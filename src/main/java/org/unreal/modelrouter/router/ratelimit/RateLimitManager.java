@@ -159,6 +159,24 @@ public class RateLimitManager {
     }
 
     /**
+     * v2.9.10: handler 层服务级限流预扣（缓存命中提前短路场景）.
+     *
+     * <p>内部仅按 serviceType 取服务级限流桶（与 tryAcquire 语义一致），
+     * modelName 仅用于指标 tag。handler 在缓存读前调用此方法实现恰一次预扣，
+     * selectInstance 内部通过 {@link ServiceRateLimitHolder} 跳过重复扣减。
+     *
+     * @param serviceType 服务类型
+     * @param clientIp 客户端 IP
+     * @param modelName 模型名称（仅指标 tag）
+     * @return true=通过限流检查；false=超限
+     */
+    public boolean tryAcquireService(final ModelServiceRegistry.ServiceType serviceType,
+                                     final String clientIp,
+                                     final String modelName) {
+        return tryAcquire(new RateLimitContext(serviceType, modelName, clientIp, 1, null, null));
+    }
+
+    /**
      * 尝试获取实例级限流令牌
      * @param context 限流上下文
      * @return 是否获取成功

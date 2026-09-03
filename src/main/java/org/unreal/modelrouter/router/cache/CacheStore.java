@@ -17,7 +17,7 @@ public interface CacheStore {
     /**
      * 按键读取缓存.
      *
-     * @param key 缓存键（SHA-256 十六进制）
+     * @param key 缓存键（三段式: rc:{serviceType}:{model}:{sha256}）
      * @return 命中返回缓存值，未命中或键为空返回 {@link Optional#empty()}
      */
     Optional<Object> get(String key);
@@ -32,6 +32,28 @@ public interface CacheStore {
      * @param ttl 有效期（由实现可加防雪崩抖动）
      */
     void put(String key, Object data, Duration ttl);
+
+    /**
+     * 按键删除缓存条目.
+     *
+     * @param key 缓存键（为 null 或空白时不做操作）
+     */
+    void delete(String key);
+
+    /**
+     * 按前缀批量删除缓存条目（用于 serviceType / model 级失效）.
+     *
+     * <p>匹配所有以 {@code prefix} 开头的缓存键并删除。
+     * 实现应先清理过期条目以保证计数精确。
+     *
+     * @param prefix 键前缀（如 {@code rc:chat:} 或 {@code rc:chat:gpt-4:}）
+     */
+    void deleteByPrefix(String prefix);
+
+    /**
+     * 清空全部缓存条目.
+     */
+    void clear();
 
     /**
      * 当前缓存条目数（估算值）.

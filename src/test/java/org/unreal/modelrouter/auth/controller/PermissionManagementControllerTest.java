@@ -59,14 +59,14 @@ class PermissionManagementControllerTest {
     class GetAllPermissionsTests {
 
         @Test
-        @DisplayName("返回全部权限码（43 个，顺序与 ALL_PERMISSION_CODES 一致）")
+        @DisplayName("返回全部权限码（44 个，顺序与 ALL_PERMISSION_CODES 一致）")
         void returnsAllPermissionCodes() {
             ResponseEntity<RouterResponse<List<String>>> result = controller.getAllPermissions();
 
             assertEquals(HttpStatus.OK, result.getStatusCode());
             assertTrue(result.getBody().isSuccess());
             assertEquals(PermissionCodes.ALL_PERMISSION_CODES, result.getBody().getData());
-            assertEquals(43, result.getBody().getData().size());
+            assertEquals(44, result.getBody().getData().size());
         }
     }
 

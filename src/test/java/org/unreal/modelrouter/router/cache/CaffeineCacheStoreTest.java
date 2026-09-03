@@ -105,4 +105,110 @@ class CaffeineCacheStoreTest {
         assertEquals("new", result.get());
         assertEquals(1, cacheStore.size());
     }
+
+    // ==================== v2.9.10: delete / clear / deleteByPrefix ====================
+
+    @Test
+    @DisplayName("delete 删除指定键")
+    void deleteRemovesKey() {
+        cacheStore.put("key-1", "v1", properties.getTtl());
+        cacheStore.put("key-2", "v2", properties.getTtl());
+
+        cacheStore.delete("key-1");
+
+        assertFalse(cacheStore.get("key-1").isPresent());
+        assertTrue(cacheStore.get("key-2").isPresent());
+        assertEquals(1, cacheStore.size());
+    }
+
+    @Test
+    @DisplayName("delete null/空白键不做操作")
+    void deleteNullKeyNoOp() {
+        cacheStore.put("key-1", "v1", properties.getTtl());
+
+        cacheStore.delete(null);
+        cacheStore.delete("  ");
+
+        assertTrue(cacheStore.get("key-1").isPresent());
+        assertEquals(1, cacheStore.size());
+    }
+
+    @Test
+    @DisplayName("delete 不存在的键不报错")
+    void deleteNonExistentKeyNoError() {
+        cacheStore.put("key-1", "v1", properties.getTtl());
+
+        cacheStore.delete("not-exists");
+
+        assertTrue(cacheStore.get("key-1").isPresent());
+        assertEquals(1, cacheStore.size());
+    }
+
+    @Test
+    @DisplayName("deleteByPrefix 按前缀批量删除")
+    void deleteByPrefixRemovesMatchingKeys() {
+        cacheStore.put("rc:chat:gpt-4:abc", "v1", properties.getTtl());
+        cacheStore.put("rc:chat:gpt-4:def", "v2", properties.getTtl());
+        cacheStore.put("rc:chat:gpt-3.5:ghi", "v3", properties.getTtl());
+        cacheStore.put("rc:embedding:em-1:jkl", "v4", properties.getTtl());
+
+        cacheStore.deleteByPrefix("rc:chat:gpt-4:");
+
+        assertFalse(cacheStore.get("rc:chat:gpt-4:abc").isPresent());
+        assertFalse(cacheStore.get("rc:chat:gpt-4:def").isPresent());
+        assertTrue(cacheStore.get("rc:chat:gpt-3.5:ghi").isPresent());
+        assertTrue(cacheStore.get("rc:embedding:em-1:jkl").isPresent());
+        assertEquals(2, cacheStore.size());
+    }
+
+    @Test
+    @DisplayName("deleteByPrefix 按服务类型前缀删除")
+    void deleteByServiceTypePrefix() {
+        cacheStore.put("rc:chat:m1:aaa", "v1", properties.getTtl());
+        cacheStore.put("rc:chat:m2:bbb", "v2", properties.getTtl());
+        cacheStore.put("rc:embedding:m3:ccc", "v3", properties.getTtl());
+
+        cacheStore.deleteByPrefix("rc:chat:");
+
+        assertFalse(cacheStore.get("rc:chat:m1:aaa").isPresent());
+        assertFalse(cacheStore.get("rc:chat:m2:bbb").isPresent());
+        assertTrue(cacheStore.get("rc:embedding:m3:ccc").isPresent());
+        assertEquals(1, cacheStore.size());
+    }
+
+    @Test
+    @DisplayName("deleteByPrefix null/空白前缀不做操作")
+    void deleteByPrefixNullNoOp() {
+        cacheStore.put("key-1", "v1", properties.getTtl());
+
+        cacheStore.deleteByPrefix(null);
+        cacheStore.deleteByPrefix("  ");
+
+        assertEquals(1, cacheStore.size());
+    }
+
+    @Test
+    @DisplayName("deleteByPrefix 无匹配条目不报错")
+    void deleteByPrefixNoMatchNoError() {
+        cacheStore.put("rc:chat:m1:aaa", "v1", properties.getTtl());
+
+        cacheStore.deleteByPrefix("rc:tts:");
+
+        assertEquals(1, cacheStore.size());
+    }
+
+    @Test
+    @DisplayName("clear 清空全部缓存")
+    void clearRemovesAllEntries() {
+        cacheStore.put("key-1", "v1", properties.getTtl());
+        cacheStore.put("key-2", "v2", properties.getTtl());
+        cacheStore.put("key-3", "v3", properties.getTtl());
+
+        cacheStore.clear();
+
+        assertEquals(0, cacheStore.size());
+        assertFalse(cacheStore.get("key-1").isPresent());
+        assertFalse(cacheStore.get("key-2").isPresent());
+        assertFalse(cacheStore.get("key-3").isPresent());
+    }
 }

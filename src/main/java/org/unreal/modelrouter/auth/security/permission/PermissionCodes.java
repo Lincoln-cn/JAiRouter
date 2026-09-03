@@ -6,7 +6,7 @@ import java.util.List;
  * RBAC 权限码常量（v2.9.8 数据驱动权限体系）
  *
  * <p>权限码格式：{@code module:resource:action}，其中 action ∈ read / write / manage。
- * 清单见开发计划2026 L1132（42 权限码），本文按该清单逐条枚举。
+ * 清单见开发计划2026 L1132（42 权限码，v2.9.10 扩展至 44），本文按该清单逐条枚举。
  *
  * <p>用途：
  * <ul>
@@ -65,6 +65,8 @@ public final class PermissionCodes {
     public static final String CONFIG_CALLHISTORY_READ = "config:callhistory:read";
     /** 调用历史配置-写 */
     public static final String CONFIG_CALLHISTORY_WRITE = "config:callhistory:write";
+    /** 响应缓存配置-写 */
+    public static final String CONFIG_CACHE_WRITE = "config:cache:write";
     /** 配置校验-读 */
     public static final String CONFIG_VALIDATION_READ = "config:validation:read";
     /** 配置校验-写 */
@@ -153,6 +155,7 @@ public final class PermissionCodes {
             CONFIG_POOLS_READ, CONFIG_POOLS_WRITE,
             CONFIG_CIRCUITBREAKER_READ, CONFIG_CIRCUITBREAKER_WRITE,
             CONFIG_CALLHISTORY_READ, CONFIG_CALLHISTORY_WRITE,
+            CONFIG_CACHE_WRITE,
             CONFIG_VALIDATION_READ, CONFIG_VALIDATION_WRITE,
             LB_MONITORING_READ, LB_CONFIG_WRITE,
             CB_MONITORING_READ, CB_HISTORY_READ,

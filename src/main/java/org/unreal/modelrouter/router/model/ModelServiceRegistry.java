@@ -22,6 +22,7 @@ import org.unreal.modelrouter.router.loadbalancer.monitor.RoutingMonitorService;
 import org.unreal.modelrouter.router.ratelimit.RateLimitConfig;
 import org.unreal.modelrouter.router.ratelimit.RateLimitContext;
 import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
+import org.unreal.modelrouter.router.ratelimit.ServiceRateLimitHolder;
 import org.unreal.modelrouter.router.pool.PoolSelector;
 import org.unreal.modelrouter.router.pool.model.PoolDefinition;
 import org.unreal.modelrouter.router.rule.RuleDecision;
@@ -364,7 +365,10 @@ public class ModelServiceRegistry {
         }
 
         // v2.8.8: 服务级限流检查(每请求恰一次;实例级在 selectWithRateLimit 内;无配置零开销)
-        if (rateLimitManager != null && !rateLimitManager.tryAcquire(
+        // v2.9.10: 缓存命中提前短路场景——handler 层已预扣服务级限流(见 ServiceRateLimitHolder),
+        // 此处跳过以保持恰一次语义;非缓存路径(无 key/disabled)标志未设置,行为与现状完全一致
+        if (!ServiceRateLimitHolder.isAcquired()
+                && rateLimitManager != null && !rateLimitManager.tryAcquire(
                 new RateLimitContext(serviceType, effectiveModelName, clientIp, 1, null, null))) {
             throw new ResponseStatusException(
                     HttpStatus.TOO_MANY_REQUESTS,

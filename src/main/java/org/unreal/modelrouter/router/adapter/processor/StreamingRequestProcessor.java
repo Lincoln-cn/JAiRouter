@@ -20,8 +20,13 @@ import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitor.service.TokenUsageRecorder;
 import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
 import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
+import org.unreal.modelrouter.router.cache.CachedStreamingResponse;
+import org.unreal.modelrouter.router.cache.ResponseCacheService;
+import org.unreal.modelrouter.router.handler.ServiceRequestHandler;
 import org.unreal.modelrouter.router.pool.PoolSelector;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
@@ -71,6 +76,10 @@ public class StreamingRequestProcessor {
 
     @Autowired(required = false)
     private SanitizationService sanitizationService;
+
+    // v2.9.10: 响应缓存门面（可选注入，未装配时跳过流式缓存写）
+    @Autowired(required = false)
+    private ResponseCacheService responseCacheService;
     
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -124,6 +133,16 @@ public class StreamingRequestProcessor {
 
         logger.debug("开始流式请求: adapter={}, instance={}, path={}", adapterType, instanceName, path);
 
+        // v2.9.10: 流式缓存写 — 读取 handler 预存的缓存键（skipStreaming=false 且确定性请求时非空）
+        final String cacheKeyForWrite;
+        if (httpRequest != null && responseCacheService != null) {
+            Object attr = httpRequest.getAttributes()
+                    .get(ServiceRequestHandler.CACHE_KEY_ATTRIBUTE);
+            cacheKeyForWrite = (attr instanceof String key && !key.isBlank()) ? key : null;
+        } else {
+            cacheKeyForWrite = null;
+        }
+
         // v2.9.2: 记录治理 - 在入口处序列化请求体
         final String capturedRequestBody;
         RecordLevel recordLevel = resolveRecordLevel();
@@ -142,6 +161,11 @@ public class StreamingRequestProcessor {
         AtomicLong cacheMissTokens = new AtomicLong(0);
         StringBuilder contentBuilder = new StringBuilder();
         AtomicReference<String> modelRef = new AtomicReference<>("unknown");
+
+        // v2.9.10: 流式缓存写 — 仅缓存键存在时收集变换后块与 finish_reason
+        final List<String> transformedChunks = (cacheKeyForWrite != null) ? new ArrayList<>() : null;
+        final AtomicReference<String> finishReasonRef = (cacheKeyForWrite != null)
+                ? new AtomicReference<>(null) : null;
 
         // 使用 ServerSentEvent 包装每个数据块，确保 SSE 格式正确
         Flux<ServerSentEvent<String>> streamResponse = client.post()
@@ -165,10 +189,32 @@ public class StreamingRequestProcessor {
                     // 提取 usage 信息和累积内容
                     extractUsageAndContent(chunk, promptTokens, completionTokens, totalTokens,
                             cacheHitTokens, cacheMissTokens, contentBuilder, modelRef);
-                    return transformAndWrapChunk(chunk, transformChunkFn);
+                    // v2.9.10: 提取 finish_reason 用于流式缓存
+                    if (cacheKeyForWrite != null) {
+                        extractFinishReason(chunk, finishReasonRef);
+                    }
+                    ServerSentEvent<String> sse = transformAndWrapChunk(chunk, transformChunkFn);
+                    // v2.9.10: 收集变换后 data 串用于流式缓存
+                    if (transformedChunks != null) {
+                        transformedChunks.add(sse.data());
+                    }
+                    return sse;
                 })
                 .doOnComplete(() -> {
                     recordStreamingComplete(serviceType, adapterType, instanceName, requestStartTime);
+
+                    // v2.9.10: 流式缓存写 — 完整成功流结束后缓存（错误/中断不触发 doOnComplete）
+                    if (cacheKeyForWrite != null && responseCacheService != null
+                            && transformedChunks != null && !transformedChunks.isEmpty()) {
+                        cacheStreamingResponse(cacheKeyForWrite, new CachedStreamingResponse(
+                                List.copyOf(transformedChunks),
+                                modelRef.get(),
+                                promptTokens.get() > 0 ? promptTokens.get() : null,
+                                completionTokens.get() > 0 ? completionTokens.get() : null,
+                                totalTokens.get() > 0 ? totalTokens.get() : null,
+                                finishReasonRef != null ? finishReasonRef.get() : null));
+                    }
+
                     // 记录 token 使用量(含 KV 缓存指标)
                     recordTokenUsage(adapterType, instanceName, modelRef.get(),
                             promptTokens.get(), completionTokens.get(), totalTokens.get(),
@@ -514,6 +560,54 @@ public class StreamingRequestProcessor {
 
         return (long) Math.ceil(chineseChars / CHINESE_CHARS_PER_TOKEN
                 + otherChars / ENGLISH_CHARS_PER_TOKEN);
+    }
+
+    /**
+     * v2.9.10: 从 SSE 块提取 finish_reason（用于流式缓存）.
+     *
+     * <p>与 {@code extractUsageAndContent} 独立，避免修改其签名破坏既有反射测试。
+     *
+     * @param chunk           原始 SSE 块（可能含 {@code data: } 前缀）
+     * @param finishReasonRef finish_reason 累积引用（最后非 null 值生效）
+     */
+    private void extractFinishReason(final String chunk, final AtomicReference<String> finishReasonRef) {
+        try {
+            String jsonPart = chunk;
+            if (chunk.startsWith("data: ")) {
+                jsonPart = chunk.substring(6);
+            }
+            if ("[DONE]".equals(jsonPart.trim())) {
+                return;
+            }
+            JsonNode jsonNode = objectMapper.readTree(jsonPart);
+            if (jsonNode.has("choices")) {
+                JsonNode choices = jsonNode.get("choices");
+                if (choices.isArray() && !choices.isEmpty()) {
+                    JsonNode choice = choices.get(0);
+                    if (choice.has("finish_reason") && !choice.get("finish_reason").isNull()) {
+                        finishReasonRef.set(choice.get("finish_reason").asText());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.trace("Failed to extract finish_reason from chunk: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * v2.9.10: 写入流式响应缓存.
+     *
+     * <p>仅在完整成功流（doOnComplete 正常触发）时调用；
+     * 键为空或数据不完整时不写。
+     *
+     * @param cacheKey         缓存键
+     * @param cachedResponse   流式缓存值
+     */
+    void cacheStreamingResponse(final String cacheKey, final CachedStreamingResponse cachedResponse) {
+        if (cacheKey == null || cachedResponse == null || responseCacheService == null) {
+            return;
+        }
+        responseCacheService.store(cacheKey, cachedResponse);
     }
 
     // ==================== v2.9.2: 记录治理辅助方法 ====================

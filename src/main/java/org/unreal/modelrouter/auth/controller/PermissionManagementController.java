@@ -64,11 +64,11 @@ public class PermissionManagementController {
     /**
      * 获取全部权限码
      *
-     * @return 全部权限码（按 ALL_PERMISSION_CODES 模块顺序，43 个）
+     * @return 全部权限码（按 ALL_PERMISSION_CODES 模块顺序，44 个）
      */
     @GetMapping("/security/permissions")
     @Operation(summary = "获取全部权限码",
-            description = "按 PermissionCodes.ALL_PERMISSION_CODES 顺序返回全部权限码（43 个，ADMIN 超集）")
+            description = "按 PermissionCodes.ALL_PERMISSION_CODES 顺序返回全部权限码（44 个，ADMIN 超集）")
     public ResponseEntity<RouterResponse<List<String>>> getAllPermissions() {
         return ResponseEntity.ok(
                 RouterResponse.success(PermissionCodes.ALL_PERMISSION_CODES, "获取权限码列表成功"));

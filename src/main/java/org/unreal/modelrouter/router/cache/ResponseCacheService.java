@@ -21,6 +21,7 @@ import java.util.Optional;
  *       不可缓存请求返回 null（处理器据此不生成键 → 读写天然双关闭）</li>
  *   <li>lookup 命中记 {@code recordResponseCacheHit}，未命中记
  *       {@code recordResponseCacheMiss}</li>
+ *   <li>v2.9.10: invalidate/invalidateAll 供管理 API 失效缓存</li>
  * </ul>
  *
  * @author JAiRouter Team
@@ -64,7 +65,7 @@ public class ResponseCacheService {
      * @param tenantKey 租户键（apiKeyId，null 时调用方已回退 clientIp）
      * @param serviceType 服务类型
      * @param requestDto 原始请求 DTO
-     * @return SHA-256 十六进制缓存键；不可缓存时返回 null
+     * @return 三段式缓存键（rc:{serviceType}:{model}:{sha256}）；不可缓存时返回 null
      */
     public String buildKey(final String tenantKey, final ServiceType serviceType, final Object requestDto) {
         if (!isEnabled() || tenantKey == null || tenantKey.isBlank()
@@ -166,5 +167,41 @@ public class ResponseCacheService {
         if (metricsCollector != null) {
             metricsCollector.recordResponseCacheMiss(serviceName, modelName);
         }
+    }
+
+    /**
+     * 按服务类型与模型失效缓存（enabled=false 时 no-op）.
+     *
+     * <p>通过键前缀寻址批量删除：{@code rc:{serviceType}:} 或
+     * {@code rc:{serviceType}:{model}:}。
+     *
+     * @param serviceType 服务类型（可选，null 时失效全部）
+     * @param model 模型名称（可选，null 时按服务类型失效）
+     * @return 失效操作是否执行（enabled=false 时返回 false）
+     */
+    public boolean invalidate(final ServiceType serviceType, final String model) {
+        if (!isEnabled()) {
+            return false;
+        }
+        if (serviceType == null) {
+            cacheStore.clear();
+            return true;
+        }
+        String prefix = ResponseCacheKeyBuilder.buildPrefix(serviceType, model);
+        cacheStore.deleteByPrefix(prefix);
+        return true;
+    }
+
+    /**
+     * 清空全部响应缓存（enabled=false 时 no-op）.
+     *
+     * @return 清空操作是否执行
+     */
+    public boolean invalidateAll() {
+        if (!isEnabled()) {
+            return false;
+        }
+        cacheStore.clear();
+        return true;
     }
 }

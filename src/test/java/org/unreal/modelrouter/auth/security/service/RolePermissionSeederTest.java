@@ -69,8 +69,8 @@ class RolePermissionSeederTest {
                     RolePermissionEntity::getRoleName, Collectors.counting()));
 
             assertEquals(Set.of("ADMIN", "OPERATOR", "USER", "VIEWER"), counts.keySet());
-            assertEquals(43L, counts.get("ADMIN"));
-            assertEquals(34L, counts.get("OPERATOR"));
+            assertEquals(44L, counts.get("ADMIN"));
+            assertEquals(35L, counts.get("OPERATOR"));
             assertEquals(24L, counts.get("USER"));
             assertEquals(23L, counts.get("VIEWER"));
         }

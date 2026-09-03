@@ -19,6 +19,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -139,6 +140,134 @@ class ResponseCacheServiceTest {
         service.store("  ", "data");
 
         verifyNoInteractions(cacheStore);
+    }
+
+    // ==================== v2.9.10: skipStreaming 门控测试 ====================
+
+    @Test
+    @DisplayName("skipStreaming=true(默认) 时流式请求不生成键")
+    void skipStreamingTrueBlocksStreamingRequests() {
+        properties.setSkipStreaming(true);
+        ChatDTO.Request streaming = new ChatDTO.Request("gpt-4",
+                List.of(new ChatDTO.Message("user", "hello", null)),
+                true, 100, 0.0, null, null, null, null, null, null, null);
+
+        assertNull(service.buildKey("tenant-a", ServiceType.chat, streaming),
+                "skipStreaming=true 时流式请求不应生成缓存键");
+    }
+
+    @Test
+    @DisplayName("skipStreaming=false 时确定性流式请求生成键")
+    void skipStreamingFalseAllowsDeterministicStreamingRequests() {
+        properties.setSkipStreaming(false);
+        ChatDTO.Request streaming = new ChatDTO.Request("gpt-4",
+                List.of(new ChatDTO.Message("user", "hello", null)),
+                true, 100, 0.0, null, null, null, null, null, null, null);
+
+        assertNotNull(service.buildKey("tenant-a", ServiceType.chat, streaming),
+                "skipStreaming=false 时确定性流式请求应生成缓存键");
+    }
+
+    @Test
+    @DisplayName("skipStreaming=false + temperature>0 非确定性流式请求不生成键")
+    void skipStreamingFalseNonDeterministicStreamingStillBlocked() {
+        properties.setSkipStreaming(false);
+        properties.setOnlyDeterministic(true);
+        ChatDTO.Request streaming = new ChatDTO.Request("gpt-4",
+                List.of(new ChatDTO.Message("user", "hello", null)),
+                true, 100, 0.9, null, null, null, null, null, null, null);
+
+        assertNull(service.buildKey("tenant-a", ServiceType.chat, streaming),
+                "非确定性流式请求即使 skipStreaming=false 也不应生成缓存键");
+    }
+
+    @Test
+    @DisplayName("流式与非流式同请求键不同（天然分桶）")
+    void streamingAndNonStreamingKeysDiffer() {
+        properties.setSkipStreaming(false);
+        ChatDTO.Request nonStreaming = new ChatDTO.Request("gpt-4",
+                List.of(new ChatDTO.Message("user", "hello", null)),
+                false, 100, 0.0, null, null, null, null, null, null, null);
+        ChatDTO.Request streaming = new ChatDTO.Request("gpt-4",
+                List.of(new ChatDTO.Message("user", "hello", null)),
+                true, 100, 0.0, null, null, null, null, null, null, null);
+
+        String nonStreamKey = service.buildKey("tenant-a", ServiceType.chat, nonStreaming);
+        String streamKey = service.buildKey("tenant-a", ServiceType.chat, streaming);
+
+        assertNotNull(nonStreamKey);
+        assertNotNull(streamKey);
+        assertNotEquals(nonStreamKey, streamKey,
+                "流式与非流式请求键应不同（天然分桶）");
+    }
+
+    // ==================== v2.9.10: invalidation 测试 ====================
+
+    @Test
+    @DisplayName("invalidate: enabled=false 时不执行，返回 false")
+    void invalidateWhenDisabledReturnsFalse() {
+        properties.setEnabled(false);
+
+        assertFalse(service.invalidate(ServiceType.chat, "gpt-4"));
+        assertFalse(service.invalidateAll());
+
+        verifyNoInteractions(cacheStore);
+    }
+
+    @Test
+    @DisplayName("invalidate: serviceType=null 清空全部")
+    void invalidateWithNullServiceTypeClearsAll() {
+        assertTrue(service.invalidate(null, null));
+
+        verify(cacheStore).clear();
+    }
+
+    @Test
+    @DisplayName("invalidate: serviceType 非空，按前缀删除")
+    void invalidateByServiceTypePrefix() {
+        assertTrue(service.invalidate(ServiceType.chat, null));
+
+        verify(cacheStore).deleteByPrefix("rc:chat:");
+    }
+
+    @Test
+    @DisplayName("invalidate: serviceType + model 按精确前缀删除")
+    void invalidateByServiceTypeAndModel() {
+        assertTrue(service.invalidate(ServiceType.chat, "gpt-4"));
+
+        verify(cacheStore).deleteByPrefix("rc:chat:gpt-4:");
+    }
+
+    @Test
+    @DisplayName("invalidateAll: enabled=false 时不执行，返回 false")
+    void invalidateAllWhenDisabledReturnsFalse() {
+        properties.setEnabled(false);
+
+        assertFalse(service.invalidateAll());
+
+        verifyNoInteractions(cacheStore);
+    }
+
+    @Test
+    @DisplayName("invalidateAll: 清空全部缓存")
+    void invalidateAllClearsCache() {
+        assertTrue(service.invalidateAll());
+
+        verify(cacheStore).clear();
+    }
+
+    @Test
+    @DisplayName("buildKey 返回三段式键格式")
+    void buildKeyReturnsThreeSegmentFormat() {
+        ChatDTO.Request request = new ChatDTO.Request("gpt-4",
+                List.of(new ChatDTO.Message("user", "hello", null)),
+                false, 100, 0.0, null, null, null, null, null, null, null);
+
+        String key = service.buildKey("tenant-a", ServiceType.chat, request);
+
+        assertNotNull(key);
+        assertTrue(key.startsWith("rc:chat:gpt-4:"),
+                "键应以三段式前缀开头，实际=" + key);
     }
 
     private ChatDTO.Request chatRequest(final String content, final Double temperature,

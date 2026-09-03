@@ -114,7 +114,7 @@ class RolePermissionServiceTest {
             List<String> codes = service.getPermissionCodesForRoles(List.of("ADMIN"));
 
             assertEquals(PermissionCodes.ALL_PERMISSION_CODES, codes);
-            assertEquals(43, codes.size());
+            assertEquals(44, codes.size());
             verify(rolePermissionRepository, never()).findByRoleNameIn(anyCollection());
         }
 

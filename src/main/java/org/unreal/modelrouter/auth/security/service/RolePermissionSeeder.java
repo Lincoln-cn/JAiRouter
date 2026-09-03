@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  * 当 {@code role_permissions} 表为空时种入 4 个角色模板（ADMIN / OPERATOR / USER / VIEWER，
  * 映射见开发计划2026 L1138-1143），表非空则跳过（幂等，不覆盖已有配置）。
  *
- * <p>角色模板（权限码共 43 个，开发计划写 42，以实现 {@link PermissionCodes} 为准）：
+ * <p>角色模板（权限码共 44 个，开发计划写 42，以实现 {@link PermissionCodes} 为准）：
  * <ul>
  *   <li>ADMIN：全量 43 码（超集，兼容现有 ADMIN）</li>
  *   <li>OPERATOR：所有 :read + :write（排除 system:* / security:*:manage / actuator:*）</li>

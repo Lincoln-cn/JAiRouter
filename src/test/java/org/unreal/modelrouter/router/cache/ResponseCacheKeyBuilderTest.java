@@ -164,15 +164,42 @@ class ResponseCacheKeyBuilderTest {
     }
 
     @Test
-    @DisplayName("键为 64 位十六进制且不含明文内容")
-    void keyIsSha256Hex() {
+    @DisplayName("键为三段式 rc:{serviceType}:{model}:{sha256} 且不含明文内容")
+    void keyIsThreeSegmentFormat() {
         ChatDTO.Request request = chatRequest("sensitive-content-不缓存明文");
         String key = ResponseCacheKeyBuilder.build(TENANT_A, ServiceType.chat, request);
 
         assertNotNull(key);
-        assertEquals(64, key.length());
-        assertTrue(key.matches("[0-9a-f]{64}"));
+        assertTrue(key.startsWith("rc:chat:" + MODEL + ":"),
+                "键应以 rc:chat:gpt-4: 开头，实际=" + key);
+        // 提取 sha256 段
+        String prefix = "rc:chat:" + MODEL + ":";
+        String sha = key.substring(prefix.length());
+        assertEquals(64, sha.length());
+        assertTrue(sha.matches("[0-9a-f]{64}"), "SHA-256 段应为 64 位十六进制");
         assertTrue(!key.contains("sensitive-content"));
+    }
+
+    @Test
+    @DisplayName("buildPrefix 生成正确前缀")
+    void buildPrefixProducesCorrectPrefix() {
+        assertEquals("rc:chat:", ResponseCacheKeyBuilder.buildPrefix(ServiceType.chat, null));
+        assertEquals("rc:chat:gpt-4:", ResponseCacheKeyBuilder.buildPrefix(ServiceType.chat, "gpt-4"));
+        assertEquals("rc:embedding:", ResponseCacheKeyBuilder.buildPrefix(ServiceType.embedding, null));
+        assertEquals("rc:rerank:model-x:", ResponseCacheKeyBuilder.buildPrefix(ServiceType.rerank, "model-x"));
+    }
+
+    @Test
+    @DisplayName("键前缀可用于按服务/模型失效")
+    void keyPrefixMatchesForInvalidation() {
+        ChatDTO.Request request = chatRequest("hello");
+        String key = ResponseCacheKeyBuilder.build(TENANT_A, ServiceType.chat, request);
+
+        assertNotNull(key);
+        assertTrue(key.startsWith(ResponseCacheKeyBuilder.buildPrefix(ServiceType.chat, null)),
+                "键应匹配服务类型前缀");
+        assertTrue(key.startsWith(ResponseCacheKeyBuilder.buildPrefix(ServiceType.chat, MODEL)),
+                "键应匹配服务类型+模型前缀");
     }
 
     private ChatDTO.Request chatRequest(final String content) {

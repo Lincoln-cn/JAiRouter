@@ -104,6 +104,28 @@ public final class CaffeineCacheStore implements CacheStore {
         return count;
     }
 
+    @Override
+    public void delete(final String key) {
+        if (key == null || key.isBlank()) {
+            return;
+        }
+        cache.invalidate(key);
+    }
+
+    @Override
+    public void deleteByPrefix(final String prefix) {
+        if (prefix == null || prefix.isBlank()) {
+            return;
+        }
+        cache.cleanUp();
+        cache.asMap().keySet().removeIf(key -> key.startsWith(prefix));
+    }
+
+    @Override
+    public void clear() {
+        cache.invalidateAll();
+    }
+
     /**
      * 计算 ±10% 抖动的条目有效期（纳秒）.
      *

@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
@@ -37,13 +38,17 @@ import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.interceptor.ControllerTracingInterceptor;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.ServiceCapability;
+import org.unreal.modelrouter.router.cache.CachedStreamingResponse;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
+import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
+import org.unreal.modelrouter.router.ratelimit.ServiceRateLimitHolder;
 import org.unreal.modelrouter.router.loadbalancer.AffinityContextHolder;
 import org.unreal.modelrouter.router.loadbalancer.AffinityKeyResolver;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
@@ -98,6 +103,13 @@ public class ServiceRequestHandler {
      */
     @Autowired(required = false)
     private ResponseCacheService responseCacheService;
+
+    /**
+     * v2.9.10: 限流管理器（可选注入，用于缓存命中前服务级限流预扣）。
+     * 未注入时缓存路径不执行预扣——限流由 selectInstance 内部执行（行为与现状一致）。
+     */
+    @Autowired(required = false)
+    private RateLimitManager rateLimitManager;
 
     /**
      * 构造函数.
@@ -237,70 +249,98 @@ public class ServiceRequestHandler {
             });
         }
 
-        // 1. 选择实例
-        ModelRouterProperties.ModelInstance selectedInstance;
-        try {
-            selectedInstance = selectInstance(serviceType, modelName, clientIp, tracingContext, requestHeaders);
-        } catch (Exception e) {
-            logger.error("Failed to select instance for service: {}, model: {}", serviceType, modelName, e);
-            return Mono.error(e);
-        } finally {
-            // v2.9.0: 请求实例选择完成后清理亲和性上下文
-            AffinityContextHolder.clear();
+        // v2.9.10: 服务级限流预扣 + 缓存提前短路
+        // 当缓存键存在时（缓存启用+请求可缓存），在 selectInstance 前：
+        //   1. 预扣服务级限流（限流是硬边界，超限 429 优先于缓存——即使缓存有值也不放行）
+        //   2. 标记已限流（selectInstance 内部跳过重复扣减，保持恰一次语义）
+        //   3. 查缓存：命中直接返回（省去实例选择开销）；未命中继续 selectInstance
+        // 无缓存键时（disabled/非确定性/无 DTO）：不预扣、不标记——selectInstance 内部限流（行为与现状完全一致）
+        Object cacheKey = httpRequest != null
+                ? httpRequest.getAttributes().get(CACHE_KEY_ATTRIBUTE) : null;
+        boolean cachePathActive = cacheKey instanceof String key && !key.isBlank();
+
+        if (cachePathActive && rateLimitManager != null) {
+            if (!rateLimitManager.tryAcquireService(serviceType, clientIp, modelName)) {
+                return Mono.error(new ResponseStatusException(
+                        HttpStatus.TOO_MANY_REQUESTS,
+                        "Service rate limit exceeded for service type '" + serviceType + "'"));
+            }
+            ServiceRateLimitHolder.markAcquired();
         }
 
-        // v2.9.9: 响应缓存读 — selectInstance 之后(服务级限流已在 ModelServiceRegistry 内执行,
-        // 每请求恰一次,命中短路不绕过限流)、获取适配器之前(命中直接跳过下游调用)
-        ResponseEntity<?> cachedResponse = tryReadCachedResponse(httpRequest, serviceType, modelName);
-        if (cachedResponse != null) {
-            return Mono.just(cachedResponse);
-        }
-
-        // 2. 获取适配器
-        ServiceCapability adapter;
-        String adapterName;
         try {
-            // v2.8.5: 规则引擎 TARGET_ADAPTER 动作 — 规则指定适配器名时按名取用
-            String ruleAdapterName = registry.resolveRuleAdapterName(serviceType, modelName, clientIp, requestHeaders);
-            if (ruleAdapterName != null && !ruleAdapterName.isBlank()) {
-                ServiceCapability ruleAdapter = adapterRegistry.getAdapterByName(ruleAdapterName);
-                if (ruleAdapter != null) {
-                    adapter = ruleAdapter;
-                    adapterName = ruleAdapterName;
-                    logger.info("Rule selected adapter '{}' for instance '{}' in service '{}'",
-                            adapterName, selectedInstance.getName(), serviceType);
+            // v2.9.10: 响应缓存读 — 限流预扣后、selectInstance 之前(命中直接跳过实例选择)
+            ResponseEntity<?> cachedResponse = tryReadCachedResponse(httpRequest, serviceType, modelName);
+            if (cachedResponse != null) {
+                return Mono.just(cachedResponse);
+            }
+
+            // 1. 选择实例
+            ModelRouterProperties.ModelInstance selectedInstance;
+            try {
+                selectedInstance = selectInstance(
+                        serviceType, modelName, clientIp, tracingContext, requestHeaders);
+            } catch (Exception e) {
+                logger.error("Failed to select instance for service: {}, model: {}",
+                        serviceType, modelName, e);
+                return Mono.error(e);
+            } finally {
+                // v2.9.0: 请求实例选择完成后清理亲和性上下文
+                AffinityContextHolder.clear();
+            }
+
+            // 2. 获取适配器
+            ServiceCapability adapter;
+            String adapterName;
+            try {
+                // v2.8.5: 规则引擎 TARGET_ADAPTER 动作 — 规则指定适配器名时按名取用
+                String ruleAdapterName = registry.resolveRuleAdapterName(
+                        serviceType, modelName, clientIp, requestHeaders);
+                if (ruleAdapterName != null && !ruleAdapterName.isBlank()) {
+                    ServiceCapability ruleAdapter = adapterRegistry.getAdapterByName(ruleAdapterName);
+                    if (ruleAdapter != null) {
+                        adapter = ruleAdapter;
+                        adapterName = ruleAdapterName;
+                        logger.info("Rule selected adapter '{}' for instance '{}' in service '{}'",
+                                adapterName, selectedInstance.getName(), serviceType);
+                    } else {
+                        logger.warn("Rule target adapter '{}' not registered, fallback to instance adapter",
+                                ruleAdapterName);
+                        adapter = adapterRegistry.getAdapter(serviceType, selectedInstance);
+                        adapterName = selectedInstance.getAdapter() != null
+                                ? selectedInstance.getAdapter()
+                                : "default";
+                    }
                 } else {
-                    logger.warn("Rule target adapter '{}' not registered, fallback to instance adapter",
-                            ruleAdapterName);
                     adapter = adapterRegistry.getAdapter(serviceType, selectedInstance);
                     adapterName = selectedInstance.getAdapter() != null
-                            ? selectedInstance.getAdapter()
-                            : "default";
+                        ? selectedInstance.getAdapter()
+                        : "default";
                 }
-            } else {
-                adapter = adapterRegistry.getAdapter(serviceType, selectedInstance);
-                adapterName = selectedInstance.getAdapter() != null
-                    ? selectedInstance.getAdapter()
-                    : "default";
+                logger.info("Selected adapter '{}' for instance '{}' in service '{}'",
+                           adapterName, selectedInstance.getName(), serviceType);
+            } catch (Exception e) {
+                logger.error("Failed to get adapter for instance: {}", selectedInstance.getName(), e);
+                return Mono.error(e);
             }
-            logger.info("Selected adapter '{}' for instance '{}' in service '{}'",
-                       adapterName, selectedInstance.getName(), serviceType);
-        } catch (Exception e) {
-            logger.error("Failed to get adapter for instance: {}", selectedInstance.getName(), e);
-            return Mono.error(e);
-        }
 
-        // 3. 执行请求（带追踪和指标收集）
-        return executeWithTracingAndMetrics(
-            endpoint,
-            adapter,
-            adapterName,
-            authorization,
-            httpRequest,
-            tracingContext,
-            selectedInstance,
-            executor
-        );
+            // 3. 执行请求（带追踪和指标收集）
+            return executeWithTracingAndMetrics(
+                endpoint,
+                adapter,
+                adapterName,
+                authorization,
+                httpRequest,
+                tracingContext,
+                selectedInstance,
+                executor
+            );
+        } finally {
+            // v2.9.10: 清理服务级限流预扣标志（防 ThreadLocal 泄漏）
+            ServiceRateLimitHolder.clear();
+            // 缓存命中提前返回时 AffinityHolder 未被 selectInstance finally 清理，此处防御性清理
+            AffinityContextHolder.clear();
+        }
     }
 
     /**
@@ -463,11 +503,15 @@ public class ServiceRequestHandler {
     }
 
     /**
-     * v2.9.9: 响应缓存读（在 selectInstance 之后调用）.
+     * v2.9.9/v2.9.10: 响应缓存读（在 selectInstance 之后调用）.
      *
-     * <p>从 httpRequest attribute 读取缓存键并查询缓存；命中时构造与正常路径同构的
-     * RouterResponse 200 JSON 响应（hit 指标由 ResponseCacheService 记录），未命中返回 null
-     * 继续原流程。
+     * <p>从 httpRequest attribute 读取缓存键并查询缓存；命中时按缓存值类型分支：
+     * <ul>
+     *   <li>{@link CachedStreamingResponse}（v2.9.10）：构造同构
+     *       {@code text/event-stream + Flux<ServerSentEvent<String>>} 逐块 SSE 回放</li>
+     *   <li>普通 Object（v2.9.9）：构造 RouterResponse 200 JSON 响应</li>
+     * </ul>
+     * 未命中返回 null 继续原流程。
      *
      * @param httpRequest HTTP 请求
      * @param serviceType 服务类型
@@ -490,10 +534,34 @@ public class ServiceRequestHandler {
             return null;
         }
         logger.info("Response cache hit: service={}, model={}", serviceName, modelName);
-        RouterResponse<Object> body = RouterResponse.success(cached.get(), "请求成功");
+        Object value = cached.get();
+        // v2.9.10: 流式缓存值 → SSE 逐块回放
+        if (value instanceof CachedStreamingResponse streamingResponse) {
+            return buildStreamingCacheResponse(streamingResponse);
+        }
+        // v2.9.9: 非流式缓存值 → RouterResponse JSON（回归）
+        RouterResponse<Object> body = RouterResponse.success(value, "请求成功");
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body);
+    }
+
+    /**
+     * v2.9.10: 将流式缓存值构建为 SSE 响应.
+     *
+     * <p>逐块回放 {@link CachedStreamingResponse#chunks()} 中的变换后 data 串，
+     * 每块包装为 {@code ServerSentEvent}，由 Spring WebFlux SSE 序列化器
+     * 自动添加 {@code data:} 前缀和事件分隔，与正常流式路径出站结构一致。
+     *
+     * @param cachedResponse 流式缓存值
+     * @return {@code text/event-stream} 响应实体
+     */
+    private ResponseEntity<?> buildStreamingCacheResponse(final CachedStreamingResponse cachedResponse) {
+        Flux<ServerSentEvent<String>> flux = Flux.fromIterable(cachedResponse.chunks())
+                .map(chunk -> ServerSentEvent.<String>builder().data(chunk).build());
+        return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_EVENT_STREAM)
+                .body(flux);
     }
 
     /**

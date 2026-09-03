@@ -24,6 +24,7 @@ import org.unreal.modelrouter.common.dto.RerankDTO;
 import org.unreal.modelrouter.config.core.ResponseCacheProperties;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.ServiceCapability;
+import org.unreal.modelrouter.router.cache.CachedStreamingResponse;
 import org.unreal.modelrouter.router.cache.CacheStore;
 import org.unreal.modelrouter.router.cache.CaffeineCacheStore;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
@@ -31,6 +32,7 @@ import org.unreal.modelrouter.router.checker.ServiceStateManager;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Field;
@@ -63,7 +65,7 @@ import static org.mockito.Mockito.when;
  * MockServerWebExchange + DTO attribute → prepareResponseCacheKey → 读短路），
  * 覆盖：
  * <ul>
- *   <li>命中：返回缓存 RouterResponse 200、不触 executor/adapter、selectInstance 仍执行（限流语义）</li>
+ *   <li>命中：返回缓存 RouterResponse 200、不触 executor/adapter、selectInstance 不执行（T3 语义：命中短路在 selectInstance 前）</li>
  *   <li>未命中：走原流程（executor 被调）</li>
  *   <li>enabled=false：永不查缓存</li>
  *   <li>流式 / 非确定性（temperature&gt;0 / n&gt;1）：不生成键不查缓存</li>
@@ -118,7 +120,7 @@ class ServiceRequestHandlerResponseCacheIntegrationTest {
     // ==================== 用例 1: 缓存启用 + 命中 ====================
 
     @Test
-    @DisplayName("RC-INTEG-001: 命中返回缓存响应(200 RouterResponse), 不触 executor/adapter, selectInstance 仍执行")
+    @DisplayName("RC-INTEG-001: 命中返回缓存响应(200 RouterResponse), 不触 executor/adapter, selectInstance 不执行(T3 短路)")
     void chatHitReturnsCachedResponseWithoutExecutorOrAdapter() throws Exception {
         buildHandler(true);
         ChatDTO.Request dto = deterministicChat("hello");
@@ -137,8 +139,10 @@ class ServiceRequestHandlerResponseCacheIntegrationTest {
         // 命中短路: executor 与适配器获取都不应发生
         verify(executor, never()).execute(any(), any(), any());
         verify(adapterRegistry, never()).getAdapter(any(ModelServiceRegistry.ServiceType.class), any());
-        // 缓存读在 selectInstance 之后(限流已在实例选择内执行), 命中也不跳过实例选择
-        verify(registry, times(1)).selectInstance(any(), anyString(), anyString(), any());
+        // T3 语义: 缓存读在 selectInstance 之前, 命中直接返回——跳过实例选择
+        // (不论 RateLimitManager 是否注入, 命中短路均在 selectInstance 前;
+        //  限流由 handler 预扣时恰一次, 见 ServiceRequestHandlerRateLimitCacheIntegrationTest)
+        verify(registry, never()).selectInstance(any(), anyString(), anyString(), any());
         // 恰一次缓存读
         assertEquals(1, cacheStore.getCount());
         assertEquals(key, result.cacheKey());
@@ -381,6 +385,109 @@ class ServiceRequestHandlerResponseCacheIntegrationTest {
         assertNotNull(result.cacheKey(), "embedding 确定性请求应生成键");
     }
 
+    // ==================== 用例 8: v2.9.10 流式缓存读短路 ====================
+
+    @Test
+    @DisplayName("RC-INTEG-020: 流式缓存命中返回 text/event-stream + Flux 逐块回放")
+    void streamingCacheHitReturnsSseResponse() throws Exception {
+        buildHandlerWithStreamingCache(true);
+        ChatDTO.Request dto = deterministicStreamingChat("hello");
+
+        // 构造流式缓存值并预置
+        List<String> chunks = List.of(
+                "{\"id\":\"chatcmpl-1\",\"object\":\"chat.completion.chunk\","
+                        + "\"created\":1700000000,\"model\":\"gpt-4\","
+                        + "\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Hi\"},"
+                        + "\"finish_reason\":null}]}",
+                "{\"id\":\"chatcmpl-2\",\"object\":\"chat.completion.chunk\","
+                        + "\"created\":1700000001,\"model\":\"gpt-4\","
+                        + "\"choices\":[{\"index\":0,\"delta\":{\"content\":\" there\"},"
+                        + "\"finish_reason\":null}]}",
+                "{\"id\":\"chatcmpl-3\",\"object\":\"chat.completion.chunk\","
+                        + "\"created\":1700000002,\"model\":\"gpt-4\","
+                        + "\"choices\":[{\"index\":0,\"delta\":{},"
+                        + "\"finish_reason\":\"stop\"}]}",
+                "[DONE]");
+        CachedStreamingResponse cachedStreaming = new CachedStreamingResponse(
+                chunks, "gpt-4", 10L, 5L, 15L, "stop");
+        String key = seedStreaming("key-1", ServiceType.chat, dto, cachedStreaming);
+
+        ServiceRequestExecutor executor = downstreamExecutor();
+        RunResult result = run(ServiceEndpoint.CHAT, "gpt-4", "key-1",
+                List.of("chat"), dto, executor);
+
+        assertNotNull(result.response());
+        assertEquals(HttpStatus.OK, result.response().getStatusCode());
+        assertEquals(MediaType.TEXT_EVENT_STREAM, result.response().getHeaders().getContentType());
+        assertTrue(result.response().getBody() instanceof Flux,
+                "流式缓存命中应返回 Flux body");
+
+        // 不触 executor/adapter
+        verify(executor, never()).execute(any(), any(), any());
+        verify(adapterRegistry, never()).getAdapter(any(ModelServiceRegistry.ServiceType.class), any());
+        assertEquals(1, cacheStore.getCount());
+        assertEquals(key, result.cacheKey());
+    }
+
+    @Test
+    @DisplayName("RC-INTEG-021: 非流式缓存命中仍返回 RouterResponse JSON（回归验证）")
+    void nonStreamingCacheHitStillReturnsJson() throws Exception {
+        buildHandler(true);
+        ChatDTO.Request dto = deterministicChat("hello");
+        Map<String, Object> payload = chatResponsePayload("chatcmpl-json-regression");
+        seed("key-1", ServiceType.chat, dto, payload);
+
+        ServiceRequestExecutor executor = downstreamExecutor();
+        RunResult result = run(ServiceEndpoint.CHAT, "gpt-4", "key-1",
+                List.of("chat"), dto, executor);
+
+        assertNotNull(result.response());
+        assertEquals(HttpStatus.OK, result.response().getStatusCode());
+        assertEquals(MediaType.APPLICATION_JSON, result.response().getHeaders().getContentType());
+        assertCachedBody(result.response(), payload);
+        verify(executor, never()).execute(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("RC-INTEG-022: 流式与非流式同请求键分桶不互污染")
+    void streamingAndNonStreamingKeysAreSeparated() throws Exception {
+        buildHandlerWithStreamingCache(true);
+        ChatDTO.Request nonStreaming = deterministicChat("hello");
+        ChatDTO.Request streaming = deterministicStreamingChat("hello");
+
+        String nonStreamKey = cacheService.buildKey("key-1", ServiceType.chat, nonStreaming);
+        String streamKey = cacheService.buildKey("key-1", ServiceType.chat, streaming);
+
+        assertNotNull(nonStreamKey);
+        assertNotNull(streamKey);
+        assertNotEquals(nonStreamKey, streamKey, "流式与非流式键应不同");
+
+        // 写入非流式缓存
+        Map<String, Object> jsonPayload = chatResponsePayload("chatcmpl-non-stream");
+        cacheStore.put(nonStreamKey, jsonPayload, Duration.ofMinutes(5));
+
+        // 流式请求不应命中非流式缓存
+        ServiceRequestExecutor executor1 = downstreamExecutor();
+        RunResult streamingResult = run(ServiceEndpoint.CHAT, "gpt-4", "key-1",
+                List.of("chat"), streaming, executor1);
+        assertEquals("downstream-ok", streamingResult.response().getBody(),
+                "流式请求不应命中非流式缓存");
+        verify(executor1, times(1)).execute(any(), any(), any());
+
+        // 写入流式缓存
+        CachedStreamingResponse streamingCached = new CachedStreamingResponse(
+                List.of("{\"id\":\"1\"}", "[DONE]"), "gpt-4", null, null, null, "stop");
+        cacheStore.put(streamKey, streamingCached, Duration.ofMinutes(5));
+
+        // 非流式请求不应命中流式缓存
+        ServiceRequestExecutor executor2 = downstreamExecutor();
+        RunResult nonStreamingResult = run(ServiceEndpoint.CHAT, "gpt-4", "key-1",
+                List.of("chat"), nonStreaming, executor2);
+        // 非流式缓存仍然存在，所以应该命中非流式缓存
+        assertTrue(nonStreamingResult.response().getBody() instanceof RouterResponse,
+                "非流式请求应命中非流式缓存并返回 RouterResponse");
+    }
+
     // ==================== 辅助方法 ====================
 
     /**
@@ -401,6 +508,23 @@ class ServiceRequestHandlerResponseCacheIntegrationTest {
     }
 
     /**
+     * v2.9.10: 构建支持流式缓存的 handler（skipStreaming=false）.
+     */
+    private void buildHandlerWithStreamingCache(final boolean cacheEnabled) throws Exception {
+        properties = new ResponseCacheProperties();
+        properties.setEnabled(cacheEnabled);
+        properties.setSkipStreaming(false);
+        properties.setTtl(Duration.ofMinutes(5));
+        CaffeineCacheStore caffeine = new CaffeineCacheStore(properties);
+        cacheStore = new CountingCacheStore(caffeine);
+        cacheService = new ResponseCacheService(cacheStore, properties, null);
+        handler = new ServiceRequestHandler(adapterRegistry, registry, serviceStateManager, null, null);
+        Field field = ServiceRequestHandler.class.getDeclaredField("responseCacheService");
+        field.setAccessible(true);
+        field.set(handler, cacheService);
+    }
+
+    /**
      * 预置缓存: 以与 handler 完全相同的租户键/服务类型/DTO 计算键并写入。
      *
      * @return 生成的缓存键
@@ -409,6 +533,19 @@ class ServiceRequestHandlerResponseCacheIntegrationTest {
                         final Object dto, final Object payload) {
         String key = cacheService.buildKey(tenantKey, serviceType, dto);
         assertNotNull(key, "确定性请求应生成缓存键");
+        cacheStore.put(key, payload, Duration.ofMinutes(5));
+        return key;
+    }
+
+    /**
+     * v2.9.10: 预置流式缓存: 计算流式请求键并写入 CachedStreamingResponse。
+     *
+     * @return 生成的缓存键
+     */
+    private String seedStreaming(final String tenantKey, final ServiceType serviceType,
+                                 final Object dto, final CachedStreamingResponse payload) {
+        String key = cacheService.buildKey(tenantKey, serviceType, dto);
+        assertNotNull(key, "确定性流式请求（skipStreaming=false）应生成缓存键");
         cacheStore.put(key, payload, Duration.ofMinutes(5));
         return key;
     }
@@ -460,6 +597,13 @@ class ServiceRequestHandlerResponseCacheIntegrationTest {
 
     private ChatDTO.Request deterministicChat(final String content) {
         return chatRequest(content, false, 0.0, null);
+    }
+
+    /**
+     * v2.9.10: 确定性流式 chat 请求（stream=true, temperature=0, n=1）
+     */
+    private ChatDTO.Request deterministicStreamingChat(final String content) {
+        return chatRequest(content, true, 0.0, null);
     }
 
     private ChatDTO.Request chatRequest(final String content, final boolean stream,
@@ -527,6 +671,21 @@ class ServiceRequestHandlerResponseCacheIntegrationTest {
         @Override
         public long size() {
             return delegate.size();
+        }
+
+        @Override
+        public void delete(final String key) {
+            delegate.delete(key);
+        }
+
+        @Override
+        public void deleteByPrefix(final String prefix) {
+            delegate.deleteByPrefix(prefix);
+        }
+
+        @Override
+        public void clear() {
+            delegate.clear();
         }
 
         int getCount() {

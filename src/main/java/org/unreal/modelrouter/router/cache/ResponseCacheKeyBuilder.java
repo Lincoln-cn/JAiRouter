@@ -23,8 +23,11 @@ import java.util.TreeMap;
  * 字符串空白归一 trim、嵌套 Map 字典序归一、列表保序），组装租户隔离键：
  *
  * <pre>
- * key = SHA-256(tenantKey | [user?] | serviceType | model | canonicalJson) 十六进制
+ * key = rc:{serviceType}:{model}:{SHA-256(tenantKey | [user?] | serviceType | model | canonicalJson)}
  * </pre>
+ *
+ * <p>serviceType 与 model 在键中可读（用于按前缀失效），SHA-256 段防明文内容泄露。
+ * P0 未发布无兼容负担，直接采用三段式。
  *
  * <p>规范化字段范围（P0 三种服务）：
  * <ul>
@@ -48,6 +51,9 @@ public final class ResponseCacheKeyBuilder {
 
     private static final String SHA_256 = "SHA-256";
 
+    /** 键前缀 */
+    private static final String KEY_PREFIX = "rc:";
+
     /** 分隔符（与键段拼接一致） */
     private static final char DELIMITER = '|';
 
@@ -58,10 +64,13 @@ public final class ResponseCacheKeyBuilder {
     /**
      * 构建响应缓存键.
      *
+     * <p>键格式: {@code rc:{serviceType}:{model}:{sha256}}。
+     * serviceType/model 可读，SHA-256 段防明文内容泄露。
+     *
      * @param tenantKey 租户键（apiKeyId，缺省回退 clientIp，由调用方解析）
      * @param serviceType 服务类型（仅 P0 三种可缓存）
      * @param requestDto 原始请求 DTO
-     * @return SHA-256 十六进制缓存键；不可缓存（类型不支持/cacheSalt 绕过/入参缺失）时返回 null
+     * @return 三段式缓存键；不可缓存（类型不支持/cacheSalt 绕过/入参缺失）时返回 null
      */
     public static String build(final String tenantKey, final ServiceType serviceType,
                                final Object requestDto) {
@@ -72,6 +81,9 @@ public final class ResponseCacheKeyBuilder {
         if (body == null) {
             return null;
         }
+        String model = extractModel(requestDto);
+        String modelSegment = model != null ? model.trim() : "";
+        // SHA-256 段: 纯哈希内容，无前缀
         StringBuilder input = new StringBuilder(tenantKey.trim());
         input.append(DELIMITER);
         String user = extractUser(requestDto);
@@ -79,10 +91,35 @@ public final class ResponseCacheKeyBuilder {
             input.append(user.trim()).append(DELIMITER);
         }
         input.append(serviceType.name()).append(DELIMITER);
-        String model = extractModel(requestDto);
-        input.append(model != null ? model.trim() : "").append(DELIMITER);
+        input.append(modelSegment).append(DELIMITER);
         input.append(canonicalJson(body));
-        return sha256Hex(input.toString());
+        String hash = sha256Hex(input.toString());
+        // 三段式: rc:{serviceType}:{model}:{sha256}
+        return KEY_PREFIX + serviceType.name() + ":" + modelSegment + ":" + hash;
+    }
+
+    /**
+     * 构建键前缀（用于按 serviceType 或 serviceType+model 失效）.
+     *
+     * <p>返回格式:
+     * <ul>
+     *   <li>{@code rc:{serviceType}:} — 按服务类型失效</li>
+     *   <li>{@code rc:{serviceType}:{model}:} — 按模型失效</li>
+     * </ul>
+     *
+     * @param serviceType 服务类型
+     * @param model 模型名称（可选，null 时仅按服务类型）
+     * @return 键前缀
+     */
+    public static String buildPrefix(final ServiceType serviceType, final String model) {
+        if (serviceType == null) {
+            return KEY_PREFIX;
+        }
+        String prefix = KEY_PREFIX + serviceType.name() + ":";
+        if (model != null && !model.isBlank()) {
+            prefix += model.trim() + ":";
+        }
+        return prefix;
     }
 
     /**

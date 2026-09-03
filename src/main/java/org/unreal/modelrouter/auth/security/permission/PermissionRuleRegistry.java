@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 /**
  * URL 权限规则注册表（v2.9.8 RBAC 数据驱动 URL 权限矩阵）
  *
- * <p>登记 42 权限码对应的 URL 规则：将原 SecurityConfiguration 硬编码 URL 矩阵
+ * <p>登记权限码对应的 URL 规则：将原 SecurityConfiguration 硬编码 URL 矩阵
  * （/api/security/jwt/accounts、/api/call-history、/api/config/call-history、
  * /api/config/tracing/security）+ 26 个同步返回 controller 的权限语义映射为
  * {method, pathPattern, permissionCode} 规则，供 {@link PermissionAuthorizationManager} 使用。
@@ -120,7 +120,10 @@ public class PermissionRuleRegistry {
 
                 // ===== 负载均衡 =====
                 PermissionRule.get("/api/loadbalancer/**", PermissionCodes.LB_MONITORING_READ),
-                PermissionRule.write("/api/loadbalancer/**", PermissionCodes.LB_CONFIG_WRITE)
+                PermissionRule.write("/api/loadbalancer/**", PermissionCodes.LB_CONFIG_WRITE),
+
+                // ===== 响应缓存配置（v2.9.10） =====
+                PermissionRule.write("/api/config/cache/**", PermissionCodes.CONFIG_CACHE_WRITE)
         );
     }
 

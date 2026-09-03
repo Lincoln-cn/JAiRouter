@@ -11,12 +11,16 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.unreal.modelrouter.auth.sanitization.SanitizationService;
 import org.unreal.modelrouter.monitor.callhistory.ApiCallHistoryRecorder;
 import org.unreal.modelrouter.monitor.callhistory.config.CallHistoryProperties;
 import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
 import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
+import org.unreal.modelrouter.router.cache.CachedStreamingResponse;
+import org.unreal.modelrouter.router.cache.ResponseCacheService;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -43,12 +47,19 @@ class StreamingRequestProcessorTest {
     @Mock
     private SanitizationService sanitizationService;
 
+    // v2.9.10: 流式缓存 mock
+    @Mock
+    private ResponseCacheService responseCacheService;
+
     @InjectMocks
     private StreamingRequestProcessor processor;
 
     @BeforeEach
     void setUp() {
         lenient().when(responseTransformer.transformStreamChunk(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+        // @InjectMocks may not inject @Autowired(required=false) fields reliably when
+        // the class has many optional dependencies; explicitly wire the cache mock.
+        ReflectionTestUtils.setField(processor, "responseCacheService", responseCacheService);
     }
 
     @Nested
@@ -431,6 +442,125 @@ class StreamingRequestProcessorTest {
             String result = (String) method.invoke(processor, longContent);
             assertNotNull(result);
             assertEquals(65536, result.length());
+        }
+    }
+
+    // ==================== v2.9.10: 流式缓存测试 ====================
+
+    @Nested
+    @DisplayName("extractFinishReason 测试")
+    class ExtractFinishReasonTests {
+
+        @Test
+        @DisplayName("应提取 finish_reason")
+        void shouldExtractFinishReason() throws Exception {
+            AtomicReference<String> finishReasonRef = new AtomicReference<>(null);
+            String chunk = "{\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}]}";
+
+            var method = StreamingRequestProcessor.class.getDeclaredMethod(
+                    "extractFinishReason", String.class, AtomicReference.class);
+            method.setAccessible(true);
+
+            method.invoke(processor, chunk, finishReasonRef);
+
+            assertEquals("stop", finishReasonRef.get());
+        }
+
+        @Test
+        @DisplayName("应处理 data: 前缀的 finish_reason")
+        void shouldHandleDataPrefixFinishReason() throws Exception {
+            AtomicReference<String> finishReasonRef = new AtomicReference<>(null);
+            String chunk = "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"length\"}]}";
+
+            var method = StreamingRequestProcessor.class.getDeclaredMethod(
+                    "extractFinishReason", String.class, AtomicReference.class);
+            method.setAccessible(true);
+
+            method.invoke(processor, chunk, finishReasonRef);
+
+            assertEquals("length", finishReasonRef.get());
+        }
+
+        @Test
+        @DisplayName("[DONE] 标记不应设置 finish_reason")
+        void doneMarkerShouldNotSetFinishReason() throws Exception {
+            AtomicReference<String> finishReasonRef = new AtomicReference<>(null);
+            String chunk = "data: [DONE]";
+
+            var method = StreamingRequestProcessor.class.getDeclaredMethod(
+                    "extractFinishReason", String.class, AtomicReference.class);
+            method.setAccessible(true);
+
+            method.invoke(processor, chunk, finishReasonRef);
+
+            assertNull(finishReasonRef.get());
+        }
+
+        @Test
+        @DisplayName("无 finish_reason 的块不应覆盖已有值")
+        void noFinishReasonShouldNotOverwrite() throws Exception {
+            AtomicReference<String> finishReasonRef = new AtomicReference<>("stop");
+            String chunk = "{\"choices\":[{\"delta\":{\"content\":\"hello\"}}]}";
+
+            var method = StreamingRequestProcessor.class.getDeclaredMethod(
+                    "extractFinishReason", String.class, AtomicReference.class);
+            method.setAccessible(true);
+
+            method.invoke(processor, chunk, finishReasonRef);
+
+            assertEquals("stop", finishReasonRef.get());
+        }
+
+        @Test
+        @DisplayName("无效 JSON 不应抛出异常")
+        void shouldNotThrowOnInvalidJson() throws Exception {
+            AtomicReference<String> finishReasonRef = new AtomicReference<>(null);
+            String chunk = "invalid json";
+
+            var method = StreamingRequestProcessor.class.getDeclaredMethod(
+                    "extractFinishReason", String.class, AtomicReference.class);
+            method.setAccessible(true);
+
+            // Should not throw
+            method.invoke(processor, chunk, finishReasonRef);
+
+            assertNull(finishReasonRef.get());
+        }
+    }
+
+    @Nested
+    @DisplayName("cacheStreamingResponse 测试")
+    class CacheStreamingResponseTests {
+
+        @Test
+        @DisplayName("正常缓存流式响应")
+        void shouldCacheStreamingResponse() {
+            CachedStreamingResponse response = new CachedStreamingResponse(
+                    List.of("{\"id\":\"1\"}", "{\"id\":\"2\"}", "[DONE]"),
+                    "gpt-4", 10L, 20L, 30L, "stop");
+
+            processor.cacheStreamingResponse("cache-key", response);
+
+            verify(responseCacheService).store("cache-key", response);
+        }
+
+        @Test
+        @DisplayName("cacheKey 为 null 时不写缓存")
+        void shouldNotCacheWhenKeyIsNull() {
+            CachedStreamingResponse response = new CachedStreamingResponse(
+                    List.of("{\"id\":\"1\"}"), "gpt-4", null, null, null, null);
+
+            processor.cacheStreamingResponse(null, response);
+
+            verifyNoInteractions(responseCacheService);
+        }
+
+        @Test
+        @DisplayName("cachedResponse 为 null 时不写缓存")
+        void shouldNotCacheWhenResponseIsNull() {
+            processor.cacheStreamingResponse("cache-key", null);
+
+            verifyNoInteractions(responseCacheService);
         }
     }
 }
