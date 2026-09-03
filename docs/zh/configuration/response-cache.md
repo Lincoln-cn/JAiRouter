@@ -1,15 +1,15 @@
 # 响应缓存
 
 <!-- 版本信息 -->
-> **文档版本**: 1.0.0
-> **最后更新**: 2026-09-03
+> **文档版本**: 1.1.0
+> **最后更新**: 2026-09-04
 > **Git 提交**: -
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
 ## 概述
 
-JAiRouter 从 **v2.9.9** 起提供**响应缓存（response cache）**：将下游 LLM 服务的完整响应按缓存键（cache key）缓存，相同请求再次到达时直接复用缓存结果并**跳过下游调用**，显著降低延迟与成本。
+JAiRouter 从 **v2.9.9** 起提供**响应缓存（response cache）**：将下游 LLM 服务的完整响应按缓存键（cache key）缓存，相同请求再次到达时直接复用缓存结果并**跳过下游调用**，显著降低延迟与成本。**v2.9.10** 扩展了三项能力：流式 SSE 缓存、失效 API（按服务 / 模型 / 全量清除）与缓存键三段式、以及限流提前短路语义优化。
 
 - **默认全关（opt-in）**：`jairouter.response-cache` 默认不启用；开启后不影响任何未命中请求的行为
 - **与 v2.9.0 前缀缓存（prefix cache / KV cache）可叠加**：两者定位不同——
@@ -33,31 +33,47 @@ jairouter:
 | `ttl` | `1h` | 缓存条目有效期（对齐 liteLLM 默认） |
 | `max-size` | `10000` | 最大缓存条目数，超出后由 Caffeine 按容量淘汰策略自动淘汰 |
 | `only-deterministic` | `true` | 仅缓存确定性请求（见下节） |
-| `skip-streaming` | `true` | 跳过流式请求（P0 仅支持非流式缓存） |
+| `skip-streaming` | `true` | 跳过流式请求；设为 `false` 可启用流式缓存（v2.9.10+） |
 
 开启即生效，无需重启或额外配置；缓存为**纯增量能力**，未命中请求的转发行为与关闭时一致。
 
-## 适用请求（P0）
+## 适用请求
 
-P0 仅缓存**非流式**确定性请求：
+### P0 非流式（v2.9.9）
 
 | 服务 | 可缓存条件 | 说明 |
 |------|-----------|------|
 | `chat`（非流式） | `temperature` 为 `0` 或 `null` **且** `n` 为 `1` 或 `null` | 采样确定性、结果可复现；其余参数（messages 等）全部进入缓存键 |
 | `embedding` | 天然确定性 | 直接可缓存 |
 | `rerank` | 天然确定性 | 直接可缓存 |
-| `chat`（流式） | 默认不缓存 | `skip-streaming: true`（默认）时跳过；流式缓存规划在后续版本 |
 | `image` / `TTS` / `STT` | 不缓存 | 二进制 / 非 P0 服务，不参与缓存 |
 
 - `only-deterministic: true`（默认）时，`temperature > 0` 或 `n > 1` 的 chat 请求不缓存（每次生成结果不同，缓存无意义）
+
+### P1 流式缓存（v2.9.10）
+
+| 服务 | 可缓存条件 | 说明 |
+|------|-----------|------|
+| `chat`（流式，`stream=true`） | `skip-streaming: false` **且** `temperature` 为 `0` 或 `null` **且** `n` 为 `1` 或 `null` | 需显式关闭 `skip-streaming` 开启；确定性前提与非流式一致 |
+
 - `skip-streaming: true`（默认）时，流式请求不生成缓存键、不读写缓存
+- 流式与非流式缓存键天然分桶、互不干扰
 
 ## 缓存键与租户隔离
 
-缓存键是规范化请求的 SHA-256 摘要，**键内不含任何明文内容**：
+缓存键采用**三段式**格式（v2.9.10），兼顾可读前缀（支持按前缀失效）与内容防泄露：
 
 ```
-cache key = SHA-256(tenantKey | [user?] | serviceType | model | canonicalJson(requestBody))
+rc:{serviceType}:{model}:{sha256}
+```
+
+- **前两段可读**：`serviceType`（如 `chat`、`embedding`）与 `model`（如 `gpt-4o`）以明文存储，支持失效 API 按前缀精确匹配清除
+- **第三段 SHA-256 摘要**：规范化请求体的 SHA-256 哈希，**不含任何明文消息内容**
+
+SHA-256 摘要计算输入：
+
+```
+SHA-256(tenantKey | [user?] | serviceType | model | canonicalJson(requestBody))
 ```
 
 - **租户隔离（tenant isolation）**：`tenantKey` = API Key ID（`apiKeyId`），缺省（无 API Key）时回退客户端 IP（`clientIp`）。不同租户的相同请求键不同、互不共享缓存，防止跨租户数据泄漏
@@ -74,7 +90,7 @@ cache key = SHA-256(tenantKey | [user?] | serviceType | model | canonicalJson(re
 - **响应结构一致**：命中返回与正常非流式成功响应同构的 `RouterResponse`（`data` 为缓存的下游原始数据），调用方无感
 - **命中不产生调用历史**：缓存命中的请求在适配器执行前短路返回（调用历史在下游执行路径记录），因此**不写入调用历史**，仅累加命中指标；需审计命中请求时以 `jairouter_response_cache_hits_total` 为准
 - **不消耗下游 token 配额**：命中请求完全跳过下游调用，不产生新的下游用量
-- **限流语义**：缓存读在**服务级限流之后**执行——命中请求不绕过限流（限流在实例选择阶段已执行）
+- **限流语义**（v2.9.10 更新）：缓存读提前到实例选择（`selectInstance`）之前——缓存查找前**先显式执行服务级限流**（扣一次），命中直接短路返回、跳过实例选择；限流超限 429 **优先于缓存**（硬边界）；未命中仍走完整 `selectInstance`（内部限流跳过，避免双扣）
 - **指标**（标签：`service`、`model`）：
 
 | 指标 | 类型 | 说明 |
@@ -83,15 +99,73 @@ cache key = SHA-256(tenantKey | [user?] | serviceType | model | canonicalJson(re
 | `jairouter_response_cache_misses_total` | Counter | 缓存未命中累计次数 |
 | `jairouter_response_cache_hit_ratio` | Gauge | 命中率 0.0~1.0（累积 hit/(hit+miss)） |
 
+## 流式缓存
+
+v2.9.10 支持对 `stream=true` 的 chat 请求进行缓存，需满足以下条件：
+
+- `skip-streaming: false`（显式开启，**默认 `true` 跳过**）
+- `only-deterministic: true`（默认）时，`temperature` 必须为 `0` 或 `null`，`n` 必须为 `1` 或 `null`
+
+### 存储
+
+流式响应在全流拼接完成后写入缓存，存储值为 transform 后的逐块 SSE data 串列表、`model`、`usage` 与 `finish_reason`，保留原始 SSE 分帧边界。
+
+### 回放
+
+命中时以**裸 SSE 流**逐块回放（`Content-Type: text/event-stream`），末尾追加 `[DONE]` 标记——与正常流式响应形态一致，不使用 `RouterResponse` JSON 包装。
+
+### 分桶
+
+流式（`stream=true`）与非流式（`stream=false`）的缓存键天然分桶，互不干扰——相同消息的流式与非流式请求各自独立缓存。
+
+## 失效 API
+
+v2.9.10 提供显式缓存失效端点：
+
+```
+DELETE /api/config/cache/response
+```
+
+### 查询参数
+
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| `serviceType` | 否 | 服务类型（如 `chat`、`embedding`），按服务清除 |
+| `model` | 否 | 模型名称（如 `gpt-4o`），与 `serviceType` 组合精确清除 |
+
+- **无参数**：清除全部缓存
+- **仅 `serviceType`**：清除该服务类型下的所有缓存
+- **`serviceType` + `model`**：精确清除指定服务+模型的缓存
+- **无效 `serviceType`**：返回 400
+
+### 键三段式
+
+失效 API 依赖缓存键三段式格式 `rc:{serviceType}:{model}:{sha256}` 的可读前缀，按前缀匹配批量清除。
+
+### RBAC
+
+失效接口需要 `config:cache:write` 权限（第 44 码）。`ADMIN` 与 `OPERATOR` 角色默认包含此权限。
+
+### 示例
+
+```bash
+# 清除全部缓存
+curl -X DELETE http://localhost:8080/api/config/cache/response
+
+# 按服务类型清除
+curl -X DELETE "http://localhost:8080/api/config/cache/response?serviceType=chat"
+
+# 精确清除（服务+模型）
+curl -X DELETE "http://localhost:8080/api/config/cache/response?serviceType=chat&model=gpt-4o"
+```
+
 ## 限制与后续
 
-P0 范围边界：
+当前版本边界：
 
-- **流式**：暂不缓存流式响应（默认 `skip-streaming: true`）；流式缓存规划在后续版本（P1 / v2.9.10）
 - **分布式**：当前为进程内 Caffeine 缓存，多实例各自独立；共享 / Redis 缓存后续版本支持
 - **语义缓存**：仅做请求级字节级匹配，不做语义级复用（你好 vs 嗨）；语义缓存属后续评估
-- **失效机制**：暂无显式失效 API，陈旧内容由 TTL（+ cacheSalt 绕过）控制；失效 API 规划在后续版本
-- 二进制服务（image / TTS / STT）与流式请求不参与缓存
+- 二进制服务（image / TTS / STT）不参与缓存
 
 ## 相关文档
 
