@@ -2,23 +2,23 @@
 
 ## 版本统计
 
-- 总文档数: 163
-- 近7天变更: 62
+- 总文档数: 167
+- 近7天变更: 78
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-09-02 06:48:42
+- 最后扫描: 2026-09-03 06:51:07
 
 ## 最近变更
 
-- **MODIFIED**: docs/zh/reference/changelog.md (1.0.13 → 1.0.14) - 2026-09-02
-- **MODIFIED**: docs/zh/index.md (1.0.13 → 1.0.14) - 2026-09-02
-- **MODIFIED**: docs/zh/configuration/routing-rules.md (1.0.3 → 1.0.4) - 2026-09-02
-- **MODIFIED**: docs/zh/configuration/load-balancing.md (1.0.4 → 1.0.5) - 2026-09-02
-- **MODIFIED**: docs/en/reference/changelog.md (1.0.13 → 1.0.14) - 2026-09-02
-- **MODIFIED**: docs/en/index.md (1.0.12 → 1.0.13) - 2026-09-02
-- **MODIFIED**: docs/en/configuration/routing-rules.md (1.0.3 → 1.0.4) - 2026-09-02
-- **MODIFIED**: docs/en/configuration/load-balancing.md (1.0.5 → 1.0.6) - 2026-09-02
-- **MODIFIED**: README.md (1.0.28 → 1.0.29) - 2026-09-02
-- **MODIFIED**: README-ZH.md (1.0.20 → 1.0.21) - 2026-09-02
+- **CREATED**: docs/zh/security/rbac-permissions.md ( → 1.0.0) - 2026-09-03
+- **MODIFIED**: docs/zh/security/index.md (1.0.2 → 1.0.3) - 2026-09-03
+- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.9 → 1.0.10) - 2026-09-03
+- **MODIFIED**: docs/zh/reference/changelog.md (1.0.14 → 1.0.15) - 2026-09-03
+- **MODIFIED**: docs/zh/index.md (1.0.14 → 1.0.15) - 2026-09-03
+- **CREATED**: docs/zh/configuration/response-cache.md ( → 1.0.0) - 2026-09-03
+- **MODIFIED**: docs/zh/configuration/index.md (1.0.4 → 1.0.5) - 2026-09-03
+- **CREATED**: docs/en/security/rbac-permissions.md ( → 1.0.0) - 2026-09-03
+- **MODIFIED**: docs/en/security/index.md (1.0.2 → 1.0.3) - 2026-09-03
+- **MODIFIED**: docs/en/reference/roadmap.md (1.0.10 → 1.0.11) - 2026-09-03
 
 ## 过期文档 (30天未更新)
 
@@ -65,7 +65,6 @@
 - docs/zh/configuration/modular-config.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/security/api-key-management.md (版本: 1.0.5, 最后更新: 2026-07-01)
 - docs/zh/security/data-sanitization.md (版本: 1.0.2, 最后更新: 2026-06-03)
-- docs/zh/security/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/security/jwt-authentication.md (版本: 1.0.4, 最后更新: 2026-06-03)
 - docs/zh/security/troubleshooting.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/en/deployment/jwt-persistence-deployment-checklist.md (版本: 1.0.1, 最后更新: 2026-06-11)
@@ -100,7 +99,7 @@
   - docs/en/configuration/load-balancing.md
   - docs/en/configuration/rate-limiting.md
   - docs/en/monitoring/index.md
-- **docs/en/configuration/index.md**: 依赖 9 个文档
+- **docs/en/configuration/index.md**: 依赖 10 个文档
   - docs/en/configuration/application-config.md
   - docs/en/configuration/circuit-breaker.md
   - docs/en/configuration/dynamic-config.md
@@ -108,6 +107,7 @@
   - docs/en/configuration/kv-cache.md
   - docs/en/configuration/load-balancing.md
   - docs/en/configuration/rate-limiting.md
+  - docs/en/configuration/response-cache.md
   - docs/en/configuration/store-config.md
   - docs/en/configuration/version-management.md
 - **docs/en/configuration/load-balancing.md**: 依赖 5 个文档
@@ -268,13 +268,14 @@
   - docs/zh/configuration/load-balancing.md
   - docs/zh/configuration/rate-limiting.md
   - docs/zh/monitoring/index.md
-- **docs/zh/configuration/index.md**: 依赖 8 个文档
+- **docs/zh/configuration/index.md**: 依赖 9 个文档
   - docs/zh/configuration/application-config.md
   - docs/zh/configuration/circuit-breaker.md
   - docs/zh/configuration/dynamic-config.md
   - docs/zh/configuration/kv-cache.md
   - docs/zh/configuration/load-balancing.md
   - docs/zh/configuration/rate-limiting.md
+  - docs/zh/configuration/response-cache.md
   - docs/zh/configuration/store-config.md
   - docs/zh/configuration/version-management.md
 - **docs/zh/configuration/load-balancing.md**: 依赖 5 个文档
@@ -440,10 +441,11 @@
   - docs/en/security/api-key-management.md
   - docs/en/security/jwt-authentication.md
   - docs/en/security/troubleshooting.md
-- **docs/en/security/index.md**: 依赖 4 个文档
+- **docs/en/security/index.md**: 依赖 5 个文档
   - docs/en/security/api-key-management.md
   - docs/en/security/data-sanitization.md
   - docs/en/security/jwt-authentication.md
+  - docs/en/security/rbac-permissions.md
   - docs/en/security/troubleshooting.md
 - **docs/en/security/troubleshooting.md**: 依赖 4 个文档
   - docs/en/monitoring/alerts.md
@@ -485,10 +487,11 @@
   - docs/zh/security/api-key-management.md
   - docs/zh/security/jwt-authentication.md
   - docs/zh/security/troubleshooting.md
-- **docs/zh/security/index.md**: 依赖 4 个文档
+- **docs/zh/security/index.md**: 依赖 5 个文档
   - docs/zh/security/api-key-management.md
   - docs/zh/security/data-sanitization.md
   - docs/zh/security/jwt-authentication.md
+  - docs/zh/security/rbac-permissions.md
   - docs/zh/security/troubleshooting.md
 - **docs/zh/security/troubleshooting.md**: 依赖 4 个文档
   - docs/zh/monitoring/alerts.md
@@ -604,27 +607,55 @@
   - docs/zh/configuration/load-balancing.md
   - docs/zh/configuration/routing-rules.md
   - docs/zh/reference/changelog.md
+- **docs/en/configuration/response-cache.md**: 依赖 4 个文档
+  - docs/en/configuration/kv-cache.md
+  - docs/en/configuration/rate-limiting.md
+  - docs/en/monitoring/metrics.md
+  - docs/en/reference/changelog.md
+- **docs/en/security/rbac-permissions.md**: 依赖 4 个文档
+  - docs/en/security/api-key-management.md
+  - docs/en/security/audit-log-management.md
+  - docs/en/security/blacklist-management.md
+  - docs/en/security/jwt-authentication.md
+- **docs/zh/configuration/response-cache.md**: 依赖 4 个文档
+  - docs/zh/configuration/kv-cache.md
+  - docs/zh/configuration/rate-limiting.md
+  - docs/zh/monitoring/metrics.md
+  - docs/zh/reference/changelog.md
+- **docs/zh/security/rbac-permissions.md**: 依赖 4 个文档
+  - docs/zh/security/api-key-management.md
+  - docs/zh/security/audit-log-management.md
+  - docs/zh/security/blacklist-management.md
+  - docs/zh/security/jwt-authentication.md
 
 ## 所有文档版本
 
-- **docs/zh/reference/changelog.md**: v1.0.14 - 2026-09-02 (5f29294f)
-- **docs/zh/index.md**: v1.0.14 - 2026-09-02 (5f29294f)
+- **docs/zh/security/rbac-permissions.md**: v1.0.0 - 2026-09-03 (601f504b)
+- **docs/zh/security/index.md**: v1.0.3 - 2026-09-03 (601f504b)
+- **docs/zh/reference/roadmap.md**: v1.0.10 - 2026-09-03 (eb4d2885)
+- **docs/zh/reference/changelog.md**: v1.0.15 - 2026-09-03 (eb4d2885)
+- **docs/zh/index.md**: v1.0.15 - 2026-09-03 (eb4d2885)
+- **docs/zh/configuration/response-cache.md**: v1.0.0 - 2026-09-03 (eb4d2885)
+- **docs/zh/configuration/index.md**: v1.0.5 - 2026-09-03 (eb4d2885)
+- **docs/en/security/rbac-permissions.md**: v1.0.0 - 2026-09-03 (601f504b)
+- **docs/en/security/index.md**: v1.0.3 - 2026-09-03 (601f504b)
+- **docs/en/reference/roadmap.md**: v1.0.11 - 2026-09-03 (eb4d2885)
+- **docs/en/reference/changelog.md**: v1.0.15 - 2026-09-03 (eb4d2885)
+- **docs/en/index.md**: v1.0.14 - 2026-09-03 (eb4d2885)
+- **docs/en/configuration/response-cache.md**: v1.0.0 - 2026-09-03 (eb4d2885)
+- **docs/en/configuration/index.md**: v1.0.7 - 2026-09-03 (eb4d2885)
+- **README.md**: v1.0.30 - 2026-09-03 (eb4d2885)
+- **README-ZH.md**: v1.0.22 - 2026-09-03 (eb4d2885)
 - **docs/zh/configuration/routing-rules.md**: v1.0.4 - 2026-09-02 (5f29294f)
 - **docs/zh/configuration/load-balancing.md**: v1.0.5 - 2026-09-02 (5f29294f)
-- **docs/en/reference/changelog.md**: v1.0.14 - 2026-09-02 (5f29294f)
-- **docs/en/index.md**: v1.0.13 - 2026-09-02 (5f29294f)
 - **docs/en/configuration/routing-rules.md**: v1.0.4 - 2026-09-02 (5f29294f)
 - **docs/en/configuration/load-balancing.md**: v1.0.6 - 2026-09-02 (5f29294f)
-- **README.md**: v1.0.29 - 2026-09-02 (5f29294f)
-- **README-ZH.md**: v1.0.21 - 2026-09-02 (5f29294f)
 - **docs/zh/tracing/index.md**: v1.0.5 - 2026-08-30 (2f3955ee)
-- **docs/zh/reference/roadmap.md**: v1.0.9 - 2026-08-30 (2f3955ee)
 - **docs/zh/development/knowledge-base-governance.md**: v1.0.0 - 2026-08-30 (2f3955ee)
 - **docs/zh/configuration/version-management.md**: v1.0.4 - 2026-08-30 (2f3955ee)
 - **docs/zh/configuration/store-config.md**: v1.0.5 - 2026-08-30 (2f3955ee)
 - **docs/zh/configuration/state-persistence.md**: v1.0.3 - 2026-08-30 (2f3955ee)
 - **docs/en/tracing/index.md**: v1.0.5 - 2026-08-30 (2f3955ee)
-- **docs/en/reference/roadmap.md**: v1.0.10 - 2026-08-30 (2f3955ee)
 - **docs/en/development/knowledge-base-governance.md**: v1.0.0 - 2026-08-30 (2f3955ee)
 - **docs/en/development/doc-maintenance.md**: v1.0.0 - 2026-08-30 (2f3955ee)
 - **docs/en/configuration/version-management.md**: v1.0.4 - 2026-08-30 (2f3955ee)
@@ -632,9 +663,7 @@
 - **docs/en/configuration/state-persistence.md**: v1.0.3 - 2026-08-30 (2f3955ee)
 - **docs/en/configuration/jwt-persistence.md**: v1.0.2 - 2026-08-30 (2f3955ee)
 - **docs/zh/configuration/kv-cache.md**: v1.0.0 - 2026-08-28 (ac0f7045)
-- **docs/zh/configuration/index.md**: v1.0.4 - 2026-08-28 (ac0f7045)
 - **docs/en/configuration/kv-cache.md**: v1.0.0 - 2026-08-28 (ac0f7045)
-- **docs/en/configuration/index.md**: v1.0.6 - 2026-08-28 (ac0f7045)
 - **docs/zh/configuration/rate-limiting.md**: v1.0.3 - 2026-08-27 (a23defac)
 - **docs/en/configuration/rate-limiting.md**: v1.0.4 - 2026-08-27 (a23defac)
 - **docs/zh/configuration/adapter-config.md**: v1.0.3 - 2026-08-26 (462db999)
@@ -664,7 +693,6 @@
 - **docs/en/tracing/operations-guide.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/en/tracing/config-reference.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/en/security/troubleshooting.md**: v1.0.3 - 2026-08-24 (f5d673e2)
-- **docs/en/security/index.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/en/security/data-sanitization.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/en/security/blacklist-management.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/security/audit-log-management.md**: v1.0.0 - 2026-08-24 (f5d673e2)
@@ -731,7 +759,6 @@
 - **docs/zh/troubleshooting/common-issues.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/zh/security/troubleshooting.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
 - **docs/zh/security/jwt-authentication.md**: v1.0.4 - 2026-06-03 (e7ca1741)
-- **docs/zh/security/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/security/data-sanitization.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/security/blacklist-management.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
 - **docs/zh/security/audit-log-management.md**: v1.0.1 - 2026-06-03 (85bfdb3e)

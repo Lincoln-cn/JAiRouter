@@ -2,10 +2,10 @@
   "versions": {
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.29",
-      "LastModified": "2026-09-02T06:48:41.249723",
-      "ContentHash": "a7cefd7ca7658631",
-      "GitCommit": "5f29294f",
+      "Version": "1.0.30",
+      "LastModified": "2026-09-03T06:51:06.174611",
+      "ContentHash": "a880c03c17a26a7c",
+      "GitCommit": "eb4d2885",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -97,10 +97,10 @@
     },
     "docs/en/configuration/index.md": {
       "FilePath": "docs/en/configuration/index.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-08-28T13:52:19.177771",
-      "ContentHash": "90bc1ced6da6d4a9",
-      "GitCommit": "ac0f7045",
+      "Version": "1.0.7",
+      "LastModified": "2026-09-03T06:51:06.205189",
+      "ContentHash": "ef77eeef0ffe9bd3",
+      "GitCommit": "eb4d2885",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -111,6 +111,7 @@
         "docs/en/configuration/kv-cache.md",
         "docs/en/configuration/load-balancing.md",
         "docs/en/configuration/rate-limiting.md",
+        "docs/en/configuration/response-cache.md",
         "docs/en/configuration/store-config.md",
         "docs/en/configuration/version-management.md"
       ]
@@ -355,10 +356,10 @@
     },
     "docs/en/index.md": {
       "FilePath": "docs/en/index.md",
-      "Version": "1.0.13",
-      "LastModified": "2026-09-02T06:48:41.362338",
-      "ContentHash": "95f1f9ce999e9418",
-      "GitCommit": "5f29294f",
+      "Version": "1.0.14",
+      "LastModified": "2026-09-03T06:51:06.294239",
+      "ContentHash": "574d1f8190e7db17",
+      "GitCommit": "eb4d2885",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -509,10 +510,10 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.14",
-      "LastModified": "2026-09-02T06:48:41.404928",
-      "ContentHash": "78ad4042c5ed4a82",
-      "GitCommit": "5f29294f",
+      "Version": "1.0.15",
+      "LastModified": "2026-09-03T06:51:06.344199",
+      "ContentHash": "438b3f3bf65f7908",
+      "GitCommit": "eb4d2885",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -561,10 +562,10 @@
     },
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
-      "Version": "1.0.10",
-      "LastModified": "2026-08-30T13:18:53.595939",
-      "ContentHash": "c25fcc278253d303",
-      "GitCommit": "2f3955ee",
+      "Version": "1.0.11",
+      "LastModified": "2026-09-03T06:51:06.357568",
+      "ContentHash": "1b5699f40df34afc",
+      "GitCommit": "eb4d2885",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -705,10 +706,10 @@
     },
     "docs/zh/configuration/index.md": {
       "FilePath": "docs/zh/configuration/index.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-08-28T13:52:19.311186",
-      "ContentHash": "d5f9fc7f2e21a486",
-      "GitCommit": "ac0f7045",
+      "Version": "1.0.5",
+      "LastModified": "2026-09-03T06:51:06.463065",
+      "ContentHash": "e36989a707753c83",
+      "GitCommit": "eb4d2885",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -718,6 +719,7 @@
         "docs/zh/configuration/kv-cache.md",
         "docs/zh/configuration/load-balancing.md",
         "docs/zh/configuration/rate-limiting.md",
+        "docs/zh/configuration/response-cache.md",
         "docs/zh/configuration/store-config.md",
         "docs/zh/configuration/version-management.md"
       ]
@@ -962,10 +964,10 @@
     },
     "docs/zh/index.md": {
       "FilePath": "docs/zh/index.md",
-      "Version": "1.0.14",
-      "LastModified": "2026-09-02T06:48:41.637664",
-      "ContentHash": "c702cbbce4ad6973",
-      "GitCommit": "5f29294f",
+      "Version": "1.0.15",
+      "LastModified": "2026-09-03T06:51:06.584902",
+      "ContentHash": "4fdfb900b8a9a10d",
+      "GitCommit": "eb4d2885",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1130,10 +1132,10 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.14",
-      "LastModified": "2026-09-02T06:48:41.698255",
-      "ContentHash": "e72be9e11fd230bd",
-      "GitCommit": "5f29294f",
+      "Version": "1.0.15",
+      "LastModified": "2026-09-03T06:51:06.646661",
+      "ContentHash": "defd51722baaa163",
+      "GitCommit": "eb4d2885",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1183,10 +1185,10 @@
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-08-30T13:18:53.841973",
-      "ContentHash": "b97fe07aec9b6618",
-      "GitCommit": "2f3955ee",
+      "Version": "1.0.10",
+      "LastModified": "2026-09-03T06:51:06.664094",
+      "ContentHash": "aa42929e4d7b739a",
+      "GitCommit": "eb4d2885",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1327,16 +1329,17 @@
     },
     "docs/en/security/index.md": {
       "FilePath": "docs/en/security/index.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-08-24T03:02:49.219748",
-      "ContentHash": "44dc4063289bc0dc",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.3",
+      "LastModified": "2026-09-03T06:51:06.373939",
+      "ContentHash": "c1b48e09515b7349",
+      "GitCommit": "601f504b",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/security/api-key-management.md",
         "docs/en/security/data-sanitization.md",
         "docs/en/security/jwt-authentication.md",
+        "docs/en/security/rbac-permissions.md",
         "docs/en/security/troubleshooting.md"
       ]
     },
@@ -1522,16 +1525,17 @@
     },
     "docs/zh/security/index.md": {
       "FilePath": "docs/zh/security/index.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-06-03T06:53:11.488446",
-      "ContentHash": "dd80cdfc62bcb956",
-      "GitCommit": "85bfdb3e",
+      "Version": "1.0.3",
+      "LastModified": "2026-09-03T06:51:06.686313",
+      "ContentHash": "fcea0f321977f7c3",
+      "GitCommit": "601f504b",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/security/api-key-management.md",
         "docs/zh/security/data-sanitization.md",
         "docs/zh/security/jwt-authentication.md",
+        "docs/zh/security/rbac-permissions.md",
         "docs/zh/security/troubleshooting.md"
       ]
     },
@@ -1727,10 +1731,10 @@
     },
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.21",
-      "LastModified": "2026-09-02T06:48:41.247876",
-      "ContentHash": "9f14059b3ca012d0",
-      "GitCommit": "5f29294f",
+      "Version": "1.0.22",
+      "LastModified": "2026-09-03T06:51:06.172748",
+      "ContentHash": "aca268f4a209308c",
+      "GitCommit": "eb4d2885",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2148,6 +2152,66 @@
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
+    },
+    "docs/en/configuration/response-cache.md": {
+      "FilePath": "docs/en/configuration/response-cache.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-09-03T06:51:06.222833",
+      "ContentHash": "24d1426ea47b43ee",
+      "GitCommit": "eb4d2885",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/en/configuration/kv-cache.md",
+        "docs/en/configuration/rate-limiting.md",
+        "docs/en/monitoring/metrics.md",
+        "docs/en/reference/changelog.md"
+      ]
+    },
+    "docs/en/security/rbac-permissions.md": {
+      "FilePath": "docs/en/security/rbac-permissions.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-09-03T06:51:06.380703",
+      "ContentHash": "72a0194b3128ca9e",
+      "GitCommit": "601f504b",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/en/security/api-key-management.md",
+        "docs/en/security/audit-log-management.md",
+        "docs/en/security/blacklist-management.md",
+        "docs/en/security/jwt-authentication.md"
+      ]
+    },
+    "docs/zh/configuration/response-cache.md": {
+      "FilePath": "docs/zh/configuration/response-cache.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-09-03T06:51:06.485646",
+      "ContentHash": "f506b81ef09b922f",
+      "GitCommit": "eb4d2885",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/zh/configuration/kv-cache.md",
+        "docs/zh/configuration/rate-limiting.md",
+        "docs/zh/monitoring/metrics.md",
+        "docs/zh/reference/changelog.md"
+      ]
+    },
+    "docs/zh/security/rbac-permissions.md": {
+      "FilePath": "docs/zh/security/rbac-permissions.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-09-03T06:51:06.693502",
+      "ContentHash": "044cd30e9d1dd1a1",
+      "GitCommit": "601f504b",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/zh/security/api-key-management.md",
+        "docs/zh/security/audit-log-management.md",
+        "docs/zh/security/blacklist-management.md",
+        "docs/zh/security/jwt-authentication.md"
+      ]
     }
   },
   "changes": [
@@ -4582,7 +4646,135 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-09-02T06:48:41.698261",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.21",
+      "NewVersion": "1.0.22",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-03T06:51:06.172754",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.29",
+      "NewVersion": "1.0.30",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-03T06:51:06.174616",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/index.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-03T06:51:06.205194",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/response-cache.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-09-03T06:51:06.222837",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/en/index.md",
+      "OldVersion": "1.0.13",
+      "NewVersion": "1.0.14",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-03T06:51:06.294246",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.14",
+      "NewVersion": "1.0.15",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-03T06:51:06.344207",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/roadmap.md",
+      "OldVersion": "1.0.10",
+      "NewVersion": "1.0.11",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-03T06:51:06.357576",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/index.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-03T06:51:06.373944",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/rbac-permissions.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-09-03T06:51:06.380708",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/zh/configuration/index.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-03T06:51:06.463073",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/response-cache.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-09-03T06:51:06.485652",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/zh/index.md",
+      "OldVersion": "1.0.14",
+      "NewVersion": "1.0.15",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-03T06:51:06.584909",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.14",
+      "NewVersion": "1.0.15",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-03T06:51:06.646667",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/roadmap.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-03T06:51:06.664099",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/index.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-03T06:51:06.686319",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/rbac-permissions.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-09-03T06:51:06.693507",
+      "Description": "文档created"
     }
   ],
-  "last_updated": "2026-09-02T06:48:42.005709"
+  "last_updated": "2026-09-03T06:51:06.947449"
 }
