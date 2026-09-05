@@ -201,7 +201,7 @@
         >
           <el-icon
             :size="48"
-            color="#909399"
+            color="var(--ja-text-secondary)"
           >
             <Document />
           </el-icon>
@@ -383,9 +383,9 @@ defineExpose({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background-color: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  padding: var(--ja-space-3) var(--ja-space-4);
+  background-color: var(--ja-bg-page);
+  border-bottom: 1px solid var(--el-border-color);
 }
 
 .model-select {
@@ -393,9 +393,9 @@ defineExpose({
 }
 
 .config-panel {
-  padding: 12px 16px;
-  background-color: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  padding: var(--ja-space-3) var(--ja-space-4);
+  background-color: var(--ja-bg-page);
+  border-bottom: 1px solid var(--el-border-color);
 }
 
 .config-item {
@@ -407,7 +407,7 @@ defineExpose({
 .config-label {
   font-size: 12px;
   font-weight: 600;
-  color: #606266;
+  color: var(--ja-text-regular);
 }
 
 .slide-down-enter-active,
@@ -424,26 +424,26 @@ defineExpose({
 .panel-content {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: var(--ja-space-4);
 }
 
 .upload-card,
 .input-card,
 .result-card {
-  background-color: #fff;
+  background-color: var(--ja-bg-page);
   border-radius: 4px;
   padding: 16px;
   margin-bottom: 16px;
 }
 
 .card-header {
-  margin-bottom: 12px;
+  margin-bottom: var(--ja-space-3);
 }
 
 .card-title {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .upload-area :deep(.el-upload-dragger) {
@@ -473,7 +473,7 @@ defineExpose({
   justify-content: center;
   padding: 40px 0;
   gap: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 
 .result-content {
@@ -484,12 +484,12 @@ defineExpose({
 
 .result-stats {
   font-size: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 
 .result-text {
   padding: 12px;
-  background-color: #f5f5f5;
+  background-color: var(--ja-main-bg);
   border-radius: 4px;
   font-size: 14px;
   line-height: 1.6;

@@ -208,7 +208,7 @@
         >
           <el-icon
             :size="48"
-            color="#909399"
+            color="var(--ja-text-secondary)"
           >
             <Edit />
           </el-icon>
@@ -393,8 +393,8 @@ defineExpose({
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background-color: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  background-color: var(--ja-bg-page);
+  border-bottom: 1px solid var(--el-border-color);
 }
 
 .model-select {
@@ -403,8 +403,8 @@ defineExpose({
 
 .config-panel {
   padding: 12px 16px;
-  background-color: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  background-color: var(--ja-bg-page);
+  border-bottom: 1px solid var(--el-border-color);
 }
 
 .config-item {
@@ -416,7 +416,7 @@ defineExpose({
 .config-label {
   font-size: 12px;
   font-weight: 600;
-  color: #606266;
+  color: var(--ja-text-regular);
 }
 
 .slide-down-enter-active,
@@ -439,7 +439,7 @@ defineExpose({
 .upload-card,
 .input-card,
 .result-card {
-  background-color: #fff;
+  background-color: var(--ja-bg-page);
   border-radius: 4px;
   padding: 16px;
   margin-bottom: 16px;
@@ -452,7 +452,7 @@ defineExpose({
 .card-title {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .action-bar {
@@ -469,7 +469,7 @@ defineExpose({
   justify-content: center;
   padding: 40px 0;
   gap: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 
 .image-grid {
@@ -480,7 +480,7 @@ defineExpose({
 
 .image-item {
   position: relative;
-  background-color: #f5f5f5;
+  background-color: var(--ja-main-bg);
   border-radius: 4px;
   overflow: hidden;
 }

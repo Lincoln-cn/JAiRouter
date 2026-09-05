@@ -93,13 +93,13 @@ defineExpose({
   display: flex;
   flex-direction: column;
   height: calc(100vh - 100px);
-  background-color: #f5f5f5;
+  background-color: var(--ja-main-bg);
 }
 
 .audio-tabs {
   padding: 12px 16px;
-  background-color: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  background-color: var(--ja-bg-page);
+  border-bottom: 1px solid var(--el-border-color);
   border-radius: 4px 4px 0 0;
 }
 </style>

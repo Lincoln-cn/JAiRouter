@@ -1,60 +1,55 @@
 <template>
-  <div class="permission-management">
-    <el-card class="main-card">
-      <template #header>
-        <div class="card-header">
-          <span>权限管理</span>
-          <div class="header-actions">
-            <el-button @click="refresh">
-              <el-icon><Refresh /></el-icon>
-              刷新
-            </el-button>
-          </div>
-        </div>
-      </template>
+  <PageSkeleton title="权限管理">
+    <template #actions>
+      <el-button @click="refresh">
+        <el-icon><Refresh /></el-icon>
+        刷新
+      </el-button>
+    </template>
 
-      <!-- 角色选择 -->
-      <el-form label-width="80px" class="role-form">
-        <el-form-item label="角色">
-          <el-select
-            v-model="selectedRole"
-            placeholder="请选择角色"
-            style="width: 480px"
-            @change="handleRoleChange"
-          >
-            <el-option
-              v-for="role in ROLES"
-              :key="role"
-              :label="`${role} - ${ROLE_DESCRIPTIONS[role]}`"
-              :value="role"
-            />
-          </el-select>
-        </el-form-item>
-      </el-form>
+    <!-- 角色选择 -->
+    <el-form label-width="80px" style="margin-bottom: 12px;">
+      <el-form-item label="角色">
+        <el-select
+          v-model="selectedRole"
+          placeholder="请选择角色"
+          style="width: 480px"
+          @change="handleRoleChange"
+        >
+          <el-option
+            v-for="role in ROLES"
+            :key="role"
+            :label="`${role} - ${ROLE_DESCRIPTIONS[role]}`"
+            :value="role"
+          />
+        </el-select>
+      </el-form-item>
+    </el-form>
 
-      <el-alert
-        v-if="selectedRole"
-        title="权限变更提示"
-        type="warning"
-        :closable="false"
-        show-icon
-        description="权限变更后需重新登录方可生效（权限内嵌于 JWT），服务端缓存约 5 分钟后过期。"
-        style="margin-bottom: 16px"
+    <el-alert
+      v-if="selectedRole"
+      title="权限变更提示"
+      type="warning"
+      :closable="false"
+      show-icon
+      description="权限变更后需重新登录方可生效（权限内嵌于 JWT），服务端缓存约 5 分钟后过期。"
+      style="margin-bottom: 16px"
+    />
+
+    <!-- 权限树（按模块分组展示 43 个权限码） -->
+    <div v-loading="loading" class="tree-wrapper">
+      <el-tree
+        ref="permissionTreeRef"
+        :data="treeData"
+        node-key="key"
+        show-checkbox
+        default-expand-all
+        :props="treeProps"
+        class="permission-tree"
       />
+    </div>
 
-      <!-- 权限树（按模块分组展示 43 个权限码） -->
-      <div v-loading="loading" class="tree-wrapper">
-        <el-tree
-          ref="permissionTreeRef"
-          :data="treeData"
-          node-key="key"
-          show-checkbox
-          default-expand-all
-          :props="treeProps"
-          class="permission-tree"
-        />
-      </div>
-
+    <template #footer>
       <div class="footer-actions">
         <el-button type="primary" :disabled="!selectedRole" :loading="saving" @click="handleSave">
           保存权限
@@ -63,8 +58,8 @@
           重置
         </el-button>
       </div>
-    </el-card>
-  </div>
+    </template>
+  </PageSkeleton>
 </template>
 
 <script setup lang="ts">
@@ -80,6 +75,7 @@ import {
   updateRolePermissions,
   type RoleName
 } from '@/api/permission'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 
 /** 权限树节点 */
 interface PermissionTreeNode {
@@ -200,25 +196,6 @@ loadRoles()
 </script>
 
 <style scoped>
-.permission-management {
-  padding: 4px;
-}
-
-.main-card {
-  min-height: calc(100vh - 120px);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 600;
-}
-
-.role-form {
-  margin-bottom: 4px;
-}
-
 .tree-wrapper {
   min-height: 320px;
   max-height: calc(100vh - 380px);

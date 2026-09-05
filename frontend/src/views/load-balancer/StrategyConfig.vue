@@ -29,7 +29,7 @@
                       style="
                         margin-left: auto;
                         text-align: right;
-                        color: #8492a6;
+                        color: var(--ja-text-secondary);
                         font-size: 12px;
                       "
                     >
@@ -92,13 +92,13 @@
         <el-table-column prop="hashAlgorithm" label="Hash算法" min-width="100">
           <template #default="{ row }">
             <span v-if="row.hashAlgorithm">{{ row.hashAlgorithm }}</span>
-            <span v-else style="color: #909399">-</span>
+            <span v-else style="color: var(--ja-text-secondary)">-</span>
           </template>
         </el-table-column>
         <el-table-column prop="virtualNodes" label="虚拟节点" min-width="80">
           <template #default="{ row }">
             <span v-if="row.virtualNodes">{{ row.virtualNodes }}</span>
-            <span v-else style="color: #909399">-</span>
+            <span v-else style="color: var(--ja-text-secondary)">-</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" min-width="100" fixed="right">
@@ -326,15 +326,15 @@ onMounted(() => {
 <style scoped>
 .load-balancer-config {
   padding: 24px;
-  background: linear-gradient(180deg, #f7f9fc 0%, #ffffff 100%);
+  background: var(--ja-main-bg-gradient);
   min-height: calc(100vh - 80px);
 }
 
 .config-card,
 .service-config-card {
   margin-bottom: 20px;
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
-  border-radius: 12px;
+  box-shadow: var(--ja-shadow-lg);
+  border-radius: var(--ja-radius-lg);
 }
 
 .card-header {
@@ -346,7 +346,7 @@ onMounted(() => {
 .card-title {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .config-form {

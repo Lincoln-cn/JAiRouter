@@ -248,7 +248,7 @@ onMounted(() => {
 }
 
 .detail-card .detail-content .info-card .message-box {
-  background: #f5f7fa;
+  background: var(--el-fill-color-light);
   padding: 15px;
   border-radius: 4px;
   font-family: 'Courier New', monospace;

@@ -44,6 +44,16 @@
   --ja-border-lighter: #f2f6fc;
   --ja-border-dark: #d4d7de;
 
+  /* ========== 间距梯度 (4pt) ========== */
+  --ja-space-1: 4px;
+  --ja-space-2: 8px;
+  --ja-space-3: 12px;
+  --ja-space-4: 16px;
+  --ja-space-5: 20px;
+  --ja-space-6: 24px;
+  --ja-space-7: 32px;
+  --ja-space-8: 40px;
+
   /* ========== 圆角 ========== */
   --ja-radius-sm: 4px;
   --ja-radius: 8px;

@@ -1,101 +1,97 @@
 <template>
-  <div class="audit-log-management">
-    <!-- 统计概览卡片 -->
-    <el-row :gutter="20" class="stats-row">
-      <el-col :span="6">
-        <el-card shadow="hover" class="stats-card jwt-card">
-          <div class="stats-content">
-            <div class="stats-icon">
-              <el-icon size="32"><Key /></el-icon>
-            </div>
-            <div class="stats-info">
-              <div class="stats-value">{{ stats.jwtOperations }}</div>
-              <div class="stats-label">JWT操作</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stats-card api-card">
-          <div class="stats-content">
-            <div class="stats-icon">
-              <el-icon size="32"><Connection /></el-icon>
-            </div>
-            <div class="stats-info">
-              <div class="stats-value">{{ stats.apiKeyOperations }}</div>
-              <div class="stats-label">API Key操作</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stats-card fail-card">
-          <div class="stats-content">
-            <div class="stats-icon">
-              <el-icon size="32"><WarningFilled /></el-icon>
-            </div>
-            <div class="stats-info">
-              <div class="stats-value">{{ stats.failedAuthentications }}</div>
-              <div class="stats-label">认证失败</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stats-card alert-card">
-          <div class="stats-content">
-            <div class="stats-icon">
-              <el-icon size="32"><Bell /></el-icon>
-            </div>
-            <div class="stats-info">
-              <div class="stats-value">{{ stats.suspiciousActivities }}</div>
-              <div class="stats-label">可疑活动</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+  <PageSkeleton title="审计日志">
+    <template #actions>
+      <el-button-group>
+        <el-button @click="handleRefresh" :icon="Refresh">刷新</el-button>
+        <el-dropdown @command="handleExport">
+          <el-button type="primary">
+            导出<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="csv">导出 CSV</el-dropdown-item>
+              <el-dropdown-item command="excel">导出 Excel</el-dropdown-item>
+              <el-dropdown-item command="json">导出 JSON</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </el-button-group>
+    </template>
 
-    <el-row :gutter="20">
-      <!-- 事件类型分布图 -->
-      <el-col :span="12">
-        <el-card shadow="hover" header="事件类型分布">
-          <div ref="eventTypeChartRef" style="height: 300px"></div>
-        </el-card>
-      </el-col>
-      <!-- 操作趋势图 -->
-      <el-col :span="12">
-        <el-card shadow="hover" header="操作趋势">
-          <div ref="trendChartRef" style="height: 300px"></div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <template #stats>
+      <!-- 统计概览卡片 -->
+      <el-row :gutter="20">
+        <el-col :span="6">
+          <el-card shadow="hover" class="stats-card jwt-card">
+            <div class="stats-content">
+              <div class="stats-icon">
+                <el-icon size="32"><Key /></el-icon>
+              </div>
+              <div class="stats-info">
+                <div class="stats-value">{{ stats.jwtOperations }}</div>
+                <div class="stats-label">JWT操作</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="6">
+          <el-card shadow="hover" class="stats-card api-card">
+            <div class="stats-content">
+              <div class="stats-icon">
+                <el-icon size="32"><Connection /></el-icon>
+              </div>
+              <div class="stats-info">
+                <div class="stats-value">{{ stats.apiKeyOperations }}</div>
+                <div class="stats-label">API Key操作</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="6">
+          <el-card shadow="hover" class="stats-card fail-card">
+            <div class="stats-content">
+              <div class="stats-icon">
+                <el-icon size="32"><WarningFilled /></el-icon>
+              </div>
+              <div class="stats-info">
+                <div class="stats-value">{{ stats.failedAuthentications }}</div>
+                <div class="stats-label">认证失败</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="6">
+          <el-card shadow="hover" class="stats-card alert-card">
+            <div class="stats-content">
+              <div class="stats-icon">
+                <el-icon size="32"><Bell /></el-icon>
+              </div>
+              <div class="stats-info">
+                <div class="stats-value">{{ stats.suspiciousActivities }}</div>
+                <div class="stats-label">可疑活动</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
 
-    <!-- 审计日志表格 -->
-    <el-card class="table-card">
-      <template #header>
-        <div class="card-header">
-          <span>审计日志</span>
-          <div class="header-actions">
-            <el-button-group>
-              <el-button @click="handleRefresh" :icon="Refresh">刷新</el-button>
-              <el-dropdown @command="handleExport">
-                <el-button type="primary">
-                  导出<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item command="csv">导出 CSV</el-dropdown-item>
-                    <el-dropdown-item command="excel">导出 Excel</el-dropdown-item>
-                    <el-dropdown-item command="json">导出 JSON</el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </el-button-group>
-          </div>
-        </div>
-      </template>
+      <el-row :gutter="20" style="margin-top: 16px;">
+        <!-- 事件类型分布图 -->
+        <el-col :span="12">
+          <el-card shadow="hover" header="事件类型分布">
+            <div ref="eventTypeChartRef" style="height: 300px"></div>
+          </el-card>
+        </el-col>
+        <!-- 操作趋势图 -->
+        <el-col :span="12">
+          <el-card shadow="hover" header="操作趋势">
+            <div ref="trendChartRef" style="height: 300px"></div>
+          </el-card>
+        </el-col>
+      </el-row>
+    </template>
 
+    <template #toolbar>
       <!-- 搜索条件 -->
       <el-form :model="searchForm" class="search-form">
         <el-row :gutter="20">
@@ -186,57 +182,58 @@
           </el-col>
         </el-row>
       </el-form>
+    </template>
 
-      <!-- 日志表格 -->
-      <el-table :data="logs" style="width: 100%" border v-loading="loading" :row-class-name="tableRowClassName">
-        <el-table-column prop="timestamp" label="时间" width="180" sortable>
-          <template #default="scope">
-            {{ formatDateTime(scope.row.timestamp) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="userId" label="用户ID" width="120" show-overflow-tooltip />
-        <el-table-column prop="type" label="事件类型" width="140">
-          <template #default="scope">
-            <el-tag :type="getEventTypeColor(scope.row.type)" size="small">
-              {{ getEventTypeText(scope.row.type) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="resourceId" label="资源ID" width="150" show-overflow-tooltip />
-        <el-table-column prop="ipAddress" label="客户端IP" width="140" />
-        <el-table-column prop="riskLevel" label="风险等级" width="100">
-          <template #default="scope">
-            <el-tag :type="getRiskLevelColor(scope.row.riskLevel)" size="small" v-if="scope.row.riskLevel">
-              {{ scope.row.riskLevel }}
-            </el-tag>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="success" label="结果" width="80">
-          <template #default="scope">
-            <el-tag :type="scope.row.success ? 'success' : 'danger'" size="small">
-              {{ scope.row.success ? '成功' : '失败' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="details" label="描述" show-overflow-tooltip />
-        <el-table-column label="操作" width="140" fixed="right">
-          <template #default="scope">
-            <el-button size="small" type="primary" link @click="handleViewDetail(scope.row)">详情</el-button>
-            <el-dropdown v-if="scope.row.ipAddress" trigger="click" @command="(cmd: string) => handleAddToBlacklist(scope.row, cmd)">
-              <el-button size="small" type="warning" link>黑名单</el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="IP">封禁IP</el-dropdown-item>
-                  <el-dropdown-item command="USER" :disabled="!scope.row.userId">封禁用户</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </template>
-        </el-table-column>
-      </el-table>
+    <!-- 日志表格 -->
+    <el-table :data="logs" style="width: 100%" border v-loading="loading" :row-class-name="tableRowClassName">
+      <el-table-column prop="timestamp" label="时间" width="180" sortable>
+        <template #default="scope">
+          {{ formatDateTime(scope.row.timestamp) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="userId" label="用户ID" width="120" show-overflow-tooltip />
+      <el-table-column prop="type" label="事件类型" width="140">
+        <template #default="scope">
+          <el-tag :type="getEventTypeColor(scope.row.type)" size="small">
+            {{ getEventTypeText(scope.row.type) }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="resourceId" label="资源ID" width="150" show-overflow-tooltip />
+      <el-table-column prop="ipAddress" label="客户端IP" width="140" />
+      <el-table-column prop="riskLevel" label="风险等级" width="100">
+        <template #default="scope">
+          <el-tag :type="getRiskLevelColor(scope.row.riskLevel)" size="small" v-if="scope.row.riskLevel">
+            {{ scope.row.riskLevel }}
+          </el-tag>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="success" label="结果" width="80">
+        <template #default="scope">
+          <el-tag :type="scope.row.success ? 'success' : 'danger'" size="small">
+            {{ scope.row.success ? '成功' : '失败' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="details" label="描述" show-overflow-tooltip />
+      <el-table-column label="操作" width="140" fixed="right">
+        <template #default="scope">
+          <el-button size="small" type="primary" link @click="handleViewDetail(scope.row)">详情</el-button>
+          <el-dropdown v-if="scope.row.ipAddress" trigger="click" @command="(cmd: string) => handleAddToBlacklist(scope.row, cmd)">
+            <el-button size="small" type="warning" link>黑名单</el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="IP">封禁IP</el-dropdown-item>
+                <el-dropdown-item command="USER" :disabled="!scope.row.userId">封禁用户</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </template>
+      </el-table-column>
+    </el-table>
 
-      <!-- 分页 -->
+    <template #footer>
       <el-pagination
         v-model:current-page="pagination.currentPage"
         v-model:page-size="pagination.pageSize"
@@ -245,9 +242,9 @@
         layout="total, sizes, prev, pager, next, jumper"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
-        class="pagination"
       />
-    </el-card>
+    </template>
+  </PageSkeleton>
 
     <!-- 日志详情对话框 -->
     <el-dialog v-model="detailDialogVisible" title="日志详情" width="650px">
@@ -285,7 +282,6 @@
         <el-button @click="detailDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -303,6 +299,7 @@ import {
 } from '@/api/auditLog'
 import { addToBlacklist } from '@/api/blacklist'
 import { useChartTheme } from '@/composables/useChartTheme'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 
 const { getChartTheme } = useChartTheme()
 
@@ -696,14 +693,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.audit-log-management {
-  padding: 20px;
-}
-
-.stats-row {
-  margin-bottom: 20px;
-}
-
 .stats-card {
   border-radius: 8px;
 }
@@ -763,37 +752,16 @@ onUnmounted(() => {
   margin-top: 4px;
 }
 
-.table-card {
-  margin-top: 20px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-actions {
-  display: flex;
-  gap: 10px;
-}
-
 .search-form {
-  margin-bottom: 20px;
-  padding: 20px;
-  background-color: var(--ja-primary-light-9, #f5f7fa);
+  padding: 16px;
+  background-color: var(--ja-primary-light-9, var(--el-fill-color-light));
   border-radius: 4px;
-}
-
-.pagination {
-  margin-top: 20px;
-  text-align: right;
 }
 
 .metadata-pre {
   max-height: 200px;
   overflow-y: auto;
-  background-color: var(--ja-primary-light-9, #f5f7fa);
+  background-color: var(--ja-primary-light-9, var(--el-fill-color-light));
   padding: 10px;
   border-radius: 4px;
   font-size: 12px;
@@ -801,10 +769,10 @@ onUnmounted(() => {
 }
 
 :deep(.warning-row) {
-  background-color: var(--el-color-warning-light-9, #fdf6ec);
+  background-color: var(--el-color-warning-light-9);
 }
 
 :deep(.error-row) {
-  background-color: var(--el-color-danger-light-9, #fef0f0);
+  background-color: var(--el-color-danger-light-9);
 }
 </style>

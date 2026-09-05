@@ -69,21 +69,23 @@ const categoryTagType = computed(() => {
   align-items: flex-start;
   gap: 12px;
   padding: 14px;
-  border: 1px solid #e4e7ed;
+  border: 1px solid var(--el-border-color);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  background: #fff;
+  background: var(--ja-bg-card);
 }
 
 .adapter-template-card:hover {
-  border-color: #409eff;
+  border-color: var(--ja-primary);
+  /* rgba primary-tinted hover shadow — no equivalent token exists */
   box-shadow: 0 2px 8px rgba(64, 158, 255, 0.15);
 }
 
 .adapter-template-card.selected {
-  border-color: #409eff;
-  background: #ecf5ff;
+  border-color: var(--ja-primary);
+  background: var(--ja-primary-light-9);
+  /* rgba primary-tinted selected shadow — no equivalent token exists */
   box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
 }
 
@@ -96,19 +98,19 @@ const categoryTagType = computed(() => {
   width: 40px;
   height: 40px;
   border-radius: 8px;
-  background: #f0f2f5;
+  background: var(--el-fill-color);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  color: #409eff;
+  color: var(--ja-primary);
   flex-shrink: 0;
 }
 
 .template-icon-text {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .template-info {
@@ -119,13 +121,13 @@ const categoryTagType = computed(() => {
 .template-name {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ja-text-primary);
   margin-bottom: 4px;
 }
 
 .template-desc {
   font-size: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
   margin-bottom: 8px;
   line-height: 1.4;
   display: -webkit-box;
@@ -143,7 +145,7 @@ const categoryTagType = computed(() => {
   position: absolute;
   top: 10px;
   right: 10px;
-  color: #409eff;
+  color: var(--ja-primary);
   font-size: 18px;
 }
 </style>

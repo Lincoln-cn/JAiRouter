@@ -172,13 +172,13 @@ onMounted(() => {
 <style scoped>
 .circuit-breaker-global-config {
   padding: 24px;
-  background: linear-gradient(180deg, #f7f9fc 0%, #ffffff 100%);
+  background: var(--ja-main-bg-gradient);
   min-height: calc(100vh - 80px);
 }
 
 .config-card {
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
-  border-radius: 12px;
+  box-shadow: var(--ja-shadow-lg);
+  border-radius: var(--ja-radius-lg);
 }
 
 .card-header {
@@ -190,7 +190,7 @@ onMounted(() => {
 .card-title {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .config-form {
@@ -210,7 +210,7 @@ onMounted(() => {
 }
 
 .hint-text {
-  color: #606266;
+  color: var(--ja-text-regular);
   font-size: 12px;
 }
 </style>

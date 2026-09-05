@@ -1,23 +1,18 @@
 <template>
-  <div class="blacklist-management">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>安全黑名单管理</span>
-          <div>
-            <el-button type="primary" @click="handleOpenAddDialog">
-              <el-icon><Plus /></el-icon>添加黑名单
-            </el-button>
-            <el-button :loading="loading" @click="handleRefresh">
-              <el-icon><Refresh /></el-icon>刷新
-            </el-button>
-            <el-button type="warning" @click="handleCleanup">
-              <el-icon><Delete /></el-icon>清理过期
-            </el-button>
-          </div>
-        </div>
-      </template>
+  <PageSkeleton title="安全黑名单管理">
+    <template #actions>
+      <el-button type="primary" @click="handleOpenAddDialog">
+        <el-icon><Plus /></el-icon>添加黑名单
+      </el-button>
+      <el-button :loading="loading" @click="handleRefresh">
+        <el-icon><Refresh /></el-icon>刷新
+      </el-button>
+      <el-button type="warning" @click="handleCleanup">
+        <el-icon><Delete /></el-icon>清理过期
+      </el-button>
+    </template>
 
+    <template #stats>
       <!-- 统计卡片 -->
       <div class="stats-section">
         <el-row :gutter="20">
@@ -51,100 +46,90 @@
           </el-col>
         </el-row>
       </div>
+    </template>
 
+    <template #toolbar>
       <!-- 搜索和过滤 -->
-      <div class="filter-section">
-        <el-row :gutter="20">
-          <el-col :span="4">
-            <el-select v-model="filterForm.type" placeholder="类型筛选" clearable @change="handleSearch">
-              <el-option label="全部类型" value="" />
-              <el-option label="Token" value="TOKEN" />
-              <el-option label="IP地址" value="IP" />
-              <el-option label="设备" value="DEVICE" />
-            </el-select>
-          </el-col>
-          <el-col :span="4">
-            <el-select v-model="filterForm.status" placeholder="状态筛选" clearable @change="handleSearch">
-              <el-option label="全部状态" value="" />
-              <el-option label="活跃" value="ACTIVE" />
-              <el-option label="已过期" value="EXPIRED" />
-              <el-option label="已移除" value="REMOVED" />
-            </el-select>
-          </el-col>
-          <el-col :span="4">
-            <el-input v-model="filterForm.userId" placeholder="用户ID" clearable @keyup.enter="handleSearch" />
-          </el-col>
-          <el-col :span="4">
-            <el-button type="primary" @click="handleSearch">搜索</el-button>
-            <el-button @click="handleResetFilter">重置</el-button>
-          </el-col>
-        </el-row>
-      </div>
+      <el-select v-model="filterForm.type" placeholder="类型筛选" clearable @change="handleSearch">
+        <el-option label="全部类型" value="" />
+        <el-option label="Token" value="TOKEN" />
+        <el-option label="IP地址" value="IP" />
+        <el-option label="设备" value="DEVICE" />
+      </el-select>
+      <el-select v-model="filterForm.status" placeholder="状态筛选" clearable @change="handleSearch">
+        <el-option label="全部状态" value="" />
+        <el-option label="活跃" value="ACTIVE" />
+        <el-option label="已过期" value="EXPIRED" />
+        <el-option label="已移除" value="REMOVED" />
+      </el-select>
+      <el-input v-model="filterForm.userId" placeholder="用户ID" clearable @keyup.enter="handleSearch" style="width: 200px" />
+      <el-button type="primary" @click="handleSearch">搜索</el-button>
+      <el-button @click="handleResetFilter">重置</el-button>
+    </template>
 
-      <!-- 黑名单列表 -->
-      <el-table v-loading="loading" :data="pageData.content" style="width: 100%">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="blacklistType" label="类型" width="100">
-          <template #default="scope">
-            <el-tag :type="getTypeTagType(scope.row.blacklistType)">
-              {{ scope.row.blacklistType }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="targetValueMasked" label="目标值" show-overflow-tooltip />
-        <el-table-column prop="userId" label="关联用户" width="120" show-overflow-tooltip />
-        <el-table-column prop="reason" label="原因" width="150" show-overflow-tooltip />
-        <el-table-column prop="riskLevel" label="风险等级" width="100">
-          <template #default="scope">
-            <el-tag :type="getRiskTagType(scope.row.riskLevel)" size="small">
-              {{ scope.row.riskLevel }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="addedBy" label="添加者" width="100" />
-        <el-table-column prop="addedAt" label="添加时间" width="160">
-          <template #default="scope">
-            {{ formatDateTime(scope.row.addedAt) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="expiresAt" label="过期时间" width="160">
-          <template #default="scope">
-            <span v-if="scope.row.permanent">永久</span>
-            <span v-else>{{ formatDateTime(scope.row.expiresAt) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" width="80">
-          <template #default="scope">
-            <el-tag :type="getStatusTagType(scope.row.status)" size="small">
-              {{ scope.row.status }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
-          <template #default="scope">
-            <el-button v-if="scope.row.status === 'ACTIVE'" type="danger" size="small" @click="handleRemove(scope.row)">
-              移除
-            </el-button>
-            <el-button type="primary" size="small" link @click="handleViewDetail(scope.row)">
-              详情
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+    <!-- 黑名单列表 -->
+    <el-table v-loading="loading" :data="pageData.content" style="width: 100%">
+      <el-table-column prop="id" label="ID" width="80" />
+      <el-table-column prop="blacklistType" label="类型" width="100">
+        <template #default="scope">
+          <el-tag :type="getTypeTagType(scope.row.blacklistType)">
+            {{ scope.row.blacklistType }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="targetValueMasked" label="目标值" show-overflow-tooltip />
+      <el-table-column prop="userId" label="关联用户" width="120" show-overflow-tooltip />
+      <el-table-column prop="reason" label="原因" width="150" show-overflow-tooltip />
+      <el-table-column prop="riskLevel" label="风险等级" width="100">
+        <template #default="scope">
+          <el-tag :type="getRiskTagType(scope.row.riskLevel)" size="small">
+            {{ scope.row.riskLevel }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="addedBy" label="添加者" width="100" />
+      <el-table-column prop="addedAt" label="添加时间" width="160">
+        <template #default="scope">
+          {{ formatDateTime(scope.row.addedAt) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="expiresAt" label="过期时间" width="160">
+        <template #default="scope">
+          <span v-if="scope.row.permanent">永久</span>
+          <span v-else>{{ formatDateTime(scope.row.expiresAt) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="status" label="状态" width="80">
+        <template #default="scope">
+          <el-tag :type="getStatusTagType(scope.row.status)" size="small">
+            {{ scope.row.status }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="120" fixed="right">
+        <template #default="scope">
+          <el-button v-if="scope.row.status === 'ACTIVE'" type="danger" size="small" @click="handleRemove(scope.row)">
+            移除
+          </el-button>
+          <el-button type="primary" size="small" link @click="handleViewDetail(scope.row)">
+            详情
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
 
-      <!-- 分页 -->
-      <div class="pagination-section">
-        <el-pagination
-          v-model:current-page="filterForm.page"
-          v-model:page-size="filterForm.size"
-          :page-sizes="[10, 20, 50, 100]"
-          :total="pageData.totalElements"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSearch"
-          @current-change="handleSearch"
-        />
-      </div>
-    </el-card>
+    <template #footer>
+      <el-pagination
+        v-model:current-page="filterForm.page"
+        v-model:page-size="filterForm.size"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="pageData.totalElements"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleSearch"
+        @current-change="handleSearch"
+      />
+    </template>
+  </PageSkeleton>
 
     <!-- 添加黑名单对话框 -->
     <el-dialog v-model="addDialogVisible" title="添加黑名单" width="600px">
@@ -334,7 +319,6 @@
         <el-descriptions-item label="来源">{{ detailData?.source }}</el-descriptions-item>
       </el-descriptions>
     </el-dialog>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -357,6 +341,7 @@ import {
 } from '@/api/blacklist'
 import { getTokens, type JwtTokenInfo } from '@/api/jwtToken'
 import { getJwtAccounts, type JwtAccount } from '@/api/account'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 
 // 状态
 const loading = ref(false)
@@ -698,31 +683,11 @@ function getRiskTagType(level: RiskLevel | undefined) {
 </script>
 
 <style scoped>
-.blacklist-management {
-  padding: 20px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .stats-section {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   padding: 20px;
-  background: #f5f7fa;
+  background: var(--el-fill-color-light);
   border-radius: 4px;
-}
-
-.filter-section {
-  margin-bottom: 15px;
-}
-
-.pagination-section {
-  margin-top: 15px;
-  display: flex;
-  justify-content: flex-end;
 }
 
 /* 选择器容器 */
@@ -749,7 +714,7 @@ function getRiskTagType(level: RiskLevel | undefined) {
 }
 
 .token-time {
-  color: #909399;
+  color: var(--ja-text-secondary);
   font-size: 12px;
   margin-left: auto;
 }
@@ -767,7 +732,7 @@ function getRiskTagType(level: RiskLevel | undefined) {
 }
 
 .ip-count {
-  color: #909399;
+  color: var(--ja-text-secondary);
   font-size: 12px;
   margin-left: auto;
 }

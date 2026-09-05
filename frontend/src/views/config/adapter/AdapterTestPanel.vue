@@ -158,13 +158,13 @@ defineExpose({
 }
 
 .test-result.success {
-  background: #f0f9eb;
-  border: 1px solid #e1f3d8;
+  background: var(--el-color-success-light-9);
+  border: 1px solid var(--el-color-success-light-8);
 }
 
 .test-result.error {
-  background: #fef0f0;
-  border: 1px solid #fde2e2;
+  background: var(--el-color-danger-light-9);
+  border: 1px solid var(--el-color-danger-light-8);
 }
 
 .result-header {
@@ -175,12 +175,12 @@ defineExpose({
 }
 
 .icon-success {
-  color: #67c23a;
+  color: var(--ja-success);
   font-size: 18px;
 }
 
 .icon-error {
-  color: #f56c6c;
+  color: var(--ja-danger);
   font-size: 18px;
 }
 
@@ -191,12 +191,12 @@ defineExpose({
 
 .result-latency {
   font-size: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 
 .result-message {
   font-size: 13px;
-  color: #606266;
+  color: var(--ja-text-regular);
 }
 
 .result-details,
@@ -206,7 +206,7 @@ defineExpose({
 
 .detail-title {
   font-size: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
   margin-bottom: 6px;
 }
 
@@ -216,8 +216,8 @@ defineExpose({
 
 .preview-text {
   font-size: 12px;
-  color: #606266;
-  background: #fff;
+  color: var(--ja-text-regular);
+  background: var(--ja-bg-page);
   border-radius: 4px;
   padding: 8px;
   max-height: 160px;

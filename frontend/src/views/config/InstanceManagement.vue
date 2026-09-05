@@ -9,6 +9,15 @@
                 <Management />
               </el-icon>
               <span>实例管理</span>
+              <el-button
+                type="primary"
+                link
+                size="small"
+                class="header-cross-link"
+                @click="router.push({ name: 'service-management', query: route.query.serviceType ? { serviceType: route.query.serviceType as string } : {} })"
+              >
+                打开服务配置
+              </el-button>
             </div>
 
             <div class="header-tools">
@@ -383,6 +392,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import type { FormInstance } from 'element-plus'
 import { SERVICE_TYPE_LABELS, COMMON_SERVICE_TYPES } from '@/constants/serviceTypes'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -407,6 +417,9 @@ import RateLimitConfig from '@/components/RateLimitConfig.vue'
 import CircuitBreakerConfig from '@/components/CircuitBreakerConfig.vue'
 
 const serviceTypeMap: Record<string, string> = SERVICE_TYPE_LABELS as Record<string, string>
+
+const route = useRoute()
+const router = useRouter()
 
 // 指定显示顺序（会按此顺序排列卡片/标签）
 const serviceOrder: string[] = COMMON_SERVICE_TYPES as string[]
@@ -663,6 +676,13 @@ watch(activeServiceType, (newServiceType) => {
   }
 })
 
+// Cross-link: 监听路由 query 变化，切换到对应服务类型 Tab
+watch(() => route.query.serviceType, (val) => {
+  if (val && typeof val === 'string' && serviceTypes.value.includes(val) && activeServiceType.value !== val) {
+    activeServiceType.value = val
+  }
+})
+
 // 获取适配器列表
 const fetchAdapters = async () => {
   try {
@@ -701,8 +721,14 @@ const fetchServiceTypes = async () => {
       serviceTypes.value = ordered
 
       if (serviceTypes.value.length > 0) {
-        activeServiceType.value = serviceTypes.value[0]
-        fetchServiceInstances(serviceTypes.value[0])
+        // Cross-link: 从路由 query 中读取 serviceType，预选对应 Tab
+        const queryType = route.query.serviceType as string | undefined
+        if (queryType && serviceTypes.value.includes(queryType)) {
+          activeServiceType.value = queryType
+        } else {
+          activeServiceType.value = serviceTypes.value[0]
+        }
+        fetchServiceInstances(activeServiceType.value)
       }
     }
   } catch (error) {
@@ -1114,6 +1140,11 @@ onMounted(() => {
   margin-right: 8px;
   color: var(--ja-primary);
   font-size: 20px;
+}
+
+.header-cross-link {
+  margin-left: 12px;
+  font-size: 13px;
 }
 
 .header-tools {

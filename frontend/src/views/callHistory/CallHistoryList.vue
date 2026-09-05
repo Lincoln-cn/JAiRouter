@@ -1,7 +1,7 @@
 <template>
-  <div class="call-history-list">
-    <!-- 查询筛选区 -->
-    <el-card class="filter-card" shadow="hover">
+  <PageSkeleton title="调用历史查询">
+    <template #toolbar>
+      <!-- 查询筛选区 -->
       <el-form :inline="true" :model="queryForm" class="filter-form">
         <el-form-item label="时间范围">
           <el-date-picker
@@ -52,7 +52,7 @@
           <el-button icon="Refresh" @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
-    </el-card>
+    </template>
 
     <!-- v2.9.2 记录治理设置 -->
     <el-card class="settings-card" shadow="hover" v-loading="configLoading">
@@ -121,7 +121,15 @@
         <el-table-column label="模型名称" prop="modelName" min-width="160" show-overflow-tooltip />
         <el-table-column label="服务类型" prop="serviceType" width="110">
           <template #default="scope">
-            <el-tag size="small">{{ getServiceTypeLabel(scope.row.serviceType) }}</el-tag>
+            <el-link
+              v-if="scope.row.serviceType"
+              type="primary"
+              :underline="false"
+              @click.stop="router.push({ name: 'instance-management', query: { serviceType: scope.row.serviceType } })"
+            >
+              <el-tag size="small">{{ getServiceTypeLabel(scope.row.serviceType) }}</el-tag>
+            </el-link>
+            <el-tag v-else size="small">{{ getServiceTypeLabel(scope.row.serviceType) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="提供商" prop="provider" width="100" show-overflow-tooltip />
@@ -159,11 +167,11 @@
           </template>
         </el-table-column>
       </el-table>
+    </el-card>
 
-      <!-- 分页 -->
+    <template #footer>
       <el-pagination
         v-if="totalCount > 0"
-        class="pagination"
         :current-page="(queryForm.page || 0) + 1"
         :page-sizes="[20, 50, 100]"
         :page-size="queryForm.size || 20"
@@ -172,7 +180,8 @@
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
       />
-    </el-card>
+    </template>
+  </PageSkeleton>
 
     <!-- 详情抽屉 -->
     <el-drawer
@@ -201,13 +210,29 @@
             {{ selectedRecord.modelName }}
           </el-descriptions-item>
           <el-descriptions-item label="服务类型">
-            {{ getServiceTypeLabel(selectedRecord.serviceType) }}
+            <el-link
+              v-if="selectedRecord.serviceType"
+              type="primary"
+              :underline="false"
+              @click="router.push({ name: 'service-management', query: { serviceType: selectedRecord.serviceType } })"
+            >
+              {{ getServiceTypeLabel(selectedRecord.serviceType) }}
+            </el-link>
+            <span v-else>{{ getServiceTypeLabel(selectedRecord.serviceType) }}</span>
           </el-descriptions-item>
           <el-descriptions-item label="提供商">
             {{ selectedRecord.provider || '-' }}
           </el-descriptions-item>
           <el-descriptions-item label="实例名称">
-            {{ selectedRecord.instanceName || '-' }}
+            <el-link
+              v-if="selectedRecord.instanceName && selectedRecord.serviceType"
+              type="primary"
+              :underline="false"
+              @click="router.push({ name: 'instance-management', query: { serviceType: selectedRecord.serviceType } })"
+            >
+              {{ selectedRecord.instanceName }}
+            </el-link>
+            <span v-else>{{ selectedRecord.instanceName || '-' }}</span>
           </el-descriptions-item>
           <el-descriptions-item label="HTTP 状态码">
             <el-tag :type="getStatusType(selectedRecord.httpStatusCode)">
@@ -274,16 +299,19 @@
         </el-card>
       </template>
     </el-drawer>
-  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Search, Refresh } from '@element-plus/icons-vue'
 import { queryCallHistory, getCallHistoryConfig, updateCallHistoryConfig } from '@/api/callHistory'
 import type { CallHistoryConfig } from '@/api/callHistory'
 import type { ApiCallHistoryRecord, CallHistoryQuery } from '@/types/callHistory'
+import PageSkeleton from '@/components/PageSkeleton.vue'
+
+const router = useRouter()
 
 // 查询表单
 const queryForm = reactive<CallHistoryQuery>({
@@ -485,73 +513,58 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.call-history-list {
-  padding: 20px;
+.settings-card {
+  margin-bottom: 16px;
 }
 
-.call-history-list .filter-card {
-  margin-bottom: 20px;
-}
-
-.call-history-list .settings-card {
-  margin-bottom: 20px;
-}
-
-.call-history-list .settings-form {
+.settings-form {
   margin-bottom: 12px;
 }
 
-.call-history-list .filter-card .filter-form {
+.filter-form {
   display: flex;
-  justify-content: center;
   flex-wrap: wrap;
   gap: 10px;
 }
 
-.call-history-list .table-header {
+.table-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.call-history-list .chart-title {
+.chart-title {
   font-size: 16px;
   font-weight: bold;
 }
 
-.call-history-list .total-count {
+.total-count {
   font-size: 14px;
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 
-.call-history-list .pagination {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.call-history-list .error-message {
-  color: #F56C6C;
+.error-message {
+  color: var(--el-color-danger);
   font-size: 12px;
   word-break: break-all;
 }
 
-.call-history-list .body-summary {
+.body-summary {
   margin-bottom: 12px;
 }
 
-.call-history-list .body-summary:last-child {
+.body-summary:last-child {
   margin-bottom: 0;
 }
 
-.call-history-list .summary-label {
+.summary-label {
   font-weight: bold;
-  color: #606266;
+  color: var(--ja-text-regular);
   margin-bottom: 4px;
 }
 
-.call-history-list .summary-content {
-  background-color: #f5f7fa;
+.summary-content {
+  background-color: var(--el-fill-color-light);
   padding: 8px 12px;
   border-radius: 4px;
   font-size: 12px;

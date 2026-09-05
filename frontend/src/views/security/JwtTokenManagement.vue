@@ -1,137 +1,121 @@
 <template>
-  <div class="jwt-token-management">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>JWT令牌管理</span>
-          <div>
-            <el-button :loading="loading" type="primary" @click="handleRefreshTokens">刷新令牌列表</el-button>
-            <el-button :disabled="selectedTokens.length === 0" type="danger" @click="handleOpenBatchRevoke">
-              批量撤销({{ selectedTokens.length }})
-            </el-button>
-            <el-button type="warning" @click="handleCleanupExpiredTokens">清理过期令牌</el-button>
-          </div>
-        </div>
-      </template>
+  <PageSkeleton title="JWT令牌管理">
+    <template #actions>
+      <el-button :loading="loading" type="primary" @click="handleRefreshTokens">刷新令牌列表</el-button>
+      <el-button :disabled="selectedTokens.length === 0" type="danger" @click="handleOpenBatchRevoke">
+        批量撤销({{ selectedTokens.length }})
+      </el-button>
+      <el-button type="warning" @click="handleCleanupExpiredTokens">清理过期令牌</el-button>
+    </template>
 
-      <!-- 搜索和过滤区域 -->
-      <div class="filter-section">
-        <el-row :gutter="20">
-          <el-col :span="6">
-            <el-input
-              v-model="searchForm.userId"
-              placeholder="按用户ID搜索"
-              clearable
-              @clear="handleSearch"
-              @keyup.enter="handleSearch"
-            >
-              <template #prefix>
-                <el-icon><Search /></el-icon>
-              </template>
-            </el-input>
-          </el-col>
-          <el-col :span="4">
-            <el-select v-model="searchForm.status" placeholder="状态筛选" clearable @change="handleSearch">
-              <el-option label="全部" value="" />
-              <el-option label="活跃" value="ACTIVE" />
-              <el-option label="已撤销" value="REVOKED" />
-              <el-option label="已过期" value="EXPIRED" />
-            </el-select>
-          </el-col>
-          <el-col :span="4">
-            <el-button type="primary" @click="handleSearch">搜索</el-button>
-            <el-button @click="handleResetSearch">重置</el-button>
-          </el-col>
-        </el-row>
-      </div>
-
-      <el-table
-          v-loading="loading"
-          :data="tokenList.content"
-          style="width: 100%"
-          @selection-change="handleSelectionChange"
+    <template #toolbar>
+      <el-input
+        v-model="searchForm.userId"
+        placeholder="按用户ID搜索"
+        clearable
+        @clear="handleSearch"
+        @keyup.enter="handleSearch"
       >
-        <el-table-column type="selection" width="55"/>
-        <el-table-column prop="userId" label="用户ID" width="150" />
-        <el-table-column label="令牌ID" prop="id" width="120" show-overflow-tooltip>
-          <template #default="scope">
-            <span>{{ formatTokenId(scope.row.id) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="令牌哈希" prop="tokenHash" show-overflow-tooltip>
-          <template #default="scope">
-            <span>{{ formatToken(scope.row.tokenHash) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="设备信息" prop="deviceInfo" width="120" show-overflow-tooltip />
-        <el-table-column label="IP地址" prop="ipAddress" width="120" />
-        <el-table-column label="签发时间" prop="issuedAt" width="160">
-          <template #default="scope">
-            {{ formatDateTime(scope.row.issuedAt) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="过期时间" prop="expiresAt" width="160">
-          <template #default="scope">
-            {{ formatDateTime(scope.row.expiresAt) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" width="100">
-          <template #default="scope">
-            <el-tag :type="getStatusTagType(scope.row.status)">
-              {{ getStatusText(scope.row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="黑名单" width="120" fixed="right">
-          <template #default="scope">
-            <el-dropdown trigger="click" @command="(cmd: string) => handleAddToBlacklist(scope.row, cmd)">
-              <el-button size="small" type="warning">
-                <el-icon><Warning /></el-icon>加入
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="TOKEN">封禁此令牌</el-dropdown-item>
-                  <el-dropdown-item command="IP" :disabled="!scope.row.ipAddress">封禁IP: {{ scope.row.ipAddress }}</el-dropdown-item>
-                  <el-dropdown-item command="DEVICE" :disabled="!scope.row.deviceInfo">封禁设备</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
-          <template #default="scope">
-            <el-button 
-              size="small" 
-              type="primary"
-              @click="handleViewDetails(scope.row)"
-            >
-              详情
-            </el-button>
-            <el-button 
-              size="small" 
-              type="danger" 
-              :disabled="scope.row.status !== 'ACTIVE'"
-              @click="handleRevoke(scope.row)"
-            >
-              撤销
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
+      </el-input>
+      <el-select v-model="searchForm.status" placeholder="状态筛选" clearable @change="handleSearch">
+        <el-option label="全部" value="" />
+        <el-option label="活跃" value="ACTIVE" />
+        <el-option label="已撤销" value="REVOKED" />
+        <el-option label="已过期" value="EXPIRED" />
+      </el-select>
+      <el-button type="primary" @click="handleSearch">搜索</el-button>
+      <el-button @click="handleResetSearch">重置</el-button>
+    </template>
 
-      <!-- 分页组件 -->
-      <div class="pagination-container">
-        <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.size"
-          :page-sizes="[10, 20, 50, 100]"
-          :total="tokenList.totalElements"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
-      </div>
-    </el-card>
+    <el-table
+        v-loading="loading"
+        :data="tokenList.content"
+        style="width: 100%"
+        @selection-change="handleSelectionChange"
+    >
+      <el-table-column type="selection" width="55"/>
+      <el-table-column prop="userId" label="用户ID" width="150" />
+      <el-table-column label="令牌ID" prop="id" width="120" show-overflow-tooltip>
+        <template #default="scope">
+          <span>{{ formatTokenId(scope.row.id) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="令牌哈希" prop="tokenHash" show-overflow-tooltip>
+        <template #default="scope">
+          <span>{{ formatToken(scope.row.tokenHash) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="设备信息" prop="deviceInfo" width="120" show-overflow-tooltip />
+      <el-table-column label="IP地址" prop="ipAddress" width="120" />
+      <el-table-column label="签发时间" prop="issuedAt" width="160">
+        <template #default="scope">
+          {{ formatDateTime(scope.row.issuedAt) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="过期时间" prop="expiresAt" width="160">
+        <template #default="scope">
+          {{ formatDateTime(scope.row.expiresAt) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="status" label="状态" width="100">
+        <template #default="scope">
+          <el-tag :type="getStatusTagType(scope.row.status)">
+            {{ getStatusText(scope.row.status) }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="黑名单" width="120" fixed="right">
+        <template #default="scope">
+          <el-dropdown trigger="click" @command="(cmd: string) => handleAddToBlacklist(scope.row, cmd)">
+            <el-button size="small" type="warning">
+              <el-icon><Warning /></el-icon>加入
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="TOKEN">封禁此令牌</el-dropdown-item>
+                <el-dropdown-item command="IP" :disabled="!scope.row.ipAddress">封禁IP: {{ scope.row.ipAddress }}</el-dropdown-item>
+                <el-dropdown-item command="DEVICE" :disabled="!scope.row.deviceInfo">封禁设备</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="150" fixed="right">
+        <template #default="scope">
+          <el-button 
+            size="small" 
+            type="primary"
+            @click="handleViewDetails(scope.row)"
+          >
+            详情
+          </el-button>
+          <el-button 
+            size="small" 
+            type="danger" 
+            :disabled="scope.row.status !== 'ACTIVE'"
+            @click="handleRevoke(scope.row)"
+          >
+            撤销
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <template #footer>
+      <el-pagination
+        v-model:current-page="pagination.page"
+        v-model:page-size="pagination.size"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="tokenList.totalElements"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </template>
+  </PageSkeleton>
     
     <!-- 令牌详情对话框 -->
     <el-dialog v-model="tokenDetailsDialogVisible" title="令牌详情" width="800px">
@@ -194,7 +178,6 @@
         </span>
       </template>
     </el-dialog>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -214,6 +197,7 @@ import {
 } from '@/api/jwtToken'
 import { addToBlacklist } from '@/api/blacklist'
 import {CircleCloseFilled, SuccessFilled, Search, Warning} from '@element-plus/icons-vue'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 
 // 令牌数据
 const tokenList = ref<PagedResult<JwtTokenInfo>>({
@@ -564,29 +548,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.jwt-token-management {
-  padding: 20px;
-}
-
-.filter-section {
-  margin-bottom: 20px;
-  padding: 16px;
-  background-color: var(--ja-primary-light-9, #f5f7fa);
-  border-radius: 4px;
-}
-
-.pagination-container {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-}
-
 .dialog-footer {
   display: flex;
   justify-content: flex-end;

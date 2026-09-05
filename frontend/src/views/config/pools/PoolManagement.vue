@@ -1,27 +1,21 @@
 <template>
-  <div class="pool-management">
-    <el-card class="pool-card">
-      <template #header>
-        <div class="card-header">
-          <span>资源池管理</span>
-          <div>
-            <el-button :icon="Refresh" circle @click="fetchPools" title="刷新列表" />
-            <el-button type="primary" @click="handleCreate">
-              <el-icon><Plus /></el-icon>&nbsp;新增资源池
-            </el-button>
-          </div>
-        </div>
-      </template>
+  <PageSkeleton title="资源池管理">
+    <template #actions>
+      <el-button :icon="Refresh" circle @click="fetchPools" title="刷新列表" />
+      <el-button type="primary" @click="handleCreate">
+        <el-icon><Plus /></el-icon>&nbsp;新增资源池
+      </el-button>
+    </template>
 
-      <el-alert
-        type="info"
-        :closable="false"
-        show-icon
-        title="请求 model 使用池名（约定名 auto-model）时,自动从池内健康实例中选择执行;未配置池时 auto-model 回退为该服务全部健康实例"
-        style="margin-bottom: 16px"
-      />
+    <el-alert
+      type="info"
+      :closable="false"
+      show-icon
+      title="请求 model 使用池名（约定名 auto-model）时,自动从池内健康实例中选择执行;未配置池时 auto-model 回退为该服务全部健康实例"
+      style="margin-bottom: 16px"
+    />
 
-      <el-table :data="pools" v-loading="loading" style="width: 100%" row-key="poolName">
+    <el-table :data="pools" v-loading="loading" style="width: 100%" row-key="poolName">
         <el-table-column label="启用" width="70" align="center">
           <template #default="{ row }">
             <el-switch :model-value="row.enabled" @change="(val: boolean) => handleToggle(row, val)" />
@@ -29,10 +23,28 @@
         </el-table-column>
         <el-table-column prop="poolName" label="池名(虚拟模型名)" min-width="150" />
         <el-table-column prop="name" label="显示名" min-width="120" />
-        <el-table-column prop="serviceType" label="服务类型" width="110" align="center" />
+        <el-table-column prop="serviceType" label="服务类型" width="110" align="center">
+          <template #default="{ row }">
+            <el-link
+              type="primary"
+              :underline="false"
+              @click.stop="router.push({ name: 'instance-management', query: { serviceType: row.serviceType } })"
+            >
+              {{ row.serviceType }}
+            </el-link>
+          </template>
+        </el-table-column>
         <el-table-column prop="strategy" label="策略" width="140" align="center" />
         <el-table-column label="成员" min-width="160">
-          <template #default="{ row }">{{ formatMembers(row.members) }}</template>
+          <template #default="{ row }">
+            <el-link
+              type="primary"
+              :underline="false"
+              @click.stop="router.push({ name: 'instance-management', query: { serviceType: row.serviceType } })"
+            >
+              {{ formatMembers(row.members) }}
+            </el-link>
+          </template>
         </el-table-column>
         <el-table-column label="操作" width="180" align="center">
           <template #default="{ row }">
@@ -41,7 +53,7 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+  </PageSkeleton>
 
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑资源池' : '新增资源池'" width="640px" destroy-on-close>
       <el-form :model="form" label-width="110px">
@@ -91,11 +103,11 @@
         <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
       </template>
     </el-dialog>
-  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Delete } from '@element-plus/icons-vue'
 import { ALL_SERVICE_TYPES as SERVICE_TYPES } from '@/constants/serviceTypes'
@@ -108,6 +120,7 @@ import {
   type PoolMember
 } from '@/api/pools'
 import { getServiceInstances, type InstanceConfig } from '@/api/instance'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 
 const pools = ref<PoolDefinition[]>([])
 const loading = ref(false)
@@ -117,6 +130,7 @@ const isEdit = ref(false)
 
 const instances = ref<InstanceConfig[]>([])
 const instancesLoading = ref(false)
+const router = useRouter()
 
 const form = reactive<PoolDefinition>({
   poolName: '',
@@ -290,11 +304,6 @@ onMounted(() => { fetchPools() })
 </script>
 
 <style scoped>
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
 .form-tip {
   margin-top: 6px;
   font-size: 12px;

@@ -88,17 +88,33 @@
         >
           <el-table-column prop="type" label="服务类型" sortable>
             <template #default="scope">
-              <el-tag type="info" class="table-tag">
-                {{ scope.row.type }}
-              </el-tag>
+              <router-link
+                :to="{ name: 'instance-management', query: { serviceType: scope.row.type } }"
+                class="cell-link"
+                @click.stop
+              >
+                <el-tag type="info" class="table-tag">
+                  {{ scope.row.type }}
+                </el-tag>
+              </router-link>
             </template>
           </el-table-column>
 
           <el-table-column prop="adapter" label="适配器" sortable>
             <template #default="scope">
               <el-tooltip :content="scope.row.adapter || '未设置'" placement="top">
-                <el-tag :type="scope.row.adapter ? 'success' : 'warning'" class="table-tag">
-                  {{ scope.row.adapter || '未设置' }}
+                <router-link
+                  v-if="scope.row.adapter"
+                  :to="{ name: 'adapter-management' }"
+                  class="cell-link"
+                  @click.stop
+                >
+                  <el-tag type="success" class="table-tag">
+                    {{ scope.row.adapter }}
+                  </el-tag>
+                </router-link>
+                <el-tag v-else type="warning" class="table-tag">
+                  未设置
                 </el-tag>
               </el-tooltip>
             </template>
@@ -325,6 +341,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import { SERVICE_TYPE_LABELS, COMMON_SERVICE_TYPES } from '@/constants/serviceTypes'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -340,6 +357,9 @@ import {
   updateServiceRateLimit
 } from '@/api/service'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+
+const route = useRoute()
+const router = useRouter()
 
 // 支持的服务类型列表（保持原有）
 const supportedTypes: string[] = [
@@ -512,6 +532,14 @@ const paginatedServices = computed(() => {
 watch([filteredServices, pageSize], () => {
   if (currentPage.value > totalPages.value) currentPage.value = totalPages.value
 })
+
+// Cross-link: 从路由 query 中读取 serviceType，设置搜索过滤
+watch(() => route.query.serviceType, (val) => {
+  if (val && typeof val === 'string') {
+    searchQuery.value = val
+    currentPage.value = 1
+  }
+}, { immediate: true })
 
 // 获取服务数据（带缓存和防抖）
 const fetchServices = async () => {
@@ -831,6 +859,12 @@ onMounted(() => { fetchServices() })
 .table-tag {
   font-size: 13px;
   padding: 6px 10px;
+}
+
+/* Cross-link: 单元格内可点击链接 */
+.cell-link {
+  text-decoration: none;
+  cursor: pointer;
 }
 
 /* 底栏/分页 */

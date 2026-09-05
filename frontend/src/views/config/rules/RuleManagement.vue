@@ -38,7 +38,17 @@
         <template #default="{ row }">{{ formatConditions(row.conditions) }}</template>
       </el-table-column>
       <el-table-column label="动作" min-width="160">
-        <template #default="{ row }">{{ formatAction(row.action) }}</template>
+        <template #default="{ row }">
+          <el-link
+            v-if="row.action && (row.action.type === 'TARGET_MODEL' || row.action.type === 'TARGET_INSTANCE' || row.action.type === 'TARGET_ADAPTER')"
+            type="primary"
+            :underline="false"
+            @click.stop="navigateActionTarget(row.action)"
+          >
+            {{ formatAction(row.action) }}
+          </el-link>
+          <span v-else>{{ formatAction(row.action) }}</span>
+        </template>
       </el-table-column>
       <el-table-column label="操作" width="200" align="center">
         <template #default="{ row }">
@@ -60,6 +70,7 @@
 
 <script setup lang="ts">
 import { nextTick, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, MagicStick, Rank, Refresh } from '@element-plus/icons-vue'
 import Sortable from 'sortablejs'
@@ -85,6 +96,7 @@ const editingRule = ref<RuleDefinition | null>(null)
 const statsMap = ref<Record<string, number>>({})
 const tableRef = ref()
 const templateDialogVisible = ref(false)
+const router = useRouter()
 
 const fetchRules = async () => {
   loading.value = true
@@ -246,6 +258,18 @@ const formatAction = (action: RuleAction) => {
   }
   const target = action.modelName || action.instanceId || action.adapterName || action.lbStrategy || '-'
   return `${label}: ${target}`
+}
+
+// Cross-link: 根据动作类型导航到对应配置页
+const navigateActionTarget = (action: RuleAction) => {
+  if (!action) return
+  if (action.type === 'TARGET_ADAPTER' && action.adapterName) {
+    router.push({ name: 'adapter-management' })
+  } else if (action.type === 'TARGET_MODEL' && action.modelName) {
+    router.push({ name: 'service-management' })
+  } else if (action.type === 'TARGET_INSTANCE' && action.instanceId) {
+    router.push({ name: 'service-management' })
+  }
 }
 
 onMounted(() => {

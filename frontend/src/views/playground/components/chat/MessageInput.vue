@@ -128,15 +128,15 @@ defineExpose({
   display: flex;
   align-items: flex-end;
   gap: 12px;
-  background-color: #fff;
-  border: 1px solid #dcdfe6;
+  background-color: var(--ja-bg-page);
+  border: 1px solid var(--el-border-color);
   border-radius: 12px;
   padding: 8px 12px;
   transition: border-color 0.2s;
 }
 
 .input-wrapper:focus-within {
-  border-color: #409eff;
+  border-color: var(--ja-primary);
 }
 
 .input-textarea {

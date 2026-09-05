@@ -136,7 +136,14 @@
           </el-table-column>
           <el-table-column label="服务类型" prop="serviceType" width="100">
             <template #default="scope">
-              <el-tag v-if="scope.row.serviceType" size="small" type="info">{{ scope.row.serviceType }}</el-tag>
+              <el-link
+                v-if="scope.row.serviceType"
+                type="primary"
+                :underline="false"
+                @click.stop="router.push({ name: 'instance-management', query: { serviceType: normalizeServiceType(scope.row.serviceType) } })"
+              >
+                <el-tag size="small" type="info">{{ scope.row.serviceType }}</el-tag>
+              </el-link>
               <span v-else>-</span>
             </template>
           </el-table-column>
@@ -235,12 +242,29 @@
         </el-descriptions-item>
         <el-descriptions-item label="客户端 IP">{{ selectedEvent.clientIp || '-' }}</el-descriptions-item>
         <el-descriptions-item label="服务类型">
-          <el-tag v-if="selectedEvent.serviceType" size="small" type="info">{{ selectedEvent.serviceType }}</el-tag>
+          <el-link
+            v-if="selectedEvent.serviceType"
+            type="primary"
+            :underline="false"
+            @click="router.push({ name: 'service-management', query: { serviceType: normalizeServiceType(selectedEvent.serviceType) } })"
+          >
+            <el-tag size="small" type="info">{{ selectedEvent.serviceType }}</el-tag>
+          </el-link>
           <span v-else>-</span>
         </el-descriptions-item>
         <el-descriptions-item label="模型名称">{{ selectedEvent.modelName || '-' }}</el-descriptions-item>
         <el-descriptions-item label="提供商">{{ selectedEvent.provider || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="实例名称">{{ selectedEvent.instanceName || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="实例名称">
+          <el-link
+            v-if="selectedEvent.instanceName && selectedEvent.serviceType"
+            type="primary"
+            :underline="false"
+            @click="router.push({ name: 'instance-management', query: { serviceType: normalizeServiceType(selectedEvent.serviceType) } })"
+          >
+            {{ selectedEvent.instanceName }}
+          </el-link>
+          <span v-else>{{ selectedEvent.instanceName || '-' }}</span>
+        </el-descriptions-item>
         <el-descriptions-item label="响应时间(ms)">{{ selectedEvent.responseTimeMs != null ? selectedEvent.responseTimeMs : '-' }}</el-descriptions-item>
         <el-descriptions-item label="追踪 ID" :span="2">
           <el-tag effect="plain" type="info">{{ selectedEvent.traceId || '-' }}</el-tag>
@@ -335,6 +359,12 @@ import type { ExceptionEvent, ExceptionQueryParams, ExceptionQueryResponse } fro
 import StatCard from '@/components/StatCard.vue'
 
 const router = useRouter()
+
+// Cross-link: 将大写服务类型转为小写路由参数
+const normalizeServiceType = (st?: string): string => {
+  if (!st) return ''
+  return st.toLowerCase()
+}
 
 // 加载状态
 const loading = ref(false)

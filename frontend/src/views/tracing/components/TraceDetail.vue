@@ -85,7 +85,7 @@
           <el-table-column prop="operationName" label="操作" min-width="200">
             <template #default="{ row }">
               <div class="operation-cell">
-                <el-icon :size="14" :color="row.error ? '#f56c6c' : '#67c23a'">
+                <el-icon :size="14" :color="row.error ? 'var(--ja-danger)' : 'var(--ja-success)'">
                   <component :is="row.error ? CircleCloseFilled : CircleCheckFilled" />
                 </el-icon>
                 <span>{{ row.operationName }}</span>
@@ -127,10 +127,13 @@ import {
   CopyDocument, Download, Search, CircleCheckFilled, CircleCloseFilled
 } from '@element-plus/icons-vue'
 import { getTraceChain } from '@/api/tracing'
+import { useChartTheme } from '@/composables/useChartTheme'
 
 const props = defineProps<{
   traceId: string
 }>()
+
+const { getChartTheme } = useChartTheme()
 
 const loading = ref(false)
 const traceChain = ref<any>(null)
@@ -196,7 +199,7 @@ const renderGanttChart = () => {
       spanId: span.spanId,
       value: [index, relativeStart, relativeStart + duration, duration],
       itemStyle: {
-        color: span.error ? '#f56c6c' : getSpanColor(span.operationName)
+        color: span.error ? getChartTheme().danger : getSpanColor(span.operationName)
       }
     }
   })
@@ -281,11 +284,12 @@ const renderGanttChart = () => {
 }
 
 const getSpanColor = (operationName: string) => {
-  if (operationName.includes('HTTP')) return '#409eff'
-  if (operationName.includes('adapter')) return '#67c23a'
-  if (operationName.includes('backend')) return '#e6a23c'
-  if (operationName.includes('gateway')) return '#909399'
-  return '#409eff'
+  const theme = getChartTheme()
+  if (operationName.includes('HTTP')) return theme.primary
+  if (operationName.includes('adapter')) return theme.success
+  if (operationName.includes('backend')) return theme.warning
+  if (operationName.includes('gateway')) return theme.info
+  return theme.primary
 }
 
 const copyTraceId = async () => {
@@ -377,7 +381,7 @@ onMounted(() => {
 
 .trace-id-cell code {
   font-family: monospace;
-  background: #f5f7fa;
+  background: var(--el-fill-color-light);
   padding: 2px 6px;
   border-radius: 4px;
 }
@@ -408,20 +412,20 @@ onMounted(() => {
 
 .span-attributes {
   padding: 12px;
-  background: #f5f7fa;
+  background: var(--el-fill-color-light);
 }
 
 .span-attributes h5 {
   margin: 0 0 12px 0;
-  color: #606266;
+  color: var(--ja-text-regular);
 }
 
 .text-danger {
-  color: #f56c6c;
+  color: var(--ja-danger);
   font-weight: 500;
 }
 
 .text-warning {
-  color: #e6a23c;
+  color: var(--ja-warning);
 }
 </style>

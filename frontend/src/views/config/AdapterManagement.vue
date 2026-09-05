@@ -1,92 +1,82 @@
 <template>
-  <div class="adapter-management">
-    <el-card class="adapter-card">
-      <template #header>
-        <div class="card-header">
-          <div class="header-left">
-            <div class="header-title">
-              <el-icon><Connection /></el-icon>
-              <span>Adapter管理</span>
-            </div>
+  <PageSkeleton title="Adapter管理">
+    <template #actions>
+      <el-button type="primary" @click="handleCreate" size="medium">
+        <el-icon><Plus /></el-icon>
+        新增Adapter
+      </el-button>
+    </template>
+
+    <el-table
+      :data="adapterList"
+      v-loading="loading"
+      stripe
+      border
+      style="width: 100%"
+    >
+      <el-table-column prop="name" label="名称" min-width="150" />
+      <el-table-column prop="type" label="类型" min-width="120">
+        <template #default="{ row }">
+          <el-tag :type="row.source === 'builtin' ? 'info' : 'success'" size="small">
+            {{ row.source === 'builtin' ? '内置' : '配置驱动' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="能力" min-width="280">
+        <template #default="{ row }">
+          <div class="capability-tags">
+            <el-tag v-if="row.capabilities?.chat" size="small" type="primary">Chat</el-tag>
+            <el-tag v-if="row.capabilities?.embedding" size="small" type="success">Embedding</el-tag>
+            <el-tag v-if="row.capabilities?.rerank" size="small" type="warning">Rerank</el-tag>
+            <el-tag v-if="row.capabilities?.tts" size="small" type="danger">TTS</el-tag>
+            <el-tag v-if="row.capabilities?.stt" size="small" type="danger">STT</el-tag>
+            <el-tag v-if="row.capabilities?.imgGen" size="small" type="info">图像生成</el-tag>
+            <el-tag v-if="row.capabilities?.imgEdit" size="small" type="info">图像编辑</el-tag>
+            <el-tag v-if="row.capabilities?.streaming" size="small" type="primary">流式</el-tag>
           </div>
-          <div class="header-actions">
-            <el-button type="primary" @click="handleCreate" size="medium">
-              <el-icon><Plus /></el-icon>
-              新增Adapter
-            </el-button>
-          </div>
-        </div>
-      </template>
-      <el-table
-        :data="adapterList"
-        v-loading="loading"
-        stripe
-        border
-        style="width: 100%"
-      >
-        <el-table-column prop="name" label="名称" min-width="150" />
-        <el-table-column prop="type" label="类型" min-width="120">
-          <template #default="{ row }">
-            <el-tag :type="row.source === 'builtin' ? 'info' : 'success'" size="small">
-              {{ row.source === 'builtin' ? '内置' : '配置驱动' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="能力" min-width="280">
-          <template #default="{ row }">
-            <div class="capability-tags">
-              <el-tag v-if="row.capabilities?.chat" size="small" type="primary">Chat</el-tag>
-              <el-tag v-if="row.capabilities?.embedding" size="small" type="success">Embedding</el-tag>
-              <el-tag v-if="row.capabilities?.rerank" size="small" type="warning">Rerank</el-tag>
-              <el-tag v-if="row.capabilities?.tts" size="small" type="danger">TTS</el-tag>
-              <el-tag v-if="row.capabilities?.stt" size="small" type="danger">STT</el-tag>
-              <el-tag v-if="row.capabilities?.imgGen" size="small" type="info">图像生成</el-tag>
-              <el-tag v-if="row.capabilities?.imgEdit" size="small" type="info">图像编辑</el-tag>
-              <el-tag v-if="row.capabilities?.streaming" size="small" type="primary">流式</el-tag>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="190" fixed="right">
-          <template #default="{ row }">
-            <el-button
-              v-if="row.source !== 'builtin'"
-              type="primary"
-              link
-              size="small"
-              @click="handleEdit(row)"
-            >
-              编辑
-            </el-button>
-            <el-button
-              type="success"
-              link
-              size="small"
-              @click="handleTest(row)"
-            >
-              测试
-            </el-button>
-            <el-button
-              v-if="row.source !== 'builtin'"
-              type="danger"
-              link
-              size="small"
-              @click="handleDelete(row)"
-            >
-              删除
-            </el-button>
-            <el-button
-              v-if="row.source === 'builtin'"
-              type="info"
-              link
-              size="small"
-              @click="handleView(row)"
-            >
-              查看
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="190" fixed="right">
+        <template #default="{ row }">
+          <el-button
+            v-if="row.source !== 'builtin'"
+            type="primary"
+            link
+            size="small"
+            @click="handleEdit(row)"
+          >
+            编辑
+          </el-button>
+          <el-button
+            type="success"
+            link
+            size="small"
+            @click="handleTest(row)"
+          >
+            测试
+          </el-button>
+          <el-button
+            v-if="row.source !== 'builtin'"
+            type="danger"
+            link
+            size="small"
+            @click="handleDelete(row)"
+          >
+            删除
+          </el-button>
+          <el-button
+            v-if="row.source === 'builtin'"
+            type="info"
+            link
+            size="small"
+            @click="handleView(row)"
+          >
+            查看
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+  </PageSkeleton>
 
     <!-- 测试弹窗 -->
     <el-dialog
@@ -195,13 +185,12 @@
         </el-descriptions-item>
       </el-descriptions>
     </el-dialog>
-  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Connection, Plus } from '@element-plus/icons-vue'
+import { Plus } from '@element-plus/icons-vue'
 import {
   getAdapterList,
   getParentAdapterList,
@@ -214,6 +203,7 @@ import {
 } from '@/api/adapter'
 import AdapterWizard from './adapter/AdapterWizard.vue'
 import AdapterTestPanel from './adapter/AdapterTestPanel.vue'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -416,34 +406,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.adapter-management {
-  padding: 0;
-}
-
-.adapter-card {
-  min-height: calc(100vh - 180px);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.header-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  font-weight: 600;
-}
-
 .capability-tags {
   display: flex;
   flex-wrap: wrap;

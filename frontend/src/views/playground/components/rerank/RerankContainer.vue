@@ -179,7 +179,7 @@
         >
           <el-icon
             :size="48"
-            color="#909399"
+            color="var(--ja-text-secondary)"
           >
             <Sort />
           </el-icon>
@@ -353,16 +353,16 @@ defineExpose({
   display: flex;
   flex-direction: column;
   height: calc(100vh - 100px);
-  background-color: #f5f5f5;
+  background-color: var(--ja-main-bg);
 }
 
 .service-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background-color: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  padding: var(--ja-space-3) var(--ja-space-4);
+  background-color: var(--ja-bg-page);
+  border-bottom: 1px solid var(--el-border-color);
   border-radius: 4px 4px 0 0;
 }
 
@@ -382,9 +382,9 @@ defineExpose({
 }
 
 .config-panel {
-  padding: 12px 16px;
-  background-color: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  padding: var(--ja-space-3) var(--ja-space-4);
+  background-color: var(--ja-bg-page);
+  border-bottom: 1px solid var(--el-border-color);
 }
 
 .config-item {
@@ -396,7 +396,7 @@ defineExpose({
 .config-label {
   font-size: 12px;
   font-weight: 600;
-  color: #606266;
+  color: var(--ja-text-regular);
 }
 
 .slide-down-enter-active,
@@ -413,12 +413,12 @@ defineExpose({
 .service-content {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: var(--ja-space-4);
 }
 
 .input-card,
 .result-card {
-  background-color: #fff;
+  background-color: var(--ja-bg-page);
   border-radius: 4px;
   padding: 16px;
   margin-bottom: 16px;
@@ -434,7 +434,7 @@ defineExpose({
 .card-title {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .document-list {
@@ -445,7 +445,7 @@ defineExpose({
 
 .document-item {
   padding: 12px;
-  background-color: #f5f5f5;
+  background-color: var(--ja-main-bg);
   border-radius: 4px;
 }
 
@@ -459,8 +459,8 @@ defineExpose({
 .document-index {
   font-size: 12px;
   font-weight: 600;
-  color: #606266;
-  background-color: #e5e5e5;
+  color: var(--ja-text-regular);
+  background-color: var(--el-fill-color-dark);
   padding: 2px 8px;
   border-radius: 4px;
 }
@@ -484,7 +484,7 @@ defineExpose({
   justify-content: center;
   padding: 40px 0;
   gap: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 
 .empty-text {
@@ -499,16 +499,16 @@ defineExpose({
   display: flex;
   gap: 16px;
   padding: 8px 12px;
-  background-color: #f5f5f5;
+  background-color: var(--ja-main-bg);
   border-radius: 4px;
   margin-bottom: 16px;
   font-size: 12px;
-  color: #606266;
+  color: var(--ja-text-regular);
 }
 
 .result-item {
   padding: 12px;
-  background-color: #f5f5f5;
+  background-color: var(--ja-main-bg);
   border-radius: 4px;
   margin-bottom: 8px;
 }
@@ -525,20 +525,20 @@ defineExpose({
 .rank-badge {
   font-size: 14px;
   font-weight: 700;
-  color: #409eff;
+  color: var(--ja-primary);
 }
 
 .score-badge {
   font-size: 12px;
-  color: #67c23a;
-  background-color: #f0f9eb;
+  color: var(--ja-success);
+  background-color: var(--el-color-success-light-9);
   padding: 2px 8px;
   border-radius: 4px;
 }
 
 .result-document {
   font-size: 13px;
-  color: #606266;
+  color: var(--ja-text-regular);
   line-height: 1.6;
   word-break: break-word;
 }
@@ -555,15 +555,15 @@ defineExpose({
 }
 
 .health-healthy {
-  color: #67c23a;
+  color: var(--ja-success);
 }
 
 .health-unhealthy {
-  color: #f56c6c;
+  color: var(--ja-danger);
 }
 
 .health-unknown {
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 
 .instance-name {
@@ -572,10 +572,10 @@ defineExpose({
 
 .health-status-text {
   font-size: 12px;
-  color: #f56c6c;
+  color: var(--ja-danger);
 }
 
 .health-status-text.unknown {
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 </style>

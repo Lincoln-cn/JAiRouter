@@ -1,5 +1,5 @@
 <template>
-  <PageSkeleton title="仪表板">
+  <PageSkeleton title="治理指挥台">
     <template #actions>
       <el-button size="small" type="primary" @click="fetchDashboardData" :loading="configLoading" plain>
         <el-icon><Refresh /></el-icon> 刷新全部
@@ -134,13 +134,197 @@
       </el-col>
     </el-row>
 
+    <!-- ════════════ 治理链路面板 ════════════ -->
+    <el-row class="governance-row" :gutter="20">
+      <el-col :xs="24">
+        <el-card class="governance-card" shadow="hover">
+          <template #header>
+            <div class="governance-header">
+              <span class="card-title">治理链路</span>
+            </div>
+          </template>
+
+          <el-row :gutter="16">
+            <!-- ① 规则命中 -->
+            <el-col :xs="24" :sm="12" :lg="6">
+              <div class="gov-section">
+                <div class="gov-section-head">
+                  <el-icon class="gov-icon gov-icon--primary"><SetUp /></el-icon>
+                  <span class="gov-label">规则命中</span>
+                  <el-button link type="primary" size="small" class="gov-jump" @click="router.push('/config/rules')">
+                    查看 <el-icon><ArrowRight /></el-icon>
+                  </el-button>
+                </div>
+                <div class="gov-metrics">
+                  <div class="gov-metric-row">
+                    <span class="gov-metric-label">启用规则</span>
+                    <span class="gov-metric-value">{{ ruleStats.enabledCount }}</span>
+                  </div>
+                  <div class="gov-metric-row">
+                    <span class="gov-metric-label">总命中次数</span>
+                    <span class="gov-metric-value gov-metric-value--primary">{{ ruleStats.totalHits }}</span>
+                  </div>
+                  <div class="gov-metric-row">
+                    <span class="gov-metric-label">触发规则数</span>
+                    <span class="gov-metric-value">{{ ruleStats.triggeredRuleCount }}</span>
+                  </div>
+                </div>
+              </div>
+            </el-col>
+
+            <!-- ② 限流 -->
+            <el-col :xs="24" :sm="12" :lg="6">
+              <div class="gov-section">
+                <div class="gov-section-head">
+                  <el-icon class="gov-icon gov-icon--warning"><DataBoard /></el-icon>
+                  <span class="gov-label">限流</span>
+                  <el-button link type="primary" size="small" class="gov-jump" @click="router.push('/rate-limiters/monitoring')">
+                    监控 <el-icon><ArrowRight /></el-icon>
+                  </el-button>
+                </div>
+                <div class="gov-metrics">
+                  <div class="gov-metric-row">
+                    <span class="gov-metric-label">平均使用率</span>
+                    <span class="gov-metric-value">{{ rlSummary.averageUsageRatio }}%</span>
+                  </div>
+                  <div class="gov-metric-row">
+                    <span class="gov-metric-label">高使用率(>80%)</span>
+                    <span :class="['gov-metric-value', rlSummary.highUsageLimiters > 0 ? 'gov-metric-value--danger' : '']">
+                      {{ rlSummary.highUsageLimiters }}
+                    </span>
+                  </div>
+                  <div class="gov-metric-row">
+                    <span class="gov-metric-label">服务 / 实例限流器</span>
+                    <span class="gov-metric-value">{{ rlSummary.serviceLimiters }} / {{ rlSummary.instanceLimiters }}</span>
+                  </div>
+                </div>
+              </div>
+            </el-col>
+
+            <!-- ③ 熔断 -->
+            <el-col :xs="24" :sm="12" :lg="6">
+              <div class="gov-section">
+                <div class="gov-section-head">
+                  <el-icon class="gov-icon gov-icon--danger"><Warning /></el-icon>
+                  <span class="gov-label">熔断</span>
+                  <el-button link type="primary" size="small" class="gov-jump" @click="router.push('/circuit-breakers/monitoring')">
+                    监控 <el-icon><ArrowRight /></el-icon>
+                  </el-button>
+                </div>
+                <div class="gov-metrics">
+                  <div class="gov-metric-row">
+                    <span class="gov-metric-label">CLOSED</span>
+                    <span class="gov-metric-value gov-metric-value--success">{{ cbStateCounts.CLOSED }}</span>
+                  </div>
+                  <div class="gov-metric-row">
+                    <span class="gov-metric-label">OPEN</span>
+                    <span :class="['gov-metric-value', cbStateCounts.OPEN > 0 ? 'gov-metric-value--danger' : '']">
+                      {{ cbStateCounts.OPEN }}
+                    </span>
+                  </div>
+                  <div class="gov-metric-row">
+                    <span class="gov-metric-label">HALF_OPEN</span>
+                    <span class="gov-metric-value gov-metric-value--warning">{{ cbStateCounts.HALF_OPEN }}</span>
+                  </div>
+                </div>
+              </div>
+            </el-col>
+
+            <!-- ④ 负载均衡 -->
+            <el-col :xs="24" :sm="12" :lg="6">
+              <div class="gov-section">
+                <div class="gov-section-head">
+                  <el-icon class="gov-icon gov-icon--success"><Connection /></el-icon>
+                  <span class="gov-label">负载均衡</span>
+                  <el-button link type="primary" size="small" class="gov-jump" @click="router.push('/load-balancers/monitoring')">
+                    监控 <el-icon><ArrowRight /></el-icon>
+                  </el-button>
+                </div>
+                <div class="gov-metrics">
+                  <div class="gov-metric-row">
+                    <span class="gov-metric-label">总实例</span>
+                    <span class="gov-metric-value">{{ lbSummary.totalInstances }}</span>
+                  </div>
+                  <div class="gov-metric-row">
+                    <span class="gov-metric-label">健康实例</span>
+                    <span class="gov-metric-value gov-metric-value--success">{{ lbSummary.healthyInstances }}</span>
+                  </div>
+                  <div class="gov-metric-row">
+                    <span class="gov-metric-label">服务数</span>
+                    <span class="gov-metric-value">{{ lbSummary.serviceCount }}</span>
+                  </div>
+                </div>
+              </div>
+            </el-col>
+          </el-row>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <!-- ════════════ 异常/告警摘要 ════════════ -->
+    <el-row class="alert-row" :gutter="20">
+      <el-col :xs="24">
+        <el-card class="alert-card" shadow="hover">
+          <template #header>
+            <div class="alert-header">
+              <span class="card-title">
+                <el-icon class="alert-title-icon"><WarningFilled /></el-icon>
+                异常 / 告警摘要
+              </span>
+              <el-button link type="primary" size="small" @click="router.push('/exceptions/list')">
+                全部异常 <el-icon><ArrowRight /></el-icon>
+              </el-button>
+            </div>
+          </template>
+
+          <div v-if="recentExceptions.length > 0">
+            <el-table :data="recentExceptions" stripe size="small" class="alert-table">
+              <el-table-column prop="occurredAt" label="时间" width="170">
+                <template #default="{ row }">
+                  <span class="alert-time">{{ formatAlertTime(row.occurredAt) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="exceptionType" label="类型" width="180" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <el-tag size="small" type="danger">{{ row.exceptionType }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="operation" label="操作" width="130">
+                <template #default="{ row }">
+                  <span>{{ row.operation || '-' }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="serviceName" label="服务" width="120">
+                <template #default="{ row }">
+                  <span>{{ row.serviceName || row.serviceType || '-' }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="sanitizedMessage" label="消息" min-width="200" show-overflow-tooltip />
+              <el-table-column label="详情" width="80" align="center">
+                <template #default="{ row }">
+                  <el-button link type="primary" size="small" @click="router.push(`/exceptions/detail/${row.eventId}`)">
+                    查看
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+
+          <div v-else class="alert-empty">
+            <el-icon class="alert-empty-icon"><CircleCheckFilled /></el-icon>
+            <span>暂无异常，系统运行正常</span>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
     <!-- 服务配置详情 -->
     <el-row class="config-row" :gutter="20">
       <el-col :xs="24">
         <el-card class="config-card" shadow="hover">
           <template #header>
             <div class="config-header">
-              <div class="config-title">服务配置详情</div>
+              <div class="config-title">服务配置速览</div>
               <div class="config-actions">
                 <el-button size="small" type="primary" @click="fetchServiceConfig" :loading="configLoading" plain>
                   <el-icon><Refresh /></el-icon> 刷新配置
@@ -179,13 +363,21 @@
               </el-descriptions>
             </el-tab-pane>
 
-            <!-- 每个服务类型单独Tab（恢复之前喜欢的交互） -->
+            <!-- 每个服务类型单独Tab -->
             <el-tab-pane
               v-for="serviceName in orderedServiceNames"
               :key="serviceName"
-              :label="getServiceTypeName(serviceName)"
               :name="serviceName"
             >
+              <template #label>
+                <router-link
+                  class="service-tab-link"
+                  :to="{ path: '/config/services', query: { serviceType: serviceName } }"
+                  @click.stop
+                >
+                  {{ getServiceTypeName(serviceName) }}
+                </router-link>
+              </template>
               <el-table
                 :data="serviceConfigData?.services?.[serviceName]?.instances || []"
                 stripe
@@ -193,7 +385,16 @@
                 style="width:100%"
                 :row-class-name="(row: any) => row.row?.health ? '' : 'row-error'"
               >
-                <el-table-column prop="name" label="实例名称" width="180" />
+                <el-table-column prop="name" label="实例名称" width="180">
+                  <template #default="scope">
+                    <router-link
+                      class="instance-link"
+                      :to="{ path: '/config/instances', query: { serviceType: serviceName } }"
+                    >
+                      {{ scope.row.name }}
+                    </router-link>
+                  </template>
+                </el-table-column>
                 <el-table-column prop="baseUrl" label="基础URL" min-width="220" />
                 <el-table-column label="适配器" width="110">
                   <template #default="scope">{{ scope.row.adapter || serviceConfigData?.adapter || 'N/A' }}</template>
@@ -214,7 +415,16 @@
             <el-tab-pane v-if="otherServiceNames.length > 0" label="其他" name="other">
               <el-table :data="otherServiceInstances" stripe size="small" style="width:100%">
                 <el-table-column prop="serviceName" label="服务类型" width="140" />
-                <el-table-column prop="name" label="实例名称" width="180" />
+                <el-table-column prop="name" label="实例名称" width="180">
+                  <template #default="scope">
+                    <router-link
+                      class="instance-link"
+                      :to="{ path: '/config/instances', query: { serviceType: scope.row.rawServiceType } }"
+                    >
+                      {{ scope.row.name }}
+                    </router-link>
+                  </template>
+                </el-table-column>
                 <el-table-column prop="baseUrl" label="基础URL" min-width="220" />
                 <el-table-column label="适配器" width="110">
                   <template #default="scope">{{ scope.row.adapter || serviceConfigData?.adapter || 'N/A' }}</template>
@@ -239,6 +449,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import {
   getServiceStats,
@@ -247,7 +458,29 @@ import {
   getDashboardMetrics
 } from '@/api/dashboard'
 import { getJwtAccounts } from '@/api/account'
+import { getRuleStats, type RuleStat } from '@/api/rules'
+import { getRecentExceptionEvents } from '@/api/exception'
+import type { ExceptionEvent } from '@/types/exception'
+import {
+  getRateLimiterSummary,
+  getCircuitBreakerStates,
+  getRoutingMonitorStats,
+  type RateLimiterSummary,
+  type CircuitBreakerState,
+  type ServiceRoutingStats
+} from '@/api/limitMetrics'
 import { ElMessage } from 'element-plus'
+import {
+  Refresh,
+  Loading,
+  ArrowRight,
+  SetUp,
+  DataBoard,
+  Warning,
+  WarningFilled,
+  CircleCheckFilled,
+  Connection
+} from '@element-plus/icons-vue'
 
 // SSE helpers
 import { connectSSE, disconnectSSE, addSSEListener, removeSSEListener } from '@/utils/sse'
@@ -260,8 +493,9 @@ import StatCard from '@/components/StatCard.vue'
 import { useChartTheme } from '@/composables/useChartTheme'
 
 const { getChartTheme } = useChartTheme()
+const router = useRouter()
 
-// 状态数据
+// ════════════ 状态数据 ════════════
 const stats = ref({
   serviceCount: 0,
   instanceCount: 0,
@@ -278,6 +512,20 @@ const serviceConfigData = ref<any>(null)
 const configLoading = ref(false)
 const activeServiceTab = ref<string>('global')
 
+// 治理链路状态
+const ruleStatsRaw = ref<RuleStat[]>([])
+const rlSummary = ref<RateLimiterSummary>({
+  totalLimiters: 0,
+  globalLimiters: 0,
+  serviceLimiters: 0,
+  instanceLimiters: 0,
+  averageUsageRatio: 0,
+  highUsageLimiters: 0,
+})
+const cbStates = ref<CircuitBreakerState[]>([])
+const lbRoutingStats = ref<Record<string, ServiceRoutingStats>>({})
+const recentExceptions = ref<ExceptionEvent[]>([])
+
 // SSE 回调引用，方便移除
 let sseHandler: ((data: any) => void) | null = null
 
@@ -293,6 +541,60 @@ const serviceTypeMap: Record<string, string> = {
 }
 
 const getServiceTypeName = (type: string) => serviceTypeMap[type] || type
+
+// ════════════ 治理链路计算属性 ════════════
+
+/** 规则命中摘要 */
+const ruleStats = computed(() => {
+  const list = ruleStatsRaw.value
+  if (!list || list.length === 0) {
+    return { enabledCount: 0, totalHits: 0, triggeredRuleCount: 0 }
+  }
+  const totalHits = list.reduce((sum, r) => sum + (r.hits || 0), 0)
+  const triggeredRuleCount = list.filter(r => (r.hits || 0) > 0).length
+  return {
+    enabledCount: list.length,
+    totalHits,
+    triggeredRuleCount,
+  }
+})
+
+/** 熔断器状态计数 */
+const cbStateCounts = computed(() => {
+  const counts: Record<string, number> = { CLOSED: 0, OPEN: 0, HALF_OPEN: 0 }
+  cbStates.value.forEach(s => {
+    const st = s.state || 'CLOSED'
+    if (counts[st] !== undefined) {
+      counts[st]++
+    } else {
+      counts[st] = 1
+    }
+  })
+  return counts
+})
+
+/** 负载均衡摘要 */
+const lbSummary = computed(() => {
+  const statsMap = lbRoutingStats.value
+  const serviceKeys = Object.keys(statsMap)
+  let totalInstances = 0
+  let healthyInstances = 0
+  serviceKeys.forEach(key => {
+    const svc = statsMap[key]
+    const instanceCounts = svc.instanceCounts || {}
+    const instKeys = Object.keys(instanceCounts)
+    totalInstances += instKeys.length
+    // instanceCounts 记录每个实例的路由次数，只要计数 > 0 就认为是活跃/健康
+    instKeys.forEach(ik => {
+      if (instanceCounts[ik] > 0) healthyInstances++
+    })
+  })
+  return {
+    totalInstances,
+    healthyInstances,
+    serviceCount: serviceKeys.length,
+  }
+})
 
 // 保留原有计算属性逻辑
 const orderedServiceNames = computed(() => {
@@ -316,7 +618,12 @@ const otherServiceInstances = computed(() => {
   otherServiceNames.value.forEach(name => {
     const svc = serviceConfigData.value.services[name]
     ;(svc.instances || []).forEach((ins: any) => {
-      res.push({ ...ins, serviceName: getServiceTypeName(name), adapter: ins.adapter || svc.adapter || serviceConfigData.value?.adapter })
+      res.push({
+        ...ins,
+        serviceName: getServiceTypeName(name),
+        rawServiceType: name,
+        adapter: ins.adapter || svc.adapter || serviceConfigData.value?.adapter
+      })
     })
   })
   return res
@@ -354,7 +661,7 @@ const statCards = computed(() => {
   ]
 })
 
-// 图表
+// ════════════ 图表 ════════════
 const systemChart = ref<HTMLElement | null>(null)
 let systemChartInstance: echarts.ECharts | null = null
 
@@ -615,6 +922,56 @@ const fetchDashboardMetrics = async () => {
   }
 }
 
+// ════════════ 治理链路数据加载（静默，不弹错误） ════════════
+
+const fetchGovernanceData = async () => {
+  // 并行加载四组治理数据 + 异常摘要，任一失败不影响其它
+  const results = await Promise.allSettled([
+    getRuleStats(),
+    getRateLimiterSummary(),
+    getCircuitBreakerStates(),
+    getRoutingMonitorStats(),
+    getRecentExceptionEvents(5),
+  ])
+
+  // ① 规则命中
+  if (results[0].status === 'fulfilled') {
+    const res = results[0].value as any
+    ruleStatsRaw.value = (res.data?.data as RuleStat[]) ?? []
+  }
+
+  // ② 限流摘要
+  if (results[1].status === 'fulfilled') {
+    rlSummary.value = results[1].value as RateLimiterSummary
+  }
+
+  // ③ 熔断器状态
+  if (results[2].status === 'fulfilled') {
+    cbStates.value = results[2].value as CircuitBreakerState[]
+  }
+
+  // ④ 负载均衡路由统计
+  if (results[3].status === 'fulfilled') {
+    lbRoutingStats.value = results[3].value as Record<string, ServiceRoutingStats>
+  }
+
+  // ⑤ 异常摘要
+  if (results[4].status === 'fulfilled') {
+    recentExceptions.value = results[4].value as ExceptionEvent[]
+  }
+}
+
+const formatAlertTime = (iso: string | undefined) => {
+  if (!iso) return '-'
+  try {
+    const d = new Date(iso)
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  } catch {
+    return iso
+  }
+}
+
 const formatUptime = (seconds: number | undefined) => {
   if (seconds === undefined || seconds === null) return 'N/A'
   const s = Math.round(seconds)
@@ -655,6 +1012,9 @@ const fetchDashboardData = async () => {
   } catch (e: any) {
     ElMessage.error(`加载仪表板失败: ${  e.message || '网络错误'}`)
   }
+
+  // 治理链路数据独立加载，不阻塞主流程
+  fetchGovernanceData()
 }
 
 onMounted(() => {
@@ -746,6 +1106,153 @@ onBeforeUnmount(() => {
 .card-title {
   font-weight: 600;
   color: var(--ja-text-primary);
+}
+
+/* ════════════ 治理链路面板 ════════════ */
+.governance-row {
+  margin-top: 22px;
+}
+
+.governance-card {
+  border-radius: var(--ja-radius-lg);
+}
+
+.governance-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gov-section {
+  padding: 8px 4px;
+  min-height: 120px;
+}
+
+.gov-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ja-border-light, #ebeef5);
+}
+
+.gov-icon {
+  font-size: 18px;
+}
+
+.gov-icon--primary { color: var(--ja-primary); }
+.gov-icon--warning { color: var(--ja-warning); }
+.gov-icon--danger  { color: var(--ja-danger); }
+.gov-icon--success { color: var(--ja-success); }
+
+.gov-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ja-text-primary);
+}
+
+.gov-jump {
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.gov-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gov-metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.gov-metric-label {
+  font-size: 12px;
+  color: var(--ja-text-secondary, #909399);
+}
+
+.gov-metric-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ja-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.gov-metric-value--primary { color: var(--ja-primary); }
+.gov-metric-value--success { color: var(--ja-success); }
+.gov-metric-value--warning { color: var(--ja-warning); }
+.gov-metric-value--danger  { color: var(--ja-danger); }
+
+/* ════════════ 异常/告警摘要 ════════════ */
+.alert-row {
+  margin-top: 22px;
+}
+
+.alert-card {
+  border-radius: var(--ja-radius-lg);
+}
+
+.alert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.alert-title-icon {
+  color: var(--ja-warning);
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.alert-time {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ja-text-secondary, #909399);
+}
+
+.alert-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--ja-success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.alert-empty-icon {
+  font-size: 20px;
+}
+
+.alert-table {
+  width: 100%;
+}
+
+/* ════════════ 服务配置链接 ════════════ */
+.service-tab-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.service-tab-link:hover {
+  color: var(--ja-primary);
+}
+
+.instance-link {
+  text-decoration: none;
+  color: var(--ja-primary);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.instance-link:hover {
+  text-decoration: underline;
 }
 
 /* 响应式 */
