@@ -587,15 +587,27 @@ onUnmounted(() => {
 }
 
 .summary-card.summary-closed {
-  background: linear-gradient(135deg, var(--ja-success-light-9, #e8f5e9) 0%, var(--ja-success-light-7, #c8e6c9) 100%);
+  background: var(--el-color-success-light-9);
+  color: var(--el-color-success);
 }
 
 .summary-card.summary-open {
-  background: linear-gradient(135deg, var(--el-color-danger-light-9, #ffebee) 0%, var(--el-color-danger-light-7, #ffcdd2) 100%);
+  background: var(--el-color-danger-light-9);
+  color: var(--el-color-danger);
 }
 
 .summary-card.summary-half_open {
-  background: linear-gradient(135deg, var(--el-color-warning-light-9, #fff3e0) 0%, var(--el-color-warning-light-7, #ffe0b2) 100%);
+  background: var(--el-color-warning-light-9);
+  color: var(--el-color-warning);
+}
+
+.summary-card.summary-closed .summary-count,
+.summary-card.summary-open .summary-count,
+.summary-card.summary-half_open .summary-count,
+.summary-card.summary-closed .summary-label,
+.summary-card.summary-open .summary-label,
+.summary-card.summary-half_open .summary-label {
+  color: inherit;
 }
 
 .summary-count {
