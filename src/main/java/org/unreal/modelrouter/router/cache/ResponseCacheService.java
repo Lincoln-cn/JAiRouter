@@ -9,7 +9,11 @@ import org.unreal.modelrouter.config.core.ResponseCacheProperties;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 
+import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * v2.9.9: 响应缓存门面服务.
@@ -30,9 +34,19 @@ import java.util.Optional;
 @Service
 public class ResponseCacheService {
 
+    /** TTL 合理下界（秒） */
+    private static final long TTL_MIN_SECONDS = 1;
+    /** TTL 合理上界（秒，7 天） */
+    private static final long TTL_MAX_SECONDS = 604_800;
+
     private final CacheStore cacheStore;
     private final ResponseCacheProperties properties;
     private final MetricsCollector metricsCollector;
+
+    /** 线程安全的启动累计命中计数 */
+    private final AtomicLong hits = new AtomicLong(0);
+    /** 线程安全的启动累计未命中计数 */
+    private final AtomicLong misses = new AtomicLong(0);
 
     /**
      * 构造函数.
@@ -152,18 +166,20 @@ public class ResponseCacheService {
     }
 
     /**
-     * 记录缓存命中指标.
+     * 记录缓存命中指标（同时递增运行时计数器）.
      */
     private void recordHit(final String serviceName, final String modelName) {
+        hits.incrementAndGet();
         if (metricsCollector != null) {
             metricsCollector.recordResponseCacheHit(serviceName, modelName);
         }
     }
 
     /**
-     * 记录缓存未命中指标.
+     * 记录缓存未命中指标（同时递增运行时计数器）.
      */
     private void recordMiss(final String serviceName, final String modelName) {
+        misses.incrementAndGet();
         if (metricsCollector != null) {
             metricsCollector.recordResponseCacheMiss(serviceName, modelName);
         }
@@ -215,5 +231,78 @@ public class ResponseCacheService {
         }
         cacheStore.clear();
         return true;
+    }
+
+    /**
+     * 获取当前缓存运行时状态快照.
+     *
+     * <p>包含配置项（来自 properties）与运行时统计（hits/misses/hitRatio/size）。
+     * hitRatio 在 hits+misses=0 时返回 null 表示"尚无请求数据"。
+     *
+     * @return 不可变快照 map
+     */
+    public Map<String, Object> snapshot() {
+        long h = hits.get();
+        long m = misses.get();
+        Double hitRatio = (h + m) == 0 ? null : (double) h / (h + m);
+
+        Map<String, Object> snap = new LinkedHashMap<>();
+        snap.put("enabled", properties.isEnabled());
+        snap.put("ttlSeconds", properties.getTtl().getSeconds());
+        snap.put("maxSize", properties.getMaxSize());
+        snap.put("size", size());
+        snap.put("skipStreaming", properties.isSkipStreaming());
+        snap.put("onlyDeterministic", properties.isOnlyDeterministic());
+        snap.put("hits", h);
+        snap.put("misses", m);
+        snap.put("hitRatio", hitRatio);
+        return snap;
+    }
+
+    /**
+     * 运行时更新缓存配置（部分更新：仅修改非 null 参数）.
+     *
+     * <p>语义：
+     * <ul>
+     *   <li>全 null（无任何配置参数）视为非法 → 抛出 {@link IllegalArgumentException}</li>
+     *   <li>非 null 参数逐一校验后直接写入注入的 {@link ResponseCacheProperties} bean</li>
+     *   <li>ttlSeconds 范围：[1, 604800]（7 天），越界抛出 {@link IllegalArgumentException}</li>
+     *   <li>maxSize 不可热改（Caffeine 构造时锁定），此处不接受该参数</li>
+     * </ul>
+     *
+     * @param enabled           是否启用（null 表示不修改）
+     * @param skipStreaming      是否跳过流式（null 表示不修改）
+     * @param onlyDeterministic  是否仅缓存确定性请求（null 表示不修改）
+     * @param ttlSeconds         缓存 TTL 秒数（null 表示不修改）
+     * @return 更新后的快照
+     * @throws IllegalArgumentException 全 null 或校验失败
+     */
+    public Map<String, Object> updateRuntimeConfig(final Boolean enabled,
+                                                   final Boolean skipStreaming,
+                                                   final Boolean onlyDeterministic,
+                                                   final Long ttlSeconds) {
+        if (enabled == null && skipStreaming == null
+                && onlyDeterministic == null && ttlSeconds == null) {
+            throw new IllegalArgumentException("至少需要指定一个配置参数");
+        }
+
+        if (ttlSeconds != null) {
+            if (ttlSeconds < TTL_MIN_SECONDS || ttlSeconds > TTL_MAX_SECONDS) {
+                throw new IllegalArgumentException(
+                        "ttlSeconds 超出范围 [" + TTL_MIN_SECONDS + ", " + TTL_MAX_SECONDS + "]: " + ttlSeconds);
+            }
+            properties.setTtl(Duration.ofSeconds(ttlSeconds));
+        }
+        if (enabled != null) {
+            properties.setEnabled(enabled);
+        }
+        if (skipStreaming != null) {
+            properties.setSkipStreaming(skipStreaming);
+        }
+        if (onlyDeterministic != null) {
+            properties.setOnlyDeterministic(onlyDeterministic);
+        }
+
+        return snapshot();
     }
 }

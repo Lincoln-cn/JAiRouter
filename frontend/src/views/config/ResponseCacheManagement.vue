@@ -44,6 +44,32 @@
           />
         </el-col>
       </el-row>
+      <el-row :gutter="16" style="margin-top: 16px">
+        <el-col :span="8">
+          <StatCard
+            icon="SuccessFilled"
+            label="命中次数"
+            :value="status?.hits ?? '—'"
+            tone="success"
+          />
+        </el-col>
+        <el-col :span="8">
+          <StatCard
+            icon="CircleCloseFilled"
+            label="未命中"
+            :value="status?.misses ?? '—'"
+            tone="danger"
+          />
+        </el-col>
+        <el-col :span="8">
+          <StatCard
+            icon="TrendCharts"
+            label="命中率"
+            :value="hitRatioDisplay"
+            tone="primary"
+          />
+        </el-col>
+      </el-row>
     </template>
 
     <!-- 状态未就绪提示 -->
@@ -57,33 +83,68 @@
       style="margin-bottom: 16px"
     />
 
-    <!-- 配置信息展示 -->
+    <!-- 运行时配置面板 -->
     <el-card v-if="status" shadow="hover" style="margin-bottom: 16px">
       <template #header>
-        <span class="card-title">缓存配置</span>
+        <span class="card-title">运行时配置</span>
       </template>
-      <el-descriptions :column="3" border size="small">
-        <el-descriptions-item label="跳过流式请求">
-          <el-tag :type="status.skipStreaming ? 'success' : 'info'" size="small">
-            {{ status.skipStreaming ? '是' : '否' }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="仅缓存确定性请求">
-          <el-tag :type="status.onlyDeterministic ? 'success' : 'info'" size="small">
-            {{ status.onlyDeterministic ? '是' : '否' }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="配置项路径">
-          <code>jairouter.response-cache.*</code>
-        </el-descriptions-item>
-      </el-descriptions>
+
+      <div class="runtime-config-grid">
+        <div class="config-switch-item">
+          <span class="config-switch-label">启用缓存</span>
+          <el-switch v-model="runtimeForm.enabled" />
+        </div>
+        <div class="config-switch-item">
+          <span class="config-switch-label">跳过流式请求</span>
+          <el-switch v-model="runtimeForm.skipStreaming" />
+        </div>
+        <div class="config-switch-item">
+          <span class="config-switch-label">仅缓存确定性请求</span>
+          <el-switch v-model="runtimeForm.onlyDeterministic" />
+        </div>
+        <div class="config-switch-item">
+          <span class="config-switch-label">TTL（秒）</span>
+          <el-input-number
+            v-model="runtimeForm.ttlSeconds"
+            :min="1"
+            :max="604800"
+            :step="60"
+            controls-position="right"
+            placeholder="留空不修改"
+            style="width: 180px"
+          />
+        </div>
+      </div>
+
+      <div class="config-actions">
+        <el-button
+          type="primary"
+          :loading="savingConfig"
+          :disabled="!configChanged"
+          @click="handleSaveConfig"
+        >
+          <el-icon><Check /></el-icon>
+          保存运行时配置
+        </el-button>
+        <el-button
+          :disabled="savingConfig"
+          @click="resetRuntimeForm"
+        >
+          重置
+        </el-button>
+      </div>
+
       <div class="config-hint">
         <el-icon><InfoFilled /></el-icon>
-        <span>UI 仅展示与失效，配置持久化请修改 YAML 文件。</span>
+        <span>运行时即时生效但重启/配置刷新后还原为 yaml <code>jairouter.response-cache.*</code></span>
+      </div>
+      <div class="config-hint">
+        <el-icon><InfoFilled /></el-icon>
+        <span><code>maxSize</code> 只读，调整需改 yaml 后重启</span>
       </div>
     </el-card>
 
-    <!-- 操作区 -->
+    <!-- 操作区：缓存失效 -->
     <el-card shadow="hover">
       <template #header>
         <span class="card-title">缓存失效操作</span>
@@ -172,22 +233,42 @@
       style="margin-top: 16px"
     >
       <template #default>
-        <p style="margin: 0">缓存命中不写调用历史。配置项参考 YAML：<code>jairouter.response-cache.*</code>（UI 仅展示与失效，不提供配置持久化）。</p>
+        <p style="margin: 0">缓存命中不写调用历史。配置项参考 YAML：<code>jairouter.response-cache.*</code>。</p>
       </template>
     </el-alert>
   </PageSkeleton>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Refresh, Delete, InfoFilled, CircleCheck, CircleClose, Timer, Box, DataLine } from '@element-plus/icons-vue'
+import {
+  Refresh,
+  Delete,
+  InfoFilled,
+  CircleCheck,
+  CircleClose,
+  Timer,
+  Box,
+  DataLine,
+  Check,
+  SuccessFilled,
+  CircleCloseFilled,
+  TrendCharts,
+} from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import StatCard from '@/components/StatCard.vue'
-import { getCacheStatus, invalidateCache, type CacheStatus } from '@/api/responseCache'
+import {
+  getCacheStatus,
+  invalidateCache,
+  updateCacheConfig,
+  type CacheStatus,
+  type CacheConfigPayload,
+} from '@/api/responseCache'
 
 const loading = ref(false)
 const invalidating = ref(false)
+const savingConfig = ref(false)
 const status = ref<CacheStatus | null>(null)
 const selectedServiceType = ref('')
 const modelName = ref('')
@@ -195,16 +276,110 @@ const modelName = ref('')
 /** 后端 ServiceType 枚举值 */
 const serviceTypes = ['chat', 'embedding', 'rerank', 'tts', 'stt', 'imgGen', 'imgEdit']
 
+// ── 运行时配置表单 ──
+
+interface RuntimeForm {
+  enabled: boolean
+  skipStreaming: boolean
+  onlyDeterministic: boolean
+  /** undefined = 未修改（不传），number = 用户修改后的值 */
+  ttlSeconds: number | undefined
+}
+
+const runtimeForm = ref<RuntimeForm>({
+  enabled: false,
+  skipStreaming: false,
+  onlyDeterministic: false,
+  ttlSeconds: undefined,
+})
+
+/** 用当前 snapshot 填充运行时表单（同步基准值，不重新赋 ttlSeconds = undefined） */
+const syncFormFromStatus = (s: CacheStatus) => {
+  runtimeForm.value.enabled = s.enabled
+  runtimeForm.value.skipStreaming = s.skipStreaming
+  runtimeForm.value.onlyDeterministic = s.onlyDeterministic
+  runtimeForm.value.ttlSeconds = undefined
+}
+
+/** 重置表单到 snapshot 原值 */
+const resetRuntimeForm = () => {
+  if (status.value) syncFormFromStatus(status.value)
+}
+
+/** 命中率显示 */
+const hitRatioDisplay = computed(() => {
+  if (!status.value || status.value.hitRatio === null) return '暂无数据'
+  return `${(status.value.hitRatio * 100).toFixed(1)}%`
+})
+
+/**
+ * 判断表单是否有变更，决定「保存」按钮是否可点。
+ * 仅发送与 snapshot 不同的字段；未动字段不传。
+ */
+const configChanged = computed(() => {
+  if (!status.value) return false
+  const s = status.value
+  if (runtimeForm.value.enabled !== s.enabled) return true
+  if (runtimeForm.value.skipStreaming !== s.skipStreaming) return true
+  if (runtimeForm.value.onlyDeterministic !== s.onlyDeterministic) return true
+  if (runtimeForm.value.ttlSeconds !== undefined && runtimeForm.value.ttlSeconds !== s.ttlSeconds) return true
+  return false
+})
+
+// ── 数据加载 ──
+
 const loadStatus = async () => {
   loading.value = true
   try {
-    status.value = await getCacheStatus()
+    const s = await getCacheStatus()
+    status.value = s
+    if (s) syncFormFromStatus(s)
   } catch {
     status.value = null
   } finally {
     loading.value = false
   }
 }
+
+// ── 保存运行时配置（diff → payload） ──
+
+const handleSaveConfig = async () => {
+  if (!status.value) return
+  const s = status.value
+  const payload: CacheConfigPayload = {}
+
+  if (runtimeForm.value.enabled !== s.enabled) {
+    payload.enabled = runtimeForm.value.enabled
+  }
+  if (runtimeForm.value.skipStreaming !== s.skipStreaming) {
+    payload.skipStreaming = runtimeForm.value.skipStreaming
+  }
+  if (runtimeForm.value.onlyDeterministic !== s.onlyDeterministic) {
+    payload.onlyDeterministic = runtimeForm.value.onlyDeterministic
+  }
+  if (runtimeForm.value.ttlSeconds !== undefined && runtimeForm.value.ttlSeconds !== s.ttlSeconds) {
+    payload.ttlSeconds = runtimeForm.value.ttlSeconds
+  }
+
+  // 后端：全空 payload → 400
+  if (Object.keys(payload).length === 0) {
+    ElMessage.warning('未修改任何配置项')
+    return
+  }
+
+  savingConfig.value = true
+  try {
+    await updateCacheConfig(payload)
+    ElMessage.success('运行时配置已更新')
+    await loadStatus()
+  } catch {
+    ElMessage.error('保存失败，请检查参数')
+  } finally {
+    savingConfig.value = false
+  }
+}
+
+// ── 缓存失效操作 ──
 
 const handleInvalidateAll = async () => {
   invalidating.value = true
@@ -216,7 +391,7 @@ const handleInvalidateAll = async () => {
       ElMessage.warning('缓存未启用，操作未执行')
     }
     await loadStatus()
-  } catch (e) {
+  } catch {
     ElMessage.error('操作失败')
   } finally {
     invalidating.value = false
@@ -234,7 +409,7 @@ const handleInvalidateByServiceType = async () => {
       ElMessage.warning('缓存未启用，操作未执行')
     }
     await loadStatus()
-  } catch (e) {
+  } catch {
     ElMessage.error('操作失败')
   } finally {
     invalidating.value = false
@@ -253,7 +428,7 @@ const handleInvalidateByModel = async () => {
       ElMessage.warning('缓存未启用，操作未执行')
     }
     await loadStatus()
-  } catch (e) {
+  } catch {
     ElMessage.error('操作失败')
   } finally {
     invalidating.value = false
@@ -294,5 +469,34 @@ onMounted(loadStatus)
   margin-top: 12px;
   font-size: 12px;
   color: var(--ja-text-secondary, var(--el-text-color-secondary));
+}
+
+.runtime-config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px 32px;
+  margin-bottom: 16px;
+}
+
+.config-switch-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--ja-radius-md, 8px);
+  background: var(--ja-bg-hover, var(--el-fill-color-light));
+}
+
+.config-switch-label {
+  font-size: 14px;
+  color: var(--ja-text-primary);
+  font-weight: 500;
+}
+
+.config-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
 }
 </style>

@@ -2,15 +2,15 @@ import request from '@/utils/request'
 import type { RouterResponse } from '@/types'
 
 /**
- * 响应缓存管理 API（v2.10.2）
+ * 响应缓存管理 API
  *
  * 对应后端 ResponseCacheController：
- * - DELETE /api/config/cache/response  失效响应缓存（query params: serviceType?, model?）
- *
- * 缓存状态来自配置属性，无独立 GET 端点——前端从 ResponseCacheProperties 推导展示。
+ * - GET    /api/config/cache/response         获取缓存快照
+ * - PUT    /api/config/cache/response/config  部分更新运行时配置
+ * - DELETE /api/config/cache/response          失效响应缓存（query params: serviceType?, model?）
  */
 
-/** 缓存状态（前端契约，基于 ResponseCacheProperties + CacheStore） */
+/** 缓存快照（后端 RouterResponse.snapshot 映射） */
 export interface CacheStatus {
   enabled: boolean
   ttlSeconds: number
@@ -18,6 +18,18 @@ export interface CacheStatus {
   size: number | null
   skipStreaming: boolean
   onlyDeterministic: boolean
+  hits: number
+  misses: number
+  /** 命中率 0~1 小数，无请求时为 null */
+  hitRatio: number | null
+}
+
+/** 运行时配置更新载荷（Boolean/Long 包装类型，传 null 表示不改） */
+export interface CacheConfigPayload {
+  enabled?: boolean
+  skipStreaming?: boolean
+  onlyDeterministic?: boolean
+  ttlSeconds?: number
 }
 
 /** 失效结果 */
@@ -28,10 +40,10 @@ export interface InvalidateResult {
 }
 
 /**
- * 获取缓存状态（优雅降级：404 时返回 null）
+ * 获取缓存快照
  *
- * 当前后端无 GET 端点，尝试 GET /api/config/cache/response，
- * 404 返回 null，前端展示 "—/未就绪"。
+ * GET /api/config/cache/response → RouterResponse<CacheStatus>
+ * 404 / 异常时优雅降级返回 null。
  */
 export const getCacheStatus = async (): Promise<CacheStatus | null> => {
   try {
@@ -40,6 +52,23 @@ export const getCacheStatus = async (): Promise<CacheStatus | null> => {
   } catch {
     return null
   }
+}
+
+/**
+ * 部分更新运行时配置
+ *
+ * PUT /api/config/cache/response/config
+ * body: { enabled?, skipStreaming?, onlyDeterministic?, ttlSeconds? }
+ * 未传字段保持不变；成功返回新 snapshot。
+ */
+export const updateCacheConfig = async (
+  payload: CacheConfigPayload
+): Promise<CacheStatus> => {
+  const response = await request.put<RouterResponse<CacheStatus>>(
+    '/config/cache/response/config',
+    payload
+  )
+  return response.data.data as CacheStatus
 }
 
 /**

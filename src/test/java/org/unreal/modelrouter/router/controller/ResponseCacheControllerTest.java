@@ -9,11 +9,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
-import org.unreal.modelrouter.config.core.ResponseCacheProperties;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
+import org.unreal.modelrouter.router.controller.ResponseCacheController.RuntimeConfigUpdateRequest;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 
-import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,14 +38,11 @@ class ResponseCacheControllerTest {
     @Mock
     private ResponseCacheService responseCacheService;
 
-    @Mock
-    private ResponseCacheProperties responseCacheProperties;
-
     private ResponseCacheController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new ResponseCacheController(responseCacheService, responseCacheProperties);
+        controller = new ResponseCacheController(responseCacheService);
     }
 
     @Test
@@ -141,14 +140,19 @@ class ResponseCacheControllerTest {
     }
 
     @Test
-    @DisplayName("GET /response → 返回缓存配置与状态")
+    @DisplayName("GET /response → 返回缓存配置与状态（含 hits/misses/hitRatio）")
     void getCacheStatusReturnsConfigAndSize() {
-        when(responseCacheProperties.isEnabled()).thenReturn(true);
-        when(responseCacheProperties.getTtl()).thenReturn(Duration.ofHours(2));
-        when(responseCacheProperties.getMaxSize()).thenReturn(5000);
-        when(responseCacheProperties.isSkipStreaming()).thenReturn(true);
-        when(responseCacheProperties.isOnlyDeterministic()).thenReturn(false);
-        when(responseCacheService.size()).thenReturn(42L);
+        Map<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("enabled", true);
+        snapshot.put("ttlSeconds", 7200L);
+        snapshot.put("maxSize", 5000);
+        snapshot.put("size", 42L);
+        snapshot.put("skipStreaming", true);
+        snapshot.put("onlyDeterministic", false);
+        snapshot.put("hits", 80L);
+        snapshot.put("misses", 20L);
+        snapshot.put("hitRatio", 0.8);
+        when(responseCacheService.snapshot()).thenReturn(snapshot);
 
         ResponseEntity<RouterResponse<Map<String, Object>>> response =
                 controller.getCacheStatus();
@@ -162,17 +166,25 @@ class ResponseCacheControllerTest {
         assertEquals(42L, data.get("size"));
         assertEquals(true, data.get("skipStreaming"));
         assertEquals(false, data.get("onlyDeterministic"));
+        assertEquals(80L, data.get("hits"));
+        assertEquals(20L, data.get("misses"));
+        assertEquals(0.8, data.get("hitRatio"));
     }
 
     @Test
-    @DisplayName("GET /response 缓存禁用 → size=0")
+    @DisplayName("GET /response 缓存禁用 → size=0, hitRatio=null（无请求数据）")
     void getCacheStatusWhenDisabledReturnsZeroSize() {
-        when(responseCacheProperties.isEnabled()).thenReturn(false);
-        when(responseCacheProperties.getTtl()).thenReturn(Duration.ofHours(1));
-        when(responseCacheProperties.getMaxSize()).thenReturn(10000);
-        when(responseCacheProperties.isSkipStreaming()).thenReturn(true);
-        when(responseCacheProperties.isOnlyDeterministic()).thenReturn(true);
-        when(responseCacheService.size()).thenReturn(0L);
+        Map<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("enabled", false);
+        snapshot.put("ttlSeconds", 3600L);
+        snapshot.put("maxSize", 10000);
+        snapshot.put("size", 0L);
+        snapshot.put("skipStreaming", true);
+        snapshot.put("onlyDeterministic", true);
+        snapshot.put("hits", 0L);
+        snapshot.put("misses", 0L);
+        snapshot.put("hitRatio", null);
+        when(responseCacheService.snapshot()).thenReturn(snapshot);
 
         ResponseEntity<RouterResponse<Map<String, Object>>> response =
                 controller.getCacheStatus();
@@ -182,5 +194,87 @@ class ResponseCacheControllerTest {
         Map<String, Object> data = response.getBody().getData();
         assertEquals(false, data.get("enabled"));
         assertEquals(0L, data.get("size"));
+        assertNull(data.get("hitRatio"), "无请求数据时 hitRatio 应为 null");
+    }
+
+    // ==================== PUT /response/config 测试 ====================
+
+    @Test
+    @DisplayName("PUT /response/config 部分更新 enabled → 返回更新后快照")
+    void putPartialUpdateEnabledReturnsSnapshot() {
+        Map<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("enabled", false);
+        snapshot.put("ttlSeconds", 300L);
+        snapshot.put("maxSize", 10000);
+        snapshot.put("size", 0L);
+        snapshot.put("skipStreaming", true);
+        snapshot.put("onlyDeterministic", true);
+        snapshot.put("hits", 0L);
+        snapshot.put("misses", 0L);
+        snapshot.put("hitRatio", null);
+        when(responseCacheService.updateRuntimeConfig(
+                eq(false), eq(null), eq(null), eq(null)))
+                .thenReturn(snapshot);
+
+        RuntimeConfigUpdateRequest request = new RuntimeConfigUpdateRequest();
+        request.enabled = false;
+
+        ResponseEntity<RouterResponse<Map<String, Object>>> response =
+                controller.updateRuntimeConfig(request);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+        assertEquals("缓存配置已更新", response.getBody().getMessage());
+        assertEquals(false, response.getBody().getData().get("enabled"));
+        verify(responseCacheService).updateRuntimeConfig(false, null, null, null);
+    }
+
+    @Test
+    @DisplayName("PUT /response/config 非法 ttlSeconds → 400")
+    void putInvalidTtlReturnsBadRequest() {
+        when(responseCacheService.updateRuntimeConfig(
+                any(), any(), any(), eq(0L)))
+                .thenThrow(new IllegalArgumentException(
+                        "ttlSeconds 超出范围 [1, 604800]: 0"));
+
+        RuntimeConfigUpdateRequest request = new RuntimeConfigUpdateRequest();
+        request.ttlSeconds = 0L;
+
+        ResponseEntity<RouterResponse<Map<String, Object>>> response =
+                controller.updateRuntimeConfig(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("INVALID_REQUEST", response.getBody().getErrorCode());
+        assertTrue(response.getBody().getMessage().contains("ttlSeconds"));
+    }
+
+    @Test
+    @DisplayName("PUT /response/config 全 null 请求体 → 400")
+    void putAllNullReturnsBadRequest() {
+        when(responseCacheService.updateRuntimeConfig(
+                eq(null), eq(null), eq(null), eq(null)))
+                .thenThrow(new IllegalArgumentException("至少需要指定一个配置参数"));
+
+        RuntimeConfigUpdateRequest request = new RuntimeConfigUpdateRequest();
+
+        ResponseEntity<RouterResponse<Map<String, Object>>> response =
+                controller.updateRuntimeConfig(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("INVALID_REQUEST", response.getBody().getErrorCode());
+        assertTrue(response.getBody().getMessage().contains("至少需要指定一个配置参数"));
+    }
+
+    @Test
+    @DisplayName("PUT /response/config null 请求体 → 400")
+    void putNullBodyReturnsBadRequest() {
+        ResponseEntity<RouterResponse<Map<String, Object>>> response =
+                controller.updateRuntimeConfig(null);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals("INVALID_REQUEST", response.getBody().getErrorCode());
     }
 }

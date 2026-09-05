@@ -7,11 +7,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
-import org.unreal.modelrouter.config.core.ResponseCacheProperties;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 
@@ -36,32 +37,24 @@ public class ResponseCacheController {
     private static final Logger logger = LoggerFactory.getLogger(ResponseCacheController.class);
 
     private final ResponseCacheService responseCacheService;
-    private final ResponseCacheProperties responseCacheProperties;
 
-    public ResponseCacheController(final ResponseCacheService responseCacheService,
-                                   final ResponseCacheProperties responseCacheProperties) {
+    public ResponseCacheController(final ResponseCacheService responseCacheService) {
         this.responseCacheService = responseCacheService;
-        this.responseCacheProperties = responseCacheProperties;
     }
 
     /**
      * 查询响应缓存管理状态.
      *
-     * <p>返回当前缓存配置与运行时状态（条目数）。
+     * <p>返回当前缓存配置与运行时状态（条目数、命中统计）。
      *
      * @return 缓存状态信息
      */
     @GetMapping("/response")
-    @Operation(summary = "查询响应缓存状态", description = "返回缓存配置（enabled/ttl/maxSize/skipStreaming/onlyDeterministic）与当前条目数")
+    @Operation(summary = "查询响应缓存状态",
+            description = "返回缓存配置（enabled/ttl/maxSize/skipStreaming/onlyDeterministic）"
+                    + "与运行时状态（size/hits/misses/hitRatio）")
     public ResponseEntity<RouterResponse<Map<String, Object>>> getCacheStatus() {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("enabled", responseCacheProperties.isEnabled());
-        result.put("ttlSeconds", responseCacheProperties.getTtl().getSeconds());
-        result.put("maxSize", responseCacheProperties.getMaxSize());
-        result.put("size", responseCacheService.size());
-        result.put("skipStreaming", responseCacheProperties.isSkipStreaming());
-        result.put("onlyDeterministic", responseCacheProperties.isOnlyDeterministic());
-        return ResponseEntity.ok(RouterResponse.success(result));
+        return ResponseEntity.ok(RouterResponse.success(responseCacheService.snapshot()));
     }
 
     /**
@@ -110,5 +103,50 @@ public class ResponseCacheController {
         result.put("model", resolvedModel);
         String message = executed ? "缓存失效操作已执行" : "缓存未启用，操作未执行";
         return ResponseEntity.ok(RouterResponse.success(result, message));
+    }
+
+    /**
+     * 运行时更新响应缓存配置（部分更新）.
+     *
+     * <p>仅修改请求体中非 null 的字段，null 字段保持不变。
+     * ttlSeconds 校验范围 [1, 604800]（7 天）。
+     * 全 null 请求视为非法。
+     *
+     * @param request 配置更新请求（字段均可空）
+     * @return 更新成功返回最新状态；校验失败返回 400
+     */
+    @PutMapping("/response/config")
+    @Operation(summary = "运行时更新响应缓存配置",
+            description = "部分更新 enabled/skipStreaming/onlyDeterministic/ttlSeconds，null 字段不修改")
+    public ResponseEntity<RouterResponse<Map<String, Object>>> updateRuntimeConfig(
+            @RequestBody final RuntimeConfigUpdateRequest request) {
+        if (request == null) {
+            return ResponseEntity.badRequest()
+                    .body(RouterResponse.error("请求体不能为空", "INVALID_REQUEST"));
+        }
+        try {
+            Map<String, Object> snapshot = responseCacheService.updateRuntimeConfig(
+                    request.enabled, request.skipStreaming,
+                    request.onlyDeterministic, request.ttlSeconds);
+            logger.info("Response cache runtime config updated: {}", snapshot);
+            return ResponseEntity.ok(RouterResponse.success(snapshot, "缓存配置已更新"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(RouterResponse.error(e.getMessage(), "INVALID_REQUEST"));
+        }
+    }
+
+    /**
+     * 运行时配置更新请求体（字段均为包装类型以支持部分更新，null = 不修改）.
+     */
+    public static class RuntimeConfigUpdateRequest {
+        /** 是否启用响应缓存 */
+        public Boolean enabled;
+        /** 是否跳过流式请求 */
+        public Boolean skipStreaming;
+        /** 是否仅缓存确定性请求 */
+        public Boolean onlyDeterministic;
+        /** 缓存 TTL（秒），范围 [1, 604800] */
+        public Long ttlSeconds;
     }
 }

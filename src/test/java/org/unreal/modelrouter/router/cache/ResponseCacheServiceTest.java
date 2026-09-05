@@ -15,6 +15,7 @@ import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -268,6 +270,147 @@ class ResponseCacheServiceTest {
         assertNotNull(key);
         assertTrue(key.startsWith("rc:chat:gpt-4:"),
                 "键应以三段式前缀开头，实际=" + key);
+    }
+
+    // ==================== 运行时计数器测试 ====================
+
+    @Test
+    @DisplayName("snapshot 初始状态：hits=0, misses=0, hitRatio=null")
+    void snapshotInitialState() {
+        Map<String, Object> snap = service.snapshot();
+
+        assertEquals(0L, snap.get("hits"));
+        assertEquals(0L, snap.get("misses"));
+        assertNull(snap.get("hitRatio"), "无请求数据时 hitRatio 应为 null");
+    }
+
+    @Test
+    @DisplayName("lookup 命中后 snapshot hits 递增")
+    void lookupHitIncrementsHitsCounter() {
+        when(cacheStore.get("key-1")).thenReturn(Optional.of("data"));
+        when(cacheStore.get("key-2")).thenReturn(Optional.of("data2"));
+
+        service.lookup("key-1", "chat", "gpt-4");
+        service.lookup("key-2", "chat", "gpt-4");
+
+        Map<String, Object> snap = service.snapshot();
+        assertEquals(2L, snap.get("hits"));
+        assertEquals(0L, snap.get("misses"));
+        assertEquals(1.0, snap.get("hitRatio"));
+    }
+
+    @Test
+    @DisplayName("lookup 未命中后 snapshot misses 递增")
+    void lookupMissIncrementsMissesCounter() {
+        when(cacheStore.get("key-1")).thenReturn(Optional.empty());
+
+        service.lookup("key-1", "chat", "gpt-4");
+
+        Map<String, Object> snap = service.snapshot();
+        assertEquals(0L, snap.get("hits"));
+        assertEquals(1L, snap.get("misses"));
+        assertEquals(0.0, snap.get("hitRatio"));
+    }
+
+    @Test
+    @DisplayName("snapshot hitRatio = hits / (hits + misses)")
+    void snapshotHitRatioCalculatedCorrectly() {
+        when(cacheStore.get("hit")).thenReturn(Optional.of("data"));
+        when(cacheStore.get("miss")).thenReturn(Optional.empty());
+
+        // 3 hits + 1 miss = 0.75
+        service.lookup("hit", "chat", "gpt-4");
+        service.lookup("hit", "chat", "gpt-4");
+        service.lookup("hit", "chat", "gpt-4");
+        service.lookup("miss", "chat", "gpt-4");
+
+        Map<String, Object> snap = service.snapshot();
+        assertEquals(3L, snap.get("hits"));
+        assertEquals(1L, snap.get("misses"));
+        assertEquals(0.75, (Double) snap.get("hitRatio"), 1e-9);
+    }
+
+    @Test
+    @DisplayName("snapshot 包含所有配置字段")
+    void snapshotContainsAllConfigFields() {
+        Map<String, Object> snap = service.snapshot();
+
+        assertEquals(true, snap.get("enabled"));
+        assertEquals(300L, snap.get("ttlSeconds"));  // 5 min
+        assertEquals(10000, snap.get("maxSize"));
+        assertNotNull(snap.get("size"));
+        assertEquals(true, snap.get("skipStreaming"));
+        assertEquals(true, snap.get("onlyDeterministic"));
+    }
+
+    // ==================== updateRuntimeConfig 测试 ====================
+
+    @Test
+    @DisplayName("updateRuntimeConfig 部分更新 enabled")
+    void updateRuntimeConfigPartialUpdateEnabled() {
+        assertTrue(properties.isEnabled());
+
+        Map<String, Object> snap = service.updateRuntimeConfig(false, null, null, null);
+
+        assertFalse(properties.isEnabled());
+        assertEquals(false, snap.get("enabled"));
+    }
+
+    @Test
+    @DisplayName("updateRuntimeConfig 部分更新 ttlSeconds")
+    void updateRuntimeConfigPartialUpdateTtl() {
+        assertEquals(Duration.ofMinutes(5), properties.getTtl());
+
+        Map<String, Object> snap = service.updateRuntimeConfig(null, null, null, 120L);
+
+        assertEquals(Duration.ofSeconds(120), properties.getTtl());
+        assertEquals(120L, snap.get("ttlSeconds"));
+    }
+
+    @Test
+    @DisplayName("updateRuntimeConfig 全 null → IllegalArgumentException")
+    void updateRuntimeConfigAllNullThrows() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.updateRuntimeConfig(null, null, null, null));
+    }
+
+    @Test
+    @DisplayName("updateRuntimeConfig ttlSeconds 超下界 → IllegalArgumentException")
+    void updateRuntimeConfigTtlTooLowThrows() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.updateRuntimeConfig(null, null, null, 0L));
+    }
+
+    @Test
+    @DisplayName("updateRuntimeConfig ttlSeconds 超上界 → IllegalArgumentException")
+    void updateRuntimeConfigTtlTooHighThrows() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.updateRuntimeConfig(null, null, null, 604_801L));
+    }
+
+    @Test
+    @DisplayName("updateRuntimeConfig ttlSeconds 边界值 1 和 604800 合法")
+    void updateRuntimeConfigTtlBoundaryValues() {
+        service.updateRuntimeConfig(null, null, null, 1L);
+        assertEquals(Duration.ofSeconds(1), properties.getTtl());
+
+        service.updateRuntimeConfig(null, null, null, 604_800L);
+        assertEquals(Duration.ofSeconds(604_800), properties.getTtl());
+    }
+
+    @Test
+    @DisplayName("updateRuntimeConfig 多字段同时更新")
+    void updateRuntimeConfigMultipleFields() {
+        Map<String, Object> snap = service.updateRuntimeConfig(false, false, false, 60L);
+
+        assertFalse(properties.isEnabled());
+        assertFalse(properties.isSkipStreaming());
+        assertFalse(properties.isOnlyDeterministic());
+        assertEquals(Duration.ofSeconds(60), properties.getTtl());
+        assertEquals(false, snap.get("enabled"));
+        assertEquals(false, snap.get("skipStreaming"));
+        assertEquals(false, snap.get("onlyDeterministic"));
+        assertEquals(60L, snap.get("ttlSeconds"));
     }
 
     private ChatDTO.Request chatRequest(final String content, final Double temperature,
