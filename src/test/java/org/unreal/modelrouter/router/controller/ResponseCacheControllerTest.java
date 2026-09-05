@@ -9,9 +9,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.config.core.ResponseCacheProperties;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 
+import java.time.Duration;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,11 +36,14 @@ class ResponseCacheControllerTest {
     @Mock
     private ResponseCacheService responseCacheService;
 
+    @Mock
+    private ResponseCacheProperties responseCacheProperties;
+
     private ResponseCacheController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new ResponseCacheController(responseCacheService);
+        controller = new ResponseCacheController(responseCacheService, responseCacheProperties);
     }
 
     @Test
@@ -133,5 +138,49 @@ class ResponseCacheControllerTest {
         // 但 invalidate 中 serviceType=null 会清空全部
         verify(responseCacheService).invalidate(null, "gpt-4");
         assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("GET /response → 返回缓存配置与状态")
+    void getCacheStatusReturnsConfigAndSize() {
+        when(responseCacheProperties.isEnabled()).thenReturn(true);
+        when(responseCacheProperties.getTtl()).thenReturn(Duration.ofHours(2));
+        when(responseCacheProperties.getMaxSize()).thenReturn(5000);
+        when(responseCacheProperties.isSkipStreaming()).thenReturn(true);
+        when(responseCacheProperties.isOnlyDeterministic()).thenReturn(false);
+        when(responseCacheService.size()).thenReturn(42L);
+
+        ResponseEntity<RouterResponse<Map<String, Object>>> response =
+                controller.getCacheStatus();
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+        Map<String, Object> data = response.getBody().getData();
+        assertEquals(true, data.get("enabled"));
+        assertEquals(7200L, data.get("ttlSeconds"));
+        assertEquals(5000, data.get("maxSize"));
+        assertEquals(42L, data.get("size"));
+        assertEquals(true, data.get("skipStreaming"));
+        assertEquals(false, data.get("onlyDeterministic"));
+    }
+
+    @Test
+    @DisplayName("GET /response 缓存禁用 → size=0")
+    void getCacheStatusWhenDisabledReturnsZeroSize() {
+        when(responseCacheProperties.isEnabled()).thenReturn(false);
+        when(responseCacheProperties.getTtl()).thenReturn(Duration.ofHours(1));
+        when(responseCacheProperties.getMaxSize()).thenReturn(10000);
+        when(responseCacheProperties.isSkipStreaming()).thenReturn(true);
+        when(responseCacheProperties.isOnlyDeterministic()).thenReturn(true);
+        when(responseCacheService.size()).thenReturn(0L);
+
+        ResponseEntity<RouterResponse<Map<String, Object>>> response =
+                controller.getCacheStatus();
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().isSuccess());
+        Map<String, Object> data = response.getBody().getData();
+        assertEquals(false, data.get("enabled"));
+        assertEquals(0L, data.get("size"));
     }
 }

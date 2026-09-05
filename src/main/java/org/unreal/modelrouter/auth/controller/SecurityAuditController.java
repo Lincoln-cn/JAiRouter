@@ -29,7 +29,12 @@ import java.util.Map;
 /**
  * 安全审计日志查询控制器
  * 提供安全日志的查询和分析接口
+ *
+ * @deprecated since 2.10.2 — 已被 {@code ExtendedSecurityAuditController}
+ * （路径 {@code /api/security/audit/extended/**}）取代，
+ * 前端已全部迁移至扩展审计 API。保留仅为向后兼容，后续版本将移除。
  */
+@Deprecated(since = "2.10.2", forRemoval = true)
 @Slf4j
 @RestController
 @RequestMapping("/api/security/audit")

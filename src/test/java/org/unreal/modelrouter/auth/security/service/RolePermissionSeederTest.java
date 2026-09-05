@@ -69,10 +69,10 @@ class RolePermissionSeederTest {
                     RolePermissionEntity::getRoleName, Collectors.counting()));
 
             assertEquals(Set.of("ADMIN", "OPERATOR", "USER", "VIEWER"), counts.keySet());
-            assertEquals(44L, counts.get("ADMIN"));
-            assertEquals(35L, counts.get("OPERATOR"));
-            assertEquals(24L, counts.get("USER"));
-            assertEquals(23L, counts.get("VIEWER"));
+            assertEquals(45L, counts.get("ADMIN"));
+            assertEquals(36L, counts.get("OPERATOR"));
+            assertEquals(25L, counts.get("USER"));
+            assertEquals(24L, counts.get("VIEWER"));
         }
 
         @Test
@@ -133,11 +133,11 @@ class RolePermissionSeederTest {
         }
 
         @Test
-        @DisplayName("VIEWER 仅含 :read 权限码（23 个），排除 view/write/manage/use")
+        @DisplayName("VIEWER 仅含 :read 权限码（24 个），排除 view/write/manage/use")
         void viewerContainsOnlyReadCodes() {
             List<String> codes = codesOf("VIEWER");
 
-            assertEquals(23, codes.size());
+            assertEquals(24, codes.size());
             assertTrue(codes.stream().allMatch(code -> code.endsWith(":read")));
             assertTrue(codes.contains(PermissionCodes.SECURITY_AUDIT_READ));
             assertFalse(codes.contains(PermissionCodes.CALLHISTORY_VIEW));

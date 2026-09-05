@@ -170,6 +170,18 @@ public class ResponseCacheService {
     }
 
     /**
+     * 当前缓存条目数（enabled=false 时返回 0）.
+     *
+     * @return 缓存条目数
+     */
+    public long size() {
+        if (!isEnabled()) {
+            return 0;
+        }
+        return cacheStore.size();
+    }
+
+    /**
      * 按服务类型与模型失效缓存（enabled=false 时 no-op）.
      *
      * <p>通过键前缀寻址批量删除：{@code rc:{serviceType}:} 或

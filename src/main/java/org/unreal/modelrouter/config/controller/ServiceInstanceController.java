@@ -21,7 +21,11 @@ import java.util.Map;
 /**
  * 服务实例控制器
  * v1.5.2: 使用 JPA 实现，使用 DTO 替代 Map
+ *
+ * @deprecated since 2.10.2 — 前端已迁移至 {@code /api/config/instance/**}，
+ * 本控制器端点不再被前端调用，保留仅为向后兼容。后续版本将移除。
  */
+@Deprecated(since = "2.10.2", forRemoval = true)
 @Slf4j
 @RestController
 @RequestMapping("/api/instances")

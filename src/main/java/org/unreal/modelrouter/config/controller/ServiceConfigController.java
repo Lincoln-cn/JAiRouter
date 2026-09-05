@@ -19,7 +19,11 @@ import java.util.List;
 /**
  * 服务配置控制器
  * v1.5.2: 使用 JPA 实现，使用 DTO 替代 Map
+ *
+ * @deprecated since 2.10.2 — 前端已迁移至 {@code /api/config/type/services/**}，
+ * 本控制器的 CRUD 端点不再被前端调用，保留仅为向后兼容。后续版本将移除。
  */
+@Deprecated(since = "2.10.2", forRemoval = true)
 @Slf4j
 @RestController
 @RequestMapping("/api/services")

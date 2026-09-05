@@ -55,6 +55,10 @@
         </div>
       </template>
 
+      <div class="onboarding-area">
+        <OnboardingSteps :current-step="3" :service-type="(route.query.serviceType as string) || undefined" />
+      </div>
+
       <div class="tabs-wrap">
         <el-tabs v-model="activeServiceType" class="service-tabs" type="card">
           <el-tab-pane v-for="serviceType in serviceTypes" :key="serviceType"
@@ -415,6 +419,7 @@ import { clearCache } from '@/stores/playgroundCache'
 import { Plus, Delete, Close, Key, Timer, WarningFilled, Edit } from '@element-plus/icons-vue'
 import RateLimitConfig from '@/components/RateLimitConfig.vue'
 import CircuitBreakerConfig from '@/components/CircuitBreakerConfig.vue'
+import OnboardingSteps from './adapter/OnboardingSteps.vue'
 
 const serviceTypeMap: Record<string, string> = SERVICE_TYPE_LABELS as Record<string, string>
 
@@ -1101,6 +1106,10 @@ onMounted(() => {
   background: var(--ja-main-bg-gradient);
   min-height: calc(100vh - 80px);
   box-sizing: border-box;
+}
+
+.onboarding-area {
+  padding: 12px 20px 0 20px;
 }
 
 /* 卡片 */

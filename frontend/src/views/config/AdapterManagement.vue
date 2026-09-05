@@ -7,6 +7,10 @@
       </el-button>
     </template>
 
+    <template #stats>
+      <OnboardingSteps :current-step="1" />
+    </template>
+
     <el-table
       :data="adapterList"
       v-loading="loading"
@@ -203,6 +207,7 @@ import {
 } from '@/api/adapter'
 import AdapterWizard from './adapter/AdapterWizard.vue'
 import AdapterTestPanel from './adapter/AdapterTestPanel.vue'
+import OnboardingSteps from './adapter/OnboardingSteps.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 
 const loading = ref(false)

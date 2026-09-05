@@ -16,6 +16,13 @@
             <el-button @click="clearHistory" :loading="clearingHistory">
               清空历史
             </el-button>
+            <el-button
+              type="danger"
+              @click="resetAllCircuitBreakersHandler"
+              :loading="resettingCbs"
+            >
+              清除全部熔断器
+            </el-button>
             <el-dropdown @command="handleExport">
               <el-button type="primary">
                 导出 <el-icon class="el-icon--right"><Download /></el-icon>
@@ -90,6 +97,41 @@
           </div>
         </el-col>
       </el-row>
+
+      <!-- 按实例熔断器状态 & 重置 -->
+      <el-table
+        v-if="circuitBreakerStatuses.length > 0"
+        :data="circuitBreakerStatuses"
+        stripe
+        size="small"
+        style="margin-top: 16px"
+      >
+        <el-table-column prop="instanceId" label="实例 ID" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="serviceType" label="服务类型" width="100">
+          <template #default="{ row }">
+            <el-tag size="small">{{ row.serviceType || '-' }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="state" label="状态" width="120">
+          <template #default="{ row }">
+            <el-tag :type="getStateTagType(row.state)" size="small">
+              {{ row.state }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="100" align="center">
+          <template #default="{ row }">
+            <el-button
+              type="warning"
+              size="small"
+              :icon="RefreshRight"
+              @click="resetSingleCircuitBreaker(row)"
+            >
+              重置
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
     </el-card>
 
     <!-- 实时事件流 -->
@@ -167,9 +209,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Download } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Download, RefreshRight } from '@element-plus/icons-vue'
 import request from '@/utils/request'
+import { resetCircuitBreakerById, clearAllCircuitBreakers } from '@/api/instance'
 
 interface MonitorStatus {
   enabled: boolean
@@ -199,6 +242,7 @@ interface CircuitBreakerStatus {
   state: string
   failureCount: number
   successCount: number
+  baseUrl?: string
 }
 
 interface StateSummary {
@@ -229,6 +273,7 @@ const togglingMonitor = ref(false)
 const updatingConfig = ref(false)
 const clearingHistory = ref(false)
 const loadingEvents = ref(false)
+const resettingCbs = ref(false)
 let ws: WebSocket | null = null
 let reconnectTimer: number | null = null
 
@@ -326,17 +371,40 @@ const loadCircuitBreakerStatus = async () => {
   try {
     const response = await request.get('/config/instance/circuit-breaker/states')
     if (response.data?.success) {
-      const states = response.data.data
-      if (Array.isArray(states)) {
-        circuitBreakerStatuses.value = states.map((item: any) => ({
-          instanceId: item.instanceId || '-',
-          instanceName: item.instanceName || '-',
-          serviceType: item.serviceType || '-',
-          state: item.state || 'CLOSED',
-          failureCount: item.failureCount || 0,
-          successCount: item.successCount || 0
-        }))
+      const raw = response.data.data
+      const parsed: CircuitBreakerStatus[] = []
+      // Backend returns Map<string, string> — handle as object entries
+      if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+        for (const [key, state] of Object.entries(raw as Record<string, string>)) {
+          // Key format: "<instanceId>-<baseUrl>" or plain instanceId
+          const dashIdx = key.indexOf('-')
+          const instanceId = dashIdx > 0 ? key.substring(0, dashIdx) : key
+          const baseUrl = dashIdx > 0 ? key.substring(dashIdx + 1) : undefined
+          parsed.push({
+            instanceId,
+            instanceName: baseUrl || '-',
+            serviceType: '-',
+            state: (state as string) || 'CLOSED',
+            failureCount: 0,
+            successCount: 0,
+            baseUrl
+          })
+        }
+      } else if (Array.isArray(raw)) {
+        // Fallback: if backend ever returns an array
+        raw.forEach((item: any) => {
+          parsed.push({
+            instanceId: item.instanceId || '-',
+            instanceName: item.instanceName || item.baseUrl || '-',
+            serviceType: item.serviceType || '-',
+            state: item.state || 'CLOSED',
+            failureCount: item.failureCount || 0,
+            successCount: item.successCount || 0,
+            baseUrl: item.baseUrl
+          })
+        })
       }
+      circuitBreakerStatuses.value = parsed
     }
   } catch (error) {
     console.error('Failed to load circuit breaker status:', error)
@@ -509,6 +577,43 @@ const handleExport = async (command: string) => {
   } catch (error) {
     ElMessage.error('导出失败')
   }
+}
+
+const resetSingleCircuitBreaker = (row: CircuitBreakerStatus) => {
+  ElMessageBox.confirm(
+    `确定要重置实例 "${row.instanceName || row.instanceId}" 的熔断器状态吗？`,
+    '重置熔断器确认',
+    { confirmButtonText: '确定重置', cancelButtonText: '取消', type: 'warning' }
+  ).then(async () => {
+    try {
+      await resetCircuitBreakerById(row.instanceId)
+      ElMessage.success('熔断器状态已重置')
+      await loadCircuitBreakerStatus()
+      await loadHistory()
+    } catch (error) {
+      ElMessage.error('重置失败')
+    }
+  }).catch(() => { /* cancelled */ })
+}
+
+const resetAllCircuitBreakersHandler = () => {
+  ElMessageBox.confirm(
+    '确定要清除所有实例的熔断器状态吗？此操作将重置所有熔断器到初始状态。',
+    '清除全部确认',
+    { confirmButtonText: '确定清除', cancelButtonText: '取消', type: 'warning' }
+  ).then(async () => {
+    resettingCbs.value = true
+    try {
+      await clearAllCircuitBreakers()
+      ElMessage.success('所有熔断器状态已清除')
+      await loadCircuitBreakerStatus()
+      await loadHistory()
+    } catch (error) {
+      ElMessage.error('清除失败')
+    } finally {
+      resettingCbs.value = false
+    }
+  }).catch(() => { /* cancelled */ })
 }
 
 onMounted(() => {

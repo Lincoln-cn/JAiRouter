@@ -102,7 +102,11 @@ public class TokenUsageController {
 
     /**
      * 获取指定模型的最近使用记录
+     *
+     * @deprecated since 2.10.2 — 前端未引用，功能由 {@link #getTokenUsageStatistics} 覆盖。
+     *             后续版本将移除。
      */
+    @Deprecated(since = "2.10.2", forRemoval = true)
     @GetMapping("/recent/{modelName}")
     @Operation(summary = "获取指定模型的最近使用记录", description = "获取指定模型的最近使用记录列表")
     public ResponseEntity<RouterResponse<List<TokenUsageEntity>>> getRecentUsageByModel(
@@ -119,7 +123,11 @@ public class TokenUsageController {
 
     /**
      * 获取模型使用量排名
+     *
+     * @deprecated since 2.10.2 — 前端未引用，功能由 {@link #getTokenUsageStatistics} 覆盖。
+     *             后续版本将移除。
      */
+    @Deprecated(since = "2.10.2", forRemoval = true)
     @GetMapping("/top/models")
     @Operation(summary = "获取模型使用量排名", description = "获取 Token 使用量最高的模型排名")
     public ResponseEntity<RouterResponse<List<Map<String, Object>>>> getTopModels(
@@ -148,7 +156,11 @@ public class TokenUsageController {
 
     /**
      * 获取服务类型使用量排名
+     *
+     * @deprecated since 2.10.2 — 前端未引用，功能由 {@link #getTokenUsageStatistics} 覆盖。
+     *             后续版本将移除。
      */
+    @Deprecated(since = "2.10.2", forRemoval = true)
     @GetMapping("/top/services")
     @Operation(summary = "获取服务类型使用量排名", description = "获取 Token 使用量最高的服务类型排名")
     public ResponseEntity<RouterResponse<List<Map<String, Object>>>> getTopServiceTypes(
@@ -177,7 +189,11 @@ public class TokenUsageController {
 
     /**
      * 获取仪表盘数据
+     *
+     * @deprecated since 2.10.2 — 前端未引用，功能由 {@link #getTokenUsageStatistics} 覆盖。
+     *             后续版本将移除。
      */
+    @Deprecated(since = "2.10.2", forRemoval = true)
     @GetMapping("/dashboard")
     @Operation(summary = "获取仪表盘数据", description = "获取 Token 使用量仪表盘所需的核心数据")
     public ResponseEntity<RouterResponse<Map<String, Object>>> getDashboardData(
@@ -225,7 +241,10 @@ public class TokenUsageController {
 
     /**
      * 删除过期使用记录
+     *
+     * @deprecated since 2.10.2 — 前端未引用，后续版本将移除。
      */
+    @Deprecated(since = "2.10.2", forRemoval = true)
     @DeleteMapping("/cleanup")
     @Operation(summary = "删除过期使用记录", description = "删除指定时间之前的 Token 使用记录")
     public ResponseEntity<RouterResponse<Map<String, Object>>> deleteOldUsageRecords(

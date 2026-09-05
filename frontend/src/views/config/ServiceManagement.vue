@@ -13,6 +13,10 @@
       </el-button>
     </template>
 
+    <template #stats>
+      <OnboardingSteps :current-step="2" />
+    </template>
+
     <template #toolbar>
       <el-input
         v-model="searchQuery"
@@ -357,6 +361,7 @@ import {
   updateServiceRateLimit
 } from '@/api/service'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import OnboardingSteps from './adapter/OnboardingSteps.vue'
 
 const route = useRoute()
 const router = useRouter()

@@ -6,10 +6,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.config.core.ResponseCacheProperties;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 
@@ -34,9 +36,32 @@ public class ResponseCacheController {
     private static final Logger logger = LoggerFactory.getLogger(ResponseCacheController.class);
 
     private final ResponseCacheService responseCacheService;
+    private final ResponseCacheProperties responseCacheProperties;
 
-    public ResponseCacheController(final ResponseCacheService responseCacheService) {
+    public ResponseCacheController(final ResponseCacheService responseCacheService,
+                                   final ResponseCacheProperties responseCacheProperties) {
         this.responseCacheService = responseCacheService;
+        this.responseCacheProperties = responseCacheProperties;
+    }
+
+    /**
+     * 查询响应缓存管理状态.
+     *
+     * <p>返回当前缓存配置与运行时状态（条目数）。
+     *
+     * @return 缓存状态信息
+     */
+    @GetMapping("/response")
+    @Operation(summary = "查询响应缓存状态", description = "返回缓存配置（enabled/ttl/maxSize/skipStreaming/onlyDeterministic）与当前条目数")
+    public ResponseEntity<RouterResponse<Map<String, Object>>> getCacheStatus() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("enabled", responseCacheProperties.isEnabled());
+        result.put("ttlSeconds", responseCacheProperties.getTtl().getSeconds());
+        result.put("maxSize", responseCacheProperties.getMaxSize());
+        result.put("size", responseCacheService.size());
+        result.put("skipStreaming", responseCacheProperties.isSkipStreaming());
+        result.put("onlyDeterministic", responseCacheProperties.isOnlyDeterministic());
+        return ResponseEntity.ok(RouterResponse.success(result));
     }
 
     /**

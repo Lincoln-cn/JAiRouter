@@ -123,6 +123,7 @@ public class PermissionRuleRegistry {
                 PermissionRule.write("/api/loadbalancer/**", PermissionCodes.LB_CONFIG_WRITE),
 
                 // ===== 响应缓存配置（v2.9.10） =====
+                PermissionRule.get("/api/config/cache/response", PermissionCodes.CONFIG_CACHE_READ),
                 PermissionRule.write("/api/config/cache/**", PermissionCodes.CONFIG_CACHE_WRITE)
         );
     }

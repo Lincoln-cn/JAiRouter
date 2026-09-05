@@ -16,6 +16,77 @@
       </el-col>
     </el-row>
 
+    <!-- 配额告警区 -->
+    <el-card class="quota-alerts-card" shadow="hover" v-loading="quotaAlertsLoading">
+      <template #header>
+        <div class="card-header">
+          <span class="main-title">
+            <el-icon><Warning /></el-icon>
+            配额告警
+            <el-badge
+              v-if="quotaAlerts.length > 0"
+              :value="quotaAlerts.length"
+              type="danger"
+              style="margin-left: 8px"
+            />
+          </span>
+          <el-button
+            icon="Refresh"
+            size="small"
+            @click="fetchQuotaAlerts"
+            :loading="quotaAlertsLoading"
+          >
+            刷新
+          </el-button>
+        </div>
+      </template>
+
+      <template v-if="quotaAlerts.length > 0">
+        <el-table :data="quotaAlerts" stripe size="small" style="width: 100%">
+          <el-table-column prop="keyId" label="密钥 ID" width="180" show-overflow-tooltip>
+            <template #default="{ row }">
+              <el-tag effect="plain" type="info">{{ row.keyId }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="description" label="描述" min-width="140" show-overflow-tooltip>
+            <template #default="{ row }">
+              {{ row.description || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="alertType" label="告警类型" width="120" align="center">
+            <template #default="{ row }">
+              <el-tag :type="getAlertTypeTag(row.alertType)" size="small">
+                {{ formatAlertType(row.alertType) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="请求用量" width="110" align="center">
+            <template #default="{ row }">
+              <span :class="{ 'alert-high': row.dailyRequestUsagePercent >= 90 }">
+                {{ formatPercent(row.dailyRequestUsagePercent) }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column label="Token 用量" width="110" align="center">
+            <template #default="{ row }">
+              <span :class="{ 'alert-high': row.dailyTokenUsagePercent >= 90 }">
+                {{ formatPercent(row.dailyTokenUsagePercent) }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="message" label="告警详情" min-width="200" show-overflow-tooltip />
+        </el-table>
+      </template>
+      <template v-else>
+        <div class="no-alerts">
+          <el-icon style="font-size: 32px; color: var(--ja-success); margin-bottom: 8px;">
+            <CircleCheck />
+          </el-icon>
+          <div class="no-alerts-text">当前无配额告警</div>
+        </div>
+      </template>
+    </el-card>
+
     <!-- 主卡片 -->
     <el-card class="main-card" shadow="hover">
       <template #header>
@@ -386,7 +457,8 @@ import {
   exportApiKeys,
   importApiKeys,
   resetApiKeyQuota,
-  getQuotaOverview
+  getQuotaOverview,
+  getQuotaAlerts
 } from '@/api/apiKey'
 import type {
   ApiKeyVO,
@@ -397,7 +469,8 @@ import type {
   ApiKeyBatchImportRequest,
   ApiKeyBatchImportResult,
   ApiKeyImportItem,
-  QuotaUsageDetail
+  QuotaUsageDetail,
+  QuotaAlertInfo
 } from '@/types'
 
 // 列表数据
@@ -598,6 +671,8 @@ const fetchApiKeys = async () => {
 
     // 获取配额概览数据并合并到列表
     await fetchQuotaOverview()
+    // 获取配额告警列表（独立加载，失败不影响主列表）
+    await fetchQuotaAlerts()
   } catch (error) {
     ElMessage.error('获取API密钥列表失败')
   } finally {
@@ -625,6 +700,59 @@ const fetchQuotaOverview = async () => {
     // 配额数据获取失败不影响列表显示
     console.error('获取配额概览失败:', error)
   }
+}
+
+// ===== 配额告警 =====
+const quotaAlerts = ref<QuotaAlertInfo[]>([])
+const quotaAlertsLoading = ref(false)
+
+/**
+ * 获取配额告警列表
+ * 数据获取失败时优雅降级：静默记录错误，不影响页面其它功能
+ */
+const fetchQuotaAlerts = async () => {
+  quotaAlertsLoading.value = true
+  try {
+    const alerts = await getQuotaAlerts()
+    quotaAlerts.value = Array.isArray(alerts) ? alerts : []
+  } catch (error) {
+    // 告警数据获取失败不影响列表显示
+    console.error('获取配额告警失败:', error)
+    quotaAlerts.value = []
+  } finally {
+    quotaAlertsLoading.value = false
+  }
+}
+
+/**
+ * 格式化告警类型显示
+ */
+const formatAlertType = (alertType: string): string => {
+  switch (alertType) {
+    case 'REQUEST_QUOTA': return '请求配额'
+    case 'TOKEN_QUOTA': return 'Token 配额'
+    case 'GENERAL': return '综合告警'
+    default: return alertType || '未知'
+  }
+}
+
+/**
+ * 获取告警类型标签类型
+ */
+const getAlertTypeTag = (alertType: string): 'danger' | 'warning' | 'info' => {
+  switch (alertType) {
+    case 'REQUEST_QUOTA': return 'danger'
+    case 'TOKEN_QUOTA': return 'warning'
+    default: return 'info'
+  }
+}
+
+/**
+ * 格式化百分比
+ */
+const formatPercent = (val: number): string => {
+  if (val < 0) return '-'
+  return `${val.toFixed(1)}%`
 }
 
 // 创建API密钥弹窗
@@ -945,6 +1073,28 @@ onMounted(() => {
 
 .stats-row {
   flex-shrink: 0;
+}
+
+.quota-alerts-card {
+  flex-shrink: 0;
+}
+
+.no-alerts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0;
+}
+
+.no-alerts-text {
+  font-size: 14px;
+  color: var(--ja-success, #67c23a);
+  font-weight: 500;
+}
+
+.alert-high {
+  color: var(--ja-danger, #f56c6c);
+  font-weight: 600;
 }
 
 .main-card {

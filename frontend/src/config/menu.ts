@@ -12,7 +12,7 @@
  * - AI 试验场(5)：chat / embedding / rerank / audio / image
  *
  * 每项新增可选 `permission` 字段（权限码，格式 `module:resource:action`，
- * 与后端 PermissionCodes 44 权限码体系一致，无 ROLE_ 前缀）。
+ * 与后端 PermissionCodes 45 权限码体系一致，无 ROLE_ 前缀）。
  *
  * 权限映射原则：
  * - 与后端 PermissionRuleRegistry 已登记的 URL 权限规则对齐
@@ -78,7 +78,8 @@ export const menuGroups: MenuGroup[] = [
       { path: '/circuit-breakers/history', title: '熔断器历史', permission: 'cb:history:read' },
       { path: '/circuit-breakers/global-config', title: '熔断器配置', permission: 'config:circuitbreaker:read' },
       { path: '/rate-limiters/monitoring', title: '限流监控', permission: 'rl:monitoring:read' },
-      { path: '/config/pools', title: '资源池', permission: 'config:pools:read' }
+      { path: '/config/pools', title: '资源池', permission: 'config:pools:read' },
+      { path: '/config/cache', title: '响应缓存管理', permission: 'config:cache:write', icon: 'coin' }
     ]
   },
   {
@@ -90,6 +91,7 @@ export const menuGroups: MenuGroup[] = [
       { path: '/call-history/list', title: '调用列表', permission: 'callhistory:view' },
       { path: '/call-history/token-usage', title: 'Token 统计', permission: 'monitoring:tokenusage:read' },
       { path: '/call-history/slow-calls', title: '慢调用', permission: 'monitoring:slowquery:read' },
+      { path: '/monitoring/slow-queries', title: '慢查询分析', permission: 'monitoring:slowquery:read', icon: 'timer' },
       // 后端 /api/exceptions/** 未登记权限规则（回退 authenticated），无需权限控制
       { path: '/exceptions/list', title: '异常事件管理' },
       { path: '/exceptions/statistics', title: '异常统计分析' }

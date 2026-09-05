@@ -99,6 +99,12 @@ const router = createRouter({
           name: 'pool-management',
           component: () => import('../views/config/pools/PoolManagement.vue'),
           meta: { title: '资源池', icon: 'box' }
+        },
+        {
+          path: 'cache',
+          name: 'response-cache-management',
+          component: () => import('../views/config/ResponseCacheManagement.vue'),
+          meta: { title: '响应缓存管理', icon: 'coin', permissions: ['config:cache:write'] }
         }
       ]
     },
@@ -356,6 +362,21 @@ const router = createRouter({
     {
       path: '/rate-limiters/management',
       redirect: '/rate-limiters/monitoring'
+    },
+    // 监控分析
+    {
+      path: '/monitoring',
+      name: 'monitoring',
+      component: () => import('../views/Layout.vue'),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: 'slow-queries',
+          name: 'slow-query-analysis',
+          component: () => import('../views/monitoring/SlowQueryAnalysis.vue'),
+          meta: { title: '慢查询分析', icon: 'timer', permissions: ['monitoring:slowquery:read'] }
+        }
+      ]
     },
     // API 调用历史路由
     {

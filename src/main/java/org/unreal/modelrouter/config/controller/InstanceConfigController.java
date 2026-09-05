@@ -20,7 +20,11 @@ import java.util.List;
 /**
  * 实例配置控制器
  * v1.5.2: 代理到 ServiceInstanceController 的简化版本，使用 DTO
+ *
+ * @deprecated since 2.10.2 — 前端已迁移至 {@code /api/config/instance/**}，
+ * 本控制器端点不再被前端调用，保留仅为向后兼容。后续版本将移除。
  */
+@Deprecated(since = "2.10.2", forRemoval = true)
 @Slf4j
 @RestController
 @RequestMapping("/api/instance-configs")
