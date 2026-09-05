@@ -66,11 +66,6 @@
 /* ========== 暗色模式 Element Plus 覆盖 ========== */
 html.dark {
   --el-color-primary: var(--ja-primary);
-  --el-color-primary-light-3: var(--ja-primary-light-3);
-  --el-color-primary-light-5: var(--ja-primary-light-5);
-  --el-color-primary-light-7: var(--ja-primary-light-7);
-  --el-color-primary-light-8: var(--ja-primary-light-8);
-  --el-color-primary-light-9: var(--ja-primary-light-9);
   --el-color-primary-dark-2: var(--ja-primary-dark-2);
 
   --el-bg-color: var(--ja-bg-page);

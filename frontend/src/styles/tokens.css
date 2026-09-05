@@ -90,11 +90,11 @@
 html.dark {
   /* 品牌色（暗色模式下略微调亮） */
   --ja-primary: #409eff;
-  --ja-primary-light-3: #79bbff;
-  --ja-primary-light-5: #a0cfff;
-  --ja-primary-light-7: #c6e2ff;
-  --ja-primary-light-8: #d9ecff;
-  --ja-primary-light-9: #ecf5ff;
+  --ja-primary-light-3: #3375b9;
+  --ja-primary-light-5: #2a598a;
+  --ja-primary-light-7: #213d5b;
+  --ja-primary-light-8: #1d3043;
+  --ja-primary-light-9: #18222b;
   --ja-primary-dark-2: #337ecc;
 
   /* 侧边栏暗色 */
