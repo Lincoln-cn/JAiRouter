@@ -79,7 +79,7 @@ export const menuGroups: MenuGroup[] = [
       { path: '/circuit-breakers/global-config', title: '熔断器配置', permission: 'config:circuitbreaker:read' },
       { path: '/rate-limiters/monitoring', title: '限流监控', permission: 'rl:monitoring:read' },
       { path: '/config/pools', title: '资源池', permission: 'config:pools:read' },
-      { path: '/config/cache', title: '响应缓存管理', permission: 'config:cache:write', icon: 'coin' }
+      { path: '/config/cache', title: '响应缓存管理', permission: 'config:cache:write' }
     ]
   },
   {
@@ -91,7 +91,7 @@ export const menuGroups: MenuGroup[] = [
       { path: '/call-history/list', title: '调用列表', permission: 'callhistory:view' },
       { path: '/call-history/token-usage', title: 'Token 统计', permission: 'monitoring:tokenusage:read' },
       { path: '/call-history/slow-calls', title: '慢调用', permission: 'monitoring:slowquery:read' },
-      { path: '/monitoring/slow-queries', title: '慢查询分析', permission: 'monitoring:slowquery:read', icon: 'timer' },
+      { path: '/monitoring/slow-queries', title: '慢查询分析', permission: 'monitoring:slowquery:read' },
       // 后端 /api/exceptions/** 未登记权限规则（回退 authenticated），无需权限控制
       { path: '/exceptions/list', title: '异常事件管理' },
       { path: '/exceptions/statistics', title: '异常统计分析' }
