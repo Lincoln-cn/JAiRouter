@@ -273,42 +273,6 @@ jobs:
             
             console.log('创建了新的过期文档提醒 Issue');
           }
-          
-          // 检查是否已存在类似的 Issue
-          const { data: issues } = await github.rest.issues.listForRepo({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            labels: 'documentation,maintenance,automated',
-            state: 'open'
-          });
-          
-          const existingIssue = issues.find(issue => 
-            issue.title.includes('文档维护提醒') && 
-            issue.title.includes('过期文档')
-          );
-          
-          if (existingIssue) {
-            // 更新现有 Issue
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: existingIssue.number,
-              body: `## 📅 ${new Date().toISOString().split('T')[0]} 更新\n\n${issueBody}`
-            });
-            
-            console.log(`更新了现有 Issue #${existingIssue.number}`);
-          } else {
-            // 创建新 Issue
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: issueTitle,
-              body: issueBody,
-              labels: ['documentation', 'maintenance', 'automated']
-            });
-            
-            console.log('创建了新的过期文档提醒 Issue');
-          }
     
     - name: PR 评论 - 版本信息
       if: github.event_name == 'pull_request'

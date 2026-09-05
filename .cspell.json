@@ -37,6 +37,7 @@
     "https",
     "hallmark",
     "i18n",
+    "idempotently",
     "SSE",
     "bucketing",
     "onboarding",

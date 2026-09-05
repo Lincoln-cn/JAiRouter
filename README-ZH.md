@@ -70,12 +70,6 @@
   <em>调用历史分析 — 成功率、延迟与 Token 用量趋势</em>
 </p>
 
-<p align="center">
-  <img src="screenshots/dashboard-dark.png" alt="暗色主题" width="720">
-  <br/>
-  <em>暗色主题 — 完整设计系统支持</em>
-</p>
-
 ## 快速开始
 
 ```bash

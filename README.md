@@ -70,12 +70,6 @@
   <em>Call history analytics — success rate, latency and token usage trends</em>
 </p>
 
-<p align="center">
-  <img src="screenshots/dashboard-dark.png" alt="Dark Theme" width="720">
-  <br/>
-  <em>Dark theme — full design-system support</em>
-</p>
-
 ## Quick Start
 
 ```bash
