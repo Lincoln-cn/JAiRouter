@@ -1,1 +1,0 @@
-var t=function(t){return t.CHAT="chat",t.EMBEDDING="embedding",t.RERANK="rerank",t.TTS="tts",t.STT="stt",t.IMG_GEN="imgGen",t.IMG_EDIT="imgEdit",t}({}),e={chat:"聊天模型",embedding:"嵌入模型",rerank:"重排序模型",tts:"语音合成",stt:"语音识别",imgGen:"图像生成",imgEdit:"图像编辑"},i=(Object.values(t),["chat","embedding","rerank","tts","stt","imgGen","imgEdit"]);export{e as n,i as t};
