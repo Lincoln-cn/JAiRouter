@@ -284,7 +284,7 @@ Performance overhead compared to direct backend access:
 - [x] RBAC permission management (44 permission codes + 4 role templates + data-driven menu & URL authorization)
 - [x] Response cache (deterministic reuse skips the downstream; P1 adds streaming SSE cache + invalidation API + rate-limit short-circuit)
 
-> **Current Release**: v2.9.11 | **LTS Release**: v2.6.11 (maintained until 2028-05)
+> **Current Release**: v2.10.0 | **LTS Release**: v2.6.11 (maintained until 2028-05)
 
 ---
 

@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.9.11
+> **Document Version**: 2.10.0
 > **Last Updated**: 2026-09-05
 > **Git Commit**: -
 > **Author**: Lincoln
@@ -20,6 +20,23 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.10.0] - 2026-09-05 - Feature Release (Web Frontend Foundation: Cleanup + Shared Components + Tokenization + Dark-Mode Fixes)
+
+#### Frontend foundation
+
+- **Dead-code cleanup**: removed 13 unreferenced .vue files (legacy tracing/playground group, 11,726 lines) + `components/common/` 13 components + 16 dead exports in `tracing.ts` (−13.5k lines in total)
+- **Shared components**: new `PageSkeleton.vue` (slot-based page skeleton), `StatCard.vue` (token-driven stat card), `useChartTheme.ts` (light/dark chart themes); piloted on Dashboard / ServiceManagement / RuleManagement
+- **Tokenization**: ~150 hard-coded hex/rgba across ~20 pages → `--ja-*` / `--el-*` semantic tokens (stat cards / tables / chart gradients / dialogs); stat cards unified to StatCard (22 cards across Dashboard/ApiKey/CallHistory/Exception/rate-limiter monitoring)
+- **Dark-mode fixes**: bundled Element Plus `theme-chalk/dark/css-vars.css`; `--el-color-*-light-N` and `--ja-primary-light-N` no longer map to light values in dark (dark-tinted, e.g. light-9 #18222b) — removes near-white blocks and harsh contrast in dark mode
+- **Details**: Layout tweaks (removed logo pulse / sidebar hover shadow; breadcrumb home links straight to `/dashboard/main`); ~50 console debug leftovers removed; circuit-breaker CLOSED/OPEN/HALF_OPEN status cards adapted for dark
+- **Embedded UI refresh**: latest frontend build mirrored into backend static resources `src/main/resources/static`
+
+#### Quality
+
+- Backend **3225 tests all green** (regression); frontend vue-tsc + vite build passed; programmatic white-surface probe passed on light/dark pages
+
+---
 
 ### [2.9.11] - 2026-09-05 - Feature Release (README Refresh + Hallmark Design Audit + Frontend Fixes)
 

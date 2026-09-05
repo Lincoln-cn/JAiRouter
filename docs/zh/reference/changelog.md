@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.9.11
+> **文档版本**: 2.10.0
 > **最后更新**: 2026-09-05
 > **作者**: JAiRouter Team
 
@@ -21,6 +21,23 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [2.10.0] - 2026-09-05 - 功能发布（Web 前端地基：清理 + 统一组件 + 令牌化 + 暗色修复）
+
+#### 前端地基
+
+- **死代码清理**：删除 13 个零引用 .vue（旧 tracing/playground 群，11,726 行）+ `components/common/` 13 组件 + `tracing.ts` 16 个死导出（合计 -13.5k 行）
+- **统一组件**：新建 `PageSkeleton.vue`（slot 化页面骨架）、`StatCard.vue`（统计卡，tone 令牌化）、`useChartTheme.ts`（亮/暗图表主题）；Dashboard / ServiceManagement / RuleManagement 试点接入
+- **令牌化**：约 20 个页面 ~150 处硬编码 hex/rgba → `--ja-*` / `--el-*` 语义令牌（统计卡/表格/图表渐变/对话框）；统计卡统一为 StatCard（Dashboard/ApiKey/CallHistory/Exception/限流监控 22 卡）
+- **暗色模式修复**：引入 Element Plus 官方 `theme-chalk/dark/css-vars.css`；暗色下 `--el-color-*-light-N` 与 `--ja-primary-light-N` 不再映射浅色值（改暗调，如 light-9 #18222b）——消除暗色近白块与刺眼高对比
+- **细节**：Layout 微调（移除 logo 呼吸灯/侧边栏 hover 阴影、面包屑直链 `/dashboard/main`）；清除约 50 处 console 调试残留；熔断器监控 CLOSED/OPEN/HALF_OPEN 状态卡暗色适配
+- **内嵌 UI 刷新**：最新前端构建同步至后端静态资源 `src/main/resources/static`
+
+#### 质量
+
+- 后端全量 **3225 用例全绿**（回归）；前端 vue-tsc + vite build 通过；亮/暗页面程序化白面探测通过
+
+---
 
 ### [2.9.11] - 2026-09-05 - 功能发布（README 更新 + hallmark 设计审计 + 前端修复）
 
