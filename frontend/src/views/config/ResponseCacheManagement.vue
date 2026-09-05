@@ -308,8 +308,9 @@ const resetRuntimeForm = () => {
 
 /** 命中率显示 */
 const hitRatioDisplay = computed(() => {
-  if (!status.value || status.value.hitRatio === null) return '暂无数据'
-  return `${(status.value.hitRatio * 100).toFixed(1)}%`
+  const ratio = status.value?.hitRatio ?? null
+  if (ratio === null) return '暂无数据'
+  return `${(ratio * 100).toFixed(1)}%`
 })
 
 /**
