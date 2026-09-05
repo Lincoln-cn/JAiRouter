@@ -20,7 +20,10 @@
     "success": "Login successful",
     "failed": "Login failed",
     "rememberMe": "Remember me",
-    "forgotPassword": "Forgot password?"
+    "forgotPassword": "Forgot password?",
+    "usernamePlaceholder": "Enter username",
+    "passwordPlaceholder": "Enter password",
+    "submitting": "Signing in…"
   },
   "common": {
     "save": "Save",

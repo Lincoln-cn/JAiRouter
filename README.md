@@ -64,6 +64,18 @@
   <em>Visual routing rules with hit statistics, priority drag-and-drop and templates</em>
 </p>
 
+<p align="center">
+  <img src="screenshots/call-history-dashboard.png" alt="Call History Analytics" width="720">
+  <br/>
+  <em>Call history analytics — success rate, latency and token usage trends</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/dashboard-dark.png" alt="Dark Theme" width="720">
+  <br/>
+  <em>Dark theme — full design-system support</em>
+</p>
+
 ## Quick Start
 
 ```bash
@@ -98,10 +110,11 @@ JAiRouter is a **production-ready AI model gateway** that provides a unified, Op
 - **🎯 Rule Engine** — Visual conditional routing (model name, service type, request header, client IP, weight)
 - **🛡️ Rate Limiting** — Token bucket, leaky bucket, sliding window algorithms
 - **🔥 Circuit Breaker** — Auto failover with configurable thresholds and recovery
-- **🔐 Authentication** — JWT + API Key dual authentication with audit logging
+- **🔐 Authentication** — JWT + API Key dual authentication with audit logging and data-driven RBAC (44 permission codes, 4 role templates)
 - **📊 Observability** — Prometheus metrics, OpenTelemetry tracing, real-time dashboards
+- **⚡ Response Cache** — exact-match reuse of deterministic responses, plus streaming SSE cache and an invalidation API (v2.9.10)
 - **💾 Persistence** — Redis / H2 / File storage for distributed deployment
-- **🎛️ Web Console** — Visual management, version control, configuration rollback
+- **🎛️ Web Console** — Visual management, version control, configuration rollback, dark/light theme
 
 ---
 
@@ -192,7 +205,7 @@ print(response.choices[0].message.content)
 # Via API - Add Ollama instance
 curl -X POST http://localhost:8080/api/config/instance/add/chat \
   -H "Content-Type: application/json" \
-  -H "Jairouter_token: your-jwt-token" \
+  -H "Jairouter_Token: your-jwt-token" \
   -d '{
     "name": "llama3.2",
     "baseUrl": "http://localhost:11434",
@@ -274,10 +287,10 @@ Performance overhead compared to direct backend access:
 - [x] Rule engine with visual conditional routing
 - [x] Service-level dynamic rate limiting + rule-based RATE_LIMIT action
 - [x] Tag routing (instance tags + TARGET_TAGS rule action + request-level header selection)
-- [x] RBAC permission management (43 permission codes + 4 role templates + data-driven menu & URL authorization)
+- [x] RBAC permission management (44 permission codes + 4 role templates + data-driven menu & URL authorization)
 - [x] Response cache (deterministic reuse skips the downstream; P1 adds streaming SSE cache + invalidation API + rate-limit short-circuit)
 
-> **Current Release**: v2.9.10 | **LTS Release**: v2.6.11 (maintained until 2028-05)
+> **Current Release**: v2.9.11 | **LTS Release**: v2.6.11 (maintained until 2028-05)
 
 ---
 

@@ -1,9 +1,9 @@
 # Roadmap
 
 <!-- 版本信息 -->
-> **Doc Version**: 1.4.0
+> **Doc Version**: 1.5.0
 > **Last Updated**: 2026-09-05
-> **Git 标签**: v2.9.10
+> **Git 标签**: v2.9.11
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -24,12 +24,12 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 
 ## Current Version Status
 
-### ✅ v2.9.10 (Current Stable)
+### ✅ v2.9.11 (Current Stable)
 
 **Release Status**: Released (2026-09-05)
-**Git Tag**: v2.9.10
+**Git Tag**: v2.9.11
 
-#### Key Features (v2.9.6 → v2.9.10 evolution)
+#### Key Features (v2.9.6 → v2.9.11 evolution)
 | Version | Date | Highlights |
 |---------|------|------------|
 | v2.9.6 | 2026-08-30 | Routing Intelligence-2: request-level failover (switch-instance retry + per-request blacklist) |
@@ -37,6 +37,7 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 | v2.9.8 | 2026-09-02 | Web menu RBAC management (43 permission codes + 4 role templates + data-driven URL authorization + permission UI + login DB fallback) |
 | v2.9.9 | 2026-09-03 | Routing Intelligence-4: response cache P0 (non-streaming exact-match cache + Caffeine + tenant-isolated keys + metrics) |
 | v2.9.10 | 2026-09-05 | Routing Intelligence-5: response cache P1 (streaming SSE concatenation cache + invalidation API + three-part cache key + service-level rate-limit early short-circuit + 44th permission code) |
+| v2.9.11 | 2026-09-05 | Docs & UI quality: README screenshot/content refresh (light/dark + 44 codes + response cache P1) + hallmark web-console design audit (input for v2.10.x) + frontend fixes (44-code sync etc.) |
 
 #### Statistics
 - Test count: 3,225 (all green)
@@ -44,10 +45,6 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 - Codebase: ~135k LOC
 
 ---
-
-### 🎯 v2.9.11 (Planned)
-
-README screenshot & content refresh (light/dark themes + permission codes 43→44 + response cache P1 features) + hallmark web-console design audit (report only, no code changes) + small frontend fixes (e.g. 44-code sync).
 
 ### 🎯 v2.10.x - Web Console Refactor Series (Planned)
 
@@ -310,7 +307,7 @@ JAiRouter will continue to uphold the open-source spirit and is committed to pro
 2. ✅ Advance v2.8.x configuration management + adapters + plugin system/rule engine/resource pools
 3. ✅ v2.9.x intelligent routing series (failover/tag routing/response cache P0)
 4. ✅ v2.9.10 response cache P1 (streaming cache + invalidation API + rate-limit short-circuit)
-5. 📋 v2.9.11 README/screenshot refresh + hallmark web-console design audit
+5. ✅ v2.9.11 README/screenshot refresh + hallmark web-console design audit + frontend fixes
 6. 📋 v2.10.x Web console refactor series (foundation / config & onboarding / governance & security / bilingual) → v3.0
 7. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.0
 

@@ -12,7 +12,7 @@
  * - AI 试验场(5)：chat / embedding / rerank / audio / image
  *
  * 每项新增可选 `permission` 字段（权限码，格式 `module:resource:action`，
- * 与后端 PermissionCodes 43 权限码体系一致，无 ROLE_ 前缀）。
+ * 与后端 PermissionCodes 44 权限码体系一致，无 ROLE_ 前缀）。
  *
  * 权限映射原则：
  * - 与后端 PermissionRuleRegistry 已登记的 URL 权限规则对齐

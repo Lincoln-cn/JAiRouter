@@ -11,7 +11,7 @@
 
 JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问控制）**体系：以 `module:resource:action` 权限码为唯一权限原子，将「权限码 → 角色 → JWT → URL 权限矩阵 → 菜单」串成一条完整链路：
 
-1. **权限码**：43 个 `module:resource:action` 权限码（`action` ∈ `read` / `write` / `manage`），同时驱动后端 URL 访问判定与前端菜单/路由可见性。
+1. **权限码**：44 个 `module:resource:action` 权限码（`action` ∈ `read` / `write` / `manage`），同时驱动后端 URL 访问判定与前端菜单/路由可见性。
 2. **角色模板**：启动时自动在 `role_permissions` 表种入 4 个内置角色模板（ADMIN / OPERATOR / USER / VIEWER），每个角色对应一组权限码（幂等播种，不覆盖已有数据）。
 3. **JWT 内嵌**：登录成功后，服务端按角色从 `role_permissions` 查询权限码并写入 JWT 的 `permissions` claim（角色仍保留在 `roles` claim；权限码无 `ROLE_` 前缀）。
 4. **URL 权限矩阵**：`PermissionRuleRegistry` 登记 36 条「{HTTP 方法, URL 模式} → 权限码」规则，`PermissionAuthorizationManager` 在网关层对每个 `/api/**` 请求完成权限判定。
@@ -44,7 +44,7 @@ JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问
 | `write` | 写入 | 创建、更新、删除、启停等写操作，通常与同资源的 `read` 成对出现 |
 | `manage` | 管理 | 管理类操作，用于安全/系统等敏感模块（如 `security:*:manage`、`system:*:manage`） |
 
-### 全量权限码清单（43 个）
+### 全量权限码清单（44 个）
 
 | 模块 | 权限码 | 说明 |
 |------|--------|------|
@@ -58,6 +58,7 @@ JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问
 | config | `config:pools:read` / `config:pools:write` | 资源池配置读/写 |
 | config | `config:circuitbreaker:read` / `config:circuitbreaker:write` | 熔断器配置读/写 |
 | config | `config:callhistory:read` / `config:callhistory:write` | 调用历史配置读/写 |
+| config | `config:cache:write` | 响应缓存失效管理（v2.9.10，仅 write） |
 | config | `config:validation:read` / `config:validation:write` | 配置校验读/写 |
 | lb | `lb:monitoring:read` | 负载均衡监控 |
 | lb | `lb:config:write` | 负载均衡策略配置（写） |
@@ -84,7 +85,7 @@ JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问
 
 说明：
 
-- 合计 43 个：config 模块为 10 个资源 × read/write = 20 码，其余模块见上表。
+- 合计 44 个：config 模块为 11 个资源（10 个 read/write 对 = 20 码 + `cache` 仅 write 1 码）= 21 码，其余模块见上表。
 - 上表顺序即全量列表（`GET /api/security/permissions`）与权限管理 UI 权限树的展示顺序。
 - 少数权限码天然不成对（如 `lb:config:write`、`callhistory:view`、`ai:playground:use`），按其资源语义定义，不强行补 read/write。
 - 部分权限码仅供菜单/路由可见性使用（如 `overview:dashboard:read`），对应端点是否受 URL 规则保护见「工作流程」一节；未登记 URL 规则的端点不影响已登录用户访问。
@@ -95,8 +96,8 @@ JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问
 
 | 角色 | 权限码数 | 权限范围 | 说明 |
 |------|:-------:|----------|------|
-| ADMIN | 43 | 全量权限码 | 超集；URL 规则直通，JWT 签发时内嵌全量码 |
-| OPERATOR | 34 | 全部 `:read` + `:write` 码 | 排除 `system:*`、`security:*:manage`、`actuator:*`；保留 `security:audit:read`，不含 `callhistory:view` |
+| ADMIN | 44 | 全量权限码 | 超集；URL 规则直通，JWT 签发时内嵌全量码 |
+| OPERATOR | 35 | 全部 `:read` + `:write` 码 | 排除 `system:*`、`security:*:manage`、`actuator:*`；保留 `security:audit:read`，不含 `callhistory:view` |
 | USER | 24 | 仪表盘 + config 只读 + lb/cb/rl 全量 + monitoring 只读 + tracing dashboard/search + AI 试验场 | 只读为主，唯一写码 `lb:config:write`；不含调用历史查看 |
 | VIEWER | 23 | 全部 `:read` 权限码 | 纯只读角色；不含 `callhistory:view`、`ai:playground:use` 等非 `:read` 码 |
 
@@ -132,10 +133,10 @@ JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问
 
 | 方法 | 路径 | 说明 | 所需权限 |
 |------|------|------|----------|
-| GET | `/api/security/permissions` | 全部权限码（43 个，按清单顺序） | `system:permissions:manage` |
+| GET | `/api/security/permissions` | 全部权限码（44 个，按清单顺序） | `system:permissions:manage` |
 | GET | `/api/security/permissions/roles` | 全部角色及其权限码（角色名 → 权限码列表） | `system:permissions:manage` |
 | PUT | `/api/security/permissions/roles/{roleName}` | 整体替换指定角色的权限码集合 | `system:permissions:manage` |
-| GET | `/api/auth/permissions` | 当前登录用户权限码（ADMIN 返回全量 43 码） | 任意已登录用户 |
+| GET | `/api/auth/permissions` | 当前登录用户权限码（ADMIN 返回全量 44 码） | 任意已登录用户 |
 
 > `/api/security/permissions/**` 由 URL 规则保护（`system:permissions:manage`）；`GET /api/auth/permissions` 未登记 URL 规则，回退 `authenticated`。
 
@@ -156,7 +157,7 @@ curl http://localhost:8080/api/security/permissions \
      -H "Authorization: Bearer {token}"
 ```
 
-响应 `data` 为 43 个权限码数组（顺序与全量清单一致）。
+响应 `data` 为 44 个权限码数组（顺序与全量清单一致）。
 
 ### 3. 查询角色权限
 
@@ -187,14 +188,14 @@ curl http://localhost:8080/api/auth/permissions \
      -H "Authorization: Bearer {token}"
 ```
 
-ADMIN 直接返回全量 43 码；其他角色返回其 JWT `permissions` claim 中的权限码。
+ADMIN 直接返回全量 44 码；其他角色返回其 JWT `permissions` claim 中的权限码。
 
 ## 权限管理 UI
 
 「系统管理 → 权限管理」页面（路由 `/system/permissions`，需 `system:permissions:manage`）提供图形化权限配置：
 
 1. **角色下拉**：选择 ADMIN / OPERATOR / USER / VIEWER，自动加载该角色当前权限码并回显勾选。
-2. **权限码树**：43 个权限码按模块分组的树形勾选（叶子为权限码，父节点自动联动）。
+2. **权限码树**：44 个权限码按模块分组的树形勾选（叶子为权限码，父节点自动联动）。
 3. **保存权限**：点击「保存权限」调用 `PUT /api/security/permissions/roles/{roleName}`，整体替换该角色权限。
 4. **生效说明**：保存成功后提示「权限变更后需重新登录方可生效」——权限内嵌于 JWT；服务端角色权限缓存约 5 分钟过期（仅影响后续登录的令牌签发）。
 

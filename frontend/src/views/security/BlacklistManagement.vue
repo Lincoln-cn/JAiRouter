@@ -357,7 +357,6 @@ import {
 } from '@/api/blacklist'
 import { getTokens, type JwtTokenInfo } from '@/api/jwtToken'
 import { getJwtAccounts, type JwtAccount } from '@/api/account'
-import request from '@/utils/request'
 
 // 状态
 const loading = ref(false)
@@ -468,23 +467,9 @@ async function searchTokens(query: string) {
   }
 }
 
-// 加载可疑IP（从审计日志中提取）
+// 从活跃令牌中提取IP列表
 async function loadSuspiciousIPs() {
   try {
-    // 尝试从审计日志获取IP列表
-    const response = await request.get('/security/audit/extended/suspicious-ips', {
-      params: { limit: 50 }
-    })
-    if (response.data?.success && response.data?.data) {
-      ipOptions.value = response.data.data.map((item: any) => ({
-        ip: item.ipAddress || item.ip,
-        loginCount: item.loginCount || item.count || 1,
-        suspicious: item.suspicious || item.failedAttempts > 3
-      }))
-    }
-  } catch (e) {
-    // 如果API不存在，使用模拟数据
-    console.warn('加载可疑IP API不存在，使用令牌中的IP')
     const result = await getTokens(0, 50, undefined, 'ACTIVE')
     const ipMap = new Map<string, number>()
     result.content?.forEach(t => {
@@ -495,8 +480,10 @@ async function loadSuspiciousIPs() {
     ipOptions.value = Array.from(ipMap.entries()).map(([ip, count]) => ({
       ip,
       loginCount: count,
-      suspicious: count > 5
+      suspicious: false
     }))
+  } catch (e) {
+    console.error('加载IP列表失败', e)
   }
 }
 

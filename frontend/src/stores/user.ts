@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import request from '@/utils/request'
-import type { ApiResponse } from '@/types'
+import type { ApiResponse, RouterResponse } from '@/types'
 
 // 用户信息接口
 export interface UserInfo {
@@ -193,18 +193,25 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  // 获取用户信息
+  // 获取用户信息（POST /auth/jwt/validate，后端仅 @PostMapping）
   const getUserInfo = async () => {
     try {
-      const response = await request.get('/auth/jwt/validate', {
-        headers: {
-          'Jairouter_Token': token.value
-        }
-      })
+      const response = await request.post<RouterResponse<{ valid: boolean; userId: string; message: string }>>(
+        '/auth/jwt/validate',
+        { token: token.value }
+      )
       
       if (response.data.success && response.data.data) {
-        userInfo.value = response.data.data.user
-        return userInfo.value
+        const validation = response.data.data
+        if (validation.valid && validation.userId) {
+          // Validate endpoint returns userId; preserve roles/permissions parsed from JWT
+          if (userInfo.value) {
+            userInfo.value.username = validation.userId
+          } else {
+            userInfo.value = { username: validation.userId }
+          }
+          return userInfo.value
+        }
       }
     } catch (error) {
       console.error('获取用户信息失败:', error)

@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.9.10
+> **文档版本**: 2.9.11
 > **最后更新**: 2026-09-05
 > **作者**: JAiRouter Team
 
@@ -21,6 +21,30 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [2.9.11] - 2026-09-05 - 功能发布（README 更新 + hallmark 设计审计 + 前端修复）
+
+#### README 与文档
+
+- **README / README-ZH 全面更新**：重拍并替换 7 张界面截图（含暗色主题与调用历史仪表盘，此前为 2026-08-26 旧 UI）；Core Features 补充响应缓存 P1、RBAC 44 权限码、暗色/亮色主题；Roadmap 权限码 43→44；示例认证头统一为 `Jairouter_Token`
+- **rbac-permissions zh/en 同步 44 码**：全量清单新增 `config:cache:write`（config 模块 11 资源 = 21 码）；角色计数 ADMIN 44 / OPERATOR 35；接口与权限树描述同步
+
+#### hallmark 设计审计（本地 innerdoc，v2.10.x 重构输入）
+
+- 产出 `innerdoc/02-架构与设计/web-management-hallmark-audit.md`（474 行）：硬编码颜色 395 处、~5,300 行死代码、Dashboard 治理链路缺失、`components/common` 13 组件零引用、4 套 stat-card 重复等；含 v2.10.0（地基）/ v2.10.1（配置接入）/ v2.10.2（治理安全）落地要点
+
+#### 前端修复
+
+- 权限码静态清单同步 44（`permission.ts` / `menu.ts`，权限树可显示 `config:cache:write`）
+- 登录页 i18n 补齐缺失 key（username/passwordPlaceholder、submitting），修复占位符直接渲染原始 key
+- `stores/user.ts` jwt validate GET→POST（对齐后端契约，修复 405 静默失败）
+- `BlacklistManagement` 移除不存在的 `suspicious-ips` 端点调用与 mock 回退（IP 列表改由活跃令牌提供）
+
+#### 质量
+
+- 后端全量 **3225 用例全绿**；前端 `vue-tsc` + `vite` build 通过
+
+---
 
 ### [2.9.10] - 2026-09-05 - 功能发布（路由智能深化-5：响应缓存 P1）
 

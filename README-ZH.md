@@ -64,6 +64,18 @@
   <em>可视化路由规则 — 命中统计、优先级拖拽与场景模板</em>
 </p>
 
+<p align="center">
+  <img src="screenshots/call-history-dashboard.png" alt="调用历史分析" width="720">
+  <br/>
+  <em>调用历史分析 — 成功率、延迟与 Token 用量趋势</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/dashboard-dark.png" alt="暗色主题" width="720">
+  <br/>
+  <em>暗色主题 — 完整设计系统支持</em>
+</p>
+
 ## 快速开始
 
 ```bash
@@ -98,10 +110,11 @@ JAiRouter 是一个 **生产级 AI 模型网关**，提供统一的 OpenAI 兼�
 - **🎯 规则引擎** — 可视化条件路由（模型名、服务类型、请求头、来源 IP、权重）
 - **🛡️ 流量控制** — 令牌桶、漏桶、滑动窗口算法
 - **🔥 熔断降级** — 自动故障转移，可配置阈值和恢复策略
-- **🔐 双认证体系** — JWT + API Key 双重认证，审计日志
+- **🔐 双认证体系** — JWT + API Key 双重认证 + 审计日志与数据驱动 RBAC（44 权限码 + 4 角色模板）
 - **📊 可观测性** — Prometheus 指标、OpenTelemetry 追踪、实时仪表盘
+- **⚡ 响应缓存** — 确定性请求命中直接复用，另支持流式 SSE 缓存与失效 API（v2.9.10）
 - **💾 状态持久化** — Redis / H2 / 文件存储，支持分布式部署
-- **🎛️ Web 控制台** — 可视化管理、版本控制、配置回滚
+- **🎛️ Web 控制台** — 可视化管理、版本控制、配置回滚、亮/暗主题
 
 ---
 
@@ -192,7 +205,7 @@ print(response.choices[0].message.content)
 # 通过 API 添加 Ollama 实例
 curl -X POST http://localhost:8080/api/config/instance/add/chat \
   -H "Content-Type: application/json" \
-  -H "Jairouter_token: your-jwt-token" \
+  -H "Jairouter_Token: your-jwt-token" \
   -d '{
     "name": "llama3.2",
     "baseUrl": "http://localhost:11434",
@@ -274,10 +287,10 @@ LangChain 是应用框架。JAiRouter 是**基础设施层**，位于 LangChain 
 - [x] 规则引擎（可视化条件路由）
 - [x] 服务级动态限流配置 + 规则级限流（RATE_LIMIT 动作）
 - [x] 标签路由（实例标签 + TARGET_TAGS 规则动作 + 请求级 header 圈选）
-- [x] RBAC 权限管理（43 权限码 + 4 角色模板 + 数据驱动菜单与 URL 权限）
+- [x] RBAC 权限管理（44 权限码 + 4 角色模板 + 数据驱动菜单与 URL 权限）
 - [x] 响应缓存（确定性请求命中直接复用响应跳过下游；P1 增流式 SSE 缓存 + 失效 API + 限流提前短路）
 
-> **当前版本**：v2.9.10 | **LTS 版本**：v2.6.11（维护至 2028-05）
+> **当前版本**：v2.9.11 | **LTS 版本**：v2.6.11（维护至 2028-05）
 
 ---
 

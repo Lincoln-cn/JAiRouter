@@ -5,7 +5,7 @@ import type { RouterResponse } from '@/types'
  * 权限管理 API 封装（v2.9.8 RBAC，Phase 4）
  *
  * 对应后端 PermissionManagementController：
- * - GET /api/security/permissions                全部权限码（43 码，ADMIN 超集）
+ * - GET /api/security/permissions                全部权限码（44 码，ADMIN 超集）
  * - GET /api/security/permissions/roles          全部角色及其权限码（角色名 → 权限码列表）
  * - PUT /api/security/permissions/roles/{roleName} 整体替换角色权限码集合
  */
@@ -23,14 +23,14 @@ export type RoleName = (typeof ROLES)[number]
 
 /** 角色说明（UI 展示） */
 export const ROLE_DESCRIPTIONS: Record<RoleName, string> = {
-  ADMIN: '全部权限（43 码，超集）',
+  ADMIN: '全部权限（44 码，超集）',
   OPERATOR: '所有读/写权限，排除系统管理、安全管理 manage 与基础设施',
   USER: '仪表盘 + 配置只读 + 流量治理 + 监控只读 + 追踪检索 + AI 试验场',
   VIEWER: '仅所有 :read 只读权限'
 }
 
 /**
- * 43 权限码按模块展示分组（与后端 PermissionCodes 全量一致）。
+ * 44 权限码按模块展示分组（与后端 PermissionCodes 全量一致）。
  * 仅用于 UI 展示（权限树分组），不代表后端授权语义。
  */
 export const PERMISSION_GROUPS: PermissionGroup[] = [
@@ -47,6 +47,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       'config:pools:read', 'config:pools:write',
       'config:circuitbreaker:read', 'config:circuitbreaker:write',
       'config:callhistory:read', 'config:callhistory:write',
+      'config:cache:write',
       'config:validation:read', 'config:validation:write'
     ]
   },

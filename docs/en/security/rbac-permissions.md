@@ -11,7 +11,7 @@
 
 Since **v2.9.8**, JAiRouter provides a **data-driven RBAC (role-based access control)** system built around the `module:resource:action` permission code as the single permission atom. It chains **permission code → role → JWT → URL permission matrix → menu** into one complete pipeline:
 
-1. **Permission code**: 43 `module:resource:action` codes (`action` ∈ `read` / `write` / `manage`) drive both backend URL access decisions and frontend menu/route visibility.
+1. **Permission code**: 44 `module:resource:action` codes (`action` ∈ `read` / `write` / `manage`) drive both backend URL access decisions and frontend menu/route visibility.
 2. **Role template**: On startup the system seeds 4 built-in role templates (ADMIN / OPERATOR / USER / VIEWER) into the `role_permissions` table — idempotent seeding that never overwrites existing data.
 3. **JWT embedding**: After a successful login, the backend resolves permission codes per role from `role_permissions` and writes them into the JWT `permissions` claim (roles stay in the `roles` claim; permission codes carry no `ROLE_` prefix).
 4. **URL permission matrix**: `PermissionRuleRegistry` holds 36 `{HTTP method, URL pattern} → permission code` rules, and `PermissionAuthorizationManager` evaluates every `/api/**` request at the gateway layer.
@@ -44,7 +44,7 @@ A permission code has the format `module:resource:action`:
 | `write` | Write | Create, update, delete, enable/disable operations; usually paired with the `read` code of the same resource |
 | `manage` | Manage | Management operations for sensitive modules (e.g. `security:*:manage`, `system:*:manage`) |
 
-### Full Permission Code List (43)
+### Full Permission Code List (44)
 
 | Module | Permission code | Description |
 |--------|-----------------|-------------|
@@ -58,6 +58,7 @@ A permission code has the format `module:resource:action`:
 | config | `config:pools:read` / `config:pools:write` | Resource pool configuration read/write |
 | config | `config:circuitbreaker:read` / `config:circuitbreaker:write` | Circuit breaker configuration read/write |
 | config | `config:callhistory:read` / `config:callhistory:write` | Call history configuration read/write |
+| config | `config:cache:write` | Response cache invalidation (v2.9.10, write-only) |
 | config | `config:validation:read` / `config:validation:write` | Configuration validation read/write |
 | lb | `lb:monitoring:read` | Load balancer monitoring |
 | lb | `lb:config:write` | Load balancer strategy configuration (write) |
@@ -84,7 +85,7 @@ A permission code has the format `module:resource:action`:
 
 Notes:
 
-- 43 codes in total: the config module contributes 10 resources × read/write = 20 codes; the remaining modules are shown above.
+- 44 codes in total: the config module contributes 10 resources × read/write = 20 codes plus the write-only `cache` code (1) = 21; the remaining modules are shown above.
 - The order above is the order used by the full list (`GET /api/security/permissions`) and the permission tree in the permission management UI.
 - A few codes are naturally unpaired (e.g. `lb:config:write`, `callhistory:view`, `ai:playground:use`) and follow the semantics of their resource rather than a forced read/write pair.
 - Some codes exist only for menu/route visibility (e.g. `overview:dashboard:read`); whether the corresponding endpoint is protected by a URL rule is described in the "Workflow" section — endpoints without a registered URL rule remain accessible to any authenticated user.
@@ -95,8 +96,8 @@ The system ships 4 built-in role templates (seeded automatically and idempotentl
 
 | Role | Permission count | Permission scope | Notes |
 |------|:----------------:|------------------|-------|
-| ADMIN | 43 | All permission codes | Superset; bypasses URL rules, and full codes are embedded at JWT issuance |
-| OPERATOR | 34 | All `:read` + `:write` codes | Excludes `system:*`, `security:*:manage`, `actuator:*`; keeps `security:audit:read`, no `callhistory:view` |
+| ADMIN | 44 | All permission codes | Superset; bypasses URL rules, and full codes are embedded at JWT issuance |
+| OPERATOR | 35 | All `:read` + `:write` codes | Excludes `system:*`, `security:*:manage`, `actuator:*`; keeps `security:audit:read`, no `callhistory:view` |
 | USER | 24 | Dashboard + config read + full lb/cb/rl + monitoring read + tracing dashboard/search + AI playground | Read-oriented; only write code is `lb:config:write`; no call history view |
 | VIEWER | 23 | All `:read` codes | Pure read-only role; no `callhistory:view`, `ai:playground:use`, or other non-`:read` codes |
 
@@ -156,7 +157,7 @@ curl http://localhost:8080/api/security/permissions \
      -H "Authorization: Bearer {token}"
 ```
 
-The `data` field of the response is an array of the 43 permission codes (same order as the full catalog).
+The `data` field of the response is an array of the 44 permission codes (same order as the full catalog).
 
 ### 3. Get Role Permissions
 
@@ -187,14 +188,14 @@ curl http://localhost:8080/api/auth/permissions \
      -H "Authorization: Bearer {token}"
 ```
 
-ADMIN receives the full 43 codes; other roles receive the codes from their JWT `permissions` claim.
+ADMIN receives the full 44 codes; other roles receive the codes from their JWT `permissions` claim.
 
 ## Permission Management UI
 
 The "System Management → Permission Management" page (route `/system/permissions`, requires `system:permissions:manage`) provides graphical permission configuration:
 
 1. **Role dropdown**: select ADMIN / OPERATOR / USER / VIEWER; the role's current permission codes are loaded and reflected in the tree.
-2. **Permission code tree**: 43 codes grouped by module as a checkable tree (leaf nodes are permission codes; parent nodes toggle automatically).
+2. **Permission code tree**: 44 codes grouped by module as a checkable tree (leaf nodes are permission codes; parent nodes toggle automatically).
 3. **Save permissions**: clicking "Save" calls `PUT /api/security/permissions/roles/{roleName}` to replace the role's permissions wholesale.
 4. **Effect notice**: after saving, the UI reminds you that "permission changes take effect only after re-login" — permissions are embedded in the JWT; the server-side role-permission cache expires in about 5 minutes (it only affects tokens issued by later logins).
 

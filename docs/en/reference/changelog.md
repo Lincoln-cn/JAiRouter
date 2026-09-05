@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.9.10
+> **Document Version**: 2.9.11
 > **Last Updated**: 2026-09-05
 > **Git Commit**: -
 > **Author**: Lincoln
@@ -20,6 +20,30 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.9.11] - 2026-09-05 - Feature Release (README Refresh + Hallmark Design Audit + Frontend Fixes)
+
+#### README & Docs
+
+- **README / README-ZH full refresh**: refreshed 7 UI screenshots (incl. dark theme and call-history dashboard; previously the 2026-08-26 UI); Core Features now cover response cache P1, RBAC 44 codes and dark/light theme; Roadmap permission codes 43→44; sample auth header unified to `Jairouter_Token`
+- **rbac-permissions zh/en synced to 44 codes**: catalog gains `config:cache:write` (config module = 11 resources / 21 codes); role counts ADMIN 44 / OPERATOR 35; API & permission-tree descriptions updated
+
+#### Hallmark design audit (local innerdoc, input for v2.10.x)
+
+- Produced `innerdoc/02-架构与设计/web-management-hallmark-audit.md` (474 lines): 395 hard-coded colors, ~5,300 lines of dead code, missing governance chain on the Dashboard, 13 unused `components/common` components, 4 duplicated stat-card implementations, etc.; includes rollout notes for v2.10.0 (foundation) / v2.10.1 (config & onboarding) / v2.10.2 (governance & security)
+
+#### Frontend fixes
+
+- Static permission catalog synced to 44 (`permission.ts` / `menu.ts`; the permission tree now shows `config:cache:write`)
+- Login i18n: added missing keys (username/passwordPlaceholder, submitting) — placeholders no longer render raw keys
+- `stores/user.ts`: jwt validate changed GET→POST (matches the backend contract, fixing silent 405)
+- `BlacklistManagement`: removed the non-existent `suspicious-ips` endpoint call and its mock fallback (IP list now sourced from active tokens)
+
+#### Quality
+
+- Backend **3225 tests all green**; frontend `vue-tsc` + `vite` build passed
+
+---
 
 ### [2.9.10] - 2026-09-05 - Feature Release (Routing Intelligence-5: Response Cache P1)
 
