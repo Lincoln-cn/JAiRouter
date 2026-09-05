@@ -1,68 +1,61 @@
 <template>
-  <div class="rule-management">
-    <el-card class="rule-card">
-      <template #header>
-        <div class="card-header">
-          <span>路由规则管理</span>
-          <div>
-            <el-button :icon="Refresh" circle @click="refresh" title="刷新列表与命中统计" />
-            <el-button type="success" plain @click="templateDialogVisible = true">
-              <el-icon><MagicStick /></el-icon>&nbsp;从模板创建
-            </el-button>
-            <el-button type="primary" @click="handleCreate">
-              <el-icon><Plus /></el-icon>&nbsp;新增规则
-            </el-button>
-          </div>
-        </div>
-      </template>
+  <PageSkeleton title="路由规则">
+    <template #actions>
+      <el-button :icon="Refresh" circle @click="refresh" title="刷新列表与命中统计" />
+      <el-button type="success" plain @click="templateDialogVisible = true">
+        <el-icon><MagicStick /></el-icon>&nbsp;从模板创建
+      </el-button>
+      <el-button type="primary" @click="handleCreate">
+        <el-icon><Plus /></el-icon>&nbsp;新增规则
+      </el-button>
+    </template>
 
-      <el-table ref="tableRef" :data="rules" v-loading="loading" style="width: 100%" row-key="id">
-        <el-table-column label="排序" width="60" align="center">
-          <template #default="{ row }">
-            <el-icon v-if="row.source !== 'YAML'" class="drag-handle"><Rank /></el-icon>
-          </template>
-        </el-table-column>
-        <el-table-column label="启用" width="70" align="center">
-          <template #default="{ row }">
-            <el-switch :model-value="row.enabled" @change="(val: boolean) => handleToggle(row, val)" />
-          </template>
-        </el-table-column>
-        <el-table-column label="名称" min-width="140">
-          <template #default="{ row }">
-            {{ row.name }}
-            <el-tag v-if="row.source === 'YAML'" size="small" type="info" style="margin-left: 6px">YAML</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="priority" label="优先级" width="80" align="center" />
-        <el-table-column label="命中" width="90" align="center">
-          <template #default="{ row }">
-            <el-badge v-if="statsMap[row.id]" :value="statsMap[row.id]" type="success" />
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="条件" min-width="200">
-          <template #default="{ row }">{{ formatConditions(row.conditions) }}</template>
-        </el-table-column>
-        <el-table-column label="动作" min-width="160">
-          <template #default="{ row }">{{ formatAction(row.action) }}</template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" align="center">
-          <template #default="{ row }">
-            <el-button size="small" @click="handleEdit(row)">编辑</el-button>
-            <el-button size="small" type="danger" @click="handleDelete(row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+    <el-table ref="tableRef" :data="rules" v-loading="loading" style="width: 100%" row-key="id">
+      <el-table-column label="排序" width="60" align="center">
+        <template #default="{ row }">
+          <el-icon v-if="row.source !== 'YAML'" class="drag-handle"><Rank /></el-icon>
+        </template>
+      </el-table-column>
+      <el-table-column label="启用" width="70" align="center">
+        <template #default="{ row }">
+          <el-switch :model-value="row.enabled" @change="(val: boolean) => handleToggle(row, val)" />
+        </template>
+      </el-table-column>
+      <el-table-column label="名称" min-width="140">
+        <template #default="{ row }">
+          {{ row.name }}
+          <el-tag v-if="row.source === 'YAML'" size="small" type="info" style="margin-left: 6px">YAML</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="priority" label="优先级" width="80" align="center" />
+      <el-table-column label="命中" width="90" align="center">
+        <template #default="{ row }">
+          <el-badge v-if="statsMap[row.id]" :value="statsMap[row.id]" type="success" />
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="条件" min-width="200">
+        <template #default="{ row }">{{ formatConditions(row.conditions) }}</template>
+      </el-table-column>
+      <el-table-column label="动作" min-width="160">
+        <template #default="{ row }">{{ formatAction(row.action) }}</template>
+      </el-table-column>
+      <el-table-column label="操作" width="200" align="center">
+        <template #default="{ row }">
+          <el-button size="small" @click="handleEdit(row)">编辑</el-button>
+          <el-button size="small" type="danger" @click="handleDelete(row)">删除</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+  </PageSkeleton>
 
-    <RuleFormDialog
-      v-model="dialogVisible"
-      :rule="editingRule"
-      @saved="fetchRules"
-    />
+  <RuleFormDialog
+    v-model="dialogVisible"
+    :rule="editingRule"
+    @saved="fetchRules"
+  />
 
-    <RuleTemplateDialog v-model="templateDialogVisible" @created="handleTemplateCreated" />
-  </div>
+  <RuleTemplateDialog v-model="templateDialogVisible" @created="handleTemplateCreated" />
 </template>
 
 <script setup lang="ts">
@@ -83,6 +76,7 @@ import {
 } from '@/api/rules'
 import RuleFormDialog from './RuleFormDialog.vue'
 import RuleTemplateDialog from './RuleTemplateDialog.vue'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 
 const rules = ref<RuleDefinition[]>([])
 const loading = ref(false)
@@ -261,17 +255,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.rule-card {
-  margin: 20px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 600;
-}
-
 .drag-handle {
   cursor: grab;
 }
