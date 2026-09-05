@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.9.9
-> **最后更新**: 2026-09-03
+> **文档版本**: 2.9.10
+> **最后更新**: 2026-09-05
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,21 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [2.9.10] - 2026-09-05 - 功能发布（路由智能深化-5：响应缓存 P1）
+
+#### 响应缓存（流式 SSE 拼接缓存 + 失效 API + 服务级限流提前短路）
+
+- **流式 SSE 拼接缓存**：非流式之外，流式 chat 响应同样可缓存——transform 后逐块 + usage + finishReason 存入 `CachedStreamingResponse`，流正常结束写缓存；命中按裸 SSE（TEXT_EVENT_STREAM + [DONE]）回放；需显式配置 `jairouter.response-cache.skip-streaming: false` 开启
+- **失效 API**：`CacheStore` 扩展 delete / deleteByPrefix / clear；新增 `DELETE /api/config/cache/response`（支持按 serviceType / model / 全部失效）；缓存键改三段式 `rc:{service}:{model}:{sha256}` 支持按前缀失效
+- **服务级限流提前短路**：`RateLimitManager.tryAcquireService` + `ServiceRateLimitHolder`（ThreadLocal 恰一次防双扣）——缓存命中在实例选择前短路，429 硬边界语义不变
+- **权限扩展**：第 44 码 `config:cache:write`（PermissionCodes + PermissionRuleRegistry URL 规则 + 角色模板同步）
+
+#### 测试
+
+- 新增 49（流式写/读回放/分桶/invalidate/键三段式/限流短路集成）；**全量 3225 用例全绿**
+
+---
 
 ### [2.9.9] - 2026-09-03 - 功能发布（路由智能深化-4：响应缓存 P0）
 

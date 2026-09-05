@@ -275,9 +275,9 @@ Performance overhead compared to direct backend access:
 - [x] Service-level dynamic rate limiting + rule-based RATE_LIMIT action
 - [x] Tag routing (instance tags + TARGET_TAGS rule action + request-level header selection)
 - [x] RBAC permission management (43 permission codes + 4 role templates + data-driven menu & URL authorization)
-- [x] Response cache (deterministic requests reuse the cached response and skip the downstream)
+- [x] Response cache (deterministic reuse skips the downstream; P1 adds streaming SSE cache + invalidation API + rate-limit short-circuit)
 
-> **Current Release**: v2.9.9 | **LTS Release**: v2.6.11 (maintained until 2028-05)
+> **Current Release**: v2.9.10 | **LTS Release**: v2.6.11 (maintained until 2028-05)
 
 ---
 

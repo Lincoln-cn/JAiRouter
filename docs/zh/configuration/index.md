@@ -402,4 +402,4 @@ model:
 - [存储配置](store-config.md) - 存储和自动合并配置
 - [版本管理](version-management.md) - 配置版本管理：应用 vs 回滚
 - [KV缓存](kv-cache.md) - 前缀缓存友好网关：粘性路由与缓存指标（v2.9.0）
-- [响应缓存](response-cache.md) - 完整响应缓存：确定性请求命中直接复用响应、跳过下游（v2.9.9）
+- [响应缓存](response-cache.md) - 完整响应缓存：确定性请求命中直接复用响应、跳过下游；P1 增流式 SSE 缓存 + 失效 API + 限流短路（v2.9.10）

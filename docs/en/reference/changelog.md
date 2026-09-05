@@ -1,9 +1,9 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.9.9
-> **Last Updated**: 2026-09-03
-> **Git Commit**: 4d3e084d
+> **Document Version**: 2.9.10
+> **Last Updated**: 2026-09-05
+> **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -20,6 +20,21 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.9.10] - 2026-09-05 - Feature Release (Routing Intelligence-5: Response Cache P1)
+
+#### Response cache (streaming SSE concatenation cache + invalidation API + service-level rate-limit early short-circuit)
+
+- **Streaming SSE concatenation cache**: beyond non-streaming, streaming chat responses can be cached too — post-transform chunks + usage + finishReason are stored in `CachedStreamingResponse`, written when the stream completes normally; hits are replayed as bare SSE (TEXT_EVENT_STREAM + [DONE]); opt-in via `jairouter.response-cache.skip-streaming: false`
+- **Invalidation API**: `CacheStore` extended with delete / deleteByPrefix / clear; new `DELETE /api/config/cache/response` (invalidate by serviceType / model / all); cache keys restructured to three parts `rc:{service}:{model}:{sha256}` so prefix invalidation works
+- **Service-level rate-limit early short-circuit**: `RateLimitManager.tryAcquireService` + `ServiceRateLimitHolder` (ThreadLocal once-only, prevents double accounting) — cache hits short-circuit before instance selection; 429 hard-boundary semantics unchanged
+- **Permission extension**: 44th code `config:cache:write` (PermissionCodes + PermissionRuleRegistry URL rules + role templates)
+
+#### Tests
+
+- Added 49 (streaming write / read replay / bucketing / invalidation / three-part key / rate-limit short-circuit integration); **3225 tests all green**
+
+---
 
 ### [2.9.9] - 2026-09-03 - Feature Release (Routing Intelligence-4: Response Cache P0)
 
