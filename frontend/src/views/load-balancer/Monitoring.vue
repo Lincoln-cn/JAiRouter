@@ -390,7 +390,6 @@ const connectWebSocket = () => {
 
   ws.onopen = () => {
     wsConnected.value = true
-    console.log('WebSocket connected to routing monitor')
   }
 
   ws.onmessage = (event) => {
@@ -419,7 +418,6 @@ const connectWebSocket = () => {
 
   ws.onclose = () => {
     wsConnected.value = false
-    console.log('WebSocket disconnected from routing monitor')
     reconnectTimer = window.setTimeout(() => {
       connectWebSocket()
     }, 3000)
@@ -557,7 +555,7 @@ onUnmounted(() => {
 <style scoped>
 .load-balancer-monitoring {
   padding: 24px;
-  background: linear-gradient(180deg, #f7f9fc 0%, #ffffff 100%);
+  background: var(--ja-main-bg-gradient);
   min-height: calc(100vh - 80px);
 }
 
@@ -574,7 +572,7 @@ onUnmounted(() => {
 .card-title {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .control-buttons {
@@ -590,7 +588,7 @@ onUnmounted(() => {
 
 .config-item label {
   font-size: 14px;
-  color: #606266;
+  color: var(--ja-text-regular);
   font-weight: 500;
 }
 
@@ -603,7 +601,7 @@ onUnmounted(() => {
 
 .sampled-count {
   font-size: 14px;
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 
 .stats-card {
@@ -628,7 +626,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   padding: 4px 0;
-  border-bottom: 1px dashed #ebeef5;
+  border-bottom: 1px dashed var(--ja-border-light);
 }
 
 .stat-row:last-child {
@@ -637,17 +635,17 @@ onUnmounted(() => {
 
 .stat-label {
   font-size: 13px;
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 
 .stat-value {
   font-size: 13px;
   font-weight: 500;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .instance-distribution {
-  background: #f5f7fa;
+  background: var(--ja-primary-light-9, #f5f7fa);
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 12px;
@@ -657,14 +655,14 @@ onUnmounted(() => {
 
 .distribution-title {
   font-size: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
   margin-bottom: 8px;
 }
 
 .model-group {
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px dashed #e4e7ed;
+  border-bottom: 1px dashed var(--ja-border-dark);
 }
 
 .model-group:last-child {
@@ -679,7 +677,7 @@ onUnmounted(() => {
   gap: 4px;
   font-size: 12px;
   font-weight: 500;
-  color: #409eff;
+  color: var(--ja-primary);
   margin-bottom: 6px;
 }
 
@@ -700,7 +698,7 @@ onUnmounted(() => {
 
 .instance-name {
   font-size: 12px;
-  color: #606266;
+  color: var(--ja-text-regular);
   width: 80px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -713,7 +711,7 @@ onUnmounted(() => {
 
 .instance-count {
   font-size: 12px;
-  color: #409eff;
+  color: var(--ja-primary);
   width: 40px;
   text-align: right;
 }
@@ -739,11 +737,11 @@ onUnmounted(() => {
 .client-id {
   font-family: monospace;
   font-size: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 
 .slow-select {
-  color: #e6a23c;
+  color: var(--ja-warning);
   font-weight: 500;
 }
 </style>

@@ -302,6 +302,9 @@ import {
   type SecurityReport
 } from '@/api/auditLog'
 import { addToBlacklist } from '@/api/blacklist'
+import { useChartTheme } from '@/composables/useChartTheme'
+
+const { getChartTheme } = useChartTheme()
 
 // 搜索表单
 const searchForm = reactive({
@@ -579,6 +582,7 @@ const updateEventTypeChart = (data: Record<string, number>) => {
   }
   
   const chartData = Object.entries(data || {}).map(([name, value]) => ({ name, value }))
+  const theme = getChartTheme()
   
   eventTypeChart.setOption({
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
@@ -587,7 +591,7 @@ const updateEventTypeChart = (data: Record<string, number>) => {
       type: 'pie',
       radius: ['40%', '70%'],
       avoidLabelOverlap: false,
-      itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
+      itemStyle: { borderRadius: 10, borderColor: 'var(--ja-bg-card, #fff)', borderWidth: 2 },
       label: { show: false },
       emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
       labelLine: { show: false },
@@ -606,6 +610,7 @@ const updateTrendChart = (data: Record<string, number>) => {
   
   const categories = Object.keys(data || {})
   const values = Object.values(data || {})
+  const theme = getChartTheme()
   
   trendChart.setOption({
     tooltip: { trigger: 'axis' },
@@ -614,7 +619,7 @@ const updateTrendChart = (data: Record<string, number>) => {
     series: [{
       data: values,
       type: 'bar',
-      itemStyle: { color: '#409EFF', borderRadius: [4, 4, 0, 0] }
+      itemStyle: { color: theme.primary, borderRadius: [4, 4, 0, 0] }
     }]
   })
 }
@@ -723,22 +728,22 @@ onUnmounted(() => {
 }
 
 .jwt-card .stats-icon {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--ja-login-gradient-start) 0%, var(--ja-login-gradient-end) 100%);
   color: white;
 }
 
 .api-card .stats-icon {
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  background: linear-gradient(135deg, var(--ja-success) 0%, var(--ja-primary) 100%);
   color: white;
 }
 
 .fail-card .stats-icon {
-  background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+  background: linear-gradient(135deg, var(--ja-danger) 0%, var(--ja-warning) 100%);
   color: white;
 }
 
 .alert-card .stats-icon {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: linear-gradient(135deg, var(--ja-primary-light-3) 0%, var(--ja-danger) 100%);
   color: white;
 }
 
@@ -749,12 +754,12 @@ onUnmounted(() => {
 .stats-value {
   font-size: 28px;
   font-weight: bold;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .stats-label {
   font-size: 14px;
-  color: #909399;
+  color: var(--ja-text-secondary);
   margin-top: 4px;
 }
 
@@ -776,7 +781,7 @@ onUnmounted(() => {
 .search-form {
   margin-bottom: 20px;
   padding: 20px;
-  background-color: #f5f7fa;
+  background-color: var(--ja-primary-light-9, #f5f7fa);
   border-radius: 4px;
 }
 
@@ -788,7 +793,7 @@ onUnmounted(() => {
 .metadata-pre {
   max-height: 200px;
   overflow-y: auto;
-  background-color: #f5f7fa;
+  background-color: var(--ja-primary-light-9, #f5f7fa);
   padding: 10px;
   border-radius: 4px;
   font-size: 12px;
@@ -796,10 +801,10 @@ onUnmounted(() => {
 }
 
 :deep(.warning-row) {
-  background-color: #fdf6ec;
+  background-color: var(--el-color-warning-light-9, #fdf6ec);
 }
 
 :deep(.error-row) {
-  background-color: #fef0f0;
+  background-color: var(--el-color-danger-light-9, #fef0f0);
 }
 </style>

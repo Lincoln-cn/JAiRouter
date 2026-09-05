@@ -560,7 +560,6 @@ const handleBatchRevoke = async () => {
 // 组件挂载时获取数据
 onMounted(async () => {
   await loadTokens()
-  console.log('JWT令牌管理页面已加载')
 })
 </script>
 
@@ -578,7 +577,7 @@ onMounted(async () => {
 .filter-section {
   margin-bottom: 20px;
   padding: 16px;
-  background-color: #f5f7fa;
+  background-color: var(--ja-primary-light-9, #f5f7fa);
   border-radius: 4px;
 }
 

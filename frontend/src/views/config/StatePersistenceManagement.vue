@@ -539,7 +539,7 @@ onMounted(() => {
 <style scoped>
 .state-persistence-management {
   padding: 24px;
-  background: linear-gradient(180deg, #f7f9fc 0%, #ffffff 100%);
+  background: var(--ja-main-bg-gradient);
   min-height: calc(100vh - 80px);
 }
 
@@ -561,20 +561,20 @@ onMounted(() => {
 .card-title {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .tier-box {
   padding: 20px;
   border-radius: 12px;
-  background: #f5f7fa;
+  background: var(--ja-primary-light-9, #f5f7fa);
   border: 2px solid transparent;
   transition: all 0.3s ease;
 }
 
 .tier-box.tier-active {
-  border-color: #409eff;
-  background: linear-gradient(135deg, #f0f7ff 0%, #e6f4ff 100%);
+  border-color: var(--ja-primary);
+  background: linear-gradient(135deg, var(--ja-primary-light-9, #f0f7ff) 0%, var(--ja-primary-light-8, #e6f4ff) 100%);
 }
 
 .tier-header {
@@ -589,17 +589,17 @@ onMounted(() => {
 }
 
 .tier-icon.healthy {
-  color: #67c23a;
+  color: var(--ja-success);
 }
 
 .tier-icon.unhealthy {
-  color: #f56c6c;
+  color: var(--ja-danger);
 }
 
 .tier-name {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .tier-status {
@@ -614,12 +614,12 @@ onMounted(() => {
 
 .tier-priority {
   font-size: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 
 .tier-message {
   font-size: 12px;
-  color: #606266;
+  color: var(--ja-text-regular);
 }
 
 .current-tier-info {
@@ -631,20 +631,20 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   padding: 20px;
-  background: #f5f7fa;
+  background: var(--ja-primary-light-9, #f5f7fa);
   border-radius: 8px;
 }
 
 .stat-value {
   font-size: 28px;
   font-weight: 600;
-  color: #409eff;
+  color: var(--ja-primary);
   margin-bottom: 8px;
 }
 
 .stat-label {
   font-size: 14px;
-  color: #606266;
+  color: var(--ja-text-regular);
 }
 
 .flex-table {

@@ -187,7 +187,7 @@
                 <template #default="{ row }">
                   <div>
                     <div style="font-weight: 500;">{{ row.operationName }}</div>
-                    <div style="font-size: 12px; color: #909399;" v-if="row.attributes && row.attributes['service.type']">
+                    <div style="font-size: 12px; color: var(--ja-text-secondary);" v-if="row.attributes && row.attributes['service.type']">
                       服务类型: {{ row.attributes['service.type'] }}
                     </div>
                   </div>
@@ -255,6 +255,9 @@ import {
   getServiceStats,
   exportTraces
 } from '@/api/tracing'
+import { useChartTheme } from '@/composables/useChartTheme'
+
+const { getChartTheme } = useChartTheme()
 
 // 搜索表单
 const searchForm = ref({
@@ -364,7 +367,6 @@ const handleSearch = async (resetPage = true) => {
     }
 
     const response = await searchTraces(params)
-    console.log('搜索结果:', response)
 
     // 处理响应数据
     const data = response.data?.data || response.data || response
@@ -413,7 +415,6 @@ const handleGetRecent = async () => {
   
   try {
     const response = await getRecentTraces(pageSize.value * 5) // 获取更多数据用于分页
-    console.log('最近追踪:', response)
 
     const data = response.data?.data || response.data || response
     if (Array.isArray(data)) {
@@ -449,7 +450,6 @@ const handleViewTrace = async (trace: any) => {
 
   try {
     const response = await getTraceChain(trace.traceId)
-    console.log('追踪链路:', response)
 
     const data = response.data?.data || response.data || response
     if (data) {
@@ -493,7 +493,6 @@ const handleExport = async () => {
     }
 
     const response = await exportTraces(exportRequest)
-    console.log('导出结果:', response)
 
     ElMessage.success('导出请求已提交')
   } catch (error) {
@@ -552,6 +551,8 @@ const getTraceChainChartOption = () => {
   const baseTime = new Date(spans[0].startTime).getTime()
   
   // 创建甘特图数据
+  const theme = getChartTheme()
+
   const ganttData = spans.map((span: any, index: number) => {
     const startTime = new Date(span.startTime).getTime()
     const endTime = new Date(span.endTime).getTime()
@@ -571,8 +572,8 @@ const getTraceChainChartOption = () => {
         duration
       ],
       itemStyle: {
-        color: span.error ? '#f56c6c' : (span.operationName.includes('process') ? '#67c23a' : '#409eff'),
-        borderColor: '#fff',
+        color: span.error ? theme.danger : (span.operationName.includes('process') ? theme.success : theme.primary),
+        borderColor: 'var(--ja-bg-page, #fff)',
         borderWidth: 1
       }
     }
@@ -633,7 +634,7 @@ const getTraceChainChartOption = () => {
       splitLine: {
         show: true,
         lineStyle: {
-          color: '#e0e6ed',
+          color: 'var(--ja-border-lighter, #e0e6ed)',
           type: 'dashed'
         }
       }
@@ -684,7 +685,7 @@ const getTraceChainChartOption = () => {
         markLine: {
           silent: true,
           lineStyle: {
-            color: '#ff4757',
+            color: 'var(--ja-danger, #ff4757)',
             type: 'dashed',
             width: 1
           },
@@ -842,8 +843,6 @@ const showSpanDetails = (span: any) => {
     message: `Span详情已复制到控制台`,
     type: 'info'
   })
-  
-  console.log('Span详情:', details)
 }
 
 // 组件挂载时初始化
@@ -906,7 +905,7 @@ onMounted(() => {
 }
 
 .high-latency {
-  color: #e6a23c;
+  color: var(--ja-warning);
   font-weight: bold;
 }
 
@@ -939,7 +938,7 @@ onMounted(() => {
 }
 
 .trace-row:hover {
-  background-color: #f5f7fa;
+  background-color: var(--ja-primary-light-9, #f5f7fa);
 }
 
 :deep(.el-descriptions__label) {
@@ -948,7 +947,7 @@ onMounted(() => {
 
 :deep(.el-card__header) {
   padding: 15px 20px;
-  border-bottom: 1px solid #ebeef5;
+  border-bottom: 1px solid var(--ja-border-light);
 }
 
 .search-form :deep(.el-form-item) {
@@ -957,31 +956,31 @@ onMounted(() => {
 
 /* 多 Span 追踪的特殊样式 */
 .multi-span-indicator {
-  background: linear-gradient(45deg, #67c23a, #409eff);
+  background: linear-gradient(45deg, var(--ja-success), var(--ja-primary));
   color: white;
   font-weight: bold;
 }
 
 .single-span-indicator {
-  background: #909399;
+  background: var(--ja-info);
   color: white;
 }
 
 /* 追踪链路图表容器 */
 .trace-chain-chart {
-  border: 1px solid #ebeef5;
+  border: 1px solid var(--ja-border-light);
   border-radius: 4px;
-  background: #fafafa;
+  background: var(--ja-bg-page);
 }
 
 /* Span 详情表格样式 */
 :deep(.el-table .el-table__row:hover > td) {
-  background-color: #f0f9ff !important;
+  background-color: var(--ja-primary-light-9, #f0f9ff) !important;
 }
 
 /* 高延迟警告样式 */
 .high-latency {
-  color: #e6a23c;
+  color: var(--ja-warning);
   font-weight: bold;
   animation: pulse 2s infinite;
 }
@@ -994,24 +993,24 @@ onMounted(() => {
 
 /* 状态标签样式优化 */
 :deep(.el-tag--success) {
-  background-color: #f0f9ff;
-  border-color: #409eff;
-  color: #409eff;
+  background-color: var(--ja-primary-light-9, #f0f9ff);
+  border-color: var(--ja-primary);
+  color: var(--ja-primary);
 }
 
 :deep(.el-tag--danger) {
-  background-color: #fef0f0;
-  border-color: #f56c6c;
-  color: #f56c6c;
+  background-color: var(--el-color-danger-light-9, #fef0f0);
+  border-color: var(--ja-danger);
+  color: var(--ja-danger);
 }
 
 /* 追踪概要信息样式 */
 .trace-summary :deep(.el-descriptions__label) {
   font-weight: 600;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .trace-summary :deep(.el-descriptions__content) {
-  color: #606266;
+  color: var(--ja-text-regular);
 }
 </style>

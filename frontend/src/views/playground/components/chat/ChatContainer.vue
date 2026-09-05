@@ -98,7 +98,7 @@
       >
         <el-icon
           :size="64"
-          color="#909399"
+          :color="'var(--ja-text-secondary)'"
         >
           <ChatDotRound />
         </el-icon>
@@ -477,7 +477,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   height: calc(100vh - 100px);
-  background-color: #f5f5f5;
+  background-color: var(--ja-main-bg);
   border-radius: 4px;
 }
 
@@ -486,8 +486,8 @@ defineExpose({
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background-color: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  background-color: var(--ja-bg-card);
+  border-bottom: 1px solid var(--ja-border-dark);
   border-radius: 4px 4px 0 0;
 }
 
@@ -509,8 +509,8 @@ defineExpose({
 
 .config-panel {
   padding: 12px 16px;
-  background-color: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  background-color: var(--ja-bg-card);
+  border-bottom: 1px solid var(--ja-border-dark);
 }
 
 .slide-down-enter-active,
@@ -543,14 +543,14 @@ defineExpose({
 .empty-title {
   font-size: 18px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ja-text-primary);
   margin-top: 16px;
   margin-bottom: 8px;
 }
 
 .empty-subtitle {
   font-size: 14px;
-  color: #909399;
+  color: var(--ja-text-secondary);
   margin-bottom: 24px;
 }
 
@@ -563,8 +563,8 @@ defineExpose({
 
 .input-area {
   padding: 12px 16px;
-  background-color: #fff;
-  border-top: 1px solid #e4e7ed;
+  background-color: var(--ja-bg-card);
+  border-top: 1px solid var(--ja-border-dark);
   border-radius: 0 0 4px 4px;
 }
 
@@ -574,11 +574,11 @@ defineExpose({
   align-items: center;
   margin-top: 8px;
   font-size: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 
 .tip-warning {
-  color: #f56c6c;
+  color: var(--ja-danger);
 }
 
 /* 健康状态指示器样式 */
@@ -593,15 +593,15 @@ defineExpose({
 }
 
 .health-healthy {
-  color: #67c23a;
+  color: var(--ja-success);
 }
 
 .health-unhealthy {
-  color: #f56c6c;
+  color: var(--ja-danger);
 }
 
 .health-unknown {
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 
 .instance-name {
@@ -610,10 +610,10 @@ defineExpose({
 
 .health-status-text {
   font-size: 12px;
-  color: #f56c6c;
+  color: var(--ja-danger);
 }
 
 .health-status-text.unknown {
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 </style>

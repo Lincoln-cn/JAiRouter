@@ -370,7 +370,6 @@ const connectWebSocket = () => {
 
   ws.onopen = () => {
     wsConnected.value = true
-    console.log('WebSocket connected to circuit breaker monitor')
   }
 
   ws.onmessage = (event) => {
@@ -408,7 +407,6 @@ const connectWebSocket = () => {
 
   ws.onclose = () => {
     wsConnected.value = false
-    console.log('WebSocket disconnected from circuit breaker monitor')
     reconnectTimer = window.setTimeout(() => {
       connectWebSocket()
     }, 3000)
@@ -528,7 +526,7 @@ onUnmounted(() => {
 <style scoped>
 .circuit-breaker-monitoring {
   padding: 24px;
-  background: linear-gradient(180deg, #f7f9fc 0%, #ffffff 100%);
+  background: var(--ja-main-bg-gradient);
   min-height: calc(100vh - 80px);
 }
 
@@ -545,7 +543,7 @@ onUnmounted(() => {
 .card-title {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .control-buttons {
@@ -561,7 +559,7 @@ onUnmounted(() => {
 
 .config-item label {
   font-size: 14px;
-  color: #606266;
+  color: var(--ja-text-regular);
   font-weight: 500;
 }
 
@@ -574,7 +572,7 @@ onUnmounted(() => {
 
 .sampled-count {
   font-size: 14px;
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 
 .status-overview {
@@ -585,30 +583,30 @@ onUnmounted(() => {
   text-align: center;
   padding: 20px;
   border-radius: 8px;
-  background: #f5f7fa;
+  background: var(--ja-primary-light-9, #f5f7fa);
 }
 
 .summary-card.summary-closed {
-  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  background: linear-gradient(135deg, var(--ja-success-light-9, #e8f5e9) 0%, var(--ja-success-light-7, #c8e6c9) 100%);
 }
 
 .summary-card.summary-open {
-  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+  background: linear-gradient(135deg, var(--el-color-danger-light-9, #ffebee) 0%, var(--el-color-danger-light-7, #ffcdd2) 100%);
 }
 
 .summary-card.summary-half_open {
-  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  background: linear-gradient(135deg, var(--el-color-warning-light-9, #fff3e0) 0%, var(--el-color-warning-light-7, #ffe0b2) 100%);
 }
 
 .summary-count {
   font-size: 32px;
   font-weight: bold;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .summary-label {
   font-size: 14px;
-  color: #606266;
+  color: var(--ja-text-regular);
   margin-top: 8px;
 }
 

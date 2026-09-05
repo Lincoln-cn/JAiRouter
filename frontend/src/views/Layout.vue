@@ -183,7 +183,7 @@ const breadcrumbs = computed(() => {
   const breadcrumbArray = []
 
   // 添加首页面包屑
-  breadcrumbArray.push({ path: '/', title: '首页' })
+  breadcrumbArray.push({ path: '/dashboard/main', title: '首页' })
 
   // 特殊处理仪表板页面
   if (route.path === '/dashboard/main') {
@@ -224,8 +224,6 @@ const breadcrumbs = computed(() => {
 
 // 处理菜单选择
 const handleMenuSelect = async (index: string) => {
-  console.log('菜单选择:', index)
-
   // 防止快速连续点击
   if (isNavigating.value) {
     return
@@ -261,8 +259,7 @@ const handleUserCommand = async (command: string) => {
     await userStore.logout()
     router.push({ name: 'login' })
   } else if (command === 'profile') {
-    // 跳转到个人资料页面
-    console.log('跳转到个人资料页面')
+    // 跳转到个人资料页面（待实现）
   }
 }
 </script>
@@ -287,14 +284,9 @@ const handleUserCommand = async (command: string) => {
   box-shadow:
     inset 0 0 20px rgba(0, 0, 0, 0.3),
     2px 0 10px rgba(0, 0, 0, 0.2);
-  transition: box-shadow 0.3s ease;
 }
 
-.layout-aside:hover {
-  box-shadow:
-    inset 0 0 20px rgba(0, 0, 0, 0.3),
-    4px 0 20px rgba(0, 0, 0, 0.3);
-}
+/* hover 保持静态，无 box-shadow 跳动 */
 
 /* 菜单区 = 独立滚动容器（logo 固定不动，仅此项区域滚动）；
    背景透明，露出 .layout-aside 的固定渐变，滚动时无缝 */
@@ -330,21 +322,6 @@ const handleUserCommand = async (command: string) => {
   align-items: center;
   justify-content: center;
   box-shadow: 0 0 10px rgba(64, 158, 255, 0.3);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 10px rgba(64, 158, 255, 0.3);
-  }
-
-  50% {
-    box-shadow: 0 0 20px rgba(64, 158, 255, 0.6);
-  }
-
-  100% {
-    box-shadow: 0 0 10px rgba(64, 158, 255, 0.3);
-  }
 }
 
 .logo-text {

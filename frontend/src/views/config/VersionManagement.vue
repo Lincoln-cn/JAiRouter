@@ -215,7 +215,6 @@ const fetchVersions = async () => {
     loading.value = true
     // 使用优化接口一次性获取所有版本信息
     const response = await getAllVersionInfo()
-    console.log('Full API Response:', JSON.stringify(response, null, 2)) // 完整响应调试日志
     
     // 检查响应结构
     if (!response || !response.data) {
@@ -223,9 +222,6 @@ const fetchVersions = async () => {
       ElMessage.error('API响应格式错误')
       return
     }
-    
-    console.log('Response data:', response.data) // 添加响应数据调试日志
-    console.log('Response data type:', typeof response.data) // 添加数据类型调试日志
     
     // 处理可能的双重序列化问题
     let versionInfos: any[] = []
@@ -243,10 +239,6 @@ const fetchVersions = async () => {
       // 正常情况，data已经是对象
       versionInfos = response.data.data || []
     }
-    
-    console.log('Raw Version Infos:', versionInfos) // 添加调试日志
-    console.log('Version Infos type:', typeof versionInfos) // 添加数据类型调试日志
-    console.log('Is array:', Array.isArray(versionInfos)) // 检查是否为数组
 
     // 转换为前端需要的格式
     const versionDetails: Version[] = versionInfos.map((info: any) => ({
@@ -260,8 +252,6 @@ const fetchVersions = async () => {
 
     // 按版本号降序排列
     versions.value = versionDetails.sort((a, b) => b.version - a.version)
-    console.log('Processed Versions:', versions.value) // 添加调试日志
-    console.log('Versions count:', versions.value.length) // 添加版本数量调试日志
   } catch (error) {
     console.error('获取版本列表失败:', error)
     ElMessage.error(`获取版本列表失败: ${  (error as Error).message}`)
@@ -291,7 +281,7 @@ const handleApply = async (row: Version) => {
       <p>版本号：${row.version}</p>
       <p>操作类型：${getOperationDisplayName(row.operation)}</p>
       <p>操作详情：${row.operationDetail || '无'}</p>
-      <p style="color: #e6a23c; margin-top: 10px;">
+      <p style="color: var(--ja-warning); margin-top: 10px;">
         <i class="el-icon-warning"></i>
         应用此版本将替换当前配置，请确认操作无误。
       </p>
@@ -395,8 +385,8 @@ const handleApply = async (row: Version) => {
       <div>
         <p><strong>错误详情：</strong></p>
         <p>${errorMessage}</p>
-        ${errorDetails ? `<p><strong>技术详情：</strong></p><p style="color: #909399; font-size: 12px;">${errorDetails}</p>` : ''}
-        <p style="margin-top: 15px; color: #606266;">
+        ${errorDetails ? `<p><strong>技术详情：</strong></p><p style="color: var(--ja-text-secondary); font-size: 12px;">${errorDetails}</p>` : ''}
+        <p style="margin-top: 15px; color: var(--ja-text-regular);">
           <strong>建议操作：</strong><br/>
           1. 检查版本是否存在<br/>
           2. 确认网络连接正常<br/>
@@ -424,9 +414,9 @@ const handleDelete = async (row: Version) => {
     ElMessageBox.alert(
       `
       <div>
-        <p><i class="el-icon-warning" style="color: #e6a23c;"></i> <strong>无法删除当前版本</strong></p>
+        <p><i class="el-icon-warning" style="color: var(--ja-warning);"></i> <strong>无法删除当前版本</strong></p>
         <p>版本 ${row.version} 是当前正在使用的版本，不能被删除。</p>
-        <p style="margin-top: 10px; color: #606266;">
+        <p style="margin-top: 10px; color: var(--ja-text-regular);">
           <strong>建议操作：</strong><br/>
           1. 先应用其他版本<br/>
           2. 然后再删除此版本
@@ -452,11 +442,11 @@ const handleDelete = async (row: Version) => {
       <p>操作类型：${getOperationDisplayName(row.operation)}</p>
       <p>操作详情：${row.operationDetail || '无'}</p>
       <p>创建时间：${formatTimestamp(row.timestamp)}</p>
-      <p style="color: #f56c6c; margin-top: 15px;">
+      <p style="color: var(--ja-danger); margin-top: 15px;">
         <i class="el-icon-warning"></i>
         <strong>警告：此操作不可恢复！</strong>
       </p>
-      <p style="color: #909399; font-size: 12px; margin-top: 10px;">
+      <p style="color: var(--ja-text-secondary); font-size: 12px; margin-top: 10px;">
         删除版本将永久移除该版本的配置数据，请确认您不再需要此版本。
       </p>
     </div>
@@ -493,7 +483,7 @@ onMounted(() => {
 <style scoped>
 .version-management {
   padding: 24px;
-  background: linear-gradient(180deg, #f7f9fc 0%, #ffffff 100%);
+  background: var(--ja-main-bg-gradient);
   min-height: calc(100vh - 80px);
 }
 
@@ -511,7 +501,7 @@ onMounted(() => {
   padding: 18px 22px;
   gap: 12px;
   flex-wrap: wrap;
-  border-bottom: 1px solid #eef2f6;
+  border-bottom: 1px solid var(--ja-border-lighter);
 }
 
 .header-title {
@@ -519,7 +509,7 @@ onMounted(() => {
   align-items: center;
   font-size: 20px;
   font-weight: 700;
-  color: #1f2d3d;
+  color: var(--ja-text-primary);
   gap: 10px;
 }
 
@@ -531,7 +521,7 @@ onMounted(() => {
   margin: 0 0 0 20px;
   padding: 0;
   font-size: 14px;
-  color: #444;
+  color: var(--ja-text-regular);
   line-height: 1.9;
 }
 
@@ -541,7 +531,7 @@ onMounted(() => {
 
 .version-table {
   border-radius: 8px;
-  background: #fff;
+  background: var(--ja-bg-card);
   font-size: 14px;
 }
 
@@ -553,12 +543,12 @@ onMounted(() => {
 .version-table :deep(.el-table__header th) {
   font-size: 14px;
   font-weight: 600;
-  color: #2b3a4b;
-  background-color: #fbfdff;
+  color: var(--ja-text-primary);
+  background-color: var(--ja-primary-light-9, #fbfdff);
 }
 
 .timestamp {
-  color: #909399;
+  color: var(--ja-text-secondary);
   font-size: 13px;
 }
 
@@ -570,14 +560,14 @@ onMounted(() => {
 }
 
 .version-dialog :deep(.el-dialog__header) {
-  background-color: #fbfdff;
-  border-bottom: 1px solid #eef2f6;
+  background-color: var(--ja-primary-light-9, #fbfdff);
+  border-bottom: 1px solid var(--ja-border-lighter);
   padding: 14px 20px;
 }
 
 .version-dialog :deep(.el-dialog__title) {
   font-weight: 700;
-  color: #1f2d3d;
+  color: var(--ja-text-primary);
   font-size: 18px;
 }
 
@@ -596,9 +586,9 @@ onMounted(() => {
 .config-preview {
   max-height: 300px;
   overflow-y: auto;
-  background: #f8f8fa;
+  background: var(--ja-primary-light-9, #f8f8fa);
   border-radius: 8px;
-  border: 1px solid #f0f2f5;
+  border: 1px solid var(--ja-border-lighter);
   margin-top: 12px;
   padding: 12px 12px 0 12px;
 }
@@ -611,13 +601,13 @@ onMounted(() => {
   word-wrap: break-word;
   font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', 'Courier New', monospace;
   font-size: 12px;
-  color: #394150;
+  color: var(--ja-text-primary);
 }
 
 .preview-title {
   font-weight: 600;
   margin-bottom: 3px;
-  color: #6b7785;
+  color: var(--ja-text-secondary);
   display: flex;
   align-items: center;
   gap: 4px;
