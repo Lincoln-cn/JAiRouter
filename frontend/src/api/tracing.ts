@@ -1,16 +1,10 @@
 import request from '@/utils/request'
 import type {
     RouterResponse,
-    TracingOverview,
-    TracingStats,
-    ServiceStats,
-    PerformanceStats,
     LatencyAnalysis,
     ErrorAnalysis,
     ThroughputAnalysis,
     TraceDetails,
-    SamplingConfig,
-    SamplingStats,
     TimeRange
 } from '@/types'
 
@@ -41,11 +35,6 @@ export const updateTracingConfig = (config: any) => {
 
 export const getServiceStats = () => {
     return request.get<RouterResponse<any>>('/tracing/query/services')
-}
-
-export const getOperations = (serviceName?: string) => {
-    const params = serviceName ? { serviceName } : {}
-    return request.get<RouterResponse<any>>('/tracing/query/operations', { params })
 }
 
 export const refreshTracingData = () => {
@@ -85,69 +74,6 @@ export const cleanupExpiredTraces = (retentionHours: number = 24) => {
     return request.post<RouterResponse<any>>('/tracing/query/cleanup', null, {
         params: { retentionHours }
     })
-}
-
-export const getQueryServiceHealth = () => {
-    return request.get<RouterResponse<any>>('/tracing/query/health')
-}
-
-// 性能分析相关接口
-export const getPerformanceStats = (timeRange?: TimeRange) => {
-    return request.get<RouterResponse<PerformanceStats>>('/tracing/performance/stats', {
-        params: timeRange
-    })
-}
-
-export const getProcessingStats = () => {
-    return request.get<RouterResponse<any>>('/tracing/performance/processing-stats')
-}
-
-export const getMemoryStats = () => {
-    return request.get<RouterResponse<any>>('/tracing/performance/memory-stats')
-}
-
-export const getPerformanceHealth = () => {
-    return request.get<RouterResponse<any>>('/tracing/performance/health')
-}
-
-export const detectBottlenecks = () => {
-    return request.get<RouterResponse<any>>('/tracing/performance/bottlenecks')
-}
-
-export const getOptimizationSuggestions = () => {
-    return request.get<RouterResponse<any>>('/tracing/performance/suggestions')
-}
-
-export const generatePerformanceReport = () => {
-    return request.get<RouterResponse<any>>('/tracing/performance/report')
-}
-
-export const triggerOptimization = () => {
-    return request.post<RouterResponse<any>>('/tracing/performance/optimize')
-}
-
-export const performTuning = (tuningActions: string[]) => {
-    return request.post<RouterResponse<any>>('/tracing/performance/tuning', tuningActions)
-}
-
-export const triggerGarbageCollection = () => {
-    return request.post<RouterResponse<any>>('/tracing/performance/memory/gc')
-}
-
-export const performMemoryCheck = () => {
-    return request.post<RouterResponse<any>>('/tracing/performance/memory/check')
-}
-
-export const flushProcessingBuffer = () => {
-    return request.post<RouterResponse<any>>('/tracing/performance/processing/flush')
-}
-
-export const getDashboardMetrics = () => {
-    return request.get<RouterResponse<any>>('/tracing/performance/metrics/dashboard')
-}
-
-export const getActiveAlerts = () => {
-    return request.get<RouterResponse<any>>('/tracing/performance/alerts/active')
 }
 
 export const getLatencyAnalysis = (timeRange?: TimeRange) => {
