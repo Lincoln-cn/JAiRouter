@@ -1,23 +1,24 @@
 <template>
-  <div class="dashboard">
-    <!-- 顶部统计卡片 -->
-    <el-row class="stats-wrap" :gutter="18" justify="center">
-      <el-col v-for="item in statCards" :key="item.key" :xs="12" :sm="8" :md="6" :lg="4">
-        <el-card class="stat-card" shadow="hover">
-          <div class="stat-inner">
-            <div class="icon-box" :style="{ background: item.bg }">
-              <el-icon class="icon">
-                <component :is="item.icon" />
-              </el-icon>
-            </div>
-            <div class="text-box">
-              <div class="value">{{ item.value }}</div>
-              <div class="label">{{ item.label }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+  <PageSkeleton title="仪表板">
+    <template #actions>
+      <el-button size="small" type="primary" @click="fetchDashboardData" :loading="configLoading" plain>
+        <el-icon><Refresh /></el-icon> 刷新全部
+      </el-button>
+    </template>
+
+    <template #stats>
+      <!-- 顶部统计卡片 -->
+      <el-row class="stats-wrap" :gutter="18" justify="center">
+        <el-col v-for="item in statCards" :key="item.key" :xs="12" :sm="8" :md="6" :lg="4">
+          <StatCard
+            :icon="item.icon"
+            :label="item.label"
+            :value="item.value"
+            :tone="item.tone"
+          />
+        </el-col>
+      </el-row>
+    </template>
 
     <!-- 主体图表与监控详情 -->
     <el-row class="main-row" :gutter="20">
@@ -233,11 +234,11 @@
         </el-card>
       </el-col>
     </el-row>
-  </div>
+  </PageSkeleton>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import * as echarts from 'echarts'
 import {
   getServiceStats,
@@ -251,6 +252,15 @@ import { ElMessage } from 'element-plus'
 // SSE helpers
 import { connectSSE, disconnectSSE, addSSEListener, removeSSEListener } from '@/utils/sse'
 
+// 组件
+import PageSkeleton from '@/components/PageSkeleton.vue'
+import StatCard from '@/components/StatCard.vue'
+
+// 图表主题
+import { useChartTheme } from '@/composables/useChartTheme'
+
+const { getChartTheme } = useChartTheme()
+
 // 状态数据
 const stats = ref({
   serviceCount: 0,
@@ -258,7 +268,6 @@ const stats = ref({
   totalModels: 0,
   alertCount: 0,
   userCount: 0,
-  // 保留这些字段作为初始值，但实际值将通过计算属性获取
   healthyInstanceCount: 0,
   errorInstanceCount: 0
 })
@@ -281,12 +290,6 @@ const serviceTypeMap: Record<string, string> = {
   stt: '语音转文本',
   imgGen: '图像生成',
   imgEdit: '图像编辑服务'
-}
-
-const categoryMap: Record<string, string> = {
-  system: '系统',
-  business: '业务',
-  infrastructure: '基础设施'
 }
 
 const getServiceTypeName = (type: string) => serviceTypeMap[type] || type
@@ -329,7 +332,7 @@ const statCards = computed(() => {
     return total
   })()
   const healthy = (() => {
-    if (!serviceConfigData.value?.services) return 0 // 默认返回0
+    if (!serviceConfigData.value?.services) return 0
     let c = 0
     Object.values(serviceConfigData.value.services).forEach((s: any) => {
       (s.instances || []).forEach((ins: any) => { if (ins.health) c++ })
@@ -338,26 +341,16 @@ const statCards = computed(() => {
   })()
   const error = instances - healthy
 
-  // 始终基于服务配置详情中的实例状态计算
   const healthyCount = healthy
   const errorCount = error
 
-  console.log('[Dashboard] 计算统计卡片数据:', {
-    serviceCount,
-    instances,
-    healthy,
-    error,
-    healthyCount,
-    errorCount
-  })
-
   return [
-    { key: 'service', icon: 'Flag', label: '服务数量', value: serviceCount, bg: 'var(--ja-stat-gradient-service)' },
-    { key: 'instance', icon: 'Cpu', label: '实例数量', value: instances, bg: 'var(--ja-stat-gradient-instance)' },
-    { key: 'model', icon: 'Monitor', label: '模型数量', value: stats.value.totalModels || 0, bg: 'var(--ja-stat-gradient-model)' },
-    { key: 'healthy', icon: 'Check', label: '健康实例', value: healthyCount, bg: 'var(--ja-stat-gradient-healthy)' },
-    { key: 'error', icon: 'Warning', label: '异常实例', value: errorCount < 0 ? 0 : errorCount, bg: 'var(--ja-stat-gradient-error)' },
-    { key: 'user', icon: 'User', label: '账号数量', value: stats.value.userCount || 0, bg: 'var(--ja-stat-gradient-user)' }
+    { key: 'service', icon: 'Flag', label: '服务数量', value: serviceCount, tone: 'primary' as const },
+    { key: 'instance', icon: 'Cpu', label: '实例数量', value: instances, tone: 'success' as const },
+    { key: 'model', icon: 'Monitor', label: '模型数量', value: stats.value.totalModels || 0, tone: 'default' as const },
+    { key: 'healthy', icon: 'Check', label: '健康实例', value: healthyCount, tone: 'success' as const },
+    { key: 'error', icon: 'Warning', label: '异常实例', value: errorCount < 0 ? 0 : errorCount, tone: 'danger' as const },
+    { key: 'user', icon: 'User', label: '账号数量', value: stats.value.userCount || 0, tone: 'info' as const }
   ]
 })
 
@@ -366,10 +359,11 @@ const systemChart = ref<HTMLElement | null>(null)
 let systemChartInstance: echarts.ECharts | null = null
 
 const getChartOption = () => {
-  // 使用真实业务指标数据
+  const { primary, success, warning, danger, textColor } = getChartTheme()
+
   if (!dashboardMetrics.value) {
     return {
-      title: { text: '系统状态概览', left: 'center', textStyle: { fontSize: 14 } },
+      title: { text: '系统状态概览', left: 'center', textStyle: { fontSize: 14, color: textColor } },
       tooltip: { trigger: 'axis' },
       xAxis: { type: 'category', data: ['内存', 'CPU', '认证', '请求'] },
       yAxis: { type: 'value', max: 100, axisLabel: { formatter: '{value}%' } },
@@ -385,14 +379,13 @@ const getChartOption = () => {
   const sec = m.security || {}
   const http = m.http || {}
 
-  // 构建真实业务指标图表
   const memoryUsage = jvm.heapUsagePercent || 0
   const cpuUsage = (sys.processCpuUsage || 0) * 100
   const authSuccess = sec.authAttempts > 0 ? ((sec.authSuccesses || 0) / sec.authAttempts * 100) : 100
-  const requestRate = Math.min((http.totalRequests || 0) / 1000 * 10, 100) // 假设 10000 请求 = 100%
+  const requestRate = Math.min((http.totalRequests || 0) / 1000 * 10, 100)
 
   return {
-    title: { text: '系统资源概览', left: 'center', textStyle: { fontSize: 14 } },
+    title: { text: '系统资源概览', left: 'center', textStyle: { fontSize: 14, color: textColor } },
     tooltip: {
       trigger: 'axis',
       formatter: (params: any) => {
@@ -407,17 +400,18 @@ const getChartOption = () => {
         return `<strong>${labels[p.dataIndex]}</strong><br/>${values[p.dataIndex]}`
       }
     },
-    legend: { bottom: 0, data: ['资源使用'] },
+    legend: { bottom: 0, data: ['资源使用'], textStyle: { color: textColor } },
     grid: { left: 30, right: 30, bottom: 50, top: 60 },
     xAxis: {
       type: 'category',
       data: ['JVM 内存', 'CPU 使用', '认证成功', '请求量'],
-      axisLabel: { interval: 0, rotate: 0, fontSize: 11 }
+      axisLabel: { interval: 0, rotate: 0, fontSize: 11, color: textColor }
     },
     yAxis: {
       type: 'value',
       max: 100,
       axisLabel: {
+        color: textColor,
         formatter: (v: number) => `${v}%`
       }
     },
@@ -427,24 +421,24 @@ const getChartOption = () => {
         type: 'bar',
         barWidth: '50%',
         data: [
-          { 
-            value: memoryUsage, 
-            itemStyle: { color: memoryUsage > 80 ? '#f56c6c' : memoryUsage > 60 ? '#e6a23c' : '#67c23a' },
+          {
+            value: memoryUsage,
+            itemStyle: { color: memoryUsage > 80 ? danger : memoryUsage > 60 ? warning : success },
             name: `${memoryUsage}%`
           },
-          { 
-            value: cpuUsage, 
-            itemStyle: { color: cpuUsage > 80 ? '#f56c6c' : cpuUsage > 60 ? '#e6a23c' : '#409eff' },
+          {
+            value: cpuUsage,
+            itemStyle: { color: cpuUsage > 80 ? danger : cpuUsage > 60 ? warning : primary },
             name: `${cpuUsage.toFixed(1)}%`
           },
-          { 
-            value: authSuccess, 
-            itemStyle: { color: authSuccess < 50 ? '#f56c6c' : authSuccess < 80 ? '#e6a23c' : '#67c23a' },
+          {
+            value: authSuccess,
+            itemStyle: { color: authSuccess < 50 ? danger : authSuccess < 80 ? warning : success },
             name: `${authSuccess.toFixed(1)}%`
           },
-          { 
-            value: requestRate, 
-            itemStyle: { color: '#409eff' },
+          {
+            value: requestRate,
+            itemStyle: { color: primary },
             name: `${http.totalRequests || 0}`
           }
         ],
@@ -472,113 +466,71 @@ const resizeChart = () => {
   systemChartInstance?.setOption(getChartOption(), { notMerge: true })
 }
 
-// 辅助显示函数
-const formatPercent = (v?: number) => `${((v ?? 0) * 100).toFixed(0)  }%`
-const degradationText = (level?: string) => (level === 'NONE' ? '无降级' : level === 'PARTIAL' ? '部分降级' : level === 'FULL' ? '全部降级' : 'N/A')
-const degradationTagType = (level?: string) => (level === 'NONE' ? 'success' : level === 'PARTIAL' ? 'warning' : 'danger')
-const circuitText = (s?: string) => (s === 'CLOSED' ? '关闭' : s === 'OPEN' ? '开启' : s === 'HALF_OPEN' ? '半开' : 'N/A')
-const circuitTagType = (s?: string) => (s === 'CLOSED' ? 'success' : s === 'OPEN' ? 'danger' : 'warning')
-
 // SSE 辅助：规范化 baseUrl（去尾部斜杠）
 const normalizeBase = (u?: string) => (u ? u.replace(/\/+$/, '') : '')
 
 // 在主线程中更新数据的方法
 const updateDataInMainThread = (updateFn: () => void) => {
-  // 使用 queueMicrotask 确保在主线程中更新数据
   queueMicrotask(updateFn)
 }
 
-// 替换 Dashboard.vue 中原有的 handleHealthUpdate 为下面实现
 const handleHealthUpdate = (payload: any) => {
   if (!payload) return
-  
-  // 处理新的SSE数据格式: {"instanceHealth":{...},"type":"health-update","timestamp":"..."}
-  let dataObj: Record<string, any> | null = null;
-  
-  // 检查是否是新的数据格式
+
+  let dataObj: Record<string, any> | null = null
+
   if (payload.type === 'health-update' && payload.instanceHealth) {
-    dataObj = payload.instanceHealth;
-  } 
-  // 兼容旧的数据格式
+    dataObj = payload.instanceHealth
+  }
   else if (payload.type === 'health-update' && payload.data && payload.data.instanceHealth) {
-    dataObj = payload.data.instanceHealth;
+    dataObj = payload.data.instanceHealth
   }
-  // 兼容直接传递instanceHealth对象的格式
   else if (payload.instanceHealth) {
-    dataObj = payload.instanceHealth;
+    dataObj = payload.instanceHealth
   }
-  
+
   if (!dataObj || typeof dataObj !== 'object') {
-    console.log('[SSE] 无效的数据格式:', payload);
-    return;
+    return
   }
 
-  console.log('[SSE] handleHealthUpdate payload:', dataObj);
-
-  // 在主线程中更新数据
   updateDataInMainThread(() => {
-    // track which services changed so we can reassign arrays to trigger reactivity
     const changedServices = new Set<string>()
 
     Object.entries(dataObj || {}).forEach(([key, val]) => {
-      // 更严格地判断健康状态：兼容 boolean 与字符串 'true'/'false'（不再使用 Boolean(val)）
       const isHealthy = (typeof val === 'boolean') ? val : String(val).toLowerCase() === 'true'
 
-      // key 格式示例: "chat:550e8400-e29b-41d4-a716-446655440000" (serviceType:instanceId)
       const firstColon = key.indexOf(':')
       if (firstColon === -1) return
       const svcType = key.slice(0, firstColon)
       const instanceId = key.slice(firstColon + 1)
-
-      console.log(`[SSE] 解析实例信息: key=${key}, svcType=${svcType}, instanceId=${instanceId}`)
 
       const svc = serviceConfigData.value?.services?.[svcType]
       if (svc && Array.isArray(svc.instances)) {
         let localChanged = false
         svc.instances.forEach((ins: any, idx: number) => {
           const insInstanceId = ins.instanceId || `${ins.name}@${ins.baseUrl}` || ''
-          // 匹配实例：优先 instanceId 精确匹配
-          console.log(`[SSE] 尝试匹配: insInstanceId=${insInstanceId} vs instanceId=${instanceId}`)
-          
+
           if (insInstanceId === instanceId) {
-            // 添加调试日志
-            console.log(`[SSE] 精确匹配到实例: ${key} -> ${svcType}.${ins.name} (${ins.baseUrl}), 健康状态: ${ins.health} -> ${isHealthy}`)
-            
-            // 仅在值变化时替换对象以确保 Vue 能检测到变化
             if (ins.health !== isHealthy) {
               const newIns = { ...ins, health: isHealthy }
-              // 使用 splice 直接替换当前索引，保持数组引用但替换元素引用
               svc.instances.splice(idx, 1, newIns)
               localChanged = true
-              console.log(`[SSE] 更新实例健康状态: ${key}, ${ins.health} -> ${isHealthy}`)
-            } else {
-              console.log(`[SSE] 实例健康状态未变化: ${key}, 仍然是 ${isHealthy}`)
             }
           } else if (!ins.instanceId && ins.name && ins.baseUrl) {
-            // 如果实例没有instanceId，尝试通过name@baseUrl格式匹配（向后兼容）
             const fallbackInstanceId = `${ins.name}@${ins.baseUrl}`;
             if (fallbackInstanceId === instanceId) {
-              console.log(`[SSE] 向后兼容匹配到实例: ${key} -> ${svcType}.${ins.name} (${ins.baseUrl}), 健康状态: ${ins.health} -> ${isHealthy}`)
-              
               if (ins.health !== isHealthy) {
                 const newIns = { ...ins, health: isHealthy }
                 svc.instances.splice(idx, 1, newIns)
                 localChanged = true
-                console.log(`[SSE] 更新实例健康状态(向后兼容): ${key}, ${ins.health} -> ${isHealthy}`)
-              } else {
-                console.log(`[SSE] 实例健康状态未变化(向后兼容): ${key}, 仍然是 ${isHealthy}`)
               }
             }
           }
         })
         if (localChanged) changedServices.add(svcType)
-      } else {
-        // 添加调试日志
-        console.log(`[SSE] 未找到服务类型或实例: ${svcType}`, svc)
       }
     })
 
-    // 强制刷新变更过的服务实例数组以保证视图更新
     changedServices.forEach(svcType => {
       const svc = serviceConfigData.value?.services?.[svcType]
       if (svc && Array.isArray(svc.instances)) {
@@ -586,16 +538,12 @@ const handleHealthUpdate = (payload: any) => {
       }
     })
 
-    // 不再直接更新健康实例和异常实例的数量，而是通过计算属性自动计算
-    console.log('[SSE] updated instance health status, changed services:', Array.from(changedServices))
-
-    // 触发视图/图表刷新（若需要）
     nextTick(() => {
       if (systemChartInstance) {
         try {
           systemChartInstance.setOption(getChartOption(), { notMerge: true })
         } catch (e) {
-          console.warn('[SSE] update chart failed', e)
+          console.error('[SSE] update chart failed', e)
         }
       }
     })
@@ -609,7 +557,6 @@ const fetchServiceConfig = async () => {
     if (res.data && res.data.success) {
       serviceConfigData.value = res.data.data
 
-      // 如果服务中未包含adapter则使用全局adapter
       if (serviceConfigData.value?.services) {
         Object.keys(serviceConfigData.value.services).forEach(k => {
           const s = serviceConfigData.value.services[k]
@@ -617,18 +564,13 @@ const fetchServiceConfig = async () => {
         })
       }
 
-      // 仅在服务配置中明确包含 models 字段时更新统计值，避免覆盖之前正确的 totalModels
       if (serviceConfigData.value?.models !== undefined) {
         if (Array.isArray(serviceConfigData.value.models)) {
           stats.value.totalModels = serviceConfigData.value.models.length
-        } else {
-          // 如果 models 存在但不是数组，不覆盖已有值（保守处理）
-          // 可以考虑记录或上报异常格式
         }
       }
 
       ElMessage.success('服务配置加载成功')
-      // 设置默认激活服务tab
       const ordered = orderedServiceNames.value
       if (ordered.length > 0) activeServiceTab.value = ordered[0]
     } else {
@@ -646,7 +588,6 @@ const fetchMonitoringOverview = async () => {
     const res = await getMonitoringOverview()
     if (res.data && res.data.success) {
       monitoringOverview.value = res.data.data
-      // 更新图表
       nextTick(() => {
         systemChartInstance ? systemChartInstance.setOption(getChartOption(), { notMerge: true }) : initChart()
       })
@@ -658,13 +599,11 @@ const fetchMonitoringOverview = async () => {
   }
 }
 
-// 获取真实业务指标
 const fetchDashboardMetrics = async () => {
   try {
     const res = await getDashboardMetrics()
     if (res.data && res.data.success) {
       dashboardMetrics.value = res.data.data
-      // 更新图表
       nextTick(() => {
         systemChartInstance ? systemChartInstance.setOption(getChartOption(), { notMerge: true }) : initChart()
       })
@@ -676,7 +615,6 @@ const fetchDashboardMetrics = async () => {
   }
 }
 
-// 格式化运行时间
 const formatUptime = (seconds: number | undefined) => {
   if (seconds === undefined || seconds === null) return 'N/A'
   const s = Math.round(seconds)
@@ -690,7 +628,6 @@ const formatUptime = (seconds: number | undefined) => {
 
 const fetchDashboardData = async () => {
   try {
-    // 服务统计（保留）
     const statsRes = await getServiceStats()
     if (statsRes.data && statsRes.data.success) {
       const d: any = statsRes.data.data || {}
@@ -701,7 +638,6 @@ const fetchDashboardData = async () => {
       stats.value.userCount = d.userCount || 0
     }
 
-    // 账号数（保留）
     try {
       const accounts = await getJwtAccounts()
       stats.value.userCount = accounts.length
@@ -709,12 +645,10 @@ const fetchDashboardData = async () => {
       // ignore
     }
 
-    // 监控和配置
     await fetchServiceConfig()
     await fetchMonitoringOverview()
     await fetchDashboardMetrics()
 
-    // 初始化或刷新图表
     nextTick(() => {
       initChart()
     })
@@ -724,18 +658,13 @@ const fetchDashboardData = async () => {
 }
 
 onMounted(() => {
-  // 加载初始数据后再建立 SSE 连接并注册回调，保证 serviceConfigData 已经尽可能就绪
   fetchDashboardData().then(() => {
-    // 注册 SSE 回调
     sseHandler = (data: any) => {
-      // sse.ts 会传入解析后的 JSON 对象
-      // 有时 payload 可能被嵌套或直接携带 instanceHealth 字段，handleHealthUpdate 会处理兼容
       handleHealthUpdate(data)
     }
     addSSEListener(sseHandler)
     connectSSE()
   }).catch(() => {
-    // 即便初始加载失败，也尝试建立 SSE 连接以便后续实时更新
     sseHandler = (data: any) => handleHealthUpdate(data)
     addSSEListener(sseHandler)
     connectSSE()
@@ -748,7 +677,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeChart)
   systemChartInstance?.dispose()
 
-  // 移除 SSE 相关资源
   if (sseHandler) {
     removeSSEListener(sseHandler)
     sseHandler = null
@@ -758,95 +686,66 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.dashboard {
-  padding: 18px;
-  background: var(--ja-main-bg-gradient);
-  min-height: 100vh;
-}
-
 /* 统计卡片 */
 .stats-wrap { margin-bottom: 16px; }
-.stat-card {
-  border-radius: 10px;
-  overflow: hidden;
-  padding: 12px;
-  min-height: 88px;
-  display: flex;
-  align-items: center;
-  background: #fff;
-  border: 1px solid rgba(20,40,80,0.04);
-}
-.stat-inner { display:flex; align-items:center; width:100% }
-.icon-box {
-  width:56px;
-  height:56px;
-  border-radius: 10px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  margin-right:12px;
-  box-shadow: 0 6px 14px rgba(64,158,255,0.06);
-}
-.icon { font-size:22px; color:var(--ja-dashboard-icon-color); }
-.text-box { flex:1; min-width:0; }
-.value { font-size:20px; font-weight:700; color:var(--ja-dashboard-value-color); }
-.label { font-size:12px; color:var(--ja-dashboard-label-color); margin-top:4px; }
 
 /* 主体卡片 */
-.card-panel { min-height: 330px; border-radius:10px; }
+.card-panel { min-height: 330px; border-radius: var(--ja-radius-lg); }
 .chart-area { width:100%; height:320px; }
 
 /* 监控侧栏 */
 .monitoring-box { padding:4px 0; }
 .row-inline { display:flex; align-items:center; gap:8px; }
-.cache-row { display:flex; align-items:center; gap:8px; }
 
 /* 配置区域 */
 .config-row { margin-top:22px; }
-.config-card { border-radius:10px; padding-bottom: 6px; }
+.config-card { border-radius: var(--ja-radius-lg); padding-bottom: 6px; }
 .config-header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
-.config-title { font-weight:700; color:var(--ja-dashboard-config-title); }
+.config-title { font-weight:700; color: var(--ja-dashboard-config-title); }
 .config-actions { display:flex; align-items:center; }
 
 /* 表格样式 */
-.el-table .row-error { background: var(--ja-dashboard-error-row) !important; }
-.el-table th { background: transparent; }
+:deep(.el-table .row-error) { background: var(--ja-dashboard-error-row) !important; }
+:deep(.el-table th) { background: transparent; }
 
 /* Empty */
-.empty-placeholder { text-align:center; padding:24px 12px; color:var(--ja-dashboard-empty-color); }
+.empty-placeholder { text-align:center; padding:24px 12px; color: var(--ja-dashboard-empty-color); }
+
 /* 使主行的列高度一致，并让卡片伸展占满列 */
 .main-row {
-  align-items: stretch; /* 让行内列高度拉伸一致 */
+  align-items: stretch;
 }
 
-/* 让列成为弹性容器，这样内部 card 可以撑满高度 */
 .main-row > .el-col {
   display: flex;
   flex-direction: column;
 }
 
-/* 卡片本身垂直布局，卡片占满列 */
 .card-panel {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
-  min-height: 320px; /* 保留一个最小高度（可按需调整） */
+  min-height: 320px;
 }
 
-/* 让 element-plus 卡片 body 占满卡片剩余空间（使用深度选择器以保证命中内部类） */
-::v-deep .card-panel .el-card__body {
+:deep(.card-panel .el-card__body) {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  padding: 12px 16px; /* 保持原有内边距感 */
+  padding: 12px 16px;
 }
 
-/* 将图表区域改为弹性高度以充满卡片 body */
 .chart-area {
   width: 100%;
   height: 100%;
-  min-height: 220px; /* 在窄屏或高度受限时保底高度 */
+  min-height: 220px;
   flex: 1 1 auto;
+}
+
+/* 卡片标题 */
+.card-title {
+  font-weight: 600;
+  color: var(--ja-text-primary);
 }
 
 /* 响应式 */
@@ -855,8 +754,6 @@ onBeforeUnmount(() => {
   .card-panel { min-height: 220px; }
 }
 @media (max-width: 640px) {
-  .stat-card { min-height: 78px; padding:10px; }
-  .icon-box { width:48px; height:48px; }
   .chart-area { height: 200px; }
 }
 </style>
