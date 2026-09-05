@@ -3,9 +3,9 @@
 ## 版本统计
 
 - 总文档数: 167
-- 近7天变更: 68
+- 近7天变更: 58
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-09-04 06:56:19
+- 最后扫描: 2026-09-05 06:40:36
 
 ## 最近变更
 
