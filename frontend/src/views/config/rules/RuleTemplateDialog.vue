@@ -89,7 +89,7 @@ onMounted(loadTemplates)
 }
 
 .template-card {
-  border: 1px solid #e4e7ed;
+  border: 1px solid var(--el-border-color);
   border-radius: 8px;
   padding: 12px;
   cursor: pointer;
@@ -97,12 +97,12 @@ onMounted(loadTemplates)
 }
 
 .template-card:hover {
-  border-color: #409eff;
+  border-color: var(--ja-primary);
 }
 
 .template-card.active {
-  border-color: #409eff;
-  background: #ecf5ff;
+  border-color: var(--ja-primary);
+  background: var(--ja-primary-light-9);
 }
 
 .template-name {
@@ -112,7 +112,7 @@ onMounted(loadTemplates)
 
 .template-desc {
   font-size: 12px;
-  color: #606266;
+  color: var(--ja-text-regular);
   margin-bottom: 8px;
   min-height: 32px;
 }
@@ -125,6 +125,6 @@ onMounted(loadTemplates)
 
 .template-tip {
   font-size: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 </style>

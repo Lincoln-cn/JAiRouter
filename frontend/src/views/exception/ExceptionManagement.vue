@@ -3,56 +3,16 @@
     <!-- 统计卡片 -->
     <el-row :gutter="20" class="stats-row">
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #F56C6C;">
-              <el-icon><Warning /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ listData.totalElements }}</div>
-              <div class="stat-label">异常总数</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="Warning" label="异常总数" :value="listData.totalElements" tone="danger" />
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #E6A23C;">
-              <el-icon><DataLine /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ listData.totalTypes }}</div>
-              <div class="stat-label">异常类型数</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="DataLine" label="异常类型数" :value="listData.totalTypes" tone="warning" />
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #409EFF;">
-              <el-icon><Monitor /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value stat-value-text">{{ listData.topExceptionType || '-' }}</div>
-              <div class="stat-label">Top 异常类型</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="Monitor" label="Top 异常类型" :value="listData.topExceptionType || '-'" tone="primary" />
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #909399;">
-              <el-icon><TrendCharts /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ listData.topClientIp || '-' }}</div>
-              <div class="stat-label">Top 来源 IP</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="TrendCharts" label="Top 来源 IP" :value="listData.topClientIp || '-'" tone="info" />
       </el-col>
     </el-row>
 
@@ -372,6 +332,7 @@ import {
   getExceptionDashboardData
 } from '@/api/exception'
 import type { ExceptionEvent, ExceptionQueryParams, ExceptionQueryResponse } from '@/types/exception'
+import StatCard from '@/components/StatCard.vue'
 
 const router = useRouter()
 
@@ -633,44 +594,6 @@ onMounted(() => {
 
 .stats-row {
   margin-bottom: 20px;
-}
-
-.stat-card .stat-content {
-  display: flex;
-  align-items: center;
-}
-
-.stat-card .stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 15px;
-  color: white;
-  font-size: 28px;
-}
-
-.stat-card .stat-info .stat-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: #303133;
-}
-
-.stat-card .stat-info .stat-value.stat-value-text {
-  font-size: 14px;
-  font-weight: 600;
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.stat-card .stat-info .stat-label {
-  font-size: 14px;
-  color: #909399;
-  margin-top: 5px;
 }
 
 .main-card .card-header {

@@ -458,7 +458,7 @@ onMounted(() => {
 
 .type-hint {
   font-size: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
   margin-top: 4px;
   line-height: 1.4;
 }

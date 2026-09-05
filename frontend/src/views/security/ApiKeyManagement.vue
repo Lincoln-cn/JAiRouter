@@ -3,56 +3,16 @@
     <!-- 统计卡片 -->
     <el-row :gutter="20" class="stats-row">
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #409EFF;">
-              <el-icon><Key /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ listData.total }}</div>
-              <div class="stat-label">总密钥数</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="Key" label="总密钥数" :value="listData.total" tone="primary" />
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #67C23A;">
-              <el-icon><CircleCheck /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ listData.enabledCount }}</div>
-              <div class="stat-label">已启用</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="CircleCheck" label="已启用" :value="listData.enabledCount" tone="success" />
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #F56C6C;">
-              <el-icon><CircleClose /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ listData.disabledCount }}</div>
-              <div class="stat-label">已禁用</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="CircleClose" label="已禁用" :value="listData.disabledCount" tone="danger" />
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #E6A23C;">
-              <el-icon><Warning /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ listData.expiredCount }}</div>
-              <div class="stat-label">已过期</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="Warning" label="已过期" :value="listData.expiredCount" tone="warning" />
       </el-col>
     </el-row>
 
@@ -151,8 +111,8 @@
             <el-switch
                 v-model="scope.row.enabled"
                 :disabled="scope.row.expired"
-                active-color="#13ce66"
-                inactive-color="#ff4949"
+                active-color="var(--ja-success)"
+                inactive-color="var(--ja-danger)"
                 @change="handleStatusChange(scope.row)"
             />
           </template>
@@ -265,7 +225,7 @@
     <!-- 创建成功后弹窗，展示密钥值 -->
     <el-dialog v-model="showKeyValueDialog" :close-on-click-modal="false" center title="API密钥已创建" width="450px">
       <div class="key-value-dialog-content">
-        <el-icon style="font-size: 48px; color: #409EFF; margin-bottom: 16px;">
+        <el-icon style="font-size: 48px; color: var(--ja-primary); margin-bottom: 16px;">
           <Key />
         </el-icon>
         <p class="key-value-tip">请妥善保存以下密钥值，密钥值仅此一次显示：</p>
@@ -393,7 +353,7 @@
           </el-table>
         </div>
         <div v-if="importResult?.errors && importResult.errors.length > 0" class="import-errors-section">
-          <h4 style="margin-top: 20px; color: #F56C6C;">导入失败</h4>
+          <h4 style="margin-top: 20px; color: var(--ja-danger);">导入失败</h4>
           <el-table :data="importResult?.errors" border stripe>
             <el-table-column prop="keyId" label="密钥ID" width="150"/>
             <el-table-column prop="reason" label="失败原因"/>
@@ -413,6 +373,7 @@
 import { onMounted, ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Key, CircleCheck, CircleClose, Warning, RefreshRight, Download, Upload, UploadFilled } from '@element-plus/icons-vue'
+import StatCard from '@/components/StatCard.vue'
 import {
   createApiKey,
   deleteApiKey,
@@ -662,7 +623,7 @@ const fetchQuotaOverview = async () => {
     listData.items = apiKeys.value
   } catch (error) {
     // 配额数据获取失败不影响列表显示
-    console.warn('获取配额概览失败:', error)
+    console.error('获取配额概览失败:', error)
   }
 }
 
@@ -1006,44 +967,6 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.stat-card {
-  border-radius: 8px;
-}
-
-.stat-content {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-}
-
-.stat-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 24px;
-  margin-right: 16px;
-}
-
-.stat-info {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: #909399;
-  margin-top: 4px;
-}
-
 .table-wrapper {
   flex: 1;
   overflow: hidden;
@@ -1070,14 +993,14 @@ onMounted(() => {
 .main-title {
   font-size: 18px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ja-text-primary);
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .desc-text {
-  color: #606266;
+  color: var(--ja-text-regular);
   font-size: 14px;
 }
 
@@ -1085,7 +1008,7 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   padding: 16px;
-  border-top: 1px solid #EBEEF5;
+  border-top: 1px solid var(--ja-border-light);
   flex-shrink: 0;
 }
 
@@ -1102,23 +1025,23 @@ onMounted(() => {
 }
 
 .expired-text {
-  color: #F56C6C;
+  color: var(--ja-danger);
 }
 
 .usage-stat {
   font-weight: 500;
-  color: #409EFF;
+  color: var(--ja-primary);
 }
 
 .usage-detail {
   font-size: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
   margin-left: 4px;
 }
 
 .form-hint {
   font-size: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
   margin-top: 4px;
 }
 
@@ -1150,7 +1073,7 @@ onMounted(() => {
 
 .key-value-tip {
   font-size: 16px;
-  color: #303133;
+  color: var(--ja-text-primary);
   margin-bottom: 16px;
   font-weight: 500;
 }
@@ -1160,12 +1083,12 @@ onMounted(() => {
 }
 
 :deep(.el-dialog__header) {
-  border-bottom: 1px solid #EBEEF5;
+  border-bottom: 1px solid var(--ja-border-light);
   padding-bottom: 16px;
 }
 
 :deep(.el-dialog__footer) {
-  border-top: 1px solid #EBEEF5;
+  border-top: 1px solid var(--ja-border-light);
   padding-top: 16px;
 }
 
@@ -1181,7 +1104,7 @@ onMounted(() => {
 
 .import-preview h4 {
   margin-bottom: 10px;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .imported-keys-section,

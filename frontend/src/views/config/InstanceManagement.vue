@@ -535,9 +535,6 @@ const onCustomHeaderChange = () => {
     }
   })
   form.headers = headers
-  console.log('请求头变化 - customHeadersList:', customHeadersList.value)
-  console.log('请求头变化 - 生成的headers:', headers)
-  console.log('请求头变化 - form.headers:', form.headers)
 }
 
 // 添加请求头
@@ -656,7 +653,6 @@ watch([filtered, pageSize], () => {
 
 // 监听服务类型变化，使用缓存或请求
 watch(activeServiceType, (newServiceType) => {
-  console.log('服务类型变化，新服务类型:', newServiceType);
   currentPage.value = 1
   searchQuery.value = ''
   statusFilter.value = ''
@@ -673,7 +669,6 @@ const fetchAdapters = async () => {
     const response = await getAdapters()
     if (response.data?.success) {
       adapters.value = response.data.data || []
-      console.log('获取到的适配器列表:', adapters.value)
     }
   } catch (error) {
     console.error('获取适配器列表失败:', error)
@@ -688,8 +683,6 @@ const fetchGlobalConfig = async () => {
       globalConfig.value = response.data.data || {}
       // 从全局配置中提取默认适配器
       globalAdapter.value = globalConfig.value.adapter || ''
-      console.log('获取到的全局配置:', globalConfig.value)
-      console.log('全局默认适配器:', globalAdapter.value)
     }
   } catch (error) {
     console.error('获取全局配置失败:', error)
@@ -702,7 +695,6 @@ const fetchServiceTypes = async () => {
     const response = await getServiceTypes()
     if (response.data?.success) {
       const types: string[] = response.data.data || []
-      console.log('获取到的服务类型:', types);
 
       // 保持 serviceOrder 中的顺序，其他未在 serviceOrder 中的类型追加在后
       const ordered = serviceOrder.filter(t => types.includes(t)).concat(types.filter(t => !serviceOrder.includes(t)))
@@ -722,8 +714,6 @@ const fetchServiceTypes = async () => {
 // 获取实例（带缓存与简单防抖）
 let fetchTimer: ReturnType<typeof setTimeout> | null = null
 const fetchServiceInstances = (serviceType: string) => {
-  console.log('获取实例列表，使用服务类型:', serviceType);
-  console.log(`发送获取请求到: /api/config/instance/${serviceType}`)
   if (fetchTimer) clearTimeout(fetchTimer)
   fetchTimer = setTimeout(async () => {
     loading.value = true
@@ -745,8 +735,6 @@ const fetchServiceInstances = (serviceType: string) => {
           headers: item.headers || {}, // 确保headers字段存在
           tags: item.tags || {} // 确保tags字段存在
         }))
-        console.log('获取实例数据 - 原始数据:', data)
-        console.log('获取实例数据 - 处理后数据:', typedData)
         instancesCache.value[serviceType] = typedData
         instances.value[serviceType] = [...typedData]
       } else {
@@ -765,7 +753,6 @@ const fetchServiceInstances = (serviceType: string) => {
 // 刷新当前 tab
 const refreshCurrent = () => {
   const t = activeServiceType.value
-  console.log('刷新当前选项卡，服务类型:', t);
   delete instancesCache.value[t]
   fetchServiceInstances(t)
   // 同时刷新适配器列表和全局配置
@@ -807,7 +794,6 @@ const handleAddInstance = () => {
   })
   customHeadersList.value = []
   tagsList.value = []
-  console.log('添加实例，使用服务类型:', activeServiceType.value)
   dialogVisible.value = true
 }
 
@@ -846,8 +832,6 @@ const handleEdit = (row: ServiceInstance) => {
   })
   syncCustomHeadersList()
   syncTagsList()
-  console.log('编辑实例，使用数据库ID:', dbId)
-  console.log('编辑实例，使用服务类型:', form.serviceType)
   dialogVisible.value = true
 }
 
@@ -863,7 +847,6 @@ const handleDelete = (row: ServiceInstance) => {
       const serviceType = activeServiceType.value;
       // 使用数据库ID
       const dbId = row.id
-      console.log('删除实例，使用数据库ID:', dbId)
       const response = await deleteServiceInstance(serviceType, String(dbId))
       if (response.data?.success) {
         instances.value[serviceType] = (instances.value[serviceType] || []).filter(i => i.id !== dbId)
@@ -896,7 +879,6 @@ const handleSave = async () => {
   try {
     // 确保使用当前选项卡的服务类型
     const serviceType = activeServiceType.value;
-    console.log('保存实例，使用服务类型:', serviceType);
 
     // 构造实例数据（仅基础属性）
     const instanceData: InstanceConfig = {
@@ -909,8 +891,6 @@ const handleSave = async () => {
       headers: form.headers || {},
       tags: form.tags || {}
     }
-
-    console.log('构造的实例数据:', instanceData)
 
     if (isEdit.value) {
       // 使用后端返回的实例ID
@@ -1092,7 +1072,7 @@ onMounted(() => {
 <style scoped>
 .instance-management {
   padding: 20px;
-  background: linear-gradient(180deg, #f7f9fc 0%, #ffffff 100%);
+  background: var(--ja-main-bg-gradient);
   min-height: calc(100vh - 80px);
   box-sizing: border-box;
 }
@@ -1100,7 +1080,7 @@ onMounted(() => {
 /* 卡片 */
 .instance-card {
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--ja-shadow-lg);
   padding: 0;
 }
 
@@ -1127,12 +1107,12 @@ onMounted(() => {
   align-items: center;
   font-size: 18px;
   font-weight: 700;
-  color: #1f2d3d;
+  color: var(--ja-text-primary);
 }
 
 .header-title .el-icon {
   margin-right: 8px;
-  color: #409eff;
+  color: var(--ja-primary);
   font-size: 20px;
 }
 
@@ -1155,7 +1135,7 @@ onMounted(() => {
 }
 
 .refresh-button {
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 
 /* tabs & table area */
@@ -1168,10 +1148,10 @@ onMounted(() => {
 }
 
 .table-area {
-  background: #fff;
+  background: var(--ja-bg-card);
   border-radius: 8px;
   padding: 12px;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
+  box-shadow: var(--ja-shadow-sm);
 }
 
 /* table */
@@ -1189,8 +1169,8 @@ onMounted(() => {
 .instance-table :deep(.el-table__header th) {
   font-size: 13px;
   font-weight: 600;
-  color: #2b3a4b;
-  background-color: #fbfdff;
+  color: var(--ja-text-primary);
+  background-color: var(--el-fill-color-light);
 }
 
 .table-tag {
@@ -1219,24 +1199,24 @@ onMounted(() => {
   align-items: center;
   margin-top: 14px;
   padding-top: 12px;
-  border-top: 1px solid #eef2f6;
+  border-top: 1px solid var(--ja-border-lighter);
 }
 
 .footer-info {
-  color: #6b7785;
+  color: var(--ja-text-secondary);
   font-size: 13px;
 }
 
 /* dialog */
 .instance-dialog :deep(.el-dialog__header) {
-  background-color: #fbfdff;
-  border-bottom: 1px solid #eef2f6;
+  background-color: var(--el-fill-color-light);
+  border-bottom: 1px solid var(--ja-border-lighter);
   padding: 14px 20px;
 }
 
 .instance-dialog :deep(.el-dialog__title) {
   font-weight: 700;
-  color: #1f2d3d;
+  color: var(--ja-text-primary);
   font-size: 18px;
 }
 
@@ -1247,7 +1227,7 @@ onMounted(() => {
 .instance-dialog :deep(.el-form-item__label) {
   font-weight: 600;
   font-size: 14px;
-  color: #213142;
+  color: var(--ja-text-primary);
 }
 
 .dialog-footer {
@@ -1260,13 +1240,13 @@ onMounted(() => {
 /* 适配器相关样式 */
 .adapter-note {
   font-size: 11px;
-  color: #909399;
+  color: var(--ja-text-secondary);
   margin-top: 2px;
 }
 
 .form-note {
   font-size: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
   margin-top: 4px;
   line-height: 1.4;
 }
@@ -1287,22 +1267,22 @@ onMounted(() => {
 .headers-list {
   margin-top: 16px;
   padding: 16px;
-  background-color: #fafbfc;
-  border: 1px solid #e4e7ed;
+  background-color: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color);
   border-radius: 6px;
 }
 
 .header-row {
   margin-bottom: 16px;
   padding-top: 16px;
-  background-color: #ffffff;
-  border: 1px solid #ebeef5;
+  background-color: var(--ja-bg-card);
+  border: 1px solid var(--ja-border-light);
   border-radius: 6px;
   transition: all 0.3s ease;
 }
 
 .header-row:hover {
-  border-color: #409eff;
+  border-color: var(--ja-primary);
   box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
 }
 
@@ -1375,7 +1355,7 @@ onMounted(() => {
 .headers-section .el-form-item__label {
   font-weight: 600;
   font-size: 14px;
-  color: #213142;
+  color: var(--ja-text-primary);
 }
 
 /* 请求头启用开关样式 */

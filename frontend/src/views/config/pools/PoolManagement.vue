@@ -298,6 +298,6 @@ onMounted(() => { fetchPools() })
 .form-tip {
   margin-top: 6px;
   font-size: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 </style>

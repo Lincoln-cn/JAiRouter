@@ -25,56 +25,16 @@
     <!-- 统计概览 -->
     <el-row :gutter="20" class="stats-row">
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #F56C6C;">
-              <el-icon><Warning /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.totalEvents }}</div>
-              <div class="stat-label">异常总数</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="Warning" label="异常总数" :value="statistics.totalEvents" tone="danger" />
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #409EFF;">
-              <el-icon><DataAnalysis /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.totalTypes }}</div>
-              <div class="stat-label">异常类型数</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="DataAnalysis" label="异常类型数" :value="statistics.totalTypes" tone="primary" />
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #E6A23C;">
-              <el-icon><TrendCharts /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ topErrorType?.count || 0 }}</div>
-              <div class="stat-label">最多错误类型</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="TrendCharts" label="最多错误类型" :value="topErrorType?.count || 0" tone="warning" />
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #67C23A;">
-              <el-icon><CircleCheck /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ successRate }}%</div>
-              <div class="stat-label">成功率</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="CircleCheck" label="成功率" :value="successRate" unit="%" tone="success" />
       </el-col>
     </el-row>
 
@@ -201,6 +161,10 @@ import {
   getRecentExceptionEvents
 } from '@/api/exception'
 import type { ExceptionEvent, ExceptionStatistics } from '@/types/exception'
+import StatCard from '@/components/StatCard.vue'
+import { useChartTheme } from '@/composables/useChartTheme'
+
+const { getChartTheme } = useChartTheme()
 
 const router = useRouter()
 
@@ -305,9 +269,10 @@ const calculatePercentage = (count: number) => {
 
 // 获取进度条颜色
 const getProgressColor = (percentage: number) => {
-  if (percentage >= 50) return '#F56C6C'
-  if (percentage >= 30) return '#E6A23C'
-  return '#67C23A'
+  const theme = getChartTheme()
+  if (percentage >= 50) return theme.danger
+  if (percentage >= 30) return theme.warning
+  return theme.success
 }
 
 // 初始化图表
@@ -343,6 +308,7 @@ const initCharts = () => {
 const updateTypeChart = () => {
   if (!typeChart) return
 
+  const theme = getChartTheme()
   const data = Object.entries(statistics.value.eventsByType || {})
     .map(([type, count]) => ({ 
       name: type, 
@@ -359,7 +325,7 @@ const updateTypeChart = () => {
       formatter: (params: any) => {
         return `<div style="max-width: 300px;">
           <div style="font-weight: bold; margin-bottom: 5px;">${params.data.shortName}</div>
-          <div style="font-size: 12px; color: #999;">${params.name}</div>
+          <div style="font-size: 12px; color: ${theme.info};">${params.name}</div>
           <div style="margin-top: 5px;">数量：<strong>${params.value}</strong> (${params.percent}%)</div>
         </div>`
       }
@@ -399,7 +365,7 @@ const updateTypeChart = () => {
             },
             value: {
               fontSize: 11,
-              color: '#666',
+              color: theme.info,
               lineHeight: 16
             }
           }
@@ -426,6 +392,7 @@ const updateTypeChart = () => {
 const updateCategoryChart = () => {
   if (!categoryChart) return
 
+  const theme = getChartTheme()
   const data = Object.entries(statistics.value.eventsByCategory || {})
     .map(([category, count]) => ({ name: formatCategory(category), value: count }))
 
@@ -452,7 +419,7 @@ const updateCategoryChart = () => {
         type: 'bar',
         data: data.map(item => item.value),
         itemStyle: {
-          color: '#409EFF'
+          color: theme.primary
         },
         label: {
           show: true,
@@ -469,6 +436,7 @@ const updateCategoryChart = () => {
 const updateHttpStatusChart = () => {
   if (!httpStatusChart) return
 
+  const theme = getChartTheme()
   const data = Object.entries(statistics.value.eventsByHttpStatus || {})
     .map(([status, count]) => ({ name: status, value: count }))
     .sort((a, b) => parseInt(a.name) - parseInt(b.name))
@@ -494,9 +462,9 @@ const updateHttpStatusChart = () => {
         itemStyle: {
           color: (params: any) => {
             const status = parseInt(params.name)
-            if (status >= 500) return '#F56C6C'
-            if (status >= 400) return '#E6A23C'
-            return '#67C23A'
+            if (status >= 500) return theme.danger
+            if (status >= 400) return theme.warning
+            return theme.success
           }
         },
         label: {
@@ -514,6 +482,7 @@ const updateHttpStatusChart = () => {
 const updateHourlyChart = () => {
   if (!hourlyChart) return
 
+  const theme = getChartTheme()
   // 初始化 24 小时数据
   const hourlyData = new Array(24).fill(0)
   ;(statistics.value.hourlyDistribution || []).forEach(item => {
@@ -552,7 +521,7 @@ const updateHourlyChart = () => {
           opacity: 0.3
         },
         itemStyle: {
-          color: '#E6A23C'
+          color: theme.warning
         },
         label: {
           show: false
@@ -647,35 +616,6 @@ onBeforeUnmount(() => {
 
 .exception-statistics .stats-row {
   margin-bottom: 20px;
-}
-
-.exception-statistics .stats-row .stat-card .stat-content {
-  display: flex;
-  align-items: center;
-}
-
-.exception-statistics .stats-row .stat-card .stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 15px;
-  color: white;
-  font-size: 28px;
-}
-
-.exception-statistics .stats-row .stat-card .stat-info .stat-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: #303133;
-}
-
-.exception-statistics .stats-row .stat-card .stat-info .stat-label {
-  font-size: 14px;
-  color: #909399;
-  margin-top: 5px;
 }
 
 .exception-statistics .chart-container {

@@ -25,112 +25,32 @@
     <!-- 统计概览卡片 -->
     <el-row :gutter="20" class="stats-row">
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #409EFF;">
-              <el-icon><DataAnalysis /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ formatNumber(statistics.totalRequests) }}</div>
-              <div class="stat-label">总请求数</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="DataAnalysis" label="总请求数" :value="statistics.totalRequests" tone="primary" />
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #67C23A;">
-              <el-icon><CircleCheck /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.successRate?.toFixed(2) || 0 }}%</div>
-              <div class="stat-label">成功率</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="CircleCheck" label="成功率" :value="statistics.successRate?.toFixed(2) || '0'" unit="%" tone="success" />
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #909399;">
-              <el-icon><Clock /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.avgResponseTimeMs?.toFixed(0) || 0 }}</div>
-              <div class="stat-label">平均响应时间 (ms)</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="Clock" label="平均响应时间" :value="statistics.avgResponseTimeMs?.toFixed(0) || '0'" unit="ms" tone="info" />
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #E6A23C;">
-              <el-icon><Tickets /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ formatNumber(statistics.totalTokens) }}</div>
-              <div class="stat-label">总 Token 消耗</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="Tickets" label="总 Token 消耗" :value="statistics.totalTokens" tone="warning" />
       </el-col>
     </el-row>
 
     <!-- 第二行统计卡片 -->
     <el-row :gutter="20" class="stats-row">
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #F56C6C;">
-              <el-icon><WarningFilled /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ formatNumber(statistics.failedRequests) }}</div>
-              <div class="stat-label">失败请求数</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="WarningFilled" label="失败请求数" :value="statistics.failedRequests" tone="danger" />
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #67C23A;">
-              <el-icon><Grid /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.byModel?.length || 0 }}</div>
-              <div class="stat-label">模型数量</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="Grid" label="模型数量" :value="statistics.byModel?.length || 0" tone="success" />
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #409EFF;">
-              <el-icon><Service /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.byServiceType?.length || 0 }}</div>
-              <div class="stat-label">服务类型数</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="Service" label="服务类型数" :value="statistics.byServiceType?.length || 0" tone="primary" />
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #E6A23C;">
-              <el-icon><Document /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ formatNumber(statistics.avgTokensPerRequest) }}</div>
-              <div class="stat-label">平均 Token / 请求</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="Document" label="平均 Token / 请求" :value="statistics.avgTokensPerRequest" tone="warning" />
       </el-col>
     </el-row>
 
@@ -284,6 +204,18 @@ import type {
   ApiCallHistoryRecord,
   RecorderStats
 } from '@/types/callHistory'
+import StatCard from '@/components/StatCard.vue'
+import { useChartTheme } from '@/composables/useChartTheme'
+
+const { getChartTheme } = useChartTheme()
+
+/** 将 #rrggbb hex 转为 rgba 字符串 */
+function colorWithAlpha(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
 
 // 时间范围
 const dateRange = ref<[string, string] | null>(null)
@@ -404,6 +336,7 @@ const initCharts = () => {
 const updateDailyChart = () => {
   if (!dailyChart) return
 
+  const theme = getChartTheme()
   const data = (statistics.value.byDay || []).map(item => ({
     date: item.date,
     requestCount: item.requestCount,
@@ -439,7 +372,7 @@ const updateDailyChart = () => {
         name: '请求数',
         type: 'bar',
         data: data.map(item => item.requestCount),
-        itemStyle: { color: '#409EFF' }
+        itemStyle: { color: theme.primary }
       },
       {
         name: '总 Token',
@@ -447,7 +380,7 @@ const updateDailyChart = () => {
         yAxisIndex: 1,
         smooth: true,
         data: data.map(item => item.totalTokens),
-        itemStyle: { color: '#E6A23C' }
+        itemStyle: { color: theme.warning }
       }
     ]
   }
@@ -505,6 +438,7 @@ const updateModelChart = () => {
 const updateServiceTypeChart = () => {
   if (!serviceTypeChart) return
 
+  const theme = getChartTheme()
   const data = (statistics.value.byServiceType || []).map(item => ({
     name: getServiceTypeLabel(item.serviceType),
     value: item.requestCount
@@ -533,7 +467,7 @@ const updateServiceTypeChart = () => {
         type: 'bar',
         data: data.map(item => item.value),
         itemStyle: {
-          color: '#409EFF'
+          color: theme.primary
         },
         label: {
           show: true,
@@ -550,6 +484,7 @@ const updateServiceTypeChart = () => {
 const updateHourlyChart = () => {
   if (!hourlyChart) return
 
+  const theme = getChartTheme()
   // 初始化 24 小时数据
   const hourlyData = new Array(24).fill(0)
   ;(statistics.value.byHour || []).forEach(item => {
@@ -581,9 +516,9 @@ const updateHourlyChart = () => {
         data: hourlyData,
         itemStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#83bff6' },
-            { offset: 0.5, color: '#188df0' },
-            { offset: 1, color: '#188df0' }
+            { offset: 0, color: colorWithAlpha(theme.primary, 0.5) },
+            { offset: 0.5, color: theme.primary },
+            { offset: 1, color: theme.primary }
           ])
         }
       }
@@ -597,6 +532,7 @@ const updateHourlyChart = () => {
 const updateStatusCodeChart = () => {
   if (!statusCodeChart) return
 
+  const theme = getChartTheme()
   const data = (statistics.value.byStatusCode || []).map(item => ({
     name: `${item.statusCode}`,
     value: item.count
@@ -604,11 +540,11 @@ const updateStatusCodeChart = () => {
 
   const getColor = (code: string) => {
     const num = parseInt(code)
-    if (num >= 200 && num < 300) return '#67C23A'
-    if (num >= 300 && num < 400) return '#409EFF'
-    if (num >= 400 && num < 500) return '#E6A23C'
-    if (num >= 500) return '#F56C6C'
-    return '#909399'
+    if (num >= 200 && num < 300) return theme.success
+    if (num >= 300 && num < 400) return theme.primary
+    if (num >= 400 && num < 500) return theme.warning
+    if (num >= 500) return theme.danger
+    return theme.info
   }
 
   const option = {
@@ -640,6 +576,7 @@ const updateStatusCodeChart = () => {
 const updateErrorCodeChart = () => {
   if (!errorCodeChart) return
 
+  const theme = getChartTheme()
   const data = (statistics.value.byErrorCode || [])
     .filter(item => item.errorCode)
     .slice(0, 10)
@@ -672,7 +609,7 @@ const updateErrorCodeChart = () => {
         type: 'bar',
         data: data.map(item => item.value),
         itemStyle: {
-          color: '#F56C6C'
+          color: theme.danger
         },
         label: {
           show: true,
@@ -768,35 +705,6 @@ onBeforeUnmount(() => {
   margin-bottom: 20px;
 }
 
-.call-history-dashboard .stats-row .stat-card .stat-content {
-  display: flex;
-  align-items: center;
-}
-
-.call-history-dashboard .stats-row .stat-card .stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 15px;
-  color: white;
-  font-size: 28px;
-}
-
-.call-history-dashboard .stats-row .stat-card .stat-info .stat-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: #303133;
-}
-
-.call-history-dashboard .stats-row .stat-card .stat-info .stat-label {
-  font-size: 14px;
-  color: #909399;
-  margin-top: 5px;
-}
-
 .call-history-dashboard .chart-container {
   height: 300px;
   width: 100%;
@@ -808,11 +716,11 @@ onBeforeUnmount(() => {
 }
 
 .call-history-dashboard .error-message {
-  color: #F56C6C;
+  color: var(--ja-danger);
   font-size: 12px;
 }
 
 .call-history-dashboard .text-muted {
-  color: #C0C4CC;
+  color: var(--ja-text-placeholder);
 }
 </style>

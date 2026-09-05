@@ -3,82 +3,27 @@
     <!-- 概览统计卡片 -->
     <el-row :gutter="16">
       <el-col :span="4">
-        <el-card shadow="hover" class="summary-card summary-total">
-          <div class="summary-content">
-            <div class="summary-icon">
-              <el-icon :size="32"><DataBoard /></el-icon>
-            </div>
-            <div class="summary-info">
-              <div class="summary-value">{{ summary.totalLimiters }}</div>
-              <div class="summary-label">限流器总数</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="DataBoard" label="限流器总数" :value="summary.totalLimiters" tone="primary" />
       </el-col>
       <el-col :span="4">
-        <el-card shadow="hover" class="summary-card summary-global">
-          <div class="summary-content">
-            <div class="summary-icon">
-              <el-icon :size="32"><Grid /></el-icon>
-            </div>
-            <div class="summary-info">
-              <div class="summary-value">{{ summary.globalLimiters }}</div>
-              <div class="summary-label">全局限流</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="Grid" label="全局限流" :value="summary.globalLimiters" tone="success" />
       </el-col>
       <el-col :span="4">
-        <el-card shadow="hover" class="summary-card summary-service">
-          <div class="summary-content">
-            <div class="summary-icon">
-              <el-icon :size="32"><Service /></el-icon>
-            </div>
-            <div class="summary-info">
-              <div class="summary-value">{{ summary.serviceLimiters }}</div>
-              <div class="summary-label">服务限流</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="Service" label="服务限流" :value="summary.serviceLimiters" tone="warning" />
       </el-col>
       <el-col :span="4">
-        <el-card shadow="hover" class="summary-card summary-instance">
-          <div class="summary-content">
-            <div class="summary-icon">
-              <el-icon :size="32"><Monitor /></el-icon>
-            </div>
-            <div class="summary-info">
-              <div class="summary-value">{{ summary.instanceLimiters }}</div>
-              <div class="summary-label">实例限流</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="Monitor" label="实例限流" :value="summary.instanceLimiters" tone="info" />
       </el-col>
       <el-col :span="4">
-        <el-card shadow="hover" class="summary-card summary-usage">
-          <div class="summary-content">
-            <div class="summary-icon">
-              <el-icon :size="32"><TrendCharts /></el-icon>
-            </div>
-            <div class="summary-info">
-              <div class="summary-value">{{ summary.averageUsageRatio }}%</div>
-              <div class="summary-label">平均使用率</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard :icon="TrendCharts" label="平均使用率" :value="summary.averageUsageRatio" unit="%" tone="primary" />
       </el-col>
       <el-col :span="4">
-        <el-card shadow="hover" class="summary-card" :class="summary.highUsageLimiters > 0 ? 'summary-warning' : 'summary-ok'">
-          <div class="summary-content">
-            <div class="summary-icon">
-              <el-icon :size="32"><WarningFilled v-if="summary.highUsageLimiters > 0" /><CircleCheckFilled v-else /></el-icon>
-            </div>
-            <div class="summary-info">
-              <div class="summary-value">{{ summary.highUsageLimiters }}</div>
-              <div class="summary-label">高使用率(>80%)</div>
-            </div>
-          </div>
-        </el-card>
+        <StatCard
+          :icon="summary.highUsageLimiters > 0 ? WarningFilled : CircleCheckFilled"
+          label="高使用率(>80%)"
+          :value="summary.highUsageLimiters"
+          :tone="summary.highUsageLimiters > 0 ? 'danger' : 'success'"
+        />
       </el-col>
     </el-row>
 
@@ -215,6 +160,10 @@ import {
   Service
 } from '@element-plus/icons-vue'
 import request from '@/utils/request'
+import StatCard from '@/components/StatCard.vue'
+import { useChartTheme } from '@/composables/useChartTheme'
+
+const { getChartTheme } = useChartTheme()
 
 interface RateLimiterMetrics {
   service: string
@@ -367,10 +316,11 @@ const formatNumber = (num: number) => {
 }
 
 const getUsageColor = (percentage: number) => {
-  if (percentage >= 90) return '#F56C6C'
-  if (percentage >= 80) return '#E6A23C'
-  if (percentage >= 50) return '#409EFF'
-  return '#67C23A'
+  const theme = getChartTheme()
+  if (percentage >= 90) return theme.danger
+  if (percentage >= 80) return theme.warning
+  if (percentage >= 50) return theme.primary
+  return theme.success
 }
 
 onMounted(() => {
@@ -390,93 +340,14 @@ onUnmounted(() => {
 <style scoped>
 .rate-limiter-monitoring {
   padding: 24px;
-  background: linear-gradient(180deg, #f7f9fc 0%, #ffffff 100%);
+  background: var(--ja-main-bg-gradient);
   min-height: calc(100vh - 80px);
-}
-
-.summary-card {
-  border-radius: 12px;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.summary-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-}
-
-.summary-content {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.summary-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(64, 158, 255, 0.1);
-  color: #409EFF;
-}
-
-.summary-total .summary-icon {
-  background: rgba(64, 158, 255, 0.1);
-  color: #409EFF;
-}
-
-.summary-global .summary-icon {
-  background: rgba(103, 194, 58, 0.1);
-  color: #67C23A;
-}
-
-.summary-service .summary-icon {
-  background: rgba(230, 162, 60, 0.1);
-  color: #E6A23C;
-}
-
-.summary-instance .summary-icon {
-  background: rgba(144, 147, 153, 0.1);
-  color: #909399;
-}
-
-.summary-usage .summary-icon {
-  background: rgba(64, 158, 255, 0.1);
-  color: #409EFF;
-}
-
-.summary-warning .summary-icon {
-  background: rgba(245, 108, 108, 0.1);
-  color: #F56C6C;
-}
-
-.summary-ok .summary-icon {
-  background: rgba(103, 194, 58, 0.1);
-  color: #67C23A;
-}
-
-.summary-info {
-  flex: 1;
-}
-
-.summary-value {
-  font-size: 28px;
-  font-weight: bold;
-  color: #303133;
-  line-height: 1.2;
-}
-
-.summary-label {
-  font-size: 13px;
-  color: #909399;
-  margin-top: 4px;
 }
 
 .metrics-card,
 .prometheus-card {
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
-  border-radius: 12px;
+  box-shadow: var(--ja-shadow);
+  border-radius: var(--ja-radius-lg);
 }
 
 .card-header {
@@ -488,7 +359,7 @@ onUnmounted(() => {
 .card-title {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .control-buttons {
@@ -503,17 +374,17 @@ onUnmounted(() => {
 .identifier-text {
   font-family: monospace;
   font-size: 12px;
-  color: #606266;
+  color: var(--ja-text-regular);
 }
 
 .metric-value {
   font-family: 'Monaco', 'Menlo', monospace;
   font-size: 13px;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .text-warning {
-  color: #E6A23C;
+  color: var(--ja-warning);
 }
 
 .usage-cell {
@@ -529,7 +400,7 @@ onUnmounted(() => {
 .usage-text {
   font-size: 12px;
   font-weight: 500;
-  color: #606266;
+  color: var(--ja-text-regular);
   min-width: 45px;
   text-align: right;
 }

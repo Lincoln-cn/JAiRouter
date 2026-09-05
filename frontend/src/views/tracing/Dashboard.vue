@@ -330,6 +330,9 @@ import {
   getRecentTraces
 } from '@/api/tracing'
 import TraceDetail from './components/TraceDetail.vue'
+import { useChartTheme } from '@/composables/useChartTheme'
+
+const { getChartTheme } = useChartTheme()
 
 const router = useRouter()
 
@@ -487,6 +490,7 @@ const initCharts = () => {
 
 // 图表配置
 const getTraceTrendOption = () => {
+  const { primary, danger } = getChartTheme()
   return {
     tooltip: {
       trigger: 'axis',
@@ -517,14 +521,14 @@ const getTraceTrendOption = () => {
         type: 'line',
         smooth: true,
         areaStyle: { opacity: 0.3 },
-        itemStyle: { color: '#409eff' },
+        itemStyle: { color: primary },
         data: generateRandomData(12, 100, 500)
       },
       {
         name: '错误数',
         type: 'line',
         smooth: true,
-        itemStyle: { color: '#f56c6c' },
+        itemStyle: { color: danger },
         data: generateRandomData(12, 0, 50)
       }
     ]
@@ -532,6 +536,7 @@ const getTraceTrendOption = () => {
 }
 
 const getLatencyDistributionOption = () => {
+  const { primary, warning } = getChartTheme()
   const services = serviceStats.value.map(s => s.name)
   const avgDurations = serviceStats.value.map(s => s.avgDuration || 0)
   const p95Durations = serviceStats.value.map(s => s.p95Duration || 0)
@@ -565,13 +570,13 @@ const getLatencyDistributionOption = () => {
       {
         name: '平均延迟',
         type: 'bar',
-        itemStyle: { color: '#409eff' },
+        itemStyle: { color: primary },
         data: avgDurations
       },
       {
         name: 'P95延迟',
         type: 'bar',
-        itemStyle: { color: '#e6a23c' },
+        itemStyle: { color: warning },
         data: p95Durations
       }
     ]
@@ -613,9 +618,10 @@ const getRowClassName = ({ row }: { row: any }) => {
 }
 
 const getServiceStatusColor = (row: any) => {
-  if (row.errorRate > 5) return '#f56c6c'
-  if (row.avgDuration > 1000) return '#e6a23c'
-  return '#67c23a'
+  const { danger, warning, success } = getChartTheme()
+  if (row.errorRate > 5) return danger
+  if (row.avgDuration > 1000) return warning
+  return success
 }
 
 const getServiceStatusIcon = (row: any) => {
@@ -776,56 +782,56 @@ onBeforeUnmount(() => {
 }
 
 .metric-icon.primary {
-  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  background: linear-gradient(135deg, var(--ja-primary) 0%, var(--ja-primary-light-3) 100%);
   color: white;
 }
 
 .metric-icon.success {
-  background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%);
+  background: linear-gradient(135deg, var(--ja-success) 0%, var(--el-color-success-light-3) 100%);
   color: white;
 }
 
 .metric-icon.warning {
-  background: linear-gradient(135deg, #e6a23c 0%, #ebb563 100%);
+  background: linear-gradient(135deg, var(--ja-warning) 0%, var(--el-color-warning-light-3) 100%);
   color: white;
 }
 
 .metric-icon.danger {
-  background: linear-gradient(135deg, #f56c6c 0%, #f78989 100%);
+  background: linear-gradient(135deg, var(--ja-danger) 0%, var(--el-color-danger-light-3) 100%);
   color: white;
 }
 
 .metric-value {
   font-size: 28px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .metric-value .unit {
   font-size: 14px;
   font-weight: normal;
-  color: #909399;
+  color: var(--ja-text-secondary);
   margin-left: 4px;
 }
 
 .metric-label {
   font-size: 14px;
-  color: #909399;
+  color: var(--ja-text-secondary);
   margin-top: 4px;
 }
 
 .metric-trend {
   font-size: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
   margin-top: 8px;
 }
 
 .metric-trend .up {
-  color: #67c23a;
+  color: var(--ja-success);
 }
 
 .metric-trend .down {
-  color: #f56c6c;
+  color: var(--ja-danger);
 }
 
 .tab-card {
@@ -846,7 +852,7 @@ onBeforeUnmount(() => {
 .chart-header h4 {
   margin: 0;
   font-size: 16px;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .chart-container {
@@ -882,19 +888,19 @@ onBeforeUnmount(() => {
 }
 
 .text-danger {
-  color: #f56c6c;
+  color: var(--ja-danger);
 }
 
 .text-warning {
-  color: #e6a23c;
+  color: var(--ja-warning);
 }
 
 :deep(.error-row) {
-  background-color: #fef0f0;
+  background-color: var(--ja-dashboard-error-row);
 }
 
 :deep(.slow-row) {
-  background-color: #fdf6ec;
+  background-color: var(--el-color-warning-light-9, #fdf6ec);
 }
 
 @media (max-width: 768px) {

@@ -637,7 +637,7 @@ const handleSave = async () => {
 .form-tip {
   margin-left: 12px;
   font-size: 12px;
-  color: #909399;
+  color: var(--ja-text-secondary);
 }
 
 .test-header-list {
