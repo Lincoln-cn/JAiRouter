@@ -492,6 +492,7 @@ import StatCard from '@/components/StatCard.vue'
 
 // 图表主题
 import { useChartTheme } from '@/composables/useChartTheme'
+import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 
 const { getChartTheme } = useChartTheme()
 const router = useRouter()
@@ -531,7 +532,7 @@ const recentExceptions = ref<ExceptionEvent[]>([])
 // SSE 回调引用，方便移除
 let sseHandler: ((data: any) => void) | null = null
 
-// 服务类型映射（保持原有顺序，type -> i18n 键名）
+// 服务类型映射（保持原有顺序，type -> i18n 键名；v2.10.4: 文案收敛到顶层 serviceTypes.*）
 const serviceTypeMap: Record<string, string> = {
   chat: 'chat',
   embedding: 'embedding',
@@ -543,7 +544,7 @@ const serviceTypeMap: Record<string, string> = {
 }
 
 const getServiceTypeName = (type: string) =>
-  serviceTypeMap[type] ? t(`dashboard.serviceTypes.${serviceTypeMap[type]}`) : type
+  serviceTypeMap[type] ? t(`serviceTypes.${serviceTypeMap[type]}`) : type
 
 // ════════════ 治理链路计算属性 ════════════
 
@@ -778,6 +779,11 @@ const initChart = () => {
 
 const resizeChart = () => {
   systemChartInstance?.resize()
+  systemChartInstance?.setOption(getChartOption(), { notMerge: true })
+}
+
+// 语言 / 主题切换后按当前数据与最新文案重建图表（纯重绘，无网络请求）
+const rebuildAll = () => {
   systemChartInstance?.setOption(getChartOption(), { notMerge: true })
 }
 
@@ -1026,6 +1032,8 @@ const fetchDashboardData = async () => {
 }
 
 onMounted(() => {
+  useChartAutoRefresh(rebuildAll)
+
   fetchDashboardData().then(() => {
     sseHandler = (data: any) => {
       handleHealthUpdate(data)

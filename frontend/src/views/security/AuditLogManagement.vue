@@ -300,6 +300,7 @@ import {
 } from '@/api/auditLog'
 import { addToBlacklist } from '@/api/blacklist'
 import { useChartTheme } from '@/composables/useChartTheme'
+import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import { formatDateTime as formatDateTimeBase } from '@/utils/format'
 
@@ -345,6 +346,8 @@ const eventTypeChartRef = ref<HTMLElement>()
 const trendChartRef = ref<HTMLElement>()
 let eventTypeChart: echarts.ECharts | null = null
 let trendChart: echarts.ECharts | null = null
+// 最近一次统计图表数据源（供语言/主题切换时纯重绘复用，不重新请求）
+let lastOperationsByType: Record<string, number> = {}
 
 // 快捷时间选择
 const handleQuickTimeChange = (value: string) => {
@@ -570,6 +573,7 @@ const loadStatistics = async () => {
     stats.suspiciousActivities = report.suspiciousActivities
     
     // 更新图表
+    lastOperationsByType = report.operationsByType || {}
     updateEventTypeChart(report.operationsByType)
     updateTrendChart(report.operationsByType)
   } catch (error) {
@@ -686,7 +690,14 @@ const handleResize = () => {
   trendChart?.resize()
 }
 
+// 语言 / 主题切换后基于最近统计结果重绘图表（纯重绘，无网络请求）
+const rebuildAll = () => {
+  updateEventTypeChart(lastOperationsByType)
+  updateTrendChart(lastOperationsByType)
+}
+
 onMounted(async () => {
+  useChartAutoRefresh(rebuildAll)
   await loadAuditLogs()
   await loadStatistics()
   window.addEventListener('resize', handleResize)

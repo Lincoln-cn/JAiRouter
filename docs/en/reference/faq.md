@@ -1,4 +1,4 @@
-﻿# Frequently Asked Questions (FAQ)
+# Frequently Asked Questions (FAQ)
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -196,6 +196,16 @@ curl -X PUT http://localhost:8080/api/config/instance/update/chat \
     }
   }'
 ```
+
+### Q12.1: The Web admin console is bilingual — why are some messages still in Chinese?
+
+**A**: Since v2.10.3 (the Web bilingual edition), the Web admin console UI has been fully localized in both Chinese and English, and the language can be switched from the page header. The current language policy is:
+
+- **Frontend UI text**: copy for the login page, menus, buttons, dialogs and other UI elements is localized via i18n and switches instantly with the UI language, including localized fallback prompts for generic cases (e.g. network errors);
+- **Backend-returned messages**: the `message` field returned directly by the backend API (e.g. error and validation messages) is, by design, **passed through verbatim without translation** — such messages remain in the original Chinese even when the UI is English;
+- **Key operation prompts**: for some common backend errors (e.g. version not found, corrupted configuration, permission denied, system error), the frontend classifies them locally and maps them to copy in the current UI language.
+
+Making backend messages follow the UI language as well belongs to a future backend error-code refactor; it will be planned as a separate initiative and is not supported in the current release.
 
 ## Monitoring and Operations
 

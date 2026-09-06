@@ -135,34 +135,114 @@ const renderedContent = computed(() => {
   height: auto;
 }
 
-/* Highlight.js 代码高亮主题适配 */
+/* ===== Highlight.js 代码高亮主题适配 =====
+ * 容器/行内 code 底色沿用上方 var(--el-*) 令牌（亮/暗自动切换）。
+ * token 色以“语义分组 + CSS 变量”实现：亮色为 GitHub Light 色调，
+ * 暗色(html.dark)切换为 GitHub Dark 近似色调，两组 hue 语义一一对应。
+ * 亮色红/紫/绿为在应用灰底(#e6e8eb)上满足对比度≥4.5 而作的加深色
+ * （注释类豁免，≥3 即可）。
+ */
+.markdown-renderer {
+  /* 亮色 token 色（GitHub Light 近似） */
+  --md-token-keyword: #c31f2b;   /* 关键字/标签/类型 */
+  --md-token-string: #0a3069;    /* 字符串/属性值 */
+  --md-token-number: #0550ae;    /* 数字/字面量/运算符 */
+  --md-token-comment: #6e7781;   /* 注释 */
+  --md-token-function: #7a3fd1;  /* 函数/标题/类名 */
+  --md-token-class: #953800;     /* 内建类型/遗留 class/符号 */
+  --md-token-name: #16713a;      /* 标签名/伪类选择器 */
+}
+
+html.dark .markdown-renderer {
+  /* 暗色 token 色（GitHub Dark 近似） */
+  --md-token-keyword: #ff7b72;
+  --md-token-string: #a5d6ff;
+  --md-token-number: #79c0ff;
+  --md-token-comment: #8b949e;
+  --md-token-function: #d2a8ff;
+  --md-token-class: #ffa657;
+  --md-token-name: #7ee787;
+}
+
 .markdown-renderer .hljs {
   background: transparent;
 }
 
+/* ---- 通用分组：一组选择器 + 随主题切换的 --md-token-* ---- */
+
+/* 关键字 / 标签 / 类型（红） */
 .markdown-renderer .hljs-keyword,
-.markdown-renderer .hljs-selector-tag {
-  color: #cf222e;
+.markdown-renderer .hljs-selector-tag,
+.markdown-renderer .hljs-doctag,
+.markdown-renderer .hljs-template-tag,
+.markdown-renderer .hljs-template-variable,
+.markdown-renderer .hljs-type,
+.markdown-renderer .hljs-variable.language_,
+.markdown-renderer .hljs-meta .hljs-keyword {
+  color: var(--md-token-keyword);
 }
 
+/* 字符串 / 属性值（藏蓝 -> 浅蓝） */
 .markdown-renderer .hljs-string,
-.markdown-renderer .hljs-attr {
-  color: #0a3069;
+.markdown-renderer .hljs-attr,
+.markdown-renderer .hljs-regexp,
+.markdown-renderer .hljs-meta .hljs-string {
+  color: var(--md-token-string);
 }
 
-.markdown-renderer .hljs-number {
-  color: #0550ae;
+/* 数字 / 字面量 / 变量 / 运算符 / 属性名 / 元信息（蓝） */
+.markdown-renderer .hljs-number,
+.markdown-renderer .hljs-literal,
+.markdown-renderer .hljs-variable,
+.markdown-renderer .hljs-operator,
+.markdown-renderer .hljs-attribute,
+.markdown-renderer .hljs-meta,
+.markdown-renderer .hljs-selector-attr,
+.markdown-renderer .hljs-selector-class,
+.markdown-renderer .hljs-selector-id {
+  color: var(--md-token-number);
 }
 
-.markdown-renderer .hljs-comment {
-  color: #6e7781;
+/* 注释 / 代码 / 引用（灰） */
+.markdown-renderer .hljs-comment,
+.markdown-renderer .hljs-code,
+.markdown-renderer .hljs-formula,
+.markdown-renderer .hljs-quote {
+  color: var(--md-token-comment);
 }
 
-.markdown-renderer .hljs-function {
-  color: #8250df;
+/* 函数 / 标题 / 类名（紫） */
+.markdown-renderer .hljs-function,
+.markdown-renderer .hljs-title,
+.markdown-renderer .hljs-title.function_,
+.markdown-renderer .hljs-title.class_,
+.markdown-renderer .hljs-title.class_.inherited__ {
+  color: var(--md-token-function);
 }
 
-.markdown-renderer .hljs-class {
-  color: #953800;
+/* 内建类型 / 遗留 class / 符号（橙褐） */
+.markdown-renderer .hljs-class,
+.markdown-renderer .hljs-built_in,
+.markdown-renderer .hljs-symbol {
+  color: var(--md-token-class);
+}
+
+/* 标签名 / 伪类选择器（绿） */
+.markdown-renderer .hljs-name,
+.markdown-renderer .hljs-selector-pseudo {
+  color: var(--md-token-name);
+}
+
+/* ===== 暗色容器底色（亮色沿用上方 var(--el-*) 令牌原值） ===== */
+html.dark .markdown-renderer code {
+  background-color: var(--el-fill-color); /* 行内 code：#303030，略高于暗色消息体 #262727 */
+}
+
+html.dark .markdown-renderer pre {
+  background-color: var(--ja-bg-overlay); /* 代码容器：#1d1e1f，GitHub Dark 画布近似 */
+}
+
+html.dark .markdown-renderer pre code {
+  background: none;
 }
 </style>

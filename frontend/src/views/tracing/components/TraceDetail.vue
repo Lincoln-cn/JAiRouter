@@ -129,6 +129,7 @@ import {
 } from '@element-plus/icons-vue'
 import { getTraceChain } from '@/api/tracing'
 import { useChartTheme } from '@/composables/useChartTheme'
+import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 
 const props = defineProps<{
   traceId: string
@@ -182,13 +183,9 @@ const loadTraceChain = async () => {
   }
 }
 
-const renderGanttChart = () => {
-  if (!ganttChart.value || !traceChain.value?.spans) return
-
-  ganttChartInstance = echarts.init(ganttChart.value)
-
+const buildGanttOption = () => {
   const spans = sortedSpans.value
-  if (spans.length === 0) return
+  if (spans.length === 0) return null
 
   const baseTime = new Date(spans[0].startTime).getTime()
   const ganttData = spans.map((span: any, index: number) => {
@@ -282,7 +279,24 @@ const renderGanttChart = () => {
     }]
   }
 
-  ganttChartInstance.setOption(option)
+  return option
+}
+
+const renderGanttChart = () => {
+  if (!ganttChart.value || !traceChain.value?.spans) return
+
+  ganttChartInstance = echarts.init(ganttChart.value)
+
+  const option = buildGanttOption()
+  if (option) ganttChartInstance.setOption(option)
+}
+
+// 语言 / 主题切换后基于当前 traceChain 数据重建甘特图（纯重绘，无网络请求）
+const rebuildAll = () => {
+  if (!ganttChartInstance || !traceChain.value?.spans) return
+
+  const option = buildGanttOption()
+  if (option) ganttChartInstance.setOption(option)
 }
 
 const getSpanColor = (operationName: string) => {
@@ -362,6 +376,7 @@ watch(() => props.traceId, () => {
 }, { immediate: true })
 
 onMounted(() => {
+  useChartAutoRefresh(rebuildAll)
   loadTraceChain()
 })
 </script>

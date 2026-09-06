@@ -176,10 +176,10 @@ const serviceTypeKeyMap: Record<string, string> = {
   imgEdit: 'imgEdit'
 }
 
-// 获取服务类型标签
+// 获取服务类型标签（v2.10.4: 文案收敛到顶层 serviceTypes.*，未知类型回退原值）
 const getServiceTypeLabel = (type?: string) => {
   if (!type) return t('callHistory.common.unknown')
-  return serviceTypeKeyMap[type] ? t(`callHistory.serviceTypes.${serviceTypeKeyMap[type]}`) : type
+  return serviceTypeKeyMap[type] ? t(`serviceTypes.${serviceTypeKeyMap[type]}`) : type
 }
 
 // 获取 HTTP 状态码标签类型

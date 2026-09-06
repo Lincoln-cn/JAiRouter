@@ -98,7 +98,7 @@
                 @click.stop
               >
                 <el-tag type="info" class="table-tag">
-                  {{ scope.row.type }}
+                  {{ serviceTypeLabel(scope.row.type) }}
                 </el-tag>
               </router-link>
             </template>
@@ -200,10 +200,10 @@
           style="width: 100%"
         >
           <el-option
-            v-for="t in availableTypes"
-            :key="t"
-            :label="t"
-            :value="t"
+            v-for="st in availableTypes"
+            :key="st"
+            :label="serviceTypeLabel(st)"
+            :value="st"
           />
         </el-select>
 
@@ -422,7 +422,14 @@ const filterAdapter = ref<string | undefined>(undefined)
 const currentPage = ref(1)
 const pageSize = ref(10)
 
+// v2.10.4: SERVICE_TYPE_LABELS 值 = 顶层 serviceTypes.* i18n key，渲染点用 t() 翻译；未知类型回退原值
 const serviceTypeMap: Record<string, string> = SERVICE_TYPE_LABELS as Record<string, string>
+
+// 服务类型显示名（未知类型回退原值）
+const serviceTypeLabel = (type: string): string => {
+  const key = serviceTypeMap[type]
+  return key ? t(key) : type
+}
 
 // 服务数据缓存
 const serviceCache = ref<Record<string, any>>({})

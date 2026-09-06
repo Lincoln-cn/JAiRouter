@@ -363,7 +363,9 @@ const handleApply = async (row: Version) => {
       errorMessage = errorData.message || t('version.errors.server')
       errorDetails = errorData.details || errorData.error || ''
 
-      // 根据错误类型提供具体的错误信息
+      // 中文哨兵分类：后端 API 直返的 message 恒为中文原文（en 界面下也不随界面语言翻译），
+      // 故按中文关键词匹配错误类别，再映射为 i18n（t()）展示文案；
+      // 未命中分类时错误详情保持后端原文，无后端消息时走 i18n 通用文案。
       if (errorMessage.includes('版本不存在')) {
         errorTitle = t('version.errors.versionNotFoundTitle')
         errorMessage = t('version.errors.versionNotFound', { version: row.version })

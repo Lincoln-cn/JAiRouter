@@ -151,7 +151,8 @@
           </el-button>
         </el-col>
         <el-col :span="6">
-          <el-button type="info" @click="loadPersistenceStatus">
+          <!-- 暗色对比收口：info 白字在 #909399 上 ratio≈3.1 <4.5，改默认类型按钮（文字随 --el-text-color-* 令牌） -->
+          <el-button @click="loadPersistenceStatus">
             <el-icon><View /></el-icon>
             {{ t('statePersistence.viewDetail') }}
           </el-button>

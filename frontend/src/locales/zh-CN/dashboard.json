@@ -103,15 +103,6 @@
       "authSuccess": "认证成功",
       "authSuccessRate": "认证成功率",
       "requestVolume": "请求量"
-    },
-    "serviceTypes": {
-      "chat": "聊天服务",
-      "embedding": "嵌入服务",
-      "rerank": "重排序服务",
-      "tts": "文本转语音",
-      "stt": "语音转文本",
-      "imgGen": "图像生成",
-      "imgEdit": "图像编辑服务"
     }
   }
 }

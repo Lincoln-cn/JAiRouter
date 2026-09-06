@@ -1,14 +1,5 @@
 {
   "callHistory": {
-    "serviceTypes": {
-      "chat": "Chat",
-      "embedding": "Embedding",
-      "rerank": "Rerank",
-      "tts": "Text-to-Speech",
-      "stt": "Speech-to-Text",
-      "imgGen": "Image Generation",
-      "imgEdit": "Image Editing"
-    },
     "common": {
       "unknown": "Unknown",
       "success": "Success",

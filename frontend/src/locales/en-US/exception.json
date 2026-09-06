@@ -27,15 +27,6 @@
       "clientIpPlaceholder": "Enter an IP address",
       "serviceType": "Service Type",
       "serviceTypePlaceholder": "Select a service type",
-      "serviceTypes": {
-        "chat": "Chat",
-        "embedding": "Embedding",
-        "rerank": "Rerank",
-        "tts": "TTS",
-        "stt": "STT",
-        "imageGeneration": "Image Generation",
-        "imageEditing": "Image Editing"
-      },
       "modelName": "Model Name",
       "modelNamePlaceholder": "Enter a model name",
       "timeRange": "Time Range",

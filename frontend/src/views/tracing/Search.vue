@@ -257,6 +257,7 @@ import {
   exportTraces
 } from '@/api/tracing'
 import { useChartTheme } from '@/composables/useChartTheme'
+import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 
 const { getChartTheme } = useChartTheme()
 const { t } = useI18n()
@@ -847,8 +848,16 @@ const showSpanDetails = (span: any) => {
   })
 }
 
+// 语言 / 主题切换后重建追踪链路甘特图（纯重绘，无网络请求；未查看追踪时安全跳过）
+const rebuildAll = () => {
+  if (traceChainChartInstance && traceChain.value?.spans) {
+    traceChainChartInstance.setOption(getTraceChainChartOption())
+  }
+}
+
 // 组件挂载时初始化
 onMounted(() => {
+  useChartAutoRefresh(rebuildAll)
   loadAvailableServices()
   handleGetRecent() // 默认加载最近的追踪
 })

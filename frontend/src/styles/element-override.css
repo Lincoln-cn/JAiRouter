@@ -106,3 +106,9 @@ html.dark {
 
 /* v2.10.3 暗色对比收口：滑块刻度文字（EP 默认 --el-color-info 暗色下过暗） */
 html.dark .el-slider__marks-text { color: var(--ja-text-regular); }
+
+/* v2.10.4 暗色对比收口：index.html 首帧启动屏 <style> 的裸 h2/p 全局色（#333/#666）会泄漏到整个 SPA，
+   暗色下这些裸 h2/p 落在卡片背景上 ratio<4.5（实例：tracing 仪表盘标题 h2、缓存页 el-alert 内提示段落 p）。
+   此处以同权选择器 + 更晚加载顺序收敛为文字令牌（正文 p 用 regular，标题 h2 用 primary）。 */
+h2 { color: var(--ja-text-primary); }
+p { color: var(--ja-text-regular); }

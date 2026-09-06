@@ -277,6 +277,7 @@ import {
 } from '@/api/tokenUsage'
 import type { TokenUsageStatistics, TokenUsageRecord } from '@/types/tokenUsage'
 import { formatDateTime as formatDateTimeBase, formatNumber as formatNumberBase } from '@/utils/format'
+import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 
 const { t } = useI18n()
 
@@ -348,10 +349,10 @@ const serviceTypeKeyMap: Record<string, string> = {
   imgEdit: 'imgEdit'
 }
 
-// 获取服务类型标签
+// 获取服务类型标签（v2.10.4: 文案收敛到顶层 serviceTypes.*，未知类型回退原值）
 const getServiceTypeLabel = (type?: string) => {
   if (!type) return t('callHistory.common.unknown')
-  return serviceTypeKeyMap[type] ? t(`callHistory.serviceTypes.${serviceTypeKeyMap[type]}`) : type
+  return serviceTypeKeyMap[type] ? t(`serviceTypes.${serviceTypeKeyMap[type]}`) : type
 }
 
 // 初始化图表
@@ -700,8 +701,19 @@ const handleResize = () => {
   hourlyChart?.resize()
 }
 
+// 语言 / 主题切换后基于已加载统计数据重绘全部图表（纯重绘，无网络请求）
+const rebuildAll = () => {
+  updateModelChart()
+  updateServiceTypeChart()
+  updateDailyChart()
+  updateWeeklyChart()
+  updateMonthlyChart()
+  updateHourlyChart()
+}
+
 // 初始化
 onMounted(() => {
+  useChartAutoRefresh(rebuildAll)
   loadData()
   window.addEventListener('resize', handleResize)
 })

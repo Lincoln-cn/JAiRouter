@@ -1,0 +1,1 @@
+import{Jn as s,ir as o}from"./element-plus-DvfIaFYU.js";import{n as t}from"./vue-i18n-BYbUrSpR.js";import{t as r}from"./index-CiU_XIaY.js";function n(n){const{locale:e}=t(),{isDark:i}=r(),a=o([e,i],()=>{n()},{flush:"post"});return s(()=>{a()}),{stop:a}}export{n as t};

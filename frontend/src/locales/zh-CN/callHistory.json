@@ -1,14 +1,5 @@
 {
   "callHistory": {
-    "serviceTypes": {
-      "chat": "聊天",
-      "embedding": "嵌入",
-      "rerank": "重排序",
-      "tts": "语音合成",
-      "stt": "语音识别",
-      "imgGen": "图像生成",
-      "imgEdit": "图像编辑"
-    },
     "common": {
       "unknown": "未知",
       "success": "成功",

@@ -332,6 +332,7 @@ import {
 } from '@/api/tracing'
 import TraceDetail from './components/TraceDetail.vue'
 import { useChartTheme } from '@/composables/useChartTheme'
+import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 import { formatNumber as formatNumberBase } from '@/utils/format'
 
 const { getChartTheme } = useChartTheme()
@@ -696,6 +697,15 @@ const updateTrendChart = () => {
   }
 }
 
+// 语言 / 主题切换后重绘所有已创建图表（纯重绘，无网络请求；未创建/隐藏页签图表自动跳过）
+const rebuildAll = () => {
+  if (traceTrendEcharts) traceTrendEcharts.setOption(getTraceTrendOption())
+  if (latencyDistEcharts) latencyDistEcharts.setOption(getLatencyDistributionOption())
+  if (latencyTrendEcharts) latencyTrendEcharts.setOption(getTraceTrendOption())
+  if (errorTrendEcharts) errorTrendEcharts.setOption(getTraceTrendOption())
+  if (throughputEcharts) throughputEcharts.setOption(getTraceTrendOption())
+}
+
 // 窗口大小变化处理
 const handleResize = () => {
   if (traceTrendEcharts) traceTrendEcharts.resize()
@@ -710,6 +720,7 @@ const handleResize = () => {
 // 生命周期
 onMounted(() => {
   window.addEventListener('resize', handleResize)
+  useChartAutoRefresh(rebuildAll)
   loadAllData()
 })
 
@@ -751,6 +762,8 @@ onBeforeUnmount(() => {
 .header-left h2 {
   margin: 0;
   font-size: 20px;
+  /* 暗色对比收口：标题色跟随主题文字色（否则裸 h2 显近黑 #333 于暗色卡片上不可读） */
+  color: var(--ja-text-primary);
 }
 
 .header-right {

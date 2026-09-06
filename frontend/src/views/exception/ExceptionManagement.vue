@@ -78,13 +78,13 @@
           </el-form-item>
           <el-form-item :label="t('exception.list.serviceType')">
             <el-select v-model="queryParams.serviceType" :placeholder="t('exception.list.serviceTypePlaceholder')" clearable style="width: 130px">
-              <el-option :label="t('exception.list.serviceTypes.chat')" value="CHAT" />
-              <el-option :label="t('exception.list.serviceTypes.embedding')" value="EMBEDDING" />
-              <el-option :label="t('exception.list.serviceTypes.rerank')" value="RERANK" />
-              <el-option :label="t('exception.list.serviceTypes.tts')" value="TTS" />
-              <el-option :label="t('exception.list.serviceTypes.stt')" value="STT" />
-              <el-option :label="t('exception.list.serviceTypes.imageGeneration')" value="IMG_GENERATE" />
-              <el-option :label="t('exception.list.serviceTypes.imageEditing')" value="IMG_EDIT" />
+              <el-option :label="t('serviceTypes.chat')" value="CHAT" />
+              <el-option :label="t('serviceTypes.embedding')" value="EMBEDDING" />
+              <el-option :label="t('serviceTypes.rerank')" value="RERANK" />
+              <el-option :label="t('serviceTypes.tts')" value="TTS" />
+              <el-option :label="t('serviceTypes.stt')" value="STT" />
+              <el-option :label="t('serviceTypes.imgGen')" value="IMG_GENERATE" />
+              <el-option :label="t('serviceTypes.imgEdit')" value="IMG_EDIT" />
             </el-select>
           </el-form-item>
           <el-form-item :label="t('exception.list.modelName')">

@@ -164,6 +164,7 @@ import {
 import type { ExceptionEvent, ExceptionStatistics } from '@/types/exception'
 import StatCard from '@/components/StatCard.vue'
 import { useChartTheme } from '@/composables/useChartTheme'
+import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 import { formatDateTime as formatDateTimeBase } from '@/utils/format'
 
 const { getChartTheme } = useChartTheme()
@@ -587,8 +588,17 @@ const handleResize = () => {
   hourlyChart?.resize()
 }
 
+// 语言 / 主题切换后基于已加载统计数据重绘全部图表（纯重绘，无网络请求）
+const rebuildAll = () => {
+  updateTypeChart()
+  updateCategoryChart()
+  updateHttpStatusChart()
+  updateHourlyChart()
+}
+
 // 初始化
 onMounted(() => {
+  useChartAutoRefresh(rebuildAll)
   loadData()
   window.addEventListener('resize', handleResize)
 })

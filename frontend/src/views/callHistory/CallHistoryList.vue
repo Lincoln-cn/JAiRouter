@@ -24,13 +24,13 @@
         </el-form-item>
         <el-form-item :label="t('callHistory.common.serviceType')">
           <el-select v-model="queryForm.serviceType" :placeholder="t('callHistory.list.allPlaceholder')" clearable style="width: 120px">
-            <el-option :label="t('callHistory.serviceTypes.chat')" value="chat" />
-            <el-option :label="t('callHistory.serviceTypes.embedding')" value="embedding" />
-            <el-option :label="t('callHistory.serviceTypes.rerank')" value="rerank" />
-            <el-option :label="t('callHistory.serviceTypes.tts')" value="tts" />
-            <el-option :label="t('callHistory.serviceTypes.stt')" value="stt" />
-            <el-option :label="t('callHistory.serviceTypes.imgGen')" value="imgGen" />
-            <el-option :label="t('callHistory.serviceTypes.imgEdit')" value="imgEdit" />
+            <el-option :label="t('serviceTypes.chat')" value="chat" />
+            <el-option :label="t('serviceTypes.embedding')" value="embedding" />
+            <el-option :label="t('serviceTypes.rerank')" value="rerank" />
+            <el-option :label="t('serviceTypes.tts')" value="tts" />
+            <el-option :label="t('serviceTypes.stt')" value="stt" />
+            <el-option :label="t('serviceTypes.imgGen')" value="imgGen" />
+            <el-option :label="t('serviceTypes.imgEdit')" value="imgEdit" />
           </el-select>
         </el-form-item>
         <el-form-item :label="t('callHistory.common.status')">
@@ -397,10 +397,10 @@ const serviceTypeKeyMap: Record<string, string> = {
   imgEdit: 'imgEdit'
 }
 
-// 获取服务类型标签
+// 获取服务类型标签（v2.10.4: 文案收敛到顶层 serviceTypes.*，未知类型回退原值）
 const getServiceTypeLabel = (type?: string) => {
   if (!type) return t('callHistory.common.unknown')
-  return serviceTypeKeyMap[type] ? t(`callHistory.serviceTypes.${serviceTypeKeyMap[type]}`) : type
+  return serviceTypeKeyMap[type] ? t(`serviceTypes.${serviceTypeKeyMap[type]}`) : type
 }
 
 // 获取 HTTP 状态码标签类型

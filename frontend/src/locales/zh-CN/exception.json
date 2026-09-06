@@ -27,15 +27,6 @@
       "clientIpPlaceholder": "输入 IP 地址",
       "serviceType": "服务类型",
       "serviceTypePlaceholder": "选择服务类型",
-      "serviceTypes": {
-        "chat": "Chat",
-        "embedding": "Embedding",
-        "rerank": "Rerank",
-        "tts": "TTS",
-        "stt": "STT",
-        "imageGeneration": "图像生成",
-        "imageEditing": "图像编辑"
-      },
       "modelName": "模型名称",
       "modelNamePlaceholder": "输入模型名",
       "timeRange": "时间范围",
