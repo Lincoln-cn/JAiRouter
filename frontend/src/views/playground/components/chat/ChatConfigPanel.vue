@@ -213,7 +213,7 @@ const stop = computed({
 .config-label {
   font-size: 12px;
   font-weight: 600;
-  color: #606266;
+  color: var(--ja-text-regular);
 }
 
 .config-control {

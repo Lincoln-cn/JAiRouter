@@ -143,11 +143,11 @@
           <el-select v-model="accountForm.roles" multiple :placeholder="t('accounts.rolesPlaceholder')" style="width: 100%;">
             <el-option :label="t('accounts.adminOptionLabel')" value="ADMIN">
               <el-tag type="danger" size="small">{{ t('accounts.adminRole') }}</el-tag>
-              <span style="margin-left: 10px; color: #909399;">{{ t('accounts.adminPermissionDescription') }}</span>
+              <span style="margin-left: 10px; color: var(--ja-text-regular);">{{ t('accounts.adminPermissionDescription') }}</span>
             </el-option>
             <el-option :label="t('accounts.userOptionLabel')" value="USER">
               <el-tag type="primary" size="small">{{ t('accounts.userRole') }}</el-tag>
-              <span style="margin-left: 10px; color: #909399;">{{ t('accounts.userPermissionDescription') }}</span>
+              <span style="margin-left: 10px; color: var(--ja-text-regular);">{{ t('accounts.userPermissionDescription') }}</span>
             </el-option>
           </el-select>
         </el-form-item>

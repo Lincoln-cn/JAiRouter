@@ -756,12 +756,12 @@ onBeforeUnmount(() => {
 .token-usage-statistics .stats-row .stat-card .stat-info .stat-value {
   font-size: 24px;
   font-weight: bold;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .token-usage-statistics .stats-row .stat-card .stat-info .stat-label {
   font-size: 14px;
-  color: #909399;
+  color: var(--ja-text-regular);
   margin-top: 5px;
 }
 

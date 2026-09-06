@@ -100,3 +100,9 @@ html.dark {
   --el-color-danger: var(--ja-danger);
   --el-color-info: var(--ja-info);
 }
+
+/* v2.10.3 暗色对比收口：卡片头 h2 标题跟随主题文字色（无继承色的裸 h2 不再显 #333 近黑） */
+.el-card__header h2 { color: var(--ja-text-primary); }
+
+/* v2.10.3 暗色对比收口：滑块刻度文字（EP 默认 --el-color-info 暗色下过暗） */
+html.dark .el-slider__marks-text { color: var(--ja-text-regular); }

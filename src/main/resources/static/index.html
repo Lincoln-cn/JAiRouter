@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>JAiRouter 管理界面</title>
+    <title>JAiRouter</title>
     <style>
       body {
         margin: 0;
@@ -69,26 +69,46 @@
         font-weight: bold;
       }
     </style>
-    <script type="module" crossorigin src="/admin/assets/index-C-lc0Enj.js"></script>
+    <script type="module" crossorigin src="/admin/assets/index-D2RNZkiC.js"></script>
     <link rel="modulepreload" crossorigin href="/admin/assets/rolldown-runtime-NMqb_1LM.js">
     <link rel="modulepreload" crossorigin href="/admin/assets/axios-DGT29bHF.js">
-    <link rel="modulepreload" crossorigin href="/admin/assets/request-QoE6nkRh.js">
-    <link rel="modulepreload" crossorigin href="/admin/assets/element-plus-Ckc7l5hT.js">
-    <link rel="modulepreload" crossorigin href="/admin/assets/pinia-DwV7m5EZ.js">
+    <link rel="modulepreload" crossorigin href="/admin/assets/request-CsRDUPwc.js">
+    <link rel="modulepreload" crossorigin href="/admin/assets/element-plus-DvfIaFYU.js">
+    <link rel="modulepreload" crossorigin href="/admin/assets/pinia-CG-SKUuh.js">
     <link rel="modulepreload" crossorigin href="/admin/assets/vendor-DCtbQ7Gp.js">
-    <link rel="modulepreload" crossorigin href="/admin/assets/vue-i18n-CjGE20d3.js">
-    <link rel="modulepreload" crossorigin href="/admin/assets/vue-router-CDrxk0MN.js">
+    <link rel="modulepreload" crossorigin href="/admin/assets/vue-i18n-BYbUrSpR.js">
+    <link rel="modulepreload" crossorigin href="/admin/assets/vue-router-B-OtNb-_.js">
+    <link rel="modulepreload" crossorigin href="/admin/assets/i18n-CJT4hyEr.js">
     <link rel="stylesheet" crossorigin href="/admin/assets/element-plus-Dz8QKE1W.css">
-    <link rel="stylesheet" crossorigin href="/admin/assets/index-Dc1wKym-.css">
+    <link rel="stylesheet" crossorigin href="/admin/assets/index-C23WlKUU.css">
   </head>
   <body>
     <div id="app">
       <div class="loading-container">
         <div class="loading-spinner"></div>
-        <h2>正在加载 <span class="brand">JAiRouter</span> 管理界面</h2>
-        <p>系统正在初始化，请稍候...</p>
-        <p>如果长时间停留在此页面，请按 F12 打开控制台查看详细错误信息。</p>
+        <h2 id="boot-title">正在加载 <span class="brand">JAiRouter</span> 管理界面</h2>
+        <p id="boot-sub">系统正在初始化，请稍候...</p>
+        <p id="boot-hint">如果长时间停留在此页面，请按 F12 打开控制台查看详细错误信息。</p>
       </div>
-    </div>
+    </div>
+    <script>
+      // 首帧加载提示按已选/浏览器语言切换（与 src/utils/locale.ts 规则一致）
+      ;(function () {
+        var loc = localStorage.getItem('ja-locale')
+        if (!loc) {
+          loc = (navigator.language || '').toLowerCase().indexOf('zh') === 0 ? 'zh-CN' : 'en-US'
+        }
+        var en = loc === 'en-US'
+        document.documentElement.lang = en ? 'en' : 'zh-CN'
+        if (en) {
+          document.getElementById('boot-title').innerHTML =
+            'Loading <span class="brand">JAiRouter</span>'
+          document.getElementById('boot-sub').textContent =
+            'Initializing the system, please wait...'
+          document.getElementById('boot-hint').textContent =
+            'Stuck here for a while? Press F12 and check the console for errors.'
+        }
+      })()
+    </script>
   </body>
 </html>
