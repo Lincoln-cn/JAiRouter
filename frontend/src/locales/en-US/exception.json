@@ -108,6 +108,7 @@
       "loadFailed": "Failed to load: {message}"
     },
     "statistics": {
+      "title": "Exception Statistics Analysis",
       "timeRange": "Time Range",
       "dateRangeSeparator": "to",
       "startTime": "Start Time",

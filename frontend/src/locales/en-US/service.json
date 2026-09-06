@@ -86,6 +86,9 @@
       "failureThreshold": "Failure Threshold",
       "timeoutMs": "Timeout (ms)",
       "successThreshold": "Success Threshold"
+    },
+    "actions": {
+      "versionHistory": "Version History"
     }
   }
 }

@@ -26,6 +26,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Check, ArrowRight } from '@element-plus/icons-vue'
+import { playgroundTargetRoute } from '@/composables/useRoutePreselect'
 
 const props = defineProps<{
   /** 当前步骤 1-based */
@@ -51,8 +52,13 @@ const steps = computed<StepItem[]>(() => [
 ])
 
 function navigate(step: StepItem) {
+  if (step.index === 4 && props.serviceType) {
+    const target = playgroundTargetRoute(props.serviceType) ?? { name: 'playground-chat' }
+    router.push({ name: target.name, query: { serviceType: props.serviceType } })
+    return
+  }
   const target: { path: string; query?: Record<string, string> } = { path: step.route }
-  if ((step.index === 3 || step.index === 4) && props.serviceType) {
+  if (step.index === 3 && props.serviceType) {
     target.query = { serviceType: props.serviceType }
   }
   router.push(target)

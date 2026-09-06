@@ -1,5 +1,5 @@
 <template>
-  <div class="exception-statistics">
+  <PageSkeleton :title="t('exception.statistics.title')">
     <!-- 时间筛选 -->
     <el-card class="filter-card" shadow="hover">
       <el-form :inline="true" class="filter-form">
@@ -139,7 +139,7 @@
         </el-table-column>
       </el-table>
     </el-card>
-  </div>
+  </PageSkeleton>
 </template>
 
 <script setup lang="ts">
@@ -163,6 +163,7 @@ import {
 } from '@/api/exception'
 import type { ExceptionEvent, ExceptionStatistics } from '@/types/exception'
 import StatCard from '@/components/StatCard.vue'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 import { useChartTheme } from '@/composables/useChartTheme'
 import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 import { formatDateTime as formatDateTimeBase } from '@/utils/format'
@@ -615,34 +616,30 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.exception-statistics {
-  padding: 20px;
-}
-
-.exception-statistics .filter-card {
+.filter-card {
   margin-bottom: 20px;
 }
 
-.exception-statistics .filter-card .filter-form {
+.filter-card .filter-form {
   display: flex;
   justify-content: center;
 }
 
-.exception-statistics .stats-row {
+.stats-row {
   margin-bottom: 20px;
 }
 
-.exception-statistics .chart-container {
+.chart-container {
   height: 300px;
   width: 100%;
 }
 
-.exception-statistics .chart-title {
+.chart-title {
   font-size: 16px;
   font-weight: bold;
 }
 
-.exception-statistics .card-header {
+.card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;

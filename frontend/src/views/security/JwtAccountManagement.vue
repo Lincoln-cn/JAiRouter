@@ -1,102 +1,95 @@
 <template>
-  <div class="jwt-account-management">
-    <el-card class="main-card">
-      <template #header>
-        <div class="card-header">
-          <span>{{ t('accounts.title') }}</span>
-          <div class="header-actions">
-            <el-input
-              v-model="searchKeyword"
-              :placeholder="t('accounts.searchPlaceholder')"
-              clearable
-              style="width: 200px; margin-right: 10px;"
-            >
-              <template #prefix>
-                <el-icon><Search /></el-icon>
-              </template>
-            </el-input>
-            <el-button type="primary" @click="showCreateDialog = true">
-              <el-icon><Plus /></el-icon>
-              {{ t('accounts.createAccount') }}
-            </el-button>
-            <el-button @click="refreshAccounts">
-              <el-icon><Refresh /></el-icon>
-              {{ t('accounts.refresh') }}
-            </el-button>
-          </div>
-        </div>
-      </template>
+  <PageSkeleton :title="t('accounts.title')">
+    <template #actions>
+      <el-input
+        v-model="searchKeyword"
+        :placeholder="t('accounts.searchPlaceholder')"
+        clearable
+        style="width: 200px;"
+      >
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
+      </el-input>
+      <el-button type="primary" @click="showCreateDialog = true">
+        <el-icon><Plus /></el-icon>
+        {{ t('accounts.createAccount') }}
+      </el-button>
+      <el-button @click="refreshAccounts">
+        <el-icon><Refresh /></el-icon>
+        {{ t('accounts.refresh') }}
+      </el-button>
+    </template>
 
-      <!-- 统计信息 -->
-      <el-row :gutter="20" style="margin-bottom: 20px;">
-        <el-col :span="6">
-          <el-statistic :title="t('accounts.totalAccounts')" :value="accounts.length" />
-        </el-col>
-        <el-col :span="6">
-          <el-statistic :title="t('accounts.enabledAccounts')" :value="accounts.filter(a => a.enabled).length" />
-        </el-col>
-        <el-col :span="6">
-          <el-statistic :title="t('accounts.disabledAccounts')" :value="accounts.filter(a => !a.enabled).length" />
-        </el-col>
-        <el-col :span="6">
-          <el-statistic :title="t('accounts.adminAccounts')" :value="accounts.filter(a => a.roles?.includes('ADMIN')).length" />
-        </el-col>
-      </el-row>
+    <!-- 统计信息 -->
+    <el-row :gutter="20" style="margin-bottom: 20px;">
+      <el-col :span="6">
+        <el-statistic :title="t('accounts.totalAccounts')" :value="accounts.length" />
+      </el-col>
+      <el-col :span="6">
+        <el-statistic :title="t('accounts.enabledAccounts')" :value="accounts.filter(a => a.enabled).length" />
+      </el-col>
+      <el-col :span="6">
+        <el-statistic :title="t('accounts.disabledAccounts')" :value="accounts.filter(a => !a.enabled).length" />
+      </el-col>
+      <el-col :span="6">
+        <el-statistic :title="t('accounts.adminAccounts')" :value="accounts.filter(a => a.roles?.includes('ADMIN')).length" />
+      </el-col>
+    </el-row>
 
-      <!-- 账户列表 -->
-      <el-table :data="filteredAccounts" style="width: 100%" v-loading="loading" stripe border>
-        <el-table-column prop="username" :label="t('accounts.username')" min-width="120" show-overflow-tooltip />
-        <el-table-column :label="t('accounts.roles')" min-width="150">
-          <template #default="scope">
-            <el-tag
-              v-for="role in scope.row.roles"
-              :key="role"
-              :type="role === 'ADMIN' ? 'danger' : 'primary'"
+    <!-- 账户列表 -->
+    <el-table :data="filteredAccounts" style="width: 100%" v-loading="loading" stripe border>
+      <el-table-column prop="username" :label="t('accounts.username')" min-width="120" show-overflow-tooltip />
+      <el-table-column :label="t('accounts.roles')" min-width="150">
+        <template #default="scope">
+          <el-tag
+            v-for="role in scope.row.roles"
+            :key="role"
+            :type="role === 'ADMIN' ? 'danger' : 'primary'"
+            size="small"
+            style="margin-right: 5px;"
+          >
+            {{ role === 'ADMIN' ? t('accounts.adminRole') : t('accounts.userRole') }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column :label="t('accounts.status')" min-width="80" align="center">
+        <template #default="scope">
+          <el-switch
+            v-model="scope.row.enabled"
+            @change="handleStatusChange(scope.row)"
+            :loading="scope.row.statusLoading"
+          />
+        </template>
+      </el-table-column>
+      <el-table-column :label="t('accounts.createdAt')" min-width="140">
+        <template #default="scope">
+          {{ formatDateTime(scope.row.createdAt) }}
+        </template>
+      </el-table-column>
+      <el-table-column :label="t('accounts.updatedAt')" min-width="140">
+        <template #default="scope">
+          {{ formatDateTime(scope.row.updatedAt) }}
+        </template>
+      </el-table-column>
+      <el-table-column :label="t('accounts.actions')" min-width="100" fixed="right">
+        <template #default="scope">
+          <el-button-group>
+            <el-button size="small" type="primary" @click="editAccount(scope.row)">
+              <el-icon><Edit /></el-icon>
+            </el-button>
+            <el-button
               size="small"
-              style="margin-right: 5px;"
+              type="danger"
+              @click="deleteAccount(scope.row)"
+              :disabled="scope.row.username === 'admin'"
             >
-              {{ role === 'ADMIN' ? t('accounts.adminRole') : t('accounts.userRole') }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('accounts.status')" min-width="80" align="center">
-          <template #default="scope">
-            <el-switch
-              v-model="scope.row.enabled"
-              @change="handleStatusChange(scope.row)"
-              :loading="scope.row.statusLoading"
-            />
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('accounts.createdAt')" min-width="140">
-          <template #default="scope">
-            {{ formatDateTime(scope.row.createdAt) }}
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('accounts.updatedAt')" min-width="140">
-          <template #default="scope">
-            {{ formatDateTime(scope.row.updatedAt) }}
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('accounts.actions')" min-width="100" fixed="right">
-          <template #default="scope">
-            <el-button-group>
-              <el-button size="small" type="primary" @click="editAccount(scope.row)">
-                <el-icon><Edit /></el-icon>
-              </el-button>
-              <el-button
-                size="small"
-                type="danger"
-                @click="deleteAccount(scope.row)"
-                :disabled="scope.row.username === 'admin'"
-              >
-                <el-icon><Delete /></el-icon>
-              </el-button>
-            </el-button-group>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+              <el-icon><Delete /></el-icon>
+            </el-button>
+          </el-button-group>
+        </template>
+      </el-table-column>
+    </el-table>
 
     <!-- 创建/编辑账户对话框 -->
     <el-dialog
@@ -162,7 +155,7 @@
         </span>
       </template>
     </el-dialog>
-  </div>
+  </PageSkeleton>
 </template>
 
 <script setup lang="ts">
@@ -171,6 +164,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { Plus, Refresh, Search, Edit, Delete } from '@element-plus/icons-vue'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 import {
   getJwtAccounts,
   createJwtAccount,
@@ -397,21 +391,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.jwt-account-management {
-  padding: 20px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-}
-
 .dialog-footer {
   text-align: right;
 }

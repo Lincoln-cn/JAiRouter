@@ -1,15 +1,16 @@
 <template>
-  <div class="state-persistence-management">
+  <PageSkeleton :title="t('statePersistence.pageTitle')">
+    <template #actions>
+      <el-button type="primary" size="small" @click="refreshTiers">
+        <el-icon><Refresh /></el-icon>
+        {{ t('statePersistence.refresh') }}
+      </el-button>
+    </template>
+
     <!-- 存储层状态卡片 -->
     <el-card class="tier-card">
       <template #header>
-        <div class="card-header">
-          <span class="card-title">{{ t('statePersistence.tierCardTitle') }}</span>
-          <el-button type="primary" size="small" @click="refreshTiers">
-            <el-icon><Refresh /></el-icon>
-            {{ t('statePersistence.refresh') }}
-          </el-button>
-        </div>
+        <span class="card-title">{{ t('statePersistence.tierCardTitle') }}</span>
       </template>
 
       <el-row :gutter="20">
@@ -246,7 +247,7 @@
         <el-button @click="stateDetailDialogVisible = false">{{ t('statePersistence.close') }}</el-button>
       </template>
     </el-dialog>
-  </div>
+  </PageSkeleton>
 </template>
 
 <script setup lang="ts">
@@ -255,6 +256,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Refresh, RefreshRight, Switch, Upload, View, SuccessFilled, CircleCloseFilled } from '@element-plus/icons-vue'
 import request from '@/utils/request'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 
 const { t } = useI18n()
 
@@ -541,12 +543,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.state-persistence-management {
-  padding: 24px;
-  background: var(--ja-main-bg-gradient);
-  min-height: calc(100vh - 80px);
-}
-
 .tier-card,
 .stats-card,
 .actions-card,
@@ -554,12 +550,6 @@ onMounted(() => {
   margin-bottom: 20px;
   box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
   border-radius: 12px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .card-title {

@@ -1,16 +1,10 @@
 <template>
-  <div class="exception-detail">
-    <el-card class="detail-card" shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <span class="detail-title">
-            <el-icon><Warning /></el-icon>
-            {{ t('exception.detail.title') }}
-          </span>
-          <el-button icon="ArrowLeft" @click="goBack">{{ t('exception.detail.back') }}</el-button>
-        </div>
-      </template>
+  <PageSkeleton :title="t('exception.detail.title')">
+    <template #actions>
+      <el-button icon="ArrowLeft" @click="goBack">{{ t('exception.detail.back') }}</el-button>
+    </template>
 
+    <el-card class="detail-card" shadow="hover">
       <el-loading v-model="loading" :text="t('exception.detail.loading')" />
 
       <div v-if="eventData" class="detail-content">
@@ -122,7 +116,7 @@
 
       <el-empty v-else :description="t('exception.detail.notFound')" />
     </el-card>
-  </div>
+  </PageSkeleton>
 </template>
 
 <script setup lang="ts">
@@ -131,6 +125,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Warning, ArrowLeft } from '@element-plus/icons-vue'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 import { getExceptionEventById } from '@/api/exception'
 import type { ExceptionEvent } from '@/types/exception'
 
@@ -223,24 +218,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.exception-detail {
-  padding: 20px;
-}
-
-.detail-card .card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.detail-card .detail-title {
-  font-size: 18px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .detail-card .detail-content .mono-font {
   font-family: 'Courier New', monospace;
   font-size: 13px;

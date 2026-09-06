@@ -1,5 +1,5 @@
 <template>
-  <div class="load-balancer-config">
+  <PageSkeleton :title="t('loadBalancer.strategyConfig.pageTitle')">
     <!-- 全局配置卡片 -->
     <el-card class="config-card">
       <template #header>
@@ -151,7 +151,7 @@
         <el-button type="primary" @click="saveServiceConfig" :loading="saving">{{ t('loadBalancer.strategyConfig.save') }}</el-button>
       </template>
     </el-dialog>
-  </div>
+  </PageSkeleton>
 </template>
 
 <script setup lang="ts">
@@ -159,6 +159,7 @@ import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 
 interface StrategyInfo {
   name: string
@@ -351,12 +352,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.load-balancer-config {
-  padding: 24px;
-  background: var(--ja-main-bg-gradient);
-  min-height: calc(100vh - 80px);
-}
-
 .config-card,
 .service-config-card {
   margin-bottom: 20px;

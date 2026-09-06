@@ -159,6 +159,7 @@ import ChatConfigPanel from './ChatConfigPanel.vue'
 import { useChatSession } from '../../composables/useChatSession'
 import { useStreaming } from '../../composables/useStreaming'
 import { usePlaygroundData } from '@/composables/usePlaygroundData'
+import { useRoutePreselect, preselectInstanceName } from '@/composables/useRoutePreselect'
 import { sendServiceRequest } from '@/api/playground'
 import type { ChatMessage, ChatRequestConfig } from '../../types/playground'
 import { parseErrorMessage, getErrorSuggestion } from '../../utils/errorHandler'
@@ -199,6 +200,23 @@ const {
 // 数据获取
 const { availableInstances, instancesLoading, initializeData, refreshData } =
   usePlaygroundData('chat')
+
+// Route preselect: auto-select instance from onboarding ?serviceType=chat
+const { requestedServiceType } = useRoutePreselect()
+watch(
+  availableInstances,
+  (instances) => {
+    if (
+      requestedServiceType() === 'chat' &&
+      !selectedModel.value &&
+      instances.length > 0
+    ) {
+      const name = preselectInstanceName(instances)
+      if (name) selectedModel.value = name
+    }
+  },
+  { once: true }
+)
 
 // 流式处理
 const { isStreaming, cancelStream, createStreamRequest, handleStreamResponse } =

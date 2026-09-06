@@ -1,12 +1,6 @@
 <template>
-  <div class="circuit-breaker-global-config">
+  <PageSkeleton :title="t('circuitBreaker.globalConfig.title')">
     <el-card class="config-card">
-      <template #header>
-        <div class="card-header">
-          <span class="card-title">{{ t('circuitBreaker.globalConfig.title') }}</span>
-        </div>
-      </template>
-
       <el-form :model="globalConfig" label-width="150px" class="config-form">
         <el-row :gutter="20">
           <el-col :span="12">
@@ -79,7 +73,7 @@
         </el-form-item>
       </el-form>
     </el-card>
-  </div>
+  </PageSkeleton>
 </template>
 
 <script setup lang="ts">
@@ -87,6 +81,7 @@ import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 
 interface GlobalConfig {
   adaptiveThresholdEnabled: boolean
@@ -173,27 +168,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.circuit-breaker-global-config {
-  padding: 24px;
-  background: var(--ja-main-bg-gradient);
-  min-height: calc(100vh - 80px);
-}
-
 .config-card {
   box-shadow: var(--ja-shadow-lg);
   border-radius: var(--ja-radius-lg);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.card-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--ja-text-primary);
 }
 
 .config-form {

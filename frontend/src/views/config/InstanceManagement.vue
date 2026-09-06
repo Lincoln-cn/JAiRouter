@@ -1,202 +1,174 @@
 <template>
-  <div class="instance-management">
-    <el-card class="instance-card">
-      <template #header>
-        <div class="card-header">
-          <div class="header-left">
-            <div class="header-title">
-              <el-icon>
-                <Management />
-              </el-icon>
-              <span>{{ t('instance.title') }}</span>
-              <el-button
-                type="primary"
-                link
-                size="small"
-                class="header-cross-link"
-                @click="router.push({ name: 'service-management', query: route.query.serviceType ? { serviceType: route.query.serviceType as string } : {} })"
-              >
-                {{ t('instance.openServiceConfig') }}
-              </el-button>
-            </div>
+  <PageSkeleton :title="t('instance.title')">
+    <template #actions>
+      <el-button
+        type="primary"
+        link
+        size="small"
+        class="header-cross-link"
+        @click="router.push({ name: 'service-management', query: route.query.serviceType ? { serviceType: route.query.serviceType as string } : {} })"
+      >
+        {{ t('instance.openServiceConfig') }}
+      </el-button>
+      <el-button type="primary" @click="handleAddInstance" size="medium">
+        <el-icon><Plus /></el-icon>
+        {{ t('instance.addInstance') }}
+      </el-button>
+    </template>
 
-            <div class="header-tools">
-              <el-input v-model="searchQuery" :placeholder="t('instance.searchPlaceholder')" clearable size="medium"
-                class="search-input" @clear="handleSearchClear" @keyup.enter.native="applySearch">
-                <template #prefix>
-                  <el-icon>
-                    <Search />
-                  </el-icon>
-                </template>
-              </el-input>
+    <template #stats>
+      <OnboardingSteps :current-step="3" :service-type="(route.query.serviceType as string) || undefined" />
+    </template>
 
-              <el-select v-model="statusFilter" :placeholder="t('instance.status')" clearable size="medium" class="filter-select">
-                <el-option :label="t('instance.all')" value=""></el-option>
-                <el-option :label="t('instance.enabled')" value="active"></el-option>
-                <el-option :label="t('instance.disabled')" value="inactive"></el-option>
-              </el-select>
+    <template #toolbar>
+      <el-input v-model="searchQuery" :placeholder="t('instance.searchPlaceholder')" clearable size="medium"
+        class="search-input" @clear="handleSearchClear" @keyup.enter.native="applySearch">
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
+      </el-input>
 
-              <el-button type="text" class="refresh-button" @click="refreshCurrent">
-                <el-icon>
-                  <Refresh />
-                </el-icon>
-              </el-button>
-            </div>
-          </div>
+      <el-select v-model="statusFilter" :placeholder="t('instance.status')" clearable size="medium" class="filter-select">
+        <el-option :label="t('instance.all')" value=""></el-option>
+        <el-option :label="t('instance.enabled')" value="active"></el-option>
+        <el-option :label="t('instance.disabled')" value="inactive"></el-option>
+      </el-select>
 
-          <div class="header-actions">
-            <el-button type="primary" @click="handleAddInstance" size="medium">
-              <el-icon>
-                <Plus />
-              </el-icon>
-              {{ t('instance.addInstance') }}
-            </el-button>
-          </div>
-        </div>
-      </template>
+      <el-button type="text" class="refresh-button" @click="refreshCurrent">
+        <el-icon><Refresh /></el-icon>
+      </el-button>
+    </template>
 
-      <div class="onboarding-area">
-        <OnboardingSteps :current-step="3" :service-type="(route.query.serviceType as string) || undefined" />
-      </div>
-
-      <div class="tabs-wrap">
-        <el-tabs v-model="activeServiceType" class="service-tabs" type="card">
-          <el-tab-pane v-for="serviceType in serviceTypes" :key="serviceType"
-            :label="serviceTypeLabel(serviceType)" :name="serviceType">
-            <div class="table-area">
-              <el-skeleton :loading="loading && !hasInstances" :rows="6" animated>
-                <template #default>
-                  <el-table :data="paginated" style="width: 100%" class="instance-table" row-key="id" border fit>
-                    <el-table-column prop="name" :label="t('instance.name')" min-width="180" />
-                    <el-table-column prop="baseUrl" :label="t('instance.baseUrl')" min-width="260">
-                      <template #default="scope">
-                        <el-tooltip :content="scope.row.baseUrl" placement="top">
-                          <div class="ellipsis">{{ scope.row.baseUrl }}</div>
-                        </el-tooltip>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="path" :label="t('instance.path')" min-width="160">
-                      <template #default="scope">
-                        <div class="ellipsis">{{ scope.row.path || '—' }}</div>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="weight" :label="t('instance.weight')" width="90" align="center" />
-                    <el-table-column prop="adapter" :label="t('instance.adapter')" width="140" align="center">
-                      <template #default="scope">
-                        <el-tag :type="scope.row.adapter ? 'primary' : 'warning'" class="table-tag" size="small">
-                          {{ scope.row.adapter || globalAdapter || t('instance.notConfigured') }}
+    <div class="tabs-wrap">
+      <el-tabs v-model="activeServiceType" class="service-tabs" type="card">
+        <el-tab-pane v-for="serviceType in serviceTypes" :key="serviceType"
+          :label="serviceTypeLabel(serviceType)" :name="serviceType">
+          <div class="table-area">
+            <el-skeleton :loading="loading && !hasInstances" :rows="6" animated>
+              <template #default>
+                <el-table :data="paginated" style="width: 100%" class="instance-table" row-key="id" border fit>
+                  <el-table-column prop="name" :label="t('instance.name')" min-width="180" />
+                  <el-table-column prop="baseUrl" :label="t('instance.baseUrl')" min-width="260">
+                    <template #default="scope">
+                      <el-tooltip :content="scope.row.baseUrl" placement="top">
+                        <div class="ellipsis">{{ scope.row.baseUrl }}</div>
+                      </el-tooltip>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="path" :label="t('instance.path')" min-width="160">
+                    <template #default="scope">
+                      <div class="ellipsis">{{ scope.row.path || '—' }}</div>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="weight" :label="t('instance.weight')" width="90" align="center" />
+                  <el-table-column prop="adapter" :label="t('instance.adapter')" width="140" align="center">
+                    <template #default="scope">
+                      <el-tag :type="scope.row.adapter ? 'primary' : 'warning'" class="table-tag" size="small">
+                        {{ scope.row.adapter || globalAdapter || t('instance.notConfigured') }}
+                      </el-tag>
+                      <div v-if="!scope.row.adapter && globalAdapter" class="adapter-note">
+                        {{ t('instance.globalNote') }}
+                      </div>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="headers" :label="t('instance.headers')" width="120" align="center">
+                    <template #default="scope">
+                      <el-tooltip v-if="scope.row.headers && Object.keys(scope.row.headers).length > 0"
+                        :content="Object.entries(scope.row.headers).map(([k, v]) => `${k}: ${v}`).join('\n')"
+                        placement="top">
+                        <el-tag type="success" class="table-tag" size="small">
+                          {{ t('instance.headersCount', { count: Object.keys(scope.row.headers).length }) }}
                         </el-tag>
-                        <div v-if="!scope.row.adapter && globalAdapter" class="adapter-note">
-                          {{ t('instance.globalNote') }}
-                        </div>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="headers" :label="t('instance.headers')" width="120" align="center">
-                      <template #default="scope">
-                        <el-tooltip v-if="scope.row.headers && Object.keys(scope.row.headers).length > 0"
-                          :content="Object.entries(scope.row.headers).map(([k, v]) => `${k}: ${v}`).join('\n')"
-                          placement="top">
-                          <el-tag type="success" class="table-tag" size="small">
-                            {{ t('instance.headersCount', { count: Object.keys(scope.row.headers).length }) }}
-                          </el-tag>
-                        </el-tooltip>
-                        <el-tag v-else type="info" class="table-tag" size="small">
-                          {{ t('instance.none') }}
+                      </el-tooltip>
+                      <el-tag v-else type="info" class="table-tag" size="small">
+                        {{ t('instance.none') }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="tags" :label="t('instance.tags')" width="120" align="center">
+                    <template #default="scope">
+                      <el-tooltip v-if="scope.row.tags && Object.keys(scope.row.tags).length > 0"
+                        :content="Object.entries(scope.row.tags).map(([k, v]) => `${k}=${v}`).join('\n')"
+                        placement="top">
+                        <el-tag type="primary" class="table-tag" size="small">
+                          {{ t('instance.tagsCount', { count: Object.keys(scope.row.tags).length }) }}
                         </el-tag>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="tags" :label="t('instance.tags')" width="120" align="center">
-                      <template #default="scope">
-                        <el-tooltip v-if="scope.row.tags && Object.keys(scope.row.tags).length > 0"
-                          :content="Object.entries(scope.row.tags).map(([k, v]) => `${k}=${v}`).join('\n')"
-                          placement="top">
-                          <el-tag type="primary" class="table-tag" size="small">
-                            {{ t('instance.tagsCount', { count: Object.keys(scope.row.tags).length }) }}
-                          </el-tag>
-                        </el-tooltip>
-                        <el-tag v-else type="info" class="table-tag" size="small">
-                          {{ t('instance.none') }}
-                        </el-tag>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="status" :label="t('instance.status')" width="110" align="center">
-                      <template #default="scope">
-                        <el-tag :type="scope.row.status === 'active' ? 'success' : 'info'" class="table-tag">
-                          {{ scope.row.status === 'active' ? t('instance.enabled') : t('instance.disabled') }}
-                        </el-tag>
-                      </template>
-                    </el-table-column>
+                      </el-tooltip>
+                      <el-tag v-else type="info" class="table-tag" size="small">
+                        {{ t('instance.none') }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="status" :label="t('instance.status')" width="110" align="center">
+                    <template #default="scope">
+                      <el-tag :type="scope.row.status === 'active' ? 'success' : 'info'" class="table-tag">
+                        {{ scope.row.status === 'active' ? t('instance.enabled') : t('instance.disabled') }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
 
-                    <el-table-column :label="t('instance.actions')" width="200" align="center" fixed="right">
-                      <template #default="scope">
-                        <el-button size="small" @click="handleEdit(scope.row)" type="primary" plain circle :title="t('instance.editInstance')">
-                          <el-icon>
-                            <Edit />
-                          </el-icon>
-                        </el-button>
+                  <el-table-column :label="t('instance.actions')" width="200" align="center" fixed="right">
+                    <template #default="scope">
+                      <el-button size="small" @click="handleEdit(scope.row)" type="primary" plain circle :title="t('instance.editInstance')">
+                        <el-icon><Edit /></el-icon>
+                      </el-button>
 
-                        <el-button size="small" @click="openRateLimitConfig(scope.row)" type="warning" plain circle :title="t('instance.rateLimitConfig')">
-                          <el-icon>
-                            <Timer />
-                          </el-icon>
-                        </el-button>
+                      <el-button size="small" @click="openRateLimitConfig(scope.row)" type="warning" plain circle :title="t('instance.rateLimitConfig')">
+                        <el-icon><Timer /></el-icon>
+                      </el-button>
 
-                        <el-button size="small" @click="openCircuitBreakerConfig(scope.row)" type="danger" plain circle :title="t('instance.circuitBreakerConfig')">
-                          <el-icon>
-                            <WarningFilled />
-                          </el-icon>
-                        </el-button>
+                      <el-button size="small" @click="openCircuitBreakerConfig(scope.row)" type="danger" plain circle :title="t('instance.circuitBreakerConfig')">
+                        <el-icon><WarningFilled /></el-icon>
+                      </el-button>
 
-                        <el-button size="small" type="info" @click="handleDelete(scope.row)" plain circle :title="t('instance.delete')">
-                          <el-icon>
-                            <Delete />
-                          </el-icon>
-                        </el-button>
-                      </template>
-                    </el-table-column>
-                  </el-table>
+                      <el-button size="small" type="info" @click="handleDelete(scope.row)" plain circle :title="t('instance.delete')">
+                        <el-icon><Delete /></el-icon>
+                      </el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
 
-                  <div v-if="filtered.length === 0" class="empty-wrap">
-                    <el-empty :description="t('instance.emptyText')"></el-empty>
+                <div v-if="filtered.length === 0" class="empty-wrap">
+                  <el-empty :description="t('instance.emptyText')"></el-empty>
+                </div>
+
+                <div class="table-footer" v-if="filtered.length > 0">
+                  <div class="footer-info">
+                    {{ t('instance.tableSummary', { count: filtered.length, current: currentPage, total: totalPages }) }}
                   </div>
-
-                  <div class="table-footer" v-if="filtered.length > 0">
-                    <div class="footer-info">
-                      {{ t('instance.tableSummary', { count: filtered.length, current: currentPage, total: totalPages }) }}
-                    </div>
-                    <div class="footer-actions">
-                      <el-pagination v-model:current-page="currentPage" :page-size="pageSize" :total="filtered.length"
-                        layout="prev, pager, next, sizes, jumper" :page-sizes="[5, 10, 20, 50]"
-                        @size-change="handleSizeChange" @current-change="handlePageChange" />
-                    </div>
+                  <div class="footer-actions">
+                    <el-pagination v-model:current-page="currentPage" :page-size="pageSize" :total="filtered.length"
+                      layout="prev, pager, next, sizes, jumper" :page-sizes="[5, 10, 20, 50]"
+                      @size-change="handleSizeChange" @current-change="handlePageChange" />
                   </div>
-                </template>
-              </el-skeleton>
-            </div>
-          </el-tab-pane>
-        </el-tabs>
-      </div>
-    </el-card>
+                </div>
+              </template>
+            </el-skeleton>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
+    </div>
+  </PageSkeleton>
 
-    <!-- 限流器配置弹窗 -->
-    <RateLimitConfig
-      v-model="rateLimitDialogVisible"
-      :title="rateLimitDialogTitle"
-      :initial-data="rateLimitFormData"
-      @save="handleRateLimitSave"
-    />
+  <!-- 限流器配置弹窗 -->
+  <RateLimitConfig
+    v-model="rateLimitDialogVisible"
+    :title="rateLimitDialogTitle"
+    :initial-data="rateLimitFormData"
+    @save="handleRateLimitSave"
+  />
 
-    <!-- 熔断器配置弹窗 -->
-    <CircuitBreakerConfig
-      v-model="circuitBreakerDialogVisible"
-      :title="circuitBreakerDialogTitle"
-      :initial-data="circuitBreakerFormData"
-      @save="handleCircuitBreakerSave"
-    />
+  <!-- 熔断器配置弹窗 -->
+  <CircuitBreakerConfig
+    v-model="circuitBreakerDialogVisible"
+    :title="circuitBreakerDialogTitle"
+    :initial-data="circuitBreakerFormData"
+    @save="handleCircuitBreakerSave"
+  />
 
-    <!-- 添加/编辑实例对话框 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="820px" :before-close="handleDialogClose"
-      class="instance-dialog">
+  <!-- 添加/编辑实例对话框 -->
+  <el-dialog v-model="dialogVisible" :title="dialogTitle" width="820px" :before-close="handleDialogClose"
+    class="instance-dialog">
       <el-form :model="form" label-width="120px" ref="formRef">
         <el-divider content-position="left">{{ t('instance.basicInfo') }}</el-divider>
 
@@ -391,7 +363,6 @@
         </span>
       </template>
     </el-dialog>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -421,6 +392,7 @@ import { Plus, Delete, Close, Key, Timer, WarningFilled, Edit } from '@element-p
 import RateLimitConfig from '@/components/RateLimitConfig.vue'
 import CircuitBreakerConfig from '@/components/CircuitBreakerConfig.vue'
 import OnboardingSteps from './adapter/OnboardingSteps.vue'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -1108,67 +1080,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.instance-management {
-  padding: 20px;
-  background: var(--ja-main-bg-gradient);
-  min-height: calc(100vh - 80px);
-  box-sizing: border-box;
-}
-
-.onboarding-area {
-  padding: 12px 20px 0 20px;
-}
-
-/* 卡片 */
-.instance-card {
-  border-radius: 12px;
-  box-shadow: var(--ja-shadow-lg);
-  padding: 0;
-}
-
-/* header */
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18px 22px;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex: 1;
-  min-width: 320px;
-}
-
-.header-title {
-  display: flex;
-  align-items: center;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--ja-text-primary);
-}
-
-.header-title .el-icon {
-  margin-right: 8px;
-  color: var(--ja-primary);
-  font-size: 20px;
-}
-
 .header-cross-link {
-  margin-left: 12px;
   font-size: 13px;
-}
-
-.header-tools {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-left: 10px;
-  flex-wrap: wrap;
 }
 
 .search-input {
@@ -1187,7 +1100,7 @@ onMounted(() => {
 
 /* tabs & table area */
 .tabs-wrap {
-  padding: 12px 20px 20px 20px;
+  padding: 0;
 }
 
 .service-tabs ::v-deep(.el-tabs__content) {

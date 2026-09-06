@@ -235,7 +235,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   Setting,
@@ -248,6 +248,7 @@ import {
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { usePlaygroundData } from '@/composables/usePlaygroundData'
+import { useRoutePreselect, preselectInstanceName } from '@/composables/useRoutePreselect'
 import { sendServiceRequest } from '@/api/playground'
 import type { RerankRequestConfig, PlaygroundResponse } from '../../types/playground'
 import { parseErrorMessage, getErrorSuggestion } from '../../utils/errorHandler'
@@ -283,6 +284,20 @@ const hasValidDocuments = computed(() => {
 onMounted(() => {
   initializeData()
 })
+
+// Route preselect: when serviceType=rerank in URL, auto-select a healthy instance
+const { requestedServiceType } = useRoutePreselect()
+
+watch(availableInstances, (instances) => {
+  if (
+    requestedServiceType() === 'rerank' &&
+    instances.length > 0 &&
+    !selectedModel.value
+  ) {
+    const name = preselectInstanceName(instances)
+    if (name) selectedModel.value = name
+  }
+}, { immediate: true })
 
 // 添加文档
 const addDocument = () => {

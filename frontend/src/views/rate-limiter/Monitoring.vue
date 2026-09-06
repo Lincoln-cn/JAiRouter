@@ -1,34 +1,36 @@
 <template>
-  <div class="rate-limiter-monitoring">
-    <!-- 概览统计卡片 -->
-    <el-row :gutter="16">
-      <el-col :span="4">
-        <StatCard :icon="DataBoard" :label="t('rateLimiter.monitoring.totalLimiters')" :value="summary.totalLimiters" tone="primary" />
-      </el-col>
-      <el-col :span="4">
-        <StatCard :icon="Grid" :label="t('rateLimiter.monitoring.globalLimiters')" :value="summary.globalLimiters" tone="success" />
-      </el-col>
-      <el-col :span="4">
-        <StatCard :icon="Service" :label="t('rateLimiter.monitoring.serviceLimiters')" :value="summary.serviceLimiters" tone="warning" />
-      </el-col>
-      <el-col :span="4">
-        <StatCard :icon="Monitor" :label="t('rateLimiter.monitoring.instanceLimiters')" :value="summary.instanceLimiters" tone="info" />
-      </el-col>
-      <el-col :span="4">
-        <StatCard :icon="TrendCharts" :label="t('rateLimiter.monitoring.averageUsage')" :value="summary.averageUsageRatio" unit="%" tone="primary" />
-      </el-col>
-      <el-col :span="4">
-        <StatCard
-          :icon="summary.highUsageLimiters > 0 ? WarningFilled : CircleCheckFilled"
-          :label="t('rateLimiter.monitoring.highUsage')"
-          :value="summary.highUsageLimiters"
-          :tone="summary.highUsageLimiters > 0 ? 'danger' : 'success'"
-        />
-      </el-col>
-    </el-row>
+  <PageSkeleton :title="t('rateLimiter.monitoring.pageTitle')">
+    <template #stats>
+      <!-- 概览统计卡片 -->
+      <el-row :gutter="16">
+        <el-col :span="4">
+          <StatCard :icon="DataBoard" :label="t('rateLimiter.monitoring.totalLimiters')" :value="summary.totalLimiters" tone="primary" />
+        </el-col>
+        <el-col :span="4">
+          <StatCard :icon="Grid" :label="t('rateLimiter.monitoring.globalLimiters')" :value="summary.globalLimiters" tone="success" />
+        </el-col>
+        <el-col :span="4">
+          <StatCard :icon="Service" :label="t('rateLimiter.monitoring.serviceLimiters')" :value="summary.serviceLimiters" tone="warning" />
+        </el-col>
+        <el-col :span="4">
+          <StatCard :icon="Monitor" :label="t('rateLimiter.monitoring.instanceLimiters')" :value="summary.instanceLimiters" tone="info" />
+        </el-col>
+        <el-col :span="4">
+          <StatCard :icon="TrendCharts" :label="t('rateLimiter.monitoring.averageUsage')" :value="summary.averageUsageRatio" unit="%" tone="primary" />
+        </el-col>
+        <el-col :span="4">
+          <StatCard
+            :icon="summary.highUsageLimiters > 0 ? WarningFilled : CircleCheckFilled"
+            :label="t('rateLimiter.monitoring.highUsage')"
+            :value="summary.highUsageLimiters"
+            :tone="summary.highUsageLimiters > 0 ? 'danger' : 'success'"
+          />
+        </el-col>
+      </el-row>
+    </template>
 
     <!-- 限流器详细指标 -->
-    <el-card class="metrics-card" style="margin-top: 16px" shadow="hover">
+    <el-card class="metrics-card" shadow="hover">
       <template #header>
         <div class="card-header">
           <span class="card-title">{{ t('rateLimiter.monitoring.metricsTitle') }}</span>
@@ -117,7 +119,7 @@
     </el-card>
 
     <!-- Prometheus 指标信息 -->
-    <el-card class="prometheus-card" style="margin-top: 16px" shadow="hover">
+    <el-card class="prometheus-card" shadow="hover">
       <template #header>
         <div class="card-header">
           <span class="card-title">{{ t('rateLimiter.monitoring.prometheusTitle') }}</span>
@@ -144,7 +146,7 @@
         </el-descriptions-item>
       </el-descriptions>
     </el-card>
-  </div>
+  </PageSkeleton>
 </template>
 
 <script setup lang="ts">
@@ -163,6 +165,7 @@ import {
 import request from '@/utils/request'
 import StatCard from '@/components/StatCard.vue'
 import { useChartTheme } from '@/composables/useChartTheme'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 
 const { getChartTheme } = useChartTheme()
 const { t } = useI18n()
@@ -340,16 +343,18 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.rate-limiter-monitoring {
-  padding: 24px;
-  background: var(--ja-main-bg-gradient);
-  min-height: calc(100vh - 80px);
-}
-
 .metrics-card,
 .prometheus-card {
   box-shadow: var(--ja-shadow);
   border-radius: var(--ja-radius-lg);
+}
+
+.metrics-card {
+  margin-top: 16px;
+}
+
+.prometheus-card {
+  margin-top: 16px;
 }
 
 .card-header {

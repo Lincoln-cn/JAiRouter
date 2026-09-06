@@ -1,5 +1,6 @@
 {
   "statePersistence": {
+    "pageTitle": "State Persistence Management",
     "tierCardTitle": "Storage Tier Status",
     "refresh": "Refresh",
     "active": "Active",

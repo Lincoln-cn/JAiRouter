@@ -131,11 +131,7 @@ const router = createRouter({
         }
       ]
     },
-    // 兼容旧路由
-    {
-      path: '/load-balancers/management',
-      redirect: '/load-balancers/monitoring'
-    },
+
     // 熔断器管理
     {
       path: '/circuit-breakers',
@@ -164,11 +160,7 @@ const router = createRouter({
         }
       ]
     },
-    // 兼容旧路由
-    {
-      path: '/circuit-breakers/management',
-      redirect: '/circuit-breakers/monitoring'
-    },
+
     // 安全管理
     {
       path: '/security',
@@ -251,20 +243,7 @@ const router = createRouter({
         }
       ]
     },
-    // 兼容旧路由
-    {
-      path: '/tracing/overview',
-      redirect: '/tracing/dashboard'
-    },
-    {
-      path: '/tracing/performance',
-      redirect: '/tracing/dashboard'
-    },
-    // 兼容 /admin/admin/tracing 的错误路径
-    {
-      path: '/admin/tracing/:pathMatch(.*)*',
-      redirect: to => `/tracing/${to.params.pathMatch || 'dashboard'}`
-    },
+
     // AI 试验场 - 各服务作为独立子路由
     {
       path: '/playground',
@@ -305,16 +284,7 @@ const router = createRouter({
         }
       ]
     },
-    // 兼容旧路径
-    {
-      path: '/playground/main',
-      redirect: '/playground/chat'
-    },
-    // 兼容 /admin/playground 路径
-    {
-      path: '/admin/playground/:pathMatch(.*)*',
-      redirect: '/playground/chat'
-    },
+
     // 异常管理
     {
       path: '/exceptions',
@@ -359,11 +329,7 @@ const router = createRouter({
         }
       ]
     },
-    // 兼容旧路由
-    {
-      path: '/rate-limiters/management',
-      redirect: '/rate-limiters/monitoring'
-    },
+
     // 监控分析
     {
       path: '/monitoring',

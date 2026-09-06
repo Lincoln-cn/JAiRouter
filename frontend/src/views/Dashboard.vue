@@ -257,6 +257,53 @@
               </div>
             </el-col>
           </el-row>
+
+          <!-- ════════════ 能力入口卡（纯导航） ════════════ -->
+          <el-row :gutter="16" class="gov-entry-row">
+            <el-col :xs="24" :sm="12" :lg="6">
+              <router-link class="gov-entry-card" :to="{ name: 'response-cache-management' }">
+                <div class="gov-entry-inner">
+                  <el-icon class="gov-icon gov-entry-icon--primary"><Coin /></el-icon>
+                  <span class="gov-entry-label">{{ t('dashboard.governance.responseCache') }}</span>
+                  <span class="gov-entry-desc">{{ t('dashboard.governance.responseCacheDesc') }}</span>
+                </div>
+                <el-icon class="gov-entry-arrow"><ArrowRight /></el-icon>
+              </router-link>
+            </el-col>
+
+            <el-col :xs="24" :sm="12" :lg="6">
+              <router-link class="gov-entry-card" :to="{ name: 'slow-query-analysis' }">
+                <div class="gov-entry-inner">
+                  <el-icon class="gov-icon gov-entry-icon--warning"><Timer /></el-icon>
+                  <span class="gov-entry-label">{{ t('dashboard.governance.slowQuery') }}</span>
+                  <span class="gov-entry-desc">{{ t('dashboard.governance.slowQueryDesc') }}</span>
+                </div>
+                <el-icon class="gov-entry-arrow"><ArrowRight /></el-icon>
+              </router-link>
+            </el-col>
+
+            <el-col :xs="24" :sm="12" :lg="6">
+              <router-link class="gov-entry-card" :to="{ name: 'call-history-token-usage' }">
+                <div class="gov-entry-inner">
+                  <el-icon class="gov-icon gov-entry-icon--success"><DataLine /></el-icon>
+                  <span class="gov-entry-label">{{ t('dashboard.governance.tokenUsage') }}</span>
+                  <span class="gov-entry-desc">{{ t('dashboard.governance.tokenUsageDesc') }}</span>
+                </div>
+                <el-icon class="gov-entry-arrow"><ArrowRight /></el-icon>
+              </router-link>
+            </el-col>
+
+            <el-col :xs="24" :sm="12" :lg="6">
+              <router-link class="gov-entry-card" :to="{ name: 'tracing-dashboard' }">
+                <div class="gov-entry-inner">
+                  <el-icon class="gov-icon gov-entry-icon--info"><TrendCharts /></el-icon>
+                  <span class="gov-entry-label">{{ t('dashboard.governance.tracing') }}</span>
+                  <span class="gov-entry-desc">{{ t('dashboard.governance.tracingDesc') }}</span>
+                </div>
+                <el-icon class="gov-entry-arrow"><ArrowRight /></el-icon>
+              </router-link>
+            </el-col>
+          </el-row>
         </el-card>
       </el-col>
     </el-row>
@@ -480,7 +527,11 @@ import {
   Warning,
   WarningFilled,
   CircleCheckFilled,
-  Connection
+  Connection,
+  Coin,
+  Timer,
+  DataLine,
+  TrendCharts
 } from '@element-plus/icons-vue'
 
 // SSE helpers
@@ -1202,6 +1253,67 @@ onBeforeUnmount(() => {
 .gov-metric-value--success { color: var(--ja-success); }
 .gov-metric-value--warning { color: var(--ja-warning); }
 .gov-metric-value--danger  { color: var(--ja-danger); }
+
+/* ════════════ 治理入口卡（纯导航） ════════════ */
+.gov-entry-row {
+  margin-top: 12px;
+}
+
+.gov-entry-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  min-height: 80px;
+  border: 1px solid var(--ja-border-light, #ebeef5);
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+
+.gov-entry-card:hover {
+  border-color: var(--ja-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background-color: var(--ja-primary-bg, rgba(64, 158, 255, 0.04));
+}
+
+.gov-entry-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.gov-entry-icon--primary { color: var(--ja-primary); font-size: 20px; }
+.gov-entry-icon--warning { color: var(--ja-warning); font-size: 20px; }
+.gov-entry-icon--success { color: var(--ja-success); font-size: 20px; }
+.gov-entry-icon--info    { color: var(--ja-info, #909399); font-size: 20px; }
+
+.gov-entry-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ja-text-primary);
+}
+
+.gov-entry-desc {
+  font-size: 12px;
+  color: var(--ja-text-secondary, #909399);
+  line-height: 1.4;
+}
+
+.gov-entry-arrow {
+  color: var(--ja-text-secondary, #909399);
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-left: 8px;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.gov-entry-card:hover .gov-entry-arrow {
+  color: var(--ja-primary);
+  transform: translateX(2px);
+}
 
 /* ════════════ 异常/告警摘要 ════════════ */
 .alert-row {

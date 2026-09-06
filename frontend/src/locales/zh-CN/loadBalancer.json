@@ -1,6 +1,7 @@
 {
   "loadBalancer": {
     "monitoring": {
+      "pageTitle": "路由监控",
       "controlTitle": "路由监控控制",
       "resumeMonitoring": "恢复监控",
       "pauseMonitoring": "暂停监控",
@@ -31,6 +32,9 @@
         "candidateCount": "候选数",
         "selectionTimeMs": "耗时(ms)"
       },
+      "actions": {
+        "strategyConfig": "策略配置"
+      },
       "messages": {
         "paused": "监控已暂停",
         "resumed": "监控已恢复",
@@ -48,6 +52,7 @@
       }
     },
     "strategyConfig": {
+      "pageTitle": "负载均衡策略配置",
       "globalTitle": "全局默认配置",
       "defaultStrategy": "默认策略",
       "selectStrategy": "选择策略",

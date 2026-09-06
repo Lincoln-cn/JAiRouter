@@ -1,6 +1,7 @@
 {
   "rateLimiter": {
     "monitoring": {
+      "pageTitle": "Rate Limiter Monitoring",
       "totalLimiters": "Total Limiters",
       "globalLimiters": "Global Limiters",
       "serviceLimiters": "Service Limiters",

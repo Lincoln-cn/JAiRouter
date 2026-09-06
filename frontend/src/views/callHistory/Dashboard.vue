@@ -1,7 +1,7 @@
 <template>
-  <div class="call-history-dashboard">
-    <!-- 时间筛选 -->
-    <el-card class="filter-card" shadow="hover">
+  <PageSkeleton :title="t('callHistory.dashboard.title')">
+    <template #toolbar>
+      <!-- 时间筛选 -->
       <el-form :inline="true" class="filter-form">
         <el-form-item :label="t('callHistory.common.timeRange')">
           <el-date-picker
@@ -20,39 +20,41 @@
           <el-button icon="Refresh" @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
         </el-form-item>
       </el-form>
-    </el-card>
+    </template>
 
-    <!-- 统计概览卡片 -->
-    <el-row :gutter="20" class="stats-row">
-      <el-col :span="6">
-        <StatCard :icon="DataAnalysis" :label="t('callHistory.dashboard.stats.totalRequests')" :value="statistics.totalRequests" tone="primary" />
-      </el-col>
-      <el-col :span="6">
-        <StatCard :icon="CircleCheck" :label="t('callHistory.dashboard.stats.successRate')" :value="statistics.successRate?.toFixed(2) || '0'" unit="%" tone="success" />
-      </el-col>
-      <el-col :span="6">
-        <StatCard :icon="Clock" :label="t('callHistory.dashboard.stats.avgResponseTime')" :value="statistics.avgResponseTimeMs?.toFixed(0) || '0'" unit="ms" tone="info" />
-      </el-col>
-      <el-col :span="6">
-        <StatCard :icon="Tickets" :label="t('callHistory.dashboard.stats.totalTokenConsumed')" :value="statistics.totalTokens" tone="warning" />
-      </el-col>
-    </el-row>
+    <template #stats>
+      <!-- 统计概览卡片 -->
+      <el-row :gutter="20" class="stats-row">
+        <el-col :span="6">
+          <StatCard :icon="DataAnalysis" :label="t('callHistory.dashboard.stats.totalRequests')" :value="statistics.totalRequests" tone="primary" />
+        </el-col>
+        <el-col :span="6">
+          <StatCard :icon="CircleCheck" :label="t('callHistory.dashboard.stats.successRate')" :value="statistics.successRate?.toFixed(2) || '0'" unit="%" tone="success" />
+        </el-col>
+        <el-col :span="6">
+          <StatCard :icon="Clock" :label="t('callHistory.dashboard.stats.avgResponseTime')" :value="statistics.avgResponseTimeMs?.toFixed(0) || '0'" unit="ms" tone="info" />
+        </el-col>
+        <el-col :span="6">
+          <StatCard :icon="Tickets" :label="t('callHistory.dashboard.stats.totalTokenConsumed')" :value="statistics.totalTokens" tone="warning" />
+        </el-col>
+      </el-row>
 
-    <!-- 第二行统计卡片 -->
-    <el-row :gutter="20" class="stats-row">
-      <el-col :span="6">
-        <StatCard :icon="WarningFilled" :label="t('callHistory.dashboard.stats.failedRequests')" :value="statistics.failedRequests" tone="danger" />
-      </el-col>
-      <el-col :span="6">
-        <StatCard :icon="Grid" :label="t('callHistory.dashboard.stats.modelCount')" :value="statistics.byModel?.length || 0" tone="success" />
-      </el-col>
-      <el-col :span="6">
-        <StatCard :icon="Service" :label="t('callHistory.dashboard.stats.serviceTypeCount')" :value="statistics.byServiceType?.length || 0" tone="primary" />
-      </el-col>
-      <el-col :span="6">
-        <StatCard :icon="Document" :label="t('callHistory.dashboard.stats.avgTokensPerRequest')" :value="statistics.avgTokensPerRequest" tone="warning" />
-      </el-col>
-    </el-row>
+      <!-- 第二行统计卡片 -->
+      <el-row :gutter="20" class="stats-row">
+        <el-col :span="6">
+          <StatCard :icon="WarningFilled" :label="t('callHistory.dashboard.stats.failedRequests')" :value="statistics.failedRequests" tone="danger" />
+        </el-col>
+        <el-col :span="6">
+          <StatCard :icon="Grid" :label="t('callHistory.dashboard.stats.modelCount')" :value="statistics.byModel?.length || 0" tone="success" />
+        </el-col>
+        <el-col :span="6">
+          <StatCard :icon="Service" :label="t('callHistory.dashboard.stats.serviceTypeCount')" :value="statistics.byServiceType?.length || 0" tone="primary" />
+        </el-col>
+        <el-col :span="6">
+          <StatCard :icon="Document" :label="t('callHistory.dashboard.stats.avgTokensPerRequest')" :value="statistics.avgTokensPerRequest" tone="warning" />
+        </el-col>
+      </el-row>
+    </template>
 
     <!-- 图表区域 -->
     <el-row :gutter="20">
@@ -175,7 +177,7 @@
         </el-table-column>
       </el-table>
     </el-card>
-  </div>
+  </PageSkeleton>
 </template>
 
 <script setup lang="ts">
@@ -206,6 +208,7 @@ import type {
   RecorderStats
 } from '@/types/callHistory'
 import StatCard from '@/components/StatCard.vue'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 import { useChartTheme } from '@/composables/useChartTheme'
 import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 import { formatDateTime as formatDateTimeBase, formatNumber as formatNumberBase } from '@/utils/format'
@@ -705,39 +708,31 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.call-history-dashboard {
-  padding: 20px;
-}
-
-.call-history-dashboard .filter-card {
-  margin-bottom: 20px;
-}
-
-.call-history-dashboard .filter-card .filter-form {
+.filter-form {
   display: flex;
   justify-content: center;
 }
 
-.call-history-dashboard .stats-row {
+.stats-row {
   margin-bottom: 20px;
 }
 
-.call-history-dashboard .chart-container {
+.chart-container {
   height: 300px;
   width: 100%;
 }
 
-.call-history-dashboard .chart-title {
+.chart-title {
   font-size: 16px;
   font-weight: bold;
 }
 
-.call-history-dashboard .error-message {
+.error-message {
   color: var(--ja-danger);
   font-size: 12px;
 }
 
-.call-history-dashboard .text-muted {
+.text-muted {
   color: var(--ja-text-placeholder);
 }
 </style>

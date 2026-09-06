@@ -30,6 +30,7 @@
       "errorMessage": "Error Message"
     },
     "dashboard": {
+      "title": "Call History Dashboard",
       "loadFailed": "Failed to load call history data: {message}",
       "stats": {
         "totalRequests": "Total Requests",
@@ -95,6 +96,7 @@
       "loadFailed": "Failed to load call history: {message}"
     },
     "slowCalls": {
+      "pageTitle": "Slow Call Analysis",
       "loadFailed": "Failed to load slow calls: {message}",
       "thresholdLabel": "Threshold (ms)",
       "displayCountLabel": "Records to Show",
@@ -105,6 +107,7 @@
       "thresholdTag": "Threshold: {value} ms"
     },
     "tokenUsage": {
+      "pageTitle": "Token Usage Statistics",
       "loadFailed": "Failed to load statistics: {message}",
       "stats": {
         "totalTokenUsed": "Total Tokens Used",

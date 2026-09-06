@@ -86,6 +86,9 @@
       "failureThreshold": "失败阈值",
       "timeoutMs": "超时时间(毫秒)",
       "successThreshold": "成功阈值"
+    },
+    "actions": {
+      "versionHistory": "版本历史"
     }
   }
 }

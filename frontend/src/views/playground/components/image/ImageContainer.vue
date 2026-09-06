@@ -36,12 +36,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Picture, Edit } from '@element-plus/icons-vue'
 import ImageGeneratePanel from './ImageGeneratePanel.vue'
 import ImageEditPanel from './ImageEditPanel.vue'
 import { usePlaygroundData } from '@/composables/usePlaygroundData'
+import { useRoutePreselect, preselectInstanceName } from '@/composables/useRoutePreselect'
 
 const { t } = useI18n()
 
@@ -66,16 +67,72 @@ const {
 
 // 初始化
 onMounted(() => {
+  // Switch tab first if serviceType demands it (before data arrives)
+  const st = requestedServiceType()
+  if (st === 'imgGen' || st === 'imgEdit') {
+    activeTab.value = st === 'imgGen' ? 'generate' : 'edit'
+  }
   initGenerateData()
   initEditData()
 })
 
-// 切换 Tab 时刷新数据
+// Route preselect: activate the right tab when serviceType matches
+const { requestedServiceType } = useRoutePreselect()
+const preselectDone = ref(false)
+
 watch(activeTab, (tab) => {
+  const st = requestedServiceType()
   if (tab === 'generate') {
     initGenerateData()
+    if (st === 'imgGen' && generateInstances.value.length > 0 && !preselectDone.value) {
+      nextTick(() => {
+        const name = preselectInstanceName(generateInstances.value)
+        if (name && generateRef.value) {
+          generateRef.value.selectedModel = name
+          preselectDone.value = true
+        }
+      })
+    }
   } else {
     initEditData()
+    if (st === 'imgEdit' && editInstances.value.length > 0 && !preselectDone.value) {
+      nextTick(() => {
+        const name = preselectInstanceName(editInstances.value)
+        if (name && editRef.value) {
+          editRef.value.selectedModel = name
+          preselectDone.value = true
+        }
+      })
+    }
+  }
+}, { immediate: true })
+
+// Preselect instance when data arrives asynchronously
+watch(generateInstances, (instances) => {
+  if (requestedServiceType() === 'imgGen' && activeTab.value === 'generate' && !preselectDone.value) {
+    const name = preselectInstanceName(instances)
+    if (name) {
+      nextTick(() => {
+        if (generateRef.value) {
+          generateRef.value.selectedModel = name
+          preselectDone.value = true
+        }
+      })
+    }
+  }
+})
+
+watch(editInstances, (instances) => {
+  if (requestedServiceType() === 'imgEdit' && activeTab.value === 'edit' && !preselectDone.value) {
+    const name = preselectInstanceName(instances)
+    if (name) {
+      nextTick(() => {
+        if (editRef.value) {
+          editRef.value.selectedModel = name
+          preselectDone.value = true
+        }
+      })
+    }
   }
 })
 

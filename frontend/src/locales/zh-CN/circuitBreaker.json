@@ -1,6 +1,7 @@
 {
   "circuitBreaker": {
     "monitoring": {
+      "pageTitle": "熔断器监控",
       "controlTitle": "熔断器监控控制",
       "resumeMonitoring": "恢复监控",
       "pauseMonitoring": "暂停监控",
@@ -47,6 +48,10 @@
         "resetAllTitle": "清除全部确认",
         "resetAllMessage": "确定要清除所有实例的熔断器状态吗？此操作将重置所有熔断器到初始状态。",
         "confirmClear": "确定清除"
+      },
+      "actions": {
+        "globalConfig": "全局配置",
+        "history": "历史记录"
       },
       "messages": {
         "paused": "监控已暂停",

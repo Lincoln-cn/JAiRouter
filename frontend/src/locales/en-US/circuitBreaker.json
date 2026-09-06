@@ -1,6 +1,7 @@
 {
   "circuitBreaker": {
     "monitoring": {
+      "pageTitle": "Circuit Breaker Monitoring",
       "controlTitle": "Circuit Breaker Monitoring Control",
       "resumeMonitoring": "Resume Monitoring",
       "pauseMonitoring": "Pause Monitoring",
@@ -47,6 +48,10 @@
         "resetAllTitle": "Clear All Confirmation",
         "resetAllMessage": "Are you sure you want to clear the circuit breaker state of all instances? This will reset every circuit breaker to its initial state.",
         "confirmClear": "Clear"
+      },
+      "actions": {
+        "globalConfig": "Global Config",
+        "history": "History"
       },
       "messages": {
         "paused": "Monitoring paused",

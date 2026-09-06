@@ -1,5 +1,6 @@
 {
   "statePersistence": {
+    "pageTitle": "状态持久化管理",
     "tierCardTitle": "存储层状态",
     "refresh": "刷新",
     "active": "活跃",

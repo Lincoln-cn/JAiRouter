@@ -103,6 +103,16 @@
       "authSuccess": "Auth Success",
       "authSuccessRate": "Auth Success Rate",
       "requestVolume": "Request Volume"
+    },
+    "governance": {
+      "responseCache": "Response Cache",
+      "responseCacheDesc": "View and manage API response cache",
+      "slowQuery": "Slow Query Analysis",
+      "slowQueryDesc": "Analyze abnormally slow requests",
+      "tokenUsage": "Token Usage",
+      "tokenUsageDesc": "View call history token consumption",
+      "tracing": "Tracing",
+      "tracingDesc": "Trace full request lifecycle"
     }
   }
 }

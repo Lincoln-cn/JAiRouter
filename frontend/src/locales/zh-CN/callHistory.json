@@ -30,6 +30,7 @@
       "errorMessage": "错误信息"
     },
     "dashboard": {
+      "title": "调用历史仪表盘",
       "loadFailed": "加载调用历史数据失败：{message}",
       "stats": {
         "totalRequests": "总请求数",
@@ -95,6 +96,7 @@
       "loadFailed": "加载调用历史失败：{message}"
     },
     "slowCalls": {
+      "pageTitle": "慢调用分析",
       "loadFailed": "加载慢调用失败：{message}",
       "thresholdLabel": "阈值 (ms)",
       "displayCountLabel": "显示数量",
@@ -105,6 +107,7 @@
       "thresholdTag": "阈值: {value} ms"
     },
     "tokenUsage": {
+      "pageTitle": "Token 使用统计",
       "loadFailed": "加载统计数据失败：{message}",
       "stats": {
         "totalTokenUsed": "总 Token 使用量",

@@ -1,6 +1,10 @@
 <template>
   <PageSkeleton :title="t('service.title')">
     <template #actions>
+      <el-button type="info" plain size="medium" @click="router.push({ name: 'version-management' })">
+        <el-icon><Document /></el-icon>
+        {{ t('service.actions.versionHistory') }}
+      </el-button>
       <el-tooltip v-if="availableTypes.length === 0" :content="t('service.allTypesAdded')" placement="left">
         <el-button type="primary" @click="handleAddService" :disabled="availableTypes.length === 0" size="medium">
           <el-icon><Plus /></el-icon>

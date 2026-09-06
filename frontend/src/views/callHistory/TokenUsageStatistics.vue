@@ -1,7 +1,6 @@
 <template>
-  <div class="token-usage-statistics">
-    <!-- 时间筛选 -->
-    <el-card class="filter-card" shadow="hover">
+  <PageSkeleton :title="t('callHistory.tokenUsage.pageTitle')">
+    <template #toolbar>
       <el-form :inline="true" class="filter-form">
         <el-form-item :label="t('callHistory.common.timeRange')">
           <el-date-picker
@@ -20,9 +19,9 @@
           <el-button icon="Refresh" @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
         </el-form-item>
       </el-form>
-    </el-card>
+    </template>
 
-    <!-- 统计概览卡片 -->
+    <template #stats>
     <el-row :gutter="20" class="stats-row">
       <el-col :span="6">
         <el-card shadow="hover" class="stat-card">
@@ -133,6 +132,7 @@
         </el-card>
       </el-col>
     </el-row>
+    </template>
 
     <!-- 图表区域 -->
     <el-row :gutter="20">
@@ -248,7 +248,7 @@
         </el-table-column>
       </el-table>
     </el-card>
-  </div>
+  </PageSkeleton>
 </template>
 
 <script setup lang="ts">
@@ -278,6 +278,7 @@ import {
 import type { TokenUsageStatistics, TokenUsageRecord } from '@/types/tokenUsage'
 import { formatDateTime as formatDateTimeBase, formatNumber as formatNumberBase } from '@/utils/format'
 import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 
 const { t } = useI18n()
 
@@ -731,29 +732,21 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.token-usage-statistics {
-  padding: 20px;
-}
-
-.token-usage-statistics .filter-card {
-  margin-bottom: 20px;
-}
-
-.token-usage-statistics .filter-card .filter-form {
+.filter-form {
   display: flex;
   justify-content: center;
 }
 
-.token-usage-statistics .stats-row {
+.stats-row {
   margin-bottom: 20px;
 }
 
-.token-usage-statistics .stats-row .stat-card .stat-content {
+.stats-row .stat-card .stat-content {
   display: flex;
   align-items: center;
 }
 
-.token-usage-statistics .stats-row .stat-card .stat-icon {
+.stats-row .stat-card .stat-icon {
   width: 60px;
   height: 60px;
   border-radius: 8px;
@@ -765,24 +758,24 @@ onBeforeUnmount(() => {
   font-size: 28px;
 }
 
-.token-usage-statistics .stats-row .stat-card .stat-info .stat-value {
+.stats-row .stat-card .stat-info .stat-value {
   font-size: 24px;
   font-weight: bold;
   color: var(--ja-text-primary);
 }
 
-.token-usage-statistics .stats-row .stat-card .stat-info .stat-label {
+.stats-row .stat-card .stat-info .stat-label {
   font-size: 14px;
   color: var(--ja-text-regular);
   margin-top: 5px;
 }
 
-.token-usage-statistics .chart-container {
+.chart-container {
   height: 300px;
   width: 100%;
 }
 
-.token-usage-statistics .chart-title {
+.chart-title {
   font-size: 16px;
   font-weight: bold;
 }

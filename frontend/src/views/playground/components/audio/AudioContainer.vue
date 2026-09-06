@@ -36,12 +36,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Microphone, Headset } from '@element-plus/icons-vue'
 import TtsPanel from './TtsPanel.vue'
 import SttPanel from './SttPanel.vue'
 import { usePlaygroundData } from '@/composables/usePlaygroundData'
+import { useRoutePreselect, preselectInstanceName } from '@/composables/useRoutePreselect'
 
 const { t } = useI18n()
 
@@ -66,16 +67,72 @@ const {
 
 // 初始化
 onMounted(() => {
+  // Switch tab first if serviceType demands it (before data arrives)
+  const st = requestedServiceType()
+  if (st === 'stt' || st === 'tts') {
+    activeTab.value = st
+  }
   initTtsData()
   initSttData()
 })
 
-// 切换 Tab 时刷新数据
+// Route preselect: activate the right tab when serviceType matches
+const { requestedServiceType } = useRoutePreselect()
+const preselectDone = ref(false)
+
 watch(activeTab, (tab) => {
+  const st = requestedServiceType()
   if (tab === 'tts') {
     initTtsData()
+    if (st === 'tts' && ttsInstances.value.length > 0 && !preselectDone.value) {
+      nextTick(() => {
+        const name = preselectInstanceName(ttsInstances.value)
+        if (name && ttsRef.value) {
+          ttsRef.value.selectedModel = name
+          preselectDone.value = true
+        }
+      })
+    }
   } else {
     initSttData()
+    if (st === 'stt' && sttInstances.value.length > 0 && !preselectDone.value) {
+      nextTick(() => {
+        const name = preselectInstanceName(sttInstances.value)
+        if (name && sttRef.value) {
+          sttRef.value.selectedModel = name
+          preselectDone.value = true
+        }
+      })
+    }
+  }
+}, { immediate: true })
+
+// Preselect instance when data arrives asynchronously
+watch(ttsInstances, (instances) => {
+  if (requestedServiceType() === 'tts' && activeTab.value === 'tts' && !preselectDone.value) {
+    const name = preselectInstanceName(instances)
+    if (name) {
+      nextTick(() => {
+        if (ttsRef.value) {
+          ttsRef.value.selectedModel = name
+          preselectDone.value = true
+        }
+      })
+    }
+  }
+})
+
+watch(sttInstances, (instances) => {
+  if (requestedServiceType() === 'stt' && activeTab.value === 'stt' && !preselectDone.value) {
+    const name = preselectInstanceName(instances)
+    if (name) {
+      nextTick(() => {
+        if (sttRef.value) {
+          sttRef.value.selectedModel = name
+          preselectDone.value = true
+        }
+      })
+    }
   }
 })
 

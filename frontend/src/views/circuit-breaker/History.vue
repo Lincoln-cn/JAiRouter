@@ -1,18 +1,12 @@
 <template>
-  <div class="circuit-breaker-history">
-    <el-card class="history-card">
-      <template #header>
-        <div class="card-header">
-          <span class="card-title">{{ t('circuitBreaker.history.title') }}</span>
-          <div class="header-actions">
-            <el-button size="small" @click="loadHistory" :loading="loadingHistory">{{ t('circuitBreaker.history.refresh') }}</el-button>
-            <el-button size="small" type="danger" @click="cleanupHistory">{{ t('circuitBreaker.history.cleanupExpired') }}</el-button>
-          </div>
-        </div>
-      </template>
+  <PageSkeleton :title="t('circuitBreaker.history.title')">
+    <template #actions>
+      <el-button size="small" @click="loadHistory" :loading="loadingHistory">{{ t('circuitBreaker.history.refresh') }}</el-button>
+      <el-button size="small" type="danger" @click="cleanupHistory">{{ t('circuitBreaker.history.cleanupExpired') }}</el-button>
+    </template>
 
-      <!-- 历史记录统计 -->
-      <el-row :gutter="20" style="margin-bottom: 16px">
+    <template #stats>
+      <el-row :gutter="20">
         <el-col :span="6">
           <el-statistic :title="t('circuitBreaker.history.stats.total')" :value="historyStats.totalCount" />
         </el-col>
@@ -26,44 +20,45 @@
           <el-statistic :title="t('circuitBreaker.history.stats.month')" :value="historyStats.monthCount" />
         </el-col>
       </el-row>
+    </template>
 
-      <el-table :data="historyRecords" stripe v-loading="loadingHistory" class="flex-table">
-        <el-table-column prop="instanceId" :label="t('circuitBreaker.history.columns.instanceId')" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="instanceName" :label="t('circuitBreaker.history.columns.instanceName')" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="serviceType" :label="t('circuitBreaker.history.columns.serviceType')" min-width="80">
-          <template #default="{ row }">
-            <el-tag size="small">{{ row.serviceType || '-' }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('circuitBreaker.history.columns.stateTransition')" min-width="150">
-          <template #default="{ row }">
-            <el-tag :type="getStateTagType(row.previousState)" size="small">{{ row.previousState }}</el-tag>
-            <span style="margin: 0 8px">→</span>
-            <el-tag :type="getStateTagType(row.currentState)" size="small">{{ row.currentState }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="triggerReasonDesc" :label="t('circuitBreaker.history.columns.triggerReason')" min-width="150" />
-        <el-table-column prop="failureCount" :label="t('circuitBreaker.history.columns.failureCount')" min-width="80" />
-        <el-table-column prop="successCount" :label="t('circuitBreaker.history.columns.successCount')" min-width="80" />
-        <el-table-column prop="changedAt" :label="t('circuitBreaker.history.columns.changedAt')" min-width="150">
-          <template #default="{ row }">
-            {{ formatDateTime(row.changedAt) }}
-          </template>
-        </el-table-column>
-      </el-table>
+    <el-table :data="historyRecords" stripe v-loading="loadingHistory" class="flex-table">
+      <el-table-column prop="instanceId" :label="t('circuitBreaker.history.columns.instanceId')" min-width="200" show-overflow-tooltip />
+      <el-table-column prop="instanceName" :label="t('circuitBreaker.history.columns.instanceName')" min-width="120" show-overflow-tooltip />
+      <el-table-column prop="serviceType" :label="t('circuitBreaker.history.columns.serviceType')" min-width="80">
+        <template #default="{ row }">
+          <el-tag size="small">{{ row.serviceType || '-' }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column :label="t('circuitBreaker.history.columns.stateTransition')" min-width="150">
+        <template #default="{ row }">
+          <el-tag :type="getStateTagType(row.previousState)" size="small">{{ row.previousState }}</el-tag>
+          <span style="margin: 0 8px">→</span>
+          <el-tag :type="getStateTagType(row.currentState)" size="small">{{ row.currentState }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="triggerReasonDesc" :label="t('circuitBreaker.history.columns.triggerReason')" min-width="150" />
+      <el-table-column prop="failureCount" :label="t('circuitBreaker.history.columns.failureCount')" min-width="80" />
+      <el-table-column prop="successCount" :label="t('circuitBreaker.history.columns.successCount')" min-width="80" />
+      <el-table-column prop="changedAt" :label="t('circuitBreaker.history.columns.changedAt')" min-width="150">
+        <template #default="{ row }">
+          {{ formatDateTime(row.changedAt) }}
+        </template>
+      </el-table-column>
+    </el-table>
 
+    <template #footer>
       <el-pagination
         v-model:current-page="historyPage"
         v-model:page-size="historyPageSize"
         :total="historyTotal"
         :page-sizes="[10, 20, 50, 100]"
         layout="total, sizes, prev, pager, next"
-        style="margin-top: 16px; justify-content: flex-end"
         @size-change="loadHistory"
         @current-change="loadHistory"
       />
-    </el-card>
-  </div>
+    </template>
+  </PageSkeleton>
 </template>
 
 <script setup lang="ts">
@@ -72,6 +67,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
 import { formatDateTime as formatDateTimeBase } from '@/utils/format'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 
 interface HistoryRecord {
   id: number
@@ -193,34 +189,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.circuit-breaker-history {
-  padding: 24px;
-  background: var(--ja-main-bg-gradient);
-  min-height: calc(100vh - 80px);
-}
-
-.history-card {
-  box-shadow: var(--ja-shadow-lg);
-  border-radius: var(--ja-radius-lg);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.card-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--ja-text-primary);
-}
-
 .flex-table {
   width: 100%;
   table-layout: auto;

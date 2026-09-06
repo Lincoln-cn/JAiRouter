@@ -1,7 +1,6 @@
 <template>
-  <div class="call-history-slow">
-    <!-- 筛选区 -->
-    <el-card class="filter-card" shadow="hover">
+  <PageSkeleton :title="t('callHistory.slowCalls.pageTitle')">
+    <template #toolbar>
       <el-form :inline="true" class="filter-form">
         <el-form-item :label="t('callHistory.common.timeRange')">
           <el-date-picker
@@ -35,50 +34,51 @@
           <el-button icon="Refresh" @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
         </el-form-item>
       </el-form>
-    </el-card>
+    </template>
 
-    <!-- 统计概览 -->
-    <el-row :gutter="20" class="stats-row">
-      <el-col :span="8">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #E6A23C;">
-              <el-icon><Timer /></el-icon>
+    <template #stats>
+      <el-row :gutter="20" class="stats-row">
+        <el-col :span="8">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-content">
+              <div class="stat-icon" style="background: #E6A23C;">
+                <el-icon><Timer /></el-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ slowCalls.length }}</div>
+                <div class="stat-label">{{ t('callHistory.slowCalls.slowCallCountLabel') }}</div>
+              </div>
             </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ slowCalls.length }}</div>
-              <div class="stat-label">{{ t('callHistory.slowCalls.slowCallCountLabel') }}</div>
+          </el-card>
+        </el-col>
+        <el-col :span="8">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-content">
+              <div class="stat-icon" style="background: #F56C6C;">
+                <el-icon><WarningFilled /></el-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ getMaxResponseTime() }}</div>
+                <div class="stat-label">{{ t('callHistory.slowCalls.maxResponseTimeLabel') }}</div>
+              </div>
             </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="8">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #F56C6C;">
-              <el-icon><WarningFilled /></el-icon>
+          </el-card>
+        </el-col>
+        <el-col :span="8">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-content">
+              <div class="stat-icon" style="background: #409EFF;">
+                <el-icon><DataAnalysis /></el-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ getAvgResponseTime() }}</div>
+                <div class="stat-label">{{ t('callHistory.slowCalls.avgResponseTimeLabel') }}</div>
+              </div>
             </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ getMaxResponseTime() }}</div>
-              <div class="stat-label">{{ t('callHistory.slowCalls.maxResponseTimeLabel') }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="8">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #409EFF;">
-              <el-icon><DataAnalysis /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ getAvgResponseTime() }}</div>
-              <div class="stat-label">{{ t('callHistory.slowCalls.avgResponseTimeLabel') }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+          </el-card>
+        </el-col>
+      </el-row>
+    </template>
 
     <!-- 慢调用列表 -->
     <el-card shadow="hover">
@@ -131,7 +131,7 @@
         <el-table-column label="Trace ID" prop="traceId" width="140" show-overflow-tooltip />
       </el-table>
     </el-card>
-  </div>
+  </PageSkeleton>
 </template>
 
 <script setup lang="ts">
@@ -141,6 +141,7 @@ import { ElMessage } from 'element-plus'
 import { Timer, WarningFilled, DataAnalysis, Search, Refresh } from '@element-plus/icons-vue'
 import { getSlowCalls } from '@/api/callHistory'
 import type { ApiCallHistoryRecord } from '@/types/callHistory'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 
 const { t } = useI18n()
 
@@ -241,29 +242,21 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.call-history-slow {
-  padding: 20px;
-}
-
-.call-history-slow .filter-card {
-  margin-bottom: 20px;
-}
-
-.call-history-slow .filter-card .filter-form {
+.filter-form {
   display: flex;
   justify-content: center;
 }
 
-.call-history-slow .stats-row {
+.stats-row {
   margin-bottom: 20px;
 }
 
-.call-history-slow .stats-row .stat-card .stat-content {
+.stats-row .stat-card .stat-content {
   display: flex;
   align-items: center;
 }
 
-.call-history-slow .stats-row .stat-card .stat-icon {
+.stats-row .stat-card .stat-icon {
   width: 60px;
   height: 60px;
   border-radius: 8px;
@@ -275,25 +268,25 @@ onMounted(() => {
   font-size: 28px;
 }
 
-.call-history-slow .stats-row .stat-card .stat-info .stat-value {
+.stats-row .stat-card .stat-info .stat-value {
   font-size: 24px;
   font-weight: bold;
   color: var(--ja-text-primary);
 }
 
-.call-history-slow .stats-row .stat-card .stat-info .stat-label {
+.stats-row .stat-card .stat-info .stat-label {
   font-size: 14px;
   color: var(--ja-text-regular);
   margin-top: 5px;
 }
 
-.call-history-slow .table-header {
+.table-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.call-history-slow .chart-title {
+.chart-title {
   font-size: 16px;
   font-weight: bold;
 }

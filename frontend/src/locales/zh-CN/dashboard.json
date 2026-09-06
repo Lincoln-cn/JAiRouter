@@ -103,6 +103,16 @@
       "authSuccess": "认证成功",
       "authSuccessRate": "认证成功率",
       "requestVolume": "请求量"
+    },
+    "governance": {
+      "responseCache": "响应缓存",
+      "responseCacheDesc": "查看与管理 API 响应缓存",
+      "slowQuery": "慢查询分析",
+      "slowQueryDesc": "分析耗时异常的请求",
+      "tokenUsage": "Token 统计",
+      "tokenUsageDesc": "查看调用历史 Token 用量",
+      "tracing": "链路追踪",
+      "tracingDesc": "追踪请求完整链路"
     }
   }
 }

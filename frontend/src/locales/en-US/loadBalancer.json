@@ -1,6 +1,7 @@
 {
   "loadBalancer": {
     "monitoring": {
+      "pageTitle": "Routing Monitoring",
       "controlTitle": "Routing Monitor Control",
       "resumeMonitoring": "Resume Monitoring",
       "pauseMonitoring": "Pause Monitoring",
@@ -31,6 +32,9 @@
         "candidateCount": "Candidates",
         "selectionTimeMs": "Latency (ms)"
       },
+      "actions": {
+        "strategyConfig": "Strategy Config"
+      },
       "messages": {
         "paused": "Monitoring paused",
         "resumed": "Monitoring resumed",
@@ -48,6 +52,7 @@
       }
     },
     "strategyConfig": {
+      "pageTitle": "Load Balancer Strategy Configuration",
       "globalTitle": "Global Default Configuration",
       "defaultStrategy": "Default Strategy",
       "selectStrategy": "Select a Strategy",

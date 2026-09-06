@@ -1,40 +1,47 @@
 <template>
-  <div class="circuit-breaker-monitoring">
+  <PageSkeleton :title="t('circuitBreaker.monitoring.pageTitle')">
+    <template #actions>
+      <el-button
+        :type="monitorStatus.paused ? 'success' : 'warning'"
+        @click="toggleMonitor"
+        :loading="togglingMonitor"
+      >
+        {{ monitorStatus.paused ? t('circuitBreaker.monitoring.resumeMonitoring') : t('circuitBreaker.monitoring.pauseMonitoring') }}
+      </el-button>
+      <el-button @click="clearHistory" :loading="clearingHistory">
+        {{ t('circuitBreaker.monitoring.clearHistory') }}
+      </el-button>
+      <el-button
+        type="danger"
+        @click="resetAllCircuitBreakersHandler"
+        :loading="resettingCbs"
+      >
+        {{ t('circuitBreaker.monitoring.clearAllCircuitBreakers') }}
+      </el-button>
+      <el-dropdown @command="handleExport">
+        <el-button type="primary">
+          {{ t('circuitBreaker.monitoring.export') }} <el-icon class="el-icon--right"><Download /></el-icon>
+        </el-button>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="json">{{ t('circuitBreaker.monitoring.exportJson') }}</el-dropdown-item>
+            <el-dropdown-item command="csv">{{ t('circuitBreaker.monitoring.exportCsv') }}</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+      <el-button type="primary" plain @click="router.push({ name: 'circuit-breaker-global-config' })">
+        {{ t('circuitBreaker.monitoring.actions.globalConfig') }}
+      </el-button>
+      <el-button type="primary" plain @click="router.push({ name: 'circuit-breaker-history' })">
+        {{ t('circuitBreaker.monitoring.actions.history') }}
+      </el-button>
+    </template>
+
     <!-- 监控控制面板 -->
     <el-card class="control-panel" shadow="hover">
       <template #header>
         <div class="card-header">
           <span class="card-title">{{ t('circuitBreaker.monitoring.controlTitle') }}</span>
-          <div class="control-buttons">
-            <el-button
-              :type="monitorStatus.paused ? 'success' : 'warning'"
-              @click="toggleMonitor"
-              :loading="togglingMonitor"
-            >
-              {{ monitorStatus.paused ? t('circuitBreaker.monitoring.resumeMonitoring') : t('circuitBreaker.monitoring.pauseMonitoring') }}
-            </el-button>
-            <el-button @click="clearHistory" :loading="clearingHistory">
-              {{ t('circuitBreaker.monitoring.clearHistory') }}
-            </el-button>
-            <el-button
-              type="danger"
-              @click="resetAllCircuitBreakersHandler"
-              :loading="resettingCbs"
-            >
-              {{ t('circuitBreaker.monitoring.clearAllCircuitBreakers') }}
-            </el-button>
-            <el-dropdown @command="handleExport">
-              <el-button type="primary">
-                {{ t('circuitBreaker.monitoring.export') }} <el-icon class="el-icon--right"><Download /></el-icon>
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="json">{{ t('circuitBreaker.monitoring.exportJson') }}</el-dropdown-item>
-                  <el-dropdown-item command="csv">{{ t('circuitBreaker.monitoring.exportCsv') }}</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </div>
         </div>
       </template>
 
@@ -204,16 +211,18 @@
         </el-table-column>
       </el-table>
     </el-card>
-  </div>
+  </PageSkeleton>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, RefreshRight } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { resetCircuitBreakerById, clearAllCircuitBreakers } from '@/api/instance'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 
 interface MonitorStatus {
   enabled: boolean
@@ -252,6 +261,7 @@ interface StateSummary {
 }
 
 const { t } = useI18n()
+const router = useRouter()
 
 const apiBaseUrl = '/v1/circuit-breaker-monitor'
 
@@ -632,12 +642,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.circuit-breaker-monitoring {
-  padding: 24px;
-  background: var(--ja-main-bg-gradient);
-  min-height: calc(100vh - 80px);
-}
-
 .control-panel {
   margin-bottom: 16px;
 }
@@ -652,11 +656,6 @@ onUnmounted(() => {
   font-size: 16px;
   font-weight: 600;
   color: var(--ja-text-primary);
-}
-
-.control-buttons {
-  display: flex;
-  gap: 8px;
 }
 
 .config-item {

@@ -1,6 +1,7 @@
 {
   "rateLimiter": {
     "monitoring": {
+      "pageTitle": "限流器监控",
       "totalLimiters": "限流器总数",
       "globalLimiters": "全局限流",
       "serviceLimiters": "服务限流",

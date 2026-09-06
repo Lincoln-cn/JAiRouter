@@ -1,5 +1,11 @@
 <template>
-  <div class="api-key-management">
+  <PageSkeleton :title="t('apiKeys.title')">
+    <template #actions>
+      <el-button icon="Download" type="success" @click="handleExport">{{ t('apiKeys.exportConfig') }}</el-button>
+      <el-button icon="Upload" type="warning" @click="showImportDialog">{{ t('apiKeys.importConfig') }}</el-button>
+      <el-button icon="Plus" type="primary" @click="handleCreateApiKey">{{ t('apiKeys.createApiKey') }}</el-button>
+    </template>
+
     <!-- 统计卡片 -->
     <el-row :gutter="20" class="stats-row">
       <el-col :span="6">
@@ -89,19 +95,6 @@
 
     <!-- 主卡片 -->
     <el-card class="main-card" shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <span class="main-title">
-            <el-icon><Key /></el-icon>
-            {{ t('apiKeys.title') }}
-          </span>
-          <div class="header-buttons">
-            <el-button icon="Download" type="success" @click="handleExport">{{ t('apiKeys.exportConfig') }}</el-button>
-            <el-button icon="Upload" type="warning" @click="showImportDialog">{{ t('apiKeys.importConfig') }}</el-button>
-            <el-button icon="Plus" type="primary" @click="handleCreateApiKey">{{ t('apiKeys.createApiKey') }}</el-button>
-          </div>
-        </div>
-      </template>
 
       <div class="table-wrapper">
         <el-table v-loading="loading" :data="pagedApiKeys" border stripe style="width: 100%">
@@ -221,6 +214,7 @@
       </div>
       </div>
     </el-card>
+  </PageSkeleton>
 
     <!-- 创建/编辑API密钥对话框 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" center width="680px">
@@ -441,7 +435,6 @@
         </span>
       </template>
     </el-dialog>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -450,6 +443,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { Key, CircleCheck, CircleClose, Warning, RefreshRight, Download, Upload, UploadFilled } from '@element-plus/icons-vue'
 import StatCard from '@/components/StatCard.vue'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 import { formatDateTime } from '@/utils/format'
 import {
   createApiKey,
@@ -1078,6 +1072,9 @@ onMounted(() => {
 
 .card-header {
   flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .table-wrapper {
@@ -1090,17 +1087,6 @@ onMounted(() => {
 .table-wrapper .el-table {
   flex: 1;
   overflow: auto;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-buttons {
-  display: flex;
-  gap: 8px;
 }
 
 .main-title {

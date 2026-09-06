@@ -1,5 +1,11 @@
 <template>
-  <div class="exception-management">
+  <PageSkeleton :title="t('exception.list.title')">
+    <template #actions>
+      <el-button icon="Refresh" @click="handleRefresh">{{ t('exception.list.refresh') }}</el-button>
+      <el-button icon="Delete" type="danger" @click="showCleanupDialog">{{ t('exception.list.cleanupExpired') }}</el-button>
+      <el-button icon="DataAnalysis" type="success" @click="goToStatistics">{{ t('exception.list.goStatistics') }}</el-button>
+    </template>
+
     <!-- 统计卡片 -->
     <el-row :gutter="20" class="stats-row">
       <el-col :span="6">
@@ -18,19 +24,6 @@
 
     <!-- 主卡片 -->
     <el-card class="main-card" shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <span class="main-title">
-            <el-icon><Warning /></el-icon>
-            {{ t('exception.list.title') }}
-          </span>
-          <div class="header-buttons">
-            <el-button icon="Refresh" @click="handleRefresh">{{ t('exception.list.refresh') }}</el-button>
-            <el-button icon="Delete" type="danger" @click="showCleanupDialog">{{ t('exception.list.cleanupExpired') }}</el-button>
-            <el-button icon="DataAnalysis" type="success" @click="goToStatistics">{{ t('exception.list.goStatistics') }}</el-button>
-          </div>
-        </div>
-      </template>
 
       <!-- 筛选条件 -->
       <div class="filter-section">
@@ -214,6 +207,7 @@
         />
       </div>
     </el-card>
+  </PageSkeleton>
 
     <!-- 详情对话框 -->
     <el-dialog
@@ -332,7 +326,6 @@
         <el-button type="danger" @click="handleCleanup">{{ t('exception.list.confirmCleanup') }}</el-button>
       </template>
     </el-dialog>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -358,6 +351,7 @@ import {
 } from '@/api/exception'
 import type { ExceptionEvent, ExceptionQueryParams, ExceptionQueryResponse } from '@/types/exception'
 import StatCard from '@/components/StatCard.vue'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 
 const router = useRouter()
 
@@ -621,31 +615,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.exception-management {
-  padding: 20px;
-}
-
 .stats-row {
   margin-bottom: 20px;
-}
-
-.main-card .card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.main-card .main-title {
-  font-size: 18px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.main-card .header-buttons {
-  display: flex;
-  gap: 10px;
 }
 
 .main-card .filter-section {

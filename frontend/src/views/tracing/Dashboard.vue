@@ -1,115 +1,113 @@
 <template>
-  <div class="tracing-dashboard">
-    <!-- 顶部操作栏 -->
-    <el-card class="header-card">
-      <div class="header-content">
-        <div class="header-left">
-          <h2>{{ t('tracing.dashboard.title') }}</h2>
-          <el-tag :type="tracingEnabled ? 'success' : 'danger'" size="small">
-            {{ tracingEnabled ? t('tracing.dashboard.enabledTag') : t('tracing.dashboard.disabledTag') }}
-          </el-tag>
-        </div>
-        <div class="header-right">
-          <el-date-picker
-            v-model="timeRange"
-            type="datetimerange"
-            :range-separator="t('tracing.dashboard.timeRangeTo')"
-            :start-placeholder="t('tracing.dashboard.startTimePlaceholder')"
-            :end-placeholder="t('tracing.dashboard.endTimePlaceholder')"
-            format="YYYY-MM-DD HH:mm:ss"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            :shortcuts="timeShortcuts"
-            @change="handleTimeRangeChange"
-          />
-          <el-button type="primary" @click="handleRefresh" :loading="refreshing">
-            <el-icon><Refresh /></el-icon>
-            {{ t('tracing.dashboard.refresh') }}
-          </el-button>
-          <el-button @click="goToSearch">
-            <el-icon><Search /></el-icon>
-            {{ t('tracing.dashboard.searchTraces') }}
-          </el-button>
-          <el-button @click="goToManagement">
-            <el-icon><Setting /></el-icon>
-            {{ t('tracing.dashboard.config') }}
-          </el-button>
-        </div>
-      </div>
-    </el-card>
+  <PageSkeleton>
+    <template #title>
+      <h2>{{ t('tracing.dashboard.title') }}</h2>
+      <el-tag :type="tracingEnabled ? 'success' : 'danger'" size="small">
+        {{ tracingEnabled ? t('tracing.dashboard.enabledTag') : t('tracing.dashboard.disabledTag') }}
+      </el-tag>
+    </template>
 
-    <!-- 关键指标卡片 -->
-    <el-row :gutter="16" class="metrics-row">
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card class="metric-card" shadow="hover">
-          <div class="metric-content">
-            <div class="metric-icon primary">
-              <el-icon><DataLine /></el-icon>
+    <template #actions>
+      <el-date-picker
+        v-model="timeRange"
+        type="datetimerange"
+        :range-separator="t('tracing.dashboard.timeRangeTo')"
+        :start-placeholder="t('tracing.dashboard.startTimePlaceholder')"
+        :end-placeholder="t('tracing.dashboard.endTimePlaceholder')"
+        format="YYYY-MM-DD HH:mm:ss"
+        value-format="YYYY-MM-DD HH:mm:ss"
+        :shortcuts="timeShortcuts"
+        @change="handleTimeRangeChange"
+      />
+      <el-button type="primary" @click="handleRefresh" :loading="refreshing">
+        <el-icon><Refresh /></el-icon>
+        {{ t('tracing.dashboard.refresh') }}
+      </el-button>
+      <el-button @click="goToSearch">
+        <el-icon><Search /></el-icon>
+        {{ t('tracing.dashboard.searchTraces') }}
+      </el-button>
+      <el-button @click="goToManagement">
+        <el-icon><Setting /></el-icon>
+        {{ t('tracing.dashboard.config') }}
+      </el-button>
+    </template>
+
+    <template #stats>
+      <!-- 关键指标卡片 -->
+      <el-row :gutter="16" class="metrics-row">
+        <el-col :xs="24" :sm="12" :md="6">
+          <el-card class="metric-card" shadow="hover">
+            <div class="metric-content">
+              <div class="metric-icon primary">
+                <el-icon><DataLine /></el-icon>
+              </div>
+              <div class="metric-info">
+                <div class="metric-value">{{ formatNumber(stats.totalTraces) }}</div>
+                <div class="metric-label">{{ t('tracing.dashboard.totalTraces') }}</div>
+              </div>
             </div>
-            <div class="metric-info">
-              <div class="metric-value">{{ formatNumber(stats.totalTraces) }}</div>
-              <div class="metric-label">{{ t('tracing.dashboard.totalTraces') }}</div>
+            <div class="metric-trend" v-if="trendData.totalTracesTrend">
+              <span :class="trendData.totalTracesTrend >= 0 ? 'up' : 'down'">
+                {{ trendData.totalTracesTrend >= 0 ? '+' : '' }}{{ trendData.totalTracesTrend }}%
+              </span>
+              {{ t('tracing.dashboard.vsPreviousPeriod') }}
             </div>
-          </div>
-          <div class="metric-trend" v-if="trendData.totalTracesTrend">
-            <span :class="trendData.totalTracesTrend >= 0 ? 'up' : 'down'">
-              {{ trendData.totalTracesTrend >= 0 ? '+' : '' }}{{ trendData.totalTracesTrend }}%
-            </span>
-            {{ t('tracing.dashboard.vsPreviousPeriod') }}
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card class="metric-card" shadow="hover" @click="goToSearch('error')">
-          <div class="metric-content">
-            <div class="metric-icon danger">
-              <el-icon><Warning /></el-icon>
+          </el-card>
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="6">
+          <el-card class="metric-card" shadow="hover" @click="goToSearch('error')">
+            <div class="metric-content">
+              <div class="metric-icon danger">
+                <el-icon><Warning /></el-icon>
+              </div>
+              <div class="metric-info">
+                <div class="metric-value">{{ formatNumber(stats.errorTraces) }}</div>
+                <div class="metric-label">{{ t('tracing.dashboard.errorTraces') }}</div>
+              </div>
             </div>
-            <div class="metric-info">
-              <div class="metric-value">{{ formatNumber(stats.errorTraces) }}</div>
-              <div class="metric-label">{{ t('tracing.dashboard.errorTraces') }}</div>
+            <div class="metric-trend" v-if="trendData.errorTrend">
+              <span :class="trendData.errorTrend <= 0 ? 'up' : 'down'">
+                {{ trendData.errorTrend >= 0 ? '+' : '' }}{{ trendData.errorTrend }}%
+              </span>
+              {{ t('tracing.dashboard.vsPreviousPeriod') }}
             </div>
-          </div>
-          <div class="metric-trend" v-if="trendData.errorTrend">
-            <span :class="trendData.errorTrend <= 0 ? 'up' : 'down'">
-              {{ trendData.errorTrend >= 0 ? '+' : '' }}{{ trendData.errorTrend }}%
-            </span>
-            {{ t('tracing.dashboard.vsPreviousPeriod') }}
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card class="metric-card" shadow="hover">
-          <div class="metric-content">
-            <div class="metric-icon success">
-              <el-icon><Timer /></el-icon>
+          </el-card>
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="6">
+          <el-card class="metric-card" shadow="hover">
+            <div class="metric-content">
+              <div class="metric-icon success">
+                <el-icon><Timer /></el-icon>
+              </div>
+              <div class="metric-info">
+                <div class="metric-value">{{ stats.avgDuration }}<span class="unit">ms</span></div>
+                <div class="metric-label">{{ t('tracing.dashboard.avgLatency') }}</div>
+              </div>
             </div>
-            <div class="metric-info">
-              <div class="metric-value">{{ stats.avgDuration }}<span class="unit">ms</span></div>
-              <div class="metric-label">{{ t('tracing.dashboard.avgLatency') }}</div>
+            <div class="metric-trend" v-if="trendData.avgDurationTrend">
+              <span :class="trendData.avgDurationTrend <= 0 ? 'up' : 'down'">
+                {{ trendData.avgDurationTrend >= 0 ? '+' : '' }}{{ trendData.avgDurationTrend }}%
+              </span>
+              {{ t('tracing.dashboard.vsPreviousPeriod') }}
             </div>
-          </div>
-          <div class="metric-trend" v-if="trendData.avgDurationTrend">
-            <span :class="trendData.avgDurationTrend <= 0 ? 'up' : 'down'">
-              {{ trendData.avgDurationTrend >= 0 ? '+' : '' }}{{ trendData.avgDurationTrend }}%
-            </span>
-            {{ t('tracing.dashboard.vsPreviousPeriod') }}
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card class="metric-card" shadow="hover">
-          <div class="metric-content">
-            <div class="metric-icon warning">
-              <el-icon><PieChart /></el-icon>
+          </el-card>
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="6">
+          <el-card class="metric-card" shadow="hover">
+            <div class="metric-content">
+              <div class="metric-icon warning">
+                <el-icon><PieChart /></el-icon>
+              </div>
+              <div class="metric-info">
+                <div class="metric-value">{{ stats.samplingRate }}<span class="unit">%</span></div>
+                <div class="metric-label">{{ t('tracing.dashboard.samplingRate') }}</div>
+              </div>
             </div>
-            <div class="metric-info">
-              <div class="metric-value">{{ stats.samplingRate }}<span class="unit">%</span></div>
-              <div class="metric-label">{{ t('tracing.dashboard.samplingRate') }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+          </el-card>
+        </el-col>
+      </el-row>
+    </template>
 
     <!-- Tab 区域 -->
     <el-card class="tab-card">
@@ -297,17 +295,17 @@
         </el-tab-pane>
       </el-tabs>
     </el-card>
+  </PageSkeleton>
 
-    <!-- 追踪详情抽屉 -->
-    <el-drawer
-      v-model="traceDetailVisible"
-      :title="t('tracing.dashboard.drawerTitle')"
-      direction="rtl"
-      size="60%"
-    >
-      <TraceDetail v-if="selectedTrace" :trace-id="selectedTrace.traceId" />
-    </el-drawer>
-  </div>
+  <!-- 追踪详情抽屉 -->
+  <el-drawer
+    v-model="traceDetailVisible"
+    :title="t('tracing.dashboard.drawerTitle')"
+    direction="rtl"
+    size="60%"
+  >
+    <TraceDetail v-if="selectedTrace" :trace-id="selectedTrace.traceId" />
+  </el-drawer>
 </template>
 
 <script setup lang="ts">
@@ -331,6 +329,7 @@ import {
   getRecentTraces
 } from '@/api/tracing'
 import TraceDetail from './components/TraceDetail.vue'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 import { useChartTheme } from '@/composables/useChartTheme'
 import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 import { formatNumber as formatNumberBase } from '@/utils/format'
@@ -675,15 +674,15 @@ const goToSearch = (filter?: string) => {
   if (filter === 'error') {
     query.hasError = 'true'
   }
-  router.push({ path: '/admin/tracing/search', query })
+  router.push({ name: 'tracing-search', query })
 }
 
 const goToManagement = () => {
-  router.push('/admin/tracing/management')
+  router.push({ name: 'tracing-management' })
 }
 
 const handleServiceRowClick = (row: any) => {
-  router.push({ path: '/admin/tracing/search', query: { serviceName: row.name } })
+  router.push({ name: 'tracing-search', query: { serviceName: row.name } })
 }
 
 const viewTraceDetail = (trace: any) => {
@@ -737,42 +736,6 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.tracing-dashboard {
-  padding: 0;
-}
-
-.header-card {
-  margin-bottom: 16px;
-}
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.header-left h2 {
-  margin: 0;
-  font-size: 20px;
-  /* 暗色对比收口：标题色跟随主题文字色（否则裸 h2 显近黑 #333 于暗色卡片上不可读） */
-  color: var(--ja-text-primary);
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
 .metrics-row {
   margin-bottom: 16px;
 }
@@ -917,16 +880,5 @@ onBeforeUnmount(() => {
 
 :deep(.slow-row) {
   background-color: var(--el-color-warning-light-9, #fdf6ec);
-}
-
-@media (max-width: 768px) {
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .header-right {
-    width: 100%;
-  }
 }
 </style>

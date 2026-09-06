@@ -256,7 +256,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   Setting,
@@ -271,6 +271,7 @@ import {
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { usePlaygroundData } from '@/composables/usePlaygroundData'
+import { useRoutePreselect, preselectInstanceName } from '@/composables/useRoutePreselect'
 import { sendServiceRequest } from '@/api/playground'
 import type { EmbeddingRequestConfig, PlaygroundResponse } from '../../types/playground'
 import { parseErrorMessage, getErrorSuggestion } from '../../utils/errorHandler'
@@ -295,6 +296,23 @@ const config = ref<Partial<EmbeddingRequestConfig>>({
 // 数据获取
 const { availableInstances, instancesLoading, initializeData } =
   usePlaygroundData('embedding')
+
+// Route preselect: auto-select instance from onboarding ?serviceType=embedding
+const { requestedServiceType } = useRoutePreselect()
+watch(
+  availableInstances,
+  (instances) => {
+    if (
+      requestedServiceType() === 'embedding' &&
+      !selectedModel.value &&
+      instances.length > 0
+    ) {
+      const name = preselectInstanceName(instances)
+      if (name) selectedModel.value = name
+    }
+  },
+  { once: true }
+)
 
 // 是否有有效输入
 const hasValidInput = computed(() => {
