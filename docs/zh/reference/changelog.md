@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.10.2
+> **文档版本**: 2.10.3
 > **最后更新**: 2026-09-06
 > **作者**: JAiRouter Team
 
@@ -21,6 +21,31 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [2.10.3] - 2026-09-06 - 功能发布（Web 双语版：全量 zh/en i18n + 语言切换器 + Element Plus locale + 日期/数字本地化）
+
+#### i18n 基建
+
+- **语言包目录化**：`locales/<lang>/*.json` 按顶层命名空间分文件、glob 自动合并（新文件零注册）；zh/en 各 39 文件、2321 leaf keys、key 与 `{占位符}` 全对等、顶层命名空间零冲突；zh 文案逐字保留
+- **语言切换器**：`LanguageSwitcher` 胶囊按钮（圆角/边框/悬停高亮主题令牌 + 箭头旋转）接入 Layout 头部与登录页；选择经 localStorage（`ja-locale`）持久化并同步 `<html lang>`；浏览器语言决定首次默认
+- **Element Plus locale**：`el-config-provider` 联动 EP 组件内置文案（分页/表格/日期等）
+- **标题体系**：menu.ts / 路由 `meta.titleKey` 全量 key 化；afterEach 依据路由标题同步浏览器标签页；登录页校验文案随语言即时更新
+
+#### 全量迁移
+
+- **~40 视图 + 共享组件**：Dashboard、服务/实例/Adapter 组、路由规则组、资源池/版本/状态持久化、响应缓存/慢查询、API Key、JWT×2、黑名单、审计日志、权限管理（含 `permission.ts`）、tracing×4、exception×3、callHistory×4、cb/lb/rl×6、playground（chat/embedding/rerank/audio/image/common×4）、共享弹窗 CircuitBreakerConfig/RateLimitConfig
+- **共享字典**：`serviceTypes` 显示名、playground errors、user store 兜底、playgroundCache、api 层抛错均 i18n 化；死代码（`utils/errorHandler`、`validators/*`）核实无消费后保留
+- **日期/数字本地化**：新增 `utils/format.ts`（locale 感知）；11 个页面关键表格日期/数字列委托接入（zh 输出逐字节保持，en 月份名/千分位）
+
+#### 体验修复
+
+- **暗色对比收口**：callHistory 统计卡硬编码 `#303133/#909399`、JwtAccount 角色描述与 ChatConfigPanel label 等 → 主题令牌；卡片头裸 `h2`（暗色呈 `#333` 不可见）与滑块刻度文字（EP `--el-color-info` 过暗）全局收口；DOM 对比度审计（ratio ≥ 5）覆盖 tracing/management、call-history/token-usage、call-history/slow-calls 等页清零
+
+#### 质量
+
+- 前端 vue-tsc + vite build 通过；后端零改动（3243 基线不变）；登录/暗色/中英切换冒烟通过；内嵌静态刷新并重启生效
+
+---
 
 ### [2.10.2] - 2026-09-06 - 功能发布（Dashboard v2 治理指挥台 + 配置接入与能力补页）
 

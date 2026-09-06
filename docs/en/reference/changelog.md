@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.10.2
+> **Document Version**: 2.10.3
 > **Last Updated**: 2026-09-06
 > **Git Commit**: -
 > **Author**: Lincoln
@@ -20,6 +20,31 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.10.3] - 2026-09-06 - Feature Release (Web Bilingual Edition: Full zh/en i18n + Language Switcher + Element Plus Locale + Date/Number Localization)
+
+#### i18n infrastructure
+
+- **Localization packs per namespace**: `locales/<lang>/*.json` split by top-level namespace, merged via glob (new files need no registration); zh/en each 39 files / 2321 leaf keys, key & `{placeholder}` parity, no top-level collisions; zh copy preserved verbatim
+- **Language switcher**: `LanguageSwitcher` pill button (rounded / bordered / theme-token hover + caret rotation) in the Layout header and Login page; selection persisted in localStorage (`ja-locale`) and mirrored to `<html lang>`; browser language picks the first-run default
+- **Element Plus locale**: `el-config-provider` drives EP built-in copy (pagination/table/date etc.)
+- **Title system**: `menu.ts` and route `meta.titleKey` fully converted to i18n keys; `afterEach` syncs the tab title from the route; Login validation messages update instantly on language switch
+
+#### Full migration
+
+- **~40 views + shared components**: Dashboard, Service/Instance/Adapter family, Rule family, Pool/Version/StatePersistence, ResponseCache/SlowQuery, API Keys, JWT×2, Blacklist, AuditLog, PermissionManagement (incl. `permission.ts`), tracing×4, exception×3, callHistory×4, cb/lb/rl×6, playground (chat/embedding/rerank/audio/image/common×4), shared dialogs CircuitBreakerConfig/RateLimitConfig
+- **Shared dictionaries**: `serviceTypes` display names, playground errors, user-store fallbacks, playgroundCache, api-layer throws all converted to i18n; dead code (`utils/errorHandler`, `validators/*`) verified unreferenced and kept
+- **Date/number localization**: new `utils/format.ts` (locale-aware); key table date/number columns in 11 pages delegated to it (zh output byte-identical, en month names / thousands separators)
+
+#### Experience fixes
+
+- **Dark-mode contrast cleanup**: callHistory stat cards' hard-coded `#303133/#909399`, JwtAccount role descriptions and ChatConfigPanel label etc. → theme tokens; bare card-header `h2` (rendered `#333` and invisible in dark) and slider marks text (EP `--el-color-info` too dark) fixed globally; DOM contrast audit (ratio ≥ 5) cleared across tracing/management, call-history/token-usage and call-history/slow-calls
+
+#### Quality
+
+- Frontend vue-tsc + vite build passed; backend untouched (3243 baseline unchanged); login / dark / zh↔en switch smoke passed; embedded static refreshed and live after restart
+
+---
 
 ### [2.10.2] - 2026-09-06 - Feature Release (Dashboard v2 Governance Hub + Config Onboarding & Capability Pages)
 
