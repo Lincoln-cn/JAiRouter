@@ -5,7 +5,7 @@
       <div class="toolbar-left">
         <el-select
           v-model="selectedModel"
-          :placeholder="'选择 Embedding 模型'"
+          :placeholder="t('playgroundEmbedding.toolbar.selectModel')"
           :loading="instancesLoading"
           filterable
           class="model-select"
@@ -36,13 +36,13 @@
                 v-if="inst.healthStatus === 'UNHEALTHY'"
                 class="health-status-text"
               >
-                (离线)
+                {{ t('playgroundEmbedding.instance.offline') }}
               </span>
               <span
                 v-else-if="inst.healthStatus === 'UNKNOWN' || !inst.healthStatus"
                 class="health-status-text unknown"
               >
-                (未知)
+                {{ t('playgroundEmbedding.instance.unknown') }}
               </span>
             </div>
           </el-option>
@@ -52,7 +52,7 @@
           @click="showConfig = !showConfig"
         >
           <el-icon><Setting /></el-icon>
-          {{ showConfig ? '隐藏配置' : '参数配置' }}
+          {{ showConfig ? t('playgroundEmbedding.toolbar.hideConfig') : t('playgroundEmbedding.toolbar.showConfig') }}
         </el-button>
       </div>
       <div class="toolbar-right">
@@ -61,7 +61,7 @@
           @click="handleClear"
         >
           <el-icon><Delete /></el-icon>
-          清空
+          {{ t('playgroundEmbedding.toolbar.clear') }}
         </el-button>
       </div>
     </div>
@@ -75,7 +75,7 @@
         <el-row :gutter="16">
           <el-col :span="6">
             <div class="config-item">
-              <label class="config-label">编码格式</label>
+              <label class="config-label">{{ t('playgroundEmbedding.labels.encodingFormat') }}</label>
               <el-select
                 v-model="config.encodingFormat"
                 size="small"
@@ -93,7 +93,7 @@
           </el-col>
           <el-col :span="6">
             <div class="config-item">
-              <label class="config-label">向量维度</label>
+              <label class="config-label">{{ t('playgroundEmbedding.labels.dimensions') }}</label>
               <el-input-number
                 v-model="config.dimensions"
                 :min="0"
@@ -112,14 +112,14 @@
       <!-- 输入区 -->
       <div class="input-card">
         <div class="card-header">
-          <span class="card-title">输入文本</span>
+          <span class="card-title">{{ t('playgroundEmbedding.input.title') }}</span>
           <el-button
             text
             size="small"
             @click="addInput"
           >
             <el-icon><Plus /></el-icon>
-            添加输入
+            {{ t('playgroundEmbedding.input.add') }}
           </el-button>
         </div>
         <div class="input-list">
@@ -132,7 +132,7 @@
               v-model="inputTexts[index]"
               type="textarea"
               :autosize="{ minRows: 2, maxRows: 4 }"
-              :placeholder="`输入文本 ${index + 1}`"
+              :placeholder="t('playgroundEmbedding.input.placeholder', { index: index + 1 })"
               resize="none"
             />
             <el-button
@@ -158,14 +158,14 @@
           @click="handleGenerate"
         >
           <el-icon><Promotion /></el-icon>
-          生成向量
+          {{ t('playgroundEmbedding.action.generate') }}
         </el-button>
       </div>
 
       <!-- 结果展示区 -->
       <div class="result-card">
         <div class="card-header">
-          <span class="card-title">向量结果</span>
+          <span class="card-title">{{ t('playgroundEmbedding.result.title') }}</span>
           <el-button
             v-if="result"
             text
@@ -173,7 +173,7 @@
             @click="handleCopyResult"
           >
             <el-icon><DocumentCopy /></el-icon>
-            复制
+            {{ t('playgroundEmbedding.result.copy') }}
           </el-button>
         </div>
 
@@ -188,7 +188,7 @@
           >
             <DataLine />
           </el-icon>
-          <span class="empty-text">输入文本后生成向量</span>
+          <span class="empty-text">{{ t('playgroundEmbedding.result.empty') }}</span>
         </div>
 
         <!-- 加载状态 -->
@@ -202,7 +202,7 @@
           >
             <Loading />
           </el-icon>
-          <span>正在生成向量...</span>
+          <span>{{ t('playgroundEmbedding.result.generating') }}</span>
         </div>
 
         <!-- 结果显示 -->
@@ -213,15 +213,15 @@
           <!-- 统计信息 -->
           <div class="result-stats">
             <div class="stat-item">
-              <span class="stat-label">向量数量</span>
+              <span class="stat-label">{{ t('playgroundEmbedding.stats.vectorCount') }}</span>
               <span class="stat-value">{{ embeddingData?.length || 0 }}</span>
             </div>
             <div class="stat-item">
-              <span class="stat-label">向量维度</span>
+              <span class="stat-label">{{ t('playgroundEmbedding.labels.dimensions') }}</span>
               <span class="stat-value">{{ vectorDimension }}</span>
             </div>
             <div class="stat-item">
-              <span class="stat-label">耗时</span>
+              <span class="stat-label">{{ t('playgroundEmbedding.stats.duration') }}</span>
               <span class="stat-value">{{ result.duration }}ms</span>
             </div>
           </div>
@@ -234,14 +234,14 @@
               class="vector-item"
             >
               <div class="vector-header">
-                <span class="vector-index">向量 {{ idx + 1 }}</span>
+                <span class="vector-index">{{ t('playgroundEmbedding.vector.index', { index: idx + 1 }) }}</span>
                 <el-button
                   text
                   size="small"
                   @click="copyVector(item.embedding)"
                 >
                   <el-icon><DocumentCopy /></el-icon>
-                  复制
+                  {{ t('playgroundEmbedding.result.copy') }}
                 </el-button>
               </div>
               <div class="vector-value">
@@ -257,6 +257,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   Setting,
   Delete,
@@ -273,6 +274,8 @@ import { usePlaygroundData } from '@/composables/usePlaygroundData'
 import { sendServiceRequest } from '@/api/playground'
 import type { EmbeddingRequestConfig, PlaygroundResponse } from '../../types/playground'
 import { parseErrorMessage, getErrorSuggestion } from '../../utils/errorHandler'
+
+const { t } = useI18n()
 
 // 状态
 const showConfig = ref(false)
@@ -309,7 +312,7 @@ const vectorDimension = computed(() => {
   if (embeddingData.value?.[0]?.embedding) {
     return embeddingData.value[0].embedding.length
   }
-  return config.value.dimensions || '未知'
+  return config.value.dimensions || t('playgroundEmbedding.stats.dimensionUnknown')
 })
 
 // 初始化
@@ -356,15 +359,15 @@ const handleGenerate = async () => {
     const response = await sendServiceRequest('embedding', requestConfig, headers)
     result.value = response
     const count = response.data?.data?.data?.length || 0
-    ElMessage.success(`成功生成 ${count} 个向量`)
+    ElMessage.success(t('playgroundEmbedding.messages.generateSuccess', { count }))
   } catch (error: any) {
-    const errorMsg = parseErrorMessage(error, '向量生成')
+    const errorMsg = parseErrorMessage(error, t('playgroundEmbedding.messages.errorContext'))
     const suggestion = getErrorSuggestion(error)
 
     if (suggestion) {
       ElMessage({
         type: 'error',
-        message: `${errorMsg}\n\n💡 建议: ${suggestion}`,
+        message: `${errorMsg}\n\n💡 ${t('playgroundEmbedding.messages.suggestion')}: ${suggestion}`,
         duration: 6000,
         showClose: true
       })
@@ -392,16 +395,16 @@ const formatVectorCompact = (embedding: number[]) => {
   const first3 = embedding.slice(0, 3).map((v) => v.toFixed(4))
   const last3 = embedding.slice(-3).map((v) => v.toFixed(4))
 
-  return `[${first3.join(', ')}, ..., ${last3.join(', ')}]  (${len}维)`
+  return `[${first3.join(', ')}, ..., ${last3.join(', ')}]  (${t('playgroundEmbedding.vector.dimensionSuffix', { dim: len })})`
 }
 
 // 复制向量
 const copyVector = async (embedding: number[]) => {
   try {
     await navigator.clipboard.writeText(JSON.stringify(embedding))
-    ElMessage.success('向量已复制')
+    ElMessage.success(t('playgroundEmbedding.messages.vectorCopied'))
   } catch {
-    ElMessage.error('复制失败')
+    ElMessage.error(t('playgroundEmbedding.messages.copyFailed'))
   }
 }
 
@@ -410,9 +413,9 @@ const handleCopyResult = async () => {
   if (!result.value) return
   try {
     await navigator.clipboard.writeText(JSON.stringify(result.value.data, null, 2))
-    ElMessage.success('结果已复制')
+    ElMessage.success(t('playgroundEmbedding.messages.resultCopied'))
   } catch {
-    ElMessage.error('复制失败')
+    ElMessage.error(t('playgroundEmbedding.messages.copyFailed'))
   }
 }
 

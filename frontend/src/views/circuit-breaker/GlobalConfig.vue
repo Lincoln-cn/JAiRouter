@@ -3,28 +3,28 @@
     <el-card class="config-card">
       <template #header>
         <div class="card-header">
-          <span class="card-title">熔断器全局配置</span>
+          <span class="card-title">{{ t('circuitBreaker.globalConfig.title') }}</span>
         </div>
       </template>
 
       <el-form :model="globalConfig" label-width="150px" class="config-form">
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="启用自适应阈值调整">
+            <el-form-item :label="t('circuitBreaker.globalConfig.adaptiveThresholdEnabled')">
               <div class="adaptive-switch-container">
                 <el-switch v-model="globalConfig.adaptiveThresholdEnabled" />
                 <span class="adaptive-hint" v-if="globalConfig.adaptiveThresholdEnabled">
-                  <el-tag type="success" size="small">已启用</el-tag>
-                  <span class="hint-text">系统将根据失败率自动调整阈值</span>
+                  <el-tag type="success" size="small">{{ t('circuitBreaker.globalConfig.enabled') }}</el-tag>
+                  <span class="hint-text">{{ t('circuitBreaker.globalConfig.adaptiveHint') }}</span>
                 </span>
                 <span class="adaptive-hint" v-else>
-                  <el-tag type="info" size="small">已禁用</el-tag>
+                  <el-tag type="info" size="small">{{ t('circuitBreaker.globalConfig.disabled') }}</el-tag>
                 </span>
               </div>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="状态同步间隔(分钟)">
+            <el-form-item :label="t('circuitBreaker.globalConfig.stateSyncInterval')">
               <el-input-number
                 v-model="globalConfig.stateSyncIntervalMinutes"
                 :min="1"
@@ -36,7 +36,7 @@
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="过期清理间隔(分钟)">
+            <el-form-item :label="t('circuitBreaker.globalConfig.cleanupInterval')">
               <el-input-number
                 v-model="globalConfig.cleanupIntervalMinutes"
                 :min="1"
@@ -45,7 +45,7 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="历史记录保留天数">
+            <el-form-item :label="t('circuitBreaker.globalConfig.historyRetentionDays')">
               <el-input-number
                 v-model="globalConfig.historyRetentionDays"
                 :min="1"
@@ -57,25 +57,25 @@
 
         <el-row :gutter="20">
           <el-col :span="8">
-            <el-form-item label="默认失败阈值">
+            <el-form-item :label="t('circuitBreaker.globalConfig.defaultFailureThreshold')">
               <el-input-number v-model="globalConfig.defaultFailureThreshold" :min="1" :max="100" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="默认成功阈值">
+            <el-form-item :label="t('circuitBreaker.globalConfig.defaultSuccessThreshold')">
               <el-input-number v-model="globalConfig.defaultSuccessThreshold" :min="1" :max="20" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="默认超时(ms)">
+            <el-form-item :label="t('circuitBreaker.globalConfig.defaultTimeout')">
               <el-input-number v-model="globalConfig.defaultTimeoutMs" :min="1000" :max="300000" :step="1000" />
             </el-form-item>
           </el-col>
         </el-row>
 
         <el-form-item>
-          <el-button type="primary" @click="saveGlobalConfig" :loading="savingConfig">保存全局配置</el-button>
-          <el-button @click="resetGlobalConfig">重置为默认值</el-button>
+          <el-button type="primary" @click="saveGlobalConfig" :loading="savingConfig">{{ t('circuitBreaker.globalConfig.save') }}</el-button>
+          <el-button @click="resetGlobalConfig">{{ t('circuitBreaker.globalConfig.resetToDefaults') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -84,6 +84,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 
@@ -108,6 +109,8 @@ const globalConfig = ref<GlobalConfig>({
 })
 
 const savingConfig = ref(false)
+
+const { t } = useI18n()
 
 const loadGlobalConfig = async () => {
   try {
@@ -136,13 +139,13 @@ const saveGlobalConfig = async () => {
   try {
     const response = await request.put('/config/circuit-breaker/global-config', globalConfig.value)
     if (response.data?.success) {
-      ElMessage.success('全局配置保存成功')
+      ElMessage.success(t('circuitBreaker.globalConfig.messages.saveSuccess'))
     } else {
-      ElMessage.error(response.data?.message || '保存全局配置失败')
+      ElMessage.error(response.data?.message || t('circuitBreaker.globalConfig.messages.saveFailed'))
     }
   } catch (error: any) {
     console.error('Failed to save global config:', error)
-    ElMessage.error('保存全局配置失败')
+    ElMessage.error(t('circuitBreaker.globalConfig.messages.saveFailed'))
   } finally {
     savingConfig.value = false
   }
@@ -156,11 +159,11 @@ const resetGlobalConfig = async () => {
       if (config) {
         globalConfig.value = config
       }
-      ElMessage.info('已重置为默认配置')
+      ElMessage.info(t('circuitBreaker.globalConfig.messages.resetSuccess'))
     }
   } catch (error: any) {
     console.error('Failed to reset global config:', error)
-    ElMessage.error('重置全局配置失败')
+    ElMessage.error(t('circuitBreaker.globalConfig.messages.resetFailed'))
   }
 }
 

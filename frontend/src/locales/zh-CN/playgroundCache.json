@@ -1,0 +1,9 @@
+{
+  "playgroundCache": {
+    "fetchInstancesFailed": "获取实例列表失败",
+    "refreshInstancesWarn": "刷新{serviceType}实例列表失败，使用缓存数据",
+    "refreshModelsWarn": "刷新{serviceType}模型列表失败，使用缓存数据",
+    "fetchModelsFailed": "获取{serviceType}模型列表失败",
+    "refreshDone": "缓存刷新完成"
+  }
+}

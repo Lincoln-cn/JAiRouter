@@ -39,7 +39,7 @@
           @click="handleCopy"
         >
           <el-icon><DocumentCopy /></el-icon>
-          复制
+          {{ t('playgroundCommon.action.copy') }}
         </el-button>
         <el-button
           v-if="role === 'assistant'"
@@ -48,7 +48,7 @@
           @click="handleRegenerate"
         >
           <el-icon><RefreshRight /></el-icon>
-          重新生成
+          {{ t('playgroundCommon.action.regenerate') }}
         </el-button>
       </div>
     </div>
@@ -57,6 +57,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { User, Monitor, DocumentCopy, RefreshRight } from '@element-plus/icons-vue'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import { ElMessage } from 'element-plus'
@@ -79,14 +80,16 @@ const emit = defineEmits<{
   regenerate: []
 }>()
 
+const { t } = useI18n()
+
 const roleLabel = computed(() => {
   switch (props.role) {
     case 'user':
-      return '你'
+      return t('playgroundCommon.role.user')
     case 'assistant':
-      return 'AI'
+      return t('playgroundCommon.role.assistant')
     case 'system':
-      return '系统'
+      return t('playgroundCommon.role.system')
     default:
       return props.role
   }
@@ -111,10 +114,10 @@ const formatTime = (time: string) => {
 const handleCopy = async () => {
   try {
     await navigator.clipboard.writeText(props.content)
-    ElMessage.success('已复制到剪贴板')
+    ElMessage.success(t('playgroundCommon.message.copiedToClipboard'))
     emit('copy', props.content)
   } catch {
-    ElMessage.error('复制失败')
+    ElMessage.error(t('playgroundCommon.message.copyFailed'))
   }
 }
 

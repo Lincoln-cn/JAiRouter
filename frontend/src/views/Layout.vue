@@ -18,13 +18,13 @@
             <el-icon>
               <component :is="groupIconMap[group.icon]" />
             </el-icon>
-            <span>{{ group.title }}</span>
+            <span>{{ t(group.title) }}</span>
           </template>
           <el-menu-item v-for="item in group.children" :key="item.path" :index="item.path">
             <el-icon v-if="item.icon">
               <component :is="itemIconMap[item.icon]" />
             </el-icon>
-            {{ item.title }}
+            {{ t(item.title) }}
           </el-menu-item>
         </el-sub-menu>
       </el-menu>
@@ -35,11 +35,12 @@
         <div class="header-left">
           <el-breadcrumb separator="/">
             <el-breadcrumb-item v-for="item in breadcrumbs" :key="item.path" :to="item.path">
-              {{ item.title }}
+              {{ t(item.title) }}
             </el-breadcrumb-item>
           </el-breadcrumb>
         </div>
         <div class="header-right">
+          <LanguageSwitcher class="lang-toggle" />
           <el-button class="theme-toggle" circle @click="toggleTheme">
             <el-icon :size="18">
               <Moon v-if="!isDark" />
@@ -49,12 +50,12 @@
           <el-dropdown @command="handleUserCommand">
             <span class="user-info">
               <el-avatar :size="30" icon="UserFilled" />
-              <span class="username">管理员</span>
+              <span class="username">{{ displayName }}</span>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="profile">个人资料</el-dropdown-item>
-                <el-dropdown-item command="logout">退出登录</el-dropdown-item>
+                <el-dropdown-item command="profile">{{ t('layout.profile') }}</el-dropdown-item>
+                <el-dropdown-item command="logout">{{ t('layout.logout') }}</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -71,10 +72,12 @@
 <script setup lang="ts">
 import { computed, ref, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { useTheme } from '@/composables/useTheme'
 import { usePermission } from '@/composables/usePermission'
 import { menuGroups } from '@/config/menu'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 import {
   House,
   Setting,
@@ -96,8 +99,12 @@ import {
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const { t } = useI18n()
 const { isDark, toggleTheme } = useTheme()
 const { filterMenuByPermission } = usePermission()
+
+// v2.10.3: 显示真实用户名（JWT sub），缺省回退「管理员」
+const displayName = computed(() => userStore.userInfo?.username || t('layout.admin'))
 
 // v2.9.8 Phase 4: 菜单数据驱动 + 权限过滤（menu.ts 提供 8 组 34 项结构与权限码）
 const filteredMenuGroups = computed(() => filterMenuByPermission(menuGroups))
@@ -182,13 +189,13 @@ const breadcrumbs = computed(() => {
   const pathArray = route.path.split('/').filter(item => item)
   const breadcrumbArray = []
 
-  // 添加首页面包屑
-  breadcrumbArray.push({ path: '/dashboard/main', title: '首页' })
+  // 添加首页面包屑（v2.10.3: title 存 i18n key，模板 t() 渲染）
+  breadcrumbArray.push({ path: '/dashboard/main', title: 'layout.home' })
 
   // 特殊处理仪表板页面
   if (route.path === '/dashboard/main') {
-    breadcrumbArray.push({ path: '/dashboard', title: '概览' })
-    breadcrumbArray.push({ path: '/dashboard/main', title: '仪表板' })
+    breadcrumbArray.push({ path: '/dashboard', title: 'menu.dashboard' })
+    breadcrumbArray.push({ path: '/dashboard/main', title: 'route.dashboardMain' })
     return breadcrumbArray
 
   }
@@ -201,7 +208,7 @@ const breadcrumbs = computed(() => {
     if (routeMatched) {
       breadcrumbArray.push({
         path,
-        title: (routeMatched.meta?.title as string) || (routeMatched.name as string)
+        title: (routeMatched.meta?.titleKey as string) || (routeMatched.name as string)
       })
     } else {
       // 查找子路由
@@ -212,7 +219,7 @@ const breadcrumbs = computed(() => {
         if (childRoute) {
           breadcrumbArray.push({
             path,
-            title: (childRoute.meta?.title as string) || (childRoute.name as string)
+            title: (childRoute.meta?.titleKey as string) || (childRoute.name as string)
           })
         }
       }
@@ -343,6 +350,10 @@ const handleUserCommand = async (command: string) => {
 }
 
 .theme-toggle {
+  margin-right: 12px;
+}
+
+.lang-toggle {
   margin-right: 12px;
 }
 

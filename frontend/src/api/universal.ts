@@ -1,4 +1,9 @@
 import request from '@/utils/request'
+import { i18n } from '@/i18n'
+const { t: gt } = i18n.global as unknown as {
+  t: (key: string, named?: Record<string, string | number>) => string
+}
+
 
 // ==================== Universal API 调用接口 ====================
 
@@ -207,7 +212,7 @@ class UniversalApiClient {
 
       const reader = response.body?.getReader()
       if (!reader) {
-        throw new Error('无法获取响应流')
+        throw new Error(gt('apiErrors.cannotGetResponseStream'))
       }
 
       const decoder = new TextDecoder()

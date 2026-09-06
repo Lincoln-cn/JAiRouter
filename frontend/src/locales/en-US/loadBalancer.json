@@ -1,0 +1,95 @@
+{
+  "loadBalancer": {
+    "monitoring": {
+      "controlTitle": "Routing Monitor Control",
+      "resumeMonitoring": "Resume Monitoring",
+      "pauseMonitoring": "Pause Monitoring",
+      "clearHistory": "Clear History",
+      "export": "Export",
+      "exportJson": "Export JSON",
+      "exportCsv": "Export CSV",
+      "sampleRate": "Sample Rate",
+      "historySize": "History Size",
+      "wsConnected": "WebSocket Connected",
+      "wsDisconnected": "WebSocket Disconnected",
+      "sampledCount": "Sampled: {count}",
+      "monitoringActive": "Monitoring",
+      "pausedStatus": "Paused",
+      "strategy": "Strategy",
+      "selectionCount": "Selections",
+      "distributionTitle": "Model-Instance Distribution",
+      "resume": "Resume",
+      "pause": "Pause",
+      "eventsTitle": "Real-Time Routing Events",
+      "selectServiceType": "Select Service Type",
+      "columns": {
+        "time": "Time",
+        "serviceType": "Service Type",
+        "strategy": "Strategy",
+        "selectedInstance": "Selected Instance",
+        "clientId": "Client ID",
+        "candidateCount": "Candidates",
+        "selectionTimeMs": "Latency (ms)"
+      },
+      "messages": {
+        "paused": "Monitoring paused",
+        "resumed": "Monitoring resumed",
+        "servicePaused": "{serviceType} monitoring paused",
+        "serviceResumed": "{serviceType} monitoring resumed",
+        "operationFailed": "Operation failed",
+        "sampleRateUpdated": "Sample rate updated to {value}%",
+        "sampleRateUpdateFailed": "Failed to update sample rate",
+        "historySizeUpdated": "History size updated to {value}",
+        "historySizeUpdateFailed": "Failed to update history size",
+        "historyCleared": "History cleared",
+        "clearHistoryFailed": "Failed to clear history",
+        "exportSuccess": "Exported {format} file",
+        "exportFailed": "Export failed"
+      }
+    },
+    "strategyConfig": {
+      "globalTitle": "Global Default Configuration",
+      "defaultStrategy": "Default Strategy",
+      "selectStrategy": "Select a Strategy",
+      "hashAlgorithm": "Hash Algorithm",
+      "selectHashAlgorithm": "Select a Hash Algorithm",
+      "virtualNodes": "Virtual Nodes",
+      "serviceConfigsTitle": "Service-Level Configuration",
+      "configureHint": "Click the configure button to change the load balancing strategy of a single service",
+      "defaultTag": "Default",
+      "configure": "Configure",
+      "loadBalanceStrategy": "Load Balancing Strategy",
+      "configureDialogTitle": "Configure Load Balancer for {serviceType}",
+      "cancel": "Cancel",
+      "save": "Save",
+      "columns": {
+        "serviceType": "Service Type",
+        "strategy": "Strategy",
+        "hashAlgorithm": "Hash Algorithm",
+        "virtualNodes": "Virtual Nodes",
+        "actions": "Actions"
+      },
+      "strategies": {
+        "random": "Random",
+        "roundRobin": "Round Robin",
+        "leastConnections": "Least Connections",
+        "ipHash": "IP Hash",
+        "consistentHash": "Consistent Hash",
+        "latency": "Latency-Aware"
+      },
+      "strategyDescriptions": {
+        "random": "Selects instances by weight at random, ideal for stateless request scenarios",
+        "roundRobin": "Selects instances by weight in rotation, suitable for evenly distributed load",
+        "leastConnections": "Selects the instance with the fewest active connections, ideal for long-lived connections",
+        "ipHash": "Selects an instance by hashing the client IP, suitable for session-affinity scenarios",
+        "consistentHash": "Selects an instance through a consistent hash ring, suitable for distributed caching",
+        "latency": "Dynamically selects the lowest-latency instance using EWMA-based latency estimates, ideal when backend latency varies significantly"
+      },
+      "messages": {
+        "loadFailed": "Failed to load service configurations",
+        "configUpdated": "Load balancing config of service {serviceType} updated",
+        "saveFailed": "Failed to save configuration"
+      }
+    }
+  }
+}

@@ -3,16 +3,16 @@
     <!-- 统计卡片 -->
     <el-row :gutter="20" class="stats-row">
       <el-col :span="6">
-        <StatCard :icon="Warning" label="异常总数" :value="listData.totalElements" tone="danger" />
+        <StatCard :icon="Warning" :label="t('exception.list.totalExceptionsLabel')" :value="listData.totalElements" tone="danger" />
       </el-col>
       <el-col :span="6">
-        <StatCard :icon="DataLine" label="异常类型数" :value="listData.totalTypes" tone="warning" />
+        <StatCard :icon="DataLine" :label="t('exception.list.totalTypesLabel')" :value="listData.totalTypes" tone="warning" />
       </el-col>
       <el-col :span="6">
-        <StatCard :icon="Monitor" label="Top 异常类型" :value="listData.topExceptionType || '-'" tone="primary" />
+        <StatCard :icon="Monitor" :label="t('exception.list.topExceptionTypeLabel')" :value="listData.topExceptionType || '-'" tone="primary" />
       </el-col>
       <el-col :span="6">
-        <StatCard :icon="TrendCharts" label="Top 来源 IP" :value="listData.topClientIp || '-'" tone="info" />
+        <StatCard :icon="TrendCharts" :label="t('exception.list.topClientIpLabel')" :value="listData.topClientIp || '-'" tone="info" />
       </el-col>
     </el-row>
 
@@ -22,12 +22,12 @@
         <div class="card-header">
           <span class="main-title">
             <el-icon><Warning /></el-icon>
-            异常事件管理
+            {{ t('exception.list.title') }}
           </span>
           <div class="header-buttons">
-            <el-button icon="Refresh" @click="handleRefresh">刷新</el-button>
-            <el-button icon="Delete" type="danger" @click="showCleanupDialog">清理过期数据</el-button>
-            <el-button icon="DataAnalysis" type="success" @click="goToStatistics">统计分析</el-button>
+            <el-button icon="Refresh" @click="handleRefresh">{{ t('exception.list.refresh') }}</el-button>
+            <el-button icon="Delete" type="danger" @click="showCleanupDialog">{{ t('exception.list.cleanupExpired') }}</el-button>
+            <el-button icon="DataAnalysis" type="success" @click="goToStatistics">{{ t('exception.list.goStatistics') }}</el-button>
           </div>
         </div>
       </template>
@@ -35,17 +35,17 @@
       <!-- 筛选条件 -->
       <div class="filter-section">
         <el-form :inline="true" :model="queryParams" class="filter-form">
-          <el-form-item label="异常类型">
+          <el-form-item :label="t('exception.list.exceptionType')">
             <el-input
               v-model="queryParams.exceptionType"
-              placeholder="输入异常类型"
+              :placeholder="t('exception.list.exceptionTypePlaceholder')"
               clearable
               style="width: 200px"
               @keyup.enter="handleQuery"
             />
           </el-form-item>
-          <el-form-item label="错误代码">
-            <el-select v-model="queryParams.errorCode" placeholder="选择错误代码" clearable style="width: 120px">
+          <el-form-item :label="t('exception.list.errorCode')">
+            <el-select v-model="queryParams.errorCode" :placeholder="t('exception.list.errorCodePlaceholder')" clearable style="width: 120px">
               <el-option label="400" value="400" />
               <el-option label="401" value="401" />
               <el-option label="403" value="403" />
@@ -57,59 +57,59 @@
               <el-option label="504" value="504" />
             </el-select>
           </el-form-item>
-          <el-form-item label="错误分类">
-            <el-select v-model="queryParams.errorCategory" placeholder="选择分类" clearable style="width: 150px">
-              <el-option label="客户端错误" value="CLIENT_ERROR" />
-              <el-option label="服务端错误" value="SERVER_ERROR" />
-              <el-option label="网络错误" value="NETWORK_ERROR" />
-              <el-option label="超时错误" value="TIMEOUT_ERROR" />
-              <el-option label="验证错误" value="VALIDATION_ERROR" />
-              <el-option label="安全错误" value="SECURITY_ERROR" />
+          <el-form-item :label="t('exception.list.errorCategory')">
+            <el-select v-model="queryParams.errorCategory" :placeholder="t('exception.list.errorCategoryPlaceholder')" clearable style="width: 150px">
+              <el-option :label="t('exception.list.errorCategories.CLIENT_ERROR')" value="CLIENT_ERROR" />
+              <el-option :label="t('exception.list.errorCategories.SERVER_ERROR')" value="SERVER_ERROR" />
+              <el-option :label="t('exception.list.errorCategories.NETWORK_ERROR')" value="NETWORK_ERROR" />
+              <el-option :label="t('exception.list.errorCategories.TIMEOUT_ERROR')" value="TIMEOUT_ERROR" />
+              <el-option :label="t('exception.list.errorCategories.VALIDATION_ERROR')" value="VALIDATION_ERROR" />
+              <el-option :label="t('exception.list.errorCategories.SECURITY_ERROR')" value="SECURITY_ERROR" />
             </el-select>
           </el-form-item>
-          <el-form-item label="客户端 IP">
+          <el-form-item :label="t('exception.list.clientIp')">
             <el-input
               v-model="queryParams.clientIp"
-              placeholder="输入 IP 地址"
+              :placeholder="t('exception.list.clientIpPlaceholder')"
               clearable
               style="width: 150px"
               @keyup.enter="handleQuery"
             />
           </el-form-item>
-          <el-form-item label="服务类型">
-            <el-select v-model="queryParams.serviceType" placeholder="选择服务类型" clearable style="width: 130px">
-              <el-option label="Chat" value="CHAT" />
-              <el-option label="Embedding" value="EMBEDDING" />
-              <el-option label="Rerank" value="RERANK" />
-              <el-option label="TTS" value="TTS" />
-              <el-option label="STT" value="STT" />
-              <el-option label="图像生成" value="IMG_GENERATE" />
-              <el-option label="图像编辑" value="IMG_EDIT" />
+          <el-form-item :label="t('exception.list.serviceType')">
+            <el-select v-model="queryParams.serviceType" :placeholder="t('exception.list.serviceTypePlaceholder')" clearable style="width: 130px">
+              <el-option :label="t('exception.list.serviceTypes.chat')" value="CHAT" />
+              <el-option :label="t('exception.list.serviceTypes.embedding')" value="EMBEDDING" />
+              <el-option :label="t('exception.list.serviceTypes.rerank')" value="RERANK" />
+              <el-option :label="t('exception.list.serviceTypes.tts')" value="TTS" />
+              <el-option :label="t('exception.list.serviceTypes.stt')" value="STT" />
+              <el-option :label="t('exception.list.serviceTypes.imageGeneration')" value="IMG_GENERATE" />
+              <el-option :label="t('exception.list.serviceTypes.imageEditing')" value="IMG_EDIT" />
             </el-select>
           </el-form-item>
-          <el-form-item label="模型名称">
+          <el-form-item :label="t('exception.list.modelName')">
             <el-input
               v-model="queryParams.modelName"
-              placeholder="输入模型名"
+              :placeholder="t('exception.list.modelNamePlaceholder')"
               clearable
               style="width: 160px"
               @keyup.enter="handleQuery"
             />
           </el-form-item>
-          <el-form-item label="时间范围">
+          <el-form-item :label="t('exception.list.timeRange')">
             <el-date-picker
               v-model="dateRange"
               type="datetimerange"
-              range-separator="至"
-              start-placeholder="开始时间"
-              end-placeholder="结束时间"
+              :range-separator="t('exception.list.dateRangeSeparator')"
+              :start-placeholder="t('exception.list.startTime')"
+              :end-placeholder="t('exception.list.endTime')"
               value-format="YYYY-MM-DD HH:mm:ss"
               style="width: 400px"
             />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" icon="Search" @click="handleQuery">查询</el-button>
-            <el-button icon="Refresh" @click="handleReset">重置</el-button>
+            <el-button type="primary" icon="Search" @click="handleQuery">{{ t('exception.list.query') }}</el-button>
+            <el-button icon="Refresh" @click="handleReset">{{ t('exception.list.reset') }}</el-button>
           </el-form-item>
         </el-form>
       </div>
@@ -124,17 +124,17 @@
           :max-height="500"
           @row-click="handleRowClick"
         >
-          <el-table-column label="事件 ID" prop="eventId" width="200" show-overflow-tooltip>
+          <el-table-column :label="t('exception.list.eventId')" prop="eventId" width="200" show-overflow-tooltip>
             <template #default="scope">
               <el-tag effect="plain" type="info">{{ scope.row.eventId }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="异常类型" prop="exceptionType" min-width="180" show-overflow-tooltip>
+          <el-table-column :label="t('exception.list.exceptionType')" prop="exceptionType" min-width="180" show-overflow-tooltip>
             <template #default="scope">
               <span class="exception-type">{{ scope.row.exceptionType }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="服务类型" prop="serviceType" width="100">
+          <el-table-column :label="t('exception.list.serviceType')" prop="serviceType" width="100">
             <template #default="scope">
               <el-link
                 v-if="scope.row.serviceType"
@@ -147,54 +147,54 @@
               <span v-else>-</span>
             </template>
           </el-table-column>
-          <el-table-column label="模型名称" prop="modelName" min-width="140" show-overflow-tooltip>
+          <el-table-column :label="t('exception.list.modelName')" prop="modelName" min-width="140" show-overflow-tooltip>
             <template #default="scope">
               <span>{{ scope.row.modelName || '-' }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="提供商" prop="provider" width="100" show-overflow-tooltip>
+          <el-table-column :label="t('exception.list.provider')" prop="provider" width="100" show-overflow-tooltip>
             <template #default="scope">
               <span>{{ scope.row.provider || '-' }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="响应时间(ms)" prop="responseTimeMs" width="120" sortable>
+          <el-table-column :label="t('exception.list.responseTime')" prop="responseTimeMs" width="120" sortable>
             <template #default="scope">
               <span>{{ scope.row.responseTimeMs != null ? scope.row.responseTimeMs : '-' }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="错误代码" prop="errorCode" width="100">
+          <el-table-column :label="t('exception.list.errorCode')" prop="errorCode" width="100">
             <template #default="scope">
               <el-tag :type="getErrorTagType(scope.row.errorCode)" size="small">
                 {{ scope.row.errorCode }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="错误分类" prop="errorCategory" width="120">
+          <el-table-column :label="t('exception.list.errorCategory')" prop="errorCategory" width="120">
             <template #default="scope">
               <el-tag :type="getCategoryTagType(scope.row.errorCategory)" size="small">
                 {{ formatCategory(scope.row.errorCategory) }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="异常消息" prop="sanitizedMessage" min-width="200" show-overflow-tooltip>
+          <el-table-column :label="t('exception.list.exceptionMessage')" prop="sanitizedMessage" min-width="200" show-overflow-tooltip>
             <template #default="scope">
               <span>{{ scope.row.sanitizedMessage || scope.row.exceptionMessage || '-' }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="客户端 IP" prop="clientIp" width="140">
+          <el-table-column :label="t('exception.list.clientIp')" prop="clientIp" width="140">
             <template #default="scope">
               <span>{{ scope.row.clientIp || '-' }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="发生时间" prop="occurredAt" width="180">
+          <el-table-column :label="t('exception.list.occurredAt')" prop="occurredAt" width="180">
             <template #default="scope">
               <span>{{ formatTime(scope.row.occurredAt) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="100" fixed="right">
+          <el-table-column :label="t('exception.list.actions')" width="100" fixed="right">
             <template #default="scope">
               <el-button link type="primary" size="small" @click.stop="handleViewDetail(scope.row)">
-                详情
+                {{ t('exception.list.detail') }}
               </el-button>
             </template>
           </el-table-column>
@@ -218,30 +218,30 @@
     <!-- 详情对话框 -->
     <el-dialog
       v-model="detailVisible"
-      title="异常事件详情"
+      :title="t('exception.list.detailDialogTitle')"
       width="800px"
       :close-on-click-modal="false"
     >
       <el-descriptions v-if="selectedEvent" :column="2" border>
-        <el-descriptions-item label="事件 ID">{{ selectedEvent.eventId }}</el-descriptions-item>
-        <el-descriptions-item label="异常类型">{{ selectedEvent.exceptionType }}</el-descriptions-item>
-        <el-descriptions-item label="错误代码">
+        <el-descriptions-item :label="t('exception.list.eventId')">{{ selectedEvent.eventId }}</el-descriptions-item>
+        <el-descriptions-item :label="t('exception.list.exceptionType')">{{ selectedEvent.exceptionType }}</el-descriptions-item>
+        <el-descriptions-item :label="t('exception.list.errorCode')">
           <el-tag :type="getErrorTagType(selectedEvent.errorCode)" size="small">
             {{ selectedEvent.errorCode }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="错误分类">
+        <el-descriptions-item :label="t('exception.list.errorCategory')">
           <el-tag :type="getCategoryTagType(selectedEvent.errorCategory)" size="small">
             {{ formatCategory(selectedEvent.errorCategory) }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="HTTP 状态码">
+        <el-descriptions-item :label="t('exception.list.httpStatus')">
           <el-tag :type="getHttpStatusTagType(selectedEvent.httpStatus)" size="small">
             {{ selectedEvent.httpStatus || '-' }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="客户端 IP">{{ selectedEvent.clientIp || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="服务类型">
+        <el-descriptions-item :label="t('exception.list.clientIp')">{{ selectedEvent.clientIp || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('exception.list.serviceType')">
           <el-link
             v-if="selectedEvent.serviceType"
             type="primary"
@@ -252,9 +252,9 @@
           </el-link>
           <span v-else>-</span>
         </el-descriptions-item>
-        <el-descriptions-item label="模型名称">{{ selectedEvent.modelName || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="提供商">{{ selectedEvent.provider || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="实例名称">
+        <el-descriptions-item :label="t('exception.list.modelName')">{{ selectedEvent.modelName || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('exception.list.provider')">{{ selectedEvent.provider || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('exception.list.instanceName')">
           <el-link
             v-if="selectedEvent.instanceName && selectedEvent.serviceType"
             type="primary"
@@ -265,11 +265,11 @@
           </el-link>
           <span v-else>{{ selectedEvent.instanceName || '-' }}</span>
         </el-descriptions-item>
-        <el-descriptions-item label="响应时间(ms)">{{ selectedEvent.responseTimeMs != null ? selectedEvent.responseTimeMs : '-' }}</el-descriptions-item>
-        <el-descriptions-item label="追踪 ID" :span="2">
+        <el-descriptions-item :label="t('exception.list.responseTime')">{{ selectedEvent.responseTimeMs != null ? selectedEvent.responseTimeMs : '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('exception.list.traceId')" :span="2">
           <el-tag effect="plain" type="info">{{ selectedEvent.traceId || '-' }}</el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="异常消息" :span="2">
+        <el-descriptions-item :label="t('exception.list.exceptionMessage')" :span="2">
           <el-input
             v-model="selectedEvent.exceptionMessage"
             type="textarea"
@@ -277,7 +277,7 @@
             readonly
           />
         </el-descriptions-item>
-        <el-descriptions-item label="脱敏消息" :span="2">
+        <el-descriptions-item :label="t('exception.list.sanitizedMessage')" :span="2">
           <el-input
             v-model="selectedEvent.sanitizedMessage"
             type="textarea"
@@ -285,51 +285,51 @@
             readonly
           />
         </el-descriptions-item>
-        <el-descriptions-item label="发生次数">{{ selectedEvent.occurrenceCount || 1 }}</el-descriptions-item>
-        <el-descriptions-item label="是否聚合">
+        <el-descriptions-item :label="t('exception.list.occurrenceCount')">{{ selectedEvent.occurrenceCount || 1 }}</el-descriptions-item>
+        <el-descriptions-item :label="t('exception.list.isAggregated')">
           <el-tag :type="selectedEvent.isAggregated ? 'success' : 'info'" size="small">
-            {{ selectedEvent.isAggregated ? '是' : '否' }}
+            {{ selectedEvent.isAggregated ? t('exception.list.yes') : t('exception.list.no') }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="首次出现">{{ formatTime(selectedEvent.firstOccurrence) }}</el-descriptions-item>
-        <el-descriptions-item label="最后出现">{{ formatTime(selectedEvent.lastOccurrence) }}</el-descriptions-item>
-        <el-descriptions-item label="发生时间">{{ formatTime(selectedEvent.occurredAt) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('exception.list.firstOccurredAt')">{{ formatTime(selectedEvent.firstOccurrence) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('exception.list.lastOccurredAt')">{{ formatTime(selectedEvent.lastOccurrence) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('exception.list.occurredAt')">{{ formatTime(selectedEvent.occurredAt) }}</el-descriptions-item>
       </el-descriptions>
       <template #footer>
-        <el-button @click="detailVisible = false">关闭</el-button>
+        <el-button @click="detailVisible = false">{{ t('exception.list.close') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 清理对话框 -->
     <el-dialog
       v-model="cleanupVisible"
-      title="清理过期异常事件"
+      :title="t('exception.list.cleanupDialogTitle')"
       width="500px"
       :close-on-click-modal="false"
     >
       <el-form :model="cleanupForm" label-width="100px">
-        <el-form-item label="截止时间">
+        <el-form-item :label="t('exception.list.cutoffTime')">
           <el-date-picker
             v-model="cleanupForm.cutoffTime"
             type="datetime"
-            placeholder="选择截止时间"
+            :placeholder="t('exception.list.cutoffTimePlaceholder')"
             value-format="YYYY-MM-DD HH:mm:ss"
             style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="仅聚合事件">
+        <el-form-item :label="t('exception.list.aggregatedOnly')">
           <el-switch v-model="cleanupForm.aggregatedOnly" />
         </el-form-item>
         <el-alert
-          title="警告"
+          :title="t('exception.list.warning')"
           type="warning"
-          description="此操作将永久删除选定的异常事件，无法恢复，请谨慎操作！"
+          :description="t('exception.list.cleanupWarning')"
           :closable="false"
         />
       </el-form>
       <template #footer>
-        <el-button @click="cleanupVisible = false">取消</el-button>
-        <el-button type="danger" @click="handleCleanup">确认清理</el-button>
+        <el-button @click="cleanupVisible = false">{{ t('exception.list.cancel') }}</el-button>
+        <el-button type="danger" @click="handleCleanup">{{ t('exception.list.confirmCleanup') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -338,6 +338,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Warning,
@@ -359,6 +360,8 @@ import type { ExceptionEvent, ExceptionQueryParams, ExceptionQueryResponse } fro
 import StatCard from '@/components/StatCard.vue'
 
 const router = useRouter()
+
+const { t } = useI18n()
 
 // Cross-link: 将大写服务类型转为小写路由参数
 const normalizeServiceType = (st?: string): string => {
@@ -486,7 +489,7 @@ const loadData = async () => {
     loadStatistics()
   } catch (error: any) {
     console.error('加载异常列表失败:', error)
-    ElMessage.error(`加载异常列表失败：${  error.message || '未知错误'}`)
+    ElMessage.error(t('exception.list.loadFailed', { message: error.message || t('exception.list.unknownError') }))
   } finally {
     loading.value = false
   }
@@ -538,7 +541,7 @@ const handleReset = () => {
 // 刷新
 const handleRefresh = () => {
   loadData()
-  ElMessage.success('刷新成功')
+  ElMessage.success(t('exception.list.refreshSuccess'))
 }
 
 // 分页大小变化
@@ -580,17 +583,17 @@ const showCleanupDialog = () => {
 // 清理过期数据
 const handleCleanup = async () => {
   if (!cleanupForm.cutoffTime) {
-    ElMessage.warning('请选择截止时间')
+    ElMessage.warning(t('exception.list.selectCutoffTime'))
     return
   }
 
   try {
     await ElMessageBox.confirm(
-      '确定要清理选定的异常事件吗？此操作不可恢复！',
-      '警告',
+      t('exception.list.cleanupConfirmMessage'),
+      t('exception.list.warning'),
       {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+        confirmButtonText: t('exception.list.confirm'),
+        cancelButtonText: t('exception.list.cancel'),
         type: 'warning'
       }
     )
@@ -600,13 +603,13 @@ const handleCleanup = async () => {
       cleanupForm.aggregatedOnly
     )
 
-    ElMessage.success(`成功删除 ${result.deletedCount} 条异常事件`)
+    ElMessage.success(t('exception.list.deleteSuccess', { count: result.deletedCount }))
     cleanupVisible.value = false
     loadData()
   } catch (error: any) {
     if (error !== 'cancel') {
       console.error('清理异常事件失败:', error)
-      ElMessage.error(`清理失败：${  error.message || '未知错误'}`)
+      ElMessage.error(t('exception.list.cleanupFailed', { message: error.message || t('exception.list.unknownError') }))
     }
   }
 }

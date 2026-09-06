@@ -1,0 +1,29 @@
+{
+  "chatRequest": {
+    "sending": "发送中...",
+    "connecting": "建立连接中...",
+    "connectingStatus": "正在连接服务器...",
+    "sendingData": "发送请求中...",
+    "sendingDataStatus": "正在发送请求数据...",
+    "awaiting": "等待响应中...",
+    "awaitingStatus": "正在等待服务器响应...",
+    "cancelled": "请求已取消",
+    "processing": "正在处理请求...",
+    "successMs": "请求成功 ({duration}ms)",
+    "sentOk": "请求发送成功",
+    "completedStatus": "请求完成，状态码：{status}",
+    "streamConnecting": "正在建立流式连接...",
+    "receivingStream": "正在接收流式数据... ({count} 条消息，{chars} 字符)",
+    "partialParseFailed": "部分流式数据解析失败",
+    "unknownError": "未知错误",
+    "streamError": "流式请求错误：{message}",
+    "streamFailed": "流式请求失败：{message}",
+    "streamDoneCount": "流式请求完成 (接收 {count} 条消息)",
+    "streamDoneTotal": "流式请求完成，共接收 {count} 条消息",
+    "streamDoneEmpty": "流式请求完成但未收到有效数据",
+    "preparing": "准备发送请求...",
+    "validating": "正在验证配置...",
+    "sendFailed": "发送请求失败",
+    "failedPrefix": "请求失败：{message}"
+  }
+}

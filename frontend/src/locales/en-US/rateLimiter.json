@@ -1,0 +1,40 @@
+{
+  "rateLimiter": {
+    "monitoring": {
+      "totalLimiters": "Total Limiters",
+      "globalLimiters": "Global Limiters",
+      "serviceLimiters": "Service Limiters",
+      "instanceLimiters": "Instance Limiters",
+      "averageUsage": "Average Usage",
+      "highUsage": "High Usage (>80%)",
+      "metricsTitle": "Rate Limiter Metrics",
+      "refresh": "Refresh",
+      "scopePlaceholder": "Scope",
+      "algorithmPlaceholder": "Algorithm",
+      "scopeOptions": {
+        "global": "Global",
+        "service": "Service",
+        "instance": "Instance"
+      },
+      "columns": {
+        "service": "Service",
+        "scope": "Scope",
+        "identifier": "Identifier",
+        "algorithm": "Algorithm",
+        "capacity": "Capacity",
+        "rate": "Rate (/s)",
+        "remainingCapacity": "Remaining Capacity",
+        "usage": "Usage"
+      },
+      "prometheusTitle": "Prometheus Metrics",
+      "collectionInterval": "Collection interval: {interval}",
+      "prometheus": {
+        "metricsCount": "Metrics Count",
+        "availableMetrics": "Available Metrics"
+      },
+      "messages": {
+        "loadFailed": "Failed to load rate limiter metrics"
+      }
+    }
+  }
+}

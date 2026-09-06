@@ -1,15 +1,15 @@
 <template>
-  <PageSkeleton title="服务管理">
+  <PageSkeleton :title="t('service.title')">
     <template #actions>
-      <el-tooltip v-if="availableTypes.length === 0" content="已添加所有类型服务" placement="left">
+      <el-tooltip v-if="availableTypes.length === 0" :content="t('service.allTypesAdded')" placement="left">
         <el-button type="primary" @click="handleAddService" :disabled="availableTypes.length === 0" size="medium">
           <el-icon><Plus /></el-icon>
-          添加服务
+          {{ t('service.addService') }}
         </el-button>
       </el-tooltip>
       <el-button v-else type="primary" @click="handleAddService" size="medium">
         <el-icon><Plus /></el-icon>
-        添加服务
+        {{ t('service.addService') }}
       </el-button>
     </template>
 
@@ -20,7 +20,7 @@
     <template #toolbar>
       <el-input
         v-model="searchQuery"
-        placeholder="搜索服务类型或适配器（回车或暂停）"
+        :placeholder="t('service.searchPlaceholder')"
         clearable
         size="medium"
         class="search-input"
@@ -34,20 +34,20 @@
 
       <el-select
         v-model="filterLoadBalance"
-        placeholder="负载策略"
+        :placeholder="t('service.filters.loadBalance')"
         clearable
         size="medium"
         class="filter-select"
       >
-        <el-option label="全部" value=""></el-option>
-        <el-option label="随机" value="random" />
-        <el-option label="轮询" value="round-robin" />
-        <el-option label="最少连接" value="least-connections" />
+        <el-option :label="t('service.filters.all')" value=""></el-option>
+        <el-option :label="t('service.loadBalance.random')" value="random" />
+        <el-option :label="t('service.loadBalance.roundRobin')" value="round-robin" />
+        <el-option :label="t('service.loadBalance.leastConnections')" value="least-connections" />
       </el-select>
 
       <el-select
         v-model="filterAdapter"
-        placeholder="适配器"
+        :placeholder="t('service.filters.adapter')"
         clearable
         size="medium"
         class="filter-select adapter-filter"
@@ -55,7 +55,7 @@
         <el-option
           v-for="a in uniqueAdapters"
           :key="a"
-          :label="a || '未设置'"
+          :label="a || t('service.unset')"
           :value="a"
         />
       </el-select>
@@ -83,14 +83,14 @@
           :data="paginatedServices"
           style="width: 100%"
           v-loading="loading"
-          element-loading-text="加载中..."
+          :element-loading-text="t('service.loading')"
           element-loading-background="rgba(0, 0, 0, 0.05)"
           class="service-table"
           :row-key="rowKey"
           border
           fit
         >
-          <el-table-column prop="type" label="服务类型" sortable>
+          <el-table-column prop="type" :label="t('service.table.serviceType')" sortable>
             <template #default="scope">
               <router-link
                 :to="{ name: 'instance-management', query: { serviceType: scope.row.type } }"
@@ -104,9 +104,9 @@
             </template>
           </el-table-column>
 
-          <el-table-column prop="adapter" label="适配器" sortable>
+          <el-table-column prop="adapter" :label="t('service.table.adapter')" sortable>
             <template #default="scope">
-              <el-tooltip :content="scope.row.adapter || '未设置'" placement="top">
+              <el-tooltip :content="scope.row.adapter || t('service.unset')" placement="top">
                 <router-link
                   v-if="scope.row.adapter"
                   :to="{ name: 'adapter-management' }"
@@ -118,13 +118,13 @@
                   </el-tag>
                 </router-link>
                 <el-tag v-else type="warning" class="table-tag">
-                  未设置
+                  {{ t('service.unset') }}
                 </el-tag>
               </el-tooltip>
             </template>
           </el-table-column>
 
-          <el-table-column prop="loadBalanceType" label="负载均衡策略" sortable>
+          <el-table-column prop="loadBalanceType" :label="t('service.table.loadBalanceType')" sortable>
             <template #default="scope">
               <el-tag :type="getLoadBalanceTagType(scope.row.loadBalanceType)" class="table-tag">
                 {{ formatLoadBalanceType(scope.row.loadBalanceType) }}
@@ -132,13 +132,13 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="操作" fixed="right" width="180">
+          <el-table-column :label="t('service.table.actions')" fixed="right" width="180">
             <template #default="scope">
-              <el-button size="small" @click="handleEdit(scope.row)" type="primary" plain circle title="编辑">
+              <el-button size="small" @click="handleEdit(scope.row)" type="primary" plain circle :title="t('service.edit')">
                 <el-icon><Edit /></el-icon>
               </el-button>
 
-              <el-button size="small" type="danger" @click="handleDelete(scope.row)" plain circle title="删除">
+              <el-button size="small" type="danger" @click="handleDelete(scope.row)" plain circle :title="t('service.delete')">
                 <el-icon><Delete /></el-icon>
               </el-button>
             </template>
@@ -146,7 +146,7 @@
         </el-table>
 
         <div v-if="filteredServices.length === 0 && !loading" class="empty-wrap">
-          <el-empty description="未找到服务">
+          <el-empty :description="t('service.table.notFound')">
             <template #image>
               <img src="https://static-element.eleme.cn/e/element-ui/empty.svg" alt="empty" />
             </template>
@@ -158,7 +158,7 @@
     <template #footer>
       <div class="table-footer" v-if="services.length > 0">
         <div class="footer-info">
-          共 {{ filteredServices.length }} 条（第 {{ currentPage }} / {{ totalPages }} 页）
+          {{ t('service.table.summary', { count: filteredServices.length, current: currentPage, total: totalPages }) }}
         </div>
         <div class="footer-actions">
           <el-pagination
@@ -190,12 +190,12 @@
       :rules="rules"
       v-loading="dialogLoading"
     >
-      <el-form-item label="服务类型" prop="type">
+      <el-form-item :label="t('service.form.serviceType')" prop="type">
         <!-- 编辑时显示不可编辑的输入，添加时显示只包含未添加类型的下拉 -->
         <el-select
           v-if="!isEdit"
           v-model="form.type"
-          placeholder="请选择服务类型"
+          :placeholder="t('service.form.selectServiceType')"
           size="large"
           style="width: 100%"
         >
@@ -210,10 +210,10 @@
         <el-input v-else v-model="form.type" disabled size="large" />
       </el-form-item>
 
-      <el-form-item label="适配器" prop="adapter">
+      <el-form-item :label="t('service.form.adapter')" prop="adapter">
         <el-select
           v-model="form.adapter"
-          placeholder="请选择适配器"
+          :placeholder="t('service.form.selectAdapter')"
           size="large"
           style="width: 100%"
           clearable
@@ -228,50 +228,50 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="负载均衡策略" prop="loadBalance.type">
+      <el-form-item :label="t('service.form.loadBalanceType')" prop="loadBalance.type">
         <el-select
           v-model="form.loadBalance.type"
-          placeholder="请选择负载均衡策略"
+          :placeholder="t('service.form.selectLoadBalance')"
           style="width: 100%"
           size="large"
         >
-          <el-option label="随机" value="random" />
-          <el-option label="轮询" value="round-robin" />
-          <el-option label="最少连接" value="least-connections" />
-          <el-option label="IP 哈希" value="ip-hash" />
+          <el-option :label="t('service.loadBalance.random')" value="random" />
+          <el-option :label="t('service.loadBalance.roundRobin')" value="round-robin" />
+          <el-option :label="t('service.loadBalance.leastConnections')" value="least-connections" />
+          <el-option :label="t('service.loadBalance.ipHash')" value="ip-hash" />
         </el-select>
       </el-form-item>
 
-      <el-form-item label="说明（可选）" prop="description">
+      <el-form-item :label="t('service.form.description')" prop="description">
         <el-input
           type="textarea"
           v-model="form.description"
-          placeholder="对该服务做简短说明，方便识别（例如：用于客服对话）"
+          :placeholder="t('service.form.descriptionPlaceholder')"
           rows="3"
         />
       </el-form-item>
       
       <!-- 服务级别限流配置 -->
-      <el-divider content-position="left">服务级别限流配置</el-divider>
-      <el-form-item label="启用限流">
-        <el-switch v-model="form.rateLimit.enabled" active-text="启用" inactive-text="禁用" />
+      <el-divider content-position="left">{{ t('service.rateLimit.section') }}</el-divider>
+      <el-form-item :label="t('service.rateLimit.enable')">
+        <el-switch v-model="form.rateLimit.enabled" :active-text="t('service.enabled')" :inactive-text="t('service.disabled')" />
       </el-form-item>
       
       <div v-if="form.rateLimit.enabled">
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="算法">
-              <el-select v-model="form.rateLimit.algorithm" placeholder="请选择算法">
-                <el-option label="令牌桶" value="token-bucket" />
-                <el-option label="漏桶" value="leaky-bucket" />
-                <el-option label="滑动窗口" value="sliding-window" />
+            <el-form-item :label="t('service.rateLimit.algorithm')">
+              <el-select v-model="form.rateLimit.algorithm" :placeholder="t('service.rateLimit.selectAlgorithm')">
+                <el-option :label="t('service.rateLimit.tokenBucket')" value="token-bucket" />
+                <el-option :label="t('service.rateLimit.leakyBucket')" value="leaky-bucket" />
+                <el-option :label="t('service.rateLimit.slidingWindow')" value="sliding-window" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="作用域">
-              <el-select v-model="form.rateLimit.scope" placeholder="请选择作用域" disabled>
-                <el-option label="服务级别" value="service" />
+            <el-form-item :label="t('service.rateLimit.scope')">
+              <el-select v-model="form.rateLimit.scope" :placeholder="t('service.rateLimit.selectScope')" disabled>
+                <el-option :label="t('service.rateLimit.serviceScope')" value="service" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -279,12 +279,12 @@
         
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="容量">
+            <el-form-item :label="t('service.rateLimit.capacity')">
               <el-input-number v-model="form.rateLimit.capacity" :min="1" :max="10000" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="速率">
+            <el-form-item :label="t('service.rateLimit.rate')">
               <el-input-number v-model="form.rateLimit.rate" :min="1" :max="10000" />
             </el-form-item>
           </el-col>
@@ -292,33 +292,33 @@
         
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="限流键值">
-              <el-input v-model="form.rateLimit.key" placeholder="请输入限流键值（可选）" />
+            <el-form-item :label="t('service.rateLimit.key')">
+              <el-input v-model="form.rateLimit.key" :placeholder="t('service.rateLimit.keyPlaceholder')" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="客户端IP限流">
-              <el-switch v-model="form.rateLimit.clientIpEnable" active-text="启用" inactive-text="禁用" />
+            <el-form-item :label="t('service.rateLimit.clientIp')">
+              <el-switch v-model="form.rateLimit.clientIpEnable" :active-text="t('service.enabled')" :inactive-text="t('service.disabled')" />
             </el-form-item>
           </el-col>
         </el-row>
       </div>
       
       <!-- 服务级别熔断器配置 -->
-      <el-divider content-position="left">服务级别熔断器配置</el-divider>
-      <el-form-item label="启用熔断器">
-        <el-switch v-model="form.circuitBreaker.enabled" active-text="启用" inactive-text="禁用" />
+      <el-divider content-position="left">{{ t('service.circuitBreaker.section') }}</el-divider>
+      <el-form-item :label="t('service.circuitBreaker.enable')">
+        <el-switch v-model="form.circuitBreaker.enabled" :active-text="t('service.enabled')" :inactive-text="t('service.disabled')" />
       </el-form-item>
       
       <div v-if="form.circuitBreaker.enabled">
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="失败阈值">
+            <el-form-item :label="t('service.circuitBreaker.failureThreshold')">
               <el-input-number v-model="form.circuitBreaker.failureThreshold" :min="1" :max="100" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="超时时间(毫秒)">
+            <el-form-item :label="t('service.circuitBreaker.timeoutMs')">
               <el-input-number v-model="form.circuitBreaker.timeout" :min="1000" :max="300000" />
             </el-form-item>
           </el-col>
@@ -326,7 +326,7 @@
         
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="成功阈值">
+            <el-form-item :label="t('service.circuitBreaker.successThreshold')">
               <el-input-number v-model="form.circuitBreaker.successThreshold" :min="1" :max="100" />
             </el-form-item>
           </el-col>
@@ -336,8 +336,8 @@
 
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="handleDialogClose" size="large">取消</el-button>
-        <el-button type="primary" @click="handleSave" :loading="dialogLoading" size="large">保存</el-button>
+        <el-button @click="handleDialogClose" size="large">{{ t('service.cancel') }}</el-button>
+        <el-button type="primary" @click="handleSave" :loading="dialogLoading" size="large">{{ t('service.save') }}</el-button>
       </span>
     </template>
   </el-dialog>
@@ -346,6 +346,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import { SERVICE_TYPE_LABELS, COMMON_SERVICE_TYPES } from '@/constants/serviceTypes'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -365,6 +366,7 @@ import OnboardingSteps from './adapter/OnboardingSteps.vue'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 // 支持的服务类型列表（保持原有）
 const supportedTypes: string[] = [
@@ -453,18 +455,18 @@ const form = reactive<ServiceForm>({
   }
 })
 
-// 验证规则
-const rules = reactive<FormRules<ServiceForm>>({
+// 验证规则（v2.10.3: computed 化，语言切换后校验文案即时更新）
+const rules = computed<FormRules<ServiceForm>>(() => ({
   type: [
-    { required: true, message: '请选择服务类型', trigger: 'change' }
+    { required: true, message: t('service.form.selectServiceType'), trigger: 'change' }
   ],
   adapter: [
-    { required: true, message: '请选择适配器', trigger: 'change' }
+    { required: true, message: t('service.form.selectAdapter'), trigger: 'change' }
   ],
   'loadBalance.type': [
-    { required: true, message: '请选择负载均衡策略', trigger: 'change' }
+    { required: true, message: t('service.form.selectLoadBalance'), trigger: 'change' }
   ]
-})
+}))
 
 // 修复表格行键的类型问题
 const rowKey = (row: Service) => row.type
@@ -480,10 +482,10 @@ const getLoadBalanceTagType = (type: string) => {
 }
 const formatLoadBalanceType = (type: string) => {
   switch (type) {
-    case 'random': return '随机'
-    case 'round-robin': return '轮询'
-    case 'least-connections': return '最少连接'
-    case 'ip-hash': return 'IP 哈希'
+    case 'random': return t('service.loadBalance.random')
+    case 'round-robin': return t('service.loadBalance.roundRobin')
+    case 'least-connections': return t('service.loadBalance.leastConnections')
+    case 'ip-hash': return t('service.loadBalance.ipHash')
     default: return type
   }
 }
@@ -585,8 +587,8 @@ const fetchServices = async () => {
           adapters.value = [...adaptersCache.value]
         }
         ElNotification({ 
-          title: '警告', 
-          message: `获取适配器列表失败: ${adaptersResponse.data?.message || '未知错误'}`, 
+          title: t('service.messages.warning'), 
+          message: t('service.messages.fetchAdaptersFailed', { message: adaptersResponse.data?.message || t('service.messages.unknownError') }), 
           type: 'warning', 
           duration: 3000 
         })
@@ -623,13 +625,13 @@ const fetchServices = async () => {
           timestamp: Date.now()
         }
       } else {
-        const errorMsg = servicesResponse.data?.message || '获取服务列表失败'
+        const errorMsg = servicesResponse.data?.message || t('service.messages.fetchServicesFailed')
         errorMessage.value = errorMsg
         ElMessage.error(errorMsg)
       }
     } catch (error: any) {
       console.error('获取服务列表失败:', error)
-      const errorMsg = error?.message || '网络错误，请检查网络连接'
+      const errorMsg = error?.message || t('service.messages.networkError')
       errorMessage.value = errorMsg
       ElMessage.error(errorMsg)
     } finally {
@@ -641,11 +643,11 @@ const fetchServices = async () => {
 const handleAddService = () => {
   // 如果没有可添加类型，提示并返回（防止打开空选择框）
   if (availableTypes.value.length === 0) {
-    ElMessage.info('已添加所有类型服务')
+    ElMessage.info(t('service.allTypesAdded'))
     return
   }
 
-  dialogTitle.value = '添加服务'
+  dialogTitle.value = t('service.addService')
   isEdit.value = false
   form.type = '' // 由下拉选择填入
   form.adapter = ''
@@ -655,7 +657,7 @@ const handleAddService = () => {
 }
 
 const handleEdit = async (row: Service) => {
-  dialogTitle.value = '编辑服务'
+  dialogTitle.value = t('service.editService')
   isEdit.value = true
   dialogLoading.value = true
   try {
@@ -698,11 +700,11 @@ const handleEdit = async (row: Service) => {
       }
       dialogVisible.value = true
     } else {
-      ElMessage.error(response.data?.message || '获取服务配置失败')
+      ElMessage.error(response.data?.message || t('service.messages.fetchConfigFailed'))
     }
   } catch (error: any) {
     console.error('获取服务配置失败:', error)
-    ElMessage.error(error?.message || '网络错误，请检查网络连接')
+    ElMessage.error(error?.message || t('service.messages.networkError'))
   } finally {
     dialogLoading.value = false
   }
@@ -711,24 +713,24 @@ const handleEdit = async (row: Service) => {
 // 删除
 const handleDelete = (row: Service) => {
   ElMessageBox.confirm(
-    `确定要删除服务 "${row.type}" 吗？此操作不可恢复！`,
-    '删除确认',
-    { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
+    t('service.deleteDialog.message', { type: row.type }),
+    t('service.deleteDialog.title'),
+    { confirmButtonText: t('service.confirm'), cancelButtonText: t('service.cancel'), type: 'warning' }
   ).then(async () => {
     try {
       const response = await deleteService(row.type)
       if (response.data?.success) {
-        ElMessage.success('服务删除成功')
+        ElMessage.success(t('service.messages.deleteSuccess'))
         await fetchServices()
       } else {
-        ElMessage.error(response.data?.message || '删除失败')
+        ElMessage.error(response.data?.message || t('service.messages.deleteFailed'))
       }
     } catch (error: any) {
       console.error('删除服务失败:', error)
-      ElMessage.error(error?.message || '网络错误，请检查网络连接')
+      ElMessage.error(error?.message || t('service.messages.networkError'))
     }
   }).catch(() => {
-    ElMessage.info('已取消删除')
+    ElMessage.info(t('service.messages.deleteCancelled'))
   })
 }
 
@@ -771,9 +773,9 @@ const handleSave = async () => {
             await updateServiceRateLimit(form.type, rateLimitPayload)
           } catch (rateLimitError: any) {
             console.error('保存服务限流配置失败:', rateLimitError)
-            ElMessage.warning(rateLimitError?.message || '服务已保存,但限流配置保存失败')
+            ElMessage.warning(rateLimitError?.message || t('service.messages.savedButRateLimitFailed'))
           }
-          ElMessage.success(isEdit.value ? '服务编辑成功' : '服务添加成功')
+          ElMessage.success(isEdit.value ? t('service.messages.editSuccess') : t('service.messages.addSuccess'))
           dialogVisible.value = false
           // 清除所有缓存，强制刷新数据
           const cacheKey = 'services_data'
@@ -798,11 +800,11 @@ const handleSave = async () => {
             }, 500)
           }
         } else {
-          ElMessage.error(response.data?.message || (isEdit.value ? '编辑失败' : '添加失败'))
+          ElMessage.error(response.data?.message || (isEdit.value ? t('service.messages.editFailed') : t('service.messages.addFailed')))
         }
       } catch (error: any) {
         console.error(isEdit.value ? '编辑服务失败:' : '添加服务失败:', error)
-        ElMessage.error(error?.message || '网络错误，请检查网络连接')
+        ElMessage.error(error?.message || t('service.messages.networkError'))
       } finally {
         dialogLoading.value = false
       }

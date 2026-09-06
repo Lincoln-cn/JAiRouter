@@ -1,0 +1,62 @@
+{
+  "pool": {
+    "title": "资源池管理",
+    "refreshList": "刷新列表",
+    "addPool": "新增资源池",
+    "editPool": "编辑资源池",
+    "routeHint": "请求 model 使用池名（约定名 auto-model）时,自动从池内健康实例中选择执行;未配置池时 auto-model 回退为该服务全部健康实例",
+    "enabled": "启用",
+    "disabled": "禁用",
+    "poolNameCol": "池名(虚拟模型名)",
+    "displayName": "显示名",
+    "serviceType": "服务类型",
+    "strategy": "策略",
+    "members": "成员",
+    "actions": "操作",
+    "edit": "编辑",
+    "delete": "删除",
+    "poolName": "池名",
+    "poolNamePlaceholder": "如 auto-model(请求 model 用它触发池路由)",
+    "displayNamePlaceholder": "可选,如 默认自动分流池",
+    "selectServiceType": "选择服务类型",
+    "selectStrategy": "选择策略",
+    "selectInstance": "选择实例",
+    "weightPlaceholder": "权重",
+    "addMember": "添加成员",
+    "description": "描述",
+    "descriptionPlaceholder": "可选",
+    "noInstancesTip": "该服务类型下暂无实例，请先在实例管理添加",
+    "memberWeightTip": "成员按实例 ID 引用;权重决定被选中概率(一致哈希策略下无效)",
+    "instanceDeleted": "{id}(实例已删除)",
+    "save": "保存",
+    "cancel": "取消",
+    "strategies": {
+      "weightedRandom": "权重随机(默认)",
+      "roundRobin": "轮询",
+      "leastConnections": "最少连接",
+      "ipHash": "IP 哈希",
+      "consistentHash": "一致性哈希(忽略权重)"
+    },
+    "deleteDialog": {
+      "title": "删除确认",
+      "message": "确定要删除资源池 \"{name}\" 吗?",
+      "confirm": "确定",
+      "cancel": "取消"
+    },
+    "messages": {
+      "fetchListFailed": "获取资源池列表失败",
+      "loadInstancesFailed": "实例加载失败",
+      "atLeastOneMember": "至少保留一个成员",
+      "poolNameRequired": "请填写池名",
+      "memberRequired": "请填写至少一个有效的成员实例 ID",
+      "updated": "资源池已更新",
+      "created": "资源池已创建",
+      "saveFailed": "保存失败,请检查输入",
+      "enabled": "已启用",
+      "disabled": "已禁用",
+      "operationFailed": "操作失败",
+      "deleted": "资源池已删除",
+      "deleteFailed": "删除失败"
+    }
+  }
+}

@@ -27,7 +27,7 @@
 export interface MenuItem {
   /** 路由路径（el-menu-item index） */
   path: string
-  /** 菜单标题 */
+  /** 菜单标题（v2.10.3 起为 i18n key，如 menu.dashboardMain；Layout.vue 经 t() 渲染） */
   title: string
   /** 权限码（module:resource:action）；缺省表示所有已登录用户可见 */
   permission?: string
@@ -38,7 +38,7 @@ export interface MenuItem {
 export interface MenuGroup {
   /** 组标识（el-sub-menu index，defaultOpeneds 引用） */
   index: string
-  /** 组标题 */
+  /** 组标题（i18n key，如 menu.traffic） */
   title: string
   /** 组图标名（Element Plus 图标 kebab-case 名） */
   icon: string
@@ -49,95 +49,95 @@ export interface MenuGroup {
 export const menuGroups: MenuGroup[] = [
   {
     index: 'dashboard',
-    title: '概览',
+    title: 'menu.dashboard',
     icon: 'house',
     children: [
-      { path: '/dashboard/main', title: '仪表板', permission: 'overview:dashboard:read' }
+      { path: '/dashboard/main', title: 'menu.dashboardMain', permission: 'overview:dashboard:read' }
     ]
   },
   {
     index: 'model-services',
-    title: '模型服务',
+    title: 'menu.modelServices',
     icon: 'setting',
     children: [
-      { path: '/config/services', title: '服务管理', permission: 'config:services:read' },
-      { path: '/config/instances', title: '实例管理', permission: 'config:instances:read' },
-      { path: '/config/versions', title: '版本管理', permission: 'config:versions:read' },
-      { path: '/config/adapters', title: 'Adapter管理', permission: 'config:adapters:read' }
+      { path: '/config/services', title: 'menu.configServices', permission: 'config:services:read' },
+      { path: '/config/instances', title: 'menu.configInstances', permission: 'config:instances:read' },
+      { path: '/config/versions', title: 'menu.configVersions', permission: 'config:versions:read' },
+      { path: '/config/adapters', title: 'menu.configAdapters', permission: 'config:adapters:read' }
     ]
   },
   {
     index: 'traffic',
-    title: '流量治理',
+    title: 'menu.traffic',
     icon: 'connection',
     children: [
-      { path: '/config/rules', title: '路由规则', permission: 'config:rules:read' },
-      { path: '/load-balancers/monitoring', title: '负载均衡监控', permission: 'lb:monitoring:read' },
-      { path: '/load-balancers/strategy-config', title: '负载均衡策略', permission: 'lb:config:write' },
-      { path: '/circuit-breakers/monitoring', title: '熔断器监控', permission: 'cb:monitoring:read' },
-      { path: '/circuit-breakers/history', title: '熔断器历史', permission: 'cb:history:read' },
-      { path: '/circuit-breakers/global-config', title: '熔断器配置', permission: 'config:circuitbreaker:read' },
-      { path: '/rate-limiters/monitoring', title: '限流监控', permission: 'rl:monitoring:read' },
-      { path: '/config/pools', title: '资源池', permission: 'config:pools:read' },
-      { path: '/config/cache', title: '响应缓存管理', permission: 'config:cache:write' }
+      { path: '/config/rules', title: 'menu.configRules', permission: 'config:rules:read' },
+      { path: '/load-balancers/monitoring', title: 'menu.lbMonitoring', permission: 'lb:monitoring:read' },
+      { path: '/load-balancers/strategy-config', title: 'menu.lbStrategy', permission: 'lb:config:write' },
+      { path: '/circuit-breakers/monitoring', title: 'menu.cbMonitoring', permission: 'cb:monitoring:read' },
+      { path: '/circuit-breakers/history', title: 'menu.cbHistory', permission: 'cb:history:read' },
+      { path: '/circuit-breakers/global-config', title: 'menu.cbConfig', permission: 'config:circuitbreaker:read' },
+      { path: '/rate-limiters/monitoring', title: 'menu.rlMonitoring', permission: 'rl:monitoring:read' },
+      { path: '/config/pools', title: 'menu.configPools', permission: 'config:pools:read' },
+      { path: '/config/cache', title: 'menu.responseCache', permission: 'config:cache:write' }
     ]
   },
   {
     index: 'records',
-    title: '数据记录',
+    title: 'menu.records',
     icon: 'document',
     children: [
-      { path: '/call-history/dashboard', title: '调用历史仪表盘', permission: 'callhistory:view' },
-      { path: '/call-history/list', title: '调用列表', permission: 'callhistory:view' },
-      { path: '/call-history/token-usage', title: 'Token 统计', permission: 'monitoring:tokenusage:read' },
-      { path: '/call-history/slow-calls', title: '慢调用', permission: 'monitoring:slowquery:read' },
-      { path: '/monitoring/slow-queries', title: '慢查询分析', permission: 'monitoring:slowquery:read' },
+      { path: '/call-history/dashboard', title: 'menu.callHistoryDashboard', permission: 'callhistory:view' },
+      { path: '/call-history/list', title: 'menu.callHistoryList', permission: 'callhistory:view' },
+      { path: '/call-history/token-usage', title: 'menu.tokenUsage', permission: 'monitoring:tokenusage:read' },
+      { path: '/call-history/slow-calls', title: 'menu.slowCalls', permission: 'monitoring:slowquery:read' },
+      { path: '/monitoring/slow-queries', title: 'menu.slowQueries', permission: 'monitoring:slowquery:read' },
       // 后端 /api/exceptions/** 未登记权限规则（回退 authenticated），无需权限控制
-      { path: '/exceptions/list', title: '异常事件管理' },
-      { path: '/exceptions/statistics', title: '异常统计分析' }
+      { path: '/exceptions/list', title: 'menu.exceptionList' },
+      { path: '/exceptions/statistics', title: 'menu.exceptionStatistics' }
     ]
   },
   {
     index: 'tracing',
-    title: '链路追踪',
+    title: 'menu.tracing',
     icon: 'position',
     children: [
-      { path: '/tracing/dashboard', title: '追踪仪表盘', permission: 'tracing:dashboard:read' },
-      { path: '/tracing/search', title: '追踪搜索', permission: 'tracing:search:read' },
-      { path: '/tracing/management', title: '追踪配置', permission: 'tracing:config:manage' }
+      { path: '/tracing/dashboard', title: 'menu.tracingDashboard', permission: 'tracing:dashboard:read' },
+      { path: '/tracing/search', title: 'menu.tracingSearch', permission: 'tracing:search:read' },
+      { path: '/tracing/management', title: 'menu.tracingManagement', permission: 'tracing:config:manage' }
     ]
   },
   {
     index: 'security',
-    title: '安全管理',
+    title: 'menu.security',
     icon: 'lock',
     children: [
-      { path: '/security/api-keys', title: 'API密钥管理', permission: 'security:apikeys:manage' },
-      { path: '/security/jwt-tokens', title: 'JWT令牌管理', permission: 'security:jwttokens:manage' },
-      { path: '/security/blacklist', title: '黑名单管理', permission: 'security:blacklist:manage' },
-      { path: '/security/audit-logs', title: '审计日志', permission: 'security:audit:read' }
+      { path: '/security/api-keys', title: 'menu.apiKeys', permission: 'security:apikeys:manage' },
+      { path: '/security/jwt-tokens', title: 'menu.jwtTokens', permission: 'security:jwttokens:manage' },
+      { path: '/security/blacklist', title: 'menu.blacklist', permission: 'security:blacklist:manage' },
+      { path: '/security/audit-logs', title: 'menu.auditLogs', permission: 'security:audit:read' }
     ]
   },
   {
     index: 'system',
-    title: '系统管理',
+    title: 'menu.system',
     icon: 'user',
     children: [
-      { path: '/system/accounts', title: '账户管理', permission: 'system:accounts:manage' },
-      { path: '/system/permissions', title: '权限管理', permission: 'system:permissions:manage' },
-      { path: '/config/state-persistence', title: '状态持久化', permission: 'config:persistence:read' }
+      { path: '/system/accounts', title: 'menu.accounts', permission: 'system:accounts:manage' },
+      { path: '/system/permissions', title: 'menu.permissions', permission: 'system:permissions:manage' },
+      { path: '/config/state-persistence', title: 'menu.statePersistence', permission: 'config:persistence:read' }
     ]
   },
   {
     index: 'playground',
-    title: 'AI 试验场',
+    title: 'menu.playground',
     icon: 'monitor',
     children: [
-      { path: '/playground/chat', title: '对话测试', permission: 'ai:playground:use', icon: 'chat-dot-round' },
-      { path: '/playground/embedding', title: '向量生成', permission: 'ai:playground:use', icon: 'data-line' },
-      { path: '/playground/rerank', title: '重排序', permission: 'ai:playground:use', icon: 'sort' },
-      { path: '/playground/audio', title: '语音服务', permission: 'ai:playground:use', icon: 'headset' },
-      { path: '/playground/image', title: '图像服务', permission: 'ai:playground:use', icon: 'picture' }
+      { path: '/playground/chat', title: 'menu.chat', permission: 'ai:playground:use', icon: 'chat-dot-round' },
+      { path: '/playground/embedding', title: 'menu.embedding', permission: 'ai:playground:use', icon: 'data-line' },
+      { path: '/playground/rerank', title: 'menu.rerank', permission: 'ai:playground:use', icon: 'sort' },
+      { path: '/playground/audio', title: 'menu.audio', permission: 'ai:playground:use', icon: 'headset' },
+      { path: '/playground/image', title: 'menu.image', permission: 'ai:playground:use', icon: 'picture' }
     ]
   }
 ]

@@ -7,71 +7,71 @@
             <el-icon>
               <History />
             </el-icon>
-            <span>版本管理</span>
+            <span>{{ t('version.title') }}</span>
           </div>
           <el-button type="primary" @click="handleRefresh">
             <el-icon>
               <Refresh />
             </el-icon>
-            刷新
+            {{ t('version.refresh') }}
           </el-button>
         </div>
       </template>
 
-      <el-alert :closable="false" class="desc-alert" show-icon title="操作说明" type="info">
+      <el-alert :closable="false" class="desc-alert" show-icon :title="t('version.help.title')" type="info">
         <template #description>
           <ul class="desc-list">
-            <li><b>应用：</b>将此版本的配置设为当前版本。</li>
-            <li><b>删除：</b>只能删除历史版本，删除后不可恢复。</li>
-            <li><b>查看：</b>可预览配置详情和变更说明。</li>
+            <li><b>{{ t('version.help.apply') }}</b>{{ t('version.help.applyBody') }}</li>
+            <li><b>{{ t('version.help.delete') }}</b>{{ t('version.help.deleteBody') }}</li>
+            <li><b>{{ t('version.help.view') }}</b>{{ t('version.help.viewBody') }}</li>
           </ul>
         </template>
       </el-alert>
 
       <div class="table-wrap">
         <el-table v-loading="loading" :data="versions" border class="version-table" fit>
-          <el-table-column align="center" label="版本号" prop="version" width="110" />
-          <el-table-column align="center" label="状态" prop="status" width="120">
+          <el-table-column align="center" :label="t('version.versionNo')" prop="version" width="110" />
+          <el-table-column align="center" :label="t('version.status')" prop="status" width="120">
             <template #default="scope">
               <el-tag :type="scope.row.status === 'current' ? 'success' : 'info'" size="large">
                 <el-icon v-if="scope.row.status === 'current'" style="margin-right:2px">
                   <SuccessFilled />
                 </el-icon>
-                {{ scope.row.status === 'current' ? '当前版本' : '历史版本' }}
+                {{ scope.row.status === 'current' ? t('version.currentStatus') : t('version.historyStatus') }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column align="center" label="操作类型" prop="operation" width="130">
+          <el-table-column align="center" :label="t('version.operationType')" prop="operation" width="130">
             <template #default="scope">
               <el-tag :type="getOperationTagType(scope.row.operation)" effect="plain">
                 {{ getOperationDisplayName(scope.row.operation) }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作详情" min-width="180" prop="operationDetail" show-overflow-tooltip>
+          <el-table-column :label="t('version.operationDetail')" min-width="180" prop="operationDetail" show-overflow-tooltip>
             <template #default="scope">
               <span v-if="scope.row.operationDetail">{{ scope.row.operationDetail }}</span>
               <span v-else>-</span>
             </template>
           </el-table-column>
-          <el-table-column align="center" label="时间" prop="timestamp" width="170">
+          <el-table-column align="center" :label="t('version.time')" prop="timestamp" width="170">
             <template #default="scope">
               <span class="timestamp">{{ formatTimestamp(scope.row.timestamp) }}</span>
             </template>
           </el-table-column>
-          <el-table-column align="center" fixed="right" label="操作" width="360">
+          <el-table-column align="center" fixed="right" :label="t('version.actions')" width="360">
             <template #default="scope">
               <el-button @click="handleView(scope.row)"
               >
-                查看
+                {{ t('version.view') }}
               </el-button>
               <el-button :disabled="scope.row.status === 'current' || applyingVersions.has(scope.row.version)"
                 :loading="applyingVersions.has(scope.row.version)" type="primary" @click="handleApply(scope.row)">
-                应用
+                {{ t('version.apply') }}
               </el-button>
               <el-button :disabled="scope.row.status === 'current' || deletingVersions.has(scope.row.version)"
                 :loading="deletingVersions.has(scope.row.version)" type="danger" @click="handleDelete(scope.row)">
-                删除
+                {{ t('version.delete') }}
               </el-button>
             </template>
           </el-table-column>
@@ -80,23 +80,23 @@
     </el-card>
 
     <!-- 查看版本详情对话框 -->
-    <el-dialog v-model="detailDialogVisible" class="version-dialog" title="版本详情" width="620px">
+    <el-dialog v-model="detailDialogVisible" class="version-dialog" :title="t('version.detailTitle')" width="620px">
       <el-descriptions :column="1" border>
-        <el-descriptions-item label="版本号">{{ currentVersion.version }}</el-descriptions-item>
-        <el-descriptions-item label="状态">
+        <el-descriptions-item :label="t('version.versionNo')">{{ currentVersion.version }}</el-descriptions-item>
+        <el-descriptions-item :label="t('version.status')">
           <el-tag :type="currentVersion.status === 'current' ? 'success' : 'info'">
-            {{ currentVersion.status === 'current' ? '当前版本' : '历史版本' }}
+            {{ currentVersion.status === 'current' ? t('version.currentStatus') : t('version.historyStatus') }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="操作类型">
+        <el-descriptions-item :label="t('version.operationType')">
           <el-tag :type="getOperationTagType(currentVersion.operation)">
             {{ getOperationDisplayName(currentVersion.operation) }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item v-if="currentVersion.operationDetail" label="操作详情">
+        <el-descriptions-item v-if="currentVersion.operationDetail" :label="t('version.operationDetail')">
           {{ currentVersion.operationDetail }}
         </el-descriptions-item>
-        <el-descriptions-item v-if="currentVersion.timestamp" label="时间戳">
+        <el-descriptions-item v-if="currentVersion.timestamp" :label="t('version.timestamp')">
           {{ formatTimestamp(currentVersion.timestamp) }}
         </el-descriptions-item>
       </el-descriptions>
@@ -108,14 +108,14 @@
           <el-icon>
             <Document />
           </el-icon>
-          配置预览
+          {{ t('version.configPreview') }}
         </div>
         <pre>{{ JSON.stringify(currentVersion.config, null, 2) }}</pre>
       </div>
 
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="detailDialogVisible = false">关闭</el-button>
+          <el-button @click="detailDialogVisible = false">{{ t('version.close') }}</el-button>
         </span>
       </template>
     </el-dialog>
@@ -124,9 +124,12 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElLoading, ElMessage, ElMessageBox } from 'element-plus'
 import { applyVersion, deleteConfigVersion, getAllVersionInfo, type Version } from '@/api/version.ts'
+import { formatDateTime } from '@/utils/format'
 
+const { t } = useI18n()
 const versions = ref<Version[]>([])
 const detailDialogVisible = ref(false)
 const currentVersion = ref({} as Version)
@@ -172,41 +175,40 @@ const getOperationTagType = (operation: string | undefined) => {
 const getOperationDisplayName = (operation: string | undefined) => {
   switch (operation) {
     case 'init':
-      return '系统初始化'
+      return t('version.operationNames.systemInit')
     case 'instanceChange':
-      return '实例变更'
+      return t('version.operationNames.instanceChange')
     case 'apply':
-      return '应用版本'
+      return t('version.operationNames.applyVersion')
     case 'serviceConfigChange':
-      return '服务配置变更'
+      return t('version.operationNames.serviceConfigChange')
     case 'createService':
-      return '创建服务'
+      return t('version.operationNames.createService')
     case 'updateService':
-      return '更新服务'
+      return t('version.operationNames.updateService')
     case 'deleteService':
-      return '删除服务'
+      return t('version.operationNames.deleteService')
     case 'addInstance':
-      return '添加实例'
+      return t('version.operationNames.addInstance')
     case 'updateInstance':
-      return '更新实例'
+      return t('version.operationNames.updateInstance')
     case 'deleteInstance':
-      return '删除实例'
+      return t('version.operationNames.deleteInstance')
     case 'updateTracingSampling':
-      return '更新采样配置'
+      return t('version.operationNames.updateTracingSampling')
     case 'rateLimitChange':
-      return '限流配置变更'
+      return t('version.operationNames.rateLimitChange')
     case 'circuitBreakerChange':
-      return '熔断配置变更'
+      return t('version.operationNames.circuitBreakerChange')
     default:
-      return operation || '未知操作'
+      return operation || t('version.unknownOperation')
   }
 }
 
 // 格式化时间戳
 const formatTimestamp = (timestamp: number | undefined) => {
   if (!timestamp) return '-'
-  const d = new Date(timestamp)
-  return d.toLocaleString('zh-CN', { hour12: false })
+  return formatDateTime(timestamp)
 }
 
 // 获取版本列表（使用优化接口）
@@ -219,7 +221,7 @@ const fetchVersions = async () => {
     // 检查响应结构
     if (!response || !response.data) {
       console.error('Invalid API response structure:', response)
-      ElMessage.error('API响应格式错误')
+      ElMessage.error(t('version.messages.invalidResponse'))
       return
     }
     
@@ -232,7 +234,7 @@ const fetchVersions = async () => {
         versionInfos = parsedData.data || [] // 注意：这里要取parsedData.data
       } catch (parseError) {
         console.error('Failed to parse response data:', parseError)
-        ElMessage.error('解析响应数据失败')
+        ElMessage.error(t('version.messages.parseFailed'))
         return
       }
     } else {
@@ -254,7 +256,7 @@ const fetchVersions = async () => {
     versions.value = versionDetails.sort((a, b) => b.version - a.version)
   } catch (error) {
     console.error('获取版本列表失败:', error)
-    ElMessage.error(`获取版本列表失败: ${  (error as Error).message}`)
+    ElMessage.error(t('version.messages.fetchFailed', { message: (error as Error).message }))
   } finally {
     loading.value = false
   }
@@ -277,20 +279,20 @@ const handleApply = async (row: Version) => {
   const confirmResult = await ElMessageBox.confirm(
     `
     <div>
-      <p><strong>版本应用确认</strong></p>
-      <p>版本号：${row.version}</p>
-      <p>操作类型：${getOperationDisplayName(row.operation)}</p>
-      <p>操作详情：${row.operationDetail || '无'}</p>
+      <p><strong>${t('version.applyDialog.heading')}</strong></p>
+      <p>${t('version.applyDialog.version', { version: row.version })}</p>
+      <p>${t('version.applyDialog.operation', { operation: getOperationDisplayName(row.operation) })}</p>
+      <p>${t('version.applyDialog.detail', { detail: row.operationDetail || t('version.none') })}</p>
       <p style="color: var(--ja-warning); margin-top: 10px;">
         <i class="el-icon-warning"></i>
-        应用此版本将替换当前配置，请确认操作无误。
+        ${t('version.applyDialog.warning')}
       </p>
     </div>
     `,
-    '应用配置版本',
+    t('version.applyDialog.title'),
     {
-      confirmButtonText: '确定应用',
-      cancelButtonText: '取消',
+      confirmButtonText: t('version.applyDialog.confirm'),
+      cancelButtonText: t('version.applyDialog.cancel'),
       type: 'warning',
       dangerouslyUseHTMLString: true,
       showClose: false,
@@ -309,7 +311,7 @@ const handleApply = async (row: Version) => {
   // 显示应用进度
   const loadingInstance = ElLoading.service({
     lock: true,
-    text: `正在应用版本 ${row.version}...`,
+    text: t('version.applyLoading', { version: row.version }),
     spinner: 'el-icon-loading',
     background: 'rgba(0, 0, 0, 0.7)'
   })
@@ -319,26 +321,26 @@ const handleApply = async (row: Version) => {
 
   try {
     // 第一步：验证版本存在性
-    loadingInstance.setText('验证版本有效性...')
+    loadingInstance.setText(t('version.validateLoading'))
     await new Promise(resolve => setTimeout(resolve, 300)) // 模拟验证过程
 
     // 第二步：应用版本配置
-    loadingInstance.setText('应用版本配置...')
+    loadingInstance.setText(t('version.applyConfigLoading'))
     const response = await applyVersion(row.version)
 
     // 第三步：验证应用结果
-    loadingInstance.setText('验证应用结果...')
+    loadingInstance.setText(t('version.validateResultLoading'))
     await new Promise(resolve => setTimeout(resolve, 500))
 
     // 第四步：刷新配置状态
-    loadingInstance.setText('刷新配置状态...')
+    loadingInstance.setText(t('version.refreshConfigLoading'))
 
     loadingInstance.close()
 
     // 显示成功消息
     ElMessage({
       type: 'success',
-      message: `版本 ${row.version} 应用成功！配置已更新并生效。`,
+      message: t('version.applySuccess', { version: row.version }),
       duration: 3000,
       showClose: true
     })
@@ -352,28 +354,28 @@ const handleApply = async (row: Version) => {
     console.error('应用版本失败:', error)
 
     // 详细的错误处理
-    let errorTitle = '版本应用失败'
-    let errorMessage = '未知错误'
+    let errorTitle = t('version.errorDialog.title')
+    let errorMessage = t('version.errors.unknown')
     let errorDetails = ''
 
     if (error?.response?.data) {
       const errorData = error.response.data
-      errorMessage = errorData.message || '服务器返回错误'
+      errorMessage = errorData.message || t('version.errors.server')
       errorDetails = errorData.details || errorData.error || ''
 
       // 根据错误类型提供具体的错误信息
       if (errorMessage.includes('版本不存在')) {
-        errorTitle = '版本不存在'
-        errorMessage = `版本 ${row.version} 不存在或已被删除`
+        errorTitle = t('version.errors.versionNotFoundTitle')
+        errorMessage = t('version.errors.versionNotFound', { version: row.version })
       } else if (errorMessage.includes('配置损坏')) {
-        errorTitle = '配置文件损坏'
-        errorMessage = `版本 ${row.version} 的配置文件已损坏，无法应用`
+        errorTitle = t('version.errors.configCorruptTitle')
+        errorMessage = t('version.errors.configCorrupt', { version: row.version })
       } else if (errorMessage.includes('权限')) {
-        errorTitle = '权限不足'
-        errorMessage = '您没有权限执行此操作'
+        errorTitle = t('version.errors.permissionTitle')
+        errorMessage = t('version.errors.permissionDenied')
       } else if (errorMessage.includes('系统错误')) {
-        errorTitle = '系统错误'
-        errorMessage = '系统内部错误，请稍后重试'
+        errorTitle = t('version.errors.systemTitle')
+        errorMessage = t('version.errors.systemError')
       }
     } else if (error?.message) {
       errorMessage = error.message
@@ -383,20 +385,20 @@ const handleApply = async (row: Version) => {
     ElMessageBox.alert(
       `
       <div>
-        <p><strong>错误详情：</strong></p>
+        <p><strong>${t('version.errorDialog.details')}</strong></p>
         <p>${errorMessage}</p>
-        ${errorDetails ? `<p><strong>技术详情：</strong></p><p style="color: var(--ja-text-secondary); font-size: 12px;">${errorDetails}</p>` : ''}
+        ${errorDetails ? `<p><strong>${t('version.errorDialog.techDetails')}</strong></p><p style="color: var(--ja-text-secondary); font-size: 12px;">${errorDetails}</p>` : ''}
         <p style="margin-top: 15px; color: var(--ja-text-regular);">
-          <strong>建议操作：</strong><br/>
-          1. 检查版本是否存在<br/>
-          2. 确认网络连接正常<br/>
-          3. 如问题持续，请联系系统管理员
+          <strong>${t('version.errorDialog.advice')}</strong><br/>
+          ${t('version.errorDialog.advice1')}<br/>
+          ${t('version.errorDialog.advice2')}<br/>
+          ${t('version.errorDialog.advice3')}
         </p>
       </div>
       `,
       errorTitle,
       {
-        confirmButtonText: '我知道了',
+        confirmButtonText: t('version.errorDialog.acknowledge'),
         type: 'error',
         dangerouslyUseHTMLString: true
       }
@@ -414,18 +416,18 @@ const handleDelete = async (row: Version) => {
     ElMessageBox.alert(
       `
       <div>
-        <p><i class="el-icon-warning" style="color: var(--ja-warning);"></i> <strong>无法删除当前版本</strong></p>
-        <p>版本 ${row.version} 是当前正在使用的版本，不能被删除。</p>
+        <p><i class="el-icon-warning" style="color: var(--ja-warning);"></i> <strong>${t('version.cannotDelete.heading')}</strong></p>
+        <p>${t('version.cannotDelete.message', { version: row.version })}</p>
         <p style="margin-top: 10px; color: var(--ja-text-regular);">
-          <strong>建议操作：</strong><br/>
-          1. 先应用其他版本<br/>
-          2. 然后再删除此版本
+          <strong>${t('version.cannotDelete.advice')}</strong><br/>
+          ${t('version.cannotDelete.advice1')}<br/>
+          ${t('version.cannotDelete.advice2')}
         </p>
       </div>
       `,
-      '删除失败',
+      t('version.cannotDelete.title'),
       {
-        confirmButtonText: '我知道了',
+        confirmButtonText: t('version.cannotDelete.acknowledge'),
         type: 'warning',
         dangerouslyUseHTMLString: true
       }
@@ -437,24 +439,24 @@ const handleDelete = async (row: Version) => {
   const confirmResult = await ElMessageBox.confirm(
     `
     <div>
-      <p><strong>版本删除确认</strong></p>
-      <p>版本号：${row.version}</p>
-      <p>操作类型：${getOperationDisplayName(row.operation)}</p>
-      <p>操作详情：${row.operationDetail || '无'}</p>
-      <p>创建时间：${formatTimestamp(row.timestamp)}</p>
+      <p><strong>${t('version.deleteDialog.heading')}</strong></p>
+      <p>${t('version.deleteDialog.version', { version: row.version })}</p>
+      <p>${t('version.deleteDialog.operation', { operation: getOperationDisplayName(row.operation) })}</p>
+      <p>${t('version.deleteDialog.detail', { detail: row.operationDetail || t('version.none') })}</p>
+      <p>${t('version.deleteDialog.createdAt', { time: formatTimestamp(row.timestamp) })}</p>
       <p style="color: var(--ja-danger); margin-top: 15px;">
         <i class="el-icon-warning"></i>
-        <strong>警告：此操作不可恢复！</strong>
+        <strong>${t('version.deleteDialog.warning')}</strong>
       </p>
       <p style="color: var(--ja-text-secondary); font-size: 12px; margin-top: 10px;">
-        删除版本将永久移除该版本的配置数据，请确认您不再需要此版本。
+        ${t('version.deleteDialog.hint')}
       </p>
     </div>
     `,
-    '删除配置版本',
+    t('version.deleteDialog.title'),
     {
-      confirmButtonText: '确定删除',
-      cancelButtonText: '取消',
+      confirmButtonText: t('version.deleteDialog.confirm'),
+      cancelButtonText: t('version.deleteDialog.cancel'),
       type: 'error',
       dangerouslyUseHTMLString: true,
       showClose: false,

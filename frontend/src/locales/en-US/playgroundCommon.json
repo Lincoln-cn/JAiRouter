@@ -1,0 +1,34 @@
+{
+  "playgroundCommon": {
+    "model": {
+      "placeholder": "Select a model",
+      "allModels": "All Models",
+      "other": "Other"
+    },
+    "action": {
+      "clear": "Clear",
+      "hideConfig": "Hide Config",
+      "showConfig": "Show Config",
+      "copy": "Copy",
+      "copied": "Copied",
+      "regenerate": "Regenerate"
+    },
+    "role": {
+      "user": "You",
+      "assistant": "AI",
+      "system": "System"
+    },
+    "status": {
+      "idle": "Ready",
+      "loading": "Processing...",
+      "success": "Success",
+      "error": "Error",
+      "duration": "Duration: {duration}ms"
+    },
+    "message": {
+      "copiedToClipboard": "Copied to clipboard",
+      "codeCopiedToClipboard": "Code copied to clipboard",
+      "copyFailed": "Failed to copy"
+    }
+  }
+}

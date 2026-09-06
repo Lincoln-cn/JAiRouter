@@ -3,16 +3,16 @@
     <!-- 统计卡片 -->
     <el-row :gutter="20" class="stats-row">
       <el-col :span="6">
-        <StatCard :icon="Key" label="总密钥数" :value="listData.total" tone="primary" />
+        <StatCard :icon="Key" :label="t('apiKeys.stats.total')" :value="listData.total" tone="primary" />
       </el-col>
       <el-col :span="6">
-        <StatCard :icon="CircleCheck" label="已启用" :value="listData.enabledCount" tone="success" />
+        <StatCard :icon="CircleCheck" :label="t('apiKeys.stats.enabled')" :value="listData.enabledCount" tone="success" />
       </el-col>
       <el-col :span="6">
-        <StatCard :icon="CircleClose" label="已禁用" :value="listData.disabledCount" tone="danger" />
+        <StatCard :icon="CircleClose" :label="t('apiKeys.stats.disabled')" :value="listData.disabledCount" tone="danger" />
       </el-col>
       <el-col :span="6">
-        <StatCard :icon="Warning" label="已过期" :value="listData.expiredCount" tone="warning" />
+        <StatCard :icon="Warning" :label="t('apiKeys.stats.expired')" :value="listData.expiredCount" tone="warning" />
       </el-col>
     </el-row>
 
@@ -22,7 +22,7 @@
         <div class="card-header">
           <span class="main-title">
             <el-icon><Warning /></el-icon>
-            配额告警
+            {{ t('apiKeys.quotaAlertsTitle') }}
             <el-badge
               v-if="quotaAlerts.length > 0"
               :value="quotaAlerts.length"
@@ -36,45 +36,45 @@
             @click="fetchQuotaAlerts"
             :loading="quotaAlertsLoading"
           >
-            刷新
+            {{ t('apiKeys.refresh') }}
           </el-button>
         </div>
       </template>
 
       <template v-if="quotaAlerts.length > 0">
         <el-table :data="quotaAlerts" stripe size="small" style="width: 100%">
-          <el-table-column prop="keyId" label="密钥 ID" width="180" show-overflow-tooltip>
+          <el-table-column prop="keyId" :label="t('apiKeys.columns.keyId')" width="180" show-overflow-tooltip>
             <template #default="{ row }">
               <el-tag effect="plain" type="info">{{ row.keyId }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="description" label="描述" min-width="140" show-overflow-tooltip>
+          <el-table-column prop="description" :label="t('apiKeys.columns.description')" min-width="140" show-overflow-tooltip>
             <template #default="{ row }">
               {{ row.description || '-' }}
             </template>
           </el-table-column>
-          <el-table-column prop="alertType" label="告警类型" width="120" align="center">
+          <el-table-column prop="alertType" :label="t('apiKeys.columns.alertType')" width="120" align="center">
             <template #default="{ row }">
               <el-tag :type="getAlertTypeTag(row.alertType)" size="small">
                 {{ formatAlertType(row.alertType) }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="请求用量" width="110" align="center">
+          <el-table-column :label="t('apiKeys.columns.requestUsage')" width="110" align="center">
             <template #default="{ row }">
               <span :class="{ 'alert-high': row.dailyRequestUsagePercent >= 90 }">
                 {{ formatPercent(row.dailyRequestUsagePercent) }}
               </span>
             </template>
           </el-table-column>
-          <el-table-column label="Token 用量" width="110" align="center">
+          <el-table-column :label="t('apiKeys.columns.tokenUsage')" width="110" align="center">
             <template #default="{ row }">
               <span :class="{ 'alert-high': row.dailyTokenUsagePercent >= 90 }">
                 {{ formatPercent(row.dailyTokenUsagePercent) }}
               </span>
             </template>
           </el-table-column>
-          <el-table-column prop="message" label="告警详情" min-width="200" show-overflow-tooltip />
+          <el-table-column prop="message" :label="t('apiKeys.columns.alertDetail')" min-width="200" show-overflow-tooltip />
         </el-table>
       </template>
       <template v-else>
@@ -82,7 +82,7 @@
           <el-icon style="font-size: 32px; color: var(--ja-success); margin-bottom: 8px;">
             <CircleCheck />
           </el-icon>
-          <div class="no-alerts-text">当前无配额告警</div>
+          <div class="no-alerts-text">{{ t('apiKeys.noQuotaAlerts') }}</div>
         </div>
       </template>
     </el-card>
@@ -93,29 +93,29 @@
         <div class="card-header">
           <span class="main-title">
             <el-icon><Key /></el-icon>
-            API密钥管理
+            {{ t('apiKeys.title') }}
           </span>
           <div class="header-buttons">
-            <el-button icon="Download" type="success" @click="handleExport">导出配置</el-button>
-            <el-button icon="Upload" type="warning" @click="showImportDialog">导入配置</el-button>
-            <el-button icon="Plus" type="primary" @click="handleCreateApiKey">创建API密钥</el-button>
+            <el-button icon="Download" type="success" @click="handleExport">{{ t('apiKeys.exportConfig') }}</el-button>
+            <el-button icon="Upload" type="warning" @click="showImportDialog">{{ t('apiKeys.importConfig') }}</el-button>
+            <el-button icon="Plus" type="primary" @click="handleCreateApiKey">{{ t('apiKeys.createApiKey') }}</el-button>
           </div>
         </div>
       </template>
 
       <div class="table-wrapper">
         <el-table v-loading="loading" :data="pagedApiKeys" border stripe style="width: 100%">
-        <el-table-column label="密钥ID" prop="keyId" width="180">
+        <el-table-column :label="t('apiKeys.columns.keyId')" prop="keyId" width="180">
           <template #default="scope">
             <el-tag effect="plain" type="info">{{ scope.row.keyId }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="描述" min-width="150" show-overflow-tooltip>
+        <el-table-column :label="t('apiKeys.columns.description')" min-width="150" show-overflow-tooltip>
           <template #default="scope">
             <span>{{ scope.row.description || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="权限" prop="permissions" width="160">
+        <el-table-column :label="t('apiKeys.columns.permissions')" prop="permissions" width="160">
           <template #default="scope">
             <div class="permission-tags">
               <el-tag
@@ -130,30 +130,34 @@
             <span v-if="!scope.row.permissions?.length">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" prop="createdAt" width="160"/>
-        <el-table-column label="创建者" width="150" show-overflow-tooltip>
+        <el-table-column :label="t('apiKeys.columns.createdAt')" width="160">
+          <template #default="scope">
+            {{ formatDateTime(scope.row.createdAt) }}
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('apiKeys.columns.createdBy')" width="150" show-overflow-tooltip>
           <template #default="scope">
             <span v-if="scope.row.createdBy">{{ scope.row.createdBy }}</span>
             <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="过期时间" prop="expiresAt" width="160">
+        <el-table-column :label="t('apiKeys.columns.expiresAt')" prop="expiresAt" width="160">
           <template #default="scope">
             <span :class="{ 'expired-text': scope.row.expired }">
-              {{ scope.row.expiresAt || '永不过期' }}
+              {{ formatDateTime(scope.row.expiresAt) || t('apiKeys.neverExpires') }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="剩余天数" width="100" align="center">
+        <el-table-column :label="t('apiKeys.columns.remainingDays')" width="100" align="center">
           <template #default="scope">
             <el-tag :type="getRemainingDaysType(scope.row)" size="small">
               {{ getRemainingDaysText(scope.row) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="使用统计" width="140" align="center">
+        <el-table-column :label="t('apiKeys.columns.usage')" width="140" align="center">
           <template #default="scope">
-            <el-tooltip :content="`成功: ${scope.row.successfulRequests}, 失败: ${scope.row.failedRequests}`">
+            <el-tooltip :content="t('apiKeys.usageTooltip', { success: scope.row.successfulRequests, failed: scope.row.failedRequests })">
               <span class="usage-stat">
                 {{ scope.row.totalRequests }}
                 <span class="usage-detail">({{ scope.row.successfulRequests }}/{{ scope.row.failedRequests }})</span>
@@ -161,7 +165,7 @@
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column label="今日Token" width="120" align="center">
+        <el-table-column :label="t('apiKeys.columns.todayToken')" width="120" align="center">
           <template #default="scope">
             <span v-if="scope.row.todayTokenUsage !== undefined && scope.row.todayTokenUsage !== null">
               {{ formatTokenCount(scope.row.todayTokenUsage) }}
@@ -169,15 +173,15 @@
             <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="告警状态" width="100" align="center">
+        <el-table-column :label="t('apiKeys.columns.alertStatus')" width="100" align="center">
           <template #default="scope">
             <el-tag v-if="scope.row.quotaAlertTriggered" type="danger" size="small">
-              <el-icon><Warning /></el-icon> 告警
+              <el-icon><Warning /></el-icon> {{ t('apiKeys.status.alert') }}
             </el-tag>
-            <el-tag v-else type="success" size="small">正常</el-tag>
+            <el-tag v-else type="success" size="small">{{ t('apiKeys.status.normal') }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" prop="enabled" width="80" align="center">
+        <el-table-column :label="t('apiKeys.columns.status')" prop="enabled" width="80" align="center">
           <template #default="scope">
             <el-switch
                 v-model="scope.row.enabled"
@@ -188,17 +192,17 @@
             />
           </template>
         </el-table-column>
-        <el-table-column fixed="right" label="操作" width="200">
+        <el-table-column fixed="right" :label="t('apiKeys.columns.actions')" width="200">
           <template #default="scope">
             <div class="action-buttons">
-              <el-button icon="Edit" size="small" @click="handleEdit(scope.row)">编辑</el-button>
+              <el-button icon="Edit" size="small" @click="handleEdit(scope.row)">{{ t('apiKeys.actions.edit') }}</el-button>
               <el-button icon="RefreshRight" size="small" type="warning" @click="handleRotate(scope.row)"
-                         :disabled="scope.row.expired">轮换</el-button>
-              <el-button icon="Refresh" size="small" type="info" @click="handleReset(scope.row)">重置</el-button>
-              <el-tooltip content="重置每日配额计数器" placement="top">
-                <el-button icon="Timer" size="small" type="success" @click="handleResetQuota(scope.row)">配额重置</el-button>
+                         :disabled="scope.row.expired">{{ t('apiKeys.actions.rotate') }}</el-button>
+              <el-button icon="Refresh" size="small" type="info" @click="handleReset(scope.row)">{{ t('apiKeys.actions.reset') }}</el-button>
+              <el-tooltip :content="t('apiKeys.actions.quotaResetTooltip')" placement="top">
+                <el-button icon="Timer" size="small" type="success" @click="handleResetQuota(scope.row)">{{ t('apiKeys.actions.quotaReset') }}</el-button>
               </el-tooltip>
-              <el-button icon="Delete" size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+              <el-button icon="Delete" size="small" type="danger" @click="handleDelete(scope.row)">{{ t('apiKeys.actions.delete') }}</el-button>
             </div>
           </template>
         </el-table-column>
@@ -221,125 +225,125 @@
     <!-- 创建/编辑API密钥对话框 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" center width="680px">
       <el-form ref="formRef" :model="form" label-width="120px" status-icon>
-        <el-form-item label="密钥ID" prop="keyId" :rules="keyIdRules">
-          <el-input v-model="form.keyId" :disabled="isEdit" maxlength="64" placeholder="留空则自动生成"
+        <el-form-item :label="t('apiKeys.form.keyId')" prop="keyId" :rules="keyIdRules">
+          <el-input v-model="form.keyId" :disabled="isEdit" maxlength="64" :placeholder="t('apiKeys.form.keyIdPlaceholder')"
                     show-word-limit/>
         </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="form.description" maxlength="128" placeholder="密钥用途描述" show-word-limit
+        <el-form-item :label="t('apiKeys.form.description')">
+          <el-input v-model="form.description" maxlength="128" :placeholder="t('apiKeys.form.descriptionPlaceholder')" show-word-limit
                     type="textarea"/>
         </el-form-item>
-        <el-form-item label="过期时间">
+        <el-form-item :label="t('apiKeys.form.expiresAt')">
           <el-date-picker
               v-model="form.expiresAt"
               clearable
               format="YYYY-MM-DD HH:mm:ss"
-              placeholder="留空则永不过期"
+              :placeholder="t('apiKeys.form.expiresAtPlaceholder')"
               style="width: 100%;"
               type="datetime"
               value-format="YYYY-MM-DD HH:mm:ss"
           />
         </el-form-item>
-        <el-form-item label="权限">
+        <el-form-item :label="t('apiKeys.form.permissions')">
           <el-checkbox-group v-model="form.permissions">
-            <el-checkbox label="chat">聊天模型</el-checkbox>
-            <el-checkbox label="embedding">嵌入模型</el-checkbox>
-            <el-checkbox label="rerank">重排序模型</el-checkbox>
-            <el-checkbox label="tts">语音合成</el-checkbox>
-            <el-checkbox label="stt">语音识别</el-checkbox>
-            <el-checkbox label="imgGen">图像生成</el-checkbox>
-            <el-checkbox label="imgEdit">图像编辑</el-checkbox>
+            <el-checkbox label="chat">{{ t('apiKeys.permissions.chat') }}</el-checkbox>
+            <el-checkbox label="embedding">{{ t('apiKeys.permissions.embedding') }}</el-checkbox>
+            <el-checkbox label="rerank">{{ t('apiKeys.permissions.rerank') }}</el-checkbox>
+            <el-checkbox label="tts">{{ t('apiKeys.permissions.tts') }}</el-checkbox>
+            <el-checkbox label="stt">{{ t('apiKeys.permissions.stt') }}</el-checkbox>
+            <el-checkbox label="imgGen">{{ t('apiKeys.permissions.imgGen') }}</el-checkbox>
+            <el-checkbox label="imgEdit">{{ t('apiKeys.permissions.imgEdit') }}</el-checkbox>
           </el-checkbox-group>
         </el-form-item>
-        <el-form-item label="IP白名单">
+        <el-form-item :label="t('apiKeys.form.ipWhitelist')">
           <el-select
               v-model="form.allowedIpAddresses"
               allow-create
               clearable
               filterable
               multiple
-              placeholder="留空则不限制IP"
+              :placeholder="t('apiKeys.form.ipWhitelistPlaceholder')"
               style="width: 100%;"
           >
           </el-select>
-          <div class="form-hint">允许使用此密钥的IP地址，留空表示不限制</div>
+          <div class="form-hint">{{ t('apiKeys.form.ipWhitelistHint') }}</div>
         </el-form-item>
-        <el-form-item label="每日请求上限">
-          <el-input-number v-model="form.dailyRequestLimit" :min="0" :step="100" placeholder="0表示不限制"/>
-          <div class="form-hint">0 表示不限制</div>
+        <el-form-item :label="t('apiKeys.form.dailyRequestLimit')">
+          <el-input-number v-model="form.dailyRequestLimit" :min="0" :step="100" :placeholder="t('apiKeys.form.zeroMeansUnlimitedPlaceholder')"/>
+          <div class="form-hint">{{ t('apiKeys.form.zeroMeansUnlimited') }}</div>
         </el-form-item>
-        <el-form-item label="每日Token上限">
-          <el-input-number v-model="form.dailyTokenLimit" :min="0" :step="1000" placeholder="0表示不限制"/>
-          <div class="form-hint">每日 Token 使用量上限，0 表示不限制</div>
+        <el-form-item :label="t('apiKeys.form.dailyTokenLimit')">
+          <el-input-number v-model="form.dailyTokenLimit" :min="0" :step="1000" :placeholder="t('apiKeys.form.zeroMeansUnlimitedPlaceholder')"/>
+          <div class="form-hint">{{ t('apiKeys.form.tokenLimitHint') }}</div>
         </el-form-item>
-        <el-form-item label="每分钟速率限制">
-          <el-input-number v-model="form.rateLimitPerMinute" :min="0" :step="10" placeholder="0表示不限制"/>
-          <div class="form-hint">每分钟请求速率上限，0 表示不限制</div>
+        <el-form-item :label="t('apiKeys.form.rateLimitPerMinute')">
+          <el-input-number v-model="form.rateLimitPerMinute" :min="0" :step="10" :placeholder="t('apiKeys.form.zeroMeansUnlimitedPlaceholder')"/>
+          <div class="form-hint">{{ t('apiKeys.form.rateLimitHint') }}</div>
         </el-form-item>
-        <el-form-item label="告警阈值">
+        <el-form-item :label="t('apiKeys.form.quotaAlertThreshold')">
           <el-slider v-model="form.quotaAlertThreshold" :min="0" :max="1" :step="0.05" show-input :format-tooltip="(val: number) => `${Math.round(val * 100)}%`"/>
-          <div class="form-hint">配额使用达到此比例时触发告警</div>
+          <div class="form-hint">{{ t('apiKeys.form.thresholdHint') }}</div>
         </el-form-item>
-        <el-form-item label="轮换周期">
-          <el-input-number v-model="form.rotationPeriodDays" :min="0" :step="30" placeholder="0表示不自动轮换"/>
-          <div class="form-hint">设置密钥自动轮换周期（天数），0 表示不自动轮换</div>
+        <el-form-item :label="t('apiKeys.form.rotationPeriod')">
+          <el-input-number v-model="form.rotationPeriodDays" :min="0" :step="30" :placeholder="t('apiKeys.form.rotationPeriodPlaceholder')"/>
+          <div class="form-hint">{{ t('apiKeys.form.rotationPeriodHint') }}</div>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSave" :loading="saveLoading">保存</el-button>
+          <el-button @click="dialogVisible = false">{{ t('apiKeys.actions.cancel') }}</el-button>
+          <el-button type="primary" @click="handleSave" :loading="saveLoading">{{ t('apiKeys.actions.save') }}</el-button>
         </span>
       </template>
     </el-dialog>
 
     <!-- 创建成功后弹窗，展示密钥值 -->
-    <el-dialog v-model="showKeyValueDialog" :close-on-click-modal="false" center title="API密钥已创建" width="450px">
+    <el-dialog v-model="showKeyValueDialog" :close-on-click-modal="false" center :title="t('apiKeys.apiKeyCreatedTitle')" width="450px">
       <div class="key-value-dialog-content">
         <el-icon style="font-size: 48px; color: var(--ja-primary); margin-bottom: 16px;">
           <Key />
         </el-icon>
-        <p class="key-value-tip">请妥善保存以下密钥值，密钥值仅此一次显示：</p>
+        <p class="key-value-tip">{{ t('apiKeys.keyValueDialog.tip') }}</p>
         <el-input v-model="createdKeyValue" readonly size="large">
           <template #append>
-            <el-button icon="CopyDocument" type="primary" @click="copyKeyValue">复制</el-button>
+            <el-button icon="CopyDocument" type="primary" @click="copyKeyValue">{{ t('apiKeys.actions.copy') }}</el-button>
           </template>
         </el-input>
         <el-alert :closable="false" show-icon style="margin-top: 16px;" type="warning">
           <template #title>
-            <strong>重要提醒</strong>
+            <strong>{{ t('apiKeys.keyValueDialog.important') }}</strong>
           </template>
-          密钥值只会显示一次，关闭弹窗后无法再次获取！如果丢失，请使用重置功能生成新密钥。
+          {{ t('apiKeys.keyValueDialog.warning') }}
         </el-alert>
       </div>
       <template #footer>
         <span class="dialog-footer">
-          <el-button type="primary" @click="closeKeyValueDialog" size="large">我已保存，关闭</el-button>
+          <el-button type="primary" @click="closeKeyValueDialog" size="large">{{ t('apiKeys.actions.savedClose') }}</el-button>
         </span>
       </template>
     </el-dialog>
 
     <!-- 导入配置对话框 -->
-    <el-dialog v-model="showImportDialogVisible" :close-on-click-modal="false" center title="导入API密钥配置" width="600px">
+    <el-dialog v-model="showImportDialogVisible" :close-on-click-modal="false" center :title="t('apiKeys.importConfigTitle')" width="600px">
       <div class="import-dialog-content">
         <el-alert :closable="false" show-icon style="margin-bottom: 20px;" type="info">
           <template #title>
-            <strong>导入说明</strong>
+            <strong>{{ t('apiKeys.import.guideTitle') }}</strong>
           </template>
-          导入时会为每个密钥生成新的密钥值，原配置中的密钥值不会被导入。
+          {{ t('apiKeys.import.note1') }}
           <br/>
-          MERGE模式：保留现有密钥，仅添加新密钥。
+          {{ t('apiKeys.import.mergeNote') }}
           <br/>
-          REPLACE模式：删除所有现有密钥后导入新密钥。
+          {{ t('apiKeys.import.replaceNote') }}
         </el-alert>
         <el-form label-width="100px">
-          <el-form-item label="导入模式">
+          <el-form-item :label="t('apiKeys.import.modeLabel')">
             <el-radio-group v-model="importMode">
-              <el-radio label="MERGE">合并（保留现有）</el-radio>
-              <el-radio label="REPLACE">替换（删除现有）</el-radio>
+              <el-radio label="MERGE">{{ t('apiKeys.import.mergeOption') }}</el-radio>
+              <el-radio label="REPLACE">{{ t('apiKeys.import.replaceOption') }}</el-radio>
             </el-radio-group>
           </el-form-item>
-          <el-form-item label="配置文件">
+          <el-form-item :label="t('apiKeys.import.fileLabel')">
             <el-upload
               ref="uploadRef"
               :auto-upload="false"
@@ -350,30 +354,30 @@
             >
               <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
               <div class="el-upload__text">
-                拖拽JSON文件到此处，或<em>点击选择</em>
+                {{ t('apiKeys.import.uploadText') }}<em>{{ t('apiKeys.import.uploadClick') }}</em>
               </div>
               <template #tip>
-                <div class="el-upload__tip">仅支持 .json 格式的配置文件</div>
+                <div class="el-upload__tip">{{ t('apiKeys.import.jsonTip') }}</div>
               </template>
             </el-upload>
           </el-form-item>
         </el-form>
         <div v-if="importPreviewKeys.length > 0" class="import-preview">
-          <h4>预览导入的密钥 ({{ importPreviewKeys.length }} 个)</h4>
+          <h4>{{ t('apiKeys.import.previewTitle', { count: importPreviewKeys.length }) }}</h4>
           <el-table :data="importPreviewKeys" max-height="300" border stripe>
-            <el-table-column prop="keyId" label="密钥ID" width="150"/>
-            <el-table-column prop="description" label="描述" show-overflow-tooltip/>
-            <el-table-column prop="permissions" label="权限" width="150">
+            <el-table-column prop="keyId" :label="t('apiKeys.columns.keyId')" width="150"/>
+            <el-table-column prop="description" :label="t('apiKeys.columns.description')" show-overflow-tooltip/>
+            <el-table-column prop="permissions" :label="t('apiKeys.columns.permissions')" width="150">
               <template #default="scope">
                 <el-tag v-for="p in scope.row.permissions" :key="p" size="small" style="margin-right: 4px;">
                   {{ p }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="enabled" label="启用" width="80">
+            <el-table-column prop="enabled" :label="t('apiKeys.columns.enabled')" width="80">
               <template #default="scope">
                 <el-tag :type="scope.row.enabled ? 'success' : 'danger'" size="small">
-                  {{ scope.row.enabled ? '是' : '否' }}
+                  {{ scope.row.enabled ? t('apiKeys.yes') : t('apiKeys.no') }}
                 </el-tag>
               </template>
             </el-table-column>
@@ -382,36 +386,36 @@
       </div>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="showImportDialogVisible = false">取消</el-button>
+          <el-button @click="showImportDialogVisible = false">{{ t('apiKeys.actions.cancel') }}</el-button>
           <el-button
             type="primary"
             @click="handleImport"
             :loading="importLoading"
             :disabled="importPreviewKeys.length === 0"
           >
-            确认导入
+            {{ t('apiKeys.actions.confirmImport') }}
           </el-button>
         </span>
       </template>
     </el-dialog>
 
     <!-- 导入结果对话框 -->
-    <el-dialog v-model="showImportResultDialog" :close-on-click-modal="false" center title="导入结果" width="700px">
+    <el-dialog v-model="showImportResultDialog" :close-on-click-modal="false" center :title="t('apiKeys.importResultTitle')" width="700px">
       <div class="import-result-content">
         <el-descriptions :column="3" border>
-          <el-descriptions-item label="尝试导入">{{ importResult?.totalAttempted }}</el-descriptions-item>
-          <el-descriptions-item label="成功">{{ importResult?.successCount }}</el-descriptions-item>
-          <el-descriptions-item label="失败">{{ importResult?.failureCount }}</el-descriptions-item>
+          <el-descriptions-item :label="t('apiKeys.result.attempted')">{{ importResult?.totalAttempted }}</el-descriptions-item>
+          <el-descriptions-item :label="t('apiKeys.result.success')">{{ importResult?.successCount }}</el-descriptions-item>
+          <el-descriptions-item :label="t('apiKeys.result.failure')">{{ importResult?.failureCount }}</el-descriptions-item>
         </el-descriptions>
         <div v-if="importResult?.importedKeys && importResult.importedKeys.length > 0" class="imported-keys-section">
           <el-alert :closable="false" show-icon style="margin-top: 20px; margin-bottom: 16px;" type="warning">
             <template #title>
-              <strong>新密钥值（仅此一次显示，请保存）</strong>
+              <strong>{{ t('apiKeys.import.newKeysTitle') }}</strong>
             </template>
           </el-alert>
           <el-table :data="importResult?.importedKeys" max-height="300" border stripe>
-            <el-table-column prop="keyId" label="密钥ID" width="150"/>
-            <el-table-column prop="keyValue" label="密钥值" width="300">
+            <el-table-column prop="keyId" :label="t('apiKeys.columns.keyId')" width="150"/>
+            <el-table-column prop="keyValue" :label="t('apiKeys.columns.keyValue')" width="300">
               <template #default="scope">
                 <el-input v-model="scope.row.keyValue" readonly size="small">
                   <template #append>
@@ -420,20 +424,20 @@
                 </el-input>
               </template>
             </el-table-column>
-            <el-table-column prop="description" label="描述" show-overflow-tooltip/>
+            <el-table-column prop="description" :label="t('apiKeys.columns.description')" show-overflow-tooltip/>
           </el-table>
         </div>
         <div v-if="importResult?.errors && importResult.errors.length > 0" class="import-errors-section">
-          <h4 style="margin-top: 20px; color: var(--ja-danger);">导入失败</h4>
+          <h4 style="margin-top: 20px; color: var(--ja-danger);">{{ t('apiKeys.import.failedTitle') }}</h4>
           <el-table :data="importResult?.errors" border stripe>
-            <el-table-column prop="keyId" label="密钥ID" width="150"/>
-            <el-table-column prop="reason" label="失败原因"/>
+            <el-table-column prop="keyId" :label="t('apiKeys.columns.keyId')" width="150"/>
+            <el-table-column prop="reason" :label="t('apiKeys.columns.failureReason')"/>
           </el-table>
         </div>
       </div>
       <template #footer>
         <span class="dialog-footer">
-          <el-button type="primary" @click="closeImportResultDialog" size="large">我已保存，关闭</el-button>
+          <el-button type="primary" @click="closeImportResultDialog" size="large">{{ t('apiKeys.actions.savedClose') }}</el-button>
         </span>
       </template>
     </el-dialog>
@@ -443,8 +447,10 @@
 <script setup lang="ts">
 import { onMounted, ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { Key, CircleCheck, CircleClose, Warning, RefreshRight, Download, Upload, UploadFilled } from '@element-plus/icons-vue'
 import StatCard from '@/components/StatCard.vue'
+import { formatDateTime } from '@/utils/format'
 import {
   createApiKey,
   deleteApiKey,
@@ -472,6 +478,8 @@ import type {
   QuotaUsageDetail,
   QuotaAlertInfo
 } from '@/types'
+
+const { t } = useI18n()
 
 // 列表数据
 const listData = reactive<ApiKeyListVO>({
@@ -518,10 +526,10 @@ const form = ref({
   rotationPeriodDays: 0
 })
 
-// 密钥ID验证规则
-const keyIdRules = [
-  { max: 64, message: '密钥ID长度不能超过64字符', trigger: 'blur' }
-]
+// 密钥ID验证规则（computed：语言切换后校验文案即时更新）
+const keyIdRules = computed(() => [
+  { max: 64, message: t('apiKeys.messages.keyIdTooLong'), trigger: 'blur' }
+])
 
 // 获取权限标签类型
 const getPermissionTagType = (permission: string) => {
@@ -552,46 +560,16 @@ const getPermissionTagType = (permission: string) => {
   }
 }
 
-// 格式化权限显示
+// 格式化权限显示（后端权限值与 i18n key 同名；未知值原样返回）
 const formatPermission = (permission: string) => {
-  switch (permission) {
-    case 'chat':
-      return '聊天模型'
-    case 'embedding':
-      return '嵌入模型'
-    case 'rerank':
-      return '重排序模型'
-    case 'tts':
-      return '语音合成'
-    case 'stt':
-      return '语音识别'
-    case 'imgGen':
-      return '图像生成'
-    case 'imgEdit':
-      return '图像编辑'
-    // 兼容旧权限格式
-    case 'image':
-      return '图像生成'
-    case 'audio':
-      return '语音合成'
-    case 'admin':
-      return '管理员'
-    case 'read':
-      return '读取'
-    case 'write':
-      return '写入'
-    case 'delete':
-      return '删除'
-    default:
-      return permission
-  }
+  return t(`apiKeys.permissions.${permission}`, permission)
 }
 
 // 获取剩余天数文本
 const getRemainingDaysText = (row: ApiKeyVO): string => {
-  if (row.remainingDays === null || row.remainingDays === undefined) return '永久'
-  if (row.remainingDays < 0) return '已过期'
-  return `${row.remainingDays}天`
+  if (row.remainingDays === null || row.remainingDays === undefined) return t('apiKeys.remainingDaysText.permanent')
+  if (row.remainingDays < 0) return t('apiKeys.remainingDaysText.expired')
+  return t('apiKeys.remainingDaysText.days', { count: row.remainingDays })
 }
 
 // 获取剩余天数标签类型
@@ -612,18 +590,6 @@ const formatTokenCount = (count: number): string => {
     return `${(count / 1000).toFixed(1)  }K`
   }
   return count.toString()
-}
-
-// 格式化日期时间
-const formatDateTime = (dateString: string): string => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return `${date.getFullYear()  }-${ 
-      String(date.getMonth() + 1).padStart(2, '0')  }-${ 
-      String(date.getDate()).padStart(2, '0')  } ${ 
-      String(date.getHours()).padStart(2, '0')  }:${ 
-      String(date.getMinutes()).padStart(2, '0')  }:${ 
-      String(date.getSeconds()).padStart(2, '0')}`
 }
 
 // 分页数据
@@ -650,13 +616,8 @@ const fetchApiKeys = async () => {
   loading.value = true
   try {
     const data = await getApiKeys()
-    // 格式化日期
-    const formattedItems = data.items.map(key => ({
-      ...key,
-      createdAt: formatDateTime(key.createdAt),
-      expiresAt: formatDateTime(key.expiresAt),
-      lastUsedAt: formatDateTime(key.lastUsedAt || '')
-    }))
+    // 列表行保留后端规范日期字符串（编辑回写/日期选择器需要），表格列内再做本地化展示
+    const formattedItems = data.items
 
     apiKeys.value = formattedItems
     listData.items = formattedItems
@@ -674,7 +635,7 @@ const fetchApiKeys = async () => {
     // 获取配额告警列表（独立加载，失败不影响主列表）
     await fetchQuotaAlerts()
   } catch (error) {
-    ElMessage.error('获取API密钥列表失败')
+    ElMessage.error(t('apiKeys.messages.fetchListFailed'))
   } finally {
     loading.value = false
   }
@@ -729,10 +690,10 @@ const fetchQuotaAlerts = async () => {
  */
 const formatAlertType = (alertType: string): string => {
   switch (alertType) {
-    case 'REQUEST_QUOTA': return '请求配额'
-    case 'TOKEN_QUOTA': return 'Token 配额'
-    case 'GENERAL': return '综合告警'
-    default: return alertType || '未知'
+    case 'REQUEST_QUOTA': return t('apiKeys.alertTypes.request')
+    case 'TOKEN_QUOTA': return t('apiKeys.alertTypes.token')
+    case 'GENERAL': return t('apiKeys.alertTypes.general')
+    default: return alertType || t('apiKeys.alertTypes.unknown')
   }
 }
 
@@ -757,7 +718,7 @@ const formatPercent = (val: number): string => {
 
 // 创建API密钥弹窗
 const handleCreateApiKey = () => {
-  dialogTitle.value = '创建API密钥'
+  dialogTitle.value = t('apiKeys.createApiKey')
   isEdit.value = false
   form.value = {
     keyId: '',
@@ -777,7 +738,7 @@ const handleCreateApiKey = () => {
 
 // 编辑API密钥弹窗
 const handleEdit = (row: ApiKeyVO) => {
-  dialogTitle.value = '编辑API密钥'
+  dialogTitle.value = t('apiKeys.editApiKey')
   isEdit.value = true
   form.value = {
     keyId: row.keyId,
@@ -797,17 +758,17 @@ const handleEdit = (row: ApiKeyVO) => {
 
 // 删除API密钥
 const handleDelete = (row: ApiKeyVO) => {
-  ElMessageBox.confirm(`确定要删除API密钥 ${row.keyId} 吗？此操作不可恢复。`, '删除确认', {
-    confirmButtonText: '确定删除',
-    cancelButtonText: '取消',
+  ElMessageBox.confirm(t('apiKeys.confirmations.deleteMessage', { keyId: row.keyId }), t('apiKeys.confirmations.deleteTitle'), {
+    confirmButtonText: t('apiKeys.confirmations.confirmDelete'),
+    cancelButtonText: t('apiKeys.actions.cancel'),
     type: 'warning'
   }).then(async () => {
     try {
       await deleteApiKey(row.keyId)
       await fetchApiKeys()
-      ElMessage.success('删除成功')
+      ElMessage.success(t('apiKeys.messages.deleteSuccess'))
     } catch (error) {
-      ElMessage.error('删除失败')
+      ElMessage.error(t('apiKeys.messages.deleteFailed'))
     }
   })
 }
@@ -815,11 +776,11 @@ const handleDelete = (row: ApiKeyVO) => {
 // 重置API密钥
 const handleReset = (row: ApiKeyVO) => {
   ElMessageBox.confirm(
-    `确定要重置API密钥 ${row.keyId} 吗？旧的密钥值将立即失效，新的密钥值仅显示一次。`,
-    '重置确认',
+    t('apiKeys.confirmations.resetMessage', { keyId: row.keyId }),
+    t('apiKeys.confirmations.resetTitle'),
     {
-      confirmButtonText: '确定重置',
-      cancelButtonText: '取消',
+      confirmButtonText: t('apiKeys.confirmations.confirmReset'),
+      cancelButtonText: t('apiKeys.actions.cancel'),
       type: 'warning'
     }
   ).then(async () => {
@@ -828,9 +789,9 @@ const handleReset = (row: ApiKeyVO) => {
       createdKeyValue.value = response.keyValue
       showKeyValueDialog.value = true
       await fetchApiKeys()
-      ElMessage.success('密钥重置成功，请保存新的密钥值！')
+      ElMessage.success(t('apiKeys.messages.resetSuccess'))
     } catch (error: any) {
-      ElMessage.error(`重置失败: ${  error.message || ''}`)
+      ElMessage.error(t('apiKeys.messages.resetFailedDetail', { message: error.message || '' }))
     }
   })
 }
@@ -838,11 +799,11 @@ const handleReset = (row: ApiKeyVO) => {
 // 强制轮换API密钥
 const handleRotate = (row: ApiKeyVO) => {
   ElMessageBox.confirm(
-    `确定要轮换API密钥 ${row.keyId} 吗？旧的密钥值将立即失效，新的密钥值仅显示一次。轮换后会更新 lastRotatedAt 时间戳。`,
-    '轮换确认',
+    t('apiKeys.confirmations.rotateMessage', { keyId: row.keyId }),
+    t('apiKeys.confirmations.rotateTitle'),
     {
-      confirmButtonText: '确定轮换',
-      cancelButtonText: '取消',
+      confirmButtonText: t('apiKeys.confirmations.confirmRotate'),
+      cancelButtonText: t('apiKeys.actions.cancel'),
       type: 'warning'
     }
   ).then(async () => {
@@ -851,9 +812,9 @@ const handleRotate = (row: ApiKeyVO) => {
       createdKeyValue.value = response.keyValue
       showKeyValueDialog.value = true
       await fetchApiKeys()
-      ElMessage.success('密钥轮换成功，请保存新的密钥值！')
+      ElMessage.success(t('apiKeys.messages.rotateSuccess'))
     } catch (error: any) {
-      ElMessage.error(`轮换失败: ${  error.message || ''}`)
+      ElMessage.error(t('apiKeys.messages.rotateFailedDetail', { message: error.message || '' }))
     }
   })
 }
@@ -861,20 +822,20 @@ const handleRotate = (row: ApiKeyVO) => {
 // 重置API密钥每日配额
 const handleResetQuota = (row: ApiKeyVO) => {
   ElMessageBox.confirm(
-    `确定要重置API密钥 ${row.keyId} 的每日配额计数器吗？这将清零今日的请求和Token使用量。`,
-    '配额重置确认',
+    t('apiKeys.confirmations.quotaResetMessage', { keyId: row.keyId }),
+    t('apiKeys.confirmations.quotaResetTitle'),
     {
-      confirmButtonText: '确定重置',
-      cancelButtonText: '取消',
+      confirmButtonText: t('apiKeys.confirmations.confirmReset'),
+      cancelButtonText: t('apiKeys.actions.cancel'),
       type: 'warning'
     }
   ).then(async () => {
     try {
       await resetApiKeyQuota(row.keyId)
       await fetchQuotaOverview()
-      ElMessage.success('配额重置成功')
+      ElMessage.success(t('apiKeys.messages.quotaResetSuccess'))
     } catch (error: any) {
-      ElMessage.error(`配额重置失败: ${  error.message || ''}`)
+      ElMessage.error(t('apiKeys.messages.quotaResetFailedDetail', { message: error.message || '' }))
     }
   })
 }
@@ -903,7 +864,7 @@ const handleSave = async () => {
         rotationPeriodDays: form.value.rotationPeriodDays
       }
       await updateApiKey(form.value.keyId, updateData)
-      ElMessage.success('编辑成功')
+      ElMessage.success(t('apiKeys.messages.editSuccess'))
     } else {
       // 新增
       const createData: ApiKeyCreateRequest = {
@@ -919,12 +880,14 @@ const handleSave = async () => {
       const response: ApiKeyCreationVO = await createApiKey(createData)
       createdKeyValue.value = response.keyValue
       showKeyValueDialog.value = true
-      ElMessage.success('创建成功，请妥善保存密钥值！')
+      ElMessage.success(t('apiKeys.messages.createSuccess'))
     }
     dialogVisible.value = false
     await fetchApiKeys()
   } catch (error: any) {
-    ElMessage.error(isEdit.value ? `编辑失败: ${  error.message || ''}` : `创建失败: ${  error.message || ''}`)
+    ElMessage.error(isEdit.value
+      ? t('apiKeys.messages.editFailedDetail', { message: error.message || '' })
+      : t('apiKeys.messages.createFailedDetail', { message: error.message || '' }))
   } finally {
     saveLoading.value = false
   }
@@ -933,8 +896,8 @@ const handleSave = async () => {
 // 复制密钥值
 const copyKeyValue = () => {
   navigator.clipboard.writeText(createdKeyValue.value)
-      .then(() => ElMessage.success('密钥值已复制到剪贴板'))
-      .catch(() => ElMessage.error('复制失败，请手动复制'))
+      .then(() => ElMessage.success(t('apiKeys.messages.keyCopied')))
+      .catch(() => ElMessage.error(t('apiKeys.messages.copyFailed')))
 }
 
 const closeKeyValueDialog = () => {
@@ -971,11 +934,11 @@ const handleImportFileChange = (file: any) => {
       } else if (content.keys && Array.isArray(content.keys)) {
         importPreviewKeys.value = content.keys
       } else {
-        ElMessage.error('文件格式不正确')
+        ElMessage.error(t('apiKeys.messages.importBadFormat'))
         importPreviewKeys.value = []
       }
     } catch (error) {
-      ElMessage.error('解析JSON文件失败')
+      ElMessage.error(t('apiKeys.messages.importParseFailed'))
       importPreviewKeys.value = []
     }
   }
@@ -985,7 +948,7 @@ const handleImportFileChange = (file: any) => {
 // 执行导入
 const handleImport = async () => {
   if (importPreviewKeys.value.length === 0) {
-    ElMessage.warning('请先选择要导入的配置文件')
+    ElMessage.warning(t('apiKeys.messages.importSelectFile'))
     return
   }
 
@@ -1000,9 +963,9 @@ const handleImport = async () => {
     showImportDialogVisible.value = false
     showImportResultDialog.value = true
     await fetchApiKeys()
-    ElMessage.success(`导入完成：成功 ${result.successCount}，失败 ${result.failureCount}`)
+    ElMessage.success(t('apiKeys.messages.importCompleted', { success: result.successCount, failure: result.failureCount }))
   } catch (error: any) {
-    ElMessage.error(`导入失败: ${  error.message || ''}`)
+    ElMessage.error(t('apiKeys.messages.importFailedDetail', { message: error.message || '' }))
   } finally {
     importLoading.value = false
   }
@@ -1011,8 +974,8 @@ const handleImport = async () => {
 // 复制导入的密钥值
 const copyImportedKey = (keyValue: string) => {
   navigator.clipboard.writeText(keyValue)
-    .then(() => ElMessage.success('密钥值已复制到剪贴板'))
-    .catch(() => ElMessage.error('复制失败，请手动复制'))
+    .then(() => ElMessage.success(t('apiKeys.messages.keyCopied')))
+    .catch(() => ElMessage.error(t('apiKeys.messages.copyFailed')))
 }
 
 // 关闭导入结果对话框
@@ -1033,9 +996,9 @@ const handleExport = async () => {
     link.download = `api-keys-export-${new Date().toISOString().slice(0, 10)}.json`
     link.click()
     URL.revokeObjectURL(url)
-    ElMessage.success(`已导出 ${exportData.total} 个密钥配置`)
+    ElMessage.success(t('apiKeys.messages.exportCompleted', { total: exportData.total }))
   } catch (error: any) {
-    ElMessage.error(`导出失败: ${  error.message || ''}`)
+    ElMessage.error(t('apiKeys.messages.exportFailedDetail', { message: error.message || '' }))
   }
 }
 
@@ -1044,15 +1007,15 @@ const handleStatusChange = async (row: ApiKeyVO) => {
   try {
     if (row.enabled) {
       await enableApiKey(row.keyId)
-      ElMessage.success(`API密钥 ${row.keyId} 已启用`)
+      ElMessage.success(t('apiKeys.messages.enabledDetail', { keyId: row.keyId }))
     } else {
       await disableApiKey(row.keyId)
-      ElMessage.success(`API密钥 ${row.keyId} 已禁用`)
+      ElMessage.success(t('apiKeys.messages.disabledDetail', { keyId: row.keyId }))
     }
     await fetchApiKeys()
   } catch (error) {
     row.enabled = !row.enabled
-    ElMessage.error('状态变更失败')
+    ElMessage.error(t('apiKeys.messages.statusChangeFailed'))
   }
 }
 

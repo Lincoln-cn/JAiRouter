@@ -3,24 +3,24 @@
     <!-- 概览统计卡片 -->
     <el-row :gutter="16">
       <el-col :span="4">
-        <StatCard :icon="DataBoard" label="限流器总数" :value="summary.totalLimiters" tone="primary" />
+        <StatCard :icon="DataBoard" :label="t('rateLimiter.monitoring.totalLimiters')" :value="summary.totalLimiters" tone="primary" />
       </el-col>
       <el-col :span="4">
-        <StatCard :icon="Grid" label="全局限流" :value="summary.globalLimiters" tone="success" />
+        <StatCard :icon="Grid" :label="t('rateLimiter.monitoring.globalLimiters')" :value="summary.globalLimiters" tone="success" />
       </el-col>
       <el-col :span="4">
-        <StatCard :icon="Service" label="服务限流" :value="summary.serviceLimiters" tone="warning" />
+        <StatCard :icon="Service" :label="t('rateLimiter.monitoring.serviceLimiters')" :value="summary.serviceLimiters" tone="warning" />
       </el-col>
       <el-col :span="4">
-        <StatCard :icon="Monitor" label="实例限流" :value="summary.instanceLimiters" tone="info" />
+        <StatCard :icon="Monitor" :label="t('rateLimiter.monitoring.instanceLimiters')" :value="summary.instanceLimiters" tone="info" />
       </el-col>
       <el-col :span="4">
-        <StatCard :icon="TrendCharts" label="平均使用率" :value="summary.averageUsageRatio" unit="%" tone="primary" />
+        <StatCard :icon="TrendCharts" :label="t('rateLimiter.monitoring.averageUsage')" :value="summary.averageUsageRatio" unit="%" tone="primary" />
       </el-col>
       <el-col :span="4">
         <StatCard
           :icon="summary.highUsageLimiters > 0 ? WarningFilled : CircleCheckFilled"
-          label="高使用率(>80%)"
+          :label="t('rateLimiter.monitoring.highUsage')"
           :value="summary.highUsageLimiters"
           :tone="summary.highUsageLimiters > 0 ? 'danger' : 'success'"
         />
@@ -31,21 +31,21 @@
     <el-card class="metrics-card" style="margin-top: 16px" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span class="card-title">限流器详细指标</span>
+          <span class="card-title">{{ t('rateLimiter.monitoring.metricsTitle') }}</span>
           <div class="control-buttons">
-            <el-select v-model="filterScope" placeholder="作用域" clearable style="width: 120px; margin-right: 8px">
-              <el-option label="全局" value="global" />
-              <el-option label="服务" value="service" />
-              <el-option label="实例" value="instance" />
+            <el-select v-model="filterScope" :placeholder="t('rateLimiter.monitoring.scopePlaceholder')" clearable style="width: 120px; margin-right: 8px">
+              <el-option :label="t('rateLimiter.monitoring.scopeOptions.global')" value="global" />
+              <el-option :label="t('rateLimiter.monitoring.scopeOptions.service')" value="service" />
+              <el-option :label="t('rateLimiter.monitoring.scopeOptions.instance')" value="instance" />
             </el-select>
-            <el-select v-model="filterAlgorithm" placeholder="算法" clearable style="width: 150px; margin-right: 8px">
+            <el-select v-model="filterAlgorithm" :placeholder="t('rateLimiter.monitoring.algorithmPlaceholder')" clearable style="width: 150px; margin-right: 8px">
               <el-option label="Token Bucket" value="TOKEN_BUCKET" />
               <el-option label="Leaky Bucket" value="LEAKY_BUCKET" />
               <el-option label="Sliding Window" value="SLIDING_WINDOW" />
               <el-option label="Warm Up" value="WARM_UP" />
             </el-select>
             <el-button type="primary" size="small" @click="loadMetrics" :loading="loading">
-              刷新
+              {{ t('rateLimiter.monitoring.refresh') }}
             </el-button>
           </div>
         </div>
@@ -58,50 +58,50 @@
         class="metrics-table"
         :default-sort="{ prop: 'usageRatio', order: 'descending' }"
       >
-        <el-table-column prop="service" label="服务" min-width="100">
+        <el-table-column prop="service" :label="t('rateLimiter.monitoring.columns.service')" min-width="100">
           <template #default="{ row }">
             <el-tag size="small">{{ row.service || '-' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="scope" label="作用域" width="90">
+        <el-table-column prop="scope" :label="t('rateLimiter.monitoring.columns.scope')" width="90">
           <template #default="{ row }">
             <el-tag :type="getScopeTagType(row.scope)" size="small">
               {{ getScopeLabel(row.scope) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="identifier" label="标识符" min-width="180" show-overflow-tooltip>
+        <el-table-column prop="identifier" :label="t('rateLimiter.monitoring.columns.identifier')" min-width="180" show-overflow-tooltip>
           <template #default="{ row }">
             <el-tooltip :content="row.identifier" placement="top">
               <span class="identifier-text">{{ getShortIdentifier(row.identifier) }}</span>
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column prop="algorithm" label="算法" width="130">
+        <el-table-column prop="algorithm" :label="t('rateLimiter.monitoring.columns.algorithm')" width="130">
           <template #default="{ row }">
             <el-tag :type="getAlgorithmTagType(row.algorithm)" size="small" effect="plain">
               {{ getAlgorithmLabel(row.algorithm) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="capacity" label="容量" width="90" align="right">
+        <el-table-column prop="capacity" :label="t('rateLimiter.monitoring.columns.capacity')" width="90" align="right">
           <template #default="{ row }">
             <span class="metric-value">{{ formatNumber(row.capacity) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="rate" label="速率(/s)" width="90" align="right">
+        <el-table-column prop="rate" :label="t('rateLimiter.monitoring.columns.rate')" width="90" align="right">
           <template #default="{ row }">
             <span class="metric-value">{{ formatNumber(row.rate) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="remainingCapacity" label="剩余容量" width="110" align="right">
+        <el-table-column prop="remainingCapacity" :label="t('rateLimiter.monitoring.columns.remainingCapacity')" width="110" align="right">
           <template #default="{ row }">
             <span :class="['metric-value', { 'text-warning': row.remainingCapacity >= 0 && row.remainingCapacity < row.capacity * 0.2 }]">
               {{ row.remainingCapacity >= 0 ? formatNumber(row.remainingCapacity) : 'N/A' }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="usageRatio" label="使用率" width="180" sortable>
+        <el-table-column prop="usageRatio" :label="t('rateLimiter.monitoring.columns.usage')" width="180" sortable>
           <template #default="{ row }">
             <div class="usage-cell">
               <el-progress
@@ -120,16 +120,16 @@
     <el-card class="prometheus-card" style="margin-top: 16px" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span class="card-title">Prometheus 指标</span>
-          <el-tag type="success" size="small">采集间隔: {{ prometheusInfo.collectionInterval }}</el-tag>
+          <span class="card-title">{{ t('rateLimiter.monitoring.prometheusTitle') }}</span>
+          <el-tag type="success" size="small">{{ t('rateLimiter.monitoring.collectionInterval', { interval: prometheusInfo.collectionInterval }) }}</el-tag>
         </div>
       </template>
 
       <el-descriptions :column="1" border>
-        <el-descriptions-item label="指标数量">
+        <el-descriptions-item :label="t('rateLimiter.monitoring.prometheus.metricsCount')">
           {{ prometheusInfo.metricsCount }}
         </el-descriptions-item>
-        <el-descriptions-item label="可用指标">
+        <el-descriptions-item :label="t('rateLimiter.monitoring.prometheus.availableMetrics')">
           <div class="metric-list">
             <el-tag
               v-for="metric in prometheusInfo.availableMetrics"
@@ -149,6 +149,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import {
   DataBoard,
@@ -164,6 +165,7 @@ import StatCard from '@/components/StatCard.vue'
 import { useChartTheme } from '@/composables/useChartTheme'
 
 const { getChartTheme } = useChartTheme()
+const { t } = useI18n()
 
 interface RateLimiterMetrics {
   service: string
@@ -236,7 +238,7 @@ const loadMetrics = async () => {
     prometheusInfo.value = prometheusRes.data || prometheusInfo.value
   } catch (error) {
     console.error('Failed to load rate limiter metrics:', error)
-    ElMessage.error('加载限流器指标失败')
+    ElMessage.error(t('rateLimiter.monitoring.messages.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -258,11 +260,11 @@ const getScopeTagType = (scope: string) => {
 const getScopeLabel = (scope: string) => {
   switch (scope) {
     case 'global':
-      return '全局'
+      return t('rateLimiter.monitoring.scopeOptions.global')
     case 'service':
-      return '服务'
+      return t('rateLimiter.monitoring.scopeOptions.service')
     case 'instance':
-      return '实例'
+      return t('rateLimiter.monitoring.scopeOptions.instance')
     default:
       return scope
   }

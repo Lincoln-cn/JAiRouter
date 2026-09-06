@@ -3,43 +3,43 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <h2>追踪配置</h2>
+          <h2>{{ t('tracing.management.title') }}</h2>
           <div class="header-actions">
-            <el-button @click="handleRefresh" :loading="loading">刷新</el-button>
-            <el-button type="primary" @click="handleSaveConfig" :loading="saving">保存配置</el-button>
+            <el-button @click="handleRefresh" :loading="loading">{{ t('tracing.management.refresh') }}</el-button>
+            <el-button type="primary" @click="handleSaveConfig" :loading="saving">{{ t('tracing.management.saveConfig') }}</el-button>
           </div>
         </div>
       </template>
 
       <el-tabs v-model="activeTab" type="border-card">
         <!-- 状态监控 Tab -->
-        <el-tab-pane label="状态监控" name="status">
+        <el-tab-pane :label="t('tracing.management.tabs.status')" name="status">
           <el-row :gutter="24">
             <el-col :xs="24" :lg="12">
               <el-card shadow="never" class="status-card">
                 <template #header>
                   <div class="section-header">
-                    <span>追踪状态</span>
+                    <span>{{ t('tracing.management.tracingStatus') }}</span>
                     <el-switch
                       v-model="tracingEnabled"
-                      active-text="启用"
-                      inactive-text="禁用"
+                      :active-text="t('tracing.management.enabled')"
+                      :inactive-text="t('tracing.management.disabled')"
                       @change="handleToggleTracing"
                     />
                   </div>
                 </template>
                 <el-descriptions :column="1" border>
-                  <el-descriptions-item label="服务名称">{{ statusInfo.serviceName }}</el-descriptions-item>
-                  <el-descriptions-item label="服务版本">{{ statusInfo.serviceVersion }}</el-descriptions-item>
+                  <el-descriptions-item :label="t('tracing.management.serviceName')">{{ statusInfo.serviceName }}</el-descriptions-item>
+                  <el-descriptions-item :label="t('tracing.management.serviceVersion')">{{ statusInfo.serviceVersion }}</el-descriptions-item>
                   <el-descriptions-item label="OpenTelemetry">
                     <el-tag :type="statusInfo.openTelemetryEnabled ? 'success' : 'danger'" size="small">
-                      {{ statusInfo.openTelemetryEnabled ? '启用' : '禁用' }}
+                      {{ statusInfo.openTelemetryEnabled ? t('tracing.management.enabled') : t('tracing.management.disabled') }}
                     </el-tag>
                   </el-descriptions-item>
-                  <el-descriptions-item label="导出器类型">
+                  <el-descriptions-item :label="t('tracing.management.exporterType')">
                     <el-tag size="small">{{ statusInfo.exporterType || 'logging' }}</el-tag>
                   </el-descriptions-item>
-                  <el-descriptions-item label="全局采样率">
+                  <el-descriptions-item :label="t('tracing.management.globalSamplingRate')">
                     <el-progress
                       :percentage="statusInfo.globalSamplingRatio * 100"
                       :format="(p: number) => `${p}%`"
@@ -51,22 +51,22 @@
             <el-col :xs="24" :lg="12">
               <el-card shadow="never" class="status-card">
                 <template #header>
-                  <span>健康状态</span>
+                  <span>{{ t('tracing.management.healthStatus') }}</span>
                 </template>
                 <el-descriptions :column="1" border>
-                  <el-descriptions-item label="整体状态">
+                  <el-descriptions-item :label="t('tracing.management.overallStatus')">
                     <el-tag :type="healthStatus.status === 'UP' ? 'success' : 'danger'">
                       {{ healthStatus.status }}
                     </el-tag>
                   </el-descriptions-item>
-                  <el-descriptions-item label="内存使用">
+                  <el-descriptions-item :label="t('tracing.management.memoryUsage')">
                     <el-progress
                       :percentage="healthStatus.memoryUsage"
                       :status="healthStatus.memoryUsage > 80 ? 'exception' : 'success'"
                     />
                   </el-descriptions-item>
-                  <el-descriptions-item label="活跃追踪数">{{ healthStatus.activeTraces }}</el-descriptions-item>
-                  <el-descriptions-item label="缓冲区使用">
+                  <el-descriptions-item :label="t('tracing.management.activeTraces')">{{ healthStatus.activeTraces }}</el-descriptions-item>
+                  <el-descriptions-item :label="t('tracing.management.bufferUsage')">
                     <el-progress
                       :percentage="healthStatus.bufferUsage"
                       :status="healthStatus.bufferUsage > 90 ? 'exception' : 'success'"
@@ -79,10 +79,10 @@
         </el-tab-pane>
 
         <!-- 采样配置 Tab -->
-        <el-tab-pane label="采样配置" name="sampling">
+        <el-tab-pane :label="t('tracing.management.tabs.sampling')" name="sampling">
           <el-card shadow="never">
             <el-form :model="samplingConfig" label-width="150px">
-              <el-form-item label="全局采样率">
+              <el-form-item :label="t('tracing.management.globalSamplingRate')">
                 <el-slider
                   v-model="samplingConfig.globalRate"
                   :min="0"
@@ -91,71 +91,71 @@
                   :marks="{ 0: '0%', 25: '25%', 50: '50%', 75: '75%', 100: '100%' }"
                 />
               </el-form-item>
-              <el-form-item label="自适应采样">
+              <el-form-item :label="t('tracing.management.adaptiveSampling')">
                 <el-switch v-model="samplingConfig.adaptiveSampling" />
               </el-form-item>
               <template v-if="samplingConfig.adaptiveSampling">
-                <el-form-item label="始终采样路径">
+                <el-form-item :label="t('tracing.management.alwaysSamplePaths')">
                   <el-select
                     v-model="samplingConfig.alwaysSamplePaths"
                     multiple
                     filterable
                     allow-create
                     default-first-option
-                    placeholder="输入路径后按回车"
+                    :placeholder="t('tracing.management.pathPlaceholder')"
                     style="width: 100%"
                   />
                 </el-form-item>
-                <el-form-item label="从不采样路径">
+                <el-form-item :label="t('tracing.management.neverSamplePaths')">
                   <el-select
                     v-model="samplingConfig.neverSamplePaths"
                     multiple
                     filterable
                     allow-create
                     default-first-option
-                    placeholder="输入路径后按回车"
+                    :placeholder="t('tracing.management.pathPlaceholder')"
                     style="width: 100%"
                   />
                 </el-form-item>
               </template>
             </el-form>
 
-            <el-divider content-position="left">服务特定采样配置</el-divider>
+            <el-divider content-position="left">{{ t('tracing.management.serviceSamplingDivider') }}</el-divider>
 
             <el-table :data="samplingConfig.serviceConfigs" style="width: 100%">
-              <el-table-column prop="service" label="服务名称" width="200">
+              <el-table-column prop="service" :label="t('tracing.management.serviceName')" width="200">
                 <template #default="{ row }">
-                  <el-input v-model="row.service" placeholder="服务名称" />
+                  <el-input v-model="row.service" :placeholder="t('tracing.management.serviceName')" />
                 </template>
               </el-table-column>
-              <el-table-column prop="rate" label="采样率(%)" width="250">
+              <el-table-column prop="rate" :label="t('tracing.management.samplingRate')" width="250">
                 <template #default="{ row }">
                   <el-slider v-model="row.rate" :min="0" :max="100" show-input />
                 </template>
               </el-table-column>
-              <el-table-column label="操作" width="100">
+              <el-table-column :label="t('tracing.management.action')" width="100">
                 <template #default="{ $index }">
                   <el-button type="danger" text @click="removeServiceConfig($index)">
-                    删除
+                    {{ t('tracing.management.delete') }}
                   </el-button>
                 </template>
               </el-table-column>
             </el-table>
             <el-button type="primary" text @click="addServiceConfig" style="margin-top: 12px">
-              + 添加服务配置
+              {{ t('tracing.management.addServiceConfig') }}
             </el-button>
           </el-card>
         </el-tab-pane>
 
         <!-- 导出器配置 Tab -->
-        <el-tab-pane label="导出器配置" name="exporter">
+        <el-tab-pane :label="t('tracing.management.tabs.exporter')" name="exporter">
           <el-card shadow="never">
             <el-form :model="exporterConfig" label-width="150px">
-              <el-form-item label="导出器类型">
+              <el-form-item :label="t('tracing.management.exporterType')">
                 <el-select v-model="exporterConfig.type" style="width: 200px">
-                  <el-option label="Logging (日志)" value="logging" />
-                  <el-option label="OTLP" value="otlp" />
-                  <el-option label="Jaeger" value="jaeger" />
+                  <el-option :label="t('tracing.management.loggingOption')" value="logging" />
+                  <el-option :label="t('tracing.management.otlpOption')" value="otlp" />
+                  <el-option :label="t('tracing.management.jaegerOption')" value="jaeger" />
                 </el-select>
               </el-form-item>
 
@@ -171,7 +171,7 @@
                 </el-form-item>
               </template>
 
-              <el-form-item label="日志导出">
+              <el-form-item :label="t('tracing.management.loggingEnabled')">
                 <el-switch v-model="exporterConfig.loggingEnabled" />
               </el-form-item>
             </el-form>
@@ -179,34 +179,34 @@
         </el-tab-pane>
 
         <!-- 高级配置 Tab -->
-        <el-tab-pane label="高级配置" name="advanced">
+        <el-tab-pane :label="t('tracing.management.tabs.advanced')" name="advanced">
           <el-card shadow="never">
             <el-form :model="performanceConfig" label-width="150px">
-              <el-form-item label="异步处理">
+              <el-form-item :label="t('tracing.management.asyncProcessing')">
                 <el-switch v-model="performanceConfig.asyncProcessing" />
               </el-form-item>
-              <el-form-item label="线程池核心大小">
+              <el-form-item :label="t('tracing.management.threadPoolCoreSize')">
                 <el-input-number v-model="performanceConfig.threadPoolCoreSize" :min="1" :max="100" />
               </el-form-item>
-              <el-form-item label="缓冲区大小">
+              <el-form-item :label="t('tracing.management.bufferSize')">
                 <el-input-number v-model="performanceConfig.bufferSize" :min="100" :max="10000" :step="100" />
               </el-form-item>
-              <el-form-item label="内存限制(MB)">
+              <el-form-item :label="t('tracing.management.memoryLimitMb')">
                 <el-input-number v-model="performanceConfig.memoryLimitMb" :min="64" :max="2048" :step="64" />
               </el-form-item>
             </el-form>
 
-            <el-divider content-position="left">数据管理</el-divider>
+            <el-divider content-position="left">{{ t('tracing.management.dataManagement') }}</el-divider>
 
             <div class="action-buttons">
               <el-button type="warning" @click="handleClearCache" :loading="clearingCache">
-                清理缓存
+                {{ t('tracing.management.clearCache') }}
               </el-button>
               <el-button type="danger" @click="handleCleanupExpired" :loading="cleaningUp">
-                清理过期数据
+                {{ t('tracing.management.cleanupExpired') }}
               </el-button>
               <el-button type="success" @click="handleExportConfig">
-                导出配置
+                {{ t('tracing.management.exportConfig') }}
               </el-button>
             </div>
           </el-card>
@@ -218,6 +218,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   getTracingStatus,
@@ -230,6 +231,8 @@ import {
   cleanupExpiredTraces,
   refreshSamplingStrategy
 } from '@/api/tracing'
+
+const { t } = useI18n()
 
 // 状态
 const loading = ref(false)
@@ -378,14 +381,14 @@ const handleToggleTracing = async (enabled: boolean) => {
   try {
     if (enabled) {
       await enableTracing()
-      ElMessage.success('追踪已启用')
+      ElMessage.success(t('tracing.management.messages.tracingEnabled'))
     } else {
       await disableTracing()
-      ElMessage.success('追踪已禁用')
+      ElMessage.success(t('tracing.management.messages.tracingDisabled'))
     }
   } catch (error) {
     console.error('切换追踪状态失败:', error)
-    ElMessage.error('操作失败')
+    ElMessage.error(t('tracing.management.messages.operationFailed'))
     tracingEnabled.value = !enabled
   }
 }
@@ -418,10 +421,10 @@ const handleSaveConfig = async () => {
 
     await updateTracingConfig(config)
     await refreshSamplingStrategy()
-    ElMessage.success('配置保存成功')
+    ElMessage.success(t('tracing.management.messages.configSaved'))
   } catch (error) {
     console.error('保存配置失败:', error)
-    ElMessage.error('保存失败')
+    ElMessage.error(t('tracing.management.messages.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -431,9 +434,9 @@ const handleClearCache = async () => {
   clearingCache.value = true
   try {
     await refreshTracingData()
-    ElMessage.success('缓存清理成功')
+    ElMessage.success(t('tracing.management.messages.cacheCleared'))
   } catch (error) {
-    ElMessage.error('清理失败')
+    ElMessage.error(t('tracing.management.messages.clearFailed'))
   } finally {
     clearingCache.value = false
   }
@@ -441,21 +444,21 @@ const handleClearCache = async () => {
 
 const handleCleanupExpired = async () => {
   try {
-    const { value } = await ElMessageBox.prompt('请输入保留时间（小时）', '清理过期数据', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
+    const { value } = await ElMessageBox.prompt(t('tracing.management.retentionPrompt'), t('tracing.management.cleanupExpired'), {
+      confirmButtonText: t('tracing.management.confirm'),
+      cancelButtonText: t('tracing.management.cancel'),
       inputValue: '24',
-      inputValidator: (v) => !isNaN(parseInt(v)) && parseInt(v) > 0 || '请输入有效的小时数'
+      inputValidator: (v) => !isNaN(parseInt(v)) && parseInt(v) > 0 || t('tracing.management.hoursInvalid')
     })
 
     cleaningUp.value = true
     const hours = parseInt(value)
     const response = await cleanupExpiredTraces(hours)
     const removed = response.data?.data?.removedCount || 0
-    ElMessage.success(`已清理 ${removed} 条过期数据`)
+    ElMessage.success(t('tracing.management.messages.cleanedUp', { count: removed }))
   } catch (e) {
     if (e !== 'cancel') {
-      ElMessage.error('清理失败')
+      ElMessage.error(t('tracing.management.messages.clearFailed'))
     }
   } finally {
     cleaningUp.value = false
@@ -478,7 +481,7 @@ const handleExportConfig = () => {
   link.click()
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
-  ElMessage.success('配置已导出')
+  ElMessage.success(t('tracing.management.messages.configExported'))
 }
 
 const addServiceConfig = () => {

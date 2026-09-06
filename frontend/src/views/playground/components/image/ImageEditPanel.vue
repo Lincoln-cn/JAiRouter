@@ -4,7 +4,7 @@
     <div class="panel-toolbar">
       <el-select
         v-model="selectedModel"
-        :placeholder="'选择图像编辑模型'"
+        :placeholder="t('playgroundImage.edit.modelPlaceholder')"
         :loading="loading"
         filterable
         class="model-select"
@@ -35,13 +35,13 @@
               v-if="inst.healthStatus === 'UNHEALTHY'"
               class="health-status-text"
             >
-              (离线)
+              {{ t('playgroundImage.offlineStatus') }}
             </span>
             <span
               v-else-if="inst.healthStatus === 'UNKNOWN' || !inst.healthStatus"
               class="health-status-text unknown"
             >
-              (未知)
+              {{ t('playgroundImage.unknownStatus') }}
             </span>
           </div>
         </el-option>
@@ -51,7 +51,7 @@
         @click="showConfig = !showConfig"
       >
         <el-icon><Setting /></el-icon>
-        {{ showConfig ? '隐藏配置' : '参数配置' }}
+        {{ showConfig ? t('playgroundImage.hideConfig') : t('playgroundImage.showConfig') }}
       </el-button>
     </div>
 
@@ -64,7 +64,7 @@
         <el-row :gutter="16">
           <el-col :span="4">
             <div class="config-item">
-              <label class="config-label">输出格式</label>
+              <label class="config-label">{{ t('playgroundImage.edit.outputFormat') }}</label>
               <el-select
                 v-model="config.outputFormat"
                 size="small"
@@ -86,7 +86,7 @@
           </el-col>
           <el-col :span="4">
             <div class="config-item">
-              <label class="config-label">输出数量</label>
+              <label class="config-label">{{ t('playgroundImage.edit.count') }}</label>
               <el-input-number
                 v-model="config.n"
                 :min="1"
@@ -97,7 +97,7 @@
           </el-col>
           <el-col :span="4">
             <div class="config-item">
-              <label class="config-label">图像尺寸</label>
+              <label class="config-label">{{ t('playgroundImage.edit.size') }}</label>
               <el-select
                 v-model="config.size"
                 size="small"
@@ -119,7 +119,7 @@
           </el-col>
           <el-col :span="4">
             <div class="config-item">
-              <label class="config-label">质量</label>
+              <label class="config-label">{{ t('playgroundImage.edit.quality') }}</label>
               <el-select
                 v-model="config.quality"
                 size="small"
@@ -152,7 +152,7 @@
       <!-- 图片上传 -->
       <div class="upload-card">
         <div class="card-header">
-          <span class="card-title">上传图像</span>
+          <span class="card-title">{{ t('playgroundImage.edit.uploadTitle') }}</span>
         </div>
         <el-upload
           ref="uploadRef"
@@ -171,13 +171,13 @@
       <!-- 提示词输入 -->
       <div class="input-card">
         <div class="card-header">
-          <span class="card-title">编辑提示词</span>
+          <span class="card-title">{{ t('playgroundImage.edit.promptTitle') }}</span>
         </div>
         <el-input
           v-model="promptText"
           type="textarea"
           :autosize="{ minRows: 3, maxRows: 6 }"
-          placeholder="描述你想如何编辑图像，例如：将背景改为蓝色..."
+          :placeholder="t('playgroundImage.edit.promptPlaceholder')"
           resize="none"
         />
       </div>
@@ -191,14 +191,14 @@
           @click="handleEdit"
         >
           <el-icon><Edit /></el-icon>
-          编辑图像
+          {{ t('playgroundImage.edit.edit') }}
         </el-button>
       </div>
 
       <!-- 结果展示 -->
       <div class="result-card">
         <div class="card-header">
-          <span class="card-title">编辑结果</span>
+          <span class="card-title">{{ t('playgroundImage.edit.resultTitle') }}</span>
         </div>
 
         <!-- 空状态 -->
@@ -212,7 +212,7 @@
           >
             <Edit />
           </el-icon>
-          <span>上传图像并输入提示词后开始编辑</span>
+          <span>{{ t('playgroundImage.edit.empty') }}</span>
         </div>
 
         <!-- 加载状态 -->
@@ -226,7 +226,7 @@
           >
             <Loading />
           </el-icon>
-          <span>正在编辑图像...</span>
+          <span>{{ t('playgroundImage.edit.loading') }}</span>
         </div>
 
         <!-- 图像展示 -->
@@ -264,10 +264,13 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Setting, Edit, Plus, Download, Loading, Cpu } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { sendServiceRequest } from '@/api/playground'
 import type { ImageEditRequestConfig } from '../../types/playground'
+
+const { t } = useI18n()
 
 interface Props {
   instances: any[]
@@ -346,9 +349,9 @@ const handleEdit = async () => {
 
     const response = await sendServiceRequest('imageEdit', requestConfig, headers)
     images.value = response.data?.data || []
-    ElMessage.success(`成功编辑 ${images.value.length} 张图像`)
+    ElMessage.success(t('playgroundImage.edit.messages.edited', { count: images.value.length }))
   } catch (error: any) {
-    const errorMsg = error.data?.error?.message || '编辑图像失败'
+    const errorMsg = error.data?.error?.message || t('playgroundImage.edit.messages.failed')
     ElMessage.error(errorMsg)
   } finally {
     isLoading.value = false

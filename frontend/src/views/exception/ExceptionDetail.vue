@@ -5,45 +5,45 @@
         <div class="card-header">
           <span class="detail-title">
             <el-icon><Warning /></el-icon>
-            异常事件详情
+            {{ t('exception.detail.title') }}
           </span>
-          <el-button icon="ArrowLeft" @click="goBack">返回</el-button>
+          <el-button icon="ArrowLeft" @click="goBack">{{ t('exception.detail.back') }}</el-button>
         </div>
       </template>
 
-      <el-loading v-model="loading" text="加载中..." />
+      <el-loading v-model="loading" :text="t('exception.detail.loading')" />
 
       <div v-if="eventData" class="detail-content">
         <!-- 基本信息 -->
-        <el-divider content-position="left">基本信息</el-divider>
+        <el-divider content-position="left">{{ t('exception.detail.basicInfo') }}</el-divider>
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="事件 ID">
+          <el-descriptions-item :label="t('exception.detail.eventId')">
             <el-tag effect="plain" type="info">{{ eventData.eventId }}</el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="异常类型">
+          <el-descriptions-item :label="t('exception.detail.exceptionType')">
             <span class="mono-font">{{ eventData.exceptionType }}</span>
           </el-descriptions-item>
-          <el-descriptions-item label="错误代码">
+          <el-descriptions-item :label="t('exception.detail.errorCode')">
             <el-tag :type="getErrorTagType(eventData.errorCode)" size="small">
               {{ eventData.errorCode }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="错误分类">
+          <el-descriptions-item :label="t('exception.detail.errorCategory')">
             <el-tag :type="getCategoryTagType(eventData.errorCategory)" size="small">
               {{ formatCategory(eventData.errorCategory) }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="HTTP 状态码">
+          <el-descriptions-item :label="t('exception.detail.httpStatus')">
             <el-tag :type="getHttpStatusTagType(eventData.httpStatus)" size="small">
               {{ eventData.httpStatus || '-' }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="操作">{{ eventData.operation || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="客户端 IP">
+          <el-descriptions-item :label="t('exception.detail.operation')">{{ eventData.operation || '-' }}</el-descriptions-item>
+          <el-descriptions-item :label="t('exception.detail.clientIp')">
             <el-tag effect="plain" type="info">{{ eventData.clientIp || '-' }}</el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="服务名称">{{ eventData.serviceName || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="追踪 ID" :span="2">
+          <el-descriptions-item :label="t('exception.detail.serviceName')">{{ eventData.serviceName || '-' }}</el-descriptions-item>
+          <el-descriptions-item :label="t('exception.detail.traceId')" :span="2">
             <el-tag v-if="eventData.traceId" effect="plain" type="info" class="mono-font">
               {{ eventData.traceId }}
             </el-tag>
@@ -52,50 +52,50 @@
         </el-descriptions>
 
         <!-- 异常信息 -->
-        <el-divider content-position="left">异常信息</el-divider>
+        <el-divider content-position="left">{{ t('exception.detail.exceptionInfo') }}</el-divider>
         <el-card shadow="never" class="info-card">
           <template #header>
-            <span>原始异常消息</span>
+            <span>{{ t('exception.detail.rawMessage') }}</span>
           </template>
-          <pre class="message-box">{{ eventData.exceptionMessage || '无' }}</pre>
+          <pre class="message-box">{{ eventData.exceptionMessage || t('exception.detail.none') }}</pre>
         </el-card>
 
         <el-card v-if="eventData.sanitizedMessage" shadow="never" class="info-card">
           <template #header>
-            <span>脱敏异常消息</span>
+            <span>{{ t('exception.detail.sanitizedMessage') }}</span>
           </template>
           <pre class="message-box">{{ eventData.sanitizedMessage }}</pre>
         </el-card>
 
         <!-- 统计信息 -->
-        <el-divider content-position="left">统计信息</el-divider>
+        <el-divider content-position="left">{{ t('exception.detail.statisticsInfo') }}</el-divider>
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="发生次数">{{ eventData.occurrenceCount || 1 }}</el-descriptions-item>
-          <el-descriptions-item label="是否聚合">
+          <el-descriptions-item :label="t('exception.detail.occurrenceCount')">{{ eventData.occurrenceCount || 1 }}</el-descriptions-item>
+          <el-descriptions-item :label="t('exception.detail.isAggregated')">
             <el-tag :type="eventData.isAggregated ? 'success' : 'info'" size="small">
-              {{ eventData.isAggregated ? '是' : '否' }}
+              {{ eventData.isAggregated ? t('exception.detail.yes') : t('exception.detail.no') }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="首次出现">
+          <el-descriptions-item :label="t('exception.detail.firstOccurredAt')">
             {{ formatTime(eventData.firstOccurrence) }}
           </el-descriptions-item>
-          <el-descriptions-item label="最后出现">
+          <el-descriptions-item :label="t('exception.detail.lastOccurredAt')">
             {{ formatTime(eventData.lastOccurrence) }}
           </el-descriptions-item>
-          <el-descriptions-item label="发生时间">
+          <el-descriptions-item :label="t('exception.detail.occurredAt')">
             {{ formatTime(eventData.occurredAt) }}
           </el-descriptions-item>
         </el-descriptions>
 
         <!-- 时间线 -->
-        <el-divider content-position="left">时间线</el-divider>
+        <el-divider content-position="left">{{ t('exception.detail.timeline') }}</el-divider>
         <el-timeline>
           <el-timeline-item
             :timestamp="formatTime(eventData.firstOccurrence)"
             placement="top"
           >
             <el-card shadow="hover">
-              <p>异常首次被记录</p>
+              <p>{{ t('exception.detail.timelineFirst') }}</p>
             </el-card>
           </el-timeline-item>
           <el-timeline-item
@@ -104,7 +104,7 @@
             placement="top"
           >
             <el-card shadow="hover">
-              <p>异常最后一次被记录</p>
+              <p>{{ t('exception.detail.timelineLast') }}</p>
             </el-card>
           </el-timeline-item>
           <el-timeline-item
@@ -114,13 +114,13 @@
             type="success"
           >
             <el-card shadow="hover">
-              <p>异常事件已被聚合</p>
+              <p>{{ t('exception.detail.timelineAggregated') }}</p>
             </el-card>
           </el-timeline-item>
         </el-timeline>
       </div>
 
-      <el-empty v-else description="未找到异常事件" />
+      <el-empty v-else :description="t('exception.detail.notFound')" />
     </el-card>
   </div>
 </template>
@@ -128,6 +128,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Warning, ArrowLeft } from '@element-plus/icons-vue'
 import { getExceptionEventById } from '@/api/exception'
@@ -135,6 +136,8 @@ import type { ExceptionEvent } from '@/types/exception'
 
 const router = useRouter()
 const route = useRoute()
+
+const { t } = useI18n()
 
 const loading = ref(true)
 const eventData = ref<ExceptionEvent | null>(null)
@@ -187,7 +190,7 @@ const formatCategory = (category?: string) => {
 const loadData = async () => {
   const eventId = route.params.id as string
   if (!eventId) {
-    ElMessage.error('事件 ID 不能为空')
+    ElMessage.error(t('exception.detail.eventIdRequired'))
     loading.value = false
     return
   }
@@ -198,11 +201,11 @@ const loadData = async () => {
     if (event) {
       eventData.value = event
     } else {
-      ElMessage.warning('未找到该异常事件')
+      ElMessage.warning(t('exception.detail.notFoundMessage'))
     }
   } catch (error: any) {
     console.error('加载异常事件详情失败:', error)
-    ElMessage.error(`加载失败：${  error.message || '未知错误'}`)
+    ElMessage.error(t('exception.detail.loadFailed', { message: error.message || t('exception.detail.unknownError') }))
   } finally {
     loading.value = false
   }

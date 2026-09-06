@@ -1,9 +1,9 @@
 <template>
-  <PageSkeleton title="响应缓存管理">
+  <PageSkeleton :title="t('responseCache.pageTitle')">
     <template #actions>
       <el-button @click="loadStatus" :loading="loading" size="default">
         <el-icon><Refresh /></el-icon>
-        刷新状态
+        {{ t('responseCache.refreshStatus') }}
       </el-button>
     </template>
 
@@ -13,24 +13,24 @@
         <el-col :span="6">
           <StatCard
             :icon="status?.enabled ? 'CircleCheck' : 'CircleClose'"
-            label="缓存状态"
-            :value="status?.enabled ? '已启用' : '已禁用'"
+            :label="t('responseCache.cacheStatusLabel')"
+            :value="status?.enabled ? t('responseCache.enabled') : t('responseCache.disabled')"
             :tone="status?.enabled ? 'success' : 'info'"
           />
         </el-col>
         <el-col :span="6">
           <StatCard
             icon="Timer"
-            label="TTL"
+            :label="t('responseCache.ttlLabel')"
             :value="status?.ttlSeconds ?? '—'"
-            unit="秒"
+            :unit="t('responseCache.ttlUnit')"
             tone="primary"
           />
         </el-col>
         <el-col :span="6">
           <StatCard
             icon="Box"
-            label="最大条目数"
+            :label="t('responseCache.maxEntriesLabel')"
             :value="status?.maxSize ?? '—'"
             tone="warning"
           />
@@ -38,7 +38,7 @@
         <el-col :span="6">
           <StatCard
             icon="DataLine"
-            label="当前条目数"
+            :label="t('responseCache.currentEntriesLabel')"
             :value="status?.size ?? '—'"
             tone="info"
           />
@@ -48,7 +48,7 @@
         <el-col :span="8">
           <StatCard
             icon="SuccessFilled"
-            label="命中次数"
+            :label="t('responseCache.hitsLabel')"
             :value="status?.hits ?? '—'"
             tone="success"
           />
@@ -56,7 +56,7 @@
         <el-col :span="8">
           <StatCard
             icon="CircleCloseFilled"
-            label="未命中"
+            :label="t('responseCache.missesLabel')"
             :value="status?.misses ?? '—'"
             tone="danger"
           />
@@ -64,7 +64,7 @@
         <el-col :span="8">
           <StatCard
             icon="TrendCharts"
-            label="命中率"
+            :label="t('responseCache.hitRateLabel')"
             :value="hitRatioDisplay"
             tone="primary"
           />
@@ -75,8 +75,8 @@
     <!-- 状态未就绪提示 -->
     <el-alert
       v-if="!status"
-      title="缓存状态暂未就绪"
-      description="后端缓存状态端点未返回数据（可能 404），请确认服务已启动且版本 ≥ v2.10.2"
+      :title="t('responseCache.notReadyTitle')"
+      :description="t('responseCache.notReadyDescription')"
       type="warning"
       :closable="false"
       show-icon
@@ -86,31 +86,31 @@
     <!-- 运行时配置面板 -->
     <el-card v-if="status" shadow="hover" style="margin-bottom: 16px">
       <template #header>
-        <span class="card-title">运行时配置</span>
+        <span class="card-title">{{ t('responseCache.runtimeConfigTitle') }}</span>
       </template>
 
       <div class="runtime-config-grid">
         <div class="config-switch-item">
-          <span class="config-switch-label">启用缓存</span>
+          <span class="config-switch-label">{{ t('responseCache.enableCacheLabel') }}</span>
           <el-switch v-model="runtimeForm.enabled" />
         </div>
         <div class="config-switch-item">
-          <span class="config-switch-label">跳过流式请求</span>
+          <span class="config-switch-label">{{ t('responseCache.skipStreamingLabel') }}</span>
           <el-switch v-model="runtimeForm.skipStreaming" />
         </div>
         <div class="config-switch-item">
-          <span class="config-switch-label">仅缓存确定性请求</span>
+          <span class="config-switch-label">{{ t('responseCache.onlyDeterministicLabel') }}</span>
           <el-switch v-model="runtimeForm.onlyDeterministic" />
         </div>
         <div class="config-switch-item">
-          <span class="config-switch-label">TTL（秒）</span>
+          <span class="config-switch-label">{{ t('responseCache.ttlSecondsLabel') }}</span>
           <el-input-number
             v-model="runtimeForm.ttlSeconds"
             :min="1"
             :max="604800"
             :step="60"
             controls-position="right"
-            placeholder="留空不修改"
+            :placeholder="t('responseCache.ttlPlaceholder')"
             style="width: 180px"
           />
         </div>
@@ -124,45 +124,45 @@
           @click="handleSaveConfig"
         >
           <el-icon><Check /></el-icon>
-          保存运行时配置
+          {{ t('responseCache.saveRuntimeConfig') }}
         </el-button>
         <el-button
           :disabled="savingConfig"
           @click="resetRuntimeForm"
         >
-          重置
+          {{ t('responseCache.reset') }}
         </el-button>
       </div>
 
       <div class="config-hint">
         <el-icon><InfoFilled /></el-icon>
-        <span>运行时即时生效但重启/配置刷新后还原为 yaml <code>jairouter.response-cache.*</code></span>
+        <span>{{ t('responseCache.runtimeHintBefore') }} <code>jairouter.response-cache.*</code></span>
       </div>
       <div class="config-hint">
         <el-icon><InfoFilled /></el-icon>
-        <span><code>maxSize</code> 只读，调整需改 yaml 后重启</span>
+        <span><code>maxSize</code> {{ t('responseCache.maxSizeHintAfter') }}</span>
       </div>
     </el-card>
 
     <!-- 操作区：缓存失效 -->
     <el-card shadow="hover">
       <template #header>
-        <span class="card-title">缓存失效操作</span>
+        <span class="card-title">{{ t('responseCache.invalidationTitle') }}</span>
       </template>
 
       <!-- 清空全部 -->
       <div class="action-section">
-        <div class="action-label">清空全部缓存</div>
+        <div class="action-label">{{ t('responseCache.clearAllCache') }}</div>
         <el-popconfirm
-          title="确认清空全部响应缓存？"
-          confirm-button-text="确认"
-          cancel-button-text="取消"
+          :title="t('responseCache.clearAllConfirmTitle')"
+          :confirm-button-text="t('responseCache.confirm')"
+          :cancel-button-text="t('responseCache.cancel')"
           @confirm="handleInvalidateAll"
         >
           <template #reference>
             <el-button type="danger" :loading="invalidating" :disabled="!status?.enabled">
               <el-icon><Delete /></el-icon>
-              清空全部缓存
+              {{ t('responseCache.clearAllCache') }}
             </el-button>
           </template>
         </el-popconfirm>
@@ -172,11 +172,11 @@
 
       <!-- 按服务类型失效 -->
       <div class="action-section">
-        <div class="action-label">按服务类型失效</div>
+        <div class="action-label">{{ t('responseCache.invalidateByServiceTypeLabel') }}</div>
         <div class="action-row">
           <el-select
             v-model="selectedServiceType"
-            placeholder="选择服务类型"
+            :placeholder="t('responseCache.selectServiceTypePlaceholder')"
             style="width: 200px"
             clearable
           >
@@ -194,7 +194,7 @@
             @click="handleInvalidateByServiceType"
           >
             <el-icon><Delete /></el-icon>
-            按服务失效
+            {{ t('responseCache.invalidateByService') }}
           </el-button>
         </div>
       </div>
@@ -203,11 +203,11 @@
 
       <!-- 按模型失效 -->
       <div class="action-section">
-        <div class="action-label">按模型失效</div>
+        <div class="action-label">{{ t('responseCache.invalidateByModelLabel') }}</div>
         <div class="action-row">
           <el-input
             v-model="modelName"
-            placeholder="输入模型名称"
+            :placeholder="t('responseCache.inputModelPlaceholder')"
             style="width: 300px"
             clearable
           />
@@ -218,7 +218,7 @@
             @click="handleInvalidateByModel"
           >
             <el-icon><Delete /></el-icon>
-            按模型失效
+            {{ t('responseCache.invalidateByModel') }}
           </el-button>
         </div>
       </div>
@@ -226,14 +226,14 @@
 
     <!-- 提示 -->
     <el-alert
-      title="提示"
+      :title="t('responseCache.tipTitle')"
       type="info"
       :closable="false"
       show-icon
       style="margin-top: 16px"
     >
       <template #default>
-        <p style="margin: 0">缓存命中不写调用历史。配置项参考 YAML：<code>jairouter.response-cache.*</code>。</p>
+        <p style="margin: 0">{{ t('responseCache.tipBefore') }}<code>jairouter.response-cache.*</code>{{ t('responseCache.tipAfter') }}</p>
       </template>
     </el-alert>
   </PageSkeleton>
@@ -241,6 +241,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import {
   Refresh,
@@ -265,6 +266,8 @@ import {
   type CacheStatus,
   type CacheConfigPayload,
 } from '@/api/responseCache'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const invalidating = ref(false)
@@ -309,7 +312,7 @@ const resetRuntimeForm = () => {
 /** 命中率显示 */
 const hitRatioDisplay = computed(() => {
   const ratio = status.value?.hitRatio ?? null
-  if (ratio === null) return '暂无数据'
+  if (ratio === null) return t('responseCache.noData')
   return `${(ratio * 100).toFixed(1)}%`
 })
 
@@ -364,17 +367,17 @@ const handleSaveConfig = async () => {
 
   // 后端：全空 payload → 400
   if (Object.keys(payload).length === 0) {
-    ElMessage.warning('未修改任何配置项')
+    ElMessage.warning(t('responseCache.noChangesWarning'))
     return
   }
 
   savingConfig.value = true
   try {
     await updateCacheConfig(payload)
-    ElMessage.success('运行时配置已更新')
+    ElMessage.success(t('responseCache.configUpdatedSuccess'))
     await loadStatus()
   } catch {
-    ElMessage.error('保存失败，请检查参数')
+    ElMessage.error(t('responseCache.saveFailedError'))
   } finally {
     savingConfig.value = false
   }
@@ -387,13 +390,13 @@ const handleInvalidateAll = async () => {
   try {
     const result = await invalidateCache()
     if (result.executed) {
-      ElMessage.success('缓存已清空')
+      ElMessage.success(t('responseCache.cacheClearedSuccess'))
     } else {
-      ElMessage.warning('缓存未启用，操作未执行')
+      ElMessage.warning(t('responseCache.cacheNotEnabledWarning'))
     }
     await loadStatus()
   } catch {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('responseCache.operationFailedError'))
   } finally {
     invalidating.value = false
   }
@@ -405,13 +408,13 @@ const handleInvalidateByServiceType = async () => {
   try {
     const result = await invalidateCache({ serviceType: selectedServiceType.value })
     if (result.executed) {
-      ElMessage.success(`已按服务类型 [${selectedServiceType.value}] 失效缓存`)
+      ElMessage.success(t('responseCache.invalidatedByServiceType', { serviceType: selectedServiceType.value }))
     } else {
-      ElMessage.warning('缓存未启用，操作未执行')
+      ElMessage.warning(t('responseCache.cacheNotEnabledWarning'))
     }
     await loadStatus()
   } catch {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('responseCache.operationFailedError'))
   } finally {
     invalidating.value = false
   }
@@ -424,13 +427,13 @@ const handleInvalidateByModel = async () => {
   try {
     const result = await invalidateCache({ model })
     if (result.executed) {
-      ElMessage.success(`已按模型 [${model}] 失效缓存`)
+      ElMessage.success(t('responseCache.invalidatedByModel', { model }))
     } else {
-      ElMessage.warning('缓存未启用，操作未执行')
+      ElMessage.warning(t('responseCache.cacheNotEnabledWarning'))
     }
     await loadStatus()
   } catch {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('responseCache.operationFailedError'))
   } finally {
     invalidating.value = false
   }

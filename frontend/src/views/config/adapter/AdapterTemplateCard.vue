@@ -16,7 +16,7 @@
           {{ categoryLabel }}
         </el-tag>
         <el-tag size="small" type="info" effect="plain">
-          {{ template.type === 'ollama-compatible' ? 'Ollama' : 'OpenAI兼容' }}
+          {{ template.type === 'ollama-compatible' ? t('adapter.card.ollamaTag') : t('adapter.types.openaiCompatible') }}
         </el-tag>
       </div>
     </div>
@@ -28,8 +28,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { MagicStick, CircleCheckFilled } from '@element-plus/icons-vue'
 import type { AdapterTemplate } from '@/api/adapter'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   template: AdapterTemplate
@@ -43,12 +46,13 @@ defineEmits<{
 
 const categoryLabel = computed(() => {
   const map: Record<string, string> = {
-    domestic: '国内',
-    international: '国际',
-    local: '本地',
-    custom: '自定义'
+    domestic: 'adapter.category.domestic',
+    international: 'adapter.category.international',
+    local: 'adapter.category.local',
+    custom: 'adapter.category.custom'
   }
-  return map[props.template.category] || props.template.category
+  const key = map[props.template.category]
+  return key ? t(key) : props.template.category
 })
 
 const categoryTagType = computed(() => {

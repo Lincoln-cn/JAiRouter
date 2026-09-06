@@ -8,11 +8,11 @@
       >
         <el-radio-button value="tts">
           <el-icon><Microphone /></el-icon>
-          语音合成 (TTS)
+          {{ t('playgroundAudio.ttsTab') }}
         </el-radio-button>
         <el-radio-button value="stt">
           <el-icon><Headset /></el-icon>
-          语音识别 (STT)
+          {{ t('playgroundAudio.sttTab') }}
         </el-radio-button>
       </el-radio-group>
     </div>
@@ -37,10 +37,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Microphone, Headset } from '@element-plus/icons-vue'
 import TtsPanel from './TtsPanel.vue'
 import SttPanel from './SttPanel.vue'
 import { usePlaygroundData } from '@/composables/usePlaygroundData'
+
+const { t } = useI18n()
 
 // 状态
 const activeTab = ref<'tts' | 'stt'>('tts')

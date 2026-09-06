@@ -1,0 +1,34 @@
+{
+  "playgroundCommon": {
+    "model": {
+      "placeholder": "选择模型",
+      "allModels": "全部模型",
+      "other": "其他"
+    },
+    "action": {
+      "clear": "清空",
+      "hideConfig": "隐藏配置",
+      "showConfig": "显示配置",
+      "copy": "复制",
+      "copied": "已复制",
+      "regenerate": "重新生成"
+    },
+    "role": {
+      "user": "你",
+      "assistant": "AI",
+      "system": "系统"
+    },
+    "status": {
+      "idle": "就绪",
+      "loading": "处理中...",
+      "success": "成功",
+      "error": "错误",
+      "duration": "耗时: {duration}ms"
+    },
+    "message": {
+      "copiedToClipboard": "已复制到剪贴板",
+      "codeCopiedToClipboard": "代码已复制到剪贴板",
+      "copyFailed": "复制失败"
+    }
+  }
+}

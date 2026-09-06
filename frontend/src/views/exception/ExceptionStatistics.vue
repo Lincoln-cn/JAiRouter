@@ -3,21 +3,21 @@
     <!-- 时间筛选 -->
     <el-card class="filter-card" shadow="hover">
       <el-form :inline="true" class="filter-form">
-        <el-form-item label="时间范围">
+        <el-form-item :label="t('exception.statistics.timeRange')">
           <el-date-picker
             v-model="dateRange"
             type="datetimerange"
-            range-separator="至"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
+            :range-separator="t('exception.statistics.dateRangeSeparator')"
+            :start-placeholder="t('exception.statistics.startTime')"
+            :end-placeholder="t('exception.statistics.endTime')"
             value-format="YYYY-MM-DD HH:mm:ss"
             style="width: 400px"
             @change="handleDateChange"
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" icon="Search" @click="loadData">查询</el-button>
-          <el-button icon="Refresh" @click="handleReset">重置</el-button>
+          <el-button type="primary" icon="Search" @click="loadData">{{ t('exception.statistics.query') }}</el-button>
+          <el-button icon="Refresh" @click="handleReset">{{ t('exception.statistics.reset') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -25,16 +25,16 @@
     <!-- 统计概览 -->
     <el-row :gutter="20" class="stats-row">
       <el-col :span="6">
-        <StatCard :icon="Warning" label="异常总数" :value="statistics.totalEvents" tone="danger" />
+        <StatCard :icon="Warning" :label="t('exception.statistics.totalEventsLabel')" :value="statistics.totalEvents" tone="danger" />
       </el-col>
       <el-col :span="6">
-        <StatCard :icon="DataAnalysis" label="异常类型数" :value="statistics.totalTypes" tone="primary" />
+        <StatCard :icon="DataAnalysis" :label="t('exception.statistics.totalTypesLabel')" :value="statistics.totalTypes" tone="primary" />
       </el-col>
       <el-col :span="6">
-        <StatCard :icon="TrendCharts" label="最多错误类型" :value="topErrorType?.count || 0" tone="warning" />
+        <StatCard :icon="TrendCharts" :label="t('exception.statistics.topErrorTypeLabel')" :value="topErrorType?.count || 0" tone="warning" />
       </el-col>
       <el-col :span="6">
-        <StatCard :icon="CircleCheck" label="成功率" :value="successRate" unit="%" tone="success" />
+        <StatCard :icon="CircleCheck" :label="t('exception.statistics.successRateLabel')" :value="successRate" unit="%" tone="success" />
       </el-col>
     </el-row>
 
@@ -44,7 +44,7 @@
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
-            <span class="chart-title">异常类型分布</span>
+            <span class="chart-title">{{ t('exception.statistics.typeDistribution') }}</span>
           </template>
           <div ref="typeChartRef" class="chart-container"></div>
         </el-card>
@@ -54,7 +54,7 @@
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
-            <span class="chart-title">错误分类统计</span>
+            <span class="chart-title">{{ t('exception.statistics.categoryStatistics') }}</span>
           </template>
           <div ref="categoryChartRef" class="chart-container"></div>
         </el-card>
@@ -66,7 +66,7 @@
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
-            <span class="chart-title">HTTP 状态码分布</span>
+            <span class="chart-title">{{ t('exception.statistics.httpStatusDistribution') }}</span>
           </template>
           <div ref="httpStatusChartRef" class="chart-container"></div>
         </el-card>
@@ -76,7 +76,7 @@
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
-            <span class="chart-title">24 小时异常分布</span>
+            <span class="chart-title">{{ t('exception.statistics.hourlyDistribution') }}</span>
           </template>
           <div ref="hourlyChartRef" class="chart-container"></div>
         </el-card>
@@ -86,17 +86,17 @@
     <!-- Top 客户端 IP -->
     <el-card shadow="hover" style="margin-top: 20px;">
       <template #header>
-        <span class="chart-title">Top 客户端 IP</span>
+        <span class="chart-title">{{ t('exception.statistics.topClientIps') }}</span>
       </template>
       <el-table :data="topClientIps" border stripe :max-height="300">
-        <el-table-column label="排名" type="index" width="60" :index="indexMethod" />
-        <el-table-column label="IP 地址" prop="ip" min-width="200" />
-        <el-table-column label="异常次数" prop="count" width="120" align="right">
+        <el-table-column :label="t('exception.statistics.rank')" type="index" width="60" :index="indexMethod" />
+        <el-table-column :label="t('exception.statistics.ipAddress')" prop="ip" min-width="200" />
+        <el-table-column :label="t('exception.statistics.exceptionCount')" prop="count" width="120" align="right">
           <template #default="scope">
             <el-tag type="info">{{ scope.row.count }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="占比" prop="percentage" width="120" align="right">
+        <el-table-column :label="t('exception.statistics.percentage')" prop="percentage" width="120" align="right">
           <template #default="scope">
             <el-progress
               :percentage="calculatePercentage(scope.row.count)"
@@ -111,28 +111,28 @@
     <el-card shadow="hover" style="margin-top: 20px;">
       <template #header>
         <div class="card-header">
-          <span class="chart-title">最近异常事件</span>
-          <el-button link type="primary" @click="goToList">查看全部</el-button>
+          <span class="chart-title">{{ t('exception.statistics.recentEvents') }}</span>
+          <el-button link type="primary" @click="goToList">{{ t('exception.statistics.viewAll') }}</el-button>
         </div>
       </template>
       <el-table :data="recentEvents" border stripe :max-height="300">
-        <el-table-column label="事件 ID" prop="eventId" width="200" show-overflow-tooltip />
-        <el-table-column label="异常类型" prop="exceptionType" min-width="180" show-overflow-tooltip />
-        <el-table-column label="错误代码" prop="errorCode" width="100">
+        <el-table-column :label="t('exception.statistics.eventId')" prop="eventId" width="200" show-overflow-tooltip />
+        <el-table-column :label="t('exception.statistics.exceptionType')" prop="exceptionType" min-width="180" show-overflow-tooltip />
+        <el-table-column :label="t('exception.statistics.errorCode')" prop="errorCode" width="100">
           <template #default="scope">
             <el-tag :type="getErrorTagType(scope.row.errorCode)" size="small">
               {{ scope.row.errorCode }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="错误分类" prop="errorCategory" width="120">
+        <el-table-column :label="t('exception.statistics.errorCategory')" prop="errorCategory" width="120">
           <template #default="scope">
             <el-tag :type="getCategoryTagType(scope.row.errorCategory)" size="small">
               {{ formatCategory(scope.row.errorCategory) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="发生时间" prop="occurredAt" width="180">
+        <el-table-column :label="t('exception.statistics.occurredAt')" prop="occurredAt" width="180">
           <template #default="scope">
             {{ formatTime(scope.row.occurredAt) }}
           </template>
@@ -145,6 +145,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import {
   Warning,
@@ -163,8 +164,11 @@ import {
 import type { ExceptionEvent, ExceptionStatistics } from '@/types/exception'
 import StatCard from '@/components/StatCard.vue'
 import { useChartTheme } from '@/composables/useChartTheme'
+import { formatDateTime as formatDateTimeBase } from '@/utils/format'
 
 const { getChartTheme } = useChartTheme()
+
+const { t } = useI18n()
 
 const router = useRouter()
 
@@ -225,10 +229,10 @@ const topClientIps = computed(() => {
 // 索引方法
 const indexMethod = (index: number) => index + 1
 
-// 格式化时间
+// 格式化时间（委托共享 format.ts）
 const formatTime = (time?: string) => {
   if (!time) return '-'
-  return time.replace('T', ' ').substring(0, 19)
+  return formatDateTimeBase(time)
 }
 
 // 获取错误标签类型
@@ -326,7 +330,7 @@ const updateTypeChart = () => {
         return `<div style="max-width: 300px;">
           <div style="font-weight: bold; margin-bottom: 5px;">${params.data.shortName}</div>
           <div style="font-size: 12px; color: ${theme.info};">${params.name}</div>
-          <div style="margin-top: 5px;">数量：<strong>${params.value}</strong> (${params.percent}%)</div>
+          <div style="margin-top: 5px;">${t('exception.statistics.tooltipCount')}<strong>${params.value}</strong> (${params.percent}%)</div>
         </div>`
       }
     },
@@ -555,7 +559,7 @@ const loadData = async () => {
     initCharts()
   } catch (error: any) {
     console.error('加载统计数据失败:', error)
-    ElMessage.error(`加载统计数据失败：${  error.message || '未知错误'}`)
+    ElMessage.error(t('exception.statistics.loadFailed', { message: error.message || t('exception.statistics.unknownError') }))
   }
 }
 

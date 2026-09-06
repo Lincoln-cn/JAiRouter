@@ -1,0 +1,91 @@
+{
+  "service": {
+    "title": "Service Management",
+    "addService": "Add Service",
+    "editService": "Edit Service",
+    "allTypesAdded": "All service types have been added",
+    "searchPlaceholder": "Search service type or adapter (press Enter or pause)",
+    "filters": {
+      "loadBalance": "Load Balance",
+      "adapter": "Adapter",
+      "all": "All"
+    },
+    "unset": "Not set",
+    "loading": "Loading...",
+    "table": {
+      "serviceType": "Service Type",
+      "adapter": "Adapter",
+      "loadBalanceType": "Load Balance Strategy",
+      "actions": "Actions",
+      "notFound": "No services found",
+      "summary": "Total {count} items (page {current} / {total})"
+    },
+    "loadBalance": {
+      "random": "Random",
+      "roundRobin": "Round Robin",
+      "leastConnections": "Least Connections",
+      "ipHash": "IP Hash"
+    },
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "deleteDialog": {
+      "title": "Delete Confirmation",
+      "message": "Are you sure you want to delete the service \"{type}\"? This action cannot be undone!"
+    },
+    "messages": {
+      "warning": "Warning",
+      "unknownError": "Unknown error",
+      "fetchAdaptersFailed": "Failed to fetch adapter list: {message}",
+      "fetchServicesFailed": "Failed to fetch service list",
+      "fetchConfigFailed": "Failed to fetch service configuration",
+      "networkError": "Network error, please check your connection",
+      "deleteSuccess": "Service deleted successfully",
+      "deleteFailed": "Delete failed",
+      "deleteCancelled": "Deletion cancelled",
+      "savedButRateLimitFailed": "Service saved, but the rate limit configuration failed to save",
+      "editSuccess": "Service updated successfully",
+      "addSuccess": "Service added successfully",
+      "editFailed": "Update failed",
+      "addFailed": "Add failed"
+    },
+    "form": {
+      "serviceType": "Service Type",
+      "adapter": "Adapter",
+      "loadBalanceType": "Load Balance Strategy",
+      "description": "Description (optional)",
+      "selectServiceType": "Select a service type",
+      "selectAdapter": "Select an adapter",
+      "selectLoadBalance": "Select a load balance strategy",
+      "descriptionPlaceholder": "Add a brief description for identification (e.g. used for customer service chat)"
+    },
+    "rateLimit": {
+      "section": "Service-level Rate Limit Config",
+      "enable": "Enable Rate Limit",
+      "algorithm": "Algorithm",
+      "selectAlgorithm": "Select an algorithm",
+      "tokenBucket": "Token Bucket",
+      "leakyBucket": "Leaky Bucket",
+      "slidingWindow": "Sliding Window",
+      "scope": "Scope",
+      "selectScope": "Select a scope",
+      "serviceScope": "Service Level",
+      "capacity": "Capacity",
+      "rate": "Rate",
+      "key": "Rate Limit Key",
+      "keyPlaceholder": "Enter the rate limit key (optional)",
+      "clientIp": "Client IP Rate Limit"
+    },
+    "circuitBreaker": {
+      "section": "Service-level Circuit Breaker Config",
+      "enable": "Enable Circuit Breaker",
+      "failureThreshold": "Failure Threshold",
+      "timeoutMs": "Timeout (ms)",
+      "successThreshold": "Success Threshold"
+    }
+  }
+}

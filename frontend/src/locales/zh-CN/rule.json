@@ -1,0 +1,140 @@
+{
+  "rule": {
+    "pageTitle": "路由规则",
+    "refreshTooltip": "刷新列表与命中统计",
+    "createFromTemplate": "从模板创建",
+    "addRule": "新增规则",
+    "editRule": "编辑规则",
+    "name": "名称",
+    "sort": "排序",
+    "priority": "优先级",
+    "enabled": "启用",
+    "hits": "命中",
+    "condition": "条件",
+    "action": "动作",
+    "operations": "操作",
+    "edit": "编辑",
+    "delete": "删除",
+    "cancel": "取消",
+    "save": "保存",
+    "close": "关闭",
+    "runTest": "测试",
+    "fetchListFailed": "获取规则列表失败",
+    "priorityUpdated": "优先级已更新",
+    "priorityUpdatedPartial": "已更新 {updated} 条,跳过 {skipped} 条(YAML 规则)",
+    "priorityUpdateFailed": "优先级更新失败",
+    "deleteConfirmTitle": "删除确认",
+    "deleteConfirmMessage": "确定删除规则「{name}」?",
+    "ruleDeleted": "规则已删除",
+    "ruleEnabled": "规则已启用",
+    "ruleDisabled": "规则已停用",
+    "operationFailed": "操作失败",
+    "ruleUpdated": "规则已更新",
+    "ruleCreated": "规则已创建",
+    "saveFailed": "保存失败,请检查条件与动作配置",
+    "conditionsAnd": " 且 ",
+    "conditionType": {
+      "SERVICE_TYPE": "服务类型",
+      "MODEL_NAME": "模型名",
+      "HEADER": "请求头",
+      "CLIENT_IP": "来源IP",
+      "WEIGHT": "权重"
+    },
+    "operator": {
+      "EQUALS": "等于",
+      "CONTAINS": "包含",
+      "STARTS_WITH": "前缀",
+      "REGEX": "正则",
+      "CIDR_MATCH": "CIDR"
+    },
+    "actionType": {
+      "TARGET_MODEL": "重写模型",
+      "TARGET_INSTANCE": "锁定实例",
+      "TARGET_ADAPTER": "切换适配器",
+      "LB_STRATEGY": "LB策略",
+      "TARGET_TAGS": "标签路由"
+    },
+    "form": {
+      "namePlaceholder": "规则名称,如: vLLM 流量路由",
+      "priorityTip": "数值越大越先匹配,首条命中即生效",
+      "conditionsSection": "匹配条件(全部满足)",
+      "actionsSection": "执行动作",
+      "addCondition": "添加条件",
+      "typePlaceholder": "条件类型",
+      "headerNamePlaceholder": "Header名",
+      "modelNamePlaceholder": "选择或输入模型名",
+      "headerValuePlaceholder": "Header值",
+      "ipCidrPlaceholder": "IP或CIDR",
+      "actionTypeLabel": "动作类型",
+      "actionTargetLabel": "动作目标",
+      "instancePlaceholder": "选择目标实例",
+      "adapterPlaceholder": "选择适配器",
+      "lbStrategyPlaceholder": "选择LB策略",
+      "tagsLabel": "目标标签",
+      "tagKeyPlaceholder": "标签名",
+      "valuePlaceholder": "值",
+      "addTag": "添加标签",
+      "tagsTip": "实例须同时包含全部标签(AND),如 gpu_type=a100",
+      "simulateButton": "模拟测试",
+      "simulateTip": "用示例请求验证规则是否命中,无需保存",
+      "actionOptions": {
+        "TARGET_MODEL": "重写模型名",
+        "TARGET_INSTANCE": "锁定实例",
+        "TARGET_ADAPTER": "切换适配器",
+        "LB_STRATEGY": "LB策略",
+        "RATE_LIMIT": "限流",
+        "TARGET_TAGS": "标签路由"
+      },
+      "actionTargetTips": {
+        "TARGET_MODEL": "重写后的模型名",
+        "TARGET_INSTANCE": "目标实例名称",
+        "TARGET_ADAPTER": "切换到的适配器",
+        "LB_STRATEGY": "负载均衡策略",
+        "RATE_LIMIT": "按规则限流(容量/速率必填)",
+        "TARGET_TAGS": "按标签圈选实例(AND)"
+      }
+    },
+    "rateLimit": {
+      "capacityLabel": "限流容量",
+      "capacityTip": "令牌桶容量",
+      "rateLabel": "限流速率",
+      "rateTip": "每秒补充速率",
+      "algorithmLabel": "限流算法",
+      "positiveRequired": "限流动作需要容量与速率大于 0",
+      "algorithms": {
+        "tokenBucket": "令牌桶",
+        "leakyBucket": "漏桶",
+        "slidingWindow": "滑动窗口"
+      }
+    },
+    "validation": {
+      "nameRequired": "请输入规则名称",
+      "actionTypeRequired": "请选择动作类型",
+      "actionTargetRequired": "请输入动作目标",
+      "atLeastOneCondition": "至少保留一个条件"
+    },
+    "test": {
+      "title": "规则模拟测试(dry-run)",
+      "serviceType": "服务类型",
+      "modelName": "模型名",
+      "modelNamePlaceholder": "如 gpt-4",
+      "clientIp": "来源IP",
+      "clientIpPlaceholder": "如 127.0.0.1",
+      "headers": "请求头",
+      "addHeader": "添加请求头",
+      "modelNameRequired": "请输入测试模型名",
+      "runFailed": "测试失败,请检查输入",
+      "hitRule": "命中规则:",
+      "hitPriority": "(优先级 {priority})",
+      "actionLabel": "执行动作:"
+    },
+    "template": {
+      "title": "从模板创建规则",
+      "name": "规则名称",
+      "namePlaceholder": "为从模板创建的规则命名",
+      "nextStep": "下一步:编辑并保存",
+      "fetchListFailed": "获取模板列表失败",
+      "createFailed": "模板创建失败"
+    }
+  }
+}

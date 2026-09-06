@@ -1,0 +1,70 @@
+{
+  "playgroundAudio": {
+    "ttsTab": "Text-to-Speech (TTS)",
+    "sttTab": "Speech-to-Text (STT)",
+    "showConfig": "Settings",
+    "hideConfig": "Hide Settings",
+    "clear": "Clear",
+    "offlineStatus": "(Offline)",
+    "unknownStatus": "(Unknown)",
+    "tts": {
+      "modelPlaceholder": "Select TTS Model",
+      "voiceType": "Voice Type",
+      "voicePlaceholder": "Select or enter a voice",
+      "openaiGroup": "OpenAI Standard",
+      "cosyVoiceGroup": "CosyVoice Multilingual",
+      "voices": {
+        "chineseFemale": "Chinese Female",
+        "chineseMale": "Chinese Male",
+        "japaneseMale": "Japanese Male",
+        "cantoneseFemale": "Cantonese Female",
+        "englishFemale": "English Female",
+        "englishMale": "English Male",
+        "koreanFemale": "Korean Female"
+      },
+      "outputFormat": "Output Format",
+      "speed": "Speed",
+      "inputTitle": "Input Text",
+      "inputPlaceholder": "Enter text to convert to speech...",
+      "charCount": "{count} characters",
+      "generate": "Generate Speech",
+      "resultTitle": "Speech Result",
+      "empty": "Enter text, then generate speech",
+      "loading": "Generating speech...",
+      "download": "Download Audio",
+      "messages": {
+        "generated": "Speech generated successfully",
+        "operation": "Speech generation"
+      }
+    },
+    "stt": {
+      "modelPlaceholder": "Select STT Model",
+      "language": "Language",
+      "languageZh": "Chinese",
+      "languageEn": "English",
+      "languageAuto": "Auto Detect",
+      "responseFormat": "Response Format",
+      "uploadTitle": "Upload Audio File",
+      "dragText": "Drag audio files here, or",
+      "clickUpload": "click to upload",
+      "uploadTip": "Supports mp3, mp4, wav, webm, etc., up to 25MB",
+      "promptTitle": "Prompt (Optional)",
+      "promptPlaceholder": "Enter an optional prompt to help improve recognition accuracy...",
+      "start": "Start Recognition",
+      "resultTitle": "Recognition Result",
+      "empty": "Upload an audio file, then start recognition",
+      "loading": "Recognizing...",
+      "duration": "Duration: {duration}ms",
+      "copy": "Copy Text",
+      "messages": {
+        "transcribed": "Recognition completed",
+        "operation": "Speech recognition",
+        "copied": "Copied",
+        "copyFailed": "Copy failed"
+      }
+    },
+    "messages": {
+      "suggestion": "💡 Suggestion: {suggestion}"
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "playgroundAudio": {
+    "ttsTab": "语音合成 (TTS)",
+    "sttTab": "语音识别 (STT)",
+    "showConfig": "参数配置",
+    "hideConfig": "隐藏配置",
+    "clear": "清空",
+    "offlineStatus": "(离线)",
+    "unknownStatus": "(未知)",
+    "tts": {
+      "modelPlaceholder": "选择 TTS 模型",
+      "voiceType": "语音类型",
+      "voicePlaceholder": "选择或输入语音",
+      "openaiGroup": "OpenAI 标准",
+      "cosyVoiceGroup": "CosyVoice 多语言",
+      "voices": {
+        "chineseFemale": "Chinese Female (中文女声)",
+        "chineseMale": "Chinese Male (中文男声)",
+        "japaneseMale": "Japanese Male (日语男声)",
+        "cantoneseFemale": "Cantonese Female (粤语女声)",
+        "englishFemale": "English Female (英语女声)",
+        "englishMale": "English Male (英语男声)",
+        "koreanFemale": "Korean Female (韩语女声)"
+      },
+      "outputFormat": "输出格式",
+      "speed": "语速",
+      "inputTitle": "输入文本",
+      "inputPlaceholder": "输入要转换为语音的文本...",
+      "charCount": "{count} 字符",
+      "generate": "生成语音",
+      "resultTitle": "语音结果",
+      "empty": "输入文本后生成语音",
+      "loading": "正在生成语音...",
+      "download": "下载音频",
+      "messages": {
+        "generated": "语音生成成功",
+        "operation": "语音生成"
+      }
+    },
+    "stt": {
+      "modelPlaceholder": "选择 STT 模型",
+      "language": "语言",
+      "languageZh": "中文",
+      "languageEn": "英文",
+      "languageAuto": "自动检测",
+      "responseFormat": "响应格式",
+      "uploadTitle": "上传音频文件",
+      "dragText": "拖拽音频文件到此处，或",
+      "clickUpload": "点击上传",
+      "uploadTip": "支持 mp3, mp4, wav, webm 等格式，最大 25MB",
+      "promptTitle": "提示词 (可选)",
+      "promptPlaceholder": "输入可选的提示词，帮助提高识别准确度...",
+      "start": "开始识别",
+      "resultTitle": "识别结果",
+      "empty": "上传音频文件后开始识别",
+      "loading": "正在识别...",
+      "duration": "耗时: {duration}ms",
+      "copy": "复制文本",
+      "messages": {
+        "transcribed": "识别完成",
+        "operation": "语音识别",
+        "copied": "已复制",
+        "copyFailed": "复制失败"
+      }
+    },
+    "messages": {
+      "suggestion": "💡 建议: {suggestion}"
+    }
+  }
+}

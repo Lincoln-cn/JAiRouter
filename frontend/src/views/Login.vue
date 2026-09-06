@@ -1,5 +1,8 @@
 <template>
   <div class="login-container">
+    <div class="login-locale">
+      <LanguageSwitcher />
+    </div>
     <el-card class="login-form">
       <div class="login-header text-center mb-4">
         <div class="logo-placeholder">
@@ -59,12 +62,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -79,14 +83,15 @@ const loginForm = reactive({
   password: ''
 })
 
-const loginRules = reactive<FormRules<typeof loginForm>>({
+// v2.10.3: computed 化，语言切换后校验文案即时更新
+const loginRules = computed<FormRules<typeof loginForm>>(() => ({
   username: [
     { required: true, message: t('login.usernameRequired'), trigger: 'blur' }
   ],
   password: [
     { required: true, message: t('login.passwordRequired'), trigger: 'blur' }
   ]
-})
+}))
 
 const handleLogin = async () => {
   
@@ -124,12 +129,19 @@ onMounted(() => {
 
 <style scoped>
 .login-container {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
   padding: 1rem;
+}
+
+.login-locale {
+  position: absolute;
+  top: 16px;
+  right: 20px;
 }
 
 .login-form {

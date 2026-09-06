@@ -1,0 +1,37 @@
+{
+  "playgroundRerank": {
+    "modelPlaceholder": "选择 Rerank 模型",
+    "showConfig": "参数配置",
+    "hideConfig": "隐藏配置",
+    "clear": "清空",
+    "offlineStatus": "(离线)",
+    "unknownStatus": "(未知)",
+    "config": {
+      "topN": "返回数量 (Top N)",
+      "returnDocuments": "返回文档内容"
+    },
+    "query": {
+      "title": "查询文本",
+      "placeholder": "输入查询文本，例如：什么是机器学习？"
+    },
+    "documents": {
+      "title": "文档列表",
+      "add": "添加文档",
+      "contentPlaceholder": "文档 {index} 内容"
+    },
+    "run": "执行重排序",
+    "result": {
+      "title": "重排序结果",
+      "empty": "输入查询和文档后执行重排序",
+      "loading": "正在重排序...",
+      "duration": "耗时: {duration}ms",
+      "returned": "返回: {count} 条",
+      "score": "分数: {score}"
+    },
+    "messages": {
+      "rerankCompleted": "重排序完成",
+      "operation": "重排序",
+      "suggestion": "💡 建议: {suggestion}"
+    }
+  }
+}

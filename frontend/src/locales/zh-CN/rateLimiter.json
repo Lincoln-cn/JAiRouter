@@ -1,0 +1,40 @@
+{
+  "rateLimiter": {
+    "monitoring": {
+      "totalLimiters": "限流器总数",
+      "globalLimiters": "全局限流",
+      "serviceLimiters": "服务限流",
+      "instanceLimiters": "实例限流",
+      "averageUsage": "平均使用率",
+      "highUsage": "高使用率(>80%)",
+      "metricsTitle": "限流器详细指标",
+      "refresh": "刷新",
+      "scopePlaceholder": "作用域",
+      "algorithmPlaceholder": "算法",
+      "scopeOptions": {
+        "global": "全局",
+        "service": "服务",
+        "instance": "实例"
+      },
+      "columns": {
+        "service": "服务",
+        "scope": "作用域",
+        "identifier": "标识符",
+        "algorithm": "算法",
+        "capacity": "容量",
+        "rate": "速率(/s)",
+        "remainingCapacity": "剩余容量",
+        "usage": "使用率"
+      },
+      "prometheusTitle": "Prometheus 指标",
+      "collectionInterval": "采集间隔: {interval}",
+      "prometheus": {
+        "metricsCount": "指标数量",
+        "availableMetrics": "可用指标"
+      },
+      "messages": {
+        "loadFailed": "加载限流器指标失败"
+      }
+    }
+  }
+}

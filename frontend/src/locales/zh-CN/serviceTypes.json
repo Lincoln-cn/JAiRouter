@@ -1,0 +1,11 @@
+{
+  "serviceTypes": {
+    "chat": "聊天模型",
+    "embedding": "嵌入模型",
+    "rerank": "重排序模型",
+    "tts": "语音合成",
+    "stt": "语音识别",
+    "imgGen": "图像生成",
+    "imgEdit": "图像编辑"
+  }
+}

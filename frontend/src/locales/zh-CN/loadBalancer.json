@@ -1,0 +1,95 @@
+{
+  "loadBalancer": {
+    "monitoring": {
+      "controlTitle": "路由监控控制",
+      "resumeMonitoring": "恢复监控",
+      "pauseMonitoring": "暂停监控",
+      "clearHistory": "清空历史",
+      "export": "导出",
+      "exportJson": "导出 JSON",
+      "exportCsv": "导出 CSV",
+      "sampleRate": "采样率",
+      "historySize": "历史记录大小",
+      "wsConnected": "WebSocket 已连接",
+      "wsDisconnected": "WebSocket 未连接",
+      "sampledCount": "已采样: {count} 条",
+      "monitoringActive": "监控中",
+      "pausedStatus": "已暂停",
+      "strategy": "策略",
+      "selectionCount": "采样数",
+      "distributionTitle": "模型-实例分布",
+      "resume": "恢复",
+      "pause": "暂停",
+      "eventsTitle": "实时路由事件",
+      "selectServiceType": "选择服务类型",
+      "columns": {
+        "time": "时间",
+        "serviceType": "服务类型",
+        "strategy": "策略",
+        "selectedInstance": "选中实例",
+        "clientId": "客户端ID",
+        "candidateCount": "候选数",
+        "selectionTimeMs": "耗时(ms)"
+      },
+      "messages": {
+        "paused": "监控已暂停",
+        "resumed": "监控已恢复",
+        "servicePaused": "{serviceType} 监控已暂停",
+        "serviceResumed": "{serviceType} 监控已恢复",
+        "operationFailed": "操作失败",
+        "sampleRateUpdated": "采样率已更新为 {value}%",
+        "sampleRateUpdateFailed": "更新采样率失败",
+        "historySizeUpdated": "历史记录大小已更新为 {value}",
+        "historySizeUpdateFailed": "更新历史记录大小失败",
+        "historyCleared": "历史记录已清空",
+        "clearHistoryFailed": "清空历史记录失败",
+        "exportSuccess": "已导出 {format} 文件",
+        "exportFailed": "导出失败"
+      }
+    },
+    "strategyConfig": {
+      "globalTitle": "全局默认配置",
+      "defaultStrategy": "默认策略",
+      "selectStrategy": "选择策略",
+      "hashAlgorithm": "Hash算法",
+      "selectHashAlgorithm": "选择Hash算法",
+      "virtualNodes": "虚拟节点数",
+      "serviceConfigsTitle": "服务级配置",
+      "configureHint": "点击配置按钮修改单个服务的负载均衡策略",
+      "defaultTag": "默认",
+      "configure": "配置",
+      "loadBalanceStrategy": "负载均衡策略",
+      "configureDialogTitle": "配置 {serviceType} 负载均衡器",
+      "cancel": "取消",
+      "save": "保存",
+      "columns": {
+        "serviceType": "服务类型",
+        "strategy": "策略",
+        "hashAlgorithm": "Hash算法",
+        "virtualNodes": "虚拟节点",
+        "actions": "操作"
+      },
+      "strategies": {
+        "random": "随机策略",
+        "roundRobin": "轮询策略",
+        "leastConnections": "最少连接策略",
+        "ipHash": "IP Hash策略",
+        "consistentHash": "一致性哈希策略",
+        "latency": "延迟感知策略"
+      },
+      "strategyDescriptions": {
+        "random": "按权重随机选择实例，适合无状态的请求场景",
+        "roundRobin": "按权重轮询选择实例，适合均匀分布的场景",
+        "leastConnections": "选择当前连接数最少的实例，适合长连接场景",
+        "ipHash": "基于客户端IP哈希选择实例，适合会话保持场景",
+        "consistentHash": "使用一致性哈希环选择实例，适合分布式缓存场景",
+        "latency": "基于EWMA延迟估算动态选择延迟最低的实例，适合后端延迟差异显著的场景"
+      },
+      "messages": {
+        "loadFailed": "加载服务配置失败",
+        "configUpdated": "服务 {serviceType} 负载均衡配置已更新",
+        "saveFailed": "保存配置失败"
+      }
+    }
+  }
+}

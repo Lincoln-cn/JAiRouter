@@ -1,20 +1,20 @@
 <template>
-  <PageSkeleton title="慢查询分析">
+  <PageSkeleton :title="t('slowQuery.pageTitle')">
     <template #actions>
       <el-button @click="loadAll" :loading="loading" size="default">
         <el-icon><Refresh /></el-icon>
-        刷新
+        {{ t('slowQuery.refresh') }}
       </el-button>
       <el-popconfirm
-        title="确认重置全部慢查询统计？"
-        confirm-button-text="确认"
-        cancel-button-text="取消"
+        :title="t('slowQuery.resetConfirmTitle')"
+        :confirm-button-text="t('slowQuery.confirm')"
+        :cancel-button-text="t('slowQuery.cancel')"
         @confirm="handleResetStats"
       >
         <template #reference>
           <el-button type="danger" plain size="default">
             <el-icon><Delete /></el-icon>
-            重置统计
+            {{ t('slowQuery.resetStats') }}
           </el-button>
         </template>
       </el-popconfirm>
@@ -26,7 +26,7 @@
         <el-col :span="6">
           <StatCard
             icon="Warning"
-            label="慢查询总数"
+            :label="t('slowQuery.totalSlowQueriesLabel')"
             :value="totalCount"
             tone="danger"
           />
@@ -34,7 +34,7 @@
         <el-col :span="6">
           <StatCard
             icon="Histogram"
-            label="操作种类数"
+            :label="t('slowQuery.operationTypesLabel')"
             :value="Object.keys(stats).length"
             tone="primary"
           />
@@ -42,7 +42,7 @@
         <el-col :span="6">
           <StatCard
             icon="Bell"
-            label="告警触发"
+            :label="t('slowQuery.alertsTriggeredLabel')"
             :value="alertStats.totalAlertsTriggered"
             tone="warning"
           />
@@ -50,7 +50,7 @@
         <el-col :span="6">
           <StatCard
             icon="Mute"
-            label="告警抑制"
+            :label="t('slowQuery.alertsSuppressedLabel')"
             :value="alertStats.totalAlertsSuppressed"
             tone="info"
           />
@@ -61,20 +61,20 @@
     <!-- 筛选区域 -->
     <el-card shadow="hover" style="margin-bottom: 16px">
       <el-form :inline="true" class="filter-form">
-        <el-form-item label="最低慢查询数">
+        <el-form-item :label="t('slowQuery.minCountLabel')">
           <el-input-number
             v-model="filterThreshold"
             :min="0"
             :max="999999"
-            placeholder="最低次数"
+            :placeholder="t('slowQuery.minCountPlaceholder')"
             controls-position="right"
             style="width: 150px"
           />
         </el-form-item>
-        <el-form-item label="服务操作">
+        <el-form-item :label="t('slowQuery.operationLabel')">
           <el-select
             v-model="filterOperation"
-            placeholder="全部操作"
+            :placeholder="t('slowQuery.allOperationsPlaceholder')"
             clearable
             style="width: 220px"
           >
@@ -89,11 +89,11 @@
         <el-form-item>
           <el-button type="primary" @click="applyFilter">
             <el-icon><Search /></el-icon>
-            筛选
+            {{ t('slowQuery.applyFilter') }}
           </el-button>
           <el-button @click="resetFilter">
             <el-icon><RefreshRight /></el-icon>
-            重置
+            {{ t('slowQuery.resetFilter') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -102,7 +102,7 @@
     <!-- 慢查询列表表格 -->
     <el-card shadow="hover" style="margin-bottom: 16px">
       <template #header>
-        <span class="card-title">慢查询操作列表</span>
+        <span class="card-title">{{ t('slowQuery.tableTitle') }}</span>
       </template>
       <el-table
         :data="filteredTableData"
@@ -112,35 +112,35 @@
         style="width: 100%"
         :default-sort="{ prop: 'totalDuration', order: 'descending' }"
       >
-        <el-table-column prop="operationName" label="操作名称" min-width="200" sortable />
-        <el-table-column prop="count" label="慢查询次数" width="130" sortable align="center" />
-        <el-table-column label="平均耗时" width="130" sortable sort-by="averageDuration" align="center">
+        <el-table-column prop="operationName" :label="t('slowQuery.operationNameColumn')" min-width="200" sortable />
+        <el-table-column prop="count" :label="t('slowQuery.slowQueryCountColumn')" width="130" sortable align="center" />
+        <el-table-column :label="t('slowQuery.averageDurationColumn')" width="130" sortable sort-by="averageDuration" align="center">
           <template #default="{ row }">
-            {{ row.averageDuration.toFixed(1) }} ms
+            {{ t('slowQuery.durationMs', { value: row.averageDuration.toFixed(1) }) }}
           </template>
         </el-table-column>
-        <el-table-column label="最大耗时" width="130" sortable sort-by="maxDuration" align="center">
+        <el-table-column :label="t('slowQuery.maxDurationColumn')" width="130" sortable sort-by="maxDuration" align="center">
           <template #default="{ row }">
-            <span :class="{ 'danger-text': row.maxDuration > 5000 }">{{ row.maxDuration }} ms</span>
+            <span :class="{ 'danger-text': row.maxDuration > 5000 }">{{ t('slowQuery.durationMs', { value: row.maxDuration }) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="最小耗时" width="130" sortable sort-by="minDuration" align="center">
-          <template #default="{ row }">{{ row.minDuration }} ms</template>
+        <el-table-column :label="t('slowQuery.minDurationColumn')" width="130" sortable sort-by="minDuration" align="center">
+          <template #default="{ row }">{{ t('slowQuery.durationMs', { value: row.minDuration }) }}</template>
         </el-table-column>
-        <el-table-column label="总耗时" width="150" sortable sort-by="totalDuration" align="center">
+        <el-table-column :label="t('slowQuery.totalDurationColumn')" width="150" sortable sort-by="totalDuration" align="center">
           <template #default="{ row }">
             {{ formatDuration(row.totalDuration) }}
           </template>
         </el-table-column>
       </el-table>
-      <el-empty v-if="!loading && filteredTableData.length === 0" description="暂无慢查询数据" />
+      <el-empty v-if="!loading && filteredTableData.length === 0" :description="t('slowQuery.noDataEmpty')" />
     </el-card>
 
     <!-- 性能热点 -->
     <el-card shadow="hover" style="margin-bottom: 16px">
       <template #header>
         <div class="card-header">
-          <span class="card-title">性能热点 Top {{ hotspotLimit }}</span>
+          <span class="card-title">{{ t('slowQuery.hotspotsTitle', { limit: hotspotLimit }) }}</span>
           <el-input-number
             v-model="hotspotLimit"
             :min="5"
@@ -160,45 +160,45 @@
         style="width: 100%"
       >
         <el-table-column type="index" label="#" width="60" align="center" />
-        <el-table-column prop="operationName" label="操作名称" min-width="200" />
-        <el-table-column label="调用次数" width="120" align="center">
+        <el-table-column prop="operationName" :label="t('slowQuery.operationNameColumn')" min-width="200" />
+        <el-table-column :label="t('slowQuery.callCountColumn')" width="120" align="center">
           <template #default="{ row }">{{ row.stats.callCount }}</template>
         </el-table-column>
-        <el-table-column label="平均耗时" width="130" align="center">
-          <template #default="{ row }">{{ row.stats.averageDuration.toFixed(1) }} ms</template>
+        <el-table-column :label="t('slowQuery.averageDurationColumn')" width="130" align="center">
+          <template #default="{ row }">{{ t('slowQuery.durationMs', { value: row.stats.averageDuration.toFixed(1) }) }}</template>
         </el-table-column>
-        <el-table-column label="最大耗时" width="130" align="center">
-          <template #default="{ row }">{{ row.stats.maxDuration }} ms</template>
+        <el-table-column :label="t('slowQuery.maxDurationColumn')" width="130" align="center">
+          <template #default="{ row }">{{ t('slowQuery.durationMs', { value: row.stats.maxDuration }) }}</template>
         </el-table-column>
-        <el-table-column label="总耗时" width="150" align="center">
+        <el-table-column :label="t('slowQuery.totalDurationColumn')" width="150" align="center">
           <template #default="{ row }">{{ formatDuration(row.totalDuration) }}</template>
         </el-table-column>
       </el-table>
-      <el-empty v-if="!loadingHotspots && hotspots.length === 0" description="暂无性能热点数据" />
+      <el-empty v-if="!loadingHotspots && hotspots.length === 0" :description="t('slowQuery.noHotspotsEmpty')" />
     </el-card>
 
     <!-- 告警状态 -->
     <el-card v-if="alertStatus.alertServiceEnabled" shadow="hover">
       <template #header>
-        <span class="card-title">告警系统状态</span>
+        <span class="card-title">{{ t('slowQuery.alertSystemTitle') }}</span>
       </template>
       <el-descriptions :column="3" border size="small">
-        <el-descriptions-item label="告警服务">
-          <el-tag type="success" size="small">已启用</el-tag>
+        <el-descriptions-item :label="t('slowQuery.alertServiceLabel')">
+          <el-tag type="success" size="small">{{ t('slowQuery.enabled') }}</el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="活跃告警键">
+        <el-descriptions-item :label="t('slowQuery.activeAlertKeysLabel')">
           {{ alertStats.activeAlertKeys }}
         </el-descriptions-item>
-        <el-descriptions-item label="触发率">
+        <el-descriptions-item :label="t('slowQuery.triggerRateLabel')">
           {{ ((alertStatus.alertTriggerRate ?? 0) * 100).toFixed(1) }}%
         </el-descriptions-item>
-        <el-descriptions-item label="抑制率">
+        <el-descriptions-item :label="t('slowQuery.suppressionRateLabel')">
           {{ ((alertStatus.alertSuppressionRate ?? 0) * 100).toFixed(1) }}%
         </el-descriptions-item>
-        <el-descriptions-item label="每操作平均告警">
+        <el-descriptions-item :label="t('slowQuery.avgAlertsPerOperationLabel')">
           {{ (alertStatus.averageAlertsPerOperation ?? 0).toFixed(1) }}
         </el-descriptions-item>
-        <el-descriptions-item label="活跃操作数">
+        <el-descriptions-item :label="t('slowQuery.activeOperationsLabel')">
           {{ alertStats.activeOperations?.length ?? 0 }}
         </el-descriptions-item>
       </el-descriptions>
@@ -207,8 +207,8 @@
     <!-- 数据缺失降级 -->
     <el-alert
       v-if="!loading && Object.keys(stats).length === 0 && !errorOccurred"
-      title="暂无慢查询数据"
-      description="当前系统中未检测到慢查询记录，请稍后刷新或检查监控配置。"
+      :title="t('slowQuery.noDataEmpty')"
+      :description="t('slowQuery.noDataAlertDescription')"
       type="info"
       :closable="false"
       show-icon
@@ -216,8 +216,8 @@
     />
     <el-alert
       v-if="errorOccurred"
-      title="数据加载失败"
-      description="慢查询分析接口返回异常，请确认后端 SlowQueryAnalysisController 已就绪。"
+      :title="t('slowQuery.loadFailedTitle')"
+      :description="t('slowQuery.loadFailedDescription')"
       type="warning"
       :closable="false"
       show-icon
@@ -228,6 +228,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Refresh, Delete, Search, RefreshRight, Warning, Histogram, Bell, Mute } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
@@ -244,6 +245,8 @@ import {
   type SlowQueryAlertStats,
   type AlertSystemStatus
 } from '@/api/slowQuery'
+
+const { t } = useI18n()
 
 interface TableRow {
   operationName: string
@@ -297,20 +300,20 @@ const filteredTableData = computed(() => {
 })
 
 const formatDuration = (ms: number): string => {
-  if (ms >= 60000) return `${(ms / 60000).toFixed(1)} 分钟`
-  if (ms >= 1000) return `${(ms / 1000).toFixed(1)} 秒`
-  return `${ms} ms`
+  if (ms >= 60000) return t('slowQuery.durationMinutes', { value: (ms / 60000).toFixed(1) })
+  if (ms >= 1000) return t('slowQuery.durationSeconds', { value: (ms / 1000).toFixed(1) })
+  return t('slowQuery.durationMs', { value: ms })
 }
 
 const applyFilter = () => {
   // Filter is reactive via computed; this triggers a UI feedback.
-  ElMessage.success('筛选已应用')
+  ElMessage.success(t('slowQuery.filterAppliedMessage'))
 }
 
 const resetFilter = () => {
   filterThreshold.value = 0
   filterOperation.value = ''
-  ElMessage.info('筛选已重置')
+  ElMessage.info(t('slowQuery.filterResetMessage'))
 }
 
 const loadStats = async () => {
@@ -363,10 +366,10 @@ const loadAll = async () => {
 const handleResetStats = async () => {
   try {
     await resetSlowQueryStats()
-    ElMessage.success('慢查询统计已重置')
+    ElMessage.success(t('slowQuery.statsResetMessage'))
     await loadAll()
   } catch {
-    ElMessage.error('重置失败')
+    ElMessage.error(t('slowQuery.resetFailedMessage'))
   }
 }
 

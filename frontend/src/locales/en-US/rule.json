@@ -1,0 +1,140 @@
+{
+  "rule": {
+    "pageTitle": "Routing Rules",
+    "refreshTooltip": "Refresh list & hit statistics",
+    "createFromTemplate": "Create from Template",
+    "addRule": "New Rule",
+    "editRule": "Edit Rule",
+    "name": "Name",
+    "sort": "Sort",
+    "priority": "Priority",
+    "enabled": "Enabled",
+    "hits": "Hits",
+    "condition": "Conditions",
+    "action": "Actions",
+    "operations": "Operations",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close",
+    "runTest": "Test",
+    "fetchListFailed": "Failed to fetch rule list",
+    "priorityUpdated": "Priorities updated",
+    "priorityUpdatedPartial": "Updated {updated}, skipped {skipped} (YAML rules)",
+    "priorityUpdateFailed": "Failed to update priorities",
+    "deleteConfirmTitle": "Confirm Deletion",
+    "deleteConfirmMessage": "Delete the rule \"{name}\"?",
+    "ruleDeleted": "Rule deleted",
+    "ruleEnabled": "Rule enabled",
+    "ruleDisabled": "Rule disabled",
+    "operationFailed": "Operation failed",
+    "ruleUpdated": "Rule updated",
+    "ruleCreated": "Rule created",
+    "saveFailed": "Save failed, please check the conditions and action",
+    "conditionsAnd": " and ",
+    "conditionType": {
+      "SERVICE_TYPE": "Service Type",
+      "MODEL_NAME": "Model Name",
+      "HEADER": "Request Header",
+      "CLIENT_IP": "Source IP",
+      "WEIGHT": "Weight"
+    },
+    "operator": {
+      "EQUALS": "Equals",
+      "CONTAINS": "Contains",
+      "STARTS_WITH": "Prefix",
+      "REGEX": "Regex",
+      "CIDR_MATCH": "CIDR"
+    },
+    "actionType": {
+      "TARGET_MODEL": "Rewrite Model",
+      "TARGET_INSTANCE": "Lock Instance",
+      "TARGET_ADAPTER": "Switch Adapter",
+      "LB_STRATEGY": "LB Strategy",
+      "TARGET_TAGS": "Tag Routing"
+    },
+    "form": {
+      "namePlaceholder": "Rule name, e.g. vLLM traffic routing",
+      "priorityTip": "Higher value matches first; the first hit takes effect",
+      "conditionsSection": "Matching Conditions (all must be satisfied)",
+      "actionsSection": "Execution Action",
+      "addCondition": "Add Condition",
+      "typePlaceholder": "Condition Type",
+      "headerNamePlaceholder": "Header Name",
+      "modelNamePlaceholder": "Select or enter a model name",
+      "headerValuePlaceholder": "Header Value",
+      "ipCidrPlaceholder": "IP or CIDR",
+      "actionTypeLabel": "Action Type",
+      "actionTargetLabel": "Action Target",
+      "instancePlaceholder": "Select a target instance",
+      "adapterPlaceholder": "Select an adapter",
+      "lbStrategyPlaceholder": "Select an LB strategy",
+      "tagsLabel": "Target Tags",
+      "tagKeyPlaceholder": "Tag key",
+      "valuePlaceholder": "Value",
+      "addTag": "Add Tag",
+      "tagsTip": "The instance must contain all the tags (AND), e.g. gpu_type=a100",
+      "simulateButton": "Simulate Test",
+      "simulateTip": "Verify whether the rule matches with a sample request; no need to save",
+      "actionOptions": {
+        "TARGET_MODEL": "Rewrite Model Name",
+        "TARGET_INSTANCE": "Lock Instance",
+        "TARGET_ADAPTER": "Switch Adapter",
+        "LB_STRATEGY": "LB Strategy",
+        "RATE_LIMIT": "Rate Limit",
+        "TARGET_TAGS": "Tag Routing"
+      },
+      "actionTargetTips": {
+        "TARGET_MODEL": "The model name after rewrite",
+        "TARGET_INSTANCE": "Target instance name",
+        "TARGET_ADAPTER": "The adapter to switch to",
+        "LB_STRATEGY": "Load balancing strategy",
+        "RATE_LIMIT": "Rate limit per rule (capacity/rate required)",
+        "TARGET_TAGS": "Select instances by tags (AND)"
+      }
+    },
+    "rateLimit": {
+      "capacityLabel": "Rate Limit Capacity",
+      "capacityTip": "Token bucket capacity",
+      "rateLabel": "Rate Limit Rate",
+      "rateTip": "Tokens replenished per second",
+      "algorithmLabel": "Rate Limit Algorithm",
+      "positiveRequired": "Rate limit action requires capacity and rate greater than 0",
+      "algorithms": {
+        "tokenBucket": "Token Bucket",
+        "leakyBucket": "Leaky Bucket",
+        "slidingWindow": "Sliding Window"
+      }
+    },
+    "validation": {
+      "nameRequired": "Please enter a rule name",
+      "actionTypeRequired": "Please select an action type",
+      "actionTargetRequired": "Please enter an action target",
+      "atLeastOneCondition": "Keep at least one condition"
+    },
+    "test": {
+      "title": "Rule Simulation Test (dry-run)",
+      "serviceType": "Service Type",
+      "modelName": "Model Name",
+      "modelNamePlaceholder": "e.g. gpt-4",
+      "clientIp": "Source IP",
+      "clientIpPlaceholder": "e.g. 127.0.0.1",
+      "headers": "Request Headers",
+      "addHeader": "Add Request Header",
+      "modelNameRequired": "Please enter a test model name",
+      "runFailed": "Test failed, please check your input",
+      "hitRule": "Matched rule:",
+      "hitPriority": "(priority {priority})",
+      "actionLabel": "Action:"
+    },
+    "template": {
+      "title": "Create Rule from Template",
+      "name": "Rule Name",
+      "namePlaceholder": "Name the rule created from the template",
+      "nextStep": "Next: Edit & Save",
+      "fetchListFailed": "Failed to fetch template list",
+      "createFailed": "Failed to create from template"
+    }
+  }
+}

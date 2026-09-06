@@ -1,17 +1,25 @@
 <template>
-  <div id="app">
-    <router-view />
-  </div>
+  <el-config-provider :locale="epLocale">
+    <div id="app">
+      <router-view />
+    </div>
+  </el-config-provider>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
+import en from 'element-plus/es/locale/lang/en'
 import { useUserStore } from '@/stores/user'
-// App root component
+import { useLocale } from '@/composables/useLocale'
 
 const route = useRoute()
 const userStore = useUserStore()
+
+// v2.10.3: Element Plus 组件语言随应用语言切换（分页/表格/日期等内置文案）
+const { locale } = useLocale()
+const epLocale = computed(() => (locale.value === 'en-US' ? en : zhCn))
 
 // 在应用启动时检查是否需要启动令牌刷新
 onMounted(() => {

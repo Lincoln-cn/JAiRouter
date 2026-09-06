@@ -4,18 +4,18 @@
     <el-card class="header-card">
       <div class="header-content">
         <div class="header-left">
-          <h2>追踪仪表盘</h2>
+          <h2>{{ t('tracing.dashboard.title') }}</h2>
           <el-tag :type="tracingEnabled ? 'success' : 'danger'" size="small">
-            {{ tracingEnabled ? '追踪已启用' : '追踪已禁用' }}
+            {{ tracingEnabled ? t('tracing.dashboard.enabledTag') : t('tracing.dashboard.disabledTag') }}
           </el-tag>
         </div>
         <div class="header-right">
           <el-date-picker
             v-model="timeRange"
             type="datetimerange"
-            range-separator="至"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
+            :range-separator="t('tracing.dashboard.timeRangeTo')"
+            :start-placeholder="t('tracing.dashboard.startTimePlaceholder')"
+            :end-placeholder="t('tracing.dashboard.endTimePlaceholder')"
             format="YYYY-MM-DD HH:mm:ss"
             value-format="YYYY-MM-DD HH:mm:ss"
             :shortcuts="timeShortcuts"
@@ -23,15 +23,15 @@
           />
           <el-button type="primary" @click="handleRefresh" :loading="refreshing">
             <el-icon><Refresh /></el-icon>
-            刷新
+            {{ t('tracing.dashboard.refresh') }}
           </el-button>
           <el-button @click="goToSearch">
             <el-icon><Search /></el-icon>
-            搜索追踪
+            {{ t('tracing.dashboard.searchTraces') }}
           </el-button>
           <el-button @click="goToManagement">
             <el-icon><Setting /></el-icon>
-            配置
+            {{ t('tracing.dashboard.config') }}
           </el-button>
         </div>
       </div>
@@ -47,14 +47,14 @@
             </div>
             <div class="metric-info">
               <div class="metric-value">{{ formatNumber(stats.totalTraces) }}</div>
-              <div class="metric-label">总追踪数</div>
+              <div class="metric-label">{{ t('tracing.dashboard.totalTraces') }}</div>
             </div>
           </div>
           <div class="metric-trend" v-if="trendData.totalTracesTrend">
             <span :class="trendData.totalTracesTrend >= 0 ? 'up' : 'down'">
               {{ trendData.totalTracesTrend >= 0 ? '+' : '' }}{{ trendData.totalTracesTrend }}%
             </span>
-            较上周期
+            {{ t('tracing.dashboard.vsPreviousPeriod') }}
           </div>
         </el-card>
       </el-col>
@@ -66,14 +66,14 @@
             </div>
             <div class="metric-info">
               <div class="metric-value">{{ formatNumber(stats.errorTraces) }}</div>
-              <div class="metric-label">错误追踪</div>
+              <div class="metric-label">{{ t('tracing.dashboard.errorTraces') }}</div>
             </div>
           </div>
           <div class="metric-trend" v-if="trendData.errorTrend">
             <span :class="trendData.errorTrend <= 0 ? 'up' : 'down'">
               {{ trendData.errorTrend >= 0 ? '+' : '' }}{{ trendData.errorTrend }}%
             </span>
-            较上周期
+            {{ t('tracing.dashboard.vsPreviousPeriod') }}
           </div>
         </el-card>
       </el-col>
@@ -85,14 +85,14 @@
             </div>
             <div class="metric-info">
               <div class="metric-value">{{ stats.avgDuration }}<span class="unit">ms</span></div>
-              <div class="metric-label">平均延迟</div>
+              <div class="metric-label">{{ t('tracing.dashboard.avgLatency') }}</div>
             </div>
           </div>
           <div class="metric-trend" v-if="trendData.avgDurationTrend">
             <span :class="trendData.avgDurationTrend <= 0 ? 'up' : 'down'">
               {{ trendData.avgDurationTrend >= 0 ? '+' : '' }}{{ trendData.avgDurationTrend }}%
             </span>
-            较上周期
+            {{ t('tracing.dashboard.vsPreviousPeriod') }}
           </div>
         </el-card>
       </el-col>
@@ -104,7 +104,7 @@
             </div>
             <div class="metric-info">
               <div class="metric-value">{{ stats.samplingRate }}<span class="unit">%</span></div>
-              <div class="metric-label">采样率</div>
+              <div class="metric-label">{{ t('tracing.dashboard.samplingRate') }}</div>
             </div>
           </div>
         </el-card>
@@ -114,16 +114,16 @@
     <!-- Tab 区域 -->
     <el-card class="tab-card">
       <el-tabs v-model="activeTab" @tab-change="handleTabChange">
-        <el-tab-pane label="概览" name="overview">
+        <el-tab-pane :label="t('tracing.dashboard.tabs.overview')" name="overview">
           <el-row :gutter="16">
             <el-col :xs="24" :lg="12">
               <div class="chart-wrapper">
                 <div class="chart-header">
-                  <h4>追踪量趋势</h4>
+                  <h4>{{ t('tracing.dashboard.chart.traceVolume') }}</h4>
                   <el-radio-group v-model="chartInterval" size="small" @change="updateTrendChart">
-                    <el-radio-button label="5m">5分钟</el-radio-button>
-                    <el-radio-button label="1h">1小时</el-radio-button>
-                    <el-radio-button label="1d">1天</el-radio-button>
+                    <el-radio-button label="5m">{{ t('tracing.dashboard.chart.intervals.5m') }}</el-radio-button>
+                    <el-radio-button label="1h">{{ t('tracing.dashboard.chart.intervals.1h') }}</el-radio-button>
+                    <el-radio-button label="1d">{{ t('tracing.dashboard.chart.intervals.1d') }}</el-radio-button>
                   </el-radio-group>
                 </div>
                 <div ref="traceTrendChart" class="chart-container"></div>
@@ -132,7 +132,7 @@
             <el-col :xs="24" :lg="12">
               <div class="chart-wrapper">
                 <div class="chart-header">
-                  <h4>服务延迟分布</h4>
+                  <h4>{{ t('tracing.dashboard.chart.latencyDistribution') }}</h4>
                 </div>
                 <div ref="latencyDistributionChart" class="chart-container"></div>
               </div>
@@ -142,8 +142,8 @@
           <!-- 服务统计表格 -->
           <div class="service-stats-section">
             <div class="section-header">
-              <h4>服务统计</h4>
-              <el-button text type="primary" @click="goToSearch">查看全部</el-button>
+              <h4>{{ t('tracing.dashboard.serviceStatistics') }}</h4>
+              <el-button text type="primary" @click="goToSearch">{{ t('tracing.dashboard.viewAll') }}</el-button>
             </div>
             <el-table
               :data="serviceStats"
@@ -152,7 +152,7 @@
               :row-class-name="getRowClassName"
               @row-click="handleServiceRowClick"
             >
-              <el-table-column prop="name" label="服务名称" min-width="150">
+              <el-table-column prop="name" :label="t('tracing.dashboard.columns.serviceName')" min-width="150">
                 <template #default="{ row }">
                   <div class="service-name">
                     <el-icon :size="16"><Monitor /></el-icon>
@@ -160,27 +160,27 @@
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column prop="traces" label="追踪数" width="100" sortable>
+              <el-table-column prop="traces" :label="t('tracing.dashboard.columns.traces')" width="100" sortable>
                 <template #default="{ row }">
                   <el-tag size="small">{{ formatNumber(row.traces) }}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="avgDuration" label="平均延迟" width="120" sortable>
+              <el-table-column prop="avgDuration" :label="t('tracing.dashboard.avgLatency')" width="120" sortable>
                 <template #default="{ row }">
                   <span :class="getLatencyClass(row.avgDuration)">{{ row.avgDuration }}ms</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="p95Duration" label="P95延迟" width="120" sortable>
+              <el-table-column prop="p95Duration" :label="t('tracing.dashboard.columns.p95Latency')" width="120" sortable>
                 <template #default="{ row }">
                   <span :class="getLatencyClass(row.p95Duration)">{{ row.p95Duration }}ms</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="errors" label="错误数" width="100" sortable>
+              <el-table-column prop="errors" :label="t('tracing.dashboard.columns.errors')" width="100" sortable>
                 <template #default="{ row }">
                   <span :class="{ 'text-danger': row.errors > 0 }">{{ row.errors }}</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="errorRate" label="错误率" width="100" sortable>
+              <el-table-column prop="errorRate" :label="t('tracing.dashboard.columns.errorRate')" width="100" sortable>
                 <template #default="{ row }">
                   <el-progress
                     :percentage="row.errorRate"
@@ -193,7 +193,7 @@
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column label="状态" width="80">
+              <el-table-column :label="t('tracing.dashboard.columns.status')" width="80">
                 <template #default="{ row }">
                   <el-tooltip :content="getServiceStatusTooltip(row)" placement="top">
                     <el-icon :size="18" :color="getServiceStatusColor(row)">
@@ -206,12 +206,12 @@
           </div>
         </el-tab-pane>
 
-        <el-tab-pane label="延迟分析" name="latency">
+        <el-tab-pane :label="t('tracing.dashboard.tabs.latency')" name="latency">
           <el-row :gutter="16">
             <el-col :xs="24" :lg="12">
               <div class="chart-wrapper">
                 <div class="chart-header">
-                  <h4>P95/P99 延迟趋势</h4>
+                  <h4>{{ t('tracing.dashboard.chart.p95P99LatencyTrend') }}</h4>
                 </div>
                 <div ref="latencyTrendChart" class="chart-container"></div>
               </div>
@@ -219,20 +219,20 @@
             <el-col :xs="24" :lg="12">
               <div class="chart-wrapper">
                 <div class="chart-header">
-                  <h4>最慢的追踪</h4>
-                  <el-button text type="primary" @click="goToSearch">查看全部</el-button>
+                  <h4>{{ t('tracing.dashboard.chart.slowestTraces') }}</h4>
+                  <el-button text type="primary" @click="goToSearch">{{ t('tracing.dashboard.viewAll') }}</el-button>
                 </div>
                 <el-table :data="slowTraces" style="width: 100%" size="small" max-height="300">
-                  <el-table-column prop="operationName" label="操作" show-overflow-tooltip />
-                  <el-table-column prop="duration" label="耗时" width="100">
+                  <el-table-column prop="operationName" :label="t('tracing.dashboard.columns.operation')" show-overflow-tooltip />
+                  <el-table-column prop="duration" :label="t('tracing.dashboard.columns.duration')" width="100">
                     <template #default="{ row }">
                       <span class="text-danger">{{ Math.round(row.duration) }}ms</span>
                     </template>
                   </el-table-column>
-                  <el-table-column label="操作" width="80">
+                  <el-table-column :label="t('tracing.dashboard.columns.action')" width="80">
                     <template #default="{ row }">
                       <el-button text type="primary" size="small" @click="viewTraceDetail(row)">
-                        详情
+                        {{ t('tracing.dashboard.viewDetail') }}
                       </el-button>
                     </template>
                   </el-table-column>
@@ -242,12 +242,12 @@
           </el-row>
         </el-tab-pane>
 
-        <el-tab-pane label="错误分析" name="error">
+        <el-tab-pane :label="t('tracing.dashboard.tabs.error')" name="error">
           <el-row :gutter="16">
             <el-col :xs="24" :lg="12">
               <div class="chart-wrapper">
                 <div class="chart-header">
-                  <h4>错误率趋势</h4>
+                  <h4>{{ t('tracing.dashboard.chart.errorRateTrend') }}</h4>
                 </div>
                 <div ref="errorTrendChart" class="chart-container"></div>
               </div>
@@ -255,32 +255,32 @@
             <el-col :xs="24" :lg="12">
               <div class="chart-wrapper">
                 <div class="chart-header">
-                  <h4>常见错误</h4>
+                  <h4>{{ t('tracing.dashboard.chart.commonErrors') }}</h4>
                 </div>
                 <el-table :data="commonErrors" style="width: 100%" size="small" max-height="300">
-                  <el-table-column prop="errorType" label="错误类型" width="150">
+                  <el-table-column prop="errorType" :label="t('tracing.dashboard.columns.errorType')" width="150">
                     <template #default="{ row }">
                       <el-tag type="danger" size="small">{{ row.errorType || 'Unknown' }}</el-tag>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="count" label="次数" width="80">
+                  <el-table-column prop="count" :label="t('tracing.dashboard.columns.count')" width="80">
                     <template #default="{ row }">
                       <span class="text-danger">{{ row.count }}</span>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="service" label="服务" show-overflow-tooltip />
+                  <el-table-column prop="service" :label="t('tracing.dashboard.columns.service')" show-overflow-tooltip />
                 </el-table>
               </div>
             </el-col>
           </el-row>
         </el-tab-pane>
 
-        <el-tab-pane label="吞吐量" name="throughput">
+        <el-tab-pane :label="t('tracing.dashboard.tabs.throughput')" name="throughput">
           <el-row :gutter="16">
             <el-col :xs="24" :lg="12">
               <div class="chart-wrapper">
                 <div class="chart-header">
-                  <h4>请求量趋势</h4>
+                  <h4>{{ t('tracing.dashboard.chart.requestVolume') }}</h4>
                 </div>
                 <div ref="throughputChart" class="chart-container"></div>
               </div>
@@ -288,7 +288,7 @@
             <el-col :xs="24" :lg="12">
               <div class="chart-wrapper">
                 <div class="chart-header">
-                  <h4>服务吞吐量分布</h4>
+                  <h4>{{ t('tracing.dashboard.chart.serviceThroughput') }}</h4>
                 </div>
                 <div ref="throughputDistChart" class="chart-container"></div>
               </div>
@@ -301,7 +301,7 @@
     <!-- 追踪详情抽屉 -->
     <el-drawer
       v-model="traceDetailVisible"
-      title="追踪详情"
+      :title="t('tracing.dashboard.drawerTitle')"
       direction="rtl"
       size="60%"
     >
@@ -313,6 +313,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, nextTick, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 import {
@@ -331,8 +332,10 @@ import {
 } from '@/api/tracing'
 import TraceDetail from './components/TraceDetail.vue'
 import { useChartTheme } from '@/composables/useChartTheme'
+import { formatNumber as formatNumberBase } from '@/utils/format'
 
 const { getChartTheme } = useChartTheme()
+const { t } = useI18n()
 
 const router = useRouter()
 
@@ -382,9 +385,9 @@ const traceDetailVisible = ref(false)
 const selectedTrace = ref<any>(null)
 
 // 时间快捷选项
-const timeShortcuts = [
+const timeShortcuts = computed(() => [
   {
-    text: '最近1小时',
+    text: t('tracing.dashboard.shortcuts.last1h'),
     value: () => {
       const end = new Date()
       const start = new Date()
@@ -393,7 +396,7 @@ const timeShortcuts = [
     }
   },
   {
-    text: '最近6小时',
+    text: t('tracing.dashboard.shortcuts.last6h'),
     value: () => {
       const end = new Date()
       const start = new Date()
@@ -402,7 +405,7 @@ const timeShortcuts = [
     }
   },
   {
-    text: '今天',
+    text: t('tracing.dashboard.shortcuts.today'),
     value: () => {
       const end = new Date()
       const start = new Date()
@@ -410,7 +413,7 @@ const timeShortcuts = [
       return [start, end]
     }
   }
-]
+])
 
 // 加载数据
 const loadAllData = async () => {
@@ -425,7 +428,7 @@ const loadAllData = async () => {
     initCharts()
   } catch (error) {
     console.error('加载数据失败:', error)
-    ElMessage.warning('加载数据失败，请稍后重试')
+    ElMessage.warning(t('tracing.dashboard.messages.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -497,7 +500,7 @@ const getTraceTrendOption = () => {
       axisPointer: { type: 'cross' }
     },
     legend: {
-      data: ['追踪数', '错误数'],
+      data: [t('tracing.dashboard.columns.traces'), t('tracing.dashboard.columns.errors')],
       bottom: 0
     },
     grid: {
@@ -517,7 +520,7 @@ const getTraceTrendOption = () => {
     },
     series: [
       {
-        name: '追踪数',
+        name: t('tracing.dashboard.columns.traces'),
         type: 'line',
         smooth: true,
         areaStyle: { opacity: 0.3 },
@@ -525,7 +528,7 @@ const getTraceTrendOption = () => {
         data: generateRandomData(12, 100, 500)
       },
       {
-        name: '错误数',
+        name: t('tracing.dashboard.columns.errors'),
         type: 'line',
         smooth: true,
         itemStyle: { color: danger },
@@ -547,7 +550,7 @@ const getLatencyDistributionOption = () => {
       axisPointer: { type: 'shadow' }
     },
     legend: {
-      data: ['平均延迟', 'P95延迟'],
+      data: [t('tracing.dashboard.avgLatency'), t('tracing.dashboard.columns.p95Latency')],
       bottom: 0
     },
     grid: {
@@ -559,22 +562,22 @@ const getLatencyDistributionOption = () => {
     },
     xAxis: {
       type: 'category',
-      data: services.length > 0 ? services : ['暂无数据'],
+      data: services.length > 0 ? services : [t('tracing.dashboard.chart.noData')],
       axisLabel: { rotate: 30 }
     },
     yAxis: {
       type: 'value',
-      name: '延迟(ms)'
+      name: t('tracing.dashboard.chart.latencyUnit')
     },
     series: [
       {
-        name: '平均延迟',
+        name: t('tracing.dashboard.avgLatency'),
         type: 'bar',
         itemStyle: { color: primary },
         data: avgDurations
       },
       {
-        name: 'P95延迟',
+        name: t('tracing.dashboard.columns.p95Latency'),
         type: 'bar',
         itemStyle: { color: warning },
         data: p95Durations
@@ -602,7 +605,7 @@ const formatNumber = (num: number) => {
   if (num >= 10000) {
     return `${(num / 10000).toFixed(1)  }w`
   }
-  return num.toLocaleString()
+  return formatNumberBase(num)
 }
 
 const getLatencyClass = (duration: number) => {
@@ -631,9 +634,9 @@ const getServiceStatusIcon = (row: any) => {
 }
 
 const getServiceStatusTooltip = (row: any) => {
-  if (row.errorRate > 5) return '错误率较高'
-  if (row.avgDuration > 1000) return '延迟较高'
-  return '运行正常'
+  if (row.errorRate > 5) return t('tracing.dashboard.statusTooltip.highErrorRate')
+  if (row.avgDuration > 1000) return t('tracing.dashboard.statusTooltip.highLatency')
+  return t('tracing.dashboard.statusTooltip.healthy')
 }
 
 // 事件处理
@@ -641,7 +644,7 @@ const handleRefresh = async () => {
   refreshing.value = true
   try {
     await loadAllData()
-    ElMessage.success('数据已刷新')
+    ElMessage.success(t('tracing.dashboard.messages.refreshed'))
   } finally {
     refreshing.value = false
   }

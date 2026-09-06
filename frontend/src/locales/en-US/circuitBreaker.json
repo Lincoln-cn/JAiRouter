@@ -1,0 +1,123 @@
+{
+  "circuitBreaker": {
+    "monitoring": {
+      "controlTitle": "Circuit Breaker Monitoring Control",
+      "resumeMonitoring": "Resume Monitoring",
+      "pauseMonitoring": "Pause Monitoring",
+      "clearHistory": "Clear History",
+      "clearAllCircuitBreakers": "Clear All Circuit Breakers",
+      "export": "Export",
+      "exportJson": "Export JSON",
+      "exportCsv": "Export CSV",
+      "sampleRate": "Sample Rate",
+      "historySize": "History Size",
+      "wsConnected": "WebSocket Connected",
+      "wsDisconnected": "WebSocket Disconnected",
+      "sampledCount": "Sampled: {count}",
+      "statusOverviewTitle": "Circuit Breaker Status Overview",
+      "refreshStatus": "Refresh Status",
+      "eventsTitle": "Real-Time Circuit Breaker Events",
+      "eventTypePlaceholder": "Event Type",
+      "reset": "Reset",
+      "columns": {
+        "instanceId": "Instance ID",
+        "instanceIdCompact": "Instance ID",
+        "serviceType": "Service Type",
+        "state": "State",
+        "actions": "Actions",
+        "time": "Time",
+        "instanceName": "Instance Name",
+        "eventType": "Event Type",
+        "previousState": "Previous State",
+        "currentState": "Current State",
+        "failureCount": "Failures",
+        "successCount": "Successes",
+        "triggerReason": "Trigger Reason"
+      },
+      "eventTypes": {
+        "stateChange": "State Change",
+        "success": "Success",
+        "failure": "Failure"
+      },
+      "confirmations": {
+        "resetSingleTitle": "Reset Circuit Breaker Confirmation",
+        "resetSingleMessage": "Are you sure you want to reset the circuit breaker state of instance \"{name}\"?",
+        "confirmReset": "Reset",
+        "cancel": "Cancel",
+        "resetAllTitle": "Clear All Confirmation",
+        "resetAllMessage": "Are you sure you want to clear the circuit breaker state of all instances? This will reset every circuit breaker to its initial state.",
+        "confirmClear": "Clear"
+      },
+      "messages": {
+        "paused": "Monitoring paused",
+        "resumed": "Monitoring resumed",
+        "operationFailed": "Operation failed",
+        "sampleRateUpdated": "Sample rate updated to {value}%",
+        "sampleRateUpdateFailed": "Failed to update sample rate",
+        "historySizeUpdated": "History size updated to {value}",
+        "historySizeUpdateFailed": "Failed to update history size",
+        "historyCleared": "History cleared",
+        "clearHistoryFailed": "Failed to clear history",
+        "exportSuccess": "Exported {format} file",
+        "exportFailed": "Export failed",
+        "stateReset": "Circuit breaker state reset",
+        "resetFailed": "Reset failed",
+        "allCleared": "All circuit breaker states cleared",
+        "clearAllFailed": "Clear failed"
+      }
+    },
+    "history": {
+      "title": "Circuit Breaker History",
+      "refresh": "Refresh",
+      "cleanupExpired": "Clean Up Expired Records",
+      "stats": {
+        "total": "Total Records",
+        "today": "Today",
+        "week": "Last 7 Days",
+        "month": "Last 30 Days"
+      },
+      "columns": {
+        "instanceId": "Instance ID",
+        "instanceName": "Instance Name",
+        "serviceType": "Service Type",
+        "stateTransition": "State Transition",
+        "triggerReason": "Trigger Reason",
+        "failureCount": "Failures",
+        "successCount": "Successes",
+        "changedAt": "Changed At"
+      },
+      "confirmations": {
+        "cleanupTitle": "Confirm",
+        "cleanupMessage": "Are you sure you want to clean up the expired history records?",
+        "confirm": "OK",
+        "cancel": "Cancel"
+      },
+      "messages": {
+        "loadFailed": "Failed to load history records",
+        "cleanupCompleted": "Cleanup completed",
+        "cleanupFailed": "Failed to clean up history records"
+      }
+    },
+    "globalConfig": {
+      "title": "Circuit Breaker Global Configuration",
+      "adaptiveThresholdEnabled": "Enable Adaptive Threshold Adjustment",
+      "stateSyncInterval": "State Sync Interval (minutes)",
+      "cleanupInterval": "Expired Cleanup Interval (minutes)",
+      "historyRetentionDays": "History Retention (days)",
+      "defaultFailureThreshold": "Default Failure Threshold",
+      "defaultSuccessThreshold": "Default Success Threshold",
+      "defaultTimeout": "Default Timeout (ms)",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "adaptiveHint": "Thresholds are adjusted automatically based on the failure rate",
+      "save": "Save Global Config",
+      "resetToDefaults": "Reset to Defaults",
+      "messages": {
+        "saveSuccess": "Global config saved successfully",
+        "saveFailed": "Failed to save global config",
+        "resetSuccess": "Reset to default config",
+        "resetFailed": "Failed to reset global config"
+      }
+    }
+  }
+}

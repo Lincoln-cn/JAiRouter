@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "title": "Permission Management",
+    "refresh": "Refresh",
+    "role": "Role",
+    "rolePlaceholder": "Select a role",
+    "changeAlert": {
+      "title": "Permission Change Notice",
+      "description": "Changes to permissions take effect only after you log in again (permissions are embedded in the JWT); the server-side cache expires after about 5 minutes."
+    },
+    "save": "Save Permissions",
+    "reset": "Reset",
+    "roleDescriptions": {
+      "ADMIN": "All permissions (45 codes, superset)",
+      "OPERATOR": "All read/write permissions, excluding system management, security management manage, and infrastructure",
+      "USER": "Dashboard + configuration read-only + traffic governance + monitoring read-only + tracing search + AI playground",
+      "VIEWER": "Read-only: all :read permissions only"
+    },
+    "groups": {
+      "overview": "Overview",
+      "config": "Configuration",
+      "trafficGovernance": "Traffic Governance",
+      "callHistory": "Call History",
+      "monitoring": "Monitoring",
+      "tracing": "Tracing",
+      "security": "Security",
+      "system": "System",
+      "ai": "AI",
+      "infrastructure": "Infrastructure"
+    },
+    "messages": {
+      "loadRolesFailed": "Failed to load role permissions, please try again",
+      "saveSuccess": "Permissions saved; changes take effect after you log in again",
+      "saveFailed": "Failed to save permissions, please try again",
+      "resetApplied": "Reset to the latest permissions saved on the server"
+    }
+  }
+}

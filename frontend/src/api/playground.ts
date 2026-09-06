@@ -6,6 +6,11 @@ import type {
   ApiEndpoint
 } from '@/views/playground/types/playground'
 import { SERVICE_ENDPOINTS } from '@/views/playground/types/playground'
+import { i18n } from '@/i18n'
+const { t: gt } = i18n.global as unknown as {
+  t: (key: string, named?: Record<string, string | number>) => string
+}
+
 
 // 创建专用于playground的axios实例
 const playgroundRequest: AxiosInstance = axios.create({
@@ -170,7 +175,7 @@ export const sendServiceRequest = async (
   const endpoint: ApiEndpoint = SERVICE_ENDPOINTS[serviceType]
   
   if (!endpoint) {
-    throw new Error(`不支持的服务类型: ${serviceType}`)
+    throw new Error(gt('apiErrors.unsupportedServiceType', { serviceType }))
   }
   
   // 构建请求头

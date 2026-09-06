@@ -3,21 +3,21 @@
     <!-- 时间筛选 -->
     <el-card class="filter-card" shadow="hover">
       <el-form :inline="true" class="filter-form">
-        <el-form-item label="时间范围">
+        <el-form-item :label="t('callHistory.common.timeRange')">
           <el-date-picker
             v-model="dateRange"
             type="datetimerange"
-            range-separator="至"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
+            :range-separator="t('callHistory.common.rangeSeparator')"
+            :start-placeholder="t('callHistory.common.startTime')"
+            :end-placeholder="t('callHistory.common.endTime')"
             value-format="YYYY-MM-DD HH:mm:ss"
             style="width: 400px"
             @change="handleDateChange"
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" icon="Search" @click="loadData">查询</el-button>
-          <el-button icon="Refresh" @click="handleReset">重置</el-button>
+          <el-button type="primary" icon="Search" @click="loadData">{{ t('callHistory.common.query') }}</el-button>
+          <el-button icon="Refresh" @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -25,32 +25,32 @@
     <!-- 统计概览卡片 -->
     <el-row :gutter="20" class="stats-row">
       <el-col :span="6">
-        <StatCard :icon="DataAnalysis" label="总请求数" :value="statistics.totalRequests" tone="primary" />
+        <StatCard :icon="DataAnalysis" :label="t('callHistory.dashboard.stats.totalRequests')" :value="statistics.totalRequests" tone="primary" />
       </el-col>
       <el-col :span="6">
-        <StatCard :icon="CircleCheck" label="成功率" :value="statistics.successRate?.toFixed(2) || '0'" unit="%" tone="success" />
+        <StatCard :icon="CircleCheck" :label="t('callHistory.dashboard.stats.successRate')" :value="statistics.successRate?.toFixed(2) || '0'" unit="%" tone="success" />
       </el-col>
       <el-col :span="6">
-        <StatCard :icon="Clock" label="平均响应时间" :value="statistics.avgResponseTimeMs?.toFixed(0) || '0'" unit="ms" tone="info" />
+        <StatCard :icon="Clock" :label="t('callHistory.dashboard.stats.avgResponseTime')" :value="statistics.avgResponseTimeMs?.toFixed(0) || '0'" unit="ms" tone="info" />
       </el-col>
       <el-col :span="6">
-        <StatCard :icon="Tickets" label="总 Token 消耗" :value="statistics.totalTokens" tone="warning" />
+        <StatCard :icon="Tickets" :label="t('callHistory.dashboard.stats.totalTokenConsumed')" :value="statistics.totalTokens" tone="warning" />
       </el-col>
     </el-row>
 
     <!-- 第二行统计卡片 -->
     <el-row :gutter="20" class="stats-row">
       <el-col :span="6">
-        <StatCard :icon="WarningFilled" label="失败请求数" :value="statistics.failedRequests" tone="danger" />
+        <StatCard :icon="WarningFilled" :label="t('callHistory.dashboard.stats.failedRequests')" :value="statistics.failedRequests" tone="danger" />
       </el-col>
       <el-col :span="6">
-        <StatCard :icon="Grid" label="模型数量" :value="statistics.byModel?.length || 0" tone="success" />
+        <StatCard :icon="Grid" :label="t('callHistory.dashboard.stats.modelCount')" :value="statistics.byModel?.length || 0" tone="success" />
       </el-col>
       <el-col :span="6">
-        <StatCard :icon="Service" label="服务类型数" :value="statistics.byServiceType?.length || 0" tone="primary" />
+        <StatCard :icon="Service" :label="t('callHistory.dashboard.stats.serviceTypeCount')" :value="statistics.byServiceType?.length || 0" tone="primary" />
       </el-col>
       <el-col :span="6">
-        <StatCard :icon="Document" label="平均 Token / 请求" :value="statistics.avgTokensPerRequest" tone="warning" />
+        <StatCard :icon="Document" :label="t('callHistory.dashboard.stats.avgTokensPerRequest')" :value="statistics.avgTokensPerRequest" tone="warning" />
       </el-col>
     </el-row>
 
@@ -60,7 +60,7 @@
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
-            <span class="chart-title">每日请求趋势</span>
+            <span class="chart-title">{{ t('callHistory.dashboard.chart.dailyTrendTitle') }}</span>
           </template>
           <div ref="dailyChartRef" class="chart-container"></div>
         </el-card>
@@ -70,7 +70,7 @@
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
-            <span class="chart-title">模型调用分布 Top 10</span>
+            <span class="chart-title">{{ t('callHistory.dashboard.chart.modelDistributionTitle') }}</span>
           </template>
           <div ref="modelChartRef" class="chart-container"></div>
         </el-card>
@@ -82,7 +82,7 @@
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
-            <span class="chart-title">服务类型调用分布</span>
+            <span class="chart-title">{{ t('callHistory.dashboard.chart.serviceTypeDistributionTitle') }}</span>
           </template>
           <div ref="serviceTypeChartRef" class="chart-container"></div>
         </el-card>
@@ -92,7 +92,7 @@
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
-            <span class="chart-title">24 小时请求分布</span>
+            <span class="chart-title">{{ t('callHistory.dashboard.chart.hourlyDistributionTitle') }}</span>
           </template>
           <div ref="hourlyChartRef" class="chart-container"></div>
         </el-card>
@@ -104,7 +104,7 @@
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
-            <span class="chart-title">HTTP 状态码分布</span>
+            <span class="chart-title">{{ t('callHistory.dashboard.chart.statusCodeDistributionTitle') }}</span>
           </template>
           <div ref="statusCodeChartRef" class="chart-container"></div>
         </el-card>
@@ -114,7 +114,7 @@
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
-            <span class="chart-title">错误码分布</span>
+            <span class="chart-title">{{ t('callHistory.dashboard.chart.errorCodeDistributionTitle') }}</span>
           </template>
           <div ref="errorCodeChartRef" class="chart-container"></div>
         </el-card>
@@ -124,48 +124,48 @@
     <!-- 最近调用记录 -->
     <el-card shadow="hover" style="margin-top: 20px;">
       <template #header>
-        <span class="chart-title">最近调用记录</span>
+        <span class="chart-title">{{ t('callHistory.dashboard.chart.recentCallsTitle') }}</span>
       </template>
       <el-table :data="recentCalls" border stripe :max-height="400">
-        <el-table-column label="时间" prop="createdAt" width="180">
+        <el-table-column :label="t('callHistory.common.time')" prop="createdAt" width="180">
           <template #default="scope">
             {{ formatTime(scope.row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="模型名称" prop="modelName" min-width="160" show-overflow-tooltip />
-        <el-table-column label="服务类型" prop="serviceType" width="110">
+        <el-table-column :label="t('callHistory.common.modelName')" prop="modelName" min-width="160" show-overflow-tooltip />
+        <el-table-column :label="t('callHistory.common.serviceType')" prop="serviceType" width="110">
           <template #default="scope">
             <el-tag size="small">{{ getServiceTypeLabel(scope.row.serviceType) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="提供商" prop="provider" width="100" show-overflow-tooltip />
-        <el-table-column label="HTTP 状态" prop="httpStatusCode" width="100" align="center">
+        <el-table-column :label="t('callHistory.common.provider')" prop="provider" width="100" show-overflow-tooltip />
+        <el-table-column :label="t('callHistory.common.httpStatus')" prop="httpStatusCode" width="100" align="center">
           <template #default="scope">
             <el-tag :type="getStatusType(scope.row.httpStatusCode)" size="small">
               {{ scope.row.httpStatusCode || '-' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="Token" prop="totalTokens" width="100" align="right">
+        <el-table-column :label="t('callHistory.common.token')" prop="totalTokens" width="100" align="right">
           <template #default="scope">
             {{ formatNumber(scope.row.totalTokens) }}
           </template>
         </el-table-column>
-        <el-table-column label="响应时间 (ms)" prop="responseTimeMs" width="120" align="right">
+        <el-table-column :label="t('callHistory.common.responseTimeMs')" prop="responseTimeMs" width="120" align="right">
           <template #default="scope">
             <el-tag :type="getResponseTimeType(scope.row.responseTimeMs)" size="small">
               {{ scope.row.responseTimeMs?.toFixed(0) || '-' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="80" align="center">
+        <el-table-column :label="t('callHistory.common.status')" width="80" align="center">
           <template #default="scope">
             <el-tag :type="scope.row.isSuccess ? 'success' : 'danger'" size="small">
-              {{ scope.row.isSuccess ? '成功' : '失败' }}
+              {{ scope.row.isSuccess ? t('callHistory.common.success') : t('callHistory.common.failed') }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="错误信息" prop="errorMessage" min-width="180" show-overflow-tooltip>
+        <el-table-column :label="t('callHistory.common.errorMessage')" prop="errorMessage" min-width="180" show-overflow-tooltip>
           <template #default="scope">
             <span v-if="scope.row.errorMessage" class="error-message">
               {{ scope.row.errorMessage }}
@@ -180,6 +180,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import {
   DataAnalysis,
@@ -206,8 +207,10 @@ import type {
 } from '@/types/callHistory'
 import StatCard from '@/components/StatCard.vue'
 import { useChartTheme } from '@/composables/useChartTheme'
+import { formatDateTime as formatDateTimeBase, formatNumber as formatNumberBase } from '@/utils/format'
 
 const { getChartTheme } = useChartTheme()
+const { t } = useI18n()
 
 /** 将 #rrggbb hex 转为 rgba 字符串 */
 function colorWithAlpha(hex: string, alpha: number): string {
@@ -258,31 +261,33 @@ let hourlyChart: ECharts | null = null
 let statusCodeChart: ECharts | null = null
 let errorCodeChart: ECharts | null = null
 
-// 格式化数字（千分位）
+// 格式化数字（千分位，委托共享 format.ts）
 const formatNumber = (num?: number): string => {
   if (!num && num !== 0) return '0'
-  return num.toLocaleString()
+  return formatNumberBase(num)
 }
 
-// 格式化时间
+// 格式化时间（委托共享 format.ts）
 const formatTime = (time?: string) => {
   if (!time) return '-'
-  return time.replace('T', ' ').substring(0, 19)
+  return formatDateTimeBase(time)
+}
+
+// 服务类型 key -> i18n 键名映射（保持原有顺序）
+const serviceTypeKeyMap: Record<string, string> = {
+  chat: 'chat',
+  embedding: 'embedding',
+  rerank: 'rerank',
+  tts: 'tts',
+  stt: 'stt',
+  imgGen: 'imgGen',
+  imgEdit: 'imgEdit'
 }
 
 // 获取服务类型标签
 const getServiceTypeLabel = (type?: string) => {
-  if (!type) return '未知'
-  const labels: Record<string, string> = {
-    chat: '聊天',
-    embedding: '嵌入',
-    rerank: '重排序',
-    tts: '语音合成',
-    stt: '语音识别',
-    imgGen: '图像生成',
-    imgEdit: '图像编辑'
-  }
-  return labels[type] || type
+  if (!type) return t('callHistory.common.unknown')
+  return serviceTypeKeyMap[type] ? t(`callHistory.serviceTypes.${serviceTypeKeyMap[type]}`) : type
 }
 
 // 获取 HTTP 状态码标签类型
@@ -348,7 +353,7 @@ const updateDailyChart = () => {
       trigger: 'axis'
     },
     legend: {
-      data: ['请求数', '总 Token']
+      data: [t('callHistory.common.requestCount'), t('callHistory.common.totalToken')]
     },
     xAxis: {
       type: 'category',
@@ -358,7 +363,7 @@ const updateDailyChart = () => {
     yAxis: [
       {
         type: 'value',
-        name: '请求数',
+        name: t('callHistory.common.requestCount'),
         position: 'left'
       },
       {
@@ -369,13 +374,13 @@ const updateDailyChart = () => {
     ],
     series: [
       {
-        name: '请求数',
+        name: t('callHistory.common.requestCount'),
         type: 'bar',
         data: data.map(item => item.requestCount),
         itemStyle: { color: theme.primary }
       },
       {
-        name: '总 Token',
+        name: t('callHistory.common.totalToken'),
         type: 'line',
         yAxisIndex: 1,
         smooth: true,
@@ -402,7 +407,7 @@ const updateModelChart = () => {
   const option = {
     tooltip: {
       trigger: 'item',
-      formatter: '{b}: {c} 次 ({d}%)'
+      formatter: '{b}: {c} ' + t('callHistory.dashboard.chart.countUnit') + ' ({d}%)'
     },
     legend: {
       orient: 'vertical',
@@ -511,7 +516,7 @@ const updateHourlyChart = () => {
     },
     series: [
       {
-        name: '请求数',
+        name: t('callHistory.common.requestCount'),
         type: 'bar',
         data: hourlyData,
         itemStyle: {
@@ -550,7 +555,7 @@ const updateStatusCodeChart = () => {
   const option = {
     tooltip: {
       trigger: 'item',
-      formatter: '{b}: {c} 次 ({d}%)'
+      formatter: '{b}: {c} ' + t('callHistory.dashboard.chart.countUnit') + ' ({d}%)'
     },
     series: [
       {
@@ -644,7 +649,7 @@ const loadData = async () => {
     initCharts()
   } catch (error: any) {
     console.error('加载调用历史数据失败:', error)
-    ElMessage.error(`加载调用历史数据失败：${error.message || '未知错误'}`)
+    ElMessage.error(t('callHistory.dashboard.loadFailed', { message: error.message || t('callHistory.common.unknownError') }))
   }
 }
 

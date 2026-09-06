@@ -5,7 +5,7 @@
       <div class="toolbar-left">
         <el-select
           v-model="selectedModel"
-          :placeholder="'选择 Rerank 模型'"
+          :placeholder="t('playgroundRerank.modelPlaceholder')"
           :loading="instancesLoading"
           filterable
           class="model-select"
@@ -36,13 +36,13 @@
                 v-if="inst.healthStatus === 'UNHEALTHY'"
                 class="health-status-text"
               >
-                (离线)
+                {{ t('playgroundRerank.offlineStatus') }}
               </span>
               <span
                 v-else-if="inst.healthStatus === 'UNKNOWN' || !inst.healthStatus"
                 class="health-status-text unknown"
               >
-                (未知)
+                {{ t('playgroundRerank.unknownStatus') }}
               </span>
             </div>
           </el-option>
@@ -52,7 +52,7 @@
           @click="showConfig = !showConfig"
         >
           <el-icon><Setting /></el-icon>
-          {{ showConfig ? '隐藏配置' : '参数配置' }}
+          {{ showConfig ? t('playgroundRerank.hideConfig') : t('playgroundRerank.showConfig') }}
         </el-button>
       </div>
       <div class="toolbar-right">
@@ -61,7 +61,7 @@
           @click="handleClear"
         >
           <el-icon><Delete /></el-icon>
-          清空
+          {{ t('playgroundRerank.clear') }}
         </el-button>
       </div>
     </div>
@@ -75,7 +75,7 @@
         <el-row :gutter="16">
           <el-col :span="6">
             <div class="config-item">
-              <label class="config-label">返回数量 (Top N)</label>
+              <label class="config-label">{{ t('playgroundRerank.config.topN') }}</label>
               <el-input-number
                 v-model="config.topN"
                 :min="1"
@@ -87,7 +87,7 @@
           </el-col>
           <el-col :span="6">
             <div class="config-item">
-              <label class="config-label">返回文档内容</label>
+              <label class="config-label">{{ t('playgroundRerank.config.returnDocuments') }}</label>
               <el-switch v-model="config.returnDocuments" />
             </div>
           </el-col>
@@ -100,13 +100,13 @@
       <!-- 查询输入 -->
       <div class="input-card">
         <div class="card-header">
-          <span class="card-title">查询文本</span>
+          <span class="card-title">{{ t('playgroundRerank.query.title') }}</span>
         </div>
         <el-input
           v-model="queryText"
           type="textarea"
           :autosize="{ minRows: 2, maxRows: 4 }"
-          placeholder="输入查询文本，例如：什么是机器学习？"
+          :placeholder="t('playgroundRerank.query.placeholder')"
           resize="none"
         />
       </div>
@@ -114,14 +114,14 @@
       <!-- 文档列表 -->
       <div class="input-card">
         <div class="card-header">
-          <span class="card-title">文档列表</span>
+          <span class="card-title">{{ t('playgroundRerank.documents.title') }}</span>
           <el-button
             text
             size="small"
             @click="addDocument"
           >
             <el-icon><Plus /></el-icon>
-            添加文档
+            {{ t('playgroundRerank.documents.add') }}
           </el-button>
         </div>
         <div class="document-list">
@@ -146,7 +146,7 @@
               v-model="documents[index]"
               type="textarea"
               :autosize="{ minRows: 2, maxRows: 6 }"
-              :placeholder="`文档 ${index + 1} 内容`"
+              :placeholder="t('playgroundRerank.documents.contentPlaceholder', { index: index + 1 })"
               resize="none"
             />
           </div>
@@ -162,14 +162,14 @@
           @click="handleRerank"
         >
           <el-icon><Sort /></el-icon>
-          执行重排序
+          {{ t('playgroundRerank.run') }}
         </el-button>
       </div>
 
       <!-- 结果展示区 -->
       <div class="result-card">
         <div class="card-header">
-          <span class="card-title">重排序结果</span>
+          <span class="card-title">{{ t('playgroundRerank.result.title') }}</span>
         </div>
 
         <!-- 空状态 -->
@@ -183,7 +183,7 @@
           >
             <Sort />
           </el-icon>
-          <span class="empty-text">输入查询和文档后执行重排序</span>
+          <span class="empty-text">{{ t('playgroundRerank.result.empty') }}</span>
         </div>
 
         <!-- 加载状态 -->
@@ -197,7 +197,7 @@
           >
             <Loading />
           </el-icon>
-          <span>正在重排序...</span>
+          <span>{{ t('playgroundRerank.result.loading') }}</span>
         </div>
 
         <!-- 结果列表 -->
@@ -206,8 +206,8 @@
           class="result-list"
         >
           <div class="result-stats">
-            <span class="stat-item">耗时: {{ result.duration }}ms</span>
-            <span class="stat-item">返回: {{ result.data?.data?.results?.length || 0 }} 条</span>
+            <span class="stat-item">{{ t('playgroundRerank.result.duration', { duration: result.duration }) }}</span>
+            <span class="stat-item">{{ t('playgroundRerank.result.returned', { count: result.data?.data?.results?.length || 0 }) }}</span>
           </div>
 
           <div
@@ -218,7 +218,7 @@
             <div class="result-header">
               <div class="result-rank">
                 <span class="rank-badge">#{{ item.index + 1 }}</span>
-                <span class="score-badge">分数: {{ (item.relevance_score || 0).toFixed(4) }}</span>
+                <span class="score-badge">{{ t('playgroundRerank.result.score', { score: (item.relevance_score || 0).toFixed(4) }) }}</span>
               </div>
             </div>
             <div
@@ -236,6 +236,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   Setting,
   Delete,
@@ -250,6 +251,8 @@ import { usePlaygroundData } from '@/composables/usePlaygroundData'
 import { sendServiceRequest } from '@/api/playground'
 import type { RerankRequestConfig, PlaygroundResponse } from '../../types/playground'
 import { parseErrorMessage, getErrorSuggestion } from '../../utils/errorHandler'
+
+const { t } = useI18n()
 
 // 状态
 const showConfig = ref(false)
@@ -322,15 +325,15 @@ const handleRerank = async () => {
 
     const response = await sendServiceRequest('rerank', requestConfig, headers)
     result.value = response
-    ElMessage.success('重排序完成')
+    ElMessage.success(t('playgroundRerank.messages.rerankCompleted'))
   } catch (error: any) {
-    const errorMsg = parseErrorMessage(error, '重排序')
+    const errorMsg = parseErrorMessage(error, t('playgroundRerank.messages.operation'))
     const suggestion = getErrorSuggestion(error)
 
     if (suggestion) {
       ElMessage({
         type: 'error',
-        message: `${errorMsg}\n\n💡 建议: ${suggestion}`,
+        message: `${errorMsg}\n\n${t('playgroundRerank.messages.suggestion', { suggestion })}`,
         duration: 6000,
         showClose: true
       })

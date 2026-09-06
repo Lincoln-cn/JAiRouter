@@ -1,0 +1,49 @@
+{
+  "playgroundEmbedding": {
+    "toolbar": {
+      "selectModel": "Select Embedding model",
+      "showConfig": "Config",
+      "hideConfig": "Hide config",
+      "clear": "Clear"
+    },
+    "instance": {
+      "offline": "(Offline)",
+      "unknown": "(Unknown)"
+    },
+    "labels": {
+      "encodingFormat": "Encoding format",
+      "dimensions": "Vector dimensions"
+    },
+    "input": {
+      "title": "Input text",
+      "add": "Add input",
+      "placeholder": "Text {index}"
+    },
+    "action": {
+      "generate": "Generate vectors"
+    },
+    "result": {
+      "title": "Vector results",
+      "copy": "Copy",
+      "empty": "Enter text to generate vectors",
+      "generating": "Generating vectors..."
+    },
+    "stats": {
+      "vectorCount": "Vectors",
+      "dimensionUnknown": "Unknown",
+      "duration": "Duration"
+    },
+    "vector": {
+      "index": "Vector {index}",
+      "dimensionSuffix": "{dim} dims"
+    },
+    "messages": {
+      "generateSuccess": "Successfully generated {count} vectors",
+      "vectorCopied": "Vector copied",
+      "resultCopied": "Result copied",
+      "copyFailed": "Copy failed",
+      "errorContext": "Vector generation",
+      "suggestion": "Suggestion"
+    }
+  }
+}

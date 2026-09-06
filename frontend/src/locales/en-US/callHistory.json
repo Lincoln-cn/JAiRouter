@@ -1,0 +1,140 @@
+{
+  "callHistory": {
+    "serviceTypes": {
+      "chat": "Chat",
+      "embedding": "Embedding",
+      "rerank": "Rerank",
+      "tts": "Text-to-Speech",
+      "stt": "Speech-to-Text",
+      "imgGen": "Image Generation",
+      "imgEdit": "Image Editing"
+    },
+    "common": {
+      "unknown": "Unknown",
+      "success": "Success",
+      "failed": "Failed",
+      "normal": "Normal",
+      "time": "Time",
+      "timeRange": "Time Range",
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "rangeSeparator": "to",
+      "modelName": "Model Name",
+      "serviceType": "Service Type",
+      "provider": "Provider",
+      "httpStatus": "HTTP Status",
+      "httpStatusCode": "HTTP Status Code",
+      "token": "Tokens",
+      "totalToken": "Total Tokens",
+      "responseTimeMs": "Response Time (ms)",
+      "status": "Status",
+      "callStatus": "Call Status",
+      "action": "Actions",
+      "details": "Details",
+      "query": "Search",
+      "reset": "Reset",
+      "save": "Save",
+      "unknownError": "Unknown error",
+      "requestCount": "Requests",
+      "errorMessage": "Error Message"
+    },
+    "dashboard": {
+      "loadFailed": "Failed to load call history data: {message}",
+      "stats": {
+        "totalRequests": "Total Requests",
+        "successRate": "Success Rate",
+        "avgResponseTime": "Avg. Response Time",
+        "totalTokenConsumed": "Total Tokens Consumed",
+        "failedRequests": "Failed Requests",
+        "modelCount": "Models",
+        "serviceTypeCount": "Service Types",
+        "avgTokensPerRequest": "Avg. Tokens / Request"
+      },
+      "chart": {
+        "countUnit": "requests",
+        "dailyTrendTitle": "Daily Request Trend",
+        "modelDistributionTitle": "Top 10 Model Call Distribution",
+        "serviceTypeDistributionTitle": "Service Type Call Distribution",
+        "hourlyDistributionTitle": "24-Hour Request Distribution",
+        "statusCodeDistributionTitle": "HTTP Status Code Distribution",
+        "errorCodeDistributionTitle": "Error Code Distribution",
+        "recentCallsTitle": "Recent Call Records"
+      }
+    },
+    "list": {
+      "pageTitle": "Call History Search",
+      "modelNamePlaceholder": "Enter model name",
+      "allPlaceholder": "All",
+      "httpStatusCodePlaceholder": "e.g. 200, 429",
+      "recordGovernanceTitle": "Record Governance Settings",
+      "recordLevelLabel": "Record Level",
+      "recordLevels": {
+        "metadataOnly": "Metadata Only (Default)",
+        "summary": "Summary (Redacted)",
+        "full": "Full (Encrypted)"
+      },
+      "levelGuideTitle": "Level Description",
+      "levelGuideDescription": "Metadata Only: request/response content is not saved; Summary: saves a redacted summary of the first N characters; Full: saves the full content encrypted (viewable by admins only)",
+      "listTitle": "Call History Records",
+      "totalRecords": "Total: {count} records",
+      "detailsTitle": "Call Details",
+      "requestId": "Request ID",
+      "requestMethod": "Request Method",
+      "requestPath": "Request Path",
+      "instanceName": "Instance Name",
+      "responseTime": "Response Time",
+      "errorCode": "Error Code",
+      "tokenStatsTitle": "Token Statistics",
+      "tokenStats": {
+        "input": "Input: {value}",
+        "output": "Output: {value}",
+        "total": "Total: {value}"
+      },
+      "rateLimitedStatus": "Rate Limit Status",
+      "rateLimited": "Rate limited",
+      "circuitBreakStatus": "Circuit Breaker Status",
+      "circuitBroken": "Circuit broken",
+      "clientIp": "Client IP",
+      "bodySummaryTitle": "Request/Response Summary",
+      "requestBodySummary": "Request body:",
+      "responseBodySummary": "Response body:",
+      "loadConfigFailed": "Failed to load recording config: {message}",
+      "saveConfigFailed": "Failed to save recording config: {message}",
+      "saveSuccess": "Record level updated",
+      "loadFailed": "Failed to load call history: {message}"
+    },
+    "slowCalls": {
+      "loadFailed": "Failed to load slow calls: {message}",
+      "thresholdLabel": "Threshold (ms)",
+      "displayCountLabel": "Records to Show",
+      "slowCallCountLabel": "Slow Calls",
+      "maxResponseTimeLabel": "Max Response Time (ms)",
+      "avgResponseTimeLabel": "Avg. Response Time (ms)",
+      "listTitle": "Slow Call List",
+      "thresholdTag": "Threshold: {value} ms"
+    },
+    "tokenUsage": {
+      "loadFailed": "Failed to load statistics: {message}",
+      "stats": {
+        "totalTokenUsed": "Total Tokens Used",
+        "inputTokens": "Input Tokens",
+        "outputTokens": "Output Tokens",
+        "avgResponseTimeMs": "Avg. Response Time (ms)",
+        "totalRequests": "Total Requests",
+        "successRate": "Success Rate",
+        "modelUsedCount": "Models Used",
+        "serviceTypeCount": "Service Types"
+      },
+      "chart": {
+        "modelTokenTopTitle": "Top 10 Models by Token Usage",
+        "serviceTypeTokenTitle": "Token Usage by Service Type",
+        "dailyTrendTitle": "Daily Token Usage Trend",
+        "weeklyTrendTitle": "Weekly Token Usage Trend",
+        "monthlyTrendTitle": "Monthly Token Usage Trend",
+        "hourlyDistributionTitle": "24-Hour Token Usage Distribution",
+        "recentUsageTitle": "Recent Token Usage",
+        "tokenUsage": "Tokens used"
+      }
+    }
+  }
+}

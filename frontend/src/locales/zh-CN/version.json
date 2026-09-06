@@ -1,0 +1,111 @@
+{
+  "version": {
+    "title": "版本管理",
+    "refresh": "刷新",
+    "help": {
+      "title": "操作说明",
+      "apply": "应用",
+      "applyBody": "：将此版本的配置设为当前版本。",
+      "delete": "删除",
+      "deleteBody": "：只能删除历史版本，删除后不可恢复。",
+      "view": "查看",
+      "viewBody": "：可预览配置详情和变更说明。"
+    },
+    "versionNo": "版本号",
+    "status": "状态",
+    "operationType": "操作类型",
+    "operationDetail": "操作详情",
+    "time": "时间",
+    "timestamp": "时间戳",
+    "actions": "操作",
+    "currentStatus": "当前版本",
+    "historyStatus": "历史版本",
+    "view": "查看",
+    "apply": "应用",
+    "delete": "删除",
+    "detailTitle": "版本详情",
+    "configPreview": "配置预览",
+    "close": "关闭",
+    "none": "无",
+    "unknownOperation": "未知操作",
+    "operationNames": {
+      "systemInit": "系统初始化",
+      "instanceChange": "实例变更",
+      "applyVersion": "应用版本",
+      "serviceConfigChange": "服务配置变更",
+      "createService": "创建服务",
+      "updateService": "更新服务",
+      "deleteService": "删除服务",
+      "addInstance": "添加实例",
+      "updateInstance": "更新实例",
+      "deleteInstance": "删除实例",
+      "updateTracingSampling": "更新采样配置",
+      "rateLimitChange": "限流配置变更",
+      "circuitBreakerChange": "熔断配置变更"
+    },
+    "applyLoading": "正在应用版本 {version}...",
+    "validateLoading": "验证版本有效性...",
+    "applyConfigLoading": "应用版本配置...",
+    "validateResultLoading": "验证应用结果...",
+    "refreshConfigLoading": "刷新配置状态...",
+    "applySuccess": "版本 {version} 应用成功！配置已更新并生效。",
+    "applyDialog": {
+      "title": "应用配置版本",
+      "heading": "版本应用确认",
+      "version": "版本号：{version}",
+      "operation": "操作类型：{operation}",
+      "detail": "操作详情：{detail}",
+      "warning": "应用此版本将替换当前配置，请确认操作无误。",
+      "confirm": "确定应用",
+      "cancel": "取消"
+    },
+    "deleteDialog": {
+      "title": "删除配置版本",
+      "heading": "版本删除确认",
+      "version": "版本号：{version}",
+      "operation": "操作类型：{operation}",
+      "detail": "操作详情：{detail}",
+      "createdAt": "创建时间：{time}",
+      "warning": "警告：此操作不可恢复！",
+      "hint": "删除版本将永久移除该版本的配置数据，请确认您不再需要此版本。",
+      "confirm": "确定删除",
+      "cancel": "取消"
+    },
+    "cannotDelete": {
+      "title": "删除失败",
+      "heading": "无法删除当前版本",
+      "message": "版本 {version} 是当前正在使用的版本，不能被删除。",
+      "advice": "建议操作：",
+      "advice1": "1. 先应用其他版本",
+      "advice2": "2. 然后再删除此版本",
+      "acknowledge": "我知道了"
+    },
+    "errorDialog": {
+      "title": "版本应用失败",
+      "details": "错误详情：",
+      "techDetails": "技术详情：",
+      "advice": "建议操作：",
+      "advice1": "1. 检查版本是否存在",
+      "advice2": "2. 确认网络连接正常",
+      "advice3": "3. 如问题持续，请联系系统管理员",
+      "acknowledge": "我知道了"
+    },
+    "errors": {
+      "unknown": "未知错误",
+      "server": "服务器返回错误",
+      "versionNotFoundTitle": "版本不存在",
+      "versionNotFound": "版本 {version} 不存在或已被删除",
+      "configCorruptTitle": "配置文件损坏",
+      "configCorrupt": "版本 {version} 的配置文件已损坏，无法应用",
+      "permissionTitle": "权限不足",
+      "permissionDenied": "您没有权限执行此操作",
+      "systemTitle": "系统错误",
+      "systemError": "系统内部错误，请稍后重试"
+    },
+    "messages": {
+      "invalidResponse": "API响应格式错误",
+      "parseFailed": "解析响应数据失败",
+      "fetchFailed": "获取版本列表失败: {message}"
+    }
+  }
+}

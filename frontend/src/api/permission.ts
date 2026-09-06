@@ -11,7 +11,7 @@ import type { RouterResponse } from '@/types'
  */
 
 export interface PermissionGroup {
-  /** 模块名（展示分组） */
+  /** 模块展示分组标题（i18n key，页面以 t(group.module) 渲染） */
   module: string
   /** 该模块下的权限码 */
   codes: string[]
@@ -21,22 +21,27 @@ export interface PermissionGroup {
 export const ROLES = ['ADMIN', 'OPERATOR', 'USER', 'VIEWER'] as const
 export type RoleName = (typeof ROLES)[number]
 
-/** 角色说明（UI 展示） */
+/**
+ * 角色说明 i18n key（UI 展示用；页面以 t(ROLE_DESCRIPTIONS[role]) 渲染文案）。
+ * 文案位于 locales/{zh-CN,en-US}/permissions.json 的 roleDescriptions 节点。
+ */
 export const ROLE_DESCRIPTIONS: Record<RoleName, string> = {
-  ADMIN: '全部权限（45 码，超集）',
-  OPERATOR: '所有读/写权限，排除系统管理、安全管理 manage 与基础设施',
-  USER: '仪表盘 + 配置只读 + 流量治理 + 监控只读 + 追踪检索 + AI 试验场',
-  VIEWER: '仅所有 :read 只读权限'
+  ADMIN: 'permissions.roleDescriptions.ADMIN',
+  OPERATOR: 'permissions.roleDescriptions.OPERATOR',
+  USER: 'permissions.roleDescriptions.USER',
+  VIEWER: 'permissions.roleDescriptions.VIEWER'
 }
 
 /**
  * 45 权限码按模块展示分组（与后端 PermissionCodes 全量一致）。
  * 仅用于 UI 展示（权限树分组），不代表后端授权语义。
+ * module 为分组标题的 i18n key（页面以 t(group.module) 渲染），
+ * 文案位于 locales/{zh-CN,en-US}/permissions.json 的 groups 节点。
  */
 export const PERMISSION_GROUPS: PermissionGroup[] = [
-  { module: '概览', codes: ['overview:dashboard:read'] },
+  { module: 'permissions.groups.overview', codes: ['overview:dashboard:read'] },
   {
-    module: '配置',
+    module: 'permissions.groups.config',
     codes: [
       'config:services:read', 'config:services:write',
       'config:instances:read', 'config:instances:write',
@@ -52,16 +57,16 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     ]
   },
   {
-    module: '流量治理',
+    module: 'permissions.groups.trafficGovernance',
     codes: [
       'lb:monitoring:read', 'lb:config:write',
       'cb:monitoring:read', 'cb:history:read',
       'rl:monitoring:read'
     ]
   },
-  { module: '调用历史', codes: ['callhistory:view'] },
+  { module: 'permissions.groups.callHistory', codes: ['callhistory:view'] },
   {
-    module: '监控',
+    module: 'permissions.groups.monitoring',
     codes: [
       'monitoring:metrics:read', 'monitoring:slowquery:read',
       'monitoring:tokenusage:read', 'monitoring:modelstats:read',
@@ -69,26 +74,26 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     ]
   },
   {
-    module: '追踪',
+    module: 'permissions.groups.tracing',
     codes: [
       'tracing:dashboard:read', 'tracing:search:read', 'tracing:config:manage'
     ]
   },
   {
-    module: '安全',
+    module: 'permissions.groups.security',
     codes: [
       'security:apikeys:manage', 'security:jwttokens:manage',
       'security:blacklist:manage', 'security:audit:read'
     ]
   },
   {
-    module: '系统',
+    module: 'permissions.groups.system',
     codes: [
       'system:accounts:manage', 'system:permissions:manage'
     ]
   },
-  { module: 'AI', codes: ['ai:playground:use'] },
-  { module: '基础设施', codes: ['actuator:admin:manage'] }
+  { module: 'permissions.groups.ai', codes: ['ai:playground:use'] },
+  { module: 'permissions.groups.infrastructure', codes: ['actuator:admin:manage'] }
 ]
 
 /** 全部权限码集合（叶子节点 key，用于 el-tree 勾选收集/校验） */

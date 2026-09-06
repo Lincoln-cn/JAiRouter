@@ -4,7 +4,7 @@
       <!-- 流式响应 -->
       <el-col :span="6">
         <div class="config-item">
-          <label class="config-label">流式响应</label>
+          <label class="config-label">{{ t('playgroundChat.config.stream') }}</label>
           <el-switch
             v-model="stream"
             :disabled="disabled"
@@ -112,7 +112,7 @@
       <!-- Stop Sequences -->
       <el-col :span="12">
         <div class="config-item">
-          <label class="config-label">停止词</label>
+          <label class="config-label">{{ t('playgroundChat.config.stopSequences') }}</label>
           <el-select
             v-model="stop"
             :disabled="disabled"
@@ -120,7 +120,7 @@
             filterable
             allow-create
             default-first-option
-            placeholder="输入停止词"
+            :placeholder="t('playgroundChat.config.stopPlaceholder')"
             size="small"
             style="width: 100%"
           />
@@ -132,7 +132,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { ChatRequestConfig } from '../../types/playground'
+
+const { t } = useI18n()
 
 interface Props {
   modelValue?: Partial<ChatRequestConfig>

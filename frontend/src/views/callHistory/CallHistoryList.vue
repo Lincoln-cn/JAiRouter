@@ -1,55 +1,55 @@
 <template>
-  <PageSkeleton title="调用历史查询">
+  <PageSkeleton :title="t('callHistory.list.pageTitle')">
     <template #toolbar>
       <!-- 查询筛选区 -->
       <el-form :inline="true" :model="queryForm" class="filter-form">
-        <el-form-item label="时间范围">
+        <el-form-item :label="t('callHistory.common.timeRange')">
           <el-date-picker
             v-model="dateRange"
             type="datetimerange"
-            range-separator="至"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
+            :range-separator="t('callHistory.common.rangeSeparator')"
+            :start-placeholder="t('callHistory.common.startTime')"
+            :end-placeholder="t('callHistory.common.endTime')"
             value-format="YYYY-MM-DD HH:mm:ss"
             style="width: 360px"
           />
         </el-form-item>
-        <el-form-item label="模型名称">
+        <el-form-item :label="t('callHistory.common.modelName')">
           <el-input
             v-model="queryForm.modelName"
-            placeholder="输入模型名称"
+            :placeholder="t('callHistory.list.modelNamePlaceholder')"
             clearable
             style="width: 180px"
           />
         </el-form-item>
-        <el-form-item label="服务类型">
-          <el-select v-model="queryForm.serviceType" placeholder="全部" clearable style="width: 120px">
-            <el-option label="聊天" value="chat" />
-            <el-option label="嵌入" value="embedding" />
-            <el-option label="重排序" value="rerank" />
-            <el-option label="语音合成" value="tts" />
-            <el-option label="语音识别" value="stt" />
-            <el-option label="图像生成" value="imgGen" />
-            <el-option label="图像编辑" value="imgEdit" />
+        <el-form-item :label="t('callHistory.common.serviceType')">
+          <el-select v-model="queryForm.serviceType" :placeholder="t('callHistory.list.allPlaceholder')" clearable style="width: 120px">
+            <el-option :label="t('callHistory.serviceTypes.chat')" value="chat" />
+            <el-option :label="t('callHistory.serviceTypes.embedding')" value="embedding" />
+            <el-option :label="t('callHistory.serviceTypes.rerank')" value="rerank" />
+            <el-option :label="t('callHistory.serviceTypes.tts')" value="tts" />
+            <el-option :label="t('callHistory.serviceTypes.stt')" value="stt" />
+            <el-option :label="t('callHistory.serviceTypes.imgGen')" value="imgGen" />
+            <el-option :label="t('callHistory.serviceTypes.imgEdit')" value="imgEdit" />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="queryForm.isSuccess" placeholder="全部" clearable style="width: 100px">
-            <el-option label="成功" :value="true" />
-            <el-option label="失败" :value="false" />
+        <el-form-item :label="t('callHistory.common.status')">
+          <el-select v-model="queryForm.isSuccess" :placeholder="t('callHistory.list.allPlaceholder')" clearable style="width: 100px">
+            <el-option :label="t('callHistory.common.success')" :value="true" />
+            <el-option :label="t('callHistory.common.failed')" :value="false" />
           </el-select>
         </el-form-item>
-        <el-form-item label="HTTP 状态码">
+        <el-form-item :label="t('callHistory.common.httpStatusCode')">
           <el-input
             v-model.number="queryForm.httpStatusCode"
-            placeholder="如 200, 429"
+            :placeholder="t('callHistory.list.httpStatusCodePlaceholder')"
             clearable
             style="width: 120px"
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" icon="Search" @click="handleSearch">查询</el-button>
-          <el-button icon="Refresh" @click="handleReset">重置</el-button>
+          <el-button type="primary" icon="Search" @click="handleSearch">{{ t('callHistory.common.query') }}</el-button>
+          <el-button icon="Refresh" @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
         </el-form-item>
       </el-form>
     </template>
@@ -58,15 +58,15 @@
     <el-card class="settings-card" shadow="hover" v-loading="configLoading">
       <template #header>
         <div class="table-header">
-          <span class="chart-title">记录治理设置</span>
+          <span class="chart-title">{{ t('callHistory.list.recordGovernanceTitle') }}</span>
         </div>
       </template>
       <el-form label-width="100px" class="settings-form">
-        <el-form-item label="记录级别">
+        <el-form-item :label="t('callHistory.list.recordLevelLabel')">
           <el-radio-group v-model="recordLevel" :disabled="configSaving">
-            <el-radio value="METADATA_ONLY">仅元数据（默认）</el-radio>
-            <el-radio value="SUMMARY">摘要（脱敏）</el-radio>
-            <el-radio value="FULL">完整（加密）</el-radio>
+            <el-radio value="METADATA_ONLY">{{ t('callHistory.list.recordLevels.metadataOnly') }}</el-radio>
+            <el-radio value="SUMMARY">{{ t('callHistory.list.recordLevels.summary') }}</el-radio>
+            <el-radio value="FULL">{{ t('callHistory.list.recordLevels.full') }}</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item>
@@ -76,7 +76,7 @@
             :disabled="configSaving || configLoading"
             @click="handleSaveConfig"
           >
-            保存
+            {{ t('callHistory.common.save') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -84,8 +84,8 @@
         type="info"
         :closable="false"
         show-icon
-        title="各级别说明"
-        description="仅元数据：不保存请求/回复内容；摘要：脱敏后保存前 N 字摘要；完整：加密保存完整内容（仅管理员可查看）"
+        :title="t('callHistory.list.levelGuideTitle')"
+        :description="t('callHistory.list.levelGuideDescription')"
       />
     </el-card>
 
@@ -93,8 +93,8 @@
     <el-card shadow="hover">
       <template #header>
         <div class="table-header">
-          <span class="chart-title">调用历史列表</span>
-          <span class="total-count">共 {{ totalCount }} 条记录</span>
+          <span class="chart-title">{{ t('callHistory.list.listTitle') }}</span>
+          <span class="total-count">{{ t('callHistory.list.totalRecords', { count: totalCount }) }}</span>
         </div>
       </template>
 
@@ -106,7 +106,7 @@
         :max-height="600"
         @sort-change="handleSortChange"
       >
-        <el-table-column label="时间" prop="createdAt" width="180" sortable="custom">
+        <el-table-column :label="t('callHistory.common.time')" prop="createdAt" width="180" sortable="custom">
           <template #default="scope">
             {{ formatTime(scope.row.createdAt) }}
           </template>
@@ -118,8 +118,8 @@
             </el-link>
           </template>
         </el-table-column>
-        <el-table-column label="模型名称" prop="modelName" min-width="160" show-overflow-tooltip />
-        <el-table-column label="服务类型" prop="serviceType" width="110">
+        <el-table-column :label="t('callHistory.common.modelName')" prop="modelName" min-width="160" show-overflow-tooltip />
+        <el-table-column :label="t('callHistory.common.serviceType')" prop="serviceType" width="110">
           <template #default="scope">
             <el-link
               v-if="scope.row.serviceType"
@@ -132,37 +132,37 @@
             <el-tag v-else size="small">{{ getServiceTypeLabel(scope.row.serviceType) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="提供商" prop="provider" width="100" show-overflow-tooltip />
-        <el-table-column label="HTTP 状态" prop="httpStatusCode" width="100" align="center" sortable="custom">
+        <el-table-column :label="t('callHistory.common.provider')" prop="provider" width="100" show-overflow-tooltip />
+        <el-table-column :label="t('callHistory.common.httpStatus')" prop="httpStatusCode" width="100" align="center" sortable="custom">
           <template #default="scope">
             <el-tag :type="getStatusType(scope.row.httpStatusCode)" size="small">
               {{ scope.row.httpStatusCode || '-' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="Token" prop="totalTokens" width="100" align="right" sortable="custom">
+        <el-table-column :label="t('callHistory.common.token')" prop="totalTokens" width="100" align="right" sortable="custom">
           <template #default="scope">
             {{ formatNumber(scope.row.totalTokens) }}
           </template>
         </el-table-column>
-        <el-table-column label="响应时间 (ms)" prop="responseTimeMs" width="120" align="right" sortable="custom">
+        <el-table-column :label="t('callHistory.common.responseTimeMs')" prop="responseTimeMs" width="120" align="right" sortable="custom">
           <template #default="scope">
             <el-tag :type="getResponseTimeType(scope.row.responseTimeMs)" size="small">
               {{ scope.row.responseTimeMs?.toFixed(0) || '-' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="80" align="center">
+        <el-table-column :label="t('callHistory.common.status')" width="80" align="center">
           <template #default="scope">
             <el-tag :type="scope.row.isSuccess ? 'success' : 'danger'" size="small">
-              {{ scope.row.isSuccess ? '成功' : '失败' }}
+              {{ scope.row.isSuccess ? t('callHistory.common.success') : t('callHistory.common.failed') }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="80" fixed="right" align="center">
+        <el-table-column :label="t('callHistory.common.action')" width="80" fixed="right" align="center">
           <template #default="scope">
             <el-button type="primary" link size="small" @click="handleDetail(scope.row)">
-              详情
+              {{ t('callHistory.common.details') }}
             </el-button>
           </template>
         </el-table-column>
@@ -186,7 +186,7 @@
     <!-- 详情抽屉 -->
     <el-drawer
       v-model="drawerVisible"
-      title="调用详情"
+      :title="t('callHistory.list.detailsTitle')"
       size="600px"
     >
       <template v-if="selectedRecord">
@@ -194,22 +194,22 @@
           <el-descriptions-item label="Trace ID" :span="2">
             <el-tag>{{ selectedRecord.traceId }}</el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="请求 ID" :span="2">
+          <el-descriptions-item :label="t('callHistory.list.requestId')" :span="2">
             {{ selectedRecord.requestId }}
           </el-descriptions-item>
-          <el-descriptions-item label="时间" :span="2">
+          <el-descriptions-item :label="t('callHistory.common.time')" :span="2">
             {{ formatTime(selectedRecord.createdAt) }}
           </el-descriptions-item>
-          <el-descriptions-item label="请求方法">
+          <el-descriptions-item :label="t('callHistory.list.requestMethod')">
             {{ selectedRecord.requestMethod }}
           </el-descriptions-item>
-          <el-descriptions-item label="请求路径" :span="2">
+          <el-descriptions-item :label="t('callHistory.list.requestPath')" :span="2">
             {{ selectedRecord.requestPath }}
           </el-descriptions-item>
-          <el-descriptions-item label="模型名称">
+          <el-descriptions-item :label="t('callHistory.common.modelName')">
             {{ selectedRecord.modelName }}
           </el-descriptions-item>
-          <el-descriptions-item label="服务类型">
+          <el-descriptions-item :label="t('callHistory.common.serviceType')">
             <el-link
               v-if="selectedRecord.serviceType"
               type="primary"
@@ -220,10 +220,10 @@
             </el-link>
             <span v-else>{{ getServiceTypeLabel(selectedRecord.serviceType) }}</span>
           </el-descriptions-item>
-          <el-descriptions-item label="提供商">
+          <el-descriptions-item :label="t('callHistory.common.provider')">
             {{ selectedRecord.provider || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="实例名称">
+          <el-descriptions-item :label="t('callHistory.list.instanceName')">
             <el-link
               v-if="selectedRecord.instanceName && selectedRecord.serviceType"
               type="primary"
@@ -234,44 +234,44 @@
             </el-link>
             <span v-else>{{ selectedRecord.instanceName || '-' }}</span>
           </el-descriptions-item>
-          <el-descriptions-item label="HTTP 状态码">
+          <el-descriptions-item :label="t('callHistory.common.httpStatusCode')">
             <el-tag :type="getStatusType(selectedRecord.httpStatusCode)">
               {{ selectedRecord.httpStatusCode || '-' }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="响应时间">
+          <el-descriptions-item :label="t('callHistory.list.responseTime')">
             {{ selectedRecord.responseTimeMs?.toFixed(0) || '-' }} ms
           </el-descriptions-item>
-          <el-descriptions-item label="调用状态">
+          <el-descriptions-item :label="t('callHistory.common.callStatus')">
             <el-tag :type="selectedRecord.isSuccess ? 'success' : 'danger'">
-              {{ selectedRecord.isSuccess ? '成功' : '失败' }}
+              {{ selectedRecord.isSuccess ? t('callHistory.common.success') : t('callHistory.common.failed') }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="错误码">
+          <el-descriptions-item :label="t('callHistory.list.errorCode')">
             {{ selectedRecord.errorCode || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="错误信息" :span="2">
+          <el-descriptions-item :label="t('callHistory.common.errorMessage')" :span="2">
             <span v-if="selectedRecord.errorMessage" class="error-message">
               {{ selectedRecord.errorMessage }}
             </span>
             <span v-else>-</span>
           </el-descriptions-item>
-          <el-descriptions-item label="Token 统计" :span="2">
-            <el-tag type="info" size="small">输入: {{ selectedRecord.promptTokens }}</el-tag>
-            <el-tag type="success" size="small">输出: {{ selectedRecord.completionTokens }}</el-tag>
-            <el-tag type="warning" size="small">总计: {{ selectedRecord.totalTokens }}</el-tag>
+          <el-descriptions-item :label="t('callHistory.list.tokenStatsTitle')" :span="2">
+            <el-tag type="info" size="small">{{ t('callHistory.list.tokenStats.input', { value: selectedRecord.promptTokens }) }}</el-tag>
+            <el-tag type="success" size="small">{{ t('callHistory.list.tokenStats.output', { value: selectedRecord.completionTokens }) }}</el-tag>
+            <el-tag type="warning" size="small">{{ t('callHistory.list.tokenStats.total', { value: selectedRecord.totalTokens }) }}</el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="限流状态">
+          <el-descriptions-item :label="t('callHistory.list.rateLimitedStatus')">
             <el-tag :type="selectedRecord.rateLimited ? 'danger' : 'info'" size="small">
-              {{ selectedRecord.rateLimited ? '已限流' : '正常' }}
+              {{ selectedRecord.rateLimited ? t('callHistory.list.rateLimited') : t('callHistory.common.normal') }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="熔断状态">
+          <el-descriptions-item :label="t('callHistory.list.circuitBreakStatus')">
             <el-tag :type="selectedRecord.circuitBroken ? 'danger' : 'info'" size="small">
-              {{ selectedRecord.circuitBroken ? '已熔断' : '正常' }}
+              {{ selectedRecord.circuitBroken ? t('callHistory.list.circuitBroken') : t('callHistory.common.normal') }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="客户端 IP">
+          <el-descriptions-item :label="t('callHistory.list.clientIp')">
             {{ selectedRecord.clientIp || '-' }}
           </el-descriptions-item>
           <el-descriptions-item label="User Agent">
@@ -286,14 +286,14 @@
         <el-card v-if="selectedRecord.requestBodySummary || selectedRecord.responseBodySummary"
                  shadow="never" style="margin-top: 16px;">
           <template #header>
-            <span>请求/响应摘要</span>
+            <span>{{ t('callHistory.list.bodySummaryTitle') }}</span>
           </template>
           <div v-if="selectedRecord.requestBodySummary" class="body-summary">
-            <div class="summary-label">请求体摘要:</div>
+            <div class="summary-label">{{ t('callHistory.list.requestBodySummary') }}</div>
             <pre class="summary-content">{{ selectedRecord.requestBodySummary }}</pre>
           </div>
           <div v-if="selectedRecord.responseBodySummary" class="body-summary">
-            <div class="summary-label">响应体摘要:</div>
+            <div class="summary-label">{{ t('callHistory.list.responseBodySummary') }}</div>
             <pre class="summary-content">{{ selectedRecord.responseBodySummary }}</pre>
           </div>
         </el-card>
@@ -304,6 +304,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Search, Refresh } from '@element-plus/icons-vue'
 import { queryCallHistory, getCallHistoryConfig, updateCallHistoryConfig } from '@/api/callHistory'
@@ -312,6 +313,7 @@ import type { ApiCallHistoryRecord, CallHistoryQuery } from '@/types/callHistory
 import PageSkeleton from '@/components/PageSkeleton.vue'
 
 const router = useRouter()
+const { t } = useI18n()
 
 // 查询表单
 const queryForm = reactive<CallHistoryQuery>({
@@ -353,7 +355,7 @@ const loadConfig = async () => {
     configLoaded.value = true
   } catch (error: any) {
     console.error('加载记录配置失败:', error)
-    ElMessage.error(`加载记录配置失败：${error.message || '未知错误'}`)
+    ElMessage.error(t('callHistory.list.loadConfigFailed', { message: error.message || t('callHistory.common.unknownError') }))
   } finally {
     configLoading.value = false
   }
@@ -363,10 +365,10 @@ const handleSaveConfig = async () => {
   configSaving.value = true
   try {
     await updateCallHistoryConfig({ recordLevel: recordLevel.value })
-    ElMessage.success('记录级别已更新')
+    ElMessage.success(t('callHistory.list.saveSuccess'))
   } catch (error: any) {
     console.error('保存记录配置失败:', error)
-    ElMessage.error(`保存记录配置失败：${error.message || '未知错误'}`)
+    ElMessage.error(t('callHistory.list.saveConfigFailed', { message: error.message || t('callHistory.common.unknownError') }))
   } finally {
     configSaving.value = false
   }
@@ -384,19 +386,21 @@ const formatTime = (time?: string) => {
   return time.replace('T', ' ').substring(0, 19)
 }
 
+// 服务类型 key -> i18n 键名映射（保持原有顺序）
+const serviceTypeKeyMap: Record<string, string> = {
+  chat: 'chat',
+  embedding: 'embedding',
+  rerank: 'rerank',
+  tts: 'tts',
+  stt: 'stt',
+  imgGen: 'imgGen',
+  imgEdit: 'imgEdit'
+}
+
 // 获取服务类型标签
 const getServiceTypeLabel = (type?: string) => {
-  if (!type) return '未知'
-  const labels: Record<string, string> = {
-    chat: '聊天',
-    embedding: '嵌入',
-    rerank: '重排序',
-    tts: '语音合成',
-    stt: '语音识别',
-    imgGen: '图像生成',
-    imgEdit: '图像编辑'
-  }
-  return labels[type] || type
+  if (!type) return t('callHistory.common.unknown')
+  return serviceTypeKeyMap[type] ? t(`callHistory.serviceTypes.${serviceTypeKeyMap[type]}`) : type
 }
 
 // 获取 HTTP 状态码标签类型
@@ -434,7 +438,7 @@ const loadData = async () => {
     totalCount.value = result.totalElements || 0
   } catch (error: any) {
     console.error('加载调用历史失败:', error)
-    ElMessage.error(`加载调用历史失败：${error.message || '未知错误'}`)
+    ElMessage.error(t('callHistory.list.loadFailed', { message: error.message || t('callHistory.common.unknownError') }))
   } finally {
     loading.value = false
   }

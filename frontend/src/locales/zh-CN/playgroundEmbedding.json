@@ -1,0 +1,49 @@
+{
+  "playgroundEmbedding": {
+    "toolbar": {
+      "selectModel": "选择 Embedding 模型",
+      "showConfig": "参数配置",
+      "hideConfig": "隐藏配置",
+      "clear": "清空"
+    },
+    "instance": {
+      "offline": "(离线)",
+      "unknown": "(未知)"
+    },
+    "labels": {
+      "encodingFormat": "编码格式",
+      "dimensions": "向量维度"
+    },
+    "input": {
+      "title": "输入文本",
+      "add": "添加输入",
+      "placeholder": "输入文本 {index}"
+    },
+    "action": {
+      "generate": "生成向量"
+    },
+    "result": {
+      "title": "向量结果",
+      "copy": "复制",
+      "empty": "输入文本后生成向量",
+      "generating": "正在生成向量..."
+    },
+    "stats": {
+      "vectorCount": "向量数量",
+      "dimensionUnknown": "未知",
+      "duration": "耗时"
+    },
+    "vector": {
+      "index": "向量 {index}",
+      "dimensionSuffix": "{dim}维"
+    },
+    "messages": {
+      "generateSuccess": "成功生成 {count} 个向量",
+      "vectorCopied": "向量已复制",
+      "resultCopied": "结果已复制",
+      "copyFailed": "复制失败",
+      "errorContext": "向量生成",
+      "suggestion": "建议"
+    }
+  }
+}

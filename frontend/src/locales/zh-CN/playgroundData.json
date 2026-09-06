@@ -1,0 +1,11 @@
+{
+  "playgroundData": {
+    "selectedUnavailable": "当前选择的实例在刷新后不可用，请重新选择",
+    "refreshedData": "已刷新数据：{instances} 个实例，{models} 个模型",
+    "fetchDataFailed": "获取{serviceType}数据失败",
+    "refreshedInstances": "已刷新实例列表，找到 {count} 个可用实例",
+    "fetchInstancesFailed": "获取{serviceType}实例失败",
+    "refreshedModels": "已刷新模型列表，找到 {count} 个可用模型",
+    "fetchModelsFailed": "获取{serviceType}模型失败"
+  }
+}

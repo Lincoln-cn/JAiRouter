@@ -1,7 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import request from '@/utils/request'
+import { i18n } from '@/i18n'
 import type { ApiResponse, RouterResponse } from '@/types'
+
+// i18n.global.t 轻量包装（兜底 Error 文案，调用时求值，随语言切换生效）
+const gt = (key: string): string =>
+  (i18n.global as unknown as { t: (key: string) => string }).t(key)
 
 // 用户信息接口
 export interface UserInfo {
@@ -145,11 +150,11 @@ export const useUserStore = defineStore('user', () => {
         setToken(newToken)
         return response.data
       } else {
-        throw new Error(response.data.message || '令牌刷新失败')
+        throw new Error(response.data.message || gt('errors.tokenRefreshFailed'))
       }
     } catch (error: any) {
       console.error('令牌刷新请求失败:', error)
-      throw new Error(error.response?.data?.message || error.message || '令牌刷新失败')
+      throw new Error(error.response?.data?.message || error.message || gt('errors.tokenRefreshFailed'))
     }
   }
 
@@ -167,11 +172,11 @@ export const useUserStore = defineStore('user', () => {
         startTokenRefresh()
         return response.data
       } else {
-        throw new Error(response.data.message || '登录失败')
+        throw new Error(response.data.message || gt('errors.loginFailed'))
       }
     } catch (error: any) {
       console.error('登录请求失败:', error)
-      throw new Error(error.response?.data?.message || '登录失败')
+      throw new Error(error.response?.data?.message || gt('errors.loginFailed'))
     }
   }
 

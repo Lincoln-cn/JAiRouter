@@ -1,0 +1,45 @@
+{
+  "playgroundImage": {
+    "generateTab": "图像生成",
+    "editTab": "图像编辑",
+    "showConfig": "参数配置",
+    "hideConfig": "隐藏配置",
+    "offlineStatus": "(离线)",
+    "unknownStatus": "(未知)",
+    "generate": {
+      "modelPlaceholder": "选择图像生成模型",
+      "count": "生成数量",
+      "size": "图像尺寸",
+      "quality": "质量",
+      "style": "风格",
+      "promptTitle": "提示词",
+      "promptPlaceholder": "描述你想生成的图像，例如：一只可爱的猫咪坐在窗台上，阳光明媚...",
+      "generate": "生成图像",
+      "resultTitle": "生成结果",
+      "empty": "输入提示词后生成图像",
+      "loading": "正在生成图像...",
+      "messages": {
+        "generated": "成功生成 {count} 张图像",
+        "failed": "生成图像失败"
+      }
+    },
+    "edit": {
+      "modelPlaceholder": "选择图像编辑模型",
+      "outputFormat": "输出格式",
+      "count": "输出数量",
+      "size": "图像尺寸",
+      "quality": "质量",
+      "uploadTitle": "上传图像",
+      "promptTitle": "编辑提示词",
+      "promptPlaceholder": "描述你想如何编辑图像，例如：将背景改为蓝色...",
+      "edit": "编辑图像",
+      "resultTitle": "编辑结果",
+      "empty": "上传图像并输入提示词后开始编辑",
+      "loading": "正在编辑图像...",
+      "messages": {
+        "edited": "成功编辑 {count} 张图像",
+        "failed": "编辑图像失败"
+      }
+    }
+  }
+}

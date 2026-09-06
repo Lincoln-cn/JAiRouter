@@ -1,26 +1,26 @@
 <template>
-  <PageSkeleton title="权限管理">
+  <PageSkeleton :title="t('permissions.title')">
     <template #actions>
       <el-button @click="refresh">
         <el-icon><Refresh /></el-icon>
-        刷新
+        {{ t('permissions.refresh') }}
       </el-button>
     </template>
 
     <!-- 角色选择 -->
     <el-form label-width="80px" style="margin-bottom: 12px;">
-      <el-form-item label="角色">
+      <el-form-item :label="t('permissions.role')">
         <el-select
           v-model="selectedRole"
-          placeholder="请选择角色"
+          :placeholder="t('permissions.rolePlaceholder')"
           style="width: 480px"
           @change="handleRoleChange"
         >
           <el-option
-            v-for="role in ROLES"
-            :key="role"
-            :label="`${role} - ${ROLE_DESCRIPTIONS[role]}`"
-            :value="role"
+            v-for="option in roleOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
           />
         </el-select>
       </el-form-item>
@@ -28,11 +28,11 @@
 
     <el-alert
       v-if="selectedRole"
-      title="权限变更提示"
+      :title="t('permissions.changeAlert.title')"
       type="warning"
       :closable="false"
       show-icon
-      description="权限变更后需重新登录方可生效（权限内嵌于 JWT），服务端缓存约 5 分钟后过期。"
+      :description="t('permissions.changeAlert.description')"
       style="margin-bottom: 16px"
     />
 
@@ -52,10 +52,10 @@
     <template #footer>
       <div class="footer-actions">
         <el-button type="primary" :disabled="!selectedRole" :loading="saving" @click="handleSave">
-          保存权限
+          {{ t('permissions.save') }}
         </el-button>
         <el-button :disabled="!selectedRole || loading" @click="resetSelection">
-          重置
+          {{ t('permissions.reset') }}
         </el-button>
       </div>
     </template>
@@ -64,6 +64,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { ElTree } from 'element-plus'
 import {
@@ -76,6 +77,8 @@ import {
   type RoleName
 } from '@/api/permission'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+
+const { t } = useI18n()
 
 /** 权限树节点 */
 interface PermissionTreeNode {
@@ -94,11 +97,19 @@ const rolePermissionMap = ref<Record<string, string[]>>({})
 
 const treeProps = { label: 'label', children: 'children' }
 
-// 权限树数据（模块分组 → 权限码叶子）
+/** 角色下拉选项（角色名 + i18n 角色说明；computed 保证语言切换后即时更新） */
+const roleOptions = computed<{ value: RoleName; label: string }[]>(() =>
+  ROLES.map(role => ({
+    value: role,
+    label: `${role} - ${t(ROLE_DESCRIPTIONS[role])}`
+  }))
+)
+
+// 权限树数据（模块分组 → 权限码叶子；模块标题按当前语言翻译）
 const treeData = computed<PermissionTreeNode[]>(() =>
   PERMISSION_GROUPS.map(group => ({
     key: `group:${group.module}`,
-    label: group.module,
+    label: t(group.module),
     children: group.codes.map(code => ({ key: code, label: code }))
   }))
 )
@@ -114,7 +125,7 @@ const loadRoles = async (): Promise<void> => {
     }
   } catch (error) {
     console.error('加载角色权限失败:', error)
-    ElMessage.error('加载角色权限失败，请重试')
+    ElMessage.error(t('permissions.messages.loadRolesFailed'))
   } finally {
     loading.value = false
   }
@@ -168,10 +179,10 @@ const handleSave = async (): Promise<void> => {
   try {
     await updateRolePermissions(selectedRole.value, codes)
     rolePermissionMap.value[selectedRole.value] = codes
-    ElMessage.success('权限保存成功，变更需重新登录生效')
+    ElMessage.success(t('permissions.messages.saveSuccess'))
   } catch (error) {
     console.error('保存权限失败:', error)
-    ElMessage.error('保存权限失败，请重试')
+    ElMessage.error(t('permissions.messages.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -183,7 +194,7 @@ const resetSelection = async (): Promise<void> => {
     return
   }
   await loadRoles()
-  ElMessage.info('已重置为服务器保存的权限')
+  ElMessage.info(t('permissions.messages.resetApplied'))
 }
 
 // 刷新（重新拉取全部角色权限）

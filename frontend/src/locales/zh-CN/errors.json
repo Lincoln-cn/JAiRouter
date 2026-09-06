@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "loginFailed": "登录失败",
+    "tokenRefreshFailed": "令牌刷新失败"
+  }
+}

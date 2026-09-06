@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "loginFailed": "Login failed",
+    "tokenRefreshFailed": "Token refresh failed"
+  }
+}

@@ -4,7 +4,7 @@
     <div class="panel-toolbar">
       <el-select
         v-model="selectedModel"
-        :placeholder="'选择 TTS 模型'"
+        :placeholder="t('playgroundAudio.tts.modelPlaceholder')"
         :loading="loading"
         filterable
         class="model-select"
@@ -35,13 +35,13 @@
               v-if="inst.healthStatus === 'UNHEALTHY'"
               class="health-status-text"
             >
-              (离线)
+              {{ t('playgroundAudio.offlineStatus') }}
             </span>
             <span
               v-else-if="inst.healthStatus === 'UNKNOWN' || !inst.healthStatus"
               class="health-status-text unknown"
             >
-              (未知)
+              {{ t('playgroundAudio.unknownStatus') }}
             </span>
           </div>
         </el-option>
@@ -51,7 +51,7 @@
         @click="showConfig = !showConfig"
       >
         <el-icon><Setting /></el-icon>
-        {{ showConfig ? '隐藏配置' : '参数配置' }}
+        {{ showConfig ? t('playgroundAudio.hideConfig') : t('playgroundAudio.showConfig') }}
       </el-button>
     </div>
 
@@ -64,16 +64,16 @@
         <el-row :gutter="16">
           <el-col :span="6">
             <div class="config-item">
-              <label class="config-label">语音类型</label>
+              <label class="config-label">{{ t('playgroundAudio.tts.voiceType') }}</label>
               <el-select
                 v-model="config.voice"
                 size="small"
                 filterable
                 allow-create
                 default-first-option
-                placeholder="选择或输入语音"
+                :placeholder="t('playgroundAudio.tts.voicePlaceholder')"
               >
-                <el-option-group label="OpenAI 标准">
+                <el-option-group :label="t('playgroundAudio.tts.openaiGroup')">
                   <el-option
                     label="alloy"
                     value="alloy"
@@ -99,33 +99,33 @@
                     value="shimmer"
                   />
                 </el-option-group>
-                <el-option-group label="CosyVoice 多语言">
+                <el-option-group :label="t('playgroundAudio.tts.cosyVoiceGroup')">
                   <el-option
-                    label="Chinese Female (中文女声)"
+                    :label="t('playgroundAudio.tts.voices.chineseFemale')"
                     value="Chinese Female"
                   />
                   <el-option
-                    label="Chinese Male (中文男声)"
+                    :label="t('playgroundAudio.tts.voices.chineseMale')"
                     value="Chinese Male"
                   />
                   <el-option
-                    label="Japanese Male (日语男声)"
+                    :label="t('playgroundAudio.tts.voices.japaneseMale')"
                     value="Japanese Male"
                   />
                   <el-option
-                    label="Cantonese Female (粤语女声)"
+                    :label="t('playgroundAudio.tts.voices.cantoneseFemale')"
                     value="Cantonese Female"
                   />
                   <el-option
-                    label="English Female (英语女声)"
+                    :label="t('playgroundAudio.tts.voices.englishFemale')"
                     value="English Female"
                   />
                   <el-option
-                    label="English Male (英语男声)"
+                    :label="t('playgroundAudio.tts.voices.englishMale')"
                     value="English Male"
                   />
                   <el-option
-                    label="Korean Female (韩语女声)"
+                    :label="t('playgroundAudio.tts.voices.koreanFemale')"
                     value="Korean Female"
                   />
                 </el-option-group>
@@ -134,7 +134,7 @@
           </el-col>
           <el-col :span="6">
             <div class="config-item">
-              <label class="config-label">输出格式</label>
+              <label class="config-label">{{ t('playgroundAudio.tts.outputFormat') }}</label>
               <el-select
                 v-model="config.responseFormat"
                 size="small"
@@ -160,7 +160,7 @@
           </el-col>
           <el-col :span="6">
             <div class="config-item">
-              <label class="config-label">语速</label>
+              <label class="config-label">{{ t('playgroundAudio.tts.speed') }}</label>
               <el-slider
                 v-model="config.speed"
                 :min="0.25"
@@ -180,17 +180,17 @@
       <!-- 文本输入 -->
       <div class="input-card">
         <div class="card-header">
-          <span class="card-title">输入文本</span>
+          <span class="card-title">{{ t('playgroundAudio.tts.inputTitle') }}</span>
         </div>
         <el-input
           v-model="inputText"
           type="textarea"
           :autosize="{ minRows: 4, maxRows: 8 }"
-          placeholder="输入要转换为语音的文本..."
+          :placeholder="t('playgroundAudio.tts.inputPlaceholder')"
           resize="none"
         />
         <div class="input-info">
-          <span>{{ inputText.length }} 字符</span>
+          <span>{{ t('playgroundAudio.tts.charCount', { count: inputText.length }) }}</span>
         </div>
       </div>
 
@@ -203,14 +203,14 @@
           @click="handleGenerate"
         >
           <el-icon><Microphone /></el-icon>
-          生成语音
+          {{ t('playgroundAudio.tts.generate') }}
         </el-button>
       </div>
 
       <!-- 结果展示 -->
       <div class="result-card">
         <div class="card-header">
-          <span class="card-title">语音结果</span>
+          <span class="card-title">{{ t('playgroundAudio.tts.resultTitle') }}</span>
         </div>
 
         <!-- 空状态 -->
@@ -224,7 +224,7 @@
           >
             <Microphone />
           </el-icon>
-          <span>输入文本后生成语音</span>
+          <span>{{ t('playgroundAudio.tts.empty') }}</span>
         </div>
 
         <!-- 加载状态 -->
@@ -238,7 +238,7 @@
           >
             <Loading />
           </el-icon>
-          <span>正在生成语音...</span>
+          <span>{{ t('playgroundAudio.tts.loading') }}</span>
         </div>
 
         <!-- 音频播放器 -->
@@ -259,7 +259,7 @@
               @click="handleDownload"
             >
               <el-icon><Download /></el-icon>
-              下载音频
+              {{ t('playgroundAudio.tts.download') }}
             </el-button>
             <el-button
               text
@@ -267,7 +267,7 @@
               @click="handleClear"
             >
               <el-icon><Delete /></el-icon>
-              清空
+              {{ t('playgroundAudio.clear') }}
             </el-button>
           </div>
         </div>
@@ -278,11 +278,14 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Setting, Microphone, Download, Delete, Loading, Cpu } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { sendServiceRequest } from '@/api/playground'
 import type { TtsRequestConfig } from '../../types/playground'
 import { parseErrorMessage, getErrorSuggestion } from '../../utils/errorHandler'
+
+const { t } = useI18n()
 
 interface Props {
   instances: any[]
@@ -335,15 +338,15 @@ const handleGenerate = async () => {
       audioUrl.value = response.data
     }
 
-    ElMessage.success('语音生成成功')
+    ElMessage.success(t('playgroundAudio.tts.messages.generated'))
   } catch (error: any) {
-    const errorMsg = parseErrorMessage(error, '语音生成')
+    const errorMsg = parseErrorMessage(error, t('playgroundAudio.tts.messages.operation'))
     const suggestion = getErrorSuggestion(error)
 
     if (suggestion) {
       ElMessage({
         type: 'error',
-        message: `${errorMsg}\n\n💡 建议: ${suggestion}`,
+        message: `${errorMsg}\n\n${t('playgroundAudio.messages.suggestion', { suggestion })}`,
         duration: 6000,
         showClose: true
       })

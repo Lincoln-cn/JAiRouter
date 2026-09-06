@@ -1,43 +1,43 @@
 <template>
-  <PageSkeleton title="路由规则">
+  <PageSkeleton :title="t('rule.pageTitle')">
     <template #actions>
-      <el-button :icon="Refresh" circle @click="refresh" title="刷新列表与命中统计" />
+      <el-button :icon="Refresh" circle @click="refresh" :title="t('rule.refreshTooltip')" />
       <el-button type="success" plain @click="templateDialogVisible = true">
-        <el-icon><MagicStick /></el-icon>&nbsp;从模板创建
+        <el-icon><MagicStick /></el-icon>&nbsp;{{ t('rule.createFromTemplate') }}
       </el-button>
       <el-button type="primary" @click="handleCreate">
-        <el-icon><Plus /></el-icon>&nbsp;新增规则
+        <el-icon><Plus /></el-icon>&nbsp;{{ t('rule.addRule') }}
       </el-button>
     </template>
 
     <el-table ref="tableRef" :data="rules" v-loading="loading" style="width: 100%" row-key="id">
-      <el-table-column label="排序" width="60" align="center">
+      <el-table-column :label="t('rule.sort')" width="60" align="center">
         <template #default="{ row }">
           <el-icon v-if="row.source !== 'YAML'" class="drag-handle"><Rank /></el-icon>
         </template>
       </el-table-column>
-      <el-table-column label="启用" width="70" align="center">
+      <el-table-column :label="t('rule.enabled')" width="70" align="center">
         <template #default="{ row }">
           <el-switch :model-value="row.enabled" @change="(val: boolean) => handleToggle(row, val)" />
         </template>
       </el-table-column>
-      <el-table-column label="名称" min-width="140">
+      <el-table-column :label="t('rule.name')" min-width="140">
         <template #default="{ row }">
           {{ row.name }}
           <el-tag v-if="row.source === 'YAML'" size="small" type="info" style="margin-left: 6px">YAML</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="priority" label="优先级" width="80" align="center" />
-      <el-table-column label="命中" width="90" align="center">
+      <el-table-column prop="priority" :label="t('rule.priority')" width="80" align="center" />
+      <el-table-column :label="t('rule.hits')" width="90" align="center">
         <template #default="{ row }">
           <el-badge v-if="statsMap[row.id]" :value="statsMap[row.id]" type="success" />
           <span v-else>-</span>
         </template>
       </el-table-column>
-      <el-table-column label="条件" min-width="200">
+      <el-table-column :label="t('rule.condition')" min-width="200">
         <template #default="{ row }">{{ formatConditions(row.conditions) }}</template>
       </el-table-column>
-      <el-table-column label="动作" min-width="160">
+      <el-table-column :label="t('rule.action')" min-width="160">
         <template #default="{ row }">
           <el-link
             v-if="row.action && (row.action.type === 'TARGET_MODEL' || row.action.type === 'TARGET_INSTANCE' || row.action.type === 'TARGET_ADAPTER')"
@@ -50,10 +50,10 @@
           <span v-else>{{ formatAction(row.action) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="200" align="center">
+      <el-table-column :label="t('rule.operations')" width="200" align="center">
         <template #default="{ row }">
-          <el-button size="small" @click="handleEdit(row)">编辑</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row)">删除</el-button>
+          <el-button size="small" @click="handleEdit(row)">{{ t('rule.edit') }}</el-button>
+          <el-button size="small" type="danger" @click="handleDelete(row)">{{ t('rule.delete') }}</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -71,6 +71,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, MagicStick, Rank, Refresh } from '@element-plus/icons-vue'
 import Sortable from 'sortablejs'
@@ -96,6 +97,7 @@ const editingRule = ref<RuleDefinition | null>(null)
 const statsMap = ref<Record<string, number>>({})
 const tableRef = ref()
 const templateDialogVisible = ref(false)
+const { t } = useI18n()
 const router = useRouter()
 
 const fetchRules = async () => {
@@ -106,7 +108,7 @@ const fetchRules = async () => {
     await nextTick()
     initDrag()
   } catch (e) {
-    ElMessage.error('获取规则列表失败')
+    ElMessage.error(t('rule.fetchListFailed'))
   } finally {
     loading.value = false
   }
@@ -163,13 +165,15 @@ const commitPriorities = async () => {
     const res = await updateRulePriorities(items)
     const data = res.data?.data
     if (data?.skipped) {
-      ElMessage.warning(`已更新 ${data.updated} 条,跳过 ${data.skipped} 条(YAML 规则)`)
+      ElMessage.warning(
+        t('rule.priorityUpdatedPartial', { updated: data.updated, skipped: data.skipped })
+      )
     } else {
-      ElMessage.success('优先级已更新')
+      ElMessage.success(t('rule.priorityUpdated'))
     }
     fetchRules()
   } catch (e) {
-    ElMessage.error('优先级更新失败')
+    ElMessage.error(t('rule.priorityUpdateFailed'))
     fetchRules()
   }
 }
@@ -191,9 +195,13 @@ const handleEdit = (row: RuleDefinition) => {
 
 const handleDelete = async (row: RuleDefinition) => {
   try {
-    await ElMessageBox.confirm(`确定删除规则「${row.name}」?`, '删除确认', { type: 'warning' })
+    await ElMessageBox.confirm(
+      t('rule.deleteConfirmMessage', { name: row.name }),
+      t('rule.deleteConfirmTitle'),
+      { type: 'warning' }
+    )
     await deleteRule(row.id!)
-    ElMessage.success('规则已删除')
+    ElMessage.success(t('rule.ruleDeleted'))
     fetchRules()
   } catch (e) {
     // 用户取消
@@ -207,49 +215,51 @@ const handleToggle = async (row: RuleDefinition, enabled: boolean) => {
     } else {
       await disableRule(row.id!)
     }
-    ElMessage.success(enabled ? '规则已启用' : '规则已停用')
+    ElMessage.success(enabled ? t('rule.ruleEnabled') : t('rule.ruleDisabled'))
     fetchRules()
   } catch (e) {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('rule.operationFailed'))
   }
 }
 
 const conditionTypeMap: Record<string, string> = {
-  SERVICE_TYPE: '服务类型',
-  MODEL_NAME: '模型名',
-  HEADER: '请求头',
-  CLIENT_IP: '来源IP',
-  WEIGHT: '权重'
+  SERVICE_TYPE: 'rule.conditionType.SERVICE_TYPE',
+  MODEL_NAME: 'rule.conditionType.MODEL_NAME',
+  HEADER: 'rule.conditionType.HEADER',
+  CLIENT_IP: 'rule.conditionType.CLIENT_IP',
+  WEIGHT: 'rule.conditionType.WEIGHT'
 }
 
 const operatorMap: Record<string, string> = {
-  EQUALS: '等于',
-  CONTAINS: '包含',
-  STARTS_WITH: '前缀',
-  REGEX: '正则',
-  CIDR_MATCH: 'CIDR'
+  EQUALS: 'rule.operator.EQUALS',
+  CONTAINS: 'rule.operator.CONTAINS',
+  STARTS_WITH: 'rule.operator.STARTS_WITH',
+  REGEX: 'rule.operator.REGEX',
+  CIDR_MATCH: 'rule.operator.CIDR_MATCH'
 }
 
 const actionTypeMap: Record<string, string> = {
-  TARGET_MODEL: '重写模型',
-  TARGET_INSTANCE: '锁定实例',
-  TARGET_ADAPTER: '切换适配器',
-  LB_STRATEGY: 'LB策略',
-  TARGET_TAGS: '标签路由'
+  TARGET_MODEL: 'rule.actionType.TARGET_MODEL',
+  TARGET_INSTANCE: 'rule.actionType.TARGET_INSTANCE',
+  TARGET_ADAPTER: 'rule.actionType.TARGET_ADAPTER',
+  LB_STRATEGY: 'rule.actionType.LB_STRATEGY',
+  TARGET_TAGS: 'rule.actionType.TARGET_TAGS'
 }
 
 const formatConditions = (conditions: RuleCondition[]) => {
   return conditions
     .map(c => {
       const prefix = c.type === 'HEADER' ? `${c.field}:` : ''
-      return `${conditionTypeMap[c.type] || c.type} ${operatorMap[c.operator] || c.operator} ${prefix}${c.value}`
+      const typeLabel = conditionTypeMap[c.type] ? t(conditionTypeMap[c.type]) : c.type
+      const opLabel = operatorMap[c.operator] ? t(operatorMap[c.operator]) : c.operator
+      return `${typeLabel} ${opLabel} ${prefix}${c.value}`
     })
-    .join(' 且 ')
+    .join(t('rule.conditionsAnd'))
 }
 
 const formatAction = (action: RuleAction) => {
   if (!action) return '-'
-  const label = actionTypeMap[action.type] || action.type
+  const label = actionTypeMap[action.type] ? t(actionTypeMap[action.type]) : action.type
   if (action.type === 'TARGET_TAGS') {
     const tags = Object.entries(action.tags || {})
       .map(([k, v]) => `${k}=${v}`)

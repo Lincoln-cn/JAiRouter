@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "title": "权限管理",
+    "refresh": "刷新",
+    "role": "角色",
+    "rolePlaceholder": "请选择角色",
+    "changeAlert": {
+      "title": "权限变更提示",
+      "description": "权限变更后需重新登录方可生效（权限内嵌于 JWT），服务端缓存约 5 分钟后过期。"
+    },
+    "save": "保存权限",
+    "reset": "重置",
+    "roleDescriptions": {
+      "ADMIN": "全部权限（45 码，超集）",
+      "OPERATOR": "所有读/写权限，排除系统管理、安全管理 manage 与基础设施",
+      "USER": "仪表盘 + 配置只读 + 流量治理 + 监控只读 + 追踪检索 + AI 试验场",
+      "VIEWER": "仅所有 :read 只读权限"
+    },
+    "groups": {
+      "overview": "概览",
+      "config": "配置",
+      "trafficGovernance": "流量治理",
+      "callHistory": "调用历史",
+      "monitoring": "监控",
+      "tracing": "追踪",
+      "security": "安全",
+      "system": "系统",
+      "ai": "AI",
+      "infrastructure": "基础设施"
+    },
+    "messages": {
+      "loadRolesFailed": "加载角色权限失败，请重试",
+      "saveSuccess": "权限保存成功，变更需重新登录生效",
+      "saveFailed": "保存权限失败，请重试",
+      "resetApplied": "已重置为服务器保存的权限"
+    }
+  }
+}

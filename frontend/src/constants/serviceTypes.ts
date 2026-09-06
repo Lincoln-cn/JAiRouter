@@ -8,6 +8,12 @@
  * @since v2.1.0
  */
 
+import { i18n } from '@/i18n'
+
+// i18n.global.t 轻量包装（消息 schema 为动态合并，运行期按 key 查找字符串）
+const gt = (key: string): string =>
+  (i18n.global as unknown as { t: (key: string) => string }).t(key)
+
 /**
  * 服务类型枚举
  */
@@ -22,16 +28,17 @@ export enum ServiceType {
 }
 
 /**
- * 服务类型显示名称
+ * 服务类型显示名称对应的 i18n key（顶层命名空间 serviceTypes，文案见各语言 serviceTypes.json）
+ * v2.10.3 双语版：渲染点用 t() / i18n.global.t(key) 翻译，未知类型回退原值
  */
 export const SERVICE_TYPE_LABELS: Record<ServiceType, string> = {
-  [ServiceType.CHAT]: '聊天模型',
-  [ServiceType.EMBEDDING]: '嵌入模型',
-  [ServiceType.RERANK]: '重排序模型',
-  [ServiceType.TTS]: '语音合成',
-  [ServiceType.STT]: '语音识别',
-  [ServiceType.IMG_GEN]: '图像生成',
-  [ServiceType.IMG_EDIT]: '图像编辑',
+  [ServiceType.CHAT]: 'serviceTypes.chat',
+  [ServiceType.EMBEDDING]: 'serviceTypes.embedding',
+  [ServiceType.RERANK]: 'serviceTypes.rerank',
+  [ServiceType.TTS]: 'serviceTypes.tts',
+  [ServiceType.STT]: 'serviceTypes.stt',
+  [ServiceType.IMG_GEN]: 'serviceTypes.imgGen',
+  [ServiceType.IMG_EDIT]: 'serviceTypes.imgEdit',
 }
 
 /**
@@ -68,8 +75,9 @@ export function toServiceType(value: string): ServiceType | null {
 }
 
 /**
- * 获取服务类型显示名称
+ * 获取服务类型显示名称（调用时求值，随语言切换生效）
  */
 export function getServiceTypeLabel(value: string): string {
-  return SERVICE_TYPE_LABELS[value as ServiceType] || value
+  const key = SERVICE_TYPE_LABELS[value as ServiceType]
+  return key ? gt(key) : value
 }

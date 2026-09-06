@@ -3,28 +3,28 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>追踪搜索</span>
-          <el-button type="primary" @click="handleSearch" :loading="searching">搜索</el-button>
+          <span>{{ t('tracing.search.title') }}</span>
+          <el-button type="primary" @click="handleSearch" :loading="searching">{{ t('tracing.search.search') }}</el-button>
         </div>
       </template>
 
       <!-- 搜索条件 -->
       <el-form :model="searchForm" :inline="true" class="search-form">
-        <el-form-item label="时间范围">
+        <el-form-item :label="t('tracing.search.timeRange')">
           <el-date-picker
             v-model="searchForm.timeRange"
             type="datetimerange"
-            range-separator="至"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
+            :range-separator="t('tracing.search.timeRangeTo')"
+            :start-placeholder="t('tracing.search.startTimePlaceholder')"
+            :end-placeholder="t('tracing.search.endTimePlaceholder')"
             format="YYYY-MM-DD HH:mm:ss"
             value-format="YYYY-MM-DD HH:mm:ss"
             :shortcuts="timeShortcuts"
           />
         </el-form-item>
         
-        <el-form-item label="服务名称">
-          <el-select v-model="searchForm.serviceName" placeholder="请选择服务" clearable filterable>
+        <el-form-item :label="t('tracing.search.serviceName')">
+          <el-select v-model="searchForm.serviceName" :placeholder="t('tracing.search.serviceNamePlaceholder')" clearable filterable>
             <el-option
               v-for="service in availableServices"
               :key="service"
@@ -34,14 +34,14 @@
           </el-select>
         </el-form-item>
         
-        <el-form-item label="追踪ID">
-          <el-input v-model="searchForm.traceId" placeholder="请输入追踪ID" clearable />
+        <el-form-item :label="t('tracing.search.traceId')">
+          <el-input v-model="searchForm.traceId" :placeholder="t('tracing.search.traceIdPlaceholder')" clearable />
         </el-form-item>
         
-        <el-form-item label="状态">
-          <el-select v-model="searchForm.hasError" placeholder="请选择状态" clearable>
-            <el-option label="成功" :value="false" />
-            <el-option label="错误" :value="true" />
+        <el-form-item :label="t('tracing.search.status')">
+          <el-select v-model="searchForm.hasError" :placeholder="t('tracing.search.statusPlaceholder')" clearable>
+            <el-option :label="t('tracing.search.success')" :value="false" />
+            <el-option :label="t('tracing.search.error')" :value="true" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -51,10 +51,10 @@
     <el-card class="results-card">
       <template #header>
         <div class="card-header">
-          <span>搜索结果 ({{ traces.length }})</span>
+          <span>{{ t('tracing.search.resultsTitle', { count: traces.length }) }}</span>
           <div class="header-actions">
-            <el-button @click="handleExport" :disabled="traces.length === 0">导出</el-button>
-            <el-button @click="handleGetRecent">获取最近追踪</el-button>
+            <el-button @click="handleExport" :disabled="traces.length === 0">{{ t('tracing.search.export') }}</el-button>
+            <el-button @click="handleGetRecent">{{ t('tracing.search.getRecent') }}</el-button>
           </div>
         </div>
       </template>
@@ -63,47 +63,47 @@
         :data="traces" 
         v-loading="searching"
         style="width: 100%" 
-        empty-text="暂无追踪数据，请点击'获取最近追踪'或使用搜索条件"
+        :empty-text="t('tracing.search.emptyText')"
         @row-click="handleRowClick"
         row-class-name="trace-row"
       >
-        <el-table-column prop="traceId" label="追踪ID" min-width="150" show-overflow-tooltip>
+        <el-table-column prop="traceId" :label="t('tracing.search.traceId')" min-width="150" show-overflow-tooltip>
           <template #default="{ row }">
             <el-link type="primary" @click.stop="handleViewTrace(row)">
               {{ row.traceId.substring(0, 16) }}...
             </el-link>
           </template>
         </el-table-column>
-        <el-table-column prop="serviceName" label="主服务" min-width="70" />
-        <el-table-column prop="operationName" label="主要操作" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="spanCount" label="Span数量" min-width="70">
+        <el-table-column prop="serviceName" :label="t('tracing.search.primaryService')" min-width="70" />
+        <el-table-column prop="operationName" :label="t('tracing.search.operationName')" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="spanCount" :label="t('tracing.search.spanCount')" min-width="70">
           <template #default="{ row }">
             <el-tag size="small" :type="row.spanCount > 1 ? 'success' : 'info'">
               {{ row.spanCount }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="duration" label="总耗时(ms)" min-width="70" sortable>
+        <el-table-column prop="duration" :label="t('tracing.search.durationColumn')" min-width="70" sortable>
           <template #default="{ row }">
             <span :class="{ 'high-latency': row.duration > 1000 }">{{ Math.round(row.duration) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="startTime" label="开始时间" min-width="140">
+        <el-table-column prop="startTime" :label="t('tracing.search.startTime')" min-width="140">
           <template #default="{ row }">
             {{ formatTime(row.startTime) }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" min-width="70">
+        <el-table-column prop="status" :label="t('tracing.search.status')" min-width="70">
           <template #default="{ row }">
             <el-tag :type="row.hasError ? 'danger' : 'success'" size="small">
-              {{ row.hasError ? '错误' : '成功' }}
+              {{ row.hasError ? t('tracing.search.error') : t('tracing.search.success') }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" min-width="70" fixed="right">
+        <el-table-column :label="t('tracing.search.action')" min-width="70" fixed="right">
           <template #default="{ row }">
             <el-button size="small" type="text" @click.stop="handleViewTrace(row)">
-              查看链路
+              {{ t('tracing.search.viewTrace') }}
             </el-button>
           </template>
         </el-table-column>
@@ -123,38 +123,38 @@
     </el-card>
 
     <!-- 追踪详情对话框 -->
-    <el-dialog v-model="traceDialogVisible" title="追踪链路详情" width="90%" top="3vh">
+    <el-dialog v-model="traceDialogVisible" :title="t('tracing.search.detailDialogTitle')" width="90%" top="3vh">
       <div v-if="selectedTrace">
         <!-- 追踪概要信息 -->
         <el-card class="trace-summary">
           <el-descriptions :column="3" border>
-            <el-descriptions-item label="追踪ID">
+            <el-descriptions-item :label="t('tracing.search.traceId')">
               <el-text type="primary" style="font-family: monospace;">{{ selectedTrace.traceId }}</el-text>
             </el-descriptions-item>
-            <el-descriptions-item label="主服务">{{ selectedTrace.serviceName }}</el-descriptions-item>
-            <el-descriptions-item label="总耗时">
+            <el-descriptions-item :label="t('tracing.search.primaryService')">{{ selectedTrace.serviceName }}</el-descriptions-item>
+            <el-descriptions-item :label="t('tracing.search.totalDurationLabel')">
               <span :class="{ 'high-latency': (traceChain?.stats?.totalDuration || selectedTrace.duration) > 1000 }">
                 {{ Math.round(traceChain?.stats?.totalDuration || selectedTrace.duration) }}ms
               </span>
             </el-descriptions-item>
-            <el-descriptions-item label="Span数量">
+            <el-descriptions-item :label="t('tracing.search.spanCount')">
               <el-tag size="small" :type="(traceChain?.stats?.totalSpans || selectedTrace.spanCount) > 1 ? 'success' : 'info'">
                 {{ traceChain?.stats?.totalSpans || selectedTrace.spanCount }}
               </el-tag>
             </el-descriptions-item>
-            <el-descriptions-item label="开始时间">{{ formatTime(selectedTrace.startTime) }}</el-descriptions-item>
-            <el-descriptions-item label="状态">
+            <el-descriptions-item :label="t('tracing.search.startTime')">{{ formatTime(selectedTrace.startTime) }}</el-descriptions-item>
+            <el-descriptions-item :label="t('tracing.search.status')">
               <el-tag :type="selectedTrace.hasError ? 'danger' : 'success'">
-                {{ selectedTrace.hasError ? '错误' : '成功' }}
+                {{ selectedTrace.hasError ? t('tracing.search.error') : t('tracing.search.success') }}
               </el-tag>
             </el-descriptions-item>
-            <el-descriptions-item label="错误数量" v-if="traceChain?.stats?.errorCount > 0">
+            <el-descriptions-item :label="t('tracing.search.errorCountLabel')" v-if="traceChain?.stats?.errorCount > 0">
               <el-tag type="danger" size="small">{{ traceChain.stats.errorCount }}</el-tag>
             </el-descriptions-item>
-            <el-descriptions-item label="平均耗时">
+            <el-descriptions-item :label="t('tracing.search.avgDurationLabel')">
               {{ Math.round(traceChain?.stats?.avgDuration || 0) }}ms
             </el-descriptions-item>
-            <el-descriptions-item label="最大耗时">
+            <el-descriptions-item :label="t('tracing.search.maxDurationLabel')">
               {{ Math.round(traceChain?.stats?.maxDuration || 0) }}ms
             </el-descriptions-item>
           </el-descriptions>
@@ -164,7 +164,7 @@
         <div v-if="traceChain" class="trace-chain">
           <el-card>
             <template #header>
-              <h4 style="margin: 0;">追踪链路时序图</h4>
+              <h4 style="margin: 0;">{{ t('tracing.search.chartTitle') }}</h4>
             </template>
             <div ref="traceChainChart" class="trace-chain-chart"></div>
           </el-card>
@@ -172,7 +172,7 @@
           <!-- Span详情表格 -->
           <el-card style="margin-top: 20px;">
             <template #header>
-              <h4 style="margin: 0;">Span详情列表</h4>
+              <h4 style="margin: 0;">{{ t('tracing.search.spanDetailsTitle') }}</h4>
             </template>
             <el-table :data="sortedSpans" style="width: 100%" size="small" default-sort="{prop: 'startTime', order: 'ascending'}">
               <el-table-column type="index" label="#" min-width="50" />
@@ -183,36 +183,36 @@
                   </el-text>
                 </template>
               </el-table-column>
-              <el-table-column prop="operationName" label="操作" show-overflow-tooltip>
+              <el-table-column prop="operationName" :label="t('tracing.search.operation')" show-overflow-tooltip>
                 <template #default="{ row }">
                   <div>
                     <div style="font-weight: 500;">{{ row.operationName }}</div>
                     <div style="font-size: 12px; color: var(--ja-text-secondary);" v-if="row.attributes && row.attributes['service.type']">
-                      服务类型: {{ row.attributes['service.type'] }}
+                      {{ t('tracing.search.serviceTypePrefix', { value: row.attributes['service.type'] }) }}
                     </div>
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column prop="duration" label="耗时(ms)" min-width="70" sortable>
+              <el-table-column prop="duration" :label="t('tracing.search.durationMsColumn')" min-width="70" sortable>
                 <template #default="{ row }">
                   <span :class="{ 'high-latency': row.duration > 500 }">
                     {{ Math.round(row.duration) }}
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column prop="startTime" label="开始时间" min-width="140" sortable>
+              <el-table-column prop="startTime" :label="t('tracing.search.startTime')" min-width="140" sortable>
                 <template #default="{ row }">
                   {{ formatTime(row.startTime) }}
                 </template>
               </el-table-column>
-              <el-table-column prop="error" label="状态" min-width="70">
+              <el-table-column prop="error" :label="t('tracing.search.status')" min-width="70">
                 <template #default="{ row }">
                   <el-tag :type="row.error ? 'danger' : 'success'" size="small">
-                    {{ row.error ? '错误' : '成功' }}
+                    {{ row.error ? t('tracing.search.error') : t('tracing.search.success') }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="statusCode" label="状态码" min-width="70">
+              <el-table-column prop="statusCode" :label="t('tracing.search.statusCode')" min-width="70">
                 <template #default="{ row }">
                   <el-tag 
                     size="small" 
@@ -222,10 +222,10 @@
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="操作" min-width="70" fixed="right">
+              <el-table-column :label="t('tracing.search.action')" min-width="70" fixed="right">
                 <template #default="{ row }">
                   <el-button size="small" type="text" @click="showSpanDetails(row)">
-                    详情
+                    {{ t('tracing.search.detail') }}
                   </el-button>
                 </template>
               </el-table-column>
@@ -236,8 +236,8 @@
       
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="traceDialogVisible = false">关闭</el-button>
-          <el-button type="primary" @click="handleExportTrace">导出此追踪</el-button>
+          <el-button @click="traceDialogVisible = false">{{ t('tracing.search.close') }}</el-button>
+          <el-button type="primary" @click="handleExportTrace">{{ t('tracing.search.exportThisTrace') }}</el-button>
         </span>
       </template>
     </el-dialog>
@@ -246,6 +246,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 import {
@@ -258,6 +259,7 @@ import {
 import { useChartTheme } from '@/composables/useChartTheme'
 
 const { getChartTheme } = useChartTheme()
+const { t } = useI18n()
 
 // 搜索表单
 const searchForm = ref({
@@ -268,9 +270,9 @@ const searchForm = ref({
 })
 
 // 时间快捷选项
-const timeShortcuts = [
+const timeShortcuts = computed(() => [
   {
-    text: '最近1小时',
+    text: t('tracing.search.shortcuts.last1h'),
     value: () => {
       const end = new Date()
       const start = new Date()
@@ -279,7 +281,7 @@ const timeShortcuts = [
     }
   },
   {
-    text: '最近6小时',
+    text: t('tracing.search.shortcuts.last6h'),
     value: () => {
       const end = new Date()
       const start = new Date()
@@ -288,7 +290,7 @@ const timeShortcuts = [
     }
   },
   {
-    text: '今天',
+    text: t('tracing.search.shortcuts.today'),
     value: () => {
       const end = new Date()
       const start = new Date()
@@ -297,7 +299,7 @@ const timeShortcuts = [
     }
   },
   {
-    text: '昨天',
+    text: t('tracing.search.shortcuts.yesterday'),
     value: () => {
       const end = new Date()
       const start = new Date()
@@ -307,7 +309,7 @@ const timeShortcuts = [
       return [start, end]
     }
   }
-]
+])
 
 // 状态
 const searching = ref(false)
@@ -385,10 +387,10 @@ const handleSearch = async (resetPage = true) => {
       totalPages.value = 0
     }
 
-    ElMessage.success(`找到 ${total.value} 条追踪记录`)
+    ElMessage.success(t('tracing.search.messages.found', { count: total.value }))
   } catch (error) {
     console.error('搜索追踪失败:', error)
-    ElMessage.error('搜索追踪失败')
+    ElMessage.error(t('tracing.search.messages.searchFailed'))
     
     // 使用模拟数据
     const mockData = generateMockTraces()
@@ -428,10 +430,10 @@ const handleGetRecent = async () => {
       totalPages.value = 0
     }
 
-    ElMessage.success(`获取到 ${total.value} 条最近追踪`)
+    ElMessage.success(t('tracing.search.messages.fetchedRecent', { count: total.value }))
   } catch (error) {
     console.error('获取最近追踪失败:', error)
-    ElMessage.error('获取最近追踪失败')
+    ElMessage.error(t('tracing.search.messages.fetchRecentFailed'))
     
     // 使用模拟数据
     const mockData = generateMockTraces()
@@ -464,7 +466,7 @@ const handleViewTrace = async (trace: any) => {
     }
   } catch (error) {
     console.error('获取追踪链路失败:', error)
-    ElMessage.error('获取追踪链路失败')
+    ElMessage.error(t('tracing.search.messages.fetchChainFailed'))
     
     // 使用模拟数据
     traceChain.value = generateMockTraceChain(trace.traceId)
@@ -494,10 +496,10 @@ const handleExport = async () => {
 
     const response = await exportTraces(exportRequest)
 
-    ElMessage.success('导出请求已提交')
+    ElMessage.success(t('tracing.search.messages.exportSubmitted'))
   } catch (error) {
     console.error('导出失败:', error)
-    ElMessage.error('导出失败')
+    ElMessage.error(t('tracing.search.messages.exportFailed'))
   }
 }
 
@@ -522,7 +524,7 @@ const handleExportTrace = () => {
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
   
-  ElMessage.success('追踪数据已下载')
+  ElMessage.success(t('tracing.search.messages.traceDownloaded'))
 }
 
 // 分页处理
@@ -590,7 +592,7 @@ const getTraceChainChartOption = () => {
 
   return {
     title: {
-      text: `追踪链路时序图 (${spans.length} 个 Span)`,
+      text: t('tracing.search.chartTitleWithCount', { count: spans.length }),
       left: 'center',
       textStyle: {
         fontSize: 16,
@@ -607,10 +609,10 @@ const getTraceChainChartOption = () => {
         return `
           <div style="max-width: 300px;">
             <div style="font-weight: bold; margin-bottom: 8px;">${data.name}</div>
-            <div style="margin-bottom: 4px;"><strong>Span ID:</strong> ${data.spanId.substring(0, 16)}...</div>
-            <div style="margin-bottom: 4px;"><strong>开始偏移:</strong> +${Math.round(startOffset)}ms</div>
-            <div style="margin-bottom: 4px;"><strong>结束偏移:</strong> +${Math.round(endOffset)}ms</div>
-            <div><strong>持续时间:</strong> ${Math.round(duration)}ms</div>
+            <div style="margin-bottom: 4px;"><strong>${t('tracing.search.tooltip.spanId')}:</strong> ${data.spanId.substring(0, 16)}...</div>
+            <div style="margin-bottom: 4px;"><strong>${t('tracing.search.tooltip.startOffset')}:</strong> +${Math.round(startOffset)}ms</div>
+            <div style="margin-bottom: 4px;"><strong>${t('tracing.search.tooltip.endOffset')}:</strong> +${Math.round(endOffset)}ms</div>
+            <div><strong>${t('tracing.search.tooltip.duration')}:</strong> ${Math.round(duration)}ms</div>
           </div>
         `
       }
@@ -623,7 +625,7 @@ const getTraceChainChartOption = () => {
     },
     xAxis: {
       type: 'value',
-      name: '时间偏移 (ms)',
+      name: t('tracing.search.timeOffset'),
       nameLocation: 'middle',
       nameGap: 30,
       min: 0,
@@ -691,7 +693,7 @@ const getTraceChainChartOption = () => {
           },
           data: spans.length > 1 ? [
             {
-              name: '调用开始',
+              name: t('tracing.search.callStart'),
               xAxis: 0
             }
           ] : []
@@ -840,7 +842,7 @@ const showSpanDetails = (span: any) => {
   }
   
   ElMessage({
-    message: `Span详情已复制到控制台`,
+    message: t('tracing.search.messages.spanDetailsCopied'),
     type: 'info'
   })
 }

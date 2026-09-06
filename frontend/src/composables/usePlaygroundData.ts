@@ -3,6 +3,11 @@ import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getCachedInstances, getCachedModels } from '@/stores/playgroundCache'
 import { getInstanceServiceType } from '@/api/models'
+import { i18n } from '@/i18n'
+const { t: gt } = i18n.global as unknown as {
+  t: (key: string, named?: Record<string, string | number>) => string
+}
+
 
 export interface ServiceInstance {
   instanceId: string
@@ -69,12 +74,15 @@ export const usePlaygroundData = (playgroundServiceType: string) => {
 
       // 如果当前选择的实例不存在，给出提示但不清空选择
       if (selectedInstanceId.value && !currentInstanceExists) {
-        ElMessage.warning(`当前选择的实例在刷新后不可用，请重新选择`)
+        ElMessage.warning(gt('playgroundData.selectedUnavailable'))
       }
 
       if (showMessage) {
         ElMessage.success(
-          `已刷新数据：${instances.length} 个实例，${models.length} 个模型`
+          gt('playgroundData.refreshedData', {
+            instances: instances.length,
+            models: models.length
+          })
         )
       }
 
@@ -82,7 +90,7 @@ export const usePlaygroundData = (playgroundServiceType: string) => {
     } catch (error) {
       console.error(`获取${playgroundServiceType}数据失败:`, error)
       if (showMessage) {
-        ElMessage.error(`获取${playgroundServiceType}数据失败`)
+        ElMessage.error(gt('playgroundData.fetchDataFailed', { serviceType: playgroundServiceType }))
       }
       return { instances: [], models: [] }
     } finally {
@@ -108,18 +116,18 @@ export const usePlaygroundData = (playgroundServiceType: string) => {
       availableInstances.value = instances
 
       if (selectedInstanceId.value && !currentInstanceExists) {
-        ElMessage.warning(`当前选择的实例在刷新后不可用，请重新选择`)
+        ElMessage.warning(gt('playgroundData.selectedUnavailable'))
       }
 
       if (showMessage && forceRefresh) {
-        ElMessage.success(`已刷新实例列表，找到 ${instances.length} 个可用实例`)
+        ElMessage.success(gt('playgroundData.refreshedInstances', { count: instances.length }))
       }
 
       return instances
     } catch (error) {
       console.error(`获取${playgroundServiceType}实例失败:`, error)
       if (showMessage) {
-        ElMessage.error(`获取${playgroundServiceType}实例失败`)
+        ElMessage.error(gt('playgroundData.fetchInstancesFailed', { serviceType: playgroundServiceType }))
       }
       return []
     } finally {
@@ -139,14 +147,14 @@ export const usePlaygroundData = (playgroundServiceType: string) => {
       availableModels.value = models
 
       if (showMessage && forceRefresh) {
-        ElMessage.success(`已刷新模型列表，找到 ${models.length} 个可用模型`)
+        ElMessage.success(gt('playgroundData.refreshedModels', { count: models.length }))
       }
 
       return models
     } catch (error) {
       console.error(`获取${playgroundServiceType}模型失败:`, error)
       if (showMessage) {
-        ElMessage.error(`获取${playgroundServiceType}模型失败`)
+        ElMessage.error(gt('playgroundData.fetchModelsFailed', { serviceType: playgroundServiceType }))
       }
       return []
     } finally {

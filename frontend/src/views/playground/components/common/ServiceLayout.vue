@@ -8,7 +8,7 @@
             v-model="selectedModel"
             :instances="instances"
             :loading="instancesLoading"
-            :placeholder="modelPlaceholder"
+            :placeholder="resolvedModelPlaceholder"
             @change="handleModelChange"
           />
         </slot>
@@ -21,7 +21,7 @@
             @click="handleClear"
           >
             <el-icon><Delete /></el-icon>
-            清空
+            {{ t('playgroundCommon.action.clear') }}
           </el-button>
           <el-button
             v-if="showConfig"
@@ -29,7 +29,7 @@
             @click="showConfigPanel = !showConfigPanel"
           >
             <el-icon><Setting /></el-icon>
-            {{ showConfigPanel ? '隐藏配置' : '显示配置' }}
+            {{ showConfigPanel ? t('playgroundCommon.action.hideConfig') : t('playgroundCommon.action.showConfig') }}
           </el-button>
         </slot>
       </div>
@@ -76,7 +76,7 @@
             v-if="metrics.duration"
             class="status-item"
           >
-            耗时: {{ metrics.duration }}ms
+            {{ t('playgroundCommon.status.duration', { duration: String(metrics.duration) }) }}
           </span>
           <span
             v-if="metrics.tokens"
@@ -92,6 +92,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Delete, Setting, CircleCheck } from '@element-plus/icons-vue'
 import ModelSelector from './ModelSelector.vue'
 
@@ -122,7 +123,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   instances: () => [],
   instancesLoading: false,
-  modelPlaceholder: '选择模型',
+  modelPlaceholder: '',
   showConfig: true,
   showClear: true,
   showStatusBar: true,
@@ -137,9 +138,16 @@ const emit = defineEmits<{
   clear: []
 }>()
 
+const { t } = useI18n()
+
 const selectedModel = ref('')
 const showConfigPanel = ref(false)
 const localConfig = ref({ ...props.config })
+
+// 模型选择框占位文案（父级未传入时使用翻译默认值）
+const resolvedModelPlaceholder = computed(() => {
+  return props.modelPlaceholder || t('playgroundCommon.model.placeholder')
+})
 
 // 状态样式
 const statusClass = computed(() => {
@@ -159,13 +167,13 @@ const statusClass = computed(() => {
 const statusText = computed(() => {
   switch (props.status) {
     case 'loading':
-      return '处理中...'
+      return t('playgroundCommon.status.loading')
     case 'success':
-      return '成功'
+      return t('playgroundCommon.status.success')
     case 'error':
-      return '错误'
+      return t('playgroundCommon.status.error')
     default:
-      return '就绪'
+      return t('playgroundCommon.status.idle')
   }
 })
 

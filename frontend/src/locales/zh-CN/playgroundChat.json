@@ -1,0 +1,45 @@
+{
+  "playgroundChat": {
+    "toolbar": {
+      "selectModel": "选择模型",
+      "showConfig": "参数配置",
+      "hideConfig": "隐藏配置",
+      "newChat": "新对话",
+      "clearChat": "清空"
+    },
+    "instance": {
+      "offline": "(离线)",
+      "unknown": "(未知)"
+    },
+    "empty": {
+      "title": "开始新的对话",
+      "subtitle": "输入消息，与 AI 开始交流"
+    },
+    "suggestions": {
+      "introduce": "你好，请介绍一下你自己",
+      "writeCode": "帮我写一段代码",
+      "machineLearning": "解释一下什么是机器学习"
+    },
+    "input": {
+      "tipEnter": "按 Enter 发送，Shift + Enter 换行",
+      "tipSelectModel": "请先选择模型",
+      "placeholderNoModel": "请先选择模型...",
+      "placeholderGenerating": "正在生成回复...",
+      "placeholderMessage": "输入消息..."
+    },
+    "config": {
+      "stream": "流式响应",
+      "stopSequences": "停止词",
+      "stopPlaceholder": "输入停止词"
+    },
+    "messages": {
+      "errorContext": "对话请求",
+      "errorTitle": "错误",
+      "suggestion": "建议",
+      "requestCancelled": "已取消请求",
+      "newChatCreated": "已创建新对话",
+      "chatCleared": "已清空对话",
+      "nothingToRegenerate": "没有可以重新生成的消息"
+    }
+  }
+}

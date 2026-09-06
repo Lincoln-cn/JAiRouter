@@ -9,7 +9,7 @@
         @click="copyCode"
       >
         <el-icon><DocumentCopy /></el-icon>
-        {{ copied ? '已复制' : '复制' }}
+        {{ t(copied ? 'playgroundCommon.action.copied' : 'playgroundCommon.action.copy') }}
       </el-button>
     </div>
     <pre class="code-content"><code :class="codeClass" v-html="highlightedCode"></code></pre>
@@ -18,6 +18,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { DocumentCopy } from '@element-plus/icons-vue'
 import { useMarkdown } from '../../composables/useMarkdown'
 import { ElMessage } from 'element-plus'
@@ -30,6 +31,8 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   language: ''
 })
+
+const { t } = useI18n()
 
 const { highlightCode, detectLanguage } = useMarkdown()
 const copied = ref(false)
@@ -55,12 +58,12 @@ const copyCode = async () => {
   try {
     await navigator.clipboard.writeText(props.code)
     copied.value = true
-    ElMessage.success('代码已复制到剪贴板')
+    ElMessage.success(t('playgroundCommon.message.codeCopiedToClipboard'))
     setTimeout(() => {
       copied.value = false
     }, 2000)
   } catch {
-    ElMessage.error('复制失败')
+    ElMessage.error(t('playgroundCommon.message.copyFailed'))
   }
 }
 </script>

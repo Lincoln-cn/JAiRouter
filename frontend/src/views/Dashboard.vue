@@ -1,8 +1,8 @@
 <template>
-  <PageSkeleton title="治理指挥台">
+  <PageSkeleton :title="t('dashboard.pageTitle')">
     <template #actions>
       <el-button size="small" type="primary" @click="fetchDashboardData" :loading="configLoading" plain>
-        <el-icon><Refresh /></el-icon> 刷新全部
+        <el-icon><Refresh /></el-icon> {{ t('dashboard.refreshAll') }}
       </el-button>
     </template>
 
@@ -25,7 +25,7 @@
       <el-col :xs="24" :lg="16">
         <el-card class="card-panel" shadow="always">
           <template #header>
-            <div class="card-title">系统概览</div>
+            <div class="card-title">{{ t('dashboard.systemOverview') }}</div>
           </template>
           <div ref="systemChart" class="chart-area" />
         </el-card>
@@ -34,13 +34,13 @@
       <el-col :xs="24" :lg="8" :gutter="20">
         <el-card class="card-panel" shadow="always">
           <template #header>
-            <div class="card-title">系统指标</div>
+            <div class="card-title">{{ t('dashboard.systemMetrics') }}</div>
           </template>
 
           <div v-if="dashboardMetrics" class="monitoring-box">
             <!-- JVM 内存 -->
             <el-descriptions :column="1" border size="small">
-              <el-descriptions-item label="JVM 内存">
+              <el-descriptions-item :label="t('dashboard.metrics.jvmMemory')">
                 <div class="row-inline">
                   <el-progress
                     :percentage="dashboardMetrics.jvm?.heapUsagePercent || 0"
@@ -54,73 +54,73 @@
                 </div>
               </el-descriptions-item>
 
-              <el-descriptions-item label="线程">
+              <el-descriptions-item :label="t('dashboard.metrics.threads')">
                 <div class="row-inline">
-                  <el-tag type="primary">{{ dashboardMetrics.jvm?.threadCount || 0 }} 个</el-tag>
+                  <el-tag type="primary">{{ t('dashboard.metrics.countUnit', { count: dashboardMetrics.jvm?.threadCount || 0 }) }}</el-tag>
                   <el-tag size="small" type="info" style="margin-left:8px">
-                    峰值: {{ dashboardMetrics.jvm?.peakThreadCount || 0 }}
+                    {{ t('dashboard.metrics.peakPrefix', { count: dashboardMetrics.jvm?.peakThreadCount || 0 }) }}
                   </el-tag>
                 </div>
               </el-descriptions-item>
 
-              <el-descriptions-item label="HTTP 请求">
+              <el-descriptions-item :label="t('dashboard.metrics.httpRequests')">
                 <div class="row-inline">
-                  <el-tag type="primary">{{ dashboardMetrics.http?.totalRequests || 0 }} 次</el-tag>
+                  <el-tag type="primary">{{ t('dashboard.metrics.timesUnit', { count: dashboardMetrics.http?.totalRequests || 0 }) }}</el-tag>
                   <el-tag size="small" type="info" style="margin-left:8px">
-                    平均: {{ (dashboardMetrics.http?.avgResponseTimeMs || 0).toFixed(1) }} ms
+                    {{ t('dashboard.metrics.avgResponse', { value: (dashboardMetrics.http?.avgResponseTimeMs || 0).toFixed(1) }) }}
                   </el-tag>
                 </div>
               </el-descriptions-item>
 
-              <el-descriptions-item label="认证">
+              <el-descriptions-item :label="t('dashboard.metrics.authentication')">
                 <div class="row-inline">
-                  <el-tag type="success">{{ dashboardMetrics.security?.authSuccesses || 0 }} 成功</el-tag>
+                  <el-tag type="success">{{ t('dashboard.metrics.successUnit', { count: dashboardMetrics.security?.authSuccesses || 0 }) }}</el-tag>
                   <el-tag :type="(dashboardMetrics.security?.authFailures || 0) > 0 ? 'danger' : 'info'" style="margin-left:8px">
-                    {{ dashboardMetrics.security?.authFailures || 0 }} 失败
+                    {{ t('dashboard.metrics.failureUnit', { count: dashboardMetrics.security?.authFailures || 0 }) }}
                   </el-tag>
                   <el-tag size="small" type="warning" style="margin-left:8px">
-                    活跃: {{ Math.round(dashboardMetrics.security?.activeUsers || 0) }}
+                    {{ t('dashboard.metrics.activePrefix', { count: Math.round(dashboardMetrics.security?.activeUsers || 0) }) }}
                   </el-tag>
                 </div>
               </el-descriptions-item>
 
-              <el-descriptions-item label="安全缓存">
+              <el-descriptions-item :label="t('dashboard.metrics.securityCache')">
                 <div class="row-inline">
-                  <el-tag type="primary">命中: {{ Math.round(dashboardMetrics.security?.cacheHits || 0) }}</el-tag>
+                  <el-tag type="primary">{{ t('dashboard.metrics.hitsPrefix', { count: Math.round(dashboardMetrics.security?.cacheHits || 0) }) }}</el-tag>
                   <el-tag size="small" type="info" style="margin-left:8px">
-                    未命中: {{ Math.round(dashboardMetrics.security?.cacheMisses || 0) }}
+                    {{ t('dashboard.metrics.missesPrefix', { count: Math.round(dashboardMetrics.security?.cacheMisses || 0) }) }}
                   </el-tag>
                   <el-tag size="small" type="warning" style="margin-left:8px">
-                    大小: {{ Math.round(dashboardMetrics.security?.cacheSize || 0) }}
+                    {{ t('dashboard.metrics.sizePrefix', { count: Math.round(dashboardMetrics.security?.cacheSize || 0) }) }}
                   </el-tag>
                 </div>
               </el-descriptions-item>
 
-              <el-descriptions-item label="审计事件">
+              <el-descriptions-item :label="t('dashboard.metrics.auditEvents')">
                 <div class="row-inline">
-                  <el-tag type="primary">{{ Math.round(dashboardMetrics.audit?.totalEvents || 0) }} 总数</el-tag>
+                  <el-tag type="primary">{{ t('dashboard.metrics.totalUnit', { count: Math.round(dashboardMetrics.audit?.totalEvents || 0) }) }}</el-tag>
                   <el-tag type="success" size="small" style="margin-left:8px">
-                    {{ Math.round(dashboardMetrics.audit?.successEvents || 0) }} 成功
+                    {{ t('dashboard.metrics.successUnit', { count: Math.round(dashboardMetrics.audit?.successEvents || 0) }) }}
                   </el-tag>
                   <el-tag :type="(dashboardMetrics.audit?.failureEvents || 0) > 0 ? 'danger' : 'info'" size="small" style="margin-left:8px">
-                    {{ Math.round(dashboardMetrics.audit?.failureEvents || 0) }} 失败
+                    {{ t('dashboard.metrics.failureUnit', { count: Math.round(dashboardMetrics.audit?.failureEvents || 0) }) }}
                   </el-tag>
                 </div>
               </el-descriptions-item>
 
-              <el-descriptions-item label="系统负载">
+              <el-descriptions-item :label="t('dashboard.metrics.systemLoad')">
                 <div class="row-inline">
                   <el-tag type="primary">{{ (dashboardMetrics.system?.systemLoadAverage || 0).toFixed(2) }}</el-tag>
                   <el-tag size="small" type="info" style="margin-left:8px">
-                    CPU: {{ ((dashboardMetrics.system?.processCpuUsage || 0) * 100).toFixed(1) }}%
+                    {{ t('dashboard.metrics.cpuPrefix', { value: ((dashboardMetrics.system?.processCpuUsage || 0) * 100).toFixed(1) }) }}
                   </el-tag>
                   <el-tag size="small" type="warning" style="margin-left:8px">
-                    核心: {{ dashboardMetrics.system?.availableProcessors || 0 }}
+                    {{ t('dashboard.metrics.coresPrefix', { count: dashboardMetrics.system?.availableProcessors || 0 }) }}
                   </el-tag>
                 </div>
               </el-descriptions-item>
 
-              <el-descriptions-item label="运行时间">
+              <el-descriptions-item :label="t('dashboard.metrics.uptime')">
                 <el-tag type="primary">{{ formatUptime(dashboardMetrics.system?.uptimeSeconds) }}</el-tag>
               </el-descriptions-item>
             </el-descriptions>
@@ -128,7 +128,7 @@
 
           <div v-else class="empty-placeholder">
             <el-icon><Loading /></el-icon>
-            <div>正在加载指标数据...</div>
+            <div>{{ t('dashboard.loadingMetrics') }}</div>
           </div>
         </el-card>
       </el-col>
@@ -140,7 +140,7 @@
         <el-card class="governance-card" shadow="hover">
           <template #header>
             <div class="governance-header">
-              <span class="card-title">治理链路</span>
+              <span class="card-title">{{ t('dashboard.governanceChain') }}</span>
             </div>
           </template>
 
@@ -150,22 +150,22 @@
               <div class="gov-section">
                 <div class="gov-section-head">
                   <el-icon class="gov-icon gov-icon--primary"><SetUp /></el-icon>
-                  <span class="gov-label">规则命中</span>
+                  <span class="gov-label">{{ t('dashboard.ruleHits') }}</span>
                   <el-button link type="primary" size="small" class="gov-jump" @click="router.push('/config/rules')">
-                    查看 <el-icon><ArrowRight /></el-icon>
+                    {{ t('dashboard.view') }} <el-icon><ArrowRight /></el-icon>
                   </el-button>
                 </div>
                 <div class="gov-metrics">
                   <div class="gov-metric-row">
-                    <span class="gov-metric-label">启用规则</span>
+                    <span class="gov-metric-label">{{ t('dashboard.enabledRules') }}</span>
                     <span class="gov-metric-value">{{ ruleStats.enabledCount }}</span>
                   </div>
                   <div class="gov-metric-row">
-                    <span class="gov-metric-label">总命中次数</span>
+                    <span class="gov-metric-label">{{ t('dashboard.totalHitsCount') }}</span>
                     <span class="gov-metric-value gov-metric-value--primary">{{ ruleStats.totalHits }}</span>
                   </div>
                   <div class="gov-metric-row">
-                    <span class="gov-metric-label">触发规则数</span>
+                    <span class="gov-metric-label">{{ t('dashboard.triggeredRuleCount') }}</span>
                     <span class="gov-metric-value">{{ ruleStats.triggeredRuleCount }}</span>
                   </div>
                 </div>
@@ -177,24 +177,24 @@
               <div class="gov-section">
                 <div class="gov-section-head">
                   <el-icon class="gov-icon gov-icon--warning"><DataBoard /></el-icon>
-                  <span class="gov-label">限流</span>
+                  <span class="gov-label">{{ t('dashboard.rateLimit') }}</span>
                   <el-button link type="primary" size="small" class="gov-jump" @click="router.push('/rate-limiters/monitoring')">
-                    监控 <el-icon><ArrowRight /></el-icon>
+                {{ t('dashboard.monitor') }} <el-icon><ArrowRight /></el-icon>
                   </el-button>
                 </div>
                 <div class="gov-metrics">
                   <div class="gov-metric-row">
-                    <span class="gov-metric-label">平均使用率</span>
+                    <span class="gov-metric-label">{{ t('dashboard.avgUsageRatio') }}</span>
                     <span class="gov-metric-value">{{ rlSummary.averageUsageRatio }}%</span>
                   </div>
                   <div class="gov-metric-row">
-                    <span class="gov-metric-label">高使用率(>80%)</span>
+                    <span class="gov-metric-label">{{ t('dashboard.highUsageRatio') }}</span>
                     <span :class="['gov-metric-value', rlSummary.highUsageLimiters > 0 ? 'gov-metric-value--danger' : '']">
                       {{ rlSummary.highUsageLimiters }}
                     </span>
                   </div>
                   <div class="gov-metric-row">
-                    <span class="gov-metric-label">服务 / 实例限流器</span>
+                    <span class="gov-metric-label">{{ t('dashboard.serviceInstanceLimiters') }}</span>
                     <span class="gov-metric-value">{{ rlSummary.serviceLimiters }} / {{ rlSummary.instanceLimiters }}</span>
                   </div>
                 </div>
@@ -206,9 +206,9 @@
               <div class="gov-section">
                 <div class="gov-section-head">
                   <el-icon class="gov-icon gov-icon--danger"><Warning /></el-icon>
-                  <span class="gov-label">熔断</span>
+                  <span class="gov-label">{{ t('dashboard.circuitBreaker') }}</span>
                   <el-button link type="primary" size="small" class="gov-jump" @click="router.push('/circuit-breakers/monitoring')">
-                    监控 <el-icon><ArrowRight /></el-icon>
+                {{ t('dashboard.monitor') }} <el-icon><ArrowRight /></el-icon>
                   </el-button>
                 </div>
                 <div class="gov-metrics">
@@ -235,22 +235,22 @@
               <div class="gov-section">
                 <div class="gov-section-head">
                   <el-icon class="gov-icon gov-icon--success"><Connection /></el-icon>
-                  <span class="gov-label">负载均衡</span>
+                  <span class="gov-label">{{ t('dashboard.loadBalancing') }}</span>
                   <el-button link type="primary" size="small" class="gov-jump" @click="router.push('/load-balancers/monitoring')">
-                    监控 <el-icon><ArrowRight /></el-icon>
+                {{ t('dashboard.monitor') }} <el-icon><ArrowRight /></el-icon>
                   </el-button>
                 </div>
                 <div class="gov-metrics">
                   <div class="gov-metric-row">
-                    <span class="gov-metric-label">总实例</span>
+                    <span class="gov-metric-label">{{ t('dashboard.totalInstanceCount') }}</span>
                     <span class="gov-metric-value">{{ lbSummary.totalInstances }}</span>
                   </div>
                   <div class="gov-metric-row">
-                    <span class="gov-metric-label">健康实例</span>
+                    <span class="gov-metric-label">{{ t('dashboard.healthyInstanceCount') }}</span>
                     <span class="gov-metric-value gov-metric-value--success">{{ lbSummary.healthyInstances }}</span>
                   </div>
                   <div class="gov-metric-row">
-                    <span class="gov-metric-label">服务数</span>
+                    <span class="gov-metric-label">{{ t('dashboard.serviceCount') }}</span>
                     <span class="gov-metric-value">{{ lbSummary.serviceCount }}</span>
                   </div>
                 </div>
@@ -269,41 +269,41 @@
             <div class="alert-header">
               <span class="card-title">
                 <el-icon class="alert-title-icon"><WarningFilled /></el-icon>
-                异常 / 告警摘要
+                {{ t('dashboard.exceptionSummary') }}
               </span>
               <el-button link type="primary" size="small" @click="router.push('/exceptions/list')">
-                全部异常 <el-icon><ArrowRight /></el-icon>
+                {{ t('dashboard.allExceptions') }} <el-icon><ArrowRight /></el-icon>
               </el-button>
             </div>
           </template>
 
           <div v-if="recentExceptions.length > 0">
             <el-table :data="recentExceptions" stripe size="small" class="alert-table">
-              <el-table-column prop="occurredAt" label="时间" width="170">
+              <el-table-column prop="occurredAt" :label="t('dashboard.time')" width="170">
                 <template #default="{ row }">
                   <span class="alert-time">{{ formatAlertTime(row.occurredAt) }}</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="exceptionType" label="类型" width="180" show-overflow-tooltip>
+              <el-table-column prop="exceptionType" :label="t('dashboard.type')" width="180" show-overflow-tooltip>
                 <template #default="{ row }">
                   <el-tag size="small" type="danger">{{ row.exceptionType }}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="operation" label="操作" width="130">
+              <el-table-column prop="operation" :label="t('dashboard.operation')" width="130">
                 <template #default="{ row }">
                   <span>{{ row.operation || '-' }}</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="serviceName" label="服务" width="120">
+              <el-table-column prop="serviceName" :label="t('dashboard.service')" width="120">
                 <template #default="{ row }">
                   <span>{{ row.serviceName || row.serviceType || '-' }}</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="sanitizedMessage" label="消息" min-width="200" show-overflow-tooltip />
-              <el-table-column label="详情" width="80" align="center">
+              <el-table-column prop="sanitizedMessage" :label="t('dashboard.message')" min-width="200" show-overflow-tooltip />
+              <el-table-column :label="t('dashboard.details')" width="80" align="center">
                 <template #default="{ row }">
                   <el-button link type="primary" size="small" @click="router.push(`/exceptions/detail/${row.eventId}`)">
-                    查看
+                    {{ t('dashboard.view') }}
                   </el-button>
                 </template>
               </el-table-column>
@@ -312,7 +312,7 @@
 
           <div v-else class="alert-empty">
             <el-icon class="alert-empty-icon"><CircleCheckFilled /></el-icon>
-            <span>暂无异常，系统运行正常</span>
+            <span>{{ t('dashboard.noException') }}</span>
           </div>
         </el-card>
       </el-col>
@@ -324,40 +324,40 @@
         <el-card class="config-card" shadow="hover">
           <template #header>
             <div class="config-header">
-              <div class="config-title">服务配置速览</div>
+              <div class="config-title">{{ t('dashboard.serviceOverview') }}</div>
               <div class="config-actions">
                 <el-button size="small" type="primary" @click="fetchServiceConfig" :loading="configLoading" plain>
-                  <el-icon><Refresh /></el-icon> 刷新配置
+                  <el-icon><Refresh /></el-icon> {{ t('dashboard.refreshConfig') }}
                 </el-button>
               </div>
             </div>
           </template>
 
           <el-tabs v-model="activeServiceTab" type="border-card" style="margin-top: 12px;">
-            <el-tab-pane label="全局配置" name="global">
+            <el-tab-pane :label="t('dashboard.globalConfig')" name="global">
               <el-descriptions :column="2" border size="small">
-                <el-descriptions-item label="适配器">{{ serviceConfigData?.adapter || 'N/A' }}</el-descriptions-item>
-                <el-descriptions-item label="负载均衡">{{ serviceConfigData?.loadBalance?.type || 'N/A' }}</el-descriptions-item>
-                <el-descriptions-item label="哈希算法">{{ serviceConfigData?.loadBalance?.hashAlgorithm || 'N/A' }}</el-descriptions-item>
+                <el-descriptions-item :label="t('dashboard.adapter')">{{ serviceConfigData?.adapter || 'N/A' }}</el-descriptions-item>
+                <el-descriptions-item :label="t('dashboard.loadBalancing')">{{ serviceConfigData?.loadBalance?.type || 'N/A' }}</el-descriptions-item>
+                <el-descriptions-item :label="t('dashboard.hashAlgorithm')">{{ serviceConfigData?.loadBalance?.hashAlgorithm || 'N/A' }}</el-descriptions-item>
 
-                <el-descriptions-item label="全局限流">
+                <el-descriptions-item :label="t('dashboard.globalRateLimit')">
                   <el-tag :type="serviceConfigData?.rateLimit?.enabled ? 'success' : 'info'">
-                    {{ serviceConfigData?.rateLimit?.enabled ? '启用' : '禁用' }}
+                    {{ serviceConfigData?.rateLimit?.enabled ? t('dashboard.enabledStatus') : t('dashboard.disabledStatus') }}
                   </el-tag>
                 </el-descriptions-item>
 
-                <el-descriptions-item label="限流参数" v-if="serviceConfigData?.rateLimit?.enabled">
+                <el-descriptions-item :label="t('dashboard.rateLimitParams')" v-if="serviceConfigData?.rateLimit?.enabled">
                   {{ serviceConfigData?.rateLimit?.algorithm || 'N/A' }} /
                   {{ serviceConfigData?.rateLimit?.rate || 'N/A' }} req/s
                 </el-descriptions-item>
 
-                <el-descriptions-item label="熔断器">
+                <el-descriptions-item :label="t('dashboard.circuitBreakerConfig')">
                   <el-tag :type="serviceConfigData?.circuitBreaker?.enabled ? 'success' : 'info'">
-                    {{ serviceConfigData?.circuitBreaker?.enabled ? '启用' : '禁用' }}
+                    {{ serviceConfigData?.circuitBreaker?.enabled ? t('dashboard.enabledStatus') : t('dashboard.disabledStatus') }}
                   </el-tag>
                 </el-descriptions-item>
 
-                <el-descriptions-item label="降级策略" v-if="serviceConfigData?.fallback?.enabled">
+                <el-descriptions-item :label="t('dashboard.fallbackStrategy')" v-if="serviceConfigData?.fallback?.enabled">
                   {{ serviceConfigData?.fallback?.strategy || 'N/A' }}
                 </el-descriptions-item>
               </el-descriptions>
@@ -385,7 +385,7 @@
                 style="width:100%"
                 :row-class-name="(row: any) => row.row?.health ? '' : 'row-error'"
               >
-                <el-table-column prop="name" label="实例名称" width="180">
+                <el-table-column prop="name" :label="t('dashboard.instanceName')" width="180">
                   <template #default="scope">
                     <router-link
                       class="instance-link"
@@ -395,16 +395,16 @@
                     </router-link>
                   </template>
                 </el-table-column>
-                <el-table-column prop="baseUrl" label="基础URL" min-width="220" />
-                <el-table-column label="适配器" width="110">
+                <el-table-column prop="baseUrl" :label="t('dashboard.baseUrl')" min-width="220" />
+                <el-table-column :label="t('dashboard.adapter')" width="110">
                   <template #default="scope">{{ scope.row.adapter || serviceConfigData?.adapter || 'N/A' }}</template>
                 </el-table-column>
-                <el-table-column prop="path" label="路径" width="160" />
-                <el-table-column prop="weight" label="权重" width="80" align="center" />
-                <el-table-column label="健康" width="110" align="center">
+                <el-table-column prop="path" :label="t('dashboard.path')" width="160" />
+                <el-table-column prop="weight" :label="t('dashboard.weight')" width="80" align="center" />
+                <el-table-column :label="t('dashboard.health')" width="110" align="center">
                   <template #default="scope">
                     <el-tag :type="scope.row.health ? 'success' : 'danger'" size="small">
-                      {{ scope.row.health ? '健康' : '异常' }}
+                      {{ scope.row.health ? t('dashboard.health') : t('dashboard.unhealthyStatus') }}
                     </el-tag>
                   </template>
                 </el-table-column>
@@ -412,10 +412,10 @@
             </el-tab-pane>
 
             <!-- 其他服务单独一个Tab -->
-            <el-tab-pane v-if="otherServiceNames.length > 0" label="其他" name="other">
+            <el-tab-pane v-if="otherServiceNames.length > 0" :label="t('dashboard.others')" name="other">
               <el-table :data="otherServiceInstances" stripe size="small" style="width:100%">
-                <el-table-column prop="serviceName" label="服务类型" width="140" />
-                <el-table-column prop="name" label="实例名称" width="180">
+                <el-table-column prop="serviceName" :label="t('dashboard.serviceType')" width="140" />
+                <el-table-column prop="name" :label="t('dashboard.instanceName')" width="180">
                   <template #default="scope">
                     <router-link
                       class="instance-link"
@@ -425,16 +425,16 @@
                     </router-link>
                   </template>
                 </el-table-column>
-                <el-table-column prop="baseUrl" label="基础URL" min-width="220" />
-                <el-table-column label="适配器" width="110">
+                <el-table-column prop="baseUrl" :label="t('dashboard.baseUrl')" min-width="220" />
+                <el-table-column :label="t('dashboard.adapter')" width="110">
                   <template #default="scope">{{ scope.row.adapter || serviceConfigData?.adapter || 'N/A' }}</template>
                 </el-table-column>
-                <el-table-column prop="path" label="路径" width="160" />
-                <el-table-column prop="weight" label="权重" width="80" align="center" />
-                <el-table-column label="健康" width="110" align="center">
+                <el-table-column prop="path" :label="t('dashboard.path')" width="160" />
+                <el-table-column prop="weight" :label="t('dashboard.weight')" width="80" align="center" />
+                <el-table-column :label="t('dashboard.health')" width="110" align="center">
                   <template #default="scope">
                     <el-tag :type="scope.row.health ? 'success' : 'danger'" size="small">
-                      {{ scope.row.health ? '健康' : '异常' }}
+                      {{ scope.row.health ? t('dashboard.health') : t('dashboard.unhealthyStatus') }}
                     </el-tag>
                   </template>
                 </el-table-column>
@@ -450,6 +450,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import * as echarts from 'echarts'
 import {
   getServiceStats,
@@ -494,6 +495,7 @@ import { useChartTheme } from '@/composables/useChartTheme'
 
 const { getChartTheme } = useChartTheme()
 const router = useRouter()
+const { t } = useI18n()
 
 // ════════════ 状态数据 ════════════
 const stats = ref({
@@ -529,18 +531,19 @@ const recentExceptions = ref<ExceptionEvent[]>([])
 // SSE 回调引用，方便移除
 let sseHandler: ((data: any) => void) | null = null
 
-// 服务类型映射（保持原有）
+// 服务类型映射（保持原有顺序，type -> i18n 键名）
 const serviceTypeMap: Record<string, string> = {
-  chat: '聊天服务',
-  embedding: '嵌入服务',
-  rerank: '重排序服务',
-  tts: '文本转语音',
-  stt: '语音转文本',
-  imgGen: '图像生成',
-  imgEdit: '图像编辑服务'
+  chat: 'chat',
+  embedding: 'embedding',
+  rerank: 'rerank',
+  tts: 'tts',
+  stt: 'stt',
+  imgGen: 'imgGen',
+  imgEdit: 'imgEdit'
 }
 
-const getServiceTypeName = (type: string) => serviceTypeMap[type] || type
+const getServiceTypeName = (type: string) =>
+  serviceTypeMap[type] ? t(`dashboard.serviceTypes.${serviceTypeMap[type]}`) : type
 
 // ════════════ 治理链路计算属性 ════════════
 
@@ -652,12 +655,12 @@ const statCards = computed(() => {
   const errorCount = error
 
   return [
-    { key: 'service', icon: 'Flag', label: '服务数量', value: serviceCount, tone: 'primary' as const },
-    { key: 'instance', icon: 'Cpu', label: '实例数量', value: instances, tone: 'success' as const },
-    { key: 'model', icon: 'Monitor', label: '模型数量', value: stats.value.totalModels || 0, tone: 'default' as const },
-    { key: 'healthy', icon: 'Check', label: '健康实例', value: healthyCount, tone: 'success' as const },
-    { key: 'error', icon: 'Warning', label: '异常实例', value: errorCount < 0 ? 0 : errorCount, tone: 'danger' as const },
-    { key: 'user', icon: 'User', label: '账号数量', value: stats.value.userCount || 0, tone: 'info' as const }
+    { key: 'service', icon: 'Flag', label: t('dashboard.serviceQuantity'), value: serviceCount, tone: 'primary' as const },
+    { key: 'instance', icon: 'Cpu', label: t('dashboard.instanceQuantity'), value: instances, tone: 'success' as const },
+    { key: 'model', icon: 'Monitor', label: t('dashboard.modelQuantity'), value: stats.value.totalModels || 0, tone: 'default' as const },
+    { key: 'healthy', icon: 'Check', label: t('dashboard.healthyInstanceCount'), value: healthyCount, tone: 'success' as const },
+    { key: 'error', icon: 'Warning', label: t('dashboard.errorInstanceCount'), value: errorCount < 0 ? 0 : errorCount, tone: 'danger' as const },
+    { key: 'user', icon: 'User', label: t('dashboard.accountQuantity'), value: stats.value.userCount || 0, tone: 'info' as const }
   ]
 })
 
@@ -670,12 +673,12 @@ const getChartOption = () => {
 
   if (!dashboardMetrics.value) {
     return {
-      title: { text: '系统状态概览', left: 'center', textStyle: { fontSize: 14, color: textColor } },
+      title: { text: t('dashboard.chart.statusOverview'), left: 'center', textStyle: { fontSize: 14, color: textColor } },
       tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: ['内存', 'CPU', '认证', '请求'] },
+      xAxis: { type: 'category', data: [t('dashboard.chart.memory'), t('dashboard.chart.cpu'), t('dashboard.metrics.authentication'), t('dashboard.chart.requests')] },
       yAxis: { type: 'value', max: 100, axisLabel: { formatter: '{value}%' } },
       series: [
-        { name: '使用率', data: [0, 0, 0, 0], type: 'bar', barWidth: '40%' }
+        { name: t('dashboard.chart.usageRate'), data: [0, 0, 0, 0], type: 'bar', barWidth: '40%' }
       ]
     }
   }
@@ -692,26 +695,31 @@ const getChartOption = () => {
   const requestRate = Math.min((http.totalRequests || 0) / 1000 * 10, 100)
 
   return {
-    title: { text: '系统资源概览', left: 'center', textStyle: { fontSize: 14, color: textColor } },
+    title: { text: t('dashboard.chart.resourceOverview'), left: 'center', textStyle: { fontSize: 14, color: textColor } },
     tooltip: {
       trigger: 'axis',
       formatter: (params: any) => {
         const p = params[0]
-        const labels = ['JVM 内存', 'CPU 使用率', '认证成功率', '请求量']
+        const labels = [
+          t('dashboard.metrics.jvmMemory'),
+          t('dashboard.chart.cpuUsageRate'),
+          t('dashboard.chart.authSuccessRate'),
+          t('dashboard.chart.requestVolume')
+        ]
         const values = [
           `${memoryUsage}% (${jvm.heapUsedMB || 0}/${jvm.heapMaxMB || 0} MB)`,
           `${cpuUsage.toFixed(1)}%`,
           `${authSuccess.toFixed(1)}%`,
-          `${http.totalRequests || 0} 次`
+          t('dashboard.metrics.timesUnit', { count: http.totalRequests || 0 })
         ]
         return `<strong>${labels[p.dataIndex]}</strong><br/>${values[p.dataIndex]}`
       }
     },
-    legend: { bottom: 0, data: ['资源使用'], textStyle: { color: textColor } },
+    legend: { bottom: 0, data: [t('dashboard.chart.resourceUsage')], textStyle: { color: textColor } },
     grid: { left: 30, right: 30, bottom: 50, top: 60 },
     xAxis: {
       type: 'category',
-      data: ['JVM 内存', 'CPU 使用', '认证成功', '请求量'],
+      data: [t('dashboard.metrics.jvmMemory'), t('dashboard.chart.cpuUsage'), t('dashboard.chart.authSuccess'), t('dashboard.chart.requestVolume')],
       axisLabel: { interval: 0, rotate: 0, fontSize: 11, color: textColor }
     },
     yAxis: {
@@ -724,7 +732,7 @@ const getChartOption = () => {
     },
     series: [
       {
-        name: '资源使用',
+        name: t('dashboard.chart.resourceUsage'),
         type: 'bar',
         barWidth: '50%',
         data: [
@@ -877,14 +885,14 @@ const fetchServiceConfig = async () => {
         }
       }
 
-      ElMessage.success('服务配置加载成功')
+      ElMessage.success(t('dashboard.serviceConfigLoaded'))
       const ordered = orderedServiceNames.value
       if (ordered.length > 0) activeServiceTab.value = ordered[0]
     } else {
-      ElMessage.error(`获取服务配置失败: ${  res.data?.message || '未知错误'}`)
+      ElMessage.error(t('dashboard.fetchConfigFailed', { message: res.data?.message || t('dashboard.unknownError') }))
     }
   } catch (e: any) {
-    ElMessage.error(`获取服务配置异常: ${  e.message || '网络错误'}`)
+    ElMessage.error(t('dashboard.fetchConfigError', { message: e.message || t('dashboard.networkError') }))
   } finally {
     configLoading.value = false
   }
@@ -899,10 +907,10 @@ const fetchMonitoringOverview = async () => {
         systemChartInstance ? systemChartInstance.setOption(getChartOption(), { notMerge: true }) : initChart()
       })
     } else {
-      ElMessage.error(`获取监控概览失败: ${  res.data?.message || '未知错误'}`)
+      ElMessage.error(t('dashboard.fetchOverviewFailed', { message: res.data?.message || t('dashboard.unknownError') }))
     }
   } catch (e: any) {
-    ElMessage.error(`获取监控概览异常: ${  e.message || '网络错误'}`)
+    ElMessage.error(t('dashboard.fetchOverviewError', { message: e.message || t('dashboard.networkError') }))
   }
 }
 
@@ -915,10 +923,10 @@ const fetchDashboardMetrics = async () => {
         systemChartInstance ? systemChartInstance.setOption(getChartOption(), { notMerge: true }) : initChart()
       })
     } else {
-      ElMessage.error(`获取指标数据失败: ${  res.data?.message || '未知错误'}`)
+      ElMessage.error(t('dashboard.fetchMetricsFailed', { message: res.data?.message || t('dashboard.unknownError') }))
     }
   } catch (e: any) {
-    ElMessage.error(`获取指标数据异常: ${  e.message || '网络错误'}`)
+    ElMessage.error(t('dashboard.fetchMetricsError', { message: e.message || t('dashboard.networkError') }))
   }
 }
 
@@ -978,9 +986,9 @@ const formatUptime = (seconds: number | undefined) => {
   const days = Math.floor(s / 86400)
   const hours = Math.floor((s % 86400) / 3600)
   const mins = Math.floor((s % 3600) / 60)
-  if (days > 0) return `${days}天 ${hours}时`
-  if (hours > 0) return `${hours}时 ${mins}分`
-  return `${mins}分`
+  if (days > 0) return t('dashboard.metrics.uptimeDaysHours', { days, hours })
+  if (hours > 0) return t('dashboard.metrics.uptimeHoursMinutes', { hours, minutes: mins })
+  return t('dashboard.metrics.uptimeMinutes', { minutes: mins })
 }
 
 const fetchDashboardData = async () => {
@@ -1010,7 +1018,7 @@ const fetchDashboardData = async () => {
       initChart()
     })
   } catch (e: any) {
-    ElMessage.error(`加载仪表板失败: ${  e.message || '网络错误'}`)
+    ElMessage.error(t('dashboard.loadDashboardFailed', { message: e.message || t('dashboard.networkError') }))
   }
 
   // 治理链路数据独立加载，不阻塞主流程

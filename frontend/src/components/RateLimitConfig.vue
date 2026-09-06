@@ -1,36 +1,36 @@
 <template>
   <el-dialog
     v-model="dialogVisible"
-    :title="title"
+    :title="dialogTitle"
     width="600px"
     :before-close="handleClose"
   >
     <el-form :model="formData" label-width="140px" ref="formRef">
-      <el-form-item label="启用限流">
+      <el-form-item :label="t('rateLimitConfig.enableToggle')">
         <el-switch
           v-model="formData.enabled"
-          active-text="启用"
-          inactive-text="禁用"
+          :active-text="t('rateLimitConfig.enabled')"
+          :inactive-text="t('rateLimitConfig.disabled')"
         />
       </el-form-item>
 
       <div v-if="formData.enabled">
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="限流算法">
-              <el-select v-model="formData.algorithm" placeholder="请选择算法">
-                <el-option label="令牌桶" value="token-bucket" />
-                <el-option label="漏桶" value="leaky-bucket" />
-                <el-option label="滑动窗口" value="sliding-window" />
+            <el-form-item :label="t('rateLimitConfig.algorithm')">
+              <el-select v-model="formData.algorithm" :placeholder="t('rateLimitConfig.algorithmPlaceholder')">
+                <el-option :label="t('rateLimitConfig.algorithms.tokenBucket')" value="token-bucket" />
+                <el-option :label="t('rateLimitConfig.algorithms.leakyBucket')" value="leaky-bucket" />
+                <el-option :label="t('rateLimitConfig.algorithms.slidingWindow')" value="sliding-window" />
               </el-select>
             </el-form-item>
           </el-col>
 
           <el-col :span="12">
-            <el-form-item label="作用域">
-              <el-select v-model="formData.scope" placeholder="请选择作用域">
-                <el-option label="实例级别" value="instance" />
-                <el-option label="客户端 IP 级别" value="client-ip" />
+            <el-form-item :label="t('rateLimitConfig.scope')">
+              <el-select v-model="formData.scope" :placeholder="t('rateLimitConfig.scopePlaceholder')">
+                <el-option :label="t('rateLimitConfig.scopes.instance')" value="instance" />
+                <el-option :label="t('rateLimitConfig.scopes.clientIp')" value="client-ip" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -38,7 +38,7 @@
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="容量">
+            <el-form-item :label="t('rateLimitConfig.capacity')">
               <el-input-number
                 v-model="formData.capacity"
                 :min="1"
@@ -49,7 +49,7 @@
           </el-col>
 
           <el-col :span="12">
-            <el-form-item label="速率">
+            <el-form-item :label="t('rateLimitConfig.rate')">
               <el-input-number
                 v-model="formData.rate"
                 :min="1"
@@ -62,20 +62,20 @@
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="限流键值">
+            <el-form-item :label="t('rateLimitConfig.key')">
               <el-input
                 v-model="formData.key"
-                placeholder="可选，用于自定义限流键"
+                :placeholder="t('rateLimitConfig.keyPlaceholder')"
               />
             </el-form-item>
           </el-col>
 
           <el-col :span="12">
-            <el-form-item label="客户端 IP 限流">
+            <el-form-item :label="t('rateLimitConfig.clientIpRateLimit')">
               <el-switch
                 v-model="formData.clientIpEnable"
-                active-text="启用"
-                inactive-text="禁用"
+                :active-text="t('rateLimitConfig.enabled')"
+                :inactive-text="t('rateLimitConfig.disabled')"
               />
             </el-form-item>
           </el-col>
@@ -85,9 +85,9 @@
 
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="handleClose">取消</el-button>
+        <el-button @click="handleClose">{{ t('rateLimitConfig.cancel') }}</el-button>
         <el-button type="primary" @click="handleSave" :loading="loading">
-          保存
+          {{ t('rateLimitConfig.save') }}
         </el-button>
       </span>
     </template>
@@ -96,6 +96,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElForm } from 'element-plus'
 
 interface Props {
@@ -105,7 +106,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: '限流器配置',
+  title: '',
   initialData: () => ({})
 })
 
@@ -114,10 +115,14 @@ const emit = defineEmits<{
   (e: 'save', data: any): void
 }>()
 
+const { t } = useI18n()
+
 const dialogVisible = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value)
 })
+
+const dialogTitle = computed(() => props.title || t('rateLimitConfig.title'))
 
 const formRef = ref<InstanceType<typeof ElForm>>()
 const loading = ref(false)
@@ -160,7 +165,7 @@ const handleSave = async () => {
     emit('save', result)
     dialogVisible.value = false
   } catch (error) {
-    ElMessage.error('保存配置失败')
+    ElMessage.error(t('rateLimitConfig.messages.saveFailed'))
   } finally {
     loading.value = false
   }

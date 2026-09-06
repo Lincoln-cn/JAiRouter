@@ -3,18 +3,18 @@
     <!-- 筛选区 -->
     <el-card class="filter-card" shadow="hover">
       <el-form :inline="true" class="filter-form">
-        <el-form-item label="时间范围">
+        <el-form-item :label="t('callHistory.common.timeRange')">
           <el-date-picker
             v-model="dateRange"
             type="datetimerange"
-            range-separator="至"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
+            :range-separator="t('callHistory.common.rangeSeparator')"
+            :start-placeholder="t('callHistory.common.startTime')"
+            :end-placeholder="t('callHistory.common.endTime')"
             value-format="YYYY-MM-DD HH:mm:ss"
             style="width: 400px"
           />
         </el-form-item>
-        <el-form-item label="阈值 (ms)">
+        <el-form-item :label="t('callHistory.slowCalls.thresholdLabel')">
           <el-input-number
             v-model="threshold"
             :min="100"
@@ -23,7 +23,7 @@
             style="width: 140px"
           />
         </el-form-item>
-        <el-form-item label="显示数量">
+        <el-form-item :label="t('callHistory.slowCalls.displayCountLabel')">
           <el-select v-model="limit" style="width: 100px">
             <el-option :value="20" label="20" />
             <el-option :value="50" label="50" />
@@ -31,8 +31,8 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" icon="Search" @click="loadData">查询</el-button>
-          <el-button icon="Refresh" @click="handleReset">重置</el-button>
+          <el-button type="primary" icon="Search" @click="loadData">{{ t('callHistory.common.query') }}</el-button>
+          <el-button icon="Refresh" @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -47,7 +47,7 @@
             </div>
             <div class="stat-info">
               <div class="stat-value">{{ slowCalls.length }}</div>
-              <div class="stat-label">慢调用数</div>
+              <div class="stat-label">{{ t('callHistory.slowCalls.slowCallCountLabel') }}</div>
             </div>
           </div>
         </el-card>
@@ -60,7 +60,7 @@
             </div>
             <div class="stat-info">
               <div class="stat-value">{{ getMaxResponseTime() }}</div>
-              <div class="stat-label">最长响应时间 (ms)</div>
+              <div class="stat-label">{{ t('callHistory.slowCalls.maxResponseTimeLabel') }}</div>
             </div>
           </div>
         </el-card>
@@ -73,7 +73,7 @@
             </div>
             <div class="stat-info">
               <div class="stat-value">{{ getAvgResponseTime() }}</div>
-              <div class="stat-label">平均响应时间 (ms)</div>
+              <div class="stat-label">{{ t('callHistory.slowCalls.avgResponseTimeLabel') }}</div>
             </div>
           </div>
         </el-card>
@@ -84,50 +84,50 @@
     <el-card shadow="hover">
       <template #header>
         <div class="table-header">
-          <span class="chart-title">慢调用列表</span>
-          <el-tag type="warning" size="small">阈值: {{ threshold }} ms</el-tag>
+          <span class="chart-title">{{ t('callHistory.slowCalls.listTitle') }}</span>
+          <el-tag type="warning" size="small">{{ t('callHistory.slowCalls.thresholdTag', { value: threshold }) }}</el-tag>
         </div>
       </template>
 
       <el-table v-loading="loading" :data="slowCalls" border stripe :max-height="600">
-        <el-table-column label="时间" prop="createdAt" width="180">
+        <el-table-column :label="t('callHistory.common.time')" prop="createdAt" width="180">
           <template #default="scope">
             {{ formatTime(scope.row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="模型名称" prop="modelName" min-width="160" show-overflow-tooltip />
-        <el-table-column label="服务类型" prop="serviceType" width="110">
+        <el-table-column :label="t('callHistory.common.modelName')" prop="modelName" min-width="160" show-overflow-tooltip />
+        <el-table-column :label="t('callHistory.common.serviceType')" prop="serviceType" width="110">
           <template #default="scope">
             <el-tag size="small">{{ getServiceTypeLabel(scope.row.serviceType) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="响应时间 (ms)" prop="responseTimeMs" width="140" align="right" sortable>
+        <el-table-column :label="t('callHistory.common.responseTimeMs')" prop="responseTimeMs" width="140" align="right" sortable>
           <template #default="scope">
             <el-tag type="danger" size="small">
               {{ scope.row.responseTimeMs?.toFixed(0) || '-' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="HTTP 状态码" prop="httpStatusCode" width="120" align="center">
+        <el-table-column :label="t('callHistory.common.httpStatusCode')" prop="httpStatusCode" width="120" align="center">
           <template #default="scope">
             <el-tag :type="getStatusType(scope.row.httpStatusCode)" size="small">
               {{ scope.row.httpStatusCode || '-' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="Token" prop="totalTokens" width="100" align="right">
+        <el-table-column :label="t('callHistory.common.token')" prop="totalTokens" width="100" align="right">
           <template #default="scope">
             {{ formatNumber(scope.row.totalTokens) }}
           </template>
         </el-table-column>
-        <el-table-column label="调用状态" width="100" align="center">
+        <el-table-column :label="t('callHistory.common.callStatus')" width="100" align="center">
           <template #default="scope">
             <el-tag :type="scope.row.isSuccess ? 'success' : 'danger'" size="small">
-              {{ scope.row.isSuccess ? '成功' : '失败' }}
+              {{ scope.row.isSuccess ? t('callHistory.common.success') : t('callHistory.common.failed') }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="提供商" prop="provider" width="100" show-overflow-tooltip />
+        <el-table-column :label="t('callHistory.common.provider')" prop="provider" width="100" show-overflow-tooltip />
         <el-table-column label="Trace ID" prop="traceId" width="140" show-overflow-tooltip />
       </el-table>
     </el-card>
@@ -136,10 +136,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Timer, WarningFilled, DataAnalysis, Search, Refresh } from '@element-plus/icons-vue'
 import { getSlowCalls } from '@/api/callHistory'
 import type { ApiCallHistoryRecord } from '@/types/callHistory'
+
+const { t } = useI18n()
 
 // 筛选条件
 const dateRange = ref<[string, string] | null>(null)
@@ -162,19 +165,21 @@ const formatTime = (time?: string) => {
   return time.replace('T', ' ').substring(0, 19)
 }
 
+// 服务类型 key -> i18n 键名映射（保持原有顺序）
+const serviceTypeKeyMap: Record<string, string> = {
+  chat: 'chat',
+  embedding: 'embedding',
+  rerank: 'rerank',
+  tts: 'tts',
+  stt: 'stt',
+  imgGen: 'imgGen',
+  imgEdit: 'imgEdit'
+}
+
 // 获取服务类型标签
 const getServiceTypeLabel = (type?: string) => {
-  if (!type) return '未知'
-  const labels: Record<string, string> = {
-    chat: '聊天',
-    embedding: '嵌入',
-    rerank: '重排序',
-    tts: '语音合成',
-    stt: '语音识别',
-    imgGen: '图像生成',
-    imgEdit: '图像编辑'
-  }
-  return labels[type] || type
+  if (!type) return t('callHistory.common.unknown')
+  return serviceTypeKeyMap[type] ? t(`callHistory.serviceTypes.${serviceTypeKeyMap[type]}`) : type
 }
 
 // 获取 HTTP 状态码标签类型
@@ -215,7 +220,7 @@ const loadData = async () => {
     slowCalls.value = await getSlowCalls(threshold.value, startTime, endTime, limit.value)
   } catch (error: any) {
     console.error('加载慢调用失败:', error)
-    ElMessage.error(`加载慢调用失败：${error.message || '未知错误'}`)
+    ElMessage.error(t('callHistory.slowCalls.loadFailed', { message: error.message || t('callHistory.common.unknownError') }))
   } finally {
     loading.value = false
   }

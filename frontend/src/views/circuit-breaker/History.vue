@@ -3,10 +3,10 @@
     <el-card class="history-card">
       <template #header>
         <div class="card-header">
-          <span class="card-title">熔断器历史记录</span>
+          <span class="card-title">{{ t('circuitBreaker.history.title') }}</span>
           <div class="header-actions">
-            <el-button size="small" @click="loadHistory" :loading="loadingHistory">刷新</el-button>
-            <el-button size="small" type="danger" @click="cleanupHistory">清理过期记录</el-button>
+            <el-button size="small" @click="loadHistory" :loading="loadingHistory">{{ t('circuitBreaker.history.refresh') }}</el-button>
+            <el-button size="small" type="danger" @click="cleanupHistory">{{ t('circuitBreaker.history.cleanupExpired') }}</el-button>
           </div>
         </div>
       </template>
@@ -14,38 +14,38 @@
       <!-- 历史记录统计 -->
       <el-row :gutter="20" style="margin-bottom: 16px">
         <el-col :span="6">
-          <el-statistic title="总记录数" :value="historyStats.totalCount" />
+          <el-statistic :title="t('circuitBreaker.history.stats.total')" :value="historyStats.totalCount" />
         </el-col>
         <el-col :span="6">
-          <el-statistic title="今日记录" :value="historyStats.todayCount" />
+          <el-statistic :title="t('circuitBreaker.history.stats.today')" :value="historyStats.todayCount" />
         </el-col>
         <el-col :span="6">
-          <el-statistic title="最近7天" :value="historyStats.weekCount" />
+          <el-statistic :title="t('circuitBreaker.history.stats.week')" :value="historyStats.weekCount" />
         </el-col>
         <el-col :span="6">
-          <el-statistic title="最近30天" :value="historyStats.monthCount" />
+          <el-statistic :title="t('circuitBreaker.history.stats.month')" :value="historyStats.monthCount" />
         </el-col>
       </el-row>
 
       <el-table :data="historyRecords" stripe v-loading="loadingHistory" class="flex-table">
-        <el-table-column prop="instanceId" label="实例ID" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="instanceName" label="实例名称" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="serviceType" label="服务类型" min-width="80">
+        <el-table-column prop="instanceId" :label="t('circuitBreaker.history.columns.instanceId')" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="instanceName" :label="t('circuitBreaker.history.columns.instanceName')" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="serviceType" :label="t('circuitBreaker.history.columns.serviceType')" min-width="80">
           <template #default="{ row }">
             <el-tag size="small">{{ row.serviceType || '-' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态变化" min-width="150">
+        <el-table-column :label="t('circuitBreaker.history.columns.stateTransition')" min-width="150">
           <template #default="{ row }">
             <el-tag :type="getStateTagType(row.previousState)" size="small">{{ row.previousState }}</el-tag>
             <span style="margin: 0 8px">→</span>
             <el-tag :type="getStateTagType(row.currentState)" size="small">{{ row.currentState }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="triggerReasonDesc" label="触发原因" min-width="150" />
-        <el-table-column prop="failureCount" label="失败次数" min-width="80" />
-        <el-table-column prop="successCount" label="成功次数" min-width="80" />
-        <el-table-column prop="changedAt" label="变化时间" min-width="150">
+        <el-table-column prop="triggerReasonDesc" :label="t('circuitBreaker.history.columns.triggerReason')" min-width="150" />
+        <el-table-column prop="failureCount" :label="t('circuitBreaker.history.columns.failureCount')" min-width="80" />
+        <el-table-column prop="successCount" :label="t('circuitBreaker.history.columns.successCount')" min-width="80" />
+        <el-table-column prop="changedAt" :label="t('circuitBreaker.history.columns.changedAt')" min-width="150">
           <template #default="{ row }">
             {{ formatDateTime(row.changedAt) }}
           </template>
@@ -68,8 +68,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
+import { formatDateTime as formatDateTimeBase } from '@/utils/format'
 
 interface HistoryRecord {
   id: number
@@ -104,6 +106,8 @@ const historyStats = ref<HistoryStats>({
   monthCount: 0
 })
 
+const { t } = useI18n()
+
 const getStateTagType = (state: string) => {
   switch (state) {
     case 'CLOSED':
@@ -119,7 +123,7 @@ const getStateTagType = (state: string) => {
 
 const formatDateTime = (datetime: string | null) => {
   if (!datetime) return '-'
-  return new Date(datetime).toLocaleString('zh-CN')
+  return formatDateTimeBase(datetime)
 }
 
 const loadHistory = async () => {
@@ -140,7 +144,7 @@ const loadHistory = async () => {
     }
   } catch (error: any) {
     console.error('Failed to load history:', error)
-    ElMessage.error('加载历史记录失败')
+    ElMessage.error(t('circuitBreaker.history.messages.loadFailed'))
   } finally {
     loadingHistory.value = false
   }
@@ -159,21 +163,25 @@ const loadHistoryStats = async () => {
 
 const cleanupHistory = async () => {
   try {
-    await ElMessageBox.confirm('确定要清理过期的历史记录吗？', '确认操作', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
+    await ElMessageBox.confirm(
+      t('circuitBreaker.history.confirmations.cleanupMessage'),
+      t('circuitBreaker.history.confirmations.cleanupTitle'),
+      {
+        confirmButtonText: t('circuitBreaker.history.confirmations.confirm'),
+        cancelButtonText: t('circuitBreaker.history.confirmations.cancel'),
+        type: 'warning'
+      }
+    )
     const response = await request.delete('/config/circuit-breaker/history/cleanup')
     if (response.data?.success) {
-      ElMessage.success(response.data.message || '清理完成')
+      ElMessage.success(response.data.message || t('circuitBreaker.history.messages.cleanupCompleted'))
       loadHistory()
       loadHistoryStats()
     }
   } catch (error: any) {
     if (error !== 'cancel') {
       console.error('Failed to cleanup history:', error)
-      ElMessage.error('清理历史记录失败')
+      ElMessage.error(t('circuitBreaker.history.messages.cleanupFailed'))
     }
   }
 }

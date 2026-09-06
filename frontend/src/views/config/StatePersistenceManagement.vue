@@ -4,10 +4,10 @@
     <el-card class="tier-card">
       <template #header>
         <div class="card-header">
-          <span class="card-title">存储层状态</span>
+          <span class="card-title">{{ t('statePersistence.tierCardTitle') }}</span>
           <el-button type="primary" size="small" @click="refreshTiers">
             <el-icon><Refresh /></el-icon>
-            刷新
+            {{ t('statePersistence.refresh') }}
           </el-button>
         </div>
       </template>
@@ -20,7 +20,7 @@
                 <component :is="tierHealth.redis?.healthy ? 'SuccessFilled' : 'CircleCloseFilled'" />
               </el-icon>
               <span class="tier-name">Redis</span>
-              <el-tag v-if="currentTier === 'redis'" type="success" size="small">活跃</el-tag>
+              <el-tag v-if="currentTier === 'redis'" type="success" size="small">{{ t('statePersistence.active') }}</el-tag>
             </div>
             <div class="tier-status">
               <el-tag :type="tierHealth.redis?.healthy ? 'success' : 'danger'" size="small">
@@ -28,7 +28,7 @@
               </el-tag>
             </div>
             <div class="tier-info">
-              <span class="tier-priority">Tier 1 (最高优先级)</span>
+              <span class="tier-priority">{{ t('statePersistence.tier1Priority') }}</span>
               <span v-if="tierHealth.redis?.message" class="tier-message">{{ tierHealth.redis?.message }}</span>
             </div>
           </div>
@@ -41,7 +41,7 @@
                 <component :is="tierHealth.h2?.healthy ? 'SuccessFilled' : 'CircleCloseFilled'" />
               </el-icon>
               <span class="tier-name">H2 Database</span>
-              <el-tag v-if="currentTier === 'h2'" type="success" size="small">活跃</el-tag>
+              <el-tag v-if="currentTier === 'h2'" type="success" size="small">{{ t('statePersistence.active') }}</el-tag>
             </div>
             <div class="tier-status">
               <el-tag :type="tierHealth.h2?.healthy ? 'success' : 'danger'" size="small">
@@ -49,7 +49,7 @@
               </el-tag>
             </div>
             <div class="tier-info">
-              <span class="tier-priority">Tier 2 (默认退坡)</span>
+              <span class="tier-priority">{{ t('statePersistence.tier2Priority') }}</span>
               <span v-if="tierHealth.h2?.message" class="tier-message">{{ tierHealth.h2?.message }}</span>
             </div>
           </div>
@@ -62,7 +62,7 @@
                 <component :is="tierHealth.file?.healthy ? 'SuccessFilled' : 'CircleCloseFilled'" />
               </el-icon>
               <span class="tier-name">File Storage</span>
-              <el-tag v-if="currentTier === 'file'" type="success" size="small">活跃</el-tag>
+              <el-tag v-if="currentTier === 'file'" type="success" size="small">{{ t('statePersistence.active') }}</el-tag>
             </div>
             <div class="tier-status">
               <el-tag :type="tierHealth.file?.healthy ? 'success' : 'danger'" size="small">
@@ -70,7 +70,7 @@
               </el-tag>
             </div>
             <div class="tier-info">
-              <span class="tier-priority">Tier 3 (兜底)</span>
+              <span class="tier-priority">{{ t('statePersistence.tier3Priority') }}</span>
               <span v-if="tierHealth.file?.message" class="tier-message">{{ tierHealth.file?.message }}</span>
             </div>
           </div>
@@ -79,7 +79,7 @@
 
       <div class="current-tier-info">
         <el-alert
-          :title="`当前活跃存储层: ${getTierDisplayName(currentTier)} (${currentTierPriority})`"
+          :title="t('statePersistence.currentTierInfo', { tier: getTierDisplayName(currentTier), priority: currentTierPriority })"
           type="info"
           :closable="false"
           show-icon
@@ -91,7 +91,7 @@
     <el-card class="stats-card">
       <template #header>
         <div class="card-header">
-          <span class="card-title">状态统计</span>
+          <span class="card-title">{{ t('statePersistence.statsTitle') }}</span>
         </div>
       </template>
 
@@ -99,25 +99,25 @@
         <el-col :span="6">
           <div class="stat-item">
             <div class="stat-value">{{ stats.circuitBreakerCount }}</div>
-            <div class="stat-label">熔断器状态</div>
+            <div class="stat-label">{{ t('statePersistence.cbStatLabel') }}</div>
           </div>
         </el-col>
         <el-col :span="6">
           <div class="stat-item">
             <div class="stat-value">{{ stats.loadBalancerCount }}</div>
-            <div class="stat-label">负载均衡器状态</div>
+            <div class="stat-label">{{ t('statePersistence.lbStatLabel') }}</div>
           </div>
         </el-col>
         <el-col :span="6">
           <div class="stat-item">
             <div class="stat-value">{{ stats.rateLimiterCount }}</div>
-            <div class="stat-label">限流器状态</div>
+            <div class="stat-label">{{ t('statePersistence.rlStatLabel') }}</div>
           </div>
         </el-col>
         <el-col :span="6">
           <div class="stat-item">
             <div class="stat-value">{{ stats.pendingSync }}</div>
-            <div class="stat-label">待同步</div>
+            <div class="stat-label">{{ t('statePersistence.pendingSyncLabel') }}</div>
           </div>
         </el-col>
       </el-row>
@@ -127,7 +127,7 @@
     <el-card class="actions-card">
       <template #header>
         <div class="card-header">
-          <span class="card-title">管理操作</span>
+          <span class="card-title">{{ t('statePersistence.actionsTitle') }}</span>
         </div>
       </template>
 
@@ -135,25 +135,25 @@
         <el-col :span="6">
           <el-button type="primary" @click="recoverAll" :loading="recovering">
             <el-icon><RefreshRight /></el-icon>
-            全部恢复
+            {{ t('statePersistence.recoverAll') }}
           </el-button>
         </el-col>
         <el-col :span="6">
           <el-button type="warning" @click="showSwitchTierDialog">
             <el-icon><Switch /></el-icon>
-            切换存储层
+            {{ t('statePersistence.switchTier') }}
           </el-button>
         </el-col>
         <el-col :span="6">
           <el-button @click="syncStates" :loading="syncing">
             <el-icon><Upload /></el-icon>
-            手动同步
+            {{ t('statePersistence.syncNow') }}
           </el-button>
         </el-col>
         <el-col :span="6">
           <el-button type="info" @click="loadPersistenceStatus">
             <el-icon><View /></el-icon>
-            查看详情
+            {{ t('statePersistence.viewDetail') }}
           </el-button>
         </el-col>
       </el-row>
@@ -163,43 +163,43 @@
     <el-card class="details-card">
       <template #header>
         <div class="card-header">
-          <span class="card-title">状态详情列表</span>
-          <el-tag type="info">共 {{ stateDetails.length }} 条</el-tag>
+          <span class="card-title">{{ t('statePersistence.detailsTitle') }}</span>
+          <el-tag type="info">{{ t('statePersistence.totalCount', { count: stateDetails.length }) }}</el-tag>
         </div>
       </template>
 
       <el-table :data="stateDetails" stripe v-loading="loadingDetails" class="flex-table">
-        <el-table-column prop="instanceId" label="实例ID" min-width="180">
+        <el-table-column prop="instanceId" :label="t('statePersistence.instanceId')" min-width="180">
           <template #default="{ row }">
             <span>{{ row.instanceId || row.serviceType || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="stateType" label="类型" min-width="120">
+        <el-table-column prop="stateType" :label="t('statePersistence.type')" min-width="120">
           <template #default="{ row }">
             <el-tag :type="getStateTypeTag(row.stateType)" size="small">
               {{ getStateTypeDisplayName(row.stateType) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="state" label="状态" min-width="100">
+        <el-table-column prop="state" :label="t('statePersistence.status')" min-width="100">
           <template #default="{ row }">
             <el-tag :type="getStateTagType(row.state)" size="small">
               {{ row.state || '-' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="lastModified" label="最后更新" min-width="180">
+        <el-table-column prop="lastModified" :label="t('statePersistence.lastModified')" min-width="180">
           <template #default="{ row }">
             <span>{{ formatTime(row.lastModified) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" min-width="150">
+        <el-table-column :label="t('statePersistence.actions')" min-width="150">
           <template #default="{ row }">
             <el-button size="small" type="primary" @click="recoverSingle(row)">
-              恢复
+              {{ t('statePersistence.recover') }}
             </el-button>
             <el-button size="small" @click="viewStateDetail(row)">
-              详情
+              {{ t('statePersistence.detail') }}
             </el-button>
           </template>
         </el-table-column>
@@ -209,12 +209,12 @@
     <!-- 切换存储层对话框 -->
     <el-dialog
       v-model="switchTierDialogVisible"
-      title="切换存储层"
+      :title="t('statePersistence.switchDialogTitle')"
       width="400px"
     >
       <el-form label-width="100px">
-        <el-form-item label="目标存储层">
-          <el-select v-model="targetTier" placeholder="选择存储层">
+        <el-form-item :label="t('statePersistence.targetTier')">
+          <el-select v-model="targetTier" :placeholder="t('statePersistence.selectTier')">
             <el-option label="Redis (Tier 1)" value="redis" :disabled="!tierHealth.redis?.healthy" />
             <el-option label="H2 Database (Tier 2)" value="h2" :disabled="!tierHealth.h2?.healthy" />
             <el-option label="File Storage (Tier 3)" value="file" :disabled="!tierHealth.file?.healthy" />
@@ -222,27 +222,27 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="switchTierDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="switchTier" :loading="switching">确认切换</el-button>
+        <el-button @click="switchTierDialogVisible = false">{{ t('statePersistence.cancel') }}</el-button>
+        <el-button type="primary" @click="switchTier" :loading="switching">{{ t('statePersistence.confirmSwitch') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 状态详情对话框 -->
     <el-dialog
       v-model="stateDetailDialogVisible"
-      title="状态详情"
+      :title="t('statePersistence.detailDialogTitle')"
       width="600px"
     >
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="实例ID">{{ currentDetail?.instanceId || currentDetail?.serviceType }}</el-descriptions-item>
-        <el-descriptions-item label="状态类型">{{ getStateTypeDisplayName(currentDetail?.stateType) }}</el-descriptions-item>
-        <el-descriptions-item label="当前状态">{{ currentDetail?.state }}</el-descriptions-item>
-        <el-descriptions-item label="最后更新">{{ formatTime(currentDetail?.lastModified) }}</el-descriptions-item>
-        <el-descriptions-item label="存储层">{{ getTierDisplayName(currentDetail?.tier) }}</el-descriptions-item>
-        <el-descriptions-item label="数据大小">{{ currentDetail?.dataSize || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('statePersistence.instanceId')">{{ currentDetail?.instanceId || currentDetail?.serviceType }}</el-descriptions-item>
+        <el-descriptions-item :label="t('statePersistence.stateType')">{{ getStateTypeDisplayName(currentDetail?.stateType) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('statePersistence.currentState')">{{ currentDetail?.state }}</el-descriptions-item>
+        <el-descriptions-item :label="t('statePersistence.lastModified')">{{ formatTime(currentDetail?.lastModified) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('statePersistence.tier')">{{ getTierDisplayName(currentDetail?.tier) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('statePersistence.dataSize')">{{ currentDetail?.dataSize || '-' }}</el-descriptions-item>
       </el-descriptions>
       <template #footer>
-        <el-button @click="stateDetailDialogVisible = false">关闭</el-button>
+        <el-button @click="stateDetailDialogVisible = false">{{ t('statePersistence.close') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -250,9 +250,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Refresh, RefreshRight, Switch, Upload, View, SuccessFilled, CircleCloseFilled } from '@element-plus/icons-vue'
 import request from '@/utils/request'
+
+const { t } = useI18n()
 
 interface TierHealth {
   healthy: boolean
@@ -316,9 +319,9 @@ const currentDetail = ref<StateDetail | null>(null)
 
 const currentTierPriority = computed(() => {
   switch (currentTier.value) {
-    case 'redis': return '优先级 1'
-    case 'h2': return '优先级 2'
-    case 'file': return '优先级 3'
+    case 'redis': return t('statePersistence.priority1')
+    case 'h2': return t('statePersistence.priority2')
+    case 'file': return t('statePersistence.priority3')
     default: return '-'
   }
 })
@@ -334,9 +337,9 @@ const getTierDisplayName = (tier?: string) => {
 
 const getStateTypeDisplayName = (type?: string) => {
   switch (type) {
-    case 'CIRCUIT_BREAKER': return '熔断器'
-    case 'LOAD_BALANCER': return '负载均衡器'
-    case 'RATE_LIMITER': return '限流器'
+    case 'CIRCUIT_BREAKER': return t('statePersistence.stateTypes.circuitBreaker')
+    case 'LOAD_BALANCER': return t('statePersistence.stateTypes.loadBalancer')
+    case 'RATE_LIMITER': return t('statePersistence.stateTypes.rateLimiter')
     default: return type || '-'
   }
 }
@@ -383,7 +386,7 @@ const loadPersistenceStatus = async () => {
     }
   } catch (error: any) {
     console.error('Failed to load status:', error)
-    ElMessage.warning('加载状态失败，使用默认值')
+    ElMessage.warning(t('statePersistence.messages.loadFailed'))
   }
 }
 
@@ -403,11 +406,11 @@ const refreshTiers = async () => {
     const response = await request.post(`${apiBaseUrl}/tiers/refresh`)
     if (response.data?.success) {
       tierHealth.value = response.data.data
-      ElMessage.success('存储层状态已刷新')
+      ElMessage.success(t('statePersistence.messages.tiersRefreshed'))
     }
   } catch (error: any) {
     console.error('Failed to refresh tiers:', error)
-    ElMessage.error('刷新存储层状态失败')
+    ElMessage.error(t('statePersistence.messages.tiersRefreshFailed'))
   }
 }
 
@@ -432,15 +435,15 @@ const recoverAll = async () => {
   try {
     const response = await request.post(`${apiBaseUrl}/recovery/all`)
     if (response.data?.success) {
-      ElMessage.success(`状态恢复完成: ${response.data.data?.message || '成功'}`)
+      ElMessage.success(t('statePersistence.messages.recoverAllSuccess', { message: response.data.data?.message || t('statePersistence.messages.success') }))
       loadStateDetails()
       loadPersistenceStatus()
     } else {
-      ElMessage.error(response.data?.message || '恢复失败')
+      ElMessage.error(response.data?.message || t('statePersistence.messages.recoverFailed'))
     }
   } catch (error: any) {
     console.error('Failed to recover all:', error)
-    ElMessage.error('状态恢复失败')
+    ElMessage.error(t('statePersistence.messages.recoverAllFailed'))
   } finally {
     recovering.value = false
   }
@@ -458,20 +461,20 @@ const recoverSingle = async (row: StateDetail) => {
     }
 
     if (!endpoint) {
-      ElMessage.warning('该状态类型不支持单独恢复')
+      ElMessage.warning(t('statePersistence.messages.recoverNotSupported'))
       return
     }
 
     const response = await request.post(endpoint)
     if (response.data?.success) {
-      ElMessage.success(`${row.instanceId || row.serviceType} 状态已恢复`)
+      ElMessage.success(t('statePersistence.messages.recoverSuccess', { id: row.instanceId || row.serviceType }))
       loadStateDetails()
     } else {
-      ElMessage.error(response.data?.message || '恢复失败')
+      ElMessage.error(response.data?.message || t('statePersistence.messages.recoverFailed'))
     }
   } catch (error: any) {
     console.error('Failed to recover single:', error)
-    ElMessage.error('状态恢复失败')
+    ElMessage.error(t('statePersistence.messages.recoverAllFailed'))
   }
 }
 
@@ -480,14 +483,14 @@ const syncStates = async () => {
   try {
     const response = await request.post(`${apiBaseUrl}/sync`)
     if (response.data?.success) {
-      ElMessage.success('状态同步完成')
+      ElMessage.success(t('statePersistence.messages.syncSuccess'))
       loadPersistenceStatus()
     } else {
-      ElMessage.error(response.data?.message || '同步失败')
+      ElMessage.error(response.data?.message || t('statePersistence.messages.syncFailed'))
     }
   } catch (error: any) {
     console.error('Failed to sync:', error)
-    ElMessage.error('状态同步失败')
+    ElMessage.error(t('statePersistence.messages.syncError'))
   } finally {
     syncing.value = false
   }
@@ -500,7 +503,7 @@ const showSwitchTierDialog = () => {
 
 const switchTier = async () => {
   if (targetTier.value === currentTier.value) {
-    ElMessage.info('当前已在使用该存储层')
+    ElMessage.info(t('statePersistence.messages.alreadyUsingTier'))
     switchTierDialogVisible.value = false
     return
   }
@@ -510,15 +513,15 @@ const switchTier = async () => {
     const response = await request.post(`${apiBaseUrl}/tiers/switch/${targetTier.value}`)
     if (response.data?.success) {
       currentTier.value = targetTier.value
-      ElMessage.success(`已切换到 ${getTierDisplayName(targetTier.value)} 存储层`)
+      ElMessage.success(t('statePersistence.messages.tierSwitched', { tier: getTierDisplayName(targetTier.value) }))
       switchTierDialogVisible.value = false
       loadPersistenceStatus()
     } else {
-      ElMessage.error(response.data?.message || '切换失败')
+      ElMessage.error(response.data?.message || t('statePersistence.messages.tierSwitchFailed'))
     }
   } catch (error: any) {
     console.error('Failed to switch tier:', error)
-    ElMessage.error('切换存储层失败')
+    ElMessage.error(t('statePersistence.messages.tierSwitchError'))
   } finally {
     switching.value = false
   }

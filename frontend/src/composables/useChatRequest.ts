@@ -6,6 +6,11 @@
 import { ref, type Ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { sendUniversalRequest, sendUniversalStreamRequest } from '@/api/universal'
+import { i18n } from '@/i18n'
+const { t: gt } = i18n.global as unknown as {
+  t: (key: string, named?: Record<string, string | number>) => string
+}
+
 import type { PlaygroundResponse, PlaygroundRequest } from '@/views/playground/types/playground'
 
 export interface RequestStatus {
@@ -26,7 +31,7 @@ export interface UseChatRequestReturn {
 
 export function useChatRequest(): UseChatRequestReturn {
   const loading = ref(false)
-  const loadingText = ref('发送中...')
+  const loadingText = ref(gt('chatRequest.sending'))
   const requestProgress = ref(0)
   const requestStatus = ref<RequestStatus | null>(null)
   let abortController: AbortController | null = null
@@ -52,14 +57,14 @@ export function useChatRequest(): UseChatRequestReturn {
       if (requestProgress.value < 90) {
         requestProgress.value += Math.random() * 10
         if (requestProgress.value < 30) {
-          loadingText.value = '建立连接中...'
-          updateRequestStatus('info', '正在连接服务器...')
+          loadingText.value = gt('chatRequest.connecting')
+          updateRequestStatus('info', gt('chatRequest.connectingStatus'))
         } else if (requestProgress.value < 60) {
-          loadingText.value = '发送请求中...'
-          updateRequestStatus('info', '正在发送请求数据...')
+          loadingText.value = gt('chatRequest.sendingData')
+          updateRequestStatus('info', gt('chatRequest.sendingDataStatus'))
         } else {
-          loadingText.value = '等待响应中...'
-          updateRequestStatus('info', '正在等待服务器响应...')
+          loadingText.value = gt('chatRequest.awaiting')
+          updateRequestStatus('info', gt('chatRequest.awaitingStatus'))
         }
       }
     }, 200)
@@ -84,7 +89,7 @@ export function useChatRequest(): UseChatRequestReturn {
     requestProgress.value = 0
     requestStatus.value = {
       type: 'warning',
-      message: '请求已取消'
+      message: gt('chatRequest.cancelled')
     }
 
     // 3 秒后清除状态
@@ -105,7 +110,7 @@ export function useChatRequest(): UseChatRequestReturn {
 
   // 处理普通请求
   const handleNormalRequest = async (request: PlaygroundRequest): Promise<PlaygroundResponse> => {
-    updateRequestStatus('info', '正在处理请求...')
+    updateRequestStatus('info', gt('chatRequest.processing'))
 
     const response = await sendUniversalRequest({
       endpoint: request.endpoint,
@@ -124,16 +129,16 @@ export function useChatRequest(): UseChatRequestReturn {
     }
 
     if (response.status >= 200 && response.status < 300) {
-      updateRequestStatus('success', `请求成功 (${response.duration}ms)`)
+      updateRequestStatus('success', gt('chatRequest.successMs', { duration: response.duration }))
       ElMessage.success({
-        message: '请求发送成功',
+        message: gt('chatRequest.sentOk'),
         duration: 2000,
         showClose: true
       })
     } else {
-      updateRequestStatus('warning', `请求完成，状态码：${response.status}`)
+      updateRequestStatus('warning', gt('chatRequest.completedStatus', { status: response.status }))
       ElMessage.warning({
-        message: `请求完成，状态码：${response.status}`,
+        message: gt('chatRequest.completedStatus', { status: response.status }),
         duration: 3000,
         showClose: true
       })
@@ -152,7 +157,7 @@ export function useChatRequest(): UseChatRequestReturn {
     let messageCount = 0
     const startTime = Date.now()
 
-    updateRequestStatus('info', '正在建立流式连接...')
+    updateRequestStatus('info', gt('chatRequest.streamConnecting'))
 
     return new Promise((resolve, reject) => {
       sendUniversalStreamRequest(
@@ -175,7 +180,13 @@ export function useChatRequest(): UseChatRequestReturn {
 
               // 更新流式状态
               if (messageCount % 5 === 0 || delta.content) {
-                updateRequestStatus('info', `正在接收流式数据... (${messageCount} 条消息，${streamContent.length} 字符)`)
+                updateRequestStatus(
+                  'info',
+                  gt('chatRequest.receivingStream', {
+                    count: messageCount,
+                    chars: streamContent.length
+                  })
+                )
               }
 
               // 构建当前的响应数据
@@ -203,15 +214,16 @@ export function useChatRequest(): UseChatRequestReturn {
             }
           } catch (parseError) {
             console.warn('解析流式数据失败:', parseError, '原始数据:', data)
-            updateRequestStatus('warning', '部分流式数据解析失败')
+            updateRequestStatus('warning', gt('chatRequest.partialParseFailed'))
           }
         },
         // onError
         (error: any) => {
           console.error('流式请求错误:', error)
-          updateRequestStatus('error', `流式请求错误：${error.message || '未知错误'}`)
+          const errText = error?.message || gt('chatRequest.unknownError')
+          updateRequestStatus('error', gt('chatRequest.streamError', { message: errText }))
           ElMessage.error({
-            message: `流式请求失败：${error.message || '未知错误'}`,
+            message: gt('chatRequest.streamFailed', { message: errText }),
             duration: 4000,
             showClose: true
           })
@@ -220,15 +232,15 @@ export function useChatRequest(): UseChatRequestReturn {
         // onComplete
         () => {
           if (streamResponse) {
-            updateRequestStatus('success', `流式请求完成 (接收 ${messageCount} 条消息)`)
+            updateRequestStatus('success', gt('chatRequest.streamDoneCount', { count: messageCount }))
             ElMessage.success({
-              message: `流式请求完成，共接收 ${messageCount} 条消息`,
+              message: gt('chatRequest.streamDoneTotal', { count: messageCount }),
               duration: 3000,
               showClose: true
             })
             resolve(streamResponse)
           } else {
-            updateRequestStatus('warning', '流式请求完成但未收到有效数据')
+            updateRequestStatus('warning', gt('chatRequest.streamDoneEmpty'))
             resolve(null)
           }
         }
@@ -247,8 +259,8 @@ export function useChatRequest(): UseChatRequestReturn {
 
       loading.value = true
       requestProgress.value = 0
-      loadingText.value = '准备发送请求...'
-      updateRequestStatus('info', '正在验证配置...')
+      loadingText.value = gt('chatRequest.preparing')
+      updateRequestStatus('info', gt('chatRequest.validating'))
 
       // 启动进度模拟
       startProgressSimulation()
@@ -269,7 +281,7 @@ export function useChatRequest(): UseChatRequestReturn {
       console.error('发送请求失败:', error)
 
       // 更好的错误处理
-      let errorMessage = '发送请求失败'
+      let errorMessage = gt('chatRequest.sendFailed')
 
       if (error instanceof Error) {
         errorMessage = error.message
@@ -292,9 +304,9 @@ export function useChatRequest(): UseChatRequestReturn {
       }
 
       if (errorMessage.includes('aborted')) {
-        updateRequestStatus('warning', '请求已取消')
+        updateRequestStatus('warning', gt('chatRequest.cancelled'))
       } else {
-        updateRequestStatus('error', `请求失败：${errorMessage}`)
+        updateRequestStatus('error', gt('chatRequest.failedPrefix', { message: errorMessage }))
         ElMessage.error(errorMessage)
       }
 

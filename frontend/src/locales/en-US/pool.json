@@ -1,0 +1,62 @@
+{
+  "pool": {
+    "title": "Resource Pool Management",
+    "refreshList": "Refresh list",
+    "addPool": "Add Resource Pool",
+    "editPool": "Edit Resource Pool",
+    "routeHint": "When a model request uses a pool name (by convention \"auto-model\"), a healthy instance is automatically selected from the pool. If no pool is configured, auto-model falls back to all healthy instances of the service.",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "poolNameCol": "Pool Name (Virtual Model Name)",
+    "displayName": "Display Name",
+    "serviceType": "Service Type",
+    "strategy": "Strategy",
+    "members": "Members",
+    "actions": "Actions",
+    "edit": "Edit",
+    "delete": "Delete",
+    "poolName": "Pool Name",
+    "poolNamePlaceholder": "e.g. auto-model (requesting a model with this name triggers pool routing)",
+    "displayNamePlaceholder": "Optional, e.g. Default Auto-Routing Pool",
+    "selectServiceType": "Select a service type",
+    "selectStrategy": "Select strategy",
+    "selectInstance": "Select instance",
+    "weightPlaceholder": "Weight",
+    "addMember": "Add Member",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional",
+    "noInstancesTip": "No instances under this service type yet. Please add them in Instance Management first.",
+    "memberWeightTip": "Members are referenced by instance ID; weight determines the probability of being selected (ignored under the consistent-hash strategy).",
+    "instanceDeleted": "{id} (instance deleted)",
+    "save": "Save",
+    "cancel": "Cancel",
+    "strategies": {
+      "weightedRandom": "Weighted Random (default)",
+      "roundRobin": "Round Robin",
+      "leastConnections": "Least Connections",
+      "ipHash": "IP Hash",
+      "consistentHash": "Consistent Hash (ignores weight)"
+    },
+    "deleteDialog": {
+      "title": "Delete Confirmation",
+      "message": "Are you sure you want to delete resource pool \"{name}\"?",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    },
+    "messages": {
+      "fetchListFailed": "Failed to fetch resource pools",
+      "loadInstancesFailed": "Failed to load instances",
+      "atLeastOneMember": "Keep at least one member",
+      "poolNameRequired": "Please enter a pool name",
+      "memberRequired": "Please add at least one valid member instance ID",
+      "updated": "Resource pool updated",
+      "created": "Resource pool created",
+      "saveFailed": "Save failed. Please check your input",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "operationFailed": "Operation failed",
+      "deleted": "Resource pool deleted",
+      "deleteFailed": "Delete failed"
+    }
+  }
+}

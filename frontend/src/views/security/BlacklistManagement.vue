@@ -1,14 +1,14 @@
 <template>
-  <PageSkeleton title="安全黑名单管理">
+  <PageSkeleton :title="t('blacklist.pageTitle')">
     <template #actions>
       <el-button type="primary" @click="handleOpenAddDialog">
-        <el-icon><Plus /></el-icon>添加黑名单
+        <el-icon><Plus /></el-icon>{{ t('blacklist.add') }}
       </el-button>
       <el-button :loading="loading" @click="handleRefresh">
-        <el-icon><Refresh /></el-icon>刷新
+        <el-icon><Refresh /></el-icon>{{ t('blacklist.refresh') }}
       </el-button>
       <el-button type="warning" @click="handleCleanup">
-        <el-icon><Delete /></el-icon>清理过期
+        <el-icon><Delete /></el-icon>{{ t('blacklist.cleanupExpired') }}
       </el-button>
     </template>
 
@@ -17,30 +17,30 @@
       <div class="stats-section">
         <el-row :gutter="20">
           <el-col :span="6">
-            <el-statistic title="活跃总数" :value="stats.totalActive">
+            <el-statistic :title="t('blacklist.totalActiveTitle')" :value="stats.totalActive">
               <template #suffix>
-                <el-tag type="success" size="small">条</el-tag>
+                <el-tag type="success" size="small">{{ t('blacklist.entryUnit') }}</el-tag>
               </template>
             </el-statistic>
           </el-col>
           <el-col :span="6">
-            <el-statistic title="Token黑名单" :value="stats.tokenCount">
+            <el-statistic :title="t('blacklist.tokenBlacklistTitle')" :value="stats.tokenCount">
               <template #suffix>
-                <el-tag type="warning" size="small">令牌</el-tag>
+                <el-tag type="warning" size="small">{{ t('blacklist.tokenUnit') }}</el-tag>
               </template>
             </el-statistic>
           </el-col>
           <el-col :span="6">
-            <el-statistic title="IP黑名单" :value="stats.ipCount">
+            <el-statistic :title="t('blacklist.ipBlacklistTitle')" :value="stats.ipCount">
               <template #suffix>
-                <el-tag type="danger" size="small">地址</el-tag>
+                <el-tag type="danger" size="small">{{ t('blacklist.addressUnit') }}</el-tag>
               </template>
             </el-statistic>
           </el-col>
           <el-col :span="6">
-            <el-statistic title="设备黑名单" :value="stats.deviceCount">
+            <el-statistic :title="t('blacklist.deviceBlacklistTitle')" :value="stats.deviceCount">
               <template #suffix>
-                <el-tag type="info" size="small">设备</el-tag>
+                <el-tag type="info" size="small">{{ t('blacklist.deviceUnit') }}</el-tag>
               </template>
             </el-statistic>
           </el-col>
@@ -50,69 +50,69 @@
 
     <template #toolbar>
       <!-- 搜索和过滤 -->
-      <el-select v-model="filterForm.type" placeholder="类型筛选" clearable @change="handleSearch">
-        <el-option label="全部类型" value="" />
-        <el-option label="Token" value="TOKEN" />
-        <el-option label="IP地址" value="IP" />
-        <el-option label="设备" value="DEVICE" />
+      <el-select v-model="filterForm.type" :placeholder="t('blacklist.typeFilterPlaceholder')" clearable @change="handleSearch">
+        <el-option :label="t('blacklist.allTypes')" value="" />
+        <el-option :label="t('blacklist.typeToken')" value="TOKEN" />
+        <el-option :label="t('blacklist.typeIp')" value="IP" />
+        <el-option :label="t('blacklist.typeDevice')" value="DEVICE" />
       </el-select>
-      <el-select v-model="filterForm.status" placeholder="状态筛选" clearable @change="handleSearch">
-        <el-option label="全部状态" value="" />
-        <el-option label="活跃" value="ACTIVE" />
-        <el-option label="已过期" value="EXPIRED" />
-        <el-option label="已移除" value="REMOVED" />
+      <el-select v-model="filterForm.status" :placeholder="t('blacklist.statusFilterPlaceholder')" clearable @change="handleSearch">
+        <el-option :label="t('blacklist.allStatuses')" value="" />
+        <el-option :label="t('blacklist.statusActive')" value="ACTIVE" />
+        <el-option :label="t('blacklist.expired')" value="EXPIRED" />
+        <el-option :label="t('blacklist.statusRemoved')" value="REMOVED" />
       </el-select>
-      <el-input v-model="filterForm.userId" placeholder="用户ID" clearable @keyup.enter="handleSearch" style="width: 200px" />
-      <el-button type="primary" @click="handleSearch">搜索</el-button>
-      <el-button @click="handleResetFilter">重置</el-button>
+      <el-input v-model="filterForm.userId" :placeholder="t('blacklist.userIdPlaceholder')" clearable @keyup.enter="handleSearch" style="width: 200px" />
+      <el-button type="primary" @click="handleSearch">{{ t('blacklist.search') }}</el-button>
+      <el-button @click="handleResetFilter">{{ t('blacklist.reset') }}</el-button>
     </template>
 
     <!-- 黑名单列表 -->
     <el-table v-loading="loading" :data="pageData.content" style="width: 100%">
       <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="blacklistType" label="类型" width="100">
+      <el-table-column prop="blacklistType" :label="t('blacklist.type')" width="100">
         <template #default="scope">
           <el-tag :type="getTypeTagType(scope.row.blacklistType)">
             {{ scope.row.blacklistType }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="targetValueMasked" label="目标值" show-overflow-tooltip />
-      <el-table-column prop="userId" label="关联用户" width="120" show-overflow-tooltip />
-      <el-table-column prop="reason" label="原因" width="150" show-overflow-tooltip />
-      <el-table-column prop="riskLevel" label="风险等级" width="100">
+      <el-table-column prop="targetValueMasked" :label="t('blacklist.target')" show-overflow-tooltip />
+      <el-table-column prop="userId" :label="t('blacklist.relatedUser')" width="120" show-overflow-tooltip />
+      <el-table-column prop="reason" :label="t('blacklist.reason')" width="150" show-overflow-tooltip />
+      <el-table-column prop="riskLevel" :label="t('blacklist.riskLevel')" width="100">
         <template #default="scope">
           <el-tag :type="getRiskTagType(scope.row.riskLevel)" size="small">
             {{ scope.row.riskLevel }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="addedBy" label="添加者" width="100" />
-      <el-table-column prop="addedAt" label="添加时间" width="160">
+      <el-table-column prop="addedBy" :label="t('blacklist.addedBy')" width="100" />
+      <el-table-column prop="addedAt" :label="t('blacklist.addedAt')" width="160">
         <template #default="scope">
           {{ formatDateTime(scope.row.addedAt) }}
         </template>
       </el-table-column>
-      <el-table-column prop="expiresAt" label="过期时间" width="160">
+      <el-table-column prop="expiresAt" :label="t('blacklist.expiresAt')" width="160">
         <template #default="scope">
-          <span v-if="scope.row.permanent">永久</span>
+          <span v-if="scope.row.permanent">{{ t('blacklist.permanent') }}</span>
           <span v-else>{{ formatDateTime(scope.row.expiresAt) }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="status" label="状态" width="80">
+      <el-table-column prop="status" :label="t('blacklist.status')" width="80">
         <template #default="scope">
           <el-tag :type="getStatusTagType(scope.row.status)" size="small">
             {{ scope.row.status }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="120" fixed="right">
+      <el-table-column :label="t('blacklist.actions')" width="120" fixed="right">
         <template #default="scope">
           <el-button v-if="scope.row.status === 'ACTIVE'" type="danger" size="small" @click="handleRemove(scope.row)">
-            移除
+            {{ t('blacklist.remove') }}
           </el-button>
           <el-button type="primary" size="small" link @click="handleViewDetail(scope.row)">
-            详情
+            {{ t('blacklist.detail') }}
           </el-button>
         </template>
       </el-table-column>
@@ -132,25 +132,25 @@
   </PageSkeleton>
 
     <!-- 添加黑名单对话框 -->
-    <el-dialog v-model="addDialogVisible" title="添加黑名单" width="600px">
+    <el-dialog v-model="addDialogVisible" :title="t('blacklist.add')" width="600px">
       <el-form ref="addFormRef" :model="addForm" :rules="addFormRules" label-width="100px">
-        <el-form-item label="类型" prop="blacklistType">
+        <el-form-item :label="t('blacklist.type')" prop="blacklistType">
           <el-radio-group v-model="addForm.blacklistType" @change="handleTypeChange">
-            <el-radio-button value="TOKEN">Token令牌</el-radio-button>
-            <el-radio-button value="IP">IP地址</el-radio-button>
-            <el-radio-button value="DEVICE">设备标识</el-radio-button>
+            <el-radio-button value="TOKEN">{{ t('blacklist.radioToken') }}</el-radio-button>
+            <el-radio-button value="IP">{{ t('blacklist.radioIp') }}</el-radio-button>
+            <el-radio-button value="DEVICE">{{ t('blacklist.radioDevice') }}</el-radio-button>
           </el-radio-group>
         </el-form-item>
         
         <!-- Token选择器 -->
-        <el-form-item v-if="addForm.blacklistType === 'TOKEN'" label="选择令牌" prop="targetValue">
+        <el-form-item v-if="addForm.blacklistType === 'TOKEN'" :label="t('blacklist.selectToken')" prop="targetValue">
           <div class="selector-container">
             <el-select
               v-model="addForm.targetValue"
               filterable
               remote
               reserve-keyword
-              placeholder="搜索并选择令牌"
+              :placeholder="t('blacklist.tokenSelectPlaceholder')"
               :remote-method="searchTokens"
               :loading="tokenLoading"
               style="width: 100%"
@@ -158,7 +158,7 @@
               <el-option
                 v-for="token in tokenOptions"
                 :key="token.id"
-                :label="`用户: ${token.userId} - ${token.status}`"
+                :label="t('blacklist.tokenOptionLabel', { userId: token.userId, status: token.status })"
                 :value="token.tokenHash"
               >
                 <div class="token-option">
@@ -168,19 +168,19 @@
                 </div>
               </el-option>
             </el-select>
-            <el-button type="primary" link @click="loadActiveTokens">加载活跃令牌</el-button>
+            <el-button type="primary" link @click="loadActiveTokens">{{ t('blacklist.loadActiveTokens') }}</el-button>
           </div>
         </el-form-item>
         
         <!-- IP选择器 -->
-        <el-form-item v-if="addForm.blacklistType === 'IP'" label="选择IP" prop="targetValue">
+        <el-form-item v-if="addForm.blacklistType === 'IP'" :label="t('blacklist.selectIp')" prop="targetValue">
           <div class="selector-container">
             <el-select
               v-model="addForm.targetValue"
               filterable
               allow-create
               default-first-option
-              placeholder="选择或输入IP地址"
+              :placeholder="t('blacklist.ipSelectPlaceholder')"
               style="width: 100%"
             >
               <el-option
@@ -191,34 +191,34 @@
               >
                 <div class="ip-option">
                   <span class="ip-address">{{ ip.ip }}</span>
-                  <el-tag v-if="ip.suspicious" type="danger" size="small">可疑</el-tag>
-                  <span class="ip-count">登录{{ ip.loginCount }}次</span>
+                  <el-tag v-if="ip.suspicious" type="danger" size="small">{{ t('blacklist.suspicious') }}</el-tag>
+                  <span class="ip-count">{{ t('blacklist.ipLoginCount', { count: ip.loginCount }) }}</span>
                 </div>
               </el-option>
             </el-select>
-            <el-button type="primary" link @click="loadSuspiciousIPs">加载可疑IP</el-button>
+            <el-button type="primary" link @click="loadSuspiciousIPs">{{ t('blacklist.loadSuspiciousIps') }}</el-button>
           </div>
           <div class="ip-input-hint">
-            <el-text size="small" type="info">支持直接输入IP或IP段(如 192.168.1.*)</el-text>
+            <el-text size="small" type="info">{{ t('blacklist.ipInputHint') }}</el-text>
           </div>
         </el-form-item>
         
         <!-- 设备标识输入 -->
-        <el-form-item v-if="addForm.blacklistType === 'DEVICE'" label="设备标识" prop="targetValue">
-          <el-input v-model="addForm.targetValue" placeholder="输入设备标识或从令牌中选择">
+        <el-form-item v-if="addForm.blacklistType === 'DEVICE'" :label="t('blacklist.device')" prop="targetValue">
+          <el-input v-model="addForm.targetValue" :placeholder="t('blacklist.devicePlaceholder')">
             <template #append>
-              <el-button @click="showDeviceSelector = true">从令牌选择</el-button>
+              <el-button @click="showDeviceSelector = true">{{ t('blacklist.pickFromToken') }}</el-button>
             </template>
           </el-input>
         </el-form-item>
 
         <!-- 用户选择器 -->
-        <el-form-item label="关联用户">
+        <el-form-item :label="t('blacklist.relatedUser')">
           <el-select
             v-model="addForm.userId"
             filterable
             clearable
-            placeholder="选择关联用户（可选）"
+            :placeholder="t('blacklist.userPlaceholder')"
             style="width: 100%"
           >
             <el-option
@@ -229,100 +229,101 @@
             >
               <div class="user-option">
                 <span>{{ user.username }}</span>
-                <el-tag v-if="user.enabled" type="success" size="small">启用</el-tag>
-                <el-tag v-else type="danger" size="small">禁用</el-tag>
+                <el-tag v-if="user.enabled" type="success" size="small">{{ t('blacklist.enabled') }}</el-tag>
+                <el-tag v-else type="danger" size="small">{{ t('blacklist.disabled') }}</el-tag>
               </div>
             </el-option>
           </el-select>
         </el-form-item>
         
         <!-- 快速原因选择 -->
-        <el-form-item label="加入原因">
+        <el-form-item :label="t('blacklist.addReason')">
           <div class="reason-selector">
             <el-select
               v-model="addForm.reason"
               filterable
               allow-create
               default-first-option
-              placeholder="选择或输入原因"
+              :placeholder="t('blacklist.reasonPlaceholder')"
               style="width: 100%"
             >
-              <el-option label="恶意登录尝试" value="恶意登录尝试" />
-              <el-option label="异常访问行为" value="异常访问行为" />
-              <el-option label="账户被盗" value="账户被盗" />
-              <el-option label="违规操作" value="违规操作" />
-              <el-option label="安全风险" value="安全风险" />
-              <el-option label="用户请求封禁" value="用户请求封禁" />
-              <el-option label="其他" value="其他" />
+              <el-option :label="t('blacklist.reasonMaliciousLogin')" value="恶意登录尝试" />
+              <el-option :label="t('blacklist.reasonAbnormalAccess')" value="异常访问行为" />
+              <el-option :label="t('blacklist.reasonCompromisedAccount')" value="账户被盗" />
+              <el-option :label="t('blacklist.reasonViolation')" value="违规操作" />
+              <el-option :label="t('blacklist.reasonSecurityRisk')" value="安全风险" />
+              <el-option :label="t('blacklist.reasonUserRequest')" value="用户请求封禁" />
+              <el-option :label="t('blacklist.reasonOther')" value="其他" />
             </el-select>
           </div>
         </el-form-item>
         
-        <el-form-item label="风险等级">
+        <el-form-item :label="t('blacklist.riskLevel')">
           <el-radio-group v-model="addForm.riskLevel">
-            <el-radio-button value="LOW">低</el-radio-button>
-            <el-radio-button value="MEDIUM">中</el-radio-button>
-            <el-radio-button value="HIGH">高</el-radio-button>
-            <el-radio-button value="CRITICAL">严重</el-radio-button>
+            <el-radio-button value="LOW">{{ t('blacklist.riskLow') }}</el-radio-button>
+            <el-radio-button value="MEDIUM">{{ t('blacklist.riskMedium') }}</el-radio-button>
+            <el-radio-button value="HIGH">{{ t('blacklist.riskHigh') }}</el-radio-button>
+            <el-radio-button value="CRITICAL">{{ t('blacklist.riskCritical') }}</el-radio-button>
           </el-radio-group>
         </el-form-item>
         
-        <el-form-item label="有效期">
+        <el-form-item :label="t('blacklist.validity')">
           <el-radio-group v-model="addForm.expiryType">
-            <el-radio value="permanent">永久</el-radio>
-            <el-radio value="temporary">临时</el-radio>
+            <el-radio value="permanent">{{ t('blacklist.permanent') }}</el-radio>
+            <el-radio value="temporary">{{ t('blacklist.temporary') }}</el-radio>
           </el-radio-group>
           <el-input-number v-if="addForm.expiryType === 'temporary'" v-model="addForm.expiresInDays" :min="1" :max="365" style="margin-left: 10px" />
-          <span v-if="addForm.expiryType === 'temporary'" style="margin-left: 5px">天</span>
+          <span v-if="addForm.expiryType === 'temporary'" style="margin-left: 5px">{{ t('blacklist.dayUnit') }}</span>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="addDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="addLoading" @click="handleAdd">确认添加</el-button>
+        <el-button @click="addDialogVisible = false">{{ t('blacklist.cancel') }}</el-button>
+        <el-button type="primary" :loading="addLoading" @click="handleAdd">{{ t('blacklist.confirmAdd') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 设备选择对话框 -->
-    <el-dialog v-model="showDeviceSelector" title="从令牌选择设备" width="500px">
+    <el-dialog v-model="showDeviceSelector" :title="t('blacklist.deviceDialogTitle')" width="500px">
       <el-table :data="tokenOptions" @row-click="selectDeviceFromToken">
-        <el-table-column prop="userId" label="用户" width="120" />
-        <el-table-column prop="deviceInfo" label="设备信息" show-overflow-tooltip />
+        <el-table-column prop="userId" :label="t('blacklist.user')" width="120" />
+        <el-table-column prop="deviceInfo" :label="t('blacklist.deviceInfo')" show-overflow-tooltip />
         <el-table-column prop="ipAddress" label="IP" width="130" />
       </el-table>
     </el-dialog>
 
     <!-- 详情对话框 -->
-    <el-dialog v-model="detailDialogVisible" title="黑名单详情" width="500px">
+    <el-dialog v-model="detailDialogVisible" :title="t('blacklist.detailTitle')" width="500px">
       <el-descriptions :column="1" border>
         <el-descriptions-item label="ID">{{ detailData?.id }}</el-descriptions-item>
-        <el-descriptions-item label="类型">
+        <el-descriptions-item :label="t('blacklist.type')">
           <el-tag :type="getTypeTagType(detailData?.blacklistType)">{{ detailData?.blacklistType }}</el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="目标值">{{ detailData?.targetValue }}</el-descriptions-item>
-        <el-descriptions-item label="目标值掩码">{{ detailData?.targetValueMasked }}</el-descriptions-item>
-        <el-descriptions-item label="关联用户">{{ detailData?.userId || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="加入原因">{{ detailData?.reason || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="风险等级">
+        <el-descriptions-item :label="t('blacklist.target')">{{ detailData?.targetValue }}</el-descriptions-item>
+        <el-descriptions-item :label="t('blacklist.maskedTarget')">{{ detailData?.targetValueMasked }}</el-descriptions-item>
+        <el-descriptions-item :label="t('blacklist.relatedUser')">{{ detailData?.userId || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('blacklist.addReason')">{{ detailData?.reason || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('blacklist.riskLevel')">
           <el-tag :type="getRiskTagType(detailData?.riskLevel)">{{ detailData?.riskLevel }}</el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="添加者">{{ detailData?.addedBy }}</el-descriptions-item>
-        <el-descriptions-item label="添加时间">{{ formatDateTime(detailData?.addedAt) }}</el-descriptions-item>
-        <el-descriptions-item label="过期时间">
-          {{ detailData?.permanent ? '永久' : formatDateTime(detailData?.expiresAt) }}
+        <el-descriptions-item :label="t('blacklist.addedBy')">{{ detailData?.addedBy }}</el-descriptions-item>
+        <el-descriptions-item :label="t('blacklist.addedAt')">{{ formatDateTime(detailData?.addedAt) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('blacklist.expiresAt')">
+          {{ detailData?.permanent ? t('blacklist.permanent') : formatDateTime(detailData?.expiresAt) }}
         </el-descriptions-item>
-        <el-descriptions-item label="剩余时间">
-          {{ detailData?.permanent ? '永久有效' : formatRemainingTime(detailData?.remainingSeconds) }}
+        <el-descriptions-item :label="t('blacklist.remainingTime')">
+          {{ detailData?.permanent ? t('blacklist.permanentValid') : formatRemainingTime(detailData?.remainingSeconds) }}
         </el-descriptions-item>
-        <el-descriptions-item label="状态">
+        <el-descriptions-item :label="t('blacklist.status')">
           <el-tag :type="getStatusTagType(detailData?.status)">{{ detailData?.status }}</el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="来源">{{ detailData?.source }}</el-descriptions-item>
+        <el-descriptions-item :label="t('blacklist.source')">{{ detailData?.source }}</el-descriptions-item>
       </el-descriptions>
     </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Delete } from '@element-plus/icons-vue'
 import {
@@ -342,6 +343,9 @@ import {
 import { getTokens, type JwtTokenInfo } from '@/api/jwtToken'
 import { getJwtAccounts, type JwtAccount } from '@/api/account'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import { formatDateTime as formatDateTimeBase } from '@/utils/format'
+
+const { t } = useI18n()
 
 // 状态
 const loading = ref(false)
@@ -399,10 +403,10 @@ const addForm = reactive<AddBlacklistRequest & { expiryType: string; expiresInDa
   expiresInDays: 30
 })
 
-const addFormRules = {
-  blacklistType: [{ required: true, message: '请选择黑名单类型', trigger: 'change' }],
-  targetValue: [{ required: true, message: '请输入或选择目标值', trigger: 'blur' }]
-}
+const addFormRules = computed(() => ({
+  blacklistType: [{ required: true, message: t('blacklist.validationType'), trigger: 'change' }],
+  targetValue: [{ required: true, message: t('blacklist.validationTarget'), trigger: 'blur' }]
+}))
 
 // 初始化
 onMounted(() => {
@@ -429,7 +433,7 @@ async function loadActiveTokens() {
     tokenOptions.value = result.content || []
   } catch (e) {
     console.error('加载令牌失败', e)
-    ElMessage.warning('加载令牌列表失败')
+    ElMessage.warning(t('blacklist.loadTokensFailed'))
   } finally {
     tokenLoading.value = false
   }
@@ -535,7 +539,7 @@ async function loadPage() {
 // 刷新
 async function handleRefresh() {
   await Promise.all([loadStats(), loadPage()])
-  ElMessage.success('刷新成功')
+  ElMessage.success(t('blacklist.refreshSuccess'))
 }
 
 // 搜索
@@ -587,14 +591,14 @@ async function handleAdd() {
 
     const res = await addToBlacklist(request)
     if (res.success) {
-      ElMessage.success('添加成功')
+      ElMessage.success(t('blacklist.addSuccess'))
       addDialogVisible.value = false
       await handleRefresh()
     } else {
-      ElMessage.error(res.message || '添加失败')
+      ElMessage.error(res.message || t('blacklist.addFailed'))
     }
   } catch (e) {
-    ElMessage.error('添加失败')
+    ElMessage.error(t('blacklist.addFailed'))
   } finally {
     addLoading.value = false
   }
@@ -603,13 +607,13 @@ async function handleAdd() {
 // 移除黑名单
 async function handleRemove(row: BlacklistEntry) {
   try {
-    await ElMessageBox.confirm('确认从黑名单移除该条目？', '确认移除', { type: 'warning' })
+    await ElMessageBox.confirm(t('blacklist.removeConfirm'), t('blacklist.removeConfirmTitle'), { type: 'warning' })
     const res = await removeFromBlacklist(row.id)
     if (res.success) {
-      ElMessage.success('移除成功')
+      ElMessage.success(t('blacklist.removeSuccess'))
       await handleRefresh()
     } else {
-      ElMessage.error(res.message || '移除失败')
+      ElMessage.error(res.message || t('blacklist.removeFailed'))
     }
   } catch {}
 }
@@ -623,31 +627,31 @@ function handleViewDetail(row: BlacklistEntry) {
 // 清理过期
 async function handleCleanup() {
   try {
-    await ElMessageBox.confirm('确认清理所有过期的黑名单条目？', '确认清理', { type: 'warning' })
+    await ElMessageBox.confirm(t('blacklist.cleanupConfirm'), t('blacklist.cleanupConfirmTitle'), { type: 'warning' })
     const res = await cleanupExpiredBlacklist()
     if (res.success) {
-      ElMessage.success(`清理完成，共清理 ${res.data} 条`)
+      ElMessage.success(t('blacklist.cleanupDone', { count: res.data }))
       await handleRefresh()
     } else {
-      ElMessage.error(res.message || '清理失败')
+      ElMessage.error(res.message || t('blacklist.cleanupFailed'))
     }
   } catch {}
 }
 
-// 格式化时间
+// 格式化时间（委托共享 format.ts）
 function formatDateTime(dt: string | undefined) {
   if (!dt) return '-'
-  return new Date(dt).toLocaleString('zh-CN')
+  return formatDateTimeBase(dt)
 }
 
 // 格式化剩余时间
 function formatRemainingTime(seconds: number | undefined) {
   if (!seconds) return '-'
-  if (seconds <= 0) return '已过期'
+  if (seconds <= 0) return t('blacklist.expired')
   const days = Math.floor(seconds / 86400)
   const hours = Math.floor((seconds % 86400) / 3600)
-  if (days > 0) return `${days}天${hours}小时`
-  return `${hours}小时`
+  if (days > 0) return t('blacklist.remainingDaysHours', { days, hours })
+  return t('blacklist.remainingHours', { hours })
 }
 
 // 类型标签颜色

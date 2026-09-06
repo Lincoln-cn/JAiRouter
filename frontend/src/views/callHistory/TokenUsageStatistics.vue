@@ -3,21 +3,21 @@
     <!-- 时间筛选 -->
     <el-card class="filter-card" shadow="hover">
       <el-form :inline="true" class="filter-form">
-        <el-form-item label="时间范围">
+        <el-form-item :label="t('callHistory.common.timeRange')">
           <el-date-picker
             v-model="dateRange"
             type="datetimerange"
-            range-separator="至"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
+            :range-separator="t('callHistory.common.rangeSeparator')"
+            :start-placeholder="t('callHistory.common.startTime')"
+            :end-placeholder="t('callHistory.common.endTime')"
             value-format="YYYY-MM-DD HH:mm:ss"
             style="width: 400px"
             @change="handleDateChange"
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" icon="Search" @click="loadData">查询</el-button>
-          <el-button icon="Refresh" @click="handleReset">重置</el-button>
+          <el-button type="primary" icon="Search" @click="loadData">{{ t('callHistory.common.query') }}</el-button>
+          <el-button icon="Refresh" @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -32,7 +32,7 @@
             </div>
             <div class="stat-info">
               <div class="stat-value">{{ formatNumber(statistics.totalTokens) }}</div>
-              <div class="stat-label">总 Token 使用量</div>
+              <div class="stat-label">{{ t('callHistory.tokenUsage.stats.totalTokenUsed') }}</div>
             </div>
           </div>
         </el-card>
@@ -45,7 +45,7 @@
             </div>
             <div class="stat-info">
               <div class="stat-value">{{ formatNumber(statistics.totalPromptTokens) }}</div>
-              <div class="stat-label">输入 Token</div>
+              <div class="stat-label">{{ t('callHistory.tokenUsage.stats.inputTokens') }}</div>
             </div>
           </div>
         </el-card>
@@ -58,7 +58,7 @@
             </div>
             <div class="stat-info">
               <div class="stat-value">{{ formatNumber(statistics.totalCompletionTokens) }}</div>
-              <div class="stat-label">输出 Token</div>
+              <div class="stat-label">{{ t('callHistory.tokenUsage.stats.outputTokens') }}</div>
             </div>
           </div>
         </el-card>
@@ -71,7 +71,7 @@
             </div>
             <div class="stat-info">
               <div class="stat-value">{{ statistics.avgResponseTimeMs?.toFixed(0) || 0 }}</div>
-              <div class="stat-label">平均响应时间 (ms)</div>
+              <div class="stat-label">{{ t('callHistory.tokenUsage.stats.avgResponseTimeMs') }}</div>
             </div>
           </div>
         </el-card>
@@ -88,7 +88,7 @@
             </div>
             <div class="stat-info">
               <div class="stat-value">{{ formatNumber(statistics.totalRequests) }}</div>
-              <div class="stat-label">总请求数</div>
+              <div class="stat-label">{{ t('callHistory.tokenUsage.stats.totalRequests') }}</div>
             </div>
           </div>
         </el-card>
@@ -101,7 +101,7 @@
             </div>
             <div class="stat-info">
               <div class="stat-value">{{ statistics.successRate?.toFixed(2) || 0 }}%</div>
-              <div class="stat-label">成功率</div>
+              <div class="stat-label">{{ t('callHistory.tokenUsage.stats.successRate') }}</div>
             </div>
           </div>
         </el-card>
@@ -114,7 +114,7 @@
             </div>
             <div class="stat-info">
               <div class="stat-value">{{ statistics.byModel?.length || 0 }}</div>
-              <div class="stat-label">使用模型数</div>
+              <div class="stat-label">{{ t('callHistory.tokenUsage.stats.modelUsedCount') }}</div>
             </div>
           </div>
         </el-card>
@@ -127,7 +127,7 @@
             </div>
             <div class="stat-info">
               <div class="stat-value">{{ statistics.byServiceType?.length || 0 }}</div>
-              <div class="stat-label">服务类型数</div>
+              <div class="stat-label">{{ t('callHistory.tokenUsage.stats.serviceTypeCount') }}</div>
             </div>
           </div>
         </el-card>
@@ -140,7 +140,7 @@
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
-            <span class="chart-title">模型 Token 使用量 Top 10</span>
+            <span class="chart-title">{{ t('callHistory.tokenUsage.chart.modelTokenTopTitle') }}</span>
           </template>
           <div ref="modelChartRef" class="chart-container"></div>
         </el-card>
@@ -150,7 +150,7 @@
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
-            <span class="chart-title">服务类型 Token 使用量</span>
+            <span class="chart-title">{{ t('callHistory.tokenUsage.chart.serviceTypeTokenTitle') }}</span>
           </template>
           <div ref="serviceTypeChartRef" class="chart-container"></div>
         </el-card>
@@ -162,7 +162,7 @@
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
-            <span class="chart-title">每日 Token 使用趋势</span>
+            <span class="chart-title">{{ t('callHistory.tokenUsage.chart.dailyTrendTitle') }}</span>
           </template>
           <div ref="dailyChartRef" class="chart-container"></div>
         </el-card>
@@ -172,7 +172,7 @@
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
-            <span class="chart-title">每周 Token 使用趋势</span>
+            <span class="chart-title">{{ t('callHistory.tokenUsage.chart.weeklyTrendTitle') }}</span>
           </template>
           <div ref="weeklyChartRef" class="chart-container"></div>
         </el-card>
@@ -184,7 +184,7 @@
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
-            <span class="chart-title">每月 Token 使用趋势</span>
+            <span class="chart-title">{{ t('callHistory.tokenUsage.chart.monthlyTrendTitle') }}</span>
           </template>
           <div ref="monthlyChartRef" class="chart-container"></div>
         </el-card>
@@ -194,7 +194,7 @@
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
-            <span class="chart-title">24 小时 Token 使用分布</span>
+            <span class="chart-title">{{ t('callHistory.tokenUsage.chart.hourlyDistributionTitle') }}</span>
           </template>
           <div ref="hourlyChartRef" class="chart-container"></div>
         </el-card>
@@ -204,45 +204,45 @@
     <!-- 最近使用记录 -->
     <el-card shadow="hover" style="margin-top: 20px;">
       <template #header>
-        <span class="chart-title">最近 Token 使用记录</span>
+        <span class="chart-title">{{ t('callHistory.tokenUsage.chart.recentUsageTitle') }}</span>
       </template>
       <el-table :data="recentUsage" border stripe :max-height="400">
-        <el-table-column label="时间" prop="occurredAt" width="180">
+        <el-table-column :label="t('callHistory.common.time')" prop="occurredAt" width="180">
           <template #default="scope">
             {{ formatTime(scope.row.occurredAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="模型名称" prop="modelName" min-width="180" show-overflow-tooltip />
-        <el-table-column label="服务类型" prop="serviceType" width="120">
+        <el-table-column :label="t('callHistory.common.modelName')" prop="modelName" min-width="180" show-overflow-tooltip />
+        <el-table-column :label="t('callHistory.common.serviceType')" prop="serviceType" width="120">
           <template #default="scope">
             <el-tag size="small">{{ getServiceTypeLabel(scope.row.serviceType) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="提供商" prop="provider" width="120" />
-        <el-table-column label="输入 Token" prop="promptTokens" width="100" align="right">
+        <el-table-column :label="t('callHistory.common.provider')" prop="provider" width="120" />
+        <el-table-column :label="t('callHistory.tokenUsage.stats.inputTokens')" prop="promptTokens" width="100" align="right">
           <template #default="scope">
             {{ formatNumber(scope.row.promptTokens) }}
           </template>
         </el-table-column>
-        <el-table-column label="输出 Token" prop="completionTokens" width="100" align="right">
+        <el-table-column :label="t('callHistory.tokenUsage.stats.outputTokens')" prop="completionTokens" width="100" align="right">
           <template #default="scope">
             {{ formatNumber(scope.row.completionTokens) }}
           </template>
         </el-table-column>
-        <el-table-column label="总 Token" prop="totalTokens" width="100" align="right">
+        <el-table-column :label="t('callHistory.common.totalToken')" prop="totalTokens" width="100" align="right">
           <template #default="scope">
             <el-tag type="success" size="small">{{ formatNumber(scope.row.totalTokens) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="响应时间 (ms)" prop="responseTimeMs" width="110" align="right">
+        <el-table-column :label="t('callHistory.common.responseTimeMs')" prop="responseTimeMs" width="110" align="right">
           <template #default="scope">
             {{ scope.row.responseTimeMs?.toFixed(0) || '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="80" align="center">
+        <el-table-column :label="t('callHistory.common.status')" width="80" align="center">
           <template #default="scope">
             <el-tag :type="scope.row.isSuccess ? 'success' : 'danger'" size="small">
-              {{ scope.row.isSuccess ? '成功' : '失败' }}
+              {{ scope.row.isSuccess ? t('callHistory.common.success') : t('callHistory.common.failed') }}
             </el-tag>
           </template>
         </el-table-column>
@@ -253,6 +253,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import {
   DataAnalysis,
@@ -275,6 +276,9 @@ import {
   getTopServiceTypes
 } from '@/api/tokenUsage'
 import type { TokenUsageStatistics, TokenUsageRecord } from '@/types/tokenUsage'
+import { formatDateTime as formatDateTimeBase, formatNumber as formatNumberBase } from '@/utils/format'
+
+const { t } = useI18n()
 
 // 时间范围
 const dateRange = ref<[string, string] | null>(null)
@@ -321,31 +325,33 @@ let weeklyChart: ECharts | null = null
 let monthlyChart: ECharts | null = null
 let hourlyChart: ECharts | null = null
 
-// 格式化数字（千分位）
+// 格式化数字（千分位，委托共享 format.ts）
 const formatNumber = (num?: number): string => {
   if (!num && num !== 0) return '0'
-  return num.toLocaleString()
+  return formatNumberBase(num)
 }
 
-// 格式化时间
+// 格式化时间（委托共享 format.ts）
 const formatTime = (time?: string) => {
   if (!time) return '-'
-  return time.replace('T', ' ').substring(0, 19)
+  return formatDateTimeBase(time)
+}
+
+// 服务类型 key -> i18n 键名映射（保持原有顺序）
+const serviceTypeKeyMap: Record<string, string> = {
+  chat: 'chat',
+  embedding: 'embedding',
+  rerank: 'rerank',
+  tts: 'tts',
+  stt: 'stt',
+  imgGen: 'imgGen',
+  imgEdit: 'imgEdit'
 }
 
 // 获取服务类型标签
 const getServiceTypeLabel = (type?: string) => {
-  if (!type) return '未知'
-  const labels: Record<string, string> = {
-    chat: '聊天',
-    embedding: '嵌入',
-    rerank: '重排序',
-    tts: '语音合成',
-    stt: '语音识别',
-    imgGen: '图像生成',
-    imgEdit: '图像编辑'
-  }
-  return labels[type] || type
+  if (!type) return t('callHistory.common.unknown')
+  return serviceTypeKeyMap[type] ? t(`callHistory.serviceTypes.${serviceTypeKeyMap[type]}`) : type
 }
 
 // 初始化图表
@@ -485,7 +491,7 @@ const updateDailyChart = () => {
       trigger: 'axis'
     },
     legend: {
-      data: ['输入 Token', '输出 Token', '总 Token']
+      data: [t('callHistory.tokenUsage.stats.inputTokens'), t('callHistory.tokenUsage.stats.outputTokens'), t('callHistory.common.totalToken')]
     },
     xAxis: {
       type: 'category',
@@ -497,7 +503,7 @@ const updateDailyChart = () => {
     },
     series: [
       {
-        name: '输入 Token',
+        name: t('callHistory.tokenUsage.stats.inputTokens'),
         type: 'line',
         stack: 'Total',
         areaStyle: { opacity: 0.3 },
@@ -505,7 +511,7 @@ const updateDailyChart = () => {
         itemStyle: { color: '#67C23A' }
       },
       {
-        name: '输出 Token',
+        name: t('callHistory.tokenUsage.stats.outputTokens'),
         type: 'line',
         stack: 'Total',
         areaStyle: { opacity: 0.3 },
@@ -513,7 +519,7 @@ const updateDailyChart = () => {
         itemStyle: { color: '#E6A23C' }
       },
       {
-        name: '总 Token',
+        name: t('callHistory.common.totalToken'),
         type: 'line',
         data: data.map(item => item.totalTokens),
         itemStyle: { color: '#409EFF' },
@@ -548,7 +554,7 @@ const updateWeeklyChart = () => {
     },
     series: [
       {
-        name: '总 Token',
+        name: t('callHistory.common.totalToken'),
         type: 'line',
         smooth: true,
         areaStyle: { opacity: 0.3 },
@@ -584,7 +590,7 @@ const updateMonthlyChart = () => {
     },
     series: [
       {
-        name: '总 Token',
+        name: t('callHistory.common.totalToken'),
         type: 'line',
         smooth: true,
         areaStyle: { opacity: 0.3 },
@@ -627,7 +633,7 @@ const updateHourlyChart = () => {
     },
     series: [
       {
-        name: 'Token 使用量',
+        name: t('callHistory.tokenUsage.chart.tokenUsage'),
         type: 'bar',
         data: hourlyData,
         itemStyle: {
@@ -669,7 +675,7 @@ const loadData = async () => {
     initCharts()
   } catch (error: any) {
     console.error('加载统计数据失败:', error)
-    ElMessage.error(`加载统计数据失败：${  error.message || '未知错误'}`)
+    ElMessage.error(t('callHistory.tokenUsage.loadFailed', { message: error.message || t('callHistory.common.unknownError') }))
   }
 }
 

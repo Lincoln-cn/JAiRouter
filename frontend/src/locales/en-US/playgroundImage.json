@@ -1,0 +1,45 @@
+{
+  "playgroundImage": {
+    "generateTab": "Image Generation",
+    "editTab": "Image Editing",
+    "showConfig": "Settings",
+    "hideConfig": "Hide Settings",
+    "offlineStatus": "(Offline)",
+    "unknownStatus": "(Unknown)",
+    "generate": {
+      "modelPlaceholder": "Select Image Generation Model",
+      "count": "Number of Images",
+      "size": "Image Size",
+      "quality": "Quality",
+      "style": "Style",
+      "promptTitle": "Prompt",
+      "promptPlaceholder": "Describe the image you want to generate, e.g. a cute cat sitting on a windowsill in the sunshine...",
+      "generate": "Generate Image",
+      "resultTitle": "Generation Result",
+      "empty": "Enter a prompt, then generate the image",
+      "loading": "Generating image...",
+      "messages": {
+        "generated": "Successfully generated {count} images",
+        "failed": "Failed to generate image"
+      }
+    },
+    "edit": {
+      "modelPlaceholder": "Select Image Editing Model",
+      "outputFormat": "Output Format",
+      "count": "Number of Images",
+      "size": "Image Size",
+      "quality": "Quality",
+      "uploadTitle": "Upload Images",
+      "promptTitle": "Edit Prompt",
+      "promptPlaceholder": "Describe how you want to edit the image, e.g. change the background to blue...",
+      "edit": "Edit Image",
+      "resultTitle": "Edit Result",
+      "empty": "Upload images and enter a prompt to start editing",
+      "loading": "Editing image...",
+      "messages": {
+        "edited": "Successfully edited {count} images",
+        "failed": "Failed to edit image"
+      }
+    }
+  }
+}

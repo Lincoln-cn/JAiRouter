@@ -2,7 +2,7 @@
   <div class="model-selector">
     <el-select
       v-model="selectedModel"
-      :placeholder="placeholder"
+      :placeholder="resolvedPlaceholder"
       :loading="loading"
       :disabled="disabled"
       :clearable="clearable"
@@ -43,6 +43,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Cpu } from '@element-plus/icons-vue'
 
 export interface ModelInstance {
@@ -70,7 +71,7 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
   disabled: false,
   clearable: false,
-  placeholder: '选择模型',
+  placeholder: '',
   groupByType: true
 })
 
@@ -79,17 +80,24 @@ const emit = defineEmits<{
   change: [value: string, instance: ModelInstance | undefined]
 }>()
 
+const { t } = useI18n()
+
 const selectedModel = ref(props.modelValue)
+
+// 占位文案（父级未传入时使用翻译默认值）
+const resolvedPlaceholder = computed(() => {
+  return props.placeholder || t('playgroundCommon.model.placeholder')
+})
 
 // 按类型分组的实例
 const groupedInstances = computed(() => {
   if (!props.groupByType) {
-    return [{ label: '全部模型', instances: props.instances }]
+    return [{ label: t('playgroundCommon.model.allModels'), instances: props.instances }]
   }
 
   const groups: Record<string, ModelInstance[]> = {}
   for (const instance of props.instances) {
-    const type = instance.type || '其他'
+    const type = instance.type || t('playgroundCommon.model.other')
     if (!groups[type]) {
       groups[type] = []
     }

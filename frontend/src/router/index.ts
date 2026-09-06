@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { i18n } from '@/i18n'
 
 // 添加JWT解码函数
 function isTokenExpired(token: string): boolean {
@@ -47,7 +48,7 @@ const router = createRouter({
           path: 'main',
           name: 'dashboard-main',
           component: () => import('../views/Dashboard.vue'),
-          meta: { title: '仪表板', icon: 'house' }
+          meta: { titleKey: 'route.dashboardMain', icon: 'house' }
         }
       ]
     },
@@ -62,49 +63,49 @@ const router = createRouter({
           path: 'services',
           name: 'service-management',
           component: () => import('../views/config/ServiceManagement.vue'),
-          meta: { title: '服务管理', icon: 'setting' }
+          meta: { titleKey: 'route.serviceManagement', icon: 'setting' }
         },
         {
           path: 'instances',
           name: 'instance-management',
           component: () => import('../views/config/InstanceManagement.vue'),
-          meta: { title: '实例管理', icon: 'cpu' }
+          meta: { titleKey: 'route.instanceManagement', icon: 'cpu' }
         },
         {
           path: 'versions',
           name: 'version-management',
           component: () => import('../views/config/VersionManagement.vue'),
-          meta: { title: '版本管理', icon: 'document' }
+          meta: { titleKey: 'route.versionManagement', icon: 'document' }
         },
         {
           path: 'state-persistence',
           name: 'state-persistence-config',
           component: () => import('../views/config/StatePersistenceManagement.vue'),
-          meta: { title: '状态持久化', icon: 'folder-opened' }
+          meta: { titleKey: 'route.statePersistenceConfig', icon: 'folder-opened' }
         },
         {
           path: 'adapters',
           name: 'adapter-management',
           component: () => import('../views/config/AdapterManagement.vue'),
-          meta: { title: 'Adapter管理', icon: 'connection' }
+          meta: { titleKey: 'route.adapterManagement', icon: 'connection' }
         },
         {
           path: 'rules',
           name: 'rule-management',
           component: () => import('../views/config/rules/RuleManagement.vue'),
-          meta: { title: '路由规则', icon: 'set-up' }
+          meta: { titleKey: 'route.ruleManagement', icon: 'set-up' }
         },
         {
           path: 'pools',
           name: 'pool-management',
           component: () => import('../views/config/pools/PoolManagement.vue'),
-          meta: { title: '资源池', icon: 'box' }
+          meta: { titleKey: 'route.poolManagement', icon: 'box' }
         },
         {
           path: 'cache',
           name: 'response-cache-management',
           component: () => import('../views/config/ResponseCacheManagement.vue'),
-          meta: { title: '响应缓存管理', icon: 'coin', permissions: ['config:cache:write'] }
+          meta: { titleKey: 'route.responseCacheManagement', icon: 'coin', permissions: ['config:cache:write'] }
         }
       ]
     },
@@ -120,13 +121,13 @@ const router = createRouter({
           path: 'monitoring',
           name: 'load-balancer-monitoring',
           component: () => import('../views/load-balancer/Monitoring.vue'),
-          meta: { title: '实时监控', icon: 'monitor' }
+          meta: { titleKey: 'route.loadBalancerMonitoring', icon: 'monitor' }
         },
         {
           path: 'strategy-config',
           name: 'load-balancer-strategy-config',
           component: () => import('../views/load-balancer/StrategyConfig.vue'),
-          meta: { title: '策略配置', icon: 'setting' }
+          meta: { titleKey: 'route.loadBalancerStrategyConfig', icon: 'setting' }
         }
       ]
     },
@@ -147,19 +148,19 @@ const router = createRouter({
           path: 'monitoring',
           name: 'circuit-breaker-monitoring',
           component: () => import('../views/circuit-breaker/Monitoring.vue'),
-          meta: { title: '实时监控', icon: 'monitor' }
+          meta: { titleKey: 'route.circuitBreakerMonitoring', icon: 'monitor' }
         },
         {
           path: 'history',
           name: 'circuit-breaker-history',
           component: () => import('../views/circuit-breaker/History.vue'),
-          meta: { title: '历史记录', icon: 'document' }
+          meta: { titleKey: 'route.circuitBreakerHistory', icon: 'document' }
         },
         {
           path: 'global-config',
           name: 'circuit-breaker-global-config',
           component: () => import('../views/circuit-breaker/GlobalConfig.vue'),
-          meta: { title: '全局配置', icon: 'setting' }
+          meta: { titleKey: 'route.circuitBreakerGlobalConfig', icon: 'setting' }
         }
       ]
     },
@@ -179,25 +180,25 @@ const router = createRouter({
           path: 'api-keys',
           name: 'api-key-management',
           component: () => import('../views/security/ApiKeyManagement.vue'),
-          meta: { title: 'API密钥管理', icon: 'key', permissions: ['security:apikeys:manage'] }
+          meta: { titleKey: 'route.apiKeyManagement', icon: 'key', permissions: ['security:apikeys:manage'] }
         },
         {
           path: 'jwt-tokens',
           name: 'jwt-token-management',
           component: () => import('../views/security/JwtTokenManagement.vue'),
-          meta: { title: 'JWT令牌管理', icon: 'lock', permissions: ['security:jwttokens:manage'] }
+          meta: { titleKey: 'route.jwtTokenManagement', icon: 'lock', permissions: ['security:jwttokens:manage'] }
         },
         {
           path: 'blacklist',
           name: 'blacklist-management',
           component: () => import('../views/security/BlacklistManagement.vue'),
-          meta: { title: '安全黑名单', icon: 'warning', permissions: ['security:blacklist:manage'] }
+          meta: { titleKey: 'route.blacklistManagement', icon: 'warning', permissions: ['security:blacklist:manage'] }
         },
         {
           path: 'audit-logs',
           name: 'audit-log-management',
           component: () => import('../views/security/AuditLogManagement.vue'),
-          meta: { title: '审计日志', icon: 'document-checked', permissions: ['security:audit:read'] }
+          meta: { titleKey: 'route.auditLogManagement', icon: 'document-checked', permissions: ['security:audit:read'] }
         }
       ]
     },
@@ -212,13 +213,13 @@ const router = createRouter({
           path: 'accounts',
           name: 'account-management',
           component: () => import('../views/security/JwtAccountManagement.vue'),
-          meta: { title: '账户管理', icon: 'user', permissions: ['system:accounts:manage'] }
+          meta: { titleKey: 'route.accountManagement', icon: 'user', permissions: ['system:accounts:manage'] }
         },
         {
           path: 'permissions',
           name: 'permission-management',
           component: () => import('../views/system/PermissionManagement.vue'),
-          meta: { title: '权限管理', icon: 'key', permissions: ['system:permissions:manage'] }
+          meta: { titleKey: 'route.permissionManagement', icon: 'key', permissions: ['system:permissions:manage'] }
         }
       ]
     },
@@ -234,19 +235,19 @@ const router = createRouter({
           path: 'dashboard',
           name: 'tracing-dashboard',
           component: () => import('../views/tracing/Dashboard.vue'),
-          meta: { title: '追踪仪表盘', icon: 'connection' }
+          meta: { titleKey: 'route.tracingDashboard', icon: 'connection' }
         },
         {
           path: 'search',
           name: 'tracing-search',
           component: () => import('../views/tracing/Search.vue'),
-          meta: { title: '链路追踪', icon: 'search' }
+          meta: { titleKey: 'route.tracingSearch', icon: 'search' }
         },
         {
           path: 'management',
           name: 'tracing-management',
           component: () => import('../views/tracing/Management.vue'),
-          meta: { title: '追踪配置', icon: 'setting' }
+          meta: { titleKey: 'route.tracingManagement', icon: 'setting' }
         }
       ]
     },
@@ -276,31 +277,31 @@ const router = createRouter({
           path: 'chat',
           name: 'playground-chat',
           component: () => import('../views/playground/components/chat/ChatContainer.vue'),
-          meta: { title: '对话测试', icon: 'chat-dot-round' }
+          meta: { titleKey: 'route.playgroundChat', icon: 'chat-dot-round' }
         },
         {
           path: 'embedding',
           name: 'playground-embedding',
           component: () => import('../views/playground/components/embedding/EmbeddingContainer.vue'),
-          meta: { title: '向量生成', icon: 'data-line' }
+          meta: { titleKey: 'route.playgroundEmbedding', icon: 'data-line' }
         },
         {
           path: 'rerank',
           name: 'playground-rerank',
           component: () => import('../views/playground/components/rerank/RerankContainer.vue'),
-          meta: { title: '重排序', icon: 'sort' }
+          meta: { titleKey: 'route.playgroundRerank', icon: 'sort' }
         },
         {
           path: 'audio',
           name: 'playground-audio',
           component: () => import('../views/playground/components/audio/AudioContainer.vue'),
-          meta: { title: '语音服务', icon: 'headset' }
+          meta: { titleKey: 'route.playgroundAudio', icon: 'headset' }
         },
         {
           path: 'image',
           name: 'playground-image',
           component: () => import('../views/playground/components/image/ImageContainer.vue'),
-          meta: { title: '图像服务', icon: 'picture' }
+          meta: { titleKey: 'route.playgroundImage', icon: 'picture' }
         }
       ]
     },
@@ -326,19 +327,19 @@ const router = createRouter({
           path: 'list',
           name: 'exception-list',
           component: () => import('../views/exception/ExceptionManagement.vue'),
-          meta: { title: '异常事件管理', icon: 'warning' }
+          meta: { titleKey: 'route.exceptionList', icon: 'warning' }
         },
         {
           path: 'detail/:id',
           name: 'exception-detail',
           component: () => import('../views/exception/ExceptionDetail.vue'),
-          meta: { title: '异常事件详情', icon: 'document-checked' }
+          meta: { titleKey: 'route.exceptionDetail', icon: 'document-checked' }
         },
         {
           path: 'statistics',
           name: 'exception-statistics',
           component: () => import('../views/exception/ExceptionStatistics.vue'),
-          meta: { title: '异常统计分析', icon: 'data-analysis' }
+          meta: { titleKey: 'route.exceptionStatistics', icon: 'data-analysis' }
         }
       ]
     },
@@ -354,7 +355,7 @@ const router = createRouter({
           path: 'monitoring',
           name: 'rate-limiter-monitoring',
           component: () => import('../views/rate-limiter/Monitoring.vue'),
-          meta: { title: '实时监控', icon: 'monitor' }
+          meta: { titleKey: 'route.rateLimiterMonitoring', icon: 'monitor' }
         }
       ]
     },
@@ -374,7 +375,7 @@ const router = createRouter({
           path: 'slow-queries',
           name: 'slow-query-analysis',
           component: () => import('../views/monitoring/SlowQueryAnalysis.vue'),
-          meta: { title: '慢查询分析', icon: 'timer', permissions: ['monitoring:slowquery:read'] }
+          meta: { titleKey: 'route.slowQueryAnalysis', icon: 'timer', permissions: ['monitoring:slowquery:read'] }
         }
       ]
     },
@@ -390,25 +391,25 @@ const router = createRouter({
           path: 'dashboard',
           name: 'call-history-dashboard',
           component: () => import('../views/callHistory/Dashboard.vue'),
-          meta: { title: '调用历史仪表盘', icon: 'data-analysis' }
+          meta: { titleKey: 'route.callHistoryDashboard', icon: 'data-analysis' }
         },
         {
           path: 'list',
           name: 'call-history-list',
           component: () => import('../views/callHistory/CallHistoryList.vue'),
-          meta: { title: '调用历史列表', icon: 'list' }
+          meta: { titleKey: 'route.callHistoryList', icon: 'list' }
         },
         {
           path: 'slow-calls',
           name: 'call-history-slow-calls',
           component: () => import('../views/callHistory/CallHistorySlowCalls.vue'),
-          meta: { title: '慢调用', icon: 'timer' }
+          meta: { titleKey: 'route.callHistorySlowCalls', icon: 'timer' }
         },
         {
           path: 'token-usage',
           name: 'call-history-token-usage',
           component: () => import('../views/callHistory/TokenUsageStatistics.vue'),
-          meta: { title: 'Token 统计', icon: 'DataAnalysis' }
+          meta: { titleKey: 'route.callHistoryTokenUsage', icon: 'DataAnalysis' }
         }
       ]
     }
@@ -478,6 +479,14 @@ router.beforeEach((to, from, next) => {
   }
 
   next()
+})
+
+// v2.10.3 双语版: 依据路由 meta.titleKey 同步标签页标题（语言切换后重新导航即更新）
+// t 经最小接口断言，规避 vue-i18n 消息泛型导致的深层实例化
+const { t: tTitle } = i18n.global as unknown as { t: (key: string) => string }
+router.afterEach((to) => {
+  const titleKey = to.meta.titleKey as string | undefined
+  document.title = titleKey ? `${tTitle(titleKey)} · JAiRouter` : 'JAiRouter'
 })
 
 export default router

@@ -1,0 +1,11 @@
+{
+  "playgroundData": {
+    "selectedUnavailable": "The currently selected instance is no longer available after refresh. Please select again",
+    "refreshedData": "Data refreshed: {instances} instances, {models} models",
+    "fetchDataFailed": "Failed to fetch {serviceType} data",
+    "refreshedInstances": "Instance list refreshed: {count} available instances found",
+    "fetchInstancesFailed": "Failed to fetch {serviceType} instances",
+    "refreshedModels": "Model list refreshed: {count} available models found",
+    "fetchModelsFailed": "Failed to fetch {serviceType} models"
+  }
+}

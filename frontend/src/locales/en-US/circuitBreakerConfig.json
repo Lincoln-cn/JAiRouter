@@ -1,0 +1,16 @@
+{
+  "circuitBreakerConfig": {
+    "title": "Circuit Breaker Config",
+    "enableToggle": "Enable Circuit Breaker",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "failureThreshold": "Failure Threshold",
+    "timeout": "Timeout (ms)",
+    "successThreshold": "Success Threshold",
+    "cancel": "Cancel",
+    "save": "Save",
+    "messages": {
+      "saveFailed": "Failed to save configuration"
+    }
+  }
+}

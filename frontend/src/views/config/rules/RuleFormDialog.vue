@@ -1,30 +1,30 @@
 <template>
-  <el-dialog v-model="visible" :title="isEdit ? '编辑规则' : '新增规则'" width="720px" destroy-on-close>
+  <el-dialog v-model="visible" :title="isEdit ? t('rule.editRule') : t('rule.addRule')" width="720px" destroy-on-close>
     <el-form ref="formRef" :model="form" :rules="formRules" label-width="90px">
-      <el-form-item label="名称" prop="name">
-        <el-input v-model="form.name" placeholder="规则名称,如: vLLM 流量路由" />
+      <el-form-item :label="t('rule.name')" prop="name">
+        <el-input v-model="form.name" :placeholder="t('rule.form.namePlaceholder')" />
       </el-form-item>
 
-      <el-form-item label="优先级" prop="priority">
+      <el-form-item :label="t('rule.priority')" prop="priority">
         <el-input-number v-model="form.priority" :min="0" :max="9999" />
-        <span class="form-tip">数值越大越先匹配,首条命中即生效</span>
+        <span class="form-tip">{{ t('rule.form.priorityTip') }}</span>
       </el-form-item>
 
-      <el-divider content-position="left">匹配条件(全部满足)</el-divider>
+      <el-divider content-position="left">{{ t('rule.form.conditionsSection') }}</el-divider>
 
       <div v-for="(cond, index) in form.conditions" :key="index" class="condition-row">
-        <el-select v-model="cond.type" style="width: 130px" placeholder="条件类型" @change="onConditionTypeChange(cond)">
-          <el-option label="模型名" value="MODEL_NAME" />
-          <el-option label="服务类型" value="SERVICE_TYPE" />
-          <el-option label="请求头" value="HEADER" />
-          <el-option label="来源IP" value="CLIENT_IP" />
-          <el-option label="权重" value="WEIGHT" />
+        <el-select v-model="cond.type" style="width: 130px" :placeholder="t('rule.form.typePlaceholder')" @change="onConditionTypeChange(cond)">
+          <el-option :label="t('rule.conditionType.MODEL_NAME')" value="MODEL_NAME" />
+          <el-option :label="t('rule.conditionType.SERVICE_TYPE')" value="SERVICE_TYPE" />
+          <el-option :label="t('rule.conditionType.HEADER')" value="HEADER" />
+          <el-option :label="t('rule.conditionType.CLIENT_IP')" value="CLIENT_IP" />
+          <el-option :label="t('rule.conditionType.WEIGHT')" value="WEIGHT" />
         </el-select>
 
         <el-select
           v-if="cond.type === 'HEADER'"
           v-model="cond.field"
-          placeholder="Header名"
+          :placeholder="t('rule.form.headerNamePlaceholder')"
           style="width: 160px"
           class="condition-gap"
           allow-create
@@ -56,7 +56,7 @@
           allow-create
           default-first-option
           :loading="loadingModels"
-          placeholder="选择或输入模型名"
+          :placeholder="t('rule.form.modelNamePlaceholder')"
         >
           <el-option v-for="m in modelNames" :key="m" :label="m" :value="m" />
         </el-select>
@@ -64,7 +64,7 @@
         <el-input
           v-else-if="cond.type === 'HEADER' || cond.type === 'CLIENT_IP'"
           v-model="cond.value"
-          :placeholder="cond.type === 'HEADER' ? 'Header值' : 'IP或CIDR'"
+          :placeholder="cond.type === 'HEADER' ? t('rule.form.headerValuePlaceholder') : t('rule.form.ipCidrPlaceholder')"
           style="width: 160px"
           class="condition-gap"
         />
@@ -81,44 +81,44 @@
         <el-button type="danger" :icon="Delete" circle class="condition-gap" @click="removeCondition(index)" />
       </div>
 
-      <el-button type="primary" plain :icon="Plus" @click="addCondition">添加条件</el-button>
+      <el-button type="primary" plain :icon="Plus" @click="addCondition">{{ t('rule.form.addCondition') }}</el-button>
 
-      <el-divider content-position="left">执行动作</el-divider>
+      <el-divider content-position="left">{{ t('rule.form.actionsSection') }}</el-divider>
 
-      <el-form-item label="动作类型" prop="actionType">
+      <el-form-item :label="t('rule.form.actionTypeLabel')" prop="actionType">
         <el-radio-group v-model="form.actionType">
-          <el-radio value="TARGET_MODEL">重写模型名</el-radio>
-          <el-radio value="TARGET_INSTANCE">锁定实例</el-radio>
-          <el-radio value="TARGET_ADAPTER">切换适配器</el-radio>
-          <el-radio value="LB_STRATEGY">LB策略</el-radio>
-          <el-radio value="RATE_LIMIT">限流</el-radio>
-          <el-radio value="TARGET_TAGS">标签路由</el-radio>
+          <el-radio value="TARGET_MODEL">{{ t('rule.form.actionOptions.TARGET_MODEL') }}</el-radio>
+          <el-radio value="TARGET_INSTANCE">{{ t('rule.form.actionOptions.TARGET_INSTANCE') }}</el-radio>
+          <el-radio value="TARGET_ADAPTER">{{ t('rule.form.actionOptions.TARGET_ADAPTER') }}</el-radio>
+          <el-radio value="LB_STRATEGY">{{ t('rule.form.actionOptions.LB_STRATEGY') }}</el-radio>
+          <el-radio value="RATE_LIMIT">{{ t('rule.form.actionOptions.RATE_LIMIT') }}</el-radio>
+          <el-radio value="TARGET_TAGS">{{ t('rule.form.actionOptions.TARGET_TAGS') }}</el-radio>
         </el-radio-group>
       </el-form-item>
 
-      <el-form-item v-if="form.actionType === 'RATE_LIMIT'" label="限流容量">
+      <el-form-item v-if="form.actionType === 'RATE_LIMIT'" :label="t('rule.rateLimit.capacityLabel')">
         <el-input-number v-model="form.rateLimit.capacity" :min="1" :max="1000000" style="width: 200px" />
-        <span class="form-tip">令牌桶容量</span>
+        <span class="form-tip">{{ t('rule.rateLimit.capacityTip') }}</span>
       </el-form-item>
 
-      <el-form-item v-if="form.actionType === 'RATE_LIMIT'" label="限流速率">
+      <el-form-item v-if="form.actionType === 'RATE_LIMIT'" :label="t('rule.rateLimit.rateLabel')">
         <el-input-number v-model="form.rateLimit.rate" :min="1" :max="1000000" style="width: 200px" />
-        <span class="form-tip">每秒补充速率</span>
+        <span class="form-tip">{{ t('rule.rateLimit.rateTip') }}</span>
       </el-form-item>
 
-      <el-form-item v-if="form.actionType === 'RATE_LIMIT'" label="限流算法">
+      <el-form-item v-if="form.actionType === 'RATE_LIMIT'" :label="t('rule.rateLimit.algorithmLabel')">
         <el-select v-model="form.rateLimit.algorithm" style="width: 200px">
-          <el-option label="令牌桶" value="token-bucket" />
-          <el-option label="漏桶" value="leaky-bucket" />
-          <el-option label="滑动窗口" value="sliding-window" />
+          <el-option :label="t('rule.rateLimit.algorithms.tokenBucket')" value="token-bucket" />
+          <el-option :label="t('rule.rateLimit.algorithms.leakyBucket')" value="leaky-bucket" />
+          <el-option :label="t('rule.rateLimit.algorithms.slidingWindow')" value="sliding-window" />
         </el-select>
       </el-form-item>
 
-      <el-form-item v-if="form.actionType !== 'RATE_LIMIT' && form.actionType !== 'TARGET_TAGS'" label="动作目标" prop="actionTarget">
+      <el-form-item v-if="form.actionType !== 'RATE_LIMIT' && form.actionType !== 'TARGET_TAGS'" :label="t('rule.form.actionTargetLabel')" prop="actionTarget">
         <el-select
           v-if="form.actionType === 'TARGET_INSTANCE'"
           v-model="form.actionTarget"
-          placeholder="选择目标实例"
+          :placeholder="t('rule.form.instancePlaceholder')"
           filterable
           allow-create
           default-first-option
@@ -130,7 +130,7 @@
         <el-select
           v-else-if="form.actionType === 'TARGET_ADAPTER'"
           v-model="form.actionTarget"
-          placeholder="选择适配器"
+          :placeholder="t('rule.form.adapterPlaceholder')"
           filterable
           allow-create
           default-first-option
@@ -142,7 +142,7 @@
         <el-select
           v-else-if="form.actionType === 'LB_STRATEGY'"
           v-model="form.actionTarget"
-          placeholder="选择LB策略"
+          :placeholder="t('rule.form.lbStrategyPlaceholder')"
           style="width: 300px"
         >
           <el-option v-for="s in LB_STRATEGIES" :key="s" :label="s" :value="s" />
@@ -151,7 +151,7 @@
         <el-select
           v-else
           v-model="form.actionTarget"
-          placeholder="选择或输入模型名"
+          :placeholder="t('rule.form.modelNamePlaceholder')"
           filterable
           allow-create
           default-first-option
@@ -168,53 +168,53 @@
         </span>
       </el-form-item>
 
-      <el-form-item v-if="form.actionType === 'TARGET_TAGS'" label="目标标签">
+      <el-form-item v-if="form.actionType === 'TARGET_TAGS'" :label="t('rule.form.tagsLabel')">
         <div class="test-header-list">
           <div v-for="(tag, idx) in form.actionTags" :key="idx" class="test-header-row">
-            <el-input v-model="tag.key" placeholder="标签名" style="width: 140px" />
-            <el-input v-model="tag.value" placeholder="值" style="width: 140px; margin-left: 8px" />
+            <el-input v-model="tag.key" :placeholder="t('rule.form.tagKeyPlaceholder')" style="width: 140px" />
+            <el-input v-model="tag.value" :placeholder="t('rule.form.valuePlaceholder')" style="width: 140px; margin-left: 8px" />
             <el-button type="danger" :icon="Delete" circle size="small" style="margin-left: 8px"
               @click="removeActionTag(idx)" />
           </div>
-          <el-button type="primary" plain size="small" :icon="Plus" @click="addActionTag">添加标签</el-button>
+          <el-button type="primary" plain size="small" :icon="Plus" @click="addActionTag">{{ t('rule.form.addTag') }}</el-button>
         </div>
-        <span class="form-tip">实例须同时包含全部标签(AND),如 gpu_type=a100</span>
+        <span class="form-tip">{{ t('rule.form.tagsTip') }}</span>
       </el-form-item>
 
       <el-form-item>
-        <el-button type="success" plain :icon="MagicStick" @click="openTestPanel">模拟测试</el-button>
-        <span class="form-tip">用示例请求验证规则是否命中,无需保存</span>
+        <el-button type="success" plain :icon="MagicStick" @click="openTestPanel">{{ t('rule.form.simulateButton') }}</el-button>
+        <span class="form-tip">{{ t('rule.form.simulateTip') }}</span>
       </el-form-item>
     </el-form>
 
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
+      <el-button @click="visible = false">{{ t('rule.cancel') }}</el-button>
+      <el-button type="primary" :loading="saving" @click="handleSave">{{ t('rule.save') }}</el-button>
     </template>
 
     <!-- 模拟测试面板 -->
-    <el-dialog v-model="testVisible" title="规则模拟测试(dry-run)" width="560px" append-to-body>
+    <el-dialog v-model="testVisible" :title="t('rule.test.title')" width="560px" append-to-body>
       <el-form label-width="90px">
-        <el-form-item label="服务类型">
+        <el-form-item :label="t('rule.test.serviceType')">
           <el-select v-model="testForm.serviceType" style="width: 200px">
             <el-option v-for="s in SERVICE_TYPES" :key="s" :label="s" :value="s" />
           </el-select>
         </el-form-item>
-        <el-form-item label="模型名">
-          <el-input v-model="testForm.modelName" placeholder="如 gpt-4" />
+        <el-form-item :label="t('rule.test.modelName')">
+          <el-input v-model="testForm.modelName" :placeholder="t('rule.test.modelNamePlaceholder')" />
         </el-form-item>
-        <el-form-item label="来源IP">
-          <el-input v-model="testForm.clientIp" placeholder="如 127.0.0.1" />
+        <el-form-item :label="t('rule.test.clientIp')">
+          <el-input v-model="testForm.clientIp" :placeholder="t('rule.test.clientIpPlaceholder')" />
         </el-form-item>
-        <el-form-item label="请求头">
+        <el-form-item :label="t('rule.test.headers')">
           <div class="test-header-list">
             <div v-for="(h, idx) in testForm.headers" :key="idx" class="test-header-row">
-              <el-input v-model="h.key" placeholder="Header名" style="width: 160px" />
-              <el-input v-model="h.value" placeholder="值" style="width: 160px; margin-left: 8px" />
+              <el-input v-model="h.key" :placeholder="t('rule.form.headerNamePlaceholder')" style="width: 160px" />
+              <el-input v-model="h.value" :placeholder="t('rule.form.valuePlaceholder')" style="width: 160px; margin-left: 8px" />
               <el-button type="danger" :icon="Delete" circle size="small" style="margin-left: 8px"
                 @click="removeTestHeader(idx)" />
             </div>
-            <el-button type="primary" plain size="small" :icon="Plus" @click="addTestHeader">添加请求头</el-button>
+            <el-button type="primary" plain size="small" :icon="Plus" @click="addTestHeader">{{ t('rule.test.addHeader') }}</el-button>
           </div>
         </el-form-item>
       </el-form>
@@ -228,16 +228,16 @@
       >
         <template v-if="testResult.matched && testResult.action" #default>
           <div style="margin-top: 6px">
-            命中规则: <b>{{ testResult.ruleName }}</b> (优先级 {{ testResult.priority }})<br />
-            执行动作: {{ testResult.action.type }}
+            {{ t('rule.test.hitRule') }} <b>{{ testResult.ruleName }}</b> {{ t('rule.test.hitPriority', { priority: testResult.priority }) }}<br />
+            {{ t('rule.test.actionLabel') }} {{ testResult.action.type }}
             <template v-if="testResult.action.target"> → {{ testResult.action.target }}</template>
           </div>
         </template>
       </el-alert>
 
       <template #footer>
-        <el-button @click="testVisible = false">关闭</el-button>
-        <el-button type="primary" :loading="testLoading" @click="runTest">测试</el-button>
+        <el-button @click="testVisible = false">{{ t('rule.close') }}</el-button>
+        <el-button type="primary" :loading="testLoading" @click="runTest">{{ t('rule.runTest') }}</el-button>
       </template>
     </el-dialog>
   </el-dialog>
@@ -245,6 +245,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Delete, Plus, MagicStick } from '@element-plus/icons-vue'
 import {
@@ -268,6 +269,8 @@ const emit = defineEmits<{
 }>()
 
 const visible = defineModel<boolean>({ required: true })
+
+const { t } = useI18n()
 
 const formRef = ref<FormInstance>()
 const saving = ref(false)
@@ -427,7 +430,7 @@ const removeTestHeader = (index: number) => {
 
 const runTest = async () => {
   if (!testForm.modelName.trim()) {
-    ElMessage.warning('请输入测试模型名')
+    ElMessage.warning(t('rule.test.modelNameRequired'))
     return
   }
   testLoading.value = true
@@ -444,7 +447,7 @@ const runTest = async () => {
     })
     testResult.value = res.data?.data || null
   } catch (e) {
-    ElMessage.error('测试失败,请检查输入')
+    ElMessage.error(t('rule.test.runFailed'))
   } finally {
     testLoading.value = false
   }
@@ -469,42 +472,44 @@ const buildActionTags = (): Record<string, string> => {
   return tags
 }
 
-const formRules: FormRules = {
-  name: [{ required: true, message: '请输入规则名称', trigger: 'blur' }],
-  actionType: [{ required: true, message: '请选择动作类型', trigger: 'change' }],
-  actionTarget: [{ required: true, message: '请输入动作目标', trigger: 'blur' }]
-}
+const formRules = computed<FormRules>(() => ({
+  name: [{ required: true, message: t('rule.validation.nameRequired'), trigger: 'blur' }],
+  actionType: [{ required: true, message: t('rule.validation.actionTypeRequired'), trigger: 'change' }],
+  actionTarget: [{ required: true, message: t('rule.validation.actionTargetRequired'), trigger: 'blur' }]
+}))
+
+const operatorLabel = (value: string) => t(`rule.operator.${value}`)
 
 const operatorsFor = (type: RuleCondition['type']) => {
   if (type === 'CLIENT_IP') {
     return [
-      { value: 'EQUALS', label: '等于' },
-      { value: 'CIDR_MATCH', label: 'CIDR' },
-      { value: 'STARTS_WITH', label: '前缀' }
+      { value: 'EQUALS', label: operatorLabel('EQUALS') },
+      { value: 'CIDR_MATCH', label: operatorLabel('CIDR_MATCH') },
+      { value: 'STARTS_WITH', label: operatorLabel('STARTS_WITH') }
     ]
   }
   return [
-    { value: 'EQUALS', label: '等于' },
-    { value: 'CONTAINS', label: '包含' },
-    { value: 'STARTS_WITH', label: '前缀' },
-    { value: 'REGEX', label: '正则' }
+    { value: 'EQUALS', label: operatorLabel('EQUALS') },
+    { value: 'CONTAINS', label: operatorLabel('CONTAINS') },
+    { value: 'STARTS_WITH', label: operatorLabel('STARTS_WITH') },
+    { value: 'REGEX', label: operatorLabel('REGEX') }
   ]
 }
 
 const actionTargetTip = computed(() => {
   switch (form.actionType) {
     case 'TARGET_MODEL':
-      return '重写后的模型名'
+      return t('rule.form.actionTargetTips.TARGET_MODEL')
     case 'TARGET_INSTANCE':
-      return '目标实例名称'
+      return t('rule.form.actionTargetTips.TARGET_INSTANCE')
     case 'TARGET_ADAPTER':
-      return '切换到的适配器'
+      return t('rule.form.actionTargetTips.TARGET_ADAPTER')
     case 'LB_STRATEGY':
-      return '负载均衡策略'
+      return t('rule.form.actionTargetTips.LB_STRATEGY')
     case 'RATE_LIMIT':
-      return '按规则限流(容量/速率必填)'
+      return t('rule.form.actionTargetTips.RATE_LIMIT')
     case 'TARGET_TAGS':
-      return '按标签圈选实例(AND)'
+      return t('rule.form.actionTargetTips.TARGET_TAGS')
     default:
       return ''
   }
@@ -528,7 +533,7 @@ const onConditionTypeChange = (cond: RuleCondition) => {
 
 const removeCondition = (index: number) => {
   if (form.conditions.length <= 1) {
-    ElMessage.warning('至少保留一个条件')
+    ElMessage.warning(t('rule.validation.atLeastOneCondition'))
     return
   }
   form.conditions.splice(index, 1)
@@ -581,7 +586,7 @@ watch(visible, val => {
 const handleSave = async () => {
   await formRef.value?.validate()
   if (form.actionType === 'RATE_LIMIT' && (form.rateLimit.capacity <= 0 || form.rateLimit.rate <= 0)) {
-    ElMessage.error('限流动作需要容量与速率大于 0')
+    ElMessage.error(t('rule.rateLimit.positiveRequired'))
     return
   }
   const payload: RuleDefinition = {
@@ -608,15 +613,15 @@ const handleSave = async () => {
   try {
     if (isEdit.value && props.rule?.id) {
       await updateRule(props.rule.id, payload)
-      ElMessage.success('规则已更新')
+      ElMessage.success(t('rule.ruleUpdated'))
     } else {
       await createRule(payload)
-      ElMessage.success('规则已创建')
+      ElMessage.success(t('rule.ruleCreated'))
     }
     visible.value = false
     emit('saved')
   } catch (e) {
-    ElMessage.error('保存失败,请检查条件与动作配置')
+    ElMessage.error(t('rule.saveFailed'))
   } finally {
     saving.value = false
   }

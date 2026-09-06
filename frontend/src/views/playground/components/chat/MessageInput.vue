@@ -6,7 +6,7 @@
         v-model="inputContent"
         type="textarea"
         :autosize="{ minRows: 1, maxRows: 6 }"
-        :placeholder="placeholder"
+        :placeholder="placeholderText"
         :disabled="disabled"
         :maxlength="maxLength"
         resize="none"
@@ -39,7 +39,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
+import { ref, computed, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Promotion, Close } from '@element-plus/icons-vue'
 import { ElInput } from 'element-plus'
 
@@ -53,7 +54,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   disabled: false,
   loading: false,
-  placeholder: '输入消息...',
+  placeholder: '',
   maxLength: 8000
 })
 
@@ -62,8 +63,13 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
+const { t } = useI18n()
+
 const inputContent = ref('')
 const textareaRef = ref<InstanceType<typeof ElInput>>()
+
+// 输入框占位文案（未传入时使用本地化默认值）
+const placeholderText = computed(() => props.placeholder || t('playgroundChat.input.placeholderMessage'))
 
 // 处理键盘事件
 const handleKeyDown = (event: Event | KeyboardEvent) => {

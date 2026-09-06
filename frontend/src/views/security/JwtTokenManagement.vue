@@ -1,17 +1,17 @@
 <template>
-  <PageSkeleton title="JWT令牌管理">
+  <PageSkeleton :title="t('jwtTokens.title')">
     <template #actions>
-      <el-button :loading="loading" type="primary" @click="handleRefreshTokens">刷新令牌列表</el-button>
+      <el-button :loading="loading" type="primary" @click="handleRefreshTokens">{{ t('jwtTokens.refreshList') }}</el-button>
       <el-button :disabled="selectedTokens.length === 0" type="danger" @click="handleOpenBatchRevoke">
-        批量撤销({{ selectedTokens.length }})
+        {{ t('jwtTokens.batchRevokeCount', { count: selectedTokens.length }) }}
       </el-button>
-      <el-button type="warning" @click="handleCleanupExpiredTokens">清理过期令牌</el-button>
+      <el-button type="warning" @click="handleCleanupExpiredTokens">{{ t('jwtTokens.cleanupExpired') }}</el-button>
     </template>
 
     <template #toolbar>
       <el-input
         v-model="searchForm.userId"
-        placeholder="按用户ID搜索"
+        :placeholder="t('jwtTokens.searchUserIdPlaceholder')"
         clearable
         @clear="handleSearch"
         @keyup.enter="handleSearch"
@@ -20,14 +20,14 @@
           <el-icon><Search /></el-icon>
         </template>
       </el-input>
-      <el-select v-model="searchForm.status" placeholder="状态筛选" clearable @change="handleSearch">
-        <el-option label="全部" value="" />
-        <el-option label="活跃" value="ACTIVE" />
-        <el-option label="已撤销" value="REVOKED" />
-        <el-option label="已过期" value="EXPIRED" />
+      <el-select v-model="searchForm.status" :placeholder="t('jwtTokens.statusFilter')" clearable @change="handleSearch">
+        <el-option :label="t('jwtTokens.all')" value="" />
+        <el-option :label="t('jwtTokens.statusActive')" value="ACTIVE" />
+        <el-option :label="t('jwtTokens.statusRevoked')" value="REVOKED" />
+        <el-option :label="t('jwtTokens.statusExpired')" value="EXPIRED" />
       </el-select>
-      <el-button type="primary" @click="handleSearch">搜索</el-button>
-      <el-button @click="handleResetSearch">重置</el-button>
+      <el-button type="primary" @click="handleSearch">{{ t('jwtTokens.search') }}</el-button>
+      <el-button @click="handleResetSearch">{{ t('jwtTokens.reset') }}</el-button>
     </template>
 
     <el-table
@@ -37,60 +37,60 @@
         @selection-change="handleSelectionChange"
     >
       <el-table-column type="selection" width="55"/>
-      <el-table-column prop="userId" label="用户ID" width="150" />
-      <el-table-column label="令牌ID" prop="id" width="120" show-overflow-tooltip>
+      <el-table-column prop="userId" :label="t('jwtTokens.userId')" width="150" />
+      <el-table-column :label="t('jwtTokens.tokenId')" prop="id" width="120" show-overflow-tooltip>
         <template #default="scope">
           <span>{{ formatTokenId(scope.row.id) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="令牌哈希" prop="tokenHash" show-overflow-tooltip>
+      <el-table-column :label="t('jwtTokens.tokenHash')" prop="tokenHash" show-overflow-tooltip>
         <template #default="scope">
           <span>{{ formatToken(scope.row.tokenHash) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="设备信息" prop="deviceInfo" width="120" show-overflow-tooltip />
-      <el-table-column label="IP地址" prop="ipAddress" width="120" />
-      <el-table-column label="签发时间" prop="issuedAt" width="160">
+      <el-table-column :label="t('jwtTokens.deviceInfo')" prop="deviceInfo" width="120" show-overflow-tooltip />
+      <el-table-column :label="t('jwtTokens.ipAddress')" prop="ipAddress" width="120" />
+      <el-table-column :label="t('jwtTokens.issuedAt')" prop="issuedAt" width="160">
         <template #default="scope">
           {{ formatDateTime(scope.row.issuedAt) }}
         </template>
       </el-table-column>
-      <el-table-column label="过期时间" prop="expiresAt" width="160">
+      <el-table-column :label="t('jwtTokens.expiresAt')" prop="expiresAt" width="160">
         <template #default="scope">
           {{ formatDateTime(scope.row.expiresAt) }}
         </template>
       </el-table-column>
-      <el-table-column prop="status" label="状态" width="100">
+      <el-table-column prop="status" :label="t('jwtTokens.status')" width="100">
         <template #default="scope">
           <el-tag :type="getStatusTagType(scope.row.status)">
             {{ getStatusText(scope.row.status) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="黑名单" width="120" fixed="right">
+      <el-table-column :label="t('jwtTokens.blacklist')" width="120" fixed="right">
         <template #default="scope">
           <el-dropdown trigger="click" @command="(cmd: string) => handleAddToBlacklist(scope.row, cmd)">
             <el-button size="small" type="warning">
-              <el-icon><Warning /></el-icon>加入
+              <el-icon><Warning /></el-icon>{{ t('jwtTokens.join') }}
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="TOKEN">封禁此令牌</el-dropdown-item>
-                <el-dropdown-item command="IP" :disabled="!scope.row.ipAddress">封禁IP: {{ scope.row.ipAddress }}</el-dropdown-item>
-                <el-dropdown-item command="DEVICE" :disabled="!scope.row.deviceInfo">封禁设备</el-dropdown-item>
+                <el-dropdown-item command="TOKEN">{{ t('jwtTokens.banToken') }}</el-dropdown-item>
+                <el-dropdown-item command="IP" :disabled="!scope.row.ipAddress">{{ t('jwtTokens.banIp', { ip: scope.row.ipAddress }) }}</el-dropdown-item>
+                <el-dropdown-item command="DEVICE" :disabled="!scope.row.deviceInfo">{{ t('jwtTokens.banDevice') }}</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="150" fixed="right">
+      <el-table-column :label="t('jwtTokens.actions')" width="150" fixed="right">
         <template #default="scope">
           <el-button 
             size="small" 
             type="primary"
             @click="handleViewDetails(scope.row)"
           >
-            详情
+            {{ t('jwtTokens.details') }}
           </el-button>
           <el-button 
             size="small" 
@@ -98,7 +98,7 @@
             :disabled="scope.row.status !== 'ACTIVE'"
             @click="handleRevoke(scope.row)"
           >
-            撤销
+            {{ t('jwtTokens.revoke') }}
           </el-button>
         </template>
       </el-table-column>
@@ -118,63 +118,63 @@
   </PageSkeleton>
     
     <!-- 令牌详情对话框 -->
-    <el-dialog v-model="tokenDetailsDialogVisible" title="令牌详情" width="800px">
+    <el-dialog v-model="tokenDetailsDialogVisible" :title="t('jwtTokens.detailTitle')" width="800px">
       <el-descriptions v-if="selectedTokenDetails" :column="2" border>
-        <el-descriptions-item label="令牌ID">{{ selectedTokenDetails.id }}</el-descriptions-item>
-        <el-descriptions-item label="用户ID">{{ selectedTokenDetails.userId }}</el-descriptions-item>
-        <el-descriptions-item label="令牌哈希" :span="2">
+        <el-descriptions-item :label="t('jwtTokens.tokenId')">{{ selectedTokenDetails.id }}</el-descriptions-item>
+        <el-descriptions-item :label="t('jwtTokens.userId')">{{ selectedTokenDetails.userId }}</el-descriptions-item>
+        <el-descriptions-item :label="t('jwtTokens.tokenHash')" :span="2">
           <el-input :value="selectedTokenDetails.tokenHash" readonly />
         </el-descriptions-item>
-        <el-descriptions-item label="设备信息">{{ selectedTokenDetails.deviceInfo || '未知' }}</el-descriptions-item>
-        <el-descriptions-item label="IP地址">{{ selectedTokenDetails.ipAddress || '未知' }}</el-descriptions-item>
-        <el-descriptions-item label="签发时间">{{ formatDateTime(selectedTokenDetails.issuedAt) }}</el-descriptions-item>
-        <el-descriptions-item label="过期时间">{{ formatDateTime(selectedTokenDetails.expiresAt) }}</el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ formatDateTime(selectedTokenDetails.createdAt) }}</el-descriptions-item>
-        <el-descriptions-item label="更新时间">{{ formatDateTime(selectedTokenDetails.updatedAt) }}</el-descriptions-item>
-        <el-descriptions-item label="状态">
+        <el-descriptions-item :label="t('jwtTokens.deviceInfo')">{{ selectedTokenDetails.deviceInfo || t('jwtTokens.unknown') }}</el-descriptions-item>
+        <el-descriptions-item :label="t('jwtTokens.ipAddress')">{{ selectedTokenDetails.ipAddress || t('jwtTokens.unknown') }}</el-descriptions-item>
+        <el-descriptions-item :label="t('jwtTokens.issuedAt')">{{ formatDateTime(selectedTokenDetails.issuedAt) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('jwtTokens.expiresAt')">{{ formatDateTime(selectedTokenDetails.expiresAt) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('jwtTokens.createdAt')">{{ formatDateTime(selectedTokenDetails.createdAt) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('jwtTokens.updatedAt')">{{ formatDateTime(selectedTokenDetails.updatedAt) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('jwtTokens.status')">
           <el-tag :type="getStatusTagType(selectedTokenDetails.status)">
             {{ getStatusText(selectedTokenDetails.status) }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="撤销者" v-if="selectedTokenDetails.revokedBy">
+        <el-descriptions-item :label="t('jwtTokens.revokedBy')" v-if="selectedTokenDetails.revokedBy">
           {{ selectedTokenDetails.revokedBy }}
         </el-descriptions-item>
-        <el-descriptions-item label="撤销时间" v-if="selectedTokenDetails.revokedAt">
+        <el-descriptions-item :label="t('jwtTokens.revokedAt')" v-if="selectedTokenDetails.revokedAt">
           {{ formatDateTime(selectedTokenDetails.revokedAt) }}
         </el-descriptions-item>
-        <el-descriptions-item label="撤销原因" :span="2" v-if="selectedTokenDetails.revokeReason">
+        <el-descriptions-item :label="t('jwtTokens.revokeReason')" :span="2" v-if="selectedTokenDetails.revokeReason">
           {{ selectedTokenDetails.revokeReason }}
         </el-descriptions-item>
       </el-descriptions>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="tokenDetailsDialogVisible = false">关闭</el-button>
+          <el-button @click="tokenDetailsDialogVisible = false">{{ t('jwtTokens.close') }}</el-button>
           <el-button 
             v-if="selectedTokenDetails?.status === 'ACTIVE'" 
             type="danger" 
             @click="handleRevokeFromDetails"
           >
-            撤销此令牌
+            {{ t('jwtTokens.revokeThisToken') }}
           </el-button>
         </span>
       </template>
     </el-dialog>
 
     <!-- 批量撤销令牌对话框 -->
-    <el-dialog v-model="batchRevokeDialogVisible" title="批量撤销令牌" width="500px">
+    <el-dialog v-model="batchRevokeDialogVisible" :title="t('jwtTokens.batchRevokeTitle')" width="500px">
       <el-form :model="batchRevokeForm" label-width="100px">
-        <el-form-item label="撤销原因">
+        <el-form-item :label="t('jwtTokens.revokeReason')">
           <el-input
               v-model="batchRevokeForm.reason"
-              placeholder="请输入撤销原因（可选）"
+              :placeholder="t('jwtTokens.reasonPlaceholder')"
               type="textarea"
           />
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="batchRevokeDialogVisible = false">取消</el-button>
-          <el-button :loading="batchRevokeLoading" type="primary" @click="handleBatchRevoke">撤销</el-button>
+          <el-button @click="batchRevokeDialogVisible = false">{{ t('jwtTokens.cancel') }}</el-button>
+          <el-button :loading="batchRevokeLoading" type="primary" @click="handleBatchRevoke">{{ t('jwtTokens.revoke') }}</el-button>
         </span>
       </template>
     </el-dialog>
@@ -183,6 +183,7 @@
 <script setup lang="ts">
 import {onMounted, ref, reactive} from 'vue'
 import {ElMessage, ElMessageBox} from 'element-plus'
+import {useI18n} from 'vue-i18n'
 import {
   type BatchTokenRevokeRequest,
   type JwtTokenInfo,
@@ -198,6 +199,9 @@ import {
 import { addToBlacklist } from '@/api/blacklist'
 import {CircleCloseFilled, SuccessFilled, Search, Warning} from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import { formatDateTime as formatDateTimeBase } from '@/utils/format'
+
+const { t } = useI18n()
 
 // 令牌数据
 const tokenList = ref<PagedResult<JwtTokenInfo>>({
@@ -271,27 +275,20 @@ const getStatusTagType = (status: string) => {
 const getStatusText = (status: string) => {
   switch (status) {
     case 'ACTIVE':
-      return '活跃'
+      return t('jwtTokens.statusActive')
     case 'REVOKED':
-      return '已撤销'
+      return t('jwtTokens.statusRevoked')
     case 'EXPIRED':
-      return '已过期'
+      return t('jwtTokens.statusExpired')
     default:
-      return '未知'
+      return t('jwtTokens.unknown')
   }
 }
 
-// 格式化日期时间
+// 格式化日期时间（委托共享 format.ts：zh 原样 YYYY-MM-DD HH:mm:ss，en 月份名）
 const formatDateTime = (dateTime: string | number) => {
   if (!dateTime) return ''
-
-  // 如果是数字，转换为日期
-  if (typeof dateTime === 'number') {
-    return new Date(dateTime).toLocaleString('zh-CN')
-  }
-
-  // 如果是字符串，直接转换
-  return new Date(dateTime).toLocaleString('zh-CN')
+  return formatDateTimeBase(dateTime)
 }
 
 // 处理选择变化
@@ -311,7 +308,7 @@ const loadTokens = async () => {
     )
     tokenList.value = result
   } catch (error: any) {
-    ElMessage.error(`加载令牌列表失败: ${  error.message || '未知错误'}`)
+    ElMessage.error(t('jwtTokens.messages.loadFailed', { error: error.message || t('jwtTokens.messages.unknownError') }))
   } finally {
     loading.value = false
   }
@@ -320,7 +317,7 @@ const loadTokens = async () => {
 // 刷新令牌列表
 const handleRefreshTokens = async () => {
   await loadTokens()
-  ElMessage.success('令牌列表已刷新')
+  ElMessage.success(t('jwtTokens.messages.refreshed'))
 }
 
 // 搜索处理
@@ -357,15 +354,15 @@ const handleViewDetails = async (token: JwtTokenInfo) => {
     selectedTokenDetails.value = details
     tokenDetailsDialogVisible.value = true
   } catch (error: any) {
-    ElMessage.error(`获取令牌详情失败: ${  error.message || '未知错误'}`)
+    ElMessage.error(t('jwtTokens.messages.detailsFetchFailed', { error: error.message || t('jwtTokens.messages.unknownError') }))
   }
 }
 
 // 撤销令牌
 const handleRevoke = (token: JwtTokenInfo) => {
-  ElMessageBox.confirm(`确定要撤销用户 ${token.userId} 的令牌吗？`, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
+  ElMessageBox.confirm(t('jwtTokens.messages.revokeConfirmMessage', { userId: token.userId }), t('jwtTokens.confirmTitle'), {
+    confirmButtonText: t('jwtTokens.confirm'),
+    cancelButtonText: t('jwtTokens.cancel'),
     type: 'warning'
   }).then(async () => {
     try {
@@ -377,15 +374,15 @@ const handleRevoke = (token: JwtTokenInfo) => {
 
       const result = await revokeToken(revokeRequest)
       if (result) {
-        ElMessage.success('令牌已撤销')
+        ElMessage.success(t('jwtTokens.messages.revokeSuccess'))
         // 刷新令牌列表和统计信息
         await loadTokens()
         
       } else {
-        ElMessage.error('令牌撤销失败')
+        ElMessage.error(t('jwtTokens.messages.revokeFailed'))
       }
     } catch (error: any) {
-      ElMessage.error(`令牌撤销失败: ${  error.message || '未知错误'}`)
+      ElMessage.error(t('jwtTokens.messages.revokeFailedDetail', { error: error.message || t('jwtTokens.messages.unknownError') }))
     }
   }).catch(() => {
     // 用户取消操作
@@ -413,14 +410,15 @@ const handleAddToBlacklist = async (token: JwtTokenInfo, type: string) => {
   }
   
   if (!targetValue) {
-    ElMessage.warning('目标值不存在，无法添加到黑名单')
+    ElMessage.warning(t('jwtTokens.messages.targetValueMissing'))
     return
   }
   
   try {
+    const targetTypeText = type === 'TOKEN' ? t('jwtTokens.token') : type === 'IP' ? t('jwtTokens.ip') : t('jwtTokens.device')
     await ElMessageBox.confirm(
-      `确定要将 ${type === 'TOKEN' ? '令牌' : type === 'IP' ? 'IP' : '设备'} 添加到黑名单吗？\n目标: ${targetValue.substring(0, 20)}...`,
-      '添加黑名单确认',
+      t('jwtTokens.messages.blacklistConfirmMessage', { targetType: targetTypeText, target: `${targetValue.substring(0, 20)}...` }),
+      t('jwtTokens.messages.blacklistConfirmTitle'),
       { type: 'warning' }
     )
     
@@ -433,9 +431,9 @@ const handleAddToBlacklist = async (token: JwtTokenInfo, type: string) => {
     })
     
     if (result.success) {
-      ElMessage.success('已添加到黑名单')
+      ElMessage.success(t('jwtTokens.messages.blacklistAddSuccess'))
     } else {
-      ElMessage.error(result.message || '添加失败')
+      ElMessage.error(result.message || t('jwtTokens.messages.blacklistAddFailed'))
     }
   } catch {
     // 用户取消
@@ -446,9 +444,9 @@ const handleAddToBlacklist = async (token: JwtTokenInfo, type: string) => {
 const handleRevokeFromDetails = async () => {
   if (!selectedTokenDetails.value) return
 
-  ElMessageBox.confirm(`确定要撤销用户 ${selectedTokenDetails.value.userId} 的令牌吗？`, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
+  ElMessageBox.confirm(t('jwtTokens.messages.revokeConfirmMessage', { userId: selectedTokenDetails.value.userId }), t('jwtTokens.confirmTitle'), {
+    confirmButtonText: t('jwtTokens.confirm'),
+    cancelButtonText: t('jwtTokens.cancel'),
     type: 'warning'
   }).then(async () => {
     try {
@@ -460,17 +458,17 @@ const handleRevokeFromDetails = async () => {
 
       const result = await revokeToken(revokeRequest)
       if (result) {
-        ElMessage.success('令牌已撤销')
+        ElMessage.success(t('jwtTokens.messages.revokeSuccess'))
         tokenDetailsDialogVisible.value = false
         selectedTokenDetails.value = null
         // 刷新令牌列表和统计信息
         await loadTokens()
         
       } else {
-        ElMessage.error('令牌撤销失败')
+        ElMessage.error(t('jwtTokens.messages.revokeFailed'))
       }
     } catch (error: any) {
-      ElMessage.error(`令牌撤销失败: ${  error.message || '未知错误'}`)
+      ElMessage.error(t('jwtTokens.messages.revokeFailedDetail', { error: error.message || t('jwtTokens.messages.unknownError') }))
     }
   }).catch(() => {
     // 用户取消操作
@@ -479,20 +477,20 @@ const handleRevokeFromDetails = async () => {
 
 // 清理过期令牌
 const handleCleanupExpiredTokens = async () => {
-  ElMessageBox.confirm('确定要清理所有过期的令牌吗？此操作不可撤销。', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
+  ElMessageBox.confirm(t('jwtTokens.messages.cleanupConfirmMessage'), t('jwtTokens.confirmTitle'), {
+    confirmButtonText: t('jwtTokens.confirm'),
+    cancelButtonText: t('jwtTokens.cancel'),
     type: 'warning'
   }).then(async () => {
     try {
       loading.value = true
       const result: CleanupResult = await cleanupExpiredTokens()
-      ElMessage.success(`清理完成！清理了 ${result.cleanedTokens} 个过期令牌和 ${result.cleanedBlacklistEntries} 个黑名单条目`)
+      ElMessage.success(t('jwtTokens.messages.cleanupSuccess', { cleanedTokens: result.cleanedTokens, cleanedBlacklistEntries: result.cleanedBlacklistEntries }))
       // 刷新令牌列表和统计信息
       await loadTokens()
       
     } catch (error: any) {
-      ElMessage.error(`清理过期令牌失败: ${  error.message || '未知错误'}`)
+      ElMessage.error(t('jwtTokens.messages.cleanupFailedDetail', { error: error.message || t('jwtTokens.messages.unknownError') }))
     } finally {
       loading.value = false
     }
@@ -512,7 +510,7 @@ const handleOpenBatchRevoke = () => {
 // 批量撤销令牌
 const handleBatchRevoke = async () => {
   if (selectedTokens.value.length === 0) {
-    ElMessage.warning('请先选择要撤销的令牌')
+    ElMessage.warning(t('jwtTokens.messages.selectTokensFirst'))
     return
   }
 
@@ -525,17 +523,17 @@ const handleBatchRevoke = async () => {
 
     const result = await revokeTokensBatch(batchRevokeRequest)
     if (result) {
-      ElMessage.success(`成功撤销${selectedTokens.value.length}个令牌`)
+      ElMessage.success(t('jwtTokens.messages.batchRevokeSuccess', { count: selectedTokens.value.length }))
       batchRevokeDialogVisible.value = false
       selectedTokens.value = []
       // 刷新令牌列表和统计信息
       await loadTokens()
       
     } else {
-      ElMessage.error('批量撤销失败')
+      ElMessage.error(t('jwtTokens.messages.batchRevokeFailed'))
     }
   } catch (error: any) {
-    ElMessage.error(`批量撤销失败: ${  error.message || '未知错误'}`)
+    ElMessage.error(t('jwtTokens.messages.batchRevokeFailedDetail', { error: error.message || t('jwtTokens.messages.unknownError') }))
   } finally {
     batchRevokeLoading.value = false
   }

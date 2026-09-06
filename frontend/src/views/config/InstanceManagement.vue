@@ -8,7 +8,7 @@
               <el-icon>
                 <Management />
               </el-icon>
-              <span>实例管理</span>
+              <span>{{ t('instance.title') }}</span>
               <el-button
                 type="primary"
                 link
@@ -16,12 +16,12 @@
                 class="header-cross-link"
                 @click="router.push({ name: 'service-management', query: route.query.serviceType ? { serviceType: route.query.serviceType as string } : {} })"
               >
-                打开服务配置
+                {{ t('instance.openServiceConfig') }}
               </el-button>
             </div>
 
             <div class="header-tools">
-              <el-input v-model="searchQuery" placeholder="搜索实例名 / URL / 路径（回车或停止输入生效）" clearable size="medium"
+              <el-input v-model="searchQuery" :placeholder="t('instance.searchPlaceholder')" clearable size="medium"
                 class="search-input" @clear="handleSearchClear" @keyup.enter.native="applySearch">
                 <template #prefix>
                   <el-icon>
@@ -30,10 +30,10 @@
                 </template>
               </el-input>
 
-              <el-select v-model="statusFilter" placeholder="状态" clearable size="medium" class="filter-select">
-                <el-option label="全部" value=""></el-option>
-                <el-option label="启用" value="active"></el-option>
-                <el-option label="禁用" value="inactive"></el-option>
+              <el-select v-model="statusFilter" :placeholder="t('instance.status')" clearable size="medium" class="filter-select">
+                <el-option :label="t('instance.all')" value=""></el-option>
+                <el-option :label="t('instance.enabled')" value="active"></el-option>
+                <el-option :label="t('instance.disabled')" value="inactive"></el-option>
               </el-select>
 
               <el-button type="text" class="refresh-button" @click="refreshCurrent">
@@ -49,7 +49,7 @@
               <el-icon>
                 <Plus />
               </el-icon>
-              添加实例
+              {{ t('instance.addInstance') }}
             </el-button>
           </div>
         </div>
@@ -62,92 +62,92 @@
       <div class="tabs-wrap">
         <el-tabs v-model="activeServiceType" class="service-tabs" type="card">
           <el-tab-pane v-for="serviceType in serviceTypes" :key="serviceType"
-            :label="serviceTypeMap[serviceType] || serviceType" :name="serviceType">
+            :label="serviceTypeLabel(serviceType)" :name="serviceType">
             <div class="table-area">
               <el-skeleton :loading="loading && !hasInstances" :rows="6" animated>
                 <template #default>
                   <el-table :data="paginated" style="width: 100%" class="instance-table" row-key="id" border fit>
-                    <el-table-column prop="name" label="实例名称" min-width="180" />
-                    <el-table-column prop="baseUrl" label="基础URL" min-width="260">
+                    <el-table-column prop="name" :label="t('instance.name')" min-width="180" />
+                    <el-table-column prop="baseUrl" :label="t('instance.baseUrl')" min-width="260">
                       <template #default="scope">
                         <el-tooltip :content="scope.row.baseUrl" placement="top">
                           <div class="ellipsis">{{ scope.row.baseUrl }}</div>
                         </el-tooltip>
                       </template>
                     </el-table-column>
-                    <el-table-column prop="path" label="路径" min-width="160">
+                    <el-table-column prop="path" :label="t('instance.path')" min-width="160">
                       <template #default="scope">
                         <div class="ellipsis">{{ scope.row.path || '—' }}</div>
                       </template>
                     </el-table-column>
-                    <el-table-column prop="weight" label="权重" width="90" align="center" />
-                    <el-table-column prop="adapter" label="适配器" width="140" align="center">
+                    <el-table-column prop="weight" :label="t('instance.weight')" width="90" align="center" />
+                    <el-table-column prop="adapter" :label="t('instance.adapter')" width="140" align="center">
                       <template #default="scope">
                         <el-tag :type="scope.row.adapter ? 'primary' : 'warning'" class="table-tag" size="small">
-                          {{ scope.row.adapter || globalAdapter || '未配置' }}
+                          {{ scope.row.adapter || globalAdapter || t('instance.notConfigured') }}
                         </el-tag>
                         <div v-if="!scope.row.adapter && globalAdapter" class="adapter-note">
-                          (全局)
+                          {{ t('instance.globalNote') }}
                         </div>
                       </template>
                     </el-table-column>
-                    <el-table-column prop="headers" label="请求头" width="120" align="center">
+                    <el-table-column prop="headers" :label="t('instance.headers')" width="120" align="center">
                       <template #default="scope">
                         <el-tooltip v-if="scope.row.headers && Object.keys(scope.row.headers).length > 0"
                           :content="Object.entries(scope.row.headers).map(([k, v]) => `${k}: ${v}`).join('\n')"
                           placement="top">
                           <el-tag type="success" class="table-tag" size="small">
-                            {{ Object.keys(scope.row.headers).length }} 个
+                            {{ t('instance.headersCount', { count: Object.keys(scope.row.headers).length }) }}
                           </el-tag>
                         </el-tooltip>
                         <el-tag v-else type="info" class="table-tag" size="small">
-                          无
+                          {{ t('instance.none') }}
                         </el-tag>
                       </template>
                     </el-table-column>
-                    <el-table-column prop="tags" label="标签" width="120" align="center">
+                    <el-table-column prop="tags" :label="t('instance.tags')" width="120" align="center">
                       <template #default="scope">
                         <el-tooltip v-if="scope.row.tags && Object.keys(scope.row.tags).length > 0"
                           :content="Object.entries(scope.row.tags).map(([k, v]) => `${k}=${v}`).join('\n')"
                           placement="top">
                           <el-tag type="primary" class="table-tag" size="small">
-                            {{ Object.keys(scope.row.tags).length }} 个
+                            {{ t('instance.tagsCount', { count: Object.keys(scope.row.tags).length }) }}
                           </el-tag>
                         </el-tooltip>
                         <el-tag v-else type="info" class="table-tag" size="small">
-                          无
+                          {{ t('instance.none') }}
                         </el-tag>
                       </template>
                     </el-table-column>
-                    <el-table-column prop="status" label="状态" width="110" align="center">
+                    <el-table-column prop="status" :label="t('instance.status')" width="110" align="center">
                       <template #default="scope">
                         <el-tag :type="scope.row.status === 'active' ? 'success' : 'info'" class="table-tag">
-                          {{ scope.row.status === 'active' ? '启用' : '禁用' }}
+                          {{ scope.row.status === 'active' ? t('instance.enabled') : t('instance.disabled') }}
                         </el-tag>
                       </template>
                     </el-table-column>
 
-                    <el-table-column label="操作" width="200" align="center" fixed="right">
+                    <el-table-column :label="t('instance.actions')" width="200" align="center" fixed="right">
                       <template #default="scope">
-                        <el-button size="small" @click="handleEdit(scope.row)" type="primary" plain circle title="编辑实例">
+                        <el-button size="small" @click="handleEdit(scope.row)" type="primary" plain circle :title="t('instance.editInstance')">
                           <el-icon>
                             <Edit />
                           </el-icon>
                         </el-button>
 
-                        <el-button size="small" @click="openRateLimitConfig(scope.row)" type="warning" plain circle title="限流器配置">
+                        <el-button size="small" @click="openRateLimitConfig(scope.row)" type="warning" plain circle :title="t('instance.rateLimitConfig')">
                           <el-icon>
                             <Timer />
                           </el-icon>
                         </el-button>
 
-                        <el-button size="small" @click="openCircuitBreakerConfig(scope.row)" type="danger" plain circle title="熔断器配置">
+                        <el-button size="small" @click="openCircuitBreakerConfig(scope.row)" type="danger" plain circle :title="t('instance.circuitBreakerConfig')">
                           <el-icon>
                             <WarningFilled />
                           </el-icon>
                         </el-button>
 
-                        <el-button size="small" type="info" @click="handleDelete(scope.row)" plain circle title="删除">
+                        <el-button size="small" type="info" @click="handleDelete(scope.row)" plain circle :title="t('instance.delete')">
                           <el-icon>
                             <Delete />
                           </el-icon>
@@ -157,12 +157,12 @@
                   </el-table>
 
                   <div v-if="filtered.length === 0" class="empty-wrap">
-                    <el-empty description="暂无实例"></el-empty>
+                    <el-empty :description="t('instance.emptyText')"></el-empty>
                   </div>
 
                   <div class="table-footer" v-if="filtered.length > 0">
                     <div class="footer-info">
-                      共 {{ filtered.length }} 条（第 {{ currentPage }} / {{ totalPages }} 页）
+                      {{ t('instance.tableSummary', { count: filtered.length, current: currentPage, total: totalPages }) }}
                     </div>
                     <div class="footer-actions">
                       <el-pagination v-model:current-page="currentPage" :page-size="pageSize" :total="filtered.length"
@@ -198,91 +198,91 @@
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="820px" :before-close="handleDialogClose"
       class="instance-dialog">
       <el-form :model="form" label-width="120px" ref="formRef">
-        <el-divider content-position="left">基本信息</el-divider>
+        <el-divider content-position="left">{{ t('instance.basicInfo') }}</el-divider>
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="服务类型" prop="serviceType">
-              <el-select v-model="form.serviceType" placeholder="请选择服务类型" :disabled="isEdit">
-                <el-option v-for="t in serviceTypes" :key="t" :label="serviceTypeMap[t] || t" :value="t" />
+            <el-form-item :label="t('instance.serviceType')" prop="serviceType">
+              <el-select v-model="form.serviceType" :placeholder="t('instance.selectServiceType')" :disabled="isEdit">
+                <el-option v-for="st in serviceTypes" :key="st" :label="serviceTypeLabel(st)" :value="st" />
               </el-select>
             </el-form-item>
           </el-col>
 
           <el-col :span="12">
-            <el-form-item label="实例名称" prop="name">
-              <el-input v-model="form.name" placeholder="请输入实例名称" />
+            <el-form-item :label="t('instance.name')" prop="name">
+              <el-input v-model="form.name" :placeholder="t('instance.inputName')" />
             </el-form-item>
           </el-col>
         </el-row>
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="基础URL" prop="baseUrl">
-              <el-input v-model="form.baseUrl" placeholder="请输入基础URL" />
+            <el-form-item :label="t('instance.baseUrl')" prop="baseUrl">
+              <el-input v-model="form.baseUrl" :placeholder="t('instance.inputBaseUrl')" />
             </el-form-item>
           </el-col>
 
           <el-col :span="12">
-            <el-form-item label="路径" prop="path">
-              <el-input v-model="form.path" placeholder="请输入路径（可选）" />
+            <el-form-item :label="t('instance.path')" prop="path">
+              <el-input v-model="form.path" :placeholder="t('instance.inputPath')" />
             </el-form-item>
           </el-col>
         </el-row>
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="权重" prop="weight">
+            <el-form-item :label="t('instance.weight')" prop="weight">
               <el-input-number v-model="form.weight" :min="1" :max="100" />
             </el-form-item>
           </el-col>
 
           <el-col :span="12">
-            <el-form-item label="状态" prop="status">
-              <el-switch v-model="form.status" active-value="active" inactive-value="inactive" active-text="启用"
-                inactive-text="禁用" />
+            <el-form-item :label="t('instance.status')" prop="status">
+              <el-switch v-model="form.status" active-value="active" inactive-value="inactive" :active-text="t('instance.enabled')"
+                :inactive-text="t('instance.disabled')" />
             </el-form-item>
           </el-col>
         </el-row>
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="适配器" prop="adapter">
-              <el-select v-model="form.adapter" placeholder="请选择适配器（留空使用全局配置）" clearable>
+            <el-form-item :label="t('instance.adapter')" prop="adapter">
+              <el-select v-model="form.adapter" :placeholder="t('instance.selectAdapterPlaceholder')" clearable>
                 <el-option v-for="adapter in adapters" :key="adapter.name || adapter" :label="adapter.name || adapter"
                   :value="adapter.name || adapter" />
               </el-select>
               <div v-if="!form.adapter && globalAdapter" class="form-note">
-                当前将使用全局适配器: {{ globalAdapter }}
+                {{ t('instance.usingGlobalAdapter', { adapter: globalAdapter }) }}
               </div>
             </el-form-item>
           </el-col>
         </el-row>
 
-        <el-divider content-position="left">请求头配置</el-divider>
+        <el-divider content-position="left">{{ t('instance.headersConfig') }}</el-divider>
 
         <div class="headers-section">
           <el-row :gutter="20">
             <el-col :span="24">
-              <el-form-item label="请求头管理">
+              <el-form-item :label="t('instance.headersManage')">
                 <div class="headers-actions">
                   <el-button type="primary" size="small" @click="addCustomHeader">
                     <el-icon>
                       <Plus />
                     </el-icon>
-                    添加请求头
+                    {{ t('instance.addHeader') }}
                   </el-button>
                   <el-button type="success" size="small" @click="addAuthorizationHeader">
                     <el-icon>
                       <Key />
                     </el-icon>
-                    添加Authorization
+                    {{ t('instance.addAuthorization') }}
                   </el-button>
                   <el-button type="warning" size="small" @click="clearAllHeaders" v-if="customHeadersList.length > 0">
                     <el-icon>
                       <Delete />
                     </el-icon>
-                    清除所有
+                    {{ t('instance.clearAll') }}
                   </el-button>
                 </div>
               </el-form-item>
@@ -292,13 +292,13 @@
           <div v-if="customHeadersList.length > 0" class="headers-list">
             <el-row v-for="(header, index) in customHeadersList" :key="index" :gutter="20" class="header-row">
               <el-col :span="10">
-                <el-form-item :label="`请求头名称 ${index + 1}`">
-                  <el-input v-model="header.key" placeholder="如：Authorization" @input="onCustomHeaderChange" />
+                <el-form-item :label="t('instance.headerName', { index: index + 1 })">
+                  <el-input v-model="header.key" :placeholder="t('instance.headerKeyPlaceholder')" @input="onCustomHeaderChange" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item :label="`请求头值 ${index + 1}`">
-                  <el-input v-model="header.value" placeholder="如：Bearer your-token-here" @input="onCustomHeaderChange"
+                <el-form-item :label="t('instance.headerValue', { index: index + 1 })">
+                  <el-input v-model="header.value" :placeholder="t('instance.headerValuePlaceholder')" @input="onCustomHeaderChange"
                     :type="header.key.toLowerCase() === 'authorization' ? 'password' : 'text'"
                     :show-password="header.key.toLowerCase() === 'authorization'" />
                 </el-form-item>
@@ -306,7 +306,7 @@
               <el-col :span="2">
                 <div class="header-delete-wrapper">
                   <el-button type="danger" size="small" @click="removeCustomHeader(index)" circle
-                    class="remove-header-btn" title="删除此请求头">
+                    class="remove-header-btn" :title="t('instance.removeHeader')">
                     <el-icon>
                       <Close />
                     </el-icon>
@@ -319,30 +319,30 @@
           <el-row v-else :gutter="20">
             <el-col :span="24">
               <el-form-item>
-                <el-empty description="暂无自定义请求头，点击上方按钮添加" :image-size="60" class="empty-headers" />
+                <el-empty :description="t('instance.emptyHeaders')" :image-size="60" class="empty-headers" />
               </el-form-item>
             </el-col>
           </el-row>
         </div>
 
-        <el-divider content-position="left">标签配置</el-divider>
+        <el-divider content-position="left">{{ t('instance.tagsConfig') }}</el-divider>
 
         <div class="headers-section">
           <el-row :gutter="20">
             <el-col :span="24">
-              <el-form-item label="标签管理">
+              <el-form-item :label="t('instance.tagsManage')">
                 <div class="headers-actions">
                   <el-button type="primary" size="small" @click="addTag">
                     <el-icon>
                       <Plus />
                     </el-icon>
-                    添加标签
+                    {{ t('instance.addTag') }}
                   </el-button>
                   <el-button type="warning" size="small" @click="clearAllTags" v-if="tagsList.length > 0">
                     <el-icon>
                       <Delete />
                     </el-icon>
-                    清除所有
+                    {{ t('instance.clearAll') }}
                   </el-button>
                 </div>
               </el-form-item>
@@ -352,19 +352,19 @@
           <div v-if="tagsList.length > 0" class="headers-list">
             <el-row v-for="(tag, index) in tagsList" :key="index" :gutter="20" class="header-row">
               <el-col :span="10">
-                <el-form-item :label="`标签名 ${index + 1}`">
-                  <el-input v-model="tag.key" placeholder="如：gpu_type" @input="onTagChange" />
+                <el-form-item :label="t('instance.tagName', { index: index + 1 })">
+                  <el-input v-model="tag.key" :placeholder="t('instance.tagKeyPlaceholder')" @input="onTagChange" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item :label="`标签值 ${index + 1}`">
-                  <el-input v-model="tag.value" placeholder="如：a100" @input="onTagChange" />
+                <el-form-item :label="t('instance.tagValue', { index: index + 1 })">
+                  <el-input v-model="tag.value" :placeholder="t('instance.tagValuePlaceholder')" @input="onTagChange" />
                 </el-form-item>
               </el-col>
               <el-col :span="2">
                 <div class="header-delete-wrapper">
                   <el-button type="danger" size="small" @click="removeTag(index)" circle
-                    class="remove-header-btn" title="删除此标签">
+                    class="remove-header-btn" :title="t('instance.removeTag')">
                     <el-icon>
                       <Close />
                     </el-icon>
@@ -377,7 +377,7 @@
           <el-row v-else :gutter="20">
             <el-col :span="24">
               <el-form-item>
-                <el-empty description="暂无标签，点击上方按钮添加" :image-size="60" class="empty-headers" />
+                <el-empty :description="t('instance.emptyTags')" :image-size="60" class="empty-headers" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -386,8 +386,8 @@
 
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="handleDialogClose">取消</el-button>
-          <el-button type="primary" @click="handleSave" :loading="saveLoading">保存</el-button>
+          <el-button @click="handleDialogClose">{{ t('instance.cancel') }}</el-button>
+          <el-button type="primary" @click="handleSave" :loading="saveLoading">{{ t('instance.save') }}</el-button>
         </span>
       </template>
     </el-dialog>
@@ -397,6 +397,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import type { FormInstance } from 'element-plus'
 import { SERVICE_TYPE_LABELS, COMMON_SERVICE_TYPES } from '@/constants/serviceTypes'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -421,10 +422,16 @@ import RateLimitConfig from '@/components/RateLimitConfig.vue'
 import CircuitBreakerConfig from '@/components/CircuitBreakerConfig.vue'
 import OnboardingSteps from './adapter/OnboardingSteps.vue'
 
-const serviceTypeMap: Record<string, string> = SERVICE_TYPE_LABELS as Record<string, string>
-
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
+
+// v2.10.3 双语版：SERVICE_TYPE_LABELS 现为「类型→i18n key」映射，渲染时翻译；未知类型回退原值
+const serviceTypeMap: Record<string, string> = SERVICE_TYPE_LABELS as Record<string, string>
+const serviceTypeLabel = (type: string): string => {
+  const key = serviceTypeMap[type]
+  return key ? t(key) : type
+}
 
 // 指定显示顺序（会按此顺序排列卡片/标签）
 const serviceOrder: string[] = COMMON_SERVICE_TYPES as string[]
@@ -738,7 +745,7 @@ const fetchServiceTypes = async () => {
     }
   } catch (error) {
     console.error('获取服务类型失败:', error)
-    ElMessage.error('获取服务类型失败')
+    ElMessage.error(t('instance.messages.fetchTypesFailed'))
   }
 }
 
@@ -774,7 +781,7 @@ const fetchServiceInstances = (serviceType: string) => {
     } catch (error) {
       console.error(`获取${serviceType}服务实例失败:`, error)
       instances.value[serviceType] = []
-      ElMessage.error(`获取${serviceType}服务实例失败`)
+      ElMessage.error(t('instance.messages.fetchInstancesFailed', { type: serviceType }))
     } finally {
       loading.value = false
     }
@@ -783,18 +790,18 @@ const fetchServiceInstances = (serviceType: string) => {
 
 // 刷新当前 tab
 const refreshCurrent = () => {
-  const t = activeServiceType.value
-  delete instancesCache.value[t]
-  fetchServiceInstances(t)
+  const serviceType = activeServiceType.value
+  delete instancesCache.value[serviceType]
+  fetchServiceInstances(serviceType)
   // 同时刷新适配器列表和全局配置
   fetchAdapters()
   fetchGlobalConfig()
-  ElMessage.success('刷新中...')
+  ElMessage.success(t('instance.messages.refreshing'))
 }
 
 // 添加实例
 const handleAddInstance = () => {
-  dialogTitle.value = '添加实例'
+  dialogTitle.value = t('instance.addInstance')
   isEdit.value = false
   Object.assign(form, {
     id: 0,
@@ -830,7 +837,7 @@ const handleAddInstance = () => {
 
 // 编辑实例
 const handleEdit = (row: ServiceInstance) => {
-  dialogTitle.value = '编辑实例'
+  dialogTitle.value = t('instance.editInstance')
   isEdit.value = true
   // 使用数据库ID（row.id）作为instanceId
   const dbId = row.id
@@ -868,9 +875,9 @@ const handleEdit = (row: ServiceInstance) => {
 
 // 删除实例
 const handleDelete = (row: ServiceInstance) => {
-  ElMessageBox.confirm('确定要删除该实例吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
+  ElMessageBox.confirm(t('instance.deleteConfirmMessage'), t('instance.confirmTitle'), {
+    confirmButtonText: t('instance.confirm'),
+    cancelButtonText: t('instance.cancel'),
     type: 'warning'
   }).then(async () => {
     try {
@@ -884,16 +891,16 @@ const handleDelete = (row: ServiceInstance) => {
         instancesCache.value[serviceType] = [...(instances.value[serviceType] || [])]
         // 同时清除试验场的缓存，让试验场下拉列表刷新
         clearCache(serviceType)
-        ElMessage.success('删除成功')
+        ElMessage.success(t('instance.messages.deleteSuccess'))
       } else {
-        ElMessage.error(response.data?.message || '删除失败')
+        ElMessage.error(response.data?.message || t('instance.messages.deleteFailed'))
       }
     } catch (error) {
       console.error('删除实例失败:', error)
-      ElMessage.error('删除实例失败')
+      ElMessage.error(t('instance.messages.deleteInstanceFailed'))
     }
   }).catch(() => {
-    ElMessage.info('已取消删除')
+    ElMessage.info(t('instance.messages.deleteCancelled'))
   })
 }
 
@@ -932,9 +939,9 @@ const handleSave = async () => {
         // 同时清除试验场的缓存，让试验场下拉列表刷新
         clearCache(serviceType)
         fetchServiceInstances(serviceType)
-        ElMessage.success('编辑成功')
+        ElMessage.success(t('instance.messages.editSuccess'))
       } else {
-        ElMessage.error(response.data?.message || '编辑失败')
+        ElMessage.error(response.data?.message || t('instance.messages.editFailed'))
         saveLoading.value = false
         return
       }
@@ -947,9 +954,9 @@ const handleSave = async () => {
         // 同时清除试验场的缓存，让试验场下拉列表刷新
         clearCache(serviceType)
         fetchServiceInstances(serviceType)
-        ElMessage.success('添加成功')
+        ElMessage.success(t('instance.messages.addSuccess'))
       } else {
-        ElMessage.error(response.data?.message || '添加失败')
+        ElMessage.error(response.data?.message || t('instance.messages.addFailed'))
         saveLoading.value = false
         return
       }
@@ -958,7 +965,7 @@ const handleSave = async () => {
     dialogVisible.value = false
   } catch (error) {
     console.error('保存实例失败:', error)
-    ElMessage.error('保存实例失败')
+    ElMessage.error(t('instance.messages.saveFailed'))
   } finally {
     saveLoading.value = false
   }
@@ -977,7 +984,7 @@ const openRateLimitConfig = (row: any) => {
   // 使用数据库ID
   currentEditInstanceId.value = String(row.id)
   currentEditServiceType.value = activeServiceType.value
-  rateLimitDialogTitle.value = `限流器配置 - ${row.name}`
+  rateLimitDialogTitle.value = t('instance.rateLimitConfigTitle', { name: row.name })
   // 从 row.rateLimit 中提取配置，转换为组件期望的嵌套格式
   const rateLimitConfig = row.rateLimit || { enabled: false }
   rateLimitFormData.value = {
@@ -999,7 +1006,7 @@ const openCircuitBreakerConfig = (row: any) => {
   // 使用数据库ID
   currentEditInstanceId.value = String(row.id)
   currentEditServiceType.value = activeServiceType.value
-  circuitBreakerDialogTitle.value = `熔断器配置 - ${row.name}`
+  circuitBreakerDialogTitle.value = t('instance.circuitBreakerConfigTitle', { name: row.name })
   // 从 row.circuitBreaker 中提取配置，转换为组件期望的嵌套格式
   const circuitBreakerConfig = row.circuitBreaker || { enabled: false }
   circuitBreakerFormData.value = {
@@ -1039,16 +1046,16 @@ const handleRateLimitSave = async (configData: any) => {
     const response = await saveRateLimitConfig(serviceType, instanceId, config)
 
     if (response.data?.success) {
-      ElMessage.success('限流器配置保存成功')
+      ElMessage.success(t('instance.messages.rateLimitSaveSuccess'))
       // 刷新缓存
       delete instancesCache.value[serviceType]
       fetchServiceInstances(serviceType)
     } else {
-      ElMessage.error(response.data?.message || '保存失败')
+      ElMessage.error(response.data?.message || t('instance.messages.saveFailedGeneric'))
     }
   } catch (error) {
     console.error('保存限流器配置失败:', error)
-    ElMessage.error('保存限流器配置失败')
+    ElMessage.error(t('instance.messages.rateLimitSaveFailed'))
   } finally {
     saveLoading.value = false
   }
@@ -1077,16 +1084,16 @@ const handleCircuitBreakerSave = async (configData: any) => {
     const response = await saveCircuitBreakerConfig(serviceType, instanceId, config)
 
     if (response.data?.success) {
-      ElMessage.success('熔断器配置保存成功')
+      ElMessage.success(t('instance.messages.cbSaveSuccess'))
       // 刷新缓存
       delete instancesCache.value[serviceType]
       fetchServiceInstances(serviceType)
     } else {
-      ElMessage.error(response.data?.message || '保存失败')
+      ElMessage.error(response.data?.message || t('instance.messages.saveFailedGeneric'))
     }
   } catch (error) {
     console.error('保存熔断器配置失败:', error)
-    ElMessage.error('保存熔断器配置失败')
+    ElMessage.error(t('instance.messages.cbSaveFailed'))
   } finally {
     saveLoading.value = false
   }

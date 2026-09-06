@@ -4,7 +4,7 @@
     <div class="panel-toolbar">
       <el-select
         v-model="selectedModel"
-        :placeholder="'选择 STT 模型'"
+        :placeholder="t('playgroundAudio.stt.modelPlaceholder')"
         :loading="loading"
         filterable
         class="model-select"
@@ -35,13 +35,13 @@
               v-if="inst.healthStatus === 'UNHEALTHY'"
               class="health-status-text"
             >
-              (离线)
+              {{ t('playgroundAudio.offlineStatus') }}
             </span>
             <span
               v-else-if="inst.healthStatus === 'UNKNOWN' || !inst.healthStatus"
               class="health-status-text unknown"
             >
-              (未知)
+              {{ t('playgroundAudio.unknownStatus') }}
             </span>
           </div>
         </el-option>
@@ -51,7 +51,7 @@
         @click="showConfig = !showConfig"
       >
         <el-icon><Setting /></el-icon>
-        {{ showConfig ? '隐藏配置' : '参数配置' }}
+        {{ showConfig ? t('playgroundAudio.hideConfig') : t('playgroundAudio.showConfig') }}
       </el-button>
     </div>
 
@@ -64,21 +64,21 @@
         <el-row :gutter="16">
           <el-col :span="6">
             <div class="config-item">
-              <label class="config-label">语言</label>
+              <label class="config-label">{{ t('playgroundAudio.stt.language') }}</label>
               <el-select
                 v-model="config.language"
                 size="small"
               >
                 <el-option
-                  label="中文"
+                  :label="t('playgroundAudio.stt.languageZh')"
                   value="zh"
                 />
                 <el-option
-                  label="英文"
+                  :label="t('playgroundAudio.stt.languageEn')"
                   value="en"
                 />
                 <el-option
-                  label="自动检测"
+                  :label="t('playgroundAudio.stt.languageAuto')"
                   value=""
                 />
               </el-select>
@@ -86,7 +86,7 @@
           </el-col>
           <el-col :span="6">
             <div class="config-item">
-              <label class="config-label">响应格式</label>
+              <label class="config-label">{{ t('playgroundAudio.stt.responseFormat') }}</label>
               <el-select
                 v-model="config.responseFormat"
                 size="small"
@@ -132,7 +132,7 @@
       <!-- 文件上传 -->
       <div class="upload-card">
         <div class="card-header">
-          <span class="card-title">上传音频文件</span>
+          <span class="card-title">{{ t('playgroundAudio.stt.uploadTitle') }}</span>
         </div>
         <el-upload
           ref="uploadRef"
@@ -151,11 +151,12 @@
             <UploadFilled />
           </el-icon>
           <div class="el-upload__text">
-            拖拽音频文件到此处，或 <em>点击上传</em>
+            {{ t('playgroundAudio.stt.dragText') }}
+            <em>{{ t('playgroundAudio.stt.clickUpload') }}</em>
           </div>
           <template #tip>
             <div class="el-upload__tip">
-              支持 mp3, mp4, wav, webm 等格式，最大 25MB
+              {{ t('playgroundAudio.stt.uploadTip') }}
             </div>
           </template>
         </el-upload>
@@ -164,13 +165,13 @@
       <!-- 提示词输入 -->
       <div class="input-card">
         <div class="card-header">
-          <span class="card-title">提示词 (可选)</span>
+          <span class="card-title">{{ t('playgroundAudio.stt.promptTitle') }}</span>
         </div>
         <el-input
           v-model="promptText"
           type="textarea"
           :autosize="{ minRows: 2, maxRows: 4 }"
-          placeholder="输入可选的提示词，帮助提高识别准确度..."
+          :placeholder="t('playgroundAudio.stt.promptPlaceholder')"
           resize="none"
         />
       </div>
@@ -184,14 +185,14 @@
           @click="handleTranscribe"
         >
           <el-icon><Headset /></el-icon>
-          开始识别
+          {{ t('playgroundAudio.stt.start') }}
         </el-button>
       </div>
 
       <!-- 结果展示 -->
       <div class="result-card">
         <div class="card-header">
-          <span class="card-title">识别结果</span>
+          <span class="card-title">{{ t('playgroundAudio.stt.resultTitle') }}</span>
         </div>
 
         <!-- 空状态 -->
@@ -205,7 +206,7 @@
           >
             <Document />
           </el-icon>
-          <span>上传音频文件后开始识别</span>
+          <span>{{ t('playgroundAudio.stt.empty') }}</span>
         </div>
 
         <!-- 加载状态 -->
@@ -219,7 +220,7 @@
           >
             <Loading />
           </el-icon>
-          <span>正在识别...</span>
+          <span>{{ t('playgroundAudio.stt.loading') }}</span>
         </div>
 
         <!-- 结果文本 -->
@@ -228,7 +229,7 @@
           class="result-content"
         >
           <div class="result-stats">
-            <span>耗时: {{ result.duration }}ms</span>
+            <span>{{ t('playgroundAudio.stt.duration', { duration: result.duration }) }}</span>
           </div>
           <div class="result-text">
             {{ resultText }}
@@ -240,7 +241,7 @@
               @click="handleCopy"
             >
               <el-icon><DocumentCopy /></el-icon>
-              复制文本
+              {{ t('playgroundAudio.stt.copy') }}
             </el-button>
             <el-button
               text
@@ -248,7 +249,7 @@
               @click="handleClear"
             >
               <el-icon><Delete /></el-icon>
-              清空
+              {{ t('playgroundAudio.clear') }}
             </el-button>
           </div>
         </div>
@@ -259,11 +260,14 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Setting, Headset, UploadFilled, Document, DocumentCopy, Delete, Loading, Cpu } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { sendServiceRequest } from '@/api/playground'
 import type { SttRequestConfig, PlaygroundResponse } from '../../types/playground'
 import { parseErrorMessage, getErrorSuggestion } from '../../utils/errorHandler'
+
+const { t } = useI18n()
 
 interface Props {
   instances: any[]
@@ -327,15 +331,15 @@ const handleTranscribe = async () => {
 
     const response = await sendServiceRequest('stt', requestConfig, headers)
     result.value = response
-    ElMessage.success('识别完成')
+    ElMessage.success(t('playgroundAudio.stt.messages.transcribed'))
   } catch (error: any) {
-    const errorMsg = parseErrorMessage(error, '语音识别')
+    const errorMsg = parseErrorMessage(error, t('playgroundAudio.stt.messages.operation'))
     const suggestion = getErrorSuggestion(error)
 
     if (suggestion) {
       ElMessage({
         type: 'error',
-        message: `${errorMsg}\n\n💡 建议: ${suggestion}`,
+        message: `${errorMsg}\n\n${t('playgroundAudio.messages.suggestion', { suggestion })}`,
         duration: 6000,
         showClose: true
       })
@@ -351,9 +355,9 @@ const handleTranscribe = async () => {
 const handleCopy = async () => {
   try {
     await navigator.clipboard.writeText(resultText.value)
-    ElMessage.success('已复制')
+    ElMessage.success(t('playgroundAudio.stt.messages.copied'))
   } catch {
-    ElMessage.error('复制失败')
+    ElMessage.error(t('playgroundAudio.stt.messages.copyFailed'))
   }
 }
 

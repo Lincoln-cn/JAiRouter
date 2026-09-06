@@ -1,0 +1,36 @@
+{
+  "playgroundErrors": {
+    "defaultContext": "Operation",
+    "status": {
+      "401": "Authentication is not configured for the instance. Add an Authorization or X-API-Key header in Instance Management.",
+      "403": "Insufficient permissions. Check the instance's access permission configuration.",
+      "404": "Endpoint not found. Check whether the instance URL and port are correct.",
+      "429": "Request rate limit exceeded. Retry later or adjust the rate limit configuration.",
+      "500": "Internal server error. Check the instance logs to troubleshoot.",
+      "502": "Instance unreachable. Check whether the instance is running properly.",
+      "503": "Service unavailable. The instance may be restarting or the circuit breaker may have tripped.",
+      "504": "Request timed out. Check the instance performance or adjust the timeout configuration."
+    },
+    "keyword": {
+      "connectionRefused": "Unable to connect to the instance. Check whether the instance is started.",
+      "timeout": "Request timed out; the instance is responding too slowly.",
+      "unknownModel": "Model not found. Check whether the model name is correct.",
+      "notFound": "Resource not found. Check the configuration.",
+      "unauthorized": "Authentication failed. Check the instance's authentication configuration.",
+      "invalidApiKey": "Invalid API Key. Check the instance's authentication credentials.",
+      "notSupported": "Parameter not supported. Check the request parameters.",
+      "serviceDegraded": "The service is circuit-broken. Retry later or reset the circuit breaker.",
+      "failedTo": "Operation failed. Check the configuration."
+    },
+    "enhance401": "{message}\n\n💡 Tip: Authentication is not configured for the instance. Add an authentication header (e.g. Authorization or X-API-Key) in Instance Management.",
+    "enhanceKeyword": "{message}\n\n💡 Tip: {hint}",
+    "failedDetail": "{context} failed: {message}",
+    "failedCheckConfig": "{context} failed. Please check the configuration and try again.",
+    "suggestion": {
+      "401": "Go to Instance Management → select the instance → click \"Edit\" → add the authentication header configuration.",
+      "404": "Check whether the instance URL and port are correct, or confirm the model is loaded.",
+      "429": "Retry later, or adjust the rate limit configuration in Instance Management.",
+      "5xx": "Check the instance logs to confirm the service is healthy."
+    }
+  }
+}

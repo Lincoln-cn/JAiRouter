@@ -1,23 +1,23 @@
 <template>
   <el-dialog
     v-model="dialogVisible"
-    :title="title"
+    :title="dialogTitle"
     width="600px"
     :before-close="handleClose"
   >
     <el-form :model="formData" label-width="140px" ref="formRef">
-      <el-form-item label="启用熔断器">
+      <el-form-item :label="t('circuitBreakerConfig.enableToggle')">
         <el-switch
           v-model="formData.enabled"
-          active-text="启用"
-          inactive-text="禁用"
+          :active-text="t('circuitBreakerConfig.enabled')"
+          :inactive-text="t('circuitBreakerConfig.disabled')"
         />
       </el-form-item>
 
       <div v-if="formData.enabled">
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="失败阈值">
+            <el-form-item :label="t('circuitBreakerConfig.failureThreshold')">
               <el-input-number
                 v-model="formData.failureThreshold"
                 :min="1"
@@ -28,7 +28,7 @@
           </el-col>
 
           <el-col :span="12">
-            <el-form-item label="超时时间 (毫秒)">
+            <el-form-item :label="t('circuitBreakerConfig.timeout')">
               <el-input-number
                 v-model="formData.timeout"
                 :min="1000"
@@ -42,7 +42,7 @@
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="成功阈值">
+            <el-form-item :label="t('circuitBreakerConfig.successThreshold')">
               <el-input-number
                 v-model="formData.successThreshold"
                 :min="1"
@@ -57,9 +57,9 @@
 
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="handleClose">取消</el-button>
+        <el-button @click="handleClose">{{ t('circuitBreakerConfig.cancel') }}</el-button>
         <el-button type="primary" @click="handleSave" :loading="loading">
-          保存
+          {{ t('circuitBreakerConfig.save') }}
         </el-button>
       </span>
     </template>
@@ -68,6 +68,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElForm } from 'element-plus'
 
 interface Props {
@@ -77,7 +78,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: '熔断器配置',
+  title: '',
   initialData: () => ({})
 })
 
@@ -86,10 +87,14 @@ const emit = defineEmits<{
   (e: 'save', data: any): void
 }>()
 
+const { t } = useI18n()
+
 const dialogVisible = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value)
 })
+
+const dialogTitle = computed(() => props.title || t('circuitBreakerConfig.title'))
 
 const formRef = ref<InstanceType<typeof ElForm>>()
 const loading = ref(false)
@@ -126,7 +131,7 @@ const handleSave = async () => {
     emit('save', result)
     dialogVisible.value = false
   } catch (error) {
-    ElMessage.error('保存配置失败')
+    ElMessage.error(t('circuitBreakerConfig.messages.saveFailed'))
   } finally {
     loading.value = false
   }

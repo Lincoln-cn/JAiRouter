@@ -1,0 +1,31 @@
+{
+  "rateLimitConfig": {
+    "title": "限流器配置",
+    "enableToggle": "启用限流",
+    "enabled": "启用",
+    "disabled": "禁用",
+    "algorithm": "限流算法",
+    "algorithmPlaceholder": "请选择算法",
+    "algorithms": {
+      "tokenBucket": "令牌桶",
+      "leakyBucket": "漏桶",
+      "slidingWindow": "滑动窗口"
+    },
+    "scope": "作用域",
+    "scopePlaceholder": "请选择作用域",
+    "scopes": {
+      "instance": "实例级别",
+      "clientIp": "客户端 IP 级别"
+    },
+    "capacity": "容量",
+    "rate": "速率",
+    "key": "限流键值",
+    "keyPlaceholder": "可选，用于自定义限流键",
+    "clientIpRateLimit": "客户端 IP 限流",
+    "cancel": "取消",
+    "save": "保存",
+    "messages": {
+      "saveFailed": "保存配置失败"
+    }
+  }
+}

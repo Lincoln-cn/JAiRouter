@@ -5,7 +5,7 @@
       <div class="toolbar-left">
         <el-select
           v-model="selectedModel"
-          :placeholder="'选择模型'"
+          :placeholder="t('playgroundChat.toolbar.selectModel')"
           :loading="instancesLoading"
           filterable
           class="model-select"
@@ -36,13 +36,13 @@
                 v-if="inst.healthStatus === 'UNHEALTHY'"
                 class="health-status-text"
               >
-                (离线)
+                {{ t('playgroundChat.instance.offline') }}
               </span>
               <span
                 v-else-if="inst.healthStatus === 'UNKNOWN' || !inst.healthStatus"
                 class="health-status-text unknown"
               >
-                (未知)
+                {{ t('playgroundChat.instance.unknown') }}
               </span>
             </div>
           </el-option>
@@ -52,7 +52,7 @@
           @click="showConfig = !showConfig"
         >
           <el-icon><Setting /></el-icon>
-          {{ showConfig ? '隐藏配置' : '参数配置' }}
+          {{ showConfig ? t('playgroundChat.toolbar.hideConfig') : t('playgroundChat.toolbar.showConfig') }}
         </el-button>
       </div>
       <div class="toolbar-right">
@@ -61,14 +61,14 @@
           @click="handleNewChat"
         >
           <el-icon><Plus /></el-icon>
-          新对话
+          {{ t('playgroundChat.toolbar.newChat') }}
         </el-button>
         <el-button
           text
           @click="handleClear"
         >
           <el-icon><Delete /></el-icon>
-          清空
+          {{ t('playgroundChat.toolbar.clearChat') }}
         </el-button>
       </div>
     </div>
@@ -102,8 +102,8 @@
         >
           <ChatDotRound />
         </el-icon>
-        <div class="empty-title">开始新的对话</div>
-        <div class="empty-subtitle">输入消息，与 AI 开始交流</div>
+        <div class="empty-title">{{ t('playgroundChat.empty.title') }}</div>
+        <div class="empty-subtitle">{{ t('playgroundChat.empty.subtitle') }}</div>
         <div class="suggestions">
           <el-button
             v-for="suggestion in suggestions"
@@ -138,11 +138,11 @@
         @cancel="handleCancelRequest"
       />
       <div class="input-tips">
-        <span>按 Enter 发送，Shift + Enter 换行</span>
+        <span>{{ t('playgroundChat.input.tipEnter') }}</span>
         <span
           v-if="!selectedModel"
           class="tip-warning"
-        >请先选择模型</span>
+        >{{ t('playgroundChat.input.tipSelectModel') }}</span>
       </div>
     </div>
   </div>
@@ -150,6 +150,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Setting, Plus, Delete, ChatDotRound, Cpu } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import MessageList from './MessageList.vue'
@@ -161,6 +162,8 @@ import { usePlaygroundData } from '@/composables/usePlaygroundData'
 import { sendServiceRequest } from '@/api/playground'
 import type { ChatMessage, ChatRequestConfig } from '../../types/playground'
 import { parseErrorMessage, getErrorSuggestion } from '../../utils/errorHandler'
+
+const { t } = useI18n()
 
 // Refs
 const messageListRef = ref<HTMLElement>()
@@ -203,17 +206,17 @@ const { isStreaming, cancelStream, createStreamRequest, handleStreamResponse } =
 
 // 输入提示
 const inputPlaceholder = computed(() => {
-  if (!selectedModel.value) return '请先选择模型...'
-  if (isLoading.value) return '正在生成回复...'
-  return '输入消息...'
+  if (!selectedModel.value) return t('playgroundChat.input.placeholderNoModel')
+  if (isLoading.value) return t('playgroundChat.input.placeholderGenerating')
+  return t('playgroundChat.input.placeholderMessage')
 })
 
 // 快捷建议
-const suggestions = [
-  '你好，请介绍一下你自己',
-  '帮我写一段代码',
-  '解释一下什么是机器学习'
-]
+const suggestions = computed(() => [
+  t('playgroundChat.suggestions.introduce'),
+  t('playgroundChat.suggestions.writeCode'),
+  t('playgroundChat.suggestions.machineLearning')
+])
 
 // 初始化
 onMounted(() => {
@@ -322,15 +325,15 @@ const handleSendMessage = async (content: string) => {
       updateLastMessage(assistantContent)
     }
   } catch (error: any) {
-    const errorMessage = parseErrorMessage(error, '对话请求')
+    const errorMessage = parseErrorMessage(error, t('playgroundChat.messages.errorContext'))
     const suggestion = getErrorSuggestion(error)
 
-    updateLastMessage(`❌ 错误: ${errorMessage}`)
+    updateLastMessage(`❌ ${t('playgroundChat.messages.errorTitle')}: ${errorMessage}`)
 
     if (suggestion) {
       ElMessage({
         type: 'error',
-        message: `${errorMessage}\n\n💡 建议: ${suggestion}`,
+        message: `${errorMessage}\n\n💡 ${t('playgroundChat.messages.suggestion')}: ${suggestion}`,
         duration: 6000,
         showClose: true
       })
@@ -348,20 +351,20 @@ const handleCancelRequest = () => {
   if (isStreaming.value) {
     cancelStream()
     isLoading.value = false
-    ElMessage.info('已取消请求')
+    ElMessage.info(t('playgroundChat.messages.requestCancelled'))
   }
 }
 
 // 新对话
 const handleNewChat = () => {
   createNewSession(selectedModel.value)
-  ElMessage.success('已创建新对话')
+  ElMessage.success(t('playgroundChat.messages.newChatCreated'))
 }
 
 // 清空当前对话
 const handleClear = () => {
   clearMessages()
-  ElMessage.success('已清空对话')
+  ElMessage.success(t('playgroundChat.messages.chatCleared'))
 }
 
 // 复制消息
@@ -376,7 +379,7 @@ const handleRegenerateMessage = async () => {
   // 找到最后一个用户消息
   const lastUserMessage = [...messages.value].reverse().find(m => m.role === 'user')
   if (!lastUserMessage) {
-    ElMessage.warning('没有可以重新生成的消息')
+    ElMessage.warning(t('playgroundChat.messages.nothingToRegenerate'))
     return
   }
 
@@ -443,15 +446,15 @@ const handleRegenerateMessage = async () => {
       updateLastMessage(assistantContent)
     }
   } catch (error: any) {
-    const errorMessage = parseErrorMessage(error, '对话请求')
+    const errorMessage = parseErrorMessage(error, t('playgroundChat.messages.errorContext'))
     const suggestion = getErrorSuggestion(error)
 
-    updateLastMessage(`❌ 错误: ${errorMessage}`)
+    updateLastMessage(`❌ ${t('playgroundChat.messages.errorTitle')}: ${errorMessage}`)
 
     if (suggestion) {
       ElMessage({
         type: 'error',
-        message: `${errorMessage}\n\n💡 建议: ${suggestion}`,
+        message: `${errorMessage}\n\n💡 ${t('playgroundChat.messages.suggestion')}: ${suggestion}`,
         duration: 6000,
         showClose: true
       })

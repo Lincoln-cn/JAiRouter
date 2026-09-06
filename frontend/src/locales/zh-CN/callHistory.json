@@ -1,0 +1,140 @@
+{
+  "callHistory": {
+    "serviceTypes": {
+      "chat": "聊天",
+      "embedding": "嵌入",
+      "rerank": "重排序",
+      "tts": "语音合成",
+      "stt": "语音识别",
+      "imgGen": "图像生成",
+      "imgEdit": "图像编辑"
+    },
+    "common": {
+      "unknown": "未知",
+      "success": "成功",
+      "failed": "失败",
+      "normal": "正常",
+      "time": "时间",
+      "timeRange": "时间范围",
+      "startTime": "开始时间",
+      "endTime": "结束时间",
+      "rangeSeparator": "至",
+      "modelName": "模型名称",
+      "serviceType": "服务类型",
+      "provider": "提供商",
+      "httpStatus": "HTTP 状态",
+      "httpStatusCode": "HTTP 状态码",
+      "token": "Token",
+      "totalToken": "总 Token",
+      "responseTimeMs": "响应时间 (ms)",
+      "status": "状态",
+      "callStatus": "调用状态",
+      "action": "操作",
+      "details": "详情",
+      "query": "查询",
+      "reset": "重置",
+      "save": "保存",
+      "unknownError": "未知错误",
+      "requestCount": "请求数",
+      "errorMessage": "错误信息"
+    },
+    "dashboard": {
+      "loadFailed": "加载调用历史数据失败：{message}",
+      "stats": {
+        "totalRequests": "总请求数",
+        "successRate": "成功率",
+        "avgResponseTime": "平均响应时间",
+        "totalTokenConsumed": "总 Token 消耗",
+        "failedRequests": "失败请求数",
+        "modelCount": "模型数量",
+        "serviceTypeCount": "服务类型数",
+        "avgTokensPerRequest": "平均 Token / 请求"
+      },
+      "chart": {
+        "countUnit": "次",
+        "dailyTrendTitle": "每日请求趋势",
+        "modelDistributionTitle": "模型调用分布 Top 10",
+        "serviceTypeDistributionTitle": "服务类型调用分布",
+        "hourlyDistributionTitle": "24 小时请求分布",
+        "statusCodeDistributionTitle": "HTTP 状态码分布",
+        "errorCodeDistributionTitle": "错误码分布",
+        "recentCallsTitle": "最近调用记录"
+      }
+    },
+    "list": {
+      "pageTitle": "调用历史查询",
+      "modelNamePlaceholder": "输入模型名称",
+      "allPlaceholder": "全部",
+      "httpStatusCodePlaceholder": "如 200, 429",
+      "recordGovernanceTitle": "记录治理设置",
+      "recordLevelLabel": "记录级别",
+      "recordLevels": {
+        "metadataOnly": "仅元数据（默认）",
+        "summary": "摘要（脱敏）",
+        "full": "完整（加密）"
+      },
+      "levelGuideTitle": "各级别说明",
+      "levelGuideDescription": "仅元数据：不保存请求/回复内容；摘要：脱敏后保存前 N 字摘要；完整：加密保存完整内容（仅管理员可查看）",
+      "listTitle": "调用历史列表",
+      "totalRecords": "共 {count} 条记录",
+      "detailsTitle": "调用详情",
+      "requestId": "请求 ID",
+      "requestMethod": "请求方法",
+      "requestPath": "请求路径",
+      "instanceName": "实例名称",
+      "responseTime": "响应时间",
+      "errorCode": "错误码",
+      "tokenStatsTitle": "Token 统计",
+      "tokenStats": {
+        "input": "输入: {value}",
+        "output": "输出: {value}",
+        "total": "总计: {value}"
+      },
+      "rateLimitedStatus": "限流状态",
+      "rateLimited": "已限流",
+      "circuitBreakStatus": "熔断状态",
+      "circuitBroken": "已熔断",
+      "clientIp": "客户端 IP",
+      "bodySummaryTitle": "请求/响应摘要",
+      "requestBodySummary": "请求体摘要:",
+      "responseBodySummary": "响应体摘要:",
+      "loadConfigFailed": "加载记录配置失败：{message}",
+      "saveConfigFailed": "保存记录配置失败：{message}",
+      "saveSuccess": "记录级别已更新",
+      "loadFailed": "加载调用历史失败：{message}"
+    },
+    "slowCalls": {
+      "loadFailed": "加载慢调用失败：{message}",
+      "thresholdLabel": "阈值 (ms)",
+      "displayCountLabel": "显示数量",
+      "slowCallCountLabel": "慢调用数",
+      "maxResponseTimeLabel": "最长响应时间 (ms)",
+      "avgResponseTimeLabel": "平均响应时间 (ms)",
+      "listTitle": "慢调用列表",
+      "thresholdTag": "阈值: {value} ms"
+    },
+    "tokenUsage": {
+      "loadFailed": "加载统计数据失败：{message}",
+      "stats": {
+        "totalTokenUsed": "总 Token 使用量",
+        "inputTokens": "输入 Token",
+        "outputTokens": "输出 Token",
+        "avgResponseTimeMs": "平均响应时间 (ms)",
+        "totalRequests": "总请求数",
+        "successRate": "成功率",
+        "modelUsedCount": "使用模型数",
+        "serviceTypeCount": "服务类型数"
+      },
+      "chart": {
+        "modelTokenTopTitle": "模型 Token 使用量 Top 10",
+        "serviceTypeTokenTitle": "服务类型 Token 使用量",
+        "dailyTrendTitle": "每日 Token 使用趋势",
+        "weeklyTrendTitle": "每周 Token 使用趋势",
+        "monthlyTrendTitle": "每月 Token 使用趋势",
+        "hourlyDistributionTitle": "24 小时 Token 使用分布",
+        "recentUsageTitle": "最近 Token 使用记录",
+        "tokenUsage": "Token 使用量"
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "playgroundCache": {
+    "fetchInstancesFailed": "Failed to fetch the instance list",
+    "refreshInstancesWarn": "Failed to refresh the {serviceType} instance list; using cached data",
+    "refreshModelsWarn": "Failed to refresh the {serviceType} model list; using cached data",
+    "fetchModelsFailed": "Failed to fetch the {serviceType} model list",
+    "refreshDone": "Cache refreshed"
+  }
+}

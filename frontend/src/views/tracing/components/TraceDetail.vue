@@ -12,23 +12,23 @@
               </el-button>
             </div>
           </el-descriptions-item>
-          <el-descriptions-item label="服务">{{ traceChain.serviceName }}</el-descriptions-item>
-          <el-descriptions-item label="总耗时">
+          <el-descriptions-item :label="t('tracing.traceDetail.service')">{{ traceChain.serviceName }}</el-descriptions-item>
+          <el-descriptions-item :label="t('tracing.traceDetail.totalDuration')">
             <span :class="{ 'text-danger': traceChain.stats?.totalDuration > 1000 }">
               {{ Math.round(traceChain.stats?.totalDuration || 0) }}ms
             </span>
           </el-descriptions-item>
-          <el-descriptions-item label="Span数">{{ traceChain.stats?.totalSpans || 0 }}</el-descriptions-item>
-          <el-descriptions-item label="开始时间">{{ formatTime(traceChain.startTime) }}</el-descriptions-item>
-          <el-descriptions-item label="状态">
+          <el-descriptions-item :label="t('tracing.traceDetail.spanCount')">{{ traceChain.stats?.totalSpans || 0 }}</el-descriptions-item>
+          <el-descriptions-item :label="t('tracing.traceDetail.startTime')">{{ formatTime(traceChain.startTime) }}</el-descriptions-item>
+          <el-descriptions-item :label="t('tracing.traceDetail.status')">
             <el-tag :type="hasError ? 'danger' : 'success'">
-              {{ hasError ? '错误' : '成功' }}
+              {{ hasError ? t('tracing.traceDetail.error') : t('tracing.traceDetail.success') }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="错误数" v-if="traceChain.stats?.errorCount > 0">
+          <el-descriptions-item :label="t('tracing.traceDetail.errorCount')" v-if="traceChain.stats?.errorCount > 0">
             <el-tag type="danger">{{ traceChain.stats.errorCount }}</el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="平均耗时">{{ Math.round(traceChain.stats?.avgDuration || 0) }}ms</el-descriptions-item>
+          <el-descriptions-item :label="t('tracing.traceDetail.avgDuration')">{{ Math.round(traceChain.stats?.avgDuration || 0) }}ms</el-descriptions-item>
         </el-descriptions>
       </el-card>
 
@@ -36,11 +36,11 @@
       <el-card class="timeline-card" shadow="never">
         <template #header>
           <div class="card-header">
-            <span>追踪链路时序图</span>
+            <span>{{ t('tracing.traceDetail.timelineTitle') }}</span>
             <el-button-group>
               <el-button size="small" @click="exportTrace">
                 <el-icon><Download /></el-icon>
-                导出
+                {{ t('tracing.traceDetail.export') }}
               </el-button>
             </el-button-group>
           </div>
@@ -52,10 +52,10 @@
       <el-card class="spans-card" shadow="never">
         <template #header>
           <div class="card-header">
-            <span>Span 详情 ({{ sortedSpans.length }})</span>
+            <span>{{ t('tracing.traceDetail.spansTitle', { count: sortedSpans.length }) }}</span>
             <el-input
               v-model="spanSearch"
-              placeholder="搜索操作名称"
+              :placeholder="t('tracing.traceDetail.searchPlaceholder')"
               clearable
               style="width: 200px"
             >
@@ -69,7 +69,7 @@
           <el-table-column type="expand">
             <template #default="{ row }">
               <div class="span-attributes" v-if="row.attributes">
-                <h5>属性</h5>
+                <h5>{{ t('tracing.traceDetail.attributes') }}</h5>
                 <el-descriptions :column="2" border size="small">
                   <el-descriptions-item
                     v-for="(value, key) in row.attributes"
@@ -82,7 +82,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column prop="operationName" label="操作" min-width="200">
+          <el-table-column prop="operationName" :label="t('tracing.traceDetail.operation')" min-width="200">
             <template #default="{ row }">
               <div class="operation-cell">
                 <el-icon :size="14" :color="row.error ? 'var(--ja-danger)' : 'var(--ja-success)'">
@@ -92,19 +92,19 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column prop="duration" label="耗时" width="100" sortable>
+          <el-table-column prop="duration" :label="t('tracing.traceDetail.duration')" width="100" sortable>
             <template #default="{ row }">
               <span :class="getDurationClass(row.duration)">
                 {{ Math.round(row.duration) }}ms
               </span>
             </template>
           </el-table-column>
-          <el-table-column prop="startTime" label="开始时间" width="140">
+          <el-table-column prop="startTime" :label="t('tracing.traceDetail.startTime')" width="140">
             <template #default="{ row }">
               {{ formatTime(row.startTime) }}
             </template>
           </el-table-column>
-          <el-table-column prop="statusCode" label="状态码" width="80">
+          <el-table-column prop="statusCode" :label="t('tracing.traceDetail.statusCode')" width="80">
             <template #default="{ row }">
               <el-tag :type="getStatusCodeType(row.statusCode)" size="small">
                 {{ row.statusCode || '-' }}
@@ -115,12 +115,13 @@
       </el-card>
     </template>
 
-    <el-empty v-else-if="!loading" description="未找到追踪数据" />
+    <el-empty v-else-if="!loading" :description="t('tracing.traceDetail.noData')" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 import {
@@ -134,6 +135,7 @@ const props = defineProps<{
 }>()
 
 const { getChartTheme } = useChartTheme()
+const { t } = useI18n()
 
 const loading = ref(false)
 const traceChain = ref<any>(null)
@@ -174,7 +176,7 @@ const loadTraceChain = async () => {
     }
   } catch (error) {
     console.error('加载追踪链路失败:', error)
-    ElMessage.error('加载追踪链路失败')
+    ElMessage.error(t('tracing.traceDetail.messages.loadChainFailed'))
   } finally {
     loading.value = false
   }
@@ -218,9 +220,9 @@ const renderGanttChart = () => {
         return `
           <div style="max-width: 300px;">
             <div style="font-weight: bold; margin-bottom: 8px;">${data.name}</div>
-            <div>Span ID: ${data.spanId?.substring(0, 16)}...</div>
-            <div>开始偏移: +${Math.round(data.value[1])}ms</div>
-            <div>持续时间: ${Math.round(data.value[3])}ms</div>
+            <div>${t('tracing.traceDetail.tooltip.spanId')}: ${data.spanId?.substring(0, 16)}...</div>
+            <div>${t('tracing.traceDetail.tooltip.startOffset')}: +${Math.round(data.value[1])}ms</div>
+            <div>${t('tracing.traceDetail.tooltip.duration')}: ${Math.round(data.value[3])}ms</div>
           </div>
         `
       }
@@ -233,7 +235,7 @@ const renderGanttChart = () => {
     },
     xAxis: {
       type: 'value',
-      name: '时间偏移 (ms)',
+      name: t('tracing.traceDetail.timeOffset'),
       nameLocation: 'middle',
       nameGap: 30,
       min: 0,
@@ -295,9 +297,9 @@ const getSpanColor = (operationName: string) => {
 const copyTraceId = async () => {
   try {
     await navigator.clipboard.writeText(props.traceId)
-    ElMessage.success('Trace ID 已复制')
+    ElMessage.success(t('tracing.traceDetail.messages.traceIdCopied'))
   } catch {
-    ElMessage.error('复制失败')
+    ElMessage.error(t('tracing.traceDetail.messages.copyFailed'))
   }
 }
 
@@ -316,7 +318,7 @@ const exportTrace = () => {
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
 
-  ElMessage.success('追踪数据已导出')
+  ElMessage.success(t('tracing.traceDetail.messages.traceExported'))
 }
 
 const formatTime = (timeStr: string) => {

@@ -2,8 +2,14 @@
 import { ref, reactive } from 'vue'
 import { getServiceInstances } from '@/api/dashboard'
 import { ElMessage } from 'element-plus'
+import { i18n } from '@/i18n'
 
 import { COMMON_SERVICE_TYPES } from '@/constants/serviceTypes'
+
+// t 经最小接口断言，规避 vue-i18n 消息泛型导致的深层实例化
+const { t: gt } = i18n.global as unknown as {
+  t: (key: string, named?: Record<string, string | number>) => string
+}
 // 缓存接口定义
 interface CacheItem<T> {
   data: T
@@ -104,18 +110,18 @@ export const getCachedInstances = async (serviceType: string, forceRefresh = fal
         console.log(`[Cache] ${serviceType} 实例数据获取成功:`, newInstances.length, '个实例')
         return newInstances
       } else {
-        throw new Error('获取实例列表失败')
+        throw new Error(gt('playgroundCache.fetchInstancesFailed'))
       }
     } catch (error) {
       console.error(`获取${serviceType}实例列表失败:`, error)
       
       // 如果有旧缓存数据，继续使用
       if (cache.data.length > 0) {
-        ElMessage.warning(`刷新${serviceType}实例列表失败，使用缓存数据`)
+        ElMessage.warning(gt('playgroundCache.refreshInstancesWarn', { serviceType }))
         return cache.data
       }
       
-      ElMessage.error(`获取${serviceType}实例列表失败`)
+      ElMessage.error(gt('playgroundCache.fetchInstancesFailed'))
       return []
     } finally {
       cache.loading = false
@@ -170,11 +176,11 @@ export const getCachedModels = async (serviceType: string, forceRefresh = false)
     
     // 如果有旧缓存数据，继续使用
     if (cache.data.length > 0) {
-      ElMessage.warning(`刷新${serviceType}模型列表失败，使用缓存数据`)
+      ElMessage.warning(gt('playgroundCache.refreshModelsWarn', { serviceType }))
       return cache.data
     }
     
-    ElMessage.error(`获取${serviceType}模型列表失败`)
+    ElMessage.error(gt('playgroundCache.fetchModelsFailed'))
     return []
   }
 }
@@ -246,7 +252,7 @@ export const refreshAllCache = async () => {
   })
   
   await Promise.all(promises)
-  ElMessage.success('缓存刷新完成')
+  ElMessage.success(gt('playgroundCache.refreshDone'))
 }
 
 // 导出响应式缓存状态供组件使用

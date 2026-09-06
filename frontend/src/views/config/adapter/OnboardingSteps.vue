@@ -24,6 +24,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Check, ArrowRight } from '@element-plus/icons-vue'
 
 const props = defineProps<{
@@ -34,6 +35,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+const { t } = useI18n()
 
 interface StepItem {
   index: number
@@ -42,10 +44,10 @@ interface StepItem {
 }
 
 const steps = computed<StepItem[]>(() => [
-  { index: 1, label: '配置 Adapter', route: '/config/adapters' },
-  { index: 2, label: '创建服务', route: '/config/services' },
-  { index: 3, label: '添加实例', route: '/config/instances' },
-  { index: 4, label: 'Playground 试连', route: '/playground/chat' }
+  { index: 1, label: t('onboarding.configureAdapter'), route: '/config/adapters' },
+  { index: 2, label: t('onboarding.createService'), route: '/config/services' },
+  { index: 3, label: t('onboarding.addInstance'), route: '/config/instances' },
+  { index: 4, label: t('onboarding.tryPlayground'), route: '/playground/chat' }
 ])
 
 function navigate(step: StepItem) {

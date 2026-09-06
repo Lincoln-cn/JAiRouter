@@ -1,32 +1,32 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="新增 Adapter"
+    :title="t('adapter.wizard.title')"
     width="720px"
     :close-on-click-modal="false"
     :before-close="handleClose"
     destroy-on-close
   >
     <el-steps :active="currentStep" align-center finish-status="success" class="wizard-steps">
-      <el-step title="选择方式" />
-      <el-step title="基本配置" />
-      <el-step title="高级配置" />
-      <el-step title="测试连接" />
+      <el-step :title="t('adapter.wizard.stepMode')" />
+      <el-step :title="t('adapter.wizard.stepBasic')" />
+      <el-step :title="t('adapter.wizard.stepAdvanced')" />
+      <el-step :title="t('adapter.wizard.stepTest')" />
     </el-steps>
 
     <div class="wizard-content">
       <!-- Step 1: 选择方式 -->
       <div v-if="currentStep === 0" class="step-panel">
         <el-radio-group v-model="createMode" class="mode-select">
-          <el-radio-button value="template">从模板创建</el-radio-button>
-          <el-radio-button value="custom">自定义创建</el-radio-button>
+          <el-radio-button value="template">{{ t('adapter.wizard.fromTemplate') }}</el-radio-button>
+          <el-radio-button value="custom">{{ t('adapter.wizard.custom') }}</el-radio-button>
         </el-radio-group>
 
         <template v-if="createMode === 'template'">
           <div class="template-toolbar">
             <el-input
               v-model="templateSearch"
-              placeholder="搜索模板..."
+              :placeholder="t('adapter.wizard.searchPlaceholder')"
               clearable
               size="small"
               class="template-search"
@@ -34,10 +34,10 @@
               <template #prefix><el-icon><Search /></el-icon></template>
             </el-input>
             <el-radio-group v-model="templateCategory" size="small">
-              <el-radio-button value="">全部</el-radio-button>
-              <el-radio-button value="domestic">国内</el-radio-button>
-              <el-radio-button value="international">国际</el-radio-button>
-              <el-radio-button value="local">本地</el-radio-button>
+              <el-radio-button value="">{{ t('adapter.category.all') }}</el-radio-button>
+              <el-radio-button value="domestic">{{ t('adapter.category.domestic') }}</el-radio-button>
+              <el-radio-button value="international">{{ t('adapter.category.international') }}</el-radio-button>
+              <el-radio-button value="local">{{ t('adapter.category.local') }}</el-radio-button>
             </el-radio-group>
           </div>
 
@@ -50,15 +50,15 @@
               @select="selectTemplate(tpl)"
             />
           </div>
-          <el-empty v-if="filteredTemplates.length === 0" description="没有匹配的模板" :image-size="80" />
+          <el-empty v-if="filteredTemplates.length === 0" :description="t('adapter.wizard.noTemplate')" :image-size="80" />
         </template>
 
         <div v-else class="custom-mode-hint">
           <el-alert
-            title="自定义创建"
+            :title="t('adapter.wizard.custom')"
             type="info"
             :closable="false"
-            description="手动配置适配器参数，适用于不在模板列表中的服务商"
+            :description="t('adapter.wizard.customHint')"
           />
         </div>
       </div>
@@ -66,31 +66,31 @@
       <!-- Step 2: 基本配置 -->
       <div v-if="currentStep === 1" class="step-panel">
         <el-form ref="basicFormRef" :model="form" :rules="basicRules" label-width="110px">
-          <el-form-item label="名称" prop="name">
-            <el-input v-model="form.name" placeholder="适配器名称，如 my-deepseek" />
+          <el-form-item :label="t('adapter.name')" prop="name">
+            <el-input v-model="form.name" :placeholder="t('adapter.wizard.namePlaceholder')" />
           </el-form-item>
 
-          <el-form-item label="类型" prop="type">
+          <el-form-item :label="t('adapter.type')" prop="type">
             <el-select v-model="form.type" style="width: 100%">
-              <el-option label="OpenAI 兼容" value="openai-compatible" />
-              <el-option label="Ollama 兼容" value="ollama-compatible" />
-              <el-option label="继承扩展" value="extend" />
+              <el-option :label="t('adapter.wizard.typeOpenai')" value="openai-compatible" />
+              <el-option :label="t('adapter.wizard.typeOllama')" value="ollama-compatible" />
+              <el-option :label="t('adapter.types.extend')" value="extend" />
             </el-select>
           </el-form-item>
 
-          <el-form-item v-if="form.type === 'extend'" label="父 Adapter" prop="parent">
-            <el-select v-model="form.parent" placeholder="选择要继承的父 adapter" style="width: 100%">
+          <el-form-item v-if="form.type === 'extend'" :label="t('adapter.wizard.parentAdapter')" prop="parent">
+            <el-select v-model="form.parent" :placeholder="t('adapter.wizard.parentPlaceholder')" style="width: 100%">
               <el-option
                 v-for="item in parentAdapters"
                 :key="item.name"
-                :label="item.name + (item.source === 'builtin' ? ' (内置)' : ' (配置驱动)')"
+                :label="item.name + (item.source === 'builtin' ? t('adapter.parentBuiltinSuffix') : t('adapter.parentConfigDrivenSuffix'))"
                 :value="item.name"
               />
             </el-select>
           </el-form-item>
 
           <el-form-item label="Base URL" prop="baseUrl">
-            <el-input v-model="form.baseUrl" placeholder="API 基础地址，如 https://api.deepseek.com" />
+            <el-input v-model="form.baseUrl" :placeholder="t('adapter.wizard.baseUrlPlaceholder')" />
           </el-form-item>
 
           <el-form-item label="API Key">
@@ -98,7 +98,7 @@
               v-model="form.apiKey"
               type="password"
               show-password
-              placeholder="服务商 API Key"
+              :placeholder="t('adapter.wizard.apiKeyPlaceholder')"
             />
           </el-form-item>
         </el-form>
@@ -107,39 +107,39 @@
       <!-- Step 3: 高级配置 -->
       <div v-if="currentStep === 2" class="step-panel">
         <el-form label-width="110px">
-          <el-form-item label="能力配置">
+          <el-form-item :label="t('adapter.capabilityConfig')">
             <div class="capability-checkboxes">
-              <el-checkbox v-model="form.capabilities.chat">Chat</el-checkbox>
-              <el-checkbox v-model="form.capabilities.embedding">Embedding</el-checkbox>
-              <el-checkbox v-model="form.capabilities.rerank">Rerank</el-checkbox>
-              <el-checkbox v-model="form.capabilities.tts">TTS</el-checkbox>
-              <el-checkbox v-model="form.capabilities.stt">STT</el-checkbox>
-              <el-checkbox v-model="form.capabilities.imgGen">图像生成</el-checkbox>
-              <el-checkbox v-model="form.capabilities.imgEdit">图像编辑</el-checkbox>
-              <el-checkbox v-model="form.capabilities.streaming">流式</el-checkbox>
+              <el-checkbox v-model="form.capabilities.chat">{{ t('adapter.capability.chat') }}</el-checkbox>
+              <el-checkbox v-model="form.capabilities.embedding">{{ t('adapter.capability.embedding') }}</el-checkbox>
+              <el-checkbox v-model="form.capabilities.rerank">{{ t('adapter.capability.rerank') }}</el-checkbox>
+              <el-checkbox v-model="form.capabilities.tts">{{ t('adapter.capability.tts') }}</el-checkbox>
+              <el-checkbox v-model="form.capabilities.stt">{{ t('adapter.capability.stt') }}</el-checkbox>
+              <el-checkbox v-model="form.capabilities.imgGen">{{ t('adapter.capability.imgGen') }}</el-checkbox>
+              <el-checkbox v-model="form.capabilities.imgEdit">{{ t('adapter.capability.imgEdit') }}</el-checkbox>
+              <el-checkbox v-model="form.capabilities.streaming">{{ t('adapter.capability.streaming') }}</el-checkbox>
             </div>
           </el-form-item>
 
-          <el-form-item label="认证 Header">
+          <el-form-item :label="t('adapter.wizard.authHeader')">
             <el-input v-model="form.auth.headerName" placeholder="Authorization" />
           </el-form-item>
 
-          <el-form-item label="Header 前缀">
+          <el-form-item :label="t('adapter.wizard.headerPrefix')">
             <el-input v-model="form.auth.headerPrefix" placeholder="Bearer " />
           </el-form-item>
 
-          <el-form-item label="额外请求头">
+          <el-form-item :label="t('adapter.wizard.extraHeaders')">
             <div class="header-list">
               <div v-for="(h, idx) in form.additionalHeaders" :key="idx" class="header-row">
-                <el-input v-model="h.key" placeholder="Header 名" size="small" />
-                <el-input v-model="h.value" placeholder="值" size="small" />
+                <el-input v-model="h.key" :placeholder="t('adapter.wizard.headerNamePlaceholder')" size="small" />
+                <el-input v-model="h.value" :placeholder="t('adapter.wizard.valuePlaceholder')" size="small" />
                 <el-button type="danger" link size="small" @click="removeHeader(idx)">
                   <el-icon><Delete /></el-icon>
                 </el-button>
               </div>
               <el-button type="primary" link size="small" @click="addHeader">
                 <el-icon><Plus /></el-icon>
-                添加请求头
+                {{ t('adapter.wizard.addHeader') }}
               </el-button>
             </div>
           </el-form-item>
@@ -151,7 +151,7 @@
         <AdapterTestPanel ref="testPanelRef" :show-api-key="false" />
         <div class="skip-hint">
           <el-alert
-            title="可以跳过测试直接保存"
+            :title="t('adapter.wizard.testSkipHint')"
             type="warning"
             :closable="false"
             show-icon
@@ -162,12 +162,12 @@
 
     <template #footer>
       <div class="wizard-footer">
-        <el-button v-if="currentStep > 0" @click="currentStep--">上一步</el-button>
-        <el-button v-if="currentStep < 3" type="primary" @click="handleNext">下一步</el-button>
+        <el-button v-if="currentStep > 0" @click="currentStep--">{{ t('adapter.wizard.previous') }}</el-button>
+        <el-button v-if="currentStep < 3" type="primary" @click="handleNext">{{ t('adapter.wizard.next') }}</el-button>
         <el-button v-else type="primary" :loading="saving" @click="handleFinish">
-          保存
+          {{ t('adapter.save') }}
         </el-button>
-        <el-button @click="handleClose">取消</el-button>
+        <el-button @click="handleClose">{{ t('adapter.cancel') }}</el-button>
       </div>
     </template>
   </el-dialog>
@@ -175,6 +175,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { Search, Delete, Plus } from '@element-plus/icons-vue'
 import AdapterTemplateCard from './AdapterTemplateCard.vue'
@@ -193,6 +194,8 @@ const visible = defineModel<boolean>({ default: false })
 const emit = defineEmits<{
   (e: 'created'): void
 }>()
+
+const { t } = useI18n()
 
 const currentStep = ref(0)
 const createMode = ref<'template' | 'custom'>('template')
@@ -228,21 +231,22 @@ const form = reactive({
   additionalHeaders: [] as { key: string; value: string }[]
 })
 
-const basicRules: FormRules = {
+// v2.10.3: computed 化，语言切换后校验文案即时更新
+const basicRules = computed<FormRules>(() => ({
   name: [
-    { required: true, message: '请输入适配器名称', trigger: 'blur' },
-    { pattern: /^[a-zA-Z0-9_-]+$/, message: '只能包含字母、数字、下划线和横线', trigger: 'blur' }
+    { required: true, message: t('adapter.wizard.validation.nameRequired'), trigger: 'blur' },
+    { pattern: /^[a-zA-Z0-9_-]+$/, message: t('adapter.wizard.validation.namePattern'), trigger: 'blur' }
   ],
-  type: [{ required: true, message: '请选择类型', trigger: 'change' }],
+  type: [{ required: true, message: t('adapter.wizard.validation.typeRequired'), trigger: 'change' }],
   baseUrl: [
-    { required: true, message: '请输入 Base URL', trigger: 'blur' },
+    { required: true, message: t('adapter.wizard.validation.baseUrlRequired'), trigger: 'blur' },
     {
       pattern: /^https?:\/\/.+/,
-      message: '请输入有效的 URL（以 http:// 或 https:// 开头）',
+      message: t('adapter.wizard.validation.baseUrlInvalid'),
       trigger: 'blur'
     }
   ]
-}
+}))
 
 const filteredTemplates = computed(() => {
   return templates.value.filter((tpl) => {
@@ -286,7 +290,7 @@ const removeHeader = (idx: number) => {
 
 const handleNext = async () => {
   if (currentStep.value === 0 && createMode.value === 'template' && !selectedTemplateId.value) {
-    ElMessage.warning('请先选择一个模板，或切换到自定义创建')
+    ElMessage.warning(t('adapter.wizard.selectTemplateWarn'))
     return
   }
   if (currentStep.value === 1) {
@@ -319,14 +323,14 @@ const handleFinish = async () => {
 
     const res = await createAdapter(data)
     if (res.data?.success) {
-      ElMessage.success('适配器创建成功')
+      ElMessage.success(t('adapter.wizard.createSuccess'))
       visible.value = false
       emit('created')
     } else {
-      ElMessage.error(res.data?.message || '创建失败')
+      ElMessage.error(res.data?.message || t('adapter.wizard.createFailed'))
     }
   } catch (e: any) {
-    ElMessage.error('创建失败: ' + (e.message || ''))
+    ElMessage.error(t('adapter.wizard.createFailedDetail', { error: e.message || '' }))
   } finally {
     saving.value = false
   }

@@ -4,26 +4,26 @@
     <el-card class="control-panel" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span class="card-title">路由监控控制</span>
+          <span class="card-title">{{ t('loadBalancer.monitoring.controlTitle') }}</span>
           <div class="control-buttons">
             <el-button
               :type="monitorStatus.paused ? 'success' : 'warning'"
               @click="toggleMonitor"
               :loading="togglingMonitor"
             >
-              {{ monitorStatus.paused ? '恢复监控' : '暂停监控' }}
+              {{ monitorStatus.paused ? t('loadBalancer.monitoring.resumeMonitoring') : t('loadBalancer.monitoring.pauseMonitoring') }}
             </el-button>
             <el-button @click="clearHistory" :loading="clearingHistory">
-              清空历史
+              {{ t('loadBalancer.monitoring.clearHistory') }}
             </el-button>
             <el-dropdown @command="handleExport">
               <el-button type="primary">
-                导出 <el-icon class="el-icon--right"><Download /></el-icon>
+                {{ t('loadBalancer.monitoring.export') }} <el-icon class="el-icon--right"><Download /></el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="json">导出 JSON</el-dropdown-item>
-                  <el-dropdown-item command="csv">导出 CSV</el-dropdown-item>
+                  <el-dropdown-item command="json">{{ t('loadBalancer.monitoring.exportJson') }}</el-dropdown-item>
+                  <el-dropdown-item command="csv">{{ t('loadBalancer.monitoring.exportCsv') }}</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -34,7 +34,7 @@
       <el-row :gutter="20">
         <el-col :span="6">
           <div class="config-item">
-            <label>采样率</label>
+            <label>{{ t('loadBalancer.monitoring.sampleRate') }}</label>
             <el-slider
               v-model="configForm.sampleRate"
               :min="1"
@@ -47,7 +47,7 @@
         </el-col>
         <el-col :span="6">
           <div class="config-item">
-            <label>历史记录大小</label>
+            <label>{{ t('loadBalancer.monitoring.historySize') }}</label>
             <el-input-number
               v-model="configForm.historySize"
               :min="100"
@@ -61,10 +61,10 @@
         <el-col :span="12">
           <div class="connection-status">
             <el-tag :type="wsConnected ? 'success' : 'danger'">
-              {{ wsConnected ? 'WebSocket 已连接' : 'WebSocket 未连接' }}
+              {{ wsConnected ? t('loadBalancer.monitoring.wsConnected') : t('loadBalancer.monitoring.wsDisconnected') }}
             </el-tag>
             <span class="sampled-count">
-              已采样: {{ monitorStatus.totalSampledCount }} 条
+              {{ t('loadBalancer.monitoring.sampledCount', { count: monitorStatus.totalSampledCount }) }}
             </span>
           </div>
         </el-col>
@@ -83,16 +83,16 @@
                 size="small"
                 style="margin-left: 8px"
               >
-                {{ isServicePaused(serviceType) ? '已暂停' : '监控中' }}
+                {{ isServicePaused(serviceType) ? t('loadBalancer.monitoring.pausedStatus') : t('loadBalancer.monitoring.monitoringActive') }}
               </el-tag>
             </div>
             <div class="stats-content">
               <div class="stat-row">
-                <span class="stat-label">策略</span>
+                <span class="stat-label">{{ t('loadBalancer.monitoring.strategy') }}</span>
                 <span class="stat-value">{{ serviceStats.strategy || '-' }}</span>
               </div>
               <div class="stat-row">
-                <span class="stat-label">采样数</span>
+                <span class="stat-label">{{ t('loadBalancer.monitoring.selectionCount') }}</span>
                 <span class="stat-value">{{ serviceStats.totalSelections || 0 }}</span>
               </div>
               <div class="stat-row">
@@ -101,7 +101,7 @@
               </div>
             </div>
             <div class="instance-distribution">
-              <div class="distribution-title">模型-实例分布</div>
+              <div class="distribution-title">{{ t('loadBalancer.monitoring.distributionTitle') }}</div>
               <!-- 按模型分组显示 -->
               <div
                 v-for="(instanceCounts, modelName) in serviceStats.modelInstanceCounts"
@@ -152,7 +152,7 @@
                 :type="isServicePaused(serviceType) ? 'success' : 'warning'"
                 @click="toggleServiceMonitor(serviceType as string)"
               >
-                {{ isServicePaused(serviceType) ? '恢复' : '暂停' }}
+                {{ isServicePaused(serviceType) ? t('loadBalancer.monitoring.resume') : t('loadBalancer.monitoring.pause') }}
               </el-button>
             </div>
           </div>
@@ -164,8 +164,8 @@
     <el-card class="events-card" style="margin-top: 16px" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span class="card-title">实时路由事件</span>
-          <el-select v-model="selectedServiceType" placeholder="选择服务类型" clearable style="width: 200px">
+          <span class="card-title">{{ t('loadBalancer.monitoring.eventsTitle') }}</span>
+          <el-select v-model="selectedServiceType" :placeholder="t('loadBalancer.monitoring.selectServiceType')" clearable style="width: 200px">
             <el-option
               v-for="type in serviceTypes"
               :key="type"
@@ -183,37 +183,37 @@
         v-loading="loadingEvents"
         class="events-table"
       >
-        <el-table-column prop="timestamp" label="时间" width="180">
+        <el-table-column prop="timestamp" :label="t('loadBalancer.monitoring.columns.time')" width="180">
           <template #default="{ row }">
             {{ formatTimestamp(row.timestamp) }}
           </template>
         </el-table-column>
-        <el-table-column prop="serviceType" label="服务类型" width="100">
+        <el-table-column prop="serviceType" :label="t('loadBalancer.monitoring.columns.serviceType')" width="100">
           <template #default="{ row }">
             <el-tag size="small">{{ row.serviceType }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="strategy" label="策略" width="150">
+        <el-table-column prop="strategy" :label="t('loadBalancer.monitoring.columns.strategy')" width="150">
           <template #default="{ row }">
             <el-tag :type="getStrategyTagType(row.strategy)" size="small">
               {{ row.strategy }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="selectedInstance" label="选中实例" min-width="200">
+        <el-table-column prop="selectedInstance" :label="t('loadBalancer.monitoring.columns.selectedInstance')" min-width="200">
           <template #default="{ row }">
             <el-tooltip :content="row.selectedInstanceUrl" placement="top">
               <span class="instance-id">{{ row.selectedInstance }}</span>
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column prop="clientId" label="客户端ID" width="120">
+        <el-table-column prop="clientId" :label="t('loadBalancer.monitoring.columns.clientId')" width="120">
           <template #default="{ row }">
             <span class="client-id">{{ row.clientId || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="candidateCount" label="候选数" width="80" />
-        <el-table-column prop="selectionTimeMs" label="耗时(ms)" width="90">
+        <el-table-column prop="candidateCount" :label="t('loadBalancer.monitoring.columns.candidateCount')" width="80" />
+        <el-table-column prop="selectionTimeMs" :label="t('loadBalancer.monitoring.columns.selectionTimeMs')" width="90">
           <template #default="{ row }">
             <span :class="{ 'slow-select': row.selectionTimeMs > 10 }">
               {{ row.selectionTimeMs || 0 }}
@@ -227,6 +227,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Download, Box } from '@element-plus/icons-vue'
 import request from '@/utils/request'
@@ -290,6 +291,8 @@ const clearingHistory = ref(false)
 const loadingEvents = ref(false)
 let ws: WebSocket | null = null
 let reconnectTimer: number | null = null
+
+const { t } = useI18n()
 
 const filteredEvents = computed(() => {
   if (!selectedServiceType.value) {
@@ -445,9 +448,9 @@ const toggleMonitor = async () => {
     const action = monitorStatus.value.paused ? 'resume' : 'pause'
     await request.post(`${apiBaseUrl}/${action}`)
     monitorStatus.value.paused = !monitorStatus.value.paused
-    ElMessage.success(monitorStatus.value.paused ? '监控已暂停' : '监控已恢复')
+    ElMessage.success(monitorStatus.value.paused ? t('loadBalancer.monitoring.messages.paused') : t('loadBalancer.monitoring.messages.resumed'))
   } catch (error) {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('loadBalancer.monitoring.messages.operationFailed'))
   } finally {
     togglingMonitor.value = false
   }
@@ -465,9 +468,13 @@ const toggleServiceMonitor = async (serviceType: string) => {
       monitorStatus.value.pausedServices.push(serviceType)
     }
 
-    ElMessage.success(`${serviceType} 监控${isPaused ? '已恢复' : '已暂停'}`)
+    ElMessage.success(
+      isPaused
+        ? t('loadBalancer.monitoring.messages.serviceResumed', { serviceType })
+        : t('loadBalancer.monitoring.messages.servicePaused', { serviceType })
+    )
   } catch (error) {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('loadBalancer.monitoring.messages.operationFailed'))
   }
 }
 
@@ -478,9 +485,9 @@ const updateSampleRate = async (value: number) => {
       sampleRate: value / 100
     })
     monitorStatus.value.sampleRate = value / 100
-    ElMessage.success(`采样率已更新为 ${value}%`)
+    ElMessage.success(t('loadBalancer.monitoring.messages.sampleRateUpdated', { value }))
   } catch (error) {
-    ElMessage.error('更新采样率失败')
+    ElMessage.error(t('loadBalancer.monitoring.messages.sampleRateUpdateFailed'))
     configForm.value.sampleRate = Math.round(monitorStatus.value.sampleRate * 100)
   } finally {
     updatingConfig.value = false
@@ -494,9 +501,9 @@ const updateHistorySize = async (value: number) => {
       historySize: value
     })
     monitorStatus.value.historySize = value
-    ElMessage.success(`历史记录大小已更新为 ${value}`)
+    ElMessage.success(t('loadBalancer.monitoring.messages.historySizeUpdated', { value }))
   } catch (error) {
-    ElMessage.error('更新历史记录大小失败')
+    ElMessage.error(t('loadBalancer.monitoring.messages.historySizeUpdateFailed'))
     configForm.value.historySize = monitorStatus.value.historySize
   } finally {
     updatingConfig.value = false
@@ -509,9 +516,9 @@ const clearHistory = async () => {
     await request.delete(`${apiBaseUrl}/history`)
     events.value = []
     monitorStatus.value.totalSampledCount = 0
-    ElMessage.success('历史记录已清空')
+    ElMessage.success(t('loadBalancer.monitoring.messages.historyCleared'))
   } catch (error) {
-    ElMessage.error('清空历史记录失败')
+    ElMessage.error(t('loadBalancer.monitoring.messages.clearHistoryFailed'))
   } finally {
     clearingHistory.value = false
   }
@@ -534,9 +541,9 @@ const handleExport = async (command: string) => {
     link.click()
     window.URL.revokeObjectURL(url)
 
-    ElMessage.success(`已导出 ${command.toUpperCase()} 文件`)
+    ElMessage.success(t('loadBalancer.monitoring.messages.exportSuccess', { format: command.toUpperCase() }))
   } catch (error) {
-    ElMessage.error('导出失败')
+    ElMessage.error(t('loadBalancer.monitoring.messages.exportFailed'))
   }
 }
 

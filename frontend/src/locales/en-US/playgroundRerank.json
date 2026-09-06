@@ -1,0 +1,37 @@
+{
+  "playgroundRerank": {
+    "modelPlaceholder": "Select Rerank Model",
+    "showConfig": "Settings",
+    "hideConfig": "Hide Settings",
+    "clear": "Clear",
+    "offlineStatus": "(Offline)",
+    "unknownStatus": "(Unknown)",
+    "config": {
+      "topN": "Return Count (Top N)",
+      "returnDocuments": "Return Document Content"
+    },
+    "query": {
+      "title": "Query Text",
+      "placeholder": "Enter query text, e.g. What is machine learning?"
+    },
+    "documents": {
+      "title": "Document List",
+      "add": "Add Document",
+      "contentPlaceholder": "Document {index} Content"
+    },
+    "run": "Run Rerank",
+    "result": {
+      "title": "Rerank Results",
+      "empty": "Enter a query and documents, then run rerank",
+      "loading": "Reranking...",
+      "duration": "Duration: {duration}ms",
+      "returned": "Returned: {count}",
+      "score": "Score: {score}"
+    },
+    "messages": {
+      "rerankCompleted": "Rerank completed",
+      "operation": "Reranking",
+      "suggestion": "💡 Suggestion: {suggestion}"
+    }
+  }
+}

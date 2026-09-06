@@ -1,0 +1,8 @@
+{
+  "onboarding": {
+    "configureAdapter": "Configure Adapter",
+    "createService": "Create Service",
+    "addInstance": "Add Instance",
+    "tryPlayground": "Try in Playground"
+  }
+}

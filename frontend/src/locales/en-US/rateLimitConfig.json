@@ -1,0 +1,31 @@
+{
+  "rateLimitConfig": {
+    "title": "Rate Limit Config",
+    "enableToggle": "Enable Rate Limit",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "algorithm": "Rate Limit Algorithm",
+    "algorithmPlaceholder": "Select an algorithm",
+    "algorithms": {
+      "tokenBucket": "Token Bucket",
+      "leakyBucket": "Leaky Bucket",
+      "slidingWindow": "Sliding Window"
+    },
+    "scope": "Scope",
+    "scopePlaceholder": "Select a scope",
+    "scopes": {
+      "instance": "Instance Level",
+      "clientIp": "Client IP Level"
+    },
+    "capacity": "Capacity",
+    "rate": "Rate",
+    "key": "Rate Limit Key",
+    "keyPlaceholder": "Optional; used for a custom rate limit key",
+    "clientIpRateLimit": "Client IP Rate Limit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "messages": {
+      "saveFailed": "Failed to save configuration"
+    }
+  }
+}

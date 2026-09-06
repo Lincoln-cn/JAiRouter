@@ -4,27 +4,27 @@
     <el-card class="config-card">
       <template #header>
         <div class="card-header">
-          <span class="card-title">全局默认配置</span>
+          <span class="card-title">{{ t('loadBalancer.strategyConfig.globalTitle') }}</span>
         </div>
       </template>
 
       <el-form :model="globalConfig" label-width="150px" class="config-form">
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="默认策略">
+            <el-form-item :label="t('loadBalancer.strategyConfig.defaultStrategy')">
               <el-select
                 v-model="globalConfig.type"
-                placeholder="选择策略"
+                :placeholder="t('loadBalancer.strategyConfig.selectStrategy')"
                 style="width: 100%"
               >
                 <el-option
                   v-for="strategy in strategies"
                   :key="strategy.name"
-                  :label="strategy.displayName"
+                  :label="strategyDisplayLabel(strategy)"
                   :value="strategy.name"
                 >
                   <div style="display: flex; align-items: center; gap: 8px">
-                    <span>{{ strategy.displayName }}</span>
+                    <span>{{ strategyDisplayLabel(strategy) }}</span>
                     <span
                       style="
                         margin-left: auto;
@@ -33,7 +33,7 @@
                         font-size: 12px;
                       "
                     >
-                      {{ strategy.description }}
+                      {{ strategyDescriptionLabel(strategy) }}
                     </span>
                   </div>
                 </el-option>
@@ -41,8 +41,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="Hash算法" v-if="isHashStrategy(globalConfig.type)">
-              <el-select v-model="globalConfig.hashAlgorithm" placeholder="选择Hash算法">
+            <el-form-item :label="t('loadBalancer.strategyConfig.hashAlgorithm')" v-if="isHashStrategy(globalConfig.type)">
+              <el-select v-model="globalConfig.hashAlgorithm" :placeholder="t('loadBalancer.strategyConfig.selectHashAlgorithm')">
                 <el-option label="MD5" value="md5" />
                 <el-option label="SHA256" value="sha256" />
                 <el-option label="MurmurHash" value="murmur" />
@@ -53,7 +53,7 @@
 
         <el-row :gutter="20" v-if="globalConfig.type === 'consistent-hash'">
           <el-col :span="12">
-            <el-form-item label="虚拟节点数">
+            <el-form-item :label="t('loadBalancer.strategyConfig.virtualNodes')">
               <el-input-number
                 v-model="globalConfig.virtualNodes"
                 :min="50"
@@ -70,40 +70,40 @@
     <el-card class="service-config-card">
       <template #header>
         <div class="card-header">
-          <span class="card-title">服务级配置</span>
-          <el-tag type="info">点击配置按钮修改单个服务的负载均衡策略</el-tag>
+          <span class="card-title">{{ t('loadBalancer.strategyConfig.serviceConfigsTitle') }}</span>
+          <el-tag type="info">{{ t('loadBalancer.strategyConfig.configureHint') }}</el-tag>
         </div>
       </template>
 
       <el-table :data="serviceConfigs" stripe v-loading="loadingConfigs" class="flex-table">
-        <el-table-column prop="serviceType" label="服务类型" min-width="120">
+        <el-table-column prop="serviceType" :label="t('loadBalancer.strategyConfig.columns.serviceType')" min-width="120">
           <template #default="{ row }">
             <el-tag type="primary">{{ row.serviceType }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="type" label="策略" min-width="150">
+        <el-table-column prop="type" :label="t('loadBalancer.strategyConfig.columns.strategy')" min-width="150">
           <template #default="{ row }">
             <el-tag :type="getStrategyTagType(row.type)">
               {{ getStrategyDisplayName(row.type) }}
             </el-tag>
-            <el-tag v-if="row.isGlobal" type="info" size="small" style="margin-left: 8px">默认</el-tag>
+            <el-tag v-if="row.isGlobal" type="info" size="small" style="margin-left: 8px">{{ t('loadBalancer.strategyConfig.defaultTag') }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="hashAlgorithm" label="Hash算法" min-width="100">
+        <el-table-column prop="hashAlgorithm" :label="t('loadBalancer.strategyConfig.columns.hashAlgorithm')" min-width="100">
           <template #default="{ row }">
             <span v-if="row.hashAlgorithm">{{ row.hashAlgorithm }}</span>
             <span v-else style="color: var(--ja-text-secondary)">-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="virtualNodes" label="虚拟节点" min-width="80">
+        <el-table-column prop="virtualNodes" :label="t('loadBalancer.strategyConfig.columns.virtualNodes')" min-width="80">
           <template #default="{ row }">
             <span v-if="row.virtualNodes">{{ row.virtualNodes }}</span>
             <span v-else style="color: var(--ja-text-secondary)">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" min-width="100" fixed="right">
+        <el-table-column :label="t('loadBalancer.strategyConfig.columns.actions')" min-width="100" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" type="primary" @click="showConfigDialog(row)">配置</el-button>
+            <el-button size="small" type="primary" @click="showConfigDialog(row)">{{ t('loadBalancer.strategyConfig.configure') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -112,32 +112,32 @@
     <!-- 配置对话框 -->
     <el-dialog
       v-model="configDialogVisible"
-      :title="`配置 ${currentService?.serviceType} 负载均衡器`"
+      :title="t('loadBalancer.strategyConfig.configureDialogTitle', { serviceType: currentService?.serviceType })"
       width="500px"
     >
       <el-form :model="serviceConfig" label-width="150px">
-        <el-form-item label="负载均衡策略">
+        <el-form-item :label="t('loadBalancer.strategyConfig.loadBalanceStrategy')">
           <el-select
             v-model="serviceConfig.type"
-            placeholder="选择策略"
+            :placeholder="t('loadBalancer.strategyConfig.selectStrategy')"
             style="width: 100%"
           >
             <el-option
               v-for="strategy in strategies"
               :key="strategy.name"
-              :label="strategy.displayName"
+              :label="strategyDisplayLabel(strategy)"
               :value="strategy.name"
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="Hash算法" v-if="isHashStrategy(serviceConfig.type)">
-          <el-select v-model="serviceConfig.hashAlgorithm" placeholder="选择Hash算法">
+        <el-form-item :label="t('loadBalancer.strategyConfig.hashAlgorithm')" v-if="isHashStrategy(serviceConfig.type)">
+          <el-select v-model="serviceConfig.hashAlgorithm" :placeholder="t('loadBalancer.strategyConfig.selectHashAlgorithm')">
             <el-option label="MD5" value="md5" />
             <el-option label="SHA256" value="sha256" />
             <el-option label="MurmurHash" value="murmur" />
           </el-select>
         </el-form-item>
-        <el-form-item label="虚拟节点数" v-if="serviceConfig.type === 'consistent-hash'">
+        <el-form-item :label="t('loadBalancer.strategyConfig.virtualNodes')" v-if="serviceConfig.type === 'consistent-hash'">
           <el-input-number
             v-model="serviceConfig.virtualNodes"
             :min="50"
@@ -147,8 +147,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="configDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveServiceConfig" :loading="saving">保存</el-button>
+        <el-button @click="configDialogVisible = false">{{ t('loadBalancer.strategyConfig.cancel') }}</el-button>
+        <el-button type="primary" @click="saveServiceConfig" :loading="saving">{{ t('loadBalancer.strategyConfig.save') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -156,6 +156,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 
@@ -180,6 +181,30 @@ interface LoadBalanceConfig {
 }
 
 const apiBaseUrl = '/loadbalancer'
+
+const { t } = useI18n()
+
+/** 策略名(如 round-robin) -> 语言包 key 后缀 */
+const strategyNameKeys: Record<string, string> = {
+  random: 'random',
+  'round-robin': 'roundRobin',
+  'least-connections': 'leastConnections',
+  'ip-hash': 'ipHash',
+  'consistent-hash': 'consistentHash',
+  latency: 'latency'
+}
+
+const getStrategyNameKey = (name: string) => strategyNameKeys[name] || null
+
+const strategyDisplayLabel = (strategy: StrategyInfo) => {
+  const key = getStrategyNameKey(strategy.name)
+  return key ? t(`loadBalancer.strategyConfig.strategies.${key}`) : strategy.displayName
+}
+
+const strategyDescriptionLabel = (strategy: StrategyInfo) => {
+  const key = getStrategyNameKey(strategy.name)
+  return key ? t(`loadBalancer.strategyConfig.strategyDescriptions.${key}`) : strategy.description
+}
 
 const strategies = ref<StrategyInfo[]>([])
 const globalConfig = ref<LoadBalanceConfig>({
@@ -211,17 +236,19 @@ const loadStrategies = async () => {
   } catch (error: any) {
     console.error('Failed to load strategies:', error)
     strategies.value = [
-      { name: 'random', displayName: '随机策略', description: '按权重随机选择实例' },
-      { name: 'round-robin', displayName: '轮询策略', description: '按权重轮询选择实例' },
-      { name: 'least-connections', displayName: '最少连接策略', description: '选择连接数最少的实例' },
-      { name: 'ip-hash', displayName: 'IP Hash策略', description: '基于客户端IP哈希选择实例' },
-      { name: 'consistent-hash', displayName: '一致性哈希策略', description: '使用一致性哈希环选择实例' },
-      { name: 'latency', displayName: '延迟感知策略', description: '基于EWMA延迟加权选择实例' }
+      { name: 'random', displayName: t('loadBalancer.strategyConfig.strategies.random'), description: t('loadBalancer.strategyConfig.strategyDescriptions.random') },
+      { name: 'round-robin', displayName: t('loadBalancer.strategyConfig.strategies.roundRobin'), description: t('loadBalancer.strategyConfig.strategyDescriptions.roundRobin') },
+      { name: 'least-connections', displayName: t('loadBalancer.strategyConfig.strategies.leastConnections'), description: t('loadBalancer.strategyConfig.strategyDescriptions.leastConnections') },
+      { name: 'ip-hash', displayName: t('loadBalancer.strategyConfig.strategies.ipHash'), description: t('loadBalancer.strategyConfig.strategyDescriptions.ipHash') },
+      { name: 'consistent-hash', displayName: t('loadBalancer.strategyConfig.strategies.consistentHash'), description: t('loadBalancer.strategyConfig.strategyDescriptions.consistentHash') },
+      { name: 'latency', displayName: t('loadBalancer.strategyConfig.strategies.latency'), description: t('loadBalancer.strategyConfig.strategyDescriptions.latency') }
     ]
   }
 }
 
 const getStrategyDisplayName = (strategy: string) => {
+  const key = getStrategyNameKey(strategy)
+  if (key) return t(`loadBalancer.strategyConfig.strategies.${key}`)
   const found = strategies.value.find(s => s.name === strategy)
   return found ? found.displayName : strategy
 }
@@ -276,7 +303,7 @@ const loadServiceConfigs = async () => {
     }
   } catch (error: any) {
     console.error('Failed to load service configs:', error)
-    ElMessage.error('加载服务配置失败')
+    ElMessage.error(t('loadBalancer.strategyConfig.messages.loadFailed'))
   } finally {
     loadingConfigs.value = false
   }
@@ -302,15 +329,15 @@ const saveServiceConfig = async () => {
       serviceConfig.value
     )
     if (response.data?.success) {
-      ElMessage.success(`服务 ${currentService.value.serviceType} 负载均衡配置已更新`)
+      ElMessage.success(t('loadBalancer.strategyConfig.messages.configUpdated', { serviceType: currentService.value.serviceType }))
       configDialogVisible.value = false
       loadServiceConfigs()
     } else {
-      ElMessage.error(response.data?.message || '保存配置失败')
+      ElMessage.error(response.data?.message || t('loadBalancer.strategyConfig.messages.saveFailed'))
     }
   } catch (error: any) {
     console.error('Failed to save service config:', error)
-    ElMessage.error('保存配置失败')
+    ElMessage.error(t('loadBalancer.strategyConfig.messages.saveFailed'))
   } finally {
     saving.value = false
   }

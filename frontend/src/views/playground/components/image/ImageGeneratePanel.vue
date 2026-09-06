@@ -4,7 +4,7 @@
     <div class="panel-toolbar">
       <el-select
         v-model="selectedModel"
-        :placeholder="'选择图像生成模型'"
+        :placeholder="t('playgroundImage.generate.modelPlaceholder')"
         :loading="loading"
         filterable
         class="model-select"
@@ -35,13 +35,13 @@
               v-if="inst.healthStatus === 'UNHEALTHY'"
               class="health-status-text"
             >
-              (离线)
+              {{ t('playgroundImage.offlineStatus') }}
             </span>
             <span
               v-else-if="inst.healthStatus === 'UNKNOWN' || !inst.healthStatus"
               class="health-status-text unknown"
             >
-              (未知)
+              {{ t('playgroundImage.unknownStatus') }}
             </span>
           </div>
         </el-option>
@@ -51,7 +51,7 @@
         @click="showConfig = !showConfig"
       >
         <el-icon><Setting /></el-icon>
-        {{ showConfig ? '隐藏配置' : '参数配置' }}
+        {{ showConfig ? t('playgroundImage.hideConfig') : t('playgroundImage.showConfig') }}
       </el-button>
     </div>
 
@@ -64,7 +64,7 @@
         <el-row :gutter="16">
           <el-col :span="4">
             <div class="config-item">
-              <label class="config-label">生成数量</label>
+              <label class="config-label">{{ t('playgroundImage.generate.count') }}</label>
               <el-input-number
                 v-model="config.n"
                 :min="1"
@@ -75,7 +75,7 @@
           </el-col>
           <el-col :span="4">
             <div class="config-item">
-              <label class="config-label">图像尺寸</label>
+              <label class="config-label">{{ t('playgroundImage.generate.size') }}</label>
               <el-select
                 v-model="config.size"
                 size="small"
@@ -105,7 +105,7 @@
           </el-col>
           <el-col :span="4">
             <div class="config-item">
-              <label class="config-label">质量</label>
+              <label class="config-label">{{ t('playgroundImage.generate.quality') }}</label>
               <el-select
                 v-model="config.quality"
                 size="small"
@@ -123,7 +123,7 @@
           </el-col>
           <el-col :span="4">
             <div class="config-item">
-              <label class="config-label">风格</label>
+              <label class="config-label">{{ t('playgroundImage.generate.style') }}</label>
               <el-select
                 v-model="config.style"
                 size="small"
@@ -148,13 +148,13 @@
       <!-- 提示词输入 -->
       <div class="input-card">
         <div class="card-header">
-          <span class="card-title">提示词</span>
+          <span class="card-title">{{ t('playgroundImage.generate.promptTitle') }}</span>
         </div>
         <el-input
           v-model="promptText"
           type="textarea"
           :autosize="{ minRows: 3, maxRows: 6 }"
-          placeholder="描述你想生成的图像，例如：一只可爱的猫咪坐在窗台上，阳光明媚..."
+          :placeholder="t('playgroundImage.generate.promptPlaceholder')"
           resize="none"
         />
       </div>
@@ -168,14 +168,14 @@
           @click="handleGenerate"
         >
           <el-icon><Picture /></el-icon>
-          生成图像
+          {{ t('playgroundImage.generate.generate') }}
         </el-button>
       </div>
 
       <!-- 结果展示 -->
       <div class="result-card">
         <div class="card-header">
-          <span class="card-title">生成结果</span>
+          <span class="card-title">{{ t('playgroundImage.generate.resultTitle') }}</span>
         </div>
 
         <!-- 空状态 -->
@@ -189,7 +189,7 @@
           >
             <Picture />
           </el-icon>
-          <span>输入提示词后生成图像</span>
+          <span>{{ t('playgroundImage.generate.empty') }}</span>
         </div>
 
         <!-- 加载状态 -->
@@ -203,7 +203,7 @@
           >
             <Loading />
           </el-icon>
-          <span>正在生成图像...</span>
+          <span>{{ t('playgroundImage.generate.loading') }}</span>
         </div>
 
         <!-- 图像展示 -->
@@ -241,10 +241,13 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Setting, Picture, Download, Loading, Cpu } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { sendServiceRequest } from '@/api/playground'
 import type { ImageGenerateRequestConfig } from '../../types/playground'
+
+const { t } = useI18n()
 
 interface Props {
   instances: any[]
@@ -303,9 +306,9 @@ const handleGenerate = async () => {
 
     const response = await sendServiceRequest('imageGenerate', requestConfig, headers)
     images.value = response.data?.data || []
-    ElMessage.success(`成功生成 ${images.value.length} 张图像`)
+    ElMessage.success(t('playgroundImage.generate.messages.generated', { count: images.value.length }))
   } catch (error: any) {
-    const errorMsg = error.data?.error?.message || '生成图像失败'
+    const errorMsg = error.data?.error?.message || t('playgroundImage.generate.messages.failed')
     ElMessage.error(errorMsg)
   } finally {
     isLoading.value = false

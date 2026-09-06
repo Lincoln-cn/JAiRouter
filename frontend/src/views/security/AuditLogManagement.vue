@@ -1,17 +1,17 @@
 <template>
-  <PageSkeleton title="审计日志">
+  <PageSkeleton :title="t('auditLog.pageTitle')">
     <template #actions>
       <el-button-group>
-        <el-button @click="handleRefresh" :icon="Refresh">刷新</el-button>
+        <el-button @click="handleRefresh" :icon="Refresh">{{ t('auditLog.refresh') }}</el-button>
         <el-dropdown @command="handleExport">
           <el-button type="primary">
-            导出<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+            {{ t('auditLog.export') }}<el-icon class="el-icon--right"><ArrowDown /></el-icon>
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="csv">导出 CSV</el-dropdown-item>
-              <el-dropdown-item command="excel">导出 Excel</el-dropdown-item>
-              <el-dropdown-item command="json">导出 JSON</el-dropdown-item>
+              <el-dropdown-item command="csv">{{ t('auditLog.exportCsv') }}</el-dropdown-item>
+              <el-dropdown-item command="excel">{{ t('auditLog.exportExcel') }}</el-dropdown-item>
+              <el-dropdown-item command="json">{{ t('auditLog.exportJson') }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -29,7 +29,7 @@
               </div>
               <div class="stats-info">
                 <div class="stats-value">{{ stats.jwtOperations }}</div>
-                <div class="stats-label">JWT操作</div>
+                <div class="stats-label">{{ t('auditLog.jwtOperations') }}</div>
               </div>
             </div>
           </el-card>
@@ -42,7 +42,7 @@
               </div>
               <div class="stats-info">
                 <div class="stats-value">{{ stats.apiKeyOperations }}</div>
-                <div class="stats-label">API Key操作</div>
+                <div class="stats-label">{{ t('auditLog.apiKeyOperations') }}</div>
               </div>
             </div>
           </el-card>
@@ -55,7 +55,7 @@
               </div>
               <div class="stats-info">
                 <div class="stats-value">{{ stats.failedAuthentications }}</div>
-                <div class="stats-label">认证失败</div>
+                <div class="stats-label">{{ t('auditLog.failedAuth') }}</div>
               </div>
             </div>
           </el-card>
@@ -68,7 +68,7 @@
               </div>
               <div class="stats-info">
                 <div class="stats-value">{{ stats.suspiciousActivities }}</div>
-                <div class="stats-label">可疑活动</div>
+                <div class="stats-label">{{ t('auditLog.suspicious') }}</div>
               </div>
             </div>
           </el-card>
@@ -78,13 +78,13 @@
       <el-row :gutter="20" style="margin-top: 16px;">
         <!-- 事件类型分布图 -->
         <el-col :span="12">
-          <el-card shadow="hover" header="事件类型分布">
+          <el-card shadow="hover" :header="t('auditLog.chartEventTypes')">
             <div ref="eventTypeChartRef" style="height: 300px"></div>
           </el-card>
         </el-col>
         <!-- 操作趋势图 -->
         <el-col :span="12">
-          <el-card shadow="hover" header="操作趋势">
+          <el-card shadow="hover" :header="t('auditLog.chartTrend')">
             <div ref="trendChartRef" style="height: 300px"></div>
           </el-card>
         </el-col>
@@ -96,23 +96,23 @@
       <el-form :model="searchForm" class="search-form">
         <el-row :gutter="20">
           <el-col :span="6">
-            <el-form-item label="时间范围">
-              <el-select v-model="searchForm.quickTime" placeholder="快捷选择" @change="handleQuickTimeChange" clearable>
-                <el-option label="今日" value="today" />
-                <el-option label="昨日" value="yesterday" />
-                <el-option label="本周" value="week" />
-                <el-option label="本月" value="month" />
-                <el-option label="最近7天" value="last7days" />
-                <el-option label="最近30天" value="last30days" />
+            <el-form-item :label="t('auditLog.timeRange')">
+              <el-select v-model="searchForm.quickTime" :placeholder="t('auditLog.quickTimePlaceholder')" @change="handleQuickTimeChange" clearable>
+                <el-option :label="t('auditLog.today')" value="today" />
+                <el-option :label="t('auditLog.yesterday')" value="yesterday" />
+                <el-option :label="t('auditLog.thisWeek')" value="week" />
+                <el-option :label="t('auditLog.thisMonth')" value="month" />
+                <el-option :label="t('auditLog.last7Days')" value="last7days" />
+                <el-option :label="t('auditLog.last30Days')" value="last30days" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="6">
-            <el-form-item label="开始时间">
+            <el-form-item :label="t('auditLog.startTime')">
               <el-date-picker
                 v-model="searchForm.startTime"
                 type="datetime"
-                placeholder="选择开始时间"
+                :placeholder="t('auditLog.startTimePlaceholder')"
                 format="YYYY-MM-DD HH:mm:ss"
                 value-format="YYYY-MM-DD HH:mm:ss"
                 style="width: 100%"
@@ -120,11 +120,11 @@
             </el-form-item>
           </el-col>
           <el-col :span="6">
-            <el-form-item label="结束时间">
+            <el-form-item :label="t('auditLog.endTime')">
               <el-date-picker
                 v-model="searchForm.endTime"
                 type="datetime"
-                placeholder="选择结束时间"
+                :placeholder="t('auditLog.endTimePlaceholder')"
                 format="YYYY-MM-DD HH:mm:ss"
                 value-format="YYYY-MM-DD HH:mm:ss"
                 style="width: 100%"
@@ -132,24 +132,24 @@
             </el-form-item>
           </el-col>
           <el-col :span="6">
-            <el-form-item label="事件类型">
-              <el-select v-model="searchForm.eventType" placeholder="请选择事件类型" clearable filterable>
-                <el-option-group label="JWT令牌">
-                  <el-option label="JWT令牌颁发" value="JWT_TOKEN_ISSUED" />
-                  <el-option label="JWT令牌刷新" value="JWT_TOKEN_REFRESHED" />
-                  <el-option label="JWT令牌撤销" value="JWT_TOKEN_REVOKED" />
-                  <el-option label="JWT令牌验证" value="JWT_TOKEN_VALIDATED" />
+            <el-form-item :label="t('auditLog.eventType')">
+              <el-select v-model="searchForm.eventType" :placeholder="t('auditLog.eventTypePlaceholder')" clearable filterable>
+                <el-option-group :label="t('auditLog.groupJwtTokens')">
+                  <el-option :label="t('auditLog.eventTypes.JWT_TOKEN_ISSUED')" value="JWT_TOKEN_ISSUED" />
+                  <el-option :label="t('auditLog.eventTypes.JWT_TOKEN_REFRESHED')" value="JWT_TOKEN_REFRESHED" />
+                  <el-option :label="t('auditLog.eventTypes.JWT_TOKEN_REVOKED')" value="JWT_TOKEN_REVOKED" />
+                  <el-option :label="t('auditLog.eventTypes.JWT_TOKEN_VALIDATED')" value="JWT_TOKEN_VALIDATED" />
                 </el-option-group>
-                <el-option-group label="API Key">
-                  <el-option label="API密钥创建" value="API_KEY_CREATED" />
-                  <el-option label="API密钥使用" value="API_KEY_USED" />
-                  <el-option label="API密钥撤销" value="API_KEY_REVOKED" />
+                <el-option-group :label="t('auditLog.groupApiKey')">
+                  <el-option :label="t('auditLog.eventTypes.API_KEY_CREATED')" value="API_KEY_CREATED" />
+                  <el-option :label="t('auditLog.eventTypes.API_KEY_USED')" value="API_KEY_USED" />
+                  <el-option :label="t('auditLog.eventTypes.API_KEY_REVOKED')" value="API_KEY_REVOKED" />
                 </el-option-group>
-                <el-option-group label="安全事件">
-                  <el-option label="认证失败" value="AUTHENTICATION_FAILED" />
-                  <el-option label="授权失败" value="AUTHORIZATION_FAILED" />
-                  <el-option label="可疑活动" value="SUSPICIOUS_ACTIVITY" />
-                  <el-option label="安全告警" value="SECURITY_ALERT" />
+                <el-option-group :label="t('auditLog.groupSecurityEvents')">
+                  <el-option :label="t('auditLog.eventTypes.AUTHENTICATION_FAILED')" value="AUTHENTICATION_FAILED" />
+                  <el-option :label="t('auditLog.eventTypes.AUTHORIZATION_FAILED')" value="AUTHORIZATION_FAILED" />
+                  <el-option :label="t('auditLog.eventTypes.SUSPICIOUS_ACTIVITY')" value="SUSPICIOUS_ACTIVITY" />
+                  <el-option :label="t('auditLog.eventTypes.SECURITY_ALERT')" value="SECURITY_ALERT" />
                 </el-option-group>
               </el-select>
             </el-form-item>
@@ -157,27 +157,27 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="6">
-            <el-form-item label="用户ID">
-              <el-input v-model="searchForm.userId" placeholder="请输入用户ID" clearable />
+            <el-form-item :label="t('auditLog.userId')">
+              <el-input v-model="searchForm.userId" :placeholder="t('auditLog.userIdPlaceholder')" clearable />
             </el-form-item>
           </el-col>
           <el-col :span="6">
-            <el-form-item label="客户端IP">
-              <el-input v-model="searchForm.clientIp" placeholder="请输入客户端IP" clearable />
+            <el-form-item :label="t('auditLog.clientIp')">
+              <el-input v-model="searchForm.clientIp" :placeholder="t('auditLog.clientIpPlaceholder')" clearable />
             </el-form-item>
           </el-col>
           <el-col :span="6">
-            <el-form-item label="操作结果">
-              <el-select v-model="searchForm.success" placeholder="请选择操作结果" clearable>
-                <el-option label="成功" :value="true" />
-                <el-option label="失败" :value="false" />
+            <el-form-item :label="t('auditLog.result')">
+              <el-select v-model="searchForm.success" :placeholder="t('auditLog.resultPlaceholder')" clearable>
+                <el-option :label="t('auditLog.success')" :value="true" />
+                <el-option :label="t('auditLog.failed')" :value="false" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="6">
             <el-form-item label=" ">
-              <el-button type="primary" @click="handleSearch">搜索</el-button>
-              <el-button @click="handleReset">重置</el-button>
+              <el-button type="primary" @click="handleSearch">{{ t('auditLog.search') }}</el-button>
+              <el-button @click="handleReset">{{ t('auditLog.reset') }}</el-button>
             </el-form-item>
           </el-col>
         </el-row>
@@ -186,22 +186,22 @@
 
     <!-- 日志表格 -->
     <el-table :data="logs" style="width: 100%" border v-loading="loading" :row-class-name="tableRowClassName">
-      <el-table-column prop="timestamp" label="时间" width="180" sortable>
+      <el-table-column prop="timestamp" :label="t('auditLog.time')" width="180" sortable>
         <template #default="scope">
           {{ formatDateTime(scope.row.timestamp) }}
         </template>
       </el-table-column>
-      <el-table-column prop="userId" label="用户ID" width="120" show-overflow-tooltip />
-      <el-table-column prop="type" label="事件类型" width="140">
+      <el-table-column prop="userId" :label="t('auditLog.userId')" width="120" show-overflow-tooltip />
+      <el-table-column prop="type" :label="t('auditLog.eventType')" width="140">
         <template #default="scope">
           <el-tag :type="getEventTypeColor(scope.row.type)" size="small">
             {{ getEventTypeText(scope.row.type) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="resourceId" label="资源ID" width="150" show-overflow-tooltip />
-      <el-table-column prop="ipAddress" label="客户端IP" width="140" />
-      <el-table-column prop="riskLevel" label="风险等级" width="100">
+      <el-table-column prop="resourceId" :label="t('auditLog.resourceId')" width="150" show-overflow-tooltip />
+      <el-table-column prop="ipAddress" :label="t('auditLog.clientIp')" width="140" />
+      <el-table-column prop="riskLevel" :label="t('auditLog.riskLevel')" width="100">
         <template #default="scope">
           <el-tag :type="getRiskLevelColor(scope.row.riskLevel)" size="small" v-if="scope.row.riskLevel">
             {{ scope.row.riskLevel }}
@@ -209,23 +209,23 @@
           <span v-else>-</span>
         </template>
       </el-table-column>
-      <el-table-column prop="success" label="结果" width="80">
+      <el-table-column prop="success" :label="t('auditLog.outcome')" width="80">
         <template #default="scope">
           <el-tag :type="scope.row.success ? 'success' : 'danger'" size="small">
-            {{ scope.row.success ? '成功' : '失败' }}
+            {{ scope.row.success ? t('auditLog.success') : t('auditLog.failed') }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="details" label="描述" show-overflow-tooltip />
-      <el-table-column label="操作" width="140" fixed="right">
+      <el-table-column prop="details" :label="t('auditLog.description')" show-overflow-tooltip />
+      <el-table-column :label="t('auditLog.actions')" width="140" fixed="right">
         <template #default="scope">
-          <el-button size="small" type="primary" link @click="handleViewDetail(scope.row)">详情</el-button>
+          <el-button size="small" type="primary" link @click="handleViewDetail(scope.row)">{{ t('auditLog.detail') }}</el-button>
           <el-dropdown v-if="scope.row.ipAddress" trigger="click" @command="(cmd: string) => handleAddToBlacklist(scope.row, cmd)">
-            <el-button size="small" type="warning" link>黑名单</el-button>
+            <el-button size="small" type="warning" link>{{ t('auditLog.blacklist') }}</el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="IP">封禁IP</el-dropdown-item>
-                <el-dropdown-item command="USER" :disabled="!scope.row.userId">封禁用户</el-dropdown-item>
+                <el-dropdown-item command="IP">{{ t('auditLog.banIp') }}</el-dropdown-item>
+                <el-dropdown-item command="USER" :disabled="!scope.row.userId">{{ t('auditLog.banUser') }}</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -247,39 +247,39 @@
   </PageSkeleton>
 
     <!-- 日志详情对话框 -->
-    <el-dialog v-model="detailDialogVisible" title="日志详情" width="650px">
+    <el-dialog v-model="detailDialogVisible" :title="t('auditLog.logDetailTitle')" width="650px">
       <el-descriptions v-if="currentLog" :column="2" border>
-        <el-descriptions-item label="事件ID" :span="2">{{ currentLog.id }}</el-descriptions-item>
-        <el-descriptions-item label="时间">{{ formatDateTime(currentLog.timestamp) }}</el-descriptions-item>
-        <el-descriptions-item label="风险等级">
+        <el-descriptions-item :label="t('auditLog.eventId')" :span="2">{{ currentLog.id }}</el-descriptions-item>
+        <el-descriptions-item :label="t('auditLog.time')">{{ formatDateTime(currentLog.timestamp) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('auditLog.riskLevel')">
           <el-tag :type="getRiskLevelColor(currentLog.riskLevel)" v-if="currentLog.riskLevel">
             {{ currentLog.riskLevel }}
           </el-tag>
           <span v-else>LOW</span>
         </el-descriptions-item>
-        <el-descriptions-item label="用户ID">{{ currentLog.userId || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="事件类型">
+        <el-descriptions-item :label="t('auditLog.userId')">{{ currentLog.userId || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('auditLog.eventType')">
           <el-tag :type="getEventTypeColor(currentLog.type)">
             {{ getEventTypeText(currentLog.type) }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="资源ID" :span="2">{{ currentLog.resourceId || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="操作">{{ currentLog.action || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="客户端IP">{{ currentLog.ipAddress || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="用户代理" :span="2">{{ currentLog.userAgent || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="结果">
+        <el-descriptions-item :label="t('auditLog.resourceId')" :span="2">{{ currentLog.resourceId || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('auditLog.action')">{{ currentLog.action || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('auditLog.clientIp')">{{ currentLog.ipAddress || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('auditLog.userAgent')" :span="2">{{ currentLog.userAgent || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('auditLog.outcome')">
           <el-tag :type="currentLog.success ? 'success' : 'danger'">
-            {{ currentLog.success ? '成功' : '失败' }}
+            {{ currentLog.success ? t('auditLog.success') : t('auditLog.failed') }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="地理位置">{{ currentLog.geoLocation || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="描述" :span="2">{{ currentLog.details || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="元数据" :span="2" v-if="currentLog.metadata && Object.keys(currentLog.metadata).length > 0">
+        <el-descriptions-item :label="t('auditLog.geoLocation')">{{ currentLog.geoLocation || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('auditLog.description')" :span="2">{{ currentLog.details || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('auditLog.metadata')" :span="2" v-if="currentLog.metadata && Object.keys(currentLog.metadata).length > 0">
           <pre class="metadata-pre">{{ JSON.stringify(currentLog.metadata, null, 2) }}</pre>
         </el-descriptions-item>
       </el-descriptions>
       <template #footer>
-        <el-button @click="detailDialogVisible = false">关闭</el-button>
+        <el-button @click="detailDialogVisible = false">{{ t('auditLog.close') }}</el-button>
       </template>
     </el-dialog>
 </template>
@@ -287,6 +287,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { Refresh, ArrowDown, Key, Connection, WarningFilled, Bell } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import {
@@ -300,6 +301,9 @@ import {
 import { addToBlacklist } from '@/api/blacklist'
 import { useChartTheme } from '@/composables/useChartTheme'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import { formatDateTime as formatDateTimeBase } from '@/utils/format'
+
+const { t } = useI18n()
 
 const { getChartTheme } = useChartTheme()
 
@@ -385,7 +389,7 @@ const formatDate = (date: Date): string => {
 const handleSearch = async () => {
   pagination.currentPage = 1
   await loadAuditLogs()
-  ElMessage.success('搜索完成')
+  ElMessage.success(t('auditLog.searchDone'))
 }
 
 // 重置
@@ -406,7 +410,7 @@ const handleReset = async () => {
 // 刷新
 const handleRefresh = async () => {
   await Promise.all([loadAuditLogs(), loadStatistics()])
-  ElMessage.success('数据已刷新')
+  ElMessage.success(t('auditLog.refreshed'))
 }
 
 // 导出
@@ -441,21 +445,21 @@ const handleExport = async (format: string) => {
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
     
-    ElMessage.success(`已导出 ${result.events.length} 条记录`)
+    ElMessage.success(t('auditLog.exported', { count: result.events.length }))
   } catch (error: any) {
-    ElMessage.error(`导出失败: ${  error.message || '未知错误'}`)
+    ElMessage.error(t('auditLog.exportFailed', { message: error.message || t('auditLog.unknownError') }))
   }
 }
 
 const convertToCSV = (events: AuditEvent[]): string => {
-  const headers = ['时间', '事件类型', '用户ID', '资源ID', '客户端IP', '结果', '风险等级', '描述']
+  const headers = [t('auditLog.time'), t('auditLog.eventType'), t('auditLog.userId'), t('auditLog.resourceId'), t('auditLog.clientIp'), t('auditLog.outcome'), t('auditLog.riskLevel'), t('auditLog.description')]
   const rows = events.map(e => [
     e.timestamp || '',
     e.type || '',
     e.userId || '',
     e.resourceId || '',
     e.ipAddress || '',
-    e.success ? '成功' : '失败',
+    e.success ? t('auditLog.success') : t('auditLog.failed'),
     e.riskLevel || 'LOW',
     e.details || ''
   ])
@@ -476,23 +480,26 @@ const handleAddToBlacklist = async (log: AuditEvent, type: string) => {
   switch (type) {
     case 'IP':
       targetValue = log.ipAddress || ''
-      reason = `可疑活动封禁IP - 事件: ${log.type}`
+      reason = t('auditLog.banReasonIp', { type: log.type })
       break
     case 'USER':
       targetValue = log.userId || ''
-      reason = `可疑活动封禁用户 - 事件: ${log.type}`
+      reason = t('auditLog.banReasonUser', { type: log.type })
       break
   }
 
   if (!targetValue) {
-    ElMessage.warning('目标值不存在，无法添加到黑名单')
+    ElMessage.warning(t('auditLog.noTargetValue'))
     return
   }
 
   try {
     await ElMessageBox.confirm(
-      `确定要将${type === 'IP' ? 'IP' : '用户'}添加到黑名单吗？\n目标: ${targetValue}`,
-      '添加黑名单确认',
+      t('auditLog.confirmMessage', {
+        entity: type === 'IP' ? t('auditLog.entityIp') : t('auditLog.entityUser'),
+        target: targetValue
+      }),
+      t('auditLog.confirmTitle'),
       { type: 'warning' }
     )
 
@@ -505,9 +512,9 @@ const handleAddToBlacklist = async (log: AuditEvent, type: string) => {
     })
 
     if (result.success) {
-      ElMessage.success('已添加到黑名单')
+      ElMessage.success(t('auditLog.addedToBlacklist'))
     } else {
-      ElMessage.error(result.message || '添加失败')
+      ElMessage.error(result.message || t('auditLog.addFailed'))
     }
   } catch {
     // 用户取消
@@ -547,7 +554,7 @@ const loadAuditLogs = async () => {
     logs.value = result.events
     pagination.total = result.totalElements
   } catch (error: any) {
-    ElMessage.error(`加载审计日志失败: ${  error.message || '未知错误'}`)
+    ElMessage.error(t('auditLog.loadFailed', { message: error.message || t('auditLog.unknownError') }))
   } finally {
     loading.value = false
   }
@@ -621,10 +628,10 @@ const updateTrendChart = (data: Record<string, number>) => {
   })
 }
 
-// 格式化日期时间
+// 格式化日期时间（委托共享 format.ts）
 const formatDateTime = (dateTime: string) => {
   if (!dateTime) return ''
-  return new Date(dateTime).toLocaleString('zh-CN')
+  return formatDateTimeBase(dateTime)
 }
 
 // 获取事件类型颜色
@@ -649,19 +656,19 @@ const getRiskLevelColor = (level: string) => {
 // 获取事件类型文本
 const getEventTypeText = (type: string) => {
   const typeMap: Record<string, string> = {
-    'JWT_TOKEN_ISSUED': 'JWT颁发',
-    'JWT_TOKEN_REFRESHED': 'JWT刷新',
-    'JWT_TOKEN_REVOKED': 'JWT撤销',
-    'JWT_TOKEN_VALIDATED': 'JWT验证',
-    'JWT_TOKEN_EXPIRED': 'JWT过期',
-    'API_KEY_CREATED': 'Key创建',
-    'API_KEY_USED': 'Key使用',
-    'API_KEY_REVOKED': 'Key撤销',
-    'API_KEY_EXPIRED': 'Key过期',
-    'AUTHENTICATION_FAILED': '认证失败',
-    'AUTHORIZATION_FAILED': '授权失败',
-    'SUSPICIOUS_ACTIVITY': '可疑活动',
-    'SECURITY_ALERT': '安全告警'
+    'JWT_TOKEN_ISSUED': t('auditLog.eventBadges.JWT_TOKEN_ISSUED'),
+    'JWT_TOKEN_REFRESHED': t('auditLog.eventBadges.JWT_TOKEN_REFRESHED'),
+    'JWT_TOKEN_REVOKED': t('auditLog.eventBadges.JWT_TOKEN_REVOKED'),
+    'JWT_TOKEN_VALIDATED': t('auditLog.eventBadges.JWT_TOKEN_VALIDATED'),
+    'JWT_TOKEN_EXPIRED': t('auditLog.eventBadges.JWT_TOKEN_EXPIRED'),
+    'API_KEY_CREATED': t('auditLog.eventBadges.API_KEY_CREATED'),
+    'API_KEY_USED': t('auditLog.eventBadges.API_KEY_USED'),
+    'API_KEY_REVOKED': t('auditLog.eventBadges.API_KEY_REVOKED'),
+    'API_KEY_EXPIRED': t('auditLog.eventBadges.API_KEY_EXPIRED'),
+    'AUTHENTICATION_FAILED': t('auditLog.eventBadges.AUTHENTICATION_FAILED'),
+    'AUTHORIZATION_FAILED': t('auditLog.eventBadges.AUTHORIZATION_FAILED'),
+    'SUSPICIOUS_ACTIVITY': t('auditLog.eventBadges.SUSPICIOUS_ACTIVITY'),
+    'SECURITY_ALERT': t('auditLog.eventBadges.SECURITY_ALERT')
   }
   return typeMap[type] || type
 }

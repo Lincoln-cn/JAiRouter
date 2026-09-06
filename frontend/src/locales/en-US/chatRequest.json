@@ -1,0 +1,29 @@
+{
+  "chatRequest": {
+    "sending": "Sending...",
+    "connecting": "Connecting...",
+    "connectingStatus": "Connecting to server...",
+    "sendingData": "Sending request...",
+    "sendingDataStatus": "Sending request data...",
+    "awaiting": "Awaiting response...",
+    "awaitingStatus": "Waiting for server response...",
+    "cancelled": "Request cancelled",
+    "processing": "Processing request...",
+    "successMs": "Request succeeded ({duration}ms)",
+    "sentOk": "Request sent",
+    "completedStatus": "Request completed with status {status}",
+    "streamConnecting": "Establishing stream connection...",
+    "receivingStream": "Receiving stream data... ({count} messages, {chars} chars)",
+    "partialParseFailed": "Failed to parse part of the stream data",
+    "unknownError": "Unknown error",
+    "streamError": "Stream request error: {message}",
+    "streamFailed": "Stream request failed: {message}",
+    "streamDoneCount": "Stream request completed (received {count} messages)",
+    "streamDoneTotal": "Stream request completed, {count} messages received",
+    "streamDoneEmpty": "Stream request completed without valid data",
+    "preparing": "Preparing request...",
+    "validating": "Validating configuration...",
+    "sendFailed": "Failed to send request",
+    "failedPrefix": "Request failed: {message}"
+  }
+}

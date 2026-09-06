@@ -1,0 +1,45 @@
+{
+  "playgroundChat": {
+    "toolbar": {
+      "selectModel": "Select model",
+      "showConfig": "Config",
+      "hideConfig": "Hide config",
+      "newChat": "New Chat",
+      "clearChat": "Clear"
+    },
+    "instance": {
+      "offline": "(Offline)",
+      "unknown": "(Unknown)"
+    },
+    "empty": {
+      "title": "Start a new conversation",
+      "subtitle": "Type a message to start chatting with AI"
+    },
+    "suggestions": {
+      "introduce": "Hi, introduce yourself",
+      "writeCode": "Help me write some code",
+      "machineLearning": "Explain what machine learning is"
+    },
+    "input": {
+      "tipEnter": "Press Enter to send, Shift + Enter for a new line",
+      "tipSelectModel": "Please select a model first",
+      "placeholderNoModel": "Please select a model first...",
+      "placeholderGenerating": "Generating a response...",
+      "placeholderMessage": "Type a message..."
+    },
+    "config": {
+      "stream": "Streaming response",
+      "stopSequences": "Stop Sequences",
+      "stopPlaceholder": "Enter stop sequences"
+    },
+    "messages": {
+      "errorContext": "Chat request",
+      "errorTitle": "Error",
+      "suggestion": "Suggestion",
+      "requestCancelled": "Request cancelled",
+      "newChatCreated": "New conversation created",
+      "chatCleared": "Conversation cleared",
+      "nothingToRegenerate": "No message to regenerate"
+    }
+  }
+}

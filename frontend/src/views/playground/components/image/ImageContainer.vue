@@ -8,11 +8,11 @@
       >
         <el-radio-button value="generate">
           <el-icon><Picture /></el-icon>
-          图像生成
+          {{ t('playgroundImage.generateTab') }}
         </el-radio-button>
         <el-radio-button value="edit">
           <el-icon><Edit /></el-icon>
-          图像编辑
+          {{ t('playgroundImage.editTab') }}
         </el-radio-button>
       </el-radio-group>
     </div>
@@ -37,10 +37,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Picture, Edit } from '@element-plus/icons-vue'
 import ImageGeneratePanel from './ImageGeneratePanel.vue'
 import ImageEditPanel from './ImageEditPanel.vue'
 import { usePlaygroundData } from '@/composables/usePlaygroundData'
+
+const { t } = useI18n()
 
 // 状态
 const activeTab = ref<'generate' | 'edit'>('generate')

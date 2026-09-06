@@ -1,0 +1,8 @@
+{
+  "apiErrors": {
+    "unknown": "未知错误",
+    "tokenNotFound": "令牌不存在",
+    "unsupportedServiceType": "不支持的服务类型: {serviceType}",
+    "cannotGetResponseStream": "无法获取响应流"
+  }
+}

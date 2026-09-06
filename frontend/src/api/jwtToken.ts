@@ -1,5 +1,10 @@
 import request from '@/utils/request'
 import type {RouterResponse} from '@/types'
+import { i18n } from '@/i18n'
+const { t: gt } = i18n.global as unknown as {
+  t: (key: string, named?: Record<string, string | number>) => string
+}
+
 
 // 定义JWT令牌信息类型（基于设计文档的JwtTokenInfo）
 export interface JwtTokenInfo {
@@ -109,7 +114,7 @@ export const revokeTokensBatch = async (batchRevokeRequest: BatchTokenRevokeRequ
 export const validateToken = async (validationRequest: TokenValidationRequest): Promise<TokenValidationResponse> => {
     try {
         const response = await request.post<RouterResponse<TokenValidationResponse>>('/auth/jwt/validate', validationRequest)
-        return response.data.data || {valid: false, message: '未知错误', timestamp: new Date().toISOString()}
+        return response.data.data || {valid: false, message: gt('apiErrors.unknown'), timestamp: new Date().toISOString()}
     } catch (error) {
         console.error('验证JWT令牌失败:', error)
         throw error
@@ -162,7 +167,7 @@ export const getTokenDetails = async (tokenId: string): Promise<JwtTokenInfo> =>
     try {
         const response = await request.get<RouterResponse<JwtTokenInfo>>(`/auth/jwt/tokens/${tokenId}`)
         if (!response.data.data) {
-            throw new Error('令牌不存在')
+            throw new Error(gt('apiErrors.tokenNotFound'))
         }
         return response.data.data
     } catch (error) {

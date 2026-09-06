@@ -1,15 +1,15 @@
 <template>
   <div class="adapter-test-panel">
     <el-form :model="form" label-width="100px" size="default">
-      <el-form-item label="测试类型">
+      <el-form-item :label="t('adapter.test.type')">
         <el-radio-group v-model="form.testType">
-          <el-radio-button value="PING">连通性测试</el-radio-button>
-          <el-radio-button value="CHAT">对话测试</el-radio-button>
+          <el-radio-button value="PING">{{ t('adapter.test.ping') }}</el-radio-button>
+          <el-radio-button value="CHAT">{{ t('adapter.test.chat') }}</el-radio-button>
         </el-radio-group>
       </el-form-item>
 
-      <el-form-item v-if="form.testType === 'CHAT'" label="测试模型">
-        <el-input v-model="form.model" placeholder="输入模型名称，如 deepseek-chat" />
+      <el-form-item v-if="form.testType === 'CHAT'" :label="t('adapter.test.model')">
+        <el-input v-model="form.model" :placeholder="t('adapter.test.modelPlaceholder')" />
       </el-form-item>
 
       <el-form-item v-if="showApiKey" label="API Key">
@@ -17,12 +17,12 @@
           v-model="form.apiKey"
           type="password"
           show-password
-          placeholder="输入用于测试的 API Key（不会保存）"
+          :placeholder="t('adapter.test.apiKeyPlaceholder')"
         />
       </el-form-item>
 
       <el-form-item label="Base URL">
-        <el-input v-model="form.baseUrl" placeholder="API 地址，留空使用适配器配置" />
+        <el-input v-model="form.baseUrl" :placeholder="t('adapter.test.baseUrlPlaceholder')" />
       </el-form-item>
 
       <el-form-item>
@@ -33,7 +33,7 @@
           @click="handleTest"
         >
           <el-icon v-if="!testing"><Connection /></el-icon>
-          <span>{{ testing ? '测试中...' : '测试连接' }}</span>
+          <span>{{ testing ? t('adapter.test.testing') : t('adapter.test.run') }}</span>
         </el-button>
       </el-form-item>
     </el-form>
@@ -45,14 +45,14 @@
           <CircleCheck v-if="result.success" />
           <CircleClose v-else />
         </el-icon>
-        <span class="result-status">{{ result.success ? '连接成功' : '连接失败' }}</span>
+        <span class="result-status">{{ result.success ? t('adapter.test.connected') : t('adapter.test.failed') }}</span>
         <span v-if="result.latencyMs > 0" class="result-latency">
-          延迟 {{ result.latencyMs }}ms
+          {{ t('adapter.test.latency', { ms: result.latencyMs }) }}
         </span>
       </div>
       <div class="result-message">{{ result.message }}</div>
       <div v-if="result.details?.models" class="result-details">
-        <div class="detail-title">可用模型：</div>
+        <div class="detail-title">{{ t('adapter.test.availableModels') }}</div>
         <el-tag
           v-for="m in result.details.models"
           :key="m"
@@ -63,7 +63,7 @@
         </el-tag>
       </div>
       <div v-if="result.details?.responsePreview" class="result-preview">
-        <div class="detail-title">响应预览：</div>
+        <div class="detail-title">{{ t('adapter.test.responsePreview') }}</div>
         <pre class="preview-text">{{ result.details.responsePreview }}</pre>
       </div>
     </div>
@@ -72,6 +72,7 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Connection, CircleCheck, CircleClose } from '@element-plus/icons-vue'
 import {
@@ -79,6 +80,8 @@ import {
   testAdapterConfig,
   type AdapterTestResult
 } from '@/api/adapter'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   adapterName?: string
@@ -97,7 +100,7 @@ const result = ref<AdapterTestResult | null>(null)
 
 const handleTest = async () => {
   if (form.testType === 'CHAT' && !form.model) {
-    ElMessage.warning('请输入测试模型名称')
+    ElMessage.warning(t('adapter.test.modelRequired'))
     return
   }
 
@@ -127,10 +130,10 @@ const handleTest = async () => {
     if (res.data?.success && res.data.data) {
       result.value = res.data.data
     } else {
-      ElMessage.error(res.data?.message || '测试请求失败')
+      ElMessage.error(res.data?.message || t('adapter.test.requestFailed'))
     }
   } catch (e: any) {
-    ElMessage.error('测试失败: ' + (e.message || ''))
+    ElMessage.error(t('adapter.test.failedDetail', { error: e.message || '' }))
   } finally {
     testing.value = false
   }

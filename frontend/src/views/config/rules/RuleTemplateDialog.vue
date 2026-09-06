@@ -1,32 +1,32 @@
 <template>
-  <el-dialog v-model="visible" title="从模板创建规则" width="680px">
+  <el-dialog v-model="visible" :title="t('rule.template.title')" width="680px">
     <el-form label-width="80px">
-      <el-form-item label="规则名称">
-        <el-input v-model="name" placeholder="为从模板创建的规则命名" />
+      <el-form-item :label="t('rule.template.name')">
+        <el-input v-model="name" :placeholder="t('rule.template.namePlaceholder')" />
       </el-form-item>
     </el-form>
 
     <div class="template-grid">
       <div
-        v-for="t in templates"
-        :key="t.id"
+        v-for="tpl in templates"
+        :key="tpl.id"
         class="template-card"
-        :class="{ active: selectedId === t.id }"
-        @click="selectedId = t.id"
+        :class="{ active: selectedId === tpl.id }"
+        @click="selectedId = tpl.id"
       >
-        <div class="template-name">{{ t.name }}</div>
-        <div class="template-desc">{{ t.description }}</div>
+        <div class="template-name">{{ tpl.name }}</div>
+        <div class="template-desc">{{ tpl.description }}</div>
         <div class="template-meta">
-          <el-tag size="small" type="info">{{ t.category }}</el-tag>
-          <span class="template-tip">{{ t.usageTip }}</span>
+          <el-tag size="small" type="info">{{ tpl.category }}</el-tag>
+          <span class="template-tip">{{ tpl.usageTip }}</span>
         </div>
       </div>
     </div>
 
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
+      <el-button @click="visible = false">{{ t('rule.cancel') }}</el-button>
       <el-button type="primary" :loading="creating" :disabled="!selectedId || !name.trim()" @click="handleNext">
-        下一步:编辑并保存
+        {{ t('rule.template.nextStep') }}
       </el-button>
     </template>
   </el-dialog>
@@ -34,6 +34,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { createRuleFromTemplate, getRuleTemplates, type RuleDefinition, type RuleTemplate } from '@/api/rules'
 
@@ -42,6 +43,8 @@ const visible = defineModel<boolean>({ required: true })
 const emit = defineEmits<{
   created: [draft: RuleDefinition]
 }>()
+
+const { t } = useI18n()
 
 const templates = ref<RuleTemplate[]>([])
 const selectedId = ref('')
@@ -53,7 +56,7 @@ const loadTemplates = async () => {
     const res = await getRuleTemplates()
     templates.value = res.data?.data || []
   } catch (e) {
-    ElMessage.error('获取模板列表失败')
+    ElMessage.error(t('rule.template.fetchListFailed'))
   }
 }
 
@@ -70,7 +73,7 @@ const handleNext = async () => {
       emit('created', draft)
     }
   } catch (e) {
-    ElMessage.error('模板创建失败')
+    ElMessage.error(t('rule.template.createFailed'))
   } finally {
     creating.value = false
   }

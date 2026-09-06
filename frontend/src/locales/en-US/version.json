@@ -1,0 +1,111 @@
+{
+  "version": {
+    "title": "Version Management",
+    "refresh": "Refresh",
+    "help": {
+      "title": "How It Works",
+      "apply": "Apply",
+      "applyBody": ": sets this version's configuration as the current version.",
+      "delete": "Delete",
+      "deleteBody": ": only historical versions can be deleted, and the action cannot be undone.",
+      "view": "View",
+      "viewBody": ": preview the configuration details and change notes."
+    },
+    "versionNo": "Version",
+    "status": "Status",
+    "operationType": "Operation Type",
+    "operationDetail": "Operation Details",
+    "time": "Time",
+    "timestamp": "Timestamp",
+    "actions": "Actions",
+    "currentStatus": "Current Version",
+    "historyStatus": "Historical Version",
+    "view": "View",
+    "apply": "Apply",
+    "delete": "Delete",
+    "detailTitle": "Version Details",
+    "configPreview": "Configuration Preview",
+    "close": "Close",
+    "none": "None",
+    "unknownOperation": "Unknown Operation",
+    "operationNames": {
+      "systemInit": "System Initialization",
+      "instanceChange": "Instance Change",
+      "applyVersion": "Apply Version",
+      "serviceConfigChange": "Service Config Change",
+      "createService": "Create Service",
+      "updateService": "Update Service",
+      "deleteService": "Delete Service",
+      "addInstance": "Add Instance",
+      "updateInstance": "Update Instance",
+      "deleteInstance": "Delete Instance",
+      "updateTracingSampling": "Update Sampling Config",
+      "rateLimitChange": "Rate Limit Config Change",
+      "circuitBreakerChange": "Circuit Breaker Config Change"
+    },
+    "applyLoading": "Applying version {version}...",
+    "validateLoading": "Validating version...",
+    "applyConfigLoading": "Applying version config...",
+    "validateResultLoading": "Verifying the result...",
+    "refreshConfigLoading": "Refreshing config state...",
+    "applySuccess": "Version {version} applied successfully! The configuration has been updated and is now active.",
+    "applyDialog": {
+      "title": "Apply Config Version",
+      "heading": "Version Apply Confirmation",
+      "version": "Version: {version}",
+      "operation": "Operation Type: {operation}",
+      "detail": "Operation Details: {detail}",
+      "warning": "Applying this version will replace the current configuration. Please make sure everything is correct.",
+      "confirm": "Apply Now",
+      "cancel": "Cancel"
+    },
+    "deleteDialog": {
+      "title": "Delete Config Version",
+      "heading": "Version Delete Confirmation",
+      "version": "Version: {version}",
+      "operation": "Operation Type: {operation}",
+      "detail": "Operation Details: {detail}",
+      "createdAt": "Created At: {time}",
+      "warning": "Warning: this action cannot be undone!",
+      "hint": "Deleting this version will permanently remove its configuration data. Please confirm you no longer need this version.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    },
+    "cannotDelete": {
+      "title": "Delete Failed",
+      "heading": "The Current Version Cannot Be Deleted",
+      "message": "Version {version} is currently in use and cannot be deleted.",
+      "advice": "Suggested actions:",
+      "advice1": "1. Apply another version first",
+      "advice2": "2. Then delete this version",
+      "acknowledge": "Got It"
+    },
+    "errorDialog": {
+      "title": "Version Apply Failed",
+      "details": "Error Details:",
+      "techDetails": "Technical Details:",
+      "advice": "Suggested actions:",
+      "advice1": "1. Check whether the version exists",
+      "advice2": "2. Make sure the network connection is normal",
+      "advice3": "3. If the issue persists, contact the system administrator",
+      "acknowledge": "Got It"
+    },
+    "errors": {
+      "unknown": "Unknown Error",
+      "server": "Server returned an error",
+      "versionNotFoundTitle": "Version Not Found",
+      "versionNotFound": "Version {version} does not exist or has been deleted",
+      "configCorruptTitle": "Corrupted Configuration File",
+      "configCorrupt": "The configuration file of version {version} is corrupted and cannot be applied",
+      "permissionTitle": "Insufficient Permissions",
+      "permissionDenied": "You do not have permission to perform this action",
+      "systemTitle": "System Error",
+      "systemError": "Internal system error, please try again later"
+    },
+    "messages": {
+      "invalidResponse": "Invalid API response format",
+      "parseFailed": "Failed to parse response data",
+      "fetchFailed": "Failed to fetch version list: {message}"
+    }
+  }
+}

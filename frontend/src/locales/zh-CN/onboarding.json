@@ -1,0 +1,8 @@
+{
+  "onboarding": {
+    "configureAdapter": "配置 Adapter",
+    "createService": "创建服务",
+    "addInstance": "添加实例",
+    "tryPlayground": "Playground 试连"
+  }
+}

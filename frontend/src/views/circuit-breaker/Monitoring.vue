@@ -4,33 +4,33 @@
     <el-card class="control-panel" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span class="card-title">熔断器监控控制</span>
+          <span class="card-title">{{ t('circuitBreaker.monitoring.controlTitle') }}</span>
           <div class="control-buttons">
             <el-button
               :type="monitorStatus.paused ? 'success' : 'warning'"
               @click="toggleMonitor"
               :loading="togglingMonitor"
             >
-              {{ monitorStatus.paused ? '恢复监控' : '暂停监控' }}
+              {{ monitorStatus.paused ? t('circuitBreaker.monitoring.resumeMonitoring') : t('circuitBreaker.monitoring.pauseMonitoring') }}
             </el-button>
             <el-button @click="clearHistory" :loading="clearingHistory">
-              清空历史
+              {{ t('circuitBreaker.monitoring.clearHistory') }}
             </el-button>
             <el-button
               type="danger"
               @click="resetAllCircuitBreakersHandler"
               :loading="resettingCbs"
             >
-              清除全部熔断器
+              {{ t('circuitBreaker.monitoring.clearAllCircuitBreakers') }}
             </el-button>
             <el-dropdown @command="handleExport">
               <el-button type="primary">
-                导出 <el-icon class="el-icon--right"><Download /></el-icon>
+                {{ t('circuitBreaker.monitoring.export') }} <el-icon class="el-icon--right"><Download /></el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="json">导出 JSON</el-dropdown-item>
-                  <el-dropdown-item command="csv">导出 CSV</el-dropdown-item>
+                  <el-dropdown-item command="json">{{ t('circuitBreaker.monitoring.exportJson') }}</el-dropdown-item>
+                  <el-dropdown-item command="csv">{{ t('circuitBreaker.monitoring.exportCsv') }}</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -41,7 +41,7 @@
       <el-row :gutter="20">
         <el-col :span="6">
           <div class="config-item">
-            <label>采样率</label>
+            <label>{{ t('circuitBreaker.monitoring.sampleRate') }}</label>
             <el-slider
               v-model="configForm.sampleRate"
               :min="1"
@@ -54,7 +54,7 @@
         </el-col>
         <el-col :span="6">
           <div class="config-item">
-            <label>历史记录大小</label>
+            <label>{{ t('circuitBreaker.monitoring.historySize') }}</label>
             <el-input-number
               v-model="configForm.historySize"
               :min="50"
@@ -68,10 +68,10 @@
         <el-col :span="12">
           <div class="connection-status">
             <el-tag :type="wsConnected ? 'success' : 'danger'">
-              {{ wsConnected ? 'WebSocket 已连接' : 'WebSocket 未连接' }}
+              {{ wsConnected ? t('circuitBreaker.monitoring.wsConnected') : t('circuitBreaker.monitoring.wsDisconnected') }}
             </el-tag>
             <span class="sampled-count">
-              已采样: {{ monitorStatus.totalSampledCount }} 条
+              {{ t('circuitBreaker.monitoring.sampledCount', { count: monitorStatus.totalSampledCount }) }}
             </span>
           </div>
         </el-col>
@@ -82,9 +82,9 @@
     <el-card class="status-overview" style="margin-top: 16px" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span class="card-title">熔断器状态概览</span>
+          <span class="card-title">{{ t('circuitBreaker.monitoring.statusOverviewTitle') }}</span>
           <el-button type="primary" size="small" @click="loadCircuitBreakerStatus">
-            刷新状态
+            {{ t('circuitBreaker.monitoring.refreshStatus') }}
           </el-button>
         </div>
       </template>
@@ -106,20 +106,20 @@
         size="small"
         style="margin-top: 16px"
       >
-        <el-table-column prop="instanceId" label="实例 ID" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="serviceType" label="服务类型" width="100">
+        <el-table-column prop="instanceId" :label="t('circuitBreaker.monitoring.columns.instanceId')" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="serviceType" :label="t('circuitBreaker.monitoring.columns.serviceType')" width="100">
           <template #default="{ row }">
             <el-tag size="small">{{ row.serviceType || '-' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="state" label="状态" width="120">
+        <el-table-column prop="state" :label="t('circuitBreaker.monitoring.columns.state')" width="120">
           <template #default="{ row }">
             <el-tag :type="getStateTagType(row.state)" size="small">
               {{ row.state }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" align="center">
+        <el-table-column :label="t('circuitBreaker.monitoring.columns.actions')" width="100" align="center">
           <template #default="{ row }">
             <el-button
               type="warning"
@@ -127,7 +127,7 @@
               :icon="RefreshRight"
               @click="resetSingleCircuitBreaker(row)"
             >
-              重置
+              {{ t('circuitBreaker.monitoring.reset') }}
             </el-button>
           </template>
         </el-table-column>
@@ -138,11 +138,11 @@
     <el-card class="events-card" style="margin-top: 16px" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span class="card-title">实时熔断器事件</span>
-          <el-select v-model="selectedEventType" placeholder="事件类型" clearable style="width: 150px">
-            <el-option label="状态变化" value="STATE_CHANGE" />
-            <el-option label="成功" value="SUCCESS" />
-            <el-option label="失败" value="FAILURE" />
+          <span class="card-title">{{ t('circuitBreaker.monitoring.eventsTitle') }}</span>
+          <el-select v-model="selectedEventType" :placeholder="t('circuitBreaker.monitoring.eventTypePlaceholder')" clearable style="width: 150px">
+            <el-option :label="t('circuitBreaker.monitoring.eventTypes.stateChange')" value="STATE_CHANGE" />
+            <el-option :label="t('circuitBreaker.monitoring.eventTypes.success')" value="SUCCESS" />
+            <el-option :label="t('circuitBreaker.monitoring.eventTypes.failure')" value="FAILURE" />
           </el-select>
         </div>
       </template>
@@ -154,32 +154,32 @@
         v-loading="loadingEvents"
         class="events-table"
       >
-        <el-table-column prop="timestamp" label="时间" width="180">
+        <el-table-column prop="timestamp" :label="t('circuitBreaker.monitoring.columns.time')" width="180">
           <template #default="{ row }">
             {{ formatTimestamp(row.timestamp) }}
           </template>
         </el-table-column>
-        <el-table-column prop="instanceId" label="实例ID" min-width="200" show-overflow-tooltip>
+        <el-table-column prop="instanceId" :label="t('circuitBreaker.monitoring.columns.instanceIdCompact')" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
             <el-tooltip :content="row.instanceId" placement="top">
               <span class="instance-id">{{ getInstanceShortName(row.instanceId) }}</span>
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column prop="instanceName" label="实例名称" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="serviceType" label="服务类型" width="100">
+        <el-table-column prop="instanceName" :label="t('circuitBreaker.monitoring.columns.instanceName')" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="serviceType" :label="t('circuitBreaker.monitoring.columns.serviceType')" width="100">
           <template #default="{ row }">
             <el-tag size="small">{{ row.serviceType || '-' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="eventType" label="事件类型" width="120">
+        <el-table-column prop="eventType" :label="t('circuitBreaker.monitoring.columns.eventType')" width="120">
           <template #default="{ row }">
             <el-tag :type="getEventTypeTagType(row.eventType)" size="small">
               {{ getEventTypeLabel(row.eventType) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="previousState" label="原状态" width="100">
+        <el-table-column prop="previousState" :label="t('circuitBreaker.monitoring.columns.previousState')" width="100">
           <template #default="{ row }">
             <el-tag v-if="row.previousState" :type="getStateTagType(row.previousState)" size="small">
               {{ row.previousState }}
@@ -187,7 +187,7 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="currentState" label="新状态" width="100">
+        <el-table-column prop="currentState" :label="t('circuitBreaker.monitoring.columns.currentState')" width="100">
           <template #default="{ row }">
             <el-tag v-if="row.currentState" :type="getStateTagType(row.currentState)" size="small">
               {{ row.currentState }}
@@ -195,9 +195,9 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="failureCount" label="失败次数" width="80" />
-        <el-table-column prop="successCount" label="成功次数" width="80" />
-        <el-table-column prop="triggerReason" label="触发原因" min-width="120" show-overflow-tooltip>
+        <el-table-column prop="failureCount" :label="t('circuitBreaker.monitoring.columns.failureCount')" width="80" />
+        <el-table-column prop="successCount" :label="t('circuitBreaker.monitoring.columns.successCount')" width="80" />
+        <el-table-column prop="triggerReason" :label="t('circuitBreaker.monitoring.columns.triggerReason')" min-width="120" show-overflow-tooltip>
           <template #default="{ row }">
             {{ row.triggerReason || '-' }}
           </template>
@@ -209,6 +209,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, RefreshRight } from '@element-plus/icons-vue'
 import request from '@/utils/request'
@@ -249,6 +250,8 @@ interface StateSummary {
   state: string
   count: number
 }
+
+const { t } = useI18n()
 
 const apiBaseUrl = '/v1/circuit-breaker-monitor'
 
@@ -346,11 +349,11 @@ const getEventTypeTagType = (eventType: string) => {
 const getEventTypeLabel = (eventType: string) => {
   switch (eventType) {
     case 'STATE_CHANGE':
-      return '状态变化'
+      return t('circuitBreaker.monitoring.eventTypes.stateChange')
     case 'SUCCESS':
-      return '成功'
+      return t('circuitBreaker.monitoring.eventTypes.success')
     case 'FAILURE':
-      return '失败'
+      return t('circuitBreaker.monitoring.eventTypes.failure')
     default:
       return eventType
   }
@@ -502,9 +505,9 @@ const toggleMonitor = async () => {
     const action = monitorStatus.value.paused ? 'resume' : 'pause'
     await request.post(`${apiBaseUrl}/${action}`)
     monitorStatus.value.paused = !monitorStatus.value.paused
-    ElMessage.success(monitorStatus.value.paused ? '监控已暂停' : '监控已恢复')
+    ElMessage.success(monitorStatus.value.paused ? t('circuitBreaker.monitoring.messages.paused') : t('circuitBreaker.monitoring.messages.resumed'))
   } catch (error) {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('circuitBreaker.monitoring.messages.operationFailed'))
   } finally {
     togglingMonitor.value = false
   }
@@ -517,9 +520,9 @@ const updateSampleRate = async (value: number) => {
       sampleRate: value / 100
     })
     monitorStatus.value.sampleRate = value / 100
-    ElMessage.success(`采样率已更新为 ${value}%`)
+    ElMessage.success(t('circuitBreaker.monitoring.messages.sampleRateUpdated', { value }))
   } catch (error) {
-    ElMessage.error('更新采样率失败')
+    ElMessage.error(t('circuitBreaker.monitoring.messages.sampleRateUpdateFailed'))
     configForm.value.sampleRate = Math.round(monitorStatus.value.sampleRate * 100)
   } finally {
     updatingConfig.value = false
@@ -533,9 +536,9 @@ const updateHistorySize = async (value: number) => {
       historySize: value
     })
     monitorStatus.value.historySize = value
-    ElMessage.success(`历史记录大小已更新为 ${value}`)
+    ElMessage.success(t('circuitBreaker.monitoring.messages.historySizeUpdated', { value }))
   } catch (error) {
-    ElMessage.error('更新历史记录大小失败')
+    ElMessage.error(t('circuitBreaker.monitoring.messages.historySizeUpdateFailed'))
     configForm.value.historySize = monitorStatus.value.historySize
   } finally {
     updatingConfig.value = false
@@ -548,9 +551,9 @@ const clearHistory = async () => {
     await request.delete(`${apiBaseUrl}/history`)
     events.value = []
     monitorStatus.value.totalSampledCount = 0
-    ElMessage.success('历史记录已清空')
+    ElMessage.success(t('circuitBreaker.monitoring.messages.historyCleared'))
   } catch (error) {
-    ElMessage.error('清空历史记录失败')
+    ElMessage.error(t('circuitBreaker.monitoring.messages.clearHistoryFailed'))
   } finally {
     clearingHistory.value = false
   }
@@ -573,43 +576,43 @@ const handleExport = async (command: string) => {
     link.click()
     window.URL.revokeObjectURL(url)
 
-    ElMessage.success(`已导出 ${command.toUpperCase()} 文件`)
+    ElMessage.success(t('circuitBreaker.monitoring.messages.exportSuccess', { format: command.toUpperCase() }))
   } catch (error) {
-    ElMessage.error('导出失败')
+    ElMessage.error(t('circuitBreaker.monitoring.messages.exportFailed'))
   }
 }
 
 const resetSingleCircuitBreaker = (row: CircuitBreakerStatus) => {
   ElMessageBox.confirm(
-    `确定要重置实例 "${row.instanceName || row.instanceId}" 的熔断器状态吗？`,
-    '重置熔断器确认',
-    { confirmButtonText: '确定重置', cancelButtonText: '取消', type: 'warning' }
+    t('circuitBreaker.monitoring.confirmations.resetSingleMessage', { name: row.instanceName || row.instanceId }),
+    t('circuitBreaker.monitoring.confirmations.resetSingleTitle'),
+    { confirmButtonText: t('circuitBreaker.monitoring.confirmations.confirmReset'), cancelButtonText: t('circuitBreaker.monitoring.confirmations.cancel'), type: 'warning' }
   ).then(async () => {
     try {
       await resetCircuitBreakerById(row.instanceId)
-      ElMessage.success('熔断器状态已重置')
+      ElMessage.success(t('circuitBreaker.monitoring.messages.stateReset'))
       await loadCircuitBreakerStatus()
       await loadHistory()
     } catch (error) {
-      ElMessage.error('重置失败')
+      ElMessage.error(t('circuitBreaker.monitoring.messages.resetFailed'))
     }
   }).catch(() => { /* cancelled */ })
 }
 
 const resetAllCircuitBreakersHandler = () => {
   ElMessageBox.confirm(
-    '确定要清除所有实例的熔断器状态吗？此操作将重置所有熔断器到初始状态。',
-    '清除全部确认',
-    { confirmButtonText: '确定清除', cancelButtonText: '取消', type: 'warning' }
+    t('circuitBreaker.monitoring.confirmations.resetAllMessage'),
+    t('circuitBreaker.monitoring.confirmations.resetAllTitle'),
+    { confirmButtonText: t('circuitBreaker.monitoring.confirmations.confirmClear'), cancelButtonText: t('circuitBreaker.monitoring.confirmations.cancel'), type: 'warning' }
   ).then(async () => {
     resettingCbs.value = true
     try {
       await clearAllCircuitBreakers()
-      ElMessage.success('所有熔断器状态已清除')
+      ElMessage.success(t('circuitBreaker.monitoring.messages.allCleared'))
       await loadCircuitBreakerStatus()
       await loadHistory()
     } catch (error) {
-      ElMessage.error('清除失败')
+      ElMessage.error(t('circuitBreaker.monitoring.messages.clearAllFailed'))
     } finally {
       resettingCbs.value = false
     }
