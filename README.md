@@ -104,7 +104,7 @@ JAiRouter is a **production-ready AI model gateway** that provides a unified, Op
 - **🎯 Rule Engine** — Visual conditional routing (model name, service type, request header, client IP, weight)
 - **🛡️ Rate Limiting** — Token bucket, leaky bucket, sliding window algorithms
 - **🔥 Circuit Breaker** — Auto failover with configurable thresholds and recovery
-- **🔐 Authentication** — JWT + API Key dual authentication with audit logging and data-driven RBAC (44 permission codes, 4 role templates)
+- **🔐 Authentication** — JWT + API Key dual authentication with audit logging and data-driven RBAC (45 permission codes, 4 role templates)
 - **📊 Observability** — Prometheus metrics, OpenTelemetry tracing, real-time dashboards
 - **⚡ Response Cache** — exact-match reuse of deterministic responses, plus streaming SSE cache and an invalidation API (v2.9.10)
 - **💾 Persistence** — Redis / H2 / File storage for distributed deployment
@@ -281,10 +281,10 @@ Performance overhead compared to direct backend access:
 - [x] Rule engine with visual conditional routing
 - [x] Service-level dynamic rate limiting + rule-based RATE_LIMIT action
 - [x] Tag routing (instance tags + TARGET_TAGS rule action + request-level header selection)
-- [x] RBAC permission management (44 permission codes + 4 role templates + data-driven menu & URL authorization)
+- [x] RBAC permission management (45 permission codes + 4 role templates + data-driven menu & URL authorization)
 - [x] Response cache (deterministic reuse skips the downstream; P1 adds streaming SSE cache + invalidation API + rate-limit short-circuit)
 
-> **Current Release**: v2.10.0 | **LTS Release**: v2.6.11 (maintained until 2028-05)
+> **Current Release**: v2.10.2 | **LTS Release**: v2.6.11 (maintained until 2028-05)
 
 ---
 

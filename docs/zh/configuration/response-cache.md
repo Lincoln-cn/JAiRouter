@@ -1,8 +1,8 @@
 # 响应缓存
 
 <!-- 版本信息 -->
-> **文档版本**: 1.1.0
-> **最后更新**: 2026-09-04
+> **文档版本**: 1.2.0
+> **最后更新**: 2026-09-06
 > **Git 提交**: -
 > **作者**: Lincoln
 <!-- /版本信息 -->
@@ -144,7 +144,7 @@ DELETE /api/config/cache/response
 
 ### RBAC
 
-失效接口需要 `config:cache:write` 权限（第 44 码）。`ADMIN` 与 `OPERATOR` 角色默认包含此权限。
+失效接口需要 `config:cache:write` 权限；状态查询（`GET /api/config/cache/response`，v2.10.2）需要 `config:cache:read`。`ADMIN` 与 `OPERATOR` 角色默认包含这两个权限。
 
 ### 示例
 
@@ -158,6 +158,19 @@ curl -X DELETE "http://localhost:8080/api/config/cache/response?serviceType=chat
 # 精确清除（服务+模型）
 curl -X DELETE "http://localhost:8080/api/config/cache/response?serviceType=chat&model=gpt-4o"
 ```
+
+## 运行时状态与配置（v2.10.2）
+
+管理端基于以下端点读取缓存状态并做运行时调整（不重启生效）：
+
+```
+GET  /api/config/cache/response        # 状态快照
+PUT  /api/config/cache/response/config # 运行时部分更新
+```
+
+- **GET 状态快照**：返回 `enabled` / `ttlSeconds` / `maxSize` / `size` / `skipStreaming` / `onlyDeterministic` 及启动累计 `hits` / `misses` / `hitRatio`（无数据时为 `null`）；需 `config:cache:read` 权限
+- **PUT 运行时配置**：部分更新，仅传需变更字段——`enabled` / `skipStreaming` / `onlyDeterministic` / `ttlSeconds`（范围 1~604800，非法返回 400 `INVALID_REQUEST`）；`maxSize` 保持只读（Caffeine 构造期固定）
+- 运行时改动**重启后还原为 yaml 配置**（不持久化）；持久化配置请修改 `jairouter.response-cache`（见「快速启用」）
 
 ## 限制与后续
 

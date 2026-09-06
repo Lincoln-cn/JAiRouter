@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.10.0
-> **Last Updated**: 2026-09-05
+> **Document Version**: 2.10.2
+> **Last Updated**: 2026-09-06
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,32 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.10.2] - 2026-09-06 - Feature Release (Dashboard v2 Governance Hub + Config Onboarding & Capability Pages)
+
+> This release merges the v2.10.1 (governance hub) and v2.10.2 (config onboarding & capability pages) development batches.
+
+#### Governance hub
+
+- **Dashboard v2**: new `api/limitMetrics.ts` (rate-limiter / circuit-breaker / routing-monitor status & metrics with per-endpoint degradation); Dashboard gains a governance-chain panel (rule hits / rate limiting / circuit breaker / LB + jump links) + exception summary (latest 5) + service config table jumps (`serviceType` query)
+- **Cross-link navigation**: Service (type → Instance / Adapter), Instance (query-driven tab switch + open service config), Rule (clickable action targets), Pool (type / member → Instance), CallHistory (service / instance column jumps), Exception (uppercase-enum normalization then jump)
+- **Skeleton migration & tokenization wrap-up**: 7 pages (AdapterManagement / PoolManagement / CallHistoryList / JwtToken / AuditLog / Blacklist / Permission) moved onto PageSkeleton; ~102 `hex` → token across 16 files; `tokens.css` gains the `--ja-space-1..8` spacing scale (piloted in 4 files)
+
+#### Config onboarding & capability pages
+
+- **Response cache management page** `/config/cache`: status cards + full / per-service / per-model targeted invalidation + hit / miss / hit-rate StatCards
+- **Response cache tier B (runtime toggle + hit observability)**: backend cumulative hits/misses counters and snapshot (`hitRatio` null = no data yet); `PUT /api/config/cache/response/config` partial update (enabled / skipStreaming / onlyDeterministic / ttlSeconds, ttl 1~604800, invalid → 400 INVALID_REQUEST); runtime config panel sends only changed fields and notes values reset to yaml on restart; `maxSize` stays read-only (Caffeine construction time); cache page guards missing `hitRatio` (undefined → "no data")
+- **Slow query analysis page** `/monitoring/slow-queries`: stats / hotspots / alerts
+- **Onboarding**: `OnboardingSteps.vue` four-step guide bar (Adapter → Service → Instance → Playground) wired into 3 config pages
+- **Governance enhancements**: circuit-breaker monitoring gains clear / per-instance reset buttons (fixes a states-Map parsing bug); API Key page gains a quota-alert section
+- **Backend support**: `ResponseCacheController` gains a GET status snapshot (enabled / ttl / maxSize / size / skipStreaming / onlyDeterministic) + `ResponseCacheService.size()`; `@Deprecated` added to 4 whole controllers (legacy `/api/services` `/api/instances` `/api/instance-configs` `/security/audit`) and 5 dead methods in `TokenUsageController`
+- **Permissions 44→45**: 45th code `config:cache:read` added (URL rules prefer child paths over parent paths); frontend static catalogs / permission tree / role templates synced (role counts 45 / 36 / 25 / 24)
+
+#### Quality
+
+- Backend **3243 tests all green** (+18 since v2.10.0); frontend vue-tsc + vite build passed; embedded static resources refreshed to the latest build; menu items drop standalone icons to align with siblings
+
+---
 
 ### [2.10.0] - 2026-09-05 - Feature Release (Web Frontend Foundation: Cleanup + Shared Components + Tokenization + Dark-Mode Fixes)
 

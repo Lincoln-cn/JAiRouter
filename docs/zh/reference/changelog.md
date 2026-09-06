@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.10.0
-> **最后更新**: 2026-09-05
+> **文档版本**: 2.10.2
+> **最后更新**: 2026-09-06
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,32 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [2.10.2] - 2026-09-06 - 功能发布（Dashboard v2 治理指挥台 + 配置接入与能力补页）
+
+> 本次发布合并 v2.10.1（治理指挥台）与 v2.10.2（配置接入与能力补页）两个开发批次。
+
+#### 治理指挥台
+
+- **Dashboard v2**：新增 `api/limitMetrics.ts`（限流/熔断/路由监控状态与指标封装，逐接口降级）；Dashboard 增治理链路面板（规则命中 / 限流 / 熔断 / LB 四维 + 跳转）+ 异常摘要（近 5 条）+ 服务配置表跳转（`serviceType` query）
+- **Cross-link 跨页导航**：服务（类型 → 实例 / 适配器）、实例（读 query 切 Tab + 打开服务配置）、规则（动作目标可点跳转）、资源池（类型 / 成员 → 实例）、调用历史（服务 / 实例列跳转）、异常（大写枚举归一化后跳转）
+- **骨架迁移与令牌化收尾**：AdapterManagement / PoolManagement / CallHistoryList / JwtToken / AuditLog / Blacklist / Permission 7 页接入 PageSkeleton；16 文件 ~102 处 `hex`→token；`tokens.css` 增 `--ja-space-1..8` 间距梯度（4 文件试点）
+
+#### 配置接入与能力补页
+
+- **「响应缓存管理」页** `/config/cache`：状态卡 + 全量 / 按服务 / 按模型定向失效 + 命中 / 未命中 / 命中率 StatCard
+- **响应缓存 B 档（运行时开关 + 命中观测）**：后端累计 hits/misses 计数与 snapshot（`hitRatio` null = 暂无数据）；`PUT /api/config/cache/response/config` 部分更新（enabled / skipStreaming / onlyDeterministic / ttlSeconds，ttl 1~604800，非法返回 400 INVALID_REQUEST）；页面运行时配置面板 diff 仅传变更字段，标注重启还原 yaml；`maxSize` 保持只读（Caffeine 构造期）；缓存页 `hitRatio` 缺失字段判空（undefined → 暂无数据）
+- **「慢查询分析」页** `/monitoring/slow-queries`：stats / hotspots / alerts
+- **接入引导**：`OnboardingSteps.vue` 四步引导条（Adapter → 服务 → 实例 → Playground）接入 3 个配置页
+- **治理增强**：CB 监控「清空 / 按实例重置」按钮（修复 states Map 解析 bug）；API Key 页「配额告警」区块
+- **后端配套**：`ResponseCacheController` 增 GET 状态快照（enabled / ttl / maxSize / size / skipStreaming / onlyDeterministic）+ `ResponseCacheService.size()`；`@Deprecated` 标注 4 个整控制器（旧 `/api/services` `/api/instances` `/api/instance-configs` `/security/audit`）+ `TokenUsageController` 5 个死方法
+- **权限 44→45**：新增第 45 码 `config:cache:read`（URL 规则子路径先于父路径）；前端静态清单 / 权限树 / 角色模板同步（角色计数 45 / 36 / 25 / 24）
+
+#### 质量
+
+- 后端全量 **3243 用例全绿**（自 v2.10.0 新增 18 例）；前端 vue-tsc + vite build 通过；内嵌静态资源刷新至最新构建；菜单子项去独立 icon 与兄弟项对齐
+
+---
 
 ### [2.10.0] - 2026-09-05 - 功能发布（Web 前端地基：清理 + 统一组件 + 令牌化 + 暗色修复）
 

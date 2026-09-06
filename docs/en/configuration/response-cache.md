@@ -1,8 +1,8 @@
 # Response Cache
 
 <!-- 版本信息 -->
-> **Doc Version**: 1.1.0
-> **Last Updated**: 2026-09-04
+> **Doc Version**: 1.2.0
+> **Last Updated**: 2026-09-06
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -144,7 +144,7 @@ The invalidation API relies on the readable prefix of the three-part cache key f
 
 ### RBAC
 
-The invalidation endpoint requires the `config:cache:write` permission (code #44). The `ADMIN` and `OPERATOR` roles include this permission by default.
+The invalidation endpoint requires the `config:cache:write` permission; the status endpoint (`GET /api/config/cache/response`, v2.10.2) requires `config:cache:read`. The `ADMIN` and `OPERATOR` roles include both permissions by default.
 
 ### Examples
 
@@ -158,6 +158,19 @@ curl -X DELETE "http://localhost:8080/api/config/cache/response?serviceType=chat
 # Clear by service + model
 curl -X DELETE "http://localhost:8080/api/config/cache/response?serviceType=chat&model=gpt-4o"
 ```
+
+## Runtime Status & Configuration (v2.10.2)
+
+The management console reads cache status and applies runtime changes (no restart) via the following endpoints:
+
+```
+GET  /api/config/cache/response        # status snapshot
+PUT  /api/config/cache/response/config # runtime partial update
+```
+
+- **GET status snapshot**: returns `enabled` / `ttlSeconds` / `maxSize` / `size` / `skipStreaming` / `onlyDeterministic` plus cumulative `hits` / `misses` / `hitRatio` (`null` when there is no data yet); requires the `config:cache:read` permission
+- **PUT runtime config**: partial update — send only the fields to change: `enabled` / `skipStreaming` / `onlyDeterministic` / `ttlSeconds` (range 1~604800; invalid values return 400 `INVALID_REQUEST`); `maxSize` stays read-only (fixed at Caffeine construction)
+- Runtime changes **reset to the yaml config on restart** (not persisted); for persistent changes edit `jairouter.response-cache` (see "Quick Start")
 
 ## Limitations and Roadmap
 
