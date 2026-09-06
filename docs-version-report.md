@@ -3,22 +3,22 @@
 ## 版本统计
 
 - 总文档数: 167
-- 近7天变更: 58
+- 近7天变更: 72
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-09-05 06:40:36
+- 最后扫描: 2026-09-06 06:50:50
 
 ## 最近变更
 
-- **CREATED**: docs/zh/security/rbac-permissions.md ( → 1.0.0) - 2026-09-03
-- **MODIFIED**: docs/zh/security/index.md (1.0.2 → 1.0.3) - 2026-09-03
-- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.9 → 1.0.10) - 2026-09-03
-- **MODIFIED**: docs/zh/reference/changelog.md (1.0.14 → 1.0.15) - 2026-09-03
-- **MODIFIED**: docs/zh/index.md (1.0.14 → 1.0.15) - 2026-09-03
-- **CREATED**: docs/zh/configuration/response-cache.md ( → 1.0.0) - 2026-09-03
-- **MODIFIED**: docs/zh/configuration/index.md (1.0.4 → 1.0.5) - 2026-09-03
-- **CREATED**: docs/en/security/rbac-permissions.md ( → 1.0.0) - 2026-09-03
-- **MODIFIED**: docs/en/security/index.md (1.0.2 → 1.0.3) - 2026-09-03
-- **MODIFIED**: docs/en/reference/roadmap.md (1.0.10 → 1.0.11) - 2026-09-03
+- **MODIFIED**: docs/zh/security/rbac-permissions.md (1.0.0 → 1.0.1) - 2026-09-06
+- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.10 → 1.0.11) - 2026-09-06
+- **MODIFIED**: docs/zh/reference/changelog.md (1.0.15 → 1.0.16) - 2026-09-06
+- **MODIFIED**: docs/zh/index.md (1.0.15 → 1.0.16) - 2026-09-06
+- **MODIFIED**: docs/zh/configuration/response-cache.md (1.0.0 → 1.0.1) - 2026-09-06
+- **MODIFIED**: docs/zh/configuration/index.md (1.0.5 → 1.0.6) - 2026-09-06
+- **MODIFIED**: docs/en/security/rbac-permissions.md (1.0.0 → 1.0.1) - 2026-09-06
+- **MODIFIED**: docs/en/reference/roadmap.md (1.0.11 → 1.0.12) - 2026-09-06
+- **MODIFIED**: docs/en/reference/changelog.md (1.0.15 → 1.0.16) - 2026-09-06
+- **MODIFIED**: docs/en/index.md (1.0.14 → 1.0.15) - 2026-09-06
 
 ## 过期文档 (30天未更新)
 
@@ -630,22 +630,22 @@
 
 ## 所有文档版本
 
-- **docs/zh/security/rbac-permissions.md**: v1.0.0 - 2026-09-03 (601f504b)
+- **docs/zh/security/rbac-permissions.md**: v1.0.1 - 2026-09-06 (d77e1587)
+- **docs/zh/reference/roadmap.md**: v1.0.11 - 2026-09-06 (af4f292c)
+- **docs/zh/reference/changelog.md**: v1.0.16 - 2026-09-06 (2b5e1bcd)
+- **docs/zh/index.md**: v1.0.16 - 2026-09-06 (af4f292c)
+- **docs/zh/configuration/response-cache.md**: v1.0.1 - 2026-09-06 (ffb50ab2)
+- **docs/zh/configuration/index.md**: v1.0.6 - 2026-09-06 (52786eef)
+- **docs/en/security/rbac-permissions.md**: v1.0.1 - 2026-09-06 (d77e1587)
+- **docs/en/reference/roadmap.md**: v1.0.12 - 2026-09-06 (af4f292c)
+- **docs/en/reference/changelog.md**: v1.0.16 - 2026-09-06 (2b5e1bcd)
+- **docs/en/index.md**: v1.0.15 - 2026-09-06 (af4f292c)
+- **docs/en/configuration/response-cache.md**: v1.0.1 - 2026-09-06 (ffb50ab2)
+- **docs/en/configuration/index.md**: v1.0.8 - 2026-09-06 (52786eef)
+- **README.md**: v1.0.31 - 2026-09-06 (af4f292c)
+- **README-ZH.md**: v1.0.23 - 2026-09-06 (af4f292c)
 - **docs/zh/security/index.md**: v1.0.3 - 2026-09-03 (601f504b)
-- **docs/zh/reference/roadmap.md**: v1.0.10 - 2026-09-03 (eb4d2885)
-- **docs/zh/reference/changelog.md**: v1.0.15 - 2026-09-03 (eb4d2885)
-- **docs/zh/index.md**: v1.0.15 - 2026-09-03 (eb4d2885)
-- **docs/zh/configuration/response-cache.md**: v1.0.0 - 2026-09-03 (eb4d2885)
-- **docs/zh/configuration/index.md**: v1.0.5 - 2026-09-03 (eb4d2885)
-- **docs/en/security/rbac-permissions.md**: v1.0.0 - 2026-09-03 (601f504b)
 - **docs/en/security/index.md**: v1.0.3 - 2026-09-03 (601f504b)
-- **docs/en/reference/roadmap.md**: v1.0.11 - 2026-09-03 (eb4d2885)
-- **docs/en/reference/changelog.md**: v1.0.15 - 2026-09-03 (eb4d2885)
-- **docs/en/index.md**: v1.0.14 - 2026-09-03 (eb4d2885)
-- **docs/en/configuration/response-cache.md**: v1.0.0 - 2026-09-03 (eb4d2885)
-- **docs/en/configuration/index.md**: v1.0.7 - 2026-09-03 (eb4d2885)
-- **README.md**: v1.0.30 - 2026-09-03 (eb4d2885)
-- **README-ZH.md**: v1.0.22 - 2026-09-03 (eb4d2885)
 - **docs/zh/configuration/routing-rules.md**: v1.0.4 - 2026-09-02 (5f29294f)
 - **docs/zh/configuration/load-balancing.md**: v1.0.5 - 2026-09-02 (5f29294f)
 - **docs/en/configuration/routing-rules.md**: v1.0.4 - 2026-09-02 (5f29294f)
