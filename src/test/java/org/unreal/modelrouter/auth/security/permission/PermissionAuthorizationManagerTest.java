@@ -56,7 +56,7 @@ class PermissionAuthorizationManagerTest {
         @Test
         @DisplayName("命中规则但缺少权限码 -> 拒绝(403)")
         void ruleMatchedWithoutPermissionDenied() {
-            AuthorizationContext context = context(HttpMethod.GET, "/api/services");
+            AuthorizationContext context = context(HttpMethod.GET, "/api/config/version/test");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
             StepVerifier.create(manager.check(Mono.just(auth), context))
@@ -67,7 +67,7 @@ class PermissionAuthorizationManagerTest {
         @Test
         @DisplayName("命中规则但拥有其他权限码 -> 拒绝")
         void ruleMatchedWithWrongPermissionDenied() {
-            AuthorizationContext context = context(HttpMethod.GET, "/api/services");
+            AuthorizationContext context = context(HttpMethod.GET, "/api/config/version/test");
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.CONFIG_POOLS_READ));
 
@@ -90,11 +90,11 @@ class PermissionAuthorizationManagerTest {
         @Test
         @DisplayName("写方法规则：POST 需 write 权限码，GET 规则不适用")
         void writeMethodRequiresWriteCode() {
-            AuthorizationContext context = context(HttpMethod.POST, "/api/services");
+            AuthorizationContext context = context(HttpMethod.POST, "/api/config/version/test");
             JwtAuthentication reader = authenticated(
-                    "user", List.of("USER"), List.of(PermissionCodes.CONFIG_SERVICES_READ));
+                    "user", List.of("USER"), List.of(PermissionCodes.CONFIG_VERSIONS_READ));
 
-            // 只有 read 权限码，POST /api/services 应被拒绝（需要 write 权限码）
+            // 只有 read 权限码，POST /api/config/version/test 应被拒绝（需要 write 权限码）
             StepVerifier.create(manager.check(Mono.just(reader), context))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();

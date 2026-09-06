@@ -81,17 +81,13 @@ public class PermissionRuleRegistry {
                 // ===== 追踪安全配置（原硬编码 ADMIN 规则迁移） =====
                 PermissionRule.any("/api/config/tracing/security/**", PermissionCodes.TRACING_CONFIG_MANAGE),
 
-                // ===== 服务/实例配置（注意：services 子路径规则需先于 /api/services/**） =====
+                // ===== 服务子路径规则（保留：前端 service.ts 仍在使用） =====
                 PermissionRule.get("/api/services/*/circuitbreaker/**", PermissionCodes.CONFIG_CIRCUITBREAKER_READ),
                 PermissionRule.write("/api/services/*/circuitbreaker/**", PermissionCodes.CONFIG_CIRCUITBREAKER_WRITE),
                 PermissionRule.get("/api/services/*/ratelimit/**", PermissionCodes.RL_MONITORING_READ),
                 PermissionRule.write("/api/services/*/ratelimit/**", PermissionCodes.RL_MONITORING_READ),
-                PermissionRule.get("/api/services/**", PermissionCodes.CONFIG_SERVICES_READ),
-                PermissionRule.write("/api/services/**", PermissionCodes.CONFIG_SERVICES_WRITE),
-                PermissionRule.get("/api/instances/**", PermissionCodes.CONFIG_INSTANCES_READ),
-                PermissionRule.write("/api/instances/**", PermissionCodes.CONFIG_INSTANCES_WRITE),
-                PermissionRule.get("/api/instance-configs/**", PermissionCodes.CONFIG_INSTANCES_READ),
-                PermissionRule.write("/api/instance-configs/**", PermissionCodes.CONFIG_INSTANCES_WRITE),
+
+                // ===== 实例配置（/api/config/instance 仍活跃） =====
                 PermissionRule.get("/api/config/instance/**", PermissionCodes.CONFIG_INSTANCES_READ),
                 PermissionRule.write("/api/config/instance/**", PermissionCodes.CONFIG_INSTANCES_WRITE),
 
@@ -124,7 +120,40 @@ public class PermissionRuleRegistry {
 
                 // ===== 响应缓存配置（v2.9.10） =====
                 PermissionRule.get("/api/config/cache/response", PermissionCodes.CONFIG_CACHE_READ),
-                PermissionRule.write("/api/config/cache/**", PermissionCodes.CONFIG_CACHE_WRITE)
+                PermissionRule.write("/api/config/cache/**", PermissionCodes.CONFIG_CACHE_WRITE),
+
+                // ===== B2b 渐进补齐：API Key 管理（ApiKeyManagementController → 菜单「安全管理-API Key」） =====
+                PermissionRule.any("/api/auth/api-keys/**", PermissionCodes.SECURITY_APIKEYS_MANAGE),
+
+                // ===== B2b 渐进补齐：安全审计扩展（ExtendedSecurityAuditController → 菜单「安全管理-审计日志」） =====
+                PermissionRule.get("/api/security/audit/extended/**", PermissionCodes.SECURITY_AUDIT_READ),
+
+                // ===== B2b 渐进补齐：慢查询分析（SlowQueryAnalysisController → 菜单「监控-慢查询」） =====
+                PermissionRule.get("/api/monitoring/slow-queries/**", PermissionCodes.MONITORING_SLOWQUERY_READ),
+
+                // ===== B2b 渐进补齐：模型统计（ModelStatsController → 菜单「监控-模型统计」） =====
+                PermissionRule.get("/api/models/stats/**", PermissionCodes.MONITORING_MODELSTATS_READ),
+
+                // ===== B2b 渐进补齐：配置版本管理（ConfigurationVersionController → 菜单「配置-版本管理」） =====
+                PermissionRule.get("/api/config/version/**", PermissionCodes.CONFIG_VERSIONS_READ),
+                PermissionRule.write("/api/config/version/**", PermissionCodes.CONFIG_VERSIONS_WRITE),
+
+                // ===== B2b 渐进补齐：状态持久化管理（StatePersistenceManagementController → 菜单「配置-状态持久化」） =====
+                PermissionRule.get("/api/state-persistence/**", PermissionCodes.CONFIG_PERSISTENCE_READ),
+                PermissionRule.write("/api/state-persistence/**", PermissionCodes.CONFIG_PERSISTENCE_WRITE),
+
+                // ===== B2b 渐进补齐：追踪仪表盘（TracingController + TracingPerformanceController → 菜单「追踪-仪表盘/性能」） =====
+                PermissionRule.get("/api/tracing/actuator/**", PermissionCodes.TRACING_DASHBOARD_READ),
+                PermissionRule.write("/api/tracing/actuator/**", PermissionCodes.TRACING_CONFIG_MANAGE),
+                PermissionRule.get("/api/tracing/performance/**", PermissionCodes.TRACING_DASHBOARD_READ),
+                PermissionRule.write("/api/tracing/performance/**", PermissionCodes.TRACING_CONFIG_MANAGE),
+
+                // ===== B2b 渐进补齐：追踪检索（TracingQueryController → 菜单「追踪-查询/搜索」） =====
+                PermissionRule.get("/api/tracing/query/**", PermissionCodes.TRACING_SEARCH_READ),
+                PermissionRule.write("/api/tracing/query/**", PermissionCodes.TRACING_CONFIG_MANAGE),
+
+                // ===== B2b 渐进补齐：概览仪表盘（DashboardMetricsController → 菜单「概览」） =====
+                PermissionRule.get("/api/dashboard/**", PermissionCodes.OVERVIEW_DASHBOARD_READ)
         );
     }
 
