@@ -1,4 +1,4 @@
-﻿# 管理 API
+# 管理 API
 
 <!-- 版本信息 -->
 > **文档版本**: 2.0.0
@@ -11,8 +11,6 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 ## 目录
 
-- [服务配置管理](#service-config-mgmt)
-- [实例管理](#instance-mgmt)
 - [服务类型管理](#service-type-mgmt)
 - [认证管理](#auth-mgmt)
 - [安全管理](#security-mgmt)
@@ -23,124 +21,6 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 - [模型统计](#model-stats)
 - [令牌使用](#token-usage)
 - [配置版本管理](#config-version-mgmt)
-
----
-
-## 服务配置管理 {#service-config-mgmt}
-
-### 基础路径: `/api/services`
-
-管理服务配置，包括负载均衡、限流和熔断器设置。
-
-#### `GET /api/services`
-获取所有服务配置。
-
-**响应示例:**
-```json
-[
-  {
-    "serviceType": "chat",
-    "loadBalancer": "random",
-    "rateLimit": {
-      "enabled": true,
-      "algorithm": "token_bucket",
-      "capacity": 100
-    },
-    "circuitBreaker": {
-      "enabled": true,
-      "failureThreshold": 5
-    }
-  }
-]
-```
-
-#### `GET /api/services/{serviceType}`
-获取指定服务类型的配置。
-
-**路径参数:**
-- `serviceType` (string): 服务类型 (chat, embedding, rerank, tts, stt, imgGen, imgEdit)
-
-#### `POST /api/services/{serviceType}`
-创建或更新服务配置。
-
-**请求体示例:**
-```json
-{
-  "loadBalancer": "round_robin",
-  "rateLimit": {
-    "enabled": true,
-    "algorithm": "token_bucket",
-    "capacity": 50
-  },
-  "circuitBreaker": {
-    "enabled": true,
-    "failureThreshold": 3
-  }
-}
-```
-
-#### `DELETE /api/services/{serviceType}`
-删除服务配置。
-
----
-
-## 实例管理 {#instance-mgmt}
-
-### 基础路径: `/api/instances`
-
-管理服务实例（模型端点）。
-
-#### `GET /api/instances`
-获取所有实例。
-
-#### `GET /api/instances/service/{serviceConfigId}`
-获取指定服务配置的所有实例。
-
-**路径参数:**
-- `serviceConfigId` (long): 服务配置 ID
-
-**响应示例:**
-```json
-[
-  {
-    "id": 1,
-    "name": "qwen2:7b",
-    "baseUrl": "http://localhost:8000",
-    "apiKey": "sk-xxx",
-    "weight": 1,
-    "enabled": true,
-    "adapter": "ollama",
-    "healthStatus": "healthy"
-  }
-]
-```
-
-#### `GET /api/instances/{id}`
-根据 ID 获取指定实例。
-
-#### `POST /api/instances/service/{serviceConfigId}`
-向服务配置添加新实例。
-
-**请求体示例:**
-```json
-{
-  "name": "qwen2:7b",
-  "baseUrl": "http://localhost:8000",
-  "apiKey": "sk-xxx",
-  "weight": 1,
-  "enabled": true,
-  "adapter": "ollama"
-}
-```
-
-#### `PUT /api/instances/{id}`
-更新实例。
-
-#### `DELETE /api/instances/{id}`
-删除实例。
-
-#### `POST /api/instances/{id}/health`
-触发实例健康检查。
 
 ---
 
@@ -308,31 +188,6 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 ---
 
 ## 安全管理 {#security-mgmt}
-
-### 安全审计
-
-#### 基础路径: `/api/security/audit`
-
-#### `GET /api/security/audit/logs`
-分页获取审计日志。
-
-#### `POST /api/security/audit/logs/query`
-带过滤条件查询审计日志。
-
-#### `GET /api/security/audit/statistics`
-获取审计统计。
-
-#### `DELETE /api/security/audit/logs/cleanup`
-清理旧审计日志。
-
-#### `GET /api/security/audit/alerts/check`
-检查安全告警。
-
-#### `GET /api/security/audit/alerts/statistics`
-获取告警统计。
-
-#### `POST /api/security/audit/alerts/reset`
-重置告警状态。
 
 ### 扩展安全审计
 
@@ -795,21 +650,6 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 #### `GET /api/token-usage/recent`
 获取最近的令牌使用。
-
-#### `GET /api/token-usage/recent/{modelName}`
-获取指定模型的最近使用。
-
-#### `GET /api/token-usage/top/models`
-获取令牌使用量最高的模型。
-
-#### `GET /api/token-usage/top/services`
-获取令牌使用量最高的服务。
-
-#### `GET /api/token-usage/dashboard`
-获取令牌使用仪表板数据。
-
-#### `DELETE /api/token-usage/cleanup`
-清理旧使用记录。
 
 ---
 

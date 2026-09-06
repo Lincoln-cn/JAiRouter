@@ -271,9 +271,7 @@ import * as echarts from 'echarts'
 import type { ECharts } from 'echarts'
 import {
   getTokenUsageStatistics,
-  getRecentUsage,
-  getTopModels,
-  getTopServiceTypes
+  getRecentUsage
 } from '@/api/tokenUsage'
 import type { TokenUsageStatistics, TokenUsageRecord } from '@/types/tokenUsage'
 import { formatDateTime as formatDateTimeBase, formatNumber as formatNumberBase } from '@/utils/format'

@@ -1,4 +1,4 @@
-﻿# Management API
+# Management API
 
 <!-- 版本信息 -->
 > **Doc Version**: 2.0.0
@@ -11,8 +11,6 @@ JAiRouter provides a complete set of management APIs for dynamic configuration m
 
 ## Table of Contents
 
-- [Service Configuration Management](#service-configuration-management)
-- [Instance Management](#instance-management)
 - [Service Type Management](#service-type-management)
 - [Authentication Management](#authentication-management)
 - [Security Management](#security-management)
@@ -23,124 +21,6 @@ JAiRouter provides a complete set of management APIs for dynamic configuration m
 - [Model Statistics](#model-statistics)
 - [Token Usage](#token-usage)
 - [Configuration Version Management](#configuration-version-management)
-
----
-
-## Service Configuration Management
-
-### Base Path: `/api/services`
-
-Manage service configurations including load balancer, rate limit, and circuit breaker settings.
-
-#### `GET /api/services`
-Get all service configurations.
-
-**Response Example:**
-```json
-[
-  {
-    "serviceType": "chat",
-    "loadBalancer": "random",
-    "rateLimit": {
-      "enabled": true,
-      "algorithm": "token_bucket",
-      "capacity": 100
-    },
-    "circuitBreaker": {
-      "enabled": true,
-      "failureThreshold": 5
-    }
-  }
-]
-```
-
-#### `GET /api/services/{serviceType}`
-Get configuration for a specific service type.
-
-**Path Parameters:**
-- `serviceType` (string): Service type (chat, embedding, rerank, tts, stt, imgGen, imgEdit)
-
-#### `POST /api/services/{serviceType}`
-Create or update service configuration.
-
-**Request Body Example:**
-```json
-{
-  "loadBalancer": "round_robin",
-  "rateLimit": {
-    "enabled": true,
-    "algorithm": "token_bucket",
-    "capacity": 50
-  },
-  "circuitBreaker": {
-    "enabled": true,
-    "failureThreshold": 3
-  }
-}
-```
-
-#### `DELETE /api/services/{serviceType}`
-Delete a service configuration.
-
----
-
-## Instance Management
-
-### Base Path: `/api/instances`
-
-Manage service instances (model endpoints).
-
-#### `GET /api/instances`
-Get all instances.
-
-#### `GET /api/instances/service/{serviceConfigId}`
-Get all instances for a specific service configuration.
-
-**Path Parameters:**
-- `serviceConfigId` (long): Service configuration ID
-
-**Response Example:**
-```json
-[
-  {
-    "id": 1,
-    "name": "qwen2:7b",
-    "baseUrl": "http://localhost:8000",
-    "apiKey": "sk-xxx",
-    "weight": 1,
-    "enabled": true,
-    "adapter": "ollama",
-    "healthStatus": "healthy"
-  }
-]
-```
-
-#### `GET /api/instances/{id}`
-Get a specific instance by ID.
-
-#### `POST /api/instances/service/{serviceConfigId}`
-Add a new instance to a service configuration.
-
-**Request Body Example:**
-```json
-{
-  "name": "qwen2:7b",
-  "baseUrl": "http://localhost:8000",
-  "apiKey": "sk-xxx",
-  "weight": 1,
-  "enabled": true,
-  "adapter": "ollama"
-}
-```
-
-#### `PUT /api/instances/{id}`
-Update an instance.
-
-#### `DELETE /api/instances/{id}`
-Delete an instance.
-
-#### `POST /api/instances/{id}/health`
-Trigger health check for an instance.
 
 ---
 
@@ -308,31 +188,6 @@ Update account status.
 ---
 
 ## Security Management
-
-### Security Audit
-
-#### Base Path: `/api/security/audit`
-
-#### `GET /api/security/audit/logs`
-Get audit logs with pagination.
-
-#### `POST /api/security/audit/logs/query`
-Query audit logs with filters.
-
-#### `GET /api/security/audit/statistics`
-Get audit statistics.
-
-#### `DELETE /api/security/audit/logs/cleanup`
-Cleanup old audit logs.
-
-#### `GET /api/security/audit/alerts/check`
-Check for security alerts.
-
-#### `GET /api/security/audit/alerts/statistics`
-Get alert statistics.
-
-#### `POST /api/security/audit/alerts/reset`
-Reset alert status.
 
 ### Extended Security Audit
 
@@ -795,21 +650,6 @@ Get token usage statistics.
 
 #### `GET /api/token-usage/recent`
 Get recent token usage.
-
-#### `GET /api/token-usage/recent/{modelName}`
-Get recent usage for a model.
-
-#### `GET /api/token-usage/top/models`
-Get top models by token usage.
-
-#### `GET /api/token-usage/top/services`
-Get top services by token usage.
-
-#### `GET /api/token-usage/dashboard`
-Get token usage dashboard data.
-
-#### `DELETE /api/token-usage/cleanup`
-Cleanup old usage records.
 
 ---
 
