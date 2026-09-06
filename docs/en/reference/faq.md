@@ -1,9 +1,9 @@
 # Frequently Asked Questions (FAQ)
 
 <!-- 版本信息 -->
-> **Doc Version**: 1.0.2  
-> **Last Updated**: 2026-05-21  
-> **Git Commit**: 61384b4a  
+> **Doc Version**: 1.0.3  
+> **Last Updated**: 2026-09-06  
+> **Git Commit**: c024c5b3  
 > **Author**: Lincoln
 <!-- /版本信息 -->
 

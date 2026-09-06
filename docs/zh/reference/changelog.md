@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.10.3
+> **文档版本**: 2.10.4
 > **最后更新**: 2026-09-06
 > **作者**: JAiRouter Team
 
@@ -21,6 +21,33 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [2.10.4] - 2026-09-06 - 功能发布（Web 体验收尾：服务类型显示名统一 + 图表热切换 + 死代码清理 + 暗色对比门禁 + 后端消息注记 + 代码块双主题高亮）
+
+#### 服务类型显示名统一
+
+- 全站收敛到顶层 `serviceTypes.*`（删除 callHistory / exception / dashboard 语言包内各自维护的嵌套字典，双源归一）
+- ServiceManagement 类型列补中文显示（原渲染原始类型码）、新增服务下拉补 i18n（原渲染 key 字面量）；exception 页残留半英（Chat/TTS 等）修正；词汇统一对照：聊天 → 聊天模型、嵌入 → 嵌入模型、聊天服务 → 聊天模型 等，en 侧同步（去 Service 后缀等）
+
+#### 图表与主题体验
+
+- 新增 `useChartAutoRefresh`（监听语言与亮暗主题，flush post）：Dashboard / callHistory×2 / tracing×3 / 异常统计 / 审计日志共 8 页图表在切语言或切主题后即时重绘（纯前端重绘，不触发网络）
+
+#### 清理与质量
+
+- 死代码清理：删除零引用的 `utils/errorHandler.ts` 与 `utils/validators/{index,rules,useValidation}.ts`
+- 暗色对比审计门禁：新增 `frontend/scripts/contrast-audit.mjs`（真实浏览器登录后对 36 个页面做暗色 DOM 对比度审计，WCAG ≥ 4.5，退出码门禁）；修复暗色违规根因与案例（`index.html` 首帧启动屏全局裸 `h2 #333 / p #666` 样式泄漏到 SPA、tracing/dashboard 标题、state-persistence info 按钮、response-cache alert 文字），暗色全站内容文字违规清零
+- 代码块双主题：MarkdownRenderer / CodeBlock 的 hljs token 色收敛为语义分组 CSS 变量，`html.dark` 采用 GitHub Dark 近似配色，亮暗两态对比度达标（注释 ≥ 3，其余 ≥ 4.5）
+
+#### 文档
+
+- FAQ zh/en 新增 Q12.1：说明管理台已中英双语、后端直返 message 维持原文透传、错误码化后端改造另立项
+
+#### 质量
+
+- 前端 vue-tsc + vite build 通过；图表页切语言/主题浏览器冒烟通过；后端零改动（3243 基线不变）；内嵌静态刷新
+
+---
 
 ### [2.10.3] - 2026-09-06 - 功能发布（Web 双语版：全量 zh/en i18n + 语言切换器 + Element Plus locale + 日期/数字本地化）
 

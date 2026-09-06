@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.10.3
+> **Document Version**: 2.10.4
 > **Last Updated**: 2026-09-06
 > **Git Commit**: -
 > **Author**: Lincoln
@@ -20,6 +20,33 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.10.4] - 2026-09-06 - Feature Release (Web Experience Wrap-up: Unified Service-Type Names + Chart Hot-Switch + Dead-Code Cleanup + Dark Contrast Gate + Backend-Message Note + Dual-Theme Code Highlighting)
+
+#### Unified service-type display names
+
+- All service-type display names consolidated onto the top-level `serviceTypes.*` namespace (per-page nested dictionaries removed from the callHistory / exception / dashboard packs — one source of truth)
+- ServiceManagement type column now shows localized names (was raw codes) and the add-service dropdown gets i18n labels (was rendering key literals); exception page residual half-English labels (Chat/TTS etc.) fixed; zh wording unified (聊天 → 聊天模型, 聊天服务 → 聊天模型, …), en aligned (dropped "Service" suffixes etc.)
+
+#### Charts & theme UX
+
+- New `useChartAutoRefresh` (watches language and dark theme, flush: post): charts on 8 pages (Dashboard / callHistory×2 / tracing×3 / exception stats / audit logs) re-render instantly on language or theme switch (pure frontend redraw, no network)
+
+#### Cleanup & quality
+
+- Dead-code cleanup: removed zero-reference `utils/errorHandler.ts` and `utils/validators/{index,rules,useValidation}.ts`
+- Dark-contrast audit gate: new `frontend/scripts/contrast-audit.mjs` (real-browser, logs in and audits 36 pages in dark mode, WCAG ≥ 4.5, exit-code gate); fixed the root cause and cases of dark illegibility (global bare `h2 #333 / p #666` from the index.html boot screen leaking into the SPA, tracing/dashboard title, state-persistence info button, response-cache alert text) — content-text violations across the whole console cleared
+- Dual-theme code blocks: MarkdownRenderer / CodeBlock hljs token colors grouped into semantic CSS variables; `html.dark` uses a GitHub Dark-like palette; contrast ≥ 4.5 in both themes (comments ≥ 3)
+
+#### Docs
+
+- FAQ zh/en Q12.1: notes the console is bilingual, backend `message` is passed through verbatim, and backend error-code localization is a separate future effort
+
+#### Quality
+
+- Frontend vue-tsc + vite build passed; chart language/theme switch browser smoke passed; backend untouched (3243 baseline unchanged); embedded static refreshed
+
+---
 
 ### [2.10.3] - 2026-09-06 - Feature Release (Web Bilingual Edition: Full zh/en i18n + Language Switcher + Element Plus Locale + Date/Number Localization)
 
