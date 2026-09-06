@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.10.4
+> **文档版本**: 3.0.1
 > **最后更新**: 2026-09-06
 > **作者**: JAiRouter Team
 
@@ -21,6 +21,32 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.0.1] - 2026-09-06 - 功能发布（Web 完整流程系列开篇：流程串联 - Onboarding 闭环 + 治理入口补全 + 统一骨架）
+
+> 版本从 2.x 进入 3.0.x：无 breaking（对外 /api/v1 通用接口保持不变），按「Web 完整流程里程碑」语义升级主版本；本版主题 = Web 流程串联。
+
+#### Onboarding 闭环
+
+- 新增 `useRoutePreselect`（`playgroundTargetRoute` / `useRoutePreselect` / `preselectInstanceName` 三导出契约）；Onboarding 第 4 步依 serviceType 跳到对应容器路由
+- 5 个 playground 容器（chat/embedding/rerank/audio/image）消费 `?serviceType=` 预选健康实例；audio/image 同步激活 tts/stt·imgGen/imgEdit 内部 Tab
+
+#### 治理入口补全（跨页闭环）
+
+- Dashboard 治理区新增 4 入口卡：响应缓存 / 慢查询分析 / Token 统计 / 链路追踪（name 路由直达）
+- CB/LB 监控页补「去配置」反向跳转：全局配置 / 历史记录 / 策略配置
+- 服务页 #actions 新增「版本历史」→ 版本管理页（版本页入站，消除孤岛）
+
+#### 旧路由清理与统一骨架
+
+- tracing/Dashboard 跳转改 name 引用；删除 8 处旧 redirect（/admin/tracing、playground/main、tracing/overview|performance 等），全仓旧路径 0 残留
+- PageSkeleton 统一布局覆盖 18 个路由叶页（callHistory×3、config×2、cb×3、lb×2、rl、tracing×3、security×2、exception×3），新增对应 pageTitle keys（zh/en 成对）
+
+#### 质量
+
+- vue-tsc + vite build 通过；语言包 zh/en 全对等；Playwright 旅程冒烟通过（入口卡/版本历史/CB·LB 反向跳转/playground 预选路由）；后端零改动（3243 基线不变）；内嵌静态刷新并重启验证（36/37 页访问、warm 后无页面错误）
+
+---
 
 ### [2.10.4] - 2026-09-06 - 功能发布（Web 体验收尾：服务类型显示名统一 + 图表热切换 + 死代码清理 + 暗色对比门禁 + 后端消息注记 + 代码块双主题高亮）
 

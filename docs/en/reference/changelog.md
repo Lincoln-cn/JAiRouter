@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.10.4
+> **Document Version**: 3.0.1
 > **Last Updated**: 2026-09-06
 > **Git Commit**: -
 > **Author**: Lincoln
@@ -20,6 +20,32 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.0.1] - 2026-09-06 - Feature Release (Web Complete-Flow Series Kick-off: Flow Wiring - Onboarding Loop + Governance Entries + Unified Skeleton)
+
+> Version moves from 2.x to 3.0.x: no breaking changes (public `/api/v1` stays compatible); the major bump follows the "Web complete-flow milestone" semantics. This release theme: Web flow wiring.
+
+#### Onboarding loop
+
+- New `useRoutePreselect` (`playgroundTargetRoute` / `useRoutePreselect` / `preselectInstanceName`); Onboarding step 4 routes to the matching playground container by serviceType
+- All 5 playground containers (chat/embedding/rerank/audio/image) consume `?serviceType=` to preselect a healthy instance; audio/image also activate the tts/stt·imgGen/imgEdit inner tab
+
+#### Governance entries (cross-page closure)
+
+- Dashboard governance area gains 4 entry cards: response cache / slow-query analysis / token usage / tracing (named-route jumps)
+- CB/LB monitoring pages get reverse "go to config" buttons: global config / history / strategy config
+- Service page `#actions` gains "Version History" → version management page (version page inbound link, no longer an island)
+
+#### Legacy routes cleanup & unified skeleton
+
+- tracing/Dashboard navigation switched to named routes; removed 8 legacy redirects (`/admin/tracing`, playground/main, tracing/overview|performance, etc.); zero old-path references remain
+- PageSkeleton unified layout applied to 18 routed leaf pages (callHistory×3, config×2, cb×3, lb×2, rl, tracing×3, security×2, exception×3) with paired pageTitle keys (zh/en)
+
+#### Quality
+
+- vue-tsc + vite build passed; locale packs fully paired zh/en; Playwright journey smoke passed (entry cards / version-history / CB·LB reverse jumps / playground preselect route); backend untouched (3243 baseline); embedded static refreshed and verified after restart (36/37 pages reachable, no page errors once warm)
+
+---
 
 ### [2.10.4] - 2026-09-06 - Feature Release (Web Experience Wrap-up: Unified Service-Type Names + Chart Hot-Switch + Dead-Code Cleanup + Dark Contrast Gate + Backend-Message Note + Dual-Theme Code Highlighting)
 
