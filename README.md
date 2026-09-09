@@ -1,21 +1,21 @@
 # JAiRouter
 
 <p align="center">
-  <img src="logo/JAiRouterLogo.png" alt="JAiRouter - AI Model Gateway" width="380">
+  <img src="logo/JAiRouterLogo.png" alt="JAiRouter — AI Model Gateway" width="180">
 </p>
 
 <p align="center">
-  <strong>Production-Ready AI Model Gateway</strong>
+  <strong>All your LLM backends behind one OpenAI-compatible API.</strong>
 </p>
 
 <p align="center">
-  OpenAI-compatible API for unified routing, load balancing & failover<br>
-  across Ollama, vLLM, GPUStack, Xinference, Claude, Gemini, and more
+  Ollama · vLLM · GPUStack · Xinference · OpenAI · Claude · Gemini<br>
+  Unified routing · load balancing · rate limiting · circuit breaking · failover · visual console
 </p>
 
 <p align="center">
-  <a href="https://github.com/Lincoln-cn/JAiRouter/stargazers">
-    <img src="https://img.shields.io/github/stars/Lincoln-cn/JAiRouter?style=flat-square&logo=github" alt="GitHub stars">
+  <a href="https://github.com/Lincoln-cn/JAiRouter/releases">
+    <img src="https://img.shields.io/github/v/release/Lincoln-cn/JAiRouter?style=flat-square" alt="Latest release">
   </a>
   <a href="https://hub.docker.com/r/sodlinken/jairouter">
     <img src="https://img.shields.io/docker/pulls/sodlinken/jairouter?style=flat-square&logo=docker" alt="Docker Pulls">
@@ -23,27 +23,55 @@
   <a href="https://github.com/Lincoln-cn/JAiRouter/blob/master/LICENSE">
     <img src="https://img.shields.io/github/license/Lincoln-cn/JAiRouter?style=flat-square" alt="License">
   </a>
-  <a href="https://github.com/Lincoln-cn/JAiRouter/releases">
-    <img src="https://img.shields.io/github/v/release/Lincoln-cn/JAiRouter?style=flat-square" alt="Release">
-  </a>
 </p>
 
 <p align="center">
   <a href="README-ZH.md">中文</a> •
   <a href="https://jairouter.com">Docs</a> •
-  <a href="https://jairouter.com/en/">English Docs</a> •
   <a href="https://github.com/Lincoln-cn/JAiRouter/discussions">Discussions</a>
 </p>
 
----
+- **One endpoint for every model** — replace direct calls to Ollama, vLLM, GPUStack, OpenAI, Claude, Gemini with a single OpenAI-compatible `base_url`. Existing OpenAI SDK, LangChain and LlamaIndex code keeps working unchanged.
+- **Built for local inference clusters** — load balancing across instances (including latency-aware and tag-based selection), circuit breaking, and failover that retries on a *different* healthy instance when one dies.
+- **Made for teams** — Web console with hot reload, config versioning & rollback, RBAC, audit logging, encrypted call records and full observability. Change routing without restarting anything.
 
-## Screenshots
+## Try it in 3 minutes
+
+```bash
+# Start the gateway (zero configuration)
+docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
+
+# Web console:  http://localhost:8080/admin
+# Default login: admin / ChangeMeOnFirstStartup123456
+```
+
+Point any OpenAI-compatible client at it:
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://localhost:8080/v1",
+    api_key="not-needed"  # JAiRouter handles authentication
+)
+
+response = client.chat.completions.create(
+    model="llama3.2",  # any model from your configured backends
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+print(response.choices[0].message.content)
+```
+
+Add your own backends — Ollama, vLLM, GPUStack or any cloud provider — in the console under **Instance Management**. Changes apply via hot reload, no restart required.
 
 <p align="center">
-  <img src="screenshots/dashboard.png" alt="Dashboard" width="720">
+  <img src="screenshots/dashboard.png" alt="JAiRouter dashboard" width="720">
   <br/>
-  <em>Dashboard — real-time service, instance and system metrics</em>
+  <em>Management console — real-time service, instance and system metrics</em>
 </p>
+
+<details>
+<summary><b>More screenshots</b></summary>
 
 <p align="center">
   <img src="screenshots/service-management.png" alt="Service Management" width="720">
@@ -70,28 +98,16 @@
   <em>Call history analytics — success rate, latency and token usage trends</em>
 </p>
 
-## Quick Start
-
-```bash
-# Start with Docker (no configuration needed)
-docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
-
-# Open Web Console: http://localhost:8080/admin
-# Default: admin / ChangeMeOnFirstStartup123456
-```
-
----
+</details>
 
 ## What is JAiRouter?
 
-JAiRouter is a **production-ready AI model gateway** that provides a unified, OpenAI-compatible API for managing multiple LLM backends. It handles load balancing, rate limiting, circuit breaking, and failover — so you can focus on building applications, not managing infrastructure.
-
-### Key Benefits
+JAiRouter is a **production-ready AI model gateway** for teams that run their own inference infrastructure (Ollama, vLLM, GPUStack, Xinference) alongside cloud providers. It exposes every backend through one unified, OpenAI-compatible API and adds the resilience and governance layer you would otherwise build yourself: load balancing, rate limiting, circuit breaking, failover, RBAC, audit logging and observability.
 
 | Problem | JAiRouter Solution |
 |---------|-------------------|
 | Multiple model endpoints to manage | Single unified API endpoint |
-| Manual failover when services fail | Automatic circuit breaker |
+| Manual failover when a service fails | Automatic circuit breaker |
 | Implementing auth for each service | JWT + API Key built-in |
 | Scattered logs and metrics | Centralized observability |
 | Service restart for config changes | Hot reload via Web Console |
@@ -100,19 +116,73 @@ JAiRouter is a **production-ready AI model gateway** that provides a unified, Op
 
 - **🔌 OpenAI-Compatible API** — Drop-in replacement for OpenAI SDK, LangChain, LlamaIndex
 - **🔧 Configurable Adapters** — Add new AI providers (DeepSeek, Zhipu, etc.) via config or Web UI, no code needed
-- **⚖️ Smart Load Balancing** — Round-robin, weighted, least-connections, IP-hash, consistent-hash
-- **🎯 Rule Engine** — Visual conditional routing (model name, service type, request header, client IP, weight)
+- **⚖️ Smart Load Balancing** — Round-robin, weighted, least-connections, IP-hash, consistent-hash, EWMA latency-aware
+- **🎯 Rule Engine & Tag Routing** — Visual conditional routing (model name, service type, request header, client IP, weight, instance tags)
 - **🛡️ Rate Limiting** — Token bucket, leaky bucket, sliding window algorithms
-- **🔥 Circuit Breaker** — Auto failover with configurable thresholds and recovery
-- **🔐 Authentication** — JWT + API Key dual authentication with audit logging and data-driven RBAC (45 permission codes, 4 role templates)
-- **📊 Observability** — Prometheus metrics, OpenTelemetry tracing, real-time dashboards
-- **⚡ Response Cache** — exact-match reuse of deterministic responses, plus streaming SSE cache and an invalidation API (v2.9.10)
+- **🔥 Circuit Breaker** — Auto failover with configurable thresholds, plus request-level failover that retries on another healthy instance
+- **🔐 Authentication & RBAC** — JWT + API Key with audit logging and data-driven RBAC (44 permission codes, 4 role templates, menu & URL authorization)
+- **📊 Observability** — Prometheus metrics, OpenTelemetry tracing, real-time dashboards, call-history analytics
+- **🔒 Record Governance** — Three recording levels (metadata-only / desensitized summary / AES-256-GCM-encrypted full content)
+- **⚡ Response Cache** — Deterministic requests reuse the downstream response and skip the backend (opt-in, tenant-isolated keys)
 - **💾 Persistence** — Redis / H2 / File storage for distributed deployment
 - **🎛️ Web Console** — Visual management, version control, configuration rollback, dark/light theme
 
----
+## Supported AI Backends
+
+<details>
+<summary><b>Built-in adapters</b> — chat, embedding, rerank, TTS/STT and image coverage</summary>
+
+| Backend | Chat | Embedding | Rerank | TTS | STT | Image | Notes |
+|---------|:----:|:---------:|:------:|:---:|:---:|:-----:|-------|
+| **Ollama** | ✅ | ✅ | - | - | - | - | Local inference |
+| **vLLM** | ✅ | ✅ | - | - | - | - | High-throughput |
+| **GPUStack** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Full-featured |
+| **Xinference** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Multi-model |
+| **LocalAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ | OpenAI-compatible |
+| **OpenAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ | Cloud fallback |
+| **Anthropic Claude** | ✅ | - | - | - | - | - | Native Claude API |
+| **Google Gemini** | ✅ | - | - | - | - | - | Native Gemini API |
+
+</details>
+
+<details>
+<summary><b>Configurable adapters</b> — any OpenAI-compatible provider, no code required</summary>
+
+| Provider | Configuration |
+|----------|--------------|
+| **DeepSeek** | `adapter-definitions: deepseek: type: openai-compatible` |
+| **Zhipu (GLM)** | `adapter-definitions: zhipu: type: openai-compatible` |
+| **Moonshot** | `adapter-definitions: moonshot: type: openai-compatible` |
+| **Qwen (Tongyi)** | `adapter-definitions: qwen: type: openai-compatible` |
+| **Baichuan** | `adapter-definitions: baichuan: type: openai-compatible` |
+| **Minimax** | `adapter-definitions: minimax: type: openai-compatible` |
+
+> 📖 See the [Adapter Configuration Guide](https://jairouter.com/configuration/adapter-config/) for details.
+
+</details>
+
+## Why Choose JAiRouter?
+
+- **vs running backends directly** — no shared resilience, no central keys, no usage visibility. JAiRouter gives one endpoint, automatic failover and a full audit trail.
+- **vs One-API / new-api** — those focus on distributing and billing API keys for shared accounts. JAiRouter targets the gateway in front of **your own local inference cluster**: multi-instance load balancing, circuit breaking, rule routing, RBAC and observability for self-hosted Ollama/vLLM/GPUStack. The two approaches complement each other.
+- **vs Nginx** — Nginx is a general-purpose web server. JAiRouter is **purpose-built for AI/LLM workloads** with OpenAI-compatible routing, circuit breaking and model-aware load balancing.
+- **vs LangChain** — LangChain is an application framework. JAiRouter is the **infrastructure layer beneath it**, providing routing, failover and monitoring.
+
+| Feature | JAiRouter | Nginx | One-API | LangChain |
+|---------|:---------:|:-----:|:-------:|:---------:|
+| OpenAI Compatible | ✅ | ❌ | ✅ | ✅ |
+| Load Balancing | ✅ | ✅ | ✅ | ❌ |
+| Circuit Breaker | ✅ | ❌ | ❌ | ❌ |
+| Rate Limiting | ✅ | ✅ | ✅ | ❌ |
+| Web Console | ✅ | ❌ | ✅ | ❌ |
+| Config Hot Reload | ✅ | ❌ | ✅ | ❌ |
+| Version Control | ✅ | ❌ | ❌ | ❌ |
+| OpenTelemetry | ✅ | ❌ | ❌ | ✅ |
 
 ## Architecture
+
+<details>
+<summary><b>How requests flow through the gateway</b></summary>
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -138,159 +208,46 @@ JAiRouter is a **production-ready AI model gateway** that provides a unified, Op
    └───────┘     └───────┘   └───────┘   └──────────┘   └───────┘
 ```
 
----
-
-## Supported AI Backends
-
-### Built-in Adapters
-
-| Backend | Chat | Embedding | Rerank | TTS | STT | Image | Notes |
-|---------|:----:|:---------:|:------:|:---:|:---:|:-----:|-------|
-| **Ollama** | ✅ | ✅ | - | - | - | - | Local inference |
-| **vLLM** | ✅ | ✅ | - | - | - | - | High-throughput |
-| **GPUStack** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Full-featured |
-| **Xinference** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Multi-model |
-| **LocalAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ | OpenAI-compatible |
-| **OpenAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ | Cloud fallback |
-| **Anthropic Claude** | ✅ | - | - | - | - | - | Native Claude API |
-| **Google Gemini** | ✅ | - | - | - | - | - | Native Gemini API |
-
-### Configurable Adapters (No Code Required)
-
-Add any OpenAI-compatible provider via configuration or Web UI:
-
-| Provider | Configuration |
-|----------|--------------|
-| **DeepSeek** | `adapter-definitions: deepseek: type: openai-compatible` |
-| **Zhipu (GLM)** | `adapter-definitions: zhipu: type: openai-compatible` |
-| **Moonshot** | `adapter-definitions: moonshot: type: openai-compatible` |
-| **Qwen (Tongyi)** | `adapter-definitions: qwen: type: openai-compatible` |
-| **Baichuan** | `adapter-definitions: baichuan: type: openai-compatible` |
-| **Minimax** | `adapter-definitions: minimax: type: openai-compatible` |
-
-> 📖 See [Adapter Configuration Guide](https://jairouter.com/configuration/adapter-config/) for details.
-
----
-
-## Usage Example
-
-### Python with OpenAI SDK
-
-```python
-from openai import OpenAI
-
-# Point to JAiRouter instead of OpenAI
-client = OpenAI(
-    base_url="http://localhost:8080/v1",
-    api_key="not-needed"  # JAiRouter handles authentication
-)
-
-# Use any model from your configured backends
-response = client.chat.completions.create(
-    model="llama3.2",  # Routed to Ollama, vLLM, or GPUStack
-    messages=[{"role": "user", "content": "Hello!"}]
-)
-print(response.choices[0].message.content)
-```
-
-### Add a Model Backend
-
-```bash
-# Via API - Add Ollama instance
-curl -X POST http://localhost:8080/api/config/instance/add/chat \
-  -H "Content-Type: application/json" \
-  -H "Jairouter_Token: your-jwt-token" \
-  -d '{
-    "name": "llama3.2",
-    "baseUrl": "http://localhost:11434",
-    "path": "/v1/chat/completions",
-    "weight": 1
-  }'
-```
-
----
-
-## Why Choose JAiRouter?
-
-### vs Nginx
-Nginx is a general-purpose web server. JAiRouter is **purpose-built for AI/LLM workloads** with OpenAI-compatible routing, circuit breaking, and model-aware load balancing.
-
-### vs One-API
-One-API focuses on API key management and billing. JAiRouter focuses on **local model gateway** with advanced resilience patterns and observability.
-
-### vs LangChain
-LangChain is an application framework. JAiRouter is an **infrastructure layer** that works beneath LangChain to provide routing, failover, and monitoring.
-
-| Feature | JAiRouter | Nginx | One-API | LangChain |
-|---------|:---------:|:-----:|:-------:|:---------:|
-| OpenAI Compatible | ✅ | ❌ | ✅ | ✅ |
-| Load Balancing | ✅ | ✅ | ✅ | ❌ |
-| Circuit Breaker | ✅ | ❌ | ❌ | ❌ |
-| Rate Limiting | ✅ | ✅ | ✅ | ❌ |
-| Web Console | ✅ | ❌ | ✅ | ❌ |
-| Config Hot Reload | ✅ | ❌ | ✅ | ❌ |
-| Version Control | ✅ | ❌ | ❌ | ❌ |
-| OpenTelemetry | ✅ | ❌ | ❌ | ✅ |
-
----
-
-## Benchmarks
-
-Performance overhead compared to direct backend access:
-
-| Scenario | Direct Ollama | Via JAiRouter | Overhead |
-|----------|---------------|---------------|----------|
-| Single request | 1.2s | 1.21s | <1% |
-| 100 concurrent | 45s | 48s | ~6% |
-| With rate limiting | N/A | Configurable | - |
-| With circuit breaker | N/A | Auto failover | - |
-
-> Benchmarks: Ubuntu 22.04, 16 cores, 32GB RAM, Ollama 0.1.27
-
----
+</details>
 
 ## Documentation
 
 | Resource | Link |
 |----------|------|
-| 📖 **Full Documentation** | https://jairouter.com |
-| 📘 **API Reference** | http://localhost:8080/swagger-ui |
-| 🚀 **Deployment Guide** | https://jairouter.com/en/deployment/ |
-| 🔧 **Configuration** | https://jairouter.com/en/configuration/ |
-| 📊 **Monitoring** | https://jairouter.com/en/monitoring/ |
-
----
+| Full Documentation | https://jairouter.com |
+| Deployment Guide | https://jairouter.com/en/deployment/ |
+| Configuration | https://jairouter.com/en/configuration/ |
+| Monitoring | https://jairouter.com/en/monitoring/ |
+| API Reference | http://localhost:8080/swagger-ui |
 
 ## Roadmap
 
-- [x] Core gateway functionality
-- [x] Multiple backend adapters (Ollama, vLLM, GPUStack, Xinference, LocalAI)
-- [x] Load balancing with multiple strategies
-- [x] Rate limiting algorithms
-- [x] Circuit breaker with auto recovery
-- [x] Web management console
-- [x] JWT + API Key authentication
-- [x] OpenTelemetry distributed tracing
-- [x] Configuration version control
+**Released** (latest: v2.9.11)
+
+- [x] Core gateway with OpenAI-compatible API
+- [x] Built-in + configurable adapters (Ollama, vLLM, GPUStack, Xinference, LocalAI, OpenAI, Claude, Gemini, …)
+- [x] Multi-strategy load balancing (round-robin, weighted, least-connections, IP-hash, consistent-hash, EWMA latency-aware)
+- [x] Rate limiting (token bucket, leaky bucket, sliding window)
+- [x] Circuit breaker + request-level failover (retry on another healthy instance)
+- [x] Visual rule engine: conditional routing, service-level dynamic rate limiting, tag routing
+- [x] JWT + API Key authentication with audit logging
+- [x] Data-driven RBAC (44 permission codes, 4 role templates, menu & URL authorization)
+- [x] Call history with record governance (metadata-only / summary / AES-256-GCM full) and analytics dashboards
+- [x] Response cache (deterministic reuse; opt-in, tenant-isolated)
+- [x] Prometheus metrics + OpenTelemetry distributed tracing
+- [x] Configuration version control & rollback
+- [x] Web console with hot reload and dark/light theme
 - [x] Docker image optimization (Alpine/Distroless)
-- [x] API Key quota management
-- [x] Call history persistence
-- [x] RBAC role-based access control
-- [x] Anthropic Claude adapter
-- [x] Google Gemini adapter
-- [x] Rule engine with visual conditional routing
-- [x] Service-level dynamic rate limiting + rule-based RATE_LIMIT action
-- [x] Tag routing (instance tags + TARGET_TAGS rule action + request-level header selection)
-- [x] RBAC permission management (45 permission codes + 4 role templates + data-driven menu & URL authorization)
-- [x] Response cache (deterministic reuse skips the downstream; P1 adds streaming SSE cache + invalidation API + rate-limit short-circuit)
 
-> **Current Release**: v3.0.1 | **LTS Release**: v2.6.11 (maintained until 2028-05)
+**In progress** (not yet released)
 
----
+- [ ] Response cache P1: streaming SSE cache, invalidation API, rate-limit short-circuit
+
+> **Current Release**: v2.9.11 | **LTS Release**: v2.6.11 (maintained until 2028-05)
 
 ## Contributing
 
-We welcome contributions! See [Contributing Guide](https://jairouter.com/en/development/contributing/).
+Contributions are welcome — see the [Contributing Guide](https://jairouter.com/en/development/contributing/).
 
 ```bash
 git clone https://github.com/Lincoln-cn/JAiRouter.git
@@ -299,15 +256,11 @@ mvn clean package -DskipTests
 java -jar target/modelrouter.jar
 ```
 
----
-
 ## Support
 
 - **Documentation**: https://jairouter.com
 - **Issues**: [GitHub Issues](https://github.com/Lincoln-cn/JAiRouter/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/Lincoln-cn/JAiRouter/discussions)
-
----
 
 ## License
 
@@ -316,9 +269,11 @@ JAiRouter is released under the [Apache 2.0 License](LICENSE).
 ---
 
 <p align="center">
-  <strong>Star ⭐ this repo if you find it useful!</strong>
+  <strong>If JAiRouter saves you time, <a href="https://github.com/Lincoln-cn/JAiRouter/stargazers">star it on GitHub</a> ⭐</strong>
+  <br/>
+  <em>Questions? Open an issue or start a discussion — we answer.</em>
 </p>
 
 <p align="center">
-  Made with ❤️ by the JAiRouter Team
+  Maintained by Lincoln-cn · Apache-2.0
 </p>
