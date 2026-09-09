@@ -1,17 +1,20 @@
 name: 文档质量检查
 
 on:
+  workflow_dispatch:
   pull_request:
     paths: 
       - 'docs/**'
       - 'mkdocs.yml'
       - '*.md'
+      - '.cspell.json'
   push:
     branches: [ main, master ]
     paths: 
       - 'docs/**'
       - 'mkdocs.yml'
       - '*.md'
+      - '.cspell.json'
 
 jobs:
   quality-check:
