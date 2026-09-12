@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 > **Doc Version**: 2.0.0
-> **Last Updated**: 2026-09-06
-> **Git 标签**: v3.0.1
+> **Last Updated**: 2026-09-13
+> **Git 标签**: v3.0.3
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -67,8 +67,8 @@ Features are complete but the console did not yet form a full system flow; one t
 
 v3.0 is the Web complete-flow milestone (public `/api/v1` stays compatible, no breaking):
 - **v3.0.1 Flow wiring ✅ (released 2026-09-06)**: Onboarding preselect loop (`useRoutePreselect` + 5 containers) + Dashboard governance entries + CB/LB reverse jumps + version-page inbound + legacy redirect cleanup + PageSkeleton across 18 pages
-- **v3.0.2 API cleanup & permission closure**: remove the 4 deprecated controllers and TokenUsageController dead methods (DTO/Registry/tests cleaned with them) + progressive URL-rule registration for permissions (each rule + 401/403 test)
-- **v3.0.3 Acceptance & release**: end-to-end journey acceptance + README screenshot refresh (bilingual × light/dark) + docs/plan sync + Release (tag/gh/docker, dual remotes)
+- **v3.0.2 API cleanup & permission closure ✅ (completed 2026-09-07)**: removed 4 deprecated controllers (ServiceConfigController/ServiceInstanceController/InstanceConfigController/SecurityAuditController) and 5 dead methods in TokenUsageController + DTO deprecation cleanup + PermissionRuleRegistry deprecated binding cleanup + progressive URL-rule registration (15 new rules, 47 total) + PermissionClosureTest 35 assertions + frontend dead-function cleanup; mvn 3202 tests all green
+- **v3.0.3 Acceptance & release ✅ (released 2026-09-13)**: end-to-end journey acceptance (10/10 PASS, 0 page errors / 0 HTTP 5xx) + README screenshot refresh (32 images = 8 pages × zh/en × light/dark) + docs/plan sync + dual-remote tag/Release/Docker; also fixed cold-start deep links (`/security/*`, `/system/*` role guard) and i18n/icon warnings
 - After v3.0.x the Web milestone closes; high-availability foundation (multi-node/Redis distributed/config rollback) re-assessed after v3.0; semantic cache evaluation only, separate project; microservice migration separate
 
 ---
@@ -325,7 +325,7 @@ JAiRouter will continue to uphold the open-source spirit and is committed to pro
 4. ✅ v2.9.10 response cache P1 (streaming cache + invalidation API + rate-limit short-circuit)
 5. ✅ v2.9.11 README/screenshot refresh + hallmark web-console design audit + frontend fixes
 6. ✅ v2.10.x Web console refactor series completed (v2.10.0 foundation ✅ 2026-09-05; v2.10.1 governance hub ✅ / v2.10.2 config & capabilities ✅ / v2.10.3 Web bilingual edition ✅ / v2.10.4 Web experience wrap-up ✅ 2026-09-06)
-7. 🎯 v3.0.x Web complete-flow series (v3.0.1 flow wiring ✅ 2026-09-06; v3.0.2 API cleanup & permission closure 📋; v3.0.3 acceptance & release 📋)
+7. ✅ v3.0.x Web complete-flow series (v3.0.1 flow wiring ✅ 2026-09-06; v3.0.2 API cleanup & permission closure ✅ 2026-09-07; v3.0.3 acceptance & release ✅ 2026-09-13)
 8. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.0.x
 
 ### Long-term Vision

@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.0.1
-> **Last Updated**: 2026-09-06
+> **Document Version**: 3.0.3
+> **Last Updated**: 2026-09-13
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,55 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.0.3] - 2026-09-13 - Feature Release (Web complete-flow acceptance & release: journey acceptance + screenshot refresh + cold-start deep-link fix)
+
+#### End-to-end journey acceptance
+
+- **10 end-to-end journeys verified**: onboarding (4 steps) → 5 AI playgrounds (chat/embedding/rerank/audio/image) → Dashboard governance panel → routing rules → call history / tracing lookup; 0 page errors, 0 HTTP 5xx
+- **Permission smoke**: login JWT carries 44 permission codes; 44 permission codes and 47 URL rules + PermissionClosureTest stay green
+
+#### README screenshot refresh
+
+- **Screenshot matrix replaces legacy images**: `screenshots/` goes from 6 images (2026-09-05) to 32 (8 pages × zh/en × light/dark), adding the slow-query analysis page and a dark-theme showcase
+- **README.md / README-ZH.md references synced**: English README points at `-en-US-*`, Chinese README at `-zh-CN-*`; legacy filenames removed
+
+#### Fixes
+
+- **Cold-start deep-link fix (important)**: on F5 / opening `/security/*` or `/system/*` in a new tab, `userInfo`/`permissions` were not hydrated from the existing token, so the role guard (`meta.roles`) treated the user as role-less and redirected to the dashboard; the store now hydrates them from the token on initialization
+- **i18n warning cleanup**: added `titleKey` to 12 parent routes (dashboard/config/loadBalancers/circuitBreakers/security/system/tracing/playground/exceptions/rateLimiters/monitoring/callHistory), removing the intlify fallback warnings; fixed key shadowing for `adapter.capability` / `adapter.test` (renamed to `capabilityColumn` / `testAction`)
+- **Language switcher icon fix**: Element Plus has no `Globe` icon, so the original `<Globe/>` was never registered (console warning, icon not rendered); switched to `Coordinate` with explicit icon imports
+
+#### Docs & plan
+
+- roadmap / changelog updated symmetrically (zh/en); `innerdoc` development plan backfilled with v2.10.x / v3.0.x iterations and status
+
+#### Quality
+
+- Full mvn suite **3202 tests green**; frontend `vue-tsc` 0 errors + `vite build` passed; markdownlint 0; Playwright re-verification: 0 i18n/icon warnings, 6/6 deep links reachable
+
+---
+
+### [3.0.2] - 2026-09-07 - Feature Release (API Cleanup & Permission Closure: Deprecated Controller Removal + Permission Rule Backfill + Frontend Dead-Function Cleanup)
+
+#### Deprecated controllers & dead-method cleanup
+
+- **Removed 4 deprecated controllers**: ServiceConfigController (legacy `/api/services`), ServiceInstanceController (legacy `/api/instances`), InstanceConfigController (legacy `/api/instance-configs`), SecurityAuditController (legacy `/security/audit`) — marked `@Deprecated` in v2.10.2, safely removed in this release
+- **Removed 5 dead methods from TokenUsageController**: endpoints with zero callers and their corresponding tests deleted
+- **DTO deprecation cleanup**: `ServiceInstanceDTO.getInstanceId` deprecated accessor removed; `ApiKey.keyValue` retained with documented contract reason (serialization compatibility)
+- **Frontend dead-function cleanup**: zero-reference functions in `tokenUsage.ts` and `debugPlayground.ts` removed
+
+#### Permission URL-rule progressive backfill
+
+- **PermissionRuleRegistry cleanup**: removed deprecated services/instances/instance-configs bindings; retained ratelimit/circuitbreaker sub-path rules
+- **15 new URL permission rules registered** (47 total): filled URL→permission-code mappings for previously uncovered management endpoints
+- **PermissionClosureTest with 35 assertions**: new permission closure test validates all 47 URL rules with 401/403/200 smoke checks
+
+#### Quality
+
+- mvn full suite **3202 tests all green** (0 failures / 0 errors); frontend vue-tsc + vite build passed
+
+---
 
 ### [3.0.1] - 2026-09-06 - Feature Release (Web Complete-Flow Series Kick-off: Flow Wiring - Onboarding Loop + Governance Entries + Unified Skeleton)
 

@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 > **文档版本**: 2.0.0
-> **最后更新**: 2026-09-06
-> **Git 标签**: v3.0.1
+> **最后更新**: 2026-09-13
+> **Git 标签**: v3.0.3
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
@@ -67,8 +67,8 @@ JAiRouter 致力于成为最优秀的开源 AI 模型服务路由网关，为用
 
 v3.0 为 Web 完整流程里程碑（对外 /api/v1 保持兼容，无 breaking）：
 - **v3.0.1 流程串联 ✅（2026-09-06 已发布）**：Onboarding 预选闭环（useRoutePreselect + 5 容器 query 预选）+ Dashboard 治理入口补全 + CB/LB 反向跳转 + 版本页入站 + 旧 redirect 清理 + PageSkeleton 覆盖 18 页
-- **v3.0.2 API 清理与权限收口**：删除 4 废弃整控制器与 TokenUsageController 死方法等（含 DTO/Registry/测试随删随清）+ 权限 URL 规则渐进补齐（每项登记 + 401/403 测试）
-- **v3.0.3 验收与发布**：端到端旅程验收 + README 素材重拍（双语×亮暗）+ 文档/计划同步 + Release（tag/gh/docker 双远端）
+- **v3.0.2 API 清理与权限收口 ✅（2026-09-07 已完成）**：删除 4 废弃控制器（ServiceConfigController/ServiceInstanceController/InstanceConfigController/SecurityAuditController）与 TokenUsageController 5 个死方法 + DTO 弃用项清理 + PermissionRuleRegistry 清理废弃绑定 + 权限 URL 规则渐进登记 15 条（共 47 条）+ PermissionClosureTest 35 断言 + 前端死函数清理；mvn 3202 用例全绿
+- **v3.0.3 验收与发布 ✅（2026-09-13 已发布）**：端到端旅程验收（10/10 PASS，0 pageerror/0 个 5xx）+ README 素材重拍（32 张 = 8 页 × 中/英 × 亮/暗）+ 文档/计划同步 + 双远端 tag/Release/Docker；另修复冷启动深链（`/security/*`、`/system/*` 角色守卫）与 i18n/图标告警
 - v3.0.x 完成后收束 Web 里程碑；高可用地基（多节点/Redis 分布式/配置回滚）顺延至 v3.0 后评估；语义缓存仅评估另立项；微服务化另行
 
 ---
@@ -327,7 +327,7 @@ JAiRouter 项目将继续秉承开源精神，致力于为用户提供最优秀�
 4. ✅ v2.9.10 响应缓存 P1（流式缓存 + 失效 API + 限流短路）
 5. ✅ v2.9.11 README/截图更新 + hallmark 管理台设计审计 + 前端修复
 6. ✅ v2.10.x Web 管理台重构系列全部完成（v2.10.0 前端地基 ✅ 2026-09-05；v2.10.1 治理指挥台 ✅ / v2.10.2 配置接入与能力补页 ✅ / v2.10.3 Web 双语版 ✅ / v2.10.4 Web 体验收尾 ✅ 2026-09-06）
-7. 🎯 v3.0.x Web 完整流程系列（v3.0.1 流程串联 ✅ 2026-09-06；v3.0.2 API 清理与权限收口 📋；v3.0.3 验收与发布 📋）
+7. ✅ v3.0.x Web 完整流程系列（v3.0.1 流程串联 ✅ 2026-09-06；v3.0.2 API 清理与权限收口 ✅ 2026-09-07；v3.0.3 验收与发布 ✅ 2026-09-13）
 8. 📋 语义缓存评估（向量相似度复用，另立项）；高可用地基（多节点/Redis）于 v3.0.x 后评估
 
 ### 长期愿景

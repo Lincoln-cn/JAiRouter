@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.0.1
-> **最后更新**: 2026-09-06
+> **文档版本**: 3.0.3
+> **最后更新**: 2026-09-13
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,55 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.0.3] - 2026-09-13 - 功能发布（Web 完整流程验收与发布：旅程验收 + 素材重拍 + 冷启动深链修复）
+
+#### 端到端旅程验收
+
+- **10 条端到端旅程逐项通过**：接入（Onboarding 四步）→ 5 类 AI 试验场（对话/向量/重排序/语音/图像）→ Dashboard 治理面板 → 配置规则 → 调用历史/追踪回查；0 pageerror、0 个 5xx
+- **权限冒烟**：登录 JWT 含 44 权限码；44 权限码与 47 条 URL 规则 + PermissionClosureTest 保持全绿
+
+#### README 素材重拍
+
+- **截图矩阵替换旧图**：`screenshots/` 由 6 张（2026-09-05）替换为 32 张（8 页 × 中/英 × 亮/暗），新增慢查询分析页与暗色主题展示
+- **README.md / README-ZH.md 引用同步**：英文版引用 `-en-US-*`、中文版引用 `-zh-CN-*`，旧命名图删除
+
+#### 修复
+
+- **冷启动深链修复（重要）**：F5 / 新标签页直达 `/security/*` 与 `/system/*` 时，`userInfo`/`permissions` 未从既有 token 补齐，角色守卫（`meta.roles`）误判为无角色并重定向到仪表盘；改为 store 初始化时从 token 同源解析补齐
+- **i18n 告警清理**：为 12 个父级路由补 `titleKey`（dashboard/config/loadBalancers/circuitBreakers/security/system/tracing/playground/exceptions/rateLimiters/monitoring/callHistory），消除 intlify 回退告警；`adapter.capability`、`adapter.test` 键名与嵌套对象遮蔽修复（改名 `capabilityColumn`、`testAction`）
+- **语言切换器图标修复**：Element Plus 图标集无 `Globe`，原 `<Globe/>` 从未注册（控制台告警且图标不渲染），改用 `Coordinate` 并显式引入所用图标
+
+#### 文档与计划
+
+- roadmap / changelog 中英对称更新；`innerdoc` 开发计划回填 v2.10.x / v3.0.x 迭代与状态
+
+#### 质量
+
+- mvn 全量 **3202 用例全绿**；前端 `vue-tsc` 0 error + `vite build` 通过；markdownlint 0；Playwright 复验：i18n/图标告警 0、深链 6/6 直达
+
+---
+
+### [3.0.2] - 2026-09-07 - 功能发布（API 清理与权限收口：废弃控制器删除 + 权限规则补齐 + 前端死函数清理）
+
+#### 废弃控制器与死方法清理
+
+- **删除 4 个废弃控制器**：ServiceConfigController（旧 `/api/services`）、ServiceInstanceController（旧 `/api/instances`）、InstanceConfigController（旧 `/api/instance-configs`）、SecurityAuditController（旧 `/security/audit`）——v2.10.2 标注 @Deprecated，本版安全移除
+- **TokenUsageController 5 个死方法删除**：去除无调用方的废弃端点及其对应测试
+- **DTO 弃用项清理**：ServiceInstanceDTO.getInstanceId 废弃移除；ApiKey.keyValue 保留并注明契约原因（序列化兼容）
+- **前端死函数清理**：tokenUsage.ts 零引用函数与 debugPlayground.ts 删除
+
+#### 权限 URL 规则渐进补齐
+
+- **PermissionRuleRegistry 清理**：废弃 services/instances/instance-configs 绑定移除，保留 ratelimit/circuitbreaker 子路径
+- **权限 URL 规则登记 15 条**（累计 47 条规则）：为此前未覆盖的管理端点补齐 URL→权限码映射
+- **PermissionClosureTest 35 断言**：新增权限闭包测试，验证全部 47 条 URL 规则的 401/403/200 冒烟
+
+#### 质量
+
+- mvn 全量 **3202 用例全绿**（0 失败/0 错误）；前端 vue-tsc + vite build 通过
+
+---
 
 ### [3.0.1] - 2026-09-06 - 功能发布（Web 完整流程系列开篇：流程串联 - Onboarding 闭环 + 治理入口补全 + 统一骨架）
 

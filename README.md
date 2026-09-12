@@ -65,7 +65,7 @@ print(response.choices[0].message.content)
 Add your own backends — Ollama, vLLM, GPUStack or any cloud provider — in the console under **Instance Management**. Changes apply via hot reload, no restart required.
 
 <p align="center">
-  <img src="screenshots/dashboard.png" alt="JAiRouter dashboard" width="720">
+  <img src="screenshots/dashboard-en-US-light.png" alt="JAiRouter dashboard" width="720">
   <br/>
   <em>Management console — real-time service, instance and system metrics</em>
 </p>
@@ -74,28 +74,46 @@ Add your own backends — Ollama, vLLM, GPUStack or any cloud provider — in th
 <summary><b>More screenshots</b></summary>
 
 <p align="center">
-  <img src="screenshots/service-management.png" alt="Service Management" width="720">
+  <img src="screenshots/service-management-en-US-light.png" alt="Service Management" width="720">
   <br/>
   <em>Service management — adapters and load-balancing strategies per service</em>
 </p>
 
 <p align="center">
-  <img src="screenshots/instance-management.png" alt="Instance Management" width="720">
-  <img src="screenshots/adapter-management.png" alt="Adapter Management" width="720">
+  <img src="screenshots/instance-management-en-US-light.png" alt="Instance Management" width="720">
+  <img src="screenshots/adapter-management-en-US-light.png" alt="Adapter Management" width="720">
   <br/>
   <em>Instance & adapter management</em>
 </p>
 
 <p align="center">
-  <img src="screenshots/rule-management.png" alt="Rule Engine" width="720">
+  <img src="screenshots/rule-management-en-US-light.png" alt="Rule Engine" width="720">
   <br/>
   <em>Visual routing rules with hit statistics, priority drag-and-drop and templates</em>
 </p>
 
 <p align="center">
-  <img src="screenshots/call-history-dashboard.png" alt="Call History Analytics" width="720">
+  <img src="screenshots/call-history-dashboard-en-US-light.png" alt="Call History Analytics" width="720">
   <br/>
   <em>Call history analytics — success rate, latency and token usage trends</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/extra-slow-query-analysis-en-US-light.png" alt="Slow Query Analysis" width="720">
+  <br/>
+  <em>Slow-query analysis — hotspots, alert status and operation breakdown</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/playground-chat-en-US-light.png" alt="AI Playground" width="720">
+  <br/>
+  <em>AI playground — chat, embedding, rerank, audio and image test benches</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/dashboard-en-US-dark.png" alt="Dashboard (dark theme)" width="720">
+  <br/>
+  <em>Built-in dark theme — the console is fully themeable and bilingual (zh-CN / en-US)</em>
 </p>
 
 </details>
@@ -243,7 +261,7 @@ JAiRouter is a **production-ready AI model gateway** for teams that run their ow
 
 - [ ] Response cache P1: streaming SSE cache, invalidation API, rate-limit short-circuit
 
-> **Current Release**: v2.9.11 | **LTS Release**: v2.6.11 (maintained until 2028-05)
+> **Current Release**: v3.0.3 | **LTS Release**: v2.6.11 (maintained until 2028-05)
 
 ## Contributing
 

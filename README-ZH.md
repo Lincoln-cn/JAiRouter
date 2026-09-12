@@ -65,7 +65,7 @@ print(response.choices[0].message.content)
 在控制台「实例管理」中添加您自己的后端——Ollama、vLLM、GPUStack 或任意云端提供商。配置热更新即时生效，无需重启。
 
 <p align="center">
-  <img src="screenshots/dashboard.png" alt="JAiRouter 控制台" width="720">
+  <img src="screenshots/dashboard-zh-CN-light.png" alt="JAiRouter 控制台" width="720">
   <br/>
   <em>管理控制台 — 服务/实例/系统指标实时总览</em>
 </p>
@@ -74,28 +74,46 @@ print(response.choices[0].message.content)
 <summary><b>更多截图</b></summary>
 
 <p align="center">
-  <img src="screenshots/service-management.png" alt="服务管理" width="720">
+  <img src="screenshots/service-management-zh-CN-light.png" alt="服务管理" width="720">
   <br/>
   <em>服务管理 — 按服务配置适配器与负载均衡策略</em>
 </p>
 
 <p align="center">
-  <img src="screenshots/instance-management.png" alt="实例管理" width="720">
-  <img src="screenshots/adapter-management.png" alt="适配器管理" width="720">
+  <img src="screenshots/instance-management-zh-CN-light.png" alt="实例管理" width="720">
+  <img src="screenshots/adapter-management-zh-CN-light.png" alt="适配器管理" width="720">
   <br/>
   <em>实例管理与适配器管理</em>
 </p>
 
 <p align="center">
-  <img src="screenshots/rule-management.png" alt="路由规则" width="720">
+  <img src="screenshots/rule-management-zh-CN-light.png" alt="路由规则" width="720">
   <br/>
   <em>可视化路由规则 — 命中统计、优先级拖拽与场景模板</em>
 </p>
 
 <p align="center">
-  <img src="screenshots/call-history-dashboard.png" alt="调用历史分析" width="720">
+  <img src="screenshots/call-history-dashboard-zh-CN-light.png" alt="调用历史分析" width="720">
   <br/>
   <em>调用历史分析 — 成功率、延迟与 Token 用量趋势</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/extra-slow-query-analysis-zh-CN-light.png" alt="慢查询分析" width="720">
+  <br/>
+  <em>慢查询分析 — 性能热点、告警状态与操作分布</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/playground-chat-zh-CN-light.png" alt="AI 试验场" width="720">
+  <br/>
+  <em>AI 试验场 — 对话/向量/重排序/语音/图像 五类能力在线调试</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/dashboard-zh-CN-dark.png" alt="仪表板（暗色主题）" width="720">
+  <br/>
+  <em>内置暗色主题 — 管理台支持亮/暗切换与中英双语</em>
 </p>
 
 </details>
@@ -243,7 +261,7 @@ JAiRouter 是一个 **生产级 AI 模型网关**，面向自建推理基础设�
 
 - [ ] 响应缓存 P1：流式 SSE 缓存、失效 API、限流提前短路
 
-> **当前版本**：v2.9.11 | **LTS 版本**：v2.6.11（维护至 2028-05）
+> **当前版本**：v3.0.3 | **LTS 版本**：v2.6.11（维护至 2028-05）
 
 ## 参与贡献
 
