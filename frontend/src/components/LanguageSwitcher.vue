@@ -2,7 +2,7 @@
   <el-dropdown trigger="click" placement="bottom-end" @command="handleCommand">
     <span class="lang-btn" tabindex="0">
       <el-icon :size="15">
-        <Globe />
+        <Coordinate />
       </el-icon>
       <span class="lang-label">{{ labels[locale] }}</span>
       <el-icon :size="11" class="lang-caret">
@@ -32,6 +32,10 @@
 <script setup lang="ts">
 import { useLocale } from '@/composables/useLocale'
 import type { AppLocale } from '@/utils/locale'
+// v3.0.3 修复：Element Plus 图标集无 Globe（地球）图标——原 <Globe/> 从未注册，
+// 控制台反复告警且图标不渲染；这里改用造型最接近「球体/全局」的 Coordinate，
+// 并按 Layout.vue / Dashboard.vue 既有约定显式引入本文件用到的全部图标。
+import { ArrowDown, Check, Coordinate } from '@element-plus/icons-vue'
 
 const { locale, setLocale, options, labels } = useLocale()
 

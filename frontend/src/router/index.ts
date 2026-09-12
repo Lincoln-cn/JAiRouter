@@ -42,7 +42,7 @@ const router = createRouter({
       name: 'dashboard',
       component: () => import('../views/Layout.vue'),
       redirect: '/dashboard/main',
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, titleKey: 'route.dashboard' },
       children: [
         {
           path: 'main',
@@ -57,7 +57,7 @@ const router = createRouter({
       path: '/config',
       name: 'config',
       component: () => import('../views/Layout.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, titleKey: 'route.config' },
       children: [
         {
           path: 'services',
@@ -115,7 +115,7 @@ const router = createRouter({
       name: 'load-balancers',
       component: () => import('../views/Layout.vue'),
       redirect: '/load-balancers/monitoring',
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, titleKey: 'route.loadBalancers' },
       children: [
         {
           path: 'monitoring',
@@ -138,7 +138,7 @@ const router = createRouter({
       name: 'circuit-breakers',
       component: () => import('../views/Layout.vue'),
       redirect: '/circuit-breakers/monitoring',
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, titleKey: 'route.circuitBreakers' },
       children: [
         {
           path: 'monitoring',
@@ -166,7 +166,7 @@ const router = createRouter({
       path: '/security',
       name: 'security',
       component: () => import('../views/Layout.vue'),
-      meta: { requiresAuth: true, roles: ['ADMIN'] },
+      meta: { requiresAuth: true, roles: ['ADMIN'], titleKey: 'route.security' },
       children: [
         {
           path: 'api-keys',
@@ -199,7 +199,7 @@ const router = createRouter({
       path: '/system',
       name: 'system',
       component: () => import('../views/Layout.vue'),
-      meta: { requiresAuth: true, roles: ['ADMIN'] },
+      meta: { requiresAuth: true, roles: ['ADMIN'], titleKey: 'route.system' },
       children: [
         {
           path: 'accounts',
@@ -221,7 +221,7 @@ const router = createRouter({
       name: 'tracing',
       component: () => import('../views/Layout.vue'),
       redirect: '/tracing/dashboard',
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, titleKey: 'route.tracing' },
       children: [
         {
           path: 'dashboard',
@@ -250,7 +250,7 @@ const router = createRouter({
       name: 'playground',
       component: () => import('../views/Layout.vue'),
       redirect: '/playground/chat',
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, titleKey: 'route.playground' },
       children: [
         {
           path: 'chat',
@@ -291,7 +291,7 @@ const router = createRouter({
       name: 'exceptions',
       component: () => import('../views/Layout.vue'),
       redirect: '/exceptions/list',
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, titleKey: 'route.exceptions' },
       children: [
         {
           path: 'list',
@@ -319,7 +319,7 @@ const router = createRouter({
       name: 'rate-limiters',
       component: () => import('../views/Layout.vue'),
       redirect: '/rate-limiters/monitoring',
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, titleKey: 'route.rateLimiters' },
       children: [
         {
           path: 'monitoring',
@@ -335,7 +335,7 @@ const router = createRouter({
       path: '/monitoring',
       name: 'monitoring',
       component: () => import('../views/Layout.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, titleKey: 'route.monitoring' },
       children: [
         {
           path: 'slow-queries',
@@ -351,7 +351,7 @@ const router = createRouter({
       name: 'call-history',
       component: () => import('../views/Layout.vue'),
       redirect: '/call-history/dashboard',
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, titleKey: 'route.callHistory' },
       children: [
         {
           path: 'dashboard',

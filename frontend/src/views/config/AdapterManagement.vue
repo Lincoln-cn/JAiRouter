@@ -26,7 +26,7 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column :label="t('adapter.capability')" min-width="280">
+      <el-table-column :label="t('adapter.capabilityColumn')" min-width="280">
         <template #default="{ row }">
           <div class="capability-tags">
             <el-tag v-if="row.capabilities?.chat" size="small" type="primary">{{ t('adapter.capability.chat') }}</el-tag>
@@ -57,7 +57,7 @@
             size="small"
             @click="handleTest(row)"
           >
-            {{ t('adapter.test') }}
+            {{ t('adapter.testAction') }}
           </el-button>
           <el-button
             v-if="row.source !== 'builtin'"

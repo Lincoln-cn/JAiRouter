@@ -92,6 +92,18 @@
     "image": "Image Service"
   },
   "route": {
+    "dashboard": "Overview",
+    "config": "Configuration",
+    "loadBalancers": "Load Balancers",
+    "circuitBreakers": "Circuit Breakers",
+    "security": "Security",
+    "system": "System",
+    "tracing": "Distributed Tracing",
+    "playground": "AI Playground",
+    "exceptions": "Exceptions",
+    "rateLimiters": "Rate Limiters",
+    "monitoring": "Monitoring",
+    "callHistory": "Call History",
     "dashboardMain": "Dashboard",
     "serviceManagement": "Service Management",
     "instanceManagement": "Instance Management",

@@ -92,6 +92,18 @@
     "image": "图像服务"
   },
   "route": {
+    "dashboard": "概览",
+    "config": "配置管理",
+    "loadBalancers": "负载均衡器",
+    "circuitBreakers": "熔断器",
+    "security": "安全管理",
+    "system": "系统管理",
+    "tracing": "链路追踪",
+    "playground": "AI 试验场",
+    "exceptions": "异常管理",
+    "rateLimiters": "限流器",
+    "monitoring": "监控分析",
+    "callHistory": "调用历史",
     "dashboardMain": "仪表板",
     "serviceManagement": "服务管理",
     "instanceManagement": "实例管理",

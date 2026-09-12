@@ -63,6 +63,21 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  // v3.0.3 修复：冷启动（F5 / 深链 / 新标签页）时 localStorage 只有 admin_token，
+  // userInfo 与 permissions 均为空 → 路由守卫的 meta.roles 判定（/security/*、/system/*）
+  // 误判为无角色并重定向到仪表板。这里在 store 初始化时用既有 token 补齐用户信息
+  // （与 setToken 同源解析），使冷启动与应用内行为一致。
+  if (token.value) {
+    const bootRoles = parseRolesFromToken(token.value)
+    const bootPerms = parsePermissionsFromToken(token.value)
+    permissions.value = bootPerms
+    userInfo.value = {
+      username: parseUsernameFromToken(token.value),
+      roles: bootRoles,
+      permissions: bootPerms
+    }
+  }
+
   // 检查是否为管理员
   const isAdmin = computed(() => {
     return userInfo.value?.roles?.includes('ADMIN') || false
