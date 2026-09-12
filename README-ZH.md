@@ -240,7 +240,7 @@ JAiRouter 是一个 **生产级 AI 模型网关**，面向自建推理基础设�
 
 ## 发展路线
 
-**已发布**（最新：v2.9.11）
+**已发布**（最新：v3.0.3）
 
 - [x] 核心网关 + OpenAI 兼容 API
 - [x] 内置 + 可配置适配器（Ollama、vLLM、GPUStack、Xinference、LocalAI、OpenAI、Claude、Gemini 等）
@@ -257,9 +257,17 @@ JAiRouter 是一个 **生产级 AI 模型网关**，面向自建推理基础设�
 - [x] Web 控制台热更新 + 亮/暗主题
 - [x] Docker 镜像优化（Alpine/Distroless）
 
-**开发中**（尚未发布）
+**近期已发布**
 
-- [ ] 响应缓存 P1：流式 SSE 缓存、失效 API、限流提前短路
+- [x] 响应缓存 P1：流式 SSE 拼接缓存、失效 API、限流提前短路（`DELETE /api/config/cache/response`，v2.9.10 —— 随 v3.0.3 发布）
+- [x] Web 管理台重构系列：设计令牌、暗色主题、治理指挥台、中英双语、慢查询分析（v2.10.x）
+- [x] Web 完整流程系列：Onboarding 预选闭环、跨页治理入口、PageSkeleton 覆盖（v3.0.1–v3.0.3）
+
+**开发中**
+
+- [ ] Token 配额与多维动态限流（v3.1.x）
+- [ ] 语义缓存评估（向量相似度复用）—— 另立项
+- [ ] 高可用地基（多节点 / Redis 分布式 / 配置回滚）—— v3.0.x 后评估
 
 > **当前版本**：v3.0.3 | **LTS 版本**：v2.6.11（维护至 2028-05）
 
