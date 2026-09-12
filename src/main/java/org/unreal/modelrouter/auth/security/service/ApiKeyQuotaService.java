@@ -5,6 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
 import org.unreal.modelrouter.auth.security.model.UsageStatistics;
+import org.unreal.modelrouter.auth.security.quota.QuotaLedgerService;
+import org.unreal.modelrouter.auth.security.quota.QuotaUsage;
+import org.unreal.modelrouter.auth.security.quota.QuotaWindow;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -27,6 +30,15 @@ public class ApiKeyQuotaService {
 
     private final ApiKeyService apiKeyService;
     private final TokenBucketRateLimiter rateLimiter;
+
+    /**
+     * 配额账本（v3.1 PR-1 旁路账本）。
+     *
+     * <p>采用可选字段注入而非构造器注入，保持既有构造器签名与单元测试装配方式不变；
+     * 字段为 {@code null}（或账本未启用）时全部走既有内存统计路径。</p>
+     */
+    @Autowired(required = false)
+    private QuotaLedgerService quotaLedgerService;
 
     @Autowired
     public ApiKeyQuotaService(ApiKeyService apiKeyService,
@@ -73,6 +85,14 @@ public class ApiKeyQuotaService {
 
         int currentRate = rateLimiter.getCurrentCount(keyId);
 
+        // v3.1 PR-1：账本启用时优先读取账本的今日（DAY 窗口）用量；
+        // 账本未启用、无今日数据或读取失败时回退上面的内存路径，既有返回结构不变。
+        final Optional<LedgerDayUsage> ledgerUsage = readTodayUsageFromLedger(keyId);
+        if (ledgerUsage.isPresent()) {
+            todayRequests = ledgerUsage.get().requests();
+            todayTokens = ledgerUsage.get().tokens();
+        }
+
         QuotaUsageDetail detail = QuotaUsageDetail.builder()
             .keyId(keyId)
             .description(apiKey.getDescription())
@@ -90,6 +110,66 @@ public class ApiKeyQuotaService {
         detail.calculateUsagePercent();
 
         return Optional.of(detail);
+    }
+
+    /**
+     * 从配额账本读取指定 API Key 今日（DAY 窗口）的聚合用量（v3.1 PR-1）。
+     *
+     * <p>账本未启用、无今日数据或读取异常时返回 {@link Optional#empty()}，调用方回退既有内存路径。
+     * 账本读库失败时其内部会降级为“仅内存态”，表现为无今日数据，同样触发回退。</p>
+     *
+     * @param keyId API Key ID
+     * @return 今日聚合用量，无法从账本读取时返回 empty
+     */
+    private Optional<LedgerDayUsage> readTodayUsageFromLedger(final String keyId) {
+        if (quotaLedgerService == null || !quotaLedgerService.isEnabled()) {
+            return Optional.empty();
+        }
+        try {
+            final LocalDateTime dayStart = QuotaWindow.DAY.windowStart(LocalDateTime.now());
+            long requests = 0;
+            long tokens = 0;
+            boolean found = false;
+            for (final QuotaUsage usage : quotaLedgerService.usageAll(keyId)) {
+                if (usage.window() == QuotaWindow.DAY && dayStart.equals(usage.windowStart())) {
+                    requests += usage.requestCount();
+                    tokens += usage.tokenCount();
+                    found = true;
+                }
+            }
+            return found ? Optional.of(new LedgerDayUsage(requests, tokens)) : Optional.empty();
+        } catch (Exception e) {
+            log.warn("读取配额账本失败，回退内存用量统计: keyId={}, error={}", keyId, e.toString());
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * 重置账本中指定 API Key 的用量（仅账本启用时执行）。
+     *
+     * <p>账本启用后今日用量来自账本，若不一起清空会出现“重置后配额未归零”的语义偏差，
+     * 因此重置每日配额时同步清空账本；账本异常不影响既有重置流程。</p>
+     *
+     * @param keyId API Key ID
+     */
+    private void resetLedger(final String keyId) {
+        if (quotaLedgerService == null || !quotaLedgerService.isEnabled()) {
+            return;
+        }
+        try {
+            quotaLedgerService.reset(keyId);
+        } catch (Exception e) {
+            log.warn("重置配额账本失败（忽略，内存配额已重置）: keyId={}, error={}", keyId, e.toString());
+        }
+    }
+
+    /**
+     * 账本读取出的今日聚合用量（v3.1 PR-1）。
+     *
+     * @param requests 今日请求数
+     * @param tokens   今日 token 数
+     */
+    private record LedgerDayUsage(long requests, long tokens) {
     }
 
     /**
@@ -142,6 +222,7 @@ public class ApiKeyQuotaService {
     public void resetDailyQuota(String keyId) {
         apiKeyService.resetDailyQuota(keyId).block();
         rateLimiter.reset(keyId);
+        resetLedger(keyId);
         log.info("已重置 API Key 每日配额和速率限制: {}", keyId);
     }
 
@@ -154,6 +235,7 @@ public class ApiKeyQuotaService {
 
         for (String keyId : index.keySet()) {
             apiKeyService.resetDailyQuota(keyId).block();
+            resetLedger(keyId);
         }
         rateLimiter.resetAll();
         log.info("已重置所有 API Key 每日配额和速率限制");
