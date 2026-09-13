@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Anthropic Messages 请求 → 内部统一 {@link ChatDTO.Request} 翻译器（v3.1 PR-4b）.
+ * Anthropic Messages 请求 → 内部统一 {@link ChatDTO.Request} 翻译器（v3.1 PR-4b/4c）.
  *
  * <p>映射规则：</p>
  * <ul>
@@ -32,7 +32,8 @@ import java.util.List;
  *   <li>{@code messages[].content} 块数组 → 只取 {@code type=text} 块拼接，其他块类型记 debug 日志并跳过；</li>
  *   <li>{@code max_tokens → maxTokens}、{@code temperature → temperature}、{@code top_p → topP}；</li>
  *   <li>{@code stop_sequences → stop}（原样以列表透传；空列表转 {@code null}）；</li>
- *   <li>{@code stream} 恒为 {@code FALSE}——本 PR 只支持非流式（流式请求在控制器已 400 拒绝）。</li>
+ *   <li>{@code stream} 由调用方显式指定（PR-4c）：{@code /v1/messages} 非流式分支恒 {@code FALSE}、
+ *       流式分支恒 {@code TRUE}，单参入口保持 {@code FALSE} 语义。</li>
  * </ul>
  *
  * <p>本版本不转发 {@code tools} / {@code tool_choice} / {@code metadata}（内部 {@code ChatDTO.Request}
@@ -51,18 +52,40 @@ public class AnthropicRequestTranslator {
     private static final String CONTENT_TYPE_TEXT = "text";
 
     /**
+     * 将 Anthropic 请求翻译为内部统一 Chat 请求（非流式）.
+     *
+     * <p>永不抛异常：{@code messages} 缺失或为空时返回仅含（可选）system 消息的请求，
+     * 由下游实例/适配器决定如何响应。等价于 {@link #toChatRequest(AnthropicMessagesRequest, Boolean)}
+     * 传 {@link Boolean#FALSE}（保持 PR-4b 的既有语义）。</p>
+     *
+     * @param request Anthropic 请求体
+     * @return 内部 Chat 请求（{@code stream=FALSE}）
+     */
+    public ChatDTO.Request toChatRequest(final AnthropicMessagesRequest request) {
+        return toChatRequest(request, Boolean.FALSE);
+    }
+
+    /**
      * 将 Anthropic 请求翻译为内部统一 Chat 请求.
      *
      * <p>永不抛异常：{@code messages} 缺失或为空时返回仅含（可选）system 消息的请求，
      * 由下游实例/适配器决定如何响应。</p>
      *
-     * @param request Anthropic 请求体
+     * <p>{@code stream} 由调用方（控制器）显式给出，而非直接透传请求体字段：
+     * {@code /v1/messages} 的流式分支要先完成「Anthropic 事件流」改写，因此内部
+     * {@code ChatDTO.Request.stream} 必须与「走哪条链路」严格一致——非流式分支恒为
+     * {@link Boolean#FALSE}，流式分支恒为 {@link Boolean#TRUE}。</p>
+     *
+     * @param request Anthropic 请求体（可为 {@code null}）
+     * @param stream  内部请求的流式标记（{@code null} 视为非流式）
      * @return 内部 Chat 请求
+     * @since v3.1 PR-4c
      */
-    public ChatDTO.Request toChatRequest(final AnthropicMessagesRequest request) {
+    public ChatDTO.Request toChatRequest(final AnthropicMessagesRequest request, final Boolean stream) {
+        final Boolean streamFlag = Boolean.TRUE.equals(stream) ? Boolean.TRUE : Boolean.FALSE;
         if (request == null) {
             return new ChatDTO.Request(
-                    null, List.of(), Boolean.FALSE, null, null, null, null, null, null, null, null, null);
+                    null, List.of(), streamFlag, null, null, null, null, null, null, null, null, null);
         }
 
         final List<ChatDTO.Message> messages = new ArrayList<>();
@@ -90,7 +113,7 @@ public class AnthropicRequestTranslator {
         return new ChatDTO.Request(
                 request.model(),
                 messages,
-                Boolean.FALSE,
+                streamFlag,
                 request.maxTokens(),
                 request.temperature(),
                 request.topP(),

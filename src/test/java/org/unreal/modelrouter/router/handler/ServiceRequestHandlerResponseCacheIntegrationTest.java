@@ -488,7 +488,76 @@ class ServiceRequestHandlerResponseCacheIntegrationTest {
                 "非流式请求应命中非流式缓存并返回 RouterResponse");
     }
 
+    // ==================== v3.1 PR-4c: 原生面（/v1）缓存命中 ====================
+
+    @Test
+    @DisplayName("RC-INTEG-023: 原生面命中返回原始 JSON（无 RouterResponse 包裹），控制台面不变")
+    void nativeSurfaceCacheHitReturnsRawJson() throws Exception {
+        buildHandler(true);
+        ChatDTO.Request dto = deterministicChat("hello");
+        Map<String, Object> payload = chatResponsePayload("chatcmpl-native-cached");
+        seed("key-1", ServiceType.chat, dto, payload);
+
+        // 原生面标记 + ObjectMapper（生产为 JacksonConfig 单例，测试反射注入）
+        injectObjectMapper();
+        ServiceRequestExecutor executor = downstreamExecutor();
+        RunResult result = run(ServiceEndpoint.CHAT, "gpt-4", "key-1",
+                List.of("chat"), dto, executor, true);
+
+        assertNotNull(result.response());
+        assertEquals(HttpStatus.OK, result.response().getStatusCode());
+        assertEquals(MediaType.APPLICATION_JSON, result.response().getHeaders().getContentType());
+        assertTrue(result.response().getBody() instanceof String,
+                "原生面命中必须是原生 JSON 文本, 而不是 RouterResponse 包裹体");
+        String body = (String) result.response().getBody();
+        assertTrue(body.contains("\"id\":\"chatcmpl-native-cached\""), "原生 JSON 应保留下游原始字段: " + body);
+        assertTrue(body.contains("\"finish_reason\":\"stop\""));
+        Map<?, ?> parsed = new com.fasterxml.jackson.databind.ObjectMapper().readValue(body, Map.class);
+        assertEquals("chatcmpl-native-cached", parsed.get("id"));
+        verify(executor, never()).execute(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("RC-INTEG-024: 原生面命中但无 ObjectMapper 时回退 RouterResponse（不返回破损响应）")
+    void nativeSurfaceCacheHitWithoutObjectMapperFallsBack() throws Exception {
+        buildHandler(true);
+        ChatDTO.Request dto = deterministicChat("hello");
+        Map<String, Object> payload = chatResponsePayload("chatcmpl-native-fallback");
+        seed("key-1", ServiceType.chat, dto, payload);
+
+        RunResult result = run(ServiceEndpoint.CHAT, "gpt-4", "key-1",
+                List.of("chat"), dto, downstreamExecutor(), true);
+
+        assertNotNull(result.response());
+        assertTrue(result.response().getBody() instanceof RouterResponse,
+                "无 ObjectMapper 时结构化缓存值无法序列化, 应回退既有包裹行为");
+    }
+
+    @Test
+    @DisplayName("RC-INTEG-025: 原生面命中且缓存值已是 JSON 文本时原样返回（不二次转义）")
+    void nativeSurfaceCacheHitKeepsJsonText() throws Exception {
+        buildHandler(true);
+        ChatDTO.Request dto = deterministicChat("hello");
+        String rawJson = "{\"id\":\"chatcmpl-text\",\"choices\":[]}";
+        seed("key-1", ServiceType.chat, dto, rawJson);
+
+        injectObjectMapper();
+        RunResult result = run(ServiceEndpoint.CHAT, "gpt-4", "key-1",
+                List.of("chat"), dto, downstreamExecutor(), true);
+
+        assertEquals(rawJson, result.response().getBody(), "已是合法 JSON 文本的缓存值应原样返回");
+    }
+
     // ==================== 辅助方法 ====================
+
+    /**
+     * v3.1 PR-4c: 反射注入 ObjectMapper（生产环境由 {@code JacksonConfig} 单例注入）.
+     */
+    private void injectObjectMapper() throws Exception {
+        Field field = ServiceRequestHandler.class.getDeclaredField("objectMapper");
+        field.setAccessible(true);
+        field.set(handler, new com.fasterxml.jackson.databind.ObjectMapper());
+    }
 
     /**
      * 构建 handler：真实 ResponseCacheProperties + CaffeineCacheStore(计数代理) +
@@ -556,13 +625,29 @@ class ServiceRequestHandlerResponseCacheIntegrationTest {
     private RunResult run(final ServiceEndpoint endpoint, final String modelName,
                           final String keyId, final List<String> permissions,
                           final Object dto, final ServiceRequestExecutor executor) {
+        return run(endpoint, modelName, keyId, permissions, dto, executor, false);
+    }
+
+    /**
+     * v3.1 PR-4c: 支持置原生面标记（{@code /v1/**} 控制器语义）的完整流程。
+     *
+     * @param nativeSurface 是否置 {@link ServiceRequestHandler#NATIVE_RESPONSE_ATTRIBUTE}
+     */
+    private RunResult run(final ServiceEndpoint endpoint, final String modelName,
+                          final String keyId, final List<String> permissions,
+                          final Object dto, final ServiceRequestExecutor executor,
+                          final boolean nativeSurface) {
         MockServerHttpRequest request = MockServerHttpRequest
-                .post("/api/v1/chat/completions")
+                .post(nativeSurface ? "/v1/chat/completions" : "/api/v1/chat/completions")
                 .build();
         ServerWebExchange exchange = MockServerWebExchange.from(request);
         if (dto != null) {
             // 模拟 UniversalController: 原始 DTO 放入 exchange attribute
             exchange.getAttributes().put(ServiceRequestHandler.REQUEST_DTO_ATTRIBUTE, dto);
+        }
+        if (nativeSurface) {
+            // 模拟 OpenAiNativeController / AnthropicMessagesController: 置原生响应标记
+            exchange.getAttributes().put(ServiceRequestHandler.NATIVE_RESPONSE_ATTRIBUTE, Boolean.TRUE);
         }
 
         ApiKeyAuthentication auth = new ApiKeyAuthentication(keyId, "sk-" + keyId, permissions);

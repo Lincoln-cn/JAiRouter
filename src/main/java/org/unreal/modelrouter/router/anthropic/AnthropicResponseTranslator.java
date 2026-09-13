@@ -164,10 +164,13 @@ public class AnthropicResponseTranslator {
     /**
      * 映射下游 {@code finish_reason} → Anthropic {@code stop_reason}.
      *
+     * <p>包内共享：流式翻译器（{@code AnthropicStreamingTranslator}）在 {@code message_delta}
+     * 中复用同一映射，避免非流式/流式两处映射规则漂移。</p>
+     *
      * @param finishReason 下游结束原因（可为 {@code null}）
      * @return {@code max_tokens} 当且仅当下游为 {@code length}，其余一律 {@code end_turn}
      */
-    private String mapStopReason(final String finishReason) {
+    static String mapStopReason(final String finishReason) {
         return switch (finishReason == null ? "" : finishReason) {
             case FINISH_REASON_STOP -> AnthropicMessagesResponse.STOP_REASON_END_TURN;
             case FINISH_REASON_LENGTH -> AnthropicMessagesResponse.STOP_REASON_MAX_TOKENS;

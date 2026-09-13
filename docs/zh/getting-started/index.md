@@ -1,4 +1,4 @@
-﻿# 快速开始
+# 快速开始
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.2  
@@ -28,6 +28,7 @@ JAiRouter 是一个基于 Spring Boot 的 AI 模型服务路由和负载均衡�
 1. **[安装指南](installation.md)** - 安装和配置 JAiRouter
 2. **[快速开始](quick-start.md)** - 进行第一次 API 调用
 3. **[第一步](first-steps.md)** - 基本配置和使用
+4. **[Claude Code 接入](claude-code.md)** - 用 Claude Code 零改造直连（Anthropic 协议入口）
 
 ## 前置条件
 

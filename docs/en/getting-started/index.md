@@ -1,4 +1,4 @@
-﻿# Getting Started
+# Getting Started
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -28,6 +28,7 @@ JAiRouter is a Spring Boot-based AI model service routing and load balancing gat
 1. **[Installation Guide](installation.md)** - Install and configure JAiRouter
 2. **[Quick Start](quick-start.md)** - Make your first API call
 3. **[First Steps](first-steps.md)** - Basic configuration and usage
+4. **[Claude Code Integration](claude-code.md)** - Point Claude Code at JAiRouter with zero changes (Anthropic protocol endpoint)
 
 ## Prerequisites
 

@@ -16,6 +16,8 @@
 
 package org.unreal.modelrouter.router.handler;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -149,6 +151,16 @@ public class ServiceRequestHandler {
      */
     @Autowired(required = false)
     private QuotaEnforcementService quotaEnforcementService;
+
+    /**
+     * v3.1 PR-4c: 全局 ObjectMapper（可选注入）。
+     *
+     * <p>仅用于「原生面（{@code /v1/**}）+ 响应缓存命中」时把缓存值序列化为<b>原生 JSON</b>
+     * （而非 {@code RouterResponse} 包裹体）。未注入（如直接 new 的单测）时该分支退化为
+     * 既有包裹行为，控制台面（{@code /api/**}）行为完全不受影响。</p>
+     */
+    @Autowired(required = false)
+    private ObjectMapper objectMapper;
 
     /**
      * 构造函数.
@@ -320,7 +332,8 @@ public class ServiceRequestHandler {
 
         try {
             // v2.9.10: 响应缓存读 — 限流预扣后、selectInstance 之前(命中直接跳过实例选择)
-            ResponseEntity<?> cachedResponse = tryReadCachedResponse(httpRequest, serviceType, modelName);
+            ResponseEntity<?> cachedResponse =
+                    tryReadCachedResponse(httpRequest, serviceType, modelName, exchange);
             if (cachedResponse != null) {
                 return Mono.just(cachedResponse);
             }
@@ -621,18 +634,22 @@ public class ServiceRequestHandler {
      * <ul>
      *   <li>{@link CachedStreamingResponse}（v2.9.10）：构造同构
      *       {@code text/event-stream + Flux<ServerSentEvent<String>>} 逐块 SSE 回放</li>
-     *   <li>普通 Object（v2.9.9）：构造 RouterResponse 200 JSON 响应</li>
+     *   <li>原生面（{@code /v1/**}，v3.1 PR-4c）：缓存值直接序列化为<b>原生 JSON</b>
+     *       ——OpenAI/Anthropic 客户端拿不到 {@code RouterResponse} 包裹体</li>
+     *   <li>控制台面（{@code /api/**}）：构造 {@code RouterResponse} 200 JSON 响应</li>
      * </ul>
      * 未命中返回 null 继续原流程。
      *
      * @param httpRequest HTTP 请求
      * @param serviceType 服务类型
      * @param modelName 模型名称
+     * @param exchange 原始交换对象（读取原生面标记），可为 {@code null}
      * @return 缓存命中时的响应实体；未命中或缓存不可用时返回 null
      */
     private ResponseEntity<?> tryReadCachedResponse(final ServerHttpRequest httpRequest,
                                                     final ServiceType serviceType,
-                                                    final String modelName) {
+                                                    final String modelName,
+                                                    final ServerWebExchange exchange) {
         if (responseCacheService == null || httpRequest == null) {
             return null;
         }
@@ -651,11 +668,86 @@ public class ServiceRequestHandler {
         if (value instanceof CachedStreamingResponse streamingResponse) {
             return buildStreamingCacheResponse(streamingResponse);
         }
-        // v2.9.9: 非流式缓存值 → RouterResponse JSON（回归）
+        // v3.1 PR-4c: 原生面缓存命中 → 原生 JSON（不包 RouterResponse）
+        if (isNativeResponse(exchange, httpRequest)) {
+            ResponseEntity<?> nativeResponse = buildNativeCacheResponse(value);
+            if (nativeResponse != null) {
+                return nativeResponse;
+            }
+            logger.warn("原生面缓存命中但缓存值无法序列化为原生 JSON, 回退 RouterResponse 包裹体: type={}",
+                    value.getClass().getName());
+        }
+        // v2.9.9: 非流式缓存值 → RouterResponse JSON（回归；控制台面行为不变）
         RouterResponse<Object> body = RouterResponse.success(value, "请求成功");
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body);
+    }
+
+    /**
+     * v3.1 PR-4c: 是否原生面请求（{@code /v1/**}）.
+     *
+     * <p>标记由 {@code OpenAiNativeController} / {@code AnthropicMessagesController} 置入
+     * exchange attribute（{@link #NATIVE_RESPONSE_ATTRIBUTE}）；同时兼容处理器侧读
+     * {@code httpRequest} attribute 的既有语义（非流式处理器即从此处读取），
+     * 两处任一命中即为原生面。</p>
+     *
+     * @param exchange 原始交换对象，可为 {@code null}
+     * @param httpRequest HTTP 请求，可为 {@code null}
+     * @return 原生面返回 true
+     */
+    private boolean isNativeResponse(final ServerWebExchange exchange, final ServerHttpRequest httpRequest) {
+        if (exchange != null && Boolean.TRUE.equals(exchange.getAttribute(NATIVE_RESPONSE_ATTRIBUTE))) {
+            return true;
+        }
+        return httpRequest != null
+                && Boolean.TRUE.equals(httpRequest.getAttributes().get(NATIVE_RESPONSE_ATTRIBUTE));
+    }
+
+    /**
+     * v3.1 PR-4c: 原生面缓存命中响应（原生 JSON 文本）.
+     *
+     * @param value 缓存值（下游转换后的数据：JSON 文本或结构化对象）
+     * @return 原生 JSON 响应；无法序列化（未注入 ObjectMapper 或序列化失败）时返回 {@code null}
+     *         ——由调用方回退包裹体，保证不会返回破损响应
+     */
+    private ResponseEntity<?> buildNativeCacheResponse(final Object value) {
+        String json = toNativeJson(value);
+        if (json == null) {
+            return null;
+        }
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(json);
+    }
+
+    /**
+     * v3.1 PR-4c: 缓存值 → 原生 JSON 文本.
+     *
+     * <p>与 {@code NonStreamingRequestProcessor#nativeJson} 同口径：已是合法 JSON 文本时原样返回
+     * （保留下游原始字段/顺序），否则以 ObjectMapper 序列化；未注入 ObjectMapper 时仅文本可原样返回。</p>
+     *
+     * @param value 缓存值
+     * @return JSON 文本；不可得返回 {@code null}
+     */
+    private String toNativeJson(final Object value) {
+        if (objectMapper == null) {
+            return value instanceof String text ? text : null;
+        }
+        if (value instanceof String text) {
+            try {
+                objectMapper.readTree(text);
+                return text;
+            } catch (JsonProcessingException e) {
+                logger.debug("原生面缓存值非合法 JSON 文本, 转为 JSON 字符串: {}", e.getOriginalMessage());
+            }
+        }
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            logger.warn("原生面缓存值序列化失败: {}", e.getMessage());
+            return null;
+        }
     }
 
     /**

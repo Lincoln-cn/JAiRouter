@@ -70,6 +70,7 @@ plugins:
             安装指南: Installation Guide
             快速开始: Quick Start
             第一步: First Steps
+            Claude Code 接入: Claude Code Integration
             配置指南: Configuration
             应用配置: Application Config
             模块化配置: Modular Config
@@ -180,6 +181,7 @@ nav:
     - 安装指南: zh/getting-started/installation.md
     - 快速开始: zh/getting-started/quick-start.md
     - 第一步: zh/getting-started/first-steps.md
+    - Claude Code 接入: zh/getting-started/claude-code.md
   - 配置指南:
     - zh/configuration/index.md
     - 应用配置: zh/configuration/application-config.md
