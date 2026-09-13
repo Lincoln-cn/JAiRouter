@@ -4,6 +4,7 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -16,7 +17,10 @@ import java.util.Objects;
  * 配额账本配置（{@code jairouter.quota.*}）。
  *
  * <p>默认 {@link #isEnabled() enabled=false}，即完全不启用账本：不累加、不查库、不落库，
- * 行为与 v3.0.x 完全一致（零行为变更）。</p>
+ * 行为与 v3.0.x 完全一致（零行为变更）。{@link #getDistributed() distributed} 默认同样关闭：
+ * 计数留在本进程内存（{@code LocalCounterBackend}），只有
+ * {@code jairouter.quota.distributed.enabled=true} 时才把 Redis 作为权威计数
+ * （{@code RedisCounterBackend}，见 {@link QuotaLedgerService}）。</p>
  *
  * <p>保留期使用字符串而非 {@link java.time.Duration}：月级保留期（{@code 13mo}）无法用
  * {@code java.time.Duration} 表达，统一采用 {@code Nmo}/{@code Nd}/{@code Nh}/{@code Nm}/{@code Ns}
@@ -30,6 +34,18 @@ import java.util.Objects;
 @Component
 @ConfigurationProperties(prefix = "jairouter.quota")
 public class QuotaProperties {
+
+    /** 默认分布式计数 key 前缀 */
+    public static final String DEFAULT_DISTRIBUTED_KEY_PREFIX = "jairouter:quota";
+
+    /** 默认 Redis 命令超时（热路径同步等待，取值保守） */
+    public static final Duration DEFAULT_DISTRIBUTED_TIMEOUT = Duration.ofMillis(50L);
+
+    /** Redis 命令超时下限（避免配成 0 导致必超时） */
+    private static final Duration MIN_DISTRIBUTED_TIMEOUT = Duration.ofMillis(1L);
+
+    /** Redis 命令超时上限（避免误配大值把请求链路拖死） */
+    private static final Duration MAX_DISTRIBUTED_TIMEOUT = Duration.ofSeconds(5L);
 
     /** 默认启用的四级窗口：分钟 / 小时 / 天 / 月 */
     private static final List<QuotaWindow> DEFAULT_WINDOWS =
@@ -65,6 +81,82 @@ public class QuotaProperties {
      * 各级窗口保留期，键为窗口名（minute / hour / day / month）
      */
     private Map<String, String> retention = new LinkedHashMap<>(DEFAULT_RETENTION);
+
+    /**
+     * 分布式（Redis）计数配置，默认关闭
+     */
+    private Distributed distributed = new Distributed();
+
+    /**
+     * 分布式计数是否启用。
+     *
+     * @return {@code jairouter.quota.distributed.enabled}，默认 {@code false}
+     */
+    public boolean distributedEnabled() {
+        return distributed != null && distributed.isEnabled();
+    }
+
+    /**
+     * 分布式计数 Redis key 前缀。
+     *
+     * @return 配置值；未配置时返回 {@link #DEFAULT_DISTRIBUTED_KEY_PREFIX}
+     */
+    public String distributedKeyPrefix() {
+        final String prefix = distributed == null ? null : distributed.getKeyPrefix();
+        return prefix == null || prefix.isEmpty() ? DEFAULT_DISTRIBUTED_KEY_PREFIX : prefix;
+    }
+
+    /**
+     * Redis 命令超时（钳制在 1ms ~ 5s，热路径同步等待）。
+     *
+     * @return 超时时间；未配置时返回 {@link #DEFAULT_DISTRIBUTED_TIMEOUT}
+     */
+    public Duration distributedTimeout() {
+        final Duration timeout = distributed == null ? null : distributed.getTimeout();
+        if (timeout == null || timeout.isNegative() || timeout.isZero()) {
+            return DEFAULT_DISTRIBUTED_TIMEOUT;
+        }
+        if (timeout.compareTo(MAX_DISTRIBUTED_TIMEOUT) > 0) {
+            return MAX_DISTRIBUTED_TIMEOUT;
+        }
+        if (timeout.compareTo(MIN_DISTRIBUTED_TIMEOUT) < 0) {
+            return MIN_DISTRIBUTED_TIMEOUT;
+        }
+        return timeout;
+    }
+
+    /**
+     * Redis 计数不可用时是否降级（读视图回退到本地计数 / 数据库快照）。
+     *
+     * <p>{@code true}（默认）：读数降级到本地视图，请求决策仍由 {@code fail-open} 决定；
+     * {@code false}：读数不降级，{@link QuotaLedgerService#usageStrict(QuotaDimension, QuotaWindow)}
+     * 读不到权威计数时抛异常（由限额判定按 fail-open 放行），避免多实例部署下把“本节点局部计数”
+     * 当成全局额度。</p>
+     *
+     * @return 是否降级到本地
+     */
+    public boolean distributedDegradeToLocal() {
+        return distributed == null || distributed.isDegradeToLocal();
+    }
+
+    /**
+     * 分布式计数配置（{@code jairouter.quota.distributed.*}）。
+     */
+    @Data
+    public static class Distributed {
+
+        /** 是否启用 Redis 分布式计数（默认 false：计数完全留在本进程内存） */
+        private boolean enabled = false;
+
+        /** Redis key 前缀（默认 {@code jairouter:quota}） */
+        private String keyPrefix = DEFAULT_DISTRIBUTED_KEY_PREFIX;
+
+        /** 单条 Redis 命令超时（默认 50ms） */
+        private Duration timeout = DEFAULT_DISTRIBUTED_TIMEOUT;
+
+        /** Redis 不可用 / 超时 / 脚本错误时是否降级回本地计数视图（默认 true） */
+        private boolean degradeToLocal = true;
+    }
 
     /**
      * 当前启用的窗口列表（去重、去空、保持配置顺序）。
