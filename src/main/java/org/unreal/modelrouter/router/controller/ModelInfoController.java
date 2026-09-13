@@ -11,18 +11,15 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
-import org.unreal.modelrouter.router.model.ModelServiceRegistry;
+import org.unreal.modelrouter.router.model.ModelCatalogService;
 import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
- * 模型信息控制器 - 处理模型信息查询相关接口
+ * 模型信息控制器 - 处理模型信息查询相关接口（控制台面，返回 RouterResponse 包裹体）.
+ *
+ * <p>v3.1: 模型汇总逻辑抽取到 {@link ModelCatalogService}，与 OpenAI 原生面
+ * {@code GET /v1/models} 共用同一份数据，字段集合保持不变。</p>
  */
 @RestController
 @RequestMapping("/api/models")
@@ -32,13 +29,15 @@ public class ModelInfoController {
 
     private static final Logger logger = LoggerFactory.getLogger(ModelInfoController.class);
 
-    private final ModelServiceRegistry registry;
-    private final AdapterRegistry adapterRegistry;
+    private final ModelCatalogService modelCatalogService;
 
-    public ModelInfoController(final ModelServiceRegistry registry,
-                               final AdapterRegistry adapterRegistry) {
-        this.registry = registry;
-        this.adapterRegistry = adapterRegistry;
+    /**
+     * 构造函数.
+     *
+     * @param modelCatalogService 模型目录服务
+     */
+    public ModelInfoController(final ModelCatalogService modelCatalogService) {
+        this.modelCatalogService = modelCatalogService;
     }
 
     /**
@@ -69,36 +68,8 @@ public class ModelInfoController {
     )
     public Mono<RouterResponse<Object>> getModels() {
         try {
-            List<Map<String, Object>> allModels = new ArrayList<>();
-
-            // 收集所有服务类型的模型
-            for (ModelServiceRegistry.ServiceType serviceType : ModelServiceRegistry.ServiceType.values()) {
-                var availableModels = registry.getAvailableModels(serviceType);
-
-                for (String modelName : availableModels) {
-                    Map<String, Object> modelInfo = new HashMap<>();
-                    modelInfo.put("id", modelName);
-                    modelInfo.put("object", "model");
-                    modelInfo.put("created", System.currentTimeMillis() / 1000);
-                    modelInfo.put("owned_by", "model-router");
-                    modelInfo.put("service_type", serviceType.name());
-
-                    // 获取适配器信息
-                    try {
-                        var adapter = adapterRegistry.getAdapter(serviceType);
-                        modelInfo.put("adapter", adapter.getClass().getSimpleName());
-                    } catch (Exception e) {
-                        modelInfo.put("adapter", "unknown");
-                    }
-
-                    allModels.add(modelInfo);
-                }
-            }
-
-            var response = new HashMap<String, Object>();
-            response.put("object", "list");
-            response.put("data", allModels);
-            return Mono.just(RouterResponse.success(response, "获取模型列表成功"));
+            return Mono.just(RouterResponse.success(
+                    modelCatalogService.listAllModelsAsOpenAiList(), "获取模型列表成功"));
         } catch (Exception e) {
             logger.error("获取模型列表失败", e);
             return Mono.just(RouterResponse.error("获取模型列表失败: " + e.getMessage()));

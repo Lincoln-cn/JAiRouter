@@ -17,7 +17,9 @@
 package org.unreal.modelrouter.router.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -29,7 +31,10 @@ import org.unreal.modelrouter.common.dto.EmbeddingDTO;
 import org.unreal.modelrouter.common.dto.RerankDTO;
 import org.unreal.modelrouter.router.handler.ServiceEndpoint;
 import org.unreal.modelrouter.router.handler.ServiceRequestHandler;
+import org.unreal.modelrouter.router.model.ModelCatalogService;
 import reactor.core.publisher.Mono;
+
+import java.util.Map;
 
 /**
  * OpenAI 原生面控制器（{@code /v1}）.
@@ -56,14 +61,30 @@ import reactor.core.publisher.Mono;
 public class OpenAiNativeController {
 
     private final ServiceRequestHandler requestHandler;
+    private final ModelCatalogService modelCatalogService;
 
     /**
      * 构造函数.
      *
-     * @param requestHandler 统一请求处理器
+     * @param requestHandler      统一请求处理器
+     * @param modelCatalogService 模型目录服务（{@code GET /v1/models} 数据源）
      */
-    public OpenAiNativeController(final ServiceRequestHandler requestHandler) {
+    public OpenAiNativeController(final ServiceRequestHandler requestHandler,
+                                  final ModelCatalogService modelCatalogService) {
         this.requestHandler = requestHandler;
+        this.modelCatalogService = modelCatalogService;
+    }
+
+    /**
+     * 模型列表接口（OpenAI 原生格式，v3.1 PR-4a）.
+     *
+     * @return {@code {object:"list", data:[{id, object:"model", created, owned_by, service_type, adapter}]}}
+     */
+    @GetMapping("/models")
+    public Mono<ResponseEntity<Map<String, Object>>> models() {
+        return Mono.just(ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(modelCatalogService.listAllModelsAsOpenAiList()));
     }
 
     /**
