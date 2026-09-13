@@ -33,6 +33,12 @@ import java.util.Map;
 /**
  * WebFlux 全局异常处理器
  * 替代 @RestControllerAdvice，避免 ReadOnlyHttpHeaders 问题
+ *
+ * <p>v3.1 PR-4d：错误体按请求路径分形状输出——{@code /v1/messages}（Anthropic 面）输出
+ * {@code {"type":"error","error":{"type","message"}}}，其余 {@code /v1/**}（OpenAI 面）输出
+ * {@code {"error":{"message","type","code"}}}，使 OpenAI SDK / Claude Code 能解析网关自身错误；
+ * 状态码、日志与 {@code /api/**}（{@code RouterResponse}）行为保持不变。
+ * 映射细节见 {@link V1ErrorBodyMapper}。</p>
  */
 @Component
 @Order(-2) // 高优先级，在默认异常处理器之前
@@ -40,6 +46,17 @@ import java.util.Map;
 public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(ReactiveGlobalExceptionHandler.class);
+
+    /**
+     * 兜底错误消息（异常处理器自身失败时使用）.
+     */
+    private static final String SIMPLE_ERROR_MESSAGE = "Internal Server Error";
+
+    /**
+     * 非 {@code /v1/**} 路径的静态兜底错误体（保持既有形状不变）.
+     */
+    private static final String SIMPLE_ERROR_BODY =
+            "{\"success\":false,\"message\":\"Internal Server Error\",\"code\":\"500\"}";
     
     private final ErrorTracker errorTracker;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -104,12 +121,12 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
                 }
                 
                 // 安全地设置响应状态和头
-                return setResponse(response, errorResponse, status);
+                return setResponse(exchange, errorResponse, status);
             }
         } catch (Exception e) {
             logger.error("异常处理器本身发生异常", e);
             // 如果异常处理器本身出错，返回最简单的错误响应
-            return setSimpleErrorResponse(response);
+            return setSimpleErrorResponse(exchange);
         }
     }
     
@@ -162,9 +179,10 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
      * 安全地设置响应
      */
     private Mono<Void> setResponse(
-            final ServerHttpResponse response,
+            final ServerWebExchange exchange,
             final RouterResponse<Void> errorResponse, final HttpStatus status) {
         try {
+            final ServerHttpResponse response = exchange.getResponse();
             // 检查响应是否已提交
             if (response.isCommitted()) {
                 logger.warn("响应已提交，无法设置错误响应");
@@ -179,8 +197,8 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
                 response.getHeaders().add("Content-Type", MediaType.APPLICATION_JSON_VALUE);
             }
             
-            // 序列化响应体
-            String jsonResponse = objectMapper.writeValueAsString(errorResponse);
+            // 序列化响应体：/v1/** 按客户端协议形状输出，其余路径沿用 RouterResponse（状态码不变）
+            String jsonResponse = serializeErrorBody(exchange, errorResponse, status);
             DataBuffer buffer = response.bufferFactory().wrap(jsonResponse.getBytes());
             
             // 再次检查响应是否已提交
@@ -194,8 +212,29 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
             
         } catch (Exception e) {
             logger.error("设置错误响应失败", e);
-            return setSimpleErrorResponse(response);
+            return setSimpleErrorResponse(exchange);
         }
+    }
+
+    /**
+     * 序列化错误体：{@code /v1/**} 按客户端协议形状（Anthropic / OpenAI）输出，其余路径沿用
+     * {@link RouterResponse} 形状（v3.1 PR-4d）.
+     *
+     * @param exchange      当前交换对象（仅用于取路径）
+     * @param errorResponse 既有错误响应载体（消息与 errorCode 原样透出）
+     * @param status        已确定的状态码
+     * @return JSON 文本
+     * @throws Exception 序列化异常（由调用方捕获并降级）
+     */
+    private String serializeErrorBody(final ServerWebExchange exchange, final RouterResponse<Void> errorResponse,
+                                      final HttpStatus status) throws Exception {
+        final Map<String, Object> clientBody = V1ErrorBodyMapper.toErrorBody(
+                V1ErrorBodyMapper.requestPathOf(exchange), status.value(),
+                errorResponse.getMessage(), errorResponse.getErrorCode());
+        if (clientBody != null) {
+            return objectMapper.writeValueAsString(clientBody);
+        }
+        return objectMapper.writeValueAsString(errorResponse);
     }
     
     /**
@@ -222,7 +261,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
         logger.warn("认证失败: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
         
         RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), ex.getErrorCode());
-        return setResponse(exchange.getResponse(), errorResponse, ex.getHttpStatus());
+        return setResponse(exchange, errorResponse, ex.getHttpStatus());
     }
 
     /**
@@ -232,7 +271,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
         logger.warn("授权失败: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
         
         RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), ex.getErrorCode());
-        return setResponse(exchange.getResponse(), errorResponse, ex.getHttpStatus());
+        return setResponse(exchange, errorResponse, ex.getHttpStatus());
     }
 
     /**
@@ -243,7 +282,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
         logger.error("数据脱敏异常: {} - {}\n{}", ex.getErrorCode(), ex.getMessage(), getStackTraceAsString(ex), ex);
         
         RouterResponse<Void> errorResponse = RouterResponse.error("数据处理失败", ex.getErrorCode());
-        return setResponse(exchange.getResponse(), errorResponse, ex.getHttpStatus());
+        return setResponse(exchange, errorResponse, ex.getHttpStatus());
     }
 
     /**
@@ -254,7 +293,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
         logger.error("安全异常: {} - {}\n{}", ex.getErrorCode(), ex.getMessage(), getStackTraceAsString(ex), ex);
         
         RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), ex.getErrorCode());
-        return setResponse(exchange.getResponse(), errorResponse, ex.getHttpStatus());
+        return setResponse(exchange, errorResponse, ex.getHttpStatus());
     }
 
     /**
@@ -277,7 +316,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
         logger.warn("认证失败: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
         
         RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), ex.getErrorCode());
-        return setResponse(exchange.getResponse(), errorResponse, HttpStatus.UNAUTHORIZED);
+        return setResponse(exchange, errorResponse, HttpStatus.UNAUTHORIZED);
     }
     
     /**
@@ -305,7 +344,17 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
         return false;
     }
 
-    private Mono<Void> setSimpleErrorResponse(final ServerHttpResponse response) {
+    /**
+     * 设置最简单的错误响应（异常处理器自身失败时的兜底）.
+     *
+     * <p>{@code /v1/**} 场景下同样按客户端协议形状输出，避免客户端拿到无法解析的兜底体；
+     * 其余路径的兜底体保持原样。</p>
+     *
+     * @param exchange 当前交换对象
+     * @return 写入结果
+     */
+    private Mono<Void> setSimpleErrorResponse(final ServerWebExchange exchange) {
+        final ServerHttpResponse response = exchange.getResponse();
         // 检查响应是否已提交，避免递归
         if (response.isCommitted()) {
             return Mono.empty();
@@ -319,7 +368,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
                 response.getHeaders().add("Content-Type", MediaType.APPLICATION_JSON_VALUE);
             }
             
-            String simpleError = "{\"success\":false,\"message\":\"Internal Server Error\",\"code\":\"500\"}";
+            String simpleError = serializeSimpleErrorBody(exchange);
             DataBuffer buffer = response.bufferFactory().wrap(simpleError.getBytes());
             
             // 再次检查响应是否已提交
@@ -335,5 +384,25 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
             // 即使设置简单响应失败，也要确保返回Mono.empty()避免递归
             return Mono.empty();
         }
+    }
+
+    /**
+     * 序列化兜底错误体.
+     *
+     * @param exchange 当前交换对象（仅用于取路径）
+     * @return {@code /v1/**} 的客户端协议形状 JSON；其余路径返回既有静态兜底体
+     */
+    private String serializeSimpleErrorBody(final ServerWebExchange exchange) {
+        final int status = HttpStatus.INTERNAL_SERVER_ERROR.value();
+        final Map<String, Object> clientBody = V1ErrorBodyMapper.toErrorBody(
+                V1ErrorBodyMapper.requestPathOf(exchange), status, SIMPLE_ERROR_MESSAGE, String.valueOf(status));
+        if (clientBody != null) {
+            try {
+                return objectMapper.writeValueAsString(clientBody);
+            } catch (Exception e) {
+                logger.warn("序列化 /v1 兜底错误体失败，回退静态兜底体: {}", e.getMessage());
+            }
+        }
+        return SIMPLE_ERROR_BODY;
     }
 }
