@@ -19,6 +19,7 @@ package org.unreal.modelrouter.router.handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +31,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.auth.security.model.ApiKeyAuthentication;
+import org.unreal.modelrouter.auth.security.quota.QuotaEnforcementService;
+import org.unreal.modelrouter.auth.security.quota.QuotaLimitViolation;
+import org.unreal.modelrouter.auth.security.quota.QuotaTokenEstimator;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.util.IpUtils;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
@@ -92,6 +96,21 @@ public class ServiceRequestHandler {
      */
     public static final String CACHE_KEY_ATTRIBUTE = "JAIR_RESPONSE_CACHE_KEY";
 
+    /**
+     * v3.1 PR-2: 429 响应头 — 本次命中的限额值（{@code ApiKey} 限额配置值）。
+     */
+    public static final String QUOTA_HEADER_LIMIT = "X-Quota-Limit";
+
+    /**
+     * v3.1 PR-2: 429 响应头 — 判定时该窗口剩余额度（非负钳制）。
+     */
+    public static final String QUOTA_HEADER_REMAINING = "X-Quota-Remaining";
+
+    /**
+     * v3.1 PR-2: 429 响应头 — 被命中的窗口（{@code DAY} / {@code MINUTE}）。
+     */
+    public static final String QUOTA_HEADER_WINDOW = "X-Quota-Window";
+
     private final AdapterRegistry adapterRegistry;
     private final ModelServiceRegistry registry;
     private final ServiceStateManager serviceStateManager;
@@ -110,6 +129,16 @@ public class ServiceRequestHandler {
      */
     @Autowired(required = false)
     private RateLimitManager rateLimitManager;
+
+    /**
+     * v3.1 PR-2: 配额限额判定服务（可选注入）。
+     *
+     * <p>未注入或账本未启用（{@code jairouter.quota.enabled=false}，默认）时不做任何判定、
+     * 不记账、不设置响应头——请求行为与 v3.0.x 完全一致。判定开启且超限时返回 429 +
+     * {@code Retry-After} / {@code X-Quota-*} 响应头（响应体沿用全局异常处理器的既有错误格式）。</p>
+     */
+    @Autowired(required = false)
+    private QuotaEnforcementService quotaEnforcementService;
 
     /**
      * 构造函数.
@@ -188,7 +217,8 @@ public class ServiceRequestHandler {
                     authorization,
                     httpRequest,
                     tracingContext,
-                    executor
+                    executor,
+                    exchange
                 );
             });
     }
@@ -216,12 +246,21 @@ public class ServiceRequestHandler {
             authorization,
             httpRequest,
             null,
-            executor
+            executor,
+            null
         );
     }
 
     /**
      * 支持实例级适配器选择的服务请求处理器.
+     *
+     * <p>v3.1 PR-2: 在 {@code selectInstance} 之前插入配额限额判定与预留；超限时以
+     * {@link HttpStatus#TOO_MANY_REQUESTS} 短路（响应头 {@code Retry-After} /
+     * {@code X-Quota-Limit} / {@code X-Quota-Remaining} / {@code X-Quota-Window}
+     * 直接写在响应上，响应体由全局异常处理器按既有错误格式渲染）。
+     * 判定发生在响应缓存读之后，因此缓存命中不消耗配额、也不产生预留凭据。</p>
+     *
+     * @param exchange 原始交换对象（读取原始 DTO 属性、写 429 响应头），可为 {@code null}
      */
     private Mono<ResponseEntity<?>> handleWithInstanceAdapter(
             final ServiceEndpoint endpoint,
@@ -229,7 +268,8 @@ public class ServiceRequestHandler {
             final String authorization,
             final ServerHttpRequest httpRequest,
             final TracingContext tracingContext,
-            final ServiceRequestExecutor executor) {
+            final ServiceRequestExecutor executor,
+            final ServerWebExchange exchange) {
 
         String clientIp = IpUtils.getClientIp(httpRequest);
         ServiceType serviceType = endpoint.getServiceType();
@@ -273,6 +313,13 @@ public class ServiceRequestHandler {
             ResponseEntity<?> cachedResponse = tryReadCachedResponse(httpRequest, serviceType, modelName);
             if (cachedResponse != null) {
                 return Mono.just(cachedResponse);
+            }
+
+            // v3.1 PR-2: 配额限额判定 + 预留 — selectInstance 之前（缓存命中已先行短路）
+            Optional<QuotaLimitViolation> quotaViolation =
+                    reserveQuota(exchange, httpRequest, apiKeyId);
+            if (quotaViolation.isPresent()) {
+                return rejectByQuota(exchange, quotaViolation.get());
             }
 
             // 1. 选择实例
@@ -464,6 +511,61 @@ public class ServiceRequestHandler {
             return key;
         }
         return null;
+    }
+
+    /**
+     * v3.1 PR-2: 配额限额判定与预留.
+     *
+     * <p>开关前置判断：配额服务未装配或账本未启用（默认）时立即返回，不估算 token、
+     * 不访问账本、不挂载结算凭据——零行为变更。判定与记账过程中的异常由
+     * {@link QuotaEnforcementService} 内部按 fail-open 吞掉，本方法不会抛出。</p>
+     *
+     * <p>估算输入取认证前 Controller 放入的原始请求 DTO（{@link #REQUEST_DTO_ATTRIBUTE}）；
+     * 简化入口（无 exchange）或不可估算的服务类型按 0 处理，预留只计请求数。</p>
+     *
+     * @param exchange   原始交换对象（读取原始 DTO），可为 {@code null}
+     * @param httpRequest HTTP 请求（挂载结算凭据）
+     * @param apiKeyId   认证后的 API Key ID
+     * @return 超限结果；放行（含降级放行）时为 {@link Optional#empty()}
+     */
+    private Optional<QuotaLimitViolation> reserveQuota(final ServerWebExchange exchange,
+                                                       final ServerHttpRequest httpRequest,
+                                                       final String apiKeyId) {
+        if (quotaEnforcementService == null || !quotaEnforcementService.isEnabled()) {
+            return Optional.empty();
+        }
+        Object requestDto = exchange != null ? exchange.getAttribute(REQUEST_DTO_ATTRIBUTE) : null;
+        long estimatedTokens = QuotaTokenEstimator.estimate(requestDto);
+        return quotaEnforcementService.tryReserve(httpRequest, apiKeyId, estimatedTokens);
+    }
+
+    /**
+     * v3.1 PR-2: 配额超限响应（429 + Retry-After + X-Quota-*）.
+     *
+     * <p>响应头直接写在响应对象上（全局异常处理器只设置状态码与 Content-Type，不清空已有头），
+     * 响应体沿用仓库既有 429 惯例——{@link ResponseStatusException} 交给
+     * {@code ReactiveGlobalExceptionHandler} 渲染为 {@code RouterResponse.error(...)}。
+     * 无 exchange（简化入口）时降级为“无响应头 + 相同状态码/响应体”。</p>
+     *
+     * @param exchange  原始交换对象，可为 {@code null}
+     * @param violation 超限结果
+     * @return 429 错误的 Mono
+     */
+    private Mono<ResponseEntity<?>> rejectByQuota(final ServerWebExchange exchange,
+                                                  final QuotaLimitViolation violation) {
+        if (exchange != null) {
+            try {
+                HttpHeaders headers = exchange.getResponse().getHeaders();
+                headers.set(QUOTA_HEADER_LIMIT, String.valueOf(violation.limit()));
+                headers.set(QUOTA_HEADER_REMAINING, String.valueOf(violation.remaining()));
+                headers.set(QUOTA_HEADER_WINDOW, violation.window().name());
+                headers.set(HttpHeaders.RETRY_AFTER, String.valueOf(violation.retryAfterSeconds()));
+            } catch (Exception e) {
+                logger.debug("设置配额超限响应头失败: {}", e.getMessage());
+            }
+        }
+        logger.warn("API Key 配额超限，返回 429: {}", violation.describe());
+        return Mono.error(new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, violation.describe()));
     }
 
     /**

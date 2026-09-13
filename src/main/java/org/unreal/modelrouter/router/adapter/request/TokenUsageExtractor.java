@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.auth.security.quota.QuotaReservation;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.unreal.modelrouter.common.dto.ChatDTO;
 import org.unreal.modelrouter.common.dto.EmbeddingDTO;
@@ -57,12 +58,39 @@ public class TokenUsageExtractor {
     }
 
     /**
-     * 从下游服务响应中提取 token 使用量并记录
+     * 从下游服务响应中提取 token 使用量并记录（不带配额结算，保留既有签名）。
+     *
+     * @param bodyStr      下游响应体
+     * @param adapterType  适配器类型
+     * @param instanceName 实例名
+     * @param apiKeyId     API Key ID
      */
     void extractAndRecordTokenUsage(final String bodyStr,
                                               final String adapterType,
                                               final String instanceName,
                                               final String apiKeyId) {
+        extractAndRecordTokenUsage(bodyStr, adapterType, instanceName, apiKeyId, null);
+    }
+
+    /**
+     * 从下游服务响应中提取 token 使用量并记录，同时完成配额结算（v3.1 PR-2）。
+     *
+     * <p>配额结算发生在“实际 token 落库点”：按 {@code 实际 − 估算} 冲正预留
+     * （{@link QuotaReservation#settleSuccess(QuotaReservation, long)}）。响应不含 usage 或
+     * 总量为 0 时本方法提前返回，预留保持原估算值（记账口径退化为“预留即计费”），
+     * 不会被错误冲正为 0。</p>
+     *
+     * @param bodyStr        下游响应体
+     * @param adapterType    适配器类型
+     * @param instanceName   实例名
+     * @param apiKeyId       API Key ID
+     * @param quotaReservation 配额预留凭据，{@code null}（未预扣 / 账本未启用）时空操作
+     */
+    void extractAndRecordTokenUsage(final String bodyStr,
+                                              final String adapterType,
+                                              final String instanceName,
+                                              final String apiKeyId,
+                                              final QuotaReservation quotaReservation) {
         try {
             JsonNode jsonNode = objectMapper.readTree(bodyStr);
 
@@ -133,6 +161,9 @@ public class TokenUsageExtractor {
 
             // 更新 API Key 的每日 Token 使用量配额
             updateApiKeyTokenUsage(apiKeyId, totalTokens);
+
+            // v3.1 PR-2: 配额结算 — 按实际用量冲正预留（恰一次）
+            QuotaReservation.settleSuccess(quotaReservation, totalTokens);
 
             logger.debug("Non-streaming token usage recorded: adapter={}, instance={}, model={}, total={}",
                     adapterType, instanceName, model, totalTokens);

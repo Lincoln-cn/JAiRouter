@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import org.unreal.modelrouter.auth.sanitization.SanitizationService;
+import org.unreal.modelrouter.auth.security.quota.QuotaReservation;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.exception.DownstreamServiceException;
 import org.unreal.modelrouter.monitor.callhistory.config.CallHistoryProperties;
@@ -114,6 +115,8 @@ public class NonStreamingRequestProcessor {
 
         // 0. 从请求属性中获取 API Key ID（由 ServiceRequestHandler 在认证阶段存入）
         final String capturedKeyId = tokenUsageExtractor.extractKeyIdFromRequest(httpRequest);
+        // v3.1 PR-2: 配额预留凭据（handler 在 selectInstance 前挂载；未预扣/账本未启用时为 null）
+        final QuotaReservation quotaReservation = QuotaReservation.from(httpRequest);
         // v2.9.9: 从请求属性读取响应缓存键（由 ServiceRequestHandler 认证阶段生成；
         // 流式/非确定性/未启用请求键为空 → 写缓存自然跳过）
         final String responseCacheKey = extractResponseCacheKey(httpRequest);
@@ -175,15 +178,21 @@ public class NonStreamingRequestProcessor {
         }
 
         // 4. 根据响应类型处理
+        // v3.1 PR-2: 失败/取消时回滚配额预留（成功路径由 token 落库点结算，凭据保证恰一次）
+        Mono<? extends ResponseEntity<?>> result;
         if (responseType == byte[].class) {
-            return processBinaryResponse(requestSpec, transformedRequest, path,
+            result = processBinaryResponse(requestSpec, transformedRequest, path,
                     instanceName, adapterType, serviceType, requestStartTime, multipartHandler,
                     selectedInstance, requestedModel);
         } else {
-            return processJsonResponse(requestSpec, transformedRequest, instanceName,
+            result = processJsonResponse(requestSpec, transformedRequest, instanceName,
                     adapterType, serviceType, requestStartTime, path, transformResponseFn, multipartHandler,
-                    capturedKeyId, responseCacheKey, requestedModel, capturedRequestBody, selectedInstance);
+                    capturedKeyId, responseCacheKey, requestedModel, capturedRequestBody, selectedInstance,
+                    quotaReservation);
         }
+        return result
+                .doOnError(error -> QuotaReservation.settleFailure(quotaReservation))
+                .doOnCancel(() -> QuotaReservation.settleFailure(quotaReservation));
     }
 
     /**
@@ -266,7 +275,8 @@ public class NonStreamingRequestProcessor {
             final String responseCacheKey,
             final String requestedModel,
             final String capturedRequestBody,
-            final ModelInstance selectedInstance) {
+            final ModelInstance selectedInstance,
+            final QuotaReservation quotaReservation) {
 
         // 支持multipart请求（如STT）
         BodyInserter<?, ? super ClientHttpRequest> requestBody;
@@ -312,8 +322,9 @@ public class NonStreamingRequestProcessor {
                         } else {
                             downstreamData = objectMapper.readValue(bodyStr, Object.class);
 
-                            // 提取并记录 token 使用量
-                            tokenUsageExtractor.extractAndRecordTokenUsage(bodyStr, adapterType, instanceName, capturedKeyId);
+                            // 提取并记录 token 使用量（v3.1 PR-2: 同时完成配额结算）
+                            tokenUsageExtractor.extractAndRecordTokenUsage(bodyStr, adapterType, instanceName,
+                                    capturedKeyId, quotaReservation);
                         }
 
                         // 响应转换

@@ -10,6 +10,7 @@ import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.unreal.modelrouter.auth.security.quota.QuotaReservation;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.unreal.modelrouter.auth.sanitization.SanitizationService;
 import org.unreal.modelrouter.monitor.callhistory.ApiCallHistoryRecorder;
@@ -127,6 +128,8 @@ public class StreamingRequestProcessor {
             final ServerHttpRequest httpRequest) {
 
         final String capturedKeyId = captureApiKeyId(httpRequest);
+        // v3.1 PR-2: 配额预留凭据（handler 在 selectInstance 前挂载；未预扣/账本未启用时为 null）
+        final QuotaReservation quotaReservation = QuotaReservation.from(httpRequest);
 
         String instanceName = selectedInstance.getName();
         long requestStartTime = System.currentTimeMillis();
@@ -219,7 +222,7 @@ public class StreamingRequestProcessor {
                     recordTokenUsage(adapterType, instanceName, modelRef.get(),
                             promptTokens.get(), completionTokens.get(), totalTokens.get(),
                             cacheHitTokens.get(), cacheMissTokens.get(),
-                            contentBuilder.toString(), capturedKeyId);
+                            contentBuilder.toString(), capturedKeyId, quotaReservation);
 
                     // v2.9.2: 记录治理 - 记录含请求/响应体的调用历史
                     if (recordLevel != RecordLevel.METADATA_ONLY && callHistoryRecorder != null) {
@@ -263,8 +266,13 @@ public class StreamingRequestProcessor {
                         }
                     }
                 })
-                .doOnError(throwable -> recordStreamingError(serviceType, adapterType, instanceName,
-                        requestStartTime, throwable))
+                .doOnError(throwable -> {
+                    recordStreamingError(serviceType, adapterType, instanceName,
+                            requestStartTime, throwable);
+                    // v3.1 PR-2: 流式中断/异常 — 回滚整笔配额预留
+                    QuotaReservation.settleFailure(quotaReservation);
+                })
+                .doOnCancel(() -> QuotaReservation.settleFailure(quotaReservation))
                 .onErrorResume(throwable -> Flux.error(throwable));
 
         return Mono.just(org.springframework.http.ResponseEntity.ok()
@@ -429,6 +437,11 @@ public class StreamingRequestProcessor {
     /**
      * 记录 Token 使用量
      * 如果后端未提供 usage 信息，则根据累积的内容进行估算
+     *
+     * <p>v3.1 PR-2: 本方法同时是流式链路的配额结算点——在 token 落库处按
+     * {@code 实际 − 估算} 冲正预留（{@link QuotaReservation#settleSuccess(QuotaReservation, long)}），
+     * 中断/异常路径由调用方的 {@code doOnError} / {@code doOnCancel} 回滚，
+     * 凭据自身保证恰一次结算。</p>
      */
     private void recordTokenUsage(final String adapterType,
                                    final String instanceName,
@@ -439,7 +452,8 @@ public class StreamingRequestProcessor {
                                    final long cacheHitTokens,
                                    final long cacheMissTokens,
                                    final String content,
-                                   final String apiKeyId) {
+                                   final String apiKeyId,
+                                   final QuotaReservation quotaReservation) {
         if (tokenUsageRecorder == null) {
             return;
         }
@@ -484,6 +498,9 @@ public class StreamingRequestProcessor {
 
                 // 更新 API Key 的每日 Token 使用量配额
                 updateApiKeyTokenUsage(apiKeyId, finalTotalTokens);
+
+                // v3.1 PR-2: 配额结算 — 按实际用量冲正预留（恰一次；失败/中断路径回滚）
+                QuotaReservation.settleSuccess(quotaReservation, finalTotalTokens);
 
                 // v2.9.0: 记录 KV 缓存命中/未命中指标
                 if (metricsCollector != null && (cacheHitTokens > 0 || cacheMissTokens > 0)) {

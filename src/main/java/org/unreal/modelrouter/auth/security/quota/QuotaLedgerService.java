@@ -35,7 +35,9 @@ import java.util.concurrent.atomic.LongAdder;
  *       使重启后用量连续；读取失败会抛异常，由 {@link #reserve(QuotaRequest)} 捕获并按 fail-open 处理。</li>
  *   <li><b>绝不抛出</b>：{@link #reserve(QuotaRequest)} / {@link #settle(QuotaSettlement)} /
  *       查询 / 清理接口都不会把异常抛给调用方；账本不可用时按
- *       {@code jairouter.quota.fail-open}（默认 true）放行并标记 {@code degraded=true}。</li>
+ *       {@code jairouter.quota.fail-open}（默认 true）放行并标记 {@code degraded=true}。
+ *       唯一例外是 {@link #usageStrict(QuotaDimension, QuotaWindow)}（v3.1 PR-2 新增，供限额判定
+ *       区分“零用量”与“读不到用量”），它把读取异常抛给调用方，由调用方按 fail-open 处理。</li>
  *   <li><b>单节点语义</b>：仅保证单实例内计数精确，多实例共享额度需 Redis 方案（PR-3）。</li>
  * </ul>
  *
@@ -181,20 +183,43 @@ public class QuotaLedgerService {
             return Optional.empty();
         }
         try {
-            final LocalDateTime windowStart = window.windowStart(LocalDateTime.now(clock));
-            final LedgerKey key = new LedgerKey(dimension, window, windowStart);
-            final LedgerSlot slot = slots.get(key);
-            if (slot != null) {
-                return Optional.of(toUsage(key, slot));
-            }
-            return repository.findByTenantIdAndApiKeyIdAndUserIdAndServiceTypeAndModelAndWindowTypeAndWindowStart(
-                    dimension.tenantId(), dimension.apiKeyId(), dimension.userId(), dimension.serviceType(),
-                    dimension.model(), window.name(), windowStart)
-                .map(row -> toUsage(key, row));
+            return usageStrict(dimension, window);
         } catch (Exception e) {
             log.warn("配额账本 usage 查询失败: apiKeyId={}, error={}", dimension.apiKeyId(), e.toString());
             return Optional.empty();
         }
+    }
+
+    /**
+     * 查询某一维度在当前窗口内的用量，读取失败时抛出异常（v3.1 PR-2 限额判定专用）。
+     *
+     * <p>与 {@link #usage(QuotaDimension, QuotaWindow)} 的唯一差异是故障语义：后者把“账本不可用”
+     * 折叠成 {@link Optional#empty()}，调用方无法区分“窗口内确实零用量”与“读不到用量”。限额判定
+     * 必须区分这两者——把读取失败当成零用量会凭空得出“仍有额度”的结论（甚至反过来误判超限），
+     * 因此这里把异常抛给调用方，由 {@code QuotaEnforcementService} 统一按 fail-open 放行。</p>
+     *
+     * @param dimension 维度
+     * @param window    窗口类型
+     * @return 内存态优先的用量；内存无数据时读数据库快照，无记录时返回 {@link Optional#empty()}
+     * @throws IllegalStateException 账本未启用，或参数缺失，或内存 / 数据库读取失败
+     */
+    public Optional<QuotaUsage> usageStrict(final QuotaDimension dimension, final QuotaWindow window) {
+        if (!isEnabled()) {
+            throw new IllegalStateException("配额账本未启用: " + QuotaDecision.REASON_DISABLED);
+        }
+        if (dimension == null || window == null) {
+            throw new IllegalStateException("配额账本查询缺少维度或窗口: " + QuotaDecision.REASON_INVALID_REQUEST);
+        }
+        final LocalDateTime windowStart = window.windowStart(LocalDateTime.now(clock));
+        final LedgerKey key = new LedgerKey(dimension, window, windowStart);
+        final LedgerSlot slot = slots.get(key);
+        if (slot != null) {
+            return Optional.of(toUsage(key, slot));
+        }
+        return repository.findByTenantIdAndApiKeyIdAndUserIdAndServiceTypeAndModelAndWindowTypeAndWindowStart(
+                dimension.tenantId(), dimension.apiKeyId(), dimension.userId(), dimension.serviceType(),
+                dimension.model(), window.name(), windowStart)
+            .map(row -> toUsage(key, row));
     }
 
     /**
