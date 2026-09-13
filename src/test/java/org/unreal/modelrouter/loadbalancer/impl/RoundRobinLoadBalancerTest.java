@@ -156,24 +156,40 @@ class RoundRobinLoadBalancerTest {
         instances.add(createInstance("weight-2", "http://w2:8080", 2));
         instances.add(createInstance("weight-3", "http://w3:8080", 3));
 
-        // When - 进行 120 次选择（权重总和 6 的倍数）
+        // When - 进行 1000 次选择（放大样本量以压低随机波动）
         java.util.Map<String, Integer> selectionCounts = new java.util.HashMap<>();
-        for (int i = 0; i < 120; i++) {
+        for (int i = 0; i < 1000; i++) {
             ModelRouterProperties.ModelInstance result = loadBalancer.selectInstance(instances, "127.0.0.1", "chat");
             selectionCounts.merge(result.getName(), 1, Integer::sum);
         }
 
-        // Then - 理论分布: weight-1: 20, weight-2: 40, weight-3: 60
-        int count1 = selectionCounts.getOrDefault("weight-1", 0);
-        int count2 = selectionCounts.getOrDefault("weight-2", 0);
-        int count3 = selectionCounts.getOrDefault("weight-3", 0);
-
-        // 允许一定误差，但应该大致符合权重比例
-        assertTrue(count3 > count2 && count2 > count1,
-            "选择次数应该按权重递增。实际: 1=" + count1 + ", 2=" + count2 + ", 3=" + count3);
+        // Then - 理论分布: weight-1: 1/6, weight-2: 2/6, weight-3: 3/6
+        // 注意：加权选择是随机过程（CachedWeightedSelector = ThreadLocalRandom + 概率数组），
+        // 原实现的「count3 > count2 > count1」严格单调断言在 120 次采样下约 0.5% 概率随机失败
+        //（差值的标准差 ≈ 7，均值仅 20）。这里改为「相对理论值 ±30% 容差」：n=1000 时
+        // 各档的容差约 4~9 个标准差，实质不可能随机翻车，同时仍能捕获权重映射错误。
+        assertCountWithinTolerance("weight-1", selectionCounts, 1000 / 6);
+        assertCountWithinTolerance("weight-2", selectionCounts, 1000 * 2 / 6);
+        assertCountWithinTolerance("weight-3", selectionCounts, 1000 * 3 / 6);
 
         // 验证所有实例都被选中
         assertEquals(3, selectionCounts.size());
+    }
+
+    /**
+     * 断言某实例的选中次数落在理论值 ±30% 容差内（统计型断言，避免随机 flaky）.
+     *
+     * @param name    实例名
+     * @param counts  各实例选中次数
+     * @param expected 理论选中次数
+     */
+    private void assertCountWithinTolerance(final String name,
+                                            final java.util.Map<String, Integer> counts,
+                                            final int expected) {
+        final int actual = counts.getOrDefault(name, 0);
+        final int tolerance = Math.max(1, (int) Math.round(expected * 0.3));
+        assertTrue(Math.abs(actual - expected) <= tolerance,
+                "权重分布应接近理论值 " + expected + "（容差 ±" + tolerance + "），实际 " + name + "=" + actual);
     }
 
     @Test
