@@ -3,27 +3,26 @@
 ## 版本统计
 
 - 总文档数: 167
-- 近7天变更: 72
+- 近7天变更: 16
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-09-06 06:50:50
+- 最后扫描: 2026-09-13 07:10:09
 
 ## 最近变更
 
-- **MODIFIED**: docs/zh/security/rbac-permissions.md (1.0.0 → 1.0.1) - 2026-09-06
-- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.10 → 1.0.11) - 2026-09-06
-- **MODIFIED**: docs/zh/reference/changelog.md (1.0.15 → 1.0.16) - 2026-09-06
-- **MODIFIED**: docs/zh/index.md (1.0.15 → 1.0.16) - 2026-09-06
-- **MODIFIED**: docs/zh/configuration/response-cache.md (1.0.0 → 1.0.1) - 2026-09-06
-- **MODIFIED**: docs/zh/configuration/index.md (1.0.5 → 1.0.6) - 2026-09-06
-- **MODIFIED**: docs/en/security/rbac-permissions.md (1.0.0 → 1.0.1) - 2026-09-06
-- **MODIFIED**: docs/en/reference/roadmap.md (1.0.11 → 1.0.12) - 2026-09-06
-- **MODIFIED**: docs/en/reference/changelog.md (1.0.15 → 1.0.16) - 2026-09-06
-- **MODIFIED**: docs/en/index.md (1.0.14 → 1.0.15) - 2026-09-06
+- **MODIFIED**: docs/zh/security/rbac-permissions.md (1.0.1 → 1.0.2) - 2026-09-13
+- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.11 → 1.0.12) - 2026-09-13
+- **MODIFIED**: docs/zh/reference/faq.md (1.0.5 → 1.0.6) - 2026-09-13
+- **MODIFIED**: docs/zh/reference/changelog.md (1.0.16 → 1.0.17) - 2026-09-13
+- **MODIFIED**: docs/zh/index.md (1.0.16 → 1.0.17) - 2026-09-13
+- **MODIFIED**: docs/zh/configuration/response-cache.md (1.0.1 → 1.0.2) - 2026-09-13
+- **MODIFIED**: docs/zh/api-reference/management-api.md (1.0.3 → 1.0.4) - 2026-09-13
+- **MODIFIED**: docs/en/security/rbac-permissions.md (1.0.1 → 1.0.2) - 2026-09-13
+- **MODIFIED**: docs/en/reference/roadmap.md (1.0.12 → 1.0.13) - 2026-09-13
+- **MODIFIED**: docs/en/reference/faq.md (1.0.5 → 1.0.6) - 2026-09-13
 
 ## 过期文档 (30天未更新)
 
 - docs/zh/api-reference/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
-- docs/zh/api-reference/management-api.md (版本: 1.0.3, 最后更新: 2026-07-01)
 - docs/zh/api-reference/openapi-spec.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/api-reference/universal-api.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/zh/configuration/application-config.md (版本: 1.0.3, 最后更新: 2026-06-03)
@@ -52,7 +51,6 @@
 - docs/zh/monitoring/setup.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/zh/monitoring/testing.md (版本: 1.0.4, 最后更新: 2026-06-03)
 - docs/zh/monitoring/troubleshooting.md (版本: 1.0.2, 最后更新: 2026-06-03)
-- docs/zh/reference/faq.md (版本: 1.0.5, 最后更新: 2026-06-03)
 - docs/zh/reference/glossary.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/reference/index.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/zh/troubleshooting/common-issues.md (版本: 1.0.3, 最后更新: 2026-06-03)
@@ -630,20 +628,24 @@
 
 ## 所有文档版本
 
-- **docs/zh/security/rbac-permissions.md**: v1.0.1 - 2026-09-06 (d77e1587)
-- **docs/zh/reference/roadmap.md**: v1.0.11 - 2026-09-06 (af4f292c)
-- **docs/zh/reference/changelog.md**: v1.0.16 - 2026-09-06 (2b5e1bcd)
-- **docs/zh/index.md**: v1.0.16 - 2026-09-06 (af4f292c)
-- **docs/zh/configuration/response-cache.md**: v1.0.1 - 2026-09-06 (ffb50ab2)
+- **docs/zh/security/rbac-permissions.md**: v1.0.2 - 2026-09-13 (6da1396b)
+- **docs/zh/reference/roadmap.md**: v1.0.12 - 2026-09-13 (fc75a645)
+- **docs/zh/reference/faq.md**: v1.0.6 - 2026-09-13 (96e0a22a)
+- **docs/zh/reference/changelog.md**: v1.0.17 - 2026-09-13 (fc75a645)
+- **docs/zh/index.md**: v1.0.17 - 2026-09-13 (fc75a645)
+- **docs/zh/configuration/response-cache.md**: v1.0.2 - 2026-09-13 (6da1396b)
+- **docs/zh/api-reference/management-api.md**: v1.0.4 - 2026-09-13 (20aea14f)
+- **docs/en/security/rbac-permissions.md**: v1.0.2 - 2026-09-13 (6da1396b)
+- **docs/en/reference/roadmap.md**: v1.0.13 - 2026-09-13 (fc75a645)
+- **docs/en/reference/faq.md**: v1.0.6 - 2026-09-13 (96e0a22a)
+- **docs/en/reference/changelog.md**: v1.0.17 - 2026-09-13 (fc75a645)
+- **docs/en/index.md**: v1.0.16 - 2026-09-13 (fc75a645)
+- **docs/en/configuration/response-cache.md**: v1.0.2 - 2026-09-13 (6da1396b)
+- **docs/en/api-reference/management-api.md**: v1.0.6 - 2026-09-13 (20aea14f)
+- **README.md**: v1.0.32 - 2026-09-13 (315960ff)
+- **README-ZH.md**: v1.0.24 - 2026-09-13 (315960ff)
 - **docs/zh/configuration/index.md**: v1.0.6 - 2026-09-06 (52786eef)
-- **docs/en/security/rbac-permissions.md**: v1.0.1 - 2026-09-06 (d77e1587)
-- **docs/en/reference/roadmap.md**: v1.0.12 - 2026-09-06 (af4f292c)
-- **docs/en/reference/changelog.md**: v1.0.16 - 2026-09-06 (2b5e1bcd)
-- **docs/en/index.md**: v1.0.15 - 2026-09-06 (af4f292c)
-- **docs/en/configuration/response-cache.md**: v1.0.1 - 2026-09-06 (ffb50ab2)
 - **docs/en/configuration/index.md**: v1.0.8 - 2026-09-06 (52786eef)
-- **README.md**: v1.0.31 - 2026-09-06 (af4f292c)
-- **README-ZH.md**: v1.0.23 - 2026-09-06 (af4f292c)
 - **docs/zh/security/index.md**: v1.0.3 - 2026-09-03 (601f504b)
 - **docs/en/security/index.md**: v1.0.3 - 2026-09-03 (601f504b)
 - **docs/zh/configuration/routing-rules.md**: v1.0.4 - 2026-09-02 (5f29294f)
@@ -698,7 +700,6 @@
 - **docs/en/security/audit-log-management.md**: v1.0.0 - 2026-08-24 (f5d673e2)
 - **docs/en/reference/index.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/en/reference/glossary.md**: v1.0.4 - 2026-08-24 (f5d673e2)
-- **docs/en/reference/faq.md**: v1.0.5 - 2026-08-24 (f5d673e2)
 - **docs/en/monitoring/troubleshooting.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/monitoring/testing.md**: v1.0.5 - 2026-08-24 (f5d673e2)
 - **docs/en/monitoring/slow-query-alerts.md**: v1.0.2 - 2026-08-24 (f5d673e2)
@@ -735,7 +736,6 @@
 - **docs/en/api-reference/universal-api.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/api-reference/openapi-spec.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/api-reference/monitoring-api.md**: v1.0.2 - 2026-08-24 (f5d673e2)
-- **docs/en/api-reference/management-api.md**: v1.0.5 - 2026-08-24 (f5d673e2)
 - **docs/en/api-reference/index.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/api-reference/error-codes.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/zh/getting-started/quick-start.md**: v1.0.5 - 2026-07-15 (d01148bb)
@@ -743,7 +743,6 @@
 - **merge-log-2026-07-10.md**: v1.0.0 - 2026-07-11 (eb2d8a82)
 - **docs/zh/monitoring/configuration.md**: v1.0.4 - 2026-07-11 (27143cbb)
 - **docs/zh/security/api-key-management.md**: v1.0.5 - 2026-07-01 (2f07f762)
-- **docs/zh/api-reference/management-api.md**: v1.0.3 - 2026-07-01 (2f07f762)
 - **docs/zh/api-reference/error-codes.md**: v1.0.1 - 2026-07-01 (2f07f762)
 - **docs/en/security/api-key-management.md**: v1.0.3 - 2026-07-01 (2f07f762)
 - **repository-description.md**: v1.0.0 - 2026-06-29 (635e749d)
@@ -764,7 +763,6 @@
 - **docs/zh/security/audit-log-management.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
 - **docs/zh/reference/index.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/zh/reference/glossary.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
-- **docs/zh/reference/faq.md**: v1.0.5 - 2026-06-03 (85bfdb3e)
 - **docs/zh/reference/adapter-updates.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
 - **docs/zh/monitoring/troubleshooting.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/monitoring/testing.md**: v1.0.4 - 2026-06-03 (85bfdb3e)
