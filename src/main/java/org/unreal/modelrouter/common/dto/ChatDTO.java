@@ -179,6 +179,39 @@ public final class ChatDTO {
         public Boolean penalizeNewline() {
             return options != null ? options.penalizeNewline : null;
         }
+
+        // v3.1 PR-5: Anthropic 入口（/v1/messages）工具调用透传
+        /**
+         * OpenAI 顶层 {@code tools} 数组.
+         *
+         * <p>仅 Anthropic 入口（{@code /v1/messages}）填充；其余入口为 {@code null}，
+         * 因此对既有面（{@code /api/v1/**}、原生 OpenAI 面）行为零影响。</p>
+         */
+        public List<Map<String, Object>> tools() {
+            return options != null ? options.tools : null;
+        }
+
+        /**
+         * OpenAI 顶层 {@code tool_choice}（{@code "auto"} / {@code "required"} / 函数对象）.
+         *
+         * @return 工具选择策略；未设置时返回 {@code null}（下游默认 auto）
+         */
+        public Object toolChoice() {
+            return options != null ? options.toolChoice : null;
+        }
+
+        /**
+         * OpenAI 顶层 {@code messages} 覆盖值（含 {@code assistant.tool_calls} / {@code role:"tool"} 消息）.
+         *
+         * <p>{@link #messages()} 是只含 {@code role/content/name} 的文本视图，无法表达 OpenAI 的
+         * 工具调用消息；Anthropic 入口在会话中出现 {@code tool_use} / {@code tool_result} 块时填充本字段，
+         * OpenAI 兼容适配器优先用它构造下游请求体。为 {@code null} 时下游请求体与既有实现逐字节一致。</p>
+         *
+         * @return 覆盖用消息列表；未设置时返回 {@code null}
+         */
+        public List<Map<String, Object>> wireMessages() {
+            return options != null ? options.wireMessages : null;
+        }
     }
 
     /**
@@ -258,6 +291,23 @@ public final class ChatDTO {
         private Integer repeatLastN;
         @JsonProperty("penalize_newline")
         private Boolean penalizeNewline;
+
+        // v3.1 PR-5: Anthropic 入口工具调用透传（OpenAI wire 形状；其他入口不设置）
+        /**
+         * OpenAI 顶层 {@code tools}（{@code [{type:"function",function:{name,description,parameters}}]}）.
+         */
+        @JsonProperty("tools")
+        private List<Map<String, Object>> tools;
+        /**
+         * OpenAI 顶层 {@code tool_choice}.
+         */
+        @JsonProperty("tool_choice")
+        private Object toolChoice;
+        /**
+         * OpenAI 顶层 {@code messages} 覆盖值（含工具调用/tool 角色消息）.
+         */
+        @JsonProperty("wire_messages")
+        private List<Map<String, Object>> wireMessages;
     }
 
     public record Message(

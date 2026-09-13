@@ -60,6 +60,11 @@ import java.util.Map;
  *       OpenAI 风格 chunk，由 {@link AnthropicStreamingTranslator} 逐块改写为 Anthropic
  *       事件序列（{@code message_start → content_block_* → message_delta → message_stop}）；</li>
  *   <li>两种模式均置 {@link ServiceRequestHandler#REQUEST_DTO_ATTRIBUTE}（响应缓存键依赖原始 DTO）；</li>
+ *   <li>工具调用（PR-5）：{@code tools} / {@code tool_choice} 与 {@code tool_use} / {@code tool_result}
+ *       块由 {@link AnthropicRequestTranslator} 转成 OpenAI 兼容 wire（经 {@code ChatDTO.Options}），
+ *       非流式响应的 {@code tool_calls} 与流式 {@code delta.tool_calls} 分片分别由
+ *       {@link AnthropicResponseTranslator} / {@link AnthropicStreamingTranslator} 转回
+ *       Anthropic {@code tool_use} 块（{@code stop_reason: tool_use}）——Claude Code 的工具能力因此可用；</li>
  *   <li>{@code count_tokens}（PR-4c）纯本地估算，<b>不触达下游</b>，与流式 {@code message_start}
  *       的 {@code input_tokens} 同源（{@link AnthropicTokenEstimator}）；</li>
  *   <li>缺 {@code model} 一律 400 + Anthropic 错误体。</li>
@@ -76,7 +81,8 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/v1")
-@Tag(name = "Anthropic 原生接口", description = "Anthropic Messages 协议入口（Claude Code 可零改造直连，支持非流式与流式）")
+@Tag(name = "Anthropic 原生接口",
+        description = "Anthropic Messages 协议入口（Claude Code 可零改造直连，支持非流式/流式与工具调用）")
 public class AnthropicMessagesController {
 
     /**

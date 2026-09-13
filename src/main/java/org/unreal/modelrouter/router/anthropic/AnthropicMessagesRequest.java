@@ -28,8 +28,8 @@ import java.util.Map;
  *
  * <p>字段与 Anthropic 官方协议保持一致（snake_case 由 {@link JsonProperty} 对齐 Java 命名）。
  * 未知字段一律忽略（{@link JsonIgnoreProperties}），以兼容 Claude Code 等客户端附带的
- * {@code thinking} / {@code cache_control} / {@code service_tier} 等扩展字段——本版本不消费
- * {@code tools} / {@code tool_choice} / {@code metadata}，仅保证其可反序列化、不报错。</p>
+ * {@code thinking} / {@code cache_control} / {@code service_tier} 等扩展字段——本版本消费
+ * {@code tools} / {@code tool_choice}（v3.1 PR-5 起转发下游）与 {@code metadata}（仅接收不转发）。</p>
  *
  * <p>{@code system} 与 {@code messages[].content} 在 Anthropic 协议中均为「字符串或块数组」
  * 的联合类型，这里统一由 {@link AnthropicContentDeserializer} 归一化为块列表：纯字符串被视为
@@ -65,19 +65,36 @@ public record AnthropicMessagesRequest(
     }
 
     /**
-     * 内容块（本版本只消费文本块，其余类型由翻译器记日志跳过）.
+     * 内容块（v3.1 PR-5 起覆盖 {@code text} / {@code tool_use} / {@code tool_result} 三类）.
      *
-     * @param type 块类型（{@code text} / {@code image} / {@code tool_use} / {@code tool_result} ...）
-     * @param text 文本内容（仅文本块有值）
+     * <p>各字段按块类型取用，其余字段为 {@code null}：</p>
+     * <ul>
+     *   <li>{@code text}：{@code text} 块与 {@code tool_result} 块正文；</li>
+     *   <li>{@code id} / {@code name} / {@code input}：{@code tool_use} 块（模型发起的工具调用）；</li>
+     *   <li>{@code toolUseId} / {@code toolResultContent}：{@code tool_result} 块（客户端回填的工具结果）。</li>
+     * </ul>
+     *
+     * @param type               块类型（{@code text} / {@code tool_use} / {@code tool_result} / {@code image} ...）
+     * @param text               文本内容（仅文本块有值）
+     * @param id                 {@code tool_use.id}（工具调用唯一标识，回填 {@code tool_result.tool_use_id} 时使用）
+     * @param name               {@code tool_use.name}（工具名）
+     * @param input              {@code tool_use.input}（工具入参对象）
+     * @param toolUseId          {@code tool_result.tool_use_id}（对应哪次工具调用）
+     * @param toolResultContent  {@code tool_result.content}（字符串或文本块数组的原始形态）
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record ContentBlock(
             String type,
-            String text) {
+            String text,
+            String id,
+            String name,
+            Map<String, Object> input,
+            @JsonProperty("tool_use_id") String toolUseId,
+            @JsonProperty("content") Object toolResultContent) {
     }
 
     /**
-     * 工具定义（本版本仅接收，不转发给下游）.
+     * 工具定义（v3.1 PR-5 起转发给下游 OpenAI 兼容适配器）.
      *
      * @param name        工具名
      * @param description 工具描述

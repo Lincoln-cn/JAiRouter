@@ -12,8 +12,12 @@ import org.unreal.modelrouter.common.dto.RerankDTO;
 import org.unreal.modelrouter.common.dto.TtsDTO;
 
 import java.util.List;
+import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * OpenAiRequestTransformer 测试类
@@ -78,6 +82,73 @@ class OpenAiRequestTransformerTest {
 
             assertNotNull(result);
             assertTrue(result.toString().contains("max_tokens"));
+        }
+
+        @Test
+        @DisplayName("v3.1 PR-5: options.tools/tool_choice 输出为 OpenAI 顶层字段")
+        void transformChatRequestWithTools() throws Exception {
+            ChatDTO.Request request = new ChatDTO.Request(
+                "deepseek-chat",
+                List.of(new ChatDTO.Message("user", "北京天气", null)),
+                Boolean.TRUE, null, null, null, null, null, null, null, null,
+                ChatDTO.Options.builder()
+                    .tools(List.of(Map.of("type", "function", "function",
+                        Map.of("name", "get_weather", "parameters", Map.of("type", "object")))))
+                    .toolChoice("required")
+                    .build()
+            );
+
+            JsonNode body = (JsonNode) transformer.transformChatRequest(request, modelNameAdapter);
+
+            assertEquals("required", body.get("tool_choice").asText());
+            assertEquals("get_weather", body.get("tools").get(0).get("function").get("name").asText());
+            assertEquals("object", body.get("tools").get(0).get("function").get("parameters").get("type").asText());
+            assertEquals("北京天气", body.get("messages").get(0).get("content").asText());
+        }
+
+        @Test
+        @DisplayName("v3.1 PR-5: options.wireMessages 覆盖 messages（承载 tool 角色消息）")
+        void transformChatRequestWithWireMessages() throws Exception {
+            ChatDTO.Request request = new ChatDTO.Request(
+                "deepseek-chat",
+                List.of(new ChatDTO.Message("assistant", "", null)),
+                Boolean.FALSE, null, null, null, null, null, null, null, null,
+                ChatDTO.Options.builder()
+                    .wireMessages(List.of(
+                        Map.of("role", "assistant", "content", "",
+                            "tool_calls", List.of(Map.of("id", "call_0", "type", "function",
+                                "function", Map.of("name", "get_weather", "arguments", "{}")))),
+                        Map.of("role", "tool", "tool_call_id", "call_0", "content", "晴")))
+                    .build()
+            );
+
+            JsonNode body = (JsonNode) transformer.transformChatRequest(request, modelNameAdapter);
+
+            assertEquals(2, body.get("messages").size());
+            assertEquals("assistant", body.get("messages").get(0).get("role").asText());
+            assertEquals("call_0", body.get("messages").get(0).get("tool_calls").get(0).get("id").asText());
+            assertEquals("get_weather", body.get("messages").get(0).get("tool_calls").get(0)
+                    .get("function").get("name").asText());
+            assertEquals("tool", body.get("messages").get(1).get("role").asText());
+            assertEquals("call_0", body.get("messages").get(1).get("tool_call_id").asText());
+            assertFalse(body.has("tools"), "未设置 tools 时不得输出该字段");
+        }
+
+        @Test
+        @DisplayName("v3.1 PR-5: 未设置工具透传字段时请求体与既有实现一致（无 tools/tool_choice）")
+        void transformChatRequestWithoutToolsKeepsLegacyShape() throws Exception {
+            ChatDTO.Request request = new ChatDTO.Request(
+                "gpt-4",
+                List.of(new ChatDTO.Message("user", "Hello", null)),
+                null, null, null, null, null, null, null, null, null, null
+            );
+
+            JsonNode body = (JsonNode) transformer.transformChatRequest(request, modelNameAdapter);
+
+            assertTrue(body.has("model"));
+            assertTrue(body.has("messages"));
+            assertFalse(body.has("tools"));
+            assertFalse(body.has("tool_choice"));
         }
     }
 

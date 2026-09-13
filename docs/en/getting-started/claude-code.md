@@ -1,8 +1,8 @@
 # Claude Code Integration
 
 <!-- 版本信息 -->
-> **Doc Version**: 1.0.0
-> **Last Updated**: 2026-09-13
+> **Doc Version**: 1.1.0
+> **Last Updated**: 2026-09-14
 > **Applies To**: v3.1+
 > **Git Commit**: -
 > **Author**: Lincoln
@@ -20,6 +20,7 @@ response is translated back into Anthropic shape.
 |------------|----------|-------------|
 | Messages (non-streaming) | `POST /v1/messages` | Downstream native JSON → Anthropic `Message` |
 | Messages (streaming) | `POST /v1/messages` (`stream: true`) | Downstream OpenAI-style SSE → **Anthropic event sequence** |
+| Tool use | `POST /v1/messages` | Anthropic `tools` / `tool_use` / `tool_result` ↔ downstream OpenAI-compatible function calling (since v3.1 PR-5, so **Claude Code's tools actually work**) |
 | Token counting | `POST /v1/messages/count_tokens` | Local estimate `{"input_tokens": N}`, **never calls downstream** |
 | Model list | `GET /v1/models` | OpenAI-shaped catalog of available models |
 
@@ -261,6 +262,176 @@ data:{"type":"error","error":{"type":"api_error","message":"…"}}
 `error.type` is mapped from the downstream status: `401/403 → authentication_error`,
 `429 → rate_limit_error`, `400/404/422 → invalid_request_error`, otherwise `api_error`.
 
+### Tool use
+
+**Prerequisite**: the downstream (OpenAI / DeepSeek / vLLM / any other OpenAI-compatible service) must
+support **function calling**. If it does not, nothing breaks — the gateway still forwards `tools`, the
+downstream ignores them and returns plain text, and this endpoint degrades to text chat
+(`content` holds only `text` blocks, `stop_reason` is `end_turn`).
+
+Request-side mapping (Anthropic → downstream OpenAI-compatible wire):
+
+| Anthropic | Downstream OpenAI-compatible |
+|-----------|------------------------------|
+| `tools[{name,description,input_schema}]` | `tools:[{type:"function",function:{name,description,parameters:input_schema}}]`; `input_schema` is used **verbatim** as `parameters`, defaulting to `{"type":"object","properties":{}}` when absent |
+| `tool_choice:"auto"` / `{"type":"auto"}` | `"auto"` |
+| `tool_choice:"any"` / `{"type":"any"}` | `"required"` |
+| `tool_choice:{"type":"tool","name":X}` | `{"type":"function","function":{"name":X}}` |
+| `tool_choice:"none"` | **omits** both `tools` and `tool_choice` (tools disabled per protocol) |
+| assistant block `{type:"tool_use",id,name,input}` | `tool_calls:[{id,type:"function",function:{name,arguments:JSON.stringify(input)}}]` on that assistant message |
+| user block `{type:"tool_result",tool_use_id,content}` | a **separate** `{role:"tool",tool_call_id:tool_use_id,content:<text>}` message (`content` arrays are joined into text) |
+
+Ordering rules:
+
+- within one assistant message: `text` blocks become `content`, multiple `tool_use` blocks become
+  `tool_calls` in block order (OpenAI structurally puts `content` first and `tool_calls` after, so no
+  finer interleaving can be expressed);
+- within one user message: `tool_result` blocks become `role:"tool"` messages emitted **before** the
+  text message, so they directly follow the assistant message carrying `tool_calls` (a hard requirement
+  of OpenAI / DeepSeek).
+
+#### Non-streaming example
+
+```bash
+curl -X POST "http://localhost:8080/v1/messages" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: <JAiRouter API Key>" \
+  -H "anthropic-version: 2023-06-01" \
+  -d '{
+    "model": "deepseek-chat",
+    "max_tokens": 512,
+    "messages": [{"role": "user", "content": "What is the weather in Beijing today?"}],
+    "tools": [{
+      "name": "get_weather",
+      "description": "Look up the weather of a city",
+      "input_schema": {"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]}
+    }],
+    "tool_choice": {"type": "auto"}
+  }'
+```
+
+Response (`content` holds the text block plus each `tool_use` block in downstream order;
+`stop_reason` is `tool_use`):
+
+```json
+{
+  "id": "chatcmpl-tool-1",
+  "type": "message",
+  "role": "assistant",
+  "model": "deepseek-chat",
+  "content": [
+    {"type": "text", "text": "Let me look that up."},
+    {"type": "tool_use", "id": "call_0", "name": "get_weather", "input": {"city": "Beijing"}}
+  ],
+  "stop_reason": "tool_use",
+  "stop_sequence": null,
+  "usage": {"input_tokens": 88, "output_tokens": 24}
+}
+```
+
+After running the tool, the client feeds the result back as a `tool_result` block inside a **user**
+message (Claude Code does this automatically):
+
+```json
+{"role": "user", "content": [{"type": "tool_result", "tool_use_id": "call_0", "content": "Sunny, 25C"}]}
+```
+
+#### Streaming event sequence
+
+Tool calls stream as `tool_use` content blocks whose input arrives as `input_json_delta` **fragments**:
+the text block is always `index: 0`, tool block indices increment in order of appearance (`1`, `2`, …),
+and each block's `start` / `delta` / `stop` triple never interleaves with another block.
+
+| Order | Event | Payload highlights |
+|-------|-------|--------------------|
+| 1 | `message_start` | Same as a plain text stream (`usage.input_tokens` is the request-side estimate) |
+| 2 | `content_block_start` | `index: 0`, `content_block: {type:"text", text:""}` |
+| 3…k | `content_block_delta` | `index: 0`, `delta: {type:"text_delta", text:"…"}` |
+| k+1 | `content_block_stop` | `index: 0` (the text block is closed before switching to a tool block) |
+| k+2 | `content_block_start` | `index: n`, `content_block: {type:"tool_use", id:"call_*", name:"<tool>"}` |
+| k+3…m | `content_block_delta` | `index: n`, `delta: {type:"input_json_delta", partial_json:"<argument fragment>"}` (concatenate in arrival order to get the full input) |
+| m+1 | `content_block_stop` | `index: n` |
+| … | (repeat k+2…m+1) | one block per tool, indices increment |
+| last-1 | `message_delta` | `delta: {stop_reason:"tool_use", stop_sequence:null}`, `usage.output_tokens` |
+| last | `message_stop` | `{type:"message_stop"}` |
+
+Real output sample (produced by the actual serializer, 10 events; the model first returned the text
+"Let me look that up." then streamed `get_weather`'s input `{"city":"Beijing"}` with `arguments`
+arriving in two fragments):
+
+```text
+event:message_start
+data:{"type":"message_start","message":{"id":"msg_ec73908348944d82b34dfd2ef5516f71","type":"message","role":"assistant","model":"deepseek-chat","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":88,"output_tokens":0}}}
+
+event:content_block_start
+data:{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}
+
+event:content_block_delta
+data:{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Let me look that up."}}
+
+event:content_block_stop
+data:{"type":"content_block_stop","index":0}
+
+event:content_block_start
+data:{"type":"content_block_start","index":1,"content_block":{"type":"tool_use","id":"call_0","name":"get_weather"}}
+
+event:content_block_delta
+data:{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"{\"city\":"}}
+
+event:content_block_delta
+data:{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"\"Beijing\"}"}}
+
+event:content_block_stop
+data:{"type":"content_block_stop","index":1}
+
+event:message_delta
+data:{"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null},"usage":{"output_tokens":24}}
+
+event:message_stop
+data:{"type":"message_stop"}
+```
+
+`stop_reason` rules: downstream `finish_reason: "tool_calls"` → `tool_use`; a stream that **produced
+tool blocks** but ends with `stop` / no reason is also upgraded to `tool_use` (Claude Code decides
+whether to run tools from it); `length` always stays `max_tokens` (truncation is more informative).
+`usage.output_tokens` semantics are unchanged — downstream `usage` wins when present, otherwise it is
+estimated from the accumulated text **plus tool `arguments` fragments**.
+
+#### Tolerance and degradation
+
+| Case | Behavior |
+|------|-----------|
+| Downstream `function.arguments` is invalid JSON | `tool_use.input` degrades to `{"raw_arguments": "<original text>"}` with a warn log (so `input` is always an object and clients never fail on shape) |
+| Downstream `arguments` empty/missing | `tool_use.input` is `{}` (a tool without arguments) |
+| Downstream `tool_calls[].id` missing | The gateway generates `toolu_*`; a request-side `tool_use.id` missing yields `call_*` |
+| Request `tool_use.id` / `tool_result.tool_use_id` missing | Downstream `tool_call_id` is an empty string, with a warn log |
+| Downstream does not support function calling | `tools` are ignored and plain text comes back (`content` has only `text`, `stop_reason: end_turn`, no tool blocks) |
+| Interleaved tool fragments (one tool split into alternating segments) | A new content block is opened for that tool with a debug log (the event sequence stays legal; clients correlate by `id`) |
+
+#### Claude Code verification
+
+```bash
+# 1) Point at the gateway (the model must be a registered instance/pool whose downstream supports
+#    function calling, e.g. deepseek-chat)
+export ANTHROPIC_BASE_URL=http://localhost:8080
+export ANTHROPIC_API_KEY=<JAiRouter API Key>
+export ANTHROPIC_MODEL=deepseek-chat
+
+# 2) Trigger one tool call non-interactively (Claude Code attaches its Read/Bash tool definitions)
+claude -p "Use the Bash tool to run pwd and tell me the output verbatim" --allowedTools "Bash"
+
+# 3) Check that it really ran: the answer must contain the command output (e.g. /home/...), not
+#    "I cannot execute commands"
+```
+
+Two places to confirm the path end to end:
+
+- gateway logs: the `/v1/messages` request carries `tools`, and the downstream request body carries
+  `tools` / `tool_calls` (with tracing enabled, the downstream call span carries
+  `adapter.api_standard=openai`);
+- the event stream (`curl -N`, or Claude Code `--verbose`): a `content_block_start` with
+  `"type":"tool_use"` and a `message_delta` with `"stop_reason":"tool_use"`.
+
 ### Token counting
 
 ```bash
@@ -298,15 +469,16 @@ each `id` can be used as the `model` field.
 
 | Limitation | Description | Workaround |
 |------------|-------------|------------|
-| **`tools` are not mapped downstream** | `tools` / `tool_choice` in the request are **ignored** (logged at debug level), so Claude Code's **tool use / file editing / Bash execution are unavailable** — plain text chat only | Use this endpoint for text Q&A; connect to Anthropic directly when tool use is required |
+| **Tool use depends on downstream function calling** | `tools` / `tool_choice` / `tool_use` / `tool_result` are forwarded downstream in OpenAI-compatible wire shape (v3.1 PR-5); if the downstream does not support function calling, `tools` are ignored and plain text comes back, which looks like "tool use does not work" | Pick a downstream with function calling (OpenAI / DeepSeek / vLLM …); verify with `claude -p "…" --allowedTools "Bash"` or `curl` against `/v1/messages` |
 | **`model` must be a registered model name** | No aliases, no automatic routing prefixes; an unregistered name fails instance selection (404/503) | List `id`s via `GET /v1/models`, or map pool names such as `auto-model` in the console |
 | **Error body shapes differ between surfaces** | Gateway errors (401 auth failure, 429 quota/rate limit, 5xx) use the **`RouterResponse`** shape `{"success":false,"message":"…","errorCode":"…","timestamp":"…"}` on **both** `/v1` and `/api`; only the Anthropic endpoint's **parameter-validation** errors use the Anthropic shape `{"type":"error","error":{…}}`; non-2xx downstream responses are **passed through** verbatim | Detect the shape by the presence of the `type` field |
 | **`x-api-key` is never forwarded** | See "Authentication Layers": downstream keys must go to instance `headers` or `Authorization` | Option A / B |
 | **Native surface only accepts API Key auth** | Requests carrying only `Jairouter_Token` cannot reach downstream on `/v1/**` (empty response) | Always send `x-api-key` |
 | **Streaming `message_start.id` / `model` come from the gateway** | `id` is a gateway-generated `msg_*` (the event is emitted before the first downstream chunk, so the downstream id is unknown yet); `model` is the **requested** model | Use the non-streaming endpoint when the real downstream `id` matters (it is passed through) |
-| **Single text content block** | Streaming emits exactly one text block at `index: 0`; no `thinking` / `tool_use` blocks | — |
-| **Response-cache hit (non-streaming)** | With `jairouter.response-cache.enabled=true`, a cache hit on the native surface (`/v1/**`) returns **native JSON** (fixed in v3.1 — no console envelope); the console surface (`/api/**`) still returns the `RouterResponse` envelope | Streaming requests skip the cache by default (`skip-streaming: true`); with `false`, a hit is replayed chunk-by-chunk into the event sequence |
-| **`count_tokens` is an estimate** | It excludes `tools` JSON Schema, image blocks, and downstream tokenizer differences | Treat it as an upper-bound reference |
+| **Streaming emits text blocks plus `tool_use` blocks** | The text block is always `index: 0` and tool blocks increment in order of appearance; no `thinking` / `redacted_thinking` blocks are emitted (a request `thinking` field is accepted but not consumed) | Connect to Anthropic directly when thinking is required |
+| **`tool_choice:"none"` omits `tools`** | Per protocol that value disables tools, so the gateway forwards neither `tools` nor `tool_choice` (instead of sending `"none"`) | Use it whenever you want "no tools at all" |
+| **Response-cache hit (non-streaming)** | With `jairouter.response-cache.enabled=true`, a cache hit on the native surface (`/v1/**`) returns **native JSON** (fixed in v3.1 — no console envelope); the cache key now includes `tools` / `tool_choice` / tool-conversation messages (PR-5), so different tool rounds never collide | Streaming requests skip the cache by default (`skip-streaming: true`); with `false`, a hit is replayed chunk-by-chunk into the event sequence |
+| **`count_tokens` is an estimate** | It excludes the `tools` JSON Schema, `tool_use` / `tool_result` block bodies, image blocks, and downstream tokenizer differences | Treat it as an upper-bound reference |
 
 ## Troubleshooting
 
@@ -316,7 +488,9 @@ each `id` can be used as the `model` field.
 | Request succeeds but downstream returns 401/403 | Downstream key missing or expired (`x-api-key` is not forwarded) | Check the instance `headers`; verify with `/api/config/instance/type/chat` |
 | `404` / `503` (model unavailable) | `model` not registered, instance unhealthy, or service circuit-broken | Cross-check the model name with `GET /v1/models`; check instance health and circuit breaker |
 | Claude Code reports an "empty response" / no output | Only `Jairouter_Token` was sent, without `x-api-key` (native surface only accepts API Key auth) | Set `ANTHROPIC_API_KEY` |
-| Tool use does not work | `tools` are not mapped downstream | See "Current Limitations" |
+| Tool use does not work | The downstream does not support function calling (`tools` ignored → plain text with `stop_reason: end_turn`), or the model chose not to call a tool | Switch to a downstream with function calling; force a call with `tool_choice:"any"` (mapped to downstream `required`) to verify the path |
+| `tool_use` blocks appear but Claude Code does not run the tool | `stop_reason` is not `tool_use` (odd downstream finish reason), or `tool_use.id` does not match `tool_result.tool_use_id` | Inspect `message_delta.delta.stop_reason` in the event stream; make sure the client echoes the same `tool_use_id` |
+| Tool `input` shows `{"raw_arguments": "…"}` | Downstream `function.arguments` is not valid JSON (downstream bug or truncation) | Check the gateway warn log to identify the downstream; tolerate the raw field client-side or retry |
 | `400 invalid_request_error: model 为必填字段` | The request body has no `model` | Add `model` or set `ANTHROPIC_MODEL` |
 | Streaming response has no `event:` lines | Upstream/intermediate proxy buffered the SSE stream | Use `curl -N` (disable buffering); turn off response buffering on reverse proxies |
 | Claude Code prints `[claude-code:unrecognized_model]` (e.g. `"deepseek-chat" isn't described by this version's model catalog`) | That Claude Code build's built-in model catalog does not know a custom model name, so auto-compact assumes the default 200k window | **It does not affect responses** (verified: exit 0 with normal text output); declare the real window, e.g. `CLAUDE_CODE_MAX_CONTEXT_TOKENS=65536`; only if needed (e.g. names using the `[1m]` suffix) consider `CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT=1` |

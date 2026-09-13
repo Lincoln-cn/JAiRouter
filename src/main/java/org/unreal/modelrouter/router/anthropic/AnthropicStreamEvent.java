@@ -20,14 +20,19 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Anthropic 流式 SSE 事件载荷（v3.1 PR-4c）.
+ * Anthropic 流式 SSE 事件载荷（v3.1 PR-4c/5）.
  *
  * <p>{@code /v1/messages?stream=true} 的事件序列为：
- * {@code message_start} → {@code content_block_start} → 若干 {@code content_block_delta}
- * → {@code content_block_stop} → {@code message_delta} → {@code message_stop}
+ * {@code message_start} → 每个内容块的 {@code content_block_start} → 若干 {@code content_block_delta}
+ * → {@code content_block_stop}（块之间不交叉，文本块为 index 0，工具块按出现顺序递增）
+ * → {@code message_delta} → {@code message_stop}
  * （每个事件形如 {@code event: <name>\n data: <json>\n\n}）。本类仅承载各事件的
  * <b>data 段 JSON 形状</b>，事件名由 {@link AnthropicStreamingTranslator} 与载荷中的
  * {@code type} 字段一并写入。</p>
+ *
+ * <p>工具调用（PR-5）的块序列为：{@code content_block_start(content_block:{type:"tool_use",id,name})}
+ * → {@code content_block_delta(delta:{type:"input_json_delta",partial_json:"<分片>"})}（0..N 次）
+ * → {@code content_block_stop}。</p>
  *
  * <p>{@link JsonInclude.Include#ALWAYS} 用于抵消全局 {@code ObjectMapper} 的 {@code NON_NULL}
  * 策略（见 {@code JacksonConfig}）：Anthropic 协议要求 {@code message_start.message.stop_reason}
@@ -81,9 +86,19 @@ public final class AnthropicStreamEvent {
     public static final String CONTENT_BLOCK_TYPE_TEXT = "text";
 
     /**
+     * 工具调用内容块类型（v3.1 PR-5）.
+     */
+    public static final String CONTENT_BLOCK_TYPE_TOOL_USE = "tool_use";
+
+    /**
      * 文本增量类型.
      */
     public static final String DELTA_TYPE_TEXT = "text_delta";
+
+    /**
+     * 工具入参增量类型（v3.1 PR-5）.
+     */
+    public static final String DELTA_TYPE_INPUT_JSON = "input_json_delta";
 
     private AnthropicStreamEvent() {
     }
@@ -105,28 +120,28 @@ public final class AnthropicStreamEvent {
      * {@code content_block_start} 载荷.
      *
      * @param type         事件类型（{@code content_block_start}）
-     * @param index        内容块下标（本版本恒为 0）
-     * @param contentBlock 起始内容块（{@code {"type":"text","text":""}}）
+     * @param index        内容块下标（文本块 0，其余块按出现顺序递增）
+     * @param contentBlock 起始内容块（{@link ContentBlock} 文本块或 {@link ToolUseBlock} 工具块）
      */
     @JsonInclude(JsonInclude.Include.ALWAYS)
     public record ContentBlockStart(
             String type,
             int index,
-            @JsonProperty("content_block") ContentBlock contentBlock) {
+            @JsonProperty("content_block") Object contentBlock) {
     }
 
     /**
      * {@code content_block_delta} 载荷.
      *
      * @param type  事件类型（{@code content_block_delta}）
-     * @param index 内容块下标（本版本恒为 0）
-     * @param delta 文本增量（{@code {"type":"text_delta","text":"..."}}）
+     * @param index 内容块下标
+     * @param delta 增量载荷（{@link TextDelta} 或 {@link InputJsonDelta}）
      */
     @JsonInclude(JsonInclude.Include.ALWAYS)
     public record ContentBlockDelta(
             String type,
             int index,
-            TextDelta delta) {
+            DeltaPayload delta) {
     }
 
     /**
@@ -190,6 +205,29 @@ public final class AnthropicStreamEvent {
     }
 
     /**
+     * 工具调用内容块（{@code content_block_start} 起始块，v3.1 PR-5）.
+     *
+     * <p>入参不在此处给出——按 Anthropic 协议，工具入参通过后续 {@link InputJsonDelta}
+     * 分片累积。</p>
+     *
+     * @param type 块类型（{@code tool_use}）
+     * @param id   工具调用 ID（客户端回填 {@code tool_result.tool_use_id} 时使用）
+     * @param name 工具名
+     */
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    public record ToolUseBlock(
+            String type,
+            String id,
+            String name) {
+    }
+
+    /**
+     * 内容块增量载荷（{@link TextDelta} / {@link InputJsonDelta}）.
+     */
+    public interface DeltaPayload {
+    }
+
+    /**
      * 文本增量.
      *
      * @param type 增量类型（{@code text_delta}）
@@ -198,7 +236,20 @@ public final class AnthropicStreamEvent {
     @JsonInclude(JsonInclude.Include.ALWAYS)
     public record TextDelta(
             String type,
-            String text) {
+            String text) implements DeltaPayload {
+    }
+
+    /**
+     * 工具入参增量（v3.1 PR-5）.
+     *
+     * @param type        增量类型（{@code input_json_delta}）
+     * @param partialJson 工具入参 JSON 的<b>片段</b>（下游 {@code function.arguments} 分片原样透传，
+     *                    客户端按到达顺序拼接后解析）
+     */
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    public record InputJsonDelta(
+            String type,
+            @JsonProperty("partial_json") String partialJson) implements DeltaPayload {
     }
 
     /**

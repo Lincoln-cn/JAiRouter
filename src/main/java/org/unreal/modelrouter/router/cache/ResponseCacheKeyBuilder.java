@@ -34,7 +34,8 @@ import java.util.TreeMap;
  *   <li>CHAT：messages(逐条 role+content+name，列表稳定序) / stream / maxTokens /
  *       temperature / topP / topK / frequencyPenalty / presencePenalty / n / stop
  *       + options 白名单（排除 requestId/priority/prefixCacheHash/enablePrefixCaching 元数据；
- *       cacheSalt 非空时整体返回 null 表示显式绕过）</li>
+ *       cacheSalt 非空时整体返回 null 表示显式绕过；v3.1 PR-5 起含 tools / toolChoice /
+ *       wireMessages——Anthropic 入口的工具会话消息，避免不同工具轮次互相命中）</li>
  *   <li>EMBEDDING：input(String 或 List 稳定序) / encodingFormat / dimensions</li>
  *   <li>RERANK：query / documents(稳定序) / topN / returnDocuments</li>
  * </ul>
@@ -238,6 +239,10 @@ public final class ResponseCacheKeyBuilder {
         putIfNotNull(body, "typicalP", request.typicalP());
         putIfNotNull(body, "repeatLastN", request.repeatLastN());
         putIfNotNull(body, "penalizeNewline", request.penalizeNewline());
+        // v3.1 PR-5: Anthropic 入口的工具调用透传字段（其余入口恒为 null → 键不变）
+        putIfNotNull(body, "tools", request.tools());
+        putIfNotNull(body, "toolChoice", request.toolChoice());
+        putIfNotNull(body, "wireMessages", request.wireMessages());
     }
 
     /**

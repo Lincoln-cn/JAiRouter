@@ -31,7 +31,8 @@ import java.util.List;
  *   <li>字符系数复用 {@link QuotaTokenEstimator#estimateFromText(String)}（表意文字 2 字符/token、
  *       其余非空白 4 字符/token），与配额预留、流式响应侧估算保持同一把尺子；</li>
  *   <li>偏差（设计取舍）：{@code tools} 的 JSON Schema 文本、{@code max_tokens} 输出侧规模、
- *       图片块与下游真实分词差异均不计入——与「tools 不映射下游」的实现边界一致。</li>
+ *       图片块、{@code tool_use}/{@code tool_result} 块正文与下游真实分词差异均不计入
+ *       ——保持 PR-4c 的既有口径（该估算值只用于预算/裁剪，不等于下游分词结果）。</li>
  * </ul>
  *
  * <p>本类为无状态工具类：全局唯一估算实现，避免 count_tokens 与流式入口各写一份比例系数。</p>

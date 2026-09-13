@@ -26,7 +26,9 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -63,8 +65,29 @@ import java.util.UUID;
  *       让 Claude Code 这类客户端能显示真实错误而不是「流被截断」。</li>
  * </ul>
  *
- * <p>已知边界：本版本只产出<b>单个文本内容块</b>（index 恒为 0），不映射 {@code tools} /
- * {@code thinking}；下游 chunk 中的 {@code reasoning_content} 不进入文本增量。</p>
+ * <p><b>工具调用（PR-5）</b>：下游 {@code choices[0].delta.tool_calls[]} 被改写为
+ * {@code tool_use} 内容块（下游 {@code index} 映射为独立 Anthropic 块，文本块恒为 index 0）：</p>
+ *
+ * <pre>
+ * event: content_block_start  data: {index:n,content_block:{type:"tool_use",id:"...",name:"..."}}
+ * event: content_block_delta  data: {index:n,delta:{type:"input_json_delta",partial_json:"<分片>"}}  （0..N 次）
+ * event: content_block_stop   data: {index:n}
+ * </pre>
+ *
+ * <p>块序列规则：</p>
+ * <ul>
+ *   <li>文本块恒为 index 0（保持既有行为）；文本与工具交替出现时，新块取「上一个块 index + 1」，</li>
+ *   <li>任意块 start/delta/stop 三件套不交叉——切到新块前先发当前块的 {@code content_block_stop}；</li>
+ *   <li>{@code message_delta.stop_reason} 在本次流出现过工具块时为 {@code tool_use}
+ *       （下游已给 {@code length} 时仍保留 {@code max_tokens}，截断信息更准确）；</li>
+ *   <li>{@code usage.output_tokens} 口径不变：优先下游 {@code usage.completion_tokens}，
+ *       否则按累计文本 <b>+ 工具 arguments 片段</b>估算（无工具时与 PR-4c 完全一致）。</li>
+ * </ul>
+ *
+ * <p>已知边界：下游按 {@code tool_calls[].index} 顺序连续分片（OpenAI/DeepSeek 实测形态）；
+ * 若同一工具分片被下游拆成多段交叉下发，交叉处会为该工具开启新的内容块并记 debug
+ * （事件序始终合法，客户端按 id 关联即可）。{@code tools} / {@code thinking} 的请求侧定义
+ * 由 {@link AnthropicRequestTranslator} 负责，本类不消费请求。</p>
  *
  * @author JAiRouter Team
  * @since v3.1
@@ -89,9 +112,29 @@ public class AnthropicStreamingTranslator {
     private static final String MESSAGE_ID_PREFIX = "msg_";
 
     /**
-     * 文本内容块下标（本版本仅单块）.
+     * 文本内容块下标（首个文本块恒为 0，保持 PR-4c 行为）.
      */
     private static final int TEXT_BLOCK_INDEX = 0;
+
+    /**
+     * 工具调用块索引计数起点（0 已被文本块占用）.
+     */
+    private static final int FIRST_DYNAMIC_BLOCK_INDEX = 1;
+
+    /**
+     * 下游缺 {@code tool_calls[].id} 时生成的调用 ID 前缀.
+     */
+    private static final String TOOL_USE_ID_PREFIX = "toolu_";
+
+    /**
+     * 块类型：文本.
+     */
+    private static final int BLOCK_KIND_TEXT = 0;
+
+    /**
+     * 块类型：工具调用.
+     */
+    private static final int BLOCK_KIND_TOOL = 1;
 
     /**
      * Anthropic 错误事件类型：通用服务端错误.
@@ -140,7 +183,7 @@ public class AnthropicStreamingTranslator {
     }
 
     /**
-     * 构造起始事件（{@code message_start} + {@code content_block_start}）.
+     * 构造起始事件（{@code message_start} + 文本块 {@code content_block_start}）.
      *
      * @param requestedModel 请求侧模型名
      * @param inputTokens    估算输入 token 数
@@ -161,37 +204,34 @@ public class AnthropicStreamingTranslator {
         events.add(event(AnthropicStreamEvent.EVENT_MESSAGE_START,
                 new AnthropicStreamEvent.MessageStart(
                         AnthropicStreamEvent.EVENT_MESSAGE_START, message)));
-        events.add(event(AnthropicStreamEvent.EVENT_CONTENT_BLOCK_START,
-                new AnthropicStreamEvent.ContentBlockStart(
-                        AnthropicStreamEvent.EVENT_CONTENT_BLOCK_START,
-                        TEXT_BLOCK_INDEX,
-                        new AnthropicStreamEvent.ContentBlock(
-                                AnthropicStreamEvent.CONTENT_BLOCK_TYPE_TEXT, ""))));
+        events.add(contentBlockStart(TEXT_BLOCK_INDEX, new AnthropicStreamEvent.ContentBlock(
+                AnthropicStreamEvent.CONTENT_BLOCK_TYPE_TEXT, "")));
         return events;
     }
 
     /**
      * 构造收尾事件（{@code content_block_stop} + {@code message_delta} + {@code message_stop}）.
      *
-     * <p>仅在订阅尾段（下游流正常结束）时求值，因此可读取累计状态。</p>
+     * <p>仅在订阅尾段（下游流正常结束）时求值，因此可读取累计状态；收尾的
+     * {@code content_block_stop} 关闭的是<b>当前仍打开</b>的块（无工具时恒为 index 0，
+     * 与 PR-4c 逐字节一致）。</p>
      *
-     * @param state 本次订阅的累积状态（累计文本、输出用量、结束原因）
+     * @param state 本次订阅的累积状态（累计文本、工具入参、输出用量、结束原因、块下标）
      * @return 收尾事件列表
      */
     private List<ServerSentEvent<String>> finishEvents(final StreamState state) {
         final long outputTokens = state.outputTokens > 0
                 ? state.outputTokens
-                : AnthropicTokenEstimator.estimateText(state.text.toString());
+                : AnthropicTokenEstimator.estimateText(state.text.toString() + state.toolArguments);
 
         final List<ServerSentEvent<String>> events = new ArrayList<>(3);
-        events.add(event(AnthropicStreamEvent.EVENT_CONTENT_BLOCK_STOP,
-                new AnthropicStreamEvent.ContentBlockStop(
-                        AnthropicStreamEvent.EVENT_CONTENT_BLOCK_STOP, TEXT_BLOCK_INDEX)));
+        if (state.openIndex >= 0) {
+            events.add(contentBlockStop(state.openIndex));
+        }
         events.add(event(AnthropicStreamEvent.EVENT_MESSAGE_DELTA,
                 new AnthropicStreamEvent.MessageDelta(
                         AnthropicStreamEvent.EVENT_MESSAGE_DELTA,
-                        new AnthropicStreamEvent.StopDelta(
-                                AnthropicResponseTranslator.mapStopReason(state.finishReason), null),
+                        new AnthropicStreamEvent.StopDelta(stopReasonOf(state), null),
                         new AnthropicStreamEvent.DeltaUsage(outputTokens))));
         events.add(event(AnthropicStreamEvent.EVENT_MESSAGE_STOP,
                 new AnthropicStreamEvent.MessageStop(AnthropicStreamEvent.EVENT_MESSAGE_STOP)));
@@ -199,11 +239,30 @@ public class AnthropicStreamingTranslator {
     }
 
     /**
-     * 单个下游块 → 0..1 个 {@code content_block_delta} 事件.
+     * 本次流的 {@code stop_reason}.
+     *
+     * <p>映射规则与 PR-4c 一致（{@code stop→end_turn}、{@code length→max_tokens}、
+     * {@code tool_calls→tool_use}、其他→{@code end_turn}），额外规则：只要本次流产出过工具块，
+     * {@code end_turn} 上修为 {@code tool_use}（Claude Code 依此决定是否执行工具调用）；
+     * 下游已给出 {@code max_tokens} 时保留（截断语义优先）。</p>
+     *
+     * @param state 累积状态
+     * @return Anthropic {@code stop_reason}
+     */
+    private String stopReasonOf(final StreamState state) {
+        final String mapped = AnthropicResponseTranslator.mapStopReason(state.finishReason);
+        if (state.hasToolBlocks && AnthropicMessagesResponse.STOP_REASON_END_TURN.equals(mapped)) {
+            return AnthropicMessagesResponse.STOP_REASON_TOOL_USE;
+        }
+        return mapped;
+    }
+
+    /**
+     * 单个下游块 → 0..N 个内容块事件.
      *
      * @param downstreamEvent 下游 SSE 元素
-     * @param state           本次订阅的累积状态（累计文本、输出用量、结束原因）
-     * @return 事件列表；无文本增量/心跳/异常块返回空列表
+     * @param state           本次订阅的累积状态
+     * @return 事件列表；无增量/心跳/异常块返回空列表
      */
     private List<ServerSentEvent<String>> toDeltaEvents(final ServerSentEvent<?> downstreamEvent,
                                                         final StreamState state) {
@@ -224,18 +283,192 @@ public class AnthropicStreamingTranslator {
         }
         accumulateFinishReason(choice, state);
 
+        state.pending.clear();
+        appendToolCallEvents(choice, state);
         final String text = extractDeltaText(choice);
-        if (text.isEmpty()) {
-            return List.of();
+        if (!text.isEmpty()) {
+            state.text.append(text);
+            appendTextDeltaEvents(text, state);
         }
-        state.text.append(text);
+        return List.copyOf(state.pending);
+    }
 
-        return List.of(event(AnthropicStreamEvent.EVENT_CONTENT_BLOCK_DELTA,
+    /**
+     * 追加「工具调用分片」对应的块事件（PR-5）.
+     *
+     * <p>下游 {@code delta.tool_calls[].index} 首次出现 → 关闭当前块并开启 {@code tool_use} 块
+     * （{@code id}/{@code name} 缺失时生成/留空）；后续分片 → {@code input_json_delta}。</p>
+     *
+     * @param choice 首个 choice
+     * @param state  累积状态（事件累积在 {@code state.pending}）
+     */
+    private void appendToolCallEvents(final JsonNode choice, final StreamState state) {
+        final JsonNode delta = choice.get("delta");
+        if (delta == null || !delta.isObject()) {
+            return;
+        }
+        final JsonNode toolCalls = delta.get("tool_calls");
+        if (toolCalls == null || !toolCalls.isArray() || toolCalls.isEmpty()) {
+            return;
+        }
+        for (final JsonNode toolCall : toolCalls) {
+            if (toolCall == null || !toolCall.isObject()) {
+                continue;
+            }
+            appendToolCallEvent(toolCall, state);
+        }
+    }
+
+    /**
+     * 单个工具分片 → 起始/增量事件.
+     *
+     * @param toolCall 下游 {@code tool_calls[]} 元素
+     * @param state    累积状态
+     */
+    private void appendToolCallEvent(final JsonNode toolCall, final StreamState state) {
+        final int downstreamIndex = toolCall.hasNonNull("index") ? toolCall.get("index").asInt() : 0;
+        final ToolBlockState tool = state.toolAt(downstreamIndex);
+        final JsonNode function = toolCall.get("function");
+        fillToolIdentity(tool, toolCall, function);
+
+        if (!state.isOpenTool(downstreamIndex)) {
+            closeOpenBlock(state);
+            final int blockIndex = state.nextBlockIndex++;
+            if (tool.opened) {
+                log.debug("Anthropic 流式翻译: 工具分片交叉下发, 已为其开启新内容块: 下游 index={}, 块 index={}",
+                        downstreamIndex, blockIndex);
+            }
+            tool.blockIndex = blockIndex;
+            tool.opened = true;
+            state.openIndex = blockIndex;
+            state.openKind = BLOCK_KIND_TOOL;
+            state.openToolIndex = downstreamIndex;
+            state.hasToolBlocks = true;
+            state.pending.add(contentBlockStart(blockIndex,
+                    new AnthropicStreamEvent.ToolUseBlock(
+                            AnthropicStreamEvent.CONTENT_BLOCK_TYPE_TOOL_USE, tool.id, tool.name)));
+        }
+
+        final String arguments = function == null ? null : textOf(function.get("arguments"));
+        if (arguments == null || arguments.isEmpty()) {
+            return;
+        }
+        state.toolArguments.append(arguments);
+        state.pending.add(event(AnthropicStreamEvent.EVENT_CONTENT_BLOCK_DELTA,
                 new AnthropicStreamEvent.ContentBlockDelta(
                         AnthropicStreamEvent.EVENT_CONTENT_BLOCK_DELTA,
-                        TEXT_BLOCK_INDEX,
+                        state.openIndex,
+                        new AnthropicStreamEvent.InputJsonDelta(
+                                AnthropicStreamEvent.DELTA_TYPE_INPUT_JSON, arguments))));
+    }
+
+    /**
+     * 补齐工具块的 {@code id}/{@code name}（仅在该工具首次出现时有值，后续分片通常不再携带）.
+     *
+     * @param tool     工具块状态
+     * @param toolCall 下游 {@code tool_calls[]} 元素
+     * @param function 下游 {@code tool_calls[].function}
+     */
+    private void fillToolIdentity(final ToolBlockState tool, final JsonNode toolCall, final JsonNode function) {
+        if (tool.id == null) {
+            final String id = textOrNull(toolCall.get("id"));
+            tool.id = id == null || id.isBlank() ? generateToolUseId() : id;
+            if (id == null || id.isBlank()) {
+                log.warn("Anthropic 流式翻译: 下游 tool_calls 缺 id, 已生成 {}", tool.id);
+            }
+        }
+        if (tool.name == null) {
+            final String name = function == null ? null : textOrNull(function.get("name"));
+            tool.name = name == null ? "" : name;
+        }
+    }
+
+    /**
+     * 读取文本字段（不 trim，{@code arguments} 片段需原样透传）.
+     *
+     * @param node JSON 节点
+     * @return 文本；节点缺失/null 或非文本时返回 {@code null}
+     */
+    private String textOrNull(final JsonNode node) {
+        if (node == null || node.isNull()) {
+            return null;
+        }
+        return node.asText();
+    }
+
+    /**
+     * 追加「文本分片」对应的块事件.
+     *
+     * <p>当前打开的是工具块时，先关闭它再以新下标开启文本块——保证块三件套不交叉。</p>
+     *
+     * @param text  文本增量
+     * @param state 累积状态
+     */
+    private void appendTextDeltaEvents(final String text, final StreamState state) {
+        if (state.openKind != BLOCK_KIND_TEXT) {
+            closeOpenBlock(state);
+            final int blockIndex = state.nextBlockIndex++;
+            state.openIndex = blockIndex;
+            state.openKind = BLOCK_KIND_TEXT;
+            state.openToolIndex = -1;
+            state.pending.add(contentBlockStart(blockIndex, new AnthropicStreamEvent.ContentBlock(
+                    AnthropicStreamEvent.CONTENT_BLOCK_TYPE_TEXT, "")));
+        }
+        state.pending.add(event(AnthropicStreamEvent.EVENT_CONTENT_BLOCK_DELTA,
+                new AnthropicStreamEvent.ContentBlockDelta(
+                        AnthropicStreamEvent.EVENT_CONTENT_BLOCK_DELTA,
+                        state.openIndex,
                         new AnthropicStreamEvent.TextDelta(
                                 AnthropicStreamEvent.DELTA_TYPE_TEXT, text))));
+    }
+
+    /**
+     * 关闭当前打开的内容块（若已关闭则无操作）.
+     *
+     * @param state 累积状态
+     */
+    private void closeOpenBlock(final StreamState state) {
+        if (state.openIndex < 0) {
+            return;
+        }
+        state.pending.add(contentBlockStop(state.openIndex));
+        state.openIndex = -1;
+        state.openKind = -1;
+        state.openToolIndex = -1;
+    }
+
+    /**
+     * 生成 {@code tool_use} 块 ID（下游缺 {@code id} 时）.
+     *
+     * @return {@code toolu_<32 位无连字符 UUID>}
+     */
+    private String generateToolUseId() {
+        return TOOL_USE_ID_PREFIX + UUID.randomUUID().toString().replace("-", "");
+    }
+
+    /**
+     * 构造文本块起始事件.
+     *
+     * @param index 块下标
+     * @param block 起始内容块
+     * @return 事件
+     */
+    private ServerSentEvent<String> contentBlockStart(final int index, final Object block) {
+        return event(AnthropicStreamEvent.EVENT_CONTENT_BLOCK_START,
+                new AnthropicStreamEvent.ContentBlockStart(
+                        AnthropicStreamEvent.EVENT_CONTENT_BLOCK_START, index, block));
+    }
+
+    /**
+     * 构造内容块结束事件.
+     *
+     * @param index 块下标
+     * @return 事件
+     */
+    private ServerSentEvent<String> contentBlockStop(final int index) {
+        return event(AnthropicStreamEvent.EVENT_CONTENT_BLOCK_STOP,
+                new AnthropicStreamEvent.ContentBlockStop(
+                        AnthropicStreamEvent.EVENT_CONTENT_BLOCK_STOP, index));
     }
 
     /**
@@ -472,6 +705,21 @@ public class AnthropicStreamingTranslator {
         private final StringBuilder text = new StringBuilder();
 
         /**
+         * 累计工具入参片段（与文本一起参与输出 token 估算）.
+         */
+        private final StringBuilder toolArguments = new StringBuilder();
+
+        /**
+         * 当前块的事件缓冲（逐下游块构建，构建完成后交由 Flux 消费）.
+         */
+        private final List<ServerSentEvent<String>> pending = new ArrayList<>(4);
+
+        /**
+         * 下游工具下标 → 工具块状态（{@code id}/{@code name}/{@code 块 index}）.
+         */
+        private final Map<Integer, ToolBlockState> tools = new HashMap<>();
+
+        /**
          * 下游提供的输出 token 数（0 表示下游未提供）.
          */
         private long outputTokens;
@@ -480,5 +728,76 @@ public class AnthropicStreamingTranslator {
          * 下游最近一次非空 {@code finish_reason}.
          */
         private String finishReason;
+
+        /**
+         * 当前打开的内容块下标（{@code -1} 表示无打开块）.
+         */
+        private int openIndex = TEXT_BLOCK_INDEX;
+
+        /**
+         * 当前打开的内容块类型（{@link #BLOCK_KIND_TEXT} / {@link #BLOCK_KIND_TOOL}，{@code -1} 表示无）.
+         */
+        private int openKind = BLOCK_KIND_TEXT;
+
+        /**
+         * 当前打开的工具块对应的下游下标（非工具块为 {@code -1}）.
+         */
+        private int openToolIndex = -1;
+
+        /**
+         * 下一个可分配的内容块下标（0 已被首个文本块占用）.
+         */
+        private int nextBlockIndex = FIRST_DYNAMIC_BLOCK_INDEX;
+
+        /**
+         * 本次流是否产出过工具块（决定 {@code stop_reason} 是否上修为 {@code tool_use}）.
+         */
+        private boolean hasToolBlocks;
+
+        /**
+         * 取（或创建）下游工具下标对应的块状态.
+         *
+         * @param downstreamIndex 下游 {@code tool_calls[].index}
+         * @return 工具块状态
+         */
+        private ToolBlockState toolAt(final int downstreamIndex) {
+            return tools.computeIfAbsent(downstreamIndex, key -> new ToolBlockState());
+        }
+
+        /**
+         * 判断指定下游工具是否为当前打开的块.
+         *
+         * @param downstreamIndex 下游 {@code tool_calls[].index}
+         * @return 是当前打开的工具块返回 true
+         */
+        private boolean isOpenTool(final int downstreamIndex) {
+            return openKind == BLOCK_KIND_TOOL && openToolIndex == downstreamIndex;
+        }
+    }
+
+    /**
+     * 单个下游工具调用的块状态.
+     */
+    private static final class ToolBlockState {
+
+        /**
+         * 工具调用 ID（首次出现时确定，缺失则生成 {@code toolu_*}）.
+         */
+        private String id;
+
+        /**
+         * 工具名（首次出现时确定，缺失则空串）.
+         */
+        private String name;
+
+        /**
+         * 当前对应的 Anthropic 块下标（交叉下发时更新为最新块）.
+         */
+        private int blockIndex = -1;
+
+        /**
+         * 是否已开启过内容块（交叉下发时用于记 debug）.
+         */
+        private boolean opened;
     }
 }

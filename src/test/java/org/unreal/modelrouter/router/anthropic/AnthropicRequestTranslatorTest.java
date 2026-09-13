@@ -1,5 +1,6 @@
 package org.unreal.modelrouter.router.anthropic;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +29,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AnthropicRequestTranslatorTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    /**
+     * 模拟全局 ObjectMapper：NON_NULL 策略（{@code JacksonConfig} 配置）——用于比对
+     * 「文本视图 messages」与「wire messages」的序列化结果是否逐字节一致。
+     */
+    private static final ObjectMapper NON_NULL_MAPPER = new ObjectMapper()
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
     private AnthropicRequestTranslator translator;
 
@@ -266,6 +274,245 @@ class AnthropicRequestTranslatorTest {
 
             assertNull(chat.user());
             assertEquals(1, chat.messages().size());
+        }
+    }
+
+    @Nested
+    @DisplayName("工具调用映射（PR-5）")
+    class ToolMapping {
+
+        private ChatDTO.Request chatOf(final String json) throws Exception {
+            return translator.toChatRequest(parse(json));
+        }
+
+        @SuppressWarnings("unchecked")
+        private Map<String, Object> functionOf(final ChatDTO.Request chat) {
+            final Map<String, Object> tool = chat.tools().get(0);
+            assertEquals("function", tool.get("type"));
+            return (Map<String, Object>) tool.get("function");
+        }
+
+        @Test
+        @DisplayName("tools.input_schema 直接作为 OpenAI function.parameters")
+        void inputSchemaBecomesParameters() throws Exception {
+            ChatDTO.Request chat = chatOf("""
+                    {"model":"deepseek-chat","messages":[{"role":"user","content":"北京天气"}],
+                     "tools":[{"name":"get_weather","description":"查询天气",
+                               "input_schema":{"type":"object","properties":{"city":{"type":"string"}},
+                                               "required":["city"]}}]}""");
+
+            assertEquals(1, chat.tools().size());
+            Map<String, Object> function = functionOf(chat);
+            assertEquals("get_weather", function.get("name"));
+            assertEquals("查询天气", function.get("description"));
+            @SuppressWarnings("unchecked")
+            Map<String, Object> parameters = (Map<String, Object>) function.get("parameters");
+            assertEquals("object", parameters.get("type"));
+            assertEquals(List.of("city"), parameters.get("required"));
+            // 文本视图不变（tools 不进 messages），options 仅在需要时填充
+            assertEquals(1, chat.messages().size());
+            assertEquals("北京天气", chat.messages().get(0).content());
+        }
+
+        @Test
+        @DisplayName("input_schema 缺失时补空 object schema（下游要求 parameters 存在）")
+        void missingInputSchemaFallsBackToEmptyObjectSchema() throws Exception {
+            ChatDTO.Request chat = chatOf("""
+                    {"model":"m","messages":[{"role":"user","content":"q"}],
+                     "tools":[{"name":"ping"}]}""");
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> parameters = (Map<String, Object>) functionOf(chat).get("parameters");
+            assertEquals("object", parameters.get("type"));
+            assertEquals(Map.of(), parameters.get("properties"));
+        }
+
+        @Test
+        @DisplayName("tool_choice: auto（字符串与对象形态）→ auto")
+        void toolChoiceAuto() throws Exception {
+            assertEquals("auto", chatOf("""
+                    {"model":"m","messages":[{"role":"user","content":"q"}],
+                     "tools":[{"name":"ping","input_schema":{}}],"tool_choice":"auto"}""").toolChoice());
+            assertEquals("auto", chatOf("""
+                    {"model":"m","messages":[{"role":"user","content":"q"}],
+                     "tools":[{"name":"ping","input_schema":{}}],"tool_choice":{"type":"auto"}}""")
+                    .toolChoice());
+        }
+
+        @Test
+        @DisplayName("tool_choice: any → required")
+        void toolChoiceAny() throws Exception {
+            assertEquals("required", chatOf("""
+                    {"model":"m","messages":[{"role":"user","content":"q"}],
+                     "tools":[{"name":"ping","input_schema":{}}],"tool_choice":"any"}""").toolChoice());
+            assertEquals("required", chatOf("""
+                    {"model":"m","messages":[{"role":"user","content":"q"}],
+                     "tools":[{"name":"ping","input_schema":{}}],"tool_choice":{"type":"any"}}""")
+                    .toolChoice());
+        }
+
+        @Test
+        @DisplayName("tool_choice: {type:tool,name} → {type:function,function:{name}}")
+        void toolChoiceNamedTool() throws Exception {
+            Object choice = chatOf("""
+                    {"model":"m","messages":[{"role":"user","content":"q"}],
+                     "tools":[{"name":"get_weather","input_schema":{}}],
+                     "tool_choice":{"type":"tool","name":"get_weather"}}""").toolChoice();
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> choiceMap = (Map<String, Object>) choice;
+            assertEquals("function", choiceMap.get("type"));
+            @SuppressWarnings("unchecked")
+            Map<String, Object> function = (Map<String, Object>) choiceMap.get("function");
+            assertEquals("get_weather", function.get("name"));
+        }
+
+        @Test
+        @DisplayName("tool_choice: none → 不传 tools 也不传 tool_choice")
+        void toolChoiceNoneDropsTools() throws Exception {
+            ChatDTO.Request chat = chatOf("""
+                    {"model":"m","messages":[{"role":"user","content":"q"}],
+                     "tools":[{"name":"ping","input_schema":{}}],"tool_choice":"none"}""");
+
+            assertNull(chat.tools());
+            assertNull(chat.toolChoice());
+        }
+
+        @Test
+        @DisplayName("无 tools 且会话中无工具块 → options 为 null（PR-4c 行为不变）")
+        void plainRequestKeepsOptionsNull() throws Exception {
+            assertNull(chatOf("""
+                    {"model":"m","messages":[{"role":"user","content":"q"}]}""").options());
+            assertNull(chatOf("""
+                    {"model":"m","system":"s","messages":[{"role":"user","content":"q"}]}""").options());
+        }
+
+        @Test
+        @DisplayName("带 tools 但会话为纯文本时，wire messages 与文本视图逐字节一致")
+        void wireMessagesMatchTextMessages() throws Exception {
+            ChatDTO.Request chat = chatOf("""
+                    {"model":"m","system":"be brief","messages":[
+                       {"role":"user","content":"q"},
+                       {"role":"assistant","content":[{"type":"text","text":"a"}]},
+                       {"role":"user","content":"b"}],
+                     "tools":[{"name":"ping","input_schema":{"type":"object"}}]}""");
+
+            assertNotNull(chat.wireMessages());
+            assertEquals(NON_NULL_MAPPER.writeValueAsString(chat.messages()),
+                    NON_NULL_MAPPER.writeValueAsString(chat.wireMessages()));
+        }
+
+        @Test
+        @DisplayName("assistant 的 tool_use → tool_calls（content 与工具块共存、arguments 为 input JSON）")
+        void assistantToolUseBecomesToolCalls() throws Exception {
+            ChatDTO.Request chat = chatOf("""
+                    {"model":"m","messages":[
+                      {"role":"user","content":"北京天气"},
+                      {"role":"assistant","content":[
+                        {"type":"text","text":"我来查一下 "},
+                        {"type":"tool_use","id":"toolu_1","name":"get_weather","input":{"city":"北京","days":2}}]},
+                      {"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_1",
+                                                 "content":"晴 25℃"}]}]}""");
+
+            List<Map<String, Object>> wire = chat.wireMessages();
+            assertEquals(3, wire.size());
+            assertEquals("user", wire.get(0).get("role"));
+            assertEquals("北京天气", wire.get(0).get("content"));
+
+            Map<String, Object> assistant = wire.get(1);
+            assertEquals("assistant", assistant.get("role"));
+            assertEquals("我来查一下 ", assistant.get("content"));
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> toolCalls = (List<Map<String, Object>>) assistant.get("tool_calls");
+            assertEquals(1, toolCalls.size());
+            assertEquals("toolu_1", toolCalls.get(0).get("id"));
+            assertEquals("function", toolCalls.get(0).get("type"));
+            @SuppressWarnings("unchecked")
+            Map<String, Object> function = (Map<String, Object>) toolCalls.get(0).get("function");
+            assertEquals("get_weather", function.get("name"));
+            assertEquals("{\"city\":\"北京\",\"days\":2}", function.get("arguments"));
+
+            Map<String, Object> toolMessage = wire.get(2);
+            assertEquals("tool", toolMessage.get("role"));
+            assertEquals("toolu_1", toolMessage.get("tool_call_id"));
+            assertEquals("晴 25℃", toolMessage.get("content"));
+        }
+
+        @Test
+        @DisplayName("assistant 只有工具块时 content 为空串；多个 tool_use 保持块序")
+        void assistantToolOnlyKeepsOrder() throws Exception {
+            ChatDTO.Request chat = chatOf("""
+                    {"model":"m","messages":[
+                      {"role":"user","content":"q"},
+                      {"role":"assistant","content":[
+                        {"type":"tool_use","id":"t1","name":"first","input":{}},
+                        {"type":"tool_use","id":"t2","name":"second","input":{"a":1}}]}]}""");
+
+            Map<String, Object> assistant = chat.wireMessages().get(1);
+            assertEquals("", assistant.get("content"));
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> toolCalls = (List<Map<String, Object>>) assistant.get("tool_calls");
+            assertEquals(2, toolCalls.size());
+            @SuppressWarnings("unchecked")
+            Map<String, Object> first = (Map<String, Object>) toolCalls.get(0).get("function");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> second = (Map<String, Object>) toolCalls.get(1).get("function");
+            assertEquals("first", first.get("name"));
+            assertEquals("{}", first.get("arguments"));
+            assertEquals("second", second.get("name"));
+            assertEquals("{\"a\":1}", second.get("arguments"));
+        }
+
+        @Test
+        @DisplayName("tool_result 的 content 支持文本块数组；tool_result 先于同消息文本（下游协议约束）")
+        void toolResultBlocksFlattenedAndOrderedFirst() throws Exception {
+            ChatDTO.Request chat = chatOf("""
+                    {"model":"m","messages":[
+                      {"role":"user","content":"q"},
+                      {"role":"assistant","content":[{"type":"tool_use","id":"t1","name":"ping","input":{}}]},
+                      {"role":"user","content":[
+                        {"type":"text","text":"谢谢"},
+                        {"type":"tool_result","tool_use_id":"t1",
+                         "content":[{"type":"text","text":"pong"},{"type":"text","text":"!"}]}]}]}""");
+
+            List<Map<String, Object>> wire = chat.wireMessages();
+            assertEquals(4, wire.size());
+            assertEquals("tool", wire.get(2).get("role"));
+            assertEquals("t1", wire.get(2).get("tool_call_id"));
+            assertEquals("pong!", wire.get(2).get("content"));
+            assertEquals("user", wire.get(3).get("role"));
+            assertEquals("谢谢", wire.get(3).get("content"));
+        }
+
+        @Test
+        @DisplayName("tool_use 缺 id 时生成 call_* 调用 ID（下游 tool_call_id 必须存在）")
+        void missingToolUseIdGeneratesCallId() throws Exception {
+            ChatDTO.Request chat = chatOf("""
+                    {"model":"m","messages":[
+                      {"role":"user","content":"q"},
+                      {"role":"assistant","content":[{"type":"tool_use","name":"ping","input":{}}]}]}""");
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> toolCalls = (List<Map<String, Object>>) chat.wireMessages()
+                    .get(1).get("tool_calls");
+            assertTrue(String.valueOf(toolCalls.get(0).get("id")).startsWith("call_"),
+                    "应生成 call_ 前缀 ID: " + toolCalls.get(0).get("id"));
+        }
+
+        @Test
+        @DisplayName("工具块只影响 wire messages，文本视图仍按文本块拼接")
+        void textViewStaysTextOnly() throws Exception {
+            ChatDTO.Request chat = chatOf("""
+                    {"model":"m","messages":[
+                      {"role":"user","content":"q"},
+                      {"role":"assistant","content":[
+                        {"type":"text","text":"先说结论 "},
+                        {"type":"tool_use","id":"t1","name":"ping","input":{}}]},
+                      {"role":"user","content":[{"type":"tool_result","tool_use_id":"t1","content":"pong"}]}]}""");
+
+            assertEquals(3, chat.messages().size());
+            assertEquals("先说结论 ", chat.messages().get(1).content());
+            assertEquals("", chat.messages().get(2).content());
         }
     }
 }

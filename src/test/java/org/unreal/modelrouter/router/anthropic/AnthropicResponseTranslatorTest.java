@@ -9,7 +9,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -116,8 +119,13 @@ class AnthropicResponseTranslatorTest {
         @DisplayName("finish_reason: 其他值（含 missing/未知）→ end_turn")
         void finishReasonOthers() {
             assertEquals("end_turn", stopReasonOf("content_filter"));
-            assertEquals("end_turn", stopReasonOf("tool_calls"));
             assertEquals("end_turn", stopReasonOf(null));
+        }
+
+        @Test
+        @DisplayName("finish_reason: tool_calls → tool_use（PR-5）")
+        void finishReasonToolCalls() {
+            assertEquals("tool_use", stopReasonOf("tool_calls"));
         }
 
         @Test
@@ -205,5 +213,126 @@ class AnthropicResponseTranslatorTest {
         String response = "{\"choices\":[{\"message\":{\"content\":\"x\"}," + "\"finish_reason\":"
                 + (finishReason == null ? "null" : "\"" + finishReason + "\"") + "}]}";
         return translator.toAnthropicMessage(response, "m").stopReason();
+    }
+
+    @Nested
+    @DisplayName("工具调用响应（PR-5）")
+    class ToolCalls {
+
+        /**
+         * 真实 DeepSeek function calling 响应形态（content 与 tool_calls 共存）.
+         */
+        private static final String DEEPSEEK_TOOL_RESPONSE = """
+                {"id":"8c5f1d3e-1f2a-4b3c-9d4e-5f6a7b8c9d0e","object":"chat.completion",
+                 "created":1735689600,"model":"deepseek-chat",
+                 "choices":[{"index":0,"message":{"role":"assistant","content":"我来查询天气",
+                   "tool_calls":[
+                     {"index":0,"id":"call_0","type":"function",
+                      "function":{"name":"get_weather","arguments":"{\\"city\\":\\"北京\\"}"}},
+                     {"index":1,"id":"call_1","type":"function",
+                      "function":{"name":"get_time","arguments":"{}"}}]},
+                   "finish_reason":"tool_calls"}],
+                 "usage":{"prompt_tokens":30,"completion_tokens":18,"total_tokens":48}}""";
+
+        @Test
+        @DisplayName("多工具 → 文本块 + 各 tool_use 块，input 解析为对象，stop_reason=tool_use")
+        void mapsToolCallsToToolUseBlocks() {
+            AnthropicMessagesResponse message =
+                    translator.toAnthropicMessage(DEEPSEEK_TOOL_RESPONSE, "deepseek-chat");
+
+            assertEquals("tool_use", message.stopReason());
+            assertEquals(3, message.content().size());
+            assertEquals("text", message.content().get(0).type());
+            assertEquals("我来查询天气", message.content().get(0).text());
+
+            AnthropicMessagesResponse.ContentBlock first = message.content().get(1);
+            assertEquals("tool_use", first.type());
+            assertEquals("call_0", first.id());
+            assertEquals("get_weather", first.name());
+            assertNull(first.text(), "tool_use 块不得带 text 字段");
+            assertEquals(Map.of("city", "北京"), first.input());
+
+            AnthropicMessagesResponse.ContentBlock second = message.content().get(2);
+            assertEquals("call_1", second.id());
+            assertEquals("get_time", second.name());
+            assertEquals(Map.of(), second.input());
+            assertEquals(30, message.usage().inputTokens());
+            assertEquals(18, message.usage().outputTokens());
+        }
+
+        @Test
+        @DisplayName("只有工具调用（无文本）时不产出空文本块")
+        void toolOnlyProducesNoTextBlock() {
+            AnthropicMessagesResponse message = translator.toAnthropicMessage("""
+                    {"choices":[{"message":{"role":"assistant","content":"",
+                     "tool_calls":[{"id":"call_0","type":"function",
+                                    "function":{"name":"ping","arguments":"{}"}}]},
+                     "finish_reason":"tool_calls"}]}""", "m");
+
+            assertEquals(1, message.content().size());
+            assertEquals("tool_use", message.content().get(0).type());
+            assertEquals("tool_use", message.stopReason());
+        }
+
+        @Test
+        @DisplayName("arguments 非法 JSON → input 保留原文并记 warn（不抛异常）")
+        void invalidArgumentsKeptAsRaw() {
+            AnthropicMessagesResponse message = translator.toAnthropicMessage("""
+                    {"choices":[{"message":{"tool_calls":[{"id":"call_0","type":"function",
+                     "function":{"name":"run","arguments":"{not-json"}}]},"finish_reason":"tool_calls"}]}""",
+                    "m");
+
+            AnthropicMessagesResponse.ContentBlock block = message.content().get(0);
+            assertEquals("tool_use", block.type());
+            assertEquals(Map.of("raw_arguments", "{not-json"), block.input());
+        }
+
+        @Test
+        @DisplayName("arguments 缺失/空串/非对象 JSON → input 降级为对象（{} 或原文包装）")
+        void argumentsFallbacks() {
+            assertInput(Map.of(), null);
+            assertInput(Map.of(), "");
+            assertInput(Map.of("raw_arguments", "[1,2]"), "[1,2]");
+        }
+
+        @Test
+        @DisplayName("下游缺 tool_calls[].id 时生成 toolu_* ID")
+        void generatesToolUseIdWhenMissing() {
+            AnthropicMessagesResponse message = translator.toAnthropicMessage("""
+                    {"choices":[{"message":{"tool_calls":[{"type":"function",
+                     "function":{"name":"ping","arguments":"{}"}}]},"finish_reason":"tool_calls"}]}""", "m");
+
+            String id = message.content().get(0).id();
+            assertNotNull(id);
+            assertTrue(id.startsWith("toolu_"), "应生成 Anthropic 风格工具 ID: " + id);
+        }
+
+        @Test
+        @DisplayName("序列化形状：文本块与 PR-4c 逐字节一致，tool_use 块带 id/name/input 且无 text")
+        void serializesToolUseShape() throws Exception {
+            AnthropicMessagesResponse message =
+                    translator.toAnthropicMessage(DEEPSEEK_TOOL_RESPONSE, "deepseek-chat");
+            JsonNode json = NON_NULL_MAPPER.readTree(NON_NULL_MAPPER.writeValueAsString(message));
+
+            JsonNode textBlock = json.get("content").get(0);
+            assertEquals("{\"type\":\"text\",\"text\":\"我来查询天气\"}", NON_NULL_MAPPER
+                    .writeValueAsString(NON_NULL_MAPPER.treeToValue(textBlock, Object.class)));
+
+            JsonNode toolBlock = json.get("content").get(1);
+            assertEquals("tool_use", toolBlock.get("type").asText());
+            assertEquals("call_0", toolBlock.get("id").asText());
+            assertEquals("get_weather", toolBlock.get("name").asText());
+            assertEquals("北京", toolBlock.get("input").get("city").asText());
+            assertFalse(toolBlock.has("text"), "tool_use 块不得出现 text 字段: " + toolBlock);
+            assertEquals("tool_use", json.get("stop_reason").asText());
+        }
+
+        private void assertInput(final Map<String, Object> expected, final String arguments) {
+            String response = "{\"choices\":[{\"message\":{\"tool_calls\":[{\"id\":\"call_0\","
+                    + "\"type\":\"function\",\"function\":{\"name\":\"run\",\"arguments\":"
+                    + (arguments == null ? "null" : "\"" + arguments.replace("\"", "\\\"") + "\"")
+                    + "}}]},\"finish_reason\":\"tool_calls\"}]}";
+            assertEquals(expected, translator.toAnthropicMessage(response, "m").content().get(0).input());
+        }
     }
 }

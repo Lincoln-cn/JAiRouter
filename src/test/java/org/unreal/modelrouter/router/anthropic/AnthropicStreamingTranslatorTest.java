@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.ResolvableType;
 import org.springframework.http.HttpStatus;
@@ -315,5 +316,214 @@ class AnthropicStreamingTranslatorTest {
         assertTrue(body.contains("\"type\":\"text_delta\""));
         assertTrue(body.contains("\"output_tokens\":1"));
         assertFalse(body.contains("chatcmpl-1"), "下游 OpenAI 形态不得出现在 Anthropic 事件流中");
+    }
+
+    @Nested
+    @DisplayName("工具调用流式翻译（PR-5）")
+    class ToolStreaming {
+
+        /**
+         * 真实 DeepSeek 工具调用流形态：文本 → 工具（arguments 分多片）→ finish_reason=tool_calls.
+         */
+        private final String[] toolStream = {
+            """
+            {"id":"chatcmpl-1","object":"chat.completion.chunk","created":1735689600,"model":"deepseek-chat",
+             "choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}""",
+            chunk("{\"content\":\"我来查询\"}"),
+            chunk("{\"tool_calls\":[{\"index\":0,\"id\":\"call_abc\",\"type\":\"function\","
+                    + "\"function\":{\"name\":\"get_weather\",\"arguments\":\"\"}}]}"),
+            chunk("{\"tool_calls\":[{\"index\":0,\"function\":{\"arguments\":\"{\\\"city\\\":\"}}]}"),
+            chunk("{\"tool_calls\":[{\"index\":0,\"function\":{\"arguments\":\"\\\"北京\\\"}\"}}]}"),
+            """
+            {"id":"chatcmpl-1","object":"chat.completion.chunk","created":1735689600,"model":"deepseek-chat",
+             "choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}],
+             "usage":{"prompt_tokens":20,"completion_tokens":12,"total_tokens":32}}""",
+            "[DONE]"
+        };
+
+        private String chunk(final String delta) {
+            return "{\"id\":\"chatcmpl-1\",\"object\":\"chat.completion.chunk\","
+                    + "\"choices\":[{\"index\":0,\"delta\":" + delta + ",\"finish_reason\":null}]}";
+        }
+
+        @Test
+        @DisplayName("文本 + 工具混排 → 事件序列/块下标/partial_json/stop_reason 全对")
+        void textThenToolStream() {
+            List<ServerSentEvent<String>> events = events(
+                    translator.toEventStream(downstream(toolStream), "deepseek-chat", 20L));
+
+            assertEquals(List.of(
+                    AnthropicStreamEvent.EVENT_MESSAGE_START,
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_START,   // index 0 文本
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_DELTA,   // index 0 文本增量
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_STOP,    // index 0 关闭
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_START,   // index 1 tool_use
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_DELTA,   // index 1 partial_json
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_DELTA,   // index 1 partial_json
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_STOP,    // index 1 关闭
+                    AnthropicStreamEvent.EVENT_MESSAGE_DELTA,
+                    AnthropicStreamEvent.EVENT_MESSAGE_STOP), names(events));
+
+            // 文本块仍为 index 0（保持既有行为）
+            assertEquals(0, payload(events.get(1)).get("index").asInt());
+            assertEquals("我来查询", payload(events.get(2)).get("delta").get("text").asText());
+
+            // 工具块起始事件：id/name 来自下游首片
+            JsonNode toolStart = payload(events.get(4));
+            assertEquals(1, toolStart.get("index").asInt());
+            assertEquals("tool_use", toolStart.get("content_block").get("type").asText());
+            assertEquals("call_abc", toolStart.get("content_block").get("id").asText());
+            assertEquals("get_weather", toolStart.get("content_block").get("name").asText());
+
+            // 入参分片原样透传（客户端拼接后即 {"city":"北京"}）
+            assertEquals(1, payload(events.get(5)).get("index").asInt());
+            assertEquals("input_json_delta", payload(events.get(5)).get("delta").get("type").asText());
+            assertEquals("{\"city\":", payload(events.get(5)).get("delta").get("partial_json").asText());
+            assertEquals("\"北京\"}", payload(events.get(6)).get("delta").get("partial_json").asText());
+
+            assertEquals(1, payload(events.get(7)).get("index").asInt());
+            assertEquals("tool_use", payload(events.get(8)).get("delta").get("stop_reason").asText());
+            assertEquals(12, payload(events.get(8)).get("usage").get("output_tokens").asInt());
+        }
+
+        @Test
+        @DisplayName("只有工具调用时不产出文本增量，空文本块先行关闭且块序不交叉")
+        void toolOnlyStreamKeepsBlockOrder() {
+            List<ServerSentEvent<String>> events = events(translator.toEventStream(downstream(
+                    chunk("{\"role\":\"assistant\"}"),
+                    chunk("{\"tool_calls\":[{\"index\":0,\"id\":\"c0\",\"type\":\"function\","
+                            + "\"function\":{\"name\":\"ping\",\"arguments\":\"{}\"}}]}"),
+                    chunk("{\"tool_calls\":[{\"index\":1,\"id\":\"c1\",\"type\":\"function\","
+                            + "\"function\":{\"name\":\"pong\",\"arguments\":\"{\\\"a\\\":1}\"}}]}"),
+                    """
+                    {"choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}""",
+                    "[DONE]"), "m", 5L));
+
+            assertEquals(List.of(
+                    AnthropicStreamEvent.EVENT_MESSAGE_START,
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_START,   // index 0 文本（空）
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_STOP,    // index 0 关闭
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_START,   // index 1 工具 c0
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_DELTA,   // index 1 "{}"
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_STOP,    // index 1 关闭
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_START,   // index 2 工具 c1
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_DELTA,   // index 2 入参
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_STOP,    // index 2 关闭
+                    AnthropicStreamEvent.EVENT_MESSAGE_DELTA,
+                    AnthropicStreamEvent.EVENT_MESSAGE_STOP), names(events));
+
+            assertEquals(1, payload(events.get(3)).get("index").asInt());
+            assertEquals("c0", payload(events.get(3)).get("content_block").get("id").asText());
+            assertEquals(2, payload(events.get(6)).get("index").asInt());
+            assertEquals("pong", payload(events.get(6)).get("content_block").get("name").asText());
+            assertEquals("tool_use", payload(events.get(9)).get("delta").get("stop_reason").asText());
+        }
+
+        @Test
+        @DisplayName("工具后恢复文本 → 新文本块下标递增且块不交叉")
+        void textResumesAfterToolWithNextIndex() {
+            List<ServerSentEvent<String>> events = events(translator.toEventStream(downstream(
+                    chunk("{\"tool_calls\":[{\"index\":0,\"id\":\"c0\",\"type\":\"function\","
+                            + "\"function\":{\"name\":\"ping\",\"arguments\":\"{}\"}}]}"),
+                    chunk("{\"content\":\"继续回答\"}"),
+                    chunk("{}"),
+                    """
+                    {"choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}""",
+                    "[DONE]"), "m", 5L));
+
+            assertEquals(List.of(
+                    AnthropicStreamEvent.EVENT_MESSAGE_START,
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_START,   // index 0 空文本
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_STOP,
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_START,   // index 1 工具
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_DELTA,
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_STOP,
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_START,   // index 2 文本（递增）
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_DELTA,
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_STOP,    // index 2
+                    AnthropicStreamEvent.EVENT_MESSAGE_DELTA,
+                    AnthropicStreamEvent.EVENT_MESSAGE_STOP), names(events));
+
+            JsonNode resumed = payload(events.get(6));
+            assertEquals(2, resumed.get("index").asInt());
+            assertEquals("text", resumed.get("content_block").get("type").asText());
+            assertEquals(2, payload(events.get(7)).get("index").asInt());
+            assertEquals("继续回答", payload(events.get(7)).get("delta").get("text").asText());
+            assertEquals(2, payload(events.get(8)).get("index").asInt());
+        }
+
+        @Test
+        @DisplayName("下游 finish_reason 缺失但有工具块 → stop_reason 上修为 tool_use")
+        void toolBlocksUpgradeEndTurnToToolUse() {
+            List<ServerSentEvent<String>> events = events(translator.toEventStream(downstream(
+                    chunk("{\"tool_calls\":[{\"index\":0,\"id\":\"c0\",\"type\":\"function\","
+                            + "\"function\":{\"name\":\"ping\",\"arguments\":\"{}\"}}]}"),
+                    "[DONE]"), "m", 5L));
+
+            assertEquals("tool_use", payload(events.get(events.size() - 2))
+                    .get("delta").get("stop_reason").asText());
+        }
+
+        @Test
+        @DisplayName("finish_reason=length 且带工具块 → 保留 max_tokens（截断语义优先）")
+        void lengthWinsOverToolUse() {
+            List<ServerSentEvent<String>> events = events(translator.toEventStream(downstream(
+                    chunk("{\"tool_calls\":[{\"index\":0,\"id\":\"c0\",\"type\":\"function\","
+                            + "\"function\":{\"name\":\"ping\",\"arguments\":\"{\\\"a\\\":\"}}]}"),
+                    """
+                    {"choices":[{"index":0,"delta":{},"finish_reason":"length"}]}""",
+                    "[DONE]"), "m", 5L));
+
+            assertEquals("max_tokens", payload(events.get(events.size() - 2))
+                    .get("delta").get("stop_reason").asText());
+        }
+
+        @Test
+        @DisplayName("工具 arguments 片段计入输出 token 估算（下游未给 usage 时）")
+        void toolArgumentsCountTowardsOutputTokens() {
+            List<ServerSentEvent<String>> events = events(translator.toEventStream(downstream(
+                    chunk("{\"tool_calls\":[{\"index\":0,\"id\":\"c0\",\"type\":\"function\","
+                            + "\"function\":{\"name\":\"ping\","
+                            + "\"arguments\":\"{\\\"city\\\":\\\"beijing\\\"}\"}}]}"),
+                    "[DONE]"), "m", 5L));
+
+            assertTrue(payload(events.get(events.size() - 2))
+                    .get("usage").get("output_tokens").asInt() > 0, "工具入参应计入输出估算");
+        }
+
+        @Test
+        @DisplayName("下游缺 tool_calls[].id 时生成 toolu_* 块 ID")
+        void generatesToolUseIdWhenDownstreamOmitsIt() {
+            List<ServerSentEvent<String>> events = events(translator.toEventStream(downstream(
+                    chunk("{\"tool_calls\":[{\"index\":0,\"type\":\"function\","
+                            + "\"function\":{\"name\":\"ping\",\"arguments\":\"{}\"}}]}"),
+                    "[DONE]"), "m", 5L));
+
+            String id = payload(events.get(3)).get("content_block").get("id").asText();
+            assertTrue(id.startsWith("toolu_"), "应生成 Anthropic 风格工具 ID: " + id);
+        }
+
+        @Test
+        @DisplayName("无工具的下游流回归：事件序列/块下标与 PR-4c 一致（单文本块）")
+        void plainStreamUnchanged() {
+            List<ServerSentEvent<String>> events = events(translator.toEventStream(
+                    downstream(CHUNK_ROLE, CHUNK_NIHAO, CHUNK_BANG, CHUNK_STOP, "[DONE]"),
+                    "deepseek-chat", 7L));
+
+            assertEquals(List.of(
+                    AnthropicStreamEvent.EVENT_MESSAGE_START,
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_START,
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_DELTA,
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_DELTA,
+                    AnthropicStreamEvent.EVENT_CONTENT_BLOCK_STOP,
+                    AnthropicStreamEvent.EVENT_MESSAGE_DELTA,
+                    AnthropicStreamEvent.EVENT_MESSAGE_STOP), names(events));
+            assertEquals(1, names(events).stream()
+                    .filter(name -> AnthropicStreamEvent.EVENT_CONTENT_BLOCK_START.equals(name)).count(),
+                    "无工具流只应有一个 content_block_start");
+            assertEquals(0, payload(events.get(1)).get("index").asInt());
+            assertEquals(0, payload(events.get(4)).get("index").asInt());
+            assertEquals("end_turn", payload(events.get(5)).get("delta").get("stop_reason").asText());
+        }
     }
 }

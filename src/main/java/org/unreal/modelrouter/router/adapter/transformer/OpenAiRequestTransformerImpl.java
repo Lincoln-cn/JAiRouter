@@ -13,6 +13,7 @@ import org.unreal.modelrouter.common.dto.SttDTO;
 import org.unreal.modelrouter.common.dto.TtsDTO;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * OpenAI请求转换器实现
@@ -34,7 +35,10 @@ public class OpenAiRequestTransformerImpl implements OpenAiRequestTransformer {
 
             // 标准OpenAI参数
             openAiRequest.put("model", modelNameAdapter.adaptModelName(request.model()));
-            openAiRequest.set("messages", objectMapper.valueToTree(request.messages()));
+            // v3.1 PR-5: Anthropic 入口可能给出含工具调用/tool 角色的消息覆盖（其余入口为 null，行为不变）
+            final List<Map<String, Object>> wireMessages = request.wireMessages();
+            openAiRequest.set("messages", objectMapper.valueToTree(
+                    wireMessages != null ? wireMessages : request.messages()));
 
             if (request.temperature() != null) {
                 openAiRequest.put("temperature", request.temperature());
@@ -68,6 +72,14 @@ public class OpenAiRequestTransformerImpl implements OpenAiRequestTransformer {
             }
             if (request.user() != null) {
                 openAiRequest.put("user", request.user());
+            }
+
+            // v3.1 PR-5: 工具调用（OpenAI 顶层字段；Anthropic 入口填充，其余入口恒为 null）
+            if (request.tools() != null && !request.tools().isEmpty()) {
+                openAiRequest.set("tools", objectMapper.valueToTree(request.tools()));
+            }
+            if (request.toolChoice() != null) {
+                openAiRequest.set("tool_choice", objectMapper.valueToTree(request.toolChoice()));
             }
 
             // 扩展参数
