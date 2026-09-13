@@ -16,6 +16,8 @@
 
 package org.unreal.modelrouter.common.exceptionhandler;
 
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 
@@ -41,6 +43,11 @@ import java.util.Map;
  * {@code RouterResponse} 形状。</p>
  *
  * <p>本类只负责「错误体形状」，<b>不</b>参与状态码与日志：状态码由调用方原样设置。</p>
+ *
+ * <p>{@code @RestControllerAdvice} 的复用入口为
+ * {@link #toClientErrorResponse(ServerWebExchange, int, String, String)}（v3.1 PR-4d.1 起
+ * {@code ReactiveGlobalExceptionHandler} / {@code GlobalControllerExceptionHandler} /
+ * {@code SecurityExceptionHandler} 共用同一套判定与映射）。</p>
  *
  * @author JAiRouter Team
  * @since v3.1
@@ -180,5 +187,36 @@ public final class V1ErrorBodyMapper {
         }
         body.put("error", error);
         return body;
+    }
+
+    /**
+     * 构造客户端协议形状的完整错误响应（状态码 + {@code application/json} + 协议错误体）.
+     *
+     * <p>v3.1 PR-4d.1：{@code @RestControllerAdvice}（如
+     * {@code SecurityExceptionHandler}）的 {@code @ExceptionHandler} 需要「要么协议形状、要么
+     * 沿用自身既有错误体」的二选一，本方法把这套分支收敛到与
+     * {@link #toErrorBody(String, int, String, String)} <b>同一张</b>映射表上，避免第二个 advice
+     * 里再复制一份路径判定与 HTTP→type 映射。</p>
+     *
+     * <p>语义与 {@link #toErrorBody(String, int, String, String)} 完全一致：非 {@code /v1/**}
+     * 路径返回 {@code null}（调用方据此回落到自己的既有错误体，控制台面契约不变）；
+     * {@code /v1/**} 返回协议形状响应。状态码原样透传给 {@code ResponseEntity}，<b>不做</b>任何
+     * 覆盖或归一，因此调用方既有的状态码语义保持不变。</p>
+     *
+     * @param exchange   当前交换对象（仅用于取请求路径；可为 {@code null}）
+     * @param statusCode HTTP 状态码（原样成为响应状态码，同时用于选 type）
+     * @param message    原错误消息（原样透出）
+     * @param errorCode  原错误码（仅 OpenAI 面带 {@code code} 字段时使用，可为 {@code null}）
+     * @return {@code /v1/**}：协议形状响应；其余路径：{@code null}
+     */
+    public static ResponseEntity<?> toClientErrorResponse(final ServerWebExchange exchange, final int statusCode,
+                                                          final String message, final String errorCode) {
+        final Map<String, Object> body = toErrorBody(requestPathOf(exchange), statusCode, message, errorCode);
+        if (body == null) {
+            return null;
+        }
+        return ResponseEntity.status(statusCode)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(body);
     }
 }

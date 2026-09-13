@@ -8,6 +8,7 @@ import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,6 +22,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * - 每个 IP 每分钟最多 30 次请求
  * - 每个 IP 每小时最多 100 次请求
  * - 创建操作每个 IP 每小时最多 10 次
+ *
+ * <p>v3.1 PR-4d.1：429 错误体（含中文提示）显式按 {@link StandardCharsets#UTF_8} 编码写出，
+ * 避免平台默认字符集非 UTF-8 时中文乱码；响应形状与状态码不变。</p>
  */
 @Slf4j
 @Component
@@ -71,7 +75,7 @@ public class AdminApiRateLimiter implements WebFilter {
                 return exchange.getResponse().writeWith(
                         Mono.just(exchange.getResponse().bufferFactory()
                                 .wrap("{\"code\":\"RATE_LIMIT_EXCEEDED\",\"message\":\"创建操作过于频繁，请稍后再试\"}"
-                                        .getBytes())));
+                                        .getBytes(StandardCharsets.UTF_8))));
             }
         }
         
@@ -82,7 +86,7 @@ public class AdminApiRateLimiter implements WebFilter {
             return exchange.getResponse().writeWith(
                     Mono.just(exchange.getResponse().bufferFactory()
                             .wrap("{\"code\":\"RATE_LIMIT_EXCEEDED\",\"message\":\"请求过于频繁，请稍后再试\"}"
-                                    .getBytes())));
+                                    .getBytes(StandardCharsets.UTF_8))));
         }
         
         // 检查每小时限制
@@ -92,7 +96,7 @@ public class AdminApiRateLimiter implements WebFilter {
             return exchange.getResponse().writeWith(
                     Mono.just(exchange.getResponse().bufferFactory()
                             .wrap("{\"code\":\"RATE_LIMIT_EXCEEDED\",\"message\":\"每小时请求次数已达上限\"}"
-                                    .getBytes())));
+                                    .getBytes(StandardCharsets.UTF_8))));
         }
         
         return chain.filter(exchange);

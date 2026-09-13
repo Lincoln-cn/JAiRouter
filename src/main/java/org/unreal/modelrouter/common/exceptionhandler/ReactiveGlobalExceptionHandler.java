@@ -27,6 +27,7 @@ import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,6 +40,11 @@ import java.util.Map;
  * {@code {"error":{"message","type","code"}}}，使 OpenAI SDK / Claude Code 能解析网关自身错误；
  * 状态码、日志与 {@code /api/**}（{@code RouterResponse}）行为保持不变。
  * 映射细节见 {@link V1ErrorBodyMapper}。</p>
+ *
+ * <p>v3.1 PR-4d.1：错误体字节一律显式按 {@link StandardCharsets#UTF_8} 编码（此前用平台默认
+ * 字符集 {@code String#getBytes()}，在非 UTF-8 默认字符集的机器上会让「认证失败」「数据处理失败」
+ * 等中文错误消息乱码）。在默认字符集本就是 UTF-8 的平台上（JDK 18+ 的 JEP 400 默认值），
+ * 输出字节与改动前完全一致。</p>
  */
 @Component
 @Order(-2) // 高优先级，在默认异常处理器之前
@@ -199,7 +205,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
             
             // 序列化响应体：/v1/** 按客户端协议形状输出，其余路径沿用 RouterResponse（状态码不变）
             String jsonResponse = serializeErrorBody(exchange, errorResponse, status);
-            DataBuffer buffer = response.bufferFactory().wrap(jsonResponse.getBytes());
+            DataBuffer buffer = response.bufferFactory().wrap(jsonResponse.getBytes(StandardCharsets.UTF_8));
             
             // 再次检查响应是否已提交
             if (response.isCommitted()) {
@@ -369,7 +375,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
             }
             
             String simpleError = serializeSimpleErrorBody(exchange);
-            DataBuffer buffer = response.bufferFactory().wrap(simpleError.getBytes());
+            DataBuffer buffer = response.bufferFactory().wrap(simpleError.getBytes(StandardCharsets.UTF_8));
             
             // 再次检查响应是否已提交
             if (response.isCommitted()) {

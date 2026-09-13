@@ -82,8 +82,8 @@ import static org.mockito.Mockito.when;
  * 路径的 {@code RouterResponse} 回归、以及<b>真实配额链路</b>在 {@code /v1/messages} 上产出的
  * 429 经真实全局异常处理器渲染为 Anthropic 形状。</p>
  *
- * <p>断言只依赖 ASCII 片段或 JSON 结构（错误消息前缀为中文，而处理器以平台默认字符集写字节，
- * 断言中文字面量会引入与运行环境相关的抖动）。</p>
+ * <p>断言只依赖 ASCII 片段或 JSON 结构（v3.1 PR-4d.1 起错误体字节已显式按 UTF-8 写出，见
+ * {@link ErrorBodyUtf8CharsetTest}；本类仍不依赖中文字面量，以保持与运行环境无关）。</p>
  *
  * @author JAiRouter Team
  * @since v3.1

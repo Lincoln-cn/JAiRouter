@@ -18,9 +18,15 @@ import org.unreal.modelrouter.auth.security.config.ExcludedPathsConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * Spring Security集成的认证过滤器
  * 只处理认证相关异常，其他业务异常交由全局异常处理器处理
+ *
+ * <p>v3.1 PR-4d.1：401 错误体（消息可能为中文，如「请求缺少认证信息…」）显式按
+ * {@link StandardCharsets#UTF_8} 编码写出，避免平台默认字符集非 UTF-8 时乱码；
+ * 响应形状与状态码不变。</p>
  */
 @Slf4j
 public class SpringSecurityAuthenticationFilter implements WebFilter {
@@ -246,7 +252,8 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
                 errorCode
         );
 
-        return response.writeWith(Mono.just(response.bufferFactory().wrap(errorResponse.getBytes())))
+        return response.writeWith(Mono.just(response.bufferFactory()
+                        .wrap(errorResponse.getBytes(StandardCharsets.UTF_8))))
                 .onErrorResume(throwable -> {
                     log.error("写入认证错误响应时发生异常: {}", throwable.getMessage(), throwable);
                     return Mono.empty();

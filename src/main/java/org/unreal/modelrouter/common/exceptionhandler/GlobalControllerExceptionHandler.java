@@ -1,6 +1,5 @@
 package org.unreal.modelrouter.common.exceptionhandler;
 
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -9,8 +8,6 @@ import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.common.controller.response.RouterResponse; // 确保引入您项目中的Response类
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 /**
  * 控制台面（{@code /api/**}）控制器异常处理器.
@@ -48,13 +45,11 @@ public class GlobalControllerExceptionHandler {
                 String.valueOf(ex.getStatusCode().value())
         );
 
-        final Map<String, Object> clientBody = V1ErrorBodyMapper.toErrorBody(
-                V1ErrorBodyMapper.requestPathOf(exchange), ex.getStatusCode().value(),
+        final ResponseEntity<?> clientResponse = V1ErrorBodyMapper.toClientErrorResponse(
+                exchange, ex.getStatusCode().value(),
                 errorResponse.getMessage(), errorResponse.getErrorCode());
-        if (clientBody != null) {
-            return ResponseEntity.status(ex.getStatusCode())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(clientBody);
+        if (clientResponse != null) {
+            return clientResponse;
         }
 
         return new ResponseEntity<>(errorResponse, ex.getStatusCode());
