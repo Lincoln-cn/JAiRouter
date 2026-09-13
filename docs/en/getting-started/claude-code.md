@@ -99,7 +99,7 @@ Three rules to remember:
 
 | Option | Where the downstream key lives | Use case | Pros | Notes |
 |--------|-------------------------------|----------|------|-------|
-| **A (recommended)** | Instance `headers` | Production / shared gateway | Keys stay centralised; clients hold nothing; instance config wins | Switch downstream keys by editing config only |
+| **A (recommended)** | Instance `headers` | Production / shared gateway | Keys stay centralized; clients hold nothing; instance config wins | Switch downstream keys by editing config only |
 | B | Request `Authorization: Bearer <downstream key>` | Trials / per-request keys | No gateway config change | Claude Code can only attach it via `ANTHROPIC_CUSTOM_HEADERS` etc.; only one `Authorization` slot exists |
 | C | Instance `headers` with a custom header name (e.g. `api-key`) | Downstream is not `Authorization`-style | Works with any downstream protocol | Verify which header the downstream expects |
 
