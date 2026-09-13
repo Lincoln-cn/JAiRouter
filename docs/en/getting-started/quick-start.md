@@ -1,4 +1,4 @@
-﻿# Quick Start
+# Quick Start
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.2.0
@@ -65,6 +65,7 @@ Make a chat completion request using the OpenAI-compatible API:
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: <API key created in the console>" \
   -d '{
     "model": "qwen2.5:7b",
     "messages": [

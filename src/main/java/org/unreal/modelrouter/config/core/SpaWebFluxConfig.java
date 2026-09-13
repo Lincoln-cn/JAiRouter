@@ -8,9 +8,6 @@ import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
-import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.server.WebFilter;
-import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
 /**
@@ -24,44 +21,13 @@ import reactor.core.publisher.Mono;
 @Configuration
 public class SpaWebFluxConfig {
 
-    /**
-     * API 路径转发过滤器
-     *
-     * 将 /v1/** 请求转发到 /api/v1/**，兼容 OpenAI API 标准路径格式
-     * 例如：/v1/chat/completions -> /api/v1/chat/completions
-     *
-     * 优先级设置为 HIGHEST_PRECEDENCE + 1，确保在 CachedBodyWebFilter (HIGHEST_PRECEDENCE)
-     * 缓存请求体之后、Spring Security 过滤器链之前执行路径重写。
-     * 这样安全过滤器只对重写后的路径执行一次认证，避免请求体被多次消费导致 400 错误。
-     */
-    @Bean
-    @Order(org.springframework.core.Ordered.HIGHEST_PRECEDENCE + 1)
-    public WebFilter apiPathForwardFilter() {
-        return new WebFilter() {
-            @Override
-            public Mono<Void> filter(final ServerWebExchange exchange, final WebFilterChain chain) {
-                String path = exchange.getRequest().getPath().value();
+    // v3.1: 原 apiPathForwardFilter（/v1/** -> /api/v1/** 路径改写）已移除。
+    // 该改写会把 OpenAI 标准路径转发给 UniversalController，但改写后请求体在解码阶段已为空
+    // （日志: DecodingException "No content to map due to end-of-input"），导致 /v1/chat/completions
+    // 恒返回 400；同时它也使新增的 OpenAiNativeController 无法被路由到。
+    // 现在 /v1/** 由 OpenAiNativeController 直接提供服务（原生 JSON/SSE，无 RouterResponse 包裹），
+    // 安全策略仍由 SecurityConfiguration 的 /v1/** authenticated() 规则约束。
 
-                // 检查是否是 /v1/ 开头的路径（不包括 /v1/debug）
-                if (path.startsWith("/v1/") && !path.startsWith("/v1/debug")) {
-                    // 修改请求路径，添加 /api 前缀
-                    String newPath = "/api" + path;
-                    org.springframework.http.server.reactive.ServerHttpRequest newRequest =
-                        exchange.getRequest().mutate()
-                            .path(newPath)
-                            .build();
-
-                    ServerWebExchange newExchange = exchange.mutate()
-                        .request(newRequest)
-                        .build();
-
-                    return chain.filter(newExchange);
-                }
-
-                return chain.filter(exchange);
-            }
-        };
-    }
 
     /**
      * 配置 SPA 资源路由

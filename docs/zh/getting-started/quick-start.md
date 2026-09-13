@@ -388,6 +388,7 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
 ```bash
 curl -X POST "http://localhost:8080/v1/chat/completions" \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: <管理台创建的 API Key>" \
   -d '{
     "model": "llama3.2:3b",
     "messages": [

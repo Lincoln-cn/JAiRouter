@@ -170,11 +170,29 @@ public class StreamingRequestProcessor {
         final AtomicReference<String> finishReasonRef = (cacheKeyForWrite != null)
                 ? new AtomicReference<>(null) : null;
 
-        // 使用 ServerSentEvent 包装每个数据块，确保 SSE 格式正确
-        Flux<ServerSentEvent<String>> streamResponse = client.post()
+        // v3.1 修复: 与非流式路径保持一致——实例自定义 headers 优先（含下游 Authorization），
+        // 仅在实例未提供 Authorization 时回退到请求传入的 authorization。
+        // 修复前流式路径写死 .header("Authorization", authorization)，导致"密钥只配在实例
+        // headers 上"的部署（参见 config-external/router/services.yml 的既有模式）流式调用
+        // 必然被下游 401 拒绝。
+        final Map<String, String> instanceHeaders = (selectedInstance.getHeaders() != null)
+                ? selectedInstance.getHeaders() : Map.of();
+        final boolean hasInstanceAuth = instanceHeaders.keySet().stream()
+                .anyMatch(key -> "Authorization".equalsIgnoreCase(key));
+
+        WebClient.RequestBodySpec requestSpec = client.post()
                 .uri(path)
-                .header("Authorization", authorization)
-                .header("Content-Type", "application/json")
+                .contentType(MediaType.APPLICATION_JSON);
+        for (Map.Entry<String, String> header : instanceHeaders.entrySet()) {
+            requestSpec = requestSpec.header(header.getKey(), header.getValue());
+            logger.debug("应用实例自定义请求头: {} = {}", header.getKey(), "***");
+        }
+        if (!hasInstanceAuth && authorization != null && !authorization.isEmpty()) {
+            requestSpec = requestSpec.header("Authorization", authorization);
+        }
+
+        // 使用 ServerSentEvent 包装每个数据块，确保 SSE 格式正确
+        Flux<ServerSentEvent<String>> streamResponse = requestSpec
                 .bodyValue(rewriteModelField(request, instanceName))
                 .retrieve()
                 .onStatus(org.springframework.http.HttpStatusCode::is5xxServerError, clientResponse -> {

@@ -188,7 +188,7 @@ public class NonStreamingRequestProcessor {
             result = processJsonResponse(requestSpec, transformedRequest, instanceName,
                     adapterType, serviceType, requestStartTime, path, transformResponseFn, multipartHandler,
                     capturedKeyId, responseCacheKey, requestedModel, capturedRequestBody, selectedInstance,
-                    quotaReservation);
+                    quotaReservation, isNativeResponse(httpRequest));
         }
         return result
                 .doOnError(error -> QuotaReservation.settleFailure(quotaReservation))
@@ -276,7 +276,8 @@ public class NonStreamingRequestProcessor {
             final String requestedModel,
             final String capturedRequestBody,
             final ModelInstance selectedInstance,
-            final QuotaReservation quotaReservation) {
+            final QuotaReservation quotaReservation,
+            final boolean nativeResponse) {
 
         // 支持multipart请求（如STT）
         BodyInserter<?, ? super ClientHttpRequest> requestBody;
@@ -345,7 +346,15 @@ public class NonStreamingRequestProcessor {
                                     capturedRequestBody, capturedResponseBody);
                         }
 
-                        // 包装 RouterResponse
+                        // v3.1: OpenAI 原生面（/v1）——不包 RouterResponse，直接回下游原生 JSON
+                        if (nativeResponse) {
+                            return Mono.just(
+                                    ResponseEntity.status(responseEntity.getStatusCode())
+                                            .contentType(MediaType.APPLICATION_JSON)
+                                            .body(nativeJson(transformedData, downstreamData)));
+                        }
+
+                        // 包装 RouterResponse（控制台面 /api/v1）
                         RouterResponse<Object> finalResponse = RouterResponse.success(transformedData, "请求成功");
 
                         return Mono.just(
@@ -385,8 +394,47 @@ public class NonStreamingRequestProcessor {
      * @param httpRequest HTTP 请求（可能为 null）
      * @return 缓存键；无键或属性为空返回 null
      */
-    private String extractResponseCacheKey(final ServerHttpRequest httpRequest) {
-        if (httpRequest == null) {
+    /**
+     * v3.1: 是否 OpenAI 原生响应（由 {@code /v1} 原生控制器在 exchange 上标记）.
+     *
+     * @param httpRequest 当前请求（与 exchange 共享 attribute map）
+     * @return 标记为 {@link Boolean#TRUE} 时返回 true
+     */
+    private boolean isNativeResponse(final ServerHttpRequest httpRequest) {
+        final Object flag = httpRequest.getAttributes().get(ServiceRequestHandler.NATIVE_RESPONSE_ATTRIBUTE);
+        return Boolean.TRUE.equals(flag);
+    }
+
+    /**
+     * v3.1: 生成 OpenAI 原生响应体 JSON.
+     *
+     * <p>变换结果已是合法 JSON 文本时原样返回；若为 {@code Map.toString()} 形式（部分适配器默认
+     * 变换的行为）或结构化对象，则回退到解析后的下游对象并以 ObjectMapper 序列化，保证输出为
+     * 合法 JSON 对象（OpenAI SDK 可直接解析）。</p>
+     *
+     * @param transformed 响应变换结果
+     * @param downstream  下游原始解析对象
+     * @return 原生 JSON 文本
+     */
+    private String nativeJson(final Object transformed, final Object downstream) {
+        if (transformed instanceof String text) {
+            try {
+                objectMapper.readTree(text);
+                return text;
+            } catch (Exception ignored) {
+                logger.debug("原生响应: 变换结果非合法 JSON, 回退结构化下游对象");
+            }
+        }
+        final Object source = (transformed instanceof String || transformed == null) ? downstream : transformed;
+        try {
+            return objectMapper.writeValueAsString(source);
+        } catch (JsonProcessingException e) {
+            logger.warn("原生响应序列化失败, 回退字符串输出: {}", e.getMessage());
+            return String.valueOf(source);
+        }
+    }
+
+    private String extractResponseCacheKey(final ServerHttpRequest httpRequest) {        if (httpRequest == null) {
             return null;
         }
         Object cacheKey = httpRequest.getAttributes().get(ServiceRequestHandler.CACHE_KEY_ATTRIBUTE);

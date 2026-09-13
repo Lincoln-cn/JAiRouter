@@ -97,6 +97,16 @@ public class ServiceRequestHandler {
     public static final String CACHE_KEY_ATTRIBUTE = "JAIR_RESPONSE_CACHE_KEY";
 
     /**
+     * v3.1: OpenAI 原生响应标记（{@code /v1} 原生面）.
+     *
+     * <p>由 {@code OpenAiNativeController} 在 exchange 上置为 {@link Boolean#TRUE}。非流式处理器
+     * 读到该标记时不再包 {@code RouterResponse}，直接返回下游原生 JSON，使 {@code /v1/**} 可直接
+     * 作为 OpenAI SDK / LangChain / LlamaIndex 的 {@code base_url}；{@code /api/v1/**}（控制台面）
+     * 不受影响。</p>
+     */
+    public static final String NATIVE_RESPONSE_ATTRIBUTE = "JAIR_NATIVE_RESPONSE";
+
+    /**
      * v3.1 PR-2: 429 响应头 — 本次命中的限额值（{@code ApiKey} 限额配置值）。
      */
     public static final String QUOTA_HEADER_LIMIT = "X-Quota-Limit";

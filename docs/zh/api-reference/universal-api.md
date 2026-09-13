@@ -1,9 +1,9 @@
-﻿# 统一 API 接口
+# 统一 API 接口
 
 <!-- 版本信息 -->
-> **文档版本**: 2.0.0
-> **最后更新**: 2026-05-21
-> **主要变更**: DTO 重构 - 核心字段 + Options 模式
+> **文档版本**: 2.1.0
+> **最后更新**: 2026-09-13
+> **主要变更**: v3.1 双入口面（/v1 OpenAI 原生面 + /api/v1 控制台面）+ 鉴权约定
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
@@ -41,6 +41,22 @@
 
 
 JAiRouter 提供兼容 OpenAI 格式的统一 API 接口，支持多种 AI 模型服务。所有接口都使用 `/v1` 前缀，确保与 OpenAI API 的兼容性。
+
+## 两个入口面（v3.1 起）
+
+| 入口面 | 路径 | 响应形态 | 用途 |
+|---|---|---|---|
+| **OpenAI 原生面** | `/v1/**` | 非流式：**原生 JSON**（`{id, object:"chat.completion", choices, usage}`）；流式：**原生 SSE**（`data: {...}`，以 `\n\n` 分隔） | OpenAI SDK / LangChain / LlamaIndex 直连：`base_url=http://<host>:8080/v1` |
+| **控制台面** | `/api/v1/**` | 统一 `RouterResponse` 包裹（`{success, message, data}`） | Web 控制台 / AI 试验场内部调用；**不对外承诺 OpenAI 兼容** |
+
+**鉴权约定**
+
+- 网关凭据：`X-API-Key: <管理台创建的 API Key>`，或 `Jairouter_Token: <JWT>`。
+- `Authorization` 头**保留并透传给下游 AI 服务**；**实例级 `headers` 优先级更高**——因此可以把下游密钥只配在实例上（`headers: {Authorization: "Bearer <下游密钥>"}`），客户端无需重复提供。
+- 服务级权限：API Key 需具备 `CHAT` / `EMBEDDING` / `RERANK` 等服务权限（或 `ADMIN`）。
+- 未携带凭据返回 `401`，权限不足返回 `403`，配额超限返回 `429`（带 `Retry-After` 与 `X-Quota-*`）。
+
+> **v3.1 变更**：此前 `/v1/**` 由一个路径改写过滤器转发到 `/api/v1/**`，且转发后请求体丢失（恒返回 `400 Failed to read HTTP message`）。现已由 `OpenAiNativeController` 直接提供原生响应，`/v1` 才真正可作为 OpenAI SDK 的 `base_url`。
 
 ## 聊天完成接口
 

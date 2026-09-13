@@ -51,8 +51,9 @@ docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="http://localhost:8080/v1",
-    api_key="not-needed"  # 认证由 JAiRouter 处理
+    base_url="http://localhost:8080/v1",             # OpenAI 原生面（原生 JSON / SSE）
+    api_key="not-needed",                            # Authorization 头会透传给下游
+    default_headers={"X-API-Key": "<你的API密钥>"}     # 网关鉴权（管理台创建的 API Key）
 )
 
 response = client.chat.completions.create(

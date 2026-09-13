@@ -51,8 +51,9 @@ Point any OpenAI-compatible client at it:
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="http://localhost:8080/v1",
-    api_key="not-needed"  # JAiRouter handles authentication
+    base_url="http://localhost:8080/v1",          # OpenAI-native surface (raw JSON / SSE)
+    api_key="not-needed",                          # Authorization is forwarded to the downstream
+    default_headers={"X-API-Key": "<your-api-key>"}  # gateway credential (Management API keys)
 )
 
 response = client.chat.completions.create(

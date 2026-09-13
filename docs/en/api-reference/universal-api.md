@@ -1,8 +1,9 @@
-﻿# Unified API Interface
+# Unified API Interface
 
 <!-- 版本信息 -->
-> **Doc Version**: 1.0.2  
-> **Last Updated**: 2026-05-21  
+> **Doc Version**: 2.1.0  
+> **Last Updated**: 2026-09-13  
+> **Main change**: v3.1 dual entry surfaces (`/v1` OpenAI-native + `/api/v1` console) and auth conventions  
 > **Git Commit**: 61384b4a  
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -10,6 +11,22 @@
 
 
 JAiRouter provides a unified API interface compatible with OpenAI format, supporting multiple AI model services. All interfaces use the `/v1` prefix to ensure compatibility with OpenAI API.
+
+## Two entry surfaces (since v3.1)
+
+| Surface | Path | Response shape | Intended use |
+|---|---|---|---|
+| **OpenAI-native** | `/v1/**` | Non-streaming: **raw JSON** (`{id, object:"chat.completion", choices, usage}`); streaming: **native SSE** (`data: {...}` separated by `\n\n`) | Point OpenAI SDK / LangChain / LlamaIndex at `base_url=http://<host>:8080/v1` |
+| **Console** | `/api/v1/**` | Wrapped in `RouterResponse` (`{success, message, data}`) | Web console / AI playground internal calls; **not advertised as OpenAI-compatible** |
+
+**Authentication**
+
+- Gateway credential: `X-API-Key: <API key created in the console>`, or `Jairouter_Token: <JWT>`.
+- The `Authorization` header is **forwarded to the downstream AI service**; **instance-level `headers` take precedence** — so the downstream key can live only on the instance (`headers: {Authorization: "Bearer <downstream-key>"}`) with no client-side duplication.
+- Service permission: the API key must carry the matching service role (`CHAT` / `EMBEDDING` / `RERANK`, or `ADMIN`).
+- Missing credentials → `401`; insufficient permission → `403`; quota exceeded → `429` (with `Retry-After` and `X-Quota-*`).
+
+> **Changed in v3.1**: `/v1/**` used to be forwarded to `/api/v1/**` by a path-rewrite filter that lost the request body (always `400 Failed to read HTTP message`). It is now served natively by `OpenAiNativeController`, so `/v1` genuinely works as an OpenAI SDK `base_url`.
 
 ## Chat Completion Interface
 
