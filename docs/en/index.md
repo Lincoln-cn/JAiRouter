@@ -36,6 +36,9 @@
 | **🔐 Dual Authentication** | JWT + API Key with audit logs and blacklist support |
 | **📊 Full-chain Tracing** | OpenTelemetry integration, performance bottlenecks at a glance |
 | **💾 State Persistence** | Redis / file storage, supports high-availability cluster deployment |
+| **🎫 Token Quota & Multi-dimensional Limiting** | Ledger across dimensions (tenant / API Key / user / service / model) × four windows (minute / hour / day / month), with Redis distributed counting and failover; **disabled by default** |
+| **🔗 Multi-protocol Entry** | OpenAI-native `/v1` and Anthropic `/v1/messages` served directly, so Claude Code can connect as-is (including tool calls) |
+| **⚡ Response Cache** | Exact-key and streaming SSE caching; cache hits do not consume downstream quota and can be invalidated on demand |
 
 ---
 
