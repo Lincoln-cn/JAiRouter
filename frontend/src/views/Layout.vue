@@ -179,6 +179,8 @@ const defaultOpeneds = computed(() => {
     openeds.push('system')
   } else if (path.startsWith('/playground')) {
     openeds.push('playground')
+  } else if (path.startsWith('/tools')) {
+    openeds.push('tools')
   }
 
   return openeds

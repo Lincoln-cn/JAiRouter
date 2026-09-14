@@ -73,6 +73,10 @@ public final class PermissionCodes {
     public static final String CONFIG_VALIDATION_READ = "config:validation:read";
     /** 配置校验-写 */
     public static final String CONFIG_VALIDATION_WRITE = "config:validation:write";
+    /** 配额配置-读 */
+    public static final String CONFIG_QUOTA_READ = "config:quota:read";
+    /** 配额配置-写 */
+    public static final String CONFIG_QUOTA_WRITE = "config:quota:write";
 
     // ==================== lb / cb / rl（流量治理） ====================
 
@@ -104,6 +108,8 @@ public final class PermissionCodes {
     public static final String MONITORING_MODELSTATS_READ = "monitoring:modelstats:read";
     /** 路由监控-读 */
     public static final String MONITORING_ROUTING_READ = "monitoring:routing:read";
+    /** 配额监控-读 */
+    public static final String MONITORING_QUOTA_READ = "monitoring:quota:read";
 
     // ==================== tracing（链路追踪） ====================
 
@@ -159,6 +165,7 @@ public final class PermissionCodes {
             CONFIG_CALLHISTORY_READ, CONFIG_CALLHISTORY_WRITE,
             CONFIG_CACHE_READ, CONFIG_CACHE_WRITE,
             CONFIG_VALIDATION_READ, CONFIG_VALIDATION_WRITE,
+            CONFIG_QUOTA_READ, CONFIG_QUOTA_WRITE,
             LB_MONITORING_READ, LB_CONFIG_WRITE,
             CB_MONITORING_READ, CB_HISTORY_READ,
             RL_MONITORING_READ,
@@ -166,6 +173,7 @@ public final class PermissionCodes {
             MONITORING_METRICS_READ, MONITORING_SLOWQUERY_READ,
             MONITORING_TOKENUSAGE_READ, MONITORING_MODELSTATS_READ,
             MONITORING_ROUTING_READ,
+            MONITORING_QUOTA_READ,
             TRACING_DASHBOARD_READ, TRACING_SEARCH_READ, TRACING_CONFIG_MANAGE,
             SECURITY_APIKEYS_MANAGE, SECURITY_JWTTOKENS_MANAGE,
             SECURITY_BLACKLIST_MANAGE, SECURITY_AUDIT_READ,

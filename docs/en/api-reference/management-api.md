@@ -21,6 +21,7 @@ JAiRouter provides a complete set of management APIs for dynamic configuration m
 - [Model Statistics](#model-statistics)
 - [Token Usage](#token-usage)
 - [Configuration Version Management](#configuration-version-management)
+- [Quota Management](#quota-management)
 
 ---
 
@@ -695,6 +696,146 @@ Get validation rules.
 
 #### `GET /api/config/environment-variables`
 Get environment variable configuration.
+
+---
+
+## Quota Management
+
+### Base Paths: `/api/config/quota`, `/api/monitoring/quota`
+
+Manage the quota ledger's runtime configuration and observe quota status.
+
+#### `GET /api/config/quota`
+
+Get the current quota configuration snapshot (including runtime overrides).
+
+**Permission:** `config:quota:read`
+
+**Response Example:**
+```json
+{
+  "success": true,
+  "data": {
+    "enabled": true,
+    "failOpen": true,
+    "windows": ["MINUTE", "HOUR", "DAY", "MONTH"],
+    "flushIntervalSeconds": 60,
+    "retention": {
+      "minute": "1d",
+      "hour": "2d",
+      "day": "35d",
+      "month": "13mo"
+    },
+    "distributed": {
+      "enabled": false,
+      "keyPrefix": "jairouter:quota",
+      "timeoutMs": 50,
+      "degradeToLocal": true
+    },
+    "backendName": "local",
+    "hotEditableFields": ["enabled", "failOpen", "windows"],
+    "restartRequiredFields": ["distributed.enabled", "distributed.keyPrefix", "distributed.timeoutMs", "distributed.degradeToLocal", "retention.*", "flushIntervalSeconds"]
+  }
+}
+```
+
+#### `PUT /api/config/quota`
+
+Update quota configuration at runtime (partial update; only non-null fields take effect).
+
+**Permission:** `config:quota:write`
+
+**Request Body:**
+```json
+{
+  "enabled": true,
+  "failOpen": true,
+  "windows": ["MINUTE", "HOUR", "DAY"],
+  "flushIntervalSeconds": null,
+  "distributedEnabled": null,
+  "distributedKeyPrefix": null,
+  "distributedTimeoutMs": null,
+  "distributedDegradeToLocal": null,
+  "retention": null
+}
+```
+
+- Hot-editable fields: `enabled`, `failOpen`, `windows`
+- Restart-required fields (`distributedEnabled` / `distributedKeyPrefix` / `distributedTimeoutMs` / `distributedDegradeToLocal` / `retention` / `flushIntervalSeconds`): if any non-null value is sent, the request returns HTTP 400 + `errorCode=RESTART_REQUIRED` with the specific field names in the message
+- All-null body → HTTP 400 + `errorCode=INVALID_REQUEST`
+
+**Error Response Example:**
+```json
+{
+  "success": false,
+  "message": "以下字段需重启生效，不支持热改: distributed.enabled, retention.*；请移除这些字段后重试",
+  "error": {
+    "code": "RESTART_REQUIRED",
+    "details": null
+  }
+}
+```
+
+#### `GET /api/monitoring/quota/status`
+
+Query the quota ledger runtime status.
+
+**Permission:** `monitoring:quota:read`
+
+**Response Example:**
+```json
+{
+  "success": true,
+  "data": {
+    "enabled": true,
+    "backendName": "local",
+    "degraded": false,
+    "degradedReason": "",
+    "failOpen": true,
+    "windows": ["MINUTE", "HOUR", "DAY", "MONTH"],
+    "distributed": {
+      "enabled": false,
+      "keyPrefix": "jairouter:quota",
+      "timeoutMs": 50,
+      "degradeToLocal": true
+    }
+  }
+}
+```
+
+`redisProbe` and `counterMetrics` are present only when `distributed.enabled=true`.
+
+#### `GET /api/monitoring/quota/usage`
+
+Query quota usage (read-only, no write side effects).
+
+**Permission:** `monitoring:quota:read`
+
+**Query Parameters:** `tenantId`, `apiKeyId`, `userId`, `serviceType`, `model`, `window` (all optional)
+
+**Response Example:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "dimensions": {
+        "tenantId": "",
+        "apiKeyId": "key-abc",
+        "userId": "",
+        "serviceType": "chat",
+        "model": "gpt-4o"
+      },
+      "window": "DAY",
+      "windowStart": "2026-09-06T00:00:00",
+      "requestCount": 42,
+      "tokenCount": 15000
+    }
+  ]
+}
+```
+
+When the quota ledger is disabled, `data=[]` and message=`配额账本未启用`.
 
 ---
 

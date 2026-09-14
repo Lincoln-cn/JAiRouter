@@ -89,7 +89,11 @@
     "embedding": "向量生成",
     "rerank": "重排序",
     "audio": "语音服务",
-    "image": "图像服务"
+    "image": "图像服务",
+    "quotaConfig": "配额运行时配置",
+    "quotaMonitoring": "配额用量监控",
+    "tools": "开发者工具",
+    "clientAccess": "客户端接入指南"
   },
   "route": {
     "dashboard": "概览",
@@ -140,6 +144,10 @@
     "callHistoryDashboard": "调用历史仪表盘",
     "callHistoryList": "调用历史列表",
     "callHistorySlowCalls": "慢调用",
-    "callHistoryTokenUsage": "Token 统计"
+    "callHistoryTokenUsage": "Token 统计",
+    "quotaConfigManagement": "配额运行时配置",
+    "quotaUsageMonitoring": "配额用量监控",
+    "tools": "开发者工具",
+    "clientAccessGuide": "客户端接入指南"
   }
 }

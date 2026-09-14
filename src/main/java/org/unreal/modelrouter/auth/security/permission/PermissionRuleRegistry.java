@@ -153,7 +153,14 @@ public class PermissionRuleRegistry {
                 PermissionRule.write("/api/tracing/query/**", PermissionCodes.TRACING_CONFIG_MANAGE),
 
                 // ===== B2b 渐进补齐：概览仪表盘（DashboardMetricsController → 菜单「概览」） =====
-                PermissionRule.get("/api/dashboard/**", PermissionCodes.OVERVIEW_DASHBOARD_READ)
+                PermissionRule.get("/api/dashboard/**", PermissionCodes.OVERVIEW_DASHBOARD_READ),
+
+                // ===== 配额配置管理（QuotaConfigController） =====
+                PermissionRule.get("/api/config/quota/**", PermissionCodes.CONFIG_QUOTA_READ),
+                PermissionRule.write("/api/config/quota/**", PermissionCodes.CONFIG_QUOTA_WRITE),
+
+                // ===== 配额监控（QuotaMonitoringController） =====
+                PermissionRule.get("/api/monitoring/quota/**", PermissionCodes.MONITORING_QUOTA_READ)
         );
     }
 

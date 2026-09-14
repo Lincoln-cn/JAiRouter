@@ -5,7 +5,7 @@ import type { RouterResponse } from '@/types'
  * 权限管理 API 封装（v2.9.8 RBAC，Phase 4）
  *
  * 对应后端 PermissionManagementController：
- * - GET /api/security/permissions                全部权限码（45 码，ADMIN 超集）
+ * - GET /api/security/permissions                全部权限码（48 码，ADMIN 超集）
  * - GET /api/security/permissions/roles          全部角色及其权限码（角色名 → 权限码列表）
  * - PUT /api/security/permissions/roles/{roleName} 整体替换角色权限码集合
  */
@@ -33,7 +33,7 @@ export const ROLE_DESCRIPTIONS: Record<RoleName, string> = {
 }
 
 /**
- * 45 权限码按模块展示分组（与后端 PermissionCodes 全量一致）。
+ * 48 权限码按模块展示分组（与后端 PermissionCodes 全量一致）。
  * 仅用于 UI 展示（权限树分组），不代表后端授权语义。
  * module 为分组标题的 i18n key（页面以 t(group.module) 渲染），
  * 文案位于 locales/{zh-CN,en-US}/permissions.json 的 groups 节点。
@@ -53,6 +53,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       'config:circuitbreaker:read', 'config:circuitbreaker:write',
       'config:callhistory:read', 'config:callhistory:write',
       'config:cache:read', 'config:cache:write',
+      'config:quota:read', 'config:quota:write',
       'config:validation:read', 'config:validation:write'
     ]
   },
@@ -69,6 +70,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     module: 'permissions.groups.monitoring',
     codes: [
       'monitoring:metrics:read', 'monitoring:slowquery:read',
+      'monitoring:quota:read',
       'monitoring:tokenusage:read', 'monitoring:modelstats:read',
       'monitoring:routing:read'
     ]

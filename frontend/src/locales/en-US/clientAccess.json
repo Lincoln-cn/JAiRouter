@@ -1,0 +1,31 @@
+{
+  "clientAccess": {
+    "pageTitle": "Client Access Guide",
+    "openaiSection": "OpenAI-Compatible API",
+    "openaiBaseUrlLabel": "Base URL",
+    "openaiAuthLabel": "Authentication",
+    "openaiAuthDesc": "X-API-Key: <Gateway API Key>",
+    "openaiModelsEndpoint": "List Models",
+    "openaiChatEndpoint": "Chat Completions",
+    "openaiCurlTitle": "curl Example",
+    "openaiSdkTitle": "OpenAI SDK Example",
+    "copyCode": "Copy Code",
+    "copied": "Copied",
+    "copyFailed": "Copy failed, please copy manually",
+    "anthropicSection": "Anthropic-Compatible API (Claude Code Direct)",
+    "anthropicBaseUrlLabel": "Base URL",
+    "anthropicAuthLabel": "Authentication",
+    "anthropicAuthDesc": "x-api-key: <Gateway API Key>",
+    "anthropicMessagesEndpoint": "Messages",
+    "anthropicCountTokensEndpoint": "Count Tokens",
+    "anthropicEnvTitle": "Environment Variables",
+    "anthropicCliTitle": "Claude Code CLI Example",
+    "modelListSection": "Available Models",
+    "modelListLoadFailed": "Failed to load model list ({origin}/v1/models). Please make sure the gateway is running.",
+    "modelListNotAvailable": "Model list not available",
+    "modelIdColumn": "Model ID",
+    "ownedByColumn": "Owned By",
+    "copying": "Copying…",
+    "streamNote": "Streaming supported (stream: true)"
+  }
+}

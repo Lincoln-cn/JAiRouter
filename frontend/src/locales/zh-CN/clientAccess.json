@@ -1,0 +1,31 @@
+{
+  "clientAccess": {
+    "pageTitle": "客户端接入指南",
+    "openaiSection": "OpenAI 兼容接口",
+    "openaiBaseUrlLabel": "Base URL",
+    "openaiAuthLabel": "认证方式",
+    "openaiAuthDesc": "X-API-Key: <网关 API Key>",
+    "openaiModelsEndpoint": "模型列表",
+    "openaiChatEndpoint": "对话补全",
+    "openaiCurlTitle": "curl 示例",
+    "openaiSdkTitle": "OpenAI SDK 示例",
+    "copyCode": "复制代码",
+    "copied": "已复制",
+    "copyFailed": "复制失败，请手动复制",
+    "anthropicSection": "Anthropic 兼容接口（Claude Code 直连）",
+    "anthropicBaseUrlLabel": "Base URL",
+    "anthropicAuthLabel": "认证方式",
+    "anthropicAuthDesc": "x-api-key: <网关 API Key>",
+    "anthropicMessagesEndpoint": "消息接口",
+    "anthropicCountTokensEndpoint": "Token 计数",
+    "anthropicEnvTitle": "环境变量设置",
+    "anthropicCliTitle": "Claude Code CLI 示例",
+    "modelListSection": "可用模型清单",
+    "modelListLoadFailed": "模型列表加载失败（{origin}/v1/models），请确认网关已启动。",
+    "modelListNotAvailable": "模型列表暂不可用",
+    "modelIdColumn": "模型 ID",
+    "ownedByColumn": "所属",
+    "copying": "复制中…",
+    "streamNote": "支持流式（stream: true）"
+  }
+}

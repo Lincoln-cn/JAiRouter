@@ -89,7 +89,11 @@
     "embedding": "Embedding",
     "rerank": "Rerank",
     "audio": "Audio Service",
-    "image": "Image Service"
+    "image": "Image Service",
+    "quotaConfig": "Quota Runtime Config",
+    "quotaMonitoring": "Quota Usage Monitoring",
+    "tools": "Developer Tools",
+    "clientAccess": "Client Access Guide"
   },
   "route": {
     "dashboard": "Overview",
@@ -140,6 +144,10 @@
     "callHistoryDashboard": "Call History Dashboard",
     "callHistoryList": "Call History List",
     "callHistorySlowCalls": "Slow Calls",
-    "callHistoryTokenUsage": "Token Usage"
+    "callHistoryTokenUsage": "Token Usage",
+    "quotaConfigManagement": "Quota Runtime Config",
+    "quotaUsageMonitoring": "Quota Usage Monitoring",
+    "tools": "Developer Tools",
+    "clientAccessGuide": "Client Access Guide"
   }
 }

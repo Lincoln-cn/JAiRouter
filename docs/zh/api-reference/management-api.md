@@ -21,6 +21,7 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 - [模型统计](#model-stats)
 - [令牌使用](#token-usage)
 - [配置版本管理](#config-version-mgmt)
+- [配额管理](#quota-mgmt)
 
 ---
 
@@ -695,6 +696,146 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 #### `GET /api/config/environment-variables`
 获取环境变量配置。
+
+---
+
+## 配额管理 {#quota-mgmt}
+
+### 基础路径: `/api/config/quota`、`/api/monitoring/quota`
+
+管理配额账本的运行时配置与观测配额运行状态。
+
+#### `GET /api/config/quota`
+
+获取当前生效的配额配置快照（含运行时覆盖）。
+
+**权限码:** `config:quota:read`
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "enabled": true,
+    "failOpen": true,
+    "windows": ["MINUTE", "HOUR", "DAY", "MONTH"],
+    "flushIntervalSeconds": 60,
+    "retention": {
+      "minute": "1d",
+      "hour": "2d",
+      "day": "35d",
+      "month": "13mo"
+    },
+    "distributed": {
+      "enabled": false,
+      "keyPrefix": "jairouter:quota",
+      "timeoutMs": 50,
+      "degradeToLocal": true
+    },
+    "backendName": "local",
+    "hotEditableFields": ["enabled", "failOpen", "windows"],
+    "restartRequiredFields": ["distributed.enabled", "distributed.keyPrefix", "distributed.timeoutMs", "distributed.degradeToLocal", "retention.*", "flushIntervalSeconds"]
+  }
+}
+```
+
+#### `PUT /api/config/quota`
+
+运行时更新配额配置（部分更新，仅非 null 字段生效）。
+
+**权限码:** `config:quota:write`
+
+**请求体:**
+```json
+{
+  "enabled": true,
+  "failOpen": true,
+  "windows": ["MINUTE", "HOUR", "DAY"],
+  "flushIntervalSeconds": null,
+  "distributedEnabled": null,
+  "distributedKeyPrefix": null,
+  "distributedTimeoutMs": null,
+  "distributedDegradeToLocal": null,
+  "retention": null
+}
+```
+
+- 可热改字段：`enabled`、`failOpen`、`windows`
+- 需重启字段（`distributedEnabled` / `distributedKeyPrefix` / `distributedTimeoutMs` / `distributedDegradeToLocal` / `retention` / `flushIntervalSeconds`）：携带非 null 值时返回 HTTP 400 + `errorCode=RESTART_REQUIRED`，message 列出具体字段名
+- 全空请求体 → HTTP 400 + `errorCode=INVALID_REQUEST`
+
+**错误响应示例:**
+```json
+{
+  "success": false,
+  "message": "以下字段需重启生效，不支持热改: distributed.enabled, retention.*；请移除这些字段后重试",
+  "error": {
+    "code": "RESTART_REQUIRED",
+    "details": null
+  }
+}
+```
+
+#### `GET /api/monitoring/quota/status`
+
+查询配额账本运行状态。
+
+**权限码:** `monitoring:quota:read`
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "enabled": true,
+    "backendName": "local",
+    "degraded": false,
+    "degradedReason": "",
+    "failOpen": true,
+    "windows": ["MINUTE", "HOUR", "DAY", "MONTH"],
+    "distributed": {
+      "enabled": false,
+      "keyPrefix": "jairouter:quota",
+      "timeoutMs": 50,
+      "degradeToLocal": true
+    }
+  }
+}
+```
+
+`redisProbe` 与 `counterMetrics` 仅在 `distributed.enabled=true` 时存在。
+
+#### `GET /api/monitoring/quota/usage`
+
+查询配额用量（只读，不触发写入）。
+
+**权限码:** `monitoring:quota:read`
+
+**查询参数:** `tenantId`、`apiKeyId`、`userId`、`serviceType`、`model`、`window`（均可选）
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "dimensions": {
+        "tenantId": "",
+        "apiKeyId": "key-abc",
+        "userId": "",
+        "serviceType": "chat",
+        "model": "gpt-4o"
+      },
+      "window": "DAY",
+      "windowStart": "2026-09-06T00:00:00",
+      "requestCount": 42,
+      "tokenCount": 15000
+    }
+  ]
+}
+```
+
+配额未启用时 `data=[]` 且 message=`配额账本未启用`。
 
 ---
 

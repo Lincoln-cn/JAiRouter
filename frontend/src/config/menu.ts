@@ -1,18 +1,19 @@
 /**
  * 菜单配置（v2.9.8 Phase 4 数据驱动，11 组 → 8 组）
  *
- * 8 组结构（开发计划2026 L1158）：
+ * 9 组结构（开发计划2026 L1158）：
  * - 概览(1)：仪表板
  * - 模型服务(4)：服务 / 实例 / 版本 / Adapter
- * - 流量治理(8)：规则 / LB监控 / LB策略 / CB监控 / CB历史 / CB配置 / 限流 / 资源池
- * - 数据记录(6)：调用历史 4 + 异常 2
+ * - 流量治理(10)：规则 / LB监控 / LB策略 / CB监控 / CB历史 / CB配置 / 限流 / 资源池 / 响应缓存 / 配额配置
+ * - 数据记录(8)：调用历史 4 / 慢查询 / 配额监控 / 异常 2
  * - 链路追踪(3)：dashboard / search / management
  * - 安全管理(4)：api-keys / jwt-tokens / blacklist / audit-logs
  * - 系统管理(3)：账户 / 权限(new) / 状态持久化（配置验证无对应路由，暂不挂载）
  * - AI 试验场(5)：chat / embedding / rerank / audio / image
+ * - 开发者工具(1)：客户端接入指南
  *
  * 每项新增可选 `permission` 字段（权限码，格式 `module:resource:action`，
- * 与后端 PermissionCodes 45 权限码体系一致，无 ROLE_ 前缀）。
+ * 与后端 PermissionCodes 48 权限码体系一致，无 ROLE_ 前缀）。
  *
  * 权限映射原则：
  * - 与后端 PermissionRuleRegistry 已登记的 URL 权限规则对齐
@@ -79,7 +80,8 @@ export const menuGroups: MenuGroup[] = [
       { path: '/circuit-breakers/global-config', title: 'menu.cbConfig', permission: 'config:circuitbreaker:read' },
       { path: '/rate-limiters/monitoring', title: 'menu.rlMonitoring', permission: 'rl:monitoring:read' },
       { path: '/config/pools', title: 'menu.configPools', permission: 'config:pools:read' },
-      { path: '/config/cache', title: 'menu.responseCache', permission: 'config:cache:write' }
+      { path: '/config/cache', title: 'menu.responseCache', permission: 'config:cache:write' },
+      { path: '/config/quota', title: 'menu.quotaConfig', permission: 'config:quota:read' }
     ]
   },
   {
@@ -92,6 +94,7 @@ export const menuGroups: MenuGroup[] = [
       { path: '/call-history/token-usage', title: 'menu.tokenUsage', permission: 'monitoring:tokenusage:read' },
       { path: '/call-history/slow-calls', title: 'menu.slowCalls', permission: 'monitoring:slowquery:read' },
       { path: '/monitoring/slow-queries', title: 'menu.slowQueries', permission: 'monitoring:slowquery:read' },
+      { path: '/monitoring/quota', title: 'menu.quotaMonitoring', permission: 'monitoring:quota:read' },
       // 后端 /api/exceptions/** 未登记权限规则（回退 authenticated），无需权限控制
       { path: '/exceptions/list', title: 'menu.exceptionList' },
       { path: '/exceptions/statistics', title: 'menu.exceptionStatistics' }
@@ -138,6 +141,14 @@ export const menuGroups: MenuGroup[] = [
       { path: '/playground/rerank', title: 'menu.rerank', permission: 'ai:playground:use', icon: 'sort' },
       { path: '/playground/audio', title: 'menu.audio', permission: 'ai:playground:use', icon: 'headset' },
       { path: '/playground/image', title: 'menu.image', permission: 'ai:playground:use', icon: 'picture' }
+    ]
+  },
+  {
+    index: 'tools',
+    title: 'menu.tools',
+    icon: 'document',
+    children: [
+      { path: '/tools/client-access', title: 'menu.clientAccess' }
     ]
   }
 ]

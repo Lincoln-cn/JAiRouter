@@ -106,6 +106,12 @@ const router = createRouter({
           name: 'response-cache-management',
           component: () => import('../views/config/ResponseCacheManagement.vue'),
           meta: { titleKey: 'route.responseCacheManagement', icon: 'coin', permissions: ['config:cache:write'] }
+        },
+        {
+          path: 'quota',
+          name: 'quota-config-management',
+          component: () => import('../views/config/QuotaConfigManagement.vue'),
+          meta: { titleKey: 'route.quotaConfigManagement', icon: 'coin', permissions: ['config:quota:read'] }
         }
       ]
     },
@@ -342,6 +348,12 @@ const router = createRouter({
           name: 'slow-query-analysis',
           component: () => import('../views/monitoring/SlowQueryAnalysis.vue'),
           meta: { titleKey: 'route.slowQueryAnalysis', icon: 'timer', permissions: ['monitoring:slowquery:read'] }
+        },
+        {
+          path: 'quota',
+          name: 'quota-usage-monitoring',
+          component: () => import('../views/monitoring/QuotaUsageMonitoring.vue'),
+          meta: { titleKey: 'route.quotaUsageMonitoring', icon: 'data-analysis', permissions: ['monitoring:quota:read'] }
         }
       ]
     },
@@ -376,6 +388,22 @@ const router = createRouter({
           name: 'call-history-token-usage',
           component: () => import('../views/callHistory/TokenUsageStatistics.vue'),
           meta: { titleKey: 'route.callHistoryTokenUsage', icon: 'DataAnalysis' }
+        }
+      ]
+    },
+
+    // 开发者工具
+    {
+      path: '/tools',
+      name: 'tools',
+      component: () => import('../views/Layout.vue'),
+      meta: { requiresAuth: true, titleKey: 'route.tools' },
+      children: [
+        {
+          path: 'client-access',
+          name: 'client-access-guide',
+          component: () => import('../views/tools/ClientAccessGuide.vue'),
+          meta: { titleKey: 'route.clientAccessGuide', icon: 'link' }
         }
       ]
     }

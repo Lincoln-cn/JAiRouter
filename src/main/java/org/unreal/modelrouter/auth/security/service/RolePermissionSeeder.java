@@ -140,7 +140,9 @@ public class RolePermissionSeeder implements ApplicationRunner {
                 PermissionCodes.MONITORING_ROUTING_READ,
                 PermissionCodes.TRACING_DASHBOARD_READ,
                 PermissionCodes.TRACING_SEARCH_READ,
-                PermissionCodes.AI_PLAYGROUND_USE
+                PermissionCodes.AI_PLAYGROUND_USE,
+                PermissionCodes.CONFIG_QUOTA_READ,
+                PermissionCodes.MONITORING_QUOTA_READ
         );
     }
 

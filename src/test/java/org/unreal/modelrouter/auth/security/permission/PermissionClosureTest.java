@@ -504,6 +504,115 @@ class PermissionClosureTest {
 
     // ==================== 回退行为不变验证 ====================
 
+    // ==================== 配额配置管理 ====================
+
+    @Nested
+    @DisplayName("配额配置管理 /api/config/quota/** → config:quota:read/write")
+    class QuotaConfigTests {
+
+        @Test
+        @DisplayName("GET /api/config/quota - 无 config:quota:read → 拒绝(403)")
+        void quotaReadWithoutPermissionDenied() {
+            AuthorizationContext ctx = context(HttpMethod.GET, "/api/config/quota");
+            JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
+
+            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+                    .expectNextMatches(decision -> !decision.isGranted())
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("GET /api/config/quota - 携带 config:quota:read → 放行")
+        void quotaReadWithPermissionGranted() {
+            AuthorizationContext ctx = context(HttpMethod.GET, "/api/config/quota");
+            JwtAuthentication auth = authenticated(
+                    "user", List.of("USER"), List.of(PermissionCodes.CONFIG_QUOTA_READ));
+
+            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationDecision::isGranted)
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("PUT /api/config/quota - 仅 config:quota:read 无 write → 拒绝")
+        void quotaWriteWithOnlyReadDenied() {
+            AuthorizationContext ctx = context(HttpMethod.PUT, "/api/config/quota");
+            JwtAuthentication auth = authenticated(
+                    "user", List.of("USER"), List.of(PermissionCodes.CONFIG_QUOTA_READ));
+
+            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+                    .expectNextMatches(decision -> !decision.isGranted())
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("PUT /api/config/quota - 携带 config:quota:write → 放行")
+        void quotaWriteWithPermissionGranted() {
+            AuthorizationContext ctx = context(HttpMethod.PUT, "/api/config/quota");
+            JwtAuthentication auth = authenticated(
+                    "operator", List.of("OPERATOR"), List.of(PermissionCodes.CONFIG_QUOTA_WRITE));
+
+            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationDecision::isGranted)
+                    .verifyComplete();
+        }
+    }
+
+    // ==================== 配额监控 ====================
+
+    @Nested
+    @DisplayName("配额监控 /api/monitoring/quota/** → monitoring:quota:read")
+    class QuotaMonitoringTests {
+
+        @Test
+        @DisplayName("GET /api/monitoring/quota/status - 无 monitoring:quota:read → 拒绝(403)")
+        void quotaStatusWithoutPermissionDenied() {
+            AuthorizationContext ctx = context(HttpMethod.GET, "/api/monitoring/quota/status");
+            JwtAuthentication auth = authenticated("viewer", List.of("VIEWER"), List.of());
+
+            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+                    .expectNextMatches(decision -> !decision.isGranted())
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("GET /api/monitoring/quota/status - 携带 monitoring:quota:read → 放行")
+        void quotaStatusWithPermissionGranted() {
+            AuthorizationContext ctx = context(HttpMethod.GET, "/api/monitoring/quota/status");
+            JwtAuthentication auth = authenticated(
+                    "user", List.of("USER"), List.of(PermissionCodes.MONITORING_QUOTA_READ));
+
+            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationDecision::isGranted)
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("GET /api/monitoring/quota/usage - 无 monitoring:quota:read → 拒绝(403)")
+        void quotaUsageWithoutPermissionDenied() {
+            AuthorizationContext ctx = context(HttpMethod.GET, "/api/monitoring/quota/usage");
+            JwtAuthentication auth = authenticated("viewer", List.of("VIEWER"), List.of());
+
+            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+                    .expectNextMatches(decision -> !decision.isGranted())
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("GET /api/monitoring/quota/usage - 携带 monitoring:quota:read → 放行")
+        void quotaUsageWithPermissionGranted() {
+            AuthorizationContext ctx = context(HttpMethod.GET, "/api/monitoring/quota/usage");
+            JwtAuthentication auth = authenticated(
+                    "user", List.of("USER"), List.of(PermissionCodes.MONITORING_QUOTA_READ));
+
+            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationDecision::isGranted)
+                    .verifyComplete();
+        }
+    }
+
+    // ==================== 回退行为不变验证 ====================
+
     @Nested
     @DisplayName("回退行为不变验证（未登记路径仍 authenticated）")
     class FallbackBehaviorTests {

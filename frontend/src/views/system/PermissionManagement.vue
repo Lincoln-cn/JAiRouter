@@ -36,7 +36,7 @@
       style="margin-bottom: 16px"
     />
 
-    <!-- 权限树（按模块分组展示 43 个权限码） -->
+    <!-- 权限树（按模块分组展示 48 个权限码） -->
     <div v-loading="loading" class="tree-wrapper">
       <el-tree
         ref="permissionTreeRef"
