@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.0.3
-> **Last Updated**: 2026-09-13
+> **Document Version**: 3.1.0
+> **Last Updated**: 2026-09-14
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,42 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.1.0] - 2026-09-14 - Feature Release (Token Quota Ledger + Multi-Protocol Entry: Multi-Dimensional Multi-Window Rate Limiting + Anthropic/Tool Calling + Runtime Config & Observability)
+
+#### Quota Ledger
+
+- **Multi-dimensional multi-window quota ledger**: supports MINUTE / HOUR / DAY / MONTH windows, with JPA-backed persistence for quota rules and usage records
+- **Main-chain `reserve` + 429 semantics**: `reserve` pre-deducts before the main chain; exceeding the quota returns HTTP 429; both streaming and non-streaming paths execute `settle`
+- **Redis distributed counting with disconnect fallback**: `QuotaCounterBackend` provides Local (in-memory) and Redis dual implementations; automatically falls back to local counting when Redis is unavailable
+- **Disabled by default** (`jairouter.quota.enabled=false`), no impact on existing deployments
+
+#### Console & Observability
+
+- **Quota runtime configuration surface** (`GET/PUT /api/config/quota`): hot-changeable fields (`enabled`, `failOpen`, `windows`); restart-required fields (`distributed.*`, `retention`, `flushIntervalSeconds`) rejected with 400 `RESTART_REQUIRED`
+- **Quota observability surface**: `GET /api/monitoring/quota/status` (quota status) and `GET /api/monitoring/quota/usage` (usage details)
+- **3 new console pages**: quota runtime config (`/config/quota`), quota usage monitoring (`/monitoring/quota`), client access guide (`/tools/client-access`)
+- **New permission codes**: `config:quota:read`, `config:quota:write`, `monitoring:quota:read`
+
+#### Multi-Protocol Entry
+
+- **`GET /v1/models`**: OpenAI-native model listing endpoint
+- **Anthropic `POST /v1/messages`**: non-streaming and streaming SSE responses, `count_tokens` support, Claude Code direct connectivity
+- **Tool calling**: `tools` / `tool_choice` / `tool_use` / `tool_result` triple protocol translation, streaming `input_json_delta` assembly
+- **Protocol-shaped gateway errors**: `/v1/**` error bodies rendered in protocol shape (Anthropic / OpenAI dual shapes); `SecurityExceptionHandler` also protocol-aware
+- **Error body charset fix**: explicit UTF-8 encoding, fixing garbled Chinese on platforms where the default charset is not UTF-8
+
+#### Fixes
+
+- **Streaming path instance-level headers ignored**: instance-level custom headers were not injected under `stream:true`, causing downstream 401; fixed
+- **`RoundRobinLoadBalancerTest` statistical flaky fix**: eliminated probabilistic test failures
+- **Response cache P1 merged**
+
+#### Upgrade Notes
+
+- Quota is disabled by default; existing deployments are unaffected. See `configuration/quota` docs for enablement.
+
+---
 
 ### [3.0.3] - 2026-09-13 - Feature Release (Web complete-flow acceptance & release: journey acceptance + screenshot refresh + cold-start deep-link fix)
 

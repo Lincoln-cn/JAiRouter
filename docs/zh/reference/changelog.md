@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.0.3
-> **最后更新**: 2026-09-13
+> **文档版本**: 3.1.0
+> **最后更新**: 2026-09-14
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,42 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.1.0] - 2026-09-14 - 功能发布（Token 配额账本 + 多协议入口：多维多窗限流 + Anthropic/工具调用 + 运行时配置与观测）
+
+#### 配额账本（Quota）
+
+- **多维多窗配额账本**：支持 MINUTE / HOUR / DAY / MONTH 四种时间窗口，基于 JPA 持久化存储配额规则与用量记录
+- **主链 `reserve` 前置 + 429 语义**：请求进入主链前执行 `reserve` 预扣，超出配额返回 HTTP 429；流式与非流式路径均执行 `settle` 结算
+- **Redis 分布式计数与断连降级**：`QuotaCounterBackend` 提供 Local（内存）与 Redis 双实现，Redis 不可用时自动降级到本地计数
+- **默认关闭**（`jairouter.quota.enabled=false`），不影响现有部署
+
+#### 控制台与观测
+
+- **配额运行时配置面**（`GET/PUT /api/config/quota`）：可热改字段（`enabled`、`failOpen`、`windows`）；需重启字段（`distributed.*`、`retention`、`flushIntervalSeconds`）传入即拒，返回 400 `RESTART_REQUIRED`
+- **配额观测面**：`GET /api/monitoring/quota/status`（配额状态）与 `GET /api/monitoring/quota/usage`（用量详情）
+- **控制台新增 3 页**：配额运行时配置（`/config/quota`）、配额用量监控（`/monitoring/quota`）、客户端接入指南（`/tools/client-access`）
+- **新增权限码**：`config:quota:read`、`config:quota:write`、`monitoring:quota:read`
+
+#### 多协议入口
+
+- **`GET /v1/models`**：OpenAI 原生模型列表端点
+- **Anthropic `POST /v1/messages`**：支持非流式与流式 SSE 响应，兼容 `count_tokens`，Claude Code 可直连
+- **工具调用**：`tools` / `tool_choice` / `tool_use` / `tool_result` 三套协议翻译，流式 `input_json_delta` 正确拼装
+- **网关错误体协议化**：`/v1/**` 路径错误体按协议形状输出（Anthropic / OpenAI 双形状）；`SecurityExceptionHandler` 一并协议化
+- **错误体字符集修复**：显式 UTF-8 编码，修复非 UTF-8 默认平台下中文乱码
+
+#### 修复
+
+- **流式路径实例级 headers 忽略**：`stream:true` 场景下实例级自定义 headers 未注入导致下游 401，已修复
+- **`RoundRobinLoadBalancerTest` 统计型 flaky 修复**：消除测试中概率性失败
+- **响应缓存 P1 已入库**
+
+#### 升级提示
+
+- 配额功能默认关闭，不影响现有部署；开启方式见 `configuration/quota` 文档
+
+---
 
 ### [3.0.3] - 2026-09-13 - 功能发布（Web 完整流程验收与发布：旅程验收 + 素材重拍 + 冷启动深链修复）
 

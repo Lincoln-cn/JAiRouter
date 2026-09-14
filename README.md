@@ -241,7 +241,7 @@ JAiRouter is a **production-ready AI model gateway** for teams that run their ow
 
 ## Roadmap
 
-**Released** (latest: v3.0.3)
+**Released** (latest: v3.1.0)
 
 - [x] Core gateway with OpenAI-compatible API
 - [x] Built-in + configurable adapters (Ollama, vLLM, GPUStack, Xinference, LocalAI, OpenAI, Claude, Gemini, …)
@@ -260,17 +260,20 @@ JAiRouter is a **production-ready AI model gateway** for teams that run their ow
 
 **Recently released**
 
+- [x] Token quota & multi-dimensional multi-window rate limiting: MINUTE/HOUR/DAY/MONTH ledger, JPA persistence, Redis distributed counting with automatic local fallback (`jairouter.quota.enabled=false` by default, v3.1.0)
+- [x] Quota runtime config & observability: `GET/PUT /api/config/quota`, quota status/usage monitoring endpoints, 3 new console pages (quota config, usage monitoring, client access guide), new permission codes `config:quota:read/write`, `monitoring:quota:read` (v3.1.0)
+- [x] OpenAI-native surface `/v1/models` endpoint (v3.1.0)
+- [x] Anthropic `/v1/messages` entry: non-streaming + streaming SSE + `count_tokens` + tool calling (`tools`/`tool_choice`/`tool_use`/`tool_result`), Claude Code direct connectivity (v3.1.0)
 - [x] Response cache P1: streaming SSE cache, invalidation API and rate-limit short-circuit (`DELETE /api/config/cache/response`, v2.9.10 — shipped in v3.0.3)
 - [x] Web console refactor series: design tokens, dark theme, governance dashboard, bilingual UI (zh/en), slow-query analytics (v2.10.x)
 - [x] Web complete-flow series: onboarding preselect loop, governance entries across pages, page-skeleton rollout (v3.0.1–v3.0.3)
 
 **In progress**
 
-- [ ] Token-based quota & multi-dimensional rate limiting (v3.1.x)
 - [ ] Semantic cache evaluation (vector-similarity reuse) — separate project
-- [ ] High-availability foundation (multi-node / Redis distributed / config rollback) — assessed after v3.0.x
+- [ ] High-availability foundation (multi-node / Redis distributed / config rollback) — assessed after v3.1.x
 
-> **Current Release**: v3.0.3 | **LTS Release**: v2.6.11 (maintained until 2028-05)
+> **Current Release**: v3.1.0 | **LTS Release**: v2.6.11 (maintained until 2028-05)
 
 ## Contributing
 
