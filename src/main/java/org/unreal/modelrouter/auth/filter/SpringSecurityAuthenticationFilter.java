@@ -18,7 +18,11 @@ import org.unreal.modelrouter.auth.security.config.ExcludedPathsConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import reactor.core.publisher.Mono;
 
+import org.unreal.modelrouter.common.exceptionhandler.V1ErrorBodyMapper;
+
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Spring Security集成的认证过滤器
@@ -229,7 +233,11 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
     }
 
     /**
-     * 创建认证错误响应
+     * 创建认证错误响应.
+     *
+     * <p>按请求路径选择错误体形状：{@code /v1/messages}（含子路径）→ Anthropic 形状；
+     * 其余 {@code /v1/**} → OpenAI 形状；非 {@code /v1} 路径沿用既有硬编码形状。
+     * 路径判定复用 {@link V1ErrorBodyMapper}（与 {@code SecurityExceptionHandler} 同源）。</p>
      */
     private Mono<Void> createAuthenticationErrorResponse(
             final ServerWebExchange exchange,
@@ -244,13 +252,23 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
         }
 
         response.setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
-        String errorResponse = String.format(
-                "{\"error\": {\"message\": \"%s\", "
-                        + "\"type\": \"authentication_error\", "
-                        + "\"code\": \"%s\"}}",
-                message.replace("\"", "\\\""),
-                errorCode
-        );
+        final String path = exchange.getRequest().getPath().value();
+        final String errorResponse;
+
+        if (V1ErrorBodyMapper.isAnthropicPath(path)) {
+            errorResponse = buildAnthropicAuthErrorBody(message);
+        } else if (V1ErrorBodyMapper.isV1Path(path)) {
+            errorResponse = buildOpenAiAuthErrorBody(errorCode, message);
+        } else {
+            // 非 /v1 路径：沿用既有硬编码形状（逐字节不变）
+            errorResponse = String.format(
+                    "{\"error\": {\"message\": \"%s\", "
+                            + "\"type\": \"authentication_error\", "
+                            + "\"code\": \"%s\"}}",
+                    message.replace("\"", "\\\""),
+                    errorCode
+            );
+        }
 
         return response.writeWith(Mono.just(response.bufferFactory()
                         .wrap(errorResponse.getBytes(StandardCharsets.UTF_8))))
@@ -258,5 +276,51 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
                     log.error("写入认证错误响应时发生异常: {}", throwable.getMessage(), throwable);
                     return Mono.empty();
                 });
+    }
+
+    /**
+     * 构建 Anthropic 协议形状的 401 认证错误体 JSON.
+     *
+     * @param message 错误消息
+     * @return Anthropic 形状 JSON 文本
+     */
+    private String buildAnthropicAuthErrorBody(final String message) {
+        final Map<String, Object> body = new LinkedHashMap<>();
+        body.put("type", "error");
+        final Map<String, Object> error = new LinkedHashMap<>();
+        error.put("type", "authentication_error");
+        error.put("message", message);
+        body.put("error", error);
+        try {
+            return objectMapper.writeValueAsString(body);
+        } catch (Exception e) {
+            log.error("序列化 Anthropic 认证错误体失败", e);
+            return "{\"type\":\"error\","
+                    + "\"error\":{\"type\":\"authentication_error\","
+                    + "\"message\":\"internal serialization error\"}}";
+        }
+    }
+
+    /**
+     * 构建 OpenAI 协议形状的 401 认证错误体 JSON.
+     *
+     * @param errorCode 错误码（写入 code 字段）
+     * @param message   错误消息
+     * @return OpenAI 形状 JSON 文本
+     */
+    private String buildOpenAiAuthErrorBody(final String errorCode, final String message) {
+        final Map<String, Object> body = new LinkedHashMap<>();
+        final Map<String, Object> error = new LinkedHashMap<>();
+        error.put("message", message);
+        error.put("type", "authentication_error");
+        error.put("code", errorCode);
+        body.put("error", error);
+        try {
+            return objectMapper.writeValueAsString(body);
+        } catch (Exception e) {
+            log.error("序列化 OpenAI 认证错误体失败", e);
+            return "{\"error\":{\"message\":\"internal serialization error\","
+                    + "\"type\":\"authentication_error\",\"code\":\"INTERNAL\"}}";
+        }
     }
 }

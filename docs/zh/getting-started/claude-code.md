@@ -79,9 +79,10 @@ Claude Code 会把 `ANTHROPIC_API_KEY` 放进 **`x-api-key`** 请求头。HTTP �
 2. **下游密钥配在实例 `headers`（推荐），或由客户端用 `Authorization: Bearer <下游密钥>` 按请求携带。** 两者同时存在时**实例级 `headers` 优先**（实例配置覆盖请求传入的 `Authorization`）。
 3. **认证优先级**：`Jairouter_Token`（JWT） > `X-API-Key`（API Key）。`Authorization` 与网关认证**无关**，它只影响下游。
 
-> **原生面限制（当前版本）**：`/v1/**` 的服务调用链只放行 **API Key 认证**（`ApiKeyAuthentication`）。
-> 只带 `Jairouter_Token`、不带 `x-api-key` 的原生面请求会拿到**空响应**（无内容），无法调用下游。
-> 请在 Claude Code 场景下始终使用 `ANTHROPIC_API_KEY`（即 `x-api-key`）。控制台面 `/api/**` 不受此限制。
+> **原生面认证说明**：`/v1/**` 同时接受 `X-API-Key`（API Key）与 `Jairouter_Token`（JWT），
+> 两者同存时 **JWT 优先**。JWT 需已启用（`jairouter.security.jwt.enabled`）且 token 未过期、未被拉黑。
+> Claude Code 场景下使用 `ANTHROPIC_API_KEY`（即 `x-api-key`）最简单；如需使用 JWT，
+> 请确保上述前提满足。控制台面 `/api/**` 不受此限制。
 
 ## 三种下游凭据配置方案
 
@@ -442,7 +443,7 @@ curl -H "x-api-key: <JAiRouter API Key>" "http://localhost:8080/v1/models"
 | **`model` 必须是已注册模型名** | 无别名、无自动路由前缀；未注册的模型名会导致实例选择失败（404/503） | 用 `GET /v1/models` 获取可用 `id`，或在控制台为 `auto-model` 等池名建好映射 |
 | **错误体形态两面不同** | 网关自身错误（401 鉴权失败、429 配额/限流、5xx）在 `/v1` 与 `/api` 两面上都是 **`RouterResponse`** 形状 `{"success":false,"message":"…","errorCode":"…","timestamp":"…"}`；只有 Anthropic 入口的**参数校验错误**用 Anthropic 形状 `{"type":"error","error":{…}}`；下游非 2xx 则**原样透传**下游错误体 | 客户端按 `type` 字段是否存在判定形态 |
 | **`x-api-key` 不下发** | 见「认证分层」：下游密钥必须走实例 `headers` 或 `Authorization` | 方案 A/B |
-| **原生面仅支持 API Key 认证** | 仅 `Jairouter_Token` 的请求在 `/v1/**` 上无法调用下游（空响应） | 始终带 `x-api-key` |
+| **原生面同时接受 API Key 与 JWT** | `/v1/**` 接受 `X-API-Key`（API Key）和 `Jairouter_Token`（JWT）；两者同存时 JWT 优先；JWT 需已启用且未过期/未被拉黑 | 使用 `x-api-key`（最简单）或 `Jairouter_Token` 均可 |
 | **流式 `message_start.id` / `model` 由网关给出** | `id` 为网关生成的 `msg_*`（该事件先于首个下游块发出，下游 id 尚不可知）；`model` 为**请求侧**模型名 | 需要下游真实 id 时使用非流式（透传下游 `id`） |
 | **流式产出文本块 + `tool_use` 块** | 文本块恒为 `index: 0`，工具块按出现顺序递增；不产出 `thinking` / `redacted_thinking` 块（请求中的 `thinking` 字段仅接收不消费） | 需要 thinking 时直连 Anthropic |
 | **`tool_choice:"none"` 不传 `tools`** | 按协议该取值表示禁用工具，网关整体不向下游传 `tools` / `tool_choice`（而非传 `"none"`） | 需要「不给工具」时直接用该取值 |
@@ -456,7 +457,7 @@ curl -H "x-api-key: <JAiRouter API Key>" "http://localhost:8080/v1/models"
 | `401 Unauthorized` | `x-api-key` 不是有效的 JAiRouter API Key，或误把**下游密钥**放在了 `x-api-key` | 生成/复制控制台的 API Key；下游密钥改到实例 `headers` 或 `Authorization` |
 | 请求成功但下游报 401/403 | 下游密钥未配置或失效（`x-api-key` 不转发下游） | 检查实例 `headers`；用 `/api/config/instance/type/chat` 确认配置 |
 | `404` / `503`（模型不可用） | `model` 未注册、实例不健康或服务被熔断 | `GET /v1/models` 核对模型名；检查实例健康状态与熔断器 |
-| Claude Code 报「空响应」/无输出 | 只带了 `Jairouter_Token` 而未带 `x-api-key`（原生面只放行 API Key 认证） | 设置 `ANTHROPIC_API_KEY` |
+| Claude Code 报「空响应」/无输出 | `x-api-key` 无效或缺失，且 `Jairouter_Token` 未启用/已过期/已被拉黑 | 设置有效的 `ANTHROPIC_API_KEY`，或确认 JWT 已启用且 token 有效 |
 | 工具调用不生效 | 下游不支持 function calling（`tools` 被忽略 → 纯文本 + `stop_reason: end_turn`），或模型未选择调用工具 | 换用支持 function calling 的下游；用 `tool_choice:"any"`（映射下游 `required`）强制调用验证链路 |
 | 工具调用有 `tool_use` 块但 Claude Code 不执行 | `stop_reason` 不是 `tool_use`（下游结束原因异常），或 `tool_use.id` 与 `tool_result.tool_use_id` 不匹配 | 检查事件流 `message_delta.delta.stop_reason`；确认客户端回填的 `tool_use_id` 与 `tool_use.id` 一致 |
 | 工具 `input` 出现 `{"raw_arguments": "…"}` | 下游 `function.arguments` 不是合法 JSON（下游 bug 或截断） | 查看网关 warn 日志定位下游；客户端按原文字段容错或重试 |

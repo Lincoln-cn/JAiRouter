@@ -340,6 +340,72 @@ class V1ClientErrorBodyMappingTest {
         assertTrue(json.has("success"), "应回落 RouterResponse 形状");
     }
 
+    // ==================== v3.1.1: legacy 消息净化 ====================
+
+    @Test
+    @DisplayName("/v1/chat/completions + 429：error.message 不含「请求处理失败」前缀（干净 reason）")
+    void openAiPath429_shouldSanitizeLegacyMessage() throws Exception {
+        final MockServerWebExchange exchange = exchangeOf(OPENAI_PATH);
+        final String body = render(exchange, new ResponseStatusException(
+                HttpStatus.TOO_MANY_REQUESTS, "dailyRequestLimit: 3/3"));
+
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, exchange.getResponse().getStatusCode());
+        final JsonNode json = singleJsonObject(body);
+        final String message = json.path("error").path("message").asText();
+        assertTrue(message.contains("dailyRequestLimit: 3/3"),
+                "干净 reason 应保留核心信息: " + message);
+        assertFalse(message.contains("请求处理失败"),
+                "不得含 legacy 前缀「请求处理失败」: " + message);
+    }
+
+    @Test
+    @DisplayName("/v1/messages + 429：Anthropic 形状同样净化（干净 reason）")
+    void anthropicPath429_shouldSanitizeLegacyMessage() throws Exception {
+        final MockServerWebExchange exchange = exchangeOf(ANTHROPIC_PATH);
+        final String body = render(exchange, new ResponseStatusException(
+                HttpStatus.TOO_MANY_REQUESTS, "dailyRequestLimit: 3/3"));
+
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, exchange.getResponse().getStatusCode());
+        final JsonNode json = singleJsonObject(body);
+        final String message = json.path("error").path("message").asText();
+        assertTrue(message.contains("dailyRequestLimit: 3/3"),
+                "干净 reason 应保留核心信息: " + message);
+        assertFalse(message.contains("请求处理失败"),
+                "不得含 legacy 前缀「请求处理失败」: " + message);
+    }
+
+    @Test
+    @DisplayName("/v1/messages + 5xx：同样净化（非配额类 5xx 也走同一清洗）")
+    void anthropicPath5xx_shouldSanitizeLegacyMessage() throws Exception {
+        final MockServerWebExchange exchange = exchangeOf(ANTHROPIC_PATH);
+        final String body = render(exchange, new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR, "downstream timeout"));
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exchange.getResponse().getStatusCode());
+        final JsonNode json = singleJsonObject(body);
+        final String message = json.path("error").path("message").asText();
+        assertTrue(message.contains("downstream timeout"),
+                "干净 reason 应保留核心信息: " + message);
+        assertFalse(message.contains("请求处理失败"),
+                "不得含 legacy 前缀: " + message);
+    }
+
+    @Test
+    @DisplayName("回归 /api/v1/... + 429：仍是原 legacy 串（逐字节，含「请求处理失败」前缀）")
+    void apiPath429_shouldKeepLegacyMessage() throws Exception {
+        final MockServerWebExchange exchange = exchangeOf(API_PATH);
+        final String body = render(exchange, new ResponseStatusException(
+                HttpStatus.TOO_MANY_REQUESTS, "dailyRequestLimit: 3/3"));
+
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, exchange.getResponse().getStatusCode());
+        final JsonNode json = singleJsonObject(body);
+        assertTrue(json.has("success"), "控制台面仍应是 RouterResponse: " + body);
+        assertTrue(json.path("message").asText().contains("请求处理失败"),
+                "/api 路径消息应保留 legacy 前缀: " + json.path("message").asText());
+        assertTrue(json.path("message").asText().contains("dailyRequestLimit: 3/3"),
+                "/api 路径消息应保留完整 reason: " + json.path("message").asText());
+    }
+
     // ==================== 真实配额链路端到端 ====================
 
     @Test

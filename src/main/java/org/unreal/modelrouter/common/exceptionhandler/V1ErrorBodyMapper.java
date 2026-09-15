@@ -23,6 +23,8 @@ import org.springframework.web.server.ServerWebExchange;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 客户端原生面（{@code /v1/**}）网关自身错误体映射器（v3.1 PR-4d）.
@@ -95,9 +97,28 @@ public final class V1ErrorBodyMapper {
     private static final String TYPE_RATE_LIMIT = "rate_limit_error";
 
     /**
-     * 错误类型：网关/下游内部错误（5xx）.
+     * 网关/下游内部错误（5xx）.
      */
     private static final String TYPE_API = "api_error";
+
+    /**
+     * Legacy 消息模式（含状态码）：{@code 请求处理失败: <code> <phrase> "<reason>"}.
+     *
+     * <p>{@code GlobalControllerExceptionHandler} 通过
+     * {@code "请求处理失败: " + ResponseStatusException.getMessage()} 产出的消息形态
+     * （{@code getMessage()} 返回格式取决于 Spring 版本，可能含状态码与引号包裹的 reason）。</p>
+     */
+    private static final Pattern LEGACY_WITH_STATUS =
+            Pattern.compile("^请求处理失败: \\d{3} [^\"]* \"(.+)\"$", Pattern.DOTALL);
+
+    /**
+     * Legacy 消息模式（纯 reason）：{@code 请求处理失败: <reason>}.
+     *
+     * <p>{@code ReactiveGlobalExceptionHandler} 通过
+     * {@code "请求处理失败: " + ResponseStatusException.getReason()} 产出的消息形态。</p>
+     */
+    private static final Pattern LEGACY_SIMPLE =
+            Pattern.compile("^请求处理失败: (.+)$", Pattern.DOTALL);
 
     private V1ErrorBodyMapper() {
     }
@@ -159,11 +180,42 @@ public final class V1ErrorBodyMapper {
     }
 
     /**
+     * 净化 legacy 错误消息（仅对 {@code /v1/**} 生效）.
+     *
+     * <p>剥除 {@code "请求处理失败: ..."} 包装，只留可读 reason：
+     * <ul>
+     *   <li>{@code 请求处理失败: <code> <phrase> "<reason>"} → {@code <reason>}（去引号）；</li>
+     *   <li>{@code 请求处理失败: <reason>} → {@code <reason>}。</li>
+     * </ul>
+     * 非 {@code /v1/**} 路径或不匹配 legacy 模式的消息原样返回。</p>
+     *
+     * @param message 原错误消息
+     * @param path    请求路径
+     * @return 净化后的消息
+     */
+    static String sanitizeMessage(final String message, final String path) {
+        if (message == null || !isV1Path(path)) {
+            return message;
+        }
+        // 先尝试含状态码的模式（更具体）
+        Matcher matcher = LEGACY_WITH_STATUS.matcher(message);
+        if (matcher.matches()) {
+            return matcher.group(1);
+        }
+        // 再尝试纯 reason 模式
+        matcher = LEGACY_SIMPLE.matcher(message);
+        if (matcher.matches()) {
+            return matcher.group(1);
+        }
+        return message;
+    }
+
+    /**
      * 构造客户端协议形状的错误体.
      *
      * @param path       请求路径
      * @param statusCode HTTP 状态码（仅用于选类型，不参与状态码设置）
-     * @param message    原错误消息（原样透出，不做包装）
+     * @param message    原错误消息（{@code /v1/**} 路径会先经 {@link #sanitizeMessage} 净化）
      * @param errorCode  原错误码（仅 OpenAI 面带 {@code code} 字段时使用，可为 {@code null}）
      * @return Anthropic 面 / OpenAI 面错误体；非 {@code /v1/**} 路径返回 {@code null}（调用方沿用
      *         {@code RouterResponse}）
@@ -173,15 +225,16 @@ public final class V1ErrorBodyMapper {
         if (!isV1Path(path)) {
             return null;
         }
+        final String cleanMessage = sanitizeMessage(message, path);
         final String errorType = errorTypeOf(statusCode);
         final Map<String, Object> body = new LinkedHashMap<>();
         final Map<String, Object> error = new LinkedHashMap<>();
         if (isAnthropicPath(path)) {
             error.put("type", errorType);
-            error.put("message", message);
+            error.put("message", cleanMessage);
             body.put("type", ANTHROPIC_OBJECT_TYPE);
         } else {
-            error.put("message", message);
+            error.put("message", cleanMessage);
             error.put("type", errorType);
             error.put("code", errorCode);
         }
