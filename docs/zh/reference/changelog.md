@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.1.0
-> **最后更新**: 2026-09-14
+> **文档版本**: 3.1.1
+> **最后更新**: 2026-09-15
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,27 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.1.1] - 2026-09-15 - 补丁发布（协议正确性 + 网关错误消息可读性 + 控制台 SSE 告警修复 + 文档纠正）
+
+#### 协议正确性
+
+- `/v1/messages` 的**认证失败 401** 改为 Anthropic 协议形状（`{"type":"error","error":{…}}`）；此前无论路径一律输出 OpenAI 形状，Anthropic-only 客户端（如 Claude Code）无法解析认证错误。`/v1/chat/completions` 等其它原生面保持 OpenAI 形状，`/api/**` 响应体逐字节不变
+- `/v1/messages/count_tokens` 现在计入 `tools` 的 schema 文本与 `tool_use` / `tool_result` 块内容；此前均被忽略，导致大幅低估（Claude Code 对话主体为 `tool_result`，影响尤为明显）。`image` 块仍不计
+
+#### 可读性
+
+- `/v1/**` 的网关错误消息不再携带 legacy 中文包装（如 `请求处理失败: 429 TOO_MANY_REQUESTS "…"`）与冗余引号，直接输出可读 reason；`/api/**` 保持既有消息格式不变
+
+#### 控制台
+
+- 修正概览页 SSE 在**路由切换 / 页面刷新**时误报连接错误（新增拆毁标志与 `pagehide` 兜底，真实失败仍会告警并重连）——此前离开概览页时控制台会出现 `SSE连接失败` / `读取SSE流时出错`
+
+#### 文档
+
+- 纠正 `claude-code.md`（zh/en）关于原生面认证的错误声称：`/v1/**` **同时接受** `X-API-Key`（OpenAI 面）/ `x-api-key`（Anthropic 面）与 `Jairouter_Token`（JWT），两者同存时 JWT 优先；此前误称"仅支持 API Key 认证"
+
+---
 
 ### [3.1.0] - 2026-09-14 - 功能发布（Token 配额账本 + 多协议入口：多维多窗限流 + Anthropic/工具调用 + 运行时配置与观测）
 

@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.1.0
-> **Last Updated**: 2026-09-14
+> **Document Version**: 3.1.1
+> **Last Updated**: 2026-09-15
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,27 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.1.1] - 2026-09-15 - Patch Release (Protocol Correctness + Gateway Error-Message Readability + Console SSE Alert Fix + Doc Corrections)
+
+#### Protocol Correctness
+
+- `/v1/messages` **auth-failure 401** now returns Anthropic protocol shape (`{"type":"error","error":{…}}`); previously all paths returned OpenAI shape, so Anthropic-only clients (e.g. Claude Code) could not parse auth errors. `/v1/chat/completions` and other native surfaces keep OpenAI shape; `/api/**` response bodies are byte-identical
+- `/v1/messages/count_tokens` now counts `tools` schema text and `tool_use` / `tool_result` block content; previously all ignored, which underestimated the total sharply (Claude Code conversations are dominated by `tool_result`, impact especially severe). `image` blocks still excluded
+
+#### Readability
+
+- `/v1/**` gateway error messages no longer carry legacy Chinese wrapping (e.g. `请求处理失败: 429 TOO_MANY_REQUESTS "…"`) or redundant quotes, outputting a human-readable reason directly; `/api/**` keeps existing message format unchanged
+
+#### Console
+
+- Fixed overview-page SSE false-positive connection errors on **route navigation / page refresh** (added teardown flag and `pagehide` fallback; real failures still alert and reconnect) — previously leaving the overview page triggered `SSE连接失败` / `读取SSE流时出错` in the console
+
+#### Docs
+
+- Corrected `claude-code.md` (zh/en) false claim about native-surface authentication: `/v1/**` **accepts both** `X-API-Key` (OpenAI surface) / `x-api-key` (Anthropic surface) and `Jairouter_Token` (JWT); when both present JWT takes priority; previously incorrectly stated "only API Key authentication is supported"
+
+---
 
 ### [3.1.0] - 2026-09-14 - Feature Release (Token Quota Ledger + Multi-Protocol Entry: Multi-Dimensional Multi-Window Rate Limiting + Anthropic/Tool Calling + Runtime Config & Observability)
 
