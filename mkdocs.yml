@@ -69,6 +69,7 @@ plugins:
             入门: Getting Started
             安装指南: Installation Guide
             快速开始: Quick Start
+            Web 控制台: Web Console
             第一步: First Steps
             Claude Code 接入: Claude Code Integration
             配置指南: Configuration
@@ -181,6 +182,7 @@ nav:
     - zh/getting-started/index.md
     - 安装指南: zh/getting-started/installation.md
     - 快速开始: zh/getting-started/quick-start.md
+    - Web 控制台: zh/getting-started/web-console.md
     - 第一步: zh/getting-started/first-steps.md
     - Claude Code 接入: zh/getting-started/claude-code.md
   - 配置指南:

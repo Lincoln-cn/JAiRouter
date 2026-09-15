@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 > **Doc Version**: 2.0.0
-> **Last Updated**: 2026-09-14
-> **Git 标签**: v3.1.0
+> **Last Updated**: 2026-09-15
+> **Git 标签**: v3.1.1
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -24,31 +24,23 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 
 ## Current Version Status
 
-### ✅ v3.0.1 (Current Stable)
+### ✅ v3.1.1 (Current Stable)
 
-**Release Status**: Released (2026-09-06)
-**Git Tag**: v3.0.1
+**Release Status**: Released (2026-09-15)
+**Git Tag**: v3.1.1
 
-#### Key Features (v2.9.6 → v3.0.1 evolution)
+#### Key Features (v3.0.2 → v3.1.1 evolution)
 | Version | Date | Highlights |
 |---------|------|------------|
-| v2.9.6 | 2026-08-30 | Routing Intelligence-2: request-level failover (switch-instance retry + per-request blacklist) |
-| v2.9.7 | 2026-09-01 | Routing Intelligence-3: tag routing (instance tags + TARGET_TAGS action + header selection) |
-| v2.9.8 | 2026-09-02 | Web menu RBAC management (43 permission codes + 4 role templates + data-driven URL authorization + permission UI + login DB fallback) |
-| v2.9.9 | 2026-09-03 | Routing Intelligence-4: response cache P0 (non-streaming exact-match cache + Caffeine + tenant-isolated keys + metrics) |
-| v2.9.10 | 2026-09-05 | Routing Intelligence-5: response cache P1 (streaming SSE concatenation cache + invalidation API + three-part cache key + service-level rate-limit early short-circuit + 44th permission code) |
-| v2.9.11 | 2026-09-05 | Docs & UI quality: README screenshot/content refresh (light/dark + 44 codes + response cache P1) + hallmark web-console design audit (input for v2.10.x) + frontend fixes (44-code sync etc.) |
-| v2.10.0 | 2026-09-05 | Web frontend foundation: dead-code cleanup (-13.5k lines) + PageSkeleton/StatCard/useChartTheme shared components + ~20 pages tokenized (~150 hex→token) + Element Plus dark-mode fixes + Layout/console cleanup |
-| v2.10.1 | 2026-09-06 | Governance hub: Dashboard v2 (governance-chain panel / exception summary / service jumps) + Cross-link navigation + 7 pages onto PageSkeleton + tokenization wrap-up (~102 hex→token + spacing scale) |
-| v2.10.2 | 2026-09-06 | Config onboarding & capability pages: response-cache management page (status / targeted invalidation + tier-B runtime toggle + hit observability) + slow-query analysis page + CB reset / quota alerts + onboarding guide + backend cache status & deprecations (45 permission codes) |
-| v2.10.3 | 2026-09-06 | Web bilingual edition: full zh/en i18n (39 packs / 2321 keys) + language switcher + Element Plus locale + date/number localization + dark-mode contrast cleanup |
-| v2.10.4 | 2026-09-06 | Web experience wrap-up: unified service-type names (top-level `serviceTypes.*`) + ECharts language/theme hot-switch + dead-code cleanup + dark-contrast audit gate (36 pages ≥4.5) + backend-message note + dual-theme code highlighting |
-| v3.0.1 | 2026-09-06 | Web complete-flow series kick-off (flow wiring): Onboarding preselect loop + Dashboard governance entries + CB/LB reverse jumps + version-page inbound + legacy redirect cleanup + PageSkeleton across 18 pages |
+| v3.0.2 | 2026-09-07 | API cleanup & permission closure: removed 4 deprecated controllers + DTO deprecation cleanup + progressive URL-rule registration (47 total) + PermissionClosureTest 35 assertions + frontend dead-function cleanup |
+| v3.0.3 | 2026-09-09 | End-to-end journey acceptance (10/10 PASS) + README screenshot refresh (32 images = 8 pages × zh/en × light/dark) + cold-start deep-link fix + i18n/icon warning cleanup |
+| v3.1.0 | 2026-09-14 | Quota ledger & multi-protocol entry: multi-dimensional multi-window quota ledger (MINUTE/HOUR/DAY/MONTH + JPA persistence + Redis distributed counting with disconnect fallback, disabled by default) + quota runtime config & observability surfaces (3 console pages) + 48 permission codes total + OpenAI `/v1/models` + Anthropic `/v1/messages` (non-streaming/streaming/`count_tokens`/tool calling) + protocol-shaped gateway errors + error-body UTF-8 fix |
+| v3.1.1 | 2026-09-15 | Patch fixes: 401 shape per protocol + `count_tokens` counts tools/tool_use/tool_result + `/v1/**` error-message de-noising + console SSE false-positive alert fix on route navigation |
 
 #### Statistics
-- Test count: 3,243 (all green)
+- Test count: 3,517 (all green)
 - Java source files: 750+
-- Codebase: ~135k LOC
+- Codebase: ~140k LOC
 
 ---
 
