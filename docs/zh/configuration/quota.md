@@ -63,6 +63,8 @@ jairouter:
 
 ## 运行时配置（不重启）
 
+![配额运行时配置](../getting-started/images/quota-config-zh-CN.png)
+
 管理端基于以下端点读取配额配置并做运行时调整：
 
 ```

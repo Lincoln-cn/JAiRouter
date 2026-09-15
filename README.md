@@ -112,6 +112,24 @@ Add your own backends — Ollama, vLLM, GPUStack or any cloud provider — in th
 </p>
 
 <p align="center">
+  <img src="screenshots/quota-config-en-US-light.png" alt="Quota Runtime Configuration" width="720">
+  <br/>
+  <em>Quota runtime configuration — hot-toggle enable/disable, windows and fail-open; restart-required fields are read-only with a "restart needed" badge</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/quota-monitoring-en-US-light.png" alt="Quota Usage Monitoring" width="720">
+  <br/>
+  <em>Quota usage monitoring — backend type and degradation status cards plus multi-dimensional filtering (tenant / key / user / service / model × window)</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/client-access-en-US-light.png" alt="Client Access Guide" width="720">
+  <br/>
+  <em>Client access guide — OpenAI-compatible and Anthropic base URLs, credential headers and copy-ready code snippets</em>
+</p>
+
+<p align="center">
   <img src="screenshots/dashboard-en-US-dark.png" alt="Dashboard (dark theme)" width="720">
   <br/>
   <em>Built-in dark theme — the console is fully themeable and bilingual (zh-CN / en-US)</em>

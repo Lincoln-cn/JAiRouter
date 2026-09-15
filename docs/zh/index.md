@@ -40,6 +40,8 @@
 | **🔗 多协议入口** | OpenAI 原生 `/v1` 与 Anthropic `/v1/messages` 双协议直连，Claude Code 可直接接入（含工具调用） |
 | **⚡ 响应缓存** | 精确键与流式 SSE 缓存，命中不消耗下游配额，支持按需失效 |
 
+![管理控制台](getting-started/images/dashboard-zh-CN.png)
+
 ---
 
 ## 🏗️ 架构概览

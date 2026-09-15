@@ -56,6 +56,10 @@ export JWT_SECRET="your-base64-encoded-secret"
 export INITIAL_ADMIN_PASSWORD="MyStr0ng!Pass#2026"
 ```
 
+![Login Page](images/login-en-US.png)
+
+![Management Console](images/dashboard-en-US.png)
+
 ## Your First API Call
 
 ### 1. Chat Completion

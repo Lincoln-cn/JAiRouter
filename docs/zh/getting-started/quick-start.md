@@ -191,6 +191,10 @@ http://localhost:8080/swagger-ui/index.html
 
 > 💡 **提示**: 在 Swagger UI 中可以直接测试 API，无需额外工具。
 
+![登录页](images/login-zh-CN.png)
+
+![管理控制台](images/dashboard-zh-CN.png)
+
 ## ⚙️ 步骤 4：配置第一个 AI 服务
 
 我们提供两种配置方式，推荐使用 API 方式进行动态配置。

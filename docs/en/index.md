@@ -40,6 +40,8 @@
 | **🔗 Multi-protocol Entry** | OpenAI-native `/v1` and Anthropic `/v1/messages` served directly, so Claude Code can connect as-is (including tool calls) |
 | **⚡ Response Cache** | Exact-key and streaming SSE caching; cache hits do not consume downstream quota and can be invalidated on demand |
 
+![Management Console](getting-started/images/dashboard-en-US.png)
+
 ---
 
 ## 🏗️ Architecture Overview

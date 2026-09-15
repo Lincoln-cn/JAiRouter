@@ -112,6 +112,24 @@ print(response.choices[0].message.content)
 </p>
 
 <p align="center">
+  <img src="screenshots/quota-config-zh-CN-light.png" alt="配额运行时配置" width="720">
+  <br/>
+  <em>配额运行时配置 — 可热改开关/窗口/放行策略，需重启字段置为只读并带"需重启"标识</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/quota-monitoring-zh-CN-light.png" alt="配额用量监控" width="720">
+  <br/>
+  <em>配额用量监控 — 后端类型/降级状态卡片 + 多维筛选（租户/Key/用户/服务/模型 × 窗口）</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/client-access-zh-CN-light.png" alt="客户端接入指南" width="720">
+  <br/>
+  <em>客户端接入指南 — OpenAI 兼容面与 Anthropic 面的 base URL、凭据头与可复制代码片段</em>
+</p>
+
+<p align="center">
   <img src="screenshots/dashboard-zh-CN-dark.png" alt="仪表板（暗色主题）" width="720">
   <br/>
   <em>内置暗色主题 — 管理台支持亮/暗切换与中英双语</em>

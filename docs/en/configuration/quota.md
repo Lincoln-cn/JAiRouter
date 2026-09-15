@@ -63,6 +63,8 @@ Retention duration units: `mo` (month), `d` (day), `h` (hour), `m` (minute), `s`
 
 ## Runtime Configuration (No Restart)
 
+![Quota Runtime Configuration](../getting-started/images/quota-config-en-US.png)
+
 The management console reads quota configuration and applies runtime changes via the following endpoints:
 
 ```
