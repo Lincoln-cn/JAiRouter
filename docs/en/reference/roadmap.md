@@ -259,11 +259,11 @@ Monolithic App → Modular Design → Reactive Programming
 
 **Decision: the LTS (Long-Term Support) release line is retired.**
 
-**Background**: release cadence has increased sharply (roughly 20 releases between v2.9 and v3.1). Maintaining a separate LTS line means continuous regression testing, security backports and dual-track documentation for an older branch, which no longer matches the effort it costs. The project therefore no longer commits to an LTS maintenance window.
+**Background**: release cadence has increased sharply (roughly 20 releases between v2.9 and v3.1). Maintaining a separate LTS line means continuous regression testing, security patches and dual-track documentation for an older branch, which no longer matches the effort it costs. The project therefore no longer commits to an LTS maintenance window.
 
 | Item | Detail |
 |------|--------|
-| Existing artifacts | The `v2.6.11` Git tag, Docker images and Release **remain downloadable and usable for rollback**, but carry **no dedicated maintenance commitment** (no guaranteed security backports or compatibility fixes) |
+| Existing artifacts | The `v2.6.11` Git tag, Docker images and Release **remain downloadable and usable for rollback**, but carry **no dedicated maintenance commitment** (no guaranteed security patches or compatibility fixes) |
 | Maintained line | Only the **current release (latest)** is maintained |
 | Upgrading | Follow the latest release; breaking changes are noted in the [changelog](changelog.md) |
 | Long-term stability | Pin a specific version tag (e.g. `v3.1.1`) and keep your own regression tests; pull the matching image tag instead of `latest` |
