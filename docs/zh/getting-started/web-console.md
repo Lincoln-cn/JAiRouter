@@ -270,7 +270,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 | **USER** | 27 | 仪表盘 + config 只读 + lb/cb/rl 全量 + monitoring 只读 + tracing 仪表盘/搜索 + AI 试验场 | 普通用户；唯一写码 `lb:config:write` |
 | **VIEWER** | 26 | 全部 `:read` 码 | 纯只读角色；不含 `callhistory:view`、`ai:playground:use` |
 
-### 6.2 为什么看不到某些菜单页
+### 6.2 为什么看不到某些菜单页 {#why-menu-pages-missing}
 
 前端菜单渲染基于权限码过滤：
 
@@ -344,7 +344,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 **处理**：
 
-- 参见本文「[6.2 为什么看不到某些菜单页](#62-为什么看不到某些菜单页)」一节。
+- 参见本文「[6.2 为什么看不到某些菜单页](#why-menu-pages-missing)」一节。
 
 ### 8.4 OpenAI SDK 接入报错
 

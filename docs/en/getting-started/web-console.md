@@ -270,7 +270,7 @@ Overview → Dashboard provides a single-pane view:
 | **USER** | 27 | Dashboard + config read + full lb/cb/rl + monitoring read + tracing dashboard/search + AI Playground | Regular user; only write code is `lb:config:write` |
 | **VIEWER** | 26 | All `:read` codes | Pure read-only role; no `callhistory:view`, `ai:playground:use`, or other non-`:read` codes |
 
-### 6.2 Why Some Menu Pages Are Missing
+### 6.2 Why Some Menu Pages Are Missing {#why-menu-pages-missing}
 
 Frontend menu rendering is filtered by permission codes:
 
@@ -344,7 +344,7 @@ This page provides complete access examples for the OpenAI-compatible API and th
 
 **Resolution**:
 
-- See [6.2 Why Some Menu Pages Are Missing](#62-why-some-menu-pages-are-missing).
+- See [6.2 Why Some Menu Pages Are Missing](#why-menu-pages-missing).
 
 ### 8.4 OpenAI SDK Integration Error
 
