@@ -66,10 +66,10 @@ v3.0 is the Web complete-flow milestone (public `/api/v1` stays compatible, no b
 
 ---
 
-### ✅ v2.6.11 LTS (Long-Term Support)
+### ✅ v2.6.11 (former Long-Term Support release; LTS policy retired)
 
 **Release Status**: Released (2026-04-17)
-**Maintenance Period**: Until 2028-05
+**Maintenance Period**: Retired (was planned until 2028-05; see the LTS policy notice below)
 
 #### Completed Features
 - ✅ Multi-tenancy support
@@ -255,11 +255,25 @@ Monolithic App → Modular Design → Reactive Programming
 - More adapter support
 - Complete plugin system
 
+## LTS Policy Retirement (2026-09)
+
+**Decision: the LTS (Long-Term Support) release line is retired.**
+
+**Background**: release cadence has increased sharply (roughly 20 releases between v2.9 and v3.1). Maintaining a separate LTS line means continuous regression testing, security backports and dual-track documentation for an older branch, which no longer matches the effort it costs. The project therefore no longer commits to an LTS maintenance window.
+
+| Item | Detail |
+|------|--------|
+| Existing artifacts | The `v2.6.11` Git tag, Docker images and Release **remain downloadable and usable for rollback**, but carry **no dedicated maintenance commitment** (no guaranteed security backports or compatibility fixes) |
+| Maintained line | Only the **current release (latest)** is maintained |
+| Upgrading | Follow the latest release; breaking changes are noted in the [changelog](changelog.md) |
+| Long-term stability | Pin a specific version tag (e.g. `v3.1.1`) and keep your own regression tests; pull the matching image tag instead of `latest` |
+
+> The LTS row in the "Release Cycle" table below has been removed as part of this policy.
+
 ## Release Cycle
 
 | Version Type | Cycle | Description |
 |--------------|-------|-------------|
-| LTS | 24 months | Long-term stable support |
 | Feature | 1-2 months | New feature iteration |
 | Patch | As needed | Bug fixes and security updates |
 
