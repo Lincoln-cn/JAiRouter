@@ -2,23 +2,23 @@
 
 ## 版本统计
 
-- 总文档数: 169
-- 近7天变更: 24
+- 总文档数: 173
+- 近7天变更: 44
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-09-14 07:33:36
+- 最后扫描: 2026-09-16 07:13:47
 
 ## 最近变更
 
-- **MODIFIED**: docs/zh/security/rbac-permissions.md (1.0.1 → 1.0.2) - 2026-09-14
-- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.11 → 1.0.12) - 2026-09-14
-- **MODIFIED**: docs/zh/reference/faq.md (1.0.5 → 1.0.6) - 2026-09-14
-- **MODIFIED**: docs/zh/reference/changelog.md (1.0.16 → 1.0.17) - 2026-09-14
-- **MODIFIED**: docs/zh/index.md (1.0.16 → 1.0.17) - 2026-09-14
-- **MODIFIED**: docs/zh/getting-started/quick-start.md (1.0.5 → 1.0.6) - 2026-09-14
-- **MODIFIED**: docs/zh/getting-started/index.md (1.0.2 → 1.0.3) - 2026-09-14
-- **CREATED**: docs/zh/getting-started/claude-code.md ( → 1.0.0) - 2026-09-14
-- **MODIFIED**: docs/zh/configuration/response-cache.md (1.0.1 → 1.0.2) - 2026-09-14
-- **MODIFIED**: docs/zh/api-reference/universal-api.md (1.0.3 → 1.0.4) - 2026-09-14
+- **MODIFIED**: docs/zh/security/rbac-permissions.md (1.0.2 → 1.0.3) - 2026-09-16
+- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.12 → 1.0.13) - 2026-09-16
+- **MODIFIED**: docs/zh/reference/changelog.md (1.0.17 → 1.0.18) - 2026-09-16
+- **MODIFIED**: docs/zh/index.md (1.0.17 → 1.0.18) - 2026-09-16
+- **CREATED**: docs/zh/getting-started/web-console.md ( → 1.0.0) - 2026-09-16
+- **MODIFIED**: docs/zh/getting-started/quick-start.md (1.0.6 → 1.0.7) - 2026-09-16
+- **MODIFIED**: docs/zh/getting-started/claude-code.md (1.0.0 → 1.0.1) - 2026-09-16
+- **CREATED**: docs/zh/configuration/quota.md ( → 1.0.0) - 2026-09-16
+- **MODIFIED**: docs/zh/api-reference/management-api.md (1.0.4 → 1.0.5) - 2026-09-16
+- **MODIFIED**: docs/en/security/rbac-permissions.md (1.0.2 → 1.0.3) - 2026-09-16
 
 ## 过期文档 (30天未更新)
 
@@ -240,6 +240,8 @@
   - docs/en/reference/faq.md
   - docs/en/reference/glossary.md
   - docs/en/reference/roadmap.md
+- **docs/en/reference/roadmap.md**: 依赖 1 个文档
+  - docs/en/reference/changelog.md
 - **docs/en/troubleshooting/index.md**: 依赖 6 个文档
   - docs/en/api-reference/index.md
   - docs/en/configuration/index.md
@@ -414,6 +416,8 @@
   - docs/zh/reference/faq.md
   - docs/zh/reference/glossary.md
   - docs/zh/reference/roadmap.md
+- **docs/zh/reference/roadmap.md**: 依赖 1 个文档
+  - docs/zh/reference/changelog.md
 - **docs/zh/troubleshooting/index.md**: 依赖 6 个文档
   - docs/zh/api-reference/index.md
   - docs/zh/configuration/index.md
@@ -636,33 +640,51 @@
   - docs/zh/configuration/instance-examples.md
   - docs/zh/getting-started/quick-start.md
   - docs/zh/security/api-key-management.md
+- **docs/en/configuration/quota.md**: 依赖 4 个文档
+  - docs/en/configuration/rate-limiting.md
+  - docs/en/configuration/response-cache.md
+  - docs/en/reference/changelog.md
+  - docs/en/security/rbac-permissions.md
+- **docs/en/getting-started/web-console.md**: 依赖 1 个文档
+  - docs/en/security/rbac-permissions.md
+- **docs/zh/configuration/quota.md**: 依赖 4 个文档
+  - docs/zh/configuration/rate-limiting.md
+  - docs/zh/configuration/response-cache.md
+  - docs/zh/reference/changelog.md
+  - docs/zh/security/rbac-permissions.md
+- **docs/zh/getting-started/web-console.md**: 依赖 1 个文档
+  - docs/zh/security/rbac-permissions.md
 
 ## 所有文档版本
 
-- **docs/zh/security/rbac-permissions.md**: v1.0.2 - 2026-09-14 (6da1396b)
-- **docs/zh/reference/roadmap.md**: v1.0.12 - 2026-09-14 (fc75a645)
+- **docs/zh/security/rbac-permissions.md**: v1.0.3 - 2026-09-16 (670a375c)
+- **docs/zh/reference/roadmap.md**: v1.0.13 - 2026-09-16 (6da53bbd)
+- **docs/zh/reference/changelog.md**: v1.0.18 - 2026-09-16 (d64f7cf2)
+- **docs/zh/index.md**: v1.0.18 - 2026-09-16 (6da53bbd)
+- **docs/zh/getting-started/web-console.md**: v1.0.0 - 2026-09-16 (9ae66348)
+- **docs/zh/getting-started/quick-start.md**: v1.0.7 - 2026-09-16 (53f26f63)
+- **docs/zh/getting-started/claude-code.md**: v1.0.1 - 2026-09-16 (efa51bab)
+- **docs/zh/configuration/quota.md**: v1.0.0 - 2026-09-16 (53f26f63)
+- **docs/zh/api-reference/management-api.md**: v1.0.5 - 2026-09-16 (670a375c)
+- **docs/en/security/rbac-permissions.md**: v1.0.3 - 2026-09-16 (670a375c)
+- **docs/en/reference/roadmap.md**: v1.0.14 - 2026-09-16 (d224e954)
+- **docs/en/reference/changelog.md**: v1.0.18 - 2026-09-16 (d64f7cf2)
+- **docs/en/index.md**: v1.0.17 - 2026-09-16 (6da53bbd)
+- **docs/en/getting-started/web-console.md**: v1.0.0 - 2026-09-16 (9ae66348)
+- **docs/en/getting-started/quick-start.md**: v1.0.8 - 2026-09-16 (53f26f63)
+- **docs/en/getting-started/claude-code.md**: v1.0.1 - 2026-09-16 (efa51bab)
+- **docs/en/configuration/quota.md**: v1.0.0 - 2026-09-16 (53f26f63)
+- **docs/en/api-reference/management-api.md**: v1.0.7 - 2026-09-16 (670a375c)
+- **README.md**: v1.0.33 - 2026-09-16 (6da53bbd)
+- **README-ZH.md**: v1.0.25 - 2026-09-16 (6da53bbd)
 - **docs/zh/reference/faq.md**: v1.0.6 - 2026-09-14 (96e0a22a)
-- **docs/zh/reference/changelog.md**: v1.0.17 - 2026-09-14 (fc75a645)
-- **docs/zh/index.md**: v1.0.17 - 2026-09-14 (fc75a645)
-- **docs/zh/getting-started/quick-start.md**: v1.0.6 - 2026-09-14 (c7a56348)
 - **docs/zh/getting-started/index.md**: v1.0.3 - 2026-09-14 (7628838f)
-- **docs/zh/getting-started/claude-code.md**: v1.0.0 - 2026-09-14 (43acff25)
 - **docs/zh/configuration/response-cache.md**: v1.0.2 - 2026-09-14 (6da1396b)
 - **docs/zh/api-reference/universal-api.md**: v1.0.4 - 2026-09-14 (c7a56348)
-- **docs/zh/api-reference/management-api.md**: v1.0.4 - 2026-09-14 (20aea14f)
-- **docs/en/security/rbac-permissions.md**: v1.0.2 - 2026-09-14 (6da1396b)
-- **docs/en/reference/roadmap.md**: v1.0.13 - 2026-09-14 (fc75a645)
 - **docs/en/reference/faq.md**: v1.0.6 - 2026-09-14 (96e0a22a)
-- **docs/en/reference/changelog.md**: v1.0.17 - 2026-09-14 (fc75a645)
-- **docs/en/index.md**: v1.0.16 - 2026-09-14 (fc75a645)
-- **docs/en/getting-started/quick-start.md**: v1.0.7 - 2026-09-14 (c7a56348)
 - **docs/en/getting-started/index.md**: v1.0.4 - 2026-09-14 (7628838f)
-- **docs/en/getting-started/claude-code.md**: v1.0.0 - 2026-09-14 (43acff25)
 - **docs/en/configuration/response-cache.md**: v1.0.2 - 2026-09-14 (6da1396b)
 - **docs/en/api-reference/universal-api.md**: v1.0.4 - 2026-09-14 (c7a56348)
-- **docs/en/api-reference/management-api.md**: v1.0.6 - 2026-09-14 (20aea14f)
-- **README.md**: v1.0.32 - 2026-09-14 (c7a56348)
-- **README-ZH.md**: v1.0.24 - 2026-09-14 (c7a56348)
 - **docs/zh/configuration/index.md**: v1.0.6 - 2026-09-06 (52786eef)
 - **docs/en/configuration/index.md**: v1.0.8 - 2026-09-06 (52786eef)
 - **docs/zh/security/index.md**: v1.0.3 - 2026-09-03 (601f504b)

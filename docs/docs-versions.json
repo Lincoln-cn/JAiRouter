@@ -2,10 +2,10 @@
   "versions": {
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.32",
-      "LastModified": "2026-09-14T07:33:35.619130",
-      "ContentHash": "d9fa7e2e852ae515",
-      "GitCommit": "c7a56348",
+      "Version": "1.0.33",
+      "LastModified": "2026-09-16T07:13:46.615516",
+      "ContentHash": "6253bbd950d10123",
+      "GitCommit": "6da53bbd",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -27,10 +27,10 @@
     },
     "docs/en/api-reference/management-api.md": {
       "FilePath": "docs/en/api-reference/management-api.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-09-14T07:33:35.628934",
-      "ContentHash": "9f52b1ffbbc3f3a9",
-      "GitCommit": "20aea14f",
+      "Version": "1.0.7",
+      "LastModified": "2026-09-16T07:13:46.625689",
+      "ContentHash": "2fde5d32c186470e",
+      "GitCommit": "670a375c",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -340,10 +340,10 @@
     },
     "docs/en/getting-started/quick-start.md": {
       "FilePath": "docs/en/getting-started/quick-start.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-09-14T07:33:35.771972",
-      "ContentHash": "52abc666fd1a2810",
-      "GitCommit": "c7a56348",
+      "Version": "1.0.8",
+      "LastModified": "2026-09-16T07:13:46.776165",
+      "ContentHash": "cafbee30910c9e03",
+      "GitCommit": "53f26f63",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -357,10 +357,10 @@
     },
     "docs/en/index.md": {
       "FilePath": "docs/en/index.md",
-      "Version": "1.0.16",
-      "LastModified": "2026-09-14T07:33:35.775206",
-      "ContentHash": "5ce77c25eaf059fa",
-      "GitCommit": "fc75a645",
+      "Version": "1.0.17",
+      "LastModified": "2026-09-16T07:13:46.780609",
+      "ContentHash": "e8b12e4c163d4be8",
+      "GitCommit": "6da53bbd",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -511,10 +511,10 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.17",
-      "LastModified": "2026-09-14T07:33:35.831855",
-      "ContentHash": "e273e930c0d5141c",
-      "GitCommit": "fc75a645",
+      "Version": "1.0.18",
+      "LastModified": "2026-09-16T07:13:46.838698",
+      "ContentHash": "3ff7a99a75c6e360",
+      "GitCommit": "d64f7cf2",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -563,13 +563,15 @@
     },
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
-      "Version": "1.0.13",
-      "LastModified": "2026-09-14T07:33:35.844827",
-      "ContentHash": "bdbcd34cda0641e9",
-      "GitCommit": "fc75a645",
+      "Version": "1.0.14",
+      "LastModified": "2026-09-16T07:13:46.852746",
+      "ContentHash": "0c82e7fab0ce4e59",
+      "GitCommit": "d224e954",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [
+        "docs/en/reference/changelog.md"
+      ]
     },
     "docs/en/troubleshooting/common-issues.md": {
       "FilePath": "docs/en/troubleshooting/common-issues.md",
@@ -635,10 +637,10 @@
     },
     "docs/zh/api-reference/management-api.md": {
       "FilePath": "docs/zh/api-reference/management-api.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-14T07:33:35.933578",
-      "ContentHash": "266a7e02f2b8c3e5",
-      "GitCommit": "20aea14f",
+      "Version": "1.0.5",
+      "LastModified": "2026-09-16T07:13:46.948148",
+      "ContentHash": "9910b3d9e5a7a140",
+      "GitCommit": "670a375c",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -948,10 +950,10 @@
     },
     "docs/zh/getting-started/quick-start.md": {
       "FilePath": "docs/zh/getting-started/quick-start.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-09-14T07:33:36.111378",
-      "ContentHash": "d7099cd0f6f22c83",
-      "GitCommit": "c7a56348",
+      "Version": "1.0.7",
+      "LastModified": "2026-09-16T07:13:47.141455",
+      "ContentHash": "4703ef559fa585d5",
+      "GitCommit": "53f26f63",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -966,10 +968,10 @@
     },
     "docs/zh/index.md": {
       "FilePath": "docs/zh/index.md",
-      "Version": "1.0.17",
-      "LastModified": "2026-09-14T07:33:36.113929",
-      "ContentHash": "9c37477cd90fc97b",
-      "GitCommit": "fc75a645",
+      "Version": "1.0.18",
+      "LastModified": "2026-09-16T07:13:47.145961",
+      "ContentHash": "e1b458e3e7b88bfa",
+      "GitCommit": "6da53bbd",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1134,10 +1136,10 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.17",
-      "LastModified": "2026-09-14T07:33:36.187128",
-      "ContentHash": "8a7b8e50a49c0fd6",
-      "GitCommit": "fc75a645",
+      "Version": "1.0.18",
+      "LastModified": "2026-09-16T07:13:47.222426",
+      "ContentHash": "028672aae8937ffd",
+      "GitCommit": "d64f7cf2",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1187,13 +1189,15 @@
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
-      "Version": "1.0.12",
-      "LastModified": "2026-09-14T07:33:36.204065",
-      "ContentHash": "897402c37ab02857",
-      "GitCommit": "fc75a645",
+      "Version": "1.0.13",
+      "LastModified": "2026-09-16T07:13:47.240045",
+      "ContentHash": "f1b3e94a02bab854",
+      "GitCommit": "6da53bbd",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [
+        "docs/zh/reference/changelog.md"
+      ]
     },
     "docs/zh/troubleshooting/common-issues.md": {
       "FilePath": "docs/zh/troubleshooting/common-issues.md",
@@ -1733,10 +1737,10 @@
     },
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.24",
-      "LastModified": "2026-09-14T07:33:35.617086",
-      "ContentHash": "ac9f12c8d3db0db3",
-      "GitCommit": "c7a56348",
+      "Version": "1.0.25",
+      "LastModified": "2026-09-16T07:13:46.613543",
+      "ContentHash": "041edcf9f23ee970",
+      "GitCommit": "6da53bbd",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2172,10 +2176,10 @@
     },
     "docs/en/security/rbac-permissions.md": {
       "FilePath": "docs/en/security/rbac-permissions.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-09-14T07:33:35.872388",
-      "ContentHash": "6e06e7069c0be132",
-      "GitCommit": "6da1396b",
+      "Version": "1.0.3",
+      "LastModified": "2026-09-16T07:13:46.882682",
+      "ContentHash": "34962a19266f3f1b",
+      "GitCommit": "670a375c",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2202,10 +2206,10 @@
     },
     "docs/zh/security/rbac-permissions.md": {
       "FilePath": "docs/zh/security/rbac-permissions.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-09-14T07:33:36.238101",
-      "ContentHash": "a7c6b847ee756dca",
-      "GitCommit": "6da1396b",
+      "Version": "1.0.3",
+      "LastModified": "2026-09-16T07:13:47.275169",
+      "ContentHash": "08027db1067514fe",
+      "GitCommit": "670a375c",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2217,10 +2221,10 @@
     },
     "docs/en/getting-started/claude-code.md": {
       "FilePath": "docs/en/getting-started/claude-code.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-09-14T07:33:35.756502",
-      "ContentHash": "22aee4cf8b408be1",
-      "GitCommit": "43acff25",
+      "Version": "1.0.1",
+      "LastModified": "2026-09-16T07:13:46.762639",
+      "ContentHash": "78c3123e7d4a344e",
+      "GitCommit": "efa51bab",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2233,10 +2237,10 @@
     },
     "docs/zh/getting-started/claude-code.md": {
       "FilePath": "docs/zh/getting-started/claude-code.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-09-14T07:33:36.093955",
-      "ContentHash": "ae653b7878397b79",
-      "GitCommit": "43acff25",
+      "Version": "1.0.1",
+      "LastModified": "2026-09-16T07:13:47.122578",
+      "ContentHash": "fa877fec4a295e32",
+      "GitCommit": "efa51bab",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2245,6 +2249,60 @@
         "docs/zh/configuration/instance-examples.md",
         "docs/zh/getting-started/quick-start.md",
         "docs/zh/security/api-key-management.md"
+      ]
+    },
+    "docs/en/configuration/quota.md": {
+      "FilePath": "docs/en/configuration/quota.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-09-16T07:13:46.675809",
+      "ContentHash": "b1934b24b8649120",
+      "GitCommit": "53f26f63",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/en/configuration/rate-limiting.md",
+        "docs/en/configuration/response-cache.md",
+        "docs/en/reference/changelog.md",
+        "docs/en/security/rbac-permissions.md"
+      ]
+    },
+    "docs/en/getting-started/web-console.md": {
+      "FilePath": "docs/en/getting-started/web-console.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-09-16T07:13:46.778272",
+      "ContentHash": "111be6f2a4794f8b",
+      "GitCommit": "9ae66348",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/en/security/rbac-permissions.md"
+      ]
+    },
+    "docs/zh/configuration/quota.md": {
+      "FilePath": "docs/zh/configuration/quota.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-09-16T07:13:47.013156",
+      "ContentHash": "8c32fc79d397ad10",
+      "GitCommit": "53f26f63",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/zh/configuration/rate-limiting.md",
+        "docs/zh/configuration/response-cache.md",
+        "docs/zh/reference/changelog.md",
+        "docs/zh/security/rbac-permissions.md"
+      ]
+    },
+    "docs/zh/getting-started/web-console.md": {
+      "FilePath": "docs/zh/getting-started/web-console.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-09-16T07:13:47.143549",
+      "ContentHash": "7a412ad778669cea",
+      "GitCommit": "9ae66348",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/zh/security/rbac-permissions.md"
       ]
     }
   },
@@ -4528,7 +4586,167 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-09-14T07:33:36.238107",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.24",
+      "NewVersion": "1.0.25",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-16T07:13:46.613551",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.32",
+      "NewVersion": "1.0.33",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-16T07:13:46.615521",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/management-api.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-16T07:13:46.625695",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/quota.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-09-16T07:13:46.675819",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/en/getting-started/claude-code.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-16T07:13:46.762648",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/quick-start.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-16T07:13:46.776171",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/web-console.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-09-16T07:13:46.778279",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/en/index.md",
+      "OldVersion": "1.0.16",
+      "NewVersion": "1.0.17",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-16T07:13:46.780614",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.17",
+      "NewVersion": "1.0.18",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-16T07:13:46.838706",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/roadmap.md",
+      "OldVersion": "1.0.13",
+      "NewVersion": "1.0.14",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-16T07:13:46.852752",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/rbac-permissions.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-16T07:13:46.882691",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/management-api.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-16T07:13:46.948157",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/quota.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-09-16T07:13:47.013165",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/claude-code.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-16T07:13:47.122587",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/quick-start.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-16T07:13:47.141461",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/web-console.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-09-16T07:13:47.143554",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/zh/index.md",
+      "OldVersion": "1.0.17",
+      "NewVersion": "1.0.18",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-16T07:13:47.145966",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.17",
+      "NewVersion": "1.0.18",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-16T07:13:47.222435",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/roadmap.md",
+      "OldVersion": "1.0.12",
+      "NewVersion": "1.0.13",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-16T07:13:47.240051",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/rbac-permissions.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-16T07:13:47.275176",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-09-14T07:33:36.503283"
+  "last_updated": "2026-09-16T07:13:47.542652"
 }
