@@ -38,11 +38,21 @@
 ## Try it in 3 minutes
 
 ```bash
-# Start the gateway (zero configuration)
-docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
+# Start the gateway — dev profile: no key setup required (built-in dev key)
+docker run -d --name jairouter -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=dev \
+  sodlinken/jairouter:latest
 
 # Web console:  http://localhost:8080/admin
 # Default login: admin / ChangeMeOnFirstStartup123456
+```
+
+For production, run the default `prod` profile and supply your own key — the prod profile deliberately ships no default key:
+
+```bash
+docker run -d --name jairouter -p 8080:8080 \
+  -e PROD_JWT_SECRET="<your-secret-at-least-32-characters>" \
+  sodlinken/jairouter:latest
 ```
 
 Point any OpenAI-compatible client at it:

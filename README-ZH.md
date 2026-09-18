@@ -38,11 +38,21 @@
 ## 3 分钟快速体验
 
 ```bash
-# 启动网关（零配置）
-docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
+# 启动网关 —— dev 方式启动，无需配置密钥（内置开发密钥）
+docker run -d --name jairouter -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=dev \
+  sodlinken/jairouter:latest
 
 # Web 控制台：http://localhost:8080/admin
 # 默认账号：admin / ChangeMeOnFirstStartup123456
+```
+
+生产环境请改用默认的 `prod` 方式启动，并配置你自己的密钥 —— prod 模式刻意不内置默认密钥：
+
+```bash
+docker run -d --name jairouter -p 8080:8080 \
+  -e PROD_JWT_SECRET="<至少32字符的密钥>" \
+  sodlinken/jairouter:latest
 ```
 
 任意 OpenAI 兼容客户端即可接入：
