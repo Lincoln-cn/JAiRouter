@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.1.1
-> **Last Updated**: 2026-09-15
+> **Document Version**: 3.1.2
+> **Last Updated**: 2026-09-18
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,34 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.1.2] - 2026-09-18 - Patch Release (Docker Startup & Usability Fixes)
+
+#### Startup & Secrets
+
+- **JWT secret environment variable unified to `JWT_SECRET`**: `application-{prod,staging,dev}.yml` now use nested placeholders such as `${JWT_SECRET:${PROD_JWT_SECRET:}}` — `JWT_SECRET` first, falling back to the legacy names; when both are unset the value is still empty, **preserving prod's fail-fast "must configure explicitly" semantics** (no built-in default key is shipped). Previously prod read `PROD_JWT_SECRET` while all three compose files passed `JWT_SECRET`, so the `docker compose` path could never start
+- **`--generate-key` fixed**: generation logic moved out of the Spring lifecycle (`main()` intercepts the flag before `SpringApplication.run`). It was previously a `CommandLineRunner`, and JWT binding validation aborts during context assembly — so the tool could never run in exactly the case it exists for. Also fixed the `ENTRYPOINT` in 5 Dockerfile variants so `docker run <image> --generate-key` arguments reach the application
+- **`secret` validation errors are now self-serviceable**: four error messages carry the variable name and generation method (original prefix substring preserved, so existing tests need no change)
+
+#### Image & Console
+
+- **Frontend packaging path fixed**: the image build script passed `-Pfast` (`frontend.build.skip=true`), so `frontend/dist` was never generated, `static/admin/` was never produced, and the console `GET /admin` returned 500. Build scripts now append `-Dfrontend.build.skip=false`, and the release workflow asserts the jar contains `BOOT-INF/classes/static/admin/index.html`
+- Removed 454 stale committed frontend build artifacts from the repository (they were packaged into `classes/static/` at the wrong path, silently shadowing real build output)
+
+#### Observability
+
+- **Health-check false alarm fixed**: without Redis deployed, `/actuator/health` was always `DOWN` and the container always `unhealthy`. Root cause: Spring Boot's auto-configured Redis probe (`spring-boot-starter-data-redis-reactive` is marked optional but present on the runtime classpath) defaults to probing `localhost:6379`. Now `management.health.redis.enabled=${REDIS_ENABLED:false}`, and the hardcoded `enabled: true` override in `persistence-base.yml` is corrected. Deployments that do use Redis should set `REDIS_ENABLED=true`
+
+#### Docs & CI
+
+- Quick-start / installation guides now start in dev mode (built-in development key, zero config) and state that production requires `JWT_SECRET`; the broken `--generate-key` instructions are corrected; the bare `docker run` on the docs landing pages is fixed too
+- `README` production examples aligned to `JWT_SECRET`; the "build from source" snippet's directory and jar name corrected
+- Branch filters in `docs-version-management.yml` / `docs-content-sync.yml` corrected (they were `[main, develop]`, so they never fired on master), plus the two latent defects this exposed (`steps is not defined` and the `--output` argument mismatch)
+- **New `image-smoke-test.yml` image cold-start smoke test**: build a jar with the frontend → assert `static/admin` is present → build the image → verify `--generate-key` produces a key without starting the app, that a dev cold start yields health UP plus `GET /admin` 200 and a healthy container, and that prod without a key fails fast with a self-serviceable error
+
+#### Related
+
+Parent issue #44 and its sub-issues #46 / #47 / #48
 
 ### [3.1.1] - 2026-09-15 - Patch Release (Protocol Correctness + Gateway Error-Message Readability + Console SSE Alert Fix + Doc Corrections)
 

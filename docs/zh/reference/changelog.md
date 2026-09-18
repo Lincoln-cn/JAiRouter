@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.1.1
-> **最后更新**: 2026-09-15
+> **文档版本**: 3.1.2
+> **最后更新**: 2026-09-18
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,34 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.1.2] - 2026-09-18 - 补丁发布（Docker 启动与可用性修复）
+
+#### 启动与密钥
+
+- **JWT 密钥环境变量名统一为 `JWT_SECRET`**：`application-{prod,staging,dev}.yml` 改为嵌套占位符 `${JWT_SECRET:${PROD_JWT_SECRET:}}` 等，优先读 `JWT_SECRET`、回退旧变量名；两者皆缺仍解析为空串，**保留 prod「必须显式配置」的 fail-fast 语义**（刻意不内置默认密钥）。此前 prod 读 `PROD_JWT_SECRET`，而三个 compose 文件传的都是 `JWT_SECRET`，导致 `docker compose` 路径必然启动失败
+- **`--generate-key` 修复**：生成逻辑移出 Spring 生命周期（`main()` 在 `SpringApplication.run` 之前拦截参数）。此前挂在 `CommandLineRunner` 上，而 JWT 绑定校验在上下文装配期即中止 → 恰在缺密钥、最需要该工具时它必然跑不起来；同时修复 5 个 Dockerfile 的 `ENTRYPOINT`，使 `docker run <镜像> --generate-key` 的参数能透传到应用层
+- **`secret` 校验报错可自助**：四处报错文案追加环境变量名与生成方式（保留原前缀子串，既有测试无需修改）
+
+#### 镜像与控制台
+
+- **前端打包路径修复**：镜像构建脚本此前传 `-Pfast`（其 `frontend.build.skip=true`），`frontend/dist` 不生成 → `static/admin/` 从不产生 → 控制台 `GET /admin` 返回 500。现为构建脚本追加 `-Dfrontend.build.skip=false`，并在 release workflow 增加「jar 内须含 `BOOT-INF/classes/static/admin/index.html`」的构建期断言
+- 清理仓库中 454 个入库的陈旧前端构建产物（它们会被 Maven 打进 `classes/static/` 根路径，静默顶替真实构建结果）
+
+#### 可观测性
+
+- **健康检查误报修复**：未部署 Redis 时 `/actuator/health` 恒 `DOWN`、容器恒 `unhealthy`。根因是 Spring Boot 自动装配的 Redis 探针（`spring-boot-starter-data-redis-reactive` 虽标 optional 但运行期在 classpath）默认探测 `localhost:6379`；现改为 `management.health.redis.enabled=${REDIS_ENABLED:false}`，并修正 `persistence-base.yml` 中硬编码 `enabled: true` 的覆盖源。使用 Redis 的部署请设置 `REDIS_ENABLED=true`
+
+#### 文档与 CI
+
+- 快速启动/安装指引改为 dev 方式启动（内置开发密钥、零配置）+ 生产环境需提供 `JWT_SECRET`；更正失效的 `--generate-key` 用法；文档落地页的裸 `docker run` 一并修正
+- `README` 生产示例变量名对齐为 `JWT_SECRET`；修正「从源码构建」片段的目录与 jar 名
+- 修正 `docs-version-management.yml` / `docs-content-sync.yml` 的分支过滤（原 `[main, develop]` 导致在 master 上永不触发），并修好两者暴露出的 `steps is not defined` 与 `--output` 参数错配缺陷
+- **新增 `image-smoke-test.yml` 镜像冷启动冒烟测试**：构建含前端的 jar → 断言 `static/admin` 存在 → 构建镜像 → 校验 `--generate-key` 不启动项目即可出密钥、dev 冷启动后 health 为 UP 且 `/admin` 返回 200 且容器 healthy、prod 无密钥时 fail-fast 且报错可自助
+
+#### 关联
+
+主 issue #44 及其子问题 #46 / #47 / #48
 
 ### [3.1.1] - 2026-09-15 - 补丁发布（协议正确性 + 网关错误消息可读性 + 控制台 SSE 告警修复 + 文档纠正）
 
