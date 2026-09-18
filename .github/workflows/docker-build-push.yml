@@ -64,6 +64,16 @@ jobs:
           chmod +x ./scripts/build/docker-build.sh
           ./scripts/build/docker-build.sh
 
+      # 防止再次产出「无前端」的镜像（见 issue #48）
+      - name: Verify frontend packaged at static/admin
+        run: |
+          JAR=$(ls target/model-router-*.jar | head -n1)
+          echo "Checking $JAR"
+          if ! unzip -l "$JAR" | grep -q 'BOOT-INF/classes/static/admin/index.html'; then
+            echo "::error::frontend missing at BOOT-INF/classes/static/admin/index.html — did the build skip the frontend (frontend.build.skip=true)?"
+            exit 1
+          fi
+
       # Extract metadata (tags, labels) for Docker
       - name: Extract Docker metadata
         id: meta

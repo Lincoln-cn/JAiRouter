@@ -30,7 +30,7 @@ if (-not (Test-Path "settings-china.xml")) {
 
 # Step 1: Clean and build the JAR with China-optimized settings
 Write-Host "${YELLOW}Step 1: Building JAR file with Alibaba Maven mirrors...${NC}"
-mvn clean package -DskipTests -Pfast -s settings-china.xml
+mvn clean package -DskipTests -Pfast -Dfrontend.build.skip=false -s settings-china.xml
 
 # Check if JAR was built successfully
 if (-not (Test-Path "target/${PROJECT_NAME}-${VERSION}.jar")) {
