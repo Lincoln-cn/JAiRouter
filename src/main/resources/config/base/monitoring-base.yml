@@ -65,6 +65,12 @@ management:
     prometheus:
       cache:
         time-to-live: 10s
+  health:
+    # Redis 健康探针默认关闭：未启用 Redis 时，Spring Boot 自动装配的探针会
+    # 探测 localhost:6379 并把 /actuator/health 判为 DOWN，导致容器恒 unhealthy
+    #（见 issue #46）。确实使用 Redis 的部署请设置 REDIS_ENABLED=true 才纳入健康判定。
+    redis:
+      enabled: ${REDIS_ENABLED:false}
   metrics:
     export:
       prometheus:

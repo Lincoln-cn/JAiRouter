@@ -149,7 +149,10 @@ spring:
 management:
   health:
     redis:
-      enabled: true
+      # 与 monitoring-base.yml 保持一致：默认关闭 Redis 健康探针，
+      # 避免未部署 Redis 时 /actuator/health 恒为 DOWN（issue #46）。
+      # 使用 Redis 的部署请设置 REDIS_ENABLED=true。
+      enabled: ${REDIS_ENABLED:false}
   endpoint:
     health:
       show-details: when-authorized
