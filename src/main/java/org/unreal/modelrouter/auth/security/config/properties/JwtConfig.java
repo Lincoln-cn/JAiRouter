@@ -30,7 +30,7 @@ public class JwtConfig {
     /**
      * JWT签名密钥
      */
-    @Size(min = 32, message = "JWT密钥长度至少32个字符")
+    @Size(min = 32, message = "JWT密钥长度至少32个字符；请设置环境变量 JWT_SECRET（可用 openssl rand -base64 32 或镜像内置 --generate-key 生成）")
     private String secret;
 
     /**
