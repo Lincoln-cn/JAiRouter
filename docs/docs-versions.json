@@ -340,10 +340,10 @@
     },
     "docs/en/getting-started/quick-start.md": {
       "FilePath": "docs/en/getting-started/quick-start.md",
-      "Version": "1.0.10",
-      "LastModified": "2026-09-18T11:24:41.580387",
-      "ContentHash": "a9a02fdaabf04707",
-      "GitCommit": "e84d79b5",
+      "Version": "1.0.11",
+      "LastModified": "2026-09-18T12:10:48.806152",
+      "ContentHash": "a07dcd27b3a13737",
+      "GitCommit": "97d6b0c2",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -357,10 +357,10 @@
     },
     "docs/en/index.md": {
       "FilePath": "docs/en/index.md",
-      "Version": "1.0.17",
-      "LastModified": "2026-09-16T07:13:46.780609",
-      "ContentHash": "e8b12e4c163d4be8",
-      "GitCommit": "6da53bbd",
+      "Version": "1.0.18",
+      "LastModified": "2026-09-18T12:10:48.810199",
+      "ContentHash": "cbecf76df2eacaa1",
+      "GitCommit": "97d6b0c2",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -950,10 +950,10 @@
     },
     "docs/zh/getting-started/quick-start.md": {
       "FilePath": "docs/zh/getting-started/quick-start.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-09-18T11:24:41.871034",
-      "ContentHash": "ec3b1f8735f0e00c",
-      "GitCommit": "e84d79b5",
+      "Version": "1.0.10",
+      "LastModified": "2026-09-18T12:10:49.024112",
+      "ContentHash": "feb30711a4169fee",
+      "GitCommit": "97d6b0c2",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -968,10 +968,10 @@
     },
     "docs/zh/index.md": {
       "FilePath": "docs/zh/index.md",
-      "Version": "1.0.18",
-      "LastModified": "2026-09-16T07:13:47.145961",
-      "ContentHash": "e1b458e3e7b88bfa",
-      "GitCommit": "6da53bbd",
+      "Version": "1.0.19",
+      "LastModified": "2026-09-18T12:10:49.028071",
+      "ContentHash": "c954cd6dffcab2e8",
+      "GitCommit": "97d6b0c2",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -5768,7 +5768,39 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-09-18T11:24:41.871039",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/quick-start.md",
+      "OldVersion": "1.0.10",
+      "NewVersion": "1.0.11",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T12:10:48.806161",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/index.md",
+      "OldVersion": "1.0.17",
+      "NewVersion": "1.0.18",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T12:10:48.810203",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/quick-start.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T12:10:49.024119",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/index.md",
+      "OldVersion": "1.0.18",
+      "NewVersion": "1.0.19",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T12:10:49.028075",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-09-18T11:24:41.997716"
+  "last_updated": "2026-09-18T12:10:49.122678"
 }

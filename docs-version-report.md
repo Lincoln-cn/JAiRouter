@@ -3,9 +3,9 @@
 ## 版本统计
 
 - 总文档数: 172
-- 近7天变更: 173
+- 近7天变更: 177
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-09-18 11:24:42
+- 最后扫描: 2026-09-18 12:10:49
 
 ## 最近变更
 
@@ -16,9 +16,9 @@
 - **MODIFIED**: docs/en/deployment/kubernetes.md (1.0.5 → 1.0.6) - 2026-09-18
 - **MODIFIED**: docs/en/configuration/modular-config.md (1.0.2 → 1.0.3) - 2026-09-18
 - **MODIFIED**: docs/en/configuration/application-config.md (1.0.4 → 1.0.5) - 2026-09-18
-- **MODIFIED**: docs/zh/security/troubleshooting.md (1.0.3 → 1.0.4) - 2026-09-18
-- **MODIFIED**: docs/zh/security/index.md (1.0.3 → 1.0.4) - 2026-09-18
-- **MODIFIED**: docs/zh/security/api-key-management.md (1.0.7 → 1.0.8) - 2026-09-18
+- **MODIFIED**: docs/zh/index.md (1.0.18 → 1.0.19) - 2026-09-18
+- **MODIFIED**: docs/zh/getting-started/quick-start.md (1.0.9 → 1.0.10) - 2026-09-18
+- **MODIFIED**: docs/en/index.md (1.0.17 → 1.0.18) - 2026-09-18
 
 ## 依赖关系分析
 
@@ -606,6 +606,10 @@
 - **docs/en/deployment/kubernetes.md**: v1.0.6 - 2026-09-18 (406b4a65)
 - **docs/en/configuration/modular-config.md**: v1.0.3 - 2026-09-18 (406b4a65)
 - **docs/en/configuration/application-config.md**: v1.0.5 - 2026-09-18 (406b4a65)
+- **docs/zh/index.md**: v1.0.19 - 2026-09-18 (97d6b0c2)
+- **docs/zh/getting-started/quick-start.md**: v1.0.10 - 2026-09-18 (97d6b0c2)
+- **docs/en/index.md**: v1.0.18 - 2026-09-18 (97d6b0c2)
+- **docs/en/getting-started/quick-start.md**: v1.0.11 - 2026-09-18 (97d6b0c2)
 - **docs/zh/security/troubleshooting.md**: v1.0.4 - 2026-09-18 (c82b4559)
 - **docs/zh/security/index.md**: v1.0.4 - 2026-09-18 (c82b4559)
 - **docs/zh/security/api-key-management.md**: v1.0.8 - 2026-09-18 (c82b4559)
@@ -626,9 +630,7 @@
 - **docs/en/monitoring/alert_rules_guide.md**: v1.0.4 - 2026-09-18 (c82b4559)
 - **docs/en/api-reference/openapi-spec.md**: v1.0.4 - 2026-09-18 (c82b4559)
 - **docs/en/api-reference/monitoring-api.md**: v1.0.3 - 2026-09-18 (c82b4559)
-- **docs/zh/getting-started/quick-start.md**: v1.0.9 - 2026-09-18 (e84d79b5)
 - **docs/zh/getting-started/installation.md**: v1.0.6 - 2026-09-18 (e84d79b5)
-- **docs/en/getting-started/quick-start.md**: v1.0.10 - 2026-09-18 (e84d79b5)
 - **docs/en/getting-started/installation.md**: v1.0.6 - 2026-09-18 (e84d79b5)
 - **README.md**: v1.0.34 - 2026-09-18 (e84d79b5)
 - **README-ZH.md**: v1.0.26 - 2026-09-18 (e84d79b5)
@@ -694,7 +696,6 @@
 - **docs/zh/security/rbac-permissions.md**: v1.0.3 - 2026-09-16 (670a375c)
 - **docs/zh/reference/roadmap.md**: v1.0.13 - 2026-09-16 (6da53bbd)
 - **docs/zh/reference/changelog.md**: v1.0.18 - 2026-09-16 (d64f7cf2)
-- **docs/zh/index.md**: v1.0.18 - 2026-09-16 (6da53bbd)
 - **docs/zh/getting-started/web-console.md**: v1.0.0 - 2026-09-16 (9ae66348)
 - **docs/zh/getting-started/claude-code.md**: v1.0.1 - 2026-09-16 (efa51bab)
 - **docs/zh/configuration/quota.md**: v1.0.0 - 2026-09-16 (53f26f63)
@@ -702,7 +703,6 @@
 - **docs/en/security/rbac-permissions.md**: v1.0.3 - 2026-09-16 (670a375c)
 - **docs/en/reference/roadmap.md**: v1.0.14 - 2026-09-16 (d224e954)
 - **docs/en/reference/changelog.md**: v1.0.18 - 2026-09-16 (d64f7cf2)
-- **docs/en/index.md**: v1.0.17 - 2026-09-16 (6da53bbd)
 - **docs/en/getting-started/web-console.md**: v1.0.0 - 2026-09-16 (9ae66348)
 - **docs/en/getting-started/claude-code.md**: v1.0.1 - 2026-09-16 (efa51bab)
 - **docs/en/configuration/quota.md**: v1.0.0 - 2026-09-16 (53f26f63)
