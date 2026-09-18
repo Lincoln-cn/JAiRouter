@@ -107,5 +107,11 @@ public class SanitizationConfig {
          * 脱敏失败时是否中断响应处理
          */
         private boolean failOnError = false;
+
+        /**
+         * 是否保留 JSON 结构（仅对 application/json 有效）
+         * 为 true 时，正则匹配仅作用于 JSON 字符串字面量内部，不破坏数值和结构
+         */
+        private boolean preserveJsonStructure = true;
     }
 }

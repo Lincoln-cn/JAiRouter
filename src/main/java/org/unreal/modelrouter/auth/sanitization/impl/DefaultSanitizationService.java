@@ -73,6 +73,11 @@ public class DefaultSanitizationService implements SanitizationService {
         SanitizationConfig.RequestSanitization requestConfig =
                 securityProperties.getSanitization().getRequest();
         
+        if (!requestConfig.isEnabled()) {
+            log.debug("请求脱敏已关闭，跳过加载请求脱敏规则");
+            return;
+        }
+        
         // 加载敏感词规则
         for (String sensitiveWord : requestConfig.getSensitiveWords()) {
             SanitizationRule rule = SanitizationRule.builder()
@@ -117,6 +122,11 @@ public class DefaultSanitizationService implements SanitizationService {
         SanitizationConfig.ResponseSanitization responseConfig =
                 securityProperties.getSanitization().getResponse();
         
+        if (!responseConfig.isEnabled()) {
+            log.debug("响应脱敏已关闭，跳过加载响应脱敏规则");
+            return;
+        }
+        
         // 加载敏感词规则
         for (String sensitiveWord : responseConfig.getSensitiveWords()) {
             SanitizationRule rule = SanitizationRule.builder()
@@ -160,6 +170,11 @@ public class DefaultSanitizationService implements SanitizationService {
             return Mono.justOrEmpty(content);
         }
         
+        if (!securityProperties.getSanitization().getRequest().isEnabled()) {
+            log.debug("请求脱敏已关闭，跳过脱敏处理");
+            return Mono.just(content);
+        }
+        
         // 检查白名单
         if (userId != null) {
             return isUserWhitelisted(userId)
@@ -181,6 +196,11 @@ public class DefaultSanitizationService implements SanitizationService {
             return Mono.justOrEmpty(content);
         }
         
+        if (!securityProperties.getSanitization().getResponse().isEnabled()) {
+            log.debug("响应脱敏已关闭，跳过脱敏处理");
+            return Mono.just(content);
+        }
+        
         return performSanitization(content, contentType, "response");
     }
     
@@ -199,7 +219,9 @@ public class DefaultSanitizationService implements SanitizationService {
             return Mono.just(content);
         }
         
-        return ruleEngine.applySanitizationRules(content, applicableRules, contentType)
+        boolean preserveJson = securityProperties.getSanitization().getResponse().isPreserveJsonStructure();
+        
+        return ruleEngine.applySanitizationRules(content, applicableRules, contentType, preserveJson)
                 .onErrorMap(throwable -> new SanitizationException(
                         String.format("%s脱敏处理失败", type.equals("request") ? "请求" : "响应"), 
                         throwable, 

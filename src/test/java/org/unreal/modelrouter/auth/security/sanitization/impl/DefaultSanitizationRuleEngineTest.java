@@ -359,4 +359,205 @@ class DefaultSanitizationRuleEngineTest {
         // 初始状态应该为空
         assertTrue(ruleEngine.getAllMatchCounts().isEmpty());
     }
+
+    // ========== JSON 结构保护脱敏测试 ==========
+
+    @Test
+    void testJsonAware_NumberLiteralsPreserved() {
+        // 模拟 /api/dashboard/metrics 的 system 段响应
+        String json = "{\"system\":{\"availableProcessors\":8,"
+                + "\"systemLoadAverage\":1.228515625,"
+                + "\"processCpuUsage\":0.12345678901234567,"
+                + "\"systemCpuUsage\":0.98765432109876543,"
+                + "\"startTime\":1.7398E9,"
+                + "\"openFiles\":0.0,"
+                + "\"uptimeSeconds\":964.057,"
+                + "\"maxFiles\":0.0}}";
+
+        SanitizationRule piiRule = SanitizationRule.builder()
+                .ruleId("response-pii-phone")
+                .name("手机号")
+                .type(RuleType.PII_PATTERN)
+                .pattern("\\d{11}")
+                .strategy(SanitizationStrategy.MASK)
+                .enabled(true)
+                .priority(2)
+                .applicableContentTypes(List.of("application/json"))
+                .replacementChar("*")
+                .build();
+
+        StepVerifier.create(ruleEngine.applySanitizationRules(json, List.of(piiRule), "application/json", true))
+                .assertNext(result -> {
+                    // 数值字面量必须原样保留
+                    assertTrue(result.contains("\"systemLoadAverage\":1.228515625"),
+                            "浮点数值不应被遮蔽");
+                    assertTrue(result.contains("\"processCpuUsage\":0.12345678901234567"),
+                            "长小数不应被遮蔽");
+                    assertTrue(result.contains("\"systemCpuUsage\":0.98765432109876543"),
+                            "长小数不应被遮蔽");
+                    assertTrue(result.contains("\"startTime\":1.7398E9"),
+                            "科学计数法不应被遮蔽");
+                    assertTrue(result.contains("\"openFiles\":0.0"),
+                            "零值浮点数不应被遮蔽");
+                    assertTrue(result.contains("\"uptimeSeconds\":964.057"),
+                            "正常浮点数不应被遮蔽");
+                    // 输出必须包含完整的 JSON 结构字符
+                    assertTrue(result.startsWith("{") && result.endsWith("}"),
+                            "输出应保持JSON对象结构");
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void testJsonAware_StringPhoneNumberMasked() {
+        String json = "{\"user\":{\"name\":\"张三\",\"phone\":\"13800138000\",\"email\":\"test@example.com\"}}";
+
+        SanitizationRule phoneRule = SanitizationRule.builder()
+                .ruleId("response-pii-phone")
+                .name("手机号")
+                .type(RuleType.PII_PATTERN)
+                .pattern("\\d{11}")
+                .strategy(SanitizationStrategy.MASK)
+                .enabled(true)
+                .priority(2)
+                .applicableContentTypes(List.of("application/json"))
+                .replacementChar("*")
+                .build();
+
+        SanitizationRule emailRule = SanitizationRule.builder()
+                .ruleId("response-pii-email")
+                .name("邮箱")
+                .type(RuleType.PII_PATTERN)
+                .pattern("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}")
+                .strategy(SanitizationStrategy.MASK)
+                .enabled(true)
+                .priority(2)
+                .applicableContentTypes(List.of("application/json"))
+                .replacementChar("*")
+                .build();
+
+        StepVerifier.create(ruleEngine.applySanitizationRules(json,
+                        List.of(phoneRule, emailRule), "application/json", true))
+                .assertNext(result -> {
+                    // 手机号应被遮蔽
+                    assertFalse(result.contains("13800138000"), "手机号应被遮蔽");
+                    assertTrue(result.contains("***********"), "手机号应被替换为星号");
+                    // 邮箱应被遮蔽
+                    assertFalse(result.contains("test@example.com"), "邮箱应被遮蔽");
+                    // 非敏感字符串应保留
+                    assertTrue(result.contains("张三"), "非敏感字符串不应被遮蔽");
+                    // 结构完好
+                    assertTrue(result.contains("\"phone\":\""), "键名应保留");
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void testJsonAware_KeysNotMasked() {
+        String json = "{\"password\":\"secret123\",\"account\":\"admin\"}";
+
+        SanitizationRule wordRule = SanitizationRule.builder()
+                .ruleId("response-sensitive-word-password")
+                .name("敏感词password")
+                .type(RuleType.SENSITIVE_WORD)
+                .pattern("password")
+                .strategy(SanitizationStrategy.MASK)
+                .enabled(true)
+                .priority(1)
+                .applicableContentTypes(List.of("application/json"))
+                .replacementChar("*")
+                .build();
+
+        StepVerifier.create(ruleEngine.applySanitizationRules(json, List.of(wordRule), "application/json", true))
+                .assertNext(result -> {
+                    // 键名 "password" 不应被遮蔽（否则 JSON 结构被破坏）
+                    assertTrue(result.contains("\"password\""), "JSON键名不应被遮蔽");
+                    // 值 "secret123" 中不含 "password"，所以不应被遮蔽
+                    assertTrue(result.contains("secret123"), "不含敏感词的值应保留");
+                    // 键名 "account" 不应被遮蔽
+                    assertTrue(result.contains("\"account\""), "JSON键名不应被遮蔽");
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void testJsonAware_DisabledWhenPreserveJsonStructureFalse() {
+        // 当 preserveJsonStructure=false 时，走原有的全文匹配逻辑
+        String json = "{\"value\":0.12345678901234567}";
+
+        SanitizationRule piiRule = SanitizationRule.builder()
+                .ruleId("response-pii-phone")
+                .name("手机号")
+                .type(RuleType.PII_PATTERN)
+                .pattern("\\d{11}")
+                .strategy(SanitizationStrategy.MASK)
+                .enabled(true)
+                .priority(2)
+                .applicableContentTypes(List.of("application/json"))
+                .replacementChar("*")
+                .build();
+
+        StepVerifier.create(ruleEngine.applySanitizationRules(json, List.of(piiRule), "application/json", false))
+                .assertNext(result -> {
+                    // preserveJsonStructure=false, 全文匹配会遮蔽数值中的11位数字
+                    assertFalse(result.contains("0.12345678901234567"),
+                            "preserveJsonStructure=false时数值中的匹配应被遮蔽");
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void testJsonAware_ValidJsonOutput() {
+        // 综合测试：完整的 dashboard metrics 响应样例
+        String json = "{\"timestamp\":1739856000000,"
+                + "\"system\":{\"availableProcessors\":8,"
+                + "\"systemLoadAverage\":1.228515625,"
+                + "\"processCpuUsage\":0.17748011299480112,"
+                + "\"systemCpuUsage\":0.23577523785775237,"
+                + "\"startTime\":1.739856E9,"
+                + "\"openFiles\":0.0,\"uptimeSeconds\":964.057,\"maxFiles\":0.0},"
+                + "\"contact\":{\"phone\":\"13800138000\",\"email\":\"admin@example.com\"}}";
+
+        SanitizationRule phoneRule = SanitizationRule.builder()
+                .ruleId("response-pii-phone")
+                .name("手机号")
+                .type(RuleType.PII_PATTERN)
+                .pattern("\\d{11}")
+                .strategy(SanitizationStrategy.MASK)
+                .enabled(true)
+                .priority(2)
+                .applicableContentTypes(List.of("application/json"))
+                .replacementChar("*")
+                .build();
+
+        SanitizationRule emailRule = SanitizationRule.builder()
+                .ruleId("response-pii-email")
+                .name("邮箱")
+                .type(RuleType.PII_PATTERN)
+                .pattern("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}")
+                .strategy(SanitizationStrategy.MASK)
+                .enabled(true)
+                .priority(2)
+                .applicableContentTypes(List.of("application/json"))
+                .replacementChar("*")
+                .build();
+
+        StepVerifier.create(ruleEngine.applySanitizationRules(json,
+                        List.of(phoneRule, emailRule), "application/json", true))
+                .assertNext(result -> {
+                    // system 段数值必须保留
+                    assertTrue(result.contains("\"processCpuUsage\":0.17748011299480112"));
+                    assertTrue(result.contains("\"systemCpuUsage\":0.23577523785775237"));
+                    assertTrue(result.contains("\"systemLoadAverage\":1.228515625"));
+                    // contact 段敏感信息应被遮蔽
+                    assertFalse(result.contains("13800138000"), "手机号应被遮蔽");
+                    assertFalse(result.contains("admin@example.com"), "邮箱应被遮蔽");
+                    // 结果应保持完整 JSON 结构
+                    assertTrue(result.startsWith("{") && result.endsWith("}"),
+                            "输出应保持JSON对象结构");
+                    assertTrue(result.contains("\"system\":{"), "嵌套对象结构应保留");
+                    assertTrue(result.contains("\"contact\":{"), "嵌套对象结构应保留");
+                })
+                .verifyComplete();
+    }
 }
