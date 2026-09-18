@@ -10,7 +10,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
-import org.unreal.modelrouter.router.adapter.ServiceCapability;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -78,8 +77,6 @@ class AdapterTestServiceTest {
         void testTestRegisteredAdapter_adapterExists() {
             // Given
             when(adapterRegistry.isAdapterSupported("normal")).thenReturn(true);
-            ServiceCapability mockAdapter = mock(ServiceCapability.class);
-            when(adapterRegistry.getAdapterByName("normal")).thenReturn(mockAdapter);
 
             // When
             var mono = testService.testRegisteredAdapter("normal", "PING", "sk-test", null, null);
