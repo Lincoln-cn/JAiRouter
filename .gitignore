@@ -131,8 +131,10 @@ site/
 # Keep docs/capture/ for documentation screenshots
 !docs/capture/
 
-# Static admin data (runtime generated)
-src/main/resources/static/admin/data/
+# Frontend build output — generated at build time (pom copies frontend/dist → static/admin).
+# Never commit these: stale copies silently shadow real builds and can ship the SPA at the
+# wrong path (see issue #48).
+src/main/resources/static/
 
 # -----------------------------------------------------------------------------
 # Monitoring & Observability

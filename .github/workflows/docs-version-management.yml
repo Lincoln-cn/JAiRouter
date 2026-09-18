@@ -2,13 +2,13 @@ name: 文档版本管理
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, master ]
     paths: 
       - 'docs/**/*.md'
       - 'README*.md'
       - '*.md'
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, master ]
     paths: 
       - 'docs/**/*.md'
       - 'README*.md'
