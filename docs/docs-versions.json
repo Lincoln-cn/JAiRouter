@@ -2,10 +2,10 @@
   "versions": {
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.33",
-      "LastModified": "2026-09-16T07:13:46.615516",
-      "ContentHash": "6253bbd950d10123",
-      "GitCommit": "6da53bbd",
+      "Version": "1.0.34",
+      "LastModified": "2026-09-18T11:24:41.422211",
+      "ContentHash": "a9858d98c4494e17",
+      "GitCommit": "e84d79b5",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -325,10 +325,10 @@
     },
     "docs/en/getting-started/installation.md": {
       "FilePath": "docs/en/getting-started/installation.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-09-18T11:16:32.086257",
-      "ContentHash": "11b1e08a0a4fe336",
-      "GitCommit": "2e651835",
+      "Version": "1.0.6",
+      "LastModified": "2026-09-18T11:24:41.577814",
+      "ContentHash": "44fd04fa6850bb64",
+      "GitCommit": "e84d79b5",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -340,10 +340,10 @@
     },
     "docs/en/getting-started/quick-start.md": {
       "FilePath": "docs/en/getting-started/quick-start.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-09-18T11:16:32.222976",
-      "ContentHash": "9710a82ff94e9e81",
-      "GitCommit": "14420877",
+      "Version": "1.0.10",
+      "LastModified": "2026-09-18T11:24:41.580387",
+      "ContentHash": "a9a02fdaabf04707",
+      "GitCommit": "e84d79b5",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -935,10 +935,10 @@
     },
     "docs/zh/getting-started/installation.md": {
       "FilePath": "docs/zh/getting-started/installation.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-09-18T10:17:18.786625",
-      "ContentHash": "ce17084cc5490025",
-      "GitCommit": "97163311",
+      "Version": "1.0.6",
+      "LastModified": "2026-09-18T11:24:41.868079",
+      "ContentHash": "e6eb2f26ebe87f7c",
+      "GitCommit": "e84d79b5",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -950,10 +950,10 @@
     },
     "docs/zh/getting-started/quick-start.md": {
       "FilePath": "docs/zh/getting-started/quick-start.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-09-18T11:16:44.851341",
-      "ContentHash": "ac980bc01e646bed",
-      "GitCommit": "14420877",
+      "Version": "1.0.9",
+      "LastModified": "2026-09-18T11:24:41.871034",
+      "ContentHash": "ec3b1f8735f0e00c",
+      "GitCommit": "e84d79b5",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1737,10 +1737,10 @@
     },
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.25",
-      "LastModified": "2026-09-16T07:13:46.613543",
-      "ContentHash": "041edcf9f23ee970",
-      "GitCommit": "6da53bbd",
+      "Version": "1.0.26",
+      "LastModified": "2026-09-18T11:24:41.419943",
+      "ContentHash": "f1775ac0ccd04a5e",
+      "GitCommit": "e84d79b5",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1965,8 +1965,8 @@
       "Version": "1.0.1",
       "LastModified": "2026-09-18T15:38:23.043414",
       "ContentHash": "bf7657d91196fb6b",
-      "GitCommit": "635e749d",
-      "Author": "Leo Lin",
+      "GitCommit": "91cff0a3",
+      "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -1975,7 +1975,7 @@
       "Version": "1.0.1",
       "LastModified": "2026-09-18T15:38:22.873239",
       "ContentHash": "f5d7118238312c8b",
-      "GitCommit": "eb2d8a82",
+      "GitCommit": "91cff0a3",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -5720,7 +5720,55 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-09-18T15:38:23.043414",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.25",
+      "NewVersion": "1.0.26",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:24:41.419953",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.33",
+      "NewVersion": "1.0.34",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:24:41.422217",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/installation.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:24:41.577827",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/quick-start.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:24:41.580393",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/installation.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:24:41.868090",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/quick-start.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:24:41.871039",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-09-18T15:38:23.044416"
+  "last_updated": "2026-09-18T11:24:41.997716"
 }

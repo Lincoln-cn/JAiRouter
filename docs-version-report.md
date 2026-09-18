@@ -2,29 +2,23 @@
 
 ## 版本统计
 
-- 总文档数: 173
-- 近7天变更: 160
+- 总文档数: 172
+- 近7天变更: 173
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-09-18 07:03:04
+- 最后扫描: 2026-09-18 11:24:42
 
 ## 最近变更
 
+- **MODIFIED**: repository-description.md (1.0.0 → 1.0.1) - 2026-09-18
+- **MODIFIED**: merge-log-2026-07-10.md (1.0.0 → 1.0.1) - 2026-09-18
+- **DELETED**: QWEN.md (1.0.4 → ) - 2026-09-18
+- **MODIFIED**: docs/zh/configuration/modular-config.md (1.0.2 → 1.0.3) - 2026-09-18
+- **MODIFIED**: docs/en/deployment/kubernetes.md (1.0.5 → 1.0.6) - 2026-09-18
+- **MODIFIED**: docs/en/configuration/modular-config.md (1.0.2 → 1.0.3) - 2026-09-18
+- **MODIFIED**: docs/en/configuration/application-config.md (1.0.4 → 1.0.5) - 2026-09-18
 - **MODIFIED**: docs/zh/security/troubleshooting.md (1.0.3 → 1.0.4) - 2026-09-18
 - **MODIFIED**: docs/zh/security/index.md (1.0.3 → 1.0.4) - 2026-09-18
 - **MODIFIED**: docs/zh/security/api-key-management.md (1.0.7 → 1.0.8) - 2026-09-18
-- **MODIFIED**: docs/zh/reference/index.md (1.0.4 → 1.0.5) - 2026-09-18
-- **MODIFIED**: docs/zh/reference/glossary.md (1.0.3 → 1.0.4) - 2026-09-18
-- **MODIFIED**: docs/zh/reference/faq.md (1.0.6 → 1.0.7) - 2026-09-18
-- **MODIFIED**: docs/zh/monitoring/alert_rules_guide.md (1.0.4 → 1.0.5) - 2026-09-18
-- **MODIFIED**: docs/zh/deployment/production.md (1.0.7 → 1.0.8) - 2026-09-18
-- **MODIFIED**: docs/zh/deployment/kubernetes.md (1.0.5 → 1.0.6) - 2026-09-18
-- **MODIFIED**: docs/zh/api-reference/openapi-spec.md (1.0.3 → 1.0.4) - 2026-09-18
-
-## 过期文档 (30天未更新)
-
-- QWEN.md (版本: 1.0.4, 最后更新: 2026-07-14)
-- repository-description.md (版本: 1.0.0, 最后更新: 2026-06-29)
-- merge-log-2026-07-10.md (版本: 1.0.0, 最后更新: 2026-07-11)
 
 ## 依赖关系分析
 
@@ -606,6 +600,12 @@
 
 ## 所有文档版本
 
+- **repository-description.md**: v1.0.1 - 2026-09-18 (91cff0a3)
+- **merge-log-2026-07-10.md**: v1.0.1 - 2026-09-18 (91cff0a3)
+- **docs/zh/configuration/modular-config.md**: v1.0.3 - 2026-09-18 (406b4a65)
+- **docs/en/deployment/kubernetes.md**: v1.0.6 - 2026-09-18 (406b4a65)
+- **docs/en/configuration/modular-config.md**: v1.0.3 - 2026-09-18 (406b4a65)
+- **docs/en/configuration/application-config.md**: v1.0.5 - 2026-09-18 (406b4a65)
 - **docs/zh/security/troubleshooting.md**: v1.0.4 - 2026-09-18 (c82b4559)
 - **docs/zh/security/index.md**: v1.0.4 - 2026-09-18 (c82b4559)
 - **docs/zh/security/api-key-management.md**: v1.0.8 - 2026-09-18 (c82b4559)
@@ -626,6 +626,12 @@
 - **docs/en/monitoring/alert_rules_guide.md**: v1.0.4 - 2026-09-18 (c82b4559)
 - **docs/en/api-reference/openapi-spec.md**: v1.0.4 - 2026-09-18 (c82b4559)
 - **docs/en/api-reference/monitoring-api.md**: v1.0.3 - 2026-09-18 (c82b4559)
+- **docs/zh/getting-started/quick-start.md**: v1.0.9 - 2026-09-18 (e84d79b5)
+- **docs/zh/getting-started/installation.md**: v1.0.6 - 2026-09-18 (e84d79b5)
+- **docs/en/getting-started/quick-start.md**: v1.0.10 - 2026-09-18 (e84d79b5)
+- **docs/en/getting-started/installation.md**: v1.0.6 - 2026-09-18 (e84d79b5)
+- **README.md**: v1.0.34 - 2026-09-18 (e84d79b5)
+- **README-ZH.md**: v1.0.26 - 2026-09-18 (e84d79b5)
 - **docs/zh/security/data-sanitization.md**: v1.0.4 - 2026-09-18 (2e651835)
 - **docs/zh/security/blacklist-management.md**: v1.0.3 - 2026-09-18 (2e651835)
 - **docs/zh/security/audit-log-management.md**: v1.0.3 - 2026-09-18 (2e651835)
@@ -634,7 +640,6 @@
 - **docs/zh/monitoring/index.md**: v1.0.4 - 2026-09-18 (2e651835)
 - **docs/zh/monitoring/error-tracking.md**: v1.0.3 - 2026-09-18 (14420877)
 - **docs/zh/monitoring/configuration.md**: v1.0.6 - 2026-09-18 (2e651835)
-- **docs/zh/getting-started/quick-start.md**: v1.0.8 - 2026-09-18 (14420877)
 - **docs/zh/deployment/jwt-persistence-deployment-checklist.md**: v1.0.3 - 2026-09-18 (14420877)
 - **docs/zh/deployment/docker.md**: v1.0.8 - 2026-09-18 (14420877)
 - **docs/zh/deployment/docker-optimized.md**: v1.0.3 - 2026-09-18 (14420877)
@@ -653,8 +658,6 @@
 - **docs/en/monitoring/performance.md**: v1.0.4 - 2026-09-18 (2e651835)
 - **docs/en/monitoring/error-tracking.md**: v1.0.3 - 2026-09-18 (14420877)
 - **docs/en/monitoring/configuration.md**: v1.0.5 - 2026-09-18 (2e651835)
-- **docs/en/getting-started/quick-start.md**: v1.0.9 - 2026-09-18 (14420877)
-- **docs/en/getting-started/installation.md**: v1.0.5 - 2026-09-18 (2e651835)
 - **docs/en/deployment/production.md**: v1.0.7 - 2026-09-18 (2e651835)
 - **docs/en/deployment/docker.md**: v1.0.6 - 2026-09-18 (14420877)
 - **docs/en/deployment/docker-optimized.md**: v1.0.4 - 2026-09-18 (14420877)
@@ -675,7 +678,6 @@
 - **docs/zh/monitoring/metrics.md**: v1.0.3 - 2026-09-18 (97163311)
 - **docs/zh/monitoring/dashboards.md**: v1.0.3 - 2026-09-18 (97163311)
 - **docs/zh/monitoring/alerts.md**: v1.0.3 - 2026-09-18 (97163311)
-- **docs/zh/getting-started/installation.md**: v1.0.5 - 2026-09-18 (97163311)
 - **docs/zh/getting-started/first-steps.md**: v1.0.4 - 2026-09-18 (97163311)
 - **docs/zh/development/testing.md**: v1.0.3 - 2026-09-18 (97163311)
 - **docs/zh/development/index.md**: v1.0.6 - 2026-09-18 (97163311)
@@ -684,7 +686,6 @@
 - **docs/zh/development/architecture.md**: v1.0.5 - 2026-09-18 (97163311)
 - **docs/zh/deployment/index.md**: v1.0.4 - 2026-09-18 (97163311)
 - **docs/zh/deployment/github-pages.md**: v1.0.3 - 2026-09-18 (97163311)
-- **docs/zh/configuration/modular-config.md**: v1.0.2 - 2026-09-18 (97163311)
 - **docs/zh/configuration/circuit-breaker.md**: v1.0.3 - 2026-09-18 (97163311)
 - **docs/zh/api-reference/index.md**: v1.0.3 - 2026-09-18 (97163311)
 - **docs/zh/api-reference/error-codes.md**: v1.0.2 - 2026-09-18 (97163311)
@@ -706,8 +707,6 @@
 - **docs/en/getting-started/claude-code.md**: v1.0.1 - 2026-09-16 (efa51bab)
 - **docs/en/configuration/quota.md**: v1.0.0 - 2026-09-16 (53f26f63)
 - **docs/en/api-reference/management-api.md**: v1.0.7 - 2026-09-16 (670a375c)
-- **README.md**: v1.0.33 - 2026-09-16 (6da53bbd)
-- **README-ZH.md**: v1.0.25 - 2026-09-16 (6da53bbd)
 - **docs/zh/getting-started/index.md**: v1.0.3 - 2026-09-14 (7628838f)
 - **docs/zh/configuration/response-cache.md**: v1.0.2 - 2026-09-14 (6da1396b)
 - **docs/zh/api-reference/universal-api.md**: v1.0.4 - 2026-09-14 (c7a56348)
@@ -765,17 +764,11 @@
 - **docs/en/development/contributing.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/development/code-quality.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/development/architecture.md**: v1.0.5 - 2026-08-24 (f5d673e2)
-- **docs/en/deployment/kubernetes.md**: v1.0.5 - 2026-08-24 (f5d673e2)
 - **docs/en/deployment/index.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/en/deployment/github-pages.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/deployment/china-optimization.md**: v1.0.4 - 2026-08-24 (f5d673e2)
-- **docs/en/configuration/modular-config.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/instance-examples.md**: v1.0.1 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/dynamic-config.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/circuit-breaker.md**: v1.0.3 - 2026-08-24 (f5d673e2)
-- **docs/en/configuration/application-config.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/en/api-reference/index.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/api-reference/error-codes.md**: v1.0.3 - 2026-08-24 (f5d673e2)
-- **QWEN.md**: v1.0.4 - 2026-07-14 (63a07c9b)
-- **merge-log-2026-07-10.md**: v1.0.0 - 2026-07-11 (eb2d8a82)
-- **repository-description.md**: v1.0.0 - 2026-06-29 (635e749d)
