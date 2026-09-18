@@ -94,7 +94,7 @@ JAiRouter audit logging records all important security-related operations and co
 
 ### Via the Admin Console
 
-Visit the admin console `/admin/security/audit-logs` to:
+Visit the admin console `/api/security/audit/extended/query` to:
 
 - View the audit log list
 - Filter logs by criteria

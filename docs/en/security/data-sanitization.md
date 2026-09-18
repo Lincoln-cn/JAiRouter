@@ -551,7 +551,7 @@ jairouter:
 ```yaml
 logging:
   level:
-    org.unreal.modelrouter.security.sanitization: DEBUG
+    org.unreal.modelrouter.auth.security.sanitization: DEBUG
 ```
 
 #### 2. Test Regular Expressions

@@ -1,4 +1,4 @@
-﻿# Security Feature Troubleshooting Guide
+# Security Feature Troubleshooting Guide
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -23,7 +23,7 @@ curl http://localhost:8080/actuator/health
 
 # Check security configuration
 curl -H "Authorization: Bearer admin-token" \
-     http://localhost:8080/admin/security/status
+     http://localhost:8080/api/monitoring/health
 ```
 
 ### 2. View Logs
@@ -423,7 +423,7 @@ jairouter:
 ```bash
 # Check current configuration
 curl -H "Authorization: Bearer admin-token" \
-     http://localhost:8080/admin/config/current
+     http://localhost:8080/api/monitoring/config
 
 # Check configuration file
 cat src/main/resources/application.yml | grep -A 20 security
@@ -567,7 +567,7 @@ jairouter:
 ```yaml
 logging:
   level:
-    org.unreal.modelrouter.security: DEBUG
+    org.unreal.modelrouter.auth: DEBUG
     org.springframework.security: DEBUG
     org.springframework.web: DEBUG
 ```
@@ -577,7 +577,7 @@ logging:
 ```bash
 # Security status check
 curl -H "Authorization: Bearer admin-token" \
-     http://localhost:8080/admin/security/debug
+     http://localhost:8080/api/monitoring/health
 
 # Configuration check
 curl -H "Authorization: Bearer admin-token" \
@@ -676,7 +676,7 @@ curl -H "Authorization: Bearer admin-token" \
 curl -X POST -H "Authorization: Bearer admin-token" \
      -H "Content-Type: application/json" \
      -d '{"level": "DEBUG"}' \
-     http://localhost:8080/admin/logging/org.unreal.modelrouter.security
+     http://localhost:8080/actuator/loggers/org.unreal.modelrouter.auth
 
 # Download logs
 curl -H "Authorization: Bearer admin-token" \

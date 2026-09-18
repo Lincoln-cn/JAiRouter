@@ -572,12 +572,12 @@ echo "Starting performance benchmark test..."
 
 # Baseline test without monitoring
 echo "Testing performance without monitoring..."
-curl -X POST http://localhost:8080/actuator/monitoring/disable
+curl -X POST http://localhost:8080/api/monitoring/disable
 ab -n 10000 -c 100 http://localhost:8080/v1/chat/completions > baseline.txt
 
 # Test with monitoring enabled
 echo "Testing performance with monitoring enabled..."
-curl -X POST http://localhost:8080/actuator/monitoring/enable
+curl -X POST http://localhost:8080/api/monitoring/enable
 ab -n 10000 -c 100 http://localhost:8080/v1/chat/completions > monitoring.txt
 
 # Analyze results

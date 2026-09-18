@@ -1237,7 +1237,7 @@ security:
 logging:
   level:
     org.unreal.modelrouter: INFO
-    org.unreal.modelrouter.security: DEBUG
+    org.unreal.modelrouter.auth: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{36} - %msg%n"
@@ -1315,7 +1315,7 @@ networks:
 logging:
   level:
     org.unreal.modelrouter: INFO
-    org.unreal.modelrouter.security: DEBUG
+    org.unreal.modelrouter.auth: DEBUG
     org.unreal.modelrouter.audit: DEBUG
   
   # 日志保留策略

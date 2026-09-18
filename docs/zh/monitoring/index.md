@@ -29,7 +29,7 @@ JAiRouter 提供了全面的监控功能，包括系统指标收集、Prometheus
 
 - **JAiRouter 应用**: http://localhost:8080
 - **Prometheus**: http://localhost:9090
-- **Grafana**: http://localhost:3000 (admin/admin)
+- **Grafana**: http://localhost:3000 (admin/jairouter2024)
 - **指标端点**: http://localhost:8080/actuator/prometheus
 
 ## 监控架构

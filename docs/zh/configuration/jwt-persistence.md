@@ -473,9 +473,9 @@ jairouter:
 ```yaml
 logging:
   level:
-    org.unreal.modelrouter.security.jwt: DEBUG
-    org.unreal.modelrouter.security.audit: DEBUG
-    org.unreal.modelrouter.security.persistence: DEBUG
+    org.unreal.modelrouter.auth.security.jwt: DEBUG
+    org.unreal.modelrouter.auth.audit: DEBUG
+    org.unreal.modelrouter.auth.security.persistence: DEBUG
     org.springframework.data.redis: DEBUG
 ```
 

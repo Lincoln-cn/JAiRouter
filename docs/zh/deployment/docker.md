@@ -599,7 +599,7 @@ logging:
   level:
     # 核心组件日志级别
     org.unreal.modelrouter: INFO
-    org.unreal.modelrouter.security: DEBUG
+    org.unreal.modelrouter.auth: DEBUG
     org.unreal.modelrouter.tracing: DEBUG
     
     # Spring 框架日志级别
@@ -837,7 +837,7 @@ docker history sodlinken/jairouter:latest
 ```
 # 使用非 root 用户运行容器
 docker run -d \
-  --user 1001:1001 \
+  --user 10010:10010 \
   --name jairouter \
   -p 8080:8080 \
   sodlinken/jairouter:latest

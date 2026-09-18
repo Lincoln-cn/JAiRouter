@@ -684,7 +684,7 @@ JAiRouter supports runtime dynamic updates of monitoring configurations:
 
 ```bash
 # Update sampling rate
-curl -X POST http://localhost:8080/actuator/monitoring/config \
+curl -X POST http://localhost:8080/api/monitoring/config \
   -H "Content-Type: application/json" \
   -d '{
     "sampling": {
@@ -694,14 +694,14 @@ curl -X POST http://localhost:8080/actuator/monitoring/config \
   }'
 
 # Enable/disable metric categories
-curl -X POST http://localhost:8080/actuator/monitoring/categories \
+curl -X POST http://localhost:8080/api/monitoring/categories \
   -H "Content-Type: application/json" \
   -d '{
     "enabled-categories": ["system", "business"]
   }'
 
 # Update performance configuration
-curl -X POST http://localhost:8080/actuator/monitoring/performance \
+curl -X POST http://localhost:8080/api/monitoring/performance \
   -H "Content-Type: application/json" \
   -d '{
     "batch-size": 200,
@@ -738,10 +738,10 @@ The system will automatically detect configuration file changes and apply the ne
 
 ```bash
 # Check current configuration
-curl http://localhost:8080/actuator/monitoring/config
+curl http://localhost:8080/api/monitoring/config
 
 # Check metric collection status
-curl http://localhost:8080/actuator/monitoring/status
+curl http://localhost:8080/api/monitoring/status
 
 # Verify endpoint accessibility
 curl http://localhost:8080/actuator/prometheus

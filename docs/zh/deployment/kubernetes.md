@@ -289,7 +289,7 @@ spec:
       # 安全上下文配置
       securityContext:
         runAsNonRoot: true
-        runAsUser: 100100
+        runAsUser: 10010
         runAsGroup: 10010
         fsGroup: 10010
       containers:
@@ -1053,7 +1053,7 @@ spec:
       # 安全上下文配置
       securityContext:
         runAsNonRoot: true
-        runAsUser: 100100
+        runAsUser: 10010
         runAsGroup: 10010
         fsGroup: 10010
       containers:
@@ -1318,7 +1318,7 @@ data:
     logging:
       level:
         org.unreal.modelrouter: INFO
-        org.unreal.modelrouter.security: DEBUG
+        org.unreal.modelrouter.auth: DEBUG
       file:
         name: /app/logs/jairouter.log
       pattern:

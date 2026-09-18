@@ -572,12 +572,12 @@ echo "开始性能基准测试..."
 
 # 无监控基准测试
 echo "测试无监控性能..."
-curl -X POST http://localhost:8080/actuator/monitoring/disable
+curl -X POST http://localhost:8080/api/monitoring/disable
 ab -n 10000 -c 100 http://localhost:8080/v1/chat/completions > baseline.txt
 
 # 启用监控测试
 echo "测试启用监控性能..."
-curl -X POST http://localhost:8080/actuator/monitoring/enable
+curl -X POST http://localhost:8080/api/monitoring/enable
 ab -n 10000 -c 100 http://localhost:8080/v1/chat/completions > monitoring.txt
 
 # 分析结果

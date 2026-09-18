@@ -1016,7 +1016,7 @@ logging:
   level:
     # 核心组件日志级别
     org.unreal.modelrouter: INFO
-    org.unreal.modelrouter.security: DEBUG
+    org.unreal.modelrouter.auth: DEBUG
     org.unreal.modelrouter.tracing: DEBUG
     org.unreal.modelrouter.monitoring: DEBUG
     

@@ -78,7 +78,7 @@ jairouter:
         enabled: true
         max-stack-depth: 20
         sensitive-packages:
-          - "org.unreal.modelrouter.security"
+          - "org.unreal.modelrouter.auth"
           - "org.unreal.modelrouter.auth"
         sensitive-fields:
           - "password"

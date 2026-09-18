@@ -607,7 +607,7 @@ Response includes:
 ```yaml
 logging:
   level:
-    org.unreal.modelrouter.security: DEBUG
+    org.unreal.modelrouter.auth: DEBUG
 ```
 
 #### 2. Check Audit Logs

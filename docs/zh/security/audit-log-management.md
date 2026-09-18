@@ -94,7 +94,7 @@ JAiRouter 审计日志功能记录了系统中所有重要的安全相关操作�
 
 ### 通过管理界面
 
-访问管理控制台 `/admin/security/audit-logs` 可以：
+访问管理控制台 `/api/security/audit/extended/query` 可以：
 
 - 查看审计日志列表
 - 按条件筛选日志
