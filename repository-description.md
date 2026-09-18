@@ -1,5 +1,10 @@
 # JAiRouter - Repository Description & SEO Optimization
 
+<!-- 版本信息 -->
+> **文档版本**: 1.0.1
+> **最后更新**: 2026-09-18
+<!-- /版本信息 -->
+
 ## Current Description (GitHub Repository)
 
 ### English
