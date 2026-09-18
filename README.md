@@ -269,7 +269,7 @@ JAiRouter is a **production-ready AI model gateway** for teams that run their ow
 
 ## Roadmap
 
-**Released** (latest: v3.1.1)
+**Released** (latest: v3.1.2)
 
 - [x] Core gateway with OpenAI-compatible API
 - [x] Built-in + configurable adapters (Ollama, vLLM, GPUStack, Xinference, LocalAI, OpenAI, Claude, Gemini, …)
@@ -301,7 +301,7 @@ JAiRouter is a **production-ready AI model gateway** for teams that run their ow
 - [ ] Semantic cache evaluation (vector-similarity reuse) — separate project
 - [ ] High-availability foundation (multi-node / Redis distributed / config rollback) — assessed after v3.1.x
 
-> **Current Release**: v3.1.1
+> **Current Release**: v3.1.2
 
 ## Contributing
 
