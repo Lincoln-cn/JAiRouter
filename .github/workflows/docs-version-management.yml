@@ -292,7 +292,7 @@ jobs:
           const recentChangesMatch = reportContent.match(/## 最近变更\n(.*?)(?=\n##|\n$)/s);
           const recentChanges = recentChangesMatch ? recentChangesMatch[1].trim() : '无最近变更';
           
-          const comment = `## 📋 文档版本管理报告 此 PR 涉及文档变更，以下是版本管理系统的分析结果： ### 📊 变更统计 - 变更记录数: ${{ steps.scan.outputs.changes_count }} - 过期文档数: ${{ steps.report.outputs.outdated_count }} ### 📝 最近变更 ${recentChanges} ### 🔍 检查项目 - ✅ 文档版本信息已更新 - ✅ 依赖关系已检测 - ✅ Git 信息已收集 ${steps.report.outputs.has_outdated == 'true' ? '- ⚠️ 发现过期文档，建议更新' : '- ✅ 无过期文档'} --- *此评论由文档版本管理系统自动生成*`;
+          const comment = `## 📋 文档版本管理报告 此 PR 涉及文档变更，以下是版本管理系统的分析结果： ### 📊 变更统计 - 变更记录数: ${{ steps.scan.outputs.changes_count }} - 过期文档数: ${{ steps.report.outputs.outdated_count }} ### 📝 最近变更 ${recentChanges} ### 🔍 检查项目 - ✅ 文档版本信息已更新 - ✅ 依赖关系已检测 - ✅ Git 信息已收集 ${{ steps.report.outputs.has_outdated == 'true' && '- ⚠️ 发现过期文档，建议更新' || '- ✅ 无过期文档' }} --- *此评论由文档版本管理系统自动生成*`;
           
           await github.rest.issues.createComment({
             owner: context.repo.owner,
