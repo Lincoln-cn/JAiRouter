@@ -33,7 +33,7 @@ JAiRouter's security blacklist feature provides defensive capabilities, allowing
 
 ### 1. Access via Admin Console
 
-Access the blacklist management console at `/admin/security/blacklist` to:
+Access the blacklist management console at `/api/security/blacklist/list` to:
 
 - View current blacklist list
 - Add new blacklist entries

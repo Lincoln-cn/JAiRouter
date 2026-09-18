@@ -394,7 +394,7 @@ Authentication Priority:
 ```yaml
 logging:
   level:
-    org.unreal.modelrouter.security.jwt: DEBUG
+    org.unreal.modelrouter.auth.security.jwt: DEBUG
 ```
 
 #### Token Decoding Tools

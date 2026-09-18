@@ -33,7 +33,7 @@ JAiRouter 安全黑名单功能提供了一种主动防御机制，允许管理�
 
 ### 1. 通过管理界面操作
 
-访问管理控制台 `/admin/security/blacklist` 可以：
+访问管理控制台 `/api/security/blacklist/list` 可以：
 
 - 查看当前黑名单列表
 - 添加新的黑名单条目

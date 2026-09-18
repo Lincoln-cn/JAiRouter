@@ -423,7 +423,7 @@ jairouter:
 ```bash
 # 检查当前配置
 curl -H "Authorization: Bearer admin-token" \
-     http://localhost:8080/admin/config/current
+     http://localhost:8080/api/monitoring/config
 
 # 检查配置文件
 cat src/main/resources/application.yml | grep -A 20 security
@@ -577,7 +577,7 @@ logging:
 ```bash
 # 安全状态检查
 curl -H "Authorization: Bearer admin-token" \
-     http://localhost:8080/admin/security/debug
+     http://localhost:8080/api/monitoring/health
 
 # 配置检查
 curl -H "Authorization: Bearer admin-token" \
@@ -676,7 +676,7 @@ curl -H "Authorization: Bearer admin-token" \
 curl -X POST -H "Authorization: Bearer admin-token" \
      -H "Content-Type: application/json" \
      -d '{"level": "DEBUG"}' \
-     http://localhost:8080/admin/logging/org.unreal.modelrouter.security
+     http://localhost:8080/actuator/loggers/org.unreal.modelrouter.auth
 
 # 下载日志
 curl -H "Authorization: Bearer admin-token" \

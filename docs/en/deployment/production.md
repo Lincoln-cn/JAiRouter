@@ -1038,7 +1038,7 @@ Enable security audit logging:
 # application-security.yml
 logging:
   level:
-    org.unreal.modelrouter.security: DEBUG
+    org.unreal.modelrouter.auth: DEBUG
     org.springframework.security: DEBUG
     
   # Security audit log configuration
@@ -1072,7 +1072,7 @@ logging:
     org.unreal.modelrouter.service: INFO
     
     # Security components - DEBUG level for detailed security logging
-    org.unreal.modelrouter.security: DEBUG
+    org.unreal.modelrouter.auth: DEBUG
     
     # Configuration components - INFO level for configuration changes
     org.unreal.modelrouter.config: INFO

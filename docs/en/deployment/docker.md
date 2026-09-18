@@ -601,7 +601,7 @@ logging:
   level:
     # Core component log levels
     org.unreal.modelrouter: INFO
-    org.unreal.modelrouter.security: DEBUG
+    org.unreal.modelrouter.auth: DEBUG
     org.unreal.modelrouter.tracing: DEBUG
     
     # Spring framework log levels
@@ -839,7 +839,7 @@ docker history sodlinken/jairouter:latest
 ```
 # Run the container with a non-root user
 docker run -d \
-  --user 1001:1001 \
+  --user 10010:10010 \
   --name jairouter \
   -p 8080:8080 \
   sodlinken/jairouter:latest

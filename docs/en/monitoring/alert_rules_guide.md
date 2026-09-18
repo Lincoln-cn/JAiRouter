@@ -145,7 +145,7 @@ This document details the Prometheus alert rules configuration for the JAiRouter
 
 #### JAiRouterCircuitBreakerOpen
 - **Description**: JAiRouter circuit breaker opened
-- **Trigger Condition**: `jairouter_circuit_breaker_state == 2`
+- **Trigger Condition**: `jairouter_circuit_breaker_state == 1`
 - **Duration**: 30 seconds
 - **Severity**: Warning
 - **Handling Recommendations**:

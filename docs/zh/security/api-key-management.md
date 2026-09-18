@@ -622,7 +622,7 @@ curl -X GET "http://localhost:8080/api/security/audit/report?from=2025-01-01&to=
 ```
 logging:
   level:
-    org.unreal.modelrouter.security: DEBUG
+    org.unreal.modelrouter.auth: DEBUG
 ```
 
 #### 2. 检查审计日志

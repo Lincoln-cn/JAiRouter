@@ -54,7 +54,7 @@ If you do not have Docker installed yet, refer to the [Docker official installat
 docker pull sodlinken/jairouter:latest
 
 # Or pull a specific version
-docker pull sodlinken/jairouter:v0.3.1
+docker pull sodlinken/jairouter:v3.1.1
 ```
 
 ### 3. Run the Container

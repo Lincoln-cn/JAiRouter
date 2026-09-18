@@ -686,7 +686,7 @@ JAiRouter 支持运行时动态更新监控配置：
 
 ```bash
 # 更新采样率
-curl -X POST http://localhost:8080/actuator/monitoring/config \
+curl -X POST http://localhost:8080/api/monitoring/config \
   -H "Content-Type: application/json" \
   -d '{
     "sampling": {
@@ -696,14 +696,14 @@ curl -X POST http://localhost:8080/actuator/monitoring/config \
   }'
 
 # 启用/禁用指标类别
-curl -X POST http://localhost:8080/actuator/monitoring/categories \
+curl -X POST http://localhost:8080/api/monitoring/categories \
   -H "Content-Type: application/json" \
   -d '{
     "enabled-categories": ["system", "business"]
   }'
 
 # 更新性能配置
-curl -X POST http://localhost:8080/actuator/monitoring/performance \
+curl -X POST http://localhost:8080/api/monitoring/performance \
   -H "Content-Type: application/json" \
   -d '{
     "batch-size": 200,
@@ -740,10 +740,10 @@ monitoring:
 
 ```bash
 # 检查当前配置
-curl http://localhost:8080/actuator/monitoring/config
+curl http://localhost:8080/api/monitoring/config
 
 # 检查指标收集状态
-curl http://localhost:8080/actuator/monitoring/status
+curl http://localhost:8080/api/monitoring/status
 
 # 验证端点可访问性
 curl http://localhost:8080/actuator/prometheus

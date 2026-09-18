@@ -144,7 +144,7 @@
 
 #### JAiRouterCircuitBreakerOpen
 - **描述**: JAiRouter熔断器开启
-- **触发条件**: `jairouter_circuit_breaker_state == 2`
+- **触发条件**: `jairouter_circuit_breaker_state == 1`
 - **持续时间**: 30秒
 - **严重级别**: Warning
 - **处理建议**:
