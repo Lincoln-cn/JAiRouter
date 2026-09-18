@@ -47,8 +47,8 @@ jairouter:
 
     jwt:
       enabled: true
-      # 生产环境必须使用环境变量设置密钥
-      secret: "${PROD_JWT_SECRET:}"
+      # 生产环境必须使用环境变量设置密钥（优先读 JWT_SECRET，回退 PROD_JWT_SECRET，两者皆无则报错）
+      secret: "${JWT_SECRET:${PROD_JWT_SECRET:}}"
       issuer: "jairouter-prod"
 
       persistence:

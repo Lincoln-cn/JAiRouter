@@ -60,7 +60,7 @@ jairouter:
     
     jwt:
       enabled: true
-      secret: "${DEV_JWT_SECRET:dev-secret-key-for-testing-only-32-characters-minimum}"
+      secret: "${JWT_SECRET:${DEV_JWT_SECRET:dev-secret-key-for-testing-only-32-characters-minimum}}"
 
       accounts:
         - username: "admin"

@@ -30,7 +30,7 @@ jairouter:
 
     jwt:
       enabled: true
-      secret: "${STAGING_JWT_SECRET:}"
+      secret: "${JWT_SECRET:${STAGING_JWT_SECRET:}}"
       issuer: "jairouter-staging"
 
       persistence:
