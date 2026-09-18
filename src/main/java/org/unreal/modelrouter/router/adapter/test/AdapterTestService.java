@@ -5,8 +5,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.unreal.modelrouter.common.util.UrlSecurityValidator;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
-import org.unreal.modelrouter.router.adapter.ServiceCapability;
 import reactor.core.publisher.Mono;
 
 import java.net.ConnectException;
@@ -43,9 +43,14 @@ public class AdapterTestService {
                                             final String authHeaderName,
                                             final String authHeaderValue) {
         long startTime = System.currentTimeMillis();
-        String url = baseUrl.endsWith("/") ? baseUrl + "models" : baseUrl + "/models";
+        final String safeBaseUrl;
+        try {
+            safeBaseUrl = UrlSecurityValidator.validateOutboundBaseUrl(baseUrl);
+        } catch (SecurityException ex) {
+            return Mono.just(AdapterTestResult.error("Base URL 不合法: " + ex.getMessage()));
+        }
 
-        WebClient client = webClientBuilder.baseUrl(baseUrl).build();
+        WebClient client = webClientBuilder.baseUrl(safeBaseUrl).build(); // lgtm[java/ssrf]
 
         return client.get()
                 .uri("/models")
@@ -92,9 +97,14 @@ public class AdapterTestService {
                                             final String model) {
         long startTime = System.currentTimeMillis();
 
-        String chatUrl = baseUrl.endsWith("/") ? baseUrl + "chat/completions" : baseUrl + "/chat/completions";
+        final String safeBaseUrl;
+        try {
+            safeBaseUrl = UrlSecurityValidator.validateOutboundBaseUrl(baseUrl);
+        } catch (SecurityException ex) {
+            return Mono.just(AdapterTestResult.error("Base URL 不合法: " + ex.getMessage()));
+        }
 
-        WebClient client = webClientBuilder.baseUrl(baseUrl).build();
+        WebClient client = webClientBuilder.baseUrl(safeBaseUrl).build(); // lgtm[java/ssrf]
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", model);
@@ -155,8 +165,6 @@ public class AdapterTestService {
             throw new IllegalArgumentException("适配器不存在: " + adapterName);
         }
 
-        // 获取适配器的配置信息
-        ServiceCapability adapter = adapterRegistry.getAdapterByName(adapterName);
         String effectiveBaseUrl = baseUrl;
 
         // 如果没有提供 baseUrl，尝试从适配器配置获取
@@ -165,12 +173,19 @@ public class AdapterTestService {
             effectiveBaseUrl = "http://localhost:8080";
         }
 
+        final String safeBaseUrl;
+        try {
+            safeBaseUrl = UrlSecurityValidator.validateOutboundBaseUrl(effectiveBaseUrl);
+        } catch (SecurityException ex) {
+            return Mono.just(AdapterTestResult.error("Base URL 不合法: " + ex.getMessage()));
+        }
+
         String authHeader = apiKey != null && !apiKey.isBlank() ? "Bearer " + apiKey : "";
 
         if ("CHAT".equalsIgnoreCase(testType)) {
-            return testChat(effectiveBaseUrl, "Authorization", authHeader, model);
+            return testChat(safeBaseUrl, "Authorization", authHeader, model);
         }
-        return testPing(effectiveBaseUrl, "Authorization", authHeader);
+        return testPing(safeBaseUrl, "Authorization", authHeader);
     }
 
     /**
@@ -182,9 +197,16 @@ public class AdapterTestService {
                                                 final String authHeaderValue,
                                                 final String testType,
                                                 final String model) {
-        if ("CHAT".equalsIgnoreCase(testType)) {
-            return testChat(baseUrl, authHeaderName, authHeaderValue, model);
+        final String safeBaseUrl;
+        try {
+            safeBaseUrl = UrlSecurityValidator.validateOutboundBaseUrl(baseUrl);
+        } catch (SecurityException ex) {
+            return Mono.just(AdapterTestResult.error("Base URL 不合法: " + ex.getMessage()));
         }
-        return testPing(baseUrl, authHeaderName, authHeaderValue);
+
+        if ("CHAT".equalsIgnoreCase(testType)) {
+            return testChat(safeBaseUrl, authHeaderName, authHeaderValue, model);
+        }
+        return testPing(safeBaseUrl, authHeaderName, authHeaderValue);
     }
 }

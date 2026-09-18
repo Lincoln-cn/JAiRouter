@@ -119,4 +119,63 @@ public final class PathSanitizer {
 
         return Paths.get(path).toAbsolutePath().normalize();
     }
+
+    /**
+     * 在受信存储根下解析目标路径，拒绝路径穿越。
+     *
+     * @param root 受信根目录
+     * @param relativePath 相对路径或文件名（会先 sanitize）
+     * @return 位于 root 内的绝对路径
+     */
+    public static Path resolveUnderRoot(final Path root, final String relativePath) {
+        if (root == null || relativePath == null) {
+            throw new IllegalArgumentException("Root and relative path cannot be null");
+        }
+        Path safeRoot = root.toAbsolutePath().normalize();
+        String sanitized = sanitizeFileName(relativePath);
+        Path target = safeRoot.resolve(sanitized).normalize();
+        if (!target.startsWith(safeRoot)) {
+            throw new SecurityException("Path traversal attempt detected: " + relativePath);
+        }
+        return target;
+    }
+
+    /**
+     * 在受信存储根下解析多级相对路径（每段都会 sanitize）。
+     */
+    public static Path resolveUnderRoot(final Path root, final String... segments) {
+        if (root == null || segments == null || segments.length == 0) {
+            throw new IllegalArgumentException("Root and path segments cannot be null/empty");
+        }
+        Path safeRoot = root.toAbsolutePath().normalize();
+        Path target = safeRoot;
+        for (String segment : segments) {
+            target = target.resolve(sanitizeFileName(segment));
+        }
+        target = target.normalize();
+        if (!target.startsWith(safeRoot)) {
+            throw new SecurityException("Path traversal attempt detected under root: " + safeRoot);
+        }
+        return target;
+    }
+
+    /**
+     * 规范化并校验路径必须位于受信根目录内。
+     */
+    public static Path requireWithinRoot(final Path root, final Path candidate) {
+        if (root == null || candidate == null) {
+            throw new IllegalArgumentException("Root and candidate path cannot be null");
+        }
+        Path safeRoot = root.toAbsolutePath().normalize();
+        Path target = candidate.toAbsolutePath().normalize();
+        if (!target.startsWith(safeRoot)) {
+            throw new SecurityException("Path traversal attempt detected: " + candidate);
+        }
+        for (Path part : target) {
+            if ("..".equals(part.toString())) {
+                throw new SecurityException("Path traversal attempt detected: " + candidate);
+            }
+        }
+        return target;
+    }
 }

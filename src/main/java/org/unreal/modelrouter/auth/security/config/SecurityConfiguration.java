@@ -83,7 +83,8 @@ public class SecurityConfiguration {
 
         // 配置授权规则 - 实现基于角色的访问控制（RBAC）
         ServerHttpSecurity.AuthorizeExchangeSpec authorizeExchangeSpec = customizedHttp
-                // 禁用CSRF，因为这是一个API网关
+                // CSRF 关闭：本服务为无状态 API 网关（Bearer/API Key，NoOpSecurityContextRepository），
+                // 不依赖 Cookie 会话，CSRF 不适用。若未来引入 Cookie 会话需重新评估并启用 CSRF。
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 // 启用CORS支持，允许Web管理界面跨域访问
                 .cors(cors -> cors.disable()) // 使用控制器级别的@CrossOrigin注解

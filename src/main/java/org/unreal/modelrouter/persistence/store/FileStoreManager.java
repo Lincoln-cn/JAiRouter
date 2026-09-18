@@ -54,9 +54,9 @@ public class FileStoreManager extends BaseStoreManager {
     protected void doSaveConfig(final String key, final Map<String, Object> config) {
         try {
             String sanitizedKey = PathSanitizer.sanitizeFileName(key);
-            Path configPath = PathSanitizer.sanitizePath(storagePath)
-                    .resolve(sanitizedKey + ".json");
-            SafeFileOperations.writeJsonFile(configPath, config, JacksonHelper.getObjectMapper());
+            Path root = PathSanitizer.sanitizePath(storagePath);
+            Path configPath = PathSanitizer.resolveUnderRoot(root, sanitizedKey + ".json");
+            SafeFileOperations.writeJsonFile(configPath, config, JacksonHelper.getObjectMapper(), root);
         } catch (IOException e) {
             LOGGER.error("Failed to save config for key: " + key, e);
             throw new RuntimeException("Failed to save config", e);
@@ -72,10 +72,10 @@ public class FileStoreManager extends BaseStoreManager {
     protected Map<String, Object> doGetConfig(final String key) {
         try {
             String sanitizedKey = PathSanitizer.sanitizeFileName(key);
-            Path configPath = PathSanitizer.sanitizePath(storagePath)
-                    .resolve(sanitizedKey + ".json");
+            Path root = PathSanitizer.sanitizePath(storagePath);
+            Path configPath = PathSanitizer.resolveUnderRoot(root, sanitizedKey + ".json");
             return SafeFileOperations.readJsonFile(configPath, JacksonHelper.getObjectMapper(), new TypeReference<>() {
-            });
+            }, root);
         } catch (IOException e) {
             // 对于文件不存在的情况，静默处理，因为这是正常现象（新安装或默认初始化）
             if (e.getMessage() != null && e.getMessage().contains("File does not exist")) {
@@ -96,9 +96,9 @@ public class FileStoreManager extends BaseStoreManager {
     protected void doDeleteConfig(final String key) {
         try {
             String sanitizedKey = PathSanitizer.sanitizeFileName(key);
-            Path configPath = PathSanitizer.sanitizePath(storagePath)
-                    .resolve(sanitizedKey + ".json");
-            SafeFileOperations.deleteFile(configPath);
+            Path root = PathSanitizer.sanitizePath(storagePath);
+            Path configPath = PathSanitizer.resolveUnderRoot(root, sanitizedKey + ".json");
+            SafeFileOperations.deleteFile(configPath, root);
         } catch (IOException e) {
             LOGGER.error("Failed to delete config for key: " + key, e);
             throw new RuntimeException("Failed to delete config", e);

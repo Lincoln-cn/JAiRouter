@@ -178,8 +178,8 @@ public class MetricsManagementController {
             return ResponseEntity.ok("Sampling configuration updated successfully");
         } catch (Exception e) {
             logger.error("Error updating sampling config", e);
-            return ResponseEntity.internalServerError().body(
-                    "Failed to update sampling configuration: " + e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body("Failed to update sampling configuration");
         }
     }
 
@@ -221,8 +221,8 @@ public class MetricsManagementController {
             return ResponseEntity.ok("Performance configuration updated successfully");
         } catch (Exception e) {
             logger.error("Error updating performance config", e);
-            return ResponseEntity.internalServerError().body(
-                    "Failed to update performance configuration: " + e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body("Failed to update performance configuration");
         }
     }
 
@@ -237,7 +237,7 @@ public class MetricsManagementController {
             return ResponseEntity.ok("Memory cleanup completed");
         } catch (Exception e) {
             logger.error("Error during manual memory cleanup", e);
-            return ResponseEntity.internalServerError().body("Memory cleanup failed: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Memory cleanup failed");
         }
     }
 
@@ -252,7 +252,7 @@ public class MetricsManagementController {
             return ResponseEntity.ok("Metrics cache cleared");
         } catch (Exception e) {
             logger.error("Error clearing metrics cache", e);
-            return ResponseEntity.internalServerError().body("Failed to clear cache: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Failed to clear cache");
         }
     }
 
@@ -279,7 +279,7 @@ public class MetricsManagementController {
             }
         } catch (Exception e) {
             logger.error("Error controlling circuit breaker", e);
-            return ResponseEntity.internalServerError().body("Circuit breaker control failed: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Circuit breaker control failed");
         }
     }
 
@@ -310,7 +310,7 @@ public class MetricsManagementController {
             return ResponseEntity.ok("Error state reset successfully");
         } catch (Exception e) {
             logger.error("Error resetting error state", e);
-            return ResponseEntity.internalServerError().body("Failed to reset error state: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Failed to reset error state");
         }
     }
 
@@ -340,10 +340,10 @@ public class MetricsManagementController {
             logger.info("Set degradation level to: {}", degradationLevel);
             return ResponseEntity.ok("Degradation level set to: " + degradationLevel.getDescription());
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Invalid degradation level: " + level);
+            return ResponseEntity.badRequest().body("Invalid degradation level");
         } catch (Exception e) {
             logger.error("Error setting degradation level", e);
-            return ResponseEntity.internalServerError().body("Failed to set degradation level: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Failed to set degradation level");
         }
     }
 
@@ -358,7 +358,7 @@ public class MetricsManagementController {
             return ResponseEntity.ok("Auto mode " + (enabled ? "enabled" : "disabled"));
         } catch (Exception e) {
             logger.error("Error setting auto mode", e);
-            return ResponseEntity.internalServerError().body("Failed to set auto mode: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Failed to set auto mode");
         }
     }
 
@@ -373,7 +373,7 @@ public class MetricsManagementController {
             return ResponseEntity.ok("Forced recovery completed");
         } catch (Exception e) {
             logger.error("Error during forced recovery", e);
-            return ResponseEntity.internalServerError().body("Forced recovery failed: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Forced recovery failed");
         }
     }
 
@@ -402,7 +402,7 @@ public class MetricsManagementController {
             return ResponseEntity.ok("Cache cleared successfully");
         } catch (Exception e) {
             logger.error("Error clearing cache", e);
-            return ResponseEntity.internalServerError().body("Failed to clear cache: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Failed to clear cache");
         }
     }
 
@@ -424,7 +424,7 @@ public class MetricsManagementController {
             logger.error("Error getting health status", e);
             Map<String, Object> errorHealth = new HashMap<>();
             errorHealth.put("status", "DOWN");
-            errorHealth.put("details", "Health check failed: " + e.getMessage());
+            errorHealth.put("details", "Health check failed");
             return ResponseEntity.internalServerError().body(errorHealth);
         }
     }

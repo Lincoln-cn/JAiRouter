@@ -193,20 +193,20 @@ public class FileStatePersistenceServiceImpl implements StatePersistenceService 
     }
 
     /**
-     * 解析文件存储路径
+     * 解析文件存储路径（强制落在 storagePath 根内）
      */
     private Path resolveFilePath(final StateType stateType, final String key) {
         Path basePath = PathSanitizer.sanitizePath(storagePath);
-        Path typePath = basePath.resolve(stateType.name().toLowerCase());
-        String safeFileName = PathSanitizer.sanitizeFileName(key) + ".json";
-        return typePath.resolve(safeFileName);
+        Path target = PathSanitizer.resolveUnderRoot(basePath, stateType.name().toLowerCase(), key + ".json");
+        return PathSanitizer.requireWithinRoot(basePath, target);
     }
 
     /**
-     * 解析目录路径
+     * 解析目录路径（强制落在 storagePath 根内）
      */
     private Path resolveDirectoryPath(final StateType stateType) {
         Path basePath = PathSanitizer.sanitizePath(storagePath);
-        return basePath.resolve(stateType.name().toLowerCase());
+        Path target = PathSanitizer.resolveUnderRoot(basePath, stateType.name().toLowerCase());
+        return PathSanitizer.requireWithinRoot(basePath, target);
     }
 }
