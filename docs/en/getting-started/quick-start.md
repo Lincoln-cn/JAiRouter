@@ -1,7 +1,7 @@
 # Quick Start
 
 <!-- 版本信息 -->
-> **Doc Version**: 1.2.1
+> **Doc Version**: 1.2.2
 > **Last Updated**: 2026-09-18
 > **Applicable Version**: v3.1.1+
 > **Author**: Lincoln
@@ -26,7 +26,11 @@ After completing this guide, you will be able to:
 
 The production profile (prod) deliberately ships no default JWT key, so you need to generate one with **at least 32 characters**.
 
-> ⚠️ **Note**: The built-in `--generate-key` / `--generate-password` commands in the image are not functional in the current release and will be fixed in a future version. Please use the methods below to generate keys.
+> 💡 **Tip**: You can use the built-in key generator in the image:
+> ```bash
+> docker run --rm sodlinken/jairouter:latest --generate-key
+> ```
+> Alternatively, use the command-line methods below:
 
 ### Linux / macOS / Git Bash
 

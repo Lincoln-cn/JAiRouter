@@ -60,8 +60,10 @@
 ## ⚡ 1-Minute Quick Start
 
 ```bash
-# Start the service
-docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
+# Start the service (dev mode, zero config)
+docker run -d --name jairouter -p 8080:8080 -e SPRING_PROFILES_ACTIVE=dev sodlinken/jairouter:latest
+
+# For production, provide a JWT secret: -e JWT_SECRET=<at-least-32-characters>
 
 # Access the console
 open http://localhost:8080
