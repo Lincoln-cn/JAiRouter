@@ -133,6 +133,29 @@ public final class SafeFileOperations {
     }
 
     /**
+     * 规范化路径并拒绝穿越：目标必须可归一化，且不得含 ".." 段。
+     * 若提供 storageRoot，则进一步要求目标位于该根目录内。
+     */
+    private static Path requireSafePath(final Path path, final Path storageRoot) {
+        if (path == null) {
+            throw new IllegalArgumentException("Path cannot be null");
+        }
+        Path safePath = path.toAbsolutePath().normalize();
+        for (Path part : safePath) {
+            if ("..".equals(part.toString())) {
+                throw new SecurityException("Path traversal attempt detected: " + path);
+            }
+        }
+        if (storageRoot != null) {
+            Path root = storageRoot.toAbsolutePath().normalize();
+            if (!safePath.startsWith(root)) {
+                throw new SecurityException("Path outside storage root: " + path);
+            }
+        }
+        return safePath;
+    }
+
+    /**
      * 将数据写入JSON文件
      *
      * @param basePath 基础路径
@@ -144,25 +167,25 @@ public final class SafeFileOperations {
     public static String writeJsonFile(
             final Path basePath, final Map<String, Object> data,
             final ObjectMapper objectMapper) throws IOException {
+        return writeJsonFile(basePath, data, objectMapper, null);
+    }
+
+    /**
+     * 将数据写入JSON文件（限定 storageRoot）
+     */
+    public static String writeJsonFile(
+            final Path basePath, final Map<String, Object> data,
+            final ObjectMapper objectMapper, final Path storageRoot) throws IOException {
         if (basePath == null || data == null || objectMapper == null) {
             throw new IllegalArgumentException("Base path, data and object mapper cannot be null");
         }
 
-        // 确保基础目录存在并规范化路径
-        Path safeBasePath = basePath.toAbsolutePath().normalize();
+        Path safeBasePath = requireSafePath(basePath, storageRoot);
         if (safeBasePath.getParent() != null) {
-            Files.createDirectories(safeBasePath.getParent());
+            Files.createDirectories(requireSafePath(safeBasePath.getParent(), storageRoot));
         }
 
-        // 检查路径安全性
-        if (safeBasePath.getParent() != null && !isPathSafe(safeBasePath.getParent().toString(),
-                safeBasePath.toString())) {
-            throw new SecurityException("Path traversal attempt detected: " + basePath.toString());
-        }
-
-        // 将数据写入JSON文件
         objectMapper.writeValue(safeBasePath.toFile(), data);
-
         return safeBasePath.toString();
     }
 
@@ -177,25 +200,25 @@ public final class SafeFileOperations {
      */
     public static String writeJsonFile(final Path basePath, final List<?> data, final ObjectMapper objectMapper)
             throws IOException {
+        return writeJsonFile(basePath, data, objectMapper, null);
+    }
+
+    /**
+     * 将List数据写入JSON文件（限定 storageRoot）
+     */
+    public static String writeJsonFile(final Path basePath, final List<?> data,
+                                       final ObjectMapper objectMapper, final Path storageRoot)
+            throws IOException {
         if (basePath == null || data == null || objectMapper == null) {
             throw new IllegalArgumentException("Base path, data and object mapper cannot be null");
         }
 
-        // 确保基础目录存在并规范化路径
-        Path safeBasePath = basePath.toAbsolutePath().normalize();
+        Path safeBasePath = requireSafePath(basePath, storageRoot);
         if (safeBasePath.getParent() != null) {
-            Files.createDirectories(safeBasePath.getParent());
+            Files.createDirectories(requireSafePath(safeBasePath.getParent(), storageRoot));
         }
 
-        // 检查路径安全性
-        if (safeBasePath.getParent() != null && !isPathSafe(safeBasePath.getParent().toString(),
-                safeBasePath.toString())) {
-            throw new SecurityException("Path traversal attempt detected: " + basePath.toString());
-        }
-
-        // 将数据写入JSON文件
         objectMapper.writeValue(safeBasePath.toFile(), data);
-
         return safeBasePath.toString();
     }
 
@@ -211,25 +234,24 @@ public final class SafeFileOperations {
     public static <T> T readJsonFile(
             final Path basePath, final ObjectMapper objectMapper,
             final TypeReference<T> typeReference) throws IOException {
+        return readJsonFile(basePath, objectMapper, typeReference, null);
+    }
+
+    /**
+     * 从JSON文件读取数据（限定 storageRoot）
+     */
+    public static <T> T readJsonFile(
+            final Path basePath, final ObjectMapper objectMapper,
+            final TypeReference<T> typeReference, final Path storageRoot) throws IOException {
         if (basePath == null || objectMapper == null || typeReference == null) {
             throw new IllegalArgumentException("Base path, object mapper and type reference cannot be null");
         }
 
-        // 规范化路径
-        Path safeBasePath = basePath.toAbsolutePath().normalize();
-
-        // 检查路径安全性
-        if (safeBasePath.getParent() != null && !isPathSafe(safeBasePath.getParent().toString(),
-                safeBasePath.toString())) {
-            throw new SecurityException("Path traversal attempt detected: " + basePath.toString());
-        }
-
-        // 检查文件是否存在
+        Path safeBasePath = requireSafePath(basePath, storageRoot);
         if (!Files.exists(safeBasePath)) {
-            throw new IOException("File does not exist: " + safeBasePath.toString());
+            throw new IOException("File does not exist");
         }
 
-        // 从JSON文件读取数据
         return objectMapper.readValue(safeBasePath.toFile(), typeReference);
     }
 
@@ -240,20 +262,18 @@ public final class SafeFileOperations {
      * @throws IOException 如果文件操作失败
      */
     public static void deleteFile(final Path basePath) throws IOException {
+        deleteFile(basePath, null);
+    }
+
+    /**
+     * 安全地删除文件（限定 storageRoot）
+     */
+    public static void deleteFile(final Path basePath, final Path storageRoot) throws IOException {
         if (basePath == null) {
             throw new IllegalArgumentException("Base path cannot be null");
         }
 
-        // 规范化路径
-        Path safeBasePath = basePath.toAbsolutePath().normalize();
-
-        // 检查路径安全性
-        if (safeBasePath.getParent() != null && !isPathSafe(safeBasePath.getParent().toString(),
-                safeBasePath.toString())) {
-            throw new SecurityException("Path traversal attempt detected: " + basePath.toString());
-        }
-
-        // 删除文件
+        Path safeBasePath = requireSafePath(basePath, storageRoot);
         if (Files.exists(safeBasePath)) {
             Files.delete(safeBasePath);
         }

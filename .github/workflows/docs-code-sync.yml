@@ -24,6 +24,10 @@ on:
       - 'Dockerfile*'
       - 'docker-compose*.yml'
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   docs-code-sync:
     runs-on: ubuntu-latest

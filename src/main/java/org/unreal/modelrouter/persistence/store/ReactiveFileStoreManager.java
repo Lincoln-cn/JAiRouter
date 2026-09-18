@@ -49,9 +49,9 @@ public class ReactiveFileStoreManager implements ReactiveVersionedStoreManager {
     public Mono<Void> saveConfig(final String key, Map<String, Object> config) {
         return Mono.fromCallable(() -> {
                     String sanitizedKey = PathSanitizer.sanitizeFileName(key);
-                    Path configPath = PathSanitizer.sanitizePath(storagePath)
-                            .resolve(sanitizedKey + ".json");
-                    SafeFileOperations.writeJsonFile(configPath, config, JacksonHelper.getObjectMapper());
+                    Path root = PathSanitizer.sanitizePath(storagePath);
+                    Path configPath = PathSanitizer.resolveUnderRoot(root, sanitizedKey + ".json");
+                    SafeFileOperations.writeJsonFile(configPath, config, JacksonHelper.getObjectMapper(), root);
                     return configPath;
                 })
                 .subscribeOn(Schedulers.boundedElastic())
@@ -64,12 +64,12 @@ public class ReactiveFileStoreManager implements ReactiveVersionedStoreManager {
     public Mono<Map<String, Object>> getConfig(final String key) {
         return Mono.fromCallable(() -> {
                     String sanitizedKey = PathSanitizer.sanitizeFileName(key);
-                    Path configPath = PathSanitizer.sanitizePath(storagePath)
-                            .resolve(sanitizedKey + ".json");
+                    Path root = PathSanitizer.sanitizePath(storagePath);
+                    Path configPath = PathSanitizer.resolveUnderRoot(root, sanitizedKey + ".json");
                     return SafeFileOperations.readJsonFile(configPath,
                             JacksonHelper.getObjectMapper(),
                             new TypeReference<Map<String, Object>>() {
-                    });
+                    }, root);
                 })
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnError(e -> {
@@ -89,9 +89,9 @@ public class ReactiveFileStoreManager implements ReactiveVersionedStoreManager {
     public Mono<Void> deleteConfig(final String key) {
         return Mono.fromCallable(() -> {
                     String sanitizedKey = PathSanitizer.sanitizeFileName(key);
-                    Path configPath = PathSanitizer.sanitizePath(storagePath)
-                            .resolve(sanitizedKey + ".json");
-                    SafeFileOperations.deleteFile(configPath);
+                    Path root = PathSanitizer.sanitizePath(storagePath);
+                    Path configPath = PathSanitizer.resolveUnderRoot(root, sanitizedKey + ".json");
+                    SafeFileOperations.deleteFile(configPath, root);
                     return configPath;
                 })
                 .subscribeOn(Schedulers.boundedElastic())
