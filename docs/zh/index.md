@@ -60,8 +60,10 @@
 ## ⚡ 1分钟快速体验
 
 ```bash
-# 启动服务
-docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
+# 启动服务（开发模式，零配置）
+docker run -d --name jairouter -p 8080:8080 -e SPRING_PROFILES_ACTIVE=dev sodlinken/jairouter:latest
+
+# 生产环境请提供 JWT 密钥：-e JWT_SECRET=<至少32字符>
 
 # 访问控制台
 open http://localhost:8080

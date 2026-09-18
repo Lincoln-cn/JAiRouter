@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.unreal.modelrouter.auth.cli.KeyGeneratorCommandLine;
 
 @SpringBootApplication
 @EnableAsync
@@ -18,6 +19,9 @@ public class ModelRouterApplication {
     private ModelRouterApplication() {}
 
     public static void main(final String[] args) {
+        if (KeyGeneratorCommandLine.tryGenerate(args)) {
+            return;
+        }
         SpringApplication.run(ModelRouterApplication.class, args);
     }
 
