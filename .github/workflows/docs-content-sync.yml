@@ -2,7 +2,7 @@ name: 文档内容同步检查
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, master ]
     paths: 
       - 'docs/**'
       - 'src/main/resources/application.yml'
@@ -10,7 +10,7 @@ on:
       - 'Dockerfile*'
       - 'docker-compose*.yml'
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, master ]
     paths: 
       - 'docs/**'
       - 'src/main/resources/application.yml'
@@ -52,7 +52,6 @@ jobs:
       run: |
         python scripts/docs/check-docs-sync.py \
           --project-root . \
-          --output docs-sync-report.md \
           --fail-on-error
     
     - name: 上传检查报告
@@ -60,7 +59,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: docs-sync-report
-        path: docs-sync-report.md
+        path: docs-sync-report.json
         retention-days: 30
     
     - name: 添加 PR 评论 (如果有问题)
@@ -71,7 +70,7 @@ jobs:
           const fs = require('fs');
           
           try {
-            const report = fs.readFileSync('docs-sync-report.md', 'utf8');
+            const report = fs.readFileSync('docs-sync-report.json', 'utf8');
             
             const comment = `## 📋 文档内容同步检查报告
             
@@ -102,9 +101,9 @@ jobs:
     - name: 检查结果总结
       if: always()
       run: |
-        if [ -f "docs-sync-report.md" ]; then
+        if [ -f "docs-sync-report.json" ]; then
           echo "## 📋 文档同步检查报告" >> $GITHUB_STEP_SUMMARY
-          cat docs-sync-report.md >> $GITHUB_STEP_SUMMARY
+          cat docs-sync-report.json >> $GITHUB_STEP_SUMMARY
         fi
         
         if [ "${{ steps.sync-check.outcome }}" = "success" ]; then

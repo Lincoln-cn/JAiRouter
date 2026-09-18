@@ -51,7 +51,7 @@ docker run -d --name jairouter -p 8080:8080 \
 
 ```bash
 docker run -d --name jairouter -p 8080:8080 \
-  -e PROD_JWT_SECRET="<至少32字符的密钥>" \
+  -e JWT_SECRET="<至少32字符的密钥>" \
   sodlinken/jairouter:latest
 ```
 
@@ -309,9 +309,9 @@ JAiRouter 是一个 **生产级 AI 模型网关**，面向自建推理基础设�
 
 ```bash
 git clone https://github.com/Lincoln-cn/JAiRouter.git
-cd JAiRouter/modelrouter
+cd JAiRouter
 mvn clean package -DskipTests
-java -jar target/modelrouter.jar
+java -jar target/model-router-*.jar
 ```
 
 ## 获取支持

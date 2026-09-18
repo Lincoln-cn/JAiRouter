@@ -1,8 +1,8 @@
 # 安装指南
 
 <!-- 版本信息 -->
-> **文档版本**: 1.0.2  
-> **最后更新**: 2026-05-21  
+> **文档版本**: 1.0.3  
+> **最后更新**: 2026-09-18  
 > **Git 提交**: 61384b4a  
 > **作者**: Lincoln
 <!-- /版本信息 -->
@@ -59,17 +59,32 @@ docker pull sodlinken/jairouter:v3.1.1
 
 ### 3. 运行容器
 
+**快速体验（dev profile，零配置）**：
+
 ```bash
-# 基本运行
+# 使用 dev 方式启动，内置开发密钥，无需额外配置
 docker run -d \
   --name jairouter \
   -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=dev \
+  sodlinken/jairouter:latest
+```
+
+**生产环境（prod profile，必须提供密钥）**：
+
+```bash
+# 生产环境需自行提供 JWT 密钥（至少 32 字符）
+docker run -d \
+  --name jairouter \
+  -p 8080:8080 \
+  -e JWT_SECRET="<至少32字符的密钥>" \
   sodlinken/jairouter:latest
 
-# 带配置文件运行
+# 挂载自定义配置目录
 docker run -d \
   --name jairouter \
   -p 8080:8080 \
+  -e JWT_SECRET="<至少32字符的密钥>" \
   -v $(pwd)/config:/app/config:ro \
   -v $(pwd)/logs:/app/logs \
   sodlinken/jairouter:latest
