@@ -37,9 +37,9 @@
     },
     "docs/en/api-reference/openapi-spec.md": {
       "FilePath": "docs/en/api-reference/openapi-spec.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-08-24T03:02:49.088870",
-      "ContentHash": "9e2138579dabd817",
+      "Version": "1.0.4",
+      "LastModified": "2026-09-18T11:28:02.698828",
+      "ContentHash": "27a1f9abe316686e",
       "GitCommit": "f5d673e2",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -168,7 +168,7 @@
       "Version": "1.0.6",
       "LastModified": "2026-09-18T11:16:29.475452",
       "ContentHash": "0517fb45edff64e3",
-      "GitCommit": "2e651835",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -343,7 +343,7 @@
       "Version": "1.0.9",
       "LastModified": "2026-09-18T11:16:32.222976",
       "ContentHash": "9710a82ff94e9e81",
-      "GitCommit": "53f26f63",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -499,7 +499,7 @@
       "Version": "1.0.4",
       "LastModified": "2026-09-18T11:16:34.381610",
       "ContentHash": "5b56f26b791019fb",
-      "GitCommit": "f5d673e2",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -521,9 +521,9 @@
     },
     "docs/en/reference/faq.md": {
       "FilePath": "docs/en/reference/faq.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-09-14T07:33:35.834421",
-      "ContentHash": "8a7b1f8e831bd935",
+      "Version": "1.0.7",
+      "LastModified": "2026-09-18T11:28:11.255674",
+      "ContentHash": "a2e76e6c5d7de12f",
       "GitCommit": "96e0a22a",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -534,9 +534,9 @@
     },
     "docs/en/reference/glossary.md": {
       "FilePath": "docs/en/reference/glossary.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-08-24T03:02:49.199359",
-      "ContentHash": "8b7b99aca752363a",
+      "Version": "1.0.5",
+      "LastModified": "2026-09-18T11:28:11.422198",
+      "ContentHash": "dd04726e611fac23",
       "GitCommit": "f5d673e2",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -544,9 +544,9 @@
     },
     "docs/en/reference/index.md": {
       "FilePath": "docs/en/reference/index.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-08-24T03:02:49.203571",
-      "ContentHash": "e1b41207dc235112",
+      "Version": "1.0.5",
+      "LastModified": "2026-09-18T11:28:11.601817",
+      "ContentHash": "0299ba0e86802528",
       "GitCommit": "f5d673e2",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -649,9 +649,9 @@
     },
     "docs/zh/api-reference/openapi-spec.md": {
       "FilePath": "docs/zh/api-reference/openapi-spec.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-09-18T10:17:12.754246",
-      "ContentHash": "ec40ba85becfd772",
+      "Version": "1.0.4",
+      "LastModified": "2026-09-18T11:28:15.473092",
+      "ContentHash": "0a0a2b31ae561455",
       "GitCommit": "97163311",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -779,7 +779,7 @@
       "Version": "1.0.8",
       "LastModified": "2026-09-18T11:16:42.457946",
       "ContentHash": "9f93445328805ff4",
-      "GitCommit": "2e651835",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -816,9 +816,9 @@
     },
     "docs/zh/deployment/kubernetes.md": {
       "FilePath": "docs/zh/deployment/kubernetes.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-09-18T11:16:42.992044",
-      "ContentHash": "3fc98a3a759e47e7",
+      "Version": "1.0.6",
+      "LastModified": "2026-09-18T11:28:19.253596",
+      "ContentHash": "2aa2712f66bf6135",
       "GitCommit": "2e651835",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -831,9 +831,9 @@
     },
     "docs/zh/deployment/production.md": {
       "FilePath": "docs/zh/deployment/production.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-09-18T11:16:43.132359",
-      "ContentHash": "536d6f793913709c",
+      "Version": "1.0.8",
+      "LastModified": "2026-09-18T11:28:19.379919",
+      "ContentHash": "f60fcdfc95528a1c",
       "GitCommit": "2e651835",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -953,7 +953,7 @@
       "Version": "1.0.8",
       "LastModified": "2026-09-18T11:16:44.851341",
       "ContentHash": "ac980bc01e646bed",
-      "GitCommit": "53f26f63",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -986,9 +986,9 @@
     },
     "docs/zh/monitoring/alert_rules_guide.md": {
       "FilePath": "docs/zh/monitoring/alert_rules_guide.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-18T11:16:45.250226",
-      "ContentHash": "60b635f9ef396e7f",
+      "Version": "1.0.5",
+      "LastModified": "2026-09-18T11:28:21.506490",
+      "ContentHash": "ed57eccf7af0484a",
       "GitCommit": "2e651835",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -1124,7 +1124,7 @@
       "Version": "1.0.4",
       "LastModified": "2026-09-18T11:16:46.737833",
       "ContentHash": "d2ca8636d4476bec",
-      "GitCommit": "97163311",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1146,9 +1146,9 @@
     },
     "docs/zh/reference/faq.md": {
       "FilePath": "docs/zh/reference/faq.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-09-14T07:33:36.189649",
-      "ContentHash": "aca3a3f7f8e75a5a",
+      "Version": "1.0.7",
+      "LastModified": "2026-09-18T11:28:23.505428",
+      "ContentHash": "b48e2b9fe8d675aa",
       "GitCommit": "96e0a22a",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -1159,9 +1159,9 @@
     },
     "docs/zh/reference/glossary.md": {
       "FilePath": "docs/zh/reference/glossary.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-09-18T10:17:21.736995",
-      "ContentHash": "01dbe76b015a9e61",
+      "Version": "1.0.4",
+      "LastModified": "2026-09-18T11:28:23.637005",
+      "ContentHash": "2c3d9359e946125f",
       "GitCommit": "97163311",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -1169,9 +1169,9 @@
     },
     "docs/zh/reference/index.md": {
       "FilePath": "docs/zh/reference/index.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-18T10:17:21.885890",
-      "ContentHash": "11e8e25b239f0c7c",
+      "Version": "1.0.5",
+      "LastModified": "2026-09-18T11:28:23.775684",
+      "ContentHash": "0d53a5244789c746",
       "GitCommit": "97163311",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -1248,9 +1248,9 @@
     },
     "docs/en/api-reference/monitoring-api.md": {
       "FilePath": "docs/en/api-reference/monitoring-api.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-08-24T03:02:49.087010",
-      "ContentHash": "5716df689bd36e50",
+      "Version": "1.0.3",
+      "LastModified": "2026-09-18T11:28:02.532783",
+      "ContentHash": "ee1427ef0e284897",
       "GitCommit": "f5d673e2",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -1262,9 +1262,9 @@
     },
     "docs/zh/api-reference/monitoring-api.md": {
       "FilePath": "docs/zh/api-reference/monitoring-api.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-09-18T10:17:12.626794",
-      "ContentHash": "83dc3df2696f4a5e",
+      "Version": "1.0.3",
+      "LastModified": "2026-09-18T11:28:15.335705",
+      "ContentHash": "64a6f13c38020ed8",
       "GitCommit": "97163311",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -1289,7 +1289,7 @@
       "Version": "1.0.3",
       "LastModified": "2026-09-18T11:16:33.247435",
       "ContentHash": "e9dfce4af4406597",
-      "GitCommit": "2e651835",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1306,9 +1306,9 @@
     },
     "docs/en/security/api-key-management.md": {
       "FilePath": "docs/en/security/api-key-management.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-09-18T11:16:35.491808",
-      "ContentHash": "dc26c0d26c960c96",
+      "Version": "1.0.6",
+      "LastModified": "2026-09-18T11:28:11.868557",
+      "ContentHash": "d21ec0bfdba8d389",
       "GitCommit": "2e651835",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -1335,9 +1335,9 @@
     },
     "docs/en/security/index.md": {
       "FilePath": "docs/en/security/index.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-09-03T06:51:06.373939",
-      "ContentHash": "c1b48e09515b7349",
+      "Version": "1.0.4",
+      "LastModified": "2026-09-18T11:28:12.408192",
+      "ContentHash": "58535abf70e756f6",
       "GitCommit": "601f504b",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -1361,9 +1361,9 @@
     },
     "docs/en/security/troubleshooting.md": {
       "FilePath": "docs/en/security/troubleshooting.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-18T11:16:36.472135",
-      "ContentHash": "b1df6e5a704560b3",
+      "Version": "1.0.5",
+      "LastModified": "2026-09-18T11:28:12.801599",
+      "ContentHash": "9059016cf29f6061",
       "GitCommit": "2e651835",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -1485,7 +1485,7 @@
       "Version": "1.0.3",
       "LastModified": "2026-09-18T11:16:45.792778",
       "ContentHash": "4b450a757e0edc47",
-      "GitCommit": "2e651835",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1502,9 +1502,9 @@
     },
     "docs/zh/security/api-key-management.md": {
       "FilePath": "docs/zh/security/api-key-management.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-09-18T11:16:47.717537",
-      "ContentHash": "d9ee0eb3e96eaefe",
+      "Version": "1.0.8",
+      "LastModified": "2026-09-18T11:28:24.033739",
+      "ContentHash": "4e707a808fe586c8",
       "GitCommit": "2e651835",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -1531,9 +1531,9 @@
     },
     "docs/zh/security/index.md": {
       "FilePath": "docs/zh/security/index.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-09-03T06:51:06.686313",
-      "ContentHash": "fcea0f321977f7c3",
+      "Version": "1.0.4",
+      "LastModified": "2026-09-18T11:28:24.647270",
+      "ContentHash": "2f3db5dd0106e298",
       "GitCommit": "601f504b",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -1557,9 +1557,9 @@
     },
     "docs/zh/security/troubleshooting.md": {
       "FilePath": "docs/zh/security/troubleshooting.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-09-18T11:16:48.684835",
-      "ContentHash": "8714cac369598d7d",
+      "Version": "1.0.4",
+      "LastModified": "2026-09-18T11:28:25.077895",
+      "ContentHash": "5ce3acdf98d0600e",
       "GitCommit": "2e651835",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -1671,7 +1671,7 @@
       "Version": "1.0.6",
       "LastModified": "2026-09-18T11:16:28.702003",
       "ContentHash": "d1bf4841cb63c624",
-      "GitCommit": "2f3955ee",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1691,7 +1691,7 @@
       "Version": "1.0.6",
       "LastModified": "2026-09-18T11:16:41.723911",
       "ContentHash": "fba9da798746d69c",
-      "GitCommit": "2f3955ee",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1774,7 +1774,7 @@
       "Version": "1.0.4",
       "LastModified": "2026-09-18T11:16:29.349742",
       "ContentHash": "9cb92630512769df",
-      "GitCommit": "f5d673e2",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1785,9 +1785,9 @@
     },
     "docs/en/monitoring/alert_rules_guide.md": {
       "FilePath": "docs/en/monitoring/alert_rules_guide.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-09-18T11:16:32.621731",
-      "ContentHash": "18f57cf7bc0c8cdb",
+      "Version": "1.0.4",
+      "LastModified": "2026-09-18T11:28:09.112937",
+      "ContentHash": "e858b4ea9d3b7fd4",
       "GitCommit": "2e651835",
       "Author": "Lincoln",
       "ChangeSummary": "",
@@ -1827,7 +1827,7 @@
       "Version": "1.0.3",
       "LastModified": "2026-09-18T11:16:40.281199",
       "ContentHash": "c3d928bfff15f4df",
-      "GitCommit": "2e651835",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1841,7 +1841,7 @@
       "Version": "1.0.5",
       "LastModified": "2026-09-18T11:16:41.890331",
       "ContentHash": "19c0f30e8a1577e8",
-      "GitCommit": "f5d673e2",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1853,7 +1853,7 @@
       "Version": "1.0.3",
       "LastModified": "2026-09-18T11:16:42.330257",
       "ContentHash": "c58a2b9771c08fce",
-      "GitCommit": "97163311",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1867,7 +1867,7 @@
       "Version": "1.0.3",
       "LastModified": "2026-09-18T11:16:42.858651",
       "ContentHash": "60dd2d023db9bdf3",
-      "GitCommit": "97163311",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1927,7 +1927,7 @@
       "Version": "1.0.4",
       "LastModified": "2026-09-18T11:16:28.519923",
       "ContentHash": "23479f234ccc4481",
-      "GitCommit": "2f3955ee",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1941,7 +1941,7 @@
       "Version": "1.0.4",
       "LastModified": "2026-09-18T11:16:41.561333",
       "ContentHash": "d9779cf575601998",
-      "GitCommit": "2f3955ee",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2015,7 +2015,7 @@
       "Version": "1.0.4",
       "LastModified": "2026-09-18T11:16:26.282362",
       "ContentHash": "2093cb4071246d77",
-      "GitCommit": "462db999",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2025,7 +2025,7 @@
       "Version": "1.0.4",
       "LastModified": "2026-09-18T11:16:39.410961",
       "ContentHash": "4189756db0082136",
-      "GitCommit": "462db999",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2045,7 +2045,7 @@
       "Version": "1.0.1",
       "LastModified": "2026-09-18T11:16:28.858996",
       "ContentHash": "5bacc9a9b3ea247a",
-      "GitCommit": "f5d673e2",
+      "GitCommit": "14420877",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -5514,7 +5514,167 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-09-18T11:16:48.684835",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/monitoring-api.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:02.532783",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/openapi-spec.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:02.698828",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/alert_rules_guide.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:09.112937",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/faq.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:11.255674",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/glossary.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:11.422198",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/index.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:11.601817",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/api-key-management.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:11.868557",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/index.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:12.408192",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/troubleshooting.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:12.801599",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/monitoring-api.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:15.335705",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/openapi-spec.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:15.473092",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/kubernetes.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:19.253596",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/production.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:19.379919",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/alert_rules_guide.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:21.506490",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/faq.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:23.505428",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/glossary.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:23.637005",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/index.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:23.775684",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/api-key-management.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:24.033739",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/index.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:24.647270",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/troubleshooting.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T11:28:25.077895",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-09-18T11:16:50.812933"
+  "last_updated": "2026-09-18T11:28:27.216263"
 }

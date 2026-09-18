@@ -1,4 +1,4 @@
-﻿# Reference
+# Reference
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -122,5 +122,4 @@ We are committed to providing accurate, timely, and useful reference materials t
 
 ---
 
-**最后更新**: August 15, 2025  
 **Maintained by**: JAiRouter Documentation Team  

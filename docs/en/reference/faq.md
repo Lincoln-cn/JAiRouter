@@ -553,5 +553,3 @@ If your question is not answered in this FAQ, please feel free to provide feedba
 - **Email Contact**: jairouter@example.com
 
 We will continuously update the FAQ content to provide better support for users.
-
-**最后更新**: January 15, 2025

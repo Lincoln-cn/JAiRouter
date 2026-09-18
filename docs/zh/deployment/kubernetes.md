@@ -631,7 +631,7 @@ apiVersion: v2
 name: jairouter
 description: A Helm chart for JAiRouter AI model routing gateway
 type: application
-version: 1.0.0
+version: 3.1.1
 appVersion: "3.1.1"
 keywords:
   - ai

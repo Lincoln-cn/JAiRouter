@@ -50,7 +50,7 @@ jairouter:
           key-value: "${ADMIN_API_KEY}"
           description: "Administrator API Key"
           permissions: ["admin", "read", "write", "delete"]
-          expires-at: "2025-12-31T23:59:59"
+          expires-at: "2027-12-31T23:59:59"
           enabled: true
 ```
 
@@ -87,7 +87,7 @@ Each API Key contains the following attributes:
   key-value: "actual-api-key-string"   # Actual API Key value
   description: "Key description"        # Description information
   permissions: ["read", "write"]        # Permission list
-  expires-at: "2025-12-31T23:59:59"    # Expiration time
+  expires-at: "2027-12-31T23:59:59"    # Expiration time
   enabled: true                         # Whether enabled
   daily-token-limit: 100000            # Daily Token usage limit (optional)
   rate-limit-per-minute: 100           # Requests per minute limit (optional)
@@ -120,7 +120,7 @@ jairouter:
           key-value: "${LIMITED_API_KEY}"
           description: "API Key with quota limits"
           permissions: ["read"]
-          expires-at: "2025-12-31T23:59:59"
+          expires-at: "2027-12-31T23:59:59"
           enabled: true
           daily-token-limit: 100000      # 100K tokens per day
           rate-limit-per-minute: 60      # 60 requests per minute
@@ -172,9 +172,9 @@ export PROD_SERVICE_API_KEY="your-production-service-api-key-here"
 export PROD_READONLY_API_KEY="your-production-readonly-api-key-here"
 
 # API Key Expiration Time Configuration
-export PROD_ADMIN_KEY_EXPIRES="2025-12-31T23:59:59"
-export PROD_SERVICE_KEY_EXPIRES="2025-12-31T23:59:59"
-export PROD_READONLY_KEY_EXPIRES="2025-12-31T23:59:59"
+export PROD_ADMIN_KEY_EXPIRES="2027-12-31T23:59:59"
+export PROD_SERVICE_KEY_EXPIRES="2027-12-31T23:59:59"
+export PROD_READONLY_KEY_EXPIRES="2027-12-31T23:59:59"
 ```
 
 ### Windows
@@ -186,9 +186,9 @@ set PROD_SERVICE_API_KEY=your-production-service-api-key-here
 set PROD_READONLY_API_KEY=your-production-readonly-api-key-here
 
 # API Key Expiration Time Configuration
-set PROD_ADMIN_KEY_EXPIRES=2025-12-31T23:59:59
-set PROD_SERVICE_KEY_EXPIRES=2025-12-31T23:59:59
-set PROD_READONLY_KEY_EXPIRES=2025-12-31T23:59:59
+set PROD_ADMIN_KEY_EXPIRES=2027-12-31T23:59:59
+set PROD_SERVICE_KEY_EXPIRES=2027-12-31T23:59:59
+set PROD_READONLY_KEY_EXPIRES=2027-12-31T23:59:59
 ```
 
 ### Docker
@@ -346,7 +346,7 @@ API Keys are stored with the following metadata:
   "keyValueHash": "sha256-hash-of-key",
   "description": "Administrator API Key",
   "permissions": ["admin", "read", "write", "delete"],
-  "expiresAt": "2025-12-31T23:59:59",
+  "expiresAt": "2027-12-31T23:59:59",
   "enabled": true,
   "dailyTokenLimit": 100000,
   "rateLimitPerMinute": 100,
@@ -645,7 +645,7 @@ jairouter:
         - key-id: "dev-admin"
           key-value: "dev-admin-key-12345"
           permissions: ["admin", "read", "write", "delete"]
-          expires-at: "2025-12-31T23:59:59"
+          expires-at: "2027-12-31T23:59:59"
 ```
 
 ### Production Environment

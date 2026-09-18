@@ -102,7 +102,7 @@ jairouter:
 # Update expiration time
 curl -X PUT -H "Authorization: Bearer admin-token" \
      -H "Content-Type: application/json" \
-     -d '{"expires_at": "2025-12-31T23:59:59"}' \
+     -d '{"expires_at": "2027-12-31T23:59:59"}' \
      http://localhost:8080/admin/security/api-keys/your-key-id
 ```
 

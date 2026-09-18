@@ -143,7 +143,7 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("JAiRouter API")
-                        .version("1.0.0")
+                        .version("3.1.1")
                         .description("AI 模型服务路由和负载均衡网关 API 文档")
                         .contact(new Contact()
                                 .name("JAiRouter Team")

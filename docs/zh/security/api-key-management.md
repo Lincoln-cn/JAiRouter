@@ -102,7 +102,7 @@ curl -H "X-API-Key: your-api-key-here" \
   key-value: "actual-api-key-string"   # 实际的 API Key 值
   description: "Key description"        # 描述信息
   permissions: ["read", "write"]        # 权限列表
-  expires-at: "2025-12-31T23:59:59"    # 过期时间
+  expires-at: "2027-12-31T23:59:59"    # 过期时间
   enabled: true                         # 是否启用
   daily-token-limit: 100000            # 每日 Token 使用限额（可选）
   rate-limit-per-minute: 100           # 每分钟请求速率限制（可选）
@@ -187,9 +187,9 @@ export PROD_SERVICE_API_KEY="your-production-service-api-key-here"
 export PROD_READONLY_API_KEY="your-production-readonly-api-key-here"
 
 # API Key 过期时间配置
-export PROD_ADMIN_KEY_EXPIRES="2025-12-31T23:59:59"
-export PROD_SERVICE_KEY_EXPIRES="2025-12-31T23:59:59"
-export PROD_READONLY_KEY_EXPIRES="2025-12-31T23:59:59"
+export PROD_ADMIN_KEY_EXPIRES="2027-12-31T23:59:59"
+export PROD_SERVICE_KEY_EXPIRES="2027-12-31T23:59:59"
+export PROD_READONLY_KEY_EXPIRES="2027-12-31T23:59:59"
 ```
 
 ### Windows
@@ -201,9 +201,9 @@ set PROD_SERVICE_API_KEY=your-production-service-api-key-here
 set PROD_READONLY_API_KEY=your-production-readonly-api-key-here
 
 # API Key 过期时间配置
-set PROD_ADMIN_KEY_EXPIRES=2025-12-31T23:59:59
-set PROD_SERVICE_KEY_EXPIRES=2025-12-31T23:59:59
-set PROD_READONLY_KEY_EXPIRES=2025-12-31T23:59:59
+set PROD_ADMIN_KEY_EXPIRES=2027-12-31T23:59:59
+set PROD_SERVICE_KEY_EXPIRES=2027-12-31T23:59:59
+set PROD_READONLY_KEY_EXPIRES=2027-12-31T23:59:59
 ```
 
 ### Docker
@@ -361,7 +361,7 @@ API Key 存储包含以下元数据：
   "keyValueHash": "sha256-hash-of-key",
   "description": "管理员API密钥",
   "permissions": ["admin", "read", "write", "delete"],
-  "expiresAt": "2025-12-31T23:59:59",
+  "expiresAt": "2027-12-31T23:59:59",
   "enabled": true,
   "dailyTokenLimit": 100000,
   "rateLimitPerMinute": 100,
@@ -667,7 +667,7 @@ curl -X GET "http://localhost:8080/api/auth/api-keys/export" \
       "keyId": "admin-key-001",
       "description": "管理员密钥",
       "permissions": ["admin", "read", "write", "delete"],
-      "expiresAt": "2025-12-31T23:59:59",
+      "expiresAt": "2027-12-31T23:59:59",
       "enabled": true,
       "allowedIpAddresses": ["192.168.1.100"],
       "dailyRequestLimit": 10000,

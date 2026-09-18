@@ -441,6 +441,6 @@ This document details the Prometheus alert rules configuration for the JAiRouter
 ## Contact Information
 
 For questions or suggestions, contact:
-- Operations Team: ops-team@example.com
-- Development Team: dev-team@example.com
-- JAiRouter Team: jairouter-team@example.com
+- Operations Team: https://github.com/Lincoln-cn/JAiRouter/issues
+- Development Team: https://github.com/Lincoln-cn/JAiRouter/issues
+- JAiRouter Team: https://github.com/Lincoln-cn/JAiRouter/issues
