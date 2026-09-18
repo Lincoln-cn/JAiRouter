@@ -440,6 +440,6 @@
 ## 联系方式
 
 如有问题或建议，请联系：
-- 运维团队: ops-team@example.com
-- 开发团队: dev-team@example.com
-- JAiRouter团队: jairouter-team@example.com
+- 运维团队: https://github.com/Lincoln-cn/JAiRouter/issues
+- 开发团队: https://github.com/Lincoln-cn/JAiRouter/issues
+- JAiRouter团队: https://github.com/Lincoln-cn/JAiRouter/issues

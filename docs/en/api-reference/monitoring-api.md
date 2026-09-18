@@ -258,11 +258,11 @@ GET /actuator/info
 {
   "app": {
     "name": "JAiRouter",
-    "version": "1.0.0",
+    "version": "3.1.1",
     "description": "AI Model Service Router and Load Balancer"
   },
   "build": {
-    "version": "1.0.0",
+    "version": "3.1.1",
     "artifact": "model-router",
     "name": "model-router",
     "group": "org.unreal",

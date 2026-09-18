@@ -131,6 +131,5 @@
 
 ---
 
-**最后更新**: 2025年1月15日  
 **维护团队**: JAiRouter 文档团队  
 **联系方式**: jairouter@example.com

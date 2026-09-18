@@ -575,4 +575,3 @@ public class CustomAdapter extends BaseAdapter {
 
 我们会持续更新 FAQ 内容，为用户提供更好的支持。
 
-**最后更新**: 2025年1月15日

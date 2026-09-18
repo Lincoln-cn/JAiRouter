@@ -273,4 +273,3 @@ graph TB
 
 **说明**: 本术语表会随着项目发展持续更新。如果您发现遗漏的术语或需要补充的概念，欢迎通过 [GitHub Issues](https://github.com/Lincoln-cn/JAiRouter/issues) 反馈。
 
-**最后更新**: 2025年1月15日

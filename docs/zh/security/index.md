@@ -59,7 +59,7 @@ jairouter:
         - key-id: "admin-key"
           key-value: "${ADMIN_API_KEY}"
           permissions: ["admin", "read", "write"]
-          expires-at: "2025-12-31T23:59:59"
+          expires-at: "2027-12-31T23:59:59"
 ```
 
 ### 3. 配置数据脱敏

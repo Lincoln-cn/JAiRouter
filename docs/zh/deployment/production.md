@@ -400,7 +400,7 @@ jairouter:
           key-value: "${PROD_ADMIN_API_KEY:}"
           description: "生产环境管理员API密钥"
           permissions: ["admin", "read", "write", "delete"]
-          expires-at: "${PROD_ADMIN_KEY_EXPIRES:2025-12-31T23:59:59}"
+          expires-at: "${PROD_ADMIN_KEY_EXPIRES:2027-12-31T23:59:59}"
           enabled: true
           metadata:
             environment: "production"
@@ -411,7 +411,7 @@ jairouter:
           key-value: "${PROD_SERVICE_API_KEY:}"
           description: "生产环境服务API密钥"
           permissions: ["read", "write"]
-          expires-at: "${PROD_SERVICE_KEY_EXPIRES:2025-12-31T23:59:59}"
+          expires-at: "${PROD_SERVICE_KEY_EXPIRES:2027-12-31T23:59:59}"
           enabled: true
           metadata:
             environment: "production"
@@ -422,7 +422,7 @@ jairouter:
           key-value: "${PROD_READONLY_API_KEY:}"
           description: "生产环境只读API密钥"
           permissions: ["read"]
-          expires-at: "${PROD_READONLY_KEY_EXPIRES:2025-12-31T23:59:59}"
+          expires-at: "${PROD_READONLY_KEY_EXPIRES:2027-12-31T23:59:59}"
           enabled: true
           metadata:
             environment: "production"
