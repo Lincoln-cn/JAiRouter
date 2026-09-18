@@ -1,8 +1,8 @@
 # JWT 认证配置说明
 
 <!-- 版本信息 -->
-> **文档版本**: 2.0.0
-> **最后更新**: 2026-05-21
+> **文档版本**: 2.1.0
+> **最后更新**: 2026-09-15
 > **Git 提交**: 61384b4a
 > **作者**: Lincoln
 <!-- /版本信息 -->
@@ -141,7 +141,7 @@ curl -X POST http://localhost:8080/api/auth/jwt/login \
     "tokenType": "Bearer",
     "expiresIn": 3600,
     "message": "登录成功",
-    "timestamp": "2023-01-01T12:00:00"
+    "timestamp": "2026-09-15T12:00:00"
   },
   "errorCode": null
 }
@@ -292,7 +292,7 @@ jairouter:
 ### 令牌撤销
 
 ```bash
-curl -X POST http://localhost:8080/api/auth/jwt/logout \
+curl -X POST http://localhost:8080/api/auth/jwt/revoke \
      -H "Jairouter_Token: token_to_revoke"
 ```
 
@@ -308,7 +308,7 @@ curl -X GET "http://localhost:8080/api/auth/jwt/tokens?page=0&size=20&status=ACT
 
 ### 撤销特定令牌
 ```bash
-curl -X POST "http://localhost:8080/api/auth/jwt/tokens/token-uuid-123/revoke" \
+curl -X POST "http://localhost:8080/api/auth/jwt/revoke" \
      -H "Jairouter_Token: admin_token" \
      -H "Content-Type: application/json" \
      -d '{"reason": "安全策略违规"}'
@@ -316,7 +316,7 @@ curl -X POST "http://localhost:8080/api/auth/jwt/tokens/token-uuid-123/revoke" \
 
 ### 批量令牌撤销
 ```bash
-curl -X POST "http://localhost:8080/api/auth/jwt/tokens/revoke-batch" \
+curl -X POST "http://localhost:8080/api/auth/jwt/revoke/batch" \
      -H "Jairouter_Token: admin_token" \
      -H "Content-Type: application/json" \
      -d '{
@@ -406,7 +406,7 @@ jairouter:
 ```yaml
 logging:
   level:
-    org.unreal.modelrouter.security.jwt: DEBUG
+    org.unreal.modelrouter.auth: DEBUG
 ```
 
 #### 令牌解析工具
@@ -416,4 +416,4 @@ logging:
 
 ---
 
-*最后更新：2026-05-21*
+*最后更新：2026-09-15*

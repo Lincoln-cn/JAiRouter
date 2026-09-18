@@ -1,8 +1,8 @@
 # API Key 管理指南
 
 <!-- 版本信息 -->
-> **文档版本**: 1.8.0
-> **最后更新**: 2026-06-30
+> **文档版本**: 1.9.0
+> **最后更新**: 2026-09-15
 > **Git 提交**: fb0cd62f
 > **作者**: Lincoln
 <!-- /版本信息 -->
@@ -65,7 +65,7 @@ jairouter:
           key-value: "${ADMIN_API_KEY}"
           description: "管理员API密钥"
           permissions: ["admin", "read", "write", "delete"]
-          expires-at: "2025-12-31T23:59:59"
+          expires-at: "2027-12-31T23:59:59"
           enabled: true
 ```
 
@@ -135,7 +135,7 @@ jairouter:
           key-value: "${LIMITED_API_KEY}"
           description: "带配额限制的 API Key"
           permissions: ["read"]
-          expires-at: "2025-12-31T23:59:59"
+          expires-at: "2027-12-31T23:59:59"
           enabled: true
           daily-token-limit: 100000      # 每日 10 万 Token
           rate-limit-per-minute: 60      # 每分钟 60 次请求
@@ -843,7 +843,7 @@ jairouter:
         - key-id: "dev-admin"
           key-value: "dev-admin-key-12345"
           permissions: ["admin", "read", "write", "delete"]
-          expires-at: "2025-12-31T23:59:59"
+          expires-at: "2027-12-31T23:59:59"
 ```
 
 ### 生产环境

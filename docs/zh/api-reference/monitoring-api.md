@@ -1,8 +1,8 @@
 # 监控 API
 
 <!-- 版本信息 -->
-> **文档版本**: 1.0.2  
-> **最后更新**: 2026-05-21  
+> **文档版本**: 1.1.0  
+> **最后更新**: 2026-09-15  
 > **Git 提交**: 61384b4a  
 > **作者**: Lincoln
 <!-- /版本信息 -->
@@ -323,197 +323,55 @@ GET /actuator/env
 
 ## 自定义监控端点
 
-### 服务实例状态
+### 系统健康状态
 
-获取所有服务实例的状态：
-
-```http
-GET /api/monitoring/instances
-```
-
-**响应：**
-```json
-{
-  "services": {
-    "chat": {
-      "instances": [
-        {
-          "id": "ollama-1",
-          "url": "http://localhost:11434",
-          "adapter": "OLLAMA",
-          "status": "HEALTHY",
-          "lastHealthCheck": "2025-08-19T10:30:00Z",
-          "responseTime": 45,
-          "successRate": 0.982,
-          "requestCount": 1270,
-          "errorCount": 23,
-          "circuitBreakerState": "CLOSED",
-          "weight": 1.0
-        },
-        {
-          "id": "ollama-2", 
-          "url": "http://localhost:11435",
-          "adapter": "OLLAMA",
-          "status": "HEALTHY",
-          "lastHealthCheck": "2025-08-19T10:30:00Z", 
-          "responseTime": 52,
-          "successRate": 0.985,
-          "requestCount": 1174,
-          "errorCount": 18,
-          "circuitBreakerState": "CLOSED",
-          "weight": 1.0
-        },
-        {
-          "id": "ollama-3",
-          "url": "http://localhost:11436",
-          "adapter": "OLLAMA", 
-          "status": "UNHEALTHY",
-          "lastHealthCheck": "2025-08-19T10:29:45Z",
-          "error": "连接超时",
-          "circuitBreakerState": "OPEN",
-          "weight": 0.0
-        }
-      ]
-    }
-  }
-}
-```
-
-### 负载均衡器统计
-
-获取负载均衡器性能统计：
+获取系统整体健康状态：
 
 ```http
-GET /api/monitoring/load-balancer
+GET /api/monitoring/health
 ```
 
-**响应：**
-```json
-{
-  "services": {
-    "chat": {
-      "strategy": "ROUND_ROBIN",
-      "totalRequests": 2444,
-      "distribution": {
-        "ollama-1": {
-          "requests": 1270,
-          "percentage": 52.0,
-          "avgResponseTime": 45
-        },
-        "ollama-2": {
-          "requests": 1174,
-          "percentage": 48.0,
-          "avgResponseTime": 52
-        }
-      }
-    },
-    "embedding": {
-      "strategy": "LEAST_CONNECTIONS", 
-      "totalRequests": 856,
-      "distribution": {
-        "xinference-1": {
-          "requests": 428,
-          "percentage": 50.0,
-          "avgResponseTime": 38
-        },
-        "xinference-2": {
-          "requests": 428,
-          "percentage": 50.0,
-          "avgResponseTime": 41
-        }
-      }
-    }
-  }
-}
-```
+### 监控配置
 
-### 限流状态
-
-获取当前限流状态：
+获取当前监控配置：
 
 ```http
-GET /api/monitoring/rate-limit
+GET /api/monitoring/config
 ```
 
-**响应：**
-```json
-{
-  "services": {
-    "chat": {
-      "algorithm": "TOKEN_BUCKET",
-      "globalLimit": {
-        "capacity": 1000,
-        "remaining": 847,
-        "refillRate": 100,
-        "nextRefill": "2025-08-19T10:30:10Z"
-      },
-      "clientLimits": [
-        {
-          "clientIp": "192.168.1.100",
-          "remaining": 45,
-          "capacity": 50,
-          "lastRequest": "2025-08-19T10:29:58Z"
-        },
-        {
-          "clientIp": "192.168.1.101", 
-          "remaining": 38,
-          "capacity": 50,
-          "lastRequest": "2025-08-19T10:29:59Z"
-        }
-      ]
-    }
-  }
-}
-```
+### 熔断器统计
 
-### 熔断器状态
-
-获取所有实例的熔断器状态：
+获取熔断器统计信息：
 
 ```http
-GET /api/monitoring/circuit-breaker
+GET /api/monitoring/circuit-breaker/stats
 ```
 
-**响应：**
-```json
-{
-  "instances": [
-    {
-      "id": "ollama-1",
-      "service": "chat",
-      "state": "CLOSED",
-      "failureCount": 2,
-      "failureThreshold": 5,
-      "successThreshold": 3,
-      "timeout": 60000,
-      "lastFailure": "2025-08-19T10:25:30Z",
-      "nextRetry": null
-    },
-    {
-      "id": "ollama-2",
-      "service": "chat", 
-      "state": "CLOSED",
-      "failureCount": 1,
-      "failureThreshold": 5,
-      "successThreshold": 3,
-      "timeout": 60000,
-      "lastFailure": "2025-08-19T10:20:15Z",
-      "nextRetry": null
-    },
-    {
-      "id": "ollama-3",
-      "service": "chat",
-      "state": "OPEN",
-      "failureCount": 8,
-      "failureThreshold": 5,
-      "successThreshold": 3,
-      "timeout": 60000,
-      "lastFailure": "2025-08-19T10:29:45Z",
-      "nextRetry": "2025-08-19T10:30:45Z"
-    }
-  ]
-}
+### 降级状态
+
+获取服务降级状态：
+
+```http
+GET /api/monitoring/degradation/status
 ```
+
+### 错误统计
+
+获取错误统计信息：
+
+```http
+GET /api/monitoring/errors/stats
+```
+
+### 缓存统计
+
+获取缓存统计信息：
+
+```http
+GET /api/monitoring/cache/stats
+```
+
+> **注意**: 以上端点为 JAiRouter v3.1.1 实际提供的自定义监控端点。更多端点请参考 [管理 API](management-api.md) 文档。
 
 ## 监控集成
 

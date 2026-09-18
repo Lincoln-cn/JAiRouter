@@ -4,7 +4,7 @@ FROM eclipse-temurin:17-jre
 # 设置维护者信息
 LABEL maintainer="JAiRouter Team"
 LABEL description="JAiRouter - AI Model Service Routing and Load Balancing Gateway"
-LABEL version="1.0-SNAPSHOT"
+LABEL version="3.1.1"
 
 # 创建应用用户（安全最佳实践）
 RUN groupadd -r -g 10010 jairouter && \

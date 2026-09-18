@@ -1,4 +1,4 @@
-﻿# 中国网络环境优化部署
+# 中国网络环境优化部署
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.2  
@@ -336,11 +336,11 @@ FROM registry.cn-hangzhou.aliyuncs.com/acs/openjdk:17-jre-alpine
 
 LABEL maintainer="JAiRouter Team"
 LABEL description="JAiRouter - AI Model Service Routing and Load Balancing Gateway (China Optimized)"
-LABEL version="1.0-SNAPSHOT"
+LABEL version="3.1.1"
 
 # 创建应用用户
-RUN addgroup -g 1001 jairouter && \
-    adduser -D -s /bin/sh -u 1001 -G jairouter jairouter
+RUN addgroup -g 10010 jairouter && \
+    adduser -D -s /bin/sh -u 10010 -G jairouter jairouter
 
 WORKDIR /app
 

@@ -1,8 +1,8 @@
 # 安全功能故障排除指南
 
 <!-- 版本信息 -->
-> **文档版本**: 1.0.2  
-> **最后更新**: 2026-05-21  
+> **文档版本**: 1.1.0  
+> **最后更新**: 2026-09-15  
 > **Git 提交**: 61384b4a  
 > **作者**: 
 <!-- /版本信息 -->
@@ -23,7 +23,7 @@ curl http://localhost:8080/actuator/health
 
 # 检查安全配置
 curl -H "Authorization: Bearer admin-token" \
-     http://localhost:8080/admin/security/status
+     http://localhost:8080/api/monitoring/health
 ```
 
 ### 2. 查看日志
@@ -137,11 +137,11 @@ echo "your-jwt-token" | cut -d'.' -f2 | base64 -d | jq
 curl -H "Authorization: Bearer admin-token" \
      -H "Content-Type: application/json" \
      -d '{"token": "your-jwt-token"}' \
-     http://localhost:8080/admin/security/jwt/validate
+     http://localhost:8080/api/auth/jwt/validate
 
 # 3. 检查黑名单
 curl -H "Authorization: Bearer admin-token" \
-     http://localhost:8080/admin/security/jwt/blacklist
+     http://localhost:8080/api/security/blacklist/list
 ```
 
 #### 解决方案
@@ -160,7 +160,7 @@ jairouter:
 ```bash
 curl -X POST -H "Content-Type: application/json" \
      -d '{"refresh_token": "your-refresh-token"}' \
-     http://localhost:8080/auth/refresh
+     http://localhost:8080/api/auth/jwt/refresh
 ```
 
 3. **清除黑名单**
@@ -567,7 +567,7 @@ jairouter:
 ```yaml
 logging:
   level:
-    org.unreal.modelrouter.security: DEBUG
+    org.unreal.modelrouter.auth: DEBUG
     org.springframework.security: DEBUG
     org.springframework.web: DEBUG
 ```
@@ -624,7 +624,7 @@ curl -s "$BASE_URL/actuator/health" | jq '.status'
 
 echo "=== 安全功能状态 ==="
 curl -s -H "Authorization: Bearer $ADMIN_TOKEN" \
-     "$BASE_URL/admin/security/status" | jq
+     "$BASE_URL/api/monitoring/health" | jq
 
 echo "=== 认证性能指标 ==="
 curl -s "$BASE_URL/actuator/prometheus" | \

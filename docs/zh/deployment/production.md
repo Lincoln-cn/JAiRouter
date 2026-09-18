@@ -1,4 +1,4 @@
-﻿# 生产环境部署
+# 生产环境部署
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.2  
@@ -903,7 +903,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp
-    user: "1001:1001"
+    user: "10010:10010"
     cap_drop:
       - ALL
     cap_add:
