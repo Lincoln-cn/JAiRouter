@@ -29,11 +29,11 @@ JAiRouter provides a complete Dockerized deployment solution, supporting multi-e
 
 | Image Type | Tags | Size | Purpose | Dockerfile |
 |------------|------|------|---------|------------|
-| **Production (Optimized)** | `latest-optimized`, `v1.7.0-optimized` | **~281MB** | Production (Recommended) ⭐ | `Dockerfile.optimized` |
-| **Production (JLink)** | `latest-jlink`, `v1.7.0-jlink` | **~281MB** | Production (Experimental) 🔬 | `Dockerfile.jlink` |
-| **Production (Standard)** | `latest`, `v1.7.0` | ~440MB | Production | `Dockerfile` |
-| **Development** | `dev`, `v1.7.0-dev` | ~220MB | Development and debugging | `Dockerfile.dev` |
-| **China Optimized** | `china`, `v1.7.0-china` | ~440MB | Optimized for Chinese users | `Dockerfile.china` |
+| **Production (Optimized)** | `latest-optimized`, `v3.1.1-optimized` | **~281MB** | Production (Recommended) ⭐ | `Dockerfile.optimized` |
+| **Production (JLink)** | `latest-jlink`, `v3.1.1-jlink` | **~281MB** | Production (Experimental) 🔬 | `Dockerfile.jlink` |
+| **Production (Standard)** | `latest`, `v3.1.1` | ~440MB | Production | `Dockerfile` |
+| **Development** | `dev`, `v3.1.1-dev` | ~220MB | Development and debugging | `Dockerfile.dev` |
+| **China Optimized** | `china`, `v3.1.1-china` | ~440MB | Optimized for Chinese users | `Dockerfile.china` |
 
 **Optimized Image Features**:
 - ✅ Uses the `eclipse-temurin:17-jre-alpine` base image (~40% smaller than the standard JRE)

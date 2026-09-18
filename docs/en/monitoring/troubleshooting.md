@@ -142,10 +142,10 @@ date
 curl -s http://localhost:9090/api/v1/query?query=time() | jq '.data.result[0].value[1]'
 
 # Check sampling configuration
-curl http://localhost:8080/actuator/jairouter-metrics/config
+curl http://localhost:8080/api/monitoring/config
 
 # Check async processing status
-curl http://localhost:8080/actuator/jairouter-metrics/status
+curl http://localhost:8080/api/monitoring/config/snapshot
 ```
 
 **Solution**:
@@ -407,7 +407,7 @@ route:
 curl http://localhost:8080/actuator/metrics/jvm.gc.pause
 
 # Check async processing status
-curl http://localhost:8080/actuator/jairouter-metrics/performance
+curl http://localhost:8080/actuator/metrics/performance
 
 # Compare performance differences with monitoring enabled/disabled
 ```

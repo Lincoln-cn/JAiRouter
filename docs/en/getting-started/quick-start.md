@@ -3,7 +3,7 @@
 <!-- 版本信息 -->
 > **Doc Version**: 1.2.0
 > **Last Updated**: 2026-07-14
-> **Applicable Version**: v1.8.0+
+> **Applicable Version**: v3.1.1+
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -22,9 +22,9 @@ After completing this guide, you will be able to:
 - JAiRouter is installed and running (see [Installation Guide](installation.md))
 - At least one AI model service is configured and accessible
 
-## Step 0: Generate Secure Keys (v1.8.0+ Recommended)
+## Step 0: Generate Secure Keys (v3.1.1+ Recommended)
 
-**v1.8.0+ provides a key generation tool** that automatically generates secure JWT keys and admin passwords.
+**v3.1.1+ provides a key generation tool** that automatically generates secure JWT keys and admin passwords.
 
 ### Option 1: Use Docker to Run Key Generation Tool (Recommended)
 

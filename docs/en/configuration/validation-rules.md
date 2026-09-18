@@ -14,7 +14,7 @@
 
 ## Overview
 
-JAiRouter v1.8.0+ introduces a startup configuration validation mechanism that automatically detects the reasonableness of key configuration items, helping administrators discover configuration issues before the application starts.
+JAiRouter v3.1.1+ introduces a startup configuration validation mechanism that automatically detects the reasonableness of key configuration items, helping administrators discover configuration issues before the application starts.
 
 ---
 

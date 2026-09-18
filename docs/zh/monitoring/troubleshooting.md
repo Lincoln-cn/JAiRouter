@@ -142,10 +142,10 @@ date
 curl -s http://localhost:9090/api/v1/query?query=time() | jq '.data.result[0].value[1]'
 
 # 检查采样配置
-curl http://localhost:8080/actuator/jairouter-metrics/config
+curl http://localhost:8080/api/monitoring/config
 
 # 检查异步处理状态
-curl http://localhost:8080/actuator/jairouter-metrics/status
+curl http://localhost:8080/api/monitoring/config/snapshot
 ```
 
 **解决方案**:
@@ -407,7 +407,7 @@ route:
 curl http://localhost:8080/actuator/metrics/jvm.gc.pause
 
 # 检查异步处理状态
-curl http://localhost:8080/actuator/jairouter-metrics/performance
+curl http://localhost:8080/actuator/metrics/performance
 
 # 对比启用/禁用监控的性能差异
 ```

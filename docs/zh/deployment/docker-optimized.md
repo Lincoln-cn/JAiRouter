@@ -281,7 +281,7 @@ services:
 
 ```bash
 # 使用具体版本标签
-docker pull sodlinken/jairouter:v1.7.0-optimized
+docker pull sodlinken/jairouter:v3.1.1-optimized
 
 # 避免在生产环境使用 latest 标签
 # docker pull sodlinken/jairouter:latest-optimized  # 不推荐用于生产

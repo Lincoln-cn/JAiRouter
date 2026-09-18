@@ -234,7 +234,7 @@ adapter-definitions:
 ### 通过API验证
 
 ```bash
-curl -X POST http://localhost:9900/v1/chat/completions \
+curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer sk-your-api-key" \
   -d '{
@@ -259,7 +259,7 @@ curl -X POST http://localhost:9900/v1/chat/completions \
 ### 创建Adapter API示例
 
 ```bash
-curl -X POST http://localhost:9900/api/config/adapter \
+curl -X POST http://localhost:8080/api/config/adapter \
   -H "Content-Type: application/json" \
   -d '{
     "name": "deepseek",

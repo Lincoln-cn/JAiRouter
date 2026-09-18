@@ -29,11 +29,11 @@
 
 | 镜像类型 | 标签 | 大小 | 用途 | Dockerfile |
 |----------|------|------|------|------------|
-| **生产镜像（优化版）** | `latest-optimized`, `v1.7.0-optimized` | **~281MB** | 生产环境（推荐）⭐ | `Dockerfile.optimized` |
-| **生产镜像（JLink 版）** | `latest-jlink`, `v1.7.0-jlink` | **~281MB** | 生产环境（实验性）🔬 | `Dockerfile.jlink` |
-| **生产镜像（标准版）** | `latest`, `v1.7.0` | ~440MB | 生产环境 | `Dockerfile` |
-| **开发镜像** | `dev`, `v1.7.0-dev` | ~220MB | 开发调试 | `Dockerfile.dev` |
-| **中国镜像** | `china`, `v1.7.0-china` | ~440MB | 中国用户优化 | `Dockerfile.china` |
+| **生产镜像（优化版）** | `latest-optimized`, `v3.1.1-optimized` | **~281MB** | 生产环境（推荐）⭐ | `Dockerfile.optimized` |
+| **生产镜像（JLink 版）** | `latest-jlink`, `v3.1.1-jlink` | **~281MB** | 生产环境（实验性）🔬 | `Dockerfile.jlink` |
+| **生产镜像（标准版）** | `latest`, `v3.1.1` | ~440MB | 生产环境 | `Dockerfile` |
+| **开发镜像** | `dev`, `v3.1.1-dev` | ~220MB | 开发调试 | `Dockerfile.dev` |
+| **中国镜像** | `china`, `v3.1.1-china` | ~440MB | 中国用户优化 | `Dockerfile.china` |
 
 **优化版镜像特点**：
 - ✅ 使用 `eclipse-temurin:17-jre-alpine` 基础镜像（比标准 JRE 小约 40%）
