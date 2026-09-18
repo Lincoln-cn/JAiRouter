@@ -51,7 +51,7 @@ echo -e "${BLUE}Image type: ${IMAGE_TYPE}${NC}"
 
 # Step 1: Clean and build the JAR
 echo -e "${YELLOW}Step 1: Building JAR file...${NC}"
-mvn clean package -DskipTests -Pfast
+mvn clean package -DskipTests -Pfast -Dfrontend.build.skip=false
 
 # Check if JAR was built successfully
 if [ ! -f "target/${PROJECT_NAME}-${VERSION}.jar" ]; then
