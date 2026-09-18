@@ -60,7 +60,7 @@
       "Version": "1.0.5",
       "LastModified": "2026-09-18T11:45:54.065153",
       "ContentHash": "37b04f2f373c0148",
-      "GitCommit": "f5d673e2",
+      "GitCommit": "406b4a65",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -209,7 +209,7 @@
       "Version": "1.0.6",
       "LastModified": "2026-09-18T11:45:57.646847",
       "ContentHash": "403902096e6a97f9",
-      "GitCommit": "f5d673e2",
+      "GitCommit": "406b4a65",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1279,7 +1279,7 @@
       "Version": "1.0.3",
       "LastModified": "2026-09-18T11:45:55.378998",
       "ContentHash": "318c81f47f17facf",
-      "GitCommit": "f5d673e2",
+      "GitCommit": "406b4a65",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1475,7 +1475,7 @@
       "Version": "1.0.3",
       "LastModified": "2026-09-18T11:46:08.070245",
       "ContentHash": "33facb9149c3fddf",
-      "GitCommit": "97163311",
+      "GitCommit": "406b4a65",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1758,16 +1758,6 @@
         "docs/zh/configuration/index.md",
         "docs/zh/troubleshooting/index.md"
       ]
-    },
-    "QWEN.md": {
-      "FilePath": "QWEN.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-07-14T04:51:10.044215",
-      "ContentHash": "034bfabbdd47be34",
-      "GitCommit": "63a07c9b",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": []
     },
     "docs/en/deployment/docker-optimized.md": {
       "FilePath": "docs/en/deployment/docker-optimized.md",
@@ -5706,7 +5696,15 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-09-18T11:46:08.070245",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "QWEN.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-09-18T15:17:55.635698",
+      "Description": "文档已删除"
     }
   ],
-  "last_updated": "2026-09-18T11:46:17.974529"
+  "last_updated": "2026-09-18T15:17:55.637236"
 }
