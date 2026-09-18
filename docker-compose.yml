@@ -12,7 +12,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
-      - JWT_SECRET=${JWT_SECRET:-your-production-jwt-secret-key}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set (>=32 characters) - see README}
       - JWT_EXPIRATION_MINUTES=${JWT_EXPIRATION_MINUTES:-15}
       - JWT_REFRESH_EXPIRATION_DAYS=${JWT_REFRESH_EXPIRATION_DAYS:-30}
     volumes:
