@@ -22,6 +22,9 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   content-sync-check:
     name: 检查文档内容同步性

@@ -19,6 +19,10 @@ env:
   # Project name
   PROJECT_NAME: model-router
 
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest

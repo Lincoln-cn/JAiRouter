@@ -23,6 +23,7 @@ public class TestSecurityConfig {
     @Primary
     public SecurityWebFilterChain testSecurityWebFilterChain(ServerHttpSecurity http) {
         return http
+                // 测试环境无状态 permitAll，不使用 Cookie 会话
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchanges -> exchanges.anyExchange().permitAll())
                 .build();

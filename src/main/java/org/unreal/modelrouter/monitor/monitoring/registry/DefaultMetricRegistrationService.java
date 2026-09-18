@@ -32,6 +32,10 @@ public class DefaultMetricRegistrationService implements MetricRegistrationServi
     
     // 指标名称验证模式 (允许字母、数字、下划线和点)
     private static final Pattern METRIC_NAME_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_.]*$");
+    private static final int MAX_SEARCH_PATTERN_LENGTH = 64;
+    // 仅允许安全的搜索子集，避免正则注入 / ReDoS 构造
+    private static final Pattern SAFE_SEARCH_PATTERN =
+            Pattern.compile("^[a-zA-Z0-9_.?*+|()\\[\\]^$\\\\\\-]{1,64}$");
     
     public DefaultMetricRegistrationService(final CustomMeterRegistry customMeterRegistry) {
         this.customMeterRegistry = customMeterRegistry;
@@ -244,14 +248,20 @@ public class DefaultMetricRegistrationService implements MetricRegistrationServi
     @Override
     public List<MetricMetadata> searchMetrics(final String namePattern, final String category) {
         try {
+            if (namePattern == null
+                    || namePattern.length() > MAX_SEARCH_PATTERN_LENGTH
+                    || !SAFE_SEARCH_PATTERN.matcher(namePattern).matches()) {
+                logger.warn("Rejected unsafe metric search pattern");
+                return List.of();
+            }
             Pattern pattern = Pattern.compile(namePattern, Pattern.CASE_INSENSITIVE);
-            
+
             return customMeterRegistry.getAllMetricMetadata().stream()
                     .filter(metadata -> pattern.matcher(metadata.getName()).find())
                     .filter(metadata -> category == null || category.equals(metadata.getCategory()))
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.error("Failed to search metrics with pattern: {} and category: {}", namePattern, category, e);
+            logger.error("Failed to search metrics with category: {}", category, e);
             return List.of();
         }
     }

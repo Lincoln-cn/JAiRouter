@@ -20,6 +20,9 @@ on:
       - '.github/workflows/docs.yml'
       - '.github/workflows/deployment-test.yml'
 
+permissions:
+  contents: read
+
 jobs:
   validate-deployment:
     runs-on: ubuntu-latest

@@ -35,7 +35,8 @@ public class DefaultSecurityConfiguration {
         log.info("配置默认安全过滤器链（安全功能已禁用）");
         
         return http
-                // 禁用 CSRF（API 网关不需要）
+                // CSRF 关闭：安全功能禁用时仍为无状态 API 入口，无 Cookie 会话；保持与主安全配置一致。
+                // 若引入浏览器 Cookie 认证，需启用 CSRF。
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 // 禁用 CORS（使用控制器级别配置）
                 .cors(cors -> cors.disable())

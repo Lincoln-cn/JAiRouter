@@ -369,7 +369,7 @@ async function main() {
         await page.waitForURL(u => !u.pathname.includes('/login'), { timeout: 25000 })
       }
       await page.waitForSelector('.el-main, .layout-main', { timeout: 20000 })
-      console.log('login OK (user=' + username + ')')
+      console.log('login OK')
     } catch (err) {
       console.error('登录失败: ' + err.message)
       return 2
