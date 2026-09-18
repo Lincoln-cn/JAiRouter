@@ -85,6 +85,99 @@ public final class DefaultSanitizationRuleEngine implements SanitizationRuleEngi
         .onErrorMap(throwable -> new SanitizationException(
                 "脱敏处理失败", throwable, SanitizationException.SANITIZATION_FAILED));
     }
+
+    @Override
+    public Mono<String> applySanitizationRules(
+            final String content, final List<SanitizationRule> rules,
+            final String contentType, final boolean preserveJsonStructure) {
+        if (preserveJsonStructure && contentType != null && contentType.startsWith("application/json")) {
+            return applySanitizationRulesJsonAware(content, rules, contentType);
+        }
+        return applySanitizationRules(content, rules, contentType);
+    }
+
+    /**
+     * JSON 结构保护脱敏：仅对 JSON 字符串字面量内部应用规则，不破坏数值字面量和结构字符。
+     */
+    private Mono<String> applySanitizationRulesJsonAware(
+            final String content, final List<SanitizationRule> rules, final String contentType) {
+        if (content == null) {
+            return Mono.empty();
+        }
+        if (content.isEmpty() || rules == null || rules.isEmpty()) {
+            return Mono.justOrEmpty(content);
+        }
+
+        return Mono.fromCallable(() -> {
+            List<SanitizationRule> sortedRules = rules.stream()
+                    .filter(SanitizationRule::isEnabled)
+                    .filter(rule -> rule.isApplicableToContentType(contentType))
+                    .sorted(Comparator.comparingInt(SanitizationRule::getPriority))
+                    .toList();
+
+            if (sortedRules.isEmpty()) {
+                return content;
+            }
+
+            StringBuilder result = new StringBuilder(content.length());
+            int i = 0;
+
+            while (i < content.length()) {
+                if (content.charAt(i) == '"') {
+                    int j = i + 1;
+                    while (j < content.length()) {
+                        char c = content.charAt(j);
+                        if (c == '\\') {
+                            j += 2;
+                        } else if (c == '"') {
+                            break;
+                        } else {
+                            j++;
+                        }
+                    }
+
+                    String stringValue = content.substring(i + 1, j);
+
+                    // 判断是否为 JSON 键名（闭合引号后仅空白然后跟 ':'）
+                    int afterQuote = j + 1;
+                    while (afterQuote < content.length()
+                            && Character.isWhitespace(content.charAt(afterQuote))) {
+                        afterQuote++;
+                    }
+                    boolean isKey = afterQuote < content.length()
+                            && content.charAt(afterQuote) == ':';
+
+                    if (isKey) {
+                        result.append(content, i, j + 1);
+                    } else {
+                        String masked = stringValue;
+                        for (SanitizationRule rule : sortedRules) {
+                            try {
+                                masked = applyRule(masked, rule);
+                            } catch (Exception e) {
+                                log.error("JSON字符串脱敏失败: ruleId={}, error={}",
+                                        rule.getRuleId(), e.getMessage(), e);
+                            }
+                        }
+                        result.append('"').append(masked).append('"');
+                    }
+                    i = j + 1;
+                } else {
+                    int nextQuote = content.indexOf('"', i);
+                    if (nextQuote == -1) {
+                        result.append(content, i, content.length());
+                        break;
+                    }
+                    result.append(content, i, nextQuote);
+                    i = nextQuote;
+                }
+            }
+
+            return result.toString();
+        })
+        .onErrorMap(throwable -> new SanitizationException(
+                "JSON脱敏处理失败", throwable, SanitizationException.SANITIZATION_FAILED));
+    }
     
     /**
      * 应用单个脱敏规则

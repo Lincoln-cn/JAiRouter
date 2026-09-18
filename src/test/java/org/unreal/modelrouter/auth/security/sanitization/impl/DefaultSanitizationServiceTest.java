@@ -53,6 +53,8 @@ class DefaultSanitizationServiceTest {
         lenient().when(ruleEngine.compileRules(anyList())).thenReturn(Mono.empty());
         lenient().when(ruleEngine.applySanitizationRules(anyString(), anyList(), anyString()))
                 .thenReturn(Mono.just("sanitized content"));
+        lenient().when(ruleEngine.applySanitizationRules(anyString(), anyList(), anyString(), anyBoolean()))
+                .thenReturn(Mono.just("sanitized content"));
         lenient().when(ruleEngine.validateRule(any(SanitizationRule.class))).thenReturn(Mono.just(true));
         
         sanitizationService = new DefaultSanitizationService(ruleEngine, securityProperties);
@@ -86,7 +88,7 @@ class DefaultSanitizationServiceTest {
                 .verifyComplete();
         
         // 不应该调用规则引擎
-        verify(ruleEngine, never()).applySanitizationRules(anyString(), anyList(), anyString());
+        verify(ruleEngine, never()).applySanitizationRules(anyString(), anyList(), anyString(), anyBoolean());
     }
     
     @Test
@@ -102,7 +104,7 @@ class DefaultSanitizationServiceTest {
                 .verifyComplete();
         
         // 应该调用规则引擎
-        verify(ruleEngine).applySanitizationRules(eq(content), anyList(), eq("application/json"));
+        verify(ruleEngine).applySanitizationRules(eq(content), anyList(), eq("application/json"), anyBoolean());
     }
     
     @Test
@@ -117,7 +119,7 @@ class DefaultSanitizationServiceTest {
                 .verifyComplete();
         
         // 应该调用规则引擎
-        verify(ruleEngine).applySanitizationRules(eq(content), anyList(), eq("application/json"));
+        verify(ruleEngine).applySanitizationRules(eq(content), anyList(), eq("application/json"), anyBoolean());
     }
     
     @Test
@@ -127,7 +129,7 @@ class DefaultSanitizationServiceTest {
                 .verifyComplete();
         
         // 不应该调用规则引擎
-        verify(ruleEngine, never()).applySanitizationRules(anyString(), anyList(), anyString());
+        verify(ruleEngine, never()).applySanitizationRules(anyString(), anyList(), anyString(), anyBoolean());
     }
     
     @Test
@@ -136,7 +138,7 @@ class DefaultSanitizationServiceTest {
                 .verifyComplete();
         
         // 不应该调用规则引擎
-        verify(ruleEngine, never()).applySanitizationRules(anyString(), anyList(), anyString());
+        verify(ruleEngine, never()).applySanitizationRules(anyString(), anyList(), anyString(), anyBoolean());
     }
     
     @Test
@@ -151,7 +153,7 @@ class DefaultSanitizationServiceTest {
                 .verifyComplete();
         
         // 应该调用规则引擎
-        verify(ruleEngine).applySanitizationRules(eq(content), anyList(), eq("application/json"));
+        verify(ruleEngine).applySanitizationRules(eq(content), anyList(), eq("application/json"), anyBoolean());
     }
     
     @Test
@@ -161,7 +163,7 @@ class DefaultSanitizationServiceTest {
                 .verifyComplete();
         
         // 不应该调用规则引擎
-        verify(ruleEngine, never()).applySanitizationRules(anyString(), anyList(), anyString());
+        verify(ruleEngine, never()).applySanitizationRules(anyString(), anyList(), anyString(), anyBoolean());
     }
     
     @Test
@@ -411,11 +413,160 @@ class DefaultSanitizationServiceTest {
         sanitizationService.initializeRules();
         
         // Mock规则引擎抛出异常
-        when(ruleEngine.applySanitizationRules(anyString(), anyList(), anyString()))
+        when(ruleEngine.applySanitizationRules(anyString(), anyList(), anyString(), anyBoolean()))
                 .thenReturn(Mono.error(new RuntimeException("Rule engine error")));
         
         StepVerifier.create(sanitizationService.sanitizeRequest(content, "application/json", "user"))
                 .expectError(SanitizationException.class)
                 .verify();
+    }
+    
+    // ===== 改动3: 开关闸测试 =====
+    
+    @Test
+    void testSanitizeResponse_ResponseDisabled_ReturnsContentVerbatim() {
+        // 关闭响应脱敏开关
+        securityProperties.getSanitization().getResponse().setEnabled(false);
+        
+        // 即使内容包含手机号，也应原样返回
+        String content = "processCpuUsage:0.12345678901, phone:13812345678";
+        
+        StepVerifier.create(sanitizationService.sanitizeResponse(content, "application/json"))
+                .expectNext(content) // 逐字不变
+                .verifyComplete();
+        
+        // 规则引擎不应被调用
+        verify(ruleEngine, never()).applySanitizationRules(anyString(), anyList(), anyString(), anyBoolean());
+    }
+    
+    @Test
+    void testSanitizeResponse_ResponseDisabled_EmptyContent() {
+        securityProperties.getSanitization().getResponse().setEnabled(false);
+        
+        StepVerifier.create(sanitizationService.sanitizeResponse("", "application/json"))
+                .expectNext("")
+                .verifyComplete();
+    }
+    
+    @Test
+    void testSanitizeRequest_RequestDisabled_ReturnsContentVerbatim() {
+        // 关闭请求脱敏开关
+        securityProperties.getSanitization().getRequest().setEnabled(false);
+        
+        String content = "password=secret, phone=13812345678";
+        
+        // 即使是白名单外用户，也应原样返回
+        StepVerifier.create(sanitizationService.sanitizeRequest(content, "application/json", "regular-user"))
+                .expectNext(content) // 逐字不变
+                .verifyComplete();
+        
+        // 规则引擎不应被调用
+        verify(ruleEngine, never()).applySanitizationRules(anyString(), anyList(), anyString(), anyBoolean());
+    }
+    
+    @Test
+    void testSanitizeRequest_RequestDisabled_BypassesWhitelistCheck() {
+        // 关闭请求脱敏开关
+        securityProperties.getSanitization().getRequest().setEnabled(false);
+        
+        String content = "phone=13812345678";
+        
+        // 白名单用户也应直接返回（开关关闭时无论白名单与否都跳过）
+        StepVerifier.create(sanitizationService.sanitizeRequest(content, "application/json", "admin"))
+                .expectNext(content)
+                .verifyComplete();
+        
+        verify(ruleEngine, never()).applySanitizationRules(anyString(), anyList(), anyString(), anyBoolean());
+    }
+    
+    @Test
+    void testSanitizeResponse_ResponseEnabled_DelegatesToEngine() {
+        // 响应脱敏开关保持默认 true
+        assertTrue(securityProperties.getSanitization().getResponse().isEnabled());
+        
+        String content = "internal debug info";
+        
+        sanitizationService.initializeRules();
+        
+        StepVerifier.create(sanitizationService.sanitizeResponse(content, "application/json"))
+                .expectNext("sanitized content")
+                .verifyComplete();
+        
+        // 应该调用规则引擎
+        verify(ruleEngine).applySanitizationRules(eq(content), anyList(), eq("application/json"), anyBoolean());
+    }
+    
+    @Test
+    void testSanitizeRequest_RequestEnabled_DelegatesToEngine() {
+        // 请求脱敏开关保持默认 true
+        assertTrue(securityProperties.getSanitization().getRequest().isEnabled());
+        
+        String content = "password is secret123";
+        
+        sanitizationService.initializeRules();
+        
+        StepVerifier.create(sanitizationService.sanitizeRequest(content, "application/json", "regular-user"))
+                .expectNext("sanitized content")
+                .verifyComplete();
+        
+        verify(ruleEngine).applySanitizationRules(eq(content), anyList(), eq("application/json"), anyBoolean());
+    }
+    
+    @Test
+    void testInitializeRules_ResponseDisabled_NoResponseRulesLoaded() {
+        // 关闭响应脱敏
+        securityProperties.getSanitization().getResponse().setEnabled(false);
+        
+        sanitizationService.initializeRules();
+        
+        StepVerifier.create(sanitizationService.getAllRules())
+                .assertNext(rules -> {
+                    // 不应有响应规则
+                    boolean hasResponseRules = rules.stream()
+                            .anyMatch(rule -> rule.getRuleId().startsWith("response-"));
+                    assertFalse(hasResponseRules, "响应脱敏关闭时不应加载响应规则");
+                    
+                    // 请求规则仍然存在（默认 enabled=true）
+                    boolean hasRequestRules = rules.stream()
+                            .anyMatch(rule -> rule.getRuleId().startsWith("request-"));
+                    assertTrue(hasRequestRules, "请求脱敏开启时应加载请求规则");
+                })
+                .verifyComplete();
+    }
+    
+    @Test
+    void testInitializeRules_RequestDisabled_NoRequestRulesLoaded() {
+        // 关闭请求脱敏
+        securityProperties.getSanitization().getRequest().setEnabled(false);
+        
+        sanitizationService.initializeRules();
+        
+        StepVerifier.create(sanitizationService.getAllRules())
+                .assertNext(rules -> {
+                    // 不应有请求规则
+                    boolean hasRequestRules = rules.stream()
+                            .anyMatch(rule -> rule.getRuleId().startsWith("request-"));
+                    assertFalse(hasRequestRules, "请求脱敏关闭时不应加载请求规则");
+                    
+                    // 响应规则仍然存在（默认 enabled=true）
+                    boolean hasResponseRules = rules.stream()
+                            .anyMatch(rule -> rule.getRuleId().startsWith("response-"));
+                    assertTrue(hasResponseRules, "响应脱敏开启时应加载响应规则");
+                })
+                .verifyComplete();
+    }
+    
+    @Test
+    void testInitializeRules_BothDisabled_NoRulesLoaded() {
+        securityProperties.getSanitization().getRequest().setEnabled(false);
+        securityProperties.getSanitization().getResponse().setEnabled(false);
+        
+        sanitizationService.initializeRules();
+        
+        StepVerifier.create(sanitizationService.getAllRules())
+                .assertNext(rules -> {
+                    assertTrue(rules.isEmpty(), "请求和响应脱敏都关闭时不应加载任何规则");
+                })
+                .verifyComplete();
     }
 }

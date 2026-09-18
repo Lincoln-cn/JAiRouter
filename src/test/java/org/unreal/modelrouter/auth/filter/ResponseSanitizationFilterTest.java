@@ -93,6 +93,41 @@ class ResponseSanitizationFilterTest {
     }
 
     @Nested
+    @DisplayName("enabled 配置测试")
+    class EnabledConfigTests {
+
+        @Test
+        @DisplayName("FILT-008: enabled=false 时过滤器不执行脱敏")
+        void testFilterDisabledWhenEnabledFalse() {
+            SanitizationConfig sanitizationConfig = mock(SanitizationConfig.class);
+            SanitizationConfig.ResponseSanitization responseConfig = mock(SanitizationConfig.ResponseSanitization.class);
+            when(securityProperties.getSanitization()).thenReturn(sanitizationConfig);
+            when(sanitizationConfig.getResponse()).thenReturn(responseConfig);
+            when(responseConfig.isEnabled()).thenReturn(false);
+            when(responseConfig.isLogSanitization()).thenReturn(false);
+
+            ResponseSanitizationFilter disabledFilter = new ResponseSanitizationFilter(
+                    sanitizationService, auditService, securityProperties);
+
+            MockServerHttpRequest request = MockServerHttpRequest
+                    .post("/api/dashboard/metrics")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+            WebFilterChain chain = mock(WebFilterChain.class);
+            when(chain.filter(any())).thenReturn(Mono.empty());
+
+            Mono<Void> result = disabledFilter.filter(exchange, chain);
+
+            StepVerifier.create(result).verifyComplete();
+            // 不应调用脱敏服务
+            verifyNoInteractions(sanitizationService);
+            // 应直接传递给下一个过滤器
+            verify(chain).filter(exchange);
+        }
+    }
+
+    @Nested
     @DisplayName("内容类型测试")
     class ContentTypeTests {
 

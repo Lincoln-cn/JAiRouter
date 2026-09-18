@@ -35,7 +35,7 @@ import java.time.LocalDateTime;
 @Component
 @Order(20) // 在请求处理之后执行
 @ConditionalOnProperty(name = "jairouter.security.sanitization.response.enabled",
-        havingValue = "true", matchIfMissing = true)
+        havingValue = "true", matchIfMissing = false)
 public class ResponseSanitizationFilter implements WebFilter {
     
     private final SanitizationService sanitizationService;
@@ -54,6 +54,11 @@ public class ResponseSanitizationFilter implements WebFilter {
     @Override
     public Mono<Void> filter(final ServerWebExchange exchange, final WebFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
+        
+        // 运行时防御：即使 @ConditionalOnProperty 未阻止 Bean 创建，配置为 false 时也跳过
+        if (!securityProperties.getSanitization().getResponse().isEnabled()) {
+            return chain.filter(exchange);
+        }
         
         // 跳过不需要脱敏的路径
         String path = request.getPath().value();

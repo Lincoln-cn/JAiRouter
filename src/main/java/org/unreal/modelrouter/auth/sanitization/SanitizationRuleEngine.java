@@ -19,6 +19,20 @@ public interface SanitizationRuleEngine {
      * @return 脱敏后的内容
      */
     Mono<String> applySanitizationRules(String content, List<SanitizationRule> rules, String contentType);
+
+    /**
+     * 应用脱敏规则到内容（支持 JSON 结构保护）
+     * @param content 原始内容
+     * @param rules 脱敏规则列表
+     * @param contentType 内容类型
+     * @param preserveJsonStructure 为 true 且 contentType 为 application/json 时，
+     *                              正则仅作用于 JSON 字符串字面量内部
+     * @return 脱敏后的内容
+     */
+    default Mono<String> applySanitizationRules(String content, List<SanitizationRule> rules,
+                                                 String contentType, boolean preserveJsonStructure) {
+        return applySanitizationRules(content, rules, contentType);
+    }
     
     /**
      * 验证脱敏规则的有效性
