@@ -1,0 +1,142 @@
+name: 镜像冷启动冒烟测试
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'Dockerfile*'
+      - 'pom.xml'
+      - 'src/main/resources/**'
+      - 'src/main/java/org/unreal/modelrouter/ModelRouterApplication.java'
+      - 'src/main/java/org/unreal/modelrouter/auth/cli/**'
+      - 'src/main/java/org/unreal/modelrouter/auth/security/config/**'
+      - 'scripts/build/**'
+      - 'frontend/**'
+      - '.github/workflows/image-smoke-test.yml'
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'Dockerfile*'
+      - 'pom.xml'
+      - 'src/main/resources/**'
+      - 'src/main/java/org/unreal/modelrouter/ModelRouterApplication.java'
+      - 'src/main/java/org/unreal/modelrouter/auth/cli/**'
+      - 'src/main/java/org/unreal/modelrouter/auth/security/config/**'
+      - 'scripts/build/**'
+      - 'frontend/**'
+      - '.github/workflows/image-smoke-test.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: 构建 JAR（含前端）
+        run: mvn -B -Pfast -DskipTests -Dfrontend.build.skip=false package
+
+      - name: 断言前端已打包到 static/admin
+        run: |
+          JAR=$(ls target/model-router-*.jar | head -n1)
+          echo "Checking $JAR"
+          if ! unzip -l "$JAR" | grep -q 'BOOT-INF/classes/static/admin/index.html'; then
+            echo "::error::frontend missing at BOOT-INF/classes/static/admin/index.html"
+            exit 1
+          fi
+
+      - name: 构建 Docker 镜像
+        run: docker build -t jairouter:smoke .
+
+      - name: 冒烟 1 — --generate-key 不启动项目即可生成密钥
+        run: |
+          set -e
+          out=$(docker run --rm jairouter:smoke --generate-key)
+          echo "$out"
+          if ! echo "$out" | grep -q 'export JWT_SECRET'; then
+            echo "::error::--generate-key did not print a JWT_SECRET"
+            exit 1
+          fi
+          if echo "$out" | grep -q 'Started ModelRouterApplication'; then
+            echo "::error::--generate-key must not start the Spring application"
+            exit 1
+          fi
+
+      - name: 冒烟 2 — dev 冷启动 + 控制台 + 健康检查
+        run: |
+          set -e
+          docker run -d --name smoke -p 18080:8080 \
+            -e SPRING_PROFILES_ACTIVE=dev \
+            -e JWT_SECRET="ci-smoke-test-secret-key-32-characters-min" \
+            jairouter:smoke
+          ok=0
+          for i in $(seq 1 45); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:18080/actuator/health || true)
+            echo "health attempt $i -> HTTP $code"
+            if [ "$code" = "200" ]; then ok=1; break; fi
+            sleep 10
+          done
+          if [ "$ok" != "1" ]; then
+            echo "::error::health did not return 200 in time"
+            docker logs smoke | tail -n 120
+            exit 1
+          fi
+          body=$(curl -s http://localhost:18080/actuator/health)
+          echo "health body: $body"
+          if ! echo "$body" | grep -q '"status":"UP"'; then
+            echo "::error::health status is not UP"
+            exit 1
+          fi
+          if echo "$body" | grep -q '"redis"'; then
+            echo "::error::redis health component should be absent when REDIS_ENABLED is unset"
+            exit 1
+          fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:18080/admin)
+          echo "GET /admin -> HTTP $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::console GET /admin did not return 200"
+            docker logs smoke | tail -n 80
+            exit 1
+          fi
+          st=$(docker ps -a --filter name=smoke --format '{{.Status}}')
+          echo "docker ps: $st"
+          if ! echo "$st" | grep -q 'healthy'; then
+            echo "::error::container is not healthy"
+            exit 1
+          fi
+
+      - name: 冒烟 3 — prod 无密钥必须 fail-fast 且报错可自助
+        run: |
+          set +e
+          out=$(docker run --rm jairouter:smoke 2>&1)
+          rc=$?
+          set -e
+          echo "$out" | tail -n 25
+          if [ "$rc" -eq 0 ]; then
+            echo "::error::prod without JWT_SECRET should fail to start"
+            exit 1
+          fi
+          if ! echo "$out" | grep -q 'JWT密钥长度至少32个字符'; then
+            echo "::error::expected the JWT secret length error message"
+            exit 1
+          fi
+          if ! echo "$out" | grep -q 'JWT_SECRET'; then
+            echo "::error::error message should mention JWT_SECRET for self-service"
+            exit 1
+          fi
+
+      - name: 清理
+        if: always()
+        run: docker rm -f smoke 2>/dev/null || true
