@@ -1,8 +1,8 @@
 # Quick Start
 
 <!-- 版本信息 -->
-> **Doc Version**: 1.2.0
-> **Last Updated**: 2026-07-14
+> **Doc Version**: 1.2.1
+> **Last Updated**: 2026-09-18
 > **Applicable Version**: v3.1.1+
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -24,37 +24,36 @@ After completing this guide, you will be able to:
 
 ## Step 0: Generate Secure Keys (v3.1.1+ Recommended)
 
-**v3.1.1+ provides a key generation tool** that automatically generates secure JWT keys and admin passwords.
+The production profile (prod) deliberately ships no default JWT key, so you need to generate one with **at least 32 characters**.
 
-### Option 1: Use Docker to Run Key Generation Tool (Recommended)
+> ⚠️ **Note**: The built-in `--generate-key` / `--generate-password` commands in the image are not functional in the current release and will be fixed in a future version. Please use the methods below to generate keys.
+
+### Linux / macOS / Git Bash
 
 ```bash
-# Generate JWT key (Base64 encoded)
-docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-key
-
-# Generate admin password
-docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-password
+# Generate a Base64-encoded JWT key (32 bytes → 44 characters)
+openssl rand -base64 32
 ```
 
-### Option 2: Use System Commands (No Docker Required)
+### Windows PowerShell
 
-```bash
-# Generate Base64 encoded JWT key (at least 32 bytes)
-openssl rand -base64 32
-
-# Generate random password (16 characters, alphanumeric)
-openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 16
+```powershell
+# Generate a Base64-encoded JWT key
+[Convert]::ToBase64String((1..32 | ForEach-Object {Get-Random -Maximum 256}))
 ```
 
 ### Set Environment Variables
 
 ```bash
-# Set JWT key (use the generated key)
+# Set the JWT key (replace with the value generated above)
 export JWT_SECRET="your-base64-encoded-secret"
 
-# Set admin password (use the generated password)
-export INITIAL_ADMIN_PASSWORD="MyStr0ng!Pass#2026"
+# Optional: override the admin password (production only)
+export INITIAL_ADMIN_PASSWORD="your-own-strong-password"
 ```
+
+> 💡 **Tip**: For quick local testing (dev profile), no key configuration is required — a built-in development key is included. The `JWT_SECRET` is only needed for production.
+> 🔐 **Default console login**: `admin` / `ChangeMeOnFirstStartup123456`. In production, override it with `INITIAL_ADMIN_PASSWORD` as shown above; otherwise change it after the first login.
 
 ![Login Page](images/login-en-US.png)
 

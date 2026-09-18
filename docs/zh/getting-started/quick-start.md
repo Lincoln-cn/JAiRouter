@@ -1,8 +1,8 @@
 # 快速开始
 
 <!-- 版本信息 -->
-> **文档版本**: 1.1.0
-> **最后更新**: 2026-05-21
+> **文档版本**: 1.1.1
+> **最后更新**: 2026-09-18
 > **适用版本**: v3.1.1+
 > **Git 提交**: 61384b4a
 > **作者**: Lincoln
@@ -19,7 +19,7 @@
 - ✅ 配置第一个 AI 模型服务
 - ✅ 发送 API 请求并获得响应
 - ✅ 体验负载均衡和限流功能
-- ✅ 使用密钥生成工具创建安全配置
+- ✅ 生成安全密钥并完成配置
 
 ## 📋 前提条件
 
@@ -41,54 +41,59 @@
 
 ## 🗝️ 步骤 0：生成安全密钥（v3.1.1+ 推荐）
 
-**v3.1.1+ 版本提供密钥生成工具**，支持自动生成安全的 JWT 密钥和管理员密码。
+生产环境（prod profile）刻意不内置 JWT 密钥，因此需要自行生成一个 **至少 32 字符** 的密钥。
 
-### 方式一：使用 Docker 运行密钥生成工具（推荐）
+> ⚠️ **注意**: 镜像内置的 `--generate-key` / `--generate-password` 命令在当前版本不可用，将在后续版本修复。请使用以下方式生成密钥。
+
+### Linux / macOS / Git Bash
 
 ```bash
-# 生成 JWT 密钥（Base64 编码）
-docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-key
-
-# 生成管理员密码
-docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-password
+# 生成 Base64 编码的 JWT 密钥（推荐 32 字节 → 44 字符 Base64）
+openssl rand -base64 32
 ```
 
-### 方式二：使用系统命令生成（无需 Docker）
+### Windows PowerShell
 
-```bash
-# 生成 Base64 编码的 JWT 密钥（至少 32 字节）
-openssl rand -base64 32
-
-# 生成随机密码（16 字符，包含字母数字）
-openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 16
+```powershell
+# 生成 Base64 编码的 JWT 密钥
+[Convert]::ToBase64String((1..32 | ForEach-Object {Get-Random -Maximum 256}))
 ```
 
 ### 设置环境变量
 
 ```bash
-# 设置 JWT 密钥（使用生成的密钥）
+# 设置 JWT 密钥（替换为上一步生成的密钥）
 export JWT_SECRET="your-base64-encoded-secret"
 
-# 设置管理员密码（使用生成的密码）
-export INITIAL_ADMIN_PASSWORD="MyStr0ng!Pass#2026"
+# 可选：覆盖管理员密码（生产环境建议设置）
+export INITIAL_ADMIN_PASSWORD="your-own-strong-password"
 ```
 
-> 💡 **提示**: v3.1.1+ 版本在启动时会自动检查密钥强度，确保生产环境安全。
+> 💡 **提示**: 快速体验（dev profile）无需配置密钥，内置了开发密钥可直接启动。生产环境才需要设置 `JWT_SECRET`。
+> 🔐 **控制台默认账号**: `admin` / `ChangeMeOnFirstStartup123456`。生产环境请通过上文的 `INITIAL_ADMIN_PASSWORD` 覆盖，或在首次登录后立即修改。
 
 ## 🚀 步骤 1：启动 JAiRouter
 
-### 方式一：Docker 一键启动（推荐）
+### 方式一：Docker 快速体验（推荐）
 
 ```bash
-# 拉取并运行 JAiRouter
+# 使用 dev 方式启动（零配置，内置开发密钥）
 docker run -d \
   --name jairouter \
   -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=dev \
   sodlinken/jairouter:latest
 
 # 检查运行状态
 docker ps --filter "name=jairouter"
 ```
+
+> ⚠️ **生产环境提醒**: 镜像默认以 prod 方式启动，**必须**自行提供 JWT 密钥，否则服务无法启动。示例：
+> ```bash
+> docker run -d --name jairouter -p 8080:8080 \
+>   -e JWT_SECRET="<至少32字符的密钥>" \
+>   sodlinken/jairouter:latest
+> ```
 
 **预期输出**：
 ```
@@ -257,12 +262,13 @@ EOF
 然后重启 JAiRouter：
 
 ```bash
-# Docker 重启（挂载配置目录）
+# Docker 重启（挂载配置目录，dev 方式启动）
 docker stop jairouter
 docker rm jairouter
 docker run -d \
   --name jairouter \
   -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=dev \
   -v $(pwd)/config:/app/config:ro \
   sodlinken/jairouter:latest
 

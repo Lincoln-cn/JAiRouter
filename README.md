@@ -51,7 +51,7 @@ For production, run the default `prod` profile and supply your own key — the p
 
 ```bash
 docker run -d --name jairouter -p 8080:8080 \
-  -e PROD_JWT_SECRET="<your-secret-at-least-32-characters>" \
+  -e JWT_SECRET="<your-secret-at-least-32-characters>" \
   sodlinken/jairouter:latest
 ```
 
@@ -309,9 +309,9 @@ Contributions are welcome — see the [Contributing Guide](https://jairouter.com
 
 ```bash
 git clone https://github.com/Lincoln-cn/JAiRouter.git
-cd JAiRouter/modelrouter
+cd JAiRouter
 mvn clean package -DskipTests
-java -jar target/modelrouter.jar
+java -jar target/model-router-*.jar
 ```
 
 ## Support

@@ -1,8 +1,8 @@
-﻿# Installation Guide
+# Installation Guide
 
 <!-- 版本信息 -->
-> **Doc Version**: 1.0.2  
-> **Last Updated**: 2026-05-21  
+> **Doc Version**: 1.0.3  
+> **Last Updated**: 2026-09-18  
 > **Git Commit**: 61384b4a  
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -59,17 +59,32 @@ docker pull sodlinken/jairouter:v3.1.1
 
 ### 3. Run the Container
 
+**Quick start (dev profile, zero configuration)**:
+
 ```bash
-# Basic run
+# Start with the dev profile — a built-in development key is included
 docker run -d \
   --name jairouter \
   -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=dev \
+  sodlinken/jairouter:latest
+```
+
+**Production (prod profile — key required)**:
+
+```bash
+# Production requires your own JWT secret (at least 32 characters)
+docker run -d \
+  --name jairouter \
+  -p 8080:8080 \
+  -e JWT_SECRET="<your-secret-at-least-32-characters>" \
   sodlinken/jairouter:latest
 
-# Run with a configuration file
+# With custom config directory mounted
 docker run -d \
   --name jairouter \
   -p 8080:8080 \
+  -e JWT_SECRET="<your-secret-at-least-32-characters>" \
   -v $(pwd)/config:/app/config:ro \
   -v $(pwd)/logs:/app/logs \
   sodlinken/jairouter:latest
