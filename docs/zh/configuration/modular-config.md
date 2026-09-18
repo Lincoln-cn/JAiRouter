@@ -180,42 +180,36 @@ logging:
 #### 适配器配置（`config/router/adapter.yml`）
 
 ```yaml
-jairouter:
-  adapter:
-    default-adapter: "ollama"           # 默认适配器类型
-    connect-timeout: 10000              # 连接超时（毫秒）
-    read-timeout: 60000                 # 读取超时（毫秒）
+model:
+  adapter: "ollama"                       # 默认适配器类型
 ```
 
 #### 负载均衡配置（`config/router/loadbalancer.yml`）
 
 ```yaml
-jairouter:
-  loadbalancer:
-    default-strategy: "random"          # random, round_robin, weighted
-    health-check-interval: 30000        # 健康检查间隔（毫秒）
+model:
+  load-balance:
+    type: "random"                        # random, round-robin, least-connections, ip-hash
 ```
 
 #### 限流配置（`config/router/ratelimit.yml`）
 
 ```yaml
-jairouter:
-  ratelimit:
+model:
+  rate-limit:
     enabled: true
-    default-algorithm: "token_bucket"   # token_bucket, leaky_bucket
-    default-capacity: 100               # 默认令牌桶容量
-    default-refill-rate: 10             # 每秒补充令牌数
+    algorithm: "token-bucket"             # 支持: token-bucket, sliding-window
 ```
 
 #### 熔断器配置（`config/router/circuitbreaker.yml`）
 
 ```yaml
-jairouter:
-  circuitbreaker:
+model:
+  circuit-breaker:
     enabled: true
-    failure-threshold: 5                # 触发熔断的失败次数
-    success-threshold: 3                # 恢复所需成功次数
-    timeout: 30000                      # 熔断状态超时（毫秒）
+    failureThreshold: 5                   # 触发熔断的失败次数
+    successThreshold: 3                   # 恢复所需成功次数
+    timeout: 60000                        # 熔断状态超时（毫秒）
 ```
 
 ---

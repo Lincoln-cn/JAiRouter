@@ -1,4 +1,4 @@
-﻿# Kubernetes Deployment
+# Kubernetes Deployment
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -589,8 +589,8 @@ apiVersion: v2
 name: jairouter
 description: A Helm chart for JAiRouter AI model routing gateway
 type: application
-version: 1.0.0
-appVersion: "1.0.0"
+version: 3.1.1
+appVersion: "3.1.1"
 keywords:
   - ai
   - router
@@ -629,7 +629,7 @@ podAnnotations:
   prometheus.io/path: "/actuator/prometheus"
 
 podSecurityContext:
-  fsGroup: 1001
+  fsGroup: 10010
 
 securityContext:
   capabilities:
@@ -637,7 +637,7 @@ securityContext:
     - ALL
   readOnlyRootFilesystem: false
   runAsNonRoot: true
-  runAsUser: 1001
+  runAsUser: 10010
 
 service:
   type: ClusterIP
@@ -1100,9 +1100,9 @@ spec:
       # Security context configuration
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1001
+        runAsUser: 10010
         runAsGroup: 1001
-        fsGroup: 1001
+        fsGroup: 10010
       containers:
       - name: jairouter
         image: sodlinken/jairouter:latest

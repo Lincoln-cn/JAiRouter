@@ -57,10 +57,10 @@
     },
     "docs/en/configuration/application-config.md": {
       "FilePath": "docs/en/configuration/application-config.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-08-24T03:02:49.094377",
-      "ContentHash": "e6aec753f5fc5671",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.5",
+      "LastModified": "2026-09-18T15:27:22.247894",
+      "ContentHash": "37b04f2f373c0148",
+      "GitCommit": "406b4a65",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -206,10 +206,10 @@
     },
     "docs/en/deployment/kubernetes.md": {
       "FilePath": "docs/en/deployment/kubernetes.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-08-24T03:02:49.139198",
-      "ContentHash": "780e4505f82788dd",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.6",
+      "LastModified": "2026-09-18T15:27:25.850177",
+      "ContentHash": "403902096e6a97f9",
+      "GitCommit": "406b4a65",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1276,10 +1276,10 @@
     },
     "docs/en/configuration/modular-config.md": {
       "FilePath": "docs/en/configuration/modular-config.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-08-24T03:02:49.110517",
-      "ContentHash": "01c1541e8aad6449",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.3",
+      "LastModified": "2026-09-18T15:27:23.547548",
+      "ContentHash": "318c81f47f17facf",
+      "GitCommit": "406b4a65",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1472,10 +1472,10 @@
     },
     "docs/zh/configuration/modular-config.md": {
       "FilePath": "docs/zh/configuration/modular-config.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-09-18T10:17:14.494587",
-      "ContentHash": "be24f957d7d972d7",
-      "GitCommit": "97163311",
+      "Version": "1.0.3",
+      "LastModified": "2026-09-18T15:27:36.833974",
+      "ContentHash": "33facb9149c3fddf",
+      "GitCommit": "406b4a65",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1758,16 +1758,6 @@
         "docs/zh/configuration/index.md",
         "docs/zh/troubleshooting/index.md"
       ]
-    },
-    "QWEN.md": {
-      "FilePath": "QWEN.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-07-14T04:51:10.044215",
-      "ContentHash": "034bfabbdd47be34",
-      "GitCommit": "63a07c9b",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": []
     },
     "docs/en/deployment/docker-optimized.md": {
       "FilePath": "docs/en/deployment/docker-optimized.md",
@@ -5674,7 +5664,47 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-09-18T11:28:25.077895",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/application-config.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T15:27:22.247894",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/modular-config.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T15:27:23.547548",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/kubernetes.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T15:27:25.850177",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/modular-config.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-18T15:27:36.833974",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "QWEN.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-09-18T15:27:51.376365",
+      "Description": "文档已删除"
     }
   ],
-  "last_updated": "2026-09-18T07:03:04.030559"
+  "last_updated": "2026-09-18T15:27:51.377366"
 }
