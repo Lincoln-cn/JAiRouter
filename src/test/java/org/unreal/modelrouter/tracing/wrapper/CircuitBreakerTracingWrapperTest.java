@@ -2,6 +2,7 @@ package org.unreal.modelrouter.monitor.tracing.wrapper;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,6 +51,12 @@ class CircuitBreakerTracingWrapperTest {
         // Mock getState方法的返回值
         when(delegate.getState()).thenReturn(CircuitBreaker.State.CLOSED);
         circuitBreakerWrapper = new CircuitBreakerTracingWrapper(delegate, structuredLogger, "test-instance");
+    }
+
+    @AfterEach
+    void tearDown() {
+        // 清除 setUp 中设置的 ThreadLocal，防止上下文泄漏到后续测试类
+        TracingContextHolder.clearCurrentContext();
     }
 
     @Test

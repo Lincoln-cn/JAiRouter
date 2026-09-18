@@ -235,6 +235,16 @@ public final class ErrorTracker {
     }
     
     /**
+     * 重置所有内部状态（统计计数器和聚合信息）。
+     * 主要用于测试环境确保测试间完全隔离。
+     */
+    public void reset() {
+        errorTypeCounters.clear();
+        errorLocationCounters.clear();
+        errorAggregations.clear();
+    }
+
+    /**
      * 获取错误聚合信息
      * 
      * @return 错误聚合映射

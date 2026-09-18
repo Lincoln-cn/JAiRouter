@@ -21,6 +21,7 @@ import org.mockito.MockedStatic;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -66,6 +67,14 @@ class ErrorTrackerTest {
 
     @BeforeEach
     void setUp() {
+        // 显式清除 mock 状态，确保测试间完全隔离（CI 环境下 MockitoExtension
+        // 对 @Mock 字段的重置可能因执行顺序而不够彻底）
+        reset(structuredLogger, stackTraceSanitizer, errorMetricsCollector, tracingContext);
+
+        // 清除 TracingContextHolder 的 ThreadLocal，防止前序测试（如
+        // AdapterTracingManagerTest）残留的上下文影响 isNull() 断言
+        TracingContextHolder.clearCurrentContext();
+
         errorTracker = new ErrorTracker(structuredLogger);
         
         // 使用反射设置可选依赖
