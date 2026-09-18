@@ -160,7 +160,7 @@ public class SecurityConfigurationValidator {
     private void validateJwtConfig(final JwtConfig config, final ValidationResult result) {
         // 验证密钥
         if (config.getSecret() == null || config.getSecret().length() < 32) {
-            result.addError("JWT密钥长度至少32个字符");
+            result.addError("JWT密钥长度至少32个字符；请设置环境变量 JWT_SECRET（可用 openssl rand -base64 32 或镜像内置 --generate-key 生成）");
         } else if (config.getSecret().length() > 512) {
             result.addWarning("JWT密钥长度超过512个字符，可能影响性能");
         }

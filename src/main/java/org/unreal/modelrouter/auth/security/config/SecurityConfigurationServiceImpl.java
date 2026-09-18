@@ -261,7 +261,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
      */
     private void validateJwtConfig(final JwtConfig config) {
         if (config.getSecret() == null || config.getSecret().length() < 32) {
-            throw new IllegalArgumentException("JWT密钥长度至少32个字符");
+            throw new IllegalArgumentException("JWT密钥长度至少32个字符；请设置环境变量 JWT_SECRET（可用 openssl rand -base64 32 或镜像内置 --generate-key 生成）");
         }
         
         if (config.getExpirationMinutes() <= 0) {

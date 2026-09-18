@@ -384,7 +384,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     private void validateJwtConfig(final JwtConfig jwtConfig) {
         if (jwtConfig.isEnabled()) {
             if (jwtConfig.getSecret() == null || jwtConfig.getSecret().length() < 32) {
-                throw new IllegalArgumentException("JWT密钥长度至少32个字符");
+                throw new IllegalArgumentException("JWT密钥长度至少32个字符；请设置环境变量 JWT_SECRET（可用 openssl rand -base64 32 或镜像内置 --generate-key 生成）");
             }
             if (jwtConfig.getExpirationMinutes() <= 0) {
                 throw new IllegalArgumentException("JWT过期时间必须大于0");
