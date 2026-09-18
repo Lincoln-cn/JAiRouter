@@ -23,7 +23,7 @@ FROM eclipse-temurin:17-jre
 # 设置元数据
 LABEL maintainer="JAiRouter Team"
 LABEL description="JAiRouter - AI Model Service Routing and Load Balancing Gateway"
-LABEL version="2.7.34"
+LABEL version="3.1.1"
 
 # 安装必要工具（curl 用于健康检查，tzdata 用于时区支持）
 RUN apt-get update && apt-get install -y --no-install-recommends \

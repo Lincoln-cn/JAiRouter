@@ -1,8 +1,8 @@
 # Adapter Updates Documentation
 
 <!-- Version Information -->
-> **Document Version**: 1.1.0
-> **Last Updated**: 2026-06-10
+> **Version**: 1.1.1
+> **Last Updated**: 2026-09-15
 > **Author**: Lincoln
 <!-- /Version Information -->
 

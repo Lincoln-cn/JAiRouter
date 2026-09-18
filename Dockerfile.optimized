@@ -26,7 +26,7 @@ FROM eclipse-temurin:17-jre-alpine
 # 设置元数据
 LABEL maintainer="JAiRouter Team"
 LABEL description="JAiRouter - AI Model Service Routing and Load Balancing Gateway"
-LABEL version="2.7.5"
+LABEL version="3.1.1"
 LABEL org.opencontainers.image.source="https://github.com/sodlinken/jairouter"
 
 # 安装必要工具（wget 用于健康检查，tzdata 用于时区支持）

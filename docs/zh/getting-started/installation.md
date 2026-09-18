@@ -1,4 +1,4 @@
-﻿# 安装指南
+# 安装指南
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.2  
@@ -54,7 +54,7 @@ Docker 安装是最简单快捷的方式，适合大多数用户。
 docker pull sodlinken/jairouter:latest
 
 # 或拉取指定版本
-docker pull sodlinken/jairouter:v0.3.1
+docker pull sodlinken/jairouter:v3.1.1
 ```
 
 ### 3. 运行容器

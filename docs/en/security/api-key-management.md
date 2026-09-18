@@ -1,8 +1,8 @@
 # API Key Management Guide
 
 <!-- Version Information -->
-> **Document Version**: 1.1.0
-> **Last Updated**: 2026-06-30
+> **Version**: 1.1.1
+> **Last Updated**: 2026-09-15
 > **Git Commit**: fb0cd62f
 > **Author**: Lincoln
 <!-- /Version Information -->

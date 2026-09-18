@@ -29,7 +29,7 @@ FROM gcr.io/distroless/java17-debian12:latest
 # 设置元数据
 LABEL maintainer="JAiRouter Team"
 LABEL description="JAiRouter - AI Model Service Routing Gateway (Distroless)"
-LABEL version="2.7.5"
+LABEL version="3.1.1"
 LABEL org.opencontainers.image.source="https://github.com/sodlinken/jairouter"
 
 WORKDIR /app

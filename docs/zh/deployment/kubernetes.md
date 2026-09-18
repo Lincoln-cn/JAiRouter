@@ -1,4 +1,4 @@
-﻿# Kubernetes 部署
+# Kubernetes 部署
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.2  
@@ -289,9 +289,9 @@ spec:
       # 安全上下文配置
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1001
-        runAsGroup: 1001
-        fsGroup: 1001
+        runAsUser: 100100
+        runAsGroup: 10010
+        fsGroup: 10010
       containers:
       - name: jairouter
         image: sodlinken/jairouter:latest
@@ -632,7 +632,7 @@ name: jairouter
 description: A Helm chart for JAiRouter AI model routing gateway
 type: application
 version: 1.0.0
-appVersion: "1.0.0"
+appVersion: "3.1.1"
 keywords:
   - ai
   - router
@@ -671,7 +671,7 @@ podAnnotations:
   prometheus.io/path: "/actuator/prometheus"
 
 podSecurityContext:
-  fsGroup: 1001
+  fsGroup: 10010
 
 securityContext:
   capabilities:
@@ -679,7 +679,7 @@ securityContext:
     - ALL
   readOnlyRootFilesystem: false
   runAsNonRoot: true
-  runAsUser: 1001
+  runAsUser: 10010
 
 service:
   type: ClusterIP
@@ -1053,9 +1053,9 @@ spec:
       # 安全上下文配置
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1001
-        runAsGroup: 1001
-        fsGroup: 1001
+        runAsUser: 100100
+        runAsGroup: 10010
+        fsGroup: 10010
       containers:
       - name: jairouter
         image: sodlinken/jairouter:latest
@@ -1463,7 +1463,7 @@ kubectl logs -f -l app=jairouter -n jairouter --max-log-requests=10
 
 ```
 # 更新镜像
-kubectl set image deployment/jairouter jairouter=sodlinken/jairouter:v1.1.0 -n jairouter
+kubectl set image deployment/jairouter jairouter=sodlinken/jairouter:v3.1.1 -n jairouter
 
 # 查看更新状态
 kubectl rollout status deployment/jairouter -n jairouter

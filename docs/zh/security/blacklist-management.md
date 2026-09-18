@@ -1,8 +1,8 @@
 # 安全黑名单管理指南
 
 <!-- 版本信息 -->
-> **文档版本**: 1.7.0
-> **最后更新**: 2026-05-21
+> **文档版本**: 1.8.0
+> **最后更新**: 2026-09-15
 > **Git 提交**: 61384b4a
 > **作者**: Lincoln
 <!-- /版本信息 -->
@@ -45,7 +45,7 @@ JAiRouter 安全黑名单功能提供了一种主动防御机制，允许管理�
 #### 添加 IP 黑名单
 
 ```bash
-curl -X POST "http://localhost:8080/api/security/blacklist" \
+curl -X POST "http://localhost:8080/api/security/blacklist/add" \
      -H "Authorization: Bearer admin_token" \
      -H "Content-Type: application/json" \
      -d '{
@@ -126,7 +126,7 @@ curl -X POST "http://localhost:8080/api/security/blacklist" \
 ### 添加黑名单条目
 
 ```http
-POST /api/security/blacklist
+POST /api/security/blacklist/add
 Authorization: Bearer {token}
 Content-Type: application/json
 ```
@@ -160,7 +160,7 @@ Content-Type: application/json
 ### 获取黑名单列表
 
 ```http
-GET /api/security/blacklist?type={type}&page={page}&size={size}&status={status}
+GET /api/security/blacklist/list?type={type}&page={page}&size={size}&status={status}
 Authorization: Bearer {token}
 ```
 
@@ -201,22 +201,6 @@ GET /api/security/blacklist/{entryId}
 Authorization: Bearer {token}
 ```
 
-### 更新黑名单条目
-
-```http
-PUT /api/security/blacklist/{entryId}
-Authorization: Bearer {token}
-Content-Type: application/json
-```
-
-请求体：
-```json
-{
-  "reason": "更新后的原因",
-  "expiresAt": "2026-06-10T00:00:00Z"
-}
-```
-
 ### 删除黑名单条目
 
 ```http
@@ -227,7 +211,7 @@ Authorization: Bearer {token}
 ### 批量添加黑名单
 
 ```http
-POST /api/security/blacklist/batch
+POST /api/security/blacklist/batch-add
 Authorization: Bearer {token}
 Content-Type: application/json
 ```

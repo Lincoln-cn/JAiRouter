@@ -1,9 +1,9 @@
 # JAiRouter Alert Rules Guide
 
 <!-- Version Information -->
-> **Document Version**: 1.1.0
-> **Last Updated**: 2026-06-10
-> **Applicable Version**: v2.7.x+
+> **Version**: 1.1.1
+> **Last Updated**: 2026-09-15
+> **Applicable Version**: v3.1.1x+
 > **Git Commit**: 135f9a60
 > **Author**: Lincoln
 <!-- /Version Information -->
