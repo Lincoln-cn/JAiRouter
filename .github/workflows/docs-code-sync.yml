@@ -1,0 +1,87 @@
+name: 文档代码同步检查
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 每周一早上 UTC 2:00 (北京时间 10:00) 运行
+    - cron: '0 2 * * 1'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'docs/**/*.md'
+      - 'src/main/java/**/*.java'
+      - 'src/main/resources/config/**/*.yml'
+      - 'pom.xml'
+      - 'Dockerfile*'
+      - 'docker-compose*.yml'
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'docs/**/*.md'
+      - 'src/main/java/**/*.java'
+      - 'src/main/resources/config/**/*.yml'
+      - 'pom.xml'
+      - 'Dockerfile*'
+      - 'docker-compose*.yml'
+
+jobs:
+  docs-code-sync:
+    runs-on: ubuntu-latest
+    name: 文档代码同步检查
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 设置 Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: 运行同步检查
+      run: |
+        python scripts/docs/check-docs-sync.py --project-root . --fail-on-error
+
+    - name: 上传检查报告
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: docs-sync-report
+        path: docs-sync-report.json
+        retention-days: 30
+
+    - name: 创建 Issue (仅 schedule 触发且有错误时)
+      if: failure() && github.event_name == 'schedule'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          let report = { errors: 0, warnings: 0, details: [] };
+          try {
+            report = JSON.parse(fs.readFileSync('docs-sync-report.json', 'utf8'));
+          } catch (e) {}
+
+          const errorDetails = report.details
+            .filter(d => d.severity === 'CRITICAL' || d.severity === 'HIGH')
+            .slice(0, 20)
+            .map(d => `- [${d.severity}] \`${d.file}:${d.line}\` ${d.message}`)
+            .join('\n');
+
+          await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `📋 文档代码同步检查发现 ${report.errors} 个问题`,
+            body: `## 文档代码同步检查报告\n\n` +
+                  `在定期检查中发现文档与代码不同步的问题。\n\n` +
+                  `### 错误 (${report.errors} 个)\n${errorDetails || '无'}\n\n` +
+                  `### 警告 (${report.warnings} 个)\n` +
+                  `详细报告请查看 [Actions 运行记录](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})\n\n` +
+                  `### 修复建议\n` +
+                  `1. 检查并修复上述错误\n` +
+                  `2. 运行 \`python scripts/docs/check-docs-sync.py --project-root .\` 验证修复\n` +
+                  `3. 提交修复后的文档\n\n` +
+                  `---\n*此 Issue 由文档代码同步检查自动创建*`,
+            labels: ['documentation', 'maintenance', 'automated']
+          });

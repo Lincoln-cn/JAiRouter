@@ -1,4 +1,4 @@
-﻿# Modular Configuration Guide
+# Modular Configuration Guide
 
 <!-- 版本信息 -->
 > **Doc Version**: 2.0.0
@@ -180,42 +180,36 @@ logging:
 #### Adapter Configuration (`config/router/adapter.yml`)
 
 ```yaml
-jairouter:
-  adapter:
-    default-adapter: "ollama"           # Default adapter type
-    connect-timeout: 10000              # Connection timeout (ms)
-    read-timeout: 60000                 # Read timeout (ms)
+model:
+  adapter: "ollama"                       # Default adapter type
 ```
 
 #### Load Balancer Configuration (`config/router/loadbalancer.yml`)
 
 ```yaml
-jairouter:
-  loadbalancer:
-    default-strategy: "random"          # random, round_robin, weighted
-    health-check-interval: 30000        # Health check interval (ms)
+model:
+  load-balance:
+    type: "random"                        # random, round-robin, least-connections, ip-hash
 ```
 
 #### Rate Limiting Configuration (`config/router/ratelimit.yml`)
 
 ```yaml
-jairouter:
-  ratelimit:
+model:
+  rate-limit:
     enabled: true
-    default-algorithm: "token_bucket"   # token_bucket, leaky_bucket
-    default-capacity: 100               # Default bucket capacity
-    default-refill-rate: 10             # Tokens per second
+    algorithm: "token-bucket"             # Supported: token-bucket, sliding-window
 ```
 
 #### Circuit Breaker Configuration (`config/router/circuitbreaker.yml`)
 
 ```yaml
-jairouter:
-  circuitbreaker:
+model:
+  circuit-breaker:
     enabled: true
-    failure-threshold: 5                # Failures to trigger open
-    success-threshold: 3                # Successes to close
-    timeout: 30000                      # Open state timeout (ms)
+    failureThreshold: 5                   # Failures to trigger open
+    successThreshold: 3                   # Successes to close
+    timeout: 60000                        # Open state timeout (ms)
 ```
 
 ---
