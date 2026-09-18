@@ -88,8 +88,8 @@ Supported state types for persistence:
 | `/api/state-persistence/status` | GET | Get storage tier status |
 | `/api/state-persistence/details` | GET | Get all state details |
 | `/api/state-persistence/sync` | POST | Manual sync trigger |
-| `/api/state-persistence/recover` | POST | Recover all states |
-| `/api/state-persistence/recover/{type}/{key}` | POST | Recover single state |
+| `/api/state-persistence/recovery/all` | POST | Recover all states |
+| `/api/state-persistence/recovery/{type}/{id}` | POST | Recover single state |
 | `/api/state-persistence/rate-limiter/recover/{limiterId}` | POST | Recover rate limiter state |
 
 ### Example Requests
@@ -186,10 +186,10 @@ When a tier is unavailable, the system automatically switches to the next tier:
 
 ```bash
 # Recover all states
-curl -X POST http://localhost:8080/api/state-persistence/recover
+curl -X POST http://localhost:8080/api/state-persistence/recovery/all
 
 # Recover single circuit breaker state
-curl -X POST http://localhost:8080/api/state-persistence/recover/circuit_breaker/ollama-1
+curl -X POST http://localhost:8080/api/state-persistence/recovery/circuit-breaker/ollama-1
 
 # Recover rate limiter state
 curl -X POST http://localhost:8080/api/state-persistence/rate-limiter/recover/global

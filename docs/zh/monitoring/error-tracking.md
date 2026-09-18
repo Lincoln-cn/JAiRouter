@@ -215,7 +215,7 @@ GET /api/monitoring/errors/stats
 ### 错误详情 API
 
 ```http
-GET /api/monitoring/errors/details
+GET /api/monitoring/errors/stats
 ```
 
 返回详细的错误信息：

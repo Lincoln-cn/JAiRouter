@@ -3,7 +3,7 @@
 <!-- 版本信息 -->
 > **Doc Version**: 1.2.0
 > **Last Updated**: 2026-06-10
-> **Applicable Version**: v2.7.x+
+> **Applicable Version**: v3.1.1+
 > **Git Commit**: 135f9a60
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -282,7 +282,7 @@ services:
 
 ```bash
 # Use specific version tags
-docker pull sodlinken/jairouter:v1.7.0-optimized
+docker pull sodlinken/jairouter:v3.1.1-optimized
 
 # Avoid using latest tag in production
 # docker pull sodlinken/jairouter:latest-optimized  # Not recommended for production

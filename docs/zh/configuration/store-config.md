@@ -117,6 +117,7 @@ jairouter:
     audit:
       storage: h2
       retentionDays: 30
+```
 
 ## 环境特定配置
 

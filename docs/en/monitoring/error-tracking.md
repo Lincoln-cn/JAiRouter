@@ -215,7 +215,7 @@ Returns error statistics:
 ### Error Details API
 
 ```http
-GET /api/monitoring/errors/details
+GET /api/monitoring/errors/stats
 ```
 
 Returns detailed error information:
