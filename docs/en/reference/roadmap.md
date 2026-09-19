@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 > **Doc Version**: 2.0.0
-> **Last Updated**: 2026-09-15
-> **Git 标签**: v3.1.1
+> **Last Updated**: 2026-09-19
+> **Git 标签**: v3.2.0-pending (code on master)
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -24,7 +24,26 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 
 ## Current Version Status
 
-### ✅ v3.1.1 (Current Stable)
+### 🚧 v3.2.0 (Code merged; release wrap-up)
+
+**Status**: Feature code merged to master via PR #60 (2026-09-19); version bump / product docs / tag pending
+**Scope**: PII sanitization management closed-loop + quota observability UX + TDD test foundation
+
+| Area | Delivered |
+|------|-----------|
+| PII record path | `sanitizeForStorage` decoupled from gateway request/response switches; call-history SUMMARY & tracing use it |
+| Management API | `GET/PUT /api/config/sanitization`, rules list, dry-run test (reactive; non-JSON samples masked as text) |
+| Console | Security → PII Sanitization page; permission `security:sanitization:manage` (49 codes) |
+| Exclusions | Admin `/api/**` and AI realtime paths excluded from gateway response masking |
+| Quota UX | Monitoring limit/progress columns + cross-links to API Key page; docs: `0`=unlimited, threshold `0.0–1.0` |
+| Quality | Redis TTL flaky assertions fixed; vitest unit/API/component tests; page smoke 10/10 |
+
+### ✅ v3.1.2 (Previous stable patch)
+
+**Release Status**: Released (2026-09-18)
+**Git Tag**: v3.1.2 (docs/changelog cover Docker startup, JWT_SECRET, image admin path)
+
+### ✅ v3.1.1 (Previous stable)
 
 **Release Status**: Released (2026-09-15)
 **Git Tag**: v3.1.1
@@ -36,6 +55,8 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 | v3.0.3 | 2026-09-09 | End-to-end journey acceptance (10/10 PASS) + README screenshot refresh (32 images = 8 pages × zh/en × light/dark) + cold-start deep-link fix + i18n/icon warning cleanup |
 | v3.1.0 | 2026-09-14 | Quota ledger & multi-protocol entry: multi-dimensional multi-window quota ledger (MINUTE/HOUR/DAY/MONTH + JPA persistence + Redis distributed counting with disconnect fallback, disabled by default) + quota runtime config & observability surfaces (3 console pages) + 48 permission codes total + OpenAI `/v1/models` + Anthropic `/v1/messages` (non-streaming/streaming/`count_tokens`/tool calling) + protocol-shaped gateway errors + error-body UTF-8 fix |
 | v3.1.1 | 2026-09-15 | Patch fixes: 401 shape per protocol + `count_tokens` counts tools/tool_use/tool_result + `/v1/**` error-message de-noising + console SSE false-positive alert fix on route navigation |
+| v3.1.2 | 2026-09-18 | Docker/startup patch: `JWT_SECRET` env unification, `--generate-key` fix, image frontend static/admin path, Redis health conditional |
+| v3.2.0 | 2026-09-19 | **Merged to master (PR #60)**: PII sanitization management (console + `/api/config/sanitization/**` + `sanitizeForStorage`) + quota monitoring limit/progress UX + vitest/page-smoke TDD foundation + excluded-path alignment |
 
 #### Statistics
 - Test count: 3,517 (all green)
@@ -334,7 +355,9 @@ JAiRouter will continue to uphold the open-source spirit and is committed to pro
 6. ✅ v2.10.x Web console refactor series completed (v2.10.0 foundation ✅ 2026-09-05; v2.10.1 governance hub ✅ / v2.10.2 config & capabilities ✅ / v2.10.3 Web bilingual edition ✅ / v2.10.4 Web experience wrap-up ✅ 2026-09-06)
 7. ✅ v3.0.x Web complete-flow series (v3.0.1 flow wiring ✅ 2026-09-06; v3.0.2 API cleanup & permission closure ✅ 2026-09-07; v3.0.3 acceptance & release ✅ 2026-09-13)
 8. ✅ v3.1.0 quota ledger & multi-protocol entry ✅ 2026-09-14 (multi-dimensional multi-window quota + Anthropic entry + tool calling + runtime config/observability)
-9. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.1.x
+9. 🚧 v3.2.0 PII governance & quota ops closed-loop — **code merged 2026-09-19 (PR #60)**; release wrap-up: version bump, sanitization/console/API docs, full regression, tag
+10. 📋 v3.2.1+ candidates: rule persistence versioning, HOUR/MONTH quota limits, FULL encryption strategy UI, dry-run regression set
+11. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.2.x
 
 ### Long-term Vision
 1. Become the standard in AI model routing
@@ -344,6 +367,6 @@ JAiRouter will continue to uphold the open-source spirit and is committed to pro
 
 ---
 
-**Last Updated**: September 6, 2026
+**Last Updated**: September 19, 2026
 
 For any suggestions or ideas, feel free to communicate with us via [GitHub Discussions](https://github.com/Lincoln-cn/JAiRouter/discussions).

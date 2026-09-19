@@ -110,9 +110,10 @@ public class EnhancedJwtBlacklistService {
             }
         }
 
-        // 2. 检查Redis主键
+        // 2. 检查Redis主键（短超时：Redis 不可达时避免拖死管理台/鉴权链路）
         String blacklistKey = BLACKLIST_KEY_PREFIX + trimmedTokenId;
         return redisTemplate.hasKey(blacklistKey)
+                .timeout(Duration.ofMillis(300))
                 .flatMap(exists -> {
                     if (exists) {
                         log.debug("令牌在Redis黑名单中: tokenId={}", trimmedTokenId);
@@ -123,6 +124,7 @@ public class EnhancedJwtBlacklistService {
                         // 3. 检查Redis备份键
                         String backupKey = BLACKLIST_BACKUP_KEY_PREFIX + trimmedTokenId;
                         return redisTemplate.hasKey(backupKey)
+                                .timeout(Duration.ofMillis(300))
                                 .map(backupExists -> {
                                     if (backupExists) {
                                         log.debug("令牌在Redis备份黑名单中: tokenId={}", trimmedTokenId);

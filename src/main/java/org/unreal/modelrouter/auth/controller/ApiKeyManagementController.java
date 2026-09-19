@@ -29,7 +29,9 @@ import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.unreal.modelrouter.auth.security.service.ApiKeyQuotaService;
 import reactor.core.publisher.Mono;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * API 密钥管理控制器
@@ -312,6 +314,66 @@ public class ApiKeyManagementController {
                 .onErrorResume(e -> {
                     log.error("重置API密钥每日配额失败: {}", keyId, e);
                     return Mono.just(RouterResponse.<Void>error("重置配额失败: " + e.getMessage(),
+                            "INTERNAL_ERROR"));
+                });
+    }
+
+    /**
+     * 仅更新 API Key 配额字段（v3.2.1）
+     */
+    @PutMapping("/{keyId}/quota")
+    @Operation(summary = "更新API密钥配额",
+               description = "仅更新每日请求/Token上限、每分钟速率与告警阈值；0 表示不限制")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Mono<RouterResponse<ApiKeyQuotaService.QuotaUsageDetail>> updateApiKeyQuota(
+            @Parameter(description = "API密钥ID") @PathVariable("keyId") final String keyId,
+            @RequestBody final org.unreal.modelrouter.auth.security.dto.ApiKeyUpdateRequest request) {
+        return Mono.fromCallable(() -> apiKeyQuotaService.updateQuotaLimits(keyId, request))
+                .map(detail -> RouterResponse.success(detail, "配额已更新"))
+                .onErrorResume(IllegalArgumentException.class, e ->
+                        Mono.just(RouterResponse.error(e.getMessage(), "INVALID_REQUEST")))
+                .onErrorResume(e -> {
+                    log.error("更新API密钥配额失败: {}", keyId, e);
+                    return Mono.just(RouterResponse.error("更新配额失败: " + e.getMessage(),
+                            "INTERNAL_ERROR"));
+                });
+    }
+
+    /**
+     * 批量重置指定 API Key 的每日配额（v3.2.1）
+     */
+    @PostMapping("/quota/batch-reset")
+    @Operation(summary = "批量重置API密钥配额",
+               description = "按 keyIds 批量重置每日配额与速率计数；不存在的 Key 会被跳过")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Mono<RouterResponse<Map<String, Object>>> batchResetQuota(
+            @RequestBody final Map<String, List<String>> body) {
+        final List<String> keyIds = body == null ? null : body.get("keyIds");
+        return Mono.fromCallable(() -> {
+            final int reset = apiKeyQuotaService.resetDailyQuotas(keyIds);
+            final Map<String, Object> data = new LinkedHashMap<>();
+            data.put("requested", keyIds == null ? 0 : keyIds.size());
+            data.put("reset", reset);
+            return RouterResponse.success(data, "批量重置配额完成");
+        }).onErrorResume(e -> {
+            log.error("批量重置API密钥配额失败", e);
+            return Mono.just(RouterResponse.error("批量重置失败: " + e.getMessage(), "INTERNAL_ERROR"));
+        });
+    }
+
+    /**
+     * 重置全部 API Key 每日配额（v3.2.1）
+     */
+    @PostMapping("/quota/reset-all")
+    @Operation(summary = "重置全部API密钥配额",
+               description = "重置所有 API Key 的每日请求/Token 计数与速率限制")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Mono<RouterResponse<Void>> resetAllQuota() {
+        return Mono.fromRunnable(() -> apiKeyQuotaService.resetAllDailyQuotas())
+                .then(Mono.just(RouterResponse.<Void>success(null, "已重置全部配额")))
+                .onErrorResume(e -> {
+                    log.error("重置全部API密钥配额失败", e);
+                    return Mono.just(RouterResponse.<Void>error("重置全部配额失败: " + e.getMessage(),
                             "INTERNAL_ERROR"));
                 });
     }

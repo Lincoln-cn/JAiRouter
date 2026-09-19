@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
+import org.unreal.modelrouter.auth.security.dto.ApiKeyUpdateRequest;
 import org.unreal.modelrouter.auth.security.model.UsageStatistics;
 import org.unreal.modelrouter.auth.security.quota.QuotaLedgerService;
 import org.unreal.modelrouter.auth.security.quota.QuotaUsage;
@@ -108,6 +109,7 @@ public class ApiKeyQuotaService {
 
         // 计算使用百分比
         detail.calculateUsagePercent();
+        detail.calculateRemaining();
 
         return Optional.of(detail);
     }
@@ -130,7 +132,8 @@ public class ApiKeyQuotaService {
             long requests = 0;
             long tokens = 0;
             boolean found = false;
-            for (final QuotaUsage usage : quotaLedgerService.usageAll(keyId)) {
+            // 管理面聚合：仅读内存账本，避免 Redis/JPA 慢查询拖死列表页
+            for (final QuotaUsage usage : quotaLedgerService.usageAllFromMemory(keyId)) {
                 if (usage.window() == QuotaWindow.DAY && dayStart.equals(usage.windowStart())) {
                     requests += usage.requestCount();
                     tokens += usage.tokenCount();
@@ -224,6 +227,66 @@ public class ApiKeyQuotaService {
         rateLimiter.reset(keyId);
         resetLedger(keyId);
         log.info("已重置 API Key 每日配额和速率限制: {}", keyId);
+    }
+
+    /**
+     * 仅更新 API Key 配额字段（v3.2.1 便捷操作）.
+     *
+     * <p>委托 {@link ApiKeyService#updateApiKey} 做部分更新（null 字段不改动），
+     * 成功后返回刷新后的用量详情。</p>
+     *
+     * @param keyId   API Key ID
+     * @param request 仅含配额相关字段的更新请求
+     * @return 更新后的配额详情
+     */
+    public QuotaUsageDetail updateQuotaLimits(final String keyId, final ApiKeyUpdateRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("配额更新请求不能为空");
+        }
+        if (request.getQuotaAlertThreshold() != null) {
+            final double th = request.getQuotaAlertThreshold();
+            if (th <= 0.0 || th >= 1.0) {
+                throw new IllegalArgumentException("quotaAlertThreshold 必须在 (0.0, 1.0) 区间");
+            }
+        }
+        if (request.getDailyRequestLimit() != null && request.getDailyRequestLimit() < 0) {
+            throw new IllegalArgumentException("dailyRequestLimit 不能为负（0 表示不限制）");
+        }
+        if (request.getDailyTokenLimit() != null && request.getDailyTokenLimit() < 0) {
+            throw new IllegalArgumentException("dailyTokenLimit 不能为负（0 表示不限制）");
+        }
+        if (request.getRateLimitPerMinute() != null && request.getRateLimitPerMinute() < 0) {
+            throw new IllegalArgumentException("rateLimitPerMinute 不能为负（0 表示不限制）");
+        }
+        apiKeyService.updateApiKey(keyId, request).block();
+        return getQuotaUsage(keyId)
+                .orElseThrow(() -> new IllegalArgumentException("API Key 不存在: " + keyId));
+    }
+
+    /**
+     * 批量重置指定 API Key 的每日配额（跳过不存在的 Key）.
+     *
+     * @param keyIds Key ID 列表
+     * @return 实际成功重置的数量
+     */
+    public int resetDailyQuotas(final List<String> keyIds) {
+        if (keyIds == null || keyIds.isEmpty()) {
+            return 0;
+        }
+        int ok = 0;
+        final Map<String, String> index = apiKeyService.getKeyIdIndex();
+        for (final String keyId : keyIds) {
+            if (keyId == null || keyId.isBlank() || !index.containsKey(keyId)) {
+                continue;
+            }
+            try {
+                resetDailyQuota(keyId);
+                ok++;
+            } catch (Exception e) {
+                log.warn("批量重置配额失败: keyId={}, error={}", keyId, e.toString());
+            }
+        }
+        return ok;
     }
 
     /**
@@ -334,6 +397,10 @@ public class ApiKeyQuotaService {
         private double dailyTokenUsagePercent;
         /** 是否触发告警 */
         private boolean alertTriggered;
+        /** 剩余请求数；限额 0（不限制）时为 -1 */
+        private long remainingRequests = -1L;
+        /** 剩余 Token 数；限额 0（不限制）时为 -1 */
+        private long remainingTokens = -1L;
 
         public void calculateUsagePercent() {
             dailyRequestUsagePercent = dailyRequestLimit > 0
@@ -346,6 +413,16 @@ public class ApiKeyQuotaService {
             double thresholdPercent = quotaAlertThreshold * 100;
             alertTriggered = (dailyRequestUsagePercent >= 0 && dailyRequestUsagePercent >= thresholdPercent)
                 || (dailyTokenUsagePercent >= 0 && dailyTokenUsagePercent >= thresholdPercent);
+        }
+
+        /** 计算剩余量：限额为 0 表示不限制（-1），否则 max(0, limit - used) */
+        public void calculateRemaining() {
+            remainingRequests = dailyRequestLimit > 0
+                ? Math.max(0L, dailyRequestLimit - todayRequestCount)
+                : -1L;
+            remainingTokens = dailyTokenLimit > 0
+                ? Math.max(0L, dailyTokenLimit - todayTokenUsage)
+                : -1L;
         }
     }
 

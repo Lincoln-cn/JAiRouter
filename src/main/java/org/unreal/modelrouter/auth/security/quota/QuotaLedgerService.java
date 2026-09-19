@@ -444,18 +444,10 @@ public class QuotaLedgerService {
         if (!isEnabled() || apiKeyId == null || apiKeyId.isEmpty()) {
             return List.of();
         }
-        final List<QuotaUsage> result = new ArrayList<>();
+        final List<QuotaUsage> result = usageAllFromMemory(apiKeyId);
         final Set<QuotaCounterKey> inMemoryKeys = new LinkedHashSet<>();
-        for (final QuotaCounterKey key : localBackend.keys()) {
-            if (!apiKeyId.equals(key.dimension().apiKeyId())) {
-                continue;
-            }
-            final long[] totals = localBackend.totals(key);
-            if (totals == null) {
-                continue;
-            }
-            inMemoryKeys.add(key);
-            result.add(toUsage(key, totals));
+        for (final QuotaUsage usage : result) {
+            inMemoryKeys.add(new QuotaCounterKey(usage.dimension(), usage.window(), usage.windowStart()));
         }
         try {
             for (final QuotaLedgerEntity row : repository.findByApiKeyId(apiKeyId)) {
@@ -482,6 +474,32 @@ public class QuotaLedgerService {
             }
             return right.windowStart().compareTo(left.windowStart());
         });
+        return result;
+    }
+
+    /**
+     * 仅从本地内存计数聚合用量（不查库）.
+     *
+     * <p>管理台告警/概览使用：避免 Redis/H2 异常时同步读库拖死 HTTP 线程。</p>
+     *
+     * @param apiKeyId API Key ID
+     * @return 内存态用量列表
+     */
+    public List<QuotaUsage> usageAllFromMemory(final String apiKeyId) {
+        if (!isEnabled() || apiKeyId == null || apiKeyId.isEmpty()) {
+            return List.of();
+        }
+        final List<QuotaUsage> result = new ArrayList<>();
+        for (final QuotaCounterKey key : localBackend.keys()) {
+            if (!apiKeyId.equals(key.dimension().apiKeyId())) {
+                continue;
+            }
+            final long[] totals = localBackend.totals(key);
+            if (totals == null) {
+                continue;
+            }
+            result.add(toUsage(key, totals));
+        }
         return result;
     }
 

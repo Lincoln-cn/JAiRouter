@@ -165,8 +165,9 @@
       <div class="meta">
         <span class="tag green"><strong>策略</strong> TDD</span>
         <span class="tag"><strong>基线</strong> v3.1.2</span>
-        <span class="tag"><strong>目标</strong> v3.2.0 minor</span>
-        <span class="tag"><strong>主战场</strong> 聊天记录 / 用户数据 / 配额 Key 限额</span>
+        <span class="tag green"><strong>目标</strong> v3.2.0 minor</span>
+        <span class="tag green"><strong>主战场</strong> 聊天记录 / 用户数据 / 配额 Key 限额</span>
+        <span class="tag green"><strong>状态</strong> 功能已合 master（PR #60）</span>
       </div>
     </header>
 
@@ -217,13 +218,13 @@
             <td><strong>v3.2.0</strong></td>
             <td>PII 管理 API + 控制台页 + sanitizeForStorage + 配额观测闭环 + 测试地基 + 权限码 <code>security:sanitization:manage</code></td>
             <td>minor</td>
-            <td><span class="status progress">推进中</span></td>
+            <td><span class="status progress">功能已合入 · 发布收口中</span></td>
           </tr>
           <tr>
-            <td><strong>v3.2.1+</strong></td>
-            <td>规则持久化 StoreManager 版本化、PII 试脱敏回归集、配额 HOUR/MONTH 限额扩展、记录级 FULL 加密策略 UI</td>
-            <td>后续</td>
-            <td><span class="status todo">待规划</span></td>
+            <td><strong>v3.2.0 全量</strong></td>
+            <td>PII + 配额闭环 + API Key 配额抽屉 + E2E 门禁 + 版本 bump</td>
+            <td>minor</td>
+            <td><span class="status progress">E2E 24/24 · 提交/PR 中</span></td>
           </tr>
         </tbody>
       </table>
@@ -254,56 +255,114 @@
     </section>
 
     <section>
-      <h2><span class="num">4</span>工作流拆解（WS）</h2>
+      <h2><span class="num">4</span>工作流拆解（WS）· 状态</h2>
       <div class="grid grid-3">
         <div class="card">
-          <h3>WS-1 测试地基</h3>
+          <h3>WS-1 测试地基 <span class="status done">完成</span></h3>
           <ul>
-            <li>frontend 增加 vitest / @vue/test-utils / happy-dom</li>
-            <li><code>npm run test:unit</code> / <code>test:api</code> 脚本</li>
-            <li>Playwright 冒烟脚本模板（.mimocode/pw）</li>
+            <li>vitest / @vue/test-utils / happy-dom</li>
+            <li><code>npm run test:unit</code> / <code>test:api</code></li>
+            <li>Playwright 冒烟 <code>smoke-v32-pii-quota.mjs</code> 10/10</li>
           </ul>
         </div>
         <div class="card">
-          <h3>WS-2 后端 PII 核心</h3>
+          <h3>WS-2 后端 PII 核心 <span class="status done">完成</span></h3>
           <ul>
-            <li><code>sanitizeForStorage</code> 单测（开关关闭仍生效）</li>
-            <li><code>rebuildRulesFromProperties</code> 热重建</li>
-            <li>Controller 单测 + 权限规则闭包</li>
+            <li><code>sanitizeForStorage</code> 与网关开关解耦</li>
+            <li>热重建规则 + Controller 响应式 API</li>
+            <li>试脱敏非 JSON 自动按文本掩码</li>
           </ul>
         </div>
         <div class="card">
-          <h3>WS-3 排除路径边界</h3>
+          <h3>WS-3 排除路径边界 <span class="status done">完成</span></h3>
           <ul>
-            <li><code>ExcludedPathsConfigTest</code></li>
-            <li>Filter 测试：管理台 / AI 路径跳过</li>
-            <li>javadoc 与设计裁决一致</li>
+            <li>管理台 <code>/api/**</code> 与 AI 路径排除</li>
+            <li><code>ExcludedPathsConfigTest</code> 通过</li>
+            <li>Filter javadoc 与设计裁决一致</li>
           </ul>
         </div>
         <div class="card">
-          <h3>WS-4 控制台 PII 页</h3>
+          <h3>WS-4 控制台 PII 页 <span class="status done">完成</span></h3>
           <ul>
-            <li>API client 单测（mock request）</li>
-            <li>组件测试：表单同步/保存 payload</li>
-            <li>页面：菜单、权限、试脱敏 UI</li>
+            <li>菜单/路由/双语 + 权限码 49</li>
+            <li>配置热改 / 规则 / 试脱敏 UI</li>
+            <li>本地页面冒烟已验证</li>
           </ul>
         </div>
         <div class="card">
-          <h3>WS-5 配额操作闭环</h3>
+          <h3>WS-5 配额操作闭环 <span class="status done">完成</span></h3>
           <ul>
-            <li>监控页限额对照逻辑单测</li>
+            <li>限额对照列 + 进度</li>
             <li>API Key ↔ 监控交叉链接</li>
-            <li>文档操作闭环表</li>
+            <li>文档操作闭环与口径修正</li>
           </ul>
         </div>
         <div class="card">
-          <h3>WS-6 发布验收</h3>
+          <h3>WS-6 发布收口 <span class="status progress">进行中</span></h3>
           <ul>
-            <li>后端相关测试全绿</li>
-            <li>vue-tsc + 构建通过</li>
-            <li>changelog / 权限码 49</li>
+            <li class="status" style="border:0;background:transparent;color:var(--green)">✔ PR #60 已合并 master</li>
+            <li>roadmap / changelog 同步 v3.2.0</li>
+            <li>版本号 bump、脱敏文档、Release 标签</li>
           </ul>
         </div>
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="num">8</span>v3.2.0 发布收口清单（下一迭代）</h2>
+      <div class="card">
+        <table>
+          <thead>
+            <tr><th>项</th><th>说明</th><th style="width:90px">状态</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>代码合入</td>
+              <td>PR #60 → master（含 PII 闭环 / 配额观测 / TDD 测试地基）</td>
+              <td><span class="status done">完成</span></td>
+            </tr>
+            <tr>
+              <td>roadmap 同步</td>
+              <td>docs/{zh,en}/reference/roadmap.md 增加 v3.2.0 行</td>
+              <td><span class="status progress">本轮推进</span></td>
+            </tr>
+            <tr>
+              <td>changelog</td>
+              <td>docs/{zh,en}/reference/changelog.md 增加 3.2.0 小节</td>
+              <td><span class="status progress">本轮推进</span></td>
+            </tr>
+            <tr>
+              <td>版本号</td>
+              <td><code>pom.xml</code> / <code>frontend/package.json</code> → 3.2.0</td>
+              <td><span class="status todo">待做</span></td>
+            </tr>
+            <tr>
+              <td>脱敏产品文档</td>
+              <td>data-sanitization.md：控制台页 + <code>/api/config/sanitization/**</code> + 记录侧语义</td>
+              <td><span class="status todo">待做</span></td>
+            </tr>
+            <tr>
+              <td>控制台手册</td>
+              <td>web-console.md：安全管理 → PII 页操作动线</td>
+              <td><span class="status todo">待做</span></td>
+            </tr>
+            <tr>
+              <td>管理 API 文档</td>
+              <td>management-api：sanitization 端点契约</td>
+              <td><span class="status todo">待做</span></td>
+            </tr>
+            <tr>
+              <td>全量回归</td>
+              <td>mvn 全量 + 前端 type-check/test:unit + 冒烟</td>
+              <td><span class="status todo">待做</span></td>
+            </tr>
+            <tr>
+              <td>Release</td>
+              <td>git tag v3.2.0 + GitHub Release + 镜像说明</td>
+              <td><span class="status todo">待做</span></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </section>
 
@@ -361,21 +420,19 @@
     </section>
 
     <section>
-      <h2><span class="num">7</span>推进顺序（本迭代）</h2>
+      <h2><span class="num">7</span>推进顺序</h2>
       <div class="card">
         <ol style="margin:0;padding-left:18px;color:var(--muted)">
-          <li><strong style="color:var(--ink)">本文件</strong>：固化版本与 TDD 矩阵（可预览规划页）</li>
-          <li><strong style="color:var(--ink)">Red</strong>：补写后端单元测试（sanitizeForStorage 解耦、排除路径）</li>
-          <li><strong style="color:var(--ink)">Red</strong>：搭建前端 vitest，先写 API client / 组件测试</li>
-          <li><strong style="color:var(--ink)">Green</strong>：修实现缺口，跑通 mvn-test + npm test:unit</li>
-          <li><strong style="color:var(--ink)">Page</strong>：Playwright 冒烟脚本覆盖 PII / 配额关键路径</li>
-          <li><strong style="color:var(--ink)">Close</strong>：changelog 草稿与验收勾选</li>
+          <li><strong style="color:var(--green)">已完成</strong>：规划页 / TDD 单测 / 实现 / 页面冒烟 / PR #60 合并 / 远端功能分支清理</li>
+          <li><strong style="color:var(--amber)">本轮推进</strong>：roadmap + changelog 同步 v3.2.0；本规划页状态刷新</li>
+          <li><strong style="color:var(--ink)">下一迭代</strong>：版本号 bump → 脱敏/控制台/管理 API 文档 → 全量回归 → tag/Release</li>
+          <li><strong style="color:var(--muted)">v3.2.1+</strong>：规则持久化、HOUR/MONTH 限额、FULL 加密 UI、试脱敏回归集</li>
         </ol>
       </div>
     </section>
 
     <footer>
-      JAiRouter · 内部版本规划页 · 工作目录 <code>D:/IdeaProjects/model-router</code> · TDD 先行 · 可在浏览器直接打开本文件
+      JAiRouter · 内部版本规划页（已更新：功能合入 master，进入 v3.2.0 发布收口） · 工作目录 <code>D:/IdeaProjects/model-router</code> · TDD 先行 · 可在浏览器直接打开本文件
     </footer>
   </div>
 </body>
