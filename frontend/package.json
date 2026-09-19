@@ -44,7 +44,7 @@
     "@vue/tsconfig": "^0.7.0",
     "eslint": "^10.7.0",
     "eslint-plugin-vue": "^10.10.0",
-    "happy-dom": "^17.4.4",
+    "happy-dom": "^20.14.5",
     "playwright-core": "^1.63.0",
     "postcss": ">=8.5.25",
     "prettier": "^3.4.2",
