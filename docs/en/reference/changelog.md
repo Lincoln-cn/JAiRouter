@@ -21,9 +21,9 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 ## Version History
 
-### [3.2.0] - 2026-09-19 - Minor Release (PII Governance & Quota Ops + E2E)
+### [3.2.0] - 2026-09-19 - Minor Release (PII Governance & Quota Ops + Console E2E/UX)
 
-> Includes PR #60 PII closed-loop, API Key quota ops (drawer/presets/batch reset), console hang fixes, version bump 3.2.0, and Playwright E2E gate (24 cases).
+> Includes PR #60 PII closed-loop, API Key quota ops (drawer/presets/batch reset), console hang fixes, admin API read/write rate-limit buckets, modular frontend E2E, and account/dashboard discoverability improvements. Version 3.2.0.
 
 #### Quota Ops (API Key)
 
@@ -31,10 +31,18 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - Console quota drawer with presets; list loading isolated from slow quota APIs; short axios timeouts
 - Management quota reads use in-memory ledger aggregation; JWT blacklist Redis fail-fast (300ms)
 
+#### Admin Console UX (3.2.0)
+
+- **`AdminApiRateLimiter` read/write split buckets**: GET/HEAD default 120/min·2000/h; mutations 30/min·200/h; POST create extra 10/h — console list refresh no longer starves write quota
+- Limits configurable via `jairouter.auth.admin-api-rate-limit.*`
+- Account management: icon buttons get `title`/`aria-label`; username hint “3–50 characters”
+- Dashboard governance jumps: View Rules / Monitor Rate Limit / Monitor Circuit Breaker / Monitor Load Balancing
+
 #### Quality
 
-- Frontend E2E: `frontend/e2e/console-v32.mjs` (`npm run test:e2e`) — login, list/refresh no-spin, drawer save/reset/restore, PII dry-run, cross-link
-- vitest unit/API tests; TDD service tests for quota ops
+- Frontend modular E2E: `frontend/e2e/` (`npm run test:e2e`) — full-route smoke, auth guard, dialog skeleton, core CRUD (accounts/pools/API keys/blacklist), quota & PII deep tests; `test:e2e:legacy` keeps `console-v32.mjs`
+- Permission-code assertions bind `PermissionCodes.ALL_PERMISSION_CODES.size()` (49, includes `security:sanitization:manage`)
+- vitest unit/API tests; TDD service tests for quota ops; `AdminApiRateLimiterReadWriteTest`
 
 ### [3.1.2] - 2026-09-18 - Patch Release (Docker Startup & Usability Fixes)
 

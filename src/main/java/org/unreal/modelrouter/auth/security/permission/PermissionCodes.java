@@ -6,7 +6,8 @@ import java.util.List;
  * RBAC 权限码常量（v2.9.8 数据驱动权限体系）
  *
  * <p>权限码格式：{@code module:resource:action}，其中 action ∈ read / write / manage。
- * 清单见开发计划2026 L1132（42 权限码，v2.9.10 扩展至 45），本文按该清单逐条枚举。
+ * 以 {@link #ALL_PERMISSION_CODES} 为权威全集（v2.9.10 起持续扩展，含 PII
+ * {@code security:sanitization:manage} 等）。
  *
  * <p>用途：
  * <ul>

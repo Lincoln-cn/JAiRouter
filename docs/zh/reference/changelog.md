@@ -22,9 +22,9 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 ## 版本历史
 
-### [3.2.0] - 2026-09-19 - 次版本（PII 治理 + 配额操作 + E2E）
+### [3.2.0] - 2026-09-19 - 次版本（PII 治理 + 配额操作 + 控制台 E2E/体验）
 
-> 含 PR #60 的 PII 闭环、API Key 配额便捷操作（抽屉/预设/批量重置）、控制台卡顿修复、版本号 3.2.0，以及 Playwright E2E 门禁（24 项）。
+> 含 PR #60 的 PII 闭环、API Key 配额便捷操作（抽屉/预设/批量重置）、控制台卡顿修复、管理端 API 限流读写分桶、模块化前端 E2E 套件，以及账户/仪表板可发现性改进。版本号 3.2.0。
 
 #### API Key 配额操作
 
@@ -32,10 +32,18 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 - 控制台配额抽屉与预设；列表 loading 与配额接口解耦；配额接口短超时
 - 管理面账本读改内存聚合；JWT 黑名单 Redis 300ms fail-fast
 
+#### 管理端体验（3.2.0 收口）
+
+- **`AdminApiRateLimiter` 读写分桶**：GET/HEAD 默认 120/min·2000/h，写操作 30/min·200/h，POST 创建另限 10/h；避免控制台列表刷新打满配额
+- 限额可配置：`jairouter.auth.admin-api-rate-limit.*`
+- 账户管理：编辑/删除图标补充 `title`/`aria-label`；用户名提示「3–50 字符」
+- 仪表板治理跳转文案：查看规则 / 监控限流 / 监控熔断 / 监控负载
+
 #### 质量
 
-- 前端 E2E：`frontend/e2e/console-v32.mjs`（`npm run test:e2e`）覆盖登录、列表/刷新不转圈、抽屉保存/重置/恢复、PII 试脱敏、交叉链接
-- vitest 单测/API 测试；配额操作 TDD 服务测试
+- 前端 E2E 模块化套件：`frontend/e2e/`（`npm run test:e2e`）覆盖全路由冒烟、认证守卫、弹窗骨架、核心 CRUD（账户/资源池/API Key/黑名单）、API Key 配额与 PII 深测；兼容命令 `test:e2e:legacy` 保留 `console-v32.mjs`
+- 权限码断言改为绑定 `PermissionCodes.ALL_PERMISSION_CODES.size()`（当前 49，含 `security:sanitization:manage`）
+- vitest 单测/API 测试；配额操作 TDD 服务测试；`AdminApiRateLimiterReadWriteTest`
 
 ### [3.1.2] - 2026-09-18 - 补丁发布（Docker 启动与可用性修复）
 
