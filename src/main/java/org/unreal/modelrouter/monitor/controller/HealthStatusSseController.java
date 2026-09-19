@@ -12,7 +12,9 @@ import org.unreal.modelrouter.persistence.jpa.entity.ServiceInstanceEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -50,19 +52,21 @@ public class HealthStatusSseController {
      */
     @GetMapping(path = "/stream")
     public Flux<ServerSentEvent<String>> streamHealthStatus() {
-        log.info("SSE连接已建立");
+        log.debug("SSE连接已建立");
 
-        // 合并定时更新和主动推送的事件流
+        // 定时快照：JPA 为阻塞 API，必须在 boundedElastic 上生成，避免卡住 Netty EventLoop
         Flux<ServerSentEvent<String>> periodicUpdates = Flux.interval(Duration.ofSeconds(5))
-                .map(sequence -> createHealthUpdateEvent(sequence, "periodic"));
+                .onBackpressureLatest()
+                .concatMap(sequence -> Mono.fromCallable(() -> createHealthUpdateEvent(sequence, "periodic"))
+                        .subscribeOn(Schedulers.boundedElastic()));
 
-        // 合并主动推送的更新
-        Flux<ServerSentEvent<String>> manualUpdates = eventSink.asFlux();
+        // 主动推送：慢消费者时丢弃积压 tick，避免无界缓冲
+        Flux<ServerSentEvent<String>> manualUpdates = eventSink.asFlux()
+                .onBackpressureLatest();
 
-        // 返回合并后的事件流
         return Flux.merge(periodicUpdates, manualUpdates)
-                .doOnCancel(() -> log.info("SSE连接已取消"))
-                .doOnComplete(() -> log.info("SSE连接已完成"));
+                .doOnCancel(() -> log.debug("SSE连接已取消"))
+                .doOnComplete(() -> log.debug("SSE连接已完成"));
     }
 
     /**
@@ -101,9 +105,17 @@ public class HealthStatusSseController {
 
         if (serviceInstanceRepository != null && serviceConfigRepository != null) {
             try {
+                // 一次拉取服务类型映射，避免每个实例 findById 造成 N+1 阻塞
+                Map<Long, String> serviceTypeByConfigId = new HashMap<>();
+                serviceConfigRepository.findAll()
+                        .forEach(config -> {
+                            if (config.getId() != null && config.getServiceType() != null) {
+                                serviceTypeByConfigId.put(config.getId(), config.getServiceType());
+                            }
+                        });
                 List<ServiceInstanceEntity> allInstances = serviceInstanceRepository.findAll();
                 for (ServiceInstanceEntity entity : allInstances) {
-                    String serviceType = getServiceTypeFromConfigId(entity.getServiceConfigId());
+                    String serviceType = serviceTypeByConfigId.get(entity.getServiceConfigId());
                     if (serviceType != null) {
                         // 使用 instanceId 作为 key 的第二部分
                         String instanceId = entity.getInstanceId();
@@ -151,7 +163,15 @@ public class HealthStatusSseController {
      * 该方法供ServiceStateManager调用
      */
     public void notifyHealthStatusChange() {
-        ServerSentEvent<String> event = createHealthUpdateEvent(System.currentTimeMillis(), "manual");
-        eventSink.tryEmitNext(event).orThrow();
+        try {
+            ServerSentEvent<String> event = createHealthUpdateEvent(System.currentTimeMillis(), "manual");
+            Sinks.EmitResult result = eventSink.tryEmitNext(event);
+            // 无订阅者 / 背压拒绝时不抛出，避免健康检查回调打崩调用方
+            if (result.isFailure()) {
+                log.debug("健康状态SSE推送丢弃: {}", result);
+            }
+        } catch (Exception e) {
+            log.warn("健康状态SSE通知失败: {}", e.getMessage());
+        }
     }
 }

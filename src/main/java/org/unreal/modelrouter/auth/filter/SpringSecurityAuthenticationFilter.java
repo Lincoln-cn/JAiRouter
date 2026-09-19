@@ -124,7 +124,7 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
         String path = exchange.getRequest().getPath().value();
         // 使用ExcludedPathsConfig.AUTH_EXCLUDED_PATHS判断是否需要认证
         boolean isExcluded = ExcludedPathsConfig.isAuthExcluded(path);
-        log.error("=== 认证检查: path={}, isExcluded={}, requiresAuth={} ===", path, isExcluded, !isExcluded);
+        log.debug("认证检查: path={}, isExcluded={}, requiresAuth={}", path, isExcluded, !isExcluded);
         // 如果路径不在排除列表中，则需要认证
         return Mono.just(!isExcluded);
     }
