@@ -42,8 +42,9 @@ public class HealthStatusSseController {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    // 使用Sinks.Many来支持主动推送更新
-    private final Sinks.Many<ServerSentEvent<String>> eventSink = Sinks.many().multicast().onBackpressureBuffer();
+    // 监控推送：有界缓冲（256），溢出由 tryEmitNext 返回失败并丢弃，避免内存无界增长
+    private final Sinks.Many<ServerSentEvent<String>> eventSink =
+            Sinks.many().multicast().onBackpressureBuffer(256, false);
 
     /**
      * 建立SSE连接，推送实时健康状态更新

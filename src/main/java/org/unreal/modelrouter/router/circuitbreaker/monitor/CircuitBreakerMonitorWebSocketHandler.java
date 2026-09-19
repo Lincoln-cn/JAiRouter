@@ -27,7 +27,9 @@ public class CircuitBreakerMonitorWebSocketHandler implements WebSocketHandler {
     private final CircuitBreakerMonitorService monitorService;
     private final ObjectMapper objectMapper;
 
-    private final Sinks.Many<String> eventSink = Sinks.many().multicast().onBackpressureBuffer();
+    /** 监控事件：有界多播缓冲（256），溢出由 emit 失败路径丢弃，避免无界内存增长 */
+    private final Sinks.Many<String> eventSink = Sinks.many().multicast()
+            .onBackpressureBuffer(256, false);
 
     public void registerEventCallback() {
         monitorService.getEventRecorder().setEventCallback(event -> {

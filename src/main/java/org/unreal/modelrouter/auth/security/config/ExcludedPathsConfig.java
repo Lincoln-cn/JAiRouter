@@ -45,17 +45,17 @@ public class ExcludedPathsConfig {
             "/webjars/",
             "/api/auth/jwt/login",
             "/api/auth/jwt/validate",
-            "/api/health-status/",  // SSE健康状态推送端点
             "/favicon.ico",
             "/.well-known"
         );
 
         // 认证排除路径模式
+        // P1 审计：/api/health-status/** 不再排除认证（Spring Security authenticated 保护）
+        // /ws/** 暂仍排除：前端 WebSocket 未携带 token，强制认证会打断监控页
         AUTH_EXCLUDED_PATTERNS = List.of(
             "/actuator/**",
             "/admin/**",
-            "/api/health-status/**",  // SSE健康状态推送端点
-            "/ws/**"                  // WebSocket端点（路由监控等）
+            "/ws/**"
         );
         
         // 数据脱敏排除路径（ResponseSanitizationFilter 网关响应过滤器）
