@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 配额限额判定与预留服务（v3.1 PR-2）。
@@ -60,6 +61,12 @@ public class QuotaEnforcementService {
     private final QuotaProperties properties;
     private final ApiKeyService apiKeyService;
     private final Clock clock;
+
+    /**
+     * 单进程内按 API Key 串行化「判定 + 预留」，消除 check-then-act 双花窗口。
+     * 多实例分布式计数仍依赖预留后二次核对 + 回滚（见 {@link #tryReserve}）。
+     */
+    private final ConcurrentHashMap<String, Object> reserveLocks = new ConcurrentHashMap<>();
 
     /**
      * Spring 使用的主构造器。
@@ -157,18 +164,82 @@ public class QuotaEnforcementService {
         if (!isEnabled() || apiKeyId == null || apiKeyId.isEmpty()) {
             return Optional.empty();
         }
-        try {
-            final Optional<QuotaLimitViolation> violation = evaluate(apiKeyId, estimatedTokens);
-            if (violation.isPresent()) {
-                log.warn("配额超限，拒绝请求: apiKeyId={}, {}", apiKeyId, violation.get().describe());
-                return violation;
+        // 单 JVM 内按 Key 串行化，避免并发请求同时通过 evaluate 再各自 reserve 造成超扣
+        final Object lock = reserveLocks.computeIfAbsent(apiKeyId, key -> new Object());
+        synchronized (lock) {
+            try {
+                final Optional<QuotaLimitViolation> violation = evaluate(apiKeyId, estimatedTokens);
+                if (violation.isPresent()) {
+                    log.warn("配额超限，拒绝请求: apiKeyId={}, {}", apiKeyId, violation.get().describe());
+                    return violation;
+                }
+                final QuotaDimension dimension = QuotaDimension.ofApiKey(apiKeyId);
+                final QuotaDecision decision =
+                        ledgerService.reserve(QuotaRequest.of(dimension, estimatedTokens));
+
+                // 分布式模式：预留后复读权威计数（用量已含本笔），超限则回滚，抑制跨实例 TOCTOU 双花
+                if (ledgerService.isDistributed() && decision != null && !decision.degraded()) {
+                    final Optional<QuotaLimitViolation> postViolation =
+                            evaluateAfterReserve(apiKeyId);
+                    if (postViolation.isPresent()) {
+                        ledgerService.settle(new QuotaSettlement(dimension, estimatedTokens, 0L, true));
+                        log.warn("配额预留后超限，已回滚: apiKeyId={}, {}",
+                                apiKeyId, postViolation.get().describe());
+                        return postViolation;
+                    }
+                }
+
+                QuotaReservation.attach(request, new QuotaReservation(ledgerService, dimension, estimatedTokens));
+                return Optional.empty();
+            } catch (Exception e) {
+                log.warn("配额预留异常，按 fail-open 放行: apiKeyId={}, error={}", apiKeyId, e.toString());
+                return Optional.empty();
             }
+        }
+    }
+
+    /**
+     * 预留后的限额复核（用量已包含本笔预留）。
+     *
+     * <p>判定改为「已用量 &gt; 限额」（不再 +1），避免把刚预留的那一笔重复计算。</p>
+     *
+     * @param apiKeyId API Key ID
+     * @return 超限结果；未超限、配置缺失或读取失败（fail-open）时为空
+     */
+    private Optional<QuotaLimitViolation> evaluateAfterReserve(final String apiKeyId) {
+        try {
+            final ApiKey apiKey = resolveApiKey(apiKeyId);
+            if (apiKey == null) {
+                return Optional.empty();
+            }
+            final LocalDateTime now = LocalDateTime.now(clock);
+            final List<QuotaWindow> windows = properties.enabledWindows();
             final QuotaDimension dimension = QuotaDimension.ofApiKey(apiKeyId);
-            ledgerService.reserve(QuotaRequest.of(dimension, estimatedTokens));
-            QuotaReservation.attach(request, new QuotaReservation(ledgerService, dimension, estimatedTokens));
+
+            if (windows.contains(QuotaWindow.DAY)) {
+                final Optional<QuotaUsage> usage = ledgerService.usageStrict(dimension, QuotaWindow.DAY);
+                final long requests = usage.map(QuotaUsage::requestCount).orElse(0L);
+                final long tokens = usage.map(QuotaUsage::tokenCount).orElse(0L);
+                if (apiKey.getDailyRequestLimit() > 0 && requests > apiKey.getDailyRequestLimit()) {
+                    return Optional.of(violation(QuotaLimitViolation.METRIC_DAILY_REQUESTS, QuotaWindow.DAY,
+                            apiKey.getDailyRequestLimit(), requests - 1L, now));
+                }
+                if (apiKey.getDailyTokenLimit() > 0 && tokens > apiKey.getDailyTokenLimit()) {
+                    return Optional.of(violation(QuotaLimitViolation.METRIC_DAILY_TOKENS, QuotaWindow.DAY,
+                            apiKey.getDailyTokenLimit(), tokens, now));
+                }
+            }
+            if (windows.contains(QuotaWindow.MINUTE) && apiKey.getRateLimitPerMinute() > 0) {
+                final long requests = ledgerService.usageStrict(dimension, QuotaWindow.MINUTE)
+                        .map(QuotaUsage::requestCount).orElse(0L);
+                if (requests > apiKey.getRateLimitPerMinute()) {
+                    return Optional.of(violation(QuotaLimitViolation.METRIC_RATE_PER_MINUTE, QuotaWindow.MINUTE,
+                            apiKey.getRateLimitPerMinute(), requests - 1L, now));
+                }
+            }
             return Optional.empty();
         } catch (Exception e) {
-            log.warn("配额预留异常，按 fail-open 放行: apiKeyId={}, error={}", apiKeyId, e.toString());
+            log.debug("配额预留后复核失败，按 fail-open 放行: apiKeyId={}, error={}", apiKeyId, e.toString());
             return Optional.empty();
         }
     }

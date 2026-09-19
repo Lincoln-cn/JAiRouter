@@ -33,7 +33,9 @@ import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -243,45 +245,50 @@ public class StreamingRequestProcessor {
                             contentBuilder.toString(), capturedKeyId, quotaReservation);
 
                     // v2.9.2: 记录治理 - 记录含请求/响应体的调用历史
+                    // 脱敏与落库不得阻塞 EventLoop（doOnComplete 可能在 IO 线程执行）
                     if (recordLevel != RecordLevel.METADATA_ONLY && callHistoryRecorder != null) {
-                        long duration = System.currentTimeMillis() - requestStartTime;
-                        String rawResponseBody = truncate(contentBuilder.toString());
-                        String responseBodyForRecord = rawResponseBody;
+                        final long duration = System.currentTimeMillis() - requestStartTime;
+                        final String rawResponseBody = truncate(contentBuilder.toString());
+                        final String modelForRecord = modelRef.get();
+                        final long promptTok = promptTokens.get();
+                        final long completionTok = completionTokens.get();
+                        final long totalTok = totalTokens.get();
+                        final boolean summarySanitize = recordLevel == RecordLevel.SUMMARY
+                                && sanitizationService != null && rawResponseBody != null;
 
-                        // SUMMARY 级别：记录链路使用存储脱敏
-                        if (recordLevel == RecordLevel.SUMMARY && sanitizationService != null && rawResponseBody != null) {
-                            try {
-                                String sanitized = sanitizationService.sanitizeForStorage(
-                                        rawResponseBody, "application/json")
-                                        .block(java.time.Duration.ofSeconds(5));
-                                if (sanitized != null) {
-                                    responseBodyForRecord = sanitized;
-                                }
-                            } catch (Exception e) {
-                                logger.debug("流式响应体脱敏失败: {}", e.getMessage());
-                            }
-                        }
+                        Mono<String> bodyMono = summarySanitize
+                                ? sanitizationService.sanitizeForStorage(rawResponseBody, "application/json")
+                                        .timeout(Duration.ofSeconds(5))
+                                        .onErrorResume(e -> {
+                                            logger.debug("流式响应体脱敏失败: {}", e.getMessage());
+                                            return Mono.just(rawResponseBody);
+                                        })
+                                        .map(sanitized -> sanitized != null ? sanitized : rawResponseBody)
+                                : Mono.just(rawResponseBody);
 
-                        try {
-                            CallHistoryRecordDTO dto = CallHistoryRecordDTO.builder()
-                                    .serviceType(serviceType != null ? serviceType.name() : null)
-                                    .modelName(modelRef.get())
-                                    .provider(adapterType)
-                                    .instanceName(instanceName)
-                                    .instanceUrl(selectedInstance.getBaseUrl())
-                                    .responseTimeMs(duration)
-                                    .isSuccess(true)
-                                    .promptTokens(promptTokens.get() > 0 ? promptTokens.get() : null)
-                                    .completionTokens(completionTokens.get() > 0 ? completionTokens.get() : null)
-                                    .totalTokens(totalTokens.get() > 0 ? totalTokens.get() : null)
-                                    .apiKeyId(capturedKeyId)
-                                    .requestBody(capturedRequestBody)
-                                    .responseBody(responseBodyForRecord)
-                                    .build();
-                            callHistoryRecorder.record(dto);
-                        } catch (Exception e) {
-                            logger.debug("流式调用历史记录失败: {}", e.getMessage());
-                        }
+                        bodyMono.subscribeOn(Schedulers.boundedElastic())
+                                .subscribe(responseBodyForRecord -> {
+                                    try {
+                                        CallHistoryRecordDTO dto = CallHistoryRecordDTO.builder()
+                                                .serviceType(serviceType != null ? serviceType.name() : null)
+                                                .modelName(modelForRecord)
+                                                .provider(adapterType)
+                                                .instanceName(instanceName)
+                                                .instanceUrl(selectedInstance.getBaseUrl())
+                                                .responseTimeMs(duration)
+                                                .isSuccess(true)
+                                                .promptTokens(promptTok > 0 ? promptTok : null)
+                                                .completionTokens(completionTok > 0 ? completionTok : null)
+                                                .totalTokens(totalTok > 0 ? totalTok : null)
+                                                .apiKeyId(capturedKeyId)
+                                                .requestBody(capturedRequestBody)
+                                                .responseBody(responseBodyForRecord)
+                                                .build();
+                                        callHistoryRecorder.record(dto);
+                                    } catch (Exception e) {
+                                        logger.debug("流式调用历史记录失败: {}", e.getMessage());
+                                    }
+                                }, err -> logger.debug("流式调用历史脱敏订阅失败: {}", err.getMessage()));
                     }
                 })
                 .doOnError(throwable -> {

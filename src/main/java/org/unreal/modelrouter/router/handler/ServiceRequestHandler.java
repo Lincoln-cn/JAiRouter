@@ -56,6 +56,7 @@ import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -285,6 +286,23 @@ public class ServiceRequestHandler {
      * @param exchange 原始交换对象（读取原始 DTO 属性、写 429 响应头），可为 {@code null}
      */
     private Mono<ResponseEntity<?>> handleWithInstanceAdapter(
+            final ServiceEndpoint endpoint,
+            final String modelName,
+            final String authorization,
+            final ServerHttpRequest httpRequest,
+            final TracingContext tracingContext,
+            final ServiceRequestExecutor executor,
+            final ServerWebExchange exchange) {
+
+        // 限流/缓存/配额/实例选择均为同步逻辑（含可能的 JPA/Redis block），订阅时放到
+        // boundedElastic，避免在 Netty EventLoop 上执行并卡死整条 IO 线程
+        return Mono.defer(() -> handleWithInstanceAdapterSync(
+                        endpoint, modelName, authorization, httpRequest,
+                        tracingContext, executor, exchange))
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    private Mono<ResponseEntity<?>> handleWithInstanceAdapterSync(
             final ServiceEndpoint endpoint,
             final String modelName,
             final String authorization,

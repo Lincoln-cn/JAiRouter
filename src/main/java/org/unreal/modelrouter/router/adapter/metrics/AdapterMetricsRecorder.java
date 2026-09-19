@@ -12,6 +12,10 @@ import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
 import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
 import org.unreal.modelrouter.monitor.callhistory.ApiCallHistoryRecorder;
 import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
+
+import java.time.Duration;
 
 /**
  * 适配器监控记录器
@@ -379,41 +383,46 @@ public class AdapterMetricsRecorder {
         recordStats(adapterType, instanceId, durationMs, success, errorCode, modelName, serviceType, instance);
 
         // v2.7.8: 记录 API 调用历史（v2.9.2: 含请求/响应体）
+        // 脱敏与落库移到 boundedElastic，避免在 EventLoop / 回调线程上 block
         if (callHistoryRecorder != null && serviceType != null && modelName != null) {
-            try {
-                RecordLevel level = resolveRecordLevel();
-                String capturedRequestBody = null;
-                String capturedResponseBody = null;
+            final RecordLevel level = resolveRecordLevel();
+            final String rawRequestBody = level != RecordLevel.METADATA_ONLY ? requestBody : null;
+            final String rawResponseBody = level != RecordLevel.METADATA_ONLY ? responseBody : null;
+            final boolean needSanitize = level == RecordLevel.SUMMARY && sanitizationService != null;
+            final SanitizationService sanitization = this.sanitizationService;
+            final ApiCallHistoryRecorder recorder = this.callHistoryRecorder;
+            final String finalAdapterType = adapterType;
+            final String finalInstanceId = instanceId;
+            final ModelRouterProperties.ModelInstance finalInstance = instance;
+            final String finalServiceType = serviceType.name();
+            final String finalModelName = modelName;
+            final long finalDurationMs = durationMs;
+            final boolean finalSuccess = success;
+            final String finalErrorCode = errorCode;
 
-                if (level != RecordLevel.METADATA_ONLY) {
-                    capturedRequestBody = requestBody;
-                    capturedResponseBody = responseBody;
-
-                    // SUMMARY 级别：记录链路使用存储脱敏（与网关 request/response 开关解耦）
-                    if (level == RecordLevel.SUMMARY && sanitizationService != null) {
-                        capturedRequestBody = sanitizeBlocking(
-                                sanitizationService.sanitizeForStorage(capturedRequestBody, "application/json"));
-                        capturedResponseBody = sanitizeBlocking(
-                                sanitizationService.sanitizeForStorage(capturedResponseBody, "application/json"));
-                    }
-                }
-
-                CallHistoryRecordDTO record = CallHistoryRecordDTO.builder()
-                        .serviceType(serviceType.name())
-                        .modelName(modelName)
-                        .provider(adapterType)
-                        .instanceName(instanceId)
-                        .instanceUrl(instance != null ? instance.getBaseUrl() : null)
-                        .responseTimeMs(durationMs)
-                        .isSuccess(success)
-                        .errorCode(errorCode)
-                        .requestBody(capturedRequestBody)
-                        .responseBody(capturedResponseBody)
-                        .build();
-                callHistoryRecorder.record(record);
-            } catch (Exception e) {
-                log.debug("Failed to record call history: {}", e.getMessage());
-            }
+            Mono.zip(
+                            sanitizeOptional(needSanitize, sanitization, rawRequestBody),
+                            sanitizeOptional(needSanitize, sanitization, rawResponseBody))
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .subscribe(tuple -> {
+                        try {
+                            CallHistoryRecordDTO record = CallHistoryRecordDTO.builder()
+                                    .serviceType(finalServiceType)
+                                    .modelName(finalModelName)
+                                    .provider(finalAdapterType)
+                                    .instanceName(finalInstanceId)
+                                    .instanceUrl(finalInstance != null ? finalInstance.getBaseUrl() : null)
+                                    .responseTimeMs(finalDurationMs)
+                                    .isSuccess(finalSuccess)
+                                    .errorCode(finalErrorCode)
+                                    .requestBody(tuple.getT1())
+                                    .responseBody(tuple.getT2())
+                                    .build();
+                            recorder.record(record);
+                        } catch (Exception e) {
+                            log.debug("Failed to record call history: {}", e.getMessage());
+                        }
+                    }, err -> log.debug("Failed to sanitize call history: {}", err.getMessage()));
         }
 
         if (log.isDebugEnabled()) {
@@ -467,18 +476,22 @@ public class AdapterMetricsRecorder {
     }
 
     /**
-     * 阻塞式执行脱敏操作（用于 doOnSuccess/doOnError 回调中的异步记录场景）
-     * 超时或异常时返回 null，不影响主流程
+     * 异步脱敏：SUMMARY 且装配了 SanitizationService 时走脱敏链路，否则原样透传。
+     * 超时/异常回退为原文，保证调用历史仍可记录。
      */
-    private String sanitizeBlocking(final reactor.core.publisher.Mono<String> mono) {
-        if (mono == null) {
-            return null;
+    private Mono<String> sanitizeOptional(final boolean needSanitize,
+                                          final SanitizationService sanitization,
+                                          final String raw) {
+        if (!needSanitize || sanitization == null) {
+            return Mono.justOrEmpty(raw);
         }
-        try {
-            return mono.block(java.time.Duration.ofSeconds(5));
-        } catch (Exception e) {
-            log.debug("Sanitization failed: {}", e.getMessage());
-            return null;
-        }
+        return sanitization.sanitizeForStorage(raw, "application/json")
+                .timeout(Duration.ofSeconds(5))
+                .onErrorResume(e -> {
+                    log.debug("Sanitization failed: {}", e.getMessage());
+                    return Mono.justOrEmpty(raw);
+                })
+                .map(sanitized -> sanitized != null ? sanitized : raw)
+                .defaultIfEmpty(raw);
     }
 }
