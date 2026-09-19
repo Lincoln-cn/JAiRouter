@@ -1969,26 +1969,6 @@
       "ChangeSummary": "",
       "Dependencies": []
     },
-    "repository-description.md": {
-      "FilePath": "repository-description.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-09-18T15:38:23.043414",
-      "ContentHash": "bf7657d91196fb6b",
-      "GitCommit": "91cff0a3",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": []
-    },
-    "merge-log-2026-07-10.md": {
-      "FilePath": "merge-log-2026-07-10.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-09-18T15:38:22.873239",
-      "ContentHash": "f5d7118238312c8b",
-      "GitCommit": "91cff0a3",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": []
-    },
     "docs/en/configuration/instance-examples.md": {
       "FilePath": "docs/en/configuration/instance-examples.md",
       "Version": "1.0.1",
@@ -6001,7 +5981,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-09-19T12:59:46.744427",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "repository-description.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-09-19T15:00:03.696004",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "merge-log-2026-07-10.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-09-19T15:00:03.696037",
+      "Description": "文档已删除"
     }
   ],
-  "last_updated": "2026-09-19T12:59:46.815975"
+  "last_updated": "2026-09-19T15:00:03.696384"
 }
