@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.1.2
-> **Last Updated**: 2026-09-18
+> **Document Version**: 3.2.0
+> **Last Updated**: 2026-09-19
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,21 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.2.0] - 2026-09-19 - Minor Release (PII Governance & Quota Ops + E2E)
+
+> Includes PR #60 PII closed-loop, API Key quota ops (drawer/presets/batch reset), console hang fixes, version bump 3.2.0, and Playwright E2E gate (24 cases).
+
+#### Quota Ops (API Key)
+
+- `PUT /auth/api-keys/{id}/quota`, batch-reset, reset-all; remaining counts in quota detail
+- Console quota drawer with presets; list loading isolated from slow quota APIs; short axios timeouts
+- Management quota reads use in-memory ledger aggregation; JWT blacklist Redis fail-fast (300ms)
+
+#### Quality
+
+- Frontend E2E: `frontend/e2e/console-v32.mjs` (`npm run test:e2e`) — login, list/refresh no-spin, drawer save/reset/restore, PII dry-run, cross-link
+- vitest unit/API tests; TDD service tests for quota ops
 
 ### [3.1.2] - 2026-09-18 - Patch Release (Docker Startup & Usability Fixes)
 

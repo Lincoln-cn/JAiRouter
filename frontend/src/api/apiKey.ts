@@ -135,7 +135,11 @@ export const importApiKeys = async (importRequest: ApiKeyBatchImportRequest): Pr
  * @returns 配额使用详情
  */
 export const getApiKeyQuota = async (keyId: string): Promise<QuotaUsageDetail> => {
-  const response = await request.get<RouterResponse<QuotaUsageDetail>>(`/auth/api-keys/${keyId}/quota`)
+  // 抽屉打开要快：单 Key 配额详情用短超时，避免列表/抽屉转圈
+  const response = await request.get<RouterResponse<QuotaUsageDetail>>(
+    `/auth/api-keys/${keyId}/quota`,
+    { timeout: 5000 }
+  )
   return response.data.data!
 }
 
@@ -152,8 +156,12 @@ export const resetApiKeyQuota = async (keyId: string): Promise<void> => {
  * @returns 告警列表
  */
 export const getQuotaAlerts = async (): Promise<QuotaAlertInfo[]> => {
-  const response = await request.get<RouterResponse<QuotaAlertInfo[]>>('/auth/api-keys/quota/alerts')
-  return response.data.data!
+  // 配额聚合接口在账本/Redis 异常时可能变慢，单独短超时，避免拖死列表页
+  const response = await request.get<RouterResponse<QuotaAlertInfo[]>>(
+    '/auth/api-keys/quota/alerts',
+    { timeout: 8000 }
+  )
+  return response.data.data! || []
 }
 
 /**
@@ -161,6 +169,9 @@ export const getQuotaAlerts = async (): Promise<QuotaAlertInfo[]> => {
  * @returns 配额使用概览列表
  */
 export const getQuotaOverview = async (): Promise<QuotaUsageDetail[]> => {
-  const response = await request.get<RouterResponse<QuotaUsageDetail[]>>('/auth/api-keys/quota/overview')
-  return response.data.data!
+  const response = await request.get<RouterResponse<QuotaUsageDetail[]>>(
+    '/auth/api-keys/quota/overview',
+    { timeout: 8000 }
+  )
+  return response.data.data! || []
 }

@@ -189,6 +189,10 @@ export interface QuotaUsageDetail {
   dailyRequestUsagePercent: number  // -1 表示无限制
   dailyTokenUsagePercent: number    // -1 表示无限制
   alertTriggered: boolean
+  /** 剩余请求数；限额 0 时为 -1（v3.2.1） */
+  remainingRequests?: number
+  /** 剩余 Token 数；限额 0 时为 -1（v3.2.1） */
+  remainingTokens?: number
 }
 
 export interface QuotaAlertInfo {

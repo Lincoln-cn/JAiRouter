@@ -186,7 +186,7 @@
             />
           </template>
         </el-table-column>
-        <el-table-column fixed="right" :label="t('apiKeys.columns.actions')" width="200">
+        <el-table-column fixed="right" :label="t('apiKeys.columns.actions')" width="260">
           <template #default="scope">
             <div class="action-buttons">
               <el-button icon="Edit" size="small" @click="handleEdit(scope.row)">{{ t('apiKeys.actions.edit') }}</el-button>
@@ -196,6 +196,9 @@
               <el-tooltip :content="t('apiKeys.actions.quotaResetTooltip')" placement="top">
                 <el-button icon="Timer" size="small" type="success" @click="handleResetQuota(scope.row)">{{ t('apiKeys.actions.quotaReset') }}</el-button>
               </el-tooltip>
+              <el-button icon="Coin" size="small" type="primary" @click="openQuotaDrawer(scope.row)">
+                {{ t('apiKeys.quota') }}
+              </el-button>
               <el-button icon="Delete" size="small" type="danger" @click="handleDelete(scope.row)">{{ t('apiKeys.actions.delete') }}</el-button>
             </div>
           </template>
@@ -215,6 +218,80 @@
       </div>
       </div>
     </el-card>
+
+    <!-- 配额快捷抽屉（v3.2.1） -->
+    <el-drawer
+      v-model="quotaDrawerVisible"
+      :title="t('apiKeys.quotaDrawerTitle')"
+      size="420px"
+    >
+      <div class="quota-drawer-body">
+        <p class="quota-key-id">{{ quotaDrawer.keyId }}</p>
+        <el-alert v-if="quotaDrawer.detail" type="info" :closable="false" style="margin-bottom: 12px">
+          <div>
+            {{ t('apiKeys.quotaForm.todayRequests') }}：
+            {{ quotaDrawer.detail.todayRequestCount }} /
+            {{ formatQuotaLimit(quotaDrawer.detail.dailyRequestLimit, t('apiKeys.quotaPresets.unlimited')) }}
+            （{{ t('apiKeys.quotaForm.remainingRequests') }}：
+            {{ formatRemaining(quotaDrawer.detail.remainingRequests, quotaDrawer.detail.dailyRequestLimit, t('apiKeys.quotaPresets.unlimited')) }}）
+          </div>
+          <div>
+            {{ t('apiKeys.quotaForm.todayTokens') }}：
+            {{ quotaDrawer.detail.todayTokenUsage }} /
+            {{ formatQuotaLimit(quotaDrawer.detail.dailyTokenLimit, t('apiKeys.quotaPresets.unlimited')) }}
+            （{{ t('apiKeys.quotaForm.remainingTokens') }}：
+            {{ formatRemaining(quotaDrawer.detail.remainingTokens, quotaDrawer.detail.dailyTokenLimit, t('apiKeys.quotaPresets.unlimited')) }}）
+          </div>
+        </el-alert>
+        <el-alert
+          v-else-if="quotaDrawerLoading"
+          type="info"
+          :closable="false"
+          :title="t('common.loading')"
+          style="margin-bottom: 12px"
+        />
+
+        <el-form label-width="140px">
+          <el-form-item :label="t('apiKeys.quotaForm.applyPreset')">
+            <el-select v-model="quotaDrawer.presetId" style="width: 100%" @change="applyQuotaPreset">
+              <el-option
+                v-for="p in QUOTA_PRESETS"
+                :key="p.id"
+                :label="t(p.labelKey)"
+                :value="p.id"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item :label="t('apiKeys.quotaForm.dailyRequestLimit')">
+            <el-input-number v-model="quotaDrawer.form.dailyRequestLimit" :min="0" :step="100" style="width: 100%" />
+          </el-form-item>
+          <el-form-item :label="t('apiKeys.quotaForm.dailyTokenLimit')">
+            <el-input-number v-model="quotaDrawer.form.dailyTokenLimit" :min="0" :step="1000" style="width: 100%" />
+          </el-form-item>
+          <el-form-item :label="t('apiKeys.quotaForm.rateLimitPerMinute')">
+            <el-input-number v-model="quotaDrawer.form.rateLimitPerMinute" :min="0" :step="10" style="width: 100%" />
+          </el-form-item>
+          <el-form-item :label="t('apiKeys.quotaForm.quotaAlertThreshold')">
+            <el-slider
+              v-model="quotaDrawer.form.quotaAlertThreshold"
+              :min="0.05"
+              :max="1"
+              :step="0.05"
+              show-input
+              :format-tooltip="(val: number) => `${Math.round(val * 100)}%`"
+            />
+          </el-form-item>
+        </el-form>
+        <div class="quota-drawer-actions">
+          <el-button type="primary" :loading="quotaDrawerSaving" @click="saveQuotaFromDrawer">
+            {{ t('apiKeys.quotaForm.saveQuota') }}
+          </el-button>
+          <el-button type="warning" @click="handleResetQuotaFromDrawer">
+            {{ t('apiKeys.quotaForm.resetQuota') }}
+          </el-button>
+        </div>
+      </div>
+    </el-drawer>
   </PageSkeleton>
 
     <!-- 创建/编辑API密钥对话框 -->
@@ -462,6 +539,9 @@ import {
   getQuotaOverview,
   getQuotaAlerts
 } from '@/api/apiKey'
+import { getApiKeyQuota } from '@/api/apiKey'
+import { updateApiKeyQuota } from '@/api/apiKeyQuotaOps'
+import { QUOTA_PRESETS, formatQuotaLimit, formatRemaining } from '@/utils/quotaOps'
 import type {
   ApiKeyVO,
   ApiKeyListVO,
@@ -480,6 +560,86 @@ const router = useRouter()
 
 const goQuotaMonitoring = () => {
   router.push('/monitoring/quota')
+}
+
+// ===== v3.2.1 配额抽屉 =====
+const quotaDrawerVisible = ref(false)
+const quotaDrawerLoading = ref(false)
+const quotaDrawerSaving = ref(false)
+const quotaDrawer = reactive({
+  keyId: '',
+  presetId: 'standard',
+  detail: null as QuotaUsageDetail | null,
+  form: {
+    dailyRequestLimit: 0,
+    dailyTokenLimit: 0,
+    rateLimitPerMinute: 0,
+    quotaAlertThreshold: 0.8
+  }
+})
+
+const openQuotaDrawer = async (row: any) => {
+  quotaDrawer.keyId = row.keyId
+  quotaDrawer.presetId = ''
+  quotaDrawer.detail = null
+  // 先用列表数据填表单，立即可操作；详情异步刷新，不阻塞打开
+  quotaDrawer.form = {
+    dailyRequestLimit: row.dailyRequestLimit || 0,
+    dailyTokenLimit: row.dailyTokenLimit || 0,
+    rateLimitPerMinute: row.rateLimitPerMinute || 0,
+    quotaAlertThreshold: row.quotaAlertThreshold ?? 0.8
+  }
+  quotaDrawerVisible.value = true
+  quotaDrawerLoading.value = true
+  try {
+    const detail = await getApiKeyQuota(row.keyId)
+    quotaDrawer.detail = detail
+    quotaDrawer.form = {
+      dailyRequestLimit: detail.dailyRequestLimit || 0,
+      dailyTokenLimit: detail.dailyTokenLimit || 0,
+      rateLimitPerMinute: detail.rateLimitPerMinute || 0,
+      quotaAlertThreshold: detail.quotaAlertThreshold ?? 0.8
+    }
+  } catch (error) {
+    console.error('获取配额详情失败:', error)
+  } finally {
+    quotaDrawerLoading.value = false
+  }
+}
+
+const applyQuotaPreset = (presetId: string) => {
+  const preset = QUOTA_PRESETS.find(p => p.id === presetId)
+  if (!preset) return
+  quotaDrawer.form = { ...preset.limits }
+}
+
+const saveQuotaFromDrawer = async () => {
+  if (!quotaDrawer.keyId) return
+  quotaDrawerSaving.value = true
+  try {
+    const detail = await updateApiKeyQuota(quotaDrawer.keyId, { ...quotaDrawer.form })
+    quotaDrawer.detail = detail
+    ElMessage.success(t('apiKeys.quotaForm.saveSuccess'))
+    await Promise.all([fetchApiKeys(), fetchQuotaAlerts()])
+  } catch (e: any) {
+    ElMessage.error(e?.message || t('apiKeys.quotaForm.saveQuota'))
+  } finally {
+    quotaDrawerSaving.value = false
+  }
+}
+
+const handleResetQuotaFromDrawer = async () => {
+  if (!quotaDrawer.keyId) return
+  try {
+    await resetApiKeyQuota(quotaDrawer.keyId)
+    if (quotaDrawer.keyId) {
+      quotaDrawer.detail = await getApiKeyQuota(quotaDrawer.keyId)
+    }
+    ElMessage.success(t('apiKeys.quotaForm.resetSuccess'))
+    await Promise.all([fetchApiKeys(), fetchQuotaAlerts()])
+  } catch (e: any) {
+    ElMessage.error(e?.message || t('apiKeys.quotaForm.resetQuota'))
+  }
 }
 
 // 列表数据
@@ -627,19 +787,16 @@ const fetchApiKeys = async () => {
     listData.disabledCount = data.disabledCount
     listData.expiredCount = data.expiredCount
     listData.summary = data.summary
-
-    // 更新分页总数
     pagination.total = data.total
-
-    // 获取配额概览数据并合并到列表
-    await fetchQuotaOverview()
-    // 获取配额告警列表（独立加载，失败不影响主列表）
-    await fetchQuotaAlerts()
   } catch (error) {
     ElMessage.error(t('apiKeys.messages.fetchListFailed'))
   } finally {
+    // 列表 spinner 只绑定主列表请求，避免被配额接口拖死
     loading.value = false
   }
+  // 配额概览/告警异步补齐，失败不影响列表
+  void fetchQuotaOverview()
+  void fetchQuotaAlerts()
 }
 
 // 获取配额概览数据
@@ -1040,7 +1197,31 @@ onMounted(() => {
 }
 
 .quota-alerts-card {
-  flex-shrink: 0;
+  margin-bottom: 16px;
+}
+
+.quota-drawer-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.quota-key-id {
+  font-family: monospace;
+  color: var(--ja-text-secondary, #888);
+  margin-bottom: 8px;
+}
+
+.quota-drawer-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 8px;
+}
+
+.quota-drawer-actions .el-button {
+  min-width: 96px;
 }
 
 .no-alerts {
