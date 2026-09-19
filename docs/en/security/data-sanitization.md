@@ -1,4 +1,4 @@
-﻿# Data Sanitization Rule Configuration Document
+# Data Sanitization Rule Configuration Document
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -11,7 +11,25 @@
 
 ## Overview
 
-JAiRouter's data sanitization feature can automatically identify and process sensitive information in requests and responses, including Personally Identifiable Information (PII) and sensitive words. By configuring sanitization rules, you can ensure that sensitive data does not leak to AI models or be returned to clients.
+JAiRouter's data sanitization feature can automatically identify and process sensitive information in requests and responses, including Personally Identifiable Information (PII) and sensitive words.
+
+### Since v3.2.0: Record-path primary + console management
+
+The **primary** PII surface is chat call-history / logs / tracing records, handled by
+`SanitizationService.sanitizeForStorage`. This path is **not** gated by gateway
+`request/response.enabled` flags (configured PII/sensitive words are always loaded into the rule set).
+
+| Capability | Description |
+|------------|-------------|
+| Console | Security → **PII Sanitization** (`/security/sanitization`) |
+| Permission | `security:sanitization:manage` (ADMIN) |
+| Admin API | `GET/PUT /api/config/sanitization`, `GET .../rules`, `POST .../test` |
+| Gateway response filter | Off by default; admin `/api/**` and AI realtime paths excluded |
+| Dry-run | Non-JSON samples mask as `text/plain` for chat-log pastes |
+
+**Call history**: with `record-level=SUMMARY`, the adapter sanitizes via `sanitizeForStorage` before persist.
+
+See [management API](../api-reference/management-api.md) and [web-console.md](../getting-started/web-console.md).
 
 ## Features
 

@@ -22,6 +22,8 @@ JAiRouter provides a complete set of management APIs for dynamic configuration m
 - [Token Usage](#token-usage)
 - [Configuration Version Management](#configuration-version-management)
 - [Quota Management](#quota-management)
+- [API Key Quota Ops](#apikey-quota-ops)
+- [PII / Sanitization Management](#sanitization-mgmt)
 
 ---
 
@@ -836,6 +838,98 @@ Query quota usage (read-only, no write side effects).
 ```
 
 When the quota ledger is disabled, `data=[]` and message=`配额账本未启用`.
+
+---
+
+## API Key Quota Ops {#apikey-quota-ops}
+
+### Base Path: `/api/auth/api-keys`
+
+**Permission:** ADMIN (`security:apikeys:manage`)
+
+Limit semantics: **0 = unlimited**; `quotaAlertThreshold` is a ratio **0.0–1.0** (e.g. 0.8 = 80%).
+
+#### `GET /api/auth/api-keys/{keyId}/quota`
+
+Quota detail for one key (usage, percents, `remainingRequests` / `remainingTokens`; unlimited → remaining = -1).
+
+#### `PUT /api/auth/api-keys/{keyId}/quota`
+
+Update **quota fields only** (partial; null fields unchanged).
+
+**Request body:**
+```json
+{
+  "dailyRequestLimit": 1000,
+  "dailyTokenLimit": 100000,
+  "rateLimitPerMinute": 60,
+  "quotaAlertThreshold": 0.8
+}
+```
+
+#### `GET /api/auth/api-keys/quota/alerts`
+
+Keys that crossed the alert threshold.
+
+#### `GET /api/auth/api-keys/quota/overview`
+
+Quota overview for all keys.
+
+#### `POST /api/auth/api-keys/{keyId}/quota/reset`
+
+Reset one key's daily counters and rate limit.
+
+#### `POST /api/auth/api-keys/quota/batch-reset`
+
+**Request body:** `{ "keyIds": ["key-a", "key-b"] }` → `{ "requested": 2, "reset": 2 }`
+
+#### `POST /api/auth/api-keys/quota/reset-all`
+
+Reset all keys' daily quotas and rate limits.
+
+---
+
+## PII / Sanitization Management {#sanitization-mgmt}
+
+### Base Path: `/api/config/sanitization`
+
+**Permission:** `security:sanitization:manage` (ADMIN)
+
+Primary path is **record-side** `sanitizeForStorage` for chat call-history/logs. The gateway response filter is off by default and excludes `/api/**` and AI realtime paths.
+
+#### `GET /api/config/sanitization`
+
+Snapshot of request/response sub-config, `ruleCount`, and design notes.
+
+#### `PUT /api/config/sanitization`
+
+Hot-update request/response (non-null fields) and rebuild in-memory rules.
+
+**Request body example:**
+```json
+{
+  "request": {
+    "enabled": true,
+    "piiPatterns": ["\\d{11}"],
+    "sensitiveWords": ["password"],
+    "maskingChar": "*"
+  }
+}
+```
+
+#### `GET /api/config/sanitization/rules`
+
+List active rules.
+
+#### `POST /api/config/sanitization/test`
+
+Dry-run. If `contentType` is missing/`application/json` but the sample **does not look like JSON**, masking runs as `text/plain`.
+
+**Request:** `{ "sample": "phone 13800138000", "contentType": "text/plain" }`
+
+**Response:** `{ "before", "after", "matchedRuleIds", "contentType" }`
+
+See [Data Sanitization](../security/data-sanitization.md).
 
 ---
 

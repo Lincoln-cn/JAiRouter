@@ -22,6 +22,8 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 - [令牌使用](#token-usage)
 - [配置版本管理](#config-version-mgmt)
 - [配额管理](#quota-mgmt)
+- [API Key 配额操作](#apikey-quota-ops)
+- [PII / 数据脱敏管理](#sanitization-mgmt)
 
 ---
 
@@ -836,6 +838,146 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 ```
 
 配额未启用时 `data=[]` 且 message=`配额账本未启用`。
+
+---
+
+## API Key 配额操作 {#apikey-quota-ops}
+
+### 基础路径: `/api/auth/api-keys`
+
+**权限:** ADMIN（`security:apikeys:manage`）
+
+限额字段语义：**0 = 不限制**；`quotaAlertThreshold` 为 **0.0–1.0**（如 0.8 = 80%）。
+
+#### `GET /api/auth/api-keys/{keyId}/quota`
+
+获取单 Key 配额详情（含今日用量、百分比、`remainingRequests` / `remainingTokens`；不限制时 remaining = -1）。
+
+#### `PUT /api/auth/api-keys/{keyId}/quota`
+
+**仅更新配额字段**（partial update，null 字段不改）。
+
+**请求体:**
+```json
+{
+  "dailyRequestLimit": 1000,
+  "dailyTokenLimit": 100000,
+  "rateLimitPerMinute": 60,
+  "quotaAlertThreshold": 0.8
+}
+```
+
+**响应:** 更新后的配额详情（同 GET）。
+
+#### `GET /api/auth/api-keys/quota/alerts`
+
+触发告警阈值的 Key 列表。
+
+#### `GET /api/auth/api-keys/quota/overview`
+
+全部 Key 配额概览。
+
+#### `POST /api/auth/api-keys/{keyId}/quota/reset`
+
+重置单 Key 每日计数与速率。
+
+**请求体:**
+```json
+{ "keyIds": ["key-a", "key-b"] }
+```
+
+**响应:** `{ "requested": 2, "reset": 2 }`（不存在的 Key 跳过）。
+
+#### `POST /api/auth/api-keys/quota/reset-all`
+
+重置全部 Key 每日配额与速率。
+
+---
+
+## PII / 数据脱敏管理 {#sanitization-mgmt}
+
+### 基础路径: `/api/config/sanitization`
+
+**权限:** `security:sanitization:manage`（ADMIN）
+
+**语义:** 主路径为聊天调用历史/日志记录侧 `sanitizeForStorage`；网关响应过滤器默认关闭且排除 `/api/**` 与 AI 实时路径。
+
+#### `GET /api/config/sanitization`
+
+返回 request/response 子配置快照、`ruleCount` 与设计说明字段。
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "request": {
+      "enabled": true,
+      "piiPatterns": ["\\d{11}"],
+      "sensitiveWords": ["password"],
+      "maskingChar": "*",
+      "logSanitization": false,
+      "failOnError": false,
+      "whitelistUsers": []
+    },
+    "response": {
+      "enabled": false,
+      "piiPatterns": [],
+      "sensitiveWords": [],
+      "maskingChar": "*",
+      "preserveJsonStructure": true
+    },
+    "ruleCount": 5,
+    "primaryUseCase": "chat-call-history-logs-and-user-data-records"
+  }
+}
+```
+
+#### `PUT /api/config/sanitization`
+
+热改 request/response（非 null 字段生效），并重建内存规则库。
+
+**请求体示例:**
+```json
+{
+  "request": {
+    "enabled": true,
+    "piiPatterns": ["\\d{11}", "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"],
+    "sensitiveWords": ["password"],
+    "maskingChar": "*"
+  }
+}
+```
+
+非法正则返回 HTTP 400 + `INVALID_REQUEST`。
+
+#### `GET /api/config/sanitization/rules`
+
+列出当前生效规则（ruleId / type / pattern / enabled 等）。
+
+#### `POST /api/config/sanitization/test`
+
+试脱敏。`contentType` 省略或为 `application/json` 但样例**不像 JSON** 时，按 `text/plain` 掩码。
+
+**请求体:**
+```json
+{ "sample": "联系人手机 13800138000", "contentType": "text/plain" }
+```
+
+**响应:**
+```json
+{
+  "success": true,
+  "data": {
+    "before": "联系人手机 13800138000",
+    "after": "联系人手机 ***********",
+    "matchedRuleIds": ["response-pii-pattern-3"],
+    "contentType": "text/plain"
+  }
+}
+```
+
+产品说明见 [数据脱敏规则配置](../security/data-sanitization.md)。
 
 ---
 

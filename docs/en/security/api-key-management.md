@@ -134,6 +134,10 @@ jairouter:
 
 2. **Rate Limiting**: Uses a sliding window algorithm to limit requests per minute. When the limit is reached, API requests are rejected with a 429 status code.
 
+3. **Alert Threshold**: Ratio `0.0–1.0` (0.8 = 80%). `0` on limit fields means unlimited.
+
+4. **Console (v3.2.0)**: Security → API Keys → **Quota** drawer (presets, save, reset). Management APIs: `PUT/GET /auth/api-keys/{id}/quota`, batch-reset, reset-all. See [management API](../api-reference/management-api.md).
+
 3. **Alert Threshold**: When usage exceeds the threshold percentage (e.g., 80%), the system triggers an alert. This is useful for monitoring and proactive management.
 
 4. **Automatic Reset**: Quota counters are automatically reset at midnight (00:00:00) every day.
