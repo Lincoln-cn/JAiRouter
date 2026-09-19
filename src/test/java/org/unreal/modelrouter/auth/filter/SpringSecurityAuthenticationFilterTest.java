@@ -101,8 +101,29 @@ class SpringSecurityAuthenticationFilterTest {
         }
 
         @Test
-        @DisplayName("FILT-010: 排除路径 - swagger路径跳过认证")
-        void testSwaggerPathExcluded() {
+        @DisplayName("FILT-010: R3-P1 默认 swagger 不免认证（docs-public=false）")
+        void testSwaggerPathRequiresAuthByDefault() {
+            org.unreal.modelrouter.auth.security.config.ExcludedPathsConfig.setApiDocsAuthExcluded(false);
+            when(authenticationConverter.convert(any())).thenReturn(Mono.empty());
+            MockServerHttpRequest request = MockServerHttpRequest
+                    .get("/swagger-ui/index.html")
+                    .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+            WebFilterChain chain = mock(WebFilterChain.class);
+            when(chain.filter(any())).thenReturn(Mono.empty());
+
+            Mono<Void> result = filter.filter(exchange, chain);
+
+            StepVerifier.create(result).verifyComplete();
+            // 默认需认证：会走 converter（缺凭证则 401，此处 converter 返回 empty）
+            verify(authenticationConverter, atLeastOnce()).convert(any());
+            org.unreal.modelrouter.auth.security.config.ExcludedPathsConfig.setApiDocsAuthExcluded(false);
+        }
+
+        @Test
+        @DisplayName("FILT-010b: docs-public=true 时 swagger 免认证")
+        void testSwaggerPathExcludedWhenDocsPublic() {
+            org.unreal.modelrouter.auth.security.config.ExcludedPathsConfig.setApiDocsAuthExcluded(true);
             MockServerHttpRequest request = MockServerHttpRequest
                     .get("/swagger-ui/index.html")
                     .build();
@@ -115,6 +136,7 @@ class SpringSecurityAuthenticationFilterTest {
             StepVerifier.create(result).verifyComplete();
             verify(chain).filter(any());
             verifyNoInteractions(authenticationConverter);
+            org.unreal.modelrouter.auth.security.config.ExcludedPathsConfig.setApiDocsAuthExcluded(false);
         }
     }
 
