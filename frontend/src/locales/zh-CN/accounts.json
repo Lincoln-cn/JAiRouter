@@ -22,6 +22,7 @@
     "password": "密码",
     "confirmPassword": "确认密码",
     "usernamePlaceholder": "请输入用户名",
+    "usernameHint": "3–50 个字符；建议使用字母、数字或下划线",
     "passwordPlaceholder": "请输入密码",
     "passwordLeaveBlank": "留空表示不修改",
     "confirmPasswordPlaceholder": "请再次输入密码",
