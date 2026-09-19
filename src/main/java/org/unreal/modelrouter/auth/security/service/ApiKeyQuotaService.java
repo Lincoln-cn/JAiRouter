@@ -223,7 +223,10 @@ public class ApiKeyQuotaService {
      * @param keyId API Key ID
      */
     public void resetDailyQuota(String keyId) {
-        apiKeyService.resetDailyQuota(keyId).block();
+        // P2：管理接口也在 WebFlux 链路上，block 必须带超时且工作放到 boundedElastic
+        apiKeyService.resetDailyQuota(keyId)
+                .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+                .block(java.time.Duration.ofSeconds(5));
         rateLimiter.reset(keyId);
         resetLedger(keyId);
         log.info("已重置 API Key 每日配额和速率限制: {}", keyId);
@@ -258,7 +261,9 @@ public class ApiKeyQuotaService {
         if (request.getRateLimitPerMinute() != null && request.getRateLimitPerMinute() < 0) {
             throw new IllegalArgumentException("rateLimitPerMinute 不能为负（0 表示不限制）");
         }
-        apiKeyService.updateApiKey(keyId, request).block();
+        apiKeyService.updateApiKey(keyId, request)
+                .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+                .block(java.time.Duration.ofSeconds(5));
         return getQuotaUsage(keyId)
                 .orElseThrow(() -> new IllegalArgumentException("API Key 不存在: " + keyId));
     }
@@ -297,7 +302,9 @@ public class ApiKeyQuotaService {
         Map<String, String> index = apiKeyService.getKeyIdIndex();
 
         for (String keyId : index.keySet()) {
-            apiKeyService.resetDailyQuota(keyId).block();
+            apiKeyService.resetDailyQuota(keyId)
+                    .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+                    .block(java.time.Duration.ofSeconds(5));
             resetLedger(keyId);
         }
         rateLimiter.resetAll();

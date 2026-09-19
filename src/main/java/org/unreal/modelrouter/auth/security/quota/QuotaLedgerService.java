@@ -305,6 +305,136 @@ public class QuotaLedgerService {
     }
 
     /**
+     * 限额 CAS 预留：对每个启用窗口原子「检查 + 累加」，任一窗口超限则返回该窗口的违规结果。
+     *
+     * <p>本地模式使用 {@link LocalCounterBackend#incrementLocalWithLimit}（槽位锁）；
+     * 分布式模式使用 Redis Lua {@link RedisCounterBackend#INCREMENT_WITH_LIMIT_SCRIPT}
+     * （超限由脚本回滚，返回空结果）。Redis 失败时按 fail-open 降级为普通预留。</p>
+     *
+     * @param request          预留请求
+     * @param dayMaxRequests   日请求数限额（0=不限）
+     * @param dayMaxTokens     日 token 限额（0=不限）
+     * @param minuteMaxRequests 每分钟请求数限额（0=不限）
+     * @return 超限结果；成功预留或账本未启用时为空
+     */
+    public Optional<QuotaLimitViolation> reserveWithLimits(final QuotaRequest request,
+                                                           final long dayMaxRequests,
+                                                           final long dayMaxTokens,
+                                                           final long minuteMaxRequests) {
+        if (!isEnabled() || request == null) {
+            return Optional.empty();
+        }
+        try {
+            final List<QuotaWindow> windows = properties.enabledWindows();
+            if (windows.isEmpty()) {
+                return Optional.empty();
+            }
+            final LocalDateTime now = LocalDateTime.now(clock);
+            final QuotaDimension dimension = request.dimension();
+            final long tokens = Math.max(0L, request.estimatedTokens());
+            for (final QuotaWindow window : windows) {
+                final long maxRequests = maxRequestsFor(window, dayMaxRequests, minuteMaxRequests);
+                final long maxTokens = maxTokensFor(window, dayMaxTokens);
+                if (maxRequests <= 0L && maxTokens <= 0L) {
+                    // 该窗口无有效限额：普通累加，保证计数连续
+                    if (!distributed) {
+                        localBackend.incrementLocal(keyOf(dimension, window, now), 1L, tokens);
+                    } else {
+                        try {
+                            publish(keyOf(dimension, window, now), 1L, tokens, true);
+                        } catch (Exception e) {
+                            markDegraded(classify(e));
+                        }
+                    }
+                    continue;
+                }
+                final QuotaCounterKey key = keyOf(dimension, window, now);
+                if (!distributed) {
+                    final long[] totals =
+                            localBackend.incrementLocalWithLimit(key, 1L, tokens, maxRequests, maxTokens);
+                    if (totals == null) {
+                        return buildLimitViolation(window, maxRequests, maxTokens, key, now);
+                    }
+                    continue;
+                }
+                try {
+                    final long[] result = executeRedis(() ->
+                            distributedBackend.incrementWithLimit(key, 1L, tokens, maxRequests, maxTokens));
+                    if (result == null) {
+                        // Lua 已回滚
+                        return buildLimitViolation(window, maxRequests, maxTokens, key, now);
+                    }
+                    localBackend.incrementLocal(key, 1L, tokens);
+                    clearDegraded();
+                } catch (Exception e) {
+                    final String reason = classify(e);
+                    markDegraded(reason);
+                    metrics.recordDegradation(reason);
+                    if (properties.isFailOpen()) {
+                        // 降级：回退普通预留，避免 Redis 故障时误杀
+                        localBackend.incrementLocal(key, 1L, tokens);
+                        localBackend.addPending(key, 1L, tokens);
+                    } else {
+                        return buildLimitViolation(window, maxRequests, maxTokens, key, now);
+                    }
+                }
+            }
+            return Optional.empty();
+        } catch (Exception e) {
+            log.warn("配额 CAS reserveWithLimits 异常，按 fail-open 处理: apiKeyId={}, error={}",
+                    request.dimension().apiKeyId(), e.toString());
+            return Optional.empty();
+        }
+    }
+
+    private static long maxRequestsFor(final QuotaWindow window,
+                                       final long dayMaxRequests,
+                                       final long minuteMaxRequests) {
+        // 与 QuotaEnforcementService.evaluate 一致：仅 DAY / MINUTE 参与限额判定
+        return switch (window) {
+            case MINUTE -> minuteMaxRequests;
+            case DAY -> dayMaxRequests;
+            case HOUR, MONTH -> 0L;
+        };
+    }
+
+    private static long maxTokensFor(final QuotaWindow window, final long dayMaxTokens) {
+        return window == QuotaWindow.DAY ? dayMaxTokens : 0L;
+    }
+
+    private Optional<QuotaLimitViolation> buildLimitViolation(final QuotaWindow window,
+                                                              final long maxRequests,
+                                                              final long maxTokens,
+                                                              final QuotaCounterKey key,
+                                                              final LocalDateTime now) {
+        // CAS 拒绝时计数未包含本笔，used 即当前窗口累计值
+        final long[] usage = localBackend.totals(key);
+        if (maxRequests > 0L) {
+            final long used = usage == null ? maxRequests : usage[0];
+            final String metric = window == QuotaWindow.MINUTE
+                    ? QuotaLimitViolation.METRIC_RATE_PER_MINUTE
+                    : QuotaLimitViolation.METRIC_DAILY_REQUESTS;
+            return Optional.of(new QuotaLimitViolation(metric, window, maxRequests,
+                    Math.max(0L, used), retryAfterSeconds(window, now)));
+        }
+        final long usedTokens = usage == null ? maxTokens : usage[1];
+        return Optional.of(new QuotaLimitViolation(QuotaLimitViolation.METRIC_DAILY_TOKENS,
+                window, maxTokens, Math.max(0L, usedTokens), retryAfterSeconds(window, now)));
+    }
+
+    private long retryAfterSeconds(final QuotaWindow window, final LocalDateTime now) {
+        final LocalDateTime start = window.windowStart(now);
+        final LocalDateTime next = switch (window) {
+            case MINUTE -> start.plusMinutes(1L);
+            case HOUR -> start.plusHours(1L);
+            case MONTH -> start.plusMonths(1L);
+            default -> start.plusDays(1L);
+        };
+        final long millis = Math.max(0L, java.time.Duration.between(now, next).toMillis());
+        return Math.max(1L, (millis + 999L) / 1000L);
+    }
+
+    /**
      * 结算一次配额：按 {@code actual - estimated} 冲正 token，调用失败时回滚整笔预留。
      *
      * <p>只冲正已存在的本地槽位（不会为结算新建槽位、不访问数据库）；异常被吞掉并记录日志，

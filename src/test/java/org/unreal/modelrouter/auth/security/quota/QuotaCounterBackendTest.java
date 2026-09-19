@@ -224,6 +224,23 @@ class QuotaCounterBackendTest {
         }
 
         @Override
+        public Mono<long[]> incrementWithLimit(final QuotaCounterKey key,
+                                               final long requests,
+                                               final long tokens,
+                                               final long maxRequests,
+                                               final long maxTokens) {
+            final long[] current = values.getOrDefault(key, new long[]{0L, 0L});
+            final long nextReq = current[0] + requests;
+            final long nextTok = current[1] + tokens;
+            if ((maxRequests > 0L && nextReq > maxRequests) || (maxTokens > 0L && nextTok > maxTokens)) {
+                return Mono.empty();
+            }
+            final long[] next = new long[]{nextReq, nextTok};
+            values.put(key, next);
+            return Mono.just(next);
+        }
+
+        @Override
         public Mono<Optional<long[]>> read(final QuotaCounterKey key) {
             return Mono.just(Optional.ofNullable(values.get(key)));
         }

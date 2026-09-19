@@ -81,6 +81,46 @@ public final class LocalCounterBackend implements QuotaCounterBackend {
     }
 
     @Override
+    public Mono<long[]> incrementWithLimit(final QuotaCounterKey key,
+                                           final long requests,
+                                           final long tokens,
+                                           final long maxRequests,
+                                           final long maxTokens) {
+        final long[] totals = incrementLocalWithLimit(key, requests, tokens, maxRequests, maxTokens);
+        return totals == null ? Mono.empty() : Mono.just(totals);
+    }
+
+    /**
+     * 限额 CAS：检查「累加后」是否越限，越限不写入并返回 {@code null}。
+     *
+     * @return 累加后的 {@code [requests, tokens]}；越限时 {@code null}
+     */
+    public long[] incrementLocalWithLimit(final QuotaCounterKey key,
+                                          final long requests,
+                                          final long tokens,
+                                          final long maxRequests,
+                                          final long maxTokens) {
+        final Slot slot = slotFor(key);
+        synchronized (slot) {
+            final long currentRequests = Math.max(0L, slot.requests.sum());
+            final long currentTokens = Math.max(0L, slot.tokens.sum());
+            final long nextRequests = Math.max(0L, currentRequests + requests);
+            final long nextTokens = Math.max(0L, currentTokens + tokens);
+            if ((maxRequests > 0L && nextRequests > maxRequests)
+                    || (maxTokens > 0L && nextTokens > maxTokens)) {
+                return null;
+            }
+            if (requests != 0L) {
+                slot.requests.add(requests);
+            }
+            if (tokens != 0L) {
+                slot.tokens.add(tokens);
+            }
+            return totals(slot);
+        }
+    }
+
+    @Override
     public Mono<Optional<long[]>> read(final QuotaCounterKey key) {
         return Mono.just(Optional.ofNullable(totals(key)));
     }

@@ -236,7 +236,7 @@ public final class FakeReactiveRedisTemplate extends ReactiveRedisTemplate<Strin
      * @param args       ARGV
      * @return 脚本返回值（{@code "req:tok"}，桶不存在时空串）
      */
-    private String applyScript(final String scriptText, final String key, final List<String> args) {
+    private synchronized String applyScript(final String scriptText, final String key, final List<String> args) {
         if (RedisCounterBackend.READ_SCRIPT.equals(scriptText)) {
             final Map<String, Long> hash = hashes.get(key);
             if (hash == null) {
@@ -245,15 +245,32 @@ public final class FakeReactiveRedisTemplate extends ReactiveRedisTemplate<Strin
             return hash.getOrDefault(FIELD_REQUESTS, 0L) + ":" + hash.getOrDefault(FIELD_TOKENS, 0L);
         }
         final boolean onlyIfPresent = RedisCounterBackend.INCREMENT_IF_PRESENT_SCRIPT.equals(scriptText);
-        if (!onlyIfPresent && !RedisCounterBackend.INCREMENT_SCRIPT.equals(scriptText)) {
+        final boolean withLimit = RedisCounterBackend.INCREMENT_WITH_LIMIT_SCRIPT.equals(scriptText);
+        if (!onlyIfPresent && !withLimit && !RedisCounterBackend.INCREMENT_SCRIPT.equals(scriptText)) {
             throw new IllegalStateException("假 Redis 未覆盖的脚本: " + scriptText);
         }
         if (onlyIfPresent && !hashes.containsKey(key)) {
             return "";
         }
         final Map<String, Long> hash = hashes.computeIfAbsent(key, ignored -> new LinkedHashMap<>());
-        final long requests = Math.max(0L, hash.getOrDefault(FIELD_REQUESTS, 0L) + Long.parseLong(args.get(0)));
-        final long tokens = Math.max(0L, hash.getOrDefault(FIELD_TOKENS, 0L) + Long.parseLong(args.get(1)));
+        final long prevReq = hash.getOrDefault(FIELD_REQUESTS, 0L);
+        final long prevTok = hash.getOrDefault(FIELD_TOKENS, 0L);
+        final long requests = Math.max(0L, prevReq + Long.parseLong(args.get(0)));
+        final long tokens = Math.max(0L, prevTok + Long.parseLong(args.get(1)));
+        if (withLimit) {
+            final long maxReq = args.size() > 3 ? Long.parseLong(args.get(3)) : 0L;
+            final long maxTok = args.size() > 4 ? Long.parseLong(args.get(4)) : 0L;
+            if ((maxReq > 0L && requests > maxReq) || (maxTok > 0L && tokens > maxTok)) {
+                // 超限：回滚（不更新 TTL 以外的状态——桶可能已存在）
+                if (!hashes.containsKey(key) || (prevReq == 0L && prevTok == 0L && hash.isEmpty())) {
+                    // keep empty bucket without values if just created
+                }
+                hash.put(FIELD_REQUESTS, prevReq);
+                hash.put(FIELD_TOKENS, prevTok);
+                expirations.putIfAbsent(key, Long.parseLong(args.get(2)));
+                return "OVER";
+            }
+        }
         hash.put(FIELD_REQUESTS, requests);
         hash.put(FIELD_TOKENS, tokens);
         expirations.putIfAbsent(key, Long.parseLong(args.get(2)));

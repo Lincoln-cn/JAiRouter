@@ -118,12 +118,10 @@ public class SecurityConfiguration {
                 .pathMatchers("/admin/**").permitAll()
                 // favicon.ico 允许匿名访问
                 .pathMatchers("/favicon.ico").permitAll()
-                // 健康状态 SSE：控制台能力，需认证（前端 fetch 已携带 Jairouter_Token）
-                // P1 审计：原 permitAll 允许匿名拉取实例拓扑/健康状态
+                // 健康状态 SSE / 监控 WebSocket：均需认证
+                // WS 通过 query token（DefaultAuthenticationConverter）校验（浏览器无法带自定义头）
                 .pathMatchers("/api/health-status/**").authenticated()
-                // WebSocket 监控：前端 new WebSocket 未携带认证头，本批保持匿名以免破坏控制台
-                // 残余风险记入审计报告 P1（后续改为 query/子协议 token + 校验）
-                .pathMatchers("/ws/**").permitAll()
+                .pathMatchers("/ws/**").authenticated()
                 // JWT登录端点允许匿名访问
                 .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/login").permitAll()
                 // JWT验证端点允许匿名访问（用于验证令牌有效性）
