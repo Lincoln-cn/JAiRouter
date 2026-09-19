@@ -5,7 +5,7 @@
 - 总文档数: 172
 - 近7天变更: 199
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-09-19 04:26:22
+- 最后扫描: 2026-09-19 07:01:56
 
 ## 最近变更
 
