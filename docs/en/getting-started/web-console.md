@@ -72,7 +72,7 @@ The console has a collapsible sidebar containing **9 menu groups** with a total 
 | 3 | Traffic Governance | 流量治理 | Routing Rules, Load Balancer Monitoring, Load Balancer Strategy, Circuit Breaker Monitoring, Circuit Breaker History, Circuit Breaker Config, Rate Limit Monitoring, Resource Pools, Response Cache Management, Quota Runtime Config |
 | 4 | Data Records | 数据记录 | Call History Dashboard, Call List, Token Usage, Slow Calls, Slow Query Analysis, Quota Usage Monitoring, Exception Management, Exception Statistics |
 | 5 | Distributed Tracing | 链路追踪 | Tracing Dashboard, Tracing Search, Tracing Config |
-| 6 | Security | 安全管理 | API Key Management, JWT Token Management, Blacklist Management, Audit Logs |
+| 6 | Security | 安全管理 | API Key Management, PII Sanitization, JWT Token Management, Blacklist Management, Audit Logs |
 | 7 | System | 系统管理 | Account Management, Permission Management, State Persistence |
 | 8 | AI Playground | AI 试验场 | Chat Playground, Embedding, Rerank, Audio Service, Image Service |
 | 9 | Developer Tools | 开发者工具 | Client Access Guide |
@@ -413,6 +413,7 @@ This page provides complete access examples for the OpenAI-compatible API and th
 | Distributed Tracing | Tracing Search | `/tracing/search` |
 | Distributed Tracing | Tracing Config | `/tracing/management` |
 | Security | API Key Management | `/security/api-keys` |
+| Security | PII Sanitization | `/security/sanitization` |
 | Security | JWT Token Management | `/security/jwt-tokens` |
 | Security | Blacklist Management | `/security/blacklist` |
 | Security | Audit Logs | `/security/audit-logs` |
@@ -425,3 +426,28 @@ This page provides complete access examples for the OpenAI-compatible API and th
 | AI Playground | Audio Service | `/playground/audio` |
 | AI Playground | Image Service | `/playground/image` |
 | Developer Tools | Client Access Guide | `/tools/client-access` |
+
+### PII Sanitization (v3.2.0)
+
+Path: **Security → PII Sanitization** `/security/sanitization` (permission `security:sanitization:manage`)
+
+1. Review request/response PII patterns, sensitive words, masking char
+2. Save to hot-rebuild the rule set (record-path SUMMARY applies immediately)
+3. Dry-run with a chat sample; expect `****` in the result
+4. Gateway live responses are not masked by default; admin `/api/**` and AI paths are excluded
+
+### API Key Quota Ops (v3.2.0)
+
+Path: **Security → API Key Management** → row action **Quota**
+
+1. Open the quota drawer: today usage / remaining + presets
+2. Adjust limits → **Save Quota** (quota fields only)
+3. **Reset Counters** clears daily usage/rate
+4. Quota Monitoring cross-links back to API Keys for limit edits
+
+### Quota Usage Monitoring
+
+Path: **Data Records → Quota Usage Monitoring** `/monitoring/quota`
+
+- Shows multi-dimensional usage plus daily request/token limits and progress
+- **Set limits on API Keys** navigates to `/security/api-keys`

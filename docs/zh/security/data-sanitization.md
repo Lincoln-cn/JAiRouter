@@ -11,7 +11,26 @@
 
 ## 概述
 
-JAiRouter 的数据脱敏功能可以自动识别和处理请求和响应中的敏感信息，包括个人身份信息（PII）、敏感词汇等。通过配置脱敏规则，您可以确保敏感数据不会泄露到 AI 模型或返回给客户端。
+JAiRouter 的数据脱敏功能可以自动识别和处理请求和响应中的敏感信息，包括个人身份信息（PII）、敏感词汇等。
+
+### v3.2.0 起：记录侧主路径与控制台管理
+
+**主战场**是「聊天调用历史 / 日志 / 追踪记录」中的用户数据，经记录侧
+`SanitizationService.sanitizeForStorage` 处理；该路径**不受**网关
+`request/response.enabled` 开关拖累（配置中的 PII/敏感词始终加载进规则库）。
+
+| 能力 | 说明 |
+|------|------|
+| 控制台 | 安全管理 → **PII 脱敏管理**（`/security/sanitization`） |
+| 权限 | `security:sanitization:manage`（ADMIN） |
+| 管理 API | `GET/PUT /api/config/sanitization`、`GET .../rules`、`POST .../test` |
+| 网关响应过滤器 | 默认关闭；管理台 `/api/**` 与 AI 实时路径 `/api/v1/**`、`/v1/**` 排除 |
+| 试脱敏 | 样例非 JSON 时按 `text/plain` 掩码，便于粘贴聊天原文 |
+
+**调用历史**：`record-level=SUMMARY` 时，适配器层用 `sanitizeForStorage` 落库前脱敏。
+
+管理 API 详见 [管理 API](../api-reference/management-api.md) 与控制台手册
+[web-console.md](../getting-started/web-console.md)。
 
 ## 功能特性
 

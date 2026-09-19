@@ -166,6 +166,19 @@ jairouter:
 
 3. **控制台**：安全管理 → API 密钥设置限额与告警/重置；数据记录 → 配额用量监控查看账本用量与限额对照。
 
+### v3.2.0 配额便捷操作 API
+
+| 端点 | 说明 |
+|------|------|
+| `PUT /api/auth/api-keys/{keyId}/quota` | 只改配额字段（0=不限制；阈值 0.0–1.0） |
+| `POST .../quota/batch-reset` | 批量重置（body `{keyIds:[]}`） |
+| `POST .../quota/reset-all` | 全量重置 |
+| `GET .../quota` | 详情含 `remainingRequests` / `remainingTokens`（不限制时 -1） |
+
+控制台：API 密钥列表操作列 **「配额」** 抽屉，支持预设（不限制/开发/标准/严格）。
+
+详见 [管理 API](../api-reference/management-api.md)。
+
 ### 权限级别说明
 
 | 权限 | 说明 | 适用场景 |

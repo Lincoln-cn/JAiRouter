@@ -72,7 +72,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 | 3 | 流量治理 | Traffic Governance | 路由规则、负载均衡监控、负载均衡策略、熔断器监控、熔断器历史、熔断器配置、限流监控、资源池、响应缓存管理、配额运行时配置 |
 | 4 | 数据记录 | Data Records | 调用历史仪表盘、调用列表、Token 统计、慢调用、慢查询分析、配额用量监控、异常事件管理、异常统计分析 |
 | 5 | 链路追踪 | Distributed Tracing | 追踪仪表盘、追踪搜索、追踪配置 |
-| 6 | 安全管理 | Security | API 密钥管理、JWT 令牌管理、黑名单管理、审计日志 |
+| 6 | 安全管理 | Security | API 密钥管理、PII 脱敏管理、JWT 令牌管理、黑名单管理、审计日志 |
 | 7 | 系统管理 | System | 账户管理、权限管理、状态持久化 |
 | 8 | AI 试验场 | AI Playground | 对话测试、向量生成、重排序、语音服务、图像服务 |
 | 9 | 开发者工具 | Developer Tools | 客户端接入指南 |
@@ -413,6 +413,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 | 链路追踪 | 追踪搜索 | `/tracing/search` |
 | 链路追踪 | 追踪配置 | `/tracing/management` |
 | 安全管理 | API 密钥管理 | `/security/api-keys` |
+| 安全管理 | PII 脱敏管理 | `/security/sanitization` |
 | 安全管理 | JWT 令牌管理 | `/security/jwt-tokens` |
 | 安全管理 | 黑名单管理 | `/security/blacklist` |
 | 安全管理 | 审计日志 | `/security/audit-logs` |
@@ -425,3 +426,30 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 | AI 试验场 | 语音服务 | `/playground/audio` |
 | AI 试验场 | 图像服务 | `/playground/image` |
 | 开发者工具 | 客户端接入指南 | `/tools/client-access` |
+
+### PII 脱敏管理（v3.2.0）
+
+路径：**安全管理 → PII 脱敏管理** `/security/sanitization`（权限 `security:sanitization:manage`）
+
+操作动线：
+1. 查看 request/response 子配置（PII 正则、敏感词、掩码字符）
+2. 热改后点保存（同步重建规则库，记录侧 SUMMARY 立即生效）
+3. 「试脱敏」粘贴聊天样例，确认脱敏后出现 `****`
+4. 说明：网关实时响应默认不脱敏；管理台 `/api/**` 与 AI 路径已排除
+
+### API 密钥配额操作（v3.2.0）
+
+路径：**安全管理 → API 密钥** 列表操作列 **「配额」**
+
+操作动线：
+1. 打开配额抽屉：今日用量 / 剩余量 + 预设（不限制/开发/标准/严格）
+2. 调整限额后「保存配额」（只改配额字段，不改密钥其它属性）
+3. 「重置计数」清零当日请求/Token 与速率
+4. 配额监控页可交叉跳转到 API Key 设置限额
+
+### 配额用量监控（交叉入口）
+
+路径：**数据记录 → 配额用量监控** `/monitoring/quota`
+
+- 展示多维用量与日请求/Token 限额、进度
+- 「到 API Key 设置限额」跳转 `/security/api-keys`
