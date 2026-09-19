@@ -3,12 +3,14 @@
 ## 版本统计
 
 - 总文档数: 172
-- 近7天变更: 199
+- 近7天变更: 201
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-09-19 07:01:56
+- 最后扫描: 2026-09-19 12:59:46
 
 ## 最近变更
 
+- **MODIFIED**: docs/zh/reference/changelog.md (1.0.20 → 1.0.21) - 2026-09-19
+- **MODIFIED**: docs/en/reference/changelog.md (1.0.20 → 1.0.21) - 2026-09-19
 - **MODIFIED**: docs/zh/security/data-sanitization.md (1.0.4 → 1.0.5) - 2026-09-19
 - **MODIFIED**: docs/zh/security/api-key-management.md (1.0.9 → 1.0.10) - 2026-09-19
 - **MODIFIED**: docs/zh/getting-started/web-console.md (1.0.0 → 1.0.1) - 2026-09-19
@@ -17,8 +19,6 @@
 - **MODIFIED**: docs/en/security/api-key-management.md (1.0.7 → 1.0.8) - 2026-09-19
 - **MODIFIED**: docs/en/getting-started/web-console.md (1.0.0 → 1.0.1) - 2026-09-19
 - **MODIFIED**: docs/en/api-reference/management-api.md (1.0.7 → 1.0.8) - 2026-09-19
-- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.13 → 1.0.14) - 2026-09-19
-- **MODIFIED**: docs/zh/reference/changelog.md (1.0.19 → 1.0.20) - 2026-09-19
 
 ## 依赖关系分析
 
@@ -609,6 +609,8 @@
 
 ## 所有文档版本
 
+- **docs/zh/reference/changelog.md**: v1.0.21 - 2026-09-19 (d4b98626)
+- **docs/en/reference/changelog.md**: v1.0.21 - 2026-09-19 (d4b98626)
 - **docs/zh/security/data-sanitization.md**: v1.0.5 - 2026-09-19 (2f5255a1)
 - **docs/zh/security/api-key-management.md**: v1.0.10 - 2026-09-19 (2f5255a1)
 - **docs/zh/getting-started/web-console.md**: v1.0.1 - 2026-09-19 (2f5255a1)
@@ -618,9 +620,7 @@
 - **docs/en/getting-started/web-console.md**: v1.0.1 - 2026-09-19 (2f5255a1)
 - **docs/en/api-reference/management-api.md**: v1.0.8 - 2026-09-19 (2f5255a1)
 - **docs/zh/reference/roadmap.md**: v1.0.14 - 2026-09-19 (9681218c)
-- **docs/zh/reference/changelog.md**: v1.0.20 - 2026-09-19 (9681218c)
 - **docs/en/reference/roadmap.md**: v1.0.15 - 2026-09-19 (9681218c)
-- **docs/en/reference/changelog.md**: v1.0.20 - 2026-09-19 (9681218c)
 - **docs/zh/configuration/quota.md**: v1.0.1 - 2026-09-19 (a9c26428)
 - **docs/en/configuration/quota.md**: v1.0.1 - 2026-09-19 (a9c26428)
 - **repository-description.md**: v1.0.1 - 2026-09-18 (91cff0a3)

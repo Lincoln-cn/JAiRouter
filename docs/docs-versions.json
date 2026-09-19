@@ -513,10 +513,10 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.20",
-      "LastModified": "2026-09-19T04:12:43.611562",
-      "ContentHash": "d82ad61d637694cc",
-      "GitCommit": "9681218c",
+      "Version": "1.0.21",
+      "LastModified": "2026-09-19T12:59:46.487368",
+      "ContentHash": "72d45394d733113d",
+      "GitCommit": "d4b98626",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1139,10 +1139,10 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.20",
-      "LastModified": "2026-09-19T04:12:43.893501",
-      "ContentHash": "2e9c6fc5cd75e84c",
-      "GitCommit": "9681218c",
+      "Version": "1.0.21",
+      "LastModified": "2026-09-19T12:59:46.744417",
+      "ContentHash": "5b63b5c97640bb3a",
+      "GitCommit": "d4b98626",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -5985,7 +5985,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-09-19T04:26:22.389598",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.20",
+      "NewVersion": "1.0.21",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-19T12:59:46.487379",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.20",
+      "NewVersion": "1.0.21",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-19T12:59:46.744427",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-09-19T07:01:56.367301"
+  "last_updated": "2026-09-19T12:59:46.815975"
 }
