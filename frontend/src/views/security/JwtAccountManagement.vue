@@ -72,17 +72,25 @@
           {{ formatDateTime(scope.row.updatedAt) }}
         </template>
       </el-table-column>
-      <el-table-column :label="t('accounts.actions')" min-width="100" fixed="right">
+      <el-table-column :label="t('accounts.actions')" min-width="140" fixed="right">
         <template #default="scope">
           <el-button-group>
-            <el-button size="small" type="primary" @click="editAccount(scope.row)">
+            <el-button
+              size="small"
+              type="primary"
+              :title="t('accounts.editAccount')"
+              :aria-label="t('accounts.editAccount')"
+              @click="editAccount(scope.row)"
+            >
               <el-icon><Edit /></el-icon>
             </el-button>
             <el-button
               size="small"
               type="danger"
-              @click="deleteAccount(scope.row)"
+              :title="t('accounts.messages.confirmDelete')"
+              :aria-label="t('accounts.messages.confirmDelete')"
               :disabled="scope.row.username === 'admin'"
+              @click="deleteAccount(scope.row)"
             >
               <el-icon><Delete /></el-icon>
             </el-button>
@@ -115,6 +123,7 @@
             :disabled="!!editingAccount"
             :placeholder="t('accounts.usernamePlaceholder')"
           />
+          <div class="form-hint">{{ t('accounts.usernameHint') }}</div>
         </el-form-item>
         <el-form-item :label="t('accounts.password')" prop="password">
           <el-input
@@ -393,6 +402,13 @@ onMounted(() => {
 <style scoped>
 .dialog-footer {
   text-align: right;
+}
+
+.form-hint {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ja-text-secondary, var(--el-text-color-secondary));
 }
 
 /* 统计卡片样式 */

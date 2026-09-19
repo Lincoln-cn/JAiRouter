@@ -22,6 +22,7 @@
     "password": "Password",
     "confirmPassword": "Confirm Password",
     "usernamePlaceholder": "Enter a username",
+    "usernameHint": "3–50 characters; letters, digits, or underscore recommended",
     "passwordPlaceholder": "Enter a password",
     "passwordLeaveBlank": "Leave blank to keep unchanged",
     "confirmPasswordPlaceholder": "Re-enter the password",

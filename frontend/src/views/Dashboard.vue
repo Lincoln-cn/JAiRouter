@@ -152,7 +152,7 @@
                   <el-icon class="gov-icon gov-icon--primary"><SetUp /></el-icon>
                   <span class="gov-label">{{ t('dashboard.ruleHits') }}</span>
                   <el-button link type="primary" size="small" class="gov-jump" @click="router.push('/config/rules')">
-                    {{ t('dashboard.view') }} <el-icon><ArrowRight /></el-icon>
+                    {{ t('dashboard.jumpViewRules') }} <el-icon><ArrowRight /></el-icon>
                   </el-button>
                 </div>
                 <div class="gov-metrics">
@@ -179,7 +179,7 @@
                   <el-icon class="gov-icon gov-icon--warning"><DataBoard /></el-icon>
                   <span class="gov-label">{{ t('dashboard.rateLimit') }}</span>
                   <el-button link type="primary" size="small" class="gov-jump" @click="router.push('/rate-limiters/monitoring')">
-                {{ t('dashboard.monitor') }} <el-icon><ArrowRight /></el-icon>
+                    {{ t('dashboard.jumpMonitorRateLimit') }} <el-icon><ArrowRight /></el-icon>
                   </el-button>
                 </div>
                 <div class="gov-metrics">
@@ -208,7 +208,7 @@
                   <el-icon class="gov-icon gov-icon--danger"><Warning /></el-icon>
                   <span class="gov-label">{{ t('dashboard.circuitBreaker') }}</span>
                   <el-button link type="primary" size="small" class="gov-jump" @click="router.push('/circuit-breakers/monitoring')">
-                {{ t('dashboard.monitor') }} <el-icon><ArrowRight /></el-icon>
+                    {{ t('dashboard.jumpMonitorCircuitBreaker') }} <el-icon><ArrowRight /></el-icon>
                   </el-button>
                 </div>
                 <div class="gov-metrics">
@@ -237,7 +237,7 @@
                   <el-icon class="gov-icon gov-icon--success"><Connection /></el-icon>
                   <span class="gov-label">{{ t('dashboard.loadBalancing') }}</span>
                   <el-button link type="primary" size="small" class="gov-jump" @click="router.push('/load-balancers/monitoring')">
-                {{ t('dashboard.monitor') }} <el-icon><ArrowRight /></el-icon>
+                    {{ t('dashboard.jumpMonitorLoadBalancer') }} <el-icon><ArrowRight /></el-icon>
                   </el-button>
                 </div>
                 <div class="gov-metrics">
