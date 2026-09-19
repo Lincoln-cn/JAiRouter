@@ -175,8 +175,9 @@ jobs:
         
         git add docs/docs-versions.json
         git add docs/**/*.md || true
-        git add README*.md || true
-        git add *.md || true
+        git add README.md README-ZH.md || true
+        # Do not git add root *.md: CI-generated reports and internal logs must stay untracked
+        # (see .gitignore root summary-doc rules; copies live under innerdoc/).
         
         git commit -m "docs: 更新文档版本信息 [skip ci] - 扫描了文档版本信息 - 发现 ${{ steps.scan.outputs.changes_count }} 个变更 - 自动更新版本标识和依赖关系 Co-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
         

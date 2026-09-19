@@ -123,6 +123,18 @@ config-store/
 # Internal documentation (not for public)
 innerdoc/
 
+# Root-level generated / internal summary docs — live under innerdoc/, not the repo root.
+# CI docs-version-management generates docs-version-report.md at root for artifacts/issues only.
+/docs-version-report.md
+/docs-version-data.json
+/docs-version-data.csv
+/outdated-check.txt
+/merge-log-*.md
+/repository-description.md
+/release-notes-*.md
+# Internal planning page (not the product SPA, which is frontend/index.html)
+/index.html
+
 # Site build output
 site/
 
