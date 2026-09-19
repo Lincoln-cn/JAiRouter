@@ -9,6 +9,9 @@ const callbacks: Array<(data: any) => void> = []
 // AbortController用于取消请求
 let abortController: AbortController | null = null
 
+// 重连定时器：disconnect / 再次 connect 前必须清理，避免叠加重连
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+
 // 显式拆毁标志：在 disconnectSSE 中置 true，在 connectSSE 入口重置
 // 用于在 catch 中区分"因断开产生的预期异常"与"真正的连接失败"
 let disconnecting = false
@@ -61,6 +64,26 @@ function isDisconnectError(error: unknown): boolean {
   return false
 }
 
+function clearReconnectTimer() {
+  if (reconnectTimer !== null) {
+    clearTimeout(reconnectTimer)
+    reconnectTimer = null
+  }
+}
+
+function scheduleReconnect() {
+  clearReconnectTimer()
+  if (disconnecting) {
+    return
+  }
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null
+    if (!disconnecting) {
+      connectSSE()
+    }
+  }, 5000)
+}
+
 // 连接SSE
 export function connectSSE() {
   // 如果已经连接或正在连接，则返回
@@ -70,6 +93,7 @@ export function connectSSE() {
 
   // 重置拆毁标志，允许新连接正常工作
   disconnecting = false
+  clearReconnectTimer()
 
   // 注册页面卸载监听，覆盖硬导航场景（Vue onBeforeUnmount 不会执行）
   addPageHideListener()
@@ -77,9 +101,12 @@ export function connectSSE() {
   sseStatus.value = 'connecting'
   
   try {
-    // 获取基础URL
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
-    const sseUrl = `${baseUrl}/health-status/stream`
+    // 获取基础URL（兼容 base 已含 /api 或为空/网关前缀的情况）
+    const rawBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '')
+    const ssePath = rawBase.endsWith('/api')
+      ? `${rawBase}/health-status/stream`
+      : `${rawBase}/api/health-status/stream`
+    const sseUrl = ssePath
     
     // 获取token
     const token = localStorage.getItem('admin_token')
@@ -132,8 +159,8 @@ export function connectSSE() {
             }
             console.log('SSE连接已关闭')
             sseStatus.value = 'disconnected'
-            // 尝试重连
-            setTimeout(connectSSE, 5000)
+            // 尝试重连（统一走可取消的定时器）
+            scheduleReconnect()
             return
           }
           
@@ -180,11 +207,11 @@ export function connectSSE() {
           
           console.error('读取SSE流时出错:', error)
           sseStatus.value = 'disconnected'
-          // 尝试重连
-          setTimeout(connectSSE, 5000)
+          // 尝试重连（统一走可取消的定时器）
+          scheduleReconnect()
         })
       }
-      
+
       // 开始读取流
       readStream()
     }).catch(error => {
@@ -193,11 +220,11 @@ export function connectSSE() {
         sseStatus.value = 'disconnected'
         return
       }
-      
+
       console.error('SSE连接失败:', error)
       sseStatus.value = 'disconnected'
-      // 尝试重连
-      setTimeout(connectSSE, 5000)
+      // 尝试重连（统一走可取消的定时器）
+      scheduleReconnect()
     })
   } catch (e) {
     console.error('SSE连接失败:', e)
@@ -209,6 +236,7 @@ export function connectSSE() {
 export function disconnectSSE() {
   // 设置拆毁标志，在 abort 之前，确保竞态窗口内的异常也能被识别
   disconnecting = true
+  clearReconnectTimer()
   // 移除页面卸载监听，SPA 拆毁时不再需要
   removePageHideListener()
   // 使用AbortController取消请求

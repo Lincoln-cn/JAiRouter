@@ -29,9 +29,10 @@ public class RoutingMonitorWebSocketHandler implements WebSocketHandler {
     private final ObjectMapper objectMapper;
 
     /**
-     * 事件广播器 - 使用 Sinks.Many 实现多播
+     * 事件广播器 - 有界多播缓冲（256），溢出由 emit 失败路径丢弃，避免无界占内存
      */
-    private final Sinks.Many<String> eventSink = Sinks.many().multicast().onBackpressureBuffer();
+    private final Sinks.Many<String> eventSink = Sinks.many().multicast()
+            .onBackpressureBuffer(256, false);
 
     /**
      * 注册事件回调到 EventRecorder
