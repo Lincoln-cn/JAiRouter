@@ -40,6 +40,14 @@ public final class DefaultAuthenticationConverter implements ServerAuthenticatio
             jwtToken = extractJwtToken(exchange);
         }
 
+        // 头缺失时回落 query（WebSocket 握手无法携带自定义头）
+        if (jwtToken == null && securityProperties.getJwt().isEnabled()) {
+            jwtToken = firstQueryParam(exchange, "token", "access_token");
+        }
+        if (apiKey == null && securityProperties.getApiKey().isEnabled()) {
+            apiKey = firstQueryParam(exchange, "api_key", "apiKey");
+        }
+
         // 如果同时提供了API Key和JWT令牌，则优先使用JWT
         if (jwtToken != null) {
             log.debug("提取到JWT令牌，创建JWT认证对象");
@@ -95,6 +103,22 @@ public final class DefaultAuthenticationConverter implements ServerAuthenticatio
                 if (headerValues != null && !headerValues.isEmpty()) {
                     return headerValues.get(0);
                 }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 按参数名顺序返回第一个非空 query 参数值（用于 WebSocket 握手 token）。
+     */
+    private static String firstQueryParam(final ServerWebExchange exchange, final String... names) {
+        if (names == null) {
+            return null;
+        }
+        for (String name : names) {
+            String value = exchange.getRequest().getQueryParams().getFirst(name);
+            if (value != null && !value.isBlank()) {
+                return value.trim();
             }
         }
         return null;

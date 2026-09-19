@@ -445,7 +445,9 @@ const loadHistory = async () => {
 
 const connectWebSocket = () => {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const wsUrl = `${protocol}//${window.location.host}/ws/circuit-breaker-monitor`
+  const token = localStorage.getItem('admin_token')
+  const qs = token ? `?token=${encodeURIComponent(token)}` : ''
+  const wsUrl = `${protocol}//${window.location.host}/ws/circuit-breaker-monitor${qs}`
 
   ws = new WebSocket(wsUrl)
 

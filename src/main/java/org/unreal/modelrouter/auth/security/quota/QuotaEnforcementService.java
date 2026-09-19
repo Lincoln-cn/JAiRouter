@@ -164,31 +164,35 @@ public class QuotaEnforcementService {
         if (!isEnabled() || apiKeyId == null || apiKeyId.isEmpty()) {
             return Optional.empty();
         }
-        // 单 JVM 内按 Key 串行化，避免并发请求同时通过 evaluate 再各自 reserve 造成超扣
         final Object lock = reserveLocks.computeIfAbsent(apiKeyId, key -> new Object());
         synchronized (lock) {
             try {
+                final QuotaDimension dimension = QuotaDimension.ofApiKey(apiKeyId);
+                final ApiKey apiKey = resolveApiKey(apiKeyId);
+
+                // 配置了限额：优先走 CAS 原子预留（本地槽位锁 / Redis Lua），消除 check-then-act
+                if (apiKey != null) {
+                    final Optional<QuotaLimitViolation> casViolation = ledgerService.reserveWithLimits(
+                            QuotaRequest.of(dimension, estimatedTokens),
+                            apiKey.getDailyRequestLimit(),
+                            apiKey.getDailyTokenLimit(),
+                            apiKey.getRateLimitPerMinute());
+                    if (casViolation.isPresent()) {
+                        log.warn("配额超限，拒绝请求: apiKeyId={}, {}", apiKeyId, casViolation.get().describe());
+                        return casViolation;
+                    }
+                    QuotaReservation.attach(request,
+                            new QuotaReservation(ledgerService, dimension, Math.max(0L, estimatedTokens)));
+                    return Optional.empty();
+                }
+
+                // 无 Key 配置：沿用普通预留（不限额）
                 final Optional<QuotaLimitViolation> violation = evaluate(apiKeyId, estimatedTokens);
                 if (violation.isPresent()) {
                     log.warn("配额超限，拒绝请求: apiKeyId={}, {}", apiKeyId, violation.get().describe());
                     return violation;
                 }
-                final QuotaDimension dimension = QuotaDimension.ofApiKey(apiKeyId);
-                final QuotaDecision decision =
-                        ledgerService.reserve(QuotaRequest.of(dimension, estimatedTokens));
-
-                // 分布式模式：预留后复读权威计数（用量已含本笔），超限则回滚，抑制跨实例 TOCTOU 双花
-                if (ledgerService.isDistributed() && decision != null && !decision.degraded()) {
-                    final Optional<QuotaLimitViolation> postViolation =
-                            evaluateAfterReserve(apiKeyId);
-                    if (postViolation.isPresent()) {
-                        ledgerService.settle(new QuotaSettlement(dimension, estimatedTokens, 0L, true));
-                        log.warn("配额预留后超限，已回滚: apiKeyId={}, {}",
-                                apiKeyId, postViolation.get().describe());
-                        return postViolation;
-                    }
-                }
-
+                ledgerService.reserve(QuotaRequest.of(dimension, estimatedTokens));
                 QuotaReservation.attach(request, new QuotaReservation(ledgerService, dimension, estimatedTokens));
                 return Optional.empty();
             } catch (Exception e) {

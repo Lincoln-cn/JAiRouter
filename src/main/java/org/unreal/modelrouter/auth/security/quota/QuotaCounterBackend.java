@@ -63,6 +63,25 @@ public interface QuotaCounterBackend {
     Mono<long[]> incrementIfPresent(QuotaCounterKey key, long requests, long tokens);
 
     /**
+     * 限额 CAS 累加：累加后若超过任一正数限额则不落账并返回空 {@link Mono}。
+     *
+     * <p>{@code maxRequests}/{@code maxTokens} 为 {@code 0} 表示该项不限制。
+     * 分布式实现须在存储端原子完成「检查 + 累加/回滚」，禁止 check-then-act。</p>
+     *
+     * @param key          计数键
+     * @param requests     请求数增量
+     * @param tokens       token 增量
+     * @param maxRequests  请求上限（0=不限）
+     * @param maxTokens    token 上限（0=不限）
+     * @return 累加后的 {@code [requests, tokens]}；超限时为空 {@link Mono}
+     */
+    Mono<long[]> incrementWithLimit(QuotaCounterKey key,
+                                    long requests,
+                                    long tokens,
+                                    long maxRequests,
+                                    long maxTokens);
+
+    /**
      * 读取一个桶的当前计数。
      *
      * @param key 计数键

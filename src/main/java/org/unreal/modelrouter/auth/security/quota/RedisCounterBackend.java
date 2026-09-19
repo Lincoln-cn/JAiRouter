@@ -90,11 +90,36 @@ public final class RedisCounterBackend implements QuotaCounterBackend {
         "if not tokens then tokens = '0' end",
         "return requests .. ':' .. tokens");
 
+    /**
+     * 限额 CAS 脚本：累加后若超过 ARGV[4]/ARGV[5]（&gt;0 表示生效）则回滚并返回 {@code OVER}。
+     * ARGV: [reqDelta, tokDelta, ttlSeconds, maxRequests, maxTokens]
+     */
+    static final String INCREMENT_WITH_LIMIT_SCRIPT = String.join("\n",
+        "local requests = redis.call('HINCRBY', KEYS[1], '" + FIELD_REQUESTS + "', ARGV[1])",
+        "local tokens = redis.call('HINCRBY', KEYS[1], '" + FIELD_TOKENS + "', ARGV[2])",
+        "if requests < 0 then redis.call('HSET', KEYS[1], '" + FIELD_REQUESTS + "', 0) requests = 0 end",
+        "if tokens < 0 then redis.call('HSET', KEYS[1], '" + FIELD_TOKENS + "', 0) tokens = 0 end",
+        "if redis.call('TTL', KEYS[1]) == -1 then redis.call('EXPIRE', KEYS[1], ARGV[3]) end",
+        "local maxReq = tonumber(ARGV[4]) or 0",
+        "local maxTok = tonumber(ARGV[5]) or 0",
+        "if (maxReq > 0 and requests > maxReq) or (maxTok > 0 and tokens > maxTok) then",
+        "  redis.call('HINCRBY', KEYS[1], '" + FIELD_REQUESTS + "', -tonumber(ARGV[1]))",
+        "  redis.call('HINCRBY', KEYS[1], '" + FIELD_TOKENS + "', -tonumber(ARGV[2]))",
+        "  return 'OVER'",
+        "end",
+        "return requests .. ':' .. tokens");
+
+    /** 超限标记（{@link #INCREMENT_WITH_LIMIT_SCRIPT} 返回值） */
+    static final String OVER_MARKER = "OVER";
+
     private static final RedisScript<String> INCREMENT =
         RedisScript.of(INCREMENT_SCRIPT, String.class);
 
     private static final RedisScript<String> INCREMENT_IF_PRESENT =
         RedisScript.of(INCREMENT_IF_PRESENT_SCRIPT, String.class);
+
+    private static final RedisScript<String> INCREMENT_WITH_LIMIT =
+        RedisScript.of(INCREMENT_WITH_LIMIT_SCRIPT, String.class);
 
     private static final RedisScript<String> READ =
         RedisScript.of(READ_SCRIPT, String.class);
@@ -139,6 +164,31 @@ public final class RedisCounterBackend implements QuotaCounterBackend {
         return redisTemplate.execute(INCREMENT_IF_PRESENT, List.of(redisKey), args)
             .next()
             .flatMap(payload -> toValues(payload).<Mono<long[]>>map(Mono::just).orElseGet(Mono::empty));
+    }
+
+    @Override
+    public Mono<long[]> incrementWithLimit(final QuotaCounterKey key,
+                                           final long requests,
+                                           final long tokens,
+                                           final long maxRequests,
+                                           final long maxTokens) {
+        final String redisKey = keyOf(key);
+        final List<String> args = List.of(
+            String.valueOf(requests),
+            String.valueOf(tokens),
+            String.valueOf(ttlSeconds(key.window())),
+            String.valueOf(Math.max(0L, maxRequests)),
+            String.valueOf(Math.max(0L, maxTokens)));
+        return redisTemplate.execute(INCREMENT_WITH_LIMIT, List.of(redisKey), args)
+            .next()
+            .flatMap(payload -> {
+                if (payload == null || payload.isBlank() || OVER_MARKER.equals(payload)) {
+                    return Mono.empty();
+                }
+                return toValues(payload)
+                    .map(Mono::just)
+                    .orElseGet(() -> Mono.error(new IllegalStateException("Redis 限额脚本返回非法结果: " + payload)));
+            });
     }
 
     @Override

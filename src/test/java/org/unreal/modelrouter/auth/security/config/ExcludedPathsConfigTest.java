@@ -66,6 +66,20 @@ class ExcludedPathsConfigTest {
     }
 
     @Test
+    @DisplayName("P1：/ws/** 不得排除认证（监控 WebSocket 需校验 token）")
+    void wsPaths_mustNotBeAuthExcluded() {
+        assertFalse(ExcludedPathsConfig.isAuthExcluded("/ws/routing-monitor"),
+                "/ws/** 应由 Spring Security 认证保护，不得进入认证排除列表");
+        assertFalse(ExcludedPathsConfig.isAuthExcluded("/ws/circuit-breaker-monitor"));
+    }
+
+    @Test
+    @DisplayName("P1：/api/health-status/** 不得排除认证")
+    void healthStatusSse_mustNotBeAuthExcluded() {
+        assertFalse(ExcludedPathsConfig.isAuthExcluded("/api/health-status/stream"));
+    }
+
+    @Test
     @DisplayName("设计说明：记录侧脱敏不依赖本过滤器排除列表")
     void recordSideSanitization_isIndependentOfExcludedPaths() {
         // 契约文档化：调用历史 SUMMARY 走 sanitizeForStorage，即使路径被排除也应脱敏
