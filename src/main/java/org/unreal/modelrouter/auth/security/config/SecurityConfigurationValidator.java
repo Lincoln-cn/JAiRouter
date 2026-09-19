@@ -27,6 +27,15 @@ public class SecurityConfigurationValidator {
             "HS256", "HS384", "HS512", "RS256", "RS384", "RS512"
     );
 
+    /**
+     * 出厂/文档中的已知默认 JWT 密钥（R2-P0-01）。
+     * 未替换时任何持有源码者均可伪造令牌，必须在配置校验阶段拒绝。
+     */
+    public static final List<String> KNOWN_DEFAULT_JWT_SECRETS = List.of(
+            "ThisIsADefaultSecretKeyForDevOnly12345678",
+            "dev-secret-key-for-testing-only-32-characters-minimum"
+    );
+
     // 支持的日志级别
     private static final List<String> SUPPORTED_LOG_LEVELS = List.of(
             "TRACE", "DEBUG", "INFO", "WARN", "ERROR"
@@ -161,6 +170,9 @@ public class SecurityConfigurationValidator {
         // 验证密钥
         if (config.getSecret() == null || config.getSecret().length() < 32) {
             result.addError("JWT密钥长度至少32个字符；请设置环境变量 JWT_SECRET（可用 openssl rand -base64 32 或镜像内置 --generate-key 生成）");
+        } else if (KNOWN_DEFAULT_JWT_SECRETS.contains(config.getSecret().trim())) {
+            // R2-P0-01：长度合规但仍是公开默认值 → 伪造风险
+            result.addError("JWT密钥仍为出厂默认值，存在令牌伪造风险；请设置环境变量 JWT_SECRET（openssl rand -base64 32）");
         } else if (config.getSecret().length() > 512) {
             result.addWarning("JWT密钥长度超过512个字符，可能影响性能");
         }

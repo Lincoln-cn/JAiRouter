@@ -16,7 +16,8 @@ jairouter:
       # JWT 令牌头名称
       jwt-header: "Jairouter_Token"
       
-      # JWT 密钥（必须使用环境变量，长度 >= 32 字符）
+      # JWT 密钥（必须使用环境变量，长度 >= 32 字符；禁止使用出厂默认值）
+      # R2-P0-01：默认占位仅用于本地开发；SecurityConfigurationValidator 会拒绝已知默认密钥
       secret: "${JWT_SECRET:ThisIsADefaultSecretKeyForDevOnly12345678}"
       
       # JWT 算法
@@ -41,13 +42,15 @@ jairouter:
       accounts:
         - username: "admin"
           # 密码必须使用环境变量（首次启动时设置）
+          # R2-P0-02：生产必须替换 INITIAL_ADMIN_PASSWORD，禁止沿用文档默认值
           password: "{noop}${INITIAL_ADMIN_PASSWORD:ChangeMeOnFirstStartup123456}"
           roles: ["ADMIN", "USER"]
           enabled: true
-        - username: "user"
-          password: "{noop}user123456"
-          roles: ["USER"]
-          enabled: true
+        # R2-P0-02：移除硬编码 user 账户口令；如需本地账号请通过管理 API 创建
+        # - username: "user"
+        #   password: "{noop}${INITIAL_USER_PASSWORD:user123456}"
+        #   roles: ["USER"]
+        #   enabled: false
 
       # JWT 持久化配置
       persistence:

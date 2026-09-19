@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.router.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -24,10 +25,37 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 调试用 multipart 端点（R2-P0-03）。
+ *
+ * <p>默认关闭：仅在 {@code jairouter.debug.endpoints.enabled=true} 时装配。
+ * 启用时凭据字段一律脱敏，禁止把明文 Token 写入响应或日志。</p>
+ */
 @Slf4j
 @RestController
 @RequestMapping("/v1/debug")
+@ConditionalOnProperty(name = "jairouter.debug.endpoints.enabled", havingValue = "true")
 public class DebugMultipartController {
+
+    /** 默认是否启用调试端点（false = 生产默认关闭） */
+    public static final boolean DEBUG_ENDPOINTS_ENABLED_BY_DEFAULT = false;
+
+    /**
+     * 凭据脱敏：保留首尾各 4 位，中间打码；null/空白返回 null。
+     */
+    public static String redactSecret(final String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String value = raw.trim();
+        if (value.isEmpty()) {
+            return null;
+        }
+        if (value.length() <= 8) {
+            return "***";
+        }
+        return value.substring(0, 4) + "***" + value.substring(value.length() - 4);
+    }
 
     /**
      * 返回请求元信息（header/content-type/boundary等，全部用字符串，避免CodecException）
@@ -38,16 +66,25 @@ public class DebugMultipartController {
 
         Map<String, Object> debugInfo = new HashMap<>();
 
-        // 收集请求头信息
+        // 收集请求头信息（敏感头脱敏，禁止明文回显/落日志）
         HttpHeaders headers = exchange.getRequest().getHeaders();
         debugInfo.put("contentType", headers.getContentType() != null ? headers.getContentType().toString() : null);
         debugInfo.put("contentLength", headers.getContentLength());
-        debugInfo.put("allHeaders", headers.toSingleValueMap());
+        Map<String, String> safeHeaders = new LinkedHashMap<>();
+        headers.toSingleValueMap().forEach((k, v) -> {
+            String lower = k.toLowerCase();
+            if (lower.contains("authorization") || lower.contains("token") || lower.contains("api-key")
+                    || lower.contains("api_key") || lower.equals("cookie")) {
+                safeHeaders.put(k, redactSecret(v));
+            } else {
+                safeHeaders.put(k, v);
+            }
+        });
+        debugInfo.put("allHeaders", safeHeaders);
 
-        // 认证头信息
-        debugInfo.put("xApiKey", headers.getFirst("X-API-Key"));
-        debugInfo.put("jairouterToken", headers.getFirst("Jairouter_token"));
-        debugInfo.put("authorization", headers.getFirst("Authorization"));
+        debugInfo.put("xApiKey", redactSecret(headers.getFirst("X-API-Key")));
+        debugInfo.put("jairouterToken", redactSecret(headers.getFirst("Jairouter_token")));
+        debugInfo.put("authorization", redactSecret(headers.getFirst("Authorization")));
 
         // 请求信息
         debugInfo.put("method", exchange.getRequest().getMethod() != null
@@ -68,7 +105,7 @@ public class DebugMultipartController {
             }
         }
 
-        log.info("调试信息: {}", debugInfo);
+        log.debug("调试信息（已脱敏）: {}", debugInfo);
 
         return Mono.just(ResponseEntity.ok(debugInfo));
     }

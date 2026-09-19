@@ -162,6 +162,15 @@ public class PermissionRuleRegistry {
                 // ===== 配额监控（QuotaMonitoringController） =====
                 PermissionRule.get("/api/monitoring/quota/**", PermissionCodes.MONITORING_QUOTA_READ),
 
+                // ===== R2-P1-03：异常管理（原未登记，任意登录用户可访问） =====
+                PermissionRule.get("/api/exceptions/**", PermissionCodes.MONITORING_EXCEPTIONS_READ),
+                PermissionRule.write("/api/exceptions/**", PermissionCodes.MONITORING_EXCEPTIONS_WRITE),
+
+                // ===== R2-P1-03：配置校验/来源指南 =====
+                PermissionRule.get("/api/config/sources", PermissionCodes.CONFIG_VALIDATION_READ),
+                PermissionRule.get("/api/config/environment-variables", PermissionCodes.CONFIG_VALIDATION_READ),
+                PermissionRule.get("/api/config/validation-rules", PermissionCodes.CONFIG_VALIDATION_READ),
+
                 // ===== PII / 脱敏配置管理（SanitizationConfigController） =====
                 PermissionRule.any("/api/config/sanitization/**", PermissionCodes.SECURITY_SANITIZATION_MANAGE)
         );
