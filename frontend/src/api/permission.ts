@@ -84,7 +84,8 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
   {
     module: 'permissions.groups.security',
     codes: [
-      'security:apikeys:manage', 'security:jwttokens:manage',
+      'security:apikeys:manage', 'security:sanitization:manage',
+      'security:jwttokens:manage',
       'security:blacklist:manage', 'security:audit:read'
     ]
   },

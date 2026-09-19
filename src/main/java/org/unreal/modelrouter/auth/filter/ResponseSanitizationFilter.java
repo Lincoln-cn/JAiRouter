@@ -28,8 +28,13 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
 /**
- * 响应数据脱敏过滤器
- * 负责对AI模型返回的响应数据进行脱敏处理
+ * 响应数据脱敏过滤器（网关 HTTP JSON 响应路径，可选）。
+ *
+ * <p><b>设计边界</b>：聊天/调用历史/日志中的 PII 由
+ * {@code SanitizationService.sanitizeForStorage} 在记录链路处理，不依赖本过滤器。
+ * 本过滤器默认关闭（{@code jairouter.security.sanitization.response.enabled=false}），
+ * 且 {@link ExcludedPathsConfig#isDataMaskExcluded(String)} 已排除管理台 {@code /api/**}
+ * 与 AI 实时路径 {@code /api/v1/**}、{@code /v1/**}，避免改写客户端模型输出或管理响应。</p>
  */
 @Slf4j
 @Component

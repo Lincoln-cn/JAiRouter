@@ -120,9 +120,10 @@ JAiRouter 支持全面的 API Key 配额管理功能，包括每日 Token 使用
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `daily-token-limit` | long | -1（无限制） | 每日 Token 使用上限 |
-| `rate-limit-per-minute` | int | -1（无限制） | 每分钟请求次数上限 |
-| `quota-alert-threshold` | int | 80 | 告警阈值百分比（0-100） |
+| `daily-token-limit` | long | 0（无限制） | 每日 Token 使用上限 |
+| `daily-request-limit` | long | 0（无限制） | 每日请求数上限 |
+| `rate-limit-per-minute` | int | 0（无限制） | 每分钟请求次数上限 |
+| `quota-alert-threshold` | double | 0.8 | 告警阈值（0.0–1.0，如 0.8 = 80%） |
 
 #### 配置示例
 
@@ -139,7 +140,7 @@ jairouter:
           enabled: true
           daily-token-limit: 100000      # 每日 10 万 Token
           rate-limit-per-minute: 60      # 每分钟 60 次请求
-          quota-alert-threshold: 80      # 使用量达到 80% 时告警
+          quota-alert-threshold: 0.8     # 使用量达到 80% 时告警（0.0–1.0）
 ```
 
 #### 配额管理工作原理
@@ -163,7 +164,7 @@ jairouter:
 
 2. **审计日志**：配额相关事件会记录在审计日志中。
 
-3. **管理 API**：通过管理 API 端点查询配额状态。
+3. **控制台**：安全管理 → API 密钥设置限额与告警/重置；数据记录 → 配额用量监控查看账本用量与限额对照。
 
 ### 权限级别说明
 
@@ -365,7 +366,7 @@ API Key 存储包含以下元数据：
   "enabled": true,
   "dailyTokenLimit": 100000,
   "rateLimitPerMinute": 100,
-  "quotaAlertThreshold": 80,
+  "quotaAlertThreshold": 0.8,
   "todayTokenUsage": 15000,
   "todayRequestCount": 200,
   "lastResetTime": "2025-01-15T00:00:00Z",

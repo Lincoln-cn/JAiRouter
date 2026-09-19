@@ -116,6 +116,7 @@ export const menuGroups: MenuGroup[] = [
     icon: 'lock',
     children: [
       { path: '/security/api-keys', title: 'menu.apiKeys', permission: 'security:apikeys:manage' },
+      { path: '/security/sanitization', title: 'menu.sanitization', permission: 'security:sanitization:manage' },
       { path: '/security/jwt-tokens', title: 'menu.jwtTokens', permission: 'security:jwttokens:manage' },
       { path: '/security/blacklist', title: 'menu.blacklist', permission: 'security:blacklist:manage' },
       { path: '/security/audit-logs', title: 'menu.auditLogs', permission: 'security:audit:read' }

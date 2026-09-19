@@ -9,7 +9,19 @@
 
 ## Overview
 
-Starting with **v3.1.0**, JAiRouter ships a **quota ledger**: it tracks request counts and token usage across multiple time windows (minute / hour / day / month) in the request path, providing the data foundation for future limit enforcement.
+JAiRouter ships a **quota ledger**: it tracks request counts and token usage across multiple time windows (minute / hour / day / month) in the request path. When enabled, the ledger also drives limit enforcement against existing API Key limits.
+
+## Operator workflow (where limits live)
+
+| Step | Where | What it does |
+|------|-------|--------------|
+| 1. Set limits | **Security → API Keys** edit form | `dailyRequestLimit` / `dailyTokenLimit` / `rateLimitPerMinute` / `quotaAlertThreshold` — **not** on the Quota config page |
+| 2. Enable ledger (optional) | **Traffic → Quota Runtime Config** `/config/quota` | Hot-edit `enabled` / `failOpen` / `windows`; ledger defaults to off |
+| 3. Observe usage | **Data Records → Quota Usage Monitoring** `/monitoring/quota` | Multi-dimensional usage + limit/progress columns |
+| 4. Alerts & reset | **Security → API Keys** | Quota alerts list, reset daily counters |
+
+- Limit mapping: DAY window → daily request/token caps; MINUTE window → rate limit; `0` means unlimited.
+- With the ledger off, API Key auth still enforces the same limits via in-memory counters + token bucket.
 
 - **Off by default (opt-in)**: `jairouter.quota.enabled` defaults to `false` — zero behavior change. No accumulation, no database access, no Redis access; behavior is identical to v3.0.x
 - **Pluggable counter backend**: defaults to in-process `LocalCounterBackend` (`LongAdder`); only when `distributed.enabled=true` is `RedisCounterBackend` assembled as the cross-instance authoritative counter

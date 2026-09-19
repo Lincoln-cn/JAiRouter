@@ -9,7 +9,19 @@
 
 ## 概述
 
-JAiRouter 从 **v3.1.0** 起提供**配额账本（quota ledger）**：在请求链路中按多维窗口（分钟 / 小时 / 天 / 月）累计请求数与 token 用量，为后续限额判定提供数据基座。
+JAiRouter 从 **v3.1.0** 起提供**配额账本（quota ledger）**：在请求链路中按多维窗口（分钟 / 小时 / 天 / 月）累计请求数与 token 用量，并在账本启用时接入限额判定。
+
+## 操作闭环（限额配在哪里）
+
+| 步骤 | 位置 | 作用 |
+|------|------|------|
+| 1. 设置限额 | **安全管理 → API 密钥** 编辑表单 | `dailyRequestLimit` / `dailyTokenLimit` / `rateLimitPerMinute` / `quotaAlertThreshold`，**配额不在 Quota 配置页设置** |
+| 2. 开启账本（可选） | **流量治理 → 配额运行时配置** `/config/quota` | 热改 `enabled` / `failOpen` / `windows`；账本默认关闭 |
+| 3. 查看用量 | **数据记录 → 配额用量监控** `/monitoring/quota` | 多维用量 + 与 API Key 限额对照（进度条） |
+| 4. 告警与重置 | **安全管理 → API 密钥** | 配额告警列表、重置每日计数 |
+
+- 限额判定映射：DAY 窗口 → 日请求/日 Token；MINUTE 窗口 → 每分钟速率；`0` 表示不限制。
+- 账本关闭时仍走 API Key 认证路径的既有校验（内存统计 + TokenBucket）。
 
 - **默认关闭（opt-in）**：`jairouter.quota.enabled` 默认 `false`，即零行为变更——不累加、不查库、不落库，行为与 v3.0.x 完全一致
 - **计数后端可选**：默认为进程内 `LocalCounterBackend`（`LongAdder`），仅 `distributed.enabled=true` 时才装配 `RedisCounterBackend` 作为跨实例权威计数

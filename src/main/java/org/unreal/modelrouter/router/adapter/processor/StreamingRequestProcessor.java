@@ -248,10 +248,10 @@ public class StreamingRequestProcessor {
                         String rawResponseBody = truncate(contentBuilder.toString());
                         String responseBodyForRecord = rawResponseBody;
 
-                        // SUMMARY 级别：对响应体进行脱敏处理
+                        // SUMMARY 级别：记录链路使用存储脱敏
                         if (recordLevel == RecordLevel.SUMMARY && sanitizationService != null && rawResponseBody != null) {
                             try {
-                                String sanitized = sanitizationService.sanitizeResponse(
+                                String sanitized = sanitizationService.sanitizeForStorage(
                                         rawResponseBody, "application/json")
                                         .block(java.time.Duration.ofSeconds(5));
                                 if (sanitized != null) {

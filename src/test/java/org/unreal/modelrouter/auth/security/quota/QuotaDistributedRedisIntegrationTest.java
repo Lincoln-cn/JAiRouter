@@ -229,7 +229,11 @@ class QuotaDistributedRedisIntegrationTest {
 
         assertTrue(second.getSeconds() < first.getSeconds(),
             "TTL 不得被后续写入续期: first=" + first.getSeconds() + ", second=" + second.getSeconds());
-        assertEquals(backend.ttlSeconds(QuotaWindow.DAY), first.getSeconds() + 1L);
+        // Redis EXPIRE/TTL 秒精度：同一秒内读到 N 或 N-1 都合法
+        final long dayExpected = backend.ttlSeconds(QuotaWindow.DAY);
+        assertTrue(first.getSeconds() == dayExpected || first.getSeconds() == dayExpected - 1L,
+            "DAY 首次写入 TTL 应为 " + dayExpected + " 或 " + (dayExpected - 1L)
+                + "，实际 " + first.getSeconds());
     }
 
     @Test
@@ -244,7 +248,11 @@ class QuotaDistributedRedisIntegrationTest {
         backend.increment(key, 1L, 1L).block(WAIT);
         final Duration ttl = template.getExpire(backend.keyOf(key)).block(WAIT);
         assertNotNull(ttl);
-        assertEquals(backend.ttlSeconds(QuotaWindow.MONTH), ttl.getSeconds() + 1L);
+        // Redis EXPIRE/TTL 秒精度：同一秒内读到 N 或 N-1 都合法，不能假定必然已过 1 秒
+        final long monthExpected = backend.ttlSeconds(QuotaWindow.MONTH);
+        assertTrue(ttl.getSeconds() == monthExpected || ttl.getSeconds() == monthExpected - 1L,
+            "MONTH TTL 应为 " + monthExpected + " 或 " + (monthExpected - 1L)
+                + "，实际 " + ttl.getSeconds());
     }
 
     /**

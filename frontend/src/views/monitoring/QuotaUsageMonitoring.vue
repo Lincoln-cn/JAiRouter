@@ -144,7 +144,12 @@
     <!-- 用量明细表格 -->
     <el-card shadow="hover" style="margin-bottom: 16px">
       <template #header>
-        <span class="card-title">{{ t('quotaMonitoring.usageTitle') }}</span>
+        <div class="card-header-row">
+          <span class="card-title">{{ t('quotaMonitoring.usageTitle') }}</span>
+          <el-button size="small" type="primary" link @click="goApiKeyLimits">
+            {{ t('quotaMonitoring.gotoApiKeyLimits') }}
+          </el-button>
+        </div>
       </template>
       <el-table
         :data="usageList"
@@ -168,6 +173,25 @@
         <el-table-column prop="tokenCount" :label="t('quotaMonitoring.tokenCountColumn')" width="120" align="right">
           <template #default="{ row }">
             {{ row.tokenCount.toLocaleString() }}
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('quotaMonitoring.limitRequestColumn')" width="120" align="right">
+          <template #default="{ row }">
+            {{ formatLimit(limitMap.get(row.dimensions?.apiKeyId)?.dailyRequestLimit) }}
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('quotaMonitoring.limitTokenColumn')" width="120" align="right">
+          <template #default="{ row }">
+            {{ formatLimit(limitMap.get(row.dimensions?.apiKeyId)?.dailyTokenLimit) }}
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('quotaMonitoring.progressColumn')" min-width="140">
+          <template #default="{ row }">
+            <el-progress
+              :percentage="usagePercent(row)"
+              :status="usagePercent(row) >= 80 ? 'exception' : undefined"
+              :stroke-width="10"
+            />
           </template>
         </el-table-column>
       </el-table>
@@ -206,6 +230,7 @@ import {
 } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import StatCard from '@/components/StatCard.vue'
+import { useRouter } from 'vue-router'
 import {
   getQuotaStatus,
   getQuotaUsage,
@@ -213,14 +238,53 @@ import {
   type QuotaUsageItem,
   type QuotaUsageQuery,
 } from '@/api/quota'
+import { getQuotaOverview } from '@/api/apiKey'
+import type { QuotaUsageDetail } from '@/types'
 
 const { t } = useI18n()
+const router = useRouter()
 
 const loading = ref(false)
 const loadingUsage = ref(false)
 const errorOccurred = ref(false)
 const status = ref<QuotaStatus | null>(null)
 const usageList = ref<QuotaUsageItem[]>([])
+const limitMap = ref(new Map<string, QuotaUsageDetail>())
+
+const goApiKeyLimits = () => {
+  router.push('/security/api-keys')
+}
+
+const formatLimit = (value?: number | null) => {
+  if (value == null || value === 0) return t('quotaMonitoring.unlimited')
+  return Number(value).toLocaleString()
+}
+
+const usagePercent = (row: QuotaUsageItem) => {
+  const keyId = row.dimensions?.apiKeyId
+  if (!keyId) return 0
+  const limits = limitMap.value.get(keyId)
+  if (!limits) return 0
+  if (row.window === 'DAY') {
+    const reqLimit = limits.dailyRequestLimit || 0
+    const tokLimit = limits.dailyTokenLimit || 0
+    const reqPct = reqLimit > 0 ? (row.requestCount / reqLimit) * 100 : 0
+    const tokPct = tokLimit > 0 ? (row.tokenCount / tokLimit) * 100 : 0
+    return Math.min(100, Math.round(Math.max(reqPct, tokPct)))
+  }
+  return 0
+}
+
+const loadLimits = async () => {
+  try {
+    const overview = await getQuotaOverview()
+    const map = new Map<string, QuotaUsageDetail>()
+    overview.forEach(item => map.set(item.keyId, item))
+    limitMap.value = map
+  } catch {
+    limitMap.value = new Map()
+  }
+}
 
 const windowOptions = ['MINUTE', 'HOUR', 'DAY', 'MONTH']
 
@@ -266,7 +330,7 @@ const loadUsage = async () => {
 const loadAll = async () => {
   loading.value = true
   try {
-    await Promise.all([loadStatus(), loadUsage()])
+    await Promise.all([loadStatus(), loadUsage(), loadLimits()])
   } finally {
     loading.value = false
   }
@@ -279,6 +343,12 @@ onMounted(loadAll)
 .card-title {
   font-weight: 600;
   font-size: 15px;
+}
+
+.card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .filter-form {

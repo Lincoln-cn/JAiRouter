@@ -58,7 +58,14 @@ public class ExcludedPathsConfig {
             "/ws/**"                  // WebSocket端点（路由监控等）
         );
         
-        // 数据脱敏排除路径
+        // 数据脱敏排除路径（ResponseSanitizationFilter 网关响应过滤器）
+        //
+        // 设计裁决（v3.1.x）：PII 主战场是「聊天调用历史 / 日志 / 追踪记录」中的用户数据，
+        // 由 SanitizationService.sanitizeForStorage 在 SUMMARY 记录链路处理，不经本过滤器。
+        // 本过滤器只作用于「未被排除的 HTTP JSON 响应」，因此：
+        //  1) AI 实时推理路径（/api/v1/**）排除 —— 不改写客户端模型输出；
+        //  2) 管理台 /api/** 全部排除 —— 管理接口返回配置/密钥元数据时不得被掩码破坏；
+        //  3) 静态资源与运维端点排除。
         DATA_MASKING_EXCLUDED_PATHS = Set.of(
             "/actuator/",
             "/health",
@@ -71,27 +78,19 @@ public class ExcludedPathsConfig {
             "/css/",
             "/js/",
             "/images/",
-            // 排除AI模型接口路径的数据脱敏（但仍需要认证！）
-            // 注意：实际请求路径是 /api/v1/xxx，不是 /v1/xxx
-            "/api/v1/chat/",
-            "/api/v1/embeddings",
-            "/api/v1/rerank",
-            "/api/v1/audio/",
-            "/api/v1/images/",
-            "/api/v1/debug/",
             "/admin",
-            // 排除认证端点
-            "/api/auth/jwt/login",
-            "/api/config/",
-            "/api/tracing/"
+            // 管理台与配置 API：管理控制台需要看到真实配置值
+            "/api/",
+            // AI 实时推理（覆盖 /api/v1/chat 等；若未来有非 /api 的 AI 入口再单独登记）
+            "/v1/"
         );
 
-        // 数据脱敏排除路径模式
+        // 数据脱敏排除路径模式（Ant 风格，补充前缀集合未覆盖的形态）
         DATA_MASKING_EXCLUDED_PATTERNS = List.of(
             "/actuator/**",
-            "/api/auth/jwt/login",
-            "/api/auth/jwt/refresh",
-            "/api/security/jwt/accounts/**"
+            "/api/**",
+            "/v1/**",
+            "/admin/**"
         );
     }
     

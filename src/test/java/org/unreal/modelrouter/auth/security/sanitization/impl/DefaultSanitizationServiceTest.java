@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.auth.security.sanitization.impl;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -514,59 +515,115 @@ class DefaultSanitizationServiceTest {
     
     @Test
     void testInitializeRules_ResponseDisabled_NoResponseRulesLoaded() {
-        // 关闭响应脱敏
+        // v3.2.0：response.enabled 只控制网关 sanitizeResponse；配置规则仍加载供记录侧使用
         securityProperties.getSanitization().getResponse().setEnabled(false);
-        
+
         sanitizationService.initializeRules();
-        
+
         StepVerifier.create(sanitizationService.getAllRules())
                 .assertNext(rules -> {
-                    // 不应有响应规则
                     boolean hasResponseRules = rules.stream()
                             .anyMatch(rule -> rule.getRuleId().startsWith("response-"));
-                    assertFalse(hasResponseRules, "响应脱敏关闭时不应加载响应规则");
-                    
-                    // 请求规则仍然存在（默认 enabled=true）
+                    assertTrue(hasResponseRules, "配置中的 response PII/敏感词应加载（记录侧可用）");
+
                     boolean hasRequestRules = rules.stream()
                             .anyMatch(rule -> rule.getRuleId().startsWith("request-"));
-                    assertTrue(hasRequestRules, "请求脱敏开启时应加载请求规则");
+                    assertTrue(hasRequestRules, "请求脱敏配置规则仍应加载");
                 })
                 .verifyComplete();
     }
     
     @Test
     void testInitializeRules_RequestDisabled_NoRequestRulesLoaded() {
-        // 关闭请求脱敏
+        // v3.2.0：request.enabled 只控制网关 sanitizeRequest；
+        // 配置中的 PII/敏感词仍加载，供记录侧 sanitizeForStorage 与管理端展示
         securityProperties.getSanitization().getRequest().setEnabled(false);
-        
+
         sanitizationService.initializeRules();
-        
+
         StepVerifier.create(sanitizationService.getAllRules())
                 .assertNext(rules -> {
-                    // 不应有请求规则
                     boolean hasRequestRules = rules.stream()
                             .anyMatch(rule -> rule.getRuleId().startsWith("request-"));
-                    assertFalse(hasRequestRules, "请求脱敏关闭时不应加载请求规则");
-                    
-                    // 响应规则仍然存在（默认 enabled=true）
+                    assertTrue(hasRequestRules, "配置中的 request PII/敏感词应加载（记录侧可用）");
+
                     boolean hasResponseRules = rules.stream()
                             .anyMatch(rule -> rule.getRuleId().startsWith("response-"));
                     assertTrue(hasResponseRules, "响应脱敏开启时应加载响应规则");
                 })
                 .verifyComplete();
     }
-    
+
     @Test
     void testInitializeRules_BothDisabled_NoRulesLoaded() {
         securityProperties.getSanitization().getRequest().setEnabled(false);
         securityProperties.getSanitization().getResponse().setEnabled(false);
-        
+        // 清空模式，确保「无配置规则」时库为空
+        securityProperties.getSanitization().getRequest().setSensitiveWords(List.of());
+        securityProperties.getSanitization().getRequest().setPiiPatterns(List.of());
+        securityProperties.getSanitization().getResponse().setSensitiveWords(List.of());
+        securityProperties.getSanitization().getResponse().setPiiPatterns(List.of());
+
         sanitizationService.initializeRules();
-        
+
         StepVerifier.create(sanitizationService.getAllRules())
                 .assertNext(rules -> {
-                    assertTrue(rules.isEmpty(), "请求和响应脱敏都关闭时不应加载任何规则");
+                    assertTrue(rules.isEmpty(), "请求和响应均无配置模式时规则库为空");
                 })
                 .verifyComplete();
+    }
+
+    @Test
+    @DisplayName("sanitizeForStorage: 网关开关关闭时仍应应用配置中的 PII 规则")
+    void testSanitizeForStorage_appliesRulesWhenGatewaySwitchesOff() {
+        securityProperties.getSanitization().getRequest().setEnabled(false);
+        securityProperties.getSanitization().getResponse().setEnabled(false);
+        sanitizationService.initializeRules();
+
+        final String content = "user phone 13812345678 in chat log";
+        when(ruleEngine.applySanitizationRules(anyString(), anyList(), anyString(), anyBoolean()))
+                .thenReturn(Mono.just("user phone *********** in chat log"));
+
+        StepVerifier.create(sanitizationService.sanitizeForStorage(content, "application/json"))
+                .expectNext("user phone *********** in chat log")
+                .verifyComplete();
+
+        verify(ruleEngine, atLeastOnce()).applySanitizationRules(anyString(), anyList(), anyString(), anyBoolean());
+    }
+
+    @Test
+    @DisplayName("sanitizeForStorage: 无任何配置规则时原样返回")
+    void testSanitizeForStorage_noRules_returnsVerbatim() {
+        securityProperties.getSanitization().getRequest().setSensitiveWords(List.of());
+        securityProperties.getSanitization().getRequest().setPiiPatterns(List.of());
+        securityProperties.getSanitization().getResponse().setSensitiveWords(List.of());
+        securityProperties.getSanitization().getResponse().setPiiPatterns(List.of());
+        securityProperties.getSanitization().getRequest().setEnabled(false);
+        securityProperties.getSanitization().getResponse().setEnabled(false);
+        sanitizationService.initializeRules();
+
+        final String content = "plain chat without pii patterns";
+        StepVerifier.create(sanitizationService.sanitizeForStorage(content, "application/json"))
+                .expectNext(content)
+                .verifyComplete();
+        verify(ruleEngine, never()).applySanitizationRules(anyString(), anyList(), anyString(), anyBoolean());
+    }
+
+    @Test
+    @DisplayName("rebuildRulesFromProperties: 热改 piiPatterns 后规则库应更新")
+    void testRebuildRulesFromProperties_afterHotUpdate() {
+        securityProperties.getSanitization().getRequest()
+                .setPiiPatterns(new java.util.ArrayList<>(List.of("\\d{11}")));
+        sanitizationService.initializeRules();
+        final int before = sanitizationService.getAllRules().block().size();
+
+        securityProperties.getSanitization().getRequest().getPiiPatterns().add("\\b[A-Z]{2}\\d{6}\\b");
+        StepVerifier.create(sanitizationService.rebuildRulesFromProperties()).verifyComplete();
+
+        final List<SanitizationRule> after = sanitizationService.getAllRules().block();
+        assertNotNull(after);
+        assertTrue(after.size() > before, "热重建后规则数应增加");
+        assertTrue(after.stream().anyMatch(r -> "\\b[A-Z]{2}\\d{6}\\b".equals(r.getPattern())),
+                "新增 PII 模式应出现在规则库中");
     }
 }
