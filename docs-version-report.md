@@ -3,22 +3,22 @@
 ## 版本统计
 
 - 总文档数: 172
-- 近7天变更: 187
+- 近7天变更: 191
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-09-19 03:11:38
+- 最后扫描: 2026-09-19 04:12:44
 
 ## 最近变更
 
+- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.13 → 1.0.14) - 2026-09-19
+- **MODIFIED**: docs/zh/reference/changelog.md (1.0.19 → 1.0.20) - 2026-09-19
+- **MODIFIED**: docs/en/reference/roadmap.md (1.0.14 → 1.0.15) - 2026-09-19
+- **MODIFIED**: docs/en/reference/changelog.md (1.0.19 → 1.0.20) - 2026-09-19
 - **MODIFIED**: docs/zh/security/api-key-management.md (1.0.8 → 1.0.9) - 2026-09-19
 - **MODIFIED**: docs/zh/configuration/quota.md (1.0.0 → 1.0.1) - 2026-09-19
 - **MODIFIED**: docs/en/security/api-key-management.md (1.0.6 → 1.0.7) - 2026-09-19
 - **MODIFIED**: docs/en/configuration/quota.md (1.0.0 → 1.0.1) - 2026-09-19
 - **MODIFIED**: repository-description.md (1.0.0 → 1.0.1) - 2026-09-18
 - **MODIFIED**: merge-log-2026-07-10.md (1.0.0 → 1.0.1) - 2026-09-18
-- **DELETED**: QWEN.md (1.0.4 → ) - 2026-09-18
-- **MODIFIED**: docs/zh/configuration/modular-config.md (1.0.2 → 1.0.3) - 2026-09-18
-- **MODIFIED**: docs/en/deployment/kubernetes.md (1.0.5 → 1.0.6) - 2026-09-18
-- **MODIFIED**: docs/en/configuration/modular-config.md (1.0.2 → 1.0.3) - 2026-09-18
 
 ## 依赖关系分析
 
@@ -600,6 +600,10 @@
 
 ## 所有文档版本
 
+- **docs/zh/reference/roadmap.md**: v1.0.14 - 2026-09-19 (9681218c)
+- **docs/zh/reference/changelog.md**: v1.0.20 - 2026-09-19 (9681218c)
+- **docs/en/reference/roadmap.md**: v1.0.15 - 2026-09-19 (9681218c)
+- **docs/en/reference/changelog.md**: v1.0.20 - 2026-09-19 (9681218c)
 - **docs/zh/security/api-key-management.md**: v1.0.9 - 2026-09-19 (a9c26428)
 - **docs/zh/configuration/quota.md**: v1.0.1 - 2026-09-19 (a9c26428)
 - **docs/en/security/api-key-management.md**: v1.0.7 - 2026-09-19 (a9c26428)
@@ -610,9 +614,7 @@
 - **docs/en/deployment/kubernetes.md**: v1.0.6 - 2026-09-18 (406b4a65)
 - **docs/en/configuration/modular-config.md**: v1.0.3 - 2026-09-18 (406b4a65)
 - **docs/en/configuration/application-config.md**: v1.0.5 - 2026-09-18 (406b4a65)
-- **docs/zh/reference/changelog.md**: v1.0.19 - 2026-09-18 (be9820f2)
 - **docs/zh/index.md**: v1.0.20 - 2026-09-18 (be9820f2)
-- **docs/en/reference/changelog.md**: v1.0.19 - 2026-09-18 (be9820f2)
 - **docs/en/index.md**: v1.0.19 - 2026-09-18 (be9820f2)
 - **README.md**: v1.0.35 - 2026-09-18 (be9820f2)
 - **README-ZH.md**: v1.0.27 - 2026-09-18 (be9820f2)
@@ -698,12 +700,10 @@
 - **docs/en/reference/adapter-updates.md**: v1.0.2 - 2026-09-18 (97163311)
 - **docs/en/deployment/jwt-persistence-deployment-checklist.md**: v1.0.2 - 2026-09-18 (97163311)
 - **docs/zh/security/rbac-permissions.md**: v1.0.3 - 2026-09-16 (670a375c)
-- **docs/zh/reference/roadmap.md**: v1.0.13 - 2026-09-16 (6da53bbd)
 - **docs/zh/getting-started/web-console.md**: v1.0.0 - 2026-09-16 (9ae66348)
 - **docs/zh/getting-started/claude-code.md**: v1.0.1 - 2026-09-16 (efa51bab)
 - **docs/zh/api-reference/management-api.md**: v1.0.5 - 2026-09-16 (670a375c)
 - **docs/en/security/rbac-permissions.md**: v1.0.3 - 2026-09-16 (670a375c)
-- **docs/en/reference/roadmap.md**: v1.0.14 - 2026-09-16 (d224e954)
 - **docs/en/getting-started/web-console.md**: v1.0.0 - 2026-09-16 (9ae66348)
 - **docs/en/getting-started/claude-code.md**: v1.0.1 - 2026-09-16 (efa51bab)
 - **docs/en/api-reference/management-api.md**: v1.0.7 - 2026-09-16 (670a375c)

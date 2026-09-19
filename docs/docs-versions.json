@@ -511,10 +511,10 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.19",
-      "LastModified": "2026-09-18T13:56:00.321542",
-      "ContentHash": "ab6269a78e9fbde5",
-      "GitCommit": "be9820f2",
+      "Version": "1.0.20",
+      "LastModified": "2026-09-19T04:12:43.611562",
+      "ContentHash": "d82ad61d637694cc",
+      "GitCommit": "9681218c",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -563,10 +563,10 @@
     },
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
-      "Version": "1.0.14",
-      "LastModified": "2026-09-16T07:13:46.852746",
-      "ContentHash": "0c82e7fab0ce4e59",
-      "GitCommit": "d224e954",
+      "Version": "1.0.15",
+      "LastModified": "2026-09-19T04:12:43.622435",
+      "ContentHash": "cf29b194b3668fee",
+      "GitCommit": "9681218c",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1136,10 +1136,10 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.19",
-      "LastModified": "2026-09-18T13:56:00.519886",
-      "ContentHash": "ff87a3d42248eaf7",
-      "GitCommit": "be9820f2",
+      "Version": "1.0.20",
+      "LastModified": "2026-09-19T04:12:43.893501",
+      "ContentHash": "2e9c6fc5cd75e84c",
+      "GitCommit": "9681218c",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1189,10 +1189,10 @@
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
-      "Version": "1.0.13",
-      "LastModified": "2026-09-16T07:13:47.240045",
-      "ContentHash": "f1b3e94a02bab854",
-      "GitCommit": "6da53bbd",
+      "Version": "1.0.14",
+      "LastModified": "2026-09-19T04:12:43.904692",
+      "ContentHash": "e4cc1549fdd26ab2",
+      "GitCommit": "9681218c",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -5880,7 +5880,39 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-09-19T03:11:38.531995",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.19",
+      "NewVersion": "1.0.20",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-19T04:12:43.611575",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/roadmap.md",
+      "OldVersion": "1.0.14",
+      "NewVersion": "1.0.15",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-19T04:12:43.622441",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.19",
+      "NewVersion": "1.0.20",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-19T04:12:43.893512",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/roadmap.md",
+      "OldVersion": "1.0.13",
+      "NewVersion": "1.0.14",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-19T04:12:43.904699",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-09-19T03:11:38.599278"
+  "last_updated": "2026-09-19T04:12:43.981463"
 }
