@@ -34,15 +34,26 @@ public class ExcludedPathsConfig {
 
     private static final AntPathMatcher pathMatcher = new AntPathMatcher();
 
+    /**
+     * R3-P1：API 文档路径是否排除认证（由 SecurityConfiguration 按 docs-public 设置）。
+     * 默认 false —— 文档端点需要认证。
+     */
+    private static volatile boolean apiDocsAuthExcluded = false;
+
+    /**
+     * 设置 API 文档是否免认证（Swagger / OpenAPI）。
+     */
+    public static void setApiDocsAuthExcluded(final boolean excluded) {
+        apiDocsAuthExcluded = excluded;
+    }
+
     static {
         // 认证排除路径 - 使用Set.of创建不可变集合（Java 9+）
+        // R3-P1：Swagger / api-docs 不再默认排除，由 docs-public 开关控制
         AUTH_EXCLUDED_PATHS = Set.of(
             "/actuator/",
             "/health",
             "/metrics",
-            "/swagger-ui/",
-            "/v3/api-docs",
-            "/webjars/",
             "/api/auth/jwt/login",
             "/api/auth/jwt/validate",
             "/favicon.ico",
@@ -50,7 +61,6 @@ public class ExcludedPathsConfig {
         );
 
         // 认证排除路径模式
-        // P1：/api/health-status/** 与 /ws/** 均不排除认证（query/header token + Spring Security）
         AUTH_EXCLUDED_PATTERNS = List.of(
             "/actuator/**",
             "/admin/**"
@@ -99,6 +109,10 @@ public class ExcludedPathsConfig {
      * @return 如果路径应排除认证则返回true，否则返回false
      */
     public static boolean isAuthExcluded(final String path) {
+        // R3-P1：文档路径仅在 docs-public=true 时免认证
+        if (apiDocsAuthExcluded && isApiDocsPath(path)) {
+            return true;
+        }
         // 检查精确匹配和前缀匹配
         if (AUTH_EXCLUDED_PATHS.stream().anyMatch(excludedPath ->
             path.equals(excludedPath) || path.startsWith(excludedPath))) {
@@ -108,6 +122,14 @@ public class ExcludedPathsConfig {
         // 检查Ant路径模式匹配
         return AUTH_EXCLUDED_PATTERNS.stream().anyMatch(pattern ->
             pathMatcher.match(pattern, path));
+    }
+
+    private static boolean isApiDocsPath(final String path) {
+        if (path == null) {
+            return false;
+        }
+        return path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs")
+                || path.startsWith("/webjars/") || path.startsWith("/webjars");
     }
     
     /**

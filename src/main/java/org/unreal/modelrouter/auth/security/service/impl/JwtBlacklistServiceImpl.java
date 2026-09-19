@@ -25,7 +25,10 @@ import java.util.Map;
 @Service
 @ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.persistence.enabled", havingValue = "true")
 public class JwtBlacklistServiceImpl implements JwtBlacklistService {
-    
+
+    /** R3-P1：冷路径 block 超时 */
+    public static final java.time.Duration BLOCK_TIMEOUT = java.time.Duration.ofSeconds(5);
+
     private final StoreManager storeManager;
     private final BlacklistIndexHelper blacklistIndexHelper;
     
@@ -208,7 +211,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                 Map<String, Object> stats = new HashMap<>();
                 
                 // 获取当前黑名单大小
-                long currentSize = getBlacklistSize().block();
+                long currentSize = getBlacklistSize().block(BLOCK_TIMEOUT);
                 stats.put("currentSize", currentSize);
                 
                 // 获取历史统计信息
@@ -343,7 +346,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
         return Mono.fromCallable(() -> {
             try {
                 // 简单的健康检查 - 尝试获取黑名单大小
-                getBlacklistSize().block();
+                getBlacklistSize().block(BLOCK_TIMEOUT);
                 return true;
             } catch (Exception e) {
                 log.warn("Blacklist service health check failed: { }", e.getMessage());

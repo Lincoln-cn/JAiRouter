@@ -213,10 +213,13 @@ public class ConfigSyncService {
     private ServiceInstanceEntity createInstanceFromConfig(
             final Long serviceConfigId,
             final Map<String, Object> instanceConfig) {
+        final String rawBaseUrl = (String) instanceConfig.get("baseUrl");
+        final String safeBaseUrl = rawBaseUrl == null ? null
+                : org.unreal.modelrouter.config.core.helper.SsrfGuard.validateOutboundBaseUrl(rawBaseUrl);
         return ServiceInstanceEntity.builder()
                 .serviceConfigId(serviceConfigId)
                 .instanceName((String) instanceConfig.get("name"))
-                .baseUrl((String) instanceConfig.get("baseUrl"))
+                .baseUrl(safeBaseUrl)
                 .path((String) instanceConfig.get("path"))
                 .weight(instanceConfig.get("weight") != null ? ((Number) instanceConfig.get("weight")).intValue() : 1)
                 .status("ACTIVE")
@@ -231,7 +234,8 @@ public class ConfigSyncService {
             final ServiceInstanceEntity entity,
             final Map<String, Object> instanceConfig) {
         if (instanceConfig.get("baseUrl") != null) {
-            entity.setBaseUrl((String) instanceConfig.get("baseUrl"));
+            entity.setBaseUrl(org.unreal.modelrouter.config.core.helper.SsrfGuard
+                    .validateOutboundBaseUrl((String) instanceConfig.get("baseUrl")));
         }
         if (instanceConfig.get("path") != null) {
             entity.setPath((String) instanceConfig.get("path"));

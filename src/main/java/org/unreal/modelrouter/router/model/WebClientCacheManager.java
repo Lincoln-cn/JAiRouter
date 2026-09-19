@@ -37,13 +37,16 @@ public class WebClientCacheManager {
      * @return WebClient 实例
      */
     private WebClient createWebClient(final String baseUrl) {
+        // R3-P0：出站前校验，覆盖历史脏数据（云元数据等）
+        final String safeBaseUrl =
+                org.unreal.modelrouter.config.core.helper.SsrfGuard.validateOutboundBaseUrl(baseUrl);
         try {
             TracingWebClientFactory tracingFactory =
                     ApplicationContextProvider.getBean(TracingWebClientFactory.class);
-            return tracingFactory.createTracingWebClient(baseUrl);
+            return tracingFactory.createTracingWebClient(safeBaseUrl);
         } catch (Exception e) {
             // 追踪功能不可用，创建普通WebClient
-            return WebClient.builder().baseUrl(baseUrl).build();
+            return WebClient.builder().baseUrl(safeBaseUrl).build();
         }
     }
 
