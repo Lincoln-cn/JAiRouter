@@ -3,22 +3,22 @@
 ## 版本统计
 
 - 总文档数: 172
-- 近7天变更: 191
+- 近7天变更: 199
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-09-19 04:12:44
+- 最后扫描: 2026-09-19 04:26:22
 
 ## 最近变更
 
+- **MODIFIED**: docs/zh/security/data-sanitization.md (1.0.4 → 1.0.5) - 2026-09-19
+- **MODIFIED**: docs/zh/security/api-key-management.md (1.0.9 → 1.0.10) - 2026-09-19
+- **MODIFIED**: docs/zh/getting-started/web-console.md (1.0.0 → 1.0.1) - 2026-09-19
+- **MODIFIED**: docs/zh/api-reference/management-api.md (1.0.5 → 1.0.6) - 2026-09-19
+- **MODIFIED**: docs/en/security/data-sanitization.md (1.0.3 → 1.0.4) - 2026-09-19
+- **MODIFIED**: docs/en/security/api-key-management.md (1.0.7 → 1.0.8) - 2026-09-19
+- **MODIFIED**: docs/en/getting-started/web-console.md (1.0.0 → 1.0.1) - 2026-09-19
+- **MODIFIED**: docs/en/api-reference/management-api.md (1.0.7 → 1.0.8) - 2026-09-19
 - **MODIFIED**: docs/zh/reference/roadmap.md (1.0.13 → 1.0.14) - 2026-09-19
 - **MODIFIED**: docs/zh/reference/changelog.md (1.0.19 → 1.0.20) - 2026-09-19
-- **MODIFIED**: docs/en/reference/roadmap.md (1.0.14 → 1.0.15) - 2026-09-19
-- **MODIFIED**: docs/en/reference/changelog.md (1.0.19 → 1.0.20) - 2026-09-19
-- **MODIFIED**: docs/zh/security/api-key-management.md (1.0.8 → 1.0.9) - 2026-09-19
-- **MODIFIED**: docs/zh/configuration/quota.md (1.0.0 → 1.0.1) - 2026-09-19
-- **MODIFIED**: docs/en/security/api-key-management.md (1.0.6 → 1.0.7) - 2026-09-19
-- **MODIFIED**: docs/en/configuration/quota.md (1.0.0 → 1.0.1) - 2026-09-19
-- **MODIFIED**: repository-description.md (1.0.0 → 1.0.1) - 2026-09-18
-- **MODIFIED**: merge-log-2026-07-10.md (1.0.0 → 1.0.1) - 2026-09-18
 
 ## 依赖关系分析
 
@@ -27,6 +27,8 @@
   - docs/en/api-reference/monitoring-api.md
   - docs/en/api-reference/openapi-spec.md
   - docs/en/api-reference/universal-api.md
+- **docs/en/api-reference/management-api.md**: 依赖 1 个文档
+  - docs/en/security/data-sanitization.md
 - **docs/en/configuration/circuit-breaker.md**: 依赖 4 个文档
   - docs/en/api-reference/index.md
   - docs/en/deployment/index.md
@@ -197,8 +199,9 @@
   - docs/zh/api-reference/monitoring-api.md
   - docs/zh/api-reference/openapi-spec.md
   - docs/zh/api-reference/universal-api.md
-- **docs/zh/api-reference/management-api.md**: 依赖 1 个文档
+- **docs/zh/api-reference/management-api.md**: 依赖 2 个文档
   - docs/zh/api-reference/error-codes.md
+  - docs/zh/security/data-sanitization.md
 - **docs/zh/configuration/circuit-breaker.md**: 依赖 4 个文档
   - docs/zh/api-reference/index.md
   - docs/zh/deployment/index.md
@@ -376,11 +379,14 @@
   - docs/zh/api-reference/management-api.md
   - docs/zh/api-reference/openapi-spec.md
   - docs/zh/api-reference/universal-api.md
-- **docs/en/security/api-key-management.md**: 依赖 3 个文档
+- **docs/en/security/api-key-management.md**: 依赖 4 个文档
+  - docs/en/api-reference/management-api.md
   - docs/en/security/data-sanitization.md
   - docs/en/security/jwt-authentication.md
   - docs/en/security/troubleshooting.md
-- **docs/en/security/data-sanitization.md**: 依赖 4 个文档
+- **docs/en/security/data-sanitization.md**: 依赖 6 个文档
+  - docs/en/api-reference/management-api.md
+  - docs/en/getting-started/web-console.md
   - docs/en/monitoring/alerts.md
   - docs/en/security/api-key-management.md
   - docs/en/security/jwt-authentication.md
@@ -422,11 +428,14 @@
   - docs/en/tracing/operations-guide.md
   - docs/en/tracing/performance-tuning.md
   - docs/en/tracing/troubleshooting.md
-- **docs/zh/security/api-key-management.md**: 依赖 3 个文档
+- **docs/zh/security/api-key-management.md**: 依赖 4 个文档
+  - docs/zh/api-reference/management-api.md
   - docs/zh/security/data-sanitization.md
   - docs/zh/security/jwt-authentication.md
   - docs/zh/security/troubleshooting.md
-- **docs/zh/security/data-sanitization.md**: 依赖 4 个文档
+- **docs/zh/security/data-sanitization.md**: 依赖 6 个文档
+  - docs/zh/api-reference/management-api.md
+  - docs/zh/getting-started/web-console.md
   - docs/zh/monitoring/alerts.md
   - docs/zh/security/api-key-management.md
   - docs/zh/security/jwt-authentication.md
@@ -600,13 +609,19 @@
 
 ## 所有文档版本
 
+- **docs/zh/security/data-sanitization.md**: v1.0.5 - 2026-09-19 (2f5255a1)
+- **docs/zh/security/api-key-management.md**: v1.0.10 - 2026-09-19 (2f5255a1)
+- **docs/zh/getting-started/web-console.md**: v1.0.1 - 2026-09-19 (2f5255a1)
+- **docs/zh/api-reference/management-api.md**: v1.0.6 - 2026-09-19 (2f5255a1)
+- **docs/en/security/data-sanitization.md**: v1.0.4 - 2026-09-19 (2f5255a1)
+- **docs/en/security/api-key-management.md**: v1.0.8 - 2026-09-19 (2f5255a1)
+- **docs/en/getting-started/web-console.md**: v1.0.1 - 2026-09-19 (2f5255a1)
+- **docs/en/api-reference/management-api.md**: v1.0.8 - 2026-09-19 (2f5255a1)
 - **docs/zh/reference/roadmap.md**: v1.0.14 - 2026-09-19 (9681218c)
 - **docs/zh/reference/changelog.md**: v1.0.20 - 2026-09-19 (9681218c)
 - **docs/en/reference/roadmap.md**: v1.0.15 - 2026-09-19 (9681218c)
 - **docs/en/reference/changelog.md**: v1.0.20 - 2026-09-19 (9681218c)
-- **docs/zh/security/api-key-management.md**: v1.0.9 - 2026-09-19 (a9c26428)
 - **docs/zh/configuration/quota.md**: v1.0.1 - 2026-09-19 (a9c26428)
-- **docs/en/security/api-key-management.md**: v1.0.7 - 2026-09-19 (a9c26428)
 - **docs/en/configuration/quota.md**: v1.0.1 - 2026-09-19 (a9c26428)
 - **repository-description.md**: v1.0.1 - 2026-09-18 (91cff0a3)
 - **merge-log-2026-07-10.md**: v1.0.1 - 2026-09-18 (91cff0a3)
@@ -640,7 +655,6 @@
 - **docs/en/api-reference/monitoring-api.md**: v1.0.3 - 2026-09-18 (c82b4559)
 - **docs/zh/getting-started/installation.md**: v1.0.6 - 2026-09-18 (e84d79b5)
 - **docs/en/getting-started/installation.md**: v1.0.6 - 2026-09-18 (e84d79b5)
-- **docs/zh/security/data-sanitization.md**: v1.0.4 - 2026-09-18 (2e651835)
 - **docs/zh/security/blacklist-management.md**: v1.0.3 - 2026-09-18 (2e651835)
 - **docs/zh/security/audit-log-management.md**: v1.0.3 - 2026-09-18 (2e651835)
 - **docs/zh/monitoring/troubleshooting.md**: v1.0.4 - 2026-09-18 (14420877)
@@ -659,7 +673,6 @@
 - **docs/zh/configuration/application-config.md**: v1.0.5 - 2026-09-18 (2e651835)
 - **docs/zh/configuration/adapter-config.md**: v1.0.4 - 2026-09-18 (14420877)
 - **docs/en/security/jwt-authentication.md**: v1.0.6 - 2026-09-18 (2e651835)
-- **docs/en/security/data-sanitization.md**: v1.0.3 - 2026-09-18 (2e651835)
 - **docs/en/security/blacklist-management.md**: v1.0.4 - 2026-09-18 (2e651835)
 - **docs/en/security/audit-log-management.md**: v1.0.1 - 2026-09-18 (2e651835)
 - **docs/en/monitoring/troubleshooting.md**: v1.0.4 - 2026-09-18 (14420877)
@@ -700,13 +713,9 @@
 - **docs/en/reference/adapter-updates.md**: v1.0.2 - 2026-09-18 (97163311)
 - **docs/en/deployment/jwt-persistence-deployment-checklist.md**: v1.0.2 - 2026-09-18 (97163311)
 - **docs/zh/security/rbac-permissions.md**: v1.0.3 - 2026-09-16 (670a375c)
-- **docs/zh/getting-started/web-console.md**: v1.0.0 - 2026-09-16 (9ae66348)
 - **docs/zh/getting-started/claude-code.md**: v1.0.1 - 2026-09-16 (efa51bab)
-- **docs/zh/api-reference/management-api.md**: v1.0.5 - 2026-09-16 (670a375c)
 - **docs/en/security/rbac-permissions.md**: v1.0.3 - 2026-09-16 (670a375c)
-- **docs/en/getting-started/web-console.md**: v1.0.0 - 2026-09-16 (9ae66348)
 - **docs/en/getting-started/claude-code.md**: v1.0.1 - 2026-09-16 (efa51bab)
-- **docs/en/api-reference/management-api.md**: v1.0.7 - 2026-09-16 (670a375c)
 - **docs/zh/getting-started/index.md**: v1.0.3 - 2026-09-14 (7628838f)
 - **docs/zh/configuration/response-cache.md**: v1.0.2 - 2026-09-14 (6da1396b)
 - **docs/zh/api-reference/universal-api.md**: v1.0.4 - 2026-09-14 (c7a56348)

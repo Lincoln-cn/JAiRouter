@@ -27,13 +27,15 @@
     },
     "docs/en/api-reference/management-api.md": {
       "FilePath": "docs/en/api-reference/management-api.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-09-16T07:13:46.625689",
-      "ContentHash": "2fde5d32c186470e",
-      "GitCommit": "670a375c",
+      "Version": "1.0.8",
+      "LastModified": "2026-09-19T04:26:21.901967",
+      "ContentHash": "94c2163b836b312b",
+      "GitCommit": "2f5255a1",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [
+        "docs/en/security/data-sanitization.md"
+      ]
     },
     "docs/en/api-reference/openapi-spec.md": {
       "FilePath": "docs/en/api-reference/openapi-spec.md",
@@ -637,14 +639,15 @@
     },
     "docs/zh/api-reference/management-api.md": {
       "FilePath": "docs/zh/api-reference/management-api.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-09-16T07:13:46.948148",
-      "ContentHash": "9910b3d9e5a7a140",
-      "GitCommit": "670a375c",
+      "Version": "1.0.6",
+      "LastModified": "2026-09-19T04:26:22.197790",
+      "ContentHash": "ad636c8a3180c0f8",
+      "GitCommit": "2f5255a1",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
-        "docs/zh/api-reference/error-codes.md"
+        "docs/zh/api-reference/error-codes.md",
+        "docs/zh/security/data-sanitization.md"
       ]
     },
     "docs/zh/api-reference/openapi-spec.md": {
@@ -1306,13 +1309,14 @@
     },
     "docs/en/security/api-key-management.md": {
       "FilePath": "docs/en/security/api-key-management.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-09-19T03:11:38.267286",
-      "ContentHash": "263ca069900713a2",
-      "GitCommit": "a9c26428",
+      "Version": "1.0.8",
+      "LastModified": "2026-09-19T04:26:22.118559",
+      "ContentHash": "6d8532085024a9d8",
+      "GitCommit": "2f5255a1",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
+        "docs/en/api-reference/management-api.md",
         "docs/en/security/data-sanitization.md",
         "docs/en/security/jwt-authentication.md",
         "docs/en/security/troubleshooting.md"
@@ -1320,13 +1324,15 @@
     },
     "docs/en/security/data-sanitization.md": {
       "FilePath": "docs/en/security/data-sanitization.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-09-18T11:16:35.899558",
-      "ContentHash": "d16d9bae761f37f0",
-      "GitCommit": "2e651835",
+      "Version": "1.0.4",
+      "LastModified": "2026-09-19T04:26:22.126397",
+      "ContentHash": "081169f6170592a1",
+      "GitCommit": "2f5255a1",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
+        "docs/en/api-reference/management-api.md",
+        "docs/en/getting-started/web-console.md",
         "docs/en/monitoring/alerts.md",
         "docs/en/security/api-key-management.md",
         "docs/en/security/jwt-authentication.md",
@@ -1502,13 +1508,14 @@
     },
     "docs/zh/security/api-key-management.md": {
       "FilePath": "docs/zh/security/api-key-management.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-09-19T03:11:38.531983",
-      "ContentHash": "747c1e4e47a1cac8",
-      "GitCommit": "a9c26428",
+      "Version": "1.0.10",
+      "LastModified": "2026-09-19T04:26:22.381788",
+      "ContentHash": "340a957e38e6b947",
+      "GitCommit": "2f5255a1",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
+        "docs/zh/api-reference/management-api.md",
         "docs/zh/security/data-sanitization.md",
         "docs/zh/security/jwt-authentication.md",
         "docs/zh/security/troubleshooting.md"
@@ -1516,13 +1523,15 @@
     },
     "docs/zh/security/data-sanitization.md": {
       "FilePath": "docs/zh/security/data-sanitization.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-18T11:16:48.135482",
-      "ContentHash": "b33f9fcf34eb5e78",
-      "GitCommit": "2e651835",
+      "Version": "1.0.5",
+      "LastModified": "2026-09-19T04:26:22.389593",
+      "ContentHash": "67d6f9c49f6780fe",
+      "GitCommit": "2f5255a1",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
+        "docs/zh/api-reference/management-api.md",
+        "docs/zh/getting-started/web-console.md",
         "docs/zh/monitoring/alerts.md",
         "docs/zh/security/api-key-management.md",
         "docs/zh/security/jwt-authentication.md",
@@ -2258,10 +2267,10 @@
     },
     "docs/en/getting-started/web-console.md": {
       "FilePath": "docs/en/getting-started/web-console.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-09-16T07:13:46.778272",
-      "ContentHash": "111be6f2a4794f8b",
-      "GitCommit": "9ae66348",
+      "Version": "1.0.1",
+      "LastModified": "2026-09-19T04:26:22.050726",
+      "ContentHash": "e4fb07508605dd24",
+      "GitCommit": "2f5255a1",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2285,10 +2294,10 @@
     },
     "docs/zh/getting-started/web-console.md": {
       "FilePath": "docs/zh/getting-started/web-console.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-09-16T07:13:47.143549",
-      "ContentHash": "7a412ad778669cea",
-      "GitCommit": "9ae66348",
+      "Version": "1.0.1",
+      "LastModified": "2026-09-19T04:26:22.326732",
+      "ContentHash": "73a19736c36fec0b",
+      "GitCommit": "2f5255a1",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -5912,7 +5921,71 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-09-19T04:12:43.904699",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/management-api.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-19T04:26:21.901973",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/web-console.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-19T04:26:22.050735",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/api-key-management.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-19T04:26:22.118567",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/data-sanitization.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-19T04:26:22.126402",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/management-api.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-19T04:26:22.197796",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/web-console.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-19T04:26:22.326738",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/api-key-management.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-19T04:26:22.381793",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/data-sanitization.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-19T04:26:22.389598",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-09-19T04:12:43.981463"
+  "last_updated": "2026-09-19T04:26:22.450174"
 }
