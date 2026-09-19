@@ -111,6 +111,10 @@ public final class PermissionCodes {
     public static final String MONITORING_ROUTING_READ = "monitoring:routing:read";
     /** 配额监控-读 */
     public static final String MONITORING_QUOTA_READ = "monitoring:quota:read";
+    /** 异常事件-读（R2-P1-03） */
+    public static final String MONITORING_EXCEPTIONS_READ = "monitoring:exceptions:read";
+    /** 异常事件-写/清理（R2-P1-03） */
+    public static final String MONITORING_EXCEPTIONS_WRITE = "monitoring:exceptions:write";
 
     // ==================== tracing（链路追踪） ====================
 
@@ -177,6 +181,7 @@ public final class PermissionCodes {
             MONITORING_TOKENUSAGE_READ, MONITORING_MODELSTATS_READ,
             MONITORING_ROUTING_READ,
             MONITORING_QUOTA_READ,
+            MONITORING_EXCEPTIONS_READ, MONITORING_EXCEPTIONS_WRITE,
             TRACING_DASHBOARD_READ, TRACING_SEARCH_READ, TRACING_CONFIG_MANAGE,
             SECURITY_APIKEYS_MANAGE, SECURITY_JWTTOKENS_MANAGE,
             SECURITY_BLACKLIST_MANAGE, SECURITY_AUDIT_READ,

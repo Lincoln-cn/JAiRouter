@@ -24,7 +24,10 @@ import reactor.core.scheduler.Schedulers;
 @Component
 @RequiredArgsConstructor
 public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
-    
+
+    /** 认证下游超时（R2-P1-02）：防止 Mono 永不完成导致线程挂死 */
+    public static final java.time.Duration AUTH_TIMEOUT = java.time.Duration.ofSeconds(5);
+
     private final ApiKeyService apiKeyService;
     private final ApplicationEventPublisher eventPublisher;
     private final SecurityAuditService auditService;
@@ -45,7 +48,7 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
             // 验证API Key
             ApiKey apiKey = apiKeyService.validateApiKey(apiKeyValue)
                     .subscribeOn(Schedulers.boundedElastic())
-                    .block();
+                    .block(AUTH_TIMEOUT);
 
             if (apiKey == null) {
                 log.debug("API Key验证失败: 无效的API Key");

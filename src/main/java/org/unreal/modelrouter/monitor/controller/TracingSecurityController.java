@@ -184,7 +184,8 @@ public class TracingSecurityController {
     public ResponseEntity<RouterResponse<Boolean>> rotateEncryptionKey(
             @PathVariable("traceId") final String traceId) {
         try {
-            Boolean result = tracingEncryptionService.rotateEncryptionKey(traceId).block();
+            Boolean result = tracingEncryptionService.rotateEncryptionKey(traceId)
+                    .block(java.time.Duration.ofSeconds(10));
             if (Boolean.TRUE.equals(result)) {
                 log.info("成功轮换加密密钥: {}", traceId);
                 return ResponseEntity.ok(RouterResponse.success(result, "轮换加密密钥成功"));
@@ -207,7 +208,8 @@ public class TracingSecurityController {
     @ApiResponse(responseCode = "200", description = "成功清理过期数据")
     public ResponseEntity<RouterResponse<Integer>> cleanupExpiredData() {
         try {
-            Integer cleanupCount = tracingEncryptionService.cleanupExpiredData().block();
+            Integer cleanupCount = tracingEncryptionService.cleanupExpiredData()
+                    .block(java.time.Duration.ofSeconds(10));
             log.info("成功清理过期数据，清理数量: {}", cleanupCount);
             return ResponseEntity.ok(RouterResponse.success(cleanupCount, "清理过期数据成功"));
         } catch (Exception e) {
@@ -226,7 +228,8 @@ public class TracingSecurityController {
     public ResponseEntity<RouterResponse<Void>> secureCleanupTraceData(
             @PathVariable("traceId") final String traceId) {
         try {
-            tracingEncryptionService.secureCleanupTraceData(traceId).block();
+            tracingEncryptionService.secureCleanupTraceData(traceId)
+                    .block(java.time.Duration.ofSeconds(10));
             log.info("成功安全清理追踪数据: {}", traceId);
             return ResponseEntity.ok(RouterResponse.success(null, "安全清理追踪数据成功"));
         } catch (Exception e) {

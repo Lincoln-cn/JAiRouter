@@ -26,10 +26,10 @@ import java.util.stream.Collectors;
  *
  * <p>角色模板（权限码共 45 个，开发计划写 42，以实现 {@link PermissionCodes} 为准）：
  * <ul>
- *   <li>ADMIN：全量 45 码（超集，兼容现有 ADMIN）</li>
+ *   <li>ADMIN：全量权限码（超集，兼容现有 ADMIN）</li>
  *   <li>OPERATOR：所有 :read + :write（排除 system:* / security:*:manage / actuator:*）</li>
- *   <li>USER：dashboard + config:*:read + lb/cb/rl + monitoring:*:read + tracing dashboard+search +
- *   ai:playground:use（兼容现有 USER 默认集）</li>
+ *   <li>USER：dashboard + config:*:read + lb/cb/rl + monitoring:*:read（含 exceptions:read） +
+ *   tracing dashboard+search + ai:playground:use</li>
  *   <li>VIEWER：仅所有 :read</li>
  * </ul>
  *
@@ -142,7 +142,8 @@ public class RolePermissionSeeder implements ApplicationRunner {
                 PermissionCodes.TRACING_SEARCH_READ,
                 PermissionCodes.AI_PLAYGROUND_USE,
                 PermissionCodes.CONFIG_QUOTA_READ,
-                PermissionCodes.MONITORING_QUOTA_READ
+                PermissionCodes.MONITORING_QUOTA_READ,
+                PermissionCodes.MONITORING_EXCEPTIONS_READ
         );
     }
 
