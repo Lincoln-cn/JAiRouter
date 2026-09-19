@@ -95,9 +95,15 @@ class DebugMultipartControllerTest {
                     .assertNext(response -> {
                         assertEquals(HttpStatus.OK, response.getStatusCode());
                         assertNotNull(response.getBody());
-                        assertEquals("test-api-key", response.getBody().get("xApiKey"));
-                        assertEquals("test-token", response.getBody().get("jairouterToken"));
-                        assertEquals("Bearer auth-token", response.getBody().get("authorization"));
+                        // R2-P0-03：凭据脱敏，不得回显明文
+                        assertEquals(DebugMultipartController.redactSecret("test-api-key"),
+                                response.getBody().get("xApiKey"));
+                        assertEquals(DebugMultipartController.redactSecret("test-token"),
+                                response.getBody().get("jairouterToken"));
+                        assertEquals(DebugMultipartController.redactSecret("Bearer auth-token"),
+                                response.getBody().get("authorization"));
+                        assertFalse(String.valueOf(response.getBody().get("authorization"))
+                                .contains("auth-token"));
                     })
                     .verifyComplete();
         }

@@ -70,9 +70,10 @@ class RolePermissionSeederTest {
 
             assertEquals(Set.of("ADMIN", "OPERATOR", "USER", "VIEWER"), counts.keySet());
             assertEquals(PermissionCodes.ALL_PERMISSION_CODES.size(), counts.get("ADMIN").intValue());
-            assertEquals(39L, counts.get("OPERATOR"));
-            assertEquals(27L, counts.get("USER"));
-            assertEquals(26L, counts.get("VIEWER"));
+            // R2-P1-03: + monitoring:exceptions:read/write
+            assertEquals(41L, counts.get("OPERATOR"));
+            assertEquals(28L, counts.get("USER"));
+            assertEquals(27L, counts.get("VIEWER"));
         }
 
         @Test
@@ -120,6 +121,8 @@ class RolePermissionSeederTest {
             for (String monitoringRead : monitoringReadCodes()) {
                 assertTrue(codes.contains(monitoringRead), "USER 应包含 " + monitoringRead);
             }
+            assertTrue(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_READ));
+            assertFalse(codes.contains(PermissionCodes.MONITORING_EXCEPTIONS_WRITE));
             assertTrue(codes.contains(PermissionCodes.TRACING_DASHBOARD_READ));
             assertTrue(codes.contains(PermissionCodes.TRACING_SEARCH_READ));
             assertTrue(codes.contains(PermissionCodes.AI_PLAYGROUND_USE));
@@ -133,11 +136,11 @@ class RolePermissionSeederTest {
         }
 
         @Test
-        @DisplayName("VIEWER 仅含 :read 权限码（26 个），排除 view/write/manage/use")
+        @DisplayName("VIEWER 仅含 :read 权限码（27 个），排除 view/write/manage/use")
         void viewerContainsOnlyReadCodes() {
             List<String> codes = codesOf("VIEWER");
 
-            assertEquals(26, codes.size());
+            assertEquals(27, codes.size());
             assertTrue(codes.stream().allMatch(code -> code.endsWith(":read")));
             assertTrue(codes.contains(PermissionCodes.SECURITY_AUDIT_READ));
             assertFalse(codes.contains(PermissionCodes.CALLHISTORY_VIEW));
