@@ -205,6 +205,11 @@ public class QuotaMonitoringController {
         map.put("windowStart", usage.windowStart().toString());
         map.put("requestCount", usage.requestCount());
         map.put("tokenCount", usage.tokenCount());
+        // 限额对照：仅当维度只关心单个 API Key 时，由前端/调用方结合 /auth/api-keys/quota/overview 填充；
+        // 此处预留字段，保证响应契约稳定。
+        map.put("dailyRequestLimit", null);
+        map.put("dailyTokenLimit", null);
+        map.put("rateLimitPerMinute", null);
         return map;
     }
 }

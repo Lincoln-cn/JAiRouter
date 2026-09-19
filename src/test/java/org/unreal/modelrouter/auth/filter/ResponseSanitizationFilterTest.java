@@ -90,6 +90,23 @@ class ResponseSanitizationFilterTest {
             verify(chain).filter(exchange);
             verifyNoInteractions(sanitizationService);
         }
+
+        @Test
+        @DisplayName("FILT-002b: 排除路径 - 管理台 /api/** 跳过网关响应脱敏")
+        void testAdminApiPathExcluded() {
+            MockServerHttpRequest request = MockServerHttpRequest
+                    .get("/api/config/quota")
+                    .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+            WebFilterChain chain = mock(WebFilterChain.class);
+            when(chain.filter(any())).thenReturn(Mono.empty());
+
+            Mono<Void> result = filter.filter(exchange, chain);
+
+            StepVerifier.create(result).verifyComplete();
+            verify(chain).filter(exchange);
+            verifyNoInteractions(sanitizationService);
+        }
     }
 
     @Nested
@@ -110,7 +127,7 @@ class ResponseSanitizationFilterTest {
                     sanitizationService, auditService, securityProperties);
 
             MockServerHttpRequest request = MockServerHttpRequest
-                    .post("/api/dashboard/metrics")
+                    .post("/custom/json-endpoint")
                     .contentType(MediaType.APPLICATION_JSON)
                     .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
@@ -135,7 +152,7 @@ class ResponseSanitizationFilterTest {
         @DisplayName("FILT-003: 内容类型 - JSON内容需要脱敏")
         void testJsonContentTypeNeedsSanitization() {
             MockServerHttpRequest request = MockServerHttpRequest
-                    .post("/api/chat")
+                    .post("/custom/json-endpoint")
                     .contentType(MediaType.APPLICATION_JSON)
                     .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
@@ -175,7 +192,7 @@ class ResponseSanitizationFilterTest {
                     .thenReturn(Mono.just("sanitized content"));
 
             MockServerHttpRequest request = MockServerHttpRequest
-                    .post("/api/chat")
+                    .post("/custom/json-endpoint")
                     .contentType(MediaType.APPLICATION_JSON)
                     .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
@@ -194,7 +211,7 @@ class ResponseSanitizationFilterTest {
                     .thenReturn(Mono.error(new RuntimeException("Sanitization failed")));
 
             MockServerHttpRequest request = MockServerHttpRequest
-                    .post("/api/chat")
+                    .post("/custom/json-endpoint")
                     .contentType(MediaType.APPLICATION_JSON)
                     .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
@@ -228,7 +245,7 @@ class ResponseSanitizationFilterTest {
                     sanitizationService, auditService, securityProperties);
 
             MockServerHttpRequest request = MockServerHttpRequest
-                    .post("/api/chat")
+                    .post("/custom/json-endpoint")
                     .contentType(MediaType.APPLICATION_JSON)
                     .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);

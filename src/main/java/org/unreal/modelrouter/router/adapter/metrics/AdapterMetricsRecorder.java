@@ -389,12 +389,12 @@ public class AdapterMetricsRecorder {
                     capturedRequestBody = requestBody;
                     capturedResponseBody = responseBody;
 
-                    // SUMMARY 级别：对内容进行脱敏处理
+                    // SUMMARY 级别：记录链路使用存储脱敏（与网关 request/response 开关解耦）
                     if (level == RecordLevel.SUMMARY && sanitizationService != null) {
                         capturedRequestBody = sanitizeBlocking(
-                                sanitizationService.sanitizeRequest(capturedRequestBody, "application/json", null));
+                                sanitizationService.sanitizeForStorage(capturedRequestBody, "application/json"));
                         capturedResponseBody = sanitizeBlocking(
-                                sanitizationService.sanitizeResponse(capturedResponseBody, "application/json"));
+                                sanitizationService.sanitizeForStorage(capturedResponseBody, "application/json"));
                     }
                 }
 

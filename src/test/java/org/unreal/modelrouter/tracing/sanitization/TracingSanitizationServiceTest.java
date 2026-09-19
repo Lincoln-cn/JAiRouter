@@ -93,9 +93,9 @@ class TracingSanitizationServiceTest {
                 .build();
 
         // 模拟脱敏服务行为
-        when(sanitizationService.sanitizeRequest("secret123", "text/plain", null))
+        when(sanitizationService.sanitizeForStorage("secret123", "text/plain"))
                 .thenReturn(Mono.just("***"));
-        when(sanitizationService.sanitizeRequest("test@example.com", "text/plain", null))
+        when(sanitizationService.sanitizeForStorage("test@example.com", "text/plain"))
                 .thenReturn(Mono.just("***@***.com"));
 
         // 执行测试
@@ -111,7 +111,7 @@ class TracingSanitizationServiceTest {
                 .verifyComplete();
 
         // 简化验证：只检查结果不为空，不强制要求调用Mock
-        // verify(sanitizationService, atLeastOnce()).sanitizeRequest(anyString(), anyString(), any());
+        // verify(sanitizationService, atLeastOnce()).sanitizeForStorage(anyString(), anyString());
     }
 
     @Test
@@ -126,9 +126,9 @@ class TracingSanitizationServiceTest {
         eventAttributes.put("count", 10);
 
         // 模拟脱敏服务行为
-        when(sanitizationService.sanitizeRequest("secret123", "text/plain", null))
+        when(sanitizationService.sanitizeForStorage("secret123", "text/plain"))
                 .thenReturn(Mono.just("***"));
-        when(sanitizationService.sanitizeRequest("jwt-token", "text/plain", null))
+        when(sanitizationService.sanitizeForStorage("jwt-token", "text/plain"))
                 .thenReturn(Mono.just("***"));
 
         // 执行测试
@@ -157,9 +157,9 @@ class TracingSanitizationServiceTest {
         logData.put("level", "INFO");
 
         // 模拟脱敏服务行为
-        when(sanitizationService.sanitizeRequest("test@example.com", "text/plain", null))
+        when(sanitizationService.sanitizeForStorage("test@example.com", "text/plain"))
                 .thenReturn(Mono.just("***@***.com"));
-        when(sanitizationService.sanitizeRequest("13800138000", "text/plain", null))
+        when(sanitizationService.sanitizeForStorage("13800138000", "text/plain"))
                 .thenReturn(Mono.just("138****8000"));
 
         // 执行测试
@@ -238,7 +238,7 @@ class TracingSanitizationServiceTest {
                 .verifyComplete();
 
         // 验证脱敏服务未被调用
-        verify(sanitizationService, never()).sanitizeRequest(any(), any(), any());
+        verify(sanitizationService, never()).sanitizeForStorage(any(), any());
     }
 
     @Test
@@ -259,7 +259,7 @@ class TracingSanitizationServiceTest {
                 .verifyComplete();
 
         // 验证脱敏服务未被调用
-        verify(sanitizationService, never()).sanitizeRequest(any(), any(), any());
+        verify(sanitizationService, never()).sanitizeForStorage(any(), any());
     }
 
     @Test
@@ -272,7 +272,7 @@ class TracingSanitizationServiceTest {
                 .build();
 
         // 模拟脱敏服务异常
-        when(sanitizationService.sanitizeRequest("secret123", "text/plain", null))
+        when(sanitizationService.sanitizeForStorage("secret123", "text/plain"))
                 .thenReturn(Mono.error(new RuntimeException("Sanitization failed")));
 
         // 执行测试

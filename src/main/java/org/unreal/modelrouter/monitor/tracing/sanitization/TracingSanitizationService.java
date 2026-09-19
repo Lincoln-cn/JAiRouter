@@ -89,7 +89,7 @@ public class TracingSanitizationService {
                 if (isSensitiveAttribute(attributeKey)) {
                     // 对敏感属性进行脱敏
                     if (attributeValue instanceof String) {
-                        sanitizationService.sanitizeRequest((String) attributeValue, "text/plain", null)
+                        sanitizationService.sanitizeForStorage((String) attributeValue, "text/plain")
                                 .subscribe(sanitizedValue -> {
                                     putAttributeSafely(builder, attributeKey, sanitizedValue);
                                     // 记录脱敏操作审计日志
@@ -132,7 +132,7 @@ public class TracingSanitizationService {
                 if (isSensitiveEventAttribute(key)) {
                     // 对敏感事件属性进行脱敏
                     if (value instanceof String) {
-                        sanitizationService.sanitizeRequest((String) value, "text/plain", null)
+                        sanitizationService.sanitizeForStorage((String) value, "text/plain")
                                 .subscribe(sanitizedValue -> {
                                     sanitizedAttributes.put(key, sanitizedValue);
                                     
@@ -180,7 +180,7 @@ public class TracingSanitizationService {
             
             if (value instanceof String && isSensitiveLogField(key)) {
                 // 脱敏字符串值
-                sanitizationService.sanitizeRequest((String) value, "text/plain", null)
+                sanitizationService.sanitizeForStorage((String) value, "text/plain")
                         .subscribe(sanitizedValue -> {
                             sanitizedData.put(key, sanitizedValue);
                             recordSanitizationAudit("log_field", key, "mask", context);
@@ -234,7 +234,7 @@ public class TracingSanitizationService {
             final AttributeKey<?> key, final Object value,
             final TracingContext context) {
         if (value instanceof String) {
-            return sanitizationService.sanitizeRequest((String) value, "text/plain", null)
+            return sanitizationService.sanitizeForStorage((String) value, "text/plain")
                     .cast(Object.class);
         }
         return Mono.just(value);

@@ -160,7 +160,10 @@ public class PermissionRuleRegistry {
                 PermissionRule.write("/api/config/quota/**", PermissionCodes.CONFIG_QUOTA_WRITE),
 
                 // ===== 配额监控（QuotaMonitoringController） =====
-                PermissionRule.get("/api/monitoring/quota/**", PermissionCodes.MONITORING_QUOTA_READ)
+                PermissionRule.get("/api/monitoring/quota/**", PermissionCodes.MONITORING_QUOTA_READ),
+
+                // ===== PII / 脱敏配置管理（SanitizationConfigController） =====
+                PermissionRule.any("/api/config/sanitization/**", PermissionCodes.SECURITY_SANITIZATION_MANAGE)
         );
     }
 

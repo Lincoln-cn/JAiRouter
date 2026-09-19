@@ -67,17 +67,16 @@ public class DefaultSanitizationService implements SanitizationService {
     }
     
     /**
-     * 加载请求脱敏规则
+     * 加载请求脱敏规则.
+     *
+     * <p>v3.2.0：配置中的敏感词/PII 始终加载进规则库（供记录侧
+     * {@link #sanitizeForStorage} 与管理端展示）；网关路径仍由
+     * {@code sanitizeRequest} 的 enabled 开关短路。</p>
      */
     private void loadRequestRules() {
         SanitizationConfig.RequestSanitization requestConfig =
                 securityProperties.getSanitization().getRequest();
-        
-        if (!requestConfig.isEnabled()) {
-            log.debug("请求脱敏已关闭，跳过加载请求脱敏规则");
-            return;
-        }
-        
+
         // 加载敏感词规则
         for (String sensitiveWord : requestConfig.getSensitiveWords()) {
             SanitizationRule rule = SanitizationRule.builder()
@@ -116,17 +115,14 @@ public class DefaultSanitizationService implements SanitizationService {
     }
     
     /**
-     * 加载响应脱敏规则
+     * 加载响应脱敏规则.
+     *
+     * <p>与请求侧相同：配置规则始终加载；网关响应路径由 enabled 开关短路。</p>
      */
     private void loadResponseRules() {
         SanitizationConfig.ResponseSanitization responseConfig =
                 securityProperties.getSanitization().getResponse();
-        
-        if (!responseConfig.isEnabled()) {
-            log.debug("响应脱敏已关闭，跳过加载响应脱敏规则");
-            return;
-        }
-        
+
         // 加载敏感词规则
         for (String sensitiveWord : responseConfig.getSensitiveWords()) {
             SanitizationRule rule = SanitizationRule.builder()
@@ -195,13 +191,50 @@ public class DefaultSanitizationService implements SanitizationService {
         if (content == null || content.isEmpty()) {
             return Mono.justOrEmpty(content);
         }
-        
+
         if (!securityProperties.getSanitization().getResponse().isEnabled()) {
             log.debug("响应脱敏已关闭，跳过脱敏处理");
             return Mono.just(content);
         }
-        
+
         return performSanitization(content, contentType, "response");
+    }
+
+    @Override
+    public Mono<String> sanitizeForStorage(final String content, final String contentType) {
+        if (content == null || content.isEmpty()) {
+            return Mono.justOrEmpty(content);
+        }
+        final List<SanitizationRule> applicableRules = rules.values().stream()
+                .filter(SanitizationRule::isEnabled)
+                .filter(rule -> rule.isApplicableToContentType(contentType))
+                .toList();
+        if (applicableRules.isEmpty()) {
+            return Mono.just(content);
+        }
+        final boolean preserveJson =
+                securityProperties.getSanitization().getResponse().isPreserveJsonStructure();
+        return ruleEngine.applySanitizationRules(content, applicableRules, contentType, preserveJson)
+                .onErrorMap(throwable -> new SanitizationException("记录脱敏处理失败", throwable,
+                        SanitizationException.SANITIZATION_FAILED));
+    }
+
+    /**
+     * 按当前 {@link SecurityProperties} 重建配置规则并热编译（供管理端热改后调用）。
+     */
+    public Mono<Void> rebuildRulesFromProperties() {
+        return Mono.fromRunnable(() -> {
+            rules.entrySet().removeIf(entry ->
+                    entry.getKey().startsWith("request-") || entry.getKey().startsWith("response-"));
+            ruleIdGenerator.set(1);
+            loadRequestRules();
+            loadResponseRules();
+            final List<SanitizationRule> allRules = new ArrayList<>(rules.values());
+            ruleEngine.compileRules(allRules).subscribe(
+                    unused -> log.info("脱敏配置规则已热重建，共 {} 条", allRules.size()),
+                    error -> log.error("脱敏配置规则热重建失败", error)
+            );
+        });
     }
     
     /**

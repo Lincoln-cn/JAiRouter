@@ -4,6 +4,7 @@
       <el-button icon="Download" type="success" @click="handleExport">{{ t('apiKeys.exportConfig') }}</el-button>
       <el-button icon="Upload" type="warning" @click="showImportDialog">{{ t('apiKeys.importConfig') }}</el-button>
       <el-button icon="Plus" type="primary" @click="handleCreateApiKey">{{ t('apiKeys.createApiKey') }}</el-button>
+      <el-button icon="DataAnalysis" @click="goQuotaMonitoring">{{ t('apiKeys.gotoQuotaMonitoring') }}</el-button>
     </template>
 
     <!-- 统计卡片 -->
@@ -439,6 +440,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { Key, CircleCheck, CircleClose, Warning, RefreshRight, Download, Upload, UploadFilled } from '@element-plus/icons-vue'
@@ -474,6 +476,11 @@ import type {
 } from '@/types'
 
 const { t } = useI18n()
+const router = useRouter()
+
+const goQuotaMonitoring = () => {
+  router.push('/monitoring/quota')
+}
 
 // 列表数据
 const listData = reactive<ApiKeyListVO>({

@@ -130,6 +130,8 @@ public final class PermissionCodes {
     public static final String SECURITY_BLACKLIST_MANAGE = "security:blacklist:manage";
     /** 安全审计-读 */
     public static final String SECURITY_AUDIT_READ = "security:audit:read";
+    /** PII / 数据脱敏配置管理 */
+    public static final String SECURITY_SANITIZATION_MANAGE = "security:sanitization:manage";
 
     // ==================== system（系统管理） ====================
 
@@ -177,6 +179,7 @@ public final class PermissionCodes {
             TRACING_DASHBOARD_READ, TRACING_SEARCH_READ, TRACING_CONFIG_MANAGE,
             SECURITY_APIKEYS_MANAGE, SECURITY_JWTTOKENS_MANAGE,
             SECURITY_BLACKLIST_MANAGE, SECURITY_AUDIT_READ,
+            SECURITY_SANITIZATION_MANAGE,
             SYSTEM_ACCOUNTS_MANAGE, SYSTEM_PERMISSIONS_MANAGE,
             AI_PLAYGROUND_USE,
             ACTUATOR_ADMIN_MANAGE

@@ -181,6 +181,12 @@ const router = createRouter({
           meta: { titleKey: 'route.apiKeyManagement', icon: 'key', permissions: ['security:apikeys:manage'] }
         },
         {
+          path: 'sanitization',
+          name: 'sanitization-management',
+          component: () => import('../views/security/SanitizationManagement.vue'),
+          meta: { titleKey: 'route.sanitizationManagement', icon: 'lock', permissions: ['security:sanitization:manage'] }
+        },
+        {
           path: 'jwt-tokens',
           name: 'jwt-token-management',
           component: () => import('../views/security/JwtTokenManagement.vue'),

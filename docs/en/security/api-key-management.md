@@ -105,9 +105,10 @@ JAiRouter supports comprehensive quota management for API Keys, including daily 
 
 | Parameter | Type | Default Value | Description |
 |-----------|------|---------------|-------------|
-| `daily-token-limit` | long | -1 (unlimited) | Maximum Token usage per day |
-| `rate-limit-per-minute` | int | -1 (unlimited) | Maximum requests per minute |
-| `quota-alert-threshold` | int | 80 | Alert threshold percentage (0-100) |
+| `daily-token-limit` | long | 0 (unlimited) | Maximum Token usage per day |
+| `daily-request-limit` | long | 0 (unlimited) | Maximum requests per day |
+| `rate-limit-per-minute` | int | 0 (unlimited) | Maximum requests per minute |
+| `quota-alert-threshold` | double | 0.8 | Alert threshold as ratio 0.0–1.0 (0.8 = 80%) |
 
 #### Quota Configuration Example
 
@@ -124,7 +125,7 @@ jairouter:
           enabled: true
           daily-token-limit: 100000      # 100K tokens per day
           rate-limit-per-minute: 60      # 60 requests per minute
-          quota-alert-threshold: 80      # Alert at 80% usage
+          quota-alert-threshold: 0.8      # Alert at 80% usage (0.0–1.0)
 ```
 
 #### How Quota Management Works
