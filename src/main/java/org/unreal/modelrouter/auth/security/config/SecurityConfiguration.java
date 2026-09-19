@@ -109,11 +109,21 @@ public class SecurityConfiguration {
                 .authorizeExchange();
 
         // 配置公共路径
+        // R3-P1：API 文档默认需认证；仅 jairouter.security.docs-public=true 时匿名
+        final boolean docsPublic = ApiDocsAccessPolicy.isPublic(securityProperties.isDocsPublic());
+        ExcludedPathsConfig.setApiDocsAuthExcluded(docsPublic);
+
         authorizeExchangeSpec
                 // 健康检查端点允许匿名访问
-                .pathMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus").permitAll()
-                // API文档端点允许匿名访问
-                .pathMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
+                .pathMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus").permitAll();
+
+        if (docsPublic) {
+            authorizeExchangeSpec.pathMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll();
+        } else {
+            authorizeExchangeSpec.pathMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").authenticated();
+        }
+
+        authorizeExchangeSpec
                 // Web管理界面静态资源允许匿名访问（前端会处理认证）
                 .pathMatchers("/admin/**").permitAll()
                 // favicon.ico 允许匿名访问

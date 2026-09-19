@@ -21,6 +21,11 @@ public class SecurityProperties {
     private boolean enabled = false;
 
     /**
+     * R3-P1：Swagger / OpenAPI 文档是否允许匿名访问（默认 false：需认证）。
+     */
+    private boolean docsPublic = false;
+
+    /**
      * API Key配置
      */
     @Valid
@@ -64,6 +69,14 @@ public class SecurityProperties {
 
     public void setEnabled(final boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public boolean isDocsPublic() {
+        return this.docsPublic;
+    }
+
+    public void setDocsPublic(final boolean docsPublic) {
+        this.docsPublic = docsPublic;
     }
 
     public @Valid @NotNull ApiKeyConfig getApiKey() {

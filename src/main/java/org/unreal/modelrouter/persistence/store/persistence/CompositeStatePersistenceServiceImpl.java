@@ -32,6 +32,9 @@ public class CompositeStatePersistenceServiceImpl implements StatePersistenceSer
     private static final Logger logger = LoggerFactory.getLogger(CompositeStatePersistenceServiceImpl.class);
     private static final int TIER_PRIORITY = 0;
 
+    /** R3-P1：冷路径 isHealthy.block 超时，避免挂死启动/健康检查 */
+    public static final java.time.Duration BLOCK_TIMEOUT = java.time.Duration.ofSeconds(5);
+
     private final List<StatePersistenceService> persistenceServices = new java.util.ArrayList<>();
     private volatile StatePersistenceService activeService;
     private final Map<String, Boolean> healthStatusCache = new HashMap<>();
@@ -76,7 +79,7 @@ public class CompositeStatePersistenceServiceImpl implements StatePersistenceSer
                 return;
             }
 
-            Boolean isHealthy = service.isHealthy().block();
+            Boolean isHealthy = service.isHealthy().block(BLOCK_TIMEOUT);
             healthStatusCache.put(service.getTierName(), isHealthy);
 
             if (Boolean.TRUE.equals(isHealthy)) {
@@ -167,7 +170,7 @@ public class CompositeStatePersistenceServiceImpl implements StatePersistenceSer
     public boolean switchTier(final String tierName) {
         for (StatePersistenceService service : persistenceServices) {
             if (service.getTierName().equalsIgnoreCase(tierName)) {
-                Boolean isHealthy = service.isHealthy().block();
+                Boolean isHealthy = service.isHealthy().block(BLOCK_TIMEOUT);
                 if (Boolean.TRUE.equals(isHealthy)) {
                     activeService = service;
                     logger.info("Manually switched to tier: {}", tierName);
@@ -185,7 +188,7 @@ public class CompositeStatePersistenceServiceImpl implements StatePersistenceSer
     public void refreshHealthStatus() {
         healthStatusCache.clear();
         for (StatePersistenceService service : persistenceServices) {
-            Boolean isHealthy = service.isHealthy().block();
+            Boolean isHealthy = service.isHealthy().block(BLOCK_TIMEOUT);
             healthStatusCache.put(service.getTierName(), isHealthy);
             logger.debug("Health status refreshed for {}: {}", service.getTierName(), isHealthy);
         }
@@ -197,7 +200,7 @@ public class CompositeStatePersistenceServiceImpl implements StatePersistenceSer
         for (StatePersistenceService service : persistenceServices) {
             Boolean cached = healthStatusCache.get(service.getTierName());
             if (cached == null) {
-                cached = service.isHealthy().block();
+                cached = service.isHealthy().block(BLOCK_TIMEOUT);
                 healthStatusCache.put(service.getTierName(), cached);
             }
             status.put(service.getTierName(), cached);
@@ -226,7 +229,7 @@ public class CompositeStatePersistenceServiceImpl implements StatePersistenceSer
                 .collect(Collectors.toList());
 
         for (StatePersistenceService fallbackService : lowerTierServices) {
-            Boolean isHealthy = fallbackService.isHealthy().block();
+            Boolean isHealthy = fallbackService.isHealthy().block(BLOCK_TIMEOUT);
             if (Boolean.TRUE.equals(isHealthy)) {
                 logger.info("Falling back to tier {}", fallbackService.getTierName());
                 activeService = fallbackService;
@@ -263,7 +266,7 @@ public class CompositeStatePersistenceServiceImpl implements StatePersistenceSer
                 .collect(Collectors.toList());
 
         for (StatePersistenceService fallbackService : lowerTierServices) {
-            Boolean isHealthy = fallbackService.isHealthy().block();
+            Boolean isHealthy = fallbackService.isHealthy().block(BLOCK_TIMEOUT);
             if (Boolean.TRUE.equals(isHealthy)) {
                 logger.info("Reading from fallback tier {} for key {}", 
                         fallbackService.getTierName(), key);
@@ -292,7 +295,7 @@ public class CompositeStatePersistenceServiceImpl implements StatePersistenceSer
                     int currentPriority = getActiveTierPriority();
                     for (StatePersistenceService fallbackService : persistenceServices) {
                         if (fallbackService.getTierPriority() > currentPriority) {
-                            Boolean isHealthy = fallbackService.isHealthy().block();
+                            Boolean isHealthy = fallbackService.isHealthy().block(BLOCK_TIMEOUT);
                             if (Boolean.TRUE.equals(isHealthy)) {
                                 activeService = fallbackService;
                                 return operation.get();
@@ -314,7 +317,7 @@ public class CompositeStatePersistenceServiceImpl implements StatePersistenceSer
                     int currentPriority = getActiveTierPriority();
                     for (StatePersistenceService fallbackService : persistenceServices) {
                         if (fallbackService.getTierPriority() > currentPriority) {
-                            Boolean isHealthy = fallbackService.isHealthy().block();
+                            Boolean isHealthy = fallbackService.isHealthy().block(BLOCK_TIMEOUT);
                             if (Boolean.TRUE.equals(isHealthy)) {
                                 activeService = fallbackService;
                                 return fallbackService.loadBatch(stateType, keys);

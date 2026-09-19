@@ -99,14 +99,17 @@ public class ServiceInstanceManager {
      */
     @Transactional
     public ServiceInstanceDTO createInstance(final Long serviceConfigId, final CreateServiceInstanceRequest request) {
+        // R3-P0 SSRF：落库前校验出站 baseUrl
+        final String safeBaseUrl = org.unreal.modelrouter.config.core.helper.SsrfGuard
+                .validateOutboundBaseUrl(request.getBaseUrl());
         // v2.x: 生成 UUID 作为实例唯一标识符，用于熔断器等组件的 key
         String instanceUuid = java.util.UUID.randomUUID().toString();
-        
+
         ServiceInstanceEntity entity = ServiceInstanceEntity.builder()
                 .serviceConfigId(serviceConfigId)
                 .instanceName(request.getName())
                 .instanceId(instanceUuid)
-                .baseUrl(request.getBaseUrl())
+                .baseUrl(safeBaseUrl)
                 .path(request.getPath())
                 .weight(request.getWeight() != null ? request.getWeight() : 1)
                 .status(request.getStatus() != null ? request.getStatus().toUpperCase() : "ACTIVE")
@@ -140,7 +143,9 @@ public class ServiceInstanceManager {
             entity.setInstanceName(request.getName());
         }
         if (request.getBaseUrl() != null) {
-            entity.setBaseUrl(request.getBaseUrl());
+            // R3-P0 SSRF
+            entity.setBaseUrl(org.unreal.modelrouter.config.core.helper.SsrfGuard
+                    .validateOutboundBaseUrl(request.getBaseUrl()));
         }
         if (request.getPath() != null) {
             entity.setPath(request.getPath());
