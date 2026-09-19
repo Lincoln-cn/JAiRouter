@@ -3,22 +3,22 @@
 ## 版本统计
 
 - 总文档数: 172
-- 近7天变更: 183
+- 近7天变更: 187
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-09-18 13:56:00
+- 最后扫描: 2026-09-19 03:11:38
 
 ## 最近变更
 
+- **MODIFIED**: docs/zh/security/api-key-management.md (1.0.8 → 1.0.9) - 2026-09-19
+- **MODIFIED**: docs/zh/configuration/quota.md (1.0.0 → 1.0.1) - 2026-09-19
+- **MODIFIED**: docs/en/security/api-key-management.md (1.0.6 → 1.0.7) - 2026-09-19
+- **MODIFIED**: docs/en/configuration/quota.md (1.0.0 → 1.0.1) - 2026-09-19
 - **MODIFIED**: repository-description.md (1.0.0 → 1.0.1) - 2026-09-18
 - **MODIFIED**: merge-log-2026-07-10.md (1.0.0 → 1.0.1) - 2026-09-18
 - **DELETED**: QWEN.md (1.0.4 → ) - 2026-09-18
 - **MODIFIED**: docs/zh/configuration/modular-config.md (1.0.2 → 1.0.3) - 2026-09-18
 - **MODIFIED**: docs/en/deployment/kubernetes.md (1.0.5 → 1.0.6) - 2026-09-18
 - **MODIFIED**: docs/en/configuration/modular-config.md (1.0.2 → 1.0.3) - 2026-09-18
-- **MODIFIED**: docs/en/configuration/application-config.md (1.0.4 → 1.0.5) - 2026-09-18
-- **MODIFIED**: docs/zh/reference/changelog.md (1.0.18 → 1.0.19) - 2026-09-18
-- **MODIFIED**: docs/zh/index.md (1.0.19 → 1.0.20) - 2026-09-18
-- **MODIFIED**: docs/en/reference/changelog.md (1.0.18 → 1.0.19) - 2026-09-18
 
 ## 依赖关系分析
 
@@ -600,6 +600,10 @@
 
 ## 所有文档版本
 
+- **docs/zh/security/api-key-management.md**: v1.0.9 - 2026-09-19 (a9c26428)
+- **docs/zh/configuration/quota.md**: v1.0.1 - 2026-09-19 (a9c26428)
+- **docs/en/security/api-key-management.md**: v1.0.7 - 2026-09-19 (a9c26428)
+- **docs/en/configuration/quota.md**: v1.0.1 - 2026-09-19 (a9c26428)
 - **repository-description.md**: v1.0.1 - 2026-09-18 (91cff0a3)
 - **merge-log-2026-07-10.md**: v1.0.1 - 2026-09-18 (91cff0a3)
 - **docs/zh/configuration/modular-config.md**: v1.0.3 - 2026-09-18 (406b4a65)
@@ -616,7 +620,6 @@
 - **docs/en/getting-started/quick-start.md**: v1.0.11 - 2026-09-18 (97d6b0c2)
 - **docs/zh/security/troubleshooting.md**: v1.0.4 - 2026-09-18 (c82b4559)
 - **docs/zh/security/index.md**: v1.0.4 - 2026-09-18 (c82b4559)
-- **docs/zh/security/api-key-management.md**: v1.0.8 - 2026-09-18 (c82b4559)
 - **docs/zh/reference/index.md**: v1.0.5 - 2026-09-18 (c82b4559)
 - **docs/zh/reference/glossary.md**: v1.0.4 - 2026-09-18 (c82b4559)
 - **docs/zh/reference/faq.md**: v1.0.7 - 2026-09-18 (c82b4559)
@@ -627,7 +630,6 @@
 - **docs/zh/api-reference/monitoring-api.md**: v1.0.3 - 2026-09-18 (c82b4559)
 - **docs/en/security/troubleshooting.md**: v1.0.5 - 2026-09-18 (c82b4559)
 - **docs/en/security/index.md**: v1.0.4 - 2026-09-18 (c82b4559)
-- **docs/en/security/api-key-management.md**: v1.0.6 - 2026-09-18 (c82b4559)
 - **docs/en/reference/index.md**: v1.0.5 - 2026-09-18 (c82b4559)
 - **docs/en/reference/glossary.md**: v1.0.5 - 2026-09-18 (c82b4559)
 - **docs/en/reference/faq.md**: v1.0.7 - 2026-09-18 (c82b4559)
@@ -699,13 +701,11 @@
 - **docs/zh/reference/roadmap.md**: v1.0.13 - 2026-09-16 (6da53bbd)
 - **docs/zh/getting-started/web-console.md**: v1.0.0 - 2026-09-16 (9ae66348)
 - **docs/zh/getting-started/claude-code.md**: v1.0.1 - 2026-09-16 (efa51bab)
-- **docs/zh/configuration/quota.md**: v1.0.0 - 2026-09-16 (53f26f63)
 - **docs/zh/api-reference/management-api.md**: v1.0.5 - 2026-09-16 (670a375c)
 - **docs/en/security/rbac-permissions.md**: v1.0.3 - 2026-09-16 (670a375c)
 - **docs/en/reference/roadmap.md**: v1.0.14 - 2026-09-16 (d224e954)
 - **docs/en/getting-started/web-console.md**: v1.0.0 - 2026-09-16 (9ae66348)
 - **docs/en/getting-started/claude-code.md**: v1.0.1 - 2026-09-16 (efa51bab)
-- **docs/en/configuration/quota.md**: v1.0.0 - 2026-09-16 (53f26f63)
 - **docs/en/api-reference/management-api.md**: v1.0.7 - 2026-09-16 (670a375c)
 - **docs/zh/getting-started/index.md**: v1.0.3 - 2026-09-14 (7628838f)
 - **docs/zh/configuration/response-cache.md**: v1.0.2 - 2026-09-14 (6da1396b)

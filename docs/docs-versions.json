@@ -1306,10 +1306,10 @@
     },
     "docs/en/security/api-key-management.md": {
       "FilePath": "docs/en/security/api-key-management.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-09-18T11:28:11.868557",
-      "ContentHash": "d21ec0bfdba8d389",
-      "GitCommit": "c82b4559",
+      "Version": "1.0.7",
+      "LastModified": "2026-09-19T03:11:38.267286",
+      "ContentHash": "263ca069900713a2",
+      "GitCommit": "a9c26428",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1502,10 +1502,10 @@
     },
     "docs/zh/security/api-key-management.md": {
       "FilePath": "docs/zh/security/api-key-management.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-09-18T11:28:24.033739",
-      "ContentHash": "4e707a808fe586c8",
-      "GitCommit": "c82b4559",
+      "Version": "1.0.9",
+      "LastModified": "2026-09-19T03:11:38.531983",
+      "ContentHash": "747c1e4e47a1cac8",
+      "GitCommit": "a9c26428",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2243,10 +2243,10 @@
     },
     "docs/en/configuration/quota.md": {
       "FilePath": "docs/en/configuration/quota.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-09-16T07:13:46.675809",
-      "ContentHash": "b1934b24b8649120",
-      "GitCommit": "53f26f63",
+      "Version": "1.0.1",
+      "LastModified": "2026-09-19T03:11:38.099717",
+      "ContentHash": "28a8222efc9b378d",
+      "GitCommit": "a9c26428",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2270,10 +2270,10 @@
     },
     "docs/zh/configuration/quota.md": {
       "FilePath": "docs/zh/configuration/quota.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-09-16T07:13:47.013156",
-      "ContentHash": "8c32fc79d397ad10",
-      "GitCommit": "53f26f63",
+      "Version": "1.0.1",
+      "LastModified": "2026-09-19T03:11:38.395311",
+      "ContentHash": "0722fc45f14c5e6a",
+      "GitCommit": "a9c26428",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -5848,7 +5848,39 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-09-18T13:56:00.519895",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/quota.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-19T03:11:38.099727",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/api-key-management.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-19T03:11:38.267295",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/quota.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-19T03:11:38.395320",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/api-key-management.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-19T03:11:38.531995",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-09-18T13:56:00.579773"
+  "last_updated": "2026-09-19T03:11:38.599278"
 }
