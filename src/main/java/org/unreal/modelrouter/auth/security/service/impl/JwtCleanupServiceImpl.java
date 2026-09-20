@@ -29,6 +29,10 @@ import java.util.Map;
         havingValue = "true", matchIfMissing = true)
 public final class JwtCleanupServiceImpl implements JwtCleanupService {
 
+    /** R4-P1：清理任务 block 超时 */
+    public static final java.time.Duration BLOCK_TIMEOUT =
+            org.unreal.modelrouter.common.util.ReactorTimeouts.BLOCK;
+
     private final JwtPersistenceService jwtPersistenceService;
     private final JwtBlacklistService jwtBlacklistService;
     private final StoreManager storeManager;
@@ -119,12 +123,12 @@ public final class JwtCleanupServiceImpl implements JwtCleanupService {
             log.info("Starting expired tokens cleanup at {}", startTime);
 
             try {
-                Long beforeCount = jwtPersistenceService.countActiveTokens().block();
+                Long beforeCount = jwtPersistenceService.countActiveTokens().block(BLOCK_TIMEOUT);
                 if (beforeCount == null) beforeCount = 0L;
 
-                jwtPersistenceService.removeExpiredTokens().block();
+                jwtPersistenceService.removeExpiredTokens().block(BLOCK_TIMEOUT);
 
-                Long afterCount = jwtPersistenceService.countActiveTokens().block();
+                Long afterCount = jwtPersistenceService.countActiveTokens().block(BLOCK_TIMEOUT);
                 if (afterCount == null) afterCount = 0L;
 
                 long removedCount = Math.max(0, beforeCount - afterCount);
@@ -185,7 +189,7 @@ public final class JwtCleanupServiceImpl implements JwtCleanupService {
             log.info("Starting expired blacklist entries cleanup at {}", startTime);
 
             try {
-                Long removedCount = jwtBlacklistService.cleanupExpiredEntriesWithCount().block();
+                Long removedCount = jwtBlacklistService.cleanupExpiredEntriesWithCount().block(BLOCK_TIMEOUT);
                 if (removedCount == null) removedCount = 0L;
 
                 LocalDateTime endTime = LocalDateTime.now();
@@ -250,14 +254,14 @@ public final class JwtCleanupServiceImpl implements JwtCleanupService {
 
             try {
                 log.info("Phase 1: Cleaning up expired tokens...");
-                tokenResult = cleanupExpiredTokens().block();
+                tokenResult = cleanupExpiredTokens().block(BLOCK_TIMEOUT);
                 if (tokenResult == null) {
                     tokenResult = new CleanupResult(0, 0, startTime, LocalDateTime.now(), false);
                     tokenResult.setErrorMessage("Token cleanup returned null result");
                 }
 
                 log.info("Phase 2: Cleaning up expired blacklist entries...");
-                blacklistResult = cleanupExpiredBlacklistEntries().block();
+                blacklistResult = cleanupExpiredBlacklistEntries().block(BLOCK_TIMEOUT);
                 if (blacklistResult == null) {
                     blacklistResult = new CleanupResult(0, 0, startTime, LocalDateTime.now(), false);
                     blacklistResult.setErrorMessage("Blacklist cleanup returned null result");

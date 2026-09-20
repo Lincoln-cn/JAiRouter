@@ -76,6 +76,10 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
                 + "║  ✓ 所有密钥和密码检查通过                                                    ║\n"
                 + "╚══════════════════════════════════════════════════════════════════════════════╝\n");
         }
+
+        // R4-P1：生产 fail-fast — 检查失败不得带着默认密钥/弱配置继续启动
+        StartupSecurityGate.enforce(isProduction, allPassed,
+                System.getenv(StartupSecurityGate.SKIP_ENV));
     }
 
     /**
@@ -149,6 +153,13 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
         if (jwtSecret == null || jwtSecret.isEmpty()) {
             log.warn("⚠️  未设置 JWT_SECRET 环境变量，将使用默认配置（仅限开发环境）");
             log.warn("   生产环境必须设置 JWT_SECRET 环境变量！");
+            // R4-P1：生产缺密钥 → 失败
+            return StartupSecurityGate.jwtSecretOk(isProductionEnvironment(), null);
+        }
+
+        // R4-P1：生产拒绝已知默认 JWT 密钥
+        if (isProductionEnvironment() && StartupSecurityGate.isDefaultJwtSecret(jwtSecret)) {
+            log.error("❌ JWT 密钥仍为出厂/文档默认值，生产环境禁止使用");
             return false;
         }
 
@@ -185,9 +196,15 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
 
         if (adminPassword == null || adminPassword.isEmpty()) {
             log.warn("⚠️  未设置 INITIAL_ADMIN_PASSWORD 环境变量");
-            log.warn("   首次启动建议设置管理员密码，或使用默认密码（仅限开发环境）");
-            log.warn("   默认密码将在后续版本中移除");
-            return true;  // 不阻止启动，但发出警告
+            // R4-P1：生产必须配置管理员密码
+            return StartupSecurityGate.adminPasswordOk(isProductionEnvironment(), null);
+        }
+
+        // R4-P1：默认出厂密码在生产视为失败
+        if (StartupSecurityGate.isDefaultAdminPassword(adminPassword)
+                && isProductionEnvironment()) {
+            log.error("❌ 管理员密码仍为出厂默认值，生产环境禁止使用");
+            return false;
         }
 
         ValidationResult result = SecretKeyValidator.validatePassword(adminPassword);

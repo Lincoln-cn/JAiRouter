@@ -282,13 +282,13 @@ public class TracingEncryptionService {
                     // 解密旧数据
                     String decryptedData = decryptTraceData(
                             oldData.getEncryptedData(), traceId,
-                            oldData.getDataType()).block();
+                            oldData.getDataType()).block(org.unreal.modelrouter.common.util.ReactorTimeouts.BLOCK);
                     
                     // 更新密钥
                     encryptionKeys.put(traceId, newKey);
                     
                     // 用新密钥重新加密
-                    String reencryptedData = encryptTraceData(decryptedData, traceId, oldData.getDataType()).block();
+                    String reencryptedData = encryptTraceData(decryptedData, traceId, oldData.getDataType()).block(org.unreal.modelrouter.common.util.ReactorTimeouts.BLOCK);
                     
                     // 更新缓存
                     oldData.setEncryptedData(reencryptedData);

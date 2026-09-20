@@ -198,7 +198,7 @@ public class LoadBalancerStatePersistenceAdapter {
                     Map<String, Map<String, Object>> states = new HashMap<>();
                     for (String key : keys) {
                         Map<String, Object> data = persistenceService
-                                .load(StateType.LOAD_BALANCER, key).block();
+                                .load(StateType.LOAD_BALANCER, key).block(org.unreal.modelrouter.common.util.ReactorTimeouts.BLOCK);
                         if (data != null && !data.isEmpty()) {
                             states.put(key, data);
                         }

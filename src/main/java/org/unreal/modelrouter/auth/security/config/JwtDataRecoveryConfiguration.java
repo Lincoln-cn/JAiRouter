@@ -19,15 +19,20 @@ import org.unreal.modelrouter.auth.security.service.DataSyncService;
         name = "jairouter.security.jwt.persistence.startup-recovery.enabled",
         havingValue = "true", matchIfMissing = true)
 public class JwtDataRecoveryConfiguration implements ApplicationRunner {
-    
+
+    /** R4-P1：启动恢复 block 超时 */
+    public static final java.time.Duration BLOCK_TIMEOUT =
+            org.unreal.modelrouter.common.util.ReactorTimeouts.STARTUP_BLOCK;
+
     private final DataSyncService dataSyncService;
-    
+
     @Override
     public void run(final ApplicationArguments args) throws Exception {
         log.info("Starting JWT data recovery process...");
-        
+
         try {
-            DataSyncService.SyncResult result = dataSyncService.performStartupRecovery().block();
+            DataSyncService.SyncResult result =
+                    dataSyncService.performStartupRecovery().block(BLOCK_TIMEOUT);
             
             if (result != null) {
                 if (result.isSuccess()) {

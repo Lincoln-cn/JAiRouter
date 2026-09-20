@@ -44,7 +44,7 @@ public class TraceQueryService {
             TraceRecord trace = traceStore.get(traceId);
             if (trace == null) {
                 CachedTraceData cachedData =
-                    memoryManager.getCachedTraceData(traceId).block();
+                    memoryManager.getCachedTraceData(traceId).block(org.unreal.modelrouter.common.util.ReactorTimeouts.BLOCK);
                 if (cachedData != null) {
                     trace = convertFromCachedData(cachedData);
                 }

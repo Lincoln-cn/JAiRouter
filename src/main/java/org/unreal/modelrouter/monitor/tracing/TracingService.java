@@ -444,7 +444,7 @@ public class TracingService {
      */
     private int getTrendValue(final long startTime, final long endTime, final boolean isTraceVolume) {
         try {
-            TraceQueryService.TraceStatistics stats = traceQueryService.getTraceStatistics(startTime, endTime).block();
+            TraceQueryService.TraceStatistics stats = traceQueryService.getTraceStatistics(startTime, endTime).block(org.unreal.modelrouter.common.util.ReactorTimeouts.BLOCK);
             if (stats == null) return 0;
             return isTraceVolume ? (int) stats.getTotalTraces() : (int) stats.getErrorTraces();
         } catch (Exception e) {
