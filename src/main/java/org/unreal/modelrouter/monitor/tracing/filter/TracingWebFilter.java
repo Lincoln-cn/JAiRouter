@@ -23,6 +23,7 @@ import reactor.util.context.Context;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 追踪Web过滤器
@@ -75,37 +76,63 @@ public class TracingWebFilter implements WebFilter, Ordered {
         }
         
         long startTime = System.currentTimeMillis();
-        
+
+        // 追踪是否可用必须在"业务链之外"先决定。原实现把 chain.filter(exchange) 包在
+        // flatMap 内、再对整个 Mono 挂 onErrorResume 兜底重新执行过滤器链，由此产生两个缺陷：
+        //   1) 业务链自身抛错时会命中该兜底 → 整条过滤器链被第二次执行（响应/审计/指标翻倍），
+        //      且原始异常被吞掉，客户端看到的是第二次执行的结果；
+        //   2) 兜底无法区分"追踪初始化失败"与"业务失败"，日志语义也是错的。
+        // 不能用 switchIfEmpty 兜底（Mono<Void> 恒 complete empty，会在每次成功请求上误触发）。
         return tracingService.createRootSpan(exchange)
-            .flatMap(context -> {
-                // 记录请求开始
-                structuredLogger.logRequest(exchange.getRequest(), context);
-                
-                // 设置追踪上下文到ThreadLocal（用于同步代码访问）
-                TracingContextHolder.setCurrentContext(context);
-                
-                // 设置追踪上下文到exchange属性中
-                exchange.getAttributes().put(TracingConstants.ContextKeys.TRACING_CONTEXT, context);
-                
-                // 在Reactor上下文中传播追踪信息
-                Context reactorContext = Context.of(
-                    TracingConstants.ContextKeys.TRACING_CONTEXT, context,
-                    TracingConstants.ContextKeys.TRACE_ID, context.getTraceId(),
-                    TracingConstants.ContextKeys.SPAN_ID, context.getSpanId()
-                );
-                
-                // 继续处理链，并在完成时记录响应
-                return chain.filter(exchange)
-                    .contextWrite(reactorContext)
-                    .doOnSuccess(v -> handleSuccess(exchange, context, startTime))
-                    .doOnError(error -> handleError(exchange, context, error, startTime))
-                    .doFinally(signal -> finishSpan(context, startTime));
-            })
             .onErrorResume(tracingError -> {
-                // 追踪系统本身出错时，不应影响主业务流程
-                log.warn("追踪过滤器处理失败，继续执行主业务流程", tracingError);
-                return chain.filter(exchange);
-            });
+                log.warn("追踪初始化失败，跳过追踪继续处理请求: {}", tracingError.getMessage());
+                return Mono.empty();
+            })
+            .map(Optional::of)
+            .defaultIfEmpty(Optional.<TracingContext>empty())
+            .flatMap(maybeContext -> maybeContext.isPresent()
+                ? tracedChain(exchange, chain, maybeContext.get(), startTime)
+                : chain.filter(exchange));
+    }
+
+    /**
+     * 执行带追踪的业务链.
+     *
+     * <p>业务链在本方法内<b>恰好执行一次</b>：追踪前置（请求日志、上下文设置、上下文传播）
+     * 失败时降级为直接放行——此时业务链尚未执行，故不存在重复执行；业务链自身的异常不做
+     * 任何捕获，原样向上传播，交给全局异常处理器。</p>
+     */
+    private Mono<Void> tracedChain(final ServerWebExchange exchange, final WebFilterChain chain,
+                                   final TracingContext context, final long startTime) {
+        final Context reactorContext;
+        try {
+            // 记录请求开始
+            structuredLogger.logRequest(exchange.getRequest(), context);
+
+            // 设置追踪上下文到ThreadLocal（用于同步代码访问）
+            TracingContextHolder.setCurrentContext(context);
+
+            // 设置追踪上下文到exchange属性中
+            exchange.getAttributes().put(TracingConstants.ContextKeys.TRACING_CONTEXT, context);
+
+            // 在Reactor上下文中传播追踪信息
+            reactorContext = Context.of(
+                TracingConstants.ContextKeys.TRACING_CONTEXT, context,
+                TracingConstants.ContextKeys.TRACE_ID, context.getTraceId(),
+                TracingConstants.ContextKeys.SPAN_ID, context.getSpanId()
+            );
+        } catch (Exception tracingError) {
+            // 追踪故障不得影响业务：此处业务链尚未执行，降级放行不会造成重复执行
+            log.warn("追踪前置处理失败，跳过追踪继续执行主业务流程", tracingError);
+            return chain.filter(exchange);
+        }
+
+        // 继续处理链，并在完成时记录响应（业务链异常不在此捕获，由上层处理）
+        return chain.filter(exchange)
+            .contextWrite(reactorContext)
+            .doOnSuccess(v -> handleSuccess(exchange, context, startTime))
+            .doOnError(error -> handleError(exchange, context, error, startTime))
+            .doFinally(signal -> finishSpan(context, startTime));
     }
     
     /**

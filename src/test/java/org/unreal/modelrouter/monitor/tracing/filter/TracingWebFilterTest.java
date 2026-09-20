@@ -277,4 +277,95 @@ class TracingWebFilterTest {
             verify(tracingService, never()).createRootSpan(any());
         }
     }
+
+    // ==================== 过滤器链只执行一次（issue #75 回归） ====================
+
+    @Nested
+    @DisplayName("过滤器链只执行一次（issue #75 回归）")
+    class SingleChainExecutionTests {
+
+        /**
+         * 原实现把 chain.filter(exchange) 包在 flatMap 内、再对整个 Mono 挂 onErrorResume
+         * 兜底重新执行过滤器链，于是业务链自身的异常会命中该兜底 → 整条链被第二次执行
+         * （响应/审计/指标翻倍），且原始异常被吞掉。
+         */
+        @Test
+        @DisplayName("TRACE-010: 业务链异常必须原样传播，且链只执行一次")
+        void businessErrorMustPropagateAndChainRunsOnce() {
+            // Given
+            MockServerHttpRequest request = MockServerHttpRequest
+                .get("/api/services")
+                .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+            when(filterChain.filter(any())).thenReturn(Mono.error(new IllegalStateException("business boom")));
+
+            // When
+            Mono<Void> result = filter.filter(exchange, filterChain);
+
+            // Then
+            StepVerifier.create(result)
+                .expectError(IllegalStateException.class)
+                .verify();
+            verify(filterChain, times(1)).filter(any());
+        }
+
+        @Test
+        @DisplayName("TRACE-011: 追踪前置失败时降级放行，且链只执行一次")
+        void tracingPrologueFailureFallsBackOnce() {
+            // Given
+            MockServerHttpRequest request = MockServerHttpRequest
+                .get("/api/services")
+                .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+            doThrow(new UnsupportedOperationException())
+                .when(structuredLogger).logRequest(any(), any());
+
+            // When
+            Mono<Void> result = filter.filter(exchange, filterChain);
+
+            // Then：追踪故障不影响业务，且链未被重复执行
+            StepVerifier.create(result).verifyComplete();
+            verify(filterChain, times(1)).filter(any());
+            // 前置失败 → 本次不进入追踪收尾
+            verify(tracingService, never()).finishHttpSpan(any(), any(), anyLong());
+        }
+
+        @Test
+        @DisplayName("TRACE-012: 追踪初始化失败时降级放行，且链只执行一次")
+        void tracingInitFailureFallsBackOnce() {
+            // Given
+            MockServerHttpRequest request = MockServerHttpRequest
+                .get("/api/services")
+                .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+            when(tracingService.createRootSpan(any()))
+                .thenReturn(Mono.error(new RuntimeException("init failed")));
+
+            // When
+            Mono<Void> result = filter.filter(exchange, filterChain);
+
+            // Then
+            StepVerifier.create(result).verifyComplete();
+            verify(filterChain, times(1)).filter(any());
+        }
+
+        @Test
+        @DisplayName("TRACE-013: 正常路径链只执行一次并完成追踪收尾")
+        void tracedRequestRunsChainOnceAndFinishesSpan() {
+            // Given
+            MockServerHttpRequest request = MockServerHttpRequest
+                .get("/api/services")
+                .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            // When
+            Mono<Void> result = filter.filter(exchange, filterChain);
+
+            // Then
+            StepVerifier.create(result).verifyComplete();
+            verify(filterChain, times(1)).filter(any());
+            verify(tracingService, times(1))
+                .finishHttpSpan(any(), any(TracingContext.class), anyLong());
+        }
+    }
 }
