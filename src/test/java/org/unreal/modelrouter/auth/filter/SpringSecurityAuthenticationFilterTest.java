@@ -296,4 +296,86 @@ class SpringSecurityAuthenticationFilterTest {
             assertEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode());
         }
     }
+
+    @Nested
+    @DisplayName("认证成功不得写出伪 401（issue #74 回归）")
+    class NoSpurious401OnSuccessTests {
+
+        /**
+         * issue #74 根因回归：{@code switchIfEmpty} 曾挂在包含 {@code chain.filter(exchange)}
+         * 的外层 Mono 上，而 chain 返回的 {@code Mono<Void>} 只 complete empty、永不 emit 值，
+         * 故认证成功的请求也会命中"缺少认证信息"分支写出 401。原有用例只断言"链路被调用"，
+         * 未断言响应状态，因此该缺陷长期未被测出。
+         */
+        @Test
+        @DisplayName("FILT-016: /v1 认证成功 → 响应不得是 401，且链路必须放行")
+        void testSuccessDoesNotWrite401OnV1Path() {
+            Authentication authentication = new UsernamePasswordAuthenticationToken("admin", null);
+            when(authenticationConverter.convert(any())).thenReturn(Mono.just(authentication));
+            when(authenticationManager.authenticate(any())).thenReturn(Mono.just(authentication));
+
+            MockServerHttpRequest request = MockServerHttpRequest
+                    .post("/v1/chat/completions")
+                    .header("Jairouter_Token", "valid-jwt")
+                    .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+            WebFilterChain chain = mock(WebFilterChain.class);
+            // 模拟真实链路：Mono<Void> 只 complete empty、永不 emit 值
+            when(chain.filter(any())).thenReturn(Mono.empty());
+
+            Mono<Void> result = filter.filter(exchange, chain);
+
+            StepVerifier.create(result).verifyComplete();
+            verify(chain).filter(any());
+            assertNotEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode(),
+                    "认证成功的请求不得被伪 401 覆盖");
+            // MockServerHttpResponse 在"未写入任何内容"时 getBodyAsString() 抛 IllegalStateException，
+            // 据此断言认证成功路径没有写出认证错误响应体。
+            assertThrows(IllegalStateException.class,
+                    () -> exchange.getResponse().getBodyAsString().block(),
+                    "认证成功不得写出认证错误响应体");
+        }
+
+        @Test
+        @DisplayName("FILT-017: multipart 认证成功 → 响应不得是 401")
+        void testSuccessDoesNotWrite401OnMultipart() {
+            Authentication authentication = new UsernamePasswordAuthenticationToken("admin", null);
+            when(authenticationConverter.convert(any())).thenReturn(Mono.just(authentication));
+            when(authenticationManager.authenticate(any())).thenReturn(Mono.just(authentication));
+
+            MockServerHttpRequest request = MockServerHttpRequest
+                    .post("/api/v1/audio/transcriptions")
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .header("Jairouter_Token", "valid-jwt")
+                    .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+            WebFilterChain chain = mock(WebFilterChain.class);
+            when(chain.filter(any())).thenReturn(Mono.empty());
+
+            Mono<Void> result = filter.filter(exchange, chain);
+
+            StepVerifier.create(result).verifyComplete();
+            verify(chain).filter(any());
+            assertNotEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode(),
+                    "multipart 认证成功不得被伪 401 覆盖");
+        }
+
+        @Test
+        @DisplayName("FILT-018: 凭据缺失仍必须返回 401（负向路径不可回归）")
+        void testMissingCredentialsStillReturns401() {
+            when(authenticationConverter.convert(any())).thenReturn(Mono.empty());
+
+            MockServerHttpRequest request = MockServerHttpRequest
+                    .post("/v1/chat/completions")
+                    .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+            WebFilterChain chain = mock(WebFilterChain.class);
+
+            Mono<Void> result = filter.filter(exchange, chain);
+
+            StepVerifier.create(result).verifyComplete();
+            assertEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode());
+            verifyNoInteractions(chain);
+        }
+    }
 }

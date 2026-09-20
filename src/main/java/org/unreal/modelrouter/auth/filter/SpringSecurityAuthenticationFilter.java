@@ -78,36 +78,21 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
      * 执行实际的认证逻辑
      */
     private Mono<Void> performAuthentication(final ServerWebExchange exchange, final WebFilterChain chain) {
+        // 凭据缺失判定必须挂在 convert() 上：只有 convert() 返回空序列才代表"未提供凭据"。
+        // 若挂在外层（即包含 chain.filter(exchange) 的那个 Mono 上），由于 Mono<Void> 只
+        // complete empty、永不 emit 值，认证成功的请求同样会命中该分支并写出伪 401，覆盖
+        // 尚未提交的真实响应（典型表现：/v1/** 代理与流式调用恒回 AUTH_MISSING）。
         return authenticationConverter.convert(exchange)
-                .flatMap(authentication -> {
-                    // 使用认证管理器进行实际认证
-                    if (authentication == null) {
-                        return handleMissingAuthentication(exchange);
-                    }
-
-                    return authenticationManager.authenticate(authentication)
-                            .flatMap(authenticated -> {
-                                // 创建已认证的安全上下文
-                                SecurityContextImpl securityContext = new SecurityContextImpl(authenticated);
-                                // 在安全上下文中继续执行过滤器链
-                                return chain.filter(exchange).contextWrite(
-                                        ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)));
-                            })
-                            // 只捕获认证相关异常，其它异常放行
-                            .onErrorResume(throwable -> {
-                                if (isAuthException(throwable)) {
-                                    return handleAuthenticationError(exchange, throwable);
-                                }
-                                return Mono.error(throwable);
-                            });
+                .switchIfEmpty(writeMissingCredentialsError(exchange,
+                        "请求缺少认证信息，请提供API Key或JWT Token"))
+                // 使用认证管理器进行实际认证
+                .flatMap(authentication -> authenticationManager.authenticate(authentication))
+                .flatMap(authenticated -> {
+                    // 创建已认证的安全上下文，并在该安全上下文中继续执行过滤器链
+                    SecurityContextImpl securityContext = new SecurityContextImpl(authenticated);
+                    return chain.filter(exchange).contextWrite(
+                            ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)));
                 })
-                .switchIfEmpty(Mono.defer(() -> {
-                    // 没有提供认证信息，返回401错误
-                    log.warn("请求缺少认证信息: {}", exchange.getRequest().getPath().value());
-                    return createAuthenticationErrorResponse(exchange,
-                            "请求缺少认证信息，请提供API Key或JWT Token",
-                            "AUTH_MISSING");
-                }))
                 // 只捕获认证相关异常，其它异常放行
                 .onErrorResume(throwable -> {
                     if (isAuthException(throwable)) {
@@ -144,24 +129,22 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
     private Mono<Void> handleMultipartAuthentication(final ServerWebExchange exchange, final WebFilterChain chain) {
         log.debug("开始处理multipart请求认证: {}", exchange.getRequest().getPath().value());
 
-        // 对于multipart请求，直接从请求头中提取认证信息，避免读取请求体
+        // 对于multipart请求，直接从请求头中提取认证信息，避免读取请求体。
+        // 凭据缺失判定同样只能挂在 convert() 上（原因见 performAuthentication），且必须用
+        // Mono.defer 延迟构造：辅助方法内含"装配期不应执行"的告警与响应写入逻辑，若作为
+        // switchIfEmpty 的实参被提前求值，认证成功的请求也会被打出"缺少认证信息"告警。
         return authenticationConverter.convert(exchange)
-                .flatMap(authentication -> {
-                    if (authentication == null) {
-                        return handleMissingAuthentication(exchange);
-                    }
-
-                    return authenticationManager.authenticate(authentication)
-                            .flatMap(authenticated -> continueWithSecurityContext(authenticated, exchange, chain))
-                            // 只捕获认证相关异常，其它异常放行
-                            .onErrorResume(throwable -> {
-                                if (isAuthException(throwable)) {
-                                    return handleAuthenticationError(exchange, throwable);
-                                }
-                                return Mono.error(throwable);
-                            });
-                })
-                .switchIfEmpty(handleMissingAuthentication(exchange))
+                .switchIfEmpty(writeMissingCredentialsError(exchange,
+                        "请求缺少认证信息，请提供X-API-Key或Jairouter_token"))
+                .flatMap(authentication -> authenticationManager.authenticate(authentication)
+                        .flatMap(authenticated -> continueWithSecurityContext(authenticated, exchange, chain))
+                        // 只捕获认证相关异常，其它异常放行
+                        .onErrorResume(throwable -> {
+                            if (isAuthException(throwable)) {
+                                return handleAuthenticationError(exchange, throwable);
+                            }
+                            return Mono.error(throwable);
+                        }))
                 // 只捕获认证相关异常，其它异常放行
                 .onErrorResume(throwable -> {
                     if (isAuthException(throwable)) {
@@ -199,13 +182,24 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
     }
 
     /**
-     * 处理缺少认证信息的情况
+     * 写出"缺少认证信息"的 401 响应，并返回 {@link Authentication} 型空序列.
+     *
+     * <p>该值作为 {@code switchIfEmpty} 的实参直接挂在 {@code convert()} 上，类型必须与
+     * {@code Mono<Authentication>} 一致，故不能返回 {@code Mono<Void>}；写出 401 属订阅期
+     * 副作用，空序列会让后续 {@code flatMap} 自然跳过。</p>
+     *
+     * <p>整体用 {@code Mono.defer} 包裹：否则 {@code switchIfEmpty} 的实参在装配期即被求值，
+     * 认证成功的请求也会打出"缺少认证信息"告警。</p>
+     *
+     * @param message 401 错误消息（区分 multipart 与标准请求的既有文案）
      */
-    private Mono<Void> handleMissingAuthentication(final ServerWebExchange exchange) {
-        log.warn("请求缺少认证信息: {}", exchange.getRequest().getPath().value());
-        return createAuthenticationErrorResponse(exchange,
-                "请求缺少认证信息，请提供X-API-Key或Jairouter_token",
-                "AUTH_MISSING");
+    private Mono<Authentication> writeMissingCredentialsError(
+            final ServerWebExchange exchange, final String message) {
+        return Mono.defer(() -> {
+            log.warn("请求缺少认证信息: {}", exchange.getRequest().getPath().value());
+            return createAuthenticationErrorResponse(exchange, message, "AUTH_MISSING")
+                    .then(Mono.<Authentication>empty());
+        });
     }
 
     /**
@@ -243,39 +237,43 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
             final ServerWebExchange exchange,
             final String message,
             final String errorCode) {
-        ServerHttpResponse response = exchange.getResponse();
+        // 延迟到订阅时再写响应：本方法含 setStatusCode 等副作用，若在装配期被求值，
+        // 会把认证成功请求的响应也改写成 401（见 handleMultipartAuthentication 注释）。
+        return Mono.defer(() -> {
+            ServerHttpResponse response = exchange.getResponse();
 
-        // 检查响应是否已经提交
-        if (response.isCommitted()) {
-            log.warn("响应已提交，无法创建认证错误响应");
-            return Mono.empty();
-        }
+            // 检查响应是否已经提交
+            if (response.isCommitted()) {
+                log.warn("响应已提交，无法创建认证错误响应");
+                return Mono.empty();
+            }
 
-        response.setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
-        final String path = exchange.getRequest().getPath().value();
-        final String errorResponse;
+            response.setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
+            final String path = exchange.getRequest().getPath().value();
+            final String errorResponse;
 
-        if (V1ErrorBodyMapper.isAnthropicPath(path)) {
-            errorResponse = buildAnthropicAuthErrorBody(message);
-        } else if (V1ErrorBodyMapper.isV1Path(path)) {
-            errorResponse = buildOpenAiAuthErrorBody(errorCode, message);
-        } else {
-            // 非 /v1 路径：沿用既有硬编码形状（逐字节不变）
-            errorResponse = String.format(
-                    "{\"error\": {\"message\": \"%s\", "
-                            + "\"type\": \"authentication_error\", "
-                            + "\"code\": \"%s\"}}",
-                    message.replace("\"", "\\\""),
-                    errorCode
-            );
-        }
+            if (V1ErrorBodyMapper.isAnthropicPath(path)) {
+                errorResponse = buildAnthropicAuthErrorBody(message);
+            } else if (V1ErrorBodyMapper.isV1Path(path)) {
+                errorResponse = buildOpenAiAuthErrorBody(errorCode, message);
+            } else {
+                // 非 /v1 路径：沿用既有硬编码形状（逐字节不变）
+                errorResponse = String.format(
+                        "{\"error\": {\"message\": \"%s\", "
+                                + "\"type\": \"authentication_error\", "
+                                + "\"code\": \"%s\"}}",
+                        message.replace("\"", "\\\""),
+                        errorCode
+                );
+            }
 
-        return response.writeWith(Mono.just(response.bufferFactory()
-                        .wrap(errorResponse.getBytes(StandardCharsets.UTF_8))))
-                .onErrorResume(throwable -> {
-                    log.error("写入认证错误响应时发生异常: {}", throwable.getMessage(), throwable);
-                    return Mono.empty();
-                });
+            return response.writeWith(Mono.just(response.bufferFactory()
+                            .wrap(errorResponse.getBytes(StandardCharsets.UTF_8))))
+                    .onErrorResume(throwable -> {
+                        log.error("写入认证错误响应时发生异常: {}", throwable.getMessage(), throwable);
+                        return Mono.empty();
+                    });
+        });
     }
 
     /**
