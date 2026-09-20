@@ -122,7 +122,7 @@ public class FileStatePersistenceServiceImpl implements StatePersistenceService 
 
         int successCount = 0;
         for (Map.Entry<String, Map<String, Object>> entry : states.entrySet()) {
-            Boolean result = save(stateType, entry.getKey(), entry.getValue()).block();
+            Boolean result = save(stateType, entry.getKey(), entry.getValue()).block(org.unreal.modelrouter.common.util.ReactorTimeouts.BLOCK);
             if (Boolean.TRUE.equals(result)) {
                 successCount++;
             }
@@ -134,7 +134,7 @@ public class FileStatePersistenceServiceImpl implements StatePersistenceService 
     public Mono<Map<String, Map<String, Object>>> loadBatch(final StateType stateType, final Iterable<String> keys) {
         Map<String, Map<String, Object>> result = new HashMap<>();
         for (String key : keys) {
-            Map<String, Object> stateData = load(stateType, key).block();
+            Map<String, Object> stateData = load(stateType, key).block(org.unreal.modelrouter.common.util.ReactorTimeouts.BLOCK);
             if (stateData != null && !stateData.isEmpty()) {
                 result.put(key, stateData);
             }

@@ -122,7 +122,7 @@ public class StateRecoveryService {
                         if (instanceUrl != null) {
                             CircuitBreaker cb = circuitBreakerManager.getCircuitBreaker(instanceId, instanceUrl);
                             if (cb != null) {
-                                Boolean result = cbPersistenceAdapter.restoreCircuitBreakerState(cb).block();
+                                Boolean result = cbPersistenceAdapter.restoreCircuitBreakerState(cb).block(org.unreal.modelrouter.common.util.ReactorTimeouts.BLOCK);
                                 if (Boolean.TRUE.equals(result)) {
                                     recoveredCount++;
                                 } else {
@@ -197,7 +197,7 @@ public class StateRecoveryService {
                         
                         if (lb != null) {
                             Boolean result = lbPersistenceAdapter
-                                    .restoreLoadBalancerState(serviceType, lb).block();
+                                    .restoreLoadBalancerState(serviceType, lb).block(org.unreal.modelrouter.common.util.ReactorTimeouts.BLOCK);
                             if (Boolean.TRUE.equals(result)) {
                                 recoveredCount++;
                             } else {

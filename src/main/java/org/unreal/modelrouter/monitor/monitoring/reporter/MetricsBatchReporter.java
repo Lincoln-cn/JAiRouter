@@ -231,7 +231,7 @@ public final class MetricsBatchReporter {
                     .retrieve()
                     .bodyToMono(String.class)
                     .timeout(java.time.Duration.ofMillis(httpTimeoutMs))
-                    .block();
+                    .block(org.unreal.modelrouter.common.util.ReactorTimeouts.BLOCK);
 
             LOGGER.debug("Reported {} metrics to HTTP endpoint: {}", batch.size(), httpEndpointUrl);
             return true;

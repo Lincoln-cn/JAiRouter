@@ -126,7 +126,7 @@ public class RateLimiterPersistenceIntegration {
         }
 
         try {
-            Integer result = persistenceAdapter.syncPendingStates().block();
+            Integer result = persistenceAdapter.syncPendingStates().block(org.unreal.modelrouter.common.util.ReactorTimeouts.BLOCK);
             return result != null ? result : 0;
         } catch (Exception e) {
             logger.error("Manual sync failed: {}", e.getMessage(), e);
@@ -148,7 +148,7 @@ public class RateLimiterPersistenceIntegration {
         try {
             Map<String, Boolean> result = persistenceAdapter.restoreAllRateLimiterStates()
                     .timeout(RECOVERY_TIMEOUT)
-                    .block();
+                    .block(org.unreal.modelrouter.common.util.ReactorTimeouts.BLOCK);
             return result != null ? result : Map.of();
         } catch (Exception e) {
             logger.error("Manual recovery failed: {}", e.getMessage(), e);
@@ -169,7 +169,7 @@ public class RateLimiterPersistenceIntegration {
 
         if (initialized && persistenceAdapter != null) {
             try {
-                Map<String, Object> stats = persistenceAdapter.getStats().block();
+                Map<String, Object> stats = persistenceAdapter.getStats().block(org.unreal.modelrouter.common.util.ReactorTimeouts.BLOCK);
                 if (stats != null) {
                     Object registeredCount = stats.get("registeredCount");
                     Object pendingSyncCount = stats.get("pendingSyncCount");
