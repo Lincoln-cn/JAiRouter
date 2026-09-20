@@ -22,8 +22,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.auth.security.model.ApiKeyAuthentication;
+import org.unreal.modelrouter.auth.security.model.JwtAuthentication;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitor.tracing.interceptor.ControllerTracingInterceptor;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
@@ -175,13 +178,124 @@ class ServiceRequestHandlerPermissionTest {
         }
     }
 
+    @Nested
+    @DisplayName("控制台 JWT 登录态权限判定（issue #77）")
+    class JwtPermissionTests {
+
+        /**
+         * 控制台页面请求只带 {@code Jairouter_Token}（JWT），不带 API Key。此前实现用
+         * {@code instanceof ApiKeyAuthentication} 过滤认证对象，JWT 被直接丢弃，导致 5 个
+         * Playground 在登录态下全部不可用。
+         */
+        @Test
+        @DisplayName("ADMIN 角色的 JWT 应该可以访问所有服务")
+        void adminJwtShouldAccessAllServices() {
+            JwtAuthentication auth = jwtAuth(List.of("ADMIN"), List.of());
+
+            for (ServiceType serviceType : ServiceType.values()) {
+                assertTrue(invokeHasServicePermission(auth, serviceType),
+                    "ADMIN JWT should access " + serviceType + " service");
+            }
+        }
+
+        @Test
+        @DisplayName("持有 ai:playground:use 的 JWT 应该可以访问所有服务")
+        void playgroundPermissionJwtShouldAccessAllServices() {
+            JwtAuthentication auth = jwtAuth(List.of("USER"), List.of("ai:playground:use"));
+
+            for (ServiceType serviceType : ServiceType.values()) {
+                assertTrue(invokeHasServicePermission(auth, serviceType),
+                    "JWT with ai:playground:use should access " + serviceType + " service");
+            }
+        }
+
+        @Test
+        @DisplayName("无 ADMIN 且无 ai:playground:use 的 JWT 应该被拒绝")
+        void jwtWithoutPlaygroundPermissionShouldBeRejected() {
+            JwtAuthentication auth = jwtAuth(List.of("USER"), List.of("overview:dashboard:read"));
+
+            for (ServiceType serviceType : ServiceType.values()) {
+                assertFalse(invokeHasServicePermission(auth, serviceType),
+                    "JWT without ADMIN/ai:playground:use should be rejected for " + serviceType);
+            }
+        }
+
+        @Test
+        @DisplayName("JWT 不按 ROLE_<服务类型> 判定（控制台准入与 API Key 服务角色是两套语义）")
+        void jwtIsNotJudgedByServiceRole() {
+            // 角色 CHAT 会映射为 ROLE_CHAT authority，但控制台登录态不以服务角色为判据
+            JwtAuthentication auth = jwtAuth(List.of("CHAT"), List.of());
+
+            assertFalse(invokeHasServicePermission(auth, ServiceType.chat),
+                "JWT 缺少 ADMIN/ai:playground:use 时应拒绝，即使带有与语义同名的服务角色");
+        }
+
+        private JwtAuthentication jwtAuth(final List<String> roles, final List<String> permissions) {
+            JwtAuthentication auth = new JwtAuthentication("admin", "jwt-token", roles, permissions);
+            auth.setAuthenticated(true);
+            return auth;
+        }
+    }
+
+    @Nested
+    @DisplayName("调用主体标识解析（issue #77）")
+    class ResolveCallerIdTests {
+
+        @Test
+        @DisplayName("ApiKeyAuthentication 取 keyId（原语义不变）")
+        void apiKeyCallerKeepsKeyId() {
+            ApiKeyAuthentication auth = new ApiKeyAuthentication(
+                "key-1", "sk-key-1", List.of("chat"));
+            auth.setAuthenticated(true);
+
+            assertEquals("key-1", invokeResolveCallerId(auth));
+        }
+
+        @Test
+        @DisplayName("JwtAuthentication 取 jwt:<用户名>（与 API Key 键空间隔离）")
+        void jwtCallerIsNamespaced() {
+            JwtAuthentication auth = new JwtAuthentication(
+                "admin", "jwt-token", List.of("ADMIN"), List.of());
+
+            assertEquals("jwt:admin", invokeResolveCallerId(auth));
+        }
+
+        @Test
+        @DisplayName("其他认证类型不可识别（不放宽准入面）")
+        void unsupportedAuthenticationIsRejected() {
+            Authentication other = new UsernamePasswordAuthenticationToken("admin", null);
+
+            assertNull(invokeResolveCallerId(other),
+                "非 ApiKey / 非 JWT 的认证对象不得被当作调用主体");
+        }
+
+        @Test
+        @DisplayName("principal 为空时不可识别")
+        void blankPrincipalIsRejected() {
+            // 单参构造 = 未认证形态，principal 为 null
+            assertNull(invokeResolveCallerId(new ApiKeyAuthentication("sk-only")));
+            assertNull(invokeResolveCallerId(null));
+        }
+
+        private String invokeResolveCallerId(final Authentication auth) {
+            try {
+                var method = ServiceRequestHandler.class.getDeclaredMethod(
+                    "resolveCallerId", Authentication.class);
+                method.setAccessible(true);
+                return (String) method.invoke(null, auth);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to invoke resolveCallerId", e);
+            }
+        }
+    }
+
     /**
      * 通过反射调用 private hasServicePermission 方法
      */
-    private boolean invokeHasServicePermission(ApiKeyAuthentication auth, ServiceType serviceType) {
+    private boolean invokeHasServicePermission(Authentication auth, ServiceType serviceType) {
         try {
             var method = ServiceRequestHandler.class.getDeclaredMethod(
-                "hasServicePermission", ApiKeyAuthentication.class, ServiceType.class);
+                "hasServicePermission", Authentication.class, ServiceType.class);
             method.setAccessible(true);
             return (boolean) method.invoke(handler, auth, serviceType);
         } catch (Exception e) {

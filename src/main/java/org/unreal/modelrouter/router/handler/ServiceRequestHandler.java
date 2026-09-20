@@ -27,12 +27,14 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.auth.security.model.ApiKeyAuthentication;
+import org.unreal.modelrouter.auth.security.model.JwtAuthentication;
 import org.unreal.modelrouter.auth.security.quota.QuotaEnforcementService;
 import org.unreal.modelrouter.auth.security.quota.QuotaLimitViolation;
 import org.unreal.modelrouter.auth.security.quota.QuotaTokenEstimator;
@@ -86,6 +88,37 @@ public class ServiceRequestHandler {
      * ServerWebExchange attribute key for storing the authenticated API Key ID.
      */
     public static final String API_KEY_ID_ATTRIBUTE = "API_KEY_ID";
+
+    /**
+     * issue #77: 请求属性 key —— 解析后的调用主体标识.
+     *
+     * <p>API Key 调用 = {@code keyId}；控制台 JWT 登录态 = {@code jwt:<用户名>}。仅供粘性路由键
+     * 与响应缓存租户键使用（避免控制台用户间共用缓存租户）。</p>
+     *
+     * <p>JWT 身份<b>不</b>写入 {@link #API_KEY_ID_ATTRIBUTE}：该属性会被用量归因链路
+     * （{@code TokenUsageExtractor} / {@code StreamingRequestProcessor}）当作 API Key ID
+     * 读取，而 JWT 用户名在 API Key 存储中不存在，会产生无意义的 WARN 与错误归属。</p>
+     */
+    public static final String CALLER_ID_ATTRIBUTE = "JAIR_CALLER_ID";
+
+    /**
+     * issue #77: JWT 调用主体标识前缀（与 API Key ID 的键空间隔离）。
+     */
+    private static final String JWT_CALLER_ID_PREFIX = "jwt:";
+
+    /**
+     * issue #77: 控制台 AI 面准入权限码.
+     *
+     * <p>与 URL 层 RBAC 对 {@code /api/**} 的门槛同源（{@code PermissionRuleRegistry} 的
+     * {@code ai:playground:use}）。控制台登录态不再要求 {@code ROLE_<SERVICE>}，否则非 ADMIN
+     * 角色（持有该权限码但无服务角色）使用 Playground 会被判 403。</p>
+     */
+    private static final String AI_PLAYGROUND_PERMISSION = "ai:playground:use";
+
+    /**
+     * ADMIN 角色 authority（JwtAuthentication/ApiKeyAuthentication 均以 {@code ROLE_} 前缀写入）。
+     */
+    private static final String ROLE_ADMIN_AUTHORITY = "ROLE_ADMIN";
 
     /**
      * v2.9.9: ServerWebExchange attribute key for storing the original request DTO.
@@ -209,30 +242,38 @@ public class ServiceRequestHandler {
 
         return ReactiveSecurityContextHolder.getContext()
             .map(ctx -> ctx.getAuthentication())
-            .filter(auth -> auth instanceof ApiKeyAuthentication)
-            .cast(ApiKeyAuthentication.class)
             .flatMap(auth -> {
-                String keyId = (String) auth.getPrincipal();
-                if (keyId == null) {
+                // issue #77: 控制台 JWT 登录态与 API Key 同为合法调用主体，此处不再只认
+                // ApiKeyAuthentication（曾用 instanceof 过滤，导致页面请求全部走不通）。
+                String callerId = resolveCallerId(auth);
+                if (callerId == null) {
+                    logger.warn("请求缺少可识别的认证主体: {}",
+                        httpRequest.getPath().value());
                     return Mono.error(new ResponseStatusException(
-                        HttpStatus.UNAUTHORIZED, "API Key authentication required"));
+                        HttpStatus.UNAUTHORIZED, "Authentication required"));
                 }
 
                 // 检查服务类型权限
                 if (!hasServicePermission(auth, endpoint.getServiceType())) {
-                    logger.warn("API Key '{}' does not have permission for service type: {}",
-                        keyId, endpoint.getServiceType());
+                    logger.warn("调用主体 '{}' 无权访问服务类型: {}",
+                        callerId, endpoint.getServiceType());
                     return Mono.error(new ResponseStatusException(
                         HttpStatus.FORBIDDEN,
-                        "API Key does not have permission for service: " + endpoint.getServiceType()));
+                        "Caller does not have permission for service: " + endpoint.getServiceType()));
                 }
 
-                exchange.getAttributes().put(API_KEY_ID_ATTRIBUTE, keyId);
-                httpRequest.getAttributes().put(API_KEY_ID_ATTRIBUTE, keyId);
+                // API Key 调用保留原属性（用量归因链路依赖）；JWT 登录态只写 CALLER_ID_ATTRIBUTE，
+                // 避免用户名被当作不存在的 API Key ID 记账。
+                if (!isJwtCaller(callerId)) {
+                    exchange.getAttributes().put(API_KEY_ID_ATTRIBUTE, callerId);
+                    httpRequest.getAttributes().put(API_KEY_ID_ATTRIBUTE, callerId);
+                }
+                exchange.getAttributes().put(CALLER_ID_ATTRIBUTE, callerId);
+                httpRequest.getAttributes().put(CALLER_ID_ATTRIBUTE, callerId);
 
                 // v2.9.9: 认证通过后为可缓存请求生成响应缓存键并放入请求属性
                 // （供 handleWithInstanceAdapter 缓存读短路与 processor 写缓存使用）
-                prepareResponseCacheKey(exchange, httpRequest, keyId, endpoint);
+                prepareResponseCacheKey(exchange, httpRequest, callerId, endpoint);
 
                 return handleWithInstanceAdapter(
                     endpoint,
@@ -314,10 +355,10 @@ public class ServiceRequestHandler {
         String clientIp = IpUtils.getClientIp(httpRequest);
         ServiceType serviceType = endpoint.getServiceType();
 
-        // v2.9.0: 存储亲和性上下文原始组件(apiKeyId, clientIp, serviceType, modelName)
+        // v2.9.0: 存储亲和性上下文原始组件(callerId, clientIp, serviceType, modelName)
         // 在 ModelServiceRegistry 中按 sticky.scope 配置动态解析为正确粒度的亲和性键
-        String apiKeyId = extractApiKeyId(httpRequest);
-        AffinityContextHolder.set(apiKeyId, clientIp, serviceType.name(), modelName);
+        String callerId = extractCallerId(httpRequest);
+        AffinityContextHolder.set(callerId, clientIp, serviceType.name(), modelName);
 
         // v2.8.5: 提取请求头用于规则引擎路由(仅用于规则匹配,不影响出站转发)
         Map<String, String> requestHeaders = new HashMap<>();
@@ -358,7 +399,7 @@ public class ServiceRequestHandler {
 
             // v3.1 PR-2: 配额限额判定 + 预留 — selectInstance 之前（缓存命中已先行短路）
             Optional<QuotaLimitViolation> quotaViolation =
-                    reserveQuota(exchange, httpRequest, apiKeyId);
+                    reserveQuota(exchange, httpRequest, callerId);
             if (quotaViolation.isPresent()) {
                 return rejectByQuota(exchange, quotaViolation.get());
             }
@@ -540,18 +581,55 @@ public class ServiceRequestHandler {
     }
 
     /**
-     * 从请求属性中提取 API Key ID
-     * v2.9.0: 用于会话亲和性键解析
+     * 从请求属性中提取调用主体标识.
+     *
+     * <p>v2.9.0: 用于会话亲和性键解析；issue #77 起主体可能是 API Key ID 或
+     * {@code jwt:<用户名>}（{@link #CALLER_ID_ATTRIBUTE} 优先，兼容仍只写
+     * {@link #API_KEY_ID_ATTRIBUTE} 的调用路径）。</p>
      */
-    private String extractApiKeyId(final ServerHttpRequest httpRequest) {
+    private String extractCallerId(final ServerHttpRequest httpRequest) {
         if (httpRequest == null) {
             return null;
         }
-        Object keyId = httpRequest.getAttributes().get(API_KEY_ID_ATTRIBUTE);
-        if (keyId instanceof String key && !key.isBlank()) {
+        Object callerId = httpRequest.getAttributes().get(CALLER_ID_ATTRIBUTE);
+        if (!(callerId instanceof String value) || value.isBlank()) {
+            callerId = httpRequest.getAttributes().get(API_KEY_ID_ATTRIBUTE);
+        }
+        if (callerId instanceof String key && !key.isBlank()) {
             return key;
         }
         return null;
+    }
+
+    /**
+     * 解析调用主体标识（issue #77）.
+     *
+     * <p>只接受网关实际产生的两种认证对象：API Key 取 {@code keyId}（原语义不变）；控制台 JWT
+     * 登录态取用户名并加 {@link #JWT_CALLER_ID_PREFIX} 前缀，与 API Key ID 的键空间隔离。
+     * 其他认证类型一律返回 {@code null}（拒绝），不因 principal 恰为字符串而放宽准入。</p>
+     *
+     * @param authentication 已认证主体
+     * @return 调用主体标识；不可识别时返回 {@code null}
+     */
+    private static String resolveCallerId(final Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
+        Object principal = authentication.getPrincipal();
+        if (!(principal instanceof String value) || value.isBlank()) {
+            return null;
+        }
+        if (authentication instanceof JwtAuthentication) {
+            return JWT_CALLER_ID_PREFIX + value;
+        }
+        return authentication instanceof ApiKeyAuthentication ? value : null;
+    }
+
+    /**
+     * 判断调用主体是否来自控制台 JWT 登录态（issue #77）.
+     */
+    private static boolean isJwtCaller(final String callerId) {
+        return callerId != null && callerId.startsWith(JWT_CALLER_ID_PREFIX);
     }
 
     /**
@@ -566,18 +644,23 @@ public class ServiceRequestHandler {
      *
      * @param exchange   原始交换对象（读取原始 DTO），可为 {@code null}
      * @param httpRequest HTTP 请求（挂载结算凭据）
-     * @param apiKeyId   认证后的 API Key ID
+     * @param callerId   调用主体标识（API Key ID 或 {@code jwt:<用户名>}）
      * @return 超限结果；放行（含降级放行）时为 {@link Optional#empty()}
      */
     private Optional<QuotaLimitViolation> reserveQuota(final ServerWebExchange exchange,
                                                        final ServerHttpRequest httpRequest,
-                                                       final String apiKeyId) {
+                                                       final String callerId) {
         if (quotaEnforcementService == null || !quotaEnforcementService.isEnabled()) {
+            return Optional.empty();
+        }
+        // issue #77: 控制台 JWT 登录态（页面请求，无 API Key）不参与 API Key 配额账本，
+        // 既不预留也不产生结算凭据；调用历史仍按 jwt:<用户名> 记归属。
+        if (isJwtCaller(callerId)) {
             return Optional.empty();
         }
         Object requestDto = exchange != null ? exchange.getAttribute(REQUEST_DTO_ATTRIBUTE) : null;
         long estimatedTokens = QuotaTokenEstimator.estimate(requestDto);
-        return quotaEnforcementService.tryReserve(httpRequest, apiKeyId, estimatedTokens);
+        return quotaEnforcementService.tryReserve(httpRequest, callerId, estimatedTokens);
     }
 
     /**
@@ -619,11 +702,11 @@ public class ServiceRequestHandler {
      *
      * @param exchange ServerWebExchange（含原始 DTO attribute）
      * @param httpRequest HTTP 请求（缓存键存放处）
-     * @param apiKeyId 认证后的 API Key ID
+     * @param callerId 调用主体标识（API Key ID 或 {@code jwt:<用户名>}）
      * @param endpoint 服务端点
      */
     private void prepareResponseCacheKey(final ServerWebExchange exchange, final ServerHttpRequest httpRequest,
-                                         final String apiKeyId, final ServiceEndpoint endpoint) {
+                                         final String callerId, final ServiceEndpoint endpoint) {
         if (responseCacheService == null || !responseCacheService.isEnabled()) {
             return;
         }
@@ -634,8 +717,8 @@ public class ServiceRequestHandler {
         if (requestDto == null) {
             return;
         }
-        // 租户键: apiKeyId 缺省回退 clientIp（复用 AffinityKeyResolver 语义，防跨租户泄漏）
-        String tenantKey = AffinityKeyResolver.resolveTenantKey(apiKeyId, IpUtils.getClientIp(httpRequest));
+        // 租户键: callerId 缺省回退 clientIp（复用 AffinityKeyResolver 语义，防跨租户泄漏）
+        String tenantKey = AffinityKeyResolver.resolveTenantKey(callerId, IpUtils.getClientIp(httpRequest));
         if (tenantKey == null) {
             return;
         }
@@ -797,26 +880,36 @@ public class ServiceRequestHandler {
     }
 
     /**
-     * 检查 API Key 是否具有访问指定服务类型的权限.
+     * 检查调用主体是否具有访问指定服务类型的权限.
      *
      * <p>权限检查逻辑：
      * <ul>
-     *   <li>如果 API Key 具有 ADMIN 权限，允许访问所有服务</li>
-     *   <li>否则检查是否具有对应服务类型的权限（如 ROLE_CHAT, ROLE_EMBEDDING 等）</li>
+     *   <li>API Key：具有 ADMIN 权限则放行所有服务；否则要求对应服务类型权限
+     *       （如 ROLE_CHAT, ROLE_EMBEDDING 等）</li>
+     *   <li>控制台 JWT（issue #77）：ADMIN 或 {@code ai:playground:use} 放行
+     *       （与 URL 层 RBAC 对 {@code /api/**} 的门槛同源）</li>
      * </ul>
      *
-     * @param authentication API Key 认证对象
+     * @param authentication 已认证主体（API Key 或 JWT）
      * @param serviceType 服务类型
      * @return 是否具有权限
      */
-    private boolean hasServicePermission(final ApiKeyAuthentication authentication, final ServiceType serviceType) {
+    private boolean hasServicePermission(final Authentication authentication, final ServiceType serviceType) {
+        // issue #77: 控制台登录态（JWT）按控制台语义判定 —— 与 URL 层 RBAC 对 /api/** 的门槛同源
+        // （ROLE_ADMIN 或 ai:playground:use），不要求 ROLE_<SERVICE>，否则持有该权限码但无服务
+        // 角色的控制台用户使用 Playground 会被误判 403。
+        if (authentication instanceof JwtAuthentication) {
+            return hasAuthority(authentication, ROLE_ADMIN_AUTHORITY)
+                    || hasAuthority(authentication, AI_PLAYGROUND_PERMISSION);
+        }
+
         String requiredRole = "ROLE_" + serviceType.name().toUpperCase();
 
         for (GrantedAuthority authority : authentication.getAuthorities()) {
             String authorityName = authority.getAuthority();
 
             // ADMIN 权限允许访问所有服务
-            if ("ROLE_ADMIN".equals(authorityName)) {
+            if (ROLE_ADMIN_AUTHORITY.equals(authorityName)) {
                 return true;
             }
 
@@ -826,6 +919,21 @@ public class ServiceRequestHandler {
             }
         }
 
+        return false;
+    }
+
+    /**
+     * 判断已认证主体是否携带指定 authority.
+     */
+    private static boolean hasAuthority(final Authentication authentication, final String authority) {
+        if (authentication.getAuthorities() == null) {
+            return false;
+        }
+        for (GrantedAuthority grantedAuthority : authentication.getAuthorities()) {
+            if (authority.equals(grantedAuthority.getAuthority())) {
+                return true;
+            }
+        }
         return false;
     }
 
