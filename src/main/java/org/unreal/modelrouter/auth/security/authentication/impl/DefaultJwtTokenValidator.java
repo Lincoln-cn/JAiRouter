@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * JWT令牌验证器默认实现
@@ -50,8 +51,17 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
     private static final String PERMISSIONS_CLAIM = "permissions";
     private static final String USER_ID_CLAIM = "userId";
 
+    /** 黑名单存储不可用后的短路窗口默认值（issue #76）。 */
+    private static final long DEFAULT_DEGRADED_RETRY_INTERVAL_MILLIS = 30_000L;
+
     private final SecurityProperties securityProperties;
     private final ReactiveStringRedisTemplate redisTemplate;
+
+    /** 降级告警是否已打过（issue #76：只打一次，避免每请求刷屏）。 */
+    private final AtomicBoolean legacyDegradationLogged = new AtomicBoolean(false);
+
+    /** 降级短路窗口截止时间戳；0 表示未处于降级状态。 */
+    private volatile long legacyRedisRetryAfterMillis = 0L;
 
     // 使用增强的黑名单服务（可选依赖）
     @Autowired(required = false)
@@ -188,23 +198,49 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
 
             final String finalJti = jti; // 创建final变量供lambda使用
             String blacklistKey = BLACKLIST_KEY_PREFIX + finalJti;
+
+            // 存储已判定不可用时短路，避免每个请求都付一次连接超时（issue #76）
+            if (System.currentTimeMillis() < legacyRedisRetryAfterMillis) {
+                log.debug("黑名单存储处于降级短路窗口，跳过 Redis 查询: jti={}", finalJti);
+                return Mono.just(false);
+            }
+
             return redisTemplate.hasKey(blacklistKey)
                 .doOnNext(isBlacklisted -> {
                     if (isBlacklisted) {
                         log.warn("令牌在Redis黑名单中被发现: jti={}", finalJti);
                     }
                 })
+                // 查询成功即证明存储可用：清除降级状态，恢复后重新生效
+                .doOnNext(ignored -> clearLegacyDegradation())
                 .onErrorResume(ex -> {
-                    log.error("检查Redis黑名单时发生错误: {}", ex.getMessage());
-                    // Redis连接失败时，为了安全起见，应该拒绝令牌
-                    // 但这可能影响正常用户，所以记录严重警告
-                    log.error("Redis黑名单检查失败，令牌状态未知，存在安全风险: jti={}", finalJti);
-                    return Mono.just(false); // 默认允许，但记录错误
+                    legacyRedisRetryAfterMillis =
+                            System.currentTimeMillis() + DEFAULT_DEGRADED_RETRY_INTERVAL_MILLIS;
+                    // 降级语义必须让运维可见，但只在首次明确告警，其后降为 DEBUG
+                    // （原实现每个请求打两条 ERROR，会掩盖真正的鉴权失败——issue #76）
+                    if (legacyDegradationLogged.compareAndSet(false, true)) {
+                        log.error("JWT 黑名单校验已降级：黑名单存储不可达，撤销/登出的令牌在存储恢复前"
+                                + "不会被拦截，存在安全风险。error={}, jti={}", ex.getMessage(), finalJti);
+                    } else {
+                        log.debug("黑名单存储仍不可用，继续降级放行: jti={}, error={}",
+                                finalJti, ex.getMessage());
+                    }
+                    return Mono.just(false); // 默认允许，降级已在首次告警中说明
                 });
 
         } catch (Exception e) {
             log.error("检查JWT令牌黑名单状态时发生严重错误: {}", e.getMessage(), e);
             return Mono.just(false); // 出错时默认不在黑名单中，但记录错误
+        }
+    }
+
+    /**
+     * 黑名单存储恢复可用时清除降级状态（幂等）.
+     */
+    private void clearLegacyDegradation() {
+        legacyRedisRetryAfterMillis = 0L;
+        if (legacyDegradationLogged.compareAndSet(true, false)) {
+            log.info("JWT 黑名单存储已恢复，Redis 黑名单校验重新生效");
         }
     }
 
