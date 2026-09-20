@@ -284,6 +284,18 @@ curl -X POST http://localhost:8080/api/auth/jwt/logout \
      -H "Jairouter_Token: token_to_revoke"
 ```
 
+### Behavior When Storage Is Unavailable
+
+Blacklist checks depend on the storage backend (Redis). When it is unreachable, checks **degrade to the local cache of the current instance**:
+
+- Tokens already recorded in the local cache are still blocked;
+- Tokens that miss the local cache are **allowed** — so before the storage recovers, **tokens revoked by another instance, or dropped from the local cache by a restart of this instance, no longer take effect immediately**; revocation degrades from global and immediate to best-effort;
+- The degradation is reported once on the first failure (later failures drop to DEBUG level), so per-request log spam no longer hides real authentication failures;
+- A storage availability probe runs at startup and warns explicitly when the backend is unreachable, instead of waiting for the first failing request;
+- Checks resume automatically once the storage recovers — **no restart required**.
+
+> ⚠️ This is an intentional availability-first trade-off. If your deployment treats immediate revocation as a hard security requirement, keep the blacklist storage available alongside the gateway (same compose file / cluster, with health checks) and watch the startup warning.
+
 ---
 
 ## Token Management APIs

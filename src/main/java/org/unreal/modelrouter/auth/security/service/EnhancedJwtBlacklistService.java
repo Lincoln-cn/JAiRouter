@@ -10,6 +10,7 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 增强的JWT黑名单服务
@@ -24,6 +25,12 @@ public class EnhancedJwtBlacklistService {
     private static final String BLACKLIST_KEY_PREFIX = "jwt:blacklist:";
     private static final String BLACKLIST_BACKUP_KEY_PREFIX = "jwt:blacklist:backup:";
 
+    /** 单次 Redis 查询超时（存储不可达时避免拖死鉴权链路）。 */
+    private static final Duration REDIS_CHECK_TIMEOUT = Duration.ofMillis(300);
+
+    /** 存储不可用后的短路窗口默认值：窗口内跳过 Redis 查询，到期后自动重试以感知恢复。 */
+    private static final long DEFAULT_DEGRADED_RETRY_INTERVAL_MILLIS = 30_000L;
+
     private final ReactiveStringRedisTemplate redisTemplate;
 
     // 本地缓存作为备份，防止Redis连接问题
@@ -31,6 +38,15 @@ public class EnhancedJwtBlacklistService {
 
     // 最大本地缓存大小
     private static final int MAX_LOCAL_CACHE_SIZE = 10000;
+
+    /** 降级告警是否已打过（issue #76：只打一次，避免每请求刷屏）。 */
+    private final AtomicBoolean storageDegradationLogged = new AtomicBoolean(false);
+
+    /** 短路窗口的截止时间戳；0 表示未处于降级状态。 */
+    private volatile long redisRetryAfterMillis = 0L;
+
+    /** 短路窗口时长；测试可调小以避免等待。 */
+    private volatile long degradedRetryIntervalMillis = DEFAULT_DEGRADED_RETRY_INTERVAL_MILLIS;
 
     /**
      * 将令牌加入黑名单
@@ -110,10 +126,17 @@ public class EnhancedJwtBlacklistService {
             }
         }
 
-        // 2. 检查Redis主键（短超时：Redis 不可达时避免拖死管理台/鉴权链路）
+        // 2. 存储已被判定为不可用时短路，避免每个请求都付出一次连接超时代价。
+        //    窗口内仅依据本地缓存判定（上面已查），到期后自动重试以感知恢复。
+        if (System.currentTimeMillis() < redisRetryAfterMillis) {
+            log.debug("黑名单存储处于降级短路窗口，跳过 Redis 查询: tokenId={}", trimmedTokenId);
+            return Mono.just(false);
+        }
+
+        // 3. 检查Redis主键（短超时：Redis 不可达时避免拖死管理台/鉴权链路）
         String blacklistKey = BLACKLIST_KEY_PREFIX + trimmedTokenId;
         return redisTemplate.hasKey(blacklistKey)
-                .timeout(Duration.ofMillis(300))
+                .timeout(REDIS_CHECK_TIMEOUT)
                 .flatMap(exists -> {
                     if (exists) {
                         log.debug("令牌在Redis黑名单中: tokenId={}", trimmedTokenId);
@@ -121,14 +144,13 @@ public class EnhancedJwtBlacklistService {
                         localBlacklistCache.put(trimmedTokenId, System.currentTimeMillis() + 3600000); // 1小时
                         return Mono.just(true);
                     } else {
-                        // 3. 检查Redis备份键
+                        // 4. 检查Redis备份键
                         String backupKey = BLACKLIST_BACKUP_KEY_PREFIX + trimmedTokenId;
                         return redisTemplate.hasKey(backupKey)
-                                .timeout(Duration.ofMillis(300))
+                                .timeout(REDIS_CHECK_TIMEOUT)
                                 .map(backupExists -> {
                                     if (backupExists) {
                                         log.debug("令牌在Redis备份黑名单中: tokenId={}", trimmedTokenId);
-                                        // 同步到本地缓存
                                         localBlacklistCache.put(trimmedTokenId, System.currentTimeMillis() + 3600000);
                                         return true;
                                     }
@@ -136,19 +158,54 @@ public class EnhancedJwtBlacklistService {
                                 });
                     }
                 })
-                .onErrorResume(ex -> {
-                    log.warn("检查令牌黑名单状态时发生异常: tokenId={}, error={}", trimmedTokenId, ex.getMessage());
-                    // Redis连接失败时，依赖本地缓存
-                    Long localExpiration = localBlacklistCache.get(trimmedTokenId);
-                    if (localExpiration != null && System.currentTimeMillis() < localExpiration) {
-                        log.info("Redis异常，使用本地缓存判断令牌黑名单状态: tokenId={}", trimmedTokenId);
-                        return Mono.just(true);
-                    }
-                    // 如果本地缓存也没有，为了安全起见，在Redis异常时应该拒绝访问
-                    // 但这可能影响正常用户，所以记录警告日志
-                    log.warn("Redis异常且本地缓存无记录，令牌状态未知: tokenId={}", trimmedTokenId);
-                    return Mono.just(false); // 默认允许，但记录警告
-                });
+                // 查询成功即证明存储可用：撤销降级状态（恢复后重新生效）
+                .doOnNext(ignored -> clearStorageDegradation())
+                .onErrorResume(ex -> handleStorageUnavailable(trimmedTokenId, ex));
+    }
+
+    /**
+     * 黑名单存储不可用时的降级处理.
+     *
+     * <p>降级语义：仅依据本地缓存判定；本地缓存无记录时放行（返回 {@code false}），
+     * 即<b>存储不可用期间被撤销/登出的令牌不会被拦截</b>——这是本方法的既有取舍
+     * （可用性优先），但必须让运维可见：首次失败打一条带安全含义的 WARN，其后同类
+     * 失败降为 DEBUG，避免每个请求刷屏掩盖真正的鉴权失败（见 issue #76）。</p>
+     */
+    private Mono<Boolean> handleStorageUnavailable(final String trimmedTokenId, final Throwable ex) {
+        // 标记降级窗口：窗口内后续请求直接短路，不再逐次等待连接超时
+        redisRetryAfterMillis = System.currentTimeMillis() + degradedRetryIntervalMillis;
+
+        Long localExpiration = localBlacklistCache.get(trimmedTokenId);
+        if (localExpiration != null && System.currentTimeMillis() < localExpiration) {
+            log.debug("黑名单存储不可用，使用本地缓存判定: tokenId={}", trimmedTokenId);
+            return Mono.just(true);
+        }
+
+        if (storageDegradationLogged.compareAndSet(false, true)) {
+            log.warn("JWT 黑名单校验已降级：黑名单存储不可达，撤销/登出的令牌在存储恢复前不会被拦截"
+                    + "（仅依据本地缓存判定）。error={}, tokenId={}", ex.getMessage(), trimmedTokenId);
+        } else {
+            log.debug("黑名单存储仍不可用，继续降级放行: tokenId={}, error={}",
+                    trimmedTokenId, ex.getMessage());
+        }
+        return Mono.just(false);
+    }
+
+    /**
+     * 黑名单存储恢复可用时清除降级状态（幂等）.
+     */
+    private void clearStorageDegradation() {
+        redisRetryAfterMillis = 0L;
+        if (storageDegradationLogged.compareAndSet(true, false)) {
+            log.info("JWT 黑名单存储已恢复，Redis 黑名单校验重新生效");
+        }
+    }
+
+    /**
+     * 调整存储不可用后的短路窗口时长（包可见，仅供测试避免等待窗口到期）.
+     */
+    void setDegradedRetryIntervalMillis(final long millis) {
+        this.degradedRetryIntervalMillis = millis;
     }
 
     /**
