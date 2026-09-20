@@ -1357,11 +1357,11 @@
     },
     "docs/en/security/jwt-authentication.md": {
       "FilePath": "docs/en/security/jwt-authentication.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-09-18T11:16:36.209633",
-      "ContentHash": "0378b2e6717c7825",
-      "GitCommit": "2e651835",
-      "Author": "Lincoln",
+      "Version": "1.0.7",
+      "LastModified": "2026-09-20T10:07:30.277528",
+      "ContentHash": "31e8f1532a24314c",
+      "GitCommit": "e9a82173",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -1556,11 +1556,11 @@
     },
     "docs/zh/security/jwt-authentication.md": {
       "FilePath": "docs/zh/security/jwt-authentication.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-09-18T10:17:22.941809",
-      "ContentHash": "3f460bf31d8ab98b",
-      "GitCommit": "97163311",
-      "Author": "Lincoln",
+      "Version": "1.0.6",
+      "LastModified": "2026-09-20T10:07:30.570718",
+      "ContentHash": "4cee0cbfceddf420",
+      "GitCommit": "e9a82173",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -5997,7 +5997,23 @@
       "ChangeType": "DELETED",
       "Timestamp": "2026-09-19T15:00:03.696037",
       "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/en/security/jwt-authentication.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-20T10:07:30.277538",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/jwt-authentication.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-20T10:07:30.570726",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-09-20T07:26:45.044481"
+  "last_updated": "2026-09-20T10:07:30.626025"
 }
