@@ -72,4 +72,23 @@ class SafeRegexValidatorTest {
         assertNotNull(phone);
         assertTrue(phone.matcher("13800138000").find());
     }
+
+    @Test
+    @DisplayName("对抗性输入：扫描器不得退化或越界")
+    void adversarialInputs_shouldBeHandledWithoutBlowup() {
+        assertNotNull(SafeRegexValidator.validateUserPattern("(".repeat(200)));
+        assertNotNull(SafeRegexValidator.validateUserPattern("[" + "a".repeat(200)));
+        assertNotNull(SafeRegexValidator.validateUserPattern("\\" + "(".repeat(100)));
+        assertNotNull(SafeRegexValidator.validateUserPattern("((".repeat(100) + "*".repeat(60)));
+        assertFalse(SafeRegexValidator.isSafeUserPattern("a{99999999999999999999}"));
+    }
+
+    @Test
+    @DisplayName("字符类与转义：不得误判为 ReDoS")
+    void characterClassAndEscapes_shouldNotBeMisclassified() {
+        assertTrue(SafeRegexValidator.isSafeUserPattern("[|+*()]+"));
+        assertTrue(SafeRegexValidator.isSafeUserPattern("\\(a+\\)+"));
+        assertNull(SafeRegexValidator.validateUserPattern("\\d{2,3}"));
+        assertFalse(SafeRegexValidator.isSafeUserPattern("\\d{10001}"));
+    }
 }
