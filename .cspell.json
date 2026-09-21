@@ -330,7 +330,9 @@
     "eW91ci1hcGkta2V5LWhlcmU",
     "eW91ci1qd3Qtc2VjcmV0LWtleQ",
     "TOCTOU",
-    "HINCRBY"
+    "HINCRBY",
+    "SSRF",
+    "apikey"
   ],
   "ignorePaths": [
     "node_modules/**",
