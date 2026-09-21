@@ -99,6 +99,41 @@ class SanitizationConfigControllerTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void updateConfig_shouldRejectRedosAndBlankPatterns() {
+        SanitizationConfigController.SanitizationUpdateRequest request =
+                new SanitizationConfigController.SanitizationUpdateRequest();
+        SanitizationConfigController.SanitizationSubUpdate req =
+                new SanitizationConfigController.SanitizationSubUpdate();
+        req.piiPatterns = List.of("(a+)+", " ");
+        request.request = req;
+
+        ResponseEntity<RouterResponse<Map<String, Object>>> resp = controller.updateConfig(request).block();
+        assertEquals(400, resp.getStatusCode().value());
+        String message = resp.getBody().getMessage();
+        assertTrue(message.contains("request.piiPatterns"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void updateConfig_shouldAcceptDefaultPiiPatterns() {
+        SanitizationConfigController.SanitizationUpdateRequest request =
+                new SanitizationConfigController.SanitizationUpdateRequest();
+        SanitizationConfigController.SanitizationSubUpdate req =
+                new SanitizationConfigController.SanitizationSubUpdate();
+        req.piiPatterns = List.of(
+                "\\d{11}",
+                "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
+                "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"
+        );
+        request.request = req;
+
+        ResponseEntity<RouterResponse<Map<String, Object>>> resp = controller.updateConfig(request).block();
+        assertEquals(200, resp.getStatusCode().value());
+        assertEquals(3, securityProperties.getSanitization().getRequest().getPiiPatterns().size());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void testSanitization_shouldMaskPhone() {
         SanitizationConfigController.SanitizationTestRequest testRequest =
                 new SanitizationConfigController.SanitizationTestRequest();

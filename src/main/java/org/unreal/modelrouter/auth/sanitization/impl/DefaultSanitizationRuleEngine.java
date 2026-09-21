@@ -3,7 +3,9 @@ package org.unreal.modelrouter.auth.sanitization.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.common.exception.SanitizationException;
+import org.unreal.modelrouter.common.util.SafeRegexValidator;
 import org.unreal.modelrouter.auth.sanitization.SanitizationRuleEngine;
+import org.unreal.modelrouter.auth.security.model.RuleType;
 import org.unreal.modelrouter.auth.security.model.SanitizationRule;
 import reactor.core.publisher.Mono;
 
@@ -286,6 +288,15 @@ public final class DefaultSanitizationRuleEngine implements SanitizationRuleEngi
      */
     private Pattern getCompiledPattern(final SanitizationRule rule) {
         return compiledPatterns.computeIfAbsent(rule.getRuleId(), k -> {
+            if (isRegexType(rule)) {
+                final String reason = SafeRegexValidator.validateUserPattern(rule.getPattern());
+                if (reason != null) {
+                    log.warn("跳过不安全的正则规则: ruleId={}, reason={}{}",
+                            rule.getRuleId(), reason,
+                            SafeRegexValidator.formatPatternForLog(rule.getPattern()));
+                    return null;
+                }
+            }
             try {
                 String pattern = buildPattern(rule);
                 return Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
@@ -305,6 +316,10 @@ public final class DefaultSanitizationRuleEngine implements SanitizationRuleEngi
             case SENSITIVE_WORD -> "\\b" + Pattern.quote(rule.getPattern()) + "\\b";
             case PII_PATTERN, CUSTOM_REGEX -> rule.getPattern();
         };
+    }
+
+    private static boolean isRegexType(final SanitizationRule rule) {
+        return rule.getType() == RuleType.PII_PATTERN || rule.getType() == RuleType.CUSTOM_REGEX;
     }
     
     /**
@@ -333,7 +348,14 @@ public final class DefaultSanitizationRuleEngine implements SanitizationRuleEngi
                 return false;
             }
             
-            // 验证正则表达式语法
+            if (isRegexType(rule)) {
+                final String reason = SafeRegexValidator.validateUserPattern(rule.getPattern());
+                if (reason != null) {
+                    log.warn("规则验证失败，正则不安全: ruleId={}, reason={}", rule.getRuleId(), reason);
+                    return false;
+                }
+            }
+            
             try {
                 String pattern = buildPattern(rule);
                 Pattern.compile(pattern);
@@ -359,6 +381,16 @@ public final class DefaultSanitizationRuleEngine implements SanitizationRuleEngi
             
             for (SanitizationRule rule : rules) {
                 try {
+                    if (isRegexType(rule)) {
+                        final String reason = SafeRegexValidator.validateUserPattern(rule.getPattern());
+                        if (reason != null) {
+                            log.warn("跳过不安全的正则规则: ruleId={}, reason={}{}",
+                                    rule.getRuleId(), reason,
+                                    SafeRegexValidator.formatPatternForLog(rule.getPattern()));
+                            failureCount++;
+                            continue;
+                        }
+                    }
                     String pattern = buildPattern(rule);
                     Pattern compiledPattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
                     compiledPatterns.put(rule.getRuleId(), compiledPattern);
