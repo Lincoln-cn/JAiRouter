@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.2.0
-> **Last Updated**: 2026-09-19
+> **Document Version**: 3.2.1
+> **Last Updated**: 2026-09-21
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,46 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.2.1] - 2026-09-21 - Patch Release (Audit Remediation: Concurrency/Streaming/Quota/Auth/SSRF/Regex Safety)
+
+> Audit remediation batch merged after the v3.2.0 release (PRs #67–#72, #78–#81). Bug and security fixes only: no new features, no breaking changes to public APIs, routes, or config keys.
+
+#### Concurrency & Streaming
+
+- Health SSE interval snapshots moved off the EventLoop (`subscribeOn(boundedElastic)`); per-instance JPA N+1 and `tryEmitNext().orThrow()` removed
+- Streaming completion and adapter metrics/call-history paths no longer `block(5s)` on SUMMARY sanitization
+- Request main-chain synchronous section moved off the EventLoop (`Mono.defer(...).subscribeOn(boundedElastic())`)
+- SSE / WebSocket sinks bounded with `onBackpressureBuffer(256, DROP_OLDEST)`
+- Cold-path `block()` unified with timeouts (`ReactorTimeouts`: 5s normal, 30s startup)
+
+#### Quota & Rate Limiting
+
+- Fixed single-node `evaluate` → `reserve` TOCTOU (per-API-key serialization)
+- Cross-instance distributed race now closed by an atomic Redis Lua CAS (HINCRBY + limit check + rollback); 429 semantics and `X-Quota-*` / `Retry-After` unchanged
+
+#### Authentication & Authorization
+
+- **Fixed the spurious 401**: the auth filter's `switchIfEmpty` was attached to a Mono containing `chain.filter`, so successful authentication still returned `AUTH_MISSING` (with a JWT session, the console AI pages and `/v1/**` were unusable)
+- Console JWT sessions allowed to use AI endpoints; the tracing filter no longer runs the filter chain twice
+- JWT blacklist degradation when storage is unavailable: single warning + 30s short-circuit window + startup storage probe
+- `/ws/**` and health SSE now require authentication (frontend WebSocket sends a query token)
+- RBAC gaps closed; debug endpoints disabled by default and redacted when enabled; Swagger / OpenAPI require credentials by default
+- Frontend SSE reconnect timer unified and cleaned up on unmount
+
+#### Startup & Configuration
+
+- Factory-default JWT secrets rejected; production fails fast on missing or default secret (`StartupSecurityGate`)
+
+#### SSRF & Regex Safety
+
+- Instance URLs guarded by `SsrfGuard`: instance create/update, config sync, outbound `WebClient`, adapter connectivity tests
+- New `SafeRegexValidator`: all user-supplied sanitization regexes go through one gate (512-char limit; nested quantifiers, quantified alternation, backreferences, oversized quantifiers rejected); all three compile paths of both sanitization engines plus config validation are funneled through it; the detector itself is now an O(n) character scanner that runs no regex over user data
+- Incidental fix: `OptimizedSanitizationRuleEngine.compileRules` returned `null` through a Reactor `map` (latent NPE)
+
+#### Intentional Behavior Change
+
+- User-supplied patterns with nested quantifiers / backreferences / oversized quantifiers now get: HTTP 400 from `PUT /api/config/sanitization`; a config-validation error; runtime skip with a WARN. Response sanitization is disabled by default and the shipped default patterns are regression-covered
 
 ### [3.2.0] - 2026-09-19 - Minor Release (PII Governance & Quota Ops + Console E2E/UX)
 
