@@ -17,6 +17,7 @@ import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties
 import org.unreal.modelrouter.auth.security.model.RuleType;
 import org.unreal.modelrouter.auth.security.model.SanitizationRule;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.util.SafeRegexValidator;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
@@ -24,7 +25,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 /**
  * PII / 数据脱敏运行时管理控制器（全链路响应式，禁止 block()）.
@@ -169,12 +169,9 @@ public class SanitizationConfigController {
                 continue;
             }
             if (rule.getType() == RuleType.PII_PATTERN || rule.getType() == RuleType.CUSTOM_REGEX) {
-                try {
-                    if (Pattern.compile(rule.getPattern()).matcher(sample).find()) {
-                        matched.add(rule.getRuleId());
-                    }
-                } catch (PatternSyntaxException ignored) {
-                    // 无效正则在试跑中忽略
+                final Pattern compiled = SafeRegexValidator.compileOrNull(rule.getPattern());
+                if (compiled != null && compiled.matcher(sample).find()) {
+                    matched.add(rule.getRuleId());
                 }
             } else if (sample.toLowerCase().contains(rule.getPattern().toLowerCase())) {
                 matched.add(rule.getRuleId());
@@ -242,15 +239,15 @@ public class SanitizationConfigController {
         }
         if (update.piiPatterns != null) {
             for (final String pattern : update.piiPatterns) {
-                if (pattern == null || pattern.isBlank()) {
-                    errors.add(side + ".piiPatterns 存在空模式");
+                final String validationError = SafeRegexValidator.validateUserPattern(pattern);
+                if (validationError != null) {
+                    errors.add(side + ".piiPatterns " + validationError
+                            + (pattern != null && !pattern.isBlank() && pattern.length() <= 80
+                                    ? ": " + pattern
+                                    : ""));
                     continue;
                 }
-                try {
-                    Pattern.compile(pattern);
-                } catch (PatternSyntaxException e) {
-                    errors.add(side + ".piiPatterns 非法正则: " + pattern);
-                }
+                SafeRegexValidator.compileUserPattern(pattern);
             }
         }
 

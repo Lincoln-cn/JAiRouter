@@ -8,6 +8,7 @@ import org.unreal.modelrouter.auth.security.config.properties.AuditConfig;
 import org.unreal.modelrouter.auth.security.config.properties.JwtConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.config.properties.SanitizationConfig;
+import org.unreal.modelrouter.common.util.SafeRegexValidator;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -312,10 +313,10 @@ public class SecurityConfigurationValidator {
                 continue;
             }
 
-            try {
-                Pattern.compile(pattern);
-            } catch (Exception e) {
-                result.addError(context + "PII模式[" + i + "]格式无效: " + e.getMessage());
+            final String reason = SafeRegexValidator.validateUserPattern(pattern);
+            if (reason != null) {
+                result.addError(context + "PII模式[" + i + "] " + reason
+                        + (pattern.length() <= 80 ? ": " + pattern : ""));
             }
         }
     }
