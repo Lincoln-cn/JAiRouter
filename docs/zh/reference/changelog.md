@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.2.0
-> **最后更新**: 2026-09-19
+> **文档版本**: 3.2.1
+> **最后更新**: 2026-09-21
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,46 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.2.1] - 2026-09-21 - 补丁发布（审计整改：并发/流式/配额/鉴权/SSRF/正则安全）
+
+> v3.2.0 发布后合入的审计整改批次（PR #67–#72、#78–#81）。纯缺陷与安全修复：无新功能、无公开 API / 路由 / 配置键破坏性变更。
+
+#### 并发与流式
+
+- 健康 SSE 的 interval 快照移出 EventLoop（`subscribeOn(boundedElastic)`），去掉逐实例 JPA N+1 与 `tryEmitNext().orThrow()`
+- 流式完成回调的 SUMMARY 脱敏不再 `block(5s)`；适配器指标与调用历史路径同样异步化
+- 请求主链同步段移出 EventLoop（`Mono.defer(...).subscribeOn(boundedElastic())`）
+- SSE / WebSocket Sink 加 `onBackpressureBuffer(256, DROP_OLDEST)` 背压上限
+- 冷路径 `block()` 统一超时（`ReactorTimeouts`：普通 5s、启动 30s）
+
+#### 配额与限流
+
+- 修复单机 `evaluate` → `reserve` 的 TOCTOU（按 API Key 串行化「判定 + 预留」）
+- 分布式跨实例竞态改为 Redis 原子 Lua CAS（HINCRBY + 上限检查 + 超限回滚）；429 与 `X-Quota-*` / `Retry-After` 语义不变
+
+#### 认证与授权
+
+- **修复伪 401**：认证过滤器 `switchIfEmpty` 误挂在含 `chain.filter` 的 Mono 上，认证成功也会返回 `AUTH_MISSING`（JWT 登录态下控制台 AI 面与 `/v1/**` 曾不可用）
+- 控制台 JWT 登录态放行 AI 端点；追踪过滤器不再重复执行过滤器链
+- JWT 黑名单存储不可用时降级收敛：首次告警 + 30s 短路窗口 + 启动期存储探测
+- `/ws/**` 与健康 SSE 改为需认证（前端 WebSocket 改带 query token）
+- 补齐 RBAC 缺口；调试端点默认关闭并在启用时脱敏；Swagger / OpenAPI 默认需认证
+- 前端 SSE 重连定时器统一并在卸载时清理
+
+#### 启动与配置
+
+- 拒绝出厂默认 JWT 密钥；生产环境缺密钥或使用默认值启动即失败（`StartupSecurityGate`）
+
+#### SSRF 与正则安全
+
+- 实例 URL 新增 `SsrfGuard`：覆盖实例创建/更新、配置同步、出站 `WebClient`、适配器连通性测试
+- 新增 `SafeRegexValidator`：用户自定义脱敏正则统一走安全闸门（长度上限 512、嵌套量词、被量词包裹的交替分支、反向引用、超大量词）；两个脱敏引擎的三条编译路径与配置面校验全部收口；检测器自身改为 O(n) 字符扫描，不再对用户输入运行正则
+- 顺带修复 `OptimizedSanitizationRuleEngine.compileRules` 在 Reactor `map` 中返回 `null` 触发 NPE 的潜伏缺陷
+
+#### 行为变化（有意）
+
+- 含嵌套量词 / 反向引用 / 超长量词的**用户自定义**正则会：PUT `/api/config/sanitization` 返回 400；配置校验报错；运行时跳过并 WARN。响应脱敏默认关闭，出厂默认模式已回归覆盖
 
 ### [3.2.0] - 2026-09-19 - 次版本（PII 治理 + 配额操作 + 控制台 E2E/体验）
 

@@ -328,7 +328,9 @@
     "Whlcm",
     "Vjcm",
     "eW91ci1hcGkta2V5LWhlcmU",
-    "eW91ci1qd3Qtc2VjcmV0LWtleQ"
+    "eW91ci1qd3Qtc2VjcmV0LWtleQ",
+    "TOCTOU",
+    "HINCRBY"
   ],
   "ignorePaths": [
     "node_modules/**",

@@ -1,9 +1,9 @@
 # Roadmap
 
 <!-- 版本信息 -->
-> **Doc Version**: 2.0.0
-> **Last Updated**: 2026-09-19
-> **Git 标签**: v3.2.0-pending (code on master)
+> **Doc Version**: 2.1.0
+> **Last Updated**: 2026-09-21
+> **Git Tag**: v3.2.1
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -24,9 +24,23 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 
 ## Current Version Status
 
-### 🚧 v3.2.0 (Code merged; release wrap-up)
+### ✅ v3.2.1 (Audit Remediation Patch, released 2026-09-21)
 
-**Status**: Feature code merged to master via PR #60 (2026-09-19); version bump / product docs / tag pending
+**Status**: Released (Git tag / GitHub Release `v3.2.1`; the Docker image is rebuilt by CI on release)
+**Scope**: Audit remediation batch merged after v3.2.0 (Reactor / SSE / quota / auth / SSRF) + user-regex ReDoS hardening
+
+| Area | Delivered |
+|------|-----------|
+| Concurrency & streaming | Health SSE and the request main chain moved off the EventLoop; streaming completion plus metrics/call-history no longer `block(5s)`; SSE/WS sinks bounded; cold-path `block` unified with timeouts (5s / 30s startup) |
+| Quota & rate limiting | Single-node check-then-reserve serialized (TOCTOU); cross-instance race closed by an atomic Redis Lua CAS (HINCRBY + limit check + rollback) |
+| Auth & authorization | Spurious 401 fixed (with a JWT session the console AI pages and `/v1/**` were unusable); console JWT sessions allowed; tracing filter no longer runs the chain twice; JWT blacklist degradation converged (single warning + 30s short-circuit + startup probe); `/ws/**` and health SSE require authentication (frontend sends a query token); RBAC gaps closed; debug endpoints off by default and redacted; Swagger requires credentials by default |
+| Startup & config | Factory-default JWT secrets rejected; production fails fast on missing/default secret (`StartupSecurityGate`) |
+| SSRF | Instance URLs guarded by `SsrfGuard`: instance create/update, config sync, outbound `WebClient`, adapter connectivity tests |
+| User regex | New `SafeRegexValidator` gate (512-char limit; nested quantifiers, quantified alternation, backreferences, oversized quantifiers rejected); all three compile paths of both sanitization engines and config validation funnel through it; the detector itself is an O(n) scanner running no regex over user data |
+
+### ✅ v3.2.0 (released 2026-09-19)
+
+**Status**: Released (GitHub Release `v3.2.0`; PRs #60/#64/#65)
 **Scope**: PII sanitization management closed-loop + quota observability UX + TDD test foundation
 
 | Area | Delivered |
@@ -56,7 +70,8 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 | v3.1.0 | 2026-09-14 | Quota ledger & multi-protocol entry: multi-dimensional multi-window quota ledger (MINUTE/HOUR/DAY/MONTH + JPA persistence + Redis distributed counting with disconnect fallback, disabled by default) + quota runtime config & observability surfaces (3 console pages) + 48 permission codes total + OpenAI `/v1/models` + Anthropic `/v1/messages` (non-streaming/streaming/`count_tokens`/tool calling) + protocol-shaped gateway errors + error-body UTF-8 fix |
 | v3.1.1 | 2026-09-15 | Patch fixes: 401 shape per protocol + `count_tokens` counts tools/tool_use/tool_result + `/v1/**` error-message de-noising + console SSE false-positive alert fix on route navigation |
 | v3.1.2 | 2026-09-18 | Docker/startup patch: `JWT_SECRET` env unification, `--generate-key` fix, image frontend static/admin path, Redis health conditional |
-| v3.2.0 | 2026-09-19 | **Merged to master (PR #60)**: PII sanitization management (console + `/api/config/sanitization/**` + `sanitizeForStorage`) + quota monitoring limit/progress UX + vitest/page-smoke TDD foundation + excluded-path alignment |
+| v3.2.0 | 2026-09-19 | PII sanitization management (console + `/api/config/sanitization/**` + `sanitizeForStorage`) + quota monitoring limit/progress UX + vitest/page-smoke TDD foundation + excluded-path alignment (PRs #60/#64/#65) |
+| v3.2.1 | 2026-09-21 | Audit remediation patch: Reactor/SSE de-blocking + quota TOCTOU & Redis Lua CAS + spurious 401 fix + tracing chain double-execution fix + JWT blacklist degradation convergence + production fail-fast + SSRF guard + RBAC/debug-endpoint tightening + user-regex ReDoS hardening (PRs #67–#72, #78–#81) |
 
 #### Statistics
 - Test count: 3,517 (all green)
@@ -355,9 +370,10 @@ JAiRouter will continue to uphold the open-source spirit and is committed to pro
 6. ✅ v2.10.x Web console refactor series completed (v2.10.0 foundation ✅ 2026-09-05; v2.10.1 governance hub ✅ / v2.10.2 config & capabilities ✅ / v2.10.3 Web bilingual edition ✅ / v2.10.4 Web experience wrap-up ✅ 2026-09-06)
 7. ✅ v3.0.x Web complete-flow series (v3.0.1 flow wiring ✅ 2026-09-06; v3.0.2 API cleanup & permission closure ✅ 2026-09-07; v3.0.3 acceptance & release ✅ 2026-09-13)
 8. ✅ v3.1.0 quota ledger & multi-protocol entry ✅ 2026-09-14 (multi-dimensional multi-window quota + Anthropic entry + tool calling + runtime config/observability)
-9. 🚧 v3.2.0 PII governance & quota ops closed-loop — **code merged 2026-09-19 (PR #60)**; release wrap-up: version bump, sanitization/console/API docs, full regression, tag
-10. 📋 v3.2.1+ candidates: rule persistence versioning, HOUR/MONTH quota limits, FULL encryption strategy UI, dry-run regression set
-11. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.2.x
+9. ✅ v3.2.0 PII governance & quota ops closed-loop (released 2026-09-19)
+10. ✅ v3.2.1 audit remediation patch (released 2026-09-21): Reactor/SSE de-blocking, quota TOCTOU and Redis Lua CAS, spurious 401 fix, tracing chain double-execution fix, JWT blacklist degradation convergence, production fail-fast, SSRF guard, RBAC/debug-endpoint tightening, user-regex ReDoS hardening. **Known remaining (P2)**: `QuotaLedgerService` distributed path still blocks synchronously; frontend temporary IDs use `Math.random`
+11. 📋 v3.2.2+ candidates: rule persistence versioning, HOUR/MONTH quota limits, FULL encryption strategy UI, dry-run regression set
+12. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.2.x
 
 ### Long-term Vision
 1. Become the standard in AI model routing
