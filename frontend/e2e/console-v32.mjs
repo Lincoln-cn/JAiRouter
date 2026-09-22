@@ -236,6 +236,77 @@ try {
     check('e2e-quota-drawer-open', false, 'quota button not found')
   }
 
+  // ---- 3b. Create dialog quota round-trip (issue #84) ----
+  // 回归守卫：创建对话框曾只提交 dailyRequestLimit + rotationPeriodDays，
+  // dailyTokenLimit / rateLimitPerMinute / quotaAlertThreshold 被静默丢弃，
+  // 导致「创建时设置的配额不生效」。此处从 UI 建 Key，再用 API 断言四项都落库。
+  {
+    await page.goto(`${BASE}/security/api-keys`, { waitUntil: 'domcontentloaded' })
+    await waitApiKeysTableSettled(page).catch(() => {})
+
+    const createBtn = page.getByRole('button', { name: /创建API密钥|Create API Key/ }).first()
+    if ((await createBtn.count().catch(() => 0)) > 0) {
+      await createBtn.click()
+      const dlg = page.locator('.el-dialog:visible').first()
+      await dlg.waitFor({ state: 'visible' })
+      await page.waitForTimeout(400)
+
+      const item = label => dlg.locator('.el-form-item', { hasText: label }).first()
+      const fillNum = async (label, value) => {
+        const input = item(label).locator('input').first()
+        await input.click()
+        await input.fill(String(value))
+        await input.press('Enter')
+        await page.waitForTimeout(150)
+      }
+
+      const newKeyId = `e2e-quota-create-${Date.now()}`
+      const want = {
+        dailyRequestLimit: 1234,
+        dailyTokenLimit: 56789,
+        rateLimitPerMinute: 42,
+        quotaAlertThreshold: 0.5
+      }
+
+      await item('密钥ID').locator('input').first().fill(newKeyId)
+      await fillNum('每日请求上限', want.dailyRequestLimit)
+      await fillNum('每日Token上限', want.dailyTokenLimit)
+      await fillNum('每分钟速率限制', want.rateLimitPerMinute)
+      const thInput = item('告警阈值').locator('.el-input-number input').first()
+      await thInput.click()
+      await thInput.fill(String(want.quotaAlertThreshold))
+      await thInput.press('Enter')
+      await page.waitForTimeout(150)
+
+      await dlg.getByRole('button', { name: /^保存$/ }).click()
+      await page.waitForTimeout(2000)
+
+      // 关掉「密钥已创建」弹窗，避免遮挡后续步骤
+      const savedClose = page.getByRole('button', { name: /我已保存|Saved|Close/ }).first()
+      if ((await savedClose.count().catch(() => 0)) > 0) {
+        await savedClose.click()
+        await page.waitForTimeout(400)
+      }
+
+      const q = await api(page, `/api/auth/api-keys/${newKeyId}/quota`)
+      const d = q.body?.data
+      check(
+        'e2e-api-key-create-quota-roundtrip',
+        d?.dailyRequestLimit === want.dailyRequestLimit &&
+          d?.dailyTokenLimit === want.dailyTokenLimit &&
+          d?.rateLimitPerMinute === want.rateLimitPerMinute &&
+          Number(d?.quotaAlertThreshold) === want.quotaAlertThreshold,
+        `req=${d?.dailyRequestLimit} tok=${d?.dailyTokenLimit} rate=${d?.rateLimitPerMinute} th=${d?.quotaAlertThreshold}`
+      )
+
+      const del = await api(page, `/api/auth/api-keys/${newKeyId}`, { method: 'DELETE' })
+      check('e2e-api-key-create-cleanup', del.status === 200, `HTTP ${del.status}`)
+    } else {
+      check('e2e-api-key-create-quota-roundtrip', false, 'create button not found')
+      check('e2e-api-key-create-cleanup', true, 'skip')
+    }
+  }
+
   // ---- 4. Quota ops APIs ----
   const keys = await api(page, '/api/auth/api-keys')
   firstKeyId = firstKeyId || keys.body?.data?.items?.[0]?.keyId || null
