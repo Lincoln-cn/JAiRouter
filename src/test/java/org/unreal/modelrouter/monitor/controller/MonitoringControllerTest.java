@@ -147,6 +147,81 @@ class MonitoringControllerTest {
         }
     }
 
+    // ==================== 降级策略自动模式测试 ====================
+
+    @Nested
+    @DisplayName("POST /api/monitoring/degradation/auto-mode - 降级策略自动模式测试")
+    class SetAutoModeTests {
+
+        @Test
+        @DisplayName("MONITOR-020: 缺少 enabled 参数返回 400（与 updateEnabled 口径一致）")
+        void testSetAutoMode_missingEnabledParam() {
+            // When：请求体存在但没有 enabled 键
+            var result = controller.setAutoMode(new HashMap<>());
+
+            // Then：客户端参数不合规 → ApiException(INVALID_REQUEST) → 400。
+            // 此前该分支既无测试覆盖、错误码又与同文件 updateEnabled 不一致（500 vs 400）。
+            StepVerifier.create(result)
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("INVALID_REQUEST", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.BAD_REQUEST, apiEx.getStatus());
+                        assertTrue(apiEx.getMessage().contains("Missing 'enabled' parameter"));
+                    })
+                    .verify();
+        }
+
+        @Test
+        @DisplayName("MONITOR-021: 启用自动模式成功")
+        void testSetAutoMode_enabledSuccess() {
+            // When
+            var result = controller.setAutoMode(Map.of("enabled", true));
+
+            // Then
+            StepVerifier.create(result)
+                    .assertNext(response -> assertTrue(response.isSuccess()))
+                    .verifyComplete();
+            verify(degradationStrategy).setAutoModeEnabled(true);
+        }
+
+        @Test
+        @DisplayName("MONITOR-022: 禁用自动模式成功")
+        void testSetAutoMode_disabledSuccess() {
+            // When
+            var result = controller.setAutoMode(Map.of("enabled", false));
+
+            // Then
+            StepVerifier.create(result)
+                    .assertNext(response -> assertTrue(response.isSuccess()))
+                    .verifyComplete();
+            verify(degradationStrategy).setAutoModeEnabled(false);
+        }
+
+        @Test
+        @DisplayName("MONITOR-023: 策略内部异常不得再被压成 200")
+        void testSetAutoMode_internalFailureIsErrorStatus() {
+            // Given：策略内部抛错
+            doThrow(new IllegalStateException("strategy down"))
+                    .when(degradationStrategy).setAutoModeEnabled(anyBoolean());
+
+            // When
+            var result = controller.setAutoMode(Map.of("enabled", true));
+
+            // Then：经 catch-all ApiExceptions.wrap 归一为 ApiException，
+            // 关键断言是「绝不能再返回 200 + success=false」（issue #94 的核心契约）。
+            StepVerifier.create(result)
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertFalse(apiEx.getStatus().is2xxSuccessful(),
+                                "内部失败不应以 2xx 状态返回: " + apiEx.getStatus());
+                        assertTrue(apiEx.getMessage().contains("设置失败"));
+                    })
+                    .verify();
+        }
+    }
+
     // ==================== 更新前缀测试 ====================
 
     @Nested
