@@ -63,6 +63,10 @@ scripts/
 - 安全功能测试
 - 熔断器/限流器测试
 
+| 脚本 | 说明 |
+|------|------|
+| `mock-model-server.mjs` | OpenAI 兼容的 mock 模型服务，供本地联调与路由/负载均衡测试使用（见下） |
+
 ### tools/ - 工具脚本
 
 | 脚本 | 说明 |
@@ -109,6 +113,56 @@ scripts/
 
 # 快速修复静态资源问题
 ./scripts/dev/quick-fix-assets.sh
+```
+
+### 本地 mock 模型服务
+
+JAiRouter 的实例健康检查是「socket 探测上游 host:port」，且路由、负载均衡、
+熔断、配额等链路都需要一个**真实可达**的上游。当手边没有可用的推理服务
+（或只想验证网关自身行为）时，用本 mock 起一个 OpenAI 兼容端点即可跑通完整链路。
+
+零依赖（仅需 Node），支持流式 SSE，并对每条请求打日志（带 `--tag`），
+便于观察请求实际落到了哪个实例。
+
+```bash
+# 默认监听 127.0.0.1:9099
+node scripts/test/mock-model-server.mjs
+
+# 多实例场景用 tag 区分
+node scripts/test/mock-model-server.mjs --port 9099 --tag A
+node scripts/test/mock-model-server.mjs --port 9100 --tag B
+
+# 模拟慢上游 / 模拟故障（用于验证熔断与降级）
+node scripts/test/mock-model-server.mjs --latency 800
+node scripts/test/mock-model-server.mjs --fail-rate 0.5
+```
+
+支持端点：`GET /v1/models`、`POST /v1/chat/completions`（含 `stream=true` 的 SSE）、
+`/v1/embeddings`、`/v1/rerank`、`/v1/audio/speech`、`/v1/audio/transcriptions`、
+`/v1/images/generations`、`/v1/images/edits`。其余路径一律返回 200，保证健康检查通过。
+
+在 JAiRouter 里把它挂成实例（`Jairouter_Token` 为控制台登录后的 JWT）：
+
+```bash
+curl -X POST http://127.0.0.1:8080/api/config/instance/chat \
+  -H "Jairouter_Token: <admin-jwt>" -H 'Content-Type: application/json' \
+  -d '{"name":"qwen3.8-flash","baseUrl":"http://127.0.0.1:9099",
+       "path":"/v1/chat/completions","weight":1,"status":"active","adapter":"gpustack"}'
+```
+
+实例健康状态转为 `HEALTHY`（约 20~30s，取决于健康检查周期）后即可发起请求：
+
+```bash
+curl -X POST http://127.0.0.1:8080/v1/chat/completions \
+  -H "Jairouter_Token: <admin-jwt>" -H 'Content-Type: application/json' \
+  -d '{"model":"qwen3.8-flash","messages":[{"role":"user","content":"hi"}],"stream":false}'
+```
+
+用完后删除该实例：
+
+```bash
+curl -X DELETE http://127.0.0.1:8080/api/config/instance/chat/<instanceDbId> \
+  -H "Jairouter_Token: <admin-jwt>"
 ```
 
 ### 监控部署
