@@ -88,20 +88,6 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     protected RetryPolicy getRetryPolicy() { return resilienceSupport.getRetryPolicy(); }
 
-    protected WebClient getWebClient(final ModelServiceRegistry.ServiceType serviceType,
-                                     final String modelName, final ServerHttpRequest httpRequest) {
-        String clientIp = IpUtils.getClientIp(httpRequest);
-        ModelRouterProperties.ModelInstance selectedInstance = selectInstance(serviceType, modelName, clientIp);
-        String baseUrl = selectedInstance.getBaseUrl();
-        try {
-            var tracingFactory = org.unreal.modelrouter.common.util.ApplicationContextProvider.getBean(
-                    org.unreal.modelrouter.monitor.tracing.client.TracingWebClientFactory.class);
-            return tracingFactory.createTracingWebClient(baseUrl);
-        } catch (Exception e) {
-            return getRegistry().getClient(serviceType, modelName, clientIp);
-        }
-    }
-
     /**
      * 根据实例 baseUrl 获取 WebClient（不重新选择实例）。
      * 用于故障转移重选实例后获取新实例的 WebClient。
@@ -132,7 +118,10 @@ public abstract class BaseAdapter implements ServiceCapability {
             final String modelName, final RequestProcessor<T> processor) {
         ModelRouterProperties.ModelInstance selectedInstance =
                 selectInstance(serviceType, modelName, IpUtils.getClientIp(httpRequest));
-        WebClient client = getWebClient(serviceType, modelName, httpRequest);
+        // 用已选中的实例构造 WebClient，不再二次选择：原 getWebClient 内部会再选一次实例，
+        // 除了让同一请求重复计入路由监控与实例级限流，还会使 WebClient 的目标实例与
+        // 传入 processing 的 selectedInstance 不一致，指标/负载均衡回调归属随之错乱。
+        WebClient client = getWebClientForInstance(selectedInstance);
         String path = getModelPath(serviceType, modelName);
         long startTime = System.currentTimeMillis();
         String adapterType = getAdapterType();
