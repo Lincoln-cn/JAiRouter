@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 > **Doc Version**: 2.1.0
-> **Last Updated**: 2026-09-21
-> **Git Tag**: v3.2.1
+> **Last Updated**: 2026-09-22
+> **Git Tag**: v3.2.2
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -23,6 +23,18 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 - **Observability**: Comprehensive monitoring, logging, and distributed tracing
 
 ## Current Version Status
+
+### ✅ v3.2.2 (Patch: User-Reported Fixes + Console HTTP Status Semantics, released 2026-09-22)
+
+**Status**: Released (Git tag / GitHub Release `v3.2.2`; the Docker image is rebuilt by CI on release)
+**Scope**: Fixes for the user-reported #83 / #84 plus adjacent defects (#92 / #94 / #95 / #96 / #98); bug fixes only, no new features (PRs #90 / #91 / #93 / #97 / #99)
+
+| Area | Delivered |
+|------|-----------|
+| API Key quota | Create/edit now submit the complete quota payload, fixing the console display of quotas set at creation time (#84); quota update/reset endpoints no longer call `block()` on a Reactor non-blocking thread (previously failed 100% of the time, #92); the alert threshold is unified to the closed interval `[0.05,1]` with `QuotaLimits` as the single source of truth and validation added to the create path (#96) |
+| Load balancing & routing monitor | Three instance selections per request reduced to one (request-scoped `SelectedInstanceHolder` plus adapter reuse of the selected instance), fixing the "instance distribution" counter jumping by 3 (#83); also fixed missing request-header propagation on the adapter side (which broke header-based rule/tag routing) and `recordCall` advancing twice per request |
+| Console HTTP status | Added `ApiException` / `ApiExceptions`; all 138 sites that disguised failures as HTTP 200 now return proper 4xx/5xx statuses with a **byte-compatible response body** (#94); the frontend interceptor surfaces backend error messages; e2e assertions tightened (#95); `MonitoringController` client-validation error codes unified to 400 with new auto-mode test coverage (#98) |
+| Engineering & tooling | OpenAI-compatible mock model server added; local `docker-ctx` ignored |
 
 ### ✅ v3.2.1 (Audit Remediation Patch, released 2026-09-21)
 
@@ -372,8 +384,9 @@ JAiRouter will continue to uphold the open-source spirit and is committed to pro
 8. ✅ v3.1.0 quota ledger & multi-protocol entry ✅ 2026-09-14 (multi-dimensional multi-window quota + Anthropic entry + tool calling + runtime config/observability)
 9. ✅ v3.2.0 PII governance & quota ops closed-loop (released 2026-09-19)
 10. ✅ v3.2.1 audit remediation patch (released 2026-09-21): Reactor/SSE de-blocking, quota TOCTOU and Redis Lua CAS, spurious 401 fix, tracing chain double-execution fix, JWT blacklist degradation convergence, production fail-fast, SSRF guard, RBAC/debug-endpoint tightening, user-regex ReDoS hardening. **Known remaining (P2)**: `QuotaLedgerService` distributed path still blocks synchronously; frontend temporary IDs use `Math.random`
-11. 📋 v3.2.2+ candidates: rule persistence versioning, HOUR/MONTH quota limits, FULL encryption strategy UI, dry-run regression set
-12. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.2.x
+11. ✅ v3.2.2 patch (released 2026-09-22): fixed the user-reported API Key quota display (#84) and routing-monitor counter (#83); console business failures now return 4xx/5xx instead of HTTP 200 (#94, response-body compatible), plus quota endpoint `block` failure (#92), over-permissive e2e assertions (#95), alert-threshold inconsistency (#96) and monitoring error-code inconsistency (#98). **Known remaining (P2)**: `QuotaLedgerService` distributed path still blocks synchronously; frontend temporary IDs use `Math.random`
+12. 📋 v3.3.0 candidates: rule persistence versioning, HOUR/MONTH quota limits, FULL encryption strategy UI, dry-run regression set
+13. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.2.x
 
 ### Long-term Vision
 1. Become the standard in AI model routing
@@ -383,6 +396,6 @@ JAiRouter will continue to uphold the open-source spirit and is committed to pro
 
 ---
 
-**Last Updated**: September 19, 2026
+**Last Updated**: September 22, 2026
 
 For any suggestions or ideas, feel free to communicate with us via [GitHub Discussions](https://github.com/Lincoln-cn/JAiRouter/discussions).
