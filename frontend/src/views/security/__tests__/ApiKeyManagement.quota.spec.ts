@@ -114,4 +114,25 @@ describe('ApiKeyManagement 配额提交（issue #84）', () => {
     expect(payload.quotaAlertThreshold).toBe(0.5)
     expect(payload.rotationPeriodDays).toBe(30)
   })
+
+  it('编辑 API Key 时应提交全部 4 个配额字段', async () => {
+    const wrapper = mountPage()
+    await flushPromises()
+    const vm = wrapper.vm as any
+
+    vm.handleEdit({
+      keyId: 'k1', description: 'd', enabled: true, permissions: ['chat'],
+      dailyRequestLimit: 200, dailyTokenLimit: 9000, rateLimitPerMinute: 30,
+      quotaAlertThreshold: 0.7, rotationPeriodDays: 10
+    })
+    await vm.handleSave()
+
+    expect(updateApiKey).toHaveBeenCalledTimes(1)
+    const payload = updateApiKey.mock.calls[0][1]
+    expect(payload.dailyRequestLimit).toBe(200)
+    expect(payload.dailyTokenLimit).toBe(9000)
+    expect(payload.rateLimitPerMinute).toBe(30)
+    expect(payload.quotaAlertThreshold).toBe(0.7)
+    expect(payload.rotationPeriodDays).toBe(10)
+  })
 })
