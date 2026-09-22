@@ -9,11 +9,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
+import org.springframework.http.HttpStatus;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.config.properties.JwtConfig;
 import org.unreal.modelrouter.auth.security.service.*;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.*;
+import org.unreal.modelrouter.common.exception.ApiException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -109,11 +111,13 @@ class JwtAuthControllerIntegrationTest {
             Mono<RouterResponse<LoginResponse>> result = controller.login(request, null);
 
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertEquals("LOGIN_FAILED", response.getErrorCode());
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("LOGIN_FAILED", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.UNAUTHORIZED, apiEx.getStatus());
                     })
-                    .verifyComplete();
+                    .verify();
         }
 
         @Test
@@ -130,11 +134,13 @@ class JwtAuthControllerIntegrationTest {
             Mono<RouterResponse<LoginResponse>> result = controller.login(request, null);
 
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertEquals("LOGIN_FAILED", response.getErrorCode());
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("LOGIN_FAILED", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.UNAUTHORIZED, apiEx.getStatus());
                     })
-                    .verifyComplete();
+                    .verify();
         }
     }
 
@@ -182,11 +188,13 @@ class JwtAuthControllerIntegrationTest {
             Mono<RouterResponse<JwtTokenInfo>> result = controller.refreshToken(request, authentication, null);
 
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertEquals("TOKEN_REFRESH_FAILED", response.getErrorCode());
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("TOKEN_REFRESH_FAILED", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, apiEx.getStatus());
                     })
-                    .verifyComplete();
+                    .verify();
         }
 
         @Test
@@ -203,11 +211,13 @@ class JwtAuthControllerIntegrationTest {
             Mono<RouterResponse<JwtTokenInfo>> result = controller.refreshToken(request, authentication, null);
 
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertEquals("TOKEN_REFRESH_FAILED", response.getErrorCode());
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("TOKEN_REFRESH_FAILED", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, apiEx.getStatus());
                     })
-                    .verifyComplete();
+                    .verify();
         }
     }
 }

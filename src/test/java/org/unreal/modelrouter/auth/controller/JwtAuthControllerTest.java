@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.unreal.modelrouter.auth.security.config.properties.JwtConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.service.AccountManager;
@@ -18,9 +19,12 @@ import org.unreal.modelrouter.common.dto.JwtTokenInfo;
 import org.unreal.modelrouter.common.dto.LoginRequest;
 import org.unreal.modelrouter.common.dto.LoginResponse;
 import org.unreal.modelrouter.common.dto.TokenRefreshRequest;
+import org.unreal.modelrouter.common.exception.ApiException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -98,9 +102,15 @@ class JwtAuthControllerTest {
             Mono<RouterResponse<LoginResponse>> result = controller.login(testLoginRequest, null);
 
             // Then
+            // issue #94: 登录失败以 ApiException 结束链路 -> 401（LOGIN_FAILED）
             StepVerifier.create(result)
-                    .expectNextMatches(response -> !response.isSuccess())
-                    .verifyComplete();
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("LOGIN_FAILED", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.UNAUTHORIZED, apiEx.getStatus());
+                    })
+                    .verify();
         }
     }
 
@@ -138,9 +148,15 @@ class JwtAuthControllerTest {
             Mono<RouterResponse<JwtTokenInfo>> result = controller.refreshToken(testRefreshRequest, null, null);
 
             // Then
+            // issue #94: 刷新失败以 ApiException 结束链路（TOKEN_REFRESH_FAILED 未命中语义码规则 -> 500）
             StepVerifier.create(result)
-                    .expectNextMatches(response -> !response.isSuccess())
-                    .verifyComplete();
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("TOKEN_REFRESH_FAILED", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, apiEx.getStatus());
+                    })
+                    .verify();
         }
     }
 }

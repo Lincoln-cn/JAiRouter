@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.router.model.ModelCatalogService;
 import reactor.core.publisher.Mono;
+import org.unreal.modelrouter.common.exception.ApiException;
+import org.unreal.modelrouter.common.exception.ApiExceptions;
 
 /**
  * 模型信息控制器 - 处理模型信息查询相关接口（控制台面，返回 RouterResponse 包裹体）.
@@ -72,7 +74,7 @@ public class ModelInfoController {
                     modelCatalogService.listAllModelsAsOpenAiList(), "获取模型列表成功"));
         } catch (Exception e) {
             logger.error("获取模型列表失败", e);
-            return Mono.just(RouterResponse.error("获取模型列表失败: " + e.getMessage()));
+            return Mono.error(ApiExceptions.wrap(e, "获取模型列表失败"));
         }
     }
 }

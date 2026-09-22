@@ -11,10 +11,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.test.AdapterTestResult;
 import org.unreal.modelrouter.router.adapter.test.AdapterTestService;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -85,11 +87,17 @@ class AdapterTestControllerTest {
                     controller.testAdapter("nonexistent", request);
 
             // Then
-            assertNotNull(resultMono);
-            ResponseEntity<RouterResponse<AdapterTestResult>> response = resultMono.block();
-            assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-            assertFalse(response.getBody().isSuccess());
-            assertEquals("ADAPTER_NOT_FOUND", response.getBody().getErrorCode());
+            // issue #94：失败不再以 200 + success=false 返回，而是 ApiException，
+            // 由 GlobalControllerExceptionHandler 映射为对应状态码。
+            StepVerifier.create(resultMono)
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("ADAPTER_NOT_FOUND", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.NOT_FOUND, apiEx.getStatus());
+                        assertTrue(apiEx.getMessage().contains("适配器不存在"));
+                    })
+                    .verify();
         }
 
         @Test
@@ -108,10 +116,16 @@ class AdapterTestControllerTest {
                     controller.testAdapter("normal", request);
 
             // Then
-            assertNotNull(resultMono);
-            ResponseEntity<RouterResponse<AdapterTestResult>> response = resultMono.block();
-            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-            assertFalse(response.getBody().isSuccess());
+            // issue #94：异常不再以 200 + success=false 返回，而是 ApiException（500）。
+            StepVerifier.create(resultMono)
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("INTERNAL_ERROR", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, apiEx.getStatus());
+                        assertTrue(apiEx.getMessage().contains("测试失败"));
+                    })
+                    .verify();
         }
     }
 
@@ -161,11 +175,16 @@ class AdapterTestControllerTest {
                     controller.testPreview(request);
 
             // Then
-            assertNotNull(resultMono);
-            ResponseEntity<RouterResponse<AdapterTestResult>> response = resultMono.block();
-            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-            assertFalse(response.getBody().isSuccess());
-            assertEquals("INVALID_REQUEST", response.getBody().getErrorCode());
+            // issue #94：参数校验失败不再以 200 + success=false 返回，而是 ApiException（400）。
+            StepVerifier.create(resultMono)
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("INVALID_REQUEST", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.BAD_REQUEST, apiEx.getStatus());
+                        assertTrue(apiEx.getMessage().contains("Base URL"));
+                    })
+                    .verify();
         }
 
         @Test
@@ -182,11 +201,16 @@ class AdapterTestControllerTest {
                     controller.testPreview(request);
 
             // Then
-            assertNotNull(resultMono);
-            ResponseEntity<RouterResponse<AdapterTestResult>> response = resultMono.block();
-            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-            assertFalse(response.getBody().isSuccess());
-            assertEquals("INVALID_REQUEST", response.getBody().getErrorCode());
+            // issue #94：参数校验失败不再以 200 + success=false 返回，而是 ApiException（400）。
+            StepVerifier.create(resultMono)
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("INVALID_REQUEST", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.BAD_REQUEST, apiEx.getStatus());
+                        assertTrue(apiEx.getMessage().contains("适配器类型"));
+                    })
+                    .verify();
         }
     }
 }

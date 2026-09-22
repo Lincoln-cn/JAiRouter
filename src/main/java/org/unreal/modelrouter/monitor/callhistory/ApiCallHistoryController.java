@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.unreal.modelrouter.common.exception.ApiException;
 
 /**
  * API 调用历史控制器
@@ -114,8 +115,7 @@ public class ApiCallHistoryController {
                     callHistoryService.decryptBodies(entity);
                     return ResponseEntity.ok(RouterResponse.success(entity));
                 })
-                .orElseGet(() -> ResponseEntity.ok(
-                        RouterResponse.error("记录不存在: id=" + id)));
+                .orElseGet(() -> ResponseEntity.status(ApiException.resolveStatus("NOT_FOUND")).body(RouterResponse.error("记录不存在: id=" + id)));
     }
 
     /**

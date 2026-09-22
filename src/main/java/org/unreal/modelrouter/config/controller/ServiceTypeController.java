@@ -25,6 +25,7 @@ import org.unreal.modelrouter.config.core.ServiceConfigManager;
 import org.unreal.modelrouter.config.core.dto.ServiceConfiguration;
 import org.unreal.modelrouter.config.core.ConfigurationValidator;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.config.dto.UpdateServiceConfigRequest;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -78,8 +79,7 @@ public class ServiceTypeController {
                 .map(configs -> ResponseEntity.ok(RouterResponse.success(configs, "获取配置成功")))
                 .onErrorResume(e -> {
                     logger.error("获取所有配置失败", e);
-                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body(RouterResponse.error("获取配置失败：" + e.getMessage())));
+                    return Mono.error(ApiException.of("INTERNAL_ERROR", "获取配置失败：" + e.getMessage()));
                 });
     }
 

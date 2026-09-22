@@ -7,7 +7,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.ServiceCapability;
 import org.unreal.modelrouter.router.model.ModelCatalogService;
@@ -127,12 +129,16 @@ class ModelInfoControllerTest {
             var result = controller.getModels();
 
             // Then
+            // issue #94: 内部异常以 ApiException 结束链路 -> 500（INTERNAL_ERROR）
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertTrue(response.getMessage().contains("获取模型列表失败"));
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("INTERNAL_ERROR", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, apiEx.getStatus());
+                        assertTrue(apiEx.getMessage().contains("获取模型列表失败"));
                     })
-                    .verifyComplete();
+                    .verify();
         }
     }
 }

@@ -13,6 +13,7 @@ import org.mockito.quality.Strictness;
 import org.unreal.modelrouter.config.core.ConfigurationService;
 import org.unreal.modelrouter.config.core.manager.ConfigVersionManager;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.config.dto.VersionInfoResponse;
 import org.unreal.modelrouter.persistence.store.StoreManager;
 import org.unreal.modelrouter.config.version.diff.ConfigDiff;
@@ -184,12 +185,16 @@ class ConfigurationVersionControllerTest {
             var result = controller.deleteConfigVersion(3);
 
             // Then
+            // issue #94：删除当前版本属客户端输入违规，按本方法 @ApiResponse 契约以 400 结束链路
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertTrue(response.getMessage().contains("不能删除当前版本"));
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("INVALID_REQUEST", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.BAD_REQUEST, apiEx.getStatus());
+                        assertTrue(apiEx.getMessage().contains("不能删除当前版本"));
                     })
-                    .verifyComplete();
+                    .verify();
         }
     }
 
@@ -275,12 +280,16 @@ class ConfigurationVersionControllerTest {
             var result = controller.compareVersions(2, 2);
 
             // Then
+            // issue #94：源/目标版本相同属客户端输入违规，按 @ApiResponse 契约以 400 结束链路
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertTrue(response.getMessage().contains("不能相同"));
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("INVALID_REQUEST", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.BAD_REQUEST, apiEx.getStatus());
+                        assertTrue(apiEx.getMessage().contains("不能相同"));
                     })
-                    .verifyComplete();
+                    .verify();
         }
 
         @Test
@@ -290,12 +299,16 @@ class ConfigurationVersionControllerTest {
             var result = controller.compareVersions(-1, 2);
 
             // Then
+            // issue #94：负数版本号属客户端输入违规，按 @ApiResponse 契约以 400 结束链路
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertTrue(response.getMessage().contains("非负数"));
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("INVALID_REQUEST", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.BAD_REQUEST, apiEx.getStatus());
+                        assertTrue(apiEx.getMessage().contains("非负数"));
                     })
-                    .verifyComplete();
+                    .verify();
         }
     }
 
@@ -336,12 +349,16 @@ class ConfigurationVersionControllerTest {
             var result = controller.getVersionChanges(999);
 
             // Then
+            // issue #94：版本不存在按 @ApiResponse 契约以 404 结束链路
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertTrue(response.getMessage().contains("不存在"));
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("NOT_FOUND", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.NOT_FOUND, apiEx.getStatus());
+                        assertTrue(apiEx.getMessage().contains("不存在"));
                     })
-                    .verifyComplete();
+                    .verify();
         }
 
         @Test
@@ -351,12 +368,16 @@ class ConfigurationVersionControllerTest {
             var result = controller.getVersionChanges(0);
 
             // Then
+            // issue #94：非正整数版本号属客户端输入违规，按 @ApiResponse 契约以 400 结束链路
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertTrue(response.getMessage().contains("正整数"));
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("INVALID_REQUEST", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.BAD_REQUEST, apiEx.getStatus());
+                        assertTrue(apiEx.getMessage().contains("正整数"));
                     })
-                    .verifyComplete();
+                    .verify();
         }
     }
 }

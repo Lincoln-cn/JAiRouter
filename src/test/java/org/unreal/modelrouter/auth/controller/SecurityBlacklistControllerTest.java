@@ -94,7 +94,8 @@ class SecurityBlacklistControllerTest {
             ResponseEntity<RouterResponse<Page<BlacklistEntryDTO>>> result = controller.getBlacklistPage("INVALID", null, 0, 20);
 
             // Then
-            assertEquals(HttpStatus.OK, result.getStatusCode());
+            // issue #94: INVALID_TYPE -> 400，不再是 200 伪装成功。
+            assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
             assertFalse(result.getBody().isSuccess());
             assertTrue(result.getBody().getMessage().contains("无效的黑名单类型"));
         }
@@ -156,7 +157,8 @@ class SecurityBlacklistControllerTest {
             ResponseEntity<RouterResponse<BlacklistEntryDTO>> result = controller.getBlacklistEntry(999L);
 
             // Then
-            assertEquals(HttpStatus.OK, result.getStatusCode());
+            // issue #94: NOT_FOUND -> 404，不再是 200 伪装成功。
+            assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
             assertFalse(result.getBody().isSuccess());
             assertTrue(result.getBody().getMessage().contains("不存在"));
         }
@@ -198,7 +200,8 @@ class SecurityBlacklistControllerTest {
             ResponseEntity<RouterResponse<BlacklistEntryDTO>> result = controller.addToBlacklist(request, principal);
 
             // Then
-            assertEquals(HttpStatus.OK, result.getStatusCode());
+            // issue #94: INVALID_PARAM -> 400，不再是 200 伪装成功。
+            assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
             assertFalse(result.getBody().isSuccess());
         }
     }
@@ -263,7 +266,8 @@ class SecurityBlacklistControllerTest {
             ResponseEntity<RouterResponse<Boolean>> result = controller.removeFromBlacklist(999L);
 
             // Then
-            assertEquals(HttpStatus.OK, result.getStatusCode());
+            // issue #94: NOT_FOUND -> 404，不再是 200 伪装成功。
+            assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
             assertFalse(result.getBody().isSuccess());
         }
     }
@@ -309,7 +313,8 @@ class SecurityBlacklistControllerTest {
             ResponseEntity<RouterResponse<Boolean>> result = controller.checkBlacklist("INVALID", "value");
 
             // Then
-            assertEquals(HttpStatus.OK, result.getStatusCode());
+            // issue #94: INVALID_TYPE -> 400，不再是 200 伪装成功。
+            assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
             assertFalse(result.getBody().isSuccess());
         }
     }

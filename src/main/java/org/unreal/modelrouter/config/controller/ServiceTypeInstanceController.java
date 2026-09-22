@@ -24,6 +24,7 @@ import org.unreal.modelrouter.router.circuitbreaker.CircuitBreakerManager;
 
 import java.util.List;
 import java.util.Map;
+import org.unreal.modelrouter.common.exception.ApiException;
 
 /**
  * 按服务类型获取实例配置的控制器
@@ -105,7 +106,7 @@ public class ServiceTypeInstanceController {
                 .orElse(null);
 
         if (serviceConfig == null) {
-            return ResponseEntity.ok(RouterResponse.error("服务配置不存在: " + serviceType));
+            return ResponseEntity.status(ApiException.resolveStatus("NOT_FOUND")).body(RouterResponse.error("服务配置不存在: " + serviceType));
         }
 
         ServiceInstanceDTO created = serviceInstanceManager.createInstance(serviceConfig.getId(), request);

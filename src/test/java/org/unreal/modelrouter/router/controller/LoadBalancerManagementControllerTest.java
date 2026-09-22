@@ -123,7 +123,8 @@ class LoadBalancerManagementControllerTest {
                     controller.getAllStatus();
 
             // Then
-            assertEquals(HttpStatus.OK, result.getStatusCode());
+            // issue #94: 内部异常返回 500 而非 200 + success=false
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
             assertFalse(result.getBody().isSuccess());
             assertTrue(result.getBody().getMessage().contains("获取负载均衡器状态失败"));
         }
@@ -173,7 +174,8 @@ class LoadBalancerManagementControllerTest {
                     controller.getStatusByServiceType(serviceType);
 
             // Then
-            assertEquals(HttpStatus.OK, result.getStatusCode());
+            // issue #94: 非法服务类型返回 400 而非 200 + success=false
+            assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
             assertFalse(result.getBody().isSuccess());
             assertTrue(result.getBody().getMessage().contains("无效的服务类型"));
         }
@@ -317,7 +319,8 @@ class LoadBalancerManagementControllerTest {
             ResponseEntity<RouterResponse<String>> result = controller.updateServiceConfig(serviceType, request);
 
             // Then
-            assertEquals(HttpStatus.OK, result.getStatusCode());
+            // issue #94: 非法服务类型返回 400 而非 200 + success=false
+            assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
             assertFalse(result.getBody().isSuccess());
             assertTrue(result.getBody().getMessage().contains("无效的服务类型"));
         }

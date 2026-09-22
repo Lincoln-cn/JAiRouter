@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.common.controller.response.RouterResponse; // 确保引入您项目中的Response类
+import org.unreal.modelrouter.common.exception.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,5 +54,34 @@ public class GlobalControllerExceptionHandler {
         }
 
         return new ResponseEntity<>(errorResponse, ex.getStatusCode());
+    }
+
+    /**
+     * 处理业务异常（issue #94）.
+     *
+     * <p>控制器此前把失败写成 {@code Mono.just(RouterResponse.error(msg, code))}，导致状态码恒为 200、
+     * 全局处理器失效。迁移为 {@code Mono.error(ApiException.of(code, msg))} 后由此处统一处理：
+     * <b>响应体与旧行为完全一致</b>（{@code RouterResponse} 的 {@code message}/{@code errorCode} 原样保留，
+     * 不加任何前缀），仅把 HTTP 状态码修正为错误码对应的语义（见 {@link ApiException#resolveStatus}）。</p>
+     *
+     * @param ex       业务异常
+     * @param exchange 当前交换对象（仅用于取请求路径，决定 {@code /v1/**} 的错误体形状）
+     * @return 带正确状态码的响应
+     */
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<?> handleApiException(final ApiException ex,
+                                                final ServerWebExchange exchange) {
+
+        logger.warn("通过 @RestControllerAdvice 捕获到业务异常: code={}, status={}, message={}",
+                ex.getErrorCode(), ex.getStatus().value(), ex.getMessage());
+
+        final ResponseEntity<?> clientResponse = V1ErrorBodyMapper.toClientErrorResponse(
+                exchange, ex.getStatus().value(), ex.getMessage(), ex.getErrorCode());
+        if (clientResponse != null) {
+            return clientResponse;
+        }
+
+        return new ResponseEntity<>(
+                RouterResponse.error(ex.getMessage(), ex.getErrorCode()), ex.getStatus());
     }
 }

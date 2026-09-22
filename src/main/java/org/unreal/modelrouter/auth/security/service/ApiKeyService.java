@@ -19,6 +19,7 @@ import org.unreal.modelrouter.auth.security.dto.ApiKeyUpdateRequest;
 import org.unreal.modelrouter.auth.security.dto.ApiKeyVO;
 import org.unreal.modelrouter.auth.security.event.ApiKeyAuditEvent;
 import org.unreal.modelrouter.auth.security.model.UsageStatistics;
+import org.unreal.modelrouter.auth.security.quota.QuotaLimits;
 import org.unreal.modelrouter.auth.security.util.ApiKeyHashUtil;
 import org.unreal.modelrouter.common.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.persistence.store.StoreManager;
@@ -80,6 +81,8 @@ public class ApiKeyService {
 
     public Mono<ApiKeyCreationVO> createApiKey(ApiKeyCreateRequest req, String by, String ip) {
         return Mono.fromCallable(() -> {
+            // issue #96：创建路径此前对 quotaAlertThreshold 完全没有校验，现与更新路径统一区间
+            QuotaLimits.validateAlertThreshold(req.getQuotaAlertThreshold());
             String kid = req.getKeyId() != null && !req.getKeyId().isEmpty()
                     ? req.getKeyId()
                     : "key-" + UUID.randomUUID().toString().substring(0, 8);
@@ -129,7 +132,11 @@ public class ApiKeyService {
             if (req.getRotationPeriodDays() != null) ak.setRotationPeriodDays(req.getRotationPeriodDays());
             if (req.getDailyTokenLimit() != null) ak.setDailyTokenLimit(req.getDailyTokenLimit());
             if (req.getRateLimitPerMinute() != null) ak.setRateLimitPerMinute(req.getRateLimitPerMinute());
-            if (req.getQuotaAlertThreshold() != null) ak.setQuotaAlertThreshold(req.getQuotaAlertThreshold());
+            if (req.getQuotaAlertThreshold() != null) {
+                // issue #96：更新路径与创建路径统一区间
+                QuotaLimits.validateAlertThreshold(req.getQuotaAlertThreshold());
+                ak.setQuotaAlertThreshold(req.getQuotaAlertThreshold());
+            }
             apiKeyPersistenceService.saveApiKeysToStore(apiKeyCache);
             log.info("更新API Key成功: {}", kid);
             return convertToVO(ak);

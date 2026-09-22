@@ -22,6 +22,8 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import org.unreal.modelrouter.common.exception.ApiException;
+import org.unreal.modelrouter.common.exception.ApiExceptions;
 
 /**
  * 监控配置管理控制器
@@ -75,7 +77,7 @@ public class MonitoringController {
             return RouterResponse.success(response);
         }).onErrorResume(e -> {
             logger.error("获取监控配置失败: {}", e.getMessage());
-            return Mono.just(RouterResponse.<MonitoringConfigResponse>error("获取监控配置失败"));
+            return Mono.error(ApiException.of("INTERNAL_ERROR", "获取监控配置失败"));
         });
     }
 
@@ -90,7 +92,7 @@ public class MonitoringController {
         return Mono.fromCallable(() -> {
             Boolean enabled = request.get("enabled");
             if (enabled == null) {
-                return RouterResponse.<Object>error("Missing 'enabled' parameter");
+                throw ApiException.of("INVALID_REQUEST", "Missing 'enabled' parameter");
             }
 
             boolean updated = configUpdater.updateBasicConfig(
@@ -104,7 +106,7 @@ public class MonitoringController {
             }
         }).onErrorResume(e -> {
             logger.error("更新监控启用状态失败: {}", e.getMessage());
-            return Mono.just(RouterResponse.<Object>error("更新失败: " + e.getMessage()));
+            return Mono.error(ApiExceptions.wrap(e, "更新失败"));
         });
     }
 
@@ -116,11 +118,11 @@ public class MonitoringController {
         return Mono.fromCallable(() -> {
             String prefix = request.get("prefix");
             if (prefix == null || prefix.trim().isEmpty()) {
-                return RouterResponse.<Object>error("Missing or empty 'prefix' parameter");
+                throw ApiException.of("INVALID_REQUEST", "Missing or empty 'prefix' parameter");
             }
 
             if (!configUpdater.validateConfigurationChange("prefix", prefix)) {
-                return RouterResponse.<Object>error("Invalid prefix format");
+                throw ApiException.of("INTERNAL_ERROR", "Invalid prefix format");
             }
 
             boolean updated = configUpdater.updateBasicConfig(
@@ -134,7 +136,7 @@ public class MonitoringController {
             }
         }).onErrorResume(e -> {
             logger.error("更新指标前缀失败: {}", e.getMessage());
-            return Mono.just(RouterResponse.<Object>error("更新失败: " + e.getMessage()));
+            return Mono.error(ApiExceptions.wrap(e, "更新失败"));
         });
     }
 
@@ -146,12 +148,12 @@ public class MonitoringController {
         return Mono.fromCallable(() -> {
             String intervalStr = request.get("interval");
             if (intervalStr == null || intervalStr.trim().isEmpty()) {
-                return RouterResponse.<Object>error("Missing 'interval' parameter");
+                throw ApiException.of("INTERNAL_ERROR", "Missing 'interval' parameter");
             }
 
             Duration interval = Duration.parse(intervalStr);
             if (!configUpdater.validateConfigurationChange("collectionInterval", interval)) {
-                return RouterResponse.<Object>error("Invalid interval format");
+                throw ApiException.of("INTERNAL_ERROR", "Invalid interval format");
             }
 
             boolean updated = configUpdater.updateBasicConfig(
@@ -164,7 +166,7 @@ public class MonitoringController {
             }
         }).onErrorResume(e -> {
             logger.error("更新收集间隔失败: {}", e.getMessage());
-            return Mono.just(RouterResponse.<Object>error("更新失败: " + e.getMessage()));
+            return Mono.error(ApiExceptions.wrap(e, "更新失败"));
         });
     }
 
@@ -176,11 +178,11 @@ public class MonitoringController {
         return Mono.fromCallable(() -> {
             Set<String> categories = request.get("categories");
             if (categories == null) {
-                return RouterResponse.<Object>error("Missing 'categories' parameter");
+                throw ApiException.of("INTERNAL_ERROR", "Missing 'categories' parameter");
             }
 
             if (!configUpdater.validateConfigurationChange("enabledCategories", categories)) {
-                return RouterResponse.<Object>error("Invalid categories");
+                throw ApiException.of("INTERNAL_ERROR", "Invalid categories");
             }
 
             boolean updated = configUpdater.updateBasicConfig(
@@ -193,7 +195,7 @@ public class MonitoringController {
             }
         }).onErrorResume(e -> {
             logger.error("更新启用类别失败: {}", e.getMessage());
-            return Mono.just(RouterResponse.<Object>error("更新失败: " + e.getMessage()));
+            return Mono.error(ApiExceptions.wrap(e, "更新失败"));
         });
     }
 
@@ -205,7 +207,7 @@ public class MonitoringController {
         return Mono.fromCallable(() -> {
             Map<String, String> customTags = request.get("customTags");
             if (customTags == null) {
-                return RouterResponse.<Object>error("Missing 'customTags' parameter");
+                throw ApiException.of("INTERNAL_ERROR", "Missing 'customTags' parameter");
             }
 
             // 注意：DynamicMonitoringConfigUpdater 不支持直接更新 customTags，
@@ -214,7 +216,7 @@ public class MonitoringController {
             return RouterResponse.<Object>success("自定义标签更新请求已接收（注意：此功能尚未实现）");
         }).onErrorResume(e -> {
             logger.error("更新自定义标签失败: {}", e.getMessage());
-            return Mono.just(RouterResponse.<Object>error("更新失败: " + e.getMessage()));
+            return Mono.error(ApiExceptions.wrap(e, "更新失败"));
         });
     }
 
@@ -290,14 +292,14 @@ public class MonitoringController {
             String operation = request.get("operation");
 
             if (component == null || operation == null) {
-                return RouterResponse.<Object>error("Missing 'component' or 'operation' parameter");
+                throw ApiException.of("INTERNAL_ERROR", "Missing 'component' or 'operation' parameter");
             }
 
             errorHandler.resetErrorState(component, operation);
             return RouterResponse.<Object>success("错误状态已重置: " + component + ":" + operation);
         }).onErrorResume(e -> {
             logger.error("重置错误状态失败: {}", e.getMessage());
-            return Mono.just(RouterResponse.<Object>error("重置失败: " + e.getMessage()));
+            return Mono.error(ApiExceptions.wrap(e, "重置失败"));
         });
     }
 
@@ -332,7 +334,7 @@ public class MonitoringController {
         return Mono.fromCallable(() -> {
             String levelStr = request.get("level");
             if (levelStr == null) {
-                return RouterResponse.<Object>error("Missing 'level' parameter");
+                throw ApiException.of("INTERNAL_ERROR", "Missing 'level' parameter");
             }
 
             try {
@@ -341,11 +343,11 @@ public class MonitoringController {
                 degradationStrategy.setDegradationLevel(level);
                 return RouterResponse.<Object>success("降级级别已设置为: " + level.getDescription());
             } catch (IllegalArgumentException e) {
-                return RouterResponse.<Object>error("Invalid degradation level: " + levelStr);
+                throw ApiException.of("INTERNAL_ERROR", "Invalid degradation level: " + levelStr);
             }
         }).onErrorResume(e -> {
             logger.error("设置降级级别失败: {}", e.getMessage());
-            return Mono.just(RouterResponse.<Object>error("设置失败: " + e.getMessage()));
+            return Mono.error(ApiExceptions.wrap(e, "设置失败"));
         });
     }
 
@@ -357,14 +359,14 @@ public class MonitoringController {
         return Mono.fromCallable(() -> {
             Boolean enabled = request.get("enabled");
             if (enabled == null) {
-                return RouterResponse.<Object>error("Missing 'enabled' parameter");
+                throw ApiException.of("INTERNAL_ERROR", "Missing 'enabled' parameter");
             }
 
             degradationStrategy.setAutoModeEnabled(enabled);
             return RouterResponse.<Object>success("降级策略自动模式已" + (enabled ? "启用" : "禁用"));
         }).onErrorResume(e -> {
             logger.error("设置自动模式失败: {}", e.getMessage());
-            return Mono.just(RouterResponse.<Object>error("设置失败: " + e.getMessage()));
+            return Mono.error(ApiExceptions.wrap(e, "设置失败"));
         });
     }
 
@@ -378,7 +380,7 @@ public class MonitoringController {
             return RouterResponse.<Object>success("已强制恢复到正常模式");
         }).onErrorResume(e -> {
             logger.error("强制恢复失败: {}", e.getMessage());
-            return Mono.just(RouterResponse.<Object>error("恢复失败: " + e.getMessage()));
+            return Mono.error(ApiExceptions.wrap(e, "恢复失败"));
         });
     }
 
@@ -414,7 +416,7 @@ public class MonitoringController {
             return RouterResponse.<Object>success("缓存已清空");
         }).onErrorResume(e -> {
             logger.error("清空缓存失败: {}", e.getMessage());
-            return Mono.just(RouterResponse.<Object>error("清空失败: " + e.getMessage()));
+            return Mono.error(ApiExceptions.wrap(e, "清空失败"));
         });
     }
 
@@ -450,7 +452,7 @@ public class MonitoringController {
             return RouterResponse.<Object>success("熔断器已强制开启");
         }).onErrorResume(e -> {
             logger.error("强制开启熔断器失败: {}", e.getMessage());
-            return Mono.just(RouterResponse.<Object>error("操作失败: " + e.getMessage()));
+            return Mono.error(ApiExceptions.wrap(e, "操作失败"));
         });
     }
 
@@ -464,7 +466,7 @@ public class MonitoringController {
             return RouterResponse.<Object>success("熔断器已强制关闭");
         }).onErrorResume(e -> {
             logger.error("强制关闭熔断器失败: {}", e.getMessage());
-            return Mono.just(RouterResponse.<Object>error("操作失败: " + e.getMessage()));
+            return Mono.error(ApiExceptions.wrap(e, "操作失败"));
         });
     }
 

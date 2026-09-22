@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.unreal.modelrouter.common.exception.ApiException;
 
 /**
  * 追踪安全管理控制器
@@ -191,7 +192,7 @@ public class TracingSecurityController {
                 return ResponseEntity.ok(RouterResponse.success(result, "轮换加密密钥成功"));
             } else {
                 log.warn("轮换加密密钥失败: {}", traceId);
-                return ResponseEntity.ok(RouterResponse.error("轮换加密密钥失败"));
+                return ResponseEntity.status(ApiException.resolveStatus("INTERNAL_ERROR")).body(RouterResponse.error("轮换加密密钥失败"));
             }
         } catch (Exception e) {
             log.error("轮换加密密钥异常: {}", traceId, e);

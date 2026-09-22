@@ -7,11 +7,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import reactor.test.StepVerifier;
 
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -54,13 +57,16 @@ class ModelStatsControllerTest {
         void handleException() {
             when(registry.getAllServiceTypes()).thenThrow(new RuntimeException("Test error"));
 
+            // issue #94：失败不再以 200 + success=false 返回，而是 ApiException（500）。
             StepVerifier.create(controller.getConfigurationStats())
-                    .assertNext(response -> {
-                        assert response.getStatusCode().value() == 500;
-                        assert response.getBody() != null;
-                        assert !response.getBody().isSuccess();
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("INTERNAL_ERROR", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, apiEx.getStatus());
+                        assertTrue(apiEx.getMessage().contains("获取配置统计失败"));
                     })
-                    .verifyComplete();
+                    .verify();
         }
     }
 }

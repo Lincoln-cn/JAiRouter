@@ -198,7 +198,7 @@ try {
         afterSave.body?.data?.rateLimitPerMinute === 0
       check(
         'e2e-quota-save-from-drawer',
-        afterSave.status === 200 && unlimitedApplied,
+        afterSave.status === 200 && afterSave.body?.success === true && unlimitedApplied,
         `HTTP ${afterSave.status} limits=${afterSave.body?.data?.dailyRequestLimit}/${afterSave.body?.data?.dailyTokenLimit}/${afterSave.body?.data?.rateLimitPerMinute}`
       )
 
@@ -208,7 +208,7 @@ try {
       const afterReset = await api(page, `/api/auth/api-keys/${firstKeyId}/quota`)
       check(
         'e2e-quota-reset-from-drawer',
-        afterReset.status === 200 && (afterReset.body?.data?.todayRequestCount ?? -1) >= 0,
+        afterReset.status === 200 && afterReset.body?.success === true && (afterReset.body?.data?.todayRequestCount ?? -1) >= 0,
         `todayReq=${afterReset.body?.data?.todayRequestCount}`
       )
 
@@ -322,7 +322,7 @@ try {
       method: 'PUT',
       body: originalQuota || { dailyRequestLimit: 0, dailyTokenLimit: 0, rateLimitPerMinute: 0 }
     })
-    check('e2e-api-key-quota-put', put.status === 200, `HTTP ${put.status}`)
+    check('e2e-api-key-quota-put', put.status === 200 && put.body?.success === true, `HTTP ${put.status} success=${put.body?.success}`)
 
     const batch = await api(page, '/api/auth/api-keys/quota/batch-reset', {
       method: 'POST',
@@ -330,12 +330,12 @@ try {
     })
     check(
       'e2e-api-key-quota-batch-reset',
-      batch.status === 200 && (batch.body?.data?.reset ?? 0) >= 0,
-      `HTTP ${batch.status} reset=${batch.body?.data?.reset}`
+      batch.status === 200 && batch.body?.success === true && (batch.body?.data?.reset ?? -1) >= 0,
+      `HTTP ${batch.status} success=${batch.body?.success} reset=${batch.body?.data?.reset}`
     )
 
     const resetAll = await api(page, '/api/auth/api-keys/quota/reset-all', { method: 'POST' })
-    check('e2e-api-key-quota-reset-all', resetAll.status === 200, `HTTP ${resetAll.status}`)
+    check('e2e-api-key-quota-reset-all', resetAll.status === 200 && resetAll.body?.success === true, `HTTP ${resetAll.status} success=${resetAll.body?.success}`)
   } else {
     check('e2e-api-key-quota-get', true, 'skip: no keys')
     check('e2e-api-key-quota-put', true, 'skip: no keys')

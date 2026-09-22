@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.unreal.modelrouter.common.exception.ApiException;
 
 /**
  * 异常管理控制器
@@ -146,7 +147,7 @@ public class ExceptionManagementController {
         ExceptionEventDTO event = exceptionManagementService.getExceptionEventById(eventId);
         
         if (event == null) {
-            return ResponseEntity.ok(RouterResponse.error("事件不存在", "404"));
+            return ResponseEntity.status(ApiException.resolveStatus("404")).body(RouterResponse.error("事件不存在", "404"));
         }
 
         return ResponseEntity.ok(RouterResponse.success(event));

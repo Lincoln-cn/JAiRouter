@@ -25,6 +25,7 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import org.unreal.modelrouter.common.exception.ApiException;
 
 /**
  * 扩展的安全审计控制器
@@ -265,10 +266,10 @@ public class ExtendedSecurityAuditController {
     public Mono<RouterResponse<Map<String, Object>>> batchRecordAuditEvents(
             @RequestBody final List<AuditEvent> auditEvents) {
         if (auditEvents == null || auditEvents.isEmpty()) {
-            return Mono.just(RouterResponse.error("审计事件列表不能为空"));
+            return Mono.error(ApiException.of("INVALID_REQUEST", "审计事件列表不能为空"));
         }
         if (auditEvents.size() > 100) {
-            return Mono.just(RouterResponse.error("批量记录事件数量不能超过100条"));
+            return Mono.error(ApiException.of("INVALID_REQUEST", "批量记录事件数量不能超过100条"));
         }
 
         return extendedAuditService.batchRecordAuditEvents(auditEvents)

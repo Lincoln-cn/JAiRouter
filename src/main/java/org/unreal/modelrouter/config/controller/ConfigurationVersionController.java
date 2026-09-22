@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.unreal.modelrouter.common.exception.ApiException;
+import org.unreal.modelrouter.common.exception.ApiExceptions;
 
 /**
  * 配置版本管理控制器 提供配置版本查询、回滚等管理接口
@@ -120,7 +122,8 @@ public class ConfigurationVersionController {
         return Mono.fromSupplier(() -> {
             int currentVersion = configVersionManager.getCurrentVersion();
             if (version == currentVersion) {
-                return RouterResponse.<Void>error("不能删除当前版本");
+                // 客户端输入违规（删当前版本）：按本方法 @ApiResponse 契约返回 400
+                throw ApiException.of("INVALID_REQUEST", "不能删除当前版本");
             }
             // 调用ConfigurationService删除指定版本
             configVersionManager.deleteConfigVersion(version);
@@ -249,10 +252,10 @@ public class ConfigurationVersionController {
         return Mono.fromSupplier(() -> {
             // 验证版本号
             if (sourceVersion < 0 || targetVersion < 0) {
-                return RouterResponse.<ConfigDiff>error("版本号必须为非负数");
+                throw ApiException.of("INVALID_REQUEST", "版本号必须为非负数");
             }
             if (sourceVersion == targetVersion) {
-                return RouterResponse.<ConfigDiff>error("源版本和目标版本不能相同");
+                throw ApiException.of("INVALID_REQUEST", "源版本和目标版本不能相同");
             }
 
             try {
@@ -261,7 +264,9 @@ public class ConfigurationVersionController {
                         "版本 %d 与 %d 对比完成，共发现 %d 处差异",
                         sourceVersion, targetVersion, diff.getTotalChanges()));
             } catch (IllegalArgumentException e) {
-                return RouterResponse.<ConfigDiff>error(e.getMessage());
+                // 迁移前对外消息即 e.getMessage()（无前缀），fallback 传 null 以保持措辞不变；
+                // IllegalArgumentException 由 ApiExceptions 映射为 INVALID_REQUEST（400）
+                throw ApiExceptions.wrap(e, null);
             }
         }).subscribeOn(Schedulers.boundedElastic());
     }
@@ -279,21 +284,21 @@ public class ConfigurationVersionController {
     @ApiResponse(responseCode = "200", description = "成功获取版本变更内容",
             content = @Content(mediaType = "application/json",
                     schema = @Schema(implementation = RouterResponse.class)))
-    @ApiResponse(responseCode = "400", description = "版本不存在")
+    @ApiResponse(responseCode = "404", description = "版本不存在")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public Mono<RouterResponse<ConfigDiff>> getVersionChanges(
             @Parameter(description = "版本号", example = "2")
             @PathVariable("version") final int version) {
         return Mono.fromSupplier(() -> {
             if (version <= 0) {
-                return RouterResponse.<ConfigDiff>error("版本号必须为正整数");
+                throw ApiException.of("INVALID_REQUEST", "版本号必须为正整数");
             }
 
             try {
                 // 获取所有版本
                 List<Integer> allVersions = configVersionManager.getAllVersions();
                 if (!allVersions.contains(version)) {
-                    return RouterResponse.<ConfigDiff>error("版本不存在: " + version);
+                    throw ApiException.of("NOT_FOUND", "版本不存在: " + version);
                 }
 
                 // 找到上一版本
@@ -308,7 +313,9 @@ public class ConfigurationVersionController {
                         "版本 %d 的变更内容（基于版本 %d），共 %d 处变更",
                         version, previousVersion, diff.getTotalChanges()));
             } catch (IllegalArgumentException e) {
-                return RouterResponse.<ConfigDiff>error(e.getMessage());
+                // 迁移前对外消息即 e.getMessage()（无前缀），fallback 传 null 以保持措辞不变；
+                // IllegalArgumentException 由 ApiExceptions 映射为 INVALID_REQUEST（400）
+                throw ApiExceptions.wrap(e, null);
             }
         }).subscribeOn(Schedulers.boundedElastic());
     }

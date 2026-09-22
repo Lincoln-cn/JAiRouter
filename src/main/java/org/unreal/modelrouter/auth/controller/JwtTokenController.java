@@ -36,6 +36,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import org.unreal.modelrouter.common.exception.ApiException;
 
 /**
  * JWT令牌管理控制器
@@ -133,7 +134,7 @@ public class JwtTokenController {
                     response.setMessage("令牌撤销失败: " + ex.getMessage());
                     response.setTimestamp(LocalDateTime.now());
 
-                    return Mono.just(RouterResponse.error("令牌撤销失败: " + ex.getMessage(), "TOKEN_REVOKE_FAILED"));
+                    return Mono.error(ApiException.of("TOKEN_REVOKE_FAILED", "令牌撤销失败: " + ex.getMessage()));
                 });
     }
 
@@ -194,7 +195,7 @@ public class JwtTokenController {
                     response.setMessage("批量撤销失败: " + ex.getMessage());
                     response.setTimestamp(LocalDateTime.now());
 
-                    return Mono.just(RouterResponse.error("批量撤销失败: " + ex.getMessage(), "BATCH_TOKEN_REVOKE_FAILED"));
+                    return Mono.error(ApiException.of("BATCH_TOKEN_REVOKE_FAILED", "批量撤销失败: " + ex.getMessage()));
                 });
     }
 
@@ -291,7 +292,7 @@ public class JwtTokenController {
                 })
                 .onErrorResume(ex -> {
                     log.warn("获取黑名单统计信息失败: {}", ex.getMessage());
-                    return Mono.just(RouterResponse.error("获取黑名单统计信息失败", "BLACKLIST_STATS_FAILED"));
+                    return Mono.error(ApiException.of("BLACKLIST_STATS_FAILED", "获取黑名单统计信息失败"));
                 });
     }
 
@@ -326,15 +327,15 @@ public class JwtTokenController {
 
         // 检查服务可用性
         if (jwtPersistenceService == null) {
-            return Mono.just(RouterResponse.error("令牌持久化服务未启用", "SERVICE_NOT_AVAILABLE"));
+            return Mono.error(ApiException.of("SERVICE_NOT_AVAILABLE", "令牌持久化服务未启用"));
         }
 
         // 参数验证
         if (page < 0) {
-            return Mono.just(RouterResponse.error("页码不能小于0", "INVALID_PAGE"));
+            return Mono.error(ApiException.of("INVALID_PAGE", "页码不能小于0"));
         }
         if (size <= 0 || size > 100) {
-            return Mono.just(RouterResponse.error("页大小必须在1-100之间", "INVALID_SIZE"));
+            return Mono.error(ApiException.of("INVALID_SIZE", "页大小必须在1-100之间"));
         }
 
         // 根据过滤条件获取令牌列表
@@ -379,7 +380,7 @@ public class JwtTokenController {
                 .map(result -> RouterResponse.success(result, "令牌列表获取成功"))
                 .onErrorResume(ex -> {
                     log.warn("获取令牌列表失败: {}", ex.getMessage());
-                    return Mono.just(RouterResponse.error("获取令牌列表失败: " + ex.getMessage(), "GET_TOKENS_FAILED"));
+                    return Mono.error(ApiException.of("GET_TOKENS_FAILED", "获取令牌列表失败: " + ex.getMessage()));
                 });
     }
 
@@ -403,20 +404,20 @@ public class JwtTokenController {
 
         // 检查服务可用性
         if (jwtPersistenceService == null) {
-            return Mono.just(RouterResponse.error("令牌持久化服务未启用", "SERVICE_NOT_AVAILABLE"));
+            return Mono.error(ApiException.of("SERVICE_NOT_AVAILABLE", "令牌持久化服务未启用"));
         }
 
         // 参数验证
         if (tokenId == null || tokenId.trim().isEmpty()) {
-            return Mono.just(RouterResponse.error("令牌ID不能为空", "INVALID_TOKEN_ID"));
+            return Mono.error(ApiException.of("INVALID_TOKEN_ID", "令牌ID不能为空"));
         }
 
         return jwtPersistenceService.findByTokenId(tokenId.trim())
                 .map(tokenInfo -> RouterResponse.success(tokenInfo, "令牌详情获取成功"))
-                .switchIfEmpty(Mono.just(RouterResponse.error("令牌不存在", "TOKEN_NOT_FOUND")))
+                .switchIfEmpty(Mono.error(ApiException.of("TOKEN_NOT_FOUND", "令牌不存在")))
                 .onErrorResume(ex -> {
                     log.warn("获取令牌详情失败: tokenId={}, error={}", tokenId, ex.getMessage());
-                    return Mono.just(RouterResponse.error("获取令牌详情失败: " + ex.getMessage(), "GET_TOKEN_DETAILS_FAILED"));
+                    return Mono.error(ApiException.of("GET_TOKEN_DETAILS_FAILED", "获取令牌详情失败: " + ex.getMessage()));
                 });
     }
 
@@ -439,7 +440,7 @@ public class JwtTokenController {
 
         // 检查服务可用性
         if (jwtCleanupService == null) {
-            return Mono.just(RouterResponse.error("令牌清理服务未启用", "SERVICE_NOT_AVAILABLE"));
+            return Mono.error(ApiException.of("SERVICE_NOT_AVAILABLE", "令牌清理服务未启用"));
         }
 
         return jwtCleanupService.performFullCleanup()
@@ -459,7 +460,7 @@ public class JwtTokenController {
                     failedResult.setStartTime(LocalDateTime.now());
                     failedResult.setEndTime(LocalDateTime.now());
                     
-                    return Mono.just(RouterResponse.error("清理操作失败: " + ex.getMessage(), "CLEANUP_FAILED"));
+                    return Mono.error(ApiException.of("CLEANUP_FAILED", "清理操作失败: " + ex.getMessage()));
                 });
     }
 
@@ -480,16 +481,14 @@ public class JwtTokenController {
 
         // 检查服务可用性
         if (jwtCleanupService == null) {
-            return Mono.just(RouterResponse.error("令牌清理服务未启用", "SERVICE_NOT_AVAILABLE"));
+            return Mono.error(ApiException.of("SERVICE_NOT_AVAILABLE", "令牌清理服务未启用"));
         }
 
         return jwtCleanupService.getCleanupStats()
                 .map(stats -> RouterResponse.success(stats, "清理统计信息获取成功"))
                 .onErrorResume(ex -> {
                     log.warn("获取清理统计信息失败: {}", ex.getMessage());
-                    return Mono.just(RouterResponse.error(
-                            "获取清理统计信息失败: " + ex.getMessage(),
-                            "GET_CLEANUP_STATS_FAILED"));
+                    return Mono.error(ApiException.of("GET_CLEANUP_STATS_FAILED", "获取清理统计信息失败: " + ex.getMessage()));
                 });
     }
 
