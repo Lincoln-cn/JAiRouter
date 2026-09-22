@@ -96,7 +96,9 @@
                 <span class="stat-value">{{ serviceStats.strategy || '-' }}</span>
               </div>
               <div class="stat-row">
-                <span class="stat-label">{{ t('loadBalancer.monitoring.selectionCount') }}</span>
+                <el-tooltip :content="t('loadBalancer.monitoring.countHint')" placement="top">
+                  <span class="stat-label">{{ t('loadBalancer.monitoring.selectionCount') }}</span>
+                </el-tooltip>
                 <span class="stat-value">{{ serviceStats.totalSelections || 0 }}</span>
               </div>
               <div class="stat-row">
@@ -105,7 +107,12 @@
               </div>
             </div>
             <div class="instance-distribution">
-              <div class="distribution-title">{{ t('loadBalancer.monitoring.distributionTitle') }}</div>
+              <div class="distribution-title">
+                {{ t('loadBalancer.monitoring.distributionTitle') }}
+                <el-tooltip :content="t('loadBalancer.monitoring.countHint')" placement="top">
+                  <el-icon class="hint-icon"><InfoFilled /></el-icon>
+                </el-tooltip>
+              </div>
               <!-- 按模型分组显示 -->
               <div
                 v-for="(instanceCounts, modelName) in serviceStats.modelInstanceCounts"
@@ -234,7 +241,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Download, Box } from '@element-plus/icons-vue'
+import { Download, Box, InfoFilled } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 
@@ -662,6 +669,12 @@ onUnmounted(() => {
   font-size: 12px;
   color: var(--ja-text-secondary);
   margin-bottom: 8px;
+}
+
+.distribution-title .hint-icon {
+  margin-left: 4px;
+  vertical-align: -2px;
+  cursor: help;
 }
 
 .model-group {
