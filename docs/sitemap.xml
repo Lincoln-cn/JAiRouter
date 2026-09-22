@@ -2,105 +2,6 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://jairouter.comen</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/tracing</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/tracing"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/tracing"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/tracing"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/development</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/development"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/development"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/development"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/monitoring</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/reference</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/reference"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/reference"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/reference"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/troubleshooting</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/troubleshooting"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/troubleshooting"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/troubleshooting"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/deployment</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/deployment"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/api-reference</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/api-reference"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/api-reference"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/api-reference"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/configuration</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/getting-started</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/getting-started"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/getting-started"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/getting-started"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/security</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/security"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/security"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/security"/>
-  </url>
-  <url>
     <loc>https://jairouter.comzh</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
@@ -108,24 +9,6 @@
     <xhtml:link rel="canonical" href="https://jairouter.comzh"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/tracing</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/tracing"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/tracing"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/tracing"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/development</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/development"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/development"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/development"/>
   </url>
   <url>
     <loc>https://jairouter.comzh/monitoring</loc>
@@ -137,15 +20,6 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/monitoring"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/reference</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/reference"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/reference"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/reference"/>
-  </url>
-  <url>
     <loc>https://jairouter.comzh/troubleshooting</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
@@ -155,13 +29,13 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/troubleshooting"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/deployment</loc>
+    <loc>https://jairouter.comzh/reference</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/deployment"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/deployment"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/deployment"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/reference"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/reference"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/reference"/>
   </url>
   <url>
     <loc>https://jairouter.comzh/api-reference</loc>
@@ -173,13 +47,13 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/api-reference"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/configuration</loc>
+    <loc>https://jairouter.comzh/security</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/security"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/security"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/security"/>
   </url>
   <url>
     <loc>https://jairouter.comzh/getting-started</loc>
@@ -191,85 +65,139 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/getting-started"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/security</loc>
+    <loc>https://jairouter.comzh/development</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/security"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/security"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/security"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/development"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/development"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/development"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/getting-started/web-console</loc>
+    <loc>https://jairouter.comzh/tracing</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/getting-started/web-console"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/getting-started/web-console"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/getting-started/web-console"/>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/tracing"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/tracing"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/tracing"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/getting-started/installation</loc>
+    <loc>https://jairouter.comzh/deployment</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/getting-started/installation"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/getting-started/installation"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/getting-started/installation"/>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/deployment"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/deployment"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/deployment"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/getting-started/quick-start</loc>
+    <loc>https://jairouter.comzh/configuration</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/getting-started/quick-start"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/getting-started/quick-start"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/getting-started/quick-start"/>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/getting-started/claude-code</loc>
+    <loc>https://jairouter.comen</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/getting-started/claude-code"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/getting-started/claude-code"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/getting-started/claude-code"/>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/getting-started/first-steps</loc>
+    <loc>https://jairouter.comen/monitoring</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/getting-started/first-steps"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/getting-started/first-steps"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/getting-started/first-steps"/>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/getting-started/web-console</loc>
+    <loc>https://jairouter.comen/troubleshooting</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/getting-started/web-console"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/getting-started/web-console"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/getting-started/web-console"/>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/troubleshooting"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/troubleshooting"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/troubleshooting"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/getting-started/installation</loc>
+    <loc>https://jairouter.comen/reference</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/getting-started/installation"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/getting-started/installation"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/getting-started/installation"/>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/reference"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/reference"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/reference"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/getting-started/quick-start</loc>
+    <loc>https://jairouter.comen/api-reference</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/getting-started/quick-start"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/getting-started/quick-start"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/getting-started/quick-start"/>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/api-reference"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/api-reference"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/api-reference"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/security</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/security"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/security"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/security"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/getting-started</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/getting-started"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/getting-started"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/getting-started"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/development</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/development"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/development"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/development"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/tracing</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/tracing"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/tracing"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/tracing"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/deployment</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/deployment"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/configuration</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration"/>
   </url>
   <url>
     <loc>https://jairouter.comzh/getting-started/claude-code</loc>
@@ -281,6 +209,15 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/getting-started/claude-code"/>
   </url>
   <url>
+    <loc>https://jairouter.comzh/getting-started/installation</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/getting-started/installation"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/getting-started/installation"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/getting-started/installation"/>
+  </url>
+  <url>
     <loc>https://jairouter.comzh/getting-started/first-steps</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
@@ -290,283 +227,112 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/getting-started/first-steps"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/deployment/kubernetes</loc>
+    <loc>https://jairouter.comzh/getting-started/quick-start</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/deployment/kubernetes"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment/kubernetes"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment/kubernetes"/>
+    <priority>0.9</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/getting-started/quick-start"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/getting-started/quick-start"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/getting-started/quick-start"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/deployment/github-pages</loc>
+    <loc>https://jairouter.comzh/getting-started/web-console</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/deployment/github-pages"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment/github-pages"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment/github-pages"/>
+    <priority>0.9</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/getting-started/web-console"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/getting-started/web-console"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/getting-started/web-console"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/deployment/jwt-persistence-deployment-checklist</loc>
+    <loc>https://jairouter.comen/getting-started/claude-code</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/deployment/jwt-persistence-deployment-checklist"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment/jwt-persistence-deployment-checklist"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment/jwt-persistence-deployment-checklist"/>
+    <priority>0.9</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/getting-started/claude-code"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/getting-started/claude-code"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/getting-started/claude-code"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/deployment/docker</loc>
+    <loc>https://jairouter.comen/getting-started/installation</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/deployment/docker"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment/docker"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment/docker"/>
+    <priority>0.9</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/getting-started/installation"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/getting-started/installation"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/getting-started/installation"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/deployment/docker-optimized</loc>
+    <loc>https://jairouter.comen/getting-started/first-steps</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/deployment/docker-optimized"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment/docker-optimized"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment/docker-optimized"/>
+    <priority>0.9</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/getting-started/first-steps"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/getting-started/first-steps"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/getting-started/first-steps"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/deployment/china-optimization</loc>
+    <loc>https://jairouter.comen/getting-started/quick-start</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/deployment/china-optimization"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment/china-optimization"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment/china-optimization"/>
+    <priority>0.9</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/getting-started/quick-start"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/getting-started/quick-start"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/getting-started/quick-start"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/deployment/production</loc>
+    <loc>https://jairouter.comen/getting-started/web-console</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/deployment/production"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment/production"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment/production"/>
+    <priority>0.9</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/getting-started/web-console"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/getting-started/web-console"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/getting-started/web-console"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/api-reference/openapi-spec</loc>
+    <loc>https://jairouter.comzh/api-reference/error-codes</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/api-reference/openapi-spec"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/api-reference/openapi-spec"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/api-reference/openapi-spec"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/api-reference/error-codes"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/api-reference/error-codes"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/api-reference/error-codes"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/api-reference/monitoring-api</loc>
+    <loc>https://jairouter.comzh/api-reference/openapi-spec</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/api-reference/monitoring-api"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/api-reference/monitoring-api"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/api-reference/monitoring-api"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/api-reference/openapi-spec"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/api-reference/openapi-spec"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/api-reference/openapi-spec"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/api-reference/error-codes</loc>
+    <loc>https://jairouter.comzh/api-reference/universal-api</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/api-reference/error-codes"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/api-reference/error-codes"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/api-reference/error-codes"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/api-reference/universal-api"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/api-reference/universal-api"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/api-reference/universal-api"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/api-reference/management-api</loc>
+    <loc>https://jairouter.comzh/api-reference/management-api</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/api-reference/management-api"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/api-reference/management-api"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/api-reference/management-api"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/api-reference/management-api"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/api-reference/management-api"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/api-reference/management-api"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/api-reference/universal-api</loc>
+    <loc>https://jairouter.comzh/api-reference/monitoring-api</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/api-reference/universal-api"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/api-reference/universal-api"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/api-reference/universal-api"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/configuration/state-persistence</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/state-persistence"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/state-persistence"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/state-persistence"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/configuration/version-management</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/version-management"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/version-management"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/version-management"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/configuration/dynamic-config</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/dynamic-config"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/dynamic-config"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/dynamic-config"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/configuration/circuit-breaker</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/circuit-breaker"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/circuit-breaker"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/circuit-breaker"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/configuration/quota</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/quota"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/quota"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/quota"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/configuration/load-balancing</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/load-balancing"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/load-balancing"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/load-balancing"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/configuration/validation-rules</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/validation-rules"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/validation-rules"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/validation-rules"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/configuration/routing-rules</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/routing-rules"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/routing-rules"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/routing-rules"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/configuration/response-cache</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/response-cache"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/response-cache"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/response-cache"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/configuration/jwt-persistence</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/jwt-persistence"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/jwt-persistence"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/jwt-persistence"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/configuration/kv-cache</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/kv-cache"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/kv-cache"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/kv-cache"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/configuration/modular-config</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/modular-config"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/modular-config"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/modular-config"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/configuration/store-config</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/store-config"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/store-config"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/store-config"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/configuration/adapter-config</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/adapter-config"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/adapter-config"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/adapter-config"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/configuration/instance-examples</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/instance-examples"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/instance-examples"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/instance-examples"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/configuration/rate-limiting</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/rate-limiting"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/rate-limiting"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/rate-limiting"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/configuration/application-config</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/application-config"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/application-config"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/application-config"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/deployment/kubernetes</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/deployment/kubernetes"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/deployment/kubernetes"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/deployment/kubernetes"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/deployment/github-pages</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/deployment/github-pages"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/deployment/github-pages"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/deployment/github-pages"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/api-reference/monitoring-api"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/api-reference/monitoring-api"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/api-reference/monitoring-api"/>
   </url>
   <url>
     <loc>https://jairouter.comzh/deployment/jwt-persistence-deployment-checklist</loc>
@@ -596,6 +362,15 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/deployment/docker-optimized"/>
   </url>
   <url>
+    <loc>https://jairouter.comzh/deployment/github-pages</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/deployment/github-pages"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/deployment/github-pages"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/deployment/github-pages"/>
+  </url>
+  <url>
     <loc>https://jairouter.comzh/deployment/china-optimization</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
@@ -614,103 +389,13 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/deployment/production"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/api-reference/openapi-spec</loc>
+    <loc>https://jairouter.comzh/deployment/kubernetes</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/api-reference/openapi-spec"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/api-reference/openapi-spec"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/api-reference/openapi-spec"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/api-reference/monitoring-api</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/api-reference/monitoring-api"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/api-reference/monitoring-api"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/api-reference/monitoring-api"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/api-reference/error-codes</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/api-reference/error-codes"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/api-reference/error-codes"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/api-reference/error-codes"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/api-reference/management-api</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/api-reference/management-api"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/api-reference/management-api"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/api-reference/management-api"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/api-reference/universal-api</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/api-reference/universal-api"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/api-reference/universal-api"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/api-reference/universal-api"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/configuration/state-persistence</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/state-persistence"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/state-persistence"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/state-persistence"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/configuration/version-management</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/version-management"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/version-management"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/version-management"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/configuration/dynamic-config</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/dynamic-config"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/dynamic-config"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/dynamic-config"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/configuration/circuit-breaker</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/circuit-breaker"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/circuit-breaker"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/circuit-breaker"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/configuration/quota</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/quota"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/quota"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/quota"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/configuration/load-balancing</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/load-balancing"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/load-balancing"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/load-balancing"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/deployment/kubernetes"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/deployment/kubernetes"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/deployment/kubernetes"/>
   </url>
   <url>
     <loc>https://jairouter.comzh/configuration/validation-rules</loc>
@@ -722,31 +407,22 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/validation-rules"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/configuration/routing-rules</loc>
+    <loc>https://jairouter.comzh/configuration/instance-examples</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/routing-rules"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/routing-rules"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/routing-rules"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/instance-examples"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/instance-examples"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/instance-examples"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/configuration/response-cache</loc>
+    <loc>https://jairouter.comzh/configuration/circuit-breaker</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/response-cache"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/response-cache"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/response-cache"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/configuration/jwt-persistence</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/jwt-persistence"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/jwt-persistence"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/jwt-persistence"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/circuit-breaker"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/circuit-breaker"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/circuit-breaker"/>
   </url>
   <url>
     <loc>https://jairouter.comzh/configuration/kv-cache</loc>
@@ -758,40 +434,31 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/kv-cache"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/configuration/modular-config</loc>
+    <loc>https://jairouter.comzh/configuration/jwt-persistence</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/modular-config"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/modular-config"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/modular-config"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/jwt-persistence"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/jwt-persistence"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/jwt-persistence"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/configuration/store-config</loc>
+    <loc>https://jairouter.comzh/configuration/dynamic-config</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/store-config"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/store-config"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/store-config"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/dynamic-config"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/dynamic-config"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/dynamic-config"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/configuration/adapter-config</loc>
+    <loc>https://jairouter.comzh/configuration/quota</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/adapter-config"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/adapter-config"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/adapter-config"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/configuration/instance-examples</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/instance-examples"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/instance-examples"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/instance-examples"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/quota"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/quota"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/quota"/>
   </url>
   <url>
     <loc>https://jairouter.comzh/configuration/rate-limiting</loc>
@@ -803,6 +470,33 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/rate-limiting"/>
   </url>
   <url>
+    <loc>https://jairouter.comzh/configuration/adapter-config</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/adapter-config"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/adapter-config"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/adapter-config"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comzh/configuration/version-management</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/version-management"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/version-management"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/version-management"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comzh/configuration/state-persistence</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/state-persistence"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/state-persistence"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/state-persistence"/>
+  </url>
+  <url>
     <loc>https://jairouter.comzh/configuration/application-config</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
@@ -812,274 +506,319 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/application-config"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/tracing/performance-tuning</loc>
+    <loc>https://jairouter.comzh/configuration/response-cache</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/tracing/performance-tuning"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/tracing/performance-tuning"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/tracing/performance-tuning"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/response-cache"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/response-cache"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/response-cache"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/tracing/troubleshooting</loc>
+    <loc>https://jairouter.comzh/configuration/store-config</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/tracing/troubleshooting"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/tracing/troubleshooting"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/tracing/troubleshooting"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/store-config"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/store-config"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/store-config"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/tracing/operations-guide</loc>
+    <loc>https://jairouter.comzh/configuration/modular-config</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/tracing/operations-guide"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/tracing/operations-guide"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/tracing/operations-guide"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/modular-config"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/modular-config"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/modular-config"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/tracing/quickstart</loc>
+    <loc>https://jairouter.comzh/configuration/load-balancing</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/tracing/quickstart"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/tracing/quickstart"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/tracing/quickstart"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/load-balancing"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/load-balancing"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/load-balancing"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/tracing/config-reference</loc>
+    <loc>https://jairouter.comzh/configuration/routing-rules</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/tracing/config-reference"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/tracing/config-reference"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/tracing/config-reference"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/configuration/routing-rules"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/configuration/routing-rules"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/configuration/routing-rules"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/tracing/usage-guide</loc>
+    <loc>https://jairouter.comen/api-reference/error-codes</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/tracing/usage-guide"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/tracing/usage-guide"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/tracing/usage-guide"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/api-reference/error-codes"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/api-reference/error-codes"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/api-reference/error-codes"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/monitoring/troubleshooting</loc>
+    <loc>https://jairouter.comen/api-reference/openapi-spec</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/troubleshooting"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/troubleshooting"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/troubleshooting"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/api-reference/openapi-spec"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/api-reference/openapi-spec"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/api-reference/openapi-spec"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/monitoring/dashboards</loc>
+    <loc>https://jairouter.comen/api-reference/universal-api</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/dashboards"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/dashboards"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/dashboards"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/api-reference/universal-api"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/api-reference/universal-api"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/api-reference/universal-api"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/monitoring/alert_rules_guide</loc>
+    <loc>https://jairouter.comen/api-reference/management-api</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/alert_rules_guide"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/alert_rules_guide"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/alert_rules_guide"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/api-reference/management-api"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/api-reference/management-api"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/api-reference/management-api"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/monitoring/testing</loc>
+    <loc>https://jairouter.comen/api-reference/monitoring-api</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/testing"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/testing"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/testing"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/api-reference/monitoring-api"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/api-reference/monitoring-api"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/api-reference/monitoring-api"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/monitoring/performance</loc>
+    <loc>https://jairouter.comen/deployment/jwt-persistence-deployment-checklist</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/performance"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/performance"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/performance"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/deployment/jwt-persistence-deployment-checklist"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment/jwt-persistence-deployment-checklist"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment/jwt-persistence-deployment-checklist"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/monitoring/error-tracking</loc>
+    <loc>https://jairouter.comen/deployment/docker</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/error-tracking"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/error-tracking"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/error-tracking"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/deployment/docker"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment/docker"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment/docker"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/monitoring/metrics</loc>
+    <loc>https://jairouter.comen/deployment/docker-optimized</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/metrics"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/metrics"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/metrics"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/deployment/docker-optimized"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment/docker-optimized"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment/docker-optimized"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/monitoring/slow-query-alerts</loc>
+    <loc>https://jairouter.comen/deployment/github-pages</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/slow-query-alerts"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/slow-query-alerts"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/slow-query-alerts"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/deployment/github-pages"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment/github-pages"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment/github-pages"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/monitoring/configuration</loc>
+    <loc>https://jairouter.comen/deployment/china-optimization</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/configuration"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/configuration"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/configuration"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/deployment/china-optimization"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment/china-optimization"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment/china-optimization"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/monitoring/alerts</loc>
+    <loc>https://jairouter.comen/deployment/production</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/alerts"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/alerts"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/alerts"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/deployment/production"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment/production"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment/production"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/monitoring/setup</loc>
+    <loc>https://jairouter.comen/deployment/kubernetes</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/setup"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/setup"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/setup"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/deployment/kubernetes"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment/kubernetes"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment/kubernetes"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/security/troubleshooting</loc>
+    <loc>https://jairouter.comen/configuration/validation-rules</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/security/troubleshooting"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/security/troubleshooting"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/security/troubleshooting"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/validation-rules"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/validation-rules"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/validation-rules"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/security/api-key-management</loc>
+    <loc>https://jairouter.comen/configuration/instance-examples</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/security/api-key-management"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/security/api-key-management"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/security/api-key-management"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/instance-examples"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/instance-examples"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/instance-examples"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/security/rbac-permissions</loc>
+    <loc>https://jairouter.comen/configuration/circuit-breaker</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/security/rbac-permissions"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/security/rbac-permissions"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/security/rbac-permissions"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/circuit-breaker"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/circuit-breaker"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/circuit-breaker"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/security/blacklist-management</loc>
+    <loc>https://jairouter.comen/configuration/kv-cache</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/security/blacklist-management"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/security/blacklist-management"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/security/blacklist-management"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/kv-cache"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/kv-cache"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/kv-cache"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/security/audit-log-management</loc>
+    <loc>https://jairouter.comen/configuration/jwt-persistence</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/security/audit-log-management"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/security/audit-log-management"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/security/audit-log-management"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/jwt-persistence"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/jwt-persistence"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/jwt-persistence"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/security/jwt-authentication</loc>
+    <loc>https://jairouter.comen/configuration/dynamic-config</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/security/jwt-authentication"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/security/jwt-authentication"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/security/jwt-authentication"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/dynamic-config"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/dynamic-config"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/dynamic-config"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/security/data-sanitization</loc>
+    <loc>https://jairouter.comen/configuration/quota</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/security/data-sanitization"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/security/data-sanitization"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/security/data-sanitization"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/quota"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/quota"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/quota"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/tracing/performance-tuning</loc>
+    <loc>https://jairouter.comen/configuration/rate-limiting</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/tracing/performance-tuning"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/tracing/performance-tuning"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/tracing/performance-tuning"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/rate-limiting"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/rate-limiting"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/rate-limiting"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/tracing/troubleshooting</loc>
+    <loc>https://jairouter.comen/configuration/adapter-config</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/tracing/troubleshooting"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/tracing/troubleshooting"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/tracing/troubleshooting"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/adapter-config"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/adapter-config"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/adapter-config"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/tracing/operations-guide</loc>
+    <loc>https://jairouter.comen/configuration/version-management</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/tracing/operations-guide"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/tracing/operations-guide"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/tracing/operations-guide"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/version-management"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/version-management"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/version-management"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/tracing/quickstart</loc>
+    <loc>https://jairouter.comen/configuration/state-persistence</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/tracing/quickstart"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/tracing/quickstart"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/tracing/quickstart"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/state-persistence"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/state-persistence"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/state-persistence"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/tracing/config-reference</loc>
+    <loc>https://jairouter.comen/configuration/application-config</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/tracing/config-reference"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/tracing/config-reference"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/tracing/config-reference"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/application-config"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/application-config"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/application-config"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/tracing/usage-guide</loc>
+    <loc>https://jairouter.comen/configuration/response-cache</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/response-cache"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/response-cache"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/response-cache"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/configuration/store-config</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/store-config"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/store-config"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/store-config"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/configuration/modular-config</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/modular-config"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/modular-config"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/modular-config"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/configuration/load-balancing</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/load-balancing"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/load-balancing"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/load-balancing"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/configuration/routing-rules</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/configuration/routing-rules"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/configuration/routing-rules"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/configuration/routing-rules"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comzh/monitoring/dashboards</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/tracing/usage-guide"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/tracing/usage-guide"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/tracing/usage-guide"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/monitoring/dashboards"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/monitoring/dashboards"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/monitoring/dashboards"/>
   </url>
   <url>
     <loc>https://jairouter.comzh/monitoring/troubleshooting</loc>
@@ -1091,13 +830,31 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/monitoring/troubleshooting"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/monitoring/dashboards</loc>
+    <loc>https://jairouter.comzh/monitoring/performance</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/monitoring/dashboards"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/monitoring/dashboards"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/monitoring/dashboards"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/monitoring/performance"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/monitoring/performance"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/monitoring/performance"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comzh/monitoring/configuration</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/monitoring/configuration"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/monitoring/configuration"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/monitoring/configuration"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comzh/monitoring/slow-query-alerts</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/monitoring/slow-query-alerts"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/monitoring/slow-query-alerts"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/monitoring/slow-query-alerts"/>
   </url>
   <url>
     <loc>https://jairouter.comzh/monitoring/alert_rules_guide</loc>
@@ -1118,13 +875,13 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/monitoring/testing"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/monitoring/performance</loc>
+    <loc>https://jairouter.comzh/monitoring/setup</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/monitoring/performance"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/monitoring/performance"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/monitoring/performance"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/monitoring/setup"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/monitoring/setup"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/monitoring/setup"/>
   </url>
   <url>
     <loc>https://jairouter.comzh/monitoring/error-tracking</loc>
@@ -1136,33 +893,6 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/monitoring/error-tracking"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/monitoring/metrics</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/monitoring/metrics"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/monitoring/metrics"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/monitoring/metrics"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/monitoring/slow-query-alerts</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/monitoring/slow-query-alerts"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/monitoring/slow-query-alerts"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/monitoring/slow-query-alerts"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/monitoring/configuration</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/monitoring/configuration"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/monitoring/configuration"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/monitoring/configuration"/>
-  </url>
-  <url>
     <loc>https://jairouter.comzh/monitoring/alerts</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
@@ -1172,58 +902,13 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/monitoring/alerts"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/monitoring/setup</loc>
+    <loc>https://jairouter.comzh/monitoring/metrics</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/monitoring/setup"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/monitoring/setup"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/monitoring/setup"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/security/troubleshooting</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/security/troubleshooting"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/security/troubleshooting"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/security/troubleshooting"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/security/api-key-management</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/security/api-key-management"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/security/api-key-management"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/security/api-key-management"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/security/rbac-permissions</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/security/rbac-permissions"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/security/rbac-permissions"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/security/rbac-permissions"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/security/blacklist-management</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/security/blacklist-management"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/security/blacklist-management"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/security/blacklist-management"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/security/audit-log-management</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/security/audit-log-management"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/security/audit-log-management"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/security/audit-log-management"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/monitoring/metrics"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/monitoring/metrics"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/monitoring/metrics"/>
   </url>
   <url>
     <loc>https://jairouter.comzh/security/jwt-authentication</loc>
@@ -1235,6 +920,42 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/security/jwt-authentication"/>
   </url>
   <url>
+    <loc>https://jairouter.comzh/security/api-key-management</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/security/api-key-management"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/security/api-key-management"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/security/api-key-management"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comzh/security/troubleshooting</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/security/troubleshooting"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/security/troubleshooting"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/security/troubleshooting"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comzh/security/rbac-permissions</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/security/rbac-permissions"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/security/rbac-permissions"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/security/rbac-permissions"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comzh/security/audit-log-management</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/security/audit-log-management"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/security/audit-log-management"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/security/audit-log-management"/>
+  </url>
+  <url>
     <loc>https://jairouter.comzh/security/data-sanitization</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
@@ -1244,148 +965,292 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/security/data-sanitization"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/development/code-quality</loc>
+    <loc>https://jairouter.comzh/security/blacklist-management</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/development/code-quality"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/development/code-quality"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/development/code-quality"/>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/security/blacklist-management"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/security/blacklist-management"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/security/blacklist-management"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/development/testing</loc>
+    <loc>https://jairouter.comzh/tracing/quickstart</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/development/testing"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/development/testing"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/development/testing"/>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/tracing/quickstart"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/tracing/quickstart"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/tracing/quickstart"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/development/contributing</loc>
+    <loc>https://jairouter.comzh/tracing/performance-tuning</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/development/contributing"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/development/contributing"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/development/contributing"/>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/tracing/performance-tuning"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/tracing/performance-tuning"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/tracing/performance-tuning"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/development/knowledge-base-governance</loc>
+    <loc>https://jairouter.comzh/tracing/troubleshooting</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/development/knowledge-base-governance"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/development/knowledge-base-governance"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/development/knowledge-base-governance"/>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/tracing/troubleshooting"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/tracing/troubleshooting"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/tracing/troubleshooting"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/development/doc-maintenance</loc>
+    <loc>https://jairouter.comzh/tracing/usage-guide</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/development/doc-maintenance"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/development/doc-maintenance"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/development/doc-maintenance"/>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/tracing/usage-guide"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/tracing/usage-guide"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/tracing/usage-guide"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/development/architecture</loc>
+    <loc>https://jairouter.comzh/tracing/operations-guide</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/development/architecture"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/development/architecture"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/development/architecture"/>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/tracing/operations-guide"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/tracing/operations-guide"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/tracing/operations-guide"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/troubleshooting/issue-fixes</loc>
+    <loc>https://jairouter.comzh/tracing/config-reference</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/tracing/config-reference"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/tracing/config-reference"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/tracing/config-reference"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/monitoring/dashboards</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/dashboards"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/dashboards"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/dashboards"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/monitoring/troubleshooting</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/troubleshooting"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/troubleshooting"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/troubleshooting"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/monitoring/performance</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/performance"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/performance"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/performance"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/monitoring/configuration</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/configuration"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/configuration"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/configuration"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/monitoring/slow-query-alerts</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/slow-query-alerts"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/slow-query-alerts"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/slow-query-alerts"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/monitoring/alert_rules_guide</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/alert_rules_guide"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/alert_rules_guide"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/alert_rules_guide"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/monitoring/testing</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/testing"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/testing"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/testing"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/monitoring/setup</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/setup"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/setup"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/setup"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/monitoring/error-tracking</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/error-tracking"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/error-tracking"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/error-tracking"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/monitoring/alerts</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/alerts"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/alerts"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/alerts"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/monitoring/metrics</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/monitoring/metrics"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/monitoring/metrics"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring/metrics"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/security/jwt-authentication</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/security/jwt-authentication"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/security/jwt-authentication"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/security/jwt-authentication"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/security/api-key-management</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/security/api-key-management"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/security/api-key-management"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/security/api-key-management"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/security/troubleshooting</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/security/troubleshooting"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/security/troubleshooting"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/security/troubleshooting"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/security/rbac-permissions</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/security/rbac-permissions"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/security/rbac-permissions"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/security/rbac-permissions"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/security/audit-log-management</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/security/audit-log-management"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/security/audit-log-management"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/security/audit-log-management"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/security/data-sanitization</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/security/data-sanitization"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/security/data-sanitization"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/security/data-sanitization"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/security/blacklist-management</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/security/blacklist-management"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/security/blacklist-management"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/security/blacklist-management"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/tracing/quickstart</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/tracing/quickstart"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/tracing/quickstart"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/tracing/quickstart"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/tracing/performance-tuning</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/tracing/performance-tuning"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/tracing/performance-tuning"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/tracing/performance-tuning"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/tracing/troubleshooting</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/tracing/troubleshooting"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/tracing/troubleshooting"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/tracing/troubleshooting"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/tracing/usage-guide</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/tracing/usage-guide"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/tracing/usage-guide"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/tracing/usage-guide"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/tracing/operations-guide</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/tracing/operations-guide"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/tracing/operations-guide"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/tracing/operations-guide"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/tracing/config-reference</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/tracing/config-reference"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/tracing/config-reference"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/tracing/config-reference"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comzh/troubleshooting/debugging</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/troubleshooting/issue-fixes"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/troubleshooting/issue-fixes"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/troubleshooting/issue-fixes"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/troubleshooting/performance</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/troubleshooting/performance"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/troubleshooting/performance"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/troubleshooting/performance"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/troubleshooting/debugging</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/troubleshooting/debugging"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/troubleshooting/debugging"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/troubleshooting/debugging"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/troubleshooting/common-issues</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/troubleshooting/common-issues"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/troubleshooting/common-issues"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/troubleshooting/common-issues"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/development/code-quality</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/development/code-quality"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/development/code-quality"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/development/code-quality"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/development/testing</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/development/testing"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/development/testing"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/development/testing"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/development/contributing</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/development/contributing"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/development/contributing"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/development/contributing"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/development/knowledge-base-governance</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/development/knowledge-base-governance"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/development/knowledge-base-governance"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/development/knowledge-base-governance"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/development/doc-maintenance</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/development/doc-maintenance"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/development/doc-maintenance"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/development/doc-maintenance"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/development/architecture</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/development/architecture"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/development/architecture"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/development/architecture"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/troubleshooting/debugging"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/troubleshooting/debugging"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/troubleshooting/debugging"/>
   </url>
   <url>
     <loc>https://jairouter.comzh/troubleshooting/issue-fixes</loc>
@@ -1406,15 +1271,6 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/troubleshooting/performance"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/troubleshooting/debugging</loc>
-    <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/troubleshooting/debugging"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/troubleshooting/debugging"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/troubleshooting/debugging"/>
-  </url>
-  <url>
     <loc>https://jairouter.comzh/troubleshooting/common-issues</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
@@ -1424,67 +1280,148 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/troubleshooting/common-issues"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/reference/glossary</loc>
+    <loc>https://jairouter.comzh/development/contributing</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/reference/glossary"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/reference/glossary"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/reference/glossary"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/development/contributing"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/development/contributing"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/development/contributing"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/reference/faq</loc>
+    <loc>https://jairouter.comzh/development/knowledge-base-governance</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/reference/faq"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/reference/faq"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/reference/faq"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/development/knowledge-base-governance"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/development/knowledge-base-governance"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/development/knowledge-base-governance"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/reference/adapter-updates</loc>
+    <loc>https://jairouter.comzh/development/testing</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/reference/adapter-updates"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/reference/adapter-updates"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/reference/adapter-updates"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/development/testing"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/development/testing"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/development/testing"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/reference/changelog</loc>
+    <loc>https://jairouter.comzh/development/code-quality</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/reference/changelog"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/reference/changelog"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/reference/changelog"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/development/code-quality"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/development/code-quality"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/development/code-quality"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/reference/roadmap</loc>
+    <loc>https://jairouter.comzh/development/doc-maintenance</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/reference/roadmap"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/reference/roadmap"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/reference/roadmap"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/development/doc-maintenance"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/development/doc-maintenance"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/development/doc-maintenance"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/reference/glossary</loc>
+    <loc>https://jairouter.comzh/development/architecture</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/reference/glossary"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/reference/glossary"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/reference/glossary"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/development/architecture"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/development/architecture"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/development/architecture"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/reference/faq</loc>
+    <loc>https://jairouter.comen/troubleshooting/debugging</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/reference/faq"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/reference/faq"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/reference/faq"/>
+    <priority>0.6</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/troubleshooting/debugging"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/troubleshooting/debugging"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/troubleshooting/debugging"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/troubleshooting/issue-fixes</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/troubleshooting/issue-fixes"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/troubleshooting/issue-fixes"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/troubleshooting/issue-fixes"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/troubleshooting/performance</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/troubleshooting/performance"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/troubleshooting/performance"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/troubleshooting/performance"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/troubleshooting/common-issues</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/troubleshooting/common-issues"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/troubleshooting/common-issues"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/troubleshooting/common-issues"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/development/contributing</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/development/contributing"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/development/contributing"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/development/contributing"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/development/knowledge-base-governance</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/development/knowledge-base-governance"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/development/knowledge-base-governance"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/development/knowledge-base-governance"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/development/testing</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/development/testing"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/development/testing"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/development/testing"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/development/code-quality</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/development/code-quality"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/development/code-quality"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/development/code-quality"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/development/doc-maintenance</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/development/doc-maintenance"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/development/doc-maintenance"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/development/doc-maintenance"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/development/architecture</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/development/architecture"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/development/architecture"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/development/architecture"/>
   </url>
   <url>
     <loc>https://jairouter.comzh/reference/adapter-updates</loc>
@@ -1496,6 +1433,24 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/reference/adapter-updates"/>
   </url>
   <url>
+    <loc>https://jairouter.comzh/reference/roadmap</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/reference/roadmap"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/reference/roadmap"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/reference/roadmap"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comzh/reference/glossary</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/reference/glossary"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/reference/glossary"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/reference/glossary"/>
+  </url>
+  <url>
     <loc>https://jairouter.comzh/reference/changelog</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
@@ -1505,12 +1460,57 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/reference/changelog"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/reference/roadmap</loc>
+    <loc>https://jairouter.comzh/reference/faq</loc>
     <lastmod>2026-09-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/reference/roadmap"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/reference/roadmap"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/reference/roadmap"/>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/reference/faq"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/reference/faq"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/reference/faq"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/reference/adapter-updates</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/reference/adapter-updates"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/reference/adapter-updates"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/reference/adapter-updates"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/reference/roadmap</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/reference/roadmap"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/reference/roadmap"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/reference/roadmap"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/reference/glossary</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/reference/glossary"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/reference/glossary"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/reference/glossary"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/reference/changelog</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/reference/changelog"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/reference/changelog"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/reference/changelog"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/reference/faq</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/reference/faq"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/reference/faq"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/reference/faq"/>
   </url>
 </urlset>
