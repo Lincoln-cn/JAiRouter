@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.test.AdapterTestResult;
 import org.unreal.modelrouter.router.adapter.test.AdapterTestService;
@@ -55,8 +55,7 @@ public class AdapterTestController {
             @RequestBody final Map<String, Object> request) {
         try {
             if (!adapterRegistry.isAdapterSupported(name)) {
-                return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(RouterResponse.error("适配器不存在: " + name, "ADAPTER_NOT_FOUND")));
+                return Mono.error(ApiException.of("ADAPTER_NOT_FOUND", "适配器不存在: " + name));
             }
 
             String testType = (String) request.getOrDefault("testType", "PING");
@@ -68,13 +67,11 @@ public class AdapterTestController {
                     .map(result -> ResponseEntity.ok(RouterResponse.success(result, "测试完成")))
                     .onErrorResume(ex -> {
                         logger.error("测试适配器失败: {}", name, ex);
-                        return Mono.just(ResponseEntity.internalServerError()
-                                .body(RouterResponse.error("测试失败: " + ex.getMessage())));
+                        return Mono.error(ApiException.of("INTERNAL_ERROR", "测试失败: " + ex.getMessage()));
                     });
         } catch (Exception e) {
             logger.error("测试适配器异常: {}", name, e);
-            return Mono.just(ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("测试异常: " + e.getMessage())));
+            return Mono.error(ApiException.of("INTERNAL_ERROR", "测试异常: " + e.getMessage()));
         }
     }
 
@@ -96,12 +93,10 @@ public class AdapterTestController {
         String model = (String) request.get("model");
 
         if (type == null || type.isBlank()) {
-            return Mono.just(ResponseEntity.badRequest()
-                    .body(RouterResponse.error("适配器类型不能为空", "INVALID_REQUEST")));
+            return Mono.error(ApiException.of("INVALID_REQUEST", "适配器类型不能为空"));
         }
         if (baseUrl == null || baseUrl.isBlank()) {
-            return Mono.just(ResponseEntity.badRequest()
-                    .body(RouterResponse.error("Base URL 不能为空", "INVALID_REQUEST")));
+            return Mono.error(ApiException.of("INVALID_REQUEST", "Base URL 不能为空"));
         }
 
         String authHeaderValue = apiKey != null && !apiKey.isBlank()
@@ -111,8 +106,7 @@ public class AdapterTestController {
                 .map(result -> ResponseEntity.ok(RouterResponse.success(result, "测试完成")))
                 .onErrorResume(ex -> {
                     logger.error("预览测试失败", ex);
-                    return Mono.just(ResponseEntity.internalServerError()
-                            .body(RouterResponse.error("测试失败: " + ex.getMessage())));
+                    return Mono.error(ApiException.of("INTERNAL_ERROR", "测试失败: " + ex.getMessage()));
                 });
     }
 }

@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.monitor.dto.ModelCallStats;
 import org.unreal.modelrouter.monitor.service.ModelCallAnalyzer;
 import reactor.test.StepVerifier;
@@ -117,12 +118,17 @@ class ModelCallStatsControllerTest {
             var result = controller.getSummary();
 
             // Then
+            // issue #94：失败不再以 200 + success=false 返回，而是 ApiException，
+            // 由 GlobalControllerExceptionHandler 映射为 500。
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-                        assertFalse(response.getBody().isSuccess());
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("INTERNAL_ERROR", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, apiEx.getStatus());
+                        assertTrue(apiEx.getMessage().contains("获取统计摘要失败"));
                     })
-                    .verifyComplete();
+                    .verify();
         }
     }
 

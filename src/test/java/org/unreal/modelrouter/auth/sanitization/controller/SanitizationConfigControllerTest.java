@@ -3,6 +3,7 @@ package org.unreal.modelrouter.auth.sanitization.controller;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.unreal.modelrouter.auth.sanitization.SanitizationService;
 import org.unreal.modelrouter.auth.sanitization.impl.DefaultSanitizationService;
@@ -12,6 +13,7 @@ import org.unreal.modelrouter.auth.security.model.RuleType;
 import org.unreal.modelrouter.auth.security.model.SanitizationRule;
 import org.unreal.modelrouter.auth.security.model.SanitizationStrategy;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.exception.ApiException;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -93,8 +95,10 @@ class SanitizationConfigControllerTest {
         res.piiPatterns = List.of("([unclosed");
         request.response = res;
 
-        ResponseEntity<RouterResponse<Map<String, Object>>> resp = controller.updateConfig(request).block();
-        assertEquals(400, resp.getStatusCode().value());
+        // issue #94：参数校验失败以 ApiException 形式抛出（400），而不是 200 + success=false。
+        ApiException ex = assertThrows(ApiException.class, () -> controller.updateConfig(request).block());
+        assertEquals("INVALID_REQUEST", ex.getErrorCode());
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
     }
 
     @Test
@@ -107,9 +111,11 @@ class SanitizationConfigControllerTest {
         req.piiPatterns = List.of("(a+)+", " ");
         request.request = req;
 
-        ResponseEntity<RouterResponse<Map<String, Object>>> resp = controller.updateConfig(request).block();
-        assertEquals(400, resp.getStatusCode().value());
-        String message = resp.getBody().getMessage();
+        // issue #94：参数校验失败以 ApiException 形式抛出（400），而不是 200 + success=false。
+        ApiException ex = assertThrows(ApiException.class, () -> controller.updateConfig(request).block());
+        assertEquals("INVALID_REQUEST", ex.getErrorCode());
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        String message = ex.getMessage();
         assertTrue(message.contains("request.piiPatterns"));
     }
 

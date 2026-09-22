@@ -177,7 +177,8 @@ class ServiceTypeInstanceControllerTest {
             ResponseEntity<RouterResponse<ServiceInstanceDTO>> result = controller.addInstanceByServiceType("nonexistent", testRequest);
 
             // Then
-            assertEquals(HttpStatus.OK, result.getStatusCode());
+            // issue #94: 服务配置不存在返回 404 而非 200 + success=false
+            assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
             assertFalse(result.getBody().isSuccess());
             assertTrue(result.getBody().getMessage().contains("不存在"));
         }

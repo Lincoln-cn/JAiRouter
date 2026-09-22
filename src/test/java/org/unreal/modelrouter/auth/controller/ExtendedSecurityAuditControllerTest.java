@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.http.HttpStatus;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.AuditEvent;
 import org.unreal.modelrouter.common.dto.AuditEventType;
@@ -17,6 +18,7 @@ import org.unreal.modelrouter.common.dto.AuditEventQuery;
 import org.unreal.modelrouter.common.dto.ExtendedAuditQueryResponse;
 import org.unreal.modelrouter.common.dto.SecurityReport;
 import org.unreal.modelrouter.auth.security.audit.ExtendedSecurityAuditService;
+import org.unreal.modelrouter.common.exception.ApiException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -291,12 +293,16 @@ class ExtendedSecurityAuditControllerTest {
             var result = controller.batchRecordAuditEvents(List.of());
 
             // Then
+            // issue #94: 客户端输入违规以 ApiException 结束链路（INVALID_REQUEST -> 400）。
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertTrue(response.getMessage().contains("不能为空"));
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("INVALID_REQUEST", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.BAD_REQUEST, apiEx.getStatus());
+                        assertTrue(apiEx.getMessage().contains("不能为空"));
                     })
-                    .verifyComplete();
+                    .verify();
         }
 
         @Test
@@ -312,12 +318,16 @@ class ExtendedSecurityAuditControllerTest {
             var result = controller.batchRecordAuditEvents(events);
 
             // Then
+            // issue #94: 批次过大同属客户端输入违规（INVALID_REQUEST -> 400）。
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertTrue(response.getMessage().contains("不能超过100条"));
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("INVALID_REQUEST", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.BAD_REQUEST, apiEx.getStatus());
+                        assertTrue(apiEx.getMessage().contains("不能超过100条"));
                     })
-                    .verifyComplete();
+                    .verify();
         }
     }
 

@@ -7,6 +7,7 @@ import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
 import org.unreal.modelrouter.auth.security.dto.ApiKeyUpdateRequest;
 import org.unreal.modelrouter.auth.security.model.UsageStatistics;
 import org.unreal.modelrouter.auth.security.quota.QuotaLedgerService;
+import org.unreal.modelrouter.auth.security.quota.QuotaLimits;
 import org.unreal.modelrouter.auth.security.quota.QuotaUsage;
 import org.unreal.modelrouter.auth.security.quota.QuotaWindow;
 
@@ -247,10 +248,8 @@ public class ApiKeyQuotaService {
             throw new IllegalArgumentException("配额更新请求不能为空");
         }
         if (request.getQuotaAlertThreshold() != null) {
-            final double th = request.getQuotaAlertThreshold();
-            if (th <= 0.0 || th >= 1.0) {
-                throw new IllegalArgumentException("quotaAlertThreshold 必须在 (0.0, 1.0) 区间");
-            }
+            // issue #96：区间与创建路径统一走 QuotaLimits（[0.05, 1.0]），不再各写一份
+            QuotaLimits.validateAlertThreshold(request.getQuotaAlertThreshold());
         }
         if (request.getDailyRequestLimit() != null && request.getDailyRequestLimit() < 0) {
             throw new IllegalArgumentException("dailyRequestLimit 不能为负（0 表示不限制）");

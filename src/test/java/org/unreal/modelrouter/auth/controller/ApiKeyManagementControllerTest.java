@@ -10,15 +10,19 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.http.HttpStatus;
 import org.unreal.modelrouter.auth.security.dto.*;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.exception.ApiException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -123,9 +127,16 @@ class ApiKeyManagementControllerTest {
             Mono<RouterResponse<ApiKeyVO>> result = controller.getApiKeyById("nonexistent");
 
             // Then
+            // issue #94: 失败不再伪装成 HTTP 200 的成功体，而是以 ApiException 结束链路，
+            // 由 GlobalControllerExceptionHandler 映射为正确状态码（NOT_FOUND -> 404）。
             StepVerifier.create(result)
-                    .expectNextMatches(response -> !response.isSuccess())
-                    .verifyComplete();
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("NOT_FOUND", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.NOT_FOUND, apiEx.getStatus());
+                    })
+                    .verify();
         }
     }
 

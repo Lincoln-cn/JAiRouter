@@ -25,6 +25,7 @@ import org.unreal.modelrouter.auth.security.service.JwtPersistenceService;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import org.unreal.modelrouter.common.exception.ApiException;
 
 /**
  * JWT认证控制器
@@ -91,7 +92,7 @@ public class JwtAuthController {
                 })
                 .onErrorResume(ex -> {
                     log.warn("用户登录失败: {}", ex.getMessage());
-                    return Mono.just(RouterResponse.error("登录失败: " + ex.getMessage(), "LOGIN_FAILED"));
+                    return Mono.error(ApiException.of("LOGIN_FAILED", "登录失败: " + ex.getMessage()));
                 });
     }
 
@@ -143,7 +144,7 @@ public class JwtAuthController {
                     response.setMessage("令牌刷新失败: " + ex.getMessage());
                     response.setTimestamp(LocalDateTime.now());
 
-                    return Mono.just(RouterResponse.error("令牌刷新失败: " + ex.getMessage(), "TOKEN_REFRESH_FAILED"));
+                    return Mono.error(ApiException.of("TOKEN_REFRESH_FAILED", "令牌刷新失败: " + ex.getMessage()));
                 });
     }
 

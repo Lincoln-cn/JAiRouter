@@ -33,6 +33,8 @@ import reactor.core.scheduler.Schedulers;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.unreal.modelrouter.common.exception.ApiException;
+import org.unreal.modelrouter.common.exception.ApiExceptions;
 
 /**
  * API 密钥管理控制器
@@ -67,7 +69,7 @@ public class ApiKeyManagementController {
                 .map(list -> RouterResponse.success(list, "获取API密钥列表成功"))
                 .onErrorResume(e -> {
                     log.error("获取API密钥列表失败", e);
-                    return Mono.just(RouterResponse.error("获取API密钥列表失败", "INTERNAL_ERROR"));
+                    return Mono.error(ApiException.of("INTERNAL_ERROR", "获取API密钥列表失败"));
                 });
     }
 
@@ -84,7 +86,7 @@ public class ApiKeyManagementController {
                 .map(vo -> RouterResponse.success(vo, "获取API密钥信息成功"))
                 .onErrorResume(e -> {
                     log.error("获取API密钥信息失败: {}", keyId, e);
-                    return Mono.just(RouterResponse.error("API密钥不存在", "NOT_FOUND"));
+                    return Mono.error(ApiException.of("NOT_FOUND", "API密钥不存在"));
                 });
     }
 
@@ -104,8 +106,7 @@ public class ApiKeyManagementController {
                         "创建API密钥成功，请妥善保存密钥值，此密钥值仅此一次显示"))
                 .onErrorResume(e -> {
                     log.error("创建API密钥失败", e);
-                    return Mono.just(RouterResponse.error(
-                            "创建API密钥失败: " + e.getMessage(), "INTERNAL_ERROR"));
+                    return Mono.error(ApiExceptions.wrap(e, "创建API密钥失败"));
                 });
     }
 
@@ -125,7 +126,7 @@ public class ApiKeyManagementController {
                 .map(vo -> RouterResponse.success(vo, "更新API密钥成功"))
                 .onErrorResume(e -> {
                     log.error("更新API密钥失败: {}", keyId, e);
-                    return Mono.just(RouterResponse.error("API密钥不存在", "NOT_FOUND"));
+                    return Mono.error(ApiException.of("NOT_FOUND", "API密钥不存在"));
                 });
     }
 
@@ -141,7 +142,7 @@ public class ApiKeyManagementController {
                 .then(Mono.just(RouterResponse.<Void>success(null, "删除API密钥成功")))
                 .onErrorResume(e -> {
                     log.error("删除API密钥失败: {}", keyId, e);
-                    return Mono.just(RouterResponse.<Void>error("API密钥不存在", "NOT_FOUND"));
+                    return Mono.error(ApiException.of("NOT_FOUND", "API密钥不存在"));
                 });
     }
 
@@ -157,7 +158,7 @@ public class ApiKeyManagementController {
                 .map(vo -> RouterResponse.success(vo, "禁用API密钥成功"))
                 .onErrorResume(e -> {
                     log.error("禁用API密钥失败: {}", keyId, e);
-                    return Mono.just(RouterResponse.error("API密钥不存在", "NOT_FOUND"));
+                    return Mono.error(ApiException.of("NOT_FOUND", "API密钥不存在"));
                 });
     }
 
@@ -173,7 +174,7 @@ public class ApiKeyManagementController {
                 .map(vo -> RouterResponse.success(vo, "启用API密钥成功"))
                 .onErrorResume(e -> {
                     log.error("启用API密钥失败: {}", keyId, e);
-                    return Mono.just(RouterResponse.error("API密钥不存在", "NOT_FOUND"));
+                    return Mono.error(ApiException.of("NOT_FOUND", "API密钥不存在"));
                 });
     }
 
@@ -208,8 +209,7 @@ public class ApiKeyManagementController {
                         "重置API密钥成功，请妥善保存新的密钥值，此密钥值仅此一次显示"))
                 .onErrorResume(e -> {
                     log.error("重置API密钥失败: {}", keyId, e);
-                    return Mono.just(RouterResponse.error("重置API密钥失败: " + e.getMessage(),
-                            "INTERNAL_ERROR"));
+                    return Mono.error(ApiExceptions.wrap(e, "重置API密钥失败"));
                 });
     }
 
@@ -230,8 +230,7 @@ public class ApiKeyManagementController {
                         "密钥轮换成功，请妥善保存新的密钥值，此密钥值仅此一次显示"))
                 .onErrorResume(e -> {
                     log.error("强制轮换API密钥失败: {}", keyId, e);
-                    return Mono.just(RouterResponse.error("密钥轮换失败: " + e.getMessage(),
-                            "INTERNAL_ERROR"));
+                    return Mono.error(ApiExceptions.wrap(e, "密钥轮换失败"));
                 });
     }
 
@@ -249,8 +248,7 @@ public class ApiKeyManagementController {
                 .map(vo -> RouterResponse.success(vo, "导出API密钥配置成功"))
                 .onErrorResume(e -> {
                     log.error("导出API密钥失败", e);
-                    return Mono.just(RouterResponse.error("导出API密钥失败: " + e.getMessage(),
-                            "INTERNAL_ERROR"));
+                    return Mono.error(ApiExceptions.wrap(e, "导出API密钥失败"));
                 });
     }
 
@@ -275,8 +273,7 @@ public class ApiKeyManagementController {
                 })
                 .onErrorResume(e -> {
                     log.error("批量导入API密钥失败", e);
-                    return Mono.just(RouterResponse.error("批量导入API密钥失败: " + e.getMessage(),
-                            "INTERNAL_ERROR"));
+                    return Mono.error(ApiExceptions.wrap(e, "批量导入API密钥失败"));
                 });
     }
 
@@ -293,11 +290,10 @@ public class ApiKeyManagementController {
             @Parameter(description = "API密钥ID") @PathVariable("keyId") final String keyId) {
         return Mono.fromCallable(() -> apiKeyQuotaService.getQuotaUsage(keyId))
                 .flatMap(opt -> opt.map(detail -> Mono.just(RouterResponse.success(detail, "获取配额详情成功")))
-                        .orElseGet(() -> Mono.just(RouterResponse.error("API密钥不存在", "NOT_FOUND"))))
+                        .orElseGet(() -> Mono.error(ApiException.of("NOT_FOUND", "API密钥不存在"))))
                 .onErrorResume(e -> {
                     log.error("获取API密钥配额详情失败: {}", keyId, e);
-                    return Mono.just(RouterResponse.error("获取配额详情失败: " + e.getMessage(),
-                            "INTERNAL_ERROR"));
+                    return Mono.error(ApiExceptions.wrap(e, "获取配额详情失败"));
                 });
     }
 
@@ -318,8 +314,7 @@ public class ApiKeyManagementController {
                 .then(Mono.just(RouterResponse.<Void>success(null, "重置每日配额成功")))
                 .onErrorResume(e -> {
                     log.error("重置API密钥每日配额失败: {}", keyId, e);
-                    return Mono.just(RouterResponse.<Void>error("重置配额失败: " + e.getMessage(),
-                            "INTERNAL_ERROR"));
+                    return Mono.error(ApiExceptions.wrap(e, "重置配额失败"));
                 });
     }
 
@@ -338,11 +333,10 @@ public class ApiKeyManagementController {
                 .subscribeOn(Schedulers.boundedElastic())
                 .map(detail -> RouterResponse.success(detail, "配额已更新"))
                 .onErrorResume(IllegalArgumentException.class, e ->
-                        Mono.just(RouterResponse.error(e.getMessage(), "INVALID_REQUEST")))
+                        Mono.error(ApiException.of("INVALID_REQUEST", e.getMessage())))
                 .onErrorResume(e -> {
                     log.error("更新API密钥配额失败: {}", keyId, e);
-                    return Mono.just(RouterResponse.error("更新配额失败: " + e.getMessage(),
-                            "INTERNAL_ERROR"));
+                    return Mono.error(ApiExceptions.wrap(e, "更新配额失败"));
                 });
     }
 
@@ -365,7 +359,7 @@ public class ApiKeyManagementController {
             return RouterResponse.success(data, "批量重置配额完成");
         }).subscribeOn(Schedulers.boundedElastic()).onErrorResume(e -> {
             log.error("批量重置API密钥配额失败", e);
-            return Mono.just(RouterResponse.error("批量重置失败: " + e.getMessage(), "INTERNAL_ERROR"));
+            return Mono.error(ApiExceptions.wrap(e, "批量重置失败"));
         });
     }
 
@@ -383,8 +377,7 @@ public class ApiKeyManagementController {
                 .then(Mono.just(RouterResponse.<Void>success(null, "已重置全部配额")))
                 .onErrorResume(e -> {
                     log.error("重置全部API密钥配额失败", e);
-                    return Mono.just(RouterResponse.<Void>error("重置全部配额失败: " + e.getMessage(),
-                            "INTERNAL_ERROR"));
+                    return Mono.error(ApiExceptions.wrap(e, "重置全部配额失败"));
                 });
     }
 
@@ -400,8 +393,7 @@ public class ApiKeyManagementController {
                 .map(alerts -> RouterResponse.success(alerts, "获取配额告警列表成功"))
                 .onErrorResume(e -> {
                     log.error("获取配额告警列表失败", e);
-                    return Mono.just(RouterResponse.error("获取告警列表失败: " + e.getMessage(),
-                            "INTERNAL_ERROR"));
+                    return Mono.error(ApiExceptions.wrap(e, "获取告警列表失败"));
                 });
     }
 
@@ -417,8 +409,7 @@ public class ApiKeyManagementController {
                 .map(overview -> RouterResponse.success(overview, "获取配额概览成功"))
                 .onErrorResume(e -> {
                     log.error("获取配额概览失败", e);
-                    return Mono.just(RouterResponse.error("获取配额概览失败: " + e.getMessage(),
-                            "INTERNAL_ERROR"));
+                    return Mono.error(ApiExceptions.wrap(e, "获取配额概览失败"));
                 });
     }
 }

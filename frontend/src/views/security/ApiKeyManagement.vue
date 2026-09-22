@@ -353,7 +353,7 @@
           <div class="form-hint">{{ t('apiKeys.form.rateLimitHint') }}</div>
         </el-form-item>
         <el-form-item :label="t('apiKeys.form.quotaAlertThreshold')">
-          <el-slider v-model="form.quotaAlertThreshold" :min="0" :max="1" :step="0.05" show-input :format-tooltip="(val: number) => `${Math.round(val * 100)}%`"/>
+          <el-slider v-model="form.quotaAlertThreshold" :min="0.05" :max="1" :step="0.05" show-input :format-tooltip="(val: number) => `${Math.round(val * 100)}%`"/>
           <div class="form-hint">{{ t('apiKeys.form.thresholdHint') }}</div>
         </el-form-item>
         <el-form-item :label="t('apiKeys.form.rotationPeriod')">

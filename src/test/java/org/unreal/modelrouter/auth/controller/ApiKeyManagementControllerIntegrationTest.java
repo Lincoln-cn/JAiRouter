@@ -8,9 +8,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.unreal.modelrouter.auth.security.dto.*;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.exception.ApiException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -150,12 +152,16 @@ class ApiKeyManagementControllerIntegrationTest {
             Mono<RouterResponse<ApiKeyListVO>> result = controller.getAllApiKeys();
 
             // Then
+            // issue #94: 失败不再伪装成 HTTP 200 的成功体，而是以 ApiException 结束链路，
+            // 由 GlobalControllerExceptionHandler 映射为正确状态码（INTERNAL_ERROR -> 500）。
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertEquals("INTERNAL_ERROR", response.getErrorCode());
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("INTERNAL_ERROR", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, apiEx.getStatus());
                     })
-                    .verifyComplete();
+                    .verify();
         }
     }
 
@@ -196,12 +202,16 @@ class ApiKeyManagementControllerIntegrationTest {
             Mono<RouterResponse<ApiKeyVO>> result = controller.getApiKeyById("nonexistent");
 
             // Then
+            // issue #94: 失败不再伪装成 HTTP 200 的成功体，而是以 ApiException 结束链路，
+            // 由 GlobalControllerExceptionHandler 映射为正确状态码（NOT_FOUND -> 404）。
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertEquals("NOT_FOUND", response.getErrorCode());
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("NOT_FOUND", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.NOT_FOUND, apiEx.getStatus());
                     })
-                    .verifyComplete();
+                    .verify();
         }
     }
 
@@ -252,12 +262,15 @@ class ApiKeyManagementControllerIntegrationTest {
             Mono<RouterResponse<ApiKeyCreationVO>> result = controller.createApiKey(request);
 
             // Then
+            // issue #94: INTERNAL_ERROR -> 500，链路以 ApiException 结束。
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertEquals("INTERNAL_ERROR", response.getErrorCode());
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("INTERNAL_ERROR", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, apiEx.getStatus());
                     })
-                    .verifyComplete();
+                    .verify();
         }
     }
 
@@ -311,12 +324,15 @@ class ApiKeyManagementControllerIntegrationTest {
             Mono<RouterResponse<ApiKeyVO>> result = controller.updateApiKey("nonexistent", request);
 
             // Then
+            // issue #94: NOT_FOUND -> 404，链路以 ApiException 结束。
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertEquals("NOT_FOUND", response.getErrorCode());
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("NOT_FOUND", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.NOT_FOUND, apiEx.getStatus());
                     })
-                    .verifyComplete();
+                    .verify();
         }
     }
 
@@ -355,12 +371,15 @@ class ApiKeyManagementControllerIntegrationTest {
             Mono<RouterResponse<Void>> result = controller.deleteApiKey("nonexistent");
 
             // Then
+            // issue #94: NOT_FOUND -> 404，链路以 ApiException 结束。
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertEquals("NOT_FOUND", response.getErrorCode());
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("NOT_FOUND", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.NOT_FOUND, apiEx.getStatus());
                     })
-                    .verifyComplete();
+                    .verify();
         }
     }
 
@@ -463,12 +482,15 @@ class ApiKeyManagementControllerIntegrationTest {
             Mono<RouterResponse<ApiKeyCreationVO>> result = controller.forceRotateApiKey("nonexistent");
 
             // Then
+            // issue #94: INTERNAL_ERROR -> 500，链路以 ApiException 结束。
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertEquals("INTERNAL_ERROR", response.getErrorCode());
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("INTERNAL_ERROR", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, apiEx.getStatus());
                     })
-                    .verifyComplete();
+                    .verify();
         }
     }
 

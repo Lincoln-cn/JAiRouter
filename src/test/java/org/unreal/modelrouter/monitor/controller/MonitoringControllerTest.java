@@ -10,6 +10,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.http.HttpStatus;
+import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.config.core.MonitoringProperties;
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsCacheAndRetry;
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsCircuitBreaker;
@@ -131,12 +133,17 @@ class MonitoringControllerTest {
             var result = controller.updateEnabled(new HashMap<>());
 
             // Then
+            // 参数缺失属于客户端不合规：ApiException(INVALID_REQUEST) 由
+            // GlobalControllerExceptionHandler 映射为 400，而不是 200 + success=false。
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
-                        assertTrue(response.getMessage().contains("Missing"));
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("INVALID_REQUEST", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.BAD_REQUEST, apiEx.getStatus());
+                        assertTrue(apiEx.getMessage().contains("Missing"));
                     })
-                    .verifyComplete();
+                    .verify();
         }
     }
 
@@ -171,11 +178,17 @@ class MonitoringControllerTest {
             var result = controller.updatePrefix(Map.of("prefix", ""));
 
             // Then
+            // 前缀为空属于客户端不合规：ApiException(INVALID_REQUEST) 由
+            // GlobalControllerExceptionHandler 映射为 400，而不是 200 + success=false。
             StepVerifier.create(result)
-                    .assertNext(response -> {
-                        assertFalse(response.isSuccess());
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        ApiException apiEx = (ApiException) ex;
+                        assertEquals("INVALID_REQUEST", apiEx.getErrorCode());
+                        assertEquals(HttpStatus.BAD_REQUEST, apiEx.getStatus());
+                        assertTrue(apiEx.getMessage().contains("Missing or empty 'prefix'"));
                     })
-                    .verifyComplete();
+                    .verify();
         }
     }
 

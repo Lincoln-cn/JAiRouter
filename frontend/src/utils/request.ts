@@ -69,6 +69,21 @@ request.interceptors.response.use(
       }
       // API测试场的401错误不进行路由跳转，让组件自行处理和显示错误信息
     }
+
+    // 管理面业务失败现在返回 4xx/5xx（issue #94），错误信息仍是后端约定的
+    // RouterResponse{success:false, message, errorCode}。若不处理，
+    // 调用方 ElMessage.error(e.message) 只会显示 "Request failed with status code 400"，
+    // 后端的中文提示会丢失。这里把后端 message 提升到 error.message，并保留 errorCode 便于排障。
+    const serverBody = error.response?.data
+    if (serverBody && serverBody.success === false) {
+      if (typeof serverBody.message === 'string' && serverBody.message) {
+        error.message = serverBody.message
+      }
+      if (serverBody.errorCode) {
+        error.serverErrorCode = serverBody.errorCode
+      }
+    }
+
     return Promise.reject(error)
   }
 )
