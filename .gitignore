@@ -99,6 +99,13 @@ app.log
 application.log
 
 # -----------------------------------------------------------------------------
+# Docker (local scratch)
+# -----------------------------------------------------------------------------
+# Local docker build context / scratch dir created by the docker workflows.
+# Docker contexts can hold registry credentials, so keep it out of the repo.
+docker-ctx/
+
+# -----------------------------------------------------------------------------
 # Configuration (Runtime Generated)
 # -----------------------------------------------------------------------------
 # Runtime config directories (keep templates)

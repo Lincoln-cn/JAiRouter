@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
 import org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker;
@@ -414,15 +413,6 @@ public class ModelServiceRegistry {
         }
         RuleDecision decision = ruleEngine.evaluate(serviceType, modelName, clientIp, headers);
         return decision != null ? decision.getTargetAdapterName() : null;
-    }
-
-    public WebClient getClient(final ServiceType serviceType, final String modelName, final String clientIp) {
-        ModelRouterProperties.ModelInstance selectedInstance = selectInstance(serviceType, modelName, clientIp);
-        return webClientCacheManager.getOrCreate(selectedInstance.getBaseUrl());
-    }
-
-    public WebClient getClient(final ServiceType serviceType, final String modelName) {
-        return getClient(serviceType, modelName, null);
     }
 
     public String getModelPath(final ServiceType serviceType, final String modelName) {

@@ -53,6 +53,7 @@ import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
 import org.unreal.modelrouter.router.ratelimit.ServiceRateLimitHolder;
 import org.unreal.modelrouter.router.loadbalancer.AffinityContextHolder;
 import org.unreal.modelrouter.router.loadbalancer.AffinityKeyResolver;
+import org.unreal.modelrouter.router.loadbalancer.SelectedInstanceHolder;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
@@ -469,6 +470,8 @@ public class ServiceRequestHandler {
             ServiceRateLimitHolder.clear();
             // 缓存命中提前返回时 AffinityHolder 未被 selectInstance finally 清理，此处防御性清理
             AffinityContextHolder.clear();
+            // 清理请求级已选实例（适配器已同步复用完毕）
+            SelectedInstanceHolder.clear();
         }
     }
 
@@ -484,6 +487,8 @@ public class ServiceRequestHandler {
 
         ModelRouterProperties.ModelInstance instance = registry.selectInstance(
                 serviceType, modelName, clientIp, requestHeaders);
+        // 透传给适配器复用，避免同一请求内二次选择（重复推进 LB 状态、重复计入路由监控）
+        SelectedInstanceHolder.set(instance);
         // 追踪实例选择
         if (tracingInterceptor != null && tracingContext != null && tracingContext.isActive()) {
             tracingInterceptor.traceInstanceSelection(tracingContext, serviceType, modelName, clientIp, instance);

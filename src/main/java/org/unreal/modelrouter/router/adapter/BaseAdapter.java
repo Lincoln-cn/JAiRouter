@@ -27,6 +27,7 @@ import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.common.util.IpUtils;
 import org.unreal.modelrouter.router.fallback.FallbackStrategy;
 import org.unreal.modelrouter.router.fallback.impl.CacheFallbackStrategy;
+import org.unreal.modelrouter.router.loadbalancer.SelectedInstanceHolder;
 import reactor.core.publisher.Mono;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,20 +89,6 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     protected RetryPolicy getRetryPolicy() { return resilienceSupport.getRetryPolicy(); }
 
-    protected WebClient getWebClient(final ModelServiceRegistry.ServiceType serviceType,
-                                     final String modelName, final ServerHttpRequest httpRequest) {
-        String clientIp = IpUtils.getClientIp(httpRequest);
-        ModelRouterProperties.ModelInstance selectedInstance = selectInstance(serviceType, modelName, clientIp);
-        String baseUrl = selectedInstance.getBaseUrl();
-        try {
-            var tracingFactory = org.unreal.modelrouter.common.util.ApplicationContextProvider.getBean(
-                    org.unreal.modelrouter.monitor.tracing.client.TracingWebClientFactory.class);
-            return tracingFactory.createTracingWebClient(baseUrl);
-        } catch (Exception e) {
-            return getRegistry().getClient(serviceType, modelName, clientIp);
-        }
-    }
-
     /**
      * 根据实例 baseUrl 获取 WebClient（不重新选择实例）。
      * 用于故障转移重选实例后获取新实例的 WebClient。
@@ -130,9 +117,15 @@ public abstract class BaseAdapter implements ServiceCapability {
     protected <T> Mono processRequest(final T request, final String authorization,
             final ServerHttpRequest httpRequest, final ModelServiceRegistry.ServiceType serviceType,
             final String modelName, final RequestProcessor<T> processor) {
-        ModelRouterProperties.ModelInstance selectedInstance =
-                selectInstance(serviceType, modelName, IpUtils.getClientIp(httpRequest));
-        WebClient client = getWebClient(serviceType, modelName, httpRequest);
+        // 优先复用网关（ServiceRequestHandler）已选中的实例：每个请求只应发生一次实例选择，
+        // 否则会重复推进负载均衡状态、重复扣减实例级限流令牌，并让路由监控一次请求 +多次计数。
+        // 未经网关的调用（持有者为空）回退为自行选择，保持既有行为。
+        ModelRouterProperties.ModelInstance selectedInstance = SelectedInstanceHolder.get();
+        if (selectedInstance == null) {
+            selectedInstance = selectInstance(serviceType, modelName, IpUtils.getClientIp(httpRequest));
+        }
+        // 用已选中的实例构造 WebClient：客户端目标与指标归属实例保持一致
+        WebClient client = getWebClientForInstance(selectedInstance);
         String path = getModelPath(serviceType, modelName);
         long startTime = System.currentTimeMillis();
         String adapterType = getAdapterType();

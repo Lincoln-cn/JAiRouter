@@ -19,6 +19,7 @@
       "strategy": "Strategy",
       "selectionCount": "Selections",
       "distributionTitle": "Model-Instance Distribution",
+      "countHint": "Counted once per instance selection; failover re-selection adds extra counts.",
       "resume": "Resume",
       "pause": "Pause",
       "eventsTitle": "Real-Time Routing Events",

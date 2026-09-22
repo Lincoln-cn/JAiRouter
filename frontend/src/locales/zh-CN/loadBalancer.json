@@ -19,6 +19,7 @@
       "strategy": "策略",
       "selectionCount": "采样数",
       "distributionTitle": "模型-实例分布",
+      "countHint": "统计口径：每次实例选择计 1 次；故障转移重选实例会额外计数。",
       "resume": "恢复",
       "pause": "暂停",
       "eventsTitle": "实时路由事件",

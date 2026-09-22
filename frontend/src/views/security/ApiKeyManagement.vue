@@ -1019,6 +1019,9 @@ const handleSave = async () => {
         permissions: form.value.permissions,
         allowedIpAddresses: form.value.allowedIpAddresses,
         dailyRequestLimit: form.value.dailyRequestLimit,
+        dailyTokenLimit: form.value.dailyTokenLimit,
+        rateLimitPerMinute: form.value.rateLimitPerMinute,
+        quotaAlertThreshold: form.value.quotaAlertThreshold,
         rotationPeriodDays: form.value.rotationPeriodDays
       }
       await updateApiKey(form.value.keyId, updateData)
@@ -1033,6 +1036,9 @@ const handleSave = async () => {
         permissions: form.value.permissions,
         allowedIpAddresses: form.value.allowedIpAddresses,
         dailyRequestLimit: form.value.dailyRequestLimit,
+        dailyTokenLimit: form.value.dailyTokenLimit,
+        rateLimitPerMinute: form.value.rateLimitPerMinute,
+        quotaAlertThreshold: form.value.quotaAlertThreshold,
         rotationPeriodDays: form.value.rotationPeriodDays
       }
       const response: ApiKeyCreationVO = await createApiKey(createData)
