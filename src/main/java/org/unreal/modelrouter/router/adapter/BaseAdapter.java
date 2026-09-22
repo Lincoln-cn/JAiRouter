@@ -27,6 +27,7 @@ import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.common.util.IpUtils;
 import org.unreal.modelrouter.router.fallback.FallbackStrategy;
 import org.unreal.modelrouter.router.fallback.impl.CacheFallbackStrategy;
+import org.unreal.modelrouter.router.loadbalancer.SelectedInstanceHolder;
 import reactor.core.publisher.Mono;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,11 +117,14 @@ public abstract class BaseAdapter implements ServiceCapability {
     protected <T> Mono processRequest(final T request, final String authorization,
             final ServerHttpRequest httpRequest, final ModelServiceRegistry.ServiceType serviceType,
             final String modelName, final RequestProcessor<T> processor) {
-        ModelRouterProperties.ModelInstance selectedInstance =
-                selectInstance(serviceType, modelName, IpUtils.getClientIp(httpRequest));
-        // 用已选中的实例构造 WebClient，不再二次选择：原 getWebClient 内部会再选一次实例，
-        // 除了让同一请求重复计入路由监控与实例级限流，还会使 WebClient 的目标实例与
-        // 传入 processing 的 selectedInstance 不一致，指标/负载均衡回调归属随之错乱。
+        // 优先复用网关（ServiceRequestHandler）已选中的实例：每个请求只应发生一次实例选择，
+        // 否则会重复推进负载均衡状态、重复扣减实例级限流令牌，并让路由监控一次请求 +多次计数。
+        // 未经网关的调用（持有者为空）回退为自行选择，保持既有行为。
+        ModelRouterProperties.ModelInstance selectedInstance = SelectedInstanceHolder.get();
+        if (selectedInstance == null) {
+            selectedInstance = selectInstance(serviceType, modelName, IpUtils.getClientIp(httpRequest));
+        }
+        // 用已选中的实例构造 WebClient：客户端目标与指标归属实例保持一致
         WebClient client = getWebClientForInstance(selectedInstance);
         String path = getModelPath(serviceType, modelName);
         long startTime = System.currentTimeMillis();

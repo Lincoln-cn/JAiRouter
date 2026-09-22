@@ -24,6 +24,7 @@ import org.unreal.modelrouter.router.adapter.support.AdapterContext;
 import org.unreal.modelrouter.router.adapter.support.RequestProcessingSupport;
 import org.unreal.modelrouter.router.adapter.support.ResilienceSupport;
 import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
+import org.unreal.modelrouter.router.loadbalancer.SelectedInstanceHolder;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import reactor.core.publisher.Mono;
@@ -36,6 +37,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -142,6 +144,36 @@ class BaseAdapterInstanceSelectionTest {
         // 2) WebClient 必须指向真正被使用的那个实例，而不是再选出来的另一个
         assertEquals(instanceA, usedInstance.get(), "处理器应使用首次选中的实例 A");
         verify(tracingFactory, times(1)).createTracingWebClient(instanceA.getBaseUrl());
+    }
+
+    @Test
+    void shouldReuseGatewaySelectedInstanceWithoutSelectingAgain() {
+        // 模拟网关已选好实例：适配器不得再选，否则同一请求会重复计数/重复推进 LB 状态
+        SelectedInstanceHolder.set(instanceB);
+        when(instanceSelector.getModelPath(any(), anyString()))
+                .thenReturn("/v1/chat/completions");
+
+        AtomicReference<ModelRouterProperties.ModelInstance> usedInstance = new AtomicReference<>();
+        BaseAdapter.RequestProcessor<Object> processor = (req, auth, client, path, instance, st) -> {
+            usedInstance.set(instance);
+            return Mono.just(ResponseEntity.ok("{\"ok\":true}"));
+        };
+
+        try {
+            Mono<?> result = adapter.doProcessRequest(
+                    new Object(), "Bearer test", httpRequest,
+                    ModelServiceRegistry.ServiceType.chat, "qwen3.8-flash", processor);
+
+            StepVerifier.create(result)
+                    .expectNextCount(1)
+                    .verifyComplete();
+
+            verify(instanceSelector, never()).selectInstance(any(), anyString(), anyString());
+            assertEquals(instanceB, usedInstance.get(), "处理器应复用网关已选中的实例 B");
+            verify(tracingFactory, times(1)).createTracingWebClient(instanceB.getBaseUrl());
+        } finally {
+            SelectedInstanceHolder.clear();
+        }
     }
 
     private static ModelRouterProperties.ModelInstance createInstance(
