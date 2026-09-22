@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.2.1
-> **Last Updated**: 2026-09-21
+> **Document Version**: 3.2.2
+> **Last Updated**: 2026-09-22
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,45 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.2.2] - 2026-09-22 - Patch Release (User-Reported Fixes + Console HTTP Status Semantics)
+
+> Fixes the two user-reported issues — API Key quota not reflected in the console (#84) and the load-balancer monitor counter jumping by 3 per request (#83) — together with adjacent defects: quota endpoints unusable (#92), console business failures always returning HTTP 200 (#94), over-permissive frontend e2e assertions (#95), inconsistent quota alert threshold (#96), and inconsistent error codes in the monitoring controller (#98). Bug fixes only: no new features, no breaking changes to public APIs, routes, or config keys. Note that **console failure responses now use 4xx / 5xx instead of HTTP 200** — an intentional behavior change documented below.
+
+#### API Key Quota
+
+- **Fixed incomplete quota field submission when creating / editing an API Key**, which made the quota configured at creation time display incorrectly in the console (#84)
+- **Fixed quota update / reset endpoints failing 100% of the time**: both called `block()` on a Reactor non-blocking thread, which WebFlux forbids, so the quota drawer's save, batch reset and reset-all operations never worked (#92)
+- **Unified the alert threshold to the closed interval `[0.05, 1]`**: the create dialog used `[0,1]`, the drawer used `[0.05,1]`, and the server enforced the open interval `(0,1)`. `QuotaLimits` is now the single source of truth (range constants plus a validation method) and is called by both write paths; the create path performed no validation at all before this release (#96)
+- Added a frontend e2e regression case asserting that a quota entered in the create dialog is actually persisted and can be read back
+
+#### Load Balancing and Routing Monitor
+
+- **Fixed the same instance being selected three times within one request**: the request main chain, `BaseAdapter.processRequest` and `BaseAdapter.getWebClient` each selected an instance, so the "instance distribution" counter advanced by 3 per request (user observed 12 → 15) (#83)
+  - The adapter now reuses the already-selected instance to build its `WebClient`, removing one duplicate selection (#87)
+  - Added `SelectedInstanceHolder` (a request-scoped ThreadLocal) so the gateway and the adapter share a single instance selection — exactly one selection per request (#88)
+- Fixed two more severe issues in the same area: the adapter-side selection did not pass request headers through, so **header-based rule / tag routing did not take effect on the adapter side** (the instance actually used could differ from the rule); and load-balancer `recordCall` advanced twice per request, skewing round-robin and least-connections state
+- Documented the counter semantics: the number counts **instance selections**, not requests; failover and other legitimate re-selections add extra counts by design
+
+#### Console HTTP Status Semantics
+
+- **Fixed console business failures always returning HTTP 200**: controllers commonly wrapped errors in their own `onErrorResume`, turning failures into successful responses where the only signal was `success:false` in the body, so clients (scripts / SDKs / e2e tests) could not tell success from failure by status code (#94)
+  - Added `ApiException` (carrying an error code and a target status, with a rule table mapping error codes to statuses) and the `ApiExceptions` helper, plus a matching branch in the global exception handler
+  - All 138 production sites that disguised failures as 200 were migrated; `onErrorResume` catch-all branches now classify by exception type instead of always mapping to 500
+  - **The migration is response-body compatible**: failure bodies remain the byte-for-byte unchanged `RouterResponse.error(message, errorCode)` — only the HTTP status changes
+  - The frontend response interceptor now surfaces the backend error message, so a 4xx no longer shows only the HTTP client library's English message
+- Tightened frontend e2e assertions (#95): five checks asserted only the status code and still passed when the endpoint actually failed; they now assert both the status code and the body's `success` field
+- Unified `MonitoringController` client-parameter error codes (#98): ten client-input validations moved from `INTERNAL_ERROR` (500) to `INVALID_REQUEST` (400), while genuine server-side failures stay 500; test coverage was added for the auto-mode endpoint, which previously had none
+
+#### Behavior Changes (Intentional)
+
+- **Console endpoints now return 4xx / 5xx on business failure** instead of always HTTP 200. Scripts that judged success solely by "HTTP 200 plus body `success`" must switch to the status code, or check both
+- The alert threshold no longer accepts `0`: creating or updating an API Key returns 400 when the threshold is out of range (below `0.05` or above `1`)
+
+#### Engineering and Tooling
+
+- Added an OpenAI-compatible mock model server for local integration and end-to-end testing
+- Ignore the local `docker-ctx` directory
 
 ### [3.2.1] - 2026-09-21 - Patch Release (Audit Remediation: Concurrency/Streaming/Quota/Auth/SSRF/Regex Safety)
 
