@@ -28,6 +28,7 @@ import org.unreal.modelrouter.auth.security.dto.ApiKeyVO;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.unreal.modelrouter.auth.security.service.ApiKeyQuotaService;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -309,7 +310,11 @@ public class ApiKeyManagementController {
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<Void>> resetApiKeyQuota(
             @Parameter(description = "API密钥ID") @PathVariable("keyId") final String keyId) {
+        // 配额服务内部会 block()（管理面同步语义），必须把执行切到 boundedElastic：
+        // Mono.fromRunnable 默认在订阅线程上执行，而订阅线程是 Reactor 非阻塞线程
+        // （实测为 parallel-*），在那里 block 会抛 IllegalStateException。
         return Mono.fromRunnable(() -> apiKeyQuotaService.resetDailyQuota(keyId))
+                .subscribeOn(Schedulers.boundedElastic())
                 .then(Mono.just(RouterResponse.<Void>success(null, "重置每日配额成功")))
                 .onErrorResume(e -> {
                     log.error("重置API密钥每日配额失败: {}", keyId, e);
@@ -328,7 +333,9 @@ public class ApiKeyManagementController {
     public Mono<RouterResponse<ApiKeyQuotaService.QuotaUsageDetail>> updateApiKeyQuota(
             @Parameter(description = "API密钥ID") @PathVariable("keyId") final String keyId,
             @RequestBody final org.unreal.modelrouter.auth.security.dto.ApiKeyUpdateRequest request) {
+        // 同上：updateQuotaLimits 内部会 block()，必须离开订阅线程（非阻塞线程无法 block）
         return Mono.fromCallable(() -> apiKeyQuotaService.updateQuotaLimits(keyId, request))
+                .subscribeOn(Schedulers.boundedElastic())
                 .map(detail -> RouterResponse.success(detail, "配额已更新"))
                 .onErrorResume(IllegalArgumentException.class, e ->
                         Mono.just(RouterResponse.error(e.getMessage(), "INVALID_REQUEST")))
@@ -349,13 +356,14 @@ public class ApiKeyManagementController {
     public Mono<RouterResponse<Map<String, Object>>> batchResetQuota(
             @RequestBody final Map<String, List<String>> body) {
         final List<String> keyIds = body == null ? null : body.get("keyIds");
+        // 同上：批量重置内部逐个 block()，必须离开订阅线程
         return Mono.fromCallable(() -> {
             final int reset = apiKeyQuotaService.resetDailyQuotas(keyIds);
             final Map<String, Object> data = new LinkedHashMap<>();
             data.put("requested", keyIds == null ? 0 : keyIds.size());
             data.put("reset", reset);
             return RouterResponse.success(data, "批量重置配额完成");
-        }).onErrorResume(e -> {
+        }).subscribeOn(Schedulers.boundedElastic()).onErrorResume(e -> {
             log.error("批量重置API密钥配额失败", e);
             return Mono.just(RouterResponse.error("批量重置失败: " + e.getMessage(), "INTERNAL_ERROR"));
         });
@@ -369,7 +377,9 @@ public class ApiKeyManagementController {
                description = "重置所有 API Key 的每日请求/Token 计数与速率限制")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<Void>> resetAllQuota() {
+        // 同上：resetAllDailyQuotas 内部逐 key block()，必须离开订阅线程
         return Mono.fromRunnable(() -> apiKeyQuotaService.resetAllDailyQuotas())
+                .subscribeOn(Schedulers.boundedElastic())
                 .then(Mono.just(RouterResponse.<Void>success(null, "已重置全部配额")))
                 .onErrorResume(e -> {
                     log.error("重置全部API密钥配额失败", e);
