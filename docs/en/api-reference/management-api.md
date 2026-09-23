@@ -771,10 +771,7 @@ Update quota configuration at runtime (partial update; only non-null fields take
 {
   "success": false,
   "message": "以下字段需重启生效，不支持热改: distributed.enabled, retention.*；请移除这些字段后重试",
-  "error": {
-    "code": "RESTART_REQUIRED",
-    "details": null
-  }
+  "errorCode": "RESTART_REQUIRED"
 }
 ```
 
@@ -968,10 +965,7 @@ All API endpoints follow a consistent error response format:
 {
   "success": false,
   "message": "Error description",
-  "error": {
-    "code": "ERROR_CODE",
-    "details": "Detailed error information"
-  }
+  "errorCode": "ERROR_CODE"
 }
 ```
 

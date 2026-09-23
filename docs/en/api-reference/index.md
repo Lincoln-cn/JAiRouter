@@ -63,7 +63,7 @@ Content-Type: application/json
 {
   "error": {
     "message": "Rate limit exceeded",
-    "type": "rate_limit_exceeded",
+    "type": "rate_limit_error",
     "code": "rate_limit_exceeded"
   }
 }
@@ -92,12 +92,12 @@ JAiRouter provides consistent error responses across all APIs:
 
 | HTTP Status | Error Type | Description |
 |-------------|------------|-------------|
-| 400 | `invalid_request` | Malformed request |
-| 404 | `not_found` | Resource not found |
-| 429 | `rate_limit_exceeded` | Rate limit exceeded |
-| 500 | `internal_error` | Internal server error |
-| 503 | `service_unavailable` | No available instances |
-| 503 | `circuit_breaker_open` | Circuit breaker is open |
+| 400 | `invalid_request_error` | Malformed request |
+| 404 | `not_found_error` | Resource not found |
+| 429 | `rate_limit_error` | Rate limit exceeded |
+| 500 | `api_error` | Internal server error |
+| 503 | `api_error` | No available instances |
+| 503 | `api_error` | Circuit breaker is open |
 
 ## Content Types
 

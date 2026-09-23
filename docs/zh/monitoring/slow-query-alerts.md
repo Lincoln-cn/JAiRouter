@@ -16,7 +16,7 @@ JAiRouter 的慢查询告警功能是一个完整的性能监控和告警系统�
 JAiRouter 使用模块化的配置管理方式，慢查询告警配置位于独立的配置文件中：
 
 - **主配置文件**: `src/main/resources/application.yml`
-- **慢查询告警配置文件**: `src/main/resources/config/monitoring/slow-query-alerts.yml`
+- **慢查询告警配置文件**: `src/main/resources/config/monitor/slow-query-alerts.yml`
 - **环境配置文件**: `src/main/resources/application-{profile}.yml`
 
 ## 模块化配置说明
@@ -28,7 +28,7 @@ JAiRouter 使用模块化的配置管理方式，慢查询告警配置位于独�
 spring:
   config:
     import:
-      - classpath:config/monitoring/slow-query-alerts.yml
+      - classpath:config/monitor/slow-query-alerts.yml
 ```
 
 ## 功能特性

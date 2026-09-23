@@ -36,18 +36,18 @@ spring:
 ```yaml
 jairouter:
   tracing:
-    enabled: true                    # Whether to enable tracing, default: false
-    service-name: "jairouter"       # Service name, default: "model-router"
-    service-version: "1.0.0"        # Service version, default: "unknown"
+    enabled: true                    # Whether to enable tracing, default: true
+    service-name: "jairouter"       # Service name, default: "jairouter"
+    service-version: "1.0.0"        # Service version, default: "1.0.0"
 ```
 
 ### Basic Configuration Items
 
 | Configuration Item | Type | Default Value | Description |
 |--------|------|---------|------|
-| `enabled` | boolean | `false` | Whether to enable tracing |
-| `service-name` | string | `"model-router"` | Service name for identifying the tracing source |
-| `service-version` | string | `"unknown"` | Service version number |
+| `enabled` | boolean | `true` | Whether to enable tracing |
+| `service-name` | string | `"jairouter"` | Service name for identifying the tracing source |
+| `service-version` | string | `"1.0.0"` | Service version number |
 | `environment` | string | `"development"` | Runtime environment identifier |
 
 ## Sampling Configuration

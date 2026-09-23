@@ -324,7 +324,7 @@ chmod 644 config/*.json
 #### Diagnostic Steps
 ```bash
 # 1. Check instance weight configuration
-curl http://localhost:8080/api/config/instance/type/chat
+curl http://localhost:8080/api/config/instance/chat
 
 # 2. Check instance health status
 curl http://localhost:8080/actuator/health
@@ -530,7 +530,7 @@ fi
 
 # Check backend connections
 echo "2. Backend connection check..."
-BACKEND_COUNT=$(curl -s http://localhost:8080/api/config/instance/type/chat | jq length)
+BACKEND_COUNT=$(curl -s http://localhost:8080/api/config/instance/chat | jq length)
 echo "Backend instance count: $BACKEND_COUNT"
 
 # Check memory usage

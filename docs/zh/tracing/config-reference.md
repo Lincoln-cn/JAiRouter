@@ -36,18 +36,18 @@ spring:
 ```yaml
 jairouter:
   tracing:
-    enabled: true                    # 是否启用追踪功能，默认: false
-    service-name: "jairouter"       # 服务名称，默认: "model-router"
-    service-version: "1.0.0"        # 服务版本，默认: "unknown"
+    enabled: true                    # 是否启用追踪功能，默认: true
+    service-name: "jairouter"       # 服务名称，默认: "jairouter"
+    service-version: "1.0.0"        # 服务版本，默认: "1.0.0"
 ```
 
 ### 基本配置项
 
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|---------|------|
-| `enabled` | boolean | `false` | 是否启用追踪功能 |
-| `service-name` | string | `"model-router"` | 服务名称，用于标识追踪源 |
-| `service-version` | string | `"unknown"` | 服务版本号 |
+| `enabled` | boolean | `true` | 是否启用追踪功能 |
+| `service-name` | string | `"jairouter"` | 服务名称，用于标识追踪源 |
+| `service-version` | string | `"1.0.0"` | 服务版本号 |
 | `environment` | string | `"development"` | 运行环境标识 |
 
 ## 采样配置

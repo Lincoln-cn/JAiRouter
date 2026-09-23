@@ -17,12 +17,12 @@ JAiRouter 提供了全面的监控功能，包括系统指标收集、Prometheus
 
 #### Windows
 ```powershell
-.\scripts\setup-monitoring.ps1
+.\scripts\monitoring\setup-monitoring.ps1
 ```
 
 #### Linux/macOS
 ```bash
-./scripts/setup-monitoring.sh
+./scripts/monitoring/setup-monitoring.sh
 ```
 
 ### 访问监控界面

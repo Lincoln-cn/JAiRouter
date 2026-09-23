@@ -51,8 +51,8 @@ stateDiagram-v2
 |------|------|--------|
 | `failureThreshold` | Failure threshold, circuit breaker trips after exceeding | 5 |
 | `recoveryTimeout` | Recovery detection interval (milliseconds) | 60000 |
-| `successThreshold` | Success threshold, circuit breaker closes after reaching | 3 |
-| `timeout` | Request timeout (milliseconds) | 30000 |
+| `successThreshold` | Success threshold, circuit breaker closes after reaching | 2 |
+| `timeout` | Request timeout (milliseconds) | 60000 |
 
 ## Global Circuit Breaker Configuration
 

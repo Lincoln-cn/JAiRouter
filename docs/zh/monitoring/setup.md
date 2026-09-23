@@ -33,22 +33,22 @@
 #### Windows PowerShell
 ```powershell
 # 运行部署脚本
-.\scripts\setup-monitoring.ps1
+.\scripts\monitoring\setup-monitoring.ps1
 
 # 带参数运行
-.\scripts\setup-monitoring.ps1 -Environment prod -EnableAlerts
+.\scripts\monitoring\setup-monitoring.ps1 -Environment prod -EnableAlerts
 ```
 
 #### Linux/macOS
 ```bash
 # 给脚本执行权限
-chmod +x scripts/setup-monitoring.sh
+chmod +x scripts/monitoring/setup-monitoring.sh
 
 # 运行部署脚本
-./scripts/setup-monitoring.sh
+./scripts/monitoring/setup-monitoring.sh
 
 # 带参数运行
-./scripts/setup-monitoring.sh --environment prod --enable-alerts
+./scripts/monitoring/setup-monitoring.sh --environment prod --enable-alerts
 ```
 
 ### 方法二：手动部署

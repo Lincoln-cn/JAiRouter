@@ -88,13 +88,13 @@ model:
       load-balance:
         type: <策略>
       rate-limit:
-        type: <算法>
+        algorithm: <算法>
         # ... 限流设置
       circuit-breaker:
         enabled: true
         # ... 熔断器设置
       fallback:
-        type: <回退类型>
+        strategy: <回退类型>
         # ... 回退设置
       instances:
         - name: <模型名称>
@@ -152,9 +152,9 @@ model:
   services:
     chat:
       rate-limit:
-        type: token-bucket
+        algorithm: token-bucket
         capacity: 100          # 桶中最大令牌数
-        refill-rate: 10        # 每秒添加的令牌数
+        rate: 10               # 每秒添加的令牌数
         client-ip-enable: true # 启用基于客户端IP的限流
 ```
 
@@ -189,11 +189,11 @@ model:
   services:
     chat:
       fallback:
-        type: default
+        strategy: default
         message: "服务暂时不可用"
         # 或者
-        type: cache
-        ttl: 300000  # 缓存TTL（毫秒）
+        strategy: cache
+        cache-ttl: 300000  # 缓存TTL（毫秒）
 ```
 
 **可用类型：**
