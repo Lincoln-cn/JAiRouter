@@ -22,18 +22,22 @@ import yaml
 class DocumentVersion:
     """文档版本信息类"""
     
-    def __init__(self, file_path: str, version: str, last_modified: str, content_hash: str):
+    def __init__(self, file_path: str, version: str, last_modified: str, content_hash: str,
+                 reviewed_at: str = ""):
         self.file_path = file_path
         self.version = version
         self.last_modified = last_modified
         self.content_hash = content_hash
+        # 人工评审时间（ISO-8601）：维护者审阅后确认“内容仍然准确”时写入，
+        # 让该文档在不改写 LastModified/ContentHash 的前提下重新获得一个完整窗口。
+        self.reviewed_at = reviewed_at or ""
         self.git_commit = ""
         self.author = ""
         self.change_summary = ""
         self.dependencies = []
     
     def to_dict(self) -> dict:
-        return {
+        data = {
             'FilePath': self.file_path,
             'Version': self.version,
             'LastModified': self.last_modified,
@@ -43,6 +47,11 @@ class DocumentVersion:
             'ChangeSummary': self.change_summary,
             'Dependencies': self.dependencies
         }
+        # 仅在已记录人工评审时落盘该字段：否则每日 --scan 会给全部记录都补上空的
+        # ReviewedAt，产生 170 条无信息量的机械 diff。缺失即“未评审”，语义不变。
+        if self.reviewed_at:
+            data['ReviewedAt'] = self.reviewed_at
+        return data
     
     @classmethod
     def from_dict(cls, data: dict) -> 'DocumentVersion':
@@ -52,6 +61,7 @@ class DocumentVersion:
             data.get('LastModified', ''),
             data.get('ContentHash', '')
         )
+        version.reviewed_at = data.get('ReviewedAt', '') or ''
         version.git_commit = data.get('GitCommit', '')
         version.author = data.get('Author', '')
         version.change_summary = data.get('ChangeSummary', '')
@@ -400,6 +410,110 @@ class DocumentVersionManager:
         
         return int(outdated_config.get('default_threshold_days', 30))
     
+    def _parse_datetime(self, value) -> Optional[datetime]:
+        """宽松解析 ISO-8601 时间戳，统一为无时区的本地时间；缺失/不可解析返回 None"""
+        if value is None:
+            return None
+        
+        text = str(value).strip()
+        if not text:
+            return None
+        
+        try:
+            parsed = datetime.fromisoformat(text.replace('Z', '+00:00'))
+        except (ValueError, TypeError):
+            return None
+        
+        if parsed.tzinfo is not None:
+            parsed = parsed.astimezone().replace(tzinfo=None)
+        
+        return parsed
+    
+    def latest_freshness_date(self, version: DocumentVersion) -> Optional[datetime]:
+        """文档的新鲜度依据：LastModified 与人工评审 ReviewedAt 中较新的那个
+
+        两者都不存在或都不可解析时返回 None，由调用方按“过期”处理
+        （即未引入评审机制前的行为）。
+        """
+        candidates = [
+            parsed for parsed in (
+                self._parse_datetime(getattr(version, 'last_modified', None)),
+                self._parse_datetime(getattr(version, 'reviewed_at', None)),
+            ) if parsed is not None
+        ]
+        
+        return max(candidates) if candidates else None
+    
+    def is_outdated_document(self, file_path: str, days_threshold: Optional[int] = None) -> bool:
+        """单个文档是否过期：max(LastModified, ReviewedAt) 早于 now - 该文档的类型阈值"""
+        threshold_days = self.resolve_outdated_threshold(file_path, days_threshold)
+        threshold_date = datetime.now() - timedelta(days=threshold_days)
+        freshness_date = self.latest_freshness_date(self.versions[file_path])
+        
+        return freshness_date is None or freshness_date < threshold_date
+    
+    def review_state(self, file_path: str, days_threshold: Optional[int] = None) -> dict:
+        """人工评审状态（仅用于展示，不参与过期判定）
+
+        fresh_by_review 为 True 表示该文档当前之所以不算过期，靠的是人工评审
+        （ReviewedAt 比 LastModified 新，且评审窗口还没走完），而不是内容变更。
+        """
+        version = self.versions[file_path]
+        threshold_days = self.resolve_outdated_threshold(file_path, days_threshold)
+        reviewed_at = self._parse_datetime(getattr(version, 'reviewed_at', None))
+        
+        if reviewed_at is None:
+            return {
+                'reviewed_at': None,
+                'expires_at': None,
+                'days_left': None,
+                'fresh_by_review': False,
+                'summary': '未记录人工评审',
+            }
+        
+        expires_at = reviewed_at + timedelta(days=threshold_days)
+        days_left = (expires_at - datetime.now()).days
+        last_modified = self._parse_datetime(getattr(version, 'last_modified', None))
+        fresh_by_review = (
+            days_left >= 0
+            and (last_modified is None or reviewed_at > last_modified)
+            and not self.is_outdated_document(file_path, days_threshold)
+        )
+        
+        if days_left >= 0:
+            summary = (
+                f'人工评审 {reviewed_at:%Y-%m-%d}，评审窗口（{threshold_days} 天）'
+                f'有效至 {expires_at:%Y-%m-%d}'
+            )
+        else:
+            summary = (
+                f'人工评审已失效（评审于 {reviewed_at:%Y-%m-%d}，'
+                f'窗口止于 {expires_at:%Y-%m-%d}）'
+            )
+        
+        return {
+            'reviewed_at': reviewed_at,
+            'expires_at': expires_at,
+            'days_left': days_left,
+            'fresh_by_review': fresh_by_review,
+            'summary': summary,
+        }
+    
+    def reviewed_fresh_documents(self, days_threshold: Optional[int] = None) -> List[str]:
+        """当前因人工评审（而非内容变更）而不算过期的文档"""
+        return [
+            file_path for file_path in self.versions
+            if not self.is_ignored_outdated_document(file_path)
+            and self.review_state(file_path, days_threshold)['fresh_by_review']
+        ]
+    
+    def count_review_records(self) -> int:
+        """已记录 ReviewedAt 的文档数"""
+        return sum(
+            1 for version in self.versions.values()
+            if self._parse_datetime(getattr(version, 'reviewed_at', None)) is not None
+        )
+    
     def update_document_version(self, file_path: str) -> Optional[VersionChange]:
         """更新文档版本"""
         full_path = self.project_root / file_path
@@ -446,7 +560,8 @@ class DocumentVersionManager:
             change_type = "CREATED"
             old_version = ""
         
-        # 更新版本信息
+        # 更新版本信息（人工评审不继承：评审只针对被评审的那一版内容，
+        # 内容已变时 LastModified 已被推进，新内容需要重新评审）
         version = DocumentVersion(
             file_path, new_version, datetime.now().isoformat(), content_hash
         )
@@ -500,25 +615,64 @@ class DocumentVersionManager:
         匹配文档类型，再取 outdated_detection.type_thresholds[type]；未匹配到类型时
         用 outdated_detection.default_threshold_days（days_threshold 显式传入时覆盖它）。
         outdated_detection.ignore_patterns 命中的文档永不参与检查。
+
+        新鲜度取 max(LastModified, ReviewedAt)：人工评审 ReviewedAt 让文档在不改写
+        LastModified/ContentHash 的前提下重新获得一个完整窗口。ReviewedAt 缺失或
+        不可解析时行为与引入评审机制前完全一致。
         """
         outdated = []
         
-        for file_path, version in self.versions.items():
+        for file_path in self.versions:
             if self.is_ignored_outdated_document(file_path):
                 continue
             
-            threshold_days = self.resolve_outdated_threshold(file_path, days_threshold)
-            threshold_date = datetime.now() - timedelta(days=threshold_days)
-            
-            try:
-                last_modified = datetime.fromisoformat(str(version.last_modified).replace('Z', '+00:00'))
-                if last_modified < threshold_date:
-                    outdated.append(file_path)
-            except (ValueError, TypeError):
-                # 日期缺失或格式错误，认为是过期的
+            if self.is_outdated_document(file_path, days_threshold):
                 outdated.append(file_path)
         
         return outdated
+    
+    def set_reviewed_at(self, file_paths: List[str], reviewed_at: Optional[str] = None) -> int:
+        """写入/清除 ReviewedAt，返回实际被改动的文档数
+
+        reviewed_at 为 None 表示清除评审记录。未被 docs-versions.json 跟踪的路径
+        直接抛 ValueError（两遍处理，绝不部分写入），避免操作员误以为标记成功。
+        """
+        normalized_paths = []
+        unknown_paths = []
+        
+        for raw_path in file_paths:
+            normalized = self._normalize_doc_path(raw_path)
+            if normalized in self.versions:
+                normalized_paths.append(normalized)
+            else:
+                unknown_paths.append(normalized)
+        
+        if unknown_paths:
+            raise ValueError(
+                f"以下路径未被 docs/docs-versions.json 跟踪，未写入任何修改: "
+                f"{', '.join(unknown_paths)}"
+                f"（新文档请先运行 --scan 生成版本记录）"
+            )
+        
+        stamp = '' if reviewed_at is None else str(reviewed_at)
+        changed_count = 0
+        
+        for file_path in dict.fromkeys(normalized_paths):
+            version = self.versions[file_path]
+            
+            if (version.reviewed_at or '') == stamp:
+                print(f"  = {file_path} 已是 {stamp or '（无评审记录）'}，幂等跳过")
+                continue
+            
+            version.reviewed_at = stamp
+            changed_count += 1
+            
+            if stamp:
+                print(f"  ✅ {file_path} 评审时间 -> {stamp}")
+            else:
+                print(f"  🧹 {file_path} 已清除评审记录")
+        
+        return changed_count
     
     def add_version_headers(self) -> int:
         """添加版本头信息"""
@@ -683,17 +837,34 @@ class DocumentVersionManager:
                 )
             report.append("")
         
-        # 过期文档检查（阈值按文档类型解析，见 outdated_detection.type_thresholds）
+        # 过期文档检查（阈值按文档类型解析，见 outdated_detection.type_thresholds；
+        # 新鲜度取 max(LastModified, ReviewedAt)，人工评审见本文件上方说明）
+        # 注意：本节标题必须仍以“## 过期文档”开头，且节内不得出现 “##”（含 ###），
+        # 工作流用 /## 过期文档.*?(?=##|$)/s 抽取本节正文。
         outdated_docs = self.check_outdated_documents()
-        if outdated_docs:
+        reviewed_fresh_docs = self.reviewed_fresh_documents()
+        if outdated_docs or reviewed_fresh_docs:
             report.extend([f"## 过期文档 (按文档类型阈值判定，共 {len(outdated_docs)} 个)\n"])
             for doc_path in outdated_docs:
                 version_info = self.versions[doc_path]
                 last_modified = str(version_info.last_modified)[:10]
                 threshold_days = self.resolve_outdated_threshold(doc_path)
+                review_summary = self.review_state(doc_path)['summary']
                 report.append(
-                    f"- {doc_path} (版本: {version_info.version}, 最后更新: {last_modified}, 阈值 {threshold_days} 天)"
+                    f"- {doc_path} (版本: {version_info.version}, 最后更新: {last_modified}, "
+                    f"阈值 {threshold_days} 天) — {review_summary}"
                 )
+            
+            if reviewed_fresh_docs:
+                report.append("")
+                report.append("**未计入过期的文档：靠人工评审保持新鲜（不是内容变更，计时由人工评审重置）**")
+                for doc_path in reviewed_fresh_docs:
+                    state = self.review_state(doc_path)
+                    report.append(
+                        f"- {doc_path} (人工评审: {state['reviewed_at']:%Y-%m-%d}, "
+                        f"评审窗口止于: {state['expires_at']:%Y-%m-%d}, "
+                        f"剩余 {state['days_left']} 天)"
+                    )
             report.append("")
         
         # 依赖关系分析
@@ -753,6 +924,24 @@ def main():
              '显式传入数值时，该数值仅作为“没有类型专属阈值”的文档的默认阈值，不覆盖按类型的阈值。'
              '不带数值（或不指定该参数）时等同于完全由配置决定'
     )
+    parser.add_argument(
+        '--mark-reviewed',
+        nargs='+',
+        metavar='PATH',
+        help='记录人工评审：把 ReviewedAt 写入 docs/docs-versions.json 中已跟踪的文档'
+             '（可一次多个路径）。人工评审让 max(LastModified, ReviewedAt) 落在阈值窗口内，'
+             '从而使审查过但内容未变的文档不再出现在过期提醒里；幂等，路径未被跟踪时报错退出'
+    )
+    parser.add_argument(
+        '--clear-reviewed',
+        nargs='+',
+        metavar='PATH',
+        help='清除人工评审记录（撤销误标），与 --mark-reviewed 使用相同的路径校验规则'
+    )
+    parser.add_argument(
+        '--reviewed-at',
+        help='配合 --mark-reviewed 使用：评审时间，YYYY-MM-DD 或完整 ISO-8601；默认当前时间'
+    )
     
     args = parser.parse_args()
     
@@ -791,6 +980,56 @@ def main():
             print(f"✅ 清理了 {old_count - new_count} 条旧记录")
             manager.save_versions()
         
+        # 人工评审：在 --scan/--add-headers/--cleanup 之后处理，保证同一次调用里评审记录是最终状态
+        if args.reviewed_at and not args.mark_reviewed:
+            print("⚠️ --reviewed-at 仅与 --mark-reviewed 搭配使用，已忽略")
+        
+        if args.mark_reviewed:
+            reviewed_at_value = ''
+            parsed_reviewed_at = None
+            
+            if args.reviewed_at:
+                try:
+                    parsed_reviewed_at = datetime.fromisoformat(args.reviewed_at)
+                except ValueError:
+                    print(f"❌ --reviewed-at 无法解析为 ISO-8601 时间戳: {args.reviewed_at}"
+                          f"（示例: 2026-01-05 或 2026-01-05T10:30:00）")
+                    sys.exit(1)
+                
+                if parsed_reviewed_at.tzinfo is not None:
+                    parsed_reviewed_at = parsed_reviewed_at.astimezone().replace(tzinfo=None)
+                reviewed_at_value = parsed_reviewed_at.isoformat()
+            else:
+                parsed_reviewed_at = datetime.now()
+                reviewed_at_value = parsed_reviewed_at.isoformat()
+            
+            print(f"🧾 记录人工评审 (ReviewedAt={reviewed_at_value})...")
+            if parsed_reviewed_at > datetime.now():
+                print("⚠️ 注意：评审时间在未来，该文档的过期计时会被推迟到该时间之后")
+            
+            try:
+                changed_count = manager.set_reviewed_at(args.mark_reviewed, reviewed_at_value)
+            except ValueError as exc:
+                print(f"❌ {exc}")
+                sys.exit(1)
+            
+            if changed_count:
+                manager.save_versions()
+            print(f"✅ 记录人工评审完成（{changed_count} 个文档被改动）")
+        
+        if args.clear_reviewed:
+            print("🧹 清除人工评审记录...")
+            
+            try:
+                changed_count = manager.set_reviewed_at(args.clear_reviewed, None)
+            except ValueError as exc:
+                print(f"❌ {exc}")
+                sys.exit(1)
+            
+            if changed_count:
+                manager.save_versions()
+            print(f"✅ 清除人工评审完成（{changed_count} 个文档被改动）")
+        
         if args.report:
             print("📊 生成版本报告...")
             report_content = manager.generate_version_report()
@@ -817,7 +1056,29 @@ def main():
                 version_info = manager.versions[doc]
                 last_modified = str(version_info.last_modified)[:10]
                 threshold_days = manager.resolve_outdated_threshold(doc, args.check_outdated)
-                print(f"  - {doc} (版本: {version_info.version}, 最后更新: {last_modified}, 阈值 {threshold_days} 天)")
+                review_summary = manager.review_state(doc, args.check_outdated)['summary']
+                print(
+                    f"  - {doc} (版本: {version_info.version}, 最后更新: {last_modified}, "
+                    f"阈值 {threshold_days} 天) — {review_summary}"
+                )
+        
+        # 评审可见性：单独列出“靠人工评审保持新鲜”的文档，读者才能把
+        # “内容变更重置计时”与“人工评审重置计时”区分开
+        reviewed_fresh_docs = manager.reviewed_fresh_documents(args.check_outdated)
+        if reviewed_fresh_docs:
+            print(f"\n🧾 靠人工评审保持新鲜、未计入过期: {len(reviewed_fresh_docs)} 个文档")
+            for doc in reviewed_fresh_docs:
+                state = manager.review_state(doc, args.check_outdated)
+                print(
+                    f"  - {doc} (人工评审: {state['reviewed_at']:%Y-%m-%d}, "
+                    f"评审窗口止于: {state['expires_at']:%Y-%m-%d}, 剩余 {state['days_left']} 天)"
+                )
+        
+        review_count = manager.count_review_records()
+        print(f"\n🧾 已记录人工评审 (ReviewedAt): {review_count} 个文档")
+        if review_count == 0:
+            print("   （审查确认某文档仍然准确时，用 --mark-reviewed <path> 记录评审，"
+                  "可在不改写 LastModified 的前提下重置其过期计时）")
         
         print("✅ 文档版本管理完成")
     

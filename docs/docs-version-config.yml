@@ -121,6 +121,33 @@ outdated_detection:
     - "docs/en/reference/changelog.md"
     - "LICENSE*"
 
+  # 人工评审（ReviewedAt）—— “审阅后确认文档仍然准确”的表达式
+  #
+  # 问题背景：LastModified 只在文档内容哈希变化时被 --scan 推进，因此一个“已被维护者
+  # 审阅并确认仍然准确”的文档无法从此处的过期提醒中消失（提醒会每天重复出现）。
+  #
+  # 机制：在 docs/docs-versions.json 中为该文档写入 ReviewedAt（ISO-8601 时间戳），
+  # 过期判定改为 max(LastModified, ReviewedAt) < now - 阈值 才算过期；阈值仍是本文件
+  # 按文档类型解析的值（outdated_detection.type_thresholds，未匹配类型时
+  # default_threshold_days）。即：一次人工评审换取一个完整窗口，不伪造内容变更。
+  #
+  # 用法（PATH 必须在 docs/docs-versions.json 中已被跟踪，否则命令报错退出且不做任何修改；
+  # 应先运行 --scan 生成版本记录）：
+  #   python scripts/docs/docs-version-manager.py --project-root . --mark-reviewed docs/zh/configuration/routing-rules.md
+  #   python scripts/docs/docs-version-manager.py --project-root . --mark-reviewed <path> [<path> ...] --reviewed-at 2026-01-05
+  #   python scripts/docs/docs-version-manager.py --project-root . --clear-reviewed <path> [<path> ...]   # 撤销误标
+  #
+  # 行为约定：
+  #   - ReviewedAt 缺失或不可解析时，行为与引入本机制前完全一致（只看 LastModified）。
+  #   - --mark-reviewed / --clear-reviewed 幂等：值与现状相同时不写文件。
+  #   - --scan 在内容未变化时保留 ReviewedAt；内容变化会清空该文档的评审记录
+  #     （评审只针对被评审的那一版内容，新内容需要重新评审；此时 LastModified 已被推进）。
+  #   - 报告与 --check-outdated 都会区分“内容变更”与“人工评审重置计时”，
+  #     以便读者判断某文档为何不再算过期。
+  #
+  # 说明：评审记录存放在 docs/docs-versions.json 的 ReviewedAt 字段，判定规则固化在
+  # scripts/docs/docs-version-manager.py 中，这里没有需要调整的开关项。
+
 # Git 集成设置
 git_integration:
   # 启用 Git 信息收集
