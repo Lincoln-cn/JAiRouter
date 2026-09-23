@@ -33,22 +33,22 @@ This document describes how to set up and configure the monitoring features of J
 #### Windows PowerShell
 ```powershell
 # Run deployment script
-.\scripts\setup-monitoring.ps1
+.\scripts\monitoring\setup-monitoring.ps1
 
 # Run with parameters
-.\scripts\setup-monitoring.ps1 -Environment prod -EnableAlerts
+.\scripts\monitoring\setup-monitoring.ps1 -Environment prod -EnableAlerts
 ```
 
 #### Linux/macOS
 ```bash
 # Give execution permission to script
-chmod +x scripts/setup-monitoring.sh
+chmod +x scripts/monitoring/setup-monitoring.sh
 
 # Run deployment script
-./scripts/setup-monitoring.sh
+./scripts/monitoring/setup-monitoring.sh
 
 # Run with parameters
-./scripts/setup-monitoring.sh --environment prod --enable-alerts
+./scripts/monitoring/setup-monitoring.sh --environment prod --enable-alerts
 ```
 
 ### Method 2: Manual Deployment

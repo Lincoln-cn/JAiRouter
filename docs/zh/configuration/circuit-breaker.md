@@ -51,8 +51,8 @@ stateDiagram-v2
 |------|------|--------|
 | `failureThreshold` | 失败阈值，超过后熔断 | 5 |
 | `recoveryTimeout` | 恢复检测间隔（毫秒） | 60000 |
-| `successThreshold` | 成功阈值，达到后关闭熔断 | 3 |
-| `timeout` | 请求超时时间（毫秒） | 30000 |
+| `successThreshold` | 成功阈值，达到后关闭熔断 | 2 |
+| `timeout` | 请求超时时间（毫秒） | 60000 |
 
 ## 全局熔断器配置
 

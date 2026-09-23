@@ -8,6 +8,7 @@
 import os
 import sys
 import json
+import fnmatch
 import hashlib
 import argparse
 import subprocess
@@ -348,6 +349,57 @@ class DocumentVersionManager:
         else:
             return path == pattern
     
+    def _normalize_doc_path(self, path: str) -> str:
+        """统一为仓库根目录相对路径（正斜杠）"""
+        normalized = str(path).replace('\\', '/')
+        while normalized.startswith('./'):
+            normalized = normalized[2:]
+        return normalized
+    
+    def is_ignored_outdated_document(self, file_path: str) -> bool:
+        """文档是否命中 outdated_detection.ignore_patterns（不参与过期检查）"""
+        ignore_patterns = self.config.get('outdated_detection', {}).get('ignore_patterns') or []
+        normalized = self._normalize_doc_path(file_path)
+        
+        for pattern in ignore_patterns:
+            if fnmatch.fnmatch(normalized, self._normalize_doc_path(pattern)):
+                return True
+        
+        return False
+    
+    def get_document_type(self, file_path: str) -> Optional[str]:
+        """按 document_scanning.document_types[*].patterns 匹配文档类型"""
+        document_types = self.config.get('document_scanning', {}).get('document_types') or {}
+        normalized = self._normalize_doc_path(file_path)
+        matched_type = None
+        matched_length = -1
+        
+        for type_name, type_config in document_types.items():
+            for pattern in (type_config or {}).get('patterns') or []:
+                # 多个类型命中时，取模式更具体（更长）的那个
+                if self._match_pattern(normalized, pattern) and len(str(pattern)) > matched_length:
+                    matched_type = type_name
+                    matched_length = len(str(pattern))
+        
+        return matched_type
+    
+    def resolve_outdated_threshold(self, file_path: str, days_threshold: Optional[int] = None) -> int:
+        """解析单个文档的过期阈值（天）
+
+        days_threshold 仅覆盖“没有类型专属阈值”时的默认阈值，不覆盖 type_thresholds。
+        """
+        outdated_config = self.config.get('outdated_detection', {}) or {}
+        document_type = self.get_document_type(file_path)
+        type_thresholds = outdated_config.get('type_thresholds') or {}
+        
+        if document_type and document_type in type_thresholds:
+            return int(type_thresholds[document_type])
+        
+        if days_threshold is not None:
+            return int(days_threshold)
+        
+        return int(outdated_config.get('default_threshold_days', 30))
+    
     def update_document_version(self, file_path: str) -> Optional[VersionChange]:
         """更新文档版本"""
         full_path = self.project_root / file_path
@@ -441,18 +493,29 @@ class DocumentVersionManager:
         
         return all_changes
     
-    def check_outdated_documents(self, days_threshold: int) -> List[str]:
-        """检查过期文档"""
+    def check_outdated_documents(self, days_threshold: Optional[int] = None) -> List[str]:
+        """检查过期文档
+
+        每个文档的阈值按类型解析：先按 document_scanning.document_types[*].patterns
+        匹配文档类型，再取 outdated_detection.type_thresholds[type]；未匹配到类型时
+        用 outdated_detection.default_threshold_days（days_threshold 显式传入时覆盖它）。
+        outdated_detection.ignore_patterns 命中的文档永不参与检查。
+        """
         outdated = []
-        threshold_date = datetime.now() - timedelta(days=days_threshold)
         
         for file_path, version in self.versions.items():
+            if self.is_ignored_outdated_document(file_path):
+                continue
+            
+            threshold_days = self.resolve_outdated_threshold(file_path, days_threshold)
+            threshold_date = datetime.now() - timedelta(days=threshold_days)
+            
             try:
-                last_modified = datetime.fromisoformat(version.last_modified.replace('Z', '+00:00'))
+                last_modified = datetime.fromisoformat(str(version.last_modified).replace('Z', '+00:00'))
                 if last_modified < threshold_date:
                     outdated.append(file_path)
-            except ValueError:
-                # 日期格式错误，认为是过期的
+            except (ValueError, TypeError):
+                # 日期缺失或格式错误，认为是过期的
                 outdated.append(file_path)
         
         return outdated
@@ -547,7 +610,7 @@ class DocumentVersionManager:
                 'statistics': {
                     'by_type': {},
                     'by_month': {},
-                    'outdated_count': len(self.check_outdated_documents(30))
+                    'outdated_count': len(self.check_outdated_documents())
                 }
             }
             
@@ -620,15 +683,16 @@ class DocumentVersionManager:
                 )
             report.append("")
         
-        # 过期文档检查
-        outdated_docs = self.check_outdated_documents(30)
+        # 过期文档检查（阈值按文档类型解析，见 outdated_detection.type_thresholds）
+        outdated_docs = self.check_outdated_documents()
         if outdated_docs:
-            report.extend(["## 过期文档 (30天未更新)\n"])
+            report.extend([f"## 过期文档 (按文档类型阈值判定，共 {len(outdated_docs)} 个)\n"])
             for doc_path in outdated_docs:
                 version_info = self.versions[doc_path]
-                last_modified = version_info.last_modified[:10]
+                last_modified = str(version_info.last_modified)[:10]
+                threshold_days = self.resolve_outdated_threshold(doc_path)
                 report.append(
-                    f"- {doc_path} (版本: {version_info.version}, 最后更新: {last_modified})"
+                    f"- {doc_path} (版本: {version_info.version}, 最后更新: {last_modified}, 阈值 {threshold_days} 天)"
                 )
             report.append("")
         
@@ -679,7 +743,16 @@ def main():
     parser.add_argument('--add-headers', action='store_true', help='添加版本头信息')
     parser.add_argument('--cleanup', type=int, help='清理指定天数前的变更记录')
     parser.add_argument('--export', help='导出版本数据到指定文件')
-    parser.add_argument('--check-outdated', type=int, default=30, help='检查过期文档的天数阈值')
+    parser.add_argument(
+        '--check-outdated',
+        type=int,
+        nargs='?',
+        default=None,
+        help='检查过期文档；阈值默认完全由 docs/docs-version-config.yml 决定'
+             '（按文档类型取 outdated_detection.type_thresholds，未匹配类型时取 default_threshold_days）；'
+             '显式传入数值时，该数值仅作为“没有类型专属阈值”的文档的默认阈值，不覆盖按类型的阈值。'
+             '不带数值（或不指定该参数）时等同于完全由配置决定'
+    )
     
     args = parser.parse_args()
     
@@ -731,14 +804,20 @@ def main():
             manager.export_version_data(args.export)
             print(f"📄 数据已导出到: {args.export}")
         
-        # 检查过期文档
+        # 检查过期文档：args.check_outdated 为 None 时完全由配置驱动
         outdated_docs = manager.check_outdated_documents(args.check_outdated)
         if outdated_docs:
-            print(f"\n⚠️ 发现 {len(outdated_docs)} 个过期文档 (超过 {args.check_outdated} 天未更新):")
+            threshold_scope = (
+                f"无类型专属阈值时按 {args.check_outdated} 天判定"
+                if args.check_outdated is not None
+                else "阈值按文档类型解析，见 docs/docs-version-config.yml"
+            )
+            print(f"\n⚠️ 发现 {len(outdated_docs)} 个过期文档 ({threshold_scope}):")
             for doc in outdated_docs:
                 version_info = manager.versions[doc]
-                last_modified = version_info.last_modified[:10]
-                print(f"  - {doc} (版本: {version_info.version}, 最后更新: {last_modified})")
+                last_modified = str(version_info.last_modified)[:10]
+                threshold_days = manager.resolve_outdated_threshold(doc, args.check_outdated)
+                print(f"  - {doc} (版本: {version_info.version}, 最后更新: {last_modified}, 阈值 {threshold_days} 天)")
         
         print("✅ 文档版本管理完成")
     

@@ -18,10 +18,10 @@
 1. **启动监控栈**
    ```bash
    # Windows
-   .\scripts\setup-monitoring.ps1
+   .\scripts\monitoring\setup-monitoring.ps1
    
    # Linux/macOS
-   ./scripts/setup-monitoring.sh
+   ./scripts/monitoring/setup-monitoring.sh
    ```
 
 2. **访问界面**

@@ -18,10 +18,10 @@ This guide provides detailed instructions on how to use JAiRouter's Grafana dash
 1. **Start the Monitoring Stack**
    ```bash
    # Windows
-   .\scripts\setup-monitoring.ps1
+   .\scripts\monitoring\setup-monitoring.ps1
    
    # Linux/macOS
-   ./scripts/setup-monitoring.sh
+   ./scripts/monitoring/setup-monitoring.sh
    ```
 
 2. **Access the Interface**

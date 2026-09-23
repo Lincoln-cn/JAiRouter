@@ -88,13 +88,13 @@ model:
       load-balance:
         type: <strategy>
       rate-limit:
-        type: <algorithm>
+        algorithm: <algorithm>
         # ... rate limit settings
       circuit-breaker:
         enabled: true
         # ... circuit breaker settings
       fallback:
-        type: <fallback-type>
+        strategy: <fallback-type>
         # ... fallback settings
       instances:
         - name: <model-name>
@@ -152,9 +152,9 @@ model:
   services:
     chat:
       rate-limit:
-        type: token-bucket
+        algorithm: token-bucket
         capacity: 100          # Maximum tokens in bucket
-        refill-rate: 10        # Tokens added per second
+        rate: 10               # Tokens added per second
         client-ip-enable: true # Enable per-client-IP rate limiting
 ```
 
@@ -189,11 +189,11 @@ model:
   services:
     chat:
       fallback:
-        type: default
+        strategy: default
         message: "Service temporarily unavailable"
         # OR
-        type: cache
-        ttl: 300000  # Cache TTL in milliseconds
+        strategy: cache
+        cache-ttl: 300000  # Cache TTL in milliseconds
 ```
 
 **Available Types:**

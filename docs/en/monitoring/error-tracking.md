@@ -16,7 +16,7 @@ JAiRouter's error tracking feature is a complete error monitoring and analysis s
 JAiRouter uses a modular configuration management approach, with error tracking configuration located in a separate configuration file:
 
 - **Main Configuration File**: `src/main/resources/application.yml`
-- **Error Tracking Configuration File**: `src/main/resources/config/monitoring/error-tracking.yml`
+- **Error Tracking Configuration File**: `src/main/resources/config/monitor/error-tracking.yml`
 - **Environment Configuration Files**: `src/main/resources/application-{profile}.yml`
 
 ## Modular Configuration Explanation
@@ -28,7 +28,7 @@ Error tracking configuration has been separated from the main configuration file
 spring:
   config:
     import:
-      - classpath:config/monitoring/error-tracking.yml
+      - classpath:config/monitor/error-tracking.yml
 ```
 
 ## Features

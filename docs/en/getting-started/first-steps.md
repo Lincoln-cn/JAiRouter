@@ -517,7 +517,7 @@ Here is a complete configuration example that includes multiple service types:
 
 ```bash
 # Add a new instance
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "new-model",
@@ -543,7 +543,7 @@ curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
 curl -X DELETE "http://localhost:8080/api/config/instance/del/chat?modelName=new-model&baseUrl=http://new-server:8080"
 
 # View all instances
-curl "http://localhost:8080/api/config/instance/type/chat"
+curl "http://localhost:8080/api/config/instance/chat"
 ```
 
 ### Configuration File Version Management
@@ -552,13 +552,13 @@ JAiRouter supports configuration file version management. Through the version ma
 
 ```bash
 # Get information about all versions
-curl "http://localhost:8080/api/config/versions"
+curl "http://localhost:8080/api/config/version"
 
 # Get the configuration of a specific version
-curl "http://localhost:8080/api/config/versions/1"
+curl "http://localhost:8080/api/config/version/1"
 
 # Roll back to a specific version
-curl -X POST "http://localhost:8080/api/config/versions/1/apply"
+curl -X POST "http://localhost:8080/api/config/version/apply/1"
 ```
 
 ## Monitoring and Logging

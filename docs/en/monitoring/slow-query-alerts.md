@@ -16,7 +16,7 @@ JAiRouter's slow query alert feature is a complete performance monitoring and al
 JAiRouter uses a modular configuration management approach, with slow query alert configuration located in a separate configuration file:
 
 - **Main Configuration File**: `src/main/resources/application.yml`
-- **Slow Query Alert Configuration File**: `src/main/resources/config/monitoring/slow-query-alerts.yml`
+- **Slow Query Alert Configuration File**: `src/main/resources/config/monitor/slow-query-alerts.yml`
 - **Environment Configuration Files**: `src/main/resources/application-{profile}.yml`
 
 ## Modular Configuration Explanation
@@ -28,7 +28,7 @@ Slow query alert configuration has been separated from the main configuration fi
 spring:
   config:
     import:
-      - classpath:config/monitoring/slow-query-alerts.yml
+      - classpath:config/monitor/slow-query-alerts.yml
 ```
 
 ## Features

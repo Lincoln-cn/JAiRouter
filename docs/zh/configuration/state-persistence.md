@@ -90,7 +90,7 @@ jairouter:
 | `/api/state-persistence/sync` | POST | 手动触发同步 |
 | `/api/state-persistence/recovery/all` | POST | 恢复所有状态 |
 | `/api/state-persistence/recovery/{type}/{id}` | POST | 恢复单个状态 |
-| `/api/state-persistence/rate-limiter/recover/{limiterId}` | POST | 恢复限流器状态 |
+| `/api/state-persistence/recovery/rate-limiter/{limiterId}` | POST | 恢复限流器状态 |
 
 ### 示例请求
 
@@ -192,7 +192,7 @@ curl -X POST http://localhost:8080/api/state-persistence/recovery/all
 curl -X POST http://localhost:8080/api/state-persistence/recovery/circuit-breaker/ollama-1
 
 # 恢复限流器状态
-curl -X POST http://localhost:8080/api/state-persistence/rate-limiter/recover/global
+curl -X POST http://localhost:8080/api/state-persistence/recovery/rate-limiter/global
 ```
 
 ---

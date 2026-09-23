@@ -90,7 +90,7 @@ Supported state types for persistence:
 | `/api/state-persistence/sync` | POST | Manual sync trigger |
 | `/api/state-persistence/recovery/all` | POST | Recover all states |
 | `/api/state-persistence/recovery/{type}/{id}` | POST | Recover single state |
-| `/api/state-persistence/rate-limiter/recover/{limiterId}` | POST | Recover rate limiter state |
+| `/api/state-persistence/recovery/rate-limiter/{limiterId}` | POST | Recover rate limiter state |
 
 ### Example Requests
 
@@ -192,7 +192,7 @@ curl -X POST http://localhost:8080/api/state-persistence/recovery/all
 curl -X POST http://localhost:8080/api/state-persistence/recovery/circuit-breaker/ollama-1
 
 # Recover rate limiter state
-curl -X POST http://localhost:8080/api/state-persistence/rate-limiter/recover/global
+curl -X POST http://localhost:8080/api/state-persistence/recovery/rate-limiter/global
 ```
 
 ---

@@ -139,7 +139,7 @@ JAiRouter uses a standardized error code system to identify various error condit
 
 | Error Code | Description | HTTP Status | Solution |
 |------------|-------------|-------------|----------|
-| `CONFLICT` | Resource conflict | 409 | Check resource state |
+| `CONFLICT_STATE` | Resource conflict | 409 | Check resource state |
 | `DUPLICATE_RESOURCE` | Duplicate resource | 409 | Use different identifier |
 | `OPERATION_FAILED` | Operation failed | 500 | Check logs for details |
 | `RATE_LIMIT_EXCEEDED` | Rate limit triggered | 429 | Reduce request frequency |
@@ -270,7 +270,7 @@ log.error("Authentication failed: errorCode={}, message={}",
 | 401 | `INVALID_API_KEY`, `EXPIRED_API_KEY`, `MISSING_API_KEY`, `INVALID_JWT_TOKEN`, `EXPIRED_JWT_TOKEN`, `BLACKLISTED_TOKEN` |
 | 403 | `INSUFFICIENT_PERMISSIONS`, `ACCESS_DENIED`, `RESOURCE_FORBIDDEN`, `FORBIDDEN` |
 | 404 | `NOT_FOUND`, `SERVICE_NOT_FOUND`, `INSTANCE_NOT_FOUND`, `CONFIG_NOT_FOUND` |
-| 409 | `CONFLICT`, `DUPLICATE_RESOURCE` |
+| 409 | `CONFLICT_STATE`, `DUPLICATE_RESOURCE` |
 | 429 | `RATE_LIMIT_EXCEEDED`, `GLOBAL_RATE_LIMIT`, `SERVICE_RATE_LIMIT`, `INSTANCE_RATE_LIMIT` |
 | 500 | `INTERNAL_ERROR`, `SANITIZATION_FAILED`, `CONFIGURATION_ERROR`, `DATABASE_ERROR`, `CACHE_ERROR` |
 | 502/503 | Downstream service errors |

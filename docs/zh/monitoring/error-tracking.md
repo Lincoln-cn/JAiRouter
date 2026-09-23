@@ -16,7 +16,7 @@ JAiRouter 的错误追踪功能是一个完整的错误监控和分析系统，�
 JAiRouter 使用模块化的配置管理方式，错误追踪配置位于独立的配置文件中：
 
 - **主配置文件**: `src/main/resources/application.yml`
-- **错误追踪配置文件**: `src/main/resources/config/monitoring/error-tracking.yml`
+- **错误追踪配置文件**: `src/main/resources/config/monitor/error-tracking.yml`
 - **环境配置文件**: `src/main/resources/application-{profile}.yml`
 
 ## 模块化配置说明
@@ -28,7 +28,7 @@ JAiRouter 使用模块化的配置管理方式，错误追踪配置位于独立�
 spring:
   config:
     import:
-      - classpath:config/monitoring/error-tracking.yml
+      - classpath:config/monitor/error-tracking.yml
 ```
 
 ## 功能特性
