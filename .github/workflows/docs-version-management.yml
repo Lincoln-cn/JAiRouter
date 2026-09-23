@@ -65,6 +65,11 @@ jobs:
       run: |
         Write-Host "PowerShell 版本: $($PSVersionTable.PSVersion)"
     
+    - name: 自测文档版本管理脚本
+      run: |
+        echo "🧪 运行文档版本管理脚本自测（按类型阈值 / ignore_patterns / 人工评审 ReviewedAt）..."
+        python scripts/docs/test_docs_version_manager.py
+
     - name: 扫描文档版本信息
       id: scan
       run: |
