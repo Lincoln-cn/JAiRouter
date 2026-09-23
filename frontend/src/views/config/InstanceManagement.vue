@@ -393,6 +393,7 @@ import RateLimitConfig from '@/components/RateLimitConfig.vue'
 import CircuitBreakerConfig from '@/components/CircuitBreakerConfig.vue'
 import OnboardingSteps from './adapter/OnboardingSteps.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import { uid } from '@/utils/uid'
 
 const route = useRoute()
 const router = useRouter()
@@ -739,7 +740,7 @@ const fetchServiceInstances = (serviceType: string) => {
         // 确保每个实例都包含正确的服务类型和ID
         const typedData: ServiceInstance[] = data.map((item) => ({
           ...item,
-          id: item.instanceId || Date.now() + Math.random(), // 使用后端返回的instanceId作为唯一标识符，如果没有则使用随机数
+          id: item.instanceId || uid(), // 使用后端返回的instanceId作为唯一标识符，如果没有则使用客户端唯一ID
           serviceType,
           adapter: item.adapter || '', // 确保适配器字段存在
           headers: item.headers || {}, // 确保headers字段存在

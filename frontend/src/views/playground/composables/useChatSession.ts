@@ -1,5 +1,6 @@
 import { ref, computed, watch } from 'vue'
 import type { ChatMessage } from '../types/playground'
+import { uid } from '@/utils/uid'
 
 export interface ChatSession {
   id: string
@@ -62,7 +63,7 @@ export function useChatSession() {
   // 创建新会话
   const createNewSession = (model: string = ''): ChatSession => {
     const session: ChatSession = {
-      id: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: uid('session_'),
       title: '新对话',
       messages: [],
       model,

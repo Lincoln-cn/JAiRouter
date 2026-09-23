@@ -1,4 +1,5 @@
 import type { SavedConfiguration, ServiceType } from '../types/playground'
+import { uid } from '@/utils/uid'
 
 // 配置存储的键名
 const STORAGE_KEY = 'playground-configs'
@@ -406,7 +407,7 @@ export class ConfigService {
    * 生成唯一ID
    */
   private generateId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2, 9)
+    return uid()
   }
 }
 
