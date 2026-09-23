@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.persistence.jpa.entity.QuotaLedgerEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.QuotaLedgerRepository;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -51,10 +52,25 @@ import java.util.function.Supplier;
  *             少计偏向放行，与默认 {@code fail-open=true} 的安全取向一致。</li>
  *       </ul>
  *   </li>
- *   <li><b>同步阻塞的代价</b>：PR-2 已把 {@code reserve}/{@code settle} 钉在同步签名上，因此
- *       Redis 调用使用 {@code Mono.block(timeout)}（默认 50ms）。这是本 PR 的已知取舍：
- *       热路径最坏阻塞 {@code distributed.timeout}，代价换来“零签名变更 + 确定性降级”；
- *       彻底异步化（把账本调用并入 Reactor 链路）留待后续 PR。</li>
+ *   <li><b>同步阻塞的代价与边界</b>（issue #105 更新）：PR-2 把 {@code reserve}/{@code settle}
+ *       钉在同步签名上，Redis 调用因此使用 {@code Mono.block(timeout)}（默认 50ms），
+ *       热路径最坏阻塞 {@code distributed.timeout}，代价换来“零签名变更 + 确定性降级”。
+ *       但 {@code Mono.block()} 在 Reactor 非阻塞线程（Netty 事件循环
+ *       {@code reactor-http-nio-*}）上会被直接拒绝并抛 {@link IllegalStateException}，
+ *       因此阻塞调用必须留在可以阻塞的线程上：
+ *       <ul>
+ *         <li>{@code reserve} 路径：唯一生产入口是
+ *             {@code ServiceRequestHandler}（{@code Mono.defer(...).subscribeOn(Schedulers.boundedElastic())}），
+ *             已在 {@code boundedElastic} 上执行，保持同步阻塞语义不变；</li>
+ *         <li>{@code settle} 路径：调用方位于 {@code doOnError}/{@code doOnCancel}/
+ *             {@code doOnComplete} 等 Netty 信号回调，{@link #settle(QuotaSettlement)} 检测到
+ *             非阻塞线程时把工作整体交给 {@code boundedElastic}（fire-and-forget，见该方法注释），
+ *             事件循环不再等待 Redis，冲正量也不会再被静默丢弃；</li>
+ *         <li>观测面 {@code QuotaMonitoringController#getUsage}：改为返回 {@code Mono} 并把读数
+ *             切到 {@code boundedElastic}，与 {@code reserve} 属同一类“显式移交”。</li>
+ *       </ul>
+ *       仍属同步阻塞的只有 {@code reserve} / {@code reserveWithLimits} / {@code usageStrict} 本身，
+ *       它们要求调用方已在可阻塞线程上（生产入口均满足）。</li>
  *   <li><b>绝不抛出</b>：{@link #reserve(QuotaRequest)} / {@link #settle(QuotaSettlement)} /
  *       查询 / 清理接口都不会把异常抛给调用方；账本不可用时按
  *       {@code jairouter.quota.fail-open}（默认 true）放行并标记 {@code degraded=true}。
@@ -440,9 +456,38 @@ public class QuotaLedgerService {
      * <p>只冲正已存在的本地槽位（不会为结算新建槽位、不访问数据库）；异常被吞掉并记录日志，
      * 不会影响调用方结果。分布式模式下同时把冲正量补写到 Redis（失败仅告警 + 降级标记）。</p>
      *
+     * <p><b>线程语义（issue #105）</b>：本方法本身就是 fire-and-forget——签名为 {@code void}、
+     * 吞掉所有异常、返回值不含任何结算结果，因此当调用方位于 Reactor 非阻塞线程
+     * （Netty 事件循环上的 {@code doOnError} / {@code doOnCancel} / {@code doOnComplete} 回调）时，
+     * 把工作整体交给 {@link Schedulers#boundedElastic()} 执行后立即返回。</p>
+     *
+     * <p>移交不改变调用方可见的语义：内联执行的返回值与异常都是“无”与“无”，异步执行同样是
+     * “无”与“无”（异常在 {@link #settleBlocking(QuotaSettlement)} 内部已消化）。不移交则有实际损失：
+     * 事件循环上 {@code Mono.block()} 会抛 {@link IllegalStateException}，Redis 冲正<b>永久静默丢失</b>，
+     * 分布式计数只增不减地漂移。非 Reactor 线程（普通调用线程、{@code boundedElastic}）仍内联执行，
+     * 保证“方法返回时冲正已写入”，既有测试依赖这一确定性。</p>
+     *
      * @param settlement 结算信息，可为 {@code null}（忽略）
      */
     public void settle(final QuotaSettlement settlement) {
+        if (!isEnabled() || settlement == null) {
+            return;
+        }
+        if (Schedulers.isInNonBlockingThread()) {
+            Schedulers.boundedElastic().schedule(() -> settleBlocking(settlement));
+            return;
+        }
+        settleBlocking(settlement);
+    }
+
+    /**
+     * 结算的实际实现（同步阻塞：分布式模式下会以 {@code Mono.block(timeout)} 补写 Redis）.
+     *
+     * <p>必须运行在可阻塞线程上；由 {@link #settle(QuotaSettlement)} 负责选择执行线程。</p>
+     *
+     * @param settlement 结算信息，可为 {@code null}（忽略）
+     */
+    private void settleBlocking(final QuotaSettlement settlement) {
         if (!isEnabled() || settlement == null) {
             return;
         }
@@ -827,14 +872,27 @@ public class QuotaLedgerService {
     /**
      * 阻塞执行一次 Redis 命令并统计耗时（超时由 {@code distributed.timeout} 控制）。
      *
+     * <p>本方法只能运行在可阻塞线程上：Reactor 会在非阻塞线程上直接拒绝 {@code Mono.block()}，
+     * 其异常信息只说明“block 不被支持”，不含任何账本上下文（issue #105 中表现为 Redis 冲正静默丢失）。
+     * 因此这里先做显式守卫，抛出可定位的异常——异常信息带上当前线程名与后端名，调用方
+     * （{@code reserve} / {@code usageStrict} / {@code reset} / {@code cleanupExpired}）的
+     * {@code classify} 会把它归类为 {@link #REASON_REDIS_UNAVAILABLE} 并打出降级告警，
+     * 使“误在事件循环上调用”与“Redis 真的不可用”至少在日志里可区分。</p>
+     *
      * @param command 命令工厂
      * @param <T>     结果类型
      * @return 命令结果
+     * @throws IllegalStateException 当前线程为 Reactor 非阻塞线程（事件循环无法阻塞等待 Redis）
      */
     private <T> T executeRedis(final Supplier<Mono<T>> command) {
         final long start = System.nanoTime();
         boolean success = false;
         try {
+            if (Schedulers.isInNonBlockingThread()) {
+                throw new IllegalStateException("配额账本 Redis 命令不能在 Reactor 非阻塞线程上同步阻塞执行"
+                    + "（否则 block() 会被拒绝且冲正量静默丢失）: thread=" + Thread.currentThread().getName()
+                    + ", backend=" + backendName());
+            }
             final T value = command.get().block(properties.distributedTimeout());
             success = true;
             return value;
