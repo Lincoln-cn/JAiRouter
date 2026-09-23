@@ -11,6 +11,9 @@ import java.util.regex.PatternSyntaxException;
  * <p>覆盖脱敏 piiPatterns 等场景：拒绝空串、超长、嵌套量词、被量词包裹的交替分支、
  * 反向引用以及过大量词，合法模式经校验后缓存编译结果。运行时匹配也应走本类，
  * 避免对未校验的用户正则直接 {@link Pattern#compile}。</p>
+ *
+ * <p>本类是用户自定义正则唯一的编译入口；针对它的 CodeQL {@code java/regex-injection}
+ * 告警属于已知且已缓解项，已在该处标注抑制。</p>
  */
 public final class SafeRegexValidator {
 
@@ -84,7 +87,21 @@ public final class SafeRegexValidator {
         return pattern.length() <= 80 ? ", pattern=" + pattern : "";
     }
 
+    /**
+     * 编译用户正则。调用方必须确保该模式已先通过 {@link #validateUserPattern}。
+     *
+     * <p>此处刻意<b>不</b>使用 {@link Pattern#quote}：本类存在的意义就是保留用户正则的语义
+     * （脱敏 piiPatterns 依赖其匹配能力），一旦转义为字面量，所有模式都会退化为纯文本匹配。</p>
+     *
+     * <p>注入/资源耗尽风险在编译前已由 {@link #MAX_PATTERN_LENGTH} 长度上限与
+     * {@link #detectRedosRisk}（O(n) 单遍字符扫描，不编译任何正则）消解。</p>
+     *
+     * <p><b>禁止</b>绕过 {@link #validateUserPattern} 直接调用本方法：缓存/编译入口
+     * {@link #compileUserPattern} 与 {@link #compileOrNull} 均会先做校验，
+     * 直接调用将使上述保护全部失效。</p>
+     */
     private static Pattern doCompile(final String pattern) {
+        // codeql[java/regex-injection] 已知且已缓解：入参必经 validateUserPattern 校验（长度上限 + ReDoS 扫描），此处不可改用 Pattern.quote 否则会丢失用户正则语义
         return Pattern.compile(pattern);
     }
 
