@@ -15,6 +15,8 @@ import org.unreal.modelrouter.auth.security.quota.QuotaProperties;
 import org.unreal.modelrouter.auth.security.quota.QuotaUsage;
 import org.unreal.modelrouter.auth.security.quota.QuotaWindow;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -112,6 +114,11 @@ public class QuotaMonitoringController {
      *
      * <p>本端点严格只读，不会触发任何写入或结算操作。</p>
      *
+     * <p><b>线程语义（issue #105）</b>：分布式模式下 {@code ledgerService.usage(...)} 会同步阻塞读取
+     * Redis / 数据库，而 WebFlux 的同步签名端点运行在事件循环线程上（本仓库未装配
+     * {@code BlockingExecutionConfigurer}），因此这里改为返回 {@code Mono} 并把读数显式切到
+     * {@link Schedulers#boundedElastic()}；响应体与状态码与同步实现完全一致。</p>
+     *
      * @param tenantId    租户 ID（可选，缺省为空串）
      * @param apiKeyId    API Key ID（可选，缺省为空串）
      * @param userId      用户 ID（可选，缺省为空串）
@@ -124,13 +131,36 @@ public class QuotaMonitoringController {
     @Operation(summary = "查询配额用量",
             description = "按维度与窗口筛选配额用量（只读），"
                     + "返回 dimensions/window/windowStart/requestCount/tokenCount")
-    public ResponseEntity<RouterResponse<List<Map<String, Object>>>> getUsage(
+    public Mono<ResponseEntity<RouterResponse<List<Map<String, Object>>>>> getUsage(
             @RequestParam(required = false) final String tenantId,
             @RequestParam(required = false) final String apiKeyId,
             @RequestParam(required = false) final String userId,
             @RequestParam(required = false) final String serviceType,
             @RequestParam(required = false) final String model,
             @RequestParam(required = false) final String window) {
+        return Mono.fromCallable(() ->
+                        doGetUsage(tenantId, apiKeyId, userId, serviceType, model, window))
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    /**
+     * 用量查询的实际实现（同步读取账本，必须运行在可阻塞线程上）.
+     *
+     * @param tenantId    租户 ID
+     * @param apiKeyId    API Key ID
+     * @param userId      用户 ID
+     * @param serviceType 服务类型
+     * @param model       模型名称
+     * @param window      窗口类型
+     * @return 用量响应
+     */
+    private ResponseEntity<RouterResponse<List<Map<String, Object>>>> doGetUsage(
+            final String tenantId,
+            final String apiKeyId,
+            final String userId,
+            final String serviceType,
+            final String model,
+            final String window) {
         if (!ledgerService.isEnabled()) {
             return ResponseEntity.ok(RouterResponse.success(List.of(), "配额账本未启用"));
         }
