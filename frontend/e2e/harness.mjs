@@ -2,6 +2,7 @@
  * E2E harness：浏览器启动、登录、断言收集、页面工具
  */
 import { chromium } from 'playwright-core'
+import { randomBytes } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -199,7 +200,7 @@ export async function waitTableSettled(page, timeoutMs = 15000) {
 
 /** 生成唯一测试后缀，避免并发/重复跑撞名 */
 export function uniq(prefix = 'e2e') {
-  return `${prefix}-${Date.now().toString(36)}-${Math.floor(Math.random() * 1000)}`
+  return `${prefix}-${Date.now().toString(36)}-${randomBytes(4).toString('hex')}`
 }
 
 /** 按文案点击页面主区域按钮（跳过禁用；对 SPA 重渲染做重试） */
