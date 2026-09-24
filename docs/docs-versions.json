@@ -2287,22 +2287,6 @@
   },
   "changes": [
     {
-      "FilePath": "docs/en/monitoring/configuration.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-06-26T06:11:19.649636",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/monitoring/configuration.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-06-26T06:11:19.853566",
-      "Description": "文档modified"
-    },
-    {
       "FilePath": "README-ZH.md",
       "OldVersion": "1.0.8",
       "NewVersion": "1.0.9",
@@ -6231,5 +6215,5 @@
       "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-09-24T04:21:36.307194"
+  "last_updated": "2026-09-24T07:11:35.838322"
 }
