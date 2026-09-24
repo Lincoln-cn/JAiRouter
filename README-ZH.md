@@ -28,6 +28,7 @@
 <p align="center">
   <a href="README.md">English</a> •
   <a href="https://jairouter.com">文档</a> •
+  <a href="https://github.com/Lincoln-cn/JAiRouter/issues">问题反馈</a> •
   <a href="https://github.com/Lincoln-cn/JAiRouter/discussions">讨论</a>
 </p>
 
@@ -317,8 +318,30 @@ java -jar target/model-router-*.jar
 ## 获取支持
 
 - **文档**：https://jairouter.com
-- **问题反馈**：[GitHub Issues](https://github.com/Lincoln-cn/JAiRouter/issues)
-- **讨论交流**：[GitHub Discussions](https://github.com/Lincoln-cn/JAiRouter/discussions)
+
+### Issues 还是 Discussions —— 我该发哪里？
+
+GitHub 提供了两个入口，我们刻意把它们分开，让每一条反馈都不会石沉大海。请按**你手上有什么**来选，而不是按习惯选：
+
+| 你手上的东西 | 发到哪里 | 我们怎么处理 |
+|--------------|----------|--------------|
+| **可复现的缺陷** —— 崩溃、结果错误、回归、文档错误 | [**Issues**](https://github.com/Lincoln-cn/JAiRouter/issues) | **快速跟进** —— 尽快分诊与回复，确认的缺陷会修复或排期 |
+| **需求或想法** —— 新功能、新适配器、方案讨论、使用提问、反馈建议 | [**Discussions**](https://github.com/Lincoln-cn/JAiRouter/discussions) | **定期整理** —— 归纳、投票，并纳入[发展路线](#发展路线) |
+
+**一句话**：缺陷发 **Issues**，需求或提问发 **Discussions**。
+
+> 拿不准发哪里？先发 Discussions —— 若确认是可复现的缺陷，我们会帮你转到 Issues。
+
+Discussions 按分类组织：
+
+| 分类 | 用来做什么 |
+|------|------------|
+| 💡 Ideas | 新功能与改进建议 |
+| 🗳 Polls | 就方向发起投票 |
+| 🙏 Q&A | 使用类问题，向社区求助 |
+| 🙌 Show and tell | 分享你基于 JAiRouter 做出的东西 |
+| 💬 General | 其他一切话题 |
+| 📣 Announcements | 维护者发布更新说明 |
 
 ## 许可证
 
@@ -329,7 +352,7 @@ JAiRouter 基于 [Apache 2.0 License](LICENSE) 开源。
 <p align="center">
   <strong>如果 JAiRouter 帮到了您，欢迎在 GitHub 上点个 <a href="https://github.com/Lincoln-cn/JAiRouter/stargazers">Star</a> ⭐</strong>
   <br/>
-  <em>有问题？开 Issue 或在 Discussions 发起讨论，我们都会回复。</em>
+  <em>遇到缺陷？提 Issue。有需求或想法？发 Discussion —— 我们都会跟进。</em>
 </p>
 
 <p align="center">

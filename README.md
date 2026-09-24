@@ -28,6 +28,7 @@
 <p align="center">
   <a href="README-ZH.md">中文</a> •
   <a href="https://jairouter.com">Docs</a> •
+  <a href="https://github.com/Lincoln-cn/JAiRouter/issues">Issues</a> •
   <a href="https://github.com/Lincoln-cn/JAiRouter/discussions">Discussions</a>
 </p>
 
@@ -317,8 +318,30 @@ java -jar target/model-router-*.jar
 ## Support
 
 - **Documentation**: https://jairouter.com
-- **Issues**: [GitHub Issues](https://github.com/Lincoln-cn/JAiRouter/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/Lincoln-cn/JAiRouter/discussions)
+
+### Issues or Discussions — where should I post?
+
+GitHub gives us two channels and we keep them separate on purpose, so nothing gets lost. Pick by **what you have**, not by where you happen to be:
+
+| What you have | Where to post | How we handle it |
+|---------------|---------------|------------------|
+| A **reproducible defect** — crash, wrong result, regression, broken doc | [**Issues**](https://github.com/Lincoln-cn/JAiRouter/issues) | **Fast follow-up** — triaged and answered quickly; confirmed defects are fixed or scheduled |
+| A **requirement or idea** — feature request, new adapter, design discussion, usage question, feedback | [**Discussions**](https://github.com/Lincoln-cn/JAiRouter/discussions) | **Regularly curated** — ideas are collected, voted on and folded into the [Roadmap](#roadmap) |
+
+**In one line**: a defect goes to **Issues**; a requirement or a question goes to **Discussions**.
+
+> Not sure which one fits? Post in Discussions — if it turns out to be a reproducible defect, we will move it to Issues for you.
+
+Discussions is organised by category:
+
+| Category | Use it for |
+|----------|------------|
+| 💡 Ideas | Feature requests and improvement suggestions |
+| 🗳 Polls | Community votes on direction |
+| 🙏 Q&A | How-to questions for the community |
+| 🙌 Show and tell | Share what you built on JAiRouter |
+| 💬 General | Anything else |
+| 📣 Announcements | Release notes from maintainers |
 
 ## License
 
@@ -329,7 +352,7 @@ JAiRouter is released under the [Apache 2.0 License](LICENSE).
 <p align="center">
   <strong>If JAiRouter saves you time, <a href="https://github.com/Lincoln-cn/JAiRouter/stargazers">star it on GitHub</a> ⭐</strong>
   <br/>
-  <em>Questions? Open an issue or start a discussion — we answer.</em>
+  <em>Found a bug? Open an issue. Have an idea or a question? Start a discussion.</em>
 </p>
 
 <p align="center">
