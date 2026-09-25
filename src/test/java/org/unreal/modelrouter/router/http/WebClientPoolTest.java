@@ -99,10 +99,9 @@ class WebClientPoolTest {
     }
 
     @Test
-    @DisplayName("测试 7: 空 baseUrl 应正常处理")
-    void getOrCreate_emptyBaseUrl_shouldWork() {
-        WebClient client = webClientPool.getOrCreate("");
-        assertNotNull(client, "空 baseUrl 也应返回 WebClient 实例");
+    @DisplayName("测试 7: 空 baseUrl 应被 SSRF 门闩拒绝")
+    void getOrCreate_emptyBaseUrl_shouldBeRejected() {
+        assertThrows(SecurityException.class, () -> webClientPool.getOrCreate(""));
     }
 
     @Test
