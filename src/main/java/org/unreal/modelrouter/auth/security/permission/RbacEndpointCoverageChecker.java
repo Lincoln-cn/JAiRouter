@@ -22,16 +22,18 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * RBAC 端点覆盖自检（#128 Phase 1）——让端点/规则漂移可见，而不是静默 fail-open。
+ * RBAC 端点覆盖自检（#128 Phase 1/2）——让端点/规则漂移可见，而不是静默 fail-open。
  *
  * <p>启动时枚举 WebFlux {@link RequestMappingHandlerMapping} 上的全部映射
  * （method + path pattern），对每个端点用与 {@link PermissionAuthorizationManager}
- * 相同的 {@link PermissionRuleRegistry#findRule(HttpMethod, String)} 判定是否被规则覆盖。
- * 未覆盖清单以单条 WARN 汇总输出，并写入 {@link RbacEndpointCoverageReport} 供
- * Health 指标暴露。
+ * 相同的判定顺序分类：先 {@link PermissionRuleRegistry#findRule(HttpMethod, String)}
+ * （命中 → covered），再 {@link RbacExemptEndpoints#isExempt(HttpMethod, String)}
+ * （命中 → exempt），都未命中 → missing（可行动信号）。结果写入
+ * {@link RbacEndpointCoverageReport} 供 Health 指标暴露。
  *
- * <p><b>本阶段不改变任何授权行为</b>：无规则路径仍回退 authenticated（login-only）。
- * fail-closed 切换属后续阶段，需完整端点审计 + 前端回归后才能启用。
+ * <p><b>Phase 2</b>：写方法未命中规则且未豁免时 fail-closed（由
+ * {@link PermissionAuthorizationManager} 执行）；GET 仍 fail-open（Phase 3）。
+ * 本自检只做观测，不改变授权行为。
  *
  * <p><b>排除清单</b>（不报告为缺口——它们根本不经过 {@code PermissionAuthorizationManager}，
  * 或在 SecurityConfiguration 中有独立授权规则）：
@@ -92,14 +94,20 @@ public class RbacEndpointCoverageChecker implements ApplicationRunner {
     /**
      * 对给定端点清单执行覆盖判定（可单测，不依赖 Spring 上下文）。
      *
+     * <p>分类优先级：规则命中 → covered；否则豁免清单命中 → exempt；
+     * 都未命中 → missing（可行动缺口）。同一端点若部分方法 covered、部分 exempt，
+     * 只要没有任何方法 missing 就归入 exempt（无需行动）。
+     *
      * @param endpoints 已映射端点（HTTP 方法集合 + 路径模式）
      * @return 覆盖报告
      */
     public RbacEndpointCoverageReport check(final Collection<MappedEndpoint> endpoints) {
         int covered = 0;
-        int uncovered = 0;
+        int exempt = 0;
+        int missing = 0;
         int excluded = 0;
-        Set<String> uncoveredLines = new TreeSet<>();
+        Set<String> exemptLines = new TreeSet<>();
+        Set<String> missingLines = new TreeSet<>();
 
         for (MappedEndpoint endpoint : endpoints) {
             if (isExcluded(endpoint.pathPattern())) {
@@ -108,25 +116,35 @@ public class RbacEndpointCoverageChecker implements ApplicationRunner {
             }
             String samplePath = toSamplePath(endpoint.pathPattern());
             List<HttpMethod> methods = methodsToCheck(endpoint.methods());
-            boolean allCovered = true;
+            boolean allCoveredByRule = true;
+            List<String> exemptMethods = new ArrayList<>();
             List<String> missingMethods = new ArrayList<>();
             for (HttpMethod method : methods) {
-                if (permissionRuleRegistry.findRule(method, samplePath).isEmpty()) {
-                    allCovered = false;
+                if (permissionRuleRegistry.findRule(method, samplePath).isPresent()) {
+                    continue;
+                }
+                allCoveredByRule = false;
+                if (RbacExemptEndpoints.isExempt(method, samplePath)) {
+                    exemptMethods.add(method.name());
+                } else {
                     missingMethods.add(method.name());
                 }
             }
-            if (allCovered) {
+            if (allCoveredByRule) {
                 covered++;
+            } else if (missingMethods.isEmpty()) {
+                exempt++;
+                exemptLines.add(String.join(",", exemptMethods) + " " + endpoint.pathPattern());
             } else {
-                uncovered++;
-                uncoveredLines.add(String.join(",", missingMethods) + " " + endpoint.pathPattern());
+                missing++;
+                missingLines.add(String.join(",", missingMethods) + " " + endpoint.pathPattern());
             }
         }
 
-        int checked = covered + uncovered;
+        int checked = covered + exempt + missing;
         return new RbacEndpointCoverageReport(
-                checked, covered, uncovered, excluded, List.copyOf(uncoveredLines));
+                checked, covered, exempt, missing, excluded,
+                List.copyOf(exemptLines), List.copyOf(missingLines));
     }
 
     /**
@@ -235,15 +253,24 @@ public class RbacEndpointCoverageChecker implements ApplicationRunner {
     }
 
     private void logReport(final RbacEndpointCoverageReport report) {
-        log.info("RBAC 端点覆盖自检完成: checked={}, covered={}, uncovered={}, excluded={}",
+        log.info("RBAC 端点覆盖自检完成: checked={}, covered={}, exempt={}, missing={}, excluded={}",
                 report.checkedCount(), report.coveredCount(),
-                report.uncoveredCount(), report.excludedCount());
-        if (report.uncoveredCount() > 0) {
+                report.exemptCount(), report.missingCount(), report.excludedCount());
+        if (report.exemptCount() > 0) {
             StringBuilder sb = new StringBuilder();
-            sb.append("RBAC 端点覆盖自检发现 ").append(report.uncoveredCount())
-                    .append(" 个端点未登记权限规则（当前回退 authenticated，任意登录用户可访问；")
-                    .append("fail-open 为默认行为，后续阶段才考虑收紧）:\n");
-            for (String line : report.uncoveredEndpoints()) {
+            sb.append("RBAC 端点覆盖自检：").append(report.exemptCount())
+                    .append(" 个端点命中显式豁免清单（有意不登记权限规则，见 RbacExemptEndpoints）:\n");
+            for (String line : report.exemptEndpoints()) {
+                sb.append("  - ").append(line).append('\n');
+            }
+            log.info(sb.toString().stripTrailing());
+        }
+        if (report.missingCount() > 0) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("RBAC 端点覆盖自检发现 ").append(report.missingCount())
+                    .append(" 个端点既无权限规则也未豁免（可行动缺口——请补登记规则或加入豁免清单；")
+                    .append("Phase 2 写方法将 fail-closed 拒绝，GET 仍回退 authenticated）:\n");
+            for (String line : report.missingEndpoints()) {
                 sb.append("  - ").append(line).append('\n');
             }
             log.warn(sb.toString().stripTrailing());

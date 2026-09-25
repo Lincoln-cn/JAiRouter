@@ -12,16 +12,17 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * RBAC 端点覆盖自检健康指标（#128 Phase 1）。
+ * RBAC 端点覆盖自检健康指标（#128 Phase 1/2）。
  *
  * <p>把 {@link RbacEndpointCoverageReport} 挂到 Spring Boot Actuator
  * {@code /actuator/health} 组件详情（与 TracingHealthIndicator / JwtRedisHealthMonitor 同一约定）。
  *
- * <p>状态恒为 UP：覆盖缺口在默认 fail-open 下是「信息可见性」问题而非可用性故障，
- * 不应触发探针重启。缺口以 details.uncoveredEndpoints 暴露。
+ * <p>状态恒为 UP：覆盖缺口是「信息可见性」问题而非可用性故障，
+ * 不应触发探针重启。Phase 2 起 EXEMPT（显式豁免）与 MISSING（可行动缺口）
+ * 分开暴露，MISSING 是需要处理的信号。
  *
  * @author JAiRouter Team
- * @since 3.0.3
+ * @since 3.0.4
  */
 @Component("rbacEndpointCoverage")
 @RequiredArgsConstructor
@@ -39,11 +40,15 @@ public class RbacEndpointCoverageHealthIndicator implements HealthIndicator {
         Map<String, Object> details = new LinkedHashMap<>();
         details.put("checkedCount", report.checkedCount());
         details.put("coveredCount", report.coveredCount());
-        details.put("uncoveredCount", report.uncoveredCount());
+        details.put("exemptCount", report.exemptCount());
+        details.put("missingCount", report.missingCount());
         details.put("excludedCount", report.excludedCount());
-        details.put("uncoveredEndpoints", report.uncoveredEndpoints());
+        details.put("exemptEndpoints", report.exemptEndpoints());
+        details.put("missingEndpoints", report.missingEndpoints());
         details.put("fallback",
-                "unmatched paths fall back to authenticated() (fail-open, phase-1 default)");
+                "unmatched GET falls back to authenticated() (fail-open, phase-3 scope); "
+                        + "unmatched writes are denied unless exempt (phase-2 default, "
+                        + "escape hatch jairouter.security.rbac.write-fail-closed.enabled=false)");
         return Health.up().withDetails(details).build();
     }
 }
