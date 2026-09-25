@@ -70,8 +70,8 @@ class RolePermissionSeederTest {
 
             assertEquals(Set.of("ADMIN", "OPERATOR", "USER", "VIEWER"), counts.keySet());
             assertEquals(PermissionCodes.ALL_PERMISSION_CODES.size(), counts.get("ADMIN").intValue());
-            // R2-P1-03: + monitoring:exceptions:read/write
-            assertEquals(41L, counts.get("OPERATOR"));
+            // R2-P1-03: + monitoring:exceptions:read/write；#116: + monitoring:config:write, security:audit:write
+            assertEquals(43L, counts.get("OPERATOR"));
             assertEquals(28L, counts.get("USER"));
             assertEquals(27L, counts.get("VIEWER"));
         }

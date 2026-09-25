@@ -91,6 +91,10 @@ public class PermissionRuleRegistry {
                 PermissionRule.get("/api/config/instance/**", PermissionCodes.CONFIG_INSTANCES_READ),
                 PermissionRule.write("/api/config/instance/**", PermissionCodes.CONFIG_INSTANCES_WRITE),
 
+                // ===== 服务类型管理（ServiceTypeController，#116）→ 与实例配置同码 =====
+                PermissionRule.get("/api/config/type/**", PermissionCodes.CONFIG_INSTANCES_READ),
+                PermissionRule.write("/api/config/type/**", PermissionCodes.CONFIG_INSTANCES_WRITE),
+
                 // ===== 熔断器配置 =====
                 PermissionRule.get("/api/config/circuit-breaker/**", PermissionCodes.CONFIG_CIRCUITBREAKER_READ),
                 PermissionRule.write("/api/config/circuit-breaker/**", PermissionCodes.CONFIG_CIRCUITBREAKER_WRITE),
@@ -127,6 +131,7 @@ public class PermissionRuleRegistry {
 
                 // ===== B2b 渐进补齐：安全审计扩展（ExtendedSecurityAuditController → 菜单「安全管理-审计日志」） =====
                 PermissionRule.get("/api/security/audit/extended/**", PermissionCodes.SECURITY_AUDIT_READ),
+                PermissionRule.write("/api/security/audit/extended/**", PermissionCodes.SECURITY_AUDIT_WRITE),
 
                 // ===== B2b 渐进补齐：慢查询分析（SlowQueryAnalysisController → 菜单「监控-慢查询」） =====
                 PermissionRule.get("/api/monitoring/slow-queries/**", PermissionCodes.MONITORING_SLOWQUERY_READ),
@@ -161,6 +166,12 @@ public class PermissionRuleRegistry {
 
                 // ===== 配额监控（QuotaMonitoringController） =====
                 PermissionRule.get("/api/monitoring/quota/**", PermissionCodes.MONITORING_QUOTA_READ),
+
+                // ===== 监控配置/运维端点（MonitoringController，#116） =====
+                // 注意：必须登记在 metrics/slow-queries/quota 的更具体 GET 规则之后（首条命中优先），
+                // 以免改写已生效的 monitoring:metrics|slowquery|quota:read 绑定。
+                PermissionRule.get("/api/monitoring/**", PermissionCodes.MONITORING_METRICS_READ),
+                PermissionRule.write("/api/monitoring/**", PermissionCodes.MONITORING_CONFIG_WRITE),
 
                 // ===== R2-P1-03：异常管理（原未登记，任意登录用户可访问） =====
                 PermissionRule.get("/api/exceptions/**", PermissionCodes.MONITORING_EXCEPTIONS_READ),

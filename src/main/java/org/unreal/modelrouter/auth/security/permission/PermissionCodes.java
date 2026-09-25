@@ -115,6 +115,8 @@ public final class PermissionCodes {
     public static final String MONITORING_EXCEPTIONS_READ = "monitoring:exceptions:read";
     /** 异常事件-写/清理（R2-P1-03） */
     public static final String MONITORING_EXCEPTIONS_WRITE = "monitoring:exceptions:write";
+    /** 监控配置/运维操作-写（#116：开关指标、降级、缓存清理、熔断强制操作等） */
+    public static final String MONITORING_CONFIG_WRITE = "monitoring:config:write";
 
     // ==================== tracing（链路追踪） ====================
 
@@ -135,6 +137,8 @@ public final class PermissionCodes {
     public static final String SECURITY_BLACKLIST_MANAGE = "security:blacklist:manage";
     /** 安全审计-读 */
     public static final String SECURITY_AUDIT_READ = "security:audit:read";
+    /** 安全审计-写（#116：扩展审计查询/批量写入/测试数据） */
+    public static final String SECURITY_AUDIT_WRITE = "security:audit:write";
     /** PII / 数据脱敏配置管理 */
     public static final String SECURITY_SANITIZATION_MANAGE = "security:sanitization:manage";
 
@@ -182,9 +186,10 @@ public final class PermissionCodes {
             MONITORING_ROUTING_READ,
             MONITORING_QUOTA_READ,
             MONITORING_EXCEPTIONS_READ, MONITORING_EXCEPTIONS_WRITE,
+            MONITORING_CONFIG_WRITE,
             TRACING_DASHBOARD_READ, TRACING_SEARCH_READ, TRACING_CONFIG_MANAGE,
             SECURITY_APIKEYS_MANAGE, SECURITY_JWTTOKENS_MANAGE,
-            SECURITY_BLACKLIST_MANAGE, SECURITY_AUDIT_READ,
+            SECURITY_BLACKLIST_MANAGE, SECURITY_AUDIT_READ, SECURITY_AUDIT_WRITE,
             SECURITY_SANITIZATION_MANAGE,
             SYSTEM_ACCOUNTS_MANAGE, SYSTEM_PERMISSIONS_MANAGE,
             AI_PLAYGROUND_USE,
