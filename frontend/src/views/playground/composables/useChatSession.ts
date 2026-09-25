@@ -1,6 +1,7 @@
 import { ref, computed, watch } from 'vue'
 import type { ChatMessage } from '../types/playground'
 import { uid } from '@/utils/uid'
+import { throttle } from '@/utils/throttle'
 
 export interface ChatSession {
   id: string
@@ -116,13 +117,14 @@ export function useChatSession() {
     saveToStorage()
   }
 
-  // 更新最后一条消息（用于流式更新）
+  // 更新最后一条消息（流式结束 / 非流式 / 错误时调用，确保最终内容立即落盘）
   const updateLastMessage = (content: string) => {
     if (!activeSession.value || activeSession.value.messages.length === 0) return
 
     const lastMessage = activeSession.value.messages[activeSession.value.messages.length - 1]
     lastMessage.content = content
     activeSession.value.updatedAt = new Date().toISOString()
+    saveToStorage()
   }
 
   // 清空当前会话消息
@@ -142,12 +144,14 @@ export function useChatSession() {
     saveToStorage()
   }
 
-  // 监听变化自动保存
+  // 监听变化自动保存：流式等高频变更合并为 400ms 一次（leading + trailing，
+  // 尾次调用保证最终内容不丢）；显式 saveToStorage() 的路径仍然立即落盘。
+  const scheduleSave = throttle(saveToStorage, 400)
   watch(
     () => sessions.value,
     () => {
       if (isInitialized.value) {
-        saveToStorage()
+        scheduleSave()
       }
     },
     { deep: true }
