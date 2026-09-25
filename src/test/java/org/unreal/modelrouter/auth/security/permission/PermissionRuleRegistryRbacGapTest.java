@@ -130,4 +130,47 @@ class PermissionRuleRegistryRbacGapTest {
         assertRuleCode(HttpMethod.GET, "/api/monitoring/quota/status",
                 PermissionCodes.MONITORING_QUOTA_READ, "配额监控");
     }
+
+    // ==================== #128 Phase 2: JWT 令牌运维端点 ====================
+
+    @Test
+    @DisplayName("/api/auth/jwt/cleanup 与 cleanup/stats 必须登记 security:jwttokens:manage（#128）")
+    void jwtCleanupEndpoints_haveTokenManageRule() {
+        assertRuleCode(HttpMethod.POST, "/api/auth/jwt/cleanup",
+                PermissionCodes.SECURITY_JWTTOKENS_MANAGE, "手动清理过期令牌");
+        assertRuleCode(HttpMethod.GET, "/api/auth/jwt/cleanup/stats",
+                PermissionCodes.SECURITY_JWTTOKENS_MANAGE, "清理统计");
+    }
+
+    @Test
+    @DisplayName("/api/auth/jwt/blacklist/stats 必须登记 security:blacklist:manage（#128）")
+    void blacklistStats_hasBlacklistManageRule() {
+        assertRuleCode(HttpMethod.GET, "/api/auth/jwt/blacklist/stats",
+                PermissionCodes.SECURITY_BLACKLIST_MANAGE, "黑名单统计");
+    }
+
+    @Test
+    @DisplayName("/api/auth/jwt/revoke/batch 必须登记 security:jwttokens:manage（#128，管理员批量撤销）")
+    void batchRevoke_hasTokenManageRule() {
+        assertRuleCode(HttpMethod.POST, "/api/auth/jwt/revoke/batch",
+                PermissionCodes.SECURITY_JWTTOKENS_MANAGE, "批量撤销令牌");
+    }
+
+    @Test
+    @DisplayName("/api/auth/jwt/tokens/{tokenId} 必须登记 security:jwttokens:manage（#128，管理员查看详情）")
+    void tokenDetails_hasTokenManageRule() {
+        assertRuleCode(HttpMethod.GET, "/api/auth/jwt/tokens/abc-123",
+                PermissionCodes.SECURITY_JWTTOKENS_MANAGE, "令牌详情");
+    }
+
+    @Test
+    @DisplayName("自助端点不得被新规则改写：revoke（非 batch）、tokens 列表、refresh 仍无规则（豁免清单管）")
+    void selfServiceEndpoints_stayUnregistered() {
+        assertTrue(registry.findRule(HttpMethod.POST, "/api/auth/jwt/revoke").isEmpty(),
+                "自助撤销不得登记规则（方法级 @PreAuthorize 约束属主）");
+        assertTrue(registry.findRule(HttpMethod.GET, "/api/auth/jwt/tokens").isEmpty(),
+                "自助令牌列表不得登记规则（会破坏普通用户管理本人令牌）");
+        assertTrue(registry.findRule(HttpMethod.POST, "/api/auth/jwt/refresh").isEmpty(),
+                "自助刷新不得登记规则");
+    }
 }

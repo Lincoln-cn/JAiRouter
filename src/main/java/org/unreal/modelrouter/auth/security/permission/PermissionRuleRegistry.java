@@ -183,7 +183,18 @@ public class PermissionRuleRegistry {
                 PermissionRule.get("/api/config/validation-rules", PermissionCodes.CONFIG_VALIDATION_READ),
 
                 // ===== PII / 脱敏配置管理（SanitizationConfigController） =====
-                PermissionRule.any("/api/config/sanitization/**", PermissionCodes.SECURITY_SANITIZATION_MANAGE)
+                PermissionRule.any("/api/config/sanitization/**", PermissionCodes.SECURITY_SANITIZATION_MANAGE),
+
+                // ===== #128 Phase 2: JWT 令牌运维端点（方法级 @PreAuthorize 均为 hasRole('ADMIN')） =====
+                // 登记规则使覆盖自检不再报缺口，且与 ApiKeyManagementController 同风格（URL 规则 + 方法级双保险）。
+                // 注意：GET /api/auth/jwt/tokens（自助列表）与 POST /api/auth/jwt/revoke（自助撤销）不在此列，
+                // 它们在 RbacExemptEndpoints 豁免清单中（方法级 @PreAuthorize 约束属主）。
+                // 具体路径必须登记在任何更宽泛模式之前（首条命中优先）。
+                PermissionRule.get("/api/auth/jwt/blacklist/stats", PermissionCodes.SECURITY_BLACKLIST_MANAGE),
+                PermissionRule.get("/api/auth/jwt/cleanup/stats", PermissionCodes.SECURITY_JWTTOKENS_MANAGE),
+                PermissionRule.write("/api/auth/jwt/cleanup", PermissionCodes.SECURITY_JWTTOKENS_MANAGE),
+                PermissionRule.write("/api/auth/jwt/revoke/batch", PermissionCodes.SECURITY_JWTTOKENS_MANAGE),
+                PermissionRule.get("/api/auth/jwt/tokens/{tokenId}", PermissionCodes.SECURITY_JWTTOKENS_MANAGE)
         );
     }
 
