@@ -20,6 +20,8 @@ import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.monitor.tracing.encryption.TracingEncryptionService;
 import org.unreal.modelrouter.monitor.tracing.sanitization.TracingSanitizationService;
 import org.unreal.modelrouter.monitor.tracing.security.TracingSecurityManager;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.HashMap;
 import java.util.List;
@@ -178,66 +180,78 @@ public class TracingSecurityController {
     
     /**
      * 轮换加密密钥
+     *
+     * <p><b>线程语义（issue #125）</b>：WebFlux 同步签名端点运行在事件循环上，原先的
+     * {@code block(10s)} 会把 Netty IO 线程钉住最长 10 秒。改为返回 {@code Mono} 直接
+     * 串联服务 {@code Mono}，并把服务侧的同步阻塞工作切到
+     * {@link Schedulers#boundedElastic()}；状态码与响应体与同步实现完全一致。</p>
      */
     @PostMapping("/encryption/rotate-key/{traceId}")
     @Operation(summary = "轮换加密密钥", description = "轮换指定追踪的加密密钥")
     @ApiResponse(responseCode = "200", description = "成功轮换密钥")
-    public ResponseEntity<RouterResponse<Boolean>> rotateEncryptionKey(
+    public Mono<ResponseEntity<RouterResponse<Boolean>>> rotateEncryptionKey(
             @PathVariable("traceId") final String traceId) {
-        try {
-            Boolean result = tracingEncryptionService.rotateEncryptionKey(traceId)
-                    .block(java.time.Duration.ofSeconds(10));
-            if (Boolean.TRUE.equals(result)) {
-                log.info("成功轮换加密密钥: {}", traceId);
-                return ResponseEntity.ok(RouterResponse.success(result, "轮换加密密钥成功"));
-            } else {
-                log.warn("轮换加密密钥失败: {}", traceId);
-                return ResponseEntity.status(ApiException.resolveStatus("INTERNAL_ERROR")).body(RouterResponse.error("轮换加密密钥失败"));
-            }
-        } catch (Exception e) {
-            log.error("轮换加密密钥异常: {}", traceId, e);
-            return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("轮换加密密钥异常: " + e.getMessage()));
-        }
+        return Mono.defer(() -> tracingEncryptionService.rotateEncryptionKey(traceId))
+                .subscribeOn(Schedulers.boundedElastic())
+                .map(result -> {
+                    if (Boolean.TRUE.equals(result)) {
+                        log.info("成功轮换加密密钥: {}", traceId);
+                        return ResponseEntity.ok(RouterResponse.success(result, "轮换加密密钥成功"));
+                    } else {
+                        log.warn("轮换加密密钥失败: {}", traceId);
+                        return ResponseEntity.status(ApiException.resolveStatus("INTERNAL_ERROR"))
+                                .body(RouterResponse.<Boolean>error("轮换加密密钥失败"));
+                    }
+                })
+                .defaultIfEmpty(ResponseEntity.status(ApiException.resolveStatus("INTERNAL_ERROR"))
+                        .body(RouterResponse.<Boolean>error("轮换加密密钥失败")))
+                .onErrorResume(e -> {
+                    log.error("轮换加密密钥异常: {}", traceId, e);
+                    return Mono.just(ResponseEntity.internalServerError()
+                            .body(RouterResponse.<Boolean>error("轮换加密密钥异常: " + e.getMessage())));
+                });
     }
-    
+
     /**
      * 清理过期数据
      */
     @PostMapping("/encryption/cleanup")
     @Operation(summary = "清理过期数据", description = "清理过期的加密追踪数据")
     @ApiResponse(responseCode = "200", description = "成功清理过期数据")
-    public ResponseEntity<RouterResponse<Integer>> cleanupExpiredData() {
-        try {
-            Integer cleanupCount = tracingEncryptionService.cleanupExpiredData()
-                    .block(java.time.Duration.ofSeconds(10));
-            log.info("成功清理过期数据，清理数量: {}", cleanupCount);
-            return ResponseEntity.ok(RouterResponse.success(cleanupCount, "清理过期数据成功"));
-        } catch (Exception e) {
-            log.error("清理过期数据失败", e);
-            return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("清理过期数据失败: " + e.getMessage()));
-        }
+    public Mono<ResponseEntity<RouterResponse<Integer>>> cleanupExpiredData() {
+        return Mono.defer(() -> tracingEncryptionService.cleanupExpiredData())
+                .subscribeOn(Schedulers.boundedElastic())
+                .map(cleanupCount -> {
+                    log.info("成功清理过期数据，清理数量: {}", cleanupCount);
+                    return ResponseEntity.ok(RouterResponse.success(cleanupCount, "清理过期数据成功"));
+                })
+                .defaultIfEmpty(ResponseEntity.ok(RouterResponse.<Integer>success(null, "清理过期数据成功")))
+                .onErrorResume(e -> {
+                    log.error("清理过期数据失败", e);
+                    return Mono.just(ResponseEntity.internalServerError()
+                            .body(RouterResponse.<Integer>error("清理过期数据失败: " + e.getMessage())));
+                });
     }
-    
+
     /**
      * 安全清理追踪数据
      */
     @DeleteMapping("/encryption/data/{traceId}")
     @Operation(summary = "安全清理追踪数据", description = "安全清理指定追踪的所有数据")
     @ApiResponse(responseCode = "200", description = "成功清理追踪数据")
-    public ResponseEntity<RouterResponse<Void>> secureCleanupTraceData(
+    public Mono<ResponseEntity<RouterResponse<Void>>> secureCleanupTraceData(
             @PathVariable("traceId") final String traceId) {
-        try {
-            tracingEncryptionService.secureCleanupTraceData(traceId)
-                    .block(java.time.Duration.ofSeconds(10));
-            log.info("成功安全清理追踪数据: {}", traceId);
-            return ResponseEntity.ok(RouterResponse.success(null, "安全清理追踪数据成功"));
-        } catch (Exception e) {
-            log.error("安全清理追踪数据失败: {}", traceId, e);
-            return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("安全清理追踪数据失败: " + e.getMessage()));
-        }
+        return Mono.defer(() -> tracingEncryptionService.secureCleanupTraceData(traceId))
+                .subscribeOn(Schedulers.boundedElastic())
+                .then(Mono.fromCallable(() -> {
+                    log.info("成功安全清理追踪数据: {}", traceId);
+                    return ResponseEntity.ok(RouterResponse.<Void>success(null, "安全清理追踪数据成功"));
+                }))
+                .onErrorResume(e -> {
+                    log.error("安全清理追踪数据失败: {}", traceId, e);
+                    return Mono.just(ResponseEntity.internalServerError()
+                            .body(RouterResponse.<Void>error("安全清理追踪数据失败: " + e.getMessage())));
+                });
     }
     
     // ========================================

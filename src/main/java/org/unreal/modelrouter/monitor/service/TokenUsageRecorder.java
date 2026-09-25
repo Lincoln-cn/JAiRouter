@@ -53,17 +53,33 @@ public class TokenUsageRecorder {
             .defaultIfEmpty(null)
             .publishOn(Schedulers.boundedElastic())
             .subscribe(
-                userId -> doRecordTokenUsage(
-                    serviceType, modelName, provider, instanceName, instanceUrl,
-                    promptTokens, completionTokens, totalTokens, traceId,
-                    userId, isSuccess, errorCode, errorMessage, responseTimeMs
-                ),
+                userId -> {
+                    // 阻塞写入（JPA）不得落在非阻塞线程上（issue #115）
+                    if (Schedulers.isInNonBlockingThread()) {
+                        Schedulers.boundedElastic().schedule(() -> doRecordTokenUsage(
+                            serviceType, modelName, provider, instanceName, instanceUrl,
+                            promptTokens, completionTokens, totalTokens, traceId,
+                            userId, isSuccess, errorCode, errorMessage, responseTimeMs
+                        ));
+                        return;
+                    }
+                    doRecordTokenUsage(
+                        serviceType, modelName, provider, instanceName, instanceUrl,
+                        promptTokens, completionTokens, totalTokens, traceId,
+                        userId, isSuccess, errorCode, errorMessage, responseTimeMs
+                    );
+                },
                 error -> log.error("获取用户信息失败", error)
             );
     }
 
     /**
      * 执行 Token 使用量记录（无用户认证）
+     *
+     * <p><b>线程语义（issue #115）</b>：落库链路（JPA {@code @Transactional} 写入）是阻塞调用，
+     * 而调用方位于 {@code doOnComplete} 等 Reactor 非阻塞线程（Netty 事件循环）上时，
+     * 把工作整体交给 {@link Schedulers#boundedElastic()} 执行后立即返回；
+     * 非 Reactor 线程仍内联执行，保持“方法返回即已落库”的既有语义。</p>
      */
     public void recordTokenUsageNoAuth(
             final String serviceType,
@@ -81,6 +97,15 @@ public class TokenUsageRecorder {
             final String errorMessage,
             final Long responseTimeMs) {
 
+        // 阻塞 JPA 写入不得阻塞 EventLoop（issue #115）
+        if (Schedulers.isInNonBlockingThread()) {
+            Schedulers.boundedElastic().schedule(() -> doRecordTokenUsageWithClientIp(
+                serviceType, modelName, provider, instanceName, instanceUrl,
+                promptTokens, completionTokens, totalTokens, traceId,
+                clientIp, null, isSuccess, errorCode, errorMessage, responseTimeMs
+            ));
+            return;
+        }
         doRecordTokenUsageWithClientIp(
             serviceType, modelName, provider, instanceName, instanceUrl,
             promptTokens, completionTokens, totalTokens, traceId,

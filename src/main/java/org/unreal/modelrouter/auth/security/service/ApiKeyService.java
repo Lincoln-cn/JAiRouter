@@ -279,6 +279,11 @@ public class ApiKeyService {
     /**
      * 更新 API Key Token 使用量
      *
+     * <p><b>线程语义（issue #115）</b>：{@code saveApiKeysToStore} 是整仓序列化 + 文件/Redis 写入的
+     * 阻塞调用，而调用方位于流式 {@code doOnComplete} 等 Reactor 非阻塞线程（Netty 事件循环）上时，
+     * 把工作整体交给 {@link reactor.core.scheduler.Schedulers#boundedElastic()} 执行后立即返回；
+     * 非 Reactor 线程仍内联执行，保持“方法返回即已写入”的既有语义。</p>
+     *
      * @param kid   API Key ID
      * @param tokens 消耗的 Token 数
      */
@@ -286,6 +291,20 @@ public class ApiKeyService {
         if (tokens <= 0) {
             return;
         }
+        // 阻塞存储写入不得阻塞 EventLoop（issue #115）
+        if (reactor.core.scheduler.Schedulers.isInNonBlockingThread()) {
+            reactor.core.scheduler.Schedulers.boundedElastic().schedule(() -> doUpdateTokenUsage(kid, tokens));
+            return;
+        }
+        doUpdateTokenUsage(kid, tokens);
+    }
+
+    /**
+     * 更新 API Key Token 使用量的实际实现（阻塞：全量写存储）.
+     *
+     * <p>必须运行在可阻塞线程上；由 {@link #updateTokenUsage(String, long)} 负责选择执行线程。</p>
+     */
+    private void doUpdateTokenUsage(String kid, long tokens) {
         String kh = keyIdIndex.get(kid);
         if (kh == null) {
             log.warn("API Key不存在: {}", kid);

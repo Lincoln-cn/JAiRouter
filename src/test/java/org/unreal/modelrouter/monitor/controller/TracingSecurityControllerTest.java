@@ -14,11 +14,16 @@ import org.unreal.modelrouter.monitor.tracing.encryption.TracingEncryptionServic
 import org.unreal.modelrouter.monitor.tracing.sanitization.TracingSanitizationService;
 import org.unreal.modelrouter.monitor.tracing.security.TracingSecurityManager;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -240,7 +245,8 @@ class TracingSecurityControllerTest {
         void rotateSuccess() {
             when(tracingEncryptionService.rotateEncryptionKey("trace-1")).thenReturn(Mono.just(true));
 
-            ResponseEntity<RouterResponse<Boolean>> response = controller.rotateEncryptionKey("trace-1");
+            ResponseEntity<RouterResponse<Boolean>> response =
+                    controller.rotateEncryptionKey("trace-1").block(java.time.Duration.ofSeconds(5));
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());
@@ -252,7 +258,8 @@ class TracingSecurityControllerTest {
         void rotateFailed() {
             when(tracingEncryptionService.rotateEncryptionKey("trace-1")).thenReturn(Mono.just(false));
 
-            ResponseEntity<RouterResponse<Boolean>> response = controller.rotateEncryptionKey("trace-1");
+            ResponseEntity<RouterResponse<Boolean>> response =
+                    controller.rotateEncryptionKey("trace-1").block(java.time.Duration.ofSeconds(5));
 
             assertNotNull(response.getBody());
             assertFalse(response.getBody().isSuccess());
@@ -264,7 +271,8 @@ class TracingSecurityControllerTest {
             when(tracingEncryptionService.rotateEncryptionKey(any()))
                     .thenThrow(new RuntimeException("Test error"));
 
-            ResponseEntity<RouterResponse<Boolean>> response = controller.rotateEncryptionKey("trace-1");
+            ResponseEntity<RouterResponse<Boolean>> response =
+                    controller.rotateEncryptionKey("trace-1").block(java.time.Duration.ofSeconds(5));
 
             assertEquals(500, response.getStatusCode().value());
             assertFalse(response.getBody().isSuccess());
@@ -280,7 +288,8 @@ class TracingSecurityControllerTest {
         void cleanupSuccess() {
             when(tracingEncryptionService.cleanupExpiredData()).thenReturn(Mono.just(10));
 
-            ResponseEntity<RouterResponse<Integer>> response = controller.cleanupExpiredData();
+            ResponseEntity<RouterResponse<Integer>> response =
+                    controller.cleanupExpiredData().block(java.time.Duration.ofSeconds(5));
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());
@@ -293,7 +302,8 @@ class TracingSecurityControllerTest {
             when(tracingEncryptionService.cleanupExpiredData())
                     .thenThrow(new RuntimeException("Test error"));
 
-            ResponseEntity<RouterResponse<Integer>> response = controller.cleanupExpiredData();
+            ResponseEntity<RouterResponse<Integer>> response =
+                    controller.cleanupExpiredData().block(java.time.Duration.ofSeconds(5));
 
             assertEquals(500, response.getStatusCode().value());
             assertFalse(response.getBody().isSuccess());
@@ -309,7 +319,8 @@ class TracingSecurityControllerTest {
         void cleanupSuccess() {
             when(tracingEncryptionService.secureCleanupTraceData("trace-1")).thenReturn(Mono.empty());
 
-            ResponseEntity<RouterResponse<Void>> response = controller.secureCleanupTraceData("trace-1");
+            ResponseEntity<RouterResponse<Void>> response =
+                    controller.secureCleanupTraceData("trace-1").block(java.time.Duration.ofSeconds(5));
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());
@@ -321,10 +332,93 @@ class TracingSecurityControllerTest {
             when(tracingEncryptionService.secureCleanupTraceData(any()))
                     .thenThrow(new RuntimeException("Test error"));
 
-            ResponseEntity<RouterResponse<Void>> response = controller.secureCleanupTraceData("trace-1");
+            ResponseEntity<RouterResponse<Void>> response =
+                    controller.secureCleanupTraceData("trace-1").block(java.time.Duration.ofSeconds(5));
 
             assertEquals(500, response.getStatusCode().value());
             assertFalse(response.getBody().isSuccess());
+        }
+    }
+
+    // ========================================
+    // issue #125：加密管理端点必须是响应式签名，不得在事件循环上 block
+    // ========================================
+
+    @Nested
+    @DisplayName("加密管理端点响应式线程语义（issue #125）")
+    class EncryptionHandlersReactiveContractTests {
+
+        @Test
+        @DisplayName("三个加密端点的处理方法返回 Mono（HTTP 契约不变）")
+        void handlersReturnMono() throws Exception {
+            assertTrue(Mono.class.isAssignableFrom(TracingSecurityController.class
+                            .getMethod("rotateEncryptionKey", String.class).getReturnType()),
+                    "rotateEncryptionKey 必须返回 Mono（不得在方法内 block）");
+            assertTrue(Mono.class.isAssignableFrom(TracingSecurityController.class
+                            .getMethod("cleanupExpiredData").getReturnType()),
+                    "cleanupExpiredData 必须返回 Mono（不得在方法内 block）");
+            assertTrue(Mono.class.isAssignableFrom(TracingSecurityController.class
+                            .getMethod("secureCleanupTraceData", String.class).getReturnType()),
+                    "secureCleanupTraceData 必须返回 Mono（不得在方法内 block）");
+        }
+
+        @Test
+        @DisplayName("非阻塞线程上调用处理方法：立即返回 Mono，不在事件循环上 block 等待服务")
+        void handlersDoNotBlockOnNonBlockingThread() throws Exception {
+            // 服务 Mono 永不完成：若处理方法内残留 block(10s)，调用会抛 ISE 或卡住 10 秒。
+            // lenient：修复后处理方法只组装不订阅，存根不会被消费（这正是“不 block”的证据）。
+            lenient().when(tracingEncryptionService.rotateEncryptionKey(any())).thenReturn(Mono.never());
+            lenient().when(tracingEncryptionService.cleanupExpiredData()).thenReturn(Mono.never());
+            lenient().when(tracingEncryptionService.secureCleanupTraceData(any())).thenReturn(Mono.never());
+
+            final AtomicReference<Throwable> error = new AtomicReference<>();
+            final AtomicReference<Object> rotate = new AtomicReference<>();
+            final AtomicReference<Object> cleanup = new AtomicReference<>();
+            final AtomicReference<Object> secure = new AtomicReference<>();
+            final CountDownLatch returned = new CountDownLatch(1);
+            Schedulers.parallel().schedule(() -> {
+                try {
+                    assertTrue(Schedulers.isInNonBlockingThread(), "前置条件：parallel 属非阻塞线程");
+                    rotate.set(controller.rotateEncryptionKey("trace-1"));
+                    cleanup.set(controller.cleanupExpiredData());
+                    secure.set(controller.secureCleanupTraceData("trace-1"));
+                } catch (Throwable t) {
+                    error.set(t);
+                } finally {
+                    returned.countDown();
+                }
+            });
+
+            assertTrue(returned.await(2, TimeUnit.SECONDS),
+                    "处理方法必须立即返回 Mono（不得在事件循环上 block 等待服务，旧实现在此阻塞 10s）");
+            assertNull(error.get(),
+                    "非阻塞线程上调用处理方法不得抛出（残留 block() 会抛 IllegalStateException）");
+            assertNotNull(rotate.get());
+            assertNotNull(cleanup.get());
+            assertNotNull(secure.get());
+        }
+
+        @Test
+        @DisplayName("服务侧阻塞工作在 boundedElastic 上执行，响应载荷与同步实现一致")
+        void serviceWorkRunsOnBoundedElasticAndPayloadUnchanged() {
+            final AtomicBoolean serviceOnNonBlockingThread = new AtomicBoolean(true);
+            final AtomicReference<String> serviceThread = new AtomicReference<>();
+            when(tracingEncryptionService.rotateEncryptionKey("trace-1")).thenReturn(Mono.defer(() -> {
+                serviceOnNonBlockingThread.set(Schedulers.isInNonBlockingThread());
+                serviceThread.set(Thread.currentThread().getName());
+                return Mono.just(true);
+            }));
+
+            final ResponseEntity<RouterResponse<Boolean>> response =
+                    controller.rotateEncryptionKey("trace-1").block(java.time.Duration.ofSeconds(5));
+
+            assertEquals(200, response.getStatusCode().value());
+            assertTrue(response.getBody().isSuccess());
+            assertTrue(response.getBody().getData());
+            assertFalse(serviceOnNonBlockingThread.get(),
+                    "服务侧同步工作不得在 Reactor 非阻塞线程上执行");
+            assertTrue(serviceThread.get().contains("boundedElastic"),
+                    "服务侧工作应在 boundedElastic 上执行，实际: " + serviceThread.get());
         }
     }
 
