@@ -32,8 +32,10 @@ public class RateLimitManager {
 
     /* ---------------- 三级限流器 ---------------- */
     private volatile RateLimiter globalLimiter;                     // 全局
-    private final Map<ModelServiceRegistry.ServiceType, RateLimiter> serviceLimiters =
-            new EnumMap<>(ModelServiceRegistry.ServiceType.class);  // 服务级
+    // #121: 服务级限流器与 instanceLimiters/ruleLimiters 一致使用 ConcurrentHashMap，
+    // 配置重载时通过 volatile 引用整体替换，避免 EnumMap 在读路径上的并发修改风险
+    private volatile Map<ModelServiceRegistry.ServiceType, RateLimiter> serviceLimiters =
+            new ConcurrentHashMap<>();                               // 服务级
     private final Map<String, RateLimiter> instanceLimiters =
             new ConcurrentHashMap<>();                               // 实例级
     private final Map<String, RateLimiter> ruleLimiters =
@@ -368,21 +370,23 @@ public class RateLimitManager {
 
     /**
      * 更新配置
+     * #121: serviceLimiters 以 volatile 引用整体替换（而非 clear+putAll），
+     * 读线程始终看到完整一致的旧表或新表，不会观察到中间空状态。
      */
     public synchronized void updateConfiguration() {
         LOGGER.info("Reloading rate limiters");
-        var oldSvc = new EnumMap<>(serviceLimiters);
+        final Map<ModelServiceRegistry.ServiceType, RateLimiter> oldSvc = serviceLimiters;
         var oldInst = new ConcurrentHashMap<>(instanceLimiters);
         // v2.7.10: clientIpRateLimiterCache has built-in cleanup, no need to backup/restore
 
         try {
-            serviceLimiters.clear();
+            serviceLimiters = new ConcurrentHashMap<>();
             instanceLimiters.clear();
             // v2.7.10: Caffeine cache auto-expires, no explicit clear needed
             initializeRateLimiters();
             LOGGER.info("Reloaded successfully");
         } catch (Exception e) {
-            serviceLimiters.putAll(oldSvc);
+            serviceLimiters = oldSvc;
             instanceLimiters.putAll(oldInst);
             LOGGER.error("Reload failed, rollback. Error: {}", e.getMessage());
             throw new RuntimeException("Rate limit reload failed", e);
