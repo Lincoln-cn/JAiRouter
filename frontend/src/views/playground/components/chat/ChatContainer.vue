@@ -149,7 +149,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Setting, Plus, Delete, ChatDotRound, Cpu } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
@@ -240,6 +240,11 @@ const suggestions = computed(() => [
 onMounted(() => {
   initialize()
   initializeData()
+})
+
+// 卸载时中止进行中的流，避免 reader 循环在组件销毁后继续消费
+onBeforeUnmount(() => {
+  cancelStream()
 })
 
 // 监听消息变化，自动滚动到底部

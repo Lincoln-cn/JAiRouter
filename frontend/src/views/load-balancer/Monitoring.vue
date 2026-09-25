@@ -304,6 +304,8 @@ const clearingHistory = ref(false)
 const loadingEvents = ref(false)
 let ws: WebSocket | null = null
 let reconnectTimer: number | null = null
+// 主动断开标志：disconnectWebSocket 置 true，避免 close 事件再排重连
+let isManualClose = false
 
 const { t } = useI18n()
 const router = useRouter()
@@ -400,6 +402,7 @@ const loadHistory = async () => {
 }
 
 const connectWebSocket = () => {
+  isManualClose = false
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   const token = localStorage.getItem('admin_token')
   const qs = token ? `?token=${encodeURIComponent(token)}` : ''
@@ -437,17 +440,20 @@ const connectWebSocket = () => {
 
   ws.onclose = () => {
     wsConnected.value = false
+    if (isManualClose) return
     reconnectTimer = window.setTimeout(() => {
       connectWebSocket()
     }, 3000)
   }
 
   ws.onerror = (error) => {
+    if (isManualClose) return
     console.error('WebSocket error:', error)
   }
 }
 
 const disconnectWebSocket = () => {
+  isManualClose = true
   if (reconnectTimer) {
     clearTimeout(reconnectTimer)
     reconnectTimer = null
