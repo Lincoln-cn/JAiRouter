@@ -121,7 +121,7 @@
       <MessageList
         :messages="messages"
         :loading="isLoading"
-        :streaming-content="streamingContent"
+        :streaming-content="streamingDisplay"
         @copy="handleCopyMessage"
         @regenerate="handleRegenerateMessage"
       />
@@ -163,6 +163,7 @@ import { useRoutePreselect, preselectInstanceName } from '@/composables/useRoute
 import { sendServiceRequest } from '@/api/playground'
 import type { ChatMessage, ChatRequestConfig } from '../../types/playground'
 import { parseErrorMessage, getErrorSuggestion } from '../../utils/errorHandler'
+import { throttle } from '@/utils/throttle'
 
 const { t } = useI18n()
 
@@ -175,6 +176,16 @@ const showConfig = ref(false)
 const selectedModel = ref('')
 const isLoading = ref(false)
 const streamingContent = ref('')
+// 流式期间喂给 MarkdownRenderer 的节流快照，避免每个 token 全量重解析
+const streamingDisplay = ref('')
+const scheduleStreamingDisplay = throttle(() => {
+  streamingDisplay.value = streamingContent.value
+}, 150)
+const resetStreamingState = () => {
+  scheduleStreamingDisplay.cancel()
+  streamingContent.value = ''
+  streamingDisplay.value = ''
+}
 
 // 配置
 const chatConfig = ref<Partial<ChatRequestConfig>>({
@@ -242,29 +253,30 @@ onMounted(() => {
   initializeData()
 })
 
-// 监听消息变化，自动滚动到底部
-watch(
-  messages,
-  () => {
-    nextTick(() => {
-      scrollToBottom()
-    })
-  },
-  { deep: true }
-)
-
-watch(streamingContent, () => {
-  nextTick(() => {
-    scrollToBottom()
-  })
-})
-
 // 滚动到底部
 const scrollToBottom = () => {
   if (messageListRef.value) {
     messageListRef.value.scrollTop = messageListRef.value.scrollHeight
   }
 }
+const scheduleScrollToBottom = throttle(scrollToBottom, 100)
+
+// 监听消息变化，自动滚动到底部（scrollToBottom 本身已节流，避免流式期间每 token 触发）
+watch(
+  messages,
+  () => {
+    nextTick(() => {
+      scheduleScrollToBottom()
+    })
+  },
+  { deep: true }
+)
+
+watch(streamingDisplay, () => {
+  nextTick(() => {
+    scheduleScrollToBottom()
+  })
+})
 
 // 处理建议点击
 const handleSuggestionClick = (suggestion: string) => {
@@ -287,7 +299,7 @@ const handleSendMessage = async (content: string) => {
 
   // 准备请求
   isLoading.value = true
-  streamingContent.value = ''
+  resetStreamingState()
 
   // 添加空的助手消息（用于流式更新）
   const assistantMessage: ChatMessage = {
@@ -327,11 +339,13 @@ const handleSendMessage = async (content: string) => {
       const fullContent = await handleStreamResponse(response, {
         onChunk: (chunk) => {
           streamingContent.value += chunk
-          updateLastMessage(streamingContent.value)
+          // 不在此处 updateLastMessage：流式期间会话对象每 token 深层变更会触发
+          // 全量 JSON 落盘与 deep watch；最终内容由 onComplete / catch 统一写入。
+          scheduleStreamingDisplay()
         },
         onComplete: (content) => {
           updateLastMessage(content)
-          streamingContent.value = ''
+          resetStreamingState()
         }
       })
     } else {
@@ -347,6 +361,7 @@ const handleSendMessage = async (content: string) => {
     const suggestion = getErrorSuggestion(error)
 
     updateLastMessage(`❌ ${t('playgroundChat.messages.errorTitle')}: ${errorMessage}`)
+    resetStreamingState()
 
     if (suggestion) {
       ElMessage({
@@ -408,7 +423,7 @@ const handleRegenerateMessage = async () => {
 
   // 准备请求
   isLoading.value = true
-  streamingContent.value = ''
+  resetStreamingState()
 
   // 添加空的助手消息（用于流式更新）
   const assistantMessage: ChatMessage = {
@@ -448,11 +463,12 @@ const handleRegenerateMessage = async () => {
       const fullContent = await handleStreamResponse(response, {
         onChunk: (chunk) => {
           streamingContent.value += chunk
-          updateLastMessage(streamingContent.value)
+          // 同 handleSendMessage：最终内容由 onComplete / catch 落盘
+          scheduleStreamingDisplay()
         },
         onComplete: (content) => {
           updateLastMessage(content)
-          streamingContent.value = ''
+          resetStreamingState()
         }
       })
     } else {
@@ -468,6 +484,7 @@ const handleRegenerateMessage = async () => {
     const suggestion = getErrorSuggestion(error)
 
     updateLastMessage(`❌ ${t('playgroundChat.messages.errorTitle')}: ${errorMessage}`)
+    resetStreamingState()
 
     if (suggestion) {
       ElMessage({
