@@ -11,6 +11,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.http.server.reactive.MockServerHttpResponse;
 import org.springframework.mock.web.server.MockServerWebExchange;
@@ -27,6 +28,7 @@ import org.unreal.modelrouter.auth.security.quota.QuotaLedgerService;
 import org.unreal.modelrouter.auth.security.quota.QuotaProperties;
 import org.unreal.modelrouter.auth.security.quota.QuotaRequest;
 import org.unreal.modelrouter.auth.security.quota.QuotaReservation;
+import org.unreal.modelrouter.auth.security.quota.QuotaSettlement;
 import org.unreal.modelrouter.auth.security.quota.QuotaUsage;
 import org.unreal.modelrouter.auth.security.quota.QuotaWindow;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
@@ -34,6 +36,7 @@ import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.ChatDTO;
 import org.unreal.modelrouter.common.exceptionhandler.ReactiveGlobalExceptionHandler;
 import org.unreal.modelrouter.config.core.ResponseCacheProperties;
+import org.unreal.modelrouter.persistence.jpa.repository.QuotaLedgerRepository;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.ServiceCapability;
 import org.unreal.modelrouter.router.cache.CaffeineCacheStore;
@@ -53,6 +56,8 @@ import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -117,7 +122,7 @@ class ServiceRequestHandlerQuotaIntegrationTest {
 
     private InMemoryQuotaLedgerRepository repository;
     private QuotaProperties quotaProperties;
-    private QuotaLedgerService ledgerService;
+    private CountingQuotaLedgerService ledgerService;
     private QuotaEnforcementService enforcementService;
     private ServiceRequestHandler handler;
     private Map<String, ApiKey> apiKeyCache;
@@ -144,7 +149,7 @@ class ServiceRequestHandlerQuotaIntegrationTest {
         when(apiKeyService.getApiKeyCache()).thenReturn(apiKeyCache);
         when(apiKeyService.getKeyIdIndex()).thenReturn(keyIdIndex);
 
-        ledgerService = new QuotaLedgerService(repository.proxy(), quotaProperties, clock);
+        ledgerService = new CountingQuotaLedgerService(repository.proxy(), quotaProperties, clock);
         enforcementService = new QuotaEnforcementService(ledgerService, quotaProperties, apiKeyService, clock);
 
         handler = new ServiceRequestHandler(adapterRegistry, registry, serviceStateManager, null, null);
@@ -354,6 +359,54 @@ class ServiceRequestHandlerQuotaIntegrationTest {
         assertEquals(0L, requestCount(QuotaWindow.DAY), "缓存命中不消耗日请求配额");
     }
 
+    // ==================== issue #119: 预留中段失败回滚 ====================
+
+    @Test
+    @DisplayName("issue #119: selectInstance 失败：预留必须恰好回滚一次，不得泄漏额度")
+    void selectInstanceFailure_shouldRollbackReservationExactlyOnce() throws Exception {
+        registerApiKey(1L, 0L, 0);
+        when(registry.selectInstance(any(), anyString(), anyString(), any()))
+                .thenThrow(new IllegalStateException("no instance available"));
+        final ServerWebExchange exchange = buildExchange(deterministicChat("hello!"));
+        final ServiceRequestExecutor executor = downstreamExecutor();
+
+        StepVerifier.create(invoke(exchange, executor))
+                .expectError(IllegalStateException.class)
+                .verify(Duration.ofSeconds(10));
+
+        assertEquals(1, ledgerService.settleInvocations(), "预留回滚必须恰好触发一次");
+        assertTrue(ledgerService.lastSettlement().failed(), "必须是失败回滚而非成功结算");
+        assertEquals(0L, requestCount(QuotaWindow.DAY), "失败请求不得泄漏 DAY 请求数");
+        assertEquals(0L, tokenCount(QuotaWindow.DAY), "失败请求不得泄漏 DAY token");
+        final QuotaReservation reservation = QuotaReservation.from(exchange.getRequest());
+        assertNotNull(reservation);
+        assertTrue(reservation.isSettled(), "凭据应已结算");
+        assertTrue(reservation.isFailed(), "凭据应标记为失败回滚");
+    }
+
+    @Test
+    @DisplayName("issue #119: 处理器路径 settleFailure 与兜底 net 叠加仍只结算一次")
+    void processorFailure_withSafetyNet_shouldSettleExactlyOnce() throws Exception {
+        registerApiKey(1L, 0L, 0);
+        final ServiceRequestExecutor executor = mock(ServiceRequestExecutor.class);
+        // 模拟 NonStreamingRequestProcessor 既有的 doOnError 回滚（处理器内结算点）
+        when(executor.execute(any(), any(), any())).thenAnswer(invocation -> {
+            final ServerHttpRequest request = invocation.getArgument(2);
+            return Mono.<ResponseEntity<?>>error(new IllegalStateException("downstream failed"))
+                    .doOnError(error -> QuotaReservation.settleFailure(QuotaReservation.from(request)));
+        });
+        final ServerWebExchange exchange = buildExchange(deterministicChat("hello!"));
+
+        StepVerifier.create(invoke(exchange, executor))
+                .expectError(IllegalStateException.class)
+                .verify(Duration.ofSeconds(10));
+
+        assertEquals(1, ledgerService.settleInvocations(),
+                "处理器回滚 + 处理器外兜底 net 不得重复冲正（恰一次结算）");
+        assertEquals(0L, requestCount(QuotaWindow.DAY));
+        assertEquals(0L, tokenCount(QuotaWindow.DAY));
+    }
+
     // ==================== 辅助方法 ====================
 
     /**
@@ -531,5 +584,39 @@ class ServiceRequestHandlerQuotaIntegrationTest {
         return new ChatDTO.Request("gpt-4",
                 List.of(new ChatDTO.Message("user", content, null)),
                 false, 256, 0.0, null, null, null, null, null, null, null);
+    }
+
+    /**
+     * 统计 settle 调用次数的真实账本（issue #119：验证回滚恰好一次）。
+     *
+     * <p>结算本身由 {@link org.unreal.modelrouter.auth.security.quota.QuotaReservation} 的
+     * {@code AtomicBoolean} 保证恰一次，这里只数真正到达账本的调用次数。</p>
+     */
+    private static final class CountingQuotaLedgerService extends QuotaLedgerService {
+
+        private final AtomicInteger settleInvocations = new AtomicInteger();
+
+        private final AtomicReference<QuotaSettlement> lastSettlement = new AtomicReference<>();
+
+        private CountingQuotaLedgerService(final QuotaLedgerRepository repository,
+                                           final QuotaProperties properties,
+                                           final Clock clock) {
+            super(repository, properties, clock);
+        }
+
+        @Override
+        public void settle(final QuotaSettlement settlement) {
+            settleInvocations.incrementAndGet();
+            lastSettlement.set(settlement);
+            super.settle(settlement);
+        }
+
+        private int settleInvocations() {
+            return settleInvocations.get();
+        }
+
+        private QuotaSettlement lastSettlement() {
+            return lastSettlement.get();
+        }
     }
 }

@@ -327,6 +327,13 @@ public class QuotaLedgerService {
      * 分布式模式使用 Redis Lua {@link RedisCounterBackend#INCREMENT_WITH_LIMIT_SCRIPT}
      * （超限由脚本回滚，返回空结果）。Redis 失败时按 fail-open 降级为普通预留。</p>
      *
+     * <p><b>多窗口原子性（issue #120）</b>：窗口之间无法做跨键原子提交（Redis 计数键按维度分散在
+     * 不同 hash slot，单脚本多键提交不兼容集群部署），因此采用「逐窗口 CAS + 超限时冲正」——
+     * 后续窗口被拒时，对前面已提交的窗口逐个撤销本请求的增量（本地 {@code -1/-tokens} +
+     * 分布式 {@code publish(-1/-tokens)}，含待补写增量的抵消）。每个窗口的准入判定仍是原子的，
+     * 并发突发不会超放；被拒请求不留残量。Redis 命令超时属“结果未知”，该窗口不做冲正
+     * （避免误减他人计数导致超放），残量留到窗口过期回收。</p>
+     *
      * @param request          预留请求
      * @param dayMaxRequests   日请求数限额（0=不限）
      * @param dayMaxTokens     日 token 限额（0=不限）
@@ -348,18 +355,26 @@ public class QuotaLedgerService {
             final LocalDateTime now = LocalDateTime.now(clock);
             final QuotaDimension dimension = request.dimension();
             final long tokens = Math.max(0L, request.estimatedTokens());
+            final List<ReserveCommit> committed = new ArrayList<>();
             for (final QuotaWindow window : windows) {
                 final long maxRequests = maxRequestsFor(window, dayMaxRequests, minuteMaxRequests);
                 final long maxTokens = maxTokensFor(window, dayMaxTokens);
                 if (maxRequests <= 0L && maxTokens <= 0L) {
                     // 该窗口无有效限额：普通累加，保证计数连续
+                    final QuotaCounterKey key = keyOf(dimension, window, now);
                     if (!distributed) {
-                        localBackend.incrementLocal(keyOf(dimension, window, now), 1L, tokens);
+                        localBackend.incrementLocal(key, 1L, tokens);
+                        committed.add(new ReserveCommit(key, true, false));
                     } else {
                         try {
-                            publish(keyOf(dimension, window, now), 1L, tokens, true);
+                            publish(key, 1L, tokens, true);
+                            committed.add(new ReserveCommit(key, false, true));
                         } catch (Exception e) {
                             markDegraded(classify(e));
+                            // 明确失败时增量已放回待补写（冲正可与之抵消）；超时结果未知，不冲正
+                            if (!isTimeout(e)) {
+                                committed.add(new ReserveCommit(key, false, true));
+                            }
                         }
                     }
                     continue;
@@ -369,8 +384,10 @@ public class QuotaLedgerService {
                     final long[] totals =
                             localBackend.incrementLocalWithLimit(key, 1L, tokens, maxRequests, maxTokens);
                     if (totals == null) {
+                        rollbackCommitted(committed, tokens);
                         return buildLimitViolation(window, maxRequests, maxTokens, key, now);
                     }
+                    committed.add(new ReserveCommit(key, true, false));
                     continue;
                 }
                 try {
@@ -378,9 +395,11 @@ public class QuotaLedgerService {
                             distributedBackend.incrementWithLimit(key, 1L, tokens, maxRequests, maxTokens));
                     if (result == null) {
                         // Lua 已回滚
+                        rollbackCommitted(committed, tokens);
                         return buildLimitViolation(window, maxRequests, maxTokens, key, now);
                     }
                     localBackend.incrementLocal(key, 1L, tokens);
+                    committed.add(new ReserveCommit(key, true, true));
                     clearDegraded();
                 } catch (Exception e) {
                     final String reason = classify(e);
@@ -390,7 +409,10 @@ public class QuotaLedgerService {
                         // 降级：回退普通预留，避免 Redis 故障时误杀
                         localBackend.incrementLocal(key, 1L, tokens);
                         localBackend.addPending(key, 1L, tokens);
+                        // 明确失败：待补写增量由冲正的 publish(-1) 抵消；超时结果未知，不冲正
+                        committed.add(new ReserveCommit(key, true, !isTimeout(e)));
                     } else {
+                        rollbackCommitted(committed, tokens);
                         return buildLimitViolation(window, maxRequests, maxTokens, key, now);
                     }
                 }
@@ -416,6 +438,44 @@ public class QuotaLedgerService {
 
     private static long maxTokensFor(final QuotaWindow window, final long dayMaxTokens) {
         return window == QuotaWindow.DAY ? dayMaxTokens : 0L;
+    }
+
+    /**
+     * 多窗口预留中一笔已提交的累加（issue #120 冲正用）。
+     *
+     * @param key              计数键
+     * @param localIncremented 本地累计是否已写入（冲正时用 {@code incrementLocalIfPresent(-1, -tokens)} 撤销）
+     * @param redisRollback    是否需要向分布式后端冲正（{@code publish(-1, -tokens)}，
+     *                         含“放回待补写增量”的抵消；结果未知的超时写入不冲正，避免误减他人计数）
+     */
+    private record ReserveCommit(QuotaCounterKey key, boolean localIncremented, boolean redisRollback) {
+    }
+
+    /**
+     * 冲正多窗口预留中已提交的累加（issue #120：后续窗口被拒时撤销前面窗口的本笔增量）。
+     *
+     * <p>只撤销本请求真正写入的部分：本地写过才做 {@code -1/-tokens}，分布式冲正走
+     * {@link #publish}（把待补写增量与 {@code -1} 合并后一次写出，或互相抵消为零不发命令）。
+     * 单个窗口冲正失败只记日志，不阻断其余窗口的撤销——账本是旁路能力。</p>
+     *
+     * @param committed 已提交窗口列表（按提交顺序，冲正按逆序执行）
+     * @param tokens    预留的估算 token 数
+     */
+    private void rollbackCommitted(final List<ReserveCommit> committed, final long tokens) {
+        for (int index = committed.size() - 1; index >= 0; index--) {
+            final ReserveCommit entry = committed.get(index);
+            try {
+                if (entry.localIncremented()) {
+                    localBackend.incrementLocalIfPresent(entry.key(), -1L, -tokens);
+                }
+                if (entry.redisRollback()) {
+                    publish(entry.key(), -1L, -tokens, true);
+                }
+            } catch (Exception e) {
+                log.warn("配额多窗口预留冲正失败（残量留待窗口过期回收）: window={}, windowStart={}, error={}",
+                    entry.key().window(), entry.key().windowStart(), e.toString());
+            }
+        }
     }
 
     private Optional<QuotaLimitViolation> buildLimitViolation(final QuotaWindow window,

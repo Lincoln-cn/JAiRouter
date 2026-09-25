@@ -37,6 +37,7 @@ import org.unreal.modelrouter.auth.security.model.ApiKeyAuthentication;
 import org.unreal.modelrouter.auth.security.model.JwtAuthentication;
 import org.unreal.modelrouter.auth.security.quota.QuotaEnforcementService;
 import org.unreal.modelrouter.auth.security.quota.QuotaLimitViolation;
+import org.unreal.modelrouter.auth.security.quota.QuotaReservation;
 import org.unreal.modelrouter.auth.security.quota.QuotaTokenEstimator;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.util.IpUtils;
@@ -338,10 +339,13 @@ public class ServiceRequestHandler {
 
         // 限流/缓存/配额/实例选择均为同步逻辑（含可能的 JPA/Redis block），订阅时放到
         // boundedElastic，避免在 Netty EventLoop 上执行并卡死整条 IO 线程
+        // issue #119: 预留之后（selectInstance / 适配器解析 / 处理器链路）的任何错误统一回滚预留。
+        // 回滚入口为 QuotaReservation 的恰一次结算，与处理器自身的 settleFailure 叠加不会重复冲正。
         return Mono.defer(() -> handleWithInstanceAdapterSync(
                         endpoint, modelName, authorization, httpRequest,
                         tracingContext, executor, exchange))
-                .subscribeOn(Schedulers.boundedElastic());
+                .subscribeOn(Schedulers.boundedElastic())
+                .doOnError(error -> QuotaReservation.settleFailure(QuotaReservation.from(httpRequest)));
     }
 
     private Mono<ResponseEntity<?>> handleWithInstanceAdapterSync(
