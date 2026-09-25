@@ -27,14 +27,6 @@ playgroundRequest.interceptors.request.use(
     const startTime = Date.now()
     config.metadata = { startTime }
     
-    // 记录请求信息用于调试
-    console.log('Playground请求:', {
-      method: config.method?.toUpperCase(),
-      url: config.url,
-      headers: config.headers,
-      data: config.data
-    })
-    
     // 添加JWT token
     const token = localStorage.getItem('admin_token')
     if (token && config.headers) {

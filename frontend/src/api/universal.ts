@@ -55,14 +55,6 @@ class UniversalApiClient {
         config.headers['Jairouter_Token'] = token
       }
 
-      // 记录请求信息用于调试
-      console.log('Universal请求:', {
-        method: config.method?.toUpperCase(),
-        url: config.url,
-        headers: config.headers,
-        hasBody: !!apiRequest.body
-      })
-
       // 处理请求体
       if (apiRequest.body) {
         if (apiRequest.files && apiRequest.files.length > 0) {
@@ -186,9 +178,7 @@ class UniversalApiClient {
         method: fetchConfig.method,
         originalUrl: apiRequest.endpoint,
         fullUrl,
-        headers,
-        hasBody: !!fetchConfig.body,
-        bodyContent: fetchConfig.body ? `${JSON.stringify(apiRequest.body).substring(0, 200)  }...` : 'no body'
+        hasBody: !!fetchConfig.body
       })
 
       const response = await fetch(fullUrl, fetchConfig)
