@@ -6,16 +6,24 @@ import org.unreal.modelrouter.router.ratelimit.RateLimitConfig;
 import org.unreal.modelrouter.router.ratelimit.RateLimitContext;
 import org.unreal.modelrouter.router.ratelimit.RateLimiter;
 
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 /**
  * 滑动窗口限流器实现
+ *
+ * <p>#122: 准入判定与记录在同一临界区内完成（避免 check-then-act 竞态超发）；
+ * 窗口时间戳存放在 {@link ArrayDeque} 上，{@code size()} 为 O(1)，
+ * 不再在热路径上调用 {@code ConcurrentLinkedQueue.size()}（O(n)）。</p>
  */
 public class SlidingWindowRateLimiter implements RateLimiter {
+    private static final long WINDOW_MS = 1000L;
+
     private final RateLimitConfig config;
-    private final Queue<Long> q = new ConcurrentLinkedQueue<>();
-    
+    /** 窗口内已放行时间戳；仅在 {@link #lock} 保护下访问 */
+    private final Deque<Long> window = new ArrayDeque<>();
+    private final Object lock = new Object();
+
     @Autowired(required = false)
     private MetricsCollector metricsCollector;
 
@@ -30,19 +38,18 @@ public class SlidingWindowRateLimiter implements RateLimiter {
      */
     @Override
     public boolean tryAcquire(final RateLimitContext context) {
-        long now = System.currentTimeMillis();
-        long window = 1000L;
-        while (!q.isEmpty() && q.peek() < now - window) {
-            q.poll();
+        final long now = System.currentTimeMillis();
+        final boolean allowed;
+        synchronized (lock) {
+            pruneExpired(now);
+            if (window.size() >= config.getRate()) {
+                allowed = false;
+            } else {
+                window.addLast(now);
+                allowed = true;
+            }
         }
-        boolean allowed;
-        if (q.size() >= config.getRate()) {
-            allowed = false;
-        } else {
-            q.offer(now);
-            allowed = true;
-        }
-        
+
         // 记录限流指标
         recordRateLimitMetrics(context, allowed);
         return allowed;
@@ -77,14 +84,11 @@ public class SlidingWindowRateLimiter implements RateLimiter {
      */
     @Override
     public long getRemainingCapacity() {
-        long now = System.currentTimeMillis();
-        long window = 1000L;
-        // 清理过期请求
-        while (!q.isEmpty() && q.peek() < now - window) {
-            q.poll();
+        final long now = System.currentTimeMillis();
+        synchronized (lock) {
+            pruneExpired(now);
+            return Math.max(0, config.getRate() - window.size());
         }
-        long maxRequests = config.getRate();
-        return Math.max(0, maxRequests - q.size());
     }
 
     /**
@@ -92,16 +96,22 @@ public class SlidingWindowRateLimiter implements RateLimiter {
      */
     @Override
     public double getUsageRatio() {
-        long now = System.currentTimeMillis();
-        long window = 1000L;
-        // 清理过期请求
-        while (!q.isEmpty() && q.peek() < now - window) {
-            q.poll();
-        }
-        long maxRequests = config.getRate();
+        final long now = System.currentTimeMillis();
+        final long maxRequests = config.getRate();
         if (maxRequests <= 0) {
             return 0;
         }
-        return (double) q.size() / maxRequests;
+        synchronized (lock) {
+            pruneExpired(now);
+            return (double) window.size() / maxRequests;
+        }
+    }
+
+    /** 清理窗口外过期时间戳（调用方须持有 {@link #lock}） */
+    private void pruneExpired(final long now) {
+        final long cutoff = now - WINDOW_MS;
+        while (!window.isEmpty() && window.peekFirst() < cutoff) {
+            window.removeFirst();
+        }
     }
 }

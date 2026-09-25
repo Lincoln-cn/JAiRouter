@@ -32,6 +32,11 @@ import java.util.concurrent.atomic.AtomicLong;
  * 无 Spring 注入时（单测 {@code new AdminApiRateLimiter()}）使用字段默认值。</p>
  *
  * <p>v3.1 PR-4d.1：429 错误体（含中文提示）显式按 {@link StandardCharsets#UTF_8} 编码写出。</p>
+ *
+ * <p>#124：X-Forwarded-For / X-Real-IP 仅在直连对端属于可信代理集合时才采用，
+ * 且 XFF 取最后一跳（由可信代理追加）。默认可信代理为空 = 一律使用 remoteAddress。
+ * <strong>行为变更</strong>：部署在反向代理之后时，必须把代理地址配置到
+ * {@code jairouter.security.rate-limit.trusted-proxies}，否则限流键将是对端代理 IP。</p>
  */
 @Slf4j
 @Component
@@ -58,6 +63,13 @@ public class AdminApiRateLimiter implements WebFilter {
     /** 创建（POST）每小时上限 */
     @Value("${jairouter.auth.admin-api-rate-limit.create-per-hour:10}")
     private int createLimitPerHour = 10;
+
+    /**
+     * 逗号分隔的可信代理地址列表（与 remoteAddress 的 host 地址精确匹配）。
+     * 默认空 = 不信任任何代理，转发头一律忽略，限流键使用 remoteAddress（安全默认）。
+     */
+    @Value("${jairouter.security.rate-limit.trusted-proxies:}")
+    private String trustedProxies = "";
 
     private final Map<String, RequestCounter> counters = new ConcurrentHashMap<>();
 
@@ -112,13 +124,26 @@ public class AdminApiRateLimiter implements WebFilter {
     }
 
     private String getClientIp(final ServerWebExchange exchange) {
+        final String remote = exchange.getRequest().getRemoteAddress() != null
+                ? exchange.getRequest().getRemoteAddress().getAddress().getHostAddress()
+                : "unknown";
+
+        // #124: 转发头可被任意客户端伪造，仅当直连对端是可信代理时才采信
+        if (!isTrustedProxy(remote)) {
+            return remote;
+        }
+
         String ip = exchange.getRequest().getHeaders().getFirst("X-Forwarded-For");
         if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
-            final int index = ip.indexOf(',');
+            // 取最后一跳：由我们的可信代理追加，首跳可被客户端伪造
+            final int index = ip.lastIndexOf(',');
             if (index != -1) {
-                ip = ip.substring(0, index);
+                ip = ip.substring(index + 1);
             }
-            return ip.trim();
+            ip = ip.trim();
+            if (!ip.isEmpty()) {
+                return ip;
+            }
         }
 
         ip = exchange.getRequest().getHeaders().getFirst("X-Real-IP");
@@ -126,9 +151,20 @@ public class AdminApiRateLimiter implements WebFilter {
             return ip.trim();
         }
 
-        return exchange.getRequest().getRemoteAddress() != null
-                ? exchange.getRequest().getRemoteAddress().getAddress().getHostAddress()
-                : "unknown";
+        return remote;
+    }
+
+    /** 直连对端是否为配置的可信代理（默认空集 = 谁也不信） */
+    private boolean isTrustedProxy(final String remoteHost) {
+        if (remoteHost == null || trustedProxies == null || trustedProxies.isBlank()) {
+            return false;
+        }
+        for (final String candidate : trustedProxies.split(",")) {
+            if (candidate.trim().equalsIgnoreCase(remoteHost)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void cleanupIfNeeded() {

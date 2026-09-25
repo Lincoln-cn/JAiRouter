@@ -1,18 +1,30 @@
 package org.unreal.modelrouter.router.ratelimit;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public final class ScopedRateLimiterWrapper implements RateLimiter {
     private static final Logger logger = LoggerFactory.getLogger(ScopedRateLimiterWrapper.class);
+
+    // #123: 作用域 key（client-ip/model/instance/rule 等）高基数且可被外部影响，
+    // 使用与 ClientIpRateLimiterCache 一致的 Caffeine 有界缓存，避免 map 无界增长。
+    // 条目被淘汰后该 key 的窗口状态会重置（下次访问重新建桶），与 ClientIpRateLimiterCache 语义一致。
+    private static final int MAX_SIZE = 10000;
+    private static final int EXPIRE_MINUTES = 30;
+
     private final RateLimitConfig config;
     private final java.util.function.Function<RateLimitConfig, RateLimiter> factory;
-    private final java.util.concurrent.ConcurrentMap<String, RateLimiter> map = new ConcurrentHashMap<>();
-    
+    private final Cache<String, RateLimiter> map = Caffeine.newBuilder()
+            .maximumSize(MAX_SIZE)
+            .expireAfterAccess(EXPIRE_MINUTES, TimeUnit.MINUTES)
+            .build();
+
     @Autowired(required = false)
     private MetricsCollector metricsCollector;
 
@@ -32,7 +44,7 @@ public final class ScopedRateLimiterWrapper implements RateLimiter {
         boolean allowed;
         String serviceName = ctx.getServiceType() != null ? ctx.getServiceType().name() : "unknown";
         String algorithm = config.getAlgorithm() != null ? config.getAlgorithm() : "unknown";
-        
+
         if (config.getScope() == null) {
             allowed = factory.apply(config).tryAcquire(ctx);
         } else {
@@ -44,13 +56,13 @@ public final class ScopedRateLimiterWrapper implements RateLimiter {
                 case "rule" -> ctx.getRuleId() != null ? ctx.getRuleId() : "default";
                 default -> "default";
             };
-            RateLimiter l = map.computeIfAbsent(key, k -> factory.apply(config));
+            RateLimiter l = map.get(key, k -> factory.apply(config));
             allowed = l.tryAcquire(ctx);
         }
-        
+
         // 记录限流指标
         recordRateLimitMetrics(serviceName, algorithm, allowed);
-        
+
         return allowed;
     }
 
@@ -82,12 +94,12 @@ public final class ScopedRateLimiterWrapper implements RateLimiter {
      */
     @Override
     public long getRemainingCapacity() {
-        if (config.getScope() == null || map.isEmpty()) {
+        if (config.getScope() == null || map.asMap().isEmpty()) {
             // 单一限流器
             return factory.apply(config).getRemainingCapacity();
         }
         // 多作用域：返回平均剩余容量
-        double avg = map.values().stream()
+        double avg = map.asMap().values().stream()
                 .mapToLong(RateLimiter::getRemainingCapacity)
                 .filter(v -> v >= 0)
                 .average()
@@ -101,15 +113,27 @@ public final class ScopedRateLimiterWrapper implements RateLimiter {
      */
     @Override
     public double getUsageRatio() {
-        if (config.getScope() == null || map.isEmpty()) {
+        if (config.getScope() == null || map.asMap().isEmpty()) {
             // 单一限流器
             return factory.apply(config).getUsageRatio();
         }
         // 多作用域：返回平均使用率
-        return map.values().stream()
+        return map.asMap().values().stream()
                 .mapToDouble(RateLimiter::getUsageRatio)
                 .filter(v -> v >= 0)
                 .average()
                 .orElse(-1);
+    }
+
+    /**
+     * 当前作用域限流器条目数（监控/测试用，有界缓存下不应无界增长）
+     */
+    long size() {
+        return map.estimatedSize();
+    }
+
+    /** 强制执行过期/淘汰维护（测试用） */
+    void cleanUp() {
+        map.cleanUp();
     }
 }
