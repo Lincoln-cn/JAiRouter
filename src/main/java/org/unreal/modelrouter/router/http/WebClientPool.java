@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.unreal.modelrouter.config.core.helper.SsrfGuard;
 import reactor.netty.http.client.HttpClient;
 
 import java.time.Duration;
@@ -70,10 +71,12 @@ public class WebClientPool {
      * @return 缓存或新创建的 WebClient 实例
      */
     public WebClient getOrCreate(String baseUrl, Consumer<WebClient.Builder> configurator) {
-        // 使用 baseUrl + configurator hashCode 作为缓存 key
+        // SSRF 门闩收敛在此：所有出站 WebClient（含 tracing 热路径）都经此创建
+        final String normalizedBaseUrl = SsrfGuard.validateOutboundBaseUrl(baseUrl);
+        // 使用规范化 baseUrl + configurator hashCode 作为缓存 key，等价 URL 不重复建池
         String cacheKey = configurator != null 
-                ? baseUrl + "#" + configurator.hashCode() 
-                : baseUrl;
+                ? normalizedBaseUrl + "#" + configurator.hashCode() 
+                : normalizedBaseUrl;
         
         WebClient cached = clientCache.get(cacheKey);
         if (cached != null) {
@@ -82,7 +85,7 @@ public class WebClientPool {
         }
 
         missCount.incrementAndGet();
-        return clientCache.computeIfAbsent(cacheKey, key -> createWebClient(baseUrl, configurator));
+        return clientCache.computeIfAbsent(cacheKey, key -> createWebClient(normalizedBaseUrl, configurator));
     }
 
     /**
@@ -111,8 +114,16 @@ public class WebClientPool {
      * 清理指定 baseUrl 的缓存
      */
     public void evict(String baseUrl) {
-        // 移除所有以 baseUrl 开头的缓存项
-        clientCache.keySet().removeIf(key -> key.startsWith(baseUrl));
+        // 与 getOrCreate 的规范化 key 对齐；原始前缀一并清理，兼容历史/脏 key
+        String normalized = baseUrl;
+        try {
+            normalized = SsrfGuard.validateOutboundBaseUrl(baseUrl);
+        } catch (SecurityException e) {
+            // 清理保持宽容：非法 URL 仍按原始前缀移除
+        }
+        final String normalizedPrefix = normalized;
+        final String rawPrefix = baseUrl;
+        clientCache.keySet().removeIf(key -> key.startsWith(normalizedPrefix) || key.startsWith(rawPrefix));
         logger.debug("WebClient 缓存已清理: baseUrl={}", baseUrl);
     }
 
