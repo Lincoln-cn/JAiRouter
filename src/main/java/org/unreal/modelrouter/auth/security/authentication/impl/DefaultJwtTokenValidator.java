@@ -201,8 +201,11 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
 
             // 存储已判定不可用时短路，避免每个请求都付一次连接超时（issue #76）
             if (System.currentTimeMillis() < legacyRedisRetryAfterMillis) {
-                log.debug("黑名单存储处于降级短路窗口，跳过 Redis 查询: jti={}", finalJti);
-                return Mono.just(false);
+                boolean failClosed = isBlacklistFailClosedWhenUnavailable();
+                log.debug("黑名单存储处于降级短路窗口，跳过 Redis 查询: jti={}, failClosed={}",
+                        finalJti, failClosed);
+                // failClosed=false：历史行为，短路窗口内放行；true：按黑名单拒绝（issue #118）
+                return Mono.just(failClosed);
             }
 
             return redisTemplate.hasKey(blacklistKey)
@@ -216,16 +219,22 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
                 .onErrorResume(ex -> {
                     legacyRedisRetryAfterMillis =
                             System.currentTimeMillis() + DEFAULT_DEGRADED_RETRY_INTERVAL_MILLIS;
+                    boolean failClosed = isBlacklistFailClosedWhenUnavailable();
                     // 降级语义必须让运维可见，但只在首次明确告警，其后降为 DEBUG
                     // （原实现每个请求打两条 ERROR，会掩盖真正的鉴权失败——issue #76）
                     if (legacyDegradationLogged.compareAndSet(false, true)) {
-                        log.error("JWT 黑名单校验已降级：黑名单存储不可达，撤销/登出的令牌在存储恢复前"
-                                + "不会被拦截，存在安全风险。error={}, jti={}", ex.getMessage(), finalJti);
+                        log.error("JWT 黑名单校验已降级：黑名单存储不可达，failClosed={}，"
+                                + "撤销/登出的令牌在存储恢复前{}，存在安全风险。error={}, jti={}",
+                                failClosed,
+                                failClosed ? "会被拦截（当前按黑名单拒绝）" : "不会被拦截",
+                                ex.getMessage(), finalJti);
                     } else {
-                        log.debug("黑名单存储仍不可用，继续降级放行: jti={}, error={}",
-                                finalJti, ex.getMessage());
+                        log.debug("黑名单存储仍不可用，继续降级放行: jti={}, failClosed={}, error={}",
+                                finalJti, failClosed, ex.getMessage());
                     }
-                    return Mono.just(false); // 默认允许，降级已在首次告警中说明
+                    // 默认允许（failClosed=false，降级已在首次告警中说明）；
+                    // failClosed=true 时按黑名单拒绝（issue #118）
+                    return Mono.just(failClosed);
                 });
 
         } catch (Exception e) {
@@ -358,9 +367,18 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
     private Claims parseToken(final String token) {
         return Jwts.parser()
             .verifyWith(getSigningKey())
+            // 签发端始终写入 iss（见 generateToken / AccountManager）；解析端强制校验（issue #117）
+            .requireIssuer(securityProperties.getJwt().getIssuer())
             .build()
             .parseSignedClaims(token)
             .getPayload();
+    }
+
+    /**
+     * 黑名单存储不可用时是否拒绝令牌（fail-closed）。默认 false 保持历史放行语义（issue #118）。
+     */
+    private boolean isBlacklistFailClosedWhenUnavailable() {
+        return securityProperties.getJwt().isBlacklistFailClosedWhenUnavailable();
     }
 
     /**

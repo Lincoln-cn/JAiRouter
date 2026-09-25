@@ -67,6 +67,15 @@ public class JwtConfig {
     private boolean blacklistEnabled = true;
 
     /**
+     * 黑名单存储不可用时是否 fail-closed（默认 false，可用性优先，与历史行为一致）。
+     *
+     * <p>false：存储不可用/降级短路期间放行（返回“不在黑名单”），已撤销/登出的令牌
+     * 在存储恢复前不会被拦截——这是既有取舍（issue #76）。true：同一场景下按
+     * “在黑名单”处理并拒绝令牌（安全优先）。</p>
+     */
+    private boolean blacklistFailClosedWhenUnavailable = false;
+
+    /**
      * 预配置的JWT账户列表
      */
     @Valid

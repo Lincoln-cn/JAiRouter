@@ -305,6 +305,8 @@ public class JwtTokenLifecycleServiceImpl implements JwtTokenLifecycleService {
     private Claims parseToken(final String token) {
         return Jwts.parser()
             .verifyWith(getSigningKey())
+            // 与 DefaultJwtTokenValidator.parseToken 保持一致：强制校验 iss（issue #117）
+            .requireIssuer(securityProperties.getJwt().getIssuer())
             .build()
             .parseSignedClaims(token)
             .getPayload();
