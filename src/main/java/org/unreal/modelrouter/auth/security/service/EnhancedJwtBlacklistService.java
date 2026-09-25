@@ -2,9 +2,11 @@ package org.unreal.modelrouter.auth.security.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.unreal.modelrouter.auth.security.config.properties.JwtConfig;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -32,6 +34,13 @@ public class EnhancedJwtBlacklistService {
     private static final long DEFAULT_DEGRADED_RETRY_INTERVAL_MILLIS = 30_000L;
 
     private final ReactiveStringRedisTemplate redisTemplate;
+
+    /**
+     * JWT 配置（可选）：用于读取 {@code blacklistFailClosedWhenUnavailable}（issue #118）。
+     * 未注入时按默认 false（可用性优先）处理，构造器签名保持不变。
+     */
+    @Autowired(required = false)
+    private JwtConfig jwtConfig;
 
     // 本地缓存作为备份，防止Redis连接问题
     private final ConcurrentMap<String, Long> localBlacklistCache = new ConcurrentHashMap<>();
@@ -128,9 +137,12 @@ public class EnhancedJwtBlacklistService {
 
         // 2. 存储已被判定为不可用时短路，避免每个请求都付出一次连接超时代价。
         //    窗口内仅依据本地缓存判定（上面已查），到期后自动重试以感知恢复。
+        //    failClosed=true 时窗口内也按“在黑名单”拒绝（issue #118）；默认 false 保持放行。
         if (System.currentTimeMillis() < redisRetryAfterMillis) {
-            log.debug("黑名单存储处于降级短路窗口，跳过 Redis 查询: tokenId={}", trimmedTokenId);
-            return Mono.just(false);
+            boolean failClosed = isBlacklistFailClosedWhenUnavailable();
+            log.debug("黑名单存储处于降级短路窗口，跳过 Redis 查询: tokenId={}, failClosed={}",
+                    trimmedTokenId, failClosed);
+            return Mono.just(failClosed);
         }
 
         // 3. 检查Redis主键（短超时：Redis 不可达时避免拖死管理台/鉴权链路）
@@ -170,6 +182,10 @@ public class EnhancedJwtBlacklistService {
      * 即<b>存储不可用期间被撤销/登出的令牌不会被拦截</b>——这是本方法的既有取舍
      * （可用性优先），但必须让运维可见：首次失败打一条带安全含义的 WARN，其后同类
      * 失败降为 DEBUG，避免每个请求刷屏掩盖真正的鉴权失败（见 issue #76）。</p>
+     *
+     * <p>issue #118：可通过 {@code jairouter.security.jwt.blacklist-fail-closed-when-unavailable}
+     * 将同一场景改为 fail-closed——本地缓存未命中时按“在黑名单”返回 {@code true} 并拒绝令牌。
+     * 默认 {@code false}，行为与历史完全一致。</p>
      */
     private Mono<Boolean> handleStorageUnavailable(final String trimmedTokenId, final Throwable ex) {
         // 标记降级窗口：窗口内后续请求直接短路，不再逐次等待连接超时
@@ -181,14 +197,33 @@ public class EnhancedJwtBlacklistService {
             return Mono.just(true);
         }
 
+        boolean failClosed = isBlacklistFailClosedWhenUnavailable();
         if (storageDegradationLogged.compareAndSet(false, true)) {
-            log.warn("JWT 黑名单校验已降级：黑名单存储不可达，撤销/登出的令牌在存储恢复前不会被拦截"
-                    + "（仅依据本地缓存判定）。error={}, tokenId={}", ex.getMessage(), trimmedTokenId);
+            log.warn("JWT 黑名单校验已降级：黑名单存储不可达，failClosed={}，撤销/登出的令牌在存储恢复前{}"
+                    + "（仅依据本地缓存判定）。error={}, tokenId={}",
+                    failClosed,
+                    failClosed ? "会被拦截（当前按黑名单拒绝）" : "不会被拦截",
+                    ex.getMessage(), trimmedTokenId);
         } else {
-            log.debug("黑名单存储仍不可用，继续降级放行: tokenId={}, error={}",
-                    trimmedTokenId, ex.getMessage());
+            log.debug("黑名单存储仍不可用，继续降级放行: tokenId={}, failClosed={}, error={}",
+                    trimmedTokenId, failClosed, ex.getMessage());
         }
-        return Mono.just(false);
+        // 默认放行（降级已在首次告警中说明）；failClosed=true 时按黑名单拒绝（issue #118）
+        return Mono.just(failClosed);
+    }
+
+    /**
+     * 黑名单存储不可用时是否拒绝令牌（issue #118）。未注入配置时默认 false（历史放行语义）。
+     */
+    private boolean isBlacklistFailClosedWhenUnavailable() {
+        return jwtConfig != null && jwtConfig.isBlacklistFailClosedWhenUnavailable();
+    }
+
+    /**
+     * 注入 JWT 配置（包可见，仅供测试；生产由 Spring 字段注入）.
+     */
+    void setJwtConfig(final JwtConfig jwtConfig) {
+        this.jwtConfig = jwtConfig;
     }
 
     /**
