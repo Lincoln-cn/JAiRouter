@@ -120,7 +120,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
@@ -285,6 +285,7 @@ const buildGanttOption = () => {
 const renderGanttChart = () => {
   if (!ganttChart.value || !traceChain.value?.spans) return
 
+  ganttChartInstance?.dispose()
   ganttChartInstance = echarts.init(ganttChart.value)
 
   const option = buildGanttOption()
@@ -377,7 +378,11 @@ watch(() => props.traceId, () => {
 
 onMounted(() => {
   useChartAutoRefresh(rebuildAll)
-  loadTraceChain()
+})
+
+onBeforeUnmount(() => {
+  ganttChartInstance?.dispose()
+  ganttChartInstance = null
 })
 </script>
 

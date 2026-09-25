@@ -118,7 +118,7 @@
   </PageSkeleton>
 
   <!-- 追踪详情对话框 -->
-  <el-dialog v-model="traceDialogVisible" :title="t('tracing.search.detailDialogTitle')" width="90%" top="3vh">
+  <el-dialog v-model="traceDialogVisible" :title="t('tracing.search.detailDialogTitle')" width="90%" top="3vh" destroy-on-close @close="disposeTraceChainChart">
     <div v-if="selectedTrace">
       <!-- 追踪概要信息 -->
       <el-card class="trace-summary">
@@ -239,7 +239,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
@@ -456,6 +456,7 @@ const handleViewTrace = async (trace: any) => {
       // 渲染追踪链路图表
       await nextTick()
       if (traceChainChart.value) {
+        traceChainChartInstance?.dispose()
         traceChainChartInstance = echarts.init(traceChainChart.value)
         traceChainChartInstance.setOption(getTraceChainChartOption())
       }
@@ -469,6 +470,7 @@ const handleViewTrace = async (trace: any) => {
     
     await nextTick()
     if (traceChainChart.value) {
+      traceChainChartInstance?.dispose()
       traceChainChartInstance = echarts.init(traceChainChart.value)
       traceChainChartInstance.setOption(getTraceChainChartOption())
     }
@@ -850,11 +852,20 @@ const rebuildAll = () => {
   }
 }
 
+const disposeTraceChainChart = () => {
+  traceChainChartInstance?.dispose()
+  traceChainChartInstance = null
+}
+
 // 组件挂载时初始化
 onMounted(() => {
   useChartAutoRefresh(rebuildAll)
   loadAvailableServices()
   handleGetRecent() // 默认加载最近的追踪
+})
+
+onBeforeUnmount(() => {
+  disposeTraceChainChart()
 })
 </script>
 
