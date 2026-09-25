@@ -20,9 +20,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
+import org.unreal.modelrouter.config.core.StreamingSafetyProperties;
 import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
@@ -141,15 +143,53 @@ public class AnthropicStreamingTranslator {
      */
     private static final String ERROR_TYPE_API = "api_error";
 
+    /**
+     * v3.2.3 (#127): text/toolArguments 累积默认字符上限（与 StreamingRequestProcessor 同量级）.
+     */
+    private static final int DEFAULT_MAX_ACCUMULATED_CHARS = 1_048_576;
+
+    /**
+     * 估算系数：表意文字字符/token（与 {@link AnthropicTokenEstimator} 同源）.
+     */
+    private static final double CHINESE_CHARS_PER_TOKEN = 2.0;
+
+    /**
+     * 估算系数：其余非空白字符/token（与 {@link AnthropicTokenEstimator} 同源）.
+     */
+    private static final double ENGLISH_CHARS_PER_TOKEN = 4.0;
+
     private final ObjectMapper objectMapper;
 
     /**
-     * 构造函数.
+     * v3.2.3 (#127): text/toolArguments 累积字符上限（仅用于输出 token 估算兜底；
+     * 发给客户端的 content_block_delta 不受影响）.
+     */
+    private final int maxAccumulatedChars;
+
+    /**
+     * 构造函数（Spring 装配）.
+     *
+     * @param objectMapper 全局 ObjectMapper（序列化各事件 data 段）
+     * @param properties   流式安全配置（可选；缺省用宽松默认上界）
+     */
+    @Autowired
+    public AnthropicStreamingTranslator(final ObjectMapper objectMapper,
+                                        final StreamingSafetyProperties properties) {
+        this(objectMapper, properties != null ? properties.getMaxContentChars() : 0);
+    }
+
+    /**
+     * 构造函数（单测/缺省上界）.
      *
      * @param objectMapper 全局 ObjectMapper（序列化各事件 data 段）
      */
     public AnthropicStreamingTranslator(final ObjectMapper objectMapper) {
+        this(objectMapper, 0);
+    }
+
+    private AnthropicStreamingTranslator(final ObjectMapper objectMapper, final int maxAccumulatedChars) {
         this.objectMapper = objectMapper;
+        this.maxAccumulatedChars = maxAccumulatedChars > 0 ? maxAccumulatedChars : DEFAULT_MAX_ACCUMULATED_CHARS;
     }
 
     /**
@@ -180,6 +220,75 @@ public class AnthropicStreamingTranslator {
                         return Flux.just(errorEvent(error));
                     });
         });
+    }
+
+    /**
+     * 累积文本增量：全量计入估算计数，有界写入 {@code state.text}.
+     *
+     * @param text  文本增量
+     * @param state 订阅状态
+     */
+    private void accumulateText(final String text, final StreamState state) {
+        countChars(text, state);
+        appendBounded(state.text, text);
+    }
+
+    /**
+     * 累积工具入参增量：全量计入估算计数，有界写入 {@code state.toolArguments}.
+     *
+     * @param arguments 入参增量
+     * @param state     订阅状态
+     */
+    private void accumulateToolArguments(final String arguments, final StreamState state) {
+        countChars(arguments, state);
+        appendBounded(state.toolArguments, arguments);
+    }
+
+    /**
+     * 将增量字符计入独立估算计数（汉字 / 其余非空白）.
+     *
+     * @param text  增量文本
+     * @param state 订阅状态
+     */
+    private void countChars(final String text, final StreamState state) {
+        for (int i = 0; i < text.length(); i++) {
+            final char c = text.charAt(i);
+            if (Character.UnicodeScript.of(c) == Character.UnicodeScript.HAN) {
+                state.chineseChars++;
+            } else if (!Character.isWhitespace(c)) {
+                state.otherChars++;
+            }
+        }
+    }
+
+    /**
+     * 有界追加：达到 {@link #maxAccumulatedChars} 后不再增长（保留前缀）.
+     *
+     * @param target 累积缓冲
+     * @param text   增量文本
+     */
+    private void appendBounded(final StringBuilder target, final String text) {
+        final int remaining = maxAccumulatedChars - target.length();
+        if (remaining <= 0) {
+            return;
+        }
+        if (text.length() <= remaining) {
+            target.append(text);
+        } else {
+            target.append(text, 0, remaining);
+        }
+    }
+
+    /**
+     * 由独立字符计数估算 token 数（与 {@link AnthropicTokenEstimator#estimateText(String)} 同系数）.
+     *
+     * @param chineseChars 汉字数
+     * @param otherChars   其余非空白字符数
+     * @return 估算 token 数（非负）
+     */
+    private static long estimateFromCounts(final long chineseChars, final long otherChars) {
+        return (long) Math.ceil(chineseChars / CHINESE_CHARS_PER_TOKEN
+                + otherChars / ENGLISH_CHARS_PER_TOKEN);
     }
 
     /**
@@ -220,9 +329,10 @@ public class AnthropicStreamingTranslator {
      * @return 收尾事件列表
      */
     private List<ServerSentEvent<String>> finishEvents(final StreamState state) {
+        // v3.2.3 (#127): 估算走独立字符计数（全量增量已计入），不受累积上界截断影响
         final long outputTokens = state.outputTokens > 0
                 ? state.outputTokens
-                : AnthropicTokenEstimator.estimateText(state.text.toString() + state.toolArguments);
+                : estimateFromCounts(state.chineseChars, state.otherChars);
 
         final List<ServerSentEvent<String>> events = new ArrayList<>(3);
         if (state.openIndex >= 0) {
@@ -287,7 +397,7 @@ public class AnthropicStreamingTranslator {
         appendToolCallEvents(choice, state);
         final String text = extractDeltaText(choice);
         if (!text.isEmpty()) {
-            state.text.append(text);
+            accumulateText(text, state);
             appendTextDeltaEvents(text, state);
         }
         return List.copyOf(state.pending);
@@ -353,7 +463,7 @@ public class AnthropicStreamingTranslator {
         if (arguments == null || arguments.isEmpty()) {
             return;
         }
-        state.toolArguments.append(arguments);
+        accumulateToolArguments(arguments, state);
         state.pending.add(event(AnthropicStreamEvent.EVENT_CONTENT_BLOCK_DELTA,
                 new AnthropicStreamEvent.ContentBlockDelta(
                         AnthropicStreamEvent.EVENT_CONTENT_BLOCK_DELTA,
@@ -700,14 +810,24 @@ public class AnthropicStreamingTranslator {
     private static final class StreamState {
 
         /**
-         * 累计文本（用于下游未给 usage 时的输出 token 估算）.
+         * 累计文本（v3.2.3 #127: 有界；仅用于输出 token 估算兜底，发给客户端的事件不受影响）.
          */
         private final StringBuilder text = new StringBuilder();
 
         /**
-         * 累计工具入参片段（与文本一起参与输出 token 估算）.
+         * 累计工具入参片段（与文本一起参与输出 token 估算；v3.2.3 #127: 有界）.
          */
         private final StringBuilder toolArguments = new StringBuilder();
+
+        /**
+         * v3.2.3 (#127): 全量文本+工具参数中的汉字数（独立于截断，估算用）.
+         */
+        private long chineseChars;
+
+        /**
+         * v3.2.3 (#127): 全量文本+工具参数中的其余非空白字符数（独立于截断，估算用）.
+         */
+        private long otherChars;
 
         /**
          * 当前块的事件缓冲（逐下游块构建，构建完成后交由 Flux 消费）.
