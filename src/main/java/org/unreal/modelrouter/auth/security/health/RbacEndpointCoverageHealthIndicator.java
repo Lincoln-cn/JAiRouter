@@ -46,9 +46,9 @@ public class RbacEndpointCoverageHealthIndicator implements HealthIndicator {
         details.put("exemptEndpoints", report.exemptEndpoints());
         details.put("missingEndpoints", report.missingEndpoints());
         details.put("fallback",
-                "unmatched GET falls back to authenticated() (fail-open, phase-3 scope); "
-                        + "unmatched writes are denied unless exempt (phase-2 default, "
-                        + "escape hatch jairouter.security.rbac.write-fail-closed.enabled=false)");
+                "unmatched requests are denied unless exempt (phase-3 default DENY_ALL via "
+                        + "jairouter.security.rbac.unmatched-policy); legacy fail-open: "
+                        + "unmatched-policy=AUTHENTICATED or write-fail-closed.enabled=false");
         return Health.up().withDetails(details).build();
     }
 }

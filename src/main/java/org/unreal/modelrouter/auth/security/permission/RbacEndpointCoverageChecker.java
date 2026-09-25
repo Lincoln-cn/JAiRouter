@@ -31,9 +31,9 @@ import java.util.TreeSet;
  * （命中 → exempt），都未命中 → missing（可行动信号）。结果写入
  * {@link RbacEndpointCoverageReport} 供 Health 指标暴露。
  *
- * <p><b>Phase 2</b>：写方法未命中规则且未豁免时 fail-closed（由
- * {@link PermissionAuthorizationManager} 执行）；GET 仍 fail-open（Phase 3）。
- * 本自检只做观测，不改变授权行为。
+ * <p><b>Phase 2/3</b>：未命中规则且未豁免时按 {@link RbacUnmatchedPolicy} 姿态
+ * fail-closed（由 {@link PermissionAuthorizationManager} 执行；Phase 3 默认 DENY_ALL，
+ * 含 GET）。本自检只做观测，不改变授权行为。
  *
  * <p><b>排除清单</b>（不报告为缺口——它们根本不经过 {@code PermissionAuthorizationManager}，
  * 或在 SecurityConfiguration 中有独立授权规则）：
@@ -269,7 +269,7 @@ public class RbacEndpointCoverageChecker implements ApplicationRunner {
             StringBuilder sb = new StringBuilder();
             sb.append("RBAC 端点覆盖自检发现 ").append(report.missingCount())
                     .append(" 个端点既无权限规则也未豁免（可行动缺口——请补登记规则或加入豁免清单；")
-                    .append("Phase 2 写方法将 fail-closed 拒绝，GET 仍回退 authenticated）:\n");
+                    .append("Phase 3 默认 DENY_ALL 将 fail-closed 拒绝，可配 unmatched-policy=AUTHENTICATED 回退）:\n");
             for (String line : report.missingEndpoints()) {
                 sb.append("  - ").append(line).append('\n');
             }

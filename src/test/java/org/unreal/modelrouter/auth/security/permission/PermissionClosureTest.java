@@ -611,19 +611,32 @@ class PermissionClosureTest {
         }
     }
 
-    // ==================== 回退行为不变验证 ====================
+    // ==================== 回退行为验证 ====================
 
     @Nested
-    @DisplayName("回退行为不变验证（未登记路径仍 authenticated）")
+    @DisplayName("回退行为验证（#128 Phase 3 默认 DENY_ALL）")
     class FallbackBehaviorTests {
 
         @Test
-        @DisplayName("未登记路径 + 已认证 -> 仍放行（authenticated 回退不变）")
-        void unregisteredPathStillAuthenticatedFallback() {
+        @DisplayName("Phase 3 默认 DENY_ALL：未登记路径 + 已认证非管理员 -> 拒绝")
+        void unregisteredPathDeniedByDefault() {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/some-unregistered-path");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
             StepVerifier.create(manager.check(Mono.just(auth), ctx))
+                    .expectNextMatches(decision -> !decision.isGranted())
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("AUTHENTICATED 姿态：未登记路径 + 已认证 -> 放行（遗留回退可恢复）")
+        void unregisteredPathStillAuthenticatedFallbackInLegacyMode() {
+            PermissionAuthorizationManager legacy = new PermissionAuthorizationManager(
+                    new PermissionRuleRegistry(), RbacUnmatchedPolicy.AUTHENTICATED);
+            AuthorizationContext ctx = context(HttpMethod.GET, "/api/some-unregistered-path");
+            JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
+
+            StepVerifier.create(legacy.check(Mono.just(auth), ctx))
                     .expectNextMatches(AuthorizationDecision::isGranted)
                     .verifyComplete();
         }

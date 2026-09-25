@@ -19,7 +19,8 @@ import java.util.stream.Collectors;
  * {method, pathPattern, permissionCode} 规则，供 {@link PermissionAuthorizationManager} 使用。
  *
  * <p>规则匹配为"首条命中"：路径模式越具体的规则应登记在越前面。
- * 未登记规则的 /api/** 端点回退为 authenticated（向后兼容，opt-in 迁移）。
+ * 未登记规则的 /api/** 端点按 {@link RbacUnmatchedPolicy} 姿态判定
+ * （Phase 3 默认 {@code DENY_ALL}，豁免清单见 {@link RbacExemptEndpoints}）。
  *
  * @author JAiRouter Team
  * @since 2.9.8

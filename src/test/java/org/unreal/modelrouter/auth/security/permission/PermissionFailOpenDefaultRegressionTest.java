@@ -19,24 +19,44 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * #128 Phase 1 回归门禁：默认授权行为必须保持不变。
+ * #128 授权姿态回归门禁（Phase 3 更新）。
  *
- * <p>Phase 1 只增加「端点覆盖自检」可观测性，<b>不得</b>把无规则路径的回退从
- * authenticated（fail-open）改为 DENY。后续 fail-closed 切换必须走独立阶段、
- * 完整端点审计 + 前端回归，并显式开启配置。
+ * <p>Phase 1 曾锁定「默认 fail-open」；Phase 2 引入写方法 fail-closed；Phase 3 默认
+ * 姿态为 {@code DENY_ALL}（未命中 GET 也拒绝）。本门禁现在锁定两件事：
+ * <ol>
+ *   <li>默认构造器 = {@code DENY_ALL}（Phase 3 新默认，未命中 GET 拒绝）</li>
+ *   <li>{@code AUTHENTICATED} 姿态完整恢复遗留 fail-open（GET 与写）</li>
+ * </ol>
  *
  * @author JAiRouter Team
  * @since 3.0.3
  */
-@DisplayName("RBAC fail-open 默认行为回归（#128 Phase 1 不得改变授权）")
+@DisplayName("RBAC 授权姿态回归（#128 Phase 3 默认 DENY_ALL + AUTHENTICATED 回退）")
 class PermissionFailOpenDefaultRegressionTest {
 
     private final PermissionRuleRegistry registry = new PermissionRuleRegistry();
 
-    @DisplayName("无任何 strict-mode 配置时，未登记路径 + 已认证 → ALLOW（fail-open 完好）")
+    @DisplayName("Phase 3 默认（DENY_ALL）：未登记路径 + 已认证非管理员 → DENY")
     @Test
-    void unmatchedPathStillAllowedForAuthenticatedUserByDefault() {
+    void unmatchedPathDeniedForAuthenticatedUserByDefault() {
         PermissionAuthorizationManager manager = new PermissionAuthorizationManager(registry);
+        String unmatched = "/api/unmatched-endpoint-regression-probe";
+        assertTrue(registry.findRule(HttpMethod.GET, unmatched).isEmpty(),
+                "回归探针路径必须是未登记路径");
+
+        AuthorizationContext context = context(HttpMethod.GET, unmatched);
+        JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
+
+        StepVerifier.create(manager.check(Mono.just(auth), context))
+                .expectNextMatches(decision -> !decision.isGranted())
+                .verifyComplete();
+    }
+
+    @DisplayName("AUTHENTICATED 姿态：未登记路径 + 已认证 → ALLOW（遗留 fail-open 可回退）")
+    @Test
+    void unmatchedPathStillAllowedInAuthenticatedMode() {
+        PermissionAuthorizationManager manager = new PermissionAuthorizationManager(
+                registry, RbacUnmatchedPolicy.AUTHENTICATED);
         String unmatched = "/api/unmatched-endpoint-regression-probe";
         assertTrue(registry.findRule(HttpMethod.GET, unmatched).isEmpty(),
                 "回归探针路径必须是未登记路径");
