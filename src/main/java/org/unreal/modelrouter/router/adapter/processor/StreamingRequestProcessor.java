@@ -13,6 +13,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.auth.security.quota.QuotaReservation;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.unreal.modelrouter.auth.sanitization.SanitizationService;
+import org.unreal.modelrouter.config.core.StreamingSafetyProperties;
 import org.unreal.modelrouter.monitor.callhistory.ApiCallHistoryRecorder;
 import org.unreal.modelrouter.monitor.callhistory.config.CallHistoryProperties;
 import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
@@ -36,6 +37,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -50,12 +52,28 @@ import java.util.function.Function;
 public class StreamingRequestProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(StreamingRequestProcessor.class);
-    
+
     // Token 估算系数
     private static final double ENGLISH_CHARS_PER_TOKEN = 4.0;
     private static final double CHINESE_CHARS_PER_TOKEN = 2.0;
 
+    /** v3.2.3 (#127): 累积内容默认字符上限（宽松；配置可调） */
+    static final int DEFAULT_MAX_CONTENT_CHARS = 1_048_576;
+
+    /** v3.2.3 (#127): 流式缓存默认字符预算（超出则不缓存） */
+    static final int DEFAULT_MAX_CACHE_CHARS = 262_144;
+
+    /** v3.2.3 (#126): 上游块间空闲超时默认值（宽松；PT0S 可禁用） */
+    static final Duration DEFAULT_IDLE_TIMEOUT = Duration.ofMinutes(5);
+
+    /** v3.2.3 (#127): 记录侧截断标记（累积超上界时附加在记录内容尾部） */
+    static final String TRUNCATION_MARKER = "\n…[content truncated]";
+
     private final ResponseTransformer responseTransformer;
+
+    // v3.2.3: 流式安全上界（可选注入，缺省时用宽松常量默认值）
+    @Autowired(required = false)
+    private StreamingSafetyProperties streamingSafety;
 
     @Autowired(required = false)
     private MetricsCollector metricsCollector;
@@ -167,10 +185,21 @@ public class StreamingRequestProcessor {
         StringBuilder contentBuilder = new StringBuilder();
         AtomicReference<String> modelRef = new AtomicReference<>("unknown");
 
+        // v3.2.3 (#127): 独立 token 估算计数（按全部增量累计，不受截断影响）+ 截断标记
+        final int maxContentChars = maxContentChars();
+        final int maxCacheChars = maxCacheChars();
+        final AtomicLong contentChineseChars = new AtomicLong(0);
+        final AtomicLong contentOtherChars = new AtomicLong(0);
+        final AtomicBoolean contentSawAnyChar = new AtomicBoolean(false);
+        final AtomicBoolean contentTruncated = new AtomicBoolean(false);
+
         // v2.9.10: 流式缓存写 — 仅缓存键存在时收集变换后块与 finish_reason
         final List<String> transformedChunks = (cacheKeyForWrite != null) ? new ArrayList<>() : null;
         final AtomicReference<String> finishReasonRef = (cacheKeyForWrite != null)
                 ? new AtomicReference<>(null) : null;
+        // v3.2.3 (#127): 缓存字符预算 — 超预算的响应不缓存（缓存是优化，不是正确性）
+        final AtomicLong cacheChars = new AtomicLong(0);
+        final AtomicBoolean cacheOverBudget = new AtomicBoolean(false);
 
         // v3.1 修复: 与非流式路径保持一致——实例自定义 headers 优先（含下游 Authorization），
         // 仅在实例未提供 Authorization 时回退到请求传入的 authorization。
@@ -209,28 +238,65 @@ public class StreamingRequestProcessor {
                 })
                 .bodyToFlux(String.class)
                 .map(chunk -> {
-                    // 提取 usage 信息和累积内容
-                    extractUsageAndContent(chunk, promptTokens, completionTokens, totalTokens,
-                            cacheHitTokens, cacheMissTokens, contentBuilder, modelRef);
+                    // 提取 usage 信息和累积内容。
+                    // v3.2.3: contentBuilder 与 doOnCancel/doOnError 的缓冲释放共享监视器
+                    // （Reactor 不保证 cancel 与 onNext 串行，StringBuilder 非线程安全）。
+                    synchronized (contentBuilder) {
+                        final int contentLenBefore = contentBuilder.length();
+                        extractUsageAndContent(chunk, promptTokens, completionTokens, totalTokens,
+                                cacheHitTokens, cacheMissTokens, contentBuilder, modelRef);
+                        // v3.2.3 (#127): 独立计数（截断前）+ 累积上界
+                        accountAppendedChars(contentBuilder, contentLenBefore,
+                                contentChineseChars, contentOtherChars, contentSawAnyChar);
+                        if (contentBuilder.length() > maxContentChars) {
+                            contentBuilder.setLength(maxContentChars);
+                            contentTruncated.set(true);
+                        }
+                    }
                     // v2.9.10: 提取 finish_reason 用于流式缓存
                     if (cacheKeyForWrite != null) {
                         extractFinishReason(chunk, finishReasonRef);
                     }
                     ServerSentEvent<String> sse = transformAndWrapChunk(chunk, transformChunkFn);
-                    // v2.9.10: 收集变换后 data 串用于流式缓存
-                    if (transformedChunks != null) {
-                        transformedChunks.add(sse.data());
+                    // v2.9.10: 收集变换后 data 串用于流式缓存（v3.2.3: 受缓存字符预算约束）
+                    if (transformedChunks != null && !cacheOverBudget.get()) {
+                        final String data = sse.data();
+                        cacheChars.addAndGet(data != null ? data.length() : 0);
+                        synchronized (transformedChunks) {
+                            if (cacheChars.get() > maxCacheChars) {
+                                cacheOverBudget.set(true);
+                                transformedChunks.clear();
+                            } else {
+                                transformedChunks.add(data);
+                            }
+                        }
                     }
                     return sse;
-                })
+                });
+
+        // v3.2.3 (#126): 块间空闲看门狗 — 超时向上游 cancel（释放连接），
+        // 向下游发出终止错误（TimeoutException），经 doOnError 回滚配额并释放累积缓冲。
+        // 空闲型而非总时长型：长但持续产出的流不受影响。PT0S/负值可禁用。
+        final Duration idleTimeout = idleTimeout();
+        if (idleTimeout != null && !idleTimeout.isZero() && !idleTimeout.isNegative()) {
+            streamResponse = streamResponse.timeout(idleTimeout);
+        }
+
+        streamResponse = streamResponse
                 .doOnComplete(() -> {
                     recordStreamingComplete(serviceType, adapterType, instanceName, requestStartTime);
 
                     // v2.9.10: 流式缓存写 — 完整成功流结束后缓存（错误/中断不触发 doOnComplete）
+                    // v3.2.3 (#127): 超出缓存预算的响应不缓存
                     if (cacheKeyForWrite != null && responseCacheService != null
-                            && transformedChunks != null && !transformedChunks.isEmpty()) {
+                            && transformedChunks != null && !transformedChunks.isEmpty()
+                            && !cacheOverBudget.get()) {
+                        final List<String> chunksToCache;
+                        synchronized (transformedChunks) {
+                            chunksToCache = List.copyOf(transformedChunks);
+                        }
                         cacheStreamingResponse(cacheKeyForWrite, new CachedStreamingResponse(
-                                List.copyOf(transformedChunks),
+                                chunksToCache,
                                 modelRef.get(),
                                 promptTokens.get() > 0 ? promptTokens.get() : null,
                                 completionTokens.get() > 0 ? completionTokens.get() : null,
@@ -238,17 +304,22 @@ public class StreamingRequestProcessor {
                                 finishReasonRef != null ? finishReasonRef.get() : null));
                     }
 
-                    // 记录 token 使用量(含 KV 缓存指标)
+                    // 记录 token 使用量(含 KV 缓存指标)。
+                    // v3.2.3 (#127): 估算走独立计数，不依赖可能被截断的 contentBuilder。
                     recordTokenUsage(adapterType, instanceName, modelRef.get(),
                             promptTokens.get(), completionTokens.get(), totalTokens.get(),
                             cacheHitTokens.get(), cacheMissTokens.get(),
-                            contentBuilder.toString(), capturedKeyId, quotaReservation);
+                            estimateTokensFromCounts(contentChineseChars.get(), contentOtherChars.get()),
+                            contentSawAnyChar.get(), capturedKeyId, quotaReservation);
 
                     // v2.9.2: 记录治理 - 记录含请求/响应体的调用历史
                     // 脱敏与落库不得阻塞 EventLoop（doOnComplete 可能在 IO 线程执行）
                     if (recordLevel != RecordLevel.METADATA_ONLY && callHistoryRecorder != null) {
                         final long duration = System.currentTimeMillis() - requestStartTime;
-                        final String rawResponseBody = truncate(contentBuilder.toString());
+                        final String rawResponseBody;
+                        synchronized (contentBuilder) {
+                            rawResponseBody = recordedResponseBody(contentBuilder, contentTruncated.get());
+                        }
                         final String modelForRecord = modelRef.get();
                         final long promptTok = promptTokens.get();
                         final long completionTok = completionTokens.get();
@@ -292,12 +363,19 @@ public class StreamingRequestProcessor {
                     }
                 })
                 .doOnError(throwable -> {
+                    // v3.2.3 (#126/#127): 释放累积缓冲（空闲超时/异常终止时立即归还内存）。
+                    // onError 与 onNext 串行，此处与 map() 无并发；同步仅统一监视器约定。
+                    releaseAccumulation(contentBuilder, transformedChunks);
                     recordStreamingError(serviceType, adapterType, instanceName,
                             requestStartTime, throwable);
                     // v3.1 PR-2: 流式中断/异常 — 回滚整笔配额预留
                     QuotaReservation.settleFailure(quotaReservation);
                 })
-                .doOnCancel(() -> QuotaReservation.settleFailure(quotaReservation))
+                .doOnCancel(() -> {
+                    // v3.2.3 (#126/#127): 同样释放累积缓冲（cancel 不与 onNext 串行，须持锁）
+                    releaseAccumulation(contentBuilder, transformedChunks);
+                    QuotaReservation.settleFailure(quotaReservation);
+                })
                 .onErrorResume(throwable -> Flux.error(throwable));
 
         return Mono.just(org.springframework.http.ResponseEntity.ok()
@@ -461,12 +539,15 @@ public class StreamingRequestProcessor {
 
     /**
      * 记录 Token 使用量
-     * 如果后端未提供 usage 信息，则根据累积的内容进行估算
+     * 如果后端未提供 usage 信息，则根据独立字符计数进行估算（与完整内容估算逐字节一致）
      *
      * <p>v3.1 PR-2: 本方法同时是流式链路的配额结算点——在 token 落库处按
      * {@code 实际 − 估算} 冲正预留（{@link QuotaReservation#settleSuccess(QuotaReservation, long)}），
      * 中断/异常路径由调用方的 {@code doOnError} / {@code doOnCancel} 回滚，
      * 凭据自身保证恰一次结算。</p>
+     *
+     * <p>v3.2.3 (#127): 估算入参改为独立累计的 token 数与「是否见过内容」标记，
+     * 不再读取可能被截断的累积缓冲——截断不影响账单/配额。</p>
      */
     private void recordTokenUsage(final String adapterType,
                                    final String instanceName,
@@ -476,7 +557,8 @@ public class StreamingRequestProcessor {
                                    final long totalTokens,
                                    final long cacheHitTokens,
                                    final long cacheMissTokens,
-                                   final String content,
+                                   final long estimatedCompletionTokens,
+                                   final boolean sawContent,
                                    final String apiKeyId,
                                    final QuotaReservation quotaReservation) {
         if (tokenUsageRecorder == null) {
@@ -487,9 +569,9 @@ public class StreamingRequestProcessor {
         long finalCompletionTokens = completionTokens;
         long finalTotalTokens = totalTokens;
 
-        // 如果后端未返回 usage，则估算
-        if (totalTokens == 0 && content.length() > 0) {
-            finalCompletionTokens = estimateTokens(content);
+        // 如果后端未提供 usage，则估算（估算值来自独立计数，与截断无关）
+        if (totalTokens == 0 && sawContent) {
+            finalCompletionTokens = estimatedCompletionTokens;
             finalTotalTokens = finalPromptTokens + finalCompletionTokens;
             logger.debug("Token usage estimated: adapter={}, instance={}, prompt={}, completion={}, total={}",
                     adapterType, instanceName, finalPromptTokens, finalCompletionTokens, finalTotalTokens);
@@ -602,6 +684,117 @@ public class StreamingRequestProcessor {
 
         return (long) Math.ceil(chineseChars / CHINESE_CHARS_PER_TOKEN
                 + otherChars / ENGLISH_CHARS_PER_TOKEN);
+    }
+
+    // ==================== v3.2.3 (#126, #127): 流式安全辅助 ====================
+
+    /**
+     * 释放累积缓冲（异常/取消终止时立即归还内存）。
+     *
+     * <p>{@code doOnCancel} 与 {@code onNext} 不保证串行，必须与 {@code map()} 中的
+     * 累积写入共用监视器，避免 {@link StringBuilder}/{@link ArrayList} 并发损坏。</p>
+     *
+     * @param contentBuilder    内容累积缓冲
+     * @param transformedChunks 流式缓存块收集器（无缓存键时为 {@code null}）
+     */
+    private void releaseAccumulation(final StringBuilder contentBuilder,
+                                     final List<String> transformedChunks) {
+        synchronized (contentBuilder) {
+            contentBuilder.setLength(0);
+        }
+        if (transformedChunks != null) {
+            synchronized (transformedChunks) {
+                transformedChunks.clear();
+            }
+        }
+    }
+
+    /**
+     * 将 contentBuilder 新增区间计入独立 token 估算计数（截断前调用，保证与完整内容估算一致）.
+     *
+     * @param contentBuilder   累积缓冲
+     * @param from             本次增量起始下标
+     * @param chineseChars     汉字计数（估算用，独立于缓冲）
+     * @param otherChars       其余非空白字符计数（估算用，独立于缓冲）
+     * @param sawAnyChar       是否出现过任意字符（含空白；决定估算分支是否启用）
+     */
+    private void accountAppendedChars(final StringBuilder contentBuilder,
+                                      final int from,
+                                      final AtomicLong chineseChars,
+                                      final AtomicLong otherChars,
+                                      final AtomicBoolean sawAnyChar) {
+        final int to = contentBuilder.length();
+        if (to <= from) {
+            return;
+        }
+        sawAnyChar.set(true);
+        for (int i = from; i < to; i++) {
+            final char c = contentBuilder.charAt(i);
+            if (Character.UnicodeScript.of(c) == Character.UnicodeScript.HAN) {
+                chineseChars.incrementAndGet();
+            } else if (!Character.isWhitespace(c)) {
+                otherChars.incrementAndGet();
+            }
+        }
+    }
+
+    /**
+     * 由独立字符计数估算 token 数——与 {@link #estimateTokens(String)} 同一系数.
+     *
+     * <p>对未截断的同一段内容，结果与 {@code estimateTokens(contentBuilder.toString())}
+     * 完全一致（先按字符分类计数再代入公式，除法顺序不变）。</p>
+     *
+     * @param chineseChars 汉字字符数
+     * @param otherChars   其余非空白字符数
+     * @return 估算 token 数（非负）
+     */
+    private long estimateTokensFromCounts(final long chineseChars, final long otherChars) {
+        return (long) Math.ceil(chineseChars / CHINESE_CHARS_PER_TOKEN
+                + otherChars / ENGLISH_CHARS_PER_TOKEN);
+    }
+
+    /**
+     * 记录用响应体：有界前缀 + 截断标记（如有），再按 call-history 上限截断.
+     *
+     * @param contentBuilder    累积缓冲（已按 maxContentChars 收紧）
+     * @param contentTruncated  是否发生过累积截断
+     * @return 记录用响应体
+     */
+    private String recordedResponseBody(final StringBuilder contentBuilder, final boolean contentTruncated) {
+        final String body = contentTruncated
+                ? contentBuilder + TRUNCATION_MARKER
+                : contentBuilder.toString();
+        return truncate(body);
+    }
+
+    /**
+     * 累积内容字符上限（配置优先，缺省 {@link #DEFAULT_MAX_CONTENT_CHARS}）.
+     */
+    private int maxContentChars() {
+        if (streamingSafety != null && streamingSafety.getMaxContentChars() > 0) {
+            return streamingSafety.getMaxContentChars();
+        }
+        return DEFAULT_MAX_CONTENT_CHARS;
+    }
+
+    /**
+     * 流式缓存字符预算（配置优先，缺省 {@link #DEFAULT_MAX_CACHE_CHARS}）.
+     */
+    private int maxCacheChars() {
+        if (streamingSafety != null && streamingSafety.getMaxCacheChars() > 0) {
+            return streamingSafety.getMaxCacheChars();
+        }
+        return DEFAULT_MAX_CACHE_CHARS;
+    }
+
+    /**
+     * 上游块间空闲超时（配置优先；PT0S/负值表示禁用）.
+     */
+    private Duration idleTimeout() {
+        if (streamingSafety != null && streamingSafety.getIdleTimeout() != null) {
+            return streamingSafety.getIdleTimeout();
+        }
+        return DEFAULT_IDLE_TIMEOUT;
     }
 
     /**
