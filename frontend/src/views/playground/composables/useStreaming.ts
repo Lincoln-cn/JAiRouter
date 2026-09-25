@@ -28,6 +28,9 @@ export function useStreaming() {
     let fullContent = ''
     isStreaming.value = true
     streamingContent.value = ''
+    // 捕获当前 AbortController：cancelStream 会把 abortController 置空，
+    // 异常时需用本地引用判断是否为主动中止
+    const controller = abortController.value
 
     try {
       while (true) {
@@ -69,6 +72,15 @@ export function useStreaming() {
 
       options.onComplete?.(fullContent)
       return fullContent
+    } catch (error) {
+      // 主动 abort（取消按钮 / 组件卸载）视为正常停止，不向上抛出
+      if (
+        (error as { name?: string })?.name === 'AbortError' ||
+        controller?.signal.aborted
+      ) {
+        return fullContent
+      }
+      throw error
     } finally {
       isStreaming.value = false
     }

@@ -582,6 +582,8 @@ const recentExceptions = ref<ExceptionEvent[]>([])
 
 // SSE 回调引用，方便移除
 let sseHandler: ((data: any) => void) | null = null
+// 卸载标志：fetchDashboardData 的 then/catch 可能在卸载后才执行
+let isUnmounted = false
 
 // 服务类型映射（保持原有顺序，type -> i18n 键名；v2.10.4: 文案收敛到顶层 serviceTypes.*）
 const serviceTypeMap: Record<string, string> = {
@@ -1086,12 +1088,14 @@ onMounted(() => {
   useChartAutoRefresh(rebuildAll)
 
   fetchDashboardData().then(() => {
+    if (isUnmounted) return
     sseHandler = (data: any) => {
       handleHealthUpdate(data)
     }
     addSSEListener(sseHandler)
     connectSSE()
   }).catch(() => {
+    if (isUnmounted) return
     sseHandler = (data: any) => handleHealthUpdate(data)
     addSSEListener(sseHandler)
     connectSSE()
@@ -1101,6 +1105,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  isUnmounted = true
   window.removeEventListener('resize', resizeChart)
   systemChartInstance?.dispose()
 
