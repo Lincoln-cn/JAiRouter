@@ -947,6 +947,15 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/security/rbac-permissions"/>
   </url>
   <url>
+    <loc>https://jairouter.comzh/security/trusted-proxies</loc>
+    <lastmod>2026-09-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/security/trusted-proxies"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/security/trusted-proxies"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/security/trusted-proxies"/>
+  </url>
+  <url>
     <loc>https://jairouter.comzh/security/audit-log-management</loc>
     <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
@@ -1161,6 +1170,15 @@
     <xhtml:link rel="canonical" href="https://jairouter.comen/security/rbac-permissions"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/security/rbac-permissions"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/security/rbac-permissions"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/security/trusted-proxies</loc>
+    <lastmod>2026-09-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/security/trusted-proxies"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/security/trusted-proxies"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/security/trusted-proxies"/>
   </url>
   <url>
     <loc>https://jairouter.comen/security/audit-log-management</loc>

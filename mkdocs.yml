@@ -96,6 +96,7 @@ plugins:
             审计日志管理: Audit Log Management
             权限管理: RBAC Permission Management
             数据脱敏: Data Sanitization
+            可信代理: Trusted Proxies
             故障排除: Troubleshooting
             API参考: API Reference
             统一API: Universal API
@@ -212,6 +213,7 @@ nav:
     - 审计日志管理: zh/security/audit-log-management.md
     - 权限管理: zh/security/rbac-permissions.md
     - 数据脱敏: zh/security/data-sanitization.md
+    - 可信代理: zh/security/trusted-proxies.md
     - 故障排除: zh/security/troubleshooting.md
   - API参考:
     - zh/api-reference/index.md
