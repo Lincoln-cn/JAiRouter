@@ -13,8 +13,8 @@ import java.util.Set;
  *
  * <p>清单中的端点<b>有意不登记 URL 权限规则</b>：它们要么是自助端点（方法级
  * {@code @PreAuthorize} 已约束属主），要么是服务代理面（授权由 API-Key 服务类型
- * 权限 + 配额控制，而非 URL 权限矩阵）。写方法 fail-closed 策略跳过这些端点，
- * 覆盖自检把它们报告为 EXEMPT 而非 MISSING。
+ * 权限 + 配额控制，而非 URL 权限矩阵）。fail-closed 姿态（{@link RbacUnmatchedPolicy}）
+ * 跳过这些端点，覆盖自检把它们报告为 EXEMPT 而非 MISSING。
  *
  * <p><b>判定顺序</b>：先 {@link PermissionRuleRegistry}（规则命中即 covered），
  * 再本清单（命中即 EXEMPT），都未命中才是 MISSING（可行动信号）。

@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 /**
  * PermissionAuthorizationManager 单元测试（v2.9.8 RBAC）
  *
- * 覆盖：规则命中授权、权限码缺失拒绝、ADMIN 直通、无规则回退 authenticated、方法感知、未认证拒绝。
+ * 覆盖：规则命中授权、权限码缺失拒绝、ADMIN 直通、无规则按姿态回退/拒绝、方法感知、未认证拒绝。
  *
  * @author JAiRouter Team
  * @since 2.9.8
@@ -44,9 +44,11 @@ class PermissionAuthorizationManagerTest {
         @Test
         @DisplayName("命中规则且携带权限码 -> 放行")
         void ruleMatchedWithPermissionGranted() {
-            AuthorizationContext context = context(HttpMethod.GET, "/api/services");
+            // /api/services 本身未登记规则（仅子路径 circuitbreaker/ratelimit 有规则），
+            // 此处改用真实命中规则的端点，避免依赖 fail-open 误判「规则命中」
+            AuthorizationContext context = context(HttpMethod.GET, "/api/config/instance/chat");
             JwtAuthentication auth = authenticated(
-                    "user", List.of("USER"), List.of(PermissionCodes.CONFIG_SERVICES_READ));
+                    "user", List.of("USER"), List.of(PermissionCodes.CONFIG_INSTANCES_READ));
 
             StepVerifier.create(manager.check(Mono.just(auth), context))
                     .expectNextMatches(AuthorizationDecision::isGranted)
@@ -79,7 +81,7 @@ class PermissionAuthorizationManagerTest {
         @Test
         @DisplayName("ADMIN 角色直通（即使无权限码）")
         void adminRoleBypassesPermissionCheck() {
-            AuthorizationContext context = context(HttpMethod.GET, "/api/services");
+            AuthorizationContext context = context(HttpMethod.GET, "/api/config/instance/chat");
             JwtAuthentication auth = authenticated("admin", List.of("ADMIN"), List.of());
 
             StepVerifier.create(manager.check(Mono.just(auth), context))
@@ -103,7 +105,7 @@ class PermissionAuthorizationManagerTest {
         @Test
         @DisplayName("未认证请求命中规则 -> 拒绝")
         void unauthenticatedOnRuleDenied() {
-            AuthorizationContext context = context(HttpMethod.GET, "/api/services");
+            AuthorizationContext context = context(HttpMethod.GET, "/api/config/instance/chat");
 
             StepVerifier.create(manager.check(Mono.empty(), context))
                     .expectNextMatches(decision -> !decision.isGranted())
@@ -116,12 +118,25 @@ class PermissionAuthorizationManagerTest {
     class NoRuleFallbackTests {
 
         @Test
-        @DisplayName("未登记路径 + 已认证 -> 放行(authenticated 回退)")
-        void noRuleAuthenticatedGranted() {
+        @DisplayName("Phase 3 默认 DENY_ALL：未登记路径 + 已认证非管理员 -> 拒绝")
+        void noRuleAuthenticatedDeniedByDefault() {
             AuthorizationContext context = context(HttpMethod.GET, "/api/unregistered-endpoint");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
             StepVerifier.create(manager.check(Mono.just(auth), context))
+                    .expectNextMatches(decision -> !decision.isGranted())
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("AUTHENTICATED 姿态：未登记路径 + 已认证 -> 放行(遗留 fail-open)")
+        void noRuleAuthenticatedGrantedInAuthenticatedMode() {
+            PermissionAuthorizationManager legacy = new PermissionAuthorizationManager(
+                    new PermissionRuleRegistry(), RbacUnmatchedPolicy.AUTHENTICATED);
+            AuthorizationContext context = context(HttpMethod.GET, "/api/unregistered-endpoint");
+            JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
+
+            StepVerifier.create(legacy.check(Mono.just(auth), context))
                     .expectNextMatches(AuthorizationDecision::isGranted)
                     .verifyComplete();
         }

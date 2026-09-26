@@ -22,12 +22,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * #128 Phase 2：写方法 fail-closed 策略测试。
+ * #128 Phase 2：写方法 fail-closed 策略测试（DENY_WRITES 姿态）。
  *
  * <p>Phase 2 仅对写方法（POST/PUT/DELETE/PATCH）实施 fail-closed：
- * 未命中规则且未豁免 → DENY。GET 保持 fail-open（Phase 3 范围）。
- * 逃生阀 {@code jairouter.security.rbac.write-fail-closed.enabled=false}
- * 可恢复旧行为。
+ * 未命中规则且未豁免 → DENY。GET 在 DENY_WRITES 姿态下保持 fail-open
+ * （Phase 3 的 DENY_ALL 见 {@link PermissionUnmatchedPolicyTest}）。
+ * 布尔构造器 {@code true}→DENY_WRITES，{@code false}→AUTHENTICATED。
  *
  * @author JAiRouter Team
  * @since 3.0.4
