@@ -21,7 +21,7 @@ Core design principles:
 
 - **Data-driven, no method-level annotations**: permission checks for synchronous controllers always go through URL rules; method-level `@PreAuthorize` is forbidden (the RBAC 500 rule — synchronous method annotations do not take effect under the reactive security stack and cause 500 errors).
 - **ADMIN bypass**: when a URL rule matches, `ROLE_ADMIN` passes through directly without per-code checks; when a deny decision is required, `ROLE_ADMIN` still short-circuits through.
-- **Unmatched endpoints are denied by default (fail-closed)**: `/api/**` endpoints not present in the rule table are governed by the `RbacUnmatchedPolicy` posture, and **the default is `DENY_ALL` (GETs and writes alike are denied; only ADMIN passes)**. The old behaviour can be rolled back via configuration — see "Authorization Decision".
+- **Unmatched endpoints are denied by default (fail-closed)**: `/api/**` endpoints not present in the rule table are governed by the `RbacUnmatchedPolicy` posture, and **the default is `DENY_ALL` (GETs and writes alike are denied; only ADMIN passes)**. The old behavior can be rolled back via configuration — see "Authorization Decision".
 - **Explicit exemption list**: endpoints that intentionally carry no URL rule and only require a login are concentrated in `RbacExemptEndpoints`; every exemption must state a written reason, and the coverage self-check reports EXEMPT and MISSING separately.
 - **`/v1/**` is independent of this system**: OpenAI-compatible inference endpoints only require authentication and are not part of the permission matrix; service-level access control is handled by **API Key service-type permissions** at the adapter layer. This RBAC system does not affect existing API Key calls.
 
@@ -123,7 +123,7 @@ The system ships 4 built-in role templates (seeded automatically at startup by `
 
 When the `role_permissions` table is **non-empty**, `RolePermissionSeeder` no longer skips it — it performs an **insert-only additive reconcile**:
 
-| Table state | Behaviour |
+| Table state | Behavior |
 |-------------|-----------|
 | Empty | Full seeding of the 4 role templates (fresh-install path) |
 | Non-empty | Per role: if the held code set is a subset of the template, insert only the missing codes that some URL rule requires (`template ∩ rule-required − held`); if the role holds a code outside its template, it is treated as hand-customized and **the whole role is skipped**; a role with no permission rows is skipped as well |
@@ -147,7 +147,7 @@ The full flow of a permission-checked request:
 `PermissionAuthorizationManager` decides every `/api/**` request in three fixed steps:
 
 1. **A `PermissionRuleRegistry` rule matches** → require `ROLE_ADMIN` **or** the required permission code;
-2. **No rule matches, but the request hits the explicit exemption list `RbacExemptEndpoints`** → **authenticated only** (same effective behaviour as the old fallback, but now explicit and auditable, with a written reason per entry);
+2. **No rule matches, but the request hits the explicit exemption list `RbacExemptEndpoints`** → **authenticated only** (same effective behavior as the old fallback, but now explicit and auditable, with a written reason per entry);
 3. **Neither matches (MISSING)** → governed by the unmatched posture; **deny by default** (`ROLE_ADMIN` still short-circuits through).
 
 Decision scenarios:
@@ -177,7 +177,7 @@ Configuration:
 | `jairouter.security.rbac.unmatched-policy` | `AUTHENTICATED` \| `DENY_WRITES` \| `DENY_ALL` | **default `DENY_ALL`** |
 | `jairouter.security.rbac.write-fail-closed.enabled` (legacy) | `true` \| `false` | **consulted only when `unmatched-policy` is absent**: `false`→`AUTHENTICATED`, `true`→`DENY_WRITES`; when both are present the new key wins, so they can never contradict |
 
-**Rollback without a code change**: set `jairouter.security.rbac.unmatched-policy=AUTHENTICATED` (full legacy behaviour) or `=DENY_WRITES` (phase-2 posture).
+**Rollback without a code change**: set `jairouter.security.rbac.unmatched-policy=AUTHENTICATED` (full legacy behavior) or `=DENY_WRITES` (phase-2 posture).
 
 ### Coverage Self-Check and Observability
 
@@ -235,7 +235,7 @@ The table below maps five caller classes against capability groups under the cur
 
 What API-Key callers must know (external integrators):
 
-- API-Key principals carry **ONLY `ROLE_<SERVICE>`** authorities (`ApiKeyAuthentication` uppercases the permission list and prefixes `ROLE_`); `ApiKeyService.validatePermissions` accepts only `ServiceTypeConstants` service types (`chat` / `embedding` / `rerank` / `tts` / `stt` / `imgGen` / `imgEdit`); invalid values are dropped, and legacy `READ` expands to all service types.
+- API-Key principals carry **ONLY `ROLE_<SERVICE>`** authorities (`ApiKeyAuthentication` converts the permission list to uppercase and prefixes `ROLE_`); `ApiKeyService.validatePermissions` accepts only `ServiceTypeConstants` service types (`chat` / `embedding` / `rerank` / `tts` / `stt` / `imgGen` / `imgEdit`); invalid values are dropped, and legacy `READ` expands to all service types.
 - Therefore an API-Key can **never** hold `ROLE_ADMIN` and never holds a permission code ⇒ **every rule-matched `/api/**` path is 403 for API-Keys**, and after phase 3 unmatched `/api/**` paths are 403 too.
 - The usable API-Key surface is: **all of `/v1/**`** (`SecurityConfiguration` maps `/v1/**` to `authenticated()` — NOT the permission manager) plus the exemption set above.
 - The `/v1/**` native surface (OpenAI + Anthropic, six endpoints) is **unaffected by all three changes** — existing integrations need no modification.
@@ -340,7 +340,7 @@ Visibility control mechanisms:
 
 - **Menu filtering**: each item in `menu.ts` may carry a `permission` field (read-semantics codes); `usePermission` (which delegates to `hasPermission` in the user store) filters items out, and a group disappears entirely when all of its items are filtered. Items without a `permission` field stay visible to every authenticated user.
 - **Route guard**: the route `meta.permissions` declares the required permission code array; `router.beforeEach` requires **all** of them (ADMIN always passes) and redirects to the dashboard otherwise.
-- **Empty-permission compatibility**: when a token was issued by an older version (no `permissions` claim) or the roles are not registered in `role_permissions`, the frontend permission list is empty and imposes **no restriction** on menus/routes, so the menu does not vanish. Note this is a **frontend** compatibility behaviour (the frontend cannot evaluate URL rules); the backend now fail-closes unmatched `/api/**` paths — the two are independent.
+- **Empty-permission compatibility**: when a token was issued by an older version (no `permissions` claim) or the roles are not registered in `role_permissions`, the frontend permission list is empty and imposes **no restriction** on menus/routes, so the menu does not vanish. Note this is a **frontend** compatibility behavior (the frontend cannot evaluate URL rules); the backend now fail-closes unmatched `/api/**` paths — the two are independent.
 
 ## Upgrade and Migration Notes
 
