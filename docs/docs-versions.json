@@ -84,19 +84,18 @@
     },
     "docs/en/configuration/dynamic-config.md": {
       "FilePath": "docs/en/configuration/dynamic-config.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-08-24T03:02:49.098658",
-      "ContentHash": "34d2316e7e7691cc",
-      "GitCommit": "f5d673e2",
-      "Author": "Lincoln",
+      "Version": "1.0.4",
+      "LastModified": "2026-09-26T06:43:32.906893",
+      "ContentHash": "0e7899edc7f29b65",
+      "GitCommit": "89443fc5",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/configuration/circuit-breaker.md",
         "docs/en/configuration/load-balancing.md",
         "docs/en/configuration/rate-limiting.md",
         "docs/en/monitoring/index.md"
-      ],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      ]
     },
     "docs/en/configuration/index.md": {
       "FilePath": "docs/en/configuration/index.md",
@@ -121,11 +120,11 @@
     },
     "docs/en/configuration/load-balancing.md": {
       "FilePath": "docs/en/configuration/load-balancing.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-09-02T06:48:41.289515",
-      "ContentHash": "c3f517d6ae7577b7",
-      "GitCommit": "5f29294f",
-      "Author": "Lincoln",
+      "Version": "1.0.7",
+      "LastModified": "2026-09-26T06:43:32.921670",
+      "ContentHash": "ca203a4bc663e7c2",
+      "GitCommit": "89443fc5",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/configuration/circuit-breaker.md",
@@ -133,16 +132,15 @@
         "docs/en/configuration/routing-rules.md",
         "docs/en/monitoring/index.md",
         "docs/en/troubleshooting/index.md"
-      ],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      ]
     },
     "docs/en/configuration/rate-limiting.md": {
       "FilePath": "docs/en/configuration/rate-limiting.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-08-27T12:24:13.181422",
-      "ContentHash": "8eb780c4861ef00e",
-      "GitCommit": "a23defac",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-09-26T06:43:32.928177",
+      "ContentHash": "d229a7e560de3f92",
+      "GitCommit": "89443fc5",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/configuration/circuit-breaker.md",
@@ -150,8 +148,7 @@
         "docs/en/monitoring/index.md",
         "docs/en/troubleshooting/index.md",
         "docs/en/troubleshooting/performance.md"
-      ],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      ]
     },
     "docs/en/deployment/china-optimization.md": {
       "FilePath": "docs/en/deployment/china-optimization.md",
@@ -226,15 +223,16 @@
     },
     "docs/en/deployment/production.md": {
       "FilePath": "docs/en/deployment/production.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-09-18T11:16:30.228354",
-      "ContentHash": "63cb17b52bfc2ffc",
-      "GitCommit": "2e651835",
-      "Author": "Lincoln",
+      "Version": "1.0.8",
+      "LastModified": "2026-09-26T06:43:32.972866",
+      "ContentHash": "ac485e2ac6580b67",
+      "GitCommit": "c1314c67",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/index.md",
         "docs/en/monitoring/index.md",
+        "docs/en/security/trusted-proxies.md",
         "docs/en/troubleshooting/index.md",
         "docs/en/troubleshooting/performance.md"
       ]
@@ -426,11 +424,11 @@
     },
     "docs/en/monitoring/index.md": {
       "FilePath": "docs/en/monitoring/index.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-08-24T03:02:49.176294",
-      "ContentHash": "714d231785fca751",
-      "GitCommit": "f5d673e2",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-09-26T06:43:33.038371",
+      "ContentHash": "c4e8e3f2c1cbdca3",
+      "GitCommit": "89443fc5",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/monitoring/alert_rules_guide.md",
@@ -438,8 +436,7 @@
         "docs/en/monitoring/dashboards.md",
         "docs/en/monitoring/setup.md",
         "docs/en/monitoring/troubleshooting.md"
-      ],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      ]
     },
     "docs/en/monitoring/metrics.md": {
       "FilePath": "docs/en/monitoring/metrics.md",
@@ -489,19 +486,18 @@
     },
     "docs/en/monitoring/testing.md": {
       "FilePath": "docs/en/monitoring/testing.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-08-24T03:02:49.186595",
-      "ContentHash": "cabb4bd4294c4c84",
-      "GitCommit": "f5d673e2",
-      "Author": "Lincoln",
+      "Version": "1.0.6",
+      "LastModified": "2026-09-26T06:43:33.051754",
+      "ContentHash": "33cea5ffee5f9478",
+      "GitCommit": "89443fc5",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/monitoring/metrics.md",
         "docs/en/monitoring/performance.md",
         "docs/en/monitoring/setup.md",
         "docs/en/monitoring/troubleshooting.md"
-      ],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      ]
     },
     "docs/en/monitoring/troubleshooting.md": {
       "FilePath": "docs/en/monitoring/troubleshooting.md",
@@ -605,11 +601,11 @@
     },
     "docs/en/troubleshooting/index.md": {
       "FilePath": "docs/en/troubleshooting/index.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-08-24T03:02:49.247293",
-      "ContentHash": "4659070d99b0ecde",
-      "GitCommit": "f5d673e2",
-      "Author": "Lincoln",
+      "Version": "1.0.4",
+      "LastModified": "2026-09-26T06:43:33.127494",
+      "ContentHash": "1d4ce90186919994",
+      "GitCommit": "89443fc5",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/index.md",
@@ -618,19 +614,17 @@
         "docs/en/troubleshooting/common-issues.md",
         "docs/en/troubleshooting/debugging.md",
         "docs/en/troubleshooting/performance.md"
-      ],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      ]
     },
     "docs/en/troubleshooting/performance.md": {
       "FilePath": "docs/en/troubleshooting/performance.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-08-24T03:02:49.251333",
-      "ContentHash": "d6e6a30baea50b68",
-      "GitCommit": "f5d673e2",
-      "Author": "Lincoln",
+      "Version": "1.0.4",
+      "LastModified": "2026-09-26T06:43:33.130064",
+      "ContentHash": "20191284270e6f1c",
+      "GitCommit": "89443fc5",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": [],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      "Dependencies": []
     },
     "docs/zh/api-reference/index.md": {
       "FilePath": "docs/zh/api-reference/index.md",
@@ -707,19 +701,18 @@
     },
     "docs/zh/configuration/dynamic-config.md": {
       "FilePath": "docs/zh/configuration/dynamic-config.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-08-24T03:02:49.286188",
-      "ContentHash": "141ea5f38d2c74cf",
-      "GitCommit": "f5d673e2",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-09-26T06:43:33.155291",
+      "ContentHash": "980e254957303bbb",
+      "GitCommit": "89443fc5",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/configuration/circuit-breaker.md",
         "docs/zh/configuration/load-balancing.md",
         "docs/zh/configuration/rate-limiting.md",
         "docs/zh/monitoring/index.md"
-      ],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      ]
     },
     "docs/zh/configuration/index.md": {
       "FilePath": "docs/zh/configuration/index.md",
@@ -743,11 +736,11 @@
     },
     "docs/zh/configuration/load-balancing.md": {
       "FilePath": "docs/zh/configuration/load-balancing.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-09-02T06:48:41.533856",
-      "ContentHash": "90b151d330e70ecd",
-      "GitCommit": "5f29294f",
-      "Author": "Lincoln",
+      "Version": "1.0.6",
+      "LastModified": "2026-09-26T06:43:33.170416",
+      "ContentHash": "1d06f70ff5c5d8b4",
+      "GitCommit": "89443fc5",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/configuration/circuit-breaker.md",
@@ -755,16 +748,15 @@
         "docs/zh/configuration/routing-rules.md",
         "docs/zh/monitoring/index.md",
         "docs/zh/troubleshooting/index.md"
-      ],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      ]
     },
     "docs/zh/configuration/rate-limiting.md": {
       "FilePath": "docs/zh/configuration/rate-limiting.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-08-27T12:24:13.416810",
-      "ContentHash": "93d608ced43f233d",
-      "GitCommit": "a23defac",
-      "Author": "Lincoln",
+      "Version": "1.0.4",
+      "LastModified": "2026-09-26T06:43:33.177226",
+      "ContentHash": "a20a2377a67f85a3",
+      "GitCommit": "89443fc5",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/configuration/circuit-breaker.md",
@@ -772,8 +764,7 @@
         "docs/zh/monitoring/index.md",
         "docs/zh/troubleshooting/index.md",
         "docs/zh/troubleshooting/performance.md"
-      ],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      ]
     },
     "docs/zh/deployment/china-optimization.md": {
       "FilePath": "docs/zh/deployment/china-optimization.md",
@@ -847,15 +838,16 @@
     },
     "docs/zh/deployment/production.md": {
       "FilePath": "docs/zh/deployment/production.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-09-18T11:28:19.379919",
-      "ContentHash": "f60fcdfc95528a1c",
-      "GitCommit": "c82b4559",
-      "Author": "Lincoln",
+      "Version": "1.0.9",
+      "LastModified": "2026-09-26T06:43:33.218558",
+      "ContentHash": "2301e6de600ab05f",
+      "GitCommit": "c1314c67",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/index.md",
         "docs/zh/monitoring/index.md",
+        "docs/zh/security/trusted-proxies.md",
         "docs/zh/troubleshooting/index.md",
         "docs/zh/troubleshooting/performance.md"
       ]
@@ -2066,18 +2058,17 @@
     },
     "docs/en/troubleshooting/issue-fixes.md": {
       "FilePath": "docs/en/troubleshooting/issue-fixes.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-08-24T03:02:49.249398",
-      "ContentHash": "282cbb8ac79759bd",
-      "GitCommit": "f5d673e2",
-      "Author": "Lincoln",
+      "Version": "1.0.1",
+      "LastModified": "2026-09-26T06:43:33.128824",
+      "ContentHash": "43fe5be14515c667",
+      "GitCommit": "89443fc5",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/troubleshooting/common-issues.md",
         "docs/en/troubleshooting/debugging.md",
         "docs/en/troubleshooting/index.md"
-      ],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      ]
     },
     "docs/zh/configuration/routing-rules.md": {
       "FilePath": "docs/zh/configuration/routing-rules.md",
@@ -2303,6 +2294,36 @@
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
+        "docs/zh/security/rbac-permissions.md"
+      ]
+    },
+    "docs/en/security/trusted-proxies.md": {
+      "FilePath": "docs/en/security/trusted-proxies.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-09-26T06:43:33.091736",
+      "ContentHash": "b09d16c123924a41",
+      "GitCommit": "c1314c67",
+      "Author": "Leo Lin",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/en/configuration/rate-limiting.md",
+        "docs/en/deployment/production.md",
+        "docs/en/security/index.md",
+        "docs/en/security/rbac-permissions.md"
+      ]
+    },
+    "docs/zh/security/trusted-proxies.md": {
+      "FilePath": "docs/zh/security/trusted-proxies.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-09-26T06:43:33.330129",
+      "ContentHash": "797a644e2e98b1c1",
+      "GitCommit": "c1314c67",
+      "Author": "Leo Lin",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/zh/configuration/rate-limiting.md",
+        "docs/zh/deployment/production.md",
+        "docs/zh/security/index.md",
         "docs/zh/security/rbac-permissions.md"
       ]
     }
@@ -6275,7 +6296,127 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-09-26T04:58:40.410062",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/dynamic-config.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-26T06:43:32.906904",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/load-balancing.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-26T06:43:32.921677",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/rate-limiting.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-26T06:43:32.928182",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/production.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-26T06:43:32.972873",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/index.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-26T06:43:33.038382",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/testing.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-26T06:43:33.051762",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/trusted-proxies.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-09-26T06:43:33.091746",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/en/troubleshooting/index.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-26T06:43:33.127502",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/troubleshooting/issue-fixes.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-26T06:43:33.128827",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/troubleshooting/performance.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-26T06:43:33.130067",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/dynamic-config.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-26T06:43:33.155297",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/load-balancing.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-26T06:43:33.170423",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/rate-limiting.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-26T06:43:33.177232",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/production.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-26T06:43:33.218566",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/trusted-proxies.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-09-26T06:43:33.330140",
+      "Description": "文档created"
     }
   ],
-  "last_updated": "2026-09-26T13:22:02.961963"
+  "last_updated": "2026-09-26T06:43:33.373949"
 }
