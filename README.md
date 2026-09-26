@@ -332,7 +332,7 @@ GitHub gives us two channels and we keep them separate on purpose, so nothing ge
 
 > Not sure which one fits? Post in Discussions — if it turns out to be a reproducible defect, we will move it to Issues for you.
 
-Discussions is organised by category:
+Discussions is organized by category:
 
 | Category | Use it for |
 |----------|------------|
