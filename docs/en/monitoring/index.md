@@ -78,33 +78,33 @@ curl http://localhost:8080/actuator/configprops
 | Metric | Description | Type |
 |--------|-------------|------|
 | `http.server.requests` | HTTP request duration and count | Timer |
-| `jairouter.requests.total` | Total requests by service type | Counter |
-| `jairouter.requests.duration` | Request processing time | Timer |
-| `jairouter.requests.errors` | Error count by type | Counter |
+| `jairouter_requests_total` | Total requests by service type | Counter |
+| `jairouter_request_duration_seconds` | Request processing time | Timer |
+| `jairouter_request_errors_total` | Error count by type | Counter |
 
 ### Load Balancer Metrics
 
 | Metric | Description | Type |
 |--------|-------------|------|
-| `jairouter.loadbalancer.requests` | Requests per instance | Counter |
-| `jairouter.loadbalancer.active_connections` | Active connections per instance | Gauge |
-| `jairouter.loadbalancer.instance_health` | Instance health status | Gauge |
+| `jairouter_loadbalancer_selections_total` | Requests per instance | Counter |
+| `jairouter_loadbalancer_active_connections` | Active connections per instance | Gauge |
+| `jairouter_backend_health` | Instance health status | Gauge |
 
 ### Rate Limiter Metrics
 
 | Metric | Description | Type |
 |--------|-------------|------|
-| `jairouter.ratelimit.requests.allowed` | Allowed requests | Counter |
-| `jairouter.ratelimit.requests.denied` | Denied requests | Counter |
-| `jairouter.ratelimit.tokens.available` | Available tokens | Gauge |
+| `jairouter_rate_limit_events_total{result="allowed"}` | Allowed requests | Counter |
+| `jairouter_rate_limit_events_total{result="denied"}` | Denied requests | Counter |
+| `jairouter_rate_limit_remaining` | Available tokens | Gauge |
 
 ### Circuit Breaker Metrics
 
 | Metric | Description | Type |
 |--------|-------------|------|
-| `jairouter.circuitbreaker.state` | Circuit breaker state | Gauge |
-| `jairouter.circuitbreaker.failures` | Failure count | Counter |
-| `jairouter.circuitbreaker.successes` | Success count | Counter |
+| `jairouter_circuit_breaker_state` | Circuit breaker state | Gauge |
+| `jairouter_circuit_breaker_events_total{result="failure"}` | Failure count | Counter |
+| `jairouter_circuit_breaker_events_total{result="success"}` | Success count | Counter |
 
 ## Quick Monitoring Setup
 

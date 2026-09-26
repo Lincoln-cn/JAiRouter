@@ -28,10 +28,10 @@ This document provides diagnostic methods and optimization strategies for JAiRou
 
 ```bash
 # Get response time metrics
-curl -s http://localhost:8080/actuator/metrics/jairouter.request.duration | jq
+curl -s http://localhost:8080/actuator/metrics/jairouter_request_duration_seconds | jq
 
 # Get request statistics
-curl -s http://localhost:8080/actuator/metrics/jairouter.requests.total | jq
+curl -s http://localhost:8080/actuator/metrics/jairouter_requests_total | jq
 
 # Get JVM metrics
 curl -s http://localhost:8080/actuator/metrics/jvm.memory.used | jq

@@ -114,19 +114,10 @@ model:
   rate-limit:
     enabled: true
     algorithm: "token-bucket"
-    
-    # Client IP rate limiting configuration
-    client-ip:
-      enabled: true
-      cleanup-interval: 300s    # Cleanup interval
-      max-idle-time: 1800s     # Maximum idle time
-      max-clients: 10000       # Maximum number of clients
-    
-    # Rate limiter performance configuration
-    performance:
-      async-processing: true    # Asynchronous processing
-      batch-size: 100          # Batch processing size
-      cache-size: 1000         # Cache size
+    capacity: 1000
+    rate: 100
+    scope: "service"
+    client-ip-enable: true  # Enable client IP rate limiting
 ```
 
 ## Detailed Rate Limiting Algorithms
@@ -172,9 +163,9 @@ JAiRouter also supports updating rate limiting configurations via the dynamic co
   "services": {
     "chat": {
       "rateLimit": {
-        "type": "token-bucket",
+        "algorithm": "token-bucket",
         "capacity": 100,
-        "refillRate": 10,
+        "rate": 10,
         "clientIpEnable": true
       }
     }
@@ -187,8 +178,8 @@ JAiRouter also supports updating rate limiting configurations via the dynamic co
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|
 | `capacity` | Integer | Bucket capacity, maximum number of tokens | 100 |
-| `rate`/`refillRate` | Integer | Token refill rate (per second) | 10 |
-| `client-ip-enable` | Boolean | Whether to enable client IP rate limiting | false |
+| `rate` | Integer | Token refill rate (per second) | 10 |
+| `clientIpEnable` | Boolean | Whether to enable client IP rate limiting | false |
 
 #### Use Cases
 
@@ -253,9 +244,9 @@ JAiRouter also supports updating rate limiting configurations via the dynamic co
   "services": {
     "embedding": {
       "rateLimit": {
-        "type": "leaky-bucket",
+        "algorithm": "leaky-bucket",
         "capacity": 50,
-        "leakRate": 5,
+        "rate": 5,
         "clientIpEnable": true
       }
     }
@@ -268,7 +259,7 @@ JAiRouter also supports updating rate limiting configurations via the dynamic co
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|
 | `capacity` | Integer | Bucket capacity, maximum queued requests | 50 |
-| `rate`/`leakRate` | Integer | Leak rate (per second) | 5 |
+| `rate` | Integer | Leak rate (per second) | 5 |
 
 #### Use Cases
 
@@ -302,8 +293,8 @@ model:
       rate-limit:
         enabled: true
         algorithm: "sliding-window"
-        window-size: 60         # Time window size (seconds)
-        max-requests: 100       # Maximum requests in window
+        capacity: 100          # Bucket capacity
+        rate: 100              # Maximum requests per 1-second window
         scope: "service"
         client-ip-enable: true
 ```
@@ -317,9 +308,9 @@ JAiRouter also supports updating rate limiting configurations via the dynamic co
   "services": {
     "tts": {
       "rateLimit": {
-        "type": "sliding-window",
-        "windowSize": 60,
-        "maxRequests": 100,
+        "algorithm": "sliding-window",
+        "capacity": 100,
+        "rate": 100,
         "clientIpEnable": true
       }
     }
@@ -331,8 +322,10 @@ JAiRouter also supports updating rate limiting configurations via the dynamic co
 
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|
-| `window-size`/`windowSize` | Integer | Time window size (seconds) | 60 |
-| `max-requests`/`maxRequests` | Integer | Maximum requests in window | 100 |
+| `capacity` | Integer | Bucket capacity | 100 |
+| `rate` | Integer | Maximum requests per 1-second window | 10 |
+
+> **Note**: The sliding window uses a fixed 1-second window. `rate` controls the maximum number of requests allowed within that window.
 
 #### Use Cases
 
@@ -370,7 +363,6 @@ model:
         capacity: 100           # Final capacity
         rate: 10               # Final rate
         warm-up-period: 300    # Warm-up time (seconds)
-        cold-factor: 3         # Cold start factor
         scope: "service"
 ```
 
@@ -383,10 +375,10 @@ JAiRouter also supports updating rate limiting configurations via the dynamic co
   "services": {
     "chat": {
       "rateLimit": {
-        "type": "warm-up",
+        "algorithm": "warm-up",
         "capacity": 100,
+        "rate": 10,
         "warmUpPeriod": 300,
-        "coldFactor": 3,
         "clientIpEnable": true
       }
     }
@@ -399,8 +391,8 @@ JAiRouter also supports updating rate limiting configurations via the dynamic co
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|
 | `capacity` | Integer | Final capacity | 100 |
-| `warm-up-period`/`warmUpPeriod` | Integer | Warm-up time (seconds) | 300 |
-| `cold-factor`/`coldFactor` | Integer | Cold start factor | 3 |
+| `rate` | Integer | Final rate (per second) | 10 |
+| `warmUpPeriod` | Integer | Warm-up time (seconds) | 600 |
 
 #### Use Cases
 
@@ -412,22 +404,20 @@ JAiRouter also supports updating rate limiting configurations via the dynamic co
 
 ### Basic Configuration
 
-Configure client IP rate limiting in the `config/base/model-services-base.yml` file:
+Enable client IP rate limiting via `client-ip-enable` in `config/base/model-services-base.yml`:
 
 ```yaml
 model:
   rate-limit:
+    enabled: true
+    algorithm: "token-bucket"
+    capacity: 1000
+    rate: 100
+    scope: "service"
     client-ip-enable: true      # Enable client IP rate limiting
-    
-    # Client IP rate limiting configuration
-    client-ip:
-      enabled: true
-      cleanup-interval: 300s    # Cleanup interval
-      max-idle-time: 1800s     # Maximum idle time
-      max-clients: 10000       # Maximum number of clients
-      default-capacity: 100     # Default capacity
-      default-rate: 10         # Default rate
 ```
+
+When enabled, each client IP gets its own rate limiter instance using the same algorithm, capacity, and rate as the parent configuration. The cache holds up to 10,000 client entries with 30-minute idle expiry.
 
 ### Service-Level IP Rate Limiting
 
@@ -441,11 +431,6 @@ model:
         capacity: 1000          # Service-level total capacity
         rate: 100              # Service-level total rate
         client-ip-enable: true  # Enable IP rate limiting
-        
-        # Rate limiting configuration per IP
-        client-ip:
-          capacity: 50          # Capacity per IP
-          rate: 5              # Rate per IP
 ```
 
 ### Instance-Level IP Rate Limiting
@@ -469,11 +454,11 @@ model:
 ### IP Rate Limiting Monitoring
 
 ```bash
-# View client IP rate limiting statistics
-curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.clients"
+# View rate limiter status (includes per-IP limiters)
+curl "http://localhost:8080/api/rate-limiter/status"
 
-# View IP rate limiter cleanup statistics
-curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.cleanup"
+# View rate limiter metrics (remaining capacity, usage ratio)
+curl "http://localhost:8080/api/rate-limiter/metrics"
 ```
 
 ## Multi-Layer Rate Limiting Configuration
@@ -501,9 +486,6 @@ model:
         capacity: 1000
         rate: 100
         client-ip-enable: true
-        client-ip:
-          capacity: 50
-          rate: 5
       
       instances:
         - name: "high-perf-model"
@@ -534,9 +516,9 @@ JAiRouter also supports updating rate limiting configurations via the dynamic co
   "services": {
     "chat": {
       "rateLimit": {
-        "type": "token-bucket",
+        "algorithm": "token-bucket",
         "capacity": 200,
-        "refillRate": 20,
+        "rate": 20,
         "clientIpEnable": true
       },
       "instances": [
@@ -544,9 +526,9 @@ JAiRouter also supports updating rate limiting configurations via the dynamic co
           "name": "model-1",
           "baseUrl": "http://server-1:8080",
           "rateLimit": {
-            "type": "token-bucket",
+            "algorithm": "token-bucket",
             "capacity": 100,
-            "refillRate": 10
+            "rate": 10
           }
         }
       ]
@@ -559,7 +541,7 @@ JAiRouter also supports updating rate limiting configurations via the dynamic co
 
 ```bash
 # Monitor current rate limiting effectiveness
-curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.requests"
+curl "http://localhost:8080/api/rate-limiter/summary"
 
 # Adjust configuration based on monitoring results
 # If rejection rate is too high, increase capacity or rate
@@ -571,33 +553,30 @@ curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.requests"
 ### Monitoring Metrics
 
 ```bash
-# Total rate limiting requests
-curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.requests.total"
+# Rate limiting events (allowed / denied)
+curl "http://localhost:8080/actuator/metrics/jairouter_rate_limit_events_total"
 
-# Rate limiting rejections
-curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.rejected.total"
+# Remaining capacity per limiter
+curl "http://localhost:8080/actuator/metrics/jairouter_rate_limit_remaining"
 
-# Number of client IPs
-curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.clients.active"
-
-# Rate limiter cleanup statistics
-curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.cleanup.total"
+# Usage ratio per limiter
+curl "http://localhost:8080/actuator/metrics/jairouter_rate_limit_usage_ratio"
 ```
 
 ### Prometheus Metrics
 
 ```prometheus
 # Rate limiting request rate
-rate(jairouter_ratelimit_requests_total[5m])
+rate(jairouter_rate_limit_events_total[5m])
 
 # Rate limiting rejection rate
-rate(jairouter_ratelimit_rejected_total[5m]) / rate(jairouter_ratelimit_requests_total[5m])
+rate(jairouter_rate_limit_events_total{result="denied"}[5m]) / rate(jairouter_rate_limit_events_total[5m])
 
-# Active client count
-jairouter_ratelimit_clients_active
+# Remaining capacity per limiter
+jairouter_rate_limit_remaining
 
-# Rate limiter memory usage
-jairouter_ratelimit_memory_usage_bytes
+# Usage ratio per limiter
+jairouter_rate_limit_usage_ratio
 ```
 
 ### Alert Rules
@@ -608,56 +587,26 @@ groups:
   - name: jairouter_ratelimit
     rules:
       - alert: HighRateLimitRejection
-        expr: rate(jairouter_ratelimit_rejected_total[5m]) / rate(jairouter_ratelimit_requests_total[5m]) > 0.1
+        expr: rate(jairouter_rate_limit_events_total{result="denied"}[5m]) / rate(jairouter_rate_limit_events_total[5m]) > 0.1
         for: 2m
         labels:
           severity: warning
         annotations:
           summary: "High rate limiting rejection rate"
           description: "Service {{ $labels.service }} rejection rate exceeds 10%"
-      
-      - alert: TooManyActiveClients
-        expr: jairouter_ratelimit_clients_active > 5000
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "Too many active clients"
-          description: "Active client count reached {{ $value }}, may need to adjust cleanup strategy"
 ```
 
 ## Performance Optimization
 
-### 1. Rate Limiter Performance Configuration
+### 1. Memory Optimization
 
-```yaml
-model:
-  rate-limit:
-    performance:
-      async-processing: true    # Enable asynchronous processing
-      batch-size: 100          # Batch processing size
-      cache-size: 1000         # Cache size
-      thread-pool-size: 4      # Thread pool size
-```
+The client IP rate limiter cache uses Caffeine with automatic cleanup:
 
-### 2. Memory Optimization
+- Maximum 10,000 entries
+- 30-minute idle expiry (access-based)
+- Automatic eviction with statistics tracking
 
-```yaml
-model:
-  rate-limit:
-    client-ip:
-      cleanup-interval: 180s    # More frequent cleanup
-      max-idle-time: 900s      # Shorter idle time
-      max-clients: 5000        # Limit maximum clients
-      
-      # Memory optimization configuration
-      memory:
-        initial-capacity: 1000  # Initial capacity
-        load-factor: 0.75      # Load factor
-        concurrency-level: 16   # Concurrency level
-```
-
-### 3. Algorithm Selection Optimization
+### 2. Algorithm Selection Optimization
 
 ```yaml
 # High concurrency scenario: Choose the best performing algorithm
@@ -689,9 +638,6 @@ model:
     capacity: 10000
     rate: 1000
     client-ip-enable: true
-    client-ip:
-      capacity: 100
-      rate: 10
   
   services:
     # Chat service: High frequency usage
@@ -701,9 +647,6 @@ model:
         capacity: 5000
         rate: 500
         client-ip-enable: true
-        client-ip:
-          capacity: 50
-          rate: 5
     
     # Image generation: Resource intensive
     image-generation:
@@ -712,9 +655,6 @@ model:
         capacity: 100
         rate: 10
         client-ip-enable: true
-        client-ip:
-          capacity: 5
-          rate: 1
 ```
 
 ### Case 2: Anti-Scraping Protection
@@ -727,12 +667,9 @@ model:
       rate-limit:
         enabled: true
         algorithm: "sliding-window"
-        window-size: 300        # 5-minute window
-        max-requests: 50        # Maximum 50 requests
+        capacity: 50           # Bucket capacity
+        rate: 50               # Maximum 50 requests per second
         client-ip-enable: true
-        client-ip:
-          window-size: 60       # 1-minute window
-          max-requests: 10      # Maximum 10 requests per IP
 ```
 
 ### Case 3: Service Warm-up
@@ -748,7 +685,6 @@ model:
         capacity: 1000
         rate: 100
         warm-up-period: 600     # 10-minute warm-up
-        cold-factor: 5          # Initial rate is 1/5 of target
 ```
 
 ## Troubleshooting
@@ -758,15 +694,15 @@ model:
 1. **Rate Limiting Too Strict**
    ```bash
    # Check rejection rate
-   curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.rejected.total"
+   curl "http://localhost:8080/api/rate-limiter/summary"
    
    # Solution: Increase capacity or rate
    ```
 
 2. **High Memory Usage**
    ```bash
-   # Check client count
-   curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.clients.active"
+   # Check limiter count
+   curl "http://localhost:8080/api/rate-limiter/status"
    
    # Solution: Adjust cleanup strategy
    ```

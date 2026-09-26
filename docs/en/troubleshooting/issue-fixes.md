@@ -268,7 +268,7 @@ python scripts/docs/check-links.py
 tail -f logs/application.log
 
 # View slow queries
-curl http://localhost:8080/actuator/metrics/db.pool.wait
+curl http://localhost:8080/actuator/metrics/hikaricp_connections_pending
 
 # View thread dumps
 jstack <pid> > thread_dump.txt
