@@ -9,18 +9,58 @@
 
 
 
-JAiRouter supports deployment in Kubernetes clusters, providing enterprise-grade features such as high availability, auto-scaling, and rolling updates. This document details how to deploy JAiRouter in a K8s environment.
+JAiRouter supports deployment in Kubernetes clusters, providing rolling updates and other enterprise-grade features. This document details how to deploy JAiRouter in a K8s environment.
+
+> **⚠️ Multi-replica not supported**: The only supported store is the H2 embedded single-file database, so `replicas` **must be 1**. See "Multi-Replica Support Status (Known Constraints)" below.
+
+## Multi-Replica Support Status (Known Constraints)
+
+**Multi-replica is not supported in the current version; `replicas` must be 1. The only supported store is the H2 embedded single-file database.** When sharing one data volume, the second and third Pods cannot open the H2 file database and enter a crash loop; with separate volumes each Pod keeps its own data, so request round-robin produces inconsistent state. Verified: two JVM processes opening `jdbc:h2:file:./data/jairouter` concurrently causes the second process to fail with `Database may be already in use` (H2 error 90020). External shared database adaptation is tracked in issue #160.
+
+### Per-Pod Semantics Inventory
+
+| Capability | Current state | Multi-replica consequence |
+|------------|---------------|---------------------------|
+| Rate limiting | All state is in-JVM; the repository has no distributed rate limiter | Allowed throughput is about the configured value times the replica count; window resets are counted per Pod |
+| Quota ledger | Defaults: `jairouter.quota.enabled=false`, `jairouter.quota.distributed.enabled=false`, `fail-open=true`; local counting | Overuse is about N times the limit |
+| JWT blacklist | Falls back to H2/StoreManager by default | Revocation only takes effect on the issuing Pod |
+| API-Key cache | In-memory by default, no TTL, mutated only in this process | Revocation/create does not cross Pods |
+| Role-permission cache | Caffeine `expireAfterWrite=5min`; `invalidateCache()` clears only this process | Permission changes take up to 5 minutes and do not cross Pods |
+| SSE / WebSocket | Event source is an in-process `Sinks.Many`; no Redis pub/sub anywhere | Clients only see events from the Pod they are connected to |
+| Scheduled tasks | 36+ `@Scheduled` jobs, none with a distributed lock | Each timer runs once per Pod |
+| Graceful shutdown | `server.shutdown`/`graceful`/`timeout-per-shutdown-phase` have zero hits in the repo | Rolling updates truncate in-flight AI streaming responses |
+
+### Prerequisites for Horizontal Scaling (in order)
+
+1. Switch to an external shared database (issue #160)
+2. Enable shared-state Redis switches and add startup gating (issue #162)
+3. Cross-instance rate limiting — new work (issue #161)
+4. Distributed locks for scheduled tasks (issue #163)
+5. Real-time event broadcast (issue #164)
+6. Deployment artifacts: graceful shutdown, `PodDisruptionBudget`, migration jobs (issue #165)
+
+### Existing Foundation: Redis Shared-State Implementations
+
+The repository already ships Redis shared-state implementations (quota `RedisCounterBackend` + Lua, JWT blacklist, token persistence, `RedisApiKeyCache`, state persistence Tier1), but they are **all off by default**. The comment in `config/persistence/state-persistence-base.yml` already says "enable for cluster deployment". Relevant config keys:
+
+| Config key | Purpose | Default |
+|------------|---------|---------|
+| `jairouter.persistence.redis.enabled` | State persistence Tier1 (circuit-breaker / load-balancer state shared across nodes) | `false` |
+| `jairouter.quota.distributed.enabled` | Quota Redis atomic counting | `false` |
+| `jairouter.security.jwt.persistence.redis.enabled` | JWT token persistence | `false` |
+| `jairouter.security.jwt.blacklist.redis.enabled` | JWT blacklist across nodes | `false` |
+| `jairouter.security.cache.redis.enabled` | API-Key distributed cache | `false` |
 
 ## Kubernetes Deployment Overview
 
 ### Features
 
-- **High Availability**: Multi-instance deployment with automatic failover
-- **Auto-scaling**: Automatic scaling based on CPU/memory/custom metrics
-- **Rolling Updates**: Zero-downtime updates
+- **High Availability** (planned): multi-instance deployment and automatic failover require shared database and shared-state wiring first; `replicas` must currently be 1
+- **Auto-scaling** (planned): HPA would raise the replica count, which is incompatible with the H2 single-file database — do not enable
+- **Rolling Updates**: zero-downtime updates (note: no graceful-shutdown settings exist today, so in-flight streaming responses may be truncated)
 - **Service Discovery**: Built-in service discovery and load balancing
 - **Configuration Management**: Configuration management using ConfigMap and Secret
-- **Persistent Storage**: Support for PVC to persist configurations and logs
+- **Persistent Storage**: Support for PVC to persist configurations, logs, and data
 
 ### Architecture Diagram
 
@@ -190,6 +230,7 @@ data:
   # Base64 encoded keys
   api-key: eW91ci1hcGkta2V5LWhlcmU=  # your-api-key-here
   database-password: cGFzc3dvcmQ=     # password
+  redis-password: cGFzc3dvcmQ=     # your-redis-password (base64)
 ```
 
 ```bash
@@ -226,6 +267,24 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: nfs-client  # Adjust according to actual situation
+
+---
+# Primary H2 database volume (must be mounted at /app/data)
+# ReadWriteOnce is itself a hard constraint for replicas: 1:
+# the H2 embedded single-file database cannot be opened by multiple processes,
+# so sharing it across Pods causes a crash loop.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jairouter-data-pvc
+  namespace: jairouter
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard  # Adjust according to actual situation
 ```
 
 ```bash
@@ -233,6 +292,12 @@ kubectl apply -f pvc.yaml
 ```
 
 ### 5. Create Deployment
+
+> **⚠️ Warning: `replicas` must be 1**
+>
+> The only supported store is the H2 embedded single-file database. Verified: two JVM processes opening the same file database concurrently causes the second process to fail immediately (`Database may be already in use`, error 90020). Sharing one PVC makes the second and third Pods crash-loop; separate volumes give each Pod its own data, so request round-robin produces random 401s / state drift. `replicas > 1` requires external shared database adaptation first (issue #160).
+>
+> `/app/data` must be mounted on a persistent volume (`ReadWriteOnce`). With `readOnlyRootFilesystem: true` and no `/app/data` mount, the primary H2 database cannot be created, so the Pod **fails to start even with `replicas: 1`**.
 
 ```yaml
 # deployment.yaml
@@ -244,7 +309,8 @@ metadata:
   labels:
     app: jairouter
 spec:
-  replicas: 3
+  # Must be 1: the H2 embedded single-file database does not support multi-replica (see warning above and issue #160)
+  replicas: 1
   selector:
     matchLabels:
       app: jairouter
@@ -268,11 +334,22 @@ spec:
           value: "prod"
         - name: JAVA_OPTS
           value: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+        # Secret name/key must match the Secret created above (jairouter-secret)
         - name: API_KEY
           valueFrom:
             secretKeyRef:
               name: jairouter-secret
               key: api-key
+        # Redis environment variables: optional for single replica, required for multi-replica
+        - name: REDIS_HOST
+          value: "your-redis-host"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: jairouter-secret
+              key: redis-password
         volumeMounts:
         - name: config-volume
           mountPath: /app/config
@@ -281,6 +358,10 @@ spec:
           mountPath: /app/logs
         - name: config-store-volume
           mountPath: /app/config-store
+        # Primary H2 database directory — must be mounted
+        # (otherwise the database cannot be created under readOnlyRootFilesystem)
+        - name: data-volume
+          mountPath: /app/data
         resources:
           requests:
             memory: "512Mi"
@@ -288,6 +369,12 @@ spec:
           limits:
             memory: "1Gi"
             cpu: "1000m"
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
@@ -314,6 +401,9 @@ spec:
       - name: config-store-volume
         persistentVolumeClaim:
           claimName: jairouter-config-pvc
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: jairouter-data-pvc
       restartPolicy: Always
 ```
 
@@ -608,7 +698,8 @@ maintainers:
 
 ```yaml
 # values.yaml
-replicaCount: 3
+# Must be 1: the H2 embedded single-file database does not support multi-replica (issue #160)
+replicaCount: 1
 
 image:
   repository: sodlinken/jairouter
@@ -666,9 +757,11 @@ resources:
     memory: 512Mi
 
 autoscaling:
-  enabled: true
-  minReplicas: 3
-  maxReplicas: 10
+  # Not available today: HPA would raise the replica count, which is incompatible
+  # with the H2 single-file database (issue #160)
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 1
   targetCPUUtilizationPercentage: 70
   targetMemoryUtilizationPercentage: 80
 
@@ -681,7 +774,8 @@ affinity: {}
 persistence:
   enabled: true
   storageClass: ""
-  accessMode: ReadWriteMany
+  # Data volume must be ReadWriteOnce: H2 single-file database + replicas=1 (issue #160)
+  accessMode: ReadWriteOnce
   size: 10Gi
 
 config:
@@ -767,6 +861,8 @@ spec:
             - name: config
               mountPath: /app/config
               readOnly: true
+            - name: data
+              mountPath: /app/data
             {{- if .Values.persistence.enabled }}
             - name: logs
               mountPath: /app/logs
@@ -775,6 +871,9 @@ spec:
         - name: config
           configMap:
             name: {{ include "jairouter.fullname" . }}-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "jairouter.fullname" . }}-data
         {{- if .Values.persistence.enabled }}
         - name: logs
           persistentVolumeClaim:
@@ -943,9 +1042,11 @@ kubectl rollout undo deployment/jairouter --to-revision=2 -n jairouter
 
 ### 4. Scaling
 
+> **⚠️ Not available today**: `kubectl scale --replicas > 1` is incompatible with the H2 embedded single-file database and requires shared database adaptation first (issue #160). Rate limiting, quota, JWT blacklist, and API-Key caches are all per-Pod semantics — see "Multi-Replica Support Status (Known Constraints)" above.
+
 ```bash
-# Manual scaling
-kubectl scale deployment jairouter --replicas=5 -n jairouter
+# Manual scaling (not available today, see warning above)
+# kubectl scale deployment jairouter --replicas=5 -n jairouter
 
 # View HPA status
 kubectl describe hpa jairouter-hpa -n jairouter
@@ -1084,7 +1185,8 @@ metadata:
   labels:
     app: jairouter
 spec:
-  replicas: 3
+  # Must be 1: the H2 embedded single-file database does not support multi-replica (issue #160)
+  replicas: 1
   selector:
     matchLabels:
       app: jairouter
@@ -1119,6 +1221,15 @@ spec:
             secretKeyRef:
               name: jairouter-secret
               key: api-key
+        - name: REDIS_HOST
+          value: "your-redis-host"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: jairouter-secret
+              key: redis-password
         volumeMounts:
         - name: config-volume
           mountPath: /app/config
@@ -1127,6 +1238,8 @@ spec:
           mountPath: /app/logs
         - name: config-store-volume
           mountPath: /app/config-store
+        - name: data-volume
+          mountPath: /app/data
         resources:
           requests:
             memory: "512Mi"
@@ -1167,6 +1280,9 @@ spec:
       - name: config-store-volume
         persistentVolumeClaim:
           claimName: jairouter-config-pvc
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: jairouter-data-pvc
       restartPolicy: Always
 ```
 
@@ -1187,6 +1303,7 @@ data:
   api-key: eW91ci1hcGkta2V5LWhlcmU=  # your-api-key-here
   jwt-secret: eW91ci1qd3Qtc2VjcmV0LWtleQ==  # your-jwt-secret-key
   database-password: cGFzc3dvcmQ=     # password
+  redis-password: cGFzc3dvcmQ=     # your-redis-password (base64)
 
 ---
 # TLS Secret configuration

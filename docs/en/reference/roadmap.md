@@ -127,14 +127,14 @@ v3.0 is the Web complete-flow milestone (public `/api/v1` stays compatible, no b
 - ✅ Role-Based Access Control (RBAC)
 - ✅ Request/response data obfuscation
 - ✅ Security audit logging
-- ✅ H2 embedded database
-- ✅ PostgreSQL/MySQL support
+- ✅ H2 embedded database (the only persistence database currently supported)
+- 📋 PostgreSQL/MySQL support (planned; `pom.xml` only includes the H2 driver, and both the JDBC config and Hibernate dialect are hard-coded to H2 — no external database adapter yet)
 - ✅ Redis cache integration
 - ✅ Prometheus metrics collection
 - ✅ Grafana dashboard templates
 - ✅ Distributed tracing (Zipkin/OpenTelemetry)
 - ✅ Complete Docker deployment
-- ✅ Kubernetes deployment support
+- 📋 Kubernetes deployment support (planned; the repository ships no executable Chart or manifests, only documentation example YAML)
 
 #### Code Quality
 - ✅ Checkstyle code standards
@@ -277,7 +277,7 @@ Monolithic App → Modular Design → Reactive Programming
 
 #### Data Storage
 - **Default**: H2 embedded database
-- **Production**: PostgreSQL / MySQL
+- **Currently supported**: H2 embedded single-file database only (external shared databases such as PostgreSQL / MySQL are planned; see issue #160)
 - **Cache**: Redis (optional)
 
 ## Performance Targets
@@ -355,6 +355,7 @@ Monolithic App → Modular Design → Reactive Programming
 - **Performance bottlenecks**: Performance challenges at scale
 - **Compatibility**: Multi-version API compatibility maintenance
 - **Security**: Security vulnerabilities and attack protection
+- **Horizontal scaling blocked**: The only supported store is the H2 embedded single-file database, so multiple replicas cannot share one data file and `replicas` must stay at 1; rate limiting, quota, JWT blacklist, and API-Key caches are all per-process by default. Planned order of work: issue #160 (shared database adapter), #161 (cross-instance rate limiting), #162 (shared-state wiring), #163 (scheduler locks), #164 (real-time event broadcast), #165 (K8s artifacts)
 
 ### Market Risks
 - **Increased competition**: Competition from similar products
