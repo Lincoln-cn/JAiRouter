@@ -1,4 +1,4 @@
-﻿# Production Environment Deployment
+# Production Environment Deployment
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -231,6 +231,12 @@ server {
     }
 }
 ```
+
+> **⚠️ Reverse-proxy deployments MUST configure
+> `jairouter.security.rate-limit.trusted-proxies`** (list the proxy that sends
+> `proxy_set_header X-Forwarded-For ...` above), or the management-API
+> rate-limit key degrades to the proxy IP. See
+> [Trusted Proxies and Client IP](../security/trusted-proxies.md).
 
 ### 2. Application Server Deployment
 

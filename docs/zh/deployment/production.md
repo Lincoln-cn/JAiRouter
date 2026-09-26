@@ -232,6 +232,11 @@ server {
 }
 ```
 
+> **⚠️ 反向代理部署必须配置 `jairouter.security.rate-limit.trusted-proxies`**
+> （把上面 `proxy_set_header X-Forwarded-For ...` 的来源代理写进可信列表），
+> 否则管理接口限流键会退化为代理 IP。详见
+> [可信代理与客户端 IP](../security/trusted-proxies.md)。
+
 ### 2. 应用服务器部署
 
 #### Docker Compose 生产配置
