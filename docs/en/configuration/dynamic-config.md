@@ -61,9 +61,9 @@ config/
         "hashAlgorithm": "md5"
       },
       "rateLimit": {
-        "type": "token-bucket",
+        "algorithm": "token-bucket",
         "capacity": 100,
-        "refillRate": 10,
+        "rate": 10,
         "clientIpEnable": true
       },
       "circuitBreaker": {

@@ -92,19 +92,10 @@ model:
 ```yaml
 model:
   load-balance:
-    type: least-connections
-    
-    # Connection tracking configuration
-    connection-tracking:
-      enabled: true             # Enable connection tracking
-      cleanup-interval: 60s     # Cleanup interval
-      max-idle-time: 300s      # Maximum idle time
-    
-    # Weight adjustment configuration
-    weight-adjustment:
-      enabled: true             # Enable dynamic weight adjustment
-      adjustment-interval: 30s  # Adjustment interval
-      performance-window: 300s  # Performance statistics window
+    type: consistent-hash
+    hash-algorithm: "md5"       # Hash algorithm for ip-hash / consistent-hash
+    virtual-nodes: 150          # Consistent-hash virtual nodes
+    ewma-alpha: 0.2             # EWMA smoothing factor (latency strategy)
 ```
 
 ## Service-Level Load Balancing Configuration
@@ -295,10 +286,6 @@ model:
     chat:
       load-balance:
         type: least-connections
-        connection-tracking:
-          enabled: true
-          cleanup-interval: 60s
-          max-idle-time: 300s
       instances:
         - name: "fast-model"
           base-url: "http://fast-server:8080"
@@ -325,19 +312,6 @@ model:
 **Selection Algorithm**:
 ```
 Selected instance = min(current connections / weight)
-```
-
-#### Connection Tracking Configuration
-
-```yaml
-model:
-  load-balance:
-    connection-tracking:
-      enabled: true             # Enable connection tracking
-      cleanup-interval: 60s     # Interval for cleaning up expired connections
-      max-idle-time: 300s      # Maximum idle time for connections
-      initial-connections: 0    # Initial connection count
-      max-connections: 1000     # Maximum connection tracking
 ```
 
 ### 4. IP Hash Strategy
@@ -455,29 +429,29 @@ JAiRouter provides the following load balancing related metrics:
 
 ```bash
 # View load balancing metrics
-curl "http://localhost:8080/actuator/metrics/jairouter.loadbalancer.requests"
+curl "http://localhost:8080/actuator/metrics/jairouter_loadbalancer_selections_total"
 
 # View instance request distribution
-curl "http://localhost:8080/actuator/metrics/jairouter.instance.requests"
+curl "http://localhost:8080/actuator/metrics/jairouter_requests_total"
 
 # View connection count statistics (Least Connections strategy only)
-curl "http://localhost:8080/actuator/metrics/jairouter.connections.active"
+curl "http://localhost:8080/actuator/metrics/jairouter_rate_limit_remaining"
 ```
 
 ### Prometheus Metrics
 
 ```prometheus
 # Total load balancing requests
-jairouter_loadbalancer_requests_total{service="chat",strategy="round-robin"}
+jairouter_loadbalancer_selections_total{service="chat",strategy="round-robin"}
 
 # Instance request distribution
-jairouter_instance_requests_total{service="chat",instance="model-1",status="success"}
+jairouter_requests_total{service="chat",instance="model-1",status="success"}
 
 # Active connections
-jairouter_connections_active{service="chat",instance="model-1"}
+jairouter_rate_limit_remaining{service="chat",instance="model-1"}
 
 # Instance response time
-jairouter_instance_response_time_seconds{service="chat",instance="model-1"}
+jairouter_request_duration_seconds{service="chat",instance="model-1"}
 ```
 
 ### Monitoring Dashboard Configuration
@@ -486,13 +460,13 @@ jairouter_instance_response_time_seconds{service="chat",instance="model-1"}
 # Grafana dashboard query examples
 queries:
   - name: "Request Distribution"
-    query: 'rate(jairouter_instance_requests_total[5m])'
+    query: 'rate(jairouter_requests_total[5m])'
     
   - name: "Load Balancing Effectiveness"
-    query: 'jairouter_instance_requests_total / ignoring(instance) group_left sum(jairouter_instance_requests_total) by (service)'
+    query: 'jairouter_requests_total / ignoring(instance) group_left sum(jairouter_requests_total) by (service)'
     
   - name: "Instance Health Status"
-    query: 'jairouter_instance_health_status'
+    query: 'jairouter_backend_health'
 ```
 
 ### 5. Latency Strategy (v2.9.3+)
@@ -587,11 +561,6 @@ webclient:
     max-idle-time: 30s         # Appropriate idle time
     pending-acquire-timeout: 60s # Connection acquisition timeout
 
-model:
-  load-balance:
-    connection-tracking:
-      cleanup-interval: 30s     # More frequent cleanup
-      max-idle-time: 180s      # Shorter idle time
 ```
 
 ## Fault Handling
@@ -654,10 +623,10 @@ Since v2.9.6, when a call fails with a retryable error (connection error / 5xx /
 curl "http://localhost:8080/api/config/instance/type/chat"
 
 # View load distribution
-curl "http://localhost:8080/actuator/metrics/jairouter.instance.requests"
+curl "http://localhost:8080/actuator/metrics/jairouter_requests_total"
 
 # Check connection status (Least Connections)
-curl "http://localhost:8080/actuator/metrics/jairouter.connections.active"
+curl "http://localhost:8080/actuator/metrics/jairouter_rate_limit_remaining"
 
 # View health check status
 curl "http://localhost:8080/actuator/health"

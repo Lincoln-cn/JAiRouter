@@ -113,19 +113,10 @@ model:
   rate-limit:
     enabled: true
     algorithm: "token-bucket"
-    
-    # 客户端IP限流配置
-    client-ip:
-      enabled: true
-      cleanup-interval: 300s    # 清理间隔
-      max-idle-time: 1800s     # 最大空闲时间
-      max-clients: 10000       # 最大客户端数量
-    
-    # 限流器性能配置
-    performance:
-      async-processing: true    # 异步处理
-      batch-size: 100          # 批量处理大小
-      cache-size: 1000         # 缓存大小
+    capacity: 1000
+    rate: 100
+    scope: "service"
+    client-ip-enable: true  # 启用客户端IP限流
 ```
 
 ## 限流算法详解
@@ -171,9 +162,9 @@ JAiRouter 也支持通过动态配置 API 更新限流配置：
   "services": {
     "chat": {
       "rateLimit": {
-        "type": "token-bucket",
+        "algorithm": "token-bucket",
         "capacity": 100,
-        "refillRate": 10,
+        "rate": 10,
         "clientIpEnable": true
       }
     }
@@ -186,8 +177,8 @@ JAiRouter 也支持通过动态配置 API 更新限流配置：
 | 参数 | 类型 | 说明 | 默认值 |
 |------|------|------|--------|
 | `capacity` | Integer | 桶容量，最大令牌数 | 100 |
-| `rate`/`refillRate` | Integer | 令牌补充速率（每秒） | 10 |
-| `client-ip-enable` | Boolean | 是否启用客户端IP限流 | false |
+| `rate` | Integer | 令牌补充速率（每秒） | 10 |
+| `clientIpEnable` | Boolean | 是否启用客户端IP限流 | false |
 
 #### 适用场景
 
@@ -252,9 +243,9 @@ JAiRouter 也支持通过动态配置 API 更新限流配置：
   "services": {
     "embedding": {
       "rateLimit": {
-        "type": "leaky-bucket",
+        "algorithm": "leaky-bucket",
         "capacity": 50,
-        "leakRate": 5,
+        "rate": 5,
         "clientIpEnable": true
       }
     }
@@ -267,7 +258,7 @@ JAiRouter 也支持通过动态配置 API 更新限流配置：
 | 参数 | 类型 | 说明 | 默认值 |
 |------|------|------|--------|
 | `capacity` | Integer | 桶容量，最大排队请求数 | 50 |
-| `rate`/`leakRate` | Integer | 漏出速率（每秒） | 5 |
+| `rate` | Integer | 漏出速率（每秒） | 5 |
 
 #### 适用场景
 
@@ -301,8 +292,8 @@ model:
       rate-limit:
         enabled: true
         algorithm: "sliding-window"
-        window-size: 60         # 时间窗口大小（秒）
-        max-requests: 100       # 窗口内最大请求数
+        capacity: 100          # 桶容量
+        rate: 100              # 每秒窗口内最大请求数
         scope: "service"
         client-ip-enable: true
 ```
@@ -316,9 +307,9 @@ JAiRouter 也支持通过动态配置 API 更新限流配置：
   "services": {
     "tts": {
       "rateLimit": {
-        "type": "sliding-window",
-        "windowSize": 60,
-        "maxRequests": 100,
+        "algorithm": "sliding-window",
+        "capacity": 100,
+        "rate": 100,
         "clientIpEnable": true
       }
     }
@@ -330,8 +321,10 @@ JAiRouter 也支持通过动态配置 API 更新限流配置：
 
 | 参数 | 类型 | 说明 | 默认值 |
 |------|------|------|--------|
-| `window-size`/`windowSize` | Integer | 时间窗口大小（秒） | 60 |
-| `max-requests`/`maxRequests` | Integer | 窗口内最大请求数 | 100 |
+| `capacity` | Integer | 桶容量 | 100 |
+| `rate` | Integer | 每秒窗口内最大请求数 | 10 |
+
+> **注意**：滑动窗口使用固定的 1 秒窗口。`rate` 控制该窗口内允许的最大请求数。
 
 #### 适用场景
 
@@ -369,7 +362,6 @@ model:
         capacity: 100           # 最终容量
         rate: 10               # 最终速率
         warm-up-period: 300    # 预热时间（秒）
-        cold-factor: 3         # 冷启动因子
         scope: "service"
 ```
 
@@ -382,10 +374,10 @@ JAiRouter 也支持通过动态配置 API 更新限流配置：
   "services": {
     "chat": {
       "rateLimit": {
-        "type": "warm-up",
+        "algorithm": "warm-up",
         "capacity": 100,
+        "rate": 10,
         "warmUpPeriod": 300,
-        "coldFactor": 3,
         "clientIpEnable": true
       }
     }
@@ -398,8 +390,8 @@ JAiRouter 也支持通过动态配置 API 更新限流配置：
 | 参数 | 类型 | 说明 | 默认值 |
 |------|------|------|--------|
 | `capacity` | Integer | 最终容量 | 100 |
-| `warm-up-period`/`warmUpPeriod` | Integer | 预热时间（秒） | 300 |
-| `cold-factor`/`coldFactor` | Integer | 冷启动因子 | 3 |
+| `rate` | Integer | 最终速率（每秒） | 10 |
+| `warmUpPeriod` | Integer | 预热时间（秒） | 600 |
 
 #### 适用场景
 
@@ -411,22 +403,20 @@ JAiRouter 也支持通过动态配置 API 更新限流配置：
 
 ### 基础配置
 
-在 `config/base/model-services-base.yml` 文件中配置客户端 IP 限流：
+在 `config/base/model-services-base.yml` 中通过 `client-ip-enable` 启用客户端 IP 限流：
 
 ```yaml
 model:
   rate-limit:
+    enabled: true
+    algorithm: "token-bucket"
+    capacity: 1000
+    rate: 100
+    scope: "service"
     client-ip-enable: true      # 启用客户端IP限流
-    
-    # 客户端IP限流配置
-    client-ip:
-      enabled: true
-      cleanup-interval: 300s    # 清理间隔
-      max-idle-time: 1800s     # 最大空闲时间
-      max-clients: 10000       # 最大客户端数量
-      default-capacity: 100     # 默认容量
-      default-rate: 10         # 默认速率
 ```
+
+启用后，每个客户端 IP 拥有独立的限流器实例，使用与父配置相同的算法、容量和速率。缓存最多保留 10,000 个客户端条目，30 分钟无访问自动过期。
 
 ### 服务级别 IP 限流
 
@@ -440,11 +430,6 @@ model:
         capacity: 1000          # 服务级别总容量
         rate: 100              # 服务级别总速率
         client-ip-enable: true  # 启用IP限流
-        
-        # 每个IP的限流配置
-        client-ip:
-          capacity: 50          # 每个IP的容量
-          rate: 5              # 每个IP的速率
 ```
 
 ### 实例级别 IP 限流
@@ -468,11 +453,11 @@ model:
 ### IP 限流监控
 
 ```bash
-# 查看客户端IP限流统计
-curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.clients"
+# 查看限流器状态（包含各IP限流器）
+curl "http://localhost:8080/api/rate-limiter/status"
 
-# 查看IP限流器清理统计
-curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.cleanup"
+# 查看限流器指标（剩余容量、使用率）
+curl "http://localhost:8080/api/rate-limiter/metrics"
 ```
 
 ## 多层限流配置
@@ -500,9 +485,6 @@ model:
         capacity: 1000
         rate: 100
         client-ip-enable: true
-        client-ip:
-          capacity: 50
-          rate: 5
       
       instances:
         - name: "high-perf-model"
@@ -533,9 +515,9 @@ JAiRouter 也支持通过动态配置 API 更新限流配置：
   "services": {
     "chat": {
       "rateLimit": {
-        "type": "token-bucket",
+        "algorithm": "token-bucket",
         "capacity": 200,
-        "refillRate": 20,
+        "rate": 20,
         "clientIpEnable": true
       },
       "instances": [
@@ -543,9 +525,9 @@ JAiRouter 也支持通过动态配置 API 更新限流配置：
           "name": "model-1",
           "baseUrl": "http://server-1:8080",
           "rateLimit": {
-            "type": "token-bucket",
+            "algorithm": "token-bucket",
             "capacity": 100,
-            "refillRate": 10
+            "rate": 10
           }
         }
       ]
@@ -558,7 +540,7 @@ JAiRouter 也支持通过动态配置 API 更新限流配置：
 
 ```bash
 # 监控当前限流效果
-curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.requests"
+curl "http://localhost:8080/api/rate-limiter/summary"
 
 # 根据监控结果调整配置
 # 如果拒绝率过高，增加容量或速率
@@ -570,33 +552,30 @@ curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.requests"
 ### 监控指标
 
 ```bash
-# 限流请求总数
-curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.requests.total"
+# 限流事件（允许/拒绝）
+curl "http://localhost:8080/actuator/metrics/jairouter_rate_limit_events_total"
 
-# 限流拒绝数
-curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.rejected.total"
+# 各限流器剩余容量
+curl "http://localhost:8080/actuator/metrics/jairouter_rate_limit_remaining"
 
-# 客户端IP数量
-curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.clients.active"
-
-# 限流器清理统计
-curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.cleanup.total"
+# 各限流器使用率
+curl "http://localhost:8080/actuator/metrics/jairouter_rate_limit_usage_ratio"
 ```
 
 ### Prometheus 指标
 
 ```prometheus
 # 限流请求速率
-rate(jairouter_ratelimit_requests_total[5m])
+rate(jairouter_rate_limit_events_total[5m])
 
 # 限流拒绝率
-rate(jairouter_ratelimit_rejected_total[5m]) / rate(jairouter_ratelimit_requests_total[5m])
+rate(jairouter_rate_limit_events_total{result="denied"}[5m]) / rate(jairouter_rate_limit_events_total[5m])
 
-# 活跃客户端数量
-jairouter_ratelimit_clients_active
+# 各限流器剩余容量
+jairouter_rate_limit_remaining
 
-# 限流器内存使用
-jairouter_ratelimit_memory_usage_bytes
+# 各限流器使用率
+jairouter_rate_limit_usage_ratio
 ```
 
 ### 告警规则
@@ -607,56 +586,26 @@ groups:
   - name: jairouter_ratelimit
     rules:
       - alert: HighRateLimitRejection
-        expr: rate(jairouter_ratelimit_rejected_total[5m]) / rate(jairouter_ratelimit_requests_total[5m]) > 0.1
+        expr: rate(jairouter_rate_limit_events_total{result="denied"}[5m]) / rate(jairouter_rate_limit_events_total[5m]) > 0.1
         for: 2m
         labels:
           severity: warning
         annotations:
           summary: "限流拒绝率过高"
           description: "服务 {{ $labels.service }} 的限流拒绝率超过 10%"
-      
-      - alert: TooManyActiveClients
-        expr: jairouter_ratelimit_clients_active > 5000
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "活跃客户端数量过多"
-          description: "活跃客户端数量达到 {{ $value }}，可能需要调整清理策略"
 ```
 
 ## 性能优化
 
-### 1. 限流器性能配置
+### 1. 内存优化
 
-```yaml
-model:
-  rate-limit:
-    performance:
-      async-processing: true    # 启用异步处理
-      batch-size: 100          # 批量处理大小
-      cache-size: 1000         # 缓存大小
-      thread-pool-size: 4      # 线程池大小
-```
+客户端 IP 限流器缓存使用 Caffeine，自动清理：
 
-### 2. 内存优化
+- 最多 10,000 个条目
+- 30 分钟无访问自动过期（基于访问）
+- 自动淘汰并记录统计信息
 
-```yaml
-model:
-  rate-limit:
-    client-ip:
-      cleanup-interval: 180s    # 更频繁的清理
-      max-idle-time: 900s      # 更短的空闲时间
-      max-clients: 5000        # 限制最大客户端数
-      
-      # 内存优化配置
-      memory:
-        initial-capacity: 1000  # 初始容量
-        load-factor: 0.75      # 负载因子
-        concurrency-level: 16   # 并发级别
-```
-
-### 3. 算法选择优化
+### 2. 算法选择优化
 
 ```yaml
 # 高并发场景：选择性能最好的算法
@@ -688,9 +637,6 @@ model:
     capacity: 10000
     rate: 1000
     client-ip-enable: true
-    client-ip:
-      capacity: 100
-      rate: 10
   
   services:
     # 聊天服务：高频使用
@@ -700,9 +646,6 @@ model:
         capacity: 5000
         rate: 500
         client-ip-enable: true
-        client-ip:
-          capacity: 50
-          rate: 5
     
     # 图像生成：资源密集
     image-generation:
@@ -711,9 +654,6 @@ model:
         capacity: 100
         rate: 10
         client-ip-enable: true
-        client-ip:
-          capacity: 5
-          rate: 1
 ```
 
 ### 案例 2：防刷保护
@@ -726,12 +666,9 @@ model:
       rate-limit:
         enabled: true
         algorithm: "sliding-window"
-        window-size: 300        # 5分钟窗口
-        max-requests: 50        # 最多50次请求
+        capacity: 50           # 桶容量
+        rate: 50               # 每秒最多 50 次请求
         client-ip-enable: true
-        client-ip:
-          window-size: 60       # 1分钟窗口
-          max-requests: 10      # 每个IP最多10次
 ```
 
 ### 案例 3：服务预热
@@ -747,7 +684,6 @@ model:
         capacity: 1000
         rate: 100
         warm-up-period: 600     # 10分钟预热
-        cold-factor: 5          # 初始速率为目标的1/5
 ```
 
 ## 故障排查
@@ -757,15 +693,15 @@ model:
 1. **限流过于严格**
    ```bash
    # 检查拒绝率
-   curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.rejected.total"
+   curl "http://localhost:8080/api/rate-limiter/summary"
    
    # 解决：增加容量或速率
    ```
 
 2. **内存使用过高**
    ```bash
-   # 检查客户端数量
-   curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.clients.active"
+   # 检查限流器数量
+   curl "http://localhost:8080/api/rate-limiter/status"
    
    # 解决：调整清理策略
    ```

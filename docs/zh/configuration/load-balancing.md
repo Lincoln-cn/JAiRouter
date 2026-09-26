@@ -92,19 +92,10 @@ model:
 ```yaml
 model:
   load-balance:
-    type: least-connections
-    
-    # 连接跟踪配置
-    connection-tracking:
-      enabled: true             # 启用连接跟踪
-      cleanup-interval: 60s     # 清理间隔
-      max-idle-time: 300s      # 最大空闲时间
-    
-    # 权重调整配置
-    weight-adjustment:
-      enabled: true             # 启用动态权重调整
-      adjustment-interval: 30s  # 调整间隔
-      performance-window: 300s  # 性能统计窗口
+    type: consistent-hash
+    hash-algorithm: "md5"       # ip-hash / consistent-hash 的哈希算法
+    virtual-nodes: 150          # 一致性哈希虚拟节点数
+    ewma-alpha: 0.2             # EWMA 平滑因子（latency 策略专用）
 ```
 
 ## 服务级负载均衡配置
@@ -295,10 +286,6 @@ model:
     chat:
       load-balance:
         type: least-connections
-        connection-tracking:
-          enabled: true
-          cleanup-interval: 60s
-          max-idle-time: 300s
       instances:
         - name: "fast-model"
           base-url: "http://fast-server:8080"
@@ -325,19 +312,6 @@ model:
 **选择算法**：
 ```
 选择实例 = min(当前连接数 / 权重)
-```
-
-#### 连接跟踪配置
-
-```yaml
-model:
-  load-balance:
-    connection-tracking:
-      enabled: true             # 启用连接跟踪
-      cleanup-interval: 60s     # 清理过期连接的间隔
-      max-idle-time: 300s      # 连接最大空闲时间
-      initial-connections: 0    # 初始连接数
-      max-connections: 1000     # 最大连接数跟踪
 ```
 
 ### 4. IP Hash（IP哈希策略）
@@ -455,29 +429,29 @@ JAiRouter 提供以下负载均衡相关指标：
 
 ```bash
 # 查看负载均衡指标
-curl "http://localhost:8080/actuator/metrics/jairouter.loadbalancer.requests"
+curl "http://localhost:8080/actuator/metrics/jairouter_loadbalancer_selections_total"
 
 # 查看实例请求分布
-curl "http://localhost:8080/actuator/metrics/jairouter.instance.requests"
+curl "http://localhost:8080/actuator/metrics/jairouter_requests_total"
 
 # 查看连接数统计（仅 Least Connections 策略）
-curl "http://localhost:8080/actuator/metrics/jairouter.connections.active"
+curl "http://localhost:8080/actuator/metrics/jairouter_rate_limit_remaining"
 ```
 
 ### Prometheus 指标
 
 ```prometheus
 # 负载均衡请求总数
-jairouter_loadbalancer_requests_total{service="chat",strategy="round-robin"}
+jairouter_loadbalancer_selections_total{service="chat",strategy="round-robin"}
 
 # 实例请求分布
-jairouter_instance_requests_total{service="chat",instance="model-1",status="success"}
+jairouter_requests_total{service="chat",instance="model-1",status="success"}
 
 # 活跃连接数
-jairouter_connections_active{service="chat",instance="model-1"}
+jairouter_rate_limit_remaining{service="chat",instance="model-1"}
 
 # 实例响应时间
-jairouter_instance_response_time_seconds{service="chat",instance="model-1"}
+jairouter_request_duration_seconds{service="chat",instance="model-1"}
 ```
 
 ### 监控仪表板配置
@@ -486,13 +460,13 @@ jairouter_instance_response_time_seconds{service="chat",instance="model-1"}
 # Grafana 仪表板查询示例
 queries:
   - name: "请求分布"
-    query: 'rate(jairouter_instance_requests_total[5m])'
+    query: 'rate(jairouter_requests_total[5m])'
     
   - name: "负载均衡效果"
-    query: 'jairouter_instance_requests_total / ignoring(instance) group_left sum(jairouter_instance_requests_total) by (service)'
+    query: 'jairouter_requests_total / ignoring(instance) group_left sum(jairouter_requests_total) by (service)'
     
   - name: "实例健康状态"
-    query: 'jairouter_instance_health_status'
+    query: 'jairouter_backend_health'
 ```
 
 ## 性能调优
@@ -589,11 +563,6 @@ webclient:
     max-idle-time: 30s         # 适当的空闲时间
     pending-acquire-timeout: 60s # 获取连接超时
 
-model:
-  load-balance:
-    connection-tracking:
-      cleanup-interval: 30s     # 更频繁的清理
-      max-idle-time: 180s      # 较短的空闲时间
 ```
 
 ## 故障处理
@@ -656,10 +625,10 @@ model:
 curl "http://localhost:8080/api/config/instance/type/chat"
 
 # 查看负载分布
-curl "http://localhost:8080/actuator/metrics/jairouter.instance.requests"
+curl "http://localhost:8080/actuator/metrics/jairouter_requests_total"
 
 # 检查连接状态（Least Connections）
-curl "http://localhost:8080/actuator/metrics/jairouter.connections.active"
+curl "http://localhost:8080/actuator/metrics/jairouter_rate_limit_remaining"
 
 # 查看健康检查状态
 curl "http://localhost:8080/actuator/health"

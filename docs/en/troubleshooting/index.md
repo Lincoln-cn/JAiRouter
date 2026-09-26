@@ -100,10 +100,10 @@ Provides detailed debugging techniques and tool usage methods:
 curl http://localhost:8080/actuator/health
 
 # Request statistics
-curl http://localhost:8080/actuator/metrics/jairouter.requests.total
+curl http://localhost:8080/actuator/metrics/jairouter_requests_total
 
 # Response time
-curl http://localhost:8080/actuator/metrics/jairouter.request.duration
+curl http://localhost:8080/actuator/metrics/jairouter_request_duration_seconds
 
 # JVM memory usage
 curl http://localhost:8080/actuator/metrics/jvm.memory.used

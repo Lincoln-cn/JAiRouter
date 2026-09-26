@@ -173,7 +173,7 @@ class MetricsCollectorTest {
         
         // Then
         ArgumentCaptor<Tags> tagsCaptor = ArgumentCaptor.forClass(Tags.class);
-        verify(meterRegistry).counter(eq("jairouter.requests.total"), tagsCaptor.capture());
+        verify(meterRegistry).counter(eq("jairouter_requests_total"), tagsCaptor.capture());
         
         Tags capturedTags = tagsCaptor.getValue();
         assertEquals(service, capturedTags.stream()
@@ -451,7 +451,7 @@ class MonitoringDataFlowEndToEndTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         
         // Verify metrics recording
-        Counter requestCounter = meterRegistry.find("jairouter.requests.total")
+        Counter requestCounter = meterRegistry.find("jairouter_requests_total")
             .tag("method", "GET")
             .tag("status", "200")
             .counter();
@@ -493,7 +493,7 @@ class MonitoringDataFlowEndToEndTest {
         Thread.sleep(3000); // Wait for async processing
         
         // Then
-        Counter requestCounter = meterRegistry.find("jairouter.requests.total").counter();
+        Counter requestCounter = meterRegistry.find("jairouter_requests_total").counter();
         assertNotNull(requestCounter);
         assertTrue(requestCounter.count() >= concurrentRequests);
     }
