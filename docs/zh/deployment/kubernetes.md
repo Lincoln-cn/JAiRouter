@@ -9,18 +9,58 @@
 
 
 
-JAiRouter 支持在 Kubernetes 集群中部署，提供高可用、自动扩缩容和滚动更新等企业级特性。本文档详细介绍如何在 K8s 环境中部署 JAiRouter.
+JAiRouter 支持在 Kubernetes 集群中部署，提供自动故障转移准备、滚动更新等企业级特性。本文档详细介绍如何在 K8s 环境中部署 JAiRouter.
+
+> **⚠️ 多副本不受支持**：当前版本唯一支持 H2 嵌入式单文件数据库，`replicas` **必须为 1**。详见下方「多副本支持现状（已知约束）」。
+
+## 多副本支持现状（已知约束）
+
+**当前版本多副本不受支持，`replicas` 必须为 1；唯一支持 H2 嵌入式文件数据库。** 共享同一数据卷时第 2、3 个 Pod 无法打开 H2 文件库并进入 crash-loop；各自独立卷时每 Pod 一份数据，请求轮询会导致状态随机不一致。已实测两个 JVM 进程并发打开 `jdbc:h2:file:./data/jairouter` 时，第二个进程报 `Database may be already in use`（H2 错误码 90020）。外部共享数据库适配见 issue #160。
+
+### 每 Pod 语义清单
+
+| 能力 | 现状 | 多副本后果 |
+|------|------|------------|
+| 限流 | 全部状态在 JVM 内，仓库无分布式限流实现 | 放行量约等于配置值乘以副本数；窗口重置各算各的 |
+| 配额账本 | 默认 `jairouter.quota.enabled=false`、`jairouter.quota.distributed.enabled=false`、`fail-open=true`，本地计数 | 超支约乘以 N |
+| JWT 黑名单 | 默认回落 H2/StoreManager | 撤销只在签发 Pod 生效 |
+| API-Key 缓存 | 默认内存实现，无 TTL，只在本进程内修改 | 吊销/新建不跨 Pod |
+| 角色权限缓存 | Caffeine `expireAfterWrite=5min`，`invalidateCache()` 只清本进程 | 权限变更最多延迟 5 分钟且不跨 Pod |
+| SSE / WebSocket | 事件源是进程内 `Sinks.Many`，全库无 Redis pub/sub | 客户端只看得到所连 Pod 的事件 |
+| 调度任务 | 36+ 个 `@Scheduled` 全部无分布式锁 | 同一定时任务在每个 Pod 各跑一遍 |
+| 优雅停机 | `server.shutdown`/`graceful`/`timeout-per-shutdown-phase` 全仓零命中 | 滚动升级会截断在途 AI 流式响应 |
+
+### 横向扩展前置条件（按顺序）
+
+1. 换外部共享数据库（issue #160）
+2. 开启共享态 Redis 开关并加启动门禁（issue #162）
+3. 限流跨实例化，需新写（issue #161）
+4. 调度任务加分布式锁（issue #163）
+5. 实时事件广播（issue #164）
+6. 部署制品：优雅停机、`PodDisruptionBudget`、迁移作业（issue #165）
+
+### 已有基础：Redis 共享态实现
+
+仓库已有 Redis 共享态实现（配额 `RedisCounterBackend` + Lua、JWT 黑名单、令牌持久化、`RedisApiKeyCache`、状态持久化 Tier1），只是**默认全关**。`config/persistence/state-persistence-base.yml` 注释原文已写着「集群部署时开启」。相关配置键：
+
+| 配置键 | 作用 | 默认 |
+|--------|------|------|
+| `jairouter.persistence.redis.enabled` | 状态持久化 Tier1（熔断/负载均衡状态跨节点共享） | `false` |
+| `jairouter.quota.distributed.enabled` | 配额 Redis 原子计数 | `false` |
+| `jairouter.security.jwt.persistence.redis.enabled` | JWT 令牌持久化 | `false` |
+| `jairouter.security.jwt.blacklist.redis.enabled` | JWT 黑名单跨节点 | `false` |
+| `jairouter.security.cache.redis.enabled` | API-Key 分布式缓存 | `false` |
 
 ## Kubernetes 部署概述
 
 ### 特性
 
-- **高可用性**：多实例部署，自动故障转移
-- **自动扩缩容**：基于 CPU/内存/自定义指标自动扩缩容
-- **滚动更新**：零停机时间更新
+- **高可用性**（规划中）：多实例部署与自动故障转移需先完成共享数据库与共享态接线，当前 `replicas` 必须为 1
+- **自动扩缩容**（规划中）：HPA 会把副本数拉高，当前与 H2 单文件库不兼容，勿启用
+- **滚动更新**：零停机时间更新（注意：当前无优雅停机配置，在途流式响应可能被截断）
 - **服务发现**：内置服务发现和负载均衡
 - **配置管理**：使用 ConfigMap 和 Secret 管理配置
-- **持久化存储**：支持 PVC 持久化配置和日志
+- **持久化存储**：支持 PVC 持久化配置、日志和数据
 
 ### 架构图
 
@@ -255,6 +295,23 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: nfs-client  # 根据实际情况调整
+
+---
+# 主 H2 数据库卷（必须挂载到 /app/data）
+# ReadWriteOnce 本身就是 replicas: 1 的硬约束：
+# H2 嵌入式单文件库不支持多进程并发打开，多 Pod 共享会 crash-loop。
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jairouter-data-pvc
+  namespace: jairouter
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard  # 根据实际情况调整
 ```
 
 ```bash
@@ -262,6 +319,12 @@ kubectl apply -f pvc.yaml
 ```
 
 ### 5. 创建 Deployment
+
+> **⚠️ 警告：`replicas` 必须为 1**
+>
+> 当前唯一支持 H2 嵌入式单文件数据库。已实测两个 JVM 进程并发打开同一文件库时，第二个进程直接失败（`Database may be already in use`，错误码 90020）。共享同一 PVC 时第 2、3 个 Pod 会 crash-loop；各自独立卷时每 Pod 一份数据，请求轮询随机 401/状态错乱。`replicas > 1` 需先完成外部共享数据库适配（issue #160）。
+>
+> `/app/data` 必须挂载持久卷（`ReadWriteOnce`）。若 `readOnlyRootFilesystem: true` 而未挂载 `/app/data`，主 H2 库无法创建，**即使 `replicas: 1` 也起不来**。
 
 ```
 # Deployment 安全配置
@@ -273,7 +336,8 @@ metadata:
   labels:
     app: jairouter
 spec:
-  replicas: 3
+  # 必须为 1：H2 嵌入式单文件库不支持多副本（见上方警告与 issue #160）
+  replicas: 1
   selector:
     matchLabels:
       app: jairouter
@@ -303,11 +367,37 @@ spec:
           value: "prod"
         - name: JAVA_OPTS
           value: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
-        - name: API_KEY
+        # 密钥引用必须与上方创建的 Secret 名/键一致（jairouter-prod-secret）
+        - name: PROD_ADMIN_API_KEY
           valueFrom:
             secretKeyRef:
-              name: jairouter-secret
-              key: api-key
+              name: jairouter-prod-secret
+              key: PROD_ADMIN_API_KEY
+        - name: PROD_SERVICE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: jairouter-prod-secret
+              key: PROD_SERVICE_API_KEY
+        - name: PROD_READONLY_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: jairouter-prod-secret
+              key: PROD_READONLY_API_KEY
+        - name: PROD_JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jairouter-prod-secret
+              key: PROD_JWT_SECRET
+        # Redis 环境变量：单副本下非必需，多副本下必需（共享态开关见上文）
+        - name: REDIS_HOST
+          value: "your-redis-host"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: jairouter-prod-secret
+              key: REDIS_PASSWORD
         volumeMounts:
         - name: config-volume
           mountPath: /app/config
@@ -316,6 +406,9 @@ spec:
           mountPath: /app/logs
         - name: config-store-volume
           mountPath: /app/config-store
+        # 主 H2 数据库目录，必须挂载（否则 readOnlyRootFilesystem 下无法创建库）
+        - name: data-volume
+          mountPath: /app/data
         resources:
           requests:
             memory: "512Mi"
@@ -356,6 +449,9 @@ spec:
       - name: config-store-volume
         persistentVolumeClaim:
           claimName: jairouter-config-pvc
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: jairouter-data-pvc
       restartPolicy: Always
 ```
 
@@ -650,7 +746,8 @@ maintainers:
 
 ```
 # values.yaml
-replicaCount: 3
+# 必须为 1：H2 嵌入式单文件库不支持多副本（issue #160）
+replicaCount: 1
 
 image:
   repository: sodlinken/jairouter
@@ -708,9 +805,10 @@ resources:
     memory: 512Mi
 
 autoscaling:
-  enabled: true
-  minReplicas: 3
-  maxReplicas: 10
+  # 当前不可用：HPA 会拉高副本数，与 H2 单文件库不兼容（issue #160）
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 1
   targetCPUUtilizationPercentage: 70
   targetMemoryUtilizationPercentage: 80
 
@@ -723,7 +821,8 @@ affinity: {}
 persistence:
   enabled: true
   storageClass: ""
-  accessMode: ReadWriteMany
+  # 数据卷必须 ReadWriteOnce：H2 单文件库 + replicas=1（issue #160）
+  accessMode: ReadWriteOnce
   size: 10Gi
 
 # 环境变量配置
@@ -831,6 +930,8 @@ spec:
             - name: config
               mountPath: /app/config
               readOnly: true
+            - name: data
+              mountPath: /app/data
             {{- if .Values.persistence.enabled }}
             - name: logs
               mountPath: /app/logs
@@ -839,6 +940,9 @@ spec:
         - name: config
           configMap:
             name: {{ include "jairouter.fullname" . }}-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "jairouter.fullname" . }}-data
         {{- if .Values.persistence.enabled }}
         - name: logs
           persistentVolumeClaim:
@@ -1037,7 +1141,8 @@ metadata:
   labels:
     app: jairouter
 spec:
-  replicas: 3
+  # 必须为 1：H2 嵌入式单文件库不支持多副本（issue #160）
+  replicas: 1
   selector:
     matchLabels:
       app: jairouter
@@ -1067,11 +1172,35 @@ spec:
           value: "prod"
         - name: JAVA_OPTS
           value: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
-        - name: API_KEY
+        - name: PROD_ADMIN_API_KEY
           valueFrom:
             secretKeyRef:
-              name: jairouter-secret
-              key: api-key
+              name: jairouter-prod-secret
+              key: PROD_ADMIN_API_KEY
+        - name: PROD_SERVICE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: jairouter-prod-secret
+              key: PROD_SERVICE_API_KEY
+        - name: PROD_READONLY_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: jairouter-prod-secret
+              key: PROD_READONLY_API_KEY
+        - name: PROD_JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jairouter-prod-secret
+              key: PROD_JWT_SECRET
+        - name: REDIS_HOST
+          value: "your-redis-host"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: jairouter-prod-secret
+              key: REDIS_PASSWORD
         volumeMounts:
         - name: config-volume
           mountPath: /app/config
@@ -1080,6 +1209,8 @@ spec:
           mountPath: /app/logs
         - name: config-store-volume
           mountPath: /app/config-store
+        - name: data-volume
+          mountPath: /app/data
         resources:
           requests:
             memory: "512Mi"
@@ -1120,6 +1251,9 @@ spec:
       - name: config-store-volume
         persistentVolumeClaim:
           claimName: jairouter-config-pvc
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: jairouter-data-pvc
       restartPolicy: Always
 ```
 
@@ -1480,9 +1614,11 @@ kubectl rollout undo deployment/jairouter --to-revision=2 -n jairouter
 
 ### 4. 扩缩容
 
+> **⚠️ 当前不可用**：`kubectl scale --replicas > 1` 与 H2 嵌入式单文件库不兼容，需先完成共享数据库适配（issue #160）。多副本下限流/配额/JWT 黑名单/API-Key 缓存等均为每 Pod 语义，详见「多副本支持现状（已知约束）」。
+
 ```
-# 手动扩容
-kubectl scale deployment jairouter --replicas=5 -n jairouter
+# 手动扩容（当前不可用，见上方警告）
+# kubectl scale deployment jairouter --replicas=5 -n jairouter
 
 # 查看 HPA 状态
 kubectl describe hpa jairouter-hpa -n jairouter
