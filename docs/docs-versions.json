@@ -95,7 +95,8 @@
         "docs/en/configuration/load-balancing.md",
         "docs/en/configuration/rate-limiting.md",
         "docs/en/monitoring/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/en/configuration/index.md": {
       "FilePath": "docs/en/configuration/index.md",
@@ -132,7 +133,8 @@
         "docs/en/configuration/routing-rules.md",
         "docs/en/monitoring/index.md",
         "docs/en/troubleshooting/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/en/configuration/rate-limiting.md": {
       "FilePath": "docs/en/configuration/rate-limiting.md",
@@ -148,7 +150,8 @@
         "docs/en/monitoring/index.md",
         "docs/en/troubleshooting/index.md",
         "docs/en/troubleshooting/performance.md"
-      ]
+      ],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/en/deployment/china-optimization.md": {
       "FilePath": "docs/en/deployment/china-optimization.md",
@@ -388,7 +391,8 @@
         "docs/en/monitoring/performance.md",
         "docs/en/monitoring/testing.md",
         "docs/en/monitoring/troubleshooting.md"
-      ]
+      ],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/en/monitoring/configuration.md": {
       "FilePath": "docs/en/monitoring/configuration.md",
@@ -434,7 +438,8 @@
         "docs/en/monitoring/dashboards.md",
         "docs/en/monitoring/setup.md",
         "docs/en/monitoring/troubleshooting.md"
-      ]
+      ],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/en/monitoring/metrics.md": {
       "FilePath": "docs/en/monitoring/metrics.md",
@@ -449,7 +454,8 @@
         "docs/en/monitoring/dashboards.md",
         "docs/en/monitoring/setup.md",
         "docs/en/monitoring/troubleshooting.md"
-      ]
+      ],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/en/monitoring/performance.md": {
       "FilePath": "docs/en/monitoring/performance.md",
@@ -494,7 +500,8 @@
         "docs/en/monitoring/performance.md",
         "docs/en/monitoring/setup.md",
         "docs/en/monitoring/troubleshooting.md"
-      ]
+      ],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/en/monitoring/troubleshooting.md": {
       "FilePath": "docs/en/monitoring/troubleshooting.md",
@@ -593,7 +600,8 @@
       "GitCommit": "f5d673e2",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/en/troubleshooting/index.md": {
       "FilePath": "docs/en/troubleshooting/index.md",
@@ -610,7 +618,8 @@
         "docs/en/troubleshooting/common-issues.md",
         "docs/en/troubleshooting/debugging.md",
         "docs/en/troubleshooting/performance.md"
-      ]
+      ],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/en/troubleshooting/performance.md": {
       "FilePath": "docs/en/troubleshooting/performance.md",
@@ -620,7 +629,8 @@
       "GitCommit": "f5d673e2",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/zh/api-reference/index.md": {
       "FilePath": "docs/zh/api-reference/index.md",
@@ -708,7 +718,8 @@
         "docs/zh/configuration/load-balancing.md",
         "docs/zh/configuration/rate-limiting.md",
         "docs/zh/monitoring/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/zh/configuration/index.md": {
       "FilePath": "docs/zh/configuration/index.md",
@@ -744,7 +755,8 @@
         "docs/zh/configuration/routing-rules.md",
         "docs/zh/monitoring/index.md",
         "docs/zh/troubleshooting/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/zh/configuration/rate-limiting.md": {
       "FilePath": "docs/zh/configuration/rate-limiting.md",
@@ -760,7 +772,8 @@
         "docs/zh/monitoring/index.md",
         "docs/zh/troubleshooting/index.md",
         "docs/zh/troubleshooting/performance.md"
-      ]
+      ],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/zh/deployment/china-optimization.md": {
       "FilePath": "docs/zh/deployment/china-optimization.md",
@@ -1693,7 +1706,8 @@
       "GitCommit": "2f3955ee",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/zh/configuration/store-config.md": {
       "FilePath": "docs/zh/configuration/store-config.md",
@@ -1713,7 +1727,8 @@
       "GitCommit": "2f3955ee",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/en/configuration/jwt-persistence.md": {
       "FilePath": "docs/en/configuration/jwt-persistence.md",
@@ -1977,7 +1992,8 @@
       "GitCommit": "f5d673e2",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/zh/configuration/instance-examples.md": {
       "FilePath": "docs/zh/configuration/instance-examples.md",
@@ -1987,7 +2003,8 @@
       "GitCommit": "f5d673e2",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/en/configuration/adapter-config.md": {
       "FilePath": "docs/en/configuration/adapter-config.md",
@@ -2017,7 +2034,8 @@
       "GitCommit": "5f29294f",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/en/configuration/validation-rules.md": {
       "FilePath": "docs/en/configuration/validation-rules.md",
@@ -2058,7 +2076,8 @@
         "docs/en/troubleshooting/common-issues.md",
         "docs/en/troubleshooting/debugging.md",
         "docs/en/troubleshooting/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/zh/configuration/routing-rules.md": {
       "FilePath": "docs/zh/configuration/routing-rules.md",
@@ -2068,7 +2087,8 @@
       "GitCommit": "5f29294f",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/zh/development/doc-maintenance.md": {
       "FilePath": "docs/zh/development/doc-maintenance.md",
@@ -2092,7 +2112,8 @@
         "docs/en/configuration/load-balancing.md",
         "docs/en/configuration/routing-rules.md",
         "docs/en/reference/changelog.md"
-      ]
+      ],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/zh/configuration/kv-cache.md": {
       "FilePath": "docs/zh/configuration/kv-cache.md",
@@ -2106,7 +2127,8 @@
         "docs/zh/configuration/load-balancing.md",
         "docs/zh/configuration/routing-rules.md",
         "docs/zh/reference/changelog.md"
-      ]
+      ],
+      "ReviewedAt": "2026-09-24T00:00:00"
     },
     "docs/en/development/doc-maintenance.md": {
       "FilePath": "docs/en/development/doc-maintenance.md",
@@ -6215,5 +6237,5 @@
       "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-09-25T07:07:23.306982"
+  "last_updated": "2026-09-26T13:22:02.961963"
 }
