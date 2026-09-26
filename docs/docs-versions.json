@@ -2,11 +2,11 @@
   "versions": {
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.36",
-      "LastModified": "2026-09-24T04:21:35.673272",
-      "ContentHash": "9de93641e09dcea2",
-      "GitCommit": "0f4d264b",
-      "Author": "Lincoln",
+      "Version": "1.0.37",
+      "LastModified": "2026-09-26T04:58:39.879286",
+      "ContentHash": "fb055c7e563f2319",
+      "GitCommit": "f23932ba",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -2177,11 +2177,11 @@
     },
     "docs/en/security/rbac-permissions.md": {
       "FilePath": "docs/en/security/rbac-permissions.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-09-16T07:13:46.882682",
-      "ContentHash": "34962a19266f3f1b",
-      "GitCommit": "670a375c",
-      "Author": "Lincoln",
+      "Version": "1.0.4",
+      "LastModified": "2026-09-26T04:58:40.134459",
+      "ContentHash": "7003217c48bb57fb",
+      "GitCommit": "f23932ba",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/security/api-key-management.md",
@@ -2207,11 +2207,11 @@
     },
     "docs/zh/security/rbac-permissions.md": {
       "FilePath": "docs/zh/security/rbac-permissions.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-09-16T07:13:47.275169",
-      "ContentHash": "08027db1067514fe",
-      "GitCommit": "670a375c",
-      "Author": "Lincoln",
+      "Version": "1.0.4",
+      "LastModified": "2026-09-26T04:58:40.410051",
+      "ContentHash": "62103537e9ddc843",
+      "GitCommit": "f23932ba",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/security/api-key-management.md",
@@ -2269,11 +2269,11 @@
     },
     "docs/en/getting-started/web-console.md": {
       "FilePath": "docs/en/getting-started/web-console.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-09-19T04:26:22.050726",
-      "ContentHash": "e4fb07508605dd24",
-      "GitCommit": "2f5255a1",
-      "Author": "Lincoln",
+      "Version": "1.0.2",
+      "LastModified": "2026-09-26T04:58:40.050652",
+      "ContentHash": "da5f65f76fb84a59",
+      "GitCommit": "f23932ba",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/security/rbac-permissions.md"
@@ -2296,11 +2296,11 @@
     },
     "docs/zh/getting-started/web-console.md": {
       "FilePath": "docs/zh/getting-started/web-console.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-09-19T04:26:22.326732",
-      "ContentHash": "73a19736c36fec0b",
-      "GitCommit": "2f5255a1",
-      "Author": "Lincoln",
+      "Version": "1.0.2",
+      "LastModified": "2026-09-26T04:58:40.336653",
+      "ContentHash": "f2ce2f0d1baedd39",
+      "GitCommit": "f23932ba",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/security/rbac-permissions.md"
@@ -6234,6 +6234,46 @@
       "NewVersion": "1.0.36",
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-09-24T04:21:35.673277",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.36",
+      "NewVersion": "1.0.37",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-26T04:58:39.879293",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/web-console.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-26T04:58:40.050664",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/rbac-permissions.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-26T04:58:40.134469",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/web-console.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-26T04:58:40.336663",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/rbac-permissions.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-26T04:58:40.410062",
       "Description": "文档modified"
     }
   ],

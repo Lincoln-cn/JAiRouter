@@ -24,7 +24,7 @@
 
 | 用户名 | 默认密码 | 角色 | 说明 |
 |--------|----------|------|------|
-| `admin` | `ChangeMeOnFirstStartup123456` | ADMIN, USER | 超级管理员，拥有全部 48 个权限码 |
+| `admin` | `ChangeMeOnFirstStartup123456` | ADMIN, USER | 超级管理员，拥有全部 53 个权限码 |
 | `user` | `user123456` | USER | 普通用户，只读为主 |
 
 > ⚠️ **首次部署务必修改 `admin` 密码**。密码通过环境变量 `INITIAL_ADMIN_PASSWORD` 设置（见 `src/main/resources/config/auth/jwt.yml`），修改后重启服务即生效。
@@ -265,10 +265,10 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 | 角色 | 权限码数 | 权限范围 | 说明 |
 |------|:-------:|----------|------|
-| **ADMIN** | 48 | 全量权限码 | 超级管理员；URL 规则直通，JWT 内嵌全量码 |
-| **OPERATOR** | 39 | 全部 `:read` + `:write` 码 | 日常运维；不含系统管理（`system:*`）、安全管理类 `manage`（API Key / JWT 令牌 / 黑名单管理） |
-| **USER** | 27 | 仪表盘 + config 只读 + lb/cb/rl 全量 + monitoring 只读 + tracing 仪表盘/搜索 + AI 试验场 | 普通用户；唯一写码 `lb:config:write` |
-| **VIEWER** | 26 | 全部 `:read` 码 | 纯只读角色；不含 `callhistory:view`、`ai:playground:use` |
+| **ADMIN** | 53 | 全量权限码 | 超级管理员；URL 规则直通，JWT 内嵌全量码 |
+| **OPERATOR** | 43 | 全部 `:read` + `:write` 码 | 日常运维；不含系统管理（`system:*`）、安全管理类 `manage`（API Key / JWT 令牌 / 黑名单管理） |
+| **USER** | 28 | 仪表盘 + config 只读 + lb/cb/rl 全量 + monitoring 只读 + tracing 仪表盘/搜索 + AI 试验场 | 普通用户；唯一写码 `lb:config:write` |
+| **VIEWER** | 27 | 全部 `:read` 码 | 纯只读角色；不含 `callhistory:view`、`ai:playground:use` |
 
 ### 6.2 为什么看不到某些菜单页 {#why-menu-pages-missing}
 
