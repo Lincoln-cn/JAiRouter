@@ -142,8 +142,11 @@ public class SecurityConfiguration {
                 // AI服务端点需要认证（API Key权限由适配器层按服务类型控制）
                 .pathMatchers("/v1/**").authenticated()
                 // v2.9.8 RBAC: /api/** 采用数据驱动 URL 权限矩阵（PermissionRuleRegistry +
-                // PermissionAuthorizationManager），同步返回 controller 的权限全靠 URL 规则；
-                // 未登记规则的回退 authenticated
+                // PermissionAuthorizationManager），同步返回 controller 的权限全靠 URL 规则。
+                // #128 阶段 2/3：未命中规则时不再一律回退 authenticated —— 命中 RbacExemptEndpoints
+                // 的端点仅需认证（显式豁免、逐条带理由），其余由 RbacUnmatchedPolicy 决定，
+                // 默认 DENY_ALL（仅 ROLE_ADMIN 直通）。可用 jairouter.security.rbac.unmatched-policy
+                // 回退到 DENY_WRITES（阶段 2）或 AUTHENTICATED（改动前的 fail-open）。
                 .pathMatchers("/api/**").access(permissionAuthorizationManager)
                 // 监控端点需要管理员权限（除了已明确允许的健康检查端点）
                 .pathMatchers("/actuator/**").hasRole("ADMIN")

@@ -24,7 +24,7 @@ Both entry points serve the same frontend code with identical functionality.
 
 | Username | Default Password | Role | Description |
 |----------|-----------------|------|-------------|
-| `admin` | `ChangeMeOnFirstStartup123456` | ADMIN, USER | Super admin with all 48 permission codes |
+| `admin` | `ChangeMeOnFirstStartup123456` | ADMIN, USER | Super admin with all 53 permission codes |
 | `user` | `user123456` | USER | Regular user, primarily read-only |
 
 > ⚠️ **Change the `admin` password before first production use.** The password is set via the `INITIAL_ADMIN_PASSWORD` environment variable (see `src/main/resources/config/auth/jwt.yml`). Restart the service after changing it.
@@ -265,10 +265,10 @@ Overview → Dashboard provides a single-pane view:
 
 | Role | Permission Count | Permission Scope | Description |
 |------|:----------------:|------------------|-------------|
-| **ADMIN** | 48 | All permission codes | Super admin; bypasses URL rules, full codes embedded in JWT |
-| **OPERATOR** | 39 | All `:read` + `:write` codes | Day-to-day ops; excludes system management (`system:*`), security management `manage` codes (API Key / JWT Token / Blacklist management) |
-| **USER** | 27 | Dashboard + config read + full lb/cb/rl + monitoring read + tracing dashboard/search + AI Playground | Regular user; only write code is `lb:config:write` |
-| **VIEWER** | 26 | All `:read` codes | Pure read-only role; no `callhistory:view`, `ai:playground:use`, or other non-`:read` codes |
+| **ADMIN** | 53 | All permission codes | Super admin; bypasses URL rules, full codes embedded in JWT |
+| **OPERATOR** | 43 | All `:read` + `:write` codes | Day-to-day ops; excludes system management (`system:*`), security management `manage` codes (API Key / JWT Token / Blacklist management) |
+| **USER** | 28 | Dashboard + config read + full lb/cb/rl + monitoring read + tracing dashboard/search + AI Playground | Regular user; only write code is `lb:config:write` |
+| **VIEWER** | 27 | All `:read` codes | Pure read-only role; no `callhistory:view`, `ai:playground:use`, or other non-`:read` codes |
 
 ### 6.2 Why Some Menu Pages Are Missing {#why-menu-pages-missing}
 
