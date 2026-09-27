@@ -2330,30 +2330,6 @@
   },
   "changes": [
     {
-      "FilePath": "README-ZH.md",
-      "OldVersion": "1.0.8",
-      "NewVersion": "1.0.9",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-06-29T06:48:15.825885",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "README.md",
-      "OldVersion": "1.0.16",
-      "NewVersion": "1.0.17",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-06-29T06:48:15.828025",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "repository-description.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2026-06-29T06:48:16.242392",
-      "Description": "文档created"
-    },
-    {
       "FilePath": "docs/configuration-guide.md",
       "OldVersion": "1.0.2",
       "NewVersion": "1.0.3",
@@ -6450,5 +6426,5 @@
       "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-09-26T08:26:48.179009"
+  "last_updated": "2026-09-27T07:35:39.283684"
 }
