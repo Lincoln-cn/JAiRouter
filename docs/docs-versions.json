@@ -2330,78 +2330,6 @@
   },
   "changes": [
     {
-      "FilePath": "docs/configuration-guide.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-01T06:27:23.934513",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/api-reference/error-codes.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "1.0.1",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-01T06:27:23.938445",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/api-reference/management-api.md",
-      "OldVersion": "1.0.3",
-      "NewVersion": "1.0.4",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-01T06:27:23.942698",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/reference/changelog.md",
-      "OldVersion": "1.0.5",
-      "NewVersion": "1.0.6",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-01T06:27:24.044466",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/security/api-key-management.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-01T06:27:24.055837",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/api-reference/error-codes.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "1.0.1",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-01T06:27:24.094948",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/api-reference/management-api.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-01T06:27:24.099662",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/reference/changelog.md",
-      "OldVersion": "1.0.5",
-      "NewVersion": "1.0.6",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-01T06:27:24.211188",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/security/api-key-management.md",
-      "OldVersion": "1.0.4",
-      "NewVersion": "1.0.5",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-01T06:27:24.223084",
-      "Description": "文档modified"
-    },
-    {
       "FilePath": "docs/zh/index.md",
       "OldVersion": "1.0.4",
       "NewVersion": "1.0.5",
@@ -6426,5 +6354,5 @@
       "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-09-28T08:13:03.459319"
+  "last_updated": "2026-09-29T07:53:00.346368"
 }
