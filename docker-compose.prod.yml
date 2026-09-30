@@ -5,7 +5,7 @@ services:
     image: sodlinken/jairouter:latest
     container_name: jairouter-prod
     ports:
-      - "9900:9900"
+      - "9900:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - REDIS_HOST=redis-prod
@@ -19,15 +19,18 @@ services:
       - ./config:/app/config:ro
       - ./logs:/app/logs
       - ./config-store:/app/config-store
-      - ./data:/app/r2dbc:h2:file/data
+      - ./data:/app/data
       - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
     networks:
       - jairouter-network
     depends_on:
       - redis-prod
+    # 停机宽限期须大于 spring.lifecycle.timeout-per-shutdown-phase(30s)，
+    # 否则 Docker 会先 SIGKILL，优雅停机配置失效
+    stop_grace_period: 35s
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9900/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3

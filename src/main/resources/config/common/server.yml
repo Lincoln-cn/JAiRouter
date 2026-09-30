@@ -6,12 +6,23 @@
 
 server:
   port: 8080
+  # 优雅停机：停止接收新连接，等待在途请求（含 SSE 流式响应）完成后再关闭。
+  # 默认 immediate 会在重启/滚动升级时直接切断在途 AI 流式响应。
+  # Netty/Reactor 下 graceful 会等待在途请求；超过 timeout-per-shutdown-phase 后强制关闭剩余连接。
+  shutdown: graceful
 
 # Spring Boot 基础配置
 spring:
   main:
     allow-circular-references: false
-  
+
+  # 停机阶段最大等待时间。
+  # 30s 理由：覆盖绝大多数 AI 流式响应的完成时间（通常数秒~数十秒），
+  # 同时不会让滚动重启/Docker stop 长时间阻塞。可按环境用
+  # spring.lifecycle.timeout-per-shutdown-phase 覆盖。
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
   # WebFlux 配置
   webflux:
     multipart:

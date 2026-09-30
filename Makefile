@@ -117,7 +117,7 @@ docker-run: ## 运行生产环境 Docker 容器
 		-v $$(pwd)/config:/app/config:ro \
 		-v $$(pwd)/logs:/app/logs \
 		-v $$(pwd)/config-store:/app/config-store \
-		-v $$(pwd)/data:/app/r2dbc:h2:file/data \
+		-v $$(pwd)/data:/app/data \
 		--restart unless-stopped \
 		$(DOCKER_IMAGE):latest
 
@@ -134,7 +134,7 @@ docker-run-dev: ## 运行开发环境 Docker 容器
 		-v $$(pwd)/config:/app/config \
 		-v $$(pwd)/logs:/app/logs \
 		-v $$(pwd)/config-store:/app/config-store \
-		-v $$(pwd)/data:/app/r2dbc:h2:file/data \
+		-v $$(pwd)/data:/app/data \
 		$(DOCKER_IMAGE):$(VERSION)-dev
 
 # Docker Compose 启动
