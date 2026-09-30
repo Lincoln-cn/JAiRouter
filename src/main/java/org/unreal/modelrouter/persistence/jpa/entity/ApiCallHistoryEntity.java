@@ -6,7 +6,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
@@ -232,15 +231,13 @@ public class ApiCallHistoryEntity {
     /**
      * 加密的请求体内容（AES-256-GCM，Base64 编码）
      */
-    @Lob
-    @Column(name = "request_body_encrypted", columnDefinition = "CLOB")
+    @Column(name = "request_body_encrypted", columnDefinition = "TEXT")
     private String requestBodyEncrypted;
 
     /**
      * 加密的响应体内容（AES-256-GCM，Base64 编码）
      */
-    @Lob
-    @Column(name = "response_body_encrypted", columnDefinition = "CLOB")
+    @Column(name = "response_body_encrypted", columnDefinition = "TEXT")
     private String responseBodyEncrypted;
 
     /**

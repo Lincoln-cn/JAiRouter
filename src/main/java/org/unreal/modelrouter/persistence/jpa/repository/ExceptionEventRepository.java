@@ -232,9 +232,9 @@ public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEn
     /**
      * 按小时分布统计
      */
-    @Query("SELECT FUNCTION('HOUR', e.occurredAt), COUNT(e) FROM ExceptionEventEntity e "
+    @Query("SELECT EXTRACT(HOUR FROM e.occurredAt), COUNT(e) FROM ExceptionEventEntity e "
            + "WHERE e.occurredAt BETWEEN :startTime AND :endTime "
-           + "GROUP BY FUNCTION('HOUR', e.occurredAt) ORDER BY FUNCTION('HOUR', e.occurredAt)")
+           + "GROUP BY EXTRACT(HOUR FROM e.occurredAt) ORDER BY EXTRACT(HOUR FROM e.occurredAt)")
     List<Object[]> countByHour(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
