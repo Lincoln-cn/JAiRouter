@@ -19,6 +19,7 @@ spring:
       - classpath:config/common/webclient.yml
       - classpath:config/common/logging.yml
       - classpath:config/common/scheduling.yml
+      - classpath:config/common/cluster.yml
       
       # ====== config-service 模块配置 ======
       - classpath:config/config-service/core.yml

@@ -112,6 +112,7 @@ plugins:
             中国优化: China Optimization
             GitHub Pages: GitHub Pages
             JWT持久化检查清单: JWT Persistence Checklist
+            多副本部署: Multi-Replica Deployment
             监控指南: Monitoring
             监控设置: Setup
             监控配置: Monitoring Configuration
@@ -232,6 +233,7 @@ nav:
     - 中国优化: zh/deployment/china-optimization.md
     - GitHub Pages: zh/deployment/github-pages.md
     - JWT持久化检查清单: zh/deployment/jwt-persistence-deployment-checklist.md
+    - 多副本部署: zh/deployment/multi-replica.md
   - 监控指南:
     - zh/monitoring/index.md
     - 监控设置: zh/monitoring/setup.md
