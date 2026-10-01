@@ -20,6 +20,17 @@ jairouter:
       cache-enabled: true
       cache-expiration-seconds: 3600
 
+      # 本副本 API Key 缓存的刷新（#162）。
+      #
+      # 缓存是各副本自己的内存镜像，只在本进程内更新：多副本下在 A 副本吊销或新建的 Key，
+      # B 副本原先要等到重启才能感知——已吊销的 Key 会继续被放行。开启后各副本在当前间隔内
+      # 收敛到共享存储的最新内容（含移除已删除项）。
+      #
+      # 该任务刷新的是「本副本」的缓存，每个副本都必须执行，因此刻意不加跨副本排他锁。
+      # 置 cache-refresh-enabled: false 可回退到「仅启动时装载」的旧行为。
+      cache-refresh-enabled: true
+      cache-refresh-interval-seconds: 60
+
       # API Key 列表（仅用于开发环境测试）
       # 生产环境应通过 API 管理或环境变量配置
       keys:

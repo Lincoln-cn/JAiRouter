@@ -1,0 +1,34 @@
+# ========================================
+# 多副本（集群）配置 (common 模块)
+# ========================================
+# 用于识别「多副本部署但跨副本共享态未开启」这一组合，并在启动时告警或 fail-fast。
+# 背景与完整清单：docs/zh/deployment/multi-replica.md
+#
+# 单副本部署不受影响：只有确认处于多副本环境（见 replicas / K8s 环境变量）时才会判定。
+
+jairouter:
+  cluster:
+    # 副本数。
+    #   0 = 未知，回退到运行环境探测（存在 KUBERNETES_SERVICE_HOST 或 POD_NAME 即判为多副本）
+    #   1 = 显式单副本，跳过共享态检查
+    #  >1 = 多副本，触发共享态检查
+    # K8s 下建议由 Downward API 注入真实副本数，避免依赖环境探测。
+    replicas: ${JAIROUTER_REPLICAS:0}
+
+    shared-state-check:
+      # 是否启用自检
+      enabled: true
+
+      # OFF  = 不检查
+      # WARN = 多副本且共享态开关缺失时启动告警（默认，不改变 /actuator/health 状态）
+      # FAIL = 多副本且共享态开关缺失时 fail-fast，应用启动失败
+      mode: ${JAIROUTER_SHARED_STATE_MODE:WARN}
+
+      # WARN 模式下是否同时把 /actuator/health 置为 DOWN。
+      #
+      # 默认 false 的原因：仓库全部 Dockerfile 与 compose 的健康检查都用
+      # /actuator/health，置为 DOWN 会让容器变 unhealthy，K8s 上还可能触发重启循环——
+      # 而重启并不能修复配置缺口。需要让编排层感知时再显式打开本项。
+      # （K8s 探针用的是 /actuator/health/liveness 与 /actuator/health/readiness，
+      #   自定义健康指标不在这两个分组内，因此不受影响。）
+      fail-health: ${JAIROUTER_SHARED_STATE_FAIL_HEALTH:false}

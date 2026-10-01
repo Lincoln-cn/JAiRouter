@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Primary;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
@@ -33,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Primary
@@ -42,6 +45,10 @@ public class ApiKeyService {
     private final Map<String, ApiKey> apiKeyCache = new ConcurrentHashMap<>();
     private final Map<String, String> keyIdIndex = new ConcurrentHashMap<>();
     private final SecurityProperties securityProperties;
+
+    /** 是否定期从共享存储刷新本副本 API Key 缓存（#162） */
+    @Value("${jairouter.security.api-key.cache-refresh-enabled:true}")
+    private boolean cacheRefreshEnabled;
 
     @Autowired private ApiKeyValidator apiKeyValidator;
     @Autowired private ApiKeyBatchService apiKeyBatchService;
@@ -253,6 +260,29 @@ public class ApiKeyService {
      */
     public void loadAndMergeWithYaml() {
         apiKeyPersistenceService.loadAndMergeWithYaml(apiKeyCache, keyIdIndex, loadApiKeysFromConfig());
+    }
+
+    /**
+     * 定期从共享存储刷新本副本的 API Key 缓存（跨副本最终一致，#162）。
+     *
+     * <p>缓存是本副本的内存镜像，只在本进程内更新：多副本下在副本 A 吊销或新建的 Key，
+     * 副本 B 原先要等到重启才能感知——其间已吊销的 Key 会继续被放行。本方法让各副本在
+     * {@code jairouter.security.api-key.cache-refresh-interval-seconds} 内收敛到共享存储的
+     * 最新内容（含移除已删除项）。</p>
+     *
+     * <p><b>每个副本都必须执行</b>，因此刻意不加跨副本排他锁：加锁会让只有一个副本刷新
+     * 自己的缓存，其余副本依旧停留在过期视图。</p>
+     */
+    @Scheduled(fixedDelayString = "${jairouter.security.api-key.cache-refresh-interval-seconds:60}",
+            timeUnit = TimeUnit.SECONDS)
+    public void refreshCacheFromSharedStore() {
+        if (!cacheRefreshEnabled) {
+            return;
+        }
+        int refreshed = apiKeyPersistenceService.refreshApiKeyCache(apiKeyCache, keyIdIndex);
+        if (refreshed >= 0) {
+            log.debug("本副本 API Key 缓存已刷新，当前 {} 个密钥", refreshed);
+        }
     }
 
     public void updateUsageStatistics(String kid, boolean succ) {

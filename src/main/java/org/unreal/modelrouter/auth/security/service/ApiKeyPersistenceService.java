@@ -363,6 +363,79 @@ public class ApiKeyPersistenceService {
     }
 
     /**
+     * 从共享存储刷新 API Key 缓存（跨副本最终一致，#162）。
+     *
+     * <p>与 {@link #loadLatestApiKeyConfig} 的关键差异：本方法按存储的最新内容<b>替换</b>缓存——
+     * 既补入其它副本新建的 Key，也移除其它副本已删除的 Key；且<b>不回写</b>存储，避免用本副本
+     * 的旧视图覆盖兄弟副本的变更（{@code loadLatestApiKeyConfig} 只增不减且末尾会全量回写，
+     * 不能用作刷新）。</p>
+     *
+     * <p>为规避「清空再填充」造成的空窗——校验路径在空窗内会把有效 Key 判为不存在——实现为
+     * 「先 putAll 新内容、再移除多余项」，任一时刻缓存都是旧值 ∪ 新值的超集。</p>
+     *
+     * <p>存储读不到配置、内容为空、或条目全部缺少 {@code keyHash} 时<b>不修改缓存</b>并返回
+     * {@code -1}：宁可让已删除的 Key 多存活一轮，也不要把全部有效 Key 剔除导致服务不可用。</p>
+     *
+     * @param apiKeyCache 待刷新的缓存（keyHash → ApiKey）
+     * @param keyIdIndex  待刷新的 ID 索引（keyId → keyHash）
+     * @return 刷新后的条目数；未发生刷新时返回 {@code -1}
+     */
+    public int refreshApiKeyCache(final Map<String, ApiKey> apiKeyCache,
+                                  final Map<String, String> keyIdIndex) {
+        try {
+            int currentVersion = apiKeyConfigManager != null
+                    ? apiKeyConfigManager.getCurrentVersion()
+                    : storeManager.getConfigVersions(API_KEYS_STORE_KEY).stream()
+                        .max(Integer::compareTo).orElse(0);
+            if (currentVersion <= 0) {
+                log.debug("刷新 API Key 缓存：存储中暂无配置版本，保留现有缓存");
+                return -1;
+            }
+
+            Map<String, Object> versionConfig = apiKeyConfigManager != null
+                    ? apiKeyConfigManager.getVersionConfig(currentVersion)
+                    : storeManager.getConfigByVersion(API_KEYS_STORE_KEY, currentVersion);
+            if (versionConfig == null) {
+                log.debug("刷新 API Key 缓存：版本 {} 内容为空，保留现有缓存", currentVersion);
+                return -1;
+            }
+
+            Object raw = versionConfig.get(STORE_API_KEYS);
+            if (!(raw instanceof List<?> items) || items.isEmpty()) {
+                log.debug("刷新 API Key 缓存：版本 {} 无 API Key 条目，保留现有缓存", currentVersion);
+                return -1;
+            }
+
+            Map<String, ApiKey> fresh = new HashMap<>();
+            Map<String, String> freshIndex = new HashMap<>();
+            for (Object item : items) {
+                ApiKey apiKey = objectMapper.convertValue(item, ApiKey.class);
+                initializeApiKeyFields(apiKey);
+                if (apiKey.getKeyHash() == null || apiKey.getKeyId() == null) {
+                    continue;
+                }
+                fresh.put(apiKey.getKeyHash(), apiKey);
+                freshIndex.put(apiKey.getKeyId(), apiKey.getKeyHash());
+            }
+            if (fresh.isEmpty()) {
+                log.warn("刷新 API Key 缓存：版本 {} 的条目均缺少 keyHash，保留现有缓存", currentVersion);
+                return -1;
+            }
+
+            apiKeyCache.putAll(fresh);
+            apiKeyCache.keySet().retainAll(fresh.keySet());
+            keyIdIndex.putAll(freshIndex);
+            keyIdIndex.keySet().retainAll(freshIndex.keySet());
+
+            log.debug("API Key 缓存已按存储版本 {} 刷新，共 {} 个密钥", currentVersion, fresh.size());
+            return fresh.size();
+        } catch (Exception e) {
+            log.warn("刷新 API Key 缓存失败，保留现有缓存: {}", e.getMessage());
+            return -1;
+        }
+    }
+
+    /**
      * 初始化 ApiKey 基本字段
      *
      * @param apiKey ApiKey 实体
