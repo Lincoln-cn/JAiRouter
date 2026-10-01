@@ -74,6 +74,17 @@ public final class AffinityContextHolder {
         return AFFINITY_KEY.get();
     }
 
+    /**
+     * 当前请求的 API Key ID（未设置或未鉴权时返回 null）。
+     *
+     * <p>限流的 {@code api-key} / {@code tenant} 键维度用它作为被限流对象的标识（#161）。</p>
+     *
+     * @return API Key ID，可能为 null
+     */
+    public static String apiKeyId() {
+        return API_KEY_ID.get();
+    }
+
     public static void clear() {
         AFFINITY_KEY.remove();
         API_KEY_ID.remove();

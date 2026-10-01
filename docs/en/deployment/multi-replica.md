@@ -138,6 +138,56 @@ shared storage every `jairouter.security.api-key.cache-refresh-interval-seconds`
   every valid key and take the service down.
 - Set `cache-refresh-enabled: false` to return to the "load at startup only" behavior.
 
+## Rate-limit key dimension and multi-replica semantics
+
+Rate-limit state lives **entirely in the JVM**, and the repository contains **no distributed rate
+limiter** (no Redis-backed implementation) — unlike the quota ledger and JWT blacklist, which ship
+Redis implementations and only need their switches turned on. Under multiple replicas:
+
+> the effective allowed volume for one client is roughly `configured value × replica count`, window
+> resets are per replica, and burst shape depends on which pod a request lands on (equivalent to
+> handing each pod its own full bucket).
+
+**Current decision: fix the key dimension first, evaluate distributed counting later.** With a
+meaningless key, distributed counting would be correct arithmetic over garbage: in a cluster with no
+L7 ingress, `remoteAddress` is the **node IP**, not the real client IP — counting by IP means counting
+by noise, either merging a whole node into one client or, behind a proxy, merging everything into the
+gateway.
+
+### Configuration
+
+```yaml
+model:
+  rate-limit:
+    client-ip-enable: true          # enables "client-dimension" limiting
+    key-dimension: "client-ip"      # client-ip (default) / api-key / tenant
+```
+
+How each dimension resolves, and what happens when its value is missing:
+
+| Dimension | Key value | When the value is missing |
+|---|---|---|
+| `client-ip` | client IP | treated as unavailable → that level is skipped, with a warning |
+| `api-key` | caller API key ID | **falls back to the client IP, with a warning** (config does not match traffic) |
+| `tenant` | API key ID, falling back to client IP | the fallback is by design, no warning |
+
+**Fallback is explicit, not a silent pass**: limiting still applies after a fallback, just at IP
+granularity; only when both the dimension value and the fallback are missing is that level skipped,
+and then with a WARN log. Cache keys carry the dimension prefix, so switching dimensions does not
+reuse the previous dimension's limiter state.
+
+The `ip-hash` load balancer still falls back to random selection when no client IP is available (there
+is no instance to pick otherwise), but that fallback now emits both a WARN log and a
+`recordLoadBalancer(..., "random-fallback-no-client-ip")` metric — previously it was only a log, so
+operators could not see "affinity is nominal" from metrics.
+
+### Still not done
+
+Direction A (Redis atomic counting) is **not implemented** here: it first needs decisions on the
+algorithm (token bucket / sliding window on Redis), the atomicity boundary, and fail-open vs
+fail-closed behavior when Redis is unavailable. Fixing the key dimension is what makes that direction
+meaningful. Until then, read and load-test your limits as **per-replica quotas**.
+
 ## Configuration change timing contract
 
 When a management API call modifies service instances or routing rules, the configuration is written to

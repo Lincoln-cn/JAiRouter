@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.core.helper.ConfigConverterHelper;
 import org.unreal.modelrouter.config.core.helper.ServiceTypeResolver;
 import org.unreal.modelrouter.router.factory.ComponentFactory;
+import org.unreal.modelrouter.router.loadbalancer.AffinityContextHolder;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 
@@ -229,38 +230,57 @@ public class RateLimitManager {
      * @return 是否通过限流检查
      */
     public boolean tryAcquireClientIp(final RateLimitContext context) {
-        if (context == null || context.getClientIp() == null) {
+        if (context == null) {
             return true;
         }
 
-        ModelServiceRegistry.ServiceType serviceType = context.getServiceType();
-        String clientIp = context.getClientIp();
+        final ModelServiceRegistry.ServiceType serviceType = context.getServiceType();
 
-        // 检查服务级配置是否启用了客户端IP限流
+        // 服务级配置优先，其次全局配置（两者的 clientIpEnable 都表示「按客户端维度限流」）
         ModelRouterProperties.ServiceConfig serviceConfig = getServiceConfig(serviceType);
+        ModelRouterProperties.RateLimitConfig effectiveConfig = null;
         if (serviceConfig != null
                 && serviceConfig.getRateLimit() != null
                 && Boolean.TRUE.equals(serviceConfig.getRateLimit().getClientIpEnable())) {
-            // v2.7.10: 使用 Caffeine 缓存获取限流器
-            RateLimiter ipLimiter = clientIpRateLimiterCache.get(serviceType, clientIp, () -> {
-                RateLimitConfig config = configConverterHelper.convertRateLimitConfig(serviceConfig.getRateLimit());
-                return componentFactory.createScopedRateLimiter(config);
-            });
-            return ipLimiter != null && ipLimiter.tryAcquire(context);
+            effectiveConfig = serviceConfig.getRateLimit();
+        } else {
+            ModelRouterProperties.RateLimitConfig globalRateLimit = properties.getRateLimit();
+            if (globalRateLimit != null && Boolean.TRUE.equals(globalRateLimit.getClientIpEnable())) {
+                effectiveConfig = globalRateLimit;
+            }
+        }
+        if (effectiveConfig == null) {
+            return true; // 未启用客户端维度限流
         }
 
-        // 检查全局配置是否启用了客户端IP限流
-        ModelRouterProperties.RateLimitConfig globalRateLimit = properties.getRateLimit();
-        if (globalRateLimit != null && Boolean.TRUE.equals(globalRateLimit.getClientIpEnable())) {
-            // v2.7.10: 使用 Caffeine 缓存获取限流器
-            RateLimiter ipLimiter = clientIpRateLimiterCache.get(serviceType, clientIp, () -> {
-                RateLimitConfig config = configConverterHelper.convertRateLimitConfig(globalRateLimit);
-                return componentFactory.createScopedRateLimiter(config);
-            });
-            return ipLimiter != null && ipLimiter.tryAcquire(context);
+        // #161: 键维度可配置。集群 + 无反代场景下 clientIp 取到的是节点 IP，
+        // 按 IP 计数等于按垃圾数据计数，此时应改用 api-key / tenant 维度。
+        final RateLimitKeyDimension dimension =
+                RateLimitKeyDimension.parse(effectiveConfig.getKeyDimension());
+        final RateLimitKeyResolver.Resolution resolution = RateLimitKeyResolver.resolve(
+                dimension, context.getClientIp(), AffinityContextHolder.apiKeyId());
+
+        if (!resolution.available()) {
+            // 维度值与回退值都缺失：无法确定限流对象，放行但显式告警（不静默）
+            LOGGER.warn("限流键维度 [{}] 无法确定限流对象（clientIp 与 apiKeyId 均为空），本次请求跳过该级限流",
+                    dimension.configValue());
+            return true;
+        }
+        if (resolution.unexpectedFallback()) {
+            LOGGER.warn("限流键维度为 [{}] 但请求未携带 API Key，已回退到客户端 IP 维度——"
+                            + "集群 + 无反代场景下该回退会把不同客户端合并计数，请确认维度配置与实际流量匹配",
+                    dimension.configValue());
+        } else if (resolution.usedFallback()) {
+            LOGGER.debug("限流键维度 [{}] 回退到客户端 IP（租户维度的预期行为）",
+                    dimension.configValue());
         }
 
-        return true; // 未启用客户端IP限流
+        final ModelRouterProperties.RateLimitConfig config = effectiveConfig;
+        RateLimiter limiter = clientIpRateLimiterCache.get(serviceType, dimension, resolution.key(), () -> {
+            RateLimitConfig converted = configConverterHelper.convertRateLimitConfig(config);
+            return componentFactory.createScopedRateLimiter(converted);
+        });
+        return limiter == null || limiter.tryAcquire(context);
     }
 
     /**
