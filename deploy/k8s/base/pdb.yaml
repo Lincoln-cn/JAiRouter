@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: jairouter
+  labels:
+    app.kubernetes.io/name: jairouter
+spec:
+  # 节点驱逐 / 集群升级时，保证至少 1 个副本在线。
+  # 副本数 ≥ 3 的部署请在 overlay 中提高该值（见 overlays/prod），
+  # 否则滚动升级会出现容量不足。
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: jairouter

@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jairouter-config
+  labels:
+    app.kubernetes.io/name: jairouter
+data:
+  # 非敏感配置（以 env 形式注入，供 envFrom 使用）。
+  # 敏感项见 Secret jairouter-secrets——本仓库不提供该 Secret 的实体，
+  # 创建方式见 docs/zh/deployment/kubernetes.md。
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REDIS_ENABLED: "true"
+  # 多副本共享态自检（见 docs/zh/deployment/multi-replica.md）：
+  # WARN = 启动告警但不改 /actuator/health；确认要让编排层感知时改为 FAIL。
+  JAIROUTER_SHARED_STATE_MODE: "WARN"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jairouter-config-files
+  labels:
+    app.kubernetes.io/name: jairouter
+data:
+  # 挂载到 /app/config，覆盖 classpath 内的默认配置。
+  # 该路径已被 application.yml 的 spring.config.import 显式导入（optional:file:/app/config/application.yml）。
+  application.yml: |
+    # 多副本部署必须开启的跨副本共享态开关（详见 docs/zh/deployment/multi-replica.md）。
+    # 未开启时各副本会退化为互不知情的单机实例：在 A 副本吊销的令牌在 B 副本仍被放行。
+    jairouter:
+      security:
+        jwt:
+          blacklist:
+            redis:
+              enabled: true
+          persistence:
+            redis:
+              enabled: true
+        cache:
+          redis:
+            enabled: true
+      quota:
+        enabled: true
+        distributed:
+          enabled: true
+      persistence:
+        redis:
+          enabled: true

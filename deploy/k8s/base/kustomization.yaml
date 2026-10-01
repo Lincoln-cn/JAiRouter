@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# JAiRouter Kubernetes 基础清单（#165）。
+#
+# 选 Kustomize 而非 Helm 的理由：kubectl 内置支持（无需额外工具链，CI 也不必安装 helm），
+# 且清单是纯 YAML——可被既有 YAML 校验与单元测试直接解析断言（见 K8sManifestTest）。
+# 需要模板化能力（多环境差异很大）时可在此基础上引入 Helm，或改用 overlays 组合
+# （本目录已给出 dev/prod 两个 overlay 的用法）。
+#
+# 多副本部署的前置条件：必须先落地共享数据库（见 docs/zh/deployment/multi-replica.md）。
+# 多副本下本机 H2 单文件库物理上不成立，因此 base 的 data/logs 卷使用 emptyDir
+# （每副本独立）——不要在未切共享 DB 前把它换成共享 PVC。
+
+namespace: jairouter
+
+resources:
+  - serviceaccount.yaml
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - pdb.yaml
+  - migration-job.yaml

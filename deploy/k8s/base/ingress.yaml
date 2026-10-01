@@ -1,0 +1,41 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jairouter
+  labels:
+    app.kubernetes.io/name: jairouter
+    app.kubernetes.io/component: gateway
+  annotations:
+    # 【部署前必读】客户端 IP 信任。
+    #
+    # Ingress Controller 默认会改写 remoteAddress，此时应用拿到的 clientIp 是网关 IP，
+    # 「按 IP 维度限流」会把所有客户端合并计数，安全审计也会把来源记为网关。
+    # 修法分两处，缺一不可：
+    #   1. Controller 侧：配置受信代理（nginx ingress: proxy-real-ip-cidr /
+    #      use-forwarded-headers / compute-full-forwarded-for，属 Controller ConfigMap，
+    #      不是 Ingress annotation）；
+    #   2. 应用侧：同步设置 jairouter.security.trusted-proxies.*，否则不会采信
+    #      X-Forwarded-For。
+    # 详见 docs/zh/deployment/multi-replica.md 与客户端 IP 信任策略的设计文档。
+    #
+    # 若确认无法还原真实客户端 IP，请把限流维度改为 api-key / tenant：
+    #   model.rate-limit.key-dimension
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: jairouter.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: jairouter
+                port:
+                  name: http
+  tls:
+    - hosts:
+        - jairouter.example.com
+      # TLS 证书 Secret 需自行创建（本仓库不提供）。
+      secretName: jairouter-tls

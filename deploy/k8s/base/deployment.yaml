@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jairouter
+  labels:
+    app.kubernetes.io/name: jairouter
+    app.kubernetes.io/component: gateway
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: jairouter
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # maxUnavailable=0：滚动升级期间容量不下降，配合下面 terminate 宽限期，
+      # 避免在途 AI 流式响应被截断。
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: jairouter
+        app.kubernetes.io/component: gateway
+    spec:
+      serviceAccountName: jairouter
+      # 必须大于 spring.lifecycle.timeout-per-shutdown-phase（30s，见 config/common/server.yml）。
+      # 小于它时 kubelet 会先 SIGKILL，优雅停机配置失效，在途流式响应被直接切断。
+      terminationGracePeriodSeconds: 45
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10010
+        runAsGroup: 10010
+        fsGroup: 10010
+      containers:
+        - name: jairouter
+          image: sodlinken/jairouter:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
+            # Downward API：InstanceIdentity 用它给本副本的产物命名
+            # （归档文件、指标落盘按副本区分，避免多副本写同一文件名互相覆盖）。
+            # POD_NAME 也参与「是否多副本」的自动判定（见 MultiReplicaSharedStateGate）。
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: INSTANCE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: JAVA_OPTS
+              value: >-
+                -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+UseContainerSupport
+          envFrom:
+            - configMapRef:
+                name: jairouter-config
+            - secretRef:
+                name: jairouter-secrets
+          # 启动探针：JVM 冷启动可能久于 liveness 的 initialDelay，用它兜住，
+          # 避免启动期被 liveness 误杀。
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "500m"
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            # 应用需要写 /app/data、/app/logs、/tmp，故不启用只读根文件系统；
+            # 如需开启，请先把这三处改为 emptyDir/PVC 挂载。
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+              readOnly: true
+            - name: data
+              mountPath: /app/data
+            - name: logs
+              mountPath: /app/logs
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: jairouter-config-files
+        # emptyDir（每副本独立）：多副本下本机 H2/文件存储不成立，共享 DB 才是状态载体。
+        # 单副本且需要保留本地数据时，在 overlay 中替换为 PVC。
+        - name: data
+          emptyDir: {}
+        - name: logs
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}

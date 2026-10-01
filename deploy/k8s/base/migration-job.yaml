@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: jairouter-schema-init
+  labels:
+    app.kubernetes.io/name: jairouter
+    app.kubernetes.io/component: migration
+spec:
+  backoffLimit: 2
+  # 完成后自动清理，避免每次部署累积已完成的 Job。
+  ttlSecondsAfterFinished: 600
+  # 兜底：进程若不自行退出则强制终止，避免部署流程被挂住。
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: jairouter
+        app.kubernetes.io/component: migration
+    spec:
+      restartPolicy: Never
+      serviceAccountName: jairouter
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10010
+        runAsGroup: 10010
+        fsGroup: 10010
+      containers:
+        - name: schema-init
+          image: sodlinken/jairouter:latest
+          imagePullPolicy: IfNotPresent
+          # 以「非 Web」方式启动一次，让启动期的兼容迁移（建表 / 补列，见
+          # CompatibilitySchemaMigrator）由**单一实例**先跑完，避免多副本同时启动时的
+          # 并发 DDL。
+          #
+          # 限制（未在真实集群验证）：当前版本没有独立的 migrate-only 入口，
+          # 这里依赖 web-application-type=none；若该实例不自行退出，会由上面的
+          # activeDeadlineSeconds 终止。彻底方案是引入版本化迁移工具
+          # （Flyway / Liquibase）并提供独立迁移入口——属本 issue 的后续项，
+          # 已在 docs 的「已知未覆盖」中记录。
+          args:
+            - "--spring.main.web-application-type=none"
+            - "--spring.main.banner-mode=off"
+          envFrom:
+            - configMapRef:
+                name: jairouter-config
+            - secretRef:
+                name: jairouter-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+              readOnly: true
+            - name: data
+              mountPath: /app/data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: jairouter-config-files
+        - name: data
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
