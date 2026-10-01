@@ -138,6 +138,22 @@ shared storage every `jairouter.security.api-key.cache-refresh-interval-seconds`
   every valid key and take the service down.
 - Set `cache-refresh-enabled: false` to return to the "load at startup only" behavior.
 
+## Configuration change timing contract
+
+When a management API call modifies service instances or routing rules, the configuration is written to
+shared storage as a **new version** and reloaded immediately **only in the replica that handled the
+request** (the version save triggers `ModelServiceRegistry.refreshFromMergedConfig`).
+
+- **The replica that made the change**: effective immediately.
+- **Every other replica**: **not** notified (there is no configuration broadcast and no periodic pull);
+  it keeps the old configuration until it triggers a local reload itself (a management operation on that
+  replica) or restarts.
+
+So a configuration change in a multi-replica deployment is **not globally atomic** — there is a window
+during which replicas use different rules, and its length depends on when operations restart pods or
+trigger a local reload. If that window is unacceptable, pin traffic during changes at the gateway, or
+wait for configuration broadcast / periodic pull to be introduced.
+
 ## Known gaps
 
 The following are recorded but not yet implemented — multi-replica deployments should be aware:
