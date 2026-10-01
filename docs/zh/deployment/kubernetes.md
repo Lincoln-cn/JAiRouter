@@ -17,7 +17,7 @@ JAiRouter 支持在 Kubernetes 集群中部署，提供自动故障转移准备�
 
 ## 仓库提供的部署制品（推荐）
 
-`deploy/k8s/` 下提供 **Kustomize** 制品（`base` + `dev` / `prod` overlays），无需额外工具链：
+`deploy/k8s/` 下提供 **`Kustomize`** 制品（`base` + `dev` / `prod` overlays），无需额外工具链：
 
 ```bash
 # 预览渲染结果（kubectl 内置 kustomize，无需安装 helm）
@@ -27,7 +27,7 @@ kubectl kustomize deploy/k8s/overlays/prod
 kubectl apply -k deploy/k8s/overlays/prod
 ```
 
-选择 Kustomize 而非 Helm 的理由：`kubectl` 内置支持，CI 与用户侧都不必安装 helm；清单是纯 YAML，
+选择 `Kustomize` 而非 Helm 的理由：`kubectl` 内置支持，CI 与用户侧都不必安装 helm；清单是纯 YAML，
 可被单元测试直接解析断言（见 `K8sManifestTest`）。
 
 制品已包含：Deployment、Service、Ingress、ConfigMap、ServiceAccount、PodDisruptionBudget、

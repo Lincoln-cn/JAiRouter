@@ -18,7 +18,7 @@ JAiRouter supports deployment in Kubernetes clusters, providing rolling updates 
 
 ## Deployment Artifacts Provided by the Repository (recommended)
 
-`deploy/k8s/` ships **Kustomize** artifacts (`base` plus `dev` / `prod` overlays); no extra toolchain
+`deploy/k8s/` ships **`Kustomize`** artifacts (`base` plus `dev` / `prod` overlays); no extra toolchain
 required:
 
 ```bash
@@ -29,7 +29,7 @@ kubectl kustomize deploy/k8s/overlays/prod
 kubectl apply -k deploy/k8s/overlays/prod
 ```
 
-Why Kustomize rather than Helm: it is built into `kubectl`, so neither CI nor users need to install
+Why `Kustomize` rather than Helm: it is built into `kubectl`, so neither CI nor users need to install
 helm; the manifests are plain YAML and can be asserted directly by unit tests (see
 `K8sManifestTest`).
 
