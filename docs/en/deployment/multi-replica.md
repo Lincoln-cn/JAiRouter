@@ -188,6 +188,39 @@ algorithm (token bucket / sliding window on Redis), the atomicity boundary, and 
 fail-closed behavior when Redis is unavailable. Fixing the key dimension is what makes that direction
 meaningful. Until then, read and load-test your limits as **per-replica quotas**.
 
+## Cross-replica real-time event broadcast
+
+The routing-monitor and circuit-breaker-monitor WebSockets take their events from **in-process runtime
+callbacks** (routing decisions, breaker state changes). With multiple replicas, a client only ever sees
+the events of the replica it is connected to — the monitoring panel then **silently misses events**:
+not an error, just incomplete data that looks normal.
+
+With `jairouter.cluster.events.enabled` on, an event produced on one replica is broadcast to the whole
+cluster over Redis pub/sub, and every replica merges what it receives into its own WebSocket stream:
+
+- **Loopback filtering**: messages carry the source replica id, and a replica does not re-distribute its
+  own events — the local sink already delivered them, and without this filter clients would see
+  duplicates.
+- **Degradation**: when the Redis connection is unavailable the bus warns once and degrades to
+  "this replica only", without blocking startup — an observability feature must not stop the service.
+- **Self-healing**: on subscription failure (Redis restart, network blip) it retries with backoff and
+  re-subscribes automatically, no application restart needed.
+- Each logical channel shares a single Redis subscription, so it does not multiply with client count.
+
+**The health-status SSE is deliberately not broadcast**: its data comes from the shared database
+(`ServiceInstanceRepository`) and a snapshot is generated every 5 seconds, so every replica already
+serves the same data; broadcasting would only duplicate pushes. The only multi-replica difference is
+that a proactive change notification may lag by up to one snapshot period (5 seconds).
+
+Configuration:
+
+```yaml
+jairouter:
+  cluster:
+    events:
+      enabled: true      # default false: single-replica deployments need no cross-replica broadcast
+```
+
 ## Configuration change timing contract
 
 When a management API call modifies service instances or routing rules, the configuration is written to

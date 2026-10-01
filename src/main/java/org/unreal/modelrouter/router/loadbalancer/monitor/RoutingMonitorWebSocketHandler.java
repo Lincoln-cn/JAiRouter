@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketSession;
+import org.unreal.modelrouter.common.cluster.ClusterEventBus;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
@@ -25,8 +26,12 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class RoutingMonitorWebSocketHandler implements WebSocketHandler {
 
+    /** 跨副本广播通道名（#164） */
+    private static final String EVENT_CHANNEL = "routing-monitor";
+
     private final RoutingMonitorService monitorService;
     private final ObjectMapper objectMapper;
+    private final ClusterEventBus clusterEventBus;
 
     /**
      * 事件广播器 - 有界多播缓冲（256），溢出由 emit 失败路径丢弃，避免无界占内存
@@ -45,6 +50,9 @@ public class RoutingMonitorWebSocketHandler implements WebSocketHandler {
                 if (result.isFailure()) {
                     log.debug("Failed to emit routing event: {}", result);
                 }
+                // 同时广播给其它副本：本地 Sink 只覆盖连在本副本上的客户端（#164）。
+                // 单副本部署下这是无操作（LocalClusterEventBus）。
+                clusterEventBus.publish(EVENT_CHANNEL, json);
             } catch (Exception e) {
                 log.warn("Failed to serialize routing event: {}", e.getMessage());
             }
@@ -76,8 +84,11 @@ public class RoutingMonitorWebSocketHandler implements WebSocketHandler {
         Flux<String> heartbeat = Flux.interval(Duration.ofSeconds(30))
                 .map(seq -> "{\"type\":\"heartbeat\",\"seq\":" + seq + "}");
 
-        // 事件流
-        Flux<String> eventStream = eventSink.asFlux()
+        // 事件流 = 本副本事件 + 其它副本广播来的事件。
+        // 广播侧已按来源副本做过回环过滤，本副本发出的事件不会在这里重复出现。
+        Flux<String> eventStream = Flux.merge(
+                        eventSink.asFlux(),
+                        clusterEventBus.subscribe(EVENT_CHANNEL))
                 .onBackpressureLatest();
 
         // 合并初始状态、心跳和事件流
