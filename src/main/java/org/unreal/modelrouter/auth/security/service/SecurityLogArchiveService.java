@@ -7,6 +7,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
+import org.unreal.modelrouter.common.scheduling.ScheduledTaskLock;
+import org.unreal.modelrouter.common.util.InstanceIdentity;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -16,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.atomic.AtomicLong;
@@ -31,6 +34,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class SecurityLogArchiveService {
     
     private final SecurityAuditService auditService;
+
+    private final ScheduledTaskLock taskLock;
     
     // 归档配置
     private static final String ARCHIVE_BASE_PATH = "logs/security/archive";
@@ -47,6 +52,12 @@ public class SecurityLogArchiveService {
      */
     @Scheduled(cron = "0 0 2 * * ?")
     public void scheduleArchive() {
+        // 归档不是幂等的（会重复搬运同一批事件），且产物是共享目录下的文件：
+        // 多副本下只让一个副本执行本周期。
+        if (!taskLock.tryAcquire("security.archive", Duration.ofDays(1))) {
+            return;
+        }
+
         log.info("开始执行定时安全日志归档任务");
         
         LocalDateTime endTime = LocalDateTime.now().minusDays(1).withHour(23).withMinute(59).withSecond(59);
@@ -77,8 +88,10 @@ public class SecurityLogArchiveService {
                 throw new RuntimeException("创建归档目录失败: " + archiveDir, e);
             }
             
-            // 归档文件路径
-            Path archiveFile = archiveDir.resolve("security-audit-" + archiveDate + ".log");
+            // 归档文件路径。带上本副本标识：即使排他锁失效（例如 Redis 不可用降级），
+            // 多个副本也各写自己的文件，不会在同一文件上交错写入。
+            Path archiveFile = archiveDir.resolve(
+                    "security-audit-" + archiveDate + "-" + InstanceIdentity.id() + ".log");
             
             AtomicLong archivedCount = new AtomicLong(0);
             

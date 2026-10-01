@@ -6,7 +6,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.auth.security.config.properties.AuditConfig;
+import org.unreal.modelrouter.common.scheduling.ScheduledTaskLock;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
@@ -20,6 +22,7 @@ public class AuditLogCleanupTask {
 
     private final ExtendedSecurityAuditService auditService;
     private final AuditConfig auditConfig;
+    private final ScheduledTaskLock taskLock;
 
     /**
      * 定时清理过期审计日志
@@ -81,6 +84,11 @@ public class AuditLogCleanupTask {
             return;  // 未配置限制
         }
 
+        // 超限会触发告警，属外部可观测副作用：多副本下只让一个副本执行
+        if (!taskLock.tryAcquire("audit.storage-size", Duration.ofHours(1))) {
+            return;
+        }
+
         // 实现存储空间检查逻辑
         // 如果超过限制，触发紧急清理或告警
         long currentSizeMb = getCurrentAuditLogSize();
@@ -138,6 +146,11 @@ public class AuditLogCleanupTask {
      */
     @Scheduled(cron = "0 0 8 * * *")  // 每天早上8点
     public void generateDailyReport() {
+        // 日报会被推送/投递，属外部可观测副作用：多副本下只让一个副本生成
+        if (!taskLock.tryAcquire("audit.daily-report", Duration.ofDays(1))) {
+            return;
+        }
+
         log.info("生成每日审计报告");
 
         LocalDateTime endTime = LocalDateTime.now();
@@ -166,6 +179,11 @@ public class AuditLogCleanupTask {
     @Scheduled(cron = "0 */5 * * * *")  // 每5分钟检查一次
     public void checkSecurityAlerts() {
         if (!auditConfig.getAlert().isEnabled()) {
+            return;
+        }
+
+        // 告警会被推送，属外部可观测副作用：多副本下只让一个副本检查并触发
+        if (!taskLock.tryAcquire("audit.security-alerts", Duration.ofMinutes(5))) {
             return;
         }
 

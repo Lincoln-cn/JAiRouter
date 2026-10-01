@@ -6,6 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.common.scheduling.ScheduledTaskLock;
+
+import java.time.Duration;
 
 /**
  * API Key 密钥轮换调度器
@@ -27,6 +30,8 @@ public class ApiKeyRotationScheduler {
     @Autowired(required = false)
     private ApiKeyService apiKeyService;
 
+    private final ScheduledTaskLock taskLock;
+
     /**
      * 每小时检查一次需要轮换的密钥
      */
@@ -34,6 +39,12 @@ public class ApiKeyRotationScheduler {
     public void checkRotationNeeded() {
         if (apiKeyService == null) {
             log.debug("API Key 服务未启用，跳过密钥轮换检查");
+            return;
+        }
+
+        // 轮换不是幂等的：两个副本同时轮换同一把 key 会让先发出的新 keyValue 立刻失效。
+        // 多副本下只让一个副本执行本周期。
+        if (!taskLock.tryAcquire("apikey.rotation", Duration.ofHours(1))) {
             return;
         }
 

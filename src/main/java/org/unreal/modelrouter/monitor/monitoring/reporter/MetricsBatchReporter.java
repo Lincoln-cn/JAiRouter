@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.unreal.modelrouter.common.util.InstanceIdentity;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -330,14 +331,18 @@ public final class MetricsBatchReporter {
 
     /**
      * 查找可用的文件（考虑文件大小限制）
-     * 文件命名规则：metrics-YYYYMMDD.json 或 metrics-YYYYMMDD-N.json
+     * 文件命名规则：metrics-YYYYMMDD-INSTANCE.json 或 metrics-YYYYMMDD-INSTANCE-N.json
+     *
+     * <p>文件名带本副本标识：多副本部署下若共用同一个文件名，两个副本会同时判定该文件
+     * 「可用」并各自写入（一个 CREATE 一个 APPEND），造成内容交错、文件损坏。</p>
      */
     private Path findAvailableFile(final Path dirPath, final String dateStr,
                                     final String extension, final long contentLength) throws IOException {
         long maxSizeBytes = (long) fileMaxSizeMb * 1024 * 1024;
+        String instance = InstanceIdentity.id();
 
         // 先检查基础文件名
-        Path baseFile = dirPath.resolve("metrics-" + dateStr + "." + extension);
+        Path baseFile = dirPath.resolve("metrics-" + dateStr + "-" + instance + "." + extension);
         if (!Files.exists(baseFile)) {
             return baseFile;
         }
@@ -355,7 +360,8 @@ public final class MetricsBatchReporter {
                         dateStr, contentLength);
                 return null;
             }
-            Path indexedFile = dirPath.resolve("metrics-" + dateStr + "-" + index + "." + extension);
+            Path indexedFile = dirPath.resolve(
+                    "metrics-" + dateStr + "-" + instance + "-" + index + "." + extension);
             if (!Files.exists(indexedFile)) {
                 return indexedFile;
             }

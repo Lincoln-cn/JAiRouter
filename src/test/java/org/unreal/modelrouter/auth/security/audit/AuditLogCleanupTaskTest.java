@@ -7,9 +7,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.unreal.modelrouter.auth.security.config.properties.AuditConfig;
 import org.unreal.modelrouter.common.dto.SecurityAlert;
 import org.unreal.modelrouter.common.dto.SecurityReport;
+import org.unreal.modelrouter.common.scheduling.ScheduledTaskLock;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
@@ -40,7 +43,19 @@ class AuditLogCleanupTaskTest {
         auditConfig.setRetentionDays(90);
         auditConfig.setMaxStorageSizeMb(1000);
         
-        cleanupTask = new AuditLogCleanupTask(auditService, auditConfig);
+        cleanupTask = new AuditLogCleanupTask(auditService, auditConfig, alwaysAcquireLock());
+    }
+
+    /**
+     * 无 Redis 的锁：总是放行。这些用例验证的是清理逻辑本身，多副本排他行为由
+     * ScheduledTaskLockTest 覆盖。
+     */
+    @SuppressWarnings("unchecked")
+    private static ScheduledTaskLock alwaysAcquireLock() {
+        ObjectProvider<ReactiveStringRedisTemplate> provider = mock(ObjectProvider.class);
+        // lenient：部分用例在到达取锁守卫前就提前返回，届时该桩不会被使用
+        lenient().when(provider.getIfAvailable()).thenReturn(null);
+        return new ScheduledTaskLock(provider, true);
     }
 
     @Nested
