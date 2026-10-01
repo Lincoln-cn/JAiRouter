@@ -36,10 +36,27 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      # PostgreSQL 服务：验证 #160 的跨库适配（H2 的 MODE=PostgreSQL 验不出真实差异）
+      postgres:
+        image: postgres:16-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     env:
       REDIS_TEST: "true"
       REDIS_TEST_HOST: localhost
       REDIS_TEST_PORT: "6379"
+      PG_TEST: "true"
+      PG_TEST_URL: jdbc:postgresql://localhost:5432/postgres
+      PG_TEST_USERNAME: postgres
+      PG_TEST_PASSWORD: postgres
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
@@ -59,18 +76,24 @@ jobs:
         run: |
           set -e
           REPORT=target/surefire-reports
-          f=$(ls $REPORT/*QuotaDistributedRedisIntegrationTest*.txt 2>/dev/null | head -n1 || true)
-          if [ -z "$f" ]; then
-            echo "::error::surefire report for QuotaDistributedRedisIntegrationTest not found — test did not run"
-            exit 1
-          fi
-          echo "--- $f ---"
-          cat "$f"
-          if grep -qE 'Tests run:.*Skipped: [1-9]' "$f"; then
-            echo "::error::gated Redis test was SKIPPED despite REDIS_TEST=true"
-            exit 1
-          fi
-          echo "gated Redis test executed (not skipped)"
+          check_gated() {
+            name="$1"
+            flag="$2"
+            f=$(ls $REPORT/*"$name"*.txt 2>/dev/null | head -n1 || true)
+            if [ -z "$f" ]; then
+              echo "::error::surefire report for $name not found — test did not run"
+              exit 1
+            fi
+            echo "--- $f ---"
+            cat "$f"
+            if grep -qE 'Tests run:.*Skipped: [1-9]' "$f"; then
+              echo "::error::gated test $name was SKIPPED despite $flag=true"
+              exit 1
+            fi
+            echo "gated test $name executed (not skipped)"
+          }
+          check_gated QuotaDistributedRedisIntegrationTest REDIS_TEST
+          check_gated PostgresCompatibilityIntegrationTest PG_TEST
 
       - name: 上传测试报告
         if: always()

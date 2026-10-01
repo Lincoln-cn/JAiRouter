@@ -228,6 +228,7 @@ nav:
     - Docker优化: zh/deployment/docker-optimized.md
     - Kubernetes部署: zh/deployment/kubernetes.md
     - 生产环境: zh/deployment/production.md
+    - 数据库部署: zh/deployment/database.md
     - 中国优化: zh/deployment/china-optimization.md
     - GitHub Pages: zh/deployment/github-pages.md
     - JWT持久化检查清单: zh/deployment/jwt-persistence-deployment-checklist.md

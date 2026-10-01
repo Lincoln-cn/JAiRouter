@@ -1,0 +1,169 @@
+# Database Deployment
+
+JAiRouter uses an **embedded H2 database** by default, which is suitable for single-instance deployments and development. As soon as you need **multiple replicas (`replicas > 1`)**, you must switch to an **external shared database** — this page explains how to connect to PostgreSQL.
+
+## Why multiple replicas require an external database
+
+An H2 single-file database can be **opened by only one process at a time**. Measured (H2 2.3.232, URL parameters identical to the default configuration, two JVM processes opening the same file concurrently):
+
+```
+[B] 失败: org.h2.jdbc.JdbcSQLNonTransientConnectionException:
+    Database may be already in use: ".../data/jairouter.mv.db".
+    Possible solutions: close all other connection(s); use the server mode [90020-232]
+```
+
+As a result, both mounting strategies are broken with multiple replicas:
+
+| Mounting strategy | Actual behavior |
+|---|---|
+| Multiple pods share one volume (`ReadWriteMany`) | The 2nd and 3rd pods **cannot open the database** ⇒ start-up fails, crash loop |
+| Each pod has its own volume | Each pod holds its own copy ⇒ users / accounts / API keys / role permissions diverge ⇒ **random 401s as requests round-robin** |
+
+> If the shared volume sits on NFS, the risk **may** escalate from a clean failure to concurrent-write corruption (NFS locking semantics are unreliable). This point was not measured.
+
+**Conclusion**: without an external shared database, `replicas` must stay at `1`. See issue #160.
+
+## Prerequisites
+
+| Item | Requirement |
+|---|---|
+| PostgreSQL | 12 or newer (the automated tests run against `postgres:16-alpine`) |
+| JDBC driver | `org.postgresql:postgresql` is bundled with the distribution — nothing extra to install |
+| Database account privileges | `CONNECT`, plus `USAGE` and `CREATE` on the target schema (for tables and indexes; use a migration account if you later adopt versioned migrations) |
+| Character set | UTF-8 (default) |
+
+## Configuration
+
+The data source is externalized through three environment variables, and the **defaults still point at H2**, so behavior is unchanged when they are not set:
+
+```yaml
+# config/config-service/core.yml
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:h2:file:./data/jairouter;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=FALSE}
+    username: ${DATABASE_USERNAME:sa}
+    password: ${DATABASE_PASSWORD:}
+```
+
+To connect to PostgreSQL:
+
+```bash
+export DATABASE_URL="jdbc:postgresql://pg.internal:5432/jairouter"
+export DATABASE_USERNAME="jairouter"
+export DATABASE_PASSWORD="<strong-password>"
+```
+
+Notes:
+
+- **Do not set `spring.jpa.properties.hibernate.dialect`.** The dialect is auto-detected by Hibernate from the connection; hardcoding it is silently carried over when you switch databases, producing wrong DDL with hard-to-diagnose errors.
+- The driver needs no explicit declaration (`driver-class-name` was removed); Spring infers it from the URL prefix.
+- The database must be **created beforehand** (`CREATE DATABASE jairouter;`). The application only creates tables.
+
+### Connection pool
+
+No connection pool is configured explicitly today, so Spring Boot's `HikariCP` defaults apply (maximum 10 connections). Before deploying multiple replicas, budget the total connections against PostgreSQL's `max_connections`:
+
+```yaml
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 10      # example; keep replicas x this value < max_connections
+      connection-timeout: 30000
+```
+
+> The pool settings have **not been validated under load**. Tune them to your own capacity plan.
+
+## Cross-database caveats
+
+The following two differences between H2 and PostgreSQL are real and were verified by automated tests against a real PostgreSQL instance.
+
+### Index and constraint names are schema-scoped
+
+In PostgreSQL, tables, indexes, sequences, and views **share one schema-wide namespace**, whereas index names are **table-scoped** in H2 / MySQL. Two different tables therefore **cannot use the same index name**:
+
+```
+ERROR: relation "idx_audit_timestamp" already exists
+```
+
+When this happens, Hibernate **only logs a WARN and continues**, so the **index is silently dropped** — functionality is unaffected, but the related queries lose their index and get slower. Three historical duplicates (`idx_audit_*`, `idx_instance_id`) have been fixed, and automated tests now guard both name uniqueness and the actual existence of indexes.
+
+When adding `@Index` to a new entity, keep the name **globally unique** and prefer a table prefix (for example `idx_cb_metrics_instance_id`).
+
+### Physical type of `columnDefinition = "JSON"` on PostgreSQL
+
+`tags` / `headers` on `service_instance` use JSON mapping. On PostgreSQL they are created as the **`json`** type (measured: `information_schema.columns.udt_name = json`), and read/write works.
+
+> Note: on the **upgrade path from an old database**, `CompatibilitySchemaMigrator` adds `tags` as `CLOB`/`TEXT`, while a **fresh database** gets `json` from Hibernate — so the physical type diverges depending on how the database came to be. This divergence is currently **not fixed**, because it does not affect read/write; see issue #160 for follow-up work.
+
+## Migrating data from H2 to PostgreSQL
+
+> ⚠️ **These steps have not been verified end-to-end against real production data.** Rehearse against a copy and verify row counts per table.
+
+1. **Create the schema on PostgreSQL first**: start the application once with a `DATABASE_URL` pointing at PostgreSQL so Hibernate creates the tables, then stop it.
+
+2. **Export each table as CSV from H2** (run on the H2 side):
+
+   ```sql
+   CALL CSVWRITE('/tmp/export/api_call_history.csv', 'SELECT * FROM api_call_history');
+   ```
+
+3. **Import into PostgreSQL**:
+
+   ```bash
+   psql -h pg.internal -U jairouter -d jairouter \
+     -c "\copy api_call_history FROM '/tmp/export/api_call_history.csv' CSV HEADER"
+   ```
+
+4. **Fix the identity sequences** (critical and easy to miss). The ID columns use `IDENTITY`, and bulk loading does **not** advance the underlying sequence, so later inserts collide with primary keys:
+
+   ```sql
+   SELECT setval(pg_get_serial_sequence('api_call_history', 'id'),
+                 COALESCE((SELECT MAX(id) FROM api_call_history), 1));
+   ```
+
+   Run this for **every** table with an auto-incrementing primary key.
+
+5. **Verify**: compare row counts between H2 and PostgreSQL for each table, and spot-check that key entities (accounts, API keys, role permissions) read back correctly.
+
+## Verifying the connection took effect
+
+1. **Check the start-up log**: the data source URL should be `jdbc:postgresql://…`. If it is still `jdbc:h2:file:…`, `DATABASE_URL` was not picked up.
+2. **List the tables**:
+
+   ```sql
+   SELECT table_name FROM information_schema.tables
+   WHERE table_schema = 'public' ORDER BY table_name;
+   ```
+
+   You should see 20 application tables.
+3. **Check the indexes are complete** (related to the namespace trap above):
+
+   ```sql
+   SELECT indexname FROM pg_indexes WHERE schemaname = 'public' ORDER BY indexname;
+   ```
+
+## Automated tests
+
+`PostgresCompatibilityIntegrationTest` verifies cross-database compatibility against a **real PostgreSQL** instance (table creation for every entity, `EXTRACT(HOUR …)`, large TEXT values, JSON columns, IDENTITY keys, `@Modifying` atomic increments, HQL `LIMIT`, index-name uniqueness, and actual index existence).
+
+It is gated by environment variables and the whole class is skipped when they are absent:
+
+```bash
+export PG_TEST=true
+export PG_TEST_URL="jdbc:postgresql://127.0.0.1:5432/postgres"
+export PG_TEST_USERNAME=postgres
+export PG_TEST_PASSWORD=postgres
+./mvnw test -Dtest=PostgresCompatibilityIntegrationTest
+```
+
+CI (`.github/workflows/java-tests.yml`) provides a `postgres:16-alpine` service container, sets the variables above, and includes a "gated tests were not skipped" check — CI fails if that test gets skipped.
+
+> Why not H2's `MODE=PostgreSQL`: the compatibility mode only covers a subset of the syntax and **cannot detect** real differences in dialect functions, column types, or generated DDL — which is exactly where cross-database issues live (for example `FUNCTION('HOUR', …)` works on H2 but there is no such function on PostgreSQL).
+
+## Not covered yet
+
+The following are **out of scope** for the current support and need separate work before scaling horizontally:
+
+- **Versioned schema migrations**: table structure is still managed by Hibernate `ddl-auto: update`, with no `Flyway` or `Liquibase`. Multiple replicas starting at once will run DDL concurrently.
+- **Historical index-name leftovers**: the `tags` column type added by `CompatibilitySchemaMigrator` on old databases does not match the entity declaration (see above).
+- Multi-replica Kubernetes artifacts for production (manifests / Helm, PodDisruptionBudget, migration jobs): see issue #165.
