@@ -62,6 +62,26 @@ management:
     health:
       show-details: always
       show-components: always
+      # 显式开启活性/就绪探针分组，供 K8s livenessProbe / readinessProbe 使用（#165）。
+      # Spring Boot 3 在检测到 Kubernetes 环境时会自动开启，但显式声明可避免依赖
+      # 云平台自动探测——非 K8s 环境（本地、纯 Docker）下不声明会导致探针路径 404。
+      probes:
+        enabled: true
+      group:
+        # 活性：只看进程是否存活。刻意不纳入 db/redis——下游依赖抖动应由就绪摘流处理，
+        # 不应触发 Pod 重启（重启解决不了依赖故障，只会放大抖动）。
+        liveness:
+          include: livenessState,ping
+        # 就绪：只用 readinessState。
+        #
+        # 刻意不 include db/redis：Spring Boot 对 group 成员做**严格存在性校验**
+        # （HealthEndpointGroupMembershipValidator），include 一个当前上下文不存在的
+        # 贡献者会导致**应用启动失败**——例如没有 DataSource 的上下文就没有 db 组件
+        # （已由 GracefulShutdownInFlightRequestTest 实测复现）。
+        # 代价：数据库不可用不会让 Pod 退出就绪集合，请用 /actuator/health 的 db 组件
+        # 详情配合告警规则来覆盖这一场景。
+        readiness:
+          include: readinessState
     prometheus:
       cache:
         time-to-live: 10s

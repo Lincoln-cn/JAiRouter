@@ -11,33 +11,87 @@
 
 JAiRouter supports deployment in Kubernetes clusters, providing rolling updates and other enterprise-grade features. This document details how to deploy JAiRouter in a K8s environment.
 
-> **⚠️ Multi-replica not supported**: The only supported store is the H2 embedded single-file database, so `replicas` **must be 1**. See "Multi-Replica Support Status (Known Constraints)" below.
+> **Multi-replica requires a shared database and shared-state switches first**: with an external
+> database in place multi-replica is usable (see `docs/en/deployment/database.md`), but the
+> cross-replica shared-state switches **must** be enabled at the same time — otherwise each replica
+> degrades into an isolated single-node instance. See `docs/en/deployment/multi-replica.md`.
 
-## Multi-Replica Support Status (Known Constraints)
+## Deployment Artifacts Provided by the Repository (recommended)
 
-**Multi-replica is not supported in the current version; `replicas` must be 1. The only supported store is the H2 embedded single-file database.** When sharing one data volume, the second and third Pods cannot open the H2 file database and enter a crash loop; with separate volumes each Pod keeps its own data, so request round-robin produces inconsistent state. Verified: two JVM processes opening `jdbc:h2:file:./data/jairouter` concurrently causes the second process to fail with `Database may be already in use` (H2 error 90020). External shared database adaptation is tracked in issue #160.
+`deploy/k8s/` ships **Kustomize** artifacts (`base` plus `dev` / `prod` overlays); no extra toolchain
+required:
 
-### Per-Pod Semantics Inventory
+```bash
+# Preview the rendered output (kustomize is built into kubectl — no helm needed)
+kubectl kustomize deploy/k8s/overlays/prod
+
+# Deploy
+kubectl apply -k deploy/k8s/overlays/prod
+```
+
+Why Kustomize rather than Helm: it is built into `kubectl`, so neither CI nor users need to install
+helm; the manifests are plain YAML and can be asserted directly by unit tests (see
+`K8sManifestTest`).
+
+The artifacts include: Deployment, Service, Ingress, ConfigMap, ServiceAccount, PodDisruptionBudget,
+a schema migration Job, plus liveness / readiness / startup probes, resource requests/limits, and a
+non-root security context (`runAsUser: 10010`, matching the user already inside the image).
+
+**Two things you must do before deploying**:
+
+1. **Create the `jairouter-secrets` Secret** — the repository deliberately ships no Secret entity, so
+   that credentials never land in git:
+
+   ```bash
+   kubectl create secret generic jairouter-secrets -n jairouter \
+     --from-literal=JWT_SECRET="$(openssl rand -base64 48)" \
+     --from-literal=INITIAL_ADMIN_PASSWORD='<strong password>' \
+     --from-literal=REDIS_PASSWORD='<redis password>'
+   ```
+
+2. **If you expose the service through Ingress, configure client-IP trust** — trusted proxies on the
+   controller side *and* `jairouter.security.trusted-proxies.*` on the application side are both
+   required. Otherwise the `clientIp` the application sees is the gateway IP, and rate limiting and
+   auditing are both distorted (in that case switch the limiting dimension to `api-key` / `tenant`).
+
+## Multi-Replica Status (Known Constraints)
+
+The **storage prerequisite is in place** (external database support, #160). The capabilities below are
+still per replica; enable the shared-state switches described in
+`docs/en/deployment/multi-replica.md`, or knowingly accept their semantics:
 
 | Capability | Current state | Multi-replica consequence |
 |------------|---------------|---------------------------|
-| Rate limiting | All state is in-JVM; the repository has no distributed rate limiter | Allowed throughput is about the configured value times the replica count; window resets are counted per Pod |
-| Quota ledger | Defaults: `jairouter.quota.enabled=false`, `jairouter.quota.distributed.enabled=false`, `fail-open=true`; local counting | Overuse is about N times the limit |
-| JWT blacklist | Falls back to H2/StoreManager by default | Revocation only takes effect on the issuing Pod |
-| API-Key cache | In-memory by default, no TTL, mutated only in this process | Revocation/create does not cross Pods |
-| Role-permission cache | Caffeine `expireAfterWrite=5min`; `invalidateCache()` clears only this process | Permission changes take up to 5 minutes and do not cross Pods |
-| SSE / WebSocket | Event source is an in-process `Sinks.Many`; no Redis pub/sub anywhere | Clients only see events from the Pod they are connected to |
-| Scheduled tasks | 36+ `@Scheduled` jobs, none with a distributed lock | Each timer runs once per Pod |
-| Graceful shutdown | `server.shutdown`/`graceful`/`timeout-per-shutdown-phase` have zero hits in the repo | Rolling updates truncate in-flight AI streaming responses |
+| Rate limiting | All state in-JVM; no distributed rate limiter; key dimension is configurable (`model.rate-limit.key-dimension`) | Allowed throughput ≈ configured value × replicas, window resets counted per Pod. When the key dimension is meaningless (no L7 proxy) counting by IP counts noise |
+| Quota ledger | Off by default; Redis atomic counting once `quota.distributed.enabled` is on | Left off, overuse is about N times the limit |
+| JWT blacklist | Falls back to local storage by default; Redis available | Left off, revocation only applies on the issuing Pod (a security gap) |
+| API-key cache | Per-replica mirror, refreshed from shared storage every `cache-refresh-interval-seconds` (default 60s) | Revocations/creates take effect across Pods within one refresh interval |
+| Role-permission cache | Caffeine `expireAfterWrite=5min`, cleared only in this process | Permission changes take up to 5 minutes to converge (bounded, documented) |
+| SSE / WebSocket | Event source is an in-process `Sinks.Many`; no Redis pub/sub | Clients only see events from the Pod they are connected to (issue #164) |
+| Scheduled tasks | Classified: file writers name per replica, externally-observable effects take a cross-replica lock, per-replica state refreshes run everywhere | See #163 |
+| Graceful shutdown | `server.shutdown=graceful` + 30s shutdown phase; artifacts use a 45s grace period (larger than the phase) | Rolling updates do not truncate in-flight streaming responses |
 
-### Prerequisites for Horizontal Scaling (in order)
+### Historical Constraint and Verified Evidence
 
-1. Switch to an external shared database (issue #160)
-2. Enable shared-state Redis switches and add startup gating (issue #162)
-3. Cross-instance rate limiting — new work (issue #161)
-4. Distributed locks for scheduled tasks (issue #163)
-5. Real-time event broadcast (issue #164)
-6. Deployment artifacts: graceful shutdown, `PodDisruptionBudget`, migration jobs (issue #165)
+Earlier versions supported only the H2 embedded single-file database; sharing one data volume made the
+second and third Pods unable to open it, entering a crash loop. Verified: two JVM processes opening
+`jdbc:h2:file:./data/jairouter` concurrently causes the second to fail with
+`Database may be already in use` (H2 error 90020). External shared database support is tracked in
+issue #160.
+
+### Remaining Work for Horizontal Scaling
+
+Done: external shared database (#160), shared-state switches and startup gating (#162), scheduled-task
+classification (#163), configurable rate-limit key dimension (#161, partial), secret/password strength
+false-positive fixes (#169 / #171).
+
+Still open:
+
+1. **Distributed rate-limit counting** (#161 remainder: Redis atomic counting and its degradation
+   policy; only meaningful once the key dimension is correct)
+2. Cross-Pod real-time event broadcast (#164)
+3. Versioned schema migration (`Flyway` / `Liquibase`) to replace startup-time raw DDL
+4. Connection-pool / thread-pool externalization and stdout structured logging (#165 remainder)
 
 ### Existing Foundation: Redis Shared-State Implementations
 

@@ -11,33 +11,77 @@
 
 JAiRouter 支持在 Kubernetes 集群中部署，提供自动故障转移准备、滚动更新等企业级特性。本文档详细介绍如何在 K8s 环境中部署 JAiRouter.
 
-> **⚠️ 多副本不受支持**：当前版本唯一支持 H2 嵌入式单文件数据库，`replicas` **必须为 1**。详见下方「多副本支持现状（已知约束）」。
+> **多副本需先落地共享数据库并开启共享态开关**：接入外部数据库后多副本已可用（见 `docs/zh/deployment/database.md`），
+> 但**必须**同时开启跨副本共享态开关，否则各副本会退化为互不知情的单机实例。
+> 详见 `docs/zh/deployment/multi-replica.md`。
 
-## 多副本支持现状（已知约束）
+## 仓库提供的部署制品（推荐）
 
-**当前版本多副本不受支持，`replicas` 必须为 1；唯一支持 H2 嵌入式文件数据库。** 共享同一数据卷时第 2、3 个 Pod 无法打开 H2 文件库并进入 crash-loop；各自独立卷时每 Pod 一份数据，请求轮询会导致状态随机不一致。已实测两个 JVM 进程并发打开 `jdbc:h2:file:./data/jairouter` 时，第二个进程报 `Database may be already in use`（H2 错误码 90020）。外部共享数据库适配见 issue #160。
+`deploy/k8s/` 下提供 **Kustomize** 制品（`base` + `dev` / `prod` overlays），无需额外工具链：
 
-### 每 Pod 语义清单
+```bash
+# 预览渲染结果（kubectl 内置 kustomize，无需安装 helm）
+kubectl kustomize deploy/k8s/overlays/prod
+
+# 部署
+kubectl apply -k deploy/k8s/overlays/prod
+```
+
+选择 Kustomize 而非 Helm 的理由：`kubectl` 内置支持，CI 与用户侧都不必安装 helm；清单是纯 YAML，
+可被单元测试直接解析断言（见 `K8sManifestTest`）。
+
+制品已包含：Deployment、Service、Ingress、ConfigMap、ServiceAccount、PodDisruptionBudget、
+schema 迁移 Job，以及 liveness / readiness / startup 探针、资源 requests/limits、非 root 安全上下文
+（`runAsUser: 10010`，沿用镜像内的既有用户）。
+
+**部署前必须完成两件事**：
+
+1. **创建 Secret `jairouter-secrets`** —— 仓库不提供实体，避免密钥入库：
+
+   ```bash
+   kubectl create secret generic jairouter-secrets -n jairouter \
+     --from-literal=JWT_SECRET="$(openssl rand -base64 48)" \
+     --from-literal=INITIAL_ADMIN_PASSWORD='<强密码>' \
+     --from-literal=REDIS_PASSWORD='<redis 密码>'
+   ```
+
+2. **若经 Ingress 暴露，配置客户端 IP 信任** —— Controller 侧受信代理与
+   应用侧 `jairouter.security.trusted-proxies.*` 缺一不可。否则应用拿到的 `clientIp`
+   是网关 IP，限流与审计都会失真（此时应把限流维度改为 `api-key` / `tenant`）。
+
+## 多副本现状（已知约束）
+
+多副本的**存储前置条件已具备**（外部数据库接入见 #160），下列能力仍以副本为单位，
+需按 `docs/zh/deployment/multi-replica.md` 开启共享态开关，或明确接受其语义：
 
 | 能力 | 现状 | 多副本后果 |
 |------|------|------------|
-| 限流 | 全部状态在 JVM 内，仓库无分布式限流实现 | 放行量约等于配置值乘以副本数；窗口重置各算各的 |
-| 配额账本 | 默认 `jairouter.quota.enabled=false`、`jairouter.quota.distributed.enabled=false`、`fail-open=true`，本地计数 | 超支约乘以 N |
-| JWT 黑名单 | 默认回落 H2/StoreManager | 撤销只在签发 Pod 生效 |
-| API-Key 缓存 | 默认内存实现，无 TTL，只在本进程内修改 | 吊销/新建不跨 Pod |
-| 角色权限缓存 | Caffeine `expireAfterWrite=5min`，`invalidateCache()` 只清本进程 | 权限变更最多延迟 5 分钟且不跨 Pod |
-| SSE / WebSocket | 事件源是进程内 `Sinks.Many`，全库无 Redis pub/sub | 客户端只看得到所连 Pod 的事件 |
-| 调度任务 | 36+ 个 `@Scheduled` 全部无分布式锁 | 同一定时任务在每个 Pod 各跑一遍 |
-| 优雅停机 | `server.shutdown`/`graceful`/`timeout-per-shutdown-phase` 全仓零命中 | 滚动升级会截断在途 AI 流式响应 |
+| 限流 | 状态全在 JVM 内，仓库无分布式限流实现；键维度可配置（`model.rate-limit.key-dimension`）| 放行量约等于配置值乘以副本数，窗口重置各算各的。键维度不成立时（无 L7 反代）按 IP 计数等于按垃圾计数 |
+| 配额账本 | 默认关闭；开启 `quota.distributed.enabled` 后走 Redis 原子计数 | 不开则超支约乘以 N |
+| JWT 黑名单 | 默认回落本机存储；可切 Redis | 不开则撤销只在签发 Pod 生效（安全缺口） |
+| API-Key 缓存 | 本副本内存镜像，按 `cache-refresh-interval-seconds`（默认 60s）从共享存储刷新 | 吊销/新建最迟一个刷新间隔后跨 Pod 生效 |
+| 角色权限缓存 | Caffeine `expireAfterWrite=5min`，只清本进程 | 权限变更最多延迟 5 分钟且不跨 Pod（有界，已文档化） |
+| SSE / WebSocket | 事件源是进程内 `Sinks.Many`，无 Redis pub/sub | 客户端只看得到所连 Pod 的事件（issue #164） |
+| 调度任务 | 按类处置：写文件类按副本命名、副作用可观测类加跨副本锁、本副本状态刷新类每副本执行 | 见 #163 |
+| 优雅停机 | `server.shutdown=graceful` + 30s 停机相位；制品宽限期 45s（大于停机相位）| 滚动升级不截断在途流式响应 |
 
-### 横向扩展前置条件（按顺序）
+### 历史约束与已验证证据
 
-1. 换外部共享数据库（issue #160）
-2. 开启共享态 Redis 开关并加启动门禁（issue #162）
-3. 限流跨实例化，需新写（issue #161）
-4. 调度任务加分布式锁（issue #163）
-5. 实时事件广播（issue #164）
-6. 部署制品：优雅停机、`PodDisruptionBudget`、迁移作业（issue #165）
+早期版本唯一支持 H2 嵌入式单文件库，共享同一数据卷时第 2、3 个 Pod 无法打开数据库并进入
+crash-loop。已实测两个 JVM 进程并发打开 `jdbc:h2:file:./data/jairouter` 时，第二个进程报
+`Database may be already in use`（H2 错误码 90020）。外部共享数据库适配见 issue #160。
+
+### 横向扩展剩余工作
+
+已完成：外部共享数据库（#160）、共享态开关与启动门禁（#162）、调度任务分类处置（#163）、
+限流键维度可配置（#161 部分）、密钥/密码强度误判修复（#169 / #171）。
+
+仍待处理：
+
+1. 限流的**分布式计数**（#161 剩余：Redis 原子计数与降级策略；须在键维度正确的前提下才有意义）
+2. 实时事件跨 Pod 广播（#164）
+3. 版本化 schema 迁移（`Flyway` / `Liquibase`），替换启动期裸 DDL
+4. 连接池 / 线程池外部化、stdout 结构化日志（#165 剩余）
 
 ### 已有基础：Redis 共享态实现
 
