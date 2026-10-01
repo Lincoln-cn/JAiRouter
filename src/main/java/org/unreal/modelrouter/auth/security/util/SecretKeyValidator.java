@@ -50,6 +50,22 @@ public class SecretKeyValidator {
     private static final double HIGH_ENTROPY_THRESHOLD = 3.75;
 
     /**
+     * 密码场景的弱模式主导阈值：模式长度占密码长度的比例 ≥ 1/2。
+     *
+     * <p>与密钥场景的 {@link #DOMINANCE_NUMERATOR}/{@link #DOMINANCE_DENOMINATOR}（15%）刻意不同。
+     * 15% 是为 32–64 字节密钥标定的——4 字符模式在 32 字节密钥中仅占 12.5%，低于阈值即视为偶然子串；
+     * 但密码短得多，同样的模式在 20 字符密码中占 <b>20%</b>，<b>高于</b> 15%，直接复用会让随机密码
+     * 含偶然 {@code test} 时仍被判弱（实测 100 万次误判率 1/41667，见 #171）。取 1/2 后，随机
+     * 20 字符密码中 4–6 字符模式的占比 20%–30% 均低于阈值，不再命中。</p>
+     *
+     * <p>需捕获的弱样例中最低占比为 62.5%（{@code admin123} 的 {@code admin}）；
+     * 唯一例外是 {@code ChangeMeOnFirstStartup123456}（{@code 123456} 占 21.4%），
+     * 由 {@link #isCommonWeakPassword} 里的显式 equals 判定兜底。</p>
+     */
+    private static final int PASSWORD_DOMINANCE_NUMERATOR = 1;
+    private static final int PASSWORD_DOMINANCE_DENOMINATOR = 2;
+
+    /**
      * 密钥强度级别
      */
     public enum StrengthLevel {
@@ -197,9 +213,12 @@ public class SecretKeyValidator {
         int length = password.length();
         int score = 0;
 
-        // 长度评分
+        // 长度评分：绝对长度是密码强度的首要来源。达到推荐长度（16）即给 4 分，使
+        //「推荐长度 + 任意两类字符」达到 MEDIUM——实测 generateAlphanumericKey(16)/(20) 的
+        // 产物分别有约 6% / 3% 概率整串不含数字，若仅因恰好缺少一个字符类别就落到 WEAK，
+        // 会让密钥生成器的产物被自己的校验器拒掉（#171）。
         if (length >= RECOMMENDED_PASSWORD_LENGTH) {
-            score += 3;
+            score += 4;
         } else if (length >= MIN_PASSWORD_LENGTH) {
             score += 2;
         } else if (length >= 8) {
@@ -336,8 +355,19 @@ public class SecretKeyValidator {
             "change", "default", "test", "guest"
         };
 
+        // 与 isCommonWeakSecret 同一约定：人择低熵密码任意弱子串都算命中；高熵（机器随机生成，
+        // 如 --generate-password 的产物）密码仅当弱模式在密码中占主导时才认为「密码本身就是该弱词」，
+        // 否则视为随机串中的偶然子串
+        final boolean highEntropy = isHighEntropy(password);
+        final int passwordLength = password.length();
+
         for (String weak : weakPasswords) {
-            if (lower.contains(weak)) {
+            if (!lower.contains(weak)) {
+                continue;
+            }
+            if (!highEntropy
+                    || weak.length() * PASSWORD_DOMINANCE_DENOMINATOR
+                        >= passwordLength * PASSWORD_DOMINANCE_NUMERATOR) {
                 return true;
             }
         }
