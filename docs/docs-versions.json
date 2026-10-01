@@ -2346,6 +2346,26 @@
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
+    },
+    "docs/en/deployment/multi-replica.md": {
+      "FilePath": "docs/en/deployment/multi-replica.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-10-01T11:43:29.166645",
+      "ContentHash": "aceb2f051e3152e0",
+      "GitCommit": "d49dd254",
+      "Author": "Leo Lin",
+      "ChangeSummary": "",
+      "Dependencies": []
+    },
+    "docs/zh/deployment/multi-replica.md": {
+      "FilePath": "docs/zh/deployment/multi-replica.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-10-01T11:43:29.521549",
+      "ContentHash": "e4af7e33b63b7757",
+      "GitCommit": "d49dd254",
+      "Author": "Leo Lin",
+      "ChangeSummary": "",
+      "Dependencies": []
     }
   },
   "changes": [
@@ -6388,7 +6408,23 @@
       "ChangeType": "CREATED",
       "Timestamp": "2026-10-01T09:29:17.164190",
       "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/en/deployment/multi-replica.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-10-01T11:43:29.166656",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/zh/deployment/multi-replica.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-10-01T11:43:29.521558",
+      "Description": "文档created"
     }
   ],
-  "last_updated": "2026-10-01T09:29:17.412640"
+  "last_updated": "2026-10-01T11:43:29.753911"
 }
