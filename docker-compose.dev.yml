@@ -5,7 +5,7 @@ services:
     image: sodlinken/jairouter:dev
     container_name: jairouter-dev
     ports:
-      - "9900:9900"
+      - "9900:8080"
       - "5005:5005"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
@@ -20,13 +20,16 @@ services:
       - ./config:/app/config
       - ./logs:/app/logs
       - ./src:/app/src:ro
-      - ./data:/app/r2dbc:h2:file/data
+      - ./data:/app/data
     networks:
       - jairouter-network
     depends_on:
       - redis-dev
+    # 停机宽限期须大于 spring.lifecycle.timeout-per-shutdown-phase(30s)，
+    # 否则 Docker 会先 SIGKILL，优雅停机配置失效
+    stop_grace_period: 35s
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9900/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
