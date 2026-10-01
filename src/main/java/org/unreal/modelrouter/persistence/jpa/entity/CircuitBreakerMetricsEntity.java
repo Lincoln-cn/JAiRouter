@@ -29,7 +29,10 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Entity
 @Table(name = "circuit_breaker_metrics", indexes = {
-    @Index(name = "idx_instance_id", columnList = "instance_id"),
+    // 不能叫 idx_instance_id：circuit_breaker_state_history 已占用该名，而 PostgreSQL 的
+    // relation 名（含索引）是 schema 级命名空间（H2/MySQL 为表级），重名会使 CREATE INDEX
+    // 失败且 Hibernate 仅记 WARN —— 索引被静默丢失。
+    @Index(name = "idx_cb_metrics_instance_id", columnList = "instance_id"),
     @Index(name = "idx_window_end", columnList = "window_end")
 })
 public class CircuitBreakerMetricsEntity {
