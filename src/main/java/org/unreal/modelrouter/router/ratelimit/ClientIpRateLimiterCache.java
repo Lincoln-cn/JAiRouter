@@ -34,7 +34,7 @@ public final class ClientIpRateLimiterCache {
     private final AtomicLong missCount = new AtomicLong(0);
     private final AtomicLong evictionCount = new AtomicLong(0);
 
-    // Caffeine 缓存：serviceType:clientIp -> RateLimiter
+    // Caffeine 缓存：serviceType:dimension:keyValue -> RateLimiter
     private final Cache<String, RateLimiter> cache;
 
     public ClientIpRateLimiterCache() {
@@ -58,13 +58,15 @@ public final class ClientIpRateLimiterCache {
      * 获取限流器
      *
      * @param serviceType 服务类型
-     * @param clientIp 客户端 IP
-     * @param loader 加载器（缓存未命中时调用）
+     * @param dimension   限流键维度（#161）
+     * @param keyValue    维度对应的键值（客户端 IP / API Key ID / 租户）
+     * @param loader      加载器（缓存未命中时调用）
      * @return 限流器
      */
-    public RateLimiter get(final ServiceType serviceType, final String clientIp,
+    public RateLimiter get(final ServiceType serviceType, final RateLimitKeyDimension dimension,
+                           final String keyValue,
                            final java.util.function.Supplier<RateLimiter> loader) {
-        String key = generateKey(serviceType, clientIp);
+        String key = generateKey(serviceType, dimension, keyValue);
         RateLimiter limiter = cache.getIfPresent(key);
 
         if (limiter != null) {
@@ -83,8 +85,9 @@ public final class ClientIpRateLimiterCache {
     /**
      * 获取已存在的限流器（不创建）
      */
-    public RateLimiter getIfPresent(final ServiceType serviceType, final String clientIp) {
-        String key = generateKey(serviceType, clientIp);
+    public RateLimiter getIfPresent(final ServiceType serviceType, final RateLimitKeyDimension dimension,
+                                    final String keyValue) {
+        String key = generateKey(serviceType, dimension, keyValue);
         RateLimiter limiter = cache.getIfPresent(key);
         if (limiter != null) {
             hitCount.incrementAndGet();
@@ -97,16 +100,18 @@ public final class ClientIpRateLimiterCache {
     /**
      * 放入限流器
      */
-    public void put(final ServiceType serviceType, final String clientIp, final RateLimiter limiter) {
-        String key = generateKey(serviceType, clientIp);
+    public void put(final ServiceType serviceType, final RateLimitKeyDimension dimension,
+                    final String keyValue, final RateLimiter limiter) {
+        String key = generateKey(serviceType, dimension, keyValue);
         cache.put(key, limiter);
     }
 
     /**
      * 移除限流器
      */
-    public void invalidate(final ServiceType serviceType, final String clientIp) {
-        String key = generateKey(serviceType, clientIp);
+    public void invalidate(final ServiceType serviceType, final RateLimitKeyDimension dimension,
+                           final String keyValue) {
+        String key = generateKey(serviceType, dimension, keyValue);
         cache.invalidate(key);
     }
 
@@ -140,10 +145,16 @@ public final class ClientIpRateLimiterCache {
     }
 
     /**
-     * 生成缓存键
+     * 生成缓存键。
+     *
+     * <p>带维度前缀：同一服务在切换维度（如 {@code client-ip} → {@code api-key}）后，
+     * 即使键值字面相同也不会复用彼此的限流器状态（#161）。</p>
      */
-    private String generateKey(final ServiceType serviceType, final String clientIp) {
-        return serviceType.name() + ":" + clientIp;
+    private String generateKey(final ServiceType serviceType, final RateLimitKeyDimension dimension,
+                               final String keyValue) {
+        final RateLimitKeyDimension dim =
+                dimension != null ? dimension : RateLimitKeyDimension.CLIENT_IP;
+        return serviceType.name() + ":" + dim.configValue() + ":" + keyValue;
     }
 
     /**

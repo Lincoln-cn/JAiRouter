@@ -44,8 +44,15 @@ public class IpHashLoadBalancer implements LoadBalancer {
         }
 
         if (clientIp == null || clientIp.trim().isEmpty()) {
-            logger.warn("No client IP provided, falling back to random selection");
-            // 如果没有客户端IP，回退到随机策略
+            // 回退到随机意味着「粘性」名存实亡：同一客户端不再稳定命中同一实例。
+            // 保留回退（取不到客户端标识就无法选实例），但必须显式可见——日志 + 指标，
+            // 否则集群 + 无反代场景下取不到真实客户端 IP 时会静默失去亲和性（#161）。
+            logger.warn("No client IP provided, falling back to random selection — "
+                    + "ip-hash affinity is NOT effective for this request");
+            if (metricsCollector != null) {
+                metricsCollector.recordLoadBalancer(serviceType, "ip-hash",
+                        "random-fallback-no-client-ip");
+            }
             return new RandomLoadBalancer().selectInstance(instances, clientIp, serviceType);
         }
 

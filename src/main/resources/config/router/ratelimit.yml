@@ -22,5 +22,13 @@ model:
     # 限流范围（支持: service, instance, global）
     scope: "service"
     
-    # 是否启用客户端 IP 限流
+    # 是否启用客户端维度限流（按下方 key-dimension 指定的维度区分被限流对象）
     client-ip-enable: true
+
+    # 限流键维度（#161）：client-ip（默认，与历史行为一致）/ api-key / tenant
+    #
+    # 集群 + 无 L7 Ingress 时，remoteAddress 是节点 IP 而非真实客户端 IP——按 IP 计数
+    # 等于按垃圾数据计数，此时应改用 api-key 或 tenant 维度。
+    # api-key 维度下请求未携带 API Key 时回退客户端 IP 并告警；tenant 维度同理，
+    # 但其回退属于设计行为（不告警）。无可用的维度值与回退值时跳过该级限流并告警。
+    key-dimension: "client-ip"

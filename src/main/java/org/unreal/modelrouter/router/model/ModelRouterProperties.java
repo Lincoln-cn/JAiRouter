@@ -322,6 +322,7 @@ public final class ModelRouterProperties {
         private String scope = "service";    // 作用域: service, instance, client-ip等
         private String key;                  // 限流键值（可选）
         private Boolean clientIpEnable = false; // 是否启用客户端IP级别的限流
+        private String keyDimension;        // 限流键维度: client-ip(默认) / api-key / tenant（#161）
 
         public Boolean getEnabled() {
             return enabled;
@@ -377,6 +378,14 @@ public final class ModelRouterProperties {
 
         public void setClientIpEnable(final Boolean clientIpEnable) {
             this.clientIpEnable = clientIpEnable;
+        }
+
+        public String getKeyDimension() {
+            return keyDimension;
+        }
+
+        public void setKeyDimension(final String keyDimension) {
+            this.keyDimension = keyDimension;
         }
 
         public org.unreal.modelrouter.router.ratelimit.RateLimitConfig covertTo() {
