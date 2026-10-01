@@ -99,14 +99,29 @@ K8s 探针用的是 `/actuator/health/liveness` 与 `/actuator/health/readiness`
   给它们加锁反而会让「抢到锁的副本」成为唯一写入者，直接丢掉其它副本的增量。
 - 副作用可被外部观测的任务（发告警、出日报、轮换密钥）加跨副本排他锁，
   由 `jairouter.scheduling.distributed-lock.enabled` 控制（默认 `true`，未配 Redis 时自动降级为单实例语义）。
+- **本副本缓存刷新**（API Key 缓存）同样属于「每个副本都必须执行」，理由见下一节。
+
+## 缓存跨副本收敛
+
+API Key 校验走的是各副本自己的内存镜像，只在本进程内更新。为让吊销与新建跨副本生效，
+`ApiKeyService` 按 `jairouter.security.api-key.cache-refresh-interval-seconds`（默认 60 秒）
+从共享存储刷新本副本缓存：
+
+- **收敛上限 = 刷新间隔**：在副本 A 吊销的 Key，最迟一个刷新间隔后在副本 B 失效。
+- 刷新是**替换式**的：既补入其它副本新建的 Key，也移除已删除的 Key。
+- 刷新**不回写**存储，避免用本副本的旧视图覆盖兄弟副本的变更（`loadLatestApiKeyConfig`
+  只增不减且末尾会全量回写，不能用作刷新）。
+- 存储读不到配置、内容为空、或条目全部缺少 `keyHash` 时**保留现有缓存**：宁可让已删除的 Key
+  多存活一轮，也不要把全部有效 Key 剔除导致服务不可用。
+- 置 `cache-refresh-enabled: false` 可回到「仅启动时装载」的旧行为。
 
 ## 已知未覆盖
 
 以下项已记录但尚未实现，多副本部署需知悉：
 
-- **缓存失效不跨 Pod 主动传播**：`ApiKeyService` 的内存镜像无 TTL（吊销后其它副本可能一直放行，
-  直到重启）；`RolePermissionService` 的权限缓存有效期 5 分钟（改角色后各副本最长 5 分钟不一致）。
-  开启 `jairouter.security.cache.redis.enabled` 可消除 API Key 这一项。
+- **权限缓存失效不跨 Pod 主动传播**：`RolePermissionService` 的缓存（`Caffeine`，写后 5 分钟过期）
+  只在本进程失效，改角色后各副本最长 5 分钟内不一致——这是**已知且有界**的失效上限。
+  API Key 缓存已由上一节的定时刷新覆盖（上限同样是刷新间隔）。
 - **配置热更新不互推**：管理 API 改配置后只有本进程生效，其它副本靠重启或再次触发本地 reload，
   期间路由与限流规则在各副本间短暂分裂。
 - **DDL 由各副本自行执行**：多副本同时启动时并发 DDL 的前置治理（版本化迁移）尚未落地。

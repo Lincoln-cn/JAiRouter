@@ -118,15 +118,34 @@ unavailability.
   take a cross-replica exclusive lock, controlled by
   `jairouter.scheduling.distributed-lock.enabled` (default `true`; degrades to single-instance
   semantics when Redis is not configured).
+- **Per-replica cache refresh** (the API key cache) is likewise work every replica must run — see the
+  next section.
+
+## Cross-replica cache convergence
+
+API key validation reads each replica's own in-memory mirror, updated only within that process. So
+that revocations and creations take effect across replicas, `ApiKeyService` refreshes its cache from
+shared storage every `jairouter.security.api-key.cache-refresh-interval-seconds` (default 60 seconds):
+
+- **Convergence bound = the refresh interval.** A key revoked on replica A stops being accepted on
+  replica B within one interval.
+- The refresh is a **replacement**: it adds keys created on other replicas and removes deleted ones.
+- It **does not write back** to storage, avoiding overwriting sibling replicas' changes with this
+  replica's stale view (`loadLatestApiKeyConfig` only adds and writes the whole set back at the end,
+  so it cannot be used as a refresh).
+- When storage has no configuration version, no entries, or entries that all lack a `keyHash`, the
+  **existing cache is preserved**: better to let a deleted key survive one more round than to drop
+  every valid key and take the service down.
+- Set `cache-refresh-enabled: false` to return to the "load at startup only" behavior.
 
 ## Known gaps
 
 The following are recorded but not yet implemented — multi-replica deployments should be aware:
 
-- **Cache invalidation does not actively propagate across pods.** The `ApiKeyService` in-memory mirror
-  has no TTL (a revoked key may keep being accepted on other replicas until restart), and the
-  `RolePermissionService` permission cache is valid for 5 minutes (role changes take up to 5 minutes
-  to converge). Enabling `jairouter.security.cache.redis.enabled` removes the API key part.
+- **Permission cache invalidation does not actively propagate across pods.** The
+  `RolePermissionService` cache (`Caffeine`, 5-minute write expiry) is invalidated only in the local
+  process, so role changes take up to 5 minutes to converge — a **bounded** limit, recorded here
+  deliberately. The API key cache is now covered by the scheduled refresh above (same bound).
 - **Configuration hot reload is not pushed between replicas.** A management API change takes effect
   only in the local process; other replicas converge on restart or on their next local reload, so
   routing and rate-limit rules briefly diverge.
