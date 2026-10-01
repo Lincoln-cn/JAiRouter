@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketSession;
+import org.unreal.modelrouter.common.cluster.ClusterEventBus;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
@@ -24,8 +25,12 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class CircuitBreakerMonitorWebSocketHandler implements WebSocketHandler {
 
+    /** 跨副本广播通道名（#164） */
+    private static final String EVENT_CHANNEL = "circuit-breaker-monitor";
+
     private final CircuitBreakerMonitorService monitorService;
     private final ObjectMapper objectMapper;
+    private final ClusterEventBus clusterEventBus;
 
     /** 监控事件：有界多播缓冲（256），溢出由 emit 失败路径丢弃，避免无界内存增长 */
     private final Sinks.Many<String> eventSink = Sinks.many().multicast()
@@ -39,6 +44,8 @@ public class CircuitBreakerMonitorWebSocketHandler implements WebSocketHandler {
                 if (result.isFailure()) {
                     log.debug("Failed to emit circuit breaker event: {}", result);
                 }
+                // 同时广播给其它副本（#164）；单副本部署下为无操作
+                clusterEventBus.publish(EVENT_CHANNEL, json);
             } catch (Exception e) {
                 log.warn("Failed to serialize circuit breaker event: {}", e.getMessage());
             }
@@ -66,7 +73,10 @@ public class CircuitBreakerMonitorWebSocketHandler implements WebSocketHandler {
         Flux<String> heartbeat = Flux.interval(Duration.ofSeconds(30))
                 .map(seq -> "{\"type\":\"heartbeat\",\"seq\":" + seq + "}");
 
-        Flux<String> eventStream = eventSink.asFlux()
+        // 事件流 = 本副本事件 + 其它副本广播来的事件（广播侧已过滤回环，不会重复）
+        Flux<String> eventStream = Flux.merge(
+                        eventSink.asFlux(),
+                        clusterEventBus.subscribe(EVENT_CHANNEL))
                 .onBackpressureLatest();
 
         Flux<String> output = Flux.concat(

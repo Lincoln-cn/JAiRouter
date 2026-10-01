@@ -15,6 +15,19 @@ jairouter:
     # K8s 下建议由 Downward API 注入真实副本数，避免依赖环境探测。
     replicas: ${JAIROUTER_REPLICAS:0}
 
+    # 跨副本实时事件广播（#164）。
+    #
+    # 路由监控与熔断监控 WebSocket 的事件源是**本进程运行时回调**：客户端连在哪个副本就只看得到
+    # 哪个副本的事件，多副本下监控面板会静默漏事件（看起来正常但数据不全）。开启后本副本产生的
+    # 事件会经 Redis pub/sub 广播到全集群，并按来源副本过滤回环（自己发的不再重复分发）。
+    #
+    # - 默认 false：单副本部署没有跨副本问题，也不应为此引入 Redis 依赖
+    # - Redis 不可用时降级为「仅本副本可见」并告警，不阻断启动；订阅中断按退避重试、自动续订
+    # - **不含健康状态 SSE**：它的数据来自共享数据库且有 5 秒定时快照，各副本看到的本就是同一份
+    #   数据，广播只会带来重复推送
+    events:
+      enabled: ${JAIROUTER_CLUSTER_EVENTS:false}
+
     shared-state-check:
       # 是否启用自检
       enabled: true
