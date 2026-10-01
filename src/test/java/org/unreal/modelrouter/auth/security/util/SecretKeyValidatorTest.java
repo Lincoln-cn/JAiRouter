@@ -36,12 +36,15 @@ class SecretKeyValidatorTest {
             "change-me-now",
             "default_key",
             "test_key_123",
-            "demo-key-abc"
+            "demo-key-abc",
+            "ChangeMeOnFirstStartup123456",
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "12345678901234567890"
         };
-        
+
         for (String secret : weakSecrets) {
             ValidationResult result = SecretKeyValidator.validateJwtSecret(secret);
-            assertEquals(StrengthLevel.VERY_WEAK, result.getStrengthLevel(), 
+            assertEquals(StrengthLevel.VERY_WEAK, result.getStrengthLevel(),
                 "密钥 '" + secret + "' 应被识别为非常弱");
             assertFalse(result.isPassed());
         }
@@ -70,12 +73,30 @@ class SecretKeyValidatorTest {
         assertTrue(result.getMessage().contains("密钥") || result.getMessage().contains("常见"));
     }
 
+    /** 32 字节固定密钥（Base64），无弱模式子串，断言精确等级用 */
+    private static final String FIXED_MEDIUM_KEY =
+        "MDEyMzQ1Njc4OWFiY2RlZkZFRENCQTk4NzY1NDMyMTA=";
+
+    /** 48 字节固定密钥（Base64），无弱模式子串，断言精确等级用 */
+    private static final String FIXED_STRONG_KEY =
+        "MDEyMzQ1Njc4OWFiY2RlZkZFRENCQTk4NzY1NDMyMTBaYVF4U3dFZENmUnZUZ0Ju";
+
+    /** 64 字节固定密钥（Base64），无弱模式子串，断言精确等级用 */
+    private static final String FIXED_VERY_STRONG_KEY =
+        "MDEyMzQ1Njc4OWFiY2RlZkZFRENCQTk4NzY1NDMyMTBaYVF4U3dFZENmUnZUZ0JuSGpLbE1uUHFSc1R1VndYeQ==";
+
+    /**
+     * issue #169 回归：48 字节随机 Base64 密钥中偶然出现子串 "key"，
+     * 不得再被误判为 VERY_WEAK。
+     */
+    private static final String REGRESSION_FALSE_POSITIVE_KEY =
+        "RotI3eHmszJEd0XQM9fw+pmlrmGHpLtLgm7U8c28qOWgAupDURlkeynY7UEoSg8a";
+
     @Test
     @DisplayName("验证 JWT 密钥 - 中等强度")
     void testValidateJwtSecret_Medium() {
-        // 32-47 字节的有效 Base64 密钥
-        String mediumKey = SecretKeyGenerator.generateBase64Key(32);
-        ValidationResult result = SecretKeyValidator.validateJwtSecret(mediumKey);
+        // 32-47 字节的有效 Base64 密钥（固定值，避免随机误判导致用例不稳）
+        ValidationResult result = SecretKeyValidator.validateJwtSecret(FIXED_MEDIUM_KEY);
         assertEquals(StrengthLevel.MEDIUM, result.getStrengthLevel());
         assertTrue(result.isPassed());
     }
@@ -84,8 +105,7 @@ class SecretKeyValidatorTest {
     @DisplayName("验证 JWT 密钥 - 强密钥")
     void testValidateJwtSecret_Strong() {
         // 48-63 字节
-        String strongKey = SecretKeyGenerator.generateBase64Key(48);
-        ValidationResult result = SecretKeyValidator.validateJwtSecret(strongKey);
+        ValidationResult result = SecretKeyValidator.validateJwtSecret(FIXED_STRONG_KEY);
         assertEquals(StrengthLevel.STRONG, result.getStrengthLevel());
         assertTrue(result.isPassed());
     }
@@ -94,10 +114,31 @@ class SecretKeyValidatorTest {
     @DisplayName("验证 JWT 密钥 - 非常强密钥")
     void testValidateJwtSecret_VeryStrong() {
         // 64 字节以上
-        String veryStrongKey = SecretKeyGenerator.generateBase64Key(64);
-        ValidationResult result = SecretKeyValidator.validateJwtSecret(veryStrongKey);
+        ValidationResult result = SecretKeyValidator.validateJwtSecret(FIXED_VERY_STRONG_KEY);
         assertEquals(StrengthLevel.VERY_STRONG, result.getStrengthLevel());
         assertTrue(result.isPassed());
+    }
+
+    @Test
+    @DisplayName("验证 JWT 密钥 - issue#169 回归：随机强密钥含 key 子串不得误判")
+    void testValidateJwtSecret_RandomStrongKeyWithWeakSubstring_NotFalsePositive() {
+        ValidationResult result = SecretKeyValidator.validateJwtSecret(REGRESSION_FALSE_POSITIVE_KEY);
+        assertEquals(StrengthLevel.STRONG, result.getStrengthLevel(),
+            "48 字节随机 Base64 密钥（含偶然子串 key）应判 STRONG，不得误判为 VERY_WEAK");
+        assertTrue(result.isPassed());
+    }
+
+    @Test
+    @DisplayName("验证 JWT 密钥 - 随机生成密钥不得误判为 VERY_WEAK（仅断言等级无关属性）")
+    void testValidateJwtSecret_RandomGeneratedKeys_NeverVeryWeakFalsePositive() {
+        for (int i = 0; i < 200; i++) {
+            String key = SecretKeyGenerator.generateBase64Key(48);
+            ValidationResult result = SecretKeyValidator.validateJwtSecret(key);
+            // 随机 48 字节密钥长度必达 STRONG，此处只断言“不会因短模式被降为 VERY_WEAK”
+            assertNotEquals(StrengthLevel.VERY_WEAK, result.getStrengthLevel(),
+                "随机生成的 48 字节密钥不得被误判为 VERY_WEAK: " + key);
+            assertTrue(result.isPassed(), "随机生成的 48 字节密钥应通过校验: " + key);
+        }
     }
 
     @Test
@@ -222,9 +263,8 @@ class SecretKeyValidatorTest {
         ValidationResult weakResult = SecretKeyValidator.validateJwtSecret("weak");
         assertNotNull(weakResult.getMessage());
         assertFalse(weakResult.getMessage().isEmpty());
-        
-        ValidationResult strongResult = SecretKeyValidator.validateJwtSecret(
-            SecretKeyGenerator.generateBase64Key(64));
+
+        ValidationResult strongResult = SecretKeyValidator.validateJwtSecret(FIXED_VERY_STRONG_KEY);
         assertNotNull(strongResult.getMessage());
         assertTrue(strongResult.isPassed());
     }
