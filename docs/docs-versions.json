@@ -2326,6 +2326,26 @@
         "docs/zh/security/index.md",
         "docs/zh/security/rbac-permissions.md"
       ]
+    },
+    "docs/en/deployment/database.md": {
+      "FilePath": "docs/en/deployment/database.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-10-01T09:29:16.802736",
+      "ContentHash": "cd4f11f85a72ae28",
+      "GitCommit": "5bf0b4bf",
+      "Author": "Leo Lin",
+      "ChangeSummary": "",
+      "Dependencies": []
+    },
+    "docs/zh/deployment/database.md": {
+      "FilePath": "docs/zh/deployment/database.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-10-01T09:29:17.164180",
+      "ContentHash": "b054459a8f26a9e1",
+      "GitCommit": "5bf0b4bf",
+      "Author": "Leo Lin",
+      "ChangeSummary": "",
+      "Dependencies": []
     }
   },
   "changes": [
@@ -6352,7 +6372,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-09-26T08:26:48.107226",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/database.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-10-01T09:29:16.802749",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/zh/deployment/database.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-10-01T09:29:17.164190",
+      "Description": "文档created"
     }
   ],
-  "last_updated": "2026-09-30T07:58:40.546860"
+  "last_updated": "2026-10-01T09:29:17.412640"
 }
