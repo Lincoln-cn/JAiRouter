@@ -232,17 +232,56 @@ class SecretKeyValidatorTest {
     }
 
     @Test
-    @DisplayName("验证密码 - 生成的随机密码")
+    @DisplayName("验证密码 - 生成的随机密码必须通过校验（#171）")
     void testValidatePassword_Generated() {
-        String generatedPassword = SecretKeyGenerator.generateAlphanumericKey(20);
-        ValidationResult result = SecretKeyValidator.validatePassword(generatedPassword);
-        // 生成的密码只有字母数字，缺少特殊字符，可能是 WEAK/MEDIUM/STRONG/VERY_STRONG
-        // 由于随机生成，字符多样性可能不同，所以接受所有非 VERY_WEAK 级别
-        assertTrue(result.getStrengthLevel() == StrengthLevel.WEAK ||
-                   result.getStrengthLevel() == StrengthLevel.MEDIUM ||
-                   result.getStrengthLevel() == StrengthLevel.STRONG ||
-                   result.getStrengthLevel() == StrengthLevel.VERY_STRONG,
-                   "生成的20位字母数字密码强度应为 WEAK 或更高，实际为: " + result.getStrengthLevel());
+        // 修复前：generateAlphanumericKey(20) 的产物有 2.99%（1/33）被判 WEAK——整串不含数字时
+        // 字符多样性只拿 2 分、总分 5 分落 WEAK，而 StartupSecretKeyChecker 对 WEAK 同样拒绝启动；
+        // 另有 1/41667 概率因偶然含 "test" 被 contains 误判为 VERY_WEAK。
+        // 实测（各 100 万次）修复后拒绝率降至 1/1000000，故此处直接断言必须通过。
+        for (int i = 0; i < 20; i++) {
+            final String generatedPassword = SecretKeyGenerator.generateAlphanumericKey(20);
+            final ValidationResult result = SecretKeyValidator.validatePassword(generatedPassword);
+            assertTrue(result.isPassed(),
+                    "生成的 20 位随机密码必须通过校验，实际为: " + result.getStrengthLevel()
+                            + "（密码: " + generatedPassword + "）");
+        }
+    }
+
+    @Test
+    @DisplayName("验证密码 - 随机密码中的偶然弱子串不得误判（#171 实测样本回归）")
+    void testValidatePassword_IncidentalWeakSubstring() {
+        // 以下样本取自修复前的 100 万次实测：均为机器随机生成、字符级熵 ≥ 3.75 的 20 字符串，
+        // 仅因偶然包含大小写不敏感的 "test" 而被老实现判为 VERY_WEAK（进而阻止生产启动）。
+        // 修复后要求弱模式在密码中占主导（≥ 1/2）才算命中，这些样本必须判定通过。
+        final String[] falsePositives = {
+            "tESTaaeh9XHdJme382qL",   // 熵 4.1219
+            "WTestDm69XROvjJU7nHz",   // 熵 4.3219
+            "qpDnnE10ewrHLTeSTq9i",   // 熵 3.9219
+        };
+        for (String password : falsePositives) {
+            final ValidationResult result = SecretKeyValidator.validatePassword(password);
+            assertNotEquals(StrengthLevel.VERY_WEAK, result.getStrengthLevel(),
+                    "随机密码中的偶然弱子串不得触发误判: " + password);
+            assertTrue(result.isPassed(), "应通过校验: " + password);
+        }
+    }
+
+    @Test
+    @DisplayName("验证密码 - 不含数字的长随机密码不得因缺一类字符被判 WEAK（#171 实测样本回归）")
+    void testValidatePassword_GeneratedWithoutDigits() {
+        // 机器生成 20 字符字母数字串时整串不含数字的概率约 3%（16 字符约 6%），修复前仅因
+        // 恰好缺少一个字符类别就落到 WEAK。这两个样本取自修复前的实测 WEAK 集合，且不含任何弱模式，
+        // 修复后必须判定通过。
+        final String[] noDigitPasswords = {
+            "NrwpqMJhkovoloMfxLlA",
+            "udicGIZugqljHuRCbDzD",
+        };
+        for (String password : noDigitPasswords) {
+            final ValidationResult result = SecretKeyValidator.validatePassword(password);
+            assertTrue(result.isPassed(),
+                    "不含数字的长随机密码不应被判 WEAK: " + password
+                            + "，实际: " + result.getStrengthLevel());
+        }
     }
 
     @Test
