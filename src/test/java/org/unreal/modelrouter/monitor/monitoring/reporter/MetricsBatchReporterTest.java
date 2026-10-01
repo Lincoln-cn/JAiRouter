@@ -12,6 +12,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.unreal.modelrouter.common.util.InstanceIdentity;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -310,6 +311,33 @@ class MetricsBatchReporterTest {
     }
 
     @Test
+    @DisplayName("指标文件名应带本副本标识（多副本下各写各自的文件，避免同一文件交错写入）")
+    void reportToFile_fileName_shouldContainInstanceId() throws Exception {
+        ReflectionTestUtils.setField(reporter, "fileEnabled", true);
+        ReflectionTestUtils.setField(reporter, "filePath", tempDir.toString());
+        ReflectionTestUtils.setField(reporter, "fileFormat", "json");
+        ReflectionTestUtils.setField(reporter, "fileMaxSizeMb", 1);
+
+        MetricsBatchReporter.MetricData data = new MetricsBatchReporter.MetricData(
+                "test.metric", "counter", 1.0, Map.of(), System.currentTimeMillis()
+        );
+
+        assertTrue(invokeReportToFile(List.of(data)));
+
+        String instanceId = InstanceIdentity.id();
+        assertTrue(instanceId != null && !instanceId.isEmpty(), "副本标识不应为空");
+
+        try (var files = Files.list(tempDir)) {
+            List<String> names = files.map(p -> p.getFileName().toString()).toList();
+            assertEquals(1, names.size(), "应只写出一个指标文件，实际：" + names);
+            assertTrue(names.get(0).contains(instanceId),
+                    "指标文件名应含副本标识 " + instanceId + "，实际：" + names.get(0));
+            assertTrue(names.get(0).startsWith("metrics-"),
+                    "指标文件名应保持 metrics- 前缀，实际：" + names.get(0));
+        }
+    }
+
+    @Test
     @DisplayName("文件大小滚动应创建新文件")
     void findAvailableFile_shouldRollWhenSizeExceeded() throws Exception {
         ReflectionTestUtils.setField(reporter, "fileEnabled", true);
@@ -320,7 +348,7 @@ class MetricsBatchReporterTest {
         // 创建一个大文件
         String dateStr = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")
                 .format(Instant.now().atZone(java.time.ZoneId.systemDefault()));
-        Path baseFile = tempDir.resolve("metrics-" + dateStr + ".json");
+        Path baseFile = tempDir.resolve("metrics-" + dateStr + "-" + InstanceIdentity.id() + ".json");
         String largeContent = "x".repeat(1024 * 1024 + 1); // > 1MB
         Files.writeString(baseFile, largeContent);
 
@@ -332,7 +360,8 @@ class MetricsBatchReporterTest {
 
         assertTrue(result);
         // 应该创建了带序号的新文件
-        assertTrue(Files.exists(tempDir.resolve("metrics-" + dateStr + "-1.json")));
+        assertTrue(Files.exists(tempDir.resolve(
+                "metrics-" + dateStr + "-" + InstanceIdentity.id() + "-1.json")));
     }
 
     @Test
@@ -347,10 +376,11 @@ class MetricsBatchReporterTest {
                 .format(Instant.now().atZone(java.time.ZoneId.systemDefault()));
 
         // 填满基础文件 + 1000 个序号文件
-        Path baseFile = tempDir.resolve("metrics-" + dateStr + ".json");
+        Path baseFile = tempDir.resolve("metrics-" + dateStr + "-" + InstanceIdentity.id() + ".json");
         Files.writeString(baseFile, "x".repeat(1024 * 1024 + 1));
         for (int i = 1; i <= 1000; i++) {
-            Path indexedFile = tempDir.resolve("metrics-" + dateStr + "-" + i + ".json");
+            Path indexedFile = tempDir.resolve(
+                    "metrics-" + dateStr + "-" + InstanceIdentity.id() + "-" + i + ".json");
             Files.writeString(indexedFile, "x".repeat(1024 * 1024 + 1));
         }
 
