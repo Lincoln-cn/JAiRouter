@@ -344,6 +344,15 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/deployment/database"/>
   </url>
   <url>
+    <loc>https://jairouter.comzh/deployment/multi-replica</loc>
+    <lastmod>2026-10-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/deployment/multi-replica"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/deployment/multi-replica"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/deployment/multi-replica"/>
+  </url>
+  <url>
     <loc>https://jairouter.comzh/deployment/jwt-persistence-deployment-checklist</loc>
     <lastmod>2026-10-01</lastmod>
     <changefreq>monthly</changefreq>
@@ -612,6 +621,15 @@
     <xhtml:link rel="canonical" href="https://jairouter.comen/deployment/database"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment/database"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment/database"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/deployment/multi-replica</loc>
+    <lastmod>2026-10-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/deployment/multi-replica"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment/multi-replica"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment/multi-replica"/>
   </url>
   <url>
     <loc>https://jairouter.comen/deployment/jwt-persistence-deployment-checklist</loc>
