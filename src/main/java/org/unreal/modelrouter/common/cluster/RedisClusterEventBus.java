@@ -64,7 +64,7 @@ public class RedisClusterEventBus implements ClusterEventBus {
     private final String selfId;
 
     /** 每个逻辑通道共享一个 Redis 订阅，避免每个客户端各建一条。 */
-    private final Map<String, Flux<String>> subscriptions = new ConcurrentHashMap<>();
+    private final Map<String, Flux<ClusterEvent>> subscriptions = new ConcurrentHashMap<>();
 
     public RedisClusterEventBus(final ObjectProvider<ReactiveRedisConnectionFactory> connectionFactoryProvider,
                                 final ObjectMapper objectMapper) {
@@ -118,7 +118,7 @@ public class RedisClusterEventBus implements ClusterEventBus {
     }
 
     @Override
-    public Flux<String> subscribe(final String channel) {
+    public Flux<ClusterEvent> subscribe(final String channel) {
         if (listenerContainer == null || channel == null) {
             return Flux.empty();
         }
@@ -130,7 +130,7 @@ public class RedisClusterEventBus implements ClusterEventBus {
         return listenerContainer != null;
     }
 
-    private Flux<String> createSubscription(final String channel) {
+    private Flux<ClusterEvent> createSubscription(final String channel) {
         final String redisChannel = CHANNEL_PREFIX + channel;
         return listenerContainer.receive(ChannelTopic.of(redisChannel))
                 .map(message -> message.getMessage())
@@ -151,15 +151,18 @@ public class RedisClusterEventBus implements ClusterEventBus {
      * 而这在没有真实 Redis 的环境里不容易通过集成测试覆盖。</p>
      *
      * @param raw 原始消息
-     * @return 其它副本的事件载荷；本副本发出的或无法解析的返回空
+     * @return 其它副本的事件（含来源副本标识）；本副本发出的或无法解析的返回空
      */
-    Mono<String> unwrap(final String raw) {
+    Mono<ClusterEvent> unwrap(final String raw) {
         try {
             final Envelope envelope = objectMapper.readValue(raw, Envelope.class);
             if (selfId.equals(envelope.source())) {
                 return Mono.empty();
             }
-            return Mono.justOrEmpty(envelope.payload());
+            if (envelope.payload() == null) {
+                return Mono.empty();
+            }
+            return Mono.just(new ClusterEvent(envelope.source(), envelope.payload()));
         } catch (Exception e) {
             log.debug("忽略无法解析的集群事件: {}", e.getMessage());
             return Mono.empty();
