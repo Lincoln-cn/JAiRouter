@@ -73,15 +73,46 @@ public final class TracingPerformanceMonitor implements HealthIndicator {
     private final AtomicReference<SystemHealth> systemHealth = new AtomicReference<>(SystemHealth.HEALTHY);
     private final List<PerformanceIssue> activeIssues = new ArrayList<>();
 
+    /** 按默认值构造（与外部化前一致），供既有调用方与测试使用。 */
     public TracingPerformanceMonitor(final TracingConfiguration tracingConfiguration,
-                                   final AsyncTracingProcessor asyncTracingProcessor,
-                                   final TracingMemoryManager memoryManager,
-                                   final MeterRegistry meterRegistry) {
+                                     final AsyncTracingProcessor asyncTracingProcessor,
+                                     final TracingMemoryManager memoryManager,
+                                     final MeterRegistry meterRegistry) {
+        this(tracingConfiguration, asyncTracingProcessor, memoryManager, meterRegistry, 2, 100);
+    }
+
+    /**
+     * 生产构造器：性能监控调度器参数可配（#182）。
+     *
+     * <p><b>必须走构造器参数注入，不能用 {@code @Value} 字段</b>：字段注入发生在构造器执行
+     * <b>之后</b>，而调度器正是在构造器里创建的——用字段会静默读到默认值，配置形同虚设。</p>
+     *
+     * <p>默认值与外部化前一致（2 / 100），不配置时行为不变。</p>
+     *
+     * @param tracingConfiguration      tracing 配置
+     * @param asyncTracingProcessor     异步处理器
+     * @param memoryManager             内存管理器
+     * @param meterRegistry             度量注册表
+     * @param schedulerThreadCap        调度器线程上限
+     * @param schedulerQueueCapacity    调度器任务队列上限
+     */
+    @org.springframework.beans.factory.annotation.Autowired
+    public TracingPerformanceMonitor(
+            final TracingConfiguration tracingConfiguration,
+            final AsyncTracingProcessor asyncTracingProcessor,
+            final TracingMemoryManager memoryManager,
+            final MeterRegistry meterRegistry,
+            @org.springframework.beans.factory.annotation.Value(
+                    "${jairouter.tracing.performance.scheduler.thread-cap:2}") final int schedulerThreadCap,
+            @org.springframework.beans.factory.annotation.Value(
+                    "${jairouter.tracing.performance.scheduler.queue-capacity:100}")
+            final int schedulerQueueCapacity) {
         this.tracingConfiguration = tracingConfiguration;
         this.asyncTracingProcessor = asyncTracingProcessor;
         this.memoryManager = memoryManager;
         this.meterRegistry = meterRegistry;
-        this.monitoringScheduler = Schedulers.newBoundedElastic(2, 100, "tracing-perf-monitor");
+        this.monitoringScheduler = Schedulers.newBoundedElastic(
+                schedulerThreadCap, schedulerQueueCapacity, "tracing-perf-monitor");
 
         this.tracingOverheadTimer = Timer.builder("tracing.overhead")
                 .description("Tracing system overhead")

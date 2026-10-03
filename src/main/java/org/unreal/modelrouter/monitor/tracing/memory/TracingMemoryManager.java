@@ -57,10 +57,35 @@ public class TracingMemoryManager {
             new AtomicReference<>(MemoryPressureLevel.LOW);
     private final AtomicBoolean memoryWarningIssued = new AtomicBoolean(false);
 
+    /** 按默认值构造（与外部化前一致），供既有调用方与测试使用。 */
     public TracingMemoryManager(final TracingConfiguration tracingConfiguration) {
+        this(tracingConfiguration, 2, 100);
+    }
+
+    /**
+     * 生产构造器：内存监控调度器参数可配（#182）。
+     *
+     * <p><b>必须走构造器参数注入，不能用 {@code @Value} 字段</b>：字段注入发生在构造器执行
+     * <b>之后</b>，而调度器正是在构造器里创建的——用字段会静默读到默认值，配置形同虚设。</p>
+     *
+     * <p>默认值与外部化前一致（2 / 100），不配置时行为不变。</p>
+     *
+     * @param tracingConfiguration      tracing 配置
+     * @param schedulerThreadCap        调度器线程上限
+     * @param schedulerQueueCapacity    调度器任务队列上限
+     */
+    @org.springframework.beans.factory.annotation.Autowired
+    public TracingMemoryManager(
+            final TracingConfiguration tracingConfiguration,
+            @org.springframework.beans.factory.annotation.Value(
+                    "${jairouter.tracing.performance.scheduler.thread-cap:2}") final int schedulerThreadCap,
+            @org.springframework.beans.factory.annotation.Value(
+                    "${jairouter.tracing.performance.scheduler.queue-capacity:100}")
+            final int schedulerQueueCapacity) {
         this.tracingConfiguration = tracingConfiguration;
         this.memoryMXBean = ManagementFactory.getMemoryMXBean();
-        this.memoryScheduler = Schedulers.newBoundedElastic(2, 100, "tracing-memory");
+        this.memoryScheduler = Schedulers.newBoundedElastic(
+                schedulerThreadCap, schedulerQueueCapacity, "tracing-memory");
 
         TracingPerformanceConfig.MemoryConfig memoryConfig =
                 tracingConfiguration.getPerformance().getMemory();
