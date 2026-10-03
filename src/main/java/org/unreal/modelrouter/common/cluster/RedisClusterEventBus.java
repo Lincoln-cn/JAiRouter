@@ -60,13 +60,31 @@ public class RedisClusterEventBus implements ClusterEventBus {
     private final ReactiveRedisTemplate<String, String> template;
     private final ReactiveRedisMessageListenerContainer listenerContainer;
     private final ObjectMapper objectMapper;
-    private final String selfId = InstanceIdentity.id();
+    /** 本副本标识；用于回环过滤（不把自己的事件再分发一次）。测试可注入以模拟多副本。 */
+    private final String selfId;
 
     /** 每个逻辑通道共享一个 Redis 订阅，避免每个客户端各建一条。 */
     private final Map<String, Flux<String>> subscriptions = new ConcurrentHashMap<>();
 
     public RedisClusterEventBus(final ObjectProvider<ReactiveRedisConnectionFactory> connectionFactoryProvider,
                                 final ObjectMapper objectMapper) {
+        this(connectionFactoryProvider, objectMapper, InstanceIdentity.id());
+    }
+
+    /**
+     * 供测试注入副本标识的构造器（#181）。
+     *
+     * <p>{@code selfId} 默认取进程级 {@link InstanceIdentity#id()}，同一 JVM 内两个实例标识相同，
+     * 因此无法模拟「两个副本」。要验证跨副本可见与不回环必须能指定不同标识。</p>
+     *
+     * @param connectionFactoryProvider Redis 连接工厂
+     * @param objectMapper              JSON 序列化器
+     * @param selfId                    本实例标识；为 null 时回退 {@link InstanceIdentity#id()}
+     */
+    public RedisClusterEventBus(final ObjectProvider<ReactiveRedisConnectionFactory> connectionFactoryProvider,
+                                final ObjectMapper objectMapper,
+                                final String selfId) {
+        this.selfId = selfId != null ? selfId : InstanceIdentity.id();
         this.objectMapper = objectMapper;
         final ReactiveRedisConnectionFactory factory = connectionFactoryProvider.getIfAvailable();
         if (factory == null) {
