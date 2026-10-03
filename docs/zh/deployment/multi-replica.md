@@ -152,11 +152,21 @@ model:
 WARN 日志与 `recordLoadBalancer(..., "random-fallback-no-client-ip")` 指标——此前只有日志，
 运维无法从指标发现「粘性名存实亡」。
 
+### 跨副本计数（可选）
+
+开启 `jairouter.ratelimit.distributed.enabled` 后，客户端维度的滑动窗口状态放到 Redis，各副本共享同一份计数 —— 放行量等于配置值，而不是配置值 × 副本数。
+
+- **与本地实现严格对齐**：窗口 1 秒、上限 `rate` 次/秒；切换实现只改变计数范围，不改变限流行为。
+- **Lua 原子**：判定（`ZCARD`）与记录（`ZADD`）在同一段脚本内完成，多副本并发不会超发。
+- **fail-open**：Redis 不可用（连接失败/超时）时放行并告警 —— 全站拒绝比放宽限流更糟，与配额侧 `degradeToLocal` 的取向一致。
+- **有界阻塞**：该调用发生在 `Schedulers.boundedElastic` 上（见 `ServiceRequestHandler` 的 `selectInstance` 调用），不会卡住 Netty EventLoop；超时默认 50ms。
+- 桶带 TTL 自动过期，无需清理任务。
+
+**前提仍然是键维度成立**：无 L7 反代时按 IP 计数，分布式化只是更精确地统计垃圾数据。
+
 ### 仍未做
 
-方向 A（Redis 原子计数）本次**未实施**：需要先确定算法（令牌桶 / 滑动窗口在 Redis 上的实现）、
-原子性边界，以及 Redis 不可用时的 fail-open / fail-closed 策略。键维度修正后该方向才有意义。
-在此之前，请按「每副本配额」理解并压测你的限流配置。
+跨副本计数只覆盖了**客户端维度**；服务级 / 实例级 / 规则级限流器仍是每副本一份，多副本下这几级的放行量仍会随副本数放大，需要按同样思路改造。
 
 ## 实时事件跨副本广播
 

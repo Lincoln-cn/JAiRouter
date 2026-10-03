@@ -181,12 +181,31 @@ is no instance to pick otherwise), but that fallback now emits both a WARN log a
 `recordLoadBalancer(..., "random-fallback-no-client-ip")` metric — previously it was only a log, so
 operators could not see "affinity is nominal" from metrics.
 
+### Cross-replica counting (optional)
+
+With `jairouter.ratelimit.distributed.enabled` on, the client-dimension sliding window lives in Redis and
+every replica shares one counter — allowed volume equals the configured value instead of
+`configured value × replicas`.
+
+- **Strictly aligned with the local implementation**: 1-second window, limit of `rate` per second.
+  Switching implementations changes the counting scope, not the limiting behavior.
+- **Atomic Lua**: the decision (`ZCARD`) and the record (`ZADD`) happen inside one script, so
+  concurrent replicas cannot over-issue.
+- **fail-open**: when Redis is unavailable (connection failure/timeout) requests are allowed with a
+  warning — rejecting everything is worse than relaxing the limit, matching the quota side's
+  `degradeToLocal`.
+- **Bounded blocking**: the call happens on `Schedulers.boundedElastic` (see the `selectInstance` call
+  in `ServiceRequestHandler`), so it does not stall the Netty event loop; the timeout defaults to 50ms.
+- Buckets carry a TTL and expire on their own, so no cleanup job is needed.
+
+**The precondition is still a meaningful key dimension**: with no L7 proxy, counting by IP means
+counting noise more precisely.
+
 ### Still not done
 
-Direction A (Redis atomic counting) is **not implemented** here: it first needs decisions on the
-algorithm (token bucket / sliding window on Redis), the atomicity boundary, and fail-open vs
-fail-closed behavior when Redis is unavailable. Fixing the key dimension is what makes that direction
-meaningful. Until then, read and load-test your limits as **per-replica quotas**.
+Cross-replica counting covers only the **client dimension**. The service / instance / rule level
+limiters remain per replica, so their allowed volume still scales with the replica count and needs the
+same treatment.
 
 ## Cross-replica real-time event broadcast
 

@@ -2,6 +2,10 @@ package org.unreal.modelrouter.router.ratelimit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.core.helper.ConfigConverterHelper;
 import org.unreal.modelrouter.config.core.helper.ServiceTypeResolver;
@@ -9,7 +13,9 @@ import org.unreal.modelrouter.router.factory.ComponentFactory;
 import org.unreal.modelrouter.router.loadbalancer.AffinityContextHolder;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
+import org.unreal.modelrouter.router.ratelimit.impl.RedisSlidingWindowRateLimiter;
 
+import java.time.Duration;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +50,21 @@ public class RateLimitManager {
 
     // v2.7.10: 使用 Caffeine 缓存替代 ConcurrentHashMap，解决内存泄漏风险
     private final ClientIpRateLimiterCache clientIpRateLimiterCache = new ClientIpRateLimiterCache();
+
+    /** 跨副本限流的 Redis key 前缀（#161） */
+    private static final String REDIS_KEY_PREFIX = "jairouter:ratelimit:";
+
+    /** 分布式限流的 Redis 模板；未配置 Redis 时为空，自动退回本地实现 */
+    @Autowired
+    private ObjectProvider<ReactiveRedisTemplate<String, String>> reactiveRedisTemplateProvider;
+
+    /** 是否启用跨副本限流（#161）；默认关闭，行为与引入前一致 */
+    @Value("${jairouter.ratelimit.distributed.enabled:false}")
+    private boolean distributedRateLimitEnabled;
+
+    /** 分布式限流的单次 Redis 调用超时（ms）：超时按 fail-open 放行 */
+    @Value("${jairouter.ratelimit.distributed.timeout-ms:50}")
+    private long distributedRateLimitTimeoutMs;
 
     public RateLimitManager(final ComponentFactory componentFactory,
                             final ServiceTypeResolver serviceTypeResolver,
@@ -276,11 +297,36 @@ public class RateLimitManager {
         }
 
         final ModelRouterProperties.RateLimitConfig config = effectiveConfig;
-        RateLimiter limiter = clientIpRateLimiterCache.get(serviceType, dimension, resolution.key(), () -> {
-            RateLimitConfig converted = configConverterHelper.convertRateLimitConfig(config);
-            return componentFactory.createScopedRateLimiter(converted);
-        });
+        RateLimiter limiter = clientIpRateLimiterCache.get(serviceType, dimension, resolution.key(),
+                cacheKey -> createClientDimensionLimiter(config, cacheKey));
         return limiter == null || limiter.tryAcquire(context);
+    }
+
+    /**
+     * 创建客户端维度限流器：按开关选择本地实现或跨副本实现（#161）。
+     *
+     * <p>跨副本实现把窗口状态放到 Redis，各副本共享同一份计数（放行量等于配置值，而不是
+     * 配置值 × 副本数）；本地实现仍是每副本一份。Redis 未配置或开关关闭时退回本地实现，
+     * 行为与引入前完全一致。</p>
+     *
+     * @param config   生效的限流配置
+     * @param cacheKey 本副本内的限流器缓存键，同时作为 Redis key 的后缀
+     * @return 限流器
+     */
+    private RateLimiter createClientDimensionLimiter(final ModelRouterProperties.RateLimitConfig config,
+                                                     final String cacheKey) {
+        final RateLimitConfig converted = configConverterHelper.convertRateLimitConfig(config);
+        if (distributedRateLimitEnabled) {
+            final ReactiveRedisTemplate<String, String> redisTemplate =
+                    reactiveRedisTemplateProvider.getIfAvailable();
+            if (redisTemplate != null) {
+                return new RedisSlidingWindowRateLimiter(converted, REDIS_KEY_PREFIX + cacheKey,
+                        redisTemplate, Duration.ofMillis(distributedRateLimitTimeoutMs));
+            }
+            LOGGER.warn("jairouter.ratelimit.distributed.enabled=true 但没有可用的 Redis 模板，"
+                    + "该维度退回本地限流（放行量将随副本数放大）");
+        }
+        return componentFactory.createScopedRateLimiter(converted);
     }
 
     /**
