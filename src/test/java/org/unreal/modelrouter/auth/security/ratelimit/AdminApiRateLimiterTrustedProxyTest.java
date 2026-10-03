@@ -135,4 +135,83 @@ class AdminApiRateLimiterTrustedProxyTest {
         assertEquals(1, counters(limiter).size(),
                 "500 个伪造 XFF 不应产生 500 个计数桶，实际=" + counters(limiter).size());
     }
+
+    @Test
+    @DisplayName("配了可信代理但请求直连且对端不可信——仍按 remoteAddress（不能因为配了代理就信任所有 XFF）")
+    void trustedProxyConfiguredButDirectUntrustedPeer_mustNotTrustXff() {
+        final AdminApiRateLimiter limiter = new AdminApiRateLimiter();
+        setTrustedProxies(limiter, "10.0.0.1");
+        final WebFilterChain chain = mock(WebFilterChain.class);
+        when(chain.filter(any())).thenReturn(Mono.empty());
+
+        // 对端不在可信列表（203.0.113.99），即便携带 XFF 也不得采信
+        final MockServerWebExchange get = exchange(MockServerHttpRequest
+                .get("/api/auth/api-keys")
+                .remoteAddress(new InetSocketAddress("203.0.113.99", 40000))
+                .header("X-Forwarded-For", "198.51.100.7"));
+        limiter.filter(get, chain).block(TIMEOUT);
+
+        final Map<String, ?> map = counters(limiter);
+        assertEquals(1, map.size(), "应只有一个计数桶");
+        assertEquals(true, map.containsKey("203.0.113.99"),
+                "对端不在可信列表时必须按 remoteAddress 计数，实际 keys=" + map.keySet());
+    }
+
+    @Test
+    @DisplayName("可信代理列表含前后空白时仍能匹配（配置书写容错）")
+    void trustedProxyListWithWhitespace_mustStillMatch() {
+        final AdminApiRateLimiter limiter = new AdminApiRateLimiter();
+        setTrustedProxies(limiter, " 10.0.0.1 , 10.0.0.2 ");
+        final WebFilterChain chain = mock(WebFilterChain.class);
+        when(chain.filter(any())).thenReturn(Mono.empty());
+
+        final MockServerWebExchange get = exchange(MockServerHttpRequest
+                .get("/api/auth/api-keys")
+                .remoteAddress(new InetSocketAddress("10.0.0.2", 41000))
+                .header("X-Forwarded-For", "198.51.100.7"));
+        limiter.filter(get, chain).block(TIMEOUT);
+
+        final Map<String, ?> map = counters(limiter);
+        assertEquals(true, map.containsKey("198.51.100.7"),
+                "列表项带空白时应仍被识别为可信代理并采信 XFF，实际 keys=" + map.keySet());
+    }
+
+    @Test
+    @DisplayName("可信代理未携带 XFF 时回退 X-Real-IP")
+    void trustedProxyWithoutXff_shouldFallBackToXRealIp() {
+        final AdminApiRateLimiter limiter = new AdminApiRateLimiter();
+        setTrustedProxies(limiter, "10.0.0.1");
+        final WebFilterChain chain = mock(WebFilterChain.class);
+        when(chain.filter(any())).thenReturn(Mono.empty());
+
+        final MockServerWebExchange get = exchange(MockServerHttpRequest
+                .get("/api/auth/api-keys")
+                .remoteAddress(new InetSocketAddress("10.0.0.1", 42000))
+                .header("X-Real-IP", "198.51.100.9"));
+        limiter.filter(get, chain).block(TIMEOUT);
+
+        final Map<String, ?> map = counters(limiter);
+        assertEquals(true, map.containsKey("198.51.100.9"),
+                "可信代理只带 X-Real-IP 时应采用它，实际 keys=" + map.keySet());
+    }
+
+    @Test
+    @DisplayName("不可信对端同时伪造 XFF 与 X-Real-IP——两者都不得采信")
+    void untrustedPeer_mustIgnoreXRealIpToo() {
+        final AdminApiRateLimiter limiter = new AdminApiRateLimiter();
+        final WebFilterChain chain = mock(WebFilterChain.class);
+        when(chain.filter(any())).thenReturn(Mono.empty());
+
+        final MockServerWebExchange get = exchange(MockServerHttpRequest
+                .get("/api/auth/api-keys")
+                .remoteAddress(new InetSocketAddress("203.0.113.30", 43000))
+                .header("X-Forwarded-For", "198.51.100.11")
+                .header("X-Real-IP", "198.51.100.12"));
+        limiter.filter(get, chain).block(TIMEOUT);
+
+        final Map<String, ?> map = counters(limiter);
+        assertEquals(1, map.size());
+        assertEquals(true, map.containsKey("203.0.113.30"),
+                "X-Real-IP 同样是可伪造的转发头，默认配置下不得采信，实际 keys=" + map.keySet());
+    }
 }
