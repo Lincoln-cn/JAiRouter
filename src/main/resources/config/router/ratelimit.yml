@@ -32,3 +32,20 @@ model:
     # api-key 维度下请求未携带 API Key 时回退客户端 IP 并告警；tenant 维度同理，
     # 但其回退属于设计行为（不告警）。无可用的维度值与回退值时跳过该级限流并告警。
     key-dimension: "client-ip"
+
+# ========================================
+# 跨副本限流（#161）
+# ========================================
+# 客户端维度的限流状态默认在 JVM 内，多副本下同一客户端的实际放行量 ≈ 配置值 × 副本数。
+# 开启后该维度的滑动窗口状态放到 Redis，各副本共享同一份计数——**前提是键维度成立**
+# （见上面的 key-dimension）：键维度不成立时，分布式计数只是在精确地统计垃圾数据。
+jairouter:
+  ratelimit:
+    distributed:
+      # 默认 false。开启前请确认 Redis 可用，并了解 Redis 故障时按 fail-open 放行。
+      enabled: ${JAIROUTER_RATELIMIT_DISTRIBUTED:false}
+      # 单次 Redis 调用超时（毫秒）。超时按 fail-open 放行。
+      # 该调用发生在 Schedulers.boundedElastic 上（见 ServiceRequestHandler 的
+      # selectInstance 调用），不会卡住 Netty EventLoop；超时值决定最坏情况下
+      # 每个被限流请求额外等待多久。
+      timeout-ms: 50

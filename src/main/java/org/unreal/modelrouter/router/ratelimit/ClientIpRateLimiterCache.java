@@ -60,12 +60,13 @@ public final class ClientIpRateLimiterCache {
      * @param serviceType 服务类型
      * @param dimension   限流键维度（#161）
      * @param keyValue    维度对应的键值（客户端 IP / API Key ID / 租户）
-     * @param loader      加载器（缓存未命中时调用）
+     * @param loader      加载器（缓存未命中时调用）；接收生成的缓存键，
+     *                    分布式实现需要它作为 Redis key 的一部分（#161）
      * @return 限流器
      */
     public RateLimiter get(final ServiceType serviceType, final RateLimitKeyDimension dimension,
                            final String keyValue,
-                           final java.util.function.Supplier<RateLimiter> loader) {
+                           final java.util.function.Function<String, RateLimiter> loader) {
         String key = generateKey(serviceType, dimension, keyValue);
         RateLimiter limiter = cache.getIfPresent(key);
 
@@ -75,7 +76,7 @@ public final class ClientIpRateLimiterCache {
         }
 
         missCount.incrementAndGet();
-        limiter = loader.get();
+        limiter = loader.apply(key);
         if (limiter != null) {
             cache.put(key, limiter);
         }
