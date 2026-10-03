@@ -16,6 +16,7 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import org.unreal.modelrouter.common.exception.SanitizationException;
+import org.unreal.modelrouter.common.util.ClientIpResolver;
 import org.unreal.modelrouter.auth.sanitization.SanitizationService;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.config.ExcludedPathsConfig;
@@ -287,19 +288,9 @@ public class ResponseSanitizationFilter implements WebFilter {
      * 获取客户端IP地址
      */
     private String getClientIp(final ServerHttpRequest request) {
-        String xForwardedFor = request.getHeaders().getFirst("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        
-        String xRealIp = request.getHeaders().getFirst("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
-        }
-        
-        return request.getRemoteAddress() != null
-                ? request.getRemoteAddress().getAddress().getHostAddress()
-                : "unknown";
+        // #151：转发头可被任意客户端伪造，信任决策统一交给共享 resolver——
+        // 仅当直连对端在 trusted-proxies 中时才采信，并按右向左走跳取真实客户端。
+        return ClientIpResolver.resolve(request);
     }
     
     /**

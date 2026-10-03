@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
+import org.unreal.modelrouter.common.util.ClientIpResolver;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -107,25 +108,9 @@ public class SpanAttributeHelper {
      * @return 客户端 IP 地址，如果无法获取则返回 null
      */
     public String getClientIp(final ServerHttpRequest request) {
-        // 检查 X-Forwarded-For 头部
-        String xForwardedFor = request.getHeaders().getFirst("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            // 取第一个 IP 地址
-            return xForwardedFor.split(",")[0].trim();
-        }
-
-        // 检查 X-Real-IP 头部
-        String xRealIp = request.getHeaders().getFirst("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
-        }
-
-        // 使用远程地址
-        if (request.getRemoteAddress() != null) {
-            return request.getRemoteAddress().getAddress().getHostAddress();
-        }
-
-        return null;
+        // #151：收敛到共享 resolver——转发头仅在直连对端可信时采信
+        final String resolved = ClientIpResolver.resolve(request);
+        return "unknown".equals(resolved) ? null : resolved;
     }
 
     /**

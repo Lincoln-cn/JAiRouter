@@ -2,6 +2,7 @@ package org.unreal.modelrouter.auth.security.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.server.ServerWebExchange;
+import org.unreal.modelrouter.common.util.ClientIpResolver;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -58,22 +59,9 @@ public class ClientIpUtils {
             return "unknown";
         }
         
-        // 1. 尝试从代理头中获取IP
-        String clientIp = getIpFromProxyHeaders(exchange);
-        if (isValidIp(clientIp)) {
-            log.debug("从代理头获取到客户端IP: {}", clientIp);
-            return clientIp;
-        }
-        
-        // 2. 从远程地址获取IP
-        clientIp = getIpFromRemoteAddress(exchange);
-        if (isValidIp(clientIp)) {
-            log.debug("从远程地址获取到客户端IP: {}", clientIp);
-            return clientIp;
-        }
-        
-        log.warn("无法获取有效的客户端IP地址");
-        return "unknown";
+        // #151：转发头可被任意客户端伪造，信任决策统一交给共享 resolver。
+        // 原实现无条件遍历 13 个候选头并优先取「首个公网 IP」，等于把伪造面直接暴露给客户端。
+        return ClientIpResolver.resolve(exchange);
     }
     
     /**

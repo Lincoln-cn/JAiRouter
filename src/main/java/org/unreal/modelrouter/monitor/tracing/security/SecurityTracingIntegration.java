@@ -6,6 +6,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
+import org.unreal.modelrouter.common.util.ClientIpResolver;
 import org.unreal.modelrouter.monitor.tracing.TracingConstants;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.logger.StructuredLogger;
@@ -348,24 +349,8 @@ public class SecurityTracingIntegration {
      * 获取客户端IP地址
      */
     private String getClientIp(final ServerWebExchange exchange) {
-        // 检查X-Forwarded-For头部
-        String xForwardedFor = exchange.getRequest().getHeaders().getFirst("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        
-        // 检查X-Real-IP头部
-        String xRealIp = exchange.getRequest().getHeaders().getFirst("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
-        }
-        
-        // 使用远程地址
-        if (exchange.getRequest().getRemoteAddress() != null) {
-            return exchange.getRequest().getRemoteAddress().getAddress().getHostAddress();
-        }
-        
-        return "unknown";
+        // #151：收敛到共享 resolver——转发头仅在直连对端可信时采信，且按右向左走跳取真实客户端
+        return ClientIpResolver.resolve(exchange);
     }
     
     /**

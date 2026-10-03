@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
+import org.unreal.modelrouter.common.util.ClientIpResolver;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
@@ -64,13 +65,6 @@ public class AdminApiRateLimiter implements WebFilter {
     @Value("${jairouter.auth.admin-api-rate-limit.create-per-hour:10}")
     private int createLimitPerHour = 10;
 
-    /**
-     * 逗号分隔的可信代理地址列表（与 remoteAddress 的 host 地址精确匹配）。
-     * 默认空 = 不信任任何代理，转发头一律忽略，限流键使用 remoteAddress（安全默认）。
-     */
-    @Value("${jairouter.security.rate-limit.trusted-proxies:}")
-    private String trustedProxies = "";
-
     private final Map<String, RequestCounter> counters = new ConcurrentHashMap<>();
 
     private static final long CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
@@ -124,47 +118,9 @@ public class AdminApiRateLimiter implements WebFilter {
     }
 
     private String getClientIp(final ServerWebExchange exchange) {
-        final String remote = exchange.getRequest().getRemoteAddress() != null
-                ? exchange.getRequest().getRemoteAddress().getAddress().getHostAddress()
-                : "unknown";
-
-        // #124: 转发头可被任意客户端伪造，仅当直连对端是可信代理时才采信
-        if (!isTrustedProxy(remote)) {
-            return remote;
-        }
-
-        String ip = exchange.getRequest().getHeaders().getFirst("X-Forwarded-For");
-        if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
-            // 取最后一跳：由我们的可信代理追加，首跳可被客户端伪造
-            final int index = ip.lastIndexOf(',');
-            if (index != -1) {
-                ip = ip.substring(index + 1);
-            }
-            ip = ip.trim();
-            if (!ip.isEmpty()) {
-                return ip;
-            }
-        }
-
-        ip = exchange.getRequest().getHeaders().getFirst("X-Real-IP");
-        if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
-            return ip.trim();
-        }
-
-        return remote;
-    }
-
-    /** 直连对端是否为配置的可信代理（默认空集 = 谁也不信） */
-    private boolean isTrustedProxy(final String remoteHost) {
-        if (remoteHost == null || trustedProxies == null || trustedProxies.isBlank()) {
-            return false;
-        }
-        for (final String candidate : trustedProxies.split(",")) {
-            if (candidate.trim().equalsIgnoreCase(remoteHost)) {
-                return true;
-            }
-        }
-        return false;
+        // #151：信任决策收敛到共享 resolver（ClientIpResolver + TrustedProxyPolicy），
+        // 本类不再自持一份 trusted-proxies 判断——否则限流按键与审计日志可能按不同策略取值。
+        return ClientIpResolver.resolve(exchange);
     }
 
     private void cleanupIfNeeded() {
