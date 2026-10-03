@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.monitor.tracing.helper;
 
 import io.opentelemetry.api.trace.Span;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,8 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.RequestPath;
 import org.springframework.web.server.ServerWebExchange;
+import org.unreal.modelrouter.common.util.ClientIpResolver;
+import org.unreal.modelrouter.common.util.TrustedProxyPolicy;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -51,6 +54,12 @@ class SpanAttributeHelperTest {
     @BeforeEach
     void setUp() {
         spanAttributeHelper = new SpanAttributeHelper();
+    }
+
+    @AfterEach
+    void resetSharedClientIpPolicy() {
+        // #151：信任策略是进程级共享状态，必须复位以免污染其它用例
+        ClientIpResolver.setPolicy(TrustedProxyPolicy.empty());
     }
 
     private void setupRequestPath(String path) {
@@ -159,31 +168,52 @@ class SpanAttributeHelperTest {
     @Test
     @DisplayName("获取客户端 IP - X-Forwarded-For 头部")
     void getClientIp_shouldExtractFromXForwardedFor() {
-        // Given
+        // Given: #151 后转发头仅在直连对端可信时才采信，故把对端设为可信代理
+        ClientIpResolver.setPolicy(TrustedProxyPolicy.parse("10.0.0.1"));
         org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
         headers.add("X-Forwarded-For", "192.168.1.100, 10.0.0.1");
         when(request.getHeaders()).thenReturn(headers);
+        when(request.getRemoteAddress()).thenReturn(new InetSocketAddress("10.0.0.1", 12345));
 
         // When
         String clientIp = spanAttributeHelper.getClientIp(request);
 
-        // Then
+        // Then: 右向左跳过可信代理跳，得到真实客户端
         assertEquals("192.168.1.100", clientIp);
     }
 
     @Test
     @DisplayName("获取客户端 IP - X-Real-IP 头部")
     void getClientIp_shouldExtractFromXRealIp() {
-        // Given
+        // Given: 同上，对端须为可信代理才会采信转发头
+        ClientIpResolver.setPolicy(TrustedProxyPolicy.parse("10.0.0.1"));
         org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
         headers.add("X-Real-IP", "10.0.0.50");
         when(request.getHeaders()).thenReturn(headers);
+        when(request.getRemoteAddress()).thenReturn(new InetSocketAddress("10.0.0.1", 12345));
 
         // When
         String clientIp = spanAttributeHelper.getClientIp(request);
 
         // Then
         assertEquals("10.0.0.50", clientIp);
+    }
+
+    @Test
+    @DisplayName("获取客户端 IP - 默认配置下不采信伪造的转发头（#151）")
+    void getClientIp_shouldIgnoreForgedHeadersByDefault() {
+        // Given: 未配置 trusted-proxies（即空策略），对端不可信
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.add("X-Forwarded-For", "198.51.100.1");
+        headers.add("X-Real-IP", "198.51.100.2");
+        when(request.getHeaders()).thenReturn(headers);
+        when(request.getRemoteAddress()).thenReturn(new InetSocketAddress("203.0.113.9", 12345));
+
+        // When
+        String clientIp = spanAttributeHelper.getClientIp(request);
+
+        // Then: span 属性里的来源 IP 不得被客户端伪造的转发头改写
+        assertEquals("203.0.113.9", clientIp);
     }
 
     @Test

@@ -1,11 +1,14 @@
 package org.unreal.modelrouter.auth.security.ratelimit;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.WebFilterChain;
+import org.unreal.modelrouter.common.util.ClientIpResolver;
+import org.unreal.modelrouter.common.util.TrustedProxyPolicy;
 import reactor.core.publisher.Mono;
 
 import java.net.InetSocketAddress;
@@ -29,14 +32,17 @@ class AdminApiRateLimiterTrustedProxyTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
 
+    /**
+     * #151：信任策略已收敛到共享组件，测试改为设置共享策略（不再反射本类字段）。
+     */
     private static void setTrustedProxies(final AdminApiRateLimiter limiter, final String raw) {
-        try {
-            java.lang.reflect.Field field = AdminApiRateLimiter.class.getDeclaredField("trustedProxies");
-            field.setAccessible(true);
-            field.set(limiter, raw);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        ClientIpResolver.setPolicy(TrustedProxyPolicy.parse(raw));
+    }
+
+    @AfterEach
+    void resetSharedPolicy() {
+        // 共享策略是进程级状态，测试之间必须复位，否则会互相污染
+        ClientIpResolver.setPolicy(TrustedProxyPolicy.empty());
     }
 
     @SuppressWarnings("unchecked")

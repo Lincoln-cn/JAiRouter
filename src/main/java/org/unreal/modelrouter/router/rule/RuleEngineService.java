@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.unreal.modelrouter.common.util.IpUtils;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.router.rule.model.RuleDefinition;
 
@@ -195,33 +196,10 @@ public class RuleEngineService {
 
     /**
      * CIDR 匹配,支持 192.168.1.0/24 与精确 IP(掩码 /32)
+     *
+     * <p>#151 §3.3：实现已提升到 {@link IpUtils#matchesCidr} 供全局复用，此处仅委托，行为不变。</p>
      */
     private boolean cidrMatches(final String ip, final String cidr) {
-        try {
-            String[] parts = cidr.split("/");
-            String cidrIp = parts[0];
-            int prefix = parts.length > 1 ? Integer.parseInt(parts[1]) : 32;
-            if (prefix < 0 || prefix > 32) {
-                return false;
-            }
-            long ipLong = ipToLong(ip);
-            long cidrLong = ipToLong(cidrIp);
-            long mask = prefix == 0 ? 0 : (0xFFFFFFFFL << (32 - prefix)) & 0xFFFFFFFFL;
-            return (ipLong & mask) == (cidrLong & mask);
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    private long ipToLong(final String ip) {
-        String[] octets = ip.split("\\.");
-        if (octets.length != 4) {
-            throw new IllegalArgumentException("非法 IP: " + ip);
-        }
-        long result = 0;
-        for (String octet : octets) {
-            result = (result << 8) | (Long.parseLong(octet) & 0xFF);
-        }
-        return result;
+        return IpUtils.matchesCidr(ip, cidr);
     }
 }
