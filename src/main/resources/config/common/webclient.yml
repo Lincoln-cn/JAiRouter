@@ -4,6 +4,10 @@
 # 此文件包含 WebClient HTTP 客户端配置
 # 位置：org.unreal.modelrouter.common
 
+# ⚠️ 注意（#182 勘察结论）：下面这组 webclient.* 目前**没有任何代码消费**——
+# 全仓库既无 @ConfigurationProperties(prefix="webclient")，也无 ${webclient...} 引用。
+# 改它们不会对出站请求产生任何影响。
+# 出站 WebClient 实际生效的超时与连接池参数见文件末尾的 jairouter.webclient.*。
 webclient:
   # 连接超时时间
   connection-timeout: 15s
@@ -16,3 +20,28 @@ webclient:
   
   # 内存中最大数据大小
   max-in-memory-size: 10MB
+
+# ========================================
+# 出站 WebClient 连接参数（#182，实际生效）
+# ========================================
+# 由 WebClientPool 读取。默认值与外部化之前的硬编码值一致，因此不配置时行为不变。
+# 多副本/容器部署可按实例资源规格调整：副本多、单副本资源小时下调 max-connections，
+# 避免每副本都开满连接把下游压垮。
+jairouter:
+  webclient:
+    # 覆盖方式：Spring Boot 宽松绑定，环境变量即可，无需占位符。
+    # 例：JAIROUTER_WEBClient_CONNECTTIMEOUTMS=5000（或 --jairouter.webclient.connect-timeout-ms=5000）。
+    #
+    # 连接超时（毫秒）。
+    # 注意：外部化之前代码里声明了 10000 但从未使用（没有 ChannelOption.CONNECT_TIMEOUT_MILLIS），
+    # 连接超时实际未生效；现在真正接上了。
+    connect-timeout-ms: 10000
+    # 响应超时（秒）。原先硬编码 60。
+    response-timeout-seconds: 60
+    # 连接池最大连接数。原先未显式设置 ConnectionProvider，用 Reactor Netty 默认。
+    # 副本数越多、单副本资源越小时越应下调，避免每副本都开满连接压垮下游。
+    max-connections: 500
+    # 等待获取连接的排队超时（毫秒）。
+    pending-acquire-timeout-ms: 60000
+    # 连接空闲回收时间（秒）。
+    max-idle-time-seconds: 60
