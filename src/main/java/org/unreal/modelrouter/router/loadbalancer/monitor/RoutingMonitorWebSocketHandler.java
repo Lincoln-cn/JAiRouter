@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketSession;
 import org.unreal.modelrouter.common.cluster.ClusterEventBus;
+import org.unreal.modelrouter.common.util.InstanceIdentity;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
@@ -86,9 +87,14 @@ public class RoutingMonitorWebSocketHandler implements WebSocketHandler {
 
         // 事件流 = 本副本事件 + 其它副本广播来的事件。
         // 广播侧已按来源副本做过回环过滤，本副本发出的事件不会在这里重复出现。
-        Flux<String> eventStream = Flux.merge(
-                        eventSink.asFlux(),
-                        clusterEventBus.subscribe(EVENT_CHANNEL))
+        // 两类事件都补出来源副本标识，前端/运维才能判断某条事件来自哪个副本（#181）。
+        final Flux<String> localEvents = eventSink.asFlux()
+                .map(json -> ClusterEventBus.withSourceInstance(
+                        json, InstanceIdentity.id(), objectMapper));
+        final Flux<String> remoteEvents = clusterEventBus.subscribe(EVENT_CHANNEL)
+                .map(event -> ClusterEventBus.withSourceInstance(
+                        event.payload(), event.sourceInstance(), objectMapper));
+        Flux<String> eventStream = Flux.merge(localEvents, remoteEvents)
                 .onBackpressureLatest();
 
         // 合并初始状态、心跳和事件流

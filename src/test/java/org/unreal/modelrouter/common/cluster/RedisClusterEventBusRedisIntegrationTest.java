@@ -79,14 +79,18 @@ class RedisClusterEventBusRedisIntegrationTest {
         final RedisClusterEventBus replicaA = bus("replica-a");
         final RedisClusterEventBus replicaB = bus("replica-b");
 
-        final CompletableFuture<List<String>> receivedByB =
+        final CompletableFuture<List<ClusterEventBus.ClusterEvent>> receivedByB =
                 replicaB.subscribe(channel).take(1).collectList().toFuture();
         Thread.sleep(SUBSCRIBE_SETTLE.toMillis());
 
         replicaA.publish(channel, "routing-event-from-a");
 
-        assertEquals(List.of("routing-event-from-a"), receivedByB.get(10, TimeUnit.SECONDS),
+        final List<ClusterEventBus.ClusterEvent> events = receivedByB.get(10, TimeUnit.SECONDS);
+        assertEquals(1, events.size(),
                 "B 应收到 A 广播的事件——这正是多副本下监控面板不再漏事件的前提");
+        assertEquals("routing-event-from-a", events.get(0).payload());
+        assertEquals("replica-a", events.get(0).sourceInstance(),
+                "必须带上来源副本标识，前端才知道事件来自哪个副本（#181）");
     }
 
     @Test
@@ -96,15 +100,15 @@ class RedisClusterEventBusRedisIntegrationTest {
         final RedisClusterEventBus replicaB = bus("replica-b");
 
         // B 的订阅用于证明这次发布确实到达了 Redis，而不是 A 压根没发出去
-        final CompletableFuture<List<String>> receivedByB =
+        final CompletableFuture<List<ClusterEventBus.ClusterEvent>> receivedByB =
                 replicaB.subscribe(channel).take(1).collectList().toFuture();
-        final CompletableFuture<List<String>> receivedByA =
+        final CompletableFuture<List<ClusterEventBus.ClusterEvent>> receivedByA =
                 replicaA.subscribe(channel).take(1).collectList().toFuture();
         Thread.sleep(SUBSCRIBE_SETTLE.toMillis());
 
         replicaA.publish(channel, "only-for-others");
 
-        assertEquals(List.of("only-for-others"), receivedByB.get(10, TimeUnit.SECONDS),
+        assertEquals("only-for-others", receivedByB.get(10, TimeUnit.SECONDS).get(0).payload(),
                 "前提校验：事件确实经由 Redis 广播出去了");
 
         // 超时即「未收到」。注意 CompletableFuture.get(timeout) 在未完成时直接抛 TimeoutException，

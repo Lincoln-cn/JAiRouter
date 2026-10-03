@@ -32,7 +32,7 @@ public class LocalClusterEventBus implements ClusterEventBus {
     }
 
     @Override
-    public Flux<String> subscribe(final String channel) {
+    public Flux<ClusterEvent> subscribe(final String channel) {
         return Flux.empty();
     }
 

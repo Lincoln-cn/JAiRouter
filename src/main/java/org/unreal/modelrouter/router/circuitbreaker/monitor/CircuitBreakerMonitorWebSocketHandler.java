@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketSession;
 import org.unreal.modelrouter.common.cluster.ClusterEventBus;
+import org.unreal.modelrouter.common.util.InstanceIdentity;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
@@ -73,10 +74,15 @@ public class CircuitBreakerMonitorWebSocketHandler implements WebSocketHandler {
         Flux<String> heartbeat = Flux.interval(Duration.ofSeconds(30))
                 .map(seq -> "{\"type\":\"heartbeat\",\"seq\":" + seq + "}");
 
-        // 事件流 = 本副本事件 + 其它副本广播来的事件（广播侧已过滤回环，不会重复）
-        Flux<String> eventStream = Flux.merge(
-                        eventSink.asFlux(),
-                        clusterEventBus.subscribe(EVENT_CHANNEL))
+        // 事件流 = 本副本事件 + 其它副本广播来的事件（广播侧已过滤回环，不会重复）。
+        // 两类事件都补出来源副本标识，前端/运维才能判断某条事件来自哪个副本（#181）。
+        final Flux<String> localEvents = eventSink.asFlux()
+                .map(json -> ClusterEventBus.withSourceInstance(
+                        json, InstanceIdentity.id(), objectMapper));
+        final Flux<String> remoteEvents = clusterEventBus.subscribe(EVENT_CHANNEL)
+                .map(event -> ClusterEventBus.withSourceInstance(
+                        event.payload(), event.sourceInstance(), objectMapper));
+        Flux<String> eventStream = Flux.merge(localEvents, remoteEvents)
                 .onBackpressureLatest();
 
         Flux<String> output = Flux.concat(

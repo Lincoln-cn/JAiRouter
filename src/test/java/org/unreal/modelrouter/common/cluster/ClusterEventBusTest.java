@@ -11,6 +11,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -74,13 +75,37 @@ class ClusterEventBusTest {
     }
 
     @Test
-    @DisplayName("其它副本的事件透传原始载荷")
+    @DisplayName("其它副本的事件透传原始载荷与来源副本标识")
     void eventsFromOtherReplicasArePassedThrough() throws Exception {
         RedisClusterEventBus bus = redisBusWithoutConnection();
 
         String theirs = envelope("replica-b", "their-event");
 
-        assertEquals("their-event", bus.unwrap(theirs).block());
+        ClusterEventBus.ClusterEvent received = bus.unwrap(theirs).block();
+
+        assertNotNull(received);
+        assertEquals("their-event", received.payload());
+        assertEquals("replica-b", received.sourceInstance(),
+                "来源副本标识必须透出，前端与运维才能判断事件来自哪个副本（#181）");
+    }
+
+    @Test
+    @DisplayName("补来源副本标识只新增字段，不改动载荷里既有的键")
+    void withSourceInstanceOnlyAddsField() {
+        String annotated = ClusterEventBus.withSourceInstance(
+                "{\"type\":\"routing\",\"service\":\"llm\"}", "replica-a", new ObjectMapper());
+
+        assertTrue(annotated.contains("\"sourceInstance\":\"replica-a\""), annotated);
+        assertTrue(annotated.contains("\"type\":\"routing\""), "既有字段不得丢失: " + annotated);
+        assertTrue(annotated.contains("\"service\":\"llm\""), "既有字段不得丢失: " + annotated);
+    }
+
+    @Test
+    @DisplayName("补标识遇到非 JSON 载荷时原样返回，不让事件本身丢失")
+    void withSourceInstanceKeepsRawPayloadOnFailure() {
+        assertEquals("not-json", ClusterEventBus.withSourceInstance(
+                "not-json", "replica-a", new ObjectMapper()));
+        assertEquals(null, ClusterEventBus.withSourceInstance(null, "replica-a", new ObjectMapper()));
     }
 
     @Test
