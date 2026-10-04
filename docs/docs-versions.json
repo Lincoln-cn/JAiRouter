@@ -2329,20 +2329,20 @@
     },
     "docs/en/deployment/database.md": {
       "FilePath": "docs/en/deployment/database.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-01T09:29:16.802736",
-      "ContentHash": "cd4f11f85a72ae28",
-      "GitCommit": "5bf0b4bf",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-04T15:28:57.672817",
+      "ContentHash": "2a0bcdce695b320a",
+      "GitCommit": "d4911555",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/deployment/database.md": {
       "FilePath": "docs/zh/deployment/database.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-01T09:29:17.164180",
-      "ContentHash": "b054459a8f26a9e1",
-      "GitCommit": "5bf0b4bf",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-04T15:28:58.080885",
+      "ContentHash": "5eb04df11f1076d7",
+      "GitCommit": "d4911555",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -6552,7 +6552,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-04T14:19:25.075192",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/database.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-04T15:28:57.672828",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/database.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-04T15:28:58.080894",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-04T14:19:25.337598"
+  "last_updated": "2026-10-04T15:28:58.372503"
 }
