@@ -25,7 +25,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
-import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.auth.security.service.EnhancedJwtBlacklistService;
@@ -135,20 +134,12 @@ class BlacklistRedisEnabledContextTest {
         }
 
         /**
-         * 真实应用中该限定名 bean 由 {@code RedisJwtCacheConfiguration} 提供，其条件是
-         * {@code jairouter.security.jwt.persistence.redis.enabled=true}。本测试只开黑名单开关
-         * （即 issue #194 的触发条件），故用桩补上这个模板。
+         * 应用默认的 String 序列化模板。
          *
-         * <p>两个开关在真实配置里是耦合的（只开黑名单会因缺此 bean 而起不来），且定额侧在
-         * 「自动化装配的 redis 工厂 + JWT 专属工厂」并存时另有注入不唯一的缺陷 —— 那两点都在
-         * 本测试范围之外、由其它 issue 跟踪；本测试只负责守住「同名 bean 不得重复定义」。
+         * <p>issue #196 之后 JWT 不再自建模板（取消了 JWT 独立 Redis），
+         * {@code JwtServiceConfiguration} 与 JWT 健康检查都直接用它；本测试补上这个唯一的
+         * {@code ReactiveRedisTemplate<String, String>} 候选，以贴合真实上下文。
          */
-        @Bean
-        @SuppressWarnings("unchecked")
-        ReactiveRedisTemplate<String, String> jwtReactiveRedisTemplate() {
-            return Mockito.mock(ReactiveRedisTemplate.class);
-        }
-
         @Bean
         ReactiveStringRedisTemplate reactiveStringRedisTemplate() {
             return Mockito.mock(ReactiveStringRedisTemplate.class);
