@@ -70,16 +70,26 @@ public class ServiceInstanceEntity {
 
     /**
      * 自定义请求头配置（JSON 格式存储）
+     *
+     * <p><b>issue #190 裁决：不写 {@code columnDefinition}，物理类型交给方言</b> ——
+     * PostgreSQL 上 Hibernate 建为 {@code jsonb}，H2 / MySQL 上为各自的 JSON 类型。
+     * 此前硬编码 {@code columnDefinition = "JSON"} 会让**新库**在 PG 上建成 {@code json}，
+     * 而**旧库升级路径**由 {@code CompatibilitySchemaMigrator} 补成 CLOB → PG 上 TEXT，
+     * 同一逻辑列按库的来历物理类型不一致；引入 Flyway 并把 {@code ddl-auto} 切到
+     * {@code validate} 后，这种不一致会直接让生产启动失败。兼容迁移器现已同步产出 JSON 类型，
+     * 并把旧库的 TEXT/CLOB 列收敛回 JSON（见该类注释）。
      */
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "headers", columnDefinition = "JSON")
+    @Column(name = "headers")
     private Map<String, String> headers;
 
     /**
      * v2.9.7: 实例标签配置（JSON 格式存储，标签路由按键值对圈选）
+     *
+     * <p>物理类型约定见上（issue #190）。
      */
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "tags", columnDefinition = "JSON")
+    @Column(name = "tags")
     private Map<String, String> tags;
 
     @CreationTimestamp

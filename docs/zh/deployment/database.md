@@ -89,11 +89,14 @@ Hibernate 遇到这种冲突**只记 WARN 并继续**，结果是**索引被静�
 
 新增实体声明 `@Index` 时请确保**名字全局唯一**，建议加表名前缀（如 `idx_cb_metrics_instance_id`）。
 
-### `columnDefinition = "JSON"` 在 PG 上的实际类型
+### JSON 列的物理类型约定（`tags` / `headers`）
 
-`service_instance` 的 `tags` / `headers` 使用的是 JSON 映射。在 PostgreSQL 上它们建为 **`json`** 类型（实测 `information_schema.columns.udt_name = json`），读写正常。
+`service_instance` 的 `tags` / `headers` 用 JSON 映射（`@JdbcTypeCode(SqlTypes.JSON)`），**实体不再硬编码 `columnDefinition`**：物理类型交给方言 —— PostgreSQL 上建为 **`jsonb`**（实测 `information_schema.columns.udt_name = jsonb`），H2 / MySQL 上为各自的 `json` 类型，读写正常。
 
-> 注意：`CompatibilitySchemaMigrator` 在**旧库升级**路径上给 `tags` 补的是 `CLOB`/`TEXT`，而**新库**由 Hibernate 建成 `json` —— 同一逻辑列的物理类型会按「库的来源」分歧。该分歧当前**未修复**，因为它不影响读写；若需彻底统一，见 issue #160 的后续工作。
+`CompatibilitySchemaMigrator` 已与实体对齐：旧库升级路径补列时产出同一 JSON 类型，并把早期补成 `TEXT` / `CLOB` 的列**收敛为 `jsonb`**（PostgreSQL 上自动执行，非 PG 库只告警、请删除重建）。于是**两种来历的库收敛到同一物理类型** —— 这是后续引入 Flyway 并切 `ddl-auto: validate` 的前置条件（原分歧见 issue #190）。
+
+> 核对某库的实际类型：
+> `SELECT udt_name FROM information_schema.columns WHERE table_name = 'service_instance' AND column_name IN ('tags', 'headers');`
 
 ## 从 H2 迁移数据到 PostgreSQL
 
@@ -165,5 +168,4 @@ CI（`.github/workflows/java-tests.yml`）已配 `postgres:16-alpine` 服务容�
 以下内容**不在**当前支持范围内，横向扩展前需要单独处理：
 
 - **版本化 schema 迁移**：当前仍由 Hibernate `ddl-auto: update` 管理表结构，没有 `Flyway` / `Liquibase`。多副本同时启动会并发执行 DDL。
-- **索引名唯一性的历史遗留**：`CompatibilitySchemaMigrator` 在旧库上补的 `tags` 列类型与实体声明不一致（见上文）。
 - 面向生产的多副本 K8s 部署制品（清单 / Helm、PodDisruptionBudget、迁移作业）见 issue #165。

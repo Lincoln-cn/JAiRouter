@@ -89,11 +89,14 @@ When this happens, Hibernate **only logs a WARN and continues**, so the **index 
 
 When adding `@Index` to a new entity, keep the name **globally unique** and prefer a table prefix (for example `idx_cb_metrics_instance_id`).
 
-### Physical type of `columnDefinition = "JSON"` on PostgreSQL
+### Physical type convention for the JSON columns (`tags` / `headers`)
 
-`tags` / `headers` on `service_instance` use JSON mapping. On PostgreSQL they are created as the **`json`** type (measured: `information_schema.columns.udt_name = json`), and read/write works.
+`tags` / `headers` on `service_instance` use JSON mapping (`@JdbcTypeCode(SqlTypes.JSON)`) and the entity **no longer hard-codes `columnDefinition`**: the physical type is left to the dialect — PostgreSQL creates **`jsonb`** (measured: `information_schema.columns.udt_name = jsonb`), H2 / MySQL use their own `json` type, and read/write works.
 
-> Note: on the **upgrade path from an old database**, `CompatibilitySchemaMigrator` adds `tags` as `CLOB`/`TEXT`, while a **fresh database** gets `json` from Hibernate — so the physical type diverges depending on how the database came to be. This divergence is currently **not fixed**, because it does not affect read/write; see issue #160 for follow-up work.
+`CompatibilitySchemaMigrator` is aligned with the entity: the old-database upgrade path produces the same JSON type and **converges** columns that earlier migrations had added as `TEXT` / `CLOB` into `jsonb` (done automatically on PostgreSQL; on other databases it only warns — recreate those databases). Both database origins therefore converge on one physical type, which is the prerequisite for adopting Flyway and switching `ddl-auto` to `validate` (the original divergence is issue #190).
+
+> Check a database's actual types:
+> `SELECT udt_name FROM information_schema.columns WHERE table_name = 'service_instance' AND column_name IN ('tags', 'headers');`
 
 ## Migrating data from H2 to PostgreSQL
 
@@ -165,5 +168,4 @@ CI (`.github/workflows/java-tests.yml`) provides a `postgres:16-alpine` service 
 The following are **out of scope** for the current support and need separate work before scaling horizontally:
 
 - **Versioned schema migrations**: table structure is still managed by Hibernate `ddl-auto: update`, with no `Flyway` or `Liquibase`. Multiple replicas starting at once will run DDL concurrently.
-- **Historical index-name leftovers**: the `tags` column type added by `CompatibilitySchemaMigrator` on old databases does not match the entity declaration (see above).
 - Multi-replica Kubernetes artifacts for production (manifests / Helm, PodDisruptionBudget, migration jobs): see issue #165.
