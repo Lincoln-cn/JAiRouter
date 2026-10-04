@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,12 +33,18 @@ import java.util.List;
 /**
  * Spring Security配置类
  * 配置WebFlux安全过滤器链和认证管理器
+ *
+ * <p>整类限定在**响应式 Web 应用**下装配：本类要消费 {@code ServerHttpSecurity}，
+ * 而它只在 WebFlux 启动时才由自动装配提供。此前缺少该条件，导致以
+ * {@code --spring.main.web-application-type=none} 启动（迁移 Job 用的就是这个方式）时
+ * 上下文刷新失败、迁移从不执行（issue #195）。
  */
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
 @EnableReactiveMethodSecurity
 @ConditionalOnProperty(name = "jairouter.security.enabled", havingValue = "true")
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
 public class SecurityConfiguration {
 
     private final SecurityProperties securityProperties;

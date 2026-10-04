@@ -32,14 +32,20 @@ spec:
           # CompatibilitySchemaMigrator）由**单一实例**先跑完，避免多副本同时启动时的
           # 并发 DDL。
           #
-          # 限制（未在真实集群验证）：当前版本没有独立的 migrate-only 入口，
-          # 这里依赖 web-application-type=none；若该实例不自行退出，会由上面的
-          # activeDeadlineSeconds 终止。彻底方案是引入版本化迁移工具
-          # （Flyway / Liquibase）并提供独立迁移入口——属本 issue 的后续项，
-          # 已在 docs 的「已知未覆盖」中记录。
+          # 两个参数都是必需的：
+          # - web-application-type=none：不起 Web 层。注意 SecurityConfiguration 必须带
+          #   @ConditionalOnWebApplication(REACTIVE)，否则该模式会因缺 ServerHttpSecurity
+          #   而启动失败、迁移从不执行（issue #195，已修）。
+          # - migration.exit-after-run=true：迁移跑完后进程**不自退**（调度器等非守护线程
+          #   会留住 JVM，实测 150 秒仍在运行），需要这个开关主动退出，Job 才能以成功结束
+          #   （issue #195）。上面的 activeDeadlineSeconds 仅作兜底。
+          #
+          # 彻底方案是引入版本化迁移工具（Flyway / Liquibase）并提供独立迁移入口，
+          # 属后续项，已在 docs 的「已知未覆盖」中记录。
           args:
             - "--spring.main.web-application-type=none"
             - "--spring.main.banner-mode=off"
+            - "--jairouter.migration.exit-after-run=true"
           envFrom:
             - configMapRef:
                 name: jairouter-config
