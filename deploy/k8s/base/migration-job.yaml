@@ -46,6 +46,10 @@ spec:
             - "--spring.main.web-application-type=none"
             - "--spring.main.banner-mode=off"
             - "--jairouter.migration.exit-after-run=true"
+          env:
+            # 与 Deployment 一致：容器日志走一行一条的结构化 JSON（见 logback-spring.xml，issue #211）
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod,json-logs
           envFrom:
             - configMapRef:
                 name: jairouter-config

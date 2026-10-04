@@ -3,6 +3,9 @@
     <!-- 定义日志文件路径 -->
     <property name="LOG_PATH" value="logs"/>
     <property name="APP_NAME" value="jairouter"/>
+
+    <!-- 副本标识（容器里由 Downward API 注入 POD_NAME / INSTANCE_ID），为空时不写入 JSON（issue #211） -->
+    <springProperty scope="context" name="INSTANCE_ID" source="INSTANCE_ID" defaultValue=""/>
     
     <!-- 定义日志格式 -->
     <property name="CONSOLE_LOG_PATTERN" 
@@ -77,6 +80,8 @@
     <appender name="TRACING_APPENDER" class="org.unreal.modelrouter.monitor.tracing.logger.TracingLogbackAppender">
         <jsonFormat>true</jsonFormat>
         <includeTraceContext>true</includeTraceContext>
+        <!-- 多副本下便于按副本检索日志；未注入时为空字符串，JSON 里不出现该字段 -->
+        <instanceId>${INSTANCE_ID}</instanceId>
     </appender>
 
     <!-- 异步文件输出 -->
@@ -107,7 +112,7 @@
     </appender>
 
     <!-- 开发环境配置 -->
-    <springProfile name="dev,default">
+    <springProfile name="(dev | default) &amp; !json-logs">
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="ASYNC_FILE"/>
@@ -131,7 +136,7 @@
     </springProfile>
 
     <!-- 测试环境配置 -->
-    <springProfile name="test">
+    <springProfile name="test &amp; !json-logs">
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="ASYNC_FILE"/>
@@ -157,7 +162,7 @@
     </springProfile>
 
     <!-- 生产环境配置 -->
-    <springProfile name="prod">
+    <springProfile name="prod &amp; !json-logs">
         <root level="WARN">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="ASYNC_FILE"/>
@@ -204,7 +209,7 @@
     </springProfile>
     
     <!-- 限流器日志 - 生产环境降级 -->
-    <springProfile name="prod">
+    <springProfile name="prod &amp; !json-logs">
         <logger name="org.unreal.modelrouter.ratelimit" level="ERROR"/>
     </springProfile>
     <springProfile name="!prod">
@@ -212,7 +217,7 @@
     </springProfile>
     
     <!-- 负载均衡器日志 - 生产环境降级 -->
-    <springProfile name="prod">
+    <springProfile name="prod &amp; !json-logs">
         <logger name="org.unreal.modelrouter.loadbalancer" level="ERROR"/>
     </springProfile>
     <springProfile name="!prod">
@@ -222,4 +227,35 @@
     <!-- 熔断器日志 - 保持警告级别用于监控 -->
     <logger name="org.unreal.modelrouter.circuitbreaker" level="WARN"/>
     
+    <!--
+      容器 / 多副本部署（issue #211）：stdout 只输出结构化 JSON，一条事件一行。
+
+      背景：CONSOLE（文本）与 TRACING_APPENDER（JSON，直接写 System.out）此前同时挂在 root 上，
+      同一条事件会在 stdout 出现两行；本 profile 只挂 TRACING_APPENDER，文本行不再重复。文件
+      appender 保留（容器里挂的是 emptyDir，按需采集）。
+
+      用法：SPRING_PROFILES_ACTIVE=prod,json-logs（deploy/k8s/base 的清单已开启）。
+      不带本 profile 时行为与引入前逐字一致。
+
+      级别取 INFO：容器日志本就应被采集；需要更安静时用 logging.level.* 覆盖（Spring Boot 最后应用）。
+    -->
+    <springProfile name="json-logs">
+        <root level="INFO">
+            <appender-ref ref="TRACING_APPENDER"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR"/>
+        </root>
+
+        <logger name="org.unreal.modelrouter" level="INFO" additivity="false">
+            <appender-ref ref="TRACING_APPENDER"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR"/>
+            <appender-ref ref="ASYNC_STRUCTURED"/>
+        </logger>
+
+        <logger name="org.springframework" level="WARN"/>
+        <logger name="io.netty" level="WARN"/>
+        <logger name="reactor.netty" level="WARN"/>
+    </springProfile>
+
 </configuration>

@@ -42,7 +42,8 @@ spec:
               protocol: TCP
           env:
             - name: SPRING_PROFILES_ACTIVE
-              value: prod
+              # json-logs：容器里 stdout 只输出一行一条结构化 JSON（见 logback-spring.xml，issue #211）
+              value: prod,json-logs
             # Downward API：InstanceIdentity 用它给本副本的产物命名
             # （归档文件、指标落盘按副本区分，避免多副本写同一文件名互相覆盖）。
             # POD_NAME 也参与「是否多副本」的自动判定（见 MultiReplicaSharedStateGate）。
