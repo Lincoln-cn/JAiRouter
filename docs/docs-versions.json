@@ -208,10 +208,10 @@
     },
     "docs/en/deployment/kubernetes.md": {
       "FilePath": "docs/en/deployment/kubernetes.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-10-04T12:22:25.079441",
-      "ContentHash": "ac595e413fc21a1f",
-      "GitCommit": "3360cc15",
+      "Version": "1.0.10",
+      "LastModified": "2026-10-04T14:19:24.661629",
+      "ContentHash": "b5a5a6c81cc97473",
+      "GitCommit": "32a98b08",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -823,10 +823,10 @@
     },
     "docs/zh/deployment/kubernetes.md": {
       "FilePath": "docs/zh/deployment/kubernetes.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-10-04T12:22:25.514704",
-      "ContentHash": "f1576fe85a710d50",
-      "GitCommit": "3360cc15",
+      "Version": "1.0.10",
+      "LastModified": "2026-10-04T14:19:25.075182",
+      "ContentHash": "53df55339b883479",
+      "GitCommit": "32a98b08",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -6536,7 +6536,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-04T12:22:25.676954",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/kubernetes.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-04T14:19:24.661640",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/kubernetes.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-04T14:19:25.075192",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-04T12:22:25.784613"
+  "last_updated": "2026-10-04T14:19:25.337598"
 }
