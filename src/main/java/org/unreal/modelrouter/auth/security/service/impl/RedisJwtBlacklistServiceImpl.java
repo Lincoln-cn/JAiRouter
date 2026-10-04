@@ -2,9 +2,7 @@ package org.unreal.modelrouter.auth.security.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
-import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.common.dto.TokenBlacklistEntry;
 import org.unreal.modelrouter.auth.security.service.JwtBlacklistService;
 import org.unreal.modelrouter.persistence.store.StoreManager;
@@ -19,11 +17,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * 基于Redis缓存和StoreManager的JWT黑名单服务实现
  * 使用Redis作为主要缓存层，StoreManager作为持久化存储和故障回退
  * 结合内存缓存提高查询性能
+ *
+ * <p>bean 统一由 {@code JwtServiceConfiguration#redisJwtBlacklistService} 提供（那里用限定名
+ * {@code jwtReactiveRedisTemplate} 注入模板），本类不做组件扫描注册，原因有两条：
+ * 一是与那个 {@code @Bean} 重复；二是本类有两个构造器且均未标 {@code @Autowired}，
+ * 被组件扫描注册后 Spring 无法选定构造器（{@code No default constructor found}），
+ * 在 {@code blacklist.redis.enabled=true} 时同样会导致启动失败（issue #194）。
  */
 @Slf4j
-@Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.redis.enabled", havingValue = "true")
 public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
 
     private final RedisBlacklistOperations redisOperations;

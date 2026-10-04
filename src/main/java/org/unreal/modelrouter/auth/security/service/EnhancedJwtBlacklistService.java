@@ -3,9 +3,7 @@ package org.unreal.modelrouter.auth.security.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
-import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.auth.security.config.properties.JwtConfig;
 import reactor.core.publisher.Mono;
 
@@ -17,11 +15,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * 增强的JWT黑名单服务
  * 提供双重保障：Redis + 本地缓存，确保撤销的令牌真正被阻止
+ *
+ * <p>bean 由 {@code EnhancedSecurityConfiguration} 提供，本类不做组件扫描注册：
+ * 在此加回 {@code @Service} 会与本包外 {@code JwtServiceConfiguration} 的同名 {@code @Bean}
+ * （同名、同开关条件）冲突，导致应用启动失败（issue #194）。
  */
 @Slf4j
-@Service("redisJwtBlacklistService")
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.redis.enabled", havingValue = "true")
 public class EnhancedJwtBlacklistService {
 
     private static final String BLACKLIST_KEY_PREFIX = "jwt:blacklist:";
