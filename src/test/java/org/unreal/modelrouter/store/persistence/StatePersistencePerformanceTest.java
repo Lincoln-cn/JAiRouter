@@ -18,6 +18,12 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * v2.4.6: 测试状态写入/读取性能
  *
+ * <p><b>issue #197：本类所有用例都跑在 Mockito mock 上</b>（{@code mockService}），因此这里
+ * 量到的是 mock 调用开销，而**不是** H2/持久化的真实性能。方法级 {@code @Timeout} 因此只当
+ * "防挂死"的余量看，不再当性能阈值用 —— 此前 {@code testStateLoadPerformance} 断言整个方法
+ * 50ms 内跑完，全量套件（数千例、多 fork）在同一台机器上跑时会被调度/GC 抖动顶破，成为与本
+ * 改动无关的红项。真正断言被测行为的，是下面各例的 {@code StepVerifier} 校验。
+ *
  * 测试场景:
  * - 单次状态保存 < 100ms (H2)
  * - 批量状态保存 (100个) < 5s
@@ -41,7 +47,7 @@ public class StatePersistencePerformanceTest {
     /* ===================== 单次状态保存测试 ===================== */
 
     @Test
-    @Timeout(value = 100, unit = TimeUnit.MILLISECONDS)
+    @Timeout(value = 1, unit = TimeUnit.SECONDS)
     void testSingleStateSavePerformance() {
         Map<String, Object> stateData = createTestState("test-1");
 
@@ -76,7 +82,7 @@ public class StatePersistencePerformanceTest {
     /* ===================== 状态读取性能测试 ===================== */
 
     @Test
-    @Timeout(value = 50, unit = TimeUnit.MILLISECONDS)
+    @Timeout(value = 1, unit = TimeUnit.SECONDS)
     void testStateLoadPerformance() {
         Mockito.when(mockService.load(stateType, "test-1"))
                 .thenReturn(Mono.just(createTestState("test-1")));
@@ -178,7 +184,7 @@ public class StatePersistencePerformanceTest {
     /* ===================== 健康检查性能测试 ===================== */
 
     @Test
-    @Timeout(value = 100, unit = TimeUnit.MILLISECONDS)
+    @Timeout(value = 1, unit = TimeUnit.SECONDS)
     void testHealthCheckPerformance() {
         Mockito.when(mockService.isHealthy())
                 .thenReturn(Mono.just(true));
