@@ -95,6 +95,15 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
             } else if (ex instanceof AuthenticationException) {
                 // 直接处理AuthenticationException异常，返回具体的错误信息
                 return handleAuthenticationException(exchange, (AuthenticationException) ex);
+            } else if (ex instanceof org.springframework.security.core.AuthenticationException) {
+                // issue #205：Spring Security 的认证异常此前不匹配上面任何分支，落到最后的
+                // 「系统异常 → 500」兜底 —— 于是"未认证"在客户端与 kubelet 探针看来像服务端故障
+                // （真实集群里探针就观测到 500）。放在本仓自定义异常之后，既有行为不变。
+                return handleSpringSecurityAuthenticationException(
+                        exchange, (org.springframework.security.core.AuthenticationException) ex);
+            } else if (ex instanceof org.springframework.security.access.AccessDeniedException) {
+                return handleSpringSecurityAccessDeniedException(
+                        exchange, (org.springframework.security.access.AccessDeniedException) ex);
             } else {
                 RouterResponse<Void> errorResponse;
                 HttpStatus status;
@@ -325,6 +334,34 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
         return setResponse(exchange, errorResponse, HttpStatus.UNAUTHORIZED);
     }
     
+    /**
+     * 处理 Spring Security 的认证异常（issue #205）
+     *
+     * <p>这类异常不属于本仓的 {@code AuthenticationException}/{@code SecurityAuthenticationException}，
+     * 此前落到「系统异常 → 500」兜底；现按语义回 401（并降为 WARN 日志：这是客户端的认证失败，
+     * 不是服务端故障）。
+     */
+    private Mono<Void> handleSpringSecurityAuthenticationException(
+            final ServerWebExchange exchange,
+            final org.springframework.security.core.AuthenticationException ex) {
+        logger.warn("认证失败: {}", ex.getMessage());
+
+        RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), "401");
+        return setResponse(exchange, errorResponse, HttpStatus.UNAUTHORIZED);
+    }
+
+    /**
+     * 处理 Spring Security 的授权异常（issue #205）：回 403。
+     */
+    private Mono<Void> handleSpringSecurityAccessDeniedException(
+            final ServerWebExchange exchange,
+            final org.springframework.security.access.AccessDeniedException ex) {
+        logger.warn("授权失败: {}", ex.getMessage());
+
+        RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), "403");
+        return setResponse(exchange, errorResponse, HttpStatus.FORBIDDEN);
+    }
+
     /**
      * 设置最简单的错误响应
      */
