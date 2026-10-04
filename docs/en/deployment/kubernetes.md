@@ -79,6 +79,28 @@ second and third Pods unable to open it, entering a crash loop. Verified: two JV
 `Database may be already in use` (H2 error 90020). External shared database support is tracked in
 issue #160.
 
+### Real-Cluster Verification (2026-10)
+
+The `deploy/k8s/base` manifests were exercised on Docker Desktop's built-in Kubernetes (v1.36.1) together
+with a Redis fixture:
+
+- **The migration Job completes**: `Complete 1/1` in 82 seconds, exit code 0 — the startup compatibility
+  migration really runs, and the process exits by itself afterwards (the manifest passes
+  `jairouter.migration.exit-after-run=true` for that; see #195).
+- **A three-replica Deployment reaches `3/3 Available`** (pods `READY`, zero restarts). Three
+  prerequisites are required, each fatal if missing:
+  1. a Service named `redis` in the namespace (the ConfigMap points `REDIS_HOST` at it);
+  2. `jairouter-secrets` must hold **strong** values: `JWT_SECRET` at least 32 bytes *after* base64
+     decoding (e.g. `openssl rand -base64 48`) and a strong `INITIAL_ADMIN_PASSWORD`, otherwise the
+     production startup check fails fast;
+  3. the probe paths `/actuator/health/liveness` and `/actuator/health/readiness` must be reachable
+     anonymously (allowed by default; see #203).
+
+Not verified yet (do not treat as established): cross-replica **state consistency** (each replica gets its
+own emptyDir at `/app/data`, and a correct multi-replica setup still needs a shared database), PDB
+eviction, and the published image `sodlinken/jairouter:latest` itself (an image built from the same jar was
+used instead).
+
 ### Remaining Work for Horizontal Scaling
 
 Done: external shared database (#160), shared-state switches and startup gating (#162), scheduled-task
@@ -91,7 +113,8 @@ Still open:
    policy; only meaningful once the key dimension is correct)
 2. Cross-Pod real-time event broadcast (#164)
 3. Versioned schema migration (`Flyway` / `Liquibase`) to replace startup-time raw DDL
-4. Connection-pool / thread-pool externalization and stdout structured logging (#165 remainder)
+4. stdout structured logging (connection-pool / thread-pool externalization is **done**: #188 for the
+   outbound WebClient, #189 for the tracing scheduler)
 
 ### Existing Foundation: Redis Shared-State Implementations
 

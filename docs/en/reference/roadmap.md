@@ -134,7 +134,7 @@ v3.0 is the Web complete-flow milestone (public `/api/v1` stays compatible, no b
 - ✅ Grafana dashboard templates
 - ✅ Distributed tracing (Zipkin/OpenTelemetry)
 - ✅ Complete Docker deployment
-- 📋 Kubernetes deployment support (planned; the repository ships no executable Chart or manifests, only documentation example YAML)
+- 🟡 Kubernetes deployment support (**partial**: `deploy/k8s/base` plus the dev/prod overlays ship with the repository and were verified on a real cluster — the migration Job completes and three replicas become Ready; horizontal scaling is still bounded by the single-file H2 database, i.e. per-replica volumes with no shared state — see "Multi-Replica Status" in `deployment/kubernetes.md`)
 
 #### Code Quality
 - ✅ Checkstyle code standards

@@ -135,7 +135,7 @@ v3.0 为 Web 完整流程里程碑（对外 /api/v1 保持兼容，无 breaking�
 - ✅ Grafana 仪表板模板
 - ✅ 分布式链路追踪 (Zipkin/OpenTelemetry)
 - ✅ 完整的 Docker 部署方案
-- 📋 Kubernetes 部署支持（规划中；仓库内无可执行的 Chart/清单制品，仅有文档示例 YAML）
+- 🟡 Kubernetes 部署支持（**部分**：`deploy/k8s/base` 及 dev/prod overlay 已随仓库提供，并已在真实集群验证「迁移 Job 完成 + 3 副本就绪」；横向扩展仍受单文件 H2 限制——每副本独立卷、副本间状态不共享，详见 `deployment/kubernetes.md` 的「多副本现状」）
 
 #### 代码质量
 - ✅ Checkstyle 代码规范检查

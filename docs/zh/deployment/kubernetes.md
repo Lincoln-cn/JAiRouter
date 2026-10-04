@@ -71,6 +71,23 @@ schema 迁移 Job，以及 liveness / readiness / startup 探针、资源 reques
 crash-loop。已实测两个 JVM 进程并发打开 `jdbc:h2:file:./data/jairouter` 时，第二个进程报
 `Database may be already in use`（H2 错误码 90020）。外部共享数据库适配见 issue #160。
 
+### 真实集群验证（2026-10）
+
+在 Docker Desktop 内置 K8s（v1.36.1）上跑 `deploy/k8s/base` 清单 + 一个 Redis 夹具，实测：
+
+- **迁移 Job 成功完成**：`Complete 1/1`、82 秒、退出码 0 —— 启动期兼容迁移确实执行，且进程在迁移后
+  自行退出（清单为此带上 `jairouter.migration.exit-after-run=true`，见 #195）。
+- **3 副本 Deployment 达到 `3/3 Available`**（pod `READY`、重启 0 次）。前置条件三项，缺一即起不来：
+  1. 命名空间内有一个名为 `redis` 的 Service（ConfigMap 的 `REDIS_HOST` 指向它）；
+  2. `jairouter-secrets` 提供**强**密钥：`JWT_SECRET` 按 base64 解码后需 ≥ 32 字节（如
+     `openssl rand -base64 48`），`INITIAL_ADMIN_PASSWORD` 需为强密码，否则生产启动期的安全检查
+     会直接 fail-fast；
+  3. 探针路径 `/actuator/health/liveness`、`/actuator/health/readiness` 必须可匿名访问（默认已放行，见 #203）。
+
+仍未验证（请不要当成已成立）：副本间**状态一致性**（每副本的 `/app/data` 是独立 emptyDir，多副本的
+正确形态仍需要共享数据库）、PDB 驱逐，以及生产镜像 `sodlinken/jairouter:latest` 本身（上述验证用的是
+同一 jar 自建的镜像）。
+
 ### 横向扩展剩余工作
 
 已完成：外部共享数据库（#160）、共享态开关与启动门禁（#162）、调度任务分类处置（#163）、
@@ -81,7 +98,7 @@ crash-loop。已实测两个 JVM 进程并发打开 `jdbc:h2:file:./data/jairout
 1. 限流的**分布式计数**（#161 剩余：Redis 原子计数与降级策略；须在键维度正确的前提下才有意义）
 2. 实时事件跨 Pod 广播（#164）
 3. 版本化 schema 迁移（`Flyway` / `Liquibase`），替换启动期裸 DDL
-4. 连接池 / 线程池外部化、stdout 结构化日志（#165 剩余）
+4. stdout 结构化日志（连接池 / 线程池外部化**已完成**：#188 出站 WebClient、#189 tracing 调度器）
 
 ### 已有基础：Redis 共享态实现
 
