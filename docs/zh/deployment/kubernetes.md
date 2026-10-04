@@ -49,6 +49,19 @@ schema 迁移 Job，以及 liveness / readiness / startup 探针、资源 reques
    应用侧 `jairouter.security.trusted-proxies.*` 缺一不可。否则应用拿到的 `clientIp`
    是网关 IP，限流与审计都会失真（此时应把限流维度改为 `api-key` / `tenant`）。
 
+### 日志形态（stdout 结构化）
+
+`deploy/k8s/base` 的清单把 `SPRING_PROFILES_ACTIVE` 设为 `prod,json-logs`。`json-logs` 是
+`logback-spring.xml` 里的一个 profile，作用是让 **stdout 只输出一行一条结构化 JSON**，字段含
+`timestamp` / `level` / `logger` / `thread` / `message`，有追踪上下文时还有 `traceId` / `spanId`，
+容器注入了 `INSTANCE_ID` 时还有 `instanceId`（便于按副本检索）。
+
+不带该 profile 时（例如本机直接 `java -jar`）**行为与以前一致**：stdout 同时有文本行与 JSON 行
+（同一事件会写两行）。文件日志仍写 `logs/`（容器里挂的是 emptyDir）。
+
+若你的部署不使用本仓库的 k8s 清单，等价做法是给进程加上该 profile：
+`SPRING_PROFILES_ACTIVE=prod,json-logs`。
+
 ## 多副本现状（已知约束）
 
 多副本的**存储前置条件已具备**（外部数据库接入见 #160），下列能力仍以副本为单位，

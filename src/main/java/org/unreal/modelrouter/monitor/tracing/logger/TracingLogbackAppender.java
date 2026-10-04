@@ -30,6 +30,12 @@ public final class TracingLogbackAppender extends AppenderBase<ILoggingEvent> {
     
     private boolean jsonFormat = true;
     private boolean includeTraceContext = true;
+
+    /**
+     * 副本标识（容器里由 Downward API 注入 {@code INSTANCE_ID}，见 logback-spring.xml 的
+     * {@code springProperty}）。为空时不写入 JSON —— 多副本下用它区分日志来自哪个 Pod（issue #211）。
+     */
+    private String instanceId;
     
     @Override
     protected void append(final ILoggingEvent event) {
@@ -64,6 +70,11 @@ public final class TracingLogbackAppender extends AppenderBase<ILoggingEvent> {
         logData.put("logger", event.getLoggerName());
         logData.put("message", event.getFormattedMessage());
         logData.put("thread", event.getThreadName());
+
+        // 多副本部署：带上副本标识，便于按副本检索（issue #211）
+        if (instanceId != null && !instanceId.isEmpty()) {
+            logData.put("instanceId", instanceId);
+        }
         
         // 添加追踪上下文信息
         if (includeTraceContext) {
@@ -162,5 +173,13 @@ public final class TracingLogbackAppender extends AppenderBase<ILoggingEvent> {
     
     public void setIncludeTraceContext(final boolean includeTraceContext) {
         this.includeTraceContext = includeTraceContext;
+    }
+
+    public String getInstanceId() {
+        return instanceId;
+    }
+
+    public void setInstanceId(final String instanceId) {
+        this.instanceId = instanceId;
     }
 }

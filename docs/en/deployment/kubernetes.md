@@ -54,6 +54,20 @@ non-root security context (`runAsUser: 10010`, matching the user already inside 
    required. Otherwise the `clientIp` the application sees is the gateway IP, and rate limiting and
    auditing are both distorted (in that case switch the limiting dimension to `api-key` / `tenant`).
 
+### Log Shape (Structured stdout)
+
+The `deploy/k8s/base` manifests set `SPRING_PROFILES_ACTIVE` to `prod,json-logs`. `json-logs` is a
+profile in `logback-spring.xml` that makes **stdout emit one line of structured JSON per event**, with
+`timestamp` / `level` / `logger` / `thread` / `message`, plus `traceId` / `spanId` when a tracing context
+exists and `instanceId` when `INSTANCE_ID` is injected (so logs can be searched per replica).
+
+Without that profile (e.g. running `java -jar` locally) **behavior is unchanged**: stdout carries both a
+text line and a JSON line, i.e. every event is written twice. File logging still goes to `logs/` (an
+emptyDir inside containers).
+
+If your deployment does not use the manifests from this repository, the equivalent is to add the profile
+to the process: `SPRING_PROFILES_ACTIVE=prod,json-logs`.
+
 ## Multi-Replica Status (Known Constraints)
 
 The **storage prerequisite is in place** (external database support, #160). The capabilities below are
