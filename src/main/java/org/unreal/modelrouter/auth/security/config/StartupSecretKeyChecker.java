@@ -122,13 +122,16 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
                 + "║  2. 或配置其他认证方式（如 API Key、OAuth2）                                 ║\n"
                 + "║                                                                              ║\n"
                 + "║  如果您确定要在无认证情况下运行（如内网环境），请设置：                       ║\n"
-                + "║     export JAROUTER_SKIP_AUTH_WARNING=true                                   ║\n"
+                + "║     export " + StartupSecurityGate.SKIP_ENV + "=true"
+                + " ".repeat(Math.max(0, 61 - StartupSecurityGate.SKIP_ENV.length())) + "║\n"
                 + "╚══════════════════════════════════════════════════════════════════════════════╝\n");
 
-            // 检查是否设置了跳过警告的环境变量
-            String skipWarning = System.getenv("JAROUTER_SKIP_AUTH_WARNING");
+            // 检查是否设置了跳过警告的环境变量。
+            // 引用同一个常量（issue #201）：此前这里另写了一个拼写 JAROUTER_SKIP_AUTH_WARNING，
+            // 而失败路径读的是 StartupSecurityGate.SKIP_ENV，导致"按提示设置却不生效"。
+            String skipWarning = System.getenv(StartupSecurityGate.SKIP_ENV);
             if ("true".equalsIgnoreCase(skipWarning)) {
-                log.warn("已设置 JAROUTER_SKIP_AUTH_WARNING=true，跳过认证警告");
+                log.warn("已设置 {}=true，跳过认证警告", StartupSecurityGate.SKIP_ENV);
                 return true;
             }
             return false;

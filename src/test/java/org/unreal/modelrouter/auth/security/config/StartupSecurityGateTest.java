@@ -3,6 +3,7 @@ package org.unreal.modelrouter.auth.security.config;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -43,9 +44,16 @@ class StartupSecurityGateTest {
     }
 
     @Test
+    @DisplayName("跳过开关的变量名单一来源（issue #201：文案与读取必须同源）")
+    void skipEnvNameIsSingleSourced() {
+        assertEquals("JAIRouter_SKIP_AUTH_WARNING", StartupSecurityGate.SKIP_ENV,
+                "该常量是启动期安全检查跳过开关的唯一定义，文案与读取都引用它；"
+                        + "改名会同时改变运维用法，故在此锁定");
+    }
+
+    @Test
     @DisplayName("默认管理员密码识别")
-    void defaultAdminPassword_detected() {
-        assertTrue(StartupSecurityGate.isDefaultAdminPassword("ChangeMeOnFirstStartup123456"));
+    void defaultAdminPassword_detected() {        assertTrue(StartupSecurityGate.isDefaultAdminPassword("ChangeMeOnFirstStartup123456"));
         assertFalse(StartupSecurityGate.isDefaultAdminPassword("S3cure!Admin#2026x"));
         assertFalse(StartupSecurityGate.isDefaultAdminPassword(null));
     }
