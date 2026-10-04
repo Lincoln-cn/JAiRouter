@@ -31,8 +31,11 @@
 
 开启配额分布式计数时还需 `jairouter.quota.enabled=true`（配额功能本身的总开关）。
 
-Redis 连接信息由各开关自己的 `host` / `port` / `password` 配置，或统一用 `REDIS_HOST`、
-`REDIS_PORT`、`REDIS_PASSWORD` 环境变量注入（推荐后者，避免多处配置漂移）。
+Redis 连接信息统一由 `REDIS_HOST`、`REDIS_PORT`、`REDIS_PASSWORD`（以及 `REDIS_DATABASE`）环境变量，
+或 Spring 的 `spring.data.redis.*` 提供 —— 上面的开关只决定**用不用** Redis，不再各自读一份
+`host` / `port`：`jairouter.security.jwt.persistence.redis.host` 这类键在取消 JWT 独立 Redis
+之后已**不再被读取**（原先写在 `config/auth/jwt.yml`、`config/security/persistence-base.yml` 里的
+那些键已随之删除）。
 
 ## 启动自检
 

@@ -34,9 +34,12 @@ A multi-replica deployment must enable all five items below and point them at a 
 
 Enabling distributed quota also requires `jairouter.quota.enabled=true` (the feature's master switch).
 
-Connection details come from each switch's own `host` / `port` / `password`, or from the
-`REDIS_HOST`, `REDIS_PORT`, and `REDIS_PASSWORD` environment variables (preferred, to avoid drift
-across several configuration sites).
+Connection details come from the `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` (and `REDIS_DATABASE`)
+environment variables, or from Spring's `spring.data.redis.*`. The switches above only decide
+*whether* Redis is used; they no longer read their own `host` / `port` — keys such as
+`jairouter.security.jwt.persistence.redis.host` are **no longer read** after the JWT-specific Redis was
+removed (the corresponding keys in `config/auth/jwt.yml` and `config/security/persistence-base.yml` were
+deleted with them).
 
 ## Startup self-check
 
