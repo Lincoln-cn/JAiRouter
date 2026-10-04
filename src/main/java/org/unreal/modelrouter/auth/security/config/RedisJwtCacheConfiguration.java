@@ -2,19 +2,31 @@ package org.unreal.modelrouter.auth.security.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
-import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
-import org.springframework.data.redis.serializer.RedisSerializationContext;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
- * Redis JWT缓存配置类
- * 配置Redis连接和ReactiveRedisTemplate用于JWT令牌和黑名单缓存
+ * JWT 侧的 Redis 健康检查配置。
+ *
+ * <p><b>issue #196（按「取消 JWT 独立 Redis」裁决整改）</b>：本类原先还会自建一套 JWT 专用 Redis
+ * —— {@code jwtRedisConnectionFactory}（按 {@code jairouter.security.jwt.persistence.redis.*} 的
+ * host/port/database 建 Lettuce 工厂）+ {@code jwtReactiveRedisTemplate}。它与 Spring Boot 自动
+ * 装配的那套**并存**，于是同一类型出现两个候选：
+ *
+ * <ul>
+ *   <li>2 个 {@code ReactiveRedisConnectionFactory}：{@code jwtRedisConnectionFactory} 与
+ *       {@code LettuceConnectionConfiguration.redisConnectionFactory}；</li>
+ *   <li>2 个 {@code ReactiveRedisTemplate<String, String>}：{@code jwtReactiveRedisTemplate} 与
+ *       应用默认的 String 模板。</li>
+ * </ul>
+ *
+ * <p>而全仓有十余处**未限定**的同类型注入点（配额、缓存、状态持久化、集群事件、限流等），
+ * 于是按文档开启全套 Redis 开关（多副本必需）后应用直接启动失败。因此 JWT 改为**复用应用默认
+ * Redis**：键本身带 {@code jwt:} 前缀，不需要独立 database。
+ *
+ * <p>本类只保留健康检查，模板一律使用应用默认的 String 序列化模板
+ * （Spring Boot 的 {@code reactiveStringRedisTemplate}）。
  */
 @Slf4j
 @Configuration
@@ -22,224 +34,13 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisJwtCacheConfiguration {
 
     /**
-     * Redis JWT缓存配置属性
-     */
-    @ConfigurationProperties(prefix = "jairouter.security.jwt.persistence.redis")
-    public static class RedisJwtCacheProperties {
-        private String host = "localhost";
-        private int port = 6379;
-        private String password;
-        private int database = 0;
-        private int connectionTimeout = 5000;
-        private int retryAttempts = 3;
-        private String keyPrefix = "jwt:";
-        private int defaultTtl = 3600;
-        private String serializationFormat = "json";
-        private Pool pool = new Pool();
-
-        public static class Pool {
-            private int maxActive = 8;
-            private int maxIdle = 8;
-            private int minIdle = 0;
-            private long maxWait = -1;
-
-            // Getters and Setters
-            public int getMaxActive() {
-                return maxActive;
-            }
-
-            public void setMaxActive(final int maxActive) {
-                this.maxActive = maxActive;
-            }
-
-            public int getMaxIdle() {
-                return maxIdle;
-            }
-
-            public void setMaxIdle(final int maxIdle) {
-                this.maxIdle = maxIdle;
-            }
-
-            public int getMinIdle() {
-                return minIdle;
-            }
-
-            public void setMinIdle(final int minIdle) {
-                this.minIdle = minIdle;
-            }
-
-            public long getMaxWait() {
-                return maxWait;
-            }
-
-            public void setMaxWait(final long maxWait) {
-                this.maxWait = maxWait;
-            }
-        }
-
-        // Getters and Setters
-        public String getHost() {
-            return host;
-        }
-
-        public void setHost(final String host) {
-            this.host = host;
-        }
-
-        public int getPort() {
-            return port;
-        }
-
-        public void setPort(final int port) {
-            this.port = port;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(final String password) {
-            this.password = password;
-        }
-
-        public int getDatabase() {
-            return database;
-        }
-
-        public void setDatabase(final int database) {
-            this.database = database;
-        }
-
-        public int getConnectionTimeout() {
-            return connectionTimeout;
-        }
-
-        public void setConnectionTimeout(final int connectionTimeout) {
-            this.connectionTimeout = connectionTimeout;
-        }
-
-        public int getRetryAttempts() {
-            return retryAttempts;
-        }
-
-        public void setRetryAttempts(final int retryAttempts) {
-            this.retryAttempts = retryAttempts;
-        }
-
-        public String getKeyPrefix() {
-            return keyPrefix;
-        }
-
-        public void setKeyPrefix(final String keyPrefix) {
-            this.keyPrefix = keyPrefix;
-        }
-
-        public int getDefaultTtl() {
-            return defaultTtl;
-        }
-
-        public void setDefaultTtl(final int defaultTtl) {
-            this.defaultTtl = defaultTtl;
-        }
-
-        public String getSerializationFormat() {
-            return serializationFormat;
-        }
-
-        public void setSerializationFormat(final String serializationFormat) {
-            this.serializationFormat = serializationFormat;
-        }
-
-        public Pool getPool() {
-            return pool;
-        }
-
-        public void setPool(final Pool pool) {
-            this.pool = pool;
-        }
-    }
-
-    /**
-     * Redis JWT缓存配置属性Bean
-     */
-    @Bean
-    @ConfigurationProperties(prefix = "jairouter.security.jwt.persistence.redis")
-    public RedisJwtCacheProperties redisJwtCacheProperties() {
-        return new RedisJwtCacheProperties();
-    }
-
-    /**
-     * JWT专用的Redis连接工厂
-     */
-    @Bean("jwtRedisConnectionFactory")
-    @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "true")
-    public ReactiveRedisConnectionFactory jwtRedisConnectionFactory() {
-        RedisJwtCacheProperties properties = redisJwtCacheProperties();
-
-        try {
-            log.info("Initializing JWT Redis connection factory with host: {}:{}, database: {}",
-                properties.getHost(), properties.getPort(), properties.getDatabase());
-
-            RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
-            config.setHostName(properties.getHost());
-            config.setPort(properties.getPort());
-            config.setDatabase(properties.getDatabase());
-
-            if (properties.getPassword() != null && !properties.getPassword().trim().isEmpty()) {
-                config.setPassword(properties.getPassword());
-            }
-
-            LettuceConnectionFactory factory = new LettuceConnectionFactory(config);
-            factory.afterPropertiesSet();
-
-            log.info("Successfully initialized JWT Redis connection factory");
-            return factory;
-
-        } catch (Exception e) {
-            log.error("Failed to initialize JWT Redis connection factory: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to initialize JWT Redis connection factory", e);
-        }
-    }
-
-    /**
-     * JWT专用的ReactiveRedisTemplate
-     */
-    @Bean("jwtReactiveRedisTemplate")
-    @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "true")
-    public ReactiveRedisTemplate<String, String> jwtReactiveRedisTemplate(
-            final ReactiveRedisConnectionFactory connectionFactory) {
-        try {
-            // 使用String序列化器
-            StringRedisSerializer stringSerializer = new StringRedisSerializer();
-
-            RedisSerializationContext<String, String> serializationContext =
-                RedisSerializationContext.<String, String>newSerializationContext()
-                    .key(stringSerializer)
-                    .value(stringSerializer)
-                    .hashKey(stringSerializer)
-                    .hashValue(stringSerializer)
-                    .build();
-
-            ReactiveRedisTemplate<String, String> template =
-                new ReactiveRedisTemplate<>(connectionFactory, serializationContext);
-
-            log.info("Successfully initialized JWT ReactiveRedisTemplate");
-            return template;
-
-        } catch (Exception e) {
-            log.error("Failed to initialize JWT ReactiveRedisTemplate: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to initialize JWT ReactiveRedisTemplate", e);
-        }
-    }
-
-    /**
-     * Redis健康检查Bean
+     * Redis 健康检查 Bean（使用应用默认的 String 序列化模板，不再自建连接）
      */
     @Bean("redisJwtHealthChecker")
     @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "true")
     public RedisJwtHealthChecker redisJwtHealthChecker(
-            final ReactiveRedisTemplate<String, String> jwtReactiveRedisTemplate) {
-        return new RedisJwtHealthChecker(jwtReactiveRedisTemplate);
+            final ReactiveRedisTemplate<String, String> reactiveRedisTemplate) {
+        return new RedisJwtHealthChecker(reactiveRedisTemplate);
     }
 
     /**

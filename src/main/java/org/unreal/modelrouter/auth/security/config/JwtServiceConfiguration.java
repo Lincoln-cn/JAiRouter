@@ -1,7 +1,6 @@
 package org.unreal.modelrouter.auth.security.config;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,7 +31,7 @@ public class JwtServiceConfiguration {
     @Primary
     @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "true")
     public JwtPersistenceService redisJwtPersistenceService(
-            @Qualifier("jwtReactiveRedisTemplate") final ReactiveRedisTemplate<String, String> redisTemplate,
+            final ReactiveRedisTemplate<String, String> redisTemplate,
             final StoreManager storeManager) {
 
         log.info("Initializing Redis-based JWT persistence service");
@@ -64,7 +63,7 @@ public class JwtServiceConfiguration {
     @Primary
     @ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.redis.enabled", havingValue = "true")
     public JwtBlacklistService redisJwtBlacklistService(
-            @Qualifier("jwtReactiveRedisTemplate") final ReactiveRedisTemplate<String, String> redisTemplate,
+            final ReactiveRedisTemplate<String, String> redisTemplate,
             final StoreManager storeManager) {
         
         log.info("Initializing Redis-based JWT blacklist service");
