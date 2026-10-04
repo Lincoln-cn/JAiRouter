@@ -25,6 +25,7 @@ import org.unreal.modelrouter.persistence.jpa.repository.ApiCallHistoryRepositor
 import org.unreal.modelrouter.persistence.jpa.repository.ConfigVersionHistoryRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.ExceptionEventRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.QuotaLedgerRepository;
+import org.unreal.modelrouter.persistence.migration.CompatibilitySchemaMigrator;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -378,7 +379,47 @@ class PostgresCompatibilityIntegrationTest {
         assertFalse(configVersionHistoryRepository.existsByVersionNumber("v-missing"));
     }
 
+    // ==================== 7. JSON 列的物理类型（issue #190）====================
+
+    @Test
+    @DisplayName("service_instance 的 JSON 列在 PG 上应为 jsonb（新库路径：实体不硬编码 columnDefinition）")
+    void jsonColumns_areJsonbOnPostgres() {
+        for (String column : List.of("tags", "headers")) {
+            assertEquals("jsonb", columnTypeOf("service_instance", column),
+                    "列 " + column + " 在 PostgreSQL 上应为 jsonb —— 实体用 @JdbcTypeCode(SqlTypes.JSON)、"
+                            + "物理类型交给方言；此前硬编码 columnDefinition=\"JSON\" 会让新库建成 json，"
+                            + "与旧库升级路径（CLOB→TEXT）不一致（issue #190）");
+        }
+    }
+
+    @Test
+    @DisplayName("旧库的 tags/headers 为 text 时，兼容迁移器应把它们收敛为 jsonb（issue #190）")
+    void legacyTextJsonColumns_areConvergedToJsonb() {
+        for (String column : List.of("tags", "headers")) {
+            jdbcTemplate.execute("ALTER TABLE service_instance ALTER COLUMN " + column
+                    + " TYPE text USING " + column + "::text");
+            assertEquals("text", columnTypeOf("service_instance", column),
+                    "前置：应已把 " + column + " 改成 text，以模拟旧库由兼容迁移补列后的物理类型");
+        }
+
+        new CompatibilitySchemaMigrator(jdbcTemplate.getDataSource(), jdbcTemplate).run(null);
+
+        for (String column : List.of("tags", "headers")) {
+            assertEquals("jsonb", columnTypeOf("service_instance", column),
+                    "兼容迁移器应把旧库的 " + column + " 收敛为 jsonb，"
+                            + "否则后续切 ddl-auto: validate 时会因物理类型不一致而启动失败");
+        }
+    }
+
     // ==================== helpers ====================
+
+    /** 读某列在 PG 上的物理类型（issue #190：断言物理类型，而不是「能读写」） */
+    private String columnTypeOf(final String table, final String column) {
+        return jdbcTemplate.queryForObject(
+                "SELECT data_type FROM information_schema.columns "
+                        + "WHERE table_schema = 'public' AND lower(table_name) = ? AND lower(column_name) = ?",
+                String.class, table.toLowerCase(), column.toLowerCase());
+    }
 
     private ConfigVersionHistoryEntity version(final String versionNumber, final Instant timestamp) {
         ConfigVersionHistoryEntity entity = new ConfigVersionHistoryEntity();

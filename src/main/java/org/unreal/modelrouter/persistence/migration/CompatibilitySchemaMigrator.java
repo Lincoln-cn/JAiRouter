@@ -7,7 +7,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
-import java.sql.DatabaseMetaData;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -26,7 +25,8 @@ import java.util.Set;
  * <ul>
  *   <li>检查目标表是否已存在（不存在则跳过，新库由 JPA 建表）</li>
  *   <li>查询 INFORMATION_SCHEMA 现有列，对缺失列执行 {@code ALTER TABLE ... ADD COLUMN}</li>
- *   <li>列类型按数据库方言选择（H2=CLOB / MySQL=LONGTEXT / PostgreSQL=TEXT）</li>
+ *   <li>列类型按数据库方言选择（CLOB 类：H2=CLOB / MySQL=LONGTEXT / PostgreSQL=TEXT）</li>
+ *   <li>JSON 列（issue #190）：PostgreSQL=jsonb / MySQL、H2=json，并对旧库已有的非 JSON 列做收敛</li>
  *   <li>重复启动安全（存在性检查保证幂等）</li>
  * </ul>
  *
@@ -47,17 +47,26 @@ public class CompatibilitySchemaMigrator implements ApplicationRunner {
                     new ColumnDef("response_body_encrypted", "CLOB")
             )),
             // v2.9.7: ServiceInstanceEntity 新增 tags JSON 列,旧库需补齐
+            // issue #190：JSON 列不再补成 CLOB —— 那是与新库不一致的物理类型（PG 上新库曾是 json、
+            // 旧库升级路径补成 CLOB→TEXT）。这里登记为 "JSON"，由方言产出（PG=jsonb / 其它=json），
+            // 并对已存在但类型不符的列做收敛。
             new TableMigration("service_instance", List.of(
-                    new ColumnDef("tags", "CLOB")
+                    new ColumnDef("tags", "JSON"),
+                    new ColumnDef("headers", "JSON")
             ))
     );
 
     private final JdbcTemplate jdbcTemplate;
     private final String clobType;
+    private final String jsonType;
+    private final boolean postgres;
 
     public CompatibilitySchemaMigrator(final DataSource dataSource, final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.clobType = resolveClobType(dataSource);
+        final String product = detectProduct(dataSource);
+        this.clobType = clobTypeFor(product);
+        this.jsonType = jsonTypeFor(product);
+        this.postgres = product.contains("postgres");
     }
 
     @Override
@@ -77,10 +86,10 @@ public class CompatibilitySchemaMigrator implements ApplicationRunner {
         List<String> applied = new ArrayList<>();
         for (ColumnDef column : migration.columns()) {
             if (existing.contains(column.name().toLowerCase())) {
+                convergeJsonColumn(table, column);
                 continue;
             }
-            String type = column.name().equals("record_level") ? column.type()
-                    : column.type().equals("CLOB") ? clobType : column.type();
+            String type = resolveColumnType(column);
             try {
                 jdbcTemplate.execute("ALTER TABLE " + table + " ADD COLUMN " + column.name() + " " + type);
                 applied.add(column.name() + " " + type);
@@ -124,22 +133,88 @@ public class CompatibilitySchemaMigrator implements ApplicationRunner {
     }
 
     /**
-     * 按数据库产品选择 CLOB 等价类型（H2=CLOB / MySQL=LONGTEXT / PostgreSQL=TEXT）
+     * 读取数据库产品名（小写）；失败返回空串
      */
-    private static String resolveClobType(final DataSource dataSource) {
+    private static String detectProduct(final DataSource dataSource) {
         try (var connection = dataSource.getConnection()) {
-            DatabaseMetaData meta = connection.getMetaData();
-            String product = meta.getDatabaseProductName().toLowerCase();
-            if (product.contains("mysql") || product.contains("mariadb")) {
-                return "LONGTEXT";
-            }
-            if (product.contains("postgres")) {
-                return "TEXT";
-            }
-            return "CLOB";
+            return connection.getMetaData().getDatabaseProductName().toLowerCase();
         } catch (Exception e) {
-            log.warn("Schema 迁移: 无法识别数据库类型，默认使用 CLOB: {}", e.getMessage());
-            return "CLOB";
+            log.warn("Schema 迁移: 无法识别数据库类型: {}", e.getMessage());
+            return "";
+        }
+    }
+
+    /**
+     * CLOB 等价类型（H2=CLOB / MySQL=LONGTEXT / PostgreSQL=TEXT）
+     */
+    static String clobTypeFor(final String product) {
+        if (product.contains("mysql") || product.contains("mariadb")) {
+            return "LONGTEXT";
+        }
+        if (product.contains("postgres")) {
+            return "TEXT";
+        }
+        return "CLOB";
+    }
+
+    /**
+     * JSON 列的物理类型（issue #190）：PostgreSQL=jsonb，其余（H2 / MySQL）=json。
+     *
+     * <p>取 jsonb 而不是 TEXT 的原因：实体用 {@code @JdbcTypeCode(SqlTypes.JSON)} 映射这两列，
+     * PostgreSQL 方言下 JSON 的参数绑定是 json/jsonb 语义，落到 text 列会类型不匹配；
+     * 且 jsonb 正是 Hibernate 在 PG 上为 JSON 类型选定的默认物理类型 —— 把手工补列/收敛
+     * 对齐到框架自己的选择，才能让后续 {@code ddl-auto: validate} 对得上。
+     */
+    static String jsonTypeFor(final String product) {
+        return product.contains("postgres") ? "jsonb" : "json";
+    }
+
+    /**
+     * 按登记的类型标记解析出实际列类型（"CLOB"/"JSON" 是标记，不是字面类型）
+     */
+    private String resolveColumnType(final ColumnDef column) {
+        if ("CLOB".equals(column.type())) {
+            return clobType;
+        }
+        if ("JSON".equals(column.type())) {
+            return jsonType;
+        }
+        return column.type();
+    }
+
+    /**
+     * 把旧库里类型不符的 JSON 列收敛为方言约定的 JSON 类型（issue #190）。
+     *
+     * <p>旧库的 {@code tags}/{@code headers} 可能是早期兼容迁移补的 TEXT/CLOB；不收敛的话，
+     * 将来切 {@code ddl-auto: validate} 会因物理类型与实体声明不一致而启动失败。
+     *
+     * <p>仅 PostgreSQL 自动收敛（{@code ALTER COLUMN ... TYPE ... USING col::type} 是 PG 语法）；
+     * 其它库（H2 开发库）只告警，请删除重建。
+     */
+    private void convergeJsonColumn(final String table, final ColumnDef column) {
+        if (!"JSON".equals(column.type())) {
+            return;
+        }
+        try {
+            String current = jdbcTemplate.queryForObject(
+                    "SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
+                            + "WHERE LOWER(TABLE_NAME) = ? AND LOWER(COLUMN_NAME) = ?",
+                    String.class, table.toLowerCase(), column.name().toLowerCase());
+            if (current == null || current.equalsIgnoreCase(jsonType)) {
+                return;
+            }
+            if (!postgres) {
+                log.warn("Schema 迁移: 表 {} 列 {} 当前为 {}，与约定的 {} 不一致；"
+                                + "非 PostgreSQL 库不自动收敛，请删除重建该库",
+                        table, column.name(), current, jsonType);
+                return;
+            }
+            jdbcTemplate.execute("ALTER TABLE " + table + " ALTER COLUMN " + column.name()
+                    + " TYPE " + jsonType + " USING " + column.name() + "::" + jsonType);
+            log.info("Schema 迁移: 表 {} 列 {} 已收敛为 {}（原 {}）", table, column.name(), jsonType, current);
+        } catch (Exception e) {
+            log.warn("Schema 迁移: 表 {} 列 {} 收敛为 {} 失败: {}",
+                    table, column.name(), jsonType, e.getMessage());
         }
     }
 
