@@ -208,10 +208,10 @@
     },
     "docs/en/deployment/kubernetes.md": {
       "FilePath": "docs/en/deployment/kubernetes.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-10-01T13:49:38.681142",
-      "ContentHash": "a9808985554ffa79",
-      "GitCommit": "888856e2",
+      "Version": "1.0.9",
+      "LastModified": "2026-10-04T12:22:25.079441",
+      "ContentHash": "ac595e413fc21a1f",
+      "GitCommit": "3360cc15",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -568,10 +568,10 @@
     },
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
-      "Version": "1.0.18",
-      "LastModified": "2026-09-26T08:26:47.838694",
-      "ContentHash": "846ab9f8829fe9a1",
-      "GitCommit": "2e0a7406",
+      "Version": "1.0.19",
+      "LastModified": "2026-10-04T12:22:25.260728",
+      "ContentHash": "0c39ed10a5083942",
+      "GitCommit": "3360cc15",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -823,10 +823,10 @@
     },
     "docs/zh/deployment/kubernetes.md": {
       "FilePath": "docs/zh/deployment/kubernetes.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-10-01T13:49:39.049043",
-      "ContentHash": "25e7a405ad6920e5",
-      "GitCommit": "888856e2",
+      "Version": "1.0.9",
+      "LastModified": "2026-10-04T12:22:25.514704",
+      "ContentHash": "f1576fe85a710d50",
+      "GitCommit": "3360cc15",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1197,10 +1197,10 @@
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
-      "Version": "1.0.17",
-      "LastModified": "2026-09-26T08:26:48.107215",
-      "ContentHash": "d646b1a08bc0ffd1",
-      "GitCommit": "2e0a7406",
+      "Version": "1.0.18",
+      "LastModified": "2026-10-04T12:22:25.676923",
+      "ContentHash": "4b02195aacd99a5d",
+      "GitCommit": "3360cc15",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -6504,7 +6504,39 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-04T11:14:38.630317",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/kubernetes.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-04T12:22:25.079452",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/roadmap.md",
+      "OldVersion": "1.0.18",
+      "NewVersion": "1.0.19",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-04T12:22:25.260738",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/kubernetes.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-04T12:22:25.514713",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/roadmap.md",
+      "OldVersion": "1.0.17",
+      "NewVersion": "1.0.18",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-04T12:22:25.676954",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-04T11:14:38.880308"
+  "last_updated": "2026-10-04T12:22:25.784613"
 }
