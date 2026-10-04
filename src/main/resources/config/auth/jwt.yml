@@ -67,11 +67,10 @@ jairouter:
           schedule: "0 */5 * * * ?"
           retention-days: 7
         redis:
+          # 只保留开关：连接信息统一由 REDIS_HOST/REDIS_PORT/REDIS_PASSWORD 或 spring.data.redis.* 提供。
+          # 原先这里的 host/port/password/database 自 issue #196（取消 JWT 独立 Redis）起已无消费者，
+          # 留着会让人以为改它有效（见 #202）。
           enabled: false
-          host: "${REDIS_HOST:localhost}"
-          port: "${REDIS_PORT:6379}"
-          password: "${REDIS_PASSWORD:}"
-          database: "${REDIS_DATABASE:1}"
 
       # JWT 黑名单持久化配置
       blacklist:
@@ -82,8 +81,5 @@ jairouter:
         composite:
           enabled: false
         redis:
+          # 同上：只保留开关
           enabled: false
-          host: "${REDIS_HOST:localhost}"
-          port: "${REDIS_PORT:6379}"
-          password: "${REDIS_PASSWORD:}"
-          database: "${REDIS_DATABASE:1}"

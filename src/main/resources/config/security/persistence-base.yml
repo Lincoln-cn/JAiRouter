@@ -45,21 +45,9 @@ jairouter:
           
         # Redis存储配置
         redis:
+          # 只保留开关：连接信息统一由 REDIS_HOST/REDIS_PORT/REDIS_PASSWORD（或 spring.data.redis.*）
+          # 提供；其余键自 issue #196（取消 JWT 独立 Redis）起已无消费者，留着会误导（见 #202）。
           enabled: false  # 默认关闭，需要时启用
-          host: "${REDIS_HOST:localhost}"
-          port: "${REDIS_PORT:6379}"
-          password: "${REDIS_PASSWORD:}"
-          database: "${REDIS_DATABASE:0}"
-          key-prefix: "jwt:"
-          default-ttl: 3600
-          connection-timeout: 5000
-          retry-attempts: 3
-          serialization-format: "json"  # json, binary
-          pool:
-            max-active: 8
-            max-idle: 8
-            min-idle: 0
-            max-wait: -1
           
       # 黑名单持久化配置
       blacklist:
@@ -76,20 +64,8 @@ jairouter:
           
         # Redis黑名单配置
         redis:
+          # 同上：只保留开关（见 #202）
           enabled: false  # 默认关闭，需要时启用
-          host: "${REDIS_HOST:localhost}"
-          port: "${REDIS_PORT:6379}"
-          password: "${REDIS_PASSWORD:}"
-          database: "${REDIS_DATABASE:0}"
-          key-prefix: "jwt:blacklist:"
-          default-ttl: 86400  # 24小时
-          connection-timeout: 5000
-          retry-attempts: 3
-          pool:
-            max-active: 8
-            max-idle: 8
-            min-idle: 0
-            max-wait: -1
 
     # 安全审计配置
     audit:
