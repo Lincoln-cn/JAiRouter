@@ -148,7 +148,7 @@ class CompatibilitySchemaMigratorTest {
     // ==================== v2.9.7: service_instance.tags 列迁移 ====================
 
     @Test
-    @DisplayName("service_instance 表缺少 tags 列时自动补齐(CLOB)")
+    @DisplayName("service_instance 表缺少 tags 列时自动补齐(json，issue #190 的 JSON 类型约定)")
     void serviceInstanceTagsColumnAdded() {
         when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), eq("service_instance")))
                 .thenReturn(1);
@@ -158,7 +158,7 @@ class CompatibilitySchemaMigratorTest {
 
         migrator.run(args);
 
-        verify(jdbcTemplate).execute("ALTER TABLE service_instance ADD COLUMN tags CLOB");
+        verify(jdbcTemplate).execute("ALTER TABLE service_instance ADD COLUMN tags json");
     }
 
     @Test
@@ -175,8 +175,8 @@ class CompatibilitySchemaMigratorTest {
     }
 
     @Test
-    @DisplayName("MySQL 方言下 service_instance.tags 使用 LONGTEXT")
-    void serviceInstanceTagsClobTypePerDialect() throws Exception {
+    @DisplayName("MySQL 方言下 service_instance.tags 使用 json（JSON 列不按 CLOB 映射，issue #190）")
+    void serviceInstanceTagsJsonTypePerDialect() throws Exception {
         Connection connection = mock(Connection.class);
         DatabaseMetaData metaData = mock(DatabaseMetaData.class);
         when(dataSource.getConnection()).thenReturn(connection);
@@ -187,10 +187,37 @@ class CompatibilitySchemaMigratorTest {
         when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), eq("service_instance")))
                 .thenReturn(1);
         when(jdbcTemplate.queryForList(anyString(), eq(String.class), eq("service_instance")))
-                .thenReturn(List.of("id"));
+                .thenReturn(List.of("id", "headers"));
 
         mysqlMigrator.run(args);
 
-        verify(jdbcTemplate).execute("ALTER TABLE service_instance ADD COLUMN tags LONGTEXT");
+        verify(jdbcTemplate).execute("ALTER TABLE service_instance ADD COLUMN tags json");
+    }
+
+    @Test
+    @DisplayName("旧库 tags 为 text、headers 已为 jsonb 时：只收敛前者（issue #190）")
+    void legacyTextJsonColumnIsConvergedOnPostgres() throws Exception {
+        Connection connection = mock(Connection.class);
+        DatabaseMetaData metaData = mock(DatabaseMetaData.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getMetaData()).thenReturn(metaData);
+        when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
+
+        CompatibilitySchemaMigrator pgMigrator = new CompatibilitySchemaMigrator(dataSource, jdbcTemplate);
+        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), eq("service_instance")))
+                .thenReturn(1);
+        when(jdbcTemplate.queryForList(anyString(), eq(String.class), eq("service_instance")))
+                .thenReturn(List.of("id", "tags", "headers"));
+        when(jdbcTemplate.queryForObject(anyString(), eq(String.class), eq("service_instance"), eq("tags")))
+                .thenReturn("text");
+        when(jdbcTemplate.queryForObject(anyString(), eq(String.class), eq("service_instance"), eq("headers")))
+                .thenReturn("jsonb");
+
+        pgMigrator.run(args);
+
+        verify(jdbcTemplate).execute(
+                "ALTER TABLE service_instance ALTER COLUMN tags TYPE jsonb USING tags::jsonb");
+        verify(jdbcTemplate, never()).execute(
+                "ALTER TABLE service_instance ALTER COLUMN headers TYPE jsonb USING headers::jsonb");
     }
 }
