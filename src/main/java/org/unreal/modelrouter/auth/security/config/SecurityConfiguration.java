@@ -121,8 +121,10 @@ public class SecurityConfiguration {
         ExcludedPathsConfig.setApiDocsAuthExcluded(docsPublic);
 
         authorizeExchangeSpec
-                // 健康检查端点允许匿名访问
-                .pathMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus").permitAll();
+                // 健康检查端点允许匿名访问。必须含 /actuator/health/** —— K8s 清单里的探针打的是
+                // /actuator/health/liveness、/actuator/health/readiness 这类**子路径**，只写精确路径
+                // 会让它们落进下面 /actuator/** 的 ADMIN 规则，pod 永远不就绪（issue #203）。
+                .pathMatchers(AnonymousEndpointPaths.HEALTH_AND_OPS.toArray(new String[0])).permitAll();
 
         if (docsPublic) {
             authorizeExchangeSpec.pathMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll();
