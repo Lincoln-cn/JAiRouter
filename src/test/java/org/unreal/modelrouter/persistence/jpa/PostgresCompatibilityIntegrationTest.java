@@ -392,6 +392,13 @@ class PostgresCompatibilityIntegrationTest {
         }
     }
 
+    /**
+     * 注意（issue #192）：生产上这条收敛在 **PostgreSQL** 路径已改由
+     * {@code db/migration/V2__legacy_convergence.sql} 承担 —— 本组件现在只在
+     * **未启用版本化迁移**时注册（即 H2 路径）。这里直接构造组件调用，钉住的是组件
+     * 自身的收敛能力；PG 路径「新库 / 老库收敛到同一 schema」由
+     * {@code PostgresFlywayMigrationEquivalenceTest} 覆盖。
+     */
     @Test
     @DisplayName("旧库的 tags/headers 为 text 时，兼容迁移器应把它们收敛为 jsonb（issue #190）")
     void legacyTextJsonColumns_areConvergedToJsonb() {

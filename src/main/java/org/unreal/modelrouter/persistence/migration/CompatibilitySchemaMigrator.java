@@ -3,6 +3,7 @@ package org.unreal.modelrouter.persistence.migration;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -32,11 +33,24 @@ import java.util.Set;
  *
  * <p>新增实体列时，在 {@link #MIGRATIONS} 清单中登记即可自动兼容旧库升级。
  *
+ * <p><b>只在没有版本化迁移时兜底（issue #192）</b>：注册条件是
+ * {@code spring.flyway.enabled=false}（缺省视为 false —— 没有版本化迁移就保留本网）。
+ * PostgreSQL 路径由 {@code PostgresFlywayEnvironmentPostProcessor} 打开 Flyway，
+ * 同一批补丁已由 {@code db/migration/V2__legacy_convergence.sql} 版本化表达，
+ * 本类因此在 PG 上**不注册**，schema 只由 Flyway 一处决定。
+ *
+ * <p>H2 路径必须保留本类：实测（H2 2.3.232 + Hibernate 6.6，库中已有表、手工删除
+ * {@code record_level} / {@code request_body_encrypted} / {@code response_body_encrypted} /
+ * {@code tags} / {@code headers} 五列后启动）Hibernate 的 {@code ddl-auto: update}
+ * **没有**补回任何一列，五列全部由本类补齐。
+ *
  * @author JAiRouter Team
  * @since 2.9.4
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "spring.flyway", name = "enabled",
+        havingValue = "false", matchIfMissing = true)
 public class CompatibilitySchemaMigrator implements ApplicationRunner {
 
     /** 迁移清单：表名 + 缺失时需补的列定义（名称 + H2 类型） */
