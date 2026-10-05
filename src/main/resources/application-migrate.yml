@@ -1,0 +1,24 @@
+# ========================================
+# 迁移专用模式（issue #193）
+# ========================================
+# 用法：以 `--spring.profiles.active=prod,migrate`（或 SPRING_PROFILES_ACTIVE=prod,migrate）启动。
+#
+# 该模式下进程只做启动期 schema 迁移（PostgreSQL 走 Flyway，H2 走启动期兼容补丁），
+# 跑完即主动退出，**退出码反映成败**：
+#   0    = 启动与迁移全部通过
+#   非 0 = 启动或迁移失败
+# 于是 K8s Job 的成败可以直接判读，不再需要 activeDeadlineSeconds 兜底
+# （见 deploy/k8s/base/migration-job.yaml）。
+#
+# 保持向后兼容：显式传 `--jairouter.migration.exit-after-run=true` 仍照旧生效，
+# 本 profile 只是把「非 Web + 跑完退出」这两件事收成一个可复用的入口。
+
+spring:
+  main:
+    # 迁移不需要监听端口，也不该占用端口
+    web-application-type: none
+
+jairouter:
+  migration:
+    # 启动与迁移完成后主动退出进程（MigrationExitRunner）
+    exit-after-run: true

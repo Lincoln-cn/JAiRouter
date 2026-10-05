@@ -15,6 +15,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -111,14 +112,32 @@ class K8sManifestTest {
     }
 
     @Test
-    @DisplayName("迁移 Job 有超时兜底，避免无独立迁移入口时挂住部署流程")
-    void migrationJobHasDeadlineAndCleanup() throws IOException {
+    @DisplayName("迁移 Job 用专用入口（migrate profile），且不再用超时兜底")
+    void migrationJobUsesDedicatedEntryWithoutDeadline() throws IOException {
         Map<String, Object> job = findDoc("migration-job.yaml", "Job");
         Map<String, Object> spec = asMap(job.get("spec"));
-        assertNotNull(spec.get("activeDeadlineSeconds"),
-                "当前无独立 migrate-only 入口，必须用 activeDeadlineSeconds 兜底");
+
+        // issue #193：有了真正的 migrate-only 入口（跑完即退出、退出码反映成败），
+        // 「跑满 N 秒强制终止」的兜底就必须去掉 —— 它会把迁移失败伪装成超时，成败无从判读。
+        assertNull(spec.get("activeDeadlineSeconds"),
+                "有独立 migrate-only 入口后不应再设 activeDeadlineSeconds："
+                        + "它会把迁移失败伪装成超时，Job 的成败无从判读");
+
         assertNotNull(spec.get("ttlSecondsAfterFinished"),
                 "已完成的 Job 应自动清理");
+
+        Map<String, Object> podSpec = asMap(asMap(spec.get("template")).get("spec"));
+        Map<String, Object> container = asMap(asList(podSpec.get("containers")).get(0));
+        String profiles = null;
+        for (Object item : asList(container.get("env"))) {
+            Map<String, Object> entry = asMap(item);
+            if ("SPRING_PROFILES_ACTIVE".equals(entry.get("name"))) {
+                profiles = String.valueOf(entry.get("value"));
+            }
+        }
+        assertNotNull(profiles, "迁移 Job 必须显式设置 SPRING_PROFILES_ACTIVE");
+        assertTrue(profiles.contains("migrate"),
+                "迁移 Job 应通过 migrate profile 走专用入口，实际: " + profiles);
     }
 
     @Test

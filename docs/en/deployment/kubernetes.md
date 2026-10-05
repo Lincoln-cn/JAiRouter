@@ -37,6 +37,24 @@ The artifacts include: Deployment, Service, Ingress, ConfigMap, ServiceAccount, 
 a schema migration Job, plus liveness / readiness / startup probes, resource requests/limits, and a
 non-root security context (`runAsUser: 10010`, matching the user already inside the image).
 
+### The schema migration Job runs first (deployment order)
+
+On the PostgreSQL path application pods only `validate` (see `database.md`), so **every table-structure
+change is performed by the schema migration Job** — the deployment order is therefore **Job finishes →
+application pods start**. The Job uses a dedicated entry point
+(`SPRING_PROFILES_ACTIVE=prod,json-logs,migrate`, see issue #193) and runs the migration once, on a
+single instance:
+
+- It exits by itself when done and its **exit code reflects the outcome** (0 = startup and migration
+  both passed; non-zero = failure), so the Job's `Complete` / `Failed` is a trustworthy signal. The
+  manifest therefore sets **no** `activeDeadlineSeconds` fallback — "kill it after N seconds" disguises
+  a failure as a timeout and makes the outcome unreadable.
+- The Job also fails when the migration fails or when that instance's configuration is unacceptable
+  (e.g. the production startup check): the same criteria as the application pods, and it fails before
+  traffic is switched over.
+- That mode still boots the application context (non-web, listening on no port), so its startup cost is
+  on the same order as an application pod.
+
 **Two things you must do before deploying**:
 
 1. **Create the `jairouter-secrets` Secret** — the repository deliberately ships no Secret entity, so
@@ -98,9 +116,10 @@ issue #160.
 The `deploy/k8s/base` manifests were exercised on Docker Desktop's built-in Kubernetes (v1.36.1) together
 with a Redis fixture:
 
-- **The migration Job completes**: `Complete 1/1` in 82 seconds, exit code 0 — the startup compatibility
-  migration really runs, and the process exits by itself afterwards (the manifest passes
-  `jairouter.migration.exit-after-run=true` for that; see #195).
+- **The migration Job completes**: `Complete 1/1` in 82 seconds, exit code 0 — the migration really
+  runs, and the process exits by itself afterwards. (The manifest passed
+  `jairouter.migration.exit-after-run=true` back then; see #195. Since #193 this is handled by the
+  `migrate` entry point, which also makes the exit code reflect the outcome.)
 - **A three-replica Deployment reaches `3/3 Available`** (pods `READY`, zero restarts). Three
   prerequisites are required, each fatal if missing:
   1. a Service named `redis` in the namespace (the ConfigMap points `REDIS_HOST` at it);
