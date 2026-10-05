@@ -40,8 +40,12 @@ spec:
           #   会留住 JVM，实测 150 秒仍在运行），需要这个开关主动退出，Job 才能以成功结束
           #   （issue #195）。上面的 activeDeadlineSeconds 仅作兜底。
           #
-          # 彻底方案是引入版本化迁移工具（Flyway / Liquibase）并提供独立迁移入口，
-          # 属后续项，已在 docs 的「已知未覆盖」中记录。
+          # 版本化迁移（Flyway）已在 PostgreSQL 路径落地（issue #191）：连到 PG 时由
+          # PostgresFlywayEnvironmentPostProcessor 自动启用，脚本与基线见
+          # src/main/resources/db/migration，H2 路径不受影响。
+          #
+          # 仍缺的是「独立的 migrate-only 入口」：本 Job 靠上面两个参数凑出来，
+          # 迁移成功与 Job 状态并不严格对应，属 issue #193 的范围。
           args:
             - "--spring.main.web-application-type=none"
             - "--spring.main.banner-mode=off"

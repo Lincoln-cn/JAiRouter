@@ -126,9 +126,12 @@ Still open:
 1. **Distributed rate-limit counting** (#161 remainder: Redis atomic counting and its degradation
    policy; only meaningful once the key dimension is correct)
 2. Cross-Pod real-time event broadcast (#164)
-3. Versioned schema migration (`Flyway` / `Liquibase`) to replace startup-time raw DDL
-4. stdout structured logging (connection-pool / thread-pool externalization is **done**: #188 for the
-   outbound WebClient, #189 for the tracing scheduler)
+3. Versioned schema migration — **done** (#191: on the PostgreSQL path Flyway's baseline plus
+   `ddl-auto: validate` own the schema, see `database.md`; H2 is still managed by `update`). What
+   remains is a **dedicated migration entry point** (a Job whose status reflects migration success,
+   without the `activeDeadlineSeconds` fallback): #193
+4. stdout structured logging — **done** (#211's `json-logs` profile); connection-pool / thread-pool
+   externalization is **done** (#188 for the outbound WebClient, #189 for the tracing scheduler)
 
 ### Existing Foundation: Redis Shared-State Implementations
 

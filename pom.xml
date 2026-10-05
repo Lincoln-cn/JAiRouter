@@ -399,6 +399,21 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!--
+          版本化 schema 迁移（issue #191）：仅 PostgreSQL 路径启用，H2 仍由 ddl-auto: update 管理。
+          启用开关按数据源 URL 判定，见 PostgresFlywayEnvironmentPostProcessor。
+          flyway-database-postgresql 是 Flyway 10+ 拆出的 PostgreSQL 支持模块，缺它会在
+          初始化时报 "Unsupported Database: PostgreSQL"。
+        -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+
         <!-- Spring Data JPA for database access (v1.5.1: replaced R2DBC) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
