@@ -1,4 +1,4 @@
-﻿# Operations Guide
+# Operations Guide
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.0
@@ -74,14 +74,16 @@ jairouter:
 
     # Performance configuration (v2.7.x optimized)
     performance:
-      async:
-        enabled: true
-        queue-size: 8192
-        worker-threads: 8
+      # Master switch for async processing
+      async-processing: true
+      # Async processing thread pool (issue #215: async.worker-threads / async.queue-size
+      # were dead keys that never took effect; the names that match the code are thread-pool.*)
+      thread-pool:
+        core-size: 8
+        queue-capacity: 8192
       batch:
         timeout: 30s
         size: 2048
-        delay: 5s
       buffer:
         size: 8192
       

@@ -1,4 +1,4 @@
-﻿# 配置参考
+# 配置参考
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0
@@ -197,11 +197,17 @@ jairouter:
 ```yaml
 jairouter:
   tracing:
-    exporter:
-      batch-size: 512              # 批处理大小，默认: 512
-      export-timeout: 30s          # 导出超时，默认: 30s
-      max-queue-size: 2048         # 最大队列大小，默认: 2048
-      schedule-delay: 5s           # 调度延迟，默认: 5s
+    # OTel 批处理导出的实际位置（issue #215：原文档写的 tracing.exporter.batch-* 在代码里
+    # 没有对应字段，照它配置不会生效）
+    open-telemetry:
+      sdk:
+        trace:
+          processors:
+            batch:
+              max-export-batch-size: 512   # 导出批大小，默认: 512
+              export-timeout: 30s          # 导出超时，默认: 30s
+              max-queue-size: 2048         # 最大队列大小，默认: 2048
+              schedule-delay: 5s           # 调度延迟，默认: 5s
 ```
 
 ## 内存管理配置
@@ -230,11 +236,17 @@ jairouter:
   tracing:
     performance:
       async-processing: true       # 异步处理，默认: true
-      batch-size: 512              # 批处理大小，默认: 512
-      buffer-size: 2048            # 缓冲区大小，默认: 2048
-      flush-interval: 5s           # 刷新间隔，默认: 5s
-      max-queue-size: 2048         # 最大队列大小，默认: 2048
-      schedule-delay: 5s           # 调度延迟，默认: 5s
+      # 异步处理线程池（issue #215：原文档写的 batch-size / buffer-size / max-queue-size
+      # 在 performance 下都不是真实字段，照它配置不会生效）
+      thread-pool:
+        core-size: 8               # 线程数，默认: 2
+        queue-capacity: 8192       # 队列上限，默认: 1000
+      batch:
+        size: 2048                 # 批大小，默认: 2048
+        timeout: 30s               # 批超时，默认: 30s
+      buffer:
+        size: 8192                 # 缓冲区大小，默认: 8192
+        flush-interval: 5s         # 刷新间隔，默认: 5s
 ```
 
 ## 组件配置

@@ -2,6 +2,11 @@
 # 追踪基础配置
 # ========================================
 # 此文件包含分布式追踪和链路跟踪配置
+#
+# ⚠️ 键名必须与 `TracingConfiguration` 的字段一致：Spring 默认忽略认不出的键，
+# 写错键名不会报错，只会**静默不生效**。本文件曾因此积累 33 个死键（issue #215），
+# 现已逐个接上或删除。`TracingConfigBindingGuardTest` 会按 NoUnboundElementsBindHandler
+# 把本文件绑一遍，任何「配了没人读」的键都会让测试变红。
 
 jairouter:
   # 追踪配置
@@ -23,18 +28,17 @@ jairouter:
         disabled: false
         trace:
           processors:
+            # 原键名 timeout / size / delay 与字段对不上，是死键（issue #215）；
+            # 这里按字段实名接上，取值保持原声明（也正好等于类默认值）。
             batch:
-              timeout: 30s
-              size: 512
-              delay: 5s
-            simple: {}
+              schedule-delay: 5s
+              max-export-batch-size: 512
+              export-timeout: 30s
     
     # 采样配置
     sampling:
-      strategy: "parent_based_traceid_ratio"
       # v2.7.9 优化：默认采样率从 1.0 改为 0.1，减少追踪开销 90%
       ratio: 0.1
-      default-ratio: 0.1
       service-ratios: {}
       always-sample:
         - "/api/v1"
@@ -44,20 +48,12 @@ jairouter:
         - "/actuator"
       rules: []
     
-    # 日志配置
+    # 结构化日志配置
     logging:
-      enabled: true
-      level: "INFO"
+      structured-logging: true
       format: "json"
-      include-stacktrace: false
-      max-message-length: 2048
-      log-request-headers: false
-      log-response-headers: false
-      log-request-body: false
-      log-response-body: false
-      redact-patterns: []
-      custom-fields: {}
       include-stack-trace: false
+      custom-fields: {}
     
     # 导出器配置
     exporter:
@@ -84,61 +80,45 @@ jairouter:
       # 日志导出器配置
       logging:
         enabled: true
-      
-      # 复合导出器配置
-      composite:
-        exporters: []
     
     # 性能配置
     performance:
-      # 异步处理配置
-      async:
-        enabled: true
-        queue-size: 8192
-        worker-threads: 8
-      
+      # 异步处理总开关。原 async.enabled 是死键（没有任何字段接它），真正的开关是这一项（issue #215）
+      async-processing: true
+
+      # 追踪数据异步处理线程池（`AsyncTracingProcessor` 用它创建 Schedulers.newBoundedElastic）。
+      # 原先这里写的是 async.worker-threads / async.queue-size —— 那两个键没有任何绑定，
+      # 调了不生效（实测生效值一直是本类默认的 core-size 2 / queue-capacity 1000，issue #215）；
+      # 归并到与代码对齐的 thread-pool.* 之后，下面的值才真正生效。
+      thread-pool:
+        core-size: 8
+        queue-capacity: 8192
+
       # 批处理配置
       batch:
         timeout: 30s
         size: 2048
-        delay: 5s
-      
+
       # 缓冲区配置
       buffer:
         size: 8192
-      
-      # 资源限制配置
-      resource-limits:
-        max-attributes: 128
-        max-events: 128
-        max-links: 128
-        max-attribute-length: 1024
     
     # 组件特定配置
+    #
+    # 原 webflux / webclient 两块的键在 TracingComponentConfig 里**根本没有对应字段**
+    # （该类只有 http / database / cache / messaging / load-balancer / rate-limiter /
+    # circuit-breaker），属凭空写的死键，已删除并归并到真实字段 http（issue #215）。
+    # 该类还有 capture-headers / capture-body / max-body-size / excluded-paths 等旋钮，
+    # 需要时按字段实名在此登记。
     components:
-      # WebFlux配置
-      webflux:
+      # HTTP 侧（WebFlux / WebClient）插桩
+      http:
         enabled: true
-        capture-request-headers: []
-        capture-response-headers: []
-        capture-request-parameters: []
-      
-      # WebClient配置
-      webclient:
-        enabled: true
-        capture-request-headers: []
-        capture-response-headers: []
-      
+
       # 数据库配置
       database:
         enabled: true
-        capture-statement: false
-        capture-parameters: false
-      
-      # Redis配置
-      redis:
-        enabled: false
-      
+
       # 限流器配置
       rate-limiter:
         enabled: true
@@ -181,13 +161,12 @@ jairouter:
         traces:
           enabled: true
           histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0]
+        # 原 exporter.histogram-buckets 没有对应字段（issue #215），已删除
         exporter:
           enabled: true
-          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
       health:
         enabled: true
+      # 原 alerts 下的三个阈值（trace-processing-failures / export-failures / buffer-pressure）
+      # 没有对应字段（issue #215），已删除
       alerts:
         enabled: true
-        trace-processing-failures: 10
-        export-failures: 5
-        buffer-pressure: 80

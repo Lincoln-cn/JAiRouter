@@ -1,4 +1,4 @@
-﻿# Configuration Reference
+# Configuration Reference
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.0
@@ -197,11 +197,17 @@ jairouter:
 ```yaml
 jairouter:
   tracing:
-    exporter:
-      batch-size: 512              # Batch size, default: 512
-      export-timeout: 30s          # Export timeout, default: 30s
-      max-queue-size: 2048         # Maximum queue size, default: 2048
-      schedule-delay: 5s           # Schedule delay, default: 5s
+    # Where the OTel batch exporter settings actually live (issue #215: the
+    # tracing.exporter.batch-* keys this page used to show have no matching field)
+    open-telemetry:
+      sdk:
+        trace:
+          processors:
+            batch:
+              max-export-batch-size: 512   # Export batch size, default: 512
+              export-timeout: 30s          # Export timeout, default: 30s
+              max-queue-size: 2048         # Maximum queue size, default: 2048
+              schedule-delay: 5s           # Schedule delay, default: 5s
 ```
 
 ## Memory Management Configuration
@@ -230,11 +236,17 @@ jairouter:
   tracing:
     performance:
       async-processing: true       # Asynchronous processing, default: true
-      batch-size: 512              # Batch size, default: 512
-      buffer-size: 2048            # Buffer size, default: 2048
-      flush-interval: 5s           # Flush interval, default: 5s
-      max-queue-size: 2048         # Maximum queue size, default: 2048
-      schedule-delay: 5s           # Schedule delay, default: 5s
+      # Async processing thread pool (issue #215: batch-size / buffer-size /
+      # max-queue-size are not fields under performance, so configuring them had no effect)
+      thread-pool:
+        core-size: 8               # Thread count, default: 2
+        queue-capacity: 8192       # Queue capacity, default: 1000
+      batch:
+        size: 2048                 # Batch size, default: 2048
+        timeout: 30s               # Batch timeout, default: 30s
+      buffer:
+        size: 8192                 # Buffer size, default: 8192
+        flush-interval: 5s         # Flush interval, default: 5s
 ```
 
 ## Component Configuration
