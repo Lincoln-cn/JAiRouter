@@ -224,6 +224,5 @@ CI（`.github/workflows/java-tests.yml`）已配 `postgres:16-alpine` 服务容�
 
 以下内容**不在**当前支持范围内，横向扩展前需要单独处理：
 
-- **H2 路径仍是启动期补丁**：H2 不启用 Flyway（见上文），老 H2 库的缺列与约束修正仍由 `CompatibilitySchemaMigrator` / `DatabaseMigrationService` 在启动后执行。这两个组件**不能整体删除**：实测（H2 2.3.232 + Hibernate 6.6）`ddl-auto: update` 不给已存在的表补列，`update` 也不会改已存在列的 NOT NULL 约束。要彻底下线它们，得先给 H2 也做版本化迁移，或明确放弃 H2 老库升级路径 —— 两者都不在本步范围内。
-- **迁移尚无独立入口**：K8s 制品用 `jairouter-schema-init` Job 承担迁移，但依赖 `--spring.main.web-application-type=none` 加 `activeDeadlineSeconds` 兜底，Job 状态并不精确反映迁移成败（issue #193 会提供真正的 migrate-only 入口）。
+- **H2 路径仍是启动期补丁**：H2 不启用 Flyway（见上文），老 H2 库的缺列与约束修正仍由 `CompatibilitySchemaMigrator` / `DatabaseMigrationService` 在启动后执行。这两个组件**不能整体删除**：实测（H2 2.3.232 + Hibernate 6.6）`ddl-auto: update` 不给已存在的表补列，`update` 也不会改已存在列的 NOT NULL 约束。要彻底下线它们有两条路（给 H2 也做版本化迁移 / 明确放弃 H2 老库升级路径），**已裁决走前者**，见 issue #192 的收口项。
 - 面向生产的多副本 K8s 部署制品（清单 / Helm、PodDisruptionBudget、迁移作业）见 issue #165。
