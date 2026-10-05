@@ -34,6 +34,19 @@ kubectl apply -k deploy/k8s/overlays/prod
 schema 迁移 Job，以及 liveness / readiness / startup 探针、资源 requests/limits、非 root 安全上下文
 （`runAsUser: 10010`，沿用镜像内的既有用户）。
 
+### schema 迁移由 Job 先行（部署顺序）
+
+PostgreSQL 路径下应用 Pod 只做 `ddl-auto: validate`（见 `database.md`），**表结构的变更全部由
+schema 迁移 Job 完成**，所以部署顺序是：**Job 跑完 → 应用 Pod 启动**。该 Job 走专用入口
+（`SPRING_PROFILES_ACTIVE=prod,json-logs,migrate`，见 issue #193），以「单一实例」跑一次迁移：
+
+- 跑完即自行退出，**退出码反映成败**（0 = 启动与迁移全部通过；非 0 = 失败）⇒ Job 的
+  `Complete` / `Failed` 就是可信判据，清单因此**不设** `activeDeadlineSeconds` 兜底
+  —— 那种「跑满 N 秒强制终止」会把失败伪装成超时，反而让成败无从判读。
+- 迁移失败、或该实例的配置不合格（例如生产安全检查不过）时 Job 会失败：这与应用 Pod 是同一套判据，
+  失败发生在流量切换之前。
+- 该模式下仍会启动应用上下文（非 Web、不监听端口），所以它的启动耗时与内存占用与应用 Pod 同量级。
+
 **部署前必须完成两件事**：
 
 1. **创建 Secret `jairouter-secrets`** —— 仓库不提供实体，避免密钥入库：
@@ -88,8 +101,9 @@ crash-loop。已实测两个 JVM 进程并发打开 `jdbc:h2:file:./data/jairout
 
 在 Docker Desktop 内置 K8s（v1.36.1）上跑 `deploy/k8s/base` 清单 + 一个 Redis 夹具，实测：
 
-- **迁移 Job 成功完成**：`Complete 1/1`、82 秒、退出码 0 —— 启动期兼容迁移确实执行，且进程在迁移后
-  自行退出（清单为此带上 `jairouter.migration.exit-after-run=true`，见 #195）。
+- **迁移 Job 成功完成**：`Complete 1/1`、82 秒、退出码 0 —— 迁移确实执行，且进程在迁移后自行退出。
+  （当时清单传的是 `jairouter.migration.exit-after-run=true`，见 #195；自 #193 起改由 `migrate`
+  专用入口承担，退出码也开始反映成败。）
 - **3 副本 Deployment 达到 `3/3 Available`**（pod `READY`、重启 0 次）。前置条件三项，缺一即起不来：
   1. 命名空间内有一个名为 `redis` 的 Service（ConfigMap 的 `REDIS_HOST` 指向它）；
   2. `jairouter-secrets` 提供**强**密钥：`JWT_SECRET` 按 base64 解码后需 ≥ 32 字节（如

@@ -9,10 +9,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * 迁移专用进程退出器的装配条件（issue #195）。
  *
- * <p>{@link MigrationExitRunner} 的唯一动作是调用 {@code System.exit}（迁移跑完后主动退出，
- * 否则 Job 只能等 {@code activeDeadlineSeconds} 强杀）。{@code System.exit} 一旦在本进程内被
- * 断言就会杀掉测试 JVM，因此这里**只守装配条件**：开关打开时注册、默认不注册。真正"跑完即退出"
- * 的行为由进程级实测覆盖（非 Web 模式实测：启动 66 秒、迁移日志已打出、全程 106 秒后进程自行退出）。
+ * <p>{@link MigrationExitRunner} 的唯一动作是调用 {@code System.exit}（迁移跑完后主动退出）。
+ * {@code System.exit} 一旦在本进程内被断言就会杀掉测试 JVM，因此这里**只守装配条件**：
+ * 开关打开时注册、默认不注册。真正「跑完即退出、以什么退出码退出」的行为由
+ * {@link MigrateOnlyEntryProcessTest} 在**真实子进程**上覆盖（issue #193）；
+ * 该开关现在由 {@code migrate} profile 自动打开，K8s Job 因此不再需要
+ * {@code activeDeadlineSeconds} 兜底。
  */
 @DisplayName("迁移专用进程退出器的装配条件（issue #195）")
 class MigrationExitRunnerWiringTest {

@@ -9,8 +9,9 @@ spec:
   backoffLimit: 2
   # 完成后自动清理，避免每次部署累积已完成的 Job。
   ttlSecondsAfterFinished: 600
-  # 兜底：进程若不自行退出则强制终止，避免部署流程被挂住。
-  activeDeadlineSeconds: 600
+  # 这里**不设** activeDeadlineSeconds：迁移专用入口（`migrate` profile）跑完即退出，
+  # 且启动/迁移失败时也会以非 0 退出码结束（见下方 args 注释与 issue #193），
+  # 所以 Job 的成败可直接判读，不需要「跑满 N 秒强制终止」这种把失败伪装成超时的兜底。
   template:
     metadata:
       labels:
@@ -28,32 +29,23 @@ spec:
         - name: schema-init
           image: sodlinken/jairouter:latest
           imagePullPolicy: IfNotPresent
-          # 以「非 Web」方式启动一次，让 schema 迁移由**单一实例**先跑完，避免多副本同时启动时的
-          # 并发 DDL：PostgreSQL 路径上执行者是 Flyway（见下），H2 路径上是启动期的兼容补丁
+          # 迁移专用入口（issue #193）：`migrate` profile 同时设定「非 Web」与「跑完即退出」，
+          # **退出码反映成败** —— 0 = 启动与迁移全部通过；非 0 = 启动或迁移失败。
+          # 于是 Job 的 Complete/Failed 就是可信的判据。
+          #
+          # 它由**单一实例**先跑完，避免多副本同时启动时的并发 DDL：PostgreSQL 路径上执行者是
+          # Flyway（连到 PG 时由 PostgresFlywayEnvironmentPostProcessor 自动启用，脚本与基线见
+          # src/main/resources/db/migration），H2 路径上是启动期的兼容补丁
           # （CompatibilitySchemaMigrator / DatabaseMigrationService，只在未启用 Flyway 时注册）。
           #
-          # 两个参数都是必需的：
-          # - web-application-type=none：不起 Web 层。注意 SecurityConfiguration 必须带
-          #   @ConditionalOnWebApplication(REACTIVE)，否则该模式会因缺 ServerHttpSecurity
-          #   而启动失败、迁移从不执行（issue #195，已修）。
-          # - migration.exit-after-run=true：迁移跑完后进程**不自退**（调度器等非守护线程
-          #   会留住 JVM，实测 150 秒仍在运行），需要这个开关主动退出，Job 才能以成功结束
-          #   （issue #195）。上面的 activeDeadlineSeconds 仅作兜底。
-          #
-          # 版本化迁移（Flyway）已在 PostgreSQL 路径落地（issue #191）：连到 PG 时由
-          # PostgresFlywayEnvironmentPostProcessor 自动启用，脚本与基线见
-          # src/main/resources/db/migration，H2 路径不受影响。
-          #
-          # 仍缺的是「独立的 migrate-only 入口」：本 Job 靠上面两个参数凑出来，
-          # 迁移成功与 Job 状态并不严格对应，属 issue #193 的范围。
+          # 该模式下仍会跑生产安全前置检查（JWT_SECRET / INITIAL_ADMIN_PASSWORD 强度）——
+          # 与应用 Pod 同一套判据：配置不合格时 Job 也会失败，这是有意的（失败早于上线）。
           args:
-            - "--spring.main.web-application-type=none"
             - "--spring.main.banner-mode=off"
-            - "--jairouter.migration.exit-after-run=true"
           env:
-            # 与 Deployment 一致：容器日志走一行一条的结构化 JSON（见 logback-spring.xml，issue #211）
+            # prod + json-logs（容器日志一行一条 JSON，见 #211）+ migrate（迁移专用入口，见 #193）
             - name: SPRING_PROFILES_ACTIVE
-              value: prod,json-logs
+              value: prod,json-logs,migrate
           envFrom:
             - configMapRef:
                 name: jairouter-config
