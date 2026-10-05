@@ -1387,11 +1387,11 @@
     },
     "docs/en/tracing/config-reference.md": {
       "FilePath": "docs/en/tracing/config-reference.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-09-23T17:13:19.678464",
-      "ContentHash": "59c4edfe4c76f516",
-      "GitCommit": "e75f4909",
-      "Author": "Lincoln",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-05T10:25:28.810176",
+      "ContentHash": "0bac92581cf6db33",
+      "GitCommit": "f62675c5",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -1412,11 +1412,11 @@
     },
     "docs/en/tracing/operations-guide.md": {
       "FilePath": "docs/en/tracing/operations-guide.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-08-24T03:02:49.232358",
-      "ContentHash": "cd1ddcff114aa6a1",
-      "GitCommit": "f5d673e2",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-05T10:25:28.818582",
+      "ContentHash": "26d4558a3a318239",
+      "GitCommit": "f62675c5",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/tracing/performance-tuning.md",
@@ -1586,11 +1586,11 @@
     },
     "docs/zh/tracing/config-reference.md": {
       "FilePath": "docs/zh/tracing/config-reference.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-09-23T17:13:19.908802",
-      "ContentHash": "5e2d021951a9b776",
-      "GitCommit": "e75f4909",
-      "Author": "Lincoln",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-05T10:25:29.228662",
+      "ContentHash": "78218f3a384cce8c",
+      "GitCommit": "f62675c5",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -1611,11 +1611,11 @@
     },
     "docs/zh/tracing/operations-guide.md": {
       "FilePath": "docs/zh/tracing/operations-guide.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-08-24T03:02:49.492574",
-      "ContentHash": "ac7ef3fa03395cd8",
-      "GitCommit": "f5d673e2",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-05T10:25:29.237803",
+      "ContentHash": "933b3800e1ef5a2f",
+      "GitCommit": "f62675c5",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/tracing/performance-tuning.md",
@@ -6616,7 +6616,39 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-05T05:02:50.380214",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/config-reference.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-05T10:25:28.810187",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/operations-guide.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-05T10:25:28.818587",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/config-reference.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-05T10:25:29.228671",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/operations-guide.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-05T10:25:29.237811",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-05T08:20:23.024326"
+  "last_updated": "2026-10-05T10:25:29.291255"
 }
