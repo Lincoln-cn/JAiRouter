@@ -208,10 +208,10 @@
     },
     "docs/en/deployment/kubernetes.md": {
       "FilePath": "docs/en/deployment/kubernetes.md",
-      "Version": "1.0.11",
-      "LastModified": "2026-10-05T03:23:27.761897",
-      "ContentHash": "a51da2eae69d4cb4",
-      "GitCommit": "e906c0e4",
+      "Version": "1.0.12",
+      "LastModified": "2026-10-05T16:15:08.364040",
+      "ContentHash": "333e7d9f94f04408",
+      "GitCommit": "ef4ab5bf",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -823,10 +823,10 @@
     },
     "docs/zh/deployment/kubernetes.md": {
       "FilePath": "docs/zh/deployment/kubernetes.md",
-      "Version": "1.0.11",
-      "LastModified": "2026-10-05T03:23:28.223136",
-      "ContentHash": "ca9659e52b36b075",
-      "GitCommit": "e906c0e4",
+      "Version": "1.0.12",
+      "LastModified": "2026-10-05T16:15:08.790632",
+      "ContentHash": "db386b21e9e47d0e",
+      "GitCommit": "ef4ab5bf",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2329,20 +2329,20 @@
     },
     "docs/en/deployment/database.md": {
       "FilePath": "docs/en/deployment/database.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-05T05:02:50.059887",
-      "ContentHash": "7ad5938799b0f662",
-      "GitCommit": "19f86492",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-05T16:15:08.329172",
+      "ContentHash": "c5d98e6cc7f87780",
+      "GitCommit": "ef4ab5bf",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/deployment/database.md": {
       "FilePath": "docs/zh/deployment/database.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-05T05:02:50.380203",
-      "ContentHash": "087caf9c49953579",
-      "GitCommit": "19f86492",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-05T16:15:08.762830",
+      "ContentHash": "ab43c8add3ea9f7e",
+      "GitCommit": "ef4ab5bf",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -6648,7 +6648,39 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-05T10:25:29.237811",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/database.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-05T16:15:08.329187",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/kubernetes.md",
+      "OldVersion": "1.0.11",
+      "NewVersion": "1.0.12",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-05T16:15:08.364052",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/database.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-05T16:15:08.762839",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/kubernetes.md",
+      "OldVersion": "1.0.11",
+      "NewVersion": "1.0.12",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-05T16:15:08.790638",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-05T10:25:29.291255"
+  "last_updated": "2026-10-05T16:15:09.056462"
 }
