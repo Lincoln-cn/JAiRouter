@@ -28,6 +28,8 @@ import java.util.Set;
  *   <li>查询 INFORMATION_SCHEMA 现有列，对缺失列执行 {@code ALTER TABLE ... ADD COLUMN}</li>
  *   <li>列类型按数据库方言选择（CLOB 类：H2=CLOB / MySQL=LONGTEXT / PostgreSQL=TEXT）</li>
  *   <li>JSON 列（issue #190）：PostgreSQL=jsonb / MySQL、H2=json，并对旧库已有的非 JSON 列做收敛</li>
+ *   <li>只看**当前 schema** 的表/列（issue #216）：三条 INFORMATION_SCHEMA 查询都带
+ *       {@link #schemaPredicateFor} 产出的谓词，不读别的 schema 的同名表</li>
  *   <li>重复启动安全（存在性检查保证幂等）</li>
  * </ul>
  *
@@ -74,6 +76,8 @@ public class CompatibilitySchemaMigrator implements ApplicationRunner {
     private final String clobType;
     private final String jsonType;
     private final boolean postgres;
+    /** 当前 schema 的过滤谓词，三条 INFORMATION_SCHEMA 查询都要带上（issue #216） */
+    private final String schemaPredicate;
 
     public CompatibilitySchemaMigrator(final DataSource dataSource, final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -81,6 +85,7 @@ public class CompatibilitySchemaMigrator implements ApplicationRunner {
         this.clobType = clobTypeFor(product);
         this.jsonType = jsonTypeFor(product);
         this.postgres = product.contains("postgres");
+        this.schemaPredicate = schemaPredicateFor(product);
     }
 
     @Override
@@ -121,7 +126,8 @@ public class CompatibilitySchemaMigrator implements ApplicationRunner {
     private boolean tableExists(final String table) {
         try {
             Integer count = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE LOWER(TABLE_NAME) = ?",
+                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES "
+                            + "WHERE LOWER(TABLE_NAME) = ? " + schemaPredicate,
                     Integer.class, table.toLowerCase());
             return count != null && count > 0;
         } catch (Exception e) {
@@ -133,7 +139,8 @@ public class CompatibilitySchemaMigrator implements ApplicationRunner {
     private Set<String> existingColumns(final String table) {
         try {
             List<String> columns = jdbcTemplate.queryForList(
-                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE LOWER(TABLE_NAME) = ?",
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS "
+                            + "WHERE LOWER(TABLE_NAME) = ? " + schemaPredicate,
                     String.class, table.toLowerCase());
             Set<String> result = new HashSet<>();
             for (String column : columns) {
@@ -184,6 +191,32 @@ public class CompatibilitySchemaMigrator implements ApplicationRunner {
     }
 
     /**
+     * 当前 schema 的过滤谓词（issue #216），拼在三条 INFORMATION_SCHEMA 查询的 WHERE 之后。
+     *
+     * <p>不加这个过滤会出真问题：同一数据库里只要有**第二个 schema 含同名表**，
+     * {@code existingColumns} 读到的是跨 schema 的并集（于是漏补列），而列类型查询会命中多行
+     * —— 旧实现用 {@code queryForObject} 直接抛异常、被 {@code catch} 吞成一条语义模糊的 WARN，
+     * 表现为「老库升级后收敛静默不发生，随后 ddl-auto: validate 启动失败」。
+     *
+     * <p>两侧都取 {@code LOWER(...)} 是刻意的：H2 在 {@code DATABASE_TO_UPPER=FALSE} 下
+     * 目录里的对象名大小写与函数返回值未必一致，只做值比较会踩大小写坑。
+     *
+     * <p>认不出的方言返回空串（维持改动前的行为），因为猜一个函数名可能在那种库上直接语法报错。
+     */
+    static String schemaPredicateFor(final String product) {
+        if (product.contains("postgres")) {
+            return "AND LOWER(TABLE_SCHEMA) = LOWER(current_schema())";
+        }
+        if (product.contains("h2")) {
+            return "AND LOWER(TABLE_SCHEMA) = LOWER(CURRENT_SCHEMA)";
+        }
+        if (product.contains("mysql") || product.contains("mariadb")) {
+            return "AND LOWER(TABLE_SCHEMA) = LOWER(DATABASE())";
+        }
+        return "";
+    }
+
+    /**
      * 按登记的类型标记解析出实际列类型（"CLOB"/"JSON" 是标记，不是字面类型）
      */
     private String resolveColumnType(final ColumnDef column) {
@@ -210,10 +243,23 @@ public class CompatibilitySchemaMigrator implements ApplicationRunner {
             return;
         }
         try {
-            String current = jdbcTemplate.queryForObject(
+            List<String> matches = jdbcTemplate.queryForList(
                     "SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS "
-                            + "WHERE LOWER(TABLE_NAME) = ? AND LOWER(COLUMN_NAME) = ?",
+                            + "WHERE LOWER(TABLE_NAME) = ? AND LOWER(COLUMN_NAME) = ? " + schemaPredicate,
                     String.class, table.toLowerCase(), column.name().toLowerCase());
+            if (matches.isEmpty()) {
+                log.warn("Schema 迁移: 未读到表 {} 列 {} 的当前类型，跳过收敛判定", table, column.name());
+                return;
+            }
+            if (matches.size() > 1) {
+                // schemaPredicate 应把结果收敛到当前 schema 的一行；多行说明该方言上谓词没生效。
+                // 宁可跳过收敛（保持现状 + 告警），也不要猜——猜错会改到别的 schema 的同名表。
+                // 旧实现用 queryForObject，这种情形直接抛异常并被 catch 吞成一条语义模糊的 WARN（issue #216）。
+                log.warn("Schema 迁移: 表 {} 列 {} 的类型查询命中 {} 行（期望 1），"
+                                + "跳过收敛以免误改其它 schema 的同名表", table, column.name(), matches.size());
+                return;
+            }
+            String current = matches.get(0);
             if (current == null || current.equalsIgnoreCase(jsonType)) {
                 return;
             }

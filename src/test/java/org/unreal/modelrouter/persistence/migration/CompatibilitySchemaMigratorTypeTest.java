@@ -31,4 +31,16 @@ class CompatibilitySchemaMigratorTypeTest {
         assertEquals("LONGTEXT", CompatibilitySchemaMigrator.clobTypeFor("mariadb"));
         assertEquals("CLOB", CompatibilitySchemaMigrator.clobTypeFor("h2"));
     }
+
+    @Test
+    @DisplayName("当前 schema 的过滤谓词按方言选择，认不出的方言不加谓词（issue #216）")
+    void schemaPredicateByProduct() {
+        assertEquals("AND LOWER(TABLE_SCHEMA) = LOWER(current_schema())",
+                CompatibilitySchemaMigrator.schemaPredicateFor("postgresql"));
+        assertEquals("AND LOWER(TABLE_SCHEMA) = LOWER(CURRENT_SCHEMA)",
+                CompatibilitySchemaMigrator.schemaPredicateFor("h2"));
+        assertEquals("AND LOWER(TABLE_SCHEMA) = LOWER(DATABASE())",
+                CompatibilitySchemaMigrator.schemaPredicateFor("mysql"));
+        assertEquals("", CompatibilitySchemaMigrator.schemaPredicateFor(""));
+    }
 }

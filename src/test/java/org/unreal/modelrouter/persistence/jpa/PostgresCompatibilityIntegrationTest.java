@@ -418,6 +418,54 @@ class PostgresCompatibilityIntegrationTest {
         }
     }
 
+    /**
+     * issue #216：三条 INFORMATION_SCHEMA 查询必须限定当前 schema。不限定的话，同库只要还有
+     * 第二个含同名表的 schema，就会同时踩两处 —— 补列判定读到跨 schema 并集因而**漏补列**；
+     * 列类型查询命中多行，旧实现用 {@code queryForObject} 直接抛异常、被 {@code catch} 吞成
+     * 一条语义模糊的 WARN ⇒ **收敛静默不发生**，随后 {@code ddl-auto: validate} 启动失败。
+     *
+     * <p>影子 schema 在本用例内创建并清理，避免污染同一库上的其它门控测试。
+     */
+    @Test
+    @DisplayName("同库存在影子 schema 时仍正常补列与收敛，且不碰影子表（issue #216）")
+    void shadowSchemaDoesNotBreakPatching() {
+        String shadow = "shadow_probe";
+        jdbcTemplate.execute("DROP SCHEMA IF EXISTS " + shadow + " CASCADE");
+        jdbcTemplate.execute("CREATE SCHEMA " + shadow);
+        try {
+            // 影子 schema 放一套同名表：service_instance 的 JSON 列是 text，api_call_history 的补丁列齐全
+            jdbcTemplate.execute("CREATE TABLE " + shadow + ".service_instance ("
+                    + "id bigint primary key, tags text, headers text)");
+            jdbcTemplate.execute("CREATE TABLE " + shadow + ".api_call_history ("
+                    + "id bigint primary key, record_level varchar(20), "
+                    + "request_body_encrypted text, response_body_encrypted text)");
+
+            // public 退化成旧库形态：三个补丁列缺失、JSON 列是 text
+            for (String column : List.of("record_level", "request_body_encrypted", "response_body_encrypted")) {
+                jdbcTemplate.execute("ALTER TABLE api_call_history DROP COLUMN " + column);
+            }
+            for (String column : List.of("tags", "headers")) {
+                jdbcTemplate.execute("ALTER TABLE service_instance ALTER COLUMN " + column
+                        + " TYPE text USING " + column + "::text");
+            }
+
+            new CompatibilitySchemaMigrator(jdbcTemplate.getDataSource(), jdbcTemplate).run(null);
+
+            for (String column : List.of("record_level", "request_body_encrypted", "response_body_encrypted")) {
+                assertEquals(1, columnCount("api_call_history", column),
+                        "有影子 schema 时 public.api_call_history 仍应补上 " + column);
+            }
+            for (String column : List.of("tags", "headers")) {
+                assertEquals("jsonb", columnTypeOf("service_instance", column),
+                        "有影子 schema 时 public.service_instance." + column + " 仍应被收敛为 jsonb");
+                assertEquals("text", columnTypeOfIn("service_instance", column, shadow),
+                        "影子 schema 的同名表不得被改动");
+            }
+        } finally {
+            jdbcTemplate.execute("DROP SCHEMA IF EXISTS " + shadow + " CASCADE");
+        }
+    }
+
     // ==================== helpers ====================
 
     /** 读某列在 PG 上的物理类型（issue #190：断言物理类型，而不是「能读写」） */
@@ -426,6 +474,23 @@ class PostgresCompatibilityIntegrationTest {
                 "SELECT data_type FROM information_schema.columns "
                         + "WHERE table_schema = 'public' AND lower(table_name) = ? AND lower(column_name) = ?",
                 String.class, table.toLowerCase(), column.toLowerCase());
+    }
+
+    /** 同 {@link #columnTypeOf}，但读指定 schema —— 用于断言影子 schema 没被改动（issue #216） */
+    private String columnTypeOfIn(final String table, final String column, final String schema) {
+        return jdbcTemplate.queryForObject(
+                "SELECT data_type FROM information_schema.columns "
+                        + "WHERE table_schema = ? AND lower(table_name) = ? AND lower(column_name) = ?",
+                String.class, schema, table.toLowerCase(), column.toLowerCase());
+    }
+
+    /** 某列在 public 下的存在数（0/1）；只判存在性时用它，避免 queryForObject 在 0 行时抛异常 */
+    private int columnCount(final String table, final String column) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM information_schema.columns "
+                        + "WHERE table_schema = 'public' AND lower(table_name) = ? AND lower(column_name) = ?",
+                Integer.class, table.toLowerCase(), column.toLowerCase());
+        return count == null ? 0 : count;
     }
 
     private ConfigVersionHistoryEntity version(final String versionNumber, final Instant timestamp) {
