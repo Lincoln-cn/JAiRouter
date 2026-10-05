@@ -1,4 +1,4 @@
-﻿# 运维指南
+# 运维指南
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0
@@ -74,14 +74,16 @@ jairouter:
 
     # 性能配置 (v2.7.x 优化)
     performance:
-      async:
-        enabled: true
-        queue-size: 8192
-        worker-threads: 8
+      # 异步处理总开关
+      async-processing: true
+      # 异步处理线程池（issue #215：原 async.worker-threads / async.queue-size 是死键，
+      # 调了不生效；与代码对齐的键名是 thread-pool.*）
+      thread-pool:
+        core-size: 8
+        queue-capacity: 8192
       batch:
         timeout: 30s
         size: 2048
-        delay: 5s
       buffer:
         size: 8192
       
