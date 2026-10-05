@@ -110,8 +110,11 @@ crash-loop。已实测两个 JVM 进程并发打开 `jdbc:h2:file:./data/jairout
 
 1. 限流的**分布式计数**（#161 剩余：Redis 原子计数与降级策略；须在键维度正确的前提下才有意义）
 2. 实时事件跨 Pod 广播（#164）
-3. 版本化 schema 迁移（`Flyway` / `Liquibase`），替换启动期裸 DDL
-4. stdout 结构化日志（连接池 / 线程池外部化**已完成**：#188 出站 WebClient、#189 tracing 调度器）
+3. 版本化 schema 迁移 —— 已完成（#191：PostgreSQL 路径由 Flyway 基线 + `ddl-auto: validate` 承担，见
+   `database.md`；H2 仍由 `update` 管理）。迁移的**独立入口**（Job 可判读成败、去掉 `activeDeadlineSeconds`
+   兜底）仍待做：#193
+4. stdout 结构化日志 —— 已完成（#211 的 `json-logs` profile）；连接池 / 线程池外部化已完成
+   （#188 出站 WebClient、#189 tracing 调度器）
 
 ### 已有基础：Redis 共享态实现
 
