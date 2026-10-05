@@ -208,10 +208,11 @@ class CompatibilitySchemaMigratorTest {
                 .thenReturn(1);
         when(jdbcTemplate.queryForList(anyString(), eq(String.class), eq("service_instance")))
                 .thenReturn(List.of("id", "tags", "headers"));
-        when(jdbcTemplate.queryForObject(anyString(), eq(String.class), eq("service_instance"), eq("tags")))
-                .thenReturn("text");
-        when(jdbcTemplate.queryForObject(anyString(), eq(String.class), eq("service_instance"), eq("headers")))
-                .thenReturn("jsonb");
+        // 类型查询走出参更长的重载（issue #216：改用 queryForList 以显式处理 0 行 / 多行）
+        when(jdbcTemplate.queryForList(anyString(), eq(String.class), eq("service_instance"), eq("tags")))
+                .thenReturn(List.of("text"));
+        when(jdbcTemplate.queryForList(anyString(), eq(String.class), eq("service_instance"), eq("headers")))
+                .thenReturn(List.of("jsonb"));
 
         pgMigrator.run(args);
 
