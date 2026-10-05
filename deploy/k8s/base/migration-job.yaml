@@ -28,9 +28,9 @@ spec:
         - name: schema-init
           image: sodlinken/jairouter:latest
           imagePullPolicy: IfNotPresent
-          # 以「非 Web」方式启动一次，让启动期的兼容迁移（建表 / 补列，见
-          # CompatibilitySchemaMigrator）由**单一实例**先跑完，避免多副本同时启动时的
-          # 并发 DDL。
+          # 以「非 Web」方式启动一次，让 schema 迁移由**单一实例**先跑完，避免多副本同时启动时的
+          # 并发 DDL：PostgreSQL 路径上执行者是 Flyway（见下），H2 路径上是启动期的兼容补丁
+          # （CompatibilitySchemaMigrator / DatabaseMigrationService，只在未启用 Flyway 时注册）。
           #
           # 两个参数都是必需的：
           # - web-application-type=none：不起 Web 层。注意 SecurityConfiguration 必须带

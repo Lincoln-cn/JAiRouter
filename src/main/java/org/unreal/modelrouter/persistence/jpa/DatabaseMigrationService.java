@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -12,11 +13,22 @@ import org.springframework.stereotype.Component;
  * 数据库迁移服务
  * 在应用启动完成后自动执行必要的数据库结构迁移
  * 使用 ApplicationRunner 确保 Hibernate ddl-auto 先执行完成
+ *
+ * <p><b>只在没有版本化迁移时兜底（issue #192）</b>：注册条件是
+ * {@code spring.flyway.enabled=false}（缺省视为 false）。PostgreSQL 路径上本类的唯一补丁
+ * （{@code security_blacklist.expires_at} 改可空）已由
+ * {@code db/migration/V2__legacy_convergence.sql} 版本化表达，因此本类在 PG 上**不注册**。
+ *
+ * <p>H2 路径必须保留：Hibernate 的 {@code ddl-auto: update} 只补缺失的表/列，
+ * **不会修改已存在列的 NOT NULL 约束** —— 实测（H2 2.3.232）把该列改回 NOT NULL 后启动，
+ * 四种候选语法里由第一条 {@code ALTER COLUMN ... DROP NOT NULL} 才修好。
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 @Order(1)  // 确保在其他 ApplicationRunner 之前执行
+@ConditionalOnProperty(prefix = "spring.flyway", name = "enabled",
+        havingValue = "false", matchIfMissing = true)
 public class DatabaseMigrationService implements ApplicationRunner {
 
     private final JdbcTemplate jdbcTemplate;

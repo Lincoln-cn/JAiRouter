@@ -94,6 +94,7 @@ jobs:
           }
           check_gated QuotaDistributedRedisIntegrationTest REDIS_TEST
           check_gated PostgresCompatibilityIntegrationTest PG_TEST
+          check_gated PostgresFlywayMigrationEquivalenceTest PG_TEST
 
       - name: 上传测试报告
         if: always()
