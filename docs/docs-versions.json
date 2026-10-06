@@ -1387,10 +1387,10 @@
     },
     "docs/en/tracing/config-reference.md": {
       "FilePath": "docs/en/tracing/config-reference.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-06T08:37:40.550188",
-      "ContentHash": "b2b7f89076c959d8",
-      "GitCommit": "fd781429",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-06T10:33:28.276634",
+      "ContentHash": "e7709276d4f7fb77",
+      "GitCommit": "88e606b5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1412,10 +1412,10 @@
     },
     "docs/en/tracing/operations-guide.md": {
       "FilePath": "docs/en/tracing/operations-guide.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-10-06T08:25:02.442687",
-      "ContentHash": "ed426d605444291c",
-      "GitCommit": "06b160db",
+      "Version": "1.0.8",
+      "LastModified": "2026-10-06T10:33:28.284027",
+      "ContentHash": "e486f52cb2bd10cc",
+      "GitCommit": "88e606b5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1426,10 +1426,10 @@
     },
     "docs/en/tracing/performance-tuning.md": {
       "FilePath": "docs/en/tracing/performance-tuning.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-06T08:25:02.445062",
-      "ContentHash": "7ad0fef0e5a03063",
-      "GitCommit": "06b160db",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-06T10:33:28.285729",
+      "ContentHash": "0847fccf833cfaaa",
+      "GitCommit": "88e606b5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1440,10 +1440,10 @@
     },
     "docs/en/tracing/quickstart.md": {
       "FilePath": "docs/en/tracing/quickstart.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-06T08:25:02.447360",
-      "ContentHash": "2c189b850868c123",
-      "GitCommit": "06b160db",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-06T10:33:28.287464",
+      "ContentHash": "2768d19f7b6fe57e",
+      "GitCommit": "88e606b5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1586,10 +1586,10 @@
     },
     "docs/zh/tracing/config-reference.md": {
       "FilePath": "docs/zh/tracing/config-reference.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-06T08:37:40.981763",
-      "ContentHash": "f9a415e12a461f6a",
-      "GitCommit": "fd781429",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-06T10:33:28.634977",
+      "ContentHash": "f33a1fd8a4471fb7",
+      "GitCommit": "88e606b5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1611,10 +1611,10 @@
     },
     "docs/zh/tracing/operations-guide.md": {
       "FilePath": "docs/zh/tracing/operations-guide.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-10-06T08:25:02.890091",
-      "ContentHash": "36d69ed17a7cc366",
-      "GitCommit": "06b160db",
+      "Version": "1.0.8",
+      "LastModified": "2026-10-06T10:33:28.642695",
+      "ContentHash": "0d2951c9a92dd59e",
+      "GitCommit": "88e606b5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1625,10 +1625,10 @@
     },
     "docs/zh/tracing/performance-tuning.md": {
       "FilePath": "docs/zh/tracing/performance-tuning.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-06T08:25:02.892422",
-      "ContentHash": "39e64d07d8f7cb47",
-      "GitCommit": "06b160db",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-06T10:33:28.644472",
+      "ContentHash": "c0a706c49ed73cc3",
+      "GitCommit": "88e606b5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1639,10 +1639,10 @@
     },
     "docs/zh/tracing/quickstart.md": {
       "FilePath": "docs/zh/tracing/quickstart.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-06T08:25:02.894643",
-      "ContentHash": "b7e1eebc76fe82c1",
-      "GitCommit": "06b160db",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-06T10:33:28.646236",
+      "ContentHash": "c0cf4243015a2ec9",
+      "GitCommit": "88e606b5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -6904,7 +6904,71 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-06T08:37:40.981772",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/config-reference.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-06T10:33:28.276645",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/operations-guide.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-06T10:33:28.284031",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/performance-tuning.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-06T10:33:28.285732",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/quickstart.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-06T10:33:28.287467",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/config-reference.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-06T10:33:28.634986",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/operations-guide.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-06T10:33:28.642701",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/performance-tuning.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-06T10:33:28.644476",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/quickstart.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-06T10:33:28.646239",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-06T08:37:41.027012"
+  "last_updated": "2026-10-06T10:33:28.673492"
 }
