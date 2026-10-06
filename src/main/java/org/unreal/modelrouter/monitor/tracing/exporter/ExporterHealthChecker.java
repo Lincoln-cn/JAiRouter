@@ -14,6 +14,7 @@ import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
+import org.unreal.modelrouter.monitor.tracing.config.TracingMonitoringConfig;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -21,6 +22,7 @@ import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -47,6 +49,8 @@ public class ExporterHealthChecker implements HealthIndicator {
     
     // 健康状态
     private final AtomicBoolean isHealthy = new AtomicBoolean(true);
+    private final AtomicInteger consecutiveFailures = new AtomicInteger(0);
+    private final AtomicInteger consecutiveSuccesses = new AtomicInteger(0);
     private final AtomicReference<String> lastError = new AtomicReference<>();
     private final AtomicReference<Instant> lastSuccessTime = new AtomicReference<>(Instant.now());
     private final AtomicReference<Instant> lastCheckTime = new AtomicReference<>(Instant.now());
@@ -164,22 +168,52 @@ public class ExporterHealthChecker implements HealthIndicator {
     /**
      * 更新健康状态
      */
+    /**
+     * 更新健康状态（issue #224 批 B2：按配置阈值去抖动）。
+     *
+     * <p>原先每次检查都直接翻转状态，于是单次抖动就会让 {@code /actuator/health} 报 DOWN；
+     * 现在按 {@code jairouter.tracing.monitoring.health.failure-threshold}（连续失败多少次判不健康）与
+     * {@code recovery-threshold}（连续成功多少次判恢复）切换，两个阈值每次调用时读取，运行时改配置即可生效。
+     * 阈值配成非正数时按 1 处理（等价于"立即切换"，不会因为配错而永久不切换）。</p>
+     *
+     * <p>注意行为变化：状态切换会比检查本身**滞后** failure/recovery-threshold 次，这是这两个字段的本意，
+     * 但确实改变了 {@code /actuator/health} 的响应时机。</p>
+     */
     private void updateHealthStatus(final boolean healthy, final String error) {
         lastCheckTime.set(Instant.now());
-        
+        final TracingMonitoringConfig.HealthConfig health =
+                tracingConfig.getMonitoring().getHealth();
+        final int failureThreshold = Math.max(1, health.getFailureThreshold());
+        final int recoveryThreshold = Math.max(1, health.getRecoveryThreshold());
+
         if (healthy) {
-            if (!isHealthy.get()) {
-                log.info("导出器健康状态恢复");
-            }
-            isHealthy.set(true);
-            lastError.set(null);
+            consecutiveFailures.set(0);
+            final int successes = consecutiveSuccesses.incrementAndGet();
             lastSuccessTime.set(Instant.now());
-        } else {
             if (isHealthy.get()) {
-                log.warn("导出器健康状态异常: {}", error);
+                lastError.set(null);
+                return;
             }
-            isHealthy.set(false);
+            if (successes >= recoveryThreshold) {
+                log.info("导出器健康状态恢复（连续成功 {} 次，阈值 {}）", successes, recoveryThreshold);
+                isHealthy.set(true);
+                lastError.set(null);
+            } else {
+                log.debug("导出器检查成功 {} 次，未达恢复阈值 {}", successes, recoveryThreshold);
+            }
+        } else {
+            consecutiveSuccesses.set(0);
+            final int failures = consecutiveFailures.incrementAndGet();
             lastError.set(error);
+            if (!isHealthy.get()) {
+                return;
+            }
+            if (failures >= failureThreshold) {
+                log.warn("导出器健康状态异常（连续失败 {} 次，阈值 {}）: {}", failures, failureThreshold, error);
+                isHealthy.set(false);
+            } else {
+                log.warn("导出器检查失败 {} 次，未达判不健康阈值 {}: {}", failures, failureThreshold, error);
+            }
         }
     }
     
