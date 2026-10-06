@@ -14,8 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * <p>背景：迁移 Job 用 {@code --spring.main.web-application-type=none} 启动。该模式下 Spring Boot
  * 建的是**非 Web** 应用上下文，{@code ServerHttpSecurity} 不再自动装配；而 {@code SecurityConfiguration}
  * 此前只标了 {@code @ConditionalOnProperty}、缺 {@code @ConditionalOnWebApplication}，于是它仍要装配
- * {@code securityWebFilterChain(ServerHttpSecurity)} ⇒ 上下文刷新失败 ⇒
- * {@code CompatibilitySchemaMigrator}（{@code ApplicationRunner}）**从未执行**。
+ * {@code securityWebFilterChain(ServerHttpSecurity)} ⇒ 上下文刷新失败 ⇒ 启动期的
+ * {@code ApplicationRunner}（当时是启动期兼容迁移/补丁）**从未执行**。
  *
  * <p>本测试用的 {@code ApplicationContextRunner} 默认建的非 Web 上下文，与
  * {@code web-application-type=none} 的形态一致。若把 {@code @ConditionalOnWebApplication} 拿掉，

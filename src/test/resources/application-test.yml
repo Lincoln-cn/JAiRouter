@@ -17,6 +17,13 @@ spring:
     username: sa
     password:
 
+  # Flyway：测试环境显式关掉（issue #192）
+  # 应用默认会按数据源方言启用 Flyway（见 FlywayDialectEnvironmentPostProcessor）并把 ddl-auto
+  # 覆盖为 validate；但测试用的是内存库 + create-drop，由 Hibernate 建表即可，不需要也不该跑
+  # 面向文件库的生产迁移脚本。这里的显式设置优先级高于处理器注入的方言默认值。
+  flyway:
+    enabled: false
+
   # JPA 配置
   jpa:
     hibernate:

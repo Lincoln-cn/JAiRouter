@@ -39,7 +39,7 @@ non-root security context (`runAsUser: 10010`, matching the user already inside 
 
 ### The schema migration Job runs first (deployment order)
 
-On the PostgreSQL path application pods only `validate` (see `database.md`), so **every table-structure
+On the PostgreSQL path application pods only `validate` (H2 keeps `update`, see `database.md`), so **every table-structure
 change is performed by the schema migration Job** — the deployment order is therefore **Job finishes →
 application pods start**. The Job uses a dedicated entry point
 (`SPRING_PROFILES_ACTIVE=prod,json-logs,migrate`, see issue #193) and runs the migration once, on a
@@ -146,11 +146,10 @@ Still open:
    policy; only meaningful once the key dimension is correct)
 2. Cross-Pod real-time event broadcast (#164)
 3. Versioned schema migration — **done** (#191: on the PostgreSQL path Flyway's baseline plus
-   `ddl-auto: validate` own the schema, see `database.md`; H2 is still managed by `update`), and so is
+   `ddl-auto: validate` own the schema, see `database.md`; #192: H2 got versioned migrations too and
+   the two start-up patch components were deleted, with H2 keeping `update`), and so is
    the **dedicated migration entry point** (#193: the `migrate` profile exits when done and its exit
    code reflects the outcome, so the Job needs no `activeDeadlineSeconds` fallback).
-   What remains is #192's closure: versioned migrations for H2 as well, then deleting the two
-   start-up patch components
 4. stdout structured logging — **done** (#211's `json-logs` profile); connection-pool / thread-pool
    externalization is **done** (#188 for the outbound WebClient, #189 for the tracing scheduler)
 

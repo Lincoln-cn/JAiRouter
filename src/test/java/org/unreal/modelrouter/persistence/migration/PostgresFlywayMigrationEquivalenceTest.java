@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 这是把「启动期条件式补丁」转成「确定序列脚本」后唯一真正的验证 —— 转错了就会出现
  * 「新库对、老库缺列」，而两者各自的单测都发现不了。</p>
  *
- * <p>三个 schema 各自跑一遍真实 Flyway（用 {@code classpath:db/migration} 里的生产脚本）：</p>
+ * <p>三个 schema 各自跑一遍真实 Flyway（用 {@code classpath:db/migration/postgres} 里的生产脚本）：</p>
  * <ol>
  *   <li>{@code fresh}：空 schema，Flyway 从 V1 建起</li>
  *   <li>{@code legacy_missing}：先手工用 V1 建好，再删掉五个补丁列并把 {@code expires_at}
@@ -113,9 +113,8 @@ class PostgresFlywayMigrationEquivalenceTest {
 
     /**
      * 退出时必须清掉三个探针 schema，这不只是整洁问题：它们各自包含一套与 {@code public}
-     * 同名的表，而 {@code CompatibilitySchemaMigrator} 的 INFORMATION_SCHEMA 查询**没有 schema 过滤**
-     * （见 issue #216），留下影子表会让同一库上运行的 {@code PostgresCompatibilityIntegrationTest}
-     * 因 {@code queryForObject} 命中多行而静默失效。
+     * 同名的表，留下影子表会让同一库上运行的其它门控测试（如 {@code PostgresCompatibilityIntegrationTest}）
+     * 读到不该读的对象而失败 —— 这是 issue #216 当时暴露出来的教训，清理仍是必须的。
      */
     @AfterAll
     static void dropProbeSchemas() throws SQLException {
@@ -158,7 +157,7 @@ class PostgresFlywayMigrationEquivalenceTest {
                 .defaultSchema(schema)
                 // 让脚本里的非限定表名落到被测 schema，而不是连接的默认 schema
                 .initSql("SET search_path TO " + schema)
-                .locations("classpath:db/migration")
+                .locations("classpath:db/migration/postgres")
                 .baselineOnMigrate(true)
                 .baselineVersion("1")
                 .load();
@@ -166,7 +165,7 @@ class PostgresFlywayMigrationEquivalenceTest {
 
     private static String baselineScript() {
         try (InputStream in = PostgresFlywayMigrationEquivalenceTest.class
-                .getResourceAsStream("/db/migration/V1__baseline.sql")) {
+                .getResourceAsStream("/db/migration/postgres/V1__baseline.sql")) {
             assertTrue(in != null, "classpath 上找不到 V1__baseline.sql");
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         } catch (Exception e) {

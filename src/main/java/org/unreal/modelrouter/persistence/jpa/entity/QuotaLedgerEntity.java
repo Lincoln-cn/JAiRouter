@@ -27,7 +27,7 @@ import java.time.LocalDateTime;
  * 累加落库（{@code UPDATE ... SET request_count = request_count + :delta}）才不会重复计数。</p>
  *
  * <p>该表由 Hibernate {@code ddl-auto} 自动创建（与 {@link ApiCallHistoryEntity} 一致），
- * 无需在 {@code CompatibilitySchemaMigrator} 中登记。</p>
+ * 无需额外登记（建表由迁移脚本负责）。</p>
  *
  * <p>列长度取舍：五个维度列合计 625 字符，可使七列唯一索引在 utf8mb4 下不超过
  * PostgreSQL btree 的 2704 字节上限（H2 无此限制，但保留跨库可移植性）。</p>

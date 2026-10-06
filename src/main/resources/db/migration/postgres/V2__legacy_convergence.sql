@@ -2,8 +2,9 @@
 -- V2：把《启动期兼容补丁》表达成版本化迁移（PostgreSQL，issue #192）
 -- ========================================
 -- 改造前这些补丁由两个 Java ApplicationRunner 在启动期执行：
---   1) CompatibilitySchemaMigrator —— 给 api_call_history / service_instance 补列，并把 JSON 列收敛为 jsonb
---   2) DatabaseMigrationService    —— 把 security_blacklist.expires_at 改为可空
+--   1) 补列 + 把 JSON 列收敛为 jsonb
+--   2) 把 security_blacklist.expires_at 改为可空
+-- （这两个组件已随 issue #192 删除 —— 本文件接管了它们的语义，且执行时机更早）
 -- 两者的执行时机都晚于 ddl-auto: validate（ApplicationRunner 在 EntityManagerFactory 之后），
 -- 因此它们救不回「缺列的老库」。本脚本把同一语义搬到 Flyway（在 validate 之前执行）。
 --
@@ -12,12 +13,12 @@
 --   * 已收敛的库（含 #190 之后的 Java 补丁已跑过的）：同样空操作
 --   * 老库：补齐缺列并把 JSON 列收敛为 jsonb
 --
--- 仅 PostgreSQL 执行本文件：H2 路径不启用 Flyway，仍由上述两个 Java 组件兜底
--- （实测依据：H2 上 Hibernate 的 ddl-auto: update 不会给已存在的表补列，见 issue #192 的 PR 说明）。
+-- 本目录只给 PostgreSQL 用：H2 有一套等价但类型不同的脚本，见 ../h2/V2__legacy_convergence.sql
+-- （两侧都必须存在，因为两种方言的物理类型不同：PG 是 jsonb / TEXT，H2 是 json / TEXT）。
 -- ========================================
 
 -- A1–A3：api_call_history 的三个补丁列
--- （原补丁在 PG 上把加密正文列补成 TEXT，见 CompatibilitySchemaMigrator.clobTypeFor("postgresql")）
+-- （原补丁在 PG 上把加密正文列补成 TEXT）
 ALTER TABLE IF EXISTS api_call_history ADD COLUMN IF NOT EXISTS request_body_encrypted TEXT;
 ALTER TABLE IF EXISTS api_call_history ADD COLUMN IF NOT EXISTS response_body_encrypted TEXT;
 ALTER TABLE IF EXISTS api_call_history ADD COLUMN IF NOT EXISTS record_level varchar(20);

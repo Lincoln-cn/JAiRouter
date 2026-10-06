@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
  * Job 永远不会以成功结束。
  *
  * <p>本类监听 {@link ApplicationReadyEvent}，因此**必然在所有 {@code ApplicationRunner}
- * （含 {@code CompatibilitySchemaMigrator}）之后**执行，不会与迁移抢时序。
+ * （含各类启动期 ApplicationRunner）之后**执行，不会与迁移抢时序。
  *
  * <p>默认关闭：不加该开关时行为与引入本类之前逐字相同。
  */

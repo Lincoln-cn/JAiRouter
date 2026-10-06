@@ -93,60 +93,67 @@ Hibernate 遇到这种冲突**只记 WARN 并继续**，结果是**索引被静�
 
 `service_instance` 的 `tags` / `headers` 用 JSON 映射（`@JdbcTypeCode(SqlTypes.JSON)`），**实体不再硬编码 `columnDefinition`**：物理类型交给方言 —— PostgreSQL 上建为 **`jsonb`**（实测 `information_schema.columns.udt_name = jsonb`），H2 / MySQL 上为各自的 `json` 类型，读写正常。
 
-`CompatibilitySchemaMigrator` 已与实体对齐：旧库升级路径补列时产出同一 JSON 类型，并把早期补成 `TEXT` / `CLOB` 的列**收敛为 `jsonb`**。于是**两种来历的库收敛到同一物理类型** —— 这是 Flyway 基线能配 `ddl-auto: validate` 的前置条件（原分歧见 issue #190）。
-
-在 PostgreSQL 路径上，这项工作现在由版本化脚本 `V2__legacy_convergence.sql` 承担（见下文「老库收敛」）；该 Java 组件已收窄为**只在没有版本化迁移时**注册，即实际只剩 H2 路径。
+`tags` / `headers` 的物理类型一致性现在由**版本化迁移**保证：PostgreSQL 上
+`db/migration/postgres/V2__legacy_convergence.sql` 把早期补成 `TEXT` / `CLOB` 的列**收敛为 `jsonb`**，
+于是两种来历的库收敛到同一物理类型（原分歧见 issue #190）；H2 侧历史上不存在这种分歧
+（旧库的 `tags` / `headers` 一直是 `json`，与实体一致），因此没有收敛步骤。
 
 > 核对某库的实际类型：
 > `SELECT udt_name FROM information_schema.columns WHERE table_name = 'service_instance' AND column_name IN ('tags', 'headers');`
 
-## 版本化 schema 迁移（Flyway，仅 PostgreSQL）
+## 版本化 schema 迁移（Flyway）
 
-PostgreSQL 路径的建表改由 **Flyway** 承担（issue #191）。**不需要额外开关**：应用按数据源 URL 的方言自行决定，见 `PostgresFlywayEnvironmentPostProcessor`。
+PostgreSQL 与 H2 的建表都由 **Flyway** 承担（issue #191 / #192）。**不需要额外开关**：应用按数据源
+URL 的方言自行决定用哪套脚本，见 `FlywayDialectEnvironmentPostProcessor`。
 
-| 数据源 | Flyway | `ddl-auto` | 建表方 |
-|---|---|---|---|
-| `jdbc:postgresql://…` | 启用 | `validate` | `db/migration` 下的版本化脚本 |
-| H2（默认 / 未设 `DATABASE_URL`） | 关闭 | `update` | Hibernate |
+| 数据源 | Flyway | 脚本目录 | `ddl-auto` | 建表方 |
+|---|---|---|---|---|
+| `jdbc:postgresql://…` | 启用 | `classpath:db/migration/postgres` | `validate` | Flyway |
+| H2（默认 / 未设 `DATABASE_URL`） | 启用 | `classpath:db/migration/h2` | `update` | Flyway |
 
-之所以按 URL 而不是按 profile 判定：本仓库连哪个库只由 `DATABASE_URL` 决定，同一个 `prod` profile 既可能连 H2 也可能连 PG。连到 PG 时注入 `spring.flyway.enabled=true`、`baseline-on-migrate=true`、`baseline-version=1`，并把 `ddl-auto` 覆盖为 `validate`；连 H2 时只关闭 Flyway，`ddl-auto` 保持 `update`，H2 路径行为不变。
+之所以按 URL 而不是按 profile 判定：本仓库连哪个库只由 `DATABASE_URL` 决定，同一个 `prod` profile
+既可能连 H2 也可能连 PG。两种方言都注入 `spring.flyway.enabled=true`、`baseline-on-migrate=true`、
+`baseline-version=1`；**只有 PostgreSQL 把 `ddl-auto` 覆盖为 `validate`** —— H2 为什么不切，见本节末
+「H2 为什么仍是 `update`」。
+
+两种方言各有一套脚本，因为物理类型不同（H2 是 `json` / `TEXT` / `enum`，PG 是 `jsonb` / `TEXT` /
+`varchar` + check）：**改动实体后两侧都要补脚本**。
 
 ### 基线（`V1__baseline.sql`）
 
-`db/migration/V1__baseline.sql` 是**当前实体模型的完整 schema**，由 Hibernate 的 schema 导出生成（不是手写 DDL），因此与实体映射天然一致 —— 这是 `validate` 能通过的前提。
+两侧的 `V1__baseline.sql` 都是**当前实体模型的完整 schema**，由 Hibernate 的 schema 导出生成
+（不是手写 DDL），因此与实体映射天然一致 —— 这是 PostgreSQL 上 `validate` 能通过的前提。
 
 - **空库**：Flyway 从头执行 `V1`，建成与实体一致的 schema（历史表记 `version = 1`、`type = SQL`）。
 - **已有库**（表已存在、无 `flyway_schema_history`）：`baseline-on-migrate=true` 使其**被记为基线 1 而不执行** `V1`（历史表记 `type = BASELINE`），库内容不动。
 
-> 历史上的 `V2` / `V3` 两个脚本已随本步删除，原因可核对：它们无任何代码引用，且 `V2` 要给 `service_instance` 补 5 个**当前模型已不存在**的列（限流、熔断字段现已独立为 `instance_rate_limit` / `instance_circuit_breaker` 两张表）。留在序列里只会在新库上重新引入这类分歧。
+> 历史上的 `V2` / `V3` 两个脚本已随 #191 删除，原因可核对：它们无任何代码引用，且 `V2` 要给 `service_instance` 补 5 个**当前模型已不存在**的列（限流、熔断字段现已独立为 `instance_rate_limit` / `instance_circuit_breaker` 两张表）。
 
-### 老库收敛（`V2__legacy_convergence.sql`）
+### 老库收敛（`V2__legacy_convergence.sql`，两侧都有）
 
-改造前，老库的兼容修补由两个**启动期**组件承担：`CompatibilitySchemaMigrator`（补列并收敛 JSON 列）与 `DatabaseMigrationService`（把 `security_blacklist.expires_at` 改为可空）。两者的执行时机都在 Hibernate 建 `EntityManagerFactory` **之后**，而 `validate` 恰恰就在那一步 —— 所以缺列的老库会在补丁跑到之前就启动失败。
+改造前，老库的兼容修补由两个**启动期** Java 组件承担（补列、收敛 JSON 列、把 `security_blacklist.expires_at` 改可空）。它们的执行时机都在 Hibernate 建 `EntityManagerFactory` **之后**，而 `validate` 恰恰就在那一步 —— 所以缺列的老库会在补丁跑到之前就启动失败。**这两个组件已随 #192 删除**，语义搬进了版本化脚本（执行时机早于 Hibernate，更安全）：
 
-现在 PostgreSQL 路径由 `V2__legacy_convergence.sql` 接管这批语义（在 `validate` **之前**执行）：
+- **空库**：`V1` 已建好一切，`V2` 每一步都是空操作。
+- **老库**（缺列，或 PG 上 `tags` / `headers` 仍是早期补成的 `text`）：`V1` 不执行（只记为基线 1），`V2` 补齐缺列，并在 PG 上把 JSON 列收敛为 `jsonb`；PG 随后 `validate` 通过 —— **不需要任何人工前置动作**。
+- 两侧脚本的所有语句都幂等，重复执行安全。
 
-- **空的 PG 库**：`V1` 已建好一切，`V2` 每一步都是空操作。
-- **老 PG 库**（缺列，或 `tags` / `headers` 仍是早期补成的 `text`）：`V1` 不执行（只记为基线 1），`V2` 补齐缺列并把 JSON 列收敛为 `jsonb`，随后 `validate` 通过 —— **不需要任何人工前置动作**。
-- 该脚本所有语句都幂等，重复执行安全。
-
-> 两个启动期组件已收窄为**只在没有版本化迁移时注册**（`@ConditionalOnProperty(spring.flyway.enabled=false)`，缺省即注册）：PG 上它们不再参与 schema 决定，H2 上照旧兜底。为什么 H2 还需要它们 —— 实测 H2 2.3.232 + Hibernate 6.6 下 `ddl-auto: update` **不会**给已存在的表补列；而 `update` 也从不会修改已存在列的 NOT NULL 约束。
->
 > 版本号提示：这里的 `V2__legacy_convergence.sql` 与上面提到的、已删除的历史脚本 `V2__add_rate_limit_circuit_breaker_fields.sql` 只是编号撞车，内容无关。
 >
-> 核对老库收敛结果：
+> 核对老库收敛结果（PostgreSQL）：
 > `SELECT column_name, udt_name FROM information_schema.columns WHERE table_name = 'service_instance' AND column_name IN ('tags', 'headers');`
 > 两列都应已是 `jsonb`。
 
-### H2 路径的老库
+### H2 为什么仍是 `update`（不切 `validate`）
 
-H2 不启用 Flyway、也没有 `validate`，因此老 H2 库的兼容仍由那两个启动期组件在启动后补齐：缺列由 `CompatibilitySchemaMigrator` 补（日志形如 `Schema 迁移: 表 service_instance 已补列 tags json`），`expires_at` 由 `DatabaseMigrationService` 改可空。启动日志里能看到 `Schema 迁移` 与 `Starting database migration check...` 这两组行。
+实测（H2 2.3.232 + Hibernate 6.6）：应用默认 URL 带 `DATABASE_TO_UPPER=FALSE`，对象建成**小写**（`PUBLIC.api_call_history`），而 Hibernate 的 schema 校验在 JDBC 元数据里按另一侧大小写去找 schema 名，一律报 `Schema-validation: missing table …` —— 用 JDBC 元数据探针确认 `getTables(cat, 'PUBLIC', …)` 命中、`'public'` 不命中，且 `default_schema=PUBLIC` 与 `jdbc_metadata_extraction_strategy=grouped` 都不解决。同一份脚本在**去掉**该模式的 H2 默认大小写下跑得通（实测：迁移 + 校验 + 启动、退出码 0），但那会让既有小写 H2 库全部失配、必须重建 —— 属破坏性变更，本步不做。H2 因此是「Flyway 版本化 + Hibernate `update`」：**建表与老库补齐归 Flyway，`update` 只是让存在漂移的开发库仍能起来**。
+
+> ⚠️ 已知限制（与改造前一致，未变差）：≤v2.9.7 的老 H2 库若 `tags` 列曾被补成 `CLOB`，H2 无法就地转成 `json`，`V2` 不会修它（原先的 Java 组件在 H2 上也只打一条 WARN）。处理办法是删除该 H2 库文件让它重建。
 
 ### 写新迁移
 
-- 已发布的脚本**不可再改**（Flyway 按校验和判定）；schema 变更请新增 `V3__…`（`V2` 已被老库收敛占用）。
-- 脚本只针对 PostgreSQL 方言（`jsonb`、`generated by default as identity` 等），H2 不执行它们。
-- 并发语义：Flyway 在 `flyway_schema_history` 上有自己的锁，多实例同时启动只有一个真正执行、其余等待 —— 已比「每个 Pod 都跑 DDL」安全。进一步做法是让迁移由先行的 K8s Job 跑完、应用 Pod 只做 `validate`（见 `kubernetes.md`）。
+- 已发布的脚本**不可再改**（Flyway 按校验和判定）；schema 变更请**两侧都**新增 `V3__…`（`V2` 已被老库收敛占用）。
+- 脚本只针对各自方言（PG 用 `jsonb` / `generated by default as identity`，H2 用 `json` / `TEXT` / `enum`）。
+- 并发语义：Flyway 在 `flyway_schema_history` 上有自己的锁，多实例同时启动只有一个真正执行、其余等待 —— 已比「每个 Pod 都跑 DDL」安全。进一步做法是让迁移由先行的 K8s Job 跑完（见 `kubernetes.md`）。
 
 ## 从 H2 迁移数据到 PostgreSQL
 
@@ -224,5 +231,6 @@ CI（`.github/workflows/java-tests.yml`）已配 `postgres:16-alpine` 服务容�
 
 以下内容**不在**当前支持范围内，横向扩展前需要单独处理：
 
-- **H2 路径仍是启动期补丁**：H2 不启用 Flyway（见上文），老 H2 库的缺列与约束修正仍由 `CompatibilitySchemaMigrator` / `DatabaseMigrationService` 在启动后执行。这两个组件**不能整体删除**：实测（H2 2.3.232 + Hibernate 6.6）`ddl-auto: update` 不给已存在的表补列，`update` 也不会改已存在列的 NOT NULL 约束。要彻底下线它们有两条路（给 H2 也做版本化迁移 / 明确放弃 H2 老库升级路径），**已裁决走前者**，见 issue #192 的收口项。
+- **H2 不切 `ddl-auto: validate`**：原因与实测证据见上文「H2 为什么仍是 `update`」，因此 H2 上 schema 漂移不会被启动期拦住。要上 validate，需先接受「既有小写 H2 库全部重建」这次破坏性改动。
+- **≤v2.9.7 的老 H2 库若 `tags` 曾被补成 `CLOB`**：H2 无法就地转 `json`，需删除该库文件重建（与改造前一致）。
 - 面向生产的多副本 K8s 部署制品（清单 / Helm、PodDisruptionBudget、迁移作业）见 issue #165。

@@ -1,2 +1,2 @@
 org.springframework.boot.env.EnvironmentPostProcessor=\
-org.unreal.modelrouter.persistence.migration.PostgresFlywayEnvironmentPostProcessor
+org.unreal.modelrouter.persistence.migration.FlywayDialectEnvironmentPostProcessor

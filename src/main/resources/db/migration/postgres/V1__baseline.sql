@@ -16,7 +16,7 @@
 --
 -- 维护约定：
 --   * 已发布的迁移脚本不可再改（Flyway 按校验和判定），schema 变更请新增 V2__/V3__… 增量脚本。
---   * 本文件只覆盖 PostgreSQL；H2 路径不启用 Flyway，仍由 ddl-auto: update 管理。
+--   * 本目录只覆盖 PostgreSQL；H2 有一套等价但类型不同的基线，见 ../h2/V1__baseline.sql。
 -- ========================================
 
     create table api_call_history (
