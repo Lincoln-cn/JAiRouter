@@ -286,23 +286,13 @@ curl -s http://localhost:8080/actuator/configprops | \
 
 ### 访问控制审计
 
-```yaml
-# 启用安全审计
-jairouter:
-  tracing:
-    security:
-      audit:
-        # 核对（issue #159）：原 log-access / log-config-changes / retention-days 三个键
-        # 没有对应字段，已按字段实名改正。
-        #
-        # ⚠️ 再核对（issue #224）：`security.audit`（含 storage）整段的字段**当前仍无任何消费方** ——
-        # 键名对了，但审计能力本身没有落地，配了不生效。是否删除整段待裁决，见 issue #224。
-        enabled: true
-        audit-data-access: true
-        audit-config-changes: true
-        storage:
-          audit-log-retention: 90d
-```
+> 核对（issue #159 / #224 批 B）：`jairouter.tracing.security.audit` 这**一整段配置不存在** ——
+> 它对应的字段（`enabled` / `audit-data-access` / `audit-config-changes` / `storage.audit-log-retention`
+> 等 11 个）全仓零消费方，即"追踪侧的审计能力没有落地"，字段与示例已一并删除。
+>
+> 需要审计能力时应先实现消费方再加回配置。**注意区分**：auth 模块有自己的一套安全审计
+> （`SecurityProperties.audit` + `/api/security/audit` 相关接口），那是独立的、真实可用的功能，
+> 与本段无关。
 
 ### 加密配置管理
 

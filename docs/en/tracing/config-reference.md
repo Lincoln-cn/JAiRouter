@@ -333,9 +333,12 @@ jairouter:
         # /actuator/info
         restrict-trace-access: true
         allowed-roles: []
-      # Checked in issues #231 / #224: the encryption.* and audit.* sections have **no behavioral
-      # consumer at all** today (encryption's enabled/algorithm/key-size are echo-only and audit is
-      # unread), so they are not listed here. Whether to wire them up or delete them is issue #224.
+      # Checked in issues #231 / #224 batch B: the whole audit.* section (including storage), plus
+      # encryption's encrypt-sensitive-spans / encrypt-sensitive-logs /
+      # key-management.{rotation-interval,key-store-path,use-hardware-security-module} /
+      # data-retention.* **had no consumer and were deleted**. Encryption now keeps only
+      # enabled / algorithm / key-size / key-management.auto-rotation, and those are echoed by
+      # /actuator/info only, so they are not listed here.
 ```
 
 ## Monitoring Configuration
@@ -445,6 +448,7 @@ This revision fixed two classes of problem: **key names/paths** and **whether a 
 
 The review also turned up **two capability gaps** (not documentation problems; recorded separately):
 
-1. `security.audit.*` and `security.encryption.*`: the whole sections have no behavioral consumer
-   (issue #224). (`sampling.rules` / `sampling.adaptive.*` were wired up in issue #234: set
-   `sampling.strategy` to `rule` / `adaptive` and they take effect.)
+(`sampling.rules` / `sampling.adaptive.*` were wired up in issue #234: set `sampling.strategy` to
+`rule` / `adaptive` and they take effect. The zero-consumer fields under `security.audit.*` and
+`security.encryption.*` were deleted in issue #224 batch B and are no longer part of the configurable
+surface.)

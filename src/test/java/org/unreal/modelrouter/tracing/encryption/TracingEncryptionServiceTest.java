@@ -17,7 +17,6 @@ import org.unreal.modelrouter.monitor.tracing.logger.StructuredLogger;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,9 +46,6 @@ class TracingEncryptionServiceTest {
     @Mock
     private TracingSecurityConfig.EncryptionConfig encryptionConfig;
 
-    @Mock
-    private TracingSecurityConfig.EncryptionConfig.DataRetention dataRetention;
-
     private TracingEncryptionService tracingEncryptionService;
     private Tracer tracer;
 
@@ -61,8 +57,7 @@ class TracingEncryptionServiceTest {
         when(encryptionConfig.isEnabled()).thenReturn(true);
         when(encryptionConfig.getAlgorithm()).thenReturn("AES");
         when(encryptionConfig.getKeySize()).thenReturn(256);
-        when(encryptionConfig.getDataRetention()).thenReturn(dataRetention);
-        when(dataRetention.getDefaultRetention()).thenReturn(Duration.ofDays(30));
+        // 原 encryptionConfig.getDataRetention() 整段（数据保留策略）零消费方，已随 issue #224 批 B 删除
 
         // 创建测试用的Tracer
         SdkTracerProvider tracerProvider = SdkTracerProvider.builder().build();
@@ -221,8 +216,9 @@ class TracingEncryptionServiceTest {
     @Test
     void testDataRetentionPolicy() {
         // 测试数据保留策略的配置
-        when(dataRetention.getDefaultRetention()).thenReturn(Duration.ofDays(7));
-        
+        // 原 stubbing（encryption.data-retention.default-retention）依赖的字段零消费方，
+        // 已随 issue #224 批 B 删除；cleanupExpiredData() 本身仍应正常返回。
+
         // 创建新的服务实例
         TracingEncryptionService serviceWithRetention = new TracingEncryptionService(tracingConfiguration, structuredLogger);
 

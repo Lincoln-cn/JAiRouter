@@ -329,7 +329,7 @@ class TracingConfigurationTest {
             assertNotNull(config.getSanitization());
             assertNotNull(config.getAccessControl());
             assertNotNull(config.getEncryption());
-            assertNotNull(config.getAudit());
+            // 原 config.getAudit() 整段（含 storage）零消费方，已随 issue #224 批 B 删除
         }
 
         @Test
@@ -349,7 +349,7 @@ class TracingConfigurationTest {
 
             assertTrue(accessControl.isRestrictTraceAccess());
             assertTrue(accessControl.isEnableRoleBasedFiltering());
-            assertTrue(accessControl.isAuditAccessAttempts());
+            // 原 auditAccessAttempts / maxAccessHistoryPerUser / fieldAccess.* 零消费方，已随 #224 批 B 删除
 
             accessControl.setAllowedRoles(List.of("ADMIN", "OPERATOR"));
             assertEquals(2, accessControl.getAllowedRoles().size());

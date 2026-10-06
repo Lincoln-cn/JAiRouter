@@ -321,9 +321,11 @@ jairouter:
         # 还有 access-control.enabled（条件键，无字段）；下面两项会回显到 /actuator/info
         restrict-trace-access: true
         allowed-roles: []
-      # 核对（issue #231 / #224）：encryption.* 与 audit.* 两段的字段目前**没有任何行为消费方**
-      # （encryption 的 enabled/algorithm/key-size 仅回显，audit 整段无人读），故不在此登记；
-      # 是否接线或删除见 issue #224。
+      # 核对（issue #231 / #224 批 B）：audit.* 整段（含 storage）以及 encryption 的
+      # encrypt-sensitive-spans / encrypt-sensitive-logs / key-management.{rotation-interval,
+      # key-store-path,use-hardware-security-module} / data-retention.* **零消费方，已删除**。
+      # encryption 只剩 enabled / algorithm / key-size / key-management.auto-rotation，
+      # 且它们仅被 /actuator/info 回显，故不在此登记。
 ```
 
 ## 监控配置
@@ -430,6 +432,6 @@ jairouter:
 
 另外，核对过程中发现**两个能力层面的缺口**（不是文档问题，已分别留痕）：
 
-1. `security.audit.*`、`security.encryption.*`：整段没有行为消费方（issue #224）。
-   （`sampling.rules` / `sampling.adaptive.*` 已在 issue #234 接线：把 `sampling.strategy` 设为 `rule` /
-   `adaptive` 即生效。）
+（`sampling.rules` / `sampling.adaptive.*` 已在 issue #234 接线：把 `sampling.strategy` 设为 `rule` /
+`adaptive` 即生效；`security.audit.*` 与 `security.encryption.*` 的零消费字段已在 issue #224 批 B 删除，
+不再出现在可配置面里。）
