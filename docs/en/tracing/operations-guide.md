@@ -52,17 +52,22 @@ jairouter:
     service-namespace: "production"
 
     # Sampling configuration
+    #
+    # Checked in issue #159: a `strategy` key, a `default-ratio` key, and the four adaptive keys
+    # base-sample-rate / max-traces-per-second / error-sample-rate / slow-request-threshold
+    # **have no backing fields** (SamplingConfig only has ratio / service-ratios /
+    # always-sample / never-sample / rules / adaptive.*), so copying them has no effect.
+    # The keys below use the real field names.
     sampling:
-      strategy: "parent_based_traceid_ratio"
-      ratio: 0.01      # 1% base sampling (v2.7.9+ optimized default)
-      default-ratio: 0.01
+      ratio: 0.01      # Global sampling ratio (v2.7.9+ default is 0.1; 1% for busy production)
       
       # Adaptive sampling (optional)
       adaptive:
-        base-sample-rate: 0.01      # 1% base sampling
-        max-traces-per-second: 100
-        error-sample-rate: 1.0      # 100% error sampling
-        slow-request-threshold: 3000
+        enabled: true                 # Turn adaptive sampling on
+        target-spans-per-second: 100  # Target spans per second
+        min-ratio: 0.01               # Lower bound of the sampling ratio
+        max-ratio: 1.0                # Upper bound of the sampling ratio
+        adjustment-interval: 30       # Adjustment interval (seconds)
     
     # Export configuration (v2.7.x optimized)
     exporter:
@@ -227,24 +232,26 @@ groups:
 # Recommended configuration
 jairouter:
   tracing:
-    memory:
-      max-spans: 100000  # Adjust based on memory capacity
-      span-ttl: 300s     # 5-minute TTL
+    # Checked in issue #159: the path is performance.memory, and there is no span-ttl knob
+    # (the model has no fixed TTL; eviction is driven by memory-limit-mb plus gc-interval).
+    performance:
+      memory:
+        max-spans-in-memory: 100000  # Adjust based on memory capacity
+        memory-limit-mb: 100
+        gc-interval: 60s
 ```
 
 #### Dynamic Adjustment Strategy
 ```yaml
+# Checked in issue #159: neither memory-threshold nor auto-cleanup has a backing field.
+# Memory pressure is driven by memory-limit-mb (eviction starts once it is exceeded) and the
+# check frequency is gc-interval.
 jairouter:
   tracing:
-    memory:
-      # Memory pressure threshold
-      memory-threshold: 0.8
-      
-      # Auto cleanup configuration
-      auto-cleanup:
-        enabled: true
-        trigger-threshold: 0.85
-        target-threshold: 0.7
+    performance:
+      memory:
+        memory-limit-mb: 80   # Lower the limit to evict sooner
+        gc-interval: 30s      # Check more often
 ```
 
 ### Storage Planning
@@ -286,10 +293,13 @@ jairouter:
   tracing:
     security:
       audit:
+        # Checked in issue #159: log-access / log-config-changes / retention-days have no
+        # backing fields; the real field names are used below.
         enabled: true
-        log-access: true
-        log-config-changes: true
-        retention-days: 90
+        audit-data-access: true
+        audit-config-changes: true
+        storage:
+          audit-log-retention: 90d
 ```
 
 ### Encryption Configuration Management
@@ -329,21 +339,10 @@ done
 
 ### Automated Tuning
 
-```yaml
-# Configure automatic tuning strategy
-jairouter:
-  tracing:
-    auto-tuning:
-      enabled: true
-      
-      # Reduce sampling rate when CPU usage exceeds 80%
-      cpu-threshold: 80
-      sampling-rate-adjustment: 0.5
-      
-      # Trigger cleanup when memory usage exceeds 85%
-      memory-threshold: 85
-      cleanup-aggressive: true
-```
+> Checked in issue #159: **there is no `jairouter.tracing.auto-tuning` section** — nothing in the
+> code base binds it, so the example had no effect. The only "automatic" behaviors that exist are
+> `sampling.adaptive.*` (adjusts the sampling ratio towards a target span rate) and
+> `performance.memory.gc-interval` (periodic memory-pressure check) — see "Memory Planning" above.
 
 ## Backup and Recovery
 
@@ -366,17 +365,10 @@ find $BACKUP_DIR -name "config-*.json" -mtime +30 -delete
 
 ### Tracing Data Backup
 
-```yaml
-# Configure tracing data export to long-term storage
-jairouter:
-  tracing:
-    exporter:
-      backup:
-        enabled: true
-        location: "/backup/tracing-data"
-        retention-days: 90
-        compression: true
-```
+> Checked in issue #159: **there is no `exporter.backup` section** — tracing has no built-in
+> backup/archival capability (nothing in the code base binds it). For long-term retention, point
+> `exporter.type` at a backend that stores data (an OTLP backend / a log pipeline), or back up the
+> database as described under "Configuration Backup".
 
 ## Upgrade and Maintenance
 
@@ -454,13 +446,14 @@ curl -X POST http://localhost:8080/api/admin/tracing/disable \
 
 #### 2. Exporter Failure
 ```yaml
-# Switch to backup exporter
+# Checked in issue #159: there are no exporter.fallback keys. To degrade the same way, simply
+# switch the exporter type to logging (that exporter does exist).
 jairouter:
   tracing:
     exporter:
-      fallback:
+      type: "logging"
+      logging:
         enabled: true
-        type: "logging"  # Temporarily use log export
 ```
 
 #### 3. Memory Leak

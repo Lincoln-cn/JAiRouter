@@ -1,4 +1,4 @@
-﻿# Troubleshooting
+# Troubleshooting
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.0
@@ -54,12 +54,12 @@ curl http://localhost:8080/actuator/metrics/jairouter.tracing.sampling.rate
 jairouter:
   tracing:
     sampling:
-      strategy: "ratio"
       ratio: 1.0
-    
-    # Enable debug logs
-    logging:
-      level: DEBUG
+
+# Enable debug logs (checked in #159: tracing has no logging.level field, use Spring's own level)
+logging:
+  level:
+    org.unreal.modelrouter.monitor.tracing: DEBUG
 ```
 
 ## Performance Issues
@@ -94,14 +94,22 @@ jairouter:
       ratio: 0.1
     
     # Enable async processing
-    async:
-      enabled: true
-      core-pool-size: 4
-    
+    # Checked in issue #159: there is no async section (the switch is
+    # performance.async-processing, the pool lives under performance.thread-pool);
+    # batch processor knobs live under open-telemetry.
+    performance:
+      async-processing: true
+      thread-pool:
+        core-size: 4
+
     # Optimize batch processing
-    exporter:
-      batch-size: 512
-      export-timeout: 5s
+    open-telemetry:
+      sdk:
+        trace:
+          processors:
+            batch:
+              max-export-batch-size: 512
+              export-timeout: 5s
 ```
 
 ### 2. Memory Leak
@@ -130,10 +138,13 @@ jcmd <pid> VM.gc
 ```yaml
 jairouter:
   tracing:
-    memory:
-      max-spans: 5000              # Limit Span count
-      cleanup-interval: 15s        # More frequent cleanup
-      span-ttl: 60s               # Shorter TTL
+    # Checked in issue #159: the real path is performance.memory, and cleanup-interval /
+    # span-ttl do not exist (memory pressure is driven by memory-limit-mb).
+    performance:
+      memory:
+        max-spans-in-memory: 5000    # Limit Span count
+        memory-limit-mb: 80          # Tighten the limit to evict sooner
+        gc-interval: 15s             # Check more often
 ```
 
 ## Configuration Issues
@@ -164,15 +175,22 @@ jairouter:
     sampling:
       ratio: 1.5                   # Out of range [0.0, 1.0]
     exporter:
-      endpoint: "localhost:4317"   # Missing protocol
+      otlp:
+        endpoint: "localhost:4317"   # Missing protocol
+```
 
+**The correct form of the same configuration** (the two halves are split into separate blocks so
+each one passes YAML syntax validation):
+
+```yaml
 # ✅ Correct configuration  
 jairouter:
   tracing:
     sampling:
       ratio: 1.0
     exporter:
-      endpoint: "http://localhost:4317"
+      otlp:
+        endpoint: "http://localhost:4317"
 ```
 
 ### 2. Dynamic Configuration Update Failure
@@ -219,7 +237,8 @@ jairouter:
       jaeger:
         endpoint: "http://jaeger:14268/api/traces"  # Use service name
         timeout: 30s                                # Increase timeout
-        retry-enabled: true                         # Enable retry
+        # Checked in issue #159: there is no retry-enabled knob
+        # (JaegerConfig only has endpoint / timeout / headers).
 ```
 
 ### 2. OTLP Export Errors

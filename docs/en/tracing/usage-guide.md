@@ -254,10 +254,14 @@ The system automatically detects requests that exceed the threshold:
 jairouter:
   tracing:
     sampling:
-      strategy: "adaptive"
+      # Checked in issue #159: there is no strategy key, and slow-request-threshold /
+      # slow-request-sample-rate do not exist; adaptive sampling has only these five fields.
       adaptive:
-        slow-request-threshold: 3000  # 3秒阈值
-        slow-request-sample-rate: 0.8 # 慢请求80%采样
+        enabled: true
+        target-spans-per-second: 1000  # Target spans per second
+        min-ratio: 0.1                 # Lower bound of the sampling ratio
+        max-ratio: 1.0                 # Upper bound of the sampling ratio
+        adjustment-interval: 30        # Adjustment interval (seconds)
 ```
 
 #### 2. Manual Slow Query Analysis
@@ -463,11 +467,14 @@ public class TracingMemoryMonitor {
 ```yaml
 jairouter:
   tracing:
-    memory:
-      max-spans: 50000              # 根据实际内存调整
-      cleanup-interval: 30s         # 更频繁的清理
-      span-ttl: 180s               # 较短的 TTL
-      memory-threshold: 0.7        # 较低的内存阈值
+    # Checked in issue #159: the real path is performance.memory; cleanup-interval / span-ttl /
+    # memory-threshold do not exist (memory pressure is driven by memory-limit-mb, the check
+    # frequency by gc-interval).
+    performance:
+      memory:
+        max-spans-in-memory: 50000  # Adjust to the actual heap
+        memory-limit-mb: 70         # Tighten the limit
+        gc-interval: 30s            # Check more often
 ```
 
 ## Security and Privacy
@@ -518,19 +525,23 @@ public class TracingSanitizer {
 jairouter:
   tracing:
     security:
+      # enabled is a condition-only key (TracingSecurityAutoConfiguration @ConditionalOnProperty;
+      # there is no field of that name, absent means on), so it still works.
       enabled: true
-      sensitive-headers:
-        - "Authorization"
-        - "Cookie"
-        - "X-API-Key"
-        - "X-Auth-Token"
-      sensitive-params:
-        - "password"
-        - "token"
-        - "secret"
-        - "api_key"
-        - "access_token"
-      mask-pattern: "***"
+      # Checked in issue #159: sensitive-headers / sensitive-params / mask-pattern do not exist.
+      # What gets sanitized is sanitization.sensitive-attributes, the mask character lives under
+      # tracing-rules.
+      sanitization:
+        enabled: true
+        inherit-global-rules: true
+        sensitive-attributes:
+          - "authorization"
+          - "cookie"
+          - "x-api-key"
+          - "password"
+          - "token"
+        tracing-rules:
+          default-mask-character: "*"
 ```
 
 ### Access Control
@@ -610,15 +621,17 @@ jairouter:
     sampling:
       ratio: 0.1
     
-    # 启用异步处理
-    async:
-      enabled: true
-      core-pool-size: 4
-    
-    # 优化内存配置
-    memory:
-      max-spans: 5000
-      cleanup-interval: 15s
+    # Enable async processing
+    # Checked in issue #159: there is no async section (the switch is
+    # performance.async-processing, the pool lives under performance.thread-pool), and the real
+    # path for memory is performance.memory.
+    performance:
+      async-processing: true
+      thread-pool:
+        core-size: 4
+      memory:
+        max-spans-in-memory: 5000
+        gc-interval: 15s
 ```
 
 #### 3. Context Propagation Issues

@@ -1,4 +1,4 @@
-﻿# 故障排除
+# 故障排除
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0
@@ -54,12 +54,12 @@ curl http://localhost:8080/actuator/metrics/jairouter.tracing.sampling.rate
 jairouter:
   tracing:
     sampling:
-      strategy: "ratio"
       ratio: 1.0
-    
-    # 启用调试日志
-    logging:
-      level: DEBUG
+
+# 启用调试日志（核对 #159：tracing 段里没有 logging.level 字段，用 Spring 的日志级别）
+logging:
+  level:
+    org.unreal.modelrouter.monitor.tracing: DEBUG
 ```
 
 ## 性能问题
@@ -94,14 +94,21 @@ jairouter:
       ratio: 0.1
     
     # 启用异步处理
-    async:
-      enabled: true
-      core-pool-size: 4
-    
+    # 核对（issue #159）：没有 async 段（总开关是 performance.async-processing，
+    # 线程池在 performance.thread-pool 下）；批处理器参数在 open-telemetry 下。
+    performance:
+      async-processing: true
+      thread-pool:
+        core-size: 4
+
     # 优化批处理
-    exporter:
-      batch-size: 512
-      export-timeout: 5s
+    open-telemetry:
+      sdk:
+        trace:
+          processors:
+            batch:
+              max-export-batch-size: 512
+              export-timeout: 5s
 ```
 
 ### 2. 内存泄漏
@@ -130,10 +137,13 @@ jcmd <pid> VM.gc
 ```yaml
 jairouter:
   tracing:
-    memory:
-      max-spans: 5000              # 限制 Span 数量
-      cleanup-interval: 15s        # 更频繁清理
-      span-ttl: 60s               # 更短的 TTL
+    # 核对（issue #159）：真实路径是 performance.memory，且没有 cleanup-interval /
+    # span-ttl 这两个旋钮（内存压力由 memory-limit-mb 决定）。
+    performance:
+      memory:
+        max-spans-in-memory: 5000    # 限制 Span 数量
+        memory-limit-mb: 80          # 收紧内存上限，更早回收
+        gc-interval: 15s             # 检查更频繁
 ```
 
 ## 配置问题
@@ -164,15 +174,21 @@ jairouter:
     sampling:
       ratio: 1.5                   # 超出范围 [0.0, 1.0]
     exporter:
-      endpoint: "localhost:4317"   # 缺少协议
+      otlp:
+        endpoint: "localhost:4317"   # 缺少协议
+```
 
+**同一条配置的正确写法**（两半拆成各自独立的块，整块才能过 YAML 语法校验）：
+
+```yaml
 # ✅ 正确配置  
 jairouter:
   tracing:
     sampling:
       ratio: 1.0
     exporter:
-      endpoint: "http://localhost:4317"
+      otlp:
+        endpoint: "http://localhost:4317"
 ```
 
 ### 2. 动态配置更新失败
@@ -219,7 +235,8 @@ jairouter:
       jaeger:
         endpoint: "http://jaeger:14268/api/traces"  # 使用服务名
         timeout: 30s                                # 增加超时时间
-        retry-enabled: true                         # 启用重试
+        # 核对（issue #159）：没有 retry-enabled 这个旋钮
+        #（JaegerConfig 只有 endpoint / timeout / headers）。
 ```
 
 ### 2. OTLP 导出错误

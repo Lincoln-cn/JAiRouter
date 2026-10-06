@@ -77,8 +77,9 @@ jairouter:
     exporter:
       type: "otlp"
       otlp:
+        # 核对（issue #159）：没有 protocol 这个旋钮（OtlpConfig 只有 endpoint /
+        # timeout / headers / compression），OTLP 走 gRPC。
         endpoint: "http://localhost:4317"
-        protocol: "grpc"  # 或 "http/protobuf"
 ```
 
 ## 验证配置
@@ -149,7 +150,7 @@ tail -f logs/application.log | grep traceId
 jairouter:
   tracing:
     sampling:
-      strategy: "ratio"
+      # 核对（issue #159）：没有 strategy 这个键（无对应字段），采样率就是 ratio。
       ratio: 1.0  # 100% 采样，用于开发调试
 ```
 
@@ -159,16 +160,15 @@ jairouter:
 jairouter:
   tracing:
     sampling:
-      strategy: "rule"
+      # 核对（issue #159）：原 strategy: "rule" 无对应字段；规则的字段是 condition + ratio
+      #（condition 是属性表达式，支持 >= / <= / == / !=，见 RuleBasedSamplingStrategy.matchesRule），
+      # 原 service / operation / path-pattern / method / sample-rate 五个键都不存在。
+      # 不匹配任何规则的请求走 sampling.ratio。
       rules:
-        - service: "jairouter"
-          operation: "*"
-          sample-rate: 0.1  # 10% 采样
-        - service: "jairouter"
-          operation: "POST /api/v1/chat/completions"
-          sample-rate: 0.5  # 关键接口 50% 采样
-        - path-pattern: "/health*"
-          sample-rate: 0.0  # 健康检查不采样
+        - condition: "http.status_code >= 500"                 # 错误请求：全采
+          ratio: 1.0
+        - condition: "http.route == /api/v1/chat/completions"  # 关键接口：50%
+          ratio: 0.5
 ```
 
 ### 自适应采样（推荐）
@@ -177,11 +177,14 @@ jairouter:
 jairouter:
   tracing:
     sampling:
-      strategy: "adaptive"
+      # 核对（issue #159）：自适应采样没有单独的 strategy 开关（用 adaptive.enabled），
+      # 原 max-traces-per-second / base-sample-rate / error-sample-rate 三个键都不存在。
       adaptive:
-        max-traces-per-second: 100
-        base-sample-rate: 0.1
-        error-sample-rate: 1.0  # 错误请求 100% 采样
+        enabled: true
+        target-spans-per-second: 100  # 目标每秒 Span 数
+        min-ratio: 0.1                # 采样率下限
+        max-ratio: 1.0                # 采样率上限
+        adjustment-interval: 30       # 调整间隔（秒）
 ```
 
 ## 性能调优
@@ -191,10 +194,16 @@ jairouter:
 ```yaml
 jairouter:
   tracing:
-    exporter:
-      batch-size: 100
-      export-timeout: 30s
-      max-queue-size: 2048
+    # 核对（issue #159）：这三个键属于 OpenTelemetry 批处理器，不挂在 exporter 下，
+    # 且原 batch-size 名字不对（字段是 max-export-batch-size）。
+    open-telemetry:
+      sdk:
+        trace:
+          processors:
+            batch:
+              max-export-batch-size: 100
+              export-timeout: 30s
+              max-queue-size: 2048
 ```
 
 ### 2. 内存管理
@@ -202,10 +211,13 @@ jairouter:
 ```yaml
 jairouter:
   tracing:
-    memory:
-      max-spans: 10000
-      cleanup-interval: 60s
-      span-ttl: 300s
+    # 核对（issue #159）：真实路径是 performance.memory，且没有 cleanup-interval /
+    # span-ttl 这两个旋钮（字段是 max-spans-in-memory / memory-limit-mb / gc-interval）。
+    performance:
+      memory:
+        max-spans-in-memory: 10000
+        memory-limit-mb: 100
+        gc-interval: 60s
 ```
 
 ### 3. 采样率动态调整
@@ -216,10 +228,11 @@ jairouter:
 jairouter:
   tracing:
     sampling:
-      strategy: "adaptive"
       adaptive:
-        base-sample-rate: 0.01  # 1% 基础采样
-        max-traces-per-second: 50
+        enabled: true
+        target-spans-per-second: 50
+        min-ratio: 0.01    # 1% 采样率下限
+        max-ratio: 1.0
 ```
 
 ## 集成监控
