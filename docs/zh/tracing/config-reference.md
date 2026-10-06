@@ -65,9 +65,9 @@ jairouter:
 jairouter:
   tracing:
     sampling:
-      # 核对（issue #231）：没有 strategy 这个键，采样率就是 ratio（字段默认 1.0，
-      # 仓库 tracing-base.yml 配的是 0.1）。
-      ratio: 0.1                     # 采样率 0.0-1.0
+      # 采样策略（issue #234 起真实存在）：ratio（默认）/ rule / adaptive
+      strategy: ratio
+      ratio: 0.1                     # 采样率 0.0-1.0（字段默认 1.0，仓库 tracing-base.yml 配的是 0.1）
 ```
 
 ### 规则采样
@@ -76,7 +76,8 @@ jairouter:
 jairouter:
   tracing:
     sampling:
-      # 核对（issue #231）：没有 strategy 键；一条规则只有两个字段 —— condition 与 ratio。
+      # 用规则采样需要把策略切到 rule（issue #234）；一条规则只有两个字段 —— condition 与 ratio。
+      strategy: rule
       rules:
         - condition: "http.status_code >= 500"   # 属性表达式，支持 >= / <= / == / !=
           ratio: 1.0                             # 命中时按此采样率
@@ -88,9 +89,10 @@ jairouter:
 按 `condition` 里的比较运算符（`>=`、`<=`、`==`、`!=`）与 span 属性逐条比较，**按声明顺序取第一条命中**的规则；
 `condition` 里没有这些运算符会被判为疑似无效并给出告警。
 
-> ⚠️ 现状（issue #231 实测核对）：`SamplingStrategyManager#refreshStrategies` 目前把 `ratio_based` 与
-> `rule_based` 都注册成同一个 `traceIdRatioBased(ratio)`，**并没有读取 `rules`** —— 也就是说规则采样
-> "配得进去、但当前不参与采样决策"。是否需要接线由 issue #231 跟踪。
+> 接线情况（issue #234）：`SamplingStrategyManager` 会按 `strategy` 装配策略，选中 `rule` 时才把
+> `RuleBasedSamplingStrategy` 接进采样链 —— 也就是说**只有把 `strategy` 设成 `rule` 时 `rules` 才生效**；
+> 留在默认的 `ratio` 下，`rules` 不参与决策（这是有意的，避免"配了 rules 就悄悄改变全局采样率"）。
+> 同一策略下 `always-sample` / `never-sample` / `service-ratios` 也一并生效。
 >
 > 原先这张表（`service` / `operation` / `path-pattern` / `method` / `header-name` / `header-value` /
 > `error-only` / `status-code`）八个条件在代码里都不存在，已删除。
@@ -102,7 +104,8 @@ jairouter:
 jairouter:
   tracing:
     sampling:
-      # 核对（issue #231）：没有 strategy 键；自适应采样只有下面五个字段。
+      # 用自适应采样需要 strategy: adaptive 且 enabled: true（issue #234）
+      strategy: adaptive
       adaptive:
         enabled: false                # 是否启用，默认: false
         target-spans-per-second: 1000 # 目标每秒 Span 数，默认: 1000
@@ -111,11 +114,9 @@ jairouter:
         adjustment-interval: 30       # 调整间隔（**整数秒**），默认: 30
 ```
 
-> ⚠️ 现状（issue #231 实测核对）：`AdaptiveSamplingStrategy` 这个类**只被测试实例化过**，
-> 生产链路上 `SamplingStrategyManager` 只把全局 `ratio` 接到采样器（`adaptive.enabled` 为真时也只是
-> 用 `min-ratio`/`max-ratio` 对 `ratio` 做一次区间夹取，是一段静态值，不是自适应闭环）。
-> 因此上面这四个字段目前**只被校验与 `/actuator/info` 回显**，不改变采样行为。
-> 接线与否由 issue #231 跟踪。
+> 接线情况（issue #234）：`strategy: adaptive` + `adaptive.enabled: true` 时，
+> `SamplingStrategyManager` 会用上面这些字段构造 `AdaptiveSamplingStrategy` 并接进采样链；
+> 两者缺一时回落 `ratio`（并在启动日志与校验器里给出告警）。
 
 ## 导出器配置
 
@@ -429,7 +430,6 @@ jairouter:
 
 另外，核对过程中发现**两个能力层面的缺口**（不是文档问题，已分别留痕）：
 
-1. `sampling.rules` 与 `sampling.adaptive.*`：配置能绑定，但
-   `SamplingStrategyManager#refreshStrategies` 只把全局 `ratio` 接到采样器上 ⇒ 规则采样与自适应采样
-   当前不参与决策；
-2. `security.audit.*`、`security.encryption.*`：整段没有行为消费方（issue #224）。
+1. `security.audit.*`、`security.encryption.*`：整段没有行为消费方（issue #224）。
+   （`sampling.rules` / `sampling.adaptive.*` 已在 issue #234 接线：把 `sampling.strategy` 设为 `rule` /
+   `adaptive` 即生效。）

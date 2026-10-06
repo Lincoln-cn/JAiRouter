@@ -67,9 +67,9 @@ jairouter:
 jairouter:
   tracing:
     sampling:
-      # Checked in issue #231: there is no strategy key; the sampling rate is just ratio (field
-      # default 1.0, the repo's tracing-base.yml sets 0.1).
-      ratio: 0.1                     # Sampling rate 0.0-1.0
+      # Sampling strategy (real since issue #234): ratio (default) / rule / adaptive
+      strategy: ratio
+      ratio: 0.1                     # Sampling rate 0.0-1.0 (field default 1.0; tracing-base.yml sets 0.1)
 ```
 
 ### Rule Sampling
@@ -78,8 +78,9 @@ jairouter:
 jairouter:
   tracing:
     sampling:
-      # Checked in issue #231: there is no strategy key; a rule has exactly two fields —
+      # Rule sampling requires strategy: rule (issue #234); a rule has exactly two fields —
       # condition and ratio.
+      strategy: rule
       rules:
         - condition: "http.status_code >= 500"   # Attribute expression: >= / <= / == / !=
           ratio: 1.0                             # Sampling ratio when the rule matches
@@ -92,10 +93,11 @@ jairouter:
 (`>=`, `<=`, `==`, `!=`) are evaluated against span attributes, and **the first matching rule in
 declaration order wins**. A `condition` without any of those operators is reported as probably invalid.
 
-> ⚠️ Current state (verified in issue #231): `SamplingStrategyManager#refreshStrategies` registers both
-> `ratio_based` and `rule_based` as the same `traceIdRatioBased(ratio)` and **never reads `rules`** — so
-> rule sampling can be configured but does not take part in sampling decisions today. Whether to wire it
-> up is tracked by issue #231.
+> Wiring (issue #234): `SamplingStrategyManager` builds the sampler according to `strategy`, and only
+> when `rule` is selected does it put `RuleBasedSamplingStrategy` into the sampling chain — i.e. **`rules`
+> take effect only when `strategy` is set to `rule`**. Under the default `ratio` they are deliberately
+> ignored, so that merely listing rules cannot silently change the global sampling rate. The same strategy
+> also activates `always-sample` / `never-sample` / `service-ratios`.
 >
 > The previous table (`service` / `operation` / `path-pattern` / `method` / `header-name` /
 > `header-value` / `error-only` / `status-code`) listed eight conditions that do not exist in the code;
@@ -108,7 +110,8 @@ declaration order wins**. A `condition` without any of those operators is report
 jairouter:
   tracing:
     sampling:
-      # Checked in issue #231: there is no strategy key; adaptive sampling has exactly these fields.
+      # Adaptive sampling needs strategy: adaptive AND enabled: true (issue #234)
+      strategy: adaptive
       adaptive:
         enabled: false                # Whether to enable it, default: false
         target-spans-per-second: 1000 # Target spans per second, default: 1000
@@ -117,11 +120,10 @@ jairouter:
         adjustment-interval: 30       # Adjustment interval in **whole seconds**, default: 30
 ```
 
-> ⚠️ Current state (verified in issue #231): the `AdaptiveSamplingStrategy` class is instantiated
-> **only by tests**; in production `SamplingStrategyManager` wires just the global `ratio` into the
-> sampler (`adaptive.enabled` merely clamps `ratio` into `min-ratio`/`max-ratio` — a static value, not a
-> feedback loop). So these fields are currently only validated and echoed by `/actuator/info`; they do
-> not change sampling behavior. Whether to wire them up is tracked by issue #231.
+> Wiring (issue #234): with `strategy: adaptive` **and** `adaptive.enabled: true`,
+> `SamplingStrategyManager` builds an `AdaptiveSamplingStrategy` from the fields above and puts it into
+> the sampling chain; if either is missing it falls back to `ratio` (with a warning in the startup log and
+> from the validator).
 
 ## Exporter Configuration
 
@@ -443,8 +445,6 @@ This revision fixed two classes of problem: **key names/paths** and **whether a 
 
 The review also turned up **two capability gaps** (not documentation problems; recorded separately):
 
-1. `sampling.rules` and `sampling.adaptive.*`: the keys bind, but
-   `SamplingStrategyManager#refreshStrategies` only wires the global `ratio` into the sampler — rule and
-   adaptive sampling do not take part in decisions today;
-2. `security.audit.*` and `security.encryption.*`: the whole sections have no behavioral consumer
-   (issue #224).
+1. `security.audit.*` and `security.encryption.*`: the whole sections have no behavioral consumer
+   (issue #224). (`sampling.rules` / `sampling.adaptive.*` were wired up in issue #234: set
+   `sampling.strategy` to `rule` / `adaptive` and they take effect.)

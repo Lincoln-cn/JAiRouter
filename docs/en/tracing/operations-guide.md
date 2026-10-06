@@ -53,12 +53,11 @@ jairouter:
 
     # Sampling configuration
     #
-    # Checked in issue #159: a `strategy` key, a `default-ratio` key, and the four adaptive keys
-    # base-sample-rate / max-traces-per-second / error-sample-rate / slow-request-threshold
-    # **have no backing fields** (SamplingConfig only has ratio / service-ratios /
-    # always-sample / never-sample / rules / adaptive.*), so copying them has no effect.
-    # The keys below use the real field names.
+    # Checked in issues #159 / #234: `default-ratio` and the four adaptive keys
+    # base-sample-rate / max-traces-per-second / error-sample-rate / slow-request-threshold have no
+    # backing fields; `strategy` however became real in issue #234, with values ratio / rule / adaptive.
     sampling:
+      strategy: ratio  # Pure ratio sampling for busy production; use rule + rules to always sample errors
       ratio: 0.01      # Global sampling ratio (v2.7.9+ default is 0.1; 1% for busy production)
       
       # Adaptive sampling (optional)

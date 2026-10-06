@@ -37,7 +37,7 @@ jairouter:
     enabled: true
     service-name: "jairouter"
     sampling:
-      strategy: "parent_based_traceid_ratio"  # 可选值：parent_based_traceid_ratio, ratio, rule, adaptive
+      strategy: "ratio"  # 可选值：ratio（默认）, rule, adaptive —— 见 config-reference（issue #234）
       ratio: 1.0         # 100% 采样（开发环境推荐）
 ```
 
@@ -150,7 +150,8 @@ tail -f logs/application.log | grep traceId
 jairouter:
   tracing:
     sampling:
-      # 核对（issue #159）：没有 strategy 这个键（无对应字段），采样率就是 ratio。
+      # 采样策略（issue #234 起真实存在）：ratio 只按采样率，rule 按 rules 匹配，adaptive 需开启对应子配置。
+      strategy: "ratio"
       ratio: 1.0  # 100% 采样，用于开发调试
 ```
 
@@ -160,7 +161,7 @@ jairouter:
 jairouter:
   tracing:
     sampling:
-      # 核对（issue #159）：原 strategy: "rule" 无对应字段；规则的字段是 condition + ratio
+      # 规则采样要点：strategy 必须是 rule（issue #234）；规则的字段是 condition + ratio
       #（condition 是属性表达式，支持 >= / <= / == / !=，见 RuleBasedSamplingStrategy.matchesRule），
       # 原 service / operation / path-pattern / method / sample-rate 五个键都不存在。
       # 不匹配任何规则的请求走 sampling.ratio。
@@ -177,8 +178,9 @@ jairouter:
 jairouter:
   tracing:
     sampling:
-      # 核对（issue #159）：自适应采样没有单独的 strategy 开关（用 adaptive.enabled），
+      # 自适应采样要点（issue #234）：strategy 设为 adaptive 且 adaptive.enabled=true 才生效；
       # 原 max-traces-per-second / base-sample-rate / error-sample-rate 三个键都不存在。
+      strategy: "adaptive"
       adaptive:
         enabled: true
         target-spans-per-second: 100  # 目标每秒 Span 数

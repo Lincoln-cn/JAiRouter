@@ -37,7 +37,7 @@ jairouter:
     enabled: true
     service-name: "jairouter"
     sampling:
-      strategy: "parent_based_traceid_ratio"  # Options: parent_based_traceid_ratio, ratio, rule, adaptive
+      strategy: "ratio"  # Options: ratio (default), rule, adaptive — see config-reference (issue #234)
       ratio: 1.0         # 100% sampling (recommended for development)
 ```
 
@@ -150,7 +150,9 @@ Check your OTEL collector configuration and backend storage.
 jairouter:
   tracing:
     sampling:
-      # Checked in issue #159: there is no strategy key (no backing field); the ratio is it.
+      # Sampling strategy (real since issue #234): ratio uses the ratio only, rule matches rules,
+      # adaptive needs its sub-config enabled.
+      strategy: "ratio"
       ratio: 1.0  # 100% sampling for development debugging
 ```
 
@@ -160,7 +162,7 @@ jairouter:
 jairouter:
   tracing:
     sampling:
-      # Checked in issue #159: strategy: "rule" has no backing field. A rule is condition + ratio
+      # Rule sampling needs strategy: rule (issue #234); a rule is condition + ratio
       # (condition is an attribute expression supporting >= / <= / == / !=, see
       # RuleBasedSamplingStrategy.matchesRule); the five old keys do not exist.
       # Requests matching no rule fall back to sampling.ratio.
@@ -177,8 +179,9 @@ jairouter:
 jairouter:
   tracing:
     sampling:
-      # Checked in issue #159: adaptive sampling has no separate strategy switch (use
-      # adaptive.enabled), and the three old keys do not exist.
+      # Adaptive sampling needs strategy: adaptive AND adaptive.enabled=true (issue #234); the three
+      # old keys do not exist.
+      strategy: "adaptive"
       adaptive:
         enabled: true
         target-spans-per-second: 100  # Target spans per second

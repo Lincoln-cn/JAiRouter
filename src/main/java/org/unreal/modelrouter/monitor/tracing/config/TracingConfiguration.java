@@ -126,6 +126,18 @@ public class TracingConfiguration {
     @Data
     public static class SamplingConfig {
         /**
+         * 采样策略（issue #234）：
+         * <ul>
+         *   <li>{@code ratio}（默认）—— 只按 {@link #ratio} 做 traceId 比例采样</li>
+         *   <li>{@code rule} —— 按 {@link #rules} 逐条匹配 span 属性，未命中时回落 {@link #ratio}</li>
+         *   <li>{@code adaptive} —— 用 {@link AdaptiveConfig} 的上下限约束采样率（需要
+         *       {@code adaptive.enabled=true}，否则回落 {@code ratio}）</li>
+         * </ul>
+         * 由 {@code SamplingStrategyManager} 读取并据此装配采样器；取值非法或所需子配置未开启时回落 {@code ratio}。
+         */
+        private String strategy = "ratio";
+
+        /**
          * 全局采样率 (0.0-1.0)
          */
         private double ratio = 1.0;

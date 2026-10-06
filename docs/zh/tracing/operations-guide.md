@@ -53,11 +53,11 @@ jairouter:
 
     # 采样配置
     #
-    # 核对（issue #159）：原有一个 `strategy` 键、一个 `default-ratio`，以及 adaptive 下的
-    # base-sample-rate / max-traces-per-second / error-sample-rate / slow-request-threshold ——
-    # **这六个键类里都没有对应字段**（SamplingConfig 只有 ratio / service-ratios /
-    # always-sample / never-sample / rules / adaptive.*），照抄不生效。下面按字段实名给出。
+    # 核对（issue #159 / #234）：原 `default-ratio` 以及 adaptive 下的 base-sample-rate /
+    # max-traces-per-second / error-sample-rate / slow-request-threshold **类里都没有对应字段**；
+    # 而 `strategy` 这个键在 issue #234 已真实实现，取值 ratio / rule / adaptive。
     sampling:
+      strategy: ratio  # 高流量生产用纯比例采样；要按规则放行错误请求就改成 rule 并配 rules
       ratio: 0.01      # 全局采样率（v2.7.9+ 默认 0.1，这里按 1% 的高流量生产取值）
       
       # 自适应采样（可选）
