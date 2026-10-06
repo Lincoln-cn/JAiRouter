@@ -1387,10 +1387,10 @@
     },
     "docs/en/tracing/config-reference.md": {
       "FilePath": "docs/en/tracing/config-reference.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-05T10:25:28.810176",
-      "ContentHash": "0bac92581cf6db33",
-      "GitCommit": "f62675c5",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-06T08:37:40.550188",
+      "ContentHash": "b2b7f89076c959d8",
+      "GitCommit": "fd781429",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1586,10 +1586,10 @@
     },
     "docs/zh/tracing/config-reference.md": {
       "FilePath": "docs/zh/tracing/config-reference.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-05T10:25:29.228662",
-      "ContentHash": "78218f3a384cce8c",
-      "GitCommit": "f62675c5",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-06T08:37:40.981763",
+      "ContentHash": "f9a415e12a461f6a",
+      "GitCommit": "fd781429",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -6888,7 +6888,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-06T08:25:02.899122",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/config-reference.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-06T08:37:40.550198",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/config-reference.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-06T08:37:40.981772",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-06T08:33:28.779610"
+  "last_updated": "2026-10-06T08:37:41.027012"
 }
