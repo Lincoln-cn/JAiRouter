@@ -94,21 +94,17 @@ jairouter:
       ratio: 0.1
     
     # 启用异步处理
-    # 核对（issue #159）：没有 async 段（总开关是 performance.async-processing，
-    # 线程池在 performance.thread-pool 下）；批处理器参数在 open-telemetry 下。
+    # 核对（issue #159 / #224）：没有 async 段（总开关是 performance.async-processing，
+    # 线程池在 performance.thread-pool 下）；批处理器参数也在 performance 下，
+    # 不在 open-telemetry 下。下面合并成同一个 performance 段。
     performance:
       async-processing: true
       thread-pool:
         core-size: 4
-
-    # 优化批处理
-    open-telemetry:
-      sdk:
-        trace:
-          processors:
-            batch:
-              max-export-batch-size: 512
-              export-timeout: 5s
+      # 优化批处理
+      batch:
+        size: 512
+        timeout: 5s
 ```
 
 ### 2. 内存泄漏

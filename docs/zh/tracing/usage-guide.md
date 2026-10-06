@@ -527,8 +527,9 @@ jairouter:
       # enabled 是条件键（TracingSecurityAutoConfiguration 的 @ConditionalOnProperty，
       # 类里没有同名字段，缺省即开启），保留有效。
       enabled: true
-      # 核对（issue #159）：没有 sensitive-headers / sensitive-params / mask-pattern 三个键；
-      # 脱敏对象是 sanitization.sensitive-attributes，掩码字符在 tracing-rules 下。
+      # 核对（issue #159 / #224）：没有 sensitive-headers / sensitive-params / mask-pattern 三个键；
+      # 真实字段是 sanitization.sensitive-attributes。原先还写过 tracing-rules.default-mask-character，
+      # 那是**零消费方**的字段（掩码字符目前不可配），已随 #224 删除。
       sanitization:
         enabled: true
         inherit-global-rules: true
@@ -538,8 +539,6 @@ jairouter:
           - "x-api-key"
           - "password"
           - "token"
-        tracing-rules:
-          default-mask-character: "*"
 ```
 
 ### 访问控制

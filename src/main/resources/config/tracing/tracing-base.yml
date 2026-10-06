@@ -26,14 +26,11 @@ jairouter:
         attributes: {}
       sdk:
         disabled: false
-        trace:
-          processors:
-            # 原键名 timeout / size / delay 与字段对不上，是死键（issue #215）；
-            # 这里按字段实名接上，取值保持原声明（也正好等于类默认值）。
-            batch:
-              schedule-delay: 5s
-              max-export-batch-size: 512
-              export-timeout: 30s
+        # 原 open-telemetry.sdk.trace.processors.batch.* 四个键（schedule-delay /
+        # max-export-batch-size / export-timeout / max-queue-size）**没有任何消费方** ——
+        # issue #215 当时只把它们"按字段实名接上"（键能绑定），但没人读它们，于是它们照样不生效。
+        # 真正的批处理器参数取自 performance.batch 与 performance.buffer.size，
+        # 见 OpenTelemetryAutoConfiguration#tracerProvider。已随 issue #224 删除字段与这里的键。
     
     # 采样配置
     sampling:
@@ -53,7 +50,8 @@ jairouter:
       structured-logging: true
       format: "json"
       include-stack-trace: false
-      custom-fields: {}
+      # 原 custom-fields / level-mapping / sanitize-enabled / include-span-id 四个键没有任何消费方，
+      # 已随 issue #224 删除（字段与键一起删）。
     
     # 导出器配置
     exporter:
@@ -133,18 +131,16 @@ jairouter:
     
     # 组件特定配置
     #
-    # 原 webflux / webclient 两块的键在 TracingComponentConfig 里**根本没有对应字段**
-    # （该类只有 http / database / cache / messaging / load-balancer / rate-limiter /
-    # circuit-breaker），属凭空写的死键，已删除并归并到真实字段 http（issue #215）。
-    # 该类还有 capture-headers / capture-body / max-body-size / excluded-paths 等旋钮，
-    # 需要时按字段实名在此登记。
+    # 原 webflux / webclient 两块的键在 TracingComponentConfig 里根本没有对应字段，属凭空写的死键，
+    # 已删除并归并到 http（issue #215）。#224 又把该类的子段核了一遍并删掉三棵**零消费方**的子树：
+    # database / cache / messaging —— 它们的 enabled 与 capture-* 全仓没有读者（getComponents()
+    # 只有两处调用点：TracingInfoContributor 只读 http、TracingWrapperFactory 只读下面三个开关）。
+    #
+    # ⚠️ http 下的字段目前**只被 /actuator/info 回显**，不改变采集行为（issue #224）；下面三个
+    # load-balancer / rate-limiter / circuit-breaker 的 enabled 才是真正的行为开关。
     components:
       # HTTP 侧（WebFlux / WebClient）插桩
       http:
-        enabled: true
-
-      # 数据库配置
-      database:
         enabled: true
 
       # 限流器配置

@@ -194,16 +194,14 @@ jairouter:
 ```yaml
 jairouter:
   tracing:
-    # 核对（issue #159）：这三个键属于 OpenTelemetry 批处理器，不挂在 exporter 下，
-    # 且原 batch-size 名字不对（字段是 max-export-batch-size）。
-    open-telemetry:
-      sdk:
-        trace:
-          processors:
-            batch:
-              max-export-batch-size: 100
-              export-timeout: 30s
-              max-queue-size: 2048
+    # 核对（issue #224）：批处理器参数**不在** open-telemetry 段下（那里原有一套
+    # sdk.trace.processors.batch.* 键，没有任何消费方，已删除），而在 performance 下。
+    performance:
+      batch:
+        size: 100          # 最大导出一批的 Span 数
+        timeout: 30s       # 导出超时（同时用作调度延迟）
+      buffer:
+        size: 2048         # 队列上限
 ```
 
 ### 2. 内存管理

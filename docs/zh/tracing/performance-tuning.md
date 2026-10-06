@@ -124,23 +124,19 @@ jairouter:
 ```yaml
 jairouter:
   tracing:
-    # OpenTelemetry 批处理器配置
-    open-telemetry:
-      sdk:
-        trace:
-          processors:
-            batch:
-              schedule-delay: 5s       # 调度延迟
-              max-queue-size: 2048     # 最大队列大小
-              max-export-batch-size: 512  # 导出批大小
-              export-timeout: 30s      # 导出超时
-    
     performance:
-      # 应用级批处理配置
+      # 批处理器参数就在这里 —— OpenTelemetry 的 BatchSpanProcessor 由这几个值驱动
+      # （见 OpenTelemetryAutoConfiguration#tracerProvider），没有第二套开关。
+      #
+      # 核对（issue #224）：原先上面还有一个 open-telemetry.sdk.trace.processors.batch.* 子段
+      # （schedule-delay / max-queue-size / max-export-batch-size / export-timeout），
+      # **没有任何生产代码读它**，调了不生效，字段与 yml 键已一并删除。
       batch:
-        size: 100                      # 批处理大小
-        timeout: 5s                    # 批处理超时
-        max-concurrent-batches: 3      # 最大并发批次数
+        size: 100                      # 最大导出一批的 Span 数（setMaxExportBatchSize）
+        timeout: 5s                    # 导出超时，同时也是调度延迟（setExporterTimeout + setScheduleDelay）
+        max-concurrent-batches: 3      # 应用侧批处理的并发度
+      buffer:
+        size: 8192                     # 队列上限（setMaxQueueSize 取的是 buffer.size）
 ```
 
 ## 导出器优化
@@ -297,15 +293,9 @@ jairouter:
 
 ### 数据库追踪
 
-```yaml
-jairouter:
-  tracing:
-    components:
-      database:
-        enabled: false                # 不需要时禁用
-        capture-sql: false            # 注意敏感数据
-        max-sql-length: 1000
-```
+> 核对（issue #224）：**这一段配置不存在**。`components.database`（`enabled` / `capture-sql` /
+> `max-sql-length`）在全仓没有任何消费方，属"配了不生效"，字段与 `tracing-base.yml` 里的键已删除。
+> 需要数据库侧的可观测性时，应先实现消费方再加回配置。
 
 ### 限流器与熔断器追踪
 

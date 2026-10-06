@@ -18,27 +18,24 @@ public class TracingSecurityConfig {
     private EncryptionConfig encryption = new EncryptionConfig();
     private AuditConfig audit = new AuditConfig();
 
+    /**
+     * 脱敏配置。
+     *
+     * <p>消费方（issue #224 逐项核对）：{@code enabled} 由 {@code TracingSanitizationService.isEnabled()} 与
+     * {@code TracingSecurityAutoConfiguration} 的条件读取；{@code inherit-global-rules} /
+     * {@code additional-patterns} / {@code sensitive-attributes} 由 {@code TracingSanitizationService} 读取
+     * （并回显到 /actuator/info）。</p>
+     *
+     * <p>原先还有 {@code encrypt-sensitive-data} 与一整个 {@code tracing-rules} 子段
+     * （{@code sanitize-span-attributes} / {@code sanitize-event-attributes} / {@code sanitize-log-data} /
+     * {@code exempted-attributes} / {@code default-mask-character}），**零消费方**，已随 issue #224 删除。</p>
+     */
     @Data
     public static class SanitizationConfig {
         private boolean enabled = true;
         private boolean inheritGlobalRules = true;
         private List<String> additionalPatterns = new ArrayList<>();
         private List<String> sensitiveAttributes = new ArrayList<>();
-        private boolean encryptSensitiveData = false;
-
-        /**
-         * 追踪特定的脱敏规则
-         */
-        private TracingSanitizationRules tracingRules = new TracingSanitizationRules();
-
-        @Data
-        public static class TracingSanitizationRules {
-            private boolean sanitizeSpanAttributes = true;
-            private boolean sanitizeEventAttributes = true;
-            private boolean sanitizeLogData = true;
-            private List<String> exemptedAttributes = new ArrayList<>();
-            private String defaultMaskCharacter = "*";
-        }
     }
 
     @Data
