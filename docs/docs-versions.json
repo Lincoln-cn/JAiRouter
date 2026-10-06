@@ -1426,11 +1426,11 @@
     },
     "docs/en/tracing/performance-tuning.md": {
       "FilePath": "docs/en/tracing/performance-tuning.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-08-24T03:02:49.234485",
-      "ContentHash": "b38e7e97746291c6",
-      "GitCommit": "f5d673e2",
-      "Author": "Lincoln",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-06T05:14:32.740080",
+      "ContentHash": "c4ef9c42d15a442a",
+      "GitCommit": "c7c1399b",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/tracing/config-reference.md",
@@ -1625,11 +1625,11 @@
     },
     "docs/zh/tracing/performance-tuning.md": {
       "FilePath": "docs/zh/tracing/performance-tuning.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-08-24T03:02:49.495065",
-      "ContentHash": "3c173892ac1608cc",
-      "GitCommit": "f5d673e2",
-      "Author": "Lincoln",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-06T05:14:33.123267",
+      "ContentHash": "21cb48e5fab6da94",
+      "GitCommit": "c7c1399b",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/tracing/config-reference.md",
@@ -6712,7 +6712,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-06T05:00:02.322836",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/performance-tuning.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-06T05:14:32.740092",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/performance-tuning.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-06T05:14:33.123277",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-06T05:00:02.583120"
+  "last_updated": "2026-10-06T05:14:33.168987"
 }
