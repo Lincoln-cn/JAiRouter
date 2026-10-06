@@ -29,6 +29,15 @@ spring:
       - classpath:config/tracing/tracing-base.yml
 ```
 
+> **Authoritative source**: key names on this page follow
+> `src/main/resources/config/tracing/tracing-base.yml` — that file is guarded by
+> `TracingConfigBindingGuardTest` (every key must bind to a field). This page was checked line by line
+> against the code in issue #231 for key names/paths and for whether a capability exists at all, but two
+> kinds of information were not re-verified (see "Known gaps on this page" at the end).
+>
+> ⚠️ **"The key exists" is not the same as "tuning it does something"**: a number of fields under tracing
+> **bind but have no consumer** (issues #224 / #231); this page flags them where relevant.
+
 ## Basic Configuration
 
 ### Enable Tracing
@@ -48,7 +57,7 @@ jairouter:
 | `enabled` | boolean | `true` | Whether to enable tracing |
 | `service-name` | string | `"jairouter"` | Service name for identifying the tracing source |
 | `service-version` | string | `"1.0.0"` | Service version number |
-| `environment` | string | `"development"` | Runtime environment identifier |
+| `service-namespace` | string | `"production"` | Service namespace (**the `environment` field this table used to show does not exist**, see issue #231) |
 
 ## Sampling Configuration
 
@@ -58,8 +67,9 @@ jairouter:
 jairouter:
   tracing:
     sampling:
-      strategy: "ratio"
-      ratio: 0.1                     # Sampling rate 0.0-1.0, default: 1.0
+      # Checked in issue #231: there is no strategy key; the sampling rate is just ratio (field
+      # default 1.0, the repo's tracing-base.yml sets 0.1).
+      ratio: 0.1                     # Sampling rate 0.0-1.0
 ```
 
 ### Rule Sampling
@@ -68,42 +78,29 @@ jairouter:
 jairouter:
   tracing:
     sampling:
-      strategy: "rule"
+      # Checked in issue #231: there is no strategy key; a rule has exactly two fields —
+      # condition and ratio.
       rules:
-        - service: "jairouter"       # Service name matching
-          operation: "*"             # Operation name matching (supports wildcards)
-          sample-rate: 0.1          # Sampling rate for this rule
-          
-        - path-pattern: "/api/v1/*"  # URL path pattern matching
-          method: "POST"             # HTTP method matching
-          sample-rate: 0.5
-          
-        - header-name: "X-Debug"     # Request header matching
-          header-value: "true"
-          sample-rate: 1.0           # 100% sampling for debug requests
-          
-        - error-only: true           # Sampling only for error requests
-          sample-rate: 1.0
+        - condition: "http.status_code >= 500"   # Attribute expression: >= / <= / == / !=
+          ratio: 1.0                             # Sampling ratio when the rule matches
+        - condition: "http.route == /api/v1/chat/completions"
+          ratio: 0.5
 ```
 
-#### Rule Matching Priority
+**Matching semantics** (`RuleBasedSamplingStrategy.matchesRule` /
+`SamplingConfigurationValidator.validateRuleCondition`): the comparison operators in `condition`
+(`>=`, `<=`, `==`, `!=`) are evaluated against span attributes, and **the first matching rule in
+declaration order wins**. A `condition` without any of those operators is reported as probably invalid.
 
-1. **Exact Matching** - Exact matching rules have the highest priority
-2. **Wildcard Matching** - Pattern matching using `*` and `?`
-3. **Default Rule** - Fallback sampling rate
+> ⚠️ Current state (verified in issue #231): `SamplingStrategyManager#refreshStrategies` registers both
+> `ratio_based` and `rule_based` as the same `traceIdRatioBased(ratio)` and **never reads `rules`** — so
+> rule sampling can be configured but does not take part in sampling decisions today. Whether to wire it
+> up is tracked by issue #231.
+>
+> The previous table (`service` / `operation` / `path-pattern` / `method` / `header-name` /
+> `header-value` / `error-only` / `status-code`) listed eight conditions that do not exist in the code;
+> it was removed.
 
-#### Supported Matching Conditions
-
-| Condition | Type | Description | Example |
-|------|------|------|------|
-| `service` | string | Service name | `"jairouter"` |
-| `operation` | string | Operation name | `"POST /api/v1/chat"` |
-| `path-pattern` | string | URL path pattern | `"/api/v1/*"` |
-| `method` | string | HTTP method | `"GET"`, `"POST"` |
-| `header-name` | string | Request header name | `"X-Debug"` |
-| `header-value` | string | Request header value | `"true"` |
-| `error-only` | boolean | Error requests only | `true` |
-| `status-code` | int | HTTP status code | `500` |
 
 ### Adaptive Sampling
 
@@ -111,23 +108,20 @@ jairouter:
 jairouter:
   tracing:
     sampling:
-      strategy: "adaptive"
+      # Checked in issue #231: there is no strategy key; adaptive sampling has exactly these fields.
       adaptive:
-        max-traces-per-second: 100   # Maximum traces per second, default: 100
-        base-sample-rate: 0.01       # Base sampling rate, default: 0.1
-        error-sample-rate: 1.0       # Error sampling rate, default: 1.0
-        slow-request-threshold: 5000 # Slow request threshold (ms), default: 3000
-        slow-request-sample-rate: 0.8 # Slow request sampling rate, default: 0.5
-        burst-protection: true       # Burst protection, default: true
-        adjustment-interval: 30s     # Adjustment interval, default: 60s
+        enabled: false                # Whether to enable it, default: false
+        target-spans-per-second: 1000 # Target spans per second, default: 1000
+        min-ratio: 0.1                # Lower bound of the sampling ratio, default: 0.1
+        max-ratio: 1.0                # Upper bound of the sampling ratio, default: 1.0
+        adjustment-interval: 30       # Adjustment interval in **whole seconds**, default: 30
 ```
 
-#### Adaptive Algorithm Description
-
-- **Load Awareness**: Dynamically adjust sampling rate based on current system load
-- **Error Priority**: Error requests get higher sampling priority  
-- **Slow Query Detection**: Automatically increase sampling rate for slow requests
-- **Burst Protection**: Protect system performance in high-concurrency scenarios
+> ⚠️ Current state (verified in issue #231): the `AdaptiveSamplingStrategy` class is instantiated
+> **only by tests**; in production `SamplingStrategyManager` wires just the global `ratio` into the
+> sampler (`adaptive.enabled` merely clamps `ratio` into `min-ratio`/`max-ratio` — a static value, not a
+> feedback loop). So these fields are currently only validated and echoed by `/actuator/info`; they do
+> not change sampling behavior. Whether to wire them up is tracked by issue #231.
 
 ## Exporter Configuration
 
@@ -139,9 +133,10 @@ jairouter:
     exporter:
       type: "logging"
       logging:
+        # Checked in issue #231: LoggingExporterConfig only has enabled / level; the former
+        # format / include-resource keys do not exist and were removed.
+        enabled: false               # Whether to enable this exporter, default: false
         level: "INFO"                # Log level, default: INFO
-        format: "json"               # Format: json/text, default: json
-        include-resource: true       # Include resource information, default: true
 ```
 
 ### Jaeger Exporter
@@ -154,7 +149,7 @@ jairouter:
       jaeger:
         endpoint: "http://localhost:14268/api/traces"  # Jaeger collector endpoint
         timeout: 10s                 # Connection timeout, default: 10s
-        compression: "gzip"          # Compression method: none/gzip, default: gzip
+        # Checked in issue #231: JaegerConfig only has endpoint / timeout / headers — no compression
         headers:                     # Custom request headers
           "Authorization": "Bearer token"
 ```
@@ -169,7 +164,7 @@ jairouter:
       zipkin:
         endpoint: "http://localhost:9411/api/v2/spans"
         timeout: 10s
-        compression: "gzip"
+        # Checked in issue #231: ZipkinConfig only has endpoint / timeout — no compression
 ```
 
 ### OTLP Exporter
@@ -180,16 +175,13 @@ jairouter:
     exporter:
       type: "otlp"
       otlp:
-        endpoint: "http://localhost:4317"  # OTLP endpoint
-        protocol: "grpc"             # Protocol: grpc/http/protobuf
-        timeout: 30s                 # Timeout, default: 10s
-        compression: "gzip"          # Compression method
+        endpoint: "http://localhost:4317"  # OTLP endpoint (gRPC)
+        timeout: 10s                 # Timeout, default: 10s
+        compression: "gzip"          # Compression
         headers:                     # Custom headers
           "api-key": "your-api-key"
-        tls:
-          enabled: false             # Whether to enable TLS
-          cert-path: "/path/to/cert" # Certificate path
-          key-path: "/path/to/key"   # Key path
+        # Checked in issue #231: OtlpConfig only has endpoint / timeout / compression / headers —
+        # neither protocol nor the whole tls.* block exists; both were removed.
 ```
 
 ### Batch Processing Configuration
@@ -197,17 +189,16 @@ jairouter:
 ```yaml
 jairouter:
   tracing:
-    # Where the OTel batch exporter settings actually live (issue #215: the
-    # tracing.exporter.batch-* keys this page used to show have no matching field)
-    open-telemetry:
-      sdk:
-        trace:
-          processors:
-            batch:
-              max-export-batch-size: 512   # Export batch size, default: 512
-              export-timeout: 30s          # Export timeout, default: 30s
-              max-queue-size: 2048         # Maximum queue size, default: 2048
-              schedule-delay: 5s           # Schedule delay, default: 5s
+    # Checked in issue #231: the batch processor parameters live **under performance**, not under
+    # open-telemetry. The open-telemetry.sdk.trace.processors.batch.* keys this page used to show do
+    # bind, but no production code reads them — they do not match the real wiring, and the fields were
+    # removed in #224. See OpenTelemetryAutoConfiguration#tracerProvider for the real assembly.
+    performance:
+      batch:
+        size: 2048                   # Max spans per export batch (setMaxExportBatchSize), default: 100
+        timeout: 30s                 # Export timeout, also used as schedule delay, default: 5s
+      buffer:
+        size: 8192                   # Queue capacity (that is what setMaxQueueSize reads), default: 1024
 ```
 
 ## Memory Management Configuration
@@ -215,18 +206,14 @@ jairouter:
 ```yaml
 jairouter:
   tracing:
-    memory:
-      max-spans: 10000             # Maximum Span count, default: 10000
-      cleanup-interval: 60s        # Cleanup interval, default: 60s
-      span-ttl: 300s               # Span TTL, default: 300s
-      memory-threshold: 0.8        # Memory threshold, default: 0.8
-      gc-pressure-threshold: 0.7   # GC pressure threshold, default: 0.7
-      
-      cache:
-        initial-capacity: 1000     # Cache initial capacity
-        maximum-size: 50000        # Cache maximum size
-        expire-after-write: 10m    # Expire after write time
-        expire-after-access: 5m    # Expire after access time
+    performance:
+      # Checked in issue #231: the real path is performance.memory, and it has exactly these three
+      # fields. The former max-spans / cleanup-interval / span-ttl / memory-threshold /
+      # gc-pressure-threshold keys and the whole cache.* block do not exist and were removed.
+      memory:
+        max-spans-in-memory: 10000   # Max spans held in memory, default: 10000
+        memory-limit-mb: 100         # Memory limit in MB; exceeding it triggers eviction, default: 100
+        gc-interval: 60s             # Memory-pressure check interval, default: 60s
 ```
 
 ## Performance Configuration
@@ -238,65 +225,49 @@ jairouter:
       async-processing: true       # Asynchronous processing, default: true
       # Async processing thread pool (issue #215: batch-size / buffer-size /
       # max-queue-size are not fields under performance, so configuring them had no effect)
+      # Caps for the memory/performance monitor schedulers (read via constructor @Value; no fields)
+      scheduler:
+        thread-cap: 2              # Thread cap, default: 2
+        queue-capacity: 100        # Queue capacity, default: 100
+
       thread-pool:
-        core-size: 8               # Thread count, default: 2
+        core-size: 8               # boundedElastic threadCap (i.e. the cap), default: 2
         queue-capacity: 8192       # Queue capacity, default: 1000
+        keep-alive: 60s            # Idle-thread TTL, default: 60s (only wired up in #220)
+        thread-name-prefix: "tracing-"  # Thread name prefix, default: "tracing-"
+        # Note: the class also has max-size, but boundedElastic has a single cap — it is only
+        # echoed by /actuator/info
       batch:
         size: 2048                 # Batch size, default: 2048
         timeout: 30s               # Batch timeout, default: 30s
+        max-concurrent-batches: 3  # Max concurrent batches, default: 3
       buffer:
         size: 8192                 # Buffer size, default: 8192
         flush-interval: 5s         # Flush interval, default: 5s
+        max-wait-time: 30s         # Max extra wait for a partially filled batch, default: 30s
 ```
 
 ## Component Configuration
 
-### WebFlux Configuration
+### HTTP Configuration
 
 ```yaml
 jairouter:
   tracing:
     components:
-      webflux:
+      http:
         enabled: true
-        capture-request-headers: []
-        capture-response-headers: []
-        capture-request-parameters: []
+        # The four fields below are currently only echoed by /actuator/info; they do not change
+        # capture behavior (issue #224)
+        capture-headers: true
+        capture-body: false
+        excluded-paths: []
 ```
 
-### WebClient Configuration
-
-```yaml
-jairouter:
-  tracing:
-    components:
-      webclient:
-        enabled: true
-        capture-request-headers: []
-        capture-response-headers: []
-```
-
-### Database Configuration
-
-```yaml
-jairouter:
-  tracing:
-    components:
-      database:
-        enabled: true
-        capture-statement: false
-        capture-parameters: false
-```
-
-### Redis Configuration
-
-```yaml
-jairouter:
-  tracing:
-    components:
-      redis:
-        enabled: true
-```
+> Checked in issues #231 / #224: the **WebFlux / WebClient / Database / Redis sections this page used
+> to show do not exist** in `TracingComponentConfig` (that class only has http / load-balancer /
+> rate-limiter / circuit-breaker; the database / cache / messaging sections had no consumer and were
+> deleted in #224). They were all removed.
 
 ### Rate Limiter Configuration
 
@@ -305,6 +276,9 @@ jairouter:
   tracing:
     components:
       rate-limiter:
+        # enabled is the real behavior switch (TracingWrapperFactory reads it); the capture-* flags
+        # are currently only echoed by /actuator/info or not read at all (issue #224) — tuning them
+        # changes nothing.
         enabled: true
         capture-algorithm: true
         capture-quota: true
@@ -345,13 +319,21 @@ jairouter:
 jairouter:
   tracing:
     security:
+      # Whole-section switch (no field; driven by @ConditionalOnProperty, absent means on)
+      enabled: true
       sanitization:
         enabled: true
         inherit-global-rules: true
         additional-patterns: []
+        sensitive-attributes: []      # Attribute names to sanitize (real field, checked in #224)
       access-control:
+        # There is also access-control.enabled (a condition-only key); the two below are echoed by
+        # /actuator/info
         restrict-trace-access: true
         allowed-roles: []
+      # Checked in issues #231 / #224: the encryption.* and audit.* sections have **no behavioral
+      # consumer at all** today (encryption's enabled/algorithm/key-size are echo-only and audit is
+      # unread), so they are not listed here. Whether to wire them up or delete them is issue #224.
 ```
 
 ## Monitoring Configuration
@@ -369,15 +351,28 @@ jairouter:
           histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0]
         exporter:
           enabled: true
-          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+          success-rate: true
+          latency: true
+          queue-size: true
       health:
         enabled: true
+        check-interval: 30s          # Exporter health check period (@Scheduled reads it), default: 30s
+        failure-threshold: 3         # Consecutive failures before unhealthy, default: 3
+        recovery-threshold: 2        # Consecutive successes before healthy again, default: 2
       alerts:
         enabled: true
-        trace-processing-failures: 10
-        export-failures: 5
-        buffer-pressure: 80
+        thresholds:
+          export-failure-rate: 0.1   # Export failure-rate threshold, default: 0.1
+          export-latency-p99: 5000   # P99 export latency threshold in ms, default: 5000
+          memory-usage: 0.8          # Memory usage threshold, default: 0.8
+          queue-size: 0.9            # Queue usage threshold, default: 0.9
 ```
+
+> Checked in issue #231: `alerts.trace-processing-failures` / `export-failures` /
+> `buffer-pressure` were already deleted in #215 (no backing fields); they are replaced here by the real
+> `thresholds.*`. The old `metrics.exporter.histogram-buckets` does not exist either — replaced by the
+> real `success-rate` / `latency` / `queue-size`. Note that `traces.histogram-buckets` binds but has no
+> consumer today (issue #224).
 
 ## Environment Configuration Overrides
 
@@ -390,9 +385,12 @@ jairouter:
   tracing:
     enabled: true
     sampling:
-      ratio: 1.0  # 100% sampling in development environment
-    logging:
-      level: "DEBUG"
+      ratio: 1.0  # 100% sampling in development
+
+# Checked in issue #231: there is no logging.level field under tracing; use Spring's own level
+logging:
+  level:
+    org.unreal.modelrouter.monitor.tracing: DEBUG
 ```
 
 ### Production Environment (application-prod.yml)
@@ -423,8 +421,30 @@ jairouter:
 2. **Production Environment**: Adjust sampling rate according to system load to avoid performance impact
 3. **Critical Paths**: Use rule sampling to ensure tracing of important business
 
-### Performance Optimization
+### Performance Tuning
 
-1. **Batch Processing**: Properly configure batch processing parameters to balance latency and throughput
-2. **Memory Management**: Adjust memory configuration according to system resources
-3. **Component Selection**: Enable only the components that need tracing to reduce overhead
+1. **Batching**: `performance.batch.*` together with `performance.buffer.size` decides exporter batching —
+   tune them as a pair
+2. **Memory management**: `performance.memory.memory-limit-mb` is the eviction trigger, `gc-interval`
+   the check frequency
+3. **Component selection**: only `components.{load-balancer,rate-limiter,circuit-breaker}.enabled` are
+   real switches
+
+## Known gaps on this page (issue #231)
+
+This revision fixed two classes of problem: **key names/paths** and **whether a capability exists**
+(the original list is in issue #231). The following were not re-verified line by line:
+
+- the **default values** quoted in prose: the values here are the config class field defaults, while the
+  repo's `tracing-base.yml` sets different values for a few keys (e.g. `sampling.ratio` defaults to 1.0
+  in the class but is 0.1 in the yml) — when they differ, trust the config file you actually load;
+- alert examples (PromQL), command-line and curl snippets;
+- "Best Practices" is experience-based advice with no mechanically checkable facts.
+
+The review also turned up **two capability gaps** (not documentation problems; recorded separately):
+
+1. `sampling.rules` and `sampling.adaptive.*`: the keys bind, but
+   `SamplingStrategyManager#refreshStrategies` only wires the global `ratio` into the sampler — rule and
+   adaptive sampling do not take part in decisions today;
+2. `security.audit.*` and `security.encryption.*`: the whole sections have no behavioral consumer
+   (issue #224).
