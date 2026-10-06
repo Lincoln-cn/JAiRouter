@@ -1,4 +1,4 @@
-﻿# Performance Tuning
+# Performance Tuning
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.0
@@ -106,15 +106,18 @@ jairouter:
     performance:
       # Thread pool configuration
       thread-pool:
-        core-size: 2                   # Core thread count
-        max-size: 8                    # Maximum thread count
+        core-size: 2                   # Core thread count (the boundedElastic threadCap, i.e. the maximum)
         queue-capacity: 1000           # Queue capacity
-        keep-alive: 60s                # Thread keep-alive time
+        keep-alive: 60s                # Idle-thread TTL (the boundedElastic ttlSeconds)
         thread-name-prefix: "tracing-" # Thread name prefix
-      
+
       # Async processing
       async-processing: true           # Enable async processing
 ```
+
+> This pool is Reactor's `Schedulers.newBoundedElastic(threadCap, queuedTaskCap, prefix, ttlSeconds)`,
+> which has **no separate core/max**: `core-size` *is* the cap. `thread-pool.max-size` is therefore only
+> echoed by `/actuator/info` and **has no effect**; `tracing-base.yml` no longer lists it (issue #220).
 
 ### Batch Processing Configuration
 

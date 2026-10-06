@@ -57,16 +57,32 @@ public final class AsyncTracingProcessor {
         // 创建专用的处理调度器
         TracingPerformanceConfig.ThreadPoolConfig threadPoolConfig = 
                 tracingConfiguration.getPerformance().getThreadPool();
+        // keep-alive 接到 Reactor 的「空闲线程 TTL」上：boundedElastic 没有 core/max 之分，
+        // 最接近 ThreadPoolExecutor.keepAlive 语义的就是它的 ttlSeconds。
+        // issue #220 之前这个字段被绑定但**没有任何消费方**，运维调 thread-pool.keep-alive 静默无效；
+        // 默认值 60s 正好等于 Reactor 自己的 BoundedElasticScheduler.DEFAULT_TTL_SECONDS，
+        // 因此接上之后默认行为逐字不变。
         this.processingScheduler = Schedulers.newBoundedElastic(
                 threadPoolConfig.getCoreSize(),
                 threadPoolConfig.getQueueCapacity(),
-                threadPoolConfig.getThreadNamePrefix() + "async-processor"
+                threadPoolConfig.getThreadNamePrefix() + "async-processor",
+                ttlSeconds(threadPoolConfig.getKeepAlive())
         );
         
         // 创建响应式数据流
         this.traceDataSink = Sinks.many().multicast().onBackpressureBuffer(
                 tracingConfiguration.getPerformance().getBuffer().getSize()
         );
+    }
+
+    /**
+     * 空闲线程 TTL（秒）。
+     *
+     * <p>Reactor 对该参数要求**严格为正**，配成 0 或负数会让 {@code newBoundedElastic} 抛异常；
+     * 这里夹到下限 1 秒 —— 配错值最多让线程回收变得更激进，不会让整个追踪处理器起不来。
+     */
+    static int ttlSeconds(final Duration keepAlive) {
+        return (int) Math.max(1L, keepAlive.toSeconds());
     }
 
     @PostConstruct

@@ -1,4 +1,4 @@
-﻿# 性能调优
+# 性能调优
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0
@@ -106,15 +106,18 @@ jairouter:
     performance:
       # 线程池配置
       thread-pool:
-        core-size: 2                   # 核心线程数
-        max-size: 8                    # 最大线程数
+        core-size: 2                   # 核心线程数（boundedElastic 的 threadCap，即线程上限）
         queue-capacity: 1000           # 队列容量
-        keep-alive: 60s                # 线程保活时间
+        keep-alive: 60s                # 空闲线程存活时间（boundedElastic 的 TTL）
         thread-name-prefix: "tracing-" # 线程名前缀
-      
+
       # 异步处理
       async-processing: true           # 启用异步处理
 ```
+
+> 该线程池是 Reactor 的 `Schedulers.newBoundedElastic(threadCap, queuedTaskCap, prefix, ttlSeconds)`，
+> **没有 core/max 之分**：`core-size` 就是上限。因此 `thread-pool.max-size` 只是被
+> `/actuator/info` 回显、**不影响行为**，`tracing-base.yml` 里已不再登记它（issue #220）。
 
 ### 批处理配置
 
