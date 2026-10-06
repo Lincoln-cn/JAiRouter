@@ -52,17 +52,21 @@ jairouter:
     service-namespace: "production"
 
     # 采样配置
+    #
+    # 核对（issue #159）：原有一个 `strategy` 键、一个 `default-ratio`，以及 adaptive 下的
+    # base-sample-rate / max-traces-per-second / error-sample-rate / slow-request-threshold ——
+    # **这六个键类里都没有对应字段**（SamplingConfig 只有 ratio / service-ratios /
+    # always-sample / never-sample / rules / adaptive.*），照抄不生效。下面按字段实名给出。
     sampling:
-      strategy: "parent_based_traceid_ratio"
-      ratio: 0.01      # 1% 基础采样（v2.7.9+ 优化默认值）
-      default-ratio: 0.01
+      ratio: 0.01      # 全局采样率（v2.7.9+ 默认 0.1，这里按 1% 的高流量生产取值）
       
       # 自适应采样（可选）
       adaptive:
-        base-sample-rate: 0.01      # 1% 基础采样
-        max-traces-per-second: 100
-        error-sample-rate: 1.0      # 错误 100% 采样
-        slow-request-threshold: 3000
+        enabled: true                 # 打开自适应采样
+        target-spans-per-second: 100  # 目标每秒 Span 数
+        min-ratio: 0.01               # 采样率下限
+        max-ratio: 1.0                # 采样率上限
+        adjustment-interval: 30       # 调整间隔（秒）
     
     # 导出配置 (v2.7.x 优化)
     exporter:
@@ -228,24 +232,25 @@ groups:
 # 建议配置
 jairouter:
   tracing:
-    memory:
-      max-spans: 100000  # 基于内存容量调整
-      span-ttl: 300s     # 5分钟 TTL
+    # 核对（issue #159）：路径是 performance.memory，且没有 span-ttl 这个旋钮
+    #（模型里没有固定 TTL，回收由 memory-limit-mb 的压力判定 + gc-interval 触发）。
+    performance:
+      memory:
+        max-spans-in-memory: 100000  # 基于内存容量调整
+        memory-limit-mb: 100
+        gc-interval: 60s
 ```
 
 #### 动态调整策略
 ```yaml
+# 核对（issue #159）：memory-threshold 与 auto-cleanup 这两组键没有对应字段；
+# 内存压力由 memory-limit-mb 直接决定（越过即回收），检查频率由 gc-interval 控制。
 jairouter:
   tracing:
-    memory:
-      # 内存压力阈值
-      memory-threshold: 0.8
-      
-      # 自动清理配置
-      auto-cleanup:
-        enabled: true
-        trigger-threshold: 0.85
-        target-threshold: 0.7
+    performance:
+      memory:
+        memory-limit-mb: 80   # 降低上限，更早触发回收
+        gc-interval: 30s      # 检查更频繁
 ```
 
 ### 存储规划
@@ -287,10 +292,13 @@ jairouter:
   tracing:
     security:
       audit:
+        # 核对（issue #159）：原 log-access / log-config-changes / retention-days 三个键
+        # 没有对应字段，已按字段实名改正。
         enabled: true
-        log-access: true
-        log-config-changes: true
-        retention-days: 90
+        audit-data-access: true
+        audit-config-changes: true
+        storage:
+          audit-log-retention: 90d
 ```
 
 ### 加密配置管理
@@ -330,21 +338,9 @@ done
 
 ### 自动化调优
 
-```yaml
-# 配置自动调优策略
-jairouter:
-  tracing:
-    auto-tuning:
-      enabled: true
-      
-      # CPU 使用率超过 80% 时降低采样率
-      cpu-threshold: 80
-      sampling-rate-adjustment: 0.5
-      
-      # 内存使用率超过 85% 时触发清理
-      memory-threshold: 85
-      cleanup-aggressive: true
-```
+> 核对（issue #159）：**没有 `jairouter.tracing.auto-tuning` 这一段** —— 全仓无对应字段，
+> 原示例照抄不会生效。现有的"自动"行为只有两处可调：`sampling.adaptive.*`（按目标 Span 速率
+> 自动调整采样率）与 `performance.memory.gc-interval`（定期检查内存压力），见上文「内存规划」。
 
 ## 备份和恢复
 
@@ -367,17 +363,9 @@ find $BACKUP_DIR -name "config-*.json" -mtime +30 -delete
 
 ### 追踪数据备份
 
-```yaml
-# 配置追踪数据导出到长期存储
-jairouter:
-  tracing:
-    exporter:
-      backup:
-        enabled: true
-        location: "/backup/tracing-data"
-        retention-days: 90
-        compression: true
-```
+> 核对（issue #159）：**没有 `exporter.backup` 这一段** —— 追踪数据没有内置的备份/归档能力
+> （全仓无对应字段）。长期留存请让 `exporter.type` 指向带存储的后端（OTLP 后端 / 日志采集），
+> 或按「配置备份」一节对数据库做常规备份。
 
 ## 升级和维护
 
@@ -455,13 +443,14 @@ curl -X POST http://localhost:8080/api/admin/tracing/disable \
 
 #### 2. 导出器故障
 ```yaml
-# 切换到备用导出器
+# 核对（issue #159）：没有 exporter.fallback 这些键。要做等效的降级，
+# 直接把导出器类型换成 logging 即可（logging 导出器是真实存在的）。
 jairouter:
   tracing:
     exporter:
-      fallback:
+      type: "logging"
+      logging:
         enabled: true
-        type: "logging"  # 临时使用日志导出
 ```
 
 #### 3. 内存泄漏

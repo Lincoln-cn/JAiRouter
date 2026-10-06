@@ -17,10 +17,10 @@
 jairouter:
   tracing:
     sampling:
-      # 采样策略: parent_based_traceid_ratio, rule_based, adaptive
-      strategy: "parent_based_traceid_ratio"
+      # 核对（issue #159）：原 `strategy`（枚举采样策略）与 `default-ratio` 两个键
+      # **类里没有对应字段**，照抄不生效，已删除。SamplingConfig 只有 ratio /
+      # service-ratios / always-sample / never-sample / rules / adaptive.*。
       ratio: 0.1                       # 10% 采样率 (v2.7.9+ 优化: 从 1.0 降低)
-      default-ratio: 0.1               # 新服务的默认采样率
       
       # 始终采样的路径
       always-sample:

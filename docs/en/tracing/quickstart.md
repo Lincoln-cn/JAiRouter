@@ -77,8 +77,9 @@ jairouter:
     exporter:
       type: "otlp"
       otlp:
+        # Checked in issue #159: there is no protocol knob (OtlpConfig only has endpoint /
+        # timeout / headers / compression); OTLP runs over gRPC.
         endpoint: "http://localhost:4317"
-        protocol: "grpc"  # or "http/protobuf"
 ```
 
 ## Verify Configuration
@@ -149,7 +150,7 @@ Check your OTEL collector configuration and backend storage.
 jairouter:
   tracing:
     sampling:
-      strategy: "ratio"
+      # Checked in issue #159: there is no strategy key (no backing field); the ratio is it.
       ratio: 1.0  # 100% sampling for development debugging
 ```
 
@@ -159,16 +160,15 @@ jairouter:
 jairouter:
   tracing:
     sampling:
-      strategy: "rule"
+      # Checked in issue #159: strategy: "rule" has no backing field. A rule is condition + ratio
+      # (condition is an attribute expression supporting >= / <= / == / !=, see
+      # RuleBasedSamplingStrategy.matchesRule); the five old keys do not exist.
+      # Requests matching no rule fall back to sampling.ratio.
       rules:
-        - service: "jairouter"
-          operation: "*"
-          sample-rate: 0.1  # 10% sampling
-        - service: "jairouter"
-          operation: "POST /api/v1/chat/completions"
-          sample-rate: 0.5  # 50% sampling for critical interfaces
-        - path-pattern: "/health*"
-          sample-rate: 0.0  # No sampling for health checks
+        - condition: "http.status_code >= 500"                 # Error requests: always sample
+          ratio: 1.0
+        - condition: "http.route == /api/v1/chat/completions"  # Critical route: 50%
+          ratio: 0.5
 ```
 
 ### Adaptive Sampling (Recommended)
@@ -177,11 +177,14 @@ jairouter:
 jairouter:
   tracing:
     sampling:
-      strategy: "adaptive"
+      # Checked in issue #159: adaptive sampling has no separate strategy switch (use
+      # adaptive.enabled), and the three old keys do not exist.
       adaptive:
-        max-traces-per-second: 100
-        base-sample-rate: 0.1
-        error-sample-rate: 1.0  # 100% sampling for error requests
+        enabled: true
+        target-spans-per-second: 100  # Target spans per second
+        min-ratio: 0.1                # Lower bound of the sampling ratio
+        max-ratio: 1.0                # Upper bound of the sampling ratio
+        adjustment-interval: 30       # Adjustment interval (seconds)
 ```
 
 ## Performance Tuning
@@ -191,10 +194,16 @@ jairouter:
 ```yaml
 jairouter:
   tracing:
-    exporter:
-      batch-size: 100
-      export-timeout: 30s
-      max-queue-size: 2048
+    # Checked in issue #159: these three belong to the OpenTelemetry batch processor, not under
+    # exporter, and batch-size is the wrong name (the field is max-export-batch-size).
+    open-telemetry:
+      sdk:
+        trace:
+          processors:
+            batch:
+              max-export-batch-size: 100
+              export-timeout: 30s
+              max-queue-size: 2048
 ```
 
 ### 2. Memory Management
@@ -202,10 +211,13 @@ jairouter:
 ```yaml
 jairouter:
   tracing:
-    memory:
-      max-spans: 10000
-      cleanup-interval: 60s
-      span-ttl: 300s
+    # Checked in issue #159: the real path is performance.memory, and cleanup-interval /
+    # span-ttl do not exist (the fields are max-spans-in-memory / memory-limit-mb / gc-interval).
+    performance:
+      memory:
+        max-spans-in-memory: 10000
+        memory-limit-mb: 100
+        gc-interval: 60s
 ```
 
 ### 3. Dynamic Sampling Rate Adjustment
@@ -216,10 +228,11 @@ It is recommended to start with a low sampling rate in production environments:
 jairouter:
   tracing:
     sampling:
-      strategy: "adaptive"
       adaptive:
-        base-sample-rate: 0.01  # 1% base sampling
-        max-traces-per-second: 50
+        enabled: true
+        target-spans-per-second: 50
+        min-ratio: 0.01    # 1% lower bound of the sampling ratio
+        max-ratio: 1.0
 ```
 
 ## Integration Monitoring

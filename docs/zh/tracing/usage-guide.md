@@ -254,10 +254,14 @@ public class ReactiveProcessor {
 jairouter:
   tracing:
     sampling:
-      strategy: "adaptive"
+      # 核对（issue #159）：没有 strategy 键，也没有 slow-request-threshold /
+      # slow-request-sample-rate 两个旋钮；自适应采样只有下面 5 个字段。
       adaptive:
-        slow-request-threshold: 3000  # 3秒阈值
-        slow-request-sample-rate: 0.8 # 慢请求80%采样
+        enabled: true
+        target-spans-per-second: 1000  # 目标每秒 Span 数
+        min-ratio: 0.1                 # 采样率下限
+        max-ratio: 1.0                 # 采样率上限
+        adjustment-interval: 30        # 调整间隔（秒）
 ```
 
 #### 2. 手动慢查询分析
@@ -463,11 +467,13 @@ public class TracingMemoryMonitor {
 ```yaml
 jairouter:
   tracing:
-    memory:
-      max-spans: 50000              # 根据实际内存调整
-      cleanup-interval: 30s         # 更频繁的清理
-      span-ttl: 180s               # 较短的 TTL
-      memory-threshold: 0.7        # 较低的内存阈值
+    # 核对（issue #159）：真实路径是 performance.memory；没有 cleanup-interval / span-ttl /
+    # memory-threshold 这三个旋钮（内存压力由 memory-limit-mb 决定，检查频率是 gc-interval）。
+    performance:
+      memory:
+        max-spans-in-memory: 50000  # 根据实际内存调整
+        memory-limit-mb: 70         # 收紧内存上限
+        gc-interval: 30s            # 更频繁检查
 ```
 
 ## 安全和隐私
@@ -518,19 +524,22 @@ public class TracingSanitizer {
 jairouter:
   tracing:
     security:
+      # enabled 是条件键（TracingSecurityAutoConfiguration 的 @ConditionalOnProperty，
+      # 类里没有同名字段，缺省即开启），保留有效。
       enabled: true
-      sensitive-headers:
-        - "Authorization"
-        - "Cookie"
-        - "X-API-Key"
-        - "X-Auth-Token"
-      sensitive-params:
-        - "password"
-        - "token"
-        - "secret"
-        - "api_key"
-        - "access_token"
-      mask-pattern: "***"
+      # 核对（issue #159）：没有 sensitive-headers / sensitive-params / mask-pattern 三个键；
+      # 脱敏对象是 sanitization.sensitive-attributes，掩码字符在 tracing-rules 下。
+      sanitization:
+        enabled: true
+        inherit-global-rules: true
+        sensitive-attributes:
+          - "authorization"
+          - "cookie"
+          - "x-api-key"
+          - "password"
+          - "token"
+        tracing-rules:
+          default-mask-character: "*"
 ```
 
 ### 访问控制
@@ -611,14 +620,15 @@ jairouter:
       ratio: 0.1
     
     # 启用异步处理
-    async:
-      enabled: true
-      core-pool-size: 4
-    
-    # 优化内存配置
-    memory:
-      max-spans: 5000
-      cleanup-interval: 15s
+    # 核对（issue #159）：没有 async 段（总开关是 performance.async-processing，
+    # 线程池在 performance.thread-pool 下），memory 的真实路径是 performance.memory。
+    performance:
+      async-processing: true
+      thread-pool:
+        core-size: 4
+      memory:
+        max-spans-in-memory: 5000
+        gc-interval: 15s
 ```
 
 #### 3. 上下文传播问题
