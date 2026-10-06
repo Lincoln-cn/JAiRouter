@@ -1387,10 +1387,10 @@
     },
     "docs/en/tracing/config-reference.md": {
       "FilePath": "docs/en/tracing/config-reference.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-06T10:33:28.276634",
-      "ContentHash": "e7709276d4f7fb77",
-      "GitCommit": "88e606b5",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-06T12:17:40.138953",
+      "ContentHash": "056b7800949106ef",
+      "GitCommit": "3d6747fc",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1412,10 +1412,10 @@
     },
     "docs/en/tracing/operations-guide.md": {
       "FilePath": "docs/en/tracing/operations-guide.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-10-06T10:33:28.284027",
-      "ContentHash": "e486f52cb2bd10cc",
-      "GitCommit": "88e606b5",
+      "Version": "1.0.9",
+      "LastModified": "2026-10-06T12:17:40.148008",
+      "ContentHash": "31c3b512e4fc6dcb",
+      "GitCommit": "3d6747fc",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1586,10 +1586,10 @@
     },
     "docs/zh/tracing/config-reference.md": {
       "FilePath": "docs/zh/tracing/config-reference.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-06T10:33:28.634977",
-      "ContentHash": "f33a1fd8a4471fb7",
-      "GitCommit": "88e606b5",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-06T12:17:40.592223",
+      "ContentHash": "e45620627c096dc2",
+      "GitCommit": "3d6747fc",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1611,10 +1611,10 @@
     },
     "docs/zh/tracing/operations-guide.md": {
       "FilePath": "docs/zh/tracing/operations-guide.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-10-06T10:33:28.642695",
-      "ContentHash": "0d2951c9a92dd59e",
-      "GitCommit": "88e606b5",
+      "Version": "1.0.9",
+      "LastModified": "2026-10-06T12:17:40.601493",
+      "ContentHash": "fa5fa281188a10d0",
+      "GitCommit": "3d6747fc",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -6968,7 +6968,39 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-06T10:33:28.646239",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/config-reference.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-06T12:17:40.138963",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/operations-guide.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-06T12:17:40.148016",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/config-reference.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-06T12:17:40.592232",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/operations-guide.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-06T12:17:40.601500",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-06T10:33:28.673492"
+  "last_updated": "2026-10-06T12:17:40.638603"
 }
