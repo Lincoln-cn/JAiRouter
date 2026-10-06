@@ -286,25 +286,14 @@ curl -s http://localhost:8080/actuator/configprops | \
 
 ### Access Control Audit
 
-```yaml
-# Enable security audit
-jairouter:
-  tracing:
-    security:
-      audit:
-        # Checked in issue #159: log-access / log-config-changes / retention-days have no
-        # backing fields; the real field names are used below.
-        #
-        # Re-checked in issue #224: the whole `security.audit` subtree (including storage) still has
-        # **no consumer at all** — the key names are right, but auditing itself was never
-        # implemented, so tuning it does nothing. Whether to delete the subtree is pending; see
-        # issue #224.
-        enabled: true
-        audit-data-access: true
-        audit-config-changes: true
-        storage:
-          audit-log-retention: 90d
-```
+> Checked in issues #159 / #224 batch B: the whole `jairouter.tracing.security.audit` section
+> **does not exist** — its fields (`enabled` / `audit-data-access` / `audit-config-changes` /
+> `storage.audit-log-retention` and 7 more) had no consumer anywhere: tracing-side auditing was never
+> implemented. The fields and the example were removed.
+>
+> Auditing should be implemented (a consumer first) before the configuration comes back. Note the
+> distinction: the auth module has its own, real security auditing (`SecurityProperties.audit` plus the
+> `/api/security/audit` endpoints) — unrelated to this section.
 
 ### Encryption Configuration Management
 

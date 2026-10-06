@@ -2,21 +2,36 @@ package org.unreal.modelrouter.monitor.tracing.config;
 
 import lombok.Data;
 
-import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 安全配置
+ *
+ * <p>字段分两类（issue #224 逐项核过消费方）：</p>
+ * <ul>
+ *   <li><b>真正生效</b>：{@code sanitization.enabled} / {@code inherit-global-rules} /
+ *       {@code additional-patterns} / {@code sensitive-attributes}（{@code TracingSanitizationService}）、
+ *       {@code access-control.restrict-trace-access} / {@code allowed-roles}
+ *       （{@code TracingSecurityManager}）；{@code sanitization.enabled} 与
+ *       {@code access-control.enabled}（无字段，见 {@code TracingSecurityAutoConfiguration}）还是 Bean 注册条件。</li>
+ *   <li><b>只被 {@code /actuator/info} 回显</b>：{@code encryption.enabled} / {@code algorithm} /
+ *       {@code key-size} / {@code key-management.auto-rotation}。保留是因为那份回显是它们唯一的消费方，
+ *       契约由 {@code TracingInfoContributorReportContractTest} 钉住。</li>
+ * </ul>
+ *
+ * <p><b>已删除（issue #224 批 B）</b>：原先还有一整套 {@code audit.*}（审计落盘开关、日志文件、保留期，
+ * 共 11 个字段）、{@code encryption.encrypt-sensitive-spans} / {@code encrypt-sensitive-logs}、
+ * {@code key-management} 的轮换/密钥库/HSM 三项、整段 {@code data-retention.*}，以及
+ * {@code access-control} 的 {@code field-access.*} / {@code max-access-history-per-user} /
+ * {@code audit-access-attempts} —— 这些字段全仓零消费方，且语义上各自意味着一套未实现的子系统
+ * （审计、密钥轮换、数据保留策略、字段级访问控制）。要提供这些能力，应先实现消费方，再按字段实名加回来。</p>
  */
 @Data
 public class TracingSecurityConfig {
     private SanitizationConfig sanitization = new SanitizationConfig();
     private AccessControlConfig accessControl = new AccessControlConfig();
     private EncryptionConfig encryption = new EncryptionConfig();
-    private AuditConfig audit = new AuditConfig();
 
     /**
      * 脱敏配置。
@@ -25,10 +40,6 @@ public class TracingSecurityConfig {
      * {@code TracingSecurityAutoConfiguration} 的条件读取；{@code inherit-global-rules} /
      * {@code additional-patterns} / {@code sensitive-attributes} 由 {@code TracingSanitizationService} 读取
      * （并回显到 /actuator/info）。</p>
-     *
-     * <p>原先还有 {@code encrypt-sensitive-data} 与一整个 {@code tracing-rules} 子段
-     * （{@code sanitize-span-attributes} / {@code sanitize-event-attributes} / {@code sanitize-log-data} /
-     * {@code exempted-attributes} / {@code default-mask-character}），**零消费方**，已随 issue #224 删除。</p>
      */
     @Data
     public static class SanitizationConfig {
@@ -43,20 +54,6 @@ public class TracingSecurityConfig {
         private boolean restrictTraceAccess = true;
         private List<String> allowedRoles = new ArrayList<>();
         private boolean enableRoleBasedFiltering = true;
-        private boolean auditAccessAttempts = true;
-        private int maxAccessHistoryPerUser = 100;
-
-        /**
-         * 字段级别访问控制
-         */
-        private FieldAccessControl fieldAccess = new FieldAccessControl();
-
-        @Data
-        public static class FieldAccessControl {
-            private boolean enabled = true;
-            private Map<String, List<String>> fieldRoleMapping = new HashMap<>();
-            private List<String> adminOnlyFields = new ArrayList<>();
-        }
     }
 
     @Data
@@ -64,58 +61,18 @@ public class TracingSecurityConfig {
         private boolean enabled = false;
         private String algorithm = "AES";
         private int keySize = 256;
-        private boolean encryptSensitiveSpans = true;
-        private boolean encryptSensitiveLogs = true;
 
         /**
-         * 密钥管理配置
+         * 密钥管理。
+         *
+         * <p>只剩 {@code auto-rotation} —— 它被 {@code /actuator/info} 回显；轮换间隔、密钥库路径与 HSM
+         * 三项零消费方，已随 issue #224 批 B 删除。</p>
          */
         private KeyManagement keyManagement = new KeyManagement();
-
-        /**
-         * 数据保留策略
-         */
-        private DataRetention dataRetention = new DataRetention();
 
         @Data
         public static class KeyManagement {
             private boolean autoRotation = true;
-            private Duration rotationInterval = Duration.ofDays(1);
-            private String keyStorePath = "./keys";
-            private boolean useHardwareSecurityModule = false;
-        }
-
-        @Data
-        public static class DataRetention {
-            private Duration defaultRetention = Duration.ofDays(30);
-            private Duration sensitiveDataRetention = Duration.ofDays(7);
-            private Duration errorDataRetention = Duration.ofDays(90);
-            private Duration performanceDataRetention = Duration.ofDays(60);
-            private boolean autoCleanup = true;
-            private Duration cleanupInterval = Duration.ofHours(1);
-        }
-    }
-
-    @Data
-    public static class AuditConfig {
-        private boolean enabled = true;
-        private boolean auditDataAccess = true;
-        private boolean auditSanitization = true;
-        private boolean auditEncryption = true;
-        private boolean auditConfigChanges = true;
-        private String auditLogLevel = "INFO";
-
-        /**
-         * 审计日志存储配置
-         */
-        private AuditStorage storage = new AuditStorage();
-
-        @Data
-        public static class AuditStorage {
-            private boolean separateAuditLog = true;
-            private String auditLogFile = "audit.log";
-            private boolean encryptAuditLog = false;
-            private Duration auditLogRetention = Duration.ofDays(365);
         }
     }
 }
