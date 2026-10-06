@@ -528,9 +528,10 @@ jairouter:
       # enabled is a condition-only key (TracingSecurityAutoConfiguration @ConditionalOnProperty;
       # there is no field of that name, absent means on), so it still works.
       enabled: true
-      # Checked in issue #159: sensitive-headers / sensitive-params / mask-pattern do not exist.
-      # What gets sanitized is sanitization.sensitive-attributes, the mask character lives under
-      # tracing-rules.
+      # Checked in issues #159 / #224: sensitive-headers / sensitive-params / mask-pattern do not
+      # exist; the real field is sanitization.sensitive-attributes. An earlier revision also used
+      # tracing-rules.default-mask-character — that field had **no consumer** (the mask character
+      # is not configurable) and was deleted in #224.
       sanitization:
         enabled: true
         inherit-global-rules: true
@@ -540,8 +541,6 @@ jairouter:
           - "x-api-key"
           - "password"
           - "token"
-        tracing-rules:
-          default-mask-character: "*"
 ```
 
 ### Access Control

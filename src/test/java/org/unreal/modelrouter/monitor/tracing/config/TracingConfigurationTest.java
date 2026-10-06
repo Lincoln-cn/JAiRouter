@@ -82,19 +82,8 @@ class TracingConfigurationTest {
         void testSdkConfig() {
             OpenTelemetryConfig.SdkConfig sdkConfig = new OpenTelemetryConfig.SdkConfig();
             assertFalse(sdkConfig.isDisabled());
-            assertNotNull(sdkConfig.getTrace());
-
-            OpenTelemetryConfig.SdkConfig.TraceConfig traceConfig = sdkConfig.getTrace();
-            assertNotNull(traceConfig.getProcessors());
-
-            OpenTelemetryConfig.SdkConfig.TraceConfig.ProcessorsConfig processorsConfig = traceConfig.getProcessors();
-            assertNotNull(processorsConfig.getBatch());
-
-            OpenTelemetryConfig.SdkConfig.TraceConfig.ProcessorsConfig.BatchConfig batchConfig = processorsConfig.getBatch();
-            assertEquals(Duration.ofSeconds(5), batchConfig.getScheduleDelay());
-            assertEquals(2048, batchConfig.getMaxQueueSize());
-            assertEquals(512, batchConfig.getMaxExportBatchSize());
-            assertEquals(Duration.ofSeconds(30), batchConfig.getExportTimeout());
+            // 原先的 sdk.trace.processors.batch.* 四个字段零消费方，已随 issue #224 删除；
+            // 批处理器参数改由 performance.batch / performance.buffer 驱动
         }
 
         @Test
@@ -191,8 +180,6 @@ class TracingConfigurationTest {
             assertTrue(config.isStructuredLogging());
             assertEquals("json", config.getFormat());
             assertTrue(config.isIncludeTraceId());
-            assertTrue(config.isIncludeSpanId());
-            assertTrue(config.isSanitizeEnabled());
             assertTrue(config.isCaptureHeaders());
             assertTrue(config.isIncludeStackTrace());
         }
@@ -205,16 +192,6 @@ class TracingConfigurationTest {
 
             assertEquals(3, config.getSensitiveFields().size());
             assertTrue(config.getSensitiveFields().contains("password"));
-        }
-
-        @Test
-        @DisplayName("测试自定义字段")
-        void testCustomFields() {
-            LoggingConfig config = new LoggingConfig();
-            config.setCustomFields(Map.of("app", "jairouter", "version", "1.0"));
-
-            assertEquals("jairouter", config.getCustomFields().get("app"));
-            assertEquals("1.0", config.getCustomFields().get("version"));
         }
     }
 
@@ -322,10 +299,8 @@ class TracingConfigurationTest {
         void testDefaultValues() {
             TracingComponentConfig config = new TracingComponentConfig();
 
+            // database / cache / messaging 三棵树是零消费方的死配置，已随 issue #224 删除
             assertNotNull(config.getHttp());
-            assertNotNull(config.getDatabase());
-            assertNotNull(config.getCache());
-            assertNotNull(config.getMessaging());
             assertNotNull(config.getLoadBalancer());
             assertNotNull(config.getRateLimiter());
             assertNotNull(config.getCircuitBreaker());
@@ -339,7 +314,6 @@ class TracingConfigurationTest {
             assertTrue(http.isEnabled());
             assertTrue(http.isCaptureHeaders());
             assertFalse(http.isCaptureBody());
-            assertEquals(1024, http.getMaxBodySize());
         }
     }
 
@@ -365,7 +339,7 @@ class TracingConfigurationTest {
 
             assertTrue(sanitization.isEnabled());
             assertTrue(sanitization.isInheritGlobalRules());
-            assertNotNull(sanitization.getTracingRules());
+            // 原 sanitization.tracing-rules.* 与本类里的 encrypt-sensitive-data 零消费方，已随 #224 删除
         }
 
         @Test

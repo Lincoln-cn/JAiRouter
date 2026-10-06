@@ -295,6 +295,11 @@ jairouter:
       audit:
         # Checked in issue #159: log-access / log-config-changes / retention-days have no
         # backing fields; the real field names are used below.
+        #
+        # Re-checked in issue #224: the whole `security.audit` subtree (including storage) still has
+        # **no consumer at all** — the key names are right, but auditing itself was never
+        # implemented, so tuning it does nothing. Whether to delete the subtree is pending; see
+        # issue #224.
         enabled: true
         audit-data-access: true
         audit-config-changes: true

@@ -103,28 +103,20 @@ public class TracingConfiguration {
             private Map<String, String> attributes = new HashMap<>();
         }
         
+        /**
+         * SDK 开关。
+         *
+         * <p>消费方：{@code disabled} 由 {@code TracingController} 回显、并被 SDK 装配判断；
+         * {@code enabled} 见 {@code OpenTelemetryAutoConfiguration}。</p>
+         *
+         * <p>原先这里还有一个 {@code trace.processors.batch.*} 子段（{@code schedule-delay} /
+         * {@code max-queue-size} / {@code max-export-batch-size} / {@code export-timeout}）—— **零消费方**，
+         * 已随 issue #224 删除。真正的批处理器参数取自 {@code performance.batch} 与
+         * {@code performance.buffer.size}，见 {@code OpenTelemetryAutoConfiguration#tracerProvider}。</p>
+         */
         @Data
         public static class SdkConfig {
             private boolean disabled = false;
-            private TraceConfig trace = new TraceConfig();
-            
-            @Data
-            public static class TraceConfig {
-                private ProcessorsConfig processors = new ProcessorsConfig();
-                
-                @Data
-                public static class ProcessorsConfig {
-                    private BatchConfig batch = new BatchConfig();
-                    
-                    @Data
-                    public static class BatchConfig {
-                        private Duration scheduleDelay = Duration.ofSeconds(5);
-                        private int maxQueueSize = 2048;
-                        private int maxExportBatchSize = 512;
-                        private Duration exportTimeout = Duration.ofSeconds(30);
-                    }
-                }
-            }
         }
     }
     
@@ -199,7 +191,15 @@ public class TracingConfiguration {
     }
     
     /**
-     * 结构化日志配置
+     * 结构化日志配置。
+     *
+     * <p>消费方（issue #224 逐项核对）：{@code structured-logging} / {@code include-trace-id} /
+     * {@code capture-headers} / {@code include-stack-trace} 分别由 {@code DefaultStructuredLogger}、
+     * {@code RequestLogBuilder} / {@code ResponseLogBuilder} / {@code ErrorLogBuilder} 读取；
+     * {@code sensitive-fields} 由脱敏链路读取。</p>
+     *
+     * <p>原先还有 {@code include-span-id} / {@code sanitize-enabled} / {@code level-mapping} /
+     * {@code custom-fields} 四个**零消费方**字段，已随 issue #224 删除。</p>
      */
     @Data
     public static class LoggingConfig {
@@ -217,23 +217,11 @@ public class TracingConfiguration {
          * 包含追踪信息
          */
         private boolean includeTraceId = true;
-        private boolean includeSpanId = true;
         
         /**
          * 敏感字段脱敏
          */
-        private boolean sanitizeEnabled = true;
         private Set<String> sensitiveFields = new HashSet<>();
-        
-        /**
-         * 日志级别映射
-         */
-        private Map<String, String> levelMapping = new HashMap<>();
-        
-        /**
-         * 自定义字段
-         */
-        private Map<String, String> customFields = new HashMap<>();
         
         /**
          * 是否捕获HTTP头部

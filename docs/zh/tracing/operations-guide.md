@@ -294,6 +294,9 @@ jairouter:
       audit:
         # 核对（issue #159）：原 log-access / log-config-changes / retention-days 三个键
         # 没有对应字段，已按字段实名改正。
+        #
+        # ⚠️ 再核对（issue #224）：`security.audit`（含 storage）整段的字段**当前仍无任何消费方** ——
+        # 键名对了，但审计能力本身没有落地，配了不生效。是否删除整段待裁决，见 issue #224。
         enabled: true
         audit-data-access: true
         audit-config-changes: true

@@ -194,16 +194,15 @@ jairouter:
 ```yaml
 jairouter:
   tracing:
-    # Checked in issue #159: these three belong to the OpenTelemetry batch processor, not under
-    # exporter, and batch-size is the wrong name (the field is max-export-batch-size).
-    open-telemetry:
-      sdk:
-        trace:
-          processors:
-            batch:
-              max-export-batch-size: 100
-              export-timeout: 30s
-              max-queue-size: 2048
+    # Checked in issue #224: the batch processor parameters are **not** under open-telemetry
+    # (the old sdk.trace.processors.batch.* keys had no consumer and were deleted) but under
+    # performance.
+    performance:
+      batch:
+        size: 100          # Max spans per export batch
+        timeout: 30s       # Export timeout (also used as the schedule delay)
+      buffer:
+        size: 2048         # Queue capacity
 ```
 
 ### 2. Memory Management

@@ -124,23 +124,21 @@ jairouter:
 ```yaml
 jairouter:
   tracing:
-    # OpenTelemetry batch processor configuration
-    open-telemetry:
-      sdk:
-        trace:
-          processors:
-            batch:
-              schedule-delay: 5s       # Schedule delay
-              max-queue-size: 2048     # Maximum queue size
-              max-export-batch-size: 512  # Batch size for export
-              export-timeout: 30s      # Export timeout
-    
     performance:
-      # Application-level batch configuration
+      # The batch processor parameters live here — OpenTelemetry's BatchSpanProcessor is driven by
+      # exactly these values (see OpenTelemetryAutoConfiguration#tracerProvider); there is no
+      # second set of switches.
+      #
+      # Checked in issue #224: there used to be an open-telemetry.sdk.trace.processors.batch.*
+      # section (schedule-delay / max-queue-size / max-export-batch-size / export-timeout) above,
+      # which **no production code read** — tuning it did nothing. The fields and the yml keys are
+      # gone.
       batch:
-        size: 100                      # Batch size
-        timeout: 5s                    # Batch timeout
-        max-concurrent-batches: 3      # Maximum concurrent batches
+        size: 100                      # Max spans per export batch (setMaxExportBatchSize)
+        timeout: 5s                    # Export timeout, also used as the schedule delay
+        max-concurrent-batches: 3      # Application-level batch concurrency
+      buffer:
+        size: 8192                     # Queue capacity (setMaxQueueSize reads buffer.size)
 ```
 
 ## Exporter Optimization
@@ -297,15 +295,10 @@ jairouter:
 
 ### Database Tracing
 
-```yaml
-jairouter:
-  tracing:
-    components:
-      database:
-        enabled: false                # Disable if not needed
-        capture-sql: false            # Be careful with sensitive data
-        max-sql-length: 1000
-```
+> Checked in issue #224: **this configuration does not exist**. `components.database`
+> (`enabled` / `capture-sql` / `max-sql-length`) has no consumer anywhere in the code base — it was
+> a knob that did nothing — so the fields and the `tracing-base.yml` keys were removed. Database-side
+> observability should be implemented (a consumer first) before the configuration comes back.
 
 ### Rate Limiter & Circuit Breaker Tracing
 

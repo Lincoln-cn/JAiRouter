@@ -94,22 +94,18 @@ jairouter:
       ratio: 0.1
     
     # Enable async processing
-    # Checked in issue #159: there is no async section (the switch is
-    # performance.async-processing, the pool lives under performance.thread-pool);
-    # batch processor knobs live under open-telemetry.
+    # Checked in issues #159 / #224: there is no async section (the switch is
+    # performance.async-processing, the pool lives under performance.thread-pool); the batch
+    # processor knobs also live under performance, not under open-telemetry. Merged into one
+    # performance mapping below.
     performance:
       async-processing: true
       thread-pool:
         core-size: 4
-
-    # Optimize batch processing
-    open-telemetry:
-      sdk:
-        trace:
-          processors:
-            batch:
-              max-export-batch-size: 512
-              export-timeout: 5s
+      # Optimize batch processing
+      batch:
+        size: 512
+        timeout: 5s
 ```
 
 ### 2. Memory Leak
