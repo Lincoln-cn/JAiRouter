@@ -34,10 +34,12 @@ spring:
     hibernate:
       # H2（默认）用 update，让 Hibernate 管理表结构。
       #
-      # 注意这里的值在 PostgreSQL 路径下会被 PostgresFlywayEnvironmentPostProcessor 覆盖为
-      # validate（建表改由 Flyway 的 db/migration 版本化脚本负责，issue #191）；该覆盖按
-      # spring.datasource.url 的方言判定，因此不能写成 profile。本行仍必须保留：缺了它，
+      # 注意：连 PostgreSQL 时这个值会被 FlywayDialectEnvironmentPostProcessor 覆盖为 validate
+      # （建表改由 Flyway 的 db/migration/postgres 版本化脚本负责，issue #191 / #192）；
+      # H2 不动它 —— 该模式下 Hibernate 的 schema 校验查不到小写对象（见处理器类注释）。
+      # 覆盖按 spring.datasource.url 的方言判定，因此不能写成 profile。本行仍必须保留：缺了它，
       # Hibernate 对嵌入式数据源的默认值会退化为 create-drop，开发库会在停机时被清空。
+      # 测试环境（application-test.yml）显式设了 create-drop 与 flyway.enabled=false，不受影响。
       ddl-auto: update
     show-sql: false
     properties:

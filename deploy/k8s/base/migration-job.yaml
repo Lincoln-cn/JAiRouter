@@ -33,10 +33,9 @@ spec:
           # **退出码反映成败** —— 0 = 启动与迁移全部通过；非 0 = 启动或迁移失败。
           # 于是 Job 的 Complete/Failed 就是可信的判据。
           #
-          # 它由**单一实例**先跑完，避免多副本同时启动时的并发 DDL：PostgreSQL 路径上执行者是
-          # Flyway（连到 PG 时由 PostgresFlywayEnvironmentPostProcessor 自动启用，脚本与基线见
-          # src/main/resources/db/migration），H2 路径上是启动期的兼容补丁
-          # （CompatibilitySchemaMigrator / DatabaseMigrationService，只在未启用 Flyway 时注册）。
+          # 它由**单一实例**先跑完，避免多副本同时启动时的并发 DDL：建表统一由 Flyway 承担，
+          # PostgreSQL 与 H2 各有一套脚本（见 src/main/resources/db/migration/{postgres,h2}，
+          # 由 FlywayDialectEnvironmentPostProcessor 按数据源方言自动启用，issue #191 / #192）。
           #
           # 该模式下仍会跑生产安全前置检查（JWT_SECRET / INITIAL_ADMIN_PASSWORD 强度）——
           # 与应用 Pod 同一套判据：配置不合格时 Job 也会失败，这是有意的（失败早于上线）。

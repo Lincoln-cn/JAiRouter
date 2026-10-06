@@ -36,7 +36,7 @@ schema 迁移 Job，以及 liveness / readiness / startup 探针、资源 reques
 
 ### schema 迁移由 Job 先行（部署顺序）
 
-PostgreSQL 路径下应用 Pod 只做 `ddl-auto: validate`（见 `database.md`），**表结构的变更全部由
+PostgreSQL 路径下应用 Pod 只做 `ddl-auto: validate`（H2 路径保留 `update`，原因见 `database.md`），**表结构的变更全部由
 schema 迁移 Job 完成**，所以部署顺序是：**Job 跑完 → 应用 Pod 启动**。该 Job 走专用入口
 （`SPRING_PROFILES_ACTIVE=prod,json-logs,migrate`，见 issue #193），以「单一实例」跑一次迁移：
 
@@ -125,9 +125,9 @@ crash-loop。已实测两个 JVM 进程并发打开 `jdbc:h2:file:./data/jairout
 1. 限流的**分布式计数**（#161 剩余：Redis 原子计数与降级策略；须在键维度正确的前提下才有意义）
 2. 实时事件跨 Pod 广播（#164）
 3. 版本化 schema 迁移 —— 已完成（#191：PostgreSQL 路径由 Flyway 基线 + `ddl-auto: validate` 承担，见
-   `database.md`；H2 仍由 `update` 管理），迁移的**独立入口**也已完成（#193：`migrate` profile
-   跑完即退出、退出码反映成败，Job 不再需要 `activeDeadlineSeconds` 兜底）。
-   余下的是 #192 的收口：给 H2 也做版本化迁移，然后删除两个启动期补丁组件
+   `database.md`；#192：H2 也接上了版本化迁移，两个启动期补丁组件已删除，H2 保留 `update`），迁移的
+   **独立入口**也已完成（#193：`migrate` profile 跑完即退出、退出码反映成败，Job 不再需要
+   `activeDeadlineSeconds` 兜底）
 4. stdout 结构化日志 —— 已完成（#211 的 `json-logs` profile）；连接池 / 线程池外部化已完成
    （#188 出站 WebClient、#189 tracing 调度器）
 

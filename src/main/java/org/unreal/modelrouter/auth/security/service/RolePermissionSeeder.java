@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 /**
  * 角色模板种子（v2.9.8 RBAC，Phase 2）+ 增量收敛（#144）
  *
- * <p>应用启动完成后执行（仿 {@code CompatibilitySchemaMigrator} 的 ApplicationRunner 模式）：
+ * <p>应用启动完成后执行（仿启动期 ApplicationRunner 模式）：
  * <ul>
  *   <li>表为空：种入 4 个角色模板（ADMIN / OPERATOR / USER / VIEWER）——全新安装路径，内容不变。</li>
  *   <li>表非空：执行「只增不删」的增量收敛，而不是跳过。仅对「未被手工定制」的角色补种

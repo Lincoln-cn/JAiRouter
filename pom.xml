@@ -400,8 +400,9 @@
         </dependency>
 
         <!--
-          版本化 schema 迁移（issue #191）：仅 PostgreSQL 路径启用，H2 仍由 ddl-auto: update 管理。
-          启用开关按数据源 URL 判定，见 PostgresFlywayEnvironmentPostProcessor。
+          版本化 schema 迁移（issue #191 / #192）：PostgreSQL 与 H2 两条路径都启用，各用自己方言的
+          脚本目录；只有 PostgreSQL 同时把 ddl-auto 覆盖为 validate。按数据源 URL 判定，
+          见 FlywayDialectEnvironmentPostProcessor。
           flyway-database-postgresql 是 Flyway 10+ 拆出的 PostgreSQL 支持模块，缺它会在
           初始化时报 "Unsupported Database: PostgreSQL"。
         -->

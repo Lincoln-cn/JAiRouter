@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
  * <p>存储角色模板到权限码的映射关系，一个角色可拥有多个权限码，
  * 同一权限码也可被多个角色共享，通过唯一约束 {@code role_name + permission_code} 去重。
  *
- * <p>新表由 Hibernate {@code ddl-auto: update} 自动创建，无需登记 CompatibilitySchemaMigrator。
+ * <p>新表由迁移脚本创建（见 src/main/resources/db/migration/<方言>/），无需额外登记。
  *
  * @author JAiRouter Team
  * @since 2.9.8

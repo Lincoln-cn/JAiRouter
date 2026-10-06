@@ -68,8 +68,11 @@ class MigrateOnlyEntryProcessTest {
         assertEquals(0, child.exitCode(),
                 "迁移成功后应以 0 退出。子进程输出：\n" + child.output());
         assertTrue(tableCount(url) >= 20,
-                "子进程应在退出前把 schema 建出来（H2 路径由启动期兼容补丁建表）；"
-                        + "库文件 " + dbFile + " 里的表数不足以说明迁移跑过");
+                "子进程应在退出前把 schema 建出来；库文件 " + dbFile + " 里的表数不足以说明迁移跑过");
+        // 建表者必须是 Flyway（issue #192）：只断言「表存在」证明不了 —— H2 上 ddl-auto: update
+        // 自己也会建表。历史表里 V1/V2 两条记录才是「H2 走的是版本化迁移」的直接证据。
+        assertEquals(List.of("1|SQL", "2|SQL"), migrationHistory(url),
+                "H2 路径应由 Flyway 顺序执行 V1、V2。子进程输出：\n" + child.output());
     }
 
     @Test
@@ -149,6 +152,27 @@ class MigrateOnlyEntryProcessTest {
                      "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC'")) {
             return rs.next() ? rs.getInt(1) : 0;
         }
+    }
+
+    /**
+     * 子进程写的 Flyway 历史（{@code version|type}），按 {@code installed_rank} 排序。
+     *
+     * <p>该库的 URL 带 {@code DATABASE_TO_UPPER=FALSE}，历史表与列名都是**小写**，必须照小写引用；
+     * 表里还有一行 {@code version} 为 NULL 的内部记录，排除掉。
+     */
+    private static List<String> migrationHistory(final String url) throws Exception {
+        String existing = url.replace("DB_CLOSE_DELAY=-1;", "") + ";IFEXISTS=TRUE";
+        List<String> rows = new ArrayList<>();
+        try (Connection connection = DriverManager.getConnection(existing, "sa", "");
+             Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery(
+                     "SELECT version || '|' || type FROM flyway_schema_history "
+                             + "WHERE version IS NOT NULL ORDER BY installed_rank")) {
+            while (rs.next()) {
+                rows.add(rs.getString(1));
+            }
+        }
+        return rows;
     }
 
     private static boolean logContains(final Path log, final String needle) {
