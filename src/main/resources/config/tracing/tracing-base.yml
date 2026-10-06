@@ -82,9 +82,28 @@ jairouter:
         enabled: true
     
     # 性能配置
+    #
+    # ⚠️ 只登记**真正生效**的旋钮（issue #220）。已知的反例，故意不写进来：
+    #   * `performance.thread-pool.max-size` —— boundedElastic 只有 threadCap 一说（即 core-size），
+    #     该字段只被 /actuator/info 回显，不影响行为；
+    #   * `components.http.capture-headers` / `capture-body` / `max-body-size` / `excluded-paths`、
+    #     `components.database.capture-sql` / `max-sql-length`、`components.cache.capture-keys` /
+    #     `capture-values` —— 同样只被 /actuator/info 回显；
+    #   * `components.{http,cache,messaging}.enabled` —— 同上（真正生效的是
+    #     load-balancer / rate-limiter / circuit-breaker 三处 enabled，见 TracingWrapperFactory）。
+    # 把它们写进 yml 会让人以为调了有用，比不写更糟；是否接上消费方另开 issue 跟踪。
     performance:
       # 异步处理总开关。原 async.enabled 是死键（没有任何字段接它），真正的开关是这一项（issue #215）
       async-processing: true
+
+      # 内存监控 / 性能监控两个调度器的线程上限与队列上限（#182 引入）。
+      # 注意这两个键**没有对应字段** —— 由 TracingMemoryManager / TracingPerformanceMonitor
+      # 的构造器参数 @Value 直接读取（必须走构造器注入：字段注入发生在构造器之后，而调度器
+      # 正是在构造器里建的，用字段会静默读到默认值）。TracingConfigBindingGuardTest 已把这两个
+      # 键登记为「允许的非绑定键」，新增别的非绑定键仍会让它变红。
+      scheduler:
+        thread-cap: 2
+        queue-capacity: 100
 
       # 追踪数据异步处理线程池（`AsyncTracingProcessor` 用它创建 Schedulers.newBoundedElastic）。
       # 原先这里写的是 async.worker-threads / async.queue-size —— 那两个键没有任何绑定，
@@ -93,15 +112,24 @@ jairouter:
       thread-pool:
         core-size: 8
         queue-capacity: 8192
+        # boundedElastic 的 threadCap 即上限，没有 core/max 之分，因此这里**不写 max-size**。
+        thread-name-prefix: "tracing-"
+        # 空闲线程存活时间。接到 boundedElastic 的 ttlSeconds 上（issue #220：此前该字段被绑定
+        # 但没有任何消费方，调参静默无效）。默认 60s 与 Reactor 自己的默认值一致。
+        keep-alive: 60s
 
       # 批处理配置
       batch:
         timeout: 30s
         size: 2048
+        # 同时进行的批次数上限（AsyncTracingProcessor 的 flatMap 并发度）
+        max-concurrent-batches: 3
 
       # 缓冲区配置
       buffer:
         size: 8192
+        # 未攒满一个批次时，最早的数据最多再等多久（避免低流量下数据长期不落）
+        max-wait-time: 30s
     
     # 组件特定配置
     #
@@ -143,6 +171,14 @@ jairouter:
         capture-statistics: true
     
     # 安全配置
+    #
+    # ⚠️ 开关键由 `TracingSecurityAutoConfiguration` 的 @ConditionalOnProperty 消费，语义是
+    # 「缺省即开启」（`matchIfMissing = true`）：`security.enabled`（整段）、
+    # `security.sanitization.enabled`、`security.access-control.enabled`、`security.encryption.enabled`。
+    # 其中 `sanitization.enabled` 类里有同名字段、故登记在下面；`security.enabled` 与
+    # `access-control.enabled` **类里没有字段**，写进 yml 会被绑定守护测试判红，
+    # `encryption.enabled` 虽有字段但只被 /actuator/info 回显（且字段默认 false ≠ 条件的「缺省即开」），
+    # 因此这三个只在注释里登记。
     security:
       sanitization:
         enabled: true
@@ -166,6 +202,9 @@ jairouter:
           enabled: true
       health:
         enabled: true
+        # 导出器健康检查周期。除绑定到本字段外，`ExporterHealthChecker` 的
+        # `@Scheduled(fixedDelayString = "${…check-interval:30000}")` 也读同一个键（30s = 30000ms）。
+        check-interval: 30s
       # 原 alerts 下的三个阈值（trace-processing-failures / export-failures / buffer-pressure）
       # 没有对应字段（issue #215），已删除
       alerts:
