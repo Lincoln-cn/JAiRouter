@@ -17,9 +17,10 @@
 jairouter:
   tracing:
     sampling:
-      # 核对（issue #159）：原 `strategy`（枚举采样策略）与 `default-ratio` 两个键
-      # **类里没有对应字段**，照抄不生效，已删除。SamplingConfig 只有 ratio /
-      # service-ratios / always-sample / never-sample / rules / adaptive.*。
+      # 采样策略（issue #234 起真实存在）：ratio（默认，只按采样率）/ rule（按 rules 匹配 span 属性，
+      # 未命中回落 ratio）/ adaptive（用 adaptive.* 的上下限，需 adaptive.enabled=true）。
+      # 原 `default-ratio` 键不存在，已删除。
+      strategy: ratio
       ratio: 0.1                       # 10% 采样率 (v2.7.9+ 优化: 从 1.0 降低)
       
       # 始终采样的路径

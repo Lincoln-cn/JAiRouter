@@ -2,6 +2,7 @@ package org.unreal.modelrouter.monitor.tracing.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.monitor.tracing.sampler.SamplingStrategyManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,9 @@ public class SamplingConfigurationValidator {
             return new ValidationResult(false, errors, warnings);
         }
         
+        // 验证策略选择（issue #234）
+        validateStrategy(config, errors, warnings);
+
         // 验证全局采样率
         validateRatio("global ratio", config.getRatio(), errors);
         
@@ -150,6 +154,32 @@ public class SamplingConfigurationValidator {
         }
     }
     
+    /**
+     * 验证采样策略选择（issue #234）。
+     *
+     * <p>取值非法直接报错（拼错策略名会导致静默回落 {@code ratio}，那是"配了不生效"的经典形态）；
+     * 取值合法但所需子配置没开或为空时只告警，因为管理器会自动回落。</p>
+     */
+    private void validateStrategy(final TracingConfiguration.SamplingConfig config,
+                                  final List<String> errors, final List<String> warnings) {
+        final String strategy = config.getStrategy();
+        if (strategy == null || strategy.trim().isEmpty()) {
+            errors.add("采样策略 strategy 不能为空，合法值：" + SamplingStrategyManager.SUPPORTED_STRATEGIES);
+            return;
+        }
+        if (!SamplingStrategyManager.SUPPORTED_STRATEGIES.contains(strategy)) {
+            errors.add("不支持的采样策略 strategy=" + strategy + "，合法值："
+                    + SamplingStrategyManager.SUPPORTED_STRATEGIES);
+            return;
+        }
+        if ("rule".equals(strategy) && (config.getRules() == null || config.getRules().isEmpty())) {
+            warnings.add("strategy=rule 但没有配置任何 rules，实际会全部回落全局采样率 ratio");
+        }
+        if ("adaptive".equals(strategy) && (config.getAdaptive() == null || !config.getAdaptive().isEnabled())) {
+            warnings.add("strategy=adaptive 但 adaptive.enabled 不是 true，实际会回落全局采样率 ratio");
+        }
+    }
+
     /**
      * 验证采样列表
      */

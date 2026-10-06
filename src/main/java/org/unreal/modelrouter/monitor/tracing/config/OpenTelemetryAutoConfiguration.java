@@ -20,6 +20,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.unreal.modelrouter.monitor.tracing.sampler.DelegatingSampler;
 import org.unreal.modelrouter.monitor.tracing.sampler.SamplingStrategyManager;
 
 import java.util.HashMap;
@@ -131,8 +132,10 @@ public class OpenTelemetryAutoConfiguration {
      */
     @Bean
     public Sampler otelSampler() {
-        // 使用采样策略管理器中的当前策略创建采样器
-        return Sampler.parentBased(samplingStrategyManager.getCurrentStrategy());
+        // 用委托壳包一层（issue #234）：provider 只在启动时取一次 Sampler，而策略允许运行时切换
+        // （PUT /api/tracing/actuator/config → updateSamplingConfiguration）。parentBased 的语义保持不变：
+        // 有父 span 时沿用父级决策，无父 span 时才落到当前策略。
+        return Sampler.parentBased(new DelegatingSampler(samplingStrategyManager::getCurrentStrategy));
     }
     
     /**

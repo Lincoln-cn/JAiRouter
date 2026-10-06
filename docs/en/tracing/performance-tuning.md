@@ -17,9 +17,11 @@ This document provides performance tuning guides and best practices for the JAiR
 jairouter:
   tracing:
     sampling:
-      # Checked in issue #159: neither `strategy` (sampler strategy enum) nor `default-ratio`
-      # has a backing field, so copying them has no effect; both were removed. SamplingConfig
-      # only has ratio / service-ratios / always-sample / never-sample / rules / adaptive.*.
+      # Sampling strategy (real since issue #234): ratio (default, uses the ratio only) / rule
+      # (matches rules against span attributes, falling back to ratio) / adaptive (uses the
+      # adaptive.* bounds; needs adaptive.enabled=true). The old `default-ratio` key does not
+      # exist and was removed.
+      strategy: ratio
       ratio: 0.1                       # 10% sampling rate (v2.7.9+ optimization: reduced from 1.0)
       
       # Paths that should always be sampled

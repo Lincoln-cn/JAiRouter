@@ -34,6 +34,13 @@ jairouter:
     
     # 采样配置
     sampling:
+      # 采样策略（issue #234 才真正接上）：
+      #   ratio（默认）—— 只按下面的 ratio 做 traceId 比例采样
+      #   rule         —— 按 rules 逐条匹配 span 属性，未命中回落 ratio
+      #   adaptive     —— 用 adaptive.* 的上下限约束采样率，需 adaptive.enabled=true
+      # 取值非法或所需子配置没开时会回落 ratio 并在启动日志里告警。
+      strategy: ratio
+
       # v2.7.9 优化：默认采样率从 1.0 改为 0.1，减少追踪开销 90%
       ratio: 0.1
       service-ratios: {}
@@ -44,6 +51,9 @@ jairouter:
         - "/health"
         - "/actuator"
       rules: []
+      adaptive:
+        # 仅在 strategy=adaptive 时为 true 才会被装配（issue #234）
+        enabled: false
     
     # 结构化日志配置
     logging:

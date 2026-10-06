@@ -87,38 +87,35 @@ public class RuleBasedSamplingStrategy implements SamplingStrategy {
             return false;
         }
         
-        // 简单条件匹配实现
-        // 实际项目中可以实现更复杂的表达式解析
-        if (condition.contains(">=")) {
-            String[] parts = condition.split(">=");
-            if (parts.length == 2) {
-                String key = parts[0].trim();
-                String valueStr = parts[1].trim();
-                
-                if (attributes.containsKey(key)) {
-                    Object attrValue = attributes.get(key);
-                    try {
-                        double threshold = Double.parseDouble(valueStr);
-                        double attrDoubleValue = Double.parseDouble(attrValue.toString());
-                        return attrDoubleValue >= threshold;
-                    } catch (NumberFormatException e) {
-                        // 忽略格式错误
-                    }
-                }
+        // 支持四种比较运算符（与 SamplingConfigurationValidator.validateRuleCondition 的口径一致；
+        // issue #234 之前这里只实现了 >= 与 ==，<= / != 会被校验器认可却不生效）
+        for (String op : new String[] {">=", "<=", "==", "!="}) {
+            final int idx = condition.indexOf(op);
+            if (idx < 0) {
+                continue;
             }
-        } else if (condition.contains("==")) {
-            String[] parts = condition.split("==");
-            if (parts.length == 2) {
-                String key = parts[0].trim();
-                String expectedValue = parts[1].trim();
-                
-                if (attributes.containsKey(key)) {
-                    Object attrValue = attributes.get(key);
-                    return expectedValue.equals(attrValue.toString());
-                }
+            final String key = condition.substring(0, idx).trim();
+            final String expected = condition.substring(idx + op.length()).trim();
+            if (!attributes.containsKey(key)) {
+                return false;
+            }
+            final String actual = String.valueOf(attributes.get(key));
+            if ("==".equals(op)) {
+                return expected.equals(actual);
+            }
+            if ("!=".equals(op)) {
+                return !expected.equals(actual);
+            }
+            try {
+                final double threshold = Double.parseDouble(expected);
+                final double actualValue = Double.parseDouble(actual);
+                return ">=".equals(op) ? actualValue >= threshold : actualValue <= threshold;
+            } catch (NumberFormatException e) {
+                // 阈值或属性值不是数字：该条规则不匹配（与原先"忽略格式错误"的行为一致）
+                return false;
             }
         }
-        
+
         return false;
     }
     
