@@ -40,7 +40,7 @@
 
 
 
-JAiRouter 提供兼容 OpenAI 格式的统一 API 接口，支持多种 AI 模型服务。所有接口都使用 `/v1` 前缀，确保与 OpenAI API 的兼容性。
+JAiRouter 提供兼容 OpenAI 格式的统一 API 接口，支持多种 AI 模型服务。OpenAI 兼容面在 `/v1` 下；TTS / STT / 图像接口**只在控制台面** `/api/v1/**` 暴露（见下表）。
 
 ## 两个入口面（v3.1 起）
 
@@ -315,7 +315,9 @@ data: [DONE]
 
 ## 文本转语音接口
 
-### `POST /v1/audio/speech`
+### `POST /api/v1/audio/speech`
+
+> **仅控制台面**：`/v1` 面只注册了 `GET /v1/models`、`POST /v1/chat/completions`、`POST /v1/embeddings`、`POST /v1/rerank`，本端点没有 `/v1/...` 映射。
 
 将文本转换为语音音频文件。
 
@@ -347,7 +349,9 @@ data: [DONE]
 
 ## 语音转文本接口
 
-### `POST /v1/audio/transcriptions`
+### `POST /api/v1/audio/transcriptions`
+
+> **仅控制台面**：`/v1` 面只注册了 `GET /v1/models`、`POST /v1/chat/completions`、`POST /v1/embeddings`、`POST /v1/rerank`，本端点没有 `/v1/...` 映射。
 
 将音频文件转换为文本。
 
@@ -359,7 +363,8 @@ data: [DONE]
 file: (音频文件)
 model: whisper-1
 language: zh
-response_format: json
+prompt: (可选提示词)
+responseFormat: json
 temperature: 0
 ```
 
@@ -370,7 +375,7 @@ temperature: 0
 | `file` | file | 是 | 音频文件 |
 | `model` | string | 是 | STT 模型名称 |
 | `language` | string | 否 | 音频语言代码 |
-| `response_format` | string | 否 | 响应格式，默认 json |
+| `responseFormat` | string | 否 | 响应格式，默认 json |
 | `temperature` | number | 否 | 采样温度 |
 
 #### 响应格式
@@ -383,7 +388,9 @@ temperature: 0
 
 ## 图像生成接口
 
-### `POST /v1/images/generations`
+### `POST /api/v1/images/generations`
+
+> **仅控制台面**：`/v1` 面只注册了 `GET /v1/models`、`POST /v1/chat/completions`、`POST /v1/embeddings`、`POST /v1/rerank`，本端点没有 `/v1/...` 映射。
 
 根据文本描述生成图像。
 
@@ -431,24 +438,29 @@ temperature: 0
 
 ## 图像编辑接口
 
-### `POST /v1/images/edits`
+### `POST /api/v1/images/edits`
+
+> **仅控制台面**：`/v1` 面只注册了 `GET /v1/models`、`POST /v1/chat/completions`、`POST /v1/embeddings`、`POST /v1/rerank`，本端点没有 `/v1/...` 映射。
 
 编辑现有图像。
 
 #### 请求参数
 
-使用 `multipart/form-data` 格式：
+**JSON** 请求体（`@RequestBody ImageEditDTO.Request`），**不是** `multipart/form-data`：
 
+```json
+{
+  "image": ["<图像引用>"],
+  "prompt": "编辑描述",
+  "model": "dall-e-2",
+  "n": 1,
+  "size": "1024x1024",
+  "response_format": "url",
+  "user": "user-123"
+}
 ```
-image: (原始图像文件)
-mask: (可选的遮罩文件)
-prompt: 编辑描述
-model: dall-e-2
-n: 1
-size: 1024x1024
-response_format: url
-user: user-123
-```
+
+> 对照：`/api/v1/audio/transcriptions` **是** `multipart/form-data`，且那里的部件名是 `responseFormat`（驼峰）。
 
 #### 响应格式
 
@@ -472,8 +484,7 @@ user: user-123
   "error": {
     "message": "Invalid request: missing required parameter 'model'",
     "type": "invalid_request_error",
-    "param": "model",
-    "code": "missing_parameter"
+    "code": "INVALID_REQUEST"
   }
 }
 ```
@@ -482,13 +493,14 @@ user: user-123
 
 | 错误类型 | 说明 |
 |----------|------|
-| `invalid_request_error` | 请求参数错误 |
-| `authentication_error` | 认证失败 |
-| `permission_error` | 权限不足 |
-| `not_found_error` | 资源不存在 |
-| `rate_limit_error` | 请求频率超限 |
-| `api_error` | API 内部错误 |
-| `overloaded_error` | 服务过载 |
+| `invalid_request_error` | 400 / 422 / 其他 4xx —— 请求参数错误 |
+| `authentication_error` | 401 —— 认证失败 |
+| `permission_error` | 403 —— 权限不足 |
+| `not_found_error` | 404 —— 资源不存在 |
+| `rate_limit_error` | 429 —— 限流 / 配额超限 |
+| `api_error` | 所有 5xx（含 503）—— 网关或下游内部错误 |
+
+> 以上是网关实际只会产出的取值（`V1ErrorBodyMapper#errorTypeOf`）；`overloaded_error` 不会被产出。该 OpenAI 形状的错误体只适用于 `/v1/**`；`/api/**` 沿用 `RouterResponse` 形状（`success` / `message` / `data` / `errorCode` / `timestamp`）。
 
 ## 使用示例
 
@@ -498,7 +510,7 @@ user: user-123
 # 聊天完成
 curl -X POST "http://localhost:8080/v1/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-api-key" \
+  -H "X-API-Key: your-api-key" \
   -d '{
     "model": "gpt-3.5-turbo",
     "messages": [
@@ -509,7 +521,7 @@ curl -X POST "http://localhost:8080/v1/chat/completions" \
 # 文本嵌入
 curl -X POST "http://localhost:8080/v1/embeddings" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-api-key" \
+  -H "X-API-Key: your-api-key" \
   -d '{
     "model": "text-embedding-ada-002",
     "input": "要嵌入的文本"
@@ -526,7 +538,7 @@ base_url = "http://localhost:8080"
 api_key = "your-api-key"
 headers = {
     "Content-Type": "application/json",
-    "Authorization": f"Bearer {api_key}"
+    "X-API-Key": api_key
 }
 
 # 聊天完成
@@ -566,7 +578,7 @@ async function chatCompletion() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
+      'X-API-Key': apiKey
     },
     body: JSON.stringify({
       model: 'gpt-3.5-turbo',
@@ -586,7 +598,7 @@ async function embedding() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
+      'X-API-Key': apiKey
     },
     body: JSON.stringify({
       model: 'text-embedding-ada-002',

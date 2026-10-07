@@ -19,13 +19,12 @@ JAiRouter integrates OpenTelemetry-based distributed tracing system, providing c
 - **Request-level tracing**: Complete tracing from client requests to backend service calls
 - **Inter-service monitoring**: Automatic recording of microservice call relationships and latency
 - **Async operation tracing**: Context propagation support in reactive programming (via `AsyncTracingProcessor`)
-- **Database query tracing**: Monitor database operations and slow query detection
 - **Component-level tracing**: Integrated tracing for rate limiter, circuit breaker, and load balancer
 
 ### 📊 Sampling Strategies
 - **Ratio sampling**: Random sampling based on percentage (default: 0.1, optimized in v2.7.9 for 90% cost reduction)
 - **Rule-based sampling**: Rule sampling based on service name, operation type, request path
-- **Adaptive sampling**: Dynamic sampling rate adjustment based on system load and error rate
+- **Adaptive sampling**: Dynamic sampling rate adjustment based on arrival counts per span name (traffic)
 - **Parent-based sampling**: Respect parent trace sampling decisions
 - **Dynamic configuration**: Runtime sampling strategy adjustment without service restart
 

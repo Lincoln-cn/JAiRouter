@@ -345,6 +345,12 @@ jairouter:
           export-latency-p99: 5000   # trace.export 操作的 P99 危险阈值(ms)，默认: 5000
 ```
 
+> `health.{failure-threshold,recovery-threshold}` 的语义是**去抖动**：`ExporterHealthChecker`
+> 只在**连续** `failure-threshold` 次检查失败后才把状态判为不健康，且只在**连续**
+> `recovery-threshold` 次检查成功后恢复；中途出现相反结果会把对应的连续计数清零。
+> 因此单次抖动的检查结果**不会**翻转 `/actuator/health` 里的 `exporterHealthChecker` 组件。
+> 把阈值配成 1 即退化为「每次检查直接决定状态」。
+>
 > 核对（issue #231 / #224）：`alerts` 下的 `trace-processing-failures` / `export-failures` /
 > `buffer-pressure` 三个键在 #215 已被删除（无对应字段）。`metrics.exporter.*`（4 个）、
 > `metrics.enabled`、`metrics.prefix`、`metrics.traces.enabled`、`self-monitoring`、`alerts.enabled`、
