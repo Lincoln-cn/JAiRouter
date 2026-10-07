@@ -167,11 +167,11 @@
     },
     "docs/en/deployment/docker.md": {
       "FilePath": "docs/en/deployment/docker.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-09-18T11:16:29.475452",
-      "ContentHash": "0517fb45edff64e3",
-      "GitCommit": "14420877",
-      "Author": "Lincoln",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-07T02:50:13.247162",
+      "ContentHash": "89a343f6ddb73ba3",
+      "GitCommit": "2e55693d",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/deployment/kubernetes.md",
@@ -343,11 +343,11 @@
     },
     "docs/en/getting-started/quick-start.md": {
       "FilePath": "docs/en/getting-started/quick-start.md",
-      "Version": "1.0.11",
-      "LastModified": "2026-09-18T12:10:48.806152",
-      "ContentHash": "a07dcd27b3a13737",
-      "GitCommit": "97d6b0c2",
-      "Author": "Lincoln",
+      "Version": "1.0.12",
+      "LastModified": "2026-10-07T02:50:13.354884",
+      "ContentHash": "d351c53bd145fe77",
+      "GitCommit": "2e55693d",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/index.md",
@@ -783,11 +783,11 @@
     },
     "docs/zh/deployment/docker.md": {
       "FilePath": "docs/zh/deployment/docker.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-09-18T11:16:42.457946",
-      "ContentHash": "9f93445328805ff4",
-      "GitCommit": "14420877",
-      "Author": "Lincoln",
+      "Version": "1.0.9",
+      "LastModified": "2026-10-07T02:50:13.694009",
+      "ContentHash": "08343112e52447b7",
+      "GitCommit": "2e55693d",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/deployment/kubernetes.md",
@@ -958,11 +958,11 @@
     },
     "docs/zh/getting-started/quick-start.md": {
       "FilePath": "docs/zh/getting-started/quick-start.md",
-      "Version": "1.0.10",
-      "LastModified": "2026-09-18T12:10:49.024112",
-      "ContentHash": "feb30711a4169fee",
-      "GitCommit": "97d6b0c2",
-      "Author": "Lincoln",
+      "Version": "1.0.11",
+      "LastModified": "2026-10-07T02:50:13.787335",
+      "ContentHash": "bc9a5e46095f1545",
+      "GitCommit": "2e55693d",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/index.md",
@@ -7000,7 +7000,39 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-06T12:17:40.601500",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/docker.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T02:50:13.247172",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/quick-start.md",
+      "OldVersion": "1.0.11",
+      "NewVersion": "1.0.12",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T02:50:13.354931",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/docker.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T02:50:13.694018",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/quick-start.md",
+      "OldVersion": "1.0.10",
+      "NewVersion": "1.0.11",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T02:50:13.787343",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-06T12:17:40.638603"
+  "last_updated": "2026-10-07T02:50:13.993829"
 }
