@@ -1,9 +1,9 @@
 # Roadmap
 
 <!-- 版本信息 -->
-> **Doc Version**: 2.1.0
-> **Last Updated**: 2026-09-22
-> **Git Tag**: v3.2.2
+> **Doc Version**: 2.2.0
+> **Last Updated**: 2026-10-07
+> **Git Tag**: v3.3.0
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -23,6 +23,22 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 - **Observability**: Comprehensive monitoring, logging, and distributed tracing
 
 ## Current Version Status
+
+### ✅ v3.3.0 (Minor: PostgreSQL & Versioned Migration + Multi-Replica Cluster + Config Honesty, released 2026-10-07)
+
+**Status**: Released (Git tag / GitHub Release `v3.3.0`; the Docker image is rebuilt by CI on release)
+**Scope**: the 24 features and 29 fixes merged after v3.2.2 — see the [changelog](changelog.md#330---2026-10-07)
+
+| Area | Delivered |
+|------|-----------|
+| Persistence & migration | PostgreSQL support (dialect / datasource / index naming externalized; PG silently dropping indexes fixed, #160); Flyway with the current schema as baseline, PG on `ddl-auto: validate` (#190, #214); legacy patches became migration V2 and **H2 gets versioned migration too**, with both startup patch components deleted (#192); dedicated `migrate` entrypoint with meaningful exit code, non-web start and exit-after-run (#193, #195) |
+| Multi-replica & cluster | Cross-replica real-time event broadcast with originating replica id (#164, #181); cross-replica sliding-window counting (#161); shared-state startup self-check and cache convergence (#162); per-class scheduled-job handling (#163) |
+| Security & auth | RBAC closed out to fail-closed GETs (default `DENY_ALL`, reversible, #128); client-IP trust policy converged (#151); SSRF guard moved to `WebClientPool` (#114); JWT issuer validation plus optional fail-closed blacklist (#117, #118); JWT's dedicated Redis removed (#194, #196); incremental `RolePermissionSeeder` fixing silent permission rollback (#144) |
+| Rate limiting & quota | Limiter concurrency, unbounded growth and XFF bypass fixed (#121–#124); quota reservation rollback (#119, #120); settlement / usage queries no longer block Redis (#105) |
+| Streaming & frontend | Bounded stream accumulation plus upstream idle watchdog (#126, #127); storage writes moved off the EventLoop (#115, #125); throttled rendering, zombie WebSocket fix, no token logging, canvas leak fix (#129–#135) |
+| Config honesty | Four batches on tracing config: 57 zero-consumer fields deleted, 3 wired up (`memory-usage` / `export-latency-p99` / `histogram-buckets`); sampling strategies wired with a console selector and a fix for saves wiping `rules` (#224, #234, #242) |
+| Deployment & logging | Container stdout as structured JSON (`json-logs`, #211); Kustomize manifests plus compose port/probe/volume fixes and graceful shutdown (#165); WebClient and tracing scheduler parameters externalized (#182) |
+| Docs governance | `ReviewedAt` review mechanism (#101); factual corrections across tracing / api-reference / landing pages, including an entirely fabricated section in the English `monitoring-api` and ~20 non-existent error codes (#159, #231, #235) |
 
 ### ✅ v3.2.2 (Patch: User-Reported Fixes + Console HTTP Status Semantics, released 2026-09-22)
 
@@ -386,8 +402,9 @@ JAiRouter will continue to uphold the open-source spirit and is committed to pro
 9. ✅ v3.2.0 PII governance & quota ops closed-loop (released 2026-09-19)
 10. ✅ v3.2.1 audit remediation patch (released 2026-09-21): Reactor/SSE de-blocking, quota TOCTOU and Redis Lua CAS, spurious 401 fix, tracing chain double-execution fix, JWT blacklist degradation convergence, production fail-fast, SSRF guard, RBAC/debug-endpoint tightening, user-regex ReDoS hardening. **Known remaining (P2)**: `QuotaLedgerService` distributed path still blocks synchronously; frontend temporary IDs use `Math.random`
 11. ✅ v3.2.2 patch (released 2026-09-22): fixed the user-reported API Key quota display (#84) and routing-monitor counter (#83); console business failures now return 4xx/5xx instead of HTTP 200 (#94, response-body compatible), plus quota endpoint `block` failure (#92), over-permissive e2e assertions (#95), alert-threshold inconsistency (#96) and monitoring error-code inconsistency (#98). **Known remaining (P2)**: `QuotaLedgerService` distributed path still blocks synchronously; frontend temporary IDs use `Math.random`
-12. 📋 v3.3.0 candidates: rule persistence versioning, HOUR/MONTH quota limits, FULL encryption strategy UI, dry-run regression set
-13. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.2.x
+12. ✅ v3.3.0 minor (released 2026-10-07): PostgreSQL and versioned migration (PG on `ddl-auto: validate`, H2 gets versioned migration too, both startup patch components deleted); multi-replica cluster (cross-replica event broadcast and sliding-window counting, shared-state self-check, per-class scheduled jobs); RBAC closed out to fail-closed GETs; four batches of tracing config honesty (57 zero-consumer fields deleted, 3 wired up); structured JSON stdout and Kustomize manifests; documentation facts checked and corrected (#160–#248)
+13. 📋 v3.4.0 candidates: rule persistence versioning, HOUR/MONTH quota limits, FULL encryption strategy UI, dry-run regression set
+14. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.2.x
 
 ### Long-term Vision
 1. Become the standard in AI model routing
