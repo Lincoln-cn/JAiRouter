@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.2.2
-> **Last Updated**: 2026-09-22
+> **Document Version**: 3.3.0
+> **Last Updated**: 2026-10-07
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,107 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.3.0] - 2026-10-07 - Minor Release (PostgreSQL & Versioned Migration, Multi-Replica Cluster, Config Honesty)
+
+> **24 new features and 29 fixes** have landed since v3.2.2 (2026-09-22). Three main threads:
+> (1) **Persistence** — PostgreSQL support, Flyway versioned migration (PG switches to `ddl-auto: validate`,
+> H2 joins in), and the removal of both startup patch components; (2) **Multi-replica** — cross-replica
+> real-time event broadcast and rate-limit counting, shared-state startup self-check, per-class handling of
+> scheduled jobs; (3) **Config honesty** — every tracing config field that bound but had zero consumers was
+> either wired up or deleted.
+>
+> **Breaking changes**: none to public APIs, routes, or config keys. Three **intentional behavior changes**:
+> (1) console failure responses already moved from HTTP 200 to 4xx / 5xx in v3.2.2; (2) RBAC misses for both
+> writes and GETs are now **fail-closed** (default `DENY_ALL`, reversible, see #128); (3) the tracing
+> `monitoring.health` thresholds now use **debounce** semantics (N consecutive failures before unhealthy).
+> **Config keys**: a batch of keys that never took effect was deleted — see "Config honesty". Old deployments
+> that set them lose them silently, but they never did anything.
+
+#### Persistence & versioned migration
+
+- PostgreSQL support, with dialect / datasource / index naming externalized; a duplicate-index bug that made
+  PG **silently drop indexes** was fixed (#160)
+- Flyway introduced with the current schema as baseline; the PostgreSQL path switches to `ddl-auto: validate` (#190, #214)
+- The legacy-schema patch logic became a versioned migration (V2); **H2 gets versioned migration too**, and
+  both startup patch components were deleted (#192)
+- A dedicated migration entrypoint (`migrate` profile): exit code reflects the outcome, non-web mode starts,
+  and it can exit after running (#193, #195)
+- The patch components' `INFORMATION_SCHEMA` queries now scope to the current schema, fixing a silent no-op
+  when several schemas share a database (#216)
+
+#### Multi-replica & cluster
+
+- Cross-replica **real-time event broadcast**, fixing silently missed console events; events and metrics now
+  carry the originating replica id (#164, #181)
+- Cross-replica **sliding-window counting** so allowed volume no longer scales with replica count; rate-limit
+  key dimensions are configurable and missing dimensions are explicit (#161)
+- Shared-state startup self-check and cross-replica cache convergence (#162)
+- Scheduled jobs handled per class: external side effects take a cross-replica lock, file writers are
+  per-replica named (#163)
+- Two-instance end-to-end verification for cross-replica broadcast (#181)
+
+#### Security & authentication
+
+- RBAC closed out in three stages: endpoint-coverage self-check → fail-closed for writes (explicit exemption
+  list) → fail-closed for GETs too (default `DENY_ALL`, reversible) (#128)
+- Client-IP trust policy converged into a single component, fixing forged `X-Forwarded-For` polluting audit
+  and tracing records (#151)
+- SSRF guard moved down to the `WebClientPool` egress point (#114)
+- JWT now validates the issuer; the blacklist can fail closed when unavailable (#117, #118)
+- JWT's dedicated Redis removed, eliminating type ambiguity and duplicate bean registration under the full
+  multi-replica switch set (#194, #196)
+- Startup security checks: the skip switch has a single source of truth (#201); randomly generated passwords
+  are no longer rejected as weak (#171) and strong random keys are no longer misjudged `VERY_WEAK` (#169)
+- Authentication / authorization exceptions return 401 / 403 instead of falling into the 500 fallback (#205);
+  `/actuator/health/**` is permitted so K8s probes are no longer blocked (#203)
+- `RolePermissionSeeder` converges incrementally, fixing a **silent permission rollback** on already-initialized
+  deployments (#144)
+
+#### Rate limiting & quota
+
+- Fixed concurrency safety, unbounded growth and XFF bypass in the limiter (#121–#124)
+- Quota reservation rolls back on mid-flight failure; multi-window reservation no longer partially commits (#119, #120)
+- Settlement and usage queries no longer block Redis synchronously on Reactor non-blocking threads (#105)
+
+#### Streaming & frontend
+
+- Streamed content accumulation is now bounded (with a buffer budget) plus an upstream idle watchdog (#126, #127)
+- JPA / storage writes in the streaming completion callback moved off the EventLoop (#115, #125)
+- Frontend: throttled rendering and persistence for streamed answers (#135); fixed the zombie WebSocket
+  reconnect loop and un-aborted stream after unmount (#130–#132); request headers and tokens no longer printed
+  to the console (#129); fixed the canvas leak from unreleased chart instances (#133, #134)
+
+#### Config honesty (tracing)
+
+- After auditing every tracing config field for "zero consumers / only echoed to `/actuator/info`", four
+  batches were applied: 24 fields deleted, 23 more deleted; 3 wired up (`alerts.thresholds.memory-usage`,
+  `export-latency-p99`, `metrics.traces.histogram-buckets`) with 10 deleted; and 6 `components.*.capture-*`
+  fields that were not even echoed deleted (#224)
+- Sampling strategies (`ratio` / `rule` / `adaptive`) are genuinely wired and configurable via `strategy`
+  (#234); the console gained a strategy selector, and saving no longer wipes `sampling.rules` / `adaptive.*` (#242)
+- `thread-pool.keep-alive` wired to a consumer (#220); `monitoring.health` thresholds wired up and switched
+  to debounce semantics (#224)
+- Dead keys in `tracing-base.yml` were each wired up or deleted, with a binding guard test (#215)
+- Fixed the cross-window false red in the Redis sliding-window gating test (#227) and the wall-clock flakiness
+  in `StatePersistencePerformanceTest` (#197)
+
+#### Deployment & logging
+
+- Container stdout switched to one structured JSON line per record (`json-logs` profile) (#211)
+- Kustomize K8s manifests and probe groups added (#165); prod / dev compose port mapping, probe port and data
+  volume paths fixed, graceful shutdown added (#165)
+- Outbound `WebClient` connection parameters and the tracing monitor scheduler parameters externalized (#182)
+- CI: `java-tests` gained a PostgreSQL service container and broader gated-test validation (#174)
+
+#### Documentation governance
+
+- `ReviewedAt` human-review mechanism added; staleness now judged per document type, fixing 9 false positives
+  and 10 leaks (#101)
+- Documentation facts checked against code and corrected: 10 tracing docs (50 key names), `config-reference`,
+  the api-reference series and the tracing landing page — including an **entirely fabricated section** in the
+  English `monitoring-api`, ~20 error codes that exist nowhere in the codebase, wrong Prometheus metric names
+  (`model_router_*` instead of `jairouter_*`) and a `modelRouter` health component that does not exist (#159, #231, #235)
 
 ### [3.2.2] - 2026-09-22 - Patch Release (User-Reported Fixes + Console HTTP Status Semantics)
 

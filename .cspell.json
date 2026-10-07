@@ -315,7 +315,10 @@
     "permissions",
     "authorize",
     "authorization",
-    "authorizeExchange"
+    "authorizeExchange",
+    "Kustomize",
+    "kustomization",
+    "datasource"
   ],
   "ignoreWords": [
     "CNAME",
