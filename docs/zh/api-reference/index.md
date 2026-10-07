@@ -46,71 +46,99 @@ http://localhost:8080
 
 ## 认证
 
-默认情况下，JAiRouter 不需要认证。对于生产部署，请考虑：
+**认证默认是开启的**：`jairouter.security.enabled` 默认 `true`（`config/auth/jwt.yml`），因此 `/v1/**` 需要凭据、`/api/**` 走权限校验，只有豁免清单允许匿名访问（`/actuator/health`、`/actuator/info`、`/actuator/prometheus`、登录接口、Swagger 文档、`/admin/**` 与 `/favicon.ico` 静态资源 —— 见 `SecurityConfiguration.java` 与 `AnonymousEndpointPaths.java`）。
 
-- 带认证的反向代理（nginx、Apache）
-- 带认证的 API 网关
-- 自定义认证过滤器
+网关自身的凭据有两种：
+
+- `X-API-Key: <控制台创建的 API Key>`
+- `Jairouter_Token: <JWT>`
+
+`Authorization` 头**不参与网关认证**，它被透传给下游 AI 服务（实例级 `headers` 优先）。
+
+确实要关闭认证时，请显式设置 `jairouter.security.enabled: false`（不建议用于生产），不要依赖「默认不需要认证」。
 
 ## 限流
 
-所有 API 都受配置的限流限制。当超过限制时，您将收到：
+限流**不是**对所有 API 生效，只有两处：AI 调用链路（`ServiceRequestHandler` 里的服务级限流）与 `/api/auth/api-keys` 前缀（`AdminApiRateLimiter`）。
 
-```http
-HTTP/1.1 429 Too Many Requests
-Content-Type: application/json
+两处的 429 响应体形状不同。
 
+`/v1/**`（OpenAI 面，经 `V1ErrorBodyMapper`）：
+
+```json
 {
   "error": {
-    "message": "超出限流限制",
-    "type": "rate_limit_exceeded",
-    "code": "rate_limit_exceeded"
+    "message": "...",
+    "type": "rate_limit_error",
+    "code": "RATE_LIMIT_EXCEEDED"
   }
+}
+```
+
+`/api/auth/api-keys`（扁平体，**没有** `error` 包裹，见 `AdminApiRateLimiter` 的 `writeRateLimited`）：
+
+```json
+{
+  "code": "RATE_LIMIT_EXCEEDED",
+  "message": "..."
 }
 ```
 
 ## 错误处理
 
-JAiRouter 在所有 API 中提供一致的错误响应：
+错误响应的形状**按入口面不同**，并不存在「所有 API 统一」的错误体。
 
-### 标准错误格式
+### `/v1/**`（OpenAI 面）
 
 ```json
 {
   "error": {
     "message": "错误描述",
-    "type": "错误类型",
-    "code": "错误代码",
-    "details": {
-      "additional": "信息"
-    }
+    "type": "invalid_request_error",
+    "code": "INVALID_REQUEST"
   }
 }
 ```
 
-### 常见错误代码
+**没有** `param`、也**没有** `details`（`V1ErrorBodyMapper#toErrorBody` 只写 `message`/`type`/`code`）。
 
-| HTTP 状态 | 错误类型 | 描述 |
-|-----------|----------|------|
-| 400 | `invalid_request` | 请求格式错误 |
-| 404 | `not_found` | 资源未找到 |
-| 429 | `rate_limit_exceeded` | 超出限流限制 |
-| 500 | `internal_error` | 内部服务器错误 |
-| 503 | `service_unavailable` | 无可用实例 |
-| 503 | `circuit_breaker_open` | 熔断器已打开 |
+### `/api/**`（控制台面）
+
+沿用 `RouterResponse`（`success` / `message` / `data` / `errorCode` / `timestamp`）：
+
+```json
+{
+  "success": false,
+  "message": "错误描述",
+  "errorCode": "INVALID_REQUEST"
+}
+```
+
+### `/v1/**` 的 `type` 取值
+
+| HTTP 状态 | `type` | 描述 |
+|-----------|--------|------|
+| 400 / 422 / 其他 4xx | `invalid_request_error` | 请求格式错误 |
+| 401 | `authentication_error` | 认证失败 |
+| 403 | `permission_error` | 权限不足 |
+| 404 | `not_found_error` | 资源未找到 |
+| 429 | `rate_limit_error` | 超出限流 / 配额 |
+| 所有 5xx（含 503） | `api_error` | 网关或下游内部错误 |
+
+来源：`V1ErrorBodyMapper#errorTypeOf`。**不存在** `service_unavailable`、`circuit_breaker_open` 这类 `type`。
 
 ## 内容类型
 
 ### 请求内容类型
 
-- `application/json` - JSON 请求（大多数 API）
-- `multipart/form-data` - 文件上传（STT、图像 API）
+- `application/json` - JSON 请求（绝大多数 API，含图像生成与图像编辑）
+- `multipart/form-data` - 只有 `/api/v1/audio/transcriptions`（STT）声明了该消费类型
 
 ### 响应内容类型
 
-- `application/json` - JSON 响应（大多数 API）
-- `audio/*` - 音频文件（TTS API）
-- `image/*` - 图像文件（图像生成 API）
+- `application/json` - JSON 响应（绝大多数 API，含图像生成与图像编辑）
+
+> 图像 API 的响应是 JSON（`data[].url` 或 `data[].b64_json`），**不**输出 `image/*`。TTS 接口（`POST /api/v1/audio/speech`）返回音频二进制，其 Content-Type 由所选输出格式决定。
 
 ## 请求/响应示例
 

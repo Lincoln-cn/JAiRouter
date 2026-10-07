@@ -59,15 +59,17 @@ JAiRouter 的 API 按功能分为以下几个主要分组：
 ### 1. 统一模型接口 (Universal API)
 - **标签**: `统一模型接口`
 - **描述**: 提供兼容 OpenAI 格式的统一模型服务接口
-- **路径前缀**: `/v1`
+- **路径前缀**: `/api/v1`（`UniversalController` 的类级映射）
 - **包含接口**:
-  - 聊天完成 (`/v1/chat/completions`)
-  - 文本嵌入 (`/v1/embeddings`)
-  - 重排序 (`/v1/rerank`)
-  - 文本转语音 (`/v1/audio/speech`)
-  - 语音转文本 (`/v1/audio/transcriptions`)
-  - 图像生成 (`/v1/images/generations`)
-  - 图像编辑 (`/v1/images/edits`)
+  - 聊天完成 (`POST /api/v1/chat/completions`)
+  - 文本嵌入 (`POST /api/v1/embeddings`)
+  - 重排序 (`POST /api/v1/rerank`)
+  - 文本转语音 (`POST /api/v1/audio/speech`)
+  - 语音转文本 (`POST /api/v1/audio/transcriptions`)
+  - 图像生成 (`POST /api/v1/images/generations`)
+  - 图像编辑 (`POST /api/v1/images/edits`)
+
+> `/v1` 面（`OpenAiNativeController`）只注册了 `GET /v1/models`、`POST /v1/chat/completions`、`POST /v1/embeddings`、`POST /v1/rerank` —— 音频与图像接口**不在** `/v1` 下。
 
 ### 2. 服务类型管理
 - **标签**: `服务类型管理`
@@ -75,12 +77,12 @@ JAiRouter 的 API 按功能分为以下几个主要分组：
 - **路径前缀**: `/api/config/type`
 
 ### 3. 服务实例管理
-- **标签**: `服务实例管理`
+- **标签**: 该控制器未声明 `@Tag`，SpringDoc 会回退用类名 `ServiceTypeInstanceController`
 - **描述**: 提供服务实例的增删改查相关接口
 - **路径前缀**: `/api/config/instance`
 
 ### 4. 监控管理
-- **标签**: `监控管理`
+- **标签**: 该控制器未声明 `@Tag`，SpringDoc 会回退用类名 `MonitoringController`
 - **描述**: 提供监控配置的查询和动态更新功能
 - **路径前缀**: `/api/monitoring`
 

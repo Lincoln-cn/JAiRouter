@@ -87,7 +87,7 @@ cache key = SHA-256(tenantKey | [user?] | serviceType | model | canonicalJson(re
 
 ## Cache Hit Semantics
 
-- **Consistent response shape**: a cache hit returns a `RouterResponse` isomorphic to a normal non-streaming success response (`data` holds the cached downstream data) — transparent to callers
+- **Consistent response shape**: on the console surface (`/api/**`) a cache hit returns a `RouterResponse` isomorphic to a normal non-streaming success response (`data` holds the cached downstream data) — transparent to callers. On the native surface (`/v1/**`, the OpenAI / Anthropic compatible entry points) a hit returns the downstream **raw JSON** instead, with no `RouterResponse` wrapper
 - **Hits do not produce call-history records**: cache-hit requests short-circuit before the adapter executes (call history is recorded on the downstream execution path), so they are **not written to call history** — only the hit counter is incremented; use `jairouter_response_cache_hits_total` when auditing hit requests
 - **No downstream token quota consumed**: hits skip the downstream call entirely and generate no new downstream usage
 - **Rate limiting semantics** (updated in v2.9.10): the cache read is now moved ahead of instance selection (`selectInstance`) — before the cache lookup, **service-level rate limiting is explicitly executed** (one deduction); a hit short-circuits immediately, skipping instance selection; a 429 from rate limiting **takes priority over the cache** (hard boundary); a miss proceeds through the full `selectInstance` (internal rate limiting is skipped to avoid double deduction)

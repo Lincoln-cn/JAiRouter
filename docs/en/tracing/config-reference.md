@@ -358,6 +358,13 @@ jairouter:
           export-latency-p99: 5000   # P99 critical threshold for the trace.export operation, in ms, default: 5000
 ```
 
+> `health.{failure-threshold,recovery-threshold}` are **debounce** thresholds: `ExporterHealthChecker`
+> marks the exporter unhealthy only after **failure-threshold consecutive** failed checks, and recovers
+> only after **recovery-threshold consecutive** successful ones. A check with the opposite result resets
+> the matching consecutive counter, so a single flapping check does **not** flip the `exporterHealthChecker`
+> component in `/actuator/health`. Setting either threshold to 1 degenerates to "each check decides the
+> state on its own".
+>
 > Checked in issues #231 / #224: `alerts.trace-processing-failures` / `export-failures` /
 > `buffer-pressure` were already deleted in #215 (no backing fields). `metrics.exporter.*` (4 keys),
 > `metrics.enabled`, `metrics.prefix`, `metrics.traces.enabled`, `self-monitoring`, `alerts.enabled`,

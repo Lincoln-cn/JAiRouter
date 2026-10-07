@@ -57,40 +57,42 @@ springdoc:
 JAiRouter's APIs are divided into the following main groups by function:
 
 ### 1. Universal Model Interface (Universal API)
-- **Tag**: `Universal Model Interface`
+- **Tag**: `统一模型接口` — the tag literal is Chinese in code (`UniversalController.java:52`)
 - **Description**: Provides unified model service interfaces compatible with OpenAI format
-- **Path Prefix**: `/v1`
+- **Path Prefix**: `/api/v1` (class-level mapping of `UniversalController`)
 - **Included Interfaces**:
-  - Chat Completion (`/v1/chat/completions`)
-  - Text Embedding (`/v1/embeddings`)
-  - Reranking (`/v1/rerank`)
-  - Text-to-Speech (`/v1/audio/speech`)
-  - Speech-to-Text (`/v1/audio/transcriptions`)
-  - Image Generation (`/v1/images/generations`)
-  - Image Editing (`/v1/images/edits`)
+  - Chat Completion (`POST /api/v1/chat/completions`)
+  - Text Embedding (`POST /api/v1/embeddings`)
+  - Reranking (`POST /api/v1/rerank`)
+  - Text-to-Speech (`POST /api/v1/audio/speech`)
+  - Speech-to-Text (`POST /api/v1/audio/transcriptions`)
+  - Image Generation (`POST /api/v1/images/generations`)
+  - Image Editing (`POST /api/v1/images/edits`)
+
+> The `/v1` surface (`OpenAiNativeController`) registers only `GET /v1/models`, `POST /v1/chat/completions`, `POST /v1/embeddings` and `POST /v1/rerank` — the audio and image interfaces are **not** under `/v1`.
 
 ### 2. Service Type Management
-- **Tag**: `Service Type Management`
+- **Tag**: `服务类型管理` — the tag literal is Chinese in code (`ServiceTypeController.java:47`)
 - **Description**: Provides CRUD interfaces for service types and related configuration management
 - **Path Prefix**: `/api/config/type`
 
 ### 3. Service Instance Management
-- **Tag**: `Service Instance Management`
+- **Tag**: this controller declares no `@Tag`, so SpringDoc falls back to the class name `ServiceTypeInstanceController`
 - **Description**: Provides CRUD interfaces for service instances
 - **Path Prefix**: `/api/config/instance`
 
 ### 4. Monitoring Management
-- **Tag**: `Monitoring Management`
+- **Tag**: this controller declares no `@Tag`, so SpringDoc falls back to the class name `MonitoringController`
 - **Description**: Provides query and dynamic update functions for monitoring configurations
 - **Path Prefix**: `/api/monitoring`
 
 ### 5. Model Information Interface
-- **Tag**: `Model Information Interface`
+- **Tag**: `模型信息接口` — the tag literal is Chinese in code (`ModelInfoController.java:29`)
 - **Description**: Provides model information query interfaces
 - **Path Prefix**: `/api/models`
 
 ### 6. Configuration Version Management
-- **Tag**: `Configuration Version Management`
+- **Tag**: `配置版本管理` — the tag literal is Chinese in code (`ConfigurationVersionController.java:40`)
 - **Description**: Provides management interfaces for querying, rolling back, and deleting configuration versions
 - **Path Prefix**: `/api/config/version`
 

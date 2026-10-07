@@ -87,7 +87,7 @@ SHA-256(tenantKey | [user?] | serviceType | model | canonicalJson(requestBody))
 
 ## 命中语义
 
-- **响应结构一致**：命中返回与正常非流式成功响应同构的 `RouterResponse`（`data` 为缓存的下游原始数据），调用方无感
+- **响应结构一致**：控制台面 `/api/**` 命中时返回与正常非流式成功响应同构的 `RouterResponse`（`data` 为缓存的下游原始数据），调用方无感；原生面 `/v1/**`（OpenAI / Anthropic 兼容入口）命中时**直接返回下游原始 JSON**，不包 `RouterResponse`
 - **命中不产生调用历史**：缓存命中的请求在适配器执行前短路返回（调用历史在下游执行路径记录），因此**不写入调用历史**，仅累加命中指标；需审计命中请求时以 `jairouter_response_cache_hits_total` 为准
 - **不消耗下游 token 配额**：命中请求完全跳过下游调用，不产生新的下游用量
 - **限流语义**（v2.9.10 更新）：缓存读提前到实例选择（`selectInstance`）之前——缓存查找前**先显式执行服务级限流**（扣一次），命中直接短路返回、跳过实例选择；限流超限 429 **优先于缓存**（硬边界）；未命中仍走完整 `selectInstance`（内部限流跳过，避免双扣）

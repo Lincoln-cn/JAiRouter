@@ -10,7 +10,7 @@
 
 
 
-JAiRouter provides a unified API interface compatible with OpenAI format, supporting multiple AI model services. All interfaces use the `/v1` prefix to ensure compatibility with OpenAI API.
+JAiRouter provides a unified API interface compatible with OpenAI format, supporting multiple AI model services. The OpenAI-compatible surface lives under `/v1`; TTS / STT / image endpoints are exposed **only on the console surface** `/api/v1/**` (see the table below).
 
 ## Two entry surfaces (since v3.1)
 
@@ -234,7 +234,9 @@ Reorders document lists based on relevance to a query.
 
 ## Text-to-Speech Interface
 
-### `POST /v1/audio/speech`
+### `POST /api/v1/audio/speech`
+
+> **Console surface only.** The `/v1` surface registers just `GET /v1/models`, `POST /v1/chat/completions`, `POST /v1/embeddings` and `POST /v1/rerank` — there is no `/v1/...` mapping for this endpoint.
 
 Converts text into speech audio files.
 
@@ -266,7 +268,9 @@ Returns binary data of the audio file with Content-Type set according to `respon
 
 ## Speech-to-Text Interface
 
-### `POST /v1/audio/transcriptions`
+### `POST /api/v1/audio/transcriptions`
+
+> **Console surface only.** The `/v1` surface registers just `GET /v1/models`, `POST /v1/chat/completions`, `POST /v1/embeddings` and `POST /v1/rerank` — there is no `/v1/...` mapping for this endpoint.
 
 Converts audio files into text.
 
@@ -278,7 +282,8 @@ Using `multipart/form-data` format:
 file: (audio file)
 model: whisper-1
 language: zh
-response_format: json
+prompt: (optional prompt)
+responseFormat: json
 temperature: 0
 ```
 
@@ -289,7 +294,7 @@ temperature: 0
 | `file` | file | Yes | Audio file |
 | `model` | string | Yes | STT model name |
 | `language` | string | No | Audio language code |
-| `response_format` | string | No | Response format, default is json |
+| `responseFormat` | string | No | Response format, default is json |
 | `temperature` | number | No | Sampling temperature |
 
 #### Response Format
@@ -302,7 +307,9 @@ temperature: 0
 
 ## Image Generation Interface
 
-### `POST /v1/images/generations`
+### `POST /api/v1/images/generations`
+
+> **Console surface only.** The `/v1` surface registers just `GET /v1/models`, `POST /v1/chat/completions`, `POST /v1/embeddings` and `POST /v1/rerank` — there is no `/v1/...` mapping for this endpoint.
 
 Generates images based on text descriptions.
 
@@ -350,24 +357,29 @@ Generates images based on text descriptions.
 
 ## Image Editing Interface
 
-### `POST /v1/images/edits`
+### `POST /api/v1/images/edits`
+
+> **Console surface only.** The `/v1` surface registers just `GET /v1/models`, `POST /v1/chat/completions`, `POST /v1/embeddings` and `POST /v1/rerank` — there is no `/v1/...` mapping for this endpoint.
 
 Edits existing images.
 
 #### Request Parameters
 
-Using `multipart/form-data` format:
+A **JSON** request body (`@RequestBody ImageEditDTO.Request`) — **not** `multipart/form-data`:
 
+```json
+{
+  "image": ["<image reference>"],
+  "prompt": "Edit description",
+  "model": "dall-e-2",
+  "n": 1,
+  "size": "1024x1024",
+  "response_format": "url",
+  "user": "user-123"
+}
 ```
-image: (original image file)
-mask: (optional mask file)
-prompt: Edit description
-model: dall-e-2
-n: 1
-size: 1024x1024
-response_format: url
-user: user-123
-```
+
+> Contrast with `/api/v1/audio/transcriptions`, which **is** declared as `multipart/form-data`, and note the part name there is `responseFormat` (camelCase).
 
 #### Response Format
 
@@ -391,8 +403,7 @@ user: user-123
   "error": {
     "message": "Invalid request: missing required parameter 'model'",
     "type": "invalid_request_error",
-    "param": "model",
-    "code": "missing_parameter"
+    "code": "INVALID_REQUEST"
   }
 }
 ```
@@ -401,13 +412,14 @@ user: user-123
 
 | Error Type | Description |
 |------------|-------------|
-| `invalid_request_error` | Request parameter error |
-| `authentication_error` | Authentication failed |
-| `permission_error` | Insufficient permissions |
-| `not_found_error` | Resource not found |
-| `rate_limit_error` | Request frequency exceeded |
-| `api_error` | API internal error |
-| `overloaded_error` | Service overloaded |
+| `invalid_request_error` | 400 / 422 / other 4xx — request parameter error |
+| `authentication_error` | 401 — authentication failed |
+| `permission_error` | 403 — insufficient permissions |
+| `not_found_error` | 404 — resource not found |
+| `rate_limit_error` | 429 — rate limit / quota exceeded |
+| `api_error` | every 5xx (including 503) — gateway or downstream internal error |
+
+> These are the only values the gateway emits (`V1ErrorBodyMapper#errorTypeOf`); `overloaded_error` is never produced. This OpenAI-shaped body applies to `/v1/**`; `/api/**` keeps the `RouterResponse` shape (`success` / `message` / `data` / `errorCode` / `timestamp`) instead.
 
 ## Usage Examples
 
@@ -417,7 +429,7 @@ user: user-123
 # Chat Completion
 curl -X POST "http://localhost:8080/v1/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-api-key" \
+  -H "X-API-Key: your-api-key" \
   -d '{
     "model": "gpt-3.5-turbo",
     "messages": [
@@ -428,7 +440,7 @@ curl -X POST "http://localhost:8080/v1/chat/completions" \
 # Text Embedding
 curl -X POST "http://localhost:8080/v1/embeddings" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-api-key" \
+  -H "X-API-Key: your-api-key" \
   -d '{
     "model": "text-embedding-ada-002",
     "input": "Text to embed"
@@ -445,7 +457,7 @@ base_url = "http://localhost:8080"
 api_key = "your-api-key"
 headers = {
     "Content-Type": "application/json",
-    "Authorization": f"Bearer {api_key}"
+    "X-API-Key": api_key
 }
 
 # Chat Completion
@@ -485,7 +497,7 @@ async function chatCompletion() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
+      'X-API-Key': apiKey
     },
     body: JSON.stringify({
       model: 'gpt-3.5-turbo',
@@ -505,7 +517,7 @@ async function embedding() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
+      'X-API-Key': apiKey
     },
     body: JSON.stringify({
       model: 'text-embedding-ada-002',
