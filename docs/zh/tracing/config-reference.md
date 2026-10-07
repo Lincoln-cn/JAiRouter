@@ -334,36 +334,31 @@ jairouter:
 jairouter:
   tracing:
     monitoring:
-      self-monitoring: true
       metrics:
-        enabled: true
-        prefix: "jairouter.tracing"
         traces:
-          enabled: true
-          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0]
-        exporter:
-          enabled: true
-          success-rate: true
-          latency: true
-          queue-size: true
+          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0]   # 处理延迟直方图桶边界，单位秒
       health:
         enabled: true
         check-interval: 30s          # 导出器健康检查周期（@Scheduled 也读它），默认: 30s
         failure-threshold: 3         # 连续失败多少次判不健康，默认: 3
         recovery-threshold: 2        # 连续成功多少次判恢复，默认: 2
       alerts:
-        enabled: true
         thresholds:
-          export-failure-rate: 0.1   # 导出失败率阈值，默认: 0.1
-          export-latency-p99: 5000   # P99 导出延迟阈值(ms)，默认: 5000
-          memory-usage: 0.8          # 内存使用率阈值，默认: 0.8
-          queue-size: 0.9            # 队列使用率阈值，默认: 0.9
+          memory-usage: 0.8          # 堆使用率超过该比例即判内存瓶颈，默认: 0.8
+          export-latency-p99: 5000   # trace.export 操作的 P99 危险阈值(ms)，默认: 5000
 ```
 
-> 核对（issue #231）：`alerts` 下的 `trace-processing-failures` / `export-failures` /
-> `buffer-pressure` 三个键在 #215 就已被删除（无对应字段），这里改为真实的 `thresholds.*`；
-> `metrics.exporter` 原来的 `histogram-buckets` 同样不存在，改为真实的 `success-rate` / `latency` /
-> `queue-size`。另外 `traces.histogram-buckets` 虽能绑定，但目前没有消费方（issue #224）。
+> 核对（issue #231 / #224）：`alerts` 下的 `trace-processing-failures` / `export-failures` /
+> `buffer-pressure` 三个键在 #215 已被删除（无对应字段）。`metrics.exporter.*`（4 个）、
+> `metrics.enabled`、`metrics.prefix`、`metrics.traces.enabled`、`self-monitoring`、`alerts.enabled`、
+> `alerts.thresholds.export-failure-rate`、`alerts.thresholds.queue-size` 在 #224 复核后确认
+> **全仓没有任何读者**（连 `/actuator/info` 都不回显 `monitoring` 段），键能绑定、文档却当真实旋钮宣传，
+> 属「绑定得上却永远不生效」，已一并删除。需要时请先实现消费方再加回来。
+>
+> 上面保留的 5 个键都有真实消费方：`histogram-buckets` → `TracingPerformanceMonitor` 注册
+> `tracing.processing.latency` 的直方图桶（注意单位是**秒**，而该指标以毫秒记录，装配时由消费方换算）；
+> `health.*` → `ExporterHealthChecker`；`alerts.thresholds.memory-usage` 与 `export-latency-p99` →
+> `TracingPerformanceMonitor#detectBottlenecks` 与默认阈值表中的 `trace.export`（原先分别写死 0.8 / 5000）。
 
 ## 环境配置覆盖
 

@@ -347,37 +347,33 @@ jairouter:
 jairouter:
   tracing:
     monitoring:
-      self-monitoring: true
       metrics:
-        enabled: true
-        prefix: "jairouter.tracing"
         traces:
-          enabled: true
-          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0]
-        exporter:
-          enabled: true
-          success-rate: true
-          latency: true
-          queue-size: true
+          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0]   # Processing-latency histogram buckets, in seconds
       health:
         enabled: true
         check-interval: 30s          # Exporter health check period (@Scheduled reads it), default: 30s
         failure-threshold: 3         # Consecutive failures before unhealthy, default: 3
         recovery-threshold: 2        # Consecutive successes before healthy again, default: 2
       alerts:
-        enabled: true
         thresholds:
-          export-failure-rate: 0.1   # Export failure-rate threshold, default: 0.1
-          export-latency-p99: 5000   # P99 export latency threshold in ms, default: 5000
-          memory-usage: 0.8          # Memory usage threshold, default: 0.8
-          queue-size: 0.9            # Queue usage threshold, default: 0.9
+          memory-usage: 0.8          # Heap usage above this ratio is reported as a memory bottleneck, default: 0.8
+          export-latency-p99: 5000   # P99 critical threshold for the trace.export operation, in ms, default: 5000
 ```
 
-> Checked in issue #231: `alerts.trace-processing-failures` / `export-failures` /
-> `buffer-pressure` were already deleted in #215 (no backing fields); they are replaced here by the real
-> `thresholds.*`. The old `metrics.exporter.histogram-buckets` does not exist either — replaced by the
-> real `success-rate` / `latency` / `queue-size`. Note that `traces.histogram-buckets` binds but has no
-> consumer today (issue #224).
+> Checked in issues #231 / #224: `alerts.trace-processing-failures` / `export-failures` /
+> `buffer-pressure` were already deleted in #215 (no backing fields). `metrics.exporter.*` (4 keys),
+> `metrics.enabled`, `metrics.prefix`, `metrics.traces.enabled`, `self-monitoring`, `alerts.enabled`,
+> `alerts.thresholds.export-failure-rate` and `alerts.thresholds.queue-size` were re-checked in #224 and
+> have **no reader anywhere in the codebase** (the `monitoring` section is not even echoed to
+> `/actuator/info`) — they bind but can never take effect, so they were deleted. Implement a consumer
+> first if you need them back.
+>
+> The five keys kept above all have real consumers: `histogram-buckets` → `TracingPerformanceMonitor`
+> registers the `tracing.processing.latency` histogram with them (note the unit is **seconds** while the
+> metric records milliseconds — the consumer converts); `health.*` → `ExporterHealthChecker`;
+> `alerts.thresholds.memory-usage` and `export-latency-p99` → `TracingPerformanceMonitor#detectBottlenecks`
+> and the `trace.export` entry of its default threshold table (previously hardcoded to 0.8 / 5000).
 
 ## Environment Configuration Overrides
 

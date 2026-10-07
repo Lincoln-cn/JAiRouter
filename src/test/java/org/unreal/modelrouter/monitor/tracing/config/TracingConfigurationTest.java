@@ -375,7 +375,6 @@ class TracingConfigurationTest {
         void testDefaultValues() {
             TracingMonitoringConfig config = new TracingMonitoringConfig();
 
-            assertTrue(config.isSelfMonitoring());
             assertNotNull(config.getMetrics());
             assertNotNull(config.getHealth());
             assertNotNull(config.getAlerts());
@@ -386,10 +385,9 @@ class TracingConfigurationTest {
         void testMetricsConfig() {
             TracingMonitoringConfig.MetricsConfig metrics = new TracingMonitoringConfig.MetricsConfig();
 
-            assertTrue(metrics.isEnabled());
-            assertEquals("jairouter.tracing", metrics.getPrefix());
             assertNotNull(metrics.getTraces());
-            assertNotNull(metrics.getExporter());
+            assertArrayEquals(new double[]{0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0},
+                    metrics.getTraces().getHistogramBuckets());
         }
 
         @Test
@@ -408,11 +406,10 @@ class TracingConfigurationTest {
         void testAlertsConfig() {
             TracingMonitoringConfig.AlertsConfig alerts = new TracingMonitoringConfig.AlertsConfig();
 
-            assertTrue(alerts.isEnabled());
             assertNotNull(alerts.getThresholds());
 
             TracingMonitoringConfig.AlertsConfig.ThresholdsConfig thresholds = alerts.getThresholds();
-            assertEquals(0.1, thresholds.getExportFailureRate(), 0.01);
+            assertEquals(0.8, thresholds.getMemoryUsage(), 0.01);
             assertEquals(5000L, thresholds.getExportLatencyP99());
         }
     }
