@@ -6,7 +6,9 @@
 > **适用版本**: v3.1.1
 > **作者**: AI Assistant
 
-JAiRouter 使用标准化的错误码系统来标识各种错误情况。所有错误响应都包含错误码字段，便于客户端进行错误处理。
+JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于客户端进行错误处理。
+
+> ⚠️ **响应形状按入口面不同**：`/api/**`（控制台面）用下面表格里的 `RouterResponse` 形状（`errorCode` 字段）；`/v1/**`（OpenAI 面）用嵌套的 `{"error":{"message","type","code"}}`（见 [统一 API 接口](universal-api.md)）。另有两个已知例外不走本表：管理面限流 429 返回`{"code":"RATE_LIMIT_EXCEEDED","message":...}`（`AdminApiRateLimiter`，**扁平体、没有 `error` 包裹**）；异常处理器兜底返回 `{"code":"500"}`（`ReactiveGlobalExceptionHandler`）。
 
 ## 错误响应格式
 
@@ -44,11 +46,18 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况。所有�
 | `INVALID_API_KEY` | 无效的 API Key | API Key 格式错误或不存在 | 检查 API Key 是否正确 |
 | `EXPIRED_API_KEY` | API Key 已过期 | API Key 超过有效期 | 重新生成 API Key |
 | `MISSING_API_KEY` | 缺少 API Key | 请求头未包含 API Key | 添加 `X-API-Key` 请求头 |
-| `INVALID_JWT_TOKEN` | 无效的 JWT 令牌 | JWT 格式错误或签名无效 | 检查 JWT 格式和签名 |
-| `EXPIRED_JWT_TOKEN` | JWT 令牌已过期 | JWT 超过有效期 | 刷新或重新获取 JWT |
-| `BLACKLISTED_TOKEN` | 令牌已被列入黑名单 | JWT 已被注销 | 重新登录获取新令牌 |
+| `JWT_INVALID` | 无效的 JWT 令牌 | JWT 格式错误或签名无效 | 检查 JWT 格式和签名 |
+| `JWT_EXPIRED` | JWT 令牌已过期 | JWT 超过有效期 | 刷新或重新获取 JWT |
+| `JWT_BLACKLISTED` | 令牌已被列入黑名单 | JWT 已被注销 | 重新登录获取新令牌 |
+| `EMPTY_JWT_TOKEN` | 未携带 JWT | 请求头缺少 `Jairouter_Token` | 添加 `Jairouter_Token` 请求头 |
+| `EMPTY_API_KEY` | 未携带 API Key | 请求头缺少 `X-API-Key` | 添加 `X-API-Key` 请求头 |
+| `API_KEY_DISABLED` | API Key 已被禁用 | 该 Key 被停用 | 启用或更换 Key |
+| `API_KEY_AUTH_FAILED` | API Key 认证失败 | Key 与账号不匹配 | 检查 Key 归属 |
+
+> 原表里的 `INVALID_JWT_TOKEN` / `EXPIRED_JWT_TOKEN` / `BLACKLISTED_TOKEN` 在
+> `AuthenticationException` 中**只有常量声明**；认证链路实际发出的 401 码是上面这几个新增项
+> （`DefaultJwtTokenValidator.java:76,85,120`、`CustomReactiveAuthenticationManager.java:57,67,92,115`）。
 | `AUTH_FAILED` | 认证失败 | 通用认证失败 | 检查认证凭据 |
-| `TOKEN_EXPIRED` | 令牌过期 | JWT 令牌过期 | 刷新令牌 |
 | `AUTH_ERROR` | 认证错误 | 认证过程异常 | 检查认证服务状态 |
 
 **示例响应**:
@@ -116,9 +125,6 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况。所有�
 | 错误码 | 描述 | 常见原因 | 解决方案 |
 |--------|------|----------|----------|
 | `NOT_FOUND` | 资源未找到 | 请求的资源不存在 | 检查资源 ID 或路径 |
-| `SERVICE_NOT_FOUND` | 服务未找到 | 服务类型不存在 | 检查服务类型名称 |
-| `INSTANCE_NOT_FOUND` | 实例未找到 | 实例 ID 不存在 | 检查实例 ID |
-| `CONFIG_NOT_FOUND` | 配置未找到 | 配置项不存在 | 检查配置键 |
 
 ---
 
@@ -128,10 +134,10 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况。所有�
 
 | 错误码 | 描述 | 常见原因 | 解决方案 |
 |--------|------|----------|----------|
-| `VALIDATION_ERROR` | 请求数据无效 | 参数格式或值错误 | 检查请求参数 |
-| `INVALID_PARAMETER` | 参数无效 | 参数值超出范围 | 检查参数约束 |
-| `MISSING_PARAMETER` | 缺少参数 | 必填参数未提供 | 添加必填参数 |
-| `INVALID_FORMAT` | 格式无效 | 数据格式错误 | 检查数据格式 |
+| `INVALID_REQUEST` | 请求不合法 | 参数格式或值错误 | 检查请求参数 |
+| `INVALID_PARAM` | 参数无效 | 参数值超出范围 | 检查参数约束 |
+
+> 原表里的 `VALIDATION_ERROR`（只是 `ValidationFailureType` 的枚举值，从不作为响应码发出，见 `ApiKeyValidator.java:344`）、`INVALID_PARAMETER` / `MISSING_PARAMETER` / `INVALID_FORMAT`（全库无匹配）已删除。
 
 ---
 
@@ -140,8 +146,6 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况。所有�
 | 错误码 | 描述 | HTTP 状态码 | 解决方案 |
 |--------|------|-------------|----------|
 | `CONFLICT` | 资源冲突 | 409 | 检查资源状态 |
-| `DUPLICATE_RESOURCE` | 资源重复 | 409 | 使用不同标识 |
-| `OPERATION_FAILED` | 操作失败 | 500 | 检查日志获取详情 |
 | `RATE_LIMIT_EXCEEDED` | 限流触发 | 429 | 降低请求频率 |
 
 ---
@@ -165,20 +169,21 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况。所有�
 
 | 错误码 | 描述 | 响应头 | 解决方案 |
 |--------|------|--------|----------|
-| `RATE_LIMIT_EXCEEDED` | 超过限流阈值 | `X-RateLimit-Reset` | 等待令牌恢复 |
-| `GLOBAL_RATE_LIMIT` | 全局限流触发 | `Retry-After` | 降低全局请求频率 |
-| `SERVICE_RATE_LIMIT` | 服务级限流触发 | `X-RateLimit-Remaining` | 降低服务请求频率 |
-| `INSTANCE_RATE_LIMIT` | 实例级限流触发 | `X-RateLimit-Remaining` | 切换实例或等待 |
+| `RATE_LIMIT_EXCEEDED` | 超过限流阈值 | `Retry-After` / `X-Quota-*` | 等待令牌恢复 |
+
+> 响应头**没有** `X-RateLimit-Reset` / `X-RateLimit-Remaining`（全仓无此头）；配额超限实际写
+> `Retry-After` 与 `X-Quota-*`（limit / remaining / window），见 `ServiceRequestHandler.java:692-695`。
+> 原表里的 `GLOBAL_RATE_LIMIT` / `SERVICE_RATE_LIMIT` / `INSTANCE_RATE_LIMIT` 全库无匹配（最后一项只是 JPA 表名 `instance_rate_limit`，见 `InstanceRateLimitEntity.java:26`），已删除。
 
 ---
 
 ## 熔断器错误码 (Circuit Breaker)
 
-| 错误码 | 描述 | 状态 | 解决方案 |
-|--------|------|------|----------|
-| `CIRCUIT_BREAKER_OPEN` | 熔断器开启 | OPEN | 等待熔断器进入半开状态 |
-| `CIRCUIT_BREAKER_HALF_OPEN` | 熔断器半开 | HALF_OPEN | 少量请求尝试 |
-| `SERVICE_DEGRADED` | 服务降级 | - | 使用降级策略 |
+**熔断器没有专属错误码。** 熔断状态通过追踪 span 属性（小写的 `circuit_breaker_open`，见
+`CircuitBreakerTracingDelegate.java:132`）与监控接口 `GET /api/monitoring/circuit-breaker/stats`
+暴露；请求在熔断打开时按下游不可用处理。
+
+> 原表里的 `CIRCUIT_BREAKER_OPEN` / `CIRCUIT_BREAKER_HALF_OPEN` / `SERVICE_DEGRADED`作为**错误码**全库无匹配，已删除。
 
 ---
 
@@ -189,9 +194,6 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况。所有�
 | 错误码 | 描述 | 常见原因 | 解决方案 |
 |--------|------|----------|----------|
 | `INTERNAL_ERROR` | 服务器内部错误 | 未预期的异常 | 检查服务日志 |
-| `CONFIGURATION_ERROR` | 配置错误 | 配置文件格式错误 | 检查配置文件 |
-| `DATABASE_ERROR` | 数据库错误 | 数据库连接失败 | 检查数据库状态 |
-| `CACHE_ERROR` | 缓存错误 | Redis 连接失败 | 检查 Redis 状态 |
 
 ---
 
