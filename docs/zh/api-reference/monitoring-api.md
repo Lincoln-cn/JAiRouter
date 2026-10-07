@@ -46,25 +46,40 @@ GET /actuator/health
     "ping": {
       "status": "UP"
     },
-    "modelRouter": {
+    "tracing": {
+      "status": "UP"
+    },
+    "sharedState": {
+      "status": "UP"
+    },
+    "rbacEndpointCoverage": {
       "status": "UP",
       "details": {
-        "activeInstances": 5,
-        "totalInstances": 8,
-        "circuitBreakerStatus": "CLOSED"
+        "missing": 0
       }
     }
   }
 }
 ```
 
+> ⚠️ 组件名以实际注册的 health indicator 为准：`tracing`（`TracingHealthIndicator.java:28`）、
+> `sharedState`（`SharedStateHealthIndicator.java:31`）、`rbacEndpointCoverage`
+> （`RbacEndpointCoverageHealthIndicator.java:27`）、`jwtRedisHealthIndicator`
+> （`JwtRedisHealthMonitor.java:21`），另有 Spring Boot 标准的 `diskSpace` 等。
+> **没有** `modelRouter` 这个组件；原文里的 `activeInstances` / `totalInstances` /
+> `circuitBreakerStatus` 结构在代码中不存在。
+
 ### 详细健康信息
 
 获取包括所有组件的详细健康信息：
 
 ```http
-GET /actuator/health/detailed
+GET /actuator/health
 ```
+
+> ⚠️ **没有 `/actuator/health/detailed` 端点**：只定义了 `liveness` / `readiness` 两个
+> group（`config/base/monitoring-base.yml:70-84`）。要看全部组件详情，请在 dev profile
+> 下直接请求 `GET /actuator/health`（该 profile 配了 `show-details: always`）。
 
 **响应：**
 ```json
@@ -79,64 +94,13 @@ GET /actuator/health/detailed
         "threshold": 10485760,
         "exists": true
       }
-    },
-    "modelRouter": {
-      "status": "UP",
-      "details": {
-        "services": {
-          "chat": {
-            "totalInstances": 3,
-            "healthyInstances": 2,
-            "instances": [
-              {
-                "id": "ollama-1",
-                "url": "http://localhost:11434",
-                "status": "UP",
-                "lastCheck": "2025-08-19T10:30:00Z",
-                "responseTime": 45
-              },
-              {
-                "id": "ollama-2", 
-                "url": "http://localhost:11435",
-                "status": "UP",
-                "lastCheck": "2025-08-19T10:30:00Z",
-                "responseTime": 52
-              },
-              {
-                "id": "ollama-3",
-                "url": "http://localhost:11436", 
-                "status": "DOWN",
-                "lastCheck": "2025-08-19T10:29:45Z",
-                "error": "连接超时"
-              }
-            ]
-          },
-          "embedding": {
-            "totalInstances": 2,
-            "healthyInstances": 2,
-            "instances": [
-              {
-                "id": "xinference-1",
-                "url": "http://localhost:9997",
-                "status": "UP",
-                "lastCheck": "2025-08-19T10:30:00Z",
-                "responseTime": 38
-              },
-              {
-                "id": "xinference-2",
-                "url": "http://localhost:9998",
-                "status": "UP", 
-                "lastCheck": "2025-08-19T10:30:00Z",
-                "responseTime": 41
-              }
-            ]
-          }
-        }
-      }
     }
   }
 }
 ```
+
+> ⚠️ 原文档在这里还列了一个 `modelRouter` 组件（含 `services.*.instances[]` 明细）——
+> **该组件在代码里不存在**，示例已删除；真实注册的 health 组件见本节开头的说明。
 
 ## 指标端点
 
@@ -156,29 +120,29 @@ jvm_memory_used_bytes{area="heap",id="PS Eden Space",} 2.38026752E8
 jvm_memory_used_bytes{area="heap",id="PS Survivor Space",} 1048576.0
 jvm_memory_used_bytes{area="heap",id="PS Old Gen",} 4.2991616E7
 
-# HELP model_router_requests_total 请求总数
-# TYPE model_router_requests_total counter
-model_router_requests_total{service="chat",instance="ollama-1",status="success",} 1247.0
-model_router_requests_total{service="chat",instance="ollama-1",status="error",} 23.0
-model_router_requests_total{service="chat",instance="ollama-2",status="success",} 1156.0
-model_router_requests_total{service="chat",instance="ollama-2",status="error",} 18.0
+# HELP jairouter_requests_total 请求总数
+# TYPE jairouter_requests_total counter
+jairouter_requests_total{service="chat",method="POST",status="200",} 1247.0
+jairouter_requests_total{service="chat",method="POST",status="500",} 23.0
+jairouter_requests_total{service="chat",method="POST",status="200",} 1156.0
+jairouter_requests_total{service="chat",method="POST",status="500",} 18.0
 
-# HELP model_router_request_duration_seconds 请求持续时间（秒）
-# TYPE model_router_request_duration_seconds histogram
-model_router_request_duration_seconds_bucket{service="chat",instance="ollama-1",le="0.1",} 234.0
-model_router_request_duration_seconds_bucket{service="chat",instance="ollama-1",le="0.5",} 892.0
-model_router_request_duration_seconds_bucket{service="chat",instance="ollama-1",le="1.0",} 1156.0
-model_router_request_duration_seconds_bucket{service="chat",instance="ollama-1",le="+Inf",} 1270.0
+# HELP jairouter_request_duration_seconds 请求持续时间（秒）
+# TYPE jairouter_request_duration_seconds histogram
+jairouter_request_duration_seconds_bucket{service="chat",method="POST",le="0.1",} 234.0
+jairouter_request_duration_seconds_bucket{service="chat",method="POST",le="0.5",} 892.0
+jairouter_request_duration_seconds_bucket{service="chat",method="POST",le="1.0",} 1156.0
+jairouter_request_duration_seconds_bucket{service="chat",method="POST",le="+Inf",} 1270.0
 
-# HELP model_router_circuit_breaker_state 熔断器状态 (0=关闭, 1=打开, 2=半开)
-# TYPE model_router_circuit_breaker_state gauge
-model_router_circuit_breaker_state{service="chat",instance="ollama-1",} 0.0
-model_router_circuit_breaker_state{service="chat",instance="ollama-2",} 0.0
+# HELP jairouter_circuit_breaker_state 熔断器状态 (0=关闭, 1=打开, 2=半开)
+# TYPE jairouter_circuit_breaker_state gauge
+jairouter_circuit_breaker_state{service="chat",method="POST",} 0.0
+jairouter_circuit_breaker_state{service="chat",method="POST",} 0.0
 
-# HELP model_router_rate_limit_remaining 限流剩余请求数
-# TYPE model_router_rate_limit_remaining gauge
-model_router_rate_limit_remaining{service="chat",client_ip="192.168.1.100",} 45.0
-model_router_rate_limit_remaining{service="chat",client_ip="192.168.1.101",} 38.0
+# HELP jairouter_rate_limit_remaining 限流剩余请求数
+# TYPE jairouter_rate_limit_remaining gauge
+jairouter_rate_limit_remaining{service="chat",client_ip="192.168.1.100",} 45.0
+jairouter_rate_limit_remaining{service="chat",client_ip="192.168.1.101",} 38.0
 ```
 
 ### 指标摘要
@@ -197,11 +161,11 @@ GET /actuator/metrics
     "jvm.memory.max", 
     "jvm.gc.pause",
     "http.server.requests",
-    "model.router.requests.total",
-    "model.router.request.duration",
-    "model.router.circuit.breaker.state",
-    "model.router.rate.limit.remaining",
-    "model.router.load.balancer.weight"
+    "jairouter_requests_total",
+    "jairouter_request_duration_seconds",
+    "jairouter_circuit_breaker_state",
+    "jairouter_rate_limit_remaining",
+    "jairouter_loadbalancer_selections_total"
   ]
 }
 ```
@@ -211,13 +175,13 @@ GET /actuator/metrics
 获取特定指标的详细信息：
 
 ```http
-GET /actuator/metrics/model.router.requests.total
+GET /actuator/metrics/jairouter_requests_total
 ```
 
 **响应：**
 ```json
 {
-  "name": "model.router.requests.total",
+  "name": "jairouter_requests_total",
   "description": "模型路由器处理的请求总数",
   "baseUnit": null,
   "measurements": [
@@ -229,15 +193,15 @@ GET /actuator/metrics/model.router.requests.total
   "availableTags": [
     {
       "tag": "service",
-      "values": ["chat", "embedding", "rerank", "tts", "stt", "image"]
+      "values": ["chat", "embedding", "rerank", "tts", "stt", "imgGen", "imgEdit"]
     },
     {
-      "tag": "instance", 
-      "values": ["ollama-1", "ollama-2", "xinference-1", "xinference-2"]
+      "tag": "method", 
+      "values": ["POST", "GET"]
     },
     {
       "tag": "status",
-      "values": ["success", "error", "timeout", "circuit_breaker"]
+      "values": ["200", "400", "500"]
     }
   ]
 }
@@ -258,11 +222,11 @@ GET /actuator/info
 {
   "app": {
     "name": "JAiRouter",
-    "version": "3.1.1",
+    "version": "3.2.2",
     "description": "AI 模型服务路由器和负载均衡器"
   },
   "build": {
-    "version": "3.1.1",
+    "version": "3.2.2",
     "artifact": "model-router",
     "name": "model-router",
     "group": "org.unreal",
@@ -282,6 +246,9 @@ GET /actuator/info
 }
 ```
 
+> ⚠️ `build` / `git` 段需要 pom 里启用 `build-info` 目标（当前 `pom.xml` 未配置），
+> 默认的 `/actuator/info` 不会返回这两段；上面是示意输出。当前工程版本为 3.2.2。
+
 ### 环境信息
 
 获取环境和配置详情：
@@ -289,6 +256,10 @@ GET /actuator/info
 ```http
 GET /actuator/env
 ```
+
+> ⚠️ `env` **不在默认暴露清单内**（`config/base/monitoring-base.yml:60` 只暴露 health / info /
+> metrics / prometheus / jairouter-metrics / error-tracking；prod 见 `application-prod.yml:40`）。
+> 需要它时先把 `env` 加进 `management.endpoints.web.exposure.include`。
 
 **响应：**
 ```json
@@ -320,6 +291,9 @@ GET /actuator/env
   ]
 }
 ```
+
+> ⚠️ 上面是示意输出：本项目的配置键全部在 `jairouter.*` 前缀下，
+> **不存在 `model-router.*` 键**（全仓 `src/main/resources` 无匹配）。
 
 ## 自定义监控端点
 
@@ -371,7 +345,8 @@ GET /api/monitoring/errors/stats
 GET /api/monitoring/cache/stats
 ```
 
-> **注意**: 以上端点为 JAiRouter v3.1.1 实际提供的自定义监控端点。更多端点请参考 [管理 API](management-api.md) 文档。
+> **注意**: 以上端点为 JAiRouter（当前版本 3.2.2）实际提供的自定义监控端点，逐条对应
+> `MonitoringController.java:65,226,240,268,309,390,426`。更多端点请参考 [管理 API](management-api.md) 文档。
 
 ## 监控集成
 
@@ -406,7 +381,7 @@ scrape_configs:
 curl -f http://localhost:8080/actuator/health || exit 1
 
 # 特定组件的详细健康检查
-curl -f http://localhost:8080/actuator/health/modelRouter || exit 1
+curl -f http://localhost:8080/actuator/health/tracing || exit 1
 ```
 
 ## 监控最佳实践
@@ -443,7 +418,7 @@ groups:
   - name: jairouter
     rules:
       - alert: 高错误率
-        expr: rate(model_router_requests_total{status="error"}[5m]) / rate(model_router_requests_total[5m]) > 0.1
+        expr: rate(jairouter_requests_total{status="500"}[5m]) / rate(jairouter_requests_total[5m]) > 0.1
         for: 2m
         labels:
           severity: warning
@@ -451,7 +426,7 @@ groups:
           summary: "检测到高错误率"
           
       - alert: 熔断器打开
-        expr: model_router_circuit_breaker_state > 0
+        expr: jairouter_circuit_breaker_state > 0
         for: 1m
         labels:
           severity: critical
@@ -517,6 +492,9 @@ logging:
 ```http
 GET /actuator/loggers/org.unreal.modelrouter
 ```
+
+> ⚠️ `loggers` **不在默认暴露清单内**，需先加进
+> `management.endpoints.web.exposure.include` 才能访问。
 
 ## 安全考虑
 

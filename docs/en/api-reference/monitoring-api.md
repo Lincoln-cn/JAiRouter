@@ -46,25 +46,40 @@ GET /actuator/health
     "ping": {
       "status": "UP"
     },
-    "modelRouter": {
+    "tracing": {
+      "status": "UP"
+    },
+    "sharedState": {
+      "status": "UP"
+    },
+    "rbacEndpointCoverage": {
       "status": "UP",
       "details": {
-        "activeInstances": 5,
-        "totalInstances": 8,
-        "circuitBreakerStatus": "CLOSED"
+        "missing": 0
       }
     }
   }
 }
 ```
 
+> ⚠️ Component names are the registered health indicators: `tracing` (`TracingHealthIndicator.java:28`),
+> `sharedState` (`SharedStateHealthIndicator.java:31`), `rbacEndpointCoverage`
+> (`RbacEndpointCoverageHealthIndicator.java:27`) and `jwtRedisHealthIndicator`
+> (`JwtRedisHealthMonitor.java:21`), plus Spring Boot's standard `diskSpace` etc.
+> There is **no** `modelRouter` component; the `activeInstances` / `totalInstances` /
+> `circuitBreakerStatus` structure does not exist in the code.
+
 ### Detailed Health Information
 
 Get detailed health information including all components:
 
 ```http
-GET /actuator/health/detailed
+GET /actuator/health
 ```
+
+> ⚠️ There is **no `/actuator/health/detailed` endpoint**: only the `liveness` and
+> `readiness` groups are defined (`config/base/monitoring-base.yml:70-84`). To see every
+> component, call `GET /actuator/health` under the dev profile (`show-details: always`).
 
 **Response:**
 ```json
@@ -79,64 +94,14 @@ GET /actuator/health/detailed
         "threshold": 10485760,
         "exists": true
       }
-    },
-    "modelRouter": {
-      "status": "UP",
-      "details": {
-        "services": {
-          "chat": {
-            "totalInstances": 3,
-            "healthyInstances": 2,
-            "instances": [
-              {
-                "id": "ollama-1",
-                "url": "http://localhost:11434",
-                "status": "UP",
-                "lastCheck": "2025-08-19T10:30:00Z",
-                "responseTime": 45
-              },
-              {
-                "id": "ollama-2", 
-                "url": "http://localhost:11435",
-                "status": "UP",
-                "lastCheck": "2025-08-19T10:30:00Z",
-                "responseTime": 52
-              },
-              {
-                "id": "ollama-3",
-                "url": "http://localhost:11436", 
-                "status": "DOWN",
-                "lastCheck": "2025-08-19T10:29:45Z",
-                "error": "Connection timeout"
-              }
-            ]
-          },
-          "embedding": {
-            "totalInstances": 2,
-            "healthyInstances": 2,
-            "instances": [
-              {
-                "id": "xinference-1",
-                "url": "http://localhost:9997",
-                "status": "UP",
-                "lastCheck": "2025-08-19T10:30:00Z",
-                "responseTime": 38
-              },
-              {
-                "id": "xinference-2",
-                "url": "http://localhost:9998",
-                "status": "UP", 
-                "lastCheck": "2025-08-19T10:30:00Z",
-                "responseTime": 41
-              }
-            ]
-          }
-        }
-      }
     }
   }
 }
 ```
+
+> ⚠️ The original document also listed a `modelRouter` component here (with
+> `services.*.instances[]` detail) — **no such component exists in the code**, so it has
+> been removed; see the note at the top of this section for the real health components.
 
 ## Metrics Endpoints
 
@@ -156,29 +121,29 @@ jvm_memory_used_bytes{area="heap",id="PS Eden Space",} 2.38026752E8
 jvm_memory_used_bytes{area="heap",id="PS Survivor Space",} 1048576.0
 jvm_memory_used_bytes{area="heap",id="PS Old Gen",} 4.2991616E7
 
-# HELP model_router_requests_total Total number of requests
-# TYPE model_router_requests_total counter
-model_router_requests_total{service="chat",instance="ollama-1",status="success",} 1247.0
-model_router_requests_total{service="chat",instance="ollama-1",status="error",} 23.0
-model_router_requests_total{service="chat",instance="ollama-2",status="success",} 1156.0
-model_router_requests_total{service="chat",instance="ollama-2",status="error",} 18.0
+# HELP jairouter_requests_total Total number of requests
+# TYPE jairouter_requests_total counter
+jairouter_requests_total{service="chat",method="POST",status="200",} 1247.0
+jairouter_requests_total{service="chat",method="POST",status="500",} 23.0
+jairouter_requests_total{service="chat",method="POST",status="200",} 1156.0
+jairouter_requests_total{service="chat",method="POST",status="500",} 18.0
 
-# HELP model_router_request_duration_seconds Request duration in seconds
-# TYPE model_router_request_duration_seconds histogram
-model_router_request_duration_seconds_bucket{service="chat",instance="ollama-1",le="0.1",} 234.0
-model_router_request_duration_seconds_bucket{service="chat",instance="ollama-1",le="0.5",} 892.0
-model_router_request_duration_seconds_bucket{service="chat",instance="ollama-1",le="1.0",} 1156.0
-model_router_request_duration_seconds_bucket{service="chat",instance="ollama-1",le="+Inf",} 1270.0
+# HELP jairouter_request_duration_seconds Request duration in seconds
+# TYPE jairouter_request_duration_seconds histogram
+jairouter_request_duration_seconds_bucket{service="chat",method="POST",le="0.1",} 234.0
+jairouter_request_duration_seconds_bucket{service="chat",method="POST",le="0.5",} 892.0
+jairouter_request_duration_seconds_bucket{service="chat",method="POST",le="1.0",} 1156.0
+jairouter_request_duration_seconds_bucket{service="chat",method="POST",le="+Inf",} 1270.0
 
-# HELP model_router_circuit_breaker_state Circuit breaker state (0=CLOSED, 1=OPEN, 2=HALF_OPEN)
-# TYPE model_router_circuit_breaker_state gauge
-model_router_circuit_breaker_state{service="chat",instance="ollama-1",} 0.0
-model_router_circuit_breaker_state{service="chat",instance="ollama-2",} 0.0
+# HELP jairouter_circuit_breaker_state Circuit breaker state (0=CLOSED, 1=OPEN, 2=HALF_OPEN)
+# TYPE jairouter_circuit_breaker_state gauge
+jairouter_circuit_breaker_state{service="chat",method="POST",} 0.0
+jairouter_circuit_breaker_state{service="chat",method="POST",} 0.0
 
-# HELP model_router_rate_limit_remaining Rate limit remaining requests
-# TYPE model_router_rate_limit_remaining gauge
-model_router_rate_limit_remaining{service="chat",client_ip="192.168.1.100",} 45.0
-model_router_rate_limit_remaining{service="chat",client_ip="192.168.1.101",} 38.0
+# HELP jairouter_rate_limit_remaining Rate limit remaining requests
+# TYPE jairouter_rate_limit_remaining gauge
+jairouter_rate_limit_remaining{service="chat",client_ip="192.168.1.100",} 45.0
+jairouter_rate_limit_remaining{service="chat",client_ip="192.168.1.101",} 38.0
 ```
 
 ### Metrics Summary
@@ -197,11 +162,11 @@ GET /actuator/metrics
     "jvm.memory.max", 
     "jvm.gc.pause",
     "http.server.requests",
-    "model.router.requests.total",
-    "model.router.request.duration",
-    "model.router.circuit.breaker.state",
-    "model.router.rate.limit.remaining",
-    "model.router.load.balancer.weight"
+    "jairouter_requests_total",
+    "jairouter_request_duration_seconds",
+    "jairouter_circuit_breaker_state",
+    "jairouter_rate_limit_remaining",
+    "jairouter_loadbalancer_selections_total"
   ]
 }
 ```
@@ -211,13 +176,13 @@ GET /actuator/metrics
 Get details for a specific metric:
 
 ```http
-GET /actuator/metrics/model.router.requests.total
+GET /actuator/metrics/jairouter_requests_total
 ```
 
 **Response:**
 ```json
 {
-  "name": "model.router.requests.total",
+  "name": "jairouter_requests_total",
   "description": "Total number of requests processed by model router",
   "baseUnit": null,
   "measurements": [
@@ -229,15 +194,15 @@ GET /actuator/metrics/model.router.requests.total
   "availableTags": [
     {
       "tag": "service",
-      "values": ["chat", "embedding", "rerank", "tts", "stt", "image"]
+      "values": ["chat", "embedding", "rerank", "tts", "stt", "imgGen", "imgEdit"]
     },
     {
-      "tag": "instance", 
-      "values": ["ollama-1", "ollama-2", "xinference-1", "xinference-2"]
+      "tag": "method", 
+      "values": ["POST", "GET"]
     },
     {
       "tag": "status",
-      "values": ["success", "error", "timeout", "circuit_breaker"]
+      "values": ["200", "400", "500"]
     }
   ]
 }
@@ -258,11 +223,11 @@ GET /actuator/info
 {
   "app": {
     "name": "JAiRouter",
-    "version": "3.1.1",
+    "version": "3.2.2",
     "description": "AI Model Service Router and Load Balancer"
   },
   "build": {
-    "version": "3.1.1",
+    "version": "3.2.2",
     "artifact": "model-router",
     "name": "model-router",
     "group": "org.unreal",
@@ -282,6 +247,10 @@ GET /actuator/info
 }
 ```
 
+> ⚠️ The `build` / `git` sections require the `build-info` goal in `pom.xml` (not configured
+> today), so the default `/actuator/info` does not return them; the output above is
+> illustrative. The current project version is 3.2.2.
+
 ### Environment Information
 
 Get environment and configuration details:
@@ -289,6 +258,11 @@ Get environment and configuration details:
 ```http
 GET /actuator/env
 ```
+
+> ⚠️ `env` is **not in the default exposure list** (`config/base/monitoring-base.yml:60` exposes
+> only health / info / metrics / prometheus / jairouter-metrics / error-tracking; see
+> `application-prod.yml:40` for prod). Add `env` to
+> `management.endpoints.web.exposure.include` first if you need it.
 
 **Response:**
 ```json
@@ -321,199 +295,65 @@ GET /actuator/env
 }
 ```
 
+> ⚠️ The output above is illustrative: every configuration key in this project lives under the
+> `jairouter.*` prefix — there are **no `model-router.*` keys** (no match anywhere under
+> `src/main/resources`).
+
 ## Custom Monitoring Endpoints
 
-### Service Instance Status
+The gateway exposes the following custom monitoring endpoints:
 
-Get status of all service instances:
+### System Health Status
 
-```http
-GET /api/monitoring/instances
-```
-
-**Response:**
-```json
-{
-  "services": {
-    "chat": {
-      "instances": [
-        {
-          "id": "ollama-1",
-          "url": "http://localhost:11434",
-          "adapter": "OLLAMA",
-          "status": "HEALTHY",
-          "lastHealthCheck": "2025-08-19T10:30:00Z",
-          "responseTime": 45,
-          "successRate": 0.982,
-          "requestCount": 1270,
-          "errorCount": 23,
-          "circuitBreakerState": "CLOSED",
-          "weight": 1.0
-        },
-        {
-          "id": "ollama-2", 
-          "url": "http://localhost:11435",
-          "adapter": "OLLAMA",
-          "status": "HEALTHY",
-          "lastHealthCheck": "2025-08-19T10:30:00Z", 
-          "responseTime": 52,
-          "successRate": 0.985,
-          "requestCount": 1174,
-          "errorCount": 18,
-          "circuitBreakerState": "CLOSED",
-          "weight": 1.0
-        },
-        {
-          "id": "ollama-3",
-          "url": "http://localhost:11436",
-          "adapter": "OLLAMA", 
-          "status": "UNHEALTHY",
-          "lastHealthCheck": "2025-08-19T10:29:45Z",
-          "error": "Connection timeout",
-          "circuitBreakerState": "OPEN",
-          "weight": 0.0
-        }
-      ]
-    }
-  }
-}
-```
-
-### Load Balancer Statistics
-
-Get load balancer performance statistics:
+Get the overall system health status:
 
 ```http
-GET /api/monitoring/load-balancer
+GET /api/monitoring/health
 ```
 
-**Response:**
-```json
-{
-  "services": {
-    "chat": {
-      "strategy": "ROUND_ROBIN",
-      "totalRequests": 2444,
-      "distribution": {
-        "ollama-1": {
-          "requests": 1270,
-          "percentage": 52.0,
-          "avgResponseTime": 45
-        },
-        "ollama-2": {
-          "requests": 1174,
-          "percentage": 48.0,
-          "avgResponseTime": 52
-        }
-      }
-    },
-    "embedding": {
-      "strategy": "LEAST_CONNECTIONS", 
-      "totalRequests": 856,
-      "distribution": {
-        "xinference-1": {
-          "requests": 428,
-          "percentage": 50.0,
-          "avgResponseTime": 38
-        },
-        "xinference-2": {
-          "requests": 428,
-          "percentage": 50.0,
-          "avgResponseTime": 41
-        }
-      }
-    }
-  }
-}
-```
+### Monitoring Configuration
 
-### Rate Limit Status
-
-Get current rate limit status:
+Get the current monitoring configuration:
 
 ```http
-GET /api/monitoring/rate-limit
+GET /api/monitoring/config
 ```
 
-**Response:**
-```json
-{
-  "services": {
-    "chat": {
-      "algorithm": "TOKEN_BUCKET",
-      "globalLimit": {
-        "capacity": 1000,
-        "remaining": 847,
-        "refillRate": 100,
-        "nextRefill": "2025-08-19T10:30:10Z"
-      },
-      "clientLimits": [
-        {
-          "clientIp": "192.168.1.100",
-          "remaining": 45,
-          "capacity": 50,
-          "lastRequest": "2025-08-19T10:29:58Z"
-        },
-        {
-          "clientIp": "192.168.1.101", 
-          "remaining": 38,
-          "capacity": 50,
-          "lastRequest": "2025-08-19T10:29:59Z"
-        }
-      ]
-    }
-  }
-}
-```
+### Circuit Breaker Statistics
 
-### Circuit Breaker Status
-
-Get circuit breaker status for all instances:
+Get circuit breaker statistics:
 
 ```http
-GET /api/monitoring/circuit-breaker
+GET /api/monitoring/circuit-breaker/stats
 ```
 
-**Response:**
-```json
-{
-  "instances": [
-    {
-      "id": "ollama-1",
-      "service": "chat",
-      "state": "CLOSED",
-      "failureCount": 2,
-      "failureThreshold": 5,
-      "successThreshold": 3,
-      "timeout": 60000,
-      "lastFailure": "2025-08-19T10:25:30Z",
-      "nextRetry": null
-    },
-    {
-      "id": "ollama-2",
-      "service": "chat", 
-      "state": "CLOSED",
-      "failureCount": 1,
-      "failureThreshold": 5,
-      "successThreshold": 3,
-      "timeout": 60000,
-      "lastFailure": "2025-08-19T10:20:15Z",
-      "nextRetry": null
-    },
-    {
-      "id": "ollama-3",
-      "service": "chat",
-      "state": "OPEN",
-      "failureCount": 8,
-      "failureThreshold": 5,
-      "successThreshold": 3,
-      "timeout": 60000,
-      "lastFailure": "2025-08-19T10:29:45Z",
-      "nextRetry": "2025-08-19T10:30:45Z"
-    }
-  ]
-}
+### Degradation Status
+
+Get the service degradation status:
+
+```http
+GET /api/monitoring/degradation/status
 ```
+
+### Error Statistics
+
+Get error statistics:
+
+```http
+GET /api/monitoring/errors/stats
+```
+
+### Cache Statistics
+
+Get cache statistics:
+
+```http
+GET /api/monitoring/cache/stats
+```
+
+> **Note**: These are the custom monitoring endpoints JAiRouter (currently 3.2.2) actually
+> provides; each maps to `MonitoringController.java:65,226,240,268,309,390,426`. See the
+> [Management API](management-api.md) for more endpoints.
 
 ## Monitoring Integration
 
@@ -548,7 +388,7 @@ Configure external monitoring tools to check JAiRouter health:
 curl -f http://localhost:8080/actuator/health || exit 1
 
 # Detailed health check with specific component
-curl -f http://localhost:8080/actuator/health/modelRouter || exit 1
+curl -f http://localhost:8080/actuator/health/tracing || exit 1
 ```
 
 ## Monitoring Best Practices
@@ -585,7 +425,7 @@ groups:
   - name: jairouter
     rules:
       - alert: HighErrorRate
-        expr: rate(model_router_requests_total{status="error"}[5m]) / rate(model_router_requests_total[5m]) > 0.1
+        expr: rate(jairouter_requests_total{status="500"}[5m]) / rate(jairouter_requests_total[5m]) > 0.1
         for: 2m
         labels:
           severity: warning
@@ -593,7 +433,7 @@ groups:
           summary: "High error rate detected"
           
       - alert: CircuitBreakerOpen
-        expr: model_router_circuit_breaker_state > 0
+        expr: jairouter_circuit_breaker_state > 0
         for: 1m
         labels:
           severity: critical
@@ -659,6 +499,9 @@ Access debug information:
 ```http
 GET /actuator/loggers/org.unreal.modelrouter
 ```
+
+> ⚠️ `loggers` is **not in the default exposure list** — add it to
+> `management.endpoints.web.exposure.include` first.
 
 ## Security Considerations
 
