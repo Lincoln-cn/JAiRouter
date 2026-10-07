@@ -41,8 +41,14 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 **响应示例:**
 ```json
-["chat", "embedding", "rerank", "tts", "stt", "imgGen", "imgEdit"]
+{
+  "success": true,
+  "message": "操作成功",
+  "data": ["chat", "embedding", "rerank", "tts", "stt", "imgGen", "imgEdit"]
+}
 ```
+
+> 该接口返回 `RouterResponse<Set<String>>` 包装，**不是**裸数组（`ServiceTypeController.java:187-189`）。
 
 #### `GET /api/config/type/services/{serviceType}`
 获取指定服务类型的配置。
@@ -84,8 +90,8 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 **响应示例:**
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiIs...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
+  "token": "eyJhbGciOiJIUzM4NCJ9...",
+  "tokenType": "Bearer",
   "expiresIn": 3600
 }
 ```
@@ -133,11 +139,16 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 **请求体示例:**
 ```json
 {
-  "name": "my-api-key",
+  "keyId": "my-api-key",
+  "description": "用于本地调试",
   "permissions": ["read", "write"],
-  "expiresAt": "2026-12-31T23:59:59Z"
+  "expiresAt": "2026-12-31 23:59:59"
 }
 ```
+
+> `ApiKeyCreateRequest` **没有 `name` 字段**（用 `description` / `keyId`）；`expiresAt` 的格式是
+> `yyyy-MM-dd HH:mm:ss`（DTO 上的 `@JsonFormat`），**不接受** ISO-8601 或 `Z` 后缀
+> （`ApiKeyCreateRequest.java:32-58`）。
 
 #### `PUT /api/auth/api-keys/{keyId}`
 更新 API 密钥。
@@ -313,11 +324,14 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 **请求体示例:**
 ```json
 {
-  "level": "PARTIAL"
+  "level": "MODERATE"
 }
 ```
 
-**可用级别:** `NORMAL`, `PARTIAL`, `MINIMAL`, `DISABLED`
+**可用级别:** `NONE`, `LIGHT`, `MODERATE`, `HEAVY`, `EMERGENCY`
+
+> 枚举定义见 `MetricsDegradationStrategy.java:34-39`；传旧文档里的 `PARTIAL` / `NORMAL` 会
+> 返回 `INVALID_REQUEST`（`MonitoringController.java:341-346`）。
 
 #### `POST /api/monitoring/degradation/auto-mode`
 启用/禁用自动降级模式。
@@ -525,21 +539,33 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 **请求体示例:**
 ```json
 {
-  "strategy": "round_robin",
-  "weights": {
-    "instance1": 2,
-    "instance2": 1
-  }
+  "type": "round-robin",
+  "hashAlgorithm": "md5",
+  "virtualNodes": 160,
+  "ewmaAlpha": 0.2
 }
 ```
+
+> `LoadBalanceConfigRequest` 的字段是 `type` / `hashAlgorithm` / `virtualNodes` / `ewmaAlpha`，
+> **没有** `strategy` / `weights`（`LoadBalancerManagementController.java:225-230,344-349`）。
 
 #### `GET /api/loadbalancer/strategies`
 获取可用的负载均衡策略。
 
 **响应示例:**
 ```json
-["random", "round_robin", "weighted", "least_connections"]
+[
+  { "name": "random" },
+  { "name": "round-robin" },
+  { "name": "least-connections" },
+  { "name": "ip-hash" },
+  { "name": "consistent-hash" },
+  { "name": "latency" }
+]
 ```
+
+> 实际返回 `StrategyInfo` **对象数组**，名称用连字符、且**没有 `weighted`**
+> （`LoadBalancerManagementController.java:250-259,363-372`）。
 
 #### `GET /api/loadbalancer/stats`
 获取负载均衡统计。
@@ -561,10 +587,13 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
   "enabled": true,
   "failureThreshold": 5,
   "successThreshold": 3,
-  "timeout": 30000,
-  "state": "CLOSED"
+  "timeout": 30000
 }
 ```
+
+> `CircuitBreakerConfiguration.toMap()` 只输出 `failureThreshold` / `timeout` /
+> `successThreshold` / `enabled`，**没有 `state`**
+> （`config/core/dto/CircuitBreakerConfiguration.java:53-67`）。
 
 #### `PUT /api/services/{serviceType}/circuitbreaker`
 更新熔断器配置。
@@ -582,9 +611,13 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
   "enabled": true,
   "algorithm": "token_bucket",
   "capacity": 100,
-  "refillRate": 10
+  "rate": 10,
+  "scope": "global"
 }
 ```
+
+> 规范键是 `enabled` / `algorithm` / `capacity` / `rate` / `scope` / `key` / `warmUpPeriod`，
+> **没有 `refillRate`**（`router/ratelimit/RateLimitConfig.java:132,137-161`）。
 
 #### `PUT /api/services/{serviceType}/ratelimit`
 更新限流配置。
@@ -639,9 +672,10 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 {
   "modelName": "qwen2:7b",
   "serviceType": "chat",
-  "inputTokens": 100,
-  "outputTokens": 50,
-  "requestId": "req-123"
+  "promptTokens": 100,
+  "completionTokens": 50,
+  "totalTokens": 150,
+  "traceId": "trace-123"
 }
 ```
 
@@ -881,12 +915,11 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 重置单 Key 每日计数与速率。
 
-**请求体:**
-```json
-{ "keyIds": ["key-a", "key-b"] }
-```
+**请求体:** 无 —— 该端点只接路径变量 `{keyId}`，返回空响应体
+（`ApiKeyManagementController.java:303-308`）。
 
-**响应:** `{ "requested": 2, "reset": 2 }`（不存在的 Key 跳过）。
+> 带 `keyIds` 请求体、返回 `{ "requested": 2, "reset": 2 }` 的**批量重置**在另一个端点：
+> `POST /api/auth/api-keys/quota/batch-reset`（`ApiKeyManagementController.java:346-364`）。
 
 #### `POST /api/auth/api-keys/quota/reset-all`
 
@@ -998,12 +1031,13 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 {
   "success": false,
   "message": "错误描述",
-  "error": {
-    "code": "ERROR_CODE",
-    "details": "详细错误信息"
-  }
+  "errorCode": "ERROR_CODE",
+  "data": null
 }
 ```
+
+> `/api/**` 用 `RouterResponse` 的**扁平**字段 `errorCode`，**没有** `error` 对象、也
+> **没有** `details` 字段（`RouterResponse.java:15-21`）。
 
 ### 常见错误码
 
@@ -1012,8 +1046,8 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 | 错误码 | 描述 | HTTP 状态码 |
 |--------|------|-------------|
 | `NOT_FOUND` | 资源未找到 | 404 |
-| `VALIDATION_ERROR` | 请求数据无效 | 400 |
-| `UNAUTHORIZED` | 需要认证 | 401 |
+| `INVALID_REQUEST` | 请求数据无效 | 400 |
+| `INVALID_API_KEY` | 需要认证 | 401 |
 | `FORBIDDEN` | 权限不足 | 403 |
 | `CONFLICT` | 资源冲突 | 409 |
 | `RATE_LIMIT_EXCEEDED` | 请求过多 | 429 |
