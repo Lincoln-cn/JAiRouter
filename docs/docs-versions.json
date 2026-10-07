@@ -39,21 +39,21 @@
     },
     "docs/en/api-reference/openapi-spec.md": {
       "FilePath": "docs/en/api-reference/openapi-spec.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-18T11:28:02.698828",
-      "ContentHash": "27a1f9abe316686e",
-      "GitCommit": "c82b4559",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-07T05:06:42.786477",
+      "ContentHash": "e3529bf589681ae7",
+      "GitCommit": "88f67b49",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/api-reference/universal-api.md": {
       "FilePath": "docs/en/api-reference/universal-api.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-14T07:33:35.638148",
-      "ContentHash": "f0cc7c0d5bf0d604",
-      "GitCommit": "c7a56348",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-07T05:06:42.788396",
+      "ContentHash": "aaa9d10932db29e0",
+      "GitCommit": "88f67b49",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -628,11 +628,11 @@
     },
     "docs/zh/api-reference/index.md": {
       "FilePath": "docs/zh/api-reference/index.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-09-18T10:17:12.344232",
-      "ContentHash": "86a9855c93d1e9c0",
-      "GitCommit": "97163311",
-      "Author": "Lincoln",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-07T05:06:43.211637",
+      "ContentHash": "f65b2af00bab3f58",
+      "GitCommit": "88f67b49",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/management-api.md",
@@ -656,21 +656,21 @@
     },
     "docs/zh/api-reference/openapi-spec.md": {
       "FilePath": "docs/zh/api-reference/openapi-spec.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-18T11:28:15.473092",
-      "ContentHash": "0a0a2b31ae561455",
-      "GitCommit": "c82b4559",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-07T05:06:43.224423",
+      "ContentHash": "55002a361e936085",
+      "GitCommit": "88f67b49",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/api-reference/universal-api.md": {
       "FilePath": "docs/zh/api-reference/universal-api.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-14T07:33:35.946992",
-      "ContentHash": "2dcd8b188fa4f6e9",
-      "GitCommit": "c7a56348",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-07T05:06:43.226370",
+      "ContentHash": "c007d63a3b4d10b5",
+      "GitCommit": "88f67b49",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -1387,21 +1387,21 @@
     },
     "docs/en/tracing/config-reference.md": {
       "FilePath": "docs/en/tracing/config-reference.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-10-07T04:28:23.310983",
-      "ContentHash": "3c4ae92812086c71",
-      "GitCommit": "378f8e1b",
+      "Version": "1.0.10",
+      "LastModified": "2026-10-07T05:06:43.165286",
+      "ContentHash": "6a70e16b5a5d7c72",
+      "GitCommit": "88f67b49",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/tracing/index.md": {
       "FilePath": "docs/en/tracing/index.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-08-30T13:18:53.619498",
-      "ContentHash": "379a7980f379e060",
-      "GitCommit": "2f3955ee",
-      "Author": "Lincoln",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-07T05:06:43.167492",
+      "ContentHash": "9f8a765ff167ad1a",
+      "GitCommit": "88f67b49",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/tracing/config-reference.md",
@@ -1586,21 +1586,21 @@
     },
     "docs/zh/tracing/config-reference.md": {
       "FilePath": "docs/zh/tracing/config-reference.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-10-07T04:28:23.791310",
-      "ContentHash": "090467a976d48dcf",
-      "GitCommit": "378f8e1b",
+      "Version": "1.0.10",
+      "LastModified": "2026-10-07T05:06:43.590330",
+      "ContentHash": "24d6e2ddf97c9772",
+      "GitCommit": "88f67b49",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/tracing/index.md": {
       "FilePath": "docs/zh/tracing/index.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-08-30T13:18:53.873718",
-      "ContentHash": "94333eed319e28ed",
-      "GitCommit": "2f3955ee",
-      "Author": "Lincoln",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-07T05:06:43.592553",
+      "ContentHash": "72c655192cd0c962",
+      "GitCommit": "88f67b49",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/tracing/config-reference.md",
@@ -2153,11 +2153,11 @@
     },
     "docs/en/configuration/response-cache.md": {
       "FilePath": "docs/en/configuration/response-cache.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-09-14T07:33:35.679549",
-      "ContentHash": "ff55848a8fc6dff9",
-      "GitCommit": "6da1396b",
-      "Author": "Lincoln",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-07T05:06:42.854958",
+      "ContentHash": "00d70e386e894eaa",
+      "GitCommit": "88f67b49",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/configuration/kv-cache.md",
@@ -2183,11 +2183,11 @@
     },
     "docs/zh/configuration/response-cache.md": {
       "FilePath": "docs/zh/configuration/response-cache.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-09-14T07:33:35.997216",
-      "ContentHash": "733ca0f9f141fb4f",
-      "GitCommit": "6da1396b",
-      "Author": "Lincoln",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-07T05:06:43.293186",
+      "ContentHash": "98e4567b49522f4d",
+      "GitCommit": "88f67b49",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/configuration/kv-cache.md",
@@ -7096,7 +7096,95 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-07T04:28:23.803636",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/openapi-spec.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T05:06:42.786484",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/universal-api.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T05:06:42.788402",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/response-cache.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T05:06:42.854963",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/config-reference.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T05:06:43.165293",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/index.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T05:06:43.167497",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/index.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T05:06:43.211642",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/openapi-spec.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T05:06:43.224428",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/universal-api.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T05:06:43.226391",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/response-cache.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T05:06:43.293191",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/config-reference.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T05:06:43.590337",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/index.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T05:06:43.592558",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-07T04:28:23.841752"
+  "last_updated": "2026-10-07T05:06:43.633685"
 }
