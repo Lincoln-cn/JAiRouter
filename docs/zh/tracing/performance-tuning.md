@@ -220,26 +220,22 @@ jairouter_tracing_active_spans
 jairouter:
   tracing:
     monitoring:
-      self-monitoring: true         # 启用自监控
       metrics:
-        enabled: true
-        prefix: "jairouter.tracing"
         traces:
-          enabled: true
-          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0]
-        exporter:
-          enabled: true
+          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0]  # 处理延迟直方图桶(秒)
       health:
         enabled: true
         check-interval: 30s
       alerts:
-        enabled: true
         thresholds:
-          export-failure-rate: 0.1  # 导出失败率 > 10% 时告警
-          export-latency-p99: 5000  # P99 延迟 > 5 秒时告警
-          memory-usage: 0.8         # 内存使用 > 80% 时告警
-          queue-size: 0.9           # 队列使用 > 90% 时告警
+          memory-usage: 0.8         # 堆使用率 > 80% 时判内存瓶颈
+          export-latency-p99: 5000  # trace.export 的 P99 > 5 秒时判操作瓶颈
 ```
+
+> 已删除：`self-monitoring`、`metrics.enabled`、`metrics.prefix`、`metrics.traces.enabled`、
+> `metrics.exporter.*`、`alerts.enabled`、`alerts.thresholds.export-failure-rate` 与 `queue-size`
+> —— 这些键能绑定但全仓无任何读者（`/actuator/info` 也不回显 `monitoring` 段），留着会让人以为改它有效
+> （issue #224）。
 
 ## 故障排除
 

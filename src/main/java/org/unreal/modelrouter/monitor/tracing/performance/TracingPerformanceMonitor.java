@@ -13,6 +13,7 @@ import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.monitor.tracing.async.AsyncTracingProcessor;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
+import org.unreal.modelrouter.monitor.tracing.config.TracingMonitoringConfig;
 import org.unreal.modelrouter.monitor.tracing.memory.TracingMemoryManager;
 import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryStats;
 import reactor.core.publisher.Flux;
@@ -64,6 +65,9 @@ public final class TracingPerformanceMonitor implements HealthIndicator {
     private final Gauge memoryUsageGauge;
     private final Counter performanceAnomalyCounter;
     private final DistributionSummary processingLatencyDistribution;
+
+    /** 监控配置缺失时（单测直接 new、或 tracingConfiguration 未注入 monitoring）回落到字段默认值 */
+    private final TracingMonitoringConfig fallbackMonitoring = new TracingMonitoringConfig();
 
     private final AtomicLong totalOperations = new AtomicLong(0);
     private final AtomicLong slowOperations = new AtomicLong(0);
@@ -127,9 +131,7 @@ public final class TracingPerformanceMonitor implements HealthIndicator {
                 .description("Number of performance anomalies detected")
                 .register(meterRegistry);
 
-        this.processingLatencyDistribution = DistributionSummary.builder("tracing.processing.latency")
-                .description("Tracing processing latency distribution")
-                .register(meterRegistry);
+        this.processingLatencyDistribution = buildLatencyDistribution();
 
         initializeDefaultThresholds();
     }
@@ -180,7 +182,7 @@ public final class TracingPerformanceMonitor implements HealthIndicator {
             List<PerformanceBottleneck> bottlenecks = new ArrayList<>();
 
             MemoryStats memoryStats = memoryManager.getMemoryStats();
-            if (memoryStats.getHeapUsageRatio() > 0.8) {
+            if (memoryStats.getHeapUsageRatio() > monitoring().getAlerts().getThresholds().getMemoryUsage()) {
                 bottlenecks.add(new PerformanceBottleneck(
                         BottleneckType.MEMORY,
                         "内存使用率过高: " + String.format("%.2f%%", memoryStats.getHeapUsageRatio() * 100),
@@ -388,10 +390,43 @@ public final class TracingPerformanceMonitor implements HealthIndicator {
     }
 
     private void initializeDefaultThresholds() {
-        thresholds.put("trace.export", new PerformanceThreshold(1000, 5000));
+        final long exportP99 = monitoring().getAlerts().getThresholds().getExportLatencyP99();
+        thresholds.put("trace.export", new PerformanceThreshold(1000, exportP99));
         thresholds.put("span.process", new PerformanceThreshold(100, 500));
         thresholds.put("memory.check", new PerformanceThreshold(50, 200));
         thresholds.put("batch.process", new PerformanceThreshold(500, 2000));
+    }
+
+    /**
+     * 当前监控配置。每次读取都走 {@code tracingConfiguration}，这样
+     * {@code PUT /api/tracing/actuator/config} 动态替换 monitoring 段后能立刻生效；
+     * 配置缺失（未注入、或直接 new 出本类做单测）时回落到字段默认值。
+     */
+    private TracingMonitoringConfig monitoring() {
+        final TracingMonitoringConfig monitoring =
+                tracingConfiguration != null ? tracingConfiguration.getMonitoring() : null;
+        return monitoring != null ? monitoring : fallbackMonitoring;
+    }
+
+    /**
+     * 处理延迟直方图。
+     *
+     * <p>{@code monitoring.metrics.traces.histogram-buckets} 的单位是**秒**（与字段默认值 0.1–30 一致），
+     * 而 {@code recordOperationPerformance} 记录的是毫秒，所以要换算后再作为 SLO 桶注册 —— 不换算会把
+     * 桶边界全压在亚毫秒区间，指标等于没用。</p>
+     */
+    private DistributionSummary buildLatencyDistribution() {
+        final DistributionSummary.Builder builder = DistributionSummary.builder("tracing.processing.latency")
+                .description("Tracing processing latency distribution");
+        final double[] buckets = monitoring().getMetrics().getTraces().getHistogramBuckets();
+        if (buckets != null && buckets.length > 0) {
+            final double[] millis = new double[buckets.length];
+            for (int i = 0; i < buckets.length; i++) {
+                millis[i] = buckets[i] * 1000;
+            }
+            builder.serviceLevelObjectives(millis);
+        }
+        return builder.register(meterRegistry);
     }
 
     private void handleSlowOperation(final String operation, final long duration, final Map<String, Object> metadata) {

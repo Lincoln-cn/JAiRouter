@@ -196,22 +196,19 @@ jairouter:
     
     # 监控配置
     monitoring:
-      self-monitoring: true
       metrics:
-        enabled: true
-        prefix: "jairouter.tracing"
         traces:
-          enabled: true
+          # 处理延迟直方图的桶边界，单位**秒**。TracingPerformanceMonitor 注册
+          # tracing.processing.latency 时读它（该指标以毫秒记录，装配时由消费方换算）。
           histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0]
-        # 原 exporter.histogram-buckets 没有对应字段（issue #215），已删除
-        exporter:
-          enabled: true
       health:
         enabled: true
         # 导出器健康检查周期。除绑定到本字段外，`ExporterHealthChecker` 的
         # `@Scheduled(fixedDelayString = "${…check-interval:30000}")` 也读同一个键（30s = 30000ms）。
         check-interval: 30s
-      # 原 alerts 下的三个阈值（trace-processing-failures / export-failures / buffer-pressure）
-      # 没有对应字段（issue #215），已删除
       alerts:
-        enabled: true
+        thresholds:
+          # 堆使用率超过该比例即判内存瓶颈（TracingPerformanceMonitor#detectBottlenecks）
+          memory-usage: 0.8
+          # trace.export 操作的 P99 危险阈值，单位毫秒
+          export-latency-p99: 5000

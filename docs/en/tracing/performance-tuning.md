@@ -223,26 +223,23 @@ jairouter_tracing_active_spans
 jairouter:
   tracing:
     monitoring:
-      self-monitoring: true         # Enable self-monitoring
       metrics:
-        enabled: true
-        prefix: "jairouter.tracing"
         traces:
-          enabled: true
-          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0]
-        exporter:
-          enabled: true
+          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0]  # Processing-latency buckets (seconds)
       health:
         enabled: true
         check-interval: 30s
       alerts:
-        enabled: true
         thresholds:
-          export-failure-rate: 0.1  # Alert if > 10% export failures
-          export-latency-p99: 5000  # Alert if P99 > 5 seconds
-          memory-usage: 0.8         # Alert if > 80% memory usage
-          queue-size: 0.9           # Alert if queue > 90% full
+          memory-usage: 0.8         # Heap usage > 80% is reported as a memory bottleneck
+          export-latency-p99: 5000  # P99 for trace.export > 5 s is reported as an operation bottleneck
 ```
+
+> Removed: `self-monitoring`, `metrics.enabled`, `metrics.prefix`, `metrics.traces.enabled`,
+> `metrics.exporter.*`, `alerts.enabled`, `alerts.thresholds.export-failure-rate` and `queue-size`
+> — these keys bind but have no reader anywhere in the codebase (the `monitoring` section is not even
+> echoed to `/actuator/info`), so keeping them only made it look like editing them did something
+> (issue #224).
 
 ## Troubleshooting
 
