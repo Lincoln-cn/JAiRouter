@@ -311,17 +311,19 @@ jairouter:
       rate-limiter:
         enabled: true
         capture-algorithm: true
-        capture-quota: true
-        capture-decision: true
         capture-statistics: true
       
       circuit-breaker:
         enabled: true
         capture-state: true
-        capture-state-changes: true
         capture-statistics: true
-        capture-failure-rate: true
 ```
+
+> Deleted (issue #224): `capture-quota` / `capture-decision` (rate limiter),
+> `capture-state-changes` / `capture-failure-rate` (circuit breaker),
+> `capture-selection` / `capture-candidates` (load balancer). These fields have no consumer and are not
+> even echoed to `/actuator/info` — changing them has no observable effect. The `capture-*` flags that
+> remain exist only so that echo can be produced; they do not change collection behavior either.
 
 ## Next Steps
 

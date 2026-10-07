@@ -154,26 +154,26 @@ jairouter:
         enabled: true
 
       # 限流器配置
+      # capture-* 只被 TracingInfoContributor 回显到 /actuator/info，
+      # 不改变采集行为；其余（capture-quota / capture-decision）属零消费方且不回显，已在 #224 删除。
       rate-limiter:
         enabled: true
         capture-algorithm: true
-        capture-quota: true
-        capture-decision: true
         capture-statistics: true
       
       # 熔断器配置
+      # 同上：capture-state / capture-statistics 被回显，capture-state-changes / capture-failure-rate 已在 #224 删除。
       circuit-breaker:
         enabled: true
         capture-state: true
-        capture-state-changes: true
         capture-statistics: true
-        capture-failure-rate: true
       
       # 负载均衡器配置
+      # 同上：capture-strategy / capture-statistics 被回显，capture-selection 与未被回显的
+      # capture-candidates 已在 #224 删除。
       load-balancer:
         enabled: true
         capture-strategy: true
-        capture-selection: true
         capture-statistics: true
     
     # 安全配置

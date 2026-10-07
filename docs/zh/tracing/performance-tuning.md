@@ -307,17 +307,18 @@ jairouter:
       rate-limiter:
         enabled: true
         capture-algorithm: true
-        capture-quota: true
-        capture-decision: true
         capture-statistics: true
       
       circuit-breaker:
         enabled: true
         capture-state: true
-        capture-state-changes: true
         capture-statistics: true
-        capture-failure-rate: true
 ```
+
+> 已删除（issue #224）：`capture-quota` / `capture-decision`（限流器）、`capture-state-changes` /
+> `capture-failure-rate`（熔断器）、`capture-selection` / `capture-candidates`（负载均衡器）。
+> 这些字段既没有消费方，也不被 `/actuator/info` 回显 —— 改它们没有任何可观测后果。
+> 留下来的 `capture-*` 的唯一消费者就是那份回显，同样不改变采集行为。
 
 ## 下一步
 

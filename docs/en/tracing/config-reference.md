@@ -279,12 +279,10 @@ jairouter:
     components:
       rate-limiter:
         # enabled is the real behavior switch (TracingWrapperFactory reads it); the capture-* flags
-        # are currently only echoed by /actuator/info or not read at all (issue #224) — tuning them
-        # changes nothing.
+        # are only echoed by /actuator/info, so tuning them changes nothing (issue #224).
+        # capture-quota / capture-decision were not even echoed and were deleted.
         enabled: true
         capture-algorithm: true
-        capture-quota: true
-        capture-decision: true
         capture-statistics: true
 ```
 
@@ -295,11 +293,10 @@ jairouter:
   tracing:
     components:
       circuit-breaker:
+        # Same as above; capture-state-changes / capture-failure-rate were not even echoed and were deleted.
         enabled: true
         capture-state: true
-        capture-state-changes: true
         capture-statistics: true
-        capture-failure-rate: true
 ```
 
 ### Load Balancer Configuration
@@ -309,9 +306,9 @@ jairouter:
   tracing:
     components:
       load-balancer:
+        # Same as above; capture-selection and capture-candidates (which had no yml key at all) were deleted.
         enabled: true
         capture-strategy: true
-        capture-selection: true
         capture-statistics: true
 ```
 
