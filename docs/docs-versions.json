@@ -1387,10 +1387,10 @@
     },
     "docs/en/tracing/config-reference.md": {
       "FilePath": "docs/en/tracing/config-reference.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-10-06T12:17:40.138953",
-      "ContentHash": "056b7800949106ef",
-      "GitCommit": "3d6747fc",
+      "Version": "1.0.8",
+      "LastModified": "2026-10-07T04:16:33.335461",
+      "ContentHash": "77c7fe70e8ebbfce",
+      "GitCommit": "930283f5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1426,10 +1426,10 @@
     },
     "docs/en/tracing/performance-tuning.md": {
       "FilePath": "docs/en/tracing/performance-tuning.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-06T10:33:28.285729",
-      "ContentHash": "0847fccf833cfaaa",
-      "GitCommit": "88e606b5",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-07T04:16:33.346824",
+      "ContentHash": "7c1a6098260530b7",
+      "GitCommit": "930283f5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1586,10 +1586,10 @@
     },
     "docs/zh/tracing/config-reference.md": {
       "FilePath": "docs/zh/tracing/config-reference.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-10-06T12:17:40.592223",
-      "ContentHash": "e45620627c096dc2",
-      "GitCommit": "3d6747fc",
+      "Version": "1.0.8",
+      "LastModified": "2026-10-07T04:16:33.779852",
+      "ContentHash": "0633bf3523305b57",
+      "GitCommit": "930283f5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1625,10 +1625,10 @@
     },
     "docs/zh/tracing/performance-tuning.md": {
       "FilePath": "docs/zh/tracing/performance-tuning.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-06T10:33:28.644472",
-      "ContentHash": "c0a706c49ed73cc3",
-      "GitCommit": "88e606b5",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-07T04:16:33.791443",
+      "ContentHash": "ea591c3ea3178b3a",
+      "GitCommit": "930283f5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -7032,7 +7032,39 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-07T02:50:13.787343",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/config-reference.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T04:16:33.335471",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/performance-tuning.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T04:16:33.346830",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/config-reference.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T04:16:33.779861",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/performance-tuning.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T04:16:33.791449",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-07T02:50:13.993829"
+  "last_updated": "2026-10-07T04:16:33.826971"
 }
