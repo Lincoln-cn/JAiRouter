@@ -944,6 +944,7 @@ security:
     algorithm: HS256
     expiration-minutes: 60
     issuer: jairouter
+    # 初始账号：仅在账号表为空时（首次启动）创建；账号表非空后改这里不再生效
     accounts:
       - username: admin
         password: admin-password

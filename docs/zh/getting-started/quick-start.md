@@ -74,7 +74,7 @@ export INITIAL_ADMIN_PASSWORD="your-own-strong-password"
 ```
 
 > 💡 **提示**: 快速体验（dev profile）无需配置密钥，内置了开发密钥可直接启动。生产环境才需要设置 `JWT_SECRET`。
-> 🔐 **控制台默认账号**: `admin` / `ChangeMeOnFirstStartup123456`。生产环境请通过上文的 `INITIAL_ADMIN_PASSWORD` 覆盖，或在首次登录后立即修改。
+> 🔐 **控制台默认账号**: `admin` / `ChangeMeOnFirstStartup123456`（**仅在账号表为空时自动创建**）。生产环境请通过上文的 `INITIAL_ADMIN_PASSWORD` 覆盖，或在首次登录后立即修改。
 
 ## 🚀 步骤 1：启动 JAiRouter
 

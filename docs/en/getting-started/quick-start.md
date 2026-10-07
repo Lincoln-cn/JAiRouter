@@ -57,7 +57,7 @@ export INITIAL_ADMIN_PASSWORD="your-own-strong-password"
 ```
 
 > 💡 **Tip**: For quick local testing (dev profile), no key configuration is required — a built-in development key is included. The `JWT_SECRET` is only needed for production.
-> 🔐 **Default console login**: `admin` / `ChangeMeOnFirstStartup123456`. In production, override it with `INITIAL_ADMIN_PASSWORD` as shown above; otherwise change it after the first login.
+> 🔐 **Default console login**: `admin` / `ChangeMeOnFirstStartup123456` (created automatically **only when the account table is empty**). In production, override it with `INITIAL_ADMIN_PASSWORD` as shown above; otherwise change it after the first login.
 
 ![Login Page](images/login-en-US.png)
 
