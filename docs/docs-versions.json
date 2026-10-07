@@ -643,11 +643,11 @@
     },
     "docs/zh/api-reference/management-api.md": {
       "FilePath": "docs/zh/api-reference/management-api.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-09-19T04:26:22.197790",
-      "ContentHash": "ad636c8a3180c0f8",
-      "GitCommit": "2f5255a1",
-      "Author": "Lincoln",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-07T06:59:11.430839",
+      "ContentHash": "5764b44e3eaefc27",
+      "GitCommit": "69384918",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/error-codes.md",
@@ -1256,11 +1256,11 @@
     },
     "docs/en/api-reference/monitoring-api.md": {
       "FilePath": "docs/en/api-reference/monitoring-api.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-09-18T11:28:02.532783",
-      "ContentHash": "ee1427ef0e284897",
-      "GitCommit": "c82b4559",
-      "Author": "Lincoln",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-07T06:59:10.989999",
+      "ContentHash": "d0d6c1015c592c99",
+      "GitCommit": "69384918",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/management-api.md",
@@ -1270,11 +1270,11 @@
     },
     "docs/zh/api-reference/monitoring-api.md": {
       "FilePath": "docs/zh/api-reference/monitoring-api.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-09-18T11:28:15.335705",
-      "ContentHash": "64a6f13c38020ed8",
-      "GitCommit": "c82b4559",
-      "Author": "Lincoln",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-07T06:59:11.433060",
+      "ContentHash": "3351475182fefd7d",
+      "GitCommit": "69384918",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/management-api.md",
@@ -1968,13 +1968,15 @@
     },
     "docs/zh/api-reference/error-codes.md": {
       "FilePath": "docs/zh/api-reference/error-codes.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-09-18T10:17:12.180126",
-      "ContentHash": "82c9a5758e3b4072",
-      "GitCommit": "97163311",
-      "Author": "Lincoln",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-07T06:59:11.426104",
+      "ContentHash": "4e530a2fac1aa332",
+      "GitCommit": "69384918",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [
+        "docs/zh/api-reference/universal-api.md"
+      ]
     },
     "docs/en/configuration/instance-examples.md": {
       "FilePath": "docs/en/configuration/instance-examples.md",
@@ -7184,7 +7186,39 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-07T05:06:43.592558",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/monitoring-api.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T06:59:10.990006",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/error-codes.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T06:59:11.426113",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/management-api.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T06:59:11.430844",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/monitoring-api.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-07T06:59:11.433065",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-07T05:06:43.633685"
+  "last_updated": "2026-10-07T06:59:11.854209"
 }
