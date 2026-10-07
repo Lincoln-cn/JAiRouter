@@ -76,6 +76,17 @@
       <el-tab-pane :label="t('tracing.management.tabs.sampling')" name="sampling">
         <el-card shadow="never">
           <el-form :model="samplingConfig" label-width="150px">
+            <el-form-item :label="t('tracing.management.samplingStrategy')">
+              <el-select v-model="samplingConfig.strategy" style="width: 100%">
+                <el-option
+                  v-for="option in strategyOptions"
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
+              </el-select>
+              <div class="form-hint">{{ t('tracing.management.strategyHint') }}</div>
+            </el-form-item>
             <el-form-item :label="t('tracing.management.globalSamplingRate')">
               <el-slider
                 v-model="samplingConfig.globalRate"
@@ -210,7 +221,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -255,6 +266,7 @@ const healthStatus = ref({
 
 // 采样配置
 const samplingConfig = ref({
+  strategy: 'ratio',
   globalRate: 10,
   adaptiveSampling: true,
   alwaysSamplePaths: [] as string[],
@@ -265,6 +277,17 @@ const samplingConfig = ref({
     { service: 'rerank', rate: 10 }
   ]
 })
+
+const strategyOptions = computed(() => [
+  { value: 'ratio', label: t('tracing.management.strategyRatio') },
+  { value: 'rule', label: t('tracing.management.strategyRule') },
+  { value: 'adaptive', label: t('tracing.management.strategyAdaptive') }
+])
+
+// 后端返回的原始 sampling 段。保存时以它为基底再覆盖本页可编辑的字段，
+// 否则本页没暴露的 rules / adaptive.targetSpansPerSecond / minRatio / maxRatio
+// 会被一并覆盖成默认值（后端是整体替换 sampling，不是逐字段合并）。
+const rawSampling = ref<Record<string, unknown> | null>(null)
 
 // 导出器配置
 const exporterConfig = ref({
@@ -340,6 +363,8 @@ const loadConfig = async () => {
     const data = response.data?.data || response.data || response
     if (data) {
       if (data.sampling) {
+        rawSampling.value = data.sampling
+        samplingConfig.value.strategy = data.sampling.strategy || 'ratio'
         samplingConfig.value.globalRate = (data.sampling.ratio || 0.1) * 100
         samplingConfig.value.adaptiveSampling = data.sampling.adaptive?.enabled ?? true
         samplingConfig.value.alwaysSamplePaths = data.sampling.alwaysSample || []
@@ -392,8 +417,14 @@ const handleSaveConfig = async () => {
   try {
     const config = {
       sampling: {
+        // 以服务端原始 sampling 段为基底，避免把本页未暴露的 rules / adaptive.* 清空
+        ...(rawSampling.value || {}),
+        strategy: samplingConfig.value.strategy,
         ratio: samplingConfig.value.globalRate / 100,
-        adaptive: { enabled: samplingConfig.value.adaptiveSampling },
+        adaptive: {
+          ...((rawSampling.value?.adaptive as Record<string, unknown>) || {}),
+          enabled: samplingConfig.value.adaptiveSampling
+        },
         alwaysSample: samplingConfig.value.alwaysSamplePaths,
         neverSample: samplingConfig.value.neverSamplePaths,
         serviceRatios: samplingConfig.value.serviceConfigs.reduce((acc, { service, rate }) => {
@@ -506,5 +537,12 @@ onMounted(() => {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.form-hint {
+  margin-top: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
 }
 </style>
