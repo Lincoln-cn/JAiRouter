@@ -946,6 +946,8 @@ security:
     algorithm: HS256
     expiration-minutes: 60
     issuer: jairouter
+    # Initial accounts: created only when the account table is empty (first start);
+    # changing this has no effect once accounts exist
     accounts:
       - username: admin
         password: admin-password
