@@ -268,12 +268,10 @@ jairouter:
   tracing:
     components:
       rate-limiter:
-        # enabled 是真正的行为开关（TracingWrapperFactory 读它）；下面这些 capture-* 目前只被
-        # /actuator/info 回显或完全没人读（issue #224），调它们不改变行为。
+        # enabled 是真正的行为开关（TracingWrapperFactory 读它）；capture-* 只被 /actuator/info 回显，
+        # 调它们不改变行为（issue #224）。原 capture-quota / capture-decision 连回显都没有，已删除。
         enabled: true
         capture-algorithm: true
-        capture-quota: true
-        capture-decision: true
         capture-statistics: true
 ```
 
@@ -284,11 +282,10 @@ jairouter:
   tracing:
     components:
       circuit-breaker:
+        # 同上；原 capture-state-changes / capture-failure-rate 连回显都没有，已删除。
         enabled: true
         capture-state: true
-        capture-state-changes: true
         capture-statistics: true
-        capture-failure-rate: true
 ```
 
 ### 负载均衡器配置
@@ -298,9 +295,9 @@ jairouter:
   tracing:
     components:
       load-balancer:
+        # 同上；原 capture-selection 与 capture-candidates（后者连 yml 键都没有）已删除。
         enabled: true
         capture-strategy: true
-        capture-selection: true
         capture-statistics: true
 ```
 

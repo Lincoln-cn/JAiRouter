@@ -8,16 +8,25 @@ import java.util.List;
 /**
  * 组件特定配置
  *
- * <p>子段与消费方（issue #224 逐项核对过）：{@code load-balancer} / {@code rate-limiter} /
- * {@code circuit-breaker} 的 {@code enabled} 由 {@code TracingWrapperFactory} 真正读取，是行为开关；
- * {@code http} 下各字段**只被 {@code TracingInfoContributor} 回显到 /actuator/info**，不改变采集行为。</p>
+ * <p>子段与消费方（issue #224 逐项核对过，方法 = 按 lombok 生成的 getter 名在 {@code src/main} 全仓计消费点）：
+ * {@code load-balancer} / {@code rate-limiter} / {@code circuit-breaker} 的 {@code enabled} 由
+ * {@code TracingWrapperFactory} 真正读取，是行为开关；其余 {@code capture-*} 标志的**唯一消费者是
+ * {@code TracingInfoContributor} 往 /actuator/info 的回显**，不改变采集行为。</p>
  *
- * <p>历史上还有 {@code database} / {@code cache} / {@code messaging} 三段，其字段（{@code enabled}、
- * {@code capture-sql} / {@code max-sql-length}、{@code capture-keys} / {@code capture-values}、
- * {@code capture-headers} / {@code capture-body}）**全仓没有任何读者**：{@code getComponents()} 只有两处
- * 调用点（{@code TracingInfoContributor} 只读 http、{@code TracingWrapperFactory} 只读上面三个开关）。
- * 这类「绑定得上却永远不生效」的配置是缺陷，已随 issue #224 删除 —— 需要真实能力时，**先实现消费方，
- * 再按字段实名加回来**。</p>
+ * <p>已经删除两批零消费方字段：</p>
+ * <ul>
+ *   <li>批 A（#224）：{@code database} / {@code cache} / {@code messaging} 三段整棵子树 ——
+ *       {@code getComponents()} 只有两个读者（{@code TracingInfoContributor} 只读 http、
+ *       {@code TracingWrapperFactory} 只读三个开关），这三棵树既不影响行为也不出现在 /actuator/info；</li>
+ *   <li>批 B2（#224）：{@code loadBalancer.capture-candidates} / {@code capture-selection}、
+ *       {@code rateLimiter.capture-quota} / {@code capture-decision}、
+ *       {@code circuitBreaker.capture-state-changes} / {@code capture-failure-rate} ——
+ *       **既没有消费方，也不被 /actuator/info 回显**，属于"改它完全没有任何可观测后果"。
+ *       注意它们与被保留的 {@code capture-strategy} / {@code capture-algorithm} / {@code capture-state} /
+ *       {@code capture-statistics} 不同：后者至少会被回显。</li>
+ * </ul>
+ *
+ * <p>这类「绑定得上却永远不生效」的配置是缺陷。需要真实能力时，**先实现消费方，再按字段实名加回来**。</p>
  */
 @Data
 public class TracingComponentConfig {
@@ -42,12 +51,11 @@ public class TracingComponentConfig {
         private List<String> excludedPaths = new ArrayList<>();
     }
 
+    /** 各字段的消费方 = {@code TracingInfoContributor} 的 http 段回显（见 {@link HttpConfig} 的说明） */
     @Data
     public static class LoadBalancerConfig {
         private boolean enabled = true;
         private boolean captureStrategy = true;
-        private boolean captureCandidates = true;
-        private boolean captureSelection = true;
         private boolean captureStatistics = true;
     }
 
@@ -55,8 +63,6 @@ public class TracingComponentConfig {
     public static class RateLimiterConfig {
         private boolean enabled = true;
         private boolean captureAlgorithm = true;
-        private boolean captureQuota = true;
-        private boolean captureDecision = true;
         private boolean captureStatistics = true;
     }
 
@@ -64,8 +70,6 @@ public class TracingComponentConfig {
     public static class CircuitBreakerConfig {
         private boolean enabled = true;
         private boolean captureState = true;
-        private boolean captureStateChanges = true;
         private boolean captureStatistics = true;
-        private boolean captureFailureRate = true;
     }
 }
