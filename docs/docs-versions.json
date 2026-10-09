@@ -2372,30 +2372,6 @@
   },
   "changes": [
     {
-      "FilePath": "docs/zh/index.md",
-      "OldVersion": "1.0.4",
-      "NewVersion": "1.0.5",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-11T05:13:39.495097",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/monitoring/configuration.md",
-      "OldVersion": "1.0.3",
-      "NewVersion": "1.0.4",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-11T05:13:39.501743",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "merge-log-2026-07-10.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2026-07-11T05:13:39.575056",
-      "Description": "文档created"
-    },
-    {
       "FilePath": "QWEN.md",
       "OldVersion": "1.0.3",
       "NewVersion": "1.0.4",
@@ -7252,5 +7228,5 @@
       "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-08T08:25:15.318673"
+  "last_updated": "2026-10-09T08:29:16.360812"
 }
