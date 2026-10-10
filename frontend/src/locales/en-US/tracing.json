@@ -48,6 +48,8 @@
         "errors": "Errors",
         "errorRate": "Error Rate",
         "p95Latency": "P95 Latency",
+        "p99Latency": "P99 Latency",
+        "requests": "Requests",
         "status": "Status",
         "operation": "Operation",
         "duration": "Duration",
