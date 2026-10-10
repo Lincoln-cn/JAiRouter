@@ -98,7 +98,7 @@ public class CircuitBreakerManager {
      * @return 熔断器实例
      */
     public CircuitBreaker getCircuitBreaker(final String instanceId, final String instanceUrl) {
-        // 使用实例URL作为唯一标识符，如果URL为空则使用ID
+        // 使用实例ID作为唯一标识符，如果ID为空则使用URL
         String key = instanceId != null && !instanceId.trim().isEmpty() ? instanceId : instanceUrl;
         if (key == null || key.trim().isEmpty()) {
             throw new IllegalArgumentException("Both instanceId and instanceUrl cannot be null or empty");
