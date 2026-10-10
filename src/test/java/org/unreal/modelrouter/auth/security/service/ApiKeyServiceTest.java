@@ -396,6 +396,42 @@ class ApiKeyServiceTest {
             assertEquals(1L, testApiKey.getUsage().getFailedRequests());
             assertEquals(1L, testApiKey.getUsage().getTotalRequests());
         }
+
+        @Test
+        @DisplayName("更新使用统计 - 非阻塞线程上不内联执行阻塞写入，普通线程上仍内联（issue #262）")
+        void updateUsageStatistics_NonBlockingThread_DoesNotWriteInline() throws Exception {
+            java.util.concurrent.atomic.AtomicReference<String> saveThread =
+                    new java.util.concurrent.atomic.AtomicReference<>();
+            java.util.concurrent.atomic.AtomicReference<String> callerThread =
+                    new java.util.concurrent.atomic.AtomicReference<>();
+            java.util.concurrent.CountDownLatch saved = new java.util.concurrent.CountDownLatch(1);
+            doAnswer(invocation -> {
+                saveThread.set(Thread.currentThread().getName());
+                saved.countDown();
+                return null;
+            }).when(apiKeyPersistenceService).saveApiKeysToStore(any(Map.class));
+
+            // EventLoop 语义：在 Reactor 非阻塞线程（Schedulers.parallel）上调用
+            StepVerifier.create(Mono.fromRunnable(() -> {
+                        callerThread.set(Thread.currentThread().getName());
+                        apiKeyService.updateUsageStatistics("test-key-id", true);
+                    })
+                    .subscribeOn(reactor.core.scheduler.Schedulers.parallel()))
+                    .verifyComplete();
+
+            assertTrue(saved.await(10, java.util.concurrent.TimeUnit.SECONDS),
+                    "存储写入应在超时内完成（被卸载到其他线程执行）");
+            assertNotEquals(callerThread.get(), saveThread.get(),
+                    "非阻塞线程上不得内联执行阻塞写入");
+            assertFalse(saveThread.get().startsWith("parallel-"),
+                    "写入不应发生在非阻塞调度线程上，实际: " + saveThread.get());
+
+            // 反证：普通线程上仍保持“方法返回即已写入”的既有语义
+            saveThread.set(null);
+            apiKeyService.updateUsageStatistics("test-key-id", true);
+            assertEquals(Thread.currentThread().getName(), saveThread.get(),
+                    "普通线程上应内联执行存储写入");
+        }
     }
 
     @Nested
