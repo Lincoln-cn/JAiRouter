@@ -129,7 +129,7 @@ public final class ErrorTracker {
             if (exceptionPersistenceService != null) {
                 String sanitizedMessage = sanitizedThrowable != null ? sanitizedThrowable.getMessage() : null;
                 String sanitizedStackTrace = sanitizedThrowable != null ? sanitizedThrowable.toSimpleString() : null;
-                exceptionPersistenceService.persistException(
+                persistExceptionSafely(
                     throwable,
                     operation,
                     context,
@@ -142,6 +142,35 @@ public final class ErrorTracker {
         } catch (Exception e) {
             log.warn("记录错误信息时发生异常", e);
         }
+    }
+
+    /**
+     * 持久化异常事件，且不在 Reactor 非阻塞线程上执行阻塞写入（issue #263）.
+     *
+     * <p>{@link ExceptionPersistenceService#persistException} 是 {@code @Transactional} 的阻塞 JDBC
+     * 写入，而本链路由出站失败路径（{@code BaseAdapter} 的 {@code onErrorResume}）与
+     * {@code ReactiveGlobalExceptionHandler} 在 Netty 事件循环上触发。在非阻塞线程上把写入交给
+     * {@link reactor.core.scheduler.Schedulers#boundedElastic()}；可阻塞线程上保持内联，
+     * 维持原有的同步可见语义。</p>
+     *
+     * <p>{@code context} 由调用方在进入本方法前捕获、按参数传入，因此卸载到其他线程不会丢失
+     * 追踪上下文。{@code persistException} 内部自行捕获并记录异常，不会向调度器抛出。</p>
+     */
+    private void persistExceptionSafely(
+            final Throwable throwable, final String operation,
+            final TracingContext context, final Map<String, Object> additionalInfo,
+            final String sanitizedMessage, final String sanitizedStackTrace) {
+        // 阻塞持久化不得在 EventLoop 上执行（issue #263）
+        if (reactor.core.scheduler.Schedulers.isInNonBlockingThread()) {
+            reactor.core.scheduler.Schedulers.boundedElastic().schedule(() ->
+                    exceptionPersistenceService.persistException(
+                            throwable, operation, context, additionalInfo,
+                            sanitizedMessage, sanitizedStackTrace));
+            return;
+        }
+        exceptionPersistenceService.persistException(
+                throwable, operation, context, additionalInfo,
+                sanitizedMessage, sanitizedStackTrace);
     }
     
     /**
