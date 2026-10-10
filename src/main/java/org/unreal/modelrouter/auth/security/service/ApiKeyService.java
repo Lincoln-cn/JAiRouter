@@ -285,7 +285,33 @@ public class ApiKeyService {
         }
     }
 
+    /**
+     * 更新 API Key 请求使用统计
+     *
+     * <p><b>线程语义（issue #262）</b>：{@code saveApiKeysToStore} 是整仓序列化 + 存储写入的
+     * 阻塞调用，而本方法经 {@link #validateApiKey(String, String, String)} 由 WebFilter 认证链
+     * 调用、运行在 Reactor 非阻塞线程（Netty 事件循环）上时，把工作整体交给
+     * {@link reactor.core.scheduler.Schedulers#boundedElastic()} 执行后立即返回；
+     * 非 Reactor 线程仍内联执行，保持“方法返回即已写入”的既有语义。</p>
+     *
+     * @param kid  API Key ID
+     * @param succ 本次请求是否成功
+     */
     public void updateUsageStatistics(String kid, boolean succ) {
+        // 阻塞存储写入不得阻塞 EventLoop（issue #262）
+        if (reactor.core.scheduler.Schedulers.isInNonBlockingThread()) {
+            reactor.core.scheduler.Schedulers.boundedElastic().schedule(() -> doUpdateUsageStatistics(kid, succ));
+            return;
+        }
+        doUpdateUsageStatistics(kid, succ);
+    }
+
+    /**
+     * 更新 API Key 请求使用统计的实际实现（阻塞：全量写存储）.
+     *
+     * <p>必须运行在可阻塞线程上；由 {@link #updateUsageStatistics(String, boolean)} 负责选择执行线程。</p>
+     */
+    private void doUpdateUsageStatistics(String kid, boolean succ) {
         String kh = keyIdIndex.get(kid);
         if (kh == null) { log.warn("API Key不存在: {}", kid); return; }
         ApiKey ak = apiKeyCache.get(kh);
