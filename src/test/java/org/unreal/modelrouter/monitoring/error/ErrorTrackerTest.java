@@ -413,6 +413,61 @@ class ErrorTrackerTest {
         assertEquals(numberOfOperations, aggregations.size());
     }
 
+    @Test
+    void testTrackErrorNonBlockingThreadDoesNotPersistInline() throws Exception {
+        // Given：注入持久化协作者（既有测试不注入，故该分支此前无覆盖）
+        ExceptionPersistenceService persistenceService = org.mockito.Mockito.mock(ExceptionPersistenceService.class);
+        setPrivateField(errorTracker, "exceptionPersistenceService", persistenceService);
+
+        java.util.concurrent.atomic.AtomicReference<String> persistThread =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        java.util.concurrent.atomic.AtomicReference<String> callerThread =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        java.util.concurrent.CountDownLatch persisted = new java.util.concurrent.CountDownLatch(1);
+        org.mockito.Mockito.doAnswer(invocation -> {
+            persistThread.set(Thread.currentThread().getName());
+            persisted.countDown();
+            return null;
+        }).when(persistenceService).persistException(any(), any(), any(), any(), any(), any());
+
+        RuntimeException exception = new RuntimeException("Test exception");
+
+        // When：在 Reactor 非阻塞线程（模拟 EventLoop）上触发错误记录
+        reactor.core.publisher.Mono.fromRunnable(() -> {
+            callerThread.set(Thread.currentThread().getName());
+            errorTracker.trackError(exception, "test-operation");
+        }).subscribeOn(reactor.core.scheduler.Schedulers.parallel()).block();
+
+        // Then：阻塞持久化被卸载，不得内联在非阻塞线程上执行（issue #263）
+        assertTrue(persisted.await(10, java.util.concurrent.TimeUnit.SECONDS),
+                "持久化应在超时内完成（被卸载到其他线程执行）");
+        org.junit.jupiter.api.Assertions.assertNotEquals(callerThread.get(), persistThread.get(),
+                "非阻塞线程上不得内联执行阻塞持久化");
+        org.junit.jupiter.api.Assertions.assertFalse(persistThread.get().startsWith("parallel-"),
+                "持久化不应发生在非阻塞调度线程上，实际: " + persistThread.get());
+    }
+
+    @Test
+    void testTrackErrorPlainThreadPersistsInline() {
+        // Given
+        ExceptionPersistenceService persistenceService = org.mockito.Mockito.mock(ExceptionPersistenceService.class);
+        setPrivateField(errorTracker, "exceptionPersistenceService", persistenceService);
+
+        java.util.concurrent.atomic.AtomicReference<String> persistThread =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        org.mockito.Mockito.doAnswer(invocation -> {
+            persistThread.set(Thread.currentThread().getName());
+            return null;
+        }).when(persistenceService).persistException(any(), any(), any(), any(), any(), any());
+
+        // When：普通线程上触发
+        errorTracker.trackError(new RuntimeException("Test exception"), "test-operation");
+
+        // Then：保持“方法返回即已写入”的既有语义
+        assertEquals(Thread.currentThread().getName(), persistThread.get(),
+                "普通线程上应内联执行持久化");
+    }
+
     /**
      * 使用反射设置私有字段
      */
