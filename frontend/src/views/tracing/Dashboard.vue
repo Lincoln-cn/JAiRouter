@@ -365,6 +365,11 @@ const serviceStats = ref<any[]>([])
 const slowTraces = ref<any[]>([])
 const commonErrors = ref<any[]>([])
 
+// 趋势图数据源（来自 /tracing/query/performance/*；缺失时渲染空图，不使用占位数据）
+const latencyAnalysis = ref<any>(null)
+const errorAnalysis = ref<any>(null)
+const throughputAnalysis = ref<any>(null)
+
 // 图表引用
 const traceTrendChart = ref<HTMLElement | null>(null)
 const latencyDistributionChart = ref<HTMLElement | null>(null)
@@ -422,10 +427,15 @@ const loadAllData = async () => {
     await Promise.all([
       loadOverviewData(),
       loadServiceStats(),
-      loadTracingStatus()
+      loadTracingStatus(),
+      loadLatencyAnalysis(),
+      loadErrorAnalysis(),
+      loadThroughputAnalysis()
     ])
     await nextTick()
     initCharts()
+    // 趋势图数据可能晚于页签切换到达，这里补一次重绘（未创建的图表会被跳过）
+    rebuildAll()
   } catch (error) {
     console.error('加载数据失败:', error)
     ElMessage.warning(t('tracing.dashboard.messages.loadFailed'))
@@ -492,6 +502,10 @@ const initCharts = () => {
 }
 
 // 图表配置
+// 追踪趋势：当前后端 API 面没有「按时间桶的追踪数/错误数」时序接口 ——
+// /tracing/query/statistics 与 /tracing/actuator/stats 只返回标量快照，
+// /tracing/performance/metrics/dashboard 返回处理器与内存快照。故此处渲染空序列，
+// 待后端提供时序接口后再接线；不得用随机数占位（issue #253）。
 const getTraceTrendOption = () => {
   const { primary, danger } = getChartTheme()
   return {
@@ -525,16 +539,123 @@ const getTraceTrendOption = () => {
         smooth: true,
         areaStyle: { opacity: 0.3 },
         itemStyle: { color: primary },
-        data: generateRandomData(12, 100, 500)
+        data: []
       },
       {
         name: t('tracing.dashboard.columns.errors'),
         type: 'line',
         smooth: true,
         itemStyle: { color: danger },
-        data: generateRandomData(12, 0, 50)
+        data: []
       }
     ]
+  }
+}
+
+// 延迟趋势（P95/P99）——数据来自 /tracing/query/performance/latency
+const getLatencyTrendOption = () => {
+  const { primary, warning } = getChartTheme()
+  const trend = latencyAnalysis.value?.trend || {}
+  return {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+    legend: {
+      data: [t('tracing.dashboard.columns.p95Latency'), t('tracing.dashboard.columns.p99Latency')],
+      bottom: 0
+    },
+    grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
+    xAxis: { type: 'category', boundaryGap: false, data: trend.timestamps || [] },
+    yAxis: { type: 'value' },
+    series: [
+      {
+        name: t('tracing.dashboard.columns.p95Latency'),
+        type: 'line',
+        smooth: true,
+        itemStyle: { color: primary },
+        data: trend.p95Latency || []
+      },
+      {
+        name: t('tracing.dashboard.columns.p99Latency'),
+        type: 'line',
+        smooth: true,
+        itemStyle: { color: warning },
+        data: trend.p99Latency || []
+      }
+    ]
+  }
+}
+
+// 错误率趋势——数据来自 /tracing/query/performance/errors
+const getErrorTrendOption = () => {
+  const { danger } = getChartTheme()
+  const points: any[] = errorAnalysis.value?.errorTrend || []
+  return {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+    legend: { data: [t('tracing.dashboard.columns.errorRate')], bottom: 0 },
+    grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
+    xAxis: { type: 'category', boundaryGap: false, data: points.map(p => p.timestamp) },
+    yAxis: { type: 'value' },
+    series: [
+      {
+        name: t('tracing.dashboard.columns.errorRate'),
+        type: 'line',
+        smooth: true,
+        itemStyle: { color: danger },
+        data: points.map(p => p.value)
+      }
+    ]
+  }
+}
+
+// 请求量趋势——数据来自 /tracing/query/performance/throughput
+const getThroughputTrendOption = () => {
+  const { primary } = getChartTheme()
+  const points: any[] = throughputAnalysis.value?.qpsTrend || []
+  return {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+    legend: { data: [t('tracing.dashboard.columns.requests')], bottom: 0 },
+    grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
+    xAxis: { type: 'category', boundaryGap: false, data: points.map(p => p.timestamp) },
+    yAxis: { type: 'value' },
+    series: [
+      {
+        name: t('tracing.dashboard.columns.requests'),
+        type: 'line',
+        smooth: true,
+        itemStyle: { color: primary },
+        data: points.map(p => p.value)
+      }
+    ]
+  }
+}
+
+// 三个趋势图的数据加载（接口失败或返回空时保持空序列，不填充占位数据）
+const loadLatencyAnalysis = async () => {
+  try {
+    const response = await getLatencyAnalysis()
+    latencyAnalysis.value = response.data?.data || response.data || response || null
+  } catch (error) {
+    console.error('加载延迟分析失败:', error)
+    latencyAnalysis.value = null
+  }
+}
+
+const loadErrorAnalysis = async () => {
+  try {
+    const response = await getErrorAnalysis()
+    errorAnalysis.value = response.data?.data || response.data || response || null
+  } catch (error) {
+    console.error('加载错误分析失败:', error)
+    errorAnalysis.value = null
+  }
+}
+
+const loadThroughputAnalysis = async () => {
+  try {
+    const response = await getThroughputAnalysis()
+    throughputAnalysis.value = response.data?.data || response.data || response || null
+  } catch (error) {
+    console.error('加载吞吐量分析失败:', error)
+    throughputAnalysis.value = null
   }
 }
 
@@ -597,10 +718,6 @@ const generateTimeLabels = () => {
   return labels
 }
 
-const generateRandomData = (count: number, min: number, max: number) => {
-  return Array.from({ length: count }, () => Math.floor(Math.random() * (max - min) + min))
-}
-
 const formatNumber = (num: number) => {
   if (num >= 10000) {
     return `${(num / 10000).toFixed(1)  }w`
@@ -658,13 +775,13 @@ const handleTabChange = (tab: string) => {
   nextTick(() => {
     if (tab === 'latency' && latencyTrendChart.value) {
       latencyTrendEcharts = echarts.init(latencyTrendChart.value)
-      latencyTrendEcharts.setOption(getTraceTrendOption())
+      latencyTrendEcharts.setOption(getLatencyTrendOption())
     } else if (tab === 'error' && errorTrendChart.value) {
       errorTrendEcharts = echarts.init(errorTrendChart.value)
-      errorTrendEcharts.setOption(getTraceTrendOption())
+      errorTrendEcharts.setOption(getErrorTrendOption())
     } else if (tab === 'throughput' && throughputChart.value) {
       throughputEcharts = echarts.init(throughputChart.value)
-      throughputEcharts.setOption(getTraceTrendOption())
+      throughputEcharts.setOption(getThroughputTrendOption())
     }
   })
 }
@@ -700,9 +817,9 @@ const updateTrendChart = () => {
 const rebuildAll = () => {
   if (traceTrendEcharts) traceTrendEcharts.setOption(getTraceTrendOption())
   if (latencyDistEcharts) latencyDistEcharts.setOption(getLatencyDistributionOption())
-  if (latencyTrendEcharts) latencyTrendEcharts.setOption(getTraceTrendOption())
-  if (errorTrendEcharts) errorTrendEcharts.setOption(getTraceTrendOption())
-  if (throughputEcharts) throughputEcharts.setOption(getTraceTrendOption())
+  if (latencyTrendEcharts) latencyTrendEcharts.setOption(getLatencyTrendOption())
+  if (errorTrendEcharts) errorTrendEcharts.setOption(getErrorTrendOption())
+  if (throughputEcharts) throughputEcharts.setOption(getThroughputTrendOption())
 }
 
 // 窗口大小变化处理
