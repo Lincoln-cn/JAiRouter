@@ -26,48 +26,64 @@ export function useStreaming() {
 
     const decoder = new TextDecoder()
     let fullContent = ''
+    let buffer = ''
     isStreaming.value = true
     streamingContent.value = ''
     // 捕获当前 AbortController：cancelStream 会把 abortController 置空，
     // 异常时需用本地引用判断是否为主动中止
     const controller = abortController.value
 
+    // 处理单条 SSE 行
+    const handleLine = (line: string) => {
+      // 兼容两种 SSE 格式：'data:' 和 'data: '
+      if (!line.startsWith('data:')) {
+        return
+      }
+      // 去掉 'data:' 前缀，并处理可能的空格
+      let data = line.slice(5).trim()
+      // 如果还有空格开头（格式为 'data: xxx'），再去掉
+      if (data.startsWith(' ')) {
+        data = data.slice(1)
+      }
+
+      if (data === '[DONE]' || data.trim() === '[DONE]') {
+        return
+      }
+
+      try {
+        const parsed = JSON.parse(data)
+        const content = parsed.choices?.[0]?.delta?.content || ''
+
+        if (content) {
+          fullContent += content
+          streamingContent.value = fullContent
+          options.onChunk?.(content)
+        }
+      } catch {
+        // 解析失败，跳过
+      }
+    }
+
     try {
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
 
-        const chunk = decoder.decode(value, { stream: true })
-        const lines = chunk.split('\n')
+        // 跨 chunk 残行缓冲：一条 data: 行可能被 TCP 分片切开，若直接 split('\n')
+        // 逐段处理，前半段会因 JSON 不完整被丢弃、后半段又不以 data: 开头同样被丢弃，
+        // 导致流式内容静默缺字（issue #256）。这里把不完整的尾段留到下一次拼接。
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
 
         for (const line of lines) {
-          // 兼容两种 SSE 格式：'data:' 和 'data: '
-          if (line.startsWith('data:')) {
-            // 去掉 'data:' 前缀，并处理可能的空格
-            let data = line.slice(5).trim()
-            // 如果还有空格开头（格式为 'data: xxx'），再去掉
-            if (data.startsWith(' ')) {
-              data = data.slice(1)
-            }
-
-            if (data === '[DONE]' || data.trim() === '[DONE]') {
-              continue
-            }
-
-            try {
-              const parsed = JSON.parse(data)
-              const content = parsed.choices?.[0]?.delta?.content || ''
-
-              if (content) {
-                fullContent += content
-                streamingContent.value = fullContent
-                options.onChunk?.(content)
-              }
-            } catch {
-              // 解析失败，跳过
-            }
-          }
+          handleLine(line)
         }
+      }
+
+      // 流结束时处理未以换行收尾的最后一行
+      if (buffer.length > 0) {
+        handleLine(buffer)
       }
 
       options.onComplete?.(fullContent)
