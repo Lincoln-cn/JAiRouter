@@ -13,9 +13,14 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 /**
  * JWT黑名单缓存管理器
@@ -34,6 +39,13 @@ public class JwtBlacklistCacheManager {
     private final Map<String, TokenBlacklistEntry> localCache = new ConcurrentHashMap<>();
     private volatile long lastCacheSync = 0;
     private static final long CACHE_SYNC_INTERVAL = 300000; // 5分钟同步间隔
+
+    /**
+     * 批量核对 Redis 的存在性超时（issue #258）.
+     *
+     * <p>整批 key 合并为一次流水线往返，故用整批超时；不再对每个 key 单独 block 1 秒。</p>
+     */
+    private static final Duration SYNC_BATCH_TIMEOUT = Duration.ofSeconds(5);
     
     // 用于定时任务互斥的锁，防止cleanup和sync任务并发执行
     private final ReentrantLock cacheOperationLock = new ReentrantLock();
@@ -188,49 +200,81 @@ public class JwtBlacklistCacheManager {
 
     /**
      * 定时同步本地缓存与Redis
+     *
+     * <p><b>issue #258</b>：原实现用 {@code removeIf} 对每个条目单独执行
+     * {@code hasKey(...).block(1s)}，最坏 N 次串行往返且全程持有缓存锁，条目多时会长时间
+     * 占住调度线程、期间其他缓存操作被 {@code tryLock} 跳过。现拆为三步：</p>
+     * <ol>
+     *   <li>锁内取快照：只做本地过期清理与复制，不涉及网络；</li>
+     *   <li><b>锁外</b>批量核对：N 个 key 合并为一次流水线往返；</li>
+     *   <li>锁内仅做内存删除。</li>
+     * </ol>
+     * <p>Redis 异常或返回数量不匹配时保留本地条目，与原先的失败语义一致。</p>
      */
     @Scheduled(fixedRate = 300000) // 每5分钟执行一次
     public void syncLocalCacheWithRedis() {
+        final long currentTime = System.currentTimeMillis();
+        if (currentTime - lastCacheSync <= CACHE_SYNC_INTERVAL) {
+            return;
+        }
+
+        // 1) 锁内取快照：仅本地过期清理 + 复制（无网络调用）
+        final Map<String, TokenBlacklistEntry> snapshot;
         if (!cacheOperationLock.tryLock()) {
             log.debug("Cache operation in progress, skipping sync task");
             return;
         }
-        
-        long currentTime = System.currentTimeMillis();
-
-        if (currentTime - lastCacheSync > CACHE_SYNC_INTERVAL) {
-            try {
-                log.debug("Starting local cache sync with Redis");
-                
-                // 验证本地缓存条目在Redis中是否仍然存在
-                localCache.entrySet().removeIf(entry -> {
-                    String tokenHash = entry.getKey();
-                    TokenBlacklistEntry localEntry = entry.getValue();
-                    
-                    // 检查本地条目是否过期
-                    if (isEntryExpired(localEntry)) {
-                        return true;
-                    }
-                    
-                    // 检查Redis中是否仍然存在
-                    try {
-                        Boolean exists = redisTemplate.hasKey(BLACKLIST_PREFIX + tokenHash)
-                            .block(Duration.ofSeconds(1));
-                        return !Boolean.TRUE.equals(exists);
-                    } catch (Exception e) {
-                        log.warn("Failed to check Redis key existence for {}: {}", tokenHash, e.getMessage());
-                        return false;
-                    }
-                });
-                
-                lastCacheSync = currentTime;
-                log.debug("Local cache sync completed, current size: {}", localCache.size());
-                
-            } catch (Exception e) {
-                log.error("Failed to sync local cache with Redis: {}", e.getMessage(), e);
-            }
+        try {
+            log.debug("Starting local cache sync with Redis");
+            localCache.entrySet().removeIf(entry -> isEntryExpired(entry.getValue()));
+            snapshot = new HashMap<>(localCache);
+        } finally {
+            cacheOperationLock.unlock();
         }
-        cacheOperationLock.unlock();
+
+        if (snapshot.isEmpty()) {
+            lastCacheSync = currentTime;
+            return;
+        }
+
+        // 2) 锁外批量核对 Redis：一次流水线往返，不再逐条 block 并持锁
+        final List<String> keys = new ArrayList<>(snapshot.keySet());
+        final List<Boolean> exists;
+        try {
+            final Mono<List<Boolean>> existenceCheck = Mono.zip(
+                    keys.stream()
+                            .map(key -> redisTemplate.hasKey(BLACKLIST_PREFIX + key))
+                            .collect(Collectors.toList()),
+                    values -> Arrays.stream(values)
+                            .map(value -> Boolean.TRUE.equals(value))
+                            .collect(Collectors.toList()));
+            exists = existenceCheck.defaultIfEmpty(List.of()).block(SYNC_BATCH_TIMEOUT);
+        } catch (Exception e) {
+            log.warn("Failed to batch check Redis keys (保留本地条目): {}", e.getMessage());
+            return;
+        }
+        if (exists == null || exists.size() != keys.size()) {
+            log.warn("Failed to batch check Redis keys: 返回数量 {} 与请求数量 {} 不匹配，保留本地条目",
+                    exists == null ? null : exists.size(), keys.size());
+            return;
+        }
+
+        // 3) 锁内仅做内存删除
+        if (!cacheOperationLock.tryLock()) {
+            log.debug("Cache operation in progress, skipping sync apply");
+            return;
+        }
+        try {
+            for (int i = 0; i < keys.size(); i++) {
+                if (!exists.get(i)) {
+                    localCache.remove(keys.get(i));
+                }
+            }
+            lastCacheSync = currentTime;
+            log.debug("Local cache sync completed, current size: {}", localCache.size());
+        } finally {
+            cacheOperationLock.unlock();
+        }
     }
 
     /**
