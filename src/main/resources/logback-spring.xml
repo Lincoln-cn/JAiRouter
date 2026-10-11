@@ -111,6 +111,19 @@
         <neverBlock>true</neverBlock>
     </appender>
 
+    <!-- 自定义追踪 Appender 的异步包装（issue #264）。
+         TracingLogbackAppender 内部同步做 JSON 序列化并直接写 System.out，裸挂在
+         logger/root 上会让产生日志的线程（含请求线程）承担该开销。这里与上面三个文件
+         appender 采用同一套参数：neverBlock=true（队列满时丢弃而不阻塞），
+         discardingThreshold=0（不按级别丢弃）。 -->
+    <appender name="ASYNC_TRACING" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="TRACING_APPENDER"/>
+        <queueSize>1024</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <includeCallerData>false</includeCallerData>
+        <neverBlock>true</neverBlock>
+    </appender>
+
     <!-- 开发环境配置 -->
     <springProfile name="(dev | default) &amp; !json-logs">
         <root level="INFO">
@@ -125,7 +138,7 @@
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
             <appender-ref ref="ASYNC_STRUCTURED"/>
-            <appender-ref ref="TRACING_APPENDER"/>
+            <appender-ref ref="ASYNC_TRACING"/>
         </logger>
         
         <!-- 框架日志适当降级 -->
@@ -142,7 +155,7 @@
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
             <appender-ref ref="ASYNC_STRUCTURED"/>
-            <appender-ref ref="TRACING_APPENDER"/>
+            <appender-ref ref="ASYNC_TRACING"/>
         </root>
         
         <!-- 关键业务日志 -->
@@ -168,7 +181,7 @@
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
             <appender-ref ref="ASYNC_STRUCTURED"/>
-            <appender-ref ref="TRACING_APPENDER"/>
+            <appender-ref ref="ASYNC_TRACING"/>
         </root>
         
         <!-- 只记录关键业务日志 -->
@@ -176,21 +189,21 @@
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
             <appender-ref ref="ASYNC_STRUCTURED"/>
-            <appender-ref ref="TRACING_APPENDER"/>
+            <appender-ref ref="ASYNC_TRACING"/>
         </logger>
         
         <logger name="org.unreal.modelrouter.config.ConfigurationService" level="INFO" additivity="false">
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
             <appender-ref ref="ASYNC_STRUCTURED"/>
-            <appender-ref ref="TRACING_APPENDER"/>
+            <appender-ref ref="ASYNC_TRACING"/>
         </logger>
         
         <logger name="org.unreal.modelrouter.checker.RateLimiterCleanupChecker" level="WARN" additivity="false">
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
             <appender-ref ref="ASYNC_STRUCTURED"/>
-            <appender-ref ref="TRACING_APPENDER"/>
+            <appender-ref ref="ASYNC_TRACING"/>
         </logger>
         
         <!-- 其他组件只记录警告和错误 -->
@@ -198,7 +211,7 @@
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
             <appender-ref ref="ASYNC_STRUCTURED"/>
-            <appender-ref ref="TRACING_APPENDER"/>
+            <appender-ref ref="ASYNC_TRACING"/>
         </logger>
         
         <!-- 框架日志最小化 -->
@@ -241,13 +254,13 @@
     -->
     <springProfile name="json-logs">
         <root level="INFO">
-            <appender-ref ref="TRACING_APPENDER"/>
+            <appender-ref ref="ASYNC_TRACING"/>
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
         </root>
 
         <logger name="org.unreal.modelrouter" level="INFO" additivity="false">
-            <appender-ref ref="TRACING_APPENDER"/>
+            <appender-ref ref="ASYNC_TRACING"/>
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
             <appender-ref ref="ASYNC_STRUCTURED"/>
