@@ -23,6 +23,7 @@ public enum AuditEventType {
     SUSPICIOUS_ACTIVITY,    // 可疑活动
     AUTHENTICATION_FAILED,  // 认证失败
     AUTHORIZATION_FAILED,   // 授权失败
+    DATA_SANITIZATION,      // 数据脱敏处理
     
     // 系统事件
     SYSTEM_CLEANUP,         // 系统清理

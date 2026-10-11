@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
+import org.unreal.modelrouter.common.dto.AuditEventType;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -11,6 +12,7 @@ import reactor.core.scheduler.Schedulers;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
@@ -185,7 +187,7 @@ public class EnhancedSecurityAuditService implements SecurityAuditService {
             final String userId, final String contentType,
             final String ruleId, final int matchCount) {
         SecurityAuditEvent event = SecurityAuditEvent.builder()
-                .eventType("DATA_SANITIZATION")
+                .eventType(AuditEventType.DATA_SANITIZATION.name())
                 .userId(userId)
                 .action("SANITIZE")
                 .success(true)
@@ -231,6 +233,21 @@ public class EnhancedSecurityAuditService implements SecurityAuditService {
     @Override
     public Mono<Boolean> shouldTriggerAlert(final String eventType, final int timeWindowMinutes, final int threshold) {
         return Mono.just(false);
+    }
+
+    @Override
+    public Mono<Long> countEvents(final LocalDateTime startTime, final LocalDateTime endTime,
+                                  final List<AuditEventType> eventTypes, final String clientIp,
+                                  final Boolean success) {
+        return Mono.fromSupplier(() -> eventBuffer.stream()
+                .filter(event -> event.getTimestamp() != null
+                        && event.getTimestamp().isAfter(startTime)
+                        && event.getTimestamp().isBefore(endTime))
+                .filter(event -> eventTypes == null || eventTypes.isEmpty()
+                        || eventTypes.stream().anyMatch(type -> type.name().equals(event.getEventType())))
+                .filter(event -> clientIp == null || clientIp.equals(event.getClientIp()))
+                .filter(event -> success == null || success == event.isSuccess())
+                .count());
     }
 
     /**
