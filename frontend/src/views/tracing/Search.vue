@@ -387,12 +387,10 @@ const handleSearch = async (resetPage = true) => {
   } catch (error) {
     console.error('搜索追踪失败:', error)
     ElMessage.error(t('tracing.search.messages.searchFailed'))
-    
-    // 使用模拟数据
-    const mockData = generateMockTraces()
-    traces.value = mockData.slice(0, pageSize.value)
-    total.value = mockData.length
-    totalPages.value = Math.ceil(mockData.length / pageSize.value)
+    // 失败时展示空态，不填充占位数据（issue #255）
+    traces.value = []
+    total.value = 0
+    totalPages.value = 0
   } finally {
     searching.value = false
   }
@@ -430,12 +428,10 @@ const handleGetRecent = async () => {
   } catch (error) {
     console.error('获取最近追踪失败:', error)
     ElMessage.error(t('tracing.search.messages.fetchRecentFailed'))
-    
-    // 使用模拟数据
-    const mockData = generateMockTraces()
-    traces.value = mockData.slice(0, pageSize.value)
-    total.value = mockData.length
-    totalPages.value = Math.ceil(mockData.length / pageSize.value)
+    // 失败时展示空态，不填充占位数据（issue #255）
+    traces.value = []
+    total.value = 0
+    totalPages.value = 0
   } finally {
     searching.value = false
   }
@@ -464,9 +460,8 @@ const handleViewTrace = async (trace: any) => {
   } catch (error) {
     console.error('获取追踪链路失败:', error)
     ElMessage.error(t('tracing.search.messages.fetchChainFailed'))
-    
-    // 使用模拟数据
-    traceChain.value = generateMockTraceChain(trace.traceId)
+    // 失败时置空链路，图表随之渲染为空，不填充占位数据（issue #255）
+    traceChain.value = null
     
     await nextTick()
     if (traceChainChart.value) {
@@ -698,85 +693,6 @@ const getTraceChainChartOption = () => {
         }
       }
     ]
-  }
-}
-
-// 生成模拟追踪数据
-const generateMockTraces = () => {
-  const mockServices = ['jairouter']
-  const mockOperations = ['POST /v1/chat/completions', 'POST /v1/embeddings', 'GET /v1/models', 'POST /v1/rerank']
-  
-  return Array.from({ length: 20 }, (_, i) => {
-    const hasError = Math.random() < 0.15
-    const spanCount = Math.random() < 0.7 ? 2 : 1 // 70% 概率有2个span，30% 概率只有1个
-    
-    return {
-      traceId: `trace-${Date.now()}-${i}`,
-      serviceName: mockServices[0],
-      operationName: mockOperations[Math.floor(Math.random() * mockOperations.length)],
-      duration: Math.floor(Math.random() * 2000) + 50,
-      spanCount,
-      startTime: new Date(Date.now() - Math.random() * 86400000).toISOString(),
-      hasError
-    }
-  })
-}
-
-// 生成模拟追踪链路数据
-const generateMockTraceChain = (traceId: string) => {
-  const baseTime = new Date()
-  const rootSpanStart = baseTime.toISOString()
-  const childSpanStart = new Date(baseTime.getTime() + 10).toISOString()
-  const rootSpanEnd = new Date(baseTime.getTime() + 1250).toISOString()
-  const childSpanEnd = new Date(baseTime.getTime() + 1200).toISOString()
-  
-  return {
-    traceId,
-    serviceName: 'jairouter',
-    spans: [
-      {
-        spanId: 'root-span-001',
-        traceId,
-        operationName: 'POST /v1/chat/completions',
-        startTime: rootSpanStart,
-        endTime: rootSpanEnd,
-        duration: 1250,
-        error: false,
-        statusCode: '200',
-        attributes: {
-          'http.method': 'POST',
-          'http.url': 'http://localhost:8080/v1/chat/completions',
-          'http.status_code': 200,
-          'trace.trace_id': traceId,
-          'trace.span_id': 'root-span-001'
-        }
-      },
-      {
-        spanId: 'child-span-001',
-        traceId,
-        operationName: 'chat.process',
-        startTime: childSpanStart,
-        endTime: childSpanEnd,
-        duration: 1190,
-        error: false,
-        statusCode: '200',
-        attributes: {
-          'service.type': 'chat',
-          'model.name': 'gpt-3.5-turbo',
-          'trace.trace_id': traceId,
-          'trace.span_id': 'child-span-001'
-        }
-      }
-    ],
-    stats: {
-      totalSpans: 2,
-      totalDuration: 1250,
-      avgDuration: 1220,
-      maxDuration: 1250,
-      errorCount: 0,
-      depth: 2
-    },
-    startTime: rootSpanStart
   }
 }
 
