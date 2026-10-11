@@ -95,3 +95,68 @@ describe('useStreaming abort 处理（issue #131）', () => {
     }
   })
 })
+
+/**
+ * Issue #256 配套：一条 data: 行被 TCP 分片切开时不得丢内容。
+ *
+ * 修复前每次 read() 直接 split('\n')：前半段因 JSON 不完整被丢弃，
+ * 后半段不以 data: 开头同样被丢弃，表现为流式回答静默缺字。
+ */
+describe('useStreaming 跨 chunk 残行缓冲（issue #256）', () => {
+  it('单条 data: 行被切成两个 chunk 时内容不丢失', async () => {
+    const { handleStreamResponse } = useStreaming()
+    const stream = createControlledBody()
+
+    const line = sseChunk('Hello')
+    const splitAt = Math.floor(line.length / 2)
+
+    const pending = handleStreamResponse({ body: stream.body } as unknown as Response)
+    stream.enqueue(line.slice(0, splitAt))
+    stream.enqueue(line.slice(splitAt))
+    stream.close()
+
+    await expect(pending).resolves.toBe('Hello')
+  })
+
+  it('相邻行的跨 chunk 边界既不合并也不丢失', async () => {
+    const { handleStreamResponse } = useStreaming()
+    const stream = createControlledBody()
+
+    const a = sseChunk('A')
+    const b = sseChunk('B')
+    const pending = handleStreamResponse({ body: stream.body } as unknown as Response)
+    // 第一个 chunk 以 b 的前半行结尾，第二个 chunk 补完 b 的剩余部分
+    stream.enqueue(a + b.slice(0, 7))
+    stream.enqueue(b.slice(7))
+    stream.close()
+
+    await expect(pending).resolves.toBe('AB')
+  })
+
+  it('流未以换行收尾时最后一行仍被处理', async () => {
+    const { handleStreamResponse } = useStreaming()
+    const stream = createControlledBody()
+
+    const pending = handleStreamResponse({ body: stream.body } as unknown as Response)
+    stream.enqueue(sseChunk('first'))
+    // 末尾不带换行符
+    stream.enqueue(`data: ${JSON.stringify({ choices: [{ delta: { content: 'last' } }] })}`)
+    stream.close()
+
+    await expect(pending).resolves.toBe('firstlast')
+  })
+
+  it('分片切开后的 [DONE] 仍被正确识别为终止标记', async () => {
+    const { handleStreamResponse } = useStreaming()
+    const stream = createControlledBody()
+
+    const doneLine = 'data: [DONE]\n'
+    const pending = handleStreamResponse({ body: stream.body } as unknown as Response)
+    stream.enqueue(sseChunk('ok'))
+    stream.enqueue(doneLine.slice(0, 8))
+    stream.enqueue(doneLine.slice(8))
+    stream.close()
+
+    await expect(pending).resolves.toBe('ok')
+  })
+})
