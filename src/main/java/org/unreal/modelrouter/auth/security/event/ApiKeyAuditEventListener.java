@@ -6,6 +6,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.auth.security.audit.ExtendedSecurityAuditService;
+import org.unreal.modelrouter.monitor.monitoring.security.SecurityAlertService;
 import reactor.core.publisher.Mono;
 
 /**
@@ -28,6 +29,16 @@ public class ApiKeyAuditEventListener {
 
     @Autowired(required = false)
     private ExtendedSecurityAuditService extendedAuditService;
+
+    /**
+     * 安全告警服务（issue #276）.
+     *
+     * <p>该服务此前<b>没有任何调用方</b>，四类告警实际都不会产生；本监听器作为认证相关事件的
+     * 单一汇聚点，在失败事件上接线它的「失败次数陡增」与「可疑 IP」两项检查。
+     * 用可选注入以兼容 {@code jairouter.security.alerts.enabled=false} 时不装配该 bean 的场景。</p>
+     */
+    @Autowired(required = false)
+    private SecurityAlertService securityAlertService;
 
     /**
      * 处理 API Key 创建事件
@@ -76,6 +87,11 @@ public class ApiKeyAuditEventListener {
                 log.warn("记录 API Key 使用审计失败: {}", ex.getMessage());
                 return Mono.empty();
             }).subscribe();
+        }
+
+        // 认证失败时驱动安全告警（issue #276）
+        if (!Boolean.TRUE.equals(event.success())) {
+            triggerAuthenticationFailureAlerts(event.ipAddress(), event.message());
         }
     }
 
@@ -178,6 +194,9 @@ public class ApiKeyAuditEventListener {
                 return Mono.empty();
             }).subscribe();
         }
+
+        // 安全事件（无效密钥 / IP 限制等）同样驱动安全告警（issue #276）
+        triggerAuthenticationFailureAlerts(event.ipAddress(), event.message());
     }
 
     /**
@@ -203,6 +222,38 @@ public class ApiKeyAuditEventListener {
                 return Mono.empty();
             }).subscribe();
         }
+    }
+
+    /**
+     * 触发认证失败相关的安全告警（issue #276）.
+     *
+     * <p>{@link SecurityAlertService} 的检查实现完整但此前**零调用方**，因此这些告警实际不会产生。
+     * 这里以本监听器为单一汇聚点接线：一次失败事件同时驱动「失败次数陡增」与「可疑 IP」两项检查
+     * （两者各自带阈值与冷却，重复触发会被抑制）。</p>
+     *
+     * <p>两项检查都返回 {@code Mono<Void>}，按本文件既有范式
+     * {@code onErrorResume(...).subscribe()} 触发 —— 不阻塞、不影响主流程，告警自身失败只记日志。
+     * 不与 {@code extendedAuditService} 的判空耦合：审计服务缺失时告警仍应生效。</p>
+     *
+     * @param ipAddress 客户端 IP（为空则跳过，避免无意义的分组）
+     * @param reason    失败原因（用于告警内容）
+     */
+    private void triggerAuthenticationFailureAlerts(final String ipAddress, final String reason) {
+        if (securityAlertService == null || ipAddress == null) {
+            return;
+        }
+        securityAlertService.checkAuthenticationFailureAlert(ipAddress, reason)
+                .onErrorResume(ex -> {
+                    log.warn("认证失败告警检查失败: {}", ex.getMessage());
+                    return Mono.empty();
+                })
+                .subscribe();
+        securityAlertService.checkSuspiciousIpAlert(ipAddress)
+                .onErrorResume(ex -> {
+                    log.warn("可疑 IP 告警检查失败: {}", ex.getMessage());
+                    return Mono.empty();
+                })
+                .subscribe();
     }
 
     /**
