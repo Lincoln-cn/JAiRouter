@@ -51,7 +51,7 @@ class ConfigSyncIntegrationTest {
     @Test
     @DisplayName("HttpConfigPushService 应该实现 ConfigPushService 接口")
     void testHttpConfigPushServiceImplementsInterface() {
-        HttpConfigPushService httpService = new HttpConfigPushService(null, null);
+        HttpConfigPushService httpService = new HttpConfigPushService(null, null, null);
         assertTrue(httpService instanceof ConfigPushService,
             "HttpConfigPushService 应该实现 ConfigPushService 接口");
     }

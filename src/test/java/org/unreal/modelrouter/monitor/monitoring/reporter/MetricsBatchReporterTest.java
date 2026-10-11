@@ -13,6 +13,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.unreal.modelrouter.common.util.InstanceIdentity;
+import org.unreal.modelrouter.router.http.WebClientPool;
+import reactor.core.publisher.Mono;
+import reactor.netty.DisposableServer;
+import reactor.netty.http.server.HttpServer;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,8 +25,11 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * MetricsBatchReporter 单元测试
@@ -43,7 +50,7 @@ class MetricsBatchReporterTest {
     void setUp() {
         meterRegistry = new SimpleMeterRegistry();
         objectMapper = new ObjectMapper();
-        reporter = new MetricsBatchReporter(meterRegistry, objectMapper);
+        reporter = new MetricsBatchReporter(meterRegistry, objectMapper, new WebClientPool());
     }
 
     @AfterEach
@@ -441,6 +448,53 @@ class MetricsBatchReporterTest {
         assertFalse(result);
     }
 
+    @Test
+    @DisplayName("HTTP 上报经 WebClientPool 创建客户端并可送达本地端点（#281）")
+    void reportToHttp_usesPooledClient_reachesLocalEndpoint() {
+        final AtomicReference<String> receivedUri = new AtomicReference<>();
+        final DisposableServer server = HttpServer.create()
+                .host("127.0.0.1")
+                .port(0)
+                .handle((request, response) -> {
+                    receivedUri.set(request.uri());
+                    return response.sendString(Mono.just("ok"));
+                })
+                .bindNow();
+        try {
+            ReflectionTestUtils.setField(reporter, "httpEnabled", true);
+            ReflectionTestUtils.setField(reporter, "httpEndpointUrl",
+                    "http://127.0.0.1:" + server.port() + "/metrics/job/jairouter");
+            ReflectionTestUtils.setField(reporter, "httpFormat", "prometheus");
+            ReflectionTestUtils.setField(reporter, "httpTimeoutMs", 5000);
+            reporter.setReportTarget(MetricsBatchReporter.ReportTarget.HTTP);
+
+            final boolean result = invokeReportToHttp(List.of(new MetricsBatchReporter.MetricData(
+                    "jairouter_requests_total", "counter", 1.0,
+                    Map.of("service", "chat"), System.currentTimeMillis())));
+
+            assertTrue(result);
+            assertEquals("/metrics/job/jairouter", receivedUri.get());
+        } finally {
+            server.disposeNow();
+        }
+    }
+
+    @Test
+    @DisplayName("HTTP 上报的客户端取自 WebClientPool，并以 scheme://host:port 为键（#281）")
+    void reportToHttp_requestsClientFromPool() {
+        final WebClientPool pool = mock(WebClientPool.class);
+        final MetricsBatchReporter pooledReporter =
+                new MetricsBatchReporter(new SimpleMeterRegistry(), new ObjectMapper(), pool);
+        ReflectionTestUtils.setField(pooledReporter, "httpEnabled", true);
+        ReflectionTestUtils.setField(pooledReporter, "httpEndpointUrl",
+                "http://pushgateway.internal:9091/metrics/job/jairouter");
+        ReflectionTestUtils.setField(pooledReporter, "httpTimeoutMs", 500);
+
+        invokeReportToHttp(pooledReporter, List.of());
+
+        verify(pool).getOrCreate("http://pushgateway.internal:9091");
+    }
+
     // ==================== 辅助方法 ====================
 
     /**
@@ -473,10 +527,17 @@ class MetricsBatchReporterTest {
      * 通过反射调用 reportToHttp 方法
      */
     private boolean invokeReportToHttp(List<MetricsBatchReporter.MetricData> batch) {
+        return invokeReportToHttp(reporter, batch);
+    }
+
+    /**
+     * 通过反射调用指定实例的 reportToHttp 方法
+     */
+    private boolean invokeReportToHttp(MetricsBatchReporter target, List<MetricsBatchReporter.MetricData> batch) {
         try {
             var method = MetricsBatchReporter.class.getDeclaredMethod("reportToHttp", List.class);
             method.setAccessible(true);
-            return (boolean) method.invoke(reporter, batch);
+            return (boolean) method.invoke(target, batch);
         } catch (Exception e) {
             throw new RuntimeException("Failed to invoke reportToHttp", e);
         }
