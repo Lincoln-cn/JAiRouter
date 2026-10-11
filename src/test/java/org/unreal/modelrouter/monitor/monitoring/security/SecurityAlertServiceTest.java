@@ -7,9 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
-import org.unreal.modelrouter.auth.security.model.SecurityAlertEvent;
 import org.unreal.modelrouter.common.dto.AuditEventType;
 import reactor.core.publisher.Mono;
 
@@ -21,16 +19,19 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
  * #283 / #285：告警判据必须落在正确的枚举类型上，且在存储侧计数（不受取回条数限制）。
+ * #292：出口 = 指标 + 日志（不再发布无人订阅的仓内事件），因此断言落在指标上。
  */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("SecurityAlertService：告警判据取数")
+@DisplayName("SecurityAlertService：告警判据取数与出口")
 class SecurityAlertServiceTest {
 
     private static final String CLIENT_IP = "10.0.0.9";
@@ -41,14 +42,11 @@ class SecurityAlertServiceTest {
     @Mock
     private SecurityMetrics securityMetrics;
 
-    @Mock
-    private ApplicationEventPublisher eventPublisher;
-
     private SecurityAlertService alertService;
 
     @BeforeEach
     void setUp() {
-        alertService = new SecurityAlertService(auditService, securityMetrics, eventPublisher);
+        alertService = new SecurityAlertService(auditService, securityMetrics);
     }
 
     @Test
@@ -60,7 +58,6 @@ class SecurityAlertServiceTest {
         alertService.checkAuthenticationFailureAlert(CLIENT_IP, "bad credentials").block();
 
         verify(auditService).shouldTriggerAlert("AUTHENTICATION_FAILED", 5, 5);
-        assertEquals("AUTH_FAILURE_SPIKE", publishedAlert().getAlertType());
         verify(securityMetrics).recordSecurityViolation("AUTH_FAILURE_SPIKE", "HIGH");
     }
 
@@ -73,7 +70,7 @@ class SecurityAlertServiceTest {
         alertService.checkSuspiciousIpAlert(CLIENT_IP).block();
 
         assertEquals(List.of(AuditEventType.AUTHENTICATION_FAILED), capturedTypes());
-        assertEquals("SUSPICIOUS_IP_ACTIVITY", publishedAlert().getAlertType());
+        verify(securityMetrics).recordSecurityViolation("SUSPICIOUS_IP_ACTIVITY", "HIGH");
     }
 
     @Test
@@ -84,7 +81,7 @@ class SecurityAlertServiceTest {
 
         alertService.checkSuspiciousIpAlert(CLIENT_IP).block();
 
-        verify(eventPublisher, never()).publishEvent(any(SecurityAlertEvent.class));
+        verify(securityMetrics, never()).recordSecurityViolation(anyString(), anyString());
     }
 
     @Test
@@ -96,7 +93,7 @@ class SecurityAlertServiceTest {
         alertService.checkSanitizationAnomalyAlert().block();
 
         assertEquals(List.of(AuditEventType.DATA_SANITIZATION), capturedTypes());
-        assertEquals("SANITIZATION_ANOMALY", publishedAlert().getAlertType());
+        verify(securityMetrics).recordSecurityViolation("SANITIZATION_ANOMALY", "MEDIUM");
     }
 
     @Test
@@ -111,11 +108,11 @@ class SecurityAlertServiceTest {
         assertTrue(types.contains(AuditEventType.JWT_TOKEN_VALIDATED), "应包含 JWT 类型");
         assertTrue(types.contains(AuditEventType.JWT_TOKEN_EXPIRED), "应包含 JWT 类型");
         assertFalse(types.contains(AuditEventType.SYSTEM_MAINTENANCE), "不得落在回退类型上");
-        assertEquals("JWT_ANOMALY", publishedAlert().getAlertType());
+        verify(securityMetrics).recordSecurityViolation("JWT_ANOMALY", "MEDIUM");
     }
 
     @Test
-    @DisplayName("冷却期内的重复触发被抑制（同类型 15 分钟内只发一次）")
+    @DisplayName("冷却期内的重复触发被抑制（同类型 15 分钟内只记一次）")
     void repeatedAlert_withinCooldown_isSuppressed() {
         when(auditService.countEvents(any(LocalDateTime.class), any(LocalDateTime.class),
                 anyList(), any(), any())).thenReturn(Mono.just(100L));
@@ -123,7 +120,7 @@ class SecurityAlertServiceTest {
         alertService.checkSanitizationAnomalyAlert().block();
         alertService.checkSanitizationAnomalyAlert().block();
 
-        verify(eventPublisher).publishEvent(any(SecurityAlertEvent.class));
+        verify(securityMetrics, times(1)).recordSecurityViolation(anyString(), anyString());
     }
 
     @SuppressWarnings("unchecked")
@@ -131,12 +128,6 @@ class SecurityAlertServiceTest {
         final ArgumentCaptor<List<AuditEventType>> captor = ArgumentCaptor.forClass(List.class);
         verify(auditService).countEvents(any(LocalDateTime.class), any(LocalDateTime.class),
                 captor.capture(), any(), any());
-        return captor.getValue();
-    }
-
-    private SecurityAlertEvent publishedAlert() {
-        final ArgumentCaptor<SecurityAlertEvent> captor = ArgumentCaptor.forClass(SecurityAlertEvent.class);
-        verify(eventPublisher).publishEvent(captor.capture());
         return captor.getValue();
     }
 }
