@@ -13,10 +13,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.common.util.InstanceIdentity;
+import org.unreal.modelrouter.router.http.WebClientPool;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -54,7 +55,7 @@ public final class MetricsBatchReporter {
 
     private final MeterRegistry meterRegistry;
     private final ObjectMapper objectMapper;
-    private final WebClient webClient;
+    private final WebClientPool webClientPool;
 
     // 指标缓冲区（内存队列）
     private final ConcurrentLinkedQueue<MetricData> metricsBuffer = new ConcurrentLinkedQueue<>();
@@ -93,10 +94,11 @@ public final class MetricsBatchReporter {
     @Value("${monitoring.metrics.export.file.max-size-mb:100}")
     private int fileMaxSizeMb;
 
-    public MetricsBatchReporter(final MeterRegistry meterRegistry, final ObjectMapper objectMapper) {
+    public MetricsBatchReporter(final MeterRegistry meterRegistry, final ObjectMapper objectMapper,
+                                final WebClientPool webClientPool) {
         this.meterRegistry = meterRegistry;
         this.objectMapper = objectMapper;
-        this.webClient = WebClient.builder().build();
+        this.webClientPool = webClientPool;
         LOGGER.info("MetricsBatchReporter initialized with target: {}", reportTarget);
     }
 
@@ -225,7 +227,9 @@ public final class MetricsBatchReporter {
                 contentType = MediaType.APPLICATION_JSON;
             }
 
-            webClient.post()
+            // #281：出站客户端统一由 WebClientPool 创建 —— SSRF 门闩与连接期解析守卫都挂在它创建的客户端上
+            webClientPool.getOrCreate(resolveBaseUrl(httpEndpointUrl))
+                    .post()
                     .uri(httpEndpointUrl)
                     .contentType(contentType)
                     .bodyValue(requestBody)
@@ -243,6 +247,19 @@ public final class MetricsBatchReporter {
             LOGGER.error("Error reporting metrics to HTTP endpoint {}: {}", httpEndpointUrl, e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * 从上报端点 URL 取 base（scheme://host[:port]）—— WebClientPool 以 baseUrl 为键创建并缓存客户端。
+     */
+    private static String resolveBaseUrl(final String endpointUrl) {
+        final URI uri = URI.create(endpointUrl);
+        final StringBuilder base = new StringBuilder();
+        base.append(uri.getScheme()).append("://").append(uri.getHost());
+        if (uri.getPort() > 0) {
+            base.append(':').append(uri.getPort());
+        }
+        return base.toString();
     }
 
     /**

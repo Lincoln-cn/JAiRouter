@@ -11,6 +11,7 @@ import org.unreal.modelrouter.persistence.jpa.entity.ServiceConfigEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.ServiceInstanceEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
+import org.unreal.modelrouter.router.http.WebClientPool;
 
 import java.util.Collections;
 import java.util.List;
@@ -36,6 +37,9 @@ class HttpConfigPushServiceTest {
     @Mock
     private ServiceInstanceRepository serviceInstanceRepository;
 
+    @Mock
+    private WebClientPool webClientPool;
+
     @InjectMocks
     private HttpConfigPushService configPushService;
 
@@ -56,8 +60,6 @@ class HttpConfigPushServiceTest {
         testInstance.setInstanceName("test-instance");
         testInstance.setBaseUrl("http://localhost:11434");
         testInstance.setStatus("ACTIVE");
-
-        configPushService.init();
     }
 
     @Test

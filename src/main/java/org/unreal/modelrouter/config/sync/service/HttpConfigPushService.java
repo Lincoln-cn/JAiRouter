@@ -2,13 +2,13 @@ package org.unreal.modelrouter.config.sync.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.common.util.JacksonHelper;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
+import org.unreal.modelrouter.router.http.WebClientPool;
 
-import jakarta.annotation.PostConstruct;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -25,23 +25,18 @@ public class HttpConfigPushService implements ConfigPushService {
 
     private final ServiceConfigRepository serviceConfigRepository;
     private final ServiceInstanceRepository serviceInstanceRepository;
-    private WebClient webClient;
+    private final WebClientPool webClientPool;
 
     private static final String PUSH_ENDPOINT = "/internal/config/push";
 
     @Autowired
     public HttpConfigPushService(
             ServiceConfigRepository serviceConfigRepository,
-            ServiceInstanceRepository serviceInstanceRepository) {
+            ServiceInstanceRepository serviceInstanceRepository,
+            WebClientPool webClientPool) {
         this.serviceConfigRepository = serviceConfigRepository;
         this.serviceInstanceRepository = serviceInstanceRepository;
-    }
-
-    @PostConstruct
-    public void init() {
-        this.webClient = WebClient.builder()
-            .defaultHeader("Content-Type", "application/json")
-            .build();
+        this.webClientPool = webClientPool;
     }
 
     @Override
@@ -106,8 +101,11 @@ public class HttpConfigPushService implements ConfigPushService {
         try {
             String jsonBody = JacksonHelper.getObjectMapper().writeValueAsString(config);
 
-            return webClient.post()
+            // #281：出站客户端统一由 WebClientPool 创建 —— SSRF 门闩与连接期解析守卫都挂在它创建的客户端上
+            return webClientPool.getOrCreate(baseUrl)
+                .post()
                 .uri(pushUrl)
+                .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(jsonBody)
                 .retrieve()
                 .toBodilessEntity()
