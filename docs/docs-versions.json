@@ -167,10 +167,10 @@
     },
     "docs/en/deployment/docker.md": {
       "FilePath": "docs/en/deployment/docker.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-10-07T02:50:13.247162",
-      "ContentHash": "89a343f6ddb73ba3",
-      "GitCommit": "2e55693d",
+      "Version": "1.0.8",
+      "LastModified": "2026-10-11T13:48:54.279926",
+      "ContentHash": "f79f689b97452015",
+      "GitCommit": "862789f2",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -223,10 +223,10 @@
     },
     "docs/en/deployment/production.md": {
       "FilePath": "docs/en/deployment/production.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-09-26T06:43:32.972866",
-      "ContentHash": "ac485e2ac6580b67",
-      "GitCommit": "c1314c67",
+      "Version": "1.0.9",
+      "LastModified": "2026-10-11T13:48:54.304395",
+      "ContentHash": "4db3fdfc975f2c7d",
+      "GitCommit": "862789f2",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -783,10 +783,10 @@
     },
     "docs/zh/deployment/docker.md": {
       "FilePath": "docs/zh/deployment/docker.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-10-07T02:50:13.694009",
-      "ContentHash": "08343112e52447b7",
-      "GitCommit": "2e55693d",
+      "Version": "1.0.10",
+      "LastModified": "2026-10-11T13:48:54.638058",
+      "ContentHash": "7e92eaf1c87a90be",
+      "GitCommit": "862789f2",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -823,10 +823,10 @@
     },
     "docs/zh/deployment/kubernetes.md": {
       "FilePath": "docs/zh/deployment/kubernetes.md",
-      "Version": "1.0.13",
-      "LastModified": "2026-10-06T05:00:02.322826",
-      "ContentHash": "4a0de4c94346da5e",
-      "GitCommit": "803a140c",
+      "Version": "1.0.14",
+      "LastModified": "2026-10-11T13:48:54.654563",
+      "ContentHash": "3a3da7672161d062",
+      "GitCommit": "862789f2",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -838,10 +838,10 @@
     },
     "docs/zh/deployment/production.md": {
       "FilePath": "docs/zh/deployment/production.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-09-26T06:43:33.218558",
-      "ContentHash": "2301e6de600ab05f",
-      "GitCommit": "c1314c67",
+      "Version": "1.0.10",
+      "LastModified": "2026-10-11T13:48:54.659183",
+      "ContentHash": "4d76fb2493541cae",
+      "GitCommit": "862789f2",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1372,11 +1372,11 @@
     },
     "docs/en/security/troubleshooting.md": {
       "FilePath": "docs/en/security/troubleshooting.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-09-18T11:28:12.801599",
-      "ContentHash": "9059016cf29f6061",
-      "GitCommit": "c82b4559",
-      "Author": "Lincoln",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-11T13:48:54.487843",
+      "ContentHash": "9da1c727760b2ff0",
+      "GitCommit": "862789f2",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/monitoring/alerts.md",
@@ -1545,11 +1545,11 @@
     },
     "docs/zh/security/index.md": {
       "FilePath": "docs/zh/security/index.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-18T11:28:24.647270",
-      "ContentHash": "2f3db5dd0106e298",
-      "GitCommit": "c82b4559",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-11T13:48:54.816340",
+      "ContentHash": "881fdf554a9ddd16",
+      "GitCommit": "862789f2",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/security/api-key-management.md",
@@ -1571,11 +1571,11 @@
     },
     "docs/zh/security/troubleshooting.md": {
       "FilePath": "docs/zh/security/troubleshooting.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-18T11:28:25.077895",
-      "ContentHash": "5ce3acdf98d0600e",
-      "GitCommit": "c82b4559",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-11T13:48:54.825931",
+      "ContentHash": "8b87d69ad8648be2",
+      "GitCommit": "862789f2",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/monitoring/alerts.md",
@@ -1885,11 +1885,11 @@
     },
     "docs/zh/security/audit-log-management.md": {
       "FilePath": "docs/zh/security/audit-log-management.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-09-18T11:16:47.836031",
-      "ContentHash": "a78079b6af38e229",
-      "GitCommit": "2e651835",
-      "Author": "Lincoln",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-11T13:48:54.805060",
+      "ContentHash": "510d6576a4bd4eae",
+      "GitCommit": "862789f2",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/security/api-key-management.md",
@@ -2045,11 +2045,11 @@
     },
     "docs/en/security/audit-log-management.md": {
       "FilePath": "docs/en/security/audit-log-management.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-09-18T11:16:35.646835",
-      "ContentHash": "873e40a518d7d3ed",
-      "GitCommit": "2e651835",
-      "Author": "Lincoln",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-11T13:48:54.464038",
+      "ContentHash": "b01502b3af0c44b1",
+      "GitCommit": "862789f2",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/security/api-key-management.md",
@@ -7226,7 +7226,87 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-07T07:44:16.745626",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/docker.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-11T13:48:54.279939",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/production.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-11T13:48:54.304401",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/audit-log-management.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-11T13:48:54.464048",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/troubleshooting.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-11T13:48:54.487851",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/docker.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-11T13:48:54.638066",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/kubernetes.md",
+      "OldVersion": "1.0.13",
+      "NewVersion": "1.0.14",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-11T13:48:54.654569",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/production.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-11T13:48:54.659186",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/audit-log-management.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-11T13:48:54.805071",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/index.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-11T13:48:54.816346",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/troubleshooting.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-11T13:48:54.825936",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-11T08:17:29.015658"
+  "last_updated": "2026-10-11T13:48:54.869775"
 }
