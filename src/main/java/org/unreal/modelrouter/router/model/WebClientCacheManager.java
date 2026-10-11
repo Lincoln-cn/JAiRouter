@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.common.util.ApplicationContextProvider;
 import org.unreal.modelrouter.monitor.tracing.client.TracingWebClientFactory;
+import org.unreal.modelrouter.router.http.WebClientPool;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,8 +46,10 @@ public class WebClientCacheManager {
                     ApplicationContextProvider.getBean(TracingWebClientFactory.class);
             return tracingFactory.createTracingWebClient(safeBaseUrl);
         } catch (Exception e) {
-            // 追踪功能不可用，创建普通WebClient
-            return WebClient.builder().baseUrl(safeBaseUrl).build();
+            // 追踪不可用（如 jairouter.tracing.enabled=false）：仍走 WebClientPool —— 出站解析守卫
+            // （#266）只挂在它创建的客户端上，自建 WebClient 会绕过校验结果的绑定
+            WebClientPool webClientPool = ApplicationContextProvider.getBean(WebClientPool.class);
+            return webClientPool.getOrCreate(safeBaseUrl);
         }
     }
 

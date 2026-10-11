@@ -60,7 +60,7 @@ public final class UrlSecurityValidator {
 
         try {
             for (InetAddress address : InetAddress.getAllByName(host)) {
-                if (isDangerousAddress(address)) {
+                if (isDangerousResolvedAddress(address)) {
                     throw new SecurityException("Base URL resolves to a blocked address");
                 }
             }
@@ -114,7 +114,16 @@ public final class UrlSecurityValidator {
         return value;
     }
 
-    private static boolean isDangerousAddress(final InetAddress address) {
+    /**
+     * 判定一个<b>已解析</b>地址是否为必须拒绝的危险目标（链路本地 / 云元数据网段）。
+     *
+     * <p>写入侧校验（{@link #validateOutboundBaseUrl(String)}）与连接期解析守卫
+     * （{@code SsrfGuardedAddressResolverGroup}）共用本判据，避免两处规则漂移。</p>
+     *
+     * @param address 已解析的地址
+     * @return true 表示必须拒绝
+     */
+    public static boolean isDangerousResolvedAddress(final InetAddress address) {
         if (address.isLinkLocalAddress()) {
             return true;
         }

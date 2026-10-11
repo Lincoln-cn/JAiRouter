@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.router.http;
 
 import io.netty.channel.ChannelOption;
+import io.netty.resolver.AddressResolverGroup;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +14,7 @@ import org.unreal.modelrouter.config.core.helper.SsrfGuard;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 
+import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,6 +39,11 @@ import java.util.function.Consumer;
  *
  * <p><b>默认值与外部化之前保持一致</b>（10s / 60s / 500 / 60s / 60s），因此不改配置时行为不变。</p>
  *
+ * <h2>出站解析守卫（#266）</h2>
+ * <p>创建时的 URL 校验不足以覆盖「主机名在校验之后才解析到危险地址」的情形，因此底层
+ * {@link HttpClient} 的解析器被替换为 {@link SsrfGuardedAddressResolverGroup}：连接期解析出的地址会
+ * 再判一次，命中链路本地 / 云元数据网段即拒绝连接，堵住 DNS 重绑定绕过面。</p>
+ *
  * @author JAiRouter Team
  * @since 2.7.0
  */
@@ -55,6 +62,7 @@ public class WebClientPool {
     private final int connectTimeoutMs;
     private final int responseTimeoutSeconds;
     private final ConnectionProvider connectionProvider;
+    private final AddressResolverGroup<InetSocketAddress> dnsResolverGroup;
 
     private final Map<String, WebClient> clientCache = new ConcurrentHashMap<>();
 
@@ -80,8 +88,21 @@ public class WebClientPool {
             @Value("${jairouter.webclient.max-connections:500}") final int maxConnections,
             @Value("${jairouter.webclient.pending-acquire-timeout-ms:60000}") final long pendingAcquireTimeoutMs,
             @Value("${jairouter.webclient.max-idle-time-seconds:60}") final int maxIdleTimeSeconds) {
+        this(connectTimeoutMs, responseTimeoutSeconds, maxConnections, pendingAcquireTimeoutMs, maxIdleTimeSeconds,
+                SsrfGuardedAddressResolverGroup.instance());
+    }
+
+    /**
+     * 内部构造器：可注入解析守卫（包内可见，供测试用可控 DNS 复现重绑定场景）。
+     *
+     * @param dnsResolverGroup 底层解析器（生产固定为 {@link SsrfGuardedAddressResolverGroup}）
+     */
+    WebClientPool(final int connectTimeoutMs, final int responseTimeoutSeconds, final int maxConnections,
+                  final long pendingAcquireTimeoutMs, final int maxIdleTimeSeconds,
+                  final AddressResolverGroup<InetSocketAddress> dnsResolverGroup) {
         this.connectTimeoutMs = connectTimeoutMs;
         this.responseTimeoutSeconds = responseTimeoutSeconds;
+        this.dnsResolverGroup = dnsResolverGroup;
         this.connectionProvider = ConnectionProvider.builder("jairouter-outbound")
                 .maxConnections(maxConnections)
                 .pendingAcquireTimeout(Duration.ofMillis(pendingAcquireTimeoutMs))
@@ -101,7 +122,8 @@ public class WebClientPool {
      */
     public WebClientPool() {
         this(DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_RESPONSE_TIMEOUT_SECONDS, DEFAULT_MAX_CONNECTIONS,
-                DEFAULT_PENDING_ACQUIRE_TIMEOUT_MS, DEFAULT_MAX_IDLE_TIME_SECONDS);
+                DEFAULT_PENDING_ACQUIRE_TIMEOUT_MS, DEFAULT_MAX_IDLE_TIME_SECONDS,
+                SsrfGuardedAddressResolverGroup.instance());
     }
 
     /**
@@ -164,6 +186,8 @@ public class WebClientPool {
         logger.debug("创建 WebClient: baseUrl={}", baseUrl);
 
         HttpClient httpClient = HttpClient.create(connectionProvider)
+                // #266：把出站 SSRF 判据绑到连接期解析结果上（堵 DNS 重绑定）
+                .resolver(dnsResolverGroup)
                 .compress(true)
                 // #182：接上此前声明却未生效的连接超时
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutMs)
