@@ -171,6 +171,17 @@ public class SecurityReportGenerator {
         .subscribeOn(Schedulers.boundedElastic());
     }
 
+    /**
+     * 统计窗口内满足条件的事件条数（在 DB 侧计数，不受取回条数限制）。
+     */
+    public Mono<Long> countEvents(final LocalDateTime startTime, final LocalDateTime endTime,
+                                  final List<AuditEventType> eventTypes, final String clientIp,
+                                  final Boolean success) {
+        return Mono.fromCallable(() -> auditRepository.countByConditions(
+                        startTime, endTime, eventTypes, null, null, clientIp, success, null, null))
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
     public Mono<Boolean> shouldTriggerAlert(final String eventType, final int timeWindowMinutes, final int threshold) {
         return Mono.fromCallable(() -> {
             LocalDateTime windowEnd = LocalDateTime.now();

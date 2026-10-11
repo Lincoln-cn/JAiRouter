@@ -445,7 +445,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
             SecurityAuditEventEntity entity = SecurityAuditEventEntity.builder()
                     .eventId(UUID.randomUUID().toString())
-                    .eventType(AuditEventType.SYSTEM_MAINTENANCE)
+                    .eventType(AuditEventType.DATA_SANITIZATION)
                     .userId(userId)
                     .action("SANITIZE")
                     .details("数据脱敏处理")
@@ -486,5 +486,12 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     @Override
     public Mono<Boolean> shouldTriggerAlert(final String eventType, final int timeWindowMinutes, final int threshold) {
         return reportGenerator.shouldTriggerAlert(eventType, timeWindowMinutes, threshold);
+    }
+
+    @Override
+    public Mono<Long> countEvents(final LocalDateTime startTime, final LocalDateTime endTime,
+                                  final List<AuditEventType> eventTypes, final String clientIp,
+                                  final Boolean success) {
+        return reportGenerator.countEvents(startTime, endTime, eventTypes, clientIp, success);
     }
 }

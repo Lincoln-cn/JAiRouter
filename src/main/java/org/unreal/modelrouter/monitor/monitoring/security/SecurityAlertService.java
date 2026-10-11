@@ -7,11 +7,13 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.model.SecurityAlertEvent;
+import org.unreal.modelrouter.common.dto.AuditEventType;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -40,6 +42,18 @@ public class SecurityAlertService {
     private static final int SANITIZATION_ANOMALY_THRESHOLD = 100; // 1小时内脱敏操作异常增长
     private static final int SANITIZATION_ANOMALY_WINDOW_MINUTES = 60;
     
+    private static final int JWT_ANOMALY_THRESHOLD = 20; // 10分钟内JWT相关失败次数
+    private static final int JWT_ANOMALY_WINDOW_MINUTES = 10;
+    
+    /** JWT 令牌相关事件类型（与 AuditEventType 枚举保持一致，勿用字符串字面量） */
+    private static final List<AuditEventType> JWT_EVENT_TYPES = List.of(
+            AuditEventType.JWT_TOKEN_ISSUED,
+            AuditEventType.JWT_TOKEN_REFRESHED,
+            AuditEventType.JWT_TOKEN_REVOKED,
+            AuditEventType.JWT_TOKEN_VALIDATED,
+            AuditEventType.JWT_TOKEN_EXPIRED
+    );
+    
     // 告警状态跟踪
     private final ConcurrentHashMap<String, LocalDateTime> lastAlertTimes = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AtomicLong> alertCounts = new ConcurrentHashMap<>();
@@ -53,7 +67,7 @@ public class SecurityAlertService {
     public Mono<Void> checkAuthenticationFailureAlert(
             final String clientIp, final String failureReason) {
         return auditService.shouldTriggerAlert(
-                "AUTHENTICATION_FAILURE", AUTH_FAILURE_WINDOW_MINUTES,
+                AuditEventType.AUTHENTICATION_FAILED.name(), AUTH_FAILURE_WINDOW_MINUTES,
                 AUTH_FAILURE_THRESHOLD)
                 .flatMap(shouldAlert -> {
                     if (shouldAlert) {
@@ -75,17 +89,13 @@ public class SecurityAlertService {
      * 检查可疑IP活动告警
      */
     public Mono<Void> checkSuspiciousIpAlert(final String clientIp) {
-        String alertKey = "SUSPICIOUS_IP_" + clientIp;
-        
-        return auditService.queryEvents(
+        return auditService.countEvents(
                 LocalDateTime.now().minusMinutes(SUSPICIOUS_IP_WINDOW_MINUTES),
                 LocalDateTime.now(),
-                "AUTHENTICATION_FAILURE",
-                null,
-                100
+                List.of(AuditEventType.AUTHENTICATION_FAILED),
+                clientIp,
+                null
         )
-                .filter(event -> clientIp.equals(event.getClientIp()))
-                .count()
                 .flatMap(failureCount -> {
                     if (failureCount >= SUSPICIOUS_IP_THRESHOLD) {
                         return triggerAlert(
@@ -106,14 +116,13 @@ public class SecurityAlertService {
      * 检查数据脱敏异常告警
      */
     public Mono<Void> checkSanitizationAnomalyAlert() {
-        return auditService.queryEvents(
+        return auditService.countEvents(
                 LocalDateTime.now().minusMinutes(SANITIZATION_ANOMALY_WINDOW_MINUTES),
                 LocalDateTime.now(),
-                "DATA_SANITIZATION",
+                List.of(AuditEventType.DATA_SANITIZATION),
                 null,
-                1000
+                null
         )
-                .count()
                 .flatMap(sanitizationCount -> {
                     if (sanitizationCount >= SANITIZATION_ANOMALY_THRESHOLD) {
                         return triggerAlert(
@@ -134,21 +143,20 @@ public class SecurityAlertService {
      * 检查JWT令牌异常告警
      */
     public Mono<Void> checkJwtAnomalyAlert() {
-        return auditService.queryEvents(
-                LocalDateTime.now().minusMinutes(10),
+        return auditService.countEvents(
+                LocalDateTime.now().minusMinutes(JWT_ANOMALY_WINDOW_MINUTES),
                 LocalDateTime.now(),
+                JWT_EVENT_TYPES,
                 null,
-                null,
-                100
+                false
         )
-                .filter(event -> event.getEventType().contains("JWT") && !event.isSuccess())
-                .count()
                 .flatMap(jwtFailureCount -> {
-                    if (jwtFailureCount >= 20) { // 10分钟内20次JWT失败
+                    if (jwtFailureCount >= JWT_ANOMALY_THRESHOLD) {
                         return triggerAlert(
                                 "JWT_ANOMALY",
                                 "JWT令牌异常活动",
-                                String.format("在过去10分钟内检测到%d次JWT相关失败", jwtFailureCount),
+                                String.format("在过去%d分钟内检测到%d次JWT相关失败",
+                                        JWT_ANOMALY_WINDOW_MINUTES, jwtFailureCount),
                                 "MEDIUM",
                                 createJwtAnomalyAlertData(jwtFailureCount)
                         );
@@ -244,8 +252,8 @@ public class SecurityAlertService {
     private Map<String, Object> createJwtAnomalyAlertData(final long jwtFailureCount) {
         Map<String, Object> data = new HashMap<>();
         data.put("jwtFailureCount", jwtFailureCount);
-        data.put("timeWindow", "10 minutes");
-        data.put("threshold", 20);
+        data.put("timeWindow", JWT_ANOMALY_WINDOW_MINUTES + " minutes");
+        data.put("threshold", JWT_ANOMALY_THRESHOLD);
         return data;
     }
     

@@ -493,7 +493,7 @@ class ExtendedSecurityAuditServiceImplTest {
         }
 
         @Test
-        @DisplayName("recordSanitizationEvent - 成功记录脱敏事件")
+        @DisplayName("recordSanitizationEvent - 成功记录脱敏事件（类型为 DATA_SANITIZATION）")
         void testRecordSanitizationEvent_Success() {
             // Arrange
             when(auditRepository.save(any())).thenReturn(createMockEntity());
@@ -505,8 +505,9 @@ class ExtendedSecurityAuditServiceImplTest {
             // Assert
             StepVerifier.create(result)
                     .verifyComplete();
+            // 此前这里断言的是 SYSTEM_MAINTENANCE —— 错误的类型被测试固化，导致脱敏告警判据恒不成立（#285）
             verify(auditRepository).save(argThat(entity ->
-                    entity.getEventType() == AuditEventType.SYSTEM_MAINTENANCE &&
+                    entity.getEventType() == AuditEventType.DATA_SANITIZATION &&
                     entity.getAction().equals("SANITIZE")
             ));
         }
@@ -649,6 +650,29 @@ class ExtendedSecurityAuditServiceImplTest {
             StepVerifier.create(result)
                     .verifyComplete();
             verify(auditRepository).saveAll(argThat(list -> ((List<?>) list).size() == 2));
+        }
+    }
+
+    // ========== 告警取数（#283 / #285） ==========
+
+    @Nested
+    @DisplayName("告警取数")
+    class AlertCriteriaTests {
+
+        @Test
+        @DisplayName("countEvents 把条件交给存储侧计数（不走「取回一批再内存过滤」）")
+        void countEvents_delegatesToRepositoryCount() {
+            when(auditRepository.countByConditions(any(), any(), anyList(), any(), any(), any(), any(), any(), any()))
+                    .thenReturn(42L);
+
+            StepVerifier.create(service.countEvents(LocalDateTime.now().minusMinutes(10), LocalDateTime.now(),
+                            List.of(AuditEventType.AUTHENTICATION_FAILED), "10.0.0.9", Boolean.FALSE))
+                    .expectNext(42L)
+                    .verifyComplete();
+
+            verify(auditRepository).countByConditions(any(), any(),
+                    eq(List.of(AuditEventType.AUTHENTICATION_FAILED)), any(), any(),
+                    eq("10.0.0.9"), eq(Boolean.FALSE), any(), any());
         }
     }
 

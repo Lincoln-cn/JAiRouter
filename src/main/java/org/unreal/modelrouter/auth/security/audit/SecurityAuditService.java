@@ -1,10 +1,12 @@
 package org.unreal.modelrouter.auth.security.audit;
 
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
+import org.unreal.modelrouter.common.dto.AuditEventType;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -77,4 +79,20 @@ public interface SecurityAuditService {
      * @return 是否需要告警
      */
     Mono<Boolean> shouldTriggerAlert(String eventType, int timeWindowMinutes, int threshold);
+
+    /**
+     * 统计窗口内满足条件的事件条数。
+     *
+     * <p>在存储侧计数，不受「一次取回多少条」限制。告警判据必须用它：用「取回一批再在内存里过滤计数」
+     * 会在窗口内事件数超过取回上限时漏报。</p>
+     *
+     * @param startTime 窗口开始
+     * @param endTime 窗口结束
+     * @param eventTypes 事件类型（非空）
+     * @param clientIp 客户端 IP（null 表示不限）
+     * @param success 成功标记（null 表示不限）
+     * @return 事件条数
+     */
+    Mono<Long> countEvents(LocalDateTime startTime, LocalDateTime endTime,
+                           List<AuditEventType> eventTypes, String clientIp, Boolean success);
 }
