@@ -138,7 +138,8 @@ class UniversalApiClient {
     apiRequest: UniversalApiRequest,
     onMessage: (data: any) => void,
     onError: (error: any) => void,
-    onComplete: () => void
+    onComplete: () => void,
+    signal?: AbortSignal
   ): Promise<void> {
     const startTime = Date.now()
 
@@ -171,7 +172,9 @@ class UniversalApiClient {
       const fetchConfig: RequestInit = {
         method: apiRequest.method.toUpperCase(),
         headers,
-        body: apiRequest.body ? JSON.stringify(apiRequest.body) : undefined
+        body: apiRequest.body ? JSON.stringify(apiRequest.body) : undefined,
+        // 允许调用方通过 AbortSignal 取消在途流式请求（issue #261）
+        ...(signal ? { signal } : {})
       }
 
       console.log('流式请求配置:', {
@@ -183,19 +186,11 @@ class UniversalApiClient {
 
       const response = await fetch(fullUrl, fetchConfig)
 
-      console.log('流式请求响应:', {
-        status: response.status,
-        statusText: response.statusText,
-        url: fullUrl,
-        headers: Object.fromEntries(response.headers.entries())
-      })
-
       if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Unknown error')
+        // 不打印响应体与响应头：它们可能含模型返回内容或凭据（issue #261）
         console.error('流式请求失败:', {
           status: response.status,
-          statusText: response.statusText,
-          body: errorText
+          statusText: response.statusText
         })
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
@@ -232,31 +227,26 @@ class UniversalApiClient {
                 // 处理SSE格式
                 if (trimmedLine.startsWith('data:')) {
                   const dataStr = trimmedLine.slice(5).trim()
-                  console.log('解析SSE数据:', dataStr)
                   if (dataStr === '[DONE]') {
-                    console.log('流式请求完成: 收到 [DONE] 标记')
                     onComplete()
                     return
                   }
                   if (dataStr) {
                     try {
                       const data = JSON.parse(dataStr)
-                      console.log('成功解析流式数据:', data)
                       // 立即触发回调，提高实时性
                       onMessage(data)
                     } catch (parseError) {
-                      console.error('解析SSE数据失败:', parseError, '原始数据:', dataStr)
+                      // 不打印原始数据：它可能含模型返回内容（issue #261）
+                      console.error('解析SSE数据失败:', parseError)
                     }
                   }
                 } else if (trimmedLine.startsWith('event: ')) {
-                  // 处理事件类型（如果需要）
-                  console.log('收到事件类型:', trimmedLine.slice(7))
+                  // 处理事件类型（如果需要）；不打印原文（issue #261）
                 } else if (trimmedLine.startsWith('id: ')) {
-                  // 处理事件ID（如果需要）
-                  console.log('收到事件ID:', trimmedLine.slice(4))
+                  // 处理事件ID（如果需要）；不打印原文（issue #261）
                 } else if (trimmedLine.startsWith('retry: ')) {
-                  // 处理重试间隔（如果需要）
-                  console.log('收到重试间隔:', trimmedLine.slice(7))
+                  // 处理重试间隔（如果需要）；不打印原文（issue #261）
                 } else {
                   // 处理普通JSON行或者可能是没有"data: "前缀的SSE数据
                   try {
@@ -267,20 +257,19 @@ class UniversalApiClient {
                     if (trimmedLine.includes('"choices"') && trimmedLine.includes('"delta"')) {
                       try {
                         const data = JSON.parse(trimmedLine)
-                        console.log('解析到流式数据:', data)
                         onMessage(data)
                       } catch (retryError) {
-                        console.log('收到非JSON数据:', trimmedLine)
+                        // 不打印原文，避免把模型返回内容写入浏览器控制台（issue #261）
                         onMessage({ content: trimmedLine })
                       }
                     } else {
-                      console.log('收到非JSON数据:', trimmedLine)
                       onMessage({ content: trimmedLine })
                     }
                   }
                 }
               } catch (parseError) {
-                console.warn('解析流式数据失败:', parseError, '原始数据:', trimmedLine)
+                // 不打印原始数据，避免把模型返回内容写入浏览器控制台（issue #261）
+                console.warn('解析流式数据失败:', parseError)
                 // 即使解析失败，也尝试传递原始内容
                 onMessage({ content: trimmedLine, parseError: true })
               }
@@ -341,8 +330,9 @@ export const sendUniversalStreamRequest = (
   request: UniversalApiRequest,
   onMessage: (data: any) => void,
   onError: (error: any) => void,
-  onComplete: () => void
-) => universalApi.sendStreamRequest(request, onMessage, onError, onComplete)
+  onComplete: () => void,
+  signal?: AbortSignal
+) => universalApi.sendStreamRequest(request, onMessage, onError, onComplete, signal)
 
 // 默认导出
 export default universalApi
