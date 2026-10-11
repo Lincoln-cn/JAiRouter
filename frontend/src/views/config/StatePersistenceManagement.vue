@@ -426,7 +426,7 @@ const loadStateDetails = async () => {
     }
   } catch (error: any) {
     console.error('Failed to load state details:', error)
-    // 如果 API 不存在，使用模拟数据
+    // 接口不可用时置空，页面展示空态（原注释写的是「使用模拟数据」，与实现不符）
     stateDetails.value = []
   } finally {
     loadingDetails.value = false
