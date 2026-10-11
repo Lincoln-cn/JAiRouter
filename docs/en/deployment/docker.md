@@ -1,4 +1,4 @@
-﻿# Docker Deployment Guide
+# Docker Deployment Guide
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -432,8 +432,6 @@ docker-compose down
 | `REDIS_HOST` | `localhost` | Redis host address |
 | `REDIS_PORT` | `6379` | Redis port |
 | `REDIS_PASSWORD` | None | Redis password |
-| `SECURITY_ALERT_EMAIL` | None | Security alert email address |
-| `SECURITY_ALERT_WEBHOOK` | None | Security alert webhook address |
 
 ### 2. JVM Parameter Configuration
 

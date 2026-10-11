@@ -338,7 +338,6 @@ stringData:
   PROD_READONLY_API_KEY: "your-production-readonly-api-key-here"
   PROD_JWT_SECRET: "your-production-jwt-secret-here"
   REDIS_PASSWORD: "your-redis-password"
-  SECURITY_ALERT_EMAIL: "security-alerts@your-company.com"
 
 ---
 # TLS Secret 配置
@@ -934,10 +933,6 @@ env:
   REDIS_HOST: "your-redis-host"
   REDIS_PORT: "6379"
   REDIS_PASSWORD: "your-redis-password"
-  
-  # 安全告警配置
-  SECURITY_ALERT_EMAIL: "security-alerts@your-company.com"
-  SECURITY_ALERT_WEBHOOK: "https://your-webhook-url.com/security-alerts"
 
 config:
   application.yml: |

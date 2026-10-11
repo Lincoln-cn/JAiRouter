@@ -1,4 +1,4 @@
-﻿# Docker 部署指南
+# Docker 部署指南
 
 <!-- 版本信息 -->
 > **文档版本**: 1.2.0
@@ -430,8 +430,6 @@ docker-compose down
 | `REDIS_HOST`             | `localhost` | Redis主机地址      |
 | `REDIS_PORT`             | `6379`      | Redis端口        |
 | `REDIS_PASSWORD`         | 无           | Redis密码        |
-| `SECURITY_ALERT_EMAIL`   | 无           | 安全告警邮件地址       |
-| `SECURITY_ALERT_WEBHOOK` | 无           | 安全告警Webhook地址  |
 
 ### 2. JVM 参数配置
 

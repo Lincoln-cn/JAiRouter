@@ -44,9 +44,38 @@ class SecurityAlertServiceTest {
 
     private SecurityAlertService alertService;
 
+    private SecurityAlertProperties properties;
+
     @BeforeEach
     void setUp() {
-        alertService = new SecurityAlertService(auditService, securityMetrics);
+        properties = new SecurityAlertProperties();
+        alertService = new SecurityAlertService(auditService, securityMetrics, properties);
+    }
+
+    @Test
+    @DisplayName("阈值来自配置面（改配置即改判据，不再有类内常量）")
+    void thresholds_comeFromConfiguration() {
+        properties.getThresholds().setAuthenticationFailureCount(9);
+        properties.getThresholds().setAuthenticationFailureWindowMinutes(30);
+        when(auditService.shouldTriggerAlert("AUTHENTICATION_FAILED", 30, 9)).thenReturn(Mono.just(true));
+
+        alertService.checkAuthenticationFailureAlert(CLIENT_IP, "bad credentials").block();
+
+        verify(auditService).shouldTriggerAlert("AUTHENTICATION_FAILED", 30, 9);
+        verify(securityMetrics).recordSecurityViolation("AUTH_FAILURE_SPIKE", "HIGH");
+    }
+
+    @Test
+    @DisplayName("冷却时间来自配置（设为 0 时连续两次都告警）")
+    void cooldown_comesFromConfiguration() {
+        properties.getThresholds().setCooldownMinutes(0);
+        when(auditService.countEvents(any(LocalDateTime.class), any(LocalDateTime.class),
+                anyList(), any(), any())).thenReturn(Mono.just(100L));
+
+        alertService.checkSanitizationAnomalyAlert().block();
+        alertService.checkSanitizationAnomalyAlert().block();
+
+        verify(securityMetrics, times(2)).recordSecurityViolation(anyString(), anyString());
     }
 
     @Test

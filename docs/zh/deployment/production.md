@@ -484,22 +484,24 @@ jairouter:
         security-events:
           by-user: false  # 生产环境不按用户统计（隐私考虑）
       
+      # 安全告警（阈值语义 = 窗口内计数；比率键从未有实现，已移除）
       alerts:
         enabled: true
+        window-check-interval-ms: 300000
         thresholds:
-          authentication-failure-rate: 0.05  # 生产环境更严格的失败率阈值（5%）
-          sanitization-error-rate: 0.01      # 生产环境更严格的错误率阈值（1%）
-          response-time-p99: 500              # 生产环境更严格的响应时间要求
-          max-requests-per-minute: 5000       # 生产环境更高的请求量阈值
-        
+          authentication-failure-count: 5
+          authentication-failure-window-minutes: 5
+          suspicious-ip-count: 10
+          suspicious-ip-window-minutes: 10
+          sanitization-count: 100
+          sanitization-window-minutes: 60
+          jwt-failure-count: 20
+          jwt-failure-window-minutes: 10
+          cooldown-minutes: 15
+
+        # 出口契约：告警只进 Prometheus 指标 + 结构化日志
+        # （仓内不实现 email / webhook 推送，外部通知由 Alertmanager / 日志平台承担）
         notifications:
-          email:
-            enabled: true
-            recipients: 
-              - "${SECURITY_ALERT_EMAIL:}"
-          webhook:
-            enabled: true
-            url: "${SECURITY_ALERT_WEBHOOK:}"
           log:
             enabled: true
     

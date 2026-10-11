@@ -76,11 +76,3 @@ jairouter:
         enable-prometheus-metrics: true
         # 启用结构化日志记录
         enable-structured-logging: true
-        # 启用Webhook通知（可选）
-        enable-webhook: false
-        # Webhook URL（如果启用）
-        webhook-url: ""
-        # Webhook请求头（如果启用）
-        webhook-headers:
-          Content-Type: "application/json"
-          Authorization: "Bearer ${WEBHOOK_TOKEN:}"

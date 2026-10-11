@@ -266,17 +266,28 @@ curl -X POST "http://localhost:8080/api/security/audit-logs/export" \
 
 ### 告警配置
 
+安全告警的配置面是 `jairouter.security.monitoring.alerts`（此前文档里写的 `jairouter.security.audit-log.alerts.*` 前缀在代码中不存在，已更正）：
+
 ```yaml
 jairouter:
   security:
-    audit-log:
+    monitoring:
       alerts:
         enabled: true
-        # 登录失败次数过多
-        login-failure-threshold: 5
-        # 配置变更频率过高
-        config-change-rate-threshold: 10
+        thresholds:
+          # 阈值语义 = 窗口内计数
+          authentication-failure-count: 5
+          authentication-failure-window-minutes: 5
+          suspicious-ip-count: 10
+          suspicious-ip-window-minutes: 10
+          sanitization-count: 100
+          sanitization-window-minutes: 60
+          jwt-failure-count: 20
+          jwt-failure-window-minutes: 10
+          cooldown-minutes: 15
 ```
+
+出口为 Prometheus 指标 `jairouter.security.violations` 与 WARN 日志（`安全告警触发: type=..., severity=...`）。
 
 ## 最佳实践
 

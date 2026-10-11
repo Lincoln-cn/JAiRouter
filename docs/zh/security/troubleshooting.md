@@ -531,7 +531,7 @@ curl http://localhost:8080/actuator/prometheus
 
 #### 解决方案
 
-1. **检查告警配置**
+1. **确认告警已启用**（默认开启；置为 `false` 时两个告警 bean 都不会装配）
 ```yaml
 jairouter:
   security:
@@ -539,26 +539,22 @@ jairouter:
       alerts:
         enabled: true
         thresholds:
-          authentication-failure-rate: 0.1
+          # 阈值语义是「窗口内计数」，不是比率
+          authentication-failure-count: 5
+          authentication-failure-window-minutes: 5
 ```
 
-2. **测试告警通知**
-```bash
-curl -X POST -H "Authorization: Bearer admin-token" \
-     http://localhost:8080/admin/security/alerts/test
-```
+2. **确认判据是否成立**：四类检查的驱动方式不同 ——
+   - 认证失败波动、可疑 IP：由认证失败路径**事件驱动**（每次失败顺带检查）；
+   - 脱敏异常增长（60 分钟窗口）、JWT 异常活动（10 分钟窗口）：**定时检查**，间隔见 `window-check-interval-ms`（默认 5 分钟）。
+   计数在存储侧完成，不受「一次取回多少条」限制；若审计表里没有对应类型的事件（例如脱敏事件未以 `DATA_SANITIZATION` 落库），判据会恒为 0。
 
-3. **检查通知配置**
-```yaml
-jairouter:
-  security:
-    monitoring:
-      alerts:
-        notifications:
-          email:
-            enabled: true
-            recipients: ["admin@example.com"]
-```
+3. **确认出口**：告警只进**指标与日志**，仓内不实现邮件 / webhook 推送 ——
+   - 指标 `jairouter.security.violations`（tag `violationType` / `severity`），抓 `GET /actuator/prometheus`；
+   - 日志 `安全告警触发: type=..., severity=...`（WARN 级）。
+   同类型告警受 `cooldown-minutes`（默认 15 分钟）冷却约束，冷却期内重复命中不会再次触发。
+
+4. **多副本部署**：窗口聚合检查带分布式排他（`ScheduledTaskLock`，键 `security.alerts.window-checks`），未拿到锁的副本不触发，这是预期行为。
 
 ## 调试工具和技巧
 

@@ -214,10 +214,6 @@ export PROD_JWT_SECRET="your-production-jwt-secret-key-here"
 export REDIS_HOST="localhost"
 export REDIS_PORT="6379"
 export REDIS_PASSWORD="your-redis-password"
-
-# 安全告警配置
-export SECURITY_ALERT_EMAIL="security-alerts@your-company.com"
-export SECURITY_ALERT_WEBHOOK="https://your-webhook-url.com/security-alerts"
 ```
 
 ## 监控指标

@@ -900,6 +900,31 @@ security:
       rotation:
         max-file-size: "100MB"
         max-files: 30
+
+    # Security alerts (thresholds are counts within a window; the rate-based keys
+    # were never implemented and have been removed)
+    monitoring:
+      enabled: true
+      alerts:
+        enabled: true
+        window-check-interval-ms: 300000
+        thresholds:
+          authentication-failure-count: 5
+          authentication-failure-window-minutes: 5
+          suspicious-ip-count: 10
+          suspicious-ip-window-minutes: 10
+          sanitization-count: 100
+          sanitization-window-minutes: 60
+          jwt-failure-count: 20
+          jwt-failure-window-minutes: 10
+          cooldown-minutes: 15
+
+        # Outlet contract: alerts only reach Prometheus metrics + structured logs.
+        # There is no in-repo email/webhook delivery; external notification is handled
+        # by Alertmanager / the log platform.
+        notifications:
+          log:
+            enabled: true
 ```
 
 #### Redis Configuration for JWT Persistence

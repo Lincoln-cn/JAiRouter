@@ -83,12 +83,6 @@ jairouter:
       alerts:
         enabled: false
         notifications:
-          email:
-            enabled: false
-            recipients: []
-          webhook:
-            enabled: false
-            url: ""
           log:
             enabled: false
     
