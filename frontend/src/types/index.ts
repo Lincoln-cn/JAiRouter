@@ -39,6 +39,11 @@ export interface DashboardOverview {
     memoryUsage: number
     diskUsage: number
   }
+  /**
+   * 近 24 小时安全告警数。
+   * 由 MonitoringController#getMonitoringOverview（/api/monitoring/overview）返回；alerts 关闭时不返回该键。
+   */
+  alertsLast24Hours?: number
 }
 
 // API Key Management Types

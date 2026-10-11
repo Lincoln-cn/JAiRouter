@@ -318,6 +318,7 @@
                 <el-icon class="alert-title-icon"><WarningFilled /></el-icon>
                 {{ t('dashboard.exceptionSummary') }}
               </span>
+              <span class="alert-count-tag">{{ t('dashboard.securityAlertsLast24h', { count: stats.alertCount }) }}</span>
               <el-button link type="primary" size="small" @click="router.push('/exceptions/list')">
                 {{ t('dashboard.allExceptions') }} <el-icon><ArrowRight /></el-icon>
               </el-button>
@@ -962,6 +963,8 @@ const fetchMonitoringOverview = async () => {
     const res = await getMonitoringOverview()
     if (res.data && res.data.success) {
       monitoringOverview.value = res.data.data
+      // 安全告警数来自监控概览（#291）：此前从 /models/stats 读一个不存在的字段，值也无处显示
+      stats.value.alertCount = res.data.data?.alertsLast24Hours ?? 0
       nextTick(() => {
         systemChartInstance ? systemChartInstance.setOption(getChartOption(), { notMerge: true }) : initChart()
       })
@@ -1058,7 +1061,6 @@ const fetchDashboardData = async () => {
       stats.value.serviceCount = d.totalServices || 0
       stats.value.instanceCount = d.totalInstances || 0
       stats.value.totalModels = d.totalModels || 0
-      stats.value.alertCount = d.alertCount || 0
       stats.value.userCount = d.userCount || 0
     }
 
@@ -1339,6 +1341,12 @@ onBeforeUnmount(() => {
   color: var(--ja-warning);
   margin-right: 4px;
   vertical-align: middle;
+}
+
+.alert-count-tag {
+  margin-left: 10px;
+  font-size: 12px;
+  color: var(--ja-text-secondary, #667085);
 }
 
 .alert-time {

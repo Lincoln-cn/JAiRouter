@@ -8,6 +8,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
+import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.common.dto.AuditEventType;
 import reactor.core.publisher.Mono;
 
@@ -21,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -50,6 +52,34 @@ class SecurityAlertServiceTest {
     void setUp() {
         properties = new SecurityAlertProperties();
         alertService = new SecurityAlertService(auditService, securityMetrics, properties);
+        // 触发告警时会落一条审计事件（#291 的数据源）；未触发的用例用不到这个 stub
+        lenient().when(auditService.recordEvent(any(SecurityAuditEvent.class))).thenReturn(Mono.empty());
+    }
+
+    @Test
+    @DisplayName("告警触发会落一条 SECURITY_ALERT 审计事件（#291 的计数数据源）")
+    void alertTriggered_recordsSecurityAlertAuditEvent() {
+        when(auditService.shouldTriggerAlert(AuditEventType.AUTHENTICATION_FAILED.name(), 5, 5))
+                .thenReturn(Mono.just(true));
+
+        alertService.checkAuthenticationFailureAlert(CLIENT_IP, "bad credentials").block();
+
+        final ArgumentCaptor<SecurityAuditEvent> captor = ArgumentCaptor.forClass(SecurityAuditEvent.class);
+        verify(auditService).recordEvent(captor.capture());
+        assertEquals(AuditEventType.SECURITY_ALERT.name(), captor.getValue().getEventType());
+        assertEquals("AUTH_FAILURE_SPIKE", captor.getValue().getAction());
+        assertEquals("HIGH", captor.getValue().getAdditionalData().get("severity"));
+    }
+
+    @Test
+    @DisplayName("近 24 小时告警数按 SECURITY_ALERT 类型在存储侧计数")
+    void countAlertsLast24Hours_countsSecurityAlertEvents() {
+        when(auditService.countEvents(any(LocalDateTime.class), any(LocalDateTime.class),
+                anyList(), any(), any())).thenReturn(Mono.just(7L));
+
+        assertEquals(7L, alertService.countAlertsLast24Hours().block());
+
+        assertEquals(List.of(AuditEventType.SECURITY_ALERT), capturedTypes());
     }
 
     @Test

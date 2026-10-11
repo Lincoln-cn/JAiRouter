@@ -2,6 +2,7 @@ package org.unreal.modelrouter.monitor.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -15,6 +16,7 @@ import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsDegradati
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MonitoringHealthChecker;
 import org.unreal.modelrouter.monitor.monitoring.config.DynamicMonitoringConfigUpdater;
 import org.unreal.modelrouter.monitor.monitoring.error.MetricsErrorHandler;
+import org.unreal.modelrouter.monitor.monitoring.security.SecurityAlertService;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import reactor.core.publisher.Mono;
 
@@ -42,6 +44,7 @@ public class MonitoringController {
     private final MetricsCacheAndRetry cacheAndRetry;
     private final MetricsDegradationStrategy degradationStrategy;
     private final MetricsCircuitBreaker circuitBreaker;
+    private final ObjectProvider<SecurityAlertService> alertServiceProvider;
 
     public MonitoringController(final MonitoringProperties monitoringProperties,
                               final DynamicMonitoringConfigUpdater configUpdater,
@@ -49,7 +52,8 @@ public class MonitoringController {
                               final MonitoringHealthChecker healthChecker,
                               final MetricsCacheAndRetry cacheAndRetry,
                               final MetricsDegradationStrategy degradationStrategy,
-                              final MetricsCircuitBreaker circuitBreaker) {
+                              final MetricsCircuitBreaker circuitBreaker,
+                              final ObjectProvider<SecurityAlertService> alertServiceProvider) {
         this.monitoringProperties = monitoringProperties;
         this.configUpdater = configUpdater;
         this.errorHandler = errorHandler;
@@ -57,6 +61,7 @@ public class MonitoringController {
         this.cacheAndRetry = cacheAndRetry;
         this.degradationStrategy = degradationStrategy;
         this.circuitBreaker = circuitBreaker;
+        this.alertServiceProvider = alertServiceProvider;
     }
 
     /**
@@ -518,7 +523,22 @@ public class MonitoringController {
             ));
 
             return RouterResponse.success(overview);
-        }).onErrorResume(e -> {
+        })
+        // 近 24 小时安全告警数（#291）：告警服务在 alerts 关闭时不存在，此时不返回该键
+        .flatMap(response -> {
+            SecurityAlertService alertService = alertServiceProvider.getIfAvailable();
+            if (alertService == null || !response.isSuccess() || response.getData() == null) {
+                return Mono.just(response);
+            }
+            return alertService.countAlertsLast24Hours()
+                    .doOnNext(count -> response.getData().put("alertsLast24Hours", count))
+                    .onErrorResume(e -> {
+                        logger.warn("获取近 24 小时安全告警数失败: {}", e.getMessage());
+                        return Mono.empty();
+                    })
+                    .thenReturn(response);
+        })
+        .onErrorResume(e -> {
             logger.error("获取监控概览失败: {}", e.getMessage());
             return Mono.just(RouterResponse.<Map<String, Object>>error("获取监控概览失败"));
         });
