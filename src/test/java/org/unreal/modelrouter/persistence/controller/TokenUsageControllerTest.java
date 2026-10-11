@@ -12,6 +12,10 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.unreal.modelrouter.auth.security.model.ApiKeyAuthentication;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.monitor.dto.TokenUsageRecordDTO;
 import org.unreal.modelrouter.monitor.dto.TokenUsageStatisticsDTO;
@@ -85,7 +89,7 @@ class TokenUsageControllerTest {
             doNothing().when(tokenUsageService).recordTokenUsage(any());
 
             // When
-            ResponseEntity<RouterResponse<Void>> result = controller.recordTokenUsage(testRecord);
+            ResponseEntity<RouterResponse<Void>> result = controller.recordTokenUsage(testRecord, null);
 
             // Then
             assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -107,11 +111,105 @@ class TokenUsageControllerTest {
             doNothing().when(tokenUsageService).recordTokenUsageBatch(anyList());
 
             // When
-            ResponseEntity<RouterResponse<Void>> result = controller.recordTokenUsageBatch(List.of(testRecord));
+            ResponseEntity<RouterResponse<Void>> result = controller.recordTokenUsageBatch(List.of(testRecord), null);
 
             // Then
             assertEquals(HttpStatus.OK, result.getStatusCode());
             assertTrue(result.getBody().isSuccess());
+        }
+    }
+
+    // ==================== 写入属主校验测试（issue #254） ====================
+
+    @Nested
+    @DisplayName("POST /api/token-usage/record[/batch] - 属主校验（issue #254）")
+    class OwnershipTests {
+
+        private Authentication apiKeyOf(final String keyId) {
+            return new ApiKeyAuthentication(keyId, "sk-test", List.of("chat"));
+        }
+
+        private Authentication jwtPrincipal() {
+            return new UsernamePasswordAuthenticationToken(
+                    "admin", null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        }
+
+        @Test
+        @DisplayName("API Key 主体上报他人 apiKeyId：403 且不落库")
+        void apiKeyClaimingOtherKeyId_isRejected() {
+            testRecord.setApiKeyId("other-key");
+
+            final ResponseEntity<RouterResponse<Void>> result =
+                    controller.recordTokenUsage(testRecord, apiKeyOf("my-key"));
+
+            assertEquals(HttpStatus.FORBIDDEN, result.getStatusCode());
+            assertFalse(result.getBody().isSuccess());
+            verify(tokenUsageService, never()).recordTokenUsage(any());
+        }
+
+        @Test
+        @DisplayName("API Key 主体上报自身 apiKeyId：放行")
+        void apiKeyClaimingOwnKeyId_isAccepted() {
+            testRecord.setApiKeyId("my-key");
+
+            final ResponseEntity<RouterResponse<Void>> result =
+                    controller.recordTokenUsage(testRecord, apiKeyOf("my-key"));
+
+            assertEquals(HttpStatus.OK, result.getStatusCode());
+            verify(tokenUsageService).recordTokenUsage(testRecord);
+        }
+
+        @Test
+        @DisplayName("API Key 主体未声明 apiKeyId：放行（无从矛盾）")
+        void apiKeyWithoutClaimedKeyId_isAccepted() {
+            testRecord.setApiKeyId(null);
+
+            final ResponseEntity<RouterResponse<Void>> result =
+                    controller.recordTokenUsage(testRecord, apiKeyOf("my-key"));
+
+            assertEquals(HttpStatus.OK, result.getStatusCode());
+            verify(tokenUsageService).recordTokenUsage(testRecord);
+        }
+
+        @Test
+        @DisplayName("非 API Key 主体（JWT）声明他人 apiKeyId：保持既有行为（放行）")
+        void jwtPrincipalClaimingOtherKeyId_isAcceptedForNow() {
+            testRecord.setApiKeyId("other-key");
+
+            final ResponseEntity<RouterResponse<Void>> result =
+                    controller.recordTokenUsage(testRecord, jwtPrincipal());
+
+            assertEquals(HttpStatus.OK, result.getStatusCode(),
+                    "管理面代报属未定义的调用形态，本次刻意不收紧");
+            verify(tokenUsageService).recordTokenUsage(testRecord);
+        }
+
+        @Test
+        @DisplayName("批量写入中任一条声明他人 apiKeyId：整批 403 且不落库")
+        void batchWithAnyForeignKeyId_isRejectedEntirely() {
+            final TokenUsageRecordDTO own = new TokenUsageRecordDTO();
+            own.setApiKeyId("my-key");
+            final TokenUsageRecordDTO foreign = new TokenUsageRecordDTO();
+            foreign.setApiKeyId("other-key");
+
+            final ResponseEntity<RouterResponse<Void>> result =
+                    controller.recordTokenUsageBatch(List.of(own, foreign), apiKeyOf("my-key"));
+
+            assertEquals(HttpStatus.FORBIDDEN, result.getStatusCode());
+            verify(tokenUsageService, never()).recordTokenUsageBatch(anyList());
+        }
+
+        @Test
+        @DisplayName("批量写入全部为自身 apiKeyId：放行")
+        void batchWithOwnKeyIds_isAccepted() {
+            final TokenUsageRecordDTO own = new TokenUsageRecordDTO();
+            own.setApiKeyId("my-key");
+
+            final ResponseEntity<RouterResponse<Void>> result =
+                    controller.recordTokenUsageBatch(List.of(own), apiKeyOf("my-key"));
+
+            assertEquals(HttpStatus.OK, result.getStatusCode());
+            verify(tokenUsageService).recordTokenUsageBatch(anyList());
         }
     }
 
