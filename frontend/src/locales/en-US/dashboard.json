@@ -32,6 +32,7 @@
     "errorInstanceCount": "Unhealthy Instances",
     "accountQuantity": "Accounts",
     "exceptionSummary": "Exceptions / Alerts Summary",
+    "securityAlertsLast24h": "Security alerts (24h): {count}",
     "allExceptions": "All Exceptions",
     "noException": "No exceptions — the system is running normally",
     "time": "Time",

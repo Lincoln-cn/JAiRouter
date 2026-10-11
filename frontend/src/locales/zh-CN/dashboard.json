@@ -32,6 +32,7 @@
     "errorInstanceCount": "异常实例",
     "accountQuantity": "账号数量",
     "exceptionSummary": "异常 / 告警摘要",
+    "securityAlertsLast24h": "近 24 小时安全告警 {count} 次",
     "allExceptions": "全部异常",
     "noException": "暂无异常，系统运行正常",
     "time": "时间",

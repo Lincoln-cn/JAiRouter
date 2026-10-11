@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
 import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.config.core.MonitoringProperties;
@@ -19,7 +20,9 @@ import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsDegradati
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MonitoringHealthChecker;
 import org.unreal.modelrouter.monitor.monitoring.config.DynamicMonitoringConfigUpdater;
 import org.unreal.modelrouter.monitor.monitoring.error.MetricsErrorHandler;
+import org.unreal.modelrouter.monitor.monitoring.security.SecurityAlertService;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
@@ -66,6 +69,12 @@ class MonitoringControllerTest {
 
     @Mock
     private MetricsCircuitBreaker circuitBreaker;
+
+    @Mock
+    private ObjectProvider<SecurityAlertService> alertServiceProvider;
+
+    @Mock
+    private SecurityAlertService securityAlertService;
 
     @InjectMocks
     private MonitoringController controller;
@@ -509,6 +518,65 @@ class MonitoringControllerTest {
                         assertNotNull(response.getData());
                     })
                     .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("MONITOR-014: 概览包含近 24 小时安全告警数（#291）")
+        void testGetMonitoringOverview_includesSecurityAlertsLast24h() {
+            stubOverviewDependencies();
+            when(alertServiceProvider.getIfAvailable()).thenReturn(securityAlertService);
+            when(securityAlertService.countAlertsLast24Hours()).thenReturn(Mono.just(3L));
+
+            StepVerifier.create(controller.getMonitoringOverview())
+                    .assertNext(response -> {
+                        assertTrue(response.isSuccess());
+                        assertEquals(3L, response.getData().get("alertsLast24Hours"));
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("MONITOR-015: 告警服务未装配时不返回该键（alerts 关闭的部署形态）")
+        void testGetMonitoringOverview_withoutAlertService_omitsKey() {
+            stubOverviewDependencies();
+            when(alertServiceProvider.getIfAvailable()).thenReturn(null);
+
+            StepVerifier.create(controller.getMonitoringOverview())
+                    .assertNext(response -> {
+                        assertTrue(response.isSuccess());
+                        assertFalse(response.getData().containsKey("alertsLast24Hours"));
+                    })
+                    .verifyComplete();
+        }
+
+        private void stubOverviewDependencies() {
+            MonitoringHealthChecker.HealthCheckResult healthResult = mock(MonitoringHealthChecker.HealthCheckResult.class);
+            when(healthResult.isHealthy()).thenReturn(true);
+            when(healthResult.getDetails()).thenReturn(new HashMap<>());
+            when(healthChecker.performHealthCheck()).thenReturn(healthResult);
+
+            MetricsErrorHandler.MetricsErrorStats errorStats = mock(MetricsErrorHandler.MetricsErrorStats.class);
+            when(errorStats.getActiveErrorComponents()).thenReturn(0);
+            when(errorStats.getDegradedComponents()).thenReturn(0);
+            when(errorStats.getTotalErrors()).thenReturn(0);
+            when(errorHandler.getErrorStats()).thenReturn(errorStats);
+
+            MetricsDegradationStrategy.DegradationStatus degradationStatus =
+                    mock(MetricsDegradationStrategy.DegradationStatus.class);
+            when(degradationStatus.getLevel()).thenReturn(MetricsDegradationStrategy.DegradationLevel.NONE);
+            when(degradationStatus.getSamplingRate()).thenReturn(1.0);
+            when(degradationStatus.isAutoModeEnabled()).thenReturn(true);
+            when(degradationStrategy.getDegradationStatus()).thenReturn(degradationStatus);
+
+            MetricsCacheAndRetry.CacheStats cacheStats = mock(MetricsCacheAndRetry.CacheStats.class);
+            when(cacheStats.getUsageRatio()).thenReturn(0.1);
+            when(cacheStats.getActiveRetries()).thenReturn(0);
+            when(cacheAndRetry.getCacheStats()).thenReturn(cacheStats);
+
+            MetricsCircuitBreaker.CircuitBreakerStats cbStats = mock(MetricsCircuitBreaker.CircuitBreakerStats.class);
+            when(cbStats.getState()).thenReturn("CLOSED");
+            when(cbStats.getFailureRate()).thenReturn(0.0);
+            when(circuitBreaker.getStats()).thenReturn(cbStats);
         }
     }
 }

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
+import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.common.dto.AuditEventType;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -181,7 +183,42 @@ public class SecurityAlertService {
             log.warn("安全告警触发: type={}, title={}, severity={}, description={}, data={}",
                     alertType, title, severity, description, alertData);
 
-        }).subscribeOn(Schedulers.boundedElastic()).then();
+        })
+                // 另落一条 SECURITY_ALERT 审计事件：告警本身成为可查询记录（#291 的「近 24h 告警数」即由此计数）
+                .then(auditService.recordEvent(buildAlertEvent(alertType, title, description, severity, alertData)))
+                .subscribeOn(Schedulers.boundedElastic())
+                .then();
+    }
+
+    /**
+     * 近 24 小时触发的安全告警条数（数据源 = 告警落下的 {@code SECURITY_ALERT} 审计事件）。
+     *
+     * <p>在存储侧计数，因此不受「一次取回多少条」限制，多副本看到的也是同一个数。</p>
+     */
+    public Mono<Long> countAlertsLast24Hours() {
+        return auditService.countEvents(LocalDateTime.now().minusHours(24), LocalDateTime.now(),
+                List.of(AuditEventType.SECURITY_ALERT), null, null);
+    }
+
+    private static SecurityAuditEvent buildAlertEvent(final String alertType, final String title,
+                                                      final String description, final String severity,
+                                                      final Map<String, Object> alertData) {
+        final Map<String, Object> data = new HashMap<>();
+        data.put("title", title);
+        data.put("description", description);
+        data.put("severity", severity);
+        if (alertData != null) {
+            data.putAll(alertData);
+        }
+
+        return SecurityAuditEvent.builder()
+                .eventId(UUID.randomUUID().toString())
+                .eventType(AuditEventType.SECURITY_ALERT.name())
+                .action(alertType)
+                .success(true)
+                .timestamp(LocalDateTime.now())
+                .additionalData(data)
+                .build();
     }
     
     /**
