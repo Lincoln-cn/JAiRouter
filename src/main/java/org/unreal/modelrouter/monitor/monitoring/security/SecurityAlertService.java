@@ -3,10 +3,8 @@ package org.unreal.modelrouter.monitor.monitoring.security;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
-import org.unreal.modelrouter.auth.security.model.SecurityAlertEvent;
 import org.unreal.modelrouter.common.dto.AuditEventType;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -16,11 +14,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 安全告警服务
- * 实现安全事件的实时告警机制
+ *
+ * <p><b>出口契约（#287 定案）</b>：告警的唯一出口是 <b>Micrometer 指标 + WARN 日志</b>
+ * （指标 {@code jairouter.security.violations}，由 {@link SecurityMetrics#recordSecurityViolation} 记录），
+ * 外部通知由 Prometheus Alertmanager / 日志平台承担。因此这里<b>不再发布仓内事件</b>——
+ * 此前发布的 {@code SecurityAlertEvent} 全仓没有订阅方，只是一圈没有接收方的同步调用。</p>
  */
 @Slf4j
 @Service
@@ -30,7 +31,6 @@ public class SecurityAlertService {
     
     private final SecurityAuditService auditService;
     private final SecurityMetrics securityMetrics;
-    private final ApplicationEventPublisher eventPublisher;
     
     // 告警阈值配置
     private static final int AUTH_FAILURE_THRESHOLD = 5; // 5分钟内认证失败次数
@@ -54,9 +54,8 @@ public class SecurityAlertService {
             AuditEventType.JWT_TOKEN_EXPIRED
     );
     
-    // 告警状态跟踪
+    // 告警状态跟踪（冷却用）
     private final ConcurrentHashMap<String, LocalDateTime> lastAlertTimes = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, AtomicLong> alertCounts = new ConcurrentHashMap<>();
     
     // 告警冷却时间（分钟）
     private static final int ALERT_COOLDOWN_MINUTES = 15;
@@ -183,31 +182,14 @@ public class SecurityAlertService {
         }
         
         return Mono.fromRunnable(() -> {
-            // 更新告警状态
+            // 更新告警状态（冷却用）
             lastAlertTimes.put(alertKey, now);
-            alertCounts.computeIfAbsent(alertKey, k -> new AtomicLong(0)).incrementAndGet();
-            
-            // 创建告警事件
-            SecurityAlertEvent alertEvent = SecurityAlertEvent.builder()
-                    .alertId(java.util.UUID.randomUUID().toString())
-                    .alertType(alertType)
-                    .title(title)
-                    .description(description)
-                    .severity(severity)
-                    .timestamp(now)
-                    .alertData(alertData)
-                    .build();
-            
-            // 发布告警事件
-            eventPublisher.publishEvent(alertEvent);
-            
-            // 记录安全违规指标
+
+            // 出口 = 指标 + 日志（#287 契约）：明细随日志进日志平台，计数进 Prometheus
             securityMetrics.recordSecurityViolation(alertType, severity);
-            
-            // 记录告警日志
-            log.warn("安全告警触发: type={}, title={}, severity={}, description={}", 
-                    alertType, title, severity, description);
-            
+            log.warn("安全告警触发: type={}, title={}, severity={}, description={}, data={}",
+                    alertType, title, severity, description, alertData);
+
         }).subscribeOn(Schedulers.boundedElastic()).then();
     }
     
@@ -276,39 +258,5 @@ public class SecurityAlertService {
         }
         
         return "****";
-    }
-    
-    /**
-     * 获取告警统计信息
-     */
-    public Map<String, Object> getAlertStatistics() {
-        Map<String, Object> stats = new HashMap<>();
-        
-        // 告警计数统计
-        Map<String, Long> alertCounts = new HashMap<>();
-        this.alertCounts.forEach((key, value) -> alertCounts.put(key, value.get()));
-        stats.put("alertCounts", alertCounts);
-        
-        // 最近告警时间
-        Map<String, LocalDateTime> lastAlerts = new HashMap<>(lastAlertTimes);
-        stats.put("lastAlertTimes", lastAlerts);
-        
-        // 活跃告警数（过去24小时内的告警）
-        LocalDateTime yesterday = LocalDateTime.now().minusHours(24);
-        long activeAlerts = lastAlertTimes.values().stream()
-                .filter(time -> time.isAfter(yesterday))
-                .count();
-        stats.put("activeAlertsLast24Hours", activeAlerts);
-        
-        return stats;
-    }
-    
-    /**
-     * 重置告警统计
-     */
-    public void resetAlertStatistics() {
-        alertCounts.clear();
-        lastAlertTimes.clear();
-        log.info("告警统计已重置");
     }
 }
