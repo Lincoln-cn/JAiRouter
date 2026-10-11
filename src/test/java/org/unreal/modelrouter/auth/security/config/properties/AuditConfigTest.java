@@ -161,41 +161,6 @@ class AuditConfigTest {
     }
 
     @Nested
-    @DisplayName("告警配置测试")
-    class AlertConfigTests {
-
-        @Test
-        @DisplayName("告警配置默认值")
-        void testAlertConfigDefaults() {
-            AuditConfig.AlertConfig alertConfig = auditConfig.getAlert();
-
-            assertTrue(alertConfig.isEnabled());
-            assertEquals(5, alertConfig.getAuthFailureThreshold());
-            assertEquals(5, alertConfig.getAuthFailureWindowMinutes());
-            assertEquals(10, alertConfig.getSuspiciousIpThreshold());
-            assertEquals(10, alertConfig.getSuspiciousIpWindowMinutes());
-            assertEquals(15, alertConfig.getAlertCooldownMinutes());
-            assertFalse(alertConfig.isEnableNotification());
-            assertEquals("", alertConfig.getNotificationChannel());
-        }
-
-        @Test
-        @DisplayName("设置告警配置")
-        void testSetAlertConfig() {
-            AuditConfig.AlertConfig alertConfig = new AuditConfig.AlertConfig();
-            alertConfig.setEnabled(false);
-            alertConfig.setAuthFailureThreshold(10);
-            alertConfig.setAuthFailureWindowMinutes(10);
-
-            auditConfig.setAlert(alertConfig);
-
-            assertFalse(auditConfig.getAlert().isEnabled());
-            assertEquals(10, auditConfig.getAlert().getAuthFailureThreshold());
-            assertEquals(10, auditConfig.getAlert().getAuthFailureWindowMinutes());
-        }
-    }
-
-    @Nested
     @DisplayName("导出配置测试")
     class ExportConfigTests {
 

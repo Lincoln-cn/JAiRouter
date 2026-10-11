@@ -172,43 +172,4 @@ public class AuditLogCleanupTask {
                 .doOnError(e -> log.error("生成每日审计报告失败", e))
                 .subscribe();
     }
-
-    /**
-     * 检查并触发安全告警
-     */
-    @Scheduled(cron = "0 */5 * * * *")  // 每5分钟检查一次
-    public void checkSecurityAlerts() {
-        if (!auditConfig.getAlert().isEnabled()) {
-            return;
-        }
-
-        // 告警会被推送，属外部可观测副作用：多副本下只让一个副本检查并触发
-        if (!taskLock.tryAcquire("audit.security-alerts", Duration.ofMinutes(5))) {
-            return;
-        }
-
-        log.debug("执行安全告警检查");
-
-        // 检查认证失败阈值
-        auditService.shouldTriggerAlert(
-                "AUTHENTICATION_FAILED",
-                auditConfig.getAlert().getAuthFailureWindowMinutes(),
-                auditConfig.getAlert().getAuthFailureThreshold()
-        ).doOnNext(shouldAlert -> {
-            if (shouldAlert) {
-                log.warn("检测到认证失败异常，可能存在安全风险");
-            }
-        }).subscribe();
-
-        // 检查可疑活动
-        auditService.shouldTriggerAlert(
-                "SUSPICIOUS_ACTIVITY",
-                10,  // 10分钟窗口
-                3    // 3次可疑活动
-        ).doOnNext(shouldAlert -> {
-            if (shouldAlert) {
-                log.warn("检测到可疑活动增加");
-            }
-        }).subscribe();
-    }
 }

@@ -231,72 +231,6 @@ class AuditLogCleanupTaskTest {
     }
 
     @Nested
-    @DisplayName("checkSecurityAlerts 测试")
-    class CheckSecurityAlertsTests {
-
-        @Test
-        @DisplayName("检查安全告警 - 告警启用")
-        void testCheckSecurityAlerts_AlertEnabled() {
-            // Arrange
-            auditConfig.getAlert().setEnabled(true);
-            when(auditService.shouldTriggerAlert(anyString(), anyInt(), anyInt()))
-                    .thenReturn(Mono.just(false));
-
-            // Act
-            cleanupTask.checkSecurityAlerts();
-
-            // Assert
-            verify(auditService, atLeastOnce()).shouldTriggerAlert(anyString(), anyInt(), anyInt());
-        }
-
-        @Test
-        @DisplayName("检查安全告警 - 告警禁用")
-        void testCheckSecurityAlerts_AlertDisabled() {
-            // Arrange
-            auditConfig.getAlert().setEnabled(false);
-
-            // Act
-            cleanupTask.checkSecurityAlerts();
-
-            // Assert
-            verify(auditService, never()).shouldTriggerAlert(anyString(), anyInt(), anyInt());
-        }
-
-        @Test
-        @DisplayName("检查安全告警 - 认证失败告警")
-        void testCheckSecurityAlerts_AuthFailureAlert() {
-            // Arrange
-            auditConfig.getAlert().setEnabled(true);
-            auditConfig.getAlert().setAuthFailureThreshold(5);
-            auditConfig.getAlert().setAuthFailureWindowMinutes(5);
-            
-            when(auditService.shouldTriggerAlert(anyString(), anyInt(), anyInt()))
-                    .thenReturn(Mono.just(true));
-
-            // Act
-            cleanupTask.checkSecurityAlerts();
-
-            // Assert
-            verify(auditService).shouldTriggerAlert(eq("AUTHENTICATION_FAILED"), anyInt(), anyInt());
-        }
-
-        @Test
-        @DisplayName("检查安全告警 - 可疑活动告警")
-        void testCheckSecurityAlerts_SuspiciousActivityAlert() {
-            // Arrange
-            auditConfig.getAlert().setEnabled(true);
-            when(auditService.shouldTriggerAlert(anyString(), anyInt(), anyInt()))
-                    .thenReturn(Mono.just(true));
-
-            // Act
-            cleanupTask.checkSecurityAlerts();
-
-            // Assert
-            verify(auditService).shouldTriggerAlert(eq("SUSPICIOUS_ACTIVITY"), eq(10), eq(3));
-        }
-    }
-
-    @Nested
     @DisplayName("配置测试")
     class ConfigurationTests {
 
@@ -315,15 +249,6 @@ class AuditLogCleanupTaskTest {
         void testUnknownRiskLevelUsesDefault() {
             // Assert
             assertEquals(90, auditConfig.getRetentionDaysByRiskLevel("UNKNOWN"));
-        }
-
-        @Test
-        @DisplayName("验证告警默认配置")
-        void testDefaultAlertConfig() {
-            // Assert
-            assertTrue(auditConfig.getAlert().isEnabled());
-            assertEquals(5, auditConfig.getAlert().getAuthFailureThreshold());
-            assertEquals(5, auditConfig.getAlert().getAuthFailureWindowMinutes());
         }
     }
 }

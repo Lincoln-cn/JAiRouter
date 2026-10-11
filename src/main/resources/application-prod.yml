@@ -77,21 +77,25 @@ jairouter:
 
     monitoring:
       enabled: true
+      # 安全告警（SecurityAlertService / SecurityAlertScheduler）：阈值语义 = 「窗口内计数」
+      # 原比率键（authentication-failure-rate 等）从未有实现，已移除；
+      # 原 email / webhook 通知从未有实现，按出口契约（指标 + 日志）移除。
       alerts:
         enabled: true
+        window-check-interval-ms: 300000
         thresholds:
-          authentication-failure-rate: 0.05
-          sanitization-error-rate: 0.01
-          response-time-p99: 500
-          max-requests-per-minute: 5000
+          authentication-failure-count: 5
+          authentication-failure-window-minutes: 5
+          suspicious-ip-count: 10
+          suspicious-ip-window-minutes: 10
+          sanitization-count: 100
+          sanitization-window-minutes: 60
+          jwt-failure-count: 20
+          jwt-failure-window-minutes: 10
+          cooldown-minutes: 15
         notifications:
-          email:
+          log:
             enabled: true
-            recipients:
-              - "${SECURITY_ALERT_EMAIL:}"
-          webhook:
-            enabled: true
-            url: "${SECURITY_ALERT_WEBHOOK:}"
 
     # 性能配置（生产环境优化）
     performance:

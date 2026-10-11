@@ -101,20 +101,24 @@ jairouter:
           by-event-type: true
           by-user: true
           by-ip: true
+      # 安全告警（SecurityAlertService / SecurityAlertScheduler）
+      # 阈值语义 = 「窗口内计数」，不是比率；原 authentication-failure-rate 等比率键从未有实现，已移除
       alerts:
-        enabled: false
+        enabled: true
+        # 窗口聚合型检查（脱敏异常增长 / JWT 异常活动）的间隔
+        window-check-interval-ms: 300000
         thresholds:
-          authentication-failure-rate: 0.1
-          sanitization-error-rate: 0.05
-          response-time-p99: 1000
-          max-requests-per-minute: 1000
+          authentication-failure-count: 5
+          authentication-failure-window-minutes: 5
+          suspicious-ip-count: 10
+          suspicious-ip-window-minutes: 10
+          sanitization-count: 100
+          sanitization-window-minutes: 60
+          jwt-failure-count: 20
+          jwt-failure-window-minutes: 10
+          cooldown-minutes: 15
+        # 出口契约：告警只进 Prometheus 指标与结构化日志，外部通知由 Alertmanager / 日志平台承担
         notifications:
-          email:
-            enabled: false
-            recipients: []
-          webhook:
-            enabled: false
-            url: ""
           log:
             enabled: true
 

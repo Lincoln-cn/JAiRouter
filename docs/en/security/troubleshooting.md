@@ -531,7 +531,7 @@ curl http://localhost:8080/actuator/prometheus
 
 #### Solutions
 
-1. **Check alert configuration**
+1. **Confirm alerts are enabled** (on by default; when set to `false` neither alert bean is created)
 ```yaml
 jairouter:
   security:
@@ -539,26 +539,24 @@ jairouter:
       alerts:
         enabled: true
         thresholds:
-          authentication-failure-rate: 0.1
+          # thresholds are counts within a window, not rates
+          authentication-failure-count: 5
+          authentication-failure-window-minutes: 5
 ```
 
-2. **Test alert notification**
-```bash
-curl -X POST -H "Authorization: Bearer admin-token" \
-     http://localhost:8080/admin/security/alerts/test
-```
+2. **Confirm the criteria can hold** — the four checks are driven differently:
+   - authentication-failure spikes and suspicious IPs are **event driven** (checked on the auth-failure path);
+   - sanitization growth (60-minute window) and JWT failures (10-minute window) are **checked on a schedule**, interval = `window-check-interval-ms` (default 5 minutes).
 
-3. **Check notification configuration**
-```yaml
-jairouter:
-  security:
-    monitoring:
-      alerts:
-        notifications:
-          email:
-            enabled: true
-            recipients: ["admin@example.com"]
-```
+   Counting happens in the store, so it is not limited by how many rows are fetched; if the audit table holds no events of the relevant type (e.g. sanitization events not stored as `DATA_SANITIZATION`), the criterion stays at 0.
+
+3. **Confirm the outlet** — alerts only reach **metrics and logs**; there is no in-repo email/webhook delivery:
+   - metric `jairouter.security.violations` (tags `violationType` / `severity`), scrape `GET /actuator/prometheus`;
+   - log line `安全告警触发: type=..., severity=...` (WARN level).
+
+   Repeated hits of the same alert type are suppressed by `cooldown-minutes` (default 15).
+
+4. **Multi-replica deployments**: the window-aggregate checks are guarded by a distributed lock (`ScheduledTaskLock`, key `security.alerts.window-checks`); replicas that do not hold the lock stay silent — that is expected.
 
 ## Debugging Tools and Tips
 

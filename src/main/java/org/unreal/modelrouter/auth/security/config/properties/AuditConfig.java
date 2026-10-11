@@ -91,11 +91,6 @@ public class AuditConfig {
     private Map<String, Integer> retentionByEventType = new HashMap<>();
 
     /**
-     * 告警配置
-     */
-    private AlertConfig alert = new AlertConfig();
-
-    /**
      * 导出配置
      */
     private ExportConfig export = new ExportConfig();
@@ -124,52 +119,6 @@ public class AuditConfig {
          * 每分钟可疑活动阈值
          */
         private int suspiciousActivitiesPerMinute = 5;
-    }
-
-    /**
-     * 告警配置
-     */
-    @Data
-    public static class AlertConfig {
-        /**
-         * 是否启用告警
-         */
-        private boolean enabled = true;
-
-        /**
-         * 认证失败阈值
-         */
-        private int authFailureThreshold = 5;
-
-        /**
-         * 认证失败时间窗口（分钟）
-         */
-        private int authFailureWindowMinutes = 5;
-
-        /**
-         * 可疑IP阈值
-         */
-        private int suspiciousIpThreshold = 10;
-
-        /**
-         * 可疑IP时间窗口（分钟）
-         */
-        private int suspiciousIpWindowMinutes = 10;
-
-        /**
-         * 告警冷却时间（分钟）
-         */
-        private int alertCooldownMinutes = 15;
-
-        /**
-         * 是否发送通知
-         */
-        private boolean enableNotification = false;
-
-        /**
-         * 通知渠道: email, webhook, slack
-         */
-        private String notificationChannel = "";
     }
 
     /**

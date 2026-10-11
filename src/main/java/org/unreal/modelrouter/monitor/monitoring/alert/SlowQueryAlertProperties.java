@@ -104,8 +104,5 @@ public final class SlowQueryAlertProperties {
     public static final class NotificationConfig {
         private boolean enablePrometheusMetrics = true;
         private boolean enableStructuredLogging = true;
-        private boolean enableWebhook = false;
-        private String webhookUrl;
-        private Map<String, String> webhookHeaders = new HashMap<>();
     }
 }

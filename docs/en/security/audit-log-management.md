@@ -266,17 +266,29 @@ curl -X POST "http://localhost:8080/api/security/audit-logs/export" \
 
 ### Alert Configuration
 
+Security alerts are configured under `jairouter.security.monitoring.alerts` (the
+`jairouter.security.audit-log.alerts.*` prefix shown here previously does not exist in code):
+
 ```yaml
 jairouter:
   security:
-    audit-log:
+    monitoring:
       alerts:
         enabled: true
-        # Too many login failures
-        login-failure-threshold: 5
-        # Configuration change frequency too high
-        config-change-rate-threshold: 10
+        thresholds:
+          # thresholds are counts within a window
+          authentication-failure-count: 5
+          authentication-failure-window-minutes: 5
+          suspicious-ip-count: 10
+          suspicious-ip-window-minutes: 10
+          sanitization-count: 100
+          sanitization-window-minutes: 60
+          jwt-failure-count: 20
+          jwt-failure-window-minutes: 10
+          cooldown-minutes: 15
 ```
+
+Alerts reach Prometheus (`jairouter.security.violations`) and WARN logs (`安全告警触发: type=..., severity=...`).
 
 ## Best Practices
 
