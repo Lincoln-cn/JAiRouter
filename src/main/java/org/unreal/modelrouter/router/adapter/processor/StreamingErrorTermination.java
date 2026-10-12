@@ -82,6 +82,17 @@ final class StreamingErrorTermination {
         }
     }
 
+    /**
+     * 是否属于需要「按下游状态保真」的客户端面（{@code /v1/**}，含 Anthropic Messages 面）。
+     *
+     * <p>#257 A：这些面上网关应在订阅响应体之前先看下游状态，把 4xx/5xx 原样结束掉
+     * （错误体由既有 {@link V1ErrorBodyMapper} 机制产出）；其余路径（legacy {@code /api/**}）
+     * 保持「200 + 流内终止」的既有语义不变。</p>
+     */
+    static boolean isV1Face(final ServerHttpRequest httpRequest) {
+        return V1ErrorBodyMapper.isV1Path(clientPathOf(httpRequest));
+    }
+
     /** OpenAI 面 = {@code /v1/**} 且非 Anthropic Messages 面 */
     private static boolean isOpenAiFace(final String clientPath) {
         return V1ErrorBodyMapper.isV1Path(clientPath) && !V1ErrorBodyMapper.isAnthropicPath(clientPath);

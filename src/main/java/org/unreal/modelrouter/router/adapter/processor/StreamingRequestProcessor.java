@@ -5,11 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.auth.security.quota.QuotaReservation;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.unreal.modelrouter.auth.sanitization.SanitizationService;
@@ -222,21 +225,12 @@ public class StreamingRequestProcessor {
             requestSpec = requestSpec.header("Authorization", authorization);
         }
 
-        // 使用 ServerSentEvent 包装每个数据块，确保 SSE 格式正确
-        Flux<ServerSentEvent<String>> streamResponse = requestSpec
-                .bodyValue(rewriteModelField(request, instanceName))
-                .retrieve()
-                .onStatus(org.springframework.http.HttpStatusCode::is5xxServerError, clientResponse -> {
-                    logger.error("流式请求5xx错误: instance={}, status={}", instanceName, clientResponse.statusCode());
-                    return Mono.error(new org.springframework.web.server.ResponseStatusException(
-                            clientResponse.statusCode(), "下游服务错误"));
-                })
-                .onStatus(org.springframework.http.HttpStatusCode::is4xxClientError, clientResponse -> {
-                    logger.error("流式请求4xx错误: instance={}, status={}", instanceName, clientResponse.statusCode());
-                    return Mono.error(new org.springframework.web.server.ResponseStatusException(
-                            clientResponse.statusCode(), "请求错误"));
-                })
-                .bodyToFlux(String.class)
+        // 使用 ServerSentEvent 包装每个数据块，确保 SSE 格式正确。
+        // v3.2.x (#257 A)：后处理链抽成局部 lambda —— /v1 面需要在**订阅响应体之前**先看下游状态，
+        // 因此链路入口从「固定 retrieve()」改为「由调用方传入原始 chunk 流」；
+        // legacy /api/** 面仍以同样的 retrieve().onStatus(...) 进入（见下方分支），语义逐字节不变。
+        final Function<Flux<String>, Flux<ServerSentEvent<String>>> decorateChunks = rawChunks -> {
+            Flux<ServerSentEvent<String>> streamResponse = rawChunks
                 .map(chunk -> {
                     // 提取 usage 信息和累积内容。
                     // v3.2.3: contentBuilder 与 doOnCancel/doOnError 的缓冲释放共享监视器
@@ -380,9 +374,47 @@ public class StreamingRequestProcessor {
                 // （不补 [DONE]：它是「正常结束」的语汇，补上会让截断被读成成功；详见 StreamingErrorTermination）
                 .onErrorResume(throwable -> StreamingErrorTermination.terminate(throwable, httpRequest, objectMapper));
 
-        return Mono.just(org.springframework.http.ResponseEntity.ok()
+            return streamResponse;
+        };
+
+        if (StreamingErrorTermination.isV1Face(httpRequest)) {
+            // #257 A：先取下游响应、再决定网关回什么 —— 下游 4xx/5xx 不再被统一成「500 + 空体」，
+            // 而是按真实状态结束（错误体由 /v1 面的既有错误体协议化机制产出）。
+            // 实测依据：WebFlux 层不会在首块之前提交 200（StreamingPreCommitErrorProbeWebFluxTest 情形 A）。
+            return requestSpec.bodyValue(rewriteModelField(request, instanceName))
+                    .exchangeToMono(clientResponse -> {
+                        if (clientResponse.statusCode().isError()) {
+                            logger.warn("流式请求下游错误: instance={}, status={}",
+                                    instanceName, clientResponse.statusCode());
+                            return clientResponse.releaseBody()
+                                    .then(Mono.error(new ResponseStatusException(
+                                            clientResponse.statusCode(), "下游服务错误")));
+                        }
+                        return Mono.just(ResponseEntity.ok()
+                                .contentType(MediaType.TEXT_EVENT_STREAM)
+                                .body(decorateChunks.apply(clientResponse.bodyToFlux(String.class))));
+                    });
+        }
+
+        // legacy /api/** 面（与 Anthropic 面之外的其余路径）：保持既有语义 —— 200 + 流，异常在流内终止
+        final Flux<ServerSentEvent<String>> legacyStream = decorateChunks.apply(requestSpec
+                .bodyValue(rewriteModelField(request, instanceName))
+                .retrieve()
+                .onStatus(HttpStatusCode::is5xxServerError, clientResponse -> {
+                    logger.error("流式请求5xx错误: instance={}, status={}", instanceName, clientResponse.statusCode());
+                    return Mono.error(new ResponseStatusException(
+                            clientResponse.statusCode(), "下游服务错误"));
+                })
+                .onStatus(HttpStatusCode::is4xxClientError, clientResponse -> {
+                    logger.error("流式请求4xx错误: instance={}, status={}", instanceName, clientResponse.statusCode());
+                    return Mono.error(new ResponseStatusException(
+                            clientResponse.statusCode(), "请求错误"));
+                })
+                .bodyToFlux(String.class));
+
+        return Mono.just(ResponseEntity.ok()
                 .contentType(MediaType.TEXT_EVENT_STREAM)
-                .body(streamResponse));
+                .body(legacyStream));
     }
 
     /**
