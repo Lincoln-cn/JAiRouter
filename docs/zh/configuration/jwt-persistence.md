@@ -108,10 +108,6 @@ jairouter:
       security-events:
         enabled: true
         suspicious-activity-detection: true
-        alert-thresholds:
-          failed-auth-per-minute: 10
-          token-revoke-per-minute: 5
-          api-key-usage-per-minute: 100
 
       # 审计存储配置
       storage:
@@ -198,10 +194,6 @@ jairouter:
       security-events:
         enabled: true
         suspicious-activity-detection: true
-        alert-thresholds:
-          failed-auth-per-minute: 20  # 生产环境更高阈值
-          token-revoke-per-minute: 10
-          api-key-usage-per-minute: 500
       storage:
         type: "file"
         # 生产环境考虑数据库存储

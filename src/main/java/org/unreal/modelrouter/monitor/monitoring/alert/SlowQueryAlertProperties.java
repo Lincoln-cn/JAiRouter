@@ -35,11 +35,6 @@ public final class SlowQueryAlertProperties {
     private Map<String, OperationConfig> operations = new HashMap<>();
     
     /**
-     * 告警通知配置
-     */
-    private NotificationConfig notification = new NotificationConfig();
-    
-    /**
      * 获取指定操作的告警配置
      * 
      * @param operationName 操作名称
@@ -95,14 +90,5 @@ public final class SlowQueryAlertProperties {
         private Set<String> enabledSeverities;
         private Long suppressionWindowMs;
         private Integer maxAlertsPerHour;
-    }
-    
-    /**
-     * 通知配置
-     */
-    @Data
-    public static final class NotificationConfig {
-        private boolean enablePrometheusMetrics = true;
-        private boolean enableStructuredLogging = true;
     }
 }

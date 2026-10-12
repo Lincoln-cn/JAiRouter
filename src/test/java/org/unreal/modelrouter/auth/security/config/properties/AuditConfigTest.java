@@ -177,21 +177,6 @@ class AuditConfigTest {
     }
 
     @Nested
-    @DisplayName("告警阈值配置测试")
-    class AlertThresholdsTests {
-
-        @Test
-        @DisplayName("告警阈值默认值")
-        void testAlertThresholdsDefaults() {
-            AuditConfig.AlertThresholds thresholds = auditConfig.getAlertThresholds();
-
-            assertEquals(10, thresholds.getAuthFailuresPerMinute());
-            assertEquals(1000, thresholds.getSanitizationOperationsPerMinute());
-            assertEquals(5, thresholds.getSuspiciousActivitiesPerMinute());
-        }
-    }
-
-    @Nested
     @DisplayName("Setter测试")
     class SetterTests {
 

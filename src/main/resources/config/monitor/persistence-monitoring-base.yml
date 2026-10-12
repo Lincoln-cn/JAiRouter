@@ -83,20 +83,6 @@ jairouter:
             redis-connection-failures: 5
             memory-allocation-failures: 3
             storage-sync-failures: 10
-            
-          # 告警通知配置
-          notifications:
-            email:
-              enabled: false
-              recipients: []
-              subject-prefix: "[JWT-Persistence]"
-            webhook:
-              enabled: false
-              url: ""
-              timeout: 5000
-            log:
-              enabled: true
-              level: "WARN"
         
         # ========================================
         # 健康检查配置

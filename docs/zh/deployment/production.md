@@ -462,11 +462,6 @@ jairouter:
       retention-days: 365  # 生产环境长期保留
       alert-enabled: true
       
-      alert-thresholds:
-        auth-failures-per-minute: 5      # 生产环境更严格的阈值
-        sanitization-operations-per-minute: 200
-        suspicious-requests-per-minute: 10
-      
       event-types:
         authentication-success: false    # 生产环境不记录成功认证（减少日志量）
         sanitization-applied: false      # 生产环境不记录脱敏操作（减少日志量）

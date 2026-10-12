@@ -310,16 +310,6 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
         if (config.getRetentionDays() <= 0) {
             throw new IllegalArgumentException("审计日志保留天数必须大于0");
         }
-        
-        if (config.getAlertThresholds() != null) {
-            if (config.getAlertThresholds().getAuthFailuresPerMinute() <= 0) {
-                throw new IllegalArgumentException("认证失败告警阈值必须大于0");
-            }
-            
-            if (config.getAlertThresholds().getSanitizationOperationsPerMinute() <= 0) {
-                throw new IllegalArgumentException("脱敏操作告警阈值必须大于0");
-            }
-        }
     }
 
     /**

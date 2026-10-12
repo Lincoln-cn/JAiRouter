@@ -45,13 +45,6 @@ jairouter:
         enabled: true
         suspicious-activity-detection: true
         
-        # 安全事件阈值配置
-        alert-thresholds:
-          failed-auth-per-minute: 10
-          token-revoke-per-minute: 5
-          api-key-usage-per-minute: 100
-          suspicious-ip-requests: 20
-          
         # 可疑活动检测规则
         suspicious-patterns:
           multiple-failed-auth: true

@@ -66,9 +66,6 @@ jairouter:
       include-response-body: false
       retention-days: 90
       alert-enabled: true
-      alert-thresholds:
-        auth-failures-per-minute: 5
-        suspicious-requests-per-minute: 10
 
     sanitization:
       response:

@@ -25,12 +25,6 @@ jairouter:
       # 告警功能开关
       alert-enabled: false
       
-      # 告警阈值配置
-      alert-thresholds:
-        auth-failures-per-minute: 10
-        sanitization-operations-per-minute: 100
-        suspicious-requests-per-minute: 20
-      
       # 记录的事件类型
       event-types:
         authentication-success: false
