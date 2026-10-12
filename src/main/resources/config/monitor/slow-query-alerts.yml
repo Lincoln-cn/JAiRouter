@@ -69,10 +69,3 @@ jairouter:
         # 限流检查操作的慢查询告警配置
         rate_limit_check:
           enabled: false  # 通常限流检查应该很快，禁用告警
-      
-      # 告警通知配置
-      notification:
-        # 启用Prometheus指标（用于Prometheus告警规则）
-        enable-prometheus-metrics: true
-        # 启用结构化日志记录
-        enable-structured-logging: true

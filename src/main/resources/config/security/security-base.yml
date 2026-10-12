@@ -61,10 +61,6 @@ jairouter:
       include-response-body: false
       retention-days: 90
       alert-enabled: false
-      alert-thresholds:
-        auth-failures-per-minute: 10
-        sanitization-operations-per-minute: 100
-        suspicious-requests-per-minute: 20
       event-types:
         authentication-success: false
         authentication-failure: true

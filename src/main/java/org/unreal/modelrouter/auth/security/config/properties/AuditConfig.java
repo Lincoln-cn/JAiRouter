@@ -96,32 +96,6 @@ public class AuditConfig {
     private ExportConfig export = new ExportConfig();
 
     /**
-     * 告警阈值配置
-     */
-    private AlertThresholds alertThresholds = new AlertThresholds();
-
-    /**
-     * 告警阈值配置
-     */
-    @Data
-    public static class AlertThresholds {
-        /**
-         * 每分钟认证失败阈值
-         */
-        private int authFailuresPerMinute = 10;
-
-        /**
-         * 每分钟脱敏操作阈值
-         */
-        private int sanitizationOperationsPerMinute = 1000;
-
-        /**
-         * 每分钟可疑活动阈值
-         */
-        private int suspiciousActivitiesPerMinute = 5;
-    }
-
-    /**
      * 导出配置
      */
     @Data

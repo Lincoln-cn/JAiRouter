@@ -888,10 +888,6 @@ security:
     security-events:
       enabled: true
       suspicious-activity-detection: true
-      alert-thresholds:
-        failed-auth-per-minute: 20
-        token-revoke-per-minute: 10
-        api-key-usage-per-minute: 500
     
     # Audit storage configuration
     storage:

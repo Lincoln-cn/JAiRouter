@@ -10,7 +10,8 @@ import org.springframework.stereotype.Component;
  * <p>此前同一语义的阈值散落在三处：本服务的类内常量、{@code AuditConfig.AlertConfig}
  * （只被审计定时任务读取）、{@code AuditConfig.AlertThresholds}（只被运行时配置校验与回显），
  * 而 {@code security-base.yml} 里这块真正被文档化的 {@code jairouter.security.monitoring.alerts.*}
- * 反而没有任何绑定类。现在统一到这里：实现读本配置，其余重复来源已删除。</p>
+ * 反而没有任何绑定类。现在统一到这里：实现读本配置，其余重复来源已删除 ——
+ * {@code AuditConfig.AlertThresholds} 及其配置键随后由 issue #295 一并移除。</p>
  *
  * <p>语义是<b>窗口计数</b>（如「5 分钟内认证失败 5 次」），不是比率 —— 原配置块里的
  * {@code authentication-failure-rate} 等比率键从未有实现，已随本次统一移除。</p>

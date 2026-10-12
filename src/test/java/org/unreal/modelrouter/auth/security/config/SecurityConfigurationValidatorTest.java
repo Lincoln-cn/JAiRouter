@@ -296,7 +296,6 @@ class SecurityConfigurationValidatorTest {
         when(properties.getAudit()).thenReturn(auditConfig);
         when(auditConfig.getLogLevel()).thenReturn(logLevel);
         when(auditConfig.getRetentionDays()).thenReturn(retentionDays);
-        when(auditConfig.getAlertThresholds()).thenReturn(null);
 
         return properties;
     }

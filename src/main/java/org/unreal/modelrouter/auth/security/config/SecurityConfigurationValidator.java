@@ -351,28 +351,6 @@ public class SecurityConfigurationValidator {
         } else if (config.getRetentionDays() > 3650) {
             result.addWarning("审计日志保留天数超过10年，可能占用大量存储空间");
         }
-
-        // 验证告警阈值
-        if (config.getAlertThresholds() != null) {
-            validateAlertThresholds(config.getAlertThresholds(), result);
-        }
-    }
-
-    /**
-     * 验证告警阈值配置
-     */
-    private void validateAlertThresholds(final AuditConfig.AlertThresholds thresholds, final ValidationResult result) {
-        if (thresholds.getAuthFailuresPerMinute() <= 0) {
-            result.addError("认证失败告警阈值必须大于0");
-        } else if (thresholds.getAuthFailuresPerMinute() > 1000) {
-            result.addWarning("认证失败告警阈值过高，可能无法及时发现安全威胁");
-        }
-
-        if (thresholds.getSanitizationOperationsPerMinute() <= 0) {
-            result.addError("脱敏操作告警阈值必须大于0");
-        } else if (thresholds.getSanitizationOperationsPerMinute() > 10000) {
-            result.addWarning("脱敏操作告警阈值过高，可能无法及时发现异常");
-        }
     }
 
     /**
