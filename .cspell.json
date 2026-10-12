@@ -101,6 +101,7 @@
     "logging",
     "monitoring",
     "alerting",
+    "cooldown",
     "dashboard",
     "visualization",
     "analytics",
