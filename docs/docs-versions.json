@@ -2372,46 +2372,6 @@
   },
   "changes": [
     {
-      "FilePath": "QWEN.md",
-      "OldVersion": "1.0.3",
-      "NewVersion": "1.0.4",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-14T04:51:10.044224",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/index.md",
-      "OldVersion": "1.0.4",
-      "NewVersion": "1.0.5",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-14T04:51:10.166100",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/index.md",
-      "OldVersion": "1.0.5",
-      "NewVersion": "1.0.6",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-14T04:51:10.387157",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/reference/changelog.md",
-      "OldVersion": "1.0.6",
-      "NewVersion": "1.0.7",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-14T04:51:10.432467",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/reference/roadmap.md",
-      "OldVersion": "1.0.5",
-      "NewVersion": "1.0.6",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-14T04:51:10.445429",
-      "Description": "文档modified"
-    },
-    {
       "FilePath": "README-ZH.md",
       "OldVersion": "1.0.9",
       "NewVersion": "1.0.10",
@@ -7308,5 +7268,5 @@
       "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-11T13:48:54.869775"
+  "last_updated": "2026-10-12T08:37:02.052048"
 }
