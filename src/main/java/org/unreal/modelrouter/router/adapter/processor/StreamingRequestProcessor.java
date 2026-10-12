@@ -376,7 +376,9 @@ public class StreamingRequestProcessor {
                     releaseAccumulation(contentBuilder, transformedChunks);
                     QuotaReservation.settleFailure(quotaReservation);
                 })
-                .onErrorResume(throwable -> Flux.error(throwable));
+                // v3.2.x (#257): /v1 OpenAI 面在失败时先补一个协议形状 error 帧、再以异常终止
+                // （不补 [DONE]：它是「正常结束」的语汇，补上会让截断被读成成功；详见 StreamingErrorTermination）
+                .onErrorResume(throwable -> StreamingErrorTermination.terminate(throwable, httpRequest, objectMapper));
 
         return Mono.just(org.springframework.http.ResponseEntity.ok()
                 .contentType(MediaType.TEXT_EVENT_STREAM)
