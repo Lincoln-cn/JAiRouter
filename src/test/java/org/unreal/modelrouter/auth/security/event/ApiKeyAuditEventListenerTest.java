@@ -4,15 +4,22 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.unreal.modelrouter.auth.security.audit.ExtendedSecurityAuditService;
+import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.monitor.monitoring.security.SecurityAlertService;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -26,6 +33,9 @@ import static org.mockito.Mockito.when;
  * 实际都不会产生。本测试锁定新接线：认证失败/安全事件必须驱动「失败次数陡增」与「可疑 IP」两项检查。</p>
  *
  * <p>用例直接调用监听方法（绕过 {@code @Async} 代理），验证的是接线本身。</p>
+ *
+ * <p>另含 issue #301 的动态事件类型降级用例：本监听器从消息前缀里抠类型名，是唯一一处
+ * 「任意字符串 → 审计事件类型」的入口。</p>
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -35,15 +45,24 @@ class ApiKeyAuditEventListenerTest {
     @Mock
     private SecurityAlertService securityAlertService;
 
+    @Mock
+    private ExtendedSecurityAuditService extendedAuditService;
+
     private ApiKeyAuditEventListener listener;
 
     @BeforeEach
     void setUp() throws Exception {
         listener = new ApiKeyAuditEventListener();
         setField(listener, "securityAlertService", securityAlertService);
+        setField(listener, "extendedAuditService", extendedAuditService);
         when(securityAlertService.checkAuthenticationFailureAlert(anyString(), anyString()))
                 .thenReturn(Mono.empty());
         when(securityAlertService.checkSuspiciousIpAlert(anyString()))
+                .thenReturn(Mono.empty());
+        when(extendedAuditService.auditSecurityEvent(anyString(), any(), any(), any()))
+                .thenReturn(Mono.empty());
+        // 装配了审计服务后，「使用」路径也会真的写审计，需一并桩掉
+        when(extendedAuditService.auditApiKeyUsed(any(), any(), any(), anyBoolean()))
                 .thenReturn(Mono.empty());
     }
 
@@ -109,6 +128,40 @@ class ApiKeyAuditEventListenerTest {
                 "API_KEY_INVALID", "无效的API Key", null, "10.0.0.5"));
 
         verify(securityAlertService).checkSuspiciousIpAlert(eq("10.0.0.5"));
+    }
+
+    @Test
+    @DisplayName("issue #301：已知的动态类型名原样落库，且仍是可解析的枚举名")
+    void knownDynamicEventTypeIsPreserved() {
+        listener.onSecurityEvent(ApiKeyAuditEvent.securityEvent(
+                AuditEventType.API_KEY_INVALID.name(), "无效的API Key", null, "10.0.0.6"));
+
+        assertEquals(AuditEventType.API_KEY_INVALID, AuditEventType.valueOf(captureAuditEventType()));
+    }
+
+    @Test
+    @DisplayName("issue #301：未知前缀降级为 SUSPICIOUS_ACTIVITY，既不抛错也不丢事件")
+    void unknownPrefixDegradesToSuspiciousActivity() {
+        listener.onSecurityEvent(ApiKeyAuditEvent.securityEvent(
+                "SOMETHING_WEIRD", "自定义安全事件", null, "10.0.0.7"));
+
+        assertEquals(AuditEventType.SUSPICIOUS_ACTIVITY.name(), captureAuditEventType());
+    }
+
+    @Test
+    @DisplayName("issue #301：消息无 [#] 前缀时同样降级而非抛错")
+    void messageWithoutPrefixDegrades() {
+        listener.onSecurityEvent(new ApiKeyAuditEvent(
+                ApiKeyAuditEvent.EventType.SECURITY_EVENT, "key-1", "裸消息无前缀",
+                null, "10.0.0.8", null, false, Instant.now()));
+
+        assertEquals(AuditEventType.SUSPICIOUS_ACTIVITY.name(), captureAuditEventType());
+    }
+
+    private String captureAuditEventType() {
+        ArgumentCaptor<String> typeCaptor = ArgumentCaptor.forClass(String.class);
+        verify(extendedAuditService).auditSecurityEvent(typeCaptor.capture(), any(), any(), any());
+        return typeCaptor.getValue();
     }
 
     private static void setField(Object target, String name, Object value) throws Exception {

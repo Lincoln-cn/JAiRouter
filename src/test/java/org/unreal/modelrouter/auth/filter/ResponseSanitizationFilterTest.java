@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
@@ -14,9 +16,14 @@ import org.unreal.modelrouter.auth.sanitization.SanitizationService;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.config.properties.SanitizationConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
+import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
+import org.unreal.modelrouter.common.dto.AuditEventType;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -229,17 +236,20 @@ class ResponseSanitizationFilterTest {
     class AuditLogTests {
 
         @Test
-        @DisplayName("FILT-007: 审计日志 - 启用日志时记录脱敏事件")
+        @DisplayName("FILT-007: 审计日志 - 启用日志时记录脱敏事件，且事件类型可解析（issue #301）")
         void testAuditLogEnabled() {
             SanitizationConfig sanitizationConfig = mock(SanitizationConfig.class);
             SanitizationConfig.ResponseSanitization responseConfig = mock(SanitizationConfig.ResponseSanitization.class);
             when(securityProperties.getSanitization()).thenReturn(sanitizationConfig);
             when(sanitizationConfig.getResponse()).thenReturn(responseConfig);
+            // 此前这条用例没有 stub isEnabled()，Mockito 默认 false ⇒ filter() 在第一个 if 就返回，
+            // 装饰器从未挂上、审计事件从未产生，用例等于空跑（issue #301）
+            when(responseConfig.isEnabled()).thenReturn(true);
             when(responseConfig.isLogSanitization()).thenReturn(true);
+            when(responseConfig.isFailOnError()).thenReturn(false);
 
             when(sanitizationService.sanitizeResponse(anyString(), anyString()))
                     .thenReturn(Mono.just("sanitized"));
-            when(auditService.recordEvent(any())).thenReturn(Mono.empty());
 
             ResponseSanitizationFilter filterWithAudit = new ResponseSanitizationFilter(
                     sanitizationService, auditService, securityProperties);
@@ -249,12 +259,22 @@ class ResponseSanitizationFilterTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
+            exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
             WebFilterChain chain = mock(WebFilterChain.class);
-            when(chain.filter(any())).thenReturn(Mono.empty());
+            // 必须真的写一次响应体，否则装饰器上的 writeWith 不会被触发
+            when(chain.filter(any())).thenAnswer(invocation -> {
+                ServerWebExchange decorated = invocation.getArgument(0);
+                DataBuffer body = decorated.getResponse().bufferFactory()
+                        .wrap("{\"phone\":\"13800000000\"}".getBytes(StandardCharsets.UTF_8));
+                return decorated.getResponse().writeWith(Mono.just(body));
+            });
 
-            Mono<Void> result = filterWithAudit.filter(exchange, chain);
+            StepVerifier.create(filterWithAudit.filter(exchange, chain)).verifyComplete();
 
-            StepVerifier.create(result).verifyComplete();
+            ArgumentCaptor<SecurityAuditEvent> eventCaptor = ArgumentCaptor.forClass(SecurityAuditEvent.class);
+            verify(auditService).recordEvent(eventCaptor.capture());
+            assertEquals(AuditEventType.RESPONSE_SANITIZATION,
+                    AuditEventType.valueOf(eventCaptor.getValue().getEventType()));
         }
     }
 }

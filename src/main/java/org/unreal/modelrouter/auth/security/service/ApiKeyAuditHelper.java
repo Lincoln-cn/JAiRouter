@@ -2,6 +2,7 @@ package org.unreal.modelrouter.auth.security.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.unreal.modelrouter.auth.security.audit.ExtendedSecurityAuditService;
+import org.unreal.modelrouter.common.dto.AuditEventType;
 import reactor.core.publisher.Mono;
 
 /**
@@ -15,7 +16,7 @@ class ApiKeyAuditHelper {
                           final String importedBy, final String ipAddress,
                           final int successCount, final int failureCount) {
         if (auditService != null) {
-            auditService.auditSecurityEvent("API_KEY_BATCH_IMPORT",
+            auditService.auditSecurityEvent(AuditEventType.API_KEY_BATCH_IMPORT.name(),
                     "批量导入完成: 成功 " + successCount + ", 失败 " + failureCount, null, ipAddress)
                     .onErrorResume(ex -> {
                         log.warn("记录批量导入审计失败: {}", ex.getMessage());
@@ -28,7 +29,7 @@ class ApiKeyAuditHelper {
     void auditApiKeyRotated(final ExtendedSecurityAuditService auditService,
                             final String keyId, final String rotatedBy) {
         if (auditService != null) {
-            auditService.auditSecurityEvent("API_KEY_ROTATED",
+            auditService.auditSecurityEvent(AuditEventType.API_KEY_ROTATED.name(),
                     "密钥已轮换", keyId, null)
                     .onErrorResume(ex -> {
                         log.warn("记录密钥轮换审计失败: {}", ex.getMessage());
@@ -41,7 +42,7 @@ class ApiKeyAuditHelper {
     void auditApiKeyExpired(final ExtendedSecurityAuditService auditService,
                             final String keyId) {
         if (auditService != null) {
-            auditService.auditSecurityEvent("API_KEY_EXPIRED",
+            auditService.auditSecurityEvent(AuditEventType.API_KEY_EXPIRED.name(),
                     "密钥已过期，自动禁用", keyId, null)
                     .onErrorResume(ex -> {
                         log.warn("记录密钥过期审计失败: {}", ex.getMessage());

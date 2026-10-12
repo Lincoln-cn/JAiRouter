@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -370,6 +371,12 @@ class ExtendedSecurityAuditControllerTest {
                         assertEquals(10, response.getData().get("eventsGenerated"));
                     })
                     .verifyComplete();
+
+            // issue #301：test-data 端点写入的事件名此前是不在枚举里的 "BRUTE_FORCE_ATTEMPT"
+            ArgumentCaptor<String> typeCaptor = ArgumentCaptor.forClass(String.class);
+            verify(extendedAuditService).auditSecurityEvent(
+                    typeCaptor.capture(), anyString(), anyString(), anyString());
+            assertEquals(AuditEventType.BRUTE_FORCE_ATTEMPT, AuditEventType.valueOf(typeCaptor.getValue()));
         }
     }
 }

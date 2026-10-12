@@ -298,7 +298,7 @@ public class ExtendedSecurityAuditController {
                         "api-key-789", "/api/chat/completions", "192.168.1.102", true))
                 .then(extendedAuditService.auditApiKeyUsed("api-key-789", "/api/embeddings", "192.168.1.103", false))
                 .then(extendedAuditService.auditSecurityEvent(
-                        "BRUTE_FORCE_ATTEMPT",
+                        AuditEventType.BRUTE_FORCE_ATTEMPT.name(),
                         "Multiple failed login attempts",
                         "suspicious-user", "192.168.1.200"))
                 .then(extendedAuditService.auditSuspiciousActivity(
