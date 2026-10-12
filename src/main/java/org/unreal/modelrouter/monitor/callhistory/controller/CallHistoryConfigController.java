@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.monitor.callhistory.config.CallHistoryProperties;
 import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
 
@@ -118,7 +119,7 @@ public class CallHistoryConfigController {
 
             SecurityAuditEvent event = SecurityAuditEvent.builder()
                     .eventId(UUID.randomUUID().toString())
-                    .eventType("RECORD_LEVEL_CHANGE")
+                    .eventType(AuditEventType.RECORD_LEVEL_CHANGE.name())
                     .resource("call-history/config")
                     .action("UPDATE")
                     .success(true)

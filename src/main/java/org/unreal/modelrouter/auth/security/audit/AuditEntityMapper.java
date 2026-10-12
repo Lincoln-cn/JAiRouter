@@ -111,13 +111,25 @@ public class AuditEntityMapper {
 
     /**
      * 解析事件类型
+     *
+     * <p>入参必须是 {@link AuditEventType} 的枚举名。历史上无法解析时会静默回退为
+     * {@link AuditEventType#SYSTEM_MAINTENANCE}，结果响应脱敏、批量导入、密钥轮换等事件
+     * 全都以同一个类型落库，按类型统计的口径随之失真（issue #301）。现改为直接抛出：
+     * 拼错的名字必须在调用点暴露，而不是被吞掉。</p>
+     *
+     * @param eventType 事件类型名，不得为 {@code null}
+     * @return 对应的枚举值
+     * @throws IllegalArgumentException 名称为 {@code null} 或不是合法的枚举名
      */
     public AuditEventType parseEventType(final String eventType) {
+        if (eventType == null) {
+            throw new IllegalArgumentException("事件类型不能为空");
+        }
         try {
             return AuditEventType.valueOf(eventType);
         } catch (IllegalArgumentException e) {
-            log.warn("无法解析事件类型: {}, 使用默认值", eventType);
-            return AuditEventType.SYSTEM_MAINTENANCE;
+            throw new IllegalArgumentException(
+                    "未知的审计事件类型: " + eventType + "，请使用 AuditEventType 的枚举名", e);
         }
     }
 

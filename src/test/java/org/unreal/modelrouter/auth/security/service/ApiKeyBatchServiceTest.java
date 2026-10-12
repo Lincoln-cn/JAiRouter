@@ -5,9 +5,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.auth.security.audit.ExtendedSecurityAuditService;
+import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
 import org.unreal.modelrouter.auth.security.dto.ApiKeyBatchExportVO;
 import org.unreal.modelrouter.auth.security.dto.ApiKeyBatchImportRequest;
@@ -137,6 +139,9 @@ class ApiKeyBatchServiceTest {
             // 验证缓存已更新
             assertEquals(1, apiKeyCache.size());
             assertTrue(keyIdIndex.containsKey("new-key-001"));
+
+            // issue #301：审计事件名必须是可解析的枚举名（此前是字面量 "API_KEY_BATCH_IMPORT"）
+            assertEmittedEventType(AuditEventType.API_KEY_BATCH_IMPORT);
         }
 
         @Test
@@ -254,6 +259,7 @@ class ApiKeyBatchServiceTest {
             assertTrue(keyIdIndex.containsKey("key-to-rotate"));
             String newHash = keyIdIndex.get("key-to-rotate");
             assertNotEquals("hash-old", newHash);
+
         }
 
         @Test
@@ -278,6 +284,9 @@ class ApiKeyBatchServiceTest {
             String newHash = keyIdIndex.get("force-rotate-key");
             assertNotNull(newHash);
             assertNotEquals(oldHash, newHash);
+
+            // issue #301：轮换审计事件名必须是可解析的枚举名（此前是字面量 "API_KEY_ROTATED"）
+            assertEmittedEventType(AuditEventType.API_KEY_ROTATED);
         }
 
         @Test
@@ -454,6 +463,22 @@ class ApiKeyBatchServiceTest {
             field.set(target, value);
         } catch (Exception e) {
             throw new RuntimeException("Failed to inject field: " + fieldName, e);
+        }
+    }
+
+    /**
+     * issue #301：断言审计链路实际写下的类型名可解析为期望的枚举值。
+     *
+     * <p>{@code AuditEventType.valueOf} 在名字不属于枚举时会抛错，因此这一条断言同时守住
+     * 「发射方字面量漂移」与「枚举被改名」两种情形 —— 而这正是 #301 里三处错名能长期潜伏的原因。</p>
+     */
+    private void assertEmittedEventType(AuditEventType expected) {
+        ArgumentCaptor<String> typeCaptor = ArgumentCaptor.forClass(String.class);
+        verify(extendedAuditService, atLeastOnce())
+                .auditSecurityEvent(typeCaptor.capture(), any(), any(), any());
+        assertFalse(typeCaptor.getAllValues().isEmpty(), "审计事件未被发出");
+        for (String emitted : typeCaptor.getAllValues()) {
+            assertEquals(expected, AuditEventType.valueOf(emitted), "审计事件类型不在枚举内: " + emitted);
         }
     }
 }

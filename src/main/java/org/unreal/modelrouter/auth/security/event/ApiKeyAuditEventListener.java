@@ -6,6 +6,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.auth.security.audit.ExtendedSecurityAuditService;
+import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.monitor.monitoring.security.SecurityAlertService;
 import reactor.core.publisher.Mono;
 
@@ -133,7 +134,7 @@ public class ApiKeyAuditEventListener {
 
         if (extendedAuditService != null) {
             extendedAuditService.auditSecurityEvent(
-                    "API_KEY_ROTATED",
+                    AuditEventType.API_KEY_ROTATED.name(),
                     "密钥已轮换",
                     event.keyId(),
                     null
@@ -158,7 +159,7 @@ public class ApiKeyAuditEventListener {
 
         if (extendedAuditService != null) {
             extendedAuditService.auditSecurityEvent(
-                    "API_KEY_EXPIRED",
+                    AuditEventType.API_KEY_EXPIRED.name(),
                     "密钥已过期，自动禁用",
                     event.keyId(),
                     null
@@ -213,7 +214,7 @@ public class ApiKeyAuditEventListener {
 
         if (extendedAuditService != null) {
             extendedAuditService.auditSecurityEvent(
-                    "API_KEY_BATCH_IMPORT",
+                    AuditEventType.API_KEY_BATCH_IMPORT.name(),
                     event.message(),
                     null,
                     event.ipAddress()
@@ -258,15 +259,36 @@ public class ApiKeyAuditEventListener {
 
     /**
      * 从消息中提取事件类型
+     *
+     * <p>类型名由发布方拼进消息正文（见 {@link ApiKeyAuditEvent#securityEvent}），这里是
+     * 「任意字符串 → 审计事件类型」的唯一开口。{@code AuditEntityMapper#parseEventType}
+     * 自 issue #301 起不再静默回退，故未知前缀必须在此就地降级，否则整条审计记录会因解析
+     * 失败而丢失。</p>
      */
     private String extractEventType(final String message) {
-        if (message == null || !message.startsWith("[")) {
-            return "SECURITY_EVENT";
+        String candidate = null;
+        if (message != null && message.startsWith("[")) {
+            int endIndex = message.indexOf("]");
+            if (endIndex > 1) {
+                candidate = message.substring(1, endIndex);
+            }
         }
-        int endIndex = message.indexOf("]");
-        if (endIndex > 1) {
-            return message.substring(1, endIndex);
+
+        if (candidate != null && isAuditEventType(candidate)) {
+            return candidate;
         }
-        return "SECURITY_EVENT";
+
+        log.warn("审计事件类型前缀缺失或不可识别（前缀={}），降级为 {}",
+                candidate, AuditEventType.SUSPICIOUS_ACTIVITY);
+        return AuditEventType.SUSPICIOUS_ACTIVITY.name();
+    }
+
+    private static boolean isAuditEventType(final String name) {
+        for (AuditEventType type : AuditEventType.values()) {
+            if (type.name().equals(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

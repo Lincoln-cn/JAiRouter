@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
 import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryQueryDTO;
 import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO;
@@ -274,7 +275,7 @@ public class ApiCallHistoryController {
         try {
             SecurityAuditEvent event = SecurityAuditEvent.builder()
                     .eventId(UUID.randomUUID().toString())
-                    .eventType("FULL_CONTENT_ACCESS")
+                    .eventType(AuditEventType.FULL_CONTENT_ACCESS.name())
                     .resource("call-history")
                     .action("DETAIL")
                     .success(true)

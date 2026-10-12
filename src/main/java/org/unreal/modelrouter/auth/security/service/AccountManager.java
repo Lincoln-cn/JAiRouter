@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.auth.security.config.properties.JwtAccountProperties;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.audit.ExtendedSecurityAuditService;
+import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.persistence.jpa.entity.JwtAccountEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.JwtAccountRepository;
 import reactor.core.publisher.Mono;
@@ -146,7 +147,7 @@ public class AccountManager implements UserDetailsService {
                 .switchIfEmpty(Mono.defer(() -> {
                     // 记录认证失败审计
                     if (auditService != null) {
-                        auditService.auditSecurityEvent("AUTHENTICATION_FAILED",
+                        auditService.auditSecurityEvent(AuditEventType.AUTHENTICATION_FAILED.name(),
                             "用户名或密码错误: " + username, username, ipAddress)
                             .onErrorResume(ex -> {
                                 log.warn("记录认证失败审计失败: {}", ex.getMessage());

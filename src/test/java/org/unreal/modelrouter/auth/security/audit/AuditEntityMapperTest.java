@@ -279,17 +279,37 @@ class AuditEntityMapperTest {
         }
 
         @Test
-        @DisplayName("无效事件类型返回默认值")
-        void testInvalidEventType() {
-            assertEquals(AuditEventType.SYSTEM_MAINTENANCE, mapper.parseEventType("INVALID_TYPE"));
-            assertEquals(AuditEventType.SYSTEM_MAINTENANCE, mapper.parseEventType(""));
+        @DisplayName("issue #301 新增的事件类型均可解析")
+        void testTypesAddedForIssue301() {
+            assertEquals(AuditEventType.RESPONSE_SANITIZATION, mapper.parseEventType("RESPONSE_SANITIZATION"));
+            assertEquals(AuditEventType.FULL_CONTENT_ACCESS, mapper.parseEventType("FULL_CONTENT_ACCESS"));
+            assertEquals(AuditEventType.RECORD_LEVEL_CHANGE, mapper.parseEventType("RECORD_LEVEL_CHANGE"));
+            assertEquals(AuditEventType.API_KEY_ROTATED, mapper.parseEventType("API_KEY_ROTATED"));
+            assertEquals(AuditEventType.API_KEY_BATCH_IMPORT, mapper.parseEventType("API_KEY_BATCH_IMPORT"));
+            assertEquals(AuditEventType.BRUTE_FORCE_ATTEMPT, mapper.parseEventType("BRUTE_FORCE_ATTEMPT"));
+            assertEquals(AuditEventType.API_KEY_MISSING, mapper.parseEventType("API_KEY_MISSING"));
+            assertEquals(AuditEventType.API_KEY_INVALID, mapper.parseEventType("API_KEY_INVALID"));
+            assertEquals(AuditEventType.API_KEY_VALIDATION_FAILED,
+                    mapper.parseEventType("API_KEY_VALIDATION_FAILED"));
         }
 
         @Test
-        @DisplayName("null事件类型抛出NPE")
+        @DisplayName("issue #301：未知事件类型不再静默回退，直接抛错")
+        void testInvalidEventTypeThrows() {
+            IllegalArgumentException unknown = assertThrows(IllegalArgumentException.class,
+                    () -> mapper.parseEventType("INVALID_TYPE"));
+            assertTrue(unknown.getMessage().contains("INVALID_TYPE"), unknown.getMessage());
+
+            assertThrows(IllegalArgumentException.class, () -> mapper.parseEventType(""));
+            // 回归点：这三类名字此前都不在枚举里，解析后一律静默落成 SYSTEM_MAINTENANCE
+            assertThrows(IllegalArgumentException.class, () -> mapper.parseEventType("SECURITY_EVENT"));
+            assertThrows(IllegalArgumentException.class, () -> mapper.parseEventType("authentication_failed"));
+        }
+
+        @Test
+        @DisplayName("issue #301：null 事件类型抛 IllegalArgumentException")
         void testNullEventType() {
-            // valueOf(null) 会抛出 NullPointerException，不是 IllegalArgumentException
-            assertThrows(NullPointerException.class, () -> mapper.parseEventType(null));
+            assertThrows(IllegalArgumentException.class, () -> mapper.parseEventType(null));
         }
     }
 

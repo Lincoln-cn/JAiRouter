@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
+import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.common.exception.SanitizationException;
 import org.unreal.modelrouter.common.util.ClientIpResolver;
 import org.unreal.modelrouter.auth.sanitization.SanitizationService;
@@ -253,7 +254,7 @@ public class ResponseSanitizationFilter implements WebFilter {
         
         try {
             SecurityAuditEvent.SecurityAuditEventBuilder eventBuilder = SecurityAuditEvent.builder()
-                    .eventType("RESPONSE_SANITIZATION")
+                    .eventType(AuditEventType.RESPONSE_SANITIZATION.name())
                     .userId("system") // 响应脱敏是系统行为
                     .clientIp(getClientIp(request))
                     .userAgent(getUserAgent(request))

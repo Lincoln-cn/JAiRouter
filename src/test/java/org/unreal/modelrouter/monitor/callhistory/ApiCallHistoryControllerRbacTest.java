@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
 import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryQueryDTO;
 import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryStatisticsDTO;
@@ -136,7 +137,7 @@ class ApiCallHistoryControllerRbacTest {
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());
             verify(securityAuditService).recordEvent(argThat(event ->
-                    "FULL_CONTENT_ACCESS".equals(event.getEventType())
+                    AuditEventType.FULL_CONTENT_ACCESS == AuditEventType.valueOf(event.getEventType())
                             && "call-history".equals(event.getResource())
                             && "DETAIL".equals(event.getAction())
             ));

@@ -24,6 +24,7 @@ import org.unreal.modelrouter.auth.security.model.UsageStatistics;
 import org.unreal.modelrouter.auth.security.quota.QuotaLimits;
 import org.unreal.modelrouter.auth.security.util.ApiKeyHashUtil;
 import org.unreal.modelrouter.common.constants.ServiceTypeConstants;
+import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.persistence.store.StoreManager;
 import reactor.core.publisher.Mono;
 
@@ -76,9 +77,9 @@ public class ApiKeyService {
                 eventPublisher.publishEvent(ApiKeyAuditEvent.used(r.getKeyId(), ep, ip, false));
             }
             String et = r.getFailureType() == ApiKeyValidator.ValidationFailureType.FORMAT_ERROR
-                    ? "API_KEY_MISSING"
+                    ? AuditEventType.API_KEY_MISSING.name()
                     : r.getFailureType() == ApiKeyValidator.ValidationFailureType.NOT_FOUND
-                    ? "API_KEY_INVALID" : "API_KEY_VALIDATION_FAILED";
+                    ? AuditEventType.API_KEY_INVALID.name() : AuditEventType.API_KEY_VALIDATION_FAILED.name();
             eventPublisher.publishEvent(ApiKeyAuditEvent.securityEvent(et, r.getErrorMessage(), r.getKeyId(), ip));
             return Mono.error(r.toException());
         });
