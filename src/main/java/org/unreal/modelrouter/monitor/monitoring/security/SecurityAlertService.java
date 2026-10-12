@@ -7,15 +7,16 @@ import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.common.dto.AuditEventType;
+import org.unreal.modelrouter.common.scheduling.ScheduledTaskLock;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 安全告警服务
@@ -35,6 +36,8 @@ public class SecurityAlertService {
     private final SecurityAuditService auditService;
     private final SecurityMetrics securityMetrics;
     private final SecurityAlertProperties properties;
+    /** 冷却跨副本生效（#300）：告警是外部可观测副作用，同一类型在冷却窗口内只让一个副本触发 */
+    private final ScheduledTaskLock taskLock;
     
     /** JWT 令牌相关事件类型（与 AuditEventType 枚举保持一致，勿用字符串字面量） */
     private static final List<AuditEventType> JWT_EVENT_TYPES = List.of(
@@ -44,9 +47,9 @@ public class SecurityAlertService {
             AuditEventType.JWT_TOKEN_VALIDATED,
             AuditEventType.JWT_TOKEN_EXPIRED
     );
-    
-    // 告警状态跟踪（冷却用）
-    private final ConcurrentHashMap<String, LocalDateTime> lastAlertTimes = new ConcurrentHashMap<>();
+
+    /** 冷却锁 key 前缀（按告警类型区分） */
+    private static final String COOLDOWN_LOCK_PREFIX = "security-alert-cooldown:";
     
     /** 阈值与窗口统一来自配置面（#288），实现内不再保留类内常量 */
     private SecurityAlertProperties.Thresholds thresholds() {
@@ -163,21 +166,17 @@ public class SecurityAlertService {
      */
     private Mono<Void> triggerAlert(final String alertType, final String title, final String description, 
                                    final String severity, final Map<String, Object> alertData) {
-        String alertKey = alertType;
-        LocalDateTime now = LocalDateTime.now();
-        
-        // 检查告警冷却时间
-        LocalDateTime lastAlertTime = lastAlertTimes.get(alertKey);
-        if (lastAlertTime != null
-            && lastAlertTime.plusMinutes(thresholds().getCooldownMinutes()).isAfter(now)) {
-            log.debug("告警 {} 在冷却期内，跳过触发", alertType);
+        // 冷却（#300）：跨副本生效 —— 同一告警类型在冷却窗口内只让一个副本触发，
+        // 否则指标、WARN 日志与 SECURITY_ALERT 审计事件会被 N 个副本各写一遍（概览的告警数随之虚高 N 倍）。
+        // 锁由 ScheduledTaskLock 提供：Redis 未配置/不可用时 fail-open（等价于单副本语义，与引入前一致）。
+        // 注意其租约取传入周期的 90%，因此实际抑制窗口略短于配置的 cooldown-minutes。
+        if (!taskLock.tryAcquire(COOLDOWN_LOCK_PREFIX + alertType,
+                Duration.ofMinutes(thresholds().getCooldownMinutes()))) {
+            log.debug("告警 {} 在冷却窗口内（本副本先前已触发或其他副本正在处理），跳过", alertType);
             return Mono.empty();
         }
-        
-        return Mono.fromRunnable(() -> {
-            // 更新告警状态（冷却用）
-            lastAlertTimes.put(alertKey, now);
 
+        return Mono.fromRunnable(() -> {
             // 出口 = 指标 + 日志（#287 契约）：明细随日志进日志平台，计数进 Prometheus
             securityMetrics.recordSecurityViolation(alertType, severity);
             log.warn("安全告警触发: type={}, title={}, severity={}, description={}, data={}",
