@@ -10,8 +10,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.common.dto.AuditEventType;
+import org.unreal.modelrouter.common.scheduling.ScheduledTaskLock;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -48,12 +50,43 @@ class SecurityAlertServiceTest {
 
     private SecurityAlertProperties properties;
 
+    @Mock
+    private ScheduledTaskLock taskLock;
+
     @BeforeEach
     void setUp() {
         properties = new SecurityAlertProperties();
-        alertService = new SecurityAlertService(auditService, securityMetrics, properties);
+        alertService = new SecurityAlertService(auditService, securityMetrics, properties, taskLock);
         // 触发告警时会落一条审计事件（#291 的数据源）；未触发的用例用不到这个 stub
         lenient().when(auditService.recordEvent(any(SecurityAuditEvent.class))).thenReturn(Mono.empty());
+        // 默认取得冷却锁（#300 的跨副本冷却）；被占用的用例自行覆盖
+        lenient().when(taskLock.tryAcquire(anyString(), any(Duration.class))).thenReturn(true);
+    }
+
+    @Test
+    @DisplayName("冷却窗口被占用（其他副本正在处理/本副本刚触发过）⇒ 不产指标、不写审计事件（#300）")
+    void alertWithinCooldown_isSuppressed() {
+        when(auditService.shouldTriggerAlert(AuditEventType.AUTHENTICATION_FAILED.name(), 5, 5))
+                .thenReturn(Mono.just(true));
+        when(taskLock.tryAcquire(anyString(), any(Duration.class))).thenReturn(false);
+
+        alertService.checkAuthenticationFailureAlert(CLIENT_IP, "bad credentials").block();
+
+        verify(securityMetrics, never()).recordSecurityViolation(anyString(), anyString());
+        verify(auditService, never()).recordEvent(any(SecurityAuditEvent.class));
+    }
+
+    @Test
+    @DisplayName("冷却锁按告警类型分键，且周期取自配置的 cooldown-minutes（#300 + #288）")
+    void cooldownLock_usesConfiguredPeriodPerAlertType() {
+        properties.getThresholds().setCooldownMinutes(7);
+        when(auditService.shouldTriggerAlert(AuditEventType.AUTHENTICATION_FAILED.name(), 5, 5))
+                .thenReturn(Mono.just(true));
+
+        alertService.checkAuthenticationFailureAlert(CLIENT_IP, "bad credentials").block();
+
+        verify(taskLock).tryAcquire(eq("security-alert-cooldown:AUTH_FAILURE_SPIKE"), eq(Duration.ofMinutes(7)));
+        verify(securityMetrics).recordSecurityViolation("AUTH_FAILURE_SPIKE", "HIGH");
     }
 
     @Test
@@ -93,19 +126,6 @@ class SecurityAlertServiceTest {
 
         verify(auditService).shouldTriggerAlert("AUTHENTICATION_FAILED", 30, 9);
         verify(securityMetrics).recordSecurityViolation("AUTH_FAILURE_SPIKE", "HIGH");
-    }
-
-    @Test
-    @DisplayName("冷却时间来自配置（设为 0 时连续两次都告警）")
-    void cooldown_comesFromConfiguration() {
-        properties.getThresholds().setCooldownMinutes(0);
-        when(auditService.countEvents(any(LocalDateTime.class), any(LocalDateTime.class),
-                anyList(), any(), any())).thenReturn(Mono.just(100L));
-
-        alertService.checkSanitizationAnomalyAlert().block();
-        alertService.checkSanitizationAnomalyAlert().block();
-
-        verify(securityMetrics, times(2)).recordSecurityViolation(anyString(), anyString());
     }
 
     @Test
@@ -171,15 +191,18 @@ class SecurityAlertServiceTest {
     }
 
     @Test
-    @DisplayName("冷却期内的重复触发被抑制（同类型 15 分钟内只记一次）")
-    void repeatedAlert_withinCooldown_isSuppressed() {
+    @DisplayName("连续两次触发：冷却锁第二次未取得 ⇒ 只产一次指标（#300 的跨副本冷却语义）")
+    void repeatedAlert_secondTriggerIsSuppressedByCooldownLock() {
         when(auditService.countEvents(any(LocalDateTime.class), any(LocalDateTime.class),
                 anyList(), any(), any())).thenReturn(Mono.just(100L));
+        // 第一次取得锁、第二次被占用（等价于同一副本冷却窗口内 / 其他副本已触发）
+        when(taskLock.tryAcquire(anyString(), any(Duration.class))).thenReturn(true, false);
 
         alertService.checkSanitizationAnomalyAlert().block();
         alertService.checkSanitizationAnomalyAlert().block();
 
         verify(securityMetrics, times(1)).recordSecurityViolation(anyString(), anyString());
+        verify(taskLock, times(2)).tryAcquire(anyString(), any(Duration.class));
     }
 
     @SuppressWarnings("unchecked")
