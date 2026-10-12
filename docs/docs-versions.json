@@ -223,10 +223,10 @@
     },
     "docs/en/deployment/production.md": {
       "FilePath": "docs/en/deployment/production.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-10-11T13:48:54.304395",
-      "ContentHash": "4db3fdfc975f2c7d",
-      "GitCommit": "862789f2",
+      "Version": "1.0.10",
+      "LastModified": "2026-10-12T17:03:34.457158",
+      "ContentHash": "809c20cf5d862b30",
+      "GitCommit": "37678a95",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -838,10 +838,10 @@
     },
     "docs/zh/deployment/production.md": {
       "FilePath": "docs/zh/deployment/production.md",
-      "Version": "1.0.10",
-      "LastModified": "2026-10-11T13:48:54.659183",
-      "ContentHash": "4d76fb2493541cae",
-      "GitCommit": "862789f2",
+      "Version": "1.0.11",
+      "LastModified": "2026-10-12T17:03:34.876218",
+      "ContentHash": "36623fc75cdf8136",
+      "GitCommit": "37678a95",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1314,11 +1314,11 @@
     },
     "docs/en/security/api-key-management.md": {
       "FilePath": "docs/en/security/api-key-management.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-09-19T04:26:22.118559",
-      "ContentHash": "6d8532085024a9d8",
-      "GitCommit": "2f5255a1",
-      "Author": "Lincoln",
+      "Version": "1.0.9",
+      "LastModified": "2026-10-12T17:03:34.642020",
+      "ContentHash": "f0284a788a47eb57",
+      "GitCommit": "37678a95",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/management-api.md",
@@ -1513,11 +1513,11 @@
     },
     "docs/zh/security/api-key-management.md": {
       "FilePath": "docs/zh/security/api-key-management.md",
-      "Version": "1.0.10",
-      "LastModified": "2026-09-19T04:26:22.381788",
-      "ContentHash": "340a957e38e6b947",
-      "GitCommit": "2f5255a1",
-      "Author": "Lincoln",
+      "Version": "1.0.11",
+      "LastModified": "2026-10-12T17:03:35.047564",
+      "ContentHash": "287a36b7b66ab6c6",
+      "GitCommit": "37678a95",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/management-api.md",
@@ -1724,11 +1724,11 @@
     },
     "docs/en/configuration/jwt-persistence.md": {
       "FilePath": "docs/en/configuration/jwt-persistence.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-09-18T11:16:27.222757",
-      "ContentHash": "b6b05e8e1a3da8a4",
-      "GitCommit": "2e651835",
-      "Author": "Lincoln",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-12T17:03:34.350598",
+      "ContentHash": "d50f92e99e934c4f",
+      "GitCommit": "37678a95",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/monitoring/index.md",
@@ -1830,11 +1830,11 @@
     },
     "docs/zh/configuration/jwt-persistence.md": {
       "FilePath": "docs/zh/configuration/jwt-persistence.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-09-18T11:16:40.281199",
-      "ContentHash": "c3d928bfff15f4df",
-      "GitCommit": "14420877",
-      "Author": "Lincoln",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-12T17:03:34.775347",
+      "ContentHash": "cc1427aad719c4d7",
+      "GitCommit": "37678a95",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/monitoring/index.md",
@@ -7266,7 +7266,55 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-11T13:48:54.825936",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/jwt-persistence.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-12T17:03:34.350611",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/production.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-12T17:03:34.457168",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/api-key-management.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-12T17:03:34.642030",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/jwt-persistence.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-12T17:03:34.775357",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/production.md",
+      "OldVersion": "1.0.10",
+      "NewVersion": "1.0.11",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-12T17:03:34.876229",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/api-key-management.md",
+      "OldVersion": "1.0.10",
+      "NewVersion": "1.0.11",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-12T17:03:35.047597",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-12T08:37:02.052048"
+  "last_updated": "2026-10-12T17:03:35.126754"
 }
