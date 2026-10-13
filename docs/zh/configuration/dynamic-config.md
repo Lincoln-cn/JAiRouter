@@ -1,4 +1,4 @@
-﻿# 动态配置
+# 动态配置
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.2  
@@ -29,13 +29,18 @@ JAiRouter 提供灵活的配置选项以满足各种部署场景。本指南涵�
 
 ```
 config/
-├── model-router-config@1.json    # Version 1 configuration file
-├── model-router-config@2.json    # Version 2 configuration file
-├── model-router-config@3.json    # Version 3 configuration file
-└── backup_1640995200000/         # Backup directory (timestamp)
-    ├── model-router-config@1.json
-    └── model-router-config@2.json
+├── model-router-config.json          # 当前生效的配置（配置存储键 `model-router-config`）
+├── model-router-config@1.json        # 1 号版本快照
+├── model-router-config@2.json        # 2 号版本快照
+└── model-router-config@3.json        # 3 号版本快照
 ```
+
+> 版本快照与当前配置文件同目录，命名为 `model-router-config@<version>.json`
+> （`persistence/store/FileStoreManager.java`）。本页此前的版本还画了一个 `backup_<时间戳>/`
+> 备份目录（内含版本文件副本）—— **代码里不会产生这样的目录**：备份是另一项能力，
+> 它以加密形式存在配置存储的 `security.backup.<id>` 键下
+> （`auth/security/config/SecurityConfigurationBackupService.java:38`），
+> id 形如 `backup-yyyyMMdd-HHmmss-<n>`。
 
 ### 配置文件格式
 
@@ -200,214 +205,78 @@ curl -X DELETE -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/in
 上面两步（更新、删除）在本页复查时都对着真实运行的实例执行过，均返回 `200`
 （完整回路 = 新增 → 列表取 `id` → 更新 → 删除）。
 
-## 配置文件管理 API
+## 配置版本管理 API
 
-### 配置合并功能
+运行期配置保存在配置**存储**的 `model-router-config` 键下，每次记录变更都会留下编号快照
+（`model-router-config@<version>.json`，由 `persistence/store/FileStoreManager.java` 落盘）。
+下面的版本 API 操作的就是这些快照。
 
-JAiRouter 提供强大的自动配置文件合并功能：
+> ⚠️ 本页此前的版本教的是 `/api/config/merge/**` 工作流 —— `scan` / `preview` / `execute` / `backup` /
+> `batch` / `cleanup` / `validate` / `statistics` / `status`。**这些端点全都不存在**：没有任何控制器声明它们，
+> `config/core/ConfigMergeService.java` 也没有对应方法（它的公开成员只有 `getPersistedConfig`、
+> `deepMergeConfigs`、`resetToYamlConfig`、`hasPersistedConfig`、`getDefaultConfig`）。
+> 真正存在的是**版本管理**，即下面这套 API。两者不是同一种能力：版本管理负责
+> **快照 / 应用 / 比较**，它不会去合并磁盘上的文件。
 
-| 功能 | API 端点 | 方法 | 说明 |
-|------|----------|------|------|
-| 扫描版本文件 | `/api/config/merge/scan` | GET | 扫描所有版本配置文件 |
-| 预览合并结果 | `/api/config/merge/preview` | GET | 预览合并后的配置 |
-| 执行合并 | `/api/config/merge/execute` | POST | 执行配置文件合并 |
-| 备份配置 | `/api/config/merge/backup` | POST | 备份当前配置文件 |
-| 批量操作 | `/api/config/merge/batch` | POST | 备份+合并+清理 |
-| 清理文件 | `/api/config/merge/cleanup` | DELETE | 清理原始配置文件 |
-| 验证配置 | `/api/config/merge/validate` | GET | 验证配置文件格式 |
-| 统计信息 | `/api/config/merge/statistics` | GET | 获取配置统计信息 |
-| 服务状态 | `/api/config/merge/status` | GET | 获取合并服务状态 |
+### 端点概览
 
-### 1. 扫描配置文件版本
+| 操作 | 方法 | 路径 | 说明 |
+|------|------|------|------|
+| 列出全部版本 | GET | `/api/config/version` | 已保存的全部版本号 |
+| 取某个版本 | GET | `/api/config/version/{version}` | 该版本的配置快照 |
+| 当前版本 | GET | `/api/config/version/current` | 正在生效的版本 |
+| 版本元信息 | GET | `/api/config/version/info` | 元数据与版本历史 |
+| 应用某个版本 | POST | `/api/config/version/apply/{version}` | 把运行期配置切到该版本 |
+| 比较两个版本 | GET | `/api/config/version/compare/{source}/{target}` | 两个已存版本的差异 |
+| 与当前版本比较 | GET | `/api/config/version/compare/{version}` | 该版本与当前版本的差异 |
+| 删除某个版本 | DELETE | `/api/config/version/{version}` | 删除某个已存快照 |
 
-```bash
-# Scan all version configuration files
-curl -X GET "http://localhost:8080/api/config/merge/scan"
+实现位置：`config/controller/ConfigurationVersionController.java`（类级
+`@RequestMapping("/api/config/version")`），背后是 `config/version/VersionManagementService.java`。
 
-# Response Example
-{
-  "success": true,
-  "data": {
-    "configFiles": [
-      {
-        "filename": "model-router-config@1.json",
-        "version": 1,
-        "size": 2048,
-        "lastModified": "2024-01-15T10:00:00Z",
-        "servicesCount": 2,
-        "instancesCount": 5
-      },
-      {
-        "filename": "model-router-config@2.json",
-        "version": 2,
-        "size": 3072,
-        "lastModified": "2024-01-15T11:00:00Z",
-        "servicesCount": 3,
-        "instancesCount": 8
-      }
-    ],
-    "totalFiles": 2,
-    "totalInstances": 13
-  }
-}
-```
+认证：与本页其它管理面 API 一样，JWT 放在 **`Jairouter_Token`** 头里
+（见[实例管理 API](#实例管理-api)）；不带它这些调用会返回 `401 {"error":{"code":"AUTH_MISSING"}}`。
 
-### 2. 预览合并结果
+### 示例
 
 ```bash
-# Preview configuration file merge result
-curl -X GET "http://localhost:8080/api/config/merge/preview"
+# 当前生效的版本
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current"
 
-# Response Example
-{
-  "success": true,
-  "data": {
-    "mergedConfig": {
-      "services": {
-        "chat": {
-          "instances": [
-            // Merged instance list
-          ]
-        }
-      }
-    },
-    "mergeStatistics": {
-      "totalServices": 3,
-      "totalInstances": 13,
-      "duplicatesRemoved": 2,
-      "conflictsResolved": 1
-    }
-  }
-}
+# 全部已存版本
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version"
+
+# 元信息 + 历史
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/info"
+
+# 当前配置与 3 号版本的差异
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/compare/3"
+
+# 把运行期配置回滚到 3 号版本
+curl -X POST -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/apply/3"
 ```
 
-### 3. 执行配置合并
-
-```bash
-# Execute configuration file merge
-curl -X POST "http://localhost:8080/api/config/merge/execute"
-
-# Response Example
-{
-  "success": true,
-  "message": "Configuration merge completed",
-  "data": {
-    "mergedFile": "model-router-config@1.json",
-    "originalFiles": [
-      "model-router-config@1.json",
-      "model-router-config@2.json"
-    ],
-    "statistics": {
-      "servicesProcessed": 3,
-      "instancesProcessed": 13,
-      "duplicatesRemoved": 2
-    }
-  }
-}
-```
-
-### 4. 批量操作
-
-```bash
-# Execute batch operation: backup + merge + cleanup
-curl -X POST "http://localhost:8080/api/config/merge/batch?deleteOriginals=true"
-
-# Response Example
-{
-  "success": true,
-  "message": "Batch operation completed",
-  "data": {
-    "backupDirectory": "backup_1640995200000",
-    "mergedFile": "model-router-config@1.json",
-    "filesDeleted": [
-      "model-router-config@2.json",
-      "model-router-config@3.json"
-    ]
-  }
-}
-```
+**版本是怎么产生的。** 不需要另外跑「合并文件」这一步：通过本页各管理面 API 做的配置变更，
+会由 `VersionManagementService`（`generateNewVersion` / `recordVersion`）记录为编号快照。
+所以流程是 **变更 → 查看（`info` / `compare`）→ 必要时回滚（`apply`）**。
 
 ## 配置验证与监控
 
-### 1. 配置验证
+本节原先描述的 `/api/config/merge/validate` · `/statistics` · `/status` 三个端点**并不存在**
+（见[配置版本管理 API](#配置版本管理-api) 的说明）。配置侧真正可以用来查看的是：
 
 ```bash
-# Validate configuration file format and content
-curl -X GET "http://localhost:8080/api/config/merge/validate"
+# 当前生效的配置来源，以及应用知道的校验规则 / 环境变量
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/sources"
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/validation-rules"
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/environment-variables"
 
-# Response Example
-{
-  "success": true,
-  "data": {
-    "validationResults": [
-      {
-        "filename": "model-router-config@1.json",
-        "valid": true,
-        "errors": [],
-        "warnings": [
-          "Instance 'old-model@http://old-server:8080' may be unavailable"
-        ]
-      }
-    ],
-    "overallValid": true,
-    "totalErrors": 0,
-    "totalWarnings": 1
-  }
-}
+# 版本状态（当前版本 / 历史 / 元信息）
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current"
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/info"
 ```
 
-### 2. 配置统计
-
-```bash
-# Get configuration statistics
-curl -X GET "http://localhost:8080/api/config/merge/statistics"
-
-# Response Example
-{
-  "success": true,
-  "data": {
-    "configFiles": 3,
-    "totalServices": 5,
-    "totalInstances": 15,
-    "serviceBreakdown": {
-      "chat": 6,
-      "embedding": 4,
-      "tts": 3,
-      "stt": 2
-    },
-    "loadBalanceStrategies": {
-      "round-robin": 2,
-      "least-connections": 2,
-      "random": 1
-    },
-    "rateLimitAlgorithms": {
-      "token-bucket": 4,
-      "sliding-window": 1
-    }
-  }
-}
-```
-
-### 3. 服务状态监控
-
-```bash
-# Get merge service status
-curl -X GET "http://localhost:8080/api/config/merge/status"
-
-# Response Example
-{
-  "success": true,
-  "data": {
-    "serviceStatus": "RUNNING",
-    "lastMergeTime": "2024-01-15T12:00:00Z",
-    "lastBackupTime": "2024-01-15T11:30:00Z",
-    "configDirectory": "/app/config",
-    "backupDirectory": "/app/config/backup_1640995200000",
-    "activeConfigFile": "model-router-config@1.json",
-    "pendingChanges": false
-  }
-}
-```
+需要运行期健康状态时，用（公开的）健康端点：`curl http://localhost:8080/actuator/health`。
 
 ## 实际使用场景
 
@@ -478,23 +347,21 @@ curl -X POST "http://localhost:8080/api/config/instance/chat" \
   }'
 ```
 
-### 场景 4：配置文件维护
+### 场景 4：查看版本与回滚
+
+本场景原先演示的文件维护工作流（`merge/backup` → `scan` → `preview` → `execute` → `cleanup`）
+并不存在。实际能做的是查看已记录的版本并按需回滚：
 
 ```bash
-# 1. Backup current configuration
-curl -X POST "http://localhost:8080/api/config/merge/backup"
+# 当前生效的版本，以及存在哪些版本
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current"
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version"
 
-# 2. Scan configuration file versions
-curl -X GET "http://localhost:8080/api/config/merge/scan"
+# 切换前先看清差异
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/compare/3"
 
-# 3. Preview merge result
-curl -X GET "http://localhost:8080/api/config/merge/preview"
-
-# 4. Execute configuration merge
-curl -X POST "http://localhost:8080/api/config/merge/execute"
-
-# 5. Clean old version files
-curl -X DELETE "http://localhost:8080/api/config/merge/cleanup?deleteOriginals=true"
+# 回滚到某个更早的版本
+curl -X POST -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/apply/3"
 ```
 
 ## 最佳实践
@@ -539,10 +406,10 @@ curl -X DELETE "http://localhost:8080/api/config/instance/chat/$ID"
 
 ```bash
 # Regularly check configuration status
-curl -X GET "http://localhost:8080/api/config/merge/status"
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current"
 
 # Validate configuration integrity
-curl -X GET "http://localhost:8080/api/config/merge/validate"
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/sources"
 
 # Monitor instance health status
 curl -X GET "http://localhost:8080/actuator/health"
@@ -555,7 +422,7 @@ curl -X GET "http://localhost:8080/actuator/health"
 #!/bin/bash
 
 # Backup current configuration
-BACKUP_RESULT=$(curl -s -X POST "http://localhost:8080/api/config/merge/backup")
+CURRENT_VERSION=$(curl -s -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current")
 
 if [[ $? -eq 0 ]]; then
     echo "Configuration backup successful"
