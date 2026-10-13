@@ -259,10 +259,10 @@
     },
     "docs/en/development/contributing.md": {
       "FilePath": "docs/en/development/contributing.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-13T14:18:25.619609",
-      "ContentHash": "e5c3dd36acc43ed5",
-      "GitCommit": "d26e5419",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-13T16:46:10.764951",
+      "ContentHash": "d14b2a7e9fe57c15",
+      "GitCommit": "92c5881a",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -874,10 +874,10 @@
     },
     "docs/zh/development/contributing.md": {
       "FilePath": "docs/zh/development/contributing.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-13T14:18:26.075737",
-      "ContentHash": "478c0348d149348b",
-      "GitCommit": "d26e5419",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-13T16:46:11.174455",
+      "ContentHash": "9468b1f2a13e75e5",
+      "GitCommit": "92c5881a",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -7482,7 +7482,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-13T15:51:55.934901",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/development/contributing.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T16:46:10.764962",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/development/contributing.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T16:46:11.174464",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-13T15:51:56.909267"
+  "last_updated": "2026-10-13T16:46:11.424422"
 }
