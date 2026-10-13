@@ -308,6 +308,23 @@ function Invoke-DocsGates {
         Add-Result "mkdocs --strict" "SKIP" "$py 没有 mkdocs 模块 —— 需先建文档 venv（见脚本说明）"
     }
 
+    # 文档脚本的语法冒烟（issue #345 顺带发现：`docs-version-manager.py` 由
+    # docs-version-management.yml 在 CI 上直接执行，但本地门闩此前**完全不覆盖**它 ——
+    # 它一旦语法坏了，CI 的「文档版本管理」整条 job 会红，而本地不会提前发现）。
+    $scriptsToCompile = @("scripts/docs/docs-version-manager.py", "scripts/docs/check-docs-sync.py",
+                          "scripts/docs/check-links.py", "scripts/docs/check-fence-parity.py")
+    $compileFails = @()
+    foreach ($s in $scriptsToCompile) {
+        if (-not (Test-Path (Join-Path $script:Root $s))) { continue }
+        $r = Invoke-Logged -Exe $py -Arguments @("-m", "py_compile", $s)
+        if ($r.ExitCode -ne 0) { $compileFails += (@($r.Output) | Select-Object -Last 2) -join " | " }
+    }
+    if ($compileFails.Count -eq 0) {
+        Add-Result "文档脚本语法" "PASS" "$($scriptsToCompile.Count) 个脚本 py_compile 通过"
+    } else {
+        Add-Result "文档脚本语法" "FAIL" ($compileFails -join " ;; ")
+    }
+
     # 围栏配平（issue #324）：CI 目前**不检查**这一项 —— 实测它一直绿，而文档里躺着 6 个文件 / 10 处
     # 围栏错字（开栏/闭栏写成两个反引号、块未闭合），这些会让整篇起错位点后渲染成代码。
     # 这里把它作为**附加**检查跑；是否进 CI 由维护者定夺（见 #324）。
