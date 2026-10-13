@@ -259,3 +259,17 @@ jindexer.jar
 
 # playwright-cli 临时产物
 .playwright-cli/
+
+# -----------------------------------------------------------------------------
+# Agent session memory & digests (local artifacts, not for git)
+# -----------------------------------------------------------------------------
+# Project memory migrated from the mimo project store (AGENTS.md + the archived
+# sections under docs/mimo-memory/), plus per-session digests under
+# docs/session-digests/. These are session-local working state:
+#   - they carry machine-specific absolute paths and local archive locations;
+#   - docs/mimo-memory/archive/ holds hundreds of historical sections, so
+#     committing them would drag them through the docs gates (cspell / 文档质量检查)
+#     on every future docs change for no reader benefit.
+/AGENTS.md
+/docs/mimo-memory/
+/docs/session-digests/
