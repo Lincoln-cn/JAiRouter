@@ -147,7 +147,7 @@ already carries the whole configuration:
       "baseUrl": "http://localhost:11434",
       "path": "/v1/chat/completions",
       "weight": 1,
-      "status": "HEALTHY",
+      "status": "active",
       "healthStatus": "HEALTHY",
       "adapter": "ollama",
       "headers": {},
@@ -169,12 +169,16 @@ curl -X POST -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
     "baseUrl": "http://gpu-server:8080",
     "path": "/v1/chat/completions",
     "weight": 2,
-    "status": "HEALTHY",
     "adapter": "normal",
     "headers": {"Authorization": "Bearer your-token"}
   }' \
   http://localhost:8080/api/config/instance/chat
 ```
+
+> ⚠️ **Do not send `"status": "HEALTHY"` in the request body.** `status` is the lifecycle flag and the
+> router only accepts `active`; a `HEALTHY` value is stored as-is (`healthy`) and the instance is then
+> filtered out of routing, so calls fail with `404 No instances found for model …`. Omit the field to keep
+> the `active` default. Health is reported separately in `healthStatus`.
 
 The response `data` is the created instance — keep its `id`, the next two calls need it:
 

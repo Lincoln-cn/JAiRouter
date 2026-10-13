@@ -146,7 +146,7 @@ curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/cha
       "baseUrl": "http://localhost:11434",
       "path": "/v1/chat/completions",
       "weight": 1,
-      "status": "HEALTHY",
+      "status": "active",
       "healthStatus": "HEALTHY",
       "adapter": "ollama",
       "headers": {},
@@ -168,12 +168,16 @@ curl -X POST -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
     "baseUrl": "http://gpu-server:8080",
     "path": "/v1/chat/completions",
     "weight": 2,
-    "status": "HEALTHY",
     "adapter": "normal",
     "headers": {"Authorization": "Bearer your-token"}
   }' \
   http://localhost:8080/api/config/instance/chat
 ```
+
+> ⚠️ **请求体里不要写 `"status": "HEALTHY"`。** `status` 是生命周期标志，路由只认 `active`；
+> 写 `HEALTHY` 会被原样存成 `healthy`，该实例随后会被可用性过滤排除，调用会以
+> `404 No instances found for model …` 失败。**不写该字段即可沿用默认 `active`**；
+> 健康状态是另一个字段 `healthStatus`。
 
 响应里的 `data` 就是新建的实例 —— **记住它的 `id`**，下面两步都要用：
 
