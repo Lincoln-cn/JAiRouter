@@ -47,12 +47,6 @@ class AuditConfigTest {
         }
 
         @Test
-        @DisplayName("默认存储类型为database")
-        void testDefaultStorage() {
-            assertEquals("database", auditConfig.getStorage());
-        }
-
-        @Test
         @DisplayName("默认保留天数为90天")
         void testDefaultRetentionDays() {
             assertEquals(90, auditConfig.getRetentionDays());
@@ -74,12 +68,6 @@ class AuditConfigTest {
         @DisplayName("默认不包含响应体")
         void testDefaultIncludeResponseBody() {
             assertFalse(auditConfig.isIncludeResponseBody());
-        }
-
-        @Test
-        @DisplayName("默认启用告警")
-        void testDefaultAlertEnabled() {
-            assertTrue(auditConfig.isAlertEnabled());
         }
 
         @Test
@@ -184,12 +172,10 @@ class AuditConfigTest {
         @DisplayName("设置所有属性")
         void testSetAllProperties() {
             auditConfig.setEnabled(false);
-            auditConfig.setStorage("memory");
             auditConfig.setRetentionDays(60);
             auditConfig.setLogLevel("DEBUG");
             auditConfig.setIncludeRequestBody(true);
             auditConfig.setIncludeResponseBody(true);
-            auditConfig.setAlertEnabled(false);
             auditConfig.setCleanupSchedule("0 0 3 * * *");
             auditConfig.setCleanupBatchSize(5000);
             auditConfig.setMaxStorageSizeMb(1000L);
@@ -197,12 +183,10 @@ class AuditConfigTest {
             auditConfig.setArchivePath("/var/log/audit");
 
             assertFalse(auditConfig.isEnabled());
-            assertEquals("memory", auditConfig.getStorage());
             assertEquals(60, auditConfig.getRetentionDays());
             assertEquals("DEBUG", auditConfig.getLogLevel());
             assertTrue(auditConfig.isIncludeRequestBody());
             assertTrue(auditConfig.isIncludeResponseBody());
-            assertFalse(auditConfig.isAlertEnabled());
             assertEquals("0 0 3 * * *", auditConfig.getCleanupSchedule());
             assertEquals(5000, auditConfig.getCleanupBatchSize());
             assertEquals(1000L, auditConfig.getMaxStorageSizeMb());

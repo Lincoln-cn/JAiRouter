@@ -22,27 +22,6 @@ jairouter:
       # 日志保留天数
       retention-days: 90
       
-      # 告警功能开关
-      alert-enabled: false
-      
-      # 记录的事件类型
-      event-types:
-        authentication-success: false
-        authentication-failure: true
-        authorization-failure: true
-        sanitization-applied: false
-        configuration-changed: true
-        security-alert: true
-        suspicious-activity: true
-      
-      # 存储配置
-      storage:
-        type: "file"
-        file-path: "logs/security-audit.log"
-        rotation:
-          max-file-size: "100MB"
-          max-files: 30
-      
       # 扩展审计配置
       extended:
         enabled: true

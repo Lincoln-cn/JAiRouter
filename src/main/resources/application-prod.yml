@@ -65,7 +65,6 @@ jairouter:
       include-request-body: false
       include-response-body: false
       retention-days: 90
-      alert-enabled: true
 
     sanitization:
       response:

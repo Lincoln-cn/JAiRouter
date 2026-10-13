@@ -48,8 +48,7 @@ config/
 │   └── model-services-base.yml
 └── security/            # 安全配置（遗留）
     ├── security-base.yml
-    ├── persistence-base.yml
-    └── audit-base.yml
+    └── persistence-base.yml
 ```
 
 ### 模块分类

@@ -343,7 +343,6 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
         auditConfig.setIncludeRequestBody(source.getAudit().isIncludeRequestBody());
         auditConfig.setIncludeResponseBody(source.getAudit().isIncludeResponseBody());
         auditConfig.setRetentionDays(source.getAudit().getRetentionDays());
-        auditConfig.setAlertEnabled(source.getAudit().isAlertEnabled());
         copy.setAudit(auditConfig);
         
         return copy;

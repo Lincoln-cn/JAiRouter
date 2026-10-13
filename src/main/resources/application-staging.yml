@@ -49,7 +49,6 @@ jairouter:
     audit:
       log-level: "INFO"
       retention-days: 30
-      alert-enabled: true
 
     sanitization:
       response:

@@ -21,11 +21,6 @@ public class AuditConfig {
     private boolean enabled = true;
 
     /**
-     * 审计日志存储类型: memory, database
-     */
-    private String storage = "database";
-
-    /**
      * 默认保留天数
      */
     private int retentionDays = 90;
@@ -44,11 +39,6 @@ public class AuditConfig {
      * 是否在审计日志中包含响应体
      */
     private boolean includeResponseBody = false;
-
-    /**
-     * 是否启用告警
-     */
-    private boolean alertEnabled = true;
 
     /**
      * 清理任务执行时间（Cron表达式）

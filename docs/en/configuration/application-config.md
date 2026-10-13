@@ -57,8 +57,7 @@ config/
 │   └── model-services-base.yml
 └── security/            # Security configurations (legacy)
     ├── security-base.yml
-    ├── persistence-base.yml
-    └── audit-base.yml
+    └── persistence-base.yml
 ```
 
 ### Configuration Import
