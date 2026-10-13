@@ -1,4 +1,4 @@
-﻿# 动态配置
+# 动态配置
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.2  
@@ -29,13 +29,18 @@ JAiRouter 提供灵活的配置选项以满足各种部署场景。本指南涵�
 
 ```
 config/
-├── model-router-config@1.json    # Version 1 configuration file
-├── model-router-config@2.json    # Version 2 configuration file
-├── model-router-config@3.json    # Version 3 configuration file
-└── backup_1640995200000/         # Backup directory (timestamp)
-    ├── model-router-config@1.json
-    └── model-router-config@2.json
+├── model-router-config.json          # 当前生效的配置（配置存储键 `model-router-config`）
+├── model-router-config@1.json        # 1 号版本快照
+├── model-router-config@2.json        # 2 号版本快照
+└── model-router-config@3.json        # 3 号版本快照
 ```
+
+> 版本快照与当前配置文件同目录，命名为 `model-router-config@<version>.json`
+> （`persistence/store/FileStoreManager.java`）。本页此前的版本还画了一个 `backup_<时间戳>/`
+> 备份目录（内含版本文件副本）—— **代码里不会产生这样的目录**：备份是另一项能力，
+> 它以加密形式存在配置存储的 `security.backup.<id>` 键下
+> （`auth/security/config/SecurityConfigurationBackupService.java:38`），
+> id 形如 `backup-yyyyMMdd-HHmmss-<n>`。
 
 ### 配置文件格式
 

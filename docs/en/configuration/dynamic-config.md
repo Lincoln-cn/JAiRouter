@@ -1,4 +1,4 @@
-﻿# Dynamic Configuration
+# Dynamic Configuration
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -29,13 +29,18 @@ Although the configuration has been modularized, the dynamic configuration API c
 
 ```
 config/
-├── model-router-config@1.json    # Version 1 configuration file
-├── model-router-config@2.json    # Version 2 configuration file
-├── model-router-config@3.json    # Version 3 configuration file
-└── backup_1640995200000/         # Backup directory (timestamp)
-    ├── model-router-config@1.json
-    └── model-router-config@2.json
+├── model-router-config.json          # the live configuration (store key `model-router-config`)
+├── model-router-config@1.json        # version snapshot 1
+├── model-router-config@2.json        # version snapshot 2
+└── model-router-config@3.json        # version snapshot 3
 ```
+
+> Version snapshots are written as `model-router-config@<version>.json` next to the live file
+> (`persistence/store/FileStoreManager.java`). An earlier revision of this page also showed a
+> `backup_<timestamp>/` directory containing copies — **no such directory is produced anywhere**:
+> backups are a separate capability that keeps an encrypted copy in the config store under
+> `security.backup.<id>` (`auth/security/config/SecurityConfigurationBackupService.java:38`), with ids
+> shaped like `backup-yyyyMMdd-HHmmss-<n>`.
 
 ### Configuration File Format
 
