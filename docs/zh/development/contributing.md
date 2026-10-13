@@ -1,4 +1,4 @@
-﻿# 贡献指南
+# 贡献指南
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.3  
@@ -285,6 +285,44 @@ Closes #123
 - 资源泄漏
 - 并发安全问题
 - 不必要的复杂度
+
+#### 合并前：把 CI 门闩读对
+
+只有当 `gh pr checks <n>` 的**每一行**都是 `pass` 或 `skipping` 时才合并 —— `pending` 不算通过。
+
+**哪些行会出现，取决于你改了什么。绝不能把「某行没出现」当成绿：**
+
+| 改动的路径 | 会跑的门闩 | **不会**出现的门闩 |
+|---|---|---|
+| `docs/**`、`*.md`、`.cspell.json` | `拼写检查`、`文档质量检查`、`文档代码同步检查` 等 | `test`（java-tests.yml 按代码路径过滤） |
+| `src/**`（Java）、`pom.xml`、资源文件 | `test`、`qodana`、`smoke` 等 | `拼写检查`、`文档质量检查`（docs-quality.yml 按文档路径过滤） |
+| `.gitignore` 等两边都不匹配的路径 | 只有 CodeQL / Analyze | 上述两者 |
+
+也就是说：**只改 docs 的 PR 没有 `test` 行是正常的**，**只改代码的 PR 没有 `拼写检查` 行也是正常的**。
+
+**陷阱：机器人提交会把门闩藏起来。** 当机器人往你的分支追加提交（例如 `Auto-update sitemap.xml`）时，
+由它触发的 run 可能停在 `action_required`（耗时 0s、没有任何 job），而**这些 run 完全不出现在
+`gh pr checks` 里**。用「按分支列 run」把它们找出来：
+
+```bash
+gh run list --branch <你的分支> --limit 10
+# 同一个 workflow 会出现两条，例如
+#   completed  success          Java 测试   38143230269  4m34s
+#   completed  action_required  Java 测试   38143237970  0s
+```
+
+逐条放行后再复查：
+
+```bash
+gh api -X POST repos/<owner>/<repo>/actions/runs/<run_id>/approve
+```
+
+同族陷阱：`gh pr view <n> --json mergeStateStatus` 可能报 `UNSTABLE`，而 `mergeable` 是
+`MERGEABLE`，且**合并仍会成功** —— **能合 ≠ 门闩跑过**。
+
+**已知抖动。** `文档质量检查` 里的外链检查偶尔会对
+`https://github.com/<owner>/<repo>/blob/master/LICENSE` 返回 `HTTP 503`。重跑该 job 即可，
+并在 PR 正文里如实说明，不要当成没发生。
 
 ## 开发指导
 

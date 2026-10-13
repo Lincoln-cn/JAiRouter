@@ -1,4 +1,4 @@
-﻿# Contribution Guide
+# Contribution Guide
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -286,6 +286,44 @@ Closes #123
 - Resource leaks
 - Concurrency safety issues
 - Unnecessary complexity
+
+#### Before You Merge: Read the CI Gates Correctly
+
+Merge only when **every** row of `gh pr checks <n>` is `pass` or `skipping` — `pending` is not a pass.
+
+**Which rows appear depends on what you changed.** Never read a missing row as green:
+
+| Changed paths | Gates that run | Gates that do **not** appear |
+|---|---|---|
+| `docs/**`, `*.md`, `.cspell.json` | `拼写检查`, `文档质量检查`, `文档代码同步检查`, … | `test` (java-tests.yml filters on code paths) |
+| `src/**` (Java), `pom.xml`, resources | `test`, `qodana`, `smoke`, … | `拼写检查`, `文档质量检查` (docs-quality.yml filters on docs paths) |
+| `.gitignore` and other unmatched paths | CodeQL / Analyze only | both of the above |
+
+So a docs-only PR with no `test` row is expected, and a code-only PR with no `拼写检查` row is expected.
+
+**Trap: bot commits can hide gates.** When a bot pushes to your branch (for example
+`Auto-update sitemap.xml`), the runs it triggers can stop at `action_required` — 0s, no jobs —
+and those runs **do not show up in `gh pr checks` at all**. Find them by listing runs per branch:
+
+```bash
+gh run list --branch <your-branch> --limit 10
+# the same workflow appears twice, e.g.
+#   completed  success          Java 测试   38143230269  4m34s
+#   completed  action_required  Java 测试   38143237970  0s
+```
+
+Release each one, then re-check:
+
+```bash
+gh api -X POST repos/<owner>/<repo>/actions/runs/<run_id>/approve
+```
+
+Related trap: `gh pr view <n> --json mergeStateStatus` may report `UNSTABLE` while `mergeable`
+is `MERGEABLE`, and the merge still succeeds — **mergeable does not mean the gates ran**.
+
+**Known flake.** The external link check inside `文档质量检查` occasionally gets `HTTP 503` for
+`https://github.com/<owner>/<repo>/blob/master/LICENSE`. Re-run that job, and say so in the PR
+description instead of pretending it never happened.
 
 ## Development Guidance
 
