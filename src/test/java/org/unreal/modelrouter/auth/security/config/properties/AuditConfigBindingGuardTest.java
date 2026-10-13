@@ -103,41 +103,13 @@ class AuditConfigBindingGuardTest {
      * 断言的是「未绑定集合**恰好等于**本集合」，所以任何未登记的键都会让测试变红。</p>
      */
     private static Set<String> knownNonBindingKeys() {
-        Set<String> keys = new TreeSet<>();
-        keys.add(extendedEnabledKey());
-        keys.addAll(residualExtendedKeys());
-        return keys;
-    }
-
-    /** 有字段之外的消费方：由 {@code ExtendedSecurityAuditController} 上的
-     * {@code @ConditionalOnProperty} 直接读属性，不进 {@code AuditConfig}
-     * （同 tracing 的 {@code performance.scheduler.*}，见 {@code TracingConfigBindingGuardTest}）。 */
-    private static String extendedEnabledKey() {
-        return PREFIX + ".extended.enabled";
-    }
-
-    /** 尚无任何消费方的残留：{@code config/auth/audit.yml} 的 {@code extended.persistence.*} /
-     * {@code extended.structured-logging.*} / {@code extended.memory-cache.*}。
-     *
-     * <p>它们**不在 #312 本轮批准的删除范围内**（批准的是 audit 树下 7 个无绑定子块 +
-     * {@code AuditConfig.storage} + {@code alertEnabled}），故在此显式登记而不是静默放过 ——
-     * 收口删除时，本段与这几个键必须一起从登记表移除。</p> */
-    private static Set<String> residualExtendedKeys() {
-        return Set.of(
-                PREFIX + ".extended.memory-cache.cleanup-interval",
-                PREFIX + ".extended.memory-cache.enabled",
-                PREFIX + ".extended.memory-cache.max-events",
-                PREFIX + ".extended.persistence.enabled",
-                PREFIX + ".extended.persistence.file.base-path",
-                PREFIX + ".extended.persistence.file.enabled",
-                PREFIX + ".extended.persistence.file.rotation.compress-archived",
-                PREFIX + ".extended.persistence.file.rotation.max-file-size",
-                PREFIX + ".extended.persistence.file.rotation.max-files",
-                PREFIX + ".extended.persistence.file.separate-files",
-                PREFIX + ".extended.persistence.storage-type",
-                PREFIX + ".extended.structured-logging.enabled",
-                PREFIX + ".extended.structured-logging.format",
-                PREFIX + ".extended.structured-logging.include-metadata");
+        // 只剩这一项：由 ExtendedSecurityAuditController 上的 @ConditionalOnProperty 直接读属性，
+        // 不进 AuditConfig（同 tracing 的 performance.scheduler.*，见 TracingConfigBindingGuardTest）。
+        //
+        // 原 extended.persistence.* / extended.structured-logging.* / extended.memory-cache.*
+        // （14 个键，无任何消费方）已随 issue #321 删除 —— 登记表随之收敛到「只剩有消费方的那一个」，
+        // 于是本测试现在是 jairouter.security.audit 前缀的完整守卫（不再是「已清理 + 登记残留」的混合状态）。
+        return Set.of(PREFIX + ".extended.enabled");
     }
 
     private static Set<String> names(final UnboundConfigurationPropertiesException thrown) {
