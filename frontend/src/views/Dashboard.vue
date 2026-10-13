@@ -561,7 +561,6 @@ const stats = ref({
   errorInstanceCount: 0
 })
 
-const monitoringOverview = ref<any>(null)
 const dashboardMetrics = ref<any>(null)
 const serviceConfigData = ref<any>(null)
 const configLoading = ref(false)
@@ -962,8 +961,9 @@ const fetchMonitoringOverview = async () => {
   try {
     const res = await getMonitoringOverview()
     if (res.data && res.data.success) {
-      monitoringOverview.value = res.data.data
-      // 安全告警数来自监控概览（#291）：此前从 /models/stats 读一个不存在的字段，值也无处显示
+      // 安全告警数来自监控概览（#291）：此前从 /models/stats 读一个不存在的字段，值也无处显示。
+      // 这里的 `res.data.data` 现在受真实 DashboardOverview 类型约束（issue #297）——
+      // 原先它被赋给一个 ref<any> 且再没人读，等于让类型检查失效。
       stats.value.alertCount = res.data.data?.alertsLast24Hours ?? 0
       nextTick(() => {
         systemChartInstance ? systemChartInstance.setOption(getChartOption(), { notMerge: true }) : initChart()
