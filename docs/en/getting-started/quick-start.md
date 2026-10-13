@@ -98,13 +98,30 @@ curl -X POST http://localhost:8080/v1/embeddings \
   }'
 ```
 
+### Prerequisites: a management token
+
+The commands in this section call the **management API**, which is authenticated — without a token they
+return `401 {"error":{"code":"AUTH_MISSING"}}`. Get a JWT once per shell and reuse it
+(the dev default account is `admin` / `ChangeMeOnFirstStartup123456`; change it in production):
+
+```bash
+TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"ChangeMeOnFirstStartup123456"}' \
+  http://localhost:8080/api/auth/jwt/login | jq -r .data.token)
+```
+
+Every command below then sends it as `-H "Jairouter_Token: $TOKEN"`.
+Note the header name: the JWT header is **`Jairouter_Token`** (configurable via
+`jairouter.security.jwt.jwt-header`), not `Authorization: Bearer`.
+
 ## Common Configuration Examples
 
 ### Online API Services
 
 **OpenAI GPT**
 ```bash
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "gpt-4o",
@@ -119,7 +136,8 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
 
 **DeepSeek**
 ```bash
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "deepseek-chat",
@@ -134,7 +152,8 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
 
 **Anthropic Claude**
 ```bash
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "claude-sonnet",
@@ -151,7 +170,8 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
 
 **Google Gemini**
 ```bash
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "gemini-pro",
@@ -168,7 +188,8 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
 
 **Ollama**
 ```bash
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "llama3.2:3b",
@@ -180,7 +201,8 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
 
 **vLLM**
 ```bash
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "vllm-qwen",
@@ -198,7 +220,7 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
 
 ```bash
 # Get all chat service instances
-curl "http://localhost:8080/api/config/instance/type/chat"
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 ```
 
 ### View Monitoring Metrics
@@ -217,7 +239,8 @@ Add a second service instance to experience load balancing:
 
 ```bash
 # Add another instance
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "llama3.2:1b",
