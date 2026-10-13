@@ -163,7 +163,8 @@
         "docs/en/deployment/production.md",
         "docs/en/monitoring/index.md",
         "docs/en/troubleshooting/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-14T01:41:41.115767"
     },
     "docs/en/deployment/docker.md": {
       "FilePath": "docs/en/deployment/docker.md",
@@ -204,7 +205,8 @@
         "docs/en/deployment/jwt-persistence-deployment-checklist.md",
         "docs/en/deployment/kubernetes.md",
         "docs/en/deployment/production.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-14T01:41:49.783819"
     },
     "docs/en/deployment/kubernetes.md": {
       "FilePath": "docs/en/deployment/kubernetes.md",
@@ -7546,5 +7548,5 @@
       "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-13T16:58:02.300093"
+  "last_updated": "2026-10-14T01:41:49.784324"
 }
