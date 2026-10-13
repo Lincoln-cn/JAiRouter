@@ -60,7 +60,7 @@ surfaces:
   - /actuator/**  # health, readiness, Prometheus
 tests:
   command: ./mvnw test -o
-  scale:   ~4000 test methods across 386 test classes
+  scale:   ~4000 test methods across 388 test classes
 license: Apache-2.0
 ```
 
@@ -372,8 +372,9 @@ multi-replica capability (cross-replica event broadcast, shared counters, startu
 per-class handling of scheduled tasks), and a "configuration honesty" pass that either wired up or
 deleted config keys nothing consumed.
 
-**Merged after v3.3.0 and not yet released** (31 commits, 2026-10-10 → 2026-10-12) — a hardening
-batch driven by a security/quality audit. Grouped by theme:
+**Merged after v3.3.0 and not yet released** (53 commits since the tag — 39 substantive plus 14 automated
+docs-version bumps; 2026-10-07 → 2026-10-13) — a hardening batch driven by a security/quality audit,
+plus a configuration-honesty pass. Grouped by theme:
 
 | Theme | What changed |
 |-------|--------------|
@@ -382,8 +383,9 @@ batch driven by a security/quality audit. Grouped by theme:
 | Alerting | `SecurityAlertService` wired to the authentication-failure path, criteria aligned with the audit event enum, counting moved to the storage side, unified config surface, cross-replica exclusive cooldown, and the remaining dead alert config removed |
 | Audit event types | Event types are now always enum names; `parseEventType` no longer silently falls back to `SYSTEM_MAINTENANCE` (enum grew 17 → 26), and unknown dynamic prefixes degrade explicitly instead of being dropped |
 | Security | SSRF: resolved address is pinned to the connection (blocks DNS rebinding); token-usage writes are ownership-scoped; outbound config/metrics clients consolidated into a shared WebClient pool |
-| Dead code | Unreachable auth provider/listener removed, unused DTO removed, unused frontend composable removed |
-| Docs & gates | Documentation realigned with code in several places; the spell-check word list fixed |
+| Config honesty | Two config trees that bound to no field are gone (`jairouter.security.audit`'s seven sub-blocks and the whole `jairouter.security.performance` tree, 21 keys across 4 files); `AuditConfig.storage` / `alertEnabled` removed; two guard tests now fail the build if such keys come back |
+| Dead code | Unreachable auth provider/listener removed, unused DTOs and an unused boundary-layer interface removed, unused frontend composable removed |
+| Docs & gates | Documentation realigned with code in several places (16 pages of config examples that never worked, plus two fabricated audit sections); the contribution guide now documents how to read the CI gates; the spell-check word list fixed |
 
 Release tags: `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`.
 
@@ -394,13 +396,12 @@ Known, tracked, and **not** done — do not assume these work:
 | Issue | Summary |
 |-------|---------|
 | [#250](https://github.com/Lincoln-cn/JAiRouter/issues/250) | Six documentation pages detected as stale and due for review |
-| [#297](https://github.com/Lincoln-cn/JAiRouter/issues/297) | Console `DashboardOverview` type does not match the real `/api/monitoring/overview` payload, so type checking does not constrain the real field names |
-| [#303](https://github.com/Lincoln-cn/JAiRouter/issues/303) | Bot commits can leave a workflow run in `action_required`, and `gh pr checks` does not list those runs |
+| [#297](https://github.com/Lincoln-cn/JAiRouter/issues/297) | Console `DashboardOverview` type does not match the real `/api/monitoring/overview` payload — no user-visible impact today, but the type is not checked against real field names |
 | [#304](https://github.com/Lincoln-cn/JAiRouter/issues/304) | Alerting and streaming error paths lack real end-to-end verification against a running instance |
-| [#307](https://github.com/Lincoln-cn/JAiRouter/issues/307) | `ResponseSanitizationFilterTest` never enables the feature, so the whole test class runs through the early-return path |
-| [#308](https://github.com/Lincoln-cn/JAiRouter/issues/308) | Audit documentation drift (config keys and event names documented that do not exist) |
-| [#310](https://github.com/Lincoln-cn/JAiRouter/issues/310) | `SecurityAuditApi` has no implementation and no caller |
-| [#312](https://github.com/Lincoln-cn/JAiRouter/issues/312) | Most sub-blocks of the `jairouter.security.audit` config tree bind to no field |
+| [#314](https://github.com/Lincoln-cn/JAiRouter/issues/314) | `SensitiveConfigValidator` claims a random admin password is generated on first startup; nothing generates one |
+| [#317](https://github.com/Lincoln-cn/JAiRouter/issues/317) | `ResponseSanitizationFilter` builds an error body it never writes (with `fail-on-error=true` the client gets the central handler's error instead) |
+| [#324](https://github.com/Lincoln-cn/JAiRouter/issues/324) | Two documentation pages have unbalanced markdown fences, so everything after the break renders as code |
+| [#327](https://github.com/Lincoln-cn/JAiRouter/issues/327) | The remaining `common/api` boundary layer (12 interfaces + 3 DTOs, ~1878 lines) has no implementation and no caller |
 
 ## Documentation
 
@@ -442,7 +443,7 @@ Contributions are welcome — see the [Contributing Guide](https://jairouter.com
 Before opening a pull request:
 
 ```bash
-./mvnw test -o                       # 386 test classes, ~4000 test methods, must stay green
+./mvnw test -o                       # 388 test classes, ~4000 test methods, must stay green
 cd frontend && npm run type-check    # the frontend type gate
 ```
 

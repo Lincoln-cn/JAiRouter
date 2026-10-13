@@ -59,7 +59,7 @@ surfaces:
   - /actuator/**  # 健康、就绪、Prometheus
 tests:
   command: ./mvnw test -o
-  scale:   386 个测试类，约 4000 个测试方法
+  scale:   388 个测试类，约 4000 个测试方法
 license: Apache-2.0
 ```
 
@@ -355,8 +355,8 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 （跨副本事件广播、共享计数、启动自检、定时任务按类处置）；以及一轮「配置诚实性」收口：把没人消费的
 配置键逐个接上消费方或删除。
 
-**v3.3.0 之后已合入、尚未发布**（31 次提交，2026-10-10 → 2026-10-12）—— 一轮由安全/质量审计驱动的加固。
-按主题归类：
+**v3.3.0 之后已合入、尚未发布**（自该 tag 起 53 次提交 —— 39 次实质改动 + 14 次自动化的文档版本号提交；
+2026-10-07 → 2026-10-13）—— 一轮由安全/质量审计驱动的加固，另加一轮「配置诚实性」收口。按主题归类：
 
 | 主题 | 变更内容 |
 |------|----------|
@@ -365,8 +365,9 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 | 告警 | `SecurityAlertService` 接到认证失败路径、判据对齐审计事件枚举、计数下沉到存储侧、配置面统一、冷却改为跨副本排他，并清掉残余死告警配置 |
 | 审计事件类型 | 事件类型一律走枚举名；`parseEventType` 不再静默回退成 `SYSTEM_MAINTENANCE`（枚举 17 → 26），未知动态前缀改为显式降级而非被丢弃 |
 | 安全 | SSRF：解析结果与建连绑定（堵 DNS 重绑定）；Token 用量写入按主体收敛属主；配置推送与指标上报的出站客户端收归共享 WebClient 池 |
-| 死代码 | 删除不可达的认证 provider/listener、无生产方的 DTO、无引用的前端 composable |
-| 文档与门闩 | 多处文档与代码口径对齐；修复拼写检查词表 |
+| 配置诚实性 | 两棵「能设、不报错、没人读」的配置树已删除（`jairouter.security.audit` 下 7 个子块，以及整棵 `jairouter.security.performance`：4 个文件 21 个键）；`AuditConfig.storage` / `alertEnabled` 一并删除；两条守卫测试现在会让这类键「复活」时直接构建失败 |
+| 死代码 | 删除不可达的认证 provider/listener、无生产方的 DTO、无引用的模块边界接口、无引用的前端 composable |
+| 文档与门闩 | 多处文档与代码口径对齐（16 篇里从未生效的配置示例，以及两处完全虚构的审计小节）；贡献文档新增「怎么读 CI 门闩」；修复拼写检查词表 |
 
 发布标签：`v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`。
 
@@ -377,13 +378,12 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 | Issue | 概要 |
 |-------|------|
 | [#250](https://github.com/Lincoln-cn/JAiRouter/issues/250) | 检出 6 个过期文档，待复审更新 |
-| [#297](https://github.com/Lincoln-cn/JAiRouter/issues/297) | 控制台 `DashboardOverview` 类型与 `/api/monitoring/overview` 真实载荷不一致，类型检查对真实字段名没有约束力 |
-| [#303](https://github.com/Lincoln-cn/JAiRouter/issues/303) | 机器人提交会让 workflow run 停在 `action_required`，且 `gh pr checks` 不显示这些 run |
+| [#297](https://github.com/Lincoln-cn/JAiRouter/issues/297) | 控制台 `DashboardOverview` 类型与 `/api/monitoring/overview` 真实载荷不一致 —— 今天无用户可见影响，但类型对真实字段名没有约束力 |
 | [#304](https://github.com/Lincoln-cn/JAiRouter/issues/304) | 告警链路与流式错误路径缺少真实运行态的端到端验证 |
-| [#307](https://github.com/Lincoln-cn/JAiRouter/issues/307) | `ResponseSanitizationFilterTest` 从未开启该功能，整个测试类都走在提前返回的分支上 |
-| [#308](https://github.com/Lincoln-cn/JAiRouter/issues/308) | 审计文档口径漂移（文档里的配置键与事件名并不存在） |
-| [#310](https://github.com/Lincoln-cn/JAiRouter/issues/310) | `SecurityAuditApi` 无实现方、无调用方 |
-| [#312](https://github.com/Lincoln-cn/JAiRouter/issues/312) | `jairouter.security.audit` 配置树大部分子块没有绑定字段 |
+| [#314](https://github.com/Lincoln-cn/JAiRouter/issues/314) | `SensitiveConfigValidator` 提示「首次启动将生成随机密码」，实际不会生成 |
+| [#317](https://github.com/Lincoln-cn/JAiRouter/issues/317) | `ResponseSanitizationFilter` 算出的错误体从未写出（`fail-on-error=true` 时客户端拿到的是中央处理器的错误体） |
+| [#324](https://github.com/Lincoln-cn/JAiRouter/issues/324) | 两篇文档的 markdown 围栏未配平，错位点之后整篇被当作代码渲染 |
+| [#327](https://github.com/Lincoln-cn/JAiRouter/issues/327) | `common/api` 余下的模块边界层（12 个接口 + 3 个 DTO，约 1878 行）无实现方与调用方 |
 
 ## 文档
 
@@ -423,7 +423,7 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 提 PR 前请先跑：
 
 ```bash
-./mvnw test -o                       # 386 个测试类、约 4000 个测试方法，必须保持全绿
+./mvnw test -o                       # 388 个测试类、约 4000 个测试方法，必须保持全绿
 cd frontend && npm run type-check    # 前端类型门闩
 ```
 
