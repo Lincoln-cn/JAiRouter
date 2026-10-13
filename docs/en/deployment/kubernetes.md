@@ -178,7 +178,7 @@ The repository already ships Redis shared-state implementations (quota `RedisCou
 
 ### Architecture Diagram
 
-``mermaid
+```mermaid
 graph TB
     subgraph "Kubernetes Cluster"
         subgraph "Ingress Layer"
