@@ -223,14 +223,6 @@ docker run -d \
 ```yaml
 jairouter:
   security:
-    performance:
-      cache:
-        redis:
-          enabled: true
-          host: "localhost"
-          port: 6379
-          password: "your-redis-password"
-          database: 0
 ```
 
 ### Local Cache
@@ -238,13 +230,6 @@ jairouter:
 ```yaml
 jairouter:
   security:
-    performance:
-      cache:
-        local:
-          enabled: true
-          api-key:
-            max-size: 1000
-            expire-after-write: 3600
 ```
 
 ## API Key Persistence Storage
@@ -395,13 +380,6 @@ jairouter:
   security:
     audit:
       enabled: true
-      event-types:
-        api-key-created: true
-        api-key-used: true
-        api-key-revoked: true
-        api-key-expired: true
-        authentication-success: true
-        authentication-failure: true
 ```
 
 ### Monitoring Metrics
@@ -431,61 +409,37 @@ jairouter:
       include-response-body: false
       retention-days: 90
       
-      # API Key operations auditing
-      api-key-operations:
-        enabled: true
-        log-key-details: false  # Don't log full keys
-        log-usage-patterns: true
-        log-ip-address: true
       
-      # JWT operations auditing
-      jwt-operations:
-        enabled: true
-        log-token-details: false  # Don't log full tokens
-        log-user-agent: true
-        log-ip-address: true
       
-      # Security events auditing
-      security-events:
-        enabled: true
-        suspicious-activity-detection: true
       
-      # Audit storage configuration
-      storage:
-        type: "h2"              # Options: h2, file, database
-        h2:
-          table-name: "security_audit_events"  # H2 table name
-        file-path: "logs/security-audit.log"
-        rotation:
-          max-file-size: "100MB"
-          max-files: 30
-        # Optional: database storage
-        database:
-          enabled: false
-          table-name: "security_audit_events"
 ```
 
 ### Audit Event Types
 
-The system logs the following API Key and JWT events:
+The list below is the **exact set of `event_type` values** written to the audit table
+(`AuditEventType`). Since #301 an unrecognized name is rejected instead of silently falling back
+to a default, so use these names verbatim when filtering, exporting or building reports.
 
 #### API Key Events
-- **Key Created**: When a new API key is generated
-- **Key Used**: When an API key is used for authentication
-- **Key Revoked**: When an API key is revoked
-- **Key Expired**: When an API key expires
+`API_KEY_CREATED` · `API_KEY_USED` · `API_KEY_UPDATED` · `API_KEY_REVOKED` · `API_KEY_EXPIRED` ·
+`API_KEY_ROTATED` · `API_KEY_BATCH_IMPORT`
+
+#### API Key Validation Failures
+`API_KEY_MISSING` · `API_KEY_INVALID` · `API_KEY_VALIDATION_FAILED`
 
 #### JWT Token Events
-- **Token Issued**: When a new JWT token is created
-- **Token Refreshed**: When an access token is refreshed
-- **Token Revoked**: When a token is manually revoked
-- **Token Validated**: When a token is validated (success/failure)
-- **Token Expired**: When a token naturally expires
+`JWT_TOKEN_ISSUED` · `JWT_TOKEN_REFRESHED` · `JWT_TOKEN_VALIDATED` · `JWT_TOKEN_REVOKED` ·
+`JWT_TOKEN_EXPIRED`
 
 #### Security Events
-- **Suspicious Activity**: Unusual authentication patterns
-- **Failed Authentication**: Failed login attempts
-- **Bulk Operations**: Mass token/key operations
+`SECURITY_ALERT` · `SUSPICIOUS_ACTIVITY` · `AUTHENTICATION_FAILED` · `AUTHORIZATION_FAILED` ·
+`BRUTE_FORCE_ATTEMPT` · `DATA_SANITIZATION` · `RESPONSE_SANITIZATION` · `FULL_CONTENT_ACCESS`
+
+#### Call History Configuration
+`RECORD_LEVEL_CHANGE`
+
+#### System Events
+`SYSTEM_CLEANUP` · `SYSTEM_MAINTENANCE`
 
 ### Audit Event Structure
 
@@ -667,13 +621,6 @@ jairouter:
           key-value: "${PROD_SERVICE_API_KEY}"
           permissions: ["read", "write"]
           expires-at: "${PROD_SERVICE_KEY_EXPIRES}"
-    performance:
-      cache:
-        redis:
-          enabled: true
-          host: "${REDIS_HOST}"
-          port: "${REDIS_PORT}"
-          password: "${REDIS_PASSWORD}"
 ```
 
 ## Related Documentation

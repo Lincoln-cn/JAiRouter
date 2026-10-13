@@ -419,14 +419,6 @@ jairouter:
 ```
 jairouter:
   security:
-    performance:
-      sanitization:
-        # 启用并行处理
-        parallel-enabled: true
-        # 线程池大小
-        thread-pool-size: 8
-        # 流式处理阈值
-        streaming-threshold: 2097152  # 2MB
 ```
 
 ### 正则表达式缓存
@@ -434,12 +426,6 @@ jairouter:
 ```
 jairouter:
   security:
-    performance:
-      sanitization:
-        # 正则表达式缓存大小
-        regex-cache-size: 500
-        # 缓存过期时间（秒）
-        regex-cache-expiration: 3600
 ```
 
 ### 批量处理
@@ -447,12 +433,6 @@ jairouter:
 ```
 jairouter:
   security:
-    performance:
-      sanitization:
-        # 批量处理大小
-        batch-size: 100
-        # 批量处理超时（毫秒）
-        batch-timeout: 1000
 ```
 
 ### 3. Redis 缓存
@@ -460,14 +440,6 @@ jairouter:
 ```
 jairouter:
   security:
-    performance:
-      cache:
-        redis:
-          enabled: true
-          host: "${REDIS_HOST:localhost}"
-          port: "${REDIS_PORT:6379}"
-          password: "${REDIS_PASSWORD:}"
-          database: 0
 ```
 
 ### 4. 应用安全配置
@@ -547,10 +519,6 @@ jairouter:
   security:
     audit:
       enabled: true
-      event-types:
-        sanitization-applied: true
-        sanitization-skipped: true
-        sanitization-failed: true
 ```
 
 ### 监控指标
@@ -717,12 +685,6 @@ jairouter:
               - "\\b(?:QQ|微信|WeChat)[:：]?\\s*\\d+\\b"
           embedding:
             enabled: false
-    performance:
-      sanitization:
-        parallel-enabled: true
-        thread-pool-size: 8
-        streaming-threshold: 2097152
-        regex-cache-size: 500
 ```
 
 ## 相关文档

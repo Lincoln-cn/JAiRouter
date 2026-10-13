@@ -251,7 +251,6 @@ jairouter:
       enabled: true                     # Enable audit logging
       include-request-body: true        # Log request bodies
       include-response-body: false      # Log response bodies
-      max-body-length: 1024             # Max body length to log
 ```
 
 #### Data Sanitization Configuration (`config/auth/sanitization.yml`)

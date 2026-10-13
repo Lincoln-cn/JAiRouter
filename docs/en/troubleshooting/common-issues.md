@@ -778,12 +778,6 @@ jairouter:
   security:
     audit:
       enabled: true
-      jwt-operations:
-        enabled: true
-      api-key-operations:
-        enabled: true
-      security-events:
-        enabled: true
 ```
 
 **Configure Log Rotation**
@@ -791,12 +785,6 @@ jairouter:
 jairouter:
   security:
     audit:
-      storage:
-        type: "file"
-        file-path: "logs/security-audit.log"
-        rotation:
-          max-file-size: "100MB"
-          max-files: 30
 ```
 
 **Optimize Audit Performance**
@@ -804,10 +792,6 @@ jairouter:
 jairouter:
   security:
     audit:
-      jwt-operations:
-        log-token-details: false  # Reduce log size
-      api-key-operations:
-        log-key-details: false
 ```
 
 ## Getting Help

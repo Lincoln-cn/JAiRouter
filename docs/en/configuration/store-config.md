@@ -82,7 +82,6 @@ spring:
 jairouter:
   security:
     audit:
-      storage: h2  # Security audit log storage type
       retentionDays: 30
 ```
 
@@ -115,7 +114,6 @@ spring:
 jairouter:
   security:
     audit:
-      storage: h2
       retentionDays: 30
 ```
 
@@ -148,7 +146,6 @@ spring:
 jairouter:
   security:
     audit:
-      storage: h2
       retentionDays: 7
 ```
 
@@ -177,7 +174,6 @@ spring:
 jairouter:
   security:
     audit:
-      storage: h2
       retentionDays: 90
 ```
 

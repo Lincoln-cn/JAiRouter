@@ -133,36 +133,9 @@ jairouter:
       include-response-body: false
       retention-days: 90
       
-      # JWT operations auditing
-      jwt-operations:
-        enabled: true
-        log-token-details: false  # Security: don't log full tokens
-        log-user-agent: true
-        log-ip-address: true
       
-      # API Key operations auditing
-      api-key-operations:
-        enabled: true
-        log-key-details: false   # Security: don't log full keys
-        log-usage-patterns: true
-        log-ip-address: true
       
-      # Security events auditing
-      security-events:
-        enabled: true
-        suspicious-activity-detection: true
       
-      # Audit storage configuration
-      storage:
-        type: "file"              # Options: file, database
-        file-path: "logs/security-audit.log"
-        rotation:
-          max-file-size: "100MB"
-          max-files: 30
-        # Optional: database storage
-        database:
-          enabled: false
-          table-name: "security_audit_events"
 ```
 
 ## Environment-Specific Configuration
@@ -188,12 +161,6 @@ jairouter:
     
     # Development audit configuration
     audit:
-      jwt-operations:
-        enabled: true
-        log-token-details: true  # OK to log details in development
-      api-key-operations:
-        enabled: true
-        log-key-details: true
       retention-days: 7          # Short retention for development
 
 # Enable debug endpoints
@@ -228,20 +195,6 @@ jairouter:
     # Production audit configuration
     audit:
       enabled: true
-      jwt-operations:
-        enabled: true
-        log-token-details: false  # Security: no token details in production
-      api-key-operations:
-        enabled: true
-        log-key-details: false
-      security-events:
-        enabled: true
-        suspicious-activity-detection: true
-      storage:
-        type: "file"
-        # Consider database storage for production
-        database:
-          enabled: false  # Enable if needed
       retention-days: 180   # Longer retention for production
 
 # Monitoring configuration
@@ -272,15 +225,6 @@ jairouter:
     # Staging audit configuration
     audit:
       enabled: true
-      jwt-operations:
-        enabled: true
-        log-token-details: false
-      api-key-operations:
-        enabled: true
-        log-key-details: false
-      security-events:
-        enabled: true
-        suspicious-activity-detection: true
       retention-days: 30
 
 # Enable debug endpoints for staging
@@ -415,14 +359,6 @@ jairouter:
           max-tokens: 50000       # Hard limit
     
     audit:
-      # Security audit settings
-      jwt-operations:
-        log-token-details: false  # Never log full tokens
-      api-key-operations:
-        log-key-details: false   # Never log full keys
-      security-events:
-        enabled: true            # Always enable security events
-        suspicious-activity-detection: true
 ```
 
 ### Access Control
@@ -635,10 +571,6 @@ jairouter:
   security:
     audit:
       enabled: true
-      jwt-operations:
-        enabled: true
-      api-key-operations:
-        enabled: true
 ```
 
 ## Best Practices
@@ -650,10 +582,6 @@ jairouter:
 jairouter:
   security:
     audit:
-      jwt-operations:
-        log-token-details: false  # Never log full tokens
-      api-key-operations:
-        log-key-details: false   # Never log full keys
 ```
 
 2. **Use Strong Redis Security**
