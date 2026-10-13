@@ -1,4 +1,4 @@
-﻿# GitHub Pages Deployment Configuration
+# GitHub Pages Deployment Configuration
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -26,19 +26,23 @@ JAiRouter documentation site is automatically deployed through GitHub Pages, pro
 
 If you need to use a custom domain:
 
-1. Configure the domain in the `docs/CNAME` file in the repository root
+1. Set the domain in the `docs/CNAME` file (this repository already ships one)
 2. Configure DNS records at your domain provider:
    - Type: CNAME
    - Name: docs (or your desired subdomain)
    - Value: lincoln-cn.github.io
 
+The canonical URL is `https://jairouter.com/` — that is the `site_url` in `mkdocs.yml`, so links and the
+sitemap are generated against it.
+
 ### 3. Automatic Deployment Process
 
-Documentation will be automatically deployed after modifications:
+Documentation is deployed by the `docs.yml` workflow, which runs on pushes to **`master`** (the default
+branch of this repository):
 
-1. Push to main branch
-2. GitHub Actions automatically builds documentation
-3. Deploy to GitHub Pages
+1. Push to `master`
+2. GitHub Actions builds the site with MkDocs
+3. The built site is published to GitHub Pages
 
 ## Access URLs
 
