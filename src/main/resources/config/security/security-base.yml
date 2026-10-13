@@ -60,25 +60,6 @@ jairouter:
       include-request-body: false
       include-response-body: false
       retention-days: 90
-      alert-enabled: false
-      event-types:
-        authentication-success: false
-        authentication-failure: true
-        authorization-failure: true
-        sanitization-applied: false
-        configuration-changed: true
-        security-alert: true
-        suspicious-activity: true
-      storage:
-        type: "file"
-        file-path: "logs/security-audit.log"
-        rotation:
-          max-file-size: "100MB"
-          max-files: 30
-        # 可选：数据库存储
-        database:
-          enabled: false
-          table-name: "security_audit_events"
     
     # ========================================
     # 安全监控基础配置

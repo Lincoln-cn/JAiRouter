@@ -70,7 +70,6 @@ jairouter:
     # 安全审计配置
     audit:
       enabled: true
-      storage: h2  # 默认使用 H2 数据库存储审计日志
       retentionDays: 30
 
 # ========================================
