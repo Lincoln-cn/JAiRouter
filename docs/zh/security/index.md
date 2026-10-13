@@ -94,7 +94,7 @@ curl -H "X-API-Key: your-api-key" \
 
 ## 架构概览
 
-``mermaid
+```mermaid
 graph TB
     Client[客户端] --> Gateway[API网关层]
     Gateway --> Auth[认证过滤器]

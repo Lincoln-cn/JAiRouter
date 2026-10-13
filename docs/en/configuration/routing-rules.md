@@ -269,7 +269,7 @@ A resource pool bundles a named set of instances of one service type. When a req
 
 1. **YAML** (config/router/pools.yml):
 
-``yaml
+```yaml
 model:
   pools:
     - pool-name: auto-model
@@ -282,7 +282,7 @@ model:
           weight: 9
         - instance-id: inst-claude
           weight: 1
-``
+```
 
 2. **Web console**: Configuration → Resource Pools (CRUD with hot reload; persisted to StoreManager key=pool_definitions)
 

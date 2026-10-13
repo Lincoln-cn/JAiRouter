@@ -311,7 +311,7 @@ sudo systemctl restart docker
 
 `Dockerfile.china` 已经针对中国网络环境进行了优化：
 
-``dockerfile
+```dockerfile
 # 多阶段构建 Dockerfile for JAiRouter (China Optimized)
 # 使用阿里云Maven镜像加速构建
 FROM maven:3.9.6-eclipse-temurin-17 AS builder
@@ -1470,3 +1470,4 @@ groups:
         annotations:
           summary: "JAiRouter 访问量激增 (中国)"
           description: "JAiRouter 实例 {{ $labels.instance }} 访问量超过 1000 次/分钟"
+```

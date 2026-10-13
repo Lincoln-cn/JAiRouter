@@ -308,6 +308,23 @@ function Invoke-DocsGates {
         Add-Result "mkdocs --strict" "SKIP" "$py 没有 mkdocs 模块 —— 需先建文档 venv（见脚本说明）"
     }
 
+    # 围栏配平（issue #324）：CI 目前**不检查**这一项 —— 实测它一直绿，而文档里躺着 6 个文件 / 10 处
+    # 围栏错字（开栏/闭栏写成两个反引号、块未闭合），这些会让整篇起错位点后渲染成代码。
+    # 这里把它作为**附加**检查跑；是否进 CI 由维护者定夺（见 #324）。
+    $fenceScript = Join-Path $script:Root "scripts/docs/check-fence-parity.py"
+    if (Test-Path $fenceScript) {
+        $r = Invoke-Logged -Exe $py -Arguments @("scripts/docs/check-fence-parity.py", "--dir", "docs", "--fail-on-error")
+        if ($r.ExitCode -eq 0) {
+            $summary = @($r.Output | Select-String -Pattern "^总计") | Select-Object -Last 1
+            Add-Result "围栏配平" "PASS" ("" + $summary)
+        } else {
+            $bad = @($r.Output | Select-String -Pattern "^❌|two-backtick|odd fence count") | Select-Object -First 5
+            Add-Result "围栏配平" "FAIL" ($bad -join " | ")
+        }
+    } else {
+        Add-Result "围栏配平" "SKIP" "未找到 scripts/docs/check-fence-parity.py"
+    }
+
     # markdownlint-cli2（CI 用 DavidAnson/markdownlint-cli2-action@v20 + .markdownlint.json）
     # 检查面刻意用 `git ls-files`（**跟踪的** *.md），而不是 `**/*.md` glob：
     # 本地 docs/ 与仓库根都有被 .gitignore 的本地产物（如 AGENTS.md），CI 里不存在这些文件，

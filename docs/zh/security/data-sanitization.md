@@ -45,7 +45,7 @@ JAiRouter 的数据脱敏功能可以自动识别和处理请求和响应中的�
 
 ### 1. 启用数据脱敏
 
-``yaml
+```yaml
 jairouter:
   security:
     enabled: true
@@ -58,7 +58,7 @@ jairouter:
 
 ### 2. 基础配置
 
-``yaml
+```yaml
 jairouter:
   security:
     sanitization:

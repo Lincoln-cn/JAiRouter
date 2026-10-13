@@ -269,7 +269,7 @@ curl -X POST http://localhost:8080/api/config/rules/validate \
 
 1. **YAML**(config/router/pools.yml):
 
-``yaml
+```yaml
 model:
   pools:
     - pool-name: auto-model
@@ -282,7 +282,7 @@ model:
           weight: 9
         - instance-id: inst-claude
           weight: 1
-``
+```
 
 2. **Web 界面**:配置管理 → 资源池(增删改 + 热生效,持久化到 StoreManager key=pool_definitions)
 
