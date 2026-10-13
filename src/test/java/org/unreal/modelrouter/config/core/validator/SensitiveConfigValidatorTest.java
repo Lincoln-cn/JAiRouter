@@ -2,6 +2,12 @@ package org.unreal.modelrouter.config.core.validator;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.io.ClassPathResource;
+
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -81,5 +87,35 @@ class SensitiveConfigValidatorTest {
         assertTrue(validator.isHardcodedSecret("SECRET"), "SECRET equals secret");
         assertTrue(validator.isHardcodedSecret("PASSWORD"), "PASSWORD equals password");
         assertFalse(validator.isHardcodedSecret("my-password"), "my-password 不等于 password");
+    }
+
+    @Test
+    @DisplayName("缺 INITIAL_ADMIN_PASSWORD 的告警必须描述真实行为（issue #314）")
+    void missingAdminPasswordWarningMatchesRealBehavior() throws Exception {
+        String warning = SensitiveConfigValidator.missingAdminPasswordWarning();
+
+        // ① 不得再声称「会生成随机密码」—— 本仓不存在任何启动期随机密码生成
+        assertFalse(warning.contains("生成随机密码"),
+                "不存在启动期随机密码生成，告警不得再这么写");
+
+        // ② 必须写出真实的回落值，且该值与 config/auth/jwt.yml 的回落写法一致（交叉核对，不是自证）
+        String fallback = adminFallbackFromJwtYml();
+        assertEquals(SensitiveConfigValidator.FACTORY_DEFAULT_ADMIN_PASSWORD, fallback,
+                "Java 常量与 config/auth/jwt.yml 的回落值必须一致");
+        assertTrue(warning.contains(fallback),
+                "告警必须写出真实的回落值 " + fallback + "，运维才能判断风险；实际文案：" + warning);
+
+        // ③ 还要指出去哪生成强密码 —— 旧文案想表达的就是这件事，只是说反了
+        assertTrue(warning.contains("--generate-password"), "应指向唯一真实的生成器");
+    }
+
+    /** 从真实 yml 里读出 {@code ${INITIAL_ADMIN_PASSWORD:...}} 的回落值 */
+    private static String adminFallbackFromJwtYml() throws Exception {
+        try (InputStream in = new ClassPathResource("config/auth/jwt.yml").getInputStream()) {
+            String yml = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            Matcher matcher = Pattern.compile("\\$\\{INITIAL_ADMIN_PASSWORD:([^}]*)}").matcher(yml);
+            assertTrue(matcher.find(), "config/auth/jwt.yml 里应存在 ${INITIAL_ADMIN_PASSWORD:...} 的回落写法");
+            return matcher.group(1);
+        }
     }
 }

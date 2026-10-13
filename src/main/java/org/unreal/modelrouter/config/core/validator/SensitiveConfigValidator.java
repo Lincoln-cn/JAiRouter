@@ -97,7 +97,7 @@ public class SensitiveConfigValidator implements ApplicationListener<Application
             if (strictMode) {
                 errors.add("INITIAL_ADMIN_PASSWORD 未设置（必须配置）");
             } else {
-                warnings.add("INITIAL_ADMIN_PASSWORD 未设置（首次启动将生成随机密码）");
+                warnings.add(missingAdminPasswordWarning());
             }
         } else if (initialAdminPassword.length() < 8) {
             warnings.add("INITIAL_ADMIN_PASSWORD 长度过短（建议 ≥8 字符，当前: " + initialAdminPassword.length() + ")");
@@ -116,6 +116,31 @@ public class SensitiveConfigValidator implements ApplicationListener<Application
         } else {
             log.info("✓ GPUSTACK_API_TOKEN 已配置");
         }
+    }
+
+    /**
+     * {@code config/auth/jwt.yml} 里 {@code ${INITIAL_ADMIN_PASSWORD:...}} 的回落值。
+     *
+     * <p>它由 {@code SensitiveConfigValidatorTest} 从**真实 yml** 读出并交叉核对 —— 任何一侧改了默认值
+     * 而另一侧没跟上，测试都会红（避免这段文案变成第二种「撒谎的提示」）。</p>
+     */
+    static final String FACTORY_DEFAULT_ADMIN_PASSWORD = "ChangeMeOnFirstStartup123456";
+
+    /**
+     * 未设置 {@code INITIAL_ADMIN_PASSWORD} 时的告警文案（包内可见：供测试断言，issue #314）。
+     *
+     * <p><b>这段文案此前写的是「首次启动将生成随机密码」，与实现不符</b> —— 本仓库**不存在任何启动期随机
+     * 密码生成**：缺口令时 JWT 账户会沿用 {@code config/auth/jwt.yml} 里的出厂默认密码
+     * （见 {@link #FACTORY_DEFAULT_ADMIN_PASSWORD}），而生产 profile 下 {@code StartupSecurityGate}
+     * 会因此**直接启动失败**。唯一生成器是显式 CLI {@code --generate-password}（{@code KeyGeneratorCommandLine}）。</p>
+     *
+     * @return 描述真实后果的告警文案
+     */
+    static String missingAdminPasswordWarning() {
+        return "INITIAL_ADMIN_PASSWORD 未设置（将回落到配置里的出厂默认密码 "
+                + FACTORY_DEFAULT_ADMIN_PASSWORD
+                + "；生产 profile 会因此启动失败 —— 请设置该环境变量，"
+                + "或用 --generate-password 生成一个强密码）";
     }
 
     /**
