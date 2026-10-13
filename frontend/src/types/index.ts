@@ -15,33 +15,46 @@ export interface RouterResponse<T = any> {
   timestamp: string
 }
 
-export interface SystemStatus {
-  uptime: number
-  version: string
-  environment: string
-}
-
+/**
+ * `GET /api/monitoring/overview` 的真实载荷（后端 `MonitoringController#getMonitoringOverview`）。
+ *
+ * issue #297：此前的版本声明了 `systemStatus` / `serviceStats` / `requestStats` / `resourceUsage`，
+ * 而该接口**从不返回这些键** —— 类型因此对真实字段毫无约束（页面当时用 `ref<any>` 接收，也就没人发现）。
+ * 现在按接口实际 put 的 9 个键重写，字段类型逐个对过后端 getter：
+ * `enabledCategories` = `Set<String>`、`degradationStatus.level` = 枚举名、其余标量见下。
+ */
 export interface DashboardOverview {
-  systemStatus: SystemStatus
-  serviceStats: {
-    totalServices: number
-    activeServices: number
-    failedServices: number
+  /** 监控总开关（`MonitoringProperties#isEnabled`） */
+  enabled: boolean
+  /** 指标前缀 */
+  prefix: string
+  /** 已启用的监控类别 */
+  enabledCategories: string[]
+  /** 健康检查结果（`MonitoringHealthChecker#performHealthCheck`） */
+  healthy: boolean
+  errorStats: {
+    activeErrorComponents: number
+    degradedComponents: number
+    totalErrors: number
   }
-  requestStats: {
-    totalRequests: number
-    requestsPerSecond: number
-    averageResponseTime: number
-    errorRate: number
+  degradationStatus: {
+    /** 降级级别枚举名 */
+    level: string
+    samplingRate: number
+    autoModeEnabled: boolean
   }
-  resourceUsage: {
-    cpuUsage: number
-    memoryUsage: number
-    diskUsage: number
+  cacheStats: {
+    usageRatio: number
+    activeRetries: number
+  }
+  circuitBreakerStats: {
+    /** 熔断器状态名 */
+    state: string
+    failureRate: number
   }
   /**
-   * 近 24 小时安全告警数。
-   * 由 MonitoringController#getMonitoringOverview（/api/monitoring/overview）返回；alerts 关闭时不返回该键。
+   * 近 24 小时安全告警数（#291）。
+   * 由本接口返回；**alerts 关闭时不返回该键**，故为可选。
    */
   alertsLast24Hours?: number
 }
