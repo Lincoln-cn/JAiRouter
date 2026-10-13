@@ -1,4 +1,4 @@
-﻿# API Reference
+# API Reference
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -268,34 +268,58 @@ JAiRouter follows OpenAI's API versioning:
 
 ## Pagination
 
-For APIs that return lists (like instance management), pagination is supported:
+Endpoints whose result set can grow unbounded are paginated; the rest return a plain array.
+Two paginated examples:
 
 ```http
-GET /api/config/instance/type/chat?page=1&size=10
+GET /api/config/circuit-breaker/history?page=0&size=20
+GET /api/security/blacklist/list?page=0&size=20
 ```
 
-**Response:**
+`page` defaults to `0` and `size` to `20`. The payload is the usual `RouterResponse` envelope with a
+**flat** Spring Data `Page` inside `data` — the paging fields sit next to `content`, there is **no** nested
+`page` object:
+
+**Response:** (field set taken from a live call)
 ```json
 {
-  "content": [...],
-  "page": {
-    "number": 1,
-    "size": 10,
-    "totalElements": 25,
-    "totalPages": 3
-  }
+  "success": true,
+  "message": "...",
+  "data": {
+    "content": [ ],
+    "empty": true,
+    "first": true,
+    "last": true,
+    "number": 0,
+    "numberOfElements": 0,
+    "size": 20,
+    "pageable": { },
+    "sort": { },
+    "totalElements": 0,
+    "totalPages": 0
+  },
+  "timestamp": "2026-10-13 17:31:28"
 }
 ```
 
+⚠️ Not every list endpoint paginates. `GET /api/config/instance/{serviceType}` (instance management)
+returns the **full array** of instances and ignores `page`/`size`. See
+[Instance Management](management-api.md#instance-management) for that shape.
+
 ## CORS Support
 
-JAiRouter supports CORS for browser-based applications:
+Cross-origin access is **not** enabled globally. The global chain explicitly disables it
+(`SecurityConfiguration#securityWebFilterChain`: `cors(cors -> cors.disable())`) and the per-controller
+`@CrossOrigin(origins = "*")` annotations are what actually apply. Those annotations sit on the
+router/management controllers (`Adapter*Controller`, `PoolConfigController`, `RuleConfigController`,
+`RuleTemplateController`, `ModelInfoController`, `ModelCallStatsController`, `ModelStatsController`,
+`ServiceTypeController`).
 
-```http
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
-Access-Control-Allow-Headers: Content-Type, Authorization
-```
+⇒ Responses carry `Access-Control-Allow-Origin: *` only for those endpoints. Endpoints **without** the
+annotation — e.g. `ServiceTypeInstanceController` (`/api/config/instance/**`), the auth endpoints and
+`/actuator/**` — send no CORS headers, so a browser on another origin cannot call them directly.
+(That is why the console is served from the same origin; add a reverse proxy or an explicit annotation if
+you need cross-origin access.)
 
 ## Health Checks
 

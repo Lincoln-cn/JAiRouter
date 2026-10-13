@@ -939,21 +939,71 @@ Get adapter configuration and capabilities.
 
 ---
 
-## Instance Configs (Legacy)
+## Instance Management
 
-### Base Path: `/api/instance-configs`
+### Base Path: `/api/config/instance`
 
-#### `GET /api/instance-configs/service/{serviceConfigId}`
-Get instance configs for a service.
+These are the **current** endpoints (implemented by `ServiceTypeInstanceController`). The older
+`/api/instance-configs` controller was removed in **v3.0.2** — see the changelog entry "Removed 4 deprecated
+controllers"; if you still call that path you will get `404`.
 
-#### `POST /api/instance-configs/service/{serviceConfigId}`
-Create instance config.
+All of them need authentication: send the JWT in the **`Jairouter_Token`** header (configurable via
+`jairouter.security.jwt.jwt-header`) — it is **not** `Authorization: Bearer`. Without it every call below
+returns `401 {"error":{"code":"AUTH_MISSING"}}`.
 
-#### `PUT /api/instance-configs/{id}`
-Update instance config.
+#### `GET /api/config/instance/{serviceType}`
+List every instance of a service type. Returns `RouterResponse<List<ServiceInstanceDTO>>`; a service type
+with no configuration yields `200` with an empty list (not `404`).
 
-#### `DELETE /api/instance-configs/{id}`
-Delete instance config.
+#### `POST /api/config/instance/{serviceType}`
+Add one instance. Body = `CreateServiceInstanceRequest`: `name`, `baseUrl`, `path`, `weight`, `status`,
+`adapter`, `headers`, `tags`. Returns the created `ServiceInstanceDTO`, whose `id` (a database `Long`) is
+what the update and delete calls below need.
+
+#### `PUT /api/config/instance/{serviceType}/{instanceId}`
+Update an instance **by its database id** (`instanceId` = the `id` from the list call), with the same body
+shape as `POST`.
+
+#### `DELETE /api/config/instance/{serviceType}/{instanceId}`
+Delete an instance by its database id.
+
+#### Per-instance rate limit and circuit breaker
+```
+GET|PUT /api/config/instance/{serviceType}/{instanceId}/rate-limit
+GET|PUT /api/config/instance/{serviceType}/{instanceId}/circuit-breaker
+POST    /api/config/instance/{serviceType}/{instanceId}/circuit-breaker/reset
+GET     /api/config/instance/circuit-breaker/states
+POST    /api/config/instance/circuit-breaker/clear-all
+POST    /api/config/instance/circuit-breaker/reset
+```
+
+A full add → update → delete round trip (these commands were executed against a running instance and all
+returned `200`):
+
+```bash
+TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"ChangeMeOnFirstStartup123456"}' \
+  http://localhost:8080/api/auth/jwt/login | jq -r .data.token)
+
+# 1. add
+curl -X POST -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"qwen2:7b","baseUrl":"http://gpu-server:8080","path":"/v1/chat/completions","weight":2,"adapter":"normal"}' \
+  http://localhost:8080/api/config/instance/chat
+
+# 2. list, and take the database id of the instance you just added
+curl -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat
+ID=$(curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
+  | jq -r '.data[] | select(.name=="qwen2:7b") | .id')
+
+# 3. update / 4. delete by that id
+curl -X PUT -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"qwen2:7b","baseUrl":"http://gpu-server:8080","path":"/v1/chat/completions","weight":3,"adapter":"normal"}' \
+  "http://localhost:8080/api/config/instance/chat/$ID"
+curl -X DELETE -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat/$ID"
+```
+
+⚠️ Do not use a `/type/`, `/add/`, `/update/`, `/del/` or `/info/` sub-path: those shapes were never routes
+and Spring matches them against `/{serviceType}/{instanceId}` instead, which answers `405`.
 
 ---
 
