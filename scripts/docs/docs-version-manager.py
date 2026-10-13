@@ -927,14 +927,17 @@ def main():
     parser.add_argument(
         '--mark-reviewed',
         nargs='+',
+        action='append',
         metavar='PATH',
         help='记录人工评审：把 ReviewedAt 写入 docs/docs-versions.json 中已跟踪的文档'
-             '（可一次多个路径）。人工评审让 max(LastModified, ReviewedAt) 落在阈值窗口内，'
+             '（可一次传多个路径，也可重复写该参数，两种写法等价）。人工评审让 '
+             'max(LastModified, ReviewedAt) 落在阈值窗口内，'
              '从而使审查过但内容未变的文档不再出现在过期提醒里；幂等，路径未被跟踪时报错退出'
     )
     parser.add_argument(
         '--clear-reviewed',
         nargs='+',
+        action='append',
         metavar='PATH',
         help='清除人工评审记录（撤销误标），与 --mark-reviewed 使用相同的路径校验规则'
     )
@@ -944,6 +947,21 @@ def main():
     )
     
     args = parser.parse_args()
+
+    # issue #345：--mark-reviewed / --clear-reviewed 两种写法都要能用 ——
+    # ① 一次传多个路径（nargs='+' 的本意）；② 重复写该参数（很多人会这么写）。
+    # 修复前用的是纯 nargs='+'，重复写会让**前面的值被静默丢弃**（只有最后一个生效），
+    # 这会让人误以为自己标了多篇（本仓 2026-10-14 就真的这么误判过一次）。
+    def _flatten_paths(values):
+        if not values:
+            return values
+        flat = []
+        for item in values:
+            flat.extend(item if isinstance(item, list) else [item])
+        return flat
+
+    args.mark_reviewed = _flatten_paths(args.mark_reviewed)
+    args.clear_reviewed = _flatten_paths(args.clear_reviewed)
     
     try:
         # 创建版本管理器
@@ -1075,7 +1093,11 @@ def main():
                 )
         
         review_count = manager.count_review_records()
-        print(f"\n🧾 已记录人工评审 (ReviewedAt): {review_count} 个文档")
+        # issue #345：这句原本写作「已记录人工评审 (ReviewedAt): N 个文档」，
+        # 与同一输出里的「本次改动了 N 篇」用词几乎一样 ⇒ 极易被读成「刚才标了 N 篇」
+        # （本仓 2026-10-14 真的因此误判过一次）。这里明确写成「当前共有」。
+        print(f"\n🧾 当前共有 {review_count} 篇文档带人工评审记录 (ReviewedAt)"
+              f"（这是总数，不是本次运行改动的篇数）")
         if review_count == 0:
             print("   （审查确认某文档仍然准确时，用 --mark-reviewed <path> 记录评审，"
                   "可在不改写 LastModified 的前提下重置其过期计时）")
