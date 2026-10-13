@@ -195,14 +195,30 @@ http://localhost:8080/swagger-ui/index.html
 
 - **Chat 对话**: `POST /v1/chat/completions`
 - **文本嵌入**: `POST /v1/embeddings`
-- **添加实例**: `POST /api/config/instance/add/{type}`
-- **查看实例**: `GET /api/config/instance/type/{type}`
+- **添加实例**: `POST /api/config/instance/{type}`
+- **查看实例**: `GET /api/config/instance/{type}`
 
 > 💡 **提示**: 在 Swagger UI 中可以直接测试 API，无需额外工具。
 
 ![登录页](images/login-zh-CN.png)
 
 ![管理控制台](images/dashboard-zh-CN.png)
+
+### 前置条件：一个管理面 token
+
+本节命令调用的是**管理面 API**，它们需要认证 —— 不带 token 会返回
+`401 {"error":{"code":"AUTH_MISSING"}}`。先在当前 shell 里取一次 JWT 并复用
+（开发环境默认账户为 `admin` / `ChangeMeOnFirstStartup123456`；生产请务必更换）：
+
+```bash
+TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"ChangeMeOnFirstStartup123456"}' \
+  http://localhost:8080/api/auth/jwt/login | jq -r .data.token)
+```
+
+下面每条命令都用 `-H "Jairouter_Token: $TOKEN"` 带上它。
+注意头名：JWT 头是 **`Jairouter_Token`**（可用 `jairouter.security.jwt.jwt-header` 配置），
+**不是** `Authorization: Bearer`。
 
 ## ⚙️ 步骤 4：配置第一个 AI 服务
 
@@ -214,7 +230,8 @@ http://localhost:8080/swagger-ui/index.html
 
 ```bash
 # 添加 Chat 服务实例
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "llama3.2:3b",
@@ -289,7 +306,8 @@ java -jar model-router.jar
 
 **OpenAI GPT**
 ```bash
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "gpt-4o",
@@ -304,7 +322,8 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
 
 **DeepSeek**
 ```bash
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "deepseek-chat",
@@ -319,7 +338,8 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
 
 **Anthropic Claude**
 ```bash
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "claude-sonnet",
@@ -336,7 +356,8 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
 
 **Google Gemini**
 ```bash
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "gemini-pro",
@@ -353,7 +374,8 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
 
 **Ollama**
 ```bash
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "llama3.2:3b",
@@ -365,7 +387,8 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
 
 **vLLM**
 ```bash
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "vllm-qwen",
@@ -383,7 +406,8 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
 
 ```bash
 # 添加模拟服务实例
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "mock-model",
@@ -447,7 +471,7 @@ curl -X POST "http://localhost:8080/v1/chat/completions" \
 
 ```bash
 # 获取 Chat 服务的所有实例
-curl "http://localhost:8080/api/config/instance/type/chat"
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 ```
 
 ### 查看监控指标
@@ -466,7 +490,8 @@ curl "http://localhost:8080/actuator/metrics/http.server.requests"
 
 ```bash
 # 添加另一个实例
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "llama3.2:1b",
