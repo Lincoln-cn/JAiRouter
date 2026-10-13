@@ -208,10 +208,10 @@
     },
     "docs/en/deployment/kubernetes.md": {
       "FilePath": "docs/en/deployment/kubernetes.md",
-      "Version": "1.0.13",
-      "LastModified": "2026-10-06T05:00:01.906421",
-      "ContentHash": "c3c4e47579faecac",
-      "GitCommit": "803a140c",
+      "Version": "1.0.14",
+      "LastModified": "2026-10-13T16:58:01.697971",
+      "ContentHash": "9bfbddea8f3d4372",
+      "GitCommit": "a0a38c66",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -768,11 +768,11 @@
     },
     "docs/zh/deployment/china-optimization.md": {
       "FilePath": "docs/zh/deployment/china-optimization.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-09-18T11:16:42.183701",
-      "ContentHash": "40c64d33dea965ec",
-      "GitCommit": "2e651835",
-      "Author": "Lincoln",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-13T16:58:02.038936",
+      "ContentHash": "1faa789ff2029058",
+      "GitCommit": "a0a38c66",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/deployment/docker.md",
@@ -1528,10 +1528,10 @@
     },
     "docs/zh/security/data-sanitization.md": {
       "FilePath": "docs/zh/security/data-sanitization.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-13T13:53:09.529591",
-      "ContentHash": "9c0f2cef36a55820",
-      "GitCommit": "2435f7d0",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-13T16:58:02.237933",
+      "ContentHash": "4a0c3a23c5f5ebba",
+      "GitCommit": "a0a38c66",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1545,10 +1545,10 @@
     },
     "docs/zh/security/index.md": {
       "FilePath": "docs/zh/security/index.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-11T13:48:54.816340",
-      "ContentHash": "881fdf554a9ddd16",
-      "GitCommit": "862789f2",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-13T16:58:02.239705",
+      "ContentHash": "6a1b073a08665f54",
+      "GitCommit": "a0a38c66",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2022,14 +2022,13 @@
     },
     "docs/en/configuration/routing-rules.md": {
       "FilePath": "docs/en/configuration/routing-rules.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-02T06:48:41.296872",
-      "ContentHash": "d176b3c84609359d",
-      "GitCommit": "5f29294f",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-13T16:58:01.642905",
+      "ContentHash": "e434eb28f0e1664c",
+      "GitCommit": "a0a38c66",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": [],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      "Dependencies": []
     },
     "docs/en/configuration/validation-rules.md": {
       "FilePath": "docs/en/configuration/validation-rules.md",
@@ -2074,14 +2073,13 @@
     },
     "docs/zh/configuration/routing-rules.md": {
       "FilePath": "docs/zh/configuration/routing-rules.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-02T06:48:41.543244",
-      "ContentHash": "8c215761c0ca0508",
-      "GitCommit": "5f29294f",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-13T16:58:02.020069",
+      "ContentHash": "682c59ecc044c828",
+      "GitCommit": "a0a38c66",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": [],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      "Dependencies": []
     },
     "docs/zh/development/doc-maintenance.md": {
       "FilePath": "docs/zh/development/doc-maintenance.md",
@@ -7498,7 +7496,55 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-13T16:46:11.174464",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/routing-rules.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T16:58:01.642918",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/kubernetes.md",
+      "OldVersion": "1.0.13",
+      "NewVersion": "1.0.14",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T16:58:01.697981",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/routing-rules.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T16:58:02.020080",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/china-optimization.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T16:58:02.038945",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/data-sanitization.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T16:58:02.237944",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/index.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T16:58:02.239709",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-13T16:46:11.424422"
+  "last_updated": "2026-10-13T16:58:02.300093"
 }
