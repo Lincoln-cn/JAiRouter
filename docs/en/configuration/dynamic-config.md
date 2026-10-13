@@ -199,214 +199,82 @@ curl -X DELETE -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/in
 Both the update and the delete above returned `200` when this page was reviewed against a running
 instance (the round-trip was add → list → take `id` → update → delete).
 
-## Configuration File Management API
+## Configuration Version Management API
 
-### Configuration Merging Functionality
+The runtime configuration is held in the config **store** under the key `model-router-config`, and every
+recorded change is kept as a numbered snapshot (`model-router-config@<version>.json`, written by
+`persistence/store/FileStoreManager.java`). Those snapshots are what the version API below operates on.
 
-JAiRouter provides powerful automatic configuration file merging functionality:
+> ⚠️ Earlier revisions of this page documented a `/api/config/merge/**` workflow — `scan` / `preview` /
+> `execute` / `backup` / `batch` / `cleanup` / `validate` / `statistics` / `status`. **None of those
+> endpoints exists**: no controller declares them, and `config/core/ConfigMergeService.java` has no such
+> methods either (its only public members are `getPersistedConfig`, `deepMergeConfigs`,
+> `resetToYamlConfig`, `hasPersistedConfig`, `getDefaultConfig`). What does exist is **version
+> management**, documented below. The two are not the same capability: version management snapshots,
+> applies and compares configurations; it never merges files on disk.
 
-| Function | API Endpoint | Method | Description |
-|----------|--------------|--------|-------------|
-| Scan Version Files | `/api/config/merge/scan` | GET | Scan all version configuration files |
-| Preview Merge Result | `/api/config/merge/preview` | GET | Preview merged configuration |
-| Execute Merge | `/api/config/merge/execute` | POST | Execute configuration file merge |
-| Backup Configuration | `/api/config/merge/backup` | POST | Backup current configuration files |
-| Batch Operation | `/api/config/merge/batch` | POST | Backup+Merge+Cleanup |
-| Clean Files | `/api/config/merge/cleanup` | DELETE | Clean original configuration files |
-| Validate Configuration | `/api/config/merge/validate` | GET | Validate configuration file format |
-| Statistics | `/api/config/merge/statistics` | GET | Get configuration statistics |
-| Service Status | `/api/config/merge/status` | GET | Get merge service status |
+### Endpoint Overview
 
-### 1. Scan Configuration File Versions
+| Operation | Method | Path | Description |
+|-----------|--------|------|-------------|
+| List versions | GET | `/api/config/version` | Every stored version number |
+| Get one version | GET | `/api/config/version/{version}` | The configuration snapshot of that version |
+| Current version | GET | `/api/config/version/current` | The version currently in effect |
+| Version info | GET | `/api/config/version/info` | Metadata plus version history |
+| Apply a version | POST | `/api/config/version/apply/{version}` | Switch the runtime configuration to that version |
+| Compare two versions | GET | `/api/config/version/compare/{source}/{target}` | Diff between two stored versions |
+| Compare with current | GET | `/api/config/version/compare/{version}` | Diff that version against the current one |
+| Delete a version | DELETE | `/api/config/version/{version}` | Remove a stored snapshot |
 
-```bash
-# Scan all version configuration files
-curl -X GET "http://localhost:8080/api/config/merge/scan"
+Implementation: `config/controller/ConfigurationVersionController.java` (class-level
+`@RequestMapping("/api/config/version")`) backed by `config/version/VersionManagementService.java`.
 
-# Response Example
-{
-  "success": true,
-  "data": {
-    "configFiles": [
-      {
-        "filename": "model-router-config@1.json",
-        "version": 1,
-        "size": 2048,
-        "lastModified": "2024-01-15T10:00:00Z",
-        "servicesCount": 2,
-        "instancesCount": 5
-      },
-      {
-        "filename": "model-router-config@2.json",
-        "version": 2,
-        "size": 3072,
-        "lastModified": "2024-01-15T11:00:00Z",
-        "servicesCount": 3,
-        "instancesCount": 8
-      }
-    ],
-    "totalFiles": 2,
-    "totalInstances": 13
-  }
-}
-```
+Authentication: like every other management API on this page, send the JWT in the **`Jairouter_Token`**
+header (see [Instance Management API](#instance-management-api)); without it these calls answer
+`401 {"error":{"code":"AUTH_MISSING"}}`.
 
-### 2. Preview Merge Result
+### Examples
 
 ```bash
-# Preview configuration file merge result
-curl -X GET "http://localhost:8080/api/config/merge/preview"
+# the version currently in effect
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current"
 
-# Response Example
-{
-  "success": true,
-  "data": {
-    "mergedConfig": {
-      "services": {
-        "chat": {
-          "instances": [
-            // Merged instance list
-          ]
-        }
-      }
-    },
-    "mergeStatistics": {
-      "totalServices": 3,
-      "totalInstances": 13,
-      "duplicatesRemoved": 2,
-      "conflictsResolved": 1
-    }
-  }
-}
+# every stored version
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version"
+
+# metadata + history
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/info"
+
+# what changed between the current configuration and version 3
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/compare/3"
+
+# roll the runtime configuration back to version 3
+curl -X POST -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/apply/3"
 ```
 
-### 3. Execute Configuration Merge
-
-```bash
-# Execute configuration file merge
-curl -X POST "http://localhost:8080/api/config/merge/execute"
-
-# Response Example
-{
-  "success": true,
-  "message": "Configuration merge completed",
-  "data": {
-    "mergedFile": "model-router-config@1.json",
-    "originalFiles": [
-      "model-router-config@1.json",
-      "model-router-config@2.json"
-    ],
-    "statistics": {
-      "servicesProcessed": 3,
-      "instancesProcessed": 13,
-      "duplicatesRemoved": 2
-    }
-  }
-}
-```
-
-### 4. Batch Operation
-
-```bash
-# Execute batch operation: backup + merge + cleanup
-curl -X POST "http://localhost:8080/api/config/merge/batch?deleteOriginals=true"
-
-# Response Example
-{
-  "success": true,
-  "message": "Batch operation completed",
-  "data": {
-    "backupDirectory": "backup_1640995200000",
-    "mergedFile": "model-router-config@1.json",
-    "filesDeleted": [
-      "model-router-config@2.json",
-      "model-router-config@3.json"
-    ]
-  }
-}
-```
+**Where versions come from.** You do not create them with a separate "merge" step: configuration changes
+made through the management APIs on this page are recorded as numbered snapshots by
+`VersionManagementService` (`generateNewVersion` / `recordVersion`). So the workflow is
+change → inspect (`info` / `compare`) → roll back (`apply`) if needed.
 
 ## Configuration Validation and Monitoring
 
-### 1. Configuration Validation
+The `/api/config/merge/validate` · `/statistics` · `/status` endpoints this section used to describe
+**do not exist** (see the note on [Configuration Version Management API](#configuration-version-management-api)).
+What the config side actually exposes for inspection is:
 
 ```bash
-# Validate configuration file format and content
-curl -X GET "http://localhost:8080/api/config/merge/validate"
+# which config sources are in effect, and the validation rules / env vars the app knows about
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/sources"
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/validation-rules"
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/environment-variables"
 
-# Response Example
-{
-  "success": true,
-  "data": {
-    "validationResults": [
-      {
-        "filename": "model-router-config@1.json",
-        "valid": true,
-        "errors": [],
-        "warnings": [
-          "Instance 'old-model@http://old-server:8080' may be unavailable"
-        ]
-      }
-    ],
-    "overallValid": true,
-    "totalErrors": 0,
-    "totalWarnings": 1
-  }
-}
+# version state (current version / history / metadata)
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current"
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/info"
 ```
 
-### 2. Configuration Statistics
-
-```bash
-# Get configuration statistics
-curl -X GET "http://localhost:8080/api/config/merge/statistics"
-
-# Response Example
-{
-  "success": true,
-  "data": {
-    "configFiles": 3,
-    "totalServices": 5,
-    "totalInstances": 15,
-    "serviceBreakdown": {
-      "chat": 6,
-      "embedding": 4,
-      "tts": 3,
-      "stt": 2
-    },
-    "loadBalanceStrategies": {
-      "round-robin": 2,
-      "least-connections": 2,
-      "random": 1
-    },
-    "rateLimitAlgorithms": {
-      "token-bucket": 4,
-      "sliding-window": 1
-    }
-  }
-}
-```
-
-### 3. Service Status Monitoring
-
-```bash
-# Get merge service status
-curl -X GET "http://localhost:8080/api/config/merge/status"
-
-# Response Example
-{
-  "success": true,
-  "data": {
-    "serviceStatus": "RUNNING",
-    "lastMergeTime": "2024-01-15T12:00:00Z",
-    "lastBackupTime": "2024-01-15T11:30:00Z",
-    "configDirectory": "/app/config",
-    "backupDirectory": "/app/config/backup_1640995200000",
-    "activeConfigFile": "model-router-config@1.json",
-    "pendingChanges": false
-  }
-}
-```
+Runtime health, when you want it, is the (public) health endpoint: `curl http://localhost:8080/actuator/health`.
 
 ## Practical Usage Scenarios
 
@@ -477,23 +345,21 @@ curl -X POST "http://localhost:8080/api/config/instance/chat" \
   }'
 ```
 
-### Scenario 4: Configuration File Maintenance
+### Scenario 4: Inspecting and Rolling Back Configuration
+
+The file-maintenance workflow this scenario used to show (`merge/backup` → `scan` → `preview` →
+`execute` → `cleanup`) does not exist. What you can do is look at the recorded versions and roll back:
 
 ```bash
-# 1. Backup current configuration
-curl -X POST "http://localhost:8080/api/config/merge/backup"
+# what version is live now, and what versions exist
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current"
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version"
 
-# 2. Scan configuration file versions
-curl -X GET "http://localhost:8080/api/config/merge/scan"
+# see what changed before switching
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/compare/3"
 
-# 3. Preview merge result
-curl -X GET "http://localhost:8080/api/config/merge/preview"
-
-# 4. Execute configuration merge
-curl -X POST "http://localhost:8080/api/config/merge/execute"
-
-# 5. Clean old version files
-curl -X DELETE "http://localhost:8080/api/config/merge/cleanup?deleteOriginals=true"
+# roll back to a previous version
+curl -X POST -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/apply/3"
 ```
 
 ## Best Practices
@@ -540,10 +406,10 @@ curl -X DELETE "http://localhost:8080/api/config/instance/chat/$ID"
 
 ```bash
 # Regularly check configuration status
-curl -X GET "http://localhost:8080/api/config/merge/status"
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current"
 
 # Validate configuration integrity
-curl -X GET "http://localhost:8080/api/config/merge/validate"
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/sources"
 
 # Monitor instance health status
 curl -X GET "http://localhost:8080/actuator/health"
@@ -556,7 +422,7 @@ curl -X GET "http://localhost:8080/actuator/health"
 #!/bin/bash
 
 # Backup current configuration
-BACKUP_RESULT=$(curl -s -X POST "http://localhost:8080/api/config/merge/backup")
+CURRENT_VERSION=$(curl -s -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current")
 
 if [[ $? -eq 0 ]]; then
     echo "Configuration backup successful"
