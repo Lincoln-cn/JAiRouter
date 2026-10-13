@@ -324,7 +324,7 @@ chmod 644 config/*.json
 #### 诊断步骤
 ```bash
 # 1. 检查实例权重配置
-curl http://localhost:8080/api/config/instance/type/chat
+curl http://localhost:8080/api/config/instance/chat
 
 # 2. 检查实例健康状态
 curl http://localhost:8080/actuator/health
@@ -530,7 +530,7 @@ fi
 
 # 检查后端连接
 echo "2. 后端连接检查..."
-BACKEND_COUNT=$(curl -s http://localhost:8080/api/config/instance/type/chat | jq length)
+BACKEND_COUNT=$(curl -s http://localhost:8080/api/config/instance/chat | jq length)
 echo "后端实例数量: $BACKEND_COUNT"
 
 # 检查内存使用

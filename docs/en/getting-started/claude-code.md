@@ -108,7 +108,8 @@ Three rules to remember:
 
 ```bash
 # DeepSeek example: the downstream key lives in the instance headers (injected by the gateway)
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: <JAiRouter API Key>" \
   -d '{
@@ -143,7 +144,8 @@ header is overridden).
 ### Option C: custom downstream header
 
 ```bash
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: <JAiRouter API Key>" \
   -d '{
@@ -485,7 +487,7 @@ each `id` can be used as the `model` field.
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | `401 Unauthorized` | `x-api-key` is not a valid JAiRouter API Key, or a **downstream** key was put in `x-api-key` | Create/copy the console API Key; move the downstream key to instance `headers` or `Authorization` |
-| Request succeeds but downstream returns 401/403 | Downstream key missing or expired (`x-api-key` is not forwarded) | Check the instance `headers`; verify with `/api/config/instance/type/chat` |
+| Request succeeds but downstream returns 401/403 | Downstream key missing or expired (`x-api-key` is not forwarded) | Check the instance `headers`; verify with `/api/config/instance/chat` |
 | `404` / `503` (model unavailable) | `model` not registered, instance unhealthy, or service circuit-broken | Cross-check the model name with `GET /v1/models`; check instance health and circuit breaker |
 | Claude Code reports an "empty response" / no output | `x-api-key` is invalid or missing, and `Jairouter_Token` is not enabled / expired / revoked | Set a valid `ANTHROPIC_API_KEY`, or confirm JWT is enabled and the token is valid |
 | Tool use does not work | The downstream does not support function calling (`tools` ignored → plain text with `stop_reason: end_turn`), or the model chose not to call a tool | Switch to a downstream with function calling; force a call with `tool_choice:"any"` (mapped to downstream `required`) to verify the path |

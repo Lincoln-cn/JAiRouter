@@ -517,7 +517,8 @@ JAiRouter 支持两种配置存储方式：
 
 ```bash
 # 添加新实例
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "new-model",
@@ -527,7 +528,9 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
   }'
 
 # 更新实例
-curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
+# $ID = 该实例的数据库 id，从 GET /api/config/instance/{serviceType} 的响应里取
+curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "new-model@http://new-server:8080",
@@ -540,10 +543,11 @@ curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
   }'
 
 # 删除实例
-curl -X DELETE "http://localhost:8080/api/config/instance/del/chat?modelName=new-model&baseUrl=http://new-server:8080"
+# $ID = 该实例的数据库 id，从 GET /api/config/instance/{serviceType} 的响应里取
+curl -X DELETE "http://localhost:8080/api/config/instance/chat/$ID"
 
 # 查看所有实例
-curl "http://localhost:8080/api/config/instance/type/chat"
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 ```
 
 ### 配置文件版本管理

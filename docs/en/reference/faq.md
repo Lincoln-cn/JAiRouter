@@ -174,7 +174,8 @@ The circuit breaker has three states:
 
 ```bash
 # Add instance
-curl -X POST http://localhost:8080/api/config/instance/add/chat \
+curl -X POST http://localhost:8080/api/config/instance/chat \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "new-model",
@@ -184,7 +185,9 @@ curl -X POST http://localhost:8080/api/config/instance/add/chat \
   }'
 
 # Update instance
-curl -X PUT http://localhost:8080/api/config/instance/update/chat \
+# $ID = the instance's database id, taken from GET /api/config/instance/{serviceType}
+curl -X PUT http://localhost:8080/api/config/instance/chat/$ID \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "new-model@http://new-server:9090",
@@ -373,7 +376,7 @@ telnet backend-server 9090
 
 3. **Check Configuration**:
 ```bash
-curl http://localhost:8080/api/config/instance/type/chat
+curl http://localhost:8080/api/config/instance/chat
 ```
 
 4. **View Logs**:
