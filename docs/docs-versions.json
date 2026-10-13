@@ -343,10 +343,10 @@
     },
     "docs/en/getting-started/quick-start.md": {
       "FilePath": "docs/en/getting-started/quick-start.md",
-      "Version": "1.0.12",
-      "LastModified": "2026-10-07T02:50:13.354884",
-      "ContentHash": "d351c53bd145fe77",
-      "GitCommit": "2e55693d",
+      "Version": "1.0.13",
+      "LastModified": "2026-10-13T17:23:40.525521",
+      "ContentHash": "cd63b9518f7ecb3b",
+      "GitCommit": "5d0582aa",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -958,10 +958,10 @@
     },
     "docs/zh/getting-started/quick-start.md": {
       "FilePath": "docs/zh/getting-started/quick-start.md",
-      "Version": "1.0.11",
-      "LastModified": "2026-10-07T02:50:13.787335",
-      "ContentHash": "bc9a5e46095f1545",
-      "GitCommit": "2e55693d",
+      "Version": "1.0.12",
+      "LastModified": "2026-10-13T17:23:40.877493",
+      "ContentHash": "f62c7b98eeff7b88",
+      "GitCommit": "5d0582aa",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -7544,7 +7544,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-13T16:58:02.239709",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/quick-start.md",
+      "OldVersion": "1.0.12",
+      "NewVersion": "1.0.13",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T17:23:40.525533",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/quick-start.md",
+      "OldVersion": "1.0.11",
+      "NewVersion": "1.0.12",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T17:23:40.877502",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-13T16:58:02.300093"
+  "last_updated": "2026-10-13T17:23:41.060541"
 }
