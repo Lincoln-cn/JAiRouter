@@ -120,10 +120,10 @@
     },
     "docs/en/configuration/load-balancing.md": {
       "FilePath": "docs/en/configuration/load-balancing.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-09-26T06:43:32.921670",
-      "ContentHash": "ca203a4bc663e7c2",
-      "GitCommit": "89443fc5",
+      "Version": "1.0.8",
+      "LastModified": "2026-10-13T18:38:16.316789",
+      "ContentHash": "cabab00fac5f8672",
+      "GitCommit": "6a215716",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -136,10 +136,10 @@
     },
     "docs/en/configuration/rate-limiting.md": {
       "FilePath": "docs/en/configuration/rate-limiting.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-09-26T06:43:32.928177",
-      "ContentHash": "d229a7e560de3f92",
-      "GitCommit": "89443fc5",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-13T18:38:16.327378",
+      "ContentHash": "7c870690cfa8a39b",
+      "GitCommit": "6a215716",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -296,11 +296,11 @@
     },
     "docs/en/getting-started/first-steps.md": {
       "FilePath": "docs/en/getting-started/first-steps.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-23T17:13:19.590892",
-      "ContentHash": "bf664a9119fd15f9",
-      "GitCommit": "e75f4909",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-13T18:38:16.463591",
+      "ContentHash": "77f28f0bfe207cfd",
+      "GitCommit": "6a215716",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/index.md",
@@ -528,11 +528,11 @@
     },
     "docs/en/reference/faq.md": {
       "FilePath": "docs/en/reference/faq.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-09-18T11:28:11.255674",
-      "ContentHash": "a2e76e6c5d7de12f",
-      "GitCommit": "c82b4559",
-      "Author": "Lincoln",
+      "Version": "1.0.8",
+      "LastModified": "2026-10-13T18:38:16.590785",
+      "ContentHash": "03a5ee31dcc3b412",
+      "GitCommit": "6a215716",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/development/contributing.md",
@@ -738,10 +738,10 @@
     },
     "docs/zh/configuration/load-balancing.md": {
       "FilePath": "docs/zh/configuration/load-balancing.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-09-26T06:43:33.170416",
-      "ContentHash": "1d06f70ff5c5d8b4",
-      "GitCommit": "89443fc5",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-13T18:38:16.770577",
+      "ContentHash": "db6d444cdb3c1db4",
+      "GitCommit": "6a215716",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -754,10 +754,10 @@
     },
     "docs/zh/configuration/rate-limiting.md": {
       "FilePath": "docs/zh/configuration/rate-limiting.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-26T06:43:33.177226",
-      "ContentHash": "a20a2377a67f85a3",
-      "GitCommit": "89443fc5",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-13T18:38:16.781877",
+      "ContentHash": "20ed003527b1788c",
+      "GitCommit": "6a215716",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -911,11 +911,11 @@
     },
     "docs/zh/getting-started/first-steps.md": {
       "FilePath": "docs/zh/getting-started/first-steps.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-18T10:17:18.473545",
-      "ContentHash": "9bffdc5a26fd264f",
-      "GitCommit": "97163311",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-13T18:38:16.915397",
+      "ContentHash": "35aac95583c6bd51",
+      "GitCommit": "6a215716",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/index.md",
@@ -1156,11 +1156,11 @@
     },
     "docs/zh/reference/faq.md": {
       "FilePath": "docs/zh/reference/faq.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-09-18T11:28:23.505428",
-      "ContentHash": "b48e2b9fe8d675aa",
-      "GitCommit": "c82b4559",
-      "Author": "Lincoln",
+      "Version": "1.0.8",
+      "LastModified": "2026-10-13T18:38:17.040570",
+      "ContentHash": "ef2ded3e4664518e",
+      "GitCommit": "6a215716",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/development/contributing.md",
@@ -1211,11 +1211,11 @@
     },
     "docs/zh/troubleshooting/common-issues.md": {
       "FilePath": "docs/zh/troubleshooting/common-issues.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-18T10:17:24.612757",
-      "ContentHash": "70b344d3894db482",
-      "GitCommit": "97163311",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-13T18:38:17.124352",
+      "ContentHash": "78e72a36d67c921b",
+      "GitCommit": "6a215716",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -2215,11 +2215,11 @@
     },
     "docs/en/getting-started/claude-code.md": {
       "FilePath": "docs/en/getting-started/claude-code.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-09-16T07:13:46.762639",
-      "ContentHash": "78c3123e7d4a344e",
-      "GitCommit": "efa51bab",
-      "Author": "Lincoln",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-13T18:38:16.461248",
+      "ContentHash": "e6821e1553960e26",
+      "GitCommit": "6a215716",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/error-codes.md",
@@ -2231,11 +2231,11 @@
     },
     "docs/zh/getting-started/claude-code.md": {
       "FilePath": "docs/zh/getting-started/claude-code.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-09-16T07:13:47.122578",
-      "ContentHash": "fa877fec4a295e32",
-      "GitCommit": "efa51bab",
-      "Author": "Lincoln",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-13T18:38:16.913127",
+      "ContentHash": "3c86eef734b1fe0b",
+      "GitCommit": "6a215716",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/error-codes.md",
@@ -7618,7 +7618,95 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-13T18:29:16.309919",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/load-balancing.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T18:38:16.316819",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/rate-limiting.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T18:38:16.327384",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/claude-code.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T18:38:16.461257",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/first-steps.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T18:38:16.463597",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/faq.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T18:38:16.590793",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/load-balancing.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T18:38:16.770586",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/rate-limiting.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T18:38:16.781886",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/claude-code.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T18:38:16.913136",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/first-steps.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T18:38:16.915402",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/faq.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T18:38:17.040579",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/troubleshooting/common-issues.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T18:38:17.124360",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-13T18:29:16.701794"
+  "last_updated": "2026-10-13T18:38:17.153486"
 }
