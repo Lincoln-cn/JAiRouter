@@ -3,3 +3,8 @@ mkdocs-material>=9.4.0
 mkdocs-git-revision-date-localized-plugin>=1.2.0
 mkdocs-static-i18n>=1.2.0
 pymdown-extensions>=10.3.0
+# 与 .github/workflows/docs-quality.yml 的「安装 MkDocs 依赖」步骤对齐：
+# 缺这两个插件时 `mkdocs build --strict` 会直接失败（mermaid2 渲染图、minify 压缩），
+# 而 CI 是显式 pip install 它们的 —— requirements.txt 漏了它们会导致「照 requirements 装完仍构不出站点」。
+mkdocs-mermaid2-plugin>=1.1.0
+mkdocs-minify-plugin>=0.8.0
