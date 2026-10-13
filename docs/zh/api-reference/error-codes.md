@@ -145,8 +145,13 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 
 | 错误码 | 描述 | HTTP 状态码 | 解决方案 |
 |--------|------|-------------|----------|
-| `CONFLICT` | 资源冲突 | 409 | 检查资源状态 |
+| `CONFLICT_STATE` | 资源冲突 | 409 | 检查资源状态 |
 | `RATE_LIMIT_EXCEEDED` | 限流触发 | 429 | 降低请求频率 |
+
+> 冲突码真实形态是 `CONFLICT_STATE`（由异常映射，见 `common/exception/ApiExceptions.java:51`）
+> 以及共用前缀的端点级变体 `CONFLICT_EXISTS` / `CONFLICT_BUILTIN`
+> （`router/controller/AdapterConfigController.java:192·197`）；**不存在**裸 `CONFLICT`。
+> `ApiException.resolveStatus` 把任何 `CONFLICT*` 归 409（`common/exception/ApiException.java:149`）。
 
 ---
 
@@ -173,7 +178,7 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 
 > 响应头**没有** `X-RateLimit-Reset` / `X-RateLimit-Remaining`（全仓无此头）；配额超限实际写
 > `Retry-After` 与 `X-Quota-*`（limit / remaining / window），见 `ServiceRequestHandler.java:692-695`。
-> 原表里的 `GLOBAL_RATE_LIMIT` / `SERVICE_RATE_LIMIT` / `INSTANCE_RATE_LIMIT` 全库无匹配（最后一项只是 JPA 表名 `instance_rate_limit`，见 `InstanceRateLimitEntity.java:26`），已删除。
+> 原表里的 `GLOBAL_RATE_LIMIT` / `SERVICE_RATE_LIMIT` / `INSTANCE_RATE_LIMIT` 全库无匹配（最后一项只是 JPA 表名 `instance_rate_limit`，见 `persistence/jpa/entity/InstanceRateLimitEntity.java:26`），已删除。
 
 ---
 
@@ -270,14 +275,21 @@ log.error("认证失败: errorCode={}, message={}",
 
 | 状态码 | 错误码列表 |
 |--------|-----------|
-| 400 | `VALIDATION_ERROR`, `INVALID_PARAMETER`, `MISSING_PARAMETER`, `INVALID_FORMAT` |
-| 401 | `INVALID_API_KEY`, `EXPIRED_API_KEY`, `MISSING_API_KEY`, `INVALID_JWT_TOKEN`, `EXPIRED_JWT_TOKEN`, `BLACKLISTED_TOKEN` |
-| 403 | `INSUFFICIENT_PERMISSIONS`, `ACCESS_DENIED`, `RESOURCE_FORBIDDEN`, `FORBIDDEN` |
-| 404 | `NOT_FOUND`, `SERVICE_NOT_FOUND`, `INSTANCE_NOT_FOUND`, `CONFIG_NOT_FOUND` |
-| 409 | `CONFLICT`, `DUPLICATE_RESOURCE` |
-| 429 | `RATE_LIMIT_EXCEEDED`, `GLOBAL_RATE_LIMIT`, `SERVICE_RATE_LIMIT`, `INSTANCE_RATE_LIMIT` |
-| 500 | `INTERNAL_ERROR`, `SANITIZATION_FAILED`, `CONFIGURATION_ERROR`, `DATABASE_ERROR`, `CACHE_ERROR` |
-| 502/503 | 下游服务错误码 |
+| 400 | `INVALID_REQUEST`、`INVALID_PARAM`（按规则任何 `INVALID_*` 也归此类） |
+| 401 | `MISSING_API_KEY`、`INVALID_API_KEY`、`EXPIRED_API_KEY`、`INVALID_JWT_TOKEN`、`EXPIRED_JWT_TOKEN`、`BLACKLISTED_TOKEN`、`DAILY_QUOTA_EXCEEDED`、`TOKEN_QUOTA_EXCEEDED`、`LOGIN_FAILED` |
+| 403 | `INSUFFICIENT_PERMISSIONS`、`ACCESS_DENIED`、`RESOURCE_FORBIDDEN`、`BUILTIN_READONLY` |
+| 404 | `NOT_FOUND`（按规则任何 `*_NOT_FOUND` 也归此类） |
+| 409 | `CONFLICT_STATE`、`CONFLICT_EXISTS`、`CONFLICT_BUILTIN` |
+| 429 | `RATE_LIMIT_EXCEEDED` |
+| 500 | `INTERNAL_ERROR`、`SANITIZATION_FAILED`；以及任何不匹配解析规则的码（兜底） |
+| 502/503/504 | 下游的**状态码模式**（不是错误码）；`SERVICE_NOT_AVAILABLE` 归 503 |
+
+> 本表每一行都已核对为 `src/main/java` 中**真实存在的字面量**。上一版还列了 `VALIDATION_ERROR`、
+> `INVALID_PARAMETER`、`MISSING_PARAMETER`、`INVALID_FORMAT`、`SERVICE_NOT_FOUND`、`INSTANCE_NOT_FOUND`、
+> `CONFIG_NOT_FOUND`、`DUPLICATE_RESOURCE`、`GLOBAL_RATE_LIMIT`、`SERVICE_RATE_LIMIT`、
+> `INSTANCE_RATE_LIMIT`、`CONFIGURATION_ERROR`、`DATABASE_ERROR`、`CACHE_ERROR` —— **这些全都不存在**
+> （各节的说明见上文）。⚠️ `TOO_MANY_REQUESTS` 与 `RATE_LIMITED` **也不是**发出的码：
+> 前者只是 Spring 的 `HttpStatus` 枚举，后者只出现在解析器自己的规则里。
 
 ---
 

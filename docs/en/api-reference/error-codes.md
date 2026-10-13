@@ -1,4 +1,4 @@
-﻿# Error Codes Reference
+# Error Codes Reference
 
 <!-- 版本信息 -->
 > **Document Version**: 1.0.2
@@ -116,9 +116,11 @@ JAiRouter uses a standardized error code system to identify various error condit
 | Error Code | Description | Common Cause | Solution |
 |------------|-------------|--------------|----------|
 | `NOT_FOUND` | Resource not found | Requested resource doesn't exist | Check resource ID or path |
-| `SERVICE_NOT_FOUND` | Service not found | Service type doesn't exist | Check service type name |
-| `INSTANCE_NOT_FOUND` | Instance not found | Instance ID doesn't exist | Check instance ID |
-| `CONFIG_NOT_FOUND` | Configuration not found | Config item doesn't exist | Check config key |
+
+> The previous table also listed `SERVICE_NOT_FOUND` / `INSTANCE_NOT_FOUND` / `CONFIG_NOT_FOUND`;
+> **none of the three exists anywhere in the codebase.** A missing resource is reported as `NOT_FOUND`,
+> and `ApiException.resolveStatus` additionally maps any code ending in `_NOT_FOUND` to 404 — the suffix
+> is handled by rule, not by dedicated codes (`common/exception/ApiException.java:143`).
 
 ---
 
@@ -128,10 +130,13 @@ JAiRouter uses a standardized error code system to identify various error condit
 
 | Error Code | Description | Common Cause | Solution |
 |------------|-------------|--------------|----------|
-| `VALIDATION_ERROR` | Invalid request data | Parameter format or value error | Check request parameters |
-| `INVALID_PARAMETER` | Invalid parameter | Parameter value out of range | Check parameter constraints |
-| `MISSING_PARAMETER` | Missing parameter | Required parameter not provided | Add required parameter |
-| `INVALID_FORMAT` | Invalid format | Data format error | Check data format |
+| `INVALID_REQUEST` | Invalid request data | Parameter format or value error | Check request parameters |
+| `INVALID_PARAM` | Invalid parameter | Parameter value out of range | Check parameter constraints |
+
+> `VALIDATION_ERROR` exists **only** as the enum constant `ValidationFailureType.VALIDATION_ERROR`
+> (`auth/security/service/ApiKeyValidator.java:344`) and is never emitted as a response code;
+> `INVALID_PARAMETER` / `MISSING_PARAMETER` / `INVALID_FORMAT` have no match in the codebase at all.
+> All four were removed from this table.
 
 ---
 
@@ -140,9 +145,14 @@ JAiRouter uses a standardized error code system to identify various error condit
 | Error Code | Description | HTTP Status | Solution |
 |------------|-------------|-------------|----------|
 | `CONFLICT_STATE` | Resource conflict | 409 | Check resource state |
-| `DUPLICATE_RESOURCE` | Duplicate resource | 409 | Use different identifier |
-| `OPERATION_FAILED` | Operation failed | 500 | Check logs for details |
 | `RATE_LIMIT_EXCEEDED` | Rate limit triggered | 429 | Reduce request frequency |
+
+> `DUPLICATE_RESOURCE` and `OPERATION_FAILED` have **no match in the codebase** and were removed.
+> Conflict reporting uses `CONFLICT_STATE` (mapped from exceptions in `common/exception/ApiExceptions.java:51`)
+> plus per-endpoint variants that share the prefix — `CONFLICT_EXISTS` / `CONFLICT_BUILTIN`
+> (`router/controller/AdapterConfigController.java:192·197`); `ApiException.resolveStatus` maps every
+> `CONFLICT*` code to 409 (`common/exception/ApiException.java:149`). There is no generic
+> "operation failed" code: unexpected failures surface as `INTERNAL_ERROR`.
 
 ---
 
@@ -165,20 +175,28 @@ JAiRouter uses a standardized error code system to identify various error condit
 
 | Error Code | Description | Response Header | Solution |
 |------------|-------------|-----------------|----------|
-| `RATE_LIMIT_EXCEEDED` | Rate limit exceeded | `X-RateLimit-Reset` | Wait for token recovery |
-| `GLOBAL_RATE_LIMIT` | Global rate limit triggered | `Retry-After` | Reduce global request frequency |
-| `SERVICE_RATE_LIMIT` | Service rate limit triggered | `X-RateLimit-Remaining` | Reduce service request frequency |
-| `INSTANCE_RATE_LIMIT` | Instance rate limit triggered | `X-RateLimit-Remaining` | Switch instance or wait |
+| `RATE_LIMIT_EXCEEDED` | Rate limit exceeded | `Retry-After` / `X-Quota-*` | Wait for token recovery |
+
+> The response headers are **`Retry-After`** and the **`X-Quota-*`** family
+> (`X-Quota-Limit` / `X-Quota-Remaining` / `X-Quota-Window`,
+> `router/handler/ServiceRequestHandler.java:150·155·160`). There is **no** `X-RateLimit-Reset` /
+> `X-RateLimit-Remaining` header anywhere in the codebase.
+> `GLOBAL_RATE_LIMIT` / `SERVICE_RATE_LIMIT` / `INSTANCE_RATE_LIMIT` were removed from this table:
+> the first two have no match in the codebase, and the third is only a JPA table name
+> (`@Table(name = "instance_rate_limit")`, `persistence/jpa/entity/InstanceRateLimitEntity.java:26`).
 
 ---
 
 ## Circuit Breaker Error Codes
 
-| Error Code | Description | State | Solution |
-|------------|-------------|-------|----------|
-| `CIRCUIT_BREAKER_OPEN` | Circuit breaker open | OPEN | Wait for half-open state |
-| `CIRCUIT_BREAKER_HALF_OPEN` | Circuit breaker half-open | HALF_OPEN | Limited requests allowed |
-| `SERVICE_DEGRADED` | Service degraded | - | Use fallback strategy |
+**The circuit breaker has no dedicated error codes.** Its state is exposed as a tracing span attribute
+(the lowercase value `circuit_breaker_open` on `cb.rejection_reason`,
+`monitor/tracing/wrapper/CircuitBreakerTracingDelegate.java:132`) and through the monitoring endpoint
+`GET /api/monitoring/circuit-breaker/stats`. A request rejected while the circuit is open is handled as a
+downstream-unavailable failure.
+
+> `CIRCUIT_BREAKER_OPEN` / `CIRCUIT_BREAKER_HALF_OPEN` / `SERVICE_DEGRADED` have **no match in the
+> codebase as error codes** and were removed from this table.
 
 ---
 
@@ -189,9 +207,11 @@ JAiRouter uses a standardized error code system to identify various error condit
 | Error Code | Description | Common Cause | Solution |
 |------------|-------------|--------------|----------|
 | `INTERNAL_ERROR` | Internal server error | Unexpected exception | Check service logs |
-| `CONFIGURATION_ERROR` | Configuration error | Config file format error | Check config files |
-| `DATABASE_ERROR` | Database error | Database connection failed | Check database status |
-| `CACHE_ERROR` | Cache error | Redis connection failed | Check Redis status |
+
+> `CONFIGURATION_ERROR` / `DATABASE_ERROR` / `CACHE_ERROR` have **no match in the codebase** and were
+> removed: configuration, database and cache failures all surface as `INTERNAL_ERROR`
+> (`common/exception/ApiException.java:129`), which is also what the resolver falls back to when a code
+> matches none of its rules (`common/exception/ApiException.java:164`).
 
 ---
 
@@ -266,14 +286,22 @@ log.error("Authentication failed: errorCode={}, message={}",
 
 | Status | Error Codes |
 |--------|-------------|
-| 400 | `VALIDATION_ERROR`, `INVALID_PARAMETER`, `MISSING_PARAMETER`, `INVALID_FORMAT` |
-| 401 | `INVALID_API_KEY`, `EXPIRED_API_KEY`, `MISSING_API_KEY`, `INVALID_JWT_TOKEN`, `EXPIRED_JWT_TOKEN`, `BLACKLISTED_TOKEN` |
-| 403 | `INSUFFICIENT_PERMISSIONS`, `ACCESS_DENIED`, `RESOURCE_FORBIDDEN`, `FORBIDDEN` |
-| 404 | `NOT_FOUND`, `SERVICE_NOT_FOUND`, `INSTANCE_NOT_FOUND`, `CONFIG_NOT_FOUND` |
-| 409 | `CONFLICT_STATE`, `DUPLICATE_RESOURCE` |
-| 429 | `RATE_LIMIT_EXCEEDED`, `GLOBAL_RATE_LIMIT`, `SERVICE_RATE_LIMIT`, `INSTANCE_RATE_LIMIT` |
-| 500 | `INTERNAL_ERROR`, `SANITIZATION_FAILED`, `CONFIGURATION_ERROR`, `DATABASE_ERROR`, `CACHE_ERROR` |
-| 502/503 | Downstream service errors |
+| 400 | `INVALID_REQUEST`, `INVALID_PARAM` (any `INVALID_*` code also resolves here, by rule) |
+| 401 | `MISSING_API_KEY`, `INVALID_API_KEY`, `EXPIRED_API_KEY`, `INVALID_JWT_TOKEN`, `EXPIRED_JWT_TOKEN`, `BLACKLISTED_TOKEN`, `DAILY_QUOTA_EXCEEDED`, `TOKEN_QUOTA_EXCEEDED`, `LOGIN_FAILED` |
+| 403 | `INSUFFICIENT_PERMISSIONS`, `ACCESS_DENIED`, `RESOURCE_FORBIDDEN`, `BUILTIN_READONLY` |
+| 404 | `NOT_FOUND` (any `*_NOT_FOUND` code also resolves here, by rule) |
+| 409 | `CONFLICT_STATE`, `CONFLICT_EXISTS`, `CONFLICT_BUILTIN` |
+| 429 | `RATE_LIMIT_EXCEEDED` |
+| 500 | `INTERNAL_ERROR`, `SANITIZATION_FAILED` — and the fallback for any code matching none of the rules |
+| 502/503/504 | Downstream **status patterns**, not error codes; `SERVICE_NOT_AVAILABLE` resolves to 503 |
+
+> Every code in this table was checked to exist as a string literal in `src/main/java`.
+> The previous version also listed `VALIDATION_ERROR`, `INVALID_PARAMETER`, `MISSING_PARAMETER`,
+> `INVALID_FORMAT`, `SERVICE_NOT_FOUND`, `INSTANCE_NOT_FOUND`, `CONFIG_NOT_FOUND`, `DUPLICATE_RESOURCE`,
+> `GLOBAL_RATE_LIMIT`, `SERVICE_RATE_LIMIT`, `INSTANCE_RATE_LIMIT`, `CONFIGURATION_ERROR`, `DATABASE_ERROR`
+> and `CACHE_ERROR` — **none of them exists** (see the notes in each section above).
+> ⚠️ `TOO_MANY_REQUESTS` and `RATE_LIMITED` are **not** emitted codes either: the first is only the Spring
+> `HttpStatus` enum, the second appears only inside the resolver's own rule — they are not in this table.
 
 ---
 
