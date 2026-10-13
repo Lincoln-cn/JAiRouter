@@ -98,131 +98,106 @@ config/
 
 ### API Endpoint Overview
 
-| Operation | Method | Path | Description |
-|-----------|--------|------|-------------|
-| Get Instance List | GET | `/api/config/instance/type/{serviceType}` | Get all instances of a specified service |
-| Get Instance Details | GET | `/api/config/instance/info/{serviceType}` | Get detailed information of a single instance |
-| Add Instance | POST | `/api/config/instance/add/{serviceType}` | Add a new service instance |
-| Update Instance | PUT | `/api/config/instance/update/{serviceType}` | Update existing instance configuration |
-| Delete Instance | DELETE | `/api/config/instance/del/{serviceType}` | Delete specified instance |
+| Operation | Method | Path | Notes |
+|-----------|--------|------|-------|
+| List instances | GET | `/api/config/instance/{serviceType}` | Every instance of the service type, as a plain array (no paging) |
+| Add instance | POST | `/api/config/instance/{serviceType}` | Body = `CreateServiceInstanceRequest` |
+| Update instance | PUT | `/api/config/instance/{serviceType}/{instanceId}` | `{instanceId}` = the **database id** returned by the list/add call |
+| Delete instance | DELETE | `/api/config/instance/{serviceType}/{instanceId}` | Same database id |
 
-### 1. Get Instance List
+**Authentication.** These are management endpoints: send the JWT in the **`Jairouter_Token`** header
+(configurable via `jairouter.security.jwt.jwt-header`) — **not** `Authorization: Bearer`. Without it every
+call answers `401 {"error":{"code":"AUTH_MISSING"}}`. Get a token once per shell:
 
 ```bash
-# Get all instances of Chat service
-curl -X GET "http://localhost:8080/api/config/instance/type/chat"
+TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"ChangeMeOnFirstStartup123456"}' \
+  http://localhost:8080/api/auth/jwt/login | jq -r .data.token)
+```
 
-# Response Example
+> ⚠️ Earlier revisions of this page documented `/api/config/instance/{type,add,update,del,info}/…`, plus
+> `timeout` / `maxRetries` in the body and an `instanceId` shaped like `"model@baseUrl"`. None of those
+> exists: the sub-paths were never routes (Spring matched them against `/{serviceType}/{instanceId}` and
+> answered `405`), `CreateServiceInstanceRequest` has no timeout/retries field, and an instance is
+> identified by its numeric database `id`. Everything below was executed against a running instance.
+
+### 1. List Instances
+
+```bash
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
+```
+
+Each array element is a full `ServiceInstanceDTO` — there is **no separate "details" endpoint**, the list
+already carries the whole configuration:
+
+```json
 {
   "success": true,
+  "message": "...",
   "data": [
     {
-      "instanceId": "llama3.2:3b@http://localhost:11434",
+      "id": 10,
+      "serviceConfigId": 1,
       "name": "llama3.2:3b",
       "baseUrl": "http://localhost:11434",
       "path": "/v1/chat/completions",
       "weight": 1,
-      "timeout": 30000,
-      "maxRetries": 3,
-      "status": "HEALTHY"
+      "status": "HEALTHY",
+      "healthStatus": "HEALTHY",
+      "adapter": "ollama",
+      "headers": {},
+      "tags": {},
+      "createdAt": "2026-10-14T01:20:00",
+      "updatedAt": "2026-10-14T01:20:00"
     }
-  ]
+  ],
+  "timestamp": "2026-10-14 01:20:00"
 }
 ```
 
-### 2. Get Instance Details
+### 2. Add an Instance
 
 ```bash
-# Get detailed information of specific instance
-curl -X GET "http://localhost:8080/api/config/instance/info/chat?modelName=llama3.2:3b&baseUrl=http://localhost:11434"
-
-# Response Example
-{
-  "success": true,
-  "data": {
-    "instanceId": "llama3.2:3b@http://localhost:11434",
-    "name": "llama3.2:3b",
-    "baseUrl": "http://localhost:11434",
-    "path": "/v1/chat/completions",
-    "weight": 1,
-    "timeout": 30000,
-    "maxRetries": 3,
-    "headers": {},
-    "status": "HEALTHY",
-    "lastHealthCheck": "2024-01-15T10:30:00Z",
-    "requestCount": 1250,
-    "errorCount": 5,
-    "avgResponseTime": 850
-  }
-}
-```
-
-### 3. Add Instance
-
-```bash
-# Add new Chat service instance
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
-  -H "Content-Type: application/json" \
+curl -X POST -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
   -d '{
     "name": "qwen2:7b",
     "baseUrl": "http://gpu-server:8080",
     "path": "/v1/chat/completions",
     "weight": 2,
-    "timeout": 45000,
-    "maxRetries": 3,
-    "headers": {
-      "Authorization": "Bearer your-token",
-      "X-Custom-Header": "custom-value"
-    }
-  }'
-
-# Response Example
-{
-  "success": true,
-  "message": "Instance added successfully",
-  "data": {
-    "instanceId": "qwen2:7b@http://gpu-server:8080"
-  }
-}
+    "status": "HEALTHY",
+    "adapter": "normal",
+    "headers": {"Authorization": "Bearer your-token"}
+  }' \
+  http://localhost:8080/api/config/instance/chat
 ```
 
-### 4. Update Instance
+The response `data` is the created instance — keep its `id`, the next two calls need it:
+
+```json
+{ "success": true, "message": "...", "data": { "id": 11, "name": "qwen2:7b", "weight": 2 } }
+```
+
+### 3. Update an Instance
+
+`{instanceId}` is that database `id` (look it up from the list response):
 
 ```bash
-# Update existing instance configuration
-curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "instanceId": "qwen2:7b@http://gpu-server:8080",
-    "instance": {
-      "name": "qwen2:7b",
-      "baseUrl": "http://gpu-server:8080",
-      "path": "/v1/chat/completions",
-      "weight": 3,
-      "timeout": 60000,
-      "maxRetries": 5
-    }
-  }'
+ID=$(curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
+  | jq -r '.data[] | select(.name=="qwen2:7b") | .id')
 
-# Response Example
-{
-  "success": true,
-  "message": "Instance updated successfully"
-}
+curl -X PUT -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"qwen2:7b","baseUrl":"http://gpu-server:8080","path":"/v1/chat/completions","weight":3,"adapter":"normal"}' \
+  "http://localhost:8080/api/config/instance/chat/$ID"
 ```
 
-### 5. Delete Instance
+### 4. Delete an Instance
 
 ```bash
-# Delete specified instance
-curl -X DELETE "http://localhost:8080/api/config/instance/del/chat?modelName=qwen2:7b&baseUrl=http://gpu-server:8080"
-
-# Response Example
-{
-  "success": true,
-  "message": "Instance deleted successfully"
-}
+curl -X DELETE -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat/$ID"
 ```
+
+Both the update and the delete above returned `200` when this page was reviewed against a running
+instance (the round-trip was add → list → take `id` → update → delete).
 
 ## Configuration File Management API
 
@@ -439,18 +414,18 @@ curl -X GET "http://localhost:8080/api/config/merge/status"
 
 ```bash
 # 1. Add new high-performance GPU instance
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "llama3.1:70b",
     "baseUrl": "http://gpu-cluster:8080",
     "path": "/v1/chat/completions",
-    "weight": 5,
-    "timeout": 60000
+    "weight": 5
   }'
 
 # 2. Verify instance addition success
-curl -X GET "http://localhost:8080/api/config/instance/type/chat"
+curl -X GET -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 
 # 3. Test new instance
 curl -X POST "http://localhost:8080/v1/chat/completions" \
@@ -465,36 +440,34 @@ curl -X POST "http://localhost:8080/v1/chat/completions" \
 
 ```bash
 # 1. Get current instance configuration
-curl -X GET "http://localhost:8080/api/config/instance/info/chat?modelName=qwen2:7b&baseUrl=http://gpu-server:8080"
+curl -X GET -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 
 # 2. Update instance weight (from 2 to 4)
-curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
+ID=$(curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
+  | jq -r '.data[] | select(.name=="qwen2:7b") | .id')
+curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{
-    "instanceId": "qwen2:7b@http://gpu-server:8080",
-    "instance": {
-      "name": "qwen2:7b",
-      "baseUrl": "http://gpu-server:8080",
-      "path": "/v1/chat/completions",
-      "weight": 4
-    }
-  }'
+  -d '{"name":"qwen2:7b","baseUrl":"http://gpu-server:8080","path":"/v1/chat/completions","weight":4}'
 
 # 3. Verify weight update
-curl -X GET "http://localhost:8080/api/config/instance/type/chat"
+curl -X GET -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 ```
 
 ### Scenario 3: Fault Instance Handling
 
 ```bash
 # 1. Check instance health status
-curl -X GET "http://localhost:8080/api/config/instance/type/chat"
+curl -X GET -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 
-# 2. Temporarily remove faulty instance
-curl -X DELETE "http://localhost:8080/api/config/instance/del/chat?modelName=faulty-model&baseUrl=http://faulty-server:8080"
+# 2. Temporarily remove faulty instance (the id comes from the list call in step 1)
+ID=$(curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
+  | jq -r '.data[] | select(.name=="faulty-model") | .id')
+curl -X DELETE "http://localhost:8080/api/config/instance/chat/$ID"
 
 # 3. Add alternative instance
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "backup-model",
@@ -537,23 +510,30 @@ curl -X DELETE "http://localhost:8080/api/config/merge/cleanup?deleteOriginals=t
 
 ```bash
 # Progressive Instance Replacement
+ID=$(curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
+  | jq -r '.data[] | select(.name=="new-model") | .id')
 # 1. Add new instance (smaller weight)
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
-  -d '{"name": "new-model", "weight": 1, ...}'
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name": "new-model", "weight": 1}'
 
 # 2. Observe new instance performance
 # Monitor metrics, error rate, response time
 
 # 3. Gradually increase new instance weight
-curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
-  -d '{"instanceId": "new-model@...", "instance": {"weight": 3, ...}}'
+curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
+  -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"new-model","weight":3}'
 
 # 4. Gradually decrease old instance weight
-curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
-  -d '{"instanceId": "old-model@...", "instance": {"weight": 1, ...}}'
+ID=$(curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
+  | jq -r '.data[] | select(.name=="new-model") | .id')
+curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
+  -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"old-model","weight":1}'
 
 # 5. Remove old instance
-curl -X DELETE "http://localhost:8080/api/config/instance/del/chat?..."
+curl -X DELETE "http://localhost:8080/api/config/instance/chat/$ID"
 ```
 
 ### 3. Configuration Monitoring
@@ -621,7 +601,8 @@ fi
 
 ```bash
 # View detailed error information
-curl -v "http://localhost:8080/api/config/instance/add/chat" \
+curl -v "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name": "test", ...}'
 
