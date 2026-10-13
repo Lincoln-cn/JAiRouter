@@ -1,21 +1,21 @@
 # JAiRouter
 
 <p align="center">
-  <img src="logo/JAiRouterLogo.png" alt="JAiRouter — AI 模型网关" width="180">
+  <img src="logo/JAiRouterLogo.png" alt="JAiRouter — AI Model Gateway" width="180">
 </p>
 
 <p align="center">
-  <strong>把您的所有 LLM 后端，收敛到一个 OpenAI 兼容入口。</strong>
+  <strong>把你在跑的所有模型后端收进一个 OpenAI 兼容端点。</strong>
 </p>
 
 <p align="center">
-  Ollama · vLLM · GPUStack · Xinference · OpenAI · Claude · Gemini<br>
-  统一路由 · 负载均衡 · 限流 · 熔断 · 故障转移 · 可视化控制台
+  Ollama · vLLM · GPUStack · Xinference · LocalAI · OpenAI · Claude · Gemini<br>
+  路由 · 负载均衡 · 限流 · 熔断 · 失败转移 · RBAC · 审计 · 可视化控制台
 </p>
 
 <p align="center">
   <a href="https://github.com/Lincoln-cn/JAiRouter/releases">
-    <img src="https://img.shields.io/github/v/release/Lincoln-cn/JAiRouter?style=flat-square" alt="最新版本">
+    <img src="https://img.shields.io/github/v/release/Lincoln-cn/JAiRouter?style=flat-square" alt="Latest release">
   </a>
   <a href="https://hub.docker.com/r/sodlinken/jairouter">
     <img src="https://img.shields.io/docker/pulls/sodlinken/jairouter?style=flat-square&logo=docker" alt="Docker Pulls">
@@ -27,225 +27,250 @@
 
 <p align="center">
   <a href="README.md">English</a> •
-  <a href="https://jairouter.com">文档</a> •
-  <a href="https://github.com/Lincoln-cn/JAiRouter/issues">问题反馈</a> •
-  <a href="https://github.com/Lincoln-cn/JAiRouter/discussions">讨论</a>
+  <a href="https://jairouter.com">文档站</a> •
+  <a href="https://github.com/Lincoln-cn/JAiRouter/issues">Issues</a> •
+  <a href="https://github.com/Lincoln-cn/JAiRouter/discussions">Discussions</a>
 </p>
 
-- **一个入口调用所有模型** —— 把对 Ollama、vLLM、GPUStack、OpenAI、Claude、Gemini 的直接调用统一为一个 OpenAI 兼容 `base_url`，现有 OpenAI SDK、LangChain、LlamaIndex 代码零改造即可切换。
-- **为本地推理集群而生** —— 多实例负载均衡（含延迟感知、标签路由）、熔断降级，以及实例故障时**自动换到健康实例重试**的请求级故障转移。
-- **为企业团队打造** —— Web 控制台热更新、配置版本管理与回滚、RBAC、审计日志、加密调用记录与完整可观测性。调整路由无需重启服务。
+本 README 同时面向**人和 AI 助手**编写：下方的事实块，以及[仓库地图](#仓库地图)、
+[常用命令](#常用命令)、[HTTP 面](#http-面)三节，是可直接机器读取的核心。**代码与本文件冲突时以代码为准**，
+并请开 issue 提醒我们修文档。
 
-## 3 分钟快速体验
+<!-- 事实块：请与 pom.xml、application*.yml 及各 workflow 保持同步 -->
+```yaml
+product:         JAiRouter
+repository:      Lincoln-cn/JAiRouter
+checkout_dir:    model-router            # 本地/仓库目录名与产品名不同
+artifact:        model-router            # Maven artifactId
+project_version: 3.3.0                   # pom.xml
+latest_release:  v3.3.0 (2026-10-07)
+stack:
+  backend:  Java 17 + Spring Boot 3.5.5（WebFlux / 响应式）
+  frontend: Vue 3 + TypeScript + Vite，中英双语（zh-CN / en-US）
+  build:    Maven wrapper —— ./mvnw（Unix）· .\mvnw.cmd（Windows）
+runtime:
+  default_port: 8080
+  console:      /admin/
+  swagger_ui:   仅 dev profile
+  required_env_in_prod: [JWT_SECRET, INITIAL_ADMIN_PASSWORD]
+surfaces:
+  - /v1/**        # 客户端面：OpenAI 原生 + Anthropic 兼容
+  - /api/**       # 管理面 + 历史面（受 RBAC 治理）
+  - /actuator/**  # 健康、就绪、Prometheus
+tests:
+  command: ./mvnw test -o
+  scale:   386 个测试类，约 4000 个测试方法
+license: Apache-2.0
+```
+
+## 它是什么
+
+JAiRouter 是一个**可自托管的 AI 模型网关**。它把你已有的模型服务——Ollama、vLLM、GPUStack、
+Xinference、LocalAI——以及云端供应商（OpenAI、Anthropic、Gemini，以及任何 OpenAI 兼容厂商）
+统一到一个 OpenAI 兼容端点之后。原有的 OpenAI SDK、LangChain、LlamaIndex 代码无需改动：把
+`base_url` 指过来即可。
+
+它补齐的是你本来要自己写的那一层：多实例负载均衡、限流、实例熔断与**换一个健康实例重试**的
+失败转移、RBAC、审计日志、记录治理与可观测性——全部可以从 Web 控制台在运行时修改，无需重启进程。
+
+| 问题 | JAiRouter 的做法 |
+|------|------------------|
+| 模型端点太多、分散管理 | 统一到一个 API 面 |
+| 后端挂了要人工切换 | 熔断 + 请求级失败转移 |
+| 每个服务各自实现鉴权 | 内置 JWT + API Key，配数据驱动 RBAC |
+| 日志和指标散落在各后端 | 统一指标、链路追踪、调用历史 |
+| 改配置要重启 | 控制台热重载 |
+
+## 快速开始
+
+### 开发 profile —— 无需任何密钥
 
 ```bash
-# 启动网关 —— dev 方式启动，无需配置密钥（内置开发密钥）
 docker run -d --name jairouter -p 8080:8080 \
   -e SPRING_PROFILES_ACTIVE=dev \
   sodlinken/jairouter:latest
 
-# Web 控制台：http://localhost:8080/admin
-# 默认账号：admin / ChangeMeOnFirstStartup123456
+# 控制台：  http://localhost:8080/admin/
+# 默认账号: admin / ChangeMeOnFirstStartup123456
 ```
 
-生产环境请改用默认的 `prod` 方式启动，并配置你自己的密钥 —— prod 模式刻意不内置默认密钥：
+dev profile 有意回退到内置的开发用密钥，因此零配置即可启动。**切勿把 dev profile 实例暴露在不可信网络。**
+
+### 生产 profile —— 密钥必填
 
 ```bash
 docker run -d --name jairouter -p 8080:8080 \
-  -e JWT_SECRET="<至少32字符的密钥>" \
+  -e JWT_SECRET="$(openssl rand -base64 48)" \
+  -e INITIAL_ADMIN_PASSWORD='<你的强管理密码>' \
   sodlinken/jairouter:latest
 ```
 
-任意 OpenAI 兼容客户端即可接入：
+**两个变量都是必填。** `prod` profile 带启动安全门闩：任一缺失、或仍是出厂默认值时
+**拒绝启动**——具体规则见[生产环境启动门闩](#生产环境启动门闩)。只给 `JWT_SECRET` 的容器会在启动阶段
+以 `IllegalStateException` 退出。
+
+直接跑 JAR（不走 Docker）时，先生成强值：
+
+```bash
+java -jar target/model-router-*.jar --generate-key        # JWT 密钥
+java -jar target/model-router-*.jar --generate-password   # 管理员密码
+```
+
+### 让客户端接进来
 
 ```python
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="http://localhost:8080/v1",             # OpenAI 原生面（原生 JSON / SSE）
-    api_key="not-needed",                            # Authorization 头会透传给下游
-    default_headers={"X-API-Key": "<你的API密钥>"}     # 网关鉴权（管理台创建的 API Key）
+    base_url="http://localhost:8080/v1",             # OpenAI 原生面（原始 JSON / SSE）
+    api_key="not-needed",                            # Authorization 会被转发给下游
+    default_headers={"X-API-Key": "<your-api-key>"}  # 网关凭据（管理面创建的 API Key）
 )
 
 response = client.chat.completions.create(
-    model="llama3.2",  # 任意已配置的后端模型
-    messages=[{"role": "user", "content": "你好！"}]
+    model="llama3.2",                                # 你配置过的任意模型
+    messages=[{"role": "user", "content": "Hello!"}]
 )
 print(response.choices[0].message.content)
 ```
 
-在控制台「实例管理」中添加您自己的后端——Ollama、vLLM、GPUStack 或任意云端提供商。配置热更新即时生效，无需重启。
+已注册的后端在控制台的**实例管理**里维护；改动经热重载生效，无需重启。
 
-<p align="center">
-  <img src="screenshots/dashboard-zh-CN-light.png" alt="JAiRouter 控制台" width="720">
-  <br/>
-  <em>管理控制台 — 服务/实例/系统指标实时总览</em>
-</p>
+## 生产环境启动门闩
 
-<details>
-<summary><b>更多截图</b></summary>
+门闩实现位于 `StartupSecretKeyChecker`（一个 `CommandLineRunner`）与 `StartupSecurityGate`。
+每次启动都会执行，且**直接读环境变量**——只设置等价的 YAML 属性**不足以**通过它：
 
-<p align="center">
-  <img src="screenshots/service-management-zh-CN-light.png" alt="服务管理" width="720">
-  <br/>
-  <em>服务管理 — 按服务配置适配器与负载均衡策略</em>
-</p>
+| 检查项 | `prod` / `production` profile 下的规则 | 其它 profile |
+|--------|----------------------------------------|--------------|
+| JWT 是否启用 | `jairouter.security.jwt.enabled` 必须为 `true`，否则失败 | 不检查 |
+| `JWT_SECRET` | 必须已设置、不是已知出厂/文档默认值、且强度不低于 `MEDIUM` | 仅告警 |
+| `INITIAL_ADMIN_PASSWORD` | 必须已设置、不能是出厂默认值 `ChangeMeOnFirstStartup123456`、且强度不低于 `MEDIUM` | 仅告警 |
 
-<p align="center">
-  <img src="screenshots/instance-management-zh-CN-light.png" alt="实例管理" width="720">
-  <img src="screenshots/adapter-management-zh-CN-light.png" alt="适配器管理" width="720">
-  <br/>
-  <em>实例管理与适配器管理</em>
-</p>
+几点值得知道：
 
-<p align="center">
-  <img src="screenshots/rule-management-zh-CN-light.png" alt="路由规则" width="720">
-  <br/>
-  <em>可视化路由规则 — 命中统计、优先级拖拽与场景模板</em>
-</p>
+- **生产环境缺 `INITIAL_ADMIN_PASSWORD` 是硬失败。** `ADMIN_PASSWORD` 作为备用变量名被接受，
+  但**系统不会替你生成任何密码**。
+- **不存在「自动生成随机密码」这回事。** 两个变量都没设时启动直接中止——既不会随机生成，
+  也不会回落到文档里的默认值。（唯一的生成器是显式 CLI 参数 `--generate-key` / `--generate-password`。）
+- 强度为 `MEDIUM` 的值会打警告并**允许**启动；`VERY_WEAK` / `WEAK` 会阻断启动。
+- 可信隔离网络的逃生舱：`JAIRouter_SKIP_AUTH_WARNING=true`。必须显式设置，且它会一次性关掉
+  上表**全部**检查。
+- `admin` 账号本身来自 `src/main/resources/config/auth/jwt.yml` 的
+  `jairouter.security.jwt.accounts`，其口令是
+  `{noop}${INITIAL_ADMIN_PASSWORD:ChangeMeOnFirstStartup123456}`。首次启动时这些 YAML 账户会在
+  `jwt_accounts` 表**为空**的前提下被写入该表（`JpaDatabaseInitializer.initializeJwtAccounts`）；
+  之后的启动不再改动该表，所以**改 `INITIAL_ADMIN_PASSWORD` 不会改变已存在于数据库里的账号**——
+  请到控制台里改。
 
-<p align="center">
-  <img src="screenshots/call-history-dashboard-zh-CN-light.png" alt="调用历史分析" width="720">
-  <br/>
-  <em>调用历史分析 — 成功率、延迟与 Token 用量趋势</em>
-</p>
+## 仓库地图
 
-<p align="center">
-  <img src="screenshots/extra-slow-query-analysis-zh-CN-light.png" alt="慢查询分析" width="720">
-  <br/>
-  <em>慢查询分析 — 性能热点、告警状态与操作分布</em>
-</p>
+| 路径 | 内容 |
+|------|------|
+| `src/main/java/org/unreal/modelrouter/router/` | 网关核心：适配器、请求处理器、负载均衡、规则引擎、熔断、缓存 |
+| `src/main/java/org/unreal/modelrouter/auth/` | 认证（JWT、API Key）、脱敏、安全审计、RBAC、控制台侧认证接口 |
+| `src/main/java/org/unreal/modelrouter/monitor/` | 指标、链路追踪、调用历史、慢查询分析、错误追踪、安全告警 |
+| `src/main/java/org/unreal/modelrouter/persistence/` | 存储抽象 + JPA 实体与仓储 + schema 初始化 |
+| `src/main/java/org/unreal/modelrouter/config/` | 配置服务：热重载、版本与回滚、校验、控制台接口 |
+| `src/main/resources/config/**` | 模块化 YAML 配置，由 `application.yml` 的 `spring.config.import` 引入 |
+| `src/main/resources/db/migration/{h2,postgres}/` | 版本化 schema 迁移（`Flyway`），两种方言各一个目录 |
+| `src/test/java/` | JUnit 5 + Mockito + Reactor `StepVerifier`；约 4000 个测试方法 |
+| `frontend/` | Vue 3 + TypeScript 控制台（Vite `base: /admin/`） |
+| `docs/zh/`、`docs/en/` | MkDocs 文档，中英保持对称 |
+| `deploy/` | Kubernetes 清单、compose 文件、部署脚本 |
+| `.cspell.json` | 拼写检查词表——文档门闩对未知词报错 |
+| `innerdoc/` | 内部设计笔记，不对外发布 |
 
-<p align="center">
-  <img src="screenshots/playground-chat-zh-CN-light.png" alt="AI 试验场" width="720">
-  <br/>
-  <em>AI 试验场 — 对话/向量/重排序/语音/图像 五类能力在线调试</em>
-</p>
+## 常用命令
 
-<p align="center">
-  <img src="screenshots/quota-config-zh-CN-light.png" alt="配额运行时配置" width="720">
-  <br/>
-  <em>配额运行时配置 — 可热改开关/窗口/放行策略，需重启字段置为只读并带"需重启"标识</em>
-</p>
+```bash
+# 构建（跳过测试）
+./mvnw clean package -DskipTests
 
-<p align="center">
-  <img src="screenshots/quota-monitoring-zh-CN-light.png" alt="配额用量监控" width="720">
-  <br/>
-  <em>配额用量监控 — 后端类型/降级状态卡片 + 多维筛选（租户/Key/用户/服务/模型 × 窗口）</em>
-</p>
+# 本地运行
+java -jar target/model-router-*.jar --spring.profiles.active=dev
 
-<p align="center">
-  <img src="screenshots/client-access-zh-CN-light.png" alt="客户端接入指南" width="720">
-  <br/>
-  <em>客户端接入指南 — OpenAI 兼容面与 Anthropic 面的 base URL、凭据头与可复制代码片段</em>
-</p>
+# 全量 Java 测试（离线可跑；加 skip 参数可加快迭代）
+./mvnw test -o
 
-<p align="center">
-  <img src="screenshots/dashboard-zh-CN-dark.png" alt="仪表板（暗色主题）" width="720">
-  <br/>
-  <em>内置暗色主题 — 管理台支持亮/暗切换与中英双语</em>
-</p>
+# 聚焦测试 —— 类名用逗号分隔，不支持通配符
+./mvnw test -Dtest=FooTest,BarTest -DfailIfNoTests=false -o
 
-</details>
+# 前端（类型检查 + 构建）
+cd frontend && npm ci && npm run type-check && npm run build
+```
 
-## JAiRouter 是什么？
+Windows 下把 `./mvnw` 换成 `.\mvnw.cmd`。
 
-JAiRouter 是一个 **生产级 AI 模型网关**，面向自建推理基础设施（Ollama、vLLM、GPUStack、Xinference）并与云端模型混用的团队。它把全部后端收敛为一个统一的 OpenAI 兼容 API，并补齐您本需自行搭建的弹性与治理能力：负载均衡、限流、熔断、故障转移、RBAC、审计日志与可观测性。
+## HTTP 面
 
-| 问题 | JAiRouter 解决方案 |
-|------|-------------------|
-| 多个模型端点需要管理 | 统一的 API 入口 |
-| 服务故障时手动切换 | 自动熔断故障转移 |
-| 每个服务单独实现认证 | 内置 JWT + API Key |
-| 分散的日志和监控指标 | 统一可观测性 |
-| 修改配置需重启服务 | Web 控制台热更新 |
+| 面 | 前缀 | 协议 | 鉴权 |
+|----|------|------|------|
+| 客户端 —— OpenAI 原生 | `/v1/**` | OpenAI JSON + SSE（`/v1/chat/completions`、`/v1/models`、`/v1/embeddings`、`/v1/rerank`） | JWT 或 API Key |
+| 客户端 —— Anthropic 兼容 | `/v1/messages`、`/v1/messages/count_tokens` | Anthropic Messages（流式 SSE、工具调用） | JWT 或 API Key |
+| 管理面 | `/api/**` | JSON，`RouterResponse` 信封 | JWT/API Key + RBAC URL 矩阵 |
+| 运维面 | `/actuator/**` | 健康、就绪、`/actuator/prometheus` | 视 profile |
 
-### 核心功能
+错误体按面区分协议形状：`/v1/messages` 上为 Anthropic 形状的
+`{"type":"error","error":{...}}`，其余 `/v1/**` 路径为 OpenAI 形状的
+`{"error":{message,type,code}}`，`/api/**` 保持历史形状。`/v1` 面的流式失败会发出协议形状的
+error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，因为客户端把 `[DONE]` 视为成功。
 
-- **🔌 OpenAI 兼容 API** — 直接替换 OpenAI SDK、LangChain、LlamaIndex
-- **🔧 可配置 Adapter** — 通过配置或 Web 页面添加新 AI 提供商（DeepSeek、智谱等），无需编码
-- **⚖️ 智能负载均衡** — 轮询、加权、最少连接、IP Hash、一致性哈希、EWMA 延迟感知
-- **🎯 规则引擎与标签路由** — 可视化条件路由（模型名、服务类型、请求头、来源 IP、权重、实例标签）
-- **🛡️ 流量控制** — 令牌桶、漏桶、滑动窗口算法
-- **🔥 熔断降级** — 自动故障转移、可配置阈值与恢复策略，支持请求级故障转移（换健康实例重试）
-- **🔐 认证与 RBAC** — JWT + API Key 双重认证 + 审计日志 + 数据驱动 RBAC（44 权限码 + 4 角色模板 + 菜单与 URL 权限）
-- **📊 可观测性** — Prometheus 指标、OpenTelemetry 追踪、实时仪表盘、调用历史分析
-- **🔒 记录治理** — 三档记录级别（仅元数据 / 脱敏摘要 / AES-256-GCM 加密全文）
-- **⚡ 响应缓存** — 确定性请求直接复用下游响应、跳过后端（可选开启，租户隔离键）
-- **💾 状态持久化** — Redis / H2 / 文件存储，支持分布式部署
-- **🎛️ Web 控制台** — 可视化管理、版本控制、配置回滚、亮/暗主题
+## 认证与授权
 
-## 支持的 AI 后端
+- **JWT** —— 头名可配置，默认 `Jairouter_Token`。
+- **API Key** —— 头 `X-API-Key`。网关凭据与下游供应商密钥彻底分离：`x-api-key` 只被网关消费、
+  绝不透传，实例级下游凭据请放在该实例自己的 `headers.Authorization`。
+- **RBAC** —— 数据驱动：53 个权限码、4 个角色模板（`ADMIN` / `OPERATOR` / `USER` / `VIEWER`）、
+  URL 规则矩阵 + 方法级 `@PreAuthorize`。未命中任何规则的请求按
+  `jairouter.security.rbac.unmatched-policy` 处理，默认 `DENY_ALL`；`ROLE_ADMIN` 恒直通。
+  `/v1/**` 需要认证，但有意不进权限矩阵。
 
-<details>
-<summary><b>内置 Adapter</b> — Chat / Embedding / Rerank / TTS / STT / Image 能力一览</summary>
+## 能力清单
 
-| 后端 | Chat | Embedding | Rerank | TTS | STT | Image | 说明 |
-|------|:----:|:---------:|:------:|:---:|:---:|:-----:|------|
-| **Ollama** | ✅ | ✅ | - | - | - | - | 本地推理 |
-| **vLLM** | ✅ | ✅ | - | - | - | - | 高吞吐量 |
-| **GPUStack** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 功能完整 |
-| **Xinference** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 多模型支持 |
-| **LocalAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ | OpenAI 兼容 |
-| **OpenAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ | 云端兜底 |
-| **Anthropic Claude** | ✅ | - | - | - | - | - | 原生 Claude API |
-| **Google Gemini** | ✅ | - | - | - | - | - | 原生 Gemini API |
+已实现、且有测试套件覆盖：
 
-</details>
+- **适配器** —— Ollama、vLLM、GPUStack、Xinference、LocalAI、OpenAI、Anthropic（原生）、
+  Gemini（原生），以及在 `adapter-definitions` 里声明的任意 OpenAI 兼容厂商。
+- **负载均衡** —— 轮询、加权、最少连接、IP 哈希、一致性哈希、EWMA 延迟感知、随机。
+- **规则引擎** —— 按模型、服务类型、请求头、客户端 IP、权重、实例标签做条件路由，带命中统计；
+  控制台可视化编辑。
+- **韧性** —— 实例级熔断、请求级失败转移到另一健康实例、限流（令牌桶 / 漏桶 / 滑动窗口）、
+  确定性请求的响应缓存（可选开启，按租户隔离键）。
+- **配额** —— 多维度、多窗口账本（`MINUTE`/`HOUR`/`DAY`/`MONTH`），Redis 分布式计数并本地降级
+  （`jairouter.quota.enabled`，默认关闭）。
+- **记录治理** —— 调用历史三档：仅元数据 / 脱敏摘要 / AES-256-GCM 加密全文；解密端点仅 ADMIN。
+- **可观测性** —— Prometheus 指标、OpenTelemetry 链路追踪、慢查询分析、错误追踪、安全告警。
+  告警出口被有意限定为 **Prometheus 指标 + 结构化日志**——仓内不实现任何推送通道
+  （邮件/Webhook/IM），请在 Alertmanager 或日志平台里接。
+- **持久化** —— 默认 H2；当 `DATABASE_URL` 指向 PostgreSQL 时用 PostgreSQL（配 `Flyway` 迁移）；
+  多副本部署用 Redis 承载共享状态。
+- **多副本** —— 跨副本事件广播、共享限流/配额计数、定时任务的分布式锁（含告警冷却）。
+- **控制台** —— `/admin/` 的 Vue 3 界面：服务、实例、适配器、规则、版本与回滚、配额、调用历史、
+  链路追踪、告警、API Key、RBAC，深/浅主题，中英双语。
 
-<details>
-<summary><b>可配置 Adapter</b> — 任意 OpenAI 兼容提供商，无需编码</summary>
+有意**未**实现：语义（向量相似度）缓存，以及任何仓内通知推送。开放中的问题见
+[状态与近期工作](#状态与近期工作)。
 
-| 提供商 | 配置方式 |
-|--------|----------|
-| **DeepSeek** | `adapter-definitions: deepseek: type: openai-compatible` |
-| **智谱 (GLM)** | `adapter-definitions: zhipu: type: openai-compatible` |
-| **月之暗面** | `adapter-definitions: moonshot: type: openai-compatible` |
-| **通义千问** | `adapter-definitions: qwen: type: openai-compatible` |
-| **百川** | `adapter-definitions: baichuan: type: openai-compatible` |
-| **Minimax** | `adapter-definitions: minimax: type: openai-compatible` |
-
-> 📖 详见 [Adapter 配置指南](https://jairouter.com/configuration/adapter-config/)
-
-</details>
-
-## 为什么选择 JAiRouter？
-
-- **对比直连后端** —— 没有统一弹性、没有集中密钥、没有调用可见性。JAiRouter 提供单一入口、自动故障转移与完整审计链路。
-- **对比 One-API / new-api** —— 它们侧重 API Key 的分发与计费（适合账号共享/中转服务）；JAiRouter 定位在**自建本地推理集群**的网关：多实例负载均衡、熔断、规则路由、RBAC 与可观测性，两者可以互补。
-- **对比 Nginx** —— Nginx 是通用 Web 服务器；JAiRouter **专为 AI/LLM 工作负载设计**，提供 OpenAI 兼容路由、熔断与模型感知的负载均衡。
-- **对比 LangChain** —— LangChain 是应用框架；JAiRouter 是**其下的基础设施层**，提供路由、故障转移与监控。
-
-| 功能 | JAiRouter | Nginx | One-API | LangChain |
-|------|:---------:|:-----:|:-------:|:---------:|
-| OpenAI 兼容 | ✅ | ❌ | ✅ | ✅ |
-| 负载均衡 | ✅ | ✅ | ✅ | ❌ |
-| 熔断降级 | ✅ | ❌ | ❌ | ❌ |
-| 限流 | ✅ | ✅ | ✅ | ❌ |
-| Web 控制台 | ✅ | ❌ | ✅ | ❌ |
-| 配置热更新 | ✅ | ❌ | ✅ | ❌ |
-| 版本控制 | ✅ | ❌ | ❌ | ❌ |
-| OpenTelemetry | ✅ | ❌ | ❌ | ✅ |
-
-## 系统架构
+## 架构
 
 <details>
-<summary><b>请求在网关中的流转</b></summary>
+<summary><b>请求流</b></summary>
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                           您的应用                               │
+│                         Your Application                         │
 │                 (OpenAI SDK / LangChain / LlamaIndex)           │
 └─────────────────────────────────┬───────────────────────────────┘
                                   │
-                                  ▼ OpenAI 兼容 API
+                                  ▼ OpenAI-Compatible API
 ┌─────────────────────────────────────────────────────────────────┐
-│                        JAiRouter 网关                            │
+│                         JAiRouter Gateway                        │
 │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐   │
-│  │  路由   │ │负载均衡 │ │  限流   │ │  熔断   │ │  认证   │   │
+│  │ Routing │ │ Balance │ │  Limit  │ │ Circuit │ │   Auth  │   │
 │  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘   │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │                  可观测性与持久化                         │   │
+│  │              Observability & Persistence                 │   │
 │  └─────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────┬───────────────────────────────┘
                                   │
@@ -258,103 +283,201 @@ JAiRouter 是一个 **生产级 AI 模型网关**，面向自建推理基础设�
 
 </details>
 
-## 文档资源
+<details>
+<summary><b>控制台截图</b></summary>
+
+<p align="center">
+  <img src="screenshots/dashboard-zh-CN-light.png" alt="JAiRouter 仪表盘" width="720">
+  <br/>
+  <em>仪表盘 —— 实时的服务、实例与系统指标</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/service-management-zh-CN-light.png" alt="服务管理" width="720">
+  <img src="screenshots/instance-management-zh-CN-light.png" alt="实例管理" width="720">
+  <br/>
+  <em>服务与实例管理 —— 每个服务的适配器与负载均衡策略</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/rule-management-zh-CN-light.png" alt="规则引擎" width="720">
+  <br/>
+  <em>可视化路由规则 —— 命中统计、优先级拖拽与模板</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/call-history-dashboard-zh-CN-light.png" alt="调用历史分析" width="720">
+  <br/>
+  <em>调用历史分析 —— 成功率、延迟与 Token 用量趋势</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/extra-slow-query-analysis-zh-CN-light.png" alt="慢查询分析" width="720">
+  <br/>
+  <em>慢查询分析 —— 热点、告警状态与操作分布</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/playground-chat-zh-CN-light.png" alt="AI 演练场" width="720">
+  <br/>
+  <em>演练场 —— 对话、向量化、重排、语音与图像测试台</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/quota-config-zh-CN-light.png" alt="配额运行时配置" width="720">
+  <br/>
+  <em>配额运行时配置 —— 仅重启生效的字段为只读并带角标</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/quota-monitoring-zh-CN-light.png" alt="配额用量监控" width="720">
+  <br/>
+  <em>配额监控 —— 后端类型、降级状态与多维度筛选</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/client-access-zh-CN-light.png" alt="客户端接入指引" width="720">
+  <br/>
+  <em>客户端接入指引 —— OpenAI 兼容与 Anthropic base URL 的可复制片段</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/dashboard-zh-CN-dark.png" alt="仪表盘（暗色主题）" width="720">
+  <br/>
+  <em>内置暗色主题 —— 界面可换肤、双语</em>
+</p>
+
+</details>
+
+## 状态与近期工作
+
+**最新发布：v3.3.0（2026-10-07）** —— 接入 PostgreSQL 并以 `Flyway` 管理版本化迁移；多副本能力
+（跨副本事件广播、共享计数、启动自检、定时任务按类处置）；以及一轮「配置诚实性」收口：把没人消费的
+配置键逐个接上消费方或删除。
+
+**v3.3.0 之后已合入、尚未发布**（31 次提交，2026-10-10 → 2026-10-12）—— 一轮由安全/质量审计驱动的加固。
+按主题归类：
+
+| 主题 | 变更内容 |
+|------|----------|
+| Reactor 正确性 | 阻塞写库移出事件循环（API Key 用量、错误上报）；JWT 黑名单同步改为锁外批量 |
+| 流式保真 | `/v1` 面：下游在响应提交前失败时补协议形状 error 帧并保持状态码保真；legacy `/api/**` 语义有意不动；两个探针测试类把客户端可见基线钉住 |
+| 告警 | `SecurityAlertService` 接到认证失败路径、判据对齐审计事件枚举、计数下沉到存储侧、配置面统一、冷却改为跨副本排他，并清掉残余死告警配置 |
+| 审计事件类型 | 事件类型一律走枚举名；`parseEventType` 不再静默回退成 `SYSTEM_MAINTENANCE`（枚举 17 → 26），未知动态前缀改为显式降级而非被丢弃 |
+| 安全 | SSRF：解析结果与建连绑定（堵 DNS 重绑定）；Token 用量写入按主体收敛属主；配置推送与指标上报的出站客户端收归共享 WebClient 池 |
+| 死代码 | 删除不可达的认证 provider/listener、无生产方的 DTO、无引用的前端 composable |
+| 文档与门闩 | 多处文档与代码口径对齐；修复拼写检查词表 |
+
+发布标签：`v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`。
+
+### 开放台账
+
+已知、已记账、**尚未完成**——请勿假设这些已可用：
+
+| Issue | 概要 |
+|-------|------|
+| [#250](https://github.com/Lincoln-cn/JAiRouter/issues/250) | 检出 6 个过期文档，待复审更新 |
+| [#297](https://github.com/Lincoln-cn/JAiRouter/issues/297) | 控制台 `DashboardOverview` 类型与 `/api/monitoring/overview` 真实载荷不一致，类型检查对真实字段名没有约束力 |
+| [#303](https://github.com/Lincoln-cn/JAiRouter/issues/303) | 机器人提交会让 workflow run 停在 `action_required`，且 `gh pr checks` 不显示这些 run |
+| [#304](https://github.com/Lincoln-cn/JAiRouter/issues/304) | 告警链路与流式错误路径缺少真实运行态的端到端验证 |
+| [#307](https://github.com/Lincoln-cn/JAiRouter/issues/307) | `ResponseSanitizationFilterTest` 从未开启该功能，整个测试类都走在提前返回的分支上 |
+| [#308](https://github.com/Lincoln-cn/JAiRouter/issues/308) | 审计文档口径漂移（文档里的配置键与事件名并不存在） |
+| [#310](https://github.com/Lincoln-cn/JAiRouter/issues/310) | `SecurityAuditApi` 无实现方、无调用方 |
+| [#312](https://github.com/Lincoln-cn/JAiRouter/issues/312) | `jairouter.security.audit` 配置树大部分子块没有绑定字段 |
+
+## 文档
 
 | 资源 | 链接 |
 |------|------|
 | 完整文档 | https://jairouter.com |
-| 部署指南 | https://jairouter.com/deployment/ |
-| 配置说明 | https://jairouter.com/configuration/ |
-| 监控配置 | https://jairouter.com/monitoring/ |
-| API 参考 | http://localhost:8080/swagger-ui |
+| 部署 | https://jairouter.com/deployment/ |
+| 配置 | https://jairouter.com/configuration/ |
+| 监控 | https://jairouter.com/monitoring/ |
+| 交互式 API 文档 | `http://localhost:8080/swagger-ui`（dev profile） |
 
-## 发展路线
+## 为什么选 JAiRouter？
 
-**已发布**（最新：v3.1.2）
+- **对比直连后端** —— 没有共享的韧性、没有中心化凭据、没有用量可见性。JAiRouter 给你一个端点、
+  自动失败转移与完整审计轨迹。
+- **对比 One-API / new-api** —— 它们面向共享账号的分发与计费。JAiRouter 是**你自己**推理集群前面的
+  那层网关：多实例均衡、熔断、规则路由、自托管 Ollama/vLLM/GPUStack 的 RBAC 与可观测性。两者互补。
+- **对比 Nginx** —— Nginx 是通用 Web 服务器；JAiRouter 为模型负载而建：OpenAI 兼容路由、
+  模型感知均衡、流式语义。
+- **对比 LangChain** —— LangChain 是应用框架；JAiRouter 是它下面的基础设施层。
 
-- [x] 核心网关 + OpenAI 兼容 API
-- [x] 内置 + 可配置适配器（Ollama、vLLM、GPUStack、Xinference、LocalAI、OpenAI、Claude、Gemini 等）
-- [x] 多策略负载均衡（轮询、加权、最少连接、IP Hash、一致性哈希、EWMA 延迟感知）
-- [x] 多算法限流（令牌桶、漏桶、滑动窗口）
-- [x] 熔断降级 + 请求级故障转移（自动换健康实例重试）
-- [x] 可视化规则引擎：条件路由、服务级动态限流、标签路由
-- [x] JWT + API Key 认证与审计日志
-- [x] 数据驱动 RBAC（44 权限码 + 4 角色模板 + 菜单与 URL 权限）
-- [x] 调用历史与记录治理（仅元数据 / 脱敏摘要 / AES-256-GCM 全文）+ 分析仪表盘
-- [x] 响应缓存（确定性请求复用；可选开启、租户隔离）
-- [x] Prometheus 指标 + OpenTelemetry 分布式追踪
-- [x] 配置版本管理与回滚
-- [x] Web 控制台热更新 + 亮/暗主题
-- [x] Docker 镜像优化（Alpine/Distroless）
-
-**近期已发布**
-
-- [x] Token 配额与多维多窗限流：MINUTE/HOUR/DAY/MONTH 账本、JPA 持久化、Redis 分布式计数与断连自动降级（默认关闭 `jairouter.quota.enabled=false`，v3.1.0）
-- [x] 配额运行时配置与观测：`GET/PUT /api/config/quota`、配额状态/用量监控端点、控制台新增 3 页（配额配置、用量监控、客户端接入指南）、新增权限码 `config:quota:read/write`、`monitoring:quota:read`（v3.1.0）
-- [x] OpenAI 原生面 `/v1/models` 端点（v3.1.0）
-- [x] Anthropic `/v1/messages` 入口：非流式 + 流式 SSE + `count_tokens` + 工具调用（`tools`/`tool_choice`/`tool_use`/`tool_result`），Claude Code 可直连（v3.1.0）
-- [x] 响应缓存 P1：流式 SSE 拼接缓存、失效 API、限流提前短路（`DELETE /api/config/cache/response`，v2.9.10 —— 随 v3.0.3 发布）
-- [x] Web 管理台重构系列：设计令牌、暗色主题、治理指挥台、中英双语、慢查询分析（v2.10.x）
-- [x] Web 完整流程系列：Onboarding 预选闭环、跨页治理入口、PageSkeleton 覆盖（v3.0.1–v3.0.3）
-
-**开发中**
-
-- [ ] 语义缓存评估（向量相似度复用）—— 另立项
-- [ ] 高可用地基（多节点 / Redis 分布式 / 配置回滚）—— v3.1.x 后评估
-
-> **当前版本**：v3.1.2
+| 能力 | JAiRouter | Nginx | One-API | LangChain |
+|------|:---------:|:-----:|:-------:|:---------:|
+| OpenAI 兼容 | ✅ | ❌ | ✅ | ✅ |
+| 负载均衡 | ✅ | ✅ | ✅ | ❌ |
+| 熔断 | ✅ | ❌ | ❌ | ❌ |
+| 限流 | ✅ | ✅ | ✅ | ❌ |
+| Web 控制台 | ✅ | ❌ | ✅ | ❌ |
+| 配置热重载 | ✅ | ❌ | ✅ | ❌ |
+| 版本管理 | ✅ | ❌ | ❌ | ❌ |
+| OpenTelemetry | ✅ | ❌ | ❌ | ✅ |
 
 ## 参与贡献
 
-欢迎参与贡献，请查看 [贡献指南](https://jairouter.com/development/contributing/)。
+欢迎贡献——见[贡献指南](https://jairouter.com/development/contributing/)。
+
+提 PR 前请先跑：
+
+```bash
+./mvnw test -o                       # 386 个测试类、约 4000 个测试方法，必须保持全绿
+cd frontend && npm run type-check    # 前端类型门闩
+```
+
+几条仓内约定：提交信息用 `<type>(<scope>): <summary>`；每个修复/功能分支都指向 `master` 并以
+squash 方式合并；文档同时存在于 `docs/zh/` 与 `docs/en/` 且要求保持对称；文档会按 `.cspell.json`
+做拼写检查，新技术名词可能需要先加进词表。
 
 ```bash
 git clone https://github.com/Lincoln-cn/JAiRouter.git
 cd JAiRouter
-mvn clean package -DskipTests
+./mvnw clean package -DskipTests
 java -jar target/model-router-*.jar
 ```
 
-## 获取支持
+## 支持
 
 - **文档**：https://jairouter.com
 
-### Issues 还是 Discussions —— 我该发哪里？
+### 该发 Issue 还是 Discussion？
 
-GitHub 提供了两个入口，我们刻意把它们分开，让每一条反馈都不会石沉大海。请按**你手上有什么**来选，而不是按习惯选：
+GitHub 给了我们两个渠道，我们有意分开，避免信息丢失。按**你手上有什么**来选：
 
-| 你手上的东西 | 发到哪里 | 我们怎么处理 |
-|--------------|----------|--------------|
-| **可复现的缺陷** —— 崩溃、结果错误、回归、文档错误 | [**Issues**](https://github.com/Lincoln-cn/JAiRouter/issues) | **快速跟进** —— 尽快分诊与回复，确认的缺陷会修复或排期 |
-| **需求或想法** —— 新功能、新适配器、方案讨论、使用提问、反馈建议 | [**Discussions**](https://github.com/Lincoln-cn/JAiRouter/discussions) | **定期整理** —— 归纳、投票，并纳入[发展路线](#发展路线) |
+| 你有什么 | 发到哪里 | 我们怎么处理 |
+|----------|----------|--------------|
+| **可复现的缺陷** —— 崩溃、结果错误、回归、文档写错 | [**Issues**](https://github.com/Lincoln-cn/JAiRouter/issues) | 快速分诊；确认的缺陷会被修复或排期 |
+| **需求或想法** —— 功能请求、新适配器、设计讨论、使用提问 | [**Discussions**](https://github.com/Lincoln-cn/JAiRouter/discussions) | 定期梳理，收集与投票后并入路线图 |
 
-**一句话**：缺陷发 **Issues**，需求或提问发 **Discussions**。
+**一句话**：缺陷发 **Issues**；需求或提问发 **Discussions**。
 
-> 拿不准发哪里？先发 Discussions —— 若确认是可复现的缺陷，我们会帮你转到 Issues。
+> 拿不准？先发 Discussions——如果最后确认是可复现的缺陷，我们会帮你转到 Issues。
 
 Discussions 按分类组织：
 
-| 分类 | 用来做什么 |
-|------|------------|
-| 💡 Ideas | 新功能与改进建议 |
-| 🗳 Polls | 就方向发起投票 |
-| 🙏 Q&A | 使用类问题，向社区求助 |
-| 🙌 Show and tell | 分享你基于 JAiRouter 做出的东西 |
-| 💬 General | 其他一切话题 |
-| 📣 Announcements | 维护者发布更新说明 |
+| 分类 | 用途 |
+|------|------|
+| 💡 Ideas | 功能请求与改进建议 |
+| 🗳 Polls | 社区对方向的投票 |
+| 🙏 Q&A | 使用问题互助 |
+| 🙌 Show and tell | 分享你基于 JAiRouter 做的东西 |
+| 💬 General | 其它 |
+| 📣 Announcements | 维护者的发布说明 |
 
-## 许可证
+## 许可
 
-JAiRouter 基于 [Apache 2.0 License](LICENSE) 开源。
+JAiRouter 基于 [Apache 2.0 许可](LICENSE) 发布。
 
 ---
 
 <p align="center">
-  <strong>如果 JAiRouter 帮到了您，欢迎在 GitHub 上点个 <a href="https://github.com/Lincoln-cn/JAiRouter/stargazers">Star</a> ⭐</strong>
+  <strong>如果 JAiRouter 帮你省了时间，<a href="https://github.com/Lincoln-cn/JAiRouter/stargazers">在 GitHub 上点个 Star</a> ⭐</strong>
   <br/>
-  <em>遇到缺陷？提 Issue。有需求或想法？发 Discussion —— 我们都会跟进。</em>
+  <em>发现 bug？开 issue。有想法或疑问？开 discussion。</em>
 </p>
 
 <p align="center">
-  由 Lincoln-cn 维护 · Apache-2.0
+  Maintained by Lincoln-cn · Apache-2.0
 </p>
