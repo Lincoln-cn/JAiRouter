@@ -77,32 +77,6 @@ jairouter:
           log:
             enabled: false
     
-    # 性能优化配置 - 向后兼容模式
-    performance:
-      authentication:
-        async-enabled: false
-        thread-pool-size: 10
-        timeout-ms: 5000
-      sanitization:
-        parallel-enabled: false
-        thread-pool-size: 5
-        streaming-threshold: 1048576
-        regex-cache-size: 100
-      cache:
-        redis:
-          enabled: false
-          host: "localhost"
-          port: mvn 6379
-          password: ""
-          database: 0
-          timeout: 2000
-          pool:
-            max-active: 8
-            max-idle: 8
-            min-idle: 0
-        local:
-          enabled: true
-
   # 错误追踪配置 - 向后兼容模式
   monitoring:
     error-tracking:
