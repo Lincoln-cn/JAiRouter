@@ -223,10 +223,10 @@
     },
     "docs/en/deployment/production.md": {
       "FilePath": "docs/en/deployment/production.md",
-      "Version": "1.0.10",
-      "LastModified": "2026-10-12T17:03:34.457158",
-      "ContentHash": "809c20cf5d862b30",
-      "GitCommit": "37678a95",
+      "Version": "1.0.11",
+      "LastModified": "2026-10-13T13:53:08.833365",
+      "ContentHash": "6f71b809f83683ad",
+      "GitCommit": "2435f7d0",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -580,11 +580,11 @@
     },
     "docs/en/troubleshooting/common-issues.md": {
       "FilePath": "docs/en/troubleshooting/common-issues.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-09-23T17:13:19.706165",
-      "ContentHash": "4f2c7565d3071489",
-      "GitCommit": "e75f4909",
-      "Author": "Lincoln",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-13T13:53:09.113355",
+      "ContentHash": "e6e859047205390a",
+      "GitCommit": "2435f7d0",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -838,10 +838,10 @@
     },
     "docs/zh/deployment/production.md": {
       "FilePath": "docs/zh/deployment/production.md",
-      "Version": "1.0.11",
-      "LastModified": "2026-10-12T17:03:34.876218",
-      "ContentHash": "36623fc75cdf8136",
-      "GitCommit": "37678a95",
+      "Version": "1.0.12",
+      "LastModified": "2026-10-13T13:53:09.306297",
+      "ContentHash": "00898a0565066837",
+      "GitCommit": "2435f7d0",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1284,10 +1284,10 @@
     },
     "docs/en/configuration/modular-config.md": {
       "FilePath": "docs/en/configuration/modular-config.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-13T12:30:36.791767",
-      "ContentHash": "2eac4e2b40c00e5c",
-      "GitCommit": "e2ca4403",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-13T13:53:08.727095",
+      "ContentHash": "daa6cafb8de0c8c0",
+      "GitCommit": "2435f7d0",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1314,10 +1314,10 @@
     },
     "docs/en/security/api-key-management.md": {
       "FilePath": "docs/en/security/api-key-management.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-10-12T17:03:34.642020",
-      "ContentHash": "f0284a788a47eb57",
-      "GitCommit": "37678a95",
+      "Version": "1.0.10",
+      "LastModified": "2026-10-13T13:53:09.054261",
+      "ContentHash": "e6d780affd3d423e",
+      "GitCommit": "2435f7d0",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1329,11 +1329,11 @@
     },
     "docs/en/security/data-sanitization.md": {
       "FilePath": "docs/en/security/data-sanitization.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-19T04:26:22.126397",
-      "ContentHash": "081169f6170592a1",
-      "GitCommit": "2f5255a1",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-13T13:53:09.065996",
+      "ContentHash": "eb9978f9d5cfabe3",
+      "GitCommit": "2435f7d0",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/management-api.md",
@@ -1346,11 +1346,11 @@
     },
     "docs/en/security/index.md": {
       "FilePath": "docs/en/security/index.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-18T11:28:12.408192",
-      "ContentHash": "58535abf70e756f6",
-      "GitCommit": "c82b4559",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-13T13:53:09.068439",
+      "ContentHash": "f6d70e53508cf7fa",
+      "GitCommit": "2435f7d0",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/security/api-key-management.md",
@@ -1372,10 +1372,10 @@
     },
     "docs/en/security/troubleshooting.md": {
       "FilePath": "docs/en/security/troubleshooting.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-11T13:48:54.487843",
-      "ContentHash": "9da1c727760b2ff0",
-      "GitCommit": "862789f2",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-13T13:53:09.081905",
+      "ContentHash": "72277c40fc4cf68c",
+      "GitCommit": "2435f7d0",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1483,10 +1483,10 @@
     },
     "docs/zh/configuration/modular-config.md": {
       "FilePath": "docs/zh/configuration/modular-config.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-13T12:30:37.210249",
-      "ContentHash": "4c6c23c3b597f70b",
-      "GitCommit": "e2ca4403",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-13T13:53:09.209853",
+      "ContentHash": "1416a6a7c065af5c",
+      "GitCommit": "2435f7d0",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1513,10 +1513,10 @@
     },
     "docs/zh/security/api-key-management.md": {
       "FilePath": "docs/zh/security/api-key-management.md",
-      "Version": "1.0.11",
-      "LastModified": "2026-10-12T17:03:35.047564",
-      "ContentHash": "287a36b7b66ab6c6",
-      "GitCommit": "37678a95",
+      "Version": "1.0.12",
+      "LastModified": "2026-10-13T13:53:09.517705",
+      "ContentHash": "a29dd8987918d6a5",
+      "GitCommit": "2435f7d0",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1528,11 +1528,11 @@
     },
     "docs/zh/security/data-sanitization.md": {
       "FilePath": "docs/zh/security/data-sanitization.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-09-19T04:26:22.389593",
-      "ContentHash": "67d6f9c49f6780fe",
-      "GitCommit": "2f5255a1",
-      "Author": "Lincoln",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-13T13:53:09.529591",
+      "ContentHash": "9c0f2cef36a55820",
+      "GitCommit": "2435f7d0",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/management-api.md",
@@ -1571,10 +1571,10 @@
     },
     "docs/zh/security/troubleshooting.md": {
       "FilePath": "docs/zh/security/troubleshooting.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-11T13:48:54.825931",
-      "ContentHash": "8b87d69ad8648be2",
-      "GitCommit": "862789f2",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-13T13:53:09.545921",
+      "ContentHash": "57bcd6e4da1dc205",
+      "GitCommit": "2435f7d0",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1682,11 +1682,11 @@
     },
     "docs/en/configuration/store-config.md": {
       "FilePath": "docs/en/configuration/store-config.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-09-18T11:16:28.702003",
-      "ContentHash": "d1bf4841cb63c624",
-      "GitCommit": "14420877",
-      "Author": "Lincoln",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-13T13:53:08.758462",
+      "ContentHash": "6425a800e12dd2f1",
+      "GitCommit": "2435f7d0",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -1703,11 +1703,11 @@
     },
     "docs/zh/configuration/store-config.md": {
       "FilePath": "docs/zh/configuration/store-config.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-09-18T11:16:41.723911",
-      "ContentHash": "fba9da798746d69c",
-      "GitCommit": "14420877",
-      "Author": "Lincoln",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-13T13:53:09.240831",
+      "ContentHash": "8eeb8e73d30a200f",
+      "GitCommit": "2435f7d0",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -1724,10 +1724,10 @@
     },
     "docs/en/configuration/jwt-persistence.md": {
       "FilePath": "docs/en/configuration/jwt-persistence.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-12T17:03:34.350598",
-      "ContentHash": "d50f92e99e934c4f",
-      "GitCommit": "37678a95",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-13T13:53:08.711840",
+      "ContentHash": "aeb535f938ec5712",
+      "GitCommit": "2435f7d0",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1830,10 +1830,10 @@
     },
     "docs/zh/configuration/jwt-persistence.md": {
       "FilePath": "docs/zh/configuration/jwt-persistence.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-12T17:03:34.775347",
-      "ContentHash": "cc1427aad719c4d7",
-      "GitCommit": "37678a95",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-13T13:53:09.194075",
+      "ContentHash": "5d56aa68ee760022",
+      "GitCommit": "2435f7d0",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -7290,7 +7290,135 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-13T12:30:37.210258",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/jwt-persistence.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T13:53:08.711849",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/modular-config.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T13:53:08.727101",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/store-config.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T13:53:08.758468",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/production.md",
+      "OldVersion": "1.0.10",
+      "NewVersion": "1.0.11",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T13:53:08.833373",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/api-key-management.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T13:53:09.054269",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/data-sanitization.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T13:53:09.066001",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/index.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T13:53:09.068444",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/troubleshooting.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T13:53:09.081910",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/troubleshooting/common-issues.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T13:53:09.113361",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/jwt-persistence.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T13:53:09.194083",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/modular-config.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T13:53:09.209859",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/store-config.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T13:53:09.240837",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/production.md",
+      "OldVersion": "1.0.11",
+      "NewVersion": "1.0.12",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T13:53:09.306305",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/api-key-management.md",
+      "OldVersion": "1.0.11",
+      "NewVersion": "1.0.12",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T13:53:09.517714",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/data-sanitization.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T13:53:09.529597",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/troubleshooting.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T13:53:09.545926",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-13T12:30:37.555663"
+  "last_updated": "2026-10-13T13:53:09.611074"
 }
