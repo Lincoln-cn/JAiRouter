@@ -324,6 +324,35 @@ gh api -X POST repos/<owner>/<repo>/actions/runs/<run_id>/approve
 `https://github.com/<owner>/<repo>/blob/master/LICENSE` 返回 `HTTP 503`。重跑该 job 即可，
 并在 PR 正文里如实说明，不要当成没发生。
 
+#### CI 不可用时的本地替代门闩
+
+Actions 的**额度**可能被耗尽（本仓 2026-10 出现过一次，见 issue #334）。那时 `gh pr checks` 什么都跑不出来 ——
+但**判据不能因此放宽**，否则 `#294` 那类「带着红合并」会重演。本仓为此提供一条**本地复刻**：
+
+```bash
+# Windows（包装器只是为了绕开「未签名脚本」的执行策略拦截）
+scripts\test\local-gates.cmd
+
+# 只要文档/拼写/前端半边（快）
+scripts\test\local-gates.cmd -SkipMaven
+```
+
+它把上一节的对照表**逐条复刻**：起 `redis:7-alpine` + `postgres:16-alpine`（CI 同款 health-cmd）
+→ `mvnw test` → 校验三个门控测试**未被跳过**；随后 `mkdocs build --strict` + `markdownlint-cli2` +
+`check-links.py --fail-on-error` + `check-docs-sync.py --fail-on-error` + `cspell` + 前端 `type-check`。
+
+**用它的纪律**（与「门闩全绿才合并」同源）：
+
+- **SKIP 不等于 PASS**：脚本会把 SKIP 单列出来；你必须在本 PR 正文写明「哪一项没跑、为什么」。
+  典型例子：只改 `frontend/**` 的 PR 没有改动的 `*.md` ⇒ 拼写检查会 SKIP，这不是「通过」。
+- **本地差异必须申报**：本机是 Windows，没有 CI 的 Linux 行为与跨平台矩阵；本地 `cspell@8` 与 CI 的
+  `cspell-action@v5` **词典不完全一致** ⇒ **本地拼写全绿不蕴含 CI 绿**。
+- **恢复额度后补跑**：CI 恢复后，要对这段期间合并的批次补跑 `test` + `文档质量检查` + `smoke`。
+- 排障与已知本地缺陷（本机 AMSI 偶发崩溃、`docs/` 下被忽略的本地产物会污染文档检查）见
+  `scripts/test/local-gates.ps1` 的头部注释。
+- ⚠️ 目前只有 PowerShell 版（本机是 Windows）。Linux / macOS 贡献者请照脚本头部的映射表手工跑同样的命令 ——
+  **不要在 PR 里声称跑了没跑过的项**。
+
 ## 开发指导
 
 ### 添加新的适配器

@@ -325,6 +325,42 @@ is `MERGEABLE`, and the merge still succeeds — **mergeable does not mean the g
 `https://github.com/<owner>/<repo>/blob/master/LICENSE`. Re-run that job, and say so in the PR
 description instead of pretending it never happened.
 
+#### When CI Is Unavailable: Run the Same Gates Locally
+
+GitHub Actions **minutes** can run out (it happened once in this repo, in Oct 2026 — see issue #334).
+`gh pr checks` then has nothing to report — but the criterion must **not** loosen, or an episode like
+`#294` (merged with a red spell check) repeats. The repo ships a local replica:
+
+```bash
+# Windows (the wrapper only bypasses the execution policy that blocks unsigned .ps1 files)
+scripts\test\local-gates.cmd
+
+# docs / spelling / frontend half only (fast)
+scripts\test\local-gates.cmd -SkipMaven
+```
+
+It reproduces the table above item by item: starts `redis:7-alpine` + `postgres:16-alpine` (same
+`health-cmd` as CI) → `mvnw test` → asserts the three gated tests were **not skipped**; then runs
+`mkdocs build --strict`, `markdownlint-cli2`, `check-links.py --fail-on-error`,
+`check-docs-sync.py --fail-on-error`, `cspell` and the frontend `type-check`.
+
+**Rules for using it** (same spirit as "merge only when the gates are green"):
+
+- **SKIP is not PASS**: the script lists SKIPs separately. You must state in the PR description which item
+  did not run and why. A typical case: a `frontend/**`-only PR has no changed `*.md`, so the spell check
+  SKIPs — that is not a pass.
+- **Declare the local deltas**: this machine is Windows, so there is no CI Linux behavior and no
+  cross-platform matrix; and the local `cspell@8` dictionary is **not identical** to CI's
+  `cspell-action@v5` ⇒ **a clean local spell check does not imply a green CI one**.
+- **Re-run after minutes are restored**: once CI is back, re-run `test` + `文档质量检查` + `smoke`
+  for everything merged during the gap.
+- Troubleshooting and known local defects (this machine's intermittent AMSI crash, and the ignored local
+  artifacts under `docs/` that pollute the docs checks) are documented in the header of
+  `scripts/test/local-gates.ps1`.
+- ⚠️ Only the PowerShell version exists so far (the maintainer's machine is Windows). On Linux / macOS,
+  follow the mapping table in that script header and run the same commands by hand — **never claim in a PR
+  that you ran something you did not**.
+
 ## Development Guidance
 
 ### Adding New Adapters
