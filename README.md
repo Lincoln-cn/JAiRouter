@@ -391,17 +391,23 @@ Release tags: `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.
 
 ### Open ledger
 
-Known, tracked, and **not** done — do not assume these work:
+**This file deliberately does not keep a hand-maintained list of issue numbers.** An earlier version did,
+and it was stale within hours of being written. The authoritative ledger is the issue tracker:
+**[open issues →](https://github.com/Lincoln-cn/JAiRouter/issues?q=is%3Aissue+is%3Aopen)**
 
-| Issue | Summary |
-|-------|---------|
-| [#250](https://github.com/Lincoln-cn/JAiRouter/issues/250) | Six documentation pages detected as stale and due for review |
-| [#297](https://github.com/Lincoln-cn/JAiRouter/issues/297) | Console `DashboardOverview` type does not match the real `/api/monitoring/overview` payload — no user-visible impact today, but the type is not checked against real field names |
-| [#304](https://github.com/Lincoln-cn/JAiRouter/issues/304) | Alerting and streaming error paths lack real end-to-end verification against a running instance |
-| [#314](https://github.com/Lincoln-cn/JAiRouter/issues/314) | `SensitiveConfigValidator` claims a random admin password is generated on first startup; nothing generates one |
-| [#317](https://github.com/Lincoln-cn/JAiRouter/issues/317) | `ResponseSanitizationFilter` builds an error body it never writes (with `fail-on-error=true` the client gets the central handler's error instead) |
-| [#324](https://github.com/Lincoln-cn/JAiRouter/issues/324) | Two documentation pages have unbalanced markdown fences, so everything after the break renders as code |
-| [#327](https://github.com/Lincoln-cn/JAiRouter/issues/327) | The remaining `common/api` boundary layer (12 interfaces + 3 DTOs, ~1878 lines) has no implementation and no caller |
+To give a sense of what tends to be tracked there, entries fall into a few kinds
+(**illustrative, not a current list** — follow the link above for the live set):
+
+- **Behavior covered only by unit tests** — paths whose real-runtime wiring has no end-to-end evidence
+  (for example the alerting chain and the streaming error path).
+- **Shapes that lie** — a declared type or interface that does not match what the runtime actually produces,
+  so tooling cannot constrain it.
+- **Operator-facing text that is wrong** — a startup message or a document that describes something the code
+  does not do.
+- **Dead surface kept by inertia** — config keys, DTOs or interfaces with no consumer.
+- **Documentation debt** — pages due for content review, or with broken rendering.
+
+If something is neither described above nor in the tracker, treat it as **unknown** rather than as working.
 
 ## Documentation
 
