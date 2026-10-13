@@ -418,14 +418,6 @@ jairouter:
 ```yaml
 jairouter:
   security:
-    performance:
-      sanitization:
-        # Enable parallel processing
-        parallel-enabled: true
-        # Thread pool size
-        thread-pool-size: 8
-        # Streaming threshold
-        streaming-threshold: 2097152  # 2MB
 ```
 
 ### Regular Expression Cache
@@ -433,12 +425,6 @@ jairouter:
 ```yaml
 jairouter:
   security:
-    performance:
-      sanitization:
-        # Regex cache size
-        regex-cache-size: 500
-        # Cache expiration time (seconds)
-        regex-cache-expiration: 3600
 ```
 
 ### Batch Processing
@@ -446,12 +432,6 @@ jairouter:
 ```yaml
 jairouter:
   security:
-    performance:
-      sanitization:
-        # Batch size
-        batch-size: 100
-        # Batch timeout (milliseconds)
-        batch-timeout: 1000
 ```
 
 ## Monitoring and Auditing
@@ -475,10 +455,6 @@ jairouter:
   security:
     audit:
       enabled: true
-      event-types:
-        sanitization-applied: true
-        sanitization-skipped: true
-        sanitization-failed: true
 ```
 
 ### Monitoring Metrics
@@ -645,12 +621,6 @@ jairouter:
               - "\\b(?:QQ|微信|WeChat)[:：]?\\s*\\d+\\b"
           embedding:
             enabled: false
-    performance:
-      sanitization:
-        parallel-enabled: true
-        thread-pool-size: 8
-        streaming-threshold: 2097152
-        regex-cache-size: 500
 ```
 
 ## Related Documents

@@ -336,23 +336,12 @@ curl http://localhost:8080/actuator/prometheus | grep thread_pool
 ```yaml
 jairouter:
   security:
-    performance:
-      cache:
-        redis:
-          enabled: true
-        local:
-          enabled: true
 ```
 
 2. **Optimize thread pool**
 ```yaml
 jairouter:
   security:
-    performance:
-      authentication:
-        async-enabled: true
-        thread-pool-size: 20
-        timeout-ms: 3000
 ```
 
 3. **Reduce API Key count**
@@ -387,10 +376,6 @@ curl http://localhost:8080/actuator/prometheus | grep regex_cache
 ```yaml
 jairouter:
   security:
-    performance:
-      sanitization:
-        parallel-enabled: true
-        thread-pool-size: 8
 ```
 
 2. **Optimize regular expressions**
@@ -405,9 +390,6 @@ pii-patterns:
 ```yaml
 jairouter:
   security:
-    performance:
-      sanitization:
-        streaming-threshold: 1048576  # 1MB
 ```
 
 ## Configuration Issues

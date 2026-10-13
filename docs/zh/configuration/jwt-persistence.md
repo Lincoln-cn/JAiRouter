@@ -90,36 +90,9 @@ jairouter:
       include-response-body: false
       retention-days: 90
 
-      # JWT操作审计
-      jwt-operations:
-        enabled: true
-        log-token-details: false  # 安全：不记录完整令牌
-        log-user-agent: true
-        log-ip-address: true
 
-      # API Key操作审计
-      api-key-operations:
-        enabled: true
-        log-key-details: false   # 安全：不记录完整密钥
-        log-usage-patterns: true
-        log-ip-address: true
 
-      # 安全事件审计
-      security-events:
-        enabled: true
-        suspicious-activity-detection: true
 
-      # 审计存储配置
-      storage:
-        type: "file"              # 选项：file, database
-        file-path: "logs/security-audit.log"
-        rotation:
-          max-file-size: "100MB"
-          max-files: 30
-        # 可选：数据库存储
-        database:
-          enabled: false
-          table-name: "security_audit_events"
 ```
 
 ## 环境特定配置
@@ -145,12 +118,6 @@ jairouter:
 
     # 开发审计配置
     audit:
-      jwt-operations:
-        enabled: true
-        log-token-details: true  # 开发环境可记录详情
-      api-key-operations:
-        enabled: true
-        log-key-details: true
       retention-days: 7          # 开发环境短保留期
 
 # 启用调试端点
@@ -185,20 +152,6 @@ jairouter:
     # 生产审计配置
     audit:
       enabled: true
-      jwt-operations:
-        enabled: true
-        log-token-details: false  # 安全：生产环境不记录令牌详情
-      api-key-operations:
-        enabled: true
-        log-key-details: false
-      security-events:
-        enabled: true
-        suspicious-activity-detection: true
-      storage:
-        type: "file"
-        # 生产环境考虑数据库存储
-        database:
-          enabled: false  # 需要时启用
       retention-days: 180   # 生产环境更长保留期
 
 # 监控配置
@@ -229,15 +182,6 @@ jairouter:
     # 预发布审计配置
     audit:
       enabled: true
-      jwt-operations:
-        enabled: true
-        log-token-details: false
-      api-key-operations:
-        enabled: true
-        log-key-details: false
-      security-events:
-        enabled: true
-        suspicious-activity-detection: true
       retention-days: 30
 
 # 预发布环境启用调试端点
@@ -372,14 +316,6 @@ jairouter:
           max-tokens: 50000       # 硬限制
 
     audit:
-      # 安全审计设置
-      jwt-operations:
-        log-token-details: false  # 永不记录完整令牌
-      api-key-operations:
-        log-key-details: false   # 永不记录完整密钥
-      security-events:
-        enabled: true            # 总是启用安全事件
-        suspicious-activity-detection: true
 ```
 
 ### 访问控制
@@ -592,10 +528,6 @@ jairouter:
   security:
     audit:
       enabled: true
-      jwt-operations:
-        enabled: true
-      api-key-operations:
-        enabled: true
 ```
 
 ## 最佳实践
@@ -607,10 +539,6 @@ jairouter:
 jairouter:
   security:
     audit:
-      jwt-operations:
-        log-token-details: false  # 永不记录完整令牌
-      api-key-operations:
-        log-key-details: false   # 永不记录完整密钥
 ```
 
 2. **使用强 Redis 安全**

@@ -251,7 +251,6 @@ jairouter:
       enabled: true                     # 启用审计日志
       include-request-body: true        # 记录请求体
       include-response-body: false      # 记录响应体
-      max-body-length: 1024             # 最大记录长度
 ```
 
 #### 数据脱敏配置（`config/auth/sanitization.yml`）

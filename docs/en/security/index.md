@@ -166,10 +166,6 @@ jairouter:
     audit:
       enabled: true
       retention-days: 365
-    performance:
-      cache:
-        redis:
-          enabled: true
 ```
 
 ## Best Practices

@@ -460,18 +460,7 @@ jairouter:
       include-request-body: false   # 生产环境不包含请求体
       include-response-body: false  # 生产环境不包含响应体
       retention-days: 365  # 生产环境长期保留
-      alert-enabled: true
-      
-      event-types:
-        authentication-success: false    # 生产环境不记录成功认证（减少日志量）
-        sanitization-applied: false      # 生产环境不记录脱敏操作（减少日志量）
-      
-      storage:
-        file-path: "logs/prod-security-audit.log"
-        rotation:
-          max-file-size: "500MB"  # 生产环境更大的文件大小
-          max-files: 100
-    
+
     # 生产环境监控配置
     monitoring:
       enabled: true
@@ -500,37 +489,6 @@ jairouter:
           log:
             enabled: true
     
-    # 生产环境性能配置
-    performance:
-      authentication:
-        thread-pool-size: 20  # 生产环境更大的线程池
-        timeout-ms: 3000      # 生产环境更短的超时时间
-      
-      sanitization:
-        thread-pool-size: 10
-        streaming-threshold: 2097152  # 2MB
-        regex-cache-size: 500         # 生产环境更大的缓存
-      
-      cache:
-        redis:
-          enabled: true  # 生产环境启用Redis缓存
-          host: "${REDIS_HOST:localhost}"
-          port: "${REDIS_PORT:6379}"
-          password: "${REDIS_PASSWORD:}"
-          database: 0
-          timeout: 2000
-          pool:
-            max-active: 20  # 生产环境更大的连接池
-            max-idle: 10
-            min-idle: 5
-        local:
-          enabled: true
-          api-key:
-            max-size: 10000  # 生产环境更大的本地缓存
-            expire-after-write: 3600
-          jwt-blacklist:
-            max-size: 100000
-            expire-after-write: 86400
 
 # 生产环境监控配置覆盖
 management:
@@ -984,27 +942,23 @@ api-keys:
 
 ### 4. 安全审计日志
 
-创建 `config/application-audit.yml`：
+审计配置在 `jairouter.security.audit` 下（出厂默认值见 `config/auth/audit.yml`，
+可在自己的配置文件、环境变量或 `--spring.config` 里覆盖）：
 
 ```yaml
-# 安全审计配置
-audit:
-  enabled: true
-  log-level: INFO
-  # 审计日志文件
-  file: /app/logs/audit.log
-  # 审计事件类型
-  events:
-    - AUTHENTICATION_SUCCESS
-    - AUTHENTICATION_FAILURE
-    - ACCESS_DENIED
-    - API_KEY_USAGE
-  # 敏感操作监控
-  sensitive-operations:
-    - CONFIG_UPDATE
-    - SERVICE_MANAGEMENT
-    - USER_MANAGEMENT
+# application-prod.yml
+jairouter:
+  security:
+    audit:
+      enabled: true
+      log-level: "INFO"
+      include-request-body: false
+      include-response-body: false
+      retention-days: 180
 ```
+
+> 不存在 `logging.audit.*` 这样的键；审计**详细程度**由
+> `logging.level.org.unreal.modelrouter.auth` 控制（见上文日志配置）。
 
 ## 日志配置
 

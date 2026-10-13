@@ -247,14 +247,6 @@ docker run -d \
 ```
 jairouter:
   security:
-    performance:
-      cache:
-        redis:
-          enabled: true
-          host: "localhost"
-          port: 6379
-          password: "your-redis-password"
-          database: 0
 ```
 
 ### 本地缓存
@@ -262,13 +254,6 @@ jairouter:
 ```
 jairouter:
   security:
-    performance:
-      cache:
-        local:
-          enabled: true
-          api-key:
-            max-size: 1000
-            expire-after-write: 3600
 ```
 
 ## API Key 持久化存储
@@ -419,13 +404,6 @@ jairouter:
   security:
     audit:
       enabled: true
-      event-types:
-        api-key-created: true
-        api-key-used: true
-        api-key-revoked: true
-        api-key-expired: true
-        authentication-success: true
-        authentication-failure: true
 ```
 
 ### 监控指标
@@ -455,61 +433,36 @@ jairouter:
       include-response-body: false
       retention-days: 90
       
-      # API Key 操作审计
-      api-key-operations:
-        enabled: true
-        log-key-details: false  # 不记录完整密钥
-        log-usage-patterns: true
-        log-ip-address: true
       
-      # JWT 操作审计
-      jwt-operations:
-        enabled: true
-        log-token-details: false  # 不记录完整令牌
-        log-user-agent: true
-        log-ip-address: true
       
-      # 安全事件审计
-      security-events:
-        enabled: true
-        suspicious-activity-detection: true
       
-      # 审计存储配置
-      storage:
-        type: "h2"              # 选项: h2, file, database
-        h2:
-          table-name: "security_audit_events"  # H2表名
-        file-path: "logs/security-audit.log"
-        rotation:
-          max-file-size: "100MB"
-          max-files: 30
-        # 可选: 数据库存储
-        database:
-          enabled: false
-          table-name: "security_audit_events"
 ```
 
 ### 审计事件类型
 
-系统记录以下 API Key 和 JWT 事件：
+下表是写入审计表的**全部 `event_type` 取值**（`AuditEventType`）。#301 之后未知类型名会被拒绝、
+不再静默回退，因此筛选、导出与统计报表请**逐字使用**这些名字。
 
 #### API Key 事件
-- **密钥创建**：生成新 API 密钥时
-- **密钥使用**：使用 API 密钥进行认证时
-- **密钥撤销**：撤销 API 密钥时
-- **密钥过期**：API 密钥过期时
+`API_KEY_CREATED` · `API_KEY_USED` · `API_KEY_UPDATED` · `API_KEY_REVOKED` · `API_KEY_EXPIRED` ·
+`API_KEY_ROTATED` · `API_KEY_BATCH_IMPORT`
+
+#### API Key 校验失败细分
+`API_KEY_MISSING` · `API_KEY_INVALID` · `API_KEY_VALIDATION_FAILED`
 
 #### JWT 令牌事件
-- **令牌颁发**：创建新 JWT 令牌时
-- **令牌刷新**：刷新访问令牌时
-- **令牌撤销**：手动撤销令牌时
-- **令牌验证**：验证令牌时（成功/失败）
-- **令牌过期**：令牌自然过期时
+`JWT_TOKEN_ISSUED` · `JWT_TOKEN_REFRESHED` · `JWT_TOKEN_VALIDATED` · `JWT_TOKEN_REVOKED` ·
+`JWT_TOKEN_EXPIRED`
 
 #### 安全事件
-- **可疑活动**：异常认证模式
-- **认证失败**：失败的登录尝试
-- **批量操作**：大量令牌/密钥操作
+`SECURITY_ALERT` · `SUSPICIOUS_ACTIVITY` · `AUTHENTICATION_FAILED` · `AUTHORIZATION_FAILED` ·
+`BRUTE_FORCE_ATTEMPT` · `DATA_SANITIZATION` · `RESPONSE_SANITIZATION` · `FULL_CONTENT_ACCESS`
+
+#### 调用历史配置
+`RECORD_LEVEL_CHANGE`
+
+#### 系统事件
+`SYSTEM_CLEANUP` · `SYSTEM_MAINTENANCE`
 
 ### 审计事件结构
 
@@ -874,13 +827,6 @@ jairouter:
           key-value: "${PROD_SERVICE_API_KEY}"
           permissions: ["read", "write"]
           expires-at: "${PROD_SERVICE_KEY_EXPIRES}"
-    performance:
-      cache:
-        redis:
-          enabled: true
-          host: "${REDIS_HOST}"
-          port: "${REDIS_PORT}"
-          password: "${REDIS_PASSWORD}"
 ```
 
 ## 相关文档

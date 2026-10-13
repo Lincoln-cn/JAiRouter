@@ -23,7 +23,7 @@ This document details how to deploy JAiRouter in a production environment, inclu
 
 ### Deployment Architecture
 
-``mermaid
+```mermaid
 graph TB
     subgraph "External Access Layer"
         A[CDN/WAF]
@@ -869,58 +869,31 @@ security:
     enabled: true
     log-level: "INFO"
     retention-days: 180  # Long retention for production
-    
-    # JWT operations auditing
-    jwt-operations:
-      enabled: true
-      log-token-details: false  # Security: never log full tokens
-      log-user-agent: true
-      log-ip-address: true
-    
-    # API Key operations auditing
-    api-key-operations:
-      enabled: true
-      log-key-details: false   # Security: never log full keys
-      log-usage-patterns: true
-      log-ip-address: true
-    
-    # Security events auditing
-    security-events:
-      enabled: true
-      suspicious-activity-detection: true
-    
-    # Audit storage configuration
-    storage:
-      type: "file"
-      file-path: "logs/security-audit.log"
-      rotation:
-        max-file-size: "100MB"
-        max-files: 30
 
-    # Security alerts (thresholds are counts within a window; the rate-based keys
-    # were never implemented and have been removed)
-    monitoring:
+  # Security alerts (thresholds are counts within a window; the rate-based keys
+  # were never implemented and have been removed)
+  monitoring:
+    enabled: true
+    alerts:
       enabled: true
-      alerts:
-        enabled: true
-        window-check-interval-ms: 300000
-        thresholds:
-          authentication-failure-count: 5
-          authentication-failure-window-minutes: 5
-          suspicious-ip-count: 10
-          suspicious-ip-window-minutes: 10
-          sanitization-count: 100
-          sanitization-window-minutes: 60
-          jwt-failure-count: 20
-          jwt-failure-window-minutes: 10
-          cooldown-minutes: 15
+      window-check-interval-ms: 300000
+      thresholds:
+        authentication-failure-count: 5
+        authentication-failure-window-minutes: 5
+        suspicious-ip-count: 10
+        suspicious-ip-window-minutes: 10
+        sanitization-count: 100
+        sanitization-window-minutes: 60
+        jwt-failure-count: 20
+        jwt-failure-window-minutes: 10
+        cooldown-minutes: 15
 
-        # Outlet contract: alerts only reach Prometheus metrics + structured logs.
-        # There is no in-repo email/webhook delivery; external notification is handled
-        # by Alertmanager / the log platform.
-        notifications:
-          log:
-            enabled: true
+      # Outlet contract: alerts only reach Prometheus metrics + structured logs.
+      # There is no in-repo email/webhook delivery; external notification is handled
+      # by Alertmanager / the log platform.
+      notifications:
+        log:
+          enabled: true
 ```
 
 #### Redis Configuration for JWT Persistence
@@ -1059,29 +1032,24 @@ security:
 
 #### Security Audit Logging
 
-Enable security audit logging:
+Security audit configuration lives under `jairouter.security.audit`
+(the bundled defaults are in `config/auth/audit.yml`; override them in your own
+config file, an environment variable, or `--spring.config`):
 
 ```yaml
-# application-security.yml
-logging:
-  level:
-    org.unreal.modelrouter.auth: DEBUG
-    org.springframework.security: DEBUG
-    
-  # Security audit log configuration
-  audit:
-    enabled: true
-    file: /app/logs/security-audit.log
-    format: json
-    fields:
-      timestamp: "@timestamp"
-      level: "level"
-      event: "event"
-      user: "user"
-      ip: "ip"
-      resource: "resource"
-      result: "result"
+# application-prod.yml
+jairouter:
+  security:
+    audit:
+      enabled: true
+      log-level: "INFO"
+      include-request-body: false
+      include-response-body: false
+      retention-days: 180
 ```
+
+> `logging.audit.*` does not exist in Spring Boot; audit *verbosity* is controlled by
+> `logging.level.org.unreal.modelrouter.auth` (see the logging section above).
 
 ## Log Configuration
 
