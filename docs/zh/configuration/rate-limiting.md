@@ -709,7 +709,7 @@ model:
 3. **限流不生效**
    ```bash
    # 检查配置是否正确加载
-   curl "http://localhost:8080/api/config/instance/type/chat"
+   curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
    
    # 检查限流是否启用
    ```

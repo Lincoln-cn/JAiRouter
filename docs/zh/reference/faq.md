@@ -192,7 +192,8 @@ model:
 
 ```bash
 # 添加实例
-curl -X POST http://localhost:8080/api/config/instance/add/chat \
+curl -X POST http://localhost:8080/api/config/instance/chat \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "new-model",
@@ -202,7 +203,9 @@ curl -X POST http://localhost:8080/api/config/instance/add/chat \
   }'
 
 # 更新实例
-curl -X PUT http://localhost:8080/api/config/instance/update/chat \
+# $ID = 该实例的数据库 id，从 GET /api/config/instance/{serviceType} 的响应里取
+curl -X PUT http://localhost:8080/api/config/instance/chat/$ID \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "new-model@http://new-server:9090",
@@ -394,7 +397,7 @@ telnet backend-server 9090
 
 3. **检查配置**:
 ```bash
-curl http://localhost:8080/api/config/instance/type/chat
+curl http://localhost:8080/api/config/instance/chat
 ```
 
 4. **查看日志**:

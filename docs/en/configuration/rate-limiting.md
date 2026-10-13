@@ -710,7 +710,7 @@ model:
 3. **Rate Limiting Not Working**
    ```bash
    # Check if configuration is loaded correctly
-   curl "http://localhost:8080/api/config/instance/type/chat"
+   curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
    
    # Check if rate limiting is enabled
    ```

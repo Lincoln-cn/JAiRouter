@@ -96,7 +96,8 @@ Claude Code 会把 `ANTHROPIC_API_KEY` 放进 **`x-api-key`** 请求头。HTTP �
 
 ```bash
 # 以 DeepSeek 为例：下游密钥配置在实例 headers 上（网关注入，客户端不持有）
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: <JAiRouter API Key>" \
   -d '{
@@ -129,7 +130,8 @@ curl -N -X POST "http://localhost:8080/v1/messages" \
 ### 方案 C：自定义下游请求头
 
 ```bash
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+curl -X POST "http://localhost:8080/api/config/instance/chat" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: <JAiRouter API Key>" \
   -d '{
@@ -455,7 +457,7 @@ curl -H "x-api-key: <JAiRouter API Key>" "http://localhost:8080/v1/models"
 | 现象 | 原因 | 处理 |
 |------|------|------|
 | `401 Unauthorized` | `x-api-key` 不是有效的 JAiRouter API Key，或误把**下游密钥**放在了 `x-api-key` | 生成/复制控制台的 API Key；下游密钥改到实例 `headers` 或 `Authorization` |
-| 请求成功但下游报 401/403 | 下游密钥未配置或失效（`x-api-key` 不转发下游） | 检查实例 `headers`；用 `/api/config/instance/type/chat` 确认配置 |
+| 请求成功但下游报 401/403 | 下游密钥未配置或失效（`x-api-key` 不转发下游） | 检查实例 `headers`；用 `/api/config/instance/chat` 确认配置 |
 | `404` / `503`（模型不可用） | `model` 未注册、实例不健康或服务被熔断 | `GET /v1/models` 核对模型名；检查实例健康状态与熔断器 |
 | Claude Code 报「空响应」/无输出 | `x-api-key` 无效或缺失，且 `Jairouter_Token` 未启用/已过期/已被拉黑 | 设置有效的 `ANTHROPIC_API_KEY`，或确认 JWT 已启用且 token 有效 |
 | 工具调用不生效 | 下游不支持 function calling（`tools` 被忽略 → 纯文本 + `stop_reason: end_turn`），或模型未选择调用工具 | 换用支持 function calling 的下游；用 `tool_choice:"any"`（映射下游 `required`）强制调用验证链路 |

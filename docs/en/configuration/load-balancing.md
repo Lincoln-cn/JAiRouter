@@ -384,7 +384,9 @@ model:
 # Requires updating the configuration file and restarting the service
 
 # But instance weights can be adjusted to influence load distribution
-curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
+# $ID = the instance's database id, taken from GET /api/config/instance/{serviceType}
+curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "high-perf-model@http://gpu-server:8080",
@@ -401,7 +403,9 @@ curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
 
 ```bash
 # Scenario: GPU server performance improved, increase weight
-curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
+# $ID = the instance's database id, taken from GET /api/config/instance/{serviceType}
+curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "gpu-model@http://gpu-server:8080",
@@ -411,7 +415,9 @@ curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
   }'
 
 # Scenario: CPU server overloaded, decrease weight
-curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
+# $ID = the instance's database id, taken from GET /api/config/instance/{serviceType}
+curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
+  -H "Jairouter_Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "cpu-model@http://cpu-server:8080",
@@ -620,7 +626,7 @@ Since v2.9.6, when a call fails with a retryable error (connection error / 5xx /
 
 ```bash
 # Check instance status
-curl "http://localhost:8080/api/config/instance/type/chat"
+curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 
 # View load distribution
 curl "http://localhost:8080/actuator/metrics/jairouter_requests_total"
