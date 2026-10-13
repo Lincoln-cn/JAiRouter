@@ -110,10 +110,25 @@ jobs:
             docker logs smoke | tail -n 80
             exit 1
           fi
-          st=$(docker ps -a --filter name=smoke --format '{{.Status}}')
-          echo "docker ps: $st"
-          if ! echo "$st" | grep -q 'healthy'; then
-            echo "::error::container is not healthy"
+          # 容器级健康：轮询 docker inspect，而不是对 `docker ps` 的一次性快照做 grep。
+          #
+          # 原因：Dockerfile 的 HEALTHCHECK 是 `--start-period=60s --interval=30s --retries=3`
+          # ⇒ 容器启动后 60 秒内状态**不可能**变成 healthy；而上面的应用级 /actuator/health
+          # 完全可能在 20 秒内就返回 200（实测如此）⇒ 一次性 grep 会让「启动越快」的构建随机变红，
+          # 且失败信息会误导成「这次改动把服务弄坏了」。
+          hc_ok=0
+          for i in $(seq 1 36); do          # 36 × 5s = 180s ≥ start-period 60s + interval 30s × retries 3
+            st=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' smoke 2>/dev/null || echo missing)
+            echo "container health attempt $i -> $st"
+            case "$st" in
+              healthy)   hc_ok=1; break ;;
+              unhealthy) echo "::error::container became unhealthy"; docker logs smoke | tail -n 120; exit 1 ;;
+            esac
+            sleep 5
+          done
+          if [ "$hc_ok" != "1" ]; then
+            echo "::error::container did not become healthy in time"
+            docker logs smoke | tail -n 120
             exit 1
           fi
 
