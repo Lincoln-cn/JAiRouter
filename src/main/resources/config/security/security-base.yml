@@ -98,38 +98,3 @@ jairouter:
         notifications:
           log:
             enabled: true
-
-    
-    # ========================================
-    # 性能优化基础配置
-    # ========================================
-    performance:
-      authentication:
-        async-enabled: true
-        thread-pool-size: 10
-        timeout-ms: 5000
-      sanitization:
-        parallel-enabled: true
-        thread-pool-size: 5
-        streaming-threshold: 1048576  # 1MB
-        regex-cache-size: 100
-      cache:
-        redis:
-          enabled: false
-          host: "${REDIS_HOST:localhost}"
-          port: "${REDIS_PORT:6379}"
-          password: "${REDIS_PASSWORD:}"
-          database: 0
-          timeout: 2000
-          pool:
-            max-active: 8
-            max-idle: 8
-            min-idle: 0
-        local:
-          enabled: true
-          api-key:
-            max-size: 1000
-            expire-after-write: 3600
-          jwt-blacklist:
-            max-size: 10000
-            expire-after-write: 86400

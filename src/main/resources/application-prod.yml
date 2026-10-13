@@ -92,18 +92,3 @@ jairouter:
         notifications:
           log:
             enabled: true
-
-    # 性能配置（生产环境优化）
-    performance:
-      authentication:
-        thread-pool-size: 20
-        timeout-ms: 3000
-      sanitization:
-        thread-pool-size: 10
-        streaming-threshold: 2097152
-      cache:
-        local:
-          api-key:
-            max-size: 10000
-          jwt-blacklist:
-            max-size: 100000

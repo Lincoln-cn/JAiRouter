@@ -53,14 +53,3 @@ jairouter:
     sanitization:
       response:
         enabled: true
-
-    # 性能配置（预发布环境）
-    performance:
-      authentication:
-        thread-pool-size: 10
-      cache:
-        redis:
-          enabled: true
-          host: "${REDIS_HOST:localhost}"
-          port: "${REDIS_PORT:6379}"
-          database: 2
