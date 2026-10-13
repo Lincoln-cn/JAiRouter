@@ -373,17 +373,18 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 
 ### 开放台账
 
-已知、已记账、**尚未完成**——请勿假设这些已可用：
+**本文件刻意不再维护一份手写的 issue 编号清单。** 早先版本这么做，结果是**写出来几小时内就过期**。
+权威台账在 issue 跟踪器：**[开放 issue →](https://github.com/Lincoln-cn/JAiRouter/issues?q=is%3Aissue+is%3Aopen)**
 
-| Issue | 概要 |
-|-------|------|
-| [#250](https://github.com/Lincoln-cn/JAiRouter/issues/250) | 检出 6 个过期文档，待复审更新 |
-| [#297](https://github.com/Lincoln-cn/JAiRouter/issues/297) | 控制台 `DashboardOverview` 类型与 `/api/monitoring/overview` 真实载荷不一致 —— 今天无用户可见影响，但类型对真实字段名没有约束力 |
-| [#304](https://github.com/Lincoln-cn/JAiRouter/issues/304) | 告警链路与流式错误路径缺少真实运行态的端到端验证 |
-| [#314](https://github.com/Lincoln-cn/JAiRouter/issues/314) | `SensitiveConfigValidator` 提示「首次启动将生成随机密码」，实际不会生成 |
-| [#317](https://github.com/Lincoln-cn/JAiRouter/issues/317) | `ResponseSanitizationFilter` 算出的错误体从未写出（`fail-on-error=true` 时客户端拿到的是中央处理器的错误体） |
-| [#324](https://github.com/Lincoln-cn/JAiRouter/issues/324) | 两篇文档的 markdown 围栏未配平，错位点之后整篇被当作代码渲染 |
-| [#327](https://github.com/Lincoln-cn/JAiRouter/issues/327) | `common/api` 余下的模块边界层（12 个接口 + 3 个 DTO，约 1878 行）无实现方与调用方 |
+下面用来说明台账里**通常有哪些类**的条目（**仅示意、不是当前清单**，当前集合请点上面的链接）：
+
+- **只有单测覆盖的行为** —— 真实运行态接线没有端到端证据的路径（例如告警链路与流式错误路径）。
+- **会撒谎的形状** —— 声明的类型/接口与运行态实际产出不一致，工具因此无法约束它。
+- **面向运维的错误文案** —— 启动提示或文档描述了代码并不会做的事。
+- **靠惯性留着的死面** —— 没有消费方的配置键、DTO 或接口。
+- **文档欠账** —— 到期待复审，或渲染已经坏掉的页面。
+
+若某件事既不在上面这些类里、也不在跟踪器里，请按**未知**对待，而不要假定它可用。
 
 ## 文档
 
