@@ -5,12 +5,12 @@
 </p>
 
 <p align="center">
-  <strong>All your LLM backends behind one OpenAI-compatible API.</strong>
+  <strong>One OpenAI-compatible endpoint in front of every model backend you run.</strong>
 </p>
 
 <p align="center">
-  Ollama · vLLM · GPUStack · Xinference · OpenAI · Claude · Gemini<br>
-  Unified routing · load balancing · rate limiting · circuit breaking · failover · visual console
+  Ollama · vLLM · GPUStack · Xinference · LocalAI · OpenAI · Claude · Gemini<br>
+  Routing · load balancing · rate limiting · circuit breaking · failover · RBAC · audit · visual console
 </p>
 
 <p align="center">
@@ -32,205 +32,246 @@
   <a href="https://github.com/Lincoln-cn/JAiRouter/discussions">Discussions</a>
 </p>
 
-- **One endpoint for every model** — replace direct calls to Ollama, vLLM, GPUStack, OpenAI, Claude, Gemini with a single OpenAI-compatible `base_url`. Existing OpenAI SDK, LangChain and LlamaIndex code keeps working unchanged.
-- **Built for local inference clusters** — load balancing across instances (including latency-aware and tag-based selection), circuit breaking, and failover that retries on a *different* healthy instance when one dies.
-- **Made for teams** — Web console with hot reload, config versioning & rollback, RBAC, audit logging, encrypted call records and full observability. Change routing without restarting anything.
+This README is written to be read by **people and AI agents alike**: the facts block below and the
+[Repository map](#repository-map) / [Commands](#commands) / [HTTP surfaces](#http-surfaces) sections
+are the machine-actionable core. Where the code and this file disagree, the code wins — please open
+an issue so we can fix the file.
 
-## Try it in 3 minutes
+<!-- Canonical facts. Keep in sync with pom.xml, application*.yml and the workflow files. -->
+```yaml
+product:         JAiRouter
+repository:      Lincoln-cn/JAiRouter
+checkout_dir:    model-router            # the local/git directory name differs from the product name
+artifact:        model-router            # Maven artifactId
+project_version: 3.3.0                   # pom.xml
+latest_release:  v3.3.0 (2026-10-07)
+stack:
+  backend:  Java 17 + Spring Boot 3.5.5 (WebFlux / reactive)
+  frontend: Vue 3 + TypeScript + Vite, bilingual zh-CN / en-US
+  build:    Maven wrapper — ./mvnw (Unix) · .\mvnw.cmd (Windows)
+runtime:
+  default_port: 8080
+  console:      /admin/
+  swagger_ui:   dev profile only
+  required_env_in_prod: [JWT_SECRET, INITIAL_ADMIN_PASSWORD]
+surfaces:
+  - /v1/**        # client surface: OpenAI-native + Anthropic-compatible
+  - /api/**       # management + legacy surface (RBAC-governed)
+  - /actuator/**  # health, readiness, Prometheus
+tests:
+  command: ./mvnw test -o
+  scale:   ~4000 test methods across 386 test classes
+license: Apache-2.0
+```
+
+## What it is
+
+JAiRouter is a **self-hosted AI model gateway**. It puts one OpenAI-compatible endpoint in front of
+the model servers you already run — Ollama, vLLM, GPUStack, Xinference, LocalAI — plus cloud
+providers (OpenAI, Anthropic, Gemini, and any OpenAI-compatible vendor). Existing OpenAI SDK,
+LangChain and LlamaIndex code keeps working: point `base_url` at the gateway and nothing else changes.
+
+It then adds the layer you would otherwise build yourself: multi-instance load balancing, rate
+limiting, circuit breaking with failover to a *different* healthy instance, RBAC, audit logging,
+record governance and observability — all configurable at runtime from a web console, without
+restarting the process.
+
+| Problem | What JAiRouter does |
+|---------|---------------------|
+| Many model endpoints to manage | One unified API surface |
+| Manual failover when a backend dies | Circuit breaker + request-level failover |
+| Auth implemented per service | JWT + API key with data-driven RBAC |
+| Logs and metrics scattered per backend | Central metrics, tracing, call history |
+| Restart required for config changes | Hot reload from the console |
+
+## Quick start
+
+### Development profile — no secrets required
 
 ```bash
-# Start the gateway — dev profile: no key setup required (built-in dev key)
 docker run -d --name jairouter -p 8080:8080 \
   -e SPRING_PROFILES_ACTIVE=dev \
   sodlinken/jairouter:latest
 
-# Web console:  http://localhost:8080/admin
+# Console:      http://localhost:8080/admin/
 # Default login: admin / ChangeMeOnFirstStartup123456
 ```
 
-For production, run the default `prod` profile and supply your own key — the prod profile deliberately ships no default key:
+The dev profile intentionally falls back to built-in development secrets, so it starts with no
+configuration at all. **Never expose a dev-profile instance to an untrusted network.**
+
+### Production profile — secrets are required
 
 ```bash
 docker run -d --name jairouter -p 8080:8080 \
-  -e JWT_SECRET="<your-secret-at-least-32-characters>" \
+  -e JWT_SECRET="$(openssl rand -base64 48)" \
+  -e INITIAL_ADMIN_PASSWORD='<your-strong-admin-password>' \
   sodlinken/jairouter:latest
 ```
 
-Point any OpenAI-compatible client at it:
+**Both variables are mandatory.** The `prod` profile performs a startup security gate and
+**refuses to boot** when either is missing or still at its factory default — see
+[Production startup gate](#production-startup-gate) for the exact rules. A container started with
+only `JWT_SECRET` exits during startup with `IllegalStateException`.
+
+If you boot the JAR directly rather than through Docker, generate strong values first:
+
+```bash
+java -jar target/model-router-*.jar --generate-key        # JWT secret
+java -jar target/model-router-*.jar --generate-password   # admin password
+```
+
+### Point a client at it
 
 ```python
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="http://localhost:8080/v1",          # OpenAI-native surface (raw JSON / SSE)
-    api_key="not-needed",                          # Authorization is forwarded to the downstream
-    default_headers={"X-API-Key": "<your-api-key>"}  # gateway credential (Management API keys)
+    base_url="http://localhost:8080/v1",             # OpenAI-native surface (raw JSON / SSE)
+    api_key="not-needed",                            # Authorization is forwarded downstream
+    default_headers={"X-API-Key": "<your-api-key>"}  # gateway credential (Management API key)
 )
 
 response = client.chat.completions.create(
-    model="llama3.2",  # any model from your configured backends
+    model="llama3.2",                                # any model from your configured backends
     messages=[{"role": "user", "content": "Hello!"}]
 )
 print(response.choices[0].message.content)
 ```
 
-Add your own backends — Ollama, vLLM, GPUStack or any cloud provider — in the console under **Instance Management**. Changes apply via hot reload, no restart required.
+Registered backends are managed from the console under **Instance Management**; changes apply by hot
+reload, with no restart.
 
-<p align="center">
-  <img src="screenshots/dashboard-en-US-light.png" alt="JAiRouter dashboard" width="720">
-  <br/>
-  <em>Management console — real-time service, instance and system metrics</em>
-</p>
+## Production startup gate
 
-<details>
-<summary><b>More screenshots</b></summary>
+The gate lives in `StartupSecretKeyChecker` (a `CommandLineRunner`) and
+`StartupSecurityGate`. It runs on every start and reads **environment variables directly** — setting
+the equivalent YAML property is *not* enough to satisfy it:
 
-<p align="center">
-  <img src="screenshots/service-management-en-US-light.png" alt="Service Management" width="720">
-  <br/>
-  <em>Service management — adapters and load-balancing strategies per service</em>
-</p>
+| Check | Rule when the profile is `prod` / `production` | Rule otherwise |
+|-------|-----------------------------------------------|----------------|
+| JWT enabled | `jairouter.security.jwt.enabled` must be `true`, otherwise fail | not checked |
+| `JWT_SECRET` | must be set, not a known factory/doc default, and not rate `VERY_WEAK` / `WEAK` | warn only |
+| `INITIAL_ADMIN_PASSWORD` | must be set, except for the factory default `ChangeMeOnFirstStartup123456`, and not rate `VERY_WEAK` / `WEAK` | warn only |
 
-<p align="center">
-  <img src="screenshots/instance-management-en-US-light.png" alt="Instance Management" width="720">
-  <img src="screenshots/adapter-management-en-US-light.png" alt="Adapter Management" width="720">
-  <br/>
-  <em>Instance & adapter management</em>
-</p>
+Details worth knowing:
 
-<p align="center">
-  <img src="screenshots/rule-management-en-US-light.png" alt="Rule Engine" width="720">
-  <br/>
-  <em>Visual routing rules with hit statistics, priority drag-and-drop and templates</em>
-</p>
+- **A missing `INITIAL_ADMIN_PASSWORD` is a hard failure in production.** `ADMIN_PASSWORD` is accepted
+  as a secondary variable name, but nothing is generated for you.
+- **No password is auto-generated, ever.** If neither variable is set, startup aborts; it does not
+  invent a random password and it does not fall back to the documented default. (The only generators
+  are the explicit CLI flags `--generate-key` / `--generate-password`.)
+- A `MEDIUM`-strength value logs a warning and **allows** startup; `VERY_WEAK` / `WEAK` blocks it.
+- Escape hatch for trusted isolated networks: `JAIRouter_SKIP_AUTH_WARNING=true`. It must be set
+  explicitly and it disables the gate for **all** of the checks above.
+- The `admin` account itself comes from `jairouter.security.jwt.accounts` in
+  `src/main/resources/config/auth/jwt.yml`, whose password is
+  `{noop}${INITIAL_ADMIN_PASSWORD:ChangeMeOnFirstStartup123456}`. On first start those YAML accounts
+  are copied into the `jwt_accounts` table **only when that table is empty**
+  (`JpaDatabaseInitializer.initializeJwtAccounts`); later starts leave the table untouched, so
+  rotating `INITIAL_ADMIN_PASSWORD` does **not** change an account that already exists in the
+  database — change it in the console instead.
 
-<p align="center">
-  <img src="screenshots/call-history-dashboard-en-US-light.png" alt="Call History Analytics" width="720">
-  <br/>
-  <em>Call history analytics — success rate, latency and token usage trends</em>
-</p>
+## Repository map
 
-<p align="center">
-  <img src="screenshots/extra-slow-query-analysis-en-US-light.png" alt="Slow Query Analysis" width="720">
-  <br/>
-  <em>Slow-query analysis — hotspots, alert status and operation breakdown</em>
-</p>
+| Path | What lives there |
+|------|------------------|
+| `src/main/java/org/unreal/modelrouter/router/` | Gateway core: adapters, request processors, load balancers, rule engine, circuit breaker, cache |
+| `src/main/java/org/unreal/modelrouter/auth/` | Authentication (JWT, API key), sanitization, security audit, RBAC, console-facing auth APIs |
+| `src/main/java/org/unreal/modelrouter/monitor/` | Metrics, tracing, call history, slow-query analysis, error tracking, security alerts |
+| `src/main/java/org/unreal/modelrouter/persistence/` | Store abstractions plus JPA entities/repositories and schema initialization |
+| `src/main/java/org/unreal/modelrouter/config/` | Configuration service: hot reload, versioning/rollback, validation, console API |
+| `src/main/resources/config/**` | Modular YAML config, imported via `spring.config.import` in `application.yml` |
+| `src/main/resources/db/migration/{h2,postgres}/` | Versioned schema migrations (`Flyway`), one dialect directory each |
+| `src/test/java/` | JUnit 5 + Mockito + Reactor `StepVerifier`; ~4000 test methods |
+| `frontend/` | Vue 3 + TypeScript console (Vite `base: /admin/`) |
+| `docs/zh/`, `docs/en/` | MkDocs documentation, kept symmetrical |
+| `deploy/` | Kubernetes manifests, compose files, deployment scripts |
+| `.cspell.json` | Spell-check word list — the docs workflow fails on unknown words |
+| `innerdoc/` | Internal design notes, not published |
 
-<p align="center">
-  <img src="screenshots/playground-chat-en-US-light.png" alt="AI Playground" width="720">
-  <br/>
-  <em>AI playground — chat, embedding, rerank, audio and image test benches</em>
-</p>
+## Commands
 
-<p align="center">
-  <img src="screenshots/quota-config-en-US-light.png" alt="Quota Runtime Configuration" width="720">
-  <br/>
-  <em>Quota runtime configuration — hot-toggle enable/disable, windows and fail-open; restart-required fields are read-only with a "restart needed" badge</em>
-</p>
+```bash
+# Build (skipping tests)
+./mvnw clean package -DskipTests
 
-<p align="center">
-  <img src="screenshots/quota-monitoring-en-US-light.png" alt="Quota Usage Monitoring" width="720">
-  <br/>
-  <em>Quota usage monitoring — backend type and degradation status cards plus multi-dimensional filtering (tenant / key / user / service / model × window)</em>
-</p>
+# Run locally
+java -jar target/model-router-*.jar --spring.profiles.active=dev
 
-<p align="center">
-  <img src="screenshots/client-access-en-US-light.png" alt="Client Access Guide" width="720">
-  <br/>
-  <em>Client access guide — OpenAI-compatible and Anthropic base URLs, credential headers and copy-ready code snippets</em>
-</p>
+# Full Java test suite (offline works; -Dcheckstyle.skip etc. speed up iteration)
+./mvnw test -o
 
-<p align="center">
-  <img src="screenshots/dashboard-en-US-dark.png" alt="Dashboard (dark theme)" width="720">
-  <br/>
-  <em>Built-in dark theme — the console is fully themeable and bilingual (zh-CN / en-US)</em>
-</p>
+# Focused test run — comma-separated class filter, no wildcards
+./mvnw test -Dtest=FooTest,BarTest -DfailIfNoTests=false -o
 
-</details>
+# Frontend (type-check + build)
+cd frontend && npm ci && npm run type-check && npm run build
+```
 
-## What is JAiRouter?
+Windows: substitute `.\mvnw.cmd` for `./mvnw`.
 
-JAiRouter is a **production-ready AI model gateway** for teams that run their own inference infrastructure (Ollama, vLLM, GPUStack, Xinference) alongside cloud providers. It exposes every backend through one unified, OpenAI-compatible API and adds the resilience and governance layer you would otherwise build yourself: load balancing, rate limiting, circuit breaking, failover, RBAC, audit logging and observability.
+## HTTP surfaces
 
-| Problem | JAiRouter Solution |
-|---------|-------------------|
-| Multiple model endpoints to manage | Single unified API endpoint |
-| Manual failover when a service fails | Automatic circuit breaker |
-| Implementing auth for each service | JWT + API Key built-in |
-| Scattered logs and metrics | Centralized observability |
-| Service restart for config changes | Hot reload via Web Console |
+| Surface | Prefix | Protocol | Auth |
+|---------|--------|----------|------|
+| Client — OpenAI-native | `/v1/**` | OpenAI JSON + SSE (`/v1/chat/completions`, `/v1/models`, `/v1/embeddings`, `/v1/rerank`) | JWT or API key |
+| Client — Anthropic-compatible | `/v1/messages`, `/v1/messages/count_tokens` | Anthropic Messages (streaming SSE, tool use) | JWT or API key |
+| Management | `/api/**` | JSON, `RouterResponse` envelope | JWT/API key + RBAC URL matrix |
+| Operations | `/actuator/**` | Health, readiness, `/actuator/prometheus` | depends on profile |
 
-### Core Features
+Error bodies are protocol-shaped per surface: on `/v1/messages` an Anthropic-shaped
+`{"type":"error","error":{...}}`, on the other `/v1/**` paths an OpenAI-shaped
+`{"error":{message,type,code}}`, and `/api/**` keeps its legacy shape. Streaming failures on the
+`/v1` surface emit a protocol-shaped error frame **and** still terminate the stream with an error —
+`[DONE]` is never appended to a failed stream, because clients treat `[DONE]` as success.
 
-- **🔌 OpenAI-Compatible API** — Drop-in replacement for OpenAI SDK, LangChain, LlamaIndex
-- **🔧 Configurable Adapters** — Add new AI providers (DeepSeek, Zhipu, etc.) via config or Web UI, no code needed
-- **⚖️ Smart Load Balancing** — Round-robin, weighted, least-connections, IP-hash, consistent-hash, EWMA latency-aware
-- **🎯 Rule Engine & Tag Routing** — Visual conditional routing (model name, service type, request header, client IP, weight, instance tags)
-- **🛡️ Rate Limiting** — Token bucket, leaky bucket, sliding window algorithms
-- **🔥 Circuit Breaker** — Auto failover with configurable thresholds, plus request-level failover that retries on another healthy instance
-- **🔐 Authentication & RBAC** — JWT + API Key with audit logging and data-driven RBAC (44 permission codes, 4 role templates, menu & URL authorization)
-- **📊 Observability** — Prometheus metrics, OpenTelemetry tracing, real-time dashboards, call-history analytics
-- **🔒 Record Governance** — Three recording levels (metadata-only / desensitized summary / AES-256-GCM-encrypted full content)
-- **⚡ Response Cache** — Deterministic requests reuse the downstream response and skip the backend (opt-in, tenant-isolated keys)
-- **💾 Persistence** — Redis / H2 / File storage for distributed deployment
-- **🎛️ Web Console** — Visual management, version control, configuration rollback, dark/light theme
+## Authentication and authorization
 
-## Supported AI Backends
+- **JWT** — header name is configurable, default `Jairouter_Token`.
+- **API key** — header `X-API-Key`. Gateway credentials are separate from downstream provider keys:
+  `x-api-key` is consumed by the gateway and never forwarded, so per-instance downstream credentials
+  belong in the instance's own `headers.Authorization`.
+- **RBAC** — data-driven: 53 permission codes, 4 role templates (`ADMIN` / `OPERATOR` / `USER` /
+  `VIEWER`), a URL rule matrix plus method-level `@PreAuthorize`. Requests that match no rule follow
+  `jairouter.security.rbac.unmatched-policy`, whose default is `DENY_ALL`; `ROLE_ADMIN` short-circuits
+  everything. `/v1/**` is authenticated but intentionally outside the permission matrix.
 
-<details>
-<summary><b>Built-in adapters</b> — chat, embedding, rerank, TTS/STT and image coverage</summary>
+## Feature inventory
 
-| Backend | Chat | Embedding | Rerank | TTS | STT | Image | Notes |
-|---------|:----:|:---------:|:------:|:---:|:---:|:-----:|-------|
-| **Ollama** | ✅ | ✅ | - | - | - | - | Local inference |
-| **vLLM** | ✅ | ✅ | - | - | - | - | High-throughput |
-| **GPUStack** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Full-featured |
-| **Xinference** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Multi-model |
-| **LocalAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ | OpenAI-compatible |
-| **OpenAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ | Cloud fallback |
-| **Anthropic Claude** | ✅ | - | - | - | - | - | Native Claude API |
-| **Google Gemini** | ✅ | - | - | - | - | - | Native Gemini API |
+Implemented and exercised by the test suite:
 
-</details>
+- **Adapters** — Ollama, vLLM, GPUStack, Xinference, LocalAI, OpenAI, Anthropic (native), Gemini
+  (native), plus any OpenAI-compatible provider declared in `adapter-definitions`.
+- **Load balancing** — round-robin, weighted, least-connections, IP hash, consistent hash, EWMA
+  latency-aware, random.
+- **Rule engine** — conditional routing on model, service type, header, client IP, weight and
+  instance tags, with hit statistics; visual editing in the console.
+- **Resilience** — circuit breaker per instance, request-level failover to another healthy instance,
+  rate limiting (token bucket / leaky bucket / sliding window), response cache for deterministic
+  requests (opt-in, tenant-isolated keys).
+- **Quota** — multi-dimensional, multi-window ledger (MINUTE/HOUR/DAY/MONTH) with Redis distributed
+  counting and local fallback (`jairouter.quota.enabled`, off by default).
+- **Record governance** — call history at three levels: metadata only, desensitized summary, or
+  AES-256-GCM-encrypted full content; ADMIN-only decryption endpoint.
+- **Observability** — Prometheus metrics, OpenTelemetry tracing, slow-query analysis, error tracking,
+  security alerts. Alert outlets are deliberately limited to **Prometheus metrics + structured logs** —
+  the repository implements no push channels (email/webhook/IM); wire those up in Alertmanager or your
+  log platform.
+- **Persistence** — H2 by default; PostgreSQL (with `Flyway` migrations) when `DATABASE_URL` points at
+  it; Redis for shared state in multi-replica deployments.
+- **Multi-replica** — cross-replica event broadcast, shared rate-limit/quota counters, and a
+  distributed lock for scheduled tasks (including the alert cooldown).
+- **Console** — Vue 3 SPA at `/admin/`: services, instances, adapters, rules, versions & rollback,
+  quota, call history, tracing, alerts, API keys, RBAC, dark/light theme, zh-CN / en-US.
 
-<details>
-<summary><b>Configurable adapters</b> — any OpenAI-compatible provider, no code required</summary>
-
-| Provider | Configuration |
-|----------|--------------|
-| **DeepSeek** | `adapter-definitions: deepseek: type: openai-compatible` |
-| **Zhipu (GLM)** | `adapter-definitions: zhipu: type: openai-compatible` |
-| **Moonshot** | `adapter-definitions: moonshot: type: openai-compatible` |
-| **Qwen (Tongyi)** | `adapter-definitions: qwen: type: openai-compatible` |
-| **Baichuan** | `adapter-definitions: baichuan: type: openai-compatible` |
-| **Minimax** | `adapter-definitions: minimax: type: openai-compatible` |
-
-> 📖 See the [Adapter Configuration Guide](https://jairouter.com/configuration/adapter-config/) for details.
-
-</details>
-
-## Why Choose JAiRouter?
-
-- **vs running backends directly** — no shared resilience, no central keys, no usage visibility. JAiRouter gives one endpoint, automatic failover and a full audit trail.
-- **vs One-API / new-api** — those focus on distributing and billing API keys for shared accounts. JAiRouter targets the gateway in front of **your own local inference cluster**: multi-instance load balancing, circuit breaking, rule routing, RBAC and observability for self-hosted Ollama/vLLM/GPUStack. The two approaches complement each other.
-- **vs Nginx** — Nginx is a general-purpose web server. JAiRouter is **purpose-built for AI/LLM workloads** with OpenAI-compatible routing, circuit breaking and model-aware load balancing.
-- **vs LangChain** — LangChain is an application framework. JAiRouter is the **infrastructure layer beneath it**, providing routing, failover and monitoring.
-
-| Feature | JAiRouter | Nginx | One-API | LangChain |
-|---------|:---------:|:-----:|:-------:|:---------:|
-| OpenAI Compatible | ✅ | ❌ | ✅ | ✅ |
-| Load Balancing | ✅ | ✅ | ✅ | ❌ |
-| Circuit Breaker | ✅ | ❌ | ❌ | ❌ |
-| Rate Limiting | ✅ | ✅ | ✅ | ❌ |
-| Web Console | ✅ | ❌ | ✅ | ❌ |
-| Config Hot Reload | ✅ | ❌ | ✅ | ❌ |
-| Version Control | ✅ | ❌ | ❌ | ❌ |
-| OpenTelemetry | ✅ | ❌ | ❌ | ✅ |
+Deliberately **not** implemented: semantic (vector-similarity) cache and any in-repo notification
+delivery. See [Status and recent work](#status-and-recent-work) for the open ledger.
 
 ## Architecture
 
 <details>
-<summary><b>How requests flow through the gateway</b></summary>
+<summary><b>Request flow</b></summary>
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -258,60 +299,162 @@ JAiRouter is a **production-ready AI model gateway** for teams that run their ow
 
 </details>
 
+<details>
+<summary><b>Console screenshots</b></summary>
+
+<p align="center">
+  <img src="screenshots/dashboard-en-US-light.png" alt="JAiRouter dashboard" width="720">
+  <br/>
+  <em>Dashboard — real-time service, instance and system metrics</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/service-management-en-US-light.png" alt="Service Management" width="720">
+  <img src="screenshots/instance-management-en-US-light.png" alt="Instance Management" width="720">
+  <br/>
+  <em>Service & instance management — adapters and load-balancing strategies per service</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/rule-management-en-US-light.png" alt="Rule Engine" width="720">
+  <br/>
+  <em>Visual routing rules with hit statistics, priority drag-and-drop and templates</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/call-history-dashboard-en-US-light.png" alt="Call History Analytics" width="720">
+  <br/>
+  <em>Call history analytics — success rate, latency and token usage trends</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/extra-slow-query-analysis-en-US-light.png" alt="Slow Query Analysis" width="720">
+  <br/>
+  <em>Slow-query analysis — hotspots, alert status and operation breakdown</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/playground-chat-en-US-light.png" alt="AI Playground" width="720">
+  <br/>
+  <em>Playground — chat, embedding, rerank, audio and image test benches</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/quota-config-en-US-light.png" alt="Quota Runtime Configuration" width="720">
+  <br/>
+  <em>Quota runtime configuration — restart-required fields are read-only with a badge</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/quota-monitoring-en-US-light.png" alt="Quota Usage Monitoring" width="720">
+  <br/>
+  <em>Quota monitoring — backend type, degradation status and multi-dimensional filtering</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/client-access-en-US-light.png" alt="Client Access Guide" width="720">
+  <br/>
+  <em>Client access guide — copy-ready snippets for the OpenAI-compatible and Anthropic base URLs</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/dashboard-en-US-dark.png" alt="Dashboard (dark theme)" width="720">
+  <br/>
+  <em>Built-in dark theme — the console is themeable and bilingual</em>
+</p>
+
+</details>
+
+## Status and recent work
+
+**Latest release: v3.3.0 (2026-10-07)** — PostgreSQL support with `Flyway`-managed migrations,
+multi-replica capability (cross-replica event broadcast, shared counters, startup self-check,
+per-class handling of scheduled tasks), and a "configuration honesty" pass that either wired up or
+deleted config keys nothing consumed.
+
+**Merged after v3.3.0 and not yet released** (31 commits, 2026-10-10 → 2026-10-12) — a hardening
+batch driven by a security/quality audit. Grouped by theme:
+
+| Theme | What changed |
+|-------|--------------|
+| Reactor correctness | Blocking writes moved off the event loop (API-key usage, error tracking); JWT blacklist sync batched outside the lock |
+| Streaming fidelity | `/v1` surface: error frames plus state-fidelity when a downstream fails before the response commits; legacy `/api/**` semantics deliberately unchanged; two probe test classes pin the client-visible baseline |
+| Alerting | `SecurityAlertService` wired to the authentication-failure path, criteria aligned with the audit event enum, counting moved to the storage side, unified config surface, cross-replica exclusive cooldown, and the remaining dead alert config removed |
+| Audit event types | Event types are now always enum names; `parseEventType` no longer silently falls back to `SYSTEM_MAINTENANCE` (enum grew 17 → 26), and unknown dynamic prefixes degrade explicitly instead of being dropped |
+| Security | SSRF: resolved address is pinned to the connection (blocks DNS rebinding); token-usage writes are ownership-scoped; outbound config/metrics clients consolidated into a shared WebClient pool |
+| Dead code | Unreachable auth provider/listener removed, unused DTO removed, unused frontend composable removed |
+| Docs & gates | Documentation realigned with code in several places; the spell-check word list fixed |
+
+Release tags: `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`.
+
+### Open ledger
+
+Known, tracked, and **not** done — do not assume these work:
+
+| Issue | Summary |
+|-------|---------|
+| [#250](https://github.com/Lincoln-cn/JAiRouter/issues/250) | Six documentation pages detected as stale and due for review |
+| [#297](https://github.com/Lincoln-cn/JAiRouter/issues/297) | Console `DashboardOverview` type does not match the real `/api/monitoring/overview` payload, so type checking does not constrain the real field names |
+| [#303](https://github.com/Lincoln-cn/JAiRouter/issues/303) | Bot commits can leave a workflow run in `action_required`, and `gh pr checks` does not list those runs |
+| [#304](https://github.com/Lincoln-cn/JAiRouter/issues/304) | Alerting and streaming error paths lack real end-to-end verification against a running instance |
+| [#307](https://github.com/Lincoln-cn/JAiRouter/issues/307) | `ResponseSanitizationFilterTest` never enables the feature, so the whole test class runs through the early-return path |
+| [#308](https://github.com/Lincoln-cn/JAiRouter/issues/308) | Audit documentation drift (config keys and event names documented that do not exist) |
+| [#310](https://github.com/Lincoln-cn/JAiRouter/issues/310) | `SecurityAuditApi` has no implementation and no caller |
+| [#312](https://github.com/Lincoln-cn/JAiRouter/issues/312) | Most sub-blocks of the `jairouter.security.audit` config tree bind to no field |
+
 ## Documentation
 
 | Resource | Link |
 |----------|------|
-| Full Documentation | https://jairouter.com |
-| Deployment Guide | https://jairouter.com/en/deployment/ |
+| Full documentation | https://jairouter.com |
+| Deployment | https://jairouter.com/en/deployment/ |
 | Configuration | https://jairouter.com/en/configuration/ |
 | Monitoring | https://jairouter.com/en/monitoring/ |
-| API Reference | http://localhost:8080/swagger-ui |
+| Interactive API reference | `http://localhost:8080/swagger-ui` (dev profile) |
 
-## Roadmap
+## Why JAiRouter?
 
-**Released** (latest: v3.1.2)
+- **vs calling backends directly** — no shared resilience, no central credentials, no usage
+  visibility. JAiRouter gives one endpoint, automatic failover and a full audit trail.
+- **vs One-API / new-api** — those distribute and bill API keys for shared accounts. JAiRouter is the
+  gateway in front of **your own** inference cluster: multi-instance balancing, circuit breaking, rule
+  routing and RBAC for self-hosted Ollama/vLLM/GPUStack. The two complement each other.
+- **vs Nginx** — Nginx is a general-purpose web server. JAiRouter is purpose-built for model
+  workloads: OpenAI-compatible routing, model-aware balancing, streaming semantics.
+- **vs LangChain** — LangChain is an application framework. JAiRouter is the infrastructure layer
+  beneath it.
 
-- [x] Core gateway with OpenAI-compatible API
-- [x] Built-in + configurable adapters (Ollama, vLLM, GPUStack, Xinference, LocalAI, OpenAI, Claude, Gemini, …)
-- [x] Multi-strategy load balancing (round-robin, weighted, least-connections, IP-hash, consistent-hash, EWMA latency-aware)
-- [x] Rate limiting (token bucket, leaky bucket, sliding window)
-- [x] Circuit breaker + request-level failover (retry on another healthy instance)
-- [x] Visual rule engine: conditional routing, service-level dynamic rate limiting, tag routing
-- [x] JWT + API Key authentication with audit logging
-- [x] Data-driven RBAC (44 permission codes, 4 role templates, menu & URL authorization)
-- [x] Call history with record governance (metadata-only / summary / AES-256-GCM full) and analytics dashboards
-- [x] Response cache (deterministic reuse; opt-in, tenant-isolated)
-- [x] Prometheus metrics + OpenTelemetry distributed tracing
-- [x] Configuration version control & rollback
-- [x] Web console with hot reload and dark/light theme
-- [x] Docker image optimization (Alpine/Distroless)
-
-**Recently released**
-
-- [x] Token quota & multi-dimensional multi-window rate limiting: MINUTE/HOUR/DAY/MONTH ledger, JPA persistence, Redis distributed counting with automatic local fallback (`jairouter.quota.enabled=false` by default, v3.1.0)
-- [x] Quota runtime config & observability: `GET/PUT /api/config/quota`, quota status/usage monitoring endpoints, 3 new console pages (quota config, usage monitoring, client access guide), new permission codes `config:quota:read/write`, `monitoring:quota:read` (v3.1.0)
-- [x] OpenAI-native surface `/v1/models` endpoint (v3.1.0)
-- [x] Anthropic `/v1/messages` entry: non-streaming + streaming SSE + `count_tokens` + tool calling (`tools`/`tool_choice`/`tool_use`/`tool_result`), Claude Code direct connectivity (v3.1.0)
-- [x] Response cache P1: streaming SSE cache, invalidation API and rate-limit short-circuit (`DELETE /api/config/cache/response`, v2.9.10 — shipped in v3.0.3)
-- [x] Web console refactor series: design tokens, dark theme, governance dashboard, bilingual UI (zh/en), slow-query analytics (v2.10.x)
-- [x] Web complete-flow series: onboarding preselect loop, governance entries across pages, page-skeleton rollout (v3.0.1–v3.0.3)
-
-**In progress**
-
-- [ ] Semantic cache evaluation (vector-similarity reuse) — separate project
-- [ ] High-availability foundation (multi-node / Redis distributed / config rollback) — assessed after v3.1.x
-
-> **Current Release**: v3.1.2
+| Feature | JAiRouter | Nginx | One-API | LangChain |
+|---------|:---------:|:-----:|:-------:|:---------:|
+| OpenAI compatible | ✅ | ❌ | ✅ | ✅ |
+| Load balancing | ✅ | ✅ | ✅ | ❌ |
+| Circuit breaker | ✅ | ❌ | ❌ | ❌ |
+| Rate limiting | ✅ | ✅ | ✅ | ❌ |
+| Web console | ✅ | ❌ | ✅ | ❌ |
+| Config hot reload | ✅ | ❌ | ✅ | ❌ |
+| Version control | ✅ | ❌ | ❌ | ❌ |
+| OpenTelemetry | ✅ | ❌ | ❌ | ✅ |
 
 ## Contributing
 
 Contributions are welcome — see the [Contributing Guide](https://jairouter.com/en/development/contributing/).
 
+Before opening a pull request:
+
+```bash
+./mvnw test -o                       # 386 test classes, ~4000 test methods, must stay green
+cd frontend && npm run type-check    # the frontend type gate
+```
+
+House conventions worth knowing: commits use `<type>(<scope>): <summary>`; every fix/feature branch
+targets `master` and is squash-merged; documentation exists in both `docs/zh/` and `docs/en/` and is
+expected to stay symmetrical; docs are spell-checked against `.cspell.json`, so new technical terms
+may need to be added there.
+
 ```bash
 git clone https://github.com/Lincoln-cn/JAiRouter.git
 cd JAiRouter
-mvn clean package -DskipTests
+./mvnw clean package -DskipTests
 java -jar target/model-router-*.jar
 ```
 
@@ -321,16 +464,17 @@ java -jar target/model-router-*.jar
 
 ### Issues or Discussions — where should I post?
 
-GitHub gives us two channels and we keep them separate on purpose, so nothing gets lost. Pick by **what you have**, not by where you happen to be:
+GitHub gives us two channels and we keep them separate on purpose. Pick by **what you have**:
 
 | What you have | Where to post | How we handle it |
 |---------------|---------------|------------------|
-| A **reproducible defect** — crash, wrong result, regression, broken doc | [**Issues**](https://github.com/Lincoln-cn/JAiRouter/issues) | **Fast follow-up** — triaged and answered quickly; confirmed defects are fixed or scheduled |
-| A **requirement or idea** — feature request, new adapter, design discussion, usage question, feedback | [**Discussions**](https://github.com/Lincoln-cn/JAiRouter/discussions) | **Regularly curated** — ideas are collected, voted on and folded into the [Roadmap](#roadmap) |
+| A **reproducible defect** — crash, wrong result, regression, wrong doc | [**Issues**](https://github.com/Lincoln-cn/JAiRouter/issues) | Triaged quickly; confirmed defects are fixed or scheduled |
+| A **requirement or idea** — feature request, new adapter, design discussion, usage question | [**Discussions**](https://github.com/Lincoln-cn/JAiRouter/discussions) | Collected, voted on and folded into the roadmap |
 
 **In one line**: a defect goes to **Issues**; a requirement or a question goes to **Discussions**.
 
-> Not sure which one fits? Post in Discussions — if it turns out to be a reproducible defect, we will move it to Issues for you.
+> Not sure which one fits? Post in Discussions — if it turns out to be a reproducible defect, we will
+> move it to Issues for you.
 
 Discussions is organized by category:
 
