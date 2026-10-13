@@ -12,11 +12,11 @@
     },
     "docs/en/api-reference/index.md": {
       "FilePath": "docs/en/api-reference/index.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-23T17:13:19.470565",
-      "ContentHash": "29d2fdb5de58da1a",
-      "GitCommit": "e75f4909",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-13T17:41:00.162242",
+      "ContentHash": "00281cebad92e2a9",
+      "GitCommit": "9fe40386",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/management-api.md",
@@ -27,11 +27,11 @@
     },
     "docs/en/api-reference/management-api.md": {
       "FilePath": "docs/en/api-reference/management-api.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-09-23T17:13:19.472075",
-      "ContentHash": "b6d84dacdb9d3c09",
-      "GitCommit": "e75f4909",
-      "Author": "Lincoln",
+      "Version": "1.0.10",
+      "LastModified": "2026-10-13T17:41:00.164412",
+      "ContentHash": "dcb04340b2317e52",
+      "GitCommit": "9fe40386",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/security/data-sanitization.md"
@@ -182,11 +182,11 @@
     },
     "docs/en/deployment/github-pages.md": {
       "FilePath": "docs/en/deployment/github-pages.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-08-24T03:02:49.130672",
-      "ContentHash": "d69aab7ac421d092",
-      "GitCommit": "f5d673e2",
-      "Author": "Lincoln",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-13T17:41:00.303908",
+      "ContentHash": "4622dc00ff53891f",
+      "GitCommit": "9fe40386",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -7560,7 +7560,31 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-13T17:23:40.877502",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/index.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T17:41:00.162249",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/management-api.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T17:41:00.164417",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/github-pages.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-13T17:41:00.303919",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-13T17:23:41.060541"
+  "last_updated": "2026-10-13T17:41:01.150373"
 }
