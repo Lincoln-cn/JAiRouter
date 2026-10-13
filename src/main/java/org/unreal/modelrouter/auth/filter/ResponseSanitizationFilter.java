@@ -302,16 +302,22 @@ public class ResponseSanitizationFilter implements WebFilter {
     }
     
     /**
-     * 处理脱敏失败
+     * 终止请求，把错误体交给中央异常处理器（issue #317）。
+     *
+     * <p><b>本方法只负责终止，不负责响应体。</b>返回的 {@link SanitizationException} 会逃出 WebFilter 链，
+     * 由 {@code ReactiveGlobalExceptionHandler} 按请求路径渲染：{@code /v1/**} 走客户端协议形状
+     * （经 {@code V1ErrorBodyMapper}），其余路径走 {@code RouterResponse}；两条路径的消息都被固定为
+     * 「数据处理失败」，**协议面不得暴露脱敏细节**（该形状由 {@code SecurityExceptionHandlerTest} 的断言守着）。</p>
+     *
+     * <p>⚠️ 不要再让本方法自己拼错误体（这里此前算过一个 {@code errorResponse} 却从未使用）：那样会
+     * ① 把 {@code ex.getMessage()} 直接发给客户端 —— 违反上面那条已测契约；
+     * ② 产出第三套既非 OpenAI/Anthropic 协议形状、也非 {@code RouterResponse} 的形状，客户端解析不了；
+     * ③ 绕过中央处理器上的 {@code ErrorTracker} 记录与 {@code isCommitted} 竞态守卫。</p>
+     *
+     * @param ex 脱敏失败异常
+     * @return 以该异常终止的 {@code Mono}（不写任何响应体）
      */
     private Mono<Void> handleSanitizationFailure(final SanitizationException ex) {
-        // 创建错误响应内容
-        String errorResponse = String.format(
-                "{\"error\":\"%s\",\"message\":\"%s\",\"timestamp\":\"%s\"}",
-                ex.getErrorCode(), ex.getMessage(), LocalDateTime.now()
-        );
-        
-        // 返回错误，让上层处理
         return Mono.error(ex);
     }
 }

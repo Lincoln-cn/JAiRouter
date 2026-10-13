@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
@@ -17,12 +18,18 @@ import org.unreal.modelrouter.auth.security.config.properties.SanitizationConfig
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.common.dto.AuditEventType;
+import org.unreal.modelrouter.common.exception.SanitizationException;
+import org.unreal.modelrouter.common.exceptionhandler.ReactiveGlobalExceptionHandler;
+import org.unreal.modelrouter.monitor.monitoring.error.ErrorTracker;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -272,9 +279,50 @@ class ResponseSanitizationFilterTest {
             MockServerWebExchange exchange = newExchange(JSON_PATH, MediaType.APPLICATION_JSON);
             WebFilterChain chain = writingChain(ORIGINAL_BODY);
 
+            // 必须是 SanitizationException：中央处理器正是按这个类型分派错误体（issue #317）
             StepVerifier.create(filter.filter(exchange, chain))
-                    .expectError()
+                    .expectErrorSatisfies(thrown -> assertInstanceOf(SanitizationException.class, thrown,
+                            "过滤器必须原样抛出 SanitizationException，否则中央处理器上那条脱敏分支不可达"))
                     .verify();
+        }
+
+        @Test
+        @DisplayName("FILT-006c: 客户端错误体由中央处理器产出，过滤器只终止且不写体（issue #317）")
+        void sanitizationFailureLeavesErrorBodyToCentralHandler() {
+            when(responseConfig.isFailOnError()).thenReturn(true);
+            // 消息里带「脱敏细节」，用来验证它不会被发给客户端
+            final SanitizationException failure = new SanitizationException(
+                    "内部细节：规则 [phone] 编译失败", SanitizationException.CONTENT_PROCESSING_FAILED);
+            when(sanitizationService.sanitizeResponse(anyString(), anyString()))
+                    .thenReturn(Mono.error(failure));
+
+            MockServerWebExchange exchange = newExchange(JSON_PATH, MediaType.APPLICATION_JSON);
+            WebFilterChain chain = writingChain(ORIGINAL_BODY);
+
+            AtomicReference<Throwable> propagated = new AtomicReference<>();
+            StepVerifier.create(filter.filter(exchange, chain))
+                    .expectErrorSatisfies(propagated::set)
+                    .verify();
+
+            // ① 过滤器自己不写响应体 —— MockServerHttpResponse 只有被写或被 complete 之后才是 committed
+            // （不能靠「读体为空」证明：未写内容时 getBodyAsString() 会直接抛 IllegalStateException）
+            assertFalse(exchange.getResponse().isCommitted(),
+                    "过滤器不得自己写错误体：那会产生第二个写入者，以及第三套客户端解析不了的形状");
+
+            // ② 把同一个异常交给中央处理器：这是真实链路上的下一个环节（WebFilter 抛出的异常不走 @RestControllerAdvice）
+            MockServerWebExchange terminal = MockServerWebExchange.from(
+                    MockServerHttpRequest.post(JSON_PATH).build());
+            StepVerifier.create(new ReactiveGlobalExceptionHandler(mock(ErrorTracker.class))
+                            .handle(terminal, propagated.get()))
+                    .verifyComplete();
+
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, terminal.getResponse().getStatusCode(),
+                    "脱敏失败的终止语义是 5xx（SanitizationException 自身携带的状态码）");
+            StepVerifier.create(terminal.getResponse().getBodyAsString())
+                    .expectNextMatches(body -> body.contains("数据处理失败")
+                            && !body.contains("phone")
+                            && !body.contains("内部细节"))
+                    .verifyComplete();
         }
     }
 
