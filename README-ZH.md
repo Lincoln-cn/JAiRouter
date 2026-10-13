@@ -366,7 +366,7 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 | 审计事件类型 | 事件类型一律走枚举名；`parseEventType` 不再静默回退成 `SYSTEM_MAINTENANCE`（枚举 17 → 26），未知动态前缀改为显式降级而非被丢弃 |
 | 安全 | SSRF：解析结果与建连绑定（堵 DNS 重绑定）；Token 用量写入按主体收敛属主；配置推送与指标上报的出站客户端收归共享 WebClient 池 |
 | 配置诚实性 | 两棵「能设、不报错、没人读」的配置树已删除（`jairouter.security.audit` 下 7 个子块，以及整棵 `jairouter.security.performance`：4 个文件 21 个键）；`AuditConfig.storage` / `alertEnabled` 一并删除；两条守卫测试现在会让这类键「复活」时直接构建失败 |
-| 死代码 | 删除不可达的认证 provider/listener、无生产方的 DTO、无引用的模块边界接口、无引用的前端 composable |
+| 死代码 | 删除不可达的认证 provider/listener、无生产方的 DTO、**整层** `common/api` 模块边界层（16 个文件 / 约 2100 行，全仓无实现方与调用方）、无引用的前端 composable |
 | 文档与门闩 | 多处文档与代码口径对齐（16 篇里从未生效的配置示例，以及两处完全虚构的审计小节）；贡献文档新增「怎么读 CI 门闩」；修复拼写检查词表 |
 
 发布标签：`v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`。

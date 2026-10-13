@@ -384,7 +384,7 @@ plus a configuration-honesty pass. Grouped by theme:
 | Audit event types | Event types are now always enum names; `parseEventType` no longer silently falls back to `SYSTEM_MAINTENANCE` (enum grew 17 → 26), and unknown dynamic prefixes degrade explicitly instead of being dropped |
 | Security | SSRF: resolved address is pinned to the connection (blocks DNS rebinding); token-usage writes are ownership-scoped; outbound config/metrics clients consolidated into a shared WebClient pool |
 | Config honesty | Two config trees that bound to no field are gone (`jairouter.security.audit`'s seven sub-blocks and the whole `jairouter.security.performance` tree, 21 keys across 4 files); `AuditConfig.storage` / `alertEnabled` removed; two guard tests now fail the build if such keys come back |
-| Dead code | Unreachable auth provider/listener removed, unused DTOs and an unused boundary-layer interface removed, unused frontend composable removed |
+| Dead code | Unreachable auth provider/listener removed, unused DTOs removed, the whole `common/api` module-boundary layer removed (16 files / ~2100 lines, no implementation and no caller anywhere), unused frontend composable removed |
 | Docs & gates | Documentation realigned with code in several places (16 pages of config examples that never worked, plus two fabricated audit sections); the contribution guide now documents how to read the CI gates; the spell-check word list fixed |
 
 Release tags: `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`.
