@@ -1848,10 +1848,10 @@
     },
     "docs/zh/configuration/validation-rules.md": {
       "FilePath": "docs/zh/configuration/validation-rules.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-14T15:58:14.832139",
-      "ContentHash": "1449ba1218c468fd",
-      "GitCommit": "359643cc",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-14T16:58:29.558291",
+      "ContentHash": "f14afe42dd771924",
+      "GitCommit": "512509dc",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2038,10 +2038,10 @@
     },
     "docs/en/configuration/validation-rules.md": {
       "FilePath": "docs/en/configuration/validation-rules.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-14T15:58:14.361802",
-      "ContentHash": "7b53d4a3d9f92f78",
-      "GitCommit": "359643cc",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-14T16:58:29.079351",
+      "ContentHash": "1d22661683200780",
+      "GitCommit": "512509dc",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2112,7 +2112,7 @@
         "docs/en/configuration/routing-rules.md",
         "docs/en/reference/changelog.md"
       ],
-      "ReviewedAt": "2026-10-15T01:00:05.743505"
+      "ReviewedAt": "2026-10-15T01:06:25.592554"
     },
     "docs/zh/configuration/kv-cache.md": {
       "FilePath": "docs/zh/configuration/kv-cache.md",
@@ -2127,7 +2127,7 @@
         "docs/zh/configuration/routing-rules.md",
         "docs/zh/reference/changelog.md"
       ],
-      "ReviewedAt": "2026-10-15T01:00:05.743505"
+      "ReviewedAt": "2026-10-15T01:06:25.592554"
     },
     "docs/en/development/doc-maintenance.md": {
       "FilePath": "docs/en/development/doc-maintenance.md",
@@ -8216,7 +8216,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-14T16:37:23.340572",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/validation-rules.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-14T16:58:29.079361",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/validation-rules.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-14T16:58:29.558300",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-15T01:00:05.744018"
+  "last_updated": "2026-10-15T01:06:25.593069"
 }
