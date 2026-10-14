@@ -1,4 +1,4 @@
-﻿# 路由规则配置
+# 路由规则配置
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.1
@@ -175,6 +175,7 @@ model:
 | `/api/config/rules/validate` | POST | 规则模拟测试（dry-run），只读不改状态 |
 | `/api/config/rules/stats` | GET | 规则命中统计（ruleId/ruleName/actionType/hits） |
 | `/api/config/rules/templates` | GET | 规则场景模板列表 |
+| `/api/config/rules/templates/{id}` | GET | 获取单个模板详情（`RuleTemplateController:45`） |
 | `/api/config/rules/templates/{id}/create` | POST | 从模板生成规则草稿（`{name, priority?}`，不持久化） |
 
 ### 创建规则示例

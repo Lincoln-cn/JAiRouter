@@ -1,4 +1,4 @@
-﻿# Routing Rules Configuration
+# Routing Rules Configuration
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.1
@@ -175,6 +175,7 @@ Base path: `/api/config/rules`
 | `/api/config/rules/validate` | POST | Rule simulation test (dry-run), read-only |
 | `/api/config/rules/stats` | GET | Rule hit statistics (ruleId/ruleName/actionType/hits) |
 | `/api/config/rules/templates` | GET | Rule scenario template list |
+| `/api/config/rules/templates/{id}` | GET | Fetch one template's details (`RuleTemplateController:45`) |
 | `/api/config/rules/templates/{id}/create` | POST | Build a rule draft from a template (`{name, priority?}`, not persisted) |
 
 ### Create Rule Example
