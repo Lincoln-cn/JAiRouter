@@ -23,7 +23,8 @@
         "docs/en/api-reference/monitoring-api.md",
         "docs/en/api-reference/openapi-spec.md",
         "docs/en/api-reference/universal-api.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-14T23:59:50.179901"
     },
     "docs/en/api-reference/management-api.md": {
       "FilePath": "docs/en/api-reference/management-api.md",
@@ -641,7 +642,8 @@
         "docs/zh/api-reference/monitoring-api.md",
         "docs/zh/api-reference/openapi-spec.md",
         "docs/zh/api-reference/universal-api.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-14T23:59:50.179901"
     },
     "docs/zh/api-reference/management-api.md": {
       "FilePath": "docs/zh/api-reference/management-api.md",
@@ -8184,5 +8186,5 @@
       "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-14T15:58:15.196037"
+  "last_updated": "2026-10-14T23:59:50.179901"
 }
