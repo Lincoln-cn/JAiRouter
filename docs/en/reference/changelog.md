@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.3.1
+> **Document Version**: 3.3.2
 > **Last Updated**: 2026-10-14
 > **Git Commit**: -
 > **Author**: Lincoln
@@ -20,6 +20,89 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.3.2] - 2026-10-14 - Patch Release (Empty `/v1` stream fixed, alert/audit close-out, config honesty pass 3, docs and gates)
+
+> This entry covers the **40 changes** merged after `v3.3.1` (the 2026-10-10 → 10-11 slice), i.e. 2026-10-12 → 2026-10-14.
+> **Tagged `v3.3.2`, not released yet** (the GitHub Release and Docker image are produced when we publish).
+
+#### `/v1` streaming empty body fixed (the most important availability fix here)
+
+- **Fixed: `/v1` normal streaming answered `200` + `text/event-stream` with a zero-byte body** (#356).
+  The `/v1` branch used `exchangeToMono` and handed `clientResponse.bodyToFlux(...)` back out of the exchange
+  scope; `Mono.just(ResponseEntity)` terminates immediately, so WebClient released and drained the body and the
+  framework subscribed to nothing. It now uses `retrieve()` with a status-preserving `onStatus`, so the normal
+  stream takes the same `bodyToFlux` path as the legacy surface
+- **Protocol error frames are emitted only after the first chunk**: before the first chunk the status is not
+  committed yet, so the exception propagates unchanged and the client keeps the downstream's real status
+  (429 stays 429); after the first chunk the error frame is still emitted before terminating (never `[DONE]`)
+- **Regression pin**: `StreamingErrorPathRuntimeTest` now drives **both** surfaces (legacy and `/v1`, plus the
+  Anthropic surface). It previously hardcoded the client path to `/gateway/stream`, so it **never covered the
+  `/v1` branch** — which is exactly why this defect escaped the suite
+- Knock-on: `/v1/messages` (Anthropic surface) shares that branch and was equally empty before
+
+#### Streaming and protocol baseline
+
+- Client-visible baseline for streaming failures pinned by probe classes as the basis and regression pin for #257 (#298)
+- `/v1` mid-stream failures emit a protocol-shaped error frame and still terminate with the exception, **never `[DONE]`** (#299)
+- `/v1` ends with the downstream's real status before the response commits; legacy semantics unchanged (#305)
+
+#### Alerts and audit semantics
+
+- Security-alert cooldown is now **exclusive across replicas**, removing duplicate alerts and inflated counts (#306)
+- Audit event types are always **enum names**; `parseEventType` no longer silently falls back to `SYSTEM_MAINTENANCE`
+  (enum 17 → 26; ⚠️ rows written before this release mixed several sources and **cannot be split retroactively**) (#309)
+- Dead alert-threshold and outlet config removed (#313)
+
+#### Config honesty (third pass — same rule: wire it up or delete it)
+
+- Seven unbound sub-blocks plus two unread keys under `jairouter.security.audit` deleted (#319)
+- The whole `jairouter.security.performance` tree (no binding class) deleted (#322)
+- Fourteen zero-consumer keys under `audit.extended` deleted (`extended.enabled` is live and kept) (#323)
+- Sanitization failures now **only terminate** — the error body belongs to the central handler, pinned by tests (#329)
+- The startup validator no longer claims a random password gets generated; it describes the real fallback and its consequences (#331)
+
+#### Dead code and shapes
+
+- `SecurityAuditApi` removed (no implementation, no caller) (#328)
+- The whole `common/api` module-boundary layer removed (16 files, no implementation and no caller anywhere) (#332)
+- The producer-less `SecurityStatisticsResponse` DTO removed (#311)
+- Console `DashboardOverview` typed to the real payload; dead write-only store and variables removed (#333)
+- The response-sanitization test now actually drives the response write path (its `setUp()` never stubbed
+  `isEnabled()`, so the entire class was a no-op) (#316)
+
+#### Documentation and governance
+
+- README rewritten as a facts-first document, with the production startup secrets requirement (#315); the ledger
+  became "links plus classified prose" (#330)
+- Documentation realigned with code for the two deleted config trees (16 files carried never-working examples) (#325)
+- Contribution guide gained "Before merging: read the CI gates correctly" (#326) and later a release-cadence rule
+  plus an executable release checklist (#362)
+- The error-code table was rebuilt from code: the English side aligned with Chinese, and both quick-reference tables
+  re-checked against real literals (#348)
+- `dynamic-config`'s instance-management and file-configuration sections rewritten against real endpoints
+  (nine non-existent endpoints removed) (#349 / #351 / #353)
+- The quick-start instance example made genuinely runnable (path corrected, auth added) and executed line by line (#341)
+- The `"status": "HEALTHY"` example removed from the docs — that value takes the instance out of routing (#355)
+- Documentation review batch: 3 pages corrected, 1 defect spun off, 2 pages recorded as `ReviewedAt` (#343 / #346)
+- Six files / ten markdown fence typos fixed, plus a reusable fence-parity checker (#337)
+
+#### Engineering and gates
+
+- Local substitute gates for the month CI minutes ran out (scripts + protocol + dependency/ignore fixes) (#336)
+- The image smoke test polls container health instead of racing it (#338)
+- End-to-end fixture for the streaming error path, putting the **production processor** in the chain (#347; it found
+  #354 and #356 the same day)
+- The docs-version script's console wording is now a single source of truth, its self-test no longer asserts a copy of
+  that wording, and the workflow's path filter now includes `scripts/docs/**` (previously changing the script did not
+  trigger it at all — the second reason #352 slipped through) (#359)
+- Regression pin for "repeating `--mark-reviewed` must not silently drop arguments" (#360)
+- The `v3.3.1` back-cut entries were added to master's changelog/roadmap (#364)
+
+> **Breaking changes**: none to public APIs or routes. **Behavior changes to note**:
+> (1) `/v1` pre-commit failures now end with the downstream's real status (previously an empty body / forced 500);
+> (2) unknown audit event names no longer fall back silently; (3) on sanitization failure the client receives the
+> exception with the error body rendered by the central handler.
 
 ### [3.3.1] - 2026-10-14 - Patch Release (Audit Remediation: Event-Loop Blocking, SSRF Connect-Time Pinning, Usage Ownership, Alert Wiring)
 

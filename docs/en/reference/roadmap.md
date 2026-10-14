@@ -1,9 +1,9 @@
 # Roadmap
 
 <!-- 版本信息 -->
-> **Doc Version**: 2.2.1
+> **Doc Version**: 2.2.2
 > **Last Updated**: 2026-10-14
-> **Git Tag**: v3.3.1
+> **Git Tag**: v3.3.2
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -23,6 +23,22 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 - **Observability**: Comprehensive monitoring, logging, and distributed tracing
 
 ## Current Version Status
+
+### 🏷️ v3.3.2 (Patch: empty `/v1` stream fixed + alert/audit close-out + config honesty pass 3 + docs and gates, **tagged, not released yet** 2026-10-14)
+
+**Status**: **Tagged `v3.3.2`, not released yet** (the GitHub Release and Docker image are produced when we publish)
+**Scope**: the **40 changes** merged after `v3.3.1` (the 10-10 ~ 10-11 slice), i.e. 2026-10-12 → 2026-10-14 —
+see the [changelog](changelog.md#332---2026-10-14)
+
+| Area | Delivered |
+|------|-----------|
+| **Streaming (`/v1`)** | **Fixed: normal streams answered 200 with a zero-byte body** (#356) by removing the early body release caused by `exchangeToMono`; protocol error frames are emitted only after the first chunk, so a pre-commit failure keeps the downstream's real status (429 stays 429); the regression pin now drives **both surfaces** (the fixture used to hardcode `/gateway/stream` and never covered `/v1`) |
+| Streaming baseline | Client-visible baseline probes (#298); `/v1` mid-stream error frame without `[DONE]` (#299); pre-commit status fidelity (#305) |
+| Alerts & audit | Cross-replica exclusive cooldown (#306); event types always enum names, unknown names no longer fall back silently (#309); dead alert threshold/outlet config removed (#313) |
+| Config honesty (pass 3) | Seven unbound `jairouter.security.audit` sub-blocks (#319), the whole `jairouter.security.performance` tree (#322) and 14 `audit.extended` keys (#323) removed; sanitization failures only terminate, error body belongs to the central handler (#329); the startup validator no longer claims a random password is generated (#331) |
+| Dead code & shapes | `SecurityAuditApi` (#328), the whole `common/api` layer (16 files, #332) and `SecurityStatisticsResponse` (#311) removed; `DashboardOverview` typed to the real payload (#333); the sanitization test now drives the write path (#316) |
+| Docs & gates | Facts-first README (#315) and link-plus-prose ledger (#330); docs realigned for the two deleted config trees (#325); "read the CI gates correctly" (#326) and the release-cadence rule (#362); error-code table rebuilt from code (#348); dynamic-config/quick-start examples rewritten against real endpoints and executed (#341/#349/#351/#353); fence-parity checker (#337) |
+| Engineering & tooling | Local substitute gates (#336); image smoke polls container health (#338); streaming e2e fixture with the production processor in the chain (#347); docs-version wording single-sourced with the workflow now covering `scripts/docs/**` (#359/#360); the v3.3.1 entries added to master (#364) |
 
 ### ✅ v3.3.1 (Patch: Audit Remediation — Event-Loop Blocking / SSRF Connect-Time Pinning / Usage Ownership / Alert Wiring, released 2026-10-14)
 
@@ -114,6 +130,7 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 | v3.1.2 | 2026-09-18 | Docker/startup patch: `JWT_SECRET` env unification, `--generate-key` fix, image frontend static/admin path, Redis health conditional |
 | v3.2.0 | 2026-09-19 | PII sanitization management (console + `/api/config/sanitization/**` + `sanitizeForStorage`) + quota monitoring limit/progress UX + vitest/page-smoke TDD foundation + excluded-path alignment (PRs #60/#64/#65) |
 | v3.2.1 | 2026-09-21 | Audit remediation patch: Reactor/SSE de-blocking + quota TOCTOU & Redis Lua CAS + spurious 401 fix + tracing chain double-execution fix + JWT blacklist degradation convergence + production fail-fast + SSRF guard + RBAC/debug-endpoint tightening + user-regex ReDoS hardening (PRs #67–#72, #78–#81) |
+| v3.3.2 | 2026-10-14 | Patch (**tagged, not released yet**): **empty `/v1` stream fixed** (#356 — no more early body release from `exchangeToMono`; error frames only after the first chunk; fixture now drives both surfaces) + cross-replica alert cooldown (#306) + audit event types always enum names (#309) + config honesty pass 3 (#319/#322/#323) + sanitization failures only terminate (#329) + startup-validator wording (#331) + dead code and shapes (#311/#328/#332/#333/#316) + docs and gates (#315/#325/#326/#330/#337/#341/#348/#349/#351/#353/#355/#362) + engineering (#336/#338/#347/#359/#360/#364) |
 | v3.3.1 | 2026-10-14 | Audit remediation patch (**back-cut release**, cut point `ea2b7bc2`): API key usage accounting (#267) and error-report persistence (#268) moved off the event loop + JWT blacklist batched sync (#273) + `TRACING_APPENDER` async attachment (#279) + SSRF resolved-address pinning (#282) + outbound clients consolidated into a pool (#284) + usage-write ownership (#280) + `SecurityAlertService` wired in (#277) + alert criteria/output/config-surface close-out (#286/#293/#294/#296) + console and tracing placeholder data removed (#269–#274) + dead code removed (#275/#278) + 4 frontend dependency bumps |
 | v3.3.0 | 2026-10-07 | PostgreSQL and versioned migration (PG on `ddl-auto: validate`, H2 joins in, both startup patch components deleted) + multi-replica cluster (cross-replica event broadcast and rate-limit counting, shared-state self-check, per-class scheduled jobs) + RBAC closed out to fail-closed GETs + four batches of tracing config honesty + Kustomize/json-logs deployment artifacts + documentation facts corrected (#160–#248) |
 | v3.2.2 | 2026-09-22 | User-reported fixes: API key quota echo (#84) and routing-monitor count +3 (#83) + quota endpoint `block` failure (#92) + management failures moved from HTTP 200 to 4xx/5xx (#94, response body compatible) + tightened e2e assertions (#95) + unified alert thresholds `[0.05,1]` (#96) + monitoring error codes (#98) (PRs #90/#91/#93/#97/#99) |
