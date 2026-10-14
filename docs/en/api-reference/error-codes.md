@@ -44,12 +44,21 @@ JAiRouter uses a standardized error code system to identify various error condit
 | `INVALID_API_KEY` | Invalid API Key | API Key format error or not found | Check API Key correctness |
 | `EXPIRED_API_KEY` | API Key expired | API Key exceeded validity period | Regenerate API Key |
 | `MISSING_API_KEY` | Missing API Key | Request header missing API Key | Add `X-API-Key` header |
-| `INVALID_JWT_TOKEN` | Invalid JWT token | JWT format error or invalid signature | Check JWT format and signature |
-| `EXPIRED_JWT_TOKEN` | JWT token expired | JWT exceeded validity period | Refresh or obtain new JWT |
-| `BLACKLISTED_TOKEN` | Token blacklisted | JWT has been revoked | Re-login to obtain new token |
+| `JWT_INVALID` | Invalid JWT token | JWT format error or invalid signature | Check JWT format and signature |
+| `JWT_EXPIRED` | JWT token expired | JWT exceeded validity period | Refresh or obtain new JWT |
+| `JWT_BLACKLISTED` | Token blacklisted | JWT has been revoked | Re-login to obtain new token |
+| `EMPTY_JWT_TOKEN` | No JWT carried | Request header missing `Jairouter_Token` | Add the `Jairouter_Token` header |
+| `EMPTY_API_KEY` | No API Key carried | Request header missing `X-API-Key` | Add the `X-API-Key` header |
+| `API_KEY_DISABLED` | API Key disabled | The key has been deactivated | Enable it or use another key |
+| `API_KEY_AUTH_FAILED` | API Key authentication failed | Key does not match the account | Check key ownership |
 | `AUTH_FAILED` | Authentication failed | Generic authentication failure | Check authentication credentials |
-| `TOKEN_EXPIRED` | Token expired | JWT token expired | Refresh token |
 | `AUTH_ERROR` | Authentication error | Authentication process exception | Check authentication service status |
+
+> The previous table listed `INVALID_JWT_TOKEN` / `EXPIRED_JWT_TOKEN` / `BLACKLISTED_TOKEN` (they exist only
+> as **constant declarations** in `AuthenticationException`) and `TOKEN_EXPIRED` (which is a
+> `SecurityEventType` enum name, **not** an error code). The codes the authentication chain actually emits are
+> the ones in the table above (`DefaultJwtTokenValidator.java:76,85,120`,
+> `CustomReactiveAuthenticationManager.java:57,67,92,115`).
 
 **Example Response**:
 ```json

@@ -85,6 +85,16 @@ jobs:
       run: |
         python3 scripts/docs/check-links.py --dir docs --output link-check-report.json --fail-on-error
         echo "✅ 链接检查完成"
+
+    - name: 自测错误码对账脚本
+      run: |
+        echo "🧪 运行错误码对账脚本自测（表格码 / 引用块排除 / 枚举名不算码）..."
+        python3 scripts/docs/test_check_error_codes.py
+
+    - name: 检查文档错误码与源码对账
+      run: |
+        echo "🔍 对账 docs/**/api-reference/error-codes.md 与 src/main/java 的错误码字面量..."
+        python3 scripts/docs/check-error-codes.py --project-root . --fail-on-error
     
     - name: 上传链接检查报告
       uses: actions/upload-artifact@v4
