@@ -1,4 +1,4 @@
-﻿# 配置验证规则文档
+# 配置校验规则
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0
@@ -7,394 +7,210 @@
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
-> 版本：v2.8.1
-> 最后更新：2026-06-23
-
 ---
 
 ## 概述
 
-JAiRouter v3.1.1+ 引入了启动时配置验证机制，自动检测关键配置项的合理性，帮助管理员在应用启动前发现配置问题。
+JAiRouter 的配置校验分**两类**，时机与后果都不同：
+
+| 时机 | 触发点 | 校验器 | 出错的后果 |
+|---|---|---|---|
+| **启动期** | `ApplicationReadyEvent` | `ConfigIntegrityValidator` · `SensitiveConfigValidator` | 前者：**应用启动失败**；后者：**仅严格模式下**才失败 |
+| **运行时** | 保存/应用配置时 | `ConfigurationValidator`（服务与实例）· `SecurityConfigurationValidator` · `MonitoringConfigurationValidator` · `SamplingConfigurationValidator`（追踪采样） | 由各调用点决定（见下节清单） |
+
+> ⚠️ **本页已按代码重写（issue #374）**。此前的版本列了 7 条具名规则（`rate-limit-capacity`、
+> `circuit-breaker-threshold`、`jwt-expiration`、`thread-pool-size` 等）、对应的 `export RATE_LIMIT_*`
+> 示例，以及一个 `ConfigurationValidationRule` 扩展接口 —— **这三类内容在本仓都不存在**。
+> 现在本页的每一条都能指到具体 `file:line`。
 
 ---
 
-## 验证规则列表
+## 一、启动期校验
 
-### 1. 限流容量 (rate-limit-capacity)
+启动期校验由两个 `ApplicationListener<ApplicationReadyEvent>` 在**应用就绪后**各跑一次
+（即校验失败时容器已经起来了，失败表现为**进程退出**）。
 
-**配置项**: `RATE_LIMIT_CAPACITY` (环境变量)
+### 总开关
 
-**验证规则**:
-| 规则类型 | 最小值 | 最大值 | 说明 |
-|----------|--------|--------|------|
-| 错误 | 1 | - | 限流容量必须大于 0 |
-| 警告 | - | 100000 | 限流容量过大可能导致内存压力 |
-
-**推荐值**: 100 - 10000
-
-**示例**:
-```bash
-# 正确配置
-export RATE_LIMIT_CAPACITY=1000
-
-# 错误配置（会报错）
-export RATE_LIMIT_CAPACITY=0
-
-# 警告配置（会告警）
-export RATE_LIMIT_CAPACITY=200000
-```
-
----
-
-### 2. 限流速率 (rate-limit-rate)
-
-**配置项**: `RATE_LIMIT_RATE` (环境变量)
-
-**验证规则**:
-| 规则类型 | 最小值 | 最大值 | 说明 |
-|----------|--------|--------|------|
-| 错误 | 1 | - | 限流速率必须大于 0 |
-| 警告 | - | 10000 | 限流速率过大可能导致系统过载 |
-
-**推荐值**: 10 - 1000 (请求/秒)
-
-**示例**:
-```bash
-# 正确配置
-export RATE_LIMIT_RATE=100
-
-# 错误配置
-export RATE_LIMIT_RATE=0
-```
-
----
-
-### 3. 熔断器失败阈值 (circuit-breaker-threshold)
-
-**配置项**: `CIRCUIT_BREAKER_FAILURE_THRESHOLD` (环境变量)
-
-**验证规则**:
-| 规则类型 | 最小值 | 最大值 | 说明 |
-|----------|--------|--------|------|
-| 错误 | 1 | - | 熔断器失败阈值必须大于 0 |
-| 警告 | - | 100 | 阈值过大可能无法及时熔断 |
-
-**推荐值**: 5 - 20
-
-**示例**:
-```bash
-# 正确配置
-export CIRCUIT_BREAKER_FAILURE_THRESHOLD=5
-
-# 警告配置
-export CIRCUIT_BREAKER_FAILURE_THRESHOLD=150
-```
-
----
-
-### 4. 熔断器超时时间 (circuit-breaker-timeout)
-
-**配置项**: `CIRCUIT_BREAKER_TIMEOUT` (环境变量，单位：毫秒)
-
-**验证规则**:
-| 规则类型 | 最小值 | 最大值 | 说明 |
-|----------|--------|--------|------|
-| 错误 | 1000 | - | 熔断器超时不能小于 1 秒 |
-| 警告 | - | 300000 | 超时过长（>5 分钟） |
-
-**推荐值**: 30000 - 120000 (30 秒 -2 分钟)
-
-**示例**:
-```bash
-# 正确配置
-export CIRCUIT_BREAKER_TIMEOUT=60000
-
-# 错误配置
-export CIRCUIT_BREAKER_TIMEOUT=500
-
-# 警告配置
-export CIRCUIT_BREAKER_TIMEOUT=400000
-```
-
----
-
-### 5. JWT 过期时间 (jwt-expiration)
-
-**配置项**: `JWT_EXPIRATION_MINUTES` (环境变量，单位：分钟)
-
-**验证规则**:
-| 规则类型 | 最小值 | 最大值 | 说明 |
-|----------|--------|--------|------|
-| 错误 | 1 | - | JWT 过期时间必须大于 0 分钟 |
-| 警告 | - | 1440 | 过期时间过长（>24 小时） |
-
-**推荐值**: 60 - 480 (1 小时 -8 小时)
-
-**示例**:
-```bash
-# 正确配置
-export JWT_EXPIRATION_MINUTES=120
-
-# 警告配置
-export JWT_EXPIRATION_MINUTES=2000
-```
-
----
-
-### 6. 服务器端口 (server-port)
-
-**配置项**: `SERVER_PORT` (环境变量)
-
-**验证规则**:
-| 规则类型 | 最小值 | 最大值 | 说明 |
-|----------|--------|--------|------|
-| 错误 | 1 | 65535 | 端口必须在有效范围内 |
-| 警告 | - | 1023 | 端口小于 1024 可能需要 root 权限 |
-
-**推荐值**: 8080, 8443, 3000 等高位端口
-
-**示例**:
-```bash
-# 正确配置
-export SERVER_PORT=8080
-
-# 错误配置
-export SERVER_PORT=70000
-
-# 警告配置（需要 root）
-export SERVER_PORT=80
-```
-
----
-
-### 7. 线程池大小 (thread-pool-size)
-
-**配置项**: `SERVER_TOMCAT_THREADS_MAX` (环境变量)
-
-**验证规则**:
-| 规则类型 | 最小值 | 最大值 | 说明 |
-|----------|--------|--------|------|
-| 错误 | 1 | - | 线程池大小必须大于 0 |
-| 警告 | - | 500 | 线程池过大可能导致资源浪费 |
-
-**推荐值**: 50 - 200
-
-**示例**:
-```bash
-# 正确配置
-export SERVER_TOMCAT_THREADS_MAX=100
-
-# 警告配置
-export SERVER_TOMCAT_THREADS_MAX=600
-```
-
----
-
-## 验证级别说明
-
-### ✅ OK (通过)
-- 配置在合理范围内
-- 不会输出日志（DEBUG 级别除外）
-- 应用正常启动
-
-### ⚠️ WARN (警告)
-- 配置可能不是最优，但可以接受
-- 输出警告日志
-- **不阻止应用启动**
-- 建议根据提示优化配置
-
-### ❌ ERROR (错误)
-- 配置存在明显问题
-- 输出错误日志
-- **不阻止应用启动**，但强烈建议修正
-- 应用可能运行时出现问题
-
----
-
-## 验证输出示例
-
-### 全部通过
-```
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                            JAiRouter 配置验证                                ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-
-✓ [rate-limit-capacity] 限流容量 - 通过
-✓ [rate-limit-rate] 限流速率 - 通过
-✓ [circuit-breaker-threshold] 熔断器失败阈值 - 通过
-✓ [circuit-breaker-timeout] 熔断器超时时间 - 通过
-✓ [jwt-expiration] JWT 过期时间 - 通过
-✓ [server-port] 服务器端口 - 通过
-✓ [thread-pool-size] 线程池大小 - 通过
-
-╔══════════════════════════════════════════════════════════════════════════════╗
-║  配置验证汇总                                                                ║
-║                                                                              ║
-║  总规则数：7                                                                 ║
-║  通过：7                                                                     ║
-║  警告：0                                                                     ║
-║  错误：0                                                                     ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-```
-
-### 有警告
-```
-⚠️  [rate-limit-capacity] 限流容量 - 限流容量过大，可能导致内存压力
-⚠️  [circuit-breaker-threshold] 熔断器失败阈值 - 熔断器失败阈值过大，可能无法及时熔断
-
-╔══════════════════════════════════════════════════════════════════════════════╗
-║  配置验证汇总                                                                ║
-║                                                                              ║
-║  总规则数：7                                                                 ║
-║  通过：7                                                                     ║
-║  警告：2                                                                     ║
-║  错误：0                                                                     ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-```
-
-### 有错误
-```
-❌ [rate-limit-rate] 限流速率 - 限流速率必须大于 0
-❌ [jwt-expiration] JWT 过期时间 - JWT 过期时间必须大于 0 分钟
-
-╔══════════════════════════════════════════════════════════════════════════════╗
-║  配置验证汇总                                                                ║
-║                                                                              ║
-║  总规则数：7                                                                 ║
-║  通过：5                                                                     ║
-║  警告：0                                                                     ║
-║  错误：2                                                                     ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-
-⚠️  检测到 2 个配置错误，请检查并修正配置后重启应用
-```
-
----
-
-## 启用/禁用验证
-
-### 启用（默认）
-验证功能默认启用，无需额外配置。
-
-### 禁用
-如需禁用验证，可设置以下配置：
+| 键 | 默认值 | 作用范围 |
+|---|---|---|
+| `jairouter.config.validation.enabled` | `true` | 两个校验器都会读它；**读法略有差异**（见下） |
+| `jairouter.config.validation.strict-mode` | `false` | **只影响** `SensitiveConfigValidator` |
 
 ```yaml
-# application.yml
+jairouter:
+  config:
+    validation:
+      enabled: true       # false ⇒ 两个启动期校验器都不工作
+      strict-mode: false  # true ⇒ 敏感值体检的「错误」升级为启动失败
+```
+
+### 1. `ConfigIntegrityValidator` —— 发现错误即启动失败
+
+`config/core/validator/ConfigIntegrityValidator.java`（`:45` 是类声明，`:79-87` 读开关）。
+它把问题分成两个桶，然后（`:107-112`）：
+
+- **有任何 error** ⇒ 逐条 `log.error` 后 **抛 `IllegalStateException("配置校验失败，存在 N 个错误")`**
+  ⇒ 应用**启动失败**；
+- **只有 warning** ⇒ 只打印日志，**不影响启动**。
+
+规则表（取值集合与边界**逐条取自代码**，见 `:129-206`）：
+
+| 配置键 | 判定 | 级别 |
+|---|---|---|
+| `server.port` | 不在 `1`–`65535` | **错误** |
+| `server.port` | `< 1024`（特权端口，可能需要 root） | 警告 |
+| `model.load-balance.type` | 不在 `round-robin` · `weighted` · `least-connections` · `ip-hash` · `random` | **错误** |
+| `model.rate-limit.algorithm`（仅当 `model.rate-limit.enabled=true`） | 不在 `token-bucket` · `sliding-window` · `fixed-window` | **错误** |
+| `model.circuit-breaker.failureThreshold`（仅当 `model.circuit-breaker.enabled=true`） | `≤ 0` | **错误** |
+| 同上 | `> 100`（熔断器可能难以触发） | 警告 |
+| `model.circuit-breaker.timeout`（仅当 `model.circuit-breaker.enabled=true`） | `≤ 0` | **错误** |
+| 同上 | `> 300000`（毫秒，恢复可能缓慢） | 警告 |
+| `store.type` | 不在 `jpa` · `redis` · `memory` · `h2` | **错误** |
+| `monitoring.enabled` | `false`（建议生产启用监控） | 警告 |
+| `jairouter.tracing.enabled` | `false`（建议生产启用追踪） | 警告 |
+
+开关读法：它用 `@Value("${jairouter.config.validation.enabled:true}")` 注入（`:79`），
+`false` 时打印一行「配置校验已禁用」后直接返回（`:84-87`）。
+
+> 📌 该类的 javadoc 里也有一份规则清单，但**取值集合比代码少**（写的是 4 种负载均衡类型 / 2 种限流算法 /
+> 2 种存储类型）。本页按**代码**写；javadoc 已在 issue #374 的同一批里对齐。
+
+### 2. `SensitiveConfigValidator` —— 敏感值体检（**默认只告警**）
+
+`config/core/validator/SensitiveConfigValidator.java`。它是
+`@ConditionalOnProperty(name = "jairouter.config.validation.enabled", havingValue = "true", matchIfMissing = true)`
+（`:28`）—— 注意与上一个校验器的差异：**这一个在开关缺失时默认启用**。
+
+检查三个**环境变量**（通过 Spring 占位符读，`${JWT_SECRET:}` 这种形态，`:33-40`）：
+
+| 变量 | 未设置 | 长度不足 | 看起来是硬编码值 |
+|---|---|---|---|
+| `JWT_SECRET` | 严格模式：**错误**；否则：警告 | 建议 ≥32 字符，不足 ⇒ **错误**（严格模式）/ 警告 | **错误** |
+| `INITIAL_ADMIN_PASSWORD` | 严格模式：**错误**；否则：警告（文案写明会回落到出厂默认密码，生产 profile 会启动失败） | 建议 ≥8 字符，不足 ⇒ 警告 | 警告 |
+| `GPUSTACK_API_TOKEN` | 警告（模型服务将无法认证） | — | 警告 |
+
+「看起来是硬编码值」的判据（`:153-169`）：包含 `your-` / `placeholder` / `example` / `test` / `demo` /
+`changeme`，或整值等于 `secret` / `password`（大小写不敏感）。
+
+**失败语义（容易误解，按代码写清）**：`errors` 只在 `strict-mode=true` 时才会被打印**并**抛
+`IllegalStateException`（`:67-72`）。也就是说：
+
+- `strict-mode=false`（默认）：**只打印 warnings**；`errors` 桶里的发现（例如 `JWT_SECRET` 看起来是硬编码值）
+  **既不打印、也不阻止启动**；
+- `strict-mode=true`：`errors` 非空 ⇒ 逐条 `log.error` + **启动失败**。
+
+> 📌 **与生产启动门闩的关系**：`prod` / `production` profile 下，`JWT_SECRET` 与
+> `INITIAL_ADMIN_PASSWORD` 的更严格判定发生得**更早**（`auth/security/config/StartupSecurityGate.java`
+> 在 `CommandLineRunner` 阶段就 fail-fast，缺失、出厂默认值或强度不足都会让进程起不来）
+> ⇒ 生产环境通常**跑不到**这个校验器。开发/测试环境才主要靠它给提示。
+
+---
+
+## 二、运行时校验（配置 API 路径）
+
+这些校验器不在启动期跑，而是挂在**配置变更**的调用点上：
+
+| 校验器 | 调用点 | 说明 |
+|---|---|---|
+| `config/core/ConfigurationValidator.java`（`:31`） | `config/controller/ServiceTypeController.java`（`:54` 注入）· `router/factory/ComponentFactory.java`（`:32` 注入） | 服务/实例/负载均衡/限流/基础配置的校验（`:258` `validateLoadBalanceConfig`、`:281` `validateRateLimitConfig`、`:376` `validateInstanceConfig`、`:434` `validateSingleServiceConfig`、`:482` `validateBasicConfiguration`） |
+| `auth/security/config/SecurityConfigurationValidator.java`（`:24`） | `SecurityConfigurationManager`（`:220`）· `ImprovedSecurityConfigurationService`（`:137`）· `SecurityConfigurationBackupService`（`:64`） | 安全配置与备份的校验 |
+| `monitor/monitoring/config/MonitoringConfigurationValidator.java`（`:17`） | 监控配置保存路径 | 监控配置校验 |
+| `monitor/tracing/config/SamplingConfigurationValidator.java`（`:21`） | `TracingConfigManager`（`:182`）· `config/core/ConfigurationService.java`（`:122`） | 追踪采样规则校验 |
+
+各调用点如何处置校验结果（拒绝保存 / 返回错误 / 仅告警）由调用点自己决定，本页只做**清单**；
+逐条后果以各自 `javadoc` 与调用点代码为准。
+
+---
+
+## 三、如何禁用 / 如何开启严格模式
+
+```yaml
+# 关闭两个启动期校验器（不推荐：等于放弃启动期体检）
 jairouter:
   config:
     validation:
       enabled: false
+
+# 只开启严格模式（让敏感值体检的「错误」真正阻止启动）
+jairouter:
+  config:
+    validation:
+      strict-mode: true
 ```
 
-或使用环境变量：
+环境变量形态（Spring Boot 的宽松绑定，等价于上面的 YAML）：
+
 ```bash
-export JAiROUTER_CONFIG_VALIDATION_ENABLED=false
+export JAIRouter_CONFIG_VALIDATION_ENABLED=true
+export JAIRouter_CONFIG_VALIDATION_STRICT_MODE=true
 ```
+
+> ⚠️ 注意：`strict-mode` **只**影响 `SensitiveConfigValidator`。`ConfigIntegrityValidator` 的错误
+> 一直是「启动失败」，没有严格模式开关。
 
 ---
 
-## 自定义验证规则
+## 四、如何扩展（按**真实**形态）
 
-开发者可以通过实现 `ConfigurationValidationRule` 接口添加自定义验证规则。
-
-### 示例代码
+本仓**没有** `ConfigurationValidationRule` 之类的接口。要加一个启动期校验，照两个真实校验器做：
 
 ```java
 @Component
-public class CustomConfigurationValidator {
+public class MyConfigValidator implements ApplicationListener<ApplicationReadyEvent> {
 
-    @EventListener(ApplicationReadyEvent.class)
-    public void validateCustomConfig() {
-        // 添加自定义验证逻辑
-        String customConfig = System.getenv("CUSTOM_CONFIG");
-        if (customConfig != null) {
-            // 验证自定义配置
-            if (!isValid(customConfig)) {
-                log.error("自定义配置无效");
-            }
+    private static final Logger log = LoggerFactory.getLogger(MyConfigValidator.class);
+
+    @Value("${jairouter.config.validation.enabled:true}")
+    private boolean validationEnabled;
+
+    @Override
+    public void onApplicationEvent(ApplicationReadyEvent event) {
+        if (!validationEnabled) {
+            return;
         }
-    }
-    
-    private boolean isValid(String config) {
-        // 实现验证逻辑
-        return true;
+        // 自行收集 errors / warnings；要在错误时阻止启动，就抛异常（模板见 ConfigIntegrityValidator:107-112）
+        log.info("✓ 自定义校验完成");
     }
 }
 ```
 
----
+**要点**：
 
-## 最佳实践
-
-### 1. 开发环境
-```bash
-export RATE_LIMIT_CAPACITY=100
-export RATE_LIMIT_RATE=10
-export CIRCUIT_BREAKER_FAILURE_THRESHOLD=3
-export CIRCUIT_BREAKER_TIMEOUT=30000
-export JWT_EXPIRATION_MINUTES=60
-export SERVER_PORT=8080
-export SERVER_TOMCAT_THREADS_MAX=50
-```
-
-### 2. 生产环境
-```bash
-export RATE_LIMIT_CAPACITY=10000
-export RATE_LIMIT_RATE=500
-export CIRCUIT_BREAKER_FAILURE_THRESHOLD=10
-export CIRCUIT_BREAKER_TIMEOUT=60000
-export JWT_EXPIRATION_MINUTES=120
-export SERVER_PORT=8080
-export SERVER_TOMCAT_THREADS_MAX=200
-```
-
-### 3. 高性能环境
-```bash
-export RATE_LIMIT_CAPACITY=50000
-export RATE_LIMIT_RATE=2000
-export CIRCUIT_BREAKER_FAILURE_THRESHOLD=15
-export CIRCUIT_BREAKER_TIMEOUT=90000
-export JWT_EXPIRATION_MINUTES=240
-export SERVER_PORT=8080
-export SERVER_TOMCAT_THREADS_MAX=400
-```
+1. 用 `@Component` + `ApplicationListener<ApplicationReadyEvent>` 注册（本仓两个真实校验器都是这个形态）；
+2. 需要「错误即启动失败」时抛 `IllegalStateException`（`ConfigIntegrityValidator` 的做法）；
+   只提示不阻断就只 `log.warn`；
+3. 请**顺手读一下 `jairouter.config.validation.enabled`**，让总开关对自定义校验同样有效。
 
 ---
 
-## 故障排查
+## 五、排查
 
-### 问题：验证规则未生效
-
-**检查项**:
-1. 确认 `jairouter.config.validation.enabled` 为 `true`（默认值）
-2. 检查日志中是否有 "JAiRouter 配置验证" 输出
-3. 确认环境变量已正确设置
-
-### 问题：误报警告
-
-**解决方法**:
-1. 检查配置值是否确实合理
-2. 如确认配置无误，可通过调整警告阈值解决
-3. 或忽略警告（不影响启动）
-
-### 问题：配置错误但未阻止启动
-
-**说明**: 
-配置验证的目的是**提前发现问题**，而不是阻止启动。即使有错误，应用仍会启动，但可能运行时出现问题。
-
-**建议**:
-- 看到错误日志后立即修正配置
-- 在 CI/CD 流程中加入配置检查
-- 使用 Docker 环境变量强制注入正确配置
+| 现象 | 原因与处置 |
+|---|---|
+| 启动失败，日志里 `配置错误` 段列出条目 | `ConfigIntegrityValidator` 的 error 桶非空 —— 按条目修配置（`:108-111` 会给出条数） |
+| 启动失败，日志里 `敏感配置校验失败` | `strict-mode=true` 且 `SensitiveConfigValidator` 的 error 桶非空（缺 `JWT_SECRET` / 长度不足 / 硬编码值） |
+| 日志有 `⚠️` 但没有启动失败 | warning 桶只提示不阻断（两个校验器都是） |
+| 设置了 `JWT_SECRET` 却仍报「未设置」 | 该值通过 `${JWT_SECRET:}` 读**环境变量**；只在 YAML 里写等价属性不会命中它（生产门闩同理，见「与生产启动门闩的关系」） |
+| 改了环境变量但校验结果没变 | 两个校验器都只在 `ApplicationReadyEvent` 跑一次 ⇒ 需重启进程 |
+| 想把校验降级为提示 | 去掉 `strict-mode`（敏感值体检默认就只告警）；`ConfigIntegrityValidator` 的错误无法降级，只能改对配置或用 `enabled=false` 整体关闭 |
 
 ---
 
-## 相关文件
+## 相关代码
 
-- [应用配置](application-config.md) - 应用配置文件说明
+| 文件 | 作用 |
+|---|---|
+| `config/core/validator/ConfigIntegrityValidator.java` | 启动期完整性校验；错误 ⇒ 启动失败 |
+| `config/core/validator/SensitiveConfigValidator.java` | 启动期敏感值体检；默认只告警，严格模式下失败 |
+| `config/core/ConfigurationValidator.java` | 运行时配置校验（服务/实例/负载均衡/限流/基础） |
+| `auth/security/config/SecurityConfigurationValidator.java` | 安全配置与备份校验 |
+| `monitor/monitoring/config/MonitoringConfigurationValidator.java` | 监控配置校验 |
+| `monitor/tracing/config/SamplingConfigurationValidator.java` | 追踪采样规则校验 |
+| `auth/security/config/StartupSecurityGate.java` · `StartupSecretKeyChecker.java` | 生产 profile 的启动门闩（比上述体检更早、更严） |
 
----
+## 相关文档
 
-**文档版本**: v1.0  
-**最后更新**: 2026 年 4 月 16 日
+- [配置参考](index.md)
+- [部署 · 生产环境](../deployment/production.md)
+- [故障排查 · 常见问题](../troubleshooting/common-issues.md)
