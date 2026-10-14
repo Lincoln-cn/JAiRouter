@@ -1846,14 +1846,16 @@
     },
     "docs/zh/configuration/validation-rules.md": {
       "FilePath": "docs/zh/configuration/validation-rules.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-09-18T11:16:41.890331",
-      "ContentHash": "19c0f30e8a1577e8",
-      "GitCommit": "14420877",
-      "Author": "Lincoln",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-14T15:58:14.832139",
+      "ContentHash": "1449ba1218c468fd",
+      "GitCommit": "359643cc",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
-        "docs/zh/configuration/application-config.md"
+        "docs/zh/configuration/index.md",
+        "docs/zh/deployment/production.md",
+        "docs/zh/troubleshooting/common-issues.md"
       ]
     },
     "docs/zh/deployment/docker-optimized.md": {
@@ -2034,14 +2036,16 @@
     },
     "docs/en/configuration/validation-rules.md": {
       "FilePath": "docs/en/configuration/validation-rules.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-09-18T11:16:28.858996",
-      "ContentHash": "5bacc9a9b3ea247a",
-      "GitCommit": "14420877",
-      "Author": "Lincoln",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-14T15:58:14.361802",
+      "ContentHash": "7b53d4a3d9f92f78",
+      "GitCommit": "359643cc",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
-        "docs/en/configuration/application-config.md"
+        "docs/en/configuration/index.md",
+        "docs/en/deployment/production.md",
+        "docs/en/troubleshooting/common-issues.md"
       ]
     },
     "docs/en/security/audit-log-management.md": {
@@ -8162,7 +8166,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-14T15:01:33.644782",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/validation-rules.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-14T15:58:14.361812",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/validation-rules.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-14T15:58:14.832148",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-14T15:01:33.928197"
+  "last_updated": "2026-10-14T15:58:15.196037"
 }
