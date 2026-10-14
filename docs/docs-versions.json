@@ -814,10 +814,10 @@
     },
     "docs/zh/deployment/index.md": {
       "FilePath": "docs/zh/deployment/index.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-14T14:39:54.539038",
-      "ContentHash": "a918a6e6ad641bd4",
-      "GitCommit": "98b5e27a",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-14T18:37:26.547607",
+      "ContentHash": "dd5d62d7784ac257",
+      "GitCommit": "b18c00ec",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -8266,7 +8266,15 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-14T18:18:15.295374",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/index.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-14T18:37:26.547619",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-14T18:27:52.309576"
+  "last_updated": "2026-10-14T18:37:27.091042"
 }
