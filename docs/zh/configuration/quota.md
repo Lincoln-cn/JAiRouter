@@ -193,7 +193,8 @@ GET /api/monitoring/quota/usage    # 用量查询
 | `config:quota:write` | 配额运行时配置更新 |
 | `monitoring:quota:read` | 配额运行状态与用量查询 |
 
-`ADMIN` 角色默认包含全部权限码；`OPERATOR` 角色包含读/写权限码；`VIEWER` 角色包含读权限码。
+`ADMIN` 角色默认包含全部权限码；`OPERATOR` 角色包含读/写权限码（**不含** `system:*`、`security:*:manage`
+与 `actuator:*`）；`VIEWER` 角色包含读权限码。角色模板的唯一定义见 `RolePermissionSeeder`。
 
 ## 限制与后续
 
