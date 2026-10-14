@@ -310,6 +310,22 @@ kubectl create secret generic tracing-config \
 
 ### Real-time Performance Monitoring
 
+🔑 **Admin credentials are required****: the `/actuator/**` calls below go through the **normal authentication chain** — only
+> `/actuator/health` (including the `liveness` / `readiness` sub-paths), `/actuator/info` and
+> `/actuator/prometheus` are anonymous (for k8s probes and Prometheus scraping); everything else needs the
+> ADMIN role. **Without credentials you get `401 AUTH_MISSING`.**
+> (Before the fix even a valid ADMIN JWT got 401: the auth chain was excluded while `hasRole("ADMIN")` was
+> still required, so the two cancelled out — see issue #340.)
+>
+> Fetch a JWT and call the endpoint (verified locally):
+>
+> ```bash
+> TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/jwt/login \
+>   -H 'Content-Type: application/json' \
+>   -d '{"username":"admin","password":"<your admin password>"}' | jq -r .data.token)
+> curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
+> ```
+
 ```bash
 # Monitoring script example
 #!/bin/bash

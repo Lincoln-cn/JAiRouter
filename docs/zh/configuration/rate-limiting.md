@@ -551,6 +551,20 @@ curl "http://localhost:8080/api/rate-limiter/summary"
 
 ### 监控指标
 
+🔑 **这些运维端点需要管理员凭据**：下列 `/actuator/**` 调用走**正常认证链** —— 只有 `/actuator/health`（含
+> `liveness` / `readiness` 子路径）、`/actuator/info`、`/actuator/prometheus` 允许匿名（供 k8s 探针与
+> Prometheus 抓取），其余都需要 ADMIN 角色。**不带凭据会得到 `401 AUTH_MISSING`。**
+> （修复前即使带了 ADMIN JWT 也会 401：认证链被整段排除，与 `hasRole("ADMIN")` 互相抵消，见 issue #340。）
+>
+> 取 JWT 与调用示例（本机实测通过）：
+>
+> ```bash
+> TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/jwt/login \
+>   -H 'Content-Type: application/json' \
+>   -d '{"username":"admin","password":"<你的管理员密码>"}' | jq -r .data.token)
+> curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
+> ```
+
 ```bash
 # 限流事件（允许/拒绝）
 curl "http://localhost:8080/actuator/metrics/jairouter_rate_limit_events_total"
