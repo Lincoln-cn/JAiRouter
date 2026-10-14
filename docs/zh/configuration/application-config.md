@@ -29,6 +29,8 @@ config/
 ├── common/              # 公共基础设施
 │   ├── server.yml       # 服务器配置
 │   ├── webclient.yml    # WebClient 配置
+│   ├── cluster.yml      # 多副本（集群）配置
+│   ├── scheduling.yml   # 定时任务配置
 │   └── logging.yml      # 日志配置
 ├── config-service/      # 配置服务
 │   └── core.yml         # ConfigurationService 设置
@@ -38,6 +40,8 @@ config/
 │   ├── ratelimit.yml    # 限流配置
 │   ├── circuitbreaker.yml # 熔断器配置
 │   ├── fallback.yml     # 降级配置
+│   ├── pools.yml        # 资源池配置
+│   ├── rules.yml        # 路由规则配置
 │   └── services.yml     # 服务实例配置
 ├── auth/                # 认证服务
 │   ├── jwt.yml          # JWT 认证配置

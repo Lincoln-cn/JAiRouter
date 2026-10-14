@@ -29,6 +29,8 @@ config/
 ├── common/              # Common infrastructure
 │   ├── server.yml       # Server configuration
 │   ├── webclient.yml    # WebClient configuration
+│   ├── cluster.yml      # Multi-replica (cluster) configuration
+│   ├── scheduling.yml   # Scheduled task configuration
 │   └── logging.yml      # Logging configuration
 ├── config-service/      # Configuration service
 │   └── core.yml         # ConfigurationService settings
@@ -38,6 +40,8 @@ config/
 │   ├── ratelimit.yml    # Rate limiting configuration
 │   ├── circuitbreaker.yml # Circuit breaker configuration
 │   ├── fallback.yml     # Fallback configuration
+│   ├── pools.yml        # Resource pool configuration
+│   ├── rules.yml        # Routing rule configuration
 │   └── services.yml     # Service instance configuration
 ├── auth/                # Authentication service
 │   ├── jwt.yml          # JWT authentication configuration
