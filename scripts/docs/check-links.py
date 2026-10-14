@@ -3,6 +3,17 @@
 """
 文档链接检查脚本
 检查文档中的所有链接，生成详细的检查报告
+
+issue #358：本脚本是**唯一**能让 workflow 变红的链接门闩（同 workflow 里的第三方工具
+`tcort/github-action-markdown-link-check` 带 `continue-on-error: true`）。而它此前把
+**目标站点侧的偶发 5xx** 也判为「无效链接」⇒ master 会随机变红（实测：
+`https://github.com/Lincoln-cn/JAiRouter/blob/master/LICENSE` 偶发 HTTP 503），
+进而训练出「红了就重跑」。现在的口径：
+
+* **4xx（除 403/429）** = 链接不存在 ⇒ 判红（这是门闩真正要抓的东西）；
+* **5xx / 连接失败 / 超时** = 目标站点侧失败 ⇒ 先**重试**（默认 2 次，间隔递增）；
+* 重试后仍失败时：URL 命中 `TOLERATED_FLAKY_URL_PREFIXES`（已登记的抖动源）⇒ 记为**警告**，不判红；
+  否则仍判红（保留门闩的牙齿），并在报告里写明「目标站点侧失败、已重试 N 次」。
 """
 
 import os
@@ -18,14 +29,33 @@ from typing import List, Dict, Tuple, Set
 from urllib.parse import urljoin, urlparse
 import argparse
 
+# 已登记的「站点侧偶发失败」URL 前缀（issue #358）。
+# 判据 = ① 我们无法通过改文档修复它；② 历史上真的抖动过（有 run 记录与 issue 留痕）。
+# 按**前缀**而不是按主机登记，避免把整个 github.com 都放过。
+TOLERATED_FLAKY_URL_PREFIXES = (
+    "https://jairouter.com/",
+    "https://lincoln-cn.github.io/JAiRouter",
+    "https://github.com/Lincoln-cn/JAiRouter/blob/master/LICENSE",
+)
+
+# 第 2、3 次尝试前的等待（秒）；超出长度的重试沿用最后一个值。
+RETRY_BACKOFF_SECONDS = (1.0, 3.0)
+
 
 class LinkChecker:
     def __init__(
-        self, base_dir: str = "docs", output_file: str = "link-check-report.json"
+        self,
+        base_dir: str = "docs",
+        output_file: str = "link-check-report.json",
+        retries: int = 2,
+        timeout: int = 30,
     ):
         self.base_dir = Path(base_dir)
         self.output_file = output_file
         self.checked_urls: Set[str] = set()
+        self.retries = max(0, retries)
+        self.timeout = timeout
+        self.tolerated_flaky_prefixes = TOLERATED_FLAKY_URL_PREFIXES
         self.results = {
             "timestamp": datetime.now().isoformat(),
             "summary": {
@@ -33,10 +63,12 @@ class LinkChecker:
                 "total_links": 0,
                 "valid_links": 0,
                 "invalid_links": 0,
+                "transient_links": 0,
                 "skipped_links": 0,
             },
             "files": [],
             "invalid_links": [],
+            "transient_links": [],
             "skipped_patterns": [],
         }
 
@@ -226,42 +258,77 @@ class LinkChecker:
         except Exception:
             return False
 
-    def check_external_link(self, url: str) -> Tuple[bool, str]:
-        """检查外部链接（HTTP/HTTPS）"""
-        if url in self.checked_urls:
-            return True, "已检查过"
+    def _is_tolerated_flaky(self, url: str) -> bool:
+        """是否属于「已登记的站点侧抖动源」（issue #358）"""
+        return any(url.startswith(prefix) for prefix in self.tolerated_flaky_prefixes)
 
+    def _probe_external_link(self, url: str) -> Tuple[str, str]:
+        """单次探测，返回 (kind, message)；kind ∈ {"ok", "invalid", "transient"}"""
         try:
             req = urllib.request.Request(url, headers=self.headers)
-            with urllib.request.urlopen(req, timeout=30) as response:
+            with urllib.request.urlopen(req, timeout=self.timeout) as response:
                 status_code = response.getcode()
-                self.checked_urls.add(url)
-                if status_code in [
-                    200,
-                    301,
-                    302,
-                    403,
-                ]:  # 403 可能是防爬虫，但链接可能有效
-                    return True, f"HTTP {status_code}"
-                else:
-                    return False, f"HTTP {status_code}"
+                if status_code in [200, 301, 302, 403]:  # 403 可能是防爬虫，但链接可能有效
+                    return "ok", f"HTTP {status_code}"
+                if 500 <= status_code <= 599:
+                    return "transient", f"HTTP {status_code}"
+                return "invalid", f"HTTP {status_code}"
 
         except urllib.error.HTTPError as e:
-            self.checked_urls.add(url)
-            if e.code in [403, 429]:  # 可能是防爬虫
-                return True, f"HTTP {e.code} (可能被防爬虫保护)"
-            return False, f"HTTP {e.code}"
+            if e.code in [403, 429]:  # 可能是防爬虫 / 限流
+                return "ok", f"HTTP {e.code} (可能被防爬虫保护)"
+            if 500 <= e.code <= 599:
+                return "transient", f"HTTP {e.code}"
+            return "invalid", f"HTTP {e.code}"
 
         except urllib.error.URLError as e:
-            self.checked_urls.add(url)
-            return False, f"URL错误: {e.reason}"
+            return "transient", f"URL错误: {e.reason}"
 
-        except Exception as e:
-            self.checked_urls.add(url)
-            return False, f"检查失败: {str(e)}"
+        except Exception as e:  # 超时等
+            return "transient", f"检查失败: {str(e)}"
 
-    def check_link(self, url: str, current_file: Path) -> Tuple[bool, str]:
-        """检查单个链接"""
+    def check_external_link(self, url: str) -> Tuple[bool, str, bool]:
+        """检查外部链接（HTTP/HTTPS）。
+
+        issue #358：5xx / 连接失败先重试 ``self.retries`` 次；重试后仍失败时，
+        只有**已登记的抖动源**降级为警告（第三个返回值为 True），其余仍判红。
+
+        :return: (is_valid, message, is_transient_warning)
+        """
+        if url in self.checked_urls:
+            return True, "已检查过", False
+
+        attempts = 0
+        kind, message = "invalid", ""
+        while attempts <= self.retries:
+            attempts += 1
+            kind, message = self._probe_external_link(url)
+            if kind != "transient":
+                break
+            if attempts <= self.retries:
+                backoff = RETRY_BACKOFF_SECONDS[
+                    min(attempts - 1, len(RETRY_BACKOFF_SECONDS) - 1)
+                ]
+                time.sleep(backoff)
+
+        self.checked_urls.add(url)
+        if attempts > 1:
+            message = f"{message}（已重试 {attempts - 1} 次）"
+
+        if kind == "ok":
+            return True, message, False
+        if kind == "transient" and self._is_tolerated_flaky(url):
+            return False, f"{message} —— 目标站点侧失败，且属已登记的抖动源（#358），记为警告", True
+        if kind == "transient":
+            return False, (
+                f"{message} —— 目标站点侧失败（重试后仍失败）。"
+                f"若确认是站点侧抖动、不是文档链接写错，请把该 URL 前缀登记到 "
+                f"TOLERATED_FLAKY_URL_PREFIXES（issue #358）"
+            ), False
+        return False, message, False
+
+    def check_link(self, url: str, current_file: Path) -> Tuple[bool, str, bool]:
+        """检查单个链接，返回 (is_valid, message, is_transient_warning)"""
         # 清理 URL
         url = url.strip()
 
@@ -272,7 +339,7 @@ class LinkChecker:
             return self.check_external_link(url)
         else:
             is_valid = self.check_internal_link(clean_url, current_file)
-            return is_valid, "内部链接" if is_valid else "文件不存在"
+            return is_valid, "内部链接" if is_valid else "文件不存在", False
 
     def check_file(self, file_path: Path) -> Dict:
         """检查单个文件中的所有链接"""
@@ -287,7 +354,7 @@ class LinkChecker:
         file_result = {
             "file": relative_path,
             "links": [],
-            "summary": {"total": 0, "valid": 0, "invalid": 0, "skipped": 0},
+            "summary": {"total": 0, "valid": 0, "invalid": 0, "transient": 0, "skipped": 0},
         }
 
         links = self.extract_links_from_file(file_path)
@@ -306,12 +373,19 @@ class LinkChecker:
                 )
                 continue
 
-            is_valid, message = self.check_link(url, file_path)
+            is_valid, message, is_transient = self.check_link(url, file_path)
+
+            if is_valid:
+                status = "valid"
+            elif is_transient:
+                status = "transient"
+            else:
+                status = "invalid"
 
             link_result = {
                 "url": url,
                 "line": line_num,
-                "status": "valid" if is_valid else "invalid",
+                "status": status,
                 "message": message,
             }
 
@@ -320,6 +394,17 @@ class LinkChecker:
             if is_valid:
                 file_result["summary"]["valid"] += 1
                 print(f"  ✅ {url}")
+            elif is_transient:
+                file_result["summary"]["transient"] += 1
+                print(f"  ⚠️  {url} - {message}")
+                self.results["transient_links"].append(
+                    {
+                        "file": relative_path,
+                        "url": url,
+                        "line": line_num,
+                        "message": message,
+                    }
+                )
             else:
                 file_result["summary"]["invalid"] += 1
                 print(f"  ❌ {url} - {message}")
@@ -376,6 +461,9 @@ class LinkChecker:
             self.results["summary"]["invalid_links"] += file_result["summary"][
                 "invalid"
             ]
+            self.results["summary"]["transient_links"] += file_result["summary"][
+                "transient"
+            ]
             self.results["summary"]["skipped_links"] += file_result["summary"][
                 "skipped"
             ]
@@ -390,7 +478,20 @@ class LinkChecker:
         print(f"  🔗 链接总数: {summary['total_links']}")
         print(f"  ✅ 有效链接: {summary['valid_links']}")
         print(f"  ❌ 无效链接: {summary['invalid_links']}")
+        print(f"  ⚠️  抖动源警告: {summary.get('transient_links', 0)}")
         print(f"  ⏭️  跳过链接: {summary['skipped_links']}")
+
+        if summary.get("transient_links", 0) > 0:
+            print(
+                f"\n⚠️  有 {summary['transient_links']} 个链接属于**已登记的站点侧抖动源**"
+                f"（重试后仍失败，不计为文档缺陷，故不影响退出码；详见报告）："
+            )
+            for transient_link in self.results.get("transient_links", []):
+                print(
+                    f"  - {transient_link['file']}:{transient_link['line']} - "
+                    f"{transient_link['url']}"
+                )
+                print(f"    说明: {transient_link['message']}")
 
         if summary["invalid_links"] > 0:
             print(f"\n❌ 发现 {summary['invalid_links']} 个无效链接:")
@@ -423,10 +524,21 @@ def main():
     parser.add_argument(
         "--fail-on-error", action="store_true", help="发现无效链接时退出码为1"
     )
+    parser.add_argument(
+        "--retries",
+        type=int,
+        default=2,
+        help="5xx/连接失败的重试次数（默认 2；issue #358）",
+    )
+    parser.add_argument(
+        "--timeout", type=int, default=30, help="单个请求的超时秒数（默认 30）"
+    )
 
     args = parser.parse_args()
 
-    checker = LinkChecker(args.dir, args.output)
+    checker = LinkChecker(
+        args.dir, args.output, retries=args.retries, timeout=args.timeout
+    )
     success = checker.run()
 
     if args.fail_on_error and not success:
