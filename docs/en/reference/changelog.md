@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.3.0
-> **Last Updated**: 2026-10-07
+> **Document Version**: 3.3.1
+> **Last Updated**: 2026-10-14
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,59 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.3.1] - 2026-10-14 - Patch Release (Audit Remediation: Event-Loop Blocking, SSRF Connect-Time Pinning, Usage Ownership, Alert Wiring)
+
+> **This is a back-cut release**: its content is the **2026-10-10 to 10-11 batch** that landed after
+> `v3.3.0` (cut point `ea2b7bc2`), i.e. **24 substantive changes** (4 frontend dependency bumps,
+> 1 documentation comment fix and 19 audit-remediation items). Everything that landed after that batch
+> (streaming error semantics fidelity, config honesty close-out, docs and tooling batch) ships in **`v3.3.2`**.
+> It therefore does **not** represent the state of `master` at release time.
+
+#### Event loop and blocking (availability)
+
+- API key usage accounting no longer blocks the event loop when writing to the database (#267)
+- Error reporting persistence no longer blocks the event loop (#268), so an incident no longer amplifies latency
+- JWT blacklist cache synchronization now performs **batched checks outside the lock** instead of blocking Redis per entry (#273)
+- The tracing `TRACING_APPENDER` is now attached through an `AsyncAppender` (#279)
+
+#### Security
+
+- Outbound validation now **pins the resolved address to the connection**, closing the DNS-rebinding bypass (#282)
+- Two services that built their own `WebClient` now share `WebClientPool`, so the outbound guard covers them too (#284)
+- `/api/token-usage/record` now **enforces ownership** on writes and rejects cross-subject reports (#280)
+- `SecurityAlertService` is wired into the authentication-failure path — before this it had **zero callers**,
+  so none of its four security alerts ever fired (#277)
+
+#### Security alerts and audit semantics
+
+- Alert criteria are aligned with audit event types and counting moved down to the storage side (#286)
+- Alert output is consolidated to **metrics + structured logs**, and window aggregation is driven by an exclusive scheduled job (#293)
+- The security-alert configuration surface is unified; duplicate implementations and a "configured but never read" notification block were removed (#294)
+- The overview page now returns the **real 24-hour security alert count** (#296)
+
+#### Console and tracing
+
+- The tracing dashboard trend charts now use real statistics instead of random placeholder data (#269)
+- The playground stream parser now buffers **residual lines across chunks**, so long answers no longer lose characters (#270)
+- The tracing search page shows an empty state on failure instead of placeholder trace data (#271)
+- The streaming path no longer prints response content to the console, and cancellation is now propagated (#274)
+
+#### Cleanup and corrections
+
+- Removed the unreachable `ApiKeyAuthenticationProvider` and `AuthenticationEventListener` (#275)
+- Removed the unreferenced `useChatRequest` (#278)
+- Corrected the `StatePersistenceManagement` comment that contradicted the implementation (#272)
+- Corrected the circuit-breaker instance-identifier comment that stated the opposite of the code (#251)
+- Frontend dependency bumps: axios 1.18.0 → 1.20.0 (#173), postcss-selector-parser 7.1.4 → 7.1.6 (#225),
+  source-map-js 1.2.1 → 1.2.2 (#226), brace-expansion 5.0.9 → 5.0.12 (#252)
+
+> **Breaking changes**: none to public APIs or routes. Four **intentional behavior changes**:
+> (1) **security alerts start firing for real** — with zero callers before this release none of the four
+> alerts ever fired, so operators will newly see the alert metric (`jairouter.security.violations`) and WARN logs;
+> (2) cross-subject usage reports to `/api/token-usage/record` are now rejected;
+> (3) the latency profile of the write paths above changes (from synchronous on the event loop to asynchronous/batched);
+> (4) outbound SSRF validation is stricter (the resolved address is pinned to the connection).
 
 ### [3.3.0] - 2026-10-07 - Minor Release (PostgreSQL & Versioned Migration, Multi-Replica Cluster, Config Honesty)
 
