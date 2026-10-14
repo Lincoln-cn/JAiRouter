@@ -1,9 +1,9 @@
 # Roadmap
 
 <!-- 版本信息 -->
-> **Doc Version**: 2.2.0
-> **Last Updated**: 2026-10-07
-> **Git Tag**: v3.3.0
+> **Doc Version**: 2.2.1
+> **Last Updated**: 2026-10-14
+> **Git Tag**: v3.3.1
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -23,6 +23,20 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 - **Observability**: Comprehensive monitoring, logging, and distributed tracing
 
 ## Current Version Status
+
+### ✅ v3.3.1 (Patch: Audit Remediation — Event-Loop Blocking / SSRF Connect-Time Pinning / Usage Ownership / Alert Wiring, released 2026-10-14)
+
+**Status**: Released (Git tag / GitHub Release `v3.3.1`; the Docker image is rebuilt by CI on release)
+**Scope**: the 2026-10-10 ~ 10-11 batch that landed after `v3.3.0` (**back-cut release**, cut point `ea2b7bc2`),
+24 substantive changes; everything after that batch ships in `v3.3.2` — see the [changelog](changelog.md#331---2026-10-14)
+
+| Area | Delivered |
+|------|-----------|
+| Event loop & blocking | API key usage accounting (#267) and error-report persistence (#268) moved off the event loop; JWT blacklist sync batched outside the lock (#273); `TRACING_APPENDER` attached via `AsyncAppender` (#279) |
+| Security | Outbound resolved address pinned to the connection, closing DNS rebinding (#282); two self-built `WebClient` instances consolidated into the pool (#284); usage writes enforce ownership (#280); `SecurityAlertService` wired into the authentication-failure path (#277, it had zero callers before) |
+| Security alerts & audit | Criteria aligned with audit event types with counting pushed to storage (#286); output consolidated to metrics + structured logs with an exclusive scheduled driver (#293); configuration surface unified and duplicate implementations removed (#294); the overview page now returns the real 24-hour alert count (#296) |
+| Console & tracing | Trend charts use real statistics (#269); playground buffers residual lines across chunks (#270); search page shows an empty state on failure (#271); streaming no longer prints response content and supports cancellation (#274) |
+| Cleanup & dependencies | Removed the unreachable `ApiKeyAuthenticationProvider` / `AuthenticationEventListener` (#275) and the unreferenced `useChatRequest` (#278); two comments realigned with the implementation (#272, #251); 4 frontend dependency bumps (#173/#225/#226/#252) |
 
 ### ✅ v3.3.0 (Minor: PostgreSQL & Versioned Migration + Multi-Replica Cluster + Config Honesty, released 2026-10-07)
 
@@ -100,6 +114,9 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 | v3.1.2 | 2026-09-18 | Docker/startup patch: `JWT_SECRET` env unification, `--generate-key` fix, image frontend static/admin path, Redis health conditional |
 | v3.2.0 | 2026-09-19 | PII sanitization management (console + `/api/config/sanitization/**` + `sanitizeForStorage`) + quota monitoring limit/progress UX + vitest/page-smoke TDD foundation + excluded-path alignment (PRs #60/#64/#65) |
 | v3.2.1 | 2026-09-21 | Audit remediation patch: Reactor/SSE de-blocking + quota TOCTOU & Redis Lua CAS + spurious 401 fix + tracing chain double-execution fix + JWT blacklist degradation convergence + production fail-fast + SSRF guard + RBAC/debug-endpoint tightening + user-regex ReDoS hardening (PRs #67–#72, #78–#81) |
+| v3.3.1 | 2026-10-14 | Audit remediation patch (**back-cut release**, cut point `ea2b7bc2`): API key usage accounting (#267) and error-report persistence (#268) moved off the event loop + JWT blacklist batched sync (#273) + `TRACING_APPENDER` async attachment (#279) + SSRF resolved-address pinning (#282) + outbound clients consolidated into a pool (#284) + usage-write ownership (#280) + `SecurityAlertService` wired in (#277) + alert criteria/output/config-surface close-out (#286/#293/#294/#296) + console and tracing placeholder data removed (#269–#274) + dead code removed (#275/#278) + 4 frontend dependency bumps |
+| v3.3.0 | 2026-10-07 | PostgreSQL and versioned migration (PG on `ddl-auto: validate`, H2 joins in, both startup patch components deleted) + multi-replica cluster (cross-replica event broadcast and rate-limit counting, shared-state self-check, per-class scheduled jobs) + RBAC closed out to fail-closed GETs + four batches of tracing config honesty + Kustomize/json-logs deployment artifacts + documentation facts corrected (#160–#248) |
+| v3.2.2 | 2026-09-22 | User-reported fixes: API key quota echo (#84) and routing-monitor count +3 (#83) + quota endpoint `block` failure (#92) + management failures moved from HTTP 200 to 4xx/5xx (#94, response body compatible) + tightened e2e assertions (#95) + unified alert thresholds `[0.05,1]` (#96) + monitoring error codes (#98) (PRs #90/#91/#93/#97/#99) |
 
 #### Statistics
 - Test count: 3,517 (all green)
