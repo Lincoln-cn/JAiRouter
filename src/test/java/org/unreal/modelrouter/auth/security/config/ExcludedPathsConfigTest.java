@@ -79,6 +79,36 @@ class ExcludedPathsConfigTest {
         assertFalse(ExcludedPathsConfig.isAuthExcluded("/api/health-status/stream"));
     }
 
+    // ------------------------------------------------------------------ issue #340
+
+    @ParameterizedTest(name = "[{index}] 匿名放行清单必须仍排除认证: {0}")
+    @ValueSource(strings = {
+            "/actuator/health",
+            "/actuator/health/liveness",
+            "/actuator/health/readiness",
+            "/actuator/info",
+            "/actuator/prometheus"
+    })
+    void anonymousOpsPaths_stayAuthExcluded(String path) {
+        assertTrue(ExcludedPathsConfig.isAuthExcluded(path),
+                path + " 必须保持匿名可访问（k8s 探针无凭据 / Prometheus 抓取）");
+    }
+
+    @ParameterizedTest(name = "[{index}] 其余 /actuator/** 不得排除认证: {0}")
+    @ValueSource(strings = {
+            "/actuator/metrics",
+            "/actuator/metrics/status",
+            "/actuator/metrics/performance",
+            "/actuator/jwt-persistence-health"
+    })
+    void otherActuatorPaths_mustNotBeAuthExcluded(String path) {
+        // issue #340：这些端点此前被**整段**排除在认证之外，而 SecurityConfiguration 又要求
+        // ROLE_ADMIN ⇒ 两者互相抵消（带 ADMIN JWT 也是 AUTH_MISSING/401，文档里的 curl 全都跑不通）。
+        // 现在它们走正常认证链，管理面 JWT 才能满足 hasRole("ADMIN")。
+        assertFalse(ExcludedPathsConfig.isAuthExcluded(path),
+                path + " 必须走认证链，否则「要求 ROLE_ADMIN」与「排除认证」会互相抵消（issue #340）");
+    }
+
     @Test
     @DisplayName("设计说明：记录侧脱敏不依赖本过滤器排除列表")
     void recordSideSanitization_isIndependentOfExcludedPaths() {

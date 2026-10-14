@@ -50,8 +50,13 @@ public class ExcludedPathsConfig {
     static {
         // 认证排除路径 - 使用Set.of创建不可变集合（Java 9+）
         // R3-P1：Swagger / api-docs 不再默认排除，由 docs-public 开关控制
+        //
+        // issue #340：此前这里还有 "/actuator/"，而 AUTH_EXCLUDED_PATTERNS 里还有 "/actuator/**"。
+        // 两处一起把整个 /actuator/** 从**认证链**里摘掉，可 SecurityConfiguration 又要求
+        // hasRole("ADMIN") ⇒ **带 ADMIN JWT 也进不去**（响应体是 AUTH_MISSING，即「认证没建立」）。
+        // 现在只排除**匿名放行清单**（与 AnonymousEndpointPaths.HEALTH_AND_OPS 同一份：健康探针 /
+        // info / prometheus），其余 /actuator/** 走正常认证链，于是管理面 JWT 能真正满足 ROLE_ADMIN。
         AUTH_EXCLUDED_PATHS = Set.of(
-            "/actuator/",
             "/health",
             "/metrics",
             "/api/auth/jwt/login",
@@ -60,11 +65,10 @@ public class ExcludedPathsConfig {
             "/.well-known"
         );
 
-        // 认证排除路径模式
-        AUTH_EXCLUDED_PATTERNS = List.of(
-            "/actuator/**",
-            "/admin/**"
-        );
+        // 认证排除路径模式：匿名放行清单（健康探针 / info / prometheus） + 控制台静态资源
+        AUTH_EXCLUDED_PATTERNS = java.util.stream.Stream
+            .concat(AnonymousEndpointPaths.HEALTH_AND_OPS.stream(), java.util.stream.Stream.of("/admin/**"))
+            .toList();
         
         // 数据脱敏排除路径（ResponseSanitizationFilter 网关响应过滤器）
         //
