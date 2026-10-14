@@ -37,7 +37,7 @@
       "Dependencies": [
         "docs/en/security/data-sanitization.md"
       ],
-      "ReviewedAt": "2026-10-15T01:34:43.260481"
+      "ReviewedAt": "2026-10-15T01:40:49.130034"
     },
     "docs/en/api-reference/openapi-spec.md": {
       "FilePath": "docs/en/api-reference/openapi-spec.md",
@@ -61,10 +61,10 @@
     },
     "docs/en/configuration/application-config.md": {
       "FilePath": "docs/en/configuration/application-config.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-13T12:30:36.755253",
-      "ContentHash": "43e8428497b25ca7",
-      "GitCommit": "e2ca4403",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-14T17:31:03.920255",
+      "ContentHash": "6803583c8b4bc178",
+      "GitCommit": "b04ee106",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -658,7 +658,7 @@
         "docs/zh/api-reference/error-codes.md",
         "docs/zh/security/data-sanitization.md"
       ],
-      "ReviewedAt": "2026-10-15T01:34:43.260481"
+      "ReviewedAt": "2026-10-15T01:40:49.130034"
     },
     "docs/zh/api-reference/openapi-spec.md": {
       "FilePath": "docs/zh/api-reference/openapi-spec.md",
@@ -682,10 +682,10 @@
     },
     "docs/zh/configuration/application-config.md": {
       "FilePath": "docs/zh/configuration/application-config.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-13T12:30:37.173301",
-      "ContentHash": "f7c818eaf0bee93b",
-      "GitCommit": "e2ca4403",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-14T17:31:04.429985",
+      "ContentHash": "5b0d685facb8761c",
+      "GitCommit": "b04ee106",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -8234,7 +8234,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-14T16:58:29.558300",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/application-config.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-14T17:31:03.920269",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/application-config.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-14T17:31:04.429996",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-15T01:34:43.261482"
+  "last_updated": "2026-10-15T01:40:49.130034"
 }
