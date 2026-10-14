@@ -23,6 +23,13 @@ import java.util.List;
  *   <li>INITIAL_ADMIN_PASSWORD - 初始管理员密码</li>
  *   <li>GPUSTACK_API_TOKEN - 模型服务 API Token（如使用 GPUStack）</li>
  * </ul>
+ *
+ * <h3>两个桶的语义（issue #381 起）：</h3>
+ * <ul>
+ *   <li><b>warnings</b>：一律打印；</li>
+ *   <li><b>errors</b>：**一律打印**（打印与阻断解耦），但**只有 {@code strict-mode=true} 才阻断启动</b>
+ *       —— 此前 errors 在非严格模式下既不打印也不阻断，错误级发现对运维不可见。</li>
+ * </ul>
  */
 @Component
 @ConditionalOnProperty(name = "jairouter.config.validation.enabled", havingValue = "true", matchIfMissing = true)
@@ -64,10 +71,16 @@ public class SensitiveConfigValidator implements ApplicationListener<Application
             log.warn("====== 警告结束 ======");
         }
 
-        if (!errors.isEmpty() && strictMode) {
+        // issue #381：错误桶**一律打印**（打印与阻断解耦）。
+        // 此前 errors 只在 strictMode 下才被处理 ⇒ 默认模式（strict-mode=false）里
+        // 「JWT_SECRET 看起来是硬编码值」这类错误级发现既不打印也不阻断，运维完全看不到。
+        if (!errors.isEmpty()) {
             log.error("====== 配置错误 ======");
             errors.forEach(e -> log.error("  ❌ {}", e));
             log.error("====== 错误结束 ======");
+        }
+
+        if (!errors.isEmpty() && strictMode) {
             throw new IllegalStateException("敏感配置校验失败，应用无法启动。请设置必要的环境变量。");
         }
     }
