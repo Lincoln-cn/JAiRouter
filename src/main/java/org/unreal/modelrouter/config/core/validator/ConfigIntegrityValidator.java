@@ -16,31 +16,21 @@ import java.util.List;
  *
  * <p>v2.8.7 新增：配置校验机制</p>
  *
- * <h3>校验规则：</h3>
+ * <h3>校验规则（与实现逐条对齐；取值集合见各 {@code validate*} 方法）：</h3>
  * <ul>
- *   <li>服务器端口：1-65535 范围</li>
- *   <li>负载均衡类型：round-robin, weighted, least-connections, ip-hash</li>
- *   <li>限流算法：token-bucket, sliding-window</li>
- *   <li>熔断器阈值：failureThreshold > 0, timeout > 0</li>
- *   <li>存储类型：jpa, redis</li>
+ *   <li>服务器端口：1-65535 范围（否则错误）；{@code < 1024} 记警告（特权端口）</li>
+ *   <li>负载均衡类型：round-robin, weighted, least-connections, ip-hash, random</li>
+ *   <li>限流算法（{@code model.rate-limit.enabled=true} 时）：token-bucket, sliding-window, fixed-window</li>
+ *   <li>熔断器（{@code model.circuit-breaker.enabled=true} 时）：failureThreshold &gt; 0（&gt; 100 记警告）、
+ *       timeout &gt; 0（&gt; 300000ms 记警告）</li>
+ *   <li>存储类型：jpa, redis, memory, h2</li>
+ *   <li>告警项：{@code monitoring.enabled=false}、{@code jairouter.tracing.enabled=false}</li>
  * </ul>
+ *
+ * <p><b>失败语义</b>：error 非空 ⇒ 抛 {@code IllegalStateException} ⇒ 应用启动失败；warning 只打日志。
+ * 用户文档见 {@code docs/{zh,en}/configuration/validation-rules.md}。</p>
  */
 
-/**
- * 配置完整性校验器
- * 校验各模块配置的完整性和正确性
- *
- * <p>v2.8.7 新增：配置校验机制</p>
- *
- * <h3>校验规则：</h3>
- * <ul>
- *   <li>服务器端口：1-65535 范围</li>
- *   <li>负载均衡类型：round-robin, weighted, least-connections, ip-hash</li>
- *   <li>限流算法：token-bucket, sliding-window</li>
- *   <li>熔断器阈值：failureThreshold > 0, timeout > 0</li>
- *   <li>存储类型：jpa, redis</li>
- * </ul>
- */
 @Component
 public class ConfigIntegrityValidator implements ApplicationListener<ApplicationReadyEvent> {
 

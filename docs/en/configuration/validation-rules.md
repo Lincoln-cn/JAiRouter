@@ -7,391 +7,217 @@
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
-> Version: v2.8.1
-> Last updated: 2026-06-23
-
 ---
 
 ## Overview
 
-JAiRouter v3.1.1+ introduces a startup configuration validation mechanism that automatically detects the reasonableness of key configuration items, helping administrators discover configuration issues before the application starts.
+Configuration validation in JAiRouter comes in **two kinds**, with different timing and consequences:
+
+| Timing | Trigger | Validators | Consequence of a finding |
+|---|---|---|---|
+| **Startup** | `ApplicationReadyEvent` | `ConfigIntegrityValidator` · `SensitiveConfigValidator` | Former: **the application fails to start**; latter: fails **only in strict mode** |
+| **Runtime** | when configuration is saved/applied | `ConfigurationValidator` (services & instances) · `SecurityConfigurationValidator` · `MonitoringConfigurationValidator` · `SamplingConfigurationValidator` (tracing) | Decided by each call site (see the inventory below) |
+
+> ⚠️ **This page was rewritten from the code (issue #374).** The previous version listed 7 named rules
+> (`rate-limit-capacity`, `circuit-breaker-threshold`, `jwt-expiration`, `thread-pool-size`, …), matching
+> `export RATE_LIMIT_*` examples, and a `ConfigurationValidationRule` extension interface — **none of those
+> three exist in this repository**. Every statement below can be traced to a `file:line`.
 
 ---
 
-## Validation Rule List
+## 1. Startup validation
 
-### 1. Rate Limit Capacity (rate-limit-capacity)
+Both startup validators are `ApplicationListener<ApplicationReadyEvent>` beans that run **once the context is
+ready** (so a failure shows up as the **process exiting**).
 
-**Config item**: `RATE_LIMIT_CAPACITY` (environment variable)
+### Master switches
 
-**Validation rules**:
-| Rule type | Min | Max | Description |
-|-----------|-----|-----|-------------|
-| Error | 1 | - | Rate limit capacity must be greater than 0 |
-| Warning | - | 100000 | Excessive capacity may cause memory pressure |
-
-**Recommended value**: 100 - 10000
-
-**Example**:
-```bash
-# Correct configuration
-export RATE_LIMIT_CAPACITY=1000
-
-# Error configuration (will report an error)
-export RATE_LIMIT_CAPACITY=0
-
-# Warning configuration (will warn)
-export RATE_LIMIT_CAPACITY=200000
-```
-
----
-
-### 2. Rate Limit Rate (rate-limit-rate)
-
-**Config item**: `RATE_LIMIT_RATE` (environment variable)
-
-**Validation rules**:
-| Rule type | Min | Max | Description |
-|-----------|-----|-----|-------------|
-| Error | 1 | - | Rate limit rate must be greater than 0 |
-| Warning | - | 10000 | Excessive rate may overload the system |
-
-**Recommended value**: 10 - 1000 (requests/second)
-
-**Example**:
-```bash
-# Correct configuration
-export RATE_LIMIT_RATE=100
-
-# Error configuration
-export RATE_LIMIT_RATE=0
-```
-
----
-
-### 3. Circuit Breaker Failure Threshold (circuit-breaker-threshold)
-
-**Config item**: `CIRCUIT_BREAKER_FAILURE_THRESHOLD` (environment variable)
-
-**Validation rules**:
-| Rule type | Min | Max | Description |
-|-----------|-----|-----|-------------|
-| Error | 1 | - | Failure threshold must be greater than 0 |
-| Warning | - | 100 | Excessive threshold may delay circuit breaking |
-
-**Recommended value**: 5 - 20
-
-**Example**:
-```bash
-# Correct configuration
-export CIRCUIT_BREAKER_FAILURE_THRESHOLD=5
-
-# Warning configuration
-export CIRCUIT_BREAKER_FAILURE_THRESHOLD=150
-```
-
----
-
-### 4. Circuit Breaker Timeout (circuit-breaker-timeout)
-
-**Config item**: `CIRCUIT_BREAKER_TIMEOUT` (environment variable, unit: milliseconds)
-
-**Validation rules**:
-| Rule type | Min | Max | Description |
-|-----------|-----|-----|-------------|
-| Error | 1000 | - | Timeout cannot be less than 1 second |
-| Warning | - | 300000 | Timeout too long (>5 minutes) |
-
-**Recommended value**: 30000 - 120000 (30 seconds - 2 minutes)
-
-**Example**:
-```bash
-# Correct configuration
-export CIRCUIT_BREAKER_TIMEOUT=60000
-
-# Error configuration
-export CIRCUIT_BREAKER_TIMEOUT=500
-
-# Warning configuration
-export CIRCUIT_BREAKER_TIMEOUT=400000
-```
-
----
-
-### 5. JWT Expiration (jwt-expiration)
-
-**Config item**: `JWT_EXPIRATION_MINUTES` (environment variable, unit: minutes)
-
-**Validation rules**:
-| Rule type | Min | Max | Description |
-|-----------|-----|-----|-------------|
-| Error | 1 | - | JWT expiration must be greater than 0 minutes |
-| Warning | - | 1440 | Expiration too long (>24 hours) |
-
-**Recommended value**: 60 - 480 (1 hour - 8 hours)
-
-**Example**:
-```bash
-# Correct configuration
-export JWT_EXPIRATION_MINUTES=120
-
-# Warning configuration
-export JWT_EXPIRATION_MINUTES=2000
-```
-
----
-
-### 6. Server Port (server-port)
-
-**Config item**: `SERVER_PORT` (environment variable)
-
-**Validation rules**:
-| Rule type | Min | Max | Description |
-|-----------|-----|-----|-------------|
-| Error | 1 | 65535 | Port must be in the valid range |
-| Warning | - | 1023 | Ports below 1024 may require root privileges |
-
-**Recommended value**: high ports such as 8080, 8443, 3000
-
-**Example**:
-```bash
-# Correct configuration
-export SERVER_PORT=8080
-
-# Error configuration
-export SERVER_PORT=70000
-
-# Warning configuration (requires root)
-export SERVER_PORT=80
-```
-
----
-
-### 7. Thread Pool Size (thread-pool-size)
-
-**Config item**: `SERVER_TOMCAT_THREADS_MAX` (environment variable)
-
-**Validation rules**:
-| Rule type | Min | Max | Description |
-|-----------|-----|-----|-------------|
-| Error | 1 | - | Thread pool size must be greater than 0 |
-| Warning | - | 500 | Oversized thread pool may waste resources |
-
-**Recommended value**: 50 - 200
-
-**Example**:
-```bash
-# Correct configuration
-export SERVER_TOMCAT_THREADS_MAX=100
-
-# Warning configuration
-export SERVER_TOMCAT_THREADS_MAX=600
-```
-
----
-
-## Validation Levels
-
-### ✅ OK (Pass)
-- Configuration is within a reasonable range
-- No logs output (except DEBUG level)
-- Application starts normally
-
-### ⚠️ WARN (Warning)
-- Configuration may not be optimal but is acceptable
-- Warning log output
-- **Does not block application startup**
-- Recommended to optimize configuration per the hint
-
-### ❌ ERROR (Error)
-- Configuration has an obvious problem
-- Error log output
-- **Does not block application startup**, but correction is strongly recommended
-- The application may have runtime issues
-
----
-
-## Validation Output Examples
-
-### All Passed
-```
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                            JAiRouter Config Validation                       ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-
-✓ [rate-limit-capacity] Rate limit capacity - Passed
-✓ [rate-limit-rate] Rate limit rate - Passed
-✓ [circuit-breaker-threshold] Circuit breaker failure threshold - Passed
-✓ [circuit-breaker-timeout] Circuit breaker timeout - Passed
-✓ [jwt-expiration] JWT expiration - Passed
-✓ [server-port] Server port - Passed
-✓ [thread-pool-size] Thread pool size - Passed
-
-╔══════════════════════════════════════════════════════════════════════════════╗
-║  Config Validation Summary                                                   ║
-║                                                                              ║
-║  Total rules: 7                                                              ║
-║  Passed: 7                                                                   ║
-║  Warnings: 0                                                                 ║
-║  Errors: 0                                                                   ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-```
-
-### With Warnings
-```
-⚠️  [rate-limit-capacity] Rate limit capacity - Capacity too large, may cause memory pressure
-⚠️  [circuit-breaker-threshold] Circuit breaker failure threshold - Threshold too large, may delay circuit breaking
-
-╔══════════════════════════════════════════════════════════════════════════════╗
-║  Config Validation Summary                                                   ║
-║                                                                              ║
-║  Total rules: 7                                                              ║
-║  Passed: 7                                                                   ║
-║  Warnings: 2                                                                 ║
-║  Errors: 0                                                                   ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-```
-
-### With Errors
-```
-❌ [rate-limit-rate] Rate limit rate - Rate must be greater than 0
-❌ [jwt-expiration] JWT expiration - JWT expiration must be greater than 0 minutes
-
-╔══════════════════════════════════════════════════════════════════════════════╗
-║  Config Validation Summary                                                   ║
-║                                                                              ║
-║  Total rules: 7                                                              ║
-║  Passed: 5                                                                   ║
-║  Warnings: 0                                                                 ║
-║  Errors: 2                                                                   ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-
-⚠️  2 configuration errors detected. Please check and fix the configuration, then restart the application.
-```
-
----
-
-## Enabling/Disabling Validation
-
-### Enable (default)
-Validation is enabled by default; no extra configuration is needed.
-
-### Disable
-To disable validation, set the following configuration:
+| Property | Default | Scope |
+|---|---|---|
+| `jairouter.config.validation.enabled` | `true` | Read by both validators; **read slightly differently** (see below) |
+| `jairouter.config.validation.strict-mode` | `false` | **Only** affects `SensitiveConfigValidator` |
 
 ```yaml
-# application.yml
+jairouter:
+  config:
+    validation:
+      enabled: true       # false => neither startup validator runs
+      strict-mode: false  # true  => the sensitive-value findings become startup failures
+```
+
+### 1.1 `ConfigIntegrityValidator` — any error fails the startup
+
+`config/core/validator/ConfigIntegrityValidator.java` (class at `:45`, switch read at `:79-87`).
+Findings go into two buckets and then (`:107-112`):
+
+- **any error** ⇒ log each one, then **throw `IllegalStateException("配置校验失败，存在 N 个错误")`**
+  ⇒ the application **fails to start**;
+- **warnings only** ⇒ logged, **startup is unaffected**.
+
+Rules (value sets and bounds are taken **from the code**, `:129-206`):
+
+| Property | Check | Level |
+|---|---|---|
+| `server.port` | outside `1`–`65535` | **error** |
+| `server.port` | `< 1024` (privileged port, may need root) | warning |
+| `model.load-balance.type` | not in `round-robin` · `weighted` · `least-connections` · `ip-hash` · `random` | **error** |
+| `model.rate-limit.algorithm` (only when `model.rate-limit.enabled=true`) | not in `token-bucket` · `sliding-window` · `fixed-window` | **error** |
+| `model.circuit-breaker.failureThreshold` (only when `model.circuit-breaker.enabled=true`) | `≤ 0` | **error** |
+| same | `> 100` (the breaker may be hard to trip) | warning |
+| `model.circuit-breaker.timeout` (only when `model.circuit-breaker.enabled=true`) | `≤ 0` | **error** |
+| same | `> 300000` (ms; recovery may be slow) | warning |
+| `store.type` | not in `jpa` · `redis` · `memory` · `h2` | **error** |
+| `monitoring.enabled` | `false` (monitoring is recommended in production) | warning |
+| `jairouter.tracing.enabled` | `false` (tracing is recommended in production) | warning |
+
+How it reads the switch: `@Value("${jairouter.config.validation.enabled:true}")` (`:79`); when `false` it logs
+one line and returns immediately (`:84-87`).
+
+> 📌 The class javadoc carries its own rule list, but with **smaller value sets than the code** (4 load-balancer
+> types / 2 rate-limit algorithms / 2 store types). This page follows the **code**; the javadoc has been
+> aligned in the same batch as issue #374.
+
+### 1.2 `SensitiveConfigValidator` — sensitive-value check-up (**warnings only by default**)
+
+`config/core/validator/SensitiveConfigValidator.java`. It is
+`@ConditionalOnProperty(name = "jairouter.config.validation.enabled", havingValue = "true", matchIfMissing = true)`
+(`:28`) — note the difference from the validator above: **this one is enabled when the switch is absent**.
+
+It checks three **environment variables** (read through Spring placeholders of the form `${JWT_SECRET:}`,
+`:33-40`):
+
+| Variable | Missing | Too short | Looks hard-coded |
+|---|---|---|---|
+| `JWT_SECRET` | strict mode: **error**; otherwise: warning | ≥32 chars recommended; shorter ⇒ **error** (strict) / warning | **error** |
+| `INITIAL_ADMIN_PASSWORD` | strict mode: **error**; otherwise: warning (the message states the fallback to the factory-default password, which makes the production profile fail to start) | ≥8 chars recommended; shorter ⇒ warning | warning |
+| `GPUSTACK_API_TOKEN` | warning (model services cannot authenticate) | — | warning |
+
+"Looks hard-coded" (`:153-169`): contains `your-` / `placeholder` / `example` / `test` / `demo` / `changeme`,
+or equals `secret` / `password` (case-insensitive).
+
+**Failure semantics (easy to misread — this is what the code does)**: the `errors` bucket is printed **and**
+turned into an `IllegalStateException` **only when `strict-mode=true`** (`:67-72`). Therefore:
+
+- `strict-mode=false` (default): **only warnings are printed**; findings in the `errors` bucket (for example a
+  hard-coded-looking `JWT_SECRET`) are **neither printed nor fatal**;
+- `strict-mode=true`: a non-empty `errors` bucket ⇒ each entry is logged with `log.error` and the
+  **startup fails**.
+
+> 📌 **Relation to the production startup gate**: under the `prod` / `production` profile, stricter checks on
+> `JWT_SECRET` and `INITIAL_ADMIN_PASSWORD` happen **earlier** — `auth/security/config/StartupSecurityGate.java`
+> fails fast during the `CommandLineRunner` phase (missing value, factory default, or weak strength all abort
+> the process). Production therefore usually **never reaches** this validator; it mainly helps in
+> dev/test environments.
+
+---
+
+## 2. Runtime validation (configuration-API path)
+
+These validators are not part of startup; they are wired into **configuration-change** call sites:
+
+| Validator | Call sites | Notes |
+|---|---|---|
+| `config/core/ConfigurationValidator.java` (`:31`) | `config/controller/ServiceTypeController.java` (injected at `:54`) · `router/factory/ComponentFactory.java` (injected at `:32`) | Validates service / instance / load-balance / rate-limit / basic configuration (`:258` `validateLoadBalanceConfig`, `:281` `validateRateLimitConfig`, `:376` `validateInstanceConfig`, `:434` `validateSingleServiceConfig`, `:482` `validateBasicConfiguration`) |
+| `auth/security/config/SecurityConfigurationValidator.java` (`:24`) | `SecurityConfigurationManager` (`:220`) · `ImprovedSecurityConfigurationService` (`:137`) · `SecurityConfigurationBackupService` (`:64`) | Security configuration and backup validation |
+| `monitor/monitoring/config/MonitoringConfigurationValidator.java` (`:17`) | monitoring configuration save path | Monitoring configuration validation |
+| `monitor/tracing/config/SamplingConfigurationValidator.java` (`:21`) | `TracingConfigManager` (`:182`) · `config/core/ConfigurationService.java` (`:122`) | Tracing sampling-rule validation |
+
+What each call site does with a validation result (reject the save / return an error / just warn) is decided by
+that call site; this page is an **inventory** only. Per-rule consequences follow each validator's javadoc and
+call-site code.
+
+---
+
+## 3. Disabling validation / enabling strict mode
+
+```yaml
+# Turn off both startup validators (not recommended: you lose the startup check-up)
 jairouter:
   config:
     validation:
       enabled: false
+
+# Enable strict mode only (let the sensitive-value findings actually block startup)
+jairouter:
+  config:
+    validation:
+      strict-mode: true
 ```
 
-Or use the environment variable:
+Environment-variable form (Spring Boot relaxed binding — framework behavior, equivalent to the YAML above):
+
 ```bash
-export JAiROUTER_CONFIG_VALIDATION_ENABLED=false
+export JAIRouter_CONFIG_VALIDATION_ENABLED=true
+export JAIRouter_CONFIG_VALIDATION_STRICT_MODE=true
 ```
+
+> ⚠️ `strict-mode` affects **only** `SensitiveConfigValidator`. The errors of `ConfigIntegrityValidator` are
+> always fatal for startup; there is no strict-mode switch for them.
 
 ---
 
-## Custom Validation Rules
+## 4. Extending validation (the **real** shape)
 
-Developers can add custom validation rules by implementing the `ConfigurationValidationRule` interface.
-
-### Example Code
+There is **no** `ConfigurationValidationRule` interface in this repository. To add a startup check, follow the
+two real validators:
 
 ```java
 @Component
-public class CustomConfigurationValidator {
+public class MyConfigValidator implements ApplicationListener<ApplicationReadyEvent> {
 
-    @EventListener(ApplicationReadyEvent.class)
-    public void validateCustomConfig() {
-        // Add custom validation logic
-        String customConfig = System.getenv("CUSTOM_CONFIG");
-        if (customConfig != null) {
-            // Validate custom config
-            if (!isValid(customConfig)) {
-                log.error("Custom configuration is invalid");
-            }
+    private static final Logger log = LoggerFactory.getLogger(MyConfigValidator.class);
+
+    @Value("${jairouter.config.validation.enabled:true}")
+    private boolean validationEnabled;
+
+    @Override
+    public void onApplicationEvent(ApplicationReadyEvent event) {
+        if (!validationEnabled) {
+            return;
         }
-    }
-    
-    private boolean isValid(String config) {
-        // Implement validation logic
-        return true;
+        // collect errors / warnings yourself; to block startup on an error, throw
+        // (template: ConfigIntegrityValidator:107-112)
+        log.info("✓ custom validation finished");
     }
 }
 ```
 
----
+**Key points**:
 
-## Best Practices
-
-### 1. Development Environment
-```bash
-export RATE_LIMIT_CAPACITY=100
-export RATE_LIMIT_RATE=10
-export CIRCUIT_BREAKER_FAILURE_THRESHOLD=3
-export CIRCUIT_BREAKER_TIMEOUT=30000
-export JWT_EXPIRATION_MINUTES=60
-export SERVER_PORT=8080
-export SERVER_TOMCAT_THREADS_MAX=50
-```
-
-### 2. Production Environment
-```bash
-export RATE_LIMIT_CAPACITY=10000
-export RATE_LIMIT_RATE=500
-export CIRCUIT_BREAKER_FAILURE_THRESHOLD=10
-export CIRCUIT_BREAKER_TIMEOUT=60000
-export JWT_EXPIRATION_MINUTES=120
-export SERVER_PORT=8080
-export SERVER_TOMCAT_THREADS_MAX=200
-```
-
-### 3. High-Performance Environment
-```bash
-export RATE_LIMIT_CAPACITY=50000
-export RATE_LIMIT_RATE=2000
-export CIRCUIT_BREAKER_FAILURE_THRESHOLD=15
-export CIRCUIT_BREAKER_TIMEOUT=90000
-export JWT_EXPIRATION_MINUTES=240
-export SERVER_PORT=8080
-export SERVER_TOMCAT_THREADS_MAX=400
-```
+1. Register with `@Component` + `ApplicationListener<ApplicationReadyEvent>` (both real validators do this);
+2. Throw `IllegalStateException` when an error must block startup (`ConfigIntegrityValidator`'s approach);
+   `log.warn` when it is informational only;
+3. Please **read `jairouter.config.validation.enabled`** as well, so the master switch applies to your check.
 
 ---
 
-## Troubleshooting
+## 5. Troubleshooting
 
-### Issue: Validation rules not taking effect
-
-**Checklist**:
-1. Confirm `jairouter.config.validation.enabled` is `true` (default)
-2. Check logs for "JAiRouter Config Validation" output
-3. Confirm environment variables are set correctly
-
-### Issue: False warnings
-
-**Solutions**:
-1. Check whether the configuration value is actually reasonable
-2. If the configuration is confirmed correct, adjust the warning thresholds
-3. Or ignore the warning (it does not affect startup)
-
-### Issue: Configuration errors but startup not blocked
-
-**Note**:
-The purpose of configuration validation is to **detect problems early**, not to block startup. Even with errors, the application will still start, but may have runtime issues.
-
-**Recommendations**:
-- Fix the configuration immediately after seeing error logs
-- Add configuration checks to the CI/CD pipeline
-- Use Docker environment variables to force-inject correct configuration
+| Symptom | Cause and fix |
+|---|---|
+| Startup fails with a `配置错误` block in the log | `ConfigIntegrityValidator`'s error bucket is non-empty — fix the listed properties (`:108-111` prints the count) |
+| Startup fails with `敏感配置校验失败` | `strict-mode=true` and `SensitiveConfigValidator`'s error bucket is non-empty (missing `JWT_SECRET` / too short / hard-coded-looking) |
+| `⚠️` lines but no startup failure | the warnings bucket is informational only (both validators) |
+| `JWT_SECRET` is set yet reported as missing | the value is read from the **environment** via `${JWT_SECRET:}`; setting an equivalent YAML property does not satisfy it (same as the production gate) |
+| Env vars changed but the result did not | both validators run once, at `ApplicationReadyEvent` ⇒ restart the process |
+| Want to downgrade validation to a hint | drop `strict-mode` (the sensitive-value check-up warns by default); `ConfigIntegrityValidator` errors cannot be downgraded — fix the configuration or disable everything with `enabled=false` |
 
 ---
 
-## Related Files
+## Related code
 
-- [Application Config](application-config.md) - Application configuration file documentation
+| File | Purpose |
+|---|---|
+| `config/core/validator/ConfigIntegrityValidator.java` | Startup integrity validation; an error fails startup |
+| `config/core/validator/SensitiveConfigValidator.java` | Startup sensitive-value check-up; warnings by default, fatal in strict mode |
+| `config/core/ConfigurationValidator.java` | Runtime configuration validation (service/instance/load-balance/rate-limit/basic) |
+| `auth/security/config/SecurityConfigurationValidator.java` | Security configuration and backup validation |
+| `monitor/monitoring/config/MonitoringConfigurationValidator.java` | Monitoring configuration validation |
+| `monitor/tracing/config/SamplingConfigurationValidator.java` | Tracing sampling-rule validation |
+| `auth/security/config/StartupSecurityGate.java` · `StartupSecretKeyChecker.java` | Production-profile startup gate (earlier and stricter than the check-up above) |
 
----
+## Related documentation
+
+- [Configuration reference](index.md)
+- [Deployment · Production](../deployment/production.md)
+- [Troubleshooting · Common issues](../troubleshooting/common-issues.md)
