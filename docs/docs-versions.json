@@ -36,7 +36,8 @@
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/security/data-sanitization.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-15T01:40:49.130034"
     },
     "docs/en/api-reference/openapi-spec.md": {
       "FilePath": "docs/en/api-reference/openapi-spec.md",
@@ -656,7 +657,8 @@
       "Dependencies": [
         "docs/zh/api-reference/error-codes.md",
         "docs/zh/security/data-sanitization.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-15T01:40:49.130034"
     },
     "docs/zh/api-reference/openapi-spec.md": {
       "FilePath": "docs/zh/api-reference/openapi-spec.md",
@@ -8250,5 +8252,5 @@
       "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-14T17:31:04.912868"
+  "last_updated": "2026-10-15T01:40:49.130034"
 }
