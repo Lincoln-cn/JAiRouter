@@ -2008,21 +2008,21 @@
     },
     "docs/en/configuration/adapter-config.md": {
       "FilePath": "docs/en/configuration/adapter-config.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-18T11:16:26.282362",
-      "ContentHash": "2093cb4071246d77",
-      "GitCommit": "14420877",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-14T16:37:22.821848",
+      "ContentHash": "0cabe2495f9a3cd0",
+      "GitCommit": "5efa6892",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/configuration/adapter-config.md": {
       "FilePath": "docs/zh/configuration/adapter-config.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-18T11:16:39.410961",
-      "ContentHash": "4189756db0082136",
-      "GitCommit": "14420877",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-14T16:37:23.340562",
+      "ContentHash": "87cd1474cab34d45",
+      "GitCommit": "5efa6892",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -8200,7 +8200,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-14T16:22:38.563678",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/adapter-config.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-14T16:37:22.821859",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/adapter-config.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-14T16:37:23.340572",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-14T16:22:38.933782"
+  "last_updated": "2026-10-14T16:37:23.800184"
 }
