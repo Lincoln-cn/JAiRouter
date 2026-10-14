@@ -193,7 +193,9 @@ The quota feature introduces 3 new permission codes:
 | `config:quota:write` | Quota runtime configuration update |
 | `monitoring:quota:read` | Quota runtime status and usage query |
 
-The `ADMIN` role includes all codes by default; `OPERATOR` includes read/write codes; `VIEWER` includes read codes.
+The `ADMIN` role includes all codes by default; `OPERATOR` includes read/write codes (**excluding**
+`system:*`, `security:*:manage` and `actuator:*`); `VIEWER` includes read codes. The single source of truth
+for the role templates is `RolePermissionSeeder`.
 
 ## Limitations and Roadmap
 
