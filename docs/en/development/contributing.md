@@ -457,13 +457,39 @@ Use [Semantic Versioning](https://semver.org/) specification:
 - **MINOR**: Backward-compatible feature additions
 - **PATCH**: Backward-compatible bug fixes
 
+### Release Cadence
+
+**Rule: once a themed batch is merged, cut a PATCH release within 48 hours; in any case, never let more than 7 days pass.**
+
+This is not a formality — it comes from a measured lesson in this repository. In the 7 days after
+`v3.3.0` (2026-10-07) the project accumulated **82 commits (58 substantive) with no release at all**.
+The consequences were concrete: the behavior-changes list had to carry 9 entries at once, the release
+notes became hard to write, the blast radius of any unknown regression covered the whole batch, and the
+empty-stream regression on `/v1` introduced by `#305` (`#356`) survived an extra day.
+
+Four supporting rules:
+
+1. **Release per batch — never stockpile**: once a themed batch (an EPIC or a group of related issues)
+   is merged, ship it;
+2. **Ship a patch within 72 hours of merging a P1 fix** — do not wait for the next feature window;
+3. **Decide the version with Semantic Versioning**: a batch containing only `fix` / `docs` / `chore` /
+   `test` / `refactor` (zero `feat`) is a **PATCH** — do not inflate it to MINOR to look important;
+4. **Release notes cover that interval only**: do not repeat the previous release's behavior changes
+   (repeating them reads as if the change happened twice); list behavior changes in the
+   "Behavior changes to be aware of" table.
+
 ### Release Checklist
 
-- [ ] All tests pass
-- [ ] Code quality checks pass
-- [ ] Documentation updated
-- [ ] CHANGELOG updated
-- [ ] Version number updated
+- [ ] **All tests pass**: `scripts/test/local-gates.cmd` is green locally (or SKIP with the reason stated
+      in the PR / release notes), and the CI `test` job passes — the three gated integration tests
+      **must not be skipped**
+- [ ] **Code quality checks pass**: both Qodana and CodeQL pass
+- [ ] **Documentation updated**: zh/en in sync, and the documentation gates that *should* appear for the
+      changed paths all pass (see "Before merging: read the CI gates correctly" in this file)
+- [ ] **CHANGELOG updated**: add the entry to `docs/{zh,en}/reference/changelog.md` and update the
+      "current version status" in `roadmap.md`
+- [ ] **Version number updated**: `pom.xml`, the facts block in `README.md` / `README-ZH.md`, and the
+      document version block in `docs/{zh,en}/reference/changelog.md` — **all four must agree**
 
 ## Community Participation
 
