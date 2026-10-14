@@ -428,6 +428,29 @@ def test_mark_and_clear_reviewed_cli(tmp_path):
     assert 'ReviewedAt' not in read_versions(versions_json)[target], '--clear-reviewed 应移除评审字段'
 
 
+def test_repeated_mark_reviewed_flags(tmp_path):
+    """#352 第二半：**重复写** --mark-reviewed 不得静默丢参（回归钉）
+
+    修复前参数是纯 nargs='+'，重复写该 flag 时只有**最后一个**生效、前面的值被静默丢弃。
+    本用例与 test_mark_and_clear_reviewed_cli 的「一次传多个路径」写法互补 ——
+    两种写法必须等价可用（脚本侧由 action='append' + _flatten_paths 支撑）。
+    """
+    versions_json = write_temp_project(tmp_path)
+    run_cli(tmp_path, ['--scan'])
+
+    first = 'docs/en/configuration/never-reviewed.md'
+    second = 'docs/en/configuration/review-expired.md'
+    stamp = (datetime.now() - timedelta(days=1)).replace(microsecond=0).isoformat()
+
+    run_cli(tmp_path, ['--mark-reviewed', first, '--mark-reviewed', second,
+                       '--reviewed-at', stamp])
+
+    data = read_versions(versions_json)
+    for path in (first, second):
+        assert data[path].get('ReviewedAt') == stamp, \
+            f'重复写 --mark-reviewed 时 {path} 被静默丢弃（只有最后一个生效）: {data[path]}'
+
+
 def test_review_state_visible_in_console_and_report(tmp_path):
     """人工评审必须可见：控制台 + 报告 “## 过期文档” 一节（工作流按该标题抽取）"""
     versions_json = write_temp_project(tmp_path)
@@ -504,6 +527,7 @@ def main():
             ('CLI --check-outdated 三种形式', test_cli_forms),
             ('ReviewedAt 扛过一次真实 --scan', test_review_survives_real_scan),
             ('CLI --mark-reviewed / --clear-reviewed', test_mark_and_clear_reviewed_cli),
+            ('CLI 重复写 --mark-reviewed 不丢参', test_repeated_mark_reviewed_flags),
             ('评审状态在控制台与报告中可见', test_review_state_visible_in_console_and_report),
         ]
 
