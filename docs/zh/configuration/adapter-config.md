@@ -255,6 +255,9 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 | `/api/config/adapter` | POST | 创建adapter |
 | `/api/config/adapter/{name}` | PUT | 更新adapter |
 | `/api/config/adapter/{name}` | DELETE | 删除adapter |
+| `/api/config/adapter` | GET | 列出系统中所有已支持的适配器（`AdapterController:42`） |
+| `/api/config/adapter/parents` | GET | 可用于继承的父 adapter 清单（`AdapterConfigController:377`） |
+| `/api/config/adapter/{name}/test` | POST | 测试指定适配器的连通性；适配器不存在 ⇒ 404 `ADAPTER_NOT_FOUND`（`AdapterTestController:49`） |
 
 ### 创建Adapter API示例
 

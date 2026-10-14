@@ -255,6 +255,9 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 | `/api/config/adapter` | POST | Create adapter |
 | `/api/config/adapter/{name}` | PUT | Update adapter |
 | `/api/config/adapter/{name}` | DELETE | Delete adapter |
+| `/api/config/adapter` | GET | List every supported adapter in the system (`AdapterController:42`) |
+| `/api/config/adapter/parents` | GET | Adapters available as inheritance parents (`AdapterConfigController:377`) |
+| `/api/config/adapter/{name}/test` | POST | Test an adapter's connectivity; unknown adapter => 404 `ADAPTER_NOT_FOUND` (`AdapterTestController:49`) |
 
 ### Create Adapter API Example
 
