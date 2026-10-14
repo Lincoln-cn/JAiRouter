@@ -1705,7 +1705,7 @@
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      "ReviewedAt": "2026-10-15T01:57:14.046368"
     },
     "docs/zh/configuration/store-config.md": {
       "FilePath": "docs/zh/configuration/store-config.md",
@@ -1726,7 +1726,7 @@
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      "ReviewedAt": "2026-10-15T01:57:14.046368"
     },
     "docs/en/configuration/jwt-persistence.md": {
       "FilePath": "docs/en/configuration/jwt-persistence.md",
@@ -8252,5 +8252,5 @@
       "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-14T17:48:38.775223"
+  "last_updated": "2026-10-15T01:57:14.047368"
 }
