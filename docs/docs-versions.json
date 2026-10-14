@@ -2112,7 +2112,7 @@
         "docs/en/configuration/routing-rules.md",
         "docs/en/reference/changelog.md"
       ],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      "ReviewedAt": "2026-10-15T01:06:25.592554"
     },
     "docs/zh/configuration/kv-cache.md": {
       "FilePath": "docs/zh/configuration/kv-cache.md",
@@ -2127,7 +2127,7 @@
         "docs/zh/configuration/routing-rules.md",
         "docs/zh/reference/changelog.md"
       ],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      "ReviewedAt": "2026-10-15T01:06:25.592554"
     },
     "docs/en/development/doc-maintenance.md": {
       "FilePath": "docs/en/development/doc-maintenance.md",
@@ -8234,5 +8234,5 @@
       "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-14T16:58:29.920392"
+  "last_updated": "2026-10-15T01:06:25.593069"
 }
