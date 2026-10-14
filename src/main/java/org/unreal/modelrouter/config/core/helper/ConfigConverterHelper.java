@@ -3,6 +3,7 @@ package org.unreal.modelrouter.config.core.helper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.common.constants.InstanceStatus;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.ratelimit.RateLimitConfig;
 
@@ -147,7 +148,16 @@ public class ConfigConverterHelper {
             }
         }
         if (instanceMap.containsKey("status")) {
-            instance.setStatus((String) instanceMap.get("status"));
+            final String rawStatus = (String) instanceMap.get("status");
+            instance.setStatus(rawStatus);
+            // issue #368：配置路径**有意不拒绝**取值（运维可能有意写 inactive），但不在词表内时必须告警 ——
+            // 否则一个拼写错误（如 activ）就会让实例被可用性过滤静默排除，现象与 #354 修复前一致
+            // （客户端收到误导性的 404「找不到该模型」）。
+            if (!InstanceStatus.isAllowed(rawStatus)) {
+                LOGGER.warn("实例 {} 的 status 取值 '{}' 不在词表中（只接受 {}，大小写不敏感）——"
+                                + "该实例不会被路由；健康状态请用 healthStatus 表达。",
+                        instance.getName(), rawStatus, InstanceStatus.ALLOWED);
+            }
         }
         if (instanceMap.containsKey("instanceId")) {
             instance.setInstanceId((String) instanceMap.get("instanceId"));
