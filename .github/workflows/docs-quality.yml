@@ -105,6 +105,16 @@ jobs:
       run: |
         echo "🔍 对账 docs/**/api-reference 的端点路径与 *Controller.java 的映射..."
         python3 scripts/docs/check-api-endpoints.py --project-root . --fail-on-error
+
+    - name: 自测配置清单对账脚本
+      run: |
+        echo "🧪 运行配置清单对账脚本自测（导入清单 / 框线树解析 / 外部路径排除 / 双向对账）..."
+        python3 scripts/docs/test_check_config_imports.py
+
+    - name: 检查文档配置清单与真实配置对账
+      run: |
+        echo "🔍 对账 modular-config 的导入清单、application-config 的模块清单与真实配置树..."
+        python3 scripts/docs/check-config-imports.py --project-root . --fail-on-error
     
     - name: 上传链接检查报告
       uses: actions/upload-artifact@v4
