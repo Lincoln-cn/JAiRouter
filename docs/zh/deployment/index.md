@@ -188,7 +188,7 @@ curl http://localhost:8080/actuator/health
 
 ```
 # 下载配置文件
-wget https://raw.githubusercontent.com/your-org/jairouter/main/docker-compose.yml
+wget https://raw.githubusercontent.com/Lincoln-cn/JAiRouter/master/docker-compose.yml
 
 # 启动服务
 docker-compose up -d
