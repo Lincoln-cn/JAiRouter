@@ -8,6 +8,10 @@ on:
       - 'mkdocs.yml'
       - '*.md'
       - '.cspell.json'
+      # issue #358：本 workflow 会跑 scripts/docs/ 下的检查器（含链接检查与它的自测），
+      # 而路径过滤原先不含该目录 ⇒ **改这些脚本不会触发本 workflow**
+      # （与 #357 在 docs-version-management.yml 修掉的是同一类缺口）。
+      - 'scripts/docs/**'
   push:
     branches: [ main, master ]
     paths: 
@@ -15,6 +19,10 @@ on:
       - 'mkdocs.yml'
       - '*.md'
       - '.cspell.json'
+      # issue #358：本 workflow 会跑 scripts/docs/ 下的检查器（含链接检查与它的自测），
+      # 而路径过滤原先不含该目录 ⇒ **改这些脚本不会触发本 workflow**
+      # （与 #357 在 docs-version-management.yml 修掉的是同一类缺口）。
+      - 'scripts/docs/**'
 
 permissions:
   contents: read
@@ -68,6 +76,11 @@ jobs:
         file-path: './README.md, ./README-ZH.md'
       continue-on-error: true
     
+    - name: 自测链接检查脚本
+      run: |
+        echo "🧪 运行链接检查脚本自测（5xx 重试 / 已登记抖动源降级 / 404 仍判红）..."
+        python3 scripts/docs/test_check_links.py
+
     - name: 检查链接有效性 (自定义脚本)
       run: |
         python3 scripts/docs/check-links.py --dir docs --output link-check-report.json --fail-on-error
