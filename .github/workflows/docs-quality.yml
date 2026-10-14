@@ -95,6 +95,16 @@ jobs:
       run: |
         echo "🔍 对账 docs/**/api-reference/error-codes.md 与 src/main/java 的错误码字面量..."
         python3 scripts/docs/check-error-codes.py --project-root . --fail-on-error
+
+    - name: 自测 API 端点对账脚本
+      run: |
+        echo "🧪 运行 API 端点对账脚本自测（映射重建 / 变量归一 / 已移除说明排除 / 反向对照）..."
+        python3 scripts/docs/test_check_api_endpoints.py
+
+    - name: 检查文档端点与控制器映射对账
+      run: |
+        echo "🔍 对账 docs/**/api-reference 的端点路径与 *Controller.java 的映射..."
+        python3 scripts/docs/check-api-endpoints.py --project-root . --fail-on-error
     
     - name: 上传链接检查报告
       uses: actions/upload-artifact@v4
