@@ -1290,10 +1290,10 @@
     },
     "docs/en/configuration/modular-config.md": {
       "FilePath": "docs/en/configuration/modular-config.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-13T13:53:08.727095",
-      "ContentHash": "daa6cafb8de0c8c0",
-      "GitCommit": "2435f7d0",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-14T18:18:14.809468",
+      "ContentHash": "319d8614ce447ea5",
+      "GitCommit": "385cc683",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1489,10 +1489,10 @@
     },
     "docs/zh/configuration/modular-config.md": {
       "FilePath": "docs/zh/configuration/modular-config.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-13T13:53:09.209853",
-      "ContentHash": "1416a6a7c065af5c",
-      "GitCommit": "2435f7d0",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-14T18:18:15.295366",
+      "ContentHash": "43f2012d036a6a13",
+      "GitCommit": "385cc683",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -8250,7 +8250,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-14T17:31:04.429996",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/modular-config.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-14T18:18:14.809477",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/modular-config.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-14T18:18:15.295374",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-15T01:57:14.047368"
+  "last_updated": "2026-10-14T18:18:15.694272"
 }
