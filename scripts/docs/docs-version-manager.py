@@ -905,6 +905,18 @@ class DocumentVersionManager:
             return False
 
 
+# 控制台文案的单一事实来源。
+#
+# issue #357：这句原本直接写在 print 里，而自测（scripts/docs/test_docs_version_manager.py）
+# 又把同一句话**抄了一遍**当断言 ⇒ 改措辞（#352 / issue #345）时自测必然假红，
+# 而「假红」会训练出「红了就改断言」的习惯，门闩随之失去意义。
+# 现在措辞只写在这里，自测读这个常量，**同时用字面量守住它的语义**。
+REVIEW_SUMMARY_TEMPLATE = (
+    "\n🧾 当前共有 {count} 篇文档带人工评审记录 (ReviewedAt)"
+    "（这是总数，不是本次运行改动的篇数）"
+)
+
+
 def main():
     """主函数"""
     parser = argparse.ArgumentParser(description='文档版本管理工具')
@@ -1096,8 +1108,7 @@ def main():
         # issue #345：这句原本写作「已记录人工评审 (ReviewedAt): N 个文档」，
         # 与同一输出里的「本次改动了 N 篇」用词几乎一样 ⇒ 极易被读成「刚才标了 N 篇」
         # （本仓 2026-10-14 真的因此误判过一次）。这里明确写成「当前共有」。
-        print(f"\n🧾 当前共有 {review_count} 篇文档带人工评审记录 (ReviewedAt)"
-              f"（这是总数，不是本次运行改动的篇数）")
+        print(REVIEW_SUMMARY_TEMPLATE.format(count=review_count))
         if review_count == 0:
             print("   （审查确认某文档仍然准确时，用 --mark-reviewed <path> 记录评审，"
                   "可在不改写 LastModified 的前提下重置其过期计时）")

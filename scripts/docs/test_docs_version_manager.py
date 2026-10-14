@@ -450,7 +450,14 @@ def test_review_state_visible_in_console_and_report(tmp_path):
     assert '人工评审已失效' in result.stdout, f'已失效的评审应被标注: {result.stdout}'
     assert '未记录人工评审' in result.stdout, f'无评审的文档应被标注: {result.stdout}'
     assert '靠人工评审保持新鲜' in result.stdout, f'靠评审保持新鲜的文档应单独列出: {result.stdout}'
-    assert '已记录人工评审 (ReviewedAt): 2 个文档' in result.stdout, result.stdout
+    # issue #357：断言不再把脚本的措辞抄一遍（抄了必然在改措辞时假红 —— #352 就是这么红的）。
+    # 数字与句子从脚本的单一事实来源派生；**消除歧义的语义用字面量守住**。
+    module = load_module()
+    expected_summary = module.REVIEW_SUMMARY_TEMPLATE.format(count=2)
+    assert expected_summary in result.stdout, \
+        f'控制台必须按脚本的单一事实来源打印评审汇总行: {result.stdout}'
+    assert '这是总数，不是本次运行改动的篇数' in result.stdout, \
+        f'#345 的歧义消除语必须保留（否则「N 篇」会被读成「本次改了 N 篇」）: {result.stdout}'
 
     report_path = tmp_path / 'docs-version-report.md'
     run_cli(tmp_path, ['--report', str(report_path)])
