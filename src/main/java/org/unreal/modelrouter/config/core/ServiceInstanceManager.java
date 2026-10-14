@@ -112,7 +112,12 @@ public class ServiceInstanceManager {
                 .baseUrl(safeBaseUrl)
                 .path(request.getPath())
                 .weight(request.getWeight() != null ? request.getWeight() : 1)
-                .status(request.getStatus() != null ? request.getStatus().toUpperCase() : "ACTIVE")
+                // issue #354：写入侧按词表校验/归一（非 active/inactive ⇒ 400），
+                // 不再静默接受 "HEALTHY" 这类会让实例被可用性过滤排除的取值。
+                .status(request.getStatus() != null
+                        ? org.unreal.modelrouter.common.constants.InstanceStatus
+                                .normalizeOrThrow(request.getStatus())
+                        : org.unreal.modelrouter.common.constants.InstanceStatus.ACTIVE)
                 .healthStatus("UNKNOWN")
                 .adapter(request.getAdapter())
                 .headers(request.getHeaders())
@@ -154,7 +159,9 @@ public class ServiceInstanceManager {
             entity.setWeight(request.getWeight());
         }
         if (request.getStatus() != null) {
-            entity.setStatus(request.getStatus().toUpperCase());
+            // issue #354：更新路径同样校验/归一（原先只做 toUpperCase ⇒ 非法值静默落库）
+            entity.setStatus(org.unreal.modelrouter.common.constants.InstanceStatus
+                    .normalizeOrThrow(request.getStatus()));
         }
         if (request.getAdapter() != null) {
             entity.setAdapter(request.getAdapter());

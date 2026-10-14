@@ -105,11 +105,17 @@ public class SelectInstanceOptimizer {
 
     /**
      * 创建状态过滤器:status 必须为 active
+     *
+     * <p>判据走 {@link InstanceAvailability}（单一事实来源，issue #354）。</p>
      */
     private Predicate<ModelInstance> createStatusFilter() {
         return instance -> {
-            String status = instance.getStatus();
-            return status != null && "active".equalsIgnoreCase(status);
+            final boolean active = InstanceAvailability.isActive(instance);
+            if (!active) {
+                LOGGER.debug("Instance {} status={} is not active, skipping",
+                        instance.getInstanceId(), instance.getStatus());
+            }
+            return active;
         };
     }
 
@@ -118,7 +124,7 @@ public class SelectInstanceOptimizer {
      */
     private Predicate<ModelInstance> createHealthFilter(final ModelServiceRegistry.ServiceType serviceType) {
         return instance -> {
-            boolean healthy = serviceStateManager.isInstanceHealthy(serviceType.name(), instance);
+            boolean healthy = InstanceAvailability.isHealthy(serviceStateManager, serviceType, instance);
             if (!healthy) {
                 LOGGER.debug("Instance {} is unhealthy, skipping", instance.getInstanceId());
             }
@@ -133,17 +139,15 @@ public class SelectInstanceOptimizer {
      */
     private Predicate<ModelInstance> createCircuitBreakerFilter() {
         return instance -> {
-            // 检查实例是否配置了禁用熔断器
+            // 检查实例是否配置了禁用熔断器（判据在 InstanceAvailability 内，单一事实来源）
             ModelRouterProperties.CircuitBreakerConfig cbConfig = instance.getCircuitBreaker();
             if (cbConfig != null && Boolean.FALSE.equals(cbConfig.getEnabled())) {
-                // 熔断器已禁用，跳过检查
                 LOGGER.trace("Instance {} has circuit breaker disabled, skipping check", instance.getInstanceId());
                 return true;
             }
-            
+
             // 执行熔断器检查
-            boolean canExecute = circuitBreakerManager.canExecute(
-                    instance.getInstanceId(), instance.getBaseUrl());
+            boolean canExecute = InstanceAvailability.isCircuitClosed(circuitBreakerManager, instance);
             if (!canExecute) {
                 LOGGER.debug("Instance {} is in circuit breaker state, skipping", instance.getInstanceId());
             }

@@ -174,10 +174,11 @@ curl -X POST -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
   http://localhost:8080/api/config/instance/chat
 ```
 
-> ⚠️ **请求体里不要写 `"status": "HEALTHY"`。** `status` 是生命周期标志，路由只认 `active`；
-> 写 `HEALTHY` 会被原样存成 `healthy`，该实例随后会被可用性过滤排除，调用会以
-> `404 No instances found for model …` 失败。**不写该字段即可沿用默认 `active`**；
-> 健康状态是另一个字段 `healthStatus`。
+> ⚠️ **请求体里的 `status` 只接受 `active` / `inactive`（大小写不敏感）。**
+> 其他取值（例如 `HEALTHY`）会被**直接拒收 —— 400 `INVALID_REQUEST`**，不会再被静默存成别的值：
+> `status` 是生命周期标志，路由只认 `active`，一旦被写坏，该实例会被可用性过滤整体排除，
+> 调用随后以 `404 No instances found for model …` 失败，而这条文案会把排查方向引向「模型不存在」。
+> **不写该字段即沿用默认 `active`**；健康状态是另一个字段 `healthStatus`。
 
 响应里的 `data` 就是新建的实例 —— **记住它的 `id`**，下面两步都要用：
 
