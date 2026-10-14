@@ -43,8 +43,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # the local/git directory name differs from the product name
 artifact:        model-router            # Maven artifactId
-project_version: 3.3.0                   # pom.xml
-latest_release:  v3.3.0 (2026-10-07)
+project_version: 3.3.2                   # pom.xml
+latest_release:  v3.3.1 (2026-10-14)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5 (WebFlux / reactive)
   frontend: Vue 3 + TypeScript + Vite, bilingual zh-CN / en-US
@@ -367,27 +367,25 @@ delivery. See [Status and recent work](#status-and-recent-work) for the open led
 
 ## Status and recent work
 
-**Latest release: v3.3.0 (2026-10-07)** — PostgreSQL support with `Flyway`-managed migrations,
-multi-replica capability (cross-replica event broadcast, shared counters, startup self-check,
-per-class handling of scheduled tasks), and a "configuration honesty" pass that either wired up or
-deleted config keys nothing consumed.
+**Latest release: v3.3.1 (2026-10-14)** — an audit-remediation patch: blocking writes moved off the event
+loop, outbound resolved addresses pinned to the connection (DNS rebinding), token-usage writes
+ownership-scoped, and `SecurityAlertService` actually wired up (it had no caller before, so none of its four
+security alerts ever fired).
 
-**Merged after v3.3.0 and not yet released** (53 commits since the tag — 39 substantive plus 14 automated
-docs-version bumps; 2026-10-07 → 2026-10-13) — a hardening batch driven by a security/quality audit,
-plus a configuration-honesty pass. Grouped by theme:
+**Merged after v3.3.1, tagged `v3.3.2`, not released yet** (40 commits; 2026-10-12 → 2026-10-14) — grouped by theme:
 
 | Theme | What changed |
 |-------|--------------|
-| Reactor correctness | Blocking writes moved off the event loop (API-key usage, error tracking); JWT blacklist sync batched outside the lock |
-| Streaming fidelity | `/v1` surface: error frames plus state-fidelity when a downstream fails before the response commits; legacy `/api/**` semantics deliberately unchanged; two probe test classes pin the client-visible baseline |
-| Alerting | `SecurityAlertService` wired to the authentication-failure path, criteria aligned with the audit event enum, counting moved to the storage side, unified config surface, cross-replica exclusive cooldown, and the remaining dead alert config removed |
-| Audit event types | Event types are now always enum names; `parseEventType` no longer silently falls back to `SYSTEM_MAINTENANCE` (enum grew 17 → 26), and unknown dynamic prefixes degrade explicitly instead of being dropped |
-| Security | SSRF: resolved address is pinned to the connection (blocks DNS rebinding); token-usage writes are ownership-scoped; outbound config/metrics clients consolidated into a shared WebClient pool |
-| Config honesty | Two config trees that bound to no field are gone (`jairouter.security.audit`'s seven sub-blocks and the whole `jairouter.security.performance` tree, 21 keys across 4 files); `AuditConfig.storage` / `alertEnabled` removed; two guard tests now fail the build if such keys come back |
-| Dead code | Unreachable auth provider/listener removed, unused DTOs removed, the whole `common/api` module-boundary layer removed (16 files / ~2100 lines, no implementation and no caller anywhere), unused frontend composable removed |
-| Docs & gates | Documentation realigned with code in several places (16 pages of config examples that never worked, plus two fabricated audit sections); the contribution guide now documents how to read the CI gates; the spell-check word list fixed |
+| **Streaming (`/v1`)** | **Fixed: `/v1` streaming answered `200` with a zero-byte body** — the `/v1` branch used `exchangeToMono` and handed the response body back out of the exchange scope, so WebClient released it before the framework subscribed. Error frames are now emitted only **after** the first chunk, so a pre-commit failure still ends with the downstream's real status code (429 stays 429). Regression-pinned by the end-to-end fixture, which now drives **both** faces |
+| Streaming baseline | `/v1` error frames plus state fidelity on pre-commit failure; legacy `/api/**` semantics deliberately unchanged; client-visible baseline pinned by probe classes |
+| Alerting & audit | Cross-replica exclusive alert cooldown; event types are always enum names and `parseEventType` no longer silently falls back to `SYSTEM_MAINTENANCE` (enum 17 → 26); dead alert-threshold/outlet config removed |
+| Config honesty (3rd pass) | `jairouter.security.audit`'s seven unbound sub-blocks, the whole `jairouter.security.performance` tree and 14 `audit.extended` keys deleted; sanitization failures now only terminate (the error body belongs to the central handler); the startup validator no longer claims a random password gets generated |
+| Dead code & shapes | `SecurityAuditApi`, the producer-less `SecurityStatisticsResponse` DTO and the whole `common/api` module-boundary layer removed (16 files, no implementation and no caller); console `DashboardOverview` typed to the real payload; the response-sanitization test now actually drives the write path |
+| Docs & gates | README rewritten as a facts-first document; error-code table rebuilt from code; `dynamic-config` and quick-start instance examples rewritten against real endpoints and executed; markdown fence-parity checker added (6 files / 10 sites fixed); contribution guide gained "read the CI gates correctly" and a release-cadence rule |
+| Tooling | Local substitute gates for the month CI minutes ran out; image smoke test polls container health instead of racing it; the docs-version self-test stopped asserting a copy of the script's wording, and its workflow now runs when `scripts/docs/**` changes |
 
-Release tags: `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`.
+Release tags: `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`.
+`v3.3.2` is tagged but **not released** yet.
 
 ### Open ledger
 
