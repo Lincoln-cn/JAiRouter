@@ -24,7 +24,11 @@ public final class CreateServiceInstanceRequest {
     private Integer weight;
 
     /**
-     * 实例状态：active 或 inactive
+     * 实例生命周期状态：只接受 {@code active} / {@code inactive}（大小写不敏感，落库归一为规范大写，
+     * 词表见 {@code InstanceStatus}，issue #354）；不传则默认 {@code active}。
+     *
+     * <p>其他取值会被**拒收**（400 INVALID_REQUEST）—— 非 {@code active} 的取值会让实例被
+     * 可用性过滤整体排除。**健康**是另一个维度，用 {@code healthStatus} 表达。</p>
      */
     private String status;
 

@@ -175,10 +175,12 @@ curl -X POST -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
   http://localhost:8080/api/config/instance/chat
 ```
 
-> ⚠️ **Do not send `"status": "HEALTHY"` in the request body.** `status` is the lifecycle flag and the
-> router only accepts `active`; a `HEALTHY` value is stored as-is (`healthy`) and the instance is then
-> filtered out of routing, so calls fail with `404 No instances found for model …`. Omit the field to keep
-> the `active` default. Health is reported separately in `healthStatus`.
+> ⚠️ **`status` in the request body accepts only `active` / `inactive` (case-insensitive).**
+> Anything else (for example `HEALTHY`) is now **rejected with 400 `INVALID_REQUEST`** instead of being
+> stored as-is: `status` is the lifecycle flag and the router only accepts `active`, so a bad value filters
+> the instance out of routing and calls fail with `404 No instances found for model …` — a message that
+> points troubleshooting at the wrong place. Omit the field to keep the `active` default; health is
+> reported separately in `healthStatus`.
 
 The response `data` is the created instance — keep its `id`, the next two calls need it:
 

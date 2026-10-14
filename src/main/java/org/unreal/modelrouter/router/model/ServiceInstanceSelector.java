@@ -112,7 +112,13 @@ public class ServiceInstanceSelector {
     }
 
     /**
-     * 创建合适的异常信息（区分无实例、不健康、熔断三种情况）
+     * 创建合适的异常信息（区分**没有该模型的实例**、**有实例但不可路由**，后者再细分状态/健康/熔断）。
+     *
+     * <p>issue #354 修复：原实现先按 {@code status=active} 过滤，再判「是否为空」⇒
+     * 状态一旦不是 {@code active}（例如被写坏成 {@code healthy}），这里会返回
+     * **404「No instances found for model ...」**，把排查方向指向「模型不存在」，
+     * 而下面「不健康 / 熔断」两条原因永远不可达。现在先按**模型名**分流，
+     * 再按 {@link InstanceAvailability} 的同一份判据（与选择路径一致）给出真实原因。</p>
      *
      * @param serviceType 服务类型
      * @param modelName 模型名称
@@ -124,11 +130,9 @@ public class ServiceInstanceSelector {
             final String modelName,
             final List<ModelRouterProperties.ModelInstance> allInstances) {
 
-        // 检查是否有匹配模型名的实例
+        // 1) 连「同名实例」都没有 —— 这才是 404（原因真的是模型/实例不存在）
         List<ModelRouterProperties.ModelInstance> modelInstances = allInstances.stream()
                 .filter(instance -> modelName.equals(instance.getName()))
-                .filter(instance -> instance.getStatus() != null
-                        && "active".equalsIgnoreCase(instance.getStatus()))
                 .collect(Collectors.toList());
 
         if (modelInstances.isEmpty()) {
@@ -137,20 +141,64 @@ public class ServiceInstanceSelector {
                     "No instances found for model '" + modelName + "' in service type '" + serviceType + "'");
         }
 
-        // 检查是否有健康实例
-        List<ModelRouterProperties.ModelInstance> healthyInstances = modelInstances.stream()
-                .filter(instance -> serviceStateManager.isInstanceHealthy(serviceType.name(), instance))
+        // 2) 有同名实例：按同一份可用性判据细分「为什么一个都用不了」
+        List<ModelRouterProperties.ModelInstance> routable = modelInstances.stream()
+                .filter(instance -> InstanceAvailability.isRoutable(
+                        serviceStateManager, circuitBreakerManager, serviceType, instance))
                 .collect(Collectors.toList());
 
-        if (healthyInstances.isEmpty()) {
+        if (!routable.isEmpty()) {
+            // 走到这里说明「选择」与「分类」之间发生了竞态（例如刚被限流/熔断）——保留兜底语义
             return new ResponseStatusException(
                     HttpStatus.SERVICE_UNAVAILABLE,
-                    "No healthy instances found for model '" + modelName + "' in service type '" + serviceType + "'");
+                    "No available instances for model '" + modelName + "' in service type '"
+                            + serviceType + "' at this moment (all instances busy or rate limited)");
         }
 
-        // 剩余情况：全部被熔断
+        long notActive = modelInstances.stream()
+                .filter(instance -> !InstanceAvailability.isActive(instance))
+                .count();
+        long unhealthy = modelInstances.stream()
+                .filter(InstanceAvailability::isActive)
+                .filter(instance -> !InstanceAvailability.isHealthy(
+                        serviceStateManager, serviceType, instance))
+                .count();
+        long circuitOpen = modelInstances.stream()
+                .filter(InstanceAvailability::isActive)
+                .filter(instance -> InstanceAvailability.isHealthy(
+                        serviceStateManager, serviceType, instance))
+                .filter(instance -> !InstanceAvailability.isCircuitClosed(circuitBreakerManager, instance))
+                .count();
+
+        // 状态不合法是最容易被忽略的一种（写入侧此前不校验）：文案必须点名 status 与合法取值
+        if (notActive > 0 && unhealthy == 0 && circuitOpen == 0) {
+            return new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "Model '" + modelName + "' has " + modelInstances.size() + " instance(s) in service type '"
+                            + serviceType + "' but none is routable: " + notActive
+                            + " instance(s) have a status other than 'active' (lifecycle status must be active;"
+                            + " health belongs to healthStatus)");
+        }
+
+        if (unhealthy > 0 && circuitOpen == 0) {
+            return new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No healthy instances found for model '" + modelName + "' in service type '"
+                            + serviceType + "' (" + unhealthy + " instance(s) unhealthy, "
+                            + notActive + " not active)");
+        }
+
+        if (circuitOpen > 0) {
+            return new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No available instances (all in circuit breaker state) for model '" + modelName
+                            + "' (circuit open: " + circuitOpen + ", unhealthy: " + unhealthy
+                            + ", not active: " + notActive + ")");
+        }
+
+        // 兜底：理论上不可达（上面三种计数之和应等于 modelInstances.size()）
         return new ResponseStatusException(
                 HttpStatus.SERVICE_UNAVAILABLE,
-                "No available instances (all in circuit breaker state) for model '" + modelName + "'");
+                "No routable instances for model '" + modelName + "' in service type '" + serviceType + "'");
     }
 }

@@ -54,7 +54,7 @@ public class ServiceInstanceEntity {
     private Integer weight;
 
     @Column(name = "status")
-    private String status; // ACTIVE, INACTIVE, ERROR
+    private String status; // 生命周期状态：ACTIVE / INACTIVE（词表见 InstanceStatus，issue #354）
 
     @Column(name = "health_status")
     private String healthStatus; // HEALTHY, UNHEALTHY, UNKNOWN
