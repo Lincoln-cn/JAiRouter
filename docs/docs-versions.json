@@ -2028,10 +2028,10 @@
     },
     "docs/en/configuration/routing-rules.md": {
       "FilePath": "docs/en/configuration/routing-rules.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-13T16:58:01.642905",
-      "ContentHash": "e434eb28f0e1664c",
-      "GitCommit": "a0a38c66",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-14T16:22:38.089060",
+      "ContentHash": "103f2d5b7a925f97",
+      "GitCommit": "70bc7d88",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2081,10 +2081,10 @@
     },
     "docs/zh/configuration/routing-rules.md": {
       "FilePath": "docs/zh/configuration/routing-rules.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-13T16:58:02.020069",
-      "ContentHash": "682c59ecc044c828",
-      "GitCommit": "a0a38c66",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-14T16:22:38.563668",
+      "ContentHash": "bf35a2c472d1a083",
+      "GitCommit": "70bc7d88",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -8184,7 +8184,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-14T15:58:14.832148",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/routing-rules.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-14T16:22:38.089070",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/routing-rules.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-14T16:22:38.563678",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-14T23:59:50.179901"
+  "last_updated": "2026-10-14T16:22:38.933782"
 }
