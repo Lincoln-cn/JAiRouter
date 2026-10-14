@@ -7,12 +7,20 @@ on:
       - 'docs/**/*.md'
       - 'README*.md'
       - '*.md'
+      # issue #357：本 workflow 的自测对象是 scripts/docs/ 下的脚本，
+      # 而路径过滤原先只有 *.md ⇒ **改脚本根本不会触发本 workflow**
+      # （#352 改了脚本措辞、自测随之变红，PR 阶段却什么都没跑，红只在 master 上出现）。
+      - 'scripts/docs/**'
   pull_request:
     branches: [ main, master ]
     paths: 
       - 'docs/**/*.md'
       - 'README*.md'
       - '*.md'
+      # issue #357：本 workflow 的自测对象是 scripts/docs/ 下的脚本，
+      # 而路径过滤原先只有 *.md ⇒ **改脚本根本不会触发本 workflow**
+      # （#352 改了脚本措辞、自测随之变红，PR 阶段却什么都没跑，红只在 master 上出现）。
+      - 'scripts/docs/**'
   schedule:
     # 每天 UTC 02:00 (北京时间 10:00) 运行
     - cron: '0 2 * * *'
@@ -298,7 +306,7 @@ jobs:
           const recentChangesMatch = reportContent.match(/## 最近变更\n(.*?)(?=\n##|\n$)/s);
           const recentChanges = recentChangesMatch ? recentChangesMatch[1].trim() : '无最近变更';
           
-          const comment = `## 📋 文档版本管理报告 此 PR 涉及文档变更，以下是版本管理系统的分析结果： ### 📊 变更统计 - 变更记录数: ${{ steps.scan.outputs.changes_count }} - 过期文档数: ${{ steps.report.outputs.outdated_count }} ### 📝 最近变更 ${recentChanges} ### 🔍 检查项目 - ✅ 文档版本信息已更新 - ✅ 依赖关系已检测 - ✅ Git 信息已收集 ${{ steps.report.outputs.has_outdated == 'true' && '- ⚠️ 发现过期文档，建议更新' || '- ✅ 无过期文档' }} --- *此评论由文档版本管理系统自动生成*`;
+          const comment = `## 📋 文档版本管理报告 此 PR 涉及文档或文档工具链变更，以下是版本管理系统的分析结果： ### 📊 变更统计 - 变更记录数: ${{ steps.scan.outputs.changes_count }} - 过期文档数: ${{ steps.report.outputs.outdated_count }} ### 📝 最近变更 ${recentChanges} ### 🔍 检查项目 - ✅ 文档版本信息已更新 - ✅ 依赖关系已检测 - ✅ Git 信息已收集 ${{ steps.report.outputs.has_outdated == 'true' && '- ⚠️ 发现过期文档，建议更新' || '- ✅ 无过期文档' }} --- *此评论由文档版本管理系统自动生成*`;
           
           await github.rest.issues.createComment({
             owner: context.repo.owner,
