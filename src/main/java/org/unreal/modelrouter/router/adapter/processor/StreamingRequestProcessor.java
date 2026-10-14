@@ -195,6 +195,9 @@ public class StreamingRequestProcessor {
         final AtomicLong contentOtherChars = new AtomicLong(0);
         final AtomicBoolean contentSawAnyChar = new AtomicBoolean(false);
         final AtomicBoolean contentTruncated = new AtomicBoolean(false);
+        // #356：是否已经产出过至少一个块 —— 决定失败时「按下游真实状态结束」（未产出）还是
+        // 「先补协议 error 帧再终止」（已产出，此时 200 已提交，状态已无法更改）。
+        final AtomicBoolean firstChunkEmitted = new AtomicBoolean(false);
 
         // v2.9.10: 流式缓存写 — 仅缓存键存在时收集变换后块与 finish_reason
         final List<String> transformedChunks = (cacheKeyForWrite != null) ? new ArrayList<>() : null;
@@ -232,6 +235,7 @@ public class StreamingRequestProcessor {
         final Function<Flux<String>, Flux<ServerSentEvent<String>>> decorateChunks = rawChunks -> {
             Flux<ServerSentEvent<String>> streamResponse = rawChunks
                 .map(chunk -> {
+                    firstChunkEmitted.set(true);
                     // 提取 usage 信息和累积内容。
                     // v3.2.3: contentBuilder 与 doOnCancel/doOnError 的缓冲释放共享监视器
                     // （Reactor 不保证 cancel 与 onNext 串行，StringBuilder 非线程安全）。
@@ -371,29 +375,43 @@ public class StreamingRequestProcessor {
                     QuotaReservation.settleFailure(quotaReservation);
                 })
                 // v3.2.x (#257): /v1 OpenAI 面在失败时先补一个协议形状 error 帧、再以异常终止
-                // （不补 [DONE]：它是「正常结束」的语汇，补上会让截断被读成成功；详见 StreamingErrorTermination）
-                .onErrorResume(throwable -> StreamingErrorTermination.terminate(throwable, httpRequest, objectMapper));
+                // （不补 [DONE]：它是「正常结束」的语汇，补上会让截断被读成成功；详见 StreamingErrorTermination）。
+                // #356：**只在首块之后**补帧 —— 首块之前失败时状态码还没提交，必须让异常原样上抛，
+                // 才能按下游真实状态结束（#257 A 的状态保真）；若此时补帧，WebFlux 会先写出 200，
+                // 客户端就把「下游 500」读成 200 + error 帧（本类测试的 face=v1 mode=before 用例钉住这一点）。
+                .onErrorResume(throwable -> firstChunkEmitted.get()
+                        ? StreamingErrorTermination.terminate(throwable, httpRequest, objectMapper)
+                        : Flux.error(throwable));
 
             return streamResponse;
         };
 
         if (StreamingErrorTermination.isV1Face(httpRequest)) {
-            // #257 A：先取下游响应、再决定网关回什么 —— 下游 4xx/5xx 不再被统一成「500 + 空体」，
-            // 而是按真实状态结束（错误体由 /v1 面的既有错误体协议化机制产出）。
-            // 实测依据：WebFlux 层不会在首块之前提交 200（StreamingPreCommitErrorProbeWebFluxTest 情形 A）。
-            return requestSpec.bodyValue(rewriteModelField(request, instanceName))
-                    .exchangeToMono(clientResponse -> {
-                        if (clientResponse.statusCode().isError()) {
-                            logger.warn("流式请求下游错误: instance={}, status={}",
-                                    instanceName, clientResponse.statusCode());
-                            return clientResponse.releaseBody()
-                                    .then(Mono.error(new ResponseStatusException(
-                                            clientResponse.statusCode(), "下游服务错误")));
-                        }
-                        return Mono.just(ResponseEntity.ok()
-                                .contentType(MediaType.TEXT_EVENT_STREAM)
-                                .body(decorateChunks.apply(clientResponse.bodyToFlux(String.class))));
-                    });
+            // #257 A：/v1 面在提交响应前按**下游真实状态**结束（不再统一成 500 + 空体），
+            // 错误体由 /v1 面的既有协议化机制产出（ReactiveGlobalExceptionHandler → V1ErrorBodyMapper）。
+            //
+            // #356 修复：原实现用 `exchangeToMono` 并把 `clientResponse.bodyToFlux(...)` 交回框架。
+            // `Mono.just(ResponseEntity...)` 会**立即终止**，WebClient 随之释放并排空响应体
+            // ⇒ 框架后续订阅那个 body flux 时一个 chunk 都拿不到：客户端看到
+            // `200 + text/event-stream + chunked` 但**响应体 0 字节**（根因已由
+            // StreamingErrorPathRuntimeTest 的 face=v1 用例在本机确定性复现）。
+            // 现改为 `retrieve()` + 状态保真的 `onStatus`：错误仍在**订阅响应体之前**发生，
+            // 而正常流的 body 与 legacy 面走同一条已验证有帧的 `bodyToFlux` 路径。
+            final Flux<ServerSentEvent<String>> v1Stream = decorateChunks.apply(requestSpec
+                    .bodyValue(rewriteModelField(request, instanceName))
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError, clientResponse -> {
+                        logger.warn("流式请求下游错误: instance={}, status={}",
+                                instanceName, clientResponse.statusCode());
+                        return clientResponse.releaseBody()
+                                .then(Mono.error(new ResponseStatusException(
+                                        clientResponse.statusCode(), "下游服务错误")));
+                    })
+                    .bodyToFlux(String.class));
+
+            return Mono.just(ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_EVENT_STREAM)
+                    .body(v1Stream));
         }
 
         // legacy /api/** 面（与 Anthropic 面之外的其余路径）：保持既有语义 —— 200 + 流，异常在流内终止

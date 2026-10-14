@@ -45,6 +45,12 @@ import static org.mockito.Mockito.when;
  *
  * <p>依据：{@code StreamingPreCommitErrorProbeWebFluxTest} 已实测 WebFlux 层在首块之前失败会返回 500
  * （不会先提交 200）⇒ 本改动能真正决定客户端看到的状态码。</p>
+ *
+ * <p><b>#356 更新（2026-10-14）</b>：{@code /v1} 面的实现从 {@code exchangeToMono} 改回
+ * {@code retrieve() + onStatus}（原因见 {@code StreamingRequestProcessor} 的注释：前者会让正常流返回空体）。
+ * 因此本类的断言形态随之为「外层 Mono 200 + 流 / 失败在流内抛出」—— 与 legacy 面同形。
+ * **要求（客户端看到真实状态）未变**：HTTP 层的守住在 {@code StreamingErrorPathRuntimeTest}
+ * （{@code face=v1 mode=before429} ⇒ 429）。</p>
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -76,9 +82,18 @@ class StreamingV1DownstreamStatusTest {
     }
 
     @Test
-    @DisplayName("/v1 面 + 下游 429 ⇒ 网关以 429 结束（保真，便于客户端退避重试）")
+    @DisplayName("/v1 面 + 下游 429 ⇒ 以 429 结束（保真，便于客户端退避重试）")
     void v1Face_downstream429_failsFastWithSameStatus() {
-        StepVerifier.create(stream("/v1/chat/completions", errorResponse(HttpStatus.TOO_MANY_REQUESTS)))
+        // #356 之后本类的断言形态变了（形状，不是要求）：错误从「外层 Mono」挪进「响应体流内」，
+        // 与 legacy 面同形 —— 因为旧实现用 exchangeToMono 把 body flux 交回框架，
+        // 会让**正常流也返回空体**。客户端可见的状态保真由两处共同守住：
+        //   ① 本用例（处理器层：流内抛出的 ResponseStatusException 带真实状态）；
+        //   ② StreamingErrorPathRuntimeTest.v1FaceKeepsDownstream429（HTTP 层：客户端真的看到 429）。
+        final ResponseEntity<?> response = stream("/v1/chat/completions",
+                errorResponse(HttpStatus.TOO_MANY_REQUESTS)).block(Duration.ofSeconds(10));
+        assertEquals(HttpStatus.OK, response == null ? null : response.getStatusCode(),
+                "外层 Mono 先给 200 + 流（与 legacy 面同形），失败在订阅响应体时抛出");
+        StepVerifier.create(sseBody(response))
                 .expectErrorSatisfies(error -> {
                     assertInstanceOf(ResponseStatusException.class, error);
                     assertEquals(HttpStatus.TOO_MANY_REQUESTS,
@@ -88,9 +103,11 @@ class StreamingV1DownstreamStatusTest {
     }
 
     @Test
-    @DisplayName("/v1 面 + 下游 401 ⇒ 网关以 401 结束（客户端可据此换密钥而非盲目重试）")
+    @DisplayName("/v1 面 + 下游 401 ⇒ 以 401 结束（客户端可据此换密钥而非盲目重试）")
     void v1Face_downstream401_failsFastWithSameStatus() {
-        StepVerifier.create(stream("/v1/chat/completions", errorResponse(HttpStatus.UNAUTHORIZED)))
+        final ResponseEntity<?> response = stream("/v1/chat/completions",
+                errorResponse(HttpStatus.UNAUTHORIZED)).block(Duration.ofSeconds(10));
+        StepVerifier.create(sseBody(response))
                 .expectErrorSatisfies(error -> assertEquals(HttpStatus.UNAUTHORIZED,
                         ((ResponseStatusException) error).getStatusCode()))
                 .verify();
@@ -99,7 +116,9 @@ class StreamingV1DownstreamStatusTest {
     @Test
     @DisplayName("/v1/messages（Anthropic 面）同样保真状态：429 ⇒ 429")
     void anthropicFace_alsoFailsFastWithSameStatus() {
-        StepVerifier.create(stream("/v1/messages", errorResponse(HttpStatus.TOO_MANY_REQUESTS)))
+        final ResponseEntity<?> response = stream("/v1/messages",
+                errorResponse(HttpStatus.TOO_MANY_REQUESTS)).block(Duration.ofSeconds(10));
+        StepVerifier.create(sseBody(response))
                 .expectErrorSatisfies(error -> assertEquals(HttpStatus.TOO_MANY_REQUESTS,
                         ((ResponseStatusException) error).getStatusCode()))
                 .verify();
