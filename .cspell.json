@@ -120,6 +120,7 @@
     "Checkstyle",
     "Backpressure",
     "Qube",
+    "Qodana",
     "Javadoc",
     "Contentful",
     "Tmetrix",
