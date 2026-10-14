@@ -95,11 +95,12 @@ It checks three **environment variables** (read through Spring placeholders of t
 "Looks hard-coded" (`:153-169`): contains `your-` / `placeholder` / `example` / `test` / `demo` / `changeme`,
 or equals `secret` / `password` (case-insensitive).
 
-**Failure semantics (easy to misread — this is what the code does)**: the `errors` bucket is printed **and**
-turned into an `IllegalStateException` **only when `strict-mode=true`** (`:67-72`). Therefore:
+**Failure semantics (easy to misread — this is what the code does)**: the `errors` bucket is **always printed**,
+but it only blocks startup when `strict-mode=true` (printing and blocking are decoupled, since issue #381).
+Therefore:
 
-- `strict-mode=false` (default): **only warnings are printed**; findings in the `errors` bucket (for example a
-  hard-coded-looking `JWT_SECRET`) are **neither printed nor fatal**;
+- `strict-mode=false` (default): both `warnings` and `errors` **are printed** (error-level findings such as a
+  hard-coded-looking `JWT_SECRET` are now **visible**), but they do **not** block startup;
 - `strict-mode=true`: a non-empty `errors` bucket ⇒ each entry is logged with `log.error` and the
   **startup fails**.
 

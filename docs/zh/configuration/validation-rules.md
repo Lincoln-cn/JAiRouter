@@ -93,11 +93,11 @@ jairouter:
 「看起来是硬编码值」的判据（`:153-169`）：包含 `your-` / `placeholder` / `example` / `test` / `demo` /
 `changeme`，或整值等于 `secret` / `password`（大小写不敏感）。
 
-**失败语义（容易误解，按代码写清）**：`errors` 只在 `strict-mode=true` 时才会被打印**并**抛
-`IllegalStateException`（`:67-72`）。也就是说：
+**失败语义（容易误解，按代码写清）**：`errors` 桶**一律打印**，但**只有 `strict-mode=true` 才阻断启动**
+（打印与阻断解耦，issue #381 起）。也就是说：
 
-- `strict-mode=false`（默认）：**只打印 warnings**；`errors` 桶里的发现（例如 `JWT_SECRET` 看起来是硬编码值）
-  **既不打印、也不阻止启动**；
+- `strict-mode=false`（默认）：`warnings` 与 `errors` **都会打印**（错误级发现例如 `JWT_SECRET` 看起来是硬编码值
+  现在**可见**），但**不阻止启动**；
 - `strict-mode=true`：`errors` 非空 ⇒ 逐条 `log.error` + **启动失败**。
 
 > 📌 **与生产启动门闩的关系**：`prod` / `production` profile 下，`JWT_SECRET` 与
