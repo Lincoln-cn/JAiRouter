@@ -82,6 +82,8 @@ spring:
       - classpath:config/common/server.yml
       - classpath:config/common/webclient.yml
       - classpath:config/common/logging.yml
+      - classpath:config/common/scheduling.yml
+      - classpath:config/common/cluster.yml
 
       # config-service 模块
       - classpath:config/config-service/core.yml
@@ -93,6 +95,8 @@ spring:
       - classpath:config/router/circuitbreaker.yml
       - classpath:config/router/fallback.yml
       - classpath:config/router/services.yml
+      - classpath:config/router/rules.yml
+      - classpath:config/router/pools.yml
 
       # auth 模块
       - classpath:config/auth/jwt.yml
@@ -111,6 +115,12 @@ spring:
 
       # persistence 模块
       - classpath:config/persistence/state-persistence-base.yml
+
+      # 向后兼容配置（保留原有路径）
+      - classpath:config/base/server-base.yml
+      - classpath:config/base/model-services-base.yml
+      - classpath:config/security/security-base.yml
+      - classpath:config/security/persistence-base.yml
 ```
 
 ---

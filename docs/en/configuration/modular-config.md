@@ -82,6 +82,8 @@ spring:
       - classpath:config/common/server.yml
       - classpath:config/common/webclient.yml
       - classpath:config/common/logging.yml
+      - classpath:config/common/scheduling.yml
+      - classpath:config/common/cluster.yml
 
       # config-service module
       - classpath:config/config-service/core.yml
@@ -93,6 +95,8 @@ spring:
       - classpath:config/router/circuitbreaker.yml
       - classpath:config/router/fallback.yml
       - classpath:config/router/services.yml
+      - classpath:config/router/rules.yml
+      - classpath:config/router/pools.yml
 
       # auth module
       - classpath:config/auth/jwt.yml
@@ -111,6 +115,12 @@ spring:
 
       # persistence module
       - classpath:config/persistence/state-persistence-base.yml
+
+      # Backward-compatible configuration (legacy paths)
+      - classpath:config/base/server-base.yml
+      - classpath:config/base/model-services-base.yml
+      - classpath:config/security/security-base.yml
+      - classpath:config/security/persistence-base.yml
 ```
 
 ---
