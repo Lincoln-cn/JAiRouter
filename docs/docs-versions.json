@@ -2381,118 +2381,6 @@
   "changes": [
     {
       "FilePath": "README-ZH.md",
-      "OldVersion": "1.0.10",
-      "NewVersion": "1.0.11",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-16T05:10:56.725465",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "README.md",
-      "OldVersion": "1.0.18",
-      "NewVersion": "1.0.19",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-16T05:10:56.727272",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/api-reference/error-codes.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-16T05:10:56.733367",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/deployment/docker-optimized.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-16T05:10:56.778880",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/development/architecture.md",
-      "OldVersion": "1.0.3",
-      "NewVersion": "1.0.4",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-16T05:10:56.795852",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/development/index.md",
-      "OldVersion": "1.0.4",
-      "NewVersion": "1.0.5",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-16T05:10:56.802807",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/getting-started/quick-start.md",
-      "OldVersion": "1.0.4",
-      "NewVersion": "1.0.5",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-16T05:10:56.815208",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/reference/changelog.md",
-      "OldVersion": "1.0.6",
-      "NewVersion": "1.0.7",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-16T05:10:56.852302",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/reference/faq.md",
-      "OldVersion": "1.0.3",
-      "NewVersion": "1.0.4",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-16T05:10:56.854206",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/reference/glossary.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-16T05:10:56.856139",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/reference/index.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-16T05:10:56.859034",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/reference/roadmap.md",
-      "OldVersion": "1.0.6",
-      "NewVersion": "1.0.7",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-16T05:10:56.860924",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/security/blacklist-management.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-16T05:10:56.865241",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/security/troubleshooting.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-16T05:10:56.876013",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "README-ZH.md",
       "OldVersion": "1.0.11",
       "NewVersion": "1.0.12",
       "ChangeType": "MODIFIED",
@@ -8276,5 +8164,5 @@
       "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-14T18:37:27.091042"
+  "last_updated": "2026-10-15T06:57:45.406477"
 }
