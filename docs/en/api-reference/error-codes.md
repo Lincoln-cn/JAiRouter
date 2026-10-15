@@ -65,7 +65,7 @@ JAiRouter uses a standardized error code system to identify various error condit
 | `JWT_REFRESH_EXPIRED` | JWT is past its refresh window | The refresh window has elapsed | Sign in again |
 | `JWT_REFRESH_ERROR` | Error while refreshing the JWT | The refresh chain threw | Check server logs |
 | `JWT_REFRESH_FAILED` | JWT refresh failed | The refresh chain threw | Sign in again |
-| `JWT_USER_ID_EXTRACTION_FAILED` | Cannot extract a user id from the JWT | The token carries no parseable user identifier | Sign in again |
+| `JWT_USER_ID_EXTRACTION_FAILED` | Cannot extract a user id from the JWT | The token carries no user identifier the gateway can read | Sign in again |
 | `JWT_AUTH_FAILED` | JWT authentication failed | The authentication manager threw an unexpected exception | Check server logs |
 | `JWT_DISABLED` | JWT authentication is disabled | The server turned JWT auth off | Enable it on the server |
 | `TOKEN_REQUIRED` | The current token is required for refresh | The refresh request carries no current token | Send the current token with the refresh |
