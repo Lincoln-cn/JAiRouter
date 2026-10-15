@@ -96,11 +96,14 @@ JAiRouter uses a standardized error code system to identify various error condit
 |------------|-------------|--------------|----------|
 | `FORBIDDEN` | Forbidden | Generic authorization failure | Check the role and permissions |
 | `FORBIDDEN_TOKEN_USAGE` | Not allowed to view this token's usage | The token does not belong to the caller | Query it with the owning account |
+| `BUILTIN_READONLY` | Built-in entry is read-only | Attempting to modify or delete a built-in adapter | Create a custom adapter instead |
 
 > ⚠️ `INSUFFICIENT_PERMISSIONS` / `ACCESS_DENIED` / `FORBIDDEN_RESOURCE` were formerly declared in `AuthorizationException`
 > but had **no emission site anywhere in the repository** (their factory methods were only called by unit tests)
 > ⇒ they were deleted together with the never-called code (#406) and are not listed here: a client branching on them would
 > never match. Real 403s come from the Spring Security authorization chain and from `FORBIDDEN` above.
+> `BUILTIN_READONLY` is **written explicitly as 403** by the PUT/DELETE built-in branch in
+> `AdapterConfigController`; under the hybrid scheme of issue #405 the rule chain derives 403 for the same code
 
 ---
 
@@ -136,12 +139,13 @@ JAiRouter uses a standardized error code system to identify various error condit
 | `INVALID_PERMISSION` | Invalid permission entry | The permission code is not in the permission list | Use a registered permission code |
 | `INVALID_RECORD_LEVEL` | Invalid record level | The level is not in the enum | Use METADATA_ONLY / SUMMARY / FULL |
 | `INVALID_ROLE` | Invalid role name | The role is not a known role | Use a known role name |
-| `BUILTIN_READONLY` | Built-in entry is read-only | Attempting to modify or delete a built-in adapter | Create a custom adapter instead |
 | `RESTART_REQUIRED` | A restart is required for these fields | Fields that cannot be hot-reloaded were submitted | Remove them, edit the config file and restart |
 
-> ⚠️ `BUILTIN_READONLY` and `RESTART_REQUIRED` are **returned with 400** by their endpoints
-> (`ResponseEntity.badRequest()`), while code-name resolution would derive 403 — the divergence is tracked as a
-> pending decision (issue #405) and this table registers the **observed** values.
+> ⚠️ `RESTART_REQUIRED` is now **returned with 400** by its endpoint *and* derived as 400 by the rule chain —
+> under the hybrid scheme of issue #405 each chain first keeps its own semantics (this code means request
+> validation ⇒ 400) and the two values are then aligned: the rule chain used to derive 403 for it.
+> The same scheme classifies `BUILTIN_READONLY` as authorization semantics (403), so it moved to the
+> Authorization section.
 > The previous version also listed `VALIDATION_ERROR` (only the `ValidationFailureType` enum constant, never emitted
 > as a response code) and `INVALID_PARAMETER` / `MISSING_PARAMETER` / `INVALID_FORMAT` (no match in the codebase);
 > all four were removed.

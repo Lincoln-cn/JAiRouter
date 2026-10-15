@@ -262,13 +262,14 @@ public class AdapterConfigController {
     @Operation(summary = "更新adapter", description = "更新配置驱动adapter的配置")
     @ApiResponse(responseCode = "200", description = "adapter更新成功")
     @ApiResponse(responseCode = "404", description = "adapter不存在")
-    @ApiResponse(responseCode = "400", description = "不能更新内置adapter")
+    @ApiResponse(responseCode = "403", description = "不能更新内置adapter")
     public ResponseEntity<RouterResponse<Map<String, Object>>> updateAdapter(
             @Parameter(description = "adapter名称") @PathVariable final String name,
             @RequestBody final AdapterDefinitionRequest request) {
         try {
             if (adapterRegistry.isBuiltinAdapter(name)) {
-                return ResponseEntity.badRequest()
+                // issue #405：内置项只读 = 授权语义，端点与规则链（ApiException.legacyResolveStatus）都是 403
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(RouterResponse.error("不能更新内置adapter: " + name, ErrorCode.BUILTIN_READONLY.code()));
             }
 
@@ -340,12 +341,13 @@ public class AdapterConfigController {
     @Operation(summary = "删除adapter", description = "删除配置驱动adapter")
     @ApiResponse(responseCode = "200", description = "adapter删除成功")
     @ApiResponse(responseCode = "404", description = "adapter不存在")
-    @ApiResponse(responseCode = "400", description = "不能删除内置adapter")
+    @ApiResponse(responseCode = "403", description = "不能删除内置adapter")
     public ResponseEntity<RouterResponse<Void>> deleteAdapter(
             @Parameter(description = "adapter名称") @PathVariable final String name) {
         try {
             if (adapterRegistry.isBuiltinAdapter(name)) {
-                return ResponseEntity.badRequest()
+                // issue #405：内置项只读 = 授权语义，端点与规则链（ApiException.legacyResolveStatus）都是 403
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(RouterResponse.error("不能删除内置adapter: " + name, ErrorCode.BUILTIN_READONLY.code()));
             }
 

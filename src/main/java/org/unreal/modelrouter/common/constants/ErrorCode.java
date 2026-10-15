@@ -87,8 +87,8 @@ public enum ErrorCode {
     // 2) RESPONSE_BODY：码只进响应体，状态由发出点的 ResponseEntity 显式指定
     //    （实测站点见 ErrorCodeRegistryTest 的「站点实测状态」用例）
     // ===================================================================================
-    BUILTIN_READONLY("BUILTIN_READONLY", HttpStatus.BAD_REQUEST, RenderPath.RESPONSE_BODY,
-            "内置项只读，不允许修改；端点以 400 返回（与规则链推导的 403 不一致，见 issue #405）"),
+    BUILTIN_READONLY("BUILTIN_READONLY", HttpStatus.FORBIDDEN, RenderPath.RESPONSE_BODY,
+            "内置项只读，不允许修改；端点与规则链推导值一致，均为 403（issue #405 混合方案）"),
     CONFLICT_BUILTIN("CONFLICT_BUILTIN", HttpStatus.CONFLICT, RenderPath.RESPONSE_BODY, "与内置项冲突"),
     CONFLICT_EXISTS("CONFLICT_EXISTS", HttpStatus.CONFLICT, RenderPath.RESPONSE_BODY, "资源已存在"),
     FORBIDDEN_TOKEN_USAGE("FORBIDDEN_TOKEN_USAGE", HttpStatus.FORBIDDEN, RenderPath.RESPONSE_BODY,
@@ -99,7 +99,7 @@ public enum ErrorCode {
             "记录级别不合法"),
     INVALID_ROLE("INVALID_ROLE", HttpStatus.BAD_REQUEST, RenderPath.RESPONSE_BODY, "角色名不合法"),
     RESTART_REQUIRED("RESTART_REQUIRED", HttpStatus.BAD_REQUEST, RenderPath.RESPONSE_BODY,
-            "需要重启后生效；端点以 400 返回（与规则链推导的 403 不一致，见 issue #405）"),
+            "需要重启后生效；端点与规则链推导值一致，均为 400（规则链已对齐，见 issue #405）"),
     TEMPLATE_NOT_FOUND("TEMPLATE_NOT_FOUND", HttpStatus.NOT_FOUND, RenderPath.RESPONSE_BODY, "模板不存在"),
 
     // ===================================================================================
@@ -241,8 +241,8 @@ public enum ErrorCode {
      * 该码的状态是否由规则链（{@code ApiException.resolveStatus}）决定。
      *
      * <p>{@code resolveStatus} 只对这一类查表，其余路径的码仍走历史规则链 —— 这样引入注册表
-     * 对「未走规则链的码」保持零行为变化（例如 {@code BUILTIN_READONLY} 的规则链推导值是 403，
-     * 而它真实的端点状态是 400：查表不得把它改成 400，那会改变任何将来经 {@code ApiException}
+     * 对「未走规则链的码」保持零行为变化（例如 {@code INVALID_API_KEY} 的规则链推导值是 400，
+     * 而它真实的端点状态是 401：查表不得把它改成 401，那会改变任何将来经 {@code ApiException}
      * 发出该码的路径的对外状态）。</p>
      */
     public static boolean isResolvedByRuleChain(final String code) {
