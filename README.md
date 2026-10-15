@@ -43,7 +43,7 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # the local/git directory name differs from the product name
 artifact:        model-router            # Maven artifactId
-project_version: 3.3.3                   # pom.xml
+project_version: 3.3.4                   # pom.xml
 latest_release:  v3.3.1 (2026-10-14)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5 (WebFlux / reactive)
@@ -390,6 +390,11 @@ security alerts ever fired).
 
 Release tags: `v3.3.3` · `v3.3.2` · `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`.
 `v3.3.2` and `v3.3.3` are tagged but **not released** yet (`v3.3.2`'s content ships with `v3.3.3`).
+
+**Master is on the unreleased `3.3.4` line**: the `v3.3.3` tag is frozen at `e965f9a8`, and everything merged after it
+(the #406 / #412 / #414 error-code close-out and the #405 status alignment) is collected for `v3.3.4`.
+The `[3.3.4]` changelog entry and the tag itself are cut once the remaining batch (#404: API-key rate limiting answers
+429 with a new `RATE_LIMITED_API_KEY` code) lands.
 
 ### Open ledger
 
