@@ -119,10 +119,14 @@ public class ApiException extends RuntimeException {
     }
 
     /**
-     * 历史兜底规则链（issue #370 之前的唯一实现）—— 仅用于**未登记**在 {@link ErrorCode} 里的码。
+     * 历史兜底规则链（issue #370 之前的唯一实现）—— 用于两类码：**未登记**在 {@link ErrorCode} 里的码，
+     * 以及**已登记但状态不由规则链决定**的码（渲染路径非 {@link ErrorCode.RenderPath#API_EXCEPTION}）。
      *
      * <p>保留原样是为了**零行为变化**：未登记的码（上游透传、临时新增字面量等）仍按原命名规则推导。
      * {@code ErrorCodeRegistryTest} 会用不变量断言钉住「登记码走注册表、未登记码走本规则链」。</p>
+     *
+     * <p>⚠️ issue #405：本表里的精确匹配项也要与**端点实测状态**保持一致（它决定「响应体路径」的码
+     * 经 {@code resolveStatus} 推导时的值）——{@code BUILTIN_READONLY} 403、{@code RESTART_REQUIRED} 400。</p>
      */
     static HttpStatus legacyResolveStatus(final String errorCode) {
         if (errorCode == null || errorCode.isBlank()) {
@@ -145,8 +149,11 @@ public class ApiException extends RuntimeException {
             case "INTERNAL_ERROR":
                 return HttpStatus.INTERNAL_SERVER_ERROR;
             case "BUILTIN_READONLY":
-            case "RESTART_REQUIRED":
+                // issue #405：内置项只读是授权语义 ⇒ 与端点一致，两端都是 403
                 return HttpStatus.FORBIDDEN;
+            case "RESTART_REQUIRED":
+                // issue #405：需重启 = 请求校验语义 ⇒ 与端点一致，两端都是 400
+                return HttpStatus.BAD_REQUEST;
             case "LOGIN_FAILED":
                 return HttpStatus.UNAUTHORIZED;
             case "SERVICE_NOT_AVAILABLE":

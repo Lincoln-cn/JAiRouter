@@ -97,10 +97,13 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 |--------|------|----------|----------|
 | `FORBIDDEN` | 禁止访问 | 通用授权失败 | 检查角色和权限 |
 | `FORBIDDEN_TOKEN_USAGE` | 无权查看该令牌的用量 | 令牌不属于当前调用者 | 用所属账号查询该令牌 |
+| `BUILTIN_READONLY` | 内置项只读 | 试图修改/删除内置适配器 | 改为新建自定义适配器 |
 
 > ⚠️ `INSUFFICIENT_PERMISSIONS` / `ACCESS_DENIED` / `FORBIDDEN_RESOURCE` 曾在 `AuthorizationException` 里声明，但
 > **全仓没有发出点**（其工厂方法只被单元测试调用）⇒ 已随未接线代码一并删除（#406），本表不列：客户端照它们写分支永远命中不到。
 > 真正的 403 由 Spring Security 的授权链与上表的 `FORBIDDEN` 承担。
+> `BUILTIN_READONLY` 由 `AdapterConfigController` 的 PUT/DELETE 内置分支**显式写成 403**；按 issue #405
+> 的混合方案，同码的规则链推导值也已对齐为 403 ⇒ **两端一致**。
 
 ---
 
@@ -136,11 +139,11 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 | `INVALID_PERMISSION` | 权限项不合法 | 权限码不在权限清单内 | 用已登记的权限码 |
 | `INVALID_RECORD_LEVEL` | 记录级别不合法 | 记录级别不在枚举内 | 用 METADATA_ONLY / SUMMARY / FULL |
 | `INVALID_ROLE` | 角色名不合法 | 角色名不在已知角色内 | 用已知角色名 |
-| `BUILTIN_READONLY` | 内置项只读 | 试图修改/删除内置适配器 | 改为新建自定义适配器 |
 | `RESTART_REQUIRED` | 需要重启后生效 | 提交了不支持热改的字段 | 移除这些字段，改配置文件后重启 |
 
-> ⚠️ `BUILTIN_READONLY` 与 `RESTART_REQUIRED` 的端点**实测返回 400**（`ResponseEntity.badRequest()`），
-> 而按错误码命名规则推导出来的状态是 403 —— 两处不一致已作为待裁定项记录（issue #405），本表按**实测值**登记。
+> ⚠️ `RESTART_REQUIRED` 的端点实测值与规则链推导值**现在都是 400** —— 按 issue #405 的混合方案，
+> 每条链先按自己的语义定状态（本码 = 请求校验语义 400），再把两端对齐：规则链对同码原先推导 403，
+> 已改为 400。同一方案把 `BUILTIN_READONLY` 定为授权语义 403，故它已移入「授权错误码」一节。
 > 上一版还列过 `VALIDATION_ERROR`（只是 `ValidationFailureType` 的枚举值，从不作为响应码发出）、
 > `INVALID_PARAMETER` / `MISSING_PARAMETER` / `INVALID_FORMAT`（全库无匹配）—— 均已从本表移除。
 

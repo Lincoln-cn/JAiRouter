@@ -101,13 +101,15 @@ class ErrorCodeRegistryTest {
     }
 
     @Test
-    @DisplayName("响应体路径：登记状态 = 发出点实测状态；与规则链不一致的码只有明列的两个")
+    @DisplayName("响应体路径：登记状态 = 发出点实测状态；与规则链不一致的码为空集（issue #405 已对齐）")
     void responseBodyCodes_matchTheStatusObservedAtEmissionSites() {
         // 站点实测证据（stage 2 取证脚本按 `ResponseEntity.*` 归类全部 RouterResponse.error 发出点）：
-        //   BUILTIN_READONLY   AdapterConfigController:269 / :346 → ResponseEntity.badRequest() = 400
-        //   RESTART_REQUIRED   QuotaConfigController:106          → ResponseEntity.badRequest() = 400
-        // 其余响应体码的站点状态与规则链推导值一致（404/409/400）。
-        assertEquals(HttpStatus.BAD_REQUEST, ErrorCode.BUILTIN_READONLY.status());
+        //   BUILTIN_READONLY   AdapterConfigController 的 PUT/DELETE 内置分支
+        //                      → ResponseEntity.status(HttpStatus.FORBIDDEN) = 403（#405 前为 badRequest = 400）
+        //   RESTART_REQUIRED   QuotaConfigController:106 → ResponseEntity.badRequest() = 400
+        // issue #405 的混合方案把两条链都对齐了：内置只读 = 授权语义 403，需重启 = 请求校验语义 400
+        // ⇒ 响应体路径**不再有**「端点实测状态 ≠ 规则链推导值」的码（其余码本来就是 404/409/400）。
+        assertEquals(HttpStatus.FORBIDDEN, ErrorCode.BUILTIN_READONLY.status());
         assertEquals(HttpStatus.BAD_REQUEST, ErrorCode.RESTART_REQUIRED.status());
 
         Set<String> diverging = new TreeSet<>();
@@ -117,8 +119,9 @@ class ErrorCodeRegistryTest {
                 diverging.add(code);
             }
         }
-        assertEquals(Set.of("BUILTIN_READONLY", "RESTART_REQUIRED"), diverging,
-                "凡「端点实测状态 ≠ 规则链推导值」的码都必须在此明列（新增或消除都要改这张清单）");
+        assertEquals(Set.<String>of(), diverging,
+                "issue #405 之后「端点实测状态 ≠ 规则链推导值」的码应为空集"
+                        + "（新增或消除都必须同时改本断言与用例的 @DisplayName）");
     }
 
     @Test
@@ -136,9 +139,12 @@ class ErrorCodeRegistryTest {
     @Test
     @DisplayName("resolveStatus 只对规则链路径查表：其余路径的码仍按历史规则推导")
     void resolveStatus_ignoresCodesWhoseStatusIsNotDerivedFromTheRuleChain() {
-        // 响应体路径：端点实返 400，但规则链推导值是 403 ⇒ 查表不得把它改成 400
+        // 响应体路径：issue #405 之后端点状态与规则链推导值一致（403 / 400），但状态仍由发出点的
+        // ResponseEntity 显式决定 —— resolveStatus 只是**碰巧**推导出同一个值，依然不查表。
         assertEquals(HttpStatus.FORBIDDEN, ApiException.resolveStatus("BUILTIN_READONLY"));
-        assertEquals(HttpStatus.FORBIDDEN, ApiException.resolveStatus("RESTART_REQUIRED"));
+        assertEquals(HttpStatus.BAD_REQUEST, ApiException.resolveStatus("RESTART_REQUIRED"));
+        assertFalse(ErrorCode.isResolvedByRuleChain(ErrorCode.BUILTIN_READONLY.code()));
+        assertFalse(ErrorCode.isResolvedByRuleChain(ErrorCode.RESTART_REQUIRED.code()));
         // 认证路径：异常携带 401，规则链推导值是 400（INVALID_ 前缀）/ 500 ⇒ 同样不查表
         assertEquals(HttpStatus.BAD_REQUEST, ApiException.resolveStatus("INVALID_API_KEY"));
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ApiException.resolveStatus("RATE_LIMIT_EXCEEDED"));
