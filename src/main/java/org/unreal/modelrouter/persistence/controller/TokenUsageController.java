@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.auth.security.model.ApiKeyAuthentication;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.monitor.dto.TokenUsageRecordDTO;
 import org.unreal.modelrouter.monitor.dto.TokenUsageStatisticsDTO;
@@ -53,7 +54,7 @@ public class TokenUsageController {
         final String rejection = crossPrincipalWriteError(authentication, record.getApiKeyId());
         if (rejection != null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(RouterResponse.error(rejection, "TOKEN_USAGE_FORBIDDEN"));
+                    .body(RouterResponse.error(rejection, ErrorCode.FORBIDDEN_TOKEN_USAGE.code()));
         }
 
         tokenUsageService.recordTokenUsage(record);
@@ -74,7 +75,7 @@ public class TokenUsageController {
                 final String rejection = crossPrincipalWriteError(authentication, record.getApiKeyId());
                 if (rejection != null) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                            .body(RouterResponse.error(rejection, "TOKEN_USAGE_FORBIDDEN"));
+                            .body(RouterResponse.error(rejection, ErrorCode.FORBIDDEN_TOKEN_USAGE.code()));
                 }
             }
         }

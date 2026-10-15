@@ -69,15 +69,30 @@ class ErrorCodeRegistryTest {
     }
 
     @Test
-    @DisplayName("已登记的 TOKEN_USAGE_FORBIDDEN 如实登记现有行为 500（并以 FORBIDDEN 作反证）")
-    void forbiddenSuffix_surpriseIsRecordedNotHidden() {
-        // 规则只认**前缀** FORBIDDEN，而该码以 _FORBIDDEN 结尾 ⇒ 现有行为是 500。
-        // 注册表如实登记（不静默改成 403），另立 issue 记录该语义异常。
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.TOKEN_USAGE_FORBIDDEN.status());
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR,
-                ApiException.resolveStatus(ErrorCode.TOKEN_USAGE_FORBIDDEN.code()));
-        // 反证：真正的前缀码 FORBIDDEN 是 403
-        assertEquals(HttpStatus.FORBIDDEN, ErrorCode.FORBIDDEN.status());
-        assertEquals(HttpStatus.FORBIDDEN, ApiException.resolveStatus(ErrorCode.FORBIDDEN.code()));
+    @DisplayName("书写约定：类别写在前缀位（曾经的 *_FORBIDDEN 已统一为 FORBIDDEN_*，issue #401）")
+    void categoryMustLiveInThePrefixPosition() {
+        // 统一后：前缀式码由**既有规则链**直接映射到 403 —— 不需要给规则加例外
+        assertEquals(HttpStatus.FORBIDDEN, ErrorCode.FORBIDDEN_TOKEN_USAGE.status());
+        assertEquals(HttpStatus.FORBIDDEN, ApiException.resolveStatus(ErrorCode.FORBIDDEN_TOKEN_USAGE.code()));
+        assertEquals(HttpStatus.FORBIDDEN, ApiException.resolveStatus("FORBIDDEN_RESOURCE"));
+
+        // 守卫：任何登记码都不得用「类别后缀」表达类别（全表唯一历史例外 = _NOT_FOUND）
+        Set<String> bannedSuffixes = Set.of(
+                "_FORBIDDEN", "_UNAUTHORIZED", "_UNAUTHENTICATED", "_UNAVAILABLE", "_RATE_LIMITED");
+        for (ErrorCode code : ErrorCode.values()) {
+            for (String suffix : bannedSuffixes) {
+                assertFalse(code.code().endsWith(suffix),
+                        "类别应写在前缀位，不得用后缀表达: " + code.code());
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("约定自洽：每个登记状态都能由规则链对同形命名推出（防注册表与规则分叉）")
+    void everyRegisteredStatus_isDerivableFromTheConvention() {
+        for (ErrorCode code : ErrorCode.values()) {
+            assertEquals(ApiException.legacyResolveStatus(code.code()), code.status(),
+                    "登记状态必须等于规则链对同形命名的推导值: " + code.code());
+        }
     }
 }

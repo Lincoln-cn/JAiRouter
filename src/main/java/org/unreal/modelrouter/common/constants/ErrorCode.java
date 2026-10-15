@@ -25,9 +25,11 @@ import java.util.stream.Collectors;
  * `TOKEN_REQUIRED`）—— 它们的客户端可见状态由认证渲染路径决定（401），与 {@code resolveStatus} 不是同一条链；
  * ② 把各调用点的裸字面量替换为本枚举常量（机械改动，按模块分批）。</p>
  *
- * <p>⚠️ 本表**暴露了一处既有语义异常**：{@code TOKEN_USAGE_FORBIDDEN} 按现有规则解析为 **500** ——
- * 因为 `resolveStatus` 只识别**前缀** `FORBIDDEN`，而该码以 `_FORBIDDEN` 结尾。本枚举**如实登记现有行为**
- * （500）并另立 issue 记录，不在本批静默改变对外状态码。</p>
+ * <p>📌 <b>码的书写约定</b>（本表据此登记，并由 {@code ErrorCodeRegistryTest} 守卫）：类别**放在前缀位** ——
+ * {@code FORBIDDEN_*} / {@code INVALID_*} / {@code CONFLICT*} / {@code UNAUTHORIZED*} 等由规则链按前缀映射；
+ * 全表**唯一**的历史后缀例外是 {@code *_NOT_FOUND}。凡「类别写在后缀」的码（如曾经的 `TOKEN_USAGE_FORBIDDEN` /
+ * `RESOURCE_FORBIDDEN`，规则链看不见、只能靠调用方自己写死状态码）已统一改为前缀式：
+ * {@code FORBIDDEN_TOKEN_USAGE} / {@code FORBIDDEN_RESOURCE}（issue #401）。</p>
  */
 public enum ErrorCode {
 
@@ -64,7 +66,7 @@ public enum ErrorCode {
     TOKEN_NOT_FOUND("TOKEN_NOT_FOUND", HttpStatus.NOT_FOUND, "令牌不存在"),
     TOKEN_REFRESH_FAILED("TOKEN_REFRESH_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, "令牌刷新失败"),
     TOKEN_REVOKE_FAILED("TOKEN_REVOKE_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, "令牌吊销失败"),
-    TOKEN_USAGE_FORBIDDEN("TOKEN_USAGE_FORBIDDEN", HttpStatus.INTERNAL_SERVER_ERROR, "无权查看该令牌的用量"),
+    FORBIDDEN_TOKEN_USAGE("FORBIDDEN_TOKEN_USAGE", HttpStatus.FORBIDDEN, "无权查看该令牌的用量"),
 
     ;
 

@@ -206,7 +206,7 @@ class SecurityExceptionHandlerTest {
 
             // Assert
             assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-            assertEquals("RESOURCE_FORBIDDEN", legacyBody(response).getErrorCode());
+            assertEquals("FORBIDDEN_RESOURCE", legacyBody(response).getErrorCode());
         }
     }
 
