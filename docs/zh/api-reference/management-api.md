@@ -1058,7 +1058,7 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 |--------|------|
 | `INVALID_API_KEY` | 无效的 API Key |
 | `EXPIRED_API_KEY` | API Key 已过期 |
-| `INVALID_JWT_TOKEN` | 无效的 JWT 令牌 |
+| `JWT_INVALID` | 无效的 JWT 令牌 |
 | `EXPIRED_JWT_TOKEN` | JWT 令牌已过期 |
 
 ---

@@ -23,12 +23,14 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 ### [3.3.3] - 2026-10-15 - Patch Release (error-code registry wired through code and docs, frontend artifact hygiene; ships the `v3.3.2` content too)
 
-> ⚠️ **External contract change**: two response-body `errorCode` literals were renamed (#403) —
-> `TOKEN_USAGE_FORBIDDEN` → **`FORBIDDEN_TOKEN_USAGE`** and `RESOURCE_FORBIDDEN` → **`FORBIDDEN_RESOURCE`**;
-> the category always lives in the **prefix** position (the only historical suffix exception is `*_NOT_FOUND`),
-> so clients that hard-coded the old names must be updated.
-> Apart from those two names this release **changes no status code and no error-code set**: stage 3's migration was
-> re-verified — "codes resolved at emission sites = the registry's 62 codes, one by one".
+> ⚠️ **External contract change (#403)**: `TOKEN_USAGE_FORBIDDEN` → **`FORBIDDEN_TOKEN_USAGE`** — that code is written
+> into the token-usage response body, so clients do see it; the category always lives in the **prefix** position
+> (the only historical suffix exception is `*_NOT_FOUND`), so clients that hard-coded the old name must be updated.
+> Separately, `RESOURCE_FORBIDDEN` → **`FORBIDDEN_RESOURCE`** is only an **internal constant rename** inside
+> `AuthorizationException`: that code has no emission site anywhere in the repository (its factory method is called
+> only by unit tests), so no client can ever receive it ⇒ it is **not** an external contract change (recorded as #406).
+> Apart from that one renamed code this release **changes no status code and no error-code set**: stage 3's migration
+> was re-verified — "codes resolved at emission sites = the registry's 62 codes, one by one".
 >
 > **Tagged `v3.3.3`**; per the standing release policy no GitHub Release or Docker image is produced yet.
 > This entry covers everything merged after `v3.3.1` — `v3.3.2` was tagged but **never released on its own**, and is

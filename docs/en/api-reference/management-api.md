@@ -1030,6 +1030,15 @@ All API endpoints follow a consistent error response format:
 | `CONFLICT` | Resource conflict |
 | `INTERNAL_ERROR` | Server error |
 
+**Authentication-related error codes**:
+
+| Code | Description |
+|------|-------------|
+| `INVALID_API_KEY` | Invalid API Key |
+| `EXPIRED_API_KEY` | API Key expired |
+| `JWT_INVALID` | Invalid JWT token |
+| `EXPIRED_JWT_TOKEN` | JWT token expired |
+
 ---
 
 ## Authentication
