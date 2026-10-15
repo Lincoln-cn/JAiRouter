@@ -93,6 +93,7 @@ jobs:
             echo "gated test $name executed (not skipped)"
           }
           check_gated QuotaDistributedRedisIntegrationTest REDIS_TEST
+          check_gated AlarmChainCooldownRedisTest REDIS_TEST
           check_gated PostgresCompatibilityIntegrationTest PG_TEST
           check_gated PostgresFlywayMigrationEquivalenceTest PG_TEST
 
