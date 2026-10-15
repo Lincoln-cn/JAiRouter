@@ -271,11 +271,15 @@ The v3.0 microservices architecture transformation has been indefinitely postpon
 | Alibaba Bailian | Chat/Embedding | ✅ |
 | Tencent Hunyuan | Chat | ✅ |
 | Baidu Cloud | Chat | ✅ |
+| Google Gemini | Chat/Embedding | ✅ |
 
 #### Planned 📋
-- 📋 Google Gemini (v2.8.x)
-- 📋 Cohere API (v2.8.x)
-- 📋 AWS Bedrock (v2.9.x)
+- 📋 Cohere API (version TBD)
+- 📋 AWS Bedrock (version TBD)
+
+> **Audit correction, 2026-10-16**: `Google Gemini` is **already implemented** — it is registered as
+> `adapters.put("gemini", …)` in `AdapterRegistry` and `GeminiAdapter.supportCapability()` reports `chat` + `embedding`,
+> so it moved into "Supported"; the `v2.8.x` / `v2.9.x` labels on the remaining two had long expired and are now "version TBD".
 
 ### Load Balancing Strategies
 
@@ -287,10 +291,16 @@ The v3.0 microservices architecture transformation has been indefinitely postpon
 - ✅ IP Hash
 - ✅ Consistent Hash
 
+#### Implemented ✅ (cont.)
+- ✅ Latency-Aware (`LatencyAwareLoadBalancer`)
+- ✅ Sticky (`StickyLoadBalancer`)
+
 #### Planned 📋
-- 📋 Latency-based
 - 📋 Cost-based
 - 📋 Model Capability-based
+
+> **Audit correction, 2026-10-16**: latency-based balancing is **already implemented** (`LatencyAwareLoadBalancer`) and was
+> listed as planned; sticky sessions were missing from the list and are added here.
 
 ### Rate Limiting Algorithms
 
@@ -301,10 +311,15 @@ The v3.0 microservices architecture transformation has been indefinitely postpon
 - ✅ Warm Up
 - ✅ Adaptive Rate Limiting
 
+#### Implemented ✅ (cont.)
+- ✅ API-key-level rate limiting (per-key `rateLimitPerMinute` + token bucket; over-limit answers **429** with `RATE_LIMITED_API_KEY`, #404)
+- ✅ Distributed rate limiting (Redis sliding window `RedisSlidingWindowRateLimiter`, wired by `RateLimitManager`; **requires Redis**)
+
 #### Planned 📋
-- 📋 Distributed Rate Limiting
 - 📋 User-based Rate Limiting
-- 📋 API Key-level Rate Limiting
+
+> **Audit correction, 2026-10-16**: both "API-key-level" and "distributed" rate limiting were listed as planned but are
+> **already implemented** (see `ApiKeyValidator.validateRateLimit` and `RateLimitManager`'s wiring of `RedisSlidingWindowRateLimiter`).
 
 ### Monitoring and Observability
 
@@ -323,7 +338,7 @@ The v3.0 microservices architecture transformation has been indefinitely postpon
 
 ## Technical Architecture
 
-### Current Architecture (v2.7.x)
+### Current Architecture (v3.3.4)
 ```
 Monolithic App → Modular Design → Reactive Programming
 ```
@@ -336,9 +351,9 @@ Monolithic App → Modular Design → Reactive Programming
 | Security | v0.4 | ✅ Complete |
 | Monitoring | v0.5 | ✅ Complete |
 | Performance | v2.7.x | ✅ Complete |
-| Configuration | v2.8.x | 📋 Planned |
-| Maintainability | v2.9.x | 📋 Planned |
-| Microservices | v3.0 | ⏸️ Postponed |
+| Configuration | v2.8.x | ✅ Complete (modular config + three config-honesty passes) |
+| Maintainability | v2.9.x | ✅ Complete (refactoring records / gate system / error-code registry) |
+| Microservices | v3.0 | ⏸️ Postponed (the current monolith meets the requirements) |
 
 ### Tech Stack
 
@@ -351,11 +366,19 @@ Monolithic App → Modular Design → Reactive Programming
 - **Tracing**: OpenTelemetry + Zipkin
 
 #### Data Storage
-- **Default**: H2 embedded database
-- **Currently supported**: H2 embedded single-file database only (external shared databases such as PostgreSQL / MySQL are planned; see issue #160)
+- **Default**: H2 embedded database (single file; **cannot be shared across replicas**)
+- **Now supported**: **PostgreSQL** — setting `DATABASE_URL=jdbc:postgresql://…` switches to PostgreSQL (horizontal multi-replica scaling needs a shared external database);
+  both paths have **versioned schema migrations** (PostgreSQL runs Flyway with `ddl-auto` overridden to `validate`, H2 uses a startup compatibility patcher)
+- **Planned**: MySQL (no driver or dialect scripts, not supported)
 - **Cache**: Redis (optional)
 
+> **Audit correction, 2026-10-16**: the text claimed "H2 only, PostgreSQL / MySQL planned" — **PostgreSQL has been supported since v3.0.0**
+> (see `org.postgresql:postgresql` + `flyway-database-postgresql` in `pom.xml`, the migration mode in `application-migrate.yml`
+> and the dialect override in `FlywayDialectEnvironmentPostProcessor`). MySQL is still unsupported.
+
 ## Performance Targets
+
+> ⚠️ The table below holds **design targets, not measured values** (this repository has no benchmark suite); measure before quoting.
 
 | Version | RPS | Latency (P95) | Availability | Connections |
 |---------|-----|---------------|--------------|-------------|

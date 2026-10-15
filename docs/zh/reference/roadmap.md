@@ -271,11 +271,15 @@ v3.0 为 Web 完整流程里程碑（对外 /api/v1 保持兼容，无 breaking�
 | 阿里云百炼 | Chat/Embedding | ✅ |
 | 腾讯云混元 | Chat | ✅ |
 | 百度智能云 | Chat | ✅ |
+| Google Gemini | Chat/Embedding | ✅ |
 
 #### 计划支持 📋
-- 📋 Google Gemini (v2.8.x)
-- 📋 Cohere API (v2.8.x)
-- 📋 AWS Bedrock (v2.9.x)
+- 📋 Cohere API（版本待定）
+- 📋 AWS Bedrock（版本待定）
+
+> **2026-10-16 审计更正**：`Google Gemini` 已实现 —— `AdapterRegistry` 里注册为
+> `adapters.put("gemini", …)`，`GeminiAdapter.supportCapability()` = `chat` + `embedding`
+> ⇒ 已移入「已支持」；另两项原先写的 `v2.8.x` / `v2.9.x` 版本号早已过期，改为「版本待定」。
 
 ### 负载均衡策略
 
@@ -287,10 +291,16 @@ v3.0 为 Web 完整流程里程碑（对外 /api/v1 保持兼容，无 breaking�
 - ✅ IP Hash (IP哈希)
 - ✅ Consistent Hash (一致性哈希)
 
+#### 已实现 ✅（续）
+- ✅ Latency-Aware（延迟感知，`LatencyAwareLoadBalancer`）
+- ✅ Sticky（会话粘滞，`StickyLoadBalancer`）
+
 #### 计划实现 📋
-- 📋 Latency-based (延迟优先)
 - 📋 Cost-based (成本优先)
 - 📋 Model Capability-based (能力匹配)
+
+> **2026-10-16 审计更正**：延迟优先其实**已实现**（`LatencyAwareLoadBalancer`），原先被列在「计划实现」里；
+> 会话粘滞此前未列出，一并补上。
 
 ### 限流算法
 
@@ -301,10 +311,15 @@ v3.0 为 Web 完整流程里程碑（对外 /api/v1 保持兼容，无 breaking�
 - ✅ Warm Up (预热限流)
 - ✅ Adaptive Rate Limiting (自适应限流)
 
+#### 已实现 ✅（续）
+- ✅ API Key 级限流（每键 `rateLimitPerMinute` + 令牌桶；超限返回 **429** 与 `RATE_LIMITED_API_KEY`，#404）
+- ✅ 分布式限流（Redis 滑动窗口 `RedisSlidingWindowRateLimiter`，由 `RateLimitManager` 装配；**依赖 Redis**）
+
 #### 计划实现 📋
-- 📋 Distributed Rate Limiting (分布式限流)
 - 📋 User-based Rate Limiting (用户级限流)
-- 📋 API Key 级别的限流
+
+> **2026-10-16 审计更正**：「API Key 级别的限流」与「分布式限流」原先都列在计划里，实际**都已实现**
+> （前者见 `ApiKeyValidator.validateRateLimit`，后者见 `RateLimitManager` 对 `RedisSlidingWindowRateLimiter` 的装配）。
 
 ### 监控和可观测性
 
@@ -323,7 +338,7 @@ v3.0 为 Web 完整流程里程碑（对外 /api/v1 保持兼容，无 breaking�
 
 ## 技术架构
 
-### 当前架构 (v2.6.x)
+### 当前架构 (v3.3.4)
 ```
 单体应用 → 模块化设计 → 响应式编程
 ```
@@ -336,9 +351,9 @@ v3.0 为 Web 完整流程里程碑（对外 /api/v1 保持兼容，无 breaking�
 | 安全认证 | v0.4 | ✅ 已完成 |
 | 监控追踪 | v0.5 | ✅ 已完成 |
 | 性能优化 | v2.7.x | ✅ 已完成 |
-| 配置管理 | v2.8.x | 📋 规划中 |
-| 可维护性提升 | v2.9.x | 📋 规划中 |
-| 微服务探索 | v3.0 | ⏸️ 推迟 |
+| 配置管理 | v2.8.x | ✅ 已完成（模块化配置 + 三批配置诚实性收口） |
+| 可维护性提升 | v2.9.x | ✅ 已完成（重构记录 / 门闩体系 / 错误码注册表） |
+| 微服务探索 | v3.0 | ⏸️ 推迟（当前单体架构已满足需求） |
 
 ### 技术栈
 
@@ -351,11 +366,19 @@ v3.0 为 Web 完整流程里程碑（对外 /api/v1 保持兼容，无 breaking�
 - **追踪**: OpenTelemetry + Zipkin
 
 #### 数据存储
-- **默认**: H2 嵌入式数据库
-- **当前唯一支持**: H2 嵌入式单文件数据库（外部共享数据库如 PostgreSQL / MySQL 规划中，见 issue #160）
+- **默认**: H2 嵌入式数据库（单文件；**不可跨副本共享**）
+- **现已支持**: **PostgreSQL** —— 显式设置 `DATABASE_URL=jdbc:postgresql://…` 即走 PostgreSQL（多副本横向扩展需要外部共享库）；
+  两条路径都有**版本化 schema 迁移**（PostgreSQL 走 Flyway 并把 `ddl-auto` 覆盖为 `validate`，H2 走启动期兼容补丁）
+- **规划中**: MySQL（无驱动与方言脚本，未支持）
 - **缓存**: Redis (可选)
 
+> **2026-10-16 审计更正**：原文写「当前唯一支持 H2，PostgreSQL / MySQL 规划中」——**PostgreSQL 自 v3.0.0 起已支持**
+> （`pom.xml` 的 `org.postgresql:postgresql` + `flyway-database-postgresql`、`application-migrate.yml` 的迁移模式、
+> `FlywayDialectEnvironmentPostProcessor` 的方言覆盖）。MySQL 仍未支持。
+
 ## 性能目标
+
+> ⚠️ 下表是**设计目标**，不是实测值（本仓未做基准压测）；引用前请自行实测。
 
 | 版本 | RPS | 延迟 (P95) | 可用性 | 并发连接 |
 |------|-----|-----------|--------|----------|
