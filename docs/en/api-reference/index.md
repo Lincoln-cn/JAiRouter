@@ -46,11 +46,24 @@ http://localhost:8080
 
 ## Authentication
 
-By default, JAiRouter doesn't require authentication. For production deployments, consider:
+**Authentication is on by default**: `jairouter.security.enabled` defaults to `true`
+(`config/auth/jwt.yml`), so `/v1/**` requires credentials, `/api/**` goes through the permission
+matrix, and only the exempt list may be called anonymously (`/actuator/health` and its sub-paths,
+`/actuator/info`, `/actuator/prometheus`, the login endpoints `POST /api/auth/jwt/login` and
+`POST /api/auth/jwt/validate`, `/admin/**` static assets and `/favicon.ico` — see
+`SecurityConfiguration.java` and `AnonymousEndpointPaths.java`). Swagger / OpenAPI is **not** exempt
+unless `jairouter.security.docs-public=true` (`ApiDocsAccessPolicy.java`).
 
-- Reverse proxy with authentication (nginx, Apache)
-- API gateway with authentication
-- Custom authentication filters
+The gateway itself accepts two credential types:
+
+- `X-API-Key: <API key created in the console>`
+- `Jairouter_Token: <JWT>`
+
+The `Authorization` header **does not participate in gateway authentication** — it is passed through
+to the downstream AI service (instance-level `headers` take precedence).
+
+To actually turn authentication off, set `jairouter.security.enabled: false` explicitly (not
+recommended for production); do not rely on "no authentication by default".
 
 ## Rate Limiting
 
@@ -88,46 +101,65 @@ while the API Key validation chain writes `RATE_LIMITED_API_KEY` (both answer 42
 
 ## Error Handling
 
-JAiRouter provides consistent error responses across all APIs:
+The error body shape **depends on the entry surface**; there is no single "one shape for all APIs"
+error body.
 
-### Standard Error Format
+### `/v1/**` (OpenAI surface)
 
 ```json
 {
   "error": {
     "message": "Error description",
-    "type": "error_type",
-    "code": "error_code",
-    "details": {
-      "additional": "information"
-    }
+    "type": "invalid_request_error",
+    "code": "INVALID_REQUEST"
   }
 }
 ```
 
-### Common Error Codes
+There is **no** `param` and **no** `details` (`V1ErrorBodyMapper#toErrorBody` writes only
+`message` / `type` / `code`). On the Anthropic surface (`/v1/messages`) the same mapper omits `code`
+and returns `{"type":"error","error":{"type","message"}}` instead.
 
-| HTTP Status | Error Type | Description |
-|-------------|------------|-------------|
-| 400 | `invalid_request_error` | Malformed request |
+### `/api/**` (console surface)
+
+Uses `RouterResponse` (`success` / `message` / `data` / `errorCode` / `timestamp`); `@JsonInclude(NON_NULL)`
+drops the fields that are `null`, so an error usually carries `success`, `message`, `errorCode` and
+`timestamp`, and `data` only when one is returned:
+
+```json
+{
+  "success": false,
+  "message": "Error description",
+  "errorCode": "INVALID_REQUEST"
+}
+```
+
+### `/v1/**` `type` values
+
+| HTTP Status | `type` | Description |
+|-------------|--------|-------------|
+| 400 / 422 / other 4xx | `invalid_request_error` | Malformed request |
+| 401 | `authentication_error` | Authentication failed |
+| 403 | `permission_error` | Permission denied |
 | 404 | `not_found_error` | Resource not found |
-| 429 | `rate_limit_error` | Rate limit exceeded |
-| 500 | `api_error` | Internal server error |
-| 503 | `api_error` | No available instances |
-| 503 | `api_error` | Circuit breaker is open |
+| 429 | `rate_limit_error` | Rate limit / quota exceeded |
+| every 5xx (including 503) | `api_error` | Gateway or downstream internal error |
+
+Source: `V1ErrorBodyMapper#errorTypeOf`. `service_unavailable` and `circuit_breaker_open` are **not**
+`type` values that exist.
 
 ## Content Types
 
 ### Request Content Types
 
-- `application/json` - JSON requests (most APIs)
-- `multipart/form-data` - File uploads (STT, image APIs)
+- `application/json` - JSON requests (nearly every API, including image generation and image editing)
+- `multipart/form-data` - declared only by `/v1/audio/transcriptions` (STT)
 
 ### Response Content Types
 
-- `application/json` - JSON responses (most APIs)
-- `audio/*` - Audio files (TTS API)
-- `image/*` - Image files (image generation API)
+- `application/json` - JSON responses (nearly every API, including image generation and image editing)
+
+> The image APIs answer with JSON (`data[].url` or `data[].b64_json`) and do **not** emit `image/*`. The TTS endpoint (`POST /v1/audio/speech`) returns audio bytes whose Content-Type follows the requested output format.
 
 ## Request/Response Examples
 
@@ -175,41 +207,6 @@ Content-Type: application/json
     "prompt_tokens": 9,
     "completion_tokens": 12,
     "total_tokens": 21
-  }
-}
-```
-
-### Embeddings
-
-**Request:**
-```http
-POST /v1/embeddings
-Content-Type: application/json
-
-{
-  "model": "text-embedding-ada-002",
-  "input": "Hello world"
-}
-```
-
-**Response:**
-```http
-HTTP/1.1 200 OK
-Content-Type: application/json
-
-{
-  "object": "list",
-  "data": [
-    {
-      "object": "embedding",
-      "embedding": [0.1, 0.2, 0.3, ...],
-      "index": 0
-    }
-  ],
-  "model": "text-embedding-ada-002",
-  "usage": {
-    "prompt_tokens": 2,
-    "total_tokens": 2
   }
 }
 ```
@@ -272,6 +269,7 @@ const openai = new OpenAI({
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: $JAiRouter_API_KEY" \
   -d '{"model": "qwen2.5:7b", "messages": [{"role": "user", "content": "Hello!"}]}'
 ```
 

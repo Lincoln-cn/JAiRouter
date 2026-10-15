@@ -1011,24 +1011,30 @@ and Spring matches them against `/{serviceType}/{instanceId}` instead, which ans
 
 All API endpoints follow a consistent error response format:
 
+> 📖 **Complete error code reference**: [Error Codes Reference](./error-codes.md)
+>
+> `/api/**` uses the **flat** `RouterResponse` field `errorCode` — there is **no** `error` object and **no** `details` field (`RouterResponse.java:15-21`).
+
 ```json
 {
   "success": false,
   "message": "Error description",
-  "errorCode": "ERROR_CODE"
+  "errorCode": "ERROR_CODE",
+  "data": null
 }
 ```
 
 ### Common Error Codes
 
-| Code | Description |
-|------|-------------|
-| `NOT_FOUND` | Resource not found |
-| `INVALID_REQUEST` | Invalid request data |
-| `INVALID_API_KEY` | Authentication required |
-| `FORBIDDEN` | Permission denied |
-| `CONFLICT_STATE` | Resource conflict |
-| `INTERNAL_ERROR` | Server error |
+| Code | Description | HTTP status |
+|------|-------------|-------------|
+| `NOT_FOUND` | Resource not found | 404 |
+| `INVALID_REQUEST` | Invalid request data | 400 |
+| `INVALID_API_KEY` | Authentication required | 401 |
+| `FORBIDDEN` | Permission denied | 403 |
+| `CONFLICT_STATE` | Resource conflict | 409 |
+| `RATE_LIMIT_EXCEEDED` | Too many requests | 429 |
+| `INTERNAL_ERROR` | Server error | 500 |
 
 **Authentication-related error codes**:
 
