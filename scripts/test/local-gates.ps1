@@ -18,9 +18,11 @@
         前端基线               npm run type-check（在 frontend/ 下）
 
     ⚠️ 两个**必须知道**的本地差异（否则会误判）：
-      1. 本仓库 `docs/` 下有若干**被 .gitignore 的本地产物**（`docs/mimo-memory/`、`docs/session-digests/`），
-         CI 里并不存在。它们会让 mkdocs 的 git-revision 插件批量报警告、并让两个 docs 扫描器误报
-         ⇒ 本脚本在跑文档检查期间会把它们**临时移到仓库外**，结束后还原（见 Move-IgnoredDocsAside）。
+      1. 本仓库的**会话本地产物**（`innerdoc/mimo-memory/`、`innerdoc/session-digests/`）已归置到 `innerdoc/` 下
+         （2026-10-16 从 `docs/` 移出；`innerdoc/` 整目录被 .gitignore，CI 里并不存在）。
+         历史提示保留：若今后再把这类目录放回 `docs/`，它们会让 mkdocs 的 git-revision 插件批量报警告、
+         并让两个 docs 扫描器误报 ⇒ 本脚本会在跑文档检查期间把 `docs/` 下**被忽略的路径**临时移到仓库外、
+         结束后还原（见 Move-IgnoredDocsAside；该逻辑按 git status --ignored 动态探测，当前已是空操作）。
       2. CI 用 `cspell-action@v5`（自带词典），本地用 `cspell@8`，两者不一致：**本地 0 问题不蕴含 CI 绿**。
 
     ⚠️ 本机执行策略默认拦未签名脚本。要么用 `scripts/test/local-gates.cmd`，要么：
