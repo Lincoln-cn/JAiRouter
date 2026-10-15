@@ -39,9 +39,9 @@ import java.util.stream.Collectors;
  *
  * <p>📌 <b>码的书写约定</b>（本表据此登记，并由 {@code ErrorCodeRegistryTest} 守卫）：类别**放在前缀位** ——
  * {@code FORBIDDEN_*} / {@code INVALID_*} / {@code CONFLICT*} / {@code UNAUTHORIZED*} 等由规则链按前缀映射；
- * 全表**唯一**的历史后缀例外是 {@code *_NOT_FOUND}。凡「类别写在后缀」的码（如曾经的 `TOKEN_USAGE_FORBIDDEN` /
- * `RESOURCE_FORBIDDEN`，规则链看不见、只能靠调用方自己写死状态码）已统一改为前缀式：
- * {@code FORBIDDEN_TOKEN_USAGE} / {@code FORBIDDEN_RESOURCE}（issue #401）。</p>
+ * 全表**唯一**的历史后缀例外是 {@code *_NOT_FOUND}。凡「类别写在后缀」的码（如曾经的 `TOKEN_USAGE_FORBIDDEN`）
+ * 已统一改为前缀式 {@code FORBIDDEN_TOKEN_USAGE}（issue #401）；同族的 `RESOURCE_FORBIDDEN` 虽也改了前缀式
+ * （`FORBIDDEN_RESOURCE`），但它**全仓没有发出点**，已随未接线代码一并删除（issue #406）。</p>
  */
 public enum ErrorCode {
 

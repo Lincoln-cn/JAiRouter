@@ -182,10 +182,10 @@ class SecurityExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("处理授权异常 - 使用静态工厂方法")
+        @DisplayName("处理授权异常 - 权限不足")
         void testHandleAuthorizationException_FactoryMethod() {
             // Arrange
-            AuthorizationException ex = AuthorizationException.insufficientPermissions("ADMIN");
+            AuthorizationException ex = new AuthorizationException("权限不足，需要权限: ADMIN", "INSUFFICIENT_PERMISSIONS");
 
             // Act
             ResponseEntity<?> response = handler.handleAuthorizationException(ex, exchange);
@@ -199,7 +199,7 @@ class SecurityExceptionHandlerTest {
         @DisplayName("处理资源禁止访问异常")
         void testHandleAuthorizationException_ResourceForbidden() {
             // Arrange
-            AuthorizationException ex = AuthorizationException.resourceForbidden("/api/admin");
+            AuthorizationException ex = new AuthorizationException("禁止访问资源: /api/admin", "FORBIDDEN_RESOURCE");
 
             // Act
             ResponseEntity<?> response = handler.handleAuthorizationException(ex, exchange);
@@ -447,7 +447,8 @@ class SecurityExceptionHandlerTest {
         @DisplayName("/v1/messages/count_tokens + 授权异常 → 同属 Anthropic 面 + permission_error")
         void anthropicCountTokensAuthorization_shouldRenderAnthropicBody() {
             // Arrange
-            final AuthorizationException ex = AuthorizationException.insufficientPermissions("ADMIN");
+            final AuthorizationException ex =
+                    new AuthorizationException("权限不足，需要权限: ADMIN", "INSUFFICIENT_PERMISSIONS");
 
             // Act
             final ResponseEntity<?> response =

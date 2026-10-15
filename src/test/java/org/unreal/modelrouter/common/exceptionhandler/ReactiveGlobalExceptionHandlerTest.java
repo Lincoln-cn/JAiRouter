@@ -108,7 +108,7 @@ class ReactiveGlobalExceptionHandlerTest {
         @DisplayName("处理授权异常 - 返回403")
         void testHandleAuthorizationException() {
             // Arrange
-            AuthorizationException ex = AuthorizationException.accessDenied("/api/admin");
+            AuthorizationException ex = new AuthorizationException("访问被拒绝，资源: /api/admin", "ACCESS_DENIED");
 
             // Act
             Mono<Void> result = handler.handle(exchange, ex);

@@ -24,9 +24,11 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 ### [3.3.3] - 2026-10-15 - 补丁发布（错误码注册表贯通代码与文档、前端生成物卫生；`v3.3.2` 的内容一并发布）
 
-> ⚠️ **对外契约变更**：两个响应体 `errorCode` 字面量已改名（#403）——`TOKEN_USAGE_FORBIDDEN` → **`FORBIDDEN_TOKEN_USAGE`**、
-> `RESOURCE_FORBIDDEN` → **`FORBIDDEN_RESOURCE`**；类别一律写在**前缀位**（全表唯一历史后缀例外是 `*_NOT_FOUND`），客户端如硬编码了旧码请同步。
-> 除这两个码名外，本版**不改变任何对外状态码与错误码集合**：阶段 3 的迁移经复核「发出点解出的码 = 注册表 62 个，逐个一致」。
+> ⚠️ **对外契约变更（#403）**：`TOKEN_USAGE_FORBIDDEN` → **`FORBIDDEN_TOKEN_USAGE`** —— 该码写进令牌用量响应体，客户端可见；
+> 类别一律写在**前缀位**（全表唯一历史后缀例外是 `*_NOT_FOUND`），客户端如硬编码了旧码请同步。
+> 另有 `RESOURCE_FORBIDDEN` → **`FORBIDDEN_RESOURCE`**，那只是 `AuthorizationException` 的**内部常量改名**：该码全仓没有发出点
+> （工厂方法只被单元测试调用），客户端不可能收到 ⇒ **不属于对外契约变更**（登记见 #406）。
+> 除 `FORBIDDEN_TOKEN_USAGE` 这一处码名外，本版**不改变任何对外状态码与错误码集合**：阶段 3 的迁移经复核「发出点解出的码 = 注册表 62 个，逐个一致」。
 >
 > **已打 tag `v3.3.3`**；按既定发布口径暂不产出 GitHub Release 与 Docker 镜像。
 > 本条目覆盖 `v3.3.1` 之后合入的全部改动 —— `v3.3.2` 曾打 tag 但**未单独发布**，已由本版取代（其内容见下一节）。

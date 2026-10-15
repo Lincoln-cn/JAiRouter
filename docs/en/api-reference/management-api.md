@@ -1024,11 +1024,20 @@ All API endpoints follow a consistent error response format:
 | Code | Description |
 |------|-------------|
 | `NOT_FOUND` | Resource not found |
-| `VALIDATION_ERROR` | Invalid request data |
-| `UNAUTHORIZED` | Authentication required |
+| `INVALID_REQUEST` | Invalid request data |
+| `INVALID_API_KEY` | Authentication required |
 | `FORBIDDEN` | Permission denied |
-| `CONFLICT` | Resource conflict |
+| `CONFLICT_STATE` | Resource conflict |
 | `INTERNAL_ERROR` | Server error |
+
+**Authentication-related error codes**:
+
+| Code | Description |
+|------|-------------|
+| `INVALID_API_KEY` | Invalid API Key |
+| `EXPIRED_API_KEY` | API Key expired |
+| `JWT_INVALID` | Invalid JWT token |
+| `EXPIRED_JWT_TOKEN` | JWT token expired |
 
 ---
 
