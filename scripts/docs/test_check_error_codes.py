@@ -97,6 +97,79 @@ def main():
     check("反证：注册表少了 JWT_EXPIRED ⇒ 文档侧报幽灵码（双向都咬得住）",
           ghost3 == {"JWT_EXPIRED"}, str(sorted(ghost3)))
 
+    # ---------------- #419 覆盖面扩展 ----------------
+    print()
+    print("--- #419：对账面扩到其它文档（码表 + 代码围栏里的示例） ---")
+
+    ghost_table = """
+## 认证错误码
+
+| 错误码 | 描述 |
+|--------|------|
+| `INVALID_API_KEY` | 无效的 API Key |
+| `GHOST_CODE` | 凭空多出来的幽灵码 |
+"""
+    table_codes = module.extract_table_codes(ghost_table)
+    check("① 码表（表头=错误码）里的反引号码被提取",
+          set(table_codes) == {"INVALID_API_KEY", "GHOST_CODE"}, str(sorted(table_codes)))
+    check("① 码表里插幽灵码 ⇒ 判红",
+          any("GHOST_CODE" in p for p in
+              module.collect_ghost_problems("sample.md", ghost_table, set(registry))),
+          str(module.collect_ghost_problems("sample.md", ghost_table, set(registry))))
+
+    plain_table = """
+| 项目 | 说明 |
+|------|------|
+| `PLAIN_UPPERCASE_TOKEN` | 普通表格里的大写词，不是码 |
+| `X_API_KEY` | 同上 |
+
+一些散文里也提到 `PROSE_UPPERCASE_TOKEN`。
+"""
+    check("② 非码表的普通表格不参与对账（不得判红）",
+          module.extract_table_codes(plain_table) == {}
+          and module.collect_ghost_problems("sample.md", plain_table, set(registry)) == [],
+          str(module.extract_table_codes(plain_table)))
+    code_header_table = """
+| Code | Description |
+|------|-------------|
+| `GHOST_IN_CODE_HEADER_TABLE` | en 侧 management-api 的表头就写 Code |
+"""
+    check("② 表头**恰好**是 `Code` 的表才算码表（口径对称，缺了它 en 侧会漏判）",
+          set(module.extract_table_codes(code_header_table)) == {"GHOST_IN_CODE_HEADER_TABLE"},
+          str(sorted(module.extract_table_codes(code_header_table))))
+
+    fenced = """
+```json
+{
+  "code": "ghost_code",
+  "errorCode": "ERROR_CODE"
+}
+```
+
+围栏外的 `PROSE_OUTSIDE_FENCE` 不参与对账。
+"""
+    example_codes = module.extract_example_codes(fenced)
+    check("③ 代码围栏里的 \"code\" / \"errorCode\" 取值被提取（含小写写法）",
+          set(example_codes) == {"ghost_code", "ERROR_CODE"}, str(sorted(example_codes)))
+    ghost_examples = module.collect_ghost_problems("sample.md", fenced, set(registry))
+    check("③ 围栏里的 \"code\": \"ghost_code\" ⇒ 判红",
+          any("ghost_code" in p for p in ghost_examples), str(ghost_examples))
+    check("③ 围栏外的反引号码不被当成示例（不误报）",
+          "PROSE_OUTSIDE_FENCE" not in example_codes, str(sorted(example_codes)))
+    check("③ 白名单里的形状占位符（ERROR_CODE）不判红，且每项都写了理由",
+          all("ERROR_CODE" not in p for p in ghost_examples)
+          and all(reason.strip() for reason in module.NON_CODE_TOKENS.values()),
+          str(ghost_examples))
+
+    # ④ 主表判据不许退化：主表漏列一个注册表码仍必须报「漏列」
+    registry_with_extra = dict(registry)
+    registry_with_extra["NEWLY_ADDED_CODE"] = "API_EXCEPTION"
+    _, missing_main = module.reconcile(module.extract_doc_codes(DOC_SAMPLE),
+                                       set(registry_with_extra))
+    check("④ 主表漏列一个注册表码 ⇒ 仍判红（原判据未退化）",
+          missing_main == {"BUILTIN_READONLY", "DOWNSTREAM_SERVICE_ERROR", "NEWLY_ADDED_CODE"},
+          str(sorted(missing_main)))
+
     print()
     if failures:
         print(f"❌ {len(failures)} 项失败: {failures}")

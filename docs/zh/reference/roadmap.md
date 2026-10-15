@@ -309,7 +309,6 @@ v3.0 为 Web 完整流程里程碑（对外 /api/v1 保持兼容，无 breaking�
 - ✅ Leaky Bucket (漏桶)
 - ✅ Sliding Window (滑动窗口)
 - ✅ Warm Up (预热限流)
-- ✅ Adaptive Rate Limiting (自适应限流)
 
 #### 已实现 ✅（续）
 - ✅ API Key 级限流（每键 `rateLimitPerMinute` + 令牌桶；超限返回 **429** 与 `RATE_LIMITED_API_KEY`，#404）
@@ -320,6 +319,10 @@ v3.0 为 Web 完整流程里程碑（对外 /api/v1 保持兼容，无 breaking�
 
 > **2026-10-16 审计更正**：「API Key 级别的限流」与「分布式限流」原先都列在计划里，实际**都已实现**
 > （前者见 `ApiKeyValidator.validateRateLimit`，后者见 `RateLimitManager` 对 `RedisSlidingWindowRateLimiter` 的装配）。
+>
+> **2026-10-16 审计更正（第二轮）**：「Adaptive Rate Limiting（自适应限流）」原先列在「已实现」里，
+> 但全仓**没有该实现**（`router/ratelimit/**` 下没有这个算法，其余文档也只列了
+> token-bucket / leaky-bucket / sliding-window / warm-up 四种）⇒ 该行已删除。
 
 ### 监控和可观测性
 

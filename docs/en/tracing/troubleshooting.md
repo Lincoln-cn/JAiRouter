@@ -372,13 +372,9 @@ curl http://localhost:8080/actuator/health/tracing
 
 ## Common Error Codes
 
-| Error Code | Description | Solution |
-|--------|------|----------|
-| `TRACING_001` | Tracing service not initialized | Check configuration and restart service |
-| `TRACING_002` | Sampling strategy configuration error | Validate sampling configuration syntax |
-| `TRACING_003` | Exporter connection failure | Check network and endpoint configuration |
-| `TRACING_004` | Insufficient memory | Increase memory or adjust configuration |
-| `TRACING_005` | Context propagation failure | Check async operation implementation |
+The tracing module emits **no** coded error identifiers: no `TRACING_*` code exists anywhere in the
+repository. Diagnose tracing failures with the logs and the `/actuator` endpoints described above;
+for client-visible error codes see the [error code reference](../api-reference/error-codes.md).
 
 ## Getting Support
 

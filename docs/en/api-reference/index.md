@@ -54,18 +54,35 @@ By default, JAiRouter doesn't require authentication. For production deployments
 
 ## Rate Limiting
 
-All APIs are subject to configured rate limits. When limits are exceeded, you'll receive:
+Rate limiting does **not** apply to every API. It is enforced at these points: the AI call chain
+(service-level limiting inside `ServiceRequestHandler`), the `/api/auth/api-keys` prefix
+(`AdminApiRateLimiter`), and the API Key validation chain
+(`ApiKeyValidator.validateRateLimit`, see the
+[error code reference](error-codes.md#rate-limit-error-codes)).
 
-```http
-HTTP/1.1 429 Too Many Requests
-Content-Type: application/json
+The 429 body shape depends on the surface, and `code` carries the code that surface actually emits:
+the admin rate limiter on `/api/auth/api-keys` writes the flat body with `RATE_LIMIT_EXCEEDED`,
+while the API Key validation chain writes `RATE_LIMITED_API_KEY` (both answer 429).
 
+`/v1/**` (OpenAI surface, mapped by `V1ErrorBodyMapper`; the code below is the validation chain's):
+
+```json
 {
   "error": {
-    "message": "Rate limit exceeded",
+    "message": "...",
     "type": "rate_limit_error",
-    "code": "rate_limit_exceeded"
+    "code": "RATE_LIMITED_API_KEY"
   }
+}
+```
+
+`/api/auth/api-keys` (flat body, **no** `error` wrapper — see `AdminApiRateLimiter`, method
+`writeRateLimited`):
+
+```json
+{
+  "code": "RATE_LIMIT_EXCEEDED",
+  "message": "..."
 }
 ```
 
