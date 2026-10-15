@@ -184,7 +184,9 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
                         // 429/限流码 ⇒ 独立文案且不带栈；其余 ⇒ 「认证失败」WARN + 栈（可诊断性不丢）。
                         return handleAuthenticationError(exchange, throwable);
                     }
-                    log.error("Multipart请求认证过程中发生非认证异常: {}", throwable.getMessage(), throwable);
+                    // issue #435：文案不得含「认证异常」/「认证失败」子串 —— 按旧文案做子串匹配的
+                    // 告警/统计会把非本仓异常（例如下游抛出的 ResponseStatusException(429)）误计成认证异常。
+                    log.error("Multipart 请求处理中发生非认证类异常: {}", throwable.getMessage(), throwable);
                     return Mono.error(throwable);
                 });
     }
