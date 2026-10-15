@@ -22,6 +22,40 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 ## 版本历史
 
+### [3.3.4] - 2026-10-16 - 补丁发布（错误码语义裁决落地、收口与文档归置）
+
+> ⚠️ **两处对外可观察变更**（客户端请核对）：
+> ① **`PUT`/`DELETE /api/config/adapter/{name}` 命中内置 adapter 时由 `400` 改为 `403`**（`errorCode` 仍为 `BUILTIN_READONLY`）—— 授权语义应报 403（#405）；
+> ② **API Key 每分钟限流由 `401` 改为 `429`**，并**新增错误码 `RATE_LIMITED_API_KEY`**（`/v1/**` 协议体的 `type` 随之由 `authentication_error` 变为 `rate_limit_error`）—— 客户端不再需要把 401 当限流处理（#404）。
+> 除上述两处外，本版**不改变任何其它对外状态码**：注册表 62 → 63（新增 1 个），两张错误码表由门闩**双向对账**。
+>
+> **已打 tag `v3.3.4`**；按既定发布口径暂不产出 GitHub Release 与 Docker 镜像。
+> 本条目覆盖 `v3.3.3` 之后合入的全部改动。
+
+#### 错误码面：裁决落地与收口
+
+- **限流拆码（#404）**：按「429 + 拆新码」把两条真实路径拆开 —— 管理面限流器保留 `RATE_LIMIT_EXCEEDED`（429 扁平体），
+  API Key 校验链改用新增的 `RATE_LIMITED_API_KEY`（登记为 429）；认证过滤器不再硬编码 401，改为**透出异常携带的状态**，
+  三处 error `type` 一律按状态经 `V1ErrorBodyMapper.errorTypeOf` 推导（与映射表同源）。`RATE_LIMIT_EXCEEDED` 的渲染路径
+  相应改为 `ERROR_BODY`（此后只由管理面直写扁平体发出）。**401 形状逐字节不变**（三条老路径有字节级断言，并用改动前的实现做过对照）。
+- **状态对齐（#405）**：`BUILTIN_READONLY` 两端均为 403（端点原为 400）、`RESTART_REQUIRED` 两端均为 400（规则链原推导 403）；
+  两处 `@ApiResponse` 注解同步（改前与实现相反）。
+- **死码删除与文档口径更正（#406 / #412 / #414）**：删除 7 个「只有常量与从未被调用的工厂、全仓无发出点」的码；
+  文档把 `RESOURCE_FORBIDDEN` → `FORBIDDEN_RESOURCE` 的**内部常量改名**与对外契约变更分开写；
+  `management-api` 两张表里 4 个从不发出的码换成注册表真名。
+
+#### 仓库与文档卫生
+
+- **内部文档归置（#418）**：会话记忆（`mimo-memory/` 393 文件、`session-digests/`）与两篇内部流程 SOP
+  （`development/{doc-maintenance,knowledge-base-governance}.md`，中英各一对）移出公开文档站到 `innerdoc/`；
+  随之修掉本地文档扫描的 10 处误报，并移除 `mkdocs` 导航里两个孤儿项。
+- **版本与台账（#417）**：版本号 3.3.3 → 3.3.4；README / roadmap 的「未发布」台账同步。
+
+#### 已知未闭环（台账）
+
+- #413（30 处失败响应不带 `errorCode`，单参 `RouterResponse.error`）· #419（错误码文档门闩只覆盖两张主表）·
+  #420（认证链两处按旧语义硬编码：entryPoint 401 与「限流打成认证失败」的日志口径）。
+
 ### [3.3.3] - 2026-10-15 - 补丁发布（错误码注册表贯通代码与文档、前端生成物卫生；`v3.3.2` 的内容一并发布）
 
 > ⚠️ **对外契约变更（#403）**：`TOKEN_USAGE_FORBIDDEN` → **`FORBIDDEN_TOKEN_USAGE`** —— 该码写进令牌用量响应体，客户端可见；

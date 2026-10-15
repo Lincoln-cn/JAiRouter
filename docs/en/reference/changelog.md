@@ -21,6 +21,44 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 ## Version History
 
+### [3.3.4] - 2026-10-16 - Patch Release (error-code rulings landed, close-out and docs relocation)
+
+> ⚠️ **Two client-visible changes** (please check your client):
+> ① **`PUT`/`DELETE /api/config/adapter/{name}` on a built-in adapter changed from `400` to `403`** (`errorCode` stays `BUILTIN_READONLY`) — authorization semantics should answer 403 (#405);
+> ② **API-key per-minute rate limiting changed from `401` to `429`**, and a **new code `RATE_LIMITED_API_KEY`** was added (the `/v1/**` protocol `type` therefore changes from `authentication_error` to `rate_limit_error`) — clients no longer have to treat 401 as a rate limit (#404).
+> Apart from those two, this release **changes no other client-visible status code**: the registry went 62 → 63 (one addition) and both error-code tables are reconciled **both ways** by the docs gate.
+>
+> **Tagged `v3.3.4`**; per the standing release policy no GitHub Release or Docker image is produced yet.
+> This entry covers everything merged after `v3.3.3`.
+
+#### Error codes: rulings landed and close-out
+
+- **Rate-limit code split (#404)**: per the "429 plus a new code" ruling the two real paths are split — the admin rate limiter
+  keeps `RATE_LIMIT_EXCEEDED` (flat 429 body) while the API-key validation chain uses the new `RATE_LIMITED_API_KEY` (registered as 429);
+  the authentication filter no longer hardcodes 401 but **passes through the status carried by the exception**, and all three error
+  `type` fields are derived from that status via `V1ErrorBodyMapper.errorTypeOf` (same source as the mapper). `RATE_LIMIT_EXCEEDED`'s
+  render path became `ERROR_BODY` (it is only written as a flat body by the admin limiter now). **The 401 shapes are byte-identical**
+  (three legacy paths carry byte-level assertions that were checked against the pre-change implementation).
+- **Status alignment (#405)**: `BUILTIN_READONLY` answers 403 everywhere (the endpoint used to answer 400) and `RESTART_REQUIRED`
+  answers 400 everywhere (the rule chain used to derive 403); two `@ApiResponse` annotations were synced (they contradicted the implementation).
+- **Dead codes deleted and docs corrected (#406 / #412 / #414)**: seven codes that existed only as constants plus never-called
+  factories with no emission site were deleted; the docs now separate the internal `RESOURCE_FORBIDDEN` → `FORBIDDEN_RESOURCE`
+  constant rename from the real client-visible rename; four never-emitted codes in the two `management-api` tables were replaced
+  with registry names.
+
+#### Repository and documentation hygiene
+
+- **Internal docs relocated (#418)**: the session memory (`mimo-memory/`, 393 files; `session-digests/`) and two internal process
+  SOPs (`development/{doc-maintenance,knowledge-base-governance}.md`, one pair per language) moved out of the published docs site
+  into `innerdoc/`; this also removed 10 false positives from the local docs scanner and two orphan nav entries from `mkdocs`.
+- **Version and ledger (#417)**: version 3.3.3 → 3.3.4; the README / roadmap "unreleased" ledger was synced.
+
+#### Known open items (ledger)
+
+- #413 (30 failure responses carry no `errorCode`, single-argument `RouterResponse.error`) · #419 (the error-code docs gate only
+  covers the two main tables) · #420 (two places on the authentication chain still follow the old semantics: the entry point's
+  hardcoded 401 and the "rate limit logged as an authentication failure" wording).
+
 ### [3.3.3] - 2026-10-15 - Patch Release (error-code registry wired through code and docs, frontend artifact hygiene; ships the `v3.3.2` content too)
 
 > ⚠️ **External contract change (#403)**: `TOKEN_USAGE_FORBIDDEN` → **`FORBIDDEN_TOKEN_USAGE`** — that code is written
