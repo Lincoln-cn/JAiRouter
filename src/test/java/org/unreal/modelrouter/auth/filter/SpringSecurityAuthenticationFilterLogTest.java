@@ -19,6 +19,7 @@ import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.WebFilterChain;
 import org.unreal.modelrouter.auth.security.config.properties.ApiKeyConfig;
 import org.unreal.modelrouter.auth.security.config.properties.JwtConfig;
@@ -209,6 +210,32 @@ class SpringSecurityAuthenticationFilterLogTest {
         assertNotNull(event.getThrowableProxy(), "真正的认证失败仍须带栈（排障需要）：" + messages());
     }
 
+    @Test
+    @DisplayName("MLOG-004: multipart 外层的**非认证类**异常 ⇒ 文案不含「认证异常」子串，仍保留 ERROR + 栈")
+    void multipartOuterFallback_nonAuthException_shouldNotUseAuthenticationWording() {
+        // issue #435：外层还有一条「非认证异常」分支，其文案原先含「认证异常」子串 —— 按子串匹配的
+        // 告警/统计会把非本仓异常（下例即下游抛出的 429）误计成认证异常。
+        final RuntimeException downstream =
+                new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "下游限流");
+        final MockServerWebExchange exchange = multipartExchangeOf(PATH);
+
+        try {
+            // 非认证类异常沿用原语义：向上抛（本用例只关心日志口径）
+            filterThrowingOnAuthenticate(downstream).filter(exchange, mockChain()).block(TIMEOUT);
+        } catch (RuntimeException expected) {
+            // 预期路径
+        }
+
+        assertNoAuthenticationFailureWording();
+        final List<ILoggingEvent> errors = appender.list.stream()
+                .filter(e -> e.getLevel() == Level.ERROR)
+                .toList();
+        assertEquals(1, errors.size(), "非认证类异常仍必须恰好一条 ERROR（可诊断性不丢）：" + messages());
+        final ILoggingEvent event = errors.get(0);
+        assertTrue(event.getFormattedMessage().contains("非认证类异常"), ": " + messages());
+        assertNotNull(event.getThrowableProxy(), "非认证类异常仍须带栈（排障需要）：" + messages());
+    }
+
     // ==================== 辅助方法 ====================
 
     private AuthenticationException rateLimitedException() {
@@ -258,6 +285,11 @@ class SpringSecurityAuthenticationFilterLogTest {
 
     /** 认证管理器**同步抛出**（而非返回 {@code Mono.error}）⇒ 只有 multipart 的外层 onErrorResume 能兜住。 */
     private SpringSecurityAuthenticationFilter filterThrowingOnAuthenticate(final AuthenticationException error) {
+        return filterThrowingOnAuthenticate((RuntimeException) error);
+    }
+
+    /** 同上，但抛的是**非认证类**异常 ⇒ 走 multipart 外层的「非认证类异常」分支（issue #435）。 */
+    private SpringSecurityAuthenticationFilter filterThrowingOnAuthenticate(final RuntimeException error) {
         final ServerAuthenticationConverter converter = mock(ServerAuthenticationConverter.class);
         final ReactiveAuthenticationManager manager = mock(ReactiveAuthenticationManager.class);
         when(converter.convert(any()))
