@@ -110,10 +110,10 @@ public class ApiException extends RuntimeException {
      * @return 对应 HTTP 状态码，无法判定时返回 500
      */
     public static HttpStatus resolveStatus(final String errorCode) {
-        // issue #370：先查错误码注册表（单一事实来源）；未登记才落回原有命名规则
-        final java.util.Optional<ErrorCode> registered = ErrorCode.of(errorCode);
-        if (registered.isPresent()) {
-            return registered.get().status();
+        // issue #370：先查错误码注册表（单一事实来源）；未登记、或该码的状态不由规则链决定时，
+        // 落回原有命名规则 —— 保证「引入注册表零行为变化」（见 ErrorCode.isResolvedByRuleChain）。
+        if (ErrorCode.isResolvedByRuleChain(errorCode)) {
+            return ErrorCode.of(errorCode).orElseThrow().status();
         }
         return legacyResolveStatus(errorCode);
     }

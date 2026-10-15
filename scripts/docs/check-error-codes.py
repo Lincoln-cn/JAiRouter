@@ -1,32 +1,38 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""文档错误码 ↔ 源码对账检查器（issue #342）
+"""文档错误码 ↔ **错误码注册表**双向对账检查器（issue #342 引入，issue #370 阶段 2 换成注册表权威）
 
 ## 为什么要它
 
 `docs/{zh,en}/api-reference/error-codes.md` 是客户端**照着写错误处理分支**的表。
 #342 记录过：这张表里曾有 **17 个全仓不存在的码**（`INSTANCE_NOT_FOUND` / `CACHE_ERROR` /
 `CIRCUIT_BREAKER_OPEN` …），客户端会为永不会出现的码写死分支，而真正会拿到的码反而没被覆盖。
-#348 已按代码重写这两张表；本检查器把它变成**可执行判据**，防止再次漂移。
+#348 已按代码重写这两张表；本检查器把它变成**可执行判据**。
 
-## 判据
+## 判据（#370 阶段 2 起：权威来源 = 注册表，双向失败）
 
-* **表格单元格里的反引号码**（`` `CODE` ``）= 权威清单 ⇒ 必须在 `src/main/java` 里存在；
-* **散文 / 引用块（blockquote）里提到的码** = 允许（它们常用于说明「上一版列过但不存在」「只有常量声明」），
-  一律**不参与**对账；
-* 以 `_` 结尾的**前缀模式**（如 `` `INVALID_*` ``）与含通配符的写法不算码；
-* 源码里存在但文档没列的码 ⇒ 输出为 **INFO**（不判红）—— 那是「文档是否够全」的问题，
-  与「文档列了假码」不是同一类错误。
+* **权威清单** = `common/constants/ErrorCode.java`（注册表里登记的就是「会被真正发出的码」）；
+* **表格单元格里的反引号码**（`` `CODE` ``）= 文档清单 ⇒ 必须**恰好等于**注册表：
+  * 文档有、注册表没有 ⇒ ❌ **幽灵码**（客户端会照它写死分支）；
+  * 注册表有、文档没列 ⇒ ❌ **漏列**（客户端会漏判，这是 #370 正文记录的原始缺口）；
+* **散文 / 引用块（blockquote）里提到的码** = 允许（它们常用于说明「上一版列过但不存在」
+  「只有常量声明」），一律**不参与**对账；
+* 以 `_` 结尾的**前缀模式**（如 `` `INVALID_*` ``）与含通配符的写法不算码。
+
+> 为什么不再以「源码字面量」为权威：字面量只能证明「某个字符串出现过」，无法区分
+> 「声明了但从不发出的码」（本仓实测有 7 个：`MISSING_API_KEY` / `INVALID_JWT_TOKEN` /
+> `BLACKLISTED_TOKEN` / `INSUFFICIENT_PERMISSIONS` / `ACCESS_DENIED` / `FORBIDDEN_RESOURCE` /
+> `RULE_COMPILATION_FAILED`）。注册表把「发出点取证」这件事固化成了一次性结论。
 
 用法:
-    python scripts/docs/check-error-codes.py --fail-on-error
+    python scripts/docs/check-error-codes.py --project-root . --fail-on-error
 """
 
 import argparse
 import re
 import sys
 from pathlib import Path
-from typing import Iterable, Set, Tuple
+from typing import Dict, Iterable, Set, Tuple
 
 # 码的形状：全大写 + 下划线/数字，至少 3 个字符
 _CODE = r"[A-Z][A-Z0-9_]{2,}"
@@ -35,27 +41,21 @@ _CODE = r"[A-Z][A-Z0-9_]{2,}"
 _DOC_TABLE_ROW = re.compile(r"^\s*\|")
 _DOC_BACKTICK_CODE = re.compile(r"`(" + _CODE + r")`")
 
-# 源码：真实发出错误码的写法（用于 INFO：「会发出但文档没列」）
-_SOURCE_PATTERNS = (
-    re.compile(r'ApiException\.of\(\s*"(' + _CODE + r')"'),
-    re.compile(r'ApiException\.resolveStatus\(\s*"(' + _CODE + r')"'),
-    re.compile(r'RouterResponse\.error\([^;]*?"(' + _CODE + r')"\s*[,)]'),
-)
-
-# 源码：**任何**形状像错误码的字符串字面量。
-# 判据依据 #342 自己的取证方法：本仓的错误码就是字符串字面量（无混淆、无拼接），
-# 而码可能以常量声明（如 AuthenticationException.INVALID_API_KEY = "INVALID_API_KEY"）
-# 或经常量引用发出 ⇒ 只扫调用点会大量误报。
-_SOURCE_LITERAL = re.compile(r'"(' + _CODE + r')"')
-
 # 形如 INVALID_ 的前缀模式（作者用它表达「任何 INVALID_* 都归此类」）
 _PREFIX_LIKE = re.compile(r"_+$")
+
+# 注册表：枚举项 = NAME("CODE", HttpStatus.X | null, RenderPath.Y, "说明")
+_REGISTRY_ENTRY = re.compile(
+    r'^\s*[A-Z][A-Z0-9_]*\(\s*"([A-Z][A-Z0-9_]+)"\s*,\s*'
+    r'(null|HttpStatus\.[A-Z_]+)\s*,\s*RenderPath\.([A-Z_]+)\s*,',
+    re.M,
+)
 
 DEFAULT_DOCS = (
     "docs/zh/api-reference/error-codes.md",
     "docs/en/api-reference/error-codes.md",
 )
-DEFAULT_SOURCE_ROOT = "src/main/java"
+DEFAULT_REGISTRY = "src/main/java/org/unreal/modelrouter/common/constants/ErrorCode.java"
 
 
 def extract_doc_codes(markdown: str) -> Set[str]:
@@ -72,55 +72,43 @@ def extract_doc_codes(markdown: str) -> Set[str]:
     return codes
 
 
-def extract_source_codes(source: str) -> Set[str]:
-    """从 Java 源码文本里取会**真实发出**的错误码字面量（按调用点，窄口径）。"""
-    codes: Set[str] = set()
-    for pattern in _SOURCE_PATTERNS:
-        for match in pattern.finditer(source):
-            codes.add(match.group(1))
-    return codes
+def extract_registry_codes(java_text: str) -> Dict[str, str]:
+    """从注册表源码里取 {码: 渲染路径}。找不到任何项时返回空字典（由调用方判为致命错误）。"""
+    return {m.group(1): m.group(3) for m in _REGISTRY_ENTRY.finditer(java_text)}
 
 
-def extract_source_literals(source: str) -> Set[str]:
-    """从 Java 源码文本里取**所有**形状像错误码的字符串字面量（宽口径，用于「是否存在」判定）。"""
-    return {match.group(1) for match in _SOURCE_LITERAL.finditer(source)}
-
-
-def scan_source(root: Path) -> Tuple[Set[str], Set[str]]:
-    """扫描目录下全部 .java 文件，返回 (全部码形状字面量, 调用点发出的码)。"""
-    literals: Set[str] = set()
-    emitted: Set[str] = set()
-    for java_file in root.rglob("*.java"):
-        try:
-            text = java_file.read_text(encoding="utf-8", errors="ignore")
-        except OSError as exc:  # 读不了的单个文件不应让整轮失败
-            print(f"⚠️  跳过无法读取的文件 {java_file}: {exc}")
-            continue
-        literals |= extract_source_literals(text)
-        emitted |= extract_source_codes(text)
-    return literals, emitted
-
-
-def reconcile(doc_codes: Iterable[str], source_codes: Set[str]) -> Tuple[Set[str], Set[str]]:
-    """返回 (文档里有但源码里没有的码, 源码里有但文档没列的码)。"""
+def reconcile(doc_codes: Iterable[str], registry_codes: Set[str]) -> Tuple[Set[str], Set[str]]:
+    """返回 (文档里有但注册表没有的码, 注册表里有但文档没列的码)。"""
     doc = set(doc_codes)
-    return doc - source_codes, source_codes - doc
+    return doc - registry_codes, registry_codes - doc
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="文档错误码与源码对账")
+    parser = argparse.ArgumentParser(description="文档错误码与错误码注册表对账")
     parser.add_argument("--project-root", default=".", help="项目根目录 (默认: .)")
     parser.add_argument(
-        "--fail-on-error", action="store_true", help="发现「文档列了不存在的码」时退出码为 1"
+        "--fail-on-error", action="store_true", help="发现任何一侧不一致时退出码为 1"
     )
     args = parser.parse_args()
 
     root = Path(args.project_root).resolve()
-    source_literals, source_emitted = scan_source(root / DEFAULT_SOURCE_ROOT)
-    print(f"🔍 源码里形状像错误码的字面量: {len(source_literals)} 个；"
-          f"其中调用点会发出的: {len(source_emitted)} 个（{DEFAULT_SOURCE_ROOT}）")
+    registry_path = root / DEFAULT_REGISTRY
+    if not registry_path.exists():
+        print(f"❌ 找不到错误码注册表: {DEFAULT_REGISTRY}")
+        return 1
+    registry = extract_registry_codes(registry_path.read_text(encoding="utf-8", errors="ignore"))
+    if not registry:
+        # 反空转：解析不到任何注册项时必须立刻报错，否则「两侧都空」会静默通过
+        print(f"❌ 注册表里解析出 0 个码（解析规则或文件结构已变）: {DEFAULT_REGISTRY}")
+        return 1
 
-    missing_total = 0
+    by_path: Dict[str, int] = {}
+    for path in registry.values():
+        by_path[path] = by_path.get(path, 0) + 1
+    print(f"🔍 注册表登记的错误码: {len(registry)} 个"
+          f"（{' · '.join(f'{k}={v}' for k, v in sorted(by_path.items()))}）")
+
+    problems = 0
     for doc_rel in DEFAULT_DOCS:
         doc_path = root / doc_rel
         if not doc_path.exists():
@@ -128,26 +116,29 @@ def main() -> int:
             continue
 
         doc_codes = extract_doc_codes(doc_path.read_text(encoding="utf-8", errors="ignore"))
-        missing = doc_codes - source_literals
-        undocumented = source_emitted - doc_codes
+        ghost, missing = reconcile(doc_codes, set(registry))
 
         print(f"\n📄 {doc_rel}")
-        print(f"   表中错误码: {len(doc_codes)}")
-        print(f"   ✅ 能在源码中找到: {len(doc_codes) - len(missing)}")
+        print(f"   表中错误码: {len(doc_codes)} / 注册表: {len(registry)}")
+        if ghost:
+            print(f"   ❌ 文档列了但注册表里没有（发不出的幽灵码）{len(ghost)}:")
+            for code in sorted(ghost):
+                print(f"      - {code}")
+            problems += len(ghost)
         if missing:
-            print(f"   ❌ 源码里不存在的码 ({len(missing)}):")
+            print(f"   ❌ 会被发出但文档没列（客户端会漏判）{len(missing)}:")
             for code in sorted(missing):
                 print(f"      - {code}")
-            missing_total += len(missing)
-        if undocumented:
-            print(f"   ℹ️  会发出但文档未列 ({len(undocumented)}): {', '.join(sorted(undocumented))}")
+            problems += len(missing)
+        if not ghost and not missing:
+            print("   ✅ 与注册表双向一致")
 
     print()
-    if missing_total:
-        print(f"❌ 文档里共 {missing_total} 个错误码在全仓源码中不存在"
-              f"（客户端会照它写死分支）：请按代码改写文档，或确认该码确实会被发出。")
+    if problems:
+        print(f"❌ 双向对账共发现 {problems} 处不一致"
+              f"（改码名/改状态请先改注册表，再同步文档）")
         return 1 if args.fail_on_error else 0
-    print("✅ 文档错误码与源码一致（表格里的每个码都能在源码中找到）")
+    print("✅ 文档错误码与注册表双向一致")
     return 0
 
 

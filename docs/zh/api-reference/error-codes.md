@@ -1,14 +1,18 @@
 # 错误码对照表
 
 <!-- 版本信息 -->
-> **文档版本**: 1.0.3
-> **最后更新**: 2026-09-15
-> **适用版本**: v3.1.1
+> **文档版本**: 1.1.0
+> **最后更新**: 2026-10-15
+> **适用版本**: v3.3.3+
 > **作者**: AI Assistant
 
 JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于客户端进行错误处理。
 
-> ⚠️ **响应形状按入口面不同**：`/api/**`（控制台面）用下面表格里的 `RouterResponse` 形状（`errorCode` 字段）；`/v1/**`（OpenAI 面）用嵌套的 `{"error":{"message","type","code"}}`（见 [统一 API 接口](universal-api.md)）。另有两个已知例外不走本表：管理面限流 429 返回`{"code":"RATE_LIMIT_EXCEEDED","message":...}`（`AdminApiRateLimiter`，**扁平体、没有 `error` 包裹**）；异常处理器兜底返回 `{"code":"500"}`（`ReactiveGlobalExceptionHandler`）。
+> ⚠️ **响应形状按入口面不同**：`/api/**`（控制台面）用下面表格里的 `RouterResponse` 形状（`errorCode` 字段）；`/v1/**`（OpenAI 面）用嵌套的 `{"error":{"message","type","code"}}`（见 [统一 API 接口](universal-api.md)）；`/v1/messages`（Anthropic 面）用 Anthropic 的 `{"type":"error","error":{...}}` 形状。另有两个已知例外不走本表：管理面限流 429 返回 `{"code":"RATE_LIMIT_EXCEEDED","message":...}`（扁平体、没有 `error` 包裹）；异常处理器兜底返回数字码（如 `{"code":"500"}`）。
+>
+> 📌 **本表的权威来源是代码**：本表与 `common/constants/ErrorCode.java`（错误码注册表，**62 个会被真正发出的码**）逐条对账，
+> 由 `scripts/docs/check-error-codes.py` 在 CI 里**双向校验** —— 文档漏列一个注册表里的码、或文档列了一个发不出来的码，都会判红。
+> 每个码的「状态由哪条链决定」也登记在注册表里（渲染路径），因此**改码名/改状态前先改注册表**。
 
 ## 错误响应格式
 
@@ -41,24 +45,37 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 
 **HTTP 状态码**: 401 Unauthorized
 
+> 这一节的码由认证异常承载（注册表里的渲染路径是认证链）：客户端可见状态来自异常携带的 401，
+> **不是**由错误码命名规则推导的 —— 例如 `INVALID_API_KEY` 的规则链推导值是 400，但客户端拿到的是 401。
+
 | 错误码 | 描述 | 常见原因 | 解决方案 |
 |--------|------|----------|----------|
-| `INVALID_API_KEY` | 无效的 API Key | API Key 格式错误或不存在 | 检查 API Key 是否正确 |
-| `EXPIRED_API_KEY` | API Key 已过期 | API Key 超过有效期 | 重新生成 API Key |
-| `MISSING_API_KEY` | 缺少 API Key | 请求头未包含 API Key | 添加 `X-API-Key` 请求头 |
-| `JWT_INVALID` | 无效的 JWT 令牌 | JWT 格式错误或签名无效 | 检查 JWT 格式和签名 |
-| `JWT_EXPIRED` | JWT 令牌已过期 | JWT 超过有效期 | 刷新或重新获取 JWT |
-| `JWT_BLACKLISTED` | 令牌已被列入黑名单 | JWT 已被注销 | 重新登录获取新令牌 |
-| `EMPTY_JWT_TOKEN` | 未携带 JWT | 请求头缺少 `Jairouter_Token` | 添加 `Jairouter_Token` 请求头 |
+| `INVALID_API_KEY` | 无效的 API Key | Key 不存在、格式错误、来源 IP 不在白名单、或已被禁用 | 核对 Key 与调用来源 |
+| `EXPIRED_API_KEY` | API Key 已过期 | Key 超过有效期 | 重新生成 API Key |
 | `EMPTY_API_KEY` | 未携带 API Key | 请求头缺少 `X-API-Key` | 添加 `X-API-Key` 请求头 |
-| `API_KEY_DISABLED` | API Key 已被禁用 | 该 Key 被停用 | 启用或更换 Key |
-| `API_KEY_AUTH_FAILED` | API Key 认证失败 | Key 与账号不匹配 | 检查 Key 归属 |
-
-> 原表里的 `INVALID_JWT_TOKEN` / `EXPIRED_JWT_TOKEN` / `BLACKLISTED_TOKEN` 在
-> `AuthenticationException` 中**只有常量声明**；认证链路实际发出的 401 码是上面这几个新增项
-> （`DefaultJwtTokenValidator.java:76,85,120`、`CustomReactiveAuthenticationManager.java:57,67,92,115`）。
-| `AUTH_FAILED` | 认证失败 | 通用认证失败 | 检查认证凭据 |
-| `AUTH_ERROR` | 认证错误 | 认证过程异常 | 检查认证服务状态 |
+| `API_KEY_DISABLED` | API Key 认证功能未启用 | 服务端关闭了 API Key 认证 | 打开服务端开关 |
+| `API_KEY_AUTH_FAILED` | API Key 认证失败 | 校验链抛出未预期异常 | 查服务端日志定位根因 |
+| `DAILY_QUOTA_EXCEEDED` | 超过每日请求配额 | Key 的每日请求数已用尽 | 等次日重置或提升配额 |
+| `TOKEN_QUOTA_EXCEEDED` | 超过每日 Token 配额 | Key 的每日 Token 数已用尽 | 等次日重置或提升配额 |
+| `RATE_LIMIT_EXCEEDED` | 请求频率超过限制 | 超过 Key 的每分钟限速（见「限流错误码」一节的**双状态**说明） | 退避后重试 |
+| `JWT_INVALID` | JWT 令牌校验失败 | 签名不匹配或格式错误 | 重新登录获取新令牌 |
+| `JWT_EXPIRED` | JWT 令牌已过期 | 令牌超过有效期 | 刷新或重新登录 |
+| `EXPIRED_JWT_TOKEN` | JWT 令牌已过期（按 expired 归类） | 校验链报 expired 时由认证管理器归类 | 重新登录 |
+| `JWT_BLACKLISTED` | 令牌已被列入黑名单 | 令牌已注销或被吊销 | 重新登录获取新令牌 |
+| `JWT_VALIDATION_ERROR` | JWT 校验过程中发生错误 | 校验时抛出异常 | 查服务端日志 |
+| `JWT_REFRESH_EXPIRED` | JWT 令牌超出刷新窗口 | 刷新窗口已过 | 重新登录 |
+| `JWT_REFRESH_ERROR` | JWT 刷新过程中发生错误 | 刷新时抛出异常 | 查服务端日志 |
+| `JWT_REFRESH_FAILED` | JWT 令牌刷新失败 | 刷新链抛出异常 | 重新登录 |
+| `JWT_USER_ID_EXTRACTION_FAILED` | 无法从 JWT 令牌中提取用户 ID | 令牌缺少可解析的用户标识 | 重新登录 |
+| `JWT_AUTH_FAILED` | JWT 认证失败 | 认证管理器抛出未预期异常 | 查服务端日志 |
+| `JWT_DISABLED` | JWT 认证功能未启用 | 服务端关闭了 JWT 认证 | 打开服务端开关 |
+| `TOKEN_REQUIRED` | 刷新时未携带当前令牌 | 刷新请求缺少当前令牌 | 携带当前令牌再刷新 |
+| `EMPTY_JWT_TOKEN` | 未携带 JWT 令牌 | 请求头缺少 `Jairouter_Token` | 添加 `Jairouter_Token` 请求头 |
+| `AUTH_MISSING` | 请求缺少认证信息 | 既未带 API Key 也未带 JWT | 补齐认证凭据 |
+| `AUTH_FAILED` | 认证失败（默认码） | 认证过滤器兜底 | 查服务端日志确认具体原因 |
+| `AUTH_ERROR` | 认证过程中发生未知错误 | 认证链抛出未识别异常 | 查服务端日志 |
+| `UNSUPPORTED_AUTH_TYPE` | 不支持的认证类型 | 客户端用了本网关不识别的认证方式 | 改用 API Key 或 JWT |
+| `LOGIN_FAILED` | 登录失败 | 用户名或密码错误 | 检查登录凭据 |
 
 **示例响应**:
 ```json
@@ -78,43 +95,12 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 
 | 错误码 | 描述 | 常见原因 | 解决方案 |
 |--------|------|----------|----------|
-| `INSUFFICIENT_PERMISSIONS` | 权限不足 | 用户没有所需权限 | 联系管理员分配权限 |
-| `ACCESS_DENIED` | 访问被拒绝 | 尝试访问无权资源 | 检查资源访问权限 |
-| `FORBIDDEN_RESOURCE` | 资源禁止访问 | 资源设置为禁止访问 | 联系资源所有者 |
-| `FORBIDDEN` | 禁止访问 | 通用授权失败 | 检查用户角色和权限 |
+| `FORBIDDEN` | 禁止访问 | 通用授权失败 | 检查角色和权限 |
+| `FORBIDDEN_TOKEN_USAGE` | 无权查看该令牌的用量 | 令牌不属于当前调用者 | 用所属账号查询该令牌 |
 
-**示例响应**:
-```json
-{
-  "success": false,
-  "message": "权限不足，需要权限: admin",
-  "errorCode": "INSUFFICIENT_PERMISSIONS",
-  "data": null
-}
-```
-
----
-
-## 数据脱敏错误码 (Sanitization)
-
-**HTTP 状态码**: 500 Internal Server Error
-
-| 错误码 | 描述 | 常见原因 | 解决方案 |
-|--------|------|----------|----------|
-| `SANITIZATION_FAILED` | 数据脱敏失败 | 脱敏过程异常 | 检查日志获取详情 |
-| `INVALID_SANITIZATION_RULE` | 无效的脱敏规则 | 规则配置错误 | 检查规则配置 |
-| `RULE_COMPILATION_FAILED` | 规则编译失败 | 正则表达式语法错误 | 修正正则表达式 |
-| `CONTENT_PROCESSING_FAILED` | 内容处理失败 | 内容格式不支持 | 检查内容类型 |
-
-**示例响应**:
-```json
-{
-  "success": false,
-  "message": "数据脱敏失败: 内容格式不支持",
-  "errorCode": "SANITIZATION_FAILED",
-  "data": null
-}
-```
+> ⚠️ `INSUFFICIENT_PERMISSIONS` / `ACCESS_DENIED` / `FORBIDDEN_RESOURCE` 是 `AuthorizationException`
+> 里**声明了但全仓没有发出点**的码（其工厂方法只被单元测试调用）⇒ 已从本表移除：客户端照它们写分支永远命中不到。
+> 真正的 403 由 Spring Security 的授权链与上表的 `FORBIDDEN` 承担。
 
 ---
 
@@ -125,10 +111,16 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 | 错误码 | 描述 | 常见原因 | 解决方案 |
 |--------|------|----------|----------|
 | `NOT_FOUND` | 资源未找到 | 请求的资源不存在 | 检查资源 ID 或路径 |
+| `TEMPLATE_NOT_FOUND` | 模板不存在 | 模板 ID 不存在 | 检查模板 ID |
+| `TOKEN_NOT_FOUND` | 令牌不存在 | 令牌 ID 不存在 | 检查令牌 ID |
+| `ADAPTER_NOT_FOUND` | 适配器不存在 | 适配器名称不存在 | 检查适配器名称 |
+
+> `ApiException.resolveStatus` 还会把任何以 `_NOT_FOUND` 结尾的**未登记码**按规则映射为 404；
+> 上表是**已登记**的四个码。
 
 ---
 
-## 验证错误码 (Validation)
+## 请求校验错误码 (Validation)
 
 **HTTP 状态码**: 400 Bad Request
 
@@ -136,69 +128,108 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 |--------|------|----------|----------|
 | `INVALID_REQUEST` | 请求不合法 | 参数格式或值错误 | 检查请求参数 |
 | `INVALID_PARAM` | 参数无效 | 参数值超出范围 | 检查参数约束 |
+| `INVALID_PAGE` | 分页参数不合法 | 页码小于 0 | 传合法页码 |
+| `INVALID_SIZE` | 分页大小不合法 | 页大小超出 1-100 | 传合法页大小 |
+| `INVALID_TOKEN_ID` | 令牌 ID 不合法 | 令牌 ID 为空或格式错误 | 检查令牌 ID |
+| `INVALID_TYPE` | 类型不合法 | 类型取值不在枚举内 | 检查类型取值 |
+| `INVALID_NAME` | 名称不合法 | 名称缺失或为空 | 传非空名称 |
+| `INVALID_PERMISSION` | 权限项不合法 | 权限码不在权限清单内 | 用已登记的权限码 |
+| `INVALID_RECORD_LEVEL` | 记录级别不合法 | 记录级别不在枚举内 | 用 METADATA_ONLY / SUMMARY / FULL |
+| `INVALID_ROLE` | 角色名不合法 | 角色名不在已知角色内 | 用已知角色名 |
+| `BUILTIN_READONLY` | 内置项只读 | 试图修改/删除内置适配器 | 改为新建自定义适配器 |
+| `RESTART_REQUIRED` | 需要重启后生效 | 提交了不支持热改的字段 | 移除这些字段，改配置文件后重启 |
 
-> 原表里的 `VALIDATION_ERROR`（只是 `ValidationFailureType` 的枚举值，从不作为响应码发出，见 `ApiKeyValidator.java:344`）、`INVALID_PARAMETER` / `MISSING_PARAMETER` / `INVALID_FORMAT`（全库无匹配）已删除。
+> ⚠️ `BUILTIN_READONLY` 与 `RESTART_REQUIRED` 的端点**实测返回 400**（`ResponseEntity.badRequest()`），
+> 而按错误码命名规则推导出来的状态是 403 —— 两处不一致已作为待裁定项记录（issue #405），本表按**实测值**登记。
+> 上一版还列过 `VALIDATION_ERROR`（只是 `ValidationFailureType` 的枚举值，从不作为响应码发出）、
+> `INVALID_PARAMETER` / `MISSING_PARAMETER` / `INVALID_FORMAT`（全库无匹配）—— 均已从本表移除。
 
 ---
 
-## 业务错误码 (Business)
+## 业务冲突错误码 (Business)
 
-| 错误码 | 描述 | HTTP 状态码 | 解决方案 |
-|--------|------|-------------|----------|
-| `CONFLICT_STATE` | 资源冲突 | 409 | 检查资源状态 |
-| `RATE_LIMIT_EXCEEDED` | 限流触发 | 429 | 降低请求频率 |
+**HTTP 状态码**: 409 Conflict
 
-> 冲突码真实形态是 `CONFLICT_STATE`（由异常映射，见 `common/exception/ApiExceptions.java:51`）
-> 以及共用前缀的端点级变体 `CONFLICT_EXISTS` / `CONFLICT_BUILTIN`
-> （`router/controller/AdapterConfigController.java:192·197`）；**不存在**裸 `CONFLICT`。
-> `ApiException.resolveStatus` 把任何 `CONFLICT*` 归 409（`common/exception/ApiException.java:149`）。
+| 错误码 | 描述 | 常见原因 | 解决方案 |
+|--------|------|----------|----------|
+| `CONFLICT_STATE` | 资源冲突 | 资源当前状态不允许该操作 | 检查资源状态 |
+| `CONFLICT_EXISTS` | 资源已存在 | 同名资源已存在 | 换名称或改为更新 |
+| `CONFLICT_BUILTIN` | 与内置项冲突 | 试图覆盖内置项 | 换名称 |
 
----
-
-## 下游服务错误码 (Downstream)
-
-**HTTP 状态码**: 502/503
-
-| 错误码模式 | 描述 | 解决方案 |
-|------------|------|----------|
-| `5xx` | 下游服务错误 | 检查下游服务状态 |
-| `502` | 网关错误 | 检查网络连接 |
-| `503` | 服务不可用 | 等待服务恢复 |
-| `504` | 网关超时 | 增加超时时间或检查下游响应 |
+> 冲突码的真实形态是 `CONFLICT_STATE`（由异常映射）以及共用前缀的端点级变体
+> `CONFLICT_EXISTS` / `CONFLICT_BUILTIN`；**不存在**裸 `CONFLICT`。
+> `ApiException.resolveStatus` 把任何 `CONFLICT*` 归 409。
 
 ---
 
 ## 限流错误码 (Rate Limit)
 
-**HTTP 状态码**: 429 Too Many Requests
+**HTTP 状态码**: 429 Too Many Requests（管理面）· 401（API Key 校验链）
 
 | 错误码 | 描述 | 响应头 | 解决方案 |
 |--------|------|--------|----------|
-| `RATE_LIMIT_EXCEEDED` | 超过限流阈值 | `Retry-After` / `X-Quota-*` | 等待令牌恢复 |
+| `RATE_LIMIT_EXCEEDED` | 超过限流阈值 | `Retry-After` / `X-Quota-*`（管理面）/ 无（校验链） | 等待令牌恢复后重试 |
 
+> ⚠️ **同一个码在两条真实路径上对应两个状态**（issue #404，待裁定）：
+> ① 管理面限流器（`AdminApiRateLimiter`）直接写 429 扁平体 `{"code":"RATE_LIMIT_EXCEEDED","message":...}`；
+> ② API Key 校验链（`ApiKeyValidator` → `FullValidationResult.toException()`）把它装进 `AuthenticationException`，
+> 客户端拿到 **401**。按状态码分支的客户端需要同时处理这两种情况。
+>
 > 响应头**没有** `X-RateLimit-Reset` / `X-RateLimit-Remaining`（全仓无此头）；配额超限实际写
-> `Retry-After` 与 `X-Quota-*`（limit / remaining / window），见 `ServiceRequestHandler.java:692-695`。
-> 原表里的 `GLOBAL_RATE_LIMIT` / `SERVICE_RATE_LIMIT` / `INSTANCE_RATE_LIMIT` 全库无匹配（最后一项只是 JPA 表名 `instance_rate_limit`，见 `persistence/jpa/entity/InstanceRateLimitEntity.java:26`），已删除。
+> `Retry-After` 与 `X-Quota-*`（limit / remaining / window）。原表里的 `GLOBAL_RATE_LIMIT` /
+> `SERVICE_RATE_LIMIT` / `INSTANCE_RATE_LIMIT` 全库无匹配，已删除。
 
 ---
 
-## 熔断器错误码 (Circuit Breaker)
-
-**熔断器没有专属错误码。** 熔断状态通过追踪 span 属性（小写的 `circuit_breaker_open`，见
-`CircuitBreakerTracingDelegate.java:132`）与监控接口 `GET /api/monitoring/circuit-breaker/stats`
-暴露；请求在熔断打开时按下游不可用处理。
-
-> 原表里的 `CIRCUIT_BREAKER_OPEN` / `CIRCUIT_BREAKER_HALF_OPEN` / `SERVICE_DEGRADED`作为**错误码**全库无匹配，已删除。
-
----
-
-## 系统错误码 (System)
+## 服务与系统错误码 (System)
 
 **HTTP 状态码**: 500 Internal Server Error
 
 | 错误码 | 描述 | 常见原因 | 解决方案 |
 |--------|------|----------|----------|
 | `INTERNAL_ERROR` | 服务器内部错误 | 未预期的异常 | 检查服务日志 |
+| `ADD_FAILED` | 新增失败 | 黑名单等新增操作失败 | 查服务端日志 |
+| `BATCH_TOKEN_REVOKE_FAILED` | 批量吊销令牌失败 | 批量吊销过程异常 | 查服务端日志 |
+| `BLACKLIST_STATS_FAILED` | 获取黑名单统计失败 | 统计查询异常 | 查服务端日志 |
+| `CLEANUP_FAILED` | 清理失败 | 清理操作异常 | 查服务端日志 |
+| `GET_CLEANUP_STATS_FAILED` | 获取清理统计失败 | 统计查询异常 | 查服务端日志 |
+| `GET_TOKENS_FAILED` | 获取令牌列表失败 | 列表查询异常 | 查服务端日志 |
+| `GET_TOKEN_DETAILS_FAILED` | 获取令牌详情失败 | 详情查询异常 | 查服务端日志 |
+| `TOKEN_REFRESH_FAILED` | 令牌刷新失败 | 刷新过程异常 | 重新登录 |
+| `TOKEN_REVOKE_FAILED` | 令牌吊销失败 | 吊销过程异常 | 查服务端日志 |
+| `SANITIZATION_FAILED` | 数据脱敏失败 | 脱敏过程异常 | 检查日志获取详情 |
+| `INVALID_SANITIZATION_RULE` | 无效的脱敏规则 | 规则配置错误 | 检查规则配置 |
+| `CONTENT_PROCESSING_FAILED` | 内容处理失败 | 内容格式不支持 | 检查内容类型 |
+
+> ⚠️ `RULE_COMPILATION_FAILED` 与上节的三个授权码同类：声明在 `SanitizationException` 里、
+> **全仓没有发出点**（工厂方法只被单元测试调用）⇒ 已从本表移除。规则编译失败今天表现为 `SANITIZATION_FAILED` 或
+> `INVALID_SANITIZATION_RULE`。
+> 上一版列过的 `CONFIGURATION_ERROR` / `DATABASE_ERROR` / `CACHE_ERROR` 同样全库无匹配：配置、数据库、
+> 缓存故障都表现为 `INTERNAL_ERROR`（也是解析器对任何不匹配规则的码的兜底值）。
+
+---
+
+## 服务不可用 (Service Unavailable)
+
+**HTTP 状态码**: 503 Service Unavailable
+
+| 错误码 | 描述 | 常见原因 | 解决方案 |
+|--------|------|----------|----------|
+| `SERVICE_NOT_AVAILABLE` | 服务不可用 | 依赖的持久化/清理服务未启用 | 检查服务端配置并等待恢复 |
+
+---
+
+## 下游服务错误码 (Downstream)
+
+**HTTP 状态码**: 原样取下游返回的状态（常见 502/503/504；下游返回 401 时归一到 401 认证分支）
+
+| 错误码 | 描述 | 常见原因 | 解决方案 |
+|--------|------|----------|----------|
+| `DOWNSTREAM_SERVICE_ERROR` | 下游服务异常 | 上游模型服务报错或超时 | 检查下游服务状态与网络 |
+
+> 这个码的 **HTTP 状态不固定**：`SecurityExceptionHandler` 直写错误体时原样取下游返回的状态码
+> ⇒ 注册表里它的状态登记为「随上下文」（不是 502/503 之一）。
+> 上一版用 `5xx` / `502` / `503` / `504` 当「错误码模式」列出，那既不是码也不是本网关发出的值。
 
 ---
 
@@ -210,29 +241,30 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 // JavaScript 示例
 async function handleApiResponse(response) {
   const data = await response.json();
-  
+
   if (!data.success) {
-    switch (data.errorCode) {
+    const code = data.errorCode ?? data.error?.code;
+
+    switch (code) {
       case 'INVALID_API_KEY':
       case 'EXPIRED_API_KEY':
-      case 'INVALID_JWT_TOKEN':
-      case 'EXPIRED_JWT_TOKEN':
-        // 跳转到登录页面
+      case 'EMPTY_API_KEY':
+      case 'JWT_EXPIRED':
+      case 'JWT_INVALID':
+      case 'JWT_BLACKLISTED':
+        // 需要重新认证
         window.location.href = '/login';
         break;
       case 'RATE_LIMIT_EXCEEDED':
-        // 等待后重试
-        const resetTime = response.headers.get('X-RateLimit-Reset');
-        await sleep(resetTime * 1000);
+        // 退避后重试（管理面 429 会带 Retry-After）
+        await sleep((Number(response.headers.get('Retry-After')) || 1) * 1000);
         return retryRequest();
-        break;
       default:
-        // 显示错误消息
-        showError(data.message);
+        showError(data.message ?? data.error?.message);
     }
     return;
   }
-  
+
   return data.data;
 }
 ```
@@ -243,18 +275,18 @@ async function handleApiResponse(response) {
 // Java 示例
 @RestControllerAdvice
 public class ErrorHandler {
-    
+
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponse> handleAuthException(AuthenticationException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+        // 状态码取异常携带的值（注册表里的认证链路径）
+        return ResponseEntity.status(ex.getHttpStatus())
             .body(new ErrorResponse(ex.getMessage(), ex.getErrorCode()));
     }
-    
-    @ExceptionHandler(RateLimitExceededException.class)
-    public ResponseEntity<ErrorResponse> handleRateLimit(RateLimitExceededException ex) {
-        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-            .header("X-RateLimit-Reset", ex.getResetTime())
-            .body(new ErrorResponse("请求过多", "RATE_LIMIT_EXCEEDED"));
+
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<ErrorResponse> handleApiException(ApiException ex) {
+        return ResponseEntity.status(ex.getStatus())
+            .body(new ErrorResponse(ex.getMessage(), ex.getErrorCode()));
     }
 }
 ```
@@ -263,33 +295,9 @@ public class ErrorHandler {
 
 ```java
 // 记录错误日志
-log.error("认证失败: errorCode={}, message={}", 
+log.error("认证失败: errorCode={}, message={}",
     ex.getErrorCode(), ex.getMessage());
 ```
-
----
-
-## 错误码快速查询
-
-### 按状态码分类
-
-| 状态码 | 错误码列表 |
-|--------|-----------|
-| 400 | `INVALID_REQUEST`、`INVALID_PARAM`（按规则任何 `INVALID_*` 也归此类） |
-| 401 | `MISSING_API_KEY`、`INVALID_API_KEY`、`EXPIRED_API_KEY`、`INVALID_JWT_TOKEN`、`EXPIRED_JWT_TOKEN`、`BLACKLISTED_TOKEN`、`DAILY_QUOTA_EXCEEDED`、`TOKEN_QUOTA_EXCEEDED`、`LOGIN_FAILED` |
-| 403 | `INSUFFICIENT_PERMISSIONS`、`ACCESS_DENIED`、`FORBIDDEN_RESOURCE`、`BUILTIN_READONLY` |
-| 404 | `NOT_FOUND`（按规则任何 `*_NOT_FOUND` 也归此类） |
-| 409 | `CONFLICT_STATE`、`CONFLICT_EXISTS`、`CONFLICT_BUILTIN` |
-| 429 | `RATE_LIMIT_EXCEEDED` |
-| 500 | `INTERNAL_ERROR`、`SANITIZATION_FAILED`；以及任何不匹配解析规则的码（兜底） |
-| 502/503/504 | 下游的**状态码模式**（不是错误码）；`SERVICE_NOT_AVAILABLE` 归 503 |
-
-> 本表每一行都已核对为 `src/main/java` 中**真实存在的字面量**。上一版还列了 `VALIDATION_ERROR`、
-> `INVALID_PARAMETER`、`MISSING_PARAMETER`、`INVALID_FORMAT`、`SERVICE_NOT_FOUND`、`INSTANCE_NOT_FOUND`、
-> `CONFIG_NOT_FOUND`、`DUPLICATE_RESOURCE`、`GLOBAL_RATE_LIMIT`、`SERVICE_RATE_LIMIT`、
-> `INSTANCE_RATE_LIMIT`、`CONFIGURATION_ERROR`、`DATABASE_ERROR`、`CACHE_ERROR` —— **这些全都不存在**
-> （各节的说明见上文）。⚠️ `TOO_MANY_REQUESTS` 与 `RATE_LIMITED` **也不是**发出的码：
-> 前者只是 Spring 的 `HttpStatus` 枚举，后者只出现在解析器自己的规则里。
 
 ---
 
@@ -297,9 +305,11 @@ log.error("认证失败: errorCode={}, message={}",
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
+| 1.1.0 | 2026-10-15 | 按错误码注册表（`ErrorCode`，62 个会发出的码）重写：补齐 33 个漏列码、删除 7 个发不出的历史码、标注渲染路径与两处「端点实测状态 ≠ 规则链推导值」、登记 `DOWNSTREAM_SERVICE_ERROR` |
+| 1.0.3 | 2026-09-15 | 按代码重写两张表（issue #342/#348）：删 17 个不存在的码，补认证链实际发出的码 |
 | 1.0.1 | 2026-06-29 | 更新版本引用为 v2.7.5+，修正版本号错误 |
 | 1.0.0 | 2026-05-25 | 初始版本，包含所有错误码定义 |
 
 ---
 
-*最后更新: 2026-06-29*
+*最后更新: 2026-10-15*
