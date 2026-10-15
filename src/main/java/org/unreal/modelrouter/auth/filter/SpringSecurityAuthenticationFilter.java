@@ -40,6 +40,9 @@ import java.util.Map;
  *
  * <p>issue #420 ②：状态渲染不变，只把**日志口径**分流 —— 限流拒绝（429）打独立文案且不带栈，
  * 不再被记成「认证失败」（见 {@link #logAuthenticationFailure}）。</p>
+ *
+ * <p>issue #431：multipart 分支**外层** {@code onErrorResume} 的日志也并入同一分流口径（此前它自带
+ * 「Multipart请求认证过程中发生认证异常」+ 栈的旧文案，见 {@link #handleMultipartAuthentication}）。</p>
  */
 @Slf4j
 public class SpringSecurityAuthenticationFilter implements WebFilter {
@@ -134,6 +137,22 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
     /**
      * 处理multipart请求的认证
      * 只捕获认证相关异常，其它异常放行
+     *
+     * <p><b>内层/外层两层 {@code onErrorResume} 的分工</b>（issue #431 取证结论）：</p>
+     * <ul>
+     *   <li><b>内层</b>只包住 {@code authenticationManager.authenticate(...)} 及其后续，且**包在
+     *       {@code flatMap} 的映射函数内部** ⇒ {@code authenticate()} 返回 {@code Mono.error}
+     *       的常规认证失败（含限流 429）在这里就被吃掉，走不到外层；</li>
+     *   <li><b>外层</b>包住整条链（含 {@code authenticationConverter.convert(...)}）。它拿到
+     *       认证异常只有两种情形：① {@code convert()} 自身以 {@code Mono.error} 返回认证异常；
+     *       ② 内层映射函数**同步抛出**（例如 {@code authenticate()} 不是返回 {@code Mono.error}
+     *       而是直接 throw）—— 此时内层 {@code onErrorResume} 根本没被装配进错误链，
+     *       异常只能由外层兜底。</li>
+     * </ul>
+     *
+     * <p>两种情形下的客户端可见结果都必须是「认证异常携带的状态」（429），因此外层的日志口径
+     * 不能与内层不一致：统一交给 {@link #handleAuthenticationError} →
+     * {@link #logAuthenticationFailure}（详见那里的分流规则）。</p>
      */
     private Mono<Void> handleMultipartAuthentication(final ServerWebExchange exchange, final WebFilterChain chain) {
         log.debug("开始处理multipart请求认证: {}", exchange.getRequest().getPath().value());
@@ -157,7 +176,12 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
                 // 只捕获认证相关异常，其它异常放行
                 .onErrorResume(throwable -> {
                     if (isAuthException(throwable)) {
-                        log.error("Multipart请求认证过程中发生认证异常: {}", throwable.getMessage(), throwable);
+                        // issue #431：外层兜底不再自带一份日志。此前这里是
+                        // log.error("Multipart请求认证过程中发生认证异常: {}", msg, throwable)（带栈），
+                        // ① 属旧口径（429 限流被记成「认证异常」）、② 与紧接着的
+                        // handleAuthenticationError 重复打印同一异常。日志口径统一由
+                        // handleAuthenticationError → logAuthenticationFailure 决定：
+                        // 429/限流码 ⇒ 独立文案且不带栈；其余 ⇒ 「认证失败」WARN + 栈（可诊断性不丢）。
                         return handleAuthenticationError(exchange, throwable);
                     }
                     log.error("Multipart请求认证过程中发生非认证异常: {}", throwable.getMessage(), throwable);
@@ -226,6 +250,10 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
      *   <li>{@link SecurityAuthenticationException}（Spring Security 类型，不携带状态）与未知异常
      *       ⇒ 固定 {@link HttpStatus#UNAUTHORIZED}（既有行为）。</li>
      * </ul>
+     *
+     * <p><b>两个 {@code onErrorResume}（内层与外层）都收敛到本方法</b>（issue #431）：日志口径
+     * （{@link #logAuthenticationFailure}）与响应渲染（{@link #createAuthenticationErrorResponse}）
+     * 各自只有一处实现，避免同一异常被打成两种口径、或写出两个错误体。</p>
      */
     private Mono<Void> handleAuthenticationError(final ServerWebExchange exchange, final Throwable throwable) {
         final String path = exchange.getRequest().getPath().value();
