@@ -2,10 +2,10 @@
   "versions": {
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.46",
-      "LastModified": "2026-10-15T16:19:51.545937",
-      "ContentHash": "9af09b0497ba8132",
-      "GitCommit": "e2e92cc1",
+      "Version": "1.0.47",
+      "LastModified": "2026-10-15T16:56:38.342591",
+      "ContentHash": "535da4b2ccd29745",
+      "GitCommit": "3cd0e4d7",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -571,10 +571,10 @@
     },
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
-      "Version": "1.0.25",
-      "LastModified": "2026-10-15T16:06:54.914570",
-      "ContentHash": "263a9da75ef2f713",
-      "GitCommit": "aefb46ee",
+      "Version": "1.0.26",
+      "LastModified": "2026-10-15T16:56:38.770419",
+      "ContentHash": "f90f650906e41cd4",
+      "GitCommit": "3cd0e4d7",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -631,10 +631,10 @@
     },
     "docs/zh/api-reference/index.md": {
       "FilePath": "docs/zh/api-reference/index.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-07T05:06:43.211637",
-      "ContentHash": "f65b2af00bab3f58",
-      "GitCommit": "88f67b49",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-15T16:56:38.888266",
+      "ContentHash": "76e6fe078c05f419",
+      "GitCommit": "3cd0e4d7",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -642,8 +642,7 @@
         "docs/zh/api-reference/monitoring-api.md",
         "docs/zh/api-reference/openapi-spec.md",
         "docs/zh/api-reference/universal-api.md"
-      ],
-      "ReviewedAt": "2026-10-14T23:59:50.179901"
+      ]
     },
     "docs/zh/api-reference/management-api.md": {
       "FilePath": "docs/zh/api-reference/management-api.md",
@@ -1201,10 +1200,10 @@
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
-      "Version": "1.0.24",
-      "LastModified": "2026-10-15T16:06:55.450669",
-      "ContentHash": "b855bae8cbf47267",
-      "GitCommit": "aefb46ee",
+      "Version": "1.0.25",
+      "LastModified": "2026-10-15T16:56:39.303911",
+      "ContentHash": "34482068b51cc03c",
+      "GitCommit": "3cd0e4d7",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1757,10 +1756,10 @@
     },
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.37",
-      "LastModified": "2026-10-15T16:19:51.544227",
-      "ContentHash": "c71c5fb37b0133d4",
-      "GitCommit": "e2e92cc1",
+      "Version": "1.0.38",
+      "LastModified": "2026-10-15T16:56:38.340298",
+      "ContentHash": "c7ec722444a4c7f5",
+      "GitCommit": "3cd0e4d7",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1964,10 +1963,10 @@
     },
     "docs/en/api-reference/error-codes.md": {
       "FilePath": "docs/en/api-reference/error-codes.md",
-      "Version": "1.0.10",
-      "LastModified": "2026-10-15T16:06:54.473755",
-      "ContentHash": "69285bfa71468b69",
-      "GitCommit": "aefb46ee",
+      "Version": "1.0.11",
+      "LastModified": "2026-10-15T16:56:38.344820",
+      "ContentHash": "f1b1e6bc5e9d4ff4",
+      "GitCommit": "3cd0e4d7",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1976,10 +1975,10 @@
     },
     "docs/zh/api-reference/error-codes.md": {
       "FilePath": "docs/zh/api-reference/error-codes.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-10-15T16:06:55.026870",
-      "ContentHash": "f52e0466f0423ea6",
-      "GitCommit": "aefb46ee",
+      "Version": "1.0.9",
+      "LastModified": "2026-10-15T16:56:38.885756",
+      "ContentHash": "b0131e57fa827d10",
+      "GitCommit": "3cd0e4d7",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -8394,7 +8393,63 @@
       "ChangeType": "DELETED",
       "Timestamp": "2026-10-15T16:34:34.614056",
       "Description": "文档已删除"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.37",
+      "NewVersion": "1.0.38",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-15T16:56:38.340307",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.46",
+      "NewVersion": "1.0.47",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-15T16:56:38.342596",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/error-codes.md",
+      "OldVersion": "1.0.10",
+      "NewVersion": "1.0.11",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-15T16:56:38.344825",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/roadmap.md",
+      "OldVersion": "1.0.25",
+      "NewVersion": "1.0.26",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-15T16:56:38.770431",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/error-codes.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-15T16:56:38.885765",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/index.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-15T16:56:38.888271",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/roadmap.md",
+      "OldVersion": "1.0.24",
+      "NewVersion": "1.0.25",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-15T16:56:39.303922",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-15T16:34:34.614560"
+  "last_updated": "2026-10-15T16:56:39.419495"
 }
