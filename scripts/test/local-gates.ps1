@@ -14,8 +14,24 @@
                                + markdownlint-cli2（.markdownlint.json）
                                + python scripts/docs/check-links.py --dir docs --fail-on-error
         文档代码同步检查       python scripts/docs/check-docs-sync.py --project-root . --fail-on-error
+        快闸（gates-fast.yml） python scripts/docs/check-error-codes.py --project-root . --fail-on-error
+                               + check-config-imports.py / check-api-endpoints.py（同上开关）
+                               + check-fence-parity.py --dir docs --fail-on-error
+                               + 上述三条各自的 test_check_*.py 自测
         拼写检查               npx cspell@8 --config .cspell.json <相对基线改动的 *.md>
         前端基线               npm run type-check（在 frontend/ 下）
+
+    📋 本地门闩清单（2026-10 起与 CI 快闸对齐）：
+       `文档质量检查` / `文档代码同步检查` / `拼写检查` / `前端基线` 四条是原有复刻项；
+       本轮新增的 **快闸** 一行对应 `.github/workflows/gates-fast.yml`（issue #419 的可见性缺口）——
+       原缺口 = `docs-quality.yml` 的 pull_request.paths 只含 docs/** · *.md · .cspell.json
+       ⇒ **只改 java 的 PR 根本看不到文档门闩**，「注册表加了错误码/端点/配置模块而文档没跟上」
+       会静默到下次动 docs 才爆红（#404 实测）。快闸把这四条**秒级、纯标准库、不联网**的对账
+       门闩单独提出来，本地也逐条复刻，于是「本机就能提前发现」，不必等 CI。
+       ⚠️ 与 CI 的差异：本地这四条只依赖 python（无第三方包），因此**不因缺 mkdocs 而 SKIP**；
+       只有 python 解释器本身不可用、或脚本文件不存在时才 SKIP，且**绝不假装通过**。
+       ⚠️ 将来新增的快闸脚本（例如 `scripts/docs/check-capability-claims.py`，现不存在）用
+       `Test-Path` 守护，不存在即记为 SKIP —— 与 workflow 里的 `if [ -f ... ]` 同口径。
 
     ⚠️ 两个**必须知道**的本地差异（否则会误判）：
       1. 本仓库的**会话本地产物**（`innerdoc/mimo-memory/`、`innerdoc/session-digests/`）已归置到 `innerdoc/` 下
@@ -290,6 +306,85 @@ function Invoke-SpellCheck {
     }
 }
 
+# ---------------------------------------------------------------- 快闸（gates-fast.yml）
+function Invoke-FastGates {
+    param([string]$Py)
+    Write-Host "`n== 快闸（复刻 gates-fast.yml：错误码 / 配置清单 / API 端点对账） ==" -ForegroundColor Cyan
+
+    # 这三组检查 + 上面的「围栏配平」= CI 快闸（gates-fast.yml）的四条，逐条对齐：
+    #   检查项        自测文件                              被自测的检查器                      CI 开关
+    $checks = @(
+        @{ Name = "错误码对账"; Test = "scripts/docs/test_check_error_codes.py";
+           Script = "scripts/docs/check-error-codes.py";
+           Hint = "❌|幽灵|漏列|不一致" },
+        @{ Name = "配置清单对账"; Test = "scripts/docs/test_check_config_imports.py";
+           Script = "scripts/docs/check-config-imports.py";
+           Hint = "❌|未收录|幽灵|缺 " },
+        @{ Name = "API 端点对账"; Test = "scripts/docs/test_check_api_endpoints.py";
+           Script = "scripts/docs/check-api-endpoints.py";
+           Hint = "❌|未提|文档中存在|不存在" }
+    )
+
+    # 解释器不可用 ⇒ 整组 SKIP（**不假装通过**：照本脚本既有口径，缺依赖就记 SKIP 并让汇总提示
+    # 「必须在本 PR 正文里写明哪一项没跑、为什么」）。CI 上不存在这种情形（setup-python 保证 3.11）。
+    try { $probe = Invoke-Logged -Exe $Py -Arguments @("--version") } catch { $probe = $null }
+    if ($null -eq $probe -or $probe.ExitCode -ne 0) {
+        Add-Result "快闸（错误码/配置清单/API 端点对账）" "SKIP" "python 解释器不可用（$Py）—— 三条对账门闩未跑，不得当成绿"
+        return
+    }
+
+    foreach ($c in $checks) {
+        $testPath = Join-Path $script:Root $c.Test
+        $scriptPath = Join-Path $script:Root $c.Script
+
+        # ① 先跑自测：自测本身是「这些对账断言有检测力」的证据（CI 里同样是独立一步）。
+        if (Test-Path $testPath) {
+            $r = Invoke-Logged -Exe $Py -Arguments @($c.Test)
+            if ($r.ExitCode -eq 0) {
+                Add-Result "$($c.Name)脚本自测" "PASS" "反证断言全部通过"
+            } else {
+                $tail = (@($r.Output) | Select-Object -Last 6) -join " | "
+                Add-Result "$($c.Name)脚本自测" "FAIL" $tail
+            }
+        } else {
+            Add-Result "$($c.Name)脚本自测" "SKIP" "未找到 $($c.Test)"
+        }
+
+        # ② 再跑对账本体（--project-root . 与 --fail-on-error 都与 workflow 逐字一致）。
+        if (-not (Test-Path $scriptPath)) {
+            Add-Result $c.Name "SKIP" "未找到 $($c.Script)"
+            continue
+        }
+        # ⚠️ 刻意不叫 $args：那是 PowerShell 的自动变量（函数未绑定参数都在里面），
+        # 覆盖它虽可行但会与「本函数收到的额外参数」混淆。
+        $scriptArgs = @($c.Script, "--project-root", ".", "--fail-on-error")
+        $r = Invoke-Logged -Exe $Py -Arguments $scriptArgs
+        if ($r.ExitCode -eq 0) {
+            Add-Result $c.Name "PASS" "$($c.Script) --fail-on-error 退出码 0"
+        } else {
+            $bad = @($r.Output | Select-String -Pattern $c.Hint) | Select-Object -First 4
+            Add-Result $c.Name "FAIL" ($bad -join " | ")
+        }
+    }
+
+    # 为将来新增的快闸脚本留位（与 gates-fast.yml 的 `if [ -f ... ]` 守护同口径）：
+    # 脚本不存在 ⇒ SKIP（不是失败）；落地后无需改本函数结构，直接生效。
+    $optional = @("scripts/docs/check-capability-claims.py")
+    foreach ($s in $optional) {
+        if (Test-Path (Join-Path $script:Root $s)) {
+            $r = Invoke-Logged -Exe $Py -Arguments @($s, "--fail-on-error")
+            if ($r.ExitCode -eq 0) {
+                Add-Result "可选快闸 $s" "PASS" "--fail-on-error 退出码 0"
+            } else {
+                $bad = @($r.Output | Select-Object -Last 4) -join " | "
+                Add-Result "可选快闸 $s" "FAIL" $bad
+            }
+        } else {
+            Add-Result "可选快闸 $s" "SKIP" "脚本尚未落地（为将来留位；与 CI 的 if [ -f ] 同口径）"
+        }
+    }
+}
+
 function Invoke-DocsGates {
     Write-Host "`n== 文档门闩（mkdocs --strict + markdownlint + 链接 + 同步检查） ==" -ForegroundColor Cyan
     $py = $DocsPython
@@ -343,6 +438,11 @@ function Invoke-DocsGates {
     } else {
         Add-Result "围栏配平" "SKIP" "未找到 scripts/docs/check-fence-parity.py"
     }
+
+    # 快闸其余三项（错误码 / 配置清单 / API 端点对账 + 各自自测）。
+    # 与上面的「围栏配平」同属 .github/workflows/gates-fast.yml；此处一并跑，
+    # 使 -SkipDocs=false 时本地快闸 = CI 快闸（缺 python 才 SKIP，见 Invoke-FastGates）。
+    Invoke-FastGates -Py $py
 
     # markdownlint-cli2（CI 用 DavidAnson/markdownlint-cli2-action@v20 + .markdownlint.json）
     # 检查面刻意用 `git ls-files`（**跟踪的** *.md），而不是 `**/*.md` glob：
