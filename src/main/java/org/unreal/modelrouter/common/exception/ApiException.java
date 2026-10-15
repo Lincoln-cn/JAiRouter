@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.common.exception;
 
 import org.springframework.http.HttpStatus;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 
 /**
  * 控制台面（{@code /api/**}）业务异常：携带对外错误码与 HTTP 状态码。
@@ -109,6 +110,21 @@ public class ApiException extends RuntimeException {
      * @return 对应 HTTP 状态码，无法判定时返回 500
      */
     public static HttpStatus resolveStatus(final String errorCode) {
+        // issue #370：先查错误码注册表（单一事实来源）；未登记才落回原有命名规则
+        final java.util.Optional<ErrorCode> registered = ErrorCode.of(errorCode);
+        if (registered.isPresent()) {
+            return registered.get().status();
+        }
+        return legacyResolveStatus(errorCode);
+    }
+
+    /**
+     * 历史兜底规则链（issue #370 之前的唯一实现）—— 仅用于**未登记**在 {@link ErrorCode} 里的码。
+     *
+     * <p>保留原样是为了**零行为变化**：未登记的码（上游透传、临时新增字面量等）仍按原命名规则推导。
+     * {@code ErrorCodeRegistryTest} 会用不变量断言钉住「登记码走注册表、未登记码走本规则链」。</p>
+     */
+    static HttpStatus legacyResolveStatus(final String errorCode) {
         if (errorCode == null || errorCode.isBlank()) {
             return HttpStatus.INTERNAL_SERVER_ERROR;
         }
