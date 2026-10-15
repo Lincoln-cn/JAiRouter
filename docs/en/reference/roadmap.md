@@ -3,7 +3,7 @@
 <!-- 版本信息 -->
 > **Doc Version**: 2.2.2
 > **Last Updated**: 2026-10-14
-> **Git Tag**: v3.3.3
+> **Git Tag**: v3.3.4
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -24,6 +24,18 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 
 ## Current Version Status
 
+### 🏷️ v3.3.4 (Patch: error-code rulings landed + close-out + docs relocation, **tagged, not released yet** 2026-10-16)
+
+**Status**: **Tagged `v3.3.4`, not released yet** (per the standing release policy the GitHub Release and Docker image are produced separately)
+**Scope**: everything merged after the `v3.3.3` slice (10-15), i.e. 2026-10-15 → 2026-10-16
+
+| Area | Delivered |
+|------|-----------|
+| **Rate-limit error-code semantics (#404, decided as "429 plus a new code")** | The two real paths became two codes, both aligned to 429: the admin rate limiter keeps `RATE_LIMIT_EXCEEDED` (flat 429 body `{"code":...}`), while the API Key validation chain uses the new `RATE_LIMITED_API_KEY` (`FullValidationResult` now carries the registry status into the `AuthenticationException`); the authentication filter no longer hardcodes 401 but passes through the status the exception carries, and the `type` in the `/v1/**` and legacy shapes is always derived from the status (429 ⇒ `rate_limit_error`). Registry 62 → 63 codes; clients no longer have to treat 401 as a rate limit |
+| **Error-code status alignment (issue #405, hybrid scheme)** | Endpoint status and rule-chain status now agree at both ends: `BUILTIN_READONLY` answers **403** everywhere (the endpoint used to answer 400) and `RESTART_REQUIRED` answers **400** everywhere (`ApiException.legacyResolveStatus` used to derive 403); the registry descriptions, both error-code tables and the `ErrorCodeRegistryTest` "divergence set" assertion were updated with it |
+| **Dead codes deleted and docs corrected (#406 / #412 / #414)** | Seven codes with no emission site (constants plus never-called factories) deleted; four never-emitted codes in the two `management-api` tables replaced with registry names; `RESOURCE_FORBIDDEN` → `FORBIDDEN_RESOURCE` restated as an internal constant rename (invisible to clients) |
+| **Internal docs relocated (#418)** | Session memory (`mimo-memory/`, 393 files; `session-digests/`) and two internal process SOPs moved out of the published docs site into `innerdoc/`; 10 false positives from the local docs scanner fixed and two orphan `mkdocs` nav entries removed |
+
 ### 🏷️ v3.3.3 (Patch: error-code registry wired through code and docs + frontend artifact hygiene; ships the `v3.3.2` content, **tagged, not released yet** 2026-10-15)
 
 **Status**: **Tagged `v3.3.3`, not released yet** (per the standing release policy the GitHub Release and Docker image are produced separately)
@@ -36,16 +48,6 @@ see the [changelog](changelog.md#333---2026-10-15)
 | Error-code ledger | `RATE_LIMIT_EXCEEDED` has two statuses, 429/401 (#404 — **resolved by splitting the code after the `v3.3.3` tag**, see below); seven codes that existed only as constants plus never-called factories **were deleted** (#406); 30 failure responses used to carry no `errorCode` at all (single-argument `RouterResponse.error`), now tracked as #413 |
 | Repository hygiene | Frontend build artifacts no longer dirty the working tree: normalized `package-lock.json` + `.gitattributes` `-text` for the two generated `.d.ts` files (#408 / #409) |
 | Inherited from `v3.3.2` (shipped together) | `/v1` empty-stream fix (#356) · alert/audit close-out (#306/#309/#313/#394/#397/#400) · config-honesty pass 3 (#319/#322/#323/#329/#331) · dead code and shapes (#311/#316/#328/#332/#333/#369/#372/#373) · CI and documentation gates (#367/#371/#385/#388/#398/#399 plus the #250 review batches) · dependency security (Vue 3.5.44, #391) |
-
-### 🚧 After `v3.3.3` (on master, unreleased, 2026-10-15 →)
-
-**Status**: merged to master, **no tag, not released**
-**Scope**: the changes merged after the `v3.3.3` slice (10-15)
-
-| Area | Delivered |
-|------|-----------|
-| **Rate-limit error-code semantics (#404, decided as "429 plus a new code")** | The two real paths became two codes, both aligned to 429: the admin rate limiter keeps `RATE_LIMIT_EXCEEDED` (flat 429 body `{"code":...}`), while the API Key validation chain uses the new `RATE_LIMITED_API_KEY` (`FullValidationResult` now carries the registry status into the `AuthenticationException`); the authentication filter no longer hardcodes 401 but passes through the status the exception carries, and the `type` in the `/v1/**` and legacy shapes is always derived from the status (429 ⇒ `rate_limit_error`). Registry 62 → 63 codes; clients no longer have to treat 401 as a rate limit |
-| **Error-code status alignment (issue #405, hybrid scheme)** | Endpoint status and rule-chain status now agree at both ends: `BUILTIN_READONLY` answers **403** everywhere (the endpoint used to answer 400) and `RESTART_REQUIRED` answers **400** everywhere (`ApiException.legacyResolveStatus` used to derive 403); the registry descriptions, both error-code tables and the `ErrorCodeRegistryTest` "divergence set" assertion were updated with it |
 
 ### 🏷️ v3.3.2 (Patch: empty `/v1` stream fixed + alert/audit close-out + config honesty pass 3 + docs and gates, **tagged, never released on its own** 2026-10-14)
 

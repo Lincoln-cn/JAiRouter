@@ -391,7 +391,7 @@ security alerts ever fired).
 Release tags: `v3.3.3` · `v3.3.2` · `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`.
 `v3.3.2` and `v3.3.3` are tagged but **not released** yet (`v3.3.2`'s content ships with `v3.3.3`).
 
-**Master is on the unreleased `3.3.4` line**: the `v3.3.3` tag is frozen at `e965f9a8`. Changes merged after it, grouped by theme:
+**Tagged `v3.3.4`, not released yet** (the `v3.3.3` tag stays frozen at `e965f9a8`); what changed relative to `v3.3.3`, grouped by theme:
 
 | Theme | What changed |
 |-------|--------------|
@@ -399,7 +399,7 @@ Release tags: `v3.3.3` · `v3.3.2` · `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.
 | **Error-code close-out (#406 / #412 / #414)** | Seven never-emitted codes (constants plus never-called factories) deleted; the docs separate the internal `RESOURCE_FORBIDDEN` → `FORBIDDEN_RESOURCE` constant rename from the client-visible `TOKEN_USAGE_FORBIDDEN` → `FORBIDDEN_TOKEN_USAGE` rename; four ghost codes in the management-API tables replaced with registry names |
 | **Status alignment (#405)** | `BUILTIN_READONLY` answers 403 everywhere (the endpoint used to answer 400); `RESTART_REQUIRED` answers 400 everywhere (the rule chain used to derive 403) |
 
-The `[3.3.4]` changelog entry and the lightweight tag are cut when this batch is closed (tag only, no GitHub Release or image, per the standing policy).
+See the [`[3.3.4]` changelog entry](docs/en/reference/changelog.md); tag only, no GitHub Release or image, per the standing policy.
 
 ### Open ledger
 
