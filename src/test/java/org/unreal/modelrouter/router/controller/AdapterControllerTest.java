@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.ServiceCapability;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
@@ -95,6 +96,8 @@ class AdapterControllerTest {
             assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
             assertFalse(result.getBody().isSuccess());
             assertTrue(result.getBody().getMessage().contains("获取适配器列表失败"));
+            // issue #413：兜底 catch 的失败响应必须带 INTERNAL_ERROR（此前为 null）
+            assertEquals(ErrorCode.INTERNAL_ERROR.code(), result.getBody().getErrorCode());
         }
     }
 }

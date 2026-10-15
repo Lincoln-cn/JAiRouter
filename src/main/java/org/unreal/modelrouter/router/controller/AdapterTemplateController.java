@@ -99,7 +99,8 @@ public class AdapterTemplateController {
         } catch (Exception e) {
             logger.error("获取模板列表失败", e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("获取模板列表失败: " + e.getMessage()));
+                    .body(RouterResponse.error("获取模板列表失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
 
@@ -122,7 +123,8 @@ public class AdapterTemplateController {
         } catch (Exception e) {
             logger.error("获取模板详情失败: {}", id, e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("获取模板详情失败: " + e.getMessage()));
+                    .body(RouterResponse.error("获取模板详情失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
 
@@ -182,7 +184,8 @@ public class AdapterTemplateController {
         } catch (Exception e) {
             logger.error("从模板创建适配器失败: {}", id, e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("从模板创建适配器失败: " + e.getMessage()));
+                    .body(RouterResponse.error("从模板创建适配器失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
 

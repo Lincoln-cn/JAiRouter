@@ -126,7 +126,8 @@ public class AdapterConfigController {
         } catch (Exception e) {
             logger.error("获取adapter列表失败", e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("获取adapter列表失败: " + e.getMessage()));
+                    .body(RouterResponse.error("获取adapter列表失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
 
@@ -168,7 +169,8 @@ public class AdapterConfigController {
         } catch (Exception e) {
             logger.error("获取adapter详情失败: {}", name, e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("获取adapter详情失败: " + e.getMessage()));
+                    .body(RouterResponse.error("获取adapter详情失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
 
@@ -251,7 +253,8 @@ public class AdapterConfigController {
         } catch (Exception e) {
             logger.error("创建adapter失败", e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("创建adapter失败: " + e.getMessage()));
+                    .body(RouterResponse.error("创建adapter失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
 
@@ -330,7 +333,8 @@ public class AdapterConfigController {
         } catch (Exception e) {
             logger.error("更新adapter失败: {}", name, e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("更新adapter失败: " + e.getMessage()));
+                    .body(RouterResponse.error("更新adapter失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
 
@@ -372,7 +376,8 @@ public class AdapterConfigController {
         } catch (Exception e) {
             logger.error("删除adapter失败: {}", name, e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("删除adapter失败: " + e.getMessage()));
+                    .body(RouterResponse.error("删除adapter失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
 
@@ -405,7 +410,8 @@ public class AdapterConfigController {
         } catch (Exception e) {
             logger.error("获取父adapter列表失败", e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("获取父adapter列表失败: " + e.getMessage()));
+                    .body(RouterResponse.error("获取父adapter列表失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
 

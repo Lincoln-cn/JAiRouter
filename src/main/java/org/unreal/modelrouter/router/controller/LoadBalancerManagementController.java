@@ -86,7 +86,8 @@ public class LoadBalancerManagementController {
         } catch (Exception e) {
             log.error("获取负载均衡器状态失败: {}", e.getMessage());
             return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.INTERNAL_ERROR.code()))
-                    .body(RouterResponse.error("获取负载均衡器状态失败: " + e.getMessage()));
+                    .body(RouterResponse.error("获取负载均衡器状态失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
 
@@ -146,11 +147,13 @@ public class LoadBalancerManagementController {
         } catch (IllegalArgumentException e) {
             log.warn("无效的服务类型: {}", serviceType);
             return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.INVALID_REQUEST.code()))
-                    .body(RouterResponse.error("无效的服务类型: " + serviceType));
+                    .body(RouterResponse.error("无效的服务类型: " + serviceType,
+                            ErrorCode.INVALID_REQUEST.code()));
         } catch (Exception e) {
             log.error("获取负载均衡器状态失败: {}", e.getMessage());
             return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.INTERNAL_ERROR.code()))
-                    .body(RouterResponse.error("获取负载均衡器状态失败: " + e.getMessage()));
+                    .body(RouterResponse.error("获取负载均衡器状态失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
 
@@ -173,7 +176,8 @@ public class LoadBalancerManagementController {
         } catch (Exception e) {
             log.error("获取全局负载均衡配置失败: {}", e.getMessage());
             return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.INTERNAL_ERROR.code()))
-                    .body(RouterResponse.error("获取全局负载均衡配置失败: " + e.getMessage()));
+                    .body(RouterResponse.error("获取全局负载均衡配置失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
 
@@ -213,7 +217,8 @@ public class LoadBalancerManagementController {
         } catch (Exception e) {
             log.error("获取服务负载均衡配置失败: {}", e.getMessage());
             return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.INTERNAL_ERROR.code()))
-                    .body(RouterResponse.error("获取服务负载均衡配置失败: " + e.getMessage()));
+                    .body(RouterResponse.error("获取服务负载均衡配置失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
 
@@ -244,11 +249,13 @@ public class LoadBalancerManagementController {
         } catch (IllegalArgumentException e) {
             log.warn("无效的服务类型: {}", serviceType);
             return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.INVALID_REQUEST.code()))
-                    .body(RouterResponse.error("无效的服务类型: " + serviceType));
+                    .body(RouterResponse.error("无效的服务类型: " + serviceType,
+                            ErrorCode.INVALID_REQUEST.code()));
         } catch (Exception e) {
             log.error("更新负载均衡配置失败: {}", e.getMessage());
             return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.INTERNAL_ERROR.code()))
-                    .body(RouterResponse.error("更新负载均衡配置失败: " + e.getMessage()));
+                    .body(RouterResponse.error("更新负载均衡配置失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
 
@@ -292,7 +299,8 @@ public class LoadBalancerManagementController {
         } catch (Exception e) {
             log.error("获取负载均衡器统计信息失败: {}", e.getMessage());
             return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.INTERNAL_ERROR.code()))
-                    .body(RouterResponse.error("获取负载均衡器统计信息失败: " + e.getMessage()));
+                    .body(RouterResponse.error("获取负载均衡器统计信息失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
 

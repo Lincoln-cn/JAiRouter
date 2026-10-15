@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.config.core.ServiceConfigManager;
 import org.unreal.modelrouter.config.core.dto.LoadBalanceConfiguration;
@@ -127,6 +128,8 @@ class LoadBalancerManagementControllerTest {
             assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
             assertFalse(result.getBody().isSuccess());
             assertTrue(result.getBody().getMessage().contains("获取负载均衡器状态失败"));
+            // issue #413：端点已按 INTERNAL_ERROR 解析状态，响应体必须带同一个码（此前为 null）
+            assertEquals(ErrorCode.INTERNAL_ERROR.code(), result.getBody().getErrorCode());
         }
     }
 
@@ -178,6 +181,8 @@ class LoadBalancerManagementControllerTest {
             assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
             assertFalse(result.getBody().isSuccess());
             assertTrue(result.getBody().getMessage().contains("无效的服务类型"));
+            // issue #413：端点已按 INVALID_REQUEST 解析状态，响应体必须带同一个码（此前为 null）
+            assertEquals(ErrorCode.INVALID_REQUEST.code(), result.getBody().getErrorCode());
         }
     }
 
@@ -323,6 +328,87 @@ class LoadBalancerManagementControllerTest {
             assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
             assertFalse(result.getBody().isSuccess());
             assertTrue(result.getBody().getMessage().contains("无效的服务类型"));
+            // issue #413：端点已按 INVALID_REQUEST 解析状态，响应体必须带同一个码（此前为 null）
+            assertEquals(ErrorCode.INVALID_REQUEST.code(), result.getBody().getErrorCode());
+        }
+    }
+
+    // ==================== issue #413：其余兜底分支的失败响应必须带 errorCode ====================
+
+    @Nested
+    @DisplayName("issue #413 - 兜底 catch 分支的 errorCode")
+    class J413ErrorCodeTests {
+
+        @Test
+        @DisplayName("LB-413-001: GET /status/{serviceType} 非枚举异常 ⇒ 500 + INTERNAL_ERROR")
+        void testGetStatusByServiceType_internalError() {
+            when(loadBalancerManager.getLoadBalancer(ModelServiceRegistry.ServiceType.chat))
+                    .thenThrow(new RuntimeException("boom"));
+
+            ResponseEntity<RouterResponse<LoadBalancerManagementController.LoadBalancerStatusResponse>> result =
+                    controller.getStatusByServiceType("chat");
+
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+            assertFalse(result.getBody().isSuccess());
+            assertEquals(ErrorCode.INTERNAL_ERROR.code(), result.getBody().getErrorCode());
+        }
+
+        @Test
+        @DisplayName("LB-413-002: GET /config/global 异常 ⇒ 500 + INTERNAL_ERROR")
+        void testGetGlobalConfig_internalError() {
+            when(properties.getLoadBalance()).thenThrow(new RuntimeException("boom"));
+
+            ResponseEntity<RouterResponse<LoadBalancerManagementController.LoadBalanceConfigResponse>> result =
+                    controller.getGlobalConfig();
+
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+            assertFalse(result.getBody().isSuccess());
+            assertEquals(ErrorCode.INTERNAL_ERROR.code(), result.getBody().getErrorCode());
+        }
+
+        @Test
+        @DisplayName("LB-413-003: GET /config/{serviceType} 异常 ⇒ 500 + INTERNAL_ERROR")
+        void testGetServiceConfig_internalError() {
+            when(serviceConfigManager.getServiceConfiguration("chat"))
+                    .thenThrow(new RuntimeException("boom"));
+
+            ResponseEntity<RouterResponse<LoadBalancerManagementController.LoadBalanceConfigResponse>> result =
+                    controller.getServiceConfig("chat");
+
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+            assertFalse(result.getBody().isSuccess());
+            assertEquals(ErrorCode.INTERNAL_ERROR.code(), result.getBody().getErrorCode());
+        }
+
+        @Test
+        @DisplayName("LB-413-004: PUT /config/{serviceType} 非枚举异常 ⇒ 500 + INTERNAL_ERROR")
+        void testUpdateServiceConfig_internalError() {
+            LoadBalancerManagementController.LoadBalanceConfigRequest request =
+                    new LoadBalancerManagementController.LoadBalanceConfigRequest();
+            request.type = "random";
+            doThrow(new RuntimeException("boom"))
+                    .when(loadBalancerManager).reinitializeLoadBalancer(
+                            eq(ModelServiceRegistry.ServiceType.chat), any());
+
+            ResponseEntity<RouterResponse<String>> result =
+                    controller.updateServiceConfig("chat", request);
+
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+            assertFalse(result.getBody().isSuccess());
+            assertEquals(ErrorCode.INTERNAL_ERROR.code(), result.getBody().getErrorCode());
+        }
+
+        @Test
+        @DisplayName("LB-413-005: GET /stats 异常 ⇒ 500 + INTERNAL_ERROR")
+        void testGetStats_internalError() {
+            when(loadBalancerManager.getLoadBalancerCount()).thenThrow(new RuntimeException("boom"));
+
+            ResponseEntity<RouterResponse<LoadBalancerManagementController.LoadBalancerStatsResponse>> result =
+                    controller.getStats();
+
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+            assertFalse(result.getBody().isSuccess());
+            assertEquals(ErrorCode.INTERNAL_ERROR.code(), result.getBody().getErrorCode());
         }
     }
 }

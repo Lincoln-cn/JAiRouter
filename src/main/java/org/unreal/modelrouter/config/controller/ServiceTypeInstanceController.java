@@ -108,7 +108,7 @@ public class ServiceTypeInstanceController {
 
         if (serviceConfig == null) {
             return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.NOT_FOUND.code()))
-                    .body(RouterResponse.error("服务配置不存在: " + serviceType));
+                    .body(RouterResponse.error("服务配置不存在: " + serviceType, ErrorCode.NOT_FOUND.code()));
         }
 
         ServiceInstanceDTO created = serviceInstanceManager.createInstance(serviceConfig.getId(), request);
@@ -259,7 +259,7 @@ public class ServiceTypeInstanceController {
         String instanceId = request.get("instanceId");
         if (instanceId == null || instanceId.trim().isEmpty()) {
             return ResponseEntity.badRequest()
-                    .body(RouterResponse.error("instanceId 不能为空"));
+                    .body(RouterResponse.error("instanceId 不能为空", ErrorCode.INVALID_REQUEST.code()));
         }
         
         log.info("Resetting circuit breaker for instance: {}", instanceId);

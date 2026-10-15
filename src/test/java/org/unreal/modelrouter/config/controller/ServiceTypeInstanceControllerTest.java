@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.InstanceCircuitBreakerDTO;
 import org.unreal.modelrouter.common.dto.InstanceRateLimitDTO;
@@ -21,7 +22,9 @@ import org.unreal.modelrouter.config.dto.CreateServiceInstanceRequest;
 import org.unreal.modelrouter.persistence.jpa.entity.ServiceConfigEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -49,6 +52,9 @@ class ServiceTypeInstanceControllerTest {
 
     @Mock
     private ServiceInstanceManager serviceInstanceManager;
+
+    @Mock
+    private org.unreal.modelrouter.router.circuitbreaker.CircuitBreakerManager circuitBreakerManager;
 
     @InjectMocks
     private ServiceTypeInstanceController controller;
@@ -181,6 +187,8 @@ class ServiceTypeInstanceControllerTest {
             assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
             assertFalse(result.getBody().isSuccess());
             assertTrue(result.getBody().getMessage().contains("不存在"));
+            // issue #413: 失败响应必须带 errorCode（此前为 null，客户端无法按码分支）
+            assertEquals(ErrorCode.NOT_FOUND.code(), result.getBody().getErrorCode());
         }
     }
 
@@ -347,5 +355,24 @@ class ServiceTypeInstanceControllerTest {
             assertTrue(result.getBody().isSuccess());
             assertEquals(10, result.getBody().getData().getFailureThreshold());
         }
+    }
+
+    // ==================== issue #413：失败响应必须带 errorCode ====================
+
+    @Test
+    @DisplayName("STYPE-013: POST /circuit-breaker/reset 缺少 instanceId ⇒ 400 + INVALID_REQUEST（issue #413）")
+    void testResetCircuitBreakerByIdMissingInstanceIdCarriesErrorCode() {
+        // Given
+        Map<String, String> request = new HashMap<>();
+        request.put("instanceId", "   ");
+
+        // When
+        ResponseEntity<RouterResponse<Object>> result = controller.resetCircuitBreakerById(request);
+
+        // Then
+        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode(), "HTTP 状态码不得因补码而变化");
+        assertFalse(result.getBody().isSuccess());
+        assertEquals(ErrorCode.INVALID_REQUEST.code(), result.getBody().getErrorCode());
+        verify(circuitBreakerManager, never()).resetCircuitBreaker(anyString(), any());
     }
 }
