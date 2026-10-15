@@ -339,7 +339,24 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
      *
      * <p>这类异常不属于本仓的 {@code AuthenticationException}/{@code SecurityAuthenticationException}，
      * 此前落到「系统异常 → 500」兜底；现按语义回 401（并降为 WARN 日志：这是客户端的认证失败，
-     * 不是服务端故障）。
+     * 不是服务端故障）。</p>
+     *
+     * <p><b>为何此处保持硬编码 401、而不做「携带状态就透传」（issue #420 取证结论）</b>：
+     * 本分支的入参类型是 {@link org.springframework.security.core.AuthenticationException}，而本仓自有的
+     * {@code common.exception.AuthenticationException}（携带 {@code getHttpStatus()}，认证链上唯一非 401
+     * 的取值是 429）继承的是本仓 {@code SecurityException}，<b>不</b>属于 Spring Security 的异常体系 ——
+     * 且 {@link #handle} 的分派顺序把它先交给 {@code ex instanceof SecurityException} 分支，最终由
+     * {@link #handleAuthenticationException} 用 {@code ex.getHttpStatus()} 渲染。因此：</p>
+     * <ul>
+     *   <li>本仓异常<b>即使</b>经 entryPoint（{@code SecurityConfiguration#securityWebFilterChain} 的
+     *       {@code authenticationEntryPoint} → {@link #handle}，唯一装配点）进来，也会透出自己携带的状态，
+     *       <b>不可能</b>被这里的 401 压回；</li>
+     *   <li>Spring Security 自身的认证异常没有任何 HTTP 状态载体（{@code InsufficientAuthenticationException}
+     *       之类只有消息），故本分支<b>没有</b>可透传的状态，401 是唯一有依据的取值；在此加透传判断只会
+     *       引入一个恒不成立的分支。</li>
+     * </ul>
+     * <p>回归守卫见 {@code AuthenticationEntryPointStatusTest}（本仓异常携带 429 经 entryPoint 仍为 429、
+     * Spring Security 异常仍为 401）。</p>
      */
     private Mono<Void> handleSpringSecurityAuthenticationException(
             final ServerWebExchange exchange,
