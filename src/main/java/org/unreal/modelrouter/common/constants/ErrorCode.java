@@ -12,18 +12,30 @@ import java.util.stream.Collectors;
  * 错误码注册表（issue #370 方案 A：**根治**错误码无单一事实来源的问题）。
  *
  * <p><b>现状与动机</b>：本仓的错误码此前散落在控制器与异常类里的字符串字面量中（实测 241 个「码形状」字面量、
- * 其中 33 个在发出点被使用），HTTP 状态码则由 {@code ApiException.resolveStatus} 的**命名规则**推导
+ * 其中 62 个会被真正发出），HTTP 状态码则由 {@code ApiException.resolveStatus} 的**命名规则**推导
  * （改名即改状态码，且没有编译期检查）；文档表只能靠人工对账（issue #342 记录过 17 个「全仓不存在却写在表里」的码）。</p>
  *
- * <p><b>本枚举的定位</b>：把「**会被真正发出**的码」登记为单一事实来源（`码 + HTTP 状态 + 说明`）。
- * 状态码取值 = **登记时的现有行为**（由 `resolveStatus` 的规则逐条推导），因此引入本枚举**不改变任何运行时行为**；
- * {@code ApiException.resolveStatus} 现在先查本表、未登记才落回原有规则链（见其 javadoc 与
- * {@code ErrorCodeRegistryTest} 的不变量断言）。</p>
+ * <p><b>本枚举的定位</b>：把「**会被真正发出**的码」登记为单一事实来源（`码 + 客户端可见状态 + 渲染路径 + 说明`）。
+ * 引入本枚举**不改变任何运行时行为**：{@code ApiException.resolveStatus} 只对
+ * {@link RenderPath#API_EXCEPTION} 的码查表（其余路径的状态不由规则链决定，见
+ * {@link #isResolvedByRuleChain(String)}），且这些码的登记状态与其在规则链下的推导值逐条一致
+ * （由 {@code ErrorCodeRegistryTest} 守卫）。</p>
  *
- * <p><b>尚未纳入</b>（后续批次）：① 走 {@code AuthenticationException} 构造器发出的 6 个认证码
- * （`JWT_EXPIRED` / `JWT_BLACKLISTED` / `JWT_REFRESH_EXPIRED` / `JWT_REFRESH_ERROR` / `JWT_VALIDATION_ERROR` /
- * `TOKEN_REQUIRED`）—— 它们的客户端可见状态由认证渲染路径决定（401），与 {@code resolveStatus} 不是同一条链；
- * ② 把各调用点的裸字面量替换为本枚举常量（机械改动，按模块分批）。</p>
+ * <p><b>为什么需要 {@link RenderPath}</b>（issue #370 阶段 2 取证结论）：错误码不由同一条链决定状态 ——</p>
+ * <ul>
+ *   <li>{@link RenderPath#API_EXCEPTION}：码由 {@code ApiException} 承载、或发出点显式调用
+ *       {@code ApiException.resolveStatus(code)} 取状态 ⇒ 状态 = **规则链推导值**；</li>
+ *   <li>{@link RenderPath#RESPONSE_BODY}：码只被写进响应体，状态由发出点的 {@code ResponseEntity} 显式指定
+ *       （如 {@code ResponseEntity.badRequest().body(RouterResponse.error(msg, "INVALID_NAME"))}）；</li>
+ *   <li>{@link RenderPath#AUTHENTICATION}：码由 {@code AuthenticationException} /
+ *       {@code SecurityAuthenticationException} 承载，状态由**异常类型/构造器**决定（今天均为 401，
+ *       经 {@code SpringSecurityAuthenticationFilter} 或 {@code SecurityExceptionHandler} 渲染）；</li>
+ *   <li>{@link RenderPath#SANITIZATION}：码由 {@code SanitizationException} 承载（500）；</li>
+ *   <li>{@link RenderPath#ERROR_BODY}：码由错误体构造器直写，状态**随上下文**（{@code DOWNSTREAM_SERVICE_ERROR}
+ *       取下游原状态）⇒ 这类码的 {@link #status()} 为 {@code null}，表示「不由本表固定」。</li>
+ * </ul>
+ *
+ * <p><b>尚未纳入</b>（后续批次）：把各调用点的裸字面量替换为本枚举常量（机械改动，按模块分批，见 issue #370 阶段 3）。</p>
  *
  * <p>📌 <b>码的书写约定</b>（本表据此登记，并由 {@code ErrorCodeRegistryTest} 守卫）：类别**放在前缀位** ——
  * {@code FORBIDDEN_*} / {@code INVALID_*} / {@code CONFLICT*} / {@code UNAUTHORIZED*} 等由规则链按前缀映射；
@@ -33,53 +45,159 @@ import java.util.stream.Collectors;
  */
 public enum ErrorCode {
 
-    // ===== 会被发出的错误码（33 个；按码字典序）=====
-    ADAPTER_NOT_FOUND("ADAPTER_NOT_FOUND", HttpStatus.NOT_FOUND, "适配器不存在"),
-    ADD_FAILED("ADD_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, "新增失败（黑名单等）"),
-    BATCH_TOKEN_REVOKE_FAILED("BATCH_TOKEN_REVOKE_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, "批量吊销令牌失败"),
-    BLACKLIST_STATS_FAILED("BLACKLIST_STATS_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, "获取黑名单统计失败"),
-    BUILTIN_READONLY("BUILTIN_READONLY", HttpStatus.FORBIDDEN, "内置项只读，不允许修改"),
-    CLEANUP_FAILED("CLEANUP_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, "清理失败"),
-    CONFLICT_BUILTIN("CONFLICT_BUILTIN", HttpStatus.CONFLICT, "与内置项冲突"),
-    CONFLICT_EXISTS("CONFLICT_EXISTS", HttpStatus.CONFLICT, "资源已存在"),
-    CONFLICT_STATE("CONFLICT_STATE", HttpStatus.CONFLICT, "资源冲突"),
-    FORBIDDEN("FORBIDDEN", HttpStatus.FORBIDDEN, "禁止访问"),
-    GET_CLEANUP_STATS_FAILED("GET_CLEANUP_STATS_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, "获取清理统计失败"),
-    GET_TOKENS_FAILED("GET_TOKENS_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, "获取令牌列表失败"),
-    GET_TOKEN_DETAILS_FAILED("GET_TOKEN_DETAILS_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, "获取令牌详情失败"),
-    INTERNAL_ERROR("INTERNAL_ERROR", HttpStatus.INTERNAL_SERVER_ERROR, "服务器内部错误"),
-    INVALID_NAME("INVALID_NAME", HttpStatus.BAD_REQUEST, "名称不合法"),
-    INVALID_PAGE("INVALID_PAGE", HttpStatus.BAD_REQUEST, "分页参数不合法"),
-    INVALID_PARAM("INVALID_PARAM", HttpStatus.BAD_REQUEST, "参数无效"),
-    INVALID_PERMISSION("INVALID_PERMISSION", HttpStatus.BAD_REQUEST, "权限项不合法"),
-    INVALID_RECORD_LEVEL("INVALID_RECORD_LEVEL", HttpStatus.BAD_REQUEST, "记录级别不合法"),
-    INVALID_REQUEST("INVALID_REQUEST", HttpStatus.BAD_REQUEST, "请求不合法"),
-    INVALID_ROLE("INVALID_ROLE", HttpStatus.BAD_REQUEST, "角色名不合法"),
-    INVALID_SIZE("INVALID_SIZE", HttpStatus.BAD_REQUEST, "分页大小不合法"),
-    INVALID_TOKEN_ID("INVALID_TOKEN_ID", HttpStatus.BAD_REQUEST, "令牌 ID 不合法"),
-    INVALID_TYPE("INVALID_TYPE", HttpStatus.BAD_REQUEST, "类型不合法"),
-    LOGIN_FAILED("LOGIN_FAILED", HttpStatus.UNAUTHORIZED, "登录失败"),
-    NOT_FOUND("NOT_FOUND", HttpStatus.NOT_FOUND, "资源未找到"),
-    RESTART_REQUIRED("RESTART_REQUIRED", HttpStatus.FORBIDDEN, "需要重启后生效"),
-    SERVICE_NOT_AVAILABLE("SERVICE_NOT_AVAILABLE", HttpStatus.SERVICE_UNAVAILABLE, "服务不可用"),
-    TEMPLATE_NOT_FOUND("TEMPLATE_NOT_FOUND", HttpStatus.NOT_FOUND, "模板不存在"),
-    TOKEN_NOT_FOUND("TOKEN_NOT_FOUND", HttpStatus.NOT_FOUND, "令牌不存在"),
-    TOKEN_REFRESH_FAILED("TOKEN_REFRESH_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, "令牌刷新失败"),
-    TOKEN_REVOKE_FAILED("TOKEN_REVOKE_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, "令牌吊销失败"),
-    FORBIDDEN_TOKEN_USAGE("FORBIDDEN_TOKEN_USAGE", HttpStatus.FORBIDDEN, "无权查看该令牌的用量"),
+    // ===================================================================================
+    // 1) API_EXCEPTION：状态由 ApiException.resolveStatus 的命名规则决定（登记值 = 现有行为）
+    // ===================================================================================
+    ADAPTER_NOT_FOUND("ADAPTER_NOT_FOUND", HttpStatus.NOT_FOUND, RenderPath.API_EXCEPTION, "适配器不存在"),
+    ADD_FAILED("ADD_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, RenderPath.API_EXCEPTION,
+            "新增失败（黑名单等）；发出点用 resolveStatus 取状态"),
+    BATCH_TOKEN_REVOKE_FAILED("BATCH_TOKEN_REVOKE_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, RenderPath.API_EXCEPTION,
+            "批量吊销令牌失败"),
+    BLACKLIST_STATS_FAILED("BLACKLIST_STATS_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, RenderPath.API_EXCEPTION,
+            "获取黑名单统计失败"),
+    CLEANUP_FAILED("CLEANUP_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, RenderPath.API_EXCEPTION, "清理失败"),
+    CONFLICT_STATE("CONFLICT_STATE", HttpStatus.CONFLICT, RenderPath.API_EXCEPTION, "资源冲突"),
+    FORBIDDEN("FORBIDDEN", HttpStatus.FORBIDDEN, RenderPath.API_EXCEPTION, "禁止访问"),
+    GET_CLEANUP_STATS_FAILED("GET_CLEANUP_STATS_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, RenderPath.API_EXCEPTION,
+            "获取清理统计失败"),
+    GET_TOKENS_FAILED("GET_TOKENS_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, RenderPath.API_EXCEPTION,
+            "获取令牌列表失败"),
+    GET_TOKEN_DETAILS_FAILED("GET_TOKEN_DETAILS_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, RenderPath.API_EXCEPTION,
+            "获取令牌详情失败"),
+    INTERNAL_ERROR("INTERNAL_ERROR", HttpStatus.INTERNAL_SERVER_ERROR, RenderPath.API_EXCEPTION, "服务器内部错误"),
+    INVALID_PAGE("INVALID_PAGE", HttpStatus.BAD_REQUEST, RenderPath.API_EXCEPTION, "分页参数不合法"),
+    INVALID_PARAM("INVALID_PARAM", HttpStatus.BAD_REQUEST, RenderPath.API_EXCEPTION,
+            "参数无效；发出点用 resolveStatus 取状态"),
+    INVALID_REQUEST("INVALID_REQUEST", HttpStatus.BAD_REQUEST, RenderPath.API_EXCEPTION, "请求不合法"),
+    INVALID_SIZE("INVALID_SIZE", HttpStatus.BAD_REQUEST, RenderPath.API_EXCEPTION, "分页大小不合法"),
+    INVALID_TOKEN_ID("INVALID_TOKEN_ID", HttpStatus.BAD_REQUEST, RenderPath.API_EXCEPTION, "令牌 ID 不合法"),
+    INVALID_TYPE("INVALID_TYPE", HttpStatus.BAD_REQUEST, RenderPath.API_EXCEPTION,
+            "类型不合法；发出点用 resolveStatus 取状态"),
+    LOGIN_FAILED("LOGIN_FAILED", HttpStatus.UNAUTHORIZED, RenderPath.API_EXCEPTION, "登录失败"),
+    NOT_FOUND("NOT_FOUND", HttpStatus.NOT_FOUND, RenderPath.API_EXCEPTION, "资源未找到"),
+    SERVICE_NOT_AVAILABLE("SERVICE_NOT_AVAILABLE", HttpStatus.SERVICE_UNAVAILABLE, RenderPath.API_EXCEPTION,
+            "服务不可用"),
+    TOKEN_NOT_FOUND("TOKEN_NOT_FOUND", HttpStatus.NOT_FOUND, RenderPath.API_EXCEPTION, "令牌不存在"),
+    TOKEN_REFRESH_FAILED("TOKEN_REFRESH_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, RenderPath.API_EXCEPTION,
+            "令牌刷新失败"),
+    TOKEN_REVOKE_FAILED("TOKEN_REVOKE_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, RenderPath.API_EXCEPTION,
+            "令牌吊销失败"),
+
+    // ===================================================================================
+    // 2) RESPONSE_BODY：码只进响应体，状态由发出点的 ResponseEntity 显式指定
+    //    （实测站点见 ErrorCodeRegistryTest 的「站点实测状态」用例）
+    // ===================================================================================
+    BUILTIN_READONLY("BUILTIN_READONLY", HttpStatus.BAD_REQUEST, RenderPath.RESPONSE_BODY,
+            "内置项只读，不允许修改；端点以 400 返回（与规则链推导的 403 不一致，见 issue #405）"),
+    CONFLICT_BUILTIN("CONFLICT_BUILTIN", HttpStatus.CONFLICT, RenderPath.RESPONSE_BODY, "与内置项冲突"),
+    CONFLICT_EXISTS("CONFLICT_EXISTS", HttpStatus.CONFLICT, RenderPath.RESPONSE_BODY, "资源已存在"),
+    FORBIDDEN_TOKEN_USAGE("FORBIDDEN_TOKEN_USAGE", HttpStatus.FORBIDDEN, RenderPath.RESPONSE_BODY,
+            "无权查看该令牌的用量"),
+    INVALID_NAME("INVALID_NAME", HttpStatus.BAD_REQUEST, RenderPath.RESPONSE_BODY, "名称不合法"),
+    INVALID_PERMISSION("INVALID_PERMISSION", HttpStatus.BAD_REQUEST, RenderPath.RESPONSE_BODY, "权限项不合法"),
+    INVALID_RECORD_LEVEL("INVALID_RECORD_LEVEL", HttpStatus.BAD_REQUEST, RenderPath.RESPONSE_BODY,
+            "记录级别不合法"),
+    INVALID_ROLE("INVALID_ROLE", HttpStatus.BAD_REQUEST, RenderPath.RESPONSE_BODY, "角色名不合法"),
+    RESTART_REQUIRED("RESTART_REQUIRED", HttpStatus.BAD_REQUEST, RenderPath.RESPONSE_BODY,
+            "需要重启后生效；端点以 400 返回（与规则链推导的 403 不一致，见 issue #405）"),
+    TEMPLATE_NOT_FOUND("TEMPLATE_NOT_FOUND", HttpStatus.NOT_FOUND, RenderPath.RESPONSE_BODY, "模板不存在"),
+
+    // ===================================================================================
+    // 3) AUTHENTICATION：状态由异常类型/构造器决定（今天均为 401）
+    //    ⚠️ RATE_LIMIT_EXCEEDED 是已知的**路径相关**码：同码在管理面限流器上为 429（见 issue #404）
+    // ===================================================================================
+    API_KEY_AUTH_FAILED("API_KEY_AUTH_FAILED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
+            "API Key 认证失败（校验链未预期异常）"),
+    API_KEY_DISABLED("API_KEY_DISABLED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
+            "API Key 认证功能未启用"),
+    AUTH_ERROR("AUTH_ERROR", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
+            "认证过程中发生未知错误（认证过滤器兜底）"),
+    AUTH_FAILED("AUTH_FAILED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
+            "认证失败（认证过滤器默认码）"),
+    AUTH_MISSING("AUTH_MISSING", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION, "请求缺少认证信息"),
+    DAILY_QUOTA_EXCEEDED("DAILY_QUOTA_EXCEEDED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
+            "超过每日请求配额限制"),
+    EMPTY_API_KEY("EMPTY_API_KEY", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION, "未携带 API Key"),
+    EMPTY_JWT_TOKEN("EMPTY_JWT_TOKEN", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION, "未携带 JWT 令牌"),
+    EXPIRED_API_KEY("EXPIRED_API_KEY", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION, "API Key 已过期"),
+    EXPIRED_JWT_TOKEN("EXPIRED_JWT_TOKEN", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
+            "JWT 令牌已过期（认证管理器按 expired 归类）"),
+    INVALID_API_KEY("INVALID_API_KEY", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION, "无效的 API Key"),
+    JWT_AUTH_FAILED("JWT_AUTH_FAILED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
+            "JWT 令牌认证失败（认证管理器未预期异常）"),
+    JWT_BLACKLISTED("JWT_BLACKLISTED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
+            "JWT 令牌已被列入黑名单"),
+    JWT_DISABLED("JWT_DISABLED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION, "JWT 认证功能未启用"),
+    JWT_EXPIRED("JWT_EXPIRED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION, "JWT 令牌已过期"),
+    JWT_INVALID("JWT_INVALID", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION, "JWT 令牌验证失败"),
+    JWT_REFRESH_ERROR("JWT_REFRESH_ERROR", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
+            "JWT 令牌刷新过程中发生错误"),
+    JWT_REFRESH_EXPIRED("JWT_REFRESH_EXPIRED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
+            "JWT 令牌超出刷新窗口"),
+    JWT_REFRESH_FAILED("JWT_REFRESH_FAILED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
+            "JWT 令牌刷新失败"),
+    JWT_USER_ID_EXTRACTION_FAILED("JWT_USER_ID_EXTRACTION_FAILED", HttpStatus.UNAUTHORIZED,
+            RenderPath.AUTHENTICATION, "无法从 JWT 令牌中提取用户 ID"),
+    JWT_VALIDATION_ERROR("JWT_VALIDATION_ERROR", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
+            "JWT 令牌验证过程中发生错误"),
+    RATE_LIMIT_EXCEEDED("RATE_LIMIT_EXCEEDED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
+            "API Key 校验链上超限（401）；管理面限流器同码写 429，见 issue #404"),
+    TOKEN_QUOTA_EXCEEDED("TOKEN_QUOTA_EXCEEDED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
+            "超过每日 Token 使用配额限制"),
+    TOKEN_REQUIRED("TOKEN_REQUIRED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
+            "刷新令牌时未携带当前令牌"),
+    UNSUPPORTED_AUTH_TYPE("UNSUPPORTED_AUTH_TYPE", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
+            "不支持的认证类型"),
+
+    // ===================================================================================
+    // 4) SANITIZATION：码由 SanitizationException 承载（500）
+    // ===================================================================================
+    CONTENT_PROCESSING_FAILED("CONTENT_PROCESSING_FAILED", HttpStatus.INTERNAL_SERVER_ERROR,
+            RenderPath.SANITIZATION, "内容处理失败"),
+    INVALID_SANITIZATION_RULE("INVALID_SANITIZATION_RULE", HttpStatus.INTERNAL_SERVER_ERROR,
+            RenderPath.SANITIZATION, "无效的脱敏规则"),
+    SANITIZATION_FAILED("SANITIZATION_FAILED", HttpStatus.INTERNAL_SERVER_ERROR, RenderPath.SANITIZATION,
+            "数据脱敏失败"),
+
+    // ===================================================================================
+    // 5) ERROR_BODY：码由错误体直写，状态随上下文 ⇒ status 为 null（不由本表固定）
+    // ===================================================================================
+    DOWNSTREAM_SERVICE_ERROR("DOWNSTREAM_SERVICE_ERROR", null, RenderPath.ERROR_BODY,
+            "下游服务异常；状态码原样取下游返回的状态（401 归一到 401 认证分支）"),
 
     ;
+
+    /**
+     * 该码的状态由哪条链决定（issue #370 阶段 2）。
+     *
+     * <p>它的存在意义 = 「同名码在不同链上会被赋予不同状态」这件事必须写在码上，否则注册表只能登记一个
+     * 谁都对不上的状态值。</p>
+     */
+    public enum RenderPath {
+        /** 状态由 {@code ApiException.resolveStatus} 的命名规则决定（含发出点显式调用它取状态的情形） */
+        API_EXCEPTION,
+        /** 码只进响应体，状态由发出点的 {@code ResponseEntity} 显式指定 */
+        RESPONSE_BODY,
+        /** 状态由 {@code AuthenticationException} / {@code SecurityAuthenticationException} 携带 */
+        AUTHENTICATION,
+        /** 状态由 {@code SanitizationException} 携带 */
+        SANITIZATION,
+        /** 码由错误体直写，状态随上下文（{@link ErrorCode#status()} 为 {@code null}） */
+        ERROR_BODY
+    }
 
     private static final Map<String, ErrorCode> BY_CODE = Arrays.stream(values())
             .collect(Collectors.toUnmodifiableMap(ErrorCode::code, Function.identity()));
 
     private final String code;
     private final HttpStatus status;
+    private final RenderPath renderPath;
     private final String description;
 
-    ErrorCode(final String code, final HttpStatus status, final String description) {
+    ErrorCode(final String code, final HttpStatus status, final RenderPath renderPath, final String description) {
         this.code = code;
         this.status = status;
+        this.renderPath = renderPath;
         this.description = description;
     }
 
@@ -88,9 +206,17 @@ public enum ErrorCode {
         return code;
     }
 
-    /** 该码的客户端可见 HTTP 状态码 */
+    /**
+     * 该码的客户端可见 HTTP 状态码；{@code null} 表示「状态随上下文、不由本表固定」
+     * （当前仅 {@link RenderPath#ERROR_BODY} 的码可能为 {@code null}）。
+     */
     public HttpStatus status() {
         return status;
+    }
+
+    /** 该码的状态由哪条链决定 */
+    public RenderPath renderPath() {
+        return renderPath;
     }
 
     /** 人类可读说明（文档与排查用） */
@@ -109,5 +235,17 @@ public enum ErrorCode {
     /** 该码是否已登记在注册表里 */
     public static boolean isRegistered(final String code) {
         return of(code).isPresent();
+    }
+
+    /**
+     * 该码的状态是否由规则链（{@code ApiException.resolveStatus}）决定。
+     *
+     * <p>{@code resolveStatus} 只对这一类查表，其余路径的码仍走历史规则链 —— 这样引入注册表
+     * 对「未走规则链的码」保持零行为变化（例如 {@code BUILTIN_READONLY} 的规则链推导值是 403，
+     * 而它真实的端点状态是 400：查表不得把它改成 400，那会改变任何将来经 {@code ApiException}
+     * 发出该码的路径的对外状态）。</p>
+     */
+    public static boolean isResolvedByRuleChain(final String code) {
+        return of(code).map(c -> c.renderPath == RenderPath.API_EXCEPTION).orElse(false);
     }
 }
