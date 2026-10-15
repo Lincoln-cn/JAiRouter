@@ -16,8 +16,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 审计日志 Prometheus 指标服务
- * 提供审计系统健康状态的监控指标
+ * 审计管道的自观测指标（Prometheus）。
+ *
+ * <p><b>历史与现状（issue #396）</b>：这些指标原先只有 {@code EnhancedSecurityAuditService}
+ * （内存缓冲实现）在写，而该类默认不是 Bean、开启还会导致启动失败（issue #395）⇒ 指标**注册了却恒为 0**。
+ * 该实现已删除，写入方改为**默认生效**的 {@link ExtendedSecurityAuditServiceImpl}
+ * （其 {@code persist(..)} 是审计写入的唯一漏斗）。</p>
+ *
+ * <p><b>随之删除的指标</b>（只对已删除的「内存缓冲 + 回退通道」设计有意义，现在没有语义）：
+ * {@code jairouter_audit_fallback_events_total} · {@code jairouter_audit_primary_storage_failures_total} ·
+ * {@code jairouter_audit_buffer_size} · {@code jairouter_audit_health_score}。</p>
  */
 @Slf4j
 @Component
@@ -25,24 +33,18 @@ import java.util.concurrent.atomic.AtomicLong;
 public class AuditMetricsService {
 
     private final MeterRegistry meterRegistry;
-    
+
     // 指标计数器
     private Counter auditEventsTotal;
     private Counter auditEventsSuccess;
     private Counter auditEventsFailure;
-    private Counter auditFallbackEventsTotal;
-    private Counter auditPrimaryStorageFailures;
-    
+
     // 计时器
     private Timer auditEventWriteTimer;
-    
-    // 健康状态指标
+
+    // 总事件数（供 Gauge 读取）
     private final AtomicLong totalEventsCount = new AtomicLong(0);
-    private final AtomicLong primaryStorageFailuresCount = new AtomicLong(0);
-    private final AtomicLong fallbackStorageSuccessCount = new AtomicLong(0);
-    private final AtomicLong currentBufferSize = new AtomicLong(0);
-    private final AtomicLong healthScore = new AtomicLong(100);
-    
+
     // 按事件类型统计
     private final ConcurrentHashMap<String, AtomicLong> eventTypeCounts = new ConcurrentHashMap<>();
 
@@ -56,101 +58,55 @@ public class AuditMetricsService {
     @PostConstruct
     public void initMetrics() {
         log.info("初始化审计日志 Prometheus 指标...");
-        
+
         // 总事件计数器
         auditEventsTotal = Counter.builder("jairouter_audit_events_total")
             .description("Total number of audit events")
             .tag("application", "jairouter")
             .register(meterRegistry);
-        
+
         // 成功事件计数器
         auditEventsSuccess = Counter.builder("jairouter_audit_events_success_total")
             .description("Number of successful audit events")
             .tag("application", "jairouter")
             .register(meterRegistry);
-        
+
         // 失败事件计数器
         auditEventsFailure = Counter.builder("jairouter_audit_events_failure_total")
             .description("Number of failed audit events")
             .tag("application", "jairouter")
             .register(meterRegistry);
-        
-        // 备用存储事件计数器
-        auditFallbackEventsTotal = Counter.builder("jairouter_audit_fallback_events_total")
-            .description("Number of audit events written to fallback storage")
-            .tag("application", "jairouter")
-            .register(meterRegistry);
-        
-        // 主存储失败计数器
-        auditPrimaryStorageFailures = Counter.builder("jairouter_audit_primary_storage_failures_total")
-            .description("Number of primary storage write failures")
-            .tag("application", "jairouter")
-            .register(meterRegistry);
-        
+
         // 写入耗时计时器
         auditEventWriteTimer = Timer.builder("jairouter_audit_event_write_duration_seconds")
             .description("Duration of audit event write operations")
             .tag("application", "jairouter")
             .register(meterRegistry);
-        
-        // 健康状态指标（Gauge）
-        Gauge.builder("jairouter_audit_health_score", this, AuditMetricsService::getHealthScoreValue)
-            .description("Audit system health score (0-100)")
-            .tag("application", "jairouter")
-            .register(meterRegistry);
-        
-        Gauge.builder("jairouter_audit_buffer_size", this, AuditMetricsService::getBufferSizeValue)
-            .description("Current audit event buffer size")
-            .tag("application", "jairouter")
-            .register(meterRegistry);
-        
+
+        // 总事件数（Gauge）
         Gauge.builder("jairouter_audit_total_events", this, AuditMetricsService::getTotalEventsValue)
             .description("Total number of audit events processed")
             .tag("application", "jairouter")
             .register(meterRegistry);
-        
+
         log.info("审计日志 Prometheus 指标初始化完成");
     }
 
     /**
-     * 记录事件
+     * 记录事件（由审计写入漏斗调用）
      */
     public void recordEvent(final String eventType, final boolean success) {
         totalEventsCount.incrementAndGet();
         auditEventsTotal.increment();
-        
+
         if (success) {
             auditEventsSuccess.increment();
         } else {
             auditEventsFailure.increment();
         }
-        
+
         // 按事件类型统计
         eventTypeCounts.computeIfAbsent(eventType, k -> new AtomicLong(0)).incrementAndGet();
-    }
-
-    /**
-     * 记录主存储失败
-     */
-    public void recordPrimaryStorageFailure() {
-        primaryStorageFailuresCount.incrementAndGet();
-        auditPrimaryStorageFailures.increment();
-        updateHealthScore();
-    }
-
-    /**
-     * 记录备用存储成功
-     */
-    public void recordFallbackStorageSuccess() {
-        fallbackStorageSuccessCount.incrementAndGet();
-        auditFallbackEventsTotal.increment();
-    }
-
-    /**
-     * 更新缓冲区大小
-     */
-    public void updateBufferSize(final int size) {
-        currentBufferSize.set(size);
     }
 
     /**
@@ -158,36 +114,6 @@ public class AuditMetricsService {
      */
     public void recordWriteDuration(final long durationMs) {
         auditEventWriteTimer.record(durationMs, TimeUnit.MILLISECONDS);
-    }
-
-    /**
-     * 更新健康分数
-     */
-    private void updateHealthScore() {
-        long total = totalEventsCount.get();
-        if (total == 0) {
-            healthScore.set(100);
-            return;
-        }
-        
-        long failures = primaryStorageFailuresCount.get();
-        double failureRate = (double) failures / total;
-        int score = Math.max(0, (int) ((1 - failureRate) * 100));
-        healthScore.set(score);
-    }
-
-    /**
-     * 获取健康分数（用于 Gauge）
-     */
-    private double getHealthScoreValue() {
-        return healthScore.get();
-    }
-
-    /**
-     * 获取缓冲区大小（用于 Gauge）
-     */
-    private double getBufferSizeValue() {
-        return currentBufferSize.get();
     }
 
     /**
@@ -203,16 +129,12 @@ public class AuditMetricsService {
     public Map<String, Object> getMetricsSummary() {
         Map<String, Object> summary = new HashMap<>();
         summary.put("totalEvents", totalEventsCount.get());
-        summary.put("primaryStorageFailures", primaryStorageFailuresCount.get());
-        summary.put("fallbackStorageSuccesses", fallbackStorageSuccessCount.get());
-        summary.put("bufferSize", currentBufferSize.get());
-        summary.put("healthScore", healthScore.get());
-        
+
         // 按事件类型统计
         Map<String, Long> eventTypeStats = new HashMap<>();
         eventTypeCounts.forEach((type, count) -> eventTypeStats.put(type, count.get()));
         summary.put("eventTypeStatistics", eventTypeStats);
-        
+
         return summary;
     }
 
@@ -221,10 +143,6 @@ public class AuditMetricsService {
      */
     public void resetMetrics() {
         totalEventsCount.set(0);
-        primaryStorageFailuresCount.set(0);
-        fallbackStorageSuccessCount.set(0);
-        currentBufferSize.set(0);
-        healthScore.set(100);
         eventTypeCounts.clear();
     }
 }

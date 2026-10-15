@@ -43,12 +43,24 @@ class ExtendedSecurityAuditServiceImplTest {
 
     private SecurityReportGenerator reportGenerator;
 
+    /**
+     * issue #396：审计管道自观测改成由本实现写入 ⇒ 构造多了一个软依赖。
+     * 这里给一个**真实**的 {@link AuditMetricsService}（内存注册表），让既有用例顺带覆盖指标路径。
+     */
+    @Mock
+    private org.springframework.beans.factory.ObjectProvider<AuditMetricsService> auditMetricsProvider;
+
     private ExtendedSecurityAuditServiceImpl service;
 
     @BeforeEach
     void setUp() {
         reportGenerator = new SecurityReportGenerator(auditRepository, entityMapper);
-        service = new ExtendedSecurityAuditServiceImpl(auditRepository, entityMapper, reportGenerator);
+        AuditMetricsService auditMetricsService =
+                new AuditMetricsService(new io.micrometer.core.instrument.simple.SimpleMeterRegistry());
+        auditMetricsService.initMetrics();
+        lenient().when(auditMetricsProvider.getIfAvailable()).thenReturn(auditMetricsService);
+        service = new ExtendedSecurityAuditServiceImpl(
+                auditRepository, entityMapper, reportGenerator, auditMetricsProvider);
     }
 
     // ========== JWT令牌审计方法测试 ==========

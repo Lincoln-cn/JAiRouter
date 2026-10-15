@@ -28,6 +28,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * AuditMetricsService 测试类
+ *
+ * <p>issue #396：只对已删除的「内存缓冲 / 回退通道」有意义的指标（`primary_storage_failures`、
+ * `fallback_events`、`buffer_size`、`health_score`）连同其用例一并删除；本类改为断言**保留**的指标
+ * （总数/成功/失败/写入耗时/总事件 Gauge）确实被写入。</p>
  */
 @DisplayName("AuditMetricsService测试")
 class AuditMetricsServiceTest {
@@ -91,56 +95,26 @@ class AuditMetricsServiceTest {
             assertEquals(2L, eventTypeStats.get("JWT_TOKEN_ISSUED"));
             assertEquals(1L, eventTypeStats.get("API_KEY_USED"));
         }
-    }
-
-    @Nested
-    @DisplayName("存储失败记录测试")
-    class StorageFailureTests {
 
         @Test
-        @DisplayName("记录主存储失败")
-        void testRecordPrimaryStorageFailure() {
-            metricsService.recordPrimaryStorageFailure();
-            metricsService.recordPrimaryStorageFailure();
+        @DisplayName("成功/失败分流到各自的 Micrometer 计数器（issue #396 保留的指标面）")
+        void testCountersSplitByOutcome() {
+            metricsService.recordEvent("JWT_TOKEN_ISSUED", true);
+            metricsService.recordEvent("API_KEY_USED", true);
+            metricsService.recordEvent("AUTHENTICATION_FAILED", false);
 
-            Map<String, Object> summary = metricsService.getMetricsSummary();
-            assertEquals(2L, summary.get("primaryStorageFailures"));
+            assertEquals(3.0d, meterRegistry.get("jairouter_audit_events_total").counter().count(), 0.0001d);
+            assertEquals(2.0d, meterRegistry.get("jairouter_audit_events_success_total").counter().count(), 0.0001d);
+            assertEquals(1.0d, meterRegistry.get("jairouter_audit_events_failure_total").counter().count(), 0.0001d);
         }
 
         @Test
-        @DisplayName("记录备用存储成功")
-        void testRecordFallbackStorageSuccess() {
-            metricsService.recordFallbackStorageSuccess();
-            metricsService.recordFallbackStorageSuccess();
-            metricsService.recordFallbackStorageSuccess();
+        @DisplayName("总事件 Gauge 反映累计事件数")
+        void testTotalEventsGauge() {
+            metricsService.recordEvent("JWT_TOKEN_ISSUED", true);
+            metricsService.recordEvent("API_KEY_USED", true);
 
-            Map<String, Object> summary = metricsService.getMetricsSummary();
-            assertEquals(3L, summary.get("fallbackStorageSuccesses"));
-        }
-    }
-
-    @Nested
-    @DisplayName("缓冲区测试")
-    class BufferTests {
-
-        @Test
-        @DisplayName("更新缓冲区大小")
-        void testUpdateBufferSize() {
-            metricsService.updateBufferSize(50);
-
-            Map<String, Object> summary = metricsService.getMetricsSummary();
-            assertEquals(50L, summary.get("bufferSize"));
-        }
-
-        @Test
-        @DisplayName("多次更新缓冲区大小")
-        void testMultipleBufferUpdates() {
-            metricsService.updateBufferSize(10);
-            metricsService.updateBufferSize(20);
-            metricsService.updateBufferSize(30);
-
-            Map<String, Object> summary = metricsService.getMetricsSummary();
-            assertEquals(30L, summary.get("bufferSize"));
+            assertEquals(2.0d, meterRegistry.get("jairouter_audit_total_events").gauge().value(), 0.0001d);
         }
     }
 
@@ -155,48 +129,8 @@ class AuditMetricsServiceTest {
             metricsService.recordWriteDuration(200);
             metricsService.recordWriteDuration(150);
 
-            // 验证计时器已注册
             assertNotNull(meterRegistry.find("jairouter_audit_event_write_duration_seconds").timer());
-        }
-    }
-
-    @Nested
-    @DisplayName("健康分数测试")
-    class HealthScoreTests {
-
-        @Test
-        @DisplayName("初始健康分数为100")
-        void testInitialHealthScore() {
-            Map<String, Object> summary = metricsService.getMetricsSummary();
-            assertEquals(100L, summary.get("healthScore"));
-        }
-
-        @Test
-        @DisplayName("主存储失败降低健康分数")
-        void testHealthScoreDecrease() {
-            // 记录一些事件
-            metricsService.recordEvent("JWT_TOKEN_ISSUED", true);
-            metricsService.recordEvent("JWT_TOKEN_ISSUED", true);
-            metricsService.recordEvent("JWT_TOKEN_ISSUED", true);
-            metricsService.recordEvent("JWT_TOKEN_ISSUED", true);
-
-            // 记录一次主存储失败
-            metricsService.recordPrimaryStorageFailure();
-
-            Map<String, Object> summary = metricsService.getMetricsSummary();
-            // 健康分数应该降低 (4个事件，1个失败 = 75%)
-            assertEquals(75L, summary.get("healthScore"));
-        }
-
-        @Test
-        @DisplayName("无事件时健康分数保持100")
-        void testHealthScoreNoEvents() {
-            // 只记录失败，没有事件
-            metricsService.recordPrimaryStorageFailure();
-
-            Map<String, Object> summary = metricsService.getMetricsSummary();
-            // 无事件时健康分数为100
-            assertEquals(100L, summary.get("healthScore"));
+            assertEquals(3L, meterRegistry.find("jairouter_audit_event_write_duration_seconds").timer().count());
         }
     }
 
@@ -205,24 +139,18 @@ class AuditMetricsServiceTest {
     class ResetMetricsTests {
 
         @Test
-        @DisplayName("重置所有指标")
+        @DisplayName("重置内存计数与按类型统计（Micrometer 计数器本身不可重置）")
         void testResetMetrics() {
-            // 记录一些数据
             metricsService.recordEvent("JWT_TOKEN_ISSUED", true);
             metricsService.recordEvent("API_KEY_USED", false);
-            metricsService.recordPrimaryStorageFailure();
-            metricsService.recordFallbackStorageSuccess();
-            metricsService.updateBufferSize(50);
 
-            // 重置
             metricsService.resetMetrics();
 
             Map<String, Object> summary = metricsService.getMetricsSummary();
             assertEquals(0L, summary.get("totalEvents"));
-            assertEquals(0L, summary.get("primaryStorageFailures"));
-            assertEquals(0L, summary.get("fallbackStorageSuccesses"));
-            assertEquals(0L, summary.get("bufferSize"));
-            assertEquals(100L, summary.get("healthScore"));
+            @SuppressWarnings("unchecked")
+            Map<String, Long> eventTypeStats = (Map<String, Long>) summary.get("eventTypeStatistics");
+            assertTrue(eventTypeStats.isEmpty(), "重置后按类型统计应为空");
         }
     }
 
@@ -231,22 +159,21 @@ class AuditMetricsServiceTest {
     class GetMetricsSummaryTests {
 
         @Test
-        @DisplayName("获取完整指标摘要")
+        @DisplayName("摘要只含保留的键（totalEvents + eventTypeStatistics）")
         void testGetMetricsSummary() {
             metricsService.recordEvent("JWT_TOKEN_ISSUED", true);
             metricsService.recordEvent("API_KEY_USED", true);
-            metricsService.recordPrimaryStorageFailure();
-            metricsService.updateBufferSize(25);
 
             Map<String, Object> summary = metricsService.getMetricsSummary();
 
             assertNotNull(summary);
             assertEquals(2L, summary.get("totalEvents"));
-            assertEquals(1L, summary.get("primaryStorageFailures"));
-            assertEquals(0L, summary.get("fallbackStorageSuccesses"));
-            assertEquals(25L, summary.get("bufferSize"));
-            assertTrue(summary.containsKey("healthScore"));
             assertTrue(summary.containsKey("eventTypeStatistics"));
+            // 已删除的键不得再出现（issue #396）
+            assertFalse(summary.containsKey("primaryStorageFailures"));
+            assertFalse(summary.containsKey("fallbackStorageSuccesses"));
+            assertFalse(summary.containsKey("bufferSize"));
+            assertFalse(summary.containsKey("healthScore"));
         }
     }
 }

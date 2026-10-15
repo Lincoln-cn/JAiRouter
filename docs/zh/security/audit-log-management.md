@@ -259,10 +259,14 @@ curl -X POST "http://localhost:8080/api/security/audit-logs/export" \
 
 ### 监控指标
 
-- `jairouter_audit_logs_total`：审计日志总数
-- `jairouter_audit_logs_by_operation`：按操作类型统计
-- `jairouter_audit_logs_by_status`：按状态统计
-- `jairouter_audit_logs_failed`：失败的操作数
+- `jairouter_audit_events_total`：审计事件总数（Counter）
+- `jairouter_audit_events_success_total`：成功事件数（Counter）
+- `jairouter_audit_events_failure_total`：失败事件数（Counter）
+- `jairouter_audit_event_write_duration_seconds`：审计写入耗时（Timer）
+- `jairouter_audit_total_events`：累计处理事件数（Gauge）
+
+> 说明：这些指标由**默认实现** `ExtendedSecurityAuditServiceImpl` 的写入漏斗上报（issue #396）；
+> 本页此前写的 `jairouter_audit_logs_total` / `_by_operation` / `_by_status` / `_failed` 在代码中**不存在**，已更正。
 
 ### 告警配置
 
