@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.config.core.ConfigurationService;
 import org.unreal.modelrouter.config.core.ServiceConfigManager;
 import org.unreal.modelrouter.config.core.dto.ServiceConfiguration;
@@ -79,7 +80,7 @@ public class ServiceTypeController {
                 .map(configs -> ResponseEntity.ok(RouterResponse.success(configs, "获取配置成功")))
                 .onErrorResume(e -> {
                     logger.error("获取所有配置失败", e);
-                    return Mono.error(ApiException.of("INTERNAL_ERROR", "获取配置失败：" + e.getMessage()));
+                    return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "获取配置失败：" + e.getMessage()));
                 });
     }
 

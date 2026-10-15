@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.auth.security.quota.QuotaLedgerService;
 import org.unreal.modelrouter.auth.security.quota.QuotaProperties;
 import org.unreal.modelrouter.auth.security.quota.QuotaWindow;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 
 import java.util.ArrayList;
@@ -98,7 +99,7 @@ public class QuotaConfigController {
             @RequestBody final QuotaConfigUpdateRequest request) {
         if (request == null) {
             return ResponseEntity.badRequest()
-                    .body(RouterResponse.error("请求体不能为空", "INVALID_REQUEST"));
+                    .body(RouterResponse.error("请求体不能为空", ErrorCode.INVALID_REQUEST.code()));
         }
 
         final List<String> rejected = collectRejectedFields(request);
@@ -106,13 +107,13 @@ public class QuotaConfigController {
             return ResponseEntity.badRequest().body(RouterResponse.error(
                     "以下字段需重启生效，不支持热改: " + String.join(", ", rejected)
                             + "；请移除这些字段后重试",
-                    "RESTART_REQUIRED"));
+                    ErrorCode.RESTART_REQUIRED.code()));
         }
 
         if (request.enabled == null && request.failOpen == null
                 && request.windows == null) {
             return ResponseEntity.badRequest()
-                    .body(RouterResponse.error("至少需要指定一个可热改的配置参数", "INVALID_REQUEST"));
+                    .body(RouterResponse.error("至少需要指定一个可热改的配置参数", ErrorCode.INVALID_REQUEST.code()));
         }
 
         if (request.enabled != null) {

@@ -1,5 +1,6 @@
 package org.unreal.modelrouter.auth.security.quota;
 
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.exception.ApiException;
 
 /**
@@ -42,7 +43,7 @@ public final class QuotaLimits {
             return;
         }
         if (threshold < MIN_ALERT_THRESHOLD || threshold > MAX_ALERT_THRESHOLD) {
-            throw ApiException.of("INVALID_REQUEST",
+            throw ApiException.of(ErrorCode.INVALID_REQUEST.code(),
                     "quotaAlertThreshold 必须在 [" + MIN_ALERT_THRESHOLD + ", "
                             + MAX_ALERT_THRESHOLD + "] 区间");
         }

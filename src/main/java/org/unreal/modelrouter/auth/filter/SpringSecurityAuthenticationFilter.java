@@ -12,6 +12,7 @@ import org.springframework.security.web.server.authentication.ServerAuthenticati
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.exception.AuthenticationException;
 import org.unreal.modelrouter.common.exception.SecurityAuthenticationException;
 import org.unreal.modelrouter.auth.security.config.ExcludedPathsConfig;
@@ -197,7 +198,7 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
             final ServerWebExchange exchange, final String message) {
         return Mono.defer(() -> {
             log.warn("请求缺少认证信息: {}", exchange.getRequest().getPath().value());
-            return createAuthenticationErrorResponse(exchange, message, "AUTH_MISSING")
+            return createAuthenticationErrorResponse(exchange, message, ErrorCode.AUTH_MISSING.code())
                     .then(Mono.<Authentication>empty());
         });
     }
@@ -209,7 +210,7 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
         log.warn("认证失败: {}", exchange.getRequest().getPath().value(), throwable);
 
         String message = "认证失败";
-        String errorCode = "AUTH_FAILED";
+        String errorCode = ErrorCode.AUTH_FAILED.code();
 
         // 根据具体异常类型提供更具体的错误信息
         if (throwable instanceof AuthenticationException authException) {
@@ -220,7 +221,7 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
             errorCode = authException.getErrorCode();
         } else {
             message = "认证过程中发生未知错误";
-            errorCode = "AUTH_ERROR";
+            errorCode = ErrorCode.AUTH_ERROR.code();
         }
 
         return createAuthenticationErrorResponse(exchange, message, errorCode);

@@ -2,6 +2,7 @@ package org.unreal.modelrouter.common.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 
 /**
  * 异常 → {@link ApiException} 的统一映射工具（issue #94 配套）。
@@ -45,10 +46,10 @@ public final class ApiExceptions {
             return apiException;
         }
         if (e instanceof IllegalArgumentException) {
-            return ApiException.of("INVALID_REQUEST", messageOf(e, fallbackMessage));
+            return ApiException.of(ErrorCode.INVALID_REQUEST.code(), messageOf(e, fallbackMessage));
         }
         if (e instanceof IllegalStateException) {
-            return ApiException.of("CONFLICT_STATE", messageOf(e, fallbackMessage));
+            return ApiException.of(ErrorCode.CONFLICT_STATE.code(), messageOf(e, fallbackMessage));
         }
         if (e instanceof ResponseStatusException rse) {
             final int status = rse.getStatusCode().value();
@@ -56,7 +57,7 @@ public final class ApiExceptions {
                     HttpStatus.resolve(status) == null ? HttpStatus.INTERNAL_SERVER_ERROR
                             : HttpStatus.resolve(status));
         }
-        return ApiException.of("INTERNAL_ERROR", messageOf(e, fallbackMessage));
+        return ApiException.of(ErrorCode.INTERNAL_ERROR.code(), messageOf(e, fallbackMessage));
     }
 
     /**

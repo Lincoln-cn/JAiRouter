@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.exception.AuthenticationException;
 
 import java.util.Map;
@@ -69,7 +70,7 @@ public class ApiKeyValidator {
      */
     public ValidationResult validateEnabled(final ApiKey apiKey) {
         if (!apiKey.isEnabled()) {
-            return ValidationResult.failure("API Key 已被禁用", AuthenticationException.INVALID_API_KEY);
+            return ValidationResult.failure("API Key 已被禁用", ErrorCode.INVALID_API_KEY.code());
         }
         return ValidationResult.success();
     }
@@ -82,7 +83,7 @@ public class ApiKeyValidator {
      */
     public ValidationResult validateExpiration(final ApiKey apiKey) {
         if (apiKey.isExpired()) {
-            return ValidationResult.failure("API Key 已过期", AuthenticationException.EXPIRED_API_KEY);
+            return ValidationResult.failure("API Key 已过期", ErrorCode.EXPIRED_API_KEY.code());
         }
         return ValidationResult.success();
     }
@@ -97,7 +98,7 @@ public class ApiKeyValidator {
     public ValidationResult validateIpWhitelist(final ApiKey apiKey, final String ipAddress) {
         if (!apiKey.isIpAllowed(ipAddress)) {
             return ValidationResult.failure("IP 地址不允许访问: " + ipAddress,
-                    AuthenticationException.INVALID_API_KEY);
+                    ErrorCode.INVALID_API_KEY.code());
         }
         return ValidationResult.success();
     }
@@ -110,7 +111,7 @@ public class ApiKeyValidator {
      */
     public ValidationResult validateDailyLimit(final ApiKey apiKey) {
         if (apiKey.isDailyLimitExceeded()) {
-            return ValidationResult.failure("超过每日请求限制", AuthenticationException.DAILY_QUOTA_EXCEEDED);
+            return ValidationResult.failure("超过每日请求限制", ErrorCode.DAILY_QUOTA_EXCEEDED.code());
         }
         return ValidationResult.success();
     }
@@ -123,7 +124,7 @@ public class ApiKeyValidator {
      */
     public ValidationResult validateTokenLimit(final ApiKey apiKey) {
         if (apiKey.isDailyTokenLimitExceeded()) {
-            return ValidationResult.failure("超过每日 Token 使用限制", AuthenticationException.TOKEN_QUOTA_EXCEEDED);
+            return ValidationResult.failure("超过每日 Token 使用限制", ErrorCode.TOKEN_QUOTA_EXCEEDED.code());
         }
         return ValidationResult.success();
     }
@@ -143,7 +144,7 @@ public class ApiKeyValidator {
         }
         if (!rateLimiter.tryAcquire(apiKey.getKeyId(), apiKey.getRateLimitPerMinute())) {
             return ValidationResult.failure("请求频率超过限制，请稍后再试",
-                    AuthenticationException.RATE_LIMIT_EXCEEDED);
+                    ErrorCode.RATE_LIMIT_EXCEEDED.code());
         }
         return ValidationResult.success();
     }

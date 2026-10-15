@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.dto.AddBlacklistRequest;
 import org.unreal.modelrouter.common.dto.BlacklistEntryDTO;
 import org.unreal.modelrouter.common.dto.BlacklistStatsDTO;
@@ -58,7 +59,8 @@ public class SecurityBlacklistController {
             try {
                 blacklistType = BlacklistType.valueOf(type.toUpperCase());
             } catch (IllegalArgumentException e) {
-                return ResponseEntity.status(ApiException.resolveStatus("INVALID_TYPE")).body(RouterResponse.error("无效的黑名单类型: " + type, "INVALID_TYPE"));
+                return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.INVALID_TYPE.code()))
+                        .body(RouterResponse.error("无效的黑名单类型: " + type, ErrorCode.INVALID_TYPE.code()));
             }
         }
 
@@ -90,7 +92,8 @@ public class SecurityBlacklistController {
 
         BlacklistEntryDTO entry = blacklistService.getBlacklistEntry(id);
         if (entry == null) {
-            return ResponseEntity.status(ApiException.resolveStatus("NOT_FOUND")).body(RouterResponse.error("黑名单条目不存在", "NOT_FOUND"));
+            return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.NOT_FOUND.code()))
+                    .body(RouterResponse.error("黑名单条目不存在", ErrorCode.NOT_FOUND.code()));
         }
         return ResponseEntity.ok(RouterResponse.success(entry, "黑名单详情获取成功"));
     }
@@ -112,10 +115,12 @@ public class SecurityBlacklistController {
             BlacklistEntryDTO entry = blacklistService.addToBlacklist(request, addedBy);
             return ResponseEntity.ok(RouterResponse.success(entry, "黑名单添加成功"));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(ApiException.resolveStatus("INVALID_PARAM")).body(RouterResponse.error("无效的参数: " + e.getMessage(), "INVALID_PARAM"));
+            return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.INVALID_PARAM.code()))
+                    .body(RouterResponse.error("无效的参数: " + e.getMessage(), ErrorCode.INVALID_PARAM.code()));
         } catch (Exception e) {
             log.error("添加黑名单失败", e);
-            return ResponseEntity.status(ApiException.resolveStatus("ADD_FAILED")).body(RouterResponse.error("添加失败: " + e.getMessage(), "ADD_FAILED"));
+            return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.ADD_FAILED.code()))
+                    .body(RouterResponse.error("添加失败: " + e.getMessage(), ErrorCode.ADD_FAILED.code()));
         }
     }
 
@@ -149,7 +154,8 @@ public class SecurityBlacklistController {
         if (success) {
             return ResponseEntity.ok(RouterResponse.success(true, "黑名单移除成功"));
         } else {
-            return ResponseEntity.status(ApiException.resolveStatus("NOT_FOUND")).body(RouterResponse.error("黑名单条目不存在", "NOT_FOUND"));
+            return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.NOT_FOUND.code()))
+                    .body(RouterResponse.error("黑名单条目不存在", ErrorCode.NOT_FOUND.code()));
         }
     }
 
@@ -170,7 +176,8 @@ public class SecurityBlacklistController {
             return ResponseEntity.ok(RouterResponse.success(inBlacklist,
                     inBlacklist ? "目标在黑名单中" : "目标不在黑名单中"));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(ApiException.resolveStatus("INVALID_TYPE")).body(RouterResponse.error("无效的黑名单类型: " + type, "INVALID_TYPE"));
+            return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.INVALID_TYPE.code()))
+                    .body(RouterResponse.error("无效的黑名单类型: " + type, ErrorCode.INVALID_TYPE.code()));
         }
     }
 

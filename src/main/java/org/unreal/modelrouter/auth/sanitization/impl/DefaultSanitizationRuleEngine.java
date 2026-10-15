@@ -2,6 +2,7 @@ package org.unreal.modelrouter.auth.sanitization.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.exception.SanitizationException;
 import org.unreal.modelrouter.common.util.SafeRegexValidator;
 import org.unreal.modelrouter.auth.sanitization.SanitizationRuleEngine;
@@ -85,7 +86,7 @@ public final class DefaultSanitizationRuleEngine implements SanitizationRuleEngi
             return sanitizedContent;
         })
         .onErrorMap(throwable -> new SanitizationException(
-                "脱敏处理失败", throwable, SanitizationException.SANITIZATION_FAILED));
+                "脱敏处理失败", throwable, ErrorCode.SANITIZATION_FAILED.code()));
     }
 
     @Override
@@ -178,7 +179,7 @@ public final class DefaultSanitizationRuleEngine implements SanitizationRuleEngi
             return result.toString();
         })
         .onErrorMap(throwable -> new SanitizationException(
-                "JSON脱敏处理失败", throwable, SanitizationException.SANITIZATION_FAILED));
+                "JSON脱敏处理失败", throwable, ErrorCode.SANITIZATION_FAILED.code()));
     }
     
     /**

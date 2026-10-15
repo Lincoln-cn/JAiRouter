@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.ServiceInstanceDTO;
 import org.unreal.modelrouter.common.dto.InstanceRateLimitDTO;
@@ -106,7 +107,8 @@ public class ServiceTypeInstanceController {
                 .orElse(null);
 
         if (serviceConfig == null) {
-            return ResponseEntity.status(ApiException.resolveStatus("NOT_FOUND")).body(RouterResponse.error("服务配置不存在: " + serviceType));
+            return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.NOT_FOUND.code()))
+                    .body(RouterResponse.error("服务配置不存在: " + serviceType));
         }
 
         ServiceInstanceDTO created = serviceInstanceManager.createInstance(serviceConfig.getId(), request);

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.exception.SecurityAuthenticationException;
 import org.unreal.modelrouter.auth.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
@@ -41,7 +42,7 @@ public class CustomReactiveAuthenticationManager implements ReactiveAuthenticati
         // 如果都不是，返回认证失败
         log.warn("不支持的认证类型: {}", authentication.getClass().getSimpleName());
         return Mono.error(new SecurityAuthenticationException(
-                "UNSUPPORTED_AUTH_TYPE", 
+                ErrorCode.UNSUPPORTED_AUTH_TYPE.code(), 
                 "不支持的认证类型: " + authentication.getClass().getSimpleName()
         ));
     }
@@ -54,7 +55,7 @@ public class CustomReactiveAuthenticationManager implements ReactiveAuthenticati
         if (!securityProperties.getApiKey().isEnabled()) {
             log.debug("API Key认证未启用");
             return Mono.error(new SecurityAuthenticationException(
-                    "API_KEY_DISABLED", 
+                    ErrorCode.API_KEY_DISABLED.code(), 
                     "API Key认证功能未启用"
             ));
         }
@@ -64,7 +65,7 @@ public class CustomReactiveAuthenticationManager implements ReactiveAuthenticati
         if (apiKey == null || apiKey.trim().isEmpty()) {
             log.debug("API Key为空");
             return Mono.error(new SecurityAuthenticationException(
-                    "EMPTY_API_KEY", 
+                    ErrorCode.EMPTY_API_KEY.code(), 
                     "API Key不能为空"
             ));
         }
@@ -89,7 +90,7 @@ public class CustomReactiveAuthenticationManager implements ReactiveAuthenticati
                     }
                     return new org.unreal.modelrouter.common.exception.AuthenticationException(
                             "API Key认证失败: " + throwable.getMessage(),
-                            "API_KEY_AUTH_FAILED"
+                            ErrorCode.API_KEY_AUTH_FAILED.code()
                     );
                 });
     }
@@ -102,7 +103,7 @@ public class CustomReactiveAuthenticationManager implements ReactiveAuthenticati
         if (!securityProperties.getJwt().isEnabled()) {
             log.debug("JWT认证未启用");
             return Mono.error(new SecurityAuthenticationException(
-                    "JWT_DISABLED", 
+                    ErrorCode.JWT_DISABLED.code(), 
                     "JWT认证功能未启用"
             ));
         }
@@ -112,7 +113,7 @@ public class CustomReactiveAuthenticationManager implements ReactiveAuthenticati
         if (token == null || token.trim().isEmpty()) {
             log.debug("JWT令牌为空");
             return Mono.error(new SecurityAuthenticationException(
-                    "EMPTY_JWT_TOKEN", 
+                    ErrorCode.EMPTY_JWT_TOKEN.code(), 
                     "JWT令牌不能为空"
             ));
         }
@@ -130,13 +131,13 @@ public class CustomReactiveAuthenticationManager implements ReactiveAuthenticati
                     if (message != null && message.contains("expired")) {
                         return new org.unreal.modelrouter.common.exception.AuthenticationException(
                                 "JWT令牌已过期，请重新获取",
-                                "EXPIRED_JWT_TOKEN"
+                                ErrorCode.EXPIRED_JWT_TOKEN.code()
                         );
                     }
                     
                     return new org.unreal.modelrouter.common.exception.AuthenticationException(
                             "JWT令牌认证失败: " + throwable.getMessage(),
-                            "JWT_AUTH_FAILED"
+                            ErrorCode.JWT_AUTH_FAILED.code()
                     );
                 });
     }

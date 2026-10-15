@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
@@ -116,7 +117,9 @@ public class ApiCallHistoryController {
                     callHistoryService.decryptBodies(entity);
                     return ResponseEntity.ok(RouterResponse.success(entity));
                 })
-                .orElseGet(() -> ResponseEntity.status(ApiException.resolveStatus("NOT_FOUND")).body(RouterResponse.error("记录不存在: id=" + id)));
+                .orElseGet(() -> ResponseEntity
+                        .status(ApiException.resolveStatus(ErrorCode.NOT_FOUND.code()))
+                        .body(RouterResponse.error("记录不存在: id=" + id)));
     }
 
     /**

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.auth.security.permission.PermissionCodes;
 import org.unreal.modelrouter.auth.security.service.RolePermissionSeeder;
 import org.unreal.modelrouter.auth.security.service.RolePermissionService;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.persistence.jpa.entity.RolePermissionEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.RolePermissionRepository;
@@ -109,13 +110,13 @@ public class PermissionManagementController {
         String normalizedRole = roleName.trim().toUpperCase(Locale.ROOT);
         if (!RolePermissionSeeder.knownRoles().contains(normalizedRole)) {
             return ResponseEntity.badRequest().body(
-                    RouterResponse.error("非法角色名: " + roleName, "INVALID_ROLE"));
+                    RouterResponse.error("非法角色名: " + roleName, ErrorCode.INVALID_ROLE.code()));
         }
         List<String> validatedCodes = normalizeCodes(permissionCodes);
         for (String code : validatedCodes) {
             if (!PermissionCodes.ALL_PERMISSION_CODES.contains(code)) {
                 return ResponseEntity.badRequest().body(
-                        RouterResponse.error("非法权限码: " + code, "INVALID_PERMISSION"));
+                        RouterResponse.error("非法权限码: " + code, ErrorCode.INVALID_PERMISSION.code()));
             }
         }
         rolePermissionRepository.deleteByRoleName(normalizedRole);

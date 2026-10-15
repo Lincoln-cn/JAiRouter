@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.monitor.tracing.encryption.TracingEncryptionService;
 import org.unreal.modelrouter.monitor.tracing.sanitization.TracingSanitizationService;
@@ -199,11 +200,11 @@ public class TracingSecurityController {
                         return ResponseEntity.ok(RouterResponse.success(result, "轮换加密密钥成功"));
                     } else {
                         log.warn("轮换加密密钥失败: {}", traceId);
-                        return ResponseEntity.status(ApiException.resolveStatus("INTERNAL_ERROR"))
+                        return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.INTERNAL_ERROR.code()))
                                 .body(RouterResponse.<Boolean>error("轮换加密密钥失败"));
                     }
                 })
-                .defaultIfEmpty(ResponseEntity.status(ApiException.resolveStatus("INTERNAL_ERROR"))
+                .defaultIfEmpty(ResponseEntity.status(ApiException.resolveStatus(ErrorCode.INTERNAL_ERROR.code()))
                         .body(RouterResponse.<Boolean>error("轮换加密密钥失败")))
                 .onErrorResume(e -> {
                     log.error("轮换加密密钥异常: {}", traceId, e);

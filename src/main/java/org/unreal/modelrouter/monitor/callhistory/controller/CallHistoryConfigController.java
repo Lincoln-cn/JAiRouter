@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.monitor.callhistory.config.CallHistoryProperties;
@@ -61,7 +62,7 @@ public class CallHistoryConfigController {
         String newLevelStr = body.get("recordLevel");
         if (newLevelStr == null || newLevelStr.isBlank()) {
             return ResponseEntity.badRequest()
-                    .body(RouterResponse.error("缺少必填字段: recordLevel", "INVALID_REQUEST"));
+                    .body(RouterResponse.error("缺少必填字段: recordLevel", ErrorCode.INVALID_REQUEST.code()));
         }
 
         // 校验枚举值
@@ -73,7 +74,7 @@ public class CallHistoryConfigController {
                     .body(RouterResponse.error(
                             "无效的 recordLevel 值: " + newLevelStr
                                     + "，有效值: METADATA_ONLY, SUMMARY, FULL",
-                            "INVALID_RECORD_LEVEL"));
+                            ErrorCode.INVALID_RECORD_LEVEL.code()));
         }
 
         // 记录旧值并更新

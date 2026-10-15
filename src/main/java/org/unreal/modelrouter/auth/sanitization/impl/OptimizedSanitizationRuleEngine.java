@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.exception.SanitizationException;
 import org.unreal.modelrouter.common.util.SafeRegexValidator;
 import org.unreal.modelrouter.auth.sanitization.SanitizationRuleEngine;
@@ -183,7 +184,7 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
         })
         .subscribeOn(Schedulers.boundedElastic())
         .onErrorMap(throwable -> new SanitizationException("JSON脱敏处理失败",
-                throwable, SanitizationException.SANITIZATION_FAILED));
+                throwable, ErrorCode.SANITIZATION_FAILED.code()));
     }
     
     /**
@@ -209,7 +210,7 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
         })
         .subscribeOn(Schedulers.boundedElastic())
         .onErrorMap(throwable -> new SanitizationException("脱敏处理失败",
-                throwable, SanitizationException.SANITIZATION_FAILED));
+                throwable, ErrorCode.SANITIZATION_FAILED.code()));
     }
     
     /**
@@ -247,7 +248,7 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
         })
         .subscribeOn(Schedulers.boundedElastic())
         .onErrorMap(throwable -> new SanitizationException("流式脱敏处理失败",
-                throwable, SanitizationException.SANITIZATION_FAILED));
+                throwable, ErrorCode.SANITIZATION_FAILED.code()));
     }
     
     /**

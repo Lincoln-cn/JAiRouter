@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
@@ -122,7 +123,7 @@ public class ResponseCacheController {
             @RequestBody final RuntimeConfigUpdateRequest request) {
         if (request == null) {
             return ResponseEntity.badRequest()
-                    .body(RouterResponse.error("请求体不能为空", "INVALID_REQUEST"));
+                    .body(RouterResponse.error("请求体不能为空", ErrorCode.INVALID_REQUEST.code()));
         }
         try {
             Map<String, Object> snapshot = responseCacheService.updateRuntimeConfig(
@@ -132,7 +133,7 @@ public class ResponseCacheController {
             return ResponseEntity.ok(RouterResponse.success(snapshot, "缓存配置已更新"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                    .body(RouterResponse.error(e.getMessage(), "INVALID_REQUEST"));
+                    .body(RouterResponse.error(e.getMessage(), ErrorCode.INVALID_REQUEST.code()));
         }
     }
 

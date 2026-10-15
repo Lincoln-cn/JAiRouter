@@ -12,6 +12,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.exception.AuthenticationException;
 import org.unreal.modelrouter.auth.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
@@ -73,7 +74,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
         return isTokenBlacklisted(token)
             .flatMap(isBlacklisted -> {
                 if (isBlacklisted) {
-                    return Mono.error(new AuthenticationException("JWT令牌已被列入黑名单", "JWT_BLACKLISTED"));
+                    return Mono.error(new AuthenticationException("JWT令牌已被列入黑名单", ErrorCode.JWT_BLACKLISTED.code()));
                 }
 
                 try {
@@ -82,7 +83,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
 
                     // 检查令牌是否过期
                     if (claims.getExpiration().before(new Date())) {
-                        return Mono.error(new AuthenticationException("JWT令牌已过期", "JWT_EXPIRED"));
+                        return Mono.error(new AuthenticationException("JWT令牌已过期", ErrorCode.JWT_EXPIRED.code()));
                     }
 
                     // 提取用户信息
@@ -117,10 +118,14 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
 
                 } catch (JwtException e) {
                     log.warn("JWT令牌验证失败: {}", e.getMessage());
-                    return Mono.error(new AuthenticationException("JWT令牌验证失败: " + e.getMessage(), "JWT_INVALID"));
+                    return Mono.error(new AuthenticationException(
+                            "JWT令牌验证失败: " + e.getMessage(),
+                            ErrorCode.JWT_INVALID.code()));
                 } catch (Exception e) {
                     log.error("JWT令牌验证过程中发生错误", e);
-                    return Mono.error(new AuthenticationException("JWT令牌验证过程中发生错误", "JWT_VALIDATION_ERROR"));
+                    return Mono.error(new AuthenticationException(
+                            "JWT令牌验证过程中发生错误",
+                            ErrorCode.JWT_VALIDATION_ERROR.code()));
                 }
             });
     }
@@ -137,7 +142,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
             long refreshWindowMs = Duration.ofDays(securityProperties.getJwt().getRefreshExpirationDays()).toMillis();
 
             if (now.getTime() - expiration.getTime() > refreshWindowMs) {
-                return Mono.error(new AuthenticationException("JWT令牌超出刷新窗口", "JWT_REFRESH_EXPIRED"));
+                return Mono.error(new AuthenticationException("JWT令牌超出刷新窗口", ErrorCode.JWT_REFRESH_EXPIRED.code()));
             }
 
             // 将旧令牌加入黑名单
@@ -162,10 +167,12 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
 
         } catch (JwtException e) {
             log.warn("JWT令牌刷新失败: {}", e.getMessage());
-            return Mono.error(new AuthenticationException("JWT令牌刷新失败: " + e.getMessage(), "JWT_REFRESH_FAILED"));
+            return Mono.error(new AuthenticationException(
+                    "JWT令牌刷新失败: " + e.getMessage(),
+                    ErrorCode.JWT_REFRESH_FAILED.code()));
         } catch (Exception e) {
             log.error("JWT令牌刷新过程中发生错误", e);
-            return Mono.error(new AuthenticationException("JWT令牌刷新过程中发生错误", "JWT_REFRESH_ERROR"));
+            return Mono.error(new AuthenticationException("JWT令牌刷新过程中发生错误", ErrorCode.JWT_REFRESH_ERROR.code()));
         }
     }
 
@@ -329,7 +336,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
             } catch (JwtException e) {
                 throw new AuthenticationException(
                         "无法从JWT令牌中提取用户ID: " + e.getMessage(),
-                        "JWT_USER_ID_EXTRACTION_FAILED");
+                        ErrorCode.JWT_USER_ID_EXTRACTION_FAILED.code());
             }
         });
     }

@@ -16,6 +16,7 @@ import org.unreal.modelrouter.auth.security.config.properties.SanitizationConfig
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.model.RuleType;
 import org.unreal.modelrouter.auth.security.model.SanitizationRule;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.common.util.SafeRegexValidator;
@@ -66,10 +67,10 @@ public class SanitizationConfigController {
     public Mono<ResponseEntity<RouterResponse<Map<String, Object>>>> updateConfig(
             @RequestBody final SanitizationUpdateRequest request) {
         if (request == null) {
-            return Mono.error(ApiException.of("INVALID_REQUEST", "请求体不能为空"));
+            return Mono.error(ApiException.of(ErrorCode.INVALID_REQUEST.code(), "请求体不能为空"));
         }
         if (request.request == null && request.response == null) {
-            return Mono.error(ApiException.of("INVALID_REQUEST", "至少需要指定 request 或 response 子配置"));
+            return Mono.error(ApiException.of(ErrorCode.INVALID_REQUEST.code(), "至少需要指定 request 或 response 子配置"));
         }
 
         final List<String> errors = new ArrayList<>();
@@ -80,7 +81,7 @@ public class SanitizationConfigController {
             applySubConfig(request.response, securityProperties.getSanitization().getResponse(), "response", errors);
         }
         if (!errors.isEmpty()) {
-            return Mono.error(ApiException.of("INVALID_REQUEST", String.join("; ", errors)));
+            return Mono.error(ApiException.of(ErrorCode.INVALID_REQUEST.code(), String.join("; ", errors)));
         }
 
         return defaultSanitizationService.rebuildRulesFromProperties()
@@ -111,7 +112,7 @@ public class SanitizationConfigController {
     public Mono<ResponseEntity<RouterResponse<Map<String, Object>>>> testSanitization(
             @RequestBody final SanitizationTestRequest request) {
         if (request == null || request.sample == null || request.sample.isBlank()) {
-            return Mono.error(ApiException.of("INVALID_REQUEST", "sample 不能为空"));
+            return Mono.error(ApiException.of(ErrorCode.INVALID_REQUEST.code(), "sample 不能为空"));
         }
         final String sample = request.sample;
         final String resolvedType = resolveDryRunContentType(sample, request.contentType);

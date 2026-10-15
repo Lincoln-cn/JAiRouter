@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
@@ -85,7 +86,7 @@ public class ModelStatsController {
             return Mono.just(ResponseEntity.ok(RouterResponse.success(stats, "获取配置统计成功")));
         } catch (Exception e) {
             logger.error("获取配置统计失败", e);
-            return Mono.error(ApiException.of("INTERNAL_ERROR", "获取配置统计失败: " + e.getMessage()));
+            return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "获取配置统计失败: " + e.getMessage()));
         }
     }
 }

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.config.core.ConfigurationService;
 import org.unreal.modelrouter.config.core.manager.ConfigVersionManager;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
@@ -123,7 +124,7 @@ public class ConfigurationVersionController {
             int currentVersion = configVersionManager.getCurrentVersion();
             if (version == currentVersion) {
                 // 客户端输入违规（删当前版本）：按本方法 @ApiResponse 契约返回 400
-                throw ApiException.of("INVALID_REQUEST", "不能删除当前版本");
+                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "不能删除当前版本");
             }
             // 调用ConfigurationService删除指定版本
             configVersionManager.deleteConfigVersion(version);
@@ -252,10 +253,10 @@ public class ConfigurationVersionController {
         return Mono.fromSupplier(() -> {
             // 验证版本号
             if (sourceVersion < 0 || targetVersion < 0) {
-                throw ApiException.of("INVALID_REQUEST", "版本号必须为非负数");
+                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "版本号必须为非负数");
             }
             if (sourceVersion == targetVersion) {
-                throw ApiException.of("INVALID_REQUEST", "源版本和目标版本不能相同");
+                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "源版本和目标版本不能相同");
             }
 
             try {
@@ -291,14 +292,14 @@ public class ConfigurationVersionController {
             @PathVariable("version") final int version) {
         return Mono.fromSupplier(() -> {
             if (version <= 0) {
-                throw ApiException.of("INVALID_REQUEST", "版本号必须为正整数");
+                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "版本号必须为正整数");
             }
 
             try {
                 // 获取所有版本
                 List<Integer> allVersions = configVersionManager.getAllVersions();
                 if (!allVersions.contains(version)) {
-                    throw ApiException.of("NOT_FOUND", "版本不存在: " + version);
+                    throw ApiException.of(ErrorCode.NOT_FOUND.code(), "版本不存在: " + version);
                 }
 
                 // 找到上一版本

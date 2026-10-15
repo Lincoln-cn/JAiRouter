@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.exception.SanitizationException;
 import org.unreal.modelrouter.auth.sanitization.SanitizationRuleEngine;
 import org.unreal.modelrouter.auth.sanitization.SanitizationService;
@@ -216,7 +217,7 @@ public class DefaultSanitizationService implements SanitizationService {
                 securityProperties.getSanitization().getResponse().isPreserveJsonStructure();
         return ruleEngine.applySanitizationRules(content, applicableRules, contentType, preserveJson)
                 .onErrorMap(throwable -> new SanitizationException("记录脱敏处理失败", throwable,
-                        SanitizationException.SANITIZATION_FAILED));
+                        ErrorCode.SANITIZATION_FAILED.code()));
     }
 
     /**
@@ -258,7 +259,7 @@ public class DefaultSanitizationService implements SanitizationService {
                 .onErrorMap(throwable -> new SanitizationException(
                         String.format("%s脱敏处理失败", type.equals("request") ? "请求" : "响应"), 
                         throwable, 
-                        SanitizationException.SANITIZATION_FAILED));
+                        ErrorCode.SANITIZATION_FAILED.code()));
     }
     
     @Override
@@ -287,13 +288,13 @@ public class DefaultSanitizationService implements SanitizationService {
             // 验证所有规则
             for (SanitizationRule rule : newRules) {
                 if (rule.getRuleId() == null || rule.getRuleId().trim().isEmpty()) {
-                    throw new SanitizationException("规则ID不能为空", SanitizationException.INVALID_SANITIZATION_RULE);
+                    throw new SanitizationException("规则ID不能为空", ErrorCode.INVALID_SANITIZATION_RULE.code());
                 }
                 if (rule.getPattern() == null || rule.getPattern().trim().isEmpty()) {
-                    throw new SanitizationException("规则模式不能为空", SanitizationException.INVALID_SANITIZATION_RULE);
+                    throw new SanitizationException("规则模式不能为空", ErrorCode.INVALID_SANITIZATION_RULE.code());
                 }
                 if (rule.getStrategy() == null) {
-                    throw new SanitizationException("规则策略不能为空", SanitizationException.INVALID_SANITIZATION_RULE);
+                    throw new SanitizationException("规则策略不能为空", ErrorCode.INVALID_SANITIZATION_RULE.code());
                 }
             }
             
@@ -317,23 +318,23 @@ public class DefaultSanitizationService implements SanitizationService {
     public Mono<Void> addRule(final SanitizationRule rule) {
         return Mono.fromRunnable(() -> {
             if (rule == null) {
-                throw new SanitizationException("规则不能为空", SanitizationException.INVALID_SANITIZATION_RULE);
+                throw new SanitizationException("规则不能为空", ErrorCode.INVALID_SANITIZATION_RULE.code());
             }
             
             if (rule.getRuleId() == null || rule.getRuleId().trim().isEmpty()) {
-                throw new SanitizationException("规则ID不能为空", SanitizationException.INVALID_SANITIZATION_RULE);
+                throw new SanitizationException("规则ID不能为空", ErrorCode.INVALID_SANITIZATION_RULE.code());
             }
             
             if (rules.containsKey(rule.getRuleId())) {
                 throw new SanitizationException("规则ID已存在: " + rule.getRuleId(), 
-                        SanitizationException.INVALID_SANITIZATION_RULE);
+                        ErrorCode.INVALID_SANITIZATION_RULE.code());
             }
             
             // 验证规则
             ruleEngine.validateRule(rule).subscribe(isValid -> {
                 if (!isValid) {
                     throw new SanitizationException("无效的脱敏规则: " + rule.getRuleId(), 
-                            SanitizationException.INVALID_SANITIZATION_RULE);
+                            ErrorCode.INVALID_SANITIZATION_RULE.code());
                 }
                 
                 rules.put(rule.getRuleId(), rule);
@@ -352,7 +353,7 @@ public class DefaultSanitizationService implements SanitizationService {
     public Mono<Void> removeRule(final String ruleId) {
         return Mono.fromRunnable(() -> {
             if (ruleId == null || ruleId.trim().isEmpty()) {
-                throw new SanitizationException("规则ID不能为空", SanitizationException.INVALID_SANITIZATION_RULE);
+                throw new SanitizationException("规则ID不能为空", ErrorCode.INVALID_SANITIZATION_RULE.code());
             }
             
             SanitizationRule removedRule = rules.remove(ruleId);

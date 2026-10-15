@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.AuditEvent;
 import org.unreal.modelrouter.common.dto.AuditEventQuery;
@@ -266,10 +267,10 @@ public class ExtendedSecurityAuditController {
     public Mono<RouterResponse<Map<String, Object>>> batchRecordAuditEvents(
             @RequestBody final List<AuditEvent> auditEvents) {
         if (auditEvents == null || auditEvents.isEmpty()) {
-            return Mono.error(ApiException.of("INVALID_REQUEST", "审计事件列表不能为空"));
+            return Mono.error(ApiException.of(ErrorCode.INVALID_REQUEST.code(), "审计事件列表不能为空"));
         }
         if (auditEvents.size() > 100) {
-            return Mono.error(ApiException.of("INVALID_REQUEST", "批量记录事件数量不能超过100条"));
+            return Mono.error(ApiException.of(ErrorCode.INVALID_REQUEST.code(), "批量记录事件数量不能超过100条"));
         }
 
         return extendedAuditService.batchRecordAuditEvents(auditEvents)

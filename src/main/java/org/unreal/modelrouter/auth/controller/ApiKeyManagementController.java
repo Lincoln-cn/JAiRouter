@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.auth.security.dto.ApiKeyBatchExportVO;
 import org.unreal.modelrouter.auth.security.dto.ApiKeyBatchImportRequest;
@@ -69,7 +70,7 @@ public class ApiKeyManagementController {
                 .map(list -> RouterResponse.success(list, "获取API密钥列表成功"))
                 .onErrorResume(e -> {
                     log.error("获取API密钥列表失败", e);
-                    return Mono.error(ApiException.of("INTERNAL_ERROR", "获取API密钥列表失败"));
+                    return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "获取API密钥列表失败"));
                 });
     }
 
@@ -86,7 +87,7 @@ public class ApiKeyManagementController {
                 .map(vo -> RouterResponse.success(vo, "获取API密钥信息成功"))
                 .onErrorResume(e -> {
                     log.error("获取API密钥信息失败: {}", keyId, e);
-                    return Mono.error(ApiException.of("NOT_FOUND", "API密钥不存在"));
+                    return Mono.error(ApiException.of(ErrorCode.NOT_FOUND.code(), "API密钥不存在"));
                 });
     }
 
@@ -126,7 +127,7 @@ public class ApiKeyManagementController {
                 .map(vo -> RouterResponse.success(vo, "更新API密钥成功"))
                 .onErrorResume(e -> {
                     log.error("更新API密钥失败: {}", keyId, e);
-                    return Mono.error(ApiException.of("NOT_FOUND", "API密钥不存在"));
+                    return Mono.error(ApiException.of(ErrorCode.NOT_FOUND.code(), "API密钥不存在"));
                 });
     }
 
@@ -142,7 +143,7 @@ public class ApiKeyManagementController {
                 .then(Mono.just(RouterResponse.<Void>success(null, "删除API密钥成功")))
                 .onErrorResume(e -> {
                     log.error("删除API密钥失败: {}", keyId, e);
-                    return Mono.error(ApiException.of("NOT_FOUND", "API密钥不存在"));
+                    return Mono.error(ApiException.of(ErrorCode.NOT_FOUND.code(), "API密钥不存在"));
                 });
     }
 
@@ -158,7 +159,7 @@ public class ApiKeyManagementController {
                 .map(vo -> RouterResponse.success(vo, "禁用API密钥成功"))
                 .onErrorResume(e -> {
                     log.error("禁用API密钥失败: {}", keyId, e);
-                    return Mono.error(ApiException.of("NOT_FOUND", "API密钥不存在"));
+                    return Mono.error(ApiException.of(ErrorCode.NOT_FOUND.code(), "API密钥不存在"));
                 });
     }
 
@@ -174,7 +175,7 @@ public class ApiKeyManagementController {
                 .map(vo -> RouterResponse.success(vo, "启用API密钥成功"))
                 .onErrorResume(e -> {
                     log.error("启用API密钥失败: {}", keyId, e);
-                    return Mono.error(ApiException.of("NOT_FOUND", "API密钥不存在"));
+                    return Mono.error(ApiException.of(ErrorCode.NOT_FOUND.code(), "API密钥不存在"));
                 });
     }
 
@@ -290,7 +291,7 @@ public class ApiKeyManagementController {
             @Parameter(description = "API密钥ID") @PathVariable("keyId") final String keyId) {
         return Mono.fromCallable(() -> apiKeyQuotaService.getQuotaUsage(keyId))
                 .flatMap(opt -> opt.map(detail -> Mono.just(RouterResponse.success(detail, "获取配额详情成功")))
-                        .orElseGet(() -> Mono.error(ApiException.of("NOT_FOUND", "API密钥不存在"))))
+                        .orElseGet(() -> Mono.error(ApiException.of(ErrorCode.NOT_FOUND.code(), "API密钥不存在"))))
                 .onErrorResume(e -> {
                     log.error("获取API密钥配额详情失败: {}", keyId, e);
                     return Mono.error(ApiExceptions.wrap(e, "获取配额详情失败"));
@@ -333,7 +334,7 @@ public class ApiKeyManagementController {
                 .subscribeOn(Schedulers.boundedElastic())
                 .map(detail -> RouterResponse.success(detail, "配额已更新"))
                 .onErrorResume(IllegalArgumentException.class, e ->
-                        Mono.error(ApiException.of("INVALID_REQUEST", e.getMessage())))
+                        Mono.error(ApiException.of(ErrorCode.INVALID_REQUEST.code(), e.getMessage())))
                 .onErrorResume(e -> {
                     log.error("更新API密钥配额失败: {}", keyId, e);
                     return Mono.error(ApiExceptions.wrap(e, "更新配额失败"));
