@@ -2,6 +2,7 @@ package org.unreal.modelrouter.auth.security.audit;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -40,6 +41,9 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     private final AuditEntityMapper entityMapper;
     private final SecurityReportGenerator reportGenerator;
 
+    /** 审计管道自观测（软依赖，见 {@link #persist}；issue #396） */
+    private final ObjectProvider<AuditMetricsService> auditMetricsProvider;
+
     // 安全事件类型
     private static final List<AuditEventType> SECURITY_EVENT_TYPES = Arrays.asList(
             AuditEventType.SECURITY_ALERT,
@@ -67,7 +71,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .success(true)
                     .timestamp(LocalDateTime.now())
                     .build();
-            auditRepository.save(entity);
+            persist(entity);
             log.info("JWT令牌颁发审计记录: userId={}, tokenId={}", userId, tokenId);
         }).subscribeOn(Schedulers.boundedElastic()).then();
     }
@@ -93,7 +97,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .metadata(entityMapper.toJson(metadata))
                     .timestamp(LocalDateTime.now())
                     .build();
-            auditRepository.save(entity);
+            persist(entity);
             log.info("JWT令牌刷新审计记录: userId={}", userId);
         }).subscribeOn(Schedulers.boundedElastic()).then();
     }
@@ -119,7 +123,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .riskLevel(RiskLevel.MEDIUM)
                     .timestamp(LocalDateTime.now())
                     .build();
-            auditRepository.save(entity);
+            persist(entity);
             log.info("JWT令牌撤销审计记录: userId={}, tokenId={}, reason={}", userId, tokenId, reason);
         }).subscribeOn(Schedulers.boundedElastic()).then();
     }
@@ -141,7 +145,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .failureReason(isValid ? null : "令牌无效或已过期")
                     .timestamp(LocalDateTime.now())
                     .build();
-            auditRepository.save(entity);
+            persist(entity);
             log.debug("JWT令牌验证审计记录: userId={}, valid={}", userId, isValid);
         }).subscribeOn(Schedulers.boundedElastic()).then();
     }
@@ -163,7 +167,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .success(true)
                     .timestamp(LocalDateTime.now())
                     .build();
-            auditRepository.save(entity);
+            persist(entity);
             log.info("API Key创建审计记录: keyId={}, createdBy={}", keyId, createdBy);
         }).subscribeOn(Schedulers.boundedElastic()).then();
     }
@@ -189,7 +193,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .metadata(entityMapper.toJson(metadata))
                     .timestamp(LocalDateTime.now())
                     .build();
-            auditRepository.save(entity);
+            persist(entity);
             log.debug("API Key使用审计记录: keyId={}, endpoint={}, success={}", keyId, endpoint, success);
         }).subscribeOn(Schedulers.boundedElastic()).then();
     }
@@ -214,7 +218,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .riskLevel(RiskLevel.MEDIUM)
                     .timestamp(LocalDateTime.now())
                     .build();
-            auditRepository.save(entity);
+            persist(entity);
             log.info("API Key撤销审计记录: keyId={}, reason={}", keyId, reason);
         }).subscribeOn(Schedulers.boundedElastic()).then();
     }
@@ -232,7 +236,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .success(true)
                     .timestamp(LocalDateTime.now())
                     .build();
-            auditRepository.save(entity);
+            persist(entity);
             log.info("API Key过期审计记录: keyId={}", keyId);
         }).subscribeOn(Schedulers.boundedElastic()).then();
     }
@@ -258,7 +262,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .riskLevel(riskLevel)
                     .timestamp(LocalDateTime.now())
                     .build();
-            auditRepository.save(entity);
+            persist(entity);
             log.warn("安全事件审计记录: type={}, userId={}, details={}", eventType, userId, details);
         }).subscribeOn(Schedulers.boundedElastic()).then();
     }
@@ -284,7 +288,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .riskLevel(RiskLevel.HIGH)
                     .timestamp(LocalDateTime.now())
                     .build();
-            auditRepository.save(entity);
+            persist(entity);
             log.warn("可疑活动审计记录: activity={}, userId={}, ip={}", activity, userId, ipAddress);
         }).subscribeOn(Schedulers.boundedElastic()).then();
     }
@@ -349,7 +353,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     public Mono<Void> recordAuditEvent(final AuditEvent auditEvent) {
         return Mono.fromRunnable(() -> {
             SecurityAuditEventEntity entity = entityMapper.dtoToEntity(auditEvent);
-            auditRepository.save(entity);
+            persist(entity);
             log.debug("审计事件记录: type={}, userId={}", auditEvent.getType(), auditEvent.getUserId());
         }).subscribeOn(Schedulers.boundedElastic()).then();
     }
@@ -398,12 +402,43 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
     // ========== SecurityAuditService方法 ==========
 
+    /**
+     * 审计写入的**唯一漏斗**：落库 + 审计管道自观测（issue #396）。
+     *
+     * <p>背景：这些指标原先只有 {@code EnhancedSecurityAuditService}（内存缓冲实现）在写，而该实现默认不是 Bean、
+     * 开启还会导致启动失败（issue #395）⇒ 指标注册了却恒为 0。该实现删除后，写入方改为本类。</p>
+     *
+     * <p>指标服务本身是条件 Bean（{@code jairouter.security.audit.metrics.enabled}），
+     * 故用 {@link ObjectProvider} 作**软依赖**：关掉指标不影响审计落库。</p>
+     */
+    private void persist(final SecurityAuditEventEntity entity) {
+        final AuditMetricsService metrics = auditMetricsProvider.getIfAvailable();
+        final String eventType = entity.getEventType() != null ? entity.getEventType().name() : "UNKNOWN";
+        final boolean success = Boolean.TRUE.equals(entity.getSuccess());
+        final long startNanos = System.nanoTime();
+        try {
+            auditRepository.save(entity);
+            if (metrics != null) {
+                metrics.recordEvent(eventType, success);
+            }
+        } catch (RuntimeException e) {
+            if (metrics != null) {
+                metrics.recordEvent(eventType, false);
+            }
+            throw e;
+        } finally {
+            if (metrics != null) {
+                metrics.recordWriteDuration((System.nanoTime() - startNanos) / 1_000_000L);
+            }
+        }
+    }
+
     @Override
     @Transactional
     public Mono<Void> recordEvent(final SecurityAuditEvent event) {
         return Mono.fromRunnable(() -> {
             SecurityAuditEventEntity entity = entityMapper.securityEventToEntity(event);
-            auditRepository.save(entity);
+            persist(entity);
             log.debug("安全审计事件记录: eventType={}", event.getEventType());
         }).subscribeOn(Schedulers.boundedElastic()).then();
     }
@@ -429,7 +464,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .riskLevel(success ? RiskLevel.LOW : RiskLevel.MEDIUM)
                     .timestamp(LocalDateTime.now())
                     .build();
-            auditRepository.save(entity);
+            persist(entity);
         }).subscribeOn(Schedulers.boundedElastic()).then();
     }
 
@@ -453,7 +488,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .metadata(entityMapper.toJson(metadata))
                     .timestamp(LocalDateTime.now())
                     .build();
-            auditRepository.save(entity);
+            persist(entity);
         }).subscribeOn(Schedulers.boundedElastic()).then();
     }
 

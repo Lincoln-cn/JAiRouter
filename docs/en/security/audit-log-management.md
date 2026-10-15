@@ -259,10 +259,15 @@ curl -X POST "http://localhost:8080/api/security/audit-logs/export" \
 
 ### Monitoring Metrics
 
-- `jairouter_audit_logs_total`: total audit logs
-- `jairouter_audit_logs_by_operation`: statistics by operation type
-- `jairouter_audit_logs_by_status`: statistics by status
-- `jairouter_audit_logs_failed`: number of failed operations
+- `jairouter_audit_events_total`: total audit events (Counter)
+- `jairouter_audit_events_success_total`: successful audit events (Counter)
+- `jairouter_audit_events_failure_total`: failed audit events (Counter)
+- `jairouter_audit_event_write_duration_seconds`: audit write duration (Timer)
+- `jairouter_audit_total_events`: cumulative processed events (Gauge)
+
+> Note: these metrics are reported by the write funnel of the **default implementation**
+> `ExtendedSecurityAuditServiceImpl` (issue #396). The `jairouter_audit_logs_total` / `_by_operation` /
+> `_by_status` / `_failed` names previously listed here **do not exist** in the code and have been corrected.
 
 ### Alert Configuration
 
