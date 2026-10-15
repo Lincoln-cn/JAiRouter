@@ -1,0 +1,13 @@
+# 前端生成物：关掉行尾转换（issue #408）
+#
+# `frontend/auto-imports.d.ts` 与 `frontend/components.d.ts` 由 unplugin-auto-import /
+# unplugin-vue-components 在**每次构建时**以 LF 重写（生成方见 frontend/vite.config.ts:16,21），
+# 而它们又必须留在仓库里：`npm run build` = `vue-tsc && vite build`，`vue-tsc` 在 vite 之前跑，
+# 干净克隆若缺这两个文件会类型检查失败。
+#
+# 若按 core.autocrlf=true 做行尾转换，则每次构建后 git 都会把它们判为「已修改」（行尾漂移，
+# 内容规范化后其实相同）⇒ 工作树被改脏、容易被误提交。
+#
+# 关掉这两条路径的行尾转换：仓库里存什么、工作副本就是什么（生成器写 LF，两侧一致）。
+frontend/auto-imports.d.ts -text
+frontend/components.d.ts -text
