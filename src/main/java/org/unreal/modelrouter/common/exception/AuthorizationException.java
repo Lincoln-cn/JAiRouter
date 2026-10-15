@@ -10,7 +10,7 @@ public class AuthorizationException extends SecurityException {
     
     public static final String INSUFFICIENT_PERMISSIONS = "INSUFFICIENT_PERMISSIONS";
     public static final String ACCESS_DENIED = "ACCESS_DENIED";
-    public static final String RESOURCE_FORBIDDEN = "RESOURCE_FORBIDDEN";
+    public static final String FORBIDDEN_RESOURCE = "FORBIDDEN_RESOURCE";
     
     public AuthorizationException(final String message, final String errorCode) {
         super(message, errorCode, HttpStatus.FORBIDDEN);
@@ -46,7 +46,7 @@ public class AuthorizationException extends SecurityException {
     public static AuthorizationException resourceForbidden(final String resource) {
         return new AuthorizationException(
             String.format("禁止访问资源: %s", resource), 
-            RESOURCE_FORBIDDEN
+            FORBIDDEN_RESOURCE
         );
     }
 }

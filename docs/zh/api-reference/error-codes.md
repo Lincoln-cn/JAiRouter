@@ -80,7 +80,7 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 |--------|------|----------|----------|
 | `INSUFFICIENT_PERMISSIONS` | 权限不足 | 用户没有所需权限 | 联系管理员分配权限 |
 | `ACCESS_DENIED` | 访问被拒绝 | 尝试访问无权资源 | 检查资源访问权限 |
-| `RESOURCE_FORBIDDEN` | 资源禁止访问 | 资源设置为禁止访问 | 联系资源所有者 |
+| `FORBIDDEN_RESOURCE` | 资源禁止访问 | 资源设置为禁止访问 | 联系资源所有者 |
 | `FORBIDDEN` | 禁止访问 | 通用授权失败 | 检查用户角色和权限 |
 
 **示例响应**:
@@ -277,7 +277,7 @@ log.error("认证失败: errorCode={}, message={}",
 |--------|-----------|
 | 400 | `INVALID_REQUEST`、`INVALID_PARAM`（按规则任何 `INVALID_*` 也归此类） |
 | 401 | `MISSING_API_KEY`、`INVALID_API_KEY`、`EXPIRED_API_KEY`、`INVALID_JWT_TOKEN`、`EXPIRED_JWT_TOKEN`、`BLACKLISTED_TOKEN`、`DAILY_QUOTA_EXCEEDED`、`TOKEN_QUOTA_EXCEEDED`、`LOGIN_FAILED` |
-| 403 | `INSUFFICIENT_PERMISSIONS`、`ACCESS_DENIED`、`RESOURCE_FORBIDDEN`、`BUILTIN_READONLY` |
+| 403 | `INSUFFICIENT_PERMISSIONS`、`ACCESS_DENIED`、`FORBIDDEN_RESOURCE`、`BUILTIN_READONLY` |
 | 404 | `NOT_FOUND`（按规则任何 `*_NOT_FOUND` 也归此类） |
 | 409 | `CONFLICT_STATE`、`CONFLICT_EXISTS`、`CONFLICT_BUILTIN` |
 | 429 | `RATE_LIMIT_EXCEEDED` |

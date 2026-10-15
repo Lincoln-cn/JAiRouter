@@ -80,7 +80,7 @@ JAiRouter uses a standardized error code system to identify various error condit
 |------------|-------------|--------------|----------|
 | `INSUFFICIENT_PERMISSIONS` | Insufficient permissions | User lacks required permissions | Contact admin to assign permissions |
 | `ACCESS_DENIED` | Access denied | Attempting to access unauthorized resource | Check resource access permissions |
-| `RESOURCE_FORBIDDEN` | Resource forbidden | Resource set as forbidden | Contact resource owner |
+| `FORBIDDEN_RESOURCE` | Resource forbidden | Resource set as forbidden | Contact resource owner |
 | `FORBIDDEN` | Forbidden | Generic authorization failure | Check user role and permissions |
 
 **Example Response**:
@@ -297,7 +297,7 @@ log.error("Authentication failed: errorCode={}, message={}",
 |--------|-------------|
 | 400 | `INVALID_REQUEST`, `INVALID_PARAM` (any `INVALID_*` code also resolves here, by rule) |
 | 401 | `MISSING_API_KEY`, `INVALID_API_KEY`, `EXPIRED_API_KEY`, `INVALID_JWT_TOKEN`, `EXPIRED_JWT_TOKEN`, `BLACKLISTED_TOKEN`, `DAILY_QUOTA_EXCEEDED`, `TOKEN_QUOTA_EXCEEDED`, `LOGIN_FAILED` |
-| 403 | `INSUFFICIENT_PERMISSIONS`, `ACCESS_DENIED`, `RESOURCE_FORBIDDEN`, `BUILTIN_READONLY` |
+| 403 | `INSUFFICIENT_PERMISSIONS`, `ACCESS_DENIED`, `FORBIDDEN_RESOURCE`, `BUILTIN_READONLY` |
 | 404 | `NOT_FOUND` (any `*_NOT_FOUND` code also resolves here, by rule) |
 | 409 | `CONFLICT_STATE`, `CONFLICT_EXISTS`, `CONFLICT_BUILTIN` |
 | 429 | `RATE_LIMIT_EXCEEDED` |
