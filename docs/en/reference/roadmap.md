@@ -3,7 +3,7 @@
 <!-- 版本信息 -->
 > **Doc Version**: 2.2.2
 > **Last Updated**: 2026-10-14
-> **Git Tag**: v3.3.2
+> **Git Tag**: v3.3.3
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -24,9 +24,22 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 
 ## Current Version Status
 
-### 🏷️ v3.3.2 (Patch: empty `/v1` stream fixed + alert/audit close-out + config honesty pass 3 + docs and gates, **tagged, not released yet** 2026-10-14)
+### 🏷️ v3.3.3 (Patch: error-code registry wired through code and docs + frontend artifact hygiene; ships the `v3.3.2` content, **tagged, not released yet** 2026-10-15)
 
-**Status**: **Tagged `v3.3.2`, not released yet** (the GitHub Release and Docker image are produced when we publish)
+**Status**: **Tagged `v3.3.3`, not released yet** (per the standing release policy the GitHub Release and Docker image are produced separately)
+**Scope**: everything merged after `v3.3.1` (2026-10-12 → 2026-10-15) — `v3.3.2` was tagged but never released on its own and is superseded by this version;
+see the [changelog](changelog.md#333---2026-10-15)
+
+| Area | Delivered |
+|------|-----------|
+| **Error-code governance (issue #370, plan A)** | The registry now holds **62 codes that are actually emitted** (code + client-visible status + **render path** + description, stage 2 #407); `resolveStatus` consults the registry **only for rule-chain codes** (every other path keeps zero behavior change); the zh/en error-code tables were rewritten against the registry (0 differences both ways); the docs gate now takes the registry as its authority and **fails in both directions** (#407); **no bare code literals remain in `src/main/java`** (~175 emission sites now read `ErrorCode.X.code()`, stage 3 #410), guarded by a new literal test. ⚠️ External contract change: `TOKEN_USAGE_FORBIDDEN` → `FORBIDDEN_TOKEN_USAGE`, `RESOURCE_FORBIDDEN` → `FORBIDDEN_RESOURCE` (#403) |
+| Error-code ledger (recorded only, no behavior change) | `RATE_LIMIT_EXCEEDED` has two statuses, 429/401 (#404); `BUILTIN_READONLY` / `RESTART_REQUIRED` return 400 while name resolution derives 403 (#405); seven codes exist only as constants and never-called factories (#406) |
+| Repository hygiene | Frontend build artifacts no longer dirty the working tree: normalized `package-lock.json` + `.gitattributes` `-text` for the two generated `.d.ts` files (#408 / #409) |
+| Inherited from `v3.3.2` (shipped together) | `/v1` empty-stream fix (#356) · alert/audit close-out (#306/#309/#313/#394/#397/#400) · config-honesty pass 3 (#319/#322/#323/#329/#331) · dead code and shapes (#311/#316/#328/#332/#333/#369/#372/#373) · CI and documentation gates (#367/#371/#385/#388/#398/#399 plus the #250 review batches) · dependency security (Vue 3.5.44, #391) |
+
+### 🏷️ v3.3.2 (Patch: empty `/v1` stream fixed + alert/audit close-out + config honesty pass 3 + docs and gates, **tagged, never released on its own** 2026-10-14)
+
+**Status**: **Tagged `v3.3.2`, never released on its own** — its content ships with `v3.3.3`
 **Scope**: the **40 changes** merged after `v3.3.1` (the 10-10 ~ 10-11 slice), i.e. 2026-10-12 → 2026-10-14 —
 see the [changelog](changelog.md#332---2026-10-14)
 

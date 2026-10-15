@@ -42,7 +42,7 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # 本地/仓库目录名与产品名不同
 artifact:        model-router            # Maven artifactId
-project_version: 3.3.2                   # pom.xml
+project_version: 3.3.3                   # pom.xml
 latest_release:  v3.3.1 (2026-10-14)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5（WebFlux / 响应式）
@@ -59,7 +59,7 @@ surfaces:
   - /actuator/**  # 健康、就绪、Prometheus
 tests:
   command: ./mvnw test -o
-  scale:   388 个测试类，约 4000 个测试方法
+  scale:   384 个测试类，约 4035 个测试方法
 license: Apache-2.0
 ```
 
@@ -355,10 +355,13 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 （堵 DNS 重绑定）；Token 用量写入按主体收敛属主；`SecurityAlertService` 真正接线（修复前零调用方，
 四类安全告警一条都不会触发）。
 
-**v3.3.1 之后已合入、已打 tag `v3.3.2`、尚未发布**（40 次提交；2026-10-12 → 2026-10-14）。按主题归类：
+**v3.3.1 之后已合入、已打 tag `v3.3.2` 与 `v3.3.3`、尚未发布**（2026-10-12 → 2026-10-15）。按主题归类：
 
 | 主题 | 变更内容 |
 |------|----------|
+| **错误码治理（#370 方案 A）** | 新增 `ErrorCode` 注册表并补全到 **62 个「会真正发出的码」**（每项带**渲染路径**：状态由命名规则 / 认证异常 / 响应体直写 / 错误体直写决定）；中英错误码表按注册表重写且由 CI **双向对账**（文档漏列、文档列了发不出的码，都判红）；`src/main/java` 里**不再有裸码字面量**（约 175 处发出点统一写 `ErrorCode.X.code()`），并加「码字面量守卫」测试防复发。⚠️ 对外契约变更：两个响应体 `errorCode` 改名 `TOKEN_USAGE_FORBIDDEN` → `FORBIDDEN_TOKEN_USAGE`、`RESOURCE_FORBIDDEN` → `FORBIDDEN_RESOURCE`（#403） |
+| 错误码台账 | 注册表当场暴露的三处既有语义问题只登记、不改行为：`RATE_LIMIT_EXCEEDED` 同码两状态 429/401（#404）；`BUILTIN_READONLY` / `RESTART_REQUIRED` 端点 400 vs 规则链 403（#405）；7 个码只有常量与未接线工厂（#406） |
+| 仓库卫生 | 前端生成物不再改脏工作树：`package-lock.json` 按本仓 npm 版本归一化 + 两个生成 `.d.ts` 关掉行尾转换（#408 / #409） |
 | **流式（`/v1`）** | **修复：`/v1` 流式返回 `200` 但响应体 0 字节** —— `/v1` 分支用 `exchangeToMono` 把响应体交回了 exchange 作用域之外，WebClient 在框架订阅之前就释放了它。现在协议 error 帧只在**首块之后**补发，因此首块前失败仍按下游真实状态结束（429 仍是 429）。由端到端夹具做回归钉，且夹具现在**同时驱动两个面** |
 | 流式基线 | `/v1` 面：首块前失败补状态保真；legacy `/api/**` 语义有意不动；客户端可见基线由探针类钉住 |
 | 告警与审计 | 告警冷却改为跨副本排他；审计事件类型一律走枚举名，`parseEventType` 不再静默回退成 `SYSTEM_MAINTENANCE`（枚举 17 → 26）；清掉残余的死告警阈值/出口配置 |
@@ -367,8 +370,8 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 | 文档与门闩 | README 重写为「事实优先」结构；错误码表按代码重写；`dynamic-config` 与 quick-start 的实例管理示例改为真实接口且逐条实跑；新增 markdown 围栏配平检查器（修 6 个文件 / 10 处）；贡献文档新增「怎么读 CI 门闩」与「发布节奏」判据 |
 | 工程与工具 | CI 配额耗尽期间的本地替代门闩；镜像冒烟改轮询容器健康状态；文档版本自测不再抄脚本措辞，且该 workflow 现在会在 `scripts/docs/**` 变更时触发 |
 
-发布标签：`v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`。
-`v3.3.2` 已打 tag，但**尚未发布**。
+发布标签：`v3.3.3` · `v3.3.2` · `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`。
+`v3.3.2` 与 `v3.3.3` 已打 tag，但**尚未发布**（`v3.3.2` 的内容随 `v3.3.3` 一并发布）。
 
 ### 开放台账
 
