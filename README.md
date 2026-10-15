@@ -60,7 +60,7 @@ surfaces:
   - /actuator/**  # health, readiness, Prometheus
 tests:
   command: ./mvnw test -o
-  scale:   ~4035 test methods across 384 test classes
+  scale:   ~4061 test methods across 400 test classes
 license: Apache-2.0
 ```
 
@@ -376,7 +376,7 @@ security alerts ever fired).
 
 | Theme | What changed |
 |-------|--------------|
-| **Error-code governance (issue #370)** | A new `ErrorCode` registry, completed to **62 codes that are actually emitted** (each with a **render path**: status decided by the naming rule, the authentication exception, the response-body site or the error-body writer). The zh/en tables were rewritten against it and CI reconciles them **both ways** (a missing code and a documented-yet-never-emitted code both fail). **No bare code literals remain in `src/main/java`** (~175 emission sites now read `ErrorCode.X.code()`), guarded by a new literal test. ⚠️ External contract change (#403): `TOKEN_USAGE_FORBIDDEN` → `FORBIDDEN_TOKEN_USAGE` — that code is written into the token-usage response body, so clients do see it. Separately, `RESOURCE_FORBIDDEN` → `FORBIDDEN_RESOURCE` is only an internal constant rename inside `AuthorizationException`: that code has no emission site (its factory method is called only by unit tests), so no client can ever receive it. |
+| **Error-code governance (issue #370)** | A new `ErrorCode` registry, completed to **62 codes that are actually emitted** (**63** after the #404 rate-limit split below; each with a **render path**: status decided by the naming rule, the authentication exception, the response-body site or the error-body writer). The zh/en tables were rewritten against it and CI reconciles them **both ways** (a missing code and a documented-yet-never-emitted code both fail). **No bare code literals remain in `src/main/java`** (~175 emission sites now read `ErrorCode.X.code()`), guarded by a new literal test. ⚠️ External contract change (#403): `TOKEN_USAGE_FORBIDDEN` → `FORBIDDEN_TOKEN_USAGE` — that code is written into the token-usage response body, so clients do see it. Separately, `RESOURCE_FORBIDDEN` → `FORBIDDEN_RESOURCE` is only an internal constant rename inside `AuthorizationException`: that code has no emission site (its factory method is called only by unit tests), so no client can ever receive it. |
 | Error-code ledger | The registry surfaced two pre-existing semantic problems: `RATE_LIMIT_EXCEEDED`'s two statuses (429/401, #404) — **resolved by splitting the code after the `v3.3.3` tag** (see below) — and seven codes that existed only as constants plus never-called factories, which **were deleted** (#406) |
 | **Error-code status alignment (issue #405, merged after the `v3.3.3` tag)** | Endpoint status and rule-chain status now agree at both ends under the hybrid scheme: `BUILTIN_READONLY` answers **403** everywhere (the endpoint used to answer 400) and `RESTART_REQUIRED` answers **400** everywhere (the rule chain used to derive 403). The registry descriptions, both error-code tables and the divergence assertion in `ErrorCodeRegistryTest` were updated with it |
 | Repository hygiene | Frontend build artifacts no longer dirty the working tree: normalized `package-lock.json` plus `.gitattributes -text` for the two generated `.d.ts` files (#408 / #409) |
@@ -461,7 +461,7 @@ Contributions are welcome — see the [Contributing Guide](https://jairouter.com
 Before opening a pull request:
 
 ```bash
-./mvnw test -o                       # 388 test classes, ~4000 test methods, must stay green
+./mvnw test -o                       # 400 test classes, ~4000 test methods, must stay green
 cd frontend && npm run type-check    # the frontend type gate
 ```
 
