@@ -46,7 +46,7 @@ http://localhost:8080
 
 ## 认证
 
-**认证默认是开启的**：`jairouter.security.enabled` 默认 `true`（`config/auth/jwt.yml`），因此 `/v1/**` 需要凭据、`/api/**` 走权限校验，只有豁免清单允许匿名访问（`/actuator/health`、`/actuator/info`、`/actuator/prometheus`、登录接口、Swagger 文档、`/admin/**` 与 `/favicon.ico` 静态资源 —— 见 `SecurityConfiguration.java` 与 `AnonymousEndpointPaths.java`）。
+**认证默认是开启的**：`jairouter.security.enabled` 默认 `true`（`config/auth/jwt.yml`），因此 `/v1/**` 需要凭据、`/api/**` 走权限校验，只有豁免清单允许匿名访问（`/actuator/health` 及其子路径、`/actuator/info`、`/actuator/prometheus`、登录接口 `POST /api/auth/jwt/login` 与 `POST /api/auth/jwt/validate`、`/admin/**` 与 `/favicon.ico` 静态资源 —— 见 `SecurityConfiguration.java` 与 `AnonymousEndpointPaths.java`）。Swagger / OpenAPI 文档**不**在豁免清单里，只有 `jairouter.security.docs-public=true` 时才匿名（`ApiDocsAccessPolicy.java`）。
 
 网关自身的凭据有两种：
 
