@@ -1,0 +1,49 @@
+name: 前端单元测试
+
+# issue #392：前端单测（vitest，14 文件 / 45 例）此前**只在开发机跑**：
+# image-smoke-test 只做「构建 + 镜像产物校验」（`mvn -Pfast -DskipTests ... package`），
+# java-tests 的 paths 又不含 frontend/** ⇒ 控制台的逻辑回归没有任何 CI 保障。
+#
+# 本 workflow 只跑单测（不跑 e2e：那需要真实后端 + 浏览器，属第二步评估）。
+# node/npm 版本与 pom.xml 的 frontend-maven-plugin 保持一致（v22.14.0 / 11.2.0），
+# 避免「CI 用一套、镜像构建用另一套」的隐性差异。
+
+on:
+  push:
+    branches: [ master, main ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-tests.yml'
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-tests.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: frontend-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: vitest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js（与 pom 的 frontend-maven-plugin 一致）
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 安装依赖（严格按锁文件）
+        run: npm ci --no-audit --no-fund
+
+      - name: 运行前端单元测试
+        run: npm run test:unit
