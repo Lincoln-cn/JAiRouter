@@ -97,10 +97,10 @@ JAiRouter uses a standardized error code system to identify various error condit
 | `FORBIDDEN` | Forbidden | Generic authorization failure | Check the role and permissions |
 | `FORBIDDEN_TOKEN_USAGE` | Not allowed to view this token's usage | The token does not belong to the caller | Query it with the owning account |
 
-> ⚠️ `INSUFFICIENT_PERMISSIONS` / `ACCESS_DENIED` / `FORBIDDEN_RESOURCE` are declared in `AuthorizationException`
-> but have **no emission site anywhere in the repository** (their factory methods are only called by unit tests)
-> ⇒ they were removed from this table: a client branching on them would never match. Real 403s come from the
-> Spring Security authorization chain and from `FORBIDDEN` above.
+> ⚠️ `INSUFFICIENT_PERMISSIONS` / `ACCESS_DENIED` / `FORBIDDEN_RESOURCE` were formerly declared in `AuthorizationException`
+> but had **no emission site anywhere in the repository** (their factory methods were only called by unit tests)
+> ⇒ they were deleted together with the never-called code (#406) and are not listed here: a client branching on them would
+> never match. Real 403s come from the Spring Security authorization chain and from `FORBIDDEN` above.
 
 ---
 
@@ -204,10 +204,10 @@ JAiRouter uses a standardized error code system to identify various error condit
 | `INVALID_SANITIZATION_RULE` | Invalid sanitization rule | Bad rule configuration | Check the rule configuration |
 | `CONTENT_PROCESSING_FAILED` | Content processing failed | Unsupported content format | Check the content type |
 
-> ⚠️ `RULE_COMPILATION_FAILED` belongs to the same family as the three authorization codes above: it is declared in
-> `SanitizationException` and **has no emission site** (its factory method is only called by unit tests), so it was
-> removed from this table. A rule compilation failure currently surfaces as `SANITIZATION_FAILED` or
-> `INVALID_SANITIZATION_RULE`.
+> ⚠️ `RULE_COMPILATION_FAILED` belongs to the same family as the three authorization codes above: it was formerly declared
+> in `SanitizationException` and **had no emission site** (its factory method was only called by unit tests), so it was
+> deleted together with the never-called code (#406) and is not listed here. A rule compilation failure currently surfaces as
+> `SANITIZATION_FAILED` or `INVALID_SANITIZATION_RULE`.
 > `CONFIGURATION_ERROR` / `DATABASE_ERROR` / `CACHE_ERROR` from the previous version have no match either:
 > configuration, database and cache failures all surface as `INTERNAL_ERROR` (which is also the resolver's fallback
 > for any code that matches none of its rules).

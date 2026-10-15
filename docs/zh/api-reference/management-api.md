@@ -1049,7 +1049,7 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 | `INVALID_REQUEST` | 请求数据无效 | 400 |
 | `INVALID_API_KEY` | 需要认证 | 401 |
 | `FORBIDDEN` | 权限不足 | 403 |
-| `CONFLICT` | 资源冲突 | 409 |
+| `CONFLICT_STATE` | 资源冲突 | 409 |
 | `RATE_LIMIT_EXCEEDED` | 请求过多 | 429 |
 | `INTERNAL_ERROR` | 服务器错误 | 500 |
 

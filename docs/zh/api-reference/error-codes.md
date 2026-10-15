@@ -98,8 +98,8 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 | `FORBIDDEN` | 禁止访问 | 通用授权失败 | 检查角色和权限 |
 | `FORBIDDEN_TOKEN_USAGE` | 无权查看该令牌的用量 | 令牌不属于当前调用者 | 用所属账号查询该令牌 |
 
-> ⚠️ `INSUFFICIENT_PERMISSIONS` / `ACCESS_DENIED` / `FORBIDDEN_RESOURCE` 是 `AuthorizationException`
-> 里**声明了但全仓没有发出点**的码（其工厂方法只被单元测试调用）⇒ 已从本表移除：客户端照它们写分支永远命中不到。
+> ⚠️ `INSUFFICIENT_PERMISSIONS` / `ACCESS_DENIED` / `FORBIDDEN_RESOURCE` 曾在 `AuthorizationException` 里声明，但
+> **全仓没有发出点**（其工厂方法只被单元测试调用）⇒ 已随未接线代码一并删除（#406），本表不列：客户端照它们写分支永远命中不到。
 > 真正的 403 由 Spring Security 的授权链与上表的 `FORBIDDEN` 承担。
 
 ---
@@ -201,9 +201,9 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 | `INVALID_SANITIZATION_RULE` | 无效的脱敏规则 | 规则配置错误 | 检查规则配置 |
 | `CONTENT_PROCESSING_FAILED` | 内容处理失败 | 内容格式不支持 | 检查内容类型 |
 
-> ⚠️ `RULE_COMPILATION_FAILED` 与上节的三个授权码同类：声明在 `SanitizationException` 里、
-> **全仓没有发出点**（工厂方法只被单元测试调用）⇒ 已从本表移除。规则编译失败今天表现为 `SANITIZATION_FAILED` 或
-> `INVALID_SANITIZATION_RULE`。
+> ⚠️ `RULE_COMPILATION_FAILED` 与上节的三个授权码同类：曾在 `SanitizationException` 里声明、
+> **全仓没有发出点**（工厂方法只被单元测试调用）⇒ 已随未接线代码一并删除（#406），本表不列。规则编译失败今天表现为
+> `SANITIZATION_FAILED` 或 `INVALID_SANITIZATION_RULE`。
 > 上一版列过的 `CONFIGURATION_ERROR` / `DATABASE_ERROR` / `CACHE_ERROR` 同样全库无匹配：配置、数据库、
 > 缓存故障都表现为 `INTERNAL_ERROR`（也是解析器对任何不匹配规则的码的兜底值）。
 

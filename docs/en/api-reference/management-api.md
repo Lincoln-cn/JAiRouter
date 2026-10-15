@@ -1024,10 +1024,10 @@ All API endpoints follow a consistent error response format:
 | Code | Description |
 |------|-------------|
 | `NOT_FOUND` | Resource not found |
-| `VALIDATION_ERROR` | Invalid request data |
-| `UNAUTHORIZED` | Authentication required |
+| `INVALID_REQUEST` | Invalid request data |
+| `INVALID_API_KEY` | Authentication required |
 | `FORBIDDEN` | Permission denied |
-| `CONFLICT` | Resource conflict |
+| `CONFLICT_STATE` | Resource conflict |
 | `INTERNAL_ERROR` | Server error |
 
 **Authentication-related error codes**:
