@@ -21,10 +21,61 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 ## Version History
 
+### [3.3.3] - 2026-10-15 - Patch Release (error-code registry wired through code and docs, frontend artifact hygiene; ships the `v3.3.2` content too)
+
+> ⚠️ **External contract change**: two response-body `errorCode` literals were renamed (#403) —
+> `TOKEN_USAGE_FORBIDDEN` → **`FORBIDDEN_TOKEN_USAGE`** and `RESOURCE_FORBIDDEN` → **`FORBIDDEN_RESOURCE`**;
+> the category always lives in the **prefix** position (the only historical suffix exception is `*_NOT_FOUND`),
+> so clients that hard-coded the old names must be updated.
+> Apart from those two names this release **changes no status code and no error-code set**: stage 3's migration was
+> re-verified — "codes resolved at emission sites = the registry's 62 codes, one by one".
+>
+> **Tagged `v3.3.3`**; per the standing release policy no GitHub Release or Docker image is produced yet.
+> This entry covers everything merged after `v3.3.1` — `v3.3.2` was tagged but **never released on its own**, and is
+> superseded by this version (its content is the next entry).
+
+#### Error-code governance: the registry is now the single source of truth (issue #370, plan A)
+
+- **Stage 1 (#402)**: added the `common/constants/ErrorCode` registry and made `ApiException.resolveStatus` consult it
+  first, with the original rule chain extracted verbatim as `legacyResolveStatus` (**zero behavior change**, pinned by
+  invariant tests).
+- **Stage 2 (#407)**: the registry was completed to **62 codes that are actually emitted**, each carrying
+  "code + client-visible status + **render path** + description"; `resolveStatus` now consults the registry **only for
+  rule-chain (`API_EXCEPTION`) codes** (the authentication, sanitization, response-body and error-body paths keep their
+  own status source, so behavior is unchanged). The zh/en error-code tables were rewritten against the registry
+  (0 differences both ways: 33 missing codes added, 7 "constant + never-called factory only" codes removed,
+  `DOWNSTREAM_SERVICE_ERROR` registered), and `scripts/docs/check-error-codes.py` now takes the registry as its
+  authority and **fails in both directions** (a registry code missing from the docs, or a documented code that can never
+  be emitted); its 11 self-tests include three counter-proofs.
+- **Stage 3 (#410)**: **no bare code literals remain in `src/main/java`** — roughly 175 emission sites now read
+  `ErrorCode.X.code()` (exception-class constants derive from the registry, the duplicated constant in
+  `SecurityExceptionHandler` is gone, the admin rate limiter's hand-written JSON body and the authentication filter's
+  variable-carried codes are migrated too). A new `ErrorCodeLiteralGuardTest` fails if a registry code ever appears as a
+  bare literal again (the exemption list must match **exactly**, each entry carrying its reason).
+- Three pre-existing semantic problems the registry surfaced on the spot are recorded as their own ledger entries
+  (this release only registers them, it **changes no behavior**): `RATE_LIMIT_EXCEEDED` has two statuses on two real
+  paths (429 from the admin limiter, 401 on the API Key validation chain — #404); `BUILTIN_READONLY` /
+  `RESTART_REQUIRED` are returned with 400 by their endpoints while name resolution derives 403 (#405); seven codes
+  exist only as constants and never-called factories with no emission site anywhere (#406).
+- Also fixed in the error-code reference: the zh table that a blockquote had **truncated**, and the invented
+  "`5xx`/`502`/`503`/`504` patterns" replaced by the real `DOWNSTREAM_SERVICE_ERROR`.
+
+#### Repository hygiene
+
+- **Frontend build artifacts no longer dirty the working tree (#408 / #409)**: committed the npm-11.2.0-normalized
+  `frontend/package-lock.json` and added `.gitattributes -text` for `auto-imports.d.ts` / `components.d.ts`
+  (disabling line-ending conversion) ⇒ after a frontend-including build (`npm install` + `vue-tsc && vite build`),
+  `git status` stays empty.
+
+#### Shipped together: the `v3.3.2` content (tagged, never released on its own)
+
+> See the next entry — the `/v1` empty-stream fix, the alert/audit close-out, config-honesty pass 3, dead-code and
+> shape clean-up, CI and documentation gates, and the dependency fix (Vue 3.5.21 → 3.5.44), 40 items in total.
+
 ### [3.3.2] - 2026-10-14 - Patch Release (Empty `/v1` stream fixed, alert/audit close-out, config honesty pass 3, docs and gates)
 
 > This entry covers the **40 changes** merged after `v3.3.1` (the 2026-10-10 → 10-11 slice), i.e. 2026-10-12 → 2026-10-14.
-> **Tagged `v3.3.2`, not released yet** (the GitHub Release and Docker image are produced when we publish).
+> **Tagged `v3.3.2` but never released on its own**; its content ships with `v3.3.3` (see the entry above).
 
 #### `/v1` streaming empty body fixed (the most important availability fix here)
 

@@ -43,7 +43,7 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # the local/git directory name differs from the product name
 artifact:        model-router            # Maven artifactId
-project_version: 3.3.2                   # pom.xml
+project_version: 3.3.3                   # pom.xml
 latest_release:  v3.3.1 (2026-10-14)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5 (WebFlux / reactive)
@@ -60,7 +60,7 @@ surfaces:
   - /actuator/**  # health, readiness, Prometheus
 tests:
   command: ./mvnw test -o
-  scale:   ~4000 test methods across 388 test classes
+  scale:   ~4035 test methods across 384 test classes
 license: Apache-2.0
 ```
 
@@ -372,10 +372,13 @@ loop, outbound resolved addresses pinned to the connection (DNS rebinding), toke
 ownership-scoped, and `SecurityAlertService` actually wired up (it had no caller before, so none of its four
 security alerts ever fired).
 
-**Merged after v3.3.1, tagged `v3.3.2`, not released yet** (40 commits; 2026-10-12 → 2026-10-14) — grouped by theme:
+**Merged after v3.3.1, tagged `v3.3.2` and `v3.3.3`, not released yet** (2026-10-12 → 2026-10-15) — grouped by theme:
 
 | Theme | What changed |
 |-------|--------------|
+| **Error-code governance (issue #370)** | A new `ErrorCode` registry, completed to **62 codes that are actually emitted** (each with a **render path**: status decided by the naming rule, the authentication exception, the response-body site or the error-body writer). The zh/en tables were rewritten against it and CI reconciles them **both ways** (a missing code and a documented-yet-never-emitted code both fail). **No bare code literals remain in `src/main/java`** (~175 emission sites now read `ErrorCode.X.code()`), guarded by a new literal test. ⚠️ External contract change: `TOKEN_USAGE_FORBIDDEN` → `FORBIDDEN_TOKEN_USAGE`, `RESOURCE_FORBIDDEN` → `FORBIDDEN_RESOURCE` (#403) |
+| Error-code ledger | Three pre-existing semantic problems the registry surfaced are recorded without changing behavior: `RATE_LIMIT_EXCEEDED` has two statuses (429/401, #404); `BUILTIN_READONLY` / `RESTART_REQUIRED` return 400 while name resolution derives 403 (#405); seven codes exist only as constants and never-called factories (#406) |
+| Repository hygiene | Frontend build artifacts no longer dirty the working tree: normalized `package-lock.json` plus `.gitattributes -text` for the two generated `.d.ts` files (#408 / #409) |
 | **Streaming (`/v1`)** | **Fixed: `/v1` streaming answered `200` with a zero-byte body** — the `/v1` branch used `exchangeToMono` and handed the response body back out of the exchange scope, so WebClient released it before the framework subscribed. Error frames are now emitted only **after** the first chunk, so a pre-commit failure still ends with the downstream's real status code (429 stays 429). Regression-pinned by the end-to-end fixture, which now drives **both** faces |
 | Streaming baseline | `/v1` error frames plus state fidelity on pre-commit failure; legacy `/api/**` semantics deliberately unchanged; client-visible baseline pinned by probe classes |
 | Alerting & audit | Cross-replica exclusive alert cooldown; event types are always enum names and `parseEventType` no longer silently falls back to `SYSTEM_MAINTENANCE` (enum 17 → 26); dead alert-threshold/outlet config removed |
@@ -384,8 +387,8 @@ security alerts ever fired).
 | Docs & gates | README rewritten as a facts-first document; error-code table rebuilt from code; `dynamic-config` and quick-start instance examples rewritten against real endpoints and executed; markdown fence-parity checker added (6 files / 10 sites fixed); contribution guide gained "read the CI gates correctly" and a release-cadence rule |
 | Tooling | Local substitute gates for the month CI minutes ran out; image smoke test polls container health instead of racing it; the docs-version self-test stopped asserting a copy of the script's wording, and its workflow now runs when `scripts/docs/**` changes |
 
-Release tags: `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`.
-`v3.3.2` is tagged but **not released** yet.
+Release tags: `v3.3.3` · `v3.3.2` · `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`.
+`v3.3.2` and `v3.3.3` are tagged but **not released** yet (`v3.3.2`'s content ships with `v3.3.3`).
 
 ### Open ledger
 
