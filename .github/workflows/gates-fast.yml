@@ -1,0 +1,160 @@
+name: 快闸
+
+# 快闸（gates-fast）= 「秒级、纯标准库、不联网、不依赖 mkdocs」的那几条文档门闩。
+#
+# 为什么需要它（issue #404 实测 / #419 记录缺口）：
+#   `docs-quality.yml` 的 on.pull_request.paths 只含 docs/** · mkdocs.yml · *.md · .cspell.json
+#   ⇒ **只改 java 的 PR 完全看不到文档门闩**，「注册表加了错误码 / 加了端点 / 加了配置模块，
+#      而文档没跟上」这类问题会静默到下次有人动 docs 时才爆红（#404 就是这么发生的）。
+#   本 workflow 把其中**不依赖 mkdocs 与网络**的四条对账门闩单独提出来，让它们在
+#   java / 文档 / 脚本任一侧改动时都跑一遍。
+#
+# 与 docs-quality.yml 的分工：
+#   本 workflow  —— 错误码对账 / 配置清单对账 / API 端点对账 / 围栏配平（秒级，无外部依赖）
+#   docs-quality —— mkdocs build --strict / markdownlint / 外链检查 / 链接脚本自测（重，需要插件与网络）
+#   ⇒ 两条 workflow 的检查项**不重复**，本文件刻意不跑 mkdocs 与外链检查。
+#
+# 本地对应物：scripts/test/local-gates.ps1 的「快闸（gates-fast.yml）」一节，两者逐条对齐。
+
+on:
+  pull_request:
+    paths:
+      # 门闩的**对账对象**：错误码注册表、控制器映射、配置树都在 src/main/java 与 pom 附近。
+      # 只改 java 的 PR 之所以必须触发，正是本 workflow 存在的理由（见上）。
+      - 'src/main/java/**'
+      # 文档侧：四条的检查面都在 docs/ 下（表格、清单、围栏）。
+      - 'docs/**'
+      - 'mkdocs.yml'
+      # 检查器自身：改脚本必须能验证脚本（与 docs-quality.yml 补 scripts/docs/** 是同一口径）。
+      - 'scripts/docs/**'
+      # 端点/错误码对账会解析 pom（模块与源码根），改它可能改变重建结果。
+      - 'pom.xml'
+      # 与 docs-quality.yml 保持同一份路径面（此处在改动拼写配置时也会跑一遍快闸，代价是秒级）。
+      - '.cspell.json'
+      # ⚠️ 必须包含本文件自身：否则「本 workflow 的改动」不会触发它自己，
+      #    新建/调整快闸的那个 PR 里就看不到这一行，也就无法验证它真的能跑。
+      - '.github/workflows/gates-fast.yml'
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'src/main/java/**'
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'scripts/docs/**'
+      - 'pom.xml'
+      - '.cspell.json'
+      - '.github/workflows/gates-fast.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  fast-gates:
+    runs-on: ubuntu-latest
+    # job 的 name 就是 `gh pr checks` 里显示的那一行 —— 保持与 workflow 同名，便于对齐判据。
+    name: 快闸
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      with:
+        # 围栏配平脚本用 git 过滤被 .gitignore 的文件，需要 git 元数据。
+        fetch-depth: 0
+
+    - name: 设置 Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    # ⚠️ 刻意**不装任何 pip 依赖**：这四组脚本与其自测只用标准库
+    #    （argparse/re/subprocess/pathlib），装了反而会把「快闸」拖成慢闸。
+    #    若将来某个快闸脚本引入了第三方依赖，请把它加到 requirements 并在此显式安装。
+
+    - name: 自测错误码对账脚本
+      run: |
+        test_file=scripts/docs/test_check_error_codes.py
+        if [ -f "$test_file" ]; then
+          echo "🧪 运行错误码对账脚本自测（表格码 / 引用块排除 / 注册表解析 / 双向反证）..."
+          python "$test_file"
+        else
+          echo "⏭️ 跳过：$test_file 不存在"
+        fi
+
+    - name: 检查文档错误码与注册表双向对账
+      run: |
+        script=scripts/docs/check-error-codes.py
+        if [ -f "$script" ]; then
+          echo "🔍 对账 docs/**/api-reference/error-codes.md 与 common/constants/ErrorCode.java（双向）..."
+          python "$script" --project-root . --fail-on-error
+        else
+          echo "⏭️ 跳过：$script 不存在"
+        fi
+
+    - name: 自测配置清单对账脚本
+      run: |
+        test_file=scripts/docs/test_check_config_imports.py
+        if [ -f "$test_file" ]; then
+          echo "🧪 运行配置清单对账脚本自测（导入清单 / 框线树解析 / 外部路径排除 / 双向对账）..."
+          python "$test_file"
+        else
+          echo "⏭️ 跳过：$test_file 不存在"
+        fi
+
+    - name: 检查文档配置清单与真实配置对账
+      run: |
+        script=scripts/docs/check-config-imports.py
+        if [ -f "$script" ]; then
+          echo "🔍 对账 modular-config 的导入清单、application-config 的模块清单与真实配置树..."
+          python "$script" --project-root . --fail-on-error
+        else
+          echo "⏭️ 跳过：$script 不存在"
+        fi
+
+    - name: 自测 API 端点对账脚本
+      run: |
+        test_file=scripts/docs/test_check_api_endpoints.py
+        if [ -f "$test_file" ]; then
+          echo "🧪 运行 API 端点对账脚本自测（映射重建 / 变量归一 / 已移除说明排除 / 反向对照）..."
+          python "$test_file"
+        else
+          echo "⏭️ 跳过：$test_file 不存在"
+        fi
+
+    - name: 检查文档端点与控制器映射对账
+      run: |
+        script=scripts/docs/check-api-endpoints.py
+        if [ -f "$script" ]; then
+          echo "🔍 对账 docs/**/api-reference 的端点路径与 *Controller.java 的映射..."
+          python "$script" --project-root . --fail-on-error
+        else
+          echo "⏭️ 跳过：$script 不存在"
+        fi
+
+    - name: 检查 markdown 围栏配平
+      run: |
+        script=scripts/docs/check-fence-parity.py
+        if [ -f "$script" ]; then
+          # 带 --fail-on-error：不带它时该脚本恒返回 0，门闩就等于没有（见脚本 docstring 的退出码说明）。
+          echo "🔍 检查 docs/ 下 markdown 围栏是否配平（奇数分隔符 / 两个反引号的开栏与闭栏）..."
+          python "$script" --dir docs --fail-on-error
+        else
+          echo "⏭️ 跳过：$script 不存在"
+        fi
+
+    - name: 可选快闸门闩（为将来新增的脚本留位）
+      run: |
+        # 说明：本步骤是**占位**，为后续新增的快闸脚本预留接线位置。
+        # 现在 scripts/docs/check-capability-claims.py 尚不存在 ⇒ 这里只打印跳过信息、不报错。
+        # 将来脚本落地后，把它加进下面的列表即可自动生效（无需再改 workflow 结构）。
+        for entry in \
+          "scripts/docs/check-capability-claims.py:--fail-on-error" \
+          ; do
+          script="${entry%%:*}"
+          args="${entry#*:}"
+          if [ -f "$script" ]; then
+            echo "🔍 运行可选快闸 $script $args"
+            python "$script" $args
+          else
+            echo "⏭️ 跳过（脚本尚未落地）：$script"
+          fi
+        done
