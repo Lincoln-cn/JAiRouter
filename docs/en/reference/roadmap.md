@@ -33,10 +33,19 @@ see the [changelog](changelog.md#333---2026-10-15)
 | Area | Delivered |
 |------|-----------|
 | **Error-code governance (issue #370, plan A)** | The registry now holds **62 codes that are actually emitted** (code + client-visible status + **render path** + description, stage 2 #407); `resolveStatus` consults the registry **only for rule-chain codes** (every other path keeps zero behavior change); the zh/en error-code tables were rewritten against the registry (0 differences both ways); the docs gate now takes the registry as its authority and **fails in both directions** (#407); **no bare code literals remain in `src/main/java`** (~175 emission sites now read `ErrorCode.X.code()`, stage 3 #410), guarded by a new literal test. ⚠️ External contract change: `TOKEN_USAGE_FORBIDDEN` → `FORBIDDEN_TOKEN_USAGE` (that code is written into the token-usage response body, so clients do see it); separately, `RESOURCE_FORBIDDEN` → `FORBIDDEN_RESOURCE` is only an internal constant rename inside `AuthorizationException` and has no emission site (clients never see it) (#403 / #406) |
-| Error-code ledger (recorded only, no behavior change) | `RATE_LIMIT_EXCEEDED` has two statuses, 429/401 (#404); seven codes that existed only as constants plus never-called factories **were deleted** (#406); 30 failure responses used to carry no `errorCode` at all (single-argument `RouterResponse.error`), now tracked as #413 |
+| Error-code ledger | `RATE_LIMIT_EXCEEDED` has two statuses, 429/401 (#404 — **resolved by splitting the code after the `v3.3.3` tag**, see below); seven codes that existed only as constants plus never-called factories **were deleted** (#406); 30 failure responses used to carry no `errorCode` at all (single-argument `RouterResponse.error`), now tracked as #413 |
 | Repository hygiene | Frontend build artifacts no longer dirty the working tree: normalized `package-lock.json` + `.gitattributes` `-text` for the two generated `.d.ts` files (#408 / #409) |
 | Inherited from `v3.3.2` (shipped together) | `/v1` empty-stream fix (#356) · alert/audit close-out (#306/#309/#313/#394/#397/#400) · config-honesty pass 3 (#319/#322/#323/#329/#331) · dead code and shapes (#311/#316/#328/#332/#333/#369/#372/#373) · CI and documentation gates (#367/#371/#385/#388/#398/#399 plus the #250 review batches) · dependency security (Vue 3.5.44, #391) |
-| **Error-code status alignment (issue #405, merged after the `v3.3.3` tag, not released yet)** | Endpoint status and rule-chain status agree at both ends under the **hybrid scheme**: `BUILTIN_READONLY` answers **403** everywhere (the endpoint used to answer 400) and `RESTART_REQUIRED` answers **400** everywhere (`ApiException.legacyResolveStatus` used to derive 403); the registry descriptions and both error-code tables were updated with it |
+
+### 🚧 After `v3.3.3` (on master, unreleased, 2026-10-15 →)
+
+**Status**: merged to master, **no tag, not released**
+**Scope**: the changes merged after the `v3.3.3` slice (10-15)
+
+| Area | Delivered |
+|------|-----------|
+| **Rate-limit error-code semantics (#404, decided as "429 plus a new code")** | The two real paths became two codes, both aligned to 429: the admin rate limiter keeps `RATE_LIMIT_EXCEEDED` (flat 429 body `{"code":...}`), while the API Key validation chain uses the new `RATE_LIMITED_API_KEY` (`FullValidationResult` now carries the registry status into the `AuthenticationException`); the authentication filter no longer hardcodes 401 but passes through the status the exception carries, and the `type` in the `/v1/**` and legacy shapes is always derived from the status (429 ⇒ `rate_limit_error`). Registry 62 → 63 codes; clients no longer have to treat 401 as a rate limit |
+| **Error-code status alignment (issue #405, hybrid scheme)** | Endpoint status and rule-chain status now agree at both ends: `BUILTIN_READONLY` answers **403** everywhere (the endpoint used to answer 400) and `RESTART_REQUIRED` answers **400** everywhere (`ApiException.legacyResolveStatus` used to derive 403); the registry descriptions, both error-code tables and the `ErrorCodeRegistryTest` "divergence set" assertion were updated with it |
 
 ### 🏷️ v3.3.2 (Patch: empty `/v1` stream fixed + alert/audit close-out + config honesty pass 3 + docs and gates, **tagged, never released on its own** 2026-10-14)
 

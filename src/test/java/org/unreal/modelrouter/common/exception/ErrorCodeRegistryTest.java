@@ -3,6 +3,7 @@ package org.unreal.modelrouter.common.exception;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.unreal.modelrouter.auth.security.service.ApiKeyValidator.FullValidationResult;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.constants.ErrorCode.RenderPath;
 
@@ -15,8 +16,8 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -28,6 +29,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * （{@link RenderPath#AUTHENTICATION} / {@link RenderPath#SANITIZATION} / {@link RenderPath#RESPONSE_BODY}
  * / {@link RenderPath#ERROR_BODY}）则由各自的发出面钉住，且**不得**被 {@code resolveStatus} 查表
  * （否则会悄悄改掉那些码经 {@code ApiException} 发出时的对外状态）。</p>
+ *
+ * <p>issue #404（2026-10-15 裁决「429 + 拆新码」）：限流不再「同码两状态」——
+ * 管理面限流器的 {@code RATE_LIMIT_EXCEEDED} 归 {@link RenderPath#ERROR_BODY} + 429，
+ * API Key 校验链改用 {@code RATE_LIMITED_API_KEY}（{@link RenderPath#AUTHENTICATION} + 429）。
+ * 因此本类的两条断言被改写：{@code registry_isWellFormed} 不再断言「ERROR_BODY ⇒ 状态为 null」，
+ * {@code authenticationCodes_matchTheStatusCarriedByTheException} 改为「2 参构造器对 401 码成立、
+ * 非 401 码由校验链显式携带并明列」。</p>
  */
 @DisplayName("ErrorCode 注册表不变量（issue #370）")
 class ErrorCodeRegistryTest {
@@ -48,9 +56,8 @@ class ErrorCodeRegistryTest {
             assertTrue(seen.add(code.code()), "重复登记: " + code.code());
             assertNotNull(code.renderPath(), "渲染路径不得为空: " + code.code());
             assertFalse(code.description().isBlank(), "说明不得为空: " + code.code());
-            if (code.renderPath() == RenderPath.ERROR_BODY) {
-                assertNull(code.status(), "状态随上下文的码不得登记固定状态: " + code.code());
-            } else {
+            if (code.renderPath() != RenderPath.ERROR_BODY) {
+                // 只有「错误体直写」路径允许状态随上下文（见 statusIsNull_onlyForDownstreamServiceError）
                 assertNotNull(code.status(), "状态不得为空: " + code.code());
             }
         }
@@ -60,6 +67,11 @@ class ErrorCodeRegistryTest {
                 RenderPath.SANITIZATION, RenderPath.RESPONSE_BODY, RenderPath.ERROR_BODY}) {
             assertFalse(codesWithPath(path).isEmpty(), "该渲染路径没有任何登记项（断言会空转）: " + path);
         }
+        // 注：原先此处还有一条「ERROR_BODY ⇒ status() == null」的分支式断言。#404 拆码把
+        // RATE_LIMIT_EXCEEDED 登记成 ERROR_BODY + 429 后该断言不再成立，也不该成立：
+        // 「状态不由规则链决定」不等于「状态为空」。这条不变量的**准确形态**由下面两个用例承担 ——
+        // statusIsNull_onlyForDownstreamServiceError（为 null 的码恰好一个）与
+        // apiExceptionCodes_resolveToRegisteredStatus（规则链码的登记状态 = 推导值）。
     }
 
     @Test
@@ -77,14 +89,29 @@ class ErrorCodeRegistryTest {
     }
 
     @Test
-    @DisplayName("认证路径：登记状态 = AuthenticationException 携带的状态")
+    @DisplayName("认证路径：2 参构造器恒 401；登记状态 ≠ 401 的认证码必须由校验链显式携带（明列清单）")
     void authenticationCodes_matchTheStatusCarriedByTheException() {
         Set<String> checked = codesWithPath(RenderPath.AUTHENTICATION);
+        Set<String> nonDefault = new TreeSet<>();
         for (String code : checked) {
-            HttpStatus carried = new AuthenticationException("测试消息", code).getHttpStatus();
-            assertEquals(carried, ErrorCode.of(code).orElseThrow().status(),
-                    "认证码的登记状态必须等于 AuthenticationException 实际携带的状态: " + code);
+            HttpStatus registered = ErrorCode.of(code).orElseThrow().status();
+            if (registered == HttpStatus.UNAUTHORIZED) {
+                // 绝大多数认证码：登记 401 且 2 参构造器也是 401 ⇒ 两条链一致（零行为变化）
+                assertEquals(HttpStatus.UNAUTHORIZED,
+                        new AuthenticationException("测试消息", code).getHttpStatus(),
+                        "登记 401 的认证码必须与 2 参构造器携带的状态一致: " + code);
+            } else {
+                // #404 起认证链上出现了非 401 的码：它不再走 2 参构造器，而由校验链
+                // FullValidationResult.toException() 显式携带注册表状态 ⇒ 用真实发出点断言。
+                nonDefault.add(code);
+                assertEquals(registered,
+                        FullValidationResult.validationError("key-001", "测试消息", code)
+                                .toException().getHttpStatus(),
+                        "登记状态 ≠ 401 的认证码必须由校验链显式携带该状态: " + code);
+            }
         }
+        assertEquals(Set.of("RATE_LIMITED_API_KEY"), nonDefault,
+                "凡登记状态 ≠ 401 的认证码都必须在此清单里明列（新增或消除都要改这张清单）");
         assertTrue(checked.contains("JWT_EXPIRED"), "反空转：" + checked);
     }
 
@@ -125,15 +152,18 @@ class ErrorCodeRegistryTest {
     }
 
     @Test
-    @DisplayName("状态随上下文的码：只有明列的那些，且不被 resolveStatus 查表")
-    void statusIsNull_onlyForContextDependentCodes() {
+    @DisplayName("状态为 null 的码：只有 DOWNSTREAM_SERVICE_ERROR（错误体直写路径不再等于「状态为空」）")
+    void statusIsNull_onlyForDownstreamServiceError() {
         Set<String> dynamic = new TreeSet<>(java.util.Arrays.stream(ErrorCode.values())
                 .filter(c -> c.status() == null)
                 .map(ErrorCode::code)
                 .collect(Collectors.toSet()));
-        // DOWNSTREAM_SERVICE_ERROR 由 SecurityExceptionHandler 直写错误体，状态原样取下游返回的状态
+        // DOWNSTREAM_SERVICE_ERROR 由 SecurityExceptionHandler 直写错误体，状态原样取下游返回的状态；
+        // 同为 ERROR_BODY 路径的 RATE_LIMIT_EXCEEDED 由管理面限流器固定写 429 ⇒ 它**有**登记状态。
         assertEquals(Set.of("DOWNSTREAM_SERVICE_ERROR"), dynamic);
         assertEquals(RenderPath.ERROR_BODY, ErrorCode.DOWNSTREAM_SERVICE_ERROR.renderPath());
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, ErrorCode.RATE_LIMIT_EXCEEDED.status());
+        assertEquals(RenderPath.ERROR_BODY, ErrorCode.RATE_LIMIT_EXCEEDED.renderPath());
     }
 
     @Test
@@ -148,6 +178,10 @@ class ErrorCodeRegistryTest {
         // 认证路径：异常携带 401，规则链推导值是 400（INVALID_ 前缀）/ 500 ⇒ 同样不查表
         assertEquals(HttpStatus.BAD_REQUEST, ApiException.resolveStatus("INVALID_API_KEY"));
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ApiException.resolveStatus("RATE_LIMIT_EXCEEDED"));
+        // #404 新增的认证码：规则链推导值（RATE_LIMITED_ 前缀 ⇒ 429）恰好与登记值自洽，
+        // 但它**依然不查表** —— 429 是校验链显式携带的，不是规则链给的。
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, ApiException.resolveStatus("RATE_LIMITED_API_KEY"));
+        assertFalse(ErrorCode.isResolvedByRuleChain("RATE_LIMITED_API_KEY"));
         // 仅规则链路径的码才查表
         assertTrue(ErrorCode.isResolvedByRuleChain("NOT_FOUND"));
         assertFalse(ErrorCode.isResolvedByRuleChain("INVALID_API_KEY"));
@@ -156,16 +190,26 @@ class ErrorCodeRegistryTest {
     }
 
     @Test
-    @DisplayName("路径相关码：同名码在两条真实路径上状态不同，这里把两处都钉住")
-    void knownPathDependentCodes_areExplicit() {
-        // RATE_LIMIT_EXCEEDED：
-        //   ① API Key 校验链（ApiKeyValidator:145 → FullValidationResult.toException()）→ 401（本表登记值）
-        //   ② 管理面限流器（AdminApiRateLimiter:113-114 直写 {"code":"RATE_LIMIT_EXCEEDED"}）→ 429
-        // 两条路径都真实可达 ⇒ 登记值取异常路径的 401，另一条 429 以 issue #404 跟踪（客户端无法只按状态分支）。
-        assertEquals(HttpStatus.UNAUTHORIZED, ErrorCode.RATE_LIMIT_EXCEEDED.status());
-        assertEquals(HttpStatus.UNAUTHORIZED,
-                new AuthenticationException("测试消息", ErrorCode.RATE_LIMIT_EXCEEDED.code()).getHttpStatus());
-        assertEquals(RenderPath.AUTHENTICATION, ErrorCode.RATE_LIMIT_EXCEEDED.renderPath());
+    @DisplayName("限流两码分立（issue #404 已裁决拆码）：渲染路径与状态逐个钉住，校验链不再产出 401 限流")
+    void rateLimitCodes_areSplitByRenderPath() {
+        // ① 管理面限流器（AdminApiRateLimiter:113-119 直写 {"code":"RATE_LIMIT_EXCEEDED","message":...}）→ 429 扁平体
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, ErrorCode.RATE_LIMIT_EXCEEDED.status());
+        assertEquals(RenderPath.ERROR_BODY, ErrorCode.RATE_LIMIT_EXCEEDED.renderPath());
+        // ② API Key 校验链（ApiKeyValidator.validateRateLimit → FullValidationResult.toException()）→ 429，但码不同
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, ErrorCode.RATE_LIMITED_API_KEY.status());
+        assertEquals(RenderPath.AUTHENTICATION, ErrorCode.RATE_LIMITED_API_KEY.renderPath());
+        AuthenticationException fromChain = FullValidationResult
+                .validationError("key-001", "请求频率超过限制，请稍后再试",
+                        ErrorCode.RATE_LIMITED_API_KEY.code())
+                .toException();
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, fromChain.getHttpStatus(),
+                "校验链的限流异常必须携带 429（拆码前它恒为 401）");
+        assertEquals(ErrorCode.RATE_LIMITED_API_KEY.code(), fromChain.getErrorCode());
+        assertNotEquals(ErrorCode.RATE_LIMIT_EXCEEDED.code(), fromChain.getErrorCode(),
+                "两条路径不得再共用同一个码");
+        // 拆码前「同码两状态」的两个取值今天分属两个码：客户端只按状态码即可写分支
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, ErrorCode.RATE_LIMIT_EXCEEDED.status());
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, ErrorCode.RATE_LIMITED_API_KEY.status());
     }
 
     @Test
@@ -217,6 +261,8 @@ class ErrorCodeRegistryTest {
         assertTrue(counts.get(RenderPath.API_EXCEPTION) >= 20, "规则链路径码数异常: " + counts);
         assertTrue(counts.get(RenderPath.AUTHENTICATION) >= 20, "认证路径码数异常: " + counts);
         assertEquals(3, counts.get(RenderPath.SANITIZATION), "脱敏码应为 3 个（多一个都要走同一套取证）: " + counts);
-        assertEquals(1, counts.get(RenderPath.ERROR_BODY), "状态随上下文的码今天只有 1 个: " + counts);
+        assertEquals(2, counts.get(RenderPath.ERROR_BODY),
+                "错误体直写路径今天有 2 个：DOWNSTREAM_SERVICE_ERROR（随上下文）与 "
+                        + "RATE_LIMIT_EXCEEDED（管理面固定 429，issue #404）: " + counts);
     }
 }

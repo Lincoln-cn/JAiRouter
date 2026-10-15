@@ -1,4 +1,4 @@
-﻿# API 参考
+# API 参考
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.3  
@@ -59,18 +59,18 @@ http://localhost:8080
 
 ## 限流
 
-限流**不是**对所有 API 生效，只有两处：AI 调用链路（`ServiceRequestHandler` 里的服务级限流）与 `/api/auth/api-keys` 前缀（`AdminApiRateLimiter`）。
+限流**不是**对所有 API 生效，主要在这几处：AI 调用链路（`ServiceRequestHandler` 里的服务级限流）、`/api/auth/api-keys` 前缀（`AdminApiRateLimiter`）与 API Key 校验链（`ApiKeyValidator.validateRateLimit`，见 [错误码对照表](error-codes.md#限流错误码-rate-limit)）。
 
-两处的 429 响应体形状不同。
+429 的响应体形状按入口面不同，`code` 取该路径实际发出的码：`/api/auth/api-keys` 的管理面限流是扁平体 `RATE_LIMIT_EXCEEDED`，API Key 校验链是 `RATE_LIMITED_API_KEY`（两者状态都是 429）。
 
-`/v1/**`（OpenAI 面，经 `V1ErrorBodyMapper`）：
+`/v1/**`（OpenAI 面，经 `V1ErrorBodyMapper`；下面以校验链的码为例）：
 
 ```json
 {
   "error": {
     "message": "...",
     "type": "rate_limit_error",
-    "code": "RATE_LIMIT_EXCEEDED"
+    "code": "RATE_LIMITED_API_KEY"
   }
 }
 ```

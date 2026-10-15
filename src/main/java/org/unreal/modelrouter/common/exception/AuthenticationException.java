@@ -17,6 +17,12 @@ public class AuthenticationException extends SecurityException {
     public static final String DAILY_QUOTA_EXCEEDED = ErrorCode.DAILY_QUOTA_EXCEEDED.code();
     public static final String TOKEN_QUOTA_EXCEEDED = ErrorCode.TOKEN_QUOTA_EXCEEDED.code();
     public static final String RATE_LIMIT_EXCEEDED = ErrorCode.RATE_LIMIT_EXCEEDED.code();
+    /**
+     * API Key 校验链超限的码（429）。issue #404 拆码前本链复用的是
+     * {@link #RATE_LIMIT_EXCEEDED}，而那个码今天只属于管理面限流器直写的 429 扁平体
+     * （{@code RenderPath.ERROR_BODY}）⇒ 认证链改用本码，避免「一个码两条路径」。
+     */
+    public static final String RATE_LIMITED_API_KEY = ErrorCode.RATE_LIMITED_API_KEY.code();
     
     public AuthenticationException(final String message, final String errorCode) {
         super(message, errorCode, HttpStatus.UNAUTHORIZED);
@@ -67,9 +73,12 @@ public class AuthenticationException extends SecurityException {
 
     /**
      * 创建速率限制超限异常（HTTP 429）
+     *
+     * <p>携带的是校验链的 {@link #RATE_LIMITED_API_KEY}（issue #404 起）；管理面限流器不走异常，
+     * 它直写 {@code {"code":"RATE_LIMIT_EXCEEDED"}} 扁平体。</p>
      */
     public static AuthenticationException rateLimitExceeded() {
         return new AuthenticationException("请求频率超过限制，请稍后再试",
-                RATE_LIMIT_EXCEEDED, HttpStatus.TOO_MANY_REQUESTS);
+                RATE_LIMITED_API_KEY, HttpStatus.TOO_MANY_REQUESTS);
     }
 }

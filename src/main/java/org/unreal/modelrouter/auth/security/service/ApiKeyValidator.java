@@ -2,9 +2,11 @@ package org.unreal.modelrouter.auth.security.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
 import org.unreal.modelrouter.common.constants.ErrorCode;
+import org.unreal.modelrouter.common.constants.ErrorCode.RenderPath;
 import org.unreal.modelrouter.common.exception.AuthenticationException;
 
 import java.util.Map;
@@ -130,7 +132,11 @@ public class ApiKeyValidator {
     }
 
     /**
-     * 验证请求速率限制
+     * 验证请求速率限制.
+     *
+     * <p>超限时返回的码是 {@link ErrorCode#RATE_LIMITED_API_KEY}（客户端可见 **429**），
+     * **不是**管理面限流器直写扁平体时用的 {@link ErrorCode#RATE_LIMIT_EXCEEDED}：
+     * 两者的客户端可见状态相同（429），但入口面与错误体形状不同，故按 issue #404 的裁定拆成两个码。</p>
      *
      * @param apiKey 要验证的 ApiKey
      * @return 验证结果
@@ -144,7 +150,7 @@ public class ApiKeyValidator {
         }
         if (!rateLimiter.tryAcquire(apiKey.getKeyId(), apiKey.getRateLimitPerMinute())) {
             return ValidationResult.failure("请求频率超过限制，请稍后再试",
-                    ErrorCode.RATE_LIMIT_EXCEEDED.code());
+                    ErrorCode.RATE_LIMITED_API_KEY.code());
         }
         return ValidationResult.success();
     }
@@ -268,37 +274,62 @@ public class ApiKeyValidator {
         private final String errorMessage;
         private final String errorCode;
         private final ValidationFailureType failureType;
+        private final HttpStatus httpStatus;
 
         private FullValidationResult(final boolean success, final ApiKey apiKey,
                                      final String keyId, final String errorMessage,
-                                     final String errorCode, final ValidationFailureType failureType) {
+                                     final String errorCode, final ValidationFailureType failureType,
+                                     final HttpStatus httpStatus) {
             this.success = success;
             this.apiKey = apiKey;
             this.keyId = keyId;
             this.errorMessage = errorMessage;
             this.errorCode = errorCode;
             this.failureType = failureType;
+            this.httpStatus = httpStatus;
         }
 
         public static FullValidationResult success(final ApiKey apiKey) {
-            return new FullValidationResult(true, apiKey, apiKey.getKeyId(), null, null, null);
+            return new FullValidationResult(true, apiKey, apiKey.getKeyId(), null, null, null,
+                    statusFromRegistry(null));
         }
 
         public static FullValidationResult formatError(final String message) {
             return new FullValidationResult(false, null, null, message,
-                    AuthenticationException.INVALID_API_KEY, ValidationFailureType.FORMAT_ERROR);
+                    AuthenticationException.INVALID_API_KEY, ValidationFailureType.FORMAT_ERROR,
+                    statusFromRegistry(AuthenticationException.INVALID_API_KEY));
         }
 
         public static FullValidationResult notFound() {
             return new FullValidationResult(false, null, null, "无效的 API Key",
-                    AuthenticationException.INVALID_API_KEY, ValidationFailureType.NOT_FOUND);
+                    AuthenticationException.INVALID_API_KEY, ValidationFailureType.NOT_FOUND,
+                    statusFromRegistry(AuthenticationException.INVALID_API_KEY));
         }
 
         public static FullValidationResult validationError(final String keyId,
                                                            final String message,
                                                            final String errorCode) {
             return new FullValidationResult(false, null, keyId, message, errorCode,
-                    ValidationFailureType.VALIDATION_ERROR);
+                    ValidationFailureType.VALIDATION_ERROR, statusFromRegistry(errorCode));
+        }
+
+        /**
+         * 从错误码注册表推导该校验失败应携带的 HTTP 状态码.
+         *
+         * <p><b>耦合声明（显式）</b>：状态取自 {@link ErrorCode} 注册表里
+         * {@link RenderPath#AUTHENTICATION} 渲染路径登记的 {@link ErrorCode#status()} ——
+         * 校验链上抛出的异常状态**不在本类另立一张表**（否则「注册表说 429、异常携带 401」会再次分叉）。
+         * 未登记、或不属于认证链渲染路径的码一律回落到 {@link HttpStatus#UNAUTHORIZED}，
+         * 因此除 {@link ErrorCode#RATE_LIMITED_API_KEY} 外，本链上所有码的状态仍是 401（零行为变化）。</p>
+         *
+         * @param errorCode 校验失败的错误码，可为 {@code null}
+         * @return 注册表登记的认证链状态；未登记或非认证链码 → 401
+         */
+        private static HttpStatus statusFromRegistry(final String errorCode) {
+            return ErrorCode.of(errorCode)
+                    .filter(entry -> entry.renderPath() == RenderPath.AUTHENTICATION)
+                    .map(ErrorCode::status)
+                    .orElse(HttpStatus.UNAUTHORIZED);
         }
 
         public boolean isSuccess() {
@@ -325,14 +356,23 @@ public class ApiKeyValidator {
             return failureType;
         }
 
+        /** 该失败结果经 {@link #toException()} 交给客户端的状态码（取自注册表的认证链路径） */
+        public HttpStatus getHttpStatus() {
+            return httpStatus;
+        }
+
         /**
-         * 转换为 AuthenticationException
+         * 转换为 AuthenticationException.
+         *
+         * <p>走 3 参构造器把状态一并带进异常：认证链上唯一非 401 的码是
+         * {@link ErrorCode#RATE_LIMITED_API_KEY}（429），其余码经
+         * {@link #statusFromRegistry(String)} 仍是 401。</p>
          */
         public AuthenticationException toException() {
             if (success) {
                 throw new IllegalStateException("验证成功，无需转换为异常");
             }
-            return new AuthenticationException(errorMessage, errorCode);
+            return new AuthenticationException(errorMessage, errorCode, httpStatus);
         }
     }
 

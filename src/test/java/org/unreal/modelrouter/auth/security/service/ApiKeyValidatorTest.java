@@ -8,10 +8,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.http.HttpStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
 import org.unreal.modelrouter.auth.security.service.ApiKeyValidator.FullValidationResult;
 import org.unreal.modelrouter.auth.security.service.ApiKeyValidator.ValidationFailureType;
 import org.unreal.modelrouter.auth.security.service.ApiKeyValidator.ValidationResult;
+import org.unreal.modelrouter.common.constants.ErrorCode;
+import org.unreal.modelrouter.common.exception.AuthenticationException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -360,6 +364,119 @@ class ApiKeyValidatorTest {
             assertFalse(result.isSuccess());
             assertEquals(ValidationFailureType.VALIDATION_ERROR, result.getFailureType());
             assertEquals("超过每日请求限制", result.getErrorMessage());
+        }
+    }
+
+    @Nested
+    @DisplayName("速率限制验证测试（issue #404：拆码 + 429）")
+    class RateLimitValidationTests {
+
+        /**
+         * 构造一个带分钟限额的 Key 桩.
+         *
+         * <p>限额本身不是被测逻辑 —— 被测的是 {@link TokenBucketRateLimiter} 的**真实**耗尽判定
+         * 与校验链返回的码/状态，故限流器用真实实例经 {@code ReflectionTestUtils} 注入
+         * （字段是 {@code @Autowired(required = false) private}）。</p>
+         */
+        private ApiKey rateLimitedKey(final String keyId, final int limitPerMinute) {
+            ApiKey apiKey = createMockApiKey(keyId, "sk-test", true);
+            when(apiKey.getRateLimitPerMinute()).thenReturn(limitPerMinute);
+            return apiKey;
+        }
+
+        @Test
+        @DisplayName("VAL-032: 真实限流器耗尽配额 ⇒ validateRateLimit 的码是 RATE_LIMITED_API_KEY")
+        void validateRateLimitExceeded_shouldReturnRateLimitedApiKeyCode() {
+            TokenBucketRateLimiter limiter = new TokenBucketRateLimiter();
+            ReflectionTestUtils.setField(validator, "rateLimiter", limiter);
+            ApiKey apiKey = rateLimitedKey("key-rate-1", 2);
+
+            assertTrue(validator.validateRateLimit(apiKey).isSuccess(), "配额内第 1 次应通过");
+            assertTrue(validator.validateRateLimit(apiKey).isSuccess(), "配额内第 2 次应通过");
+
+            ValidationResult exceeded = validator.validateRateLimit(apiKey);
+
+            assertFalse(exceeded.isSuccess(), "第 3 次应被真实限流器拒绝（限额 2/分钟）");
+            assertEquals(ErrorCode.RATE_LIMITED_API_KEY.code(), exceeded.getErrorCode());
+            assertNotEquals(ErrorCode.RATE_LIMIT_EXCEEDED.code(), exceeded.getErrorCode(),
+                    "管理面限流器的码不得再从校验链发出（issue #404 拆码）");
+            assertTrue(exceeded.getMessage().contains("请求频率超过限制"), exceeded.getMessage());
+        }
+
+        @Test
+        @DisplayName("VAL-033: 校验链把 429 带进 AuthenticationException（toException 不再恒 401）")
+        void fullValidationRateLimitExceeded_shouldCarry429IntoTheException() {
+            TokenBucketRateLimiter limiter = new TokenBucketRateLimiter();
+            ReflectionTestUtils.setField(validator, "rateLimiter", limiter);
+
+            ApiKey apiKey = createMockApiKey("key-rate-2", "sk-test-key-123456", true);
+            when(apiKey.verifyKey("sk-test-key-123456")).thenReturn(true);
+            when(apiKey.isExpired()).thenReturn(false);
+            when(apiKey.isIpAllowed("192.168.1.1")).thenReturn(true);
+            when(apiKey.getRateLimitPerMinute()).thenReturn(1);
+            when(apiKey.createSecureCopy()).thenReturn(apiKey);
+            apiKeyCache.put("hash1", apiKey);
+
+            FullValidationResult within = validator.validateFully(
+                    "sk-test-key-123456", apiKeyCache, "192.168.1.1");
+            assertTrue(within.isSuccess(), "配额内第一次应走通完整校验链");
+
+            FullValidationResult exceeded = validator.validateFully(
+                    "sk-test-key-123456", apiKeyCache, "192.168.1.1");
+
+            assertFalse(exceeded.isSuccess());
+            assertEquals(ValidationFailureType.VALIDATION_ERROR, exceeded.getFailureType());
+            assertEquals(ErrorCode.RATE_LIMITED_API_KEY.code(), exceeded.getErrorCode());
+
+            AuthenticationException exception = exceeded.toException();
+            assertEquals(HttpStatus.TOO_MANY_REQUESTS, exception.getHttpStatus(),
+                    "状态必须取自注册表的认证链路径（429），拆码前这里恒为 401");
+            assertEquals(ErrorCode.RATE_LIMITED_API_KEY.code(), exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("VAL-034: 其余认证码经校验链仍携带 401（拆码零行为变化）")
+        void fullValidationOtherAuthCodes_shouldStillCarry401() {
+            ApiKey apiKey = createMockApiKey("key-401", "sk-test-key-123456", true);
+            when(apiKey.verifyKey("sk-test-key-123456")).thenReturn(true);
+            when(apiKey.isExpired()).thenReturn(true);
+            apiKeyCache.put("hash1", apiKey);
+
+            FullValidationResult result = validator.validateFully(
+                    "sk-test-key-123456", apiKeyCache, "192.168.1.1");
+
+            assertFalse(result.isSuccess());
+            assertEquals(ErrorCode.EXPIRED_API_KEY.code(), result.getErrorCode());
+            assertEquals(HttpStatus.UNAUTHORIZED, result.toException().getHttpStatus());
+        }
+
+        @Test
+        @DisplayName("VAL-035: 未注入限流器 / 限额为 0 时校验链放行（既有行为不变）")
+        void rateLimitAbsentOrDisabled_shouldPass() {
+            // ① 字段默认 null（起步阶段的 @Autowired(required = false) 分支）：放行且不消耗任何窗口
+            assertTrue(validator.validateRateLimit(rateLimitedKey("key-nolimiter", 5)).isSuccess(),
+                    "限流器未注入时应放行（既有容错行为）");
+
+            // ② 限额为 0 = 不限制：放行且不消耗窗口
+            TokenBucketRateLimiter limiter = new TokenBucketRateLimiter();
+            ReflectionTestUtils.setField(validator, "rateLimiter", limiter);
+            assertTrue(validator.validateRateLimit(rateLimitedKey("key-zero", 0)).isSuccess());
+            assertEquals(0, limiter.getCurrentCount("key-zero"), "限额为 0 时不得消耗令牌窗口");
+        }
+
+        @Test
+        @DisplayName("VAL-036: 非认证链码 / 未登记码经校验链仍回落到 401（注册表回退分支）")
+        void nonAuthenticationCodes_shouldFallBackTo401() {
+            assertEquals(HttpStatus.UNAUTHORIZED,
+                    FullValidationResult.validationError("key-001", "名称不合法",
+                            ErrorCode.INVALID_NAME.code()).toException().getHttpStatus(),
+                    "响应体路径的码不属于认证链 ⇒ 回落 401");
+            assertEquals(HttpStatus.UNAUTHORIZED,
+                    FullValidationResult.validationError("key-001", "未知码",
+                            "NOT_A_REGISTERED_CODE").toException().getHttpStatus(),
+                    "未登记的码 ⇒ 回落 401");
+            assertEquals(HttpStatus.UNAUTHORIZED, FullValidationResult.notFound().getHttpStatus());
+            assertEquals(HttpStatus.UNAUTHORIZED, FullValidationResult.formatError("格式错误").getHttpStatus());
         }
     }
 

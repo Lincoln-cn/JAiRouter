@@ -1,7 +1,7 @@
 # 错误码对照表
 
 <!-- 版本信息 -->
-> **文档版本**: 1.1.0
+> **文档版本**: 1.2.0
 > **最后更新**: 2026-10-15
 > **适用版本**: v3.3.3+
 > **作者**: AI Assistant
@@ -10,7 +10,7 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 
 > ⚠️ **响应形状按入口面不同**：`/api/**`（控制台面）用下面表格里的 `RouterResponse` 形状（`errorCode` 字段）；`/v1/**`（OpenAI 面）用嵌套的 `{"error":{"message","type","code"}}`（见 [统一 API 接口](universal-api.md)）；`/v1/messages`（Anthropic 面）用 Anthropic 的 `{"type":"error","error":{...}}` 形状。另有两个已知例外不走本表：管理面限流 429 返回 `{"code":"RATE_LIMIT_EXCEEDED","message":...}`（扁平体、没有 `error` 包裹）；异常处理器兜底返回数字码（如 `{"code":"500"}`）。
 >
-> 📌 **本表的权威来源是代码**：本表与 `common/constants/ErrorCode.java`（错误码注册表，**62 个会被真正发出的码**）逐条对账，
+> 📌 **本表的权威来源是代码**：本表与 `common/constants/ErrorCode.java`（错误码注册表，**63 个会被真正发出的码**）逐条对账，
 > 由 `scripts/docs/check-error-codes.py` 在 CI 里**双向校验** —— 文档漏列一个注册表里的码、或文档列了一个发不出来的码，都会判红。
 > 每个码的「状态由哪条链决定」也登记在注册表里（渲染路径），因此**改码名/改状态前先改注册表**。
 
@@ -47,6 +47,7 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 
 > 这一节的码由认证异常承载（注册表里的渲染路径是认证链）：客户端可见状态来自异常携带的 401，
 > **不是**由错误码命名规则推导的 —— 例如 `INVALID_API_KEY` 的规则链推导值是 400，但客户端拿到的是 401。
+> 认证链上唯一不返回 401 的码是 `RATE_LIMITED_API_KEY`（每分钟限速超限，**429**），它按状态归入下面的「限流错误码」一节。
 
 | 错误码 | 描述 | 常见原因 | 解决方案 |
 |--------|------|----------|----------|
@@ -57,7 +58,6 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 | `API_KEY_AUTH_FAILED` | API Key 认证失败 | 校验链抛出未预期异常 | 查服务端日志定位根因 |
 | `DAILY_QUOTA_EXCEEDED` | 超过每日请求配额 | Key 的每日请求数已用尽 | 等次日重置或提升配额 |
 | `TOKEN_QUOTA_EXCEEDED` | 超过每日 Token 配额 | Key 的每日 Token 数已用尽 | 等次日重置或提升配额 |
-| `RATE_LIMIT_EXCEEDED` | 请求频率超过限制 | 超过 Key 的每分钟限速（见「限流错误码」一节的**双状态**说明） | 退避后重试 |
 | `JWT_INVALID` | JWT 令牌校验失败 | 签名不匹配或格式错误 | 重新登录获取新令牌 |
 | `JWT_EXPIRED` | JWT 令牌已过期 | 令牌超过有效期 | 刷新或重新登录 |
 | `EXPIRED_JWT_TOKEN` | JWT 令牌已过期（按 expired 归类） | 校验链报 expired 时由认证管理器归类 | 重新登录 |
@@ -167,16 +167,19 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 
 ## 限流错误码 (Rate Limit)
 
-**HTTP 状态码**: 429 Too Many Requests（管理面）· 401（API Key 校验链）
+**HTTP 状态码**: 429 Too Many Requests（管理面与 API Key 校验链**两条路径**）
 
 | 错误码 | 描述 | 响应头 | 解决方案 |
 |--------|------|--------|----------|
-| `RATE_LIMIT_EXCEEDED` | 超过限流阈值 | `Retry-After` / `X-Quota-*`（管理面）/ 无（校验链） | 等待令牌恢复后重试 |
+| `RATE_LIMIT_EXCEEDED` | 管理面限流超限（`/api/auth/api-keys`） | `Retry-After` / `X-Quota-*` | 等待令牌恢复后重试 |
+| `RATE_LIMITED_API_KEY` | API Key 每分钟限速超限（校验链） | 无 | 退避后重试 |
 
-> ⚠️ **同一个码在两条真实路径上对应两个状态**（issue #404，待裁定）：
+> ✅ **拆码已完成**（issue #404，2026-10-15 裁定「429 + 拆新码」）：限流不再「同码两状态」——
+> 两个入口面各有一个码，且**状态都是 429**：
 > ① 管理面限流器（`AdminApiRateLimiter`）直接写 429 扁平体 `{"code":"RATE_LIMIT_EXCEEDED","message":...}`；
-> ② API Key 校验链（`ApiKeyValidator` → `FullValidationResult.toException()`）把它装进 `AuthenticationException`，
-> 客户端拿到 **401**。按状态码分支的客户端需要同时处理这两种情况。
+> ② API Key 校验链（`ApiKeyValidator.validateRateLimit` → `FullValidationResult.toException()`）携带
+> `RATE_LIMITED_API_KEY`，由认证过滤器渲染为 **429**（`/v1/**` 上的 `type` 按状态映射为 `rate_limit_error`）。
+> ⇒ 客户端**不再需要**把 401 当作限流处理，只按状态码 429 分支即可；若仍按码分支，请把两个码都覆盖。
 >
 > 响应头**没有** `X-RateLimit-Reset` / `X-RateLimit-Remaining`（全仓无此头）；配额超限实际写
 > `Retry-After` 与 `X-Quota-*`（limit / remaining / window）。原表里的 `GLOBAL_RATE_LIMIT` /
@@ -259,6 +262,7 @@ async function handleApiResponse(response) {
         window.location.href = '/login';
         break;
       case 'RATE_LIMIT_EXCEEDED':
+      case 'RATE_LIMITED_API_KEY':
         // 退避后重试（管理面 429 会带 Retry-After）
         await sleep((Number(response.headers.get('Retry-After')) || 1) * 1000);
         return retryRequest();
@@ -308,6 +312,7 @@ log.error("认证失败: errorCode={}, message={}",
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
+| 1.2.0 | 2026-10-15 | 按 issue #404 的裁决**拆码**：新增 `RATE_LIMITED_API_KEY`（API Key 校验链，429），`RATE_LIMIT_EXCEEDED` 改为管理面限流器直写的 429 扁平体（注册表 62 → 63 个码；限流不再同码两状态） |
 | 1.1.0 | 2026-10-15 | 按错误码注册表（`ErrorCode`，62 个会发出的码）重写：补齐 33 个漏列码、删除 7 个发不出的历史码、标注渲染路径与两处「端点实测状态 ≠ 规则链推导值」、登记 `DOWNSTREAM_SERVICE_ERROR` |
 | 1.0.3 | 2026-09-15 | 按代码重写两张表（issue #342/#348）：删 17 个不存在的码，补认证链实际发出的码 |
 | 1.0.1 | 2026-06-29 | 更新版本引用为 v2.7.5+，修正版本号错误 |
