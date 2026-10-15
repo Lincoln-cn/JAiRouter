@@ -37,6 +37,9 @@ import java.util.Map;
  * <p>issue #404：状态码不再硬编码 401 —— 本仓 {@link AuthenticationException} 携带的状态透传
  * （认证链上唯一非 401 的码是 {@code RATE_LIMITED_API_KEY} = 429），错误体里的 {@code type}
  * 按该状态经 {@link V1ErrorBodyMapper#errorTypeOf(int)} 推导。401 时的输出逐字节不变。</p>
+ *
+ * <p>issue #420 ②：状态渲染不变，只把**日志口径**分流 —— 限流拒绝（429）打独立文案且不带栈，
+ * 不再被记成「认证失败」（见 {@link #logAuthenticationFailure}）。</p>
  */
 @Slf4j
 public class SpringSecurityAuthenticationFilter implements WebFilter {
@@ -225,7 +228,7 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
      * </ul>
      */
     private Mono<Void> handleAuthenticationError(final ServerWebExchange exchange, final Throwable throwable) {
-        log.warn("认证失败: {}", exchange.getRequest().getPath().value(), throwable);
+        final String path = exchange.getRequest().getPath().value();
 
         String message = "认证失败";
         String errorCode = ErrorCode.AUTH_FAILED.code();
@@ -246,7 +249,43 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
             errorCode = ErrorCode.AUTH_ERROR.code();
         }
 
+        logAuthenticationFailure(path, status, errorCode, message, throwable);
+
         return createAuthenticationErrorResponse(exchange, message, errorCode, status);
+    }
+
+    /**
+     * 认证失败的日志分流（issue #420 ②）.
+     *
+     * <p><b>为什么分流</b>：限流拒绝（{@code RATE_LIMITED_API_KEY} = 429）此前与真正的认证失败共用
+     * {@code log.warn("认证失败: {}", path, throwable)}（带完整栈）⇒ ① 按该文案做的告警/统计会把**限流**
+     * 计入**认证失败**、② 高频限流会按「每次一条栈」放大日志量。这是**日志口径**问题，响应体与状态码
+     * 一概不受影响（状态的唯一渲染点是 {@link #createAuthenticationErrorResponse}）。</p>
+     *
+     * <p><b>口径</b>：限流的判据 = 状态 {@link HttpStatus#TOO_MANY_REQUESTS} <b>或</b>码为
+     * {@link ErrorCode#RATE_LIMITED_API_KEY}（防「码对但状态在构造时掉了」这类半边异常仍被记成认证失败）；
+     * 命中则用独立文案（点明 429 与码，**不带栈**）且仍是 {@code WARN} —— 限流尖峰对运维是可行动信号
+     * （配额配置错误 / 滥用），降成 INFO/DEBUG 会把它藏起来，去掉栈即消除了放大效应。其余认证失败保持
+     * 原样（同文案、同栈），既有告警口径与日志断言不变。</p>
+     *
+     * <p><b>新文案刻意不含「认证失败」四个字</b>：按旧文案做的告警/统计多是子串匹配，
+     * 写成「非认证失败」仍会被它们命中 —— 那就等于没分流。</p>
+     *
+     * @param path      请求路径
+     * @param status    客户端可见状态码
+     * @param errorCode 错误码
+     * @param message   错误消息（仅限流文案使用）
+     * @param throwable 原始异常（仅非限流路径用于打印栈）
+     */
+    private void logAuthenticationFailure(final String path, final HttpStatus status, final String errorCode,
+                                          final String message, final Throwable throwable) {
+        final boolean rateLimited = status == HttpStatus.TOO_MANY_REQUESTS
+                || ErrorCode.RATE_LIMITED_API_KEY.code().equals(errorCode);
+        if (rateLimited) {
+            log.warn("限流拒绝（429）: {} - {}: {}", path, errorCode, message);
+        } else {
+            log.warn("认证失败: {}", path, throwable);
+        }
     }
 
     /**
