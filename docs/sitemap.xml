@@ -1343,15 +1343,6 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/development/contributing"/>
   </url>
   <url>
-    <loc>https://jairouter.comzh/development/knowledge-base-governance</loc>
-    <lastmod>2026-10-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/development/knowledge-base-governance"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/development/knowledge-base-governance"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/development/knowledge-base-governance"/>
-  </url>
-  <url>
     <loc>https://jairouter.comzh/development/testing</loc>
     <lastmod>2026-10-15</lastmod>
     <changefreq>weekly</changefreq>
@@ -1368,15 +1359,6 @@
     <xhtml:link rel="canonical" href="https://jairouter.comzh/development/code-quality"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/development/code-quality"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/development/code-quality"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comzh/development/doc-maintenance</loc>
-    <lastmod>2026-10-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comzh/development/doc-maintenance"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/development/doc-maintenance"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/development/doc-maintenance"/>
   </url>
   <url>
     <loc>https://jairouter.comzh/development/architecture</loc>
@@ -1433,15 +1415,6 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/development/contributing"/>
   </url>
   <url>
-    <loc>https://jairouter.comen/development/knowledge-base-governance</loc>
-    <lastmod>2026-10-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/development/knowledge-base-governance"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/development/knowledge-base-governance"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/development/knowledge-base-governance"/>
-  </url>
-  <url>
     <loc>https://jairouter.comen/development/testing</loc>
     <lastmod>2026-10-15</lastmod>
     <changefreq>weekly</changefreq>
@@ -1458,15 +1431,6 @@
     <xhtml:link rel="canonical" href="https://jairouter.comen/development/code-quality"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/development/code-quality"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/development/code-quality"/>
-  </url>
-  <url>
-    <loc>https://jairouter.comen/development/doc-maintenance</loc>
-    <lastmod>2026-10-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-    <xhtml:link rel="canonical" href="https://jairouter.comen/development/doc-maintenance"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/development/doc-maintenance"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/development/doc-maintenance"/>
   </url>
   <url>
     <loc>https://jairouter.comen/development/architecture</loc>
