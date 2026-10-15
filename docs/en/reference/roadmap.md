@@ -309,7 +309,6 @@ The v3.0 microservices architecture transformation has been indefinitely postpon
 - ✅ Leaky Bucket
 - ✅ Sliding Window
 - ✅ Warm Up
-- ✅ Adaptive Rate Limiting
 
 #### Implemented ✅ (cont.)
 - ✅ API-key-level rate limiting (per-key `rateLimitPerMinute` + token bucket; over-limit answers **429** with `RATE_LIMITED_API_KEY`, #404)
@@ -320,6 +319,10 @@ The v3.0 microservices architecture transformation has been indefinitely postpon
 
 > **Audit correction, 2026-10-16**: both "API-key-level" and "distributed" rate limiting were listed as planned but are
 > **already implemented** (see `ApiKeyValidator.validateRateLimit` and `RateLimitManager`'s wiring of `RedisSlidingWindowRateLimiter`).
+>
+> **Audit correction, 2026-10-16 (second pass)**: "Adaptive Rate Limiting" was listed as implemented, but there is
+> **no such implementation** anywhere in the repository (no such algorithm under `router/ratelimit/**`, and the other
+> documentation pages list only token-bucket / leaky-bucket / sliding-window / warm-up) — the line was removed.
 
 ### Monitoring and Observability
 
