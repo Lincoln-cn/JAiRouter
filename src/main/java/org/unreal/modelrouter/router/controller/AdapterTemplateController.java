@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.router.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
@@ -115,7 +116,7 @@ public class AdapterTemplateController {
             AdapterTemplate template = templateService.getTemplateById(id);
             if (template == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(RouterResponse.error("模板不存在: " + id, "TEMPLATE_NOT_FOUND"));
+                        .body(RouterResponse.error("模板不存在: " + id, ErrorCode.TEMPLATE_NOT_FOUND.code()));
             }
             return ResponseEntity.ok(RouterResponse.success(template, "获取模板详情成功"));
         } catch (Exception e) {
@@ -141,20 +142,20 @@ public class AdapterTemplateController {
             AdapterTemplate template = templateService.getTemplateById(id);
             if (template == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(RouterResponse.error("模板不存在: " + id, "TEMPLATE_NOT_FOUND"));
+                        .body(RouterResponse.error("模板不存在: " + id, ErrorCode.TEMPLATE_NOT_FOUND.code()));
             }
 
             // 验证名称
             String name = overrides.get("name");
             if (name == null || name.isBlank()) {
                 return ResponseEntity.badRequest()
-                        .body(RouterResponse.error("适配器名称不能为空", "INVALID_NAME"));
+                        .body(RouterResponse.error("适配器名称不能为空", ErrorCode.INVALID_NAME.code()));
             }
 
             // 检查名称冲突
             if (adapterRegistry.isAdapterSupported(name)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body(RouterResponse.error("适配器名称已存在: " + name, "CONFLICT_EXISTS"));
+                        .body(RouterResponse.error("适配器名称已存在: " + name, ErrorCode.CONFLICT_EXISTS.code()));
             }
 
             // 从模板生成定义

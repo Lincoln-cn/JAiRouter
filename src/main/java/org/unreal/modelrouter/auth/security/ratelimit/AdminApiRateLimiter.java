@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.util.ClientIpResolver;
 import reactor.core.publisher.Mono;
 
@@ -111,7 +112,8 @@ public class AdminApiRateLimiter implements WebFilter {
 
     private static Mono<Void> writeRateLimited(final ServerWebExchange exchange, final String message) {
         exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
-        final String body = "{\"code\":\"RATE_LIMIT_EXCEEDED\",\"message\":\"" + message + "\"}";
+        final String body = "{\"code\":\"" + ErrorCode.RATE_LIMIT_EXCEEDED.code()
+                + "\",\"message\":\"" + message + "\"}";
         return exchange.getResponse().writeWith(
                 Mono.just(exchange.getResponse().bufferFactory()
                         .wrap(body.getBytes(StandardCharsets.UTF_8))));

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.config.core.MonitoringProperties;
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsCacheAndRetry;
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsCircuitBreaker;
@@ -82,7 +83,7 @@ public class MonitoringController {
             return RouterResponse.success(response);
         }).onErrorResume(e -> {
             logger.error("获取监控配置失败: {}", e.getMessage());
-            return Mono.error(ApiException.of("INTERNAL_ERROR", "获取监控配置失败"));
+            return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "获取监控配置失败"));
         });
     }
 
@@ -97,7 +98,7 @@ public class MonitoringController {
         return Mono.fromCallable(() -> {
             Boolean enabled = request.get("enabled");
             if (enabled == null) {
-                throw ApiException.of("INVALID_REQUEST", "Missing 'enabled' parameter");
+                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "Missing 'enabled' parameter");
             }
 
             boolean updated = configUpdater.updateBasicConfig(
@@ -123,11 +124,11 @@ public class MonitoringController {
         return Mono.fromCallable(() -> {
             String prefix = request.get("prefix");
             if (prefix == null || prefix.trim().isEmpty()) {
-                throw ApiException.of("INVALID_REQUEST", "Missing or empty 'prefix' parameter");
+                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "Missing or empty 'prefix' parameter");
             }
 
             if (!configUpdater.validateConfigurationChange("prefix", prefix)) {
-                throw ApiException.of("INVALID_REQUEST", "Invalid prefix format");
+                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "Invalid prefix format");
             }
 
             boolean updated = configUpdater.updateBasicConfig(
@@ -153,12 +154,12 @@ public class MonitoringController {
         return Mono.fromCallable(() -> {
             String intervalStr = request.get("interval");
             if (intervalStr == null || intervalStr.trim().isEmpty()) {
-                throw ApiException.of("INVALID_REQUEST", "Missing 'interval' parameter");
+                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "Missing 'interval' parameter");
             }
 
             Duration interval = Duration.parse(intervalStr);
             if (!configUpdater.validateConfigurationChange("collectionInterval", interval)) {
-                throw ApiException.of("INVALID_REQUEST", "Invalid interval format");
+                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "Invalid interval format");
             }
 
             boolean updated = configUpdater.updateBasicConfig(
@@ -183,11 +184,11 @@ public class MonitoringController {
         return Mono.fromCallable(() -> {
             Set<String> categories = request.get("categories");
             if (categories == null) {
-                throw ApiException.of("INVALID_REQUEST", "Missing 'categories' parameter");
+                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "Missing 'categories' parameter");
             }
 
             if (!configUpdater.validateConfigurationChange("enabledCategories", categories)) {
-                throw ApiException.of("INVALID_REQUEST", "Invalid categories");
+                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "Invalid categories");
             }
 
             boolean updated = configUpdater.updateBasicConfig(
@@ -212,7 +213,7 @@ public class MonitoringController {
         return Mono.fromCallable(() -> {
             Map<String, String> customTags = request.get("customTags");
             if (customTags == null) {
-                throw ApiException.of("INVALID_REQUEST", "Missing 'customTags' parameter");
+                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "Missing 'customTags' parameter");
             }
 
             // 注意：DynamicMonitoringConfigUpdater 不支持直接更新 customTags，
@@ -297,7 +298,7 @@ public class MonitoringController {
             String operation = request.get("operation");
 
             if (component == null || operation == null) {
-                throw ApiException.of("INVALID_REQUEST", "Missing 'component' or 'operation' parameter");
+                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "Missing 'component' or 'operation' parameter");
             }
 
             errorHandler.resetErrorState(component, operation);
@@ -339,7 +340,7 @@ public class MonitoringController {
         return Mono.fromCallable(() -> {
             String levelStr = request.get("level");
             if (levelStr == null) {
-                throw ApiException.of("INVALID_REQUEST", "Missing 'level' parameter");
+                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "Missing 'level' parameter");
             }
 
             try {
@@ -348,7 +349,7 @@ public class MonitoringController {
                 degradationStrategy.setDegradationLevel(level);
                 return RouterResponse.<Object>success("降级级别已设置为: " + level.getDescription());
             } catch (IllegalArgumentException e) {
-                throw ApiException.of("INVALID_REQUEST", "Invalid degradation level: " + levelStr);
+                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "Invalid degradation level: " + levelStr);
             }
         }).onErrorResume(e -> {
             logger.error("设置降级级别失败: {}", e.getMessage());
@@ -364,7 +365,7 @@ public class MonitoringController {
         return Mono.fromCallable(() -> {
             Boolean enabled = request.get("enabled");
             if (enabled == null) {
-                throw ApiException.of("INVALID_REQUEST", "Missing 'enabled' parameter");
+                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "Missing 'enabled' parameter");
             }
 
             degradationStrategy.setAutoModeEnabled(enabled);

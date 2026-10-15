@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.core.Authentication;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.JwtTokenInfo;
 import org.unreal.modelrouter.common.dto.LoginRequest;
@@ -92,7 +93,7 @@ public class JwtAuthController {
                 })
                 .onErrorResume(ex -> {
                     log.warn("用户登录失败: {}", ex.getMessage());
-                    return Mono.error(ApiException.of("LOGIN_FAILED", "登录失败: " + ex.getMessage()));
+                    return Mono.error(ApiException.of(ErrorCode.LOGIN_FAILED.code(), "登录失败: " + ex.getMessage()));
                 });
     }
 
@@ -144,7 +145,8 @@ public class JwtAuthController {
                     response.setMessage("令牌刷新失败: " + ex.getMessage());
                     response.setTimestamp(LocalDateTime.now());
 
-                    return Mono.error(ApiException.of("TOKEN_REFRESH_FAILED", "令牌刷新失败: " + ex.getMessage()));
+                    return Mono.error(ApiException.of(
+                            ErrorCode.TOKEN_REFRESH_FAILED.code(), "令牌刷新失败: " + ex.getMessage()));
                 });
     }
 

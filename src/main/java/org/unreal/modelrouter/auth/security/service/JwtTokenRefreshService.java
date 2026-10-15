@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.dto.JwtTokenInfo;
 import org.unreal.modelrouter.common.dto.TokenStatus;
 import org.unreal.modelrouter.common.exception.AuthenticationException;
@@ -69,7 +70,7 @@ public class JwtTokenRefreshService {
      */
     public Mono<String> refreshToken(final String currentToken, final String ipAddress, final String userAgent) {
         if (currentToken == null || currentToken.trim().isEmpty()) {
-            return Mono.error(new AuthenticationException("当前令牌不能为空", "TOKEN_REQUIRED"));
+            return Mono.error(new AuthenticationException("当前令牌不能为空", ErrorCode.TOKEN_REQUIRED.code()));
         }
         
         log.debug("开始刷新JWT令牌");
@@ -136,7 +137,7 @@ public class JwtTokenRefreshService {
      */
     public Mono<Void> revokeToken(final String token, final String reason, final String revokedBy) {
         if (token == null || token.trim().isEmpty()) {
-            return Mono.error(new AuthenticationException("令牌不能为空", "TOKEN_REQUIRED"));
+            return Mono.error(new AuthenticationException("令牌不能为空", ErrorCode.TOKEN_REQUIRED.code()));
         }
         
         log.debug("开始撤销JWT令牌");

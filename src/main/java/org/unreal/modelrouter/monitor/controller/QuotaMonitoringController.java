@@ -14,6 +14,7 @@ import org.unreal.modelrouter.auth.security.quota.QuotaLedgerService;
 import org.unreal.modelrouter.auth.security.quota.QuotaProperties;
 import org.unreal.modelrouter.auth.security.quota.QuotaUsage;
 import org.unreal.modelrouter.auth.security.quota.QuotaWindow;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -175,7 +176,7 @@ public class QuotaMonitoringController {
                 return ResponseEntity.badRequest().body(RouterResponse.error(
                         "无效的窗口类型: " + window
                                 + "（有效值: MINUTE, HOUR, DAY, MONTH）",
-                        "INVALID_REQUEST"));
+                        ErrorCode.INVALID_REQUEST.code()));
             }
             targetWindows = List.of(parsed.get());
         } else {

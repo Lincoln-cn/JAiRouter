@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.router.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
@@ -152,7 +153,7 @@ public class AdapterConfigController {
                     return ResponseEntity.ok(RouterResponse.success(info, "获取adapter详情成功"));
                 }
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(RouterResponse.error("adapter不存在: " + name, "NOT_FOUND"));
+                        .body(RouterResponse.error("adapter不存在: " + name, ErrorCode.NOT_FOUND.code()));
             }
 
             Map<String, Object> info = new HashMap<>();
@@ -184,17 +185,19 @@ public class AdapterConfigController {
         try {
             if (request.getName() == null || request.getName().isBlank()) {
                 return ResponseEntity.badRequest()
-                        .body(RouterResponse.error("adapter名称不能为空", "INVALID_NAME"));
+                        .body(RouterResponse.error("adapter名称不能为空", ErrorCode.INVALID_NAME.code()));
             }
 
             if (adapterRegistry.isBuiltinAdapter(request.getName())) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body(RouterResponse.error("不能覆盖内置adapter: " + request.getName(), "CONFLICT_BUILTIN"));
+                        .body(RouterResponse.error(
+                                "不能覆盖内置adapter: " + request.getName(), ErrorCode.CONFLICT_BUILTIN.code()));
             }
 
             if (adapterRegistry.isAdapterSupported(request.getName())) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body(RouterResponse.error("adapter名称已存在: " + request.getName(), "CONFLICT_EXISTS"));
+                        .body(RouterResponse.error(
+                                "adapter名称已存在: " + request.getName(), ErrorCode.CONFLICT_EXISTS.code()));
             }
 
             AdapterDefinitionProperties.AdapterDefinition definition =
@@ -266,14 +269,14 @@ public class AdapterConfigController {
         try {
             if (adapterRegistry.isBuiltinAdapter(name)) {
                 return ResponseEntity.badRequest()
-                        .body(RouterResponse.error("不能更新内置adapter: " + name, "BUILTIN_READONLY"));
+                        .body(RouterResponse.error("不能更新内置adapter: " + name, ErrorCode.BUILTIN_READONLY.code()));
             }
 
             Map<String, AdapterDefinitionProperties.AdapterDefinition> definitions =
                     adapterDefinitionProperties.getAdapterDefinitions();
             if (!definitions.containsKey(name)) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(RouterResponse.error("adapter不存在: " + name, "NOT_FOUND"));
+                        .body(RouterResponse.error("adapter不存在: " + name, ErrorCode.NOT_FOUND.code()));
             }
 
             AdapterDefinitionProperties.AdapterDefinition definition =
@@ -343,14 +346,14 @@ public class AdapterConfigController {
         try {
             if (adapterRegistry.isBuiltinAdapter(name)) {
                 return ResponseEntity.badRequest()
-                        .body(RouterResponse.error("不能删除内置adapter: " + name, "BUILTIN_READONLY"));
+                        .body(RouterResponse.error("不能删除内置adapter: " + name, ErrorCode.BUILTIN_READONLY.code()));
             }
 
             Map<String, AdapterDefinitionProperties.AdapterDefinition> definitions =
                     adapterDefinitionProperties.getAdapterDefinitions();
             if (!definitions.containsKey(name)) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(RouterResponse.error("adapter不存在: " + name, "NOT_FOUND"));
+                        .body(RouterResponse.error("adapter不存在: " + name, ErrorCode.NOT_FOUND.code()));
             }
 
             // 从配置中移除

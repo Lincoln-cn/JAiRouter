@@ -1,22 +1,28 @@
 package org.unreal.modelrouter.common.exception;
 
 import org.springframework.http.HttpStatus;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 
 /**
  * 认证异常类
  * 用于处理API Key和JWT认证相关的异常
+ *
+ * <p>⚠️ 错误码的单一事实来源是 {@link ErrorCode}（issue #370 方案 A）：本类的码常量一律由它派生。
+ * 例外：{@code MISSING_API_KEY} / {@code INVALID_JWT_TOKEN} / {@code BLACKLISTED_TOKEN} 三个码
+ * <b>全仓没有任何发出点</b>（其工厂方法只被单元测试调用）⇒ 未登记进注册表，这里保留字面量并显式标注；
+ * 客户端不应据此写分支，处置见 issue #406。</p>
  */
 public class AuthenticationException extends SecurityException {
     
-    public static final String INVALID_API_KEY = "INVALID_API_KEY";
-    public static final String EXPIRED_API_KEY = "EXPIRED_API_KEY";
+    public static final String INVALID_API_KEY = ErrorCode.INVALID_API_KEY.code();
+    public static final String EXPIRED_API_KEY = ErrorCode.EXPIRED_API_KEY.code();
     public static final String MISSING_API_KEY = "MISSING_API_KEY";
     public static final String INVALID_JWT_TOKEN = "INVALID_JWT_TOKEN";
-    public static final String EXPIRED_JWT_TOKEN = "EXPIRED_JWT_TOKEN";
+    public static final String EXPIRED_JWT_TOKEN = ErrorCode.EXPIRED_JWT_TOKEN.code();
     public static final String BLACKLISTED_TOKEN = "BLACKLISTED_TOKEN";
-    public static final String DAILY_QUOTA_EXCEEDED = "DAILY_QUOTA_EXCEEDED";
-    public static final String TOKEN_QUOTA_EXCEEDED = "TOKEN_QUOTA_EXCEEDED";
-    public static final String RATE_LIMIT_EXCEEDED = "RATE_LIMIT_EXCEEDED";
+    public static final String DAILY_QUOTA_EXCEEDED = ErrorCode.DAILY_QUOTA_EXCEEDED.code();
+    public static final String TOKEN_QUOTA_EXCEEDED = ErrorCode.TOKEN_QUOTA_EXCEEDED.code();
+    public static final String RATE_LIMIT_EXCEEDED = ErrorCode.RATE_LIMIT_EXCEEDED.code();
     
     public AuthenticationException(final String message, final String errorCode) {
         super(message, errorCode, HttpStatus.UNAUTHORIZED);

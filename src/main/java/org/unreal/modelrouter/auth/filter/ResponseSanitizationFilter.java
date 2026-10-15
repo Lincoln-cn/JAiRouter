@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.common.exception.SanitizationException;
 import org.unreal.modelrouter.common.util.ClientIpResolver;
@@ -167,7 +168,7 @@ public class ResponseSanitizationFilter implements WebFilter {
                                             if (securityProperties.getSanitization().getResponse().isFailOnError()) {
                                                 return handleSanitizationFailure(
                                                         new SanitizationException("响应脱敏过程中发生未知错误", ex, 
-                                                                SanitizationException.CONTENT_PROCESSING_FAILED));
+                                                                ErrorCode.CONTENT_PROCESSING_FAILED.code()));
                                             } else {
                                                 // 检查响应是否已经提交
                                                 if (getDelegate().isCommitted()) {
@@ -184,7 +185,7 @@ public class ResponseSanitizationFilter implements WebFilter {
                             } catch (Exception e) {
                                 log.error("响应内容读取失败", e);
                                 return Mono.error(new SanitizationException("响应内容读取失败", e, 
-                                        SanitizationException.CONTENT_PROCESSING_FAILED));
+                                        ErrorCode.CONTENT_PROCESSING_FAILED.code()));
                             } finally {
                                 // 确保DataBuffer被释放
                                 DataBufferUtils.release(dataBuffer);

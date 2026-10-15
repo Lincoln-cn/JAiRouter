@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ServerWebExchange;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.dto.SecurityErrorResponse;
 import org.unreal.modelrouter.common.exception.AuthenticationException;
 import org.unreal.modelrouter.common.exception.DownstreamServiceException;
@@ -43,11 +44,6 @@ public class SecurityExceptionHandler {
      * 数据脱敏异常对外的通用消息（不暴露具体的脱敏错误信息）.
      */
     private static final String SANITIZATION_ERROR_MESSAGE = "数据处理失败";
-
-    /**
-     * 下游服务异常的错误码（既有契约，原样保留）.
-     */
-    private static final String DOWNSTREAM_SERVICE_ERROR_CODE = "DOWNSTREAM_SERVICE_ERROR";
 
     /**
      * 处理认证异常
@@ -190,7 +186,7 @@ public class SecurityExceptionHandler {
             ? HttpStatus.UNAUTHORIZED : HttpStatus.valueOf(ex.getStatusCode().value());
 
         final ResponseEntity<?> clientResponse = V1ErrorBodyMapper.toClientErrorResponse(
-                exchange, status.value(), ex.getMessage(), DOWNSTREAM_SERVICE_ERROR_CODE);
+                exchange, status.value(), ex.getMessage(), ErrorCode.DOWNSTREAM_SERVICE_ERROR.code());
         if (clientResponse != null) {
             return clientResponse;
         }
@@ -200,7 +196,7 @@ public class SecurityExceptionHandler {
                 .status(ex.getStatusCode().value())
                 .error(ex.getStatusCode().getReasonPhrase())
                 .message(ex.getMessage())
-                .errorCode(DOWNSTREAM_SERVICE_ERROR_CODE)
+                .errorCode(ErrorCode.DOWNSTREAM_SERVICE_ERROR.code())
                 .build();
 
         return ResponseEntity.status(status).body(errorResponse);
