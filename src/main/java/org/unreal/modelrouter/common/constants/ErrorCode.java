@@ -12,7 +12,8 @@ import java.util.stream.Collectors;
  * 错误码注册表（issue #370 方案 A：**根治**错误码无单一事实来源的问题）。
  *
  * <p><b>现状与动机</b>：本仓的错误码此前散落在控制器与异常类里的字符串字面量中（实测 241 个「码形状」字面量、
- * 其中 62 个会被真正发出），HTTP 状态码则由 {@code ApiException.resolveStatus} 的**命名规则**推导
+ * 其中 62 个会被真正发出；本表登记 63 个，多出的一个是 issue #404 拆码新增的
+ * {@code RATE_LIMITED_API_KEY}），HTTP 状态码则由 {@code ApiException.resolveStatus} 的**命名规则**推导
  * （改名即改状态码，且没有编译期检查）；文档表只能靠人工对账（issue #342 记录过 17 个「全仓不存在却写在表里」的码）。</p>
  *
  * <p><b>本枚举的定位</b>：把「**会被真正发出**的码」登记为单一事实来源（`码 + 客户端可见状态 + 渲染路径 + 说明`）。
@@ -31,8 +32,9 @@ import java.util.stream.Collectors;
  *       {@code SecurityAuthenticationException} 承载，状态由**异常类型/构造器**决定（今天均为 401，
  *       经 {@code SpringSecurityAuthenticationFilter} 或 {@code SecurityExceptionHandler} 渲染）；</li>
  *   <li>{@link RenderPath#SANITIZATION}：码由 {@code SanitizationException} 承载（500）；</li>
- *   <li>{@link RenderPath#ERROR_BODY}：码由错误体构造器直写，状态**随上下文**（{@code DOWNSTREAM_SERVICE_ERROR}
- *       取下游原状态）⇒ 这类码的 {@link #status()} 为 {@code null}，表示「不由本表固定」。</li>
+ *   <li>{@link RenderPath#ERROR_BODY}：码由错误体构造器直写，状态**不由规则链决定** ——
+ *       {@code DOWNSTREAM_SERVICE_ERROR} 随上下文（取下游原状态，故 {@link #status()} 为 {@code null}），
+ *       {@code RATE_LIMIT_EXCEEDED} 则由管理面限流器固定直写 429（故登记了 429）。</li>
  * </ul>
  *
  * <p><b>尚未纳入</b>（后续批次）：把各调用点的裸字面量替换为本枚举常量（机械改动，按模块分批，见 issue #370 阶段 3）。</p>
@@ -103,8 +105,7 @@ public enum ErrorCode {
     TEMPLATE_NOT_FOUND("TEMPLATE_NOT_FOUND", HttpStatus.NOT_FOUND, RenderPath.RESPONSE_BODY, "模板不存在"),
 
     // ===================================================================================
-    // 3) AUTHENTICATION：状态由异常类型/构造器决定（今天均为 401）
-    //    ⚠️ RATE_LIMIT_EXCEEDED 是已知的**路径相关**码：同码在管理面限流器上为 429（见 issue #404）
+    // 3) AUTHENTICATION：状态由异常携带（经校验链的码今天均为 401，唯一例外见 RATE_LIMITED_API_KEY）
     // ===================================================================================
     API_KEY_AUTH_FAILED("API_KEY_AUTH_FAILED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
             "API Key 认证失败（校验链未预期异常）"),
@@ -140,8 +141,8 @@ public enum ErrorCode {
             RenderPath.AUTHENTICATION, "无法从 JWT 令牌中提取用户 ID"),
     JWT_VALIDATION_ERROR("JWT_VALIDATION_ERROR", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
             "JWT 令牌验证过程中发生错误"),
-    RATE_LIMIT_EXCEEDED("RATE_LIMIT_EXCEEDED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
-            "API Key 校验链上超限（401）；管理面限流器同码写 429，见 issue #404"),
+    RATE_LIMITED_API_KEY("RATE_LIMITED_API_KEY", HttpStatus.TOO_MANY_REQUESTS, RenderPath.AUTHENTICATION,
+            "API Key 每分钟限速超限（校验链，429）；管理面限流器见 RATE_LIMIT_EXCEEDED（issue #404 拆码）"),
     TOKEN_QUOTA_EXCEEDED("TOKEN_QUOTA_EXCEEDED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
             "超过每日 Token 使用配额限制"),
     TOKEN_REQUIRED("TOKEN_REQUIRED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
@@ -160,10 +161,14 @@ public enum ErrorCode {
             "数据脱敏失败"),
 
     // ===================================================================================
-    // 5) ERROR_BODY：码由错误体直写，状态随上下文 ⇒ status 为 null（不由本表固定）
+    // 5) ERROR_BODY：码由错误体直写，状态不由规则链决定
+    //    DOWNSTREAM_SERVICE_ERROR 随上下文（status = null）；RATE_LIMIT_EXCEEDED 固定 429
     // ===================================================================================
     DOWNSTREAM_SERVICE_ERROR("DOWNSTREAM_SERVICE_ERROR", null, RenderPath.ERROR_BODY,
             "下游服务异常；状态码原样取下游返回的状态（401 归一到 401 认证分支）"),
+    RATE_LIMIT_EXCEEDED("RATE_LIMIT_EXCEEDED", HttpStatus.TOO_MANY_REQUESTS, RenderPath.ERROR_BODY,
+            "管理面限流器（/api/auth/api-keys 前缀）直写的 429 扁平体；"
+                    + "API Key 校验链的超限改用 RATE_LIMITED_API_KEY（issue #404 拆码）"),
 
     ;
 
@@ -182,7 +187,7 @@ public enum ErrorCode {
         AUTHENTICATION,
         /** 状态由 {@code SanitizationException} 携带 */
         SANITIZATION,
-        /** 码由错误体直写，状态随上下文（{@link ErrorCode#status()} 为 {@code null}） */
+        /** 码由错误体直写，状态不由规则链决定（{@link ErrorCode#status()} 可为 {@code null}，如随下游上下文的码） */
         ERROR_BODY
     }
 
@@ -208,7 +213,8 @@ public enum ErrorCode {
 
     /**
      * 该码的客户端可见 HTTP 状态码；{@code null} 表示「状态随上下文、不由本表固定」
-     * （当前仅 {@link RenderPath#ERROR_BODY} 的码可能为 {@code null}）。
+     * （当前仅 {@code DOWNSTREAM_SERVICE_ERROR} 为 {@code null}；同为错误体直写路径的
+     * {@code RATE_LIMIT_EXCEEDED} 由管理面限流器固定写 429，故登记 429）。
      */
     public HttpStatus status() {
         return status;

@@ -377,7 +377,7 @@ security alerts ever fired).
 | Theme | What changed |
 |-------|--------------|
 | **Error-code governance (issue #370)** | A new `ErrorCode` registry, completed to **62 codes that are actually emitted** (each with a **render path**: status decided by the naming rule, the authentication exception, the response-body site or the error-body writer). The zh/en tables were rewritten against it and CI reconciles them **both ways** (a missing code and a documented-yet-never-emitted code both fail). **No bare code literals remain in `src/main/java`** (~175 emission sites now read `ErrorCode.X.code()`), guarded by a new literal test. ⚠️ External contract change (#403): `TOKEN_USAGE_FORBIDDEN` → `FORBIDDEN_TOKEN_USAGE` — that code is written into the token-usage response body, so clients do see it. Separately, `RESOURCE_FORBIDDEN` → `FORBIDDEN_RESOURCE` is only an internal constant rename inside `AuthorizationException`: that code has no emission site (its factory method is called only by unit tests), so no client can ever receive it. |
-| Error-code ledger | Two pre-existing semantic problems the registry surfaced are recorded without changing behavior: `RATE_LIMIT_EXCEEDED` has two statuses (429/401, #404); seven codes that existed only as constants plus never-called factories **were deleted** (#406) |
+| Error-code ledger | The registry surfaced two pre-existing semantic problems: `RATE_LIMIT_EXCEEDED`'s two statuses (429/401, #404) — **resolved by splitting the code after the `v3.3.3` tag** (see below) — and seven codes that existed only as constants plus never-called factories, which **were deleted** (#406) |
 | **Error-code status alignment (issue #405, merged after the `v3.3.3` tag)** | Endpoint status and rule-chain status now agree at both ends under the hybrid scheme: `BUILTIN_READONLY` answers **403** everywhere (the endpoint used to answer 400) and `RESTART_REQUIRED` answers **400** everywhere (the rule chain used to derive 403). The registry descriptions, both error-code tables and the divergence assertion in `ErrorCodeRegistryTest` were updated with it |
 | Repository hygiene | Frontend build artifacts no longer dirty the working tree: normalized `package-lock.json` plus `.gitattributes -text` for the two generated `.d.ts` files (#408 / #409) |
 | **Streaming (`/v1`)** | **Fixed: `/v1` streaming answered `200` with a zero-byte body** — the `/v1` branch used `exchangeToMono` and handed the response body back out of the exchange scope, so WebClient released it before the framework subscribed. Error frames are now emitted only **after** the first chunk, so a pre-commit failure still ends with the downstream's real status code (429 stays 429). Regression-pinned by the end-to-end fixture, which now drives **both** faces |
@@ -391,10 +391,15 @@ security alerts ever fired).
 Release tags: `v3.3.3` · `v3.3.2` · `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`.
 `v3.3.2` and `v3.3.3` are tagged but **not released** yet (`v3.3.2`'s content ships with `v3.3.3`).
 
-**Master is on the unreleased `3.3.4` line**: the `v3.3.3` tag is frozen at `e965f9a8`, and everything merged after it
-(the #406 / #412 / #414 error-code close-out and the #405 status alignment) is collected for `v3.3.4`.
-The `[3.3.4]` changelog entry and the tag itself are cut once the remaining batch (#404: API-key rate limiting answers
-429 with a new `RATE_LIMITED_API_KEY` code) lands.
+**Master is on the unreleased `3.3.4` line**: the `v3.3.3` tag is frozen at `e965f9a8`. Changes merged after it, grouped by theme:
+
+| Theme | What changed |
+|-------|--------------|
+| **Rate-limit error-code semantics (#404, decided)** | The two real paths were split per "429 plus a new code": the admin rate limiter keeps `RATE_LIMIT_EXCEEDED` (flat 429 body) while the API Key validation chain uses the new `RATE_LIMITED_API_KEY`, and the authentication filter now passes through **the 429 carried by the exception** (on `/v1/**` the `type` maps from the status to `rate_limit_error`). Registry 62 → 63 codes; clients no longer have to treat 401 as a rate limit |
+| **Error-code close-out (#406 / #412 / #414)** | Seven never-emitted codes (constants plus never-called factories) deleted; the docs separate the internal `RESOURCE_FORBIDDEN` → `FORBIDDEN_RESOURCE` constant rename from the client-visible `TOKEN_USAGE_FORBIDDEN` → `FORBIDDEN_TOKEN_USAGE` rename; four ghost codes in the management-API tables replaced with registry names |
+| **Status alignment (#405)** | `BUILTIN_READONLY` answers 403 everywhere (the endpoint used to answer 400); `RESTART_REQUIRED` answers 400 everywhere (the rule chain used to derive 403) |
+
+The `[3.3.4]` changelog entry and the lightweight tag are cut when this batch is closed (tag only, no GitHub Release or image, per the standing policy).
 
 ### Open ledger
 
