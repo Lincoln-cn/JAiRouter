@@ -57,15 +57,16 @@ import static org.mockito.Mockito.mock;
  *
  * <p>多副本冷却用例需要 Redis（{@code ScheduledTaskLock} 无 Redis 时 fail-open），故**不在本类**，
  * 见 issue #390 的说明（CI 的 {@code test} job 有 redis:7-alpine）。</p>
+ *
+ * <p>📌 历史（issue #393）：本类原先必须写 {@code @ContextConfiguration(classes = ModelRouterApplication.class)}
+ * 才能起来 —— 因为本包之上曾有一个**无人引用**的测试配置 {@code TestMonitoringConfiguration}
+ * （声明包名 {@code org.unreal.modelrouter.monitor.monitoring}、且没有 {@code @EnableAutoConfiguration}），
+ * Boot 的切片测试按包向上找配置时会先命中它，报 {@code Unable to retrieve @EnableAutoConfiguration base packages}。
+ * 该配置已删除，本类随之回到**普通 {@code @DataJpaTest}** 形态（本类即该修复的验收用例）。</p>
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @org.springframework.test.context.ActiveProfiles("test")
-// 必须显式指向真实应用类：本包之上存在测试用的 @SpringBootConfiguration（`TestMonitoringConfiguration`，
-// 声明包名为 org.unreal.modelrouter.monitor.monitoring，且**没有** @EnableAutoConfiguration），
-// Boot 的切片测试会先命中它 ⇒ EntityScan 基线包拿不到、上下文起不来。
-@org.springframework.test.context.ContextConfiguration(
-        classes = {org.unreal.modelrouter.ModelRouterApplication.class, AlarmChainRuntimeTest.Stubs.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 @EnableConfigurationProperties(SecurityAlertProperties.class)
 @Import({ExtendedSecurityAuditServiceImpl.class, AuditEntityMapper.class, SecurityReportGenerator.class,
