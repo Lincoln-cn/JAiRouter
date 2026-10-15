@@ -74,7 +74,8 @@ public class TracingSecurityController {
         } catch (Exception e) {
             log.error("获取追踪敏感字段失败", e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("获取追踪敏感字段失败: " + e.getMessage()));
+                    .body(RouterResponse.error("获取追踪敏感字段失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
     
@@ -92,7 +93,8 @@ public class TracingSecurityController {
         } catch (Exception e) {
             log.error("添加追踪敏感字段失败: {}", field, e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("添加追踪敏感字段失败: " + e.getMessage()));
+                    .body(RouterResponse.error("添加追踪敏感字段失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
     
@@ -110,7 +112,8 @@ public class TracingSecurityController {
         } catch (Exception e) {
             log.error("移除追踪敏感字段失败: {}", field, e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("移除追踪敏感字段失败: " + e.getMessage()));
+                    .body(RouterResponse.error("移除追踪敏感字段失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
     
@@ -134,7 +137,8 @@ public class TracingSecurityController {
         } catch (Exception e) {
             log.error("获取用户追踪访问历史失败: {}", username, e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("获取追踪访问历史失败: " + e.getMessage()));
+                    .body(RouterResponse.error("获取追踪访问历史失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
     
@@ -153,7 +157,8 @@ public class TracingSecurityController {
         } catch (Exception e) {
             log.error("清理用户权限缓存失败: {}", username, e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("清理用户权限缓存失败: " + e.getMessage()));
+                    .body(RouterResponse.error("清理用户权限缓存失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
     
@@ -171,7 +176,8 @@ public class TracingSecurityController {
         } catch (Exception e) {
             log.error("清理所有权限缓存失败", e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("清理所有权限缓存失败: " + e.getMessage()));
+                    .body(RouterResponse.error("清理所有权限缓存失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
     
@@ -300,7 +306,8 @@ public class TracingSecurityController {
         } catch (Exception e) {
             log.error("获取追踪安全状态概览失败", e);
             return ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("获取追踪安全状态概览失败: " + e.getMessage()));
+                    .body(RouterResponse.error("获取追踪安全状态概览失败: " + e.getMessage(),
+                            ErrorCode.INTERNAL_ERROR.code()));
         }
     }
 }

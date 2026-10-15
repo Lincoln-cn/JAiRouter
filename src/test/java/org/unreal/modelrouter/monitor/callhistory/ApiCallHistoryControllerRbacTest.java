@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
@@ -111,6 +112,8 @@ class ApiCallHistoryControllerRbacTest {
             assertNotNull(response.getBody());
             assertFalse(response.getBody().isSuccess());
             assertTrue(response.getBody().getMessage().contains("记录不存在"));
+            // issue #413：状态码已按 NOT_FOUND 解析，响应体也必须带同一个码（此前为 null）
+            assertEquals(ErrorCode.NOT_FOUND.code(), response.getBody().getErrorCode());
         }
 
         @Test

@@ -119,7 +119,7 @@ public class ApiCallHistoryController {
                 })
                 .orElseGet(() -> ResponseEntity
                         .status(ApiException.resolveStatus(ErrorCode.NOT_FOUND.code()))
-                        .body(RouterResponse.error("记录不存在: id=" + id)));
+                        .body(RouterResponse.error("记录不存在: id=" + id, ErrorCode.NOT_FOUND.code())));
     }
 
     /**

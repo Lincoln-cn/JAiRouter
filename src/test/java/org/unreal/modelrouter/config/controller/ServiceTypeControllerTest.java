@@ -7,17 +7,23 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.config.core.ConfigurationService;
 import org.unreal.modelrouter.config.core.ServiceConfigManager;
 import org.unreal.modelrouter.config.core.ConfigurationValidator;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.config.dto.UpdateServiceConfigRequest;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.*;
 
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -140,5 +146,53 @@ class ServiceTypeControllerTest {
 
         verify(configurationValidator).isValidServiceType("nonexistent");
         verify(serviceConfigManager, never()).deleteService(anyString());
+    }
+
+    // ==================== issue #413：失败响应必须带 errorCode ====================
+
+    @Test
+    @DisplayName("测试 7: GET /services/{serviceType} 未配置 ⇒ 404 + NOT_FOUND（issue #413）")
+    void testGetServiceConfigNotFoundCarriesErrorCode() {
+        when(configurationValidator.isValidServiceType("chat")).thenReturn(true);
+        when(serviceConfigManager.getServiceConfiguration("chat")).thenReturn(null);
+
+        ResponseEntity<RouterResponse<Map<String, Object>>> response = controller.getServiceConfig("chat");
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode(), "HTTP 状态码不得因补码而变化");
+        assertNotNull(response.getBody());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals(ErrorCode.NOT_FOUND.code(), response.getBody().getErrorCode());
+    }
+
+    @Test
+    @DisplayName("测试 8: POST /services/{serviceType} 参数校验失败 ⇒ 400 + INVALID_REQUEST（issue #413）")
+    void testCreateServiceValidationFailureCarriesErrorCode() {
+        when(configurationValidator.isValidServiceType("chat")).thenReturn(true);
+        doAnswer(invocation -> {
+            List<String> errors = invocation.getArgument(2);
+            errors.add("缺少实例配置");
+            return null;
+        }).when(configurationValidator).validateServiceConfig(eq("chat"), anyMap(), anyList(), anyList());
+
+        ResponseEntity<RouterResponse<Void>> response = controller.createService("chat", Map.of());
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode(), "HTTP 状态码不得因补码而变化");
+        assertNotNull(response.getBody());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals(ErrorCode.INVALID_REQUEST.code(), response.getBody().getErrorCode());
+    }
+
+    @Test
+    @DisplayName("测试 9: PUT /services/{serviceType} 无效服务类型 ⇒ 400 + INVALID_REQUEST（issue #413）")
+    void testUpdateServiceConfigInvalidTypeCarriesErrorCode() {
+        when(configurationValidator.isValidServiceType("nonexistent")).thenReturn(false);
+
+        ResponseEntity<RouterResponse<UpdateServiceConfigRequest>> response =
+                controller.updateServiceConfig("nonexistent", new UpdateServiceConfigRequest());
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode(), "HTTP 状态码不得因补码而变化");
+        assertNotNull(response.getBody());
+        assertFalse(response.getBody().isSuccess());
+        assertEquals(ErrorCode.INVALID_REQUEST.code(), response.getBody().getErrorCode());
     }
 }

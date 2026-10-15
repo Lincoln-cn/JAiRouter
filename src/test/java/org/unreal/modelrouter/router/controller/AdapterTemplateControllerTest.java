@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.support.AdapterContext;
@@ -128,6 +129,22 @@ class AdapterTemplateControllerTest {
             assertEquals(1, result.getBody().getData().size());
             verify(templateService).getTemplatesByCategory("domestic");
         }
+
+        @Test
+        @DisplayName("TMPL-API-002b: 服务抛异常 ⇒ 500 + INTERNAL_ERROR（issue #413）")
+        void testGetAllTemplates_exception() {
+            // Given
+            when(templateService.getAllTemplates()).thenThrow(new RuntimeException("boom"));
+
+            // When
+            ResponseEntity<RouterResponse<List<AdapterTemplate>>> result = controller.getAllTemplates(null);
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode(),
+                    "HTTP 状态码不得因补码而变化");
+            assertFalse(result.getBody().isSuccess());
+            assertEquals(ErrorCode.INTERNAL_ERROR.code(), result.getBody().getErrorCode());
+        }
     }
 
     // ==================== 获取单个模板测试 ====================
@@ -164,6 +181,22 @@ class AdapterTemplateControllerTest {
             assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
             assertFalse(result.getBody().isSuccess());
             assertEquals("TEMPLATE_NOT_FOUND", result.getBody().getErrorCode());
+        }
+
+        @Test
+        @DisplayName("TMPL-API-004b: 服务抛异常 ⇒ 500 + INTERNAL_ERROR（issue #413）")
+        void testGetTemplateById_exception() {
+            // Given
+            when(templateService.getTemplateById("deepseek")).thenThrow(new RuntimeException("boom"));
+
+            // When
+            ResponseEntity<RouterResponse<AdapterTemplate>> result = controller.getTemplateById("deepseek");
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode(),
+                    "HTTP 状态码不得因补码而变化");
+            assertFalse(result.getBody().isSuccess());
+            assertEquals(ErrorCode.INTERNAL_ERROR.code(), result.getBody().getErrorCode());
         }
     }
 
@@ -270,6 +303,30 @@ class AdapterTemplateControllerTest {
             // Then
             verify(adapterRegistry).registerAdapter(eq("my-deepseek"), any());
             verify(persistenceService).saveDefinition(eq("my-deepseek"), any());
+        }
+
+        @Test
+        @DisplayName("TMPL-API-010: 持久化抛异常 ⇒ 500 + INTERNAL_ERROR（issue #413）")
+        void testCreateFromTemplate_exception() {
+            // Given
+            when(templateService.getTemplateById("deepseek")).thenReturn(deepseekTemplate);
+            when(adapterRegistry.isAdapterSupported("my-deepseek")).thenReturn(false);
+            doThrow(new RuntimeException("boom"))
+                    .when(persistenceService).saveDefinition(eq("my-deepseek"), any());
+
+            Map<String, String> overrides = new HashMap<>();
+            overrides.put("name", "my-deepseek");
+            overrides.put("apiKey", "sk-test");
+
+            // When
+            ResponseEntity<RouterResponse<Map<String, Object>>> result =
+                    controller.createFromTemplate("deepseek", overrides);
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode(),
+                    "HTTP 状态码不得因补码而变化");
+            assertFalse(result.getBody().isSuccess());
+            assertEquals(ErrorCode.INTERNAL_ERROR.code(), result.getBody().getErrorCode());
         }
     }
 }

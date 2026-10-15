@@ -9,6 +9,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.monitor.tracing.encryption.TracingEncryptionService;
 import org.unreal.modelrouter.monitor.tracing.sanitization.TracingSanitizationService;
@@ -78,6 +79,8 @@ class TracingSecurityControllerTest {
 
             assertEquals(500, response.getStatusCode().value());
             assertFalse(response.getBody().isSuccess());
+            // issue #413：失败响应必须带 errorCode（此前为 null）
+            assertEquals(ErrorCode.INTERNAL_ERROR.code(), response.getBody().getErrorCode());
         }
     }
 
@@ -107,6 +110,7 @@ class TracingSecurityControllerTest {
 
             assertEquals(500, response.getStatusCode().value());
             assertFalse(response.getBody().isSuccess());
+            assertEquals(ErrorCode.INTERNAL_ERROR.code(), response.getBody().getErrorCode());
         }
     }
 
@@ -136,6 +140,7 @@ class TracingSecurityControllerTest {
 
             assertEquals(500, response.getStatusCode().value());
             assertFalse(response.getBody().isSuccess());
+            assertEquals(ErrorCode.INTERNAL_ERROR.code(), response.getBody().getErrorCode());
         }
     }
 
@@ -171,6 +176,7 @@ class TracingSecurityControllerTest {
 
             assertEquals(500, response.getStatusCode().value());
             assertFalse(response.getBody().isSuccess());
+            assertEquals(ErrorCode.INTERNAL_ERROR.code(), response.getBody().getErrorCode());
         }
     }
 
@@ -200,6 +206,7 @@ class TracingSecurityControllerTest {
 
             assertEquals(500, response.getStatusCode().value());
             assertFalse(response.getBody().isSuccess());
+            assertEquals(ErrorCode.INTERNAL_ERROR.code(), response.getBody().getErrorCode());
         }
     }
 
@@ -229,6 +236,7 @@ class TracingSecurityControllerTest {
 
             assertEquals(500, response.getStatusCode().value());
             assertFalse(response.getBody().isSuccess());
+            assertEquals(ErrorCode.INTERNAL_ERROR.code(), response.getBody().getErrorCode());
         }
     }
 
@@ -459,6 +467,7 @@ class TracingSecurityControllerTest {
 
             assertEquals(500, response.getStatusCode().value());
             assertFalse(response.getBody().isSuccess());
+            assertEquals(ErrorCode.INTERNAL_ERROR.code(), response.getBody().getErrorCode());
         }
     }
 }

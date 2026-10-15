@@ -215,7 +215,7 @@ public class ServiceTypeController {
         Map<String, Object> serviceConfig = config != null ? config.toMap() : null;
         if (serviceConfig == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(RouterResponse.error("服务类型不存在: " + serviceType));
+                    .body(RouterResponse.error("服务类型不存在: " + serviceType, ErrorCode.NOT_FOUND.code()));
         }
         return ResponseEntity.ok(RouterResponse.success(serviceConfig, "获取服务配置成功"));
     }
@@ -240,7 +240,8 @@ public class ServiceTypeController {
 
         if (!errors.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(RouterResponse.error("参数验证失败: " + String.join(", ", errors)));
+                    .body(RouterResponse.error("参数验证失败: " + String.join(", ", errors),
+                            ErrorCode.INVALID_REQUEST.code()));
         }
 
         // 使用 ServiceConfigManager 替代废弃方法，将 Map 转换为 ServiceConfiguration
@@ -272,7 +273,7 @@ public class ServiceTypeController {
         // 验证服务类型
         if (!configurationValidator.isValidServiceType(serviceType)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(RouterResponse.error("无效的服务类型: " + serviceType));
+                    .body(RouterResponse.error("无效的服务类型: " + serviceType, ErrorCode.INVALID_REQUEST.code()));
         }
 
         // 更新配置
