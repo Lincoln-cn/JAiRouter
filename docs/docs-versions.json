@@ -2091,16 +2091,6 @@
       "ChangeSummary": "",
       "Dependencies": []
     },
-    "docs/zh/development/doc-maintenance.md": {
-      "FilePath": "docs/zh/development/doc-maintenance.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-08-24T03:02:49.363322",
-      "ContentHash": "e3b5708f0382d16c",
-      "GitCommit": "26c1f68e",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": []
-    },
     "docs/en/configuration/kv-cache.md": {
       "FilePath": "docs/en/configuration/kv-cache.md",
       "Version": "1.0.0",
@@ -2130,36 +2120,6 @@
         "docs/zh/reference/changelog.md"
       ],
       "ReviewedAt": "2026-10-15T01:06:25.592554"
-    },
-    "docs/en/development/doc-maintenance.md": {
-      "FilePath": "docs/en/development/doc-maintenance.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-08-30T13:18:53.531308",
-      "ContentHash": "066235f2256a127a",
-      "GitCommit": "2f3955ee",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": []
-    },
-    "docs/en/development/knowledge-base-governance.md": {
-      "FilePath": "docs/en/development/knowledge-base-governance.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-08-30T13:18:53.535694",
-      "ContentHash": "974991ff32beed55",
-      "GitCommit": "2f3955ee",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": []
-    },
-    "docs/zh/development/knowledge-base-governance.md": {
-      "FilePath": "docs/zh/development/knowledge-base-governance.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-08-30T13:18:53.755865",
-      "ContentHash": "1485ad3415c08ab1",
-      "GitCommit": "2f3955ee",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": []
     },
     "docs/en/configuration/response-cache.md": {
       "FilePath": "docs/en/configuration/response-cache.md",
@@ -8402,7 +8362,39 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-15T16:19:51.545944",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/development/doc-maintenance.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-10-15T16:34:34.613985",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/en/development/doc-maintenance.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-10-15T16:34:34.614020",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/en/development/knowledge-base-governance.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-10-15T16:34:34.614039",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/zh/development/knowledge-base-governance.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-10-15T16:34:34.614056",
+      "Description": "文档已删除"
     }
   ],
-  "last_updated": "2026-10-15T16:19:52.351804"
+  "last_updated": "2026-10-15T16:34:34.614560"
 }
