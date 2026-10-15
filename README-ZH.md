@@ -42,7 +42,7 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # 本地/仓库目录名与产品名不同
 artifact:        model-router            # Maven artifactId
-project_version: 3.3.3                   # pom.xml
+project_version: 3.3.4                   # pom.xml
 latest_release:  v3.3.1 (2026-10-14)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5（WebFlux / 响应式）
@@ -373,6 +373,10 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 
 发布标签：`v3.3.3` · `v3.3.2` · `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`。
 `v3.3.2` 与 `v3.3.3` 已打 tag，但**尚未发布**（`v3.3.2` 的内容随 `v3.3.3` 一并发布）。
+
+**master 现处于未发布的 `3.3.4` 线**：`v3.3.3` tag 冻结在 `e965f9a8`，其后合入的内容
+（#406 / #412 / #414 的错误码收口、#405 的状态对齐）归入 `v3.3.4`。
+`[3.3.4]` 的 changelog 条目与 tag 会在剩余批次（#404：API Key 限流改为 429 并新增 `RATE_LIMITED_API_KEY` 码）落地后一并收口。
 
 ### 开放台账
 
