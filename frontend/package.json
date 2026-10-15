@@ -33,7 +33,7 @@
     "minimatch": "^10.2.5",
     "pinia": "^2.3.1",
     "sortablejs": "^1.15.7",
-    "vue": "^3.5.13",
+    "vue": "^3.5.44",
     "vue-echarts": "^8.0.1",
     "vue-i18n": "^11.1.2",
     "vue-router": "^4.5.0"
