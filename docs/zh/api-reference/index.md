@@ -114,6 +114,17 @@ http://localhost:8080
 }
 ```
 
+**这个面上有三种响应不使用上面的形状** —— 它们破坏的不是「按面选形状」，而是「按**谁写的**选形状」：
+
+| 场景 | 写入方 | 实际响应体 |
+|------|--------|-----------|
+| 缺少 / 非法凭据（401） | 认证过滤器 | `{"error":{"message":…,"type":"authentication_error","code":"AUTH_MISSING"}}` |
+| 凭据被限流（429） | 认证过滤器 | `{"error":{"message":…,"type":"rate_limit_error","code":"RATE_LIMITED_API_KEY"}}` |
+| 被授权层拦下（403） | Spring Security 默认处理器 | `text/plain`，正文 `Access Denied` |
+
+而 controller 自己抛的 403（例如 `BUILTIN_READONLY`）**是** `RouterResponse`。因此客户端的判据应是
+**「顶层有没有 `error` 字段」**：有就按协议形状解析，没有就按 `RouterResponse` 解析。
+
 ### `/v1/**` 的 `type` 取值
 
 | HTTP 状态 | `type` | 描述 |

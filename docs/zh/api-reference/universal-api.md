@@ -500,7 +500,7 @@ temperature: 0
 | `rate_limit_error` | 429 —— 限流 / 配额超限 |
 | `api_error` | 所有 5xx（含 503）—— 网关或下游内部错误 |
 
-> 以上是网关实际只会产出的取值（`V1ErrorBodyMapper#errorTypeOf`）；`overloaded_error` 不会被产出。该 OpenAI 形状的错误体只适用于 `/v1/**`；`/api/**` 沿用 `RouterResponse` 形状（`success` / `message` / `data` / `errorCode` / `timestamp`）。
+> 以上是网关实际只会产出的取值（`V1ErrorBodyMapper#errorTypeOf`）；`overloaded_error` 不会被产出。该 OpenAI 形状的错误体适用于 `/v1/**`；`/api/**` 通常沿用 `RouterResponse` 形状（`success` / `message` / `data` / `errorCode` / `timestamp`）—— **但由认证过滤器写出的响应除外**（缺少/非法凭据的 401、`RATE_LIMITED_API_KEY` 的 429），它在 `/api/**` 上也发这个 `{"error":{"message","type","code"}}` 形状。完整例外清单见 [错误码对照表](error-codes.md)。
 
 ## 使用示例
 

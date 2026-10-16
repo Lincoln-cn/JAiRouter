@@ -443,7 +443,7 @@ curl -H "x-api-key: <JAiRouter API Key>" "http://localhost:8080/v1/models"
 |------|------|----------|
 | **工具调用依赖下游 function calling** | `tools` / `tool_choice` / `tool_use` / `tool_result` 会按 OpenAI 兼容 wire 转发下游（v3.1 PR-5）；下游若不支持 function calling，`tools` 被忽略、只回纯文本，表现为「工具调用不生效」 | 选用支持 function calling 的下游（OpenAI / DeepSeek / vLLM 等）；用 `claude -p "…" --allowedTools "Bash"` 或 `curl` 直连 `/v1/messages` 验证 |
 | **`model` 必须是已注册模型名** | 无别名、无自动路由前缀；未注册的模型名会导致实例选择失败（404/503） | 用 `GET /v1/models` 获取可用 `id`，或在控制台为 `auto-model` 等池名建好映射 |
-| **错误体形态两面不同** | 网关自身错误（401 鉴权失败、429 配额/限流、5xx）在 `/v1` 与 `/api` 两面上都是 **`RouterResponse`** 形状 `{"success":false,"message":"…","errorCode":"…","timestamp":"…"}`；只有 Anthropic 入口的**参数校验错误**用 Anthropic 形状 `{"type":"error","error":{…}}`；下游非 2xx 则**原样透传**下游错误体 | 客户端按 `type` 字段是否存在判定形态 |
+| **错误体形态按面不同，`/api` 上还按写入方不同** | `/v1/**` 上网关自身错误是协议形状 `{"error":{"message":"…","type":"…","code":"…"}}`（`/v1/messages` 用 Anthropic 形状 `{"type":"error","error":{…}}`）。`/api/**` 上通常是 `RouterResponse` `{"success":false,"message":"…","errorCode":"…","timestamp":"…"}`，**但**认证过滤器自己写出的响应（缺少/非法凭据的 401、`RATE_LIMITED_API_KEY` 的 429）在该面也用 `{"error":{…}}` 形状，授权层拦下的 403 则是 `text/plain` 的 `Access Denied`；下游非 2xx 则**原样透传**下游错误体 | 客户端按**顶层是否存在 `error` 字段**判定形态 |
 | **`x-api-key` 不下发** | 见「认证分层」：下游密钥必须走实例 `headers` 或 `Authorization` | 方案 A/B |
 | **原生面同时接受 API Key 与 JWT** | `/v1/**` 接受 `X-API-Key`（API Key）和 `Jairouter_Token`（JWT）；两者同存时 JWT 优先；JWT 需已启用且未过期/未被拉黑 | 使用 `x-api-key`（最简单）或 `Jairouter_Token` 均可 |
 | **流式 `message_start.id` / `model` 由网关给出** | `id` 为网关生成的 `msg_*`（该事件先于首个下游块发出，下游 id 尚不可知）；`model` 为**请求侧**模型名 | 需要下游真实 id 时使用非流式（透传下游 `id`） |
