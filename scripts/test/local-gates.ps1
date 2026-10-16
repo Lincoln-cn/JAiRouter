@@ -422,9 +422,9 @@ function Invoke-DocsGates {
         Add-Result "文档脚本语法" "FAIL" ($compileFails -join " ;; ")
     }
 
-    # 围栏配平（issue #324）：CI 目前**不检查**这一项 —— 实测它一直绿，而文档里躺着 6 个文件 / 10 处
-    # 围栏错字（开栏/闭栏写成两个反引号、块未闭合），这些会让整篇起错位点后渲染成代码。
-    # 这里把它作为**附加**检查跑；是否进 CI 由维护者定夺（见 #324）。
+    # 围栏配平（issue #324）：当初落地时 CI 并不检查它（文档里躺着 6 个文件 / 10 处围栏错字：
+    # 开栏/闭栏写成两个反引号、块未闭合，会让整篇自错位点起渲染成代码），本脚本先作为附加检查跑；
+    # 该检查**后来已接进 CI**（`.github/workflows/gates-fast.yml` 的「检查 markdown 围栏配平」）⇒ 本地与 CI 对齐。
     $fenceScript = Join-Path $script:Root "scripts/docs/check-fence-parity.py"
     if (Test-Path $fenceScript) {
         $r = Invoke-Logged -Exe $py -Arguments @("scripts/docs/check-fence-parity.py", "--dir", "docs", "--fail-on-error")
@@ -437,6 +437,34 @@ function Invoke-DocsGates {
         }
     } else {
         Add-Result "围栏配平" "SKIP" "未找到 scripts/docs/check-fence-parity.py"
+    }
+
+    # 工作流内嵌 Python 语法（issue #429）：CI 里已接进 gates-fast.yml，本地逐条对齐。
+    # 顺序与 CI 一致 —— 先跑自测（含反证与 #429 两处误报的回归守卫），再跑校验本体。
+    $wfSyntaxTest = Join-Path $script:Root "scripts/docs/test_validate_workflow_syntax.py"
+    $wfSyntaxScript = Join-Path $script:Root "scripts/docs/validate-workflow-syntax.py"
+    if (Test-Path $wfSyntaxTest) {
+        $r = Invoke-Logged -Exe $py -Arguments @("scripts/docs/test_validate_workflow_syntax.py")
+        if ($r.ExitCode -eq 0) {
+            Add-Result "工作流语法校验脚本自测" "PASS" "提取语义 / 反证 / #429 误报回归守卫全部通过"
+        } else {
+            $tail = (@($r.Output) | Select-Object -Last 6) -join " | "
+            Add-Result "工作流语法校验脚本自测" "FAIL" $tail
+        }
+    } else {
+        Add-Result "工作流语法校验脚本自测" "SKIP" "未找到 scripts/docs/test_validate_workflow_syntax.py"
+    }
+    if (Test-Path $wfSyntaxScript) {
+        $r = Invoke-Logged -Exe $py -Arguments @("scripts/docs/validate-workflow-syntax.py", "--project-root", ".")
+        if ($r.ExitCode -eq 0) {
+            $summary = @($r.Output | Select-String -Pattern "检查了") | Select-Object -Last 1
+            Add-Result "工作流内嵌 Python 语法" "PASS" ("" + $summary)
+        } else {
+            $bad = @($r.Output | Select-String -Pattern "❌") | Select-Object -First 5
+            Add-Result "工作流内嵌 Python 语法" "FAIL" ($bad -join " | ")
+        }
+    } else {
+        Add-Result "工作流内嵌 Python 语法" "SKIP" "未找到 scripts/docs/validate-workflow-syntax.py"
     }
 
     # 快闸其余三项（错误码 / 配置清单 / API 端点对账 + 各自自测）。
