@@ -153,13 +153,13 @@ Source: `V1ErrorBodyMapper#errorTypeOf`. `service_unavailable` and `circuit_brea
 ### Request Content Types
 
 - `application/json` - JSON requests (nearly every API, including image generation and image editing)
-- `multipart/form-data` - declared only by `/v1/audio/transcriptions` (STT)
+- `multipart/form-data` - declared only by `/api/v1/audio/transcriptions` (STT)
 
 ### Response Content Types
 
 - `application/json` - JSON responses (nearly every API, including image generation and image editing)
 
-> The image APIs answer with JSON (`data[].url` or `data[].b64_json`) and do **not** emit `image/*`. The TTS endpoint (`POST /v1/audio/speech`) returns audio bytes whose Content-Type follows the requested output format.
+> The image APIs answer with JSON (`data[].url` or `data[].b64_json`) and do **not** emit `image/*`. The TTS endpoint (`POST /api/v1/audio/speech`) returns audio bytes whose Content-Type follows the requested output format.
 
 ## Request/Response Examples
 
