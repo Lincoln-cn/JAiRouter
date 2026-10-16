@@ -42,7 +42,7 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # 本地/仓库目录名与产品名不同
 artifact:        model-router            # Maven artifactId
-project_version: 3.3.4                   # pom.xml
+project_version: 3.3.5                   # pom.xml
 latest_release:  v3.3.1 (2026-10-14)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5（WebFlux / 响应式）
@@ -382,15 +382,21 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 | **错误码收口（#406 / #412 / #414）** | 删除 7 个「只有常量与从未被调用的工厂、全仓无发出点」的码；文档把 `RESOURCE_FORBIDDEN` → `FORBIDDEN_RESOURCE` 的**内部常量改名**与客户端可见的 `TOKEN_USAGE_FORBIDDEN` → `FORBIDDEN_TOKEN_USAGE` 分开写；`management-api` 两表里 4 个幽灵码换成注册表真名 |
 | **状态对齐（#405）** | `BUILTIN_READONLY` 两端都是 403（端点原为 400）、`RESTART_REQUIRED` 两端都是 400（规则链原推导 403） |
 
-**`v3.3.4` tag 之后合入**（2026-10-16），按主题归类：
+**已打 tag `v3.3.5`、尚未发布**（2026-10-16；`v3.3.4` tag 冻结在 `92a134ef`）；本版相对 `v3.3.4` 的改动按主题归类：
 
 | 主题 | 变更内容 |
 |------|----------|
 | **客户端可见状态修复（#432）** | **请求体缺失**不再变成 **500 + `INTERNAL_ERROR`**：三个 `@RequestBody` 端点（`AdapterConfigController` 的创建/更新、`LoadBalancerManagementController` 的配置更新）改为前置校验，返回 **400 +「请求体无效或缺失」**。这条顺带暴露了一个约束：校验必须放在方法自己的 `try` **之外**，否则会被兜底 `catch (Exception)` 吞掉并重新包成 500 |
 | 文档↔代码契约（#436） | 英文侧 TTS/STT 端点前缀纠正为 `/api/v1/audio/*`。先取证：**`/v1/audio/*` 根本没有映射** —— `/v1` 面只提供 models / chat / embeddings / rerank（外加 Anthropic messages 与 debug），所以**错的是英文侧** |
 | 门闩 | `快闸` 现也会在 `src/main/resources/config/**` 与 `.github/workflows/**` 变更时触发；此前失效的工作流语法校验器修好（它把 YAML 缩进当成 Python 解析，且含一处恒真的路径自比较）并接进门闩，配了含反证的用例自测 |
+| **存储契约修复（#446）** | **「删除最后一个条目」此前静默不生效**，却仍返回 `200 {"success":true}`：`JpaStoreManager.saveConfig` 对空表早退（`config.isEmpty()` → `return`），而上层普遍是「读全量 → 改 → 写全量」，删掉最后一项时正好传空表。资源池侧表现为**立即复活**，可配置 adapter 侧表现为**重启后复活**。已去掉早退、与其余三个 store 实现对齐，并把「空表是合法输入」写进 `StoreManager.saveConfig` 契约。原测试漏掉它是因为把 `StoreManager` mock 了 —— mock 上没有那段早退，「saveConfig 被调用过」恒真 |
+| **健康判定修复（#447）** | `/actuator/health` 不再因**生命周期累计**的 span 丢弃率判 `DOWN`：三份 compose 的容器健康检查都用该端点，而该比值越过阈值后只能靠重启归零 ⇒ 容器会被**永久**判 unhealthy，而重启并不解决丢 span（实测现场：`tracing=DOWN`、`issue=数据丢弃率过高: 50.44%`、其余组件全 UP）。现改为 `WARNING`（HTTP 仍 200，数值仍留在 details 供告警规则使用），只有「异步处理器未运行」「内存压力 CRITICAL」「性能监控自身 DOWN」才判 DOWN；顺带修掉同段「后写覆盖前写」导致的问题项丢失 |
+| 文档准确性（#448） | `/api/**` 面的错误体形状按实测更正：认证链自己写的 401（`AUTH_MISSING`）与 429（`RATE_LIMITED_API_KEY`）用协议形状，授权层拦下的 403 是 `text/plain` 的 `Access Denied`，只有 controller 抛出的错误才是 `RouterResponse` ⇒ 客户端判据改为「**顶层有没有 `error` 字段**」；同时更正 `claude-code.md` 里「两面都是 `RouterResponse`」这处对 `/v1` 也错的表述 |
+| 工程与工具 | 分支清理脚本入库：squash 合并下不再用 ancestry 判「分支是否已合并」（实测 67/80 会被漏掉），改用两条内容判据 + 合成仓库自检 |
 
-`[3.3.4]` 的 changelog 条目见 [更新日志](docs/zh/reference/changelog.md)；按既定口径只打 tag，不建 GitHub Release、不产镜像。
+本轮发布前的本地验证（冷启动全新 H2 库 → 前端构建 → 打包 → 起 8080）：**前端全量 E2E 414/414 通过**（14 个 spec；修复前 404/407，其中 `crud:pool:delete` 是真缺陷、另 2 例是用例缺少 API Key 前置）；**接口冒烟 51/51 通过**（覆盖 v3.3.1 以来全部对外语义变更：#404 限流拆码、#405 的 403、#432 的 400、`/v1` 双协议错误体、#340 的 `/actuator` 认证面）。
+
+`[3.3.5]` 的 changelog 条目见 [更新日志](docs/zh/reference/changelog.md)；按既定口径只打 tag，不建 GitHub Release、不产镜像。
 
 ### 开放台账
 
