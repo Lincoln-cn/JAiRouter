@@ -19,9 +19,14 @@ name: 快闸
 on:
   pull_request:
     paths:
-      # 门闩的**对账对象**：错误码注册表、控制器映射、配置树都在 src/main/java 与 pom 附近。
+      # 门闩的**对账对象**：错误码注册表、控制器映射在 `src/main/java`，配置树在
+      # `src/main/resources/config`（见下），端点/错误码对账还会解析 `pom.xml`。
       # 只改 java 的 PR 之所以必须触发，正是本 workflow 存在的理由（见上）。
       - 'src/main/java/**'
+      # 配置树（`#426` 正文申报的缺口，2026-10-16 补）：`check-config-imports.py` 正是拿
+      # 「真实 config 树」与文档清单双向对账 —— 只改 `src/main/resources/config/**` 的 PR
+      # （增删一个配置模块 / 改导入清单）同样会改变对账结果，此前却不触发本 workflow。
+      - 'src/main/resources/config/**'
       # 文档侧：四条的检查面都在 docs/ 下（表格、清单、围栏）。
       - 'docs/**'
       - 'mkdocs.yml'
@@ -38,6 +43,8 @@ on:
     branches: [ main, master ]
     paths:
       - 'src/main/java/**'
+      # 与 pull_request 同一份路径面（理由见上）：配置树是「配置清单对账」的直接对象。
+      - 'src/main/resources/config/**'
       - 'docs/**'
       - 'mkdocs.yml'
       - 'scripts/docs/**'
