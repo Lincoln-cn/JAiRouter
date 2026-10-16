@@ -60,7 +60,7 @@ surfaces:
   - /actuator/**  # health, readiness, Prometheus
 tests:
   command: ./mvnw test -o
-  scale:   ~4061 test methods across 400 test classes
+  scale:   ~4,100 test methods across ~400 test classes
 license: Apache-2.0
 ```
 
@@ -183,7 +183,7 @@ Details worth knowing:
 | `src/main/java/org/unreal/modelrouter/config/` | Configuration service: hot reload, versioning/rollback, validation, console API |
 | `src/main/resources/config/**` | Modular YAML config, imported via `spring.config.import` in `application.yml` |
 | `src/main/resources/db/migration/{h2,postgres}/` | Versioned schema migrations (`Flyway`), one dialect directory each |
-| `src/test/java/` | JUnit 5 + Mockito + Reactor `StepVerifier`; ~4000 test methods |
+| `src/test/java/` | JUnit 5 + Mockito + Reactor `StepVerifier`; ~4,100 test methods |
 | `frontend/` | Vue 3 + TypeScript console (Vite `base: /admin/`) |
 | `docs/zh/`, `docs/en/` | MkDocs documentation, kept symmetrical |
 | `deploy/` | Kubernetes manifests, compose files, deployment scripts |
@@ -461,7 +461,7 @@ Contributions are welcome — see the [Contributing Guide](https://jairouter.com
 Before opening a pull request:
 
 ```bash
-./mvnw test -o                       # 400 test classes, ~4000 test methods, must stay green
+./mvnw test -o                       # ~400 test classes, ~4,100 test methods, must stay green
 cd frontend && npm run type-check    # the frontend type gate
 ```
 
