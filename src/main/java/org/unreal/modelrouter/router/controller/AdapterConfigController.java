@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ServerWebInputException;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.router.adapter.AdapterCapabilities;
@@ -184,6 +185,14 @@ public class AdapterConfigController {
     @ApiResponse(responseCode = "409", description = "adapter名称已存在")
     public ResponseEntity<RouterResponse<Map<String, Object>>> createAdapter(
             @RequestBody final AdapterDefinitionRequest request) {
+        // issue #432：请求体缺失属**客户端可归因**的失败 ⇒ 前置校验、天然 400。
+        // ⚠️ 必须放在下面的 try **之外**：ServerWebInputException 是 RuntimeException，
+        // 放进 try 会被本方法自己的兜底 `catch (Exception e)` 吞掉并重新包成 500 + INTERNAL_ERROR
+        // （实测踩到：客户端拿到「更新adapter失败: 400 BAD_REQUEST "Request body is required"」+ 500）。
+        // 放在 try 之外 ⇒ 交给中央处理器 ReactiveGlobalExceptionHandler 映射为 400。
+        if (request == null) {
+            throw new ServerWebInputException("Request body is required");
+        }
         try {
             if (request.getName() == null || request.getName().isBlank()) {
                 return ResponseEntity.badRequest()
@@ -269,6 +278,11 @@ public class AdapterConfigController {
     public ResponseEntity<RouterResponse<Map<String, Object>>> updateAdapter(
             @Parameter(description = "adapter名称") @PathVariable final String name,
             @RequestBody final AdapterDefinitionRequest request) {
+        // issue #432：同 createAdapter —— 请求体缺失前置校验为 400；**必须在 try 之外**，
+        // 否则会被本方法的兜底 catch 吞成 500（理由见 createAdapter 处的注释）。
+        if (request == null) {
+            throw new ServerWebInputException("Request body is required");
+        }
         try {
             if (adapterRegistry.isBuiltinAdapter(name)) {
                 // issue #405：内置项只读 = 授权语义，端点与规则链（ApiException.legacyResolveStatus）都是 403

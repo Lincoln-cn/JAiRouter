@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ServerWebInputException;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
@@ -18,6 +19,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -80,8 +82,15 @@ class AdapterConfigControllerBuiltinReadonlyStatusTest {
     @Test
     @DisplayName("PUT /api/config/adapter/{name} - 内置 adapter ⇒ 403 + BUILTIN_READONLY")
     void updateBuiltinAdapterReturnsForbidden() {
+        // issue #432 之后必须传**非 null** 请求体：方法最前面新增了「请求体缺失 ⇒ 400」的前置校验，
+        // 传 null 会先撞上那条（见 updateWithNullRequestBodyIsRejectedAsClientInput）。
+        // 本用例要验的是**授权**分支（内置项只读 ⇒ 403），故给一个最小合法请求体把它隔离出来。
+        final AdapterConfigController.AdapterDefinitionRequest request =
+                new AdapterConfigController.AdapterDefinitionRequest();
+        request.setName(BUILTIN_ADAPTER);
+
         final ResponseEntity<RouterResponse<Map<String, Object>>> response =
-                controller.updateAdapter(BUILTIN_ADAPTER, null);
+                controller.updateAdapter(BUILTIN_ADAPTER, request);
 
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode(),
                 "内置项只读是授权语义，端点必须与规则链推导值一致（403）");
@@ -121,7 +130,8 @@ class AdapterConfigControllerBuiltinReadonlyStatusTest {
     @DisplayName("对照组：非内置且未配置 ⇒ PUT 404 + NOT_FOUND（用最小 stub 定义绕开 request 判空）")
     void unknownAdapterUpdateStillReturnsNotFound() {
         // 定义表里塞一个占位定义：让方法走到「name 不在表里」的 404 分支，
-        // 而不是先撞上 request.getName() 的 NPE（那条路径见 updateWithNullRequestBodyCarriesInternalError）
+        // 而不是先撞上 request.getName() 的 NPE（请求体为 null 的路径见
+        // updateWithNullRequestBodyIsRejectedAsClientInput；该方法非空、但 name 不在表里）
         when(definitionProperties.getAdapterDefinitions()).thenReturn(new HashMap<>(Map.of(
                 "placeholder-adapter", new AdapterDefinitionProperties.AdapterDefinition())));
         final AdapterConfigController.AdapterDefinitionRequest request =
@@ -165,18 +175,18 @@ class AdapterConfigControllerBuiltinReadonlyStatusTest {
     }
 
     @Test
-    @DisplayName("PUT /{name} - 定义存在但 request 为 null ⇒ 500 + INTERNAL_ERROR（issue #413 记录的 NPE 路径）")
-    void updateWithNullRequestBodyCarriesInternalError() {
+    @DisplayName("PUT /{name} - request 为 null ⇒ 抛 ServerWebInputException（issue #432 前置校验，客户端得 400）")
+    void updateWithNullRequestBodyIsRejectedAsClientInput() {
         when(definitionProperties.getAdapterDefinitions()).thenReturn(new HashMap<>(Map.of(
                 CONFIGURED_ADAPTER, new AdapterDefinitionProperties.AdapterDefinition())));
 
-        final ResponseEntity<RouterResponse<Map<String, Object>>> response =
-                controller.updateAdapter(CONFIGURED_ADAPTER, null);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode(),
-                "request 为 null 时方法在 request.getType() 抛 NPE，被兜底 catch 吞掉 ⇒ 500（本轮只补码）");
-        assertNotNull(response.getBody());
-        assertEquals(ErrorCode.INTERNAL_ERROR.code(), response.getBody().getErrorCode());
+        // issue #432：请求体缺失属客户端可归因的失败 ⇒ 方法开头就抛 ServerWebInputException，
+        // 不再走到 request.getType() 的 NPE、被兜底 catch 吞成 500 + INTERNAL_ERROR。
+        // 该异常由 ReactiveGlobalExceptionHandler 映射为 400（"请求体无效或缺失"），
+        // MVC 层的行为见 AdapterConfigControllerRequestBodyPrevalidationTest（走真实 HTTP 路径）。
+        assertThrows(ServerWebInputException.class,
+                () -> controller.updateAdapter(CONFIGURED_ADAPTER, null),
+                "request 为 null 时必须抛 ServerWebInputException（⇒ 400），而不是返回 500");
     }
 
     @Test
