@@ -39,6 +39,9 @@ on:
       # ⚠️ 必须包含本文件自身：否则「本 workflow 的改动」不会触发它自己，
       #    新建/调整快闸的那个 PR 里就看不到这一行，也就无法验证它真的能跑。
       - '.github/workflows/gates-fast.yml'
+      # 工作流语法门闩（#429）读**全部** workflow 文件里内嵌的 Python ⇒ 改任何一个 workflow
+      # 都必须触发本 workflow，否则「把别的 workflow 写坏」这类改动仍然检查不到。
+      - '.github/workflows/**'
   push:
     branches: [ main, master ]
     paths:
@@ -51,6 +54,8 @@ on:
       - 'pom.xml'
       - '.cspell.json'
       - '.github/workflows/gates-fast.yml'
+      # 与 pull_request 同一份路径面：工作流语法门闩读全部 workflow 文件（见上）。
+      - '.github/workflows/**'
 
 permissions:
   contents: read
@@ -148,11 +153,33 @@ jobs:
           echo "⏭️ 跳过：$script 不存在"
         fi
 
+    - name: 自测工作流语法校验脚本
+      run: |
+        test_file=scripts/docs/test_validate_workflow_syntax.py
+        if [ -f "$test_file" ]; then
+          # 自测里含**反证**（把内嵌 Python 写坏 / 写坏脚本引用 ⇒ 必须判红）与**回归守卫**
+          # （#429 的两处误报：YAML 缩进被当成 Python、恒真的路径自比较）⇒ 防「校验器空转」。
+          echo "🧪 运行工作流语法校验脚本自测（提取语义 / 反证 / #429 误报回归守卫）..."
+          python "$test_file"
+        else
+          echo "⏭️ 跳过：$test_file 不存在"
+        fi
+
+    - name: 检查工作流内嵌 Python 语法（#429）
+      run: |
+        script=scripts/docs/validate-workflow-syntax.py
+        if [ -f "$script" ]; then
+          echo "🔍 校验 .github/workflows/*.yml 里内嵌的 Python 代码语法..."
+          python "$script" --project-root .
+        else
+          echo "⏭️ 跳过：$script 不存在"
+        fi
+
     - name: 可选快闸门闩（为将来新增的脚本留位）
       run: |
         # 说明：本步骤是**占位**，为后续新增的快闸脚本预留接线位置。
-        # 现在 scripts/docs/check-capability-claims.py 尚不存在 ⇒ 这里只打印跳过信息、不报错。
-        # 将来脚本落地后，把它加进下面的列表即可自动生效（无需再改 workflow 结构）。
+        # 列表里的脚本若尚未落地，只打印跳过信息、不报错；落地后自动生效（无需再改 workflow 结构）。
+        # 现有项：check-capability-claims.py（路线图能力清单 ↔ 代码三类能力双向对账，已落地）。
         for entry in \
           "scripts/docs/check-capability-claims.py:--fail-on-error" \
           ; do
