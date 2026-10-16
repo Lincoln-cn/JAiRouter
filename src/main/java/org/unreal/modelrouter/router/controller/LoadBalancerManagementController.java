@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ServerWebInputException;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.config.core.ServiceConfigManager;
@@ -229,6 +230,12 @@ public class LoadBalancerManagementController {
     public ResponseEntity<RouterResponse<String>> updateServiceConfig(
             @PathVariable final String serviceType,
             @RequestBody final LoadBalanceConfigRequest request) {
+        // issue #432：请求体缺失属客户端可归因的失败 ⇒ 前置校验为 400。
+        // ⚠️ 必须在 try 之外：ServerWebInputException 是 RuntimeException，放进 try 会被本方法
+        // 自己的兜底 `catch (Exception e)` 吞掉并重新包成 500（与 AdapterConfigController 同因）。
+        if (request == null) {
+            throw new ServerWebInputException("Request body is required");
+        }
         try {
             ModelServiceRegistry.ServiceType type = ModelServiceRegistry.ServiceType.valueOf(serviceType.toLowerCase());
 
