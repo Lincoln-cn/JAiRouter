@@ -5,7 +5,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.unreal.modelrouter.persistence.store.MemoryStoreManager;
 import org.unreal.modelrouter.persistence.store.StoreManager;
 import org.unreal.modelrouter.router.pool.model.PoolDefinition;
 import org.unreal.modelrouter.router.pool.model.PoolMember;
@@ -131,7 +133,7 @@ class PoolPersistenceServiceTest {
     class RemoveTests {
 
         @Test
-        @DisplayName("POOL-PERSIST-007: 删除存在的资源池")
+        @DisplayName("POOL-PERSIST-007: 删除存在的资源池（落库内容必须已摘掉它）")
         void testRemove_existing() {
             Map<String, Object> stored = new HashMap<>();
             stored.put("auto-model", pool("auto-model", "chat"));
@@ -139,7 +141,28 @@ class PoolPersistenceServiceTest {
 
             service.remove("auto-model");
 
-            verify(storeManager).saveConfig(eq("pool_definitions"), any(Map.class));
+            // 只断言「saveConfig 被调用过」是不够的：调用方传旧内容过来同样满足。
+            // 这里钉住**载荷**——落库的那张表里不能再有 auto-model。
+            @SuppressWarnings("unchecked")
+            ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
+            verify(storeManager).saveConfig(eq("pool_definitions"), captor.capture());
+            assertFalse(captor.getValue().containsKey("auto-model"),
+                    "删除后落库的表里不应再有 auto-model，实际=" + captor.getValue().keySet());
+        }
+
+        @Test
+        @DisplayName("POOL-PERSIST-009: 删除最后一个资源池后重新加载为空（真实 StoreManager 往返）")
+        void testRemove_lastPool_roundTripEmpty() {
+            // 用真实实现而不是 Mockito 桩：桩不会复现「空表被静默丢弃」这类 store 侧行为，
+            // 正是它让本仓长期绿着漏掉「删最后一个条目不生效」。
+            PoolPersistenceService real = new PoolPersistenceService(new MemoryStoreManager(), new ObjectMapper());
+            real.save(pool("only-pool", "chat"));
+            assertEquals(1, real.loadAll().size(), "前置：已有一条");
+
+            real.remove("only-pool");
+
+            assertTrue(real.loadAll().isEmpty(),
+                    "删掉最后一个池后必须读回空集合；非空即说明空表被丢弃、条目会复活");
         }
 
         @Test

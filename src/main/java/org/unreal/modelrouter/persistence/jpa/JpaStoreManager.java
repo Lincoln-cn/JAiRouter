@@ -30,7 +30,17 @@ public class JpaStoreManager implements StoreManager {
     @Override
     @Transactional
     public void saveConfig(final String key, final Map<String, Object> config) {
-        if (config == null || config.isEmpty()) {
+        // ⚠️ 这里**不得**对空表早退（曾经如此，是个缺陷）：
+        // saveConfig 的契约是「把这张表原样落库」—— BaseStoreManager / MemoryStoreManager
+        // 与 FileStoreManager.doSaveConfig 都是照原样写的（含空表），只有本类擅自早退，
+        // 于是「把集合删空」这个意图无法表达：
+        // 调用方普遍是 loadAll() → removeIf() → saveAll()，删掉最后一个条目时正好传空表，
+        // 落库被跳过 ⇒ 旧值留在库里、条目复活，而接口仍返回 200 成功。
+        // 实证：DELETE /api/config/pools/{仅剩的那个池} 后列表依旧；
+        //       删除最后一个可配置 adapter 后当时"消失"，进程重启即复活。
+        // 回归守护见 JpaStoreManagerTest（空表必须落库、且覆盖旧值）。
+        if (config == null) {
+            log.warn("saveConfig 收到 null 配置，已忽略: key={}", key);
             return;
         }
         try {

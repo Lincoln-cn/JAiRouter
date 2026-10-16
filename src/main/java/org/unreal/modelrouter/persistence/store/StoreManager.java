@@ -12,9 +12,16 @@ import java.util.Map;
 public interface StoreManager {
 
     /**
-     * 保存配置
+     * 保存配置。
+     *
+     * <p><b>契约：把 {@code config} 原样落库，包含空表。</b>「空表」是合法且必要的输入 ——
+     * 上层普遍是 {@code loadAll() → removeIf() → saveAll()}，把集合删空时就传空表；
+     * 若某个实现把空表当成「无内容、跳过」，删除最后一个条目就会静默不生效
+     * （接口仍报成功、条目复活），见 {@code JpaStoreManager.saveConfig} 的历史注释与
+     * {@code JpaStoreManagerTest} 的回归守卫。要表达「清除该键」请用 {@link #deleteConfig(String)}。</p>
+     *
      * @param key 配置键
-     * @param config 配置内容
+     * @param config 配置内容（空表表示「该键的集合已被清空」，不是「不保存」）
      */
     void saveConfig(String key, Map<String, Object> config);
 
