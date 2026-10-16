@@ -2346,46 +2346,6 @@
   "changes": [
     {
       "FilePath": "README-ZH.md",
-      "OldVersion": "1.0.11",
-      "NewVersion": "1.0.12",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-18T04:48:48.291391",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "README.md",
-      "OldVersion": "1.0.19",
-      "NewVersion": "1.0.20",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-18T04:48:48.293552",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/reference/roadmap.md",
-      "OldVersion": "1.0.7",
-      "NewVersion": "1.0.8",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-18T04:48:48.463877",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/configuration/validation-rules.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-18T04:48:48.571400",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/reference/roadmap.md",
-      "OldVersion": "1.0.7",
-      "NewVersion": "1.0.8",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-07-18T04:48:48.688771",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "README-ZH.md",
       "OldVersion": "1.0.12",
       "NewVersion": "1.0.13",
       "ChangeType": "MODIFIED",
@@ -8609,5 +8569,5 @@
       "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-16T03:05:20.653551"
+  "last_updated": "2026-10-16T06:44:04.316116"
 }
