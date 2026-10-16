@@ -13,7 +13,9 @@ import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryStats;
 import org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceMonitor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,6 +30,14 @@ import java.util.Map;
 @Component("tracing")
 @RequiredArgsConstructor
 public class TracingHealthIndicator implements HealthIndicator {
+
+    /**
+     * span 丢弃率的「降级」告警阈值。
+     *
+     * <p>超过它只把该组件标成 {@code WARNING}（HTTP 仍为 200），**不再**判 {@code DOWN}：
+     * 计数器是生命周期累计值，判 DOWN 会让实例永久 unhealthy（详见 {@link #health()} 内注释）。</p>
+     */
+    static final double DROP_RATE_WARNING_THRESHOLD = 0.1;
 
     private final TracingConfiguration tracingConfiguration;
     private final TracingPerformanceMonitor performanceMonitor;
@@ -91,31 +101,63 @@ public class TracingHealthIndicator implements HealthIndicator {
             ));
             
             // 综合健康状态判断
-            Health.Builder healthBuilder = Health.up();
-            
-            // 检查异步处理器
+            //
+            // ⚠️ 两类判定必须分开，且**汇总后再定状态**：
+            // 原实现是 `healthBuilder = Health.down()...` 逐条覆盖，后一条会把前一条的
+            // 状态与 details 一起丢掉（例如「处理器未运行」会被随后「内存压力高」改写），
+            // 属于顺序相关的信息丢失。现在把 DOWN 级与降级级分别收集。
+            final Health.Builder healthBuilder = Health.up();
+            final List<String> downIssues = new ArrayList<>();
+            final List<String> warnings = new ArrayList<>();
+
+            // 检查异步处理器：这是真的"追踪不可用"
             if (!processingStats.isRunning()) {
-                healthBuilder = Health.down().withDetail("issue", "异步处理器未运行");
+                downIssues.add("异步处理器未运行");
             }
-            
-            // 检查丢弃率
-            if (processingStats.getDropRate() > 0.1) { // 丢弃率超过10%
-                healthBuilder = Health.down().withDetail("issue", "数据丢弃率过高: "
-                    + String.format("%.2f%%", processingStats.getDropRate() * 100));
+
+            // 检查丢弃率：**不得判 DOWN**。
+            // 理由一（口径）：丢 span 是**可观测性**降级，不是服务不可用 —— 上游调用照常成功。
+            // 理由二（可用性）：dropRate 取自 AsyncTracingProcessor.ProcessingStats 的
+            //   processedCount / droppedCount，是**生命周期累计**值，一旦越过阈值就再也回不到
+            //   阈值以下（只有重启才归零）⇒ 判 DOWN 等于让实例**永久** unhealthy。
+            //   而三份 docker-compose*.yml 的容器健康检查都是 `curl -f /actuator/health`
+            //   （wget --spider），于是容器被判 unhealthy，重启又并不解决丢 span。
+            //   这与本仓既有口径一致：monitoring-base.yml 刻意把 db/redis 排除在探针分组外
+            //   ——「下游依赖抖动应由就绪摘流处理，不应触发重启」。
+            // 数值仍完整留在 details 的 asyncProcessor / processingDropRate 里，告警规则照旧可用。
+            if (processingStats.getDropRate() > DROP_RATE_WARNING_THRESHOLD) {
+                warnings.add("数据丢弃率过高: "
+                        + String.format("%.2f%%", processingStats.getDropRate() * 100));
             }
-            
+
             // 检查内存压力
             if (memoryStats.getPressureLevel() == MemoryPressureLevel.CRITICAL) {
-                healthBuilder = Health.down().withDetail("issue", "内存压力严重");
+                downIssues.add("内存压力严重");
             } else if (memoryStats.getPressureLevel() == MemoryPressureLevel.HIGH) {
-                healthBuilder = Health.status("WARNING").withDetail("warning", "内存压力较高");
+                warnings.add("内存压力较高");
             }
-            
+
             // 检查性能监控状态
             if (performanceHealth.getStatus().getCode().equals("DOWN")) {
-                healthBuilder = Health.down().withDetail("issue", "性能监控系统异常");
+                downIssues.add("性能监控系统异常");
             }
-            
+
+            details.put("downIssues", downIssues);
+            details.put("warnings", warnings);
+
+            if (!downIssues.isEmpty()) {
+                return Health.down()
+                        .withDetails(details)
+                        .withDetail("issue", String.join("; ", downIssues))
+                        .build();
+            }
+            if (!warnings.isEmpty()) {
+                return Health.status("WARNING")
+                        .withDetails(details)
+                        .withDetail("warning", String.join("; ", warnings))
+                        .build();
+            }
+
             return healthBuilder.withDetails(details).build();
             
         } catch (Exception e) {
