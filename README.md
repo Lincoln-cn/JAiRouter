@@ -399,6 +399,14 @@ Release tags: `v3.3.3` · `v3.3.2` · `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.
 | **Error-code close-out (#406 / #412 / #414)** | Seven never-emitted codes (constants plus never-called factories) deleted; the docs separate the internal `RESOURCE_FORBIDDEN` → `FORBIDDEN_RESOURCE` constant rename from the client-visible `TOKEN_USAGE_FORBIDDEN` → `FORBIDDEN_TOKEN_USAGE` rename; four ghost codes in the management-API tables replaced with registry names |
 | **Status alignment (#405)** | `BUILTIN_READONLY` answers 403 everywhere (the endpoint used to answer 400); `RESTART_REQUIRED` answers 400 everywhere (the rule chain used to derive 403) |
 
+**Merged after the `v3.3.4` tag** (2026-10-16), grouped by theme:
+
+| Theme | What changed |
+|-------|--------------|
+| **Client-visible status fix (#432)** | A **missing request body** no longer becomes a **500 + `INTERNAL_ERROR`**: three `@RequestBody` endpoints (`AdapterConfigController` create/update, `LoadBalancerManagementController` config update) now pre-validate and answer **400 + "request body invalid or missing"**. Note the constraint this exposed: the check has to sit **outside** the method's own `try`, otherwise the blanket `catch (Exception)` swallows the `ServerWebInputException` and re-wraps it as 500 |
+| Documentation↔code contract (#436) | The en TTS/STT endpoint prefixes were corrected to `/api/v1/audio/*`. Evidence first: `/v1/audio/*` **has no mapping at all** — the `/v1` face only serves models, chat, embeddings, rerank (plus Anthropic messages and debug), so it was the **en** side that was wrong |
+| Gates | `快闸` now also triggers on `src/main/resources/config/**` and `.github/workflows/**`; the previously dead workflow-syntax validator was repaired (it was misreading YAML indentation as Python and contained a tautological path check) and wired into the gate, with a self-test that includes refutation cases |
+
 See the [`[3.3.4]` changelog entry](docs/en/reference/changelog.md); tag only, no GitHub Release or image, per the standing policy.
 
 ### Open ledger

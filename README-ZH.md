@@ -382,6 +382,14 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 | **错误码收口（#406 / #412 / #414）** | 删除 7 个「只有常量与从未被调用的工厂、全仓无发出点」的码；文档把 `RESOURCE_FORBIDDEN` → `FORBIDDEN_RESOURCE` 的**内部常量改名**与客户端可见的 `TOKEN_USAGE_FORBIDDEN` → `FORBIDDEN_TOKEN_USAGE` 分开写；`management-api` 两表里 4 个幽灵码换成注册表真名 |
 | **状态对齐（#405）** | `BUILTIN_READONLY` 两端都是 403（端点原为 400）、`RESTART_REQUIRED` 两端都是 400（规则链原推导 403） |
 
+**`v3.3.4` tag 之后合入**（2026-10-16），按主题归类：
+
+| 主题 | 变更内容 |
+|------|----------|
+| **客户端可见状态修复（#432）** | **请求体缺失**不再变成 **500 + `INTERNAL_ERROR`**：三个 `@RequestBody` 端点（`AdapterConfigController` 的创建/更新、`LoadBalancerManagementController` 的配置更新）改为前置校验，返回 **400 +「请求体无效或缺失」**。这条顺带暴露了一个约束：校验必须放在方法自己的 `try` **之外**，否则会被兜底 `catch (Exception)` 吞掉并重新包成 500 |
+| 文档↔代码契约（#436） | 英文侧 TTS/STT 端点前缀纠正为 `/api/v1/audio/*`。先取证：**`/v1/audio/*` 根本没有映射** —— `/v1` 面只提供 models / chat / embeddings / rerank（外加 Anthropic messages 与 debug），所以**错的是英文侧** |
+| 门闩 | `快闸` 现也会在 `src/main/resources/config/**` 与 `.github/workflows/**` 变更时触发；此前失效的工作流语法校验器修好（它把 YAML 缩进当成 Python 解析，且含一处恒真的路径自比较）并接进门闩，配了含反证的用例自测 |
+
 `[3.3.4]` 的 changelog 条目见 [更新日志](docs/zh/reference/changelog.md)；按既定口径只打 tag，不建 GitHub Release、不产镜像。
 
 ### 开放台账
