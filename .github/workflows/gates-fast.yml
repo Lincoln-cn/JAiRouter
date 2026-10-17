@@ -165,6 +165,20 @@ jobs:
           echo "⏭️ 跳过：$test_file 不存在"
         fi
 
+    - name: 自测后端死代码探测器（#453）
+      run: |
+        # 该探测器只输出"候选"，不适合直接把 findings 当门闩（会有假阳性）；
+        # 但它的 **--self-test 必须一直绿** —— 自检含正控/负控与
+        # 「4b 可疑桶 与 4c 序列化面桶 按 owner 互斥」的不变量，
+        # 分类器一旦写错（把契约字段当死代码），这条会立刻变红。
+        script=scripts/audit/detect-backend-dead-code.py
+        if [ -f "$script" ]; then
+          echo "🧪 运行后端死代码探测器自测（正控 / 负控 / 序列化面不变量）..."
+          python "$script" --self-test
+        else
+          echo "⏭️ 跳过：$script 不存在"
+        fi
+
     - name: 检查工作流内嵌 Python 语法（#429）
       run: |
         script=scripts/docs/validate-workflow-syntax.py

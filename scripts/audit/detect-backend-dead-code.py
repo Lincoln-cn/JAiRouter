@@ -123,6 +123,16 @@ FRAMEWORK_ANNOTATIONS = {
 # annotations that generate accessors / builders referencing field names
 LOMBOK_ACCESSOR_ANNOTATIONS = {"Data", "Getter", "Setter", "Builder", "Value"}
 
+# 由 Jackson / Spring Binder 观测其值的类型：这些类的字段属"契约面"，不是死代码
+SERIALIZATION_SURFACE_ANNOTATIONS = {
+    "ConfigurationProperties", "Schema", "JsonProperty", "JsonInclude",
+    "JsonIgnoreProperties", "JsonNaming", "JsonTypeInfo", "JsonFormat",
+    "Entity", "Embeddable", "MappedSuperclass",
+}
+SERIALIZATION_SURFACE_PKG_SEGMENTS = (
+    ".dto", ".entity", ".properties", ".config", ".model", ".vo",
+)
+
 # interfaces whose implementation is generated at runtime by Spring Data
 SPRING_DATA_REPOSITORY_BASES = {
     "Repository", "CrudRepository", "PagingAndSortingRepository",
@@ -924,6 +934,7 @@ def analyze(ana: Analysis):
         "cat3_private_methods": [],
         "cat4_fields": [],
         "cat4b_lombok_fields": [],
+        "cat4b_serialized": [],
         "cat5a_core": [],
         "cat5a_framework": [],
         "cat5b_core": [],
@@ -1010,6 +1021,34 @@ def analyze(ana: Analysis):
                     "note": _ann_note(m.annotations),
                 })
 
+    # ---- 序列化面：这些类的字段由 Jackson/Binder 观测，不能按"零读取"删 ----
+    controller_idents = {}
+    for fi in ana.main_files:
+        file_anns = set()
+        for t in fi.types:
+            file_anns |= {a.split(".")[-1] for a in t.annotations}
+        if file_anns & {"RestController", "Controller"}:
+            controller_idents[fi.rel] = fi.ident
+    serialized_surface_owners = set()
+    def _pkg_of(info):
+        # FileInfo.pkg 从未被解析器赋值（探测器自身的死字段）⇒ 从路径推导
+        rel = (info.rel or "").replace("\\", "/")
+        for marker in ("src/main/java/", "src/test/java/", "src/main/resources/"):
+            if marker in rel:
+                rel = rel.split(marker, 1)[1]
+                break
+        return ".".join(rel.split("/")[:-1]).lower()
+    for fi in ana.main_files:
+        pkg = _pkg_of(fi)
+        pkg_hit = any(seg in "." + pkg for seg in SERIALIZATION_SURFACE_PKG_SEGMENTS)
+        for t in fi.types:
+            anns = {a.split(".")[-1] for a in t.annotations}
+            if anns & SERIALIZATION_SURFACE_ANNOTATIONS or pkg_hit:
+                serialized_surface_owners.add(t.name)
+                continue
+            if any(t.name in ident for ident in controller_idents.values()):
+                serialized_surface_owners.add(t.name)
+
     # ---- 4. unused private / package-private fields -----------------------
     owner_ann_index = {}
     for fi in ana.main_files:
@@ -1054,7 +1093,14 @@ def analyze(ana: Analysis):
                 row["note"] = (row["note"] + " lombok:" + ",".join(
                     sorted(owner_anns & LOMBOK_ACCESSOR_ANNOTATIONS))).strip()
                 if repo_refs <= 1 and acc_refs == 0 and acc_res == 0:
-                    f["cat4b_lombok_fields"].append(row)
+                    if fl.owner in serialized_surface_owners:
+                        # DTO / 实体 / 配置类：字段值由 Jackson 或 Spring Binder 读，
+                        # "代码里没人 getXxx()"不等于死代码 —— 单独列出，不并入可删清单。
+                        row["note"] = (row["note"] + " serialization-surface").strip()
+                        f["cat4b_serialized"].append(row)
+                        f["suppressed"]["serialization_surface_field"] += 1
+                    else:
+                        f["cat4b_lombok_fields"].append(row)
                 else:
                     f["suppressed"]["lombok_accessor_used"] += 1
                 continue
@@ -1736,6 +1782,7 @@ def run_selftest(verbose=True):
         cat3 = {r["name"]: r["loc"] for r in f["cat3_private_methods"]}
         cat4 = {r["name"]: r["loc"] for r in f["cat4_fields"]}
         cat4b = {r["name"]: r["loc"] for r in f["cat4b_lombok_fields"]}
+        cat4c = {r["name"]: r["loc"] for r in f["cat4b_serialized"]}
         cat5a = {r["name"]: r["loc"] for r in f["cat5a_core"] + f["cat5a_framework"]}
         cat5b = {r["name"]: r["loc"] for r in f["cat5b_core"] + f["cat5b_framework"]}
 
@@ -1754,6 +1801,17 @@ def run_selftest(verbose=True):
             else:
                 results.append((label, False,
                                 f"FALSE POSITIVE at {mapping[name]}"))
+
+        # 序列化面与"可疑"两个桶必须按 owner 互斥（分类器写错会两边都进）
+        overlap = ({r["owner"] for r in f["cat4b_lombok_fields"]}
+                   & {r["owner"] for r in f["cat4b_serialized"]})
+        results.append(("cat4b / cat4c are disjoint by owner", not overlap,
+                        f"overlap={sorted(overlap)}"))
+        results.append(("serialization-surface markers are non-empty",
+                        bool(SERIALIZATION_SURFACE_ANNOTATIONS)
+                        and bool(SERIALIZATION_SURFACE_PKG_SEGMENTS),
+                        f"{len(SERIALIZATION_SURFACE_ANNOTATIONS)} annotations / "
+                        f"{len(SERIALIZATION_SURFACE_PKG_SEGMENTS)} package segments"))
 
         pos("cat1 fires: SyntheticOrphan reported", cat1, "SyntheticOrphan")
         pos("cat1 fires: SyntheticPackagePrivateOrphan reported", cat1,
@@ -1933,7 +1991,11 @@ def real_run(args) -> int:
           f"(static-final suppressed {f['suppressed']['static_final']}, "
           f"annotated suppressed {f['suppressed']['annotated_field']})")
     print(f"4b. lombok fields, no accessor ref  : {len(f['cat4b_lombok_fields'])} "
-          f"(suppressed {f['suppressed']['lombok_accessor_used']})")
+          f"(suppressed {f['suppressed']['lombok_accessor_used']}; "
+          f"serialization-surface sorted out "
+          f"{f['suppressed']['serialization_surface_field']})")
+    print(f"4c. serialization-surface fields     : {len(f['cat4b_serialized'])} "
+          f"(DO NOT delete without checking the wire contract)")
     print(f"5a. bean public methods no refs     : {len(f['cat5a_core'])} core "
           f"+ {len(f['cat5a_framework'])} framework-shaped")
     print(f"5b. other public methods no refs    : {len(f['cat5b_core'])} core "
