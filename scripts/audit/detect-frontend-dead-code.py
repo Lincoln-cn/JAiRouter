@@ -102,7 +102,7 @@ RE_EXPORT_FROM = re.compile(
     r"\bexport\s+(?:type\s+)?[\s\S]{0,400}?\bfrom\s*(['\"])([^'\"]+)\1"
 )
 
-RE_SCRIPT_BLOCK = re.compile(r"<script\b[^>]*>([\s\S]*?)</script\s*>", re.I)
+RE_SCRIPT_BLOCK = re.compile(r"<script\b[^>]*>([\s\S]*?)</script[^>]*>", re.I)
 RE_STYLE_BLOCK = re.compile(r"<style\b[^>]*>([\s\S]*?)</style\s*>", re.I)
 RE_HTML_COMMENT = re.compile(r"<!--[\s\S]*?-->")
 

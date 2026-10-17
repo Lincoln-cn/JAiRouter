@@ -214,7 +214,9 @@ const created = await req('/api/auth/api-keys', {
 const apiKeyValue = created.json?.data?.keyValue
 const apiKeyId = created.json?.data?.keyId || created.json?.data?.id
 check('apikey:create-200', created.status === 200, `status=${created.status} msg=${created.json?.message}`)
-check('apikey:value-returned', !!apiKeyValue, apiKeyValue ? `prefix=${String(apiKeyValue).slice(0, 8)}…` : 'none')
+// 刻意不打印密钥的任何片段（哪怕前 8 位）：CodeQL 把「记录 API Key 值」判为 high 级告警，
+// 而这个脚本是要入库的。只断言「拿到了」。
+check('apikey:value-returned', !!apiKeyValue, apiKeyValue ? 'returned (value not logged)' : 'none')
 
 if (apiKeyValue) {
   const models = await req('/v1/models', { apiKey: apiKeyValue })
