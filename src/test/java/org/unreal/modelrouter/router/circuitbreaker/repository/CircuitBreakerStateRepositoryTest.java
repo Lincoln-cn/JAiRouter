@@ -1,6 +1,5 @@
 package org.unreal.modelrouter.router.circuitbreaker.repository;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,13 +33,11 @@ class CircuitBreakerStateRepositoryTest {
     @Mock
     private StoreManager storeManager;
 
-    private ObjectMapper objectMapper;
     private CircuitBreakerStateRepository repository;
 
     @BeforeEach
     void setUp() {
-        objectMapper = new ObjectMapper();
-        repository = new CircuitBreakerStateRepository(storeManager, objectMapper);
+        repository = new CircuitBreakerStateRepository(storeManager);
     }
 
     @Test

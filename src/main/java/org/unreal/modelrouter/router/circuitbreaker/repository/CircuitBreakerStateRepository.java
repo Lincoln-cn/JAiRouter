@@ -1,7 +1,5 @@
 package org.unreal.modelrouter.router.circuitbreaker.repository;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +9,6 @@ import org.unreal.modelrouter.router.circuitbreaker.LockFreeCircuitBreaker;
 import org.unreal.modelrouter.persistence.store.StoreManager;
 
 import java.util.HashMap;
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -34,15 +31,13 @@ public class CircuitBreakerStateRepository {
     private static final String STORE_KEY_PREFIX = "circuitbreaker.state.";
 
     private final StoreManager storeManager;
-    private final ObjectMapper objectMapper;
 
     // 本地缓存：instanceId -> stateData
     private final Map<String, Map<String, Object>> stateCache = new ConcurrentHashMap<>();
 
     @Autowired
-    public CircuitBreakerStateRepository(final StoreManager storeManager, final ObjectMapper objectMapper) {
+    public CircuitBreakerStateRepository(final StoreManager storeManager) {
         this.storeManager = storeManager;
-        this.objectMapper = objectMapper;
     }
 
     /**
@@ -163,37 +158,6 @@ public class CircuitBreakerStateRepository {
     public void clearAll() {
         stateCache.clear();
         logger.info("所有熔断器状态缓存已清除");
-    }
-
-    /**
-     * 保存状态数据为 JSON 字符串
-     *
-     * @param stateData 状态数据
-     * @return JSON 字符串
-     */
-    private String toJson(final Map<String, Object> stateData) {
-        try {
-            return objectMapper.writeValueAsString(stateData);
-        } catch (JsonProcessingException e) {
-            logger.error("序列化状态数据失败：{}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * 从 JSON 字符串读取状态数据
-     *
-     * @param json JSON 字符串
-     * @return 状态数据 Map
-     */
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> fromJson(final String json) {
-        try {
-            return objectMapper.readValue(json, Map.class);
-        } catch (JsonProcessingException e) {
-            logger.error("反序列化状态数据失败：{}", e.getMessage());
-            return Collections.emptyMap();
-        }
     }
 
     /**
