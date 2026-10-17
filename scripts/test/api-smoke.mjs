@@ -19,6 +19,7 @@
  * 设计约束：
  *   - 只依赖 Node 内置 fetch（无 npm 依赖），因此不进 Maven/vitest 门闩也能在任何机器跑；
  *   - 会创建并删除一个临时 API Key（`rateLimitPerMinute: 5`）用于验证限流语义，跑完自行清理；
+ *   - 会创建并删除一个临时 **JWT 账号**（`roles: ["USER"]`）用于第 9 段的 RBAC 读/写矩阵，跑完自行清理；
  *   - **只断言「应当成立」的契约**。已登记但未修的问题（`#454` 的 405、`#456` 的 custom-tags
  *     谎报成功、`#457` 的空 OpenAPI）**不在此断言**，避免把缺陷固化成期望值。
  *
@@ -248,6 +249,72 @@ if (apiKeyId) {
   check('cleanup:apikey-deleted', del.status === 200, `status=${del.status}`)
 } else {
   check('cleanup:apikey-deleted', false, 'no keyId to delete')
+}
+
+// ------------------------------------- 9. RBAC 读/写矩阵 + 未绑定写端点 fail-closed
+// 由来（审计 #468）：权限码层面读写是分离的（14 组 :read/:write），但页内按钮不随写权限变化。
+// 那组结论当时是手工实测的（建低权限账号 → 逐个端点打读/写 → 删账号），这里把它固化成可复跑断言：
+//   ① 低权限角色（roles:["USER"]）对「只读可进」的管理端点：读 200、写 403；
+//   ② 未在权限矩阵里绑定规则的写端点（DELETE /api/monitoring/slow-queries/stats 只有 GET 规则）
+//      必须 fail-closed —— 低权限 403、ADMIN 200。这条守的是 RbacUnmatchedPolicy 的默认姿态：
+//      一旦有人把它切成 AUTHENTICATED，任何已认证用户就能重置全局慢查询统计。
+log('9. RBAC 读/写矩阵（低权限账号）与未绑定写端点的 fail-closed')
+
+const lowUser = `smoke-limited-user-${Date.now()}`
+const lowPass = 'SmokeLowPriv!2345'
+const createdAccountResp = await req('/api/security/jwt/accounts', {
+  method: 'POST',
+  token,
+  body: { username: lowUser, password: lowPass, roles: ['USER'], enabled: true }
+})
+check('rbac:create-limited-user', createdAccountResp.status === 200, `status=${createdAccountResp.status} msg=${createdAccountResp.json?.message ?? ''}`)
+
+let lowToken = null
+let limitedAccountId = null
+if (createdAccountResp.status === 200) {
+  const login = await req('/api/auth/jwt/login', { method: 'POST', body: { username: lowUser, password: lowPass } })
+  lowToken = login.json?.data?.token ?? null
+  check('rbac:limited-user-login', !!lowToken, `status=${login.status}`)
+
+  const accountsResp = await req('/api/security/jwt/accounts', { token })
+  const accList = accountsResp.json?.data?.items ?? accountsResp.json?.data ?? []
+  limitedAccountId = (Array.isArray(accList) ? accList : []).find((a) => a.username === lowUser)?.id ?? null
+}
+
+if (lowToken) {
+  // ① 读/写分离：读得通、写被拒
+  const RW_CASES = [
+    {
+      tag: 'config-quota',
+      read: ['GET', '/api/config/quota'],
+      write: ['PUT', '/api/config/quota', {}]
+    },
+    {
+      tag: 'slow-queries',
+      read: ['GET', '/api/monitoring/slow-queries/stats'],
+      // ⚠️ 这条 DELETE 在 PermissionRuleRegistry 里**没有绑定规则**，靠 RbacUnmatchedPolicy 兜底
+      write: ['DELETE', '/api/monitoring/slow-queries/stats']
+    }
+  ]
+  for (const c of RW_CASES) {
+    const r = await req(c.read[1], { method: c.read[0], token: lowToken })
+    check(`rbac:${c.tag}:read-200`, r.status === 200, `status=${r.status}`)
+    const w = await req(c.write[1], { method: c.write[0], token: lowToken, body: c.write[2] })
+    check(`rbac:${c.tag}:write-403`, w.status === 403, `status=${w.status} ct=${w.headers.get('content-type') ?? ''}`)
+  }
+
+  // ② 未绑定写端点对 ADMIN 必须放行（否则 403 可能只是因为"端点坏了"，而不是权限拦住了）
+  const adminDel = await req('/api/monitoring/slow-queries/stats', { method: 'DELETE', token })
+  check('rbac:unbound-delete:admin-200', adminDel.status === 200, `status=${adminDel.status}`)
+} else {
+  check('rbac:matrix', false, 'skip: 低权限账号不可用，本段未验证')
+}
+
+if (limitedAccountId) {
+  const del = await req(`/api/security/jwt/accounts/${encodeURIComponent(limitedAccountId)}`, { method: 'DELETE', token })
+  check('rbac:cleanup-limited-user', del.status === 200, `status=${del.status}`)
+} else if (createdAccountResp.status === 200) {
+  check('rbac:cleanup-limited-user', false, 'created but no id found')
 }
 
 // ---------------------------------------------------------------- 汇总
