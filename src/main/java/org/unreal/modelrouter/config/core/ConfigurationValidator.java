@@ -476,31 +476,6 @@ public class ConfigurationValidator {
         }
     }
 
-    /**
-     * 验证基本配置
-     */
-    private void validateBasicConfiguration(final Map<String, Object> config,
-                                            final List<String> errors,
-                                            final List<String> warnings) {
-        // 验证全局适配器
-        if (config.containsKey("adapter")) {
-            String adapter = (String) config.get("adapter");
-            if (adapter == null || adapter.trim().isEmpty()) {
-                warnings.add("全局适配器配置为空");
-            }
-        }
-
-        // 验证全局负载均衡配置
-        if (config.containsKey("loadBalance")) {
-            validateLoadBalanceConfig(config.get("loadBalance"), "全局", errors, warnings);
-        }
-
-        // 验证全局限流配置
-        if (config.containsKey("rateLimit")) {
-            validateRateLimitConfig(config.get("rateLimit"), "全局", errors, warnings);
-        }
-    }
-
 
     public boolean isValidServiceType(final String serviceType) {
         if (serviceType == null) {
