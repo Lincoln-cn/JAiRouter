@@ -93,6 +93,7 @@ E2E_USER=admin E2E_PASS=*** node scripts/test/api-smoke.mjs  # 非出厂口令�
 | 内置 adapter 只读 | `PUT`/`DELETE` 命中内置 adapter → **403 + `BUILTIN_READONLY`** |
 | 缺失请求体 | 三个 `@RequestBody` 端点 → **400**（不得是 500）；非法 JSON → 400 |
 | API Key 全链 | 建 Key → `/v1/models` 200 → 限流后 **429 + `RATE_LIMITED_API_KEY`**，且 `/v1` 的 `type=rate_limit_error` → 清理 |
+| **RBAC 读/写矩阵** | 临时低权限账号（`roles:["USER"]`）：`/config/quota` 与 `/monitoring/slow-queries` 的**读 200 / 写 403**；且**未绑定规则的写端点**必须 fail-closed（低权限 403、ADMIN 200）→ 清理 |
 
 约束与边界：
 
