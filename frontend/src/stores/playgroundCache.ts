@@ -4,7 +4,6 @@ import { getServiceInstances } from '@/api/dashboard'
 import { ElMessage } from 'element-plus'
 import { i18n } from '@/i18n'
 
-import { COMMON_SERVICE_TYPES } from '@/constants/serviceTypes'
 
 // t 经最小接口断言，规避 vue-i18n 消息泛型导致的深层实例化
 const { t: gt } = i18n.global as unknown as {
@@ -220,37 +219,3 @@ export const clearCache = (serviceType?: string) => {
   }
 }
 
-// 预加载常用服务类型的数据
-export const preloadCommonData = async () => {
-  const commonServiceTypes = COMMON_SERVICE_TYPES
-  
-  // 并行预加载，但不等待结果，避免阻塞
-  commonServiceTypes.forEach(serviceType => {
-    getCachedInstances(serviceType).catch(() => {
-      // 静默处理错误，不影响用户体验
-    })
-    getCachedModels(serviceType).catch(() => {
-      // 静默处理错误，不影响用户体验
-    })
-  })
-}
-
-// 刷新所有缓存
-export const refreshAllCache = async () => {
-  const serviceTypes = [...Object.keys(instancesCache), ...Object.keys(modelsCache)]
-  const uniqueServiceTypes = [...new Set(serviceTypes)]
-  
-  const promises = uniqueServiceTypes.map(async (serviceType) => {
-    try {
-      await Promise.all([
-        getCachedInstances(serviceType, true),
-        getCachedModels(serviceType, true)
-      ])
-    } catch (error) {
-      console.error(`刷新${serviceType}缓存失败:`, error)
-    }
-  })
-  
-  await Promise.all(promises)
-  ElMessage.success(gt('playgroundCache.refreshDone'))
-}

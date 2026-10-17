@@ -278,34 +278,12 @@ export interface ServiceThroughput {
   totalRequests: number
 }
 
-export interface SlowTrace {
-  traceId: string
-  service: string
-  operation: string
-  duration: number
-  startTime: string
-}
-
 export interface CommonError {
   errorType: string
   service: string
   operation: string
   count: number
   lastOccurrence: string
-}
-
-export interface SpanInfo {
-  spanId: string
-  service: string
-  operation: string
-  duration: number
-  startTime: string
-  status: string
-}
-
-export interface ServiceSamplingConfig {
-  service: string
-  rate: number
 }
 
 // Common Types
