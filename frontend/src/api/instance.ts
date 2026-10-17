@@ -42,10 +42,11 @@ export const getServiceInstances = (serviceType: string) => {
   return request.get<RouterResponse<any[]>>(`/config/instance/${serviceType}`)
 }
 
-// 获取单个实例详情
-export const getServiceInstance = (serviceType: string, instanceId: string) => {
-  return request.get<RouterResponse<any>>(`/config/instance/${serviceType}/${instanceId}`)
-}
+// 注：这里曾有一个 `getServiceInstance(serviceType, instanceId)` 调用
+// `GET /config/instance/{serviceType}/{instanceId}`，但后端 ServiceTypeInstanceController
+// 在该路径上**只声明了 PUT 与 DELETE**，没有 GET ⇒ 真调用会得到 405。
+// 又因为它全仓零调用方（0 references），审计 #454 直接删除。
+// 若将来确实需要「取单个实例」，要么后端补 GET，要么复用列表接口按 instanceId 过滤。
 
 // 添加服务实例
 export const addServiceInstance = (serviceType: string, instanceConfig: InstanceConfig) => {
