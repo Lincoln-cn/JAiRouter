@@ -222,69 +222,9 @@ export interface QuotaAlertInfo {
   message: string
 }
 
-// 兼容旧类型
-export type ApiKeyInfo = ApiKeyVO
-export type ApiKeyCreationResponse = ApiKeyCreationVO
-export type CreateApiKeyRequest = ApiKeyCreateRequest
-export type UpdateApiKeyRequest = ApiKeyUpdateRequest
-
-// Tracing Management Types
-export interface TracingOverview {
-  totalTraces: number
-  errorTraces: number
-  avgDuration: number
-  samplingRate: number
-  successfulTraces?: number
-  totalSpans?: number
-  maxDuration?: number
-  minDuration?: number
-}
-
-export interface TracingStats {
-  traceVolumeTrend: TimeSeriesData[]
-  errorTrend: TimeSeriesData[]
-  processing?: {
-    queue_size: number
-    processed_count: number
-    is_running: boolean
-    success_rate: number
-    dropped_count: number
-  }
-  configInfo?: {
-    serviceName: string
-    exporterType: string
-    globalSamplingRatio: number
-    enabled: boolean
-  }
-  memory?: {
-    cache_size: number
-    pressure_level: string
-    cache_hit_ratio: number
-    heap_usage_ratio: number
-  }
-  timestamp?: string
-}
-
-export interface ServiceStats {
-  name: string
-  traces: number
-  errors: number
-  avgDuration: number
-  p95Duration: number
-  p99Duration: number
-  errorRate: number
-}
-
 export interface TimeSeriesData {
   timestamp: string | number
   value: number
-}
-
-// Performance Analysis Types
-export interface PerformanceStats {
-  latencyDistribution: ServiceLatency[]
-  latencyTrend: LatencyTrendData
-  slowTraces: SlowTrace[]
 }
 
 export interface LatencyAnalysis {
@@ -354,13 +294,6 @@ export interface CommonError {
   lastOccurrence: string
 }
 
-export interface TraceDetails {
-  traceId: string
-  spans: SpanInfo[]
-  totalDuration: number
-  services: string[]
-}
-
 export interface SpanInfo {
   spanId: string
   service: string
@@ -370,24 +303,9 @@ export interface SpanInfo {
   status: string
 }
 
-// Sampling Configuration Types
-export interface SamplingConfig {
-  globalRate: number
-  adaptiveSampling: boolean
-  alwaysSamplePaths: string[]
-  neverSamplePaths: string[]
-  serviceConfigs: ServiceSamplingConfig[]
-}
-
 export interface ServiceSamplingConfig {
   service: string
   rate: number
-}
-
-export interface SamplingStats {
-  totalSamples: number
-  droppedSamples: number
-  samplingEfficiency: number
 }
 
 // Common Types

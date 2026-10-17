@@ -67,14 +67,6 @@ export function isValidServiceType(value: string): boolean {
 }
 
 /**
- * 从字符串转换为服务类型
- */
-export function toServiceType(value: string): ServiceType | null {
-  const serviceType = value as ServiceType
-  return isValidServiceType(value) ? serviceType : null
-}
-
-/**
  * 获取服务类型显示名称（调用时求值，随语言切换生效）
  */
 export function getServiceTypeLabel(value: string): string {

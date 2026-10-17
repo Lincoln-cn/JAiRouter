@@ -61,23 +61,6 @@ export interface ExtendedAuditQueryResponse {
     hasMore: boolean
 }
 
-// 审计查询参数
-export interface AuditQueryParams {
-    startTime?: string
-    endTime?: string
-    userId?: string
-    resourceId?: string
-    eventTypes?: AuditEventType[]
-    ipAddress?: string
-    success?: boolean
-    eventCategory?: string
-    riskLevel?: RiskLevel
-    page?: number
-    size?: number
-    sortBy?: string
-    sortDirection?: 'ASC' | 'DESC'
-}
-
 // 安全报告类型
 export interface SecurityReport {
     reportPeriodStart: string

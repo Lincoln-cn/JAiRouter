@@ -19,18 +19,6 @@ export interface RateLimiterSummary {
   highUsageLimiters: number
 }
 
-/** 单条限流器指标（/rate-limiter/metrics 裸响应数组元素） */
-export interface RateLimiterMetricItem {
-  service: string
-  scope: string
-  identifier: string
-  algorithm: string
-  remainingCapacity: number
-  usageRatio: number
-  capacity: number
-  rate: number
-}
-
 /** 熔断器实例状态（/config/instance/circuit-breaker/states 响应 data 元素） */
 export interface CircuitBreakerState {
   instanceId: string
@@ -39,16 +27,6 @@ export interface CircuitBreakerState {
   state: string       // CLOSED | OPEN | HALF_OPEN
   failureCount: number
   successCount: number
-}
-
-/** 路由监控状态（/v1/routing-monitor/status 裸响应） */
-export interface RoutingMonitorStatus {
-  enabled: boolean
-  paused: boolean
-  sampleRate: number
-  historySize: number
-  totalSampledCount: number
-  pausedServices: string[]
 }
 
 /** 单服务路由统计 */
