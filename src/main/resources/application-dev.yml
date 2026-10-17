@@ -16,7 +16,12 @@ springdoc:
     operations-sorter: method
   api-docs:
     path: /v3/api-docs
-  packages-to-scan: org.unreal.modelrouter.controller
+  # ⚠️ 必须是**真实存在且包含控制器**的父包（issue #457）。
+  # 原值是 `org.unreal.modelrouter.controller` —— 这个包在整个代码库里**不存在**
+  # （控制器都在 router/monitor/auth/config/persistence 各自的 `controller` 子包下），
+  # 于是 springdoc 扫了个空包，`/v3/api-docs` 返回 `{"paths":{},"components":{}}`（实测 180 字节、0 个路径），
+  # Swagger UI 打开后没有任何接口。改成命名空间根包后实测 312 个路径 / 34 个 tag / 270 个 schema。
+  packages-to-scan: org.unreal.modelrouter
   show-actuator: true
   cache:
     disabled: true

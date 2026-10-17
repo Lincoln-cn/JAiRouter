@@ -1,4 +1,4 @@
-﻿# OpenAPI Specification Document
+# OpenAPI Specification Document
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -46,11 +46,27 @@ springdoc:
     operations-sorter: method       # Sort operations by HTTP method
   api-docs:
     path: /v3/api-docs             # OpenAPI JSON document path
-  packages-to-scan: org.unreal.modelrouter.controller  # Package path to scan
+  packages-to-scan: org.unreal.modelrouter  # Package path to scan (must exist and contain controllers)
   show-actuator: true             # Show Actuator endpoints
   cache:
     disabled: true                 # Disable cache in development environment
 ```
+
+> ⚠️ **`packages-to-scan` must name a package that really exists and really contains controllers.** This
+> value was once `org.unreal.modelrouter.controller` — a package that does not exist in this codebase (every
+> controller lives under `router/`, `monitor/`, `auth/`, `config/` or `persistence/`, each with its own
+> `controller` sub-package). springdoc then scanned an empty package and `/v3/api-docs` answered
+> `{"paths":{},"components":{}}` (180 bytes, **0 paths**) while still returning `200` — the Swagger UI opened
+> with nothing in it. With the root namespace above the spec is **312 paths / 34 tags / 270 schemas**.
+> The failure mode is silent, so after changing this key always check the **path count**, not just the status
+> code:
+>
+> ```bash
+> curl -s -H "Jairouter_Token: <ADMIN JWT>" http://localhost:8080/v3/api-docs | jq '.paths | length'
+> ```
+>
+> `/v3/api-docs` is **not** anonymous by default — it needs a credential unless
+> `jairouter.security.docs-public=true` (see `ApiDocsAccessPolicy`).
 
 ## API Grouping
 

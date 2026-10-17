@@ -1,4 +1,4 @@
-﻿# OpenAPI 规范文档
+# OpenAPI 规范文档
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.3  
@@ -46,11 +46,25 @@ springdoc:
     operations-sorter: method       # 操作按 HTTP 方法排序
   api-docs:
     path: /v3/api-docs             # OpenAPI JSON 文档路径
-  packages-to-scan: org.unreal.modelrouter.controller  # 扫描的包路径
+  packages-to-scan: org.unreal.modelrouter  # 扫描的包路径（必须真实存在且真的含控制器）
   show-actuator: true             # 显示 Actuator 端点
   cache:
     disabled: true                 # 开发环境禁用缓存
 ```
+
+> ⚠️ **`packages-to-scan` 必须指向真实存在、且真的包含控制器的包**。这个值曾经是
+> `org.unreal.modelrouter.controller` —— 该包在本代码库里**不存在**（控制器都在 `router/`、`monitor/`、
+> `auth/`、`config/`、`persistence/` 各自的 `controller` 子包下）。于是 springdoc 扫了个空包，
+> `/v3/api-docs` 返回 `{"paths":{},"components":{}}`（180 字节、**0 个路径**）却**照样返回 `200`**，
+> Swagger UI 打开后没有任何接口。改成命名空间根包后实测 **312 个路径 / 34 个 tag / 270 个 schema**。
+> 这个失败是**静默**的，所以改动该键之后一定要看**路径数量**，不能只看状态码：
+>
+> ```bash
+> curl -s -H "Jairouter_Token: <ADMIN JWT>" http://localhost:8080/v3/api-docs | jq '.paths | length'
+> ```
+>
+> `/v3/api-docs` **默认不是匿名可访问的** —— 需要凭据，除非设了
+> `jairouter.security.docs-public=true`（见 `ApiDocsAccessPolicy`）。
 
 ## API 分组
 
