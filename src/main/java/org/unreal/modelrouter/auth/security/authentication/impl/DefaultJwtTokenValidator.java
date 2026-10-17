@@ -5,6 +5,7 @@ import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,8 @@ import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties
 import org.unreal.modelrouter.auth.security.model.JwtAuthentication;
 import org.unreal.modelrouter.auth.security.model.JwtPrincipal;
 import org.unreal.modelrouter.auth.security.service.EnhancedJwtBlacklistService;
+import org.unreal.modelrouter.common.exception.SecurityException;
+import org.unreal.modelrouter.monitor.monitoring.security.SecurityMetrics;
 import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
@@ -68,8 +71,16 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
     @Autowired(required = false)
     private EnhancedJwtBlacklistService enhancedBlacklistService;
 
+    /**
+     * 安全指标（issue #456）。可选依赖：单元测试直接 new 出本类时该字段为 null，埋点自动跳过。
+     */
+    @Autowired(required = false)
+    private SecurityMetrics securityMetrics;
+
     @Override
     public Mono<Authentication> validateToken(final String token) {
+        // issue #456：每个受保护请求都会经过这里，是 JWT 指标的唯一天然埋点。
+        final Timer.Sample sample = securityMetrics != null ? securityMetrics.startJwtValidationTimer() : null;
         // 检查令牌是否在黑名单中
         return isTokenBlacklisted(token)
             .flatMap(isBlacklisted -> {
@@ -127,6 +138,26 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
                             "JWT令牌验证过程中发生错误",
                             ErrorCode.JWT_VALIDATION_ERROR.code()));
                 }
+            })
+            .doOnSuccess(authentication -> {
+                if (securityMetrics != null) {
+                    securityMetrics.recordJwtValidation(true);
+                }
+            })
+            .doOnError(error -> {
+                if (securityMetrics != null) {
+                    securityMetrics.recordJwtValidation(false);
+                    // 过期与无效要分开：过期数能反映 token 寿命配置是否合理
+                    if (error instanceof SecurityException se
+                            && ErrorCode.JWT_EXPIRED.code().equals(se.getErrorCode())) {
+                        securityMetrics.recordJwtExpired();
+                    }
+                }
+            })
+            .doFinally(signal -> {
+                if (securityMetrics != null && sample != null) {
+                    securityMetrics.recordJwtValidationDuration(sample);
+                }
             });
     }
 
@@ -163,7 +194,12 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
                     });
 
                     return generateToken(subject, roles, additionalClaims);
-                }));
+                }))
+                .doOnSuccess(refreshed -> {
+                    if (securityMetrics != null) {
+                        securityMetrics.recordJwtRefresh();
+                    }
+                });
 
         } catch (JwtException e) {
             log.warn("JWT令牌刷新失败: {}", e.getMessage());

@@ -2,6 +2,7 @@ package org.unreal.modelrouter.auth.security.authentication.impl;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -13,9 +14,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.unreal.modelrouter.auth.security.config.properties.JwtConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.service.EnhancedJwtBlacklistService;
+import org.unreal.modelrouter.monitor.monitoring.security.SecurityMetrics;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -95,6 +98,45 @@ class DefaultJwtTokenValidatorTest {
             StepVerifier.create(result)
                 .expectError()
                 .verify();
+        }
+    }
+
+    @Nested
+    @DisplayName("安全指标接线（issue #456）")
+    class SecurityMetricsWiringTests {
+
+        @Test
+        @DisplayName("有效令牌 → jwt.validations{result=success} +1，且计时器被 stop")
+        void validTokenRecordsSuccessAndDuration() {
+            SimpleMeterRegistry registry = new SimpleMeterRegistry();
+            ReflectionTestUtils.setField(validator, "securityMetrics", new SecurityMetrics(registry));
+
+            String token = generateTestToken("user123", Arrays.asList("USER"));
+
+            StepVerifier.create(validator.validateToken(token))
+                    .expectNextCount(1)
+                    .verifyComplete();
+
+            assertEquals(1.0, registry.get("jairouter.security.jwt.validations")
+                    .tag("result", "success").counter().count());
+            assertEquals(1L, registry.get("jairouter.security.jwt.validation.duration").timer().count(),
+                    "计时器必须被 stop 一次，否则 duration 指标永远是 0");
+        }
+
+        @Test
+        @DisplayName("无效令牌 → jwt.validations{result=failure} +1")
+        void invalidTokenRecordsFailure() {
+            SimpleMeterRegistry registry = new SimpleMeterRegistry();
+            ReflectionTestUtils.setField(validator, "securityMetrics", new SecurityMetrics(registry));
+
+            StepVerifier.create(validator.validateToken("invalid.token.format"))
+                    .expectError()
+                    .verify();
+
+            assertEquals(1.0, registry.get("jairouter.security.jwt.validations")
+                    .tag("result", "failure").counter().count());
+            assertNull(registry.find("jairouter.security.jwt.validations")
+                    .tag("result", "success").counter());
         }
     }
 

@@ -1,11 +1,13 @@
 package org.unreal.modelrouter.auth.security.sanitization.impl;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.unreal.modelrouter.common.exception.SanitizationException;
 import org.unreal.modelrouter.auth.sanitization.SanitizationRuleEngine;
 import org.unreal.modelrouter.auth.sanitization.impl.DefaultSanitizationService;
@@ -13,6 +15,7 @@ import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties
 import org.unreal.modelrouter.auth.security.model.RuleType;
 import org.unreal.modelrouter.auth.security.model.SanitizationRule;
 import org.unreal.modelrouter.auth.security.model.SanitizationStrategy;
+import org.unreal.modelrouter.monitor.monitoring.security.SecurityMetrics;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -625,5 +628,46 @@ class DefaultSanitizationServiceTest {
         assertTrue(after.size() > before, "热重建后规则数应增加");
         assertTrue(after.stream().anyMatch(r -> "\\b[A-Z]{2}\\d{6}\\b".equals(r.getPattern())),
                 "新增 PII 模式应出现在规则库中");
+    }
+
+    @Test
+    @DisplayName("脱敏指标接线（#456）：请求脱敏记 operations{direction=request} 并计时")
+    void testSanitizationMetrics_recordedForRequest() {
+        securityProperties.getSanitization().getRequest().setEnabled(true);
+        sanitizationService.initializeRules();
+
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        ReflectionTestUtils.setField(sanitizationService, "securityMetrics", new SecurityMetrics(registry));
+
+        StepVerifier.create(sanitizationService.sanitizeRequest("password=1", "application/json", null))
+                .expectNextCount(1)
+                .verifyComplete();
+
+        assertEquals(1.0, registry.get("jairouter.security.sanitization.operations")
+                .tag("content_type", "application/json")
+                .tag("direction", "request")
+                .counter().count());
+        assertEquals(1L, registry.get("jairouter.security.sanitization.duration")
+                .tag("operation", "request").timer().count(),
+                "计时器必须被 stop 一次，否则 duration 指标永远是 0");
+    }
+
+    @Test
+    @DisplayName("脱敏指标接线（#456）：响应脱敏记 direction=response")
+    void testSanitizationMetrics_recordedForResponse() {
+        securityProperties.getSanitization().getResponse().setEnabled(true);
+        sanitizationService.initializeRules();
+
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        ReflectionTestUtils.setField(sanitizationService, "securityMetrics", new SecurityMetrics(registry));
+
+        StepVerifier.create(sanitizationService.sanitizeResponse("debug info", "application/json"))
+                .expectNextCount(1)
+                .verifyComplete();
+
+        assertEquals(1.0, registry.get("jairouter.security.sanitization.operations")
+                .tag("content_type", "application/json")
+                .tag("direction", "response")
+                .counter().count());
     }
 }

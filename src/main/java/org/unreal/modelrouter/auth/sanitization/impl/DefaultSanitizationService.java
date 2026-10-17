@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.auth.sanitization.impl;
 
 import jakarta.annotation.PostConstruct;
+import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties
 import org.unreal.modelrouter.auth.security.model.RuleType;
 import org.unreal.modelrouter.auth.security.model.SanitizationRule;
 import org.unreal.modelrouter.auth.security.model.SanitizationStrategy;
+import org.unreal.modelrouter.monitor.monitoring.security.SecurityMetrics;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
@@ -31,6 +33,12 @@ public class DefaultSanitizationService implements SanitizationService {
     
     private final SanitizationRuleEngine ruleEngine;
     private final SecurityProperties securityProperties;
+
+    /**
+     * 安全指标（issue #456）。可选依赖：单测直接 new 出本类时该字段为 null，埋点自动跳过。
+     */
+    @Autowired(required = false)
+    private SecurityMetrics securityMetrics;
     
     /**
      * 脱敏规则存储
@@ -242,6 +250,21 @@ public class DefaultSanitizationService implements SanitizationService {
      * 执行脱敏处理
      */
     private Mono<String> performSanitization(final String content, final String contentType, final String type) {
+        // issue #456：请求/响应/存储三条脱敏都走这里，是脱敏指标的唯一天然埋点。
+        // 只记录 operations 与耗时；ruleMatch 需要规则引擎回传命中数（当前签名只有内容），另批处理。
+        final Timer.Sample sample = securityMetrics != null ? securityMetrics.startSanitizationTimer() : null;
+        if (securityMetrics != null) {
+            securityMetrics.recordSanitizationOperation(contentType, type);
+        }
+        Mono<String> result = doPerformSanitization(content, contentType, type);
+        return result.doFinally(signal -> {
+            if (securityMetrics != null && sample != null) {
+                securityMetrics.recordSanitizationDuration(sample, type);
+            }
+        });
+    }
+
+    private Mono<String> doPerformSanitization(final String content, final String contentType, final String type) {
         // 获取适用的规则
         List<SanitizationRule> applicableRules = rules.values().stream()
                 .filter(rule -> rule.getRuleId().startsWith(type))

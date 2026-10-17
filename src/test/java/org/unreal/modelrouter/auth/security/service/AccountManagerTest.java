@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,9 +20,11 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.unreal.modelrouter.auth.security.config.properties.JwtAccountProperties;
 import org.unreal.modelrouter.auth.security.config.properties.JwtConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
+import org.unreal.modelrouter.monitor.monitoring.security.SecurityMetrics;
 import org.unreal.modelrouter.persistence.jpa.entity.JwtAccountEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.JwtAccountRepository;
 import reactor.core.publisher.Mono;
@@ -35,6 +38,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -330,6 +334,56 @@ class AccountManagerTest {
             assertEquals("{noop}secret", details.getPassword());
             assertEquals(List.of("ADMIN"), authorities(details));
             verify(jwtAccountRepository, never()).findByUsername(anyString());
+        }
+    }
+
+    @Nested
+    @DisplayName("安全指标接线（issue #456）")
+    class SecurityMetricsWiringTests {
+
+        @Test
+        @DisplayName("登录成功 → attempts / successes{auth_type=password} / duration 都增长")
+        void loginSuccessRecordsMetrics() {
+            when(jwtConfig.getAccounts()).thenReturn(List.of(
+                    yamlAccount("admin", "{noop}secret", true, List.of("ADMIN"))));
+            when(passwordEncoder.matches("secret", "{noop}secret")).thenReturn(true);
+            when(rolePermissionService.getPermissionCodesForRoles(any())).thenReturn(List.of());
+
+            SimpleMeterRegistry registry = new SimpleMeterRegistry();
+            ReflectionTestUtils.setField(accountManager, "securityMetrics", new SecurityMetrics(registry));
+
+            StepVerifier.create(accountManager.authenticateAndGenerateToken("admin", "secret", securityProperties))
+                    .expectNextCount(1)
+                    .verifyComplete();
+
+            assertEquals(1.0, registry.get("jairouter.security.authentication.attempts").counter().count());
+            assertEquals(1.0, registry.get("jairouter.security.authentication.successes")
+                    .tag("auth_type", "password").counter().count());
+            assertEquals(1L, registry.get("jairouter.security.authentication.duration").timer().count(),
+                    "计时器必须被 stop 一次，否则 duration 指标永远是 0");
+        }
+
+        @Test
+        @DisplayName("登录失败 → attempts 增长、failures{auth_type=password} 增长、successes 不增长")
+        void loginFailureRecordsMetrics() {
+            when(jwtConfig.getAccounts()).thenReturn(List.of(
+                    yamlAccount("admin", "{noop}secret", true, List.of("ADMIN"))));
+            when(passwordEncoder.matches("wrong", "{noop}secret")).thenReturn(false);
+            when(jwtAccountRepository.findByUsername(anyString())).thenReturn(Optional.empty());
+
+            SimpleMeterRegistry registry = new SimpleMeterRegistry();
+            ReflectionTestUtils.setField(accountManager, "securityMetrics", new SecurityMetrics(registry));
+
+            StepVerifier.create(accountManager.authenticateAndGenerateToken("admin", "wrong", securityProperties))
+                    .expectError()
+                    .verify();
+
+            assertEquals(1.0, registry.get("jairouter.security.authentication.attempts").counter().count());
+            assertEquals(1.0, registry.get("jairouter.security.authentication.failures")
+                    .tag("auth_type", "password").counter().count());
+            // 成功计数器根本没被注册过 ⇒ 不存在，而不是"值为 0"
+            assertNull(registry.find("jairouter.security.authentication.successes")
+                    .tag("auth_type", "password").counter());
         }
     }
 
