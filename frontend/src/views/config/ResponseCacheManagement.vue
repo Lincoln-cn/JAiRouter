@@ -242,7 +242,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Refresh,
   Delete,
@@ -402,41 +402,66 @@ const handleInvalidateAll = async () => {
   }
 }
 
-const handleInvalidateByServiceType = async () => {
+// 按服务类型批量失效缓存会影响该服务下所有条目 ⇒ 必须二次确认。
+// 审计 #460 / #466：本页此前**没有任何 E2E 覆盖**，因此这两处未确认的批量失效一直没人发现；
+// 守卫见 14-response-cache.mjs（需以 --jairouter.response-cache.enabled=true 起服务才点得到按钮）。
+const handleInvalidateByServiceType = () => {
   if (!selectedServiceType.value) return
-  invalidating.value = true
-  try {
-    const result = await invalidateCache({ serviceType: selectedServiceType.value })
-    if (result.executed) {
-      ElMessage.success(t('responseCache.invalidatedByServiceType', { serviceType: selectedServiceType.value }))
-    } else {
-      ElMessage.warning(t('responseCache.cacheNotEnabledWarning'))
+  const serviceType = selectedServiceType.value
+  ElMessageBox.confirm(
+    t('responseCache.invalidateByServiceConfirmMessage', { serviceType }),
+    t('responseCache.invalidateByServiceConfirmTitle'),
+    {
+      confirmButtonText: t('responseCache.confirm'),
+      cancelButtonText: t('responseCache.cancel'),
+      type: 'warning'
     }
-    await loadStatus()
-  } catch {
-    ElMessage.error(t('responseCache.operationFailedError'))
-  } finally {
-    invalidating.value = false
-  }
+  ).then(async () => {
+    invalidating.value = true
+    try {
+      const result = await invalidateCache({ serviceType })
+      if (result.executed) {
+        ElMessage.success(t('responseCache.invalidatedByServiceType', { serviceType }))
+      } else {
+        ElMessage.warning(t('responseCache.cacheNotEnabledWarning'))
+      }
+      await loadStatus()
+    } catch {
+      ElMessage.error(t('responseCache.operationFailedError'))
+    } finally {
+      invalidating.value = false
+    }
+  })
 }
 
-const handleInvalidateByModel = async () => {
+// 按模型批量失效缓存 ⇒ 同上。
+const handleInvalidateByModel = () => {
   const model = modelName.value.trim()
   if (!model) return
-  invalidating.value = true
-  try {
-    const result = await invalidateCache({ model })
-    if (result.executed) {
-      ElMessage.success(t('responseCache.invalidatedByModel', { model }))
-    } else {
-      ElMessage.warning(t('responseCache.cacheNotEnabledWarning'))
+  ElMessageBox.confirm(
+    t('responseCache.invalidateByModelConfirmMessage', { model }),
+    t('responseCache.invalidateByModelConfirmTitle'),
+    {
+      confirmButtonText: t('responseCache.confirm'),
+      cancelButtonText: t('responseCache.cancel'),
+      type: 'warning'
     }
-    await loadStatus()
-  } catch {
-    ElMessage.error(t('responseCache.operationFailedError'))
-  } finally {
-    invalidating.value = false
-  }
+  ).then(async () => {
+    invalidating.value = true
+    try {
+      const result = await invalidateCache({ model })
+      if (result.executed) {
+        ElMessage.success(t('responseCache.invalidatedByModel', { model }))
+      } else {
+        ElMessage.warning(t('responseCache.cacheNotEnabledWarning'))
+      }
+      await loadStatus()
+    } catch {
+      ElMessage.error(t('responseCache.operationFailedError'))
+    } finally {
+      invalidating.value = false
+    }
+  })
 }
 
 onMounted(loadStatus)
