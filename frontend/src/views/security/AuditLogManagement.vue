@@ -589,7 +589,6 @@ const updateEventTypeChart = (data: Record<string, number>) => {
   }
   
   const chartData = Object.entries(data || {}).map(([name, value]) => ({ name, value }))
-  const theme = getChartTheme()
   
   eventTypeChart.setOption({
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },

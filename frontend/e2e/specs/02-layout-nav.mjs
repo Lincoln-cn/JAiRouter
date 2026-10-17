@@ -38,7 +38,7 @@ export default {
     check('layout-menu-groups', subCount >= 8, `sub-menus=${subCount}`)
 
     const menuText = await page.locator('.layout-menu').innerText().catch(() => '')
-    const missing = MENU_GROUPS.filter(g => false) // text is i18n; check structure via count only
+    const missing = MENU_GROUPS.filter(() => false) // text is i18n; check structure via count only
     check('layout-menu-render', menuText.trim().length > 10, `missing=${missing.join(',')}`)
 
     // 用户区

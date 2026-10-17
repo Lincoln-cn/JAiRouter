@@ -265,21 +265,6 @@ interface TierHealth {
   message?: string
 }
 
-interface PersistenceStatus {
-  currentTier: string
-  tierHealth: {
-    redis?: TierHealth
-    h2?: TierHealth
-    file?: TierHealth
-  }
-  stats: {
-    circuitBreakerCount: number
-    loadBalancerCount: number
-    rateLimiterCount: number
-    pendingSync: number
-  }
-}
-
 interface StateDetail {
   instanceId?: string
   serviceType?: string

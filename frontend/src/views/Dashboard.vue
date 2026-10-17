@@ -841,7 +841,6 @@ const rebuildAll = () => {
 }
 
 // SSE 辅助：规范化 baseUrl（去尾部斜杠）
-const normalizeBase = (u?: string) => (u ? u.replace(/\/+$/, '') : '')
 
 // 在主线程中更新数据的方法
 const updateDataInMainThread = (updateFn: () => void) => {

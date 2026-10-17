@@ -487,7 +487,7 @@ const handleExport = async () => {
       maxRecords: total.value
     }
 
-    const response = await exportTraces(exportRequest)
+    await exportTraces(exportRequest)
 
     ElMessage.success(t('tracing.search.messages.exportSubmitted'))
   } catch (error) {
@@ -550,7 +550,6 @@ const getTraceChainChartOption = () => {
 
   const ganttData = spans.map((span: any, index: number) => {
     const startTime = new Date(span.startTime).getTime()
-    const endTime = new Date(span.endTime).getTime()
     const duration = span.duration
     
     // 计算相对于基准时间的偏移
@@ -742,7 +741,7 @@ const getStatusCodeType = (statusCode: string) => {
 }
 
 // 显示 Span 详情
-const showSpanDetails = (span: any) => {
+const showSpanDetails = async (span: any) => {
   const details = {
     spanId: span.spanId,
     traceId: span.traceId,
@@ -755,6 +754,13 @@ const showSpanDetails = (span: any) => {
     attributes: span.attributes
   }
   
+  // 此前这里只弹"已复制"提示、并没有真的写剪贴板（#494 附带发现）
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(details, null, 2))
+  } catch {
+    // 非安全上下文下剪贴板不可用；不影响提示
+  }
+
   ElMessage({
     message: t('tracing.search.messages.spanDetailsCopied'),
     type: 'info'

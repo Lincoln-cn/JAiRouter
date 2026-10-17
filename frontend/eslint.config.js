@@ -34,14 +34,12 @@ export default defineConfigWithVueTs(
       'vue/require-prop-types': 'error',
 
       // TypeScript
-      // 说明：存量未使用变量已从 93 处清到 22 处（import 项已全部清完，剩余为局部变量/未用接口）。
-      // 本 PR 只做「把 lint 跑起来并接进 CI」，不把工具链迁移和 32 个文件的重构混在一起；
-      // 因此先降为 warn 并用 CI 的 --max-warnings 棘轮冻结存量（新增即红），
-      // 清理完成后把它升回 error 并收紧棘轮 —— 追踪于 issue #462。
+      // 未使用变量已于 #494 清零（原 93 处：75 个 import 项 + 18 个局部变量/未用接口）
+      // ⇒ 规则恢复为 error，任何新增未使用变量都会直接让门闩变红。
       '@typescript-eslint/no-unused-vars': [
-        'warn',
+        'error',
         {
-          // 下划线前缀 = 有意不用的占位参数（如 vite 代理回调里的 req/res）
+          // 下划线前缀 = 有意不用的占位参数（如 vite 代理回调里的 req/res、e2e 里保留签名的 tag）
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
           // JS 的 catch 绑定无法省略时才可用 `catch {}`，这里不强制改造存量代码

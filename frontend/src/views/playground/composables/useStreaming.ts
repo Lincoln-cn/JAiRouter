@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue'
+import { ref } from 'vue'
 
 export interface StreamingOptions {
   onChunk?: (chunk: string) => void

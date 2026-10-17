@@ -105,7 +105,7 @@ const handleLogin = async () => {
     loading.value = true
     
     // 调用用户 store 的登录方法
-    const response = await userStore.login(loginForm.username, loginForm.password)
+    await userStore.login(loginForm.username, loginForm.password)
     
     // 跳转到仪表板 (将使用Layout组件)
     router.push({ name: 'dashboard-main' })
