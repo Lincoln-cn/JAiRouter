@@ -160,7 +160,7 @@ export interface ValidationRule {
   min?: number
   max?: number
   pattern?: RegExp
-  validator?: (rule: any, value: any, callback: Function) => void
+  validator?: (rule: any, value: any, callback: (error?: Error) => void) => void
 }
 
 // 表单验证规则集合

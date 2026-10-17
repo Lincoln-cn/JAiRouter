@@ -29,7 +29,7 @@
         size="medium"
         class="search-input"
         @clear="handleSearchClear"
-        @keyup.enter.native="applySearch"
+        @keyup.enter="applySearch"
       >
         <template #prefix>
           <el-icon><Search /></el-icon>

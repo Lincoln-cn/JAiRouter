@@ -829,7 +829,7 @@ const handleResize = () => {
   if (latencyTrendEcharts) latencyTrendEcharts.resize()
   if (errorTrendEcharts) errorTrendEcharts.resize()
   if (throughputEcharts) throughputEcharts.resize()
-  // @ts-ignore - Vue template ref causes type conflict
+  // @ts-expect-error - Vue template ref causes type conflict
   if (throughputDistEcharts) throughputDistEcharts.resize()
 }
 
@@ -847,7 +847,7 @@ onBeforeUnmount(() => {
   if (latencyTrendEcharts) latencyTrendEcharts.dispose()
   if (errorTrendEcharts) errorTrendEcharts.dispose()
   if (throughputEcharts) throughputEcharts.dispose()
-  // @ts-ignore - Vue template ref causes type conflict
+  // @ts-expect-error - Vue template ref causes type conflict
   if (throughputDistEcharts) throughputDistEcharts.dispose()
 })
 </script>

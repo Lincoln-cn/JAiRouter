@@ -22,7 +22,7 @@
 
     <template #toolbar>
       <el-input v-model="searchQuery" :placeholder="t('instance.searchPlaceholder')" clearable size="medium"
-        class="search-input" @clear="handleSearchClear" @keyup.enter.native="applySearch">
+        class="search-input" @clear="handleSearchClear" @keyup.enter="applySearch">
         <template #prefix>
           <el-icon><Search /></el-icon>
         </template>

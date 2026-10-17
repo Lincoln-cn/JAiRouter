@@ -32,6 +32,7 @@ const props = withDefaults(defineProps<{
   tone?: 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'default'
 }>(), {
   tone: 'default',
+  unit: '',
 })
 
 const formattedValue = computed(() => {

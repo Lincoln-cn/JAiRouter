@@ -70,7 +70,7 @@ export default {
     const hasQuotaBtn = (await quotaBtn.count().catch(() => 0)) > 0
     check('deep-quota-drawer-button', hasQuotaBtn)
 
-    let firstKeyId = keysList.body?.data?.items?.[0]?.keyId || null
+    const firstKeyId = keysList.body?.data?.items?.[0]?.keyId || null
     let originalQuota = null
 
     if (hasQuotaBtn) {
