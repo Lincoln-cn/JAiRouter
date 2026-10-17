@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.common.util.ClientIpResolver;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.List;
@@ -34,19 +33,7 @@ public class ClientIpUtils {
         "HTTP_VIA",
         "REMOTE_ADDR"
     );
-    
-    // 私有IP地址范围
-    private static final List<String> PRIVATE_IP_PREFIXES = Arrays.asList(
-        "10.",
-        "172.16.", "172.17.", "172.18.", "172.19.", "172.20.", "172.21.", "172.22.", "172.23.",
-        "172.24.", "172.25.", "172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.",
-        "192.168.",
-        "127.",
-        "169.254.", // 链路本地地址
-        "::1", // IPv6 loopback
-        "fc00:", "fd00:" // IPv6 私有地址
-    );
-    
+
     /**
      * 从ServerWebExchange中获取客户端真实IP地址
      * 
@@ -62,97 +49,6 @@ public class ClientIpUtils {
         // #151：转发头可被任意客户端伪造，信任决策统一交给共享 resolver。
         // 原实现无条件遍历 13 个候选头并优先取「首个公网 IP」，等于把伪造面直接暴露给客户端。
         return ClientIpResolver.resolve(exchange);
-    }
-    
-    /**
-     * 从代理头中获取IP地址
-     */
-    private static String getIpFromProxyHeaders(final ServerWebExchange exchange) {
-        for (String header : PROXY_HEADERS) {
-            String headerValue = exchange.getRequest().getHeaders().getFirst(header);
-            if (headerValue != null && !headerValue.trim().isEmpty()
-                    && !"unknown".equalsIgnoreCase(headerValue.trim())) {
-                // 处理多个IP的情况（如X-Forwarded-For: client, proxy1, proxy2）
-                String[] ips = headerValue.split(",");
-                for (String ip : ips) {
-                    String trimmedIp = ip.trim();
-                    if (isValidIp(trimmedIp) && !isPrivateIp(trimmedIp)) {
-                        log.debug("从头 {} 获取到公网IP: {}", header, trimmedIp);
-                        return trimmedIp;
-                    }
-                }
-                
-                // 如果没有公网IP，返回第一个有效的私有IP
-                for (String ip : ips) {
-                    String trimmedIp = ip.trim();
-                    if (isValidIp(trimmedIp)) {
-                        log.debug("从头 {} 获取到私有IP: {}", header, trimmedIp);
-                        return trimmedIp;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-    
-    /**
-     * 从远程地址获取IP
-     */
-    private static String getIpFromRemoteAddress(final ServerWebExchange exchange) {
-        try {
-            InetSocketAddress remoteAddress = exchange.getRequest().getRemoteAddress();
-            if (remoteAddress != null && remoteAddress.getAddress() != null) {
-                String ip = remoteAddress.getAddress().getHostAddress();
-                
-                // 处理IPv6地址中的scope ID
-                if (ip.contains("%")) {
-                    ip = ip.substring(0, ip.indexOf("%"));
-                }
-                
-                return ip;
-            }
-        } catch (Exception e) {
-            log.warn("从远程地址获取IP时发生异常: {}", e.getMessage());
-        }
-        return null;
-    }
-    
-    /**
-     * 验证IP地址是否有效
-     */
-    private static boolean isValidIp(final String ip) {
-        if (ip == null || ip.trim().isEmpty() || "unknown".equalsIgnoreCase(ip.trim())) {
-            return false;
-        }
-        
-        String trimmedIp = ip.trim();
-        
-        // 基本格式检查
-        if (trimmedIp.equals("0.0.0.0") || trimmedIp.equals("::") || trimmedIp.equals("::0")) {
-            return false;
-        }
-        
-        try {
-            // 使用InetAddress验证IP格式
-            InetAddress.getByName(trimmedIp);
-            return true;
-        } catch (Exception e) {
-            log.debug("IP地址格式无效: {}", trimmedIp);
-            return false;
-        }
-    }
-    
-    /**
-     * 判断是否为私有IP地址
-     */
-    private static boolean isPrivateIp(final String ip) {
-        if (ip == null || ip.trim().isEmpty()) {
-            return true;
-        }
-        
-        String trimmedIp = ip.trim().toLowerCase();
-        
-        return PRIVATE_IP_PREFIXES.stream().anyMatch(trimmedIp::startsWith);
     }
     
     /**
