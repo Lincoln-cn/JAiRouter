@@ -17,7 +17,6 @@ jairouter:
       default-expiration-days: 365
 
       # 缓存配置
-      cache-enabled: true
       cache-expiration-seconds: 3600
 
       # 本副本 API Key 缓存的刷新（#162）。
@@ -40,8 +39,3 @@ jairouter:
           permissions: "read,write"
           enabled: true
 
-    # API Key 配额管理配置
-    quota:
-      # 启用配额清理调度器（每天凌晨 3:00 清理 >30 天的历史数据）
-      cleanup:
-        enabled: true
