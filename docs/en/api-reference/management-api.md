@@ -289,9 +289,6 @@ Update collection interval.
 #### `PUT /api/monitoring/config/categories`
 Update enabled categories.
 
-#### `PUT /api/monitoring/config/custom-tags`
-Update custom tags.
-
 #### `GET /api/monitoring/config/snapshot`
 Get configuration snapshot.
 

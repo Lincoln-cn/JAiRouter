@@ -300,9 +300,6 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 #### `PUT /api/monitoring/config/categories`
 更新启用的类别。
 
-#### `PUT /api/monitoring/config/custom-tags`
-更新自定义标签。
-
 #### `GET /api/monitoring/config/snapshot`
 获取配置快照。
 
