@@ -11,12 +11,16 @@ public class AuditEvent {
     
     private String id;              // 事件ID
     private AuditEventType type;    // 事件类型
+    private String eventCategory;   // 事件分类（认证 / API Key / 安全 / 数据保护 / 系统）
+    private String riskLevel;       // 风险级别（LOW / MEDIUM / HIGH / CRITICAL）
     private String userId;          // 用户ID
     private String resourceId;      // 资源ID（令牌ID或API Key ID）
     private String action;          // 操作类型
     private String details;         // 详细信息
     private String ipAddress;       // IP地址
     private String userAgent;       // 用户代理
+    private String geoLocation;     // 地理位置（由审计写入方提供，可能为空）
+    private String deviceInfo;      // 设备信息（由审计写入方提供，可能为空）
     private boolean success;        // 操作是否成功
     private LocalDateTime timestamp; // 时间戳
     private Map<String, Object> metadata; // 额外元数据
@@ -127,6 +131,44 @@ public class AuditEvent {
 
     public void setMetadata(final Map<String, Object> metadata) {
         this.metadata = metadata;
+    }
+
+    /**
+     * 事件分类。由审计实体在写入时算好（{@code SecurityAuditEventEntity.prePersist}），这里只透传。
+     */
+    public String getEventCategory() {
+        return eventCategory;
+    }
+
+    public void setEventCategory(final String eventCategory) {
+        this.eventCategory = eventCategory;
+    }
+
+    /**
+     * 风险级别。由审计实体在写入时算好，这里只透传，前端不参与计算。
+     */
+    public String getRiskLevel() {
+        return riskLevel;
+    }
+
+    public void setRiskLevel(final String riskLevel) {
+        this.riskLevel = riskLevel;
+    }
+
+    public String getGeoLocation() {
+        return geoLocation;
+    }
+
+    public void setGeoLocation(final String geoLocation) {
+        this.geoLocation = geoLocation;
+    }
+
+    public String getDeviceInfo() {
+        return deviceInfo;
+    }
+
+    public void setDeviceInfo(final String deviceInfo) {
+        this.deviceInfo = deviceInfo;
     }
 
     @Override

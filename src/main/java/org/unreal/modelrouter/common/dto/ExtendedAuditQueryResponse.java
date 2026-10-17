@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.common.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 
@@ -45,6 +46,7 @@ public final class ExtendedAuditQueryResponse {
     private LocalDateTime generatedAt = LocalDateTime.now();
     
     @Schema(description = "是否有更多数据")
+    @JsonProperty("hasMore")
     public boolean hasMore() {
         return events != null && events.size() == size;
     }

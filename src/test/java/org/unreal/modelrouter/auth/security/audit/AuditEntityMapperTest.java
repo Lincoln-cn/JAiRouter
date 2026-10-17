@@ -16,6 +16,7 @@
 
 package org.unreal.modelrouter.auth.security.audit;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -83,6 +84,49 @@ class AuditEntityMapperTest {
             assertEquals(LocalDateTime.of(2025, 1, 15, 10, 30, 0), dto.getTimestamp());
             assertNotNull(dto.getMetadata());
             assertEquals("value", dto.getMetadata().get("key"));
+        }
+
+        @Test
+        @DisplayName("事件分类/风险级别/地理位置/设备信息都要映射出来（#459）")
+        void testRiskLevelAndCategoryAreMapped() {
+            SecurityAuditEventEntity entity = SecurityAuditEventEntity.builder()
+                    .eventId("event-risk-1")
+                    .eventType(AuditEventType.BRUTE_FORCE_ATTEMPT)
+                    .eventCategory("SECURITY")
+                    .riskLevel(RiskLevel.CRITICAL)
+                    .geoLocation("CN-Beijing")
+                    .deviceInfo("Chrome/120")
+                    .success(false)
+                    .timestamp(LocalDateTime.of(2025, 1, 15, 10, 30, 0))
+                    .build();
+
+            AuditEvent dto = mapper.entityToDto(entity);
+
+            assertEquals("SECURITY", dto.getEventCategory());
+            assertEquals("CRITICAL", dto.getRiskLevel());
+            assertEquals("CN-Beijing", dto.getGeoLocation());
+            assertEquals("Chrome/120", dto.getDeviceInfo());
+
+            // 决定前端能否读到的不是 DTO 字段，而是序列化后的键名（#459 就是这里漏了）
+            JsonNode json = objectMapper.valueToTree(dto);
+            assertTrue(json.has("eventCategory"), "JSON 必须含 eventCategory");
+            assertTrue(json.has("riskLevel"), "JSON 必须含 riskLevel");
+            assertTrue(json.has("geoLocation"), "JSON 必须含 geoLocation");
+            assertTrue(json.has("deviceInfo"), "JSON 必须含 deviceInfo");
+        }
+
+        @Test
+        @DisplayName("riskLevel 为 null 时仍输出该键（值为 null），前端不会因此读错位")
+        void testNullRiskLevel() {
+            SecurityAuditEventEntity entity = SecurityAuditEventEntity.builder()
+                    .eventId("event-risk-2")
+                    .eventType(AuditEventType.JWT_TOKEN_ISSUED)
+                    .build();
+
+            AuditEvent dto = mapper.entityToDto(entity);
+
+            assertNull(dto.getRiskLevel());
+            assertTrue(objectMapper.valueToTree(dto).has("riskLevel"));
         }
 
         @Test

@@ -117,6 +117,32 @@ class SecurityReportTest {
     }
 
     @Nested
+    @DisplayName("后端计算字段（#459：成功率与高危事件数由后端下发）")
+    class BackendComputedFieldsTests {
+
+        @Test
+        @DisplayName("默认值为 0，且不经前端计算")
+        void testDefaults() {
+            SecurityReport report = new SecurityReport();
+
+            assertEquals(0.0, report.getSuccessRate());
+            assertEquals(0L, report.getHighRiskEventCount());
+        }
+
+        @Test
+        @DisplayName("setter 可写入后端算好的值")
+        void testSetters() {
+            SecurityReport report = new SecurityReport();
+
+            report.setSuccessRate(99.87);
+            report.setHighRiskEventCount(7L);
+
+            assertEquals(99.87, report.getSuccessRate());
+            assertEquals(7L, report.getHighRiskEventCount());
+        }
+    }
+
+    @Nested
     @DisplayName("toString测试")
     class ToStringTests {
 

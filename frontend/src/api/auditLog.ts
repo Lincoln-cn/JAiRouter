@@ -94,9 +94,9 @@ export interface SecurityReport {
     successRate: number
 }
 
-// 安全告警类型
+// 安全告警类型（字段名与后端 common/dto/SecurityAlert 对齐：alertType，不是 eventType）
 export interface SecurityAlert {
-    eventType: string
+    alertType: string
     message: string
     userId?: string
     ipAddress?: string
