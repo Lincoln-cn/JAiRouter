@@ -42,10 +42,10 @@
     },
     "docs/en/api-reference/openapi-spec.md": {
       "FilePath": "docs/en/api-reference/openapi-spec.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-07T05:06:42.786477",
-      "ContentHash": "e3529bf589681ae7",
-      "GitCommit": "88f67b49",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-17T01:54:09.231232",
+      "ContentHash": "c1a7aff6e9b7a19d",
+      "GitCommit": "8d448970",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -663,10 +663,10 @@
     },
     "docs/zh/api-reference/openapi-spec.md": {
       "FilePath": "docs/zh/api-reference/openapi-spec.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-07T05:06:43.224423",
-      "ContentHash": "55002a361e936085",
-      "GitCommit": "88f67b49",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-17T01:54:09.763565",
+      "ContentHash": "ba3400e9f1ab0f5a",
+      "GitCommit": "8d448970",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -8715,7 +8715,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-17T00:33:03.350144",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/openapi-spec.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-17T01:54:09.231239",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/openapi-spec.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-17T01:54:09.763573",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-17T00:33:03.449038"
+  "last_updated": "2026-10-17T01:54:10.269863"
 }
