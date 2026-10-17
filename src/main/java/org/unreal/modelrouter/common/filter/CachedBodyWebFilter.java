@@ -67,47 +67,6 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
     }
 
     /**
-     * 处理multipart请求的缓存
-     */
-    private Mono<Void> handleMultipartRequest(
-            final ServerWebExchange exchange, final WebFilterChain chain,
-            final ServerHttpRequest request) {
-        // 对于multipart请求，我们需要特别小心处理边界信息
-        return DataBufferUtils.join(request.getBody())
-                .flatMap(dataBuffer -> {
-                    try {
-                        // 检查数据大小
-                        int size = dataBuffer.readableByteCount();
-                        if (size > MAX_CACHE_SIZE) {
-                            log.warn("Multipart请求体过大({}MB)，跳过缓存", size / (1024 * 1024));
-                            return chain.filter(exchange);
-                        }
-
-                        // 读取字节数据，保持原始格式
-                        byte[] bytes = new byte[size];
-                        dataBuffer.read(bytes);
-
-                        log.debug("成功缓存multipart请求体，大小: {} bytes", bytes.length);
-
-                        // 创建可重复读取的请求装饰器
-                        ServerHttpRequest cachedRequest = new MultipartCachedRequestDecorator(request, bytes, exchange);
-
-                        // 继续处理链
-                        return chain.filter(exchange.mutate().request(cachedRequest).build());
-
-                    } finally {
-                        // 释放原始 DataBuffer
-                        DataBufferUtils.release(dataBuffer);
-                    }
-                })
-                .onErrorResume(error -> {
-                    // 如果缓存失败，记录错误但继续处理
-                    log.error("缓存multipart请求体失败: {} - {}", request.getPath().value(), error.getMessage());
-                    return Mono.error(error);
-                });
-    }
-
-    /**
      * 处理标准请求的缓存
      */
     private Mono<Void> handleStandardRequest(
@@ -170,26 +129,4 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
 
     }
 
-    /**
-     * Multipart专用的缓存请求装饰器
-     */
-    private static class MultipartCachedRequestDecorator extends ServerHttpRequestDecorator {
-
-        private final byte[] cachedBody;
-        private final ServerWebExchange exchange;
-
-        MultipartCachedRequestDecorator(
-                final ServerHttpRequest delegate, final byte[] cachedBody,
-                final ServerWebExchange exchange) {
-            super(delegate);
-            this.cachedBody = cachedBody;
-            this.exchange = exchange;
-        }
-
-        @Override
-        public Flux<DataBuffer> getBody() {
-            // 每次调用都创建新的DataBuffer，确保数据完整性
-            return Flux.just(exchange.getResponse().bufferFactory().wrap(cachedBody.clone()));
-        }
-    }
 }
