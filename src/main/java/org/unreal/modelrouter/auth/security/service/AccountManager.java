@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import org.unreal.modelrouter.auth.security.config.properties.JwtAccountProperti
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.audit.ExtendedSecurityAuditService;
 import org.unreal.modelrouter.common.dto.AuditEventType;
+import org.unreal.modelrouter.monitor.monitoring.security.SecurityMetrics;
 import org.unreal.modelrouter.persistence.jpa.entity.JwtAccountEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.JwtAccountRepository;
 import reactor.core.publisher.Mono;
@@ -54,6 +56,13 @@ public class AccountManager implements UserDetailsService {
     // 审计服务（用于记录认证操作）
     @Autowired(required = false)
     private ExtendedSecurityAuditService auditService;
+
+    /**
+     * 安全指标（issue #456）。可选依赖：单测里用 {@code new AccountManager(...)} 构造时该字段为 null，
+     * 埋点自动跳过，不改变既有构造签名。
+     */
+    @Autowired(required = false)
+    private SecurityMetrics securityMetrics;
 
     /**
      * 验证用户凭据
@@ -141,6 +150,11 @@ public class AccountManager implements UserDetailsService {
             final String username, final String password,
             final SecurityProperties securityProperties,
             final String ipAddress, final String userAgent) {
+        // issue #456：登录是认证指标的唯一入口 —— 3 参重载也走这里，所以只需在这一处埋点。
+        final Timer.Sample sample = securityMetrics != null ? securityMetrics.startAuthenticationTimer() : null;
+        if (securityMetrics != null) {
+            securityMetrics.recordAuthenticationAttempt();
+        }
         // 验证配置中的用户凭据
         return Mono.just(validateCredentials(username, password))
                 .filter(valid -> valid)
@@ -157,7 +171,25 @@ public class AccountManager implements UserDetailsService {
                     }
                     return Mono.error(new RuntimeException("用户名或密码错误"));
                 }))
-                .map(valid -> generateJwtToken(username, securityProperties));
+                .map(valid -> generateJwtToken(username, securityProperties))
+                .doOnSuccess(token -> {
+                    if (securityMetrics != null) {
+                        securityMetrics.recordAuthenticationSuccess("password");
+                        recordAuthenticationDuration(sample);
+                    }
+                })
+                .doOnError(error -> {
+                    if (securityMetrics != null) {
+                        securityMetrics.recordAuthenticationFailure("password", error.getMessage());
+                        recordAuthenticationDuration(sample);
+                    }
+                });
+    }
+
+    private void recordAuthenticationDuration(final Timer.Sample sample) {
+        if (sample != null && securityMetrics != null) {
+            securityMetrics.recordAuthenticationDuration(sample);
+        }
     }
 
     /**
