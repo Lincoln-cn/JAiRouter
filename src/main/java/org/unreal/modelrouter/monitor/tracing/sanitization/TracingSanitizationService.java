@@ -227,20 +227,6 @@ public class TracingSanitizationService {
     }
     
     /**
-     * 脱敏属性值
-     */
-    @SuppressWarnings("unchecked")
-    private Mono<Object> sanitizeAttributeValue(
-            final AttributeKey<?> key, final Object value,
-            final TracingContext context) {
-        if (value instanceof String) {
-            return sanitizationService.sanitizeForStorage((String) value, "text/plain")
-                    .cast(Object.class);
-        }
-        return Mono.just(value);
-    }
-    
-    /**
      * 检查是否为敏感属性
      */
     private boolean isSensitiveAttribute(final AttributeKey<?> attributeKey) {
