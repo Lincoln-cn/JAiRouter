@@ -112,10 +112,6 @@ export const getParentAdapterList = () => {
   return request.get<RouterResponse<ParentAdapterInfo[]>>('/config/adapter/parents')
 }
 
-export const getAdapterDetail = (name: string) => {
-  return request.get<RouterResponse<AdapterDetail>>(`/config/adapter/${name}`)
-}
-
 export const createAdapter = (data: AdapterDefinitionRequest) => {
   return request.post<RouterResponse<AdapterDetail>>('/config/adapter', data)
 }
@@ -133,14 +129,6 @@ export const getAdapterTemplates = (category?: string) => {
   return request.get<RouterResponse<AdapterTemplate[]>>('/config/adapter/templates', {
     params: category ? { category } : undefined
   })
-}
-
-export const getAdapterTemplate = (id: string) => {
-  return request.get<RouterResponse<AdapterTemplate>>(`/config/adapter/templates/${id}`)
-}
-
-export const createAdapterFromTemplate = (templateId: string, data: TemplateCreateRequest) => {
-  return request.post<RouterResponse<AdapterDetail>>(`/config/adapter/templates/${templateId}/create`, data)
 }
 
 // 测试 API

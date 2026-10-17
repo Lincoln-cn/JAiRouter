@@ -582,16 +582,24 @@ class Scanner:
                 total += 1
                 ref_files = self.ident_to_files.get(name, set()) - {abs_str}
                 if not ref_files:
+                    # 本文件内除声明本身之外的出现次数：>0 说明"只是没被别的文件引用"，
+                    # 而不是死代码（删掉它会直接打断本文件里的其它导出）。
+                    local_refs = len(re.findall(
+                        r"\b" + re.escape(name) + r"\b", sf.code)) - 1
                     findings.append({
                         "name": name,
                         "kind": kind,
                         "where": f"{sf.rel_posix}:{sf.line_of(m.start())}",
                         "decl_file": sf.rel_posix,
                         "is_test": sf.is_test,
+                        "in_file_refs": max(local_refs, 0),
                     })
         findings.sort(key=lambda f: f["where"])
         self.counts["exported_symbols_declared"] = total
         self.counts["exported_symbols_unreferenced"] = len(findings)
+        # 本文件仍在用 ⇒ 不是死代码
+        self.counts["exported_symbols_local_only"] = sum(
+            1 for x in findings if x.get("in_file_refs", 0) > 0)
         return findings
 
     # -- category 2 --------------------------------------------------------- #
@@ -891,8 +899,13 @@ class Scanner:
         self.load()
         self.build_ident_index()
         edges, inbound, outbound = self.build_graph()
+        exports = self.category_exports()
+        # cat1 语义不变（"没有被别的文件引用"，含只在本文件使用的导出 ——
+        # 那些的 `export` 是多余的，但仍属该类别，自检也这么断言）。
+        # cat1_safe 是给"删除"用的子集：本文件内除声明外也零出现。
         self.result = {
-            "cat1": self.category_exports(),
+            "cat1": exports,
+            "cat1_safe": [x for x in exports if x.get("in_file_refs", 0) == 0],
             "locales": self.category_locales(),
             "cat3": self.category_views(inbound, outbound),
             "cat4": self.category_modules(inbound),
@@ -1057,6 +1070,13 @@ def write_report(path: Path, scanner: Scanner, result, counts, calibration_outpu
        f"**{counts['exported_symbols_declared']}** declared exported symbols have no "
        "reference in any other file under `frontend/src`.")
     ap("")
+    local_n = counts['exported_symbols_local_only']
+    ap(f"Of those, **{local_n}** are still used **inside their own file** (their "
+       "`export` keyword is superfluous, but the declaration is live). **"
+       f"{len(result['cat1_safe'])}** have zero references anywhere and are the only "
+       "ones safe to delete — deleting the other "
+       f"{local_n} breaks the type check.")
+    ap("")
     ap("Declaration regex: `\\bexport\\s+(?:async\\s+)?(?:declare\\s+)?(?:(const)\\s+)?"
        "(function|const|var|let|class|interface|type|enum)\\s+<Name>` over `.ts` files "
        "and `.vue` `<script>`/`<script setup>` blocks. An earlier ad-hoc probe of this "
@@ -1074,6 +1094,17 @@ def write_report(path: Path, scanner: Scanner, result, counts, calibration_outpu
             ap(f"_Table truncated: showing {TOP_FINDING_CAP} of {len(c1)} rows._")
     else:
         ap("_No findings in this category._")
+
+    safe = result["cat1_safe"]
+    ap("")
+    ap("### 3a. Safe-to-delete subset (zero references in ANY file)")
+    ap(f"**{len(safe)}** symbol(s). The `3.` table above lists every unreferenced-"
+       "elsewhere export; this subset additionally requires zero in-file references, "
+       "which is what a deletion pass must use.")
+    if safe:
+        ap("")
+        rows = [(f["name"], f["kind"], f"`{f['where']}`") for f in safe[:TOP_FINDING_CAP]]
+        ap(md_table(["symbol", "kind", "declaration"], rows))
     ap("")
 
     ap("## 4. Category 2 - locale keys never referenced")

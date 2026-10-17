@@ -4,7 +4,6 @@ const { t: gt } = i18n.global as unknown as {
   t: (key: string, named?: Record<string, string | number>) => string
 }
 
-
 // ==================== Universal API 调用接口 ====================
 
 /**
@@ -317,22 +316,6 @@ class UniversalApiClient {
  * Universal API 客户端实例
  */
 export const universalApi = new UniversalApiClient()
-
-/**
- * 发送Universal API请求
- */
-export const sendUniversalRequest = (request: UniversalApiRequest) => universalApi.sendRequest(request)
-
-/**
- * 发送流式Universal API请求
- */
-export const sendUniversalStreamRequest = (
-  request: UniversalApiRequest,
-  onMessage: (data: any) => void,
-  onError: (error: any) => void,
-  onComplete: () => void,
-  signal?: AbortSignal
-) => universalApi.sendStreamRequest(request, onMessage, onError, onComplete, signal)
 
 // 默认导出
 export default universalApi
