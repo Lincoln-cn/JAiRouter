@@ -29,7 +29,7 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 > controller-thrown errors are `RouterResponse`. **The client rule is: is there a top-level `error` field?**
 > This release **changes no runtime behavior and no status code** — that item documents the existing implementation as measured (#448).
 >
-> **Tagged `v3.3.5`**; per the standing release policy no GitHub Release or Docker image is produced yet.
+> **Released as GitHub Release `v3.3.5` (2026-10-17)** with multi-arch images (`v3.3.5` / `3.3.5` / `latest`); this release also ships the content of `v3.3.2`–`v3.3.4`.
 > This entry covers everything merged after `v3.3.4`.
 
 #### Store contract: deleting the last entry is no longer a silent no-op (#446)
@@ -103,7 +103,7 @@ both `/v1` error shapes / the #340 `/actuator` auth surface).
 > ② **API-key per-minute rate limiting changed from `401` to `429`**, and a **new code `RATE_LIMITED_API_KEY`** was added (the `/v1/**` protocol `type` therefore changes from `authentication_error` to `rate_limit_error`) — clients no longer have to treat 401 as a rate limit (#404).
 > Apart from those two, this release **changes no other client-visible status code**: the registry went 62 → 63 (one addition) and both error-code tables are reconciled **both ways** by the docs gate.
 >
-> **Tagged `v3.3.4`**; per the standing release policy no GitHub Release or Docker image is produced yet.
+> **Tagged `v3.3.4`**; its content ships with the `v3.3.5` GitHub Release (2026-10-17).
 > This entry covers everything merged after `v3.3.3`.
 
 #### Error codes: rulings landed and close-out
@@ -145,7 +145,7 @@ both `/v1` error shapes / the #340 `/actuator` auth surface).
 > Apart from that one renamed code this release **changes no status code and no error-code set**: stage 3's migration
 > was re-verified — "codes resolved at emission sites = the registry's 62 codes, one by one".
 >
-> **Tagged `v3.3.3`**; per the standing release policy no GitHub Release or Docker image is produced yet.
+> **Tagged `v3.3.3`**; its content ships with the `v3.3.5` GitHub Release (2026-10-17).
 > This entry covers everything merged after `v3.3.1` — `v3.3.2` was tagged but **never released on its own**, and is
 > superseded by this version (its content is the next entry).
 
