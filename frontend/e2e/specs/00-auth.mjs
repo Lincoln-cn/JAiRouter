@@ -43,8 +43,13 @@ export default {
     // 5. 已登录访问登录页 → 重定向仪表板
     await page.waitForTimeout(500)
     await gotoApp(page, '/login')
-    await page.waitForTimeout(1200)
-    const bounced = !currentPathname(page).endsWith('/login')
+    // 不要用固定 sleep 判跳转：SPA 启动 + 守卫重定向在机器繁忙时会超过 1.2s，
+    // 造成偶发假红（审计 #469 同族；实测全量 445/446 就红在这一条，单跑即绿）。
+    // 改为等条件成立，超时才算失败。
+    const bounced = await page
+      .waitForFunction(() => !location.pathname.endsWith('/login'), null, { timeout: 8000 })
+      .then(() => true)
+      .catch(() => false)
     check('auth-login-page-bounce', bounced, page.url())
 
     // 6. UI 登出

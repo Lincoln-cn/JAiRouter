@@ -67,6 +67,51 @@ export default {
       .count()
     check('rbac-ui:quota:save-visible-for-admin', adminSaveCount > 0, `count=${adminSaveCount}`)
 
+    // ── 第二例：`/security/**` 的**角色门**（不是权限码门）──
+    // 我原以为这里要测"OPERATOR 能进审计页但没有黑名单权限"。实测否掉了这个前提：
+    // `/security` **父路由**带 `meta.roles: ['ADMIN']`（router/index.ts:176），
+    // 所以非 ADMIN 根本进不去任何 `/security/**` 子页——子页自己的 `meta.permissions`
+    // 被这个角色门完全遮住（OPERATOR 的 JWT 里**确实**有 security:audit:read，仍被重定向）。
+    // 因此这里断言的真实属性是：**OPERATOR 访问 /security/audit-logs 必须被重定向到仪表盘**。
+    // ⚠️ 这条不能用「页面正文里有没有『审计』二字」来判：仪表盘的「审计事件」字样会让它**假绿**
+    //    （我第一版就这么错了）。判据必须是 URL。
+    const opName = uniq('e2e-operator')
+    const opCreated = await api(adminPage, '/api/security/jwt/accounts', {
+      method: 'POST',
+      body: { username: opName, password: pass, roles: ['OPERATOR'], enabled: true }
+    })
+    check('rbac-ui:create-operator', opCreated.status === 200, `status=${opCreated.status}`)
+
+    const list2 = await api(adminPage, '/api/security/jwt/accounts')
+    const items2 = list2.body?.data?.items ?? list2.body?.data ?? []
+    const opId = (Array.isArray(items2) ? items2 : []).find((a) => a.username === opName)?.id ?? null
+
+    const opPage = await createAuthedContextAs(browser, opName, pass)
+
+    await gotoApp(opPage, '/security/audit-logs', { waitMs: 1500 })
+    const opPath = new URL(opPage.url()).pathname
+    check(
+      'rbac-ui:security-pages-are-admin-only',
+      !opPath.includes('/security/'),
+      `operator 落在 ${opPath}（期望被重定向出 /security/）`
+    )
+
+    // 对照：ADMIN 必须**留在**该页（证明重定向确实来自角色门，而不是页面本身坏了）
+    await gotoApp(adminPage, '/security/audit-logs', { waitMs: 1200 })
+    const adminPath = new URL(adminPage.url()).pathname
+    check(
+      'rbac-ui:security-pages-open-for-admin',
+      adminPath.includes('/security/audit-logs'),
+      `admin 落在 ${adminPath}`
+    )
+
+    if (opId) {
+      const del = await api(adminPage, `/api/security/jwt/accounts/${opId}`, { method: 'DELETE' })
+      check('rbac-ui:cleanup-operator', del.status === 200, `status=${del.status}`)
+    } else {
+      check('rbac-ui:cleanup-operator', false, 'account id not found')
+    }
+
     // ── 清理 ──
     if (accId) {
       const del = await api(adminPage, `/api/security/jwt/accounts/${accId}`, { method: 'DELETE' })
@@ -75,6 +120,7 @@ export default {
       check('rbac-ui:cleanup-limited-user', false, 'account id not found')
     }
 
+    await opPage.close()
     await lowPage.close()
     await adminPage.close()
   }
