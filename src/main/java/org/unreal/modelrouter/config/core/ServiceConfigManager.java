@@ -11,7 +11,6 @@ import org.unreal.modelrouter.config.dto.UpdateServiceConfigRequest;
 import org.unreal.modelrouter.common.dto.LoadBalanceConfig;
 import org.unreal.modelrouter.persistence.jpa.entity.ServiceConfigEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;
-import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
 import org.unreal.modelrouter.config.sync.converter.ServiceConfigConverter;
 import org.unreal.modelrouter.config.sync.merger.ConfigMerger;
 import org.unreal.modelrouter.config.sync.repository.StoreConfigRepository;
@@ -49,7 +48,6 @@ public class ServiceConfigManager {
 
     // JPA Repository (保留现有数据库操作)
     private final ServiceConfigRepository jpaRepository;
-    private final ServiceInstanceRepository instanceRepository;
 
     // ========== API 层方法 (DTO 方式) ==========
 

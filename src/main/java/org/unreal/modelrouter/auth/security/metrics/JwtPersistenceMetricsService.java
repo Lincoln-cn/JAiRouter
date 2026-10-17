@@ -32,8 +32,6 @@ public class JwtPersistenceMetricsService {
     // 黑名单操作计时器
     private final Map<String, Timer> blacklistOperationTimers = new ConcurrentHashMap<>();
     
-    // 存储健康状态计量器
-    private final Map<String, Gauge> storageHealthGauges = new ConcurrentHashMap<>();
     
     // 计数器
     private final Counter tokenCreateCounter;

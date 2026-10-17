@@ -76,10 +76,10 @@ public class TracingSecurityAutoConfiguration {
             name = "jairouter.tracing.security.encryption.enabled",
             havingValue = "true", matchIfMissing = true)
     public TracingEncryptionService tracingEncryptionService(
-            final TracingConfiguration tracingConfiguration,
             @Lazy final StructuredLogger structuredLogger) {
 
-        TracingEncryptionService service = new TracingEncryptionService(tracingConfiguration, structuredLogger);
+        // #453：TracingEncryptionService 从未读取 TracingConfiguration ⇒ 该构造参数已删除
+        TracingEncryptionService service = new TracingEncryptionService(structuredLogger);
 
         log.info("配置追踪数据加密服务");
         return service;

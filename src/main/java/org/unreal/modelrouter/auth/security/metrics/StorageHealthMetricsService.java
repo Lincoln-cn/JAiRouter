@@ -41,9 +41,6 @@ public class StorageHealthMetricsService {
     private final AtomicLong memoryUsagePercent = new AtomicLong(0);
     private final AtomicLong redisMemoryUsage = new AtomicLong(0);
     
-    // 连接池指标
-    private final AtomicLong redisActiveConnections = new AtomicLong(0);
-    private final AtomicLong redisIdleConnections = new AtomicLong(0);
     
     // 错误统计
     private final Map<String, AtomicLong> errorCounts = new ConcurrentHashMap<>();

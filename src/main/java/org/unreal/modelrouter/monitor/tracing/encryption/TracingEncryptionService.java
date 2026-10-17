@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
 import org.unreal.modelrouter.monitor.tracing.logger.StructuredLogger;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -43,7 +42,6 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class TracingEncryptionService {
     
-    private final TracingConfiguration tracingConfiguration;
     private final @Lazy StructuredLogger structuredLogger;
     
     // 加密算法常量

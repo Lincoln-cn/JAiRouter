@@ -3,7 +3,6 @@ package org.unreal.modelrouter.router.adapter.tracing;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.api.trace.Tracer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +31,6 @@ import org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer;
 @RequiredArgsConstructor
 public class AdapterTracingManager {
 
-    private final Tracer tracer;
     
     private AdapterTracingEnhancer enhancer; // v2.27.0: 延迟注入避免循环依赖
     

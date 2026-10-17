@@ -12,7 +12,6 @@ import org.unreal.modelrouter.persistence.jpa.entity.CircuitBreakerStateHistoryE
 import org.unreal.modelrouter.persistence.jpa.repository.CircuitBreakerGlobalConfigRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.CircuitBreakerStateHistoryRepository;
 import org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker;
-import org.unreal.modelrouter.router.circuitbreaker.CircuitBreakerManager;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,7 +30,6 @@ public class CircuitBreakerConfigService {
 
     private final CircuitBreakerGlobalConfigRepository globalConfigRepository;
     private final CircuitBreakerStateHistoryRepository historyRepository;
-    private final CircuitBreakerManager circuitBreakerManager;
 
     // ==================== 全局配置管理 ====================
 

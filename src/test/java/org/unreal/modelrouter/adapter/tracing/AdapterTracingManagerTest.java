@@ -3,7 +3,6 @@ package org.unreal.modelrouter.router.adapter.tracing;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.api.trace.Tracer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,8 +35,6 @@ import static org.mockito.Mockito.*;
 @DisplayName("AdapterTracingManager 单元测试")
 class AdapterTracingManagerTest {
 
-    @Mock
-    private Tracer tracer;
 
     @Mock
     private TracingContext tracingContext;
@@ -49,7 +46,7 @@ class AdapterTracingManagerTest {
 
     @BeforeEach
     void setUp() {
-        tracingManager = new AdapterTracingManager(tracer);
+        tracingManager = new AdapterTracingManager();
         
         // 清理线程本地上下文
         TracingContextHolder.clearCurrentContext();
