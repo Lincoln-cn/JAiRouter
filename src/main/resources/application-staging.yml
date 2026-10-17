@@ -35,13 +35,8 @@ jairouter:
 
       persistence:
         enabled: true
-        primary-storage: redis
         redis:
           enabled: true
-          host: "${REDIS_HOST:localhost}"
-          port: "${REDIS_PORT:6379}"
-          password: "${REDIS_PASSWORD:}"
-          database: "${REDIS_DATABASE:2}"
 
     api-key:
       enabled: true
