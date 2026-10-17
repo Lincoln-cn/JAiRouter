@@ -42,7 +42,6 @@ import org.unreal.modelrouter.monitor.tracing.logger.dto.ResponseLogFields;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.SecurityEventFields;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.StructuredLogEntry;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.SystemEventFields;
-import org.unreal.modelrouter.monitor.tracing.sanitization.TracingSanitizationService;
 import org.unreal.modelrouter.monitor.tracing.security.TracingSecurityManager;
 
 import java.time.Instant;
@@ -73,7 +72,6 @@ public class DefaultStructuredLogger implements StructuredLogger {
     private final ObjectMapper objectMapper;
     private final TracingConfiguration tracingConfiguration;
     private final TracingMDCManager tracingMDCManager;
-    private final TracingSanitizationService tracingSanitizationService;
     private final TracingSecurityManager tracingSecurityManager;
 
     // Builder组件 - v2.16.4~v2.16.6 委托调用

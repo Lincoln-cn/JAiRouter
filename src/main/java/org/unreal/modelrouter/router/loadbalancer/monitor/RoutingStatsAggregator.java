@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 路由统计聚合器
@@ -31,10 +30,6 @@ public class RoutingStatsAggregator {
      */
     private final Map<String, ServiceRoutingStats> statsMap = new ConcurrentHashMap<>();
 
-    /**
-     * 用于更新统计的锁
-     */
-    private final ReentrantLock updateLock = new ReentrantLock();
 
     /**
      * 更新统计（收到路由事件时调用）

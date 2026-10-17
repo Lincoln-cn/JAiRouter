@@ -9,7 +9,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
-import org.unreal.modelrouter.auth.security.service.JwtBlacklistService;
 import org.unreal.modelrouter.common.dto.TokenBlacklistEntry;
 import reactor.core.publisher.Mono;
 
@@ -44,8 +43,6 @@ class JwtBlacklistCacheManagerTest {
     @Mock
     private ReactiveRedisTemplate<String, String> redisTemplate;
 
-    @Mock
-    private JwtBlacklistService blacklistService;
 
     private JwtBlacklistCacheManager manager;
 
@@ -54,7 +51,7 @@ class JwtBlacklistCacheManagerTest {
     @BeforeEach
     @SuppressWarnings("unchecked")
     void setUp() throws Exception {
-        manager = new JwtBlacklistCacheManager(redisTemplate, blacklistService);
+        manager = new JwtBlacklistCacheManager(redisTemplate);
         localCache = (Map<String, TokenBlacklistEntry>) readField(manager, "localCache");
         // 让 5 分钟同步间隔门禁放行
         writeField(manager, "lastCacheSync", 0L);

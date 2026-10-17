@@ -64,7 +64,7 @@ class TracingEncryptionServiceTest {
         tracer = tracerProvider.get("test");
 
         // 创建服务实例
-        tracingEncryptionService = new TracingEncryptionService(tracingConfiguration, structuredLogger);
+        tracingEncryptionService = new TracingEncryptionService(structuredLogger);
     }
 
     @Test
@@ -152,7 +152,7 @@ class TracingEncryptionServiceTest {
         when(encryptionConfig.isEnabled()).thenReturn(false);
         
         // 创建新的服务实例
-        TracingEncryptionService disabledService = new TracingEncryptionService(tracingConfiguration, structuredLogger);
+        TracingEncryptionService disabledService = new TracingEncryptionService(structuredLogger);
 
         String testData = "test data";
 
@@ -220,7 +220,7 @@ class TracingEncryptionServiceTest {
         // 已随 issue #224 批 B 删除；cleanupExpiredData() 本身仍应正常返回。
 
         // 创建新的服务实例
-        TracingEncryptionService serviceWithRetention = new TracingEncryptionService(tracingConfiguration, structuredLogger);
+        TracingEncryptionService serviceWithRetention = new TracingEncryptionService(structuredLogger);
 
         // 执行清理测试
         Mono<Integer> result = serviceWithRetention.cleanupExpiredData();
@@ -281,7 +281,7 @@ class TracingEncryptionServiceTest {
         when(encryptionConfig.getKeySize()).thenReturn(128);
         
         // 创建新的服务实例
-        TracingEncryptionService customService = new TracingEncryptionService(tracingConfiguration, structuredLogger);
+        TracingEncryptionService customService = new TracingEncryptionService(structuredLogger);
 
         String data = "test config data";
 

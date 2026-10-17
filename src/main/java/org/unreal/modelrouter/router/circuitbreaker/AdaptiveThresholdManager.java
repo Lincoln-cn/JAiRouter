@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.unreal.modelrouter.config.service.CircuitBreakerConfigService;
 import org.unreal.modelrouter.persistence.jpa.entity.CircuitBreakerMetricsEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.CircuitBreakerMetricsRepository;
 
@@ -50,7 +49,6 @@ public class AdaptiveThresholdManager {
     private static final double SEVERE_TIGHTEN_FACTOR = 0.6;  // 严重收紧 40%
 
     private final CircuitBreakerMetricsRepository metricsRepository;
-    private final CircuitBreakerConfigService configService;
     private final CircuitBreakerManager circuitBreakerManager;
 
     // 实时统计数据缓存（内存）

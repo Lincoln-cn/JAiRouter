@@ -9,7 +9,6 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.monitor.tracing.async.AsyncTracingProcessor;
-import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
 import org.unreal.modelrouter.monitor.tracing.helper.ServiceNameResolver;
 import org.unreal.modelrouter.monitor.tracing.helper.SpanAttributeHelper;
 import org.unreal.modelrouter.monitor.tracing.memory.TracingMemoryManager;
@@ -46,7 +45,6 @@ public class TracingService {
     private final TracingMemoryManager memoryManager;
     private final TracingPerformanceMonitor performanceMonitor;
     private final TraceQueryService traceQueryService;
-    private final TracingConfiguration tracingConfiguration;
     private final SpanAttributeHelper spanAttributeHelper;
     private final ServiceNameResolver serviceNameResolver;
 

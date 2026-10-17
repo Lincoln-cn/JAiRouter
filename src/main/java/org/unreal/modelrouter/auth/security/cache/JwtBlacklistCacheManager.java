@@ -7,7 +7,6 @@ import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.common.dto.TokenBlacklistEntry;
-import org.unreal.modelrouter.auth.security.service.JwtBlacklistService;
 import org.unreal.modelrouter.common.util.JacksonHelper;
 import reactor.core.publisher.Mono;
 
@@ -33,7 +32,6 @@ import java.util.stream.Collectors;
 public class JwtBlacklistCacheManager {
     
     private final ReactiveRedisTemplate<String, String> redisTemplate;
-    private final JwtBlacklistService blacklistService;
     
     // 本地缓存用于快速查询
     private final Map<String, TokenBlacklistEntry> localCache = new ConcurrentHashMap<>();
