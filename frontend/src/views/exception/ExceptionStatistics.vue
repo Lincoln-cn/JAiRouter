@@ -143,7 +143,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
@@ -152,8 +152,6 @@ import {
   DataAnalysis,
   TrendCharts,
   CircleCheck,
-  Search,
-  Refresh
 } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import type { ECharts } from 'echarts'

@@ -197,7 +197,7 @@ import {
   type TokenRevokeRequest
 } from '@/api/jwtToken'
 import { addToBlacklist } from '@/api/blacklist'
-import {CircleCloseFilled, SuccessFilled, Search, Warning} from '@element-plus/icons-vue'
+import { Search, Warning } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import { formatDateTime as formatDateTimeBase } from '@/utils/format'
 

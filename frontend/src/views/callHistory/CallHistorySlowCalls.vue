@@ -138,7 +138,7 @@
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { Timer, WarningFilled, DataAnalysis, Search, Refresh } from '@element-plus/icons-vue'
+import { Timer, WarningFilled, DataAnalysis } from '@element-plus/icons-vue'
 import { getSlowCalls } from '@/api/callHistory'
 import type { ApiCallHistoryRecord } from '@/types/callHistory'
 import PageSkeleton from '@/components/PageSkeleton.vue'

@@ -230,7 +230,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { Refresh, Delete, Search, RefreshRight, Warning, Histogram, Bell, Mute } from '@element-plus/icons-vue'
+import { Refresh, Delete, Search, RefreshRight } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import StatCard from '@/components/StatCard.vue'
 import {

@@ -1,7 +1,7 @@
 /**
  * 链路追踪模块
  */
-import { createAuthedContext, gotoApp, api, waitTableSettled } from '../harness.mjs'
+import { createAuthedContext, gotoApp, api } from '../harness.mjs'
 
 export default {
   id: 'tracing',

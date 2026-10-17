@@ -2,7 +2,7 @@
  * 安全管理：API Key / 脱敏 / JWT / 黑名单 / 审计
  * （配额抽屉与 PII 深测见 12-deep-security-quota.mjs，这里做模块级骨架）
  */
-import { createAuthedContext, gotoApp, api, apiThrottled, waitTableSettled } from '../harness.mjs'
+import { createAuthedContext, gotoApp, apiThrottled, waitTableSettled } from '../harness.mjs'
 
 const PAGES = [
   // api-keys 列表接口有 AdminApiRateLimiter 30/min；UI 冒烟 + deep 负责 API，这里只验页面

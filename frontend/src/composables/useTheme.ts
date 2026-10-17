@@ -1,4 +1,4 @@
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 
 const STORAGE_KEY = 'ja-theme'
 const isDark = ref(false)

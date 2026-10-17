@@ -377,13 +377,11 @@ import {
   deleteServiceInstance,
   getServiceInstances,
   updateServiceInstance,
-  getRateLimitConfig,
   saveRateLimitConfig,
-  getCircuitBreakerConfig,
   saveCircuitBreakerConfig,
   type InstanceConfig,
   type RateLimitConfig as RateLimitConfigType,
-  type CircuitBreakerConfig as CircuitBreakerConfigType
+  type CircuitBreakerConfig as CircuitBreakerConfigType,
 } from '@/api/instance'
 import { getServiceTypes } from '@/api/dashboard'
 import { getAdapters, getAllConfigurations } from '@/api/service'
