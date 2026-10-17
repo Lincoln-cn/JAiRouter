@@ -15,8 +15,6 @@ jairouter:
       # 令牌持久化配置
       persistence:
         enabled: false  # 默认关闭，各环境按需启用
-        primary-storage: file    # file（使用 H2）, redis, memory
-        fallback-storage: memory  # memory
         
         # 复合存储策略配置
         composite:
@@ -37,12 +35,6 @@ jairouter:
           retention-days: 30
           batch-size: 1000
         
-        # 内存存储配置
-        memory:
-          max-tokens: 500
-          cleanup-threshold: 0.8  # 80%时触发清理
-          lru-enabled: true
-          
         # Redis存储配置
         redis:
           # 只保留开关：连接信息统一由 REDIS_HOST/REDIS_PORT/REDIS_PASSWORD（或 spring.data.redis.*）
@@ -53,10 +45,6 @@ jairouter:
       blacklist:
         persistence:
           enabled: false  # 默认关闭
-          primary-storage: file  # file（使用 H2）, redis, memory
-          fallback-storage: memory
-          max-memory-size: 10000
-          cleanup-interval: 3600  # 1小时
           
         # 复合存储策略配置
         composite:
