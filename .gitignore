@@ -279,3 +279,7 @@ jindexer.jar
 # 「内部文档一律放 innerdoc/」的归置移到 `innerdoc/` 下 ⇒ 与 `innerdoc/` 整目录忽略规则重合，
 # 无需再单列（`scripts/test/local-gates.ps1` 的临时移开逻辑也已自动退化为空操作）。
 /AGENTS.md
+
+# 审计探测器的生成物：报告与 JSON 每次都能重跑出来（`python scripts/audit/<detector>.py`），
+# 故不入库，只入库探测器本身与 `scripts/audit/README.md`（2026-10-17 审计）。
+scripts/audit/out/

@@ -67,8 +67,39 @@ scripts/
 |------|------|
 | `mock-model-server.mjs` | OpenAI 兼容的 mock 模型服务，供本地联调与路由/负载均衡测试使用（见下） |
 | `local-gates.ps1/.cmd` | 本地复刻 CI 门闩（GitHub Actions 不可用期间使用） |
+| `api-smoke.mjs` | 接口层冒烟（可复跑资产，见下）：直接断言对外状态码与错误体形状 |
 | `branch-cleanup.ps1/.sh/.cmd` | 分支清理与「合并不干净」梳理（见下） |
 | `test-branch-cleanup.ps1` | `branch-cleanup.ps1` 的自检：用合成 git 仓库复现各条判据 |
+
+### 接口冒烟（api-smoke）
+
+单元测试与前端 E2E 都不直接断言「线上返回什么状态码、错误体是什么形状」，而这恰恰是客户端最先感知的面。本仓的对外语义却在持续变化（`#404` API Key 限流 401→429 并拆码、`#405` `BUILTIN_READONLY` 400→403、`#432` 缺请求体 500→400、`#340` `/actuator` 不再整段豁免、`#448` `/api/**` 的错误体形状），所以单独留一份接口层冒烟。
+
+```bash
+# 先起服务（dev profile 即可），然后：
+node scripts/test/api-smoke.mjs
+node scripts/test/api-smoke.mjs http://127.0.0.1:8080        # 或 E2E_BASE_URL
+E2E_USER=admin E2E_PASS=*** node scripts/test/api-smoke.mjs  # 非出厂口令时
+```
+
+覆盖哪些面（每项都是「应当成立」的契约）：
+
+| 面 | 断言 |
+|---|---|
+| 认证入口 | 无凭据 / 坏凭据 → **401**（不是 403、不是重定向） |
+| `/actuator` 认证面 | `health` / `info` / `prometheus` 匿名可达；`env` / `beans` / `configprops` 无凭据 **401**、带 ADMIN **200** |
+| `/v1` 协议错误体 | OpenAI 形状 `{"error":{message,type,code}}` 且 `type=authentication_error`；`/v1/messages` 为 Anthropic 形状 |
+| `/api/**` 形状 | 认证链写出的 401 是协议形状；授权层 403 是 `text/plain`；controller 抛的 403 是 `RouterResponse` |
+| 内置 adapter 只读 | `PUT`/`DELETE` 命中内置 adapter → **403 + `BUILTIN_READONLY`** |
+| 缺失请求体 | 三个 `@RequestBody` 端点 → **400**（不得是 500）；非法 JSON → 400 |
+| API Key 全链 | 建 Key → `/v1/models` 200 → 限流后 **429 + `RATE_LIMITED_API_KEY`**，且 `/v1` 的 `type=rate_limit_error` → 清理 |
+
+约束与边界：
+
+* 只依赖 Node 内置 `fetch`，**无 npm 依赖**，因此不进 Maven / vitest 门闩也能跑；
+* 会创建并删除一个临时 API Key（`rateLimitPerMinute: 5`）用于验证限流，跑完自行清理；
+* **只断言「应当成立」的契约**：已登记未修的问题（`#454` 的 405、`#456` 的 custom-tags 谎报成功、`#457` 的空 OpenAPI）刻意不断言，避免把缺陷固化成期望值；
+* 它需要**真实运行**的实例，而 CI 目前没有这一步（`#454` 建议把接口对账固化进守卫）。
 
 ### 分支清理（branch-cleanup）
 
