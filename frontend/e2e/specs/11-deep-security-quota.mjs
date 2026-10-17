@@ -30,6 +30,29 @@ export default {
     const listApi = await apiThrottled(page, '/api/auth/api-keys')
     check('deep-api-keys-http', listApi.status === 200 && !!listApi.body?.data, `HTTP ${listApi.status}`)
 
+    // ── 自给自足（issue #464）────────────────────────────────────────────
+    // 本 spec 后面的配额抽屉断言要求表格里**至少有一行** API Key；空库
+    // （新克隆 / CI 首次跑 / 独立测试库）上会因此假红两条，且带得动的整段抽屉断言全被跳过。
+    // 这里在"列表为空"时自己建一个，跑完删掉；**已有 Key 时完全不介入**。
+    let seededKeyId = null
+    let keysList = listApi
+    if (!(keysList.body?.data?.items?.length > 0)) {
+      const created = await apiThrottled(page, '/api/auth/api-keys', {
+        method: 'POST',
+        body: { description: 'e2e-quota-fixture', rateLimitPerMinute: 60 }
+      })
+      seededKeyId = created.body?.data?.keyId || created.body?.data?.id || null
+      check(
+        'deep-apikeys-seeded',
+        created.status === 200 && !!seededKeyId,
+        `HTTP ${created.status} keyId=${seededKeyId}`
+      )
+      // 重新载入列表页，让表格里出现这一行
+      await gotoApp(page, '/security/api-keys')
+      await waitTableSettled(page).catch(() => {})
+      keysList = await apiThrottled(page, '/api/auth/api-keys')
+    }
+
     const tRefresh = Date.now()
     await gotoApp(page, '/dashboard/main')
     await gotoApp(page, '/security/api-keys')
@@ -47,7 +70,7 @@ export default {
     const hasQuotaBtn = (await quotaBtn.count().catch(() => 0)) > 0
     check('deep-quota-drawer-button', hasQuotaBtn)
 
-    let firstKeyId = listApi.body?.data?.items?.[0]?.keyId || null
+    let firstKeyId = keysList.body?.data?.items?.[0]?.keyId || null
     let originalQuota = null
 
     if (hasQuotaBtn) {
@@ -313,6 +336,12 @@ export default {
     } else {
       await gotoApp(page, '/security/api-keys')
       check('deep-quota-monitoring-crosslink', page.url().includes('/security/api-keys'), 'fallback navigate')
+    }
+
+    // 清理：只删本 spec 自己造的那个 Key（已有 Key 不动）
+    if (seededKeyId) {
+      const del = await apiThrottled(page, `/api/auth/api-keys/${seededKeyId}`, { method: 'DELETE' })
+      check('deep-apikeys-seeded-cleanup', del.status === 200, `HTTP ${del.status} keyId=${seededKeyId}`)
     }
 
     await page.close()
