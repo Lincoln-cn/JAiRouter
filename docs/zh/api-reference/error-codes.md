@@ -8,7 +8,7 @@
 
 JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于客户端进行错误处理。
 
-> ⚠️ **响应形状按入口面不同**：`/api/**`（控制台面）用下面表格里的 `RouterResponse` 形状（`errorCode` 字段）；`/v1/**`（OpenAI 面）用嵌套的 `{"error":{"message","type","code"}}`（见 [统一 API 接口](universal-api.md)）；`/v1/messages`（Anthropic 面）用 Anthropic 的 `{"type":"error","error":{...}}` 形状。另有两个已知例外不走本表：管理面限流 429 返回 `{"code":"RATE_LIMIT_EXCEEDED","message":...}`（扁平体、没有 `error` 包裹）；异常处理器兜底返回数字码（如 `{"code":"500"}`）。
+> ⚠️ **响应形状按入口面不同；而在 `/api/**` 上，还取决于「谁写的这个响应」**：`/api/**`（控制台面）通常用下面表格里的 `RouterResponse` 形状（`errorCode` 字段）；`/v1/**`（OpenAI 面）用嵌套的 `{"error":{"message","type","code"}}`（见 [统一 API 接口](universal-api.md)）；`/v1/messages`（Anthropic 面）用 Anthropic 的 `{"type":"error","error":{...}}` 形状。**不走本表的已知例外**：**（1）认证过滤器在每一个面上都自己写响应体，`/api/**` 也不例外** —— 缺少/非法凭据（401）与凭据在校验环节被限流（429 `RATE_LIMITED_API_KEY`）返回的是 `{"error":{"message":…,"type":"authentication_error"|"rate_limit_error","code":…}}`，因为该过滤器是认证链状态的**唯一渲染点**，这条链上两个 `@RestControllerAdvice` 都到不了；**（2）由授权层拦下的 403**（URL 权限矩阵 / `@PreAuthorize`）是 Spring Security 默认的 `text/plain` 纯文本 `Access Denied`，而 controller 自己抛的 403（例如 `BUILTIN_READONLY`）**是** `RouterResponse` —— 也就是说在 `/api/**` 上形状取决于写入方，而不只取决于面；**（3）**管理面限流 429 返回 `{"code":"RATE_LIMIT_EXCEEDED","message":...}`（扁平体、没有 `error` 包裹）；**（4）**异常处理器兜底返回数字码（如 `{"code":"500"}`）。
 >
 > 📌 **本表的权威来源是代码**：本表与 `common/constants/ErrorCode.java`（错误码注册表，**63 个会被真正发出的码**）逐条对账，
 > 由 `scripts/docs/check-error-codes.py` 在 CI 里**双向校验** —— 文档漏列一个注册表里的码、或文档列了一个发不出来的码，都会判红。

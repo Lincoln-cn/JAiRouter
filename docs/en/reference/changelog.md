@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.3.2
-> **Last Updated**: 2026-10-14
+> **Document Version**: 3.3.5
+> **Last Updated**: 2026-10-16
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,81 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.3.5] - 2026-10-16 - Patch Release (store contract and health semantics fixed; error-body shapes corrected in docs)
+
+> ⚠️ **One client-visible change** (please check your client): **on the `/api/**` surface the error-body shape depends on who writes it** —
+> the authentication filter's own responses (401 `AUTH_MISSING`, 429 `RATE_LIMITED_API_KEY`) are protocol-shaped
+> `{"error":{"message":…,"type":…,"code":…}}`, an authorization-layer 403 is `text/plain` `Access Denied`, and only
+> controller-thrown errors are `RouterResponse`. **The client rule is: is there a top-level `error` field?**
+> This release **changes no runtime behavior and no status code** — that item documents the existing implementation as measured (#448).
+>
+> **Tagged `v3.3.5`**; per the standing release policy no GitHub Release or Docker image is produced yet.
+> This entry covers everything merged after `v3.3.4`.
+
+#### Store contract: deleting the last entry is no longer a silent no-op (#446)
+
+- **Symptom**: deleting the only remaining entry of a collection answered `200 {"success":true}` without deleting it.
+  Pools came straight back (the controller re-reads persistence via `reloadActivePools()` after deleting); a configurable
+  adapter looked deleted until the **process restarted**.
+- **Root cause**: `JpaStoreManager.saveConfig` returned early on an empty map (`config.isEmpty()` → `return`), while
+  `PoolPersistenceService` / `AdapterDefinitionPersistenceService` / `RuleDefinitionPersistenceService` all do
+  "`loadAll()` → `removeIf()` → `saveAll()`", so removing the final entry passes exactly that empty map — the write was
+  skipped and the old value stayed in the database.
+- **This was not a convention but a one-sided divergence**: `BaseStoreManager`, `MemoryStoreManager` and
+  `FileStoreManager.doSaveConfig` all persist the map as given, empty maps included; only `JpaStoreManager` bailed out.
+- **Fix**: the early return is gone (only the `null` guard remains, now with a warn), and "an empty map is a legal payload"
+  is part of the `StoreManager.saveConfig` contract (use `deleteConfig` to clear a key).
+- **Regression guards**: a new `JpaStoreManagerTest` drives the real implementation (only the JPA repository is replaced by
+  a stateful stand-in) and asserts *what is left in the store*, not *that a method was called*; the three
+  `*PersistenceServiceTest` deletion assertions now check the payload, each with an added "delete to empty → read back
+  empty" round trip over a real `MemoryStoreManager`. The old tests missed all of this because they **mocked
+  `StoreManager`** — the mock has no such early return, so "`saveConfig` was called" was vacuously true.
+- Present since `c86fe199` (2026-04-28, v2.7.6) — **not a regression introduced after v3.3.1**.
+
+#### Health semantics: the span drop rate no longer makes `/actuator/health` answer 503 (#447)
+
+- **Symptom**: once the **lifetime-cumulative** span drop rate passed 10%, the aggregate `/actuator/health` answered `503`,
+  and it could only return below the threshold after a restart. All three `docker-compose*.yml` files use that endpoint as
+  the container healthcheck ⇒ the container was permanently unhealthy, while restarting does not stop spans from being
+  dropped. Measured: `tracing=DOWN` (`issue=数据丢弃率过高: 50.44%`) with every other component `UP`.
+- **Fix**: an over-threshold drop rate now reports `WARNING` (HTTP stays 200, the numbers stay in the details for alert
+  rules); only "async processor not running", "CRITICAL memory pressure" and "performance monitor itself DOWN" still
+  answer `DOWN`. The same block also lost issues because each check overwrote the previous builder
+  (`healthBuilder = Health.down()...`), discarding the earlier status *and* its details; it now collects `downIssues` and
+  `warnings` separately and decides once.
+- **Regression guards**: a new `TracingHealthIndicatorTest` (that class had **zero** coverage) with 8 cases, including
+  "an over-threshold drop rate must not be DOWN" and "multiple DOWN-level issues must not overwrite each other".
+- The Kubernetes probe surface is unaffected (`liveness` includes only `livenessState,ping`; `readiness` only
+  `readinessState`). Present since `deffede2` (2026-04-28, v2.7.5) — not a regression after v3.3.1.
+
+#### Docs: `/api/**` error-body shapes corrected against measurement (#448)
+
+- The authentication filter is the **single render point** for authentication-chain state
+  (`SpringSecurityAuthenticationFilter:287-319`, `:339-383`) and takes a hard-coded shape branch on non-`/v1` paths, so
+  `/api/**` 401/429 are protocol-shaped; an authorization-layer 403 is written as `text/plain` by Spring Security's
+  default handler. A controller-thrown 403 (for example `BUILTIN_READONLY`) *is* `RouterResponse`.
+- Corrected in `api-reference/{error-codes,universal-api,index}.md` and `getting-started/claude-code.md` (zh/en
+  symmetrical); the latter claimed gateway errors use `RouterResponse` on **both** `/v1` and `/api`, which is wrong for
+  `/v1` as well.
+
+#### Other
+
+- **Client-visible status fix (#432)**: a missing request body no longer becomes `500 + INTERNAL_ERROR`; three
+  `@RequestBody` endpoints pre-validate and answer **400**. Constraint: the check must sit **outside** the method's own
+  `try`, or the blanket `catch (Exception)` swallows it and re-wraps it as 500.
+- **Documentation↔code contract (#436)**: the en TTS/STT endpoint prefixes were corrected to `/api/v1/audio/*`
+  (`/v1/audio/*` has no mapping at all — the en side was wrong).
+- **Gates**: `快闸` also triggers on `src/main/resources/config/**` and `.github/workflows/**`; the workflow-syntax
+  validator was repaired and wired into the gate with a self-test that includes refutation cases.
+- **Tooling**: the branch-cleanup scripts landed (content criteria instead of ancestry under squash merges, with a
+  synthetic-repo self-test).
+
+#### Local verification before this release
+
+Cold start on a fresh H2 database → frontend build → package → run on 8080: **frontend E2E 414/414** (14 specs;
+404/407 before the fixes); **API smoke 51/51** (covering every client-visible change since v3.3.1: #404 / #405 / #432 /
+both `/v1` error shapes / the #340 `/actuator` auth surface).
 
 ### [3.3.4] - 2026-10-16 - Patch Release (error-code rulings landed, close-out and docs relocation)
 

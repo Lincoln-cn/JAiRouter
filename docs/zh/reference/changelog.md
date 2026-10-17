@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.3.2
-> **最后更新**: 2026-10-14
+> **文档版本**: 3.3.5
+> **最后更新**: 2026-10-16
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,68 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.3.5] - 2026-10-16 - 补丁发布（存储契约与健康判定修复 + 错误体形状口径更正）
+
+> ⚠️ **一处对外可观察变更**（客户端请核对）：**`/api/**` 面上的错误体形状取决于「谁写的」**——
+> 认证过滤器自己写出的响应（401 `AUTH_MISSING`、429 `RATE_LIMITED_API_KEY`）是协议形状
+> `{"error":{"message":…,"type":…,"code":…}}`，授权层拦下的 403 是 `text/plain` 的 `Access Denied`，
+> 只有 controller 抛出的错误才是 `RouterResponse`。**客户端判据 = 顶层有没有 `error` 字段**。
+> 本版**不改变任何运行时行为与状态码**，这一条是把既有实现按实测写进文档（#448）。
+>
+> **已打 tag `v3.3.5`**；按既定发布口径暂不产出 GitHub Release 与 Docker 镜像。
+> 本条目覆盖 `v3.3.4` 之后合入的全部改动。
+
+#### 存储契约：删除最后一个条目不再静默失败（#446）
+
+- **现象**：对只剩一个条目的集合执行删除，接口返回 `200 {"success":true}`，但条目并未删除。资源池侧**立即复活**
+  （控制器删完会 `reloadActivePools()` 从持久层重读），可配置 adapter 侧**当时看着删掉了、进程重启后复活**。
+- **根因**：`JpaStoreManager.saveConfig` 对空表早退（`config.isEmpty()` → `return`），而 `PoolPersistenceService` /
+  `AdapterDefinitionPersistenceService` / `RuleDefinitionPersistenceService` 都是「`loadAll()` → `removeIf()` → `saveAll()`」，
+  删掉最后一个条目时正好传空表 ⇒ 落库被跳过，而旧值仍在库里。
+- **这不是约定而是单方面偏离**：`BaseStoreManager` / `MemoryStoreManager` / `FileStoreManager.doSaveConfig`
+  都按原样落库（含空表），只有 `JpaStoreManager` 早退。
+- **修法**：去掉早退（只保留 `null` 保护并打 warn），并把「空表是合法输入」写进 `StoreManager.saveConfig` 的契约
+  （表达「清除该键」请用 `deleteConfig`）。
+- **测试守护**：新增 `JpaStoreManagerTest` 直接驱动真实实现（只把 JPA 仓库换成有状态替身），断言「库里最后留下了什么」；
+  三个 `*PersistenceServiceTest` 的删除断言补上载荷检查，并各补一例真实 `MemoryStoreManager` 的「删到空 → 读回空」往返。
+  原测试漏掉该缺陷的机制是：它们 **mock 了 `StoreManager`**，mock 上没有那段早退，「`saveConfig` 被调用过」恒真。
+- 该缺陷自 `c86fe199`（2026-04-28，v2.7.6）起存在，**不是 v3.3.1 之后的回归**。
+
+#### 健康判定：span 丢弃率不再让 `/actuator/health` 变成 503（#447）
+
+- **现象**：**生命周期累计**的 span 丢弃率一旦超过 10%，聚合端点 `/actuator/health` 就返回 `503`，且越阈值后
+  只能靠重启归零。三份 `docker-compose*.yml` 的容器健康检查用的正是该端点 ⇒ 容器被持续判 unhealthy，
+  而重启并不解决丢 span。实测现场：`tracing=DOWN`（`issue=数据丢弃率过高: 50.44%`），其余组件全 `UP`。
+- **修法**：丢弃率超阈值改记 `WARNING`（HTTP 仍 200，数值仍完整留在 details 供告警规则使用），
+  只有「异步处理器未运行」「内存压力 CRITICAL」「性能监控自身 DOWN」才判 `DOWN`。
+  顺带修掉同段「`healthBuilder = Health.down()...` 逐条覆盖」导致的问题项丢失（后者会连前者的状态与 details 一起丢掉），
+  改为分别收集 `downIssues` / `warnings` 后统一定状态。
+- **测试守护**：新增 `TracingHealthIndicatorTest`（该类此前**零覆盖**）共 8 例，含「丢弃率超阈值不得 DOWN」
+  与「多条 DOWN 级问题不得互相覆盖」。
+- K8s 探针面不受影响（`liveness` 只含 `livenessState,ping`，`readiness` 只含 `readinessState`）。
+  该判定自 `deffede2`（2026-04-28，v2.7.5）起存在，非 v3.3.1 之后的回归。
+
+#### 文档：`/api/**` 错误体形状按实测更正（#448）
+
+- 认证过滤器是认证链状态的**唯一渲染点**（`SpringSecurityAuthenticationFilter:287-319`、`:339-383`），
+  非 `/v1` 路径走硬编码形状分支 ⇒ `/api/**` 的 401 / 429 是协议形状；授权层 403 由 Spring Security 默认
+  处理器写成 `text/plain`。而 controller 抛出的 403（如 `BUILTIN_READONLY`）确实是 `RouterResponse`。
+- 更正位置：`api-reference/{error-codes,universal-api,index}.md` 与 `getting-started/claude-code.md`（中英对称）；
+  后者原有「网关自身错误在 `/v1` 与 `/api` 两面上都是 `RouterResponse`」的说法，对 `/v1` 也是错的。
+
+#### 其它
+
+- **客户端可见状态修复（#432）**：请求体缺失不再变成 `500 + INTERNAL_ERROR`，三个 `@RequestBody` 端点改为前置校验返回 **400**。
+  约束：校验必须放在方法自己的 `try` **之外**，否则会被兜底 `catch (Exception)` 吞掉再包成 500。
+- **文档↔代码契约（#436）**：英文侧 TTS/STT 端点前缀纠正为 `/api/v1/audio/*`（`/v1/audio/*` 全无映射，错的是英文侧）。
+- **门闩**：`快闸` 补 `src/main/resources/config/**` 与 `.github/workflows/**` 触发路径；工作流语法校验器修好后接入快闸（含反证自测）。
+- **工程与工具**：分支清理脚本入库（squash 合并下改用内容判据，含合成仓库自检）。
+
+#### 本轮发布前验证（本地）
+
+冷启动全新 H2 库 → 前端构建 → 打包 → 起 8080：**前端全量 E2E 414/414 通过**（14 个 spec；修复前 404/407）；
+**接口冒烟 51/51 通过**（覆盖 v3.3.1 以来全部对外语义变更：#404 / #405 / #432 / `/v1` 双协议错误体 / #340）。
 
 ### [3.3.4] - 2026-10-16 - 补丁发布（错误码语义裁决落地、收口与文档归置）
 

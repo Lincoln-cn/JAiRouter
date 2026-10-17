@@ -134,6 +134,19 @@ drops the fields that are `null`, so an error usually carries `success`, `messag
 }
 ```
 
+**Three responses on this surface do not use that shape** — they are not exceptions to "the surface",
+but to "who writes the body":
+
+| Case | Written by | Actual body |
+|------|-----------|-------------|
+| Missing / invalid credential (401) | authentication filter | `{"error":{"message":…,"type":"authentication_error","code":"AUTH_MISSING"}}` |
+| Credential rate-limited (429) | authentication filter | `{"error":{"message":…,"type":"rate_limit_error","code":"RATE_LIMITED_API_KEY"}}` |
+| Denied by the authorization layer (403) | Spring Security default handler | `text/plain`, body `Access Denied` |
+
+A 403 thrown by a controller (for example `BUILTIN_READONLY`) *is* `RouterResponse`, which is why
+clients should key off the writer: **detect the shape by the presence of the top-level `error` field**
+and fall back to `RouterResponse` otherwise.
+
 ### `/v1/**` `type` values
 
 | HTTP Status | `type` | Description |

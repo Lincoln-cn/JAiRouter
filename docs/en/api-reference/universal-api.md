@@ -419,7 +419,7 @@ A **JSON** request body (`@RequestBody ImageEditDTO.Request`) — **not** `multi
 | `rate_limit_error` | 429 — rate limit / quota exceeded |
 | `api_error` | every 5xx (including 503) — gateway or downstream internal error |
 
-> These are the only values the gateway emits (`V1ErrorBodyMapper#errorTypeOf`); `overloaded_error` is never produced. This OpenAI-shaped body applies to `/v1/**`; `/api/**` keeps the `RouterResponse` shape (`success` / `message` / `data` / `errorCode` / `timestamp`) instead.
+> These are the only values the gateway emits (`V1ErrorBodyMapper#errorTypeOf`); `overloaded_error` is never produced. This OpenAI-shaped body applies to `/v1/**`; `/api/**` normally keeps the `RouterResponse` shape (`success` / `message` / `data` / `errorCode` / `timestamp`) instead — **except when the response is written by the authentication filter** (401 for a missing/invalid credential, 429 `RATE_LIMITED_API_KEY`), which emits this same `{"error":{"message","type","code"}}` shape on `/api/**` too. See [Error Codes](error-codes.md) for the full exception list.
 
 ## Usage Examples
 

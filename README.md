@@ -43,7 +43,7 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # the local/git directory name differs from the product name
 artifact:        model-router            # Maven artifactId
-project_version: 3.3.4                   # pom.xml
+project_version: 3.3.5                   # pom.xml
 latest_release:  v3.3.1 (2026-10-14)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5 (WebFlux / reactive)
@@ -399,15 +399,21 @@ Release tags: `v3.3.3` · `v3.3.2` · `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.
 | **Error-code close-out (#406 / #412 / #414)** | Seven never-emitted codes (constants plus never-called factories) deleted; the docs separate the internal `RESOURCE_FORBIDDEN` → `FORBIDDEN_RESOURCE` constant rename from the client-visible `TOKEN_USAGE_FORBIDDEN` → `FORBIDDEN_TOKEN_USAGE` rename; four ghost codes in the management-API tables replaced with registry names |
 | **Status alignment (#405)** | `BUILTIN_READONLY` answers 403 everywhere (the endpoint used to answer 400); `RESTART_REQUIRED` answers 400 everywhere (the rule chain used to derive 403) |
 
-**Merged after the `v3.3.4` tag** (2026-10-16), grouped by theme:
+**Tagged `v3.3.5`, not released yet** (2026-10-16; the `v3.3.4` tag stays frozen at `92a134ef`); what changed relative to `v3.3.4`, grouped by theme:
 
 | Theme | What changed |
 |-------|--------------|
 | **Client-visible status fix (#432)** | A **missing request body** no longer becomes a **500 + `INTERNAL_ERROR`**: three `@RequestBody` endpoints (`AdapterConfigController` create/update, `LoadBalancerManagementController` config update) now pre-validate and answer **400 + "request body invalid or missing"**. Note the constraint this exposed: the check has to sit **outside** the method's own `try`, otherwise the blanket `catch (Exception)` swallows the `ServerWebInputException` and re-wraps it as 500 |
 | Documentation↔code contract (#436) | The en TTS/STT endpoint prefixes were corrected to `/api/v1/audio/*`. Evidence first: `/v1/audio/*` **has no mapping at all** — the `/v1` face only serves models, chat, embeddings, rerank (plus Anthropic messages and debug), so it was the **en** side that was wrong |
 | Gates | `快闸` now also triggers on `src/main/resources/config/**` and `.github/workflows/**`; the previously dead workflow-syntax validator was repaired (it was misreading YAML indentation as Python and contained a tautological path check) and wired into the gate, with a self-test that includes refutation cases |
+| **Store contract fix (#446)** | Deleting the **last** entry of a `StoreManager`-backed collection was a **silent no-op that still answered `200 {"success":true}`**: `JpaStoreManager.saveConfig` returned early on an empty map, while the callers are all "load all → mutate → save all", so removing the final entry passes exactly that empty map. Pools came straight back; a configurable adapter looked deleted until the **process restarted**. The early return is gone (the other three store implementations never had it) and "an empty map is a legal payload" is now part of the `StoreManager.saveConfig` contract. The old tests missed it because they **mocked `StoreManager`** — the mock has no such early return, so "`saveConfig` was called" was vacuously true |
+| **Health semantics fix (#447)** | `/actuator/health` no longer turns `DOWN` on the **lifetime-cumulative** tracing span drop rate: all three compose files use that endpoint as the container healthcheck, and the ratio can only return below the threshold after a restart ⇒ the container was **permanently** unhealthy, while restarting does not stop spans from being dropped (measured: `tracing=DOWN`, `issue=数据丢弃率过高: 50.44%`, every other component `UP`). It is now a `WARNING` (HTTP stays 200, the numbers stay in the details for alert rules); only "async processor not running", "CRITICAL memory pressure" and "performance monitor itself DOWN" still answer `DOWN`. The same block also lost issues because each check overwrote the previous builder — that is fixed too |
+| Docs accuracy (#448) | The `/api/**` error-body shape was corrected against measurement: the authentication chain's own 401 (`AUTH_MISSING`) and 429 (`RATE_LIMITED_API_KEY`) are protocol-shaped, an authorization-layer 403 is `text/plain` `Access Denied`, and only controller-thrown errors are `RouterResponse` ⇒ the client rule is now "**is there a top-level `error` field?**". The `claude-code.md` claim that both surfaces use `RouterResponse` (wrong for `/v1` as well) was corrected with it |
+| Tooling | The branch-cleanup scripts landed: under squash merges, ancestry cannot tell whether a branch was merged (67 of 80 were missed), so they use two content criteria plus a synthetic-repo self-test |
 
-See the [`[3.3.4]` changelog entry](docs/en/reference/changelog.md); tag only, no GitHub Release or image, per the standing policy.
+Local verification before this release (cold start on a fresh H2 database → frontend build → package → run on 8080): **frontend E2E 414/414** (14 specs; 404/407 before the fixes — `crud:pool:delete` was the real defect, the other two were missing API-key fixtures); **API smoke 51/51** (covering every client-visible change since v3.3.1: the #404 rate-limit split, the #405 403, the #432 400, both `/v1` error shapes and the #340 `/actuator` auth surface).
+
+See the [`[3.3.5]` changelog entry](docs/en/reference/changelog.md); tag only, no GitHub Release or image, per the standing policy.
 
 ### Open ledger
 

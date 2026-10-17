@@ -6,9 +6,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.unreal.modelrouter.persistence.store.MemoryStoreManager;
 import org.unreal.modelrouter.persistence.store.StoreManager;
 import org.unreal.modelrouter.router.adapter.config.AdapterDefinitionProperties;
 
@@ -163,7 +165,7 @@ class AdapterDefinitionPersistenceServiceTest {
     class RemoveTests {
 
         @Test
-        @DisplayName("PERSIST-005: 删除单个定义成功")
+        @DisplayName("PERSIST-005: 删除单个定义成功（落库内容必须已摘掉它）")
         void testRemoveDefinition_success() {
             // Given
             Map<String, Object> configMap = new HashMap<>();
@@ -175,7 +177,30 @@ class AdapterDefinitionPersistenceServiceTest {
             persistenceService.removeDefinition("deepseek");
 
             // Then
-            verify(storeManager, atLeastOnce()).saveConfig(eq("adapter_definitions"), any());
+            // 只断言「saveConfig 被调用过」不够：传旧载荷同样满足。这里钉住载荷本身。
+            @SuppressWarnings("unchecked")
+            ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
+            verify(storeManager, atLeastOnce()).saveConfig(eq("adapter_definitions"), captor.capture());
+            Map<String, Object> persisted = captor.getValue();
+            assertFalse(persisted.containsKey("deepseek"),
+                    "删除后落库的表里不应再有 deepseek，实际=" + persisted.keySet());
+            assertTrue(persisted.containsKey("zhipu"), "同表的其它条目必须保留");
+        }
+
+        @Test
+        @DisplayName("PERSIST-009: 删除最后一个可配置 adapter 后重新加载为空（真实 StoreManager 往返）")
+        void testRemoveDefinition_lastDefinition_roundTripEmpty() {
+            // 用真实实现而非 Mockito 桩：桩不复现 store 侧「空表被静默丢弃」，正是它让本仓长期绿着漏掉该缺陷。
+            // 该缺陷在 adapter 上的可见形态是「当时看着删掉了，进程重启后条目复活」。
+            AdapterDefinitionPersistenceService real =
+                    new AdapterDefinitionPersistenceService(new MemoryStoreManager(), new ObjectMapper());
+            real.saveDefinition("only-adapter", deepseekDefinition);
+            assertEquals(1, real.loadAllDefinitions().size(), "前置：已有一条");
+
+            real.removeDefinition("only-adapter");
+
+            assertTrue(real.loadAllDefinitions().isEmpty(),
+                    "删掉最后一个 adapter 后必须读回空集合；非空即说明空表被丢弃、重启后会复活");
         }
 
         @Test

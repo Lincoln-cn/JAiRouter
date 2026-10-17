@@ -3,7 +3,7 @@
 <!-- 版本信息 -->
 > **Doc Version**: 2.2.2
 > **Last Updated**: 2026-10-14
-> **Git Tag**: v3.3.4
+> **Git Tag**: v3.3.5
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -23,6 +23,20 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 - **Observability**: Comprehensive monitoring, logging, and distributed tracing
 
 ## Current Version Status
+
+### 🏷️ v3.3.5 (Patch: store contract and health semantics fixed + error-body shapes corrected in docs, **tagged, not released yet** 2026-10-16)
+
+**Status**: **Tagged `v3.3.5`, not released yet** (per the standing release policy the GitHub Release and Docker image are produced separately)
+**Scope**: everything merged after the `v3.3.4` slice (10-16 morning), i.e. 2026-10-16
+
+| Area | Delivered |
+|------|-----------|
+| **Store contract: deleting the last entry is no longer a silent no-op (#446)** | `JpaStoreManager.saveConfig` no longer bails out on an empty map (only the `null` guard remains, with a warn), aligning it with `BaseStoreManager` / `MemoryStoreManager` / `FileStoreManager`; "an empty map is a legal payload" is now part of the `StoreManager.saveConfig` contract. Affected paths: deleting pools, routing rules and configurable adapters. A new `JpaStoreManagerTest` drives the real implementation and asserts *what is left in the store*; the three `*PersistenceServiceTest` deletion assertions check the payload and add a real `MemoryStoreManager` delete-to-empty round trip |
+| **Health semantics: the drop rate no longer makes `/actuator/health` answer 503 forever (#447)** | An over-threshold span drop rate now reports `WARNING` (HTTP stays 200; the numbers stay in the details for alert rules); only "async processor not running / CRITICAL memory pressure / performance monitor itself DOWN" still answer DOWN. The same block's "each check overwrites the previous builder" loss of issues is fixed too. A new `TracingHealthIndicatorTest` (previously zero coverage) adds 8 cases |
+| **Error-body shapes corrected (#448)** | On `/api/**`, the authentication chain's own 401/429 are protocol-shaped, an authorization-layer 403 is `text/plain`, and only controller-thrown errors are `RouterResponse` ⇒ the client rule is now "is there a top-level `error` field?". The `claude-code.md` claim that both surfaces use `RouterResponse` (wrong for `/v1` too) is corrected alongside (zh/en symmetrical) |
+| **Other** | A missing request body answers 400 (#432) · the en TTS/STT prefixes corrected to `/api/v1/audio/*` (#436) · `快闸` triggers on the config tree and workflow paths · the branch-cleanup scripts landed |
+
+**Local verification before this release**: frontend E2E **414/414**, API smoke **51/51** (cold start on a fresh H2 database → frontend build → package → run on 8080).
 
 ### 🏷️ v3.3.4 (Patch: error-code rulings landed + close-out + docs relocation, **tagged, not released yet** 2026-10-16)
 
@@ -341,7 +355,7 @@ The v3.0 microservices architecture transformation has been indefinitely postpon
 
 ## Technical Architecture
 
-### Current Architecture (v3.3.4)
+### Current Architecture (v3.3.5)
 ```
 Monolithic App → Modular Design → Reactive Programming
 ```

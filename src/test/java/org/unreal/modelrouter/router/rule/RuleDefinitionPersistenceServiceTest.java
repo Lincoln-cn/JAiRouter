@@ -5,7 +5,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.unreal.modelrouter.persistence.store.MemoryStoreManager;
 import org.unreal.modelrouter.persistence.store.StoreManager;
 import org.unreal.modelrouter.router.rule.model.RuleDefinition;
 
@@ -146,7 +148,7 @@ class RuleDefinitionPersistenceServiceTest {
     class RemoveTests {
 
         @Test
-        @DisplayName("PERSIST-008: 删除存在的规则")
+        @DisplayName("PERSIST-008: 删除存在的规则（落库内容必须已摘掉它）")
         void testRemove_existing() {
             Map<String, Object> saved = new HashMap<>();
             RuleDefinition r1 = rule("r1", "rule1");
@@ -155,7 +157,27 @@ class RuleDefinitionPersistenceServiceTest {
 
             service.remove("r1");
 
-            verify(storeManager).saveConfig(eq("rule_definitions"), any(Map.class));
+            // 只断言「saveConfig 被调用过」不够：传旧载荷同样满足。这里钉住载荷本身。
+            @SuppressWarnings("unchecked")
+            ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
+            verify(storeManager).saveConfig(eq("rule_definitions"), captor.capture());
+            assertFalse(captor.getValue().containsKey("r1"),
+                    "删除后落库的表里不应再有 r1，实际=" + captor.getValue().keySet());
+        }
+
+        @Test
+        @DisplayName("PERSIST-010: 删除最后一条规则后重新加载为空（真实 StoreManager 往返）")
+        void testRemove_lastRule_roundTripEmpty() {
+            // 用真实实现而非 Mockito 桩：桩不复现 store 侧「空表被静默丢弃」，正是它让本仓长期绿着漏掉该缺陷。
+            RuleDefinitionPersistenceService real =
+                    new RuleDefinitionPersistenceService(new MemoryStoreManager(), new ObjectMapper());
+            real.save(rule("only-rule", "rule-only"));
+            assertEquals(1, real.loadAll().size(), "前置：已有一条");
+
+            real.remove("only-rule");
+
+            assertTrue(real.loadAll().isEmpty(),
+                    "删掉最后一条规则后必须读回空集合；非空即说明空表被丢弃、条目会复活");
         }
 
         @Test

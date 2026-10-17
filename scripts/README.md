@@ -66,6 +66,55 @@ scripts/
 | 脚本 | 说明 |
 |------|------|
 | `mock-model-server.mjs` | OpenAI 兼容的 mock 模型服务，供本地联调与路由/负载均衡测试使用（见下） |
+| `local-gates.ps1/.cmd` | 本地复刻 CI 门闩（GitHub Actions 不可用期间使用） |
+| `branch-cleanup.ps1/.sh/.cmd` | 分支清理与「合并不干净」梳理（见下） |
+| `test-branch-cleanup.ps1` | `branch-cleanup.ps1` 的自检：用合成 git 仓库复现各条判据 |
+
+### 分支清理（branch-cleanup）
+
+清理已在主线落地的本地/远端分支，并把「合并得不干净、有遗留」的分支单独梳理成清单。
+
+**为什么不能直接用 `git branch --merged`**：本仓 PR 用 **squash** 合并，分支提交**从未成为主线祖先**。
+对 80 个本地分支实测，ancestry 判据只认出 6 个，而内容早已进主线的有 67 个 ⇒ 据此删除会漏掉九成。
+
+脚本改用两条**内容判据**：
+
+| 判据 | 做法 | 含义 |
+|------|------|------|
+| A（最强） | `git merge-tree --write-tree --merge-base=<mb> <base> <branch>` 的结果树是否**等于**基线树 | 等价 ⇒ 分支净增量已被完全吸收 |
+| B（次强） | 分支相对 merge-base 的改动在基线里的**存活率**（双向：新增行要在、删除行要不在） | 整份文件零存活 / 新文件缺失 ⇒ 内容没落地 |
+
+分类结果：`contained`（判据 A，可删）· `patch`（判据 B，可删）· `churn`（改动已进基线、后续被改写，可删）
+· `review` / `orphan`（**禁止直接删**，报告列出哪几份文件没进基线）· `has-open-pr` · `protected-*`。
+
+**安全默认：dry-run**，只打印命令；必须显式 `-Apply`（或 `--apply`）才真正删除。删除用 `git branch -D`
+（必需：squash 合并的分支用 `-d` 会被 git 拒绝），且当前分支 / worktree 占用 / 基线 / `-Protect` 匹配的分支一律不动。
+
+```bash
+# 1) 先看（默认不改动任何分支）
+powershell -ExecutionPolicy Bypass -File scripts/test/branch-cleanup.ps1
+scripts/test/branch-cleanup.cmd                    # 或绕过执行策略
+scripts/test/branch-cleanup.sh                     # Linux/macOS
+
+# 2) 出报告给后续开发用（markdown 可直接贴 issue；同时落盘 md + json）
+powershell -ExecutionPolicy Bypass -File scripts/test/branch-cleanup.ps1 -IncludeRemote -Format Markdown -OutDir .tmp-branch-cleanup
+
+# 3) 确认无误后执行（远端服务端删除需再显式加 -DeleteRemote）
+powershell -ExecutionPolicy Bypass -File scripts/test/branch-cleanup.ps1 -Apply
+powershell -ExecutionPolicy Bypass -File scripts/test/branch-cleanup.ps1 -IncludeRemote -Apply -DeleteRemote
+```
+
+退出码：`0`=无待删；`2`=有可删候选；`3`=存在「需人工确认」项；`1`=前置条件不满足。
+
+**自检**（改了判据务必先跑；用合成仓库复现 6 种情形，全部断言必须绿）：
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts/test/test-branch-cleanup.ps1
+```
+
+> ⚠️ 已知环境缺陷（偶发，非脚本错误）：Windows PowerShell 5.1 + 本机 AMSI 组合下，长脚本可能抛
+> `AccessViolationException ... AmsiScanBuffer` 并直接结束进程；**同一命令重跑即可通过**
+> （与 `local-gates.ps1` 同款问题）。自检脚本已内置重试。
 
 ### tools/ - 工具脚本
 
