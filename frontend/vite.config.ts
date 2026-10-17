@@ -87,15 +87,15 @@ export default defineConfig({
         secure: false,
         configure: (proxy, options) => {
           // 添加请求日志
-          proxy.on('proxyReq', (proxyReq, req, res) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
             console.log(`[Vite Proxy] Request: ${req.method} ${req.url} -> ${options.target}${req.url}`)
           });
           // 添加响应日志
-          proxy.on('proxyRes', (proxyRes, req, res) => {
+          proxy.on('proxyRes', (proxyRes, req, _res) => {
             console.log(`[Vite Proxy] Response: ${req.method} ${req.url} -> Status: ${proxyRes.statusCode}`)
           });
           // 添加错误日志
-          proxy.on('error', (err, req, res) => {
+          proxy.on('error', (err, req, _res) => {
             console.error(`[Vite Proxy] Error: ${req.method} ${req.url} ->`, err.message)
           });
         }
@@ -105,13 +105,13 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         configure: (proxy, options) => {
-          proxy.on('proxyReq', (proxyReq, req, res) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
             console.log(`[Vite Proxy] Request: ${req.method} ${req.url} -> ${options.target}${req.url}`)
           });
-          proxy.on('proxyRes', (proxyRes, req, res) => {
+          proxy.on('proxyRes', (proxyRes, req, _res) => {
             console.log(`[Vite Proxy] Response: ${req.method} ${req.url} -> Status: ${proxyRes.statusCode}`)
           });
-          proxy.on('error', (err, req, res) => {
+          proxy.on('error', (err, req, _res) => {
             console.error(`[Vite Proxy] Error: ${req.method} ${req.url} ->`, err.message)
           });
         }

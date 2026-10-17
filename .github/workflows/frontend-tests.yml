@@ -47,3 +47,33 @@ jobs:
 
       - name: 运行前端单元测试
         run: npm run test:unit
+
+  lint:
+    # issue #462：前端 lint 门闩此前完全不可用 —— eslint 已升到 10.x，
+    # 而配置还是 `.eslintrc.cjs`（eslint 10 不再支持 eslintrc）⇒ `npx eslint .` 直接报错退出。
+    # 本 job 接的是迁移后的 flat config（frontend/eslint.config.js）。
+    #
+    # `--max-warnings 393` 是**棘轮**：现有 393 条警告（300 个 no-explicit-any + 93 个未使用变量）
+    # 被冻结为上限，任何新增问题都会让这一步变红。存量清理干净后再收紧这个数字，
+    # 并把 no-unused-vars 从 warn 升回 error。
+    name: eslint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js（与 pom 的 frontend-maven-plugin 一致）
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 安装依赖（严格按锁文件）
+        run: npm ci --no-audit --no-fund
+
+      - name: 运行 ESLint（flat config，警告数受棘轮约束）
+        run: npx eslint . --max-warnings 406

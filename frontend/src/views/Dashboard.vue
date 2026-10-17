@@ -966,7 +966,11 @@ const fetchMonitoringOverview = async () => {
       // 原先它被赋给一个 ref<any> 且再没人读，等于让类型检查失效。
       stats.value.alertCount = res.data.data?.alertsLast24Hours ?? 0
       nextTick(() => {
-        systemChartInstance ? systemChartInstance.setOption(getChartOption(), { notMerge: true }) : initChart()
+        if (systemChartInstance) {
+          systemChartInstance.setOption(getChartOption(), { notMerge: true })
+        } else {
+          initChart()
+        }
       })
     } else {
       ElMessage.error(t('dashboard.fetchOverviewFailed', { message: res.data?.message || t('dashboard.unknownError') }))
@@ -982,7 +986,11 @@ const fetchDashboardMetrics = async () => {
     if (res.data && res.data.success) {
       dashboardMetrics.value = res.data.data
       nextTick(() => {
-        systemChartInstance ? systemChartInstance.setOption(getChartOption(), { notMerge: true }) : initChart()
+        if (systemChartInstance) {
+          systemChartInstance.setOption(getChartOption(), { notMerge: true })
+        } else {
+          initChart()
+        }
       })
     } else {
       ElMessage.error(t('dashboard.fetchMetricsFailed', { message: res.data?.message || t('dashboard.unknownError') }))

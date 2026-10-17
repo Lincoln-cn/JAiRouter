@@ -71,6 +71,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  timestamp: '',
   loading: false,
   showActions: true
 })
