@@ -57,19 +57,11 @@ jairouter:
     # 安全监控基础配置
     # ========================================
     monitoring:
-      enabled: false
       metrics:
         authentication:
-          enabled: true
           histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
         sanitization:
-          enabled: true
           histogram-buckets: [0.01, 0.05, 0.1, 0.5, 1.0, 2.0]
-        security-events:
-          enabled: true
-          by-event-type: true
-          by-user: true
-          by-ip: true
       # 安全告警（SecurityAlertService / SecurityAlertScheduler）
       # 阈值语义 = 「窗口内计数」，不是比率；原 authentication-failure-rate 等比率键从未有实现，已移除
       alerts:
@@ -86,7 +78,3 @@ jairouter:
           jwt-failure-count: 20
           jwt-failure-window-minutes: 10
           cooldown-minutes: 15
-        # 出口契约：告警只进 Prometheus 指标与结构化日志，外部通知由 Alertmanager / 日志平台承担
-        notifications:
-          log:
-            enabled: true
