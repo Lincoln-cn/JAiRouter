@@ -46,7 +46,7 @@
 |---|---|---|---|
 | 配置（正向） | `src/test/java/org/unreal/modelrouter/config/binding/ConfigBindingSweepTest.java` | 6 例（1 反空转 + 3 反证 + 报告 + 最长前缀） | `target/config-binding-sweep.txt` |
 | 配置（正向+反向） | `scripts/audit/analyze-config-keys.py` | `--self-test` 6 例 | `scripts/audit/out/config-keys.md` |
-| 死代码（后端） | `scripts/audit/detect-backend-dead-code.py` | `--self-test` **24/24** | `scripts/audit/out/backend-dead-code.md` |
+| 死代码（后端） | `scripts/audit/detect-backend-dead-code.py` | `--self-test` **26/26**（含新加的「4b 可疑桶 / 4c 序列化面桶按 owner 互斥」不变量） | `scripts/audit/out/backend-dead-code.md` |
 | 死代码（前端） | `scripts/audit/detect-frontend-dead-code.py` | `--self-test` **30/30** | `scripts/audit/out/frontend-dead-code.md` |
 | 前端硬编码 | `scripts/audit/detect-hardcoded-i18n.py` | `--self-test` **30/30** | `scripts/audit/out/hardcoded-i18n.md` |
 | 接口对账 | `scripts/audit/reconcile-frontend-api.py` | `--self-test` **35/35** | `scripts/audit/out/frontend-api-reconcile.md` |
