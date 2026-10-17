@@ -203,52 +203,6 @@ public class QuotaEnforcementService {
     }
 
     /**
-     * 预留后的限额复核（用量已包含本笔预留）。
-     *
-     * <p>判定改为「已用量 &gt; 限额」（不再 +1），避免把刚预留的那一笔重复计算。</p>
-     *
-     * @param apiKeyId API Key ID
-     * @return 超限结果；未超限、配置缺失或读取失败（fail-open）时为空
-     */
-    private Optional<QuotaLimitViolation> evaluateAfterReserve(final String apiKeyId) {
-        try {
-            final ApiKey apiKey = resolveApiKey(apiKeyId);
-            if (apiKey == null) {
-                return Optional.empty();
-            }
-            final LocalDateTime now = LocalDateTime.now(clock);
-            final List<QuotaWindow> windows = properties.enabledWindows();
-            final QuotaDimension dimension = QuotaDimension.ofApiKey(apiKeyId);
-
-            if (windows.contains(QuotaWindow.DAY)) {
-                final Optional<QuotaUsage> usage = ledgerService.usageStrict(dimension, QuotaWindow.DAY);
-                final long requests = usage.map(QuotaUsage::requestCount).orElse(0L);
-                final long tokens = usage.map(QuotaUsage::tokenCount).orElse(0L);
-                if (apiKey.getDailyRequestLimit() > 0 && requests > apiKey.getDailyRequestLimit()) {
-                    return Optional.of(violation(QuotaLimitViolation.METRIC_DAILY_REQUESTS, QuotaWindow.DAY,
-                            apiKey.getDailyRequestLimit(), requests - 1L, now));
-                }
-                if (apiKey.getDailyTokenLimit() > 0 && tokens > apiKey.getDailyTokenLimit()) {
-                    return Optional.of(violation(QuotaLimitViolation.METRIC_DAILY_TOKENS, QuotaWindow.DAY,
-                            apiKey.getDailyTokenLimit(), tokens, now));
-                }
-            }
-            if (windows.contains(QuotaWindow.MINUTE) && apiKey.getRateLimitPerMinute() > 0) {
-                final long requests = ledgerService.usageStrict(dimension, QuotaWindow.MINUTE)
-                        .map(QuotaUsage::requestCount).orElse(0L);
-                if (requests > apiKey.getRateLimitPerMinute()) {
-                    return Optional.of(violation(QuotaLimitViolation.METRIC_RATE_PER_MINUTE, QuotaWindow.MINUTE,
-                            apiKey.getRateLimitPerMinute(), requests - 1L, now));
-                }
-            }
-            return Optional.empty();
-        } catch (Exception e) {
-            log.debug("配额预留后复核失败，按 fail-open 放行: apiKeyId={}, error={}", apiKeyId, e.toString());
-            return Optional.empty();
-        }
-    }
-
-    /**
      * 日限额判定（请求数 + token 数）。
      *
      * @param apiKey          限额配置

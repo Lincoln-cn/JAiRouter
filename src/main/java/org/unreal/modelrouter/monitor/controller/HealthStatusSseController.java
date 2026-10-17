@@ -143,23 +143,6 @@ public class HealthStatusSseController {
     }
 
     /**
-     * 根据 serviceConfigId 获取服务类型
-     */
-    private String getServiceTypeFromConfigId(final Long serviceConfigId) {
-        if (serviceConfigRepository == null || serviceConfigId == null) {
-            return null;
-        }
-        try {
-            return serviceConfigRepository.findById(serviceConfigId)
-                    .map(config -> config.getServiceType())
-                    .orElse(null);
-        } catch (Exception e) {
-            log.warn("获取服务类型失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
      * 当实例健康状态发生变化时，主动推送更新给所有连接的客户端
      * 该方法供ServiceStateManager调用
      */
