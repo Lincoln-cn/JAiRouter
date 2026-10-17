@@ -1,15 +1,11 @@
 package org.unreal.modelrouter.monitor.monitoring.security;
 
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 安全监控指标收集器
@@ -41,12 +37,6 @@ public class SecurityMetrics {
     
     // 安全事件指标
     private final Counter securityViolations;
-    private final Counter suspiciousActivities;
-    
-    // 实时统计数据
-    private final AtomicLong activeAuthenticatedUsers = new AtomicLong(0);
-    private final AtomicLong totalApiKeysInUse = new AtomicLong(0);
-    private final ConcurrentHashMap<String, AtomicLong> failureReasonCounts = new ConcurrentHashMap<>();
     
     public SecurityMetrics(final MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
@@ -103,19 +93,6 @@ public class SecurityMetrics {
                 .description("安全违规事件总数")
                 .register(meterRegistry);
                 
-        this.suspiciousActivities = Counter.builder("jairouter.security.suspicious.activities")
-                .description("可疑活动总数")
-                .register(meterRegistry);
-        
-        // 注册实时统计Gauge
-        Gauge.builder("jairouter.security.active.users", activeAuthenticatedUsers, AtomicLong::doubleValue)
-                .description("当前活跃认证用户数")
-                .register(meterRegistry);
-                
-        Gauge.builder("jairouter.security.apikeys.active", totalApiKeysInUse, AtomicLong::doubleValue)
-                .description("当前使用中的API Key数量")
-                .register(meterRegistry);
-        
         log.info("安全监控指标已初始化");
     }
     
@@ -147,10 +124,6 @@ public class SecurityMetrics {
                 .tag("failure_reason", categorizeFailureReason(failureReason))
                 .register(meterRegistry)
                 .increment();
-        
-        // 更新失败原因统计
-        String category = categorizeFailureReason(failureReason);
-        failureReasonCounts.computeIfAbsent(category, k -> new AtomicLong(0)).incrementAndGet();
     }
     
     /**
@@ -262,50 +235,6 @@ public class SecurityMetrics {
                 .increment();
     }
     
-    /**
-     * 记录可疑活动
-     */
-    public void recordSuspiciousActivity(final String activityType, final String clientIp) {
-        Counter.builder("jairouter.security.suspicious.activities")
-                .tag("activity_type", activityType != null ? activityType : "unknown")
-                .tag("client_ip_hash", hashClientIp(clientIp))
-                .register(meterRegistry)
-                .increment();
-    }
-    
-    // 实时统计更新方法
-    
-    /**
-     * 更新活跃用户数
-     */
-    public void updateActiveUsers(final long count) {
-        activeAuthenticatedUsers.set(count);
-    }
-    
-    /**
-     * 增加活跃用户
-     */
-    public void incrementActiveUsers() {
-        activeAuthenticatedUsers.incrementAndGet();
-    }
-    
-    /**
-     * 减少活跃用户
-     */
-    public void decrementActiveUsers() {
-        long current = activeAuthenticatedUsers.get();
-        if (current > 0) {
-            activeAuthenticatedUsers.decrementAndGet();
-        }
-    }
-    
-    /**
-     * 更新使用中的API Key数量
-     */
-    public void updateActiveApiKeys(final long count) {
-        totalApiKeysInUse.set(count);
-    }
-    
     // 工具方法
     
     /**
@@ -330,32 +259,6 @@ public class SecurityMetrics {
         } else {
             return "other";
         }
-    }
-    
-    /**
-     * 对客户端IP进行哈希处理（保护隐私）
-     */
-    private String hashClientIp(final String clientIp) {
-        if (clientIp == null) {
-            return "unknown";
-        }
-        
-        // 简单的哈希处理，实际应用中可以使用更安全的哈希算法
-        return String.valueOf(clientIp.hashCode() & 0x7FFFFFFF);
-    }
-    
-    /**
-     * 获取失败原因统计
-     */
-    public ConcurrentHashMap<String, AtomicLong> getFailureReasonCounts() {
-        return new ConcurrentHashMap<>(failureReasonCounts);
-    }
-    
-    /**
-     * 重置失败原因统计
-     */
-    public void resetFailureReasonCounts() {
-        failureReasonCounts.clear();
     }
     
     // 公共getter方法，用于测试

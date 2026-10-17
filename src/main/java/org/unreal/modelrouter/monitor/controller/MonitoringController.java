@@ -206,27 +206,6 @@ public class MonitoringController {
     }
 
     /**
-     * 更新自定义标签
-     */
-    @PutMapping("/config/custom-tags")
-    public Mono<RouterResponse<Object>> updateCustomTags(@RequestBody final Map<String, Map<String, String>> request) {
-        return Mono.fromCallable(() -> {
-            Map<String, String> customTags = request.get("customTags");
-            if (customTags == null) {
-                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "Missing 'customTags' parameter");
-            }
-
-            // 注意：DynamicMonitoringConfigUpdater 不支持直接更新 customTags，
-            // 因此我们只记录日志并返回成功消息
-            logger.info("自定义标签更新请求: {}", customTags);
-            return RouterResponse.<Object>success("自定义标签更新请求已接收（注意：此功能尚未实现）");
-        }).onErrorResume(e -> {
-            logger.error("更新自定义标签失败: {}", e.getMessage());
-            return Mono.error(ApiExceptions.wrap(e, "更新失败"));
-        });
-    }
-
-    /**
      * 获取配置快照
      */
     @GetMapping("/config/snapshot")
