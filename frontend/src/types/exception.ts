@@ -88,34 +88,10 @@ export interface ExceptionQueryResponse {
   hasPrevious: boolean
 }
 
-// 仪表盘数据类型
-export interface ExceptionDashboardData {
-  statistics: ExceptionStatistics
-  recentEvents: ExceptionEvent[]
-  timeRange: {
-    startTime: string
-    endTime: string
-  }
-}
-
 // 删除结果类型
 export interface ExceptionDeleteResult {
   deletedCount: number
   cutoffTime: string
   aggregatedOnly: boolean
 }
-
-// 默认统计数据
-export const defaultExceptionStatistics = (): ExceptionStatistics => ({
-  startTime: '',
-  endTime: '',
-  totalEvents: 0,
-  totalTypes: 0,
-  eventsByType: {},
-  eventsByCategory: {},
-  eventsByOperation: {},
-  eventsByHttpStatus: {},
-  topClientIps: [],
-  hourlyDistribution: []
-})
 

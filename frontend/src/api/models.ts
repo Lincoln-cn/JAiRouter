@@ -31,32 +31,6 @@ export const getModelsByServiceType = async (serviceType: string): Promise<strin
   }
 }
 
-// 获取所有服务类型的模型列表
-export const getAllModels = async (): Promise<Record<string, string[]>> => {
-  try {
-    // 先获取所有服务类型
-    const serviceTypesResponse = await request.get<RouterResponse<string[]>>('/config/type/services')
-    if (!serviceTypesResponse.data?.success || !serviceTypesResponse.data.data) {
-      return {}
-    }
-
-    const serviceTypes = serviceTypesResponse.data.data
-    const modelsMap: Record<string, string[]> = {}
-
-    // 为每个服务类型获取模型列表
-    await Promise.all(
-      serviceTypes.map(async (serviceType) => {
-        modelsMap[serviceType] = await getModelsByServiceType(serviceType)
-      })
-    )
-
-    return modelsMap
-  } catch (error) {
-    console.error('获取所有模型列表失败:', error)
-    return {}
-  }
-}
-
 // 服务类型到playground类型的映射
 export const serviceTypeMapping: Record<string, string[]> = {
   chat: ['chat'],

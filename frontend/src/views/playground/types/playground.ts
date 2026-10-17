@@ -130,17 +130,6 @@ export interface GlobalConfig {
   customHeaders: Record<string, string>
 }
 
-// 表单验证规则
-export interface ValidationRule {
-  required?: boolean
-  message: string
-  trigger?: string | string[]
-  min?: number
-  max?: number
-  pattern?: RegExp
-  validator?: (rule: any, value: any, callback: (error?: Error) => void) => void
-}
-
 // API端点配置
 export interface ApiEndpoint {
   path: string
