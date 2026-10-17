@@ -36,13 +36,20 @@ public class AuditEntityMapper {
         AuditEvent dto = new AuditEvent();
         dto.setId(entity.getEventId());
         dto.setType(entity.getEventType());
+        // 以下四个字段实体侧本就有（eventCategory/riskLevel 在 prePersist 里算好），
+        // 此前 DTO 没映射 ⇒ 前端读到的必然是 undefined（issue #459）。
+        dto.setEventCategory(entity.getEventCategory());
+        dto.setRiskLevel(entity.getRiskLevel() != null ? entity.getRiskLevel().name() : null);
+        dto.setGeoLocation(entity.getGeoLocation());
+        dto.setDeviceInfo(entity.getDeviceInfo());
         dto.setUserId(entity.getUserId());
         dto.setResourceId(entity.getResourceId());
         dto.setAction(entity.getAction());
         dto.setDetails(entity.getDetails());
         dto.setIpAddress(entity.getClientIp());
         dto.setUserAgent(entity.getUserAgent());
-        dto.setSuccess(entity.getSuccess());
+        // 实体字段是 Boolean（列 NOT NULL，但 builder/瞬时实体可为 null）⇒ 用 TRUE.equals 防拆箱 NPE
+        dto.setSuccess(Boolean.TRUE.equals(entity.getSuccess()));
         dto.setTimestamp(entity.getTimestamp());
         dto.setMetadata(parseJson(entity.getMetadata()));
         return dto;

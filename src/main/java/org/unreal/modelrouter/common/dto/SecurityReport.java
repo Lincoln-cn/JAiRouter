@@ -20,6 +20,10 @@ public final class SecurityReport {
     private Map<String, Long> operationsByUser;
     private List<String> topIpAddresses;
     private List<SecurityAlert> alerts;
+    /** 成功率（0~100 百分比，保留两位小数），由后端按统计窗口内的成功/总事件数算好，前端只展示 */
+    private double successRate;
+    /** 高危事件数（riskLevel = HIGH / CRITICAL），由后端算好，前端只展示 */
+    private long highRiskEventCount;
 
     public SecurityReport() {
     }
@@ -120,6 +124,22 @@ public final class SecurityReport {
 
     public void setAlerts(final List<SecurityAlert> alerts) {
         this.alerts = alerts;
+    }
+
+    public double getSuccessRate() {
+        return successRate;
+    }
+
+    public void setSuccessRate(final double successRate) {
+        this.successRate = successRate;
+    }
+
+    public long getHighRiskEventCount() {
+        return highRiskEventCount;
+    }
+
+    public void setHighRiskEventCount(final long highRiskEventCount) {
+        this.highRiskEventCount = highRiskEventCount;
     }
 
     @Override

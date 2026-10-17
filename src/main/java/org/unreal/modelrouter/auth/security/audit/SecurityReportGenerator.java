@@ -101,22 +101,38 @@ public class SecurityReportGenerator {
                     from
             );
             List<SecurityAlert> alerts = highRiskEvents.stream()
-                    .map(e -> new SecurityAlert(
-                            e.getEventType().name(),
-                            e.getDetails(),
-                            e.getUserId(),
-                            e.getClientIp(),
-                            e.getTimestamp()
-                    ))
+                    .map(e -> {
+                        SecurityAlert alert = new SecurityAlert(
+                                e.getEventType().name(),
+                                e.getDetails(),
+                                e.getUserId(),
+                                e.getClientIp(),
+                                e.getTimestamp()
+                        );
+                        // severity 也要由后端给（此前构造时没赋值 ⇒ 前端恒读到 null）
+                        alert.setSeverity(e.getRiskLevel() != null ? e.getRiskLevel().name() : null);
+                        return alert;
+                    })
                     .collect(Collectors.toList());
 
-            return new SecurityReport(
+            // 成功率与高危事件数在**后端**算好再下发（issue #459）：
+            // 前端不做统计，只展示。successRate 用 0~100 百分比，与控制台展示口径一致。
+            long totalEvents = auditRepository.countByTimeRange(from, to);
+            long successEvents = auditRepository.countSuccessEvents(from, to);
+            double successRate = totalEvents > 0
+                    ? Math.round(successEvents * 10000.0 / totalEvents) / 100.0
+                    : 0.0;
+
+            SecurityReport report = new SecurityReport(
                     from, to,
                     jwtOps, apiKeyOps,
                     failedAuth, suspiciousActivities,
                     operationsByType, operationsByUser,
                     topIpAddresses, alerts
             );
+            report.setSuccessRate(successRate);
+            report.setHighRiskEventCount(highRiskEvents.size());
+            return report;
         })
         .subscribeOn(Schedulers.boundedElastic());
     }
