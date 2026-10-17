@@ -575,32 +575,6 @@ public class ModelServiceRegistry {
     // ==================== 私有方法 ====================
 
     /**
-     * v2.9.0: 检查指定服务类型是否启用粘性路由
-     * 需要 sticky.enabled=true (默认true) 且实例数>1
-     */
-    private boolean isStickyEnabled(final ServiceType serviceType) {
-        String serviceKey = serviceTypeResolver.getServiceConfigKey(serviceType);
-        ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
-        if (runtimeConfig == null) {
-            return false;
-        }
-        List<ModelRouterProperties.ModelInstance> instances = runtimeConfig.getInstances();
-        if (instances == null || instances.size() <= 1) {
-            return false;
-        }
-        // 从原始配置中读取 sticky 配置
-        if (originalProperties != null && originalProperties.getServices() != null) {
-            ModelRouterProperties.ServiceConfig svcConfig =
-                    originalProperties.getServices().get(serviceKey);
-            if (svcConfig != null && svcConfig.getSticky() != null) {
-                return Boolean.TRUE.equals(svcConfig.getSticky().getEnabled());
-            }
-        }
-        // 默认:实例>1时启用
-        return true;
-    }
-
-    /**
      * v2.9.0: 获取指定服务类型的粘性亲和性粒度(scope)。
      * 粘性未启用时返回 null(调用方跳过粘性路由)。
      * scope 值: "tenant_model"(默认) 或 "tenant"。
