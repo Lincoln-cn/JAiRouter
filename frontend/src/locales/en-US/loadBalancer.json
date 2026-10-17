@@ -36,6 +36,12 @@
       "actions": {
         "strategyConfig": "Strategy Config"
       },
+      "confirmations": {
+        "clearHistoryTitle": "Confirm Clearing History",
+        "clearHistoryMessage": "Clear all routing monitoring history? This cannot be undone.",
+        "confirm": "Clear",
+        "cancel": "Cancel"
+      },
       "messages": {
         "paused": "Monitoring paused",
         "resumed": "Monitoring resumed",

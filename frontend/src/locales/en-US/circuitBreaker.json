@@ -117,6 +117,12 @@
       "adaptiveHint": "Thresholds are adjusted automatically based on the failure rate",
       "save": "Save Global Config",
       "resetToDefaults": "Reset to Defaults",
+      "confirmations": {
+        "resetTitle": "Confirm Global Config Reset",
+        "resetMessage": "Reset the circuit breaker global config to its defaults? This affects the circuit breaking parameters of every service and cannot be undone.",
+        "confirm": "Reset",
+        "cancel": "Cancel"
+      },
       "messages": {
         "saveSuccess": "Global config saved successfully",
         "saveFailed": "Failed to save global config",

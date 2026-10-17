@@ -36,6 +36,12 @@
       "actions": {
         "strategyConfig": "策略配置"
       },
+      "confirmations": {
+        "clearHistoryTitle": "清空历史确认",
+        "clearHistoryMessage": "确定要清空全部路由监控历史吗？此操作不可恢复。",
+        "confirm": "确定清空",
+        "cancel": "取消"
+      },
       "messages": {
         "paused": "监控已暂停",
         "resumed": "监控已恢复",
