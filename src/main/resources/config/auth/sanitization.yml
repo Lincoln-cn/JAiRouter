@@ -34,11 +34,3 @@ jairouter:
         # 是否保留 JSON 结构
         preserve-json-structure: true
         
-        # 服务特定规则
-        service-specific-rules:
-          chat:
-            additional-patterns: []
-          embedding:
-            enabled: false
-          rerank:
-            preserve-ranking-scores: true

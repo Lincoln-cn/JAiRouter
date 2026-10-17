@@ -17,7 +17,6 @@ jairouter:
       enabled: false
       header-name: "X-API-Key"
       default-expiration-days: 365
-      cache-enabled: true
       cache-expiration-seconds: 3600
       keys: []  # 具体密钥由各环境配置定义
     
@@ -43,13 +42,6 @@ jairouter:
         masking-char: "*"
         log-sanitization: false
         preserve-json-structure: true
-        service-specific-rules:
-          chat:
-            additional-patterns: []
-          embedding:
-            enabled: false
-          rerank:
-            preserve-ranking-scores: true
     
     # ========================================
     # 安全审计基础配置

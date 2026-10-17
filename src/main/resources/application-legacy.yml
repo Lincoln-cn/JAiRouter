@@ -22,7 +22,6 @@ jairouter:
     api-key:
       # 即使安全功能关闭，也保持API Key配置结构以便后续启用
       enabled: false
-      cache-enabled: false
       keys: []  # 空的API Key列表
     
     # JWT 认证配置 - 向后兼容模式
@@ -39,18 +38,12 @@ jairouter:
         pii-patterns: []
         log-sanitization: false
         whitelist-users: []
-        whitelist-ips: []
       
       response:
         enabled: false
         sensitive-words: []
         pii-patterns: []
         log-sanitization: false
-        service-specific-rules:
-          chat:
-            additional-patterns: []
-          embedding:
-            enabled: false
     
     # 安全审计配置 - 向后兼容模式
     audit:
