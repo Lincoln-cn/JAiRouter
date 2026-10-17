@@ -82,6 +82,72 @@ export default {
       check('traffic:rl-refresh', true, 'skip: no refresh button')
     }
 
+    // ── 不可逆操作的二次确认（审计 #460） ────────────────────────────────────
+    // 这两处原先点一下就直接发写请求，且整文件没有任何确认语句。本块是这条修复的守卫：
+    // ① 点击后必须弹出 .el-message-box；② 点「取消」不得发出任何写请求；③ 取消后弹层关闭。
+    // 「不发请求」是这组断言的关键——只断言"弹了框"无法区分"确认框是个摆设"。
+    const CONFIRM_CASES = [
+      {
+        path: '/load-balancers/monitoring',
+        tag: 'lb-clear-history',
+        button: /清空历史|Clear History/i,
+        method: 'DELETE',
+        urlPart: '/history'
+      },
+      {
+        path: '/circuit-breakers/global-config',
+        tag: 'cb-reset-global',
+        button: /重置为默认值|Reset to Defaults/i,
+        method: 'POST',
+        urlPart: '/global-config/reset'
+      }
+    ]
+
+    for (const c of CONFIRM_CASES) {
+      await gotoApp(page, c.path, { waitMs: 700 })
+      const btn = page.locator('.layout-main button').filter({ hasText: c.button }).first()
+      if ((await btn.count()) === 0) {
+        check(`traffic:${c.tag}:confirm-dialog`, false, 'skip: button not found')
+        continue
+      }
+
+      const sent = []
+      const onReq = (req) => {
+        if (req.method() === c.method && req.url().includes(c.urlPart)) sent.push(req.url())
+      }
+      page.on('request', onReq)
+
+      await btn.click()
+      const box = page.locator('.el-message-box').first()
+      const appeared = await box
+        .waitFor({ state: 'visible', timeout: 5000 })
+        .then(() => true)
+        .catch(() => false)
+      check(`traffic:${c.tag}:confirm-dialog`, appeared, appeared ? '.el-message-box visible' : 'no dialog appeared')
+
+      if (appeared) {
+        const cancel = box.locator('button').filter({ hasText: /取消|Cancel/i }).first()
+        if ((await cancel.count()) > 0) {
+          await cancel.click()
+        } else {
+          // 兜底：没有文案可辨时按「非主按钮」点（避免误点确认反而触发写请求）
+          await box.locator('button').first().click()
+        }
+        await page.waitForTimeout(700)
+      }
+
+      // 这条**无条件**断言：无论弹层有没有出现，点这个按钮都不许立刻发出写请求。
+      // 放在 if 里面就等于「弹层没出现时跳过」，会把最关键的失败静默掉（A/B 实测过）。
+      check(`traffic:${c.tag}:cancel-sends-nothing`, sent.length === 0, `write requests=${sent.length}`)
+
+      if (appeared) {
+        const closed = (await page.locator('.el-message-box').count()) === 0
+        check(`traffic:${c.tag}:dialog-closed`, closed)
+      }
+
+      page.off('request', onReq)
+    }
+
     await page.close()
   }
 }

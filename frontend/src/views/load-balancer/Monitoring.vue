@@ -240,7 +240,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, Box, InfoFilled } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import PageSkeleton from '@/components/PageSkeleton.vue'
@@ -532,18 +532,32 @@ const updateHistorySize = async (value: number) => {
   }
 }
 
-const clearHistory = async () => {
-  clearingHistory.value = true
-  try {
-    await request.delete(`${apiBaseUrl}/history`)
-    events.value = []
-    monitorStatus.value.totalSampledCount = 0
-    ElMessage.success(t('loadBalancer.monitoring.messages.historyCleared'))
-  } catch (error) {
-    ElMessage.error(t('loadBalancer.monitoring.messages.clearHistoryFailed'))
-  } finally {
-    clearingHistory.value = false
-  }
+// 清空路由监控历史不可恢复 ⇒ 必须二次确认。
+// 审计 #460：原实现点一下就直接 DELETE，且**整个文件没有任何确认语句**。
+// 守卫见 frontend/e2e/specs/05-traffic-governance.mjs 的 lb-clear-history:* 三条断言
+// （弹层出现 / 取消不发写请求 / 取消后关闭）——其中「取消不发写请求」做过 A/B 反证。
+const clearHistory = () => {
+  ElMessageBox.confirm(
+    t('loadBalancer.monitoring.confirmations.clearHistoryMessage'),
+    t('loadBalancer.monitoring.confirmations.clearHistoryTitle'),
+    {
+      confirmButtonText: t('loadBalancer.monitoring.confirmations.confirm'),
+      cancelButtonText: t('loadBalancer.monitoring.confirmations.cancel'),
+      type: 'warning'
+    }
+  ).then(async () => {
+    clearingHistory.value = true
+    try {
+      await request.delete(`${apiBaseUrl}/history`)
+      events.value = []
+      monitorStatus.value.totalSampledCount = 0
+      ElMessage.success(t('loadBalancer.monitoring.messages.historyCleared'))
+    } catch (error) {
+      ElMessage.error(t('loadBalancer.monitoring.messages.clearHistoryFailed'))
+    } finally {
+      clearingHistory.value = false
+    }
+  })
 }
 
 const handleExport = async (command: string) => {

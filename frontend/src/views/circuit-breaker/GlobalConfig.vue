@@ -79,7 +79,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 
@@ -146,20 +146,32 @@ const saveGlobalConfig = async () => {
   }
 }
 
-const resetGlobalConfig = async () => {
-  try {
-    const response = await request.post('/config/circuit-breaker/global-config/reset')
-    if (response.data?.success) {
-      const config = response.data.data
-      if (config) {
-        globalConfig.value = config
-      }
-      ElMessage.info(t('circuitBreaker.globalConfig.messages.resetSuccess'))
+// 重置全局配置会把熔断参数恢复出厂值（影响所有服务），属不可逆操作 ⇒ 必须二次确认。
+// 审计 #460：原实现点一下就直接发请求，且**整个文件没有任何确认语句**。
+const resetGlobalConfig = () => {
+  ElMessageBox.confirm(
+    t('circuitBreaker.globalConfig.confirmations.resetMessage'),
+    t('circuitBreaker.globalConfig.confirmations.resetTitle'),
+    {
+      confirmButtonText: t('circuitBreaker.globalConfig.confirmations.confirm'),
+      cancelButtonText: t('circuitBreaker.globalConfig.confirmations.cancel'),
+      type: 'warning'
     }
-  } catch (error: any) {
-    console.error('Failed to reset global config:', error)
-    ElMessage.error(t('circuitBreaker.globalConfig.messages.resetFailed'))
-  }
+  ).then(async () => {
+    try {
+      const response = await request.post('/config/circuit-breaker/global-config/reset')
+      if (response.data?.success) {
+        const config = response.data.data
+        if (config) {
+          globalConfig.value = config
+        }
+        ElMessage.info(t('circuitBreaker.globalConfig.messages.resetSuccess'))
+      }
+    } catch (error: any) {
+      console.error('Failed to reset global config:', error)
+      ElMessage.error(t('circuitBreaker.globalConfig.messages.resetFailed'))
+    }
+  })
 }
 
 onMounted(() => {

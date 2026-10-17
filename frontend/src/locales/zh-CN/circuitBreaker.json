@@ -117,6 +117,12 @@
       "adaptiveHint": "系统将根据失败率自动调整阈值",
       "save": "保存全局配置",
       "resetToDefaults": "重置为默认值",
+      "confirmations": {
+        "resetTitle": "重置全局配置确认",
+        "resetMessage": "确定要把熔断器全局配置恢复为默认值吗？此操作会影响所有服务的熔断参数，且不可撤销。",
+        "confirm": "确定重置",
+        "cancel": "取消"
+      },
       "messages": {
         "saveSuccess": "全局配置保存成功",
         "saveFailed": "保存全局配置失败",
