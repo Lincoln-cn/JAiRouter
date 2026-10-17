@@ -124,32 +124,10 @@ export interface PlaygroundRequest {
   responseType?: 'json' | 'blob' | 'text'
 }
 
-// 请求状态
-export interface RequestState {
-  loading: boolean
-  error: string | null
-  response: PlaygroundResponse | null
-}
-
 // 全局配置状态
 export interface GlobalConfig {
   authorization: string
   customHeaders: Record<string, string>
-}
-
-// 配置管理状态
-export interface ConfigManagerState {
-  savedConfigs: SavedConfiguration[]
-  selectedConfigId: string
-  showSaveDialog: boolean
-  showLoadDialog: boolean
-}
-
-// 选项卡状态
-export interface TabState {
-  activeTab: ServiceType
-  activeAudioTab: 'tts' | 'stt'
-  activeImageTab: 'generate' | 'edit'
 }
 
 // 表单验证规则
@@ -161,11 +139,6 @@ export interface ValidationRule {
   max?: number
   pattern?: RegExp
   validator?: (rule: any, value: any, callback: (error?: Error) => void) => void
-}
-
-// 表单验证规则集合
-export interface ValidationRules {
-  [key: string]: ValidationRule[]
 }
 
 // API端点配置
@@ -216,59 +189,3 @@ export const SERVICE_ENDPOINTS: Record<ServiceType, ApiEndpoint> = {
   }
 }
 
-// 默认配置值
-export const DEFAULT_CONFIGS = {
-  chat: {
-    model: '',
-    messages: [],
-    temperature: 0.7,
-    maxTokens: 1000,
-    stream: true // 默认开启流式响应
-  } as Partial<ChatRequestConfig>,
-
-  embedding: {
-    model: '',
-    input: '',
-    encodingFormat: 'float'
-  } as Partial<EmbeddingRequestConfig>,
-
-  rerank: {
-    model: '',
-    query: '',
-    documents: [],
-    topN: 10
-  } as Partial<RerankRequestConfig>,
-
-  tts: {
-    model: '',
-    input: '',
-    voice: 'alloy',
-    responseFormat: 'mp3',
-    speed: 1.0
-  } as Partial<TtsRequestConfig>,
-
-  stt: {
-    model: '',
-    language: 'zh',
-    responseFormat: 'json',
-    temperature: 0
-  } as Partial<Omit<SttRequestConfig, 'file'>>,
-
-  imageGenerate: {
-    model: '',
-    prompt: '',
-    n: 1,
-    quality: 'standard',
-    size: '1024x1024',
-    responseFormat: 'url'
-  } as Partial<ImageGenerateRequestConfig>,
-
-  imageEdit: {
-    model: '',
-    prompt: '',
-    n: 1,
-    quality: 'standard',
-    size: '1024x1024',
-    responseFormat: 'url'
-  } as Partial<Omit<ImageEditRequestConfig, 'images'>>
-}

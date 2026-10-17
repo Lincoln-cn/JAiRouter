@@ -56,19 +56,6 @@ export interface BatchTokenRevokeRequest {
     reason?: string
 }
 
-// 定义令牌验证请求类型
-export interface TokenValidationRequest {
-    token: string
-}
-
-// 定义令牌验证响应类型
-export interface TokenValidationResponse {
-    valid: boolean
-    userId?: string
-    message: string
-    timestamp: string
-}
-
 // 定义黑名单统计信息类型
 export interface BlacklistStats {
     memoryBlacklistSize: number

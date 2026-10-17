@@ -62,12 +62,6 @@ export interface AlertSystemStatus {
   message?: string
 }
 
-/** 慢查询趋势 */
-export interface SlowQueryTrends {
-  slowOperations: Record<string, OperationStats>
-  totalSlowQueries: number
-}
-
 /** 获取全量操作慢查询统计 */
 export const getSlowQueryStats = async (): Promise<Record<string, SlowQueryStats>> => {
   const response = await request.get<Record<string, SlowQueryStats>>('/monitoring/slow-queries/stats')

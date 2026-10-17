@@ -254,22 +254,3 @@ export const refreshAllCache = async () => {
   await Promise.all(promises)
   ElMessage.success(gt('playgroundCache.refreshDone'))
 }
-
-// 导出响应式缓存状态供组件使用
-export const usePlaygroundCache = () => {
-  return {
-    instancesCache: readonly(instancesCache),
-    modelsCache: readonly(modelsCache),
-    getCachedInstances,
-    getCachedModels,
-    getCacheStatus,
-    clearCache,
-    preloadCommonData,
-    refreshAllCache
-  }
-}
-
-// 只读包装函数
-function readonly<T>(obj: T): Readonly<T> {
-  return obj as Readonly<T>
-}

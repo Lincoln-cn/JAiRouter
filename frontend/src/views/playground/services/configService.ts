@@ -411,5 +411,3 @@ export class ConfigService {
   }
 }
 
-// 导出单例实例
-export const configService = ConfigService.getInstance()

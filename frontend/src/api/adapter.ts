@@ -80,13 +80,6 @@ export interface AdapterTemplate {
   sortOrder: number
 }
 
-export interface TemplateCreateRequest {
-  name: string
-  apiKey: string
-  baseUrl?: string
-  capabilities?: Record<string, boolean>
-}
-
 // 测试相关类型
 export interface AdapterTestRequest {
   testType: 'PING' | 'CHAT'
