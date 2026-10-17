@@ -11,7 +11,6 @@ const { t: gt } = i18n.global as unknown as {
   t: (key: string, named?: Record<string, string | number>) => string
 }
 
-
 // 创建专用于playground的axios实例
 const playgroundRequest: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -214,82 +213,6 @@ export const sendServiceRequest = async (
   }
   
   return sendPlaygroundRequest(request)
-}
-
-/**
- * 获取请求大小（字节）
- * @param request 请求对象
- * @returns 请求大小
- */
-export const getRequestSize = (request: PlaygroundRequest): number => {
-  let size = 0
-  
-  // 计算headers大小
-  if (request.headers) {
-    Object.entries(request.headers).forEach(([key, value]) => {
-      size += key.length + value.length + 4 // +4 for ": " and "\r\n"
-    })
-  }
-  
-  // 计算body大小
-  if (request.body) {
-    if (typeof request.body === 'string') {
-      size += new Blob([request.body]).size
-    } else {
-      size += new Blob([JSON.stringify(request.body)]).size
-    }
-  }
-  
-  // 计算文件大小
-  if (request.files) {
-    request.files.forEach(file => {
-      size += file.size
-    })
-  }
-  
-  return size
-}
-
-/**
- * 获取响应大小（字节）
- * @param response 响应对象
- * @returns 响应大小
- */
-export const getResponseSize = (response: PlaygroundResponse): number => {
-  let size = 0
-  
-  // 计算headers大小
-  Object.entries(response.headers).forEach(([key, value]) => {
-    size += key.length + value.length + 4
-  })
-  
-  // 计算data大小
-  if (response.data) {
-    if (typeof response.data === 'string') {
-      size += new Blob([response.data]).size
-    } else if (response.data instanceof Blob) {
-      size += response.data.size
-    } else {
-      size += new Blob([JSON.stringify(response.data)]).size
-    }
-  }
-  
-  return size
-}
-
-/**
- * 格式化文件大小
- * @param bytes 字节数
- * @returns 格式化的大小字符串
- */
-export const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
-  
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))  } ${  sizes[i]}`
 }
 
 /**

@@ -23,16 +23,6 @@ export const getApiKeys = async (): Promise<ApiKeyListVO> => {
 }
 
 /**
- * 根据 ID 获取 API 密钥详情
- * @param keyId API 密钥 ID
- * @returns API 密钥 VO
- */
-export const getApiKeyById = async (keyId: string): Promise<ApiKeyVO> => {
-  const response = await request.get<RouterResponse<ApiKeyVO>>(`/auth/api-keys/${keyId}`)
-  return response.data.data!
-}
-
-/**
  * 创建新的 API 密钥
  * 注意：keyValue 仅在创建时返回一次，请提示用户保存
  * @param apiKey 创建请求

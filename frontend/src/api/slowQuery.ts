@@ -74,16 +74,6 @@ export const getSlowQueryStats = async (): Promise<Record<string, SlowQueryStats
   return response.data ?? {}
 }
 
-/** 获取特定操作慢查询统计 */
-export const getSlowQueryStatsByOperation = async (
-  operationName: string
-): Promise<SlowQueryStats> => {
-  const response = await request.get<SlowQueryStats>(
-    `/monitoring/slow-queries/stats/${encodeURIComponent(operationName)}`
-  )
-  return response.data ?? { count: 0, totalDuration: 0, maxDuration: 0, minDuration: 0, averageDuration: 0 }
-}
-
 /** 获取慢查询总数 */
 export const getSlowQueryCount = async (): Promise<number> => {
   const response = await request.get<RouterResponse<number>>('/monitoring/slow-queries/count')
@@ -96,12 +86,6 @@ export const getPerformanceHotspots = async (limit: number = 10): Promise<Perfor
     params: { limit }
   })
   return response.data ?? []
-}
-
-/** 获取慢查询趋势 */
-export const getSlowQueryTrends = async (): Promise<SlowQueryTrends> => {
-  const response = await request.get<SlowQueryTrends>('/monitoring/slow-queries/trends')
-  return response.data ?? { slowOperations: {}, totalSlowQueries: 0 }
 }
 
 /** 获取告警统计 */
@@ -126,7 +110,3 @@ export const resetSlowQueryStats = async (): Promise<void> => {
   await request.delete('/monitoring/slow-queries/stats')
 }
 
-/** 重置告警统计 */
-export const resetAlertStats = async (): Promise<void> => {
-  await request.delete('/monitoring/slow-queries/alerts/stats')
-}

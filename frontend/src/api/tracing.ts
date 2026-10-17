@@ -4,17 +4,12 @@ import type {
     LatencyAnalysis,
     ErrorAnalysis,
     ThroughputAnalysis,
-    TraceDetails,
     TimeRange
 } from '@/types'
 
 // 追踪概览相关接口
 export const getTracingOverview = () => {
     return request.get<RouterResponse<any>>('/tracing/query/statistics')
-}
-
-export const getTracingStats = () => {
-    return request.get<RouterResponse<any>>('/tracing/actuator/stats')
 }
 
 export const getTracingStatus = () => {
@@ -94,6 +89,3 @@ export const getThroughputAnalysis = (timeRange?: TimeRange) => {
     })
 }
 
-export const getTraceDetails = (traceId: string) => {
-    return request.get<RouterResponse<TraceDetails>>(`/tracing/query/trace/${traceId}`)
-}

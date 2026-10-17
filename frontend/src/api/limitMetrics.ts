@@ -73,15 +73,6 @@ const DEFAULT_RATE_LIMITER_SUMMARY: RateLimiterSummary = {
   highUsageLimiters: 0,
 }
 
-const DEFAULT_ROUTING_MONITOR_STATUS: RoutingMonitorStatus = {
-  enabled: false,
-  paused: true,
-  sampleRate: 0,
-  historySize: 0,
-  totalSampledCount: 0,
-  pausedServices: [],
-}
-
 /* ────────────────────────── 导出函数 ────────────────────────── */
 
 /**
@@ -94,19 +85,6 @@ export async function getRateLimiterSummary(): Promise<RateLimiterSummary> {
     return (res.data as RateLimiterSummary) ?? DEFAULT_RATE_LIMITER_SUMMARY
   } catch {
     return DEFAULT_RATE_LIMITER_SUMMARY
-  }
-}
-
-/**
- * 获取限流器详细指标列表 — /rate-limiter/metrics
- * 后端直接返回 JSON 数组（无 RouterResponse 包装）
- */
-export async function getRateLimiterMetrics(): Promise<RateLimiterMetricItem[]> {
-  try {
-    const res = await request.get('/rate-limiter/metrics')
-    return (res.data as RateLimiterMetricItem[]) ?? []
-  } catch {
-    return []
   }
 }
 
@@ -125,19 +103,6 @@ export async function getCircuitBreakerStates(): Promise<CircuitBreakerState[]> 
     return []
   } catch {
     return []
-  }
-}
-
-/**
- * 获取路由监控状态 — /v1/routing-monitor/status
- * 后端直接返回 JSON（无 RouterResponse 包装）
- */
-export async function getRoutingMonitorStatus(): Promise<RoutingMonitorStatus> {
-  try {
-    const res = await request.get('/v1/routing-monitor/status')
-    return (res.data as RoutingMonitorStatus) ?? DEFAULT_ROUTING_MONITOR_STATUS
-  } catch {
-    return DEFAULT_ROUTING_MONITOR_STATUS
   }
 }
 

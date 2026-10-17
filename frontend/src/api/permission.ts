@@ -107,12 +107,6 @@ export interface RolePermissions {
   [roleName: string]: string[]
 }
 
-/** 获取全部权限码 */
-export const getAllPermissions = async (): Promise<string[]> => {
-  const response = await request.get<RouterResponse<string[]>>('/security/permissions')
-  return response.data.data || []
-}
-
 /** 获取全部角色及其权限码 */
 export const getRolePermissions = async (): Promise<RolePermissions> => {
   const response = await request.get<RouterResponse<RolePermissions>>('/security/permissions/roles')

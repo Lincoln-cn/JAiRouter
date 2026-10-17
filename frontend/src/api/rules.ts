@@ -95,10 +95,6 @@ export const getRuleList = () => {
   return request.get<RouterResponse<RuleDefinition[]>>('/config/rules/list')
 }
 
-export const getRule = (id: string) => {
-  return request.get<RouterResponse<RuleDefinition>>(`/config/rules/${id}`)
-}
-
 export const createRule = (data: RuleDefinition) => {
   return request.post<RouterResponse<RuleDefinition>>('/config/rules', data)
 }

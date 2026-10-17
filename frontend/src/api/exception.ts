@@ -5,7 +5,6 @@ import type {
   ExceptionStatistics,
   ExceptionQueryParams,
   ExceptionQueryResponse,
-  ExceptionDashboardData,
   ExceptionDeleteResult
 } from '@/types/exception'
 
@@ -105,26 +104,6 @@ export const getRecentExceptionEvents = async (limit: number = 10): Promise<Exce
 }
 
 /**
- * 获取指定类型的最近异常事件
- * @param exceptionType 异常类型
- * @param limit 最大数量
- */
-export const getRecentExceptionEventsByType = async (
-  exceptionType: string,
-  limit: number = 10
-): Promise<ExceptionEvent[]> => {
-  try {
-    const response = await request.get<RouterResponse<ExceptionEvent[]>>(`/exceptions/recent/${exceptionType}`, {
-      params: { limit }
-    })
-    return response.data.data || []
-  } catch (error) {
-    console.error('获取指定类型的最近异常事件失败:', error)
-    throw error
-  }
-}
-
-/**
  * 删除过期异常事件
  * @param cutoffTime 截止时间
  * @param aggregatedOnly 是否仅删除已聚合的事件
@@ -148,42 +127,3 @@ export const deleteOldExceptionEvents = async (
   }
 }
 
-/**
- * 获取异常管理仪表盘数据
- * @param startTime 开始时间
- * @param endTime 结束时间
- */
-export const getExceptionDashboardData = async (
-  startTime?: string,
-  endTime?: string
-): Promise<ExceptionDashboardData> => {
-  try {
-    const params: any = {}
-    if (startTime) params.startTime = startTime
-    if (endTime) params.endTime = endTime
-
-    const response = await request.get<RouterResponse<ExceptionDashboardData>>('/exceptions/dashboard', { params })
-    return response.data.data || {
-      statistics: {
-        startTime: startTime || '',
-        endTime: endTime || '',
-        totalEvents: 0,
-        totalTypes: 0,
-        eventsByType: {},
-        eventsByCategory: {},
-        eventsByOperation: {},
-        eventsByHttpStatus: {},
-        topClientIps: [],
-        hourlyDistribution: []
-      },
-      recentEvents: [],
-      timeRange: {
-        startTime: startTime || '',
-        endTime: endTime || ''
-      }
-    }
-  } catch (error) {
-    console.error('获取异常管理仪表盘数据失败:', error)
-    throw error
-  }
-}

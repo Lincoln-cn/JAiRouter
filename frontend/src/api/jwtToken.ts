@@ -5,7 +5,6 @@ const { t: gt } = i18n.global as unknown as {
   t: (key: string, named?: Record<string, string | number>) => string
 }
 
-
 // 定义JWT令牌信息类型（基于设计文档的JwtTokenInfo）
 export interface JwtTokenInfo {
     id: string              // 令牌ID (UUID)
@@ -21,15 +20,6 @@ export interface JwtTokenInfo {
     revokedBy?: string      // 撤销者
     createdAt: string       // 创建时间
     updatedAt: string       // 更新时间
-}
-
-// 保持向后兼容的JWT令牌类型
-export interface JwtToken {
-    userId: string
-    token: string
-    issuedAt: string
-    expiresAt: string
-    status: 'active' | 'revoked'
 }
 
 // 分页结果类型
@@ -106,17 +96,6 @@ export const revokeTokensBatch = async (batchRevokeRequest: BatchTokenRevokeRequ
         return response.data.success || false
     } catch (error) {
         console.error('批量撤销JWT令牌失败:', error)
-        throw error
-    }
-}
-
-// 验证JWT令牌
-export const validateToken = async (validationRequest: TokenValidationRequest): Promise<TokenValidationResponse> => {
-    try {
-        const response = await request.post<RouterResponse<TokenValidationResponse>>('/auth/jwt/validate', validationRequest)
-        return response.data.data || {valid: false, message: gt('apiErrors.unknown'), timestamp: new Date().toISOString()}
-    } catch (error) {
-        console.error('验证JWT令牌失败:', error)
         throw error
     }
 }

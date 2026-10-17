@@ -94,16 +94,6 @@ export function getBlacklistStats(): Promise<RouterResponse<BlacklistStats>> {
 }
 
 /**
- * 获取黑名单条目详情
- */
-export function getBlacklistEntry(id: number): Promise<RouterResponse<BlacklistEntry>> {
-    return request({
-        url: `/security/blacklist/${id}`,
-        method: 'get'
-    })
-}
-
-/**
  * 添加到黑名单
  */
 export function addToBlacklist(data: AddBlacklistRequest): Promise<RouterResponse<BlacklistEntry>> {
@@ -115,34 +105,12 @@ export function addToBlacklist(data: AddBlacklistRequest): Promise<RouterRespons
 }
 
 /**
- * 批量添加黑名单
- */
-export function batchAddToBlacklist(dataList: AddBlacklistRequest[]): Promise<RouterResponse<number>> {
-    return request({
-        url: '/security/blacklist/batch-add',
-        method: 'post',
-        data: dataList
-    })
-}
-
-/**
  * 从黑名单移除
  */
 export function removeFromBlacklist(id: number): Promise<RouterResponse<boolean>> {
     return request({
         url: `/security/blacklist/${id}`,
         method: 'delete'
-    })
-}
-
-/**
- * 检查是否在黑名单中
- */
-export function checkBlacklist(type: BlacklistType, value: string): Promise<RouterResponse<boolean>> {
-    return request({
-        url: '/security/blacklist/check',
-        method: 'get',
-        params: { type, value }
     })
 }
 

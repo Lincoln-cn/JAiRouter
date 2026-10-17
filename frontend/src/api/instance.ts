@@ -66,13 +66,6 @@ export const deleteServiceInstance = (serviceType: string, instanceId: string) =
 // ==================== 限流器配置 API ====================
 
 /**
- * 获取实例的限流器配置
- */
-export const getRateLimitConfig = (serviceType: string, instanceId: string) => {
-  return request.get<RouterResponse<RateLimitConfig>>(`/config/instance/${serviceType}/${instanceId}/rate-limit`)
-}
-
-/**
  * 保存实例的限流器配置
  */
 export const saveRateLimitConfig = (serviceType: string, instanceId: string, config: RateLimitConfig) => {
@@ -82,13 +75,6 @@ export const saveRateLimitConfig = (serviceType: string, instanceId: string, con
 // ==================== 熔断器配置 API ====================
 
 /**
- * 获取实例的熔断器配置
- */
-export const getCircuitBreakerConfig = (serviceType: string, instanceId: string) => {
-  return request.get<RouterResponse<CircuitBreakerConfig>>(`/config/instance/${serviceType}/${instanceId}/circuit-breaker`)
-}
-
-/**
  * 保存实例的熔断器配置
  */
 export const saveCircuitBreakerConfig = (serviceType: string, instanceId: string, config: CircuitBreakerConfig) => {
@@ -96,15 +82,6 @@ export const saveCircuitBreakerConfig = (serviceType: string, instanceId: string
 }
 
 // ==================== 熔断器重置 API ====================
-
-/**
- * 重置指定实例的熔断器状态（路径参数方式）
- * @param serviceType 服务类型
- * @param instanceId 实例数据库 ID
- */
-export const resetCircuitBreakerByPath = (serviceType: string, instanceId: string) => {
-  return request.post<RouterResponse<null>>(`/config/instance/${serviceType}/${instanceId}/circuit-breaker/reset`)
-}
 
 /**
  * 重置指定实例的熔断器状态（请求体方式）

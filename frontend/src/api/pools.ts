@@ -22,10 +22,6 @@ export const getPoolList = () => {
   return request.get<RouterResponse<PoolDefinition[]>>('/config/pools/list')
 }
 
-export const getPool = (poolName: string) => {
-  return request.get<RouterResponse<PoolDefinition>>(`/config/pools/${poolName}`)
-}
-
 export const createPool = (data: PoolDefinition) => {
   return request.post<RouterResponse<PoolDefinition>>('/config/pools', data)
 }

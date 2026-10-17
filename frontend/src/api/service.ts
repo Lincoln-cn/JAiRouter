@@ -46,16 +46,6 @@ export const deleteService = (serviceType: string) => {
   return request.delete<RouterResponse<void>>(`/config/type/services/${serviceType}`)
 }
 
-// 获取指定服务的所有可用模型
-export const getAvailableModels = (serviceType: string) => {
-  return request.get<RouterResponse<string[]>>(`/config/type/${serviceType}/models`)
-}
-
-// 重置配置为默认值
-export const resetToDefaultConfig = () => {
-  return request.post<RouterResponse<void>>('/config/type/reset')
-}
-
 // 获取所有适配器
 export const getAdapters = () => {
   return request.get<RouterResponse<any[]>>('/config/adapter')

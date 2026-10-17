@@ -104,18 +104,6 @@ export interface SecurityAlert {
     severity: string
 }
 
-// 审计统计类型
-export interface AuditStatistics {
-    totalEvents: number
-    successCount: number
-    failureCount: number
-    eventTypeStatistics: Record<string, number>
-    categoryStatistics: Record<string, number>
-    riskLevelStatistics: Record<string, number>
-    topUsers: { userId: string; count: number }[]
-    topIpAddresses: { ip: string; count: number }[]
-}
-
 // 默认响应
 const defaultQueryResponse = (): ExtendedAuditQueryResponse => ({
     events: [],
@@ -144,39 +132,6 @@ const defaultSecurityReport = (): SecurityReport => ({
     successRate: 0
 })
 
-// 查询JWT令牌审计事件
-export const queryJwtTokenAuditEvents = async (params: AuditQueryParams): Promise<ExtendedAuditQueryResponse> => {
-    try {
-        const response = await request.get<RouterResponse<ExtendedAuditQueryResponse>>('/security/audit/extended/jwt-tokens', { params })
-        return response.data.data || { ...defaultQueryResponse(), eventCategory: 'JWT_TOKEN' }
-    } catch (error) {
-        console.error('查询JWT令牌审计事件失败:', error)
-        throw error
-    }
-}
-
-// 查询API Key审计事件
-export const queryApiKeyAuditEvents = async (params: AuditQueryParams): Promise<ExtendedAuditQueryResponse> => {
-    try {
-        const response = await request.get<RouterResponse<ExtendedAuditQueryResponse>>('/security/audit/extended/api-keys', { params })
-        return response.data.data || { ...defaultQueryResponse(), eventCategory: 'API_KEY' }
-    } catch (error) {
-        console.error('查询API Key审计事件失败:', error)
-        throw error
-    }
-}
-
-// 查询安全事件
-export const querySecurityEvents = async (params: AuditQueryParams): Promise<ExtendedAuditQueryResponse> => {
-    try {
-        const response = await request.get<RouterResponse<ExtendedAuditQueryResponse>>('/security/audit/extended/security-events', { params })
-        return response.data.data || { ...defaultQueryResponse(), eventCategory: 'SECURITY' }
-    } catch (error) {
-        console.error('查询安全事件失败:', error)
-        throw error
-    }
-}
-
 // 复杂条件查询审计事件
 export const queryAuditEventsAdvanced = async (query: any): Promise<ExtendedAuditQueryResponse> => {
     try {
@@ -203,47 +158,3 @@ export const generateSecurityReport = async (startTime?: string, endTime?: strin
     }
 }
 
-// 获取用户审计事件
-export const getUserAuditEvents = async (userId: string, startTime?: string, endTime?: string, limit: number = 50): Promise<ExtendedAuditQueryResponse> => {
-    try {
-        const params: any = { limit }
-        if (startTime) params.startTime = startTime
-        if (endTime) params.endTime = endTime
-
-        const response = await request.get<RouterResponse<ExtendedAuditQueryResponse>>(`/security/audit/extended/users/${userId}/events`, { params })
-        return response.data.data || { ...defaultQueryResponse(), eventCategory: 'USER_SPECIFIC' }
-    } catch (error) {
-        console.error('获取用户审计事件失败:', error)
-        throw error
-    }
-}
-
-// 获取IP地址审计事件
-export const getIpAuditEvents = async (ipAddress: string, startTime?: string, endTime?: string, limit: number = 50): Promise<ExtendedAuditQueryResponse> => {
-    try {
-        const params: any = { limit }
-        if (startTime) params.startTime = startTime
-        if (endTime) params.endTime = endTime
-
-        const response = await request.get<RouterResponse<ExtendedAuditQueryResponse>>(`/security/audit/extended/ip-addresses/${ipAddress}/events`, { params })
-        return response.data.data || { ...defaultQueryResponse(), eventCategory: 'IP_SPECIFIC' }
-    } catch (error) {
-        console.error('获取IP地址审计事件失败:', error)
-        throw error
-    }
-}
-
-// 获取扩展审计统计信息
-export const getExtendedAuditStatistics = async (startTime?: string, endTime?: string): Promise<any> => {
-    try {
-        const params: any = {}
-        if (startTime) params.startTime = startTime
-        if (endTime) params.endTime = endTime
-
-        const response = await request.get<RouterResponse<any>>('/security/audit/extended/statistics/extended', { params })
-        return response.data.data || {}
-    } catch (error) {
-        console.error('获取扩展审计统计信息失败:', error)
-        throw error
-    }
-}

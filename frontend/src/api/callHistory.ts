@@ -32,22 +32,6 @@ export const queryCallHistory = async (
 }
 
 /**
- * 根据 traceId 查询调用链路
- */
-export const findByTraceId = async (traceId: string): Promise<ApiCallHistoryRecord[]> => {
-  const response = await request.get(`/call-history/trace/${traceId}`)
-  return response.data.data || []
-}
-
-/**
- * 获取最近的调用记录
- */
-export const getRecentCalls = async (limit: number = 20): Promise<ApiCallHistoryRecord[]> => {
-  const response = await request.get('/call-history/recent', { params: { limit } })
-  return response.data.data || []
-}
-
-/**
  * 查询慢调用
  */
 export const getSlowCalls = async (
@@ -93,25 +77,6 @@ export const getCallHistoryDashboard = async (
 
   const response = await request.get('/call-history/dashboard', { params })
   return response.data.data
-}
-
-/**
- * 清理过期数据
- */
-export const cleanupCallHistory = async (cutoffTime?: string): Promise<number> => {
-  const params: Record<string, any> = {}
-  if (cutoffTime) params.cutoffTime = cutoffTime
-
-  const response = await request.delete('/call-history/cleanup', { params })
-  return response.data.data?.deletedCount || 0
-}
-
-/**
- * 获取总记录数
- */
-export const getCallHistoryCount = async (): Promise<number> => {
-  const response = await request.get('/call-history/count')
-  return response.data.data?.count || 0
 }
 
 // ---- v2.9.2 记录治理 (record governance) ----
