@@ -1,5 +1,5 @@
 // Playground 缓存管理
-import { ref, reactive } from 'vue'
+import { reactive } from 'vue'
 import { getServiceInstances } from '@/api/dashboard'
 import { ElMessage } from 'element-plus'
 import { i18n } from '@/i18n'

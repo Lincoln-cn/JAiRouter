@@ -277,7 +277,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Setting, Microphone, Download, Delete, Loading, Cpu } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'

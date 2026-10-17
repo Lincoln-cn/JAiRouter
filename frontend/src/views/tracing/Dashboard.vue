@@ -309,7 +309,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick, watch, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import * as echarts from 'echarts'
@@ -320,13 +320,11 @@ import {
 } from '@element-plus/icons-vue'
 import {
   getTracingOverview,
-  getTracingStats,
   getServiceStats,
   getTracingStatus,
   getLatencyAnalysis,
   getErrorAnalysis,
   getThroughputAnalysis,
-  getRecentTraces
 } from '@/api/tracing'
 import TraceDetail from './components/TraceDetail.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'

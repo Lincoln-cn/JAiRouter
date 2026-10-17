@@ -76,4 +76,4 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: 运行 ESLint（flat config，警告数受棘轮约束）
-        run: npx eslint . --max-warnings 406
+        run: npx eslint . --max-warnings 335

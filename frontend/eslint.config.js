@@ -34,7 +34,7 @@ export default defineConfigWithVueTs(
       'vue/require-prop-types': 'error',
 
       // TypeScript
-      // 说明：该项目存量有约 93 处未使用变量（75 个未使用 import 项 + 52 个未使用局部变量，有重叠）。
+      // 说明：存量未使用变量已从 93 处清到 22 处（import 项已全部清完，剩余为局部变量/未用接口）。
       // 本 PR 只做「把 lint 跑起来并接进 CI」，不把工具链迁移和 32 个文件的重构混在一起；
       // 因此先降为 warn 并用 CI 的 --max-warnings 棘轮冻结存量（新增即红），
       // 清理完成后把它升回 error 并收紧棘轮 —— 追踪于 issue #462。

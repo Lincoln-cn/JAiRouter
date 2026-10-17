@@ -1,4 +1,3 @@
-import { computed } from 'vue'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
 

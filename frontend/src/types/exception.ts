@@ -1,4 +1,3 @@
-import type { RouterResponse } from '@/types'
 
 /**
  * 异常事件类型定义

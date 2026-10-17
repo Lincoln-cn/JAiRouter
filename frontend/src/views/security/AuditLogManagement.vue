@@ -285,7 +285,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { Refresh, ArrowDown, Key, Connection, WarningFilled, Bell } from '@element-plus/icons-vue'
@@ -293,10 +293,9 @@ import * as echarts from 'echarts'
 import {
   queryAuditEventsAdvanced,
   generateSecurityReport,
-  getExtendedAuditStatistics,
   type AuditEvent,
   type ExtendedAuditQueryResponse,
-  type SecurityReport
+  type SecurityReport,
 } from '@/api/auditLog'
 import { addToBlacklist } from '@/api/blacklist'
 import { useChartTheme } from '@/composables/useChartTheme'

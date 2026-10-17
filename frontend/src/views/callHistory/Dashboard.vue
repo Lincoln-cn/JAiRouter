@@ -193,8 +193,6 @@ import {
   Grid,
   Service,
   Document,
-  Search,
-  Refresh
 } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import type { ECharts } from 'echarts'
@@ -205,7 +203,6 @@ import {
 import type {
   CallHistoryStatistics,
   ApiCallHistoryRecord,
-  RecorderStats
 } from '@/types/callHistory'
 import StatCard from '@/components/StatCard.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'

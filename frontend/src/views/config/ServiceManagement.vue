@@ -354,16 +354,16 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import { SERVICE_TYPE_LABELS, COMMON_SERVICE_TYPES } from '@/constants/serviceTypes'
 import type { FormInstance, FormRules } from 'element-plus'
-import { 
-  getServiceTypes, 
-  getAllServicesWithConfig, // 添加新导入
-  getServiceConfig, 
-  createService, 
-  updateServiceConfig, 
+import {
+  getAllServicesWithConfig,
+  // 添加新导入
+  getServiceConfig,
+  createService,
+  updateServiceConfig,
   deleteService,
   getAdapters,
   getServiceRateLimit,
-  updateServiceRateLimit
+  updateServiceRateLimit,
 } from '@/api/service'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import OnboardingSteps from './adapter/OnboardingSteps.vue'
