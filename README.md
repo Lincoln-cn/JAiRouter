@@ -44,7 +44,7 @@ repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # the local/git directory name differs from the product name
 artifact:        model-router            # Maven artifactId
 project_version: 3.3.5                   # pom.xml
-latest_release:  v3.3.1 (2026-10-14)
+latest_release:  v3.3.5 (2026-10-17)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5 (WebFlux / reactive)
   frontend: Vue 3 + TypeScript + Vite, bilingual zh-CN / en-US
@@ -367,12 +367,13 @@ delivery. See [Status and recent work](#status-and-recent-work) for the open led
 
 ## Status and recent work
 
-**Latest release: v3.3.1 (2026-10-14)** — an audit-remediation patch: blocking writes moved off the event
-loop, outbound resolved addresses pinned to the connection (DNS rebinding), token-usage writes
-ownership-scoped, and `SecurityAlertService` actually wired up (it had no caller before, so none of its four
-security alerts ever fired).
+**Latest release: v3.3.5 (2026-10-17)** — a four-version bundle (`v3.3.2` → `v3.3.5`, 149 commits) that fixes
+zero-byte `/v1` streams, makes deleting the last entry of a store-backed collection persist, stops
+`/actuator/health` from answering 503 on a lifetime-cumulative span drop rate, and lands the error-code
+registry with the #404 rate-limit split (`401` → `429` + `RATE_LIMITED_API_KEY`) and the #405 `403` for
+built-in adapters.
 
-**Merged after v3.3.1, tagged `v3.3.2` and `v3.3.3`, not released yet** (2026-10-12 → 2026-10-15) — grouped by theme:
+**Also shipped in that release — `v3.3.2` / `v3.3.3`** (2026-10-12 → 2026-10-15), grouped by theme:
 
 | Theme | What changed |
 |-------|--------------|
@@ -388,10 +389,10 @@ security alerts ever fired).
 | Docs & gates | README rewritten as a facts-first document; error-code table rebuilt from code; `dynamic-config` and quick-start instance examples rewritten against real endpoints and executed; markdown fence-parity checker added (6 files / 10 sites fixed); contribution guide gained "read the CI gates correctly" and a release-cadence rule |
 | Tooling | Local substitute gates for the month CI minutes ran out; image smoke test polls container health instead of racing it; the docs-version self-test stopped asserting a copy of the script's wording, and its workflow now runs when `scripts/docs/**` changes |
 
-Release tags: `v3.3.3` · `v3.3.2` · `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`.
-`v3.3.2` and `v3.3.3` are tagged but **not released** yet (`v3.3.2`'s content ships with `v3.3.3`).
+Release tags: `v3.3.5` · `v3.3.4` · `v3.3.3` · `v3.3.2` · `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`.
+`v3.3.2`–`v3.3.5` were tagged earlier and shipped together in the **v3.3.5** release (`v3.3.2`'s content ships with `v3.3.3`).
 
-**Tagged `v3.3.4`, not released yet** (the `v3.3.3` tag stays frozen at `e965f9a8`); what changed relative to `v3.3.3`, grouped by theme:
+**`v3.3.4`** (shipped in the `v3.3.5` release; the `v3.3.3` tag stays frozen at `e965f9a8`); what changed relative to `v3.3.3`, grouped by theme:
 
 | Theme | What changed |
 |-------|--------------|
@@ -399,7 +400,7 @@ Release tags: `v3.3.3` · `v3.3.2` · `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.
 | **Error-code close-out (#406 / #412 / #414)** | Seven never-emitted codes (constants plus never-called factories) deleted; the docs separate the internal `RESOURCE_FORBIDDEN` → `FORBIDDEN_RESOURCE` constant rename from the client-visible `TOKEN_USAGE_FORBIDDEN` → `FORBIDDEN_TOKEN_USAGE` rename; four ghost codes in the management-API tables replaced with registry names |
 | **Status alignment (#405)** | `BUILTIN_READONLY` answers 403 everywhere (the endpoint used to answer 400); `RESTART_REQUIRED` answers 400 everywhere (the rule chain used to derive 403) |
 
-**Tagged `v3.3.5`, not released yet** (2026-10-16; the `v3.3.4` tag stays frozen at `92a134ef`); what changed relative to `v3.3.4`, grouped by theme:
+**`v3.3.5`** (2026-10-16; the `v3.3.4` tag stays frozen at `92a134ef`); what changed relative to `v3.3.4`, grouped by theme:
 
 | Theme | What changed |
 |-------|--------------|
@@ -413,7 +414,7 @@ Release tags: `v3.3.3` · `v3.3.2` · `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.
 
 Local verification before this release (cold start on a fresh H2 database → frontend build → package → run on 8080): **frontend E2E 414/414** (14 specs; 404/407 before the fixes — `crud:pool:delete` was the real defect, the other two were missing API-key fixtures); **API smoke 51/51** (covering every client-visible change since v3.3.1: the #404 rate-limit split, the #405 403, the #432 400, both `/v1` error shapes and the #340 `/actuator` auth surface).
 
-See the [`[3.3.5]` changelog entry](docs/en/reference/changelog.md); tag only, no GitHub Release or image, per the standing policy.
+See the [`[3.3.5]` changelog entry](docs/en/reference/changelog.md). Shipped as [GitHub Release v3.3.5](https://github.com/Lincoln-cn/JAiRouter/releases/tag/v3.3.5) with multi-arch images (`v3.3.5` / `3.3.5` / `latest`).
 
 ### Open ledger
 

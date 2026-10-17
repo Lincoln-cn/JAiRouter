@@ -24,9 +24,9 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 
 ## Current Version Status
 
-### 🏷️ v3.3.5 (Patch: store contract and health semantics fixed + error-body shapes corrected in docs, **tagged, not released yet** 2026-10-16)
+### ✅ v3.3.5 (Patch: store contract and health semantics fixed + error-body shapes corrected in docs, **released 2026-10-17**)
 
-**Status**: **Tagged `v3.3.5`, not released yet** (per the standing release policy the GitHub Release and Docker image are produced separately)
+**Status**: Released (GitHub Release `v3.3.5`, 2026-10-17; multi-arch Docker images rebuilt by CI on release: `v3.3.5` / `3.3.5` / `latest`)
 **Scope**: everything merged after the `v3.3.4` slice (10-16 morning), i.e. 2026-10-16
 
 | Area | Delivered |
@@ -38,9 +38,9 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 
 **Local verification before this release**: frontend E2E **414/414**, API smoke **51/51** (cold start on a fresh H2 database → frontend build → package → run on 8080).
 
-### 🏷️ v3.3.4 (Patch: error-code rulings landed + close-out + docs relocation, **tagged, not released yet** 2026-10-16)
+### 🏷️ v3.3.4 (Patch: error-code rulings landed + close-out + docs relocation, **shipped in v3.3.5** 2026-10-16)
 
-**Status**: **Tagged `v3.3.4`, not released yet** (per the standing release policy the GitHub Release and Docker image are produced separately)
+**Status**: Shipped in the `v3.3.5` GitHub Release (2026-10-17)
 **Scope**: everything merged after the `v3.3.3` slice (10-15), i.e. 2026-10-15 → 2026-10-16
 
 | Area | Delivered |
@@ -50,9 +50,9 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 | **Dead codes deleted and docs corrected (#406 / #412 / #414)** | Seven codes with no emission site (constants plus never-called factories) deleted; four never-emitted codes in the two `management-api` tables replaced with registry names; `RESOURCE_FORBIDDEN` → `FORBIDDEN_RESOURCE` restated as an internal constant rename (invisible to clients) |
 | **Internal docs relocated (#418)** | Session memory (`mimo-memory/`, 393 files; `session-digests/`) and two internal process SOPs moved out of the published docs site into `innerdoc/`; 10 false positives from the local docs scanner fixed and two orphan `mkdocs` nav entries removed |
 
-### 🏷️ v3.3.3 (Patch: error-code registry wired through code and docs + frontend artifact hygiene; ships the `v3.3.2` content, **tagged, not released yet** 2026-10-15)
+### 🏷️ v3.3.3 (Patch: error-code registry wired through code and docs + frontend artifact hygiene; ships the `v3.3.2` content, **shipped in v3.3.5** 2026-10-15)
 
-**Status**: **Tagged `v3.3.3`, not released yet** (per the standing release policy the GitHub Release and Docker image are produced separately)
+**Status**: Shipped in the `v3.3.5` GitHub Release (2026-10-17)
 **Scope**: everything merged after `v3.3.1` (2026-10-12 → 2026-10-15) — `v3.3.2` was tagged but never released on its own and is superseded by this version;
 see the [changelog](changelog.md#333---2026-10-15)
 
@@ -63,9 +63,9 @@ see the [changelog](changelog.md#333---2026-10-15)
 | Repository hygiene | Frontend build artifacts no longer dirty the working tree: normalized `package-lock.json` + `.gitattributes` `-text` for the two generated `.d.ts` files (#408 / #409) |
 | Inherited from `v3.3.2` (shipped together) | `/v1` empty-stream fix (#356) · alert/audit close-out (#306/#309/#313/#394/#397/#400) · config-honesty pass 3 (#319/#322/#323/#329/#331) · dead code and shapes (#311/#316/#328/#332/#333/#369/#372/#373) · CI and documentation gates (#367/#371/#385/#388/#398/#399 plus the #250 review batches) · dependency security (Vue 3.5.44, #391) |
 
-### 🏷️ v3.3.2 (Patch: empty `/v1` stream fixed + alert/audit close-out + config honesty pass 3 + docs and gates, **tagged, never released on its own** 2026-10-14)
+### 🏷️ v3.3.2 (Patch: empty `/v1` stream fixed + alert/audit close-out + config honesty pass 3 + docs and gates, **tagged, shipped in v3.3.5** 2026-10-14)
 
-**Status**: **Tagged `v3.3.2`, never released on its own** — its content ships with `v3.3.3`
+**Status**: **Tagged `v3.3.2`, never released on its own** — its content ships with `v3.3.3` inside the `v3.3.5` GitHub Release (2026-10-17)
 **Scope**: the **40 changes** merged after `v3.3.1` (the 10-10 ~ 10-11 slice), i.e. 2026-10-12 → 2026-10-14 —
 see the [changelog](changelog.md#332---2026-10-14)
 
@@ -169,7 +169,7 @@ see the [changelog](changelog.md#332---2026-10-14)
 | v3.1.2 | 2026-09-18 | Docker/startup patch: `JWT_SECRET` env unification, `--generate-key` fix, image frontend static/admin path, Redis health conditional |
 | v3.2.0 | 2026-09-19 | PII sanitization management (console + `/api/config/sanitization/**` + `sanitizeForStorage`) + quota monitoring limit/progress UX + vitest/page-smoke TDD foundation + excluded-path alignment (PRs #60/#64/#65) |
 | v3.2.1 | 2026-09-21 | Audit remediation patch: Reactor/SSE de-blocking + quota TOCTOU & Redis Lua CAS + spurious 401 fix + tracing chain double-execution fix + JWT blacklist degradation convergence + production fail-fast + SSRF guard + RBAC/debug-endpoint tightening + user-regex ReDoS hardening (PRs #67–#72, #78–#81) |
-| v3.3.2 | 2026-10-14 | Patch (**tagged, not released yet**): **empty `/v1` stream fixed** (#356 — no more early body release from `exchangeToMono`; error frames only after the first chunk; fixture now drives both surfaces) + cross-replica alert cooldown (#306) + audit event types always enum names (#309) + config honesty pass 3 (#319/#322/#323) + sanitization failures only terminate (#329) + startup-validator wording (#331) + dead code and shapes (#311/#328/#332/#333/#316) + docs and gates (#315/#325/#326/#330/#337/#341/#348/#349/#351/#353/#355/#362) + engineering (#336/#338/#347/#359/#360/#364) |
+| v3.3.2 | 2026-10-14 | Patch (**shipped in v3.3.5**): **empty `/v1` stream fixed** (#356 — no more early body release from `exchangeToMono`; error frames only after the first chunk; fixture now drives both surfaces) + cross-replica alert cooldown (#306) + audit event types always enum names (#309) + config honesty pass 3 (#319/#322/#323) + sanitization failures only terminate (#329) + startup-validator wording (#331) + dead code and shapes (#311/#328/#332/#333/#316) + docs and gates (#315/#325/#326/#330/#337/#341/#348/#349/#351/#353/#355/#362) + engineering (#336/#338/#347/#359/#360/#364) |
 | v3.3.1 | 2026-10-14 | Audit remediation patch (**back-cut release**, cut point `ea2b7bc2`): API key usage accounting (#267) and error-report persistence (#268) moved off the event loop + JWT blacklist batched sync (#273) + `TRACING_APPENDER` async attachment (#279) + SSRF resolved-address pinning (#282) + outbound clients consolidated into a pool (#284) + usage-write ownership (#280) + `SecurityAlertService` wired in (#277) + alert criteria/output/config-surface close-out (#286/#293/#294/#296) + console and tracing placeholder data removed (#269–#274) + dead code removed (#275/#278) + 4 frontend dependency bumps |
 | v3.3.0 | 2026-10-07 | PostgreSQL and versioned migration (PG on `ddl-auto: validate`, H2 joins in, both startup patch components deleted) + multi-replica cluster (cross-replica event broadcast and rate-limit counting, shared-state self-check, per-class scheduled jobs) + RBAC closed out to fail-closed GETs + four batches of tracing config honesty + Kustomize/json-logs deployment artifacts + documentation facts corrected (#160–#248) |
 | v3.2.2 | 2026-09-22 | User-reported fixes: API key quota echo (#84) and routing-monitor count +3 (#83) + quota endpoint `block` failure (#92) + management failures moved from HTTP 200 to 4xx/5xx (#94, response body compatible) + tightened e2e assertions (#95) + unified alert thresholds `[0.05,1]` (#96) + monitoring error codes (#98) (PRs #90/#91/#93/#97/#99) |
