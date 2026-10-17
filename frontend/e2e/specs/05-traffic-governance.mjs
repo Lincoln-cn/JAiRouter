@@ -100,6 +100,15 @@ export default {
         button: /重置为默认值|Reset to Defaults/i,
         method: 'POST',
         urlPart: '/global-config/reset'
+      },
+      {
+        // 熔断器监控页的「清空历史」：同文件里 reset 类操作有确认语句，本操作没有
+        // —— 文件级规则查不出这种「被别处的确认掩盖」的情况（#460 调用点级）。
+        path: '/circuit-breakers/monitoring',
+        tag: 'cb-clear-history',
+        button: /清空历史|Clear History/i,
+        method: 'DELETE',
+        urlPart: '/history'
       }
     ]
 

@@ -563,18 +563,31 @@ const updateHistorySize = async (value: number) => {
   }
 }
 
-const clearHistory = async () => {
-  clearingHistory.value = true
-  try {
-    await request.delete(`${apiBaseUrl}/history`)
-    events.value = []
-    monitorStatus.value.totalSampledCount = 0
-    ElMessage.success(t('circuitBreaker.monitoring.messages.historyCleared'))
-  } catch (error) {
-    ElMessage.error(t('circuitBreaker.monitoring.messages.clearHistoryFailed'))
-  } finally {
-    clearingHistory.value = false
-  }
+// 清空路由监控历史不可恢复 ⇒ 必须二次确认。
+// 审计 #460：本函数的确认被同文件里 reset 类操作的确认语句「掩盖」了——按文件看有确认，
+// 按调用点看没有（文件级规则查不出这类）。守卫见 05-traffic-governance.mjs 的 cb-clear-history:*。
+const clearHistory = () => {
+  ElMessageBox.confirm(
+    t('circuitBreaker.monitoring.confirmations.clearHistoryMessage'),
+    t('circuitBreaker.monitoring.confirmations.clearHistoryTitle'),
+    {
+      confirmButtonText: t('circuitBreaker.monitoring.confirmations.confirmClear'),
+      cancelButtonText: t('circuitBreaker.monitoring.confirmations.cancel'),
+      type: 'warning'
+    }
+  ).then(async () => {
+    clearingHistory.value = true
+    try {
+      await request.delete(`${apiBaseUrl}/history`)
+      events.value = []
+      monitorStatus.value.totalSampledCount = 0
+      ElMessage.success(t('circuitBreaker.monitoring.messages.historyCleared'))
+    } catch (error) {
+      ElMessage.error(t('circuitBreaker.monitoring.messages.clearHistoryFailed'))
+    } finally {
+      clearingHistory.value = false
+    }
+  })
 }
 
 const handleExport = async (command: string) => {

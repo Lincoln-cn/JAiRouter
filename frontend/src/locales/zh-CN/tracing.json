@@ -186,6 +186,8 @@
       "memoryLimitMb": "内存限制(MB)",
       "dataManagement": "数据管理",
       "clearCache": "清理缓存",
+      "clearCacheTitle": "清理缓存确认",
+      "clearCacheMessage": "确定要清理追踪缓存吗？这会影响所有正在采样的链路数据。",
       "cleanupExpired": "清理过期数据",
       "exportConfig": "导出配置",
       "confirm": "确定",

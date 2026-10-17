@@ -48,6 +48,61 @@ export default {
     }
     check('tracing:management:api-any', anyOk || details.every(d => d.includes('=404')), details.join(','))
 
+    // ── 清理缓存的二次确认（审计 #460）──────────────────────────────────────
+    // 这条尤其需要守：按钮文案是「清理缓存」，但底层 refreshTracingData() 叫「刷新」、
+    // 实际是 POST /tracing/actuator/clear-cache —— 名字和效果相反，误点代价不小。
+    await gotoApp(page, '/tracing/management', { waitMs: 600 })
+    // 「清理缓存」在 el-tab-pane name="advanced" 里 —— 不切到「高级配置」这个 tab，
+    // 元素虽在 DOM 但不可见，locator.click 会一直等到超时（实测踩到）。
+    await page
+      .locator('.page-skeleton')
+      .first()
+      .waitFor({ state: 'hidden', timeout: 10000 })
+      .catch(() => {})
+    const advancedTab = page
+      .locator('.el-tabs__item')
+      .filter({ hasText: /高级配置|Advanced Configuration|Advanced/i })
+      .first()
+    if ((await advancedTab.count()) > 0) {
+      await advancedTab.click({ timeout: 10000 }).catch(() => {})
+      await page.waitForTimeout(500)
+    } else {
+      check('tracing:clear-cache:advanced-tab', false, 'skip: advanced tab not found')
+    }
+    const clearBtn = page.locator('.layout-main button').filter({ hasText: /清理缓存|Clear Cache/i }).first()
+    if ((await clearBtn.count()) === 0) {
+      check('tracing:clear-cache:confirm-dialog', false, 'skip: button not found')
+    } else {
+      const sent = []
+      const onReq = (req) => {
+        if (req.method() === 'POST' && req.url().includes('clear-cache')) sent.push(req.url())
+      }
+      page.on('request', onReq)
+
+      await clearBtn.scrollIntoViewIfNeeded().catch(() => {})
+      await clearBtn.click({ timeout: 10000 })
+      const box = page.locator('.el-message-box').first()
+      const appeared = await box
+        .waitFor({ state: 'visible', timeout: 5000 })
+        .then(() => true)
+        .catch(() => false)
+      check('tracing:clear-cache:confirm-dialog', appeared, appeared ? '.el-message-box visible' : 'no dialog appeared')
+
+      if (appeared) {
+        const cancel = box.locator('button').filter({ hasText: /取消|Cancel/i }).first()
+        if ((await cancel.count()) > 0) {
+          await cancel.click()
+        } else {
+          await box.locator('button').first().click()
+        }
+        await page.waitForTimeout(600)
+      }
+      // 无条件断言：弹层没出现时这条会红，而不是被跳过
+      check('tracing:clear-cache:cancel-sends-nothing', sent.length === 0, `requests=${sent.length}`)
+
+      page.off('request', onReq)
+    }
+
     await page.close()
   }
 }

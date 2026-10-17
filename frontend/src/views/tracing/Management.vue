@@ -455,16 +455,30 @@ const handleSaveConfig = async () => {
   }
 }
 
-const handleClearCache = async () => {
-  clearingCache.value = true
-  try {
-    await refreshTracingData()
-    ElMessage.success(t('tracing.management.messages.cacheCleared'))
-  } catch (error) {
-    ElMessage.error(t('tracing.management.messages.clearFailed'))
-  } finally {
-    clearingCache.value = false
-  }
+// 清理追踪缓存会影响所有正在采样的链路数据 ⇒ 必须二次确认。
+// 审计 #460：同文件 :472 的 ElMessageBox.prompt 是「清理过期」用的，盖不住本函数；
+// 且本函数会误导——refreshTracingData() 看着像只读刷新，实际 POST 到
+// /tracing/actuator/clear-cache。守卫见 07-tracing.mjs 的 tracing:clear-cache:*。
+const handleClearCache = () => {
+  ElMessageBox.confirm(
+    t('tracing.management.clearCacheMessage'),
+    t('tracing.management.clearCacheTitle'),
+    {
+      confirmButtonText: t('tracing.management.confirm'),
+      cancelButtonText: t('tracing.management.cancel'),
+      type: 'warning'
+    }
+  ).then(async () => {
+    clearingCache.value = true
+    try {
+      await refreshTracingData()
+      ElMessage.success(t('tracing.management.messages.cacheCleared'))
+    } catch (error) {
+      ElMessage.error(t('tracing.management.messages.clearFailed'))
+    } finally {
+      clearingCache.value = false
+    }
+  })
 }
 
 const handleCleanupExpired = async () => {

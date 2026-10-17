@@ -628,18 +628,32 @@ const saveQuotaFromDrawer = async () => {
   }
 }
 
-const handleResetQuotaFromDrawer = async () => {
+// 重置配额计数器会清零今日请求数与 Token 用量 ⇒ 必须二次确认。
+// 审计 #460：**同一个操作在本文件里有两套入口，只有表格行那套有确认**（:989 用了
+// apiKeys.confirmations.quotaResetTitle/Message），抽屉里这套没有 —— 典型的
+// 「同语义不同入口不一致」。这里复用同一组键，不新增文案。
+// 守卫见 11-deep-security-quota.mjs 的 deep-quota-drawer-reset-confirm:*。
+const handleResetQuotaFromDrawer = () => {
   if (!quotaDrawer.keyId) return
-  try {
-    await resetApiKeyQuota(quotaDrawer.keyId)
-    if (quotaDrawer.keyId) {
-      quotaDrawer.detail = await getApiKeyQuota(quotaDrawer.keyId)
+  const keyId = quotaDrawer.keyId
+  ElMessageBox.confirm(
+    t('apiKeys.confirmations.quotaResetMessage', { keyId }),
+    t('apiKeys.confirmations.quotaResetTitle'),
+    {
+      confirmButtonText: t('apiKeys.confirmations.confirmReset'),
+      cancelButtonText: t('apiKeys.actions.cancel'),
+      type: 'warning'
     }
-    ElMessage.success(t('apiKeys.quotaForm.resetSuccess'))
-    await Promise.all([fetchApiKeys(), fetchQuotaAlerts()])
-  } catch (e: any) {
-    ElMessage.error(e?.message || t('apiKeys.quotaForm.resetQuota'))
-  }
+  ).then(async () => {
+    try {
+      await resetApiKeyQuota(keyId)
+      quotaDrawer.detail = await getApiKeyQuota(keyId)
+      ElMessage.success(t('apiKeys.quotaForm.resetSuccess'))
+      await Promise.all([fetchApiKeys(), fetchQuotaAlerts()])
+    } catch (e: any) {
+      ElMessage.error(e?.message || t('apiKeys.quotaForm.resetQuota'))
+    }
+  })
 }
 
 // 列表数据

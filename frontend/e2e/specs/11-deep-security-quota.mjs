@@ -99,6 +99,52 @@ export default {
         }
       }
 
+      // ── 抽屉里「重置计数」的二次确认（审计 #460）────────────────────────
+      // 同一个操作在本页有两条入口：表格行的重置有确认（quotaResetTitle/Message），
+      // 抽屉里这条原先没有。断言点同样是「取消后不得发出写请求」。
+      const drawerResetBtn = page
+        .locator('.quota-drawer-actions button')
+        .filter({ hasText: /重置计数|Reset/i })
+        .first()
+      if ((await drawerResetBtn.count()) === 0) {
+        check('deep-quota-drawer-reset-confirm:dialog', false, 'skip: button not found')
+      } else {
+        const resetSent = []
+        const onResetReq = (req) => {
+          if (req.method() === 'POST' && req.url().includes('/quota/reset')) resetSent.push(req.url())
+        }
+        page.on('request', onResetReq)
+
+        await drawerResetBtn.click()
+        const resetBox = page.locator('.el-message-box').first()
+        const resetDialogShown = await resetBox
+          .waitFor({ state: 'visible', timeout: 5000 })
+          .then(() => true)
+          .catch(() => false)
+        check(
+          'deep-quota-drawer-reset-confirm:dialog',
+          resetDialogShown,
+          resetDialogShown ? '.el-message-box visible' : 'no dialog appeared'
+        )
+
+        if (resetDialogShown) {
+          const cancelBtn = resetBox.locator('button').filter({ hasText: /取消|Cancel/i }).first()
+          if ((await cancelBtn.count()) > 0) {
+            await cancelBtn.click()
+          } else {
+            await resetBox.locator('button').first().click()
+          }
+          await page.waitForTimeout(600)
+        }
+        check(
+          'deep-quota-drawer-reset-confirm:cancel-sends-nothing',
+          resetSent.length === 0,
+          `requests=${resetSent.length}`
+        )
+
+        page.off('request', onResetReq)
+      }
+
       if (firstKeyId) {
         const before = await apiThrottled(page, `/api/auth/api-keys/${firstKeyId}/quota`)
         originalQuota = before.body?.data
