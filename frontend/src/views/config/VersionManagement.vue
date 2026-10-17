@@ -326,7 +326,7 @@ const handleApply = async (row: Version) => {
 
     // 第二步：应用版本配置
     loadingInstance.setText(t('version.applyConfigLoading'))
-    const response = await applyVersion(row.version)
+    await applyVersion(row.version)
 
     // 第三步：验证应用结果
     loadingInstance.setText(t('version.validateResultLoading'))

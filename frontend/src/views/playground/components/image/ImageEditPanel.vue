@@ -277,7 +277,7 @@ interface Props {
   loading: boolean
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
 interface EditedImage {
   url?: string

@@ -274,7 +274,7 @@ interface Props {
   loading: boolean
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
 // 状态
 const showConfig = ref(false)

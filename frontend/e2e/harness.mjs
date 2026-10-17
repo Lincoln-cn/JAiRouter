@@ -385,7 +385,7 @@ export async function clickRowAction(page, rowTextRe, actionRe) {
  * AdminApiRateLimiter 按客户端 IP 计数（X-Forwarded-For 优先）。
  * E2E 注入独立 IP，避免与人工操作/历史跑次共享 30/min、100/hour 桶。
  */
-export function e2eClientIp(tag = 'suite') {
+export function e2eClientIp(_tag = 'suite') {
   if (process.env.E2E_CLIENT_IP) return process.env.E2E_CLIENT_IP
   const n = Math.floor(Math.random() * 200) + 10
   return `10.77.${n}.${Math.floor(Math.random() * 200) + 10}`

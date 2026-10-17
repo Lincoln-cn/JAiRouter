@@ -203,7 +203,6 @@ import {
   updateAdapter,
   deleteAdapter,
   type AdapterInfo,
-  type AdapterCapabilities,
   type ParentAdapterInfo
 } from '@/api/adapter'
 import AdapterWizard from './adapter/AdapterWizard.vue'
