@@ -92,6 +92,7 @@
 
       <div class="config-actions">
         <el-button
+          v-if="canWrite"
           type="primary"
           :loading="saving"
           :disabled="!configChanged"
@@ -217,6 +218,7 @@ import { ElMessage } from 'element-plus'
 import { Refresh, CircleCheck, CircleClose, Coin, Warning, Timer, Check } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import StatCard from '@/components/StatCard.vue'
+import { useUserStore } from '@/stores/user'
 import {
   getQuotaConfig,
   updateQuotaConfig,
@@ -225,6 +227,12 @@ import {
 } from '@/api/quota'
 
 const { t } = useI18n()
+const userStore = useUserStore()
+
+// 审计 #468：本页路由只要求 `config:quota:read`（只读角色也能进），
+// 但「保存」是 `PUT /api/config/quota`，后端要求 `config:quota:write`。
+// 不做页内门控的话，只读角色会看到一个「点了必然 403」的按钮（实测：低权限 403 / ADMIN 200）。
+const canWrite = computed(() => userStore.hasPermission('config:quota:write'))
 
 const loading = ref(false)
 const saving = ref(false)

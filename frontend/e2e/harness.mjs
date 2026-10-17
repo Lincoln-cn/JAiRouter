@@ -407,3 +407,17 @@ export async function createAuthedContext(browser) {
   await login(page)
   return page
 }
+
+/**
+ * 以**指定账号**建立已认证上下文（审计 #468 的页内权限门控验证需要）。
+ *
+ * 与 {@link createAuthedContext} 的唯一区别是账号/口令可传。调用方需自行保证该账号存在
+ * （惯例是用 admin 上下文先 `POST /api/security/jwt/accounts` 建、跑完删）。
+ */
+export async function createAuthedContextAs(browser, user, pass) {
+  const page = await newPage(browser)
+  const ip = await attachAdminApiRateLimitIsolation(page)
+  page.__e2eClientIp = ip
+  await login(page, user, pass)
+  return page
+}
