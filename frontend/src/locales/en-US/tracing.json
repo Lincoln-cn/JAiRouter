@@ -186,6 +186,8 @@
       "memoryLimitMb": "Memory Limit (MB)",
       "dataManagement": "Data Management",
       "clearCache": "Clear Cache",
+      "clearCacheTitle": "Confirm Clearing Cache",
+      "clearCacheMessage": "Clear the tracing cache? This affects all traces currently being sampled.",
       "cleanupExpired": "Clean Up Expired Data",
       "exportConfig": "Export Configuration",
       "confirm": "OK",

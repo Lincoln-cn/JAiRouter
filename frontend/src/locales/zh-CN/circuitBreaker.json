@@ -47,7 +47,9 @@
         "cancel": "取消",
         "resetAllTitle": "清除全部确认",
         "resetAllMessage": "确定要清除所有实例的熔断器状态吗？此操作将重置所有熔断器到初始状态。",
-        "confirmClear": "确定清除"
+        "confirmClear": "确定清除",
+        "clearHistoryTitle": "清空历史确认",
+        "clearHistoryMessage": "确定要清空全部熔断器监控历史吗？此操作不可恢复。"
       },
       "actions": {
         "globalConfig": "全局配置",

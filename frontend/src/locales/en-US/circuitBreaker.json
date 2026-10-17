@@ -47,7 +47,9 @@
         "cancel": "Cancel",
         "resetAllTitle": "Clear All Confirmation",
         "resetAllMessage": "Are you sure you want to clear the circuit breaker state of all instances? This will reset every circuit breaker to its initial state.",
-        "confirmClear": "Clear"
+        "confirmClear": "Clear",
+        "clearHistoryTitle": "Confirm Clearing History",
+        "clearHistoryMessage": "Clear all circuit breaker monitoring history? This cannot be undone."
       },
       "actions": {
         "globalConfig": "Global Config",
