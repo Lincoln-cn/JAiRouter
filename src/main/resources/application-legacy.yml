@@ -53,22 +53,8 @@ jairouter:
     
     # 安全监控配置 - 向后兼容模式
     monitoring:
-      enabled: false
-      metrics:
-        authentication:
-          enabled: false
-        sanitization:
-          enabled: false
-        security-events:
-          enabled: false
-          by-event-type: false
-          by-user: false
-          by-ip: false
       alerts:
         enabled: false
-        notifications:
-          log:
-            enabled: false
     
   # 错误追踪配置 - 向后兼容模式
   monitoring:

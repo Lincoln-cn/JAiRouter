@@ -72,7 +72,6 @@ jairouter:
         log-sanitization: false
 
     monitoring:
-      enabled: true
       # 安全告警（SecurityAlertService / SecurityAlertScheduler）：阈值语义 = 「窗口内计数」
       # 原比率键（authentication-failure-rate 等）从未有实现，已移除；
       # 原 email / webhook 通知从未有实现，按出口契约（指标 + 日志）移除。
@@ -89,6 +88,3 @@ jairouter:
           jwt-failure-count: 20
           jwt-failure-window-minutes: 10
           cooldown-minutes: 15
-        notifications:
-          log:
-            enabled: true
