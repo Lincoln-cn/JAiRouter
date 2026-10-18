@@ -17,24 +17,24 @@ Starting from v1.0.0, JAiRouter adopts a modular configuration structure, separa
 
 ```
 src/main/resources/
-├── application.yml                    # Main configuration file, imports other modules
+├── application.yml                    # Main config: only the spring.config.import list
 ├── config/
-│   ├── base/
-│   │   ├── server-base.yml           # Server base configuration
-│   │   ├── model-services-base.yml    # Model services configuration
-│   │   └── monitoring-base.yml       # Monitoring base configuration
-│   ├── security/
-│   │   └── security-base.yml         # Security feature configuration
-│   ├── tracing/
-│   │   └── tracing-base.yml          # Tracing feature configuration
-│   └── monitoring/
-│       ├── slow-query-alerts.yml     # Slow query alert configuration
-│       └── error-tracking.yml        # Error tracking configuration
-├── application-dev.yml               # Development environment configuration
-├── application-staging.yml           # Staging environment configuration
-├── application-prod.yml              # Production environment configuration
-├── application-legacy.yml            # Backward compatibility configuration
-└── application-security-example.yml  # Security configuration example
+│   ├── common/                        # server / webclient / logging / scheduling / cluster
+│   ├── config-service/core.yml        # Config service (dynamic-config backend)
+│   ├── router/                        # adapter / loadbalancer / ratelimit / circuitbreaker /
+│   │                                  # fallback / services / rules / pools
+│   ├── auth/                          # jwt / api-key / audit / sanitization
+│   ├── monitor/                       # slow-query-alerts / error-tracking /
+│   │                                  # persistence-monitoring-base
+│   ├── tracing/tracing-base.yml       # Tracing
+│   ├── persistence/state-persistence-base.yml   # State persistence
+│   ├── base/                          # server-base / model-services-base / monitoring-base
+│   └── security/                      # security-base / persistence-base
+├── application-dev.yml                # Development profile
+├── application-staging.yml            # Staging profile
+├── application-prod.yml               # Production profile
+├── application-migrate.yml            # Data migration profile
+└── application-legacy.yml             # Backward-compatibility profile
 ```
 
 ### Configuration Import Mechanism
@@ -42,18 +42,42 @@ src/main/resources/
 The main configuration file `application.yml` imports various module configurations through the `spring.config.import` mechanism:
 
 ```yaml
-# application.yml
+# application.yml — the authoritative list (28 entries)
 spring:
   config:
     import:
+      - classpath:config/common/server.yml
+      - classpath:config/common/webclient.yml
+      - classpath:config/common/logging.yml
+      - classpath:config/common/scheduling.yml
+      - classpath:config/common/cluster.yml
+      - classpath:config/config-service/core.yml
+      - classpath:config/router/adapter.yml
+      - classpath:config/router/loadbalancer.yml
+      - classpath:config/router/ratelimit.yml
+      - classpath:config/router/circuitbreaker.yml
+      - classpath:config/router/fallback.yml
+      - classpath:config/router/services.yml
+      - classpath:config/router/rules.yml
+      - classpath:config/router/pools.yml
+      - classpath:config/auth/jwt.yml
+      - classpath:config/auth/api-key.yml
+      - classpath:config/auth/audit.yml
+      - classpath:config/auth/sanitization.yml
+      - classpath:config/base/monitoring-base.yml
+      - classpath:config/monitor/slow-query-alerts.yml
+      - classpath:config/monitor/error-tracking.yml
+      - classpath:config/monitor/persistence-monitoring-base.yml
+      - classpath:config/tracing/tracing-base.yml
+      - classpath:config/persistence/state-persistence-base.yml
       - classpath:config/base/server-base.yml
       - classpath:config/base/model-services-base.yml
-      - classpath:config/base/monitoring-base.yml
-      - classpath:config/tracing/tracing-base.yml
       - classpath:config/security/security-base.yml
-      - classpath:config/monitoring/slow-query-alerts.yml
-      - classpath:config/monitoring/error-tracking.yml
+      - classpath:config/security/persistence-base.yml
 ```
+
+> Note: the tree and the list above are checked against the repository rather than being an
+> illustrative sketch. If they drift, `src/main/resources/application.yml` wins.
 
 This approach makes the configuration clearer and easier to maintain and extend.
 
