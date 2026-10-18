@@ -12,6 +12,19 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 
+/**
+ * 组件实例的对外形状（#522：替代 `wrapper.vm as any`）。
+ * 只声明本文件用例真正访问的成员；字段名写错会在编译期报错。
+ */
+interface ManagementPageVm {
+  samplingConfig: {
+    strategy: string
+    adaptiveSampling: boolean
+  }
+  handleSaveConfig: () => Promise<void>
+}
+
+
 vi.mock('element-plus', () => ({
   ElMessage: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
   ElMessageBox: { confirm: vi.fn().mockResolvedValue('confirm'), prompt: vi.fn() }
@@ -85,13 +98,13 @@ describe('tracing Management 采样配置（issue #224 P5）', () => {
     const wrapper = mountPage()
     await flushPromises()
 
-    expect((wrapper.vm as any).samplingConfig.strategy).toBe('rule')
+    expect((wrapper.vm as unknown as ManagementPageVm).samplingConfig.strategy).toBe('rule')
   })
 
   it('保存时应提交页面选中的 strategy 与服务端原本的 rules / adaptive 字段', async () => {
     const wrapper = mountPage()
     await flushPromises()
-    const vm = wrapper.vm as any
+    const vm = wrapper.vm as unknown as ManagementPageVm
 
     vm.samplingConfig.strategy = 'adaptive'
     await vm.handleSaveConfig()
@@ -116,7 +129,7 @@ describe('tracing Management 采样配置（issue #224 P5）', () => {
   it('关闭自适应开关只改 adaptive.enabled，不丢其余 adaptive 字段', async () => {
     const wrapper = mountPage()
     await flushPromises()
-    const vm = wrapper.vm as any
+    const vm = wrapper.vm as unknown as ManagementPageVm
 
     vm.samplingConfig.adaptiveSampling = false
     await vm.handleSaveConfig()

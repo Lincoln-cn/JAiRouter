@@ -85,15 +85,57 @@ export interface TracingConfig {
   performance?: TracingPerformanceConfig
 }
 
-/** 单条链路的详情节点（页面按 span 树渲染，结构随 OpenTelemetry 数据变化） */
-export interface TraceChainNode {
+/**
+ * 单条链路的 span（#522：形状取自 `TraceDetail.vue` / `Search.vue` 的实际读取 ——
+ * `startTime` 是 ISO 字符串、`operationName` 是展示名、`error` 决定甘特条颜色）。
+ * 结构随 OpenTelemetry 数据变化，故保留索引签名。
+ */
+export interface TraceSpan {
   traceId?: string
   spanId?: string
   parentSpanId?: string
-  name?: string
+  /** 展示用操作名（如 `HTTP GET /v1/chat/completions`） */
+  operationName?: string
+  serviceName?: string
+  /** ISO 时间字符串 */
+  startTime?: string
+  /** 毫秒 */
   duration?: number
+  error?: boolean
+  /** 列表行的是否错误标记（`/tracing/query/search` 的 `hasError`） */
+  hasError?: boolean
+  /** 列表行的 span 数（详情头部在拿不到 stats 时回落到它） */
+  spanCount?: number
   status?: string
+  /** span 标签 / 属性，值类型不定，展示时再格式化 */
+  attributes?: Record<string, unknown>
+  tags?: Record<string, unknown>
   [key: string]: unknown
+}
+
+/** 链路详情里由后端算好的汇总（`Search.vue` 的详情头部直接展示这四个数） */
+export interface TraceChainStats {
+  totalDuration?: number
+  totalSpans?: number
+  errorCount?: number
+  avgDuration?: number
+  maxDuration?: number
+}
+
+/**
+ * `GET /tracing/query/trace/{traceId}` 的载荷（#522 修正）。
+ *
+ * ⚠️ `#520` 里把它声明成了「span 数组」，但两个消费方都读 `data.spans` / `data.stats`
+ * ⇒ 真实形状是对象。这里改正，否则类型对真实字段毫无约束（正是本轴要消除的情况）。
+ */
+export interface TraceChainResponse {
+  traceId?: string
+  /** 链路所属服务名（详情头部展示） */
+  serviceName?: string
+  /** 链路开始时间（ISO 字符串） */
+  startTime?: string
+  spans?: TraceSpan[]
+  stats?: TraceChainStats
 }
 
 /** `GET /tracing/query/services` 的单个服务统计（页面只读服务名与计数类字段） */
@@ -101,6 +143,10 @@ export interface TracingServiceStat {
   serviceName?: string
   traceCount?: number
   errorCount?: number
+  /** 错误率（百分比，>5 视为异常） */
+  errorRate?: number
+  /** 平均耗时（毫秒，>1000 视为慢） */
+  avgDuration?: number
   [key: string]: unknown
 }
 
@@ -116,7 +162,7 @@ export interface TracingServiceListResult {
  * `GET /tracing/query/search` 的分页形态（页面同时兼容「裸数组」旧格式，见 searchTraces 的返回联合类型）。
  */
 export interface TraceSearchResult {
-  traces?: TraceChainNode[]
+  traces?: TraceSpan[]
   total?: number
   totalPages?: number
 }
