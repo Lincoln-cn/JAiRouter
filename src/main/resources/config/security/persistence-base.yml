@@ -4,10 +4,6 @@
 # H2 数据库存储配置
 store:
   type: h2  # 默认使用 H2 数据库存储
-  migration:
-    enabled: false  # 默认关闭自动迁移，首次启动时手动启用
-  security-migration:
-    enabled: false  # 默认关闭安全数据迁移，首次启动时手动启用
 
 jairouter:
   security:
