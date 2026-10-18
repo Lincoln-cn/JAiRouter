@@ -100,13 +100,6 @@ public final class TracingPerformanceModels {
     }
 
     @Data
-    public static final class PerformanceIssue {
-        private final String description;
-        private final Severity severity;
-        private final Instant detectedAt;
-    }
-
-    @Data
     public static final class PerformanceReport {
         private final Instant timestamp;
         private final long totalOperations;
@@ -115,7 +108,6 @@ public final class TracingPerformanceModels {
         private final AsyncTracingProcessor.ProcessingStats processingStats;
         private final List<OperationMetrics> operationMetrics;
         private final SystemHealth systemHealth;
-        private final List<PerformanceIssue> activeIssues;
     }
 
     @Data
