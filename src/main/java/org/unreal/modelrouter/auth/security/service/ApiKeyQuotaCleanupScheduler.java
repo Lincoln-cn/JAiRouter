@@ -10,11 +10,16 @@ import org.springframework.stereotype.Component;
  * API Key 每日使用量历史数据清理调度器
  * 定期清理超过 30 天的 dailyUsage 记录，防止内存膨胀
  *
+ * <p>开关 = {@code jairouter.security.quota.cleanup.enabled}（issue #487）。
+ * 之前读的是 {@code app.quota.cleanup.enabled} —— 与本仓 {@code jairouter.*} 的约定不一致，
+ * 且没有任何 yml 设置它，于是「运维照 yml 改成 false 也不生效、想关也关不掉」。</p>
+ *
  * @since v2.7.6
  */
 @Slf4j
 @Component
-@ConditionalOnProperty(name = "app.quota.cleanup.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "jairouter.security.quota.cleanup.enabled",
+        havingValue = "true", matchIfMissing = true)
 public class ApiKeyQuotaCleanupScheduler {
 
     private final ApiKeyQuotaService quotaService;

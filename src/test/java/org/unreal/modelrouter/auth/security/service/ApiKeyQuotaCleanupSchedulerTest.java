@@ -60,4 +60,47 @@ class ApiKeyQuotaCleanupSchedulerTest {
 
         verify(quotaService).cleanupExpiredDailyUsage();
     }
+
+    /**
+     * 开关语义（issue #487）：默认启用；显式 false 时 bean **不注册**（调度器真的关得掉）。
+     *
+     * <p>回归点：开关原名是 {@code app.quota.cleanup.enabled} —— 与本仓 {@code jairouter.*} 约定不符，
+     * 且没有 yml 设置它，所以运维改任何键都关不掉这个每天 03:00 的清理任务。</p>
+     */
+    @org.junit.jupiter.api.Nested
+    @DisplayName("开关 jairouter.security.quota.cleanup.enabled")
+    class SwitchSemantics {
+
+        private final org.springframework.boot.test.context.runner.ApplicationContextRunner runner =
+                new org.springframework.boot.test.context.runner.ApplicationContextRunner()
+                        .withBean(ApiKeyQuotaService.class, () -> mock(ApiKeyQuotaService.class))
+                        .withUserConfiguration(ApiKeyQuotaCleanupScheduler.class);
+
+        private static final String KEY = "jairouter.security.quota.cleanup.enabled";
+
+        @Test
+        @DisplayName("未设置 -> 默认启用（matchIfMissing）")
+        void defaultEnabled() {
+            runner.run(ctx -> org.junit.jupiter.api.Assertions.assertTrue(
+                    ctx.containsBean("apiKeyQuotaCleanupScheduler"),
+                    "未配置开关时应默认启用"));
+        }
+
+        @Test
+        @DisplayName("显式 false -> 不注册（开关真的生效）")
+        void explicitFalseDisables() {
+            runner.withPropertyValues(KEY + "=false").run(ctx ->
+                    org.junit.jupiter.api.Assertions.assertFalse(
+                            ctx.containsBean("apiKeyQuotaCleanupScheduler"),
+                            "显式 false 时必须不注册该调度器"));
+        }
+
+        @Test
+        @DisplayName("显式 true -> 注册")
+        void explicitTrueEnables() {
+            runner.withPropertyValues(KEY + "=true").run(ctx ->
+                    org.junit.jupiter.api.Assertions.assertTrue(
+                            ctx.containsBean("apiKeyQuotaCleanupScheduler")));
+        }
+    }
 }

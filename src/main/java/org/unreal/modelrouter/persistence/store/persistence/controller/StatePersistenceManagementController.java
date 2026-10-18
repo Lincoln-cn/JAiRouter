@@ -423,37 +423,6 @@ public class StatePersistenceManagementController {
     }
 
     /**
-     * 测试用：手动保存熔断器状态 (v2.9.x)
-     * 用于验证状态持久化和前端显示
-     */
-    @PostMapping("/test/save-circuit-breaker/{instanceId}")
-    public Mono<ResponseEntity<Map<String, Object>>> testSaveCircuitBreakerState(
-            @PathVariable final String instanceId) {
-
-        logger.info("Test save circuit breaker state for instance: {}", instanceId);
-
-        // 创建测试状态数据
-        Map<String, Object> stateData = new HashMap<>();
-        stateData.put("instanceId", instanceId);
-        stateData.put("state", "OPEN");
-        stateData.put("failureCount", 5);
-        stateData.put("successCount", 0);
-        stateData.put("timestamp", System.currentTimeMillis());
-
-        return compositePersistenceService.save(
-                org.unreal.modelrouter.persistence.store.persistence.StatePersistenceService.StateType.CIRCUIT_BREAKER,
-                instanceId,
-                stateData)
-                .map(saved -> {
-                    Map<String, Object> data = new HashMap<>();
-                    data.put("instanceId", instanceId);
-                    data.put("saved", saved);
-                    data.put("stateData", stateData);
-                    return ResponseEntity.ok(createSuccessResponse(data));
-                });
-    }
-
-    /**
      * 创建成功响应
      */
     private Map<String, Object> createSuccessResponse(final Object data) {
