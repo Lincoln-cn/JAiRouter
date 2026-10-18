@@ -77,16 +77,6 @@ public final class ModelCallStats implements Serializable {
     private long maxResponseTime;
 
     /**
-     * P95 响应时间 (毫秒)
-     */
-    private double p95ResponseTime;
-
-    /**
-     * P99 响应时间 (毫秒)
-     */
-    private double p99ResponseTime;
-
-    /**
      * 成功率 (0.0-1.0)
      */
     private double successRate;
@@ -97,11 +87,6 @@ public final class ModelCallStats implements Serializable {
     private double currentQps;
 
     /**
-     * 峰值 QPS
-     */
-    private double peakQps;
-
-    /**
      * 最后调用时间戳
      */
     private long lastCallTime;
@@ -110,11 +95,6 @@ public final class ModelCallStats implements Serializable {
      * 统计开始时间戳
      */
     private long statsStartTime;
-
-    /**
-     * 统计结束时间戳
-     */
-    private long statsEndTime;
 
     /**
      * 关联的实例 ID 列表
