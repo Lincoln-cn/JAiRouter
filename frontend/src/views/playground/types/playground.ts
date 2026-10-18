@@ -97,7 +97,8 @@ export interface SavedConfiguration {
   id: string
   name: string
   serviceType: ServiceType
-  config: any
+  /** 各服务类型的请求配置（形状按端点不同），保存/回填时整块透传 */
+  config: Record<string, unknown>
   createdAt: string
   description?: string
   editing?: boolean
@@ -109,7 +110,8 @@ export interface PlaygroundResponse {
   status: number
   statusText: string
   headers: Record<string, string>
-  data: any
+  /** 上游原始载荷（JSON 或 Blob），由各面板按自己的端点收窄 */
+  data: unknown
   duration: number
   timestamp: string
 }
@@ -119,7 +121,7 @@ export interface PlaygroundRequest {
   endpoint: string
   method: string
   headers: Record<string, string>
-  body?: any
+  body?: Record<string, unknown>
   files?: File[]
   responseType?: 'json' | 'blob' | 'text'
 }

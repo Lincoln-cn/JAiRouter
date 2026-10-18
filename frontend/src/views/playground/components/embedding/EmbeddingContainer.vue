@@ -238,14 +238,14 @@
                 <el-button
                   text
                   size="small"
-                  @click="copyVector(item.embedding)"
+                  @click="copyVector(item.embedding ?? [])"
                 >
                   <el-icon><DocumentCopy /></el-icon>
                   {{ t('playgroundEmbedding.result.copy') }}
                 </el-button>
               </div>
               <div class="vector-value">
-                {{ formatVectorCompact(item.embedding) }}
+                {{ formatVectorCompact(item.embedding ?? []) }}
               </div>
             </div>
           </div>
@@ -320,9 +320,14 @@ const hasValidInput = computed(() => {
 })
 
 // 提取向量数据（处理嵌套的响应结构）
-const embeddingData = computed<any[]>(() => {
-  if (!result.value?.data?.data?.data) return []
-  return result.value.data.data.data
+interface EmbeddingVectorRow {
+  embedding?: number[]
+  [key: string]: unknown
+}
+
+const embeddingData = computed<EmbeddingVectorRow[]>(() => {
+  const rows = (result.value?.data as { data?: { data?: EmbeddingVectorRow[] } } | null)?.data?.data
+  return Array.isArray(rows) ? rows : []
 })
 
 // 向量维度
@@ -376,9 +381,9 @@ const handleGenerate = async () => {
 
     const response = await sendServiceRequest('embedding', requestConfig, headers)
     result.value = response
-    const count = response.data?.data?.data?.length || 0
+    const count = (response.data as { data?: { data?: unknown[] } } | null)?.data?.data?.length || 0
     ElMessage.success(t('playgroundEmbedding.messages.generateSuccess', { count }))
-  } catch (error: any) {
+  } catch (error) {
     const errorMsg = parseErrorMessage(error, t('playgroundEmbedding.messages.errorContext'))
     const suggestion = getErrorSuggestion(error)
 

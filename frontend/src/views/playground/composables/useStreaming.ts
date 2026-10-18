@@ -117,7 +117,7 @@ export function useStreaming() {
    */
   const createStreamRequest = async (
     url: string,
-    body: any,
+    body: unknown,
     headers: Record<string, string> = {}
   ): Promise<Response> => {
     abortController.value = new AbortController()

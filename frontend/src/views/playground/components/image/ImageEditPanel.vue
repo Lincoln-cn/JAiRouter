@@ -267,13 +267,16 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Setting, Edit, Plus, Download, Loading, Cpu } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import type { UploadFile } from 'element-plus'
 import { sendServiceRequest } from '@/api/playground'
+import { parseErrorMessage } from '../../utils/errorHandler'
 import type { ImageEditRequestConfig } from '../../types/playground'
+import type { ServiceInstance } from '@/composables/usePlaygroundData'
 
 const { t } = useI18n()
 
 interface Props {
-  instances: any[]
+  instances: ServiceInstance[]
   loading: boolean
 }
 
@@ -307,12 +310,12 @@ const imageUrls = computed(() => {
 })
 
 // 文件变化
-const handleFileChange = (file: any) => {
-  uploadedFiles.value.push(file.raw)
+const handleFileChange = (file: UploadFile) => {
+  if (file.raw) uploadedFiles.value.push(file.raw)
 }
 
 // 文件移除
-const handleFileRemove = (file: any) => {
+const handleFileRemove = (file: UploadFile) => {
   const index = uploadedFiles.value.findIndex((f) => f === file.raw)
   if (index !== -1) {
     uploadedFiles.value.splice(index, 1)
@@ -348,10 +351,10 @@ const handleEdit = async () => {
     if (token) headers['Jairouter_Token'] = token
 
     const response = await sendServiceRequest('imageEdit', requestConfig, headers)
-    images.value = response.data?.data || []
+    images.value = (response.data as { data?: Array<{ url?: string; b64_json?: string }> } | null)?.data || []
     ElMessage.success(t('playgroundImage.edit.messages.edited', { count: images.value.length }))
-  } catch (error: any) {
-    const errorMsg = error.data?.error?.message || t('playgroundImage.edit.messages.failed')
+  } catch (error) {
+    const errorMsg = parseErrorMessage(error, t('playgroundImage.edit.messages.failed'))
     ElMessage.error(errorMsg)
   } finally {
     isLoading.value = false

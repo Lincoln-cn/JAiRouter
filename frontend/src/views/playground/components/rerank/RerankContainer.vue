@@ -207,17 +207,17 @@
         >
           <div class="result-stats">
             <span class="stat-item">{{ t('playgroundRerank.result.duration', { duration: result.duration }) }}</span>
-            <span class="stat-item">{{ t('playgroundRerank.result.returned', { count: result.data?.data?.results?.length || 0 }) }}</span>
+            <span class="stat-item">{{ t('playgroundRerank.result.returned', { count: rerankResults.length }) }}</span>
           </div>
 
           <div
-            v-for="(item, idx) in result.data?.data?.results"
+            v-for="(item, idx) in rerankResults"
             :key="idx"
             class="result-item"
           >
             <div class="result-header">
               <div class="result-rank">
-                <span class="rank-badge">#{{ item.index + 1 }}</span>
+                <span class="rank-badge">#{{ (item.index ?? idx) + 1 }}</span>
                 <span class="score-badge">{{ t('playgroundRerank.result.score', { score: (item.relevance_score || 0).toFixed(4) }) }}</span>
               </div>
             </div>
@@ -260,6 +260,19 @@ const showConfig = ref(false)
 const selectedModel = ref('')
 const isLoading = ref(false)
 const result = ref<PlaygroundResponse | null>(null)
+
+interface RerankResultRow {
+  index?: number
+  relevance_score?: number
+  document?: { text?: string }
+  [key: string]: unknown
+}
+
+/** 从响应里取出 rerank 结果行（响应体是 unknown，按实际读取的字段收窄） */
+const rerankResults = computed<RerankResultRow[]>(() => {
+  const rows = (result.value?.data as { data?: { results?: RerankResultRow[] } } | null)?.data?.results
+  return Array.isArray(rows) ? rows : []
+})
 
 // 输入
 const queryText = ref('')
@@ -341,7 +354,7 @@ const handleRerank = async () => {
     const response = await sendServiceRequest('rerank', requestConfig, headers)
     result.value = response
     ElMessage.success(t('playgroundRerank.messages.rerankCompleted'))
-  } catch (error: any) {
+  } catch (error) {
     const errorMsg = parseErrorMessage(error, t('playgroundRerank.messages.operation'))
     const suggestion = getErrorSuggestion(error)
 

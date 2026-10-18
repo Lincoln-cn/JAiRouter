@@ -53,9 +53,9 @@ jobs:
     # 而配置还是 `.eslintrc.cjs`（eslint 10 不再支持 eslintrc）⇒ `npx eslint .` 直接报错退出。
     # 本 job 接的是迁移后的 flat config（frontend/eslint.config.js）。
     #
-    # `--max-warnings 34` 是**棘轮**：现有 34 条警告（292 − 13（#527）− 21（#521）− 60（#520）− 26（#525）− 32（#523）− 55（#522）− 51（#526））
-    # 被冻结为上限，任何新增问题都会让这一步变红。未使用变量已在 #494 清零并把该规则恢复为 error。
-    # 剩余 34 条全部是 `@typescript-eslint/no-explicit-any`，集中在 `src/views/playground/**`（#524）。
+    # `--max-warnings 0`：#494 的存量 406 条警告已全部清零（#527 / #521 / #520 / #525 / #523 / #522 / #526 / #524）。
+    # 两条规则都已是 error：`@typescript-eslint/no-unused-vars`（93 处清零后恢复）与
+    # `@typescript-eslint/no-explicit-any`（406 条清零后恢复）⇒ 任何新增问题都会直接让这一步变红。
     name: eslint
     runs-on: ubuntu-latest
     defaults:
@@ -76,4 +76,4 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: 运行 ESLint（flat config，警告数受棘轮约束）
-        run: npx eslint . --max-warnings 34
+        run: npx eslint . --max-warnings 0
