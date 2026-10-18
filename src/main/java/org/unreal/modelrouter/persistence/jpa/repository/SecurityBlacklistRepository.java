@@ -10,8 +10,10 @@ import org.springframework.stereotype.Repository;
 import org.unreal.modelrouter.persistence.jpa.entity.SecurityBlacklistEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.SecurityBlacklistEntity.BlacklistStatus;
 import org.unreal.modelrouter.persistence.jpa.entity.SecurityBlacklistEntity.BlacklistType;
+import org.unreal.modelrouter.persistence.jpa.entity.SecurityBlacklistEntity.RiskLevel;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -71,6 +73,26 @@ public interface SecurityBlacklistRepository extends JpaRepository<SecurityBlack
 
     @Query("SELECT COUNT(e) FROM SecurityBlacklistEntity e WHERE e.status = :status")
     long countByStatus(@Param("status") BlacklistStatus status);
+
+    /**
+     * 按风险级别统计（issue #501）：{@code highRiskCount} / {@code criticalRiskCount} 的数据来源。
+     */
+    @Query("SELECT COUNT(e) FROM SecurityBlacklistEntity e "
+           + "WHERE e.status = :status AND e.riskLevel IN :levels")
+    long countByStatusAndRiskLevelIn(@Param("status") BlacklistStatus status,
+                                     @Param("levels") Collection<RiskLevel> levels);
+
+    /**
+     * 最近一次新增的条目时间（issue #501）：{@code lastAddedAt} 的数据来源。
+     */
+    @Query("SELECT MAX(e.addedAt) FROM SecurityBlacklistEntity e WHERE e.status = :status")
+    LocalDateTime findMaxAddedAt(@Param("status") BlacklistStatus status);
+
+    /**
+     * 最近一次到期时间（issue #501）：{@code lastExpiredAt} 的数据来源。
+     */
+    @Query("SELECT MAX(e.expiresAt) FROM SecurityBlacklistEntity e WHERE e.status = :status")
+    LocalDateTime findMaxExpiresAt(@Param("status") BlacklistStatus status);
 
     @Modifying
     @Query("UPDATE SecurityBlacklistEntity e SET e.status = :expired "

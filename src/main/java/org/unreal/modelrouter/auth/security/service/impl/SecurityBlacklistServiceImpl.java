@@ -38,6 +38,16 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
 
     private final SecurityBlacklistRepository repository;
 
+    /**
+     * 本副本最近一次"标记过期"清理的完成时间（issue #501）。
+     *
+     * <p>清理是各副本自己的调度任务（{@code @Scheduled}），没有跨副本排他锁，
+     * 因此这里记录的是**本副本**的最近一次清理时间；多副本部署时各副本的值可能不同。
+     * 仅当清理**确实标记了过期条目**时才更新 —— 它表示"最近一次生效的清理"。</p>
+     */
+    private final java.util.concurrent.atomic.AtomicReference<LocalDateTime> lastEffectiveCleanupAt =
+            new java.util.concurrent.atomic.AtomicReference<>();
+
     @Override
     @Transactional
     public BlacklistEntryDTO addToBlacklist(final AddBlacklistRequest request, final String addedBy) {
@@ -202,13 +212,33 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
             }
         }
 
+        // issue #501：以下 5 个字段此前恒为 null（DTO 里声明了、生产者从不赋值）。
+        // 数据本来就在库里（riskLevel / addedAt / expiresAt），在这里算出来再下发。
+        long highRiskCount = repository.countByStatusAndRiskLevelIn(
+                BlacklistStatus.ACTIVE, List.of(RiskLevel.HIGH));
+        long criticalRiskCount = repository.countByStatusAndRiskLevelIn(
+                BlacklistStatus.ACTIVE, List.of(RiskLevel.CRITICAL));
+        LocalDateTime lastAddedAt = repository.findMaxAddedAt(BlacklistStatus.ACTIVE);
+        LocalDateTime lastExpiredAt = repository.findMaxExpiresAt(BlacklistStatus.EXPIRED);
+        LocalDateTime lastCleanupAt = lastEffectiveCleanupAt.get();
+
         return BlacklistStatsDTO.builder()
                 .totalActive(totalActive)
                 .typeCounts(typeMap)
                 .tokenCount(tokenCount)
                 .ipCount(ipCount)
                 .deviceCount(deviceCount)
+                .highRiskCount(highRiskCount)
+                .criticalRiskCount(criticalRiskCount)
+                .lastAddedAt(formatTimestamp(lastAddedAt))
+                .lastExpiredAt(formatTimestamp(lastExpiredAt))
+                .lastCleanupAt(formatTimestamp(lastCleanupAt))
                 .build();
+    }
+
+    /** 时间字段统一用 ISO-8601（与前端 `string` 类型的常见解析方式一致）；null 保持 null。 */
+    private static String formatTimestamp(final LocalDateTime value) {
+        return value == null ? null : value.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     }
 
     @Override
@@ -219,6 +249,10 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
 
         int marked = repository.markExpired(BlacklistStatus.ACTIVE, BlacklistStatus.EXPIRED, LocalDateTime.now());
         log.info("标记过期条目数量: {}", marked);
+        if (marked > 0) {
+            // 只在"确实有条目被标记为过期"时更新，语义 = 最近一次生效的清理（#501）
+            lastEffectiveCleanupAt.set(LocalDateTime.now());
+        }
 
         int deleted = repository.cleanupExpired(BlacklistStatus.EXPIRED, LocalDateTime.now().minusDays(7));
         log.info("删除过期条目数量: {}", deleted);
