@@ -195,6 +195,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import { getErrorMessage } from '@/utils/error'
 import { Plus } from '@element-plus/icons-vue'
 import {
   getAdapterList,
@@ -310,8 +311,8 @@ const fetchAdapters = async () => {
     if (res.data?.success) {
       adapterList.value = res.data.data || []
     }
-  } catch (e: any) {
-    ElMessage.error(t('adapter.fetchListFailed', { error: e.message || '' }))
+  } catch (e) {
+    ElMessage.error(t('adapter.fetchListFailed', { error: getErrorMessage(e) || '' }))
   } finally {
     loading.value = false
   }
@@ -355,9 +356,9 @@ const handleDelete = async (row: AdapterInfo) => {
     } else {
       ElMessage.error(res.data?.message || t('adapter.deleteFailed'))
     }
-  } catch (e: any) {
+  } catch (e) {
     if (e !== 'cancel') {
-      ElMessage.error(t('adapter.deleteFailedDetail', { error: e.message || '' }))
+      ElMessage.error(t('adapter.deleteFailedDetail', { error: getErrorMessage(e) || '' }))
     }
   }
 }
@@ -389,8 +390,8 @@ const handleSubmit = async () => {
     } else {
       ElMessage.error(res.data?.message || t('adapter.operationFailed'))
     }
-  } catch (e: any) {
-    ElMessage.error(t('adapter.operationFailedDetail', { error: e.message || '' }))
+  } catch (e) {
+    ElMessage.error(t('adapter.operationFailedDetail', { error: getErrorMessage(e) || '' }))
   } finally {
     submitting.value = false
   }
@@ -402,7 +403,7 @@ const fetchParentAdapters = async () => {
     if (res.data?.success) {
       parentAdapters.value = res.data.data || []
     }
-  } catch (e: any) {
+  } catch (e) {
     console.error('获取父adapter列表失败:', e)
   }
 }
