@@ -75,7 +75,12 @@ public class PermissionRuleRegistry {
                 PermissionRule.any("/api/security/permissions/**", PermissionCodes.SYSTEM_PERMISSIONS_MANAGE),
 
                 // ===== 调用历史（原硬编码 ADMIN 规则迁移） =====
-                PermissionRule.any("/api/call-history/**", PermissionCodes.CALLHISTORY_VIEW),
+                // issue #514：这里原来是 any(...)（空方法集 = 所有方法），于是「查看」权限码
+                // 同时放行了 POST /record（写入一条调用记录）与 DELETE /cleanup（删除历史）。
+                // 现在只给 GET 一条规则：写/删**不匹配任何规则**，由 RbacUnmatchedPolicy 裁决
+                // （默认 DENY_ALL ⇒ 仅 ROLE_ADMIN 直通）。这样既不新增权限码、也不动角色模板，
+                // 权限语义就与「view」这个名字一致了。
+                PermissionRule.get("/api/call-history/**", PermissionCodes.CALLHISTORY_VIEW),
                 PermissionRule.get("/api/config/call-history/**", PermissionCodes.CONFIG_CALLHISTORY_READ),
                 PermissionRule.write("/api/config/call-history/**", PermissionCodes.CONFIG_CALLHISTORY_WRITE),
 

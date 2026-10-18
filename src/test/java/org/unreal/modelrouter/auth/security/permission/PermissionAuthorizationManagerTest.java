@@ -157,15 +157,32 @@ class PermissionAuthorizationManagerTest {
     class RuleSemanticsTests {
 
         @Test
-        @DisplayName("call-history 任意方法 -> callhistory:view")
-        void callHistoryAnyMethodRule() {
-            AuthorizationContext context = context(HttpMethod.DELETE, "/api/call-history/123");
+        @DisplayName("call-history 读 -> callhistory:view 放行（issue #514 后仅 GET 有规则）")
+        void callHistoryReadRule() {
+            AuthorizationContext context = context(HttpMethod.GET, "/api/call-history/recent");
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.CALLHISTORY_VIEW));
 
             StepVerifier.create(manager.check(Mono.just(auth), context))
                     .expectNextMatches(AuthorizationDecision::isGranted)
                     .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("call-history 写/删 -> 不再由 callhistory:view 放行（issue #514 的回归点）")
+        void callHistoryWriteIsNotGuardedByViewCode() {
+            // 修复前：any(...) 规则让「查看」权限码同时放行 DELETE 与 POST。
+            // 修复后：该前缀只有 GET 规则 ⇒ 写/删不匹配任何规则，落到 RbacUnmatchedPolicy
+            // （本测试用默认 manager，即 DENY_ALL）⇒ 仅持 CALLHISTORY_VIEW 的用户被拒。
+            for (HttpMethod method : new HttpMethod[]{HttpMethod.DELETE, HttpMethod.POST}) {
+                AuthorizationContext context = context(method, "/api/call-history/cleanup");
+                JwtAuthentication auth = authenticated(
+                        "user", List.of("USER"), List.of(PermissionCodes.CALLHISTORY_VIEW));
+
+                StepVerifier.create(manager.check(Mono.just(auth), context))
+                        .expectNextMatches(decision -> !decision.isGranted())
+                        .verifyComplete();
+            }
         }
 
         @Test
