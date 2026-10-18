@@ -17,24 +17,24 @@ JAiRouter 提供灵活的配置选项以满足各种部署场景。本指南涵�
 
 ```
 src/main/resources/
-├── application.yml                    # 主配置文件，导入其他模块
+├── application.yml                    # 主配置：只保留 spring.config.import 清单
 ├── config/
-│   ├── base/
-│   │   ├── server-base.yml           # 服务器基础配置
-│   │   ├── model-services-base.yml    # 模型服务配置
-│   │   └── monitoring-base.yml       # 监控基础配置
-│   ├── security/
-│   │   └── security-base.yml         # 安全功能配置
-│   ├── tracing/
-│   │   └── tracing-base.yml          # 追踪功能配置
-│   └── monitoring/
-│       ├── slow-query-alerts.yml     # 慢查询告警配置
-│       └── error-tracking.yml        # 错误追踪配置
-├── application-dev.yml               # 开发环境配置
-├── application-staging.yml           # 预发布环境配置
-├── application-prod.yml              # 生产环境配置
-├── application-legacy.yml            # 向后兼容配置
-└── application-security-example.yml  # 安全配置示例
+│   ├── common/                        # server / webclient / logging / scheduling / cluster
+│   ├── config-service/core.yml        # 配置服务（动态配置后端）
+│   ├── router/                        # adapter / loadbalancer / ratelimit / circuitbreaker /
+│   │                                  # fallback / services / rules / pools
+│   ├── auth/                          # jwt / api-key / audit / sanitization
+│   ├── monitor/                       # slow-query-alerts / error-tracking /
+│   │                                  # persistence-monitoring-base
+│   ├── tracing/tracing-base.yml       # 链路追踪
+│   ├── persistence/state-persistence-base.yml   # 状态持久化
+│   ├── base/                          # server-base / model-services-base / monitoring-base
+│   └── security/                      # security-base / persistence-base
+├── application-dev.yml                # 开发环境
+├── application-staging.yml            # 预发布环境
+├── application-prod.yml               # 生产环境
+├── application-migrate.yml            # 数据迁移 profile
+└── application-legacy.yml             # 向后兼容环境
 ```
 
 ### 配置导入机制
@@ -42,18 +42,42 @@ src/main/resources/
 主配置文件 `application.yml` 通过 `spring.config.import` 机制导入各个模块配置：
 
 ```yaml
-# application.yml
+# application.yml —— 以此为准（当前 28 项）
 spring:
   config:
     import:
+      - classpath:config/common/server.yml
+      - classpath:config/common/webclient.yml
+      - classpath:config/common/logging.yml
+      - classpath:config/common/scheduling.yml
+      - classpath:config/common/cluster.yml
+      - classpath:config/config-service/core.yml
+      - classpath:config/router/adapter.yml
+      - classpath:config/router/loadbalancer.yml
+      - classpath:config/router/ratelimit.yml
+      - classpath:config/router/circuitbreaker.yml
+      - classpath:config/router/fallback.yml
+      - classpath:config/router/services.yml
+      - classpath:config/router/rules.yml
+      - classpath:config/router/pools.yml
+      - classpath:config/auth/jwt.yml
+      - classpath:config/auth/api-key.yml
+      - classpath:config/auth/audit.yml
+      - classpath:config/auth/sanitization.yml
+      - classpath:config/base/monitoring-base.yml
+      - classpath:config/monitor/slow-query-alerts.yml
+      - classpath:config/monitor/error-tracking.yml
+      - classpath:config/monitor/persistence-monitoring-base.yml
+      - classpath:config/tracing/tracing-base.yml
+      - classpath:config/persistence/state-persistence-base.yml
       - classpath:config/base/server-base.yml
       - classpath:config/base/model-services-base.yml
-      - classpath:config/base/monitoring-base.yml
-      - classpath:config/tracing/tracing-base.yml
       - classpath:config/security/security-base.yml
-      - classpath:config/monitoring/slow-query-alerts.yml
-      - classpath:config/monitoring/error-tracking.yml
+      - classpath:config/security/persistence-base.yml
 ```
+
+> 注：上面的目录树与清单是**按仓库实际内容核对过的**，不是示意。两者若发生漂移，
+> 以 `src/main/resources/application.yml` 为准。
 
 这种方式使得配置更加清晰，便于维护和扩展。
 
