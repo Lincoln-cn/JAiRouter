@@ -32,6 +32,9 @@ on:
       - 'mkdocs.yml'
       # 检查器自身：改脚本必须能验证脚本（与 docs-quality.yml 补 scripts/docs/** 是同一口径）。
       - 'scripts/docs/**'
+      # 审计探测器（scripts/audit/**）的自测已接进本 workflow（#500）。
+      # 缺这条时，"改探测器"的 PR 反而不会触发它的门闩 —— 正是最该生效的时刻。
+      - 'scripts/audit/**'
       # 端点/错误码对账会解析 pom（模块与源码根），改它可能改变重建结果。
       - 'pom.xml'
       # 与 docs-quality.yml 保持同一份路径面（此处在改动拼写配置时也会跑一遍快闸，代价是秒级）。
@@ -51,6 +54,9 @@ on:
       - 'docs/**'
       - 'mkdocs.yml'
       - 'scripts/docs/**'
+      # 审计探测器（scripts/audit/**）的自测已接进本 workflow（#500）。
+      # 缺这条时，"改探测器"的 PR 反而不会触发它的门闩 —— 正是最该生效的时刻。
+      - 'scripts/audit/**'
       - 'pom.xml'
       - '.cspell.json'
       - '.github/workflows/gates-fast.yml'
