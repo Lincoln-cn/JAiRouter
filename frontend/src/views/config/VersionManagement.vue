@@ -126,6 +126,8 @@
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElLoading, ElMessage, ElMessageBox } from 'element-plus'
+import type { VersionInfo } from '@/api/version'
+import { getErrorMessage } from '@/utils/error'
 import { applyVersion, deleteConfigVersion, getAllVersionInfo, type Version } from '@/api/version.ts'
 import { formatDateTime } from '@/utils/format'
 
@@ -226,7 +228,7 @@ const fetchVersions = async () => {
     }
     
     // 处理可能的双重序列化问题
-    let versionInfos: any[] = []
+    let versionInfos: VersionInfo[] = []
     if (typeof response.data === 'string') {
       // 如果data是字符串，需要先解析
       try {
@@ -243,7 +245,7 @@ const fetchVersions = async () => {
     }
 
     // 转换为前端需要的格式
-    const versionDetails: Version[] = versionInfos.map((info: any) => ({
+    const versionDetails: Version[] = versionInfos.map((info: VersionInfo) => ({
       version: info.version,
       status: info.current ? 'current' : 'history',
       config: info.config || {},
@@ -348,7 +350,7 @@ const handleApply = async (row: Version) => {
     // 立即刷新版本列表，确保状态更新
     await fetchVersions()
 
-  } catch (error: any) {
+  } catch (error) {
     loadingInstance.close()
 
     console.error('应用版本失败:', error)
@@ -358,8 +360,13 @@ const handleApply = async (row: Version) => {
     let errorMessage = t('version.errors.unknown')
     let errorDetails = ''
 
-    if (error?.response?.data) {
-      const errorData = error.response.data
+    // catch 的载荷是 unknown（#523）：这里按「后端错误体」形状收窄
+    const err = error as {
+      response?: { data?: { message?: string; details?: string; error?: string } }
+    }
+
+    if (err.response?.data) {
+      const errorData = err.response.data
       errorMessage = errorData.message || t('version.errors.server')
       errorDetails = errorData.details || errorData.error || ''
 
@@ -379,8 +386,9 @@ const handleApply = async (row: Version) => {
         errorTitle = t('version.errors.systemTitle')
         errorMessage = t('version.errors.systemError')
       }
-    } else if (error?.message) {
-      errorMessage = error.message
+    } else {
+      // 没有后端错误体时，用异常自带的文案；仍为空则保留上面的 i18n 通用文案
+      errorMessage = getErrorMessage(error) || errorMessage
     }
 
     // 显示详细错误对话框

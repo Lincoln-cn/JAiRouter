@@ -74,6 +74,7 @@
 import { reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
+import { getErrorMessage } from '@/utils/error'
 import { Connection, CircleCheck, CircleClose } from '@element-plus/icons-vue'
 import {
   testAdapter,
@@ -132,8 +133,8 @@ const handleTest = async () => {
     } else {
       ElMessage.error(res.data?.message || t('adapter.test.requestFailed'))
     }
-  } catch (e: any) {
-    ElMessage.error(t('adapter.test.failedDetail', { error: e.message || '' }))
+  } catch (e) {
+    ElMessage.error(t('adapter.test.failedDetail', { error: getErrorMessage(e) || '' }))
   } finally {
     testing.value = false
   }

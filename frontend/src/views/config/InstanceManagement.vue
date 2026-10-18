@@ -372,6 +372,10 @@ import { useI18n } from 'vue-i18n'
 import type { FormInstance } from 'element-plus'
 import { SERVICE_TYPE_LABELS, COMMON_SERVICE_TYPES } from '@/constants/serviceTypes'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import type { AdapterInfo } from '@/api/adapter'
+import type { ServiceConfigPayload } from '@/types/common'
+import type { RateLimitConfigPayload, RateLimitFormData } from '@/components/RateLimitConfig.vue'
+import type { CircuitBreakerConfigPayload, CircuitBreakerFormData } from '@/components/CircuitBreakerConfig.vue'
 import {
   addServiceInstance,
   deleteServiceInstance,
@@ -414,8 +418,8 @@ const serviceTypes = ref<string[]>([])
 const activeServiceType = ref('chat')
 
 // 适配器相关数据
-const adapters = ref<any[]>([])
-const globalConfig = ref<any>({})
+const adapters = ref<AdapterInfo[]>([])
+const globalConfig = ref<ServiceConfigPayload>({})
 const globalAdapter = ref<string>('')
 
 // 定义实例类型
@@ -433,10 +437,11 @@ interface ServiceInstance {
   tags?: Record<string, string>  // 标签配置
   rateLimit: {
     enabled: boolean
-    algorithm: string
+    /** 与限流弹窗 el-option 的取值一致（#523：收成联合类型，避免任意 string 混进来） */
+    algorithm: 'token-bucket' | 'leaky-bucket' | 'sliding-window'
     capacity: number
     rate: number
-    scope: string
+    scope: 'instance' | 'client-ip'
     key: string
     clientIpEnable: boolean
   }
@@ -507,12 +512,12 @@ const customHeadersList = ref<HeaderItem[]>([])
 // 限流器配置弹窗相关
 const rateLimitDialogVisible = ref(false)
 const rateLimitDialogTitle = ref('')
-const rateLimitFormData = ref<any>({ enabled: false })
+const rateLimitFormData = ref<RateLimitConfigPayload>({ rateLimit: null })
 
 // 熔断器配置弹窗相关
 const circuitBreakerDialogVisible = ref(false)
 const circuitBreakerDialogTitle = ref('')
-const circuitBreakerFormData = ref<any>({ enabled: false })
+const circuitBreakerFormData = ref<CircuitBreakerConfigPayload>({ circuitBreaker: null })
 
 // 同步请求头列表
 const syncCustomHeadersList = () => {
@@ -604,7 +609,7 @@ const clearAllTags = () => {
 }
 
 // 简单防抖
-function debounce<T extends (...args: any[]) => void>(fn: T, wait = 300) {
+function debounce<T extends (...args: never[]) => void>(fn: T, wait = 300) {
   let timeout: ReturnType<typeof setTimeout> | null = null
   return (...args: Parameters<T>) => {
     if (timeout) clearTimeout(timeout)
@@ -734,16 +739,17 @@ const fetchServiceInstances = (serviceType: string) => {
       }
       const response = await getServiceInstances(serviceType)
       if (response.data?.success) {
-        const data: any[] = response.data.data || []
+        const data = (response.data.data ?? []) as Partial<ServiceInstance>[]
         // 确保每个实例都包含正确的服务类型和ID
-        const typedData: ServiceInstance[] = data.map((item) => ({
+        // 后端实例行只保证核心字段（instanceId/name/baseUrl…），UI 侧补齐 id/adapter/headers/tags
+        const typedData = data.map((item) => ({
           ...item,
           id: item.instanceId || uid(), // 使用后端返回的instanceId作为唯一标识符，如果没有则使用客户端唯一ID
           serviceType,
           adapter: item.adapter || '', // 确保适配器字段存在
           headers: item.headers || {}, // 确保headers字段存在
           tags: item.tags || {} // 确保tags字段存在
-        }))
+        })) as ServiceInstance[]
         instancesCache.value[serviceType] = typedData
         instances.value[serviceType] = [...typedData]
       } else {
@@ -951,7 +957,7 @@ const currentEditInstanceId = ref<string>('')
 const currentEditServiceType = ref<string>('')
 
 // 打开限流器配置弹窗
-const openRateLimitConfig = (row: any) => {
+const openRateLimitConfig = (row: ServiceInstance) => {
   // 使用数据库ID
   currentEditInstanceId.value = String(row.id)
   currentEditServiceType.value = activeServiceType.value
@@ -973,7 +979,7 @@ const openRateLimitConfig = (row: any) => {
 }
 
 // 打开熔断器配置弹窗
-const openCircuitBreakerConfig = (row: any) => {
+const openCircuitBreakerConfig = (row: ServiceInstance) => {
   // 使用数据库ID
   currentEditInstanceId.value = String(row.id)
   currentEditServiceType.value = activeServiceType.value
@@ -992,7 +998,7 @@ const openCircuitBreakerConfig = (row: any) => {
 }
 
 // 保存限流器配置
-const handleRateLimitSave = async (configData: any) => {
+const handleRateLimitSave = async (configData: RateLimitConfigPayload) => {
   if (!currentEditInstanceId.value) return
 
   saveLoading.value = true
@@ -1000,8 +1006,8 @@ const handleRateLimitSave = async (configData: any) => {
     const serviceType = currentEditServiceType.value
     const instanceId = currentEditInstanceId.value
 
-    // 从嵌套格式中提取限流器配置
-    const rateLimitConfig = configData.rateLimit || configData
+    // 从嵌套格式中提取限流器配置（组件 emit 的载荷是 `{ rateLimit }`；关闭时是 null ⇒ 走默认值）
+    const rateLimitConfig: Partial<RateLimitFormData> = configData.rateLimit ?? { enabled: false }
 
     // 构造请求数据
     const config: RateLimitConfigType = {
@@ -1033,7 +1039,7 @@ const handleRateLimitSave = async (configData: any) => {
 }
 
 // 保存熔断器配置
-const handleCircuitBreakerSave = async (configData: any) => {
+const handleCircuitBreakerSave = async (configData: CircuitBreakerConfigPayload) => {
   if (!currentEditInstanceId.value) return
 
   saveLoading.value = true
@@ -1042,7 +1048,7 @@ const handleCircuitBreakerSave = async (configData: any) => {
     const instanceId = currentEditInstanceId.value
 
     // 从嵌套格式中提取熔断器配置
-    const circuitBreakerConfig = configData.circuitBreaker || configData
+    const circuitBreakerConfig: Partial<CircuitBreakerFormData> = configData.circuitBreaker ?? { enabled: false }
 
     // 构造请求数据
     const config: CircuitBreakerConfigType = {
