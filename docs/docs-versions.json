@@ -401,11 +401,11 @@
     },
     "docs/en/monitoring/configuration.md": {
       "FilePath": "docs/en/monitoring/configuration.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-09-18T11:16:32.921427",
-      "ContentHash": "04ab0229984097a4",
-      "GitCommit": "2e651835",
-      "Author": "Lincoln",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-18T05:46:47.431719",
+      "ContentHash": "f58a10491a47b48b",
+      "GitCommit": "06b43058",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/monitoring/metrics.md",
@@ -463,11 +463,11 @@
     },
     "docs/en/monitoring/performance.md": {
       "FilePath": "docs/en/monitoring/performance.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-18T11:16:33.708411",
-      "ContentHash": "17ccb82ab0809f43",
-      "GitCommit": "2e651835",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-18T05:46:47.472335",
+      "ContentHash": "9b565923839e3010",
+      "GitCommit": "06b43058",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/monitoring/metrics.md",
@@ -1028,11 +1028,11 @@
     },
     "docs/zh/monitoring/configuration.md": {
       "FilePath": "docs/zh/monitoring/configuration.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-09-18T11:16:45.522072",
-      "ContentHash": "5cb52205515297ec",
-      "GitCommit": "2e651835",
-      "Author": "Lincoln",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-18T05:46:48.066057",
+      "ContentHash": "f5d416fd65ff5093",
+      "GitCommit": "06b43058",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/monitoring/metrics.md",
@@ -1093,11 +1093,11 @@
     },
     "docs/zh/monitoring/performance.md": {
       "FilePath": "docs/zh/monitoring/performance.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-18T11:16:46.169578",
-      "ContentHash": "24c7b1592f3b73d7",
-      "GitCommit": "2e651835",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-18T05:46:48.109830",
+      "ContentHash": "2234990afc33723f",
+      "GitCommit": "06b43058",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/monitoring/metrics.md",
@@ -1693,10 +1693,10 @@
     },
     "docs/en/configuration/store-config.md": {
       "FilePath": "docs/en/configuration/store-config.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-10-13T13:53:08.758462",
-      "ContentHash": "6425a800e12dd2f1",
-      "GitCommit": "2435f7d0",
+      "Version": "1.0.8",
+      "LastModified": "2026-10-18T05:46:47.184406",
+      "ContentHash": "3f055d53e79ef889",
+      "GitCommit": "06b43058",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1714,10 +1714,10 @@
     },
     "docs/zh/configuration/store-config.md": {
       "FilePath": "docs/zh/configuration/store-config.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-10-13T13:53:09.240831",
-      "ContentHash": "8eeb8e73d30a200f",
-      "GitCommit": "2435f7d0",
+      "Version": "1.0.8",
+      "LastModified": "2026-10-18T05:46:47.834736",
+      "ContentHash": "cb4d165a53d9f6f6",
+      "GitCommit": "06b43058",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -8795,7 +8795,55 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-17T11:46:47.335539",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/store-config.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-18T05:46:47.184417",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/configuration.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-18T05:46:47.431731",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/performance.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-18T05:46:47.472344",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/store-config.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-18T05:46:47.834745",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/configuration.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-18T05:46:48.066068",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/performance.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-18T05:46:48.109839",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-17T11:46:47.432406"
+  "last_updated": "2026-10-18T05:46:48.331860"
 }
