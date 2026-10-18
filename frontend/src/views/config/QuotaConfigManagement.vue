@@ -270,7 +270,7 @@ const isRestartRequired = (fieldPath: string): boolean => {
   return config.value.restartRequiredFields.some(pattern => {
     if (pattern.endsWith('.*')) {
       const prefix = pattern.slice(0, -2)
-      return fieldPath === prefix || fieldPath.startsWith(prefix + '.')
+      return fieldPath === prefix || fieldPath.startsWith(`${prefix}.`)
     }
     return pattern === fieldPath
   })

@@ -408,7 +408,7 @@ const updateModelChart = () => {
   const option = {
     tooltip: {
       trigger: 'item',
-      formatter: '{b}: {c} ' + t('callHistory.dashboard.chart.countUnit') + ' ({d}%)'
+      formatter: `{b}: {c} ${t('callHistory.dashboard.chart.countUnit')} ({d}%)`
     },
     legend: {
       orient: 'vertical',
@@ -556,7 +556,7 @@ const updateStatusCodeChart = () => {
   const option = {
     tooltip: {
       trigger: 'item',
-      formatter: '{b}: {c} ' + t('callHistory.dashboard.chart.countUnit') + ' ({d}%)'
+      formatter: `{b}: {c} ${t('callHistory.dashboard.chart.countUnit')} ({d}%)`
     },
     series: [
       {
