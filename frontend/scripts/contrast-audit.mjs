@@ -193,7 +193,7 @@ function scanVisibleText(opts) {
   }
   function toHex(c) {
     const h = v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')
-    return '#' + h(c.r) + h(c.g) + h(c.b)
+    return `#${h(c.r)}${h(c.g)}${h(c.b)}`
   }
 
   // 求文本实际背景色：沿祖先链收集背景层，从远到近合成（透明层继续向上取）
@@ -306,7 +306,7 @@ function scanVisibleText(opts) {
     const text = (node.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 80)
 
     if (ratio < THRESHOLD) {
-      const key = cls + '|' + text + '|' + ratio.toFixed(2)
+      const key = `${cls}|${text}|${ratio.toFixed(2)}`
       if (seen.has(key)) continue
       seen.add(key)
       const disabled = hasAncestor(el, DISABLED_SEL)
@@ -371,7 +371,7 @@ async function main() {
       await page.waitForSelector('.el-main, .layout-main', { timeout: 20000 })
       console.log('login OK')
     } catch (err) {
-      console.error('登录失败: ' + err.message)
+      console.error(`登录失败: ${err.message}`)
       return 2
     }
 
@@ -397,7 +397,7 @@ async function main() {
     }
     const finalDark = await page.evaluate(() => document.documentElement.classList.contains('dark'))
     if (finalDark !== wantDark) {
-      console.error('主题切换失败: 期望 dark=' + wantDark)
+      console.error(`主题切换失败: 期望 dark=${wantDark}`)
       return 2
     }
     console.log(`theme OK (html.dark=${finalDark})`)
@@ -434,7 +434,7 @@ async function main() {
         let extra = rec.violations.length ? ` violations=${rec.violations.length}` : ''
         extra += rec.exceptions.length ? ` exceptions=${rec.exceptions.length}` : ''
         console.log(`[${tag}] ${route}${extra}`)
-        if (pageErrors.length) console.log('   pageerror: ' + pageErrors[0])
+        if (pageErrors.length) console.log(`   pageerror: ${pageErrors[0]}`)
       } catch (err) {
         rec.error = String((err && err.message) || err).slice(0, 300)
         console.log(`[ERR ] ${route} -> ${rec.error}`)
@@ -445,7 +445,7 @@ async function main() {
   }
 
   /* ---- 4. 汇总输出 ---- */
-  console.log('\n=== 违规明细 (ratio<' + args.threshold + ') ===')
+  console.log(`\n=== 违规明细 (ratio<${args.threshold}) ===`)
   for (const p of report.pages) {
     if (p.error) { console.log(`\n[${p.route}] ERROR: ${p.error}`); continue }
     if (!p.violations.length) continue
@@ -475,17 +475,17 @@ async function main() {
 
   if (args.json) {
     writeFileSync(args.json, JSON.stringify(report, null, 2))
-    console.log('JSON 报告已写入: ' + args.json)
+    console.log(`JSON 报告已写入: ${args.json}`)
   }
 
   const exitCode = totalViolations > 0 ? 1 : 0
-  console.log('exit=' + exitCode)
+  console.log(`exit=${exitCode}`)
   return exitCode
 }
 
 main()
   .then(code => { process.exitCode = code })
   .catch(err => {
-    console.error('脚本运行异常: ' + ((err && err.stack) || err))
+    console.error(`脚本运行异常: ${(err && err.stack) || err}`)
     process.exitCode = 2
   })
