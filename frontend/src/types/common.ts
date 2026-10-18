@@ -14,6 +14,12 @@ export interface ServiceInstance {
   headers?: Record<string, string>
   health?: boolean
   metadata?: Record<string, unknown>
+  /**
+   * 后端返回的其余字段（`/config/instance/{type}` 会带运行时统计等）。
+   * 前端只透传、不做业务判断，故用 unknown；加索引签名也让本类型与
+   * `stores/playgroundCache.ts` 的同名类型结构兼容（#520）。
+   */
+  [key: string]: unknown
 }
 
 // 服务配置类型
