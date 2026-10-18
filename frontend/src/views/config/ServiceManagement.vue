@@ -352,6 +352,9 @@ import { ref, onMounted, reactive, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
+import type { AdapterInfo } from '@/api/adapter'
+import type { ServiceConfigEntry } from '@/types/common'
+import { getErrorMessage } from '@/utils/error'
 import { SERVICE_TYPE_LABELS, COMMON_SERVICE_TYPES } from '@/constants/serviceTypes'
 import type { FormInstance, FormRules } from 'element-plus'
 import {
@@ -436,9 +439,18 @@ const serviceTypeLabel = (type: string): string => {
 }
 
 // 服务数据缓存
-const serviceCache = ref<Record<string, any>>({})
+/**
+ * 页面级缓存条目（#523）：`data` 是服务列表或单服务配置，`timestamp` 用于 30s 过期判断。
+ * 两种用途共用一张表，故 `data` 只能是 unknown，读取处按用途收窄（不用 any）。
+ */
+interface ServiceCacheEntry {
+  data: unknown
+  timestamp: number
+}
+
+const serviceCache = ref<Record<string, ServiceCacheEntry>>({})
 // 适配器数据缓存
-const adaptersCache = ref<any[]>([])
+const adaptersCache = ref<AdapterInfo[]>([])
 // 请求防抖定时器
 let fetchTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -501,7 +513,7 @@ const formatLoadBalanceType = (type: string) => {
   }
 }
 
-function debounce<T extends (...args: any[]) => void>(fn: T, wait = 300) {
+function debounce<T extends (...args: never[]) => void>(fn: T, wait = 300) {
   let timeout: ReturnType<typeof setTimeout> | null = null
   return (...args: Parameters<T>) => {
     if (timeout) clearTimeout(timeout)
@@ -513,7 +525,7 @@ const applySearch = debounce(() => { currentPage.value = 1 }, 350)
 const handleSearchClear = () => { currentPage.value = 1 }
 
 // 添加适配器相关数据
-const adapters = ref<any[]>([])
+const adapters = ref<AdapterInfo[]>([])
 
 // 计算当前尚未被添加的类型
 const availableTypes = computed(() => {
@@ -575,7 +587,8 @@ const fetchServices = async () => {
       const cacheKey = 'services_data'
       const cachedData = serviceCache.value[cacheKey]
       if (cachedData && Date.now() - cachedData.timestamp < 30000) { // 30秒内使用缓存
-        services.value = [...cachedData.data]
+        // 该 key 只存服务列表（写入处见下方 `serviceCache.value[cacheKey] = { data: [...serviceList] }`）
+        services.value = [...(cachedData.data as Service[])]
         loading.value = false
         return
       }
@@ -607,7 +620,7 @@ const fetchServices = async () => {
       
       // 处理服务数据（优化：单次请求获取所有服务配置）
       if (servicesResponse.data?.success) {
-        const servicesData: Record<string, any> = servicesResponse.data.data || {}
+        const servicesData: Record<string, ServiceConfigEntry> = servicesResponse.data.data || {}
         const serviceList: Service[] = []
 
         // 遍历所有服务类型并构建服务列表
@@ -640,9 +653,9 @@ const fetchServices = async () => {
         errorMessage.value = errorMsg
         ElMessage.error(errorMsg)
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('获取服务列表失败:', error)
-      const errorMsg = error?.message || t('service.messages.networkError')
+      const errorMsg = getErrorMessage(error) || t('service.messages.networkError')
       errorMessage.value = errorMsg
       ElMessage.error(errorMsg)
     } finally {
@@ -713,9 +726,9 @@ const handleEdit = async (row: Service) => {
     } else {
       ElMessage.error(response.data?.message || t('service.messages.fetchConfigFailed'))
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('获取服务配置失败:', error)
-    ElMessage.error(error?.message || t('service.messages.networkError'))
+    ElMessage.error(getErrorMessage(error) || t('service.messages.networkError'))
   } finally {
     dialogLoading.value = false
   }
@@ -736,9 +749,9 @@ const handleDelete = (row: Service) => {
       } else {
         ElMessage.error(response.data?.message || t('service.messages.deleteFailed'))
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('删除服务失败:', error)
-      ElMessage.error(error?.message || t('service.messages.networkError'))
+      ElMessage.error(getErrorMessage(error) || t('service.messages.networkError'))
     }
   }).catch(() => {
     ElMessage.info(t('service.messages.deleteCancelled'))
@@ -756,7 +769,7 @@ const handleSave = async () => {
     if (valid) {
       dialogLoading.value = true
       try {
-        const serviceConfig: any = {
+        const serviceConfig: ServiceConfigEntry = {
           adapter: form.adapter || undefined,
           loadBalance: form.loadBalance,
           description: form.description || undefined,
@@ -782,9 +795,9 @@ const handleSave = async () => {
                 }
               : { enabled: false }
             await updateServiceRateLimit(form.type, rateLimitPayload)
-          } catch (rateLimitError: any) {
+          } catch (rateLimitError) {
             console.error('保存服务限流配置失败:', rateLimitError)
-            ElMessage.warning(rateLimitError?.message || t('service.messages.savedButRateLimitFailed'))
+            ElMessage.warning(getErrorMessage(rateLimitError) || t('service.messages.savedButRateLimitFailed'))
           }
           ElMessage.success(isEdit.value ? t('service.messages.editSuccess') : t('service.messages.addSuccess'))
           dialogVisible.value = false
@@ -813,9 +826,9 @@ const handleSave = async () => {
         } else {
           ElMessage.error(response.data?.message || (isEdit.value ? t('service.messages.editFailed') : t('service.messages.addFailed')))
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error(isEdit.value ? '编辑服务失败:' : '添加服务失败:', error)
-        ElMessage.error(error?.message || t('service.messages.networkError'))
+        ElMessage.error(getErrorMessage(error) || t('service.messages.networkError'))
       } finally {
         dialogLoading.value = false
       }

@@ -177,6 +177,7 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { getErrorMessage } from '@/utils/error'
 import { Search, Delete, Plus } from '@element-plus/icons-vue'
 import AdapterTemplateCard from './AdapterTemplateCard.vue'
 import AdapterTestPanel from './AdapterTestPanel.vue'
@@ -329,8 +330,8 @@ const handleFinish = async () => {
     } else {
       ElMessage.error(res.data?.message || t('adapter.wizard.createFailed'))
     }
-  } catch (e: any) {
-    ElMessage.error(t('adapter.wizard.createFailedDetail', { error: e.message || '' }))
+  } catch (e) {
+    ElMessage.error(t('adapter.wizard.createFailedDetail', { error: getErrorMessage(e) || '' }))
   } finally {
     saving.value = false
   }
@@ -379,7 +380,7 @@ onMounted(async () => {
     if (res.data?.success) {
       templates.value = res.data.data || []
     }
-  } catch (e: any) {
+  } catch (e) {
     console.error('获取模板失败:', e)
   }
   try {
@@ -387,7 +388,7 @@ onMounted(async () => {
     if (res.data?.success) {
       parentAdapters.value = res.data.data || []
     }
-  } catch (e: any) {
+  } catch (e) {
     console.error('获取父 adapter 失败:', e)
   }
 })

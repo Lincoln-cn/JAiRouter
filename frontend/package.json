@@ -8,7 +8,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "lint:ci": "eslint . --max-warnings 172",
+    "lint:ci": "eslint . --max-warnings 140",
     "type-check": "vue-tsc --noEmit",
     "test:unit": "vitest run",
     "test:api": "vitest run src/api",
