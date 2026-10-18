@@ -148,3 +148,19 @@ GET  /v3/api-docs       (ADMIN)          -> 200，180 字节，paths=0
 **仍未收紧**：`qodana.yaml` 用 `qodana.starter` 且 `failureConditions` 整段注释 ⇒ 该 job 不可能失败；
 SpotBugs include 只有 `category="SECURITY"`。收紧会让存量 PR 变红，属"改门闩"，待授权。
 
+### 复验记录（证明上面那组数字是**当前 master 实测**，不是历史快照）
+
+| 日期 | 复验项 | 结果 | 手法 |
+|---|---|---|---|
+| 2026-10-18 | 接口冒烟（含批 2D 低权限 RBAC 矩阵） | **59/59 PASS** | 起 dev 实例（8080，15.2s 就绪）→ `node scripts/test/api-smoke.mjs` |
+| 2026-10-18 | 后端全量 | `Tests run: 4150, Failures: 0, Errors: 0, Skipped: 26` | `mvnw test -o` |
+| 2026-10-18 | 前端 lint | **0 error / 300 warning** | `npx eslint .`（棘轮 `--max-warnings 300`） |
+| 2026-10-18 | 前端类型 | **exit 0** | `npx vue-tsc --noEmit` |
+| 2026-10-18 | 7 个探测器自检 | 26/26 · 30/30 · 19/19 · 12/12 · 35/35 · PASS · PASS | `--self-test` |
+
+**关于接口冒烟**：它是本仓唯一**断言线上状态码与错误体形状**的资产（单测与前端 E2E 都不直接断言）。
+本次复跑覆盖了这几轮改动之后仍应成立的关键契约：`#404`（API Key 限流 401→429 并拆码，实测 `429 hits=8/12` +
+`RATE_LIMITED_API_KEY` + OpenAI `rate_limit_error`）· `#405`（BUILTIN_READONLY 400→403）· `#432`（缺请求体 500→400）·
+`#448`（`/api/**` 错误体形状）· 以及第 9 段低权限账号的读 200 / 写 403 矩阵。
+它需要**真实运行实例**，因此不在 CI 里（`#454` 的建议之一即把接口对账固化进守卫）。
+
