@@ -39,28 +39,42 @@ jairouter:
     # Enable state persistence
     enabled: true
 
-    # Redis configuration (Tier 1)
+    # Redis configuration (Tier 1, optional: required only when replicas must share state)
     redis:
       enabled: false
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       database: 0
+      timeout: 3000        # Connect timeout (ms)
+      ttl-days: 7          # State TTL (days)
 
-    # H2 configuration (Tier 2) - Default layer
+    # H2 configuration (Tier 2) - default fallback layer
     h2:
       enabled: true
-      # Uses StoreManager's H2 database
+      data-dir: ./data
+      database: jairouter_state
 
-    # File configuration (Tier 3) - Fallback layer
+    # File configuration (Tier 3) - last-resort fallback layer
     file:
       enabled: true
       path: ./data/state
+      compress: false
 
-    # Sync configuration
-    sync:
-      interval: 30000  # Sync interval (ms)
-      recoveryTimeout: 10000  # Recovery timeout (ms)
+    # State recovery (on startup or via the recovery API)
+    recovery:
+      enabled: true
+      auto-on-startup: true
+      timeout: 10000       # Recovery timeout (ms)
+      parallel: false
+
+    # Tier fallback policy
+    fallback:
+      auto-detect: true
+      health-check-interval: 30   # seconds
+      retry-interval: 10          # seconds
+      max-retries: 3
+      sync-on-recovery: true
 ```
 
 ---

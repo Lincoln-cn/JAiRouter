@@ -39,28 +39,42 @@ jairouter:
     # 启用状态持久化
     enabled: true
 
-    # Redis 配置 (Tier 1)
+    # Redis 配置 (Tier 1，可选：需要多副本共享状态时才启用)
     redis:
       enabled: false
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       database: 0
+      timeout: 3000        # 连接超时（毫秒）
+      ttl-days: 7          # 状态数据 TTL（天）
 
-    # H2 配置 (Tier 2) - 默认层
+    # H2 配置 (Tier 2) - 默认退坡层
     h2:
       enabled: true
-      # 复用 StoreManager 的 H2 数据库
+      data-dir: ./data
+      database: jairouter_state
 
-    # File 配置 (Tier 3) - 兜底层
+    # File 配置 (Tier 3) - 最后兜底层
     file:
       enabled: true
       path: ./data/state
+      compress: false
 
-    # 同步配置
-    sync:
-      interval: 30000  # 同步间隔（毫秒）
-      recoveryTimeout: 10000  # 恢复超时（毫秒）
+    # 状态恢复（启动时自动 / 也可通过恢复 API 手动触发）
+    recovery:
+      enabled: true
+      auto-on-startup: true
+      timeout: 10000       # 恢复超时（毫秒）
+      parallel: false
+
+    # 退坡策略
+    fallback:
+      auto-detect: true
+      health-check-interval: 30   # 健康检查间隔（秒）
+      retry-interval: 10          # 重试间隔（秒）
+      max-retries: 3
+      sync-on-recovery: true
 ```
 
 ---

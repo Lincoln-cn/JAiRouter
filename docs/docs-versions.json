@@ -331,7 +331,8 @@
         "docs/en/getting-started/first-steps.md",
         "docs/en/getting-started/installation.md",
         "docs/en/getting-started/quick-start.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-19T01:49:25"
     },
     "docs/en/getting-started/installation.md": {
       "FilePath": "docs/en/getting-started/installation.md",
@@ -948,7 +949,8 @@
         "docs/zh/getting-started/first-steps.md",
         "docs/zh/getting-started/installation.md",
         "docs/zh/getting-started/quick-start.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-19T01:49:25"
     },
     "docs/zh/getting-started/installation.md": {
       "FilePath": "docs/zh/getting-started/installation.md",
@@ -2004,7 +2006,7 @@
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      "ReviewedAt": "2026-10-19T01:49:25"
     },
     "docs/zh/configuration/instance-examples.md": {
       "FilePath": "docs/zh/configuration/instance-examples.md",
@@ -2015,7 +2017,7 @@
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [],
-      "ReviewedAt": "2026-09-24T00:00:00"
+      "ReviewedAt": "2026-10-19T01:49:25"
     },
     "docs/en/configuration/adapter-config.md": {
       "FilePath": "docs/en/configuration/adapter-config.md",
