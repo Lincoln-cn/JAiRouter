@@ -1265,10 +1265,10 @@
     },
     "docs/en/api-reference/monitoring-api.md": {
       "FilePath": "docs/en/api-reference/monitoring-api.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-14T14:39:53.892444",
-      "ContentHash": "b9dd457e283b222a",
-      "GitCommit": "98b5e27a",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-18T05:56:51.965726",
+      "ContentHash": "e61b5861aac61f06",
+      "GitCommit": "ab9497ca",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1279,10 +1279,10 @@
     },
     "docs/zh/api-reference/monitoring-api.md": {
       "FilePath": "docs/zh/api-reference/monitoring-api.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-14T14:39:54.395509",
-      "ContentHash": "52a85d4917b9544c",
-      "GitCommit": "98b5e27a",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-18T05:56:52.421663",
+      "ContentHash": "7a92dba13d633fc1",
+      "GitCommit": "ab9497ca",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -8843,7 +8843,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-18T05:46:48.109839",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/monitoring-api.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-18T05:56:51.965734",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/monitoring-api.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-18T05:56:52.421675",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-18T05:46:48.331860"
+  "last_updated": "2026-10-18T05:56:52.861332"
 }
