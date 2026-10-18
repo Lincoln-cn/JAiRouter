@@ -16,7 +16,8 @@ export interface ServiceInstance {
   status?: 'active' | 'inactive'
   healthStatus?: 'HEALTHY' | 'UNHEALTHY' | 'UNKNOWN'
   baseUrl?: string
-  [key: string]: any
+  /** 后端返回的其余字段：只透传、不做业务判断，故用 unknown（#521，不用 any） */
+  [key: string]: unknown
 }
 
 export const usePlaygroundData = (playgroundServiceType: string) => {

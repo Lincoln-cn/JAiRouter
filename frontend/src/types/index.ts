@@ -1,13 +1,15 @@
 // Common type definitions for the admin interface
 
-export interface ApiResponse<T = any> {
+// 默认类型参数用 `unknown` 而不是 `any`：调用方必须显式给出载荷类型或自行收窄，
+// 避免「看起来有类型、实际什么都能进」（#521）。
+export interface ApiResponse<T = unknown> {
   success: boolean
   data?: T
   message?: string
   error?: string
 }
 
-export interface RouterResponse<T = any> {
+export interface RouterResponse<T = unknown> {
   success: boolean
   message: string
   data?: T

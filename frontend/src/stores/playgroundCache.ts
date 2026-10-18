@@ -20,7 +20,8 @@ interface ServiceInstance {
   instanceId: string
   name: string
   headers?: Record<string, string>
-  [key: string]: any
+  /** 后端返回的其余字段：只透传、不做业务判断，故用 unknown（#521，不用 any） */
+  [key: string]: unknown
 }
 
 // 缓存过期时间（5分钟）
@@ -30,8 +31,9 @@ const CACHE_EXPIRE_TIME = 5 * 60 * 1000
 const instancesCache = reactive<Record<string, CacheItem<ServiceInstance[]>>>({})
 const modelsCache = reactive<Record<string, CacheItem<string[]>>>({})
 
-// 请求去重控制
-const pendingRequests = new Map<string, Promise<any>>()
+// 请求去重控制：键相同则并发复用同一个 Promise。不同键对应的载荷类型不同（实例列表 / 模型列表），
+// 故存 `Promise<unknown>`，由 dedupeRequest 在取出时按调用方的 T 收窄（#521）。
+const pendingRequests = new Map<string, Promise<unknown>>()
 
 // 检查缓存是否有效
 const isCacheValid = <T>(cache: CacheItem<T>): boolean => {
@@ -50,7 +52,8 @@ const dedupeRequest = <T>(key: string, fn: () => Promise<T>): Promise<T> => {
   // 如果已经有相同的请求在进行中，直接返回该请求的 Promise
   if (pendingRequests.has(key)) {
     console.log(`[Cache] 复用进行中的请求: ${key}`)
-    return pendingRequests.get(key)!
+    // 同一 key 的请求必然由同一个 fn 产生，载荷类型即 T；map 的 unknown 只是「异构键共用一张表」的代价
+    return pendingRequests.get(key) as Promise<T>
   }
 
   // 创建新的请求
