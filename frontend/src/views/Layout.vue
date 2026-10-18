@@ -248,10 +248,10 @@ const handleMenuSelect = async (index: string) => {
   try {
     // 使用编程式导航而不是让Element Plus处理
     await router.push(index)
-  } catch (error: any) {
+  } catch (error) {
     console.error('路由跳转失败:', error)
     // 如果是导航重复错误，可以忽略
-    if (error?.name !== 'NavigationDuplicated') {
+    if ((error as { name?: string })?.name !== 'NavigationDuplicated') {
       console.error('Navigation error:', error)
     }
   } finally {

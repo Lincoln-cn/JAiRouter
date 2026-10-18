@@ -389,7 +389,7 @@ const loadHistory = async () => {
       params: { limit: 100 }
     })
     const allEvents: RoutingEvent[] = []
-    Object.values(response.data).forEach((serviceEvents: any) => {
+    Object.values(response.data as Record<string, RoutingEvent[]>).forEach((serviceEvents) => {
       allEvents.push(...serviceEvents)
     })
     allEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())

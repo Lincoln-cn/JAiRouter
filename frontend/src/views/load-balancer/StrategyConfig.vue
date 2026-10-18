@@ -234,7 +234,7 @@ const loadStrategies = async () => {
     if (response.data?.success) {
       strategies.value = response.data.data
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Failed to load strategies:', error)
     strategies.value = [
       { name: 'random', displayName: t('loadBalancer.strategyConfig.strategies.random'), description: t('loadBalancer.strategyConfig.strategyDescriptions.random') },
@@ -277,7 +277,7 @@ const loadGlobalConfig = async () => {
     if (response.data?.success) {
       globalConfig.value = response.data.data
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Failed to load global config:', error)
   }
 }
@@ -288,7 +288,7 @@ const loadServiceConfigs = async () => {
     const statusResponse = await request.get(`${apiBaseUrl}/status`)
     if (statusResponse.data?.success) {
       const services = statusResponse.data.data
-      const configPromises = services.map(async (service: any) => {
+      const configPromises = services.map(async (service: { serviceType: string }) => {
         try {
           const configResponse = await request.get(`${apiBaseUrl}/config/${service.serviceType}`)
           if (configResponse.data?.success) {
@@ -302,7 +302,7 @@ const loadServiceConfigs = async () => {
       const configs = await Promise.all(configPromises)
       serviceConfigs.value = configs.filter((c): c is ServiceConfig => c !== null)
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Failed to load service configs:', error)
     ElMessage.error(t('loadBalancer.strategyConfig.messages.loadFailed'))
   } finally {
@@ -336,7 +336,7 @@ const saveServiceConfig = async () => {
     } else {
       ElMessage.error(response.data?.message || t('loadBalancer.strategyConfig.messages.saveFailed'))
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Failed to save service config:', error)
     ElMessage.error(t('loadBalancer.strategyConfig.messages.saveFailed'))
   } finally {

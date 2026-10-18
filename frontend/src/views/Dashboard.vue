@@ -431,7 +431,7 @@
                 stripe
                 size="small"
                 style="width:100%"
-                :row-class-name="(row: any) => row.row?.health ? '' : 'row-error'"
+                :row-class-name="(scope: { row?: InstanceRow }) => scope.row?.health ? '' : 'row-error'"
               >
                 <el-table-column prop="name" :label="t('dashboard.instanceName')" width="180">
                   <template #default="scope">
@@ -496,6 +496,15 @@
 </template>
 
 <script setup lang="ts">
+import type { DashboardMetrics, ServiceStatsPayload } from '@/types'
+import type { ServiceConfigPayload, ServiceInstance } from '@/types/common'
+
+/** 首页实例行：服务配置里的实例 + 本页补的服务名/原始类型（#526） */
+interface InstanceRow extends ServiceInstance {
+  serviceName?: string
+  rawServiceType?: string
+}
+
 import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -519,6 +528,7 @@ import {
   type ServiceRoutingStats
 } from '@/api/limitMetrics'
 import { ElMessage } from 'element-plus'
+import { getErrorMessage } from '@/utils/error'
 import {
   Refresh,
   Loading,
@@ -561,8 +571,8 @@ const stats = ref({
   errorInstanceCount: 0
 })
 
-const dashboardMetrics = ref<any>(null)
-const serviceConfigData = ref<any>(null)
+const dashboardMetrics = ref<DashboardMetrics | null>(null)
+const serviceConfigData = ref<ServiceConfigPayload | null>(null)
 const configLoading = ref(false)
 const activeServiceTab = ref<string>('global')
 
@@ -581,7 +591,7 @@ const lbRoutingStats = ref<Record<string, ServiceRoutingStats>>({})
 const recentExceptions = ref<ExceptionEvent[]>([])
 
 // SSE 回调引用，方便移除
-let sseHandler: ((data: any) => void) | null = null
+let sseHandler: ((data: unknown) => void) | null = null
 // 卸载标志：fetchDashboardData 的 then/catch 可能在卸载后才执行
 let isUnmounted = false
 
@@ -671,15 +681,16 @@ const otherServiceNames = computed(() => {
 
 const otherServiceInstances = computed(() => {
   if (!serviceConfigData.value?.services || otherServiceNames.value.length === 0) return []
-  const res: any[] = []
+  const res: InstanceRow[] = []
+  const services = serviceConfigData.value.services
   otherServiceNames.value.forEach(name => {
-    const svc = serviceConfigData.value.services[name]
-    ;(svc.instances || []).forEach((ins: any) => {
+    const svc = services[name]
+    ;(svc.instances ?? []).forEach((ins) => {
       res.push({
         ...ins,
         serviceName: getServiceTypeName(name),
         rawServiceType: name,
-        adapter: ins.adapter || svc.adapter || serviceConfigData.value?.adapter
+        adapter: ins.adapter || svc.adapter || serviceConfigData.value?.adapter || ''
       })
     })
   })
@@ -692,14 +703,14 @@ const statCards = computed(() => {
   const instances = (() => {
     if (!serviceConfigData.value?.services) return stats.value.instanceCount
     let total = 0
-    Object.values(serviceConfigData.value.services).forEach((s: any) => { total += (s.instances?.length || 0) })
+    Object.values(serviceConfigData.value.services).forEach((s) => { total += (s.instances?.length || 0) })
     return total
   })()
   const healthy = (() => {
     if (!serviceConfigData.value?.services) return 0
     let c = 0
-    Object.values(serviceConfigData.value.services).forEach((s: any) => {
-      (s.instances || []).forEach((ins: any) => { if (ins.health) c++ })
+    Object.values(serviceConfigData.value.services).forEach((s) => {
+      (s.instances || []).forEach((ins) => { if (ins.health) c++ })
     })
     return c
   })()
@@ -745,15 +756,16 @@ const getChartOption = () => {
 
   const memoryUsage = jvm.heapUsagePercent || 0
   const cpuUsage = (sys.processCpuUsage || 0) * 100
-  const authSuccess = sec.authAttempts > 0 ? ((sec.authSuccesses || 0) / sec.authAttempts * 100) : 100
+  const attempts = sec.authAttempts ?? 0
+    const authSuccess = attempts > 0 ? ((sec.authSuccesses || 0) / attempts * 100) : 100
   const requestRate = Math.min((http.totalRequests || 0) / 1000 * 10, 100)
 
   return {
     title: { text: t('dashboard.chart.resourceOverview'), left: 'center', textStyle: { fontSize: 14, color: textColor } },
     tooltip: {
       trigger: 'axis',
-      formatter: (params: any) => {
-        const p = params[0]
+      formatter: (params: unknown) => {
+        const p = (params as Array<{ dataIndex: number }>)[0]
         const labels = [
           t('dashboard.metrics.jvmMemory'),
           t('dashboard.chart.cpuUsageRate'),
@@ -814,9 +826,10 @@ const getChartOption = () => {
         label: {
           show: true,
           position: 'top',
-          formatter: (p: any) => {
-            if (p.dataIndex === 3) return `${http.totalRequests || 0}`
-            return `${p.value.toFixed(1)}%`
+          formatter: (p: unknown) => {
+            const item = p as { dataIndex: number; value: number }
+            if (item.dataIndex === 3) return `${http.totalRequests || 0}`
+            return `${item.value.toFixed(1)}%`
           }
         }
       }
@@ -847,19 +860,24 @@ const updateDataInMainThread = (updateFn: () => void) => {
   queueMicrotask(updateFn)
 }
 
-const handleHealthUpdate = (payload: any) => {
+const handleHealthUpdate = (payload: unknown) => {
+    const p = payload as {
+      type?: string
+      instanceHealth?: Record<string, unknown>
+      data?: { instanceHealth?: Record<string, unknown> }
+    }
   if (!payload) return
 
-  let dataObj: Record<string, any> | null = null
+  let dataObj: Record<string, unknown> | null = null
 
-  if (payload.type === 'health-update' && payload.instanceHealth) {
-    dataObj = payload.instanceHealth
+  if (p.type === 'health-update' && p.instanceHealth) {
+    dataObj = p.instanceHealth
   }
-  else if (payload.type === 'health-update' && payload.data && payload.data.instanceHealth) {
-    dataObj = payload.data.instanceHealth
+  else if (p.type === 'health-update' && p.data && p.data.instanceHealth) {
+    dataObj = p.data.instanceHealth
   }
-  else if (payload.instanceHealth) {
-    dataObj = payload.instanceHealth
+  else if (p.instanceHealth) {
+    dataObj = p.instanceHealth
   }
 
   if (!dataObj || typeof dataObj !== 'object') {
@@ -878,15 +896,16 @@ const handleHealthUpdate = (payload: any) => {
       const instanceId = key.slice(firstColon + 1)
 
       const svc = serviceConfigData.value?.services?.[svcType]
-      if (svc && Array.isArray(svc.instances)) {
+      const instances = svc?.instances
+      if (svc && Array.isArray(instances)) {
         let localChanged = false
-        svc.instances.forEach((ins: any, idx: number) => {
+        instances.forEach((ins, idx: number) => {
           const insInstanceId = ins.instanceId || `${ins.name}@${ins.baseUrl}` || ''
 
           if (insInstanceId === instanceId) {
             if (ins.health !== isHealthy) {
               const newIns = { ...ins, health: isHealthy }
-              svc.instances.splice(idx, 1, newIns)
+              instances.splice(idx, 1, newIns)
               localChanged = true
             }
           } else if (!ins.instanceId && ins.name && ins.baseUrl) {
@@ -894,7 +913,7 @@ const handleHealthUpdate = (payload: any) => {
             if (fallbackInstanceId === instanceId) {
               if (ins.health !== isHealthy) {
                 const newIns = { ...ins, health: isHealthy }
-                svc.instances.splice(idx, 1, newIns)
+                instances.splice(idx, 1, newIns)
                 localChanged = true
               }
             }
@@ -928,12 +947,14 @@ const fetchServiceConfig = async () => {
     configLoading.value = true
     const res = await getAllServiceConfig()
     if (res.data && res.data.success) {
-      serviceConfigData.value = res.data.data
+      serviceConfigData.value = (res.data?.data ?? null) as ServiceConfigPayload | null
 
       if (serviceConfigData.value?.services) {
-        Object.keys(serviceConfigData.value.services).forEach(k => {
-          const s = serviceConfigData.value.services[k]
-          if (!s.adapter) s.adapter = serviceConfigData.value.adapter
+        const services = serviceConfigData.value.services
+        const fallbackAdapter = serviceConfigData.value.adapter
+        Object.keys(services).forEach(k => {
+          const s = services[k]
+          if (!s.adapter) s.adapter = fallbackAdapter
         })
       }
 
@@ -949,8 +970,8 @@ const fetchServiceConfig = async () => {
     } else {
       ElMessage.error(t('dashboard.fetchConfigFailed', { message: res.data?.message || t('dashboard.unknownError') }))
     }
-  } catch (e: any) {
-    ElMessage.error(t('dashboard.fetchConfigError', { message: e.message || t('dashboard.networkError') }))
+  } catch (e) {
+    ElMessage.error(t('dashboard.fetchConfigError', { message: getErrorMessage(e) || t('dashboard.networkError') }))
   } finally {
     configLoading.value = false
   }
@@ -974,8 +995,8 @@ const fetchMonitoringOverview = async () => {
     } else {
       ElMessage.error(t('dashboard.fetchOverviewFailed', { message: res.data?.message || t('dashboard.unknownError') }))
     }
-  } catch (e: any) {
-    ElMessage.error(t('dashboard.fetchOverviewError', { message: e.message || t('dashboard.networkError') }))
+  } catch (e) {
+    ElMessage.error(t('dashboard.fetchOverviewError', { message: getErrorMessage(e) || t('dashboard.networkError') }))
   }
 }
 
@@ -983,7 +1004,7 @@ const fetchDashboardMetrics = async () => {
   try {
     const res = await getDashboardMetrics()
     if (res.data && res.data.success) {
-      dashboardMetrics.value = res.data.data
+      dashboardMetrics.value = (res.data?.data ?? null) as DashboardMetrics | null
       nextTick(() => {
         if (systemChartInstance) {
           systemChartInstance.setOption(getChartOption(), { notMerge: true })
@@ -994,8 +1015,8 @@ const fetchDashboardMetrics = async () => {
     } else {
       ElMessage.error(t('dashboard.fetchMetricsFailed', { message: res.data?.message || t('dashboard.unknownError') }))
     }
-  } catch (e: any) {
-    ElMessage.error(t('dashboard.fetchMetricsError', { message: e.message || t('dashboard.networkError') }))
+  } catch (e) {
+    ElMessage.error(t('dashboard.fetchMetricsError', { message: getErrorMessage(e) || t('dashboard.networkError') }))
   }
 }
 
@@ -1013,7 +1034,7 @@ const fetchGovernanceData = async () => {
 
   // ① 规则命中
   if (results[0].status === 'fulfilled') {
-    const res = results[0].value as any
+    const res = results[0].value as { data?: { data?: RuleStat[] } }
     ruleStatsRaw.value = (res.data?.data as RuleStat[]) ?? []
   }
 
@@ -1064,7 +1085,7 @@ const fetchDashboardData = async () => {
   try {
     const statsRes = await getServiceStats()
     if (statsRes.data && statsRes.data.success) {
-      const d: any = statsRes.data.data || {}
+      const d: ServiceStatsPayload = statsRes.data.data || {}
       stats.value.serviceCount = d.totalServices || 0
       stats.value.instanceCount = d.totalInstances || 0
       stats.value.totalModels = d.totalModels || 0
@@ -1085,8 +1106,8 @@ const fetchDashboardData = async () => {
     nextTick(() => {
       initChart()
     })
-  } catch (e: any) {
-    ElMessage.error(t('dashboard.loadDashboardFailed', { message: e.message || t('dashboard.networkError') }))
+  } catch (e) {
+    ElMessage.error(t('dashboard.loadDashboardFailed', { message: getErrorMessage(e) || t('dashboard.networkError') }))
   }
 
   // 治理链路数据独立加载，不阻塞主流程
@@ -1098,14 +1119,14 @@ onMounted(() => {
 
   fetchDashboardData().then(() => {
     if (isUnmounted) return
-    sseHandler = (data: any) => {
+    sseHandler = (data: unknown) => {
       handleHealthUpdate(data)
     }
     addSSEListener(sseHandler)
     connectSSE()
   }).catch(() => {
     if (isUnmounted) return
-    sseHandler = (data: any) => handleHealthUpdate(data)
+    sseHandler = (data: unknown) => handleHealthUpdate(data)
     addSSEListener(sseHandler)
     connectSSE()
   })

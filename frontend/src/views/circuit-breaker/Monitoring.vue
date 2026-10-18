@@ -407,7 +407,16 @@ const loadCircuitBreakerStatus = async () => {
         }
       } else if (Array.isArray(raw)) {
         // Fallback: if backend ever returns an array
-        raw.forEach((item: any) => {
+        const rawList = raw as Array<{
+          instanceId?: string
+          instanceName?: string
+          baseUrl?: string
+          serviceType?: string
+          state?: string
+          failureCount?: number
+          successCount?: number
+        }>
+        rawList.forEach((item) => {
           parsed.push({
             instanceId: item.instanceId || '-',
             instanceName: item.instanceName || item.baseUrl || '-',
@@ -433,7 +442,7 @@ const loadHistory = async () => {
       params: { limit: 200 }
     })
     const allEvents: CircuitBreakerEvent[] = []
-    Object.values(response.data).forEach((instanceEvents: any) => {
+    Object.values(response.data as Record<string, CircuitBreakerEvent[]>).forEach((instanceEvents) => {
       allEvents.push(...instanceEvents)
     })
     allEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())

@@ -255,6 +255,7 @@
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
+import { getErrorMessage } from '@/utils/error'
 import {
   DataAnalysis,
   Document,
@@ -671,9 +672,9 @@ const loadData = async () => {
 
     // 更新图表
     initCharts()
-  } catch (error: any) {
+  } catch (error) {
     console.error('加载统计数据失败:', error)
-    ElMessage.error(t('callHistory.tokenUsage.loadFailed', { message: error.message || t('callHistory.common.unknownError') }))
+    ElMessage.error(t('callHistory.tokenUsage.loadFailed', { message: getErrorMessage(error) || t('callHistory.common.unknownError') }))
   }
 }
 

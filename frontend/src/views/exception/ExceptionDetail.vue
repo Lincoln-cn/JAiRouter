@@ -124,6 +124,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
+import { getErrorMessage } from '@/utils/error'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import { getExceptionEventById } from '@/api/exception'
 import type { ExceptionEvent } from '@/types/exception'
@@ -197,9 +198,9 @@ const loadData = async () => {
     } else {
       ElMessage.warning(t('exception.detail.notFoundMessage'))
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('加载异常事件详情失败:', error)
-    ElMessage.error(t('exception.detail.loadFailed', { message: error.message || t('exception.detail.unknownError') }))
+    ElMessage.error(t('exception.detail.loadFailed', { message: getErrorMessage(error) || t('exception.detail.unknownError') }))
   } finally {
     loading.value = false
   }

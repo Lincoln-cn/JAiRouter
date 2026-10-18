@@ -47,6 +47,8 @@ export interface ServiceConfigEntry {
   }
   rateLimit?: ServiceRateLimitSection
   circuitBreaker?: ServiceCircuitBreakerSection
+  /** 该服务下的实例列表（首页按类型汇总实例数/健康数时读取） */
+  instances?: ServiceInstance[]
   [key: string]: unknown
 }
 
@@ -76,6 +78,28 @@ export interface ServiceCircuitBreakerSection {
 export interface ServiceConfigPayload {
   adapter?: string
   services?: Record<string, ServiceConfigEntry>
+  /** 可选：首页用来统计「模型数」 */
+  models?: string[]
+  /** 全局负载均衡段（首页状态面板读 type / hashAlgorithm） */
+  loadBalance?: {
+    type?: string
+    hashAlgorithm?: string
+  }
+  /** 全局限流段（首页读 algorithm / rate / enabled） */
+  rateLimit?: {
+    enabled?: boolean
+    algorithm?: string
+    rate?: number
+  }
+  /** 全局熔断段（首页只读 enabled） */
+  circuitBreaker?: {
+    enabled?: boolean
+  }
+  /** 全局降级段（首页读 enabled / strategy） */
+  fallback?: {
+    enabled?: boolean
+    strategy?: string
+  }
 }
 
 
