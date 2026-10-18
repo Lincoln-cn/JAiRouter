@@ -565,21 +565,21 @@ None of these endpoints is called by the console, and none was documented (the `
 
 | Method | Path | Effective permission code |
 |---|---|---|
-| `DELETE` | `/api/monitoring/metrics/batch` | **No matching rule** → `RbacUnmatchedPolicy` default `DENY_ALL` (ROLE_ADMIN only) |
+| `DELETE` | `/api/monitoring/metrics/batch` | `monitoring:metrics:write` |
 | `GET` | `/api/monitoring/metrics/category/{}` | `monitoring:metrics:read` |
-| `POST` | `/api/monitoring/metrics/cleanup` | **No matching rule** → `RbacUnmatchedPolicy` default `DENY_ALL` (ROLE_ADMIN only) |
+| `POST` | `/api/monitoring/metrics/cleanup` | `monitoring:metrics:write` |
 | `GET` | `/api/monitoring/metrics/exists/{}` | `monitoring:metrics:read` |
 | `GET` | `/api/monitoring/metrics/list` | `monitoring:metrics:read` |
 | `GET` | `/api/monitoring/metrics/metadata` | `monitoring:metrics:read` |
 | `GET` | `/api/monitoring/metrics/metadata/{}` | `monitoring:metrics:read` |
-| `PUT` | `/api/monitoring/metrics/metadata/{}` | **No matching rule** → `RbacUnmatchedPolicy` default `DENY_ALL` (ROLE_ADMIN only) |
-| `POST` | `/api/monitoring/metrics/register` | **No matching rule** → `RbacUnmatchedPolicy` default `DENY_ALL` (ROLE_ADMIN only) |
-| `POST` | `/api/monitoring/metrics/register/batch` | **No matching rule** → `RbacUnmatchedPolicy` default `DENY_ALL` (ROLE_ADMIN only) |
+| `PUT` | `/api/monitoring/metrics/metadata/{}` | `monitoring:metrics:write` |
+| `POST` | `/api/monitoring/metrics/register` | `monitoring:metrics:write` |
+| `POST` | `/api/monitoring/metrics/register/batch` | `monitoring:metrics:write` |
 | `GET` | `/api/monitoring/metrics/search` | `monitoring:metrics:read` |
 | `GET` | `/api/monitoring/metrics/statistics` | `monitoring:metrics:read` |
-| `POST` | `/api/monitoring/metrics/validate` | **No matching rule** → `RbacUnmatchedPolicy` default `DENY_ALL` (ROLE_ADMIN only) |
-| `DELETE` | `/api/monitoring/metrics/{}` | **No matching rule** → `RbacUnmatchedPolicy` default `DENY_ALL` (ROLE_ADMIN only) |
-| `PUT` | `/api/monitoring/metrics/{}/configuration` | **No matching rule** → `RbacUnmatchedPolicy` default `DENY_ALL` (ROLE_ADMIN only) |
+| `POST` | `/api/monitoring/metrics/validate` | `monitoring:metrics:write` |
+| `DELETE` | `/api/monitoring/metrics/{}` | `monitoring:metrics:write` |
+| `PUT` | `/api/monitoring/metrics/{}/configuration` | `monitoring:metrics:write` |
 
 ### Call history
 
@@ -650,6 +650,6 @@ None of these endpoints is called by the console, and none was documented (the `
 
 ### Two caveats
 
-1. **Writes under `/api/monitoring/metrics/**` have no permission rule** — registering, updating and deleting metrics are protected only by the `RbacUnmatchedPolicy` default `DENY_ALL` (ROLE_ADMIN passes). Only reads carry `monitoring:metrics:read`. Granting an operator role the ability to register metrics requires an **explicit write rule**.
+1. **Writes under `/api/monitoring/metrics/**` now have an explicit rule** — reads use `monitoring:metrics:read`, writes use `monitoring:metrics:write` (added by `#454`). Previously writes had no rule and were protected only by the `RbacUnmatchedPolicy` default `DENY_ALL` ("secure by accident"); the `OPERATOR` template now receives the write code automatically.
 2. **`/api/call-history/**` shares `callhistory:view` across read, write and delete** — `POST /record` and `DELETE /cleanup` are both allowed by the "view" code; see `#514`.
 

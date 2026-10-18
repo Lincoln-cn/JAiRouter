@@ -127,7 +127,16 @@ public final class RbacExemptEndpoints {
                         "Token 用量上报摄取面：内部代理经进程内 TokenUsageRecorder 落库，不经此端点；"
                                 + "对外公开摄取 API，调用方可能为 API-Key（仅 ROLE_<SERVICE>），登记权限码会阻断上报"),
                 Exemption.post("/api/token-usage/record/batch",
-                        "批量 Token 用量上报摄取面：同 /api/token-usage/record，外部摄取 API 不宜绑定权限码")
+                        "批量 Token 用量上报摄取面：同 /api/token-usage/record，外部摄取 API 不宜绑定权限码"),
+
+                // ===== 调用记录摄取面（issue #454） =====
+                // 应用自身的调用记录走进程内 ApiCallHistoryRecorder → ApiCallHistoryService，不经此端点；
+                // 这个 POST 是给外部上报用的摄取 API。此前它**没有任何权限规则**，只靠
+                // RbacUnmatchedPolicy 的默认 DENY_ALL（仅 ROLE_ADMIN）兜住 —— 属于「碰巧安全」。
+                // 现在显式登记为摄取面豁免，与 token-usage 同口径；理由同上：调用方可能是 API-Key。
+                Exemption.post("/api/call-history/record",
+                        "调用记录摄取面（外部上报）：应用自身记录走进程内 ApiCallHistoryRecorder，不经此端点；"
+                                + "对外摄取 API 的调用方可能是 API-Key（仅 ROLE_<SERVICE>），登记权限码会阻断上报")
         );
     }
 

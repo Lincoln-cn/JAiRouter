@@ -556,21 +556,21 @@ management:
 
 | 方法 | 路径 | 生效的权限码 |
 |---|---|---|
-| `DELETE` | `/api/monitoring/metrics/batch` | **无匹配规则** ⇒ `RbacUnmatchedPolicy` 默认 `DENY_ALL`（仅 ROLE_ADMIN） |
+| `DELETE` | `/api/monitoring/metrics/batch` | `monitoring:metrics:write` |
 | `GET` | `/api/monitoring/metrics/category/{}` | `monitoring:metrics:read` |
-| `POST` | `/api/monitoring/metrics/cleanup` | **无匹配规则** ⇒ `RbacUnmatchedPolicy` 默认 `DENY_ALL`（仅 ROLE_ADMIN） |
+| `POST` | `/api/monitoring/metrics/cleanup` | `monitoring:metrics:write` |
 | `GET` | `/api/monitoring/metrics/exists/{}` | `monitoring:metrics:read` |
 | `GET` | `/api/monitoring/metrics/list` | `monitoring:metrics:read` |
 | `GET` | `/api/monitoring/metrics/metadata` | `monitoring:metrics:read` |
 | `GET` | `/api/monitoring/metrics/metadata/{}` | `monitoring:metrics:read` |
-| `PUT` | `/api/monitoring/metrics/metadata/{}` | **无匹配规则** ⇒ `RbacUnmatchedPolicy` 默认 `DENY_ALL`（仅 ROLE_ADMIN） |
-| `POST` | `/api/monitoring/metrics/register` | **无匹配规则** ⇒ `RbacUnmatchedPolicy` 默认 `DENY_ALL`（仅 ROLE_ADMIN） |
-| `POST` | `/api/monitoring/metrics/register/batch` | **无匹配规则** ⇒ `RbacUnmatchedPolicy` 默认 `DENY_ALL`（仅 ROLE_ADMIN） |
+| `PUT` | `/api/monitoring/metrics/metadata/{}` | `monitoring:metrics:write` |
+| `POST` | `/api/monitoring/metrics/register` | `monitoring:metrics:write` |
+| `POST` | `/api/monitoring/metrics/register/batch` | `monitoring:metrics:write` |
 | `GET` | `/api/monitoring/metrics/search` | `monitoring:metrics:read` |
 | `GET` | `/api/monitoring/metrics/statistics` | `monitoring:metrics:read` |
-| `POST` | `/api/monitoring/metrics/validate` | **无匹配规则** ⇒ `RbacUnmatchedPolicy` 默认 `DENY_ALL`（仅 ROLE_ADMIN） |
-| `DELETE` | `/api/monitoring/metrics/{}` | **无匹配规则** ⇒ `RbacUnmatchedPolicy` 默认 `DENY_ALL`（仅 ROLE_ADMIN） |
-| `PUT` | `/api/monitoring/metrics/{}/configuration` | **无匹配规则** ⇒ `RbacUnmatchedPolicy` 默认 `DENY_ALL`（仅 ROLE_ADMIN） |
+| `POST` | `/api/monitoring/metrics/validate` | `monitoring:metrics:write` |
+| `DELETE` | `/api/monitoring/metrics/{}` | `monitoring:metrics:write` |
+| `PUT` | `/api/monitoring/metrics/{}/configuration` | `monitoring:metrics:write` |
 
 ### 调用历史（ApiCallHistoryController）
 
@@ -580,7 +580,7 @@ management:
 | `GET` | `/api/call-history/count` | `callhistory:view` |
 | `GET` | `/api/call-history/errors` | `callhistory:view` |
 | `GET` | `/api/call-history/recent` | `callhistory:view` |
-| `POST` | `/api/call-history/record` | `callhistory:view（同码，见 #514）` |
+| `POST` | `/api/call-history/record` | `**摄取面豁免**（`RbacExemptEndpoints`，#454）` |
 | `GET` | `/api/call-history/trace/{}` | `callhistory:view` |
 
 ### 路由监控（RoutingMonitorController）
@@ -641,6 +641,6 @@ management:
 
 ### 两个需要注意的口径
 
-1. **`/api/monitoring/metrics/**` 的写操作没有权限规则** —— 注册 / 更新 / 删除指标只受`RbacUnmatchedPolicy` 的默认 `DENY_ALL`（仅 `ROLE_ADMIN` 直通）保护，读操作才有 `monitoring:metrics:read`。若要让运维角色能注册指标，需要**显式加一条写规则**。
+1. **`/api/monitoring/metrics/**` 的写操作已有显式规则** —— 读 `monitoring:metrics:read`、写 `monitoring:metrics:write`（`#454` 补）。此前写操作没有规则、只靠 `RbacUnmatchedPolicy` 的默认 `DENY_ALL`（仅 `ROLE_ADMIN`）兜住，属「碰巧安全」；现在「谁能注册指标」是一条可授的权限，`OPERATOR` 模板按「所有 `:read`/`:write` 码」自动获得它。
 2. **`/api/call-history/**` 的读 / 写 / 删共用 `callhistory:view`** —— `POST /record`（写入）与 `DELETE /cleanup`（删除）都被「查看」权限放行，见 `#514`。
 

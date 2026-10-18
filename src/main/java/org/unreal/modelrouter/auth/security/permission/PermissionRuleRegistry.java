@@ -123,6 +123,10 @@ public class PermissionRuleRegistry {
                 PermissionRule.get("/api/v1/routing-monitor/**", PermissionCodes.MONITORING_ROUTING_READ),
                 PermissionRule.write("/api/v1/routing-monitor/**", PermissionCodes.LB_CONFIG_WRITE),
                 PermissionRule.get("/api/monitoring/metrics/**", PermissionCodes.MONITORING_METRICS_READ),
+                // issue #454：这一前缀此前只有 GET 规则，于是 10 个写端点（注册/更新/删除/清理/校验）
+                // 只能靠 RbacUnmatchedPolicy 的默认 DENY_ALL（仅 ROLE_ADMIN）兜住 —— 不是显式设计。
+                // 现在补显式写规则，让"谁能注册指标"成为一条可授的权限，而不是「默认拒绝」的副产品。
+                PermissionRule.write("/api/monitoring/metrics/**", PermissionCodes.MONITORING_METRICS_WRITE),
 
                 // ===== 负载均衡 =====
                 PermissionRule.get("/api/loadbalancer/**", PermissionCodes.LB_MONITORING_READ),

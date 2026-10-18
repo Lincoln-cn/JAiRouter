@@ -101,6 +101,8 @@ public final class PermissionCodes {
 
     /** 指标监控-读 */
     public static final String MONITORING_METRICS_READ = "monitoring:metrics:read";
+    /** 指标注册/更新/删除-写（issue #454：读与写此前共用"无写规则"，写操作只靠默认 DENY_ALL 兜住） */
+    public static final String MONITORING_METRICS_WRITE = "monitoring:metrics:write";
     /** 慢查询分析-读 */
     public static final String MONITORING_SLOWQUERY_READ = "monitoring:slowquery:read";
     /** Token 用量-读 */
@@ -181,7 +183,7 @@ public final class PermissionCodes {
             CB_MONITORING_READ, CB_HISTORY_READ,
             RL_MONITORING_READ,
             CALLHISTORY_VIEW,
-            MONITORING_METRICS_READ, MONITORING_SLOWQUERY_READ,
+            MONITORING_METRICS_READ, MONITORING_METRICS_WRITE, MONITORING_SLOWQUERY_READ,
             MONITORING_TOKENUSAGE_READ, MONITORING_MODELSTATS_READ,
             MONITORING_ROUTING_READ,
             MONITORING_QUOTA_READ,
