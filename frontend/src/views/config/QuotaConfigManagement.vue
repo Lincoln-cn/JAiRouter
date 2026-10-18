@@ -96,7 +96,7 @@
           type="primary"
           :loading="saving"
           :disabled="!configChanged"
-          @click="handleSaveConfig"
+          v-permission="'config:quota:write'" @click="handleSaveConfig"
         >
           <el-icon><Check /></el-icon>
           {{ t('quotaConfig.saveRuntimeConfig') }}

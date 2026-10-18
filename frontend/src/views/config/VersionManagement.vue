@@ -66,11 +66,11 @@
                 {{ t('version.view') }}
               </el-button>
               <el-button :disabled="scope.row.status === 'current' || applyingVersions.has(scope.row.version)"
-                :loading="applyingVersions.has(scope.row.version)" type="primary" @click="handleApply(scope.row)">
+                :loading="applyingVersions.has(scope.row.version)" type="primary" v-permission="'config:versions:write'" @click="handleApply(scope.row)">
                 {{ t('version.apply') }}
               </el-button>
               <el-button :disabled="scope.row.status === 'current' || deletingVersions.has(scope.row.version)"
-                :loading="deletingVersions.has(scope.row.version)" type="danger" @click="handleDelete(scope.row)">
+                :loading="deletingVersions.has(scope.row.version)" type="danger" v-permission="'config:versions:write'" @click="handleDelete(scope.row)">
                 {{ t('version.delete') }}
               </el-button>
             </template>

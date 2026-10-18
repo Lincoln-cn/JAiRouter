@@ -2,7 +2,7 @@
   <PageSkeleton :title="t('pool.title')">
     <template #actions>
       <el-button :icon="Refresh" circle @click="fetchPools" :title="t('pool.refreshList')" />
-      <el-button type="primary" @click="handleCreate">
+      <el-button type="primary" v-permission="'config:pools:write'" @click="handleCreate">
         <el-icon><Plus /></el-icon>&nbsp;{{ t('pool.addPool') }}
       </el-button>
     </template>
@@ -48,8 +48,8 @@
         </el-table-column>
         <el-table-column :label="t('pool.actions')" width="180" align="center">
           <template #default="{ row }">
-            <el-button size="small" @click="handleEdit(row)">{{ t('pool.edit') }}</el-button>
-            <el-button size="small" type="danger" @click="handleDelete(row)">{{ t('pool.delete') }}</el-button>
+            <el-button size="small" v-permission="'config:pools:write'" @click="handleEdit(row)">{{ t('pool.edit') }}</el-button>
+            <el-button size="small" type="danger" v-permission="'config:pools:write'" @click="handleDelete(row)">{{ t('pool.delete') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -100,7 +100,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">{{ t('pool.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">{{ t('pool.save') }}</el-button>
+        <el-button type="primary" :loading="saving" v-permission="'config:pools:write'" @click="handleSave">{{ t('pool.save') }}</el-button>
       </template>
     </el-dialog>
 </template>

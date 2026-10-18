@@ -1,7 +1,7 @@
 <template>
   <PageSkeleton :title="t('adapter.management')">
     <template #actions>
-      <el-button type="primary" @click="handleCreate" size="medium">
+      <el-button type="primary" v-permission="'config:adapters:write'" @click="handleCreate" size="medium">
         <el-icon><Plus /></el-icon>
         {{ t('adapter.newAdapter') }}
       </el-button>
@@ -47,7 +47,7 @@
             type="primary"
             link
             size="small"
-            @click="handleEdit(row)"
+            v-permission="'config:adapters:write'" @click="handleEdit(row)"
           >
             {{ t('adapter.edit') }}
           </el-button>
@@ -64,7 +64,7 @@
             type="danger"
             link
             size="small"
-            @click="handleDelete(row)"
+            v-permission="'config:adapters:write'" @click="handleDelete(row)"
           >
             {{ t('adapter.delete') }}
           </el-button>
@@ -169,7 +169,7 @@
 
       <template #footer>
         <el-button @click="dialogVisible = false">{{ t('adapter.cancel') }}</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitting">{{ t('adapter.save') }}</el-button>
+        <el-button type="primary" v-permission="'config:adapters:write'" @click="handleSubmit" :loading="submitting">{{ t('adapter.save') }}</el-button>
       </template>
     </el-dialog>
 
