@@ -20,44 +20,43 @@ JAiRouter 监控配置主要在 `application.yml` 中定义：
 ```yaml
 # 监控配置
 monitoring:
-  metrics:
-    # 基础配置
-    enabled: true
-    prefix: "jairouter"
-    collection-interval: 10s
+  # 基础配置
+  enabled: true
+  prefix: "jairouter"
+  collection-interval: 10s
     
-    # 指标类别
-    enabled-categories:
-      - system
-      - business
-      - infrastructure
+  # 指标类别
+  enabled-categories:
+    - system
+    - business
+    - infrastructure
     
-    # 自定义标签
-    custom-tags:
-      environment: "${spring.profiles.active:default}"
-      version: "@project.version@"
+  # 自定义标签
+  custom-tags:
+    environment: "${spring.profiles.active:default}"
+    version: "@project.version@"
     
-    # 采样配置
-    sampling:
-      request-metrics: 1.0
-      backend-metrics: 1.0
-      infrastructure-metrics: 1.0
+  # 采样配置
+  sampling:
+    request-metrics: 1.0
+    backend-metrics: 1.0
+    infrastructure-metrics: 1.0
     
-    # 性能配置
-    performance:
-      async-processing: true
-      batch-size: 500
-      buffer-size: 2000
+  # 性能配置
+  performance:
+    async-processing: true
+    batch-size: 500
+    buffer-size: 2000
     
-    # 内存配置
-    memory:
-      cache-size: 10000
-      cache-expiry: 5m
+  # 内存配置
+  memory:
+    cache-size: 10000
+    cache-expiry: 5m
     
-    # 安全配置
-    security:
-      data-masking: false
-      mask-labels: []
+  # 安全配置
+  security:
+    data-masking: false
+    mask-labels: []
 
 # Spring Actuator 配置
 management:
@@ -92,9 +91,8 @@ management:
 
 ```yaml
 monitoring:
-  metrics:
-    enabled: true  # 启用监控
-    # enabled: false  # 禁用监控
+  enabled: true  # 启用监控
+  # enabled: false  # 禁用监控
 ```
 
 **环境变量**: `MONITORING_METRICS_ENABLED`
@@ -107,10 +105,9 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    prefix: "jairouter"        # 默认前缀
-    # prefix: "my-app"         # 自定义前缀
-    # prefix: ""               # 无前缀
+  prefix: "jairouter"        # 默认前缀
+  # prefix: "my-app"         # 自定义前缀
+  # prefix: ""               # 无前缀
 ```
 
 ### monitoring.metrics.collection-interval
@@ -121,10 +118,9 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    collection-interval: 10s   # 10 秒
-    # collection-interval: 5s  # 5 秒（更频繁）
-    # collection-interval: 30s # 30 秒（较少频繁）
+  collection-interval: 10s   # 10 秒
+  # collection-interval: 5s  # 5 秒（更频繁）
+  # collection-interval: 30s # 30 秒（较少频繁）
 ```
 
 ## 指标类别配置
@@ -137,11 +133,10 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    enabled-categories:
-      - system          # 系统指标（JVM、HTTP等）
-      - business        # 业务指标（模型调用、用户会话等）
-      - infrastructure  # 基础设施指标（负载均衡、限流、熔断等）
+  enabled-categories:
+    - system          # 系统指标（JVM、HTTP等）
+    - business        # 业务指标（模型调用、用户会话等）
+    - infrastructure  # 基础设施指标（负载均衡、限流、熔断等）
 ```
 
 **可选值**:
@@ -159,13 +154,12 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    custom-tags:
-      environment: "${spring.profiles.active:default}"
-      version: "@project.version@"
-      region: "us-west-1"
-      datacenter: "dc1"
-      team: "platform"
+  custom-tags:
+    environment: "${spring.profiles.active:default}"
+    version: "@project.version@"
+    region: "us-west-1"
+    datacenter: "dc1"
+    team: "platform"
 ```
 
 **注意事项**:
@@ -182,13 +176,12 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    sampling:
-      request-metrics: 1.0        # 请求指标采样率（100%）
-      backend-metrics: 1.0        # 后端调用指标采样率
-      infrastructure-metrics: 1.0 # 基础设施指标采样率
-      system-metrics: 1.0         # 系统指标采样率
-      debug-metrics: 0.1          # 调试指标采样率（10%）
+  sampling:
+    request-metrics: 1.0        # 请求指标采样率（100%）
+    backend-metrics: 1.0        # 后端调用指标采样率
+    infrastructure-metrics: 1.0 # 基础设施指标采样率
+    system-metrics: 1.0         # 系统指标采样率
+    debug-metrics: 0.1          # 调试指标采样率（10%）
 ```
 
 **采样率说明**:
@@ -201,17 +194,15 @@ monitoring:
 ```yaml
 # 开发环境 - 全量采样便于调试
 monitoring:
-  metrics:
-    sampling:
-      request-metrics: 1.0
-      backend-metrics: 1.0
+  sampling:
+    request-metrics: 1.0
+    backend-metrics: 1.0
 
 # 生产环境 - 降低采样率减少开销
 monitoring:
-  metrics:
-    sampling:
-      request-metrics: 0.1
-      backend-metrics: 0.5
+  sampling:
+    request-metrics: 0.1
+    backend-metrics: 0.5
 ```
 
 ## 性能配置
@@ -223,24 +214,23 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    performance:
-      # 异步处理配置
-      async-processing: true
-      async-thread-pool-size: 4
-      async-thread-pool-max-size: 8
-      async-queue-capacity: 1000
+  performance:
+    # 异步处理配置
+    async-processing: true
+    async-thread-pool-size: 4
+    async-thread-pool-max-size: 8
+    async-queue-capacity: 1000
       
-      # 批处理配置
-      batch-size: 500
-      batch-timeout: 1s
+    # 批处理配置
+    batch-size: 500
+    batch-timeout: 1s
       
-      # 缓冲区配置
-      buffer-size: 2000
-      buffer-flush-interval: 5s
+    # 缓冲区配置
+    buffer-size: 2000
+    buffer-flush-interval: 5s
       
-      # 处理超时配置
-      processing-timeout: 5s
+    # 处理超时配置
+    processing-timeout: 5s
 ```
 
 #### async-processing
@@ -251,10 +241,9 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    performance:
-      async-processing: true   # 启用异步处理（推荐）
-      # async-processing: false # 同步处理（调试时使用）
+  performance:
+    async-processing: true   # 启用异步处理（推荐）
+    # async-processing: false # 同步处理（调试时使用）
 ```
 
 #### batch-size
@@ -265,11 +254,10 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    performance:
-      batch-size: 500    # 默认批大小
-      # batch-size: 100  # 小批量，低延迟
-      # batch-size: 1000 # 大批量，高吞吐
+  performance:
+    batch-size: 500    # 默认批大小
+    # batch-size: 100  # 小批量，低延迟
+    # batch-size: 1000 # 大批量，高吞吐
 ```
 
 #### buffer-size
@@ -280,11 +268,10 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    performance:
-      buffer-size: 2000   # 默认缓冲区大小
-      # buffer-size: 5000 # 大缓冲区，处理突发流量
-      # buffer-size: 1000 # 小缓冲区，节省内存
+  performance:
+    buffer-size: 2000   # 默认缓冲区大小
+    # buffer-size: 5000 # 大缓冲区，处理突发流量
+    # buffer-size: 1000 # 小缓冲区，节省内存
 ```
 
 ## 内存配置
@@ -296,20 +283,19 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    memory:
-      # 缓存配置
-      cache-size: 10000
-      cache-expiry: 5m
-      cache-cleanup-interval: 1m
+  memory:
+    # 缓存配置
+    cache-size: 10000
+    cache-expiry: 5m
+    cache-cleanup-interval: 1m
       
-      # 内存阈值配置
-      memory-threshold: 80
-      low-memory-sampling-rate: 0.1
+    # 内存阈值配置
+    memory-threshold: 80
+    low-memory-sampling-rate: 0.1
       
-      # 对象池配置
-      object-pool-enabled: true
-      object-pool-size: 1000
+    # 对象池配置
+    object-pool-enabled: true
+    object-pool-size: 1000
 ```
 
 #### cache-size
@@ -339,26 +325,25 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    security:
-      # 数据脱敏
-      data-masking: true
-      mask-labels:
-        - user_id
-        - client_ip
-        - api_key
-        - session_id
+  security:
+    # 数据脱敏
+    data-masking: true
+    mask-labels:
+      - user_id
+      - client_ip
+      - api_key
+      - session_id
       
-      # IP 地址脱敏
-      ip-masking: true
-      ip-mask-pattern: "xxx.xxx.xxx.xxx"
+    # IP 地址脱敏
+    ip-masking: true
+    ip-mask-pattern: "xxx.xxx.xxx.xxx"
       
-      # 敏感指标过滤
-      sensitive-metrics-filter: true
-      filtered-metrics:
-        - "*.password.*"
-        - "*.secret.*"
-        - "*.token.*"
+    # 敏感指标过滤
+    sensitive-metrics-filter: true
+    filtered-metrics:
+      - "*.password.*"
+      - "*.secret.*"
+      - "*.token.*"
 ```
 
 #### data-masking
@@ -437,13 +422,12 @@ JAiRouter 支持将 Micrometer 指标批量上报到外部系统，包括 HTTP �
 
 ```yaml
 monitoring:
-  metrics:
-    export:
-      http:
-        enabled: false                    # 是否启用 HTTP 上报
-        url: ""                           # 上报端点 URL
-        timeout: 5000                     # 请求超时时间（毫秒）
-        format: prometheus                # 上报格式：prometheus 或 json
+  export:
+    http:
+      enabled: false                    # 是否启用 HTTP 上报
+      url: ""                           # 上报端点 URL
+      timeout: 5000                     # 请求超时时间（毫秒）
+      format: prometheus                # 上报格式：prometheus 或 json
 ```
 
 **字段说明**:
@@ -460,13 +444,12 @@ monitoring:
 ```yaml
 # Prometheus Pushgateway 示例配置
 monitoring:
-  metrics:
-    export:
-      http:
-        enabled: true
-        url: "http://your-pushgateway-host:9091/metrics/job/jairouter/instance/${HOSTNAME}"
-        timeout: 5000
-        format: prometheus
+  export:
+    http:
+      enabled: true
+      url: "http://your-pushgateway-host:9091/metrics/job/jairouter/instance/${HOSTNAME}"
+      timeout: 5000
+      format: prometheus
 ```
 
 **InfluxDB 示例配置**:
@@ -474,13 +457,12 @@ monitoring:
 ```yaml
 # InfluxDB 示例配置
 monitoring:
-  metrics:
-    export:
-      http:
-        enabled: true
-        url: "http://your-influxdb-host:8086/api/v2/write?org=myorg&bucket=metrics"
-        timeout: 10000
-        format: json
+  export:
+    http:
+      enabled: true
+      url: "http://your-influxdb-host:8086/api/v2/write?org=myorg&bucket=metrics"
+      timeout: 10000
+      format: json
 ```
 
 #### monitoring.metrics.export.file
@@ -490,13 +472,12 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    export:
-      file:
-        enabled: false                    # 是否启用文件上报
-        path: "./logs/metrics"            # 指标文件存储路径
-        format: json                      # 文件格式：json 或 prometheus
-        max-size-mb: 100                  # 单文件最大大小（MB）
+  export:
+    file:
+      enabled: false                    # 是否启用文件上报
+      path: "./logs/metrics"            # 指标文件存储路径
+      format: json                      # 文件格式：json 或 prometheus
+      max-size-mb: 100                  # 单文件最大大小（MB）
 ```
 
 **字段说明**:
@@ -562,25 +543,24 @@ metricsBatchReporter.setReportTarget(ReportTarget.LOG);
 
 ```yaml
 monitoring:
-  metrics:
-    enabled: true
-    prefix: "jairouter"
+  enabled: true
+  prefix: "jairouter"
     
-    # 批量上报配置
-    export:
-      # HTTP 上报（如 Prometheus Pushgateway）
-      http:
-        enabled: true
-        url: "http://pushgateway:9091/metrics/job/jairouter"
-        timeout: 5000
-        format: prometheus
+  # 批量上报配置
+  export:
+    # HTTP 上报（如 Prometheus Pushgateway）
+    http:
+      enabled: true
+      url: "http://pushgateway:9091/metrics/job/jairouter"
+      timeout: 5000
+      format: prometheus
       
-      # 文件上报（备份或离线分析）
-      file:
-        enabled: true
-        path: "./logs/metrics"
-        format: json
-        max-size-mb: 100
+    # 文件上报（备份或离线分析）
+    file:
+      enabled: true
+      path: "./logs/metrics"
+      format: json
+      max-size-mb: 100
 ```
 
 ## 环境特定配置
@@ -590,17 +570,16 @@ monitoring:
 ```yaml
 # application-dev.yml
 monitoring:
-  metrics:
-    enabled: true
-    sampling:
-      request-metrics: 1.0
-      backend-metrics: 1.0
-      infrastructure-metrics: 1.0
-    performance:
-      async-processing: false  # 便于调试
-      batch-size: 100
-    security:
-      data-masking: false
+  enabled: true
+  sampling:
+    request-metrics: 1.0
+    backend-metrics: 1.0
+    infrastructure-metrics: 1.0
+  performance:
+    async-processing: false  # 便于调试
+    batch-size: 100
+  security:
+    data-masking: false
 
 management:
   endpoints:
@@ -618,17 +597,16 @@ management:
 ```yaml
 # application-test.yml
 monitoring:
-  metrics:
-    enabled: true
-    prefix: "test_jairouter"
-    sampling:
-      request-metrics: 0.1  # 降低采样率减少测试干扰
-      backend-metrics: 0.5
-    performance:
-      async-processing: true
-      batch-size: 50
-    memory:
-      cache-size: 1000
+  enabled: true
+  prefix: "test_jairouter"
+  sampling:
+    request-metrics: 0.1  # 降低采样率减少测试干扰
+    backend-metrics: 0.5
+  performance:
+    async-processing: true
+    batch-size: 50
+  memory:
+    cache-size: 1000
 
 management:
   endpoints:
@@ -642,28 +620,27 @@ management:
 ```yaml
 # application-prod.yml
 monitoring:
-  metrics:
-    enabled: true
-    sampling:
-      request-metrics: 0.1
-      backend-metrics: 0.5
-      infrastructure-metrics: 0.1
-      system-metrics: 0.5
-    performance:
-      async-processing: true
-      batch-size: 1000
-      buffer-size: 5000
-    memory:
-      cache-size: 20000
-      memory-threshold: 85
-      low-memory-sampling-rate: 0.01
-    security:
-      data-masking: true
-      mask-labels:
-        - user_id
-        - client_ip
-        - api_key
-      ip-masking: true
+  enabled: true
+  sampling:
+    request-metrics: 0.1
+    backend-metrics: 0.5
+    infrastructure-metrics: 0.1
+    system-metrics: 0.5
+  performance:
+    async-processing: true
+    batch-size: 1000
+    buffer-size: 5000
+  memory:
+    cache-size: 20000
+    memory-threshold: 85
+    low-memory-sampling-rate: 0.01
+  security:
+    data-masking: true
+    mask-labels:
+      - user_id
+      - client_ip
+      - api_key
+    ip-masking: true
 
 management:
   endpoints:
@@ -718,11 +695,10 @@ curl -X POST http://localhost:8080/api/monitoring/performance \
 ```yaml
 # config/monitoring-override.yml
 monitoring:
-  metrics:
-    sampling:
-      request-metrics: 0.3
-    performance:
-      batch-size: 200
+  sampling:
+    request-metrics: 0.3
+  performance:
+    batch-size: 200
 ```
 
 系统会自动检测配置文件变化并应用新配置。
@@ -762,15 +738,14 @@ curl http://localhost:8080/actuator/prometheus
 ```yaml
 # 高性能配置
 monitoring:
-  metrics:
-    sampling:
-      request-metrics: 0.1
-    performance:
-      async-processing: true
-      batch-size: 1000
-      buffer-size: 5000
-    memory:
-      cache-size: 20000
+  sampling:
+    request-metrics: 0.1
+  performance:
+    async-processing: true
+    batch-size: 1000
+    buffer-size: 5000
+  memory:
+    cache-size: 20000
 ```
 
 ### 3. 安全配置
@@ -778,13 +753,12 @@ monitoring:
 ```yaml
 # 安全配置
 monitoring:
-  metrics:
-    security:
-      data-masking: true
-      mask-labels:
-        - user_id
-        - client_ip
-        - api_key
+  security:
+    data-masking: true
+    mask-labels:
+      - user_id
+      - client_ip
+      - api_key
 
 management:
   security:
@@ -799,12 +773,11 @@ management:
 ```yaml
 # 监控监控系统
 monitoring:
-  metrics:
-    custom-tags:
-      monitoring_version: "1.0"
-    enabled-categories:
-      - system
-      - monitoring  # 监控系统自身的指标
+  custom-tags:
+    monitoring_version: "1.0"
+  enabled-categories:
+    - system
+    - monitoring  # 监控系统自身的指标
 ```
 
 ## 故障排查配置
@@ -819,11 +792,10 @@ logging:
     io.micrometer: DEBUG
 
 monitoring:
-  metrics:
-    debug:
-      enabled: true
-      log-metrics: true
-      log-interval: 30s
+  debug:
+    enabled: true
+    log-metrics: true
+    log-interval: 30s
 ```
 
 ### 问题诊断配置
@@ -831,12 +803,11 @@ monitoring:
 ```yaml
 # 诊断配置
 monitoring:
-  metrics:
-    diagnostics:
-      enabled: true
-      collect-jvm-metrics: true
-      collect-system-metrics: true
-      health-check-interval: 10s
+  diagnostics:
+    enabled: true
+    collect-jvm-metrics: true
+    collect-system-metrics: true
+    health-check-interval: 10s
 ```
 
 ## 配置模板
@@ -846,19 +817,18 @@ monitoring:
 ```yaml
 # 基础监控配置模板
 monitoring:
-  metrics:
-    enabled: true
-    prefix: "jairouter"
-    enabled-categories:
-      - system
-      - business
-      - infrastructure
-    sampling:
-      request-metrics: 1.0
-      backend-metrics: 1.0
-    performance:
-      async-processing: true
-      batch-size: 500
+  enabled: true
+  prefix: "jairouter"
+  enabled-categories:
+    - system
+    - business
+    - infrastructure
+  sampling:
+    request-metrics: 1.0
+    backend-metrics: 1.0
+  performance:
+    async-processing: true
+    batch-size: 500
 
 management:
   endpoints:
@@ -876,19 +846,18 @@ management:
 ```yaml
 # 高性能监控配置模板
 monitoring:
-  metrics:
-    enabled: true
-    sampling:
-      request-metrics: 0.1
-      backend-metrics: 0.5
-      infrastructure-metrics: 0.1
-    performance:
-      async-processing: true
-      batch-size: 1000
-      buffer-size: 5000
-    memory:
-      cache-size: 20000
-      memory-threshold: 85
+  enabled: true
+  sampling:
+    request-metrics: 0.1
+    backend-metrics: 0.5
+    infrastructure-metrics: 0.1
+  performance:
+    async-processing: true
+    batch-size: 1000
+    buffer-size: 5000
+  memory:
+    cache-size: 20000
+    memory-threshold: 85
 ```
 
 ### 安全模板
@@ -896,15 +865,14 @@ monitoring:
 ```yaml
 # 安全监控配置模板
 monitoring:
-  metrics:
-    enabled: true
-    security:
-      data-masking: true
-      mask-labels:
-        - user_id
-        - client_ip
-        - api_key
-      ip-masking: true
+  enabled: true
+  security:
+    data-masking: true
+    mask-labels:
+      - user_id
+      - client_ip
+      - api_key
+    ip-masking: true
 
 management:
   endpoints:

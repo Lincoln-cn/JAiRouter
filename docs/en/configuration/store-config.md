@@ -40,31 +40,20 @@ Storage configuration is configured through the `store` prefix and can be set in
 ```yaml
 store:
   type: h2          # Storage type, default is h2
-  h2:
-    url: file:./data/config  # H2 database file path
-  auto-merge: true  # Whether to enable automatic merge function, default is true
 ```
 
 ### Configuration Description
 
 | Configuration Item | Default Value | Description |
 |--------------------|---------------|-------------|
-| `store.type` | `h2` | Storage type, supports h2, file, memory |
-| `store.h2.url` | `file:./data/config` | H2 database file path |
+| `store.type` | `jpa` | Storage type, supports h2, file, memory |
 | `store.path` | `config/` | Configuration file storage directory path (only used for file storage) |
-| `store.auto-merge` | `true` | Whether to enable automatic merge function |
 
 ### H2 Database Storage Advanced Configuration
 
 ```yaml
 store:
   type: h2  # Default storage type
-  h2:
-    url: file:./data/config  # H2 database file path
-  migration:
-    enabled: false  # Whether to enable configuration data migration (from file storage to H2 database)
-  security-migration:
-    enabled: false  # Whether to enable security data migration (API Keys, JWT accounts, etc.)
 
 spring:
   r2dbc:
@@ -80,9 +69,6 @@ spring:
       path: /h2-console
 
 jairouter:
-  security:
-    audit:
-      retentionDays: 30
 ```
 
 ### H2 Database Storage Complete Configuration
@@ -90,12 +76,6 @@ jairouter:
 ```yaml
 store:
   type: h2
-  h2:
-    url: file:./data/config
-  migration:
-    enabled: false
-  security-migration:
-    enabled: false
 
 spring:
   r2dbc:
@@ -112,9 +92,6 @@ spring:
       path: /h2-console
 
 jairouter:
-  security:
-    audit:
-      retentionDays: 30
 ```
 
 ## Environment-Specific Configuration
@@ -126,12 +103,6 @@ Different environments can have different storage configurations:
 ```yaml
 store:
   type: h2
-  h2:
-    url: file:./data/dev-config
-  migration:
-    enabled: true  # Enable automatic migration in development environment
-  security-migration:
-    enabled: true  # Enable security data migration in development environment
 
 spring:
   r2dbc:
@@ -143,10 +114,6 @@ spring:
       enabled: true
       path: /h2-console
 
-jairouter:
-  security:
-    audit:
-      retentionDays: 7
 ```
 
 ### Production Environment (application-prod.yml)
@@ -154,12 +121,6 @@ jairouter:
 ```yaml
 store:
   type: h2
-  h2:
-    url: file:/var/lib/jairouter/data/config
-  migration:
-    enabled: false
-  security-migration:
-    enabled: false
 
 spring:
   h2:
@@ -171,10 +132,6 @@ spring:
       max-size: 50
       max-idle-time: 30m
 
-jairouter:
-  security:
-    audit:
-      retentionDays: 90
 ```
 
 ## Auto-Merge Configuration
@@ -192,7 +149,6 @@ When the auto-merge function is enabled, the system will periodically scan multi
 store:
   type: file
   path: "/var/lib/jairouter/config/"
-  auto-merge: true
 ```
 
 ## H2 Database Management
@@ -294,8 +250,6 @@ Enable automatic migration function to automatically migrate file storage data t
 ```yaml
 store:
   type: h2
-  migration:
-    enabled: true
 ```
 
 ### Security Data Migration
@@ -305,8 +259,6 @@ The system also supports migrating security-related data to H2 database:
 ```yaml
 store:
   type: h2
-  security-migration:
-    enabled: true  # Enable security data migration (API Keys, JWT accounts, etc.)
 ```
 
 ### First-time Startup Configuration
@@ -318,10 +270,6 @@ If there is existing data in the system that needs to be migrated, you can enabl
 ```yaml
 # application-dev.yml
 store:
-  migration:
-    enabled: true  # Enable configuration data migration
-  security-migration:
-    enabled: true  # Enable security data migration
 ```
 
 After starting the application, the system will automatically:
@@ -333,35 +281,15 @@ After migration is complete, it is recommended to disable automatic migration:
 
 ```yaml
 store:
-  migration:
-    enabled: false
-  security-migration:
-    enabled: false
 ```
 
 **Production Environment:**
 
 It is recommended to manually migrate in production environments:
 
-```bash
-# 1. Validate migration in staging environment
-java -jar app.jar --spring.profiles.active=staging \
-  --store.migration.enabled=true \
-  --store.security-migration.enabled=true
-
-# 2. Verify data integrity
-# Access H2 console to check data
-
-# 3. Backup database
-cp ./data/config.mv.db ./backup/
-
-# 4. Execute migration in production environment
-java -jar app.jar --spring.profiles.active=prod \
-  --store.migration.enabled=true \
-  --store.security-migration.enabled=true
-
-# 5. Disable migration switch after verification
-```
+> **There are no `store.migration` / `store.security-migration` switches.**
+> Migration runs through the dedicated `migrate` profile (`application-migrate.yml`),
+> and `jairouter.migration.exit-after-run` controls whether the process exits afterwards.
 
 ## Performance Optimization
 
@@ -476,14 +404,12 @@ Monitor the disk usage of the storage directory to ensure there is enough space 
 ### Auto-Merge Function Not Working
 
 If the auto-merge function is not working, please check:
-- Whether the `store.auto-merge` configuration is set to true
 - Whether the configuration directory exists and has read permissions
 - Whether the configuration file naming conforms to the `model-router-config@<version>.json` format
 
 ### Database Connection Failure
 
 If you encounter database connection issues, please check:
-- Whether the `store.h2.url` configuration is correct
 - Whether the database file path has write permissions
 - Detailed error information in application logs
 
