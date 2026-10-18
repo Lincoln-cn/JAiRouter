@@ -553,3 +553,103 @@ Avoid exposing sensitive data in metrics:
 - **[Management API](management-api.md)** - Configuration management
 - **[Universal API](universal-api.md)** - OpenAI-compatible endpoints
 - **[OpenAPI Specification](openapi-spec.md)** - Interactive API documentation
+---
+
+## Read-only monitoring surface: 37 management endpoints with no frontend entry and no docs
+
+None of these endpoints is called by the console, and none was documented (the `#454` reconciliation). By maintainer decision they are kept as a **read-only monitoring / diagnostics surface** and are documented here.
+
+> **Where authorization comes from**: these endpoints declare **no method-level `@PreAuthorize`**. Authorization is decided by `PermissionAuthorizationManager` over the `/api/**` matcher, using the URL rules in `PermissionRuleRegistry`. The codes below are the rules that are **actually in effect**, not an intended design.
+
+### Dynamic metric registration
+
+| Method | Path | Effective permission code |
+|---|---|---|
+| `DELETE` | `/api/monitoring/metrics/batch` | **No matching rule** → `RbacUnmatchedPolicy` default `DENY_ALL` (ROLE_ADMIN only) |
+| `GET` | `/api/monitoring/metrics/category/{}` | `monitoring:metrics:read` |
+| `POST` | `/api/monitoring/metrics/cleanup` | **No matching rule** → `RbacUnmatchedPolicy` default `DENY_ALL` (ROLE_ADMIN only) |
+| `GET` | `/api/monitoring/metrics/exists/{}` | `monitoring:metrics:read` |
+| `GET` | `/api/monitoring/metrics/list` | `monitoring:metrics:read` |
+| `GET` | `/api/monitoring/metrics/metadata` | `monitoring:metrics:read` |
+| `GET` | `/api/monitoring/metrics/metadata/{}` | `monitoring:metrics:read` |
+| `PUT` | `/api/monitoring/metrics/metadata/{}` | **No matching rule** → `RbacUnmatchedPolicy` default `DENY_ALL` (ROLE_ADMIN only) |
+| `POST` | `/api/monitoring/metrics/register` | **No matching rule** → `RbacUnmatchedPolicy` default `DENY_ALL` (ROLE_ADMIN only) |
+| `POST` | `/api/monitoring/metrics/register/batch` | **No matching rule** → `RbacUnmatchedPolicy` default `DENY_ALL` (ROLE_ADMIN only) |
+| `GET` | `/api/monitoring/metrics/search` | `monitoring:metrics:read` |
+| `GET` | `/api/monitoring/metrics/statistics` | `monitoring:metrics:read` |
+| `POST` | `/api/monitoring/metrics/validate` | **No matching rule** → `RbacUnmatchedPolicy` default `DENY_ALL` (ROLE_ADMIN only) |
+| `DELETE` | `/api/monitoring/metrics/{}` | **No matching rule** → `RbacUnmatchedPolicy` default `DENY_ALL` (ROLE_ADMIN only) |
+| `PUT` | `/api/monitoring/metrics/{}/configuration` | **No matching rule** → `RbacUnmatchedPolicy` default `DENY_ALL` (ROLE_ADMIN only) |
+
+### Call history
+
+| Method | Path | Effective permission code |
+|---|---|---|
+| `DELETE` | `/api/call-history/cleanup` | `callhistory:view（同码，见 #514）` |
+| `GET` | `/api/call-history/count` | `callhistory:view` |
+| `GET` | `/api/call-history/errors` | `callhistory:view` |
+| `GET` | `/api/call-history/recent` | `callhistory:view` |
+| `POST` | `/api/call-history/record` | `callhistory:view（同码，见 #514）` |
+| `GET` | `/api/call-history/trace/{}` | `callhistory:view` |
+
+### Routing monitor
+
+| Method | Path | Effective permission code |
+|---|---|---|
+| `PUT` | `/api/v1/routing-monitor/config` | `lb:config:write` |
+| `DELETE` | `/api/v1/routing-monitor/history/{}` | `lb:config:write` |
+| `GET` | `/api/v1/routing-monitor/history/{}` | `monitoring:routing:read` |
+| `GET` | `/api/v1/routing-monitor/stats/{}` | `monitoring:routing:read` |
+
+### Circuit breaker history
+
+| Method | Path | Effective permission code |
+|---|---|---|
+| `GET` | `/api/config/circuit-breaker/history/instance` | `config:circuitbreaker:read` |
+| `GET` | `/api/config/circuit-breaker/history/service-type` | `config:circuitbreaker:read` |
+| `GET` | `/api/config/circuit-breaker/history/time-range` | `config:circuitbreaker:read` |
+
+### Adapter templates
+
+| Method | Path | Effective permission code |
+|---|---|---|
+| `GET` | `/api/config/adapter/templates/{}` | `config:adapters:read` |
+| `POST` | `/api/config/adapter/templates/{}/create` | `config:adapters:write` |
+
+### Exception management
+
+| Method | Path | Effective permission code |
+|---|---|---|
+| `GET` | `/api/exceptions/dashboard` | `monitoring:exceptions:read` |
+| `GET` | `/api/exceptions/recent/{}` | `monitoring:exceptions:read` |
+
+### Slow query analysis
+
+| Method | Path | Effective permission code |
+|---|---|---|
+| `GET` | `/api/monitoring/slow-queries/stats/{}` | `monitoring:slowquery:read` |
+| `GET` | `/api/monitoring/slow-queries/trends` | `monitoring:slowquery:read` |
+
+### Health status SSE
+
+| Method | Path | Effective permission code |
+|---|---|---|
+| `GET` | `/api/health-status/stream` | Authenticated only |
+
+### Rate limit monitor
+
+| Method | Path | Effective permission code |
+|---|---|---|
+| `GET` | `/api/rate-limiter/status` | `rl:monitoring:read` |
+
+### State persistence
+
+| Method | Path | Effective permission code |
+|---|---|---|
+| `POST` | `/api/state-persistence/test/save-circuit-breaker/{}` | `config:persistence:write` |
+
+### Two caveats
+
+1. **Writes under `/api/monitoring/metrics/**` have no permission rule** — registering, updating and deleting metrics are protected only by the `RbacUnmatchedPolicy` default `DENY_ALL` (ROLE_ADMIN passes). Only reads carry `monitoring:metrics:read`. Granting an operator role the ability to register metrics requires an **explicit write rule**.
+2. **`/api/call-history/**` shares `callhistory:view` across read, write and delete** — `POST /record` and `DELETE /cleanup` are both allowed by the "view" code; see `#514`.
+
