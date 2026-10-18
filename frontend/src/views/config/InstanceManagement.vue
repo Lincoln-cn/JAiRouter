@@ -10,7 +10,7 @@
       >
         {{ t('instance.openServiceConfig') }}
       </el-button>
-      <el-button type="primary" @click="handleAddInstance" size="medium">
+      <el-button type="primary" v-permission="'config:instances:write'" @click="handleAddInstance" size="medium">
         <el-icon><Plus /></el-icon>
         {{ t('instance.addInstance') }}
       </el-button>
@@ -109,19 +109,19 @@
 
                   <el-table-column :label="t('instance.actions')" width="200" align="center" fixed="right">
                     <template #default="scope">
-                      <el-button size="small" @click="handleEdit(scope.row)" type="primary" plain circle :title="t('instance.editInstance')">
+                      <el-button size="small" v-permission="'config:instances:write'" @click="handleEdit(scope.row)" type="primary" plain circle :title="t('instance.editInstance')">
                         <el-icon><Edit /></el-icon>
                       </el-button>
 
-                      <el-button size="small" @click="openRateLimitConfig(scope.row)" type="warning" plain circle :title="t('instance.rateLimitConfig')">
+                      <el-button size="small" v-permission="'config:instances:write'" @click="openRateLimitConfig(scope.row)" type="warning" plain circle :title="t('instance.rateLimitConfig')">
                         <el-icon><Timer /></el-icon>
                       </el-button>
 
-                      <el-button size="small" @click="openCircuitBreakerConfig(scope.row)" type="danger" plain circle :title="t('instance.circuitBreakerConfig')">
+                      <el-button size="small" v-permission="'config:instances:write'" @click="openCircuitBreakerConfig(scope.row)" type="danger" plain circle :title="t('instance.circuitBreakerConfig')">
                         <el-icon><WarningFilled /></el-icon>
                       </el-button>
 
-                      <el-button size="small" type="info" @click="handleDelete(scope.row)" plain circle :title="t('instance.delete')">
+                      <el-button size="small" type="info" v-permission="'config:instances:write'" @click="handleDelete(scope.row)" plain circle :title="t('instance.delete')">
                         <el-icon><Delete /></el-icon>
                       </el-button>
                     </template>
@@ -359,7 +359,7 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="handleDialogClose">{{ t('instance.cancel') }}</el-button>
-          <el-button type="primary" @click="handleSave" :loading="saveLoading">{{ t('instance.save') }}</el-button>
+          <el-button type="primary" v-permission="'config:instances:write'" @click="handleSave" :loading="saveLoading">{{ t('instance.save') }}</el-button>
         </span>
       </template>
     </el-dialog>

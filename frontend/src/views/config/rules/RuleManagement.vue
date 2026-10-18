@@ -5,7 +5,7 @@
       <el-button type="success" plain @click="templateDialogVisible = true">
         <el-icon><MagicStick /></el-icon>&nbsp;{{ t('rule.createFromTemplate') }}
       </el-button>
-      <el-button type="primary" @click="handleCreate">
+      <el-button type="primary" v-permission="'config:rules:write'" @click="handleCreate">
         <el-icon><Plus /></el-icon>&nbsp;{{ t('rule.addRule') }}
       </el-button>
     </template>
@@ -18,7 +18,7 @@
       </el-table-column>
       <el-table-column :label="t('rule.enabled')" width="70" align="center">
         <template #default="{ row }">
-          <el-switch :model-value="row.enabled" @change="(val: boolean) => handleToggle(row, val)" />
+          <el-switch :model-value="row.enabled" v-permission="'config:rules:write'" @change="(val: boolean) => handleToggle(row, val)" />
         </template>
       </el-table-column>
       <el-table-column :label="t('rule.name')" min-width="140">
@@ -52,8 +52,8 @@
       </el-table-column>
       <el-table-column :label="t('rule.operations')" width="200" align="center">
         <template #default="{ row }">
-          <el-button size="small" @click="handleEdit(row)">{{ t('rule.edit') }}</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row)">{{ t('rule.delete') }}</el-button>
+          <el-button size="small" v-permission="'config:rules:write'" @click="handleEdit(row)">{{ t('rule.edit') }}</el-button>
+          <el-button size="small" type="danger" v-permission="'config:rules:write'" @click="handleDelete(row)">{{ t('rule.delete') }}</el-button>
         </template>
       </el-table-column>
     </el-table>

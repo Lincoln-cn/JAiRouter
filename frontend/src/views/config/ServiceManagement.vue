@@ -6,12 +6,12 @@
         {{ t('service.actions.versionHistory') }}
       </el-button>
       <el-tooltip v-if="availableTypes.length === 0" :content="t('service.allTypesAdded')" placement="left">
-        <el-button type="primary" @click="handleAddService" :disabled="availableTypes.length === 0" size="medium">
+        <el-button type="primary" v-permission="'config:instances:write'" @click="handleAddService" :disabled="availableTypes.length === 0" size="medium">
           <el-icon><Plus /></el-icon>
           {{ t('service.addService') }}
         </el-button>
       </el-tooltip>
-      <el-button v-else type="primary" @click="handleAddService" size="medium">
+      <el-button v-else type="primary" v-permission="'config:instances:write'" @click="handleAddService" size="medium">
         <el-icon><Plus /></el-icon>
         {{ t('service.addService') }}
       </el-button>
@@ -138,11 +138,11 @@
 
           <el-table-column :label="t('service.table.actions')" fixed="right" width="180">
             <template #default="scope">
-              <el-button size="small" @click="handleEdit(scope.row)" type="primary" plain circle :title="t('service.edit')">
+              <el-button size="small" v-permission="'config:instances:write'" @click="handleEdit(scope.row)" type="primary" plain circle :title="t('service.edit')">
                 <el-icon><Edit /></el-icon>
               </el-button>
 
-              <el-button size="small" type="danger" @click="handleDelete(scope.row)" plain circle :title="t('service.delete')">
+              <el-button size="small" type="danger" v-permission="'config:instances:write'" @click="handleDelete(scope.row)" plain circle :title="t('service.delete')">
                 <el-icon><Delete /></el-icon>
               </el-button>
             </template>
@@ -341,7 +341,7 @@
     <template #footer>
       <span class="dialog-footer">
         <el-button @click="handleDialogClose" size="large">{{ t('service.cancel') }}</el-button>
-        <el-button type="primary" @click="handleSave" :loading="dialogLoading" size="large">{{ t('service.save') }}</el-button>
+        <el-button type="primary" v-permission="'config:instances:write'" @click="handleSave" :loading="dialogLoading" size="large">{{ t('service.save') }}</el-button>
       </span>
     </template>
   </el-dialog>
