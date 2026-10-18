@@ -11,6 +11,7 @@ import App from './App.vue'
 import router from './router'
 import { i18n } from './i18n'
 import { useTheme } from './composables/useTheme'
+import { permission } from './directives/permission'
 
 const app = createApp(App)
 
@@ -18,6 +19,10 @@ const app = createApp(App)
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
+
+// 页内按钮级权限门控（#468 方案 A：无权限不渲染）。
+// 只是显示层；后端仍按 PermissionRuleRegistry 独立裁决（403）。
+app.directive('permission', permission)
 
 app.use(createPinia())
 app.use(router)

@@ -1,7 +1,7 @@
 <template>
   <PageSkeleton :title="t('statePersistence.pageTitle')">
     <template #actions>
-      <el-button type="primary" size="small" @click="refreshTiers">
+      <el-button type="primary" size="small" v-permission="'config:persistence:write'" @click="refreshTiers">
         <el-icon><Refresh /></el-icon>
         {{ t('statePersistence.refresh') }}
       </el-button>
@@ -134,19 +134,19 @@
 
       <el-row :gutter="20">
         <el-col :span="6">
-          <el-button type="primary" @click="recoverAll" :loading="recovering">
+          <el-button type="primary" v-permission="'config:persistence:write'" @click="recoverAll" :loading="recovering">
             <el-icon><RefreshRight /></el-icon>
             {{ t('statePersistence.recoverAll') }}
           </el-button>
         </el-col>
         <el-col :span="6">
-          <el-button type="warning" @click="showSwitchTierDialog">
+          <el-button type="warning" v-permission="'config:persistence:write'" @click="showSwitchTierDialog">
             <el-icon><Switch /></el-icon>
             {{ t('statePersistence.switchTier') }}
           </el-button>
         </el-col>
         <el-col :span="6">
-          <el-button @click="syncStates" :loading="syncing">
+          <el-button v-permission="'config:persistence:write'" @click="syncStates" :loading="syncing">
             <el-icon><Upload /></el-icon>
             {{ t('statePersistence.syncNow') }}
           </el-button>
@@ -197,7 +197,7 @@
         </el-table-column>
         <el-table-column :label="t('statePersistence.actions')" min-width="150">
           <template #default="{ row }">
-            <el-button size="small" type="primary" @click="recoverSingle(row)">
+            <el-button size="small" type="primary" v-permission="'config:persistence:write'" @click="recoverSingle(row)">
               {{ t('statePersistence.recover') }}
             </el-button>
             <el-button size="small" @click="viewStateDetail(row)">
@@ -225,7 +225,7 @@
       </el-form>
       <template #footer>
         <el-button @click="switchTierDialogVisible = false">{{ t('statePersistence.cancel') }}</el-button>
-        <el-button type="primary" @click="switchTier" :loading="switching">{{ t('statePersistence.confirmSwitch') }}</el-button>
+        <el-button type="primary" v-permission="'config:persistence:write'" @click="switchTier" :loading="switching">{{ t('statePersistence.confirmSwitch') }}</el-button>
       </template>
     </el-dialog>
 
