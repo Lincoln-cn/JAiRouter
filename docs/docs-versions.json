@@ -1947,11 +1947,11 @@
     },
     "docs/en/configuration/state-persistence.md": {
       "FilePath": "docs/en/configuration/state-persistence.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-09-23T17:13:19.523893",
-      "ContentHash": "23887eea8d56bb43",
-      "GitCommit": "e75f4909",
-      "Author": "Lincoln",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-18T18:00:08.766895",
+      "ContentHash": "3f7770a8cd657443",
+      "GitCommit": "da2c4618",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/configuration/circuit-breaker.md",
@@ -1961,11 +1961,11 @@
     },
     "docs/zh/configuration/state-persistence.md": {
       "FilePath": "docs/zh/configuration/state-persistence.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-09-23T17:13:19.782037",
-      "ContentHash": "8b324a516cbacd79",
-      "GitCommit": "e75f4909",
-      "Author": "Lincoln",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-18T18:00:09.441222",
+      "ContentHash": "4582fc802316f2fe",
+      "GitCommit": "da2c4618",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/configuration/circuit-breaker.md",
@@ -8925,7 +8925,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-18T17:47:29.917387",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/state-persistence.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-18T18:00:08.766906",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/state-persistence.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-18T18:00:09.441233",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-18T17:47:30.496978"
+  "last_updated": "2026-10-18T18:00:09.987813"
 }
