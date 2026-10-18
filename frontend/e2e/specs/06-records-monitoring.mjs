@@ -113,7 +113,7 @@ export default {
         check(
           'records:exception-detail',
           url.includes('/exceptions/') || (await page.locator('.el-drawer, .el-dialog').count()) > 0,
-          url + ' (row-click)'
+          `${url} (row-click)`
         )
       }
     } else {
