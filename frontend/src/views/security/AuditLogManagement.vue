@@ -287,6 +287,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getErrorMessage } from '@/utils/error'
 import { useI18n } from 'vue-i18n'
 import { Refresh, ArrowDown, Key, Connection, WarningFilled, Bell } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
@@ -448,8 +449,8 @@ const handleExport = async (format: string) => {
     URL.revokeObjectURL(url)
     
     ElMessage.success(t('auditLog.exported', { count: result.events.length }))
-  } catch (error: any) {
-    ElMessage.error(t('auditLog.exportFailed', { message: error.message || t('auditLog.unknownError') }))
+  } catch (error) {
+    ElMessage.error(t('auditLog.exportFailed', { message: getErrorMessage(error) || t('auditLog.unknownError') }))
   }
 }
 
@@ -555,8 +556,8 @@ const loadAuditLogs = async () => {
     const result: ExtendedAuditQueryResponse = await queryAuditEventsAdvanced(query)
     logs.value = result.events
     pagination.total = result.totalElements
-  } catch (error: any) {
-    ElMessage.error(t('auditLog.loadFailed', { message: error.message || t('auditLog.unknownError') }))
+  } catch (error) {
+    ElMessage.error(t('auditLog.loadFailed', { message: getErrorMessage(error) || t('auditLog.unknownError') }))
   } finally {
     loading.value = false
   }

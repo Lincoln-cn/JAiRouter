@@ -5,6 +5,17 @@ import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 
+/**
+ * 组件实例的对外形状（#525：替代 `wrapper.vm as any`）。
+ * 只声明本文件用例真正访问的成员；字段名写错会在编译期报错。
+ */
+interface SanitizationPageVm {
+  form: {
+    request: { enabled: boolean; maskingChar: string; piiPatternsText: string }
+    response: { enabled: boolean; maskingChar: string }
+  }
+}
+
 vi.mock('element-plus', () => ({
   ElMessage: {
     success: vi.fn(),
@@ -127,7 +138,7 @@ describe('SanitizationManagement.vue', () => {
     })
 
     await flushPromises()
-    const vm = wrapper.vm as any
+    const vm = wrapper.vm as unknown as SanitizationPageVm
     expect(vm.form.request.enabled).toBe(true)
     expect(vm.form.request.maskingChar).toBe('*')
     expect(vm.form.request.piiPatternsText).toContain('\\d{11}')
