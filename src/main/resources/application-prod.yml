@@ -14,13 +14,6 @@ logging:
   file:
     name: logs/jairouter-prod.log
 
-# 存储配置（生产环境关闭自动迁移）
-store:
-  migration:
-    enabled: false
-  security-migration:
-    enabled: false
-
 # H2 控制台（生产环境关闭）
 spring:
   h2:

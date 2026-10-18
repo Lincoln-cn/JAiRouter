@@ -90,6 +90,11 @@ class ConfigBindingSweepTest {
     private static final Pattern RE_PLACEHOLDER = Pattern.compile("\\$\\{([a-zA-Z][\\w.\\-]*)(?::[^}]*)?}");
     private static final Pattern RE_COND_NAME_LITERAL = Pattern.compile("name\\s*=\\s*\"([^\"]+)\"");
     private static final Pattern RE_COND_NAME_IDENT = Pattern.compile("name\\s*=\\s*(\\w+)\\s*[,)]");
+    /** 整个 {@code @ConditionalOnProperty(...)} 参数体（DOTALL：允许跨行书写）。 */
+    private static final Pattern RE_COND_ANNOTATION =
+            Pattern.compile("@ConditionalOnProperty\\s*\\(([^)]*)\\)", Pattern.DOTALL);
+    private static final Pattern RE_ANN_PREFIX = Pattern.compile("prefix\\s*=\\s*\"([^\"]+)\"");
+    private static final Pattern RE_ANN_NAME = Pattern.compile("name\\s*=\\s*\"([^\"]+)\"");
 
     // ------------------------------------------------------------------ 真实数据用例
 
@@ -420,8 +425,32 @@ class ConfigBindingSweepTest {
             addAll(consumers, text, RE_GETPROP_IDENT, 1, where, consts);
             addAll(consumers, text, RE_COND_NAME_LITERAL, 1, where, consts);
             addAll(consumers, text, RE_COND_NAME_IDENT, 1, where, consts);
+            addConditionalOnPropertyConsumers(consumers, text, where);
         }
         return consumers;
+    }
+
+    /**
+     * {@code @ConditionalOnProperty(prefix = "a.b", name = "enabled")} 读的是 **{@code a.b.enabled}**，
+     * 而 {@link #RE_COND_NAME_LITERAL} 只能抓到光秃秃的 {@code enabled}（不含点号、会被
+     * {@link #addAll} 跳过）⇒ 这类消费方长期没被登记。
+     *
+     * <p>实测后果：{@code jairouter.security.monitoring.alerts.enabled} 被
+     * {@code SecurityAlertService} / {@code SecurityAlertScheduler} 的 {@code @ConditionalOnProperty}
+     * 真实消费，却被报成"无任何消费方"，差点在配置瘦身时被误删。</p>
+     */
+    private static void addConditionalOnPropertyConsumers(
+            final Map<String, List<String>> consumers, final String text, final String where) {
+        Matcher ann = RE_COND_ANNOTATION.matcher(text);
+        while (ann.find()) {
+            String body = ann.group(1);
+            Matcher prefix = RE_ANN_PREFIX.matcher(body);
+            Matcher name = RE_ANN_NAME.matcher(body);
+            if (prefix.find() && name.find()) {
+                String key = prefix.group(1) + "." + name.group(1);
+                consumers.computeIfAbsent(key, k -> new ArrayList<>()).add(where);
+            }
+        }
     }
 
     private static void addAll(final Map<String, List<String>> consumers, final String text,

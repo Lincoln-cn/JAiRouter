@@ -1,7 +1,5 @@
 store:
   type: h2
-  h2:
-    url: mem:testdb
 
 spring:
   # R2DBC 配置 (响应式数据库)
