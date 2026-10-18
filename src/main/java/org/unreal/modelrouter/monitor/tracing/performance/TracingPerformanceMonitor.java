@@ -36,7 +36,6 @@ import static org.unreal.modelrouter.monitor.tracing.performance.TracingPerforma
 import static org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceModels.OperationMetrics;
 import static org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceModels.OptimizationSuggestion;
 import static org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceModels.PerformanceBottleneck;
-import static org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceModels.PerformanceIssue;
 import static org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceModels.PerformanceReport;
 import static org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceModels.PerformanceSnapshot;
 import static org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceModels.PerformanceThreshold;
@@ -75,7 +74,6 @@ public final class TracingPerformanceMonitor implements HealthIndicator {
     private final Map<String, OperationMetrics> operationMetrics = new ConcurrentHashMap<>();
     private final Map<String, PerformanceThreshold> thresholds = new ConcurrentHashMap<>();
     private final AtomicReference<SystemHealth> systemHealth = new AtomicReference<>(SystemHealth.HEALTHY);
-    private final List<PerformanceIssue> activeIssues = new ArrayList<>();
 
     /** 按默认值构造（与外部化前一致），供既有调用方与测试使用。 */
     public TracingPerformanceMonitor(final TracingConfiguration tracingConfiguration,
@@ -240,8 +238,7 @@ public final class TracingPerformanceMonitor implements HealthIndicator {
                     memoryStats,
                     processingStats,
                     new ArrayList<>(operationMetrics.values()),
-                    systemHealth.get(),
-                    new ArrayList<>(activeIssues)
+                    systemHealth.get()
             );
         }).subscribeOn(monitoringScheduler);
     }
@@ -302,7 +299,6 @@ public final class TracingPerformanceMonitor implements HealthIndicator {
                     .withDetail("slowOperations", slowOperations.get())
                     .withDetail("memoryUsage", memoryStats.getHeapUsageRatio())
                     .withDetail("processingDropRate", processingStats.getDropRate())
-                    .withDetail("activeIssues", activeIssues.size())
                     .build();
         } catch (Exception e) {
             return Health.down().withDetail("error", e.getMessage()).build();
