@@ -14,7 +14,7 @@
           </el-descriptions-item>
           <el-descriptions-item :label="t('tracing.traceDetail.service')">{{ traceChain.serviceName }}</el-descriptions-item>
           <el-descriptions-item :label="t('tracing.traceDetail.totalDuration')">
-            <span :class="{ 'text-danger': traceChain.stats?.totalDuration > 1000 }">
+            <span :class="{ 'text-danger': (traceChain.stats?.totalDuration ?? 0) > 1000 }">
               {{ Math.round(traceChain.stats?.totalDuration || 0) }}ms
             </span>
           </el-descriptions-item>
@@ -25,8 +25,8 @@
               {{ hasError ? t('tracing.traceDetail.error') : t('tracing.traceDetail.success') }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item :label="t('tracing.traceDetail.errorCount')" v-if="traceChain.stats?.errorCount > 0">
-            <el-tag type="danger">{{ traceChain.stats.errorCount }}</el-tag>
+          <el-descriptions-item :label="t('tracing.traceDetail.errorCount')" v-if="(traceChain.stats?.errorCount ?? 0) > 0">
+            <el-tag type="danger">{{ traceChain.stats?.errorCount }}</el-tag>
           </el-descriptions-item>
           <el-descriptions-item :label="t('tracing.traceDetail.avgDuration')">{{ Math.round(traceChain.stats?.avgDuration || 0) }}ms</el-descriptions-item>
         </el-descriptions>
@@ -128,7 +128,7 @@ import {
   CopyDocument, Download, Search, CircleCheckFilled, CircleCloseFilled
 } from '@element-plus/icons-vue'
 import { getTraceChain } from '@/api/tracing'
-import type { TraceChainNode } from '@/types/tracing'
+import type { TraceChainResponse } from '@/types/tracing'
 import { useChartTheme } from '@/composables/useChartTheme'
 import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 
@@ -140,26 +140,26 @@ const { getChartTheme } = useChartTheme()
 const { t } = useI18n()
 
 const loading = ref(false)
-const traceChain = ref<any>(null)
+const traceChain = ref<TraceChainResponse | null>(null)
 const spanSearch = ref('')
 const ganttChart = ref<HTMLElement | null>(null)
 let ganttChartInstance: echarts.ECharts | null = null
 
 const hasError = computed(() => {
-  return traceChain.value?.spans?.some((s: any) => s.error) || false
+  return traceChain.value?.spans?.some((s) => s.error) || false
 })
 
 const sortedSpans = computed(() => {
   if (!traceChain.value?.spans) return []
-  return [...traceChain.value.spans].sort((a: any, b: any) =>
-    new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+  return [...traceChain.value.spans].sort((a, b) =>
+    new Date(a.startTime ?? 0).getTime() - new Date(b.startTime ?? 0).getTime()
   )
 })
 
 const filteredSpans = computed(() => {
   if (!spanSearch.value) return sortedSpans.value
   const search = spanSearch.value.toLowerCase()
-  return sortedSpans.value.filter((s: any) =>
+  return sortedSpans.value.filter((s) =>
     s.operationName?.toLowerCase().includes(search)
   )
 })
@@ -170,7 +170,7 @@ const loadTraceChain = async () => {
   loading.value = true
   try {
     const response = await getTraceChain(props.traceId)
-    const data = (response.data?.data || response.data) as TraceChainNode[] | undefined
+    const data = (response.data?.data || response.data) as TraceChainResponse | undefined
     if (data) {
       traceChain.value = data
       await nextTick()
@@ -188,10 +188,10 @@ const buildGanttOption = () => {
   const spans = sortedSpans.value
   if (spans.length === 0) return null
 
-  const baseTime = new Date(spans[0].startTime).getTime()
-  const ganttData = spans.map((span: any, index: number) => {
-    const startTime = new Date(span.startTime).getTime()
-    const duration = span.duration
+  const baseTime = new Date(spans[0].startTime ?? 0).getTime()
+  const ganttData = spans.map((span, index: number) => {
+    const startTime = new Date(span.startTime ?? 0).getTime()
+    const duration = span.duration ?? 0
     const relativeStart = startTime - baseTime
 
     return {
@@ -199,22 +199,23 @@ const buildGanttOption = () => {
       spanId: span.spanId,
       value: [index, relativeStart, relativeStart + duration, duration],
       itemStyle: {
-        color: span.error ? getChartTheme().danger : getSpanColor(span.operationName)
+        color: span.error ? getChartTheme().danger : getSpanColor(span.operationName ?? '')
       }
     }
   })
 
-  const categories = spans.map((span: any) => {
+  const categories = spans.map((span) => {
     const name = span.operationName || ''
     return name.length > 30 ? `${name.substring(0, 30)  }...` : name
   })
 
-  const maxDuration = Math.max(...ganttData.map((d: any) => d.value[2]))
+  const maxDuration = Math.max(...ganttData.map((d) => d.value[2] ?? 0))
 
   const option = {
     tooltip: {
-      formatter: (params: any) => {
-        const data = params.data
+      // echarts 的 formatter 入参类型很宽，这里收成「甘特条自带的那几个字段」（#522）
+      formatter: (params: unknown) => {
+        const data = (params as { data: { name?: string; spanId?: string; value: number[] } }).data
         return `
           <div style="max-width: 300px;">
             <div style="font-weight: bold; margin-bottom: 8px;">${data.name}</div>
@@ -255,11 +256,19 @@ const buildGanttOption = () => {
     },
     series: [{
       type: 'custom',
-      renderItem: (params: any, api: any) => {
-        const categoryIndex = api.value(0)
-        const start = api.coord([api.value(1), categoryIndex])
-        const end = api.coord([api.value(2), categoryIndex])
-        const height = api.size([0, 1])[1] * 0.6
+      // echarts 自定义系列的 renderItem：入参类型同样很宽，这里只用到 value/coord/size/style（#522）
+      renderItem: (params: unknown, api: unknown) => {
+        void params
+        const a = api as {
+          value: (index: number) => number
+          coord: (point: number[]) => number[]
+          size: (range: number[]) => number[]
+          style: () => Record<string, unknown>
+        }
+        const categoryIndex = a.value(0)
+        const start = a.coord([a.value(1), categoryIndex])
+        const end = a.coord([a.value(2), categoryIndex])
+        const height = a.size([0, 1])[1] * 0.6
 
         return {
           type: 'rect',
@@ -270,7 +279,7 @@ const buildGanttOption = () => {
             height
           },
           style: {
-            ...api.style(),
+            ...a.style(),
             shadowBlur: 2,
             shadowColor: 'rgba(0, 0, 0, 0.1)'
           }
@@ -337,7 +346,8 @@ const exportTrace = () => {
   ElMessage.success(t('tracing.traceDetail.messages.traceExported'))
 }
 
-const formatTime = (timeStr: string) => {
+const formatTime = (timeStr?: string) => {
+  if (!timeStr) return ''
   try {
     const date = new Date(timeStr)
     return date.toLocaleString('zh-CN', {
@@ -352,7 +362,7 @@ const formatTime = (timeStr: string) => {
   }
 }
 
-const formatAttributeValue = (value: any) => {
+const formatAttributeValue = (value: unknown) => {
   if (value === null || value === undefined) return '-'
   if (typeof value === 'object') return JSON.stringify(value)
   return String(value)

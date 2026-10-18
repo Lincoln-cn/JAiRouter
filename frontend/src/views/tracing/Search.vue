@@ -128,23 +128,23 @@
           </el-descriptions-item>
           <el-descriptions-item :label="t('tracing.search.primaryService')">{{ selectedTrace.serviceName }}</el-descriptions-item>
           <el-descriptions-item :label="t('tracing.search.totalDurationLabel')">
-            <span :class="{ 'high-latency': (traceChain?.stats?.totalDuration || selectedTrace.duration) > 1000 }">
-              {{ Math.round(traceChain?.stats?.totalDuration || selectedTrace.duration) }}ms
+            <span :class="{ 'high-latency': (traceChain?.stats?.totalDuration || selectedTrace?.duration || 0) > 1000 }">
+              {{ Math.round(traceChain?.stats?.totalDuration || selectedTrace?.duration || 0) }}ms
             </span>
           </el-descriptions-item>
           <el-descriptions-item :label="t('tracing.search.spanCount')">
-            <el-tag size="small" :type="(traceChain?.stats?.totalSpans || selectedTrace.spanCount) > 1 ? 'success' : 'info'">
-              {{ traceChain?.stats?.totalSpans || selectedTrace.spanCount }}
+            <el-tag size="small" :type="(traceChain?.stats?.totalSpans || selectedTrace?.spanCount || 0) > 1 ? 'success' : 'info'">
+              {{ traceChain?.stats?.totalSpans || selectedTrace?.spanCount || 0 }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item :label="t('tracing.search.startTime')">{{ formatTime(selectedTrace.startTime) }}</el-descriptions-item>
+          <el-descriptions-item :label="t('tracing.search.startTime')">{{ formatTime(selectedTrace?.startTime) }}</el-descriptions-item>
           <el-descriptions-item :label="t('tracing.search.status')">
-            <el-tag :type="selectedTrace.hasError ? 'danger' : 'success'">
-              {{ selectedTrace.hasError ? t('tracing.search.error') : t('tracing.search.success') }}
+            <el-tag :type="selectedTrace?.hasError ? 'danger' : 'success'">
+              {{ selectedTrace?.hasError ? t('tracing.search.error') : t('tracing.search.success') }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item :label="t('tracing.search.errorCountLabel')" v-if="traceChain?.stats?.errorCount > 0">
-            <el-tag type="danger" size="small">{{ traceChain.stats.errorCount }}</el-tag>
+          <el-descriptions-item :label="t('tracing.search.errorCountLabel')" v-if="(traceChain?.stats?.errorCount ?? 0) > 0">
+            <el-tag type="danger" size="small">{{ traceChain?.stats?.errorCount }}</el-tag>
           </el-descriptions-item>
           <el-descriptions-item :label="t('tracing.search.avgDurationLabel')">
             {{ Math.round(traceChain?.stats?.avgDuration || 0) }}ms
@@ -250,6 +250,14 @@ import {
   getServiceStats,
   exportTraces
 } from '@/api/tracing'
+import type { TraceSearchParams } from '@/api/tracing'
+import type {
+  TraceChainResponse,
+  TraceSearchResult,
+  TraceSpan,
+  TracingServiceListResult,
+  TracingServiceStat
+} from '@/types/tracing'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import { useChartTheme } from '@/composables/useChartTheme'
 import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
@@ -309,7 +317,7 @@ const timeShortcuts = computed(() => [
 
 // 状态
 const searching = ref(false)
-const traces = ref<any[]>([])
+const traces = ref<TraceSpan[]>([])
 const availableServices = ref<string[]>([])
 const currentPage = ref(1)
 const pageSize = ref(20)
@@ -318,8 +326,8 @@ const totalPages = ref(0)
 
 // 追踪详情
 const traceDialogVisible = ref(false)
-const selectedTrace = ref<any>(null)
-const traceChain = ref<any>(null)
+const selectedTrace = ref<TraceSpan | null>(null)
+const traceChain = ref<TraceChainResponse | null>(null)
 const traceChainChart = ref<HTMLElement | null>(null)
 let traceChainChartInstance: echarts.ECharts | null = null
 
@@ -329,8 +337,8 @@ const sortedSpans = computed(() => {
     return []
   }
   
-  return [...traceChain.value.spans].sort((a: any, b: any) => 
-    new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+  return [...traceChain.value.spans].sort((a, b) => 
+    new Date(a.startTime ?? 0).getTime() - new Date(b.startTime ?? 0).getTime()
   )
 })
 
@@ -342,7 +350,7 @@ const handleSearch = async (resetPage = true) => {
   
   searching.value = true
   try {
-    const params: any = {
+    const params: TraceSearchParams = {
       page: currentPage.value,
       size: pageSize.value
     }
@@ -367,11 +375,11 @@ const handleSearch = async (resetPage = true) => {
     const response = await searchTraces(params)
 
     // 处理响应数据
-    const data = response.data?.data || response.data || response
-    if (data && (data as any).traces) {
-      traces.value = (data as any).traces
-      total.value = (data as any).total || 0
-      totalPages.value = (data as any).totalPages || 0
+    const data = (response.data?.data || response.data) as TraceSearchResult | TraceSpan[] | undefined
+    if (data && !Array.isArray(data) && data.traces) {
+      traces.value = data.traces
+      total.value = data.total || 0
+      totalPages.value = data.totalPages || 0
     } else if (Array.isArray(data)) {
       // 兼容旧的数组格式
       traces.value = data
@@ -412,7 +420,7 @@ const handleGetRecent = async () => {
   try {
     const response = await getRecentTraces(pageSize.value * 5) // 获取更多数据用于分页
 
-    const data = response.data?.data || response.data || response
+    const data = (response.data?.data || response.data) as TraceSearchResult | TraceSpan[] | undefined
     if (Array.isArray(data)) {
       // 模拟分页
       traces.value = data.slice(0, pageSize.value)
@@ -438,14 +446,14 @@ const handleGetRecent = async () => {
 }
 
 // 查看追踪详情
-const handleViewTrace = async (trace: any) => {
+const handleViewTrace = async (trace: TraceSpan) => {
   selectedTrace.value = trace
   traceDialogVisible.value = true
 
   try {
-    const response = await getTraceChain(trace.traceId)
+    const response = await getTraceChain(trace.traceId ?? '')
 
-    const data = response.data?.data || response.data || response
+    const data = (response.data?.data || response.data) as TraceChainResponse | undefined
     if (data) {
       traceChain.value = data
       
@@ -473,7 +481,7 @@ const handleViewTrace = async (trace: any) => {
 }
 
 // 行点击事件
-const handleRowClick = (row: any) => {
+const handleRowClick = (row: TraceSpan) => {
   handleViewTrace(row)
 }
 
@@ -538,19 +546,19 @@ const getTraceChainChartOption = () => {
     return {}
   }
 
-  const spans = [...traceChain.value.spans].sort((a: any, b: any) => 
-    new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+  const spans = [...traceChain.value.spans].sort((a, b) => 
+    new Date(a.startTime ?? 0).getTime() - new Date(b.startTime ?? 0).getTime()
   )
   
   // 找到最早的开始时间作为基准
-  const baseTime = new Date(spans[0].startTime).getTime()
+  const baseTime = new Date(spans[0].startTime ?? 0).getTime()
   
   // 创建甘特图数据
   const theme = getChartTheme()
 
-  const ganttData = spans.map((span: any, index: number) => {
-    const startTime = new Date(span.startTime).getTime()
-    const duration = span.duration
+  const ganttData = spans.map((span, index: number) => {
+    const startTime = new Date(span.startTime ?? 0).getTime()
+    const duration = span.duration ?? 0
     
     // 计算相对于基准时间的偏移
     const relativeStart = startTime - baseTime
@@ -566,21 +574,21 @@ const getTraceChainChartOption = () => {
         duration
       ],
       itemStyle: {
-        color: span.error ? theme.danger : (span.operationName.includes('process') ? theme.success : theme.primary),
+        color: span.error ? theme.danger : ((span.operationName ?? '').includes('process') ? theme.success : theme.primary),
         borderColor: 'var(--ja-bg-page, #fff)',
         borderWidth: 1
       }
     }
   })
 
-  const categories = spans.map((span: any) => {
-    const shortName = span.operationName.length > 25 
-      ? `${span.operationName.substring(0, 25)  }...` 
-      : span.operationName
+  const categories = spans.map((span) => {
+    const shortName = (span.operationName ?? '').length > 25 
+      ? `${(span.operationName ?? '').substring(0, 25)}...` 
+      : (span.operationName ?? '')
     return shortName
   })
 
-  const maxDuration = Math.max(...ganttData.map(item => item.value[2]))
+  const maxDuration = Math.max(...ganttData.map(item => item.value[2] ?? 0))
 
   return {
     title: {
@@ -592,8 +600,9 @@ const getTraceChainChartOption = () => {
       }
     },
     tooltip: {
-      formatter: (params: any) => {
-        const data = params.data
+      formatter: (params: unknown) => {
+        // echarts 入参类型很宽，这里收成甘特条自带的那几个字段（#522）
+        const data = (params as { data: { name?: string; spanId?: string; value: number[] } }).data
         const duration = data.value[3]
         const startOffset = data.value[1]
         const endOffset = data.value[2]
@@ -601,7 +610,7 @@ const getTraceChainChartOption = () => {
         return `
           <div style="max-width: 300px;">
             <div style="font-weight: bold; margin-bottom: 8px;">${data.name}</div>
-            <div style="margin-bottom: 4px;"><strong>${t('tracing.search.tooltip.spanId')}:</strong> ${data.spanId.substring(0, 16)}...</div>
+            <div style="margin-bottom: 4px;"><strong>${t('tracing.search.tooltip.spanId')}:</strong> ${(data.spanId ?? '').substring(0, 16)}...</div>
             <div style="margin-bottom: 4px;"><strong>${t('tracing.search.tooltip.startOffset')}:</strong> +${Math.round(startOffset)}ms</div>
             <div style="margin-bottom: 4px;"><strong>${t('tracing.search.tooltip.endOffset')}:</strong> +${Math.round(endOffset)}ms</div>
             <div><strong>${t('tracing.search.tooltip.duration')}:</strong> ${Math.round(duration)}ms</div>
@@ -651,11 +660,18 @@ const getTraceChainChartOption = () => {
     series: [
       {
         type: 'custom',
-        renderItem: (params: any, api: any) => {
-          const categoryIndex = api.value(0)
-          const start = api.coord([api.value(1), categoryIndex])
-          const end = api.coord([api.value(2), categoryIndex])
-          const height = api.size([0, 1])[1] * 0.7
+        renderItem: (params: unknown, api: unknown) => {
+          void params
+          const a = api as {
+            value: (index: number) => number
+            coord: (point: number[]) => number[]
+            size: (range: number[]) => number[]
+            style: () => Record<string, unknown>
+          }
+          const categoryIndex = a.value(0)
+          const start = a.coord([a.value(1), categoryIndex])
+          const end = a.coord([a.value(2), categoryIndex])
+          const height = a.size([0, 1])[1] * 0.7
           
           const rectShape = {
             x: start[0],
@@ -668,7 +684,7 @@ const getTraceChainChartOption = () => {
             type: 'rect',
             shape: rectShape,
             style: {
-              ...api.style(),
+              ...a.style(),
               shadowBlur: 3,
               shadowColor: 'rgba(0, 0, 0, 0.2)',
               shadowOffsetY: 2
@@ -699,12 +715,12 @@ const getTraceChainChartOption = () => {
 const loadAvailableServices = async () => {
   try {
     const response = await getServiceStats()
-    const data = response.data?.data || response.data || response
+    const data = (response.data?.data || response.data) as TraceSearchResult | TraceSpan[] | undefined
 
     if (Array.isArray(data)) {
-      availableServices.value = data.map((item: any) => item.name || item)
-    } else if ((data as any).services && Array.isArray((data as any).services)) {
-      availableServices.value = (data as any).services
+      availableServices.value = (data as TracingServiceStat[]).map((item) => item.serviceName || '')
+    } else if (!Array.isArray(data) && (data as TracingServiceListResult).services) {
+      availableServices.value = (data as TracingServiceListResult).services || []
     } else {
       availableServices.value = ['jairouter', 'model-adapter-service', 'load-balancer-service', 'rate-limiter-service']
     }
@@ -715,7 +731,8 @@ const loadAvailableServices = async () => {
 }
 
 // 时间格式化
-const formatTime = (timeStr: string) => {
+const formatTime = (timeStr?: string) => {
+  if (!timeStr) return ''
   try {
     const date = new Date(timeStr)
     return date.toLocaleString('zh-CN', {
@@ -741,7 +758,7 @@ const getStatusCodeType = (statusCode: string) => {
 }
 
 // 显示 Span 详情
-const showSpanDetails = async (span: any) => {
+const showSpanDetails = async (span: TraceSpan) => {
   const details = {
     spanId: span.spanId,
     traceId: span.traceId,

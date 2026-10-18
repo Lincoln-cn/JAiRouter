@@ -7,7 +7,8 @@ import type {
     TimeRange
 } from '@/types'
 import type {
-    TraceChainNode,
+    TraceChainResponse,
+    TraceSpan,
     TraceExportRequest,
     TraceSearchResult,
     TracingCleanupResult,
@@ -71,20 +72,24 @@ export interface TraceSearchParams {
     status?: string
     startTime?: string
     endTime?: string
-    limit?: number
+    /** 只看错误链路；未选择时页面传 null */
+    hasError?: boolean | null
+    /** 页码（从 1 开始，页面直接传 currentPage） */
+    page?: number
+    size?: number
 }
 
 export const getTraceChain = (traceId: string) => {
-    return request.get<RouterResponse<TraceChainNode[]>>(`/tracing/query/trace/${traceId}`)
+    return request.get<RouterResponse<TraceChainResponse>>(`/tracing/query/trace/${traceId}`)
 }
 
 export const searchTraces = (params: TraceSearchParams) => {
     // 新格式 `{ traces, total, totalPages }`，旧格式裸数组 —— 页面两种都兼容
-    return request.get<RouterResponse<TraceSearchResult | TraceChainNode[]>>('/tracing/query/search', { params })
+    return request.get<RouterResponse<TraceSearchResult | TraceSpan[]>>('/tracing/query/search', { params })
 }
 
 export const getRecentTraces = (limit: number = 50) => {
-    return request.get<RouterResponse<TraceChainNode[]>>('/tracing/query/recent', { params: { limit } })
+    return request.get<RouterResponse<TraceSpan[]>>('/tracing/query/recent', { params: { limit } })
 }
 
 export const exportTraces = (exportRequest: TraceExportRequest) => {

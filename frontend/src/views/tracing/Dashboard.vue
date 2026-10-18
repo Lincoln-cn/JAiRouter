@@ -304,7 +304,7 @@
     direction="rtl"
     size="60%"
   >
-    <TraceDetail v-if="selectedTrace" :trace-id="selectedTrace.traceId" />
+    <TraceDetail v-if="selectedTrace" :trace-id="selectedTrace.traceId ?? ''" />
   </el-drawer>
 </template>
 
@@ -326,7 +326,9 @@ import {
   getErrorAnalysis,
   getThroughputAnalysis,
 } from '@/api/tracing'
-import type { TracingServiceStat, TracingStatistics, TracingStatus } from '@/types/tracing'
+import type { TraceSpan, TracingServiceStat, TracingStatistics, TracingStatus } from '@/types/tracing'
+import type { LocationQueryRaw } from 'vue-router'
+import type { CommonError, ErrorAnalysis, LatencyAnalysis, LatencyTrendData, ThroughputAnalysis, TimeSeriesData } from '@/types'
 import TraceDetail from './components/TraceDetail.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import { useChartTheme } from '@/composables/useChartTheme'
@@ -360,14 +362,14 @@ const trendData = ref({
   avgDurationTrend: 0
 })
 
-const serviceStats = ref<any[]>([])
-const slowTraces = ref<any[]>([])
-const commonErrors = ref<any[]>([])
+const serviceStats = ref<TracingServiceStat[]>([])
+const slowTraces = ref<TraceSpan[]>([])
+const commonErrors = ref<CommonError[]>([])
 
 // 趋势图数据源（来自 /tracing/query/performance/*；缺失时渲染空图，不使用占位数据）
-const latencyAnalysis = ref<any>(null)
-const errorAnalysis = ref<any>(null)
-const throughputAnalysis = ref<any>(null)
+const latencyAnalysis = ref<LatencyAnalysis | null>(null)
+const errorAnalysis = ref<ErrorAnalysis | null>(null)
+const throughputAnalysis = ref<ThroughputAnalysis | null>(null)
 
 // 图表引用
 const traceTrendChart = ref<HTMLElement | null>(null)
@@ -386,7 +388,7 @@ const throughputDistEcharts: echarts.ECharts | null = null
 
 // 追踪详情
 const traceDetailVisible = ref(false)
-const selectedTrace = ref<any>(null)
+const selectedTrace = ref<TraceSpan | null>(null)
 
 // 时间快捷选项
 const timeShortcuts = computed(() => [
@@ -554,7 +556,7 @@ const getTraceTrendOption = () => {
 // 延迟趋势（P95/P99）——数据来自 /tracing/query/performance/latency
 const getLatencyTrendOption = () => {
   const { primary, warning } = getChartTheme()
-  const trend = latencyAnalysis.value?.trend || {}
+  const trend: Partial<LatencyTrendData> = latencyAnalysis.value?.trend ?? {}
   return {
     tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
     legend: {
@@ -586,7 +588,7 @@ const getLatencyTrendOption = () => {
 // 错误率趋势——数据来自 /tracing/query/performance/errors
 const getErrorTrendOption = () => {
   const { danger } = getChartTheme()
-  const points: any[] = errorAnalysis.value?.errorTrend || []
+  const points: TimeSeriesData[] = errorAnalysis.value?.errorTrend || []
   return {
     tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
     legend: { data: [t('tracing.dashboard.columns.errorRate')], bottom: 0 },
@@ -608,7 +610,7 @@ const getErrorTrendOption = () => {
 // 请求量趋势——数据来自 /tracing/query/performance/throughput
 const getThroughputTrendOption = () => {
   const { primary } = getChartTheme()
-  const points: any[] = throughputAnalysis.value?.qpsTrend || []
+  const points: TimeSeriesData[] = throughputAnalysis.value?.qpsTrend || []
   return {
     tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
     legend: { data: [t('tracing.dashboard.columns.requests')], bottom: 0 },
@@ -631,7 +633,7 @@ const getThroughputTrendOption = () => {
 const loadLatencyAnalysis = async () => {
   try {
     const response = await getLatencyAnalysis()
-    latencyAnalysis.value = response.data?.data || response.data || response || null
+    latencyAnalysis.value = (response.data?.data || response.data) as LatencyAnalysis | null
   } catch (error) {
     console.error('加载延迟分析失败:', error)
     latencyAnalysis.value = null
@@ -641,7 +643,7 @@ const loadLatencyAnalysis = async () => {
 const loadErrorAnalysis = async () => {
   try {
     const response = await getErrorAnalysis()
-    errorAnalysis.value = response.data?.data || response.data || response || null
+    errorAnalysis.value = (response.data?.data || response.data) as ErrorAnalysis | null
   } catch (error) {
     console.error('加载错误分析失败:', error)
     errorAnalysis.value = null
@@ -651,7 +653,7 @@ const loadErrorAnalysis = async () => {
 const loadThroughputAnalysis = async () => {
   try {
     const response = await getThroughputAnalysis()
-    throughputAnalysis.value = response.data?.data || response.data || response || null
+    throughputAnalysis.value = (response.data?.data || response.data) as ThroughputAnalysis | null
   } catch (error) {
     console.error('加载吞吐量分析失败:', error)
     throughputAnalysis.value = null
@@ -730,28 +732,28 @@ const getLatencyClass = (duration: number) => {
   return ''
 }
 
-const getRowClassName = ({ row }: { row: any }) => {
-  if (row.errorRate > 5) return 'error-row'
-  if (row.avgDuration > 1000) return 'slow-row'
+const getRowClassName = ({ row }: { row: TracingServiceStat }) => {
+  if ((row.errorRate ?? 0) > 5) return 'error-row'
+  if ((row.avgDuration ?? 0) > 1000) return 'slow-row'
   return ''
 }
 
-const getServiceStatusColor = (row: any) => {
+const getServiceStatusColor = (row: TracingServiceStat) => {
   const { danger, warning, success } = getChartTheme()
-  if (row.errorRate > 5) return danger
-  if (row.avgDuration > 1000) return warning
+  if ((row.errorRate ?? 0) > 5) return danger
+  if ((row.avgDuration ?? 0) > 1000) return warning
   return success
 }
 
-const getServiceStatusIcon = (row: any) => {
-  if (row.errorRate > 5) return CircleCloseFilled
-  if (row.avgDuration > 1000) return WarningFilled
+const getServiceStatusIcon = (row: TracingServiceStat) => {
+  if ((row.errorRate ?? 0) > 5) return CircleCloseFilled
+  if ((row.avgDuration ?? 0) > 1000) return WarningFilled
   return CircleCheckFilled
 }
 
-const getServiceStatusTooltip = (row: any) => {
-  if (row.errorRate > 5) return t('tracing.dashboard.statusTooltip.highErrorRate')
-  if (row.avgDuration > 1000) return t('tracing.dashboard.statusTooltip.highLatency')
+const getServiceStatusTooltip = (row: TracingServiceStat) => {
+  if ((row.errorRate ?? 0) > 5) return t('tracing.dashboard.statusTooltip.highErrorRate')
+  if ((row.avgDuration ?? 0) > 1000) return t('tracing.dashboard.statusTooltip.highLatency')
   return t('tracing.dashboard.statusTooltip.healthy')
 }
 
@@ -786,7 +788,7 @@ const handleTabChange = (tab: string) => {
 }
 
 const goToSearch = (filter?: string) => {
-  const query: any = {}
+  const query: LocationQueryRaw = {}
   if (filter === 'error') {
     query.hasError = 'true'
   }
@@ -797,11 +799,11 @@ const goToManagement = () => {
   router.push({ name: 'tracing-management' })
 }
 
-const handleServiceRowClick = (row: any) => {
-  router.push({ name: 'tracing-search', query: { serviceName: row.name } })
+const handleServiceRowClick = (row: TracingServiceStat) => {
+  router.push({ name: 'tracing-search', query: { serviceName: String(row.name ?? row.serviceName ?? '') } })
 }
 
-const viewTraceDetail = (trace: any) => {
+const viewTraceDetail = (trace: TraceSpan) => {
   selectedTrace.value = trace
   traceDetailVisible.value = true
 }
