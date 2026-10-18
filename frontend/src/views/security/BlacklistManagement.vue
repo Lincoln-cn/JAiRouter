@@ -79,7 +79,9 @@
       </el-table-column>
       <el-table-column prop="targetValueMasked" :label="t('blacklist.target')" show-overflow-tooltip />
       <el-table-column prop="userId" :label="t('blacklist.relatedUser')" width="120" show-overflow-tooltip />
-      <el-table-column prop="reason" :label="t('blacklist.reason')" width="150" show-overflow-tooltip />
+      <el-table-column :label="t('blacklist.reason')" width="150" show-overflow-tooltip>
+          <template #default="{ row }">{{ formatReason(row.reason) }}</template>
+        </el-table-column>
       <el-table-column prop="riskLevel" :label="t('blacklist.riskLevel')" width="100">
         <template #default="scope">
           <el-tag :type="getRiskTagType(scope.row.riskLevel)" size="small">
@@ -247,13 +249,13 @@
               :placeholder="t('blacklist.reasonPlaceholder')"
               style="width: 100%"
             >
-              <el-option :label="t('blacklist.reasonMaliciousLogin')" value="恶意登录尝试" />
-              <el-option :label="t('blacklist.reasonAbnormalAccess')" value="异常访问行为" />
-              <el-option :label="t('blacklist.reasonCompromisedAccount')" value="账户被盗" />
-              <el-option :label="t('blacklist.reasonViolation')" value="违规操作" />
-              <el-option :label="t('blacklist.reasonSecurityRisk')" value="安全风险" />
-              <el-option :label="t('blacklist.reasonUserRequest')" value="用户请求封禁" />
-              <el-option :label="t('blacklist.reasonOther')" value="其他" />
+              <el-option :label="t('blacklist.reasonMaliciousLogin')" value="MALICIOUS_LOGIN" />
+              <el-option :label="t('blacklist.reasonAbnormalAccess')" value="ABNORMAL_ACCESS" />
+              <el-option :label="t('blacklist.reasonCompromisedAccount')" value="COMPROMISED_ACCOUNT" />
+              <el-option :label="t('blacklist.reasonViolation')" value="VIOLATION" />
+              <el-option :label="t('blacklist.reasonSecurityRisk')" value="SECURITY_RISK" />
+              <el-option :label="t('blacklist.reasonUserRequest')" value="USER_REQUEST" />
+              <el-option :label="t('blacklist.reasonOther')" value="OTHER" />
             </el-select>
           </div>
         </el-form-item>
@@ -346,6 +348,37 @@ import PageSkeleton from '@/components/PageSkeleton.vue'
 import { formatDateTime as formatDateTimeBase } from '@/utils/format'
 
 const { t } = useI18n()
+
+/**
+ * 黑名单原因的「值 → 语言键」映射（issue #455）。
+ *
+ * 值曾经是中文文案本身（`value="恶意登录尝试"`），导致英文界面下列表仍显示中文。
+ * 现在提交的是与语言无关的稳定码；**中文键名同时保留映射**，用于迁移之前写入的存量行。
+ * 不在表里的（用户自填 / 后端写入的自由文本，如 JWT 撤销的"手动撤销"）原样显示，不做猜测。
+ */
+const REASON_CODE_KEYS: Record<string, string> = {
+  MALICIOUS_LOGIN: 'blacklist.reasonMaliciousLogin',
+  ABNORMAL_ACCESS: 'blacklist.reasonAbnormalAccess',
+  COMPROMISED_ACCOUNT: 'blacklist.reasonCompromisedAccount',
+  VIOLATION: 'blacklist.reasonViolation',
+  SECURITY_RISK: 'blacklist.reasonSecurityRisk',
+  USER_REQUEST: 'blacklist.reasonUserRequest',
+  OTHER: 'blacklist.reasonOther',
+  // 迁移（Flyway V3）之前的存量值
+  恶意登录尝试: 'blacklist.reasonMaliciousLogin',
+  异常访问行为: 'blacklist.reasonAbnormalAccess',
+  账户被盗: 'blacklist.reasonCompromisedAccount',
+  违规操作: 'blacklist.reasonViolation',
+  安全风险: 'blacklist.reasonSecurityRisk',
+  用户请求封禁: 'blacklist.reasonUserRequest'
+}
+
+/** 把存储的原因值渲染成当前语言的文案；未知值原样返回 */
+const formatReason = (reason?: string): string => {
+  if (!reason) return '-'
+  const key = REASON_CODE_KEYS[reason]
+  return key ? t(key) : reason
+}
 
 // 状态
 const loading = ref(false)
