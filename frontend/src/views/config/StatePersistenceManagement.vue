@@ -255,39 +255,32 @@ import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Refresh, RefreshRight, Switch, Upload, View } from '@element-plus/icons-vue'
-import request from '@/utils/request'
+import {
+  getPersistenceStatus,
+  getTierHealth,
+  refreshTiers as refreshTiersApi,
+  getStateDetails,
+  recoverAll as recoverAllApi,
+  recoverSingle as recoverSingleApi,
+  syncStates as syncStatesApi,
+  switchTier as switchTierApi,
+  type TierHealth,
+  type StateDetail,
+  type PersistenceStats
+} from '@/api/statePersistence'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 
 const { t } = useI18n()
 
-interface TierHealth {
-  healthy: boolean
-  message?: string
-}
-
-interface StateDetail {
-  instanceId?: string
-  serviceType?: string
-  stateType: string
-  state: string
-  lastModified: string
-  tier?: string
-  dataSize?: string
-}
-
-const apiBaseUrl = '/state-persistence'
-
 const currentTier = ref('h2')
-const tierHealth = ref<{
-  redis?: TierHealth
-  h2?: TierHealth
-  file?: TierHealth
-}>({
+// 后端返回的是 Map<String, TierHealth>（键名由三层实现决定），因此按 Record 收，
+// 而不是写死 redis/h2/file —— 否则后端加一层就要改前端类型。
+const tierHealth = ref<Record<string, TierHealth>>({
   redis: { healthy: false },
   h2: { healthy: true },
   file: { healthy: true }
 })
-const stats = ref({
+const stats = ref<PersistenceStats>({
   circuitBreakerCount: 0,
   loadBalancerCount: 0,
   rateLimiterCount: 0,
@@ -364,15 +357,15 @@ const formatTime = (time?: string) => {
 
 const loadPersistenceStatus = async () => {
   try {
-    const response = await request.get(`${apiBaseUrl}/status`)
-    if (response.data?.success) {
-      const data = response.data.data
+    const response = await getPersistenceStatus()
+    const data = response.data?.data
+    if (response.data?.success && data) {
       currentTier.value = data.currentTier || 'h2'
       // tierHealth 由 loadTiers() 单独获取，此处不再覆盖
       // 因为 /status 返回的是 Map<String, Boolean>，而前端需要 { healthy, message } 结构
       stats.value = data.stats || stats.value
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to load status:', error)
     ElMessage.warning(t('statePersistence.messages.loadFailed'))
   }
@@ -380,23 +373,25 @@ const loadPersistenceStatus = async () => {
 
 const loadTiers = async () => {
   try {
-    const response = await request.get(`${apiBaseUrl}/tiers`)
-    if (response.data?.success) {
-      tierHealth.value = response.data.data
+    const response = await getTierHealth()
+    const data = response.data?.data
+    if (response.data?.success && data) {
+      tierHealth.value = data
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to load tiers:', error)
   }
 }
 
 const refreshTiers = async () => {
   try {
-    const response = await request.post(`${apiBaseUrl}/tiers/refresh`)
-    if (response.data?.success) {
-      tierHealth.value = response.data.data
+    const response = await refreshTiersApi()
+    const data = response.data?.data
+    if (response.data?.success && data) {
+      tierHealth.value = data
       ElMessage.success(t('statePersistence.messages.tiersRefreshed'))
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to refresh tiers:', error)
     ElMessage.error(t('statePersistence.messages.tiersRefreshFailed'))
   }
@@ -405,11 +400,11 @@ const refreshTiers = async () => {
 const loadStateDetails = async () => {
   loadingDetails.value = true
   try {
-    const response = await request.get(`${apiBaseUrl}/details`)
+    const response = await getStateDetails()
     if (response.data?.success) {
       stateDetails.value = response.data.data || []
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to load state details:', error)
     // 接口不可用时置空，页面展示空态（原注释写的是「使用模拟数据」，与实现不符）
     stateDetails.value = []
@@ -421,7 +416,7 @@ const loadStateDetails = async () => {
 const recoverAll = async () => {
   recovering.value = true
   try {
-    const response = await request.post(`${apiBaseUrl}/recovery/all`)
+    const response = await recoverAllApi()
     if (response.data?.success) {
       ElMessage.success(t('statePersistence.messages.recoverAllSuccess', { message: response.data.data?.message || t('statePersistence.messages.success') }))
       loadStateDetails()
@@ -429,7 +424,7 @@ const recoverAll = async () => {
     } else {
       ElMessage.error(response.data?.message || t('statePersistence.messages.recoverFailed'))
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to recover all:', error)
     ElMessage.error(t('statePersistence.messages.recoverAllFailed'))
   } finally {
@@ -439,28 +434,22 @@ const recoverAll = async () => {
 
 const recoverSingle = async (row: StateDetail) => {
   try {
-    let endpoint = ''
-    if (row.stateType === 'CIRCUIT_BREAKER') {
-      endpoint = `${apiBaseUrl}/recovery/circuit-breaker/${row.instanceId}`
-    } else if (row.stateType === 'LOAD_BALANCER') {
-      endpoint = `${apiBaseUrl}/recovery/load-balancer/${row.serviceType}`
-    } else if (row.stateType === 'RATE_LIMITER') {
-      endpoint = `${apiBaseUrl}/recovery/rate-limiter/${row.instanceId}`
-    }
-
-    if (!endpoint) {
+    // 支持的三种状态类型；其余类型的"恢复"后端没有对应端点（原实现靠拼空串兜住，这里显式判）。
+    const supported = ['CIRCUIT_BREAKER', 'LOAD_BALANCER', 'RATE_LIMITER']
+    if (!supported.includes(row.stateType)) {
       ElMessage.warning(t('statePersistence.messages.recoverNotSupported'))
       return
     }
 
-    const response = await request.post(endpoint)
+    const target = row.instanceId || row.serviceType || ''
+    const response = await recoverSingleApi(row.stateType, target)
     if (response.data?.success) {
       ElMessage.success(t('statePersistence.messages.recoverSuccess', { id: row.instanceId || row.serviceType }))
       loadStateDetails()
     } else {
       ElMessage.error(response.data?.message || t('statePersistence.messages.recoverFailed'))
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to recover single:', error)
     ElMessage.error(t('statePersistence.messages.recoverAllFailed'))
   }
@@ -469,14 +458,14 @@ const recoverSingle = async (row: StateDetail) => {
 const syncStates = async () => {
   syncing.value = true
   try {
-    const response = await request.post(`${apiBaseUrl}/sync`)
+    const response = await syncStatesApi()
     if (response.data?.success) {
       ElMessage.success(t('statePersistence.messages.syncSuccess'))
       loadPersistenceStatus()
     } else {
       ElMessage.error(response.data?.message || t('statePersistence.messages.syncFailed'))
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to sync:', error)
     ElMessage.error(t('statePersistence.messages.syncError'))
   } finally {
@@ -498,7 +487,7 @@ const switchTier = async () => {
 
   switching.value = true
   try {
-    const response = await request.post(`${apiBaseUrl}/tiers/switch/${targetTier.value}`)
+    const response = await switchTierApi(targetTier.value)
     if (response.data?.success) {
       currentTier.value = targetTier.value
       ElMessage.success(t('statePersistence.messages.tierSwitched', { tier: getTierDisplayName(targetTier.value) }))
@@ -507,7 +496,7 @@ const switchTier = async () => {
     } else {
       ElMessage.error(response.data?.message || t('statePersistence.messages.tierSwitchFailed'))
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to switch tier:', error)
     ElMessage.error(t('statePersistence.messages.tierSwitchError'))
   } finally {
