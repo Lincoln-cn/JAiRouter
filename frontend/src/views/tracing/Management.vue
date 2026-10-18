@@ -235,6 +235,7 @@ import {
   cleanupExpiredTraces,
   refreshSamplingStrategy
 } from '@/api/tracing'
+import type { TracingConfig, TracingHealth, TracingStatus } from '@/types/tracing'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 
 const { t } = useI18n()
@@ -324,7 +325,7 @@ const loadAllData = async () => {
 const loadStatus = async () => {
   try {
     const response = await getTracingStatus()
-    const data = response.data?.data || response.data || response
+    const data = (response.data?.data || response.data) as TracingStatus | undefined
     if (data) {
       statusInfo.value = {
         serviceName: data.serviceName || 'jairouter',
@@ -343,7 +344,7 @@ const loadStatus = async () => {
 const loadHealth = async () => {
   try {
     const response = await getTracingHealth()
-    const data = response.data?.data || response.data || response
+    const data = (response.data?.data || response.data) as TracingHealth | undefined
     if (data) {
       healthStatus.value = {
         status: data.status || 'UP',
@@ -360,7 +361,7 @@ const loadHealth = async () => {
 const loadConfig = async () => {
   try {
     const response = await getTracingConfig()
-    const data = response.data?.data || response.data || response
+    const data = (response.data?.data || response.data) as TracingConfig | undefined
     if (data) {
       if (data.sampling) {
         rawSampling.value = data.sampling

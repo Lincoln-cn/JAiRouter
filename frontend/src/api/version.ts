@@ -2,8 +2,10 @@ import request from '@/utils/request'
 import type {RouterResponse} from '@/types'
 
 // 定义版本配置类型
+// 版本快照保存的是整份运行时配置，各段形状随配置面演进；前端只做展示/回滚，
+// 不按键读取具体字段，故用 unknown 而不是 any（#520：拒绝 any→any）。
 export interface VersionConfig {
-  [key: string]: any
+  [key: string]: unknown
 }
 
 // 定义版本信息类型

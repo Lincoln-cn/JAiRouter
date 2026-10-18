@@ -128,6 +128,7 @@ import {
   CopyDocument, Download, Search, CircleCheckFilled, CircleCloseFilled
 } from '@element-plus/icons-vue'
 import { getTraceChain } from '@/api/tracing'
+import type { TraceChainNode } from '@/types/tracing'
 import { useChartTheme } from '@/composables/useChartTheme'
 import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 
@@ -169,7 +170,7 @@ const loadTraceChain = async () => {
   loading.value = true
   try {
     const response = await getTraceChain(props.traceId)
-    const data = response.data?.data || response.data || response
+    const data = (response.data?.data || response.data) as TraceChainNode[] | undefined
     if (data) {
       traceChain.value = data
       await nextTick()

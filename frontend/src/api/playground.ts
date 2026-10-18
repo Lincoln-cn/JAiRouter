@@ -136,15 +136,26 @@ export const sendPlaygroundRequest = async (request: PlaygroundRequest): Promise
       duration: response.duration || 0,
       timestamp: response.timestamp || new Date().toISOString()
     }
-  } catch (error: any) {
-    // 构造错误响应
+  } catch (error) {
+    // 构造错误响应（#520：catch 的载荷是 unknown，这里按 axios 错误形状收窄）
+    const err = error as {
+      response?: {
+        status?: number
+        statusText?: string
+        headers?: Record<string, string>
+        data?: unknown
+        duration?: number
+        timestamp?: string
+      }
+      message?: string
+    }
     const errorResponse: PlaygroundResponse = {
-      status: error.response?.status || 0,
-      statusText: error.response?.statusText || 'Network Error',
-      headers: error.response?.headers || {},
-      data: error.response?.data || { error: error.message },
-      duration: error.response?.duration || 0,
-      timestamp: error.response?.timestamp || new Date().toISOString()
+      status: err.response?.status || 0,
+      statusText: err.response?.statusText || 'Network Error',
+      headers: err.response?.headers || {},
+      data: err.response?.data || { error: err.message },
+      duration: err.response?.duration || 0,
+      timestamp: err.response?.timestamp || new Date().toISOString()
     }
     
     throw errorResponse
@@ -152,15 +163,36 @@ export const sendPlaygroundRequest = async (request: PlaygroundRequest): Promise
 }
 
 /**
+ * Playground 请求配置的**公共底座**（#520）。
+ *
+ * 各服务类型各有自己的 `XxxRequestConfig extends BaseRequestConfig`（`ChatRequestConfig.messages`、
+ * `ImageGenerateRequestConfig.prompt`…），形状不同但都带 `model` 与这几个可选字段。
+ * 这里只声明「本模块自己消费的字段」，`sendServiceRequest` 用泛型约束接收，
+ * 从而既保留调用方的具体类型，又不必让它们都补一条索引签名。
+ */
+export interface PlaygroundRequestConfig {
+  /** 模型名（所有端点公共，决定路由实例） */
+  model: string
+  /** 覆盖默认授权头 */
+  authorization?: string
+  /** 追加到请求头的自定义键值 */
+  customHeaders?: Record<string, string>
+  /** 语音转写等单文件端点 */
+  file?: File
+  /** 图片编辑等多文件端点 */
+  images?: File[]
+}
+
+/**
  * 根据服务类型和配置发送请求
  * @param serviceType 服务类型
- * @param config 请求配置
+ * @param config 请求配置（调用方的具体配置类型，见 PlaygroundRequestConfig）
  * @param globalHeaders 全局请求头
  * @returns Promise<PlaygroundResponse>
  */
-export const sendServiceRequest = async (
+export const sendServiceRequest = async <T extends PlaygroundRequestConfig>(
   serviceType: ServiceType,
-  config: any,
+  config: T,
   globalHeaders: Record<string, string> = {}
 ): Promise<PlaygroundResponse> => {
   const endpoint: ApiEndpoint = SERVICE_ENDPOINTS[serviceType]

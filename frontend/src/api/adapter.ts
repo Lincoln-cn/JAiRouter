@@ -94,7 +94,8 @@ export interface AdapterTestResult {
   latencyMs: number
   message: string
   httpStatusCode?: number
-  details?: Record<string, any>
+  /** 适配器自检返回的原始附加信息：键值由各适配器实现决定，页面只展示不参与判断（#520） */
+  details?: Record<string, unknown>
 }
 
 export const getAdapterList = () => {

@@ -13,7 +13,7 @@ import request from '@/utils/request'
 export const queryCallHistory = async (
   query: CallHistoryQuery = {}
 ): Promise<PageResponse<ApiCallHistoryRecord>> => {
-  const params: Record<string, any> = {
+  const params: Record<string, unknown> = {
     page: query.page || 0,
     size: query.size || 20
   }
@@ -40,7 +40,7 @@ export const getSlowCalls = async (
   endTime?: string,
   limit: number = 50
 ): Promise<ApiCallHistoryRecord[]> => {
-  const params: Record<string, any> = { limit }
+  const params: Record<string, unknown> = { limit }
   if (threshold) params.threshold = threshold
   if (startTime) params.startTime = startTime
   if (endTime) params.endTime = endTime
@@ -56,7 +56,7 @@ export const getCallHistoryStatistics = async (
   startTime?: string,
   endTime?: string
 ): Promise<CallHistoryStatistics> => {
-  const params: Record<string, any> = {}
+  const params: Record<string, unknown> = {}
   if (startTime) params.startTime = startTime
   if (endTime) params.endTime = endTime
 
@@ -71,7 +71,7 @@ export const getCallHistoryDashboard = async (
   startTime?: string,
   endTime?: string
 ): Promise<CallHistoryDashboard> => {
-  const params: Record<string, any> = {}
+  const params: Record<string, unknown> = {}
   if (startTime) params.startTime = startTime
   if (endTime) params.endTime = endTime
 

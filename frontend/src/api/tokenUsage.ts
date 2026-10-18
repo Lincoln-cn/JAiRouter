@@ -8,7 +8,7 @@ export const getTokenUsageStatistics = async (
   startTime?: string,
   endTime?: string
 ): Promise<TokenUsageStatistics> => {
-  const params: Record<string, any> = {}
+  const params: { startTime?: string; endTime?: string } = {}
   if (startTime) params.startTime = startTime
   if (endTime) params.endTime = endTime
 

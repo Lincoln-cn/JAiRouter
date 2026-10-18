@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import type { AxiosRequestConfig } from 'axios'
 import { i18n } from '@/i18n'
 const { t: gt } = i18n.global as unknown as {
   t: (key: string, named?: Record<string, string | number>) => string
@@ -13,7 +14,8 @@ export interface UniversalApiRequest {
   endpoint: string
   method: string
   headers: Record<string, string>
-  body?: any
+  /** JSON 请求体（各端点的参数形状不同，由调用方按端点构造；#520） */
+  body?: unknown
   files?: File[]
 }
 
@@ -24,7 +26,8 @@ export interface UniversalApiResponse {
   status: number
   statusText: string
   headers: Record<string, string>
-  data: any
+  /** 上游返回的原始 JSON / 文本，由调用方按端点收窄（#520：unknown 而非 any） */
+  data: unknown
   duration: number
   timestamp: string
 }
@@ -40,8 +43,8 @@ class UniversalApiClient {
     const startTime = Date.now()
 
     try {
-      // 构建请求配置
-      const config: any = {
+      // 构建请求配置（headers 显式收成 string 映射，便于下面按需改/删单个头）
+      const config: AxiosRequestConfig & { headers: Record<string, string> } = {
         method: apiRequest.method,
         url: apiRequest.endpoint,
         headers: { ...apiRequest.headers },
@@ -105,23 +108,33 @@ class UniversalApiClient {
         duration: endTime - startTime,
         timestamp: new Date().toISOString()
       }
-    } catch (error: any) {
+    } catch (error) {
       const endTime = Date.now()
+      // catch 的载荷是 unknown，这里按 axios 错误形状收窄（#520）
+      const err = error as {
+        response?: {
+          status?: number
+          statusText?: string
+          headers?: Record<string, string>
+          data?: unknown
+        }
+        message?: string
+      }
 
       console.error('Universal响应错误:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
         duration: `${endTime - startTime}ms`,
-        message: error.message,
+        message: err.message,
         url: apiRequest.endpoint
       })
 
       // 构建错误响应
       const errorResponse: UniversalApiResponse = {
-        status: error.response?.status || 0,
-        statusText: error.response?.statusText || 'Network Error',
-        headers: error.response?.headers || {},
-        data: error.response?.data || { error: error.message },
+        status: err.response?.status || 0,
+        statusText: err.response?.statusText || 'Network Error',
+        headers: err.response?.headers || {},
+        data: err.response?.data || { error: err.message },
         duration: endTime - startTime,
         timestamp: new Date().toISOString()
       }
@@ -135,8 +148,8 @@ class UniversalApiClient {
    */
   async sendStreamRequest(
     apiRequest: UniversalApiRequest,
-    onMessage: (data: any) => void,
-    onError: (error: any) => void,
+    onMessage: (data: unknown) => void,
+    onError: (error: unknown) => void,
     onComplete: () => void,
     signal?: AbortSignal
   ): Promise<void> {
@@ -284,22 +297,32 @@ class UniversalApiClient {
       } finally {
         reader.releaseLock()
       }
-    } catch (error: any) {
+    } catch (error) {
       const endTime = Date.now()
+      // catch 的载荷是 unknown：这里既可能是 fetch 的网络错误，也可能是被 throw 的响应对象（#520）
+      const err = error as {
+        response?: { status?: number; statusText?: string; data?: unknown }
+        status?: number
+        statusText?: string
+        message?: string
+        stack?: string
+        name?: string
+      }
+
       console.error('流式请求异常:', {
-        error: error.message,
-        stack: error.stack,
+        error: err.message,
+        stack: err.stack,
         duration: endTime - startTime
       })
 
       // 构建详细的错误信息
       const errorResponse = {
-        status: error.status || 0,
-        statusText: error.statusText || 'Stream Error',
+        status: err.response?.status || err.status || 0,
+        statusText: err.response?.statusText || err.statusText || 'Stream Error',
         headers: {},
         data: {
-          error: error.message,
-          type: error.name || 'StreamError',
+          error: err.message,
+          type: err.name || 'StreamError',
           timestamp: new Date().toISOString()
         },
         duration: endTime - startTime,

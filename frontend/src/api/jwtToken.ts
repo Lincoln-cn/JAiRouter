@@ -62,13 +62,14 @@ export interface BlacklistStats {
     blacklistEnabled: boolean
     lastCleanupTime: number | string
 
-    [key: string]: any
+    /** 后端后续可能追加的统计字段，前端只展示（#520：unknown 而非 any） */
+    [key: string]: unknown
 }
 
 // 撤销JWT令牌
 export const revokeToken = async (revokeRequest: TokenRevokeRequest): Promise<boolean> => {
     try {
-        const response = await request.post<RouterResponse<any>>('/auth/jwt/revoke', revokeRequest)
+        const response = await request.post<RouterResponse<unknown>>('/auth/jwt/revoke', revokeRequest)
         return response.data.success || false
     } catch (error) {
         console.error('撤销JWT令牌失败:', error)
@@ -79,7 +80,7 @@ export const revokeToken = async (revokeRequest: TokenRevokeRequest): Promise<bo
 // 批量撤销JWT令牌
 export const revokeTokensBatch = async (batchRevokeRequest: BatchTokenRevokeRequest): Promise<boolean> => {
     try {
-        const response = await request.post<RouterResponse<any>>('/auth/jwt/revoke/batch', batchRevokeRequest)
+        const response = await request.post<RouterResponse<unknown>>('/auth/jwt/revoke/batch', batchRevokeRequest)
         return response.data.success || false
     } catch (error) {
         console.error('批量撤销JWT令牌失败:', error)
@@ -106,7 +107,7 @@ export const getTokens = async (
     status?: string
 ): Promise<PagedResult<JwtTokenInfo>> => {
     try {
-        const params: any = { page, size }
+        const params: { page: number; size: number; userId?: string; status?: string } = { page, size }
         if (userId) params.userId = userId
         if (status) params.status = status
         

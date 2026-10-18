@@ -1,5 +1,6 @@
 import request from '@/utils/request'
 import type { RouterResponse } from '@/types'
+import type { ServiceInstance } from '@/types/common'
 
 // 定义实例配置接口
 export interface InstanceConfig {
@@ -37,9 +38,9 @@ export interface CircuitBreakerConfig {
   successThreshold: number
 }
 
-// 获取服务实例列表
+// 获取服务实例列表（#520：用具名的 ServiceInstance，不用 any[]）
 export const getServiceInstances = (serviceType: string) => {
-  return request.get<RouterResponse<any[]>>(`/config/instance/${serviceType}`)
+  return request.get<RouterResponse<ServiceInstance[]>>(`/config/instance/${serviceType}`)
 }
 
 // 注：这里曾有一个 `getServiceInstance(serviceType, instanceId)` 调用
@@ -50,12 +51,12 @@ export const getServiceInstances = (serviceType: string) => {
 
 // 添加服务实例
 export const addServiceInstance = (serviceType: string, instanceConfig: InstanceConfig) => {
-  return request.post<RouterResponse<any>>(`/config/instance/${serviceType}`, instanceConfig)
+  return request.post<RouterResponse<unknown>>(`/config/instance/${serviceType}`, instanceConfig)
 }
 
 // 更新服务实例
 export const updateServiceInstance = (serviceType: string, instanceId: string, instanceConfig: InstanceConfig) => {
-  return request.put<RouterResponse<any>>(`/config/instance/${serviceType}/${instanceId}`, instanceConfig)
+  return request.put<RouterResponse<unknown>>(`/config/instance/${serviceType}/${instanceId}`, instanceConfig)
 }
 
 // 删除服务实例
