@@ -72,7 +72,9 @@ class RolePermissionSeederTest {
             assertEquals(Set.of("ADMIN", "OPERATOR", "USER", "VIEWER"), counts.keySet());
             assertEquals(PermissionCodes.ALL_PERMISSION_CODES.size(), counts.get("ADMIN").intValue());
             // R2-P1-03: + monitoring:exceptions:read/write；#116: + monitoring:config:write, security:audit:write
-            assertEquals(43L, counts.get("OPERATOR"));
+            // 44 = 43 + monitoring:metrics:write（#454 新增；OPERATOR 的规则是「所有 :read/:write 码」，
+            // 所以新写码会自动进运维角色——这正是我们想要的分工：运维能注册指标，USER/VIEWER 不能）
+            assertEquals(44L, counts.get("OPERATOR"));
             assertEquals(28L, counts.get("USER"));
             assertEquals(27L, counts.get("VIEWER"));
         }
