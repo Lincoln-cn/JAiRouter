@@ -20,44 +20,43 @@ JAiRouter monitoring configuration is primarily defined in `application.yml`:
 ```yaml
 # Monitoring configuration
 monitoring:
-  metrics:
-    # Basic configuration
-    enabled: true
-    prefix: "jairouter"
-    collection-interval: 10s
+  # Basic configuration
+  enabled: true
+  prefix: "jairouter"
+  collection-interval: 10s
     
-    # Metric categories
-    enabled-categories:
-      - system
-      - business
-      - infrastructure
+  # Metric categories
+  enabled-categories:
+    - system
+    - business
+    - infrastructure
     
-    # Custom tags
-    custom-tags:
-      environment: "${spring.profiles.active:default}"
-      version: "@project.version@"
+  # Custom tags
+  custom-tags:
+    environment: "${spring.profiles.active:default}"
+    version: "@project.version@"
     
-    # Sampling configuration
-    sampling:
-      request-metrics: 1.0
-      backend-metrics: 1.0
-      infrastructure-metrics: 1.0
+  # Sampling configuration
+  sampling:
+    request-metrics: 1.0
+    backend-metrics: 1.0
+    infrastructure-metrics: 1.0
     
-    # Performance configuration
-    performance:
-      async-processing: true
-      batch-size: 500
-      buffer-size: 2000
+  # Performance configuration
+  performance:
+    async-processing: true
+    batch-size: 500
+    buffer-size: 2000
     
-    # Memory configuration
-    memory:
-      cache-size: 10000
-      cache-expiry: 5m
+  # Memory configuration
+  memory:
+    cache-size: 10000
+    cache-expiry: 5m
     
-    # Security configuration
-    security:
-      data-masking: false
-      mask-labels: []
+  # Security configuration
+  security:
+    data-masking: false
+    mask-labels: []
 
 # Spring Actuator configuration
 management:
@@ -92,9 +91,8 @@ management:
 
 ```yaml
 monitoring:
-  metrics:
-    enabled: true  # Enable monitoring
-    # enabled: false  # Disable monitoring
+  enabled: true  # Enable monitoring
+  # enabled: false  # Disable monitoring
 ```
 
 **Environment Variable**: `MONITORING_METRICS_ENABLED`
@@ -107,10 +105,9 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    prefix: "jairouter"        # Default prefix
-    # prefix: "my-app"         # Custom prefix
-    # prefix: ""               # No prefix
+  prefix: "jairouter"        # Default prefix
+  # prefix: "my-app"         # Custom prefix
+  # prefix: ""               # No prefix
 ```
 
 ### monitoring.metrics.collection-interval
@@ -121,10 +118,9 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    collection-interval: 10s   # 10 seconds
-    # collection-interval: 5s  # 5 seconds (more frequent)
-    # collection-interval: 30s # 30 seconds (less frequent)
+  collection-interval: 10s   # 10 seconds
+  # collection-interval: 5s  # 5 seconds (more frequent)
+  # collection-interval: 30s # 30 seconds (less frequent)
 ```
 
 ## Metric Category Configuration
@@ -137,11 +133,10 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    enabled-categories:
-      - system          # System metrics (JVM, HTTP, etc.)
-      - business        # Business metrics (model calls, user sessions, etc.)
-      - infrastructure  # Infrastructure metrics (load balancing, rate limiting, circuit breaking, etc.)
+  enabled-categories:
+    - system          # System metrics (JVM, HTTP, etc.)
+    - business        # Business metrics (model calls, user sessions, etc.)
+    - infrastructure  # Infrastructure metrics (load balancing, rate limiting, circuit breaking, etc.)
 ```
 
 **Available Values**:
@@ -159,13 +154,12 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    custom-tags:
-      environment: "${spring.profiles.active:default}"
-      version: "@project.version@"
-      region: "us-west-1"
-      datacenter: "dc1"
-      team: "platform"
+  custom-tags:
+    environment: "${spring.profiles.active:default}"
+    version: "@project.version@"
+    region: "us-west-1"
+    datacenter: "dc1"
+    team: "platform"
 ```
 
 **Notes**:
@@ -182,13 +176,12 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    sampling:
-      request-metrics: 1.0        # Request metric sampling rate (100%)
-      backend-metrics: 1.0        # Backend call metric sampling rate
-      infrastructure-metrics: 1.0 # Infrastructure metric sampling rate
-      system-metrics: 1.0         # System metric sampling rate
-      debug-metrics: 0.1          # Debug metric sampling rate (10%)
+  sampling:
+    request-metrics: 1.0        # Request metric sampling rate (100%)
+    backend-metrics: 1.0        # Backend call metric sampling rate
+    infrastructure-metrics: 1.0 # Infrastructure metric sampling rate
+    system-metrics: 1.0         # System metric sampling rate
+    debug-metrics: 0.1          # Debug metric sampling rate (10%)
 ```
 
 **Sampling Rate Explanation**:
@@ -201,17 +194,15 @@ monitoring:
 ```yaml
 # Development environment - full sampling for debugging
 monitoring:
-  metrics:
-    sampling:
-      request-metrics: 1.0
-      backend-metrics: 1.0
+  sampling:
+    request-metrics: 1.0
+    backend-metrics: 1.0
 
 # Production environment - reduce sampling rate to reduce overhead
 monitoring:
-  metrics:
-    sampling:
-      request-metrics: 0.1
-      backend-metrics: 0.5
+  sampling:
+    request-metrics: 0.1
+    backend-metrics: 0.5
 ```
 
 ## Performance Configuration
@@ -223,24 +214,23 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    performance:
-      # Asynchronous processing configuration
-      async-processing: true
-      async-thread-pool-size: 4
-      async-thread-pool-max-size: 8
-      async-queue-capacity: 1000
+  performance:
+    # Asynchronous processing configuration
+    async-processing: true
+    async-thread-pool-size: 4
+    async-thread-pool-max-size: 8
+    async-queue-capacity: 1000
       
-      # Batch processing configuration
-      batch-size: 500
-      batch-timeout: 1s
+    # Batch processing configuration
+    batch-size: 500
+    batch-timeout: 1s
       
-      # Buffer configuration
-      buffer-size: 2000
-      buffer-flush-interval: 5s
+    # Buffer configuration
+    buffer-size: 2000
+    buffer-flush-interval: 5s
       
-      # Processing timeout configuration
-      processing-timeout: 5s
+    # Processing timeout configuration
+    processing-timeout: 5s
 ```
 
 #### async-processing
@@ -251,10 +241,9 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    performance:
-      async-processing: true   # Enable asynchronous processing (recommended)
-      # async-processing: false # Synchronous processing (for debugging)
+  performance:
+    async-processing: true   # Enable asynchronous processing (recommended)
+    # async-processing: false # Synchronous processing (for debugging)
 ```
 
 #### batch-size
@@ -265,11 +254,10 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    performance:
-      batch-size: 500    # Default batch size
-      # batch-size: 100  # Small batch, low latency
-      # batch-size: 1000 # Large batch, high throughput
+  performance:
+    batch-size: 500    # Default batch size
+    # batch-size: 100  # Small batch, low latency
+    # batch-size: 1000 # Large batch, high throughput
 ```
 
 #### buffer-size
@@ -280,11 +268,10 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    performance:
-      buffer-size: 2000   # Default buffer size
-      # buffer-size: 5000 # Large buffer, handle burst traffic
-      # buffer-size: 1000 # Small buffer, save memory
+  performance:
+    buffer-size: 2000   # Default buffer size
+    # buffer-size: 5000 # Large buffer, handle burst traffic
+    # buffer-size: 1000 # Small buffer, save memory
 ```
 
 ## Memory Configuration
@@ -296,20 +283,19 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    memory:
-      # Cache configuration
-      cache-size: 10000
-      cache-expiry: 5m
-      cache-cleanup-interval: 1m
+  memory:
+    # Cache configuration
+    cache-size: 10000
+    cache-expiry: 5m
+    cache-cleanup-interval: 1m
       
-      # Memory threshold configuration
-      memory-threshold: 80
-      low-memory-sampling-rate: 0.1
+    # Memory threshold configuration
+    memory-threshold: 80
+    low-memory-sampling-rate: 0.1
       
-      # Object pool configuration
-      object-pool-enabled: true
-      object-pool-size: 1000
+    # Object pool configuration
+    object-pool-enabled: true
+    object-pool-size: 1000
 ```
 
 #### cache-size
@@ -339,26 +325,25 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    security:
-      # Data masking
-      data-masking: true
-      mask-labels:
-        - user_id
-        - client_ip
-        - api_key
-        - session_id
+  security:
+    # Data masking
+    data-masking: true
+    mask-labels:
+      - user_id
+      - client_ip
+      - api_key
+      - session_id
       
-      # IP address masking
-      ip-masking: true
-      ip-mask-pattern: "xxx.xxx.xxx.xxx"
+    # IP address masking
+    ip-masking: true
+    ip-mask-pattern: "xxx.xxx.xxx.xxx"
       
-      # Sensitive metric filtering
-      sensitive-metrics-filter: true
-      filtered-metrics:
-        - "*.password.*"
-        - "*.secret.*"
-        - "*.token.*"
+    # Sensitive metric filtering
+    sensitive-metrics-filter: true
+    filtered-metrics:
+      - "*.password.*"
+      - "*.secret.*"
+      - "*.token.*"
 ```
 
 #### data-masking
@@ -437,13 +422,12 @@ JAiRouter supports batch reporting of Micrometer metrics to external systems, in
 
 ```yaml
 monitoring:
-  metrics:
-    export:
-      http:
-        enabled: false                    # Enable HTTP reporting
-        url: ""                           # Reporting endpoint URL
-        timeout: 5000                     # Request timeout (milliseconds)
-        format: prometheus                # Reporting format: prometheus or json
+  export:
+    http:
+      enabled: false                    # Enable HTTP reporting
+      url: ""                           # Reporting endpoint URL
+      timeout: 5000                     # Request timeout (milliseconds)
+      format: prometheus                # Reporting format: prometheus or json
 ```
 
 **Field Description**:
@@ -459,26 +443,24 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    export:
-      http:
-        enabled: true
-        url: "http://pushgateway:9091/metrics/job/jairouter/instance/${HOSTNAME}"
-        timeout: 5000
-        format: prometheus
+  export:
+    http:
+      enabled: true
+      url: "http://pushgateway:9091/metrics/job/jairouter/instance/${HOSTNAME}"
+      timeout: 5000
+      format: prometheus
 ```
 
 **JSON Format Example**:
 
 ```yaml
 monitoring:
-  metrics:
-    export:
-      http:
-        enabled: true
-        url: "http://influxdb:8086/api/v2/write?org=myorg&bucket=metrics"
-        timeout: 10000
-        format: json
+  export:
+    http:
+      enabled: true
+      url: "http://influxdb:8086/api/v2/write?org=myorg&bucket=metrics"
+      timeout: 10000
+      format: json
 ```
 
 #### monitoring.metrics.export.file
@@ -488,13 +470,12 @@ monitoring:
 
 ```yaml
 monitoring:
-  metrics:
-    export:
-      file:
-        enabled: false                    # Enable file reporting
-        path: "./logs/metrics"            # Metrics file storage path
-        format: json                      # File format: json or prometheus
-        max-size-mb: 100                  # Maximum file size (MB)
+  export:
+    file:
+      enabled: false                    # Enable file reporting
+      path: "./logs/metrics"            # Metrics file storage path
+      format: json                      # File format: json or prometheus
+      max-size-mb: 100                  # Maximum file size (MB)
 ```
 
 **Field Description**:
@@ -560,25 +541,24 @@ metricsBatchReporter.setReportTarget(ReportTarget.LOG);
 
 ```yaml
 monitoring:
-  metrics:
-    enabled: true
-    prefix: "jairouter"
+  enabled: true
+  prefix: "jairouter"
     
-    # Batch reporting configuration
-    export:
-      # HTTP reporting (e.g., Prometheus Pushgateway)
-      http:
-        enabled: true
-        url: "http://pushgateway:9091/metrics/job/jairouter"
-        timeout: 5000
-        format: prometheus
+  # Batch reporting configuration
+  export:
+    # HTTP reporting (e.g., Prometheus Pushgateway)
+    http:
+      enabled: true
+      url: "http://pushgateway:9091/metrics/job/jairouter"
+      timeout: 5000
+      format: prometheus
       
-      # File reporting (backup or offline analysis)
-      file:
-        enabled: true
-        path: "./logs/metrics"
-        format: json
-        max-size-mb: 100
+    # File reporting (backup or offline analysis)
+    file:
+      enabled: true
+      path: "./logs/metrics"
+      format: json
+      max-size-mb: 100
 ```
 
 ## Environment-Specific Configuration
@@ -588,17 +568,16 @@ monitoring:
 ```yaml
 # application-dev.yml
 monitoring:
-  metrics:
-    enabled: true
-    sampling:
-      request-metrics: 1.0
-      backend-metrics: 1.0
-      infrastructure-metrics: 1.0
-    performance:
-      async-processing: false  # For easier debugging
-      batch-size: 100
-    security:
-      data-masking: false
+  enabled: true
+  sampling:
+    request-metrics: 1.0
+    backend-metrics: 1.0
+    infrastructure-metrics: 1.0
+  performance:
+    async-processing: false  # For easier debugging
+    batch-size: 100
+  security:
+    data-masking: false
 
 management:
   endpoints:
@@ -616,17 +595,16 @@ management:
 ```yaml
 # application-test.yml
 monitoring:
-  metrics:
-    enabled: true
-    prefix: "test_jairouter"
-    sampling:
-      request-metrics: 0.1  # Reduce sampling rate to minimize test interference
-      backend-metrics: 0.5
-    performance:
-      async-processing: true
-      batch-size: 50
-    memory:
-      cache-size: 1000
+  enabled: true
+  prefix: "test_jairouter"
+  sampling:
+    request-metrics: 0.1  # Reduce sampling rate to minimize test interference
+    backend-metrics: 0.5
+  performance:
+    async-processing: true
+    batch-size: 50
+  memory:
+    cache-size: 1000
 
 management:
   endpoints:
@@ -640,28 +618,27 @@ management:
 ```yaml
 # application-prod.yml
 monitoring:
-  metrics:
-    enabled: true
-    sampling:
-      request-metrics: 0.1
-      backend-metrics: 0.5
-      infrastructure-metrics: 0.1
-      system-metrics: 0.5
-    performance:
-      async-processing: true
-      batch-size: 1000
-      buffer-size: 5000
-    memory:
-      cache-size: 20000
-      memory-threshold: 85
-      low-memory-sampling-rate: 0.01
-    security:
-      data-masking: true
-      mask-labels:
-        - user_id
-        - client_ip
-        - api_key
-      ip-masking: true
+  enabled: true
+  sampling:
+    request-metrics: 0.1
+    backend-metrics: 0.5
+    infrastructure-metrics: 0.1
+    system-metrics: 0.5
+  performance:
+    async-processing: true
+    batch-size: 1000
+    buffer-size: 5000
+  memory:
+    cache-size: 20000
+    memory-threshold: 85
+    low-memory-sampling-rate: 0.01
+  security:
+    data-masking: true
+    mask-labels:
+      - user_id
+      - client_ip
+      - api_key
+    ip-masking: true
 
 management:
   endpoints:
@@ -716,11 +693,10 @@ Supports updating monitoring configurations through configuration files:
 ```yaml
 # config/monitoring-override.yml
 monitoring:
-  metrics:
-    sampling:
-      request-metrics: 0.3
-    performance:
-      batch-size: 200
+  sampling:
+    request-metrics: 0.3
+  performance:
+    batch-size: 200
 ```
 
 The system will automatically detect configuration file changes and apply the new configuration.
@@ -760,15 +736,14 @@ curl http://localhost:8080/actuator/prometheus
 ```yaml
 # High-performance configuration
 monitoring:
-  metrics:
-    sampling:
-      request-metrics: 0.1
-    performance:
-      async-processing: true
-      batch-size: 1000
-      buffer-size: 5000
-    memory:
-      cache-size: 20000
+  sampling:
+    request-metrics: 0.1
+  performance:
+    async-processing: true
+    batch-size: 1000
+    buffer-size: 5000
+  memory:
+    cache-size: 20000
 ```
 
 ### 3. Security Configuration
@@ -776,13 +751,12 @@ monitoring:
 ```yaml
 # Security configuration
 monitoring:
-  metrics:
-    security:
-      data-masking: true
-      mask-labels:
-        - user_id
-        - client_ip
-        - api_key
+  security:
+    data-masking: true
+    mask-labels:
+      - user_id
+      - client_ip
+      - api_key
 
 management:
   security:
@@ -797,12 +771,11 @@ management:
 ```yaml
 # Monitoring system configuration
 monitoring:
-  metrics:
-    custom-tags:
-      monitoring_version: "1.0"
-    enabled-categories:
-      - system
-      - monitoring  # Metrics of the monitoring system itself
+  custom-tags:
+    monitoring_version: "1.0"
+  enabled-categories:
+    - system
+    - monitoring  # Metrics of the monitoring system itself
 ```
 
 ## Troubleshooting Configuration
@@ -817,11 +790,10 @@ logging:
     io.micrometer: DEBUG
 
 monitoring:
-  metrics:
-    debug:
-      enabled: true
-      log-metrics: true
-      log-interval: 30s
+  debug:
+    enabled: true
+    log-metrics: true
+    log-interval: 30s
 ```
 
 ### Problem Diagnosis Configuration
@@ -829,12 +801,11 @@ monitoring:
 ```yaml
 # Diagnosis configuration
 monitoring:
-  metrics:
-    diagnostics:
-      enabled: true
-      collect-jvm-metrics: true
-      collect-system-metrics: true
-      health-check-interval: 10s
+  diagnostics:
+    enabled: true
+    collect-jvm-metrics: true
+    collect-system-metrics: true
+    health-check-interval: 10s
 ```
 
 ## Configuration Templates
@@ -844,19 +815,18 @@ monitoring:
 ```yaml
 # Basic monitoring configuration template
 monitoring:
-  metrics:
-    enabled: true
-    prefix: "jairouter"
-    enabled-categories:
-      - system
-      - business
-      - infrastructure
-    sampling:
-      request-metrics: 1.0
-      backend-metrics: 1.0
-    performance:
-      async-processing: true
-      batch-size: 500
+  enabled: true
+  prefix: "jairouter"
+  enabled-categories:
+    - system
+    - business
+    - infrastructure
+  sampling:
+    request-metrics: 1.0
+    backend-metrics: 1.0
+  performance:
+    async-processing: true
+    batch-size: 500
 
 management:
   endpoints:
@@ -874,19 +844,18 @@ management:
 ```yaml
 # High-performance monitoring configuration template
 monitoring:
-  metrics:
-    enabled: true
-    sampling:
-      request-metrics: 0.1
-      backend-metrics: 0.5
-      infrastructure-metrics: 0.1
-    performance:
-      async-processing: true
-      batch-size: 1000
-      buffer-size: 5000
-    memory:
-      cache-size: 20000
-      memory-threshold: 85
+  enabled: true
+  sampling:
+    request-metrics: 0.1
+    backend-metrics: 0.5
+    infrastructure-metrics: 0.1
+  performance:
+    async-processing: true
+    batch-size: 1000
+    buffer-size: 5000
+  memory:
+    cache-size: 20000
+    memory-threshold: 85
 ```
 
 ### Security Template
@@ -894,15 +863,14 @@ monitoring:
 ```yaml
 # Security monitoring configuration template
 monitoring:
-  metrics:
-    enabled: true
-    security:
-      data-masking: true
-      mask-labels:
-        - user_id
-        - client_ip
-        - api_key
-      ip-masking: true
+  enabled: true
+  security:
+    data-masking: true
+    mask-labels:
+      - user_id
+      - client_ip
+      - api_key
+    ip-masking: true
 
 management:
   endpoints:

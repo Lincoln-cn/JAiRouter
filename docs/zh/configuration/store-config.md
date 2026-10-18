@@ -40,31 +40,20 @@ H2 数据库现在是项目的**默认存储方式**，适用于所有环境（d
 ```yaml
 store:
   type: h2          # 存储类型，默认为 h2
-  h2:
-    url: file:./data/config  # H2 数据库文件路径
-  auto-merge: true  # 是否启用自动合并功能，默认为 true
 ```
 
 ### 配置说明
 
 | 配置项 | 默认值 | 说明 |
 |-------|--------|------|
-| `store.type` | `h2` | 存储类型，支持 h2、file、memory |
-| `store.h2.url` | `file:./data/config` | H2 数据库文件路径 |
+| `store.type` | `jpa` | 存储类型，支持 h2、file、memory |
 | `store.path` | `config/` | 配置文件存储的目录路径（仅文件存储时使用） |
-| `store.auto-merge` | `true` | 是否启用自动合并功能 |
 
 ### H2 数据库存储高级配置
 
 ```yaml
 store:
   type: h2  # 默认使用 H2 数据库
-  h2:
-    url: file:./data/config  # H2 数据库文件路径
-  migration:
-    enabled: false  # 是否启用配置数据迁移（从文件存储迁移到H2数据库）
-  security-migration:
-    enabled: false  # 是否启用安全数据迁移（API Keys、JWT 账户等）
 
 spring:
   r2dbc:
@@ -80,9 +69,6 @@ spring:
       path: /h2-console
 
 jairouter:
-  security:
-    audit:
-      retentionDays: 30
 ```
 
 ### H2 数据库存储完整配置
@@ -90,12 +76,6 @@ jairouter:
 ```yaml
 store:
   type: h2
-  h2:
-    url: file:./data/config
-  migration:
-    enabled: false
-  security-migration:
-    enabled: false
 
 spring:
   r2dbc:
@@ -112,9 +92,6 @@ spring:
       path: /h2-console
 
 jairouter:
-  security:
-    audit:
-      retentionDays: 30
 ```
 
 ## 环境特定配置
@@ -126,12 +103,6 @@ jairouter:
 ```yaml
 store:
   type: h2
-  h2:
-    url: file:./data/dev-config
-  migration:
-    enabled: true  # 开发环境启用自动迁移
-  security-migration:
-    enabled: true  # 开发环境启用安全数据迁移
 
 spring:
   r2dbc:
@@ -143,10 +114,6 @@ spring:
       enabled: true
       path: /h2-console
 
-jairouter:
-  security:
-    audit:
-      retentionDays: 7
 ```
 
 ### 生产环境 (application-prod.yml)
@@ -154,12 +121,6 @@ jairouter:
 ```yaml
 store:
   type: h2
-  h2:
-    url: file:/var/lib/jairouter/data/config
-  migration:
-    enabled: false
-  security-migration:
-    enabled: false
 
 spring:
   h2:
@@ -171,10 +132,6 @@ spring:
       max-size: 50
       max-idle-time: 30m
 
-jairouter:
-  security:
-    audit:
-      retentionDays: 90
 ```
 
 ## 自动合并配置
@@ -192,7 +149,6 @@ jairouter:
 store:
   type: file
   path: "/var/lib/jairouter/config/"
-  auto-merge: true
 ```
 
 ## H2 数据库管理
@@ -294,8 +250,6 @@ spring:
 ```yaml
 store:
   type: h2
-  migration:
-    enabled: true
 ```
 
 ### 安全数据迁移
@@ -305,8 +259,6 @@ store:
 ```yaml
 store:
   type: h2
-  security-migration:
-    enabled: true  # 启用安全数据迁移（API Keys、JWT 账户等）
 ```
 
 ### 首次启动配置
@@ -318,10 +270,6 @@ store:
 ```yaml
 # application-dev.yml
 store:
-  migration:
-    enabled: true  # 启用配置数据迁移
-  security-migration:
-    enabled: true  # 启用安全数据迁移
 ```
 
 启动应用后，系统会自动：
@@ -333,35 +281,15 @@ store:
 
 ```yaml
 store:
-  migration:
-    enabled: false
-  security-migration:
-    enabled: false
 ```
 
 **生产环境：**
 
 生产环境建议手动迁移：
 
-```bash
-# 1. 在测试环境验证迁移
-java -jar app.jar --spring.profiles.active=staging \
-  --store.migration.enabled=true \
-  --store.security-migration.enabled=true
-
-# 2. 验证数据完整性
-# 访问 H2 控制台检查数据
-
-# 3. 备份数据库
-cp ./data/config.mv.db ./backup/
-
-# 4. 在生产环境执行迁移
-java -jar app.jar --spring.profiles.active=prod \
-  --store.migration.enabled=true \
-  --store.security-migration.enabled=true
-
-# 5. 验证后关闭迁移开关
-```
+> **迁移没有 `store.migration` / `store.security-migration` 开关。**
+> 当前实现通过独立的 `migrate` profile（`application-migrate.yml`）触发，
+> 并用 `jairouter.migration.exit-after-run` 控制迁移后是否退出进程。
 
 ## 性能优化
 
@@ -476,14 +404,12 @@ echo "Backup completed: config_$DATE.mv.db.gz"
 ### 自动合并功能未生效
 
 如果自动合并功能未生效，请检查：
-- `store.auto-merge` 配置是否设置为 true
 - 配置目录是否存在且具有读取权限
 - 配置文件命名是否符合 `model-router-config@<version>.json` 格式
 
 ### 数据库连接失败
 
 如果遇到数据库连接问题，请检查：
-- `store.h2.url` 配置是否正确
 - 数据库文件路径是否有写权限
 - 应用日志中的详细错误信息
 

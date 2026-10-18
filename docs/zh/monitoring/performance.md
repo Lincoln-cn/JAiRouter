@@ -30,15 +30,14 @@
 ```yaml
 # 测试配置
 monitoring:
-  metrics:
-    enabled: true
-    performance:
-      async-processing: true
-      batch-size: 500
-      buffer-size: 2000
-    sampling:
-      request-metrics: 1.0
-      backend-metrics: 1.0
+  enabled: true
+  performance:
+    async-processing: true
+    batch-size: 500
+    buffer-size: 2000
+  sampling:
+    request-metrics: 1.0
+    backend-metrics: 1.0
 ```
 
 #### 基准测试结果
@@ -59,32 +58,18 @@ monitoring:
 #### 1. 分层采样配置
 ```yaml
 monitoring:
-  metrics:
-    sampling:
-      # 核心业务指标保持高采样率
-      request-metrics: 1.0
-      model-call-metrics: 1.0
+  sampling:
+    # 核心业务指标保持高采样率
+    request-metrics: 1.0
       
-      # 基础设施指标可以降低采样率
-      infrastructure-metrics: 0.1
-      system-metrics: 0.5
+    # 基础设施指标可以降低采样率
+    infrastructure-metrics: 0.1
       
-      # 调试指标仅在需要时启用
-      debug-metrics: 0.01
+    # 调试指标仅在需要时启用
 ```
 
 #### 2. 动态采样率调整
-```yaml
-monitoring:
-  metrics:
-    adaptive-sampling:
-      enabled: true
-      # 基于系统负载动态调整
-      cpu-threshold: 80
-      memory-threshold: 85
-      # 高负载时的采样率
-      high-load-sampling-rate: 0.1
-```
+> **当前实现不支持动态采样。** `MonitoringProperties` 只提供固定采样率（`monitoring.sampling.*` 六个字段），没有按 CPU / 内存负载自动调整的能力；调整采样率请改配置并重启，或经配置 API 更新。
 
 #### 3. 条件采样
 ```java
@@ -115,23 +100,22 @@ public class ConditionalMetricsCollector {
 #### 1. 异步处理配置
 ```yaml
 monitoring:
-  metrics:
-    performance:
-      # 启用异步处理
-      async-processing: true
+  performance:
+    # 启用异步处理
+    async-processing: true
       
-      # 线程池配置
-      async-thread-pool-size: 4
-      async-thread-pool-max-size: 8
-      async-queue-capacity: 1000
+    # 线程池配置
+    async-thread-pool-size: 4
+    async-thread-pool-max-size: 8
+    async-queue-capacity: 1000
       
-      # 批处理配置
-      batch-size: 500
-      batch-timeout: 1s
+    # 批处理配置
+    batch-size: 500
+    batch-timeout: 1s
       
-      # 缓冲区配置
-      buffer-size: 2000
-      buffer-flush-interval: 5s
+    # 缓冲区配置
+    buffer-size: 2000
+    buffer-flush-interval: 5s
 ```
 
 #### 2. 异步处理实现
@@ -173,20 +157,19 @@ public class AsyncMetricsProcessor {
 #### 1. 内存使用配置
 ```yaml
 monitoring:
-  metrics:
-    memory:
-      # 指标缓存配置
-      cache-size: 10000
-      cache-expiry: 5m
-      cache-cleanup-interval: 1m
+  memory:
+    # 指标缓存配置
+    cache-size: 10000
+    cache-expiry: 5m
+    cache-cleanup-interval: 1m
       
-      # 内存阈值配置
-      memory-threshold: 80
-      low-memory-sampling-rate: 0.1
+    # 内存阈值配置
+    memory-threshold: 80
+    low-memory-sampling-rate: 0.1
       
-      # 对象池配置
-      object-pool-enabled: true
-      object-pool-size: 1000
+    # 对象池配置
+    object-pool-enabled: true
+    object-pool-size: 1000
 ```
 
 #### 2. 内存监控和自适应
@@ -418,12 +401,11 @@ public class BatchMetricsExporter {
 #### 1. 连接池配置
 ```yaml
 monitoring:
-  metrics:
-    http-client:
-      connection-pool-size: 10
-      connection-timeout: 5s
-      read-timeout: 10s
-      keep-alive: true
+  http-client:
+    connection-pool-size: 10
+    connection-timeout: 5s
+    read-timeout: 10s
+    keep-alive: true
 ```
 
 #### 2. 本地缓存
@@ -517,13 +499,12 @@ public class AdaptiveMonitoringConfig {
 ```yaml
 # application-dev.yml
 monitoring:
-  metrics:
-    enabled: true
-    sampling:
-      request-metrics: 1.0  # 开发环境保持全量采样
-    performance:
-      async-processing: false  # 简化调试
-      batch-size: 100
+  enabled: true
+  sampling:
+    request-metrics: 1.0  # 开发环境保持全量采样
+  performance:
+    async-processing: false  # 简化调试
+    batch-size: 100
 ```
 
 ### 测试环境优化
@@ -531,13 +512,12 @@ monitoring:
 ```yaml
 # application-test.yml
 monitoring:
-  metrics:
-    enabled: true
-    sampling:
-      request-metrics: 0.1  # 降低采样率减少干扰
-    performance:
-      async-processing: true
-      batch-size: 1000
+  enabled: true
+  sampling:
+    request-metrics: 0.1  # 降低采样率减少干扰
+  performance:
+    async-processing: true
+    batch-size: 1000
 ```
 
 ### 生产环境优化
@@ -545,19 +525,18 @@ monitoring:
 ```yaml
 # application-prod.yml
 monitoring:
-  metrics:
-    enabled: true
-    sampling:
-      request-metrics: 0.1
-      backend-metrics: 0.5
-      infrastructure-metrics: 0.1
-    performance:
-      async-processing: true
-      batch-size: 1000
-      buffer-size: 5000
-    memory:
-      cache-size: 20000
-      low-memory-sampling-rate: 0.01
+  enabled: true
+  sampling:
+    request-metrics: 0.1
+    backend-metrics: 0.5
+    infrastructure-metrics: 0.1
+  performance:
+    async-processing: true
+    batch-size: 1000
+    buffer-size: 5000
+  memory:
+    cache-size: 20000
+    low-memory-sampling-rate: 0.01
 ```
 
 ## 性能测试

@@ -30,15 +30,14 @@ The impact of monitoring functionality on system performance is mainly reflected
 ```yaml
 # Test Configuration
 monitoring:
-  metrics:
-    enabled: true
-    performance:
-      async-processing: true
-      batch-size: 500
-      buffer-size: 2000
-    sampling:
-      request-metrics: 1.0
-      backend-metrics: 1.0
+  enabled: true
+  performance:
+    async-processing: true
+    batch-size: 500
+    buffer-size: 2000
+  sampling:
+    request-metrics: 1.0
+    backend-metrics: 1.0
 ```
 
 #### Benchmark Test Results
@@ -59,32 +58,18 @@ monitoring:
 #### 1. Hierarchical Sampling Configuration
 ```yaml
 monitoring:
-  metrics:
-    sampling:
-      # Keep high sampling rate for core business metrics
-      request-metrics: 1.0
-      model-call-metrics: 1.0
+  sampling:
+    # Keep high sampling rate for core business metrics
+    request-metrics: 1.0
       
-      # Infrastructure metrics can have lower sampling rate
-      infrastructure-metrics: 0.1
-      system-metrics: 0.5
+    # Infrastructure metrics can have lower sampling rate
+    infrastructure-metrics: 0.1
       
-      # Debug metrics only enabled when needed
-      debug-metrics: 0.01
+    # Debug metrics only enabled when needed
 ```
 
 #### 2. Dynamic Sampling Rate Adjustment
-```yaml
-monitoring:
-  metrics:
-    adaptive-sampling:
-      enabled: true
-      # Dynamically adjust based on system load
-      cpu-threshold: 80
-      memory-threshold: 85
-      # Sampling rate under high load
-      high-load-sampling-rate: 0.1
-```
+> **Dynamic sampling is not implemented.** `MonitoringProperties` only exposes fixed sampling rates (`monitoring.sampling.*`, six fields); there is no automatic adjustment based on CPU / memory load. Change the configuration and restart, or update through the configuration API.
 
 #### 3. Conditional Sampling
 ```java
@@ -115,23 +100,22 @@ public class ConditionalMetricsCollector {
 #### 1. Asynchronous Processing Configuration
 ```yaml
 monitoring:
-  metrics:
-    performance:
-      # Enable asynchronous processing
-      async-processing: true
+  performance:
+    # Enable asynchronous processing
+    async-processing: true
       
-      # Thread pool configuration
-      async-thread-pool-size: 4
-      async-thread-pool-max-size: 8
-      async-queue-capacity: 1000
+    # Thread pool configuration
+    async-thread-pool-size: 4
+    async-thread-pool-max-size: 8
+    async-queue-capacity: 1000
       
-      # Batch processing configuration
-      batch-size: 500
-      batch-timeout: 1s
+    # Batch processing configuration
+    batch-size: 500
+    batch-timeout: 1s
       
-      # Buffer configuration
-      buffer-size: 2000
-      buffer-flush-interval: 5s
+    # Buffer configuration
+    buffer-size: 2000
+    buffer-flush-interval: 5s
 ```
 
 #### 2. Asynchronous Processing Implementation
@@ -173,20 +157,19 @@ public class AsyncMetricsProcessor {
 #### 1. Memory Usage Configuration
 ```yaml
 monitoring:
-  metrics:
-    memory:
-      # Metric cache configuration
-      cache-size: 10000
-      cache-expiry: 5m
-      cache-cleanup-interval: 1m
+  memory:
+    # Metric cache configuration
+    cache-size: 10000
+    cache-expiry: 5m
+    cache-cleanup-interval: 1m
       
-      # Memory threshold configuration
-      memory-threshold: 80
-      low-memory-sampling-rate: 0.1
+    # Memory threshold configuration
+    memory-threshold: 80
+    low-memory-sampling-rate: 0.1
       
-      # Object pool configuration
-      object-pool-enabled: true
-      object-pool-size: 1000
+    # Object pool configuration
+    object-pool-enabled: true
+    object-pool-size: 1000
 ```
 
 #### 2. Memory Monitoring and Adaptation
@@ -418,12 +401,11 @@ public class BatchMetricsExporter {
 #### 1. Connection Pool Configuration
 ```yaml
 monitoring:
-  metrics:
-    http-client:
-      connection-pool-size: 10
-      connection-timeout: 5s
-      read-timeout: 10s
-      keep-alive: true
+  http-client:
+    connection-pool-size: 10
+    connection-timeout: 5s
+    read-timeout: 10s
+    keep-alive: true
 ```
 
 #### 2. Local Caching
@@ -517,13 +499,12 @@ public class AdaptiveMonitoringConfig {
 ```yaml
 # application-dev.yml
 monitoring:
-  metrics:
-    enabled: true
-    sampling:
-      request-metrics: 1.0  # Keep full sampling in development
-    performance:
-      async-processing: false  # Simplify debugging
-      batch-size: 100
+  enabled: true
+  sampling:
+    request-metrics: 1.0  # Keep full sampling in development
+  performance:
+    async-processing: false  # Simplify debugging
+    batch-size: 100
 ```
 
 ### Test Environment Optimization
@@ -531,13 +512,12 @@ monitoring:
 ```yaml
 # application-test.yml
 monitoring:
-  metrics:
-    enabled: true
-    sampling:
-      request-metrics: 0.1  # Reduce sampling rate to minimize interference
-    performance:
-      async-processing: true
-      batch-size: 1000
+  enabled: true
+  sampling:
+    request-metrics: 0.1  # Reduce sampling rate to minimize interference
+  performance:
+    async-processing: true
+    batch-size: 1000
 ```
 
 ### Production Environment Optimization
@@ -545,19 +525,18 @@ monitoring:
 ```yaml
 # application-prod.yml
 monitoring:
-  metrics:
-    enabled: true
-    sampling:
-      request-metrics: 0.1
-      backend-metrics: 0.5
-      infrastructure-metrics: 0.1
-    performance:
-      async-processing: true
-      batch-size: 1000
-      buffer-size: 5000
-    memory:
-      cache-size: 20000
-      low-memory-sampling-rate: 0.01
+  enabled: true
+  sampling:
+    request-metrics: 0.1
+    backend-metrics: 0.5
+    infrastructure-metrics: 0.1
+  performance:
+    async-processing: true
+    batch-size: 1000
+    buffer-size: 5000
+  memory:
+    cache-size: 20000
+    low-memory-sampling-rate: 0.01
 ```
 
 ## Performance Testing
