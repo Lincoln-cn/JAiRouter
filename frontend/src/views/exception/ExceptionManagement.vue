@@ -2,7 +2,7 @@
   <PageSkeleton :title="t('exception.list.title')">
     <template #actions>
       <el-button icon="Refresh" @click="handleRefresh">{{ t('exception.list.refresh') }}</el-button>
-      <el-button icon="Delete" type="danger" @click="showCleanupDialog">{{ t('exception.list.cleanupExpired') }}</el-button>
+      <el-button icon="Delete" type="danger" v-permission="'monitoring:exceptions:write'" @click="showCleanupDialog">{{ t('exception.list.cleanupExpired') }}</el-button>
       <el-button icon="DataAnalysis" type="success" @click="goToStatistics">{{ t('exception.list.goStatistics') }}</el-button>
     </template>
 

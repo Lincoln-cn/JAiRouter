@@ -95,9 +95,12 @@ export const menuGroups: MenuGroup[] = [
       { path: '/call-history/slow-calls', title: 'menu.slowCalls', permission: 'monitoring:slowquery:read' },
       { path: '/monitoring/slow-queries', title: 'menu.slowQueries', permission: 'monitoring:slowquery:read' },
       { path: '/monitoring/quota', title: 'menu.quotaMonitoring', permission: 'monitoring:quota:read' },
-      // 后端 /api/exceptions/** 未登记权限规则（回退 authenticated），无需权限控制
-      { path: '/exceptions/list', title: 'menu.exceptionList' },
-      { path: '/exceptions/statistics', title: 'menu.exceptionStatistics' }
+      // 后端 /api/exceptions/** 已登记 read/write 两码（PermissionRuleRegistry:183-184）：
+      //   get   -> monitoring:exceptions:read
+      //   write -> monitoring:exceptions:write
+      // 菜单按“读”门控；页内清理按钮另由 v-permission 按“写”门控（#468/#528）。
+      { path: '/exceptions/list', title: 'menu.exceptionList', permission: 'monitoring:exceptions:read' },
+      { path: '/exceptions/statistics', title: 'menu.exceptionStatistics', permission: 'monitoring:exceptions:read' }
     ]
   },
   {
