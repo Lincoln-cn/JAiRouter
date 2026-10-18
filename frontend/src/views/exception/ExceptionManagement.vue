@@ -333,6 +333,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getErrorMessage } from '@/utils/error'
 import {
   Warning,
   DataLine,
@@ -476,9 +477,9 @@ const loadData = async () => {
 
     // 加载统计数据
     loadStatistics()
-  } catch (error: any) {
+  } catch (error) {
     console.error('加载异常列表失败:', error)
-    ElMessage.error(t('exception.list.loadFailed', { message: error.message || t('exception.list.unknownError') }))
+    ElMessage.error(t('exception.list.loadFailed', { message: getErrorMessage(error) || t('exception.list.unknownError') }))
   } finally {
     loading.value = false
   }
@@ -595,10 +596,10 @@ const handleCleanup = async () => {
     ElMessage.success(t('exception.list.deleteSuccess', { count: result.deletedCount }))
     cleanupVisible.value = false
     loadData()
-  } catch (error: any) {
+  } catch (error) {
     if (error !== 'cancel') {
       console.error('清理异常事件失败:', error)
-      ElMessage.error(t('exception.list.cleanupFailed', { message: error.message || t('exception.list.unknownError') }))
+      ElMessage.error(t('exception.list.cleanupFailed', { message: getErrorMessage(error) || t('exception.list.unknownError') }))
     }
   }
 }

@@ -124,7 +124,7 @@ const loadGlobalConfig = async () => {
         }
       }
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Failed to load global config:', error)
   }
 }
@@ -138,7 +138,7 @@ const saveGlobalConfig = async () => {
     } else {
       ElMessage.error(response.data?.message || t('circuitBreaker.globalConfig.messages.saveFailed'))
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Failed to save global config:', error)
     ElMessage.error(t('circuitBreaker.globalConfig.messages.saveFailed'))
   } finally {
@@ -167,7 +167,7 @@ const resetGlobalConfig = () => {
         }
         ElMessage.info(t('circuitBreaker.globalConfig.messages.resetSuccess'))
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to reset global config:', error)
       ElMessage.error(t('circuitBreaker.globalConfig.messages.resetFailed'))
     }

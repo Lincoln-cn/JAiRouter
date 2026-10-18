@@ -306,6 +306,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
+import { getErrorMessage } from '@/utils/error'
 import { queryCallHistory, getCallHistoryConfig, updateCallHistoryConfig } from '@/api/callHistory'
 import type { CallHistoryConfig } from '@/api/callHistory'
 import type { ApiCallHistoryRecord, CallHistoryQuery } from '@/types/callHistory'
@@ -352,9 +353,9 @@ const loadConfig = async () => {
     const cfg: CallHistoryConfig = await getCallHistoryConfig()
     recordLevel.value = cfg.recordLevel || 'METADATA_ONLY'
     configLoaded.value = true
-  } catch (error: any) {
+  } catch (error) {
     console.error('加载记录配置失败:', error)
-    ElMessage.error(t('callHistory.list.loadConfigFailed', { message: error.message || t('callHistory.common.unknownError') }))
+    ElMessage.error(t('callHistory.list.loadConfigFailed', { message: getErrorMessage(error) || t('callHistory.common.unknownError') }))
   } finally {
     configLoading.value = false
   }
@@ -365,9 +366,9 @@ const handleSaveConfig = async () => {
   try {
     await updateCallHistoryConfig({ recordLevel: recordLevel.value })
     ElMessage.success(t('callHistory.list.saveSuccess'))
-  } catch (error: any) {
+  } catch (error) {
     console.error('保存记录配置失败:', error)
-    ElMessage.error(t('callHistory.list.saveConfigFailed', { message: error.message || t('callHistory.common.unknownError') }))
+    ElMessage.error(t('callHistory.list.saveConfigFailed', { message: getErrorMessage(error) || t('callHistory.common.unknownError') }))
   } finally {
     configSaving.value = false
   }
@@ -435,9 +436,9 @@ const loadData = async () => {
     const result = await queryCallHistory(queryForm)
     tableData.value = result.content || []
     totalCount.value = result.totalElements || 0
-  } catch (error: any) {
+  } catch (error) {
     console.error('加载调用历史失败:', error)
-    ElMessage.error(t('callHistory.list.loadFailed', { message: error.message || t('callHistory.common.unknownError') }))
+    ElMessage.error(t('callHistory.list.loadFailed', { message: getErrorMessage(error) || t('callHistory.common.unknownError') }))
   } finally {
     loading.value = false
   }
@@ -497,7 +498,7 @@ const handleTraceIdClick = async (traceId: string) => {
     // 这里可以通过 API 查询该 traceId 的所有调用
     // 暂时简单提示
     ElMessage.info(`Trace ID: ${traceId}`)
-  } catch (error: any) {
+  } catch (error) {
     console.error('查询 Trace ID 失败:', error)
   }
 }

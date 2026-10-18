@@ -138,7 +138,7 @@ const loadHistory = async () => {
         historyTotal.value = pageData.totalElements || 0
       }
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Failed to load history:', error)
     ElMessage.error(t('circuitBreaker.history.messages.loadFailed'))
   } finally {
@@ -152,7 +152,7 @@ const loadHistoryStats = async () => {
     if (response.data?.success) {
       historyStats.value = response.data.data
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Failed to load history stats:', error)
   }
 }
@@ -174,7 +174,7 @@ const cleanupHistory = async () => {
       loadHistory()
       loadHistoryStats()
     }
-  } catch (error: any) {
+  } catch (error) {
     if (error !== 'cancel') {
       console.error('Failed to cleanup history:', error)
       ElMessage.error(t('circuitBreaker.history.messages.cleanupFailed'))

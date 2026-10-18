@@ -25,6 +25,54 @@ export interface RouterResponse<T = unknown> {
  * 现在按接口实际 put 的 9 个键重写，字段类型逐个对过后端 getter：
  * `enabledCategories` = `Set<String>`、`degradationStatus.level` = 枚举名、其余标量见下。
  */
+/**
+ * `GET /dashboard/metrics` 的载荷（#526）。
+ *
+ * 字段取自 `views/Dashboard.vue` 模板的**实际读取**（jvm/http/security/audit/system 五组），
+ * 不照抄后端 DTO：页面没读的键不声明。
+ */
+export interface DashboardMetrics {
+  jvm?: {
+    heapUsagePercent?: number
+    heapUsedMB?: number
+    heapMaxMB?: number
+    threadCount?: number
+    peakThreadCount?: number
+  }
+  http?: {
+    totalRequests?: number
+    avgResponseTimeMs?: number
+  }
+  security?: {
+    authSuccesses?: number
+    authAttempts?: number
+    authFailures?: number
+    activeUsers?: number
+    cacheHits?: number
+    cacheMisses?: number
+    cacheSize?: number
+  }
+  audit?: {
+    totalEvents?: number
+    successEvents?: number
+    failureEvents?: number
+  }
+  system?: {
+    systemLoadAverage?: number
+    availableProcessors?: number
+    processCpuUsage?: number
+    uptimeSeconds?: number
+  }
+}
+
+/** `GET /models/stats` 的载荷（#526）：首页统计卡片读的 4 个数 */
+export interface ServiceStatsPayload {
+  totalServices?: number
+  totalInstances?: number
+  totalModels?: number
+  userCount?: number
+}
+
 export interface DashboardOverview {
   /** 监控总开关（`MonitoringProperties#isEnabled`） */
   enabled: boolean

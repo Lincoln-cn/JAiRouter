@@ -138,6 +138,7 @@
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
+import { getErrorMessage } from '@/utils/error'
 import { Timer, WarningFilled, DataAnalysis } from '@element-plus/icons-vue'
 import { getSlowCalls } from '@/api/callHistory'
 import type { ApiCallHistoryRecord } from '@/types/callHistory'
@@ -219,9 +220,9 @@ const loadData = async () => {
     }
 
     slowCalls.value = await getSlowCalls(threshold.value, startTime, endTime, limit.value)
-  } catch (error: any) {
+  } catch (error) {
     console.error('加载慢调用失败:', error)
-    ElMessage.error(t('callHistory.slowCalls.loadFailed', { message: error.message || t('callHistory.common.unknownError') }))
+    ElMessage.error(t('callHistory.slowCalls.loadFailed', { message: getErrorMessage(error) || t('callHistory.common.unknownError') }))
   } finally {
     loading.value = false
   }

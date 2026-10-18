@@ -67,6 +67,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
+import { getErrorMessage } from '@/utils/error'
 import type { FormInstance, FormRules } from 'element-plus'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
@@ -109,10 +110,10 @@ const handleLogin = async () => {
     
     // 跳转到仪表板 (将使用Layout组件)
     router.push({ name: 'dashboard-main' })
-  } catch (error: any) {
+  } catch (error) {
     console.error('登录失败:', error)
     // 显示错误消息给用户
-    ElMessage.error(error.message || t('login.failed'))
+    ElMessage.error(getErrorMessage(error) || t('login.failed'))
   } finally {
     loading.value = false
   }

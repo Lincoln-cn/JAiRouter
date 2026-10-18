@@ -1,11 +1,11 @@
 import request from '@/utils/request'
-import type { DashboardOverview, RouterResponse } from '@/types'
+import type { DashboardMetrics, DashboardOverview, RouterResponse, ServiceStatsPayload } from '@/types'
 import type { ServiceConfigPayload, ServiceInstance } from '@/types/common'
 import type { InstanceConfig } from './instance'
 
 // 获取服务统计信息
 export const getServiceStats = () => {
-  return request.get<RouterResponse<object>>('/models/stats')
+  return request.get<RouterResponse<ServiceStatsPayload>>('/models/stats')
 }
 
 // 获取服务类型列表
@@ -50,7 +50,7 @@ export const getAllServiceConfig = () => {
  * 各字段的消费方（Dashboard.vue）目前用 `ref<any>` 接收（属 #526 的范围），
  * 所以这里**不抄一整份后端形状**，只如实声明为「键值未知的对象」，避免用 any 假装有约束。
  */
-export type DashboardMetricsPayload = Record<string, unknown>
+export type DashboardMetricsPayload = DashboardMetrics
 
 // 获取仪表盘真实业务指标
 export const getDashboardMetrics = () => {

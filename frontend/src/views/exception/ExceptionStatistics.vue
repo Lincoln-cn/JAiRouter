@@ -147,6 +147,7 @@ import { ref, onMounted, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
+import { getErrorMessage } from '@/utils/error'
 import {
   Warning,
   DataAnalysis,
@@ -326,11 +327,12 @@ const updateTypeChart = () => {
   const option = {
     tooltip: {
       trigger: 'item',
-      formatter: (params: any) => {
+      formatter: (params: unknown) => {
+        const p = params as { data: { shortName?: string }; name?: string; value?: number; percent?: number }
         return `<div style="max-width: 300px;">
-          <div style="font-weight: bold; margin-bottom: 5px;">${params.data.shortName}</div>
-          <div style="font-size: 12px; color: ${theme.info};">${params.name}</div>
-          <div style="margin-top: 5px;">${t('exception.statistics.tooltipCount')}<strong>${params.value}</strong> (${params.percent}%)</div>
+          <div style="font-weight: bold; margin-bottom: 5px;">${p.data.shortName}</div>
+          <div style="font-size: 12px; color: ${theme.info};">${p.name}</div>
+          <div style="margin-top: 5px;">${t('exception.statistics.tooltipCount')}<strong>${p.value}</strong> (${p.percent}%)</div>
         </div>`
       }
     },
@@ -357,8 +359,9 @@ const updateTypeChart = () => {
         label: {
           show: true,
           position: 'outside',
-          formatter: (params: any) => {
-            return `{name|${params.name}}\n{value|${params.value} (${params.percent}%)}`
+          formatter: (params: unknown) => {
+            const p = params as { name?: string; value?: number; percent?: number }
+            return `{name|${p.name}}\n{value|${p.value} (${p.percent}%)}`
           },
           rich: {
             name: {
@@ -464,8 +467,8 @@ const updateHttpStatusChart = () => {
         type: 'bar',
         data: data.map(item => item.value),
         itemStyle: {
-          color: (params: any) => {
-            const status = parseInt(params.name)
+          color: (params: unknown) => {
+            const status = parseInt(String((params as { name?: string }).name ?? ''), 10)
             if (status >= 500) return theme.danger
             if (status >= 400) return theme.warning
             return theme.success
@@ -557,9 +560,9 @@ const loadData = async () => {
 
     // 更新图表
     initCharts()
-  } catch (error: any) {
+  } catch (error) {
     console.error('加载统计数据失败:', error)
-    ElMessage.error(t('exception.statistics.loadFailed', { message: error.message || t('exception.statistics.unknownError') }))
+    ElMessage.error(t('exception.statistics.loadFailed', { message: getErrorMessage(error) || t('exception.statistics.unknownError') }))
   }
 }
 
