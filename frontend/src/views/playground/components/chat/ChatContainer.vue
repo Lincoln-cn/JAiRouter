@@ -356,11 +356,11 @@ const handleSendMessage = async (content: string) => {
       // 非流式请求
       const response = await sendServiceRequest('chat', config, headers)
       const assistantContent =
-        response.data?.choices?.[0]?.message?.content || ''
+        (response.data as { choices?: Array<{ message?: { content?: string } }> } | null)?.choices?.[0]?.message?.content || ''
 
       updateLastMessage(assistantContent)
     }
-  } catch (error: any) {
+  } catch (error) {
     const errorMessage = parseErrorMessage(error, t('playgroundChat.messages.errorContext'))
     const suggestion = getErrorSuggestion(error)
 
@@ -479,11 +479,11 @@ const handleRegenerateMessage = async () => {
       // 鞞流式请求
       const response = await sendServiceRequest('chat', config, headers)
       const assistantContent =
-        response.data?.choices?.[0]?.message?.content || ''
+        (response.data as { choices?: Array<{ message?: { content?: string } }> } | null)?.choices?.[0]?.message?.content || ''
 
       updateLastMessage(assistantContent)
     }
-  } catch (error: any) {
+  } catch (error) {
     const errorMessage = parseErrorMessage(error, t('playgroundChat.messages.errorContext'))
     const suggestion = getErrorSuggestion(error)
 

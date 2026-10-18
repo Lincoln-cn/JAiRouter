@@ -263,14 +263,16 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Setting, Headset, UploadFilled, Document, DocumentCopy, Delete, Loading, Cpu } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import type { UploadFile } from 'element-plus'
 import { sendServiceRequest } from '@/api/playground'
 import type { SttRequestConfig, PlaygroundResponse } from '../../types/playground'
+import type { ServiceInstance } from '@/composables/usePlaygroundData'
 import { parseErrorMessage, getErrorSuggestion } from '../../utils/errorHandler'
 
 const { t } = useI18n()
 
 interface Props {
-  instances: any[]
+  instances: ServiceInstance[]
   loading: boolean
 }
 
@@ -295,12 +297,13 @@ const config = ref<Partial<Omit<SttRequestConfig, 'file'>>>({
 const resultText = computed(() => {
   if (!result.value?.data) return ''
   if (typeof result.value.data === 'string') return result.value.data
-  return result.value.data.text || JSON.stringify(result.value.data, null, 2)
+  const data = result.value.data as { text?: string }
+  return data.text || JSON.stringify(result.value.data, null, 2)
 })
 
 // 文件变化
-const handleFileChange = (file: any) => {
-  audioFile.value = file.raw
+const handleFileChange = (file: UploadFile) => {
+  if (file.raw) audioFile.value = file.raw
 }
 
 // 文件移除
@@ -332,7 +335,7 @@ const handleTranscribe = async () => {
     const response = await sendServiceRequest('stt', requestConfig, headers)
     result.value = response
     ElMessage.success(t('playgroundAudio.stt.messages.transcribed'))
-  } catch (error: any) {
+  } catch (error) {
     const errorMsg = parseErrorMessage(error, t('playgroundAudio.stt.messages.operation'))
     const suggestion = getErrorSuggestion(error)
 

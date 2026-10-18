@@ -245,12 +245,14 @@ import { useI18n } from 'vue-i18n'
 import { Setting, Picture, Download, Loading, Cpu } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { sendServiceRequest } from '@/api/playground'
+import { parseErrorMessage } from '../../utils/errorHandler'
 import type { ImageGenerateRequestConfig } from '../../types/playground'
+import type { ServiceInstance } from '@/composables/usePlaygroundData'
 
 const { t } = useI18n()
 
 interface Props {
-  instances: any[]
+  instances: ServiceInstance[]
   loading: boolean
 }
 
@@ -305,10 +307,10 @@ const handleGenerate = async () => {
     if (token) headers['Jairouter_Token'] = token
 
     const response = await sendServiceRequest('imageGenerate', requestConfig, headers)
-    images.value = response.data?.data || []
+    images.value = (response.data as { data?: Array<{ url?: string; b64_json?: string }> } | null)?.data || []
     ElMessage.success(t('playgroundImage.generate.messages.generated', { count: images.value.length }))
-  } catch (error: any) {
-    const errorMsg = error.data?.error?.message || t('playgroundImage.generate.messages.failed')
+  } catch (error) {
+    const errorMsg = parseErrorMessage(error, t('playgroundImage.generate.messages.failed'))
     ElMessage.error(errorMsg)
   } finally {
     isLoading.value = false

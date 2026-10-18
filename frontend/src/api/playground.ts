@@ -110,10 +110,13 @@ export const sendPlaygroundRequest = async (request: PlaygroundRequest): Promise
       })
       
       // 添加其他数据
-      if (request.body) {
-        Object.keys(request.body).forEach(key => {
-          if (request.body[key] !== undefined && request.body[key] !== null) {
-            formData.append(key, request.body[key])
+      const body = request.body
+      if (body) {
+        Object.keys(body).forEach(key => {
+          const value = body[key]
+          if (value !== undefined && value !== null) {
+            // Blob 原样传递，其余按表单字段语义转成字符串（与原先隐式 ToString 等价）
+            formData.append(key, value instanceof Blob ? value : String(value))
           }
         })
       }

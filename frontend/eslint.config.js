@@ -47,7 +47,9 @@ export default defineConfigWithVueTs(
           ignoreRestSiblings: true,
         },
       ],
-      '@typescript-eslint/no-explicit-any': 'warn',
+      // `any` 已于 #520/#521/#522/#523/#524/#525/#526/#527 全部清零（406 → 0）
+      // ⇒ 规则恢复为 error，任何新增 `any` 都会直接让门闩变红（确需时用行内 eslint-disable 并写明理由）。
+      '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
 

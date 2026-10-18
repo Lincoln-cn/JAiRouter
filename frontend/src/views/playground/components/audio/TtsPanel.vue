@@ -283,12 +283,13 @@ import { Setting, Microphone, Download, Delete, Loading, Cpu } from '@element-pl
 import { ElMessage } from 'element-plus'
 import { sendServiceRequest } from '@/api/playground'
 import type { TtsRequestConfig } from '../../types/playground'
+import type { ServiceInstance } from '@/composables/usePlaygroundData'
 import { parseErrorMessage, getErrorSuggestion } from '../../utils/errorHandler'
 
 const { t } = useI18n()
 
 interface Props {
-  instances: any[]
+  instances: ServiceInstance[]
   loading: boolean
 }
 
@@ -335,11 +336,11 @@ const handleGenerate = async () => {
     if (response.data instanceof Blob) {
       audioUrl.value = URL.createObjectURL(response.data)
     } else {
-      audioUrl.value = response.data
+      audioUrl.value = String(response.data ?? '')
     }
 
     ElMessage.success(t('playgroundAudio.tts.messages.generated'))
-  } catch (error: any) {
+  } catch (error) {
     const errorMsg = parseErrorMessage(error, t('playgroundAudio.tts.messages.operation'))
     const suggestion = getErrorSuggestion(error)
 

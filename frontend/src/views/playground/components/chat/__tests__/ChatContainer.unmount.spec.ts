@@ -46,7 +46,7 @@ vi.mock('@/views/playground/composables/useChatSession', async () => {
   const { ref, computed } = await import('vue')
   return {
     useChatSession: () => {
-      const messages = ref<any[]>([])
+      const messages = ref<Array<{ role: string; content: string }>>([])
       return {
         messages: computed(() => messages.value),
         initialize: vi.fn(),

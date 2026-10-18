@@ -115,9 +115,9 @@ interface Props {
   metrics?: {
     duration?: number
     tokens?: number
-    [key: string]: any
+    [key: string]: unknown
   }
-  config?: Record<string, any>
+  config?: Record<string, unknown>
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -134,7 +134,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   'update:model': [modelId: string]
-  'update:config': [config: Record<string, any>]
+  'update:config': [config: Record<string, unknown>]
   clear: []
 }>()
 
@@ -192,7 +192,7 @@ const handleModelChange = (modelId: string) => {
 }
 
 // 更新配置
-const updateConfig = (key: string, value: any) => {
+const updateConfig = (key: string, value: unknown) => {
   localConfig.value[key] = value
   emit('update:config', { ...localConfig.value })
 }

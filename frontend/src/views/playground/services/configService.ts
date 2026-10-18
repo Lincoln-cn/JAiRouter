@@ -17,7 +17,7 @@ interface ConfigValidationResult {
 interface ConfigMigration {
   fromVersion: string
   toVersion: string
-  migrate: (configs: any[]) => SavedConfiguration[]
+  migrate: (configs: Array<Partial<SavedConfiguration>>) => SavedConfiguration[]
 }
 
 /**
@@ -46,13 +46,13 @@ export class ConfigService {
     this.migrations.push({
       fromVersion: '0.0.0',
       toVersion: '1.0.0',
-      migrate: (configs: any[]) => {
+      migrate: (configs: Array<Partial<SavedConfiguration>>) => {
         return configs.map(config => ({
           ...config,
           id: config.id || this.generateId(),
           createdAt: config.createdAt || new Date().toISOString(),
           description: config.description || ''
-        }))
+        }) as SavedConfiguration)
       }
     })
   }
@@ -83,7 +83,7 @@ export class ConfigService {
       if (!validationResult.isValid) {
         console.warn('配置数据验证失败:', validationResult.errors)
         // 过滤掉无效的配置
-        configs = configs.filter((config: any) => this.validateSingleConfiguration(config).isValid)
+        configs = configs.filter((config: SavedConfiguration) => this.validateSingleConfiguration(config).isValid)
       }
 
       return configs
@@ -214,7 +214,7 @@ export class ConfigService {
       const errors: string[] = []
       let successCount = 0
 
-      data.configurations.forEach((config: any, index: number) => {
+      data.configurations.forEach((config: SavedConfiguration, index: number) => {
         try {
           const validationResult = this.validateSingleConfiguration(config)
           if (!validationResult.isValid) {
@@ -289,7 +289,7 @@ export class ConfigService {
   /**
    * 验证配置数组
    */
-  private validateConfigurations(configurations: any[]): ConfigValidationResult {
+  private validateConfigurations(configurations: SavedConfiguration[]): ConfigValidationResult {
     const errors: string[] = []
     const warnings: string[] = []
 
@@ -316,7 +316,7 @@ export class ConfigService {
   /**
    * 验证单个配置
    */
-  private validateSingleConfiguration(config: any): ConfigValidationResult {
+  private validateSingleConfiguration(config: SavedConfiguration): ConfigValidationResult {
     const errors: string[] = []
     const warnings: string[] = []
 
@@ -382,7 +382,7 @@ export class ConfigService {
   /**
    * 执行配置迁移
    */
-  private migrateConfigurations(configs: any[], fromVersion: string): SavedConfiguration[] {
+  private migrateConfigurations(configs: SavedConfiguration[], fromVersion: string): SavedConfiguration[] {
     let currentConfigs = configs
     let currentVersion = fromVersion
 
