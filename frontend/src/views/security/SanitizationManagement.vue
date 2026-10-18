@@ -221,6 +221,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getErrorMessage } from '@/utils/error'
 import { Refresh, Check } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import PageSkeleton from '@/components/PageSkeleton.vue'
@@ -341,8 +342,8 @@ const handleSave = async () => {
     config.value = updated
     rules.value = await getSanitizationRules()
     ElMessage.success(t('sanitization.saveSuccess'))
-  } catch (e: any) {
-    ElMessage.error(e?.message || t('sanitization.saveFailed'))
+  } catch (e) {
+    ElMessage.error(getErrorMessage(e) || t('sanitization.saveFailed'))
   } finally {
     saving.value = false
   }

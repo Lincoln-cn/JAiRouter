@@ -183,6 +183,7 @@
 <script setup lang="ts">
 import {onMounted, ref, reactive} from 'vue'
 import {ElMessage, ElMessageBox} from 'element-plus'
+import { getErrorMessage } from '@/utils/error'
 import {useI18n} from 'vue-i18n'
 import {
   type BatchTokenRevokeRequest,
@@ -307,8 +308,8 @@ const loadTokens = async () => {
       searchForm.status || undefined
     )
     tokenList.value = result
-  } catch (error: any) {
-    ElMessage.error(t('jwtTokens.messages.loadFailed', { error: error.message || t('jwtTokens.messages.unknownError') }))
+  } catch (error) {
+    ElMessage.error(t('jwtTokens.messages.loadFailed', { error: getErrorMessage(error) || t('jwtTokens.messages.unknownError') }))
   } finally {
     loading.value = false
   }
@@ -353,8 +354,8 @@ const handleViewDetails = async (token: JwtTokenInfo) => {
     const details = await getTokenDetails(token.id)
     selectedTokenDetails.value = details
     tokenDetailsDialogVisible.value = true
-  } catch (error: any) {
-    ElMessage.error(t('jwtTokens.messages.detailsFetchFailed', { error: error.message || t('jwtTokens.messages.unknownError') }))
+  } catch (error) {
+    ElMessage.error(t('jwtTokens.messages.detailsFetchFailed', { error: getErrorMessage(error) || t('jwtTokens.messages.unknownError') }))
   }
 }
 
@@ -381,8 +382,8 @@ const handleRevoke = (token: JwtTokenInfo) => {
       } else {
         ElMessage.error(t('jwtTokens.messages.revokeFailed'))
       }
-    } catch (error: any) {
-      ElMessage.error(t('jwtTokens.messages.revokeFailedDetail', { error: error.message || t('jwtTokens.messages.unknownError') }))
+    } catch (error) {
+      ElMessage.error(t('jwtTokens.messages.revokeFailedDetail', { error: getErrorMessage(error) || t('jwtTokens.messages.unknownError') }))
     }
   }).catch(() => {
     // 用户取消操作
@@ -467,8 +468,8 @@ const handleRevokeFromDetails = async () => {
       } else {
         ElMessage.error(t('jwtTokens.messages.revokeFailed'))
       }
-    } catch (error: any) {
-      ElMessage.error(t('jwtTokens.messages.revokeFailedDetail', { error: error.message || t('jwtTokens.messages.unknownError') }))
+    } catch (error) {
+      ElMessage.error(t('jwtTokens.messages.revokeFailedDetail', { error: getErrorMessage(error) || t('jwtTokens.messages.unknownError') }))
     }
   }).catch(() => {
     // 用户取消操作
@@ -489,8 +490,8 @@ const handleCleanupExpiredTokens = async () => {
       // 刷新令牌列表和统计信息
       await loadTokens()
       
-    } catch (error: any) {
-      ElMessage.error(t('jwtTokens.messages.cleanupFailedDetail', { error: error.message || t('jwtTokens.messages.unknownError') }))
+    } catch (error) {
+      ElMessage.error(t('jwtTokens.messages.cleanupFailedDetail', { error: getErrorMessage(error) || t('jwtTokens.messages.unknownError') }))
     } finally {
       loading.value = false
     }
@@ -532,8 +533,8 @@ const handleBatchRevoke = async () => {
     } else {
       ElMessage.error(t('jwtTokens.messages.batchRevokeFailed'))
     }
-  } catch (error: any) {
-    ElMessage.error(t('jwtTokens.messages.batchRevokeFailedDetail', { error: error.message || t('jwtTokens.messages.unknownError') }))
+  } catch (error) {
+    ElMessage.error(t('jwtTokens.messages.batchRevokeFailedDetail', { error: getErrorMessage(error) || t('jwtTokens.messages.unknownError') }))
   } finally {
     batchRevokeLoading.value = false
   }

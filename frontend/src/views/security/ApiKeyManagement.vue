@@ -519,6 +519,8 @@
 import { onMounted, ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import type { UploadFile } from 'element-plus'
+import { getErrorMessage } from '@/utils/error'
 import { useI18n } from 'vue-i18n'
 import { Key, CircleCheck, CircleClose, Warning, UploadFilled } from '@element-plus/icons-vue'
 import StatCard from '@/components/StatCard.vue'
@@ -578,7 +580,7 @@ const quotaDrawer = reactive({
   }
 })
 
-const openQuotaDrawer = async (row: any) => {
+const openQuotaDrawer = async (row: ApiKeyVO) => {
   quotaDrawer.keyId = row.keyId
   quotaDrawer.presetId = ''
   quotaDrawer.detail = null
@@ -621,8 +623,8 @@ const saveQuotaFromDrawer = async () => {
     quotaDrawer.detail = detail
     ElMessage.success(t('apiKeys.quotaForm.saveSuccess'))
     await Promise.all([fetchApiKeys(), fetchQuotaAlerts()])
-  } catch (e: any) {
-    ElMessage.error(e?.message || t('apiKeys.quotaForm.saveQuota'))
+  } catch (e) {
+    ElMessage.error(getErrorMessage(e) || t('apiKeys.quotaForm.saveQuota'))
   } finally {
     quotaDrawerSaving.value = false
   }
@@ -650,8 +652,8 @@ const handleResetQuotaFromDrawer = () => {
       quotaDrawer.detail = await getApiKeyQuota(keyId)
       ElMessage.success(t('apiKeys.quotaForm.resetSuccess'))
       await Promise.all([fetchApiKeys(), fetchQuotaAlerts()])
-    } catch (e: any) {
-      ElMessage.error(e?.message || t('apiKeys.quotaForm.resetQuota'))
+    } catch (e) {
+      ElMessage.error(getErrorMessage(e) || t('apiKeys.quotaForm.resetQuota'))
     }
   })
 }
@@ -962,8 +964,8 @@ const handleReset = (row: ApiKeyVO) => {
       showKeyValueDialog.value = true
       await fetchApiKeys()
       ElMessage.success(t('apiKeys.messages.resetSuccess'))
-    } catch (error: any) {
-      ElMessage.error(t('apiKeys.messages.resetFailedDetail', { message: error.message || '' }))
+    } catch (error) {
+      ElMessage.error(t('apiKeys.messages.resetFailedDetail', { message: getErrorMessage(error) || '' }))
     }
   })
 }
@@ -985,8 +987,8 @@ const handleRotate = (row: ApiKeyVO) => {
       showKeyValueDialog.value = true
       await fetchApiKeys()
       ElMessage.success(t('apiKeys.messages.rotateSuccess'))
-    } catch (error: any) {
-      ElMessage.error(t('apiKeys.messages.rotateFailedDetail', { message: error.message || '' }))
+    } catch (error) {
+      ElMessage.error(t('apiKeys.messages.rotateFailedDetail', { message: getErrorMessage(error) || '' }))
     }
   })
 }
@@ -1006,8 +1008,8 @@ const handleResetQuota = (row: ApiKeyVO) => {
       await resetApiKeyQuota(row.keyId)
       await fetchQuotaOverview()
       ElMessage.success(t('apiKeys.messages.quotaResetSuccess'))
-    } catch (error: any) {
-      ElMessage.error(t('apiKeys.messages.quotaResetFailedDetail', { message: error.message || '' }))
+    } catch (error) {
+      ElMessage.error(t('apiKeys.messages.quotaResetFailedDetail', { message: getErrorMessage(error) || '' }))
     }
   })
 }
@@ -1062,10 +1064,10 @@ const handleSave = async () => {
     }
     dialogVisible.value = false
     await fetchApiKeys()
-  } catch (error: any) {
+  } catch (error) {
     ElMessage.error(isEdit.value
-      ? t('apiKeys.messages.editFailedDetail', { message: error.message || '' })
-      : t('apiKeys.messages.createFailedDetail', { message: error.message || '' }))
+      ? t('apiKeys.messages.editFailedDetail', { message: getErrorMessage(error) || '' })
+      : t('apiKeys.messages.createFailedDetail', { message: getErrorMessage(error) || '' }))
   } finally {
     saveLoading.value = false
   }
@@ -1101,7 +1103,13 @@ const showImportDialog = () => {
 }
 
 // 处理导入文件选择
-const handleImportFileChange = (file: any) => {
+const handleImportFileChange = (file: UploadFile) => {
+  // Element Plus 的 UploadFile.raw 是可选（仅「选择后未上传」时存在）；没有原始文件就没法读内容
+  const rawFile = file.raw
+  if (!rawFile) {
+    ElMessage.warning(t('apiKeys.messages.importSelectFile'))
+    return
+  }
   const reader = new FileReader()
   reader.onload = (e) => {
     try {
@@ -1120,7 +1128,7 @@ const handleImportFileChange = (file: any) => {
       importPreviewKeys.value = []
     }
   }
-  reader.readAsText(file.raw)
+  reader.readAsText(rawFile)
 }
 
 // 执行导入
@@ -1142,8 +1150,8 @@ const handleImport = async () => {
     showImportResultDialog.value = true
     await fetchApiKeys()
     ElMessage.success(t('apiKeys.messages.importCompleted', { success: result.successCount, failure: result.failureCount }))
-  } catch (error: any) {
-    ElMessage.error(t('apiKeys.messages.importFailedDetail', { message: error.message || '' }))
+  } catch (error) {
+    ElMessage.error(t('apiKeys.messages.importFailedDetail', { message: getErrorMessage(error) || '' }))
   } finally {
     importLoading.value = false
   }
@@ -1175,8 +1183,8 @@ const handleExport = async () => {
     link.click()
     URL.revokeObjectURL(url)
     ElMessage.success(t('apiKeys.messages.exportCompleted', { total: exportData.total }))
-  } catch (error: any) {
-    ElMessage.error(t('apiKeys.messages.exportFailedDetail', { message: error.message || '' }))
+  } catch (error) {
+    ElMessage.error(t('apiKeys.messages.exportFailedDetail', { message: getErrorMessage(error) || '' }))
   }
 }
 

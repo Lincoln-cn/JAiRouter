@@ -554,7 +554,7 @@ async function loadStats() {
 async function loadPage() {
   loading.value = true
   try {
-    const params: any = { page: filterForm.page, size: filterForm.size }
+    const params: Parameters<typeof getBlacklistPage>[0] = { page: filterForm.page, size: filterForm.size }
     if (filterForm.type) params.type = filterForm.type
     if (filterForm.status) params.status = filterForm.status
 

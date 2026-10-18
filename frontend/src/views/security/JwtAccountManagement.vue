@@ -170,6 +170,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getErrorMessage } from '@/utils/error'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { Plus, Refresh, Search, Edit, Delete } from '@element-plus/icons-vue'
@@ -309,9 +310,9 @@ const submitAccount = async () => {
         showCreateDialog.value = false
         resetForm()
         fetchAccounts()
-      } catch (error: any) {
+      } catch (error) {
         console.error('操作失败:', error)
-        const errorMsg = error.response?.data?.message || (editingAccount.value ? t('accounts.messages.updateFailed') : t('accounts.messages.createFailed'))
+        const errorMsg = getErrorMessage(error) || (editingAccount.value ? t('accounts.messages.updateFailed') : t('accounts.messages.createFailed'))
         ElMessage.error(errorMsg)
       }
     }
@@ -338,7 +339,7 @@ const handleStatusChange = async (account: JwtAccount) => {
     await toggleJwtAccountStatus(account.username, newStatus)
     ElMessage.success(newStatus ? t('accounts.messages.enabledSuccess') : t('accounts.messages.disabledSuccess'))
     fetchAccounts()
-  } catch (error: any) {
+  } catch (error) {
     // 恢复原状态
     account.enabled = !newStatus
     console.error('状态切换失败:', error)
@@ -370,9 +371,9 @@ const deleteAccount = (account: JwtAccount) => {
       await deleteJwtAccount(account.username)
       ElMessage.success(t('accounts.messages.deleteSuccess'))
       fetchAccounts()
-    } catch (error: any) {
+    } catch (error) {
       console.error('删除失败:', error)
-      const errorMsg = error.response?.data?.message || t('accounts.messages.deleteFailed')
+      const errorMsg = getErrorMessage(error) || t('accounts.messages.deleteFailed')
       ElMessage.error(errorMsg)
     }
   }).catch(() => {
