@@ -3,8 +3,8 @@ import { ref } from 'vue'
 // SSE连接状态
 export const sseStatus = ref<'disconnected' | 'connecting' | 'connected'>('disconnected')
 
-// 回调函数集合
-const callbacks: Array<(data: any) => void> = []
+// 回调函数集合（载荷是 JSON.parse 出来的任意 JSON，由订阅方自行收窄；#521 不用 any）
+const callbacks: Array<(data: unknown) => void> = []
 
 // AbortController用于取消请求
 let abortController: AbortController | null = null
@@ -248,12 +248,12 @@ export function disconnectSSE() {
 }
 
 // 添加消息回调
-export function addSSEListener(callback: (data: any) => void) {
+export function addSSEListener(callback: (data: unknown) => void) {
   callbacks.push(callback)
 }
 
 // 移除消息回调
-export function removeSSEListener(callback: (data: any) => void) {
+export function removeSSEListener(callback: (data: unknown) => void) {
   const index = callbacks.indexOf(callback)
   if (index > -1) {
     callbacks.splice(index, 1)

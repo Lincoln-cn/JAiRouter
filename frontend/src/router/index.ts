@@ -2,6 +2,28 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { i18n } from '@/i18n'
 
+/**
+ * 路由 meta 的具名声明（#521）。
+ *
+ * 此前守卫里写 `(to.meta as any).roles` / `(to.meta as any).permissions` —— 等于放弃类型检查：
+ * 键名拼错、值形状写错都不会有人发现。这里把路由表实际用到的 5 个键声明出来，
+ * 守卫改为直接读 `to.meta.roles`，写错键名会在编译期报错。
+ */
+declare module 'vue-router' {
+  interface RouteMeta {
+    /** 是否需要登录（未声明时按需要处理） */
+    requiresAuth?: boolean
+    /** i18n 标题键（如 `route.dashboard`） */
+    titleKey?: string
+    /** 侧栏图标名 */
+    icon?: string
+    /** 允许访问的角色名（任一命中即可） */
+    roles?: string[]
+    /** 需要的权限码（需全部拥有；ADMIN 恒通过） */
+    permissions?: string[]
+  }
+}
+
 // 添加JWT解码函数
 function isTokenExpired(token: string): boolean {
   try {
@@ -443,7 +465,7 @@ router.beforeEach((to, from, next) => {
     }
 
     // 检查角色权限
-    const requiredRoles = (to.meta as any).roles as string[] | undefined
+    const requiredRoles = to.meta.roles
     if (requiredRoles && requiredRoles.length > 0) {
       const userRoles = userStore.userInfo?.roles || []
       const hasRole = requiredRoles.some(role => userRoles.includes(role))
@@ -455,7 +477,7 @@ router.beforeEach((to, from, next) => {
     }
 
     // v2.9.8 RBAC: 检查权限码（meta.permissions，需全部拥有；ADMIN 恒通过）
-    const requiredPermissions = (to.meta as any).permissions as string[] | undefined
+    const requiredPermissions = to.meta.permissions
     if (requiredPermissions && requiredPermissions.length > 0) {
       const hasAllPermissions = requiredPermissions.every(code => userStore.hasPermission(code))
       if (!hasAllPermissions) {

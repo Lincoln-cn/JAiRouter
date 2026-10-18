@@ -8,6 +8,17 @@ import type { ApiResponse, RouterResponse } from '@/types'
 const gt = (key: string): string =>
   (i18n.global as unknown as { t: (key: string) => string }).t(key)
 
+/**
+ * 从 `catch` 捕获的未知异常里取后端错误文案。
+ * 优先取 axios 风格的 `response.data.message`，其次 `Error.message`；
+ * 两者都没有则返回 undefined，由调用方回落 i18n 文案（#521：替代 `catch (error: any)`）。
+ */
+const extractErrorMessage = (error: unknown): string | undefined => {
+  if (typeof error !== 'object' || error === null) return undefined
+  const err = error as { response?: { data?: { message?: string } }; message?: string }
+  return err.response?.data?.message ?? err.message
+}
+
 // 用户信息接口
 export interface UserInfo {
   username: string
@@ -167,9 +178,9 @@ export const useUserStore = defineStore('user', () => {
       } else {
         throw new Error(response.data.message || gt('errors.tokenRefreshFailed'))
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('令牌刷新请求失败:', error)
-      throw new Error(error.response?.data?.message || error.message || gt('errors.tokenRefreshFailed'))
+      throw new Error(extractErrorMessage(error) || gt('errors.tokenRefreshFailed'))
     }
   }
 
@@ -189,9 +200,9 @@ export const useUserStore = defineStore('user', () => {
       } else {
         throw new Error(response.data.message || gt('errors.loginFailed'))
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('登录请求失败:', error)
-      throw new Error(error.response?.data?.message || gt('errors.loginFailed'))
+      throw new Error(extractErrorMessage(error) || gt('errors.loginFailed'))
     }
   }
 

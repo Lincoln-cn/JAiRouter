@@ -74,7 +74,25 @@ import { ElMessage, ElForm } from 'element-plus'
 interface Props {
   modelValue: boolean
   title?: string
-  initialData?: any
+  initialData?: CircuitBreakerConfigInitialData
+}
+
+/** 熔断表单载荷（与 `formData` 同形，保存时整块下发） */
+export interface CircuitBreakerFormData {
+  enabled: boolean
+  failureThreshold: number
+  timeout: number
+  successThreshold: number
+}
+
+/** 弹窗入参：父页面持有整份实例策略，本组件只关心 `circuitBreaker` 这一段（#521） */
+export interface CircuitBreakerConfigInitialData {
+  circuitBreaker?: Partial<CircuitBreakerFormData> | null
+}
+
+/** `save` 事件的载荷：关闭开关时显式下发 `null` 表示「清除该段配置」 */
+export interface CircuitBreakerConfigPayload {
+  circuitBreaker: CircuitBreakerFormData | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -84,7 +102,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
-  (e: 'save', data: any): void
+  (e: 'save', data: CircuitBreakerConfigPayload): void
 }>()
 
 const { t } = useI18n()
@@ -99,7 +117,7 @@ const dialogTitle = computed(() => props.title || t('circuitBreakerConfig.title'
 const formRef = ref<InstanceType<typeof ElForm>>()
 const loading = ref(false)
 
-const formData = reactive({
+const formData = reactive<CircuitBreakerFormData>({
   enabled: false,
   failureThreshold: 5,
   timeout: 60000,

@@ -3,13 +3,13 @@
  * 保证最后一次调用不丢失（trailing）。与 lodash.throttle 默认行为一致，
  * 但不引入额外依赖，且暴露 cancel/flush 供收尾（如流式结束落盘）使用。
  */
-export interface ThrottledFunction<T extends (...args: any[]) => void> {
+export interface ThrottledFunction<T extends (...args: never[]) => void> {
   (...args: Parameters<T>): void
   cancel(): void
   flush(): void
 }
 
-export function throttle<T extends (...args: any[]) => void>(
+export function throttle<T extends (...args: never[]) => void>(
   fn: T,
   wait: number
 ): ThrottledFunction<T> {

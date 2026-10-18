@@ -102,7 +102,29 @@ import { ElMessage, ElForm } from 'element-plus'
 interface Props {
   modelValue: boolean
   title?: string
-  initialData?: any
+  initialData?: RateLimitConfigInitialData
+}
+
+/** 限流表单载荷（与 `formData` 同形，保存时整块下发） */
+export interface RateLimitFormData {
+  enabled: boolean
+  /** 与下拉选项一致（`el-option` 的 value） */
+  algorithm: 'token-bucket' | 'leaky-bucket' | 'sliding-window'
+  capacity: number
+  rate: number
+  scope: 'instance' | 'client-ip'
+  key: string
+  clientIpEnable: boolean
+}
+
+/** 弹窗入参：父页面持有整份实例策略，本组件只关心 `rateLimit` 这一段（#521） */
+export interface RateLimitConfigInitialData {
+  rateLimit?: Partial<RateLimitFormData> | null
+}
+
+/** `save` 事件的载荷：关闭开关时显式下发 `null` 表示「清除该段配置」 */
+export interface RateLimitConfigPayload {
+  rateLimit: RateLimitFormData | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -112,7 +134,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
-  (e: 'save', data: any): void
+  (e: 'save', data: RateLimitConfigPayload): void
 }>()
 
 const { t } = useI18n()
@@ -127,7 +149,7 @@ const dialogTitle = computed(() => props.title || t('rateLimitConfig.title'))
 const formRef = ref<InstanceType<typeof ElForm>>()
 const loading = ref(false)
 
-const formData = reactive({
+const formData = reactive<RateLimitFormData>({
   enabled: false,
   algorithm: 'token-bucket',
   capacity: 100,

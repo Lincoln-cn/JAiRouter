@@ -22,9 +22,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { Component } from 'vue'
 
 const props = withDefaults(defineProps<{
-  icon: any
+  /** 图标：可传组件（Element Plus 图标），也可传已全局注册的图标名字符串（#521） */
+  icon: Component | string
   label: string
   value: string | number
   unit?: string
