@@ -544,3 +544,103 @@ management:
 - **[管理 API](management-api.md)** - 配置管理
 - **[统一 API](universal-api.md)** - OpenAI 兼容端点
 - **[OpenAPI 规范](openapi-spec.md)** - 交互式 API 文档
+---
+
+## 只读监控面：37 个未在前端调用、也未文档化的管理端点
+
+这些端点**没有前端入口**，此前也没有文档（`#454` 的对账结果）。按维护者裁定，它们作为**只读监控 / 运维诊断面保留**，在此补齐说明。
+
+> **授权来源说明**：这些端点**没有方法级 `@PreAuthorize`**，鉴权由 `/api/**` 的 `PermissionAuthorizationManager` 按 `PermissionRuleRegistry` 的 URL 规则统一裁决。下表的权限码就是**当前实际生效**的规则，不是设计意图。
+
+### 动态指标注册（MetricRegistrationController）
+
+| 方法 | 路径 | 生效的权限码 |
+|---|---|---|
+| `DELETE` | `/api/monitoring/metrics/batch` | **无匹配规则** ⇒ `RbacUnmatchedPolicy` 默认 `DENY_ALL`（仅 ROLE_ADMIN） |
+| `GET` | `/api/monitoring/metrics/category/{}` | `monitoring:metrics:read` |
+| `POST` | `/api/monitoring/metrics/cleanup` | **无匹配规则** ⇒ `RbacUnmatchedPolicy` 默认 `DENY_ALL`（仅 ROLE_ADMIN） |
+| `GET` | `/api/monitoring/metrics/exists/{}` | `monitoring:metrics:read` |
+| `GET` | `/api/monitoring/metrics/list` | `monitoring:metrics:read` |
+| `GET` | `/api/monitoring/metrics/metadata` | `monitoring:metrics:read` |
+| `GET` | `/api/monitoring/metrics/metadata/{}` | `monitoring:metrics:read` |
+| `PUT` | `/api/monitoring/metrics/metadata/{}` | **无匹配规则** ⇒ `RbacUnmatchedPolicy` 默认 `DENY_ALL`（仅 ROLE_ADMIN） |
+| `POST` | `/api/monitoring/metrics/register` | **无匹配规则** ⇒ `RbacUnmatchedPolicy` 默认 `DENY_ALL`（仅 ROLE_ADMIN） |
+| `POST` | `/api/monitoring/metrics/register/batch` | **无匹配规则** ⇒ `RbacUnmatchedPolicy` 默认 `DENY_ALL`（仅 ROLE_ADMIN） |
+| `GET` | `/api/monitoring/metrics/search` | `monitoring:metrics:read` |
+| `GET` | `/api/monitoring/metrics/statistics` | `monitoring:metrics:read` |
+| `POST` | `/api/monitoring/metrics/validate` | **无匹配规则** ⇒ `RbacUnmatchedPolicy` 默认 `DENY_ALL`（仅 ROLE_ADMIN） |
+| `DELETE` | `/api/monitoring/metrics/{}` | **无匹配规则** ⇒ `RbacUnmatchedPolicy` 默认 `DENY_ALL`（仅 ROLE_ADMIN） |
+| `PUT` | `/api/monitoring/metrics/{}/configuration` | **无匹配规则** ⇒ `RbacUnmatchedPolicy` 默认 `DENY_ALL`（仅 ROLE_ADMIN） |
+
+### 调用历史（ApiCallHistoryController）
+
+| 方法 | 路径 | 生效的权限码 |
+|---|---|---|
+| `DELETE` | `/api/call-history/cleanup` | `callhistory:view（同码，见 #514）` |
+| `GET` | `/api/call-history/count` | `callhistory:view` |
+| `GET` | `/api/call-history/errors` | `callhistory:view` |
+| `GET` | `/api/call-history/recent` | `callhistory:view` |
+| `POST` | `/api/call-history/record` | `callhistory:view（同码，见 #514）` |
+| `GET` | `/api/call-history/trace/{}` | `callhistory:view` |
+
+### 路由监控（RoutingMonitorController）
+
+| 方法 | 路径 | 生效的权限码 |
+|---|---|---|
+| `PUT` | `/api/v1/routing-monitor/config` | `lb:config:write` |
+| `DELETE` | `/api/v1/routing-monitor/history/{}` | `lb:config:write` |
+| `GET` | `/api/v1/routing-monitor/history/{}` | `monitoring:routing:read` |
+| `GET` | `/api/v1/routing-monitor/stats/{}` | `monitoring:routing:read` |
+
+### 熔断历史（CircuitBreakerConfigController）
+
+| 方法 | 路径 | 生效的权限码 |
+|---|---|---|
+| `GET` | `/api/config/circuit-breaker/history/instance` | `config:circuitbreaker:read` |
+| `GET` | `/api/config/circuit-breaker/history/service-type` | `config:circuitbreaker:read` |
+| `GET` | `/api/config/circuit-breaker/history/time-range` | `config:circuitbreaker:read` |
+
+### 适配器模板（AdapterTemplateController）
+
+| 方法 | 路径 | 生效的权限码 |
+|---|---|---|
+| `GET` | `/api/config/adapter/templates/{}` | `config:adapters:read` |
+| `POST` | `/api/config/adapter/templates/{}/create` | `config:adapters:write` |
+
+### 异常管理（ExceptionManagementController）
+
+| 方法 | 路径 | 生效的权限码 |
+|---|---|---|
+| `GET` | `/api/exceptions/dashboard` | `monitoring:exceptions:read` |
+| `GET` | `/api/exceptions/recent/{}` | `monitoring:exceptions:read` |
+
+### 慢查询分析（SlowQueryAnalysisController）
+
+| 方法 | 路径 | 生效的权限码 |
+|---|---|---|
+| `GET` | `/api/monitoring/slow-queries/stats/{}` | `monitoring:slowquery:read` |
+| `GET` | `/api/monitoring/slow-queries/trends` | `monitoring:slowquery:read` |
+
+### 健康状态 SSE（HealthStatusSseController）
+
+| 方法 | 路径 | 生效的权限码 |
+|---|---|---|
+| `GET` | `/api/health-status/stream` | 已认证即可（`/api/health-status/**` → `authenticated()`） |
+
+### 限流监控（RateLimitMonitorController）
+
+| 方法 | 路径 | 生效的权限码 |
+|---|---|---|
+| `GET` | `/api/rate-limiter/status` | `rl:monitoring:read` |
+
+### 状态持久化（StatePersistenceManagementController）
+
+| 方法 | 路径 | 生效的权限码 |
+|---|---|---|
+| `POST` | `/api/state-persistence/test/save-circuit-breaker/{}` | `config:persistence:write` |
+
+### 两个需要注意的口径
+
+1. **`/api/monitoring/metrics/**` 的写操作没有权限规则** —— 注册 / 更新 / 删除指标只受`RbacUnmatchedPolicy` 的默认 `DENY_ALL`（仅 `ROLE_ADMIN` 直通）保护，读操作才有 `monitoring:metrics:read`。若要让运维角色能注册指标，需要**显式加一条写规则**。
+2. **`/api/call-history/**` 的读 / 写 / 删共用 `callhistory:view`** —— `POST /record`（写入）与 `DELETE /cleanup`（删除）都被「查看」权限放行，见 `#514`。
+
