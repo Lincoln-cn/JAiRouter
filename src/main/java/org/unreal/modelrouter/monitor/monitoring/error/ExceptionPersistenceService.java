@@ -167,7 +167,41 @@ public class ExceptionPersistenceService {
             }
         }
 
+        // issue #501：lineNumber 之前从未赋值（JPA 列恒 null）。
+        // 数据源就在异常自己的堆栈里 —— 取"第一个应用帧"（跳过 JDK/Spring 代理帧）。
+        builder.lineNumber(resolveLineNumber(throwable));
+
         return builder.build();
+    }
+
+    /**
+     * 从异常的堆栈里取"主帧"行号（issue #501）。
+     *
+     * <p>只认**本项目**（{@code org.unreal.modelrouter}）的帧：实体的 {@code className} /
+     * {@code methodName} 也来自应用层上下文，若这里退回 JDK/Spring 内部帧的行号，
+     * 两者会拼成"应用类名 + 框架行号"的错位信息。所以**没有应用帧就返回 null**。</p>
+     *
+     * <p>行号 {@code < 0} 表示未知（native / 合成帧），同样返回 {@code null} —— 不伪造 0 或 -1。</p>
+     *
+     * @param throwable 异常（可为 null）
+     * @return 应用帧行号，或 null
+     */
+    static Integer resolveLineNumber(final Throwable throwable) {
+        if (throwable == null) {
+            return null;
+        }
+        StackTraceElement[] frames = throwable.getStackTrace();
+        if (frames == null || frames.length == 0) {
+            return null;
+        }
+        for (StackTraceElement frame : frames) {
+            String className = frame.getClassName();
+            if (className != null && className.startsWith("org.unreal.modelrouter")) {
+                int line = frame.getLineNumber();
+                return line > 0 ? line : null;
+            }
+        }
+        return null;
     }
 
     /**
