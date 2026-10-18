@@ -64,7 +64,7 @@ export const getExceptionStatistics = async (
   endTime?: string
 ): Promise<ExceptionStatistics> => {
   try {
-    const params: any = {}
+    const params: { startTime?: string; endTime?: string } = {}
     if (startTime) params.startTime = startTime
     if (endTime) params.endTime = endTime
 

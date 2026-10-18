@@ -41,7 +41,7 @@ export interface AuditEvent {
     userAgent?: string
     success: boolean
     timestamp: string
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
     eventCategory?: string
     riskLevel?: RiskLevel | string
     geoLocation?: string
@@ -115,8 +115,27 @@ const defaultSecurityReport = (): SecurityReport => ({
     successRate: 0
 })
 
+/**
+ * 复杂条件查询的入参（#520）。
+ * 字段取自调用方 `AuditLogManagement.buildQuery()` 实际下发的键，与后端
+ * `POST /api/security/audit/extended/query` 的过滤条件一一对应；未列出的一律不加，
+ * 避免又退化成「什么都能塞」。
+ */
+export interface ExtendedAuditQuery {
+  startTime?: string
+  endTime?: string
+  userId?: string
+  ipAddress?: string
+  success?: boolean | null
+  eventType?: string
+  /** 页码，从 0 开始 */
+  page?: number
+  /** 每页条数（导出时调用方会传 10000） */
+  size?: number
+}
+
 // 复杂条件查询审计事件
-export const queryAuditEventsAdvanced = async (query: any): Promise<ExtendedAuditQueryResponse> => {
+export const queryAuditEventsAdvanced = async (query: ExtendedAuditQuery): Promise<ExtendedAuditQueryResponse> => {
     try {
         const response = await request.post<RouterResponse<ExtendedAuditQueryResponse>>('/security/audit/extended/query', query)
         return response.data.data || defaultQueryResponse()
@@ -129,7 +148,7 @@ export const queryAuditEventsAdvanced = async (query: any): Promise<ExtendedAudi
 // 生成安全报告
 export const generateSecurityReport = async (startTime?: string, endTime?: string): Promise<SecurityReport> => {
     try {
-        const params: any = {}
+        const params: { startTime?: string; endTime?: string } = {}
         if (startTime) params.startTime = startTime
         if (endTime) params.endTime = endTime
 

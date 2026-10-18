@@ -326,6 +326,7 @@ import {
   getErrorAnalysis,
   getThroughputAnalysis,
 } from '@/api/tracing'
+import type { TracingServiceStat, TracingStatistics, TracingStatus } from '@/types/tracing'
 import TraceDetail from './components/TraceDetail.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import { useChartTheme } from '@/composables/useChartTheme'
@@ -445,7 +446,7 @@ const loadAllData = async () => {
 const loadOverviewData = async () => {
   try {
     const response = await getTracingOverview()
-    const data = response.data?.data || response.data || response
+    const data = (response.data?.data || response.data) as TracingStatistics | undefined
     if (data) {
       stats.value = {
         totalTraces: data.totalTraces || 0,
@@ -462,7 +463,7 @@ const loadOverviewData = async () => {
 const loadServiceStats = async () => {
   try {
     const response = await getServiceStats()
-    const data = response.data?.data || response.data || response
+    const data = (response.data?.data || response.data) as TracingServiceStat[] | undefined
     if (Array.isArray(data)) {
       serviceStats.value = data
     }
@@ -475,7 +476,7 @@ const loadServiceStats = async () => {
 const loadTracingStatus = async () => {
   try {
     const response = await getTracingStatus()
-    const data = response.data?.data || response.data || response
+    const data = (response.data?.data || response.data) as TracingStatus | undefined
     if (data) {
       tracingEnabled.value = data.enabled !== false
     }
