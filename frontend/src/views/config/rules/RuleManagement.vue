@@ -13,7 +13,7 @@
     <el-table ref="tableRef" :data="rules" v-loading="loading" style="width: 100%" row-key="id">
       <el-table-column :label="t('rule.sort')" width="60" align="center">
         <template #default="{ row }">
-          <el-icon v-if="row.source !== 'YAML'" class="drag-handle"><Rank /></el-icon>
+          <el-icon v-if="row.source !== 'YAML' && canWrite" class="drag-handle"><Rank /></el-icon>
         </template>
       </el-table-column>
       <el-table-column :label="t('rule.enabled')" width="70" align="center">
@@ -69,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -89,6 +89,7 @@ import {
 import RuleFormDialog from './RuleFormDialog.vue'
 import RuleTemplateDialog from './RuleTemplateDialog.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import { usePermission } from '@/composables/usePermission'
 
 const rules = ref<RuleDefinition[]>([])
 const loading = ref(false)
@@ -99,6 +100,15 @@ const tableRef = ref()
 const templateDialogVisible = ref(false)
 const { t } = useI18n()
 const router = useRouter()
+const { hasPermission } = usePermission()
+
+/**
+ * 拖拽排序 = 写操作（改的是 priority 并立即落库），必须与页内其它写按钮同一口径。
+ *
+ * 此前只有按钮挂了 `v-permission`，拖拽手柄是裸的：只读角色（`config:rules:read`）
+ * 仍能拖动行，松手即触发 `PUT /api/config/rules/priorities` → 403（issue #468）。
+ */
+const canWrite = computed(() => hasPermission('config:rules:write'))
 
 const fetchRules = async () => {
   loading.value = true
@@ -144,6 +154,9 @@ const initDrag = () => {
     handle: '.drag-handle',
     filter: '.yaml-row',
     animation: 150,
+    // 无写权限时整体禁用（手柄本身也不渲染，这里是第二道保险：
+    // 权限在会话内变化 / 手柄选择器将来被改宽时仍然拖不动）。
+    disabled: !canWrite.value,
     onEnd: (evt) => {
       const { oldIndex, newIndex } = evt
       if (oldIndex == null || newIndex == null || oldIndex === newIndex) return
@@ -155,6 +168,11 @@ const initDrag = () => {
     }
   })
 }
+
+// 权限在运行时变化（切换账号 / 刷新权限）时同步 Sortable 的 enabled 状态。
+watch(canWrite, (allowed) => {
+  sortable?.option('disabled', !allowed)
+})
 
 const commitPriorities = async () => {
   const items = rules.value.map((rule, index) => ({

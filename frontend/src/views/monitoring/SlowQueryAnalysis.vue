@@ -6,6 +6,7 @@
         {{ t('slowQuery.refresh') }}
       </el-button>
       <el-popconfirm
+        v-if="canResetStats"
         :title="t('slowQuery.resetConfirmTitle')"
         :confirm-button-text="t('slowQuery.confirm')"
         :cancel-button-text="t('slowQuery.cancel')"
@@ -233,6 +234,7 @@ import { ElMessage } from 'element-plus'
 import { Refresh, Delete, Search, RefreshRight } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import StatCard from '@/components/StatCard.vue'
+import { usePermission } from '@/composables/usePermission'
 import {
   getSlowQueryStats,
   getSlowQueryCount,
@@ -247,6 +249,14 @@ import {
 } from '@/api/slowQuery'
 
 const { t } = useI18n()
+const { hasPermission } = usePermission()
+
+/**
+ * 「重置全部慢查询统计」是写操作：`DELETE /api/monitoring/slow-queries/stats`，
+ * 自 issue #468 起由 `monitoring:slowquery:write` 显式裁决（此前该前缀只有 GET 规则，
+ * 写操作靠 RbacUnmatchedPolicy 的默认 DENY_ALL 兜住 ⇒ 只读角色能看到一个必然 403 的按钮）。
+ */
+const canResetStats = computed(() => hasPermission('monitoring:slowquery:write'))
 
 interface TableRow {
   operationName: string

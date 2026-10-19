@@ -98,6 +98,13 @@ public class PermissionRuleRegistry {
                 PermissionRule.write("/api/config/instance/**", PermissionCodes.CONFIG_INSTANCES_WRITE),
 
                 // ===== 服务类型管理（ServiceTypeController，#116）→ 与实例配置同码 =====
+                // issue #468 复核过"要不要改成 config:services:*"，结论是**保持现状**，理由两条：
+                // 1) 这个前缀是**共享读面**：概览页（api/dashboard.ts）与服务管理页（api/service.ts）
+                //    都读 GET /api/config/type/**，绑到任一页的 :read 都会让另一页的角色配置变玄学；
+                // 2) 内置角色下改与不改**没有差别**（ADMIN/OPERATOR/VIEWER 两类码都有或都没有），
+                //    只有自定义角色会被静默改权 —— 那属于独立的权限设计变更，不该随一条 UX 修复顺带做。
+                // 前端页内门控按"端点实际要求的码"挂（ServiceManagement 的写按钮挂 config:instances:write），
+                // 因此按钮显隐与后端裁决始终一致。
                 PermissionRule.get("/api/config/type/**", PermissionCodes.CONFIG_INSTANCES_READ),
                 PermissionRule.write("/api/config/type/**", PermissionCodes.CONFIG_INSTANCES_WRITE),
 
@@ -144,7 +151,13 @@ public class PermissionRuleRegistry {
                 PermissionRule.write("/api/security/audit/extended/**", PermissionCodes.SECURITY_AUDIT_WRITE),
 
                 // ===== B2b 渐进补齐：慢查询分析（SlowQueryAnalysisController → 菜单「监控-慢查询」） =====
+                // issue #468：此前这一前缀只登记了 GET 规则，而页面上的「重置全部慢查询统计」是
+                // DELETE /api/monitoring/slow-queries/stats ⇒ 命不中任何规则，只能靠
+                // RbacUnmatchedPolicy 的默认 DENY_ALL 兜住（实测 403，但那是「未匹配」的副产品）。
+                // 现在补显式写规则，让"谁能重置慢查询统计"成为一条可授的权限（与 #454 对
+                // /api/monitoring/metrics/** 的处置同款）。
                 PermissionRule.get("/api/monitoring/slow-queries/**", PermissionCodes.MONITORING_SLOWQUERY_READ),
+                PermissionRule.write("/api/monitoring/slow-queries/**", PermissionCodes.MONITORING_SLOWQUERY_WRITE),
 
                 // ===== B2b 渐进补齐：模型统计（ModelStatsController → 菜单「监控-模型统计」） =====
                 PermissionRule.get("/api/models/stats/**", PermissionCodes.MONITORING_MODELSTATS_READ),

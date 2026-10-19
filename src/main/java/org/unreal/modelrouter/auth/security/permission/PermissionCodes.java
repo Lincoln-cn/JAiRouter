@@ -105,6 +105,8 @@ public final class PermissionCodes {
     public static final String MONITORING_METRICS_WRITE = "monitoring:metrics:write";
     /** 慢查询分析-读 */
     public static final String MONITORING_SLOWQUERY_READ = "monitoring:slowquery:read";
+    /** 慢查询统计重置-写（issue #468：该前缀此前只登记了 GET 规则，重置操作只靠默认 DENY_ALL 兜住） */
+    public static final String MONITORING_SLOWQUERY_WRITE = "monitoring:slowquery:write";
     /** Token 用量-读 */
     public static final String MONITORING_TOKENUSAGE_READ = "monitoring:tokenusage:read";
     /** 模型统计-读 */
@@ -184,6 +186,7 @@ public final class PermissionCodes {
             RL_MONITORING_READ,
             CALLHISTORY_VIEW,
             MONITORING_METRICS_READ, MONITORING_METRICS_WRITE, MONITORING_SLOWQUERY_READ,
+            MONITORING_SLOWQUERY_WRITE,
             MONITORING_TOKENUSAGE_READ, MONITORING_MODELSTATS_READ,
             MONITORING_ROUTING_READ,
             MONITORING_QUOTA_READ,
