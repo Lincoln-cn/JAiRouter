@@ -336,19 +336,18 @@
     },
     "docs/en/getting-started/installation.md": {
       "FilePath": "docs/en/getting-started/installation.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-09-18T11:24:41.577814",
-      "ContentHash": "44fd04fa6850bb64",
-      "GitCommit": "e84d79b5",
-      "Author": "Lincoln",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-19T12:56:58.639546",
+      "ContentHash": "a53e327b39449e18",
+      "GitCommit": "e40a51b1",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/configuration/index.md",
         "docs/en/getting-started/first-steps.md",
         "docs/en/getting-started/quick-start.md",
         "docs/en/troubleshooting/index.md"
-      ],
-      "ReviewedAt": "2026-10-19T20:47:00.296168"
+      ]
     },
     "docs/en/getting-started/quick-start.md": {
       "FilePath": "docs/en/getting-started/quick-start.md",
@@ -369,11 +368,11 @@
     },
     "docs/en/index.md": {
       "FilePath": "docs/en/index.md",
-      "Version": "1.0.19",
-      "LastModified": "2026-09-18T13:56:00.281379",
-      "ContentHash": "7ba16a80397f4087",
-      "GitCommit": "be9820f2",
-      "Author": "Lincoln",
+      "Version": "1.0.20",
+      "LastModified": "2026-10-19T12:56:58.649933",
+      "ContentHash": "1946dc697365eeb2",
+      "GitCommit": "e40a51b1",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/index.md",
@@ -383,8 +382,7 @@
         "docs/en/getting-started/quick-start.md",
         "docs/en/monitoring/index.md",
         "docs/en/troubleshooting/index.md"
-      ],
-      "ReviewedAt": "2026-10-19T20:47:00.296168"
+      ]
     },
     "docs/en/monitoring/alerts.md": {
       "FilePath": "docs/en/monitoring/alerts.md",
@@ -958,19 +956,18 @@
     },
     "docs/zh/getting-started/installation.md": {
       "FilePath": "docs/zh/getting-started/installation.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-09-18T11:24:41.868079",
-      "ContentHash": "e6eb2f26ebe87f7c",
-      "GitCommit": "e84d79b5",
-      "Author": "Lincoln",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-19T12:56:59.280724",
+      "ContentHash": "0a559fcf37382587",
+      "GitCommit": "e40a51b1",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/configuration/index.md",
         "docs/zh/getting-started/first-steps.md",
         "docs/zh/getting-started/quick-start.md",
         "docs/zh/troubleshooting/index.md"
-      ],
-      "ReviewedAt": "2026-10-19T20:47:00.296168"
+      ]
     },
     "docs/zh/getting-started/quick-start.md": {
       "FilePath": "docs/zh/getting-started/quick-start.md",
@@ -992,11 +989,11 @@
     },
     "docs/zh/index.md": {
       "FilePath": "docs/zh/index.md",
-      "Version": "1.0.20",
-      "LastModified": "2026-09-18T13:56:00.490496",
-      "ContentHash": "a59b6bcac78d764f",
-      "GitCommit": "be9820f2",
-      "Author": "Lincoln",
+      "Version": "1.0.21",
+      "LastModified": "2026-10-19T12:56:59.293849",
+      "ContentHash": "399d5edafcdb6261",
+      "GitCommit": "e40a51b1",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/index.md",
@@ -1006,8 +1003,7 @@
         "docs/zh/getting-started/quick-start.md",
         "docs/zh/monitoring/index.md",
         "docs/zh/troubleshooting/index.md"
-      ],
-      "ReviewedAt": "2026-10-19T20:47:00.296168"
+      ]
     },
     "docs/zh/monitoring/alert_rules_guide.md": {
       "FilePath": "docs/zh/monitoring/alert_rules_guide.md",
@@ -1820,14 +1816,13 @@
     },
     "docs/en/monitoring/alert_rules_guide.md": {
       "FilePath": "docs/en/monitoring/alert_rules_guide.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-09-18T11:28:09.112937",
-      "ContentHash": "e858b4ea9d3b7fd4",
-      "GitCommit": "c82b4559",
-      "Author": "Lincoln",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-19T12:56:58.651743",
+      "ContentHash": "22a69435f40158a2",
+      "GitCommit": "e40a51b1",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": [],
-      "ReviewedAt": "2026-10-19T20:47:00.296168"
+      "Dependencies": []
     },
     "docs/en/reference/adapter-updates.md": {
       "FilePath": "docs/en/reference/adapter-updates.md",
@@ -9007,7 +9002,47 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-19T12:45:59.945612",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/installation.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-19T12:56:58.639556",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/index.md",
+      "OldVersion": "1.0.19",
+      "NewVersion": "1.0.20",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-19T12:56:58.649939",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/alert_rules_guide.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-19T12:56:58.651747",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/installation.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-19T12:56:59.280739",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/index.md",
+      "OldVersion": "1.0.20",
+      "NewVersion": "1.0.21",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-19T12:56:59.293854",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-19T20:47:00.298197"
+  "last_updated": "2026-10-19T12:56:59.601037"
 }
