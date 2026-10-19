@@ -619,7 +619,7 @@ POST /api/v1/circuit-breaker-monitor/instances/reset              # config:circu
 持久化状态，避免重启后恢复回 `OPEN`。单个重置返回
 `{previousState, currentState, persistedStateDeleted, triggerReason}`；批量重置接受
 `{instanceIds}` 或 `{serviceType, states}`，返回 `{matched, reset[]}`。实例不存在时返回
-`404 CIRCUIT_BREAKER_NOT_FOUND`，不再静默成功。
+`404 NOT_FOUND`，不再静默成功。
 
 > 迁移说明：`GET .../states` 返回扁平 `Map<key, state>`、没有计数与名称，仅为兼容保留；
 > `POST .../clear-all` 没有作用域，已由 `POST /api/v1/circuit-breaker-monitor/instances/reset`

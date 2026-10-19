@@ -988,7 +988,7 @@ the counters, writes a `MANUAL_RESET` history record, and deletes the persisted 
 cannot restore `OPEN`. A single reset returns
 `{previousState, currentState, persistedStateDeleted, triggerReason}`; a batch reset accepts
 `{instanceIds}` or `{serviceType, states}` and returns `{matched, reset[]}`. An unknown instance
-returns `404 CIRCUIT_BREAKER_NOT_FOUND` instead of a silent success.
+returns `404 NOT_FOUND` instead of a silent success.
 
 > Migration notes: `GET .../states` returns a flat `Map<key, state>` without counters or names and is
 > kept only for compatibility; `POST .../clear-all` has no scope and is superseded by

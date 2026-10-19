@@ -259,6 +259,6 @@ public class ServiceTypeInstanceController {
                 .map(result -> ResponseEntity.ok(RouterResponse.success(result, "熔断器已重置")))
                 .defaultIfEmpty(ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(RouterResponse.<CircuitBreakerResetResult>error(
-                                "该实例当前没有熔断器记录", "CIRCUIT_BREAKER_NOT_FOUND")));
+                                "该实例当前没有熔断器记录", ErrorCode.NOT_FOUND.code())));
     }
 }

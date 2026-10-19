@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import reactor.core.publisher.Mono;
 
@@ -61,7 +62,8 @@ public class CircuitBreakerMonitorController {
         return adminService.reset(instanceId, reason)
                 .map(result -> ResponseEntity.ok(RouterResponse.success(result, "熔断器已重置")))
                 .defaultIfEmpty(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(RouterResponse.<CircuitBreakerResetResult>error("该实例当前没有熔断器记录", "CIRCUIT_BREAKER_NOT_FOUND")));
+                        .body(RouterResponse.<CircuitBreakerResetResult>error("该实例当前没有熔断器记录",
+                                ErrorCode.NOT_FOUND.code())));
     }
 
     /**
@@ -78,7 +80,8 @@ public class CircuitBreakerMonitorController {
                 && (request.states() == null || request.states().isEmpty());
         if (noTarget) {
             return Mono.just(ResponseEntity.badRequest()
-                    .body(RouterResponse.error("请指定实例列表，或至少一个过滤条件（serviceType / states）", "INVALID_REQUEST")));
+                    .body(RouterResponse.error("请指定实例列表，或至少一个过滤条件（serviceType / states）",
+                            ErrorCode.INVALID_REQUEST.code())));
         }
         return adminService.resetBatch(request.instanceIds(), request.serviceType(), request.states(), request.reason())
                 .map(result -> ResponseEntity.ok(RouterResponse.success(result,

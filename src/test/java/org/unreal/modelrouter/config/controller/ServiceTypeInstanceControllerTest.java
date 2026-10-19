@@ -418,6 +418,6 @@ class ServiceTypeInstanceControllerTest {
         // Then
         assertNotNull(result);
         assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
-        assertEquals("CIRCUIT_BREAKER_NOT_FOUND", result.getBody().getErrorCode());
+        assertEquals(ErrorCode.NOT_FOUND.code(), result.getBody().getErrorCode());
     }
 }
