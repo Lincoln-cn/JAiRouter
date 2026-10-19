@@ -645,9 +645,11 @@ None of these endpoints is called by the console, and none was documented (the `
 
 ### State persistence
 
-| Method | Path | Effective permission code |
-|---|---|---|
-| `POST` | `/api/state-persistence/test/save-circuit-breaker/{}` | `config:persistence:write` |
+> History: `POST /api/state-persistence/test/save-circuit-breaker/{}` was a **test-fixture endpoint**
+> (it wrote hard-coded `state=OPEN` / `failureCount=5` straight into the persistence tier). `#483` first
+> isolated it behind `@Profile("!prod")`, then it was **removed** — production code should not ship a
+> data-fabrication endpoint; the same chain (real state → persistence → startup recovery) is now covered by
+> `CircuitBreakerStatePersistenceAdapterTest` in the test tree.
 
 ### Two caveats
 

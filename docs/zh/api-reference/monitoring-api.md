@@ -636,9 +636,10 @@ management:
 
 ### 状态持久化（StatePersistenceManagementController）
 
-| 方法 | 路径 | 生效的权限码 |
-|---|---|---|
-| `POST` | `/api/state-persistence/test/save-circuit-breaker/{}` | `config:persistence:write` |
+> 历史：`POST /api/state-persistence/test/save-circuit-breaker/{}` 是**测试夹具端点**（手写死值
+> `state=OPEN` / `failureCount=5` 直接写进持久层），`#483` 先把它隔离到 `@Profile("!prod")`，
+> 随后**已移除** —— 主代码不该保留造数端点；该链路（真实状态 → 持久层 → 启动恢复）改由测试包内
+> `CircuitBreakerStatePersistenceAdapterTest` 覆盖。
 
 ### 两个需要注意的口径
 
