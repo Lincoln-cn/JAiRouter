@@ -121,6 +121,70 @@ export default {
     check('rbac-ui:slowquery:reset-api-200-for-admin', adminResetApi.status === 200,
       `status=${adminResetApi.status}`)
 
+    // ── 例 5：`/circuit-breakers/monitoring` 的「重置」与「批量重置」──
+    // 路由只要 `cb:monitoring:read`（USER 角色就有），而重置走
+    // `POST /api/v1/circuit-breaker-monitor/instances/**` ⇒ 自 #557 起需
+    // `config:circuitbreaker:write`。修前 USER 能看到按钮、点了必然 403。
+    // ⚠️ 实例表由后端按「运行时熔断器 ⋈ 实例库」生成，开发环境可能为空表 ——
+    // 空表时按钮根本不存在，断言会假绿。这里用固定夹具保证「表里至少一行」。
+    const cbFixture = [
+      {
+        instanceId: '11111111-1111-4111-8111-111111111111',
+        instanceName: 'rbac-fixture-open',
+        serviceType: 'chat',
+        baseUrl: 'https://open.example.com',
+        state: 'OPEN',
+        failureCount: 5,
+        successCount: 0,
+        failureThreshold: 5,
+        successThreshold: 2,
+        timeoutMillis: 60000,
+        lastFailureTime: new Date().toISOString()
+      }
+    ]
+    const mockInstances = async (target) => {
+      await target.route('**/api/v1/circuit-breaker-monitor/instances**', (route) => {
+        if (route.request().method() !== 'GET') return route.continue()
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(cbFixture)
+        })
+      })
+    }
+    await mockInstances(lowPage)
+    await mockInstances(adminPage)
+
+    await gotoApp(lowPage, '/circuit-breakers/monitoring', { waitMs: 1200 })
+    const lowCbBody = await lowPage.locator('.layout-main').innerText().catch(() => '')
+    check('rbac-ui:cb:page-opens-for-limited', /熔断器实例|Circuit Breaker Instances/.test(lowCbBody),
+      lowCbBody.slice(0, 80).replace(/\n/g, ' '))
+    const lowCbRows = await lowPage.locator('.instances-table .el-table__body tr').count()
+    const lowCbReset = await lowPage
+      .locator('.instances-table button')
+      .filter({ hasText: /^重置$|^Reset$/ })
+      .count()
+    check('rbac-ui:cb:rows-rendered-for-limited', lowCbRows === 1, `rows=${lowCbRows}`)
+    check('rbac-ui:cb:reset-hidden-for-limited', lowCbReset === 0, `count=${lowCbReset}`)
+    const lowCbBatch = await lowPage
+      .locator('.layout-main button')
+      .filter({ hasText: /重置筛选结果|Reset Filtered/ })
+      .count()
+    check('rbac-ui:cb:batch-reset-hidden-for-limited', lowCbBatch === 0, `count=${lowCbBatch}`)
+
+    await gotoApp(adminPage, '/circuit-breakers/monitoring', { waitMs: 1200 })
+    const adminCbReset = await adminPage
+      .locator('.instances-table button')
+      .filter({ hasText: /^重置$|^Reset$/ })
+      .count()
+    check('rbac-ui:cb:reset-visible-for-admin', adminCbReset > 0, `count=${adminCbReset}`)
+
+    // 后端裁决：USER 的 POST 必须 403（前端只是显隐，不是安全边界）
+    const lowCbApi = await api(lowPage, '/api/v1/circuit-breaker-monitor/instances/uuid-none/reset', {
+      method: 'POST'
+    })
+    check('rbac-ui:cb:reset-api-403-for-limited', lowCbApi.status === 403, `status=${lowCbApi.status}`)
+
     // ── 清理夹具规则 ──
     if (createdRuleId) {
       const delRule = await api(adminPage, `/api/config/rules/${createdRuleId}`, { method: 'DELETE' })

@@ -21,6 +21,8 @@ import org.unreal.modelrouter.config.core.ServiceInstanceManager;
 import org.unreal.modelrouter.config.dto.CreateServiceInstanceRequest;
 import org.unreal.modelrouter.persistence.jpa.entity.ServiceConfigEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;
+import org.unreal.modelrouter.router.circuitbreaker.monitor.CircuitBreakerResetResult;
+import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +34,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -55,6 +58,9 @@ class ServiceTypeInstanceControllerTest {
 
     @Mock
     private org.unreal.modelrouter.router.circuitbreaker.CircuitBreakerManager circuitBreakerManager;
+
+    @Mock
+    private org.unreal.modelrouter.router.circuitbreaker.monitor.CircuitBreakerAdminService circuitBreakerAdminService;
 
     @InjectMocks
     private ServiceTypeInstanceController controller;
@@ -367,12 +373,51 @@ class ServiceTypeInstanceControllerTest {
         request.put("instanceId", "   ");
 
         // When
-        ResponseEntity<RouterResponse<Object>> result = controller.resetCircuitBreakerById(request);
+        ResponseEntity<RouterResponse<CircuitBreakerResetResult>> result =
+                controller.resetCircuitBreakerById(request).block();
 
         // Then
+        assertNotNull(result);
         assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode(), "HTTP 状态码不得因补码而变化");
         assertFalse(result.getBody().isSuccess());
         assertEquals(ErrorCode.INVALID_REQUEST.code(), result.getBody().getErrorCode());
+        verify(circuitBreakerAdminService, never()).reset(anyString(), any());
+    }
+
+    @Test
+    @DisplayName("STYPE-014: POST /circuit-breaker/reset 委派给管理服务并返回重置结果")
+    void testResetCircuitBreakerByIdDelegatesToAdminService() {
+        // Given
+        Map<String, String> request = Map.of("instanceId", "uuid-1");
+        CircuitBreakerResetResult resetResult = new CircuitBreakerResetResult("uuid-1", "instance-1", "chat",
+                "OPEN", "CLOSED", true, "MANUAL_RESET");
+        when(circuitBreakerAdminService.reset(eq("uuid-1"), anyString())).thenReturn(Mono.just(resetResult));
+
+        // When
+        ResponseEntity<RouterResponse<CircuitBreakerResetResult>> result =
+                controller.resetCircuitBreakerById(request).block();
+
+        // Then
+        assertNotNull(result);
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertEquals("OPEN", result.getBody().getData().previousState());
         verify(circuitBreakerManager, never()).resetCircuitBreaker(anyString(), any());
+    }
+
+    @Test
+    @DisplayName("STYPE-015: POST /circuit-breaker/reset 实例没有熔断器 ⇒ 404（不再假成功，issue #556）")
+    void testResetCircuitBreakerByIdNotFound() {
+        // Given
+        Map<String, String> request = Map.of("instanceId", "uuid-missing");
+        when(circuitBreakerAdminService.reset(eq("uuid-missing"), anyString())).thenReturn(Mono.empty());
+
+        // When
+        ResponseEntity<RouterResponse<CircuitBreakerResetResult>> result =
+                controller.resetCircuitBreakerById(request).block();
+
+        // Then
+        assertNotNull(result);
+        assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
+        assertEquals("CIRCUIT_BREAKER_NOT_FOUND", result.getBody().getErrorCode());
     }
 }

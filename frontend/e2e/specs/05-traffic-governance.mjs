@@ -157,6 +157,168 @@ export default {
       page.off('request', onReq)
     }
 
+    // ── 熔断器实例页：真实数据渲染 + 单个/批量重置（#556 / #557） ───────────────
+    // 这两条 issue 的根因是一份「前端靠 `Map<key, state>` 拆字符串」的旧契约：
+    // UUID 实例标识被 `indexOf('-')` 截断 ⇒ 重置命中不了运行时熔断器却仍报成功。
+    // 新契约 `GET /v1/circuit-breaker-monitor/instances` 返回结构化数组，本块用固定夹具
+    // 验证「计数/阈值来自后端」「按状态筛选」「重置落到正确实例」。
+    const cbRequests = []
+    const CB_INSTANCES = [
+      {
+        instanceId: '11111111-1111-4111-8111-111111111111',
+        instanceName: 'gpt-4o-open',
+        serviceType: 'chat',
+        baseUrl: 'https://open.example.com',
+        state: 'OPEN',
+        failureCount: 5,
+        successCount: 0,
+        failureThreshold: 5,
+        successThreshold: 2,
+        timeoutMillis: 60000,
+        lastFailureTime: new Date().toISOString()
+      },
+      {
+        instanceId: '22222222-2222-4222-8222-222222222222',
+        instanceName: 'embedding-closed',
+        serviceType: 'embedding',
+        baseUrl: 'https://closed.example.com',
+        state: 'CLOSED',
+        failureCount: 1,
+        successCount: 9,
+        failureThreshold: 5,
+        successThreshold: 2,
+        timeoutMillis: 60000,
+        lastFailureTime: null
+      }
+    ]
+
+    await page.route('**/api/v1/circuit-breaker-monitor/instances**', async (route) => {
+      const req = route.request()
+      const url = new URL(req.url())
+      if (req.method() === 'POST') {
+        const body = req.postDataJSON ? req.postDataJSON() : null
+        cbRequests.push({ path: url.pathname, body })
+        const single = /\/instances\/[^/]+\/reset$/.test(url.pathname)
+        const payload = single
+          ? {
+              instanceId: CB_INSTANCES[0].instanceId,
+              instanceName: CB_INSTANCES[0].instanceName,
+              serviceType: CB_INSTANCES[0].serviceType,
+              previousState: 'OPEN',
+              currentState: 'CLOSED',
+              persistedStateDeleted: true,
+              triggerReason: 'MANUAL_RESET'
+            }
+          : { matched: 1, reset: [] }
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, message: 'ok', data: payload, timestamp: new Date().toISOString() })
+        })
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(CB_INSTANCES)
+      })
+    })
+
+    await gotoApp(page, '/circuit-breakers/monitoring', { waitMs: 900 })
+    await waitTableSettled(page, 12000).catch(() => {})
+
+    const instanceRows = page.locator('.instances-table .el-table__body tr')
+    const rowCount = await instanceRows.count()
+    check('traffic:cb-instances:rendered', rowCount === 2, `rows=${rowCount}`)
+
+    const openRow = instanceRows.filter({ hasText: 'gpt-4o-open' }).first()
+    const openRowText = (await openRow.count()) > 0 ? await openRow.innerText() : ''
+    check(
+      'traffic:cb-instances:real-counters',
+      openRowText.includes('5 / 5'),
+      openRowText.replace(/\n/g, ' ').slice(0, 120)
+    )
+
+    // 概览卡片可点筛选：OPEN 卡片 → 只剩 1 行
+    const openCard = page.locator('.summary-card').filter({ hasText: /熔断中|Tripped/ }).first()
+    if ((await openCard.count()) > 0) {
+      await openCard.click()
+      await page.waitForTimeout(400)
+      const filtered = await instanceRows.count()
+      check('traffic:cb-instances:state-filter', filtered === 1, `rows=${filtered}`)
+      await openCard.click()
+      await page.waitForTimeout(300)
+    } else {
+      check('traffic:cb-instances:state-filter', false, 'skip: OPEN summary card not found')
+    }
+
+    // 详情抽屉：展示运行时 UUID（旧实现把 UUID 截断成前两段）
+    const detailBtn = openRow.locator('button').filter({ hasText: /详情|Details/ }).first()
+    if ((await detailBtn.count()) > 0) {
+      await detailBtn.click()
+      const drawer = page.locator('.el-drawer:visible').first()
+      const opened = await drawer.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false)
+      const drawerText = opened ? await drawer.innerText() : ''
+      check(
+        'traffic:cb-instances:detail-drawer',
+        opened && drawerText.includes('11111111-1111-4111-8111-111111111111'),
+        drawerText.replace(/\n/g, ' ').slice(0, 120)
+      )
+      await page.keyboard.press('Escape').catch(() => {})
+      await page.waitForTimeout(400)
+    } else {
+      check('traffic:cb-instances:detail-drawer', false, 'skip: detail button not found')
+    }
+
+    // 单个重置：必须落到该实例的 UUID 端点，且成功后提示状态迁移
+    const resetBtn = openRow.locator('button').filter({ hasText: /^重置$|^Reset$/ }).first()
+    if ((await resetBtn.count()) > 0) {
+      await resetBtn.click()
+      const box = page.locator('.el-message-box').first()
+      const appeared = await box.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false)
+      check('traffic:cb-instances:reset-confirm', appeared)
+      if (appeared) {
+        await box.locator('button').filter({ hasText: /确定重置|Reset|确定/ }).first().click()
+        await page.waitForTimeout(900)
+      }
+      const single = cbRequests.find(r => r.path.endsWith('/reset') && !r.path.endsWith('/instances/reset'))
+      check(
+        'traffic:cb-instances:reset-hits-uuid-endpoint',
+        Boolean(single) && single.path.includes(CB_INSTANCES[0].instanceId),
+        single ? single.path : 'no reset request'
+      )
+      const successMsg = await page.locator('.el-message--success').first().innerText().catch(() => '')
+      check('traffic:cb-instances:reset-success-message', /OPEN.*CLOSED|已重置/.test(successMsg), successMsg)
+    } else {
+      check('traffic:cb-instances:reset-hits-uuid-endpoint', false, 'skip: reset button not found')
+    }
+
+    // 按筛选范围重置：无筛选时不得退化成「清除全部」语义，必须带 scope 进 body
+    cbRequests.length = 0
+    const resetFilteredBtn = page
+      .locator('.layout-main button')
+      .filter({ hasText: /重置筛选结果|Reset Filtered/ })
+      .first()
+    if ((await resetFilteredBtn.count()) > 0) {
+      await resetFilteredBtn.click()
+      const box = page.locator('.el-message-box').first()
+      const appeared = await box.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false)
+      if (appeared) {
+        await box.locator('button').filter({ hasText: /确定重置|Reset|确定/ }).first().click()
+        await page.waitForTimeout(900)
+      }
+      const batch = cbRequests.find(r => r.path.endsWith('/instances/reset'))
+      check('traffic:cb-instances:batch-reset-endpoint', Boolean(batch), batch ? batch.path : 'no batch request')
+      check(
+        'traffic:cb-instances:batch-reset-confirm-required',
+        appeared,
+        appeared ? '.el-message-box visible' : 'no dialog appeared'
+      )
+    } else {
+      check('traffic:cb-instances:batch-reset-endpoint', false, 'skip: batch reset button not found')
+    }
+
+    await page.unroute('**/api/v1/circuit-breaker-monitor/instances**')
+
     await page.close()
   }
 }

@@ -595,6 +595,37 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 #### `PUT /api/services/{serviceType}/circuitbreaker`
 更新熔断器配置。
 
+#### 实例级熔断状态与手动重置
+
+```
+GET|PUT /api/config/instance/{serviceType}/{instanceId}/rate-limit
+GET|PUT /api/config/instance/{serviceType}/{instanceId}/circuit-breaker
+GET     /api/config/instance/circuit-breaker/states        （已弃用）
+POST    /api/config/instance/circuit-breaker/reset         （兼容别名）
+POST    /api/config/instance/circuit-breaker/clear-all     （已弃用）
+```
+
+熔断器的**运行时状态**改由监控接口提供：它把运行时熔断器快照与实例元数据（名称、服务类型、
+上游地址、阈值、最近失败时间）合并返回，不再让前端从字符串键里拆字段：
+
+```
+GET  /api/v1/circuit-breaker-monitor/instances                    # cb:monitoring:read
+POST /api/v1/circuit-breaker-monitor/instances/{instanceId}/reset # config:circuitbreaker:write
+POST /api/v1/circuit-breaker-monitor/instances/reset              # config:circuitbreaker:write
+```
+
+这里的 `{instanceId}` 是**运行时实例 UUID**（`instanceId` 列），不是上文更新/删除所用的数据库
+`Long` 主键。重置会把状态机置为 `CLOSED`、计数清零、写入一条 `MANUAL_RESET` 历史，并删除
+持久化状态，避免重启后恢复回 `OPEN`。单个重置返回
+`{previousState, currentState, persistedStateDeleted, triggerReason}`；批量重置接受
+`{instanceIds}` 或 `{serviceType, states}`，返回 `{matched, reset[]}`。实例不存在时返回
+`404 CIRCUIT_BREAKER_NOT_FOUND`，不再静默成功。
+
+> 迁移说明：`GET .../states` 返回扁平 `Map<key, state>`、没有计数与名称，仅为兼容保留；
+> `POST .../clear-all` 没有作用域，已由 `POST /api/v1/circuit-breaker-monitor/instances/reset`
+> 取代；原 `POST /api/config/instance/{serviceType}/{instanceId}/circuit-breaker/reset` 已删除——
+> 它把数据库 `Long` 主键当成运行时 UUID 去查表，永远命中不了。
+
 ### 限流
 
 #### 基础路径: `/api/services/{serviceType}/ratelimit`

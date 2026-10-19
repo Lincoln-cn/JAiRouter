@@ -2,6 +2,7 @@ package org.unreal.modelrouter.config.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +23,9 @@ import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository
 import org.unreal.modelrouter.config.core.ServiceInstanceManager;
 import org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker;
 import org.unreal.modelrouter.router.circuitbreaker.CircuitBreakerManager;
+import org.unreal.modelrouter.router.circuitbreaker.monitor.CircuitBreakerAdminService;
+import org.unreal.modelrouter.router.circuitbreaker.monitor.CircuitBreakerResetResult;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Map;
@@ -40,6 +44,7 @@ public class ServiceTypeInstanceController {
     private final ServiceConfigRepository serviceConfigRepository;
     private final ServiceInstanceManager serviceInstanceManager;
     private final CircuitBreakerManager circuitBreakerManager;
+    private final CircuitBreakerAdminService circuitBreakerAdminService;
 
     /**
      * 获取指定服务类型的所有实例配置
@@ -210,26 +215,6 @@ public class ServiceTypeInstanceController {
     }
 
     /**
-     * 重置实例的内存熔断器状态
-     * 当实例熔断器配置禁用时，可以通过此 API 清除内存中的熔断器状态
-     */
-    @PostMapping("/{serviceType}/{instanceId}/circuit-breaker/reset")
-    public ResponseEntity<RouterResponse<Object>> resetCircuitBreakerState(
-            @PathVariable final String serviceType,
-            @PathVariable final Long instanceId) {
-        log.info("Resetting circuit breaker state for instance: {}", instanceId);
-
-        // 获取实例信息以获取 baseUrl
-        serviceInstanceManager.getInstance(instanceId).ifPresent(instance -> {
-            String instanceUrl = instance.getBaseUrl();
-            circuitBreakerManager.resetCircuitBreaker(String.valueOf(instanceId), instanceUrl);
-            log.info("Circuit breaker reset for instance: {} (url: {})", instanceId, instanceUrl);
-        });
-
-        return ResponseEntity.ok(RouterResponse.success(null, "熔断器状态已重置"));
-    }
-
-    /**
      * 清除所有实例的内存熔断器状态
      */
     @PostMapping("/circuit-breaker/clear-all")
@@ -241,7 +226,11 @@ public class ServiceTypeInstanceController {
 
     /**
      * 获取所有实例的熔断器状态
+     *
+     * @deprecated 只返回「key → 状态名」，不含实例名与服务类型，且键格式未对外约定；
+     *             请改用 {@code GET /api/v1/circuit-breaker-monitor/instances}
      */
+    @Deprecated
     @GetMapping("/circuit-breaker/states")
     public ResponseEntity<RouterResponse<Map<String, String>>> getAllCircuitBreakerStates() {
         Map<String, CircuitBreaker.State> states = circuitBreakerManager.getAllCircuitBreakerStates();
@@ -252,18 +241,24 @@ public class ServiceTypeInstanceController {
 
     /**
      * 重置指定实例的熔断器（通过 instanceId）
+     *
+     * <p>保留该路径以兼容既有调用方，内部委派给 {@link CircuitBreakerAdminService}：
+     * 内存状态置 CLOSED、清零计数、删除持久化状态并写 MANUAL_RESET 历史。</p>
      */
     @PostMapping("/circuit-breaker/reset")
-    public ResponseEntity<RouterResponse<Object>> resetCircuitBreakerById(
+    public Mono<ResponseEntity<RouterResponse<CircuitBreakerResetResult>>> resetCircuitBreakerById(
             @RequestBody final Map<String, String> request) {
         String instanceId = request.get("instanceId");
         if (instanceId == null || instanceId.trim().isEmpty()) {
-            return ResponseEntity.badRequest()
-                    .body(RouterResponse.error("instanceId 不能为空", ErrorCode.INVALID_REQUEST.code()));
+            return Mono.just(ResponseEntity.badRequest()
+                    .body(RouterResponse.error("instanceId 不能为空", ErrorCode.INVALID_REQUEST.code())));
         }
-        
+
         log.info("Resetting circuit breaker for instance: {}", instanceId);
-        circuitBreakerManager.resetCircuitBreaker(instanceId, null);
-        return ResponseEntity.ok(RouterResponse.success(null, "熔断器已重置"));
+        return circuitBreakerAdminService.reset(instanceId, "旧端点 /api/config/instance/circuit-breaker/reset")
+                .map(result -> ResponseEntity.ok(RouterResponse.success(result, "熔断器已重置")))
+                .defaultIfEmpty(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(RouterResponse.<CircuitBreakerResetResult>error(
+                                "该实例当前没有熔断器记录", "CIRCUIT_BREAKER_NOT_FOUND")));
     }
 }
