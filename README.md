@@ -43,8 +43,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # the local/git directory name differs from the product name
 artifact:        model-router            # Maven artifactId
-project_version: 3.3.5                   # pom.xml
-latest_release:  v3.3.5 (2026-10-17)
+project_version: 3.3.6                   # pom.xml
+latest_release:  v3.3.6 (2026-10-19)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5 (WebFlux / reactive)
   frontend: Vue 3 + TypeScript + Vite, bilingual zh-CN / en-US
@@ -367,9 +367,27 @@ delivery. See [Status and recent work](#status-and-recent-work) for the open led
 
 ## Status and recent work
 
-**Latest release: v3.3.5 (2026-10-17)** — a four-version bundle (`v3.3.2` → `v3.3.5`, 149 commits) that fixes
-zero-byte `/v1` streams, makes deleting the last entry of a store-backed collection persist, stops
-`/actuator/health` from answering 503 on a lifetime-cumulative span drop rate, and lands the error-code
+**Latest release: v3.3.6 (2026-10-19)** — the patch that follows `v3.3.5`. It ships a **schema migration**
+(blacklist reasons become language-neutral codes), two authorization restrictions (the "view" code no longer
+authorizes call-history writes/deletes; the state-persistence test write endpoint is absent from `prod`), two
+new permission codes, in-page write gating driven by those codes, and a contract-slimming pass that deletes
+fields which were always empty.
+
+| Theme | What changed |
+|-------|--------------|
+| **Data migration (#455)** | Blacklist "reason" presets are stored as stable codes (`MALICIOUS_LOGIN`, `ABNORMAL_ACCESS`, …) and translated at render time. **Flyway V3** rewrites the seven historic Chinese literals in both the H2 and PostgreSQL chains — idempotent, and free text typed by users is untouched |
+| **Authorization (#514 / #483 / #487)** | `callhistory:view` no longer authorizes `POST /api/call-history/record` or `DELETE /api/call-history/cleanup` (no rule matches ⇒ `DENY_ALL`, ADMIN only); `POST /api/state-persistence/test/save-circuit-breaker/{id}` is now `@Profile("!prod")`; the quota-cleanup scheduler reads `jairouter.security.quota.cleanup.enabled` instead of an `app.quota.*` key that nothing set, so it can finally be turned off |
+| **Permission codes 54 → 55 (#454 / #468)** | `monitoring:metrics:write` turns the ten metric-write endpoints into an explicit grant instead of "caught by the default deny"; `monitoring:slowquery:write` does the same for `DELETE /api/monitoring/slow-queries/stats`. `OPERATOR` picks both up by template (every `:read` + `:write`) |
+| **Console gating (#468)** | A `v-permission` directive plus 33 in-page write controls across 9 pages (drag-to-reorder included), so read-only roles stop seeing buttons that are guaranteed to answer 403 |
+| **Contract slimming (#501)** | `PerformanceIssue` / `activeIssues` (always empty) and `ModelCallStats.p95ResponseTime` / `p99ResponseTime` / `peakQps` (no producer) deleted; blacklist statistics computed for real instead of five constant-empty fields; exception `lineNumber` now comes from the application frame |
+| **Observability (#456 / #495)** | Ten security meters wired to real call sites (authentication 4, JWT 4, sanitization 2); the never-incremented `sanitization.rule.matches` counter and the zero-caller `SanitizationMetrics` class (9 more series) removed |
+| **Docs & gates (#457 / #547)** | `/v3/api-docs` used to be an empty document (springdoc scanned a package that does not exist); 18 stale documents reviewed and three classes of outdated facts fixed; the release cadence and "read the gates correctly" rules are written down in the contribution guide |
+
+See the [`[3.3.6]` changelog entry](docs/en/reference/changelog.md). Released as GitHub Release `v3.3.6` with multi-arch images (`v3.3.6` / `3.3.6` / `latest`).
+
+**`v3.3.5` (2026-10-17)** was itself a four-version bundle (`v3.3.2` → `v3.3.5`, 149 commits) that fixed
+zero-byte `/v1` streams, made deleting the last entry of a store-backed collection persist, stopped
+`/actuator/health` from answering 503 on a lifetime-cumulative span drop rate, and landed the error-code
 registry with the #404 rate-limit split (`401` → `429` + `RATE_LIMITED_API_KEY`) and the #405 `403` for
 built-in adapters.
 
@@ -389,7 +407,7 @@ built-in adapters.
 | Docs & gates | README rewritten as a facts-first document; error-code table rebuilt from code; `dynamic-config` and quick-start instance examples rewritten against real endpoints and executed; markdown fence-parity checker added (6 files / 10 sites fixed); contribution guide gained "read the CI gates correctly" and a release-cadence rule |
 | Tooling | Local substitute gates for the month CI minutes ran out; image smoke test polls container health instead of racing it; the docs-version self-test stopped asserting a copy of the script's wording, and its workflow now runs when `scripts/docs/**` changes |
 
-Release tags: `v3.3.5` · `v3.3.4` · `v3.3.3` · `v3.3.2` · `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`.
+Release tags: `v3.3.6` · `v3.3.5` · `v3.3.4` · `v3.3.3` · `v3.3.2` · `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`.
 `v3.3.2`–`v3.3.5` were tagged earlier and shipped together in the **v3.3.5** release (`v3.3.2`'s content ships with `v3.3.3`).
 
 **`v3.3.4`** (shipped in the `v3.3.5` release; the `v3.3.3` tag stays frozen at `e965f9a8`); what changed relative to `v3.3.3`, grouped by theme:

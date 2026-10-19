@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 > **Doc Version**: 2.2.2
-> **Last Updated**: 2026-10-14
-> **Git Tag**: v3.3.5
+> **Last Updated**: 2026-10-19
+> **Git Tag**: v3.3.6
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -23,6 +23,24 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 - **Observability**: Comprehensive monitoring, logging, and distributed tracing
 
 ## Current Version Status
+
+### ✅ v3.3.6 (Patch: schema migration + two authorization restrictions + in-page write gating and contract slimming, **released 2026-10-19**)
+
+**Status**: Released (GitHub Release `v3.3.6`, 2026-10-19; multi-arch Docker images rebuilt by CI on release: `v3.3.6` / `3.3.6` / `latest`)
+**Scope**: everything merged after `v3.3.5` (released 10-17), i.e. 2026-10-17 → 2026-10-19, including 19 `feat`/`fix` commits
+
+| Area | Delivered |
+|------|-----------|
+| **Schema migration (#455)** | The seven blacklist "reason" presets become language-neutral codes plus `V3__blacklist_reason_codes.sql` (one copy per dialect, H2 / PostgreSQL; idempotently rewrites the historic Chinese literals while leaving user-typed text alone). Rollback statements are in PR `#533` |
+| **Authorization (#514 / #483 / #487)** | `callhistory:view` no longer authorizes call-history writes/deletes (GET-only rule; writes fall to `DENY_ALL`); the state-persistence test write endpoint moved into a `@Profile("!prod")` class; the quota-cleanup switch now reads `jairouter.security.quota.cleanup.enabled` (it used to read `app.quota.*`, which no YAML set, so it could not be turned off) |
+| **Permission codes 54 → 55 (#454 / #468)** | `monitoring:metrics:write` (ten metric-write endpoints move from "caught by the default deny" to a grantable permission) and `monitoring:slowquery:write` (slow-query reset); `OPERATOR` picks both up by template |
+| **Console gating (#468)** | A `v-permission` directive hides 33 write controls across 9 pages (drag-to-reorder included); server-side authorization is unchanged, so a limited role still gets 403 |
+| **Contract slimming (#501)** | `PerformanceIssue` / `activeIssues` (always empty) and `ModelCallStats.p95ResponseTime` / `p99ResponseTime` / `peakQps` (no producer) deleted; five always-empty blacklist statistics fields computed for real; exception `lineNumber` taken from the application frame |
+| **Observability (#456 / #495)** | Ten security meters wired to real call sites (authentication 4 / JWT 4 / sanitization 2); the never-incremented `sanitization.rule.matches` counter and the zero-caller `SanitizationMetrics` class (nine more series) removed; a registration-surface guard test added |
+| **Other** | The empty `/v3/api-docs` document fixed (#457) · eighteen stale documents reviewed (#547) · confirmations added to the remaining irreversible actions (#460 series) · the zero-caller, 405-only `getServiceInstance` deleted (#454) |
+
+**Local verification before this release**: `scripts/test/local-gates.ps1` **21 PASS / 0 FAIL / 1 SKIP** (the SKIP is the spelling check — no changed markdown relative to `github/master`); all three PRs' CI green (`test` / `qodana` / `快闸` / spelling / docs quality), and after merging the master runs for `Java tests`, `frontend unit tests`, `image cold-start smoke` and `docs build` all succeeded.
+The gating was verified end-to-end by `15-rbac-ui-gating` **16/16** (⚠️ the full E2E suite was interrupted this round and did not finish, so no full-suite claim is made).
 
 ### ✅ v3.3.5 (Patch: store contract and health semantics fixed + error-body shapes corrected in docs, **released 2026-10-17**)
 
