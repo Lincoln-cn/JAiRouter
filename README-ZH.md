@@ -358,7 +358,7 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 | 主题 | 变更内容 |
 |------|----------|
 | **数据迁移（#455）** | 黑名单「原因」的预设值改为与语言无关的稳定码（`MALICIOUS_LOGIN`、`ABNORMAL_ACCESS` …），展示时按语言翻译；**Flyway V3** 在 H2 与 PostgreSQL 两条链上把 7 个历史中文值改写为稳定码（幂等；用户自填的自由文本不动） |
-| **授权收紧（#514 / #483 / #487）** | `callhistory:view` 不再放行 `POST /api/call-history/record` 与 `DELETE /api/call-history/cleanup`（无规则命中 ⇒ `DENY_ALL`，仅 ADMIN）；`POST /api/state-persistence/test/save-circuit-breaker/{id}` 改为 `@Profile("!prod")`；配额清理调度器改读 `jairouter.security.quota.cleanup.enabled`（原先读的是没人设置过的 `app.quota.*` 键，运维改不动） |
+| **授权收紧（#514 / #483 / #487）** | `callhistory:view` 不再放行 `POST /api/call-history/record` 与 `DELETE /api/call-history/cleanup`（无规则命中 ⇒ `DENY_ALL`，仅 ADMIN）；`POST /api/state-persistence/test/save-circuit-breaker/{id}` 本版先隔离到 `@Profile("!prod")`、随后**已移除**（测试夹具不该留在业务包里，该链路改由测试包单测覆盖）；配额清理调度器改读 `jairouter.security.quota.cleanup.enabled`（原先读的是没人设置过的 `app.quota.*` 键，运维改不动） |
 | **权限码 54 → 55（#454 / #468）** | `monitoring:metrics:write` 让 10 个指标写端点成为「显式授予」而不是靠默认拒绝兜住；`monitoring:slowquery:write` 对 `DELETE /api/monitoring/slow-queries/stats` 做同样的事。`OPERATOR` 按模板（所有 `:read`+`:write`）自动获得这两个能力 |
 | **控制台门控（#468）** | 新增 `v-permission` 指令，9 个页面的 33 处页内写控件（含拖拽排序）按写权限显隐；只读角色不再看到「点了必 403」的按钮 |
 | **契约瘦身（#501）** | 删除 `PerformanceIssue` / `activeIssues`（恒空）与 `ModelCallStats` 的 `p95ResponseTime` / `p99ResponseTime` / `peakQps`（无生产者）；黑名单统计的 5 个恒空字段改为后端真算；异常事件 `lineNumber` 改为取应用帧行号 |
