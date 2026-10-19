@@ -90,7 +90,7 @@ open http://localhost:8080
 [![Docker Pulls](https://img.shields.io/docker/pulls/sodlinken/jairouter)](https://hub.docker.com/r/sodlinken/jairouter)
 [![License](https://img.shields.io/github/license/Lincoln-cn/JAiRouter)](https://github.com/Lincoln-cn/JAiRouter/blob/master/LICENSE)
 
-> **Current Release**: v3.1.2 (2026-09-18)
+> **Current Release**: v3.3.5 (2026-10-17)
 
 ---
 
