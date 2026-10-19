@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.3.5
-> **Last Updated**: 2026-10-16
+> **Document Version**: 3.3.6
+> **Last Updated**: 2026-10-19
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,71 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.3.6] - 2026-10-19 - Patch Release (schema migration + two authorization restrictions + in-page write gating and contract slimming)
+
+> ⚠️ **Behavior changes to check** (one by one, for clients and operators):
+>
+> | # | Change | Who is affected |
+> |---|---|---|
+> | 1 | **Flyway V3** rewrites the seven historic Chinese blacklist "reason" presets into stable codes (`MALICIOUS_LOGIN`, …); the console translates them per language | Deployments that already hold data; the field's value shape changes (free text is untouched) |
+> | 2 | **Permission codes 54 → 55**: `monitoring:metrics:write` and `monitoring:slowquery:write` are new | Custom roles must be granted explicitly; the built-in `OPERATOR` picks both up by its "every `:read` + `:write`" template |
+> | 3 | `callhistory:view` **no longer** authorizes `POST /api/call-history/record` and `DELETE /api/call-history/cleanup` | Non-ADMIN roles holding only `callhistory:view`: these two calls turn from allowed into 403 |
+> | 4 | `POST /api/state-persistence/test/save-circuit-breaker/{id}` is **not registered** under `prod` | Anything in production that relied on this test endpoint (nothing should) |
+> | 5 | Always-empty fields deleted: `PerformanceIssue` / `activeIssues`, and `ModelCallStats.p95ResponseTime` / `p99ResponseTime` / `peakQps` | Clients and scripts that read those fields |
+> | 6 | Prometheus loses ten series (`sanitization.rule.matches` plus the nine from `SanitizationMetrics`) | Dashboards built on them — they were permanently 0 |
+
+#### Data: blacklist reasons become stable codes with Flyway V3 (#455)
+
+- Root cause: `security_blacklist.reason` is free text and the console submitted **the Chinese label itself** as the value, so
+  historic reasons stayed Chinese after switching to English.
+- Fix: the seven presets are language-neutral codes translated at render time; existing rows are rewritten by the idempotent
+  `V3__blacklist_reason_codes.sql` (one copy per dialect, H2 and PostgreSQL; the `WHERE` matches the old Chinese literals, so a
+  rerun does not hit twice; user-typed text is untouched). Rollback statements are in PR `#533`.
+
+#### Authorization: two restrictions (#514 / #483 / #487)
+
+- `callhistory:view` used to be an `any(...)` rule (empty method set = every method), so **"view" also authorized writes and
+  deletes**. It is now a `GET`-only rule; writes and deletes match nothing and fall to the `DENY_ALL` default (ADMIN only).
+- The state-persistence **test write endpoint** moved out of the management controller into its own `@Profile("!prod")` class,
+  so it does not exist in the production contract.
+- The quota-cleanup scheduler read `app.quota.cleanup.enabled` — an odd one out that no YAML ever set — so operators could not
+  turn it off. It now reads `jairouter.security.quota.cleanup.enabled`, and `security-base.yml` declares the key (default
+  `true`, same behavior as before).
+
+#### Permissions and console gating (#454 / #468)
+
+- `monitoring:metrics:write`: the ten write endpoints under `/api/monitoring/metrics/**` had **no rule at all** and were only
+  caught by the default deny; they are now an explicit, grantable permission.
+- `monitoring:slowquery:write`: same for `DELETE /api/monitoring/slow-queries/stats` (the "reset statistics" button).
+- A new `v-permission` directive hides 33 write controls across 9 pages (including drag-to-reorder in `RuleManagement`) unless
+  the user holds the matching write code. **The frontend only hides; authorization is still enforced server-side** — a limited
+  role calling anyway still gets 403, asserted end-to-end.
+
+#### Contract slimming: deleting fields that were always empty (#501)
+
+- `PerformanceIssue` / `activeIssues`: `activeIssues` was never populated (zero `activeIssues.add` sites) so it was always `[]`;
+  removed.
+- `ModelCallStats.p95ResponseTime` / `p99ResponseTime` / `peakQps`: percentiles cannot be derived from aggregates and
+  `currentQps` was never computed; removed.
+- Five always-empty blacklist statistics fields are now computed for real; the exception event `lineNumber` is taken from the
+  application frame of the stack trace.
+
+#### Observability (#456 / #495)
+
+- Ten security meters wired to real call sites: authentication 4 (attempts / successes / failures / duration), JWT 4
+  (validations / refreshes / expired / validation duration), sanitization 2 (operations / duration).
+- The never-incremented `jairouter.security.sanitization.rule.matches` counter and the zero-caller `SanitizationMetrics` class
+  (nine more always-zero series) were removed, and a registration-surface guard test prevents "registered but never written"
+  meters from coming back.
+
+#### Docs and gates (#457 / #547)
+
+- `/v3/api-docs` used to be an **empty document** (springdoc scanned a package that does not exist); the scan scope was fixed
+  and pinned by a guard.
+- Eighteen stale documents were reviewed one by one: the release version pinned at v3.1.2, the `docker pull` example pinned at
+  v3.1.1 and a `v3.1.1x+` typo were fixed; the rest are recorded as reviewed (ReviewedAt).
+- The contribution guide now documents the release cadence and how to read the CI gates correctly.
 
 ### [3.3.5] - 2026-10-16 - Patch Release (store contract and health semantics fixed; error-body shapes corrected in docs)
 

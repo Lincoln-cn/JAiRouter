@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.3.5
-> **最后更新**: 2026-10-16
+> **文档版本**: 3.3.6
+> **最后更新**: 2026-10-19
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,62 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.3.6] - 2026-10-19 - 补丁发布（库结构迁移 + 两处授权收紧 + 页内写门控与契约瘦身）
+
+> ⚠️ **需要留意的行为变化**（逐条，客户端与运维请核对）：
+>
+> | # | 变化 | 谁受影响 |
+> |---|---|---|
+> | 1 | **Flyway V3** 把黑名单「原因」的 7 个历史中文预设值改写为稳定码（`MALICIOUS_LOGIN` 等），展示时按语言翻译 | 已有数据的部署；接口里该字段的取值形态变了（自由文本不受影响） |
+> | 2 | **权限码 54 → 55**：新增 `monitoring:metrics:write`、`monitoring:slowquery:write` | 自定义角色需显式授予；内置 `OPERATOR` 按「所有 `:read`+`:write`」模板自动获得 |
+> | 3 | `callhistory:view` **不再**放行 `POST /api/call-history/record` 与 `DELETE /api/call-history/cleanup` | 只持有 `callhistory:view` 的非 ADMIN 角色：这两个操作由「能」变 403 |
+> | 4 | `POST /api/state-persistence/test/save-circuit-breaker/{id}` 在 `prod` 下**不注册** | 生产环境依赖该测试端点者（本不应存在） |
+> | 5 | 恒空字段删除：`PerformanceIssue` / `activeIssues`、`ModelCallStats` 的 `p95ResponseTime` / `p99ResponseTime` / `peakQps` | 读这些字段的客户端与脚本 |
+> | 6 | Prometheus 少 10 条序列（`sanitization.rule.matches` + `SanitizationMetrics` 的 9 条） | 按这些序列建的看板 —— 它们此前恒为 0 |
+
+#### 数据：黑名单原因改稳定码 + Flyway V3（#455）
+
+- 根因：`security_blacklist.reason` 是自由文本列，前端下拉把**中文文案本身**当 value 提交 ⇒ 切到英文界面后历史原因仍是中文。
+- 修法：7 个预设值改为与语言无关的稳定码，渲染时按语言翻译；**存量数据**由 `V3__blacklist_reason_codes.sql` 幂等改写
+  （H2 与 PostgreSQL 各一份；`WHERE` 匹配旧中文文本，重跑不二次命中；用户自填文本不动）。
+- 回滚语句在 PR `#533` 描述里。
+
+#### 授权：两处收紧（#514 / #483 / #487）
+
+- `callhistory:view` 原来是 `any(...)` 规则（空方法集 = 不限制方法）⇒ **查看权限同时放行了写入与删除**。现在只给
+  `GET` 一条规则；写/删不匹配任何规则，落 `RbacUnmatchedPolicy` 的 `DENY_ALL`（仅 ADMIN）。
+- 状态持久化的**测试写端点**从管理控制器抽成独立类并标 `@Profile("!prod")`，生产 profile 下该端点不存在。
+- 配额清理调度器原先读 `app.quota.cleanup.enabled`（本仓孤例、且没有任何 yml 设置它）⇒ 运维改 `jairouter.*` 关不掉。
+  现在读 `jairouter.security.quota.cleanup.enabled`，并在 `security-base.yml` 补上该键（默认 `true`，与现状一致）。
+
+#### 权限与门控（#454 / #468）
+
+- `monitoring:metrics:write`：`/api/monitoring/metrics/**` 的 10 个写端点此前**没有任何规则**、只靠默认拒绝兜住；
+  现在是一条可授的权限。
+- `monitoring:slowquery:write`：`DELETE /api/monitoring/slow-queries/stats`（慢查询「重置统计」）同理。
+- 控制台新增 `v-permission` 指令，9 个页面的 33 处写控件（含 `RuleManagement` 的拖拽排序）按写权限显隐；
+  只读角色不再看到「点了必 403」的按钮。**前端只做显隐，后端裁决不变**（低权限调用仍 403，已由 E2E 断言）。
+
+#### 契约瘦身：删掉「恒空」字段（#501）
+
+- `PerformanceIssue` / `activeIssues`：`activeIssues` 从未被填充（全仓 `activeIssues.add` 命中 0）⇒ 恒 `[]`，删除。
+- `ModelCallStats` 的 `p95ResponseTime` / `p99ResponseTime` / `peakQps`：百分位无法从聚合量反推、`currentQps` 从未被计算 ⇒ 删除。
+- 黑名单统计的 5 个恒空字段改为**后端真算**；异常事件的 `lineNumber` 改为从堆栈取应用帧行号。
+
+#### 可观测性（#456 / #495）
+
+- 10 个安全指标接到真实入口：认证 4（attempts / successes / failures / duration）、JWT 4（validations / refreshes /
+  expired / validation duration）、脱敏 2（operations / duration）。
+- 删掉从不递增的 `jairouter.security.sanitization.rule.matches` 与零调用方的 `SanitizationMetrics` 类
+  （另 9 条恒 0 序列）；新增登记面守卫测试，防止「注册了但没人写」的指标再加回来。
+
+#### 文档与门闩（#457 / #547）
+
+- `/v3/api-docs` 曾是**空文档**（springdoc 扫描的包不存在）⇒ 修正扫描范围并补守卫。
+- 18 篇过期文档逐篇评审：修掉「版本号停在 v3.1.2」「`docker pull` 示例停在 v3.1.1」与一处 `v3.1.1x+` 笔误，
+  其余按 ReviewedAt 记评审。
+- 贡献指南补齐「发布节奏」与「合并前把 CI 门闩读对」两节。
 
 ### [3.3.5] - 2026-10-16 - 补丁发布（存储契约与健康判定修复 + 错误体形状口径更正）
 

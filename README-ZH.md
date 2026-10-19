@@ -42,8 +42,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # 本地/仓库目录名与产品名不同
 artifact:        model-router            # Maven artifactId
-project_version: 3.3.5                   # pom.xml
-latest_release:  v3.3.5 (2026-10-17)
+project_version: 3.3.6                   # pom.xml
+latest_release:  v3.3.6 (2026-10-19)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5（WebFlux / 响应式）
   frontend: Vue 3 + TypeScript + Vite，中英双语（zh-CN / en-US）
@@ -351,7 +351,23 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 
 ## 状态与近期工作
 
-**最新发布：v3.3.5（2026-10-17）** —— 四版合并发布的补丁（`v3.3.2` → `v3.3.5`，149 个提交）：修复 `/v1` 流式 0 字节、
+**最新发布：v3.3.6（2026-10-19）** —— 跟 `v3.3.5` 的补丁版：带一次**库结构迁移**（黑名单原因改稳定码）、
+两处授权收紧（`callhistory:view` 不再放行调用历史的写/删；状态持久化的测试写端点在 `prod` 下不存在）、
+两个新权限码 + 由它们驱动的页内写门控，以及一轮把「恒空字段」删掉的契约瘦身。
+
+| 主题 | 变更内容 |
+|------|----------|
+| **数据迁移（#455）** | 黑名单「原因」的预设值改为与语言无关的稳定码（`MALICIOUS_LOGIN`、`ABNORMAL_ACCESS` …），展示时按语言翻译；**Flyway V3** 在 H2 与 PostgreSQL 两条链上把 7 个历史中文值改写为稳定码（幂等；用户自填的自由文本不动） |
+| **授权收紧（#514 / #483 / #487）** | `callhistory:view` 不再放行 `POST /api/call-history/record` 与 `DELETE /api/call-history/cleanup`（无规则命中 ⇒ `DENY_ALL`，仅 ADMIN）；`POST /api/state-persistence/test/save-circuit-breaker/{id}` 改为 `@Profile("!prod")`；配额清理调度器改读 `jairouter.security.quota.cleanup.enabled`（原先读的是没人设置过的 `app.quota.*` 键，运维改不动） |
+| **权限码 54 → 55（#454 / #468）** | `monitoring:metrics:write` 让 10 个指标写端点成为「显式授予」而不是靠默认拒绝兜住；`monitoring:slowquery:write` 对 `DELETE /api/monitoring/slow-queries/stats` 做同样的事。`OPERATOR` 按模板（所有 `:read`+`:write`）自动获得这两个能力 |
+| **控制台门控（#468）** | 新增 `v-permission` 指令，9 个页面的 33 处页内写控件（含拖拽排序）按写权限显隐；只读角色不再看到「点了必 403」的按钮 |
+| **契约瘦身（#501）** | 删除 `PerformanceIssue` / `activeIssues`（恒空）与 `ModelCallStats` 的 `p95ResponseTime` / `p99ResponseTime` / `peakQps`（无生产者）；黑名单统计的 5 个恒空字段改为后端真算；异常事件 `lineNumber` 改为取应用帧行号 |
+| **可观测性（#456 / #495）** | 10 个安全指标接到真实埋点（认证 4 + JWT 4 + 脱敏 2）；删掉从不递增的 `sanitization.rule.matches` 计数器与零调用方的 `SanitizationMetrics` 类（另 9 条序列） |
+| **文档与门闩（#457 / #547）** | `/v3/api-docs` 曾是空文档（springdoc 扫了不存在的包）；18 篇过期文档逐篇评审并修掉三类过期事实；发布节奏与「把 CI 门闩读对」写进贡献指南 |
+
+`[3.3.6]` 的 changelog 条目见 [更新日志](docs/zh/reference/changelog.md)；发布为 [GitHub Release v3.3.6](https://github.com/Lincoln-cn/JAiRouter/releases/tag/v3.3.6)（多架构镜像（`v3.3.6` / `3.3.6` / `latest`）。
+
+**`v3.3.5`（2026-10-17）** 本身是四版合并发布的补丁（`v3.3.2` → `v3.3.5`，149 个提交）：修复 `/v1` 流式 0 字节、
 「删除最后一个条目」不落库、`/actuator/health` 因累计 span 丢弃率长期 503；错误码注册表落地，含 #404 限流拆码
 （`401` → `429` + `RATE_LIMITED_API_KEY`）与 #405 内置 adapter 的 `403`。
 
@@ -371,7 +387,7 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 | 文档与门闩 | README 重写为「事实优先」结构；错误码表按代码重写；`dynamic-config` 与 quick-start 的实例管理示例改为真实接口且逐条实跑；新增 markdown 围栏配平检查器（修 6 个文件 / 10 处）；贡献文档新增「怎么读 CI 门闩」与「发布节奏」判据 |
 | 工程与工具 | CI 配额耗尽期间的本地替代门闩；镜像冒烟改轮询容器健康状态；文档版本自测不再抄脚本措辞，且该 workflow 现在会在 `scripts/docs/**` 变更时触发 |
 
-发布标签：`v3.3.5` · `v3.3.4` · `v3.3.3` · `v3.3.2` · `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`。
+发布标签：`v3.3.6` · `v3.3.5` · `v3.3.4` · `v3.3.3` · `v3.3.2` · `v3.3.1` · `v3.3.0` · `v3.2.2` · `v3.2.1` · `v3.2.0` · `v3.1.2` · `v3.1.1`。
 `v3.3.2`–`v3.3.5` 均已随 **v3.3.5** 的 GitHub Release 一并发布（`v3.3.2` 的内容随 `v3.3.3` 一并交付）。
 
 **`v3.3.4`**（随 `v3.3.5` 发布；`v3.3.3` tag 冻结在 `e965f9a8`）；本版相对 `v3.3.3` 的改动按主题归类：
