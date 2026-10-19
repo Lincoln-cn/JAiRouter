@@ -32,7 +32,6 @@ public class SecurityMetrics {
     
     // 脱敏相关指标
     private final Counter sanitizationOperations;
-    private final Counter sanitizationRuleMatches;
     private final Timer sanitizationDuration;
     
     // 安全事件指标
@@ -78,10 +77,6 @@ public class SecurityMetrics {
         // 初始化脱敏指标
         this.sanitizationOperations = Counter.builder("jairouter.security.sanitization.operations")
                 .description("数据脱敏操作总数")
-                .register(meterRegistry);
-                
-        this.sanitizationRuleMatches = Counter.builder("jairouter.security.sanitization.rule.matches")
-                .description("脱敏规则匹配总数")
                 .register(meterRegistry);
                 
         this.sanitizationDuration = Timer.builder("jairouter.security.sanitization.duration")
@@ -191,19 +186,6 @@ public class SecurityMetrics {
                 .tag("direction", direction != null ? direction : "unknown")
                 .register(meterRegistry)
                 .increment();
-    }
-    
-    /**
-     * 记录脱敏规则匹配
-     */
-    public void recordSanitizationRuleMatch(final String ruleId, final String ruleType, final int matchCount) {
-        Counter ruleMatchCounter = Counter.builder("jairouter.security.sanitization.rule.matches")
-                .tag("rule_id", ruleId != null ? ruleId : "unknown")
-                .tag("rule_type", ruleType != null ? ruleType : "unknown")
-                .register(meterRegistry);
-        
-        // 记录匹配次数
-        ruleMatchCounter.increment(matchCount);
     }
     
     /**
