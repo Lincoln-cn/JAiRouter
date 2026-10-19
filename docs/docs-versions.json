@@ -29,10 +29,10 @@
     },
     "docs/en/api-reference/management-api.md": {
       "FilePath": "docs/en/api-reference/management-api.md",
-      "Version": "1.0.13",
-      "LastModified": "2026-10-17T11:02:23.574177",
-      "ContentHash": "e3a57be7267a37b4",
-      "GitCommit": "323005e3",
+      "Version": "1.0.14",
+      "LastModified": "2026-10-19T16:58:27.501402",
+      "ContentHash": "88b399becce1dcca",
+      "GitCommit": "e732828e",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -653,10 +653,10 @@
     },
     "docs/zh/api-reference/management-api.md": {
       "FilePath": "docs/zh/api-reference/management-api.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-10-17T11:02:23.979224",
-      "ContentHash": "88965eb2bc69c57f",
-      "GitCommit": "323005e3",
+      "Version": "1.0.10",
+      "LastModified": "2026-10-19T16:58:28.128999",
+      "ContentHash": "2b1ccee472a31396",
+      "GitCommit": "e732828e",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -9122,7 +9122,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-19T14:34:39.025048",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/management-api.md",
+      "OldVersion": "1.0.13",
+      "NewVersion": "1.0.14",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-19T16:58:27.501413",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/management-api.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-19T16:58:28.129009",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-19T14:34:39.629709"
+  "last_updated": "2026-10-19T16:58:28.748910"
 }
