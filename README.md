@@ -383,7 +383,7 @@ fields which were always empty.
 | **Observability (#456 / #495)** | Ten security meters wired to real call sites (authentication 4, JWT 4, sanitization 2); the never-incremented `sanitization.rule.matches` counter and the zero-caller `SanitizationMetrics` class (9 more series) removed |
 | **Docs & gates (#457 / #547)** | `/v3/api-docs` used to be an empty document (springdoc scanned a package that does not exist); 18 stale documents reviewed and three classes of outdated facts fixed; the release cadence and "read the gates correctly" rules are written down in the contribution guide |
 
-See the [`[3.3.6]` changelog entry](docs/en/reference/changelog.md). Shipped as [GitHub Release v3.3.6](https://github.com/Lincoln-cn/JAiRouter/releases/tag/v3.3.6) with multi-arch images (`v3.3.6` / `3.3.6` / `latest`).
+See the [`[3.3.6]` changelog entry](docs/en/reference/changelog.md). Released as GitHub Release `v3.3.6` with multi-arch images (`v3.3.6` / `3.3.6` / `latest`).
 
 **`v3.3.5` (2026-10-17)** was itself a four-version bundle (`v3.3.2` → `v3.3.5`, 149 commits) that fixed
 zero-byte `/v1` streams, made deleting the last entry of a store-backed collection persist, stopped

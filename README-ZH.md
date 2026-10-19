@@ -365,7 +365,7 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 | **可观测性（#456 / #495）** | 10 个安全指标接到真实埋点（认证 4 + JWT 4 + 脱敏 2）；删掉从不递增的 `sanitization.rule.matches` 计数器与零调用方的 `SanitizationMetrics` 类（另 9 条序列） |
 | **文档与门闩（#457 / #547）** | `/v3/api-docs` 曾是空文档（springdoc 扫了不存在的包）；18 篇过期文档逐篇评审并修掉三类过期事实；发布节奏与「把 CI 门闩读对」写进贡献指南 |
 
-`[3.3.6]` 的 changelog 条目见 [更新日志](docs/zh/reference/changelog.md)；发布为 [GitHub Release v3.3.6](https://github.com/Lincoln-cn/JAiRouter/releases/tag/v3.3.6)（多架构镜像（`v3.3.6` / `3.3.6` / `latest`）。
+`[3.3.6]` 的 changelog 条目见 [更新日志](docs/zh/reference/changelog.md)；以 GitHub Release `v3.3.6` 发布，并触发多架构镜像（`v3.3.6` / `3.3.6` / `latest`）。
 
 **`v3.3.5`（2026-10-17）** 本身是四版合并发布的补丁（`v3.3.2` → `v3.3.5`，149 个提交）：修复 `/v1` 流式 0 字节、
 「删除最后一个条目」不落库、`/actuator/health` 因累计 span 丢弃率长期 503；错误码注册表落地，含 #404 限流拆码
