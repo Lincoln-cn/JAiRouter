@@ -6,7 +6,6 @@
       "resumeMonitoring": "Resume Monitoring",
       "pauseMonitoring": "Pause Monitoring",
       "clearHistory": "Clear History",
-      "clearAllCircuitBreakers": "Clear All Circuit Breakers",
       "export": "Export",
       "exportJson": "Export JSON",
       "exportCsv": "Export CSV",
@@ -16,18 +15,43 @@
       "wsDisconnected": "WebSocket Disconnected",
       "sampledCount": "Sampled: {count}",
       "statusOverviewTitle": "Circuit Breaker Status Overview",
+      "instancesTitle": "Circuit Breaker Instances",
       "refreshStatus": "Refresh Status",
+      "filterServiceType": "Service Type",
+      "filterState": "Breaker State",
+      "searchPlaceholder": "Search name / ID / upstream URL",
+      "clearFilters": "Clear Filters",
+      "resetSelected": "Reset Selected ({count})",
+      "resetFiltered": "Reset Filtered ({count})",
+      "neverFailed": "No failures yet",
+      "states": {
+        "total": "Total Instances",
+        "closed": "Healthy (CLOSED)",
+        "open": "Tripped (OPEN)",
+        "halfOpen": "Half Open (HALF_OPEN)",
+        "all": "All States"
+      },
+      "relative": {
+        "justNow": "just now",
+        "secondsAgo": "{n}s ago",
+        "minutesAgo": "{n}m ago",
+        "hoursAgo": "{n}h ago",
+        "daysAgo": "{n}d ago"
+      },
       "eventsTitle": "Real-Time Circuit Breaker Events",
       "eventTypePlaceholder": "Event Type",
       "reset": "Reset",
       "columns": {
         "instanceId": "Instance ID",
         "instanceIdCompact": "Instance ID",
+        "baseUrl": "Upstream URL",
         "serviceType": "Service Type",
         "state": "State",
         "actions": "Actions",
         "time": "Time",
         "instanceName": "Instance Name",
+        "failureRatio": "Failures / Threshold",
+        "lastFailure": "Last Failure",
         "eventType": "Event Type",
         "previousState": "Previous State",
         "currentState": "Current State",
@@ -42,18 +66,29 @@
       },
       "confirmations": {
         "resetSingleTitle": "Reset Circuit Breaker Confirmation",
-        "resetSingleMessage": "Are you sure you want to reset the circuit breaker state of instance \"{name}\"?",
+        "resetSingleMessage": "Reset the circuit breaker of instance \"{name}\"? Current state is {state}; after reset it becomes CLOSED and the failure count is cleared.",
         "confirmReset": "Reset",
         "cancel": "Cancel",
-        "resetAllTitle": "Clear All Confirmation",
-        "resetAllMessage": "Are you sure you want to clear the circuit breaker state of all instances? This will reset every circuit breaker to its initial state.",
+        "resetSelectedTitle": "Batch Reset Confirmation",
+        "resetSelectedMessage": "Reset the {count} selected circuit breakers? They become CLOSED and their persisted state is deleted.",
+        "resetFilteredTitle": "Reset Filtered Confirmation",
+        "resetFilteredMessage": "Reset the {count} circuit breakers in the current filter scope ({scope})? They become CLOSED and their persisted state is deleted.",
         "confirmClear": "Clear",
         "clearHistoryTitle": "Confirm Clearing History",
         "clearHistoryMessage": "Clear all circuit breaker monitoring history? This cannot be undone."
       },
+      "drawer": {
+        "title": "Circuit Breaker Details",
+        "instanceId": "Instance ID (runtime key)",
+        "failureCount": "Failures / Threshold",
+        "successCount": "Successes / Threshold",
+        "timeout": "Timeout",
+        "resetHint": "Reset moves the state machine to CLOSED, clears the counters and deletes the persisted state so a restart cannot restore OPEN; a MANUAL_RESET history record is written."
+      },
       "actions": {
         "globalConfig": "Global Config",
-        "history": "History"
+        "history": "History",
+        "detail": "Details"
       },
       "messages": {
         "paused": "Monitoring paused",
@@ -67,10 +102,13 @@
         "clearHistoryFailed": "Failed to clear history",
         "exportSuccess": "Exported {format} file",
         "exportFailed": "Export failed",
-        "stateReset": "Circuit breaker state reset",
+        "loadInstancesFailed": "Failed to load circuit breaker instances",
+        "noInstances": "No instances registered yet",
+        "noMatchingInstances": "No instances match the current filters",
+        "resetSuccess": "Reset \"{name}\": {from} → {to}",
+        "resetPersistWarning": "Circuit breaker reset, but the persisted state was not deleted and may be restored after restart",
         "resetFailed": "Reset failed",
-        "allCleared": "All circuit breaker states cleared",
-        "clearAllFailed": "Clear failed"
+        "batchResetSuccess": "Reset {count} circuit breakers"
       }
     },
     "history": {

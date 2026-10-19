@@ -968,11 +968,33 @@ Delete an instance by its database id.
 ```
 GET|PUT /api/config/instance/{serviceType}/{instanceId}/rate-limit
 GET|PUT /api/config/instance/{serviceType}/{instanceId}/circuit-breaker
-POST    /api/config/instance/{serviceType}/{instanceId}/circuit-breaker/reset
-GET     /api/config/instance/circuit-breaker/states
-POST    /api/config/instance/circuit-breaker/clear-all
-POST    /api/config/instance/circuit-breaker/reset
+GET     /api/config/instance/circuit-breaker/states        (deprecated)
+POST    /api/config/instance/circuit-breaker/reset         (compatibility alias)
+POST    /api/config/instance/circuit-breaker/clear-all     (deprecated)
 ```
+
+Circuit breaker **runtime state** is now managed by the monitor API, which joins the live breaker
+snapshot with the instance metadata (name, service type, upstream URL, thresholds, last failure):
+
+```
+GET  /api/v1/circuit-breaker-monitor/instances                    # cb:monitoring:read
+POST /api/v1/circuit-breaker-monitor/instances/{instanceId}/reset # config:circuitbreaker:write
+POST /api/v1/circuit-breaker-monitor/instances/reset              # config:circuitbreaker:write
+```
+
+`{instanceId}` here is the **runtime instance UUID** (the `instanceId` column), not the database
+`Long` id used by the update/delete calls above. Reset moves the state machine to `CLOSED`, clears
+the counters, writes a `MANUAL_RESET` history record, and deletes the persisted state so a restart
+cannot restore `OPEN`. A single reset returns
+`{previousState, currentState, persistedStateDeleted, triggerReason}`; a batch reset accepts
+`{instanceIds}` or `{serviceType, states}` and returns `{matched, reset[]}`. An unknown instance
+returns `404 NOT_FOUND` instead of a silent success.
+
+> Migration notes: `GET .../states` returns a flat `Map<key, state>` without counters or names and is
+> kept only for compatibility; `POST .../clear-all` has no scope and is superseded by
+> `POST /api/v1/circuit-breaker-monitor/instances/reset`; the former
+> `POST /api/config/instance/{serviceType}/{instanceId}/circuit-breaker/reset` was removed because it
+> fed a database `Long` id into a runtime map keyed by the instance UUID, so it never matched.
 
 A full add → update → delete round trip (these commands were executed against a running instance and all
 returned `200`):

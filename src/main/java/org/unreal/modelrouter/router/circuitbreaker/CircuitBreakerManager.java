@@ -345,21 +345,58 @@ public class CircuitBreakerManager {
     }
 
     /**
-     * 重置指定实例的熔断器
-     * @param instanceId 实例ID
-     * @param instanceUrl 实例URL
+     * 移除指定实例的熔断器（下次调用时按最新配置重建）
+     *
+     * <p>该语义用于「配置已变更，旧的阈值/地址不再适用」的场景：实例更新与熔断配置更新都会调用它。
+     * 手动重置请使用 {@link #resetCircuitBreakerInPlace(String)}，后者会把实例保留在监控视图中。</p>
+     *
+     * @param instanceId 实例ID（UUID）
+     * @param instanceUrl 实例URL（仅在 instanceId 为空时作为 key）
+     * @return 重置前的状态；该实例没有熔断器时返回 {@code null}
      */
-    public void resetCircuitBreaker(final String instanceId, final String instanceUrl) {
+    public CircuitBreaker.State resetCircuitBreaker(final String instanceId, final String instanceUrl) {
         // 与 getCircuitBreaker 保持一致的 key 选择逻辑：优先 instanceId
         String key = instanceId != null && !instanceId.trim().isEmpty() ? instanceId : instanceUrl;
-        if (key != null && !key.trim().isEmpty()) {
-            CircuitBreaker removed = circuitBreakers.remove(key);
-            if (removed != null) {
-                logger.info("Reset circuit breaker for instance: key={}, id={}, url={}", key, instanceId, instanceUrl);
-            } else {
-                logger.debug("No circuit breaker found to reset: key={}, id={}, url={}", key, instanceId, instanceUrl);
-            }
+        if (key == null || key.trim().isEmpty()) {
+            return null;
         }
+        CircuitBreaker removed = circuitBreakers.remove(key);
+        if (removed != null) {
+            CircuitBreaker.State previous = removed.getState();
+            logger.info("Removed circuit breaker for instance: key={}, id={}, url={}, previousState={}",
+                    key, instanceId, instanceUrl, previous);
+            return previous;
+        }
+        logger.debug("No circuit breaker found to reset: key={}, id={}, url={}", key, instanceId, instanceUrl);
+        return null;
+    }
+
+    /**
+     * 就地重置指定实例的熔断器（保留在监控视图中）
+     *
+     * <p>与 {@link #resetCircuitBreaker(String, String)} 的区别：不把实例从注册表移除，而是调用
+     * {@link LockFreeCircuitBreaker#reset()} 把状态置为 {@code CLOSED} 并清零失败/成功计数，
+     * 因此运维在监控页重置后仍能看到该实例（状态为 CLOSED、计数为 0）。</p>
+     *
+     * @param instanceId 实例ID（UUID）
+     * @return 重置前的状态；该实例没有熔断器时返回 {@code null}
+     */
+    public CircuitBreaker.State resetCircuitBreakerInPlace(final String instanceId) {
+        if (instanceId == null || instanceId.trim().isEmpty()) {
+            return null;
+        }
+        CircuitBreaker breaker = circuitBreakers.get(instanceId);
+        if (breaker == null) {
+            logger.debug("No circuit breaker found to reset in place: id={}", instanceId);
+            return null;
+        }
+        CircuitBreaker.State previous = breaker.getState();
+        if (breaker instanceof LockFreeCircuitBreaker lockFreeCircuitBreaker) {
+            lockFreeCircuitBreaker.reset();
+        }
+        logger.info("Reset circuit breaker in place: id={}, previousState={}, currentState={}",
+                instanceId, previous, breaker.getState());
+        return previous;
     }
 
     /**

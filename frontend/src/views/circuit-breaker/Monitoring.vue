@@ -2,21 +2,15 @@
   <PageSkeleton :title="t('circuitBreaker.monitoring.pageTitle')">
     <template #actions>
       <el-button
+        v-if="canWrite"
         :type="monitorStatus.paused ? 'success' : 'warning'"
         @click="toggleMonitor"
         :loading="togglingMonitor"
       >
         {{ monitorStatus.paused ? t('circuitBreaker.monitoring.resumeMonitoring') : t('circuitBreaker.monitoring.pauseMonitoring') }}
       </el-button>
-      <el-button @click="clearHistory" :loading="clearingHistory">
+      <el-button v-if="canWrite" @click="clearHistory" :loading="clearingHistory">
         {{ t('circuitBreaker.monitoring.clearHistory') }}
-      </el-button>
-      <el-button
-        type="danger"
-        @click="resetAllCircuitBreakersHandler"
-        :loading="resettingCbs"
-      >
-        {{ t('circuitBreaker.monitoring.clearAllCircuitBreakers') }}
       </el-button>
       <el-dropdown @command="handleExport">
         <el-button type="primary">
@@ -55,7 +49,7 @@
               :max="100"
               :format-tooltip="formatSampleRate"
               @change="updateSampleRate"
-              :disabled="updatingConfig"
+              :disabled="updatingConfig || !canWrite"
             />
           </div>
         </el-col>
@@ -68,7 +62,7 @@
               :max="5000"
               :step="50"
               @change="updateHistorySize"
-              :disabled="updatingConfig"
+              :disabled="updatingConfig || !canWrite"
             />
           </div>
         </el-col>
@@ -85,60 +79,173 @@
       </el-row>
     </el-card>
 
-    <!-- 熔断器状态概览 -->
-    <el-card class="status-overview" style="margin-top: 16px" shadow="hover">
+    <!-- 熔断器实例：概览数字 + 筛选 + 批量/单个重置 -->
+    <el-card class="instances-card" style="margin-top: 16px" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span class="card-title">{{ t('circuitBreaker.monitoring.statusOverviewTitle') }}</span>
-          <el-button type="primary" size="small" @click="loadCircuitBreakerStatus">
+          <span class="card-title">{{ t('circuitBreaker.monitoring.instancesTitle') }}</span>
+          <el-button type="primary" size="small" :loading="loadingInstances" @click="loadInstances">
             {{ t('circuitBreaker.monitoring.refreshStatus') }}
           </el-button>
         </div>
       </template>
 
-      <el-row :gutter="16">
+      <el-row :gutter="16" class="summary-row">
         <el-col :span="6" v-for="summary in stateSummary" :key="summary.state">
-          <div class="summary-card" :class="`summary-${summary.state.toLowerCase()}`">
+          <div
+            class="summary-card"
+            :class="[`summary-${summary.state.toLowerCase()}`, { 'is-active': filterState === summary.state }]"
+            role="button"
+            tabindex="0"
+            @click="toggleStateFilter(summary.state)"
+            @keydown.enter="toggleStateFilter(summary.state)"
+          >
             <div class="summary-count">{{ summary.count }}</div>
-            <div class="summary-label">{{ summary.state }}</div>
+            <div class="summary-label">{{ stateLabel(summary.state) }}</div>
           </div>
         </el-col>
       </el-row>
 
-      <!-- 按实例熔断器状态 & 重置 -->
+      <div class="instance-toolbar">
+        <el-select
+          v-model="filterServiceType"
+          :placeholder="t('circuitBreaker.monitoring.filterServiceType')"
+          clearable
+          style="width: 170px"
+        >
+          <el-option v-for="type in serviceTypes" :key="type" :label="type" :value="type" />
+        </el-select>
+        <el-select
+          v-model="filterState"
+          :placeholder="t('circuitBreaker.monitoring.filterState')"
+          clearable
+          style="width: 150px"
+        >
+          <el-option v-for="state in breakerStates" :key="state" :label="stateLabel(state)" :value="state" />
+        </el-select>
+        <el-input
+          v-model="keyword"
+          :placeholder="t('circuitBreaker.monitoring.searchPlaceholder')"
+          clearable
+          style="width: 240px"
+        >
+          <template #prefix><el-icon><Search /></el-icon></template>
+        </el-input>
+        <el-button v-if="hasActiveFilter" @click="clearFilters">
+          {{ t('circuitBreaker.monitoring.clearFilters') }}
+        </el-button>
+        <div class="toolbar-spacer" />
+        <template v-if="canWrite">
+          <el-button
+            type="warning"
+            :disabled="selectedInstances.length === 0"
+            :loading="resettingInstances"
+            @click="resetSelected"
+          >
+            {{ t('circuitBreaker.monitoring.resetSelected', { count: selectedInstances.length }) }}
+          </el-button>
+          <el-button
+            type="danger"
+            plain
+            :disabled="filteredInstances.length === 0"
+            :loading="resettingInstances"
+            @click="resetFiltered"
+          >
+            {{ t('circuitBreaker.monitoring.resetFiltered', { count: filteredInstances.length }) }}
+          </el-button>
+        </template>
+      </div>
+
       <el-table
-        v-if="circuitBreakerStatuses.length > 0"
-        :data="circuitBreakerStatuses"
+        v-loading="loadingInstances"
+        :data="pagedInstances"
+        row-key="instanceId"
         stripe
         size="small"
-        style="margin-top: 16px"
+        class="instances-table"
+        @selection-change="handleSelectionChange"
       >
-        <el-table-column prop="instanceId" :label="t('circuitBreaker.monitoring.columns.instanceId')" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="serviceType" :label="t('circuitBreaker.monitoring.columns.serviceType')" width="100">
+        <el-table-column v-if="canWrite" type="selection" width="44" />
+        <el-table-column :label="t('circuitBreaker.monitoring.columns.instanceName')" min-width="150">
           <template #default="{ row }">
-            <el-tag size="small">{{ row.serviceType || '-' }}</el-tag>
+            <el-tooltip :content="row.instanceId" placement="top">
+              <span class="instance-name">{{ row.instanceName || row.instanceId }}</span>
+            </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column prop="state" :label="t('circuitBreaker.monitoring.columns.state')" width="120">
+        <el-table-column :label="t('circuitBreaker.monitoring.columns.serviceType')" width="120">
           <template #default="{ row }">
-            <el-tag :type="getStateTagType(row.state)" size="small">
-              {{ row.state }}
-            </el-tag>
+            <el-tag v-if="row.serviceType" size="small">{{ row.serviceType }}</el-tag>
+            <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('circuitBreaker.monitoring.columns.actions')" width="100" align="center">
+        <el-table-column
+          :label="t('circuitBreaker.monitoring.columns.baseUrl')"
+          min-width="220"
+          show-overflow-tooltip
+        >
+          <template #default="{ row }">{{ row.baseUrl || '-' }}</template>
+        </el-table-column>
+        <el-table-column :label="t('circuitBreaker.monitoring.columns.state')" width="110">
           <template #default="{ row }">
+            <el-tag :type="getStateTagType(row.state)" size="small">{{ stateLabel(row.state) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('circuitBreaker.monitoring.columns.failureRatio')" width="140">
+          <template #default="{ row }">
+            <div class="ratio-cell">
+              <span>{{ row.failureCount }} / {{ row.failureThreshold }}</span>
+              <el-progress
+                :percentage="failureRatio(row)"
+                :show-text="false"
+                :stroke-width="4"
+                :status="row.state === 'OPEN' ? 'exception' : undefined"
+              />
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('circuitBreaker.monitoring.columns.lastFailure')" width="150">
+          <template #default="{ row }">
+            <el-tooltip v-if="row.lastFailureTime" :content="formatAbsoluteTime(row.lastFailureTime)" placement="top">
+              <span>{{ formatRelativeTime(row.lastFailureTime) }}</span>
+            </el-tooltip>
+            <span v-else class="muted">{{ t('circuitBreaker.monitoring.neverFailed') }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('circuitBreaker.monitoring.columns.actions')" width="150" align="center">
+          <template #default="{ row }">
+            <el-button size="small" @click="openDetail(row)">
+              {{ t('circuitBreaker.monitoring.actions.detail') }}
+            </el-button>
             <el-button
+              v-if="canWrite"
               type="warning"
               size="small"
               :icon="RefreshRight"
-              @click="resetSingleCircuitBreaker(row)"
+              @click="resetSingle(row)"
             >
               {{ t('circuitBreaker.monitoring.reset') }}
             </el-button>
           </template>
         </el-table-column>
+        <template #empty>
+          <div class="empty-state">
+            <p>{{ hasActiveFilter ? t('circuitBreaker.monitoring.messages.noMatchingInstances') : t('circuitBreaker.monitoring.messages.noInstances') }}</p>
+            <el-button v-if="hasActiveFilter" size="small" @click="clearFilters">
+              {{ t('circuitBreaker.monitoring.clearFilters') }}
+            </el-button>
+          </div>
+        </template>
       </el-table>
+
+      <div v-if="filteredInstances.length > pageSize" class="pagination">
+        <el-pagination
+          v-model:current-page="currentPage"
+          :page-size="pageSize"
+          :total="filteredInstances.length"
+          layout="total, prev, pager, next"
+        />
+      </div>
     </el-card>
 
     <!-- 实时事件流 -->
@@ -211,6 +318,54 @@
         </el-table-column>
       </el-table>
     </el-card>
+
+    <!-- 单实例详情 -->
+    <el-drawer
+      v-model="detailVisible"
+      :title="t('circuitBreaker.monitoring.drawer.title')"
+      size="420px"
+    >
+      <template v-if="detailRow">
+        <el-descriptions :column="1" border size="small">
+          <el-descriptions-item :label="t('circuitBreaker.monitoring.columns.instanceName')">
+            {{ detailRow.instanceName || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('circuitBreaker.monitoring.drawer.instanceId')">
+            <span class="instance-id">{{ detailRow.instanceId }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('circuitBreaker.monitoring.columns.serviceType')">
+            {{ detailRow.serviceType || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('circuitBreaker.monitoring.columns.baseUrl')">
+            {{ detailRow.baseUrl || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('circuitBreaker.monitoring.columns.state')">
+            <el-tag :type="getStateTagType(detailRow.state)" size="small">{{ stateLabel(detailRow.state) }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('circuitBreaker.monitoring.drawer.failureCount')">
+            {{ detailRow.failureCount }} / {{ detailRow.failureThreshold }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('circuitBreaker.monitoring.drawer.successCount')">
+            {{ detailRow.successCount }} / {{ detailRow.successThreshold }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('circuitBreaker.monitoring.drawer.timeout')">
+            {{ detailRow.timeoutMillis }} ms
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('circuitBreaker.monitoring.columns.lastFailure')">
+            {{ detailRow.lastFailureTime ? formatAbsoluteTime(detailRow.lastFailureTime) : t('circuitBreaker.monitoring.neverFailed') }}
+          </el-descriptions-item>
+        </el-descriptions>
+        <p class="drawer-hint">{{ t('circuitBreaker.monitoring.drawer.resetHint') }}</p>
+        <el-button
+          v-if="canWrite"
+          type="warning"
+          :loading="resettingInstances"
+          @click="resetSingle(detailRow)"
+        >
+          {{ t('circuitBreaker.monitoring.confirmations.resetSingleTitle') }}
+        </el-button>
+      </template>
+    </el-drawer>
   </PageSkeleton>
 </template>
 
@@ -219,10 +374,16 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Download, RefreshRight } from '@element-plus/icons-vue'
+import { Download, RefreshRight, Search } from '@element-plus/icons-vue'
 import request from '@/utils/request'
-import { resetCircuitBreakerById, clearAllCircuitBreakers } from '@/api/instance'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import { usePermission } from '@/composables/usePermission'
+import {
+  getCircuitBreakerInstances,
+  resetCircuitBreakerInstance,
+  resetCircuitBreakerInstances,
+  type CircuitBreakerInstance
+} from '@/api/circuitBreakerMonitor'
 
 interface MonitorStatus {
   enabled: boolean
@@ -245,25 +406,20 @@ interface CircuitBreakerEvent {
   triggerReason: string | null
 }
 
-interface CircuitBreakerStatus {
-  instanceId: string
-  instanceName: string
-  serviceType: string
-  state: string
-  failureCount: number
-  successCount: number
-  baseUrl?: string
-}
-
 interface StateSummary {
   state: string
   count: number
 }
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
+const { hasPermission } = usePermission()
 
 const apiBaseUrl = '/v1/circuit-breaker-monitor'
+const breakerStates = ['CLOSED', 'OPEN', 'HALF_OPEN']
+const pageSize = 20
+
+const canWrite = computed(() => hasPermission('config:circuitbreaker:write'))
 
 const monitorStatus = ref<MonitorStatus>({
   enabled: true,
@@ -274,36 +430,69 @@ const monitorStatus = ref<MonitorStatus>({
 })
 
 const events = ref<CircuitBreakerEvent[]>([])
-const circuitBreakerStatuses = ref<CircuitBreakerStatus[]>([])
+const instances = ref<CircuitBreakerInstance[]>([])
+const selectedInstances = ref<CircuitBreakerInstance[]>([])
 const selectedEventType = ref<string>('')
 const configForm = ref({
   sampleRate: 10,
   historySize: 500
 })
 
+const filterServiceType = ref<string>('')
+const filterState = ref<string>('')
+const keyword = ref<string>('')
+const currentPage = ref(1)
+
+const detailVisible = ref(false)
+const detailRow = ref<CircuitBreakerInstance | null>(null)
+
 const wsConnected = ref(false)
 const togglingMonitor = ref(false)
 const updatingConfig = ref(false)
 const clearingHistory = ref(false)
 const loadingEvents = ref(false)
-const resettingCbs = ref(false)
+const loadingInstances = ref(false)
+const resettingInstances = ref(false)
 let ws: WebSocket | null = null
 let reconnectTimer: number | null = null
 // 主动断开标志：disconnectWebSocket 置 true，避免 close 事件再排重连
 let isManualClose = false
 
+const serviceTypes = computed<string[]>(() => {
+  const types = new Set<string>()
+  instances.value.forEach(item => {
+    if (item.serviceType) types.add(item.serviceType)
+  })
+  return Array.from(types).sort()
+})
+
 const stateSummary = computed<StateSummary[]>(() => {
-  const counts: Record<string, number> = {
-    CLOSED: 0,
-    OPEN: 0,
-    HALF_OPEN: 0
-  }
-  circuitBreakerStatuses.value.forEach(cb => {
+  const counts: Record<string, number> = { CLOSED: 0, OPEN: 0, HALF_OPEN: 0 }
+  instances.value.forEach(cb => {
     if (counts[cb.state] !== undefined) {
       counts[cb.state]++
     }
   })
-  return Object.entries(counts).map(([state, count]) => ({ state, count }))
+  const total = { state: 'TOTAL', count: instances.value.length }
+  return [total, ...Object.entries(counts).map(([state, count]) => ({ state, count }))]
+})
+
+const hasActiveFilter = computed(() => Boolean(filterServiceType.value || filterState.value || keyword.value.trim()))
+
+const filteredInstances = computed<CircuitBreakerInstance[]>(() => {
+  const kw = keyword.value.trim().toLowerCase()
+  return instances.value.filter(item => {
+    if (filterServiceType.value && item.serviceType !== filterServiceType.value) return false
+    if (filterState.value && item.state !== filterState.value) return false
+    if (!kw) return true
+    return [item.instanceName, item.instanceId, item.baseUrl, item.serviceType]
+      .some(field => (field || '').toLowerCase().includes(kw))
+  })
+})
+
+const pagedInstances = computed<CircuitBreakerInstance[]>(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return filteredInstances.value.slice(start, start + pageSize)
 })
 
 const filteredEvents = computed(() => {
@@ -319,17 +508,50 @@ const formatSampleRate = (val: number) => `${val}%`
 
 const formatTimestamp = (timestamp: string) => {
   const date = new Date(timestamp)
-  return `${date.toLocaleTimeString('zh-CN', {
+  return `${date.toLocaleTimeString(locale.value === 'en-US' ? 'en-US' : 'zh-CN', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit'
-  })  }.${  String(date.getMilliseconds()).padStart(3, '0')}`
+  })}.${String(date.getMilliseconds()).padStart(3, '0')}`
+}
+
+const formatAbsoluteTime = (value: string) => new Date(value).toLocaleString(locale.value === 'en-US' ? 'en-US' : 'zh-CN')
+
+const formatRelativeTime = (value: string) => {
+  const diffMs = Date.now() - new Date(value).getTime()
+  const seconds = Math.max(0, Math.floor(diffMs / 1000))
+  if (seconds < 10) return t('circuitBreaker.monitoring.relative.justNow')
+  if (seconds < 60) return t('circuitBreaker.monitoring.relative.secondsAgo', { n: seconds })
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return t('circuitBreaker.monitoring.relative.minutesAgo', { n: minutes })
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return t('circuitBreaker.monitoring.relative.hoursAgo', { n: hours })
+  return t('circuitBreaker.monitoring.relative.daysAgo', { n: Math.floor(hours / 24) })
 }
 
 const getInstanceShortName = (instanceId: string) => {
   if (!instanceId) return '-'
   const parts = instanceId.split('-')
   return parts.length > 2 ? parts.slice(0, 2).join('-') : instanceId.substring(0, 12)
+}
+
+const failureRatio = (row: CircuitBreakerInstance) => {
+  if (!row.failureThreshold || row.failureThreshold <= 0) return 0
+  return Math.min(100, Math.round((row.failureCount / row.failureThreshold) * 100))
+}
+
+const stateLabel = (state: string) => {
+  if (state === 'TOTAL') return t('circuitBreaker.monitoring.states.total')
+  switch (state) {
+    case 'CLOSED':
+      return t('circuitBreaker.monitoring.states.closed')
+    case 'OPEN':
+      return t('circuitBreaker.monitoring.states.open')
+    case 'HALF_OPEN':
+      return t('circuitBreaker.monitoring.states.halfOpen')
+    default:
+      return state
+  }
 }
 
 const getStateTagType = (state: string) => {
@@ -371,6 +593,31 @@ const getEventTypeLabel = (eventType: string) => {
   }
 }
 
+const toggleStateFilter = (state: string) => {
+  if (state === 'TOTAL') {
+    filterState.value = ''
+  } else {
+    filterState.value = filterState.value === state ? '' : state
+  }
+  currentPage.value = 1
+}
+
+const clearFilters = () => {
+  filterServiceType.value = ''
+  filterState.value = ''
+  keyword.value = ''
+  currentPage.value = 1
+}
+
+const handleSelectionChange = (selection: CircuitBreakerInstance[]) => {
+  selectedInstances.value = selection
+}
+
+const openDetail = (row: CircuitBreakerInstance) => {
+  detailRow.value = row
+  detailVisible.value = true
+}
+
 const loadStatus = async () => {
   try {
     const response = await request.get(`${apiBaseUrl}/status`)
@@ -382,56 +629,19 @@ const loadStatus = async () => {
   }
 }
 
-const loadCircuitBreakerStatus = async () => {
+const loadInstances = async () => {
+  loadingInstances.value = true
   try {
-    const response = await request.get('/config/instance/circuit-breaker/states')
-    if (response.data?.success) {
-      const raw = response.data.data
-      const parsed: CircuitBreakerStatus[] = []
-      // Backend returns Map<string, string> — handle as object entries
-      if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
-        for (const [key, state] of Object.entries(raw as Record<string, string>)) {
-          // Key format: "<instanceId>-<baseUrl>" or plain instanceId
-          const dashIdx = key.indexOf('-')
-          const instanceId = dashIdx > 0 ? key.substring(0, dashIdx) : key
-          const baseUrl = dashIdx > 0 ? key.substring(dashIdx + 1) : undefined
-          parsed.push({
-            instanceId,
-            instanceName: baseUrl || '-',
-            serviceType: '-',
-            state: (state as string) || 'CLOSED',
-            failureCount: 0,
-            successCount: 0,
-            baseUrl
-          })
-        }
-      } else if (Array.isArray(raw)) {
-        // Fallback: if backend ever returns an array
-        const rawList = raw as Array<{
-          instanceId?: string
-          instanceName?: string
-          baseUrl?: string
-          serviceType?: string
-          state?: string
-          failureCount?: number
-          successCount?: number
-        }>
-        rawList.forEach((item) => {
-          parsed.push({
-            instanceId: item.instanceId || '-',
-            instanceName: item.instanceName || item.baseUrl || '-',
-            serviceType: item.serviceType || '-',
-            state: item.state || 'CLOSED',
-            failureCount: item.failureCount || 0,
-            successCount: item.successCount || 0,
-            baseUrl: item.baseUrl
-          })
-        })
-      }
-      circuitBreakerStatuses.value = parsed
+    const response = await getCircuitBreakerInstances()
+    instances.value = Array.isArray(response.data) ? response.data : []
+    if ((currentPage.value - 1) * pageSize >= filteredInstances.value.length) {
+      currentPage.value = 1
     }
   } catch (error) {
-    console.error('Failed to load circuit breaker status:', error)
+    console.error('Failed to load circuit breaker instances:', error)
+    ElMessage.error(t('circuitBreaker.monitoring.messages.loadInstancesFailed'))
+  } finally {
+    loadingInstances.value = false
   }
 }
 
@@ -476,22 +686,24 @@ const connectWebSocket = () => {
       } else if (data.type === 'heartbeat') {
         // Heartbeat received
       } else {
-        // Circuit breaker event
         const newEvent: CircuitBreakerEvent = data
         events.value.unshift(newEvent)
         if (events.value.length > 100) {
           events.value.pop()
         }
 
-        // 如果是状态变化事件，更新状态列表
         if (newEvent.eventType === 'STATE_CHANGE' && newEvent.currentState) {
-          const idx = circuitBreakerStatuses.value.findIndex(
-            cb => cb.instanceId === newEvent.instanceId
-          )
+          const idx = instances.value.findIndex(cb => cb.instanceId === newEvent.instanceId)
           if (idx >= 0) {
-            circuitBreakerStatuses.value[idx].state = newEvent.currentState
-            circuitBreakerStatuses.value[idx].failureCount = newEvent.failureCount
-            circuitBreakerStatuses.value[idx].successCount = newEvent.successCount
+            instances.value[idx] = {
+              ...instances.value[idx],
+              state: newEvent.currentState,
+              failureCount: newEvent.failureCount,
+              successCount: newEvent.successCount,
+              lastFailureTime: newEvent.currentState === 'OPEN'
+                ? newEvent.timestamp
+                : instances.value[idx].lastFailureTime
+            }
           }
         }
       }
@@ -596,7 +808,7 @@ const clearHistory = () => {
     } finally {
       clearingHistory.value = false
     }
-  })
+  }).catch(() => { /* cancelled */ })
 }
 
 const handleExport = async (command: string) => {
@@ -622,46 +834,101 @@ const handleExport = async (command: string) => {
   }
 }
 
-const resetSingleCircuitBreaker = (row: CircuitBreakerStatus) => {
+const resetSingle = (row: CircuitBreakerInstance) => {
   ElMessageBox.confirm(
-    t('circuitBreaker.monitoring.confirmations.resetSingleMessage', { name: row.instanceName || row.instanceId }),
+    t('circuitBreaker.monitoring.confirmations.resetSingleMessage', {
+      name: row.instanceName || row.instanceId,
+      state: stateLabel(row.state)
+    }),
     t('circuitBreaker.monitoring.confirmations.resetSingleTitle'),
-    { confirmButtonText: t('circuitBreaker.monitoring.confirmations.confirmReset'), cancelButtonText: t('circuitBreaker.monitoring.confirmations.cancel'), type: 'warning' }
+    {
+      confirmButtonText: t('circuitBreaker.monitoring.confirmations.confirmReset'),
+      cancelButtonText: t('circuitBreaker.monitoring.confirmations.cancel'),
+      type: 'warning'
+    }
   ).then(async () => {
+    resettingInstances.value = true
     try {
-      await resetCircuitBreakerById(row.instanceId)
-      ElMessage.success(t('circuitBreaker.monitoring.messages.stateReset'))
-      await loadCircuitBreakerStatus()
-      await loadHistory()
+      const response = await resetCircuitBreakerInstance(row.instanceId)
+      const result = response.data?.data
+      if (result?.persistedStateDeleted === false) {
+        ElMessage.warning(t('circuitBreaker.monitoring.messages.resetPersistWarning'))
+      } else {
+        ElMessage.success(t('circuitBreaker.monitoring.messages.resetSuccess', {
+          name: row.instanceName || row.instanceId,
+          from: stateLabel(result?.previousState || row.state),
+          to: stateLabel(result?.currentState || 'CLOSED')
+        }))
+      }
+      await Promise.all([loadInstances(), loadHistory()])
     } catch (error) {
       ElMessage.error(t('circuitBreaker.monitoring.messages.resetFailed'))
+    } finally {
+      resettingInstances.value = false
     }
   }).catch(() => { /* cancelled */ })
 }
 
-const resetAllCircuitBreakersHandler = () => {
+const resetSelected = () => {
+  const ids = selectedInstances.value.map(item => item.instanceId)
   ElMessageBox.confirm(
-    t('circuitBreaker.monitoring.confirmations.resetAllMessage'),
-    t('circuitBreaker.monitoring.confirmations.resetAllTitle'),
-    { confirmButtonText: t('circuitBreaker.monitoring.confirmations.confirmClear'), cancelButtonText: t('circuitBreaker.monitoring.confirmations.cancel'), type: 'warning' }
+    t('circuitBreaker.monitoring.confirmations.resetSelectedMessage', { count: ids.length }),
+    t('circuitBreaker.monitoring.confirmations.resetSelectedTitle'),
+    {
+      confirmButtonText: t('circuitBreaker.monitoring.confirmations.confirmReset'),
+      cancelButtonText: t('circuitBreaker.monitoring.confirmations.cancel'),
+      type: 'warning'
+    }
   ).then(async () => {
-    resettingCbs.value = true
+    resettingInstances.value = true
     try {
-      await clearAllCircuitBreakers()
-      ElMessage.success(t('circuitBreaker.monitoring.messages.allCleared'))
-      await loadCircuitBreakerStatus()
-      await loadHistory()
+      const response = await resetCircuitBreakerInstances({ instanceIds: ids })
+      const matched = response.data?.data?.matched ?? 0
+      ElMessage.success(t('circuitBreaker.monitoring.messages.batchResetSuccess', { count: matched }))
+      await Promise.all([loadInstances(), loadHistory()])
     } catch (error) {
-      ElMessage.error(t('circuitBreaker.monitoring.messages.clearAllFailed'))
+      ElMessage.error(t('circuitBreaker.monitoring.messages.resetFailed'))
     } finally {
-      resettingCbs.value = false
+      resettingInstances.value = false
+    }
+  }).catch(() => { /* cancelled */ })
+}
+
+const resetFiltered = () => {
+  const payload = {
+    serviceType: filterServiceType.value || undefined,
+    states: filterState.value ? [filterState.value] : undefined
+  }
+  ElMessageBox.confirm(
+    t('circuitBreaker.monitoring.confirmations.resetFilteredMessage', {
+      count: filteredInstances.value.length,
+      scope: filterState.value ? stateLabel(filterState.value) : t('circuitBreaker.monitoring.states.all')
+    }),
+    t('circuitBreaker.monitoring.confirmations.resetFilteredTitle'),
+    {
+      confirmButtonText: t('circuitBreaker.monitoring.confirmations.confirmReset'),
+      cancelButtonText: t('circuitBreaker.monitoring.confirmations.cancel'),
+      type: 'warning'
+    }
+  ).then(async () => {
+    resettingInstances.value = true
+    try {
+      const response = await resetCircuitBreakerInstances(payload)
+      const matched = response.data?.data?.matched ?? 0
+      ElMessage.success(t('circuitBreaker.monitoring.messages.batchResetSuccess', { count: matched }))
+      selectedInstances.value = []
+      await Promise.all([loadInstances(), loadHistory()])
+    } catch (error) {
+      ElMessage.error(t('circuitBreaker.monitoring.messages.resetFailed'))
+    } finally {
+      resettingInstances.value = false
     }
   }).catch(() => { /* cancelled */ })
 }
 
 onMounted(() => {
   loadStatus()
-  loadCircuitBreakerStatus()
+  loadInstances()
   loadHistory()
   connectWebSocket()
 })
@@ -712,7 +979,7 @@ onUnmounted(() => {
   color: var(--ja-text-secondary);
 }
 
-.status-overview {
+.summary-row {
   margin-bottom: 16px;
 }
 
@@ -721,6 +988,18 @@ onUnmounted(() => {
   padding: 20px;
   border-radius: 8px;
   background: var(--ja-primary-light-9, #f5f7fa);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  border: 2px solid transparent;
+}
+
+.summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.summary-card.is-active {
+  border-color: var(--el-color-primary);
 }
 
 .summary-card.summary-closed {
@@ -759,6 +1038,64 @@ onUnmounted(() => {
   margin-top: 8px;
 }
 
+.instance-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.instances-table {
+  width: 100%;
+}
+
+.instance-name {
+  font-weight: 500;
+}
+
+.instance-id {
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.ratio-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.muted {
+  color: var(--el-text-color-placeholder);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 0;
+  color: var(--el-text-color-secondary);
+}
+
+.pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.drawer-hint {
+  margin: 16px 0;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.6;
+}
+
 .events-card {
   box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
   border-radius: 12px;
@@ -766,10 +1103,5 @@ onUnmounted(() => {
 
 .events-table {
   width: 100%;
-}
-
-.instance-id {
-  font-family: monospace;
-  font-size: 12px;
 }
 </style>

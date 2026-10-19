@@ -81,20 +81,3 @@ export const saveRateLimitConfig = (serviceType: string, instanceId: string, con
 export const saveCircuitBreakerConfig = (serviceType: string, instanceId: string, config: CircuitBreakerConfig) => {
   return request.put<RouterResponse<CircuitBreakerConfig>>(`/config/instance/${serviceType}/${instanceId}/circuit-breaker`, config)
 }
-
-// ==================== 熔断器重置 API ====================
-
-/**
- * 重置指定实例的熔断器状态（请求体方式）
- * @param instanceId 实例标识（Map key，可以是数字 ID 或复合键）
- */
-export const resetCircuitBreakerById = (instanceId: string) => {
-  return request.post<RouterResponse<null>>('/config/instance/circuit-breaker/reset', { instanceId })
-}
-
-/**
- * 清除所有实例的熔断器状态
- */
-export const clearAllCircuitBreakers = () => {
-  return request.post<RouterResponse<null>>('/config/instance/circuit-breaker/clear-all')
-}
