@@ -347,7 +347,8 @@
         "docs/en/getting-started/first-steps.md",
         "docs/en/getting-started/quick-start.md",
         "docs/en/troubleshooting/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-19T20:47:00.296168"
     },
     "docs/en/getting-started/quick-start.md": {
       "FilePath": "docs/en/getting-started/quick-start.md",
@@ -382,7 +383,8 @@
         "docs/en/getting-started/quick-start.md",
         "docs/en/monitoring/index.md",
         "docs/en/troubleshooting/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-19T20:47:00.296168"
     },
     "docs/en/monitoring/alerts.md": {
       "FilePath": "docs/en/monitoring/alerts.md",
@@ -553,7 +555,8 @@
       "GitCommit": "c82b4559",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-10-19T20:47:00.296168"
     },
     "docs/en/reference/index.md": {
       "FilePath": "docs/en/reference/index.md",
@@ -572,7 +575,8 @@
         "docs/en/reference/faq.md",
         "docs/en/reference/glossary.md",
         "docs/en/reference/roadmap.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-19T20:47:00.296168"
     },
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
@@ -965,7 +969,8 @@
         "docs/zh/getting-started/first-steps.md",
         "docs/zh/getting-started/quick-start.md",
         "docs/zh/troubleshooting/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-19T20:47:00.296168"
     },
     "docs/zh/getting-started/quick-start.md": {
       "FilePath": "docs/zh/getting-started/quick-start.md",
@@ -1001,7 +1006,8 @@
         "docs/zh/getting-started/quick-start.md",
         "docs/zh/monitoring/index.md",
         "docs/zh/troubleshooting/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-19T20:47:00.296168"
     },
     "docs/zh/monitoring/alert_rules_guide.md": {
       "FilePath": "docs/zh/monitoring/alert_rules_guide.md",
@@ -1011,7 +1017,8 @@
       "GitCommit": "c82b4559",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-10-19T20:47:00.296168"
     },
     "docs/zh/monitoring/alerts.md": {
       "FilePath": "docs/zh/monitoring/alerts.md",
@@ -1026,7 +1033,8 @@
         "docs/zh/monitoring/performance.md",
         "docs/zh/monitoring/testing.md",
         "docs/zh/monitoring/troubleshooting.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-19T20:47:00.296168"
     },
     "docs/zh/monitoring/configuration.md": {
       "FilePath": "docs/zh/monitoring/configuration.md",
@@ -1091,7 +1099,8 @@
         "docs/zh/monitoring/dashboards.md",
         "docs/zh/monitoring/setup.md",
         "docs/zh/monitoring/troubleshooting.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-19T20:47:00.296168"
     },
     "docs/zh/monitoring/performance.md": {
       "FilePath": "docs/zh/monitoring/performance.md",
@@ -1136,7 +1145,8 @@
         "docs/zh/monitoring/performance.md",
         "docs/zh/monitoring/setup.md",
         "docs/zh/monitoring/troubleshooting.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-19T20:47:00.296168"
     },
     "docs/zh/monitoring/troubleshooting.md": {
       "FilePath": "docs/zh/monitoring/troubleshooting.md",
@@ -1184,7 +1194,8 @@
       "GitCommit": "c82b4559",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-10-19T20:47:00.296168"
     },
     "docs/zh/reference/index.md": {
       "FilePath": "docs/zh/reference/index.md",
@@ -1204,7 +1215,8 @@
         "docs/zh/reference/faq.md",
         "docs/zh/reference/glossary.md",
         "docs/zh/reference/roadmap.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-19T20:47:00.296168"
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
@@ -1236,7 +1248,8 @@
       "GitCommit": "97163311",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-10-19T20:47:00.296168"
     },
     "docs/zh/troubleshooting/index.md": {
       "FilePath": "docs/zh/troubleshooting/index.md",
@@ -1788,7 +1801,8 @@
         "docs/zh/api-reference/index.md",
         "docs/zh/configuration/index.md",
         "docs/zh/troubleshooting/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-19T20:47:00.296168"
     },
     "docs/en/deployment/docker-optimized.md": {
       "FilePath": "docs/en/deployment/docker-optimized.md",
@@ -1812,7 +1826,8 @@
       "GitCommit": "c82b4559",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [],
+      "ReviewedAt": "2026-10-19T20:47:00.296168"
     },
     "docs/en/reference/adapter-updates.md": {
       "FilePath": "docs/en/reference/adapter-updates.md",
@@ -1826,7 +1841,8 @@
         "docs/en/api-reference/index.md",
         "docs/en/configuration/index.md",
         "docs/en/troubleshooting/index.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-19T20:47:00.296168"
     },
     "docs/en/security/blacklist-management.md": {
       "FilePath": "docs/en/security/blacklist-management.md",
@@ -1841,7 +1857,8 @@
         "docs/en/security/audit-log-management.md",
         "docs/en/security/jwt-authentication.md",
         "docs/en/security/troubleshooting.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-19T20:47:00.296168"
     },
     "docs/zh/configuration/jwt-persistence.md": {
       "FilePath": "docs/zh/configuration/jwt-persistence.md",
@@ -1929,7 +1946,8 @@
         "docs/zh/security/data-sanitization.md",
         "docs/zh/security/jwt-authentication.md",
         "docs/zh/security/troubleshooting.md"
-      ]
+      ],
+      "ReviewedAt": "2026-10-19T20:47:00.296168"
     },
     "docs/zh/troubleshooting/issue-fixes.md": {
       "FilePath": "docs/zh/troubleshooting/issue-fixes.md",
@@ -8991,5 +9009,5 @@
       "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-19T12:46:00.046541"
+  "last_updated": "2026-10-19T20:47:00.298197"
 }

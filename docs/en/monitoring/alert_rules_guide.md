@@ -3,7 +3,7 @@
 <!-- Version Information -->
 > **Version**: 1.1.1
 > **Last Updated**: 2026-09-15
-> **Applicable Version**: v3.1.1x+
+> **Applicable Version**: v3.1.1+
 > **Git Commit**: 135f9a60
 > **Author**: Lincoln
 <!-- /Version Information -->
