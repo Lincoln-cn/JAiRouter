@@ -620,6 +620,7 @@ management:
 |---|---|---|
 | `GET` | `/api/monitoring/slow-queries/stats/{}` | `monitoring:slowquery:read` |
 | `GET` | `/api/monitoring/slow-queries/trends` | `monitoring:slowquery:read` |
+| `DELETE` | `/api/monitoring/slow-queries/stats` | `monitoring:slowquery:write`（`#468` 新增；修前该写操作无规则，靠默认 `DENY_ALL` 兜住） |
 
 ### 健康状态 SSE（HealthStatusSseController）
 

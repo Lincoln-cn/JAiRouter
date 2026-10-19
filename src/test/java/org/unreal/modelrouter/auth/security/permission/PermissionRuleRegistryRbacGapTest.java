@@ -131,6 +131,15 @@ class PermissionRuleRegistryRbacGapTest {
                 PermissionCodes.MONITORING_QUOTA_READ, "配额监控");
     }
 
+    @Test
+    @DisplayName("慢查询写操作必须有显式规则：DELETE /stats → monitoring:slowquery:write（#468）")
+    void slowQueryReset_hasExplicitWriteRule() {
+        // 修前：该前缀只有 GET 规则，DELETE 命不中任何规则 ⇒ 只能靠 RbacUnmatchedPolicy 的
+        // 默认 DENY_ALL 兜住（403 是"未匹配"的副产品，不是显式设计）。
+        assertRuleCode(HttpMethod.DELETE, "/api/monitoring/slow-queries/stats",
+                PermissionCodes.MONITORING_SLOWQUERY_WRITE, "慢查询统计重置");
+    }
+
     // ==================== #128 Phase 2: JWT 令牌运维端点 ====================
 
     @Test

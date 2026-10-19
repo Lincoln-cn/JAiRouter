@@ -629,6 +629,7 @@ None of these endpoints is called by the console, and none was documented (the `
 |---|---|---|
 | `GET` | `/api/monitoring/slow-queries/stats/{}` | `monitoring:slowquery:read` |
 | `GET` | `/api/monitoring/slow-queries/trends` | `monitoring:slowquery:read` |
+| `DELETE` | `/api/monitoring/slow-queries/stats` | `monitoring:slowquery:write` (added by `#468`; before that the write had no rule and was only caught by the default `DENY_ALL`) |
 
 ### Health status SSE
 
