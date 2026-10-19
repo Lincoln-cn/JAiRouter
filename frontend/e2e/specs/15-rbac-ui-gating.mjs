@@ -67,7 +67,69 @@ export default {
       .count()
     check('rbac-ui:quota:save-visible-for-admin', adminSaveCount > 0, `count=${adminSaveCount}`)
 
-    // ── 第二例：`/security/**` 的**角色门**（不是权限码门）──
+    // ── 例 2：`/config/rules` 的**拖拽排序**（不是按钮，`v-permission` 摘元素不适用）──
+    // 拖拽改 priority 并立即 PUT /api/config/rules/priority ⇒ 是写操作（config:rules:write）。
+    // 修前：手柄对所有角色渲染，只读用户拖一下必然 403（issue #468 残项①）。
+    // 默认 rules.yml 是空列表，所以先由 ADMIN 建一条非 YAML 规则，否则页面上根本没有手柄
+    // ——那样"低权限看不到手柄"会因为它本来就没有而假绿。
+    const ruleName = uniq('e2e-drag-rule')
+    const ruleBody = {
+      name: ruleName,
+      description: 'e2e rbac ui gating',
+      enabled: true,
+      priority: 10,
+      conditions: [{ type: 'MODEL_NAME', operator: 'EQUALS', value: 'e2e-model' }],
+      action: { type: 'TARGET_MODEL', modelName: 'e2e-target' }
+    }
+    const ruleCreated = await api(adminPage, '/api/config/rules', { method: 'POST', body: ruleBody })
+    check('rbac-ui:rules:create-fixture-rule', ruleCreated.status === 200 || ruleCreated.status === 201,
+      `status=${ruleCreated.status}`)
+    const createdRuleId = ruleCreated.body?.data?.id ?? null
+
+    await gotoApp(lowPage, '/config/rules', { waitMs: 900 })
+    const lowDragCount = await lowPage.locator('.layout-main .drag-handle').count()
+    check('rbac-ui:rules:drag-handle-hidden-for-limited', lowDragCount === 0, `count=${lowDragCount}`)
+
+    await gotoApp(adminPage, '/config/rules', { waitMs: 900 })
+    const adminDragCount = await adminPage.locator('.layout-main .drag-handle').count()
+    check('rbac-ui:rules:drag-handle-visible-for-admin', adminDragCount > 0, `count=${adminDragCount}`)
+
+    // ── 例 3：`/monitoring/slow-queries` 的「重置全部统计」──
+    // 路由只要 monitoring:slowquery:read，但重置是 DELETE（自 #468 起需 monitoring:slowquery:write）。
+    // ⚠️ 选择器必须精确到「重置统计」：本页还有一个**筛选区的「重置」**按钮
+    // （`slowQuery.resetFilter`），用 /重置|Reset/ 会把它算进来 —— 第一版就这么假绿了。
+    const resetStatsText = /重置统计|Reset Stats/
+    const lowResetCount = await (async () => {
+      await gotoApp(lowPage, '/monitoring/slow-queries', { waitMs: 900 })
+      return lowPage.locator('.layout-main button').filter({ hasText: resetStatsText }).count()
+    })()
+    check('rbac-ui:slowquery:reset-hidden-for-limited', lowResetCount === 0, `count=${lowResetCount}`)
+
+    const adminResetCount = await (async () => {
+      await gotoApp(adminPage, '/monitoring/slow-queries', { waitMs: 900 })
+      return adminPage.locator('.layout-main button').filter({ hasText: resetStatsText }).count()
+    })()
+    check('rbac-ui:slowquery:reset-visible-for-admin', adminResetCount > 0, `count=${adminResetCount}`)
+
+    // 后端裁决：低权限 DELETE 必须 403（证明前端只是显隐，不是安全边界）
+    const lowResetApi = await api(lowPage, '/api/monitoring/slow-queries/stats', { method: 'DELETE' })
+    check('rbac-ui:slowquery:reset-api-403-for-limited', lowResetApi.status === 403,
+      `status=${lowResetApi.status}`)
+
+    // 对照：ADMIN 必须仍然能重置（新增 URL 规则不得把原本可用的操作关掉）
+    const adminResetApi = await api(adminPage, '/api/monitoring/slow-queries/stats', { method: 'DELETE' })
+    check('rbac-ui:slowquery:reset-api-200-for-admin', adminResetApi.status === 200,
+      `status=${adminResetApi.status}`)
+
+    // ── 清理夹具规则 ──
+    if (createdRuleId) {
+      const delRule = await api(adminPage, `/api/config/rules/${createdRuleId}`, { method: 'DELETE' })
+      check('rbac-ui:rules:cleanup-fixture', delRule.status === 200, `status=${delRule.status}`)
+    } else {
+      check('rbac-ui:rules:cleanup-fixture', false, 'rule id not found')
+    }
+
+    // ── 例 4：`/security/**` 的**角色门**（不是权限码门）──
     // 我原以为这里要测"OPERATOR 能进审计页但没有黑名单权限"。实测否掉了这个前提：
     // `/security` **父路由**带 `meta.roles: ['ADMIN']`（router/index.ts:176），
     // 所以非 ADMIN 根本进不去任何 `/security/**` 子页——子页自己的 `meta.permissions`

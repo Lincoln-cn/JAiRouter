@@ -162,6 +162,35 @@ class PermissionClosureTest {
                     .expectNextMatches(AuthorizationDecision::isGranted)
                     .verifyComplete();
         }
+
+        // issue #468：写侧此前**没有规则**，只能靠 RbacUnmatchedPolicy 的默认 DENY_ALL 兜住。
+        // 现在 DELETE 有显式绑定，因此"只读码能不能重置统计"从"默认拒绝的副产品"变成"一条可授的权限"。
+
+        @Test
+        @DisplayName("DELETE /api/monitoring/slow-queries/stats - 只有 read 码 → 拒绝(403)")
+        void slowQueryResetWithReadOnlyDenied() {
+            AuthorizationContext ctx = context(HttpMethod.DELETE, "/api/monitoring/slow-queries/stats");
+            JwtAuthentication auth = authenticated(
+                    "user", List.of("USER"), List.of(PermissionCodes.MONITORING_SLOWQUERY_READ));
+
+            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+                    .expectNextMatches(decision -> !decision.isGranted())
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("DELETE /api/monitoring/slow-queries/stats - 携带 write 码 → 放行")
+        void slowQueryResetWithWriteGranted() {
+            AuthorizationContext ctx = context(HttpMethod.DELETE, "/api/monitoring/slow-queries/stats");
+            JwtAuthentication auth = authenticated(
+                    "operator", List.of("OPERATOR"),
+                    List.of(PermissionCodes.MONITORING_SLOWQUERY_READ,
+                            PermissionCodes.MONITORING_SLOWQUERY_WRITE));
+
+            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationDecision::isGranted)
+                    .verifyComplete();
+        }
     }
 
     // ==================== 模型统计 ====================
