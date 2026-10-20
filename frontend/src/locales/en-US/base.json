@@ -180,5 +180,30 @@
     "quotaUsageMonitoring": "Quota Usage Monitoring",
     "tools": "Developer Tools",
     "clientAccessGuide": "Client Access Guide"
+  },
+  "globalSearch": {
+    "dialogLabel": "Global search",
+    "inputLabel": "Search menus, service types, instances, API keys, TraceID or exceptions",
+    "placeholder": "Search menus, services, instances, API keys, TraceID, exceptions…",
+    "resultsLabel": "Search results",
+    "groupMenu": "Menus",
+    "groupServices": "Service types",
+    "groupInstances": "Instances",
+    "groupApiKeys": "API keys",
+    "groupTrace": "Tracing",
+    "groupExceptions": "Exceptions",
+    "total": "{count} in total",
+    "empty": "No matching results",
+    "hint": "↑↓ to navigate · Enter to open · Esc to close",
+    "traceSearchItem": "Find {id} in trace search",
+    "traceSearchHint": "Search by TraceID",
+    "goServices": "Service type management"
+  },
+  "statusBar": {
+    "label": "System status",
+    "openBreakers": "Open breakers",
+    "openBreakersAria": "{count} open circuit breakers, click to view monitoring",
+    "exceptions24h": "24h exceptions",
+    "exceptions24hAria": "{count} exceptions in the last 24 hours, click to view the list"
   }
 }

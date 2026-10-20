@@ -180,5 +180,30 @@
     "quotaUsageMonitoring": "配额用量监控",
     "tools": "开发者工具",
     "clientAccessGuide": "客户端接入指南"
+  },
+  "globalSearch": {
+    "dialogLabel": "全局搜索",
+    "inputLabel": "搜索菜单、服务类型、实例、API Key、TraceID 或异常",
+    "placeholder": "搜索菜单、服务、实例、API Key、TraceID、异常…",
+    "resultsLabel": "搜索结果",
+    "groupMenu": "菜单",
+    "groupServices": "服务类型",
+    "groupInstances": "实例",
+    "groupApiKeys": "API Key",
+    "groupTrace": "链路追踪",
+    "groupExceptions": "异常",
+    "total": "共 {count} 条",
+    "empty": "没有匹配结果",
+    "hint": "↑↓ 选择 · Enter 打开 · Esc 关闭",
+    "traceSearchItem": "在链路搜索中查找 {id}",
+    "traceSearchHint": "按 TraceID 搜索",
+    "goServices": "服务类型管理"
+  },
+  "statusBar": {
+    "label": "系统状态",
+    "openBreakers": "开放熔断",
+    "openBreakersAria": "开放熔断 {count} 个，点击查看熔断监控",
+    "exceptions24h": "24h 异常",
+    "exceptions24hAria": "24 小时异常 {count} 条，点击查看异常列表"
   }
 }
