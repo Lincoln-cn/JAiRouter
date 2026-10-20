@@ -53,9 +53,6 @@ export default defineConfig({
           if (id.includes('node_modules/echarts/') || id.includes('node_modules\\echarts\\')) {
             return 'echarts'
           }
-          if (id.includes('node_modules/vue-echarts/') || id.includes('node_modules\\vue-echarts\\')) {
-            return 'vue-echarts'
-          }
           // 网络请求
           if (id.includes('node_modules/axios/') || id.includes('node_modules\\axios\\')) {
             return 'axios'
