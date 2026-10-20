@@ -1,28 +1,36 @@
 <template>
-  <PageSkeleton :title="t('callHistory.tokenUsage.pageTitle')">
-    <template #toolbar>
-      <el-form :inline="true" class="filter-form">
-        <el-form-item :label="t('callHistory.common.timeRange')">
-          <el-date-picker
-            v-model="dateRange"
-            type="datetimerange"
-            :range-separator="t('callHistory.common.rangeSeparator')"
-            :start-placeholder="t('callHistory.common.startTime')"
-            :end-placeholder="t('callHistory.common.endTime')"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            style="width: 400px"
-            @change="handleDateChange"
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" icon="Search" @click="loadData">{{ t('callHistory.common.query') }}</el-button>
-          <el-button icon="Refresh" @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
-        </el-form-item>
-      </el-form>
+  <ListPageLayout>
+    <template #header>
+      <h2 class="page-title">{{ t('callHistory.tokenUsage.pageTitle') }}</h2>
+      <p class="page-subtitle">{{ t('callHistory.tokenUsage.pageDescription') }}</p>
     </template>
 
-    <template #stats>
-    <el-row :gutter="20" class="stats-row">
+    <!-- 时间范围筛选 -->
+    <template #filters>
+      <FilterBar>
+        <el-form :inline="true" class="filter-form">
+          <el-form-item :label="t('callHistory.common.timeRange')">
+            <el-date-picker
+              v-model="dateRange"
+              type="datetimerange"
+              :range-separator="t('callHistory.common.rangeSeparator')"
+              :start-placeholder="t('callHistory.common.startTime')"
+              :end-placeholder="t('callHistory.common.endTime')"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              style="width: 400px"
+              @change="handleDateChange"
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" icon="Search" @click="loadData">{{ t('callHistory.common.query') }}</el-button>
+            <el-button icon="Refresh" @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
+          </el-form-item>
+        </el-form>
+      </FilterBar>
+    </template>
+
+    <!-- 概览统计卡片（P1-2 另行压缩，本轮保留） -->
+<el-row :gutter="20" class="stats-row">
       <el-col :span="6">
         <el-card shadow="hover" class="stat-card">
           <div class="stat-content">
@@ -132,7 +140,6 @@
         </el-card>
       </el-col>
     </el-row>
-    </template>
 
     <!-- 图表区域 -->
     <el-row :gutter="20">
@@ -209,7 +216,7 @@
       <el-table :data="recentUsage" border stripe :max-height="400">
         <el-table-column :label="t('callHistory.common.time')" prop="occurredAt" width="180">
           <template #default="scope">
-            {{ formatTime(scope.row.occurredAt) }}
+            <TimeText :value="scope.row.occurredAt" />
           </template>
         </el-table-column>
         <el-table-column :label="t('callHistory.common.modelName')" prop="modelName" min-width="180" show-overflow-tooltip />
@@ -248,7 +255,7 @@
         </el-table-column>
       </el-table>
     </el-card>
-  </PageSkeleton>
+  </ListPageLayout>
 </template>
 
 <script setup lang="ts">
@@ -273,9 +280,11 @@ import {
   getRecentUsage
 } from '@/api/tokenUsage'
 import type { TokenUsageStatistics, TokenUsageRecord } from '@/types/tokenUsage'
-import { formatDateTime as formatDateTimeBase, formatNumber as formatNumberBase } from '@/utils/format'
+import { formatNumber as formatNumberBase } from '@/utils/format'
 import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
-import PageSkeleton from '@/components/PageSkeleton.vue'
+import ListPageLayout from '@/components/ListPageLayout.vue'
+import FilterBar from '@/components/FilterBar.vue'
+import TimeText from '@/components/TimeText.vue'
 
 const { t } = useI18n()
 
@@ -328,12 +337,6 @@ let hourlyChart: ECharts | null = null
 const formatNumber = (num?: number): string => {
   if (!num && num !== 0) return '0'
   return formatNumberBase(num)
-}
-
-// 格式化时间（委托共享 format.ts）
-const formatTime = (time?: string) => {
-  if (!time) return '-'
-  return formatDateTimeBase(time)
 }
 
 // 服务类型 key -> i18n 键名映射（保持原有顺序）
@@ -729,6 +732,24 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.page-subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--ja-ink-3);
+  line-height: 1.5;
+}
+
+.filter-form {
+  width: 100%;
+}
+
 .filter-form {
   display: flex;
   justify-content: center;

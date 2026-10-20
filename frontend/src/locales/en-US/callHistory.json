@@ -55,6 +55,7 @@
     },
     "list": {
       "pageTitle": "Call History Search",
+      "pageDescription": "Filter call records by time, model, service type and status; open a row to inspect a single call.",
       "modelNamePlaceholder": "Enter model name",
       "allPlaceholder": "All",
       "httpStatusCodePlaceholder": "e.g. 200, 429",
@@ -93,10 +94,13 @@
       "loadConfigFailed": "Failed to load recording config: {message}",
       "saveConfigFailed": "Failed to save recording config: {message}",
       "saveSuccess": "Record level updated",
-      "loadFailed": "Failed to load call history: {message}"
+      "loadFailed": "Failed to load call history: {message}",
+      "emptyTitle": "No matching records",
+      "emptyDescription": "No call records match the current filters. Adjust the time range or filters and try again."
     },
     "slowCalls": {
       "pageTitle": "Slow Call Analysis",
+      "pageDescription": "Filter call records by response-time threshold to locate performance bottlenecks.",
       "loadFailed": "Failed to load slow calls: {message}",
       "thresholdLabel": "Threshold (ms)",
       "displayCountLabel": "Records to Show",
@@ -104,10 +108,13 @@
       "maxResponseTimeLabel": "Max Response Time (ms)",
       "avgResponseTimeLabel": "Avg. Response Time (ms)",
       "listTitle": "Slow Call List",
-      "thresholdTag": "Threshold: {value} ms"
+      "thresholdTag": "Threshold: {value} ms",
+      "emptyTitle": "No matching records",
+      "emptyDescription": "No slow calls exceeded the threshold in this time range. Lower the threshold or adjust the time range and try again."
     },
     "tokenUsage": {
       "pageTitle": "Token Usage Statistics",
+      "pageDescription": "Inspect token consumption, request volume and latency trends over time, plus the most recent usage records.",
       "loadFailed": "Failed to load statistics: {message}",
       "stats": {
         "totalTokenUsed": "Total Tokens Used",

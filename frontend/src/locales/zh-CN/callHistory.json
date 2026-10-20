@@ -55,6 +55,7 @@
     },
     "list": {
       "pageTitle": "调用历史查询",
+      "pageDescription": "按时间、模型、服务类型与状态筛选调用记录，点开可查看单次调用详情。",
       "modelNamePlaceholder": "输入模型名称",
       "allPlaceholder": "全部",
       "httpStatusCodePlaceholder": "如 200, 429",
@@ -93,10 +94,13 @@
       "loadConfigFailed": "加载记录配置失败：{message}",
       "saveConfigFailed": "保存记录配置失败：{message}",
       "saveSuccess": "记录级别已更新",
-      "loadFailed": "加载调用历史失败：{message}"
+      "loadFailed": "加载调用历史失败：{message}",
+      "emptyTitle": "没有符合条件的记录",
+      "emptyDescription": "当前筛选条件下没有调用记录，可调整时间范围或筛选条件后重试。"
     },
     "slowCalls": {
       "pageTitle": "慢调用分析",
+      "pageDescription": "按响应时间阈值筛选调用记录，快速定位性能瓶颈。",
       "loadFailed": "加载慢调用失败：{message}",
       "thresholdLabel": "阈值 (ms)",
       "displayCountLabel": "显示数量",
@@ -104,10 +108,13 @@
       "maxResponseTimeLabel": "最长响应时间 (ms)",
       "avgResponseTimeLabel": "平均响应时间 (ms)",
       "listTitle": "慢调用列表",
-      "thresholdTag": "阈值: {value} ms"
+      "thresholdTag": "阈值: {value} ms",
+      "emptyTitle": "没有符合条件的记录",
+      "emptyDescription": "当前时间范围内没有超过阈值的慢调用，可放宽阈值或调整时间范围后重试。"
     },
     "tokenUsage": {
       "pageTitle": "Token 使用统计",
+      "pageDescription": "按时间范围查看 Token 消耗、请求量与响应时延的分布趋势，以及最近的用量明细。",
       "loadFailed": "加载统计数据失败：{message}",
       "stats": {
         "totalTokenUsed": "总 Token 使用量",

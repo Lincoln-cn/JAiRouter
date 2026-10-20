@@ -1,32 +1,24 @@
 <template>
-  <PageSkeleton :title="t('exception.list.title')">
+  <ListPageLayout
+    :loading="loading"
+    :empty="!loading && exceptionList.length === 0"
+    :empty-title="t('exception.list.emptyTitle')"
+    :empty-description="t('exception.list.emptyDescription')"
+  >
+    <template #header>
+      <h2 class="page-title">{{ t('exception.list.title') }}</h2>
+      <p class="page-subtitle">{{ t('exception.list.pageDescription') }}</p>
+    </template>
+
     <template #actions>
       <el-button icon="Refresh" @click="handleRefresh">{{ t('exception.list.refresh') }}</el-button>
       <el-button icon="Delete" type="danger" v-permission="'monitoring:exceptions:write'" @click="showCleanupDialog">{{ t('exception.list.cleanupExpired') }}</el-button>
       <el-button icon="DataAnalysis" type="success" @click="goToStatistics">{{ t('exception.list.goStatistics') }}</el-button>
     </template>
 
-    <!-- 统计卡片 -->
-    <el-row :gutter="20" class="stats-row">
-      <el-col :span="6">
-        <StatCard :icon="Warning" :label="t('exception.list.totalExceptionsLabel')" :value="listData.totalElements" tone="danger" />
-      </el-col>
-      <el-col :span="6">
-        <StatCard :icon="DataLine" :label="t('exception.list.totalTypesLabel')" :value="listData.totalTypes" tone="warning" />
-      </el-col>
-      <el-col :span="6">
-        <StatCard :icon="Monitor" :label="t('exception.list.topExceptionTypeLabel')" :value="listData.topExceptionType || '-'" tone="primary" />
-      </el-col>
-      <el-col :span="6">
-        <StatCard :icon="TrendCharts" :label="t('exception.list.topClientIpLabel')" :value="listData.topClientIp || '-'" tone="info" />
-      </el-col>
-    </el-row>
-
-    <!-- 主卡片 -->
-    <el-card class="main-card" shadow="hover">
-
-      <!-- 筛选条件 -->
-      <div class="filter-section">
+    <!-- 筛选条件 -->
+    <template #filters>
+      <FilterBar>
         <el-form :inline="true" :model="queryParams" class="filter-form">
           <el-form-item :label="t('exception.list.exceptionType')">
             <el-input
@@ -105,227 +97,247 @@
             <el-button icon="Refresh" @click="handleReset">{{ t('exception.list.reset') }}</el-button>
           </el-form-item>
         </el-form>
-      </div>
+      </FilterBar>
+    </template>
 
-      <!-- 表格 -->
-      <div class="table-wrapper">
-        <el-table
-          v-loading="loading"
-          :data="exceptionList"
-          border
-          stripe
-          :max-height="500"
-          @row-click="handleRowClick"
-        >
-          <el-table-column :label="t('exception.list.eventId')" prop="eventId" width="200" show-overflow-tooltip>
-            <template #default="scope">
-              <el-tag effect="plain" type="info">{{ scope.row.eventId }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('exception.list.exceptionType')" prop="exceptionType" min-width="180" show-overflow-tooltip>
-            <template #default="scope">
-              <span class="exception-type">{{ scope.row.exceptionType }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('exception.list.serviceType')" prop="serviceType" width="100">
-            <template #default="scope">
-              <el-link
-                v-if="scope.row.serviceType"
-                type="primary"
-                :underline="false"
-                @click.stop="router.push({ name: 'instance-management', query: { serviceType: normalizeServiceType(scope.row.serviceType) } })"
-              >
-                <el-tag size="small" type="info">{{ scope.row.serviceType }}</el-tag>
-              </el-link>
-              <span v-else>-</span>
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('exception.list.modelName')" prop="modelName" min-width="140" show-overflow-tooltip>
-            <template #default="scope">
-              <span>{{ scope.row.modelName || '-' }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('exception.list.provider')" prop="provider" width="100" show-overflow-tooltip>
-            <template #default="scope">
-              <span>{{ scope.row.provider || '-' }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('exception.list.responseTime')" prop="responseTimeMs" width="120" sortable>
-            <template #default="scope">
-              <span>{{ scope.row.responseTimeMs != null ? scope.row.responseTimeMs : '-' }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('exception.list.errorCode')" prop="errorCode" width="100">
-            <template #default="scope">
-              <el-tag :type="getErrorTagType(scope.row.errorCode)" size="small">
-                {{ scope.row.errorCode }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('exception.list.errorCategory')" prop="errorCategory" width="120">
-            <template #default="scope">
-              <el-tag :type="getCategoryTagType(scope.row.errorCategory)" size="small">
-                {{ formatCategory(scope.row.errorCategory) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('exception.list.exceptionMessage')" prop="sanitizedMessage" min-width="200" show-overflow-tooltip>
-            <template #default="scope">
-              <span>{{ scope.row.sanitizedMessage || scope.row.exceptionMessage || '-' }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('exception.list.clientIp')" prop="clientIp" width="140">
-            <template #default="scope">
-              <span>{{ scope.row.clientIp || '-' }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('exception.list.occurredAt')" prop="occurredAt" width="180">
-            <template #default="scope">
-              <span>{{ formatTime(scope.row.occurredAt) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('exception.list.actions')" width="100" fixed="right">
-            <template #default="scope">
-              <el-button link type="primary" size="small" @click.stop="handleViewDetail(scope.row)">
-                {{ t('exception.list.detail') }}
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
+    <!-- 统计卡片（本轮保留原样，P1-2 再压缩） -->
+    <template #toolbar>
+      <el-row :gutter="20" class="stats-row">
+        <el-col :span="6">
+          <StatCard :icon="Warning" :label="t('exception.list.totalExceptionsLabel')" :value="listData.totalElements" tone="danger" />
+        </el-col>
+        <el-col :span="6">
+          <StatCard :icon="DataLine" :label="t('exception.list.totalTypesLabel')" :value="listData.totalTypes" tone="warning" />
+        </el-col>
+        <el-col :span="6">
+          <StatCard :icon="Monitor" :label="t('exception.list.topExceptionTypeLabel')" :value="listData.topExceptionType || '-'" tone="primary" />
+        </el-col>
+        <el-col :span="6">
+          <StatCard :icon="TrendCharts" :label="t('exception.list.topClientIpLabel')" :value="listData.topClientIp || '-'" tone="info" />
+        </el-col>
+      </el-row>
+    </template>
 
-      <!-- 分页 -->
-      <div class="pagination-section">
-        <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50, 100]"
-          :total="totalElements"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
-      </div>
-    </el-card>
-  </PageSkeleton>
+    <!-- 表格 -->
+    <div class="table-wrapper">
+      <el-table
+        v-loading="loading"
+        :data="exceptionList"
+        border
+        stripe
+        :max-height="500"
+        @row-click="handleRowClick"
+      >
+        <el-table-column :label="t('exception.list.eventId')" prop="eventId" width="200" show-overflow-tooltip>
+          <template #default="scope">
+            <el-tag effect="plain" type="info">{{ scope.row.eventId }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('exception.list.exceptionType')" prop="exceptionType" min-width="180" show-overflow-tooltip>
+          <template #default="scope">
+            <span class="exception-type">{{ scope.row.exceptionType }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('exception.list.serviceType')" prop="serviceType" width="100">
+          <template #default="scope">
+            <el-link
+              v-if="scope.row.serviceType"
+              type="primary"
+              :underline="false"
+              @click.stop="router.push({ name: 'instance-management', query: { serviceType: normalizeServiceType(scope.row.serviceType) } })"
+            >
+              <el-tag size="small" type="info">{{ scope.row.serviceType }}</el-tag>
+            </el-link>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('exception.list.modelName')" prop="modelName" min-width="140" show-overflow-tooltip>
+          <template #default="scope">
+            <span>{{ scope.row.modelName || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('exception.list.provider')" prop="provider" width="100" show-overflow-tooltip>
+          <template #default="scope">
+            <span>{{ scope.row.provider || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('exception.list.responseTime')" prop="responseTimeMs" width="120" sortable>
+          <template #default="scope">
+            <span>{{ scope.row.responseTimeMs != null ? scope.row.responseTimeMs : '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('exception.list.errorCode')" prop="errorCode" width="100">
+          <template #default="scope">
+            <el-tag :type="getErrorTagType(scope.row.errorCode)" size="small">
+              {{ scope.row.errorCode }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('exception.list.errorCategory')" prop="errorCategory" width="120">
+          <template #default="scope">
+            <el-tag :type="getCategoryTagType(scope.row.errorCategory)" size="small">
+              {{ formatCategory(scope.row.errorCategory) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('exception.list.exceptionMessage')" prop="sanitizedMessage" min-width="200" show-overflow-tooltip>
+          <template #default="scope">
+            <span>{{ scope.row.sanitizedMessage || scope.row.exceptionMessage || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('exception.list.clientIp')" prop="clientIp" width="140">
+          <template #default="scope">
+            <span>{{ scope.row.clientIp || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('exception.list.occurredAt')" prop="occurredAt" width="180">
+          <template #default="scope">
+            <TimeText :value="scope.row.occurredAt" />
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('exception.list.actions')" width="100" fixed="right">
+          <template #default="scope">
+            <el-button link type="primary" size="small" @click.stop="handleViewDetail(scope.row)">
+              {{ t('exception.list.detail') }}
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
-    <!-- 详情对话框 -->
-    <el-dialog
-      v-model="detailVisible"
-      :title="t('exception.list.detailDialogTitle')"
-      width="800px"
-      :close-on-click-modal="false"
-    >
-      <el-descriptions v-if="selectedEvent" :column="2" border>
-        <el-descriptions-item :label="t('exception.list.eventId')">{{ selectedEvent.eventId }}</el-descriptions-item>
-        <el-descriptions-item :label="t('exception.list.exceptionType')">{{ selectedEvent.exceptionType }}</el-descriptions-item>
-        <el-descriptions-item :label="t('exception.list.errorCode')">
-          <el-tag :type="getErrorTagType(selectedEvent.errorCode)" size="small">
-            {{ selectedEvent.errorCode }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('exception.list.errorCategory')">
-          <el-tag :type="getCategoryTagType(selectedEvent.errorCategory)" size="small">
-            {{ formatCategory(selectedEvent.errorCategory) }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('exception.list.httpStatus')">
-          <el-tag :type="getHttpStatusTagType(selectedEvent.httpStatus)" size="small">
-            {{ selectedEvent.httpStatus || '-' }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('exception.list.clientIp')">{{ selectedEvent.clientIp || '-' }}</el-descriptions-item>
-        <el-descriptions-item :label="t('exception.list.serviceType')">
-          <el-link
-            v-if="selectedEvent.serviceType"
-            type="primary"
-            :underline="false"
-            @click="router.push({ name: 'service-management', query: { serviceType: normalizeServiceType(selectedEvent.serviceType) } })"
-          >
-            <el-tag size="small" type="info">{{ selectedEvent.serviceType }}</el-tag>
-          </el-link>
-          <span v-else>-</span>
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('exception.list.modelName')">{{ selectedEvent.modelName || '-' }}</el-descriptions-item>
-        <el-descriptions-item :label="t('exception.list.provider')">{{ selectedEvent.provider || '-' }}</el-descriptions-item>
-        <el-descriptions-item :label="t('exception.list.instanceName')">
-          <el-link
-            v-if="selectedEvent.instanceName && selectedEvent.serviceType"
-            type="primary"
-            :underline="false"
-            @click="router.push({ name: 'instance-management', query: { serviceType: normalizeServiceType(selectedEvent.serviceType) } })"
-          >
-            {{ selectedEvent.instanceName }}
-          </el-link>
-          <span v-else>{{ selectedEvent.instanceName || '-' }}</span>
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('exception.list.responseTime')">{{ selectedEvent.responseTimeMs != null ? selectedEvent.responseTimeMs : '-' }}</el-descriptions-item>
-        <el-descriptions-item :label="t('exception.list.traceId')" :span="2">
-          <el-tag effect="plain" type="info">{{ selectedEvent.traceId || '-' }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('exception.list.exceptionMessage')" :span="2">
-          <el-input
-            v-model="selectedEvent.exceptionMessage"
-            type="textarea"
-            :rows="4"
-            readonly
+    <!-- 分页（空态由骨架承担，0 条时不渲染无意义的分页条） -->
+    <template #footer>
+      <el-pagination
+        v-if="totalElements > 0"
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="totalElements"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </template>
+
+    <!-- 详情 / 清理对话框（drawer 透传槽，不受空态影响） -->
+    <template #drawer>
+      <el-dialog
+        v-model="detailVisible"
+        :title="t('exception.list.detailDialogTitle')"
+        width="800px"
+        :close-on-click-modal="false"
+      >
+        <el-descriptions v-if="selectedEvent" :column="2" border>
+          <el-descriptions-item :label="t('exception.list.eventId')">{{ selectedEvent.eventId }}</el-descriptions-item>
+          <el-descriptions-item :label="t('exception.list.exceptionType')">{{ selectedEvent.exceptionType }}</el-descriptions-item>
+          <el-descriptions-item :label="t('exception.list.errorCode')">
+            <el-tag :type="getErrorTagType(selectedEvent.errorCode)" size="small">
+              {{ selectedEvent.errorCode }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('exception.list.errorCategory')">
+            <el-tag :type="getCategoryTagType(selectedEvent.errorCategory)" size="small">
+              {{ formatCategory(selectedEvent.errorCategory) }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('exception.list.httpStatus')">
+            <el-tag :type="getHttpStatusTagType(selectedEvent.httpStatus)" size="small">
+              {{ selectedEvent.httpStatus || '-' }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('exception.list.clientIp')">{{ selectedEvent.clientIp || '-' }}</el-descriptions-item>
+          <el-descriptions-item :label="t('exception.list.serviceType')">
+            <el-link
+              v-if="selectedEvent.serviceType"
+              type="primary"
+              :underline="false"
+              @click="router.push({ name: 'service-management', query: { serviceType: normalizeServiceType(selectedEvent.serviceType) } })"
+            >
+              <el-tag size="small" type="info">{{ selectedEvent.serviceType }}</el-tag>
+            </el-link>
+            <span v-else>-</span>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('exception.list.modelName')">{{ selectedEvent.modelName || '-' }}</el-descriptions-item>
+          <el-descriptions-item :label="t('exception.list.provider')">{{ selectedEvent.provider || '-' }}</el-descriptions-item>
+          <el-descriptions-item :label="t('exception.list.instanceName')">
+            <el-link
+              v-if="selectedEvent.instanceName && selectedEvent.serviceType"
+              type="primary"
+              :underline="false"
+              @click="router.push({ name: 'instance-management', query: { serviceType: normalizeServiceType(selectedEvent.serviceType) } })"
+            >
+              {{ selectedEvent.instanceName }}
+            </el-link>
+            <span v-else>{{ selectedEvent.instanceName || '-' }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('exception.list.responseTime')">{{ selectedEvent.responseTimeMs != null ? selectedEvent.responseTimeMs : '-' }}</el-descriptions-item>
+          <el-descriptions-item :label="t('exception.list.traceId')" :span="2">
+            <el-tag effect="plain" type="info">{{ selectedEvent.traceId || '-' }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('exception.list.exceptionMessage')" :span="2">
+            <el-input
+              v-model="selectedEvent.exceptionMessage"
+              type="textarea"
+              :rows="4"
+              readonly
+            />
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('exception.list.sanitizedMessage')" :span="2">
+            <el-input
+              v-model="selectedEvent.sanitizedMessage"
+              type="textarea"
+              :rows="3"
+              readonly
+            />
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('exception.list.occurrenceCount')">{{ selectedEvent.occurrenceCount || 1 }}</el-descriptions-item>
+          <el-descriptions-item :label="t('exception.list.isAggregated')">
+            <el-tag :type="selectedEvent.isAggregated ? 'success' : 'info'" size="small">
+              {{ selectedEvent.isAggregated ? t('exception.list.yes') : t('exception.list.no') }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('exception.list.firstOccurredAt')">{{ formatTime(selectedEvent.firstOccurrence) }}</el-descriptions-item>
+          <el-descriptions-item :label="t('exception.list.lastOccurredAt')">{{ formatTime(selectedEvent.lastOccurrence) }}</el-descriptions-item>
+          <el-descriptions-item :label="t('exception.list.occurredAt')">{{ formatTime(selectedEvent.occurredAt) }}</el-descriptions-item>
+        </el-descriptions>
+        <template #footer>
+          <el-button @click="detailVisible = false">{{ t('exception.list.close') }}</el-button>
+        </template>
+      </el-dialog>
+
+      <el-dialog
+        v-model="cleanupVisible"
+        :title="t('exception.list.cleanupDialogTitle')"
+        width="500px"
+        :close-on-click-modal="false"
+      >
+        <el-form :model="cleanupForm" label-width="100px">
+          <el-form-item :label="t('exception.list.cutoffTime')">
+            <el-date-picker
+              v-model="cleanupForm.cutoffTime"
+              type="datetime"
+              :placeholder="t('exception.list.cutoffTimePlaceholder')"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              style="width: 100%"
+            />
+          </el-form-item>
+          <el-form-item :label="t('exception.list.aggregatedOnly')">
+            <el-switch v-model="cleanupForm.aggregatedOnly" />
+          </el-form-item>
+          <el-alert
+            :title="t('exception.list.warning')"
+            type="warning"
+            :description="t('exception.list.cleanupWarning')"
+            :closable="false"
           />
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('exception.list.sanitizedMessage')" :span="2">
-          <el-input
-            v-model="selectedEvent.sanitizedMessage"
-            type="textarea"
-            :rows="3"
-            readonly
-          />
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('exception.list.occurrenceCount')">{{ selectedEvent.occurrenceCount || 1 }}</el-descriptions-item>
-        <el-descriptions-item :label="t('exception.list.isAggregated')">
-          <el-tag :type="selectedEvent.isAggregated ? 'success' : 'info'" size="small">
-            {{ selectedEvent.isAggregated ? t('exception.list.yes') : t('exception.list.no') }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('exception.list.firstOccurredAt')">{{ formatTime(selectedEvent.firstOccurrence) }}</el-descriptions-item>
-        <el-descriptions-item :label="t('exception.list.lastOccurredAt')">{{ formatTime(selectedEvent.lastOccurrence) }}</el-descriptions-item>
-        <el-descriptions-item :label="t('exception.list.occurredAt')">{{ formatTime(selectedEvent.occurredAt) }}</el-descriptions-item>
-      </el-descriptions>
-      <template #footer>
-        <el-button @click="detailVisible = false">{{ t('exception.list.close') }}</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 清理对话框 -->
-    <el-dialog
-      v-model="cleanupVisible"
-      :title="t('exception.list.cleanupDialogTitle')"
-      width="500px"
-      :close-on-click-modal="false"
-    >
-      <el-form :model="cleanupForm" label-width="100px">
-        <el-form-item :label="t('exception.list.cutoffTime')">
-          <el-date-picker
-            v-model="cleanupForm.cutoffTime"
-            type="datetime"
-            :placeholder="t('exception.list.cutoffTimePlaceholder')"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item :label="t('exception.list.aggregatedOnly')">
-          <el-switch v-model="cleanupForm.aggregatedOnly" />
-        </el-form-item>
-        <el-alert
-          :title="t('exception.list.warning')"
-          type="warning"
-          :description="t('exception.list.cleanupWarning')"
-          :closable="false"
-        />
-      </el-form>
-      <template #footer>
-        <el-button @click="cleanupVisible = false">{{ t('exception.list.cancel') }}</el-button>
-        <el-button type="danger" @click="handleCleanup">{{ t('exception.list.confirmCleanup') }}</el-button>
-      </template>
-    </el-dialog>
+        </el-form>
+        <template #footer>
+          <el-button @click="cleanupVisible = false">{{ t('exception.list.cancel') }}</el-button>
+          <el-button type="danger" @click="handleCleanup">{{ t('exception.list.confirmCleanup') }}</el-button>
+        </template>
+      </el-dialog>
+    </template>
+  </ListPageLayout>
 </template>
 
 <script setup lang="ts">
@@ -347,7 +359,9 @@ import {
 } from '@/api/exception'
 import type { ExceptionEvent, ExceptionQueryParams } from '@/types/exception'
 import StatCard from '@/components/StatCard.vue'
-import PageSkeleton from '@/components/PageSkeleton.vue'
+import ListPageLayout from '@/components/ListPageLayout.vue'
+import FilterBar from '@/components/FilterBar.vue'
+import TimeText from '@/components/TimeText.vue'
 
 const router = useRouter()
 
@@ -360,7 +374,7 @@ const normalizeServiceType = (st?: string): string => {
 }
 
 // 加载状态
-const loading = ref(false)
+const loading = ref(true)
 
 // 查询参数
 const queryParams = reactive<ExceptionQueryParams>({
@@ -611,30 +625,39 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.page-subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--ja-ink-3);
+  line-height: 1.5;
+}
+
 .stats-row {
   margin-bottom: 20px;
 }
 
-.main-card .filter-section {
-  margin-bottom: 20px;
+.filter-form {
+  width: 100%;
 }
 
-.main-card .filter-section .filter-form .el-form-item {
+.filter-form .el-form-item {
   margin-bottom: 0;
   margin-right: 15px;
 }
 
-.main-card .table-wrapper {
+.table-wrapper {
   margin-bottom: 20px;
 }
 
-.main-card .table-wrapper .exception-type {
+.table-wrapper .exception-type {
   font-family: 'Courier New', monospace;
   font-size: 13px;
-}
-
-.main-card .pagination-section {
-  display: flex;
-  justify-content: flex-end;
 }
 </style>

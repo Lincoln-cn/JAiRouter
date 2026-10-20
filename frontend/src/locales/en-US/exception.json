@@ -2,6 +2,9 @@
   "exception": {
     "list": {
       "title": "Exception Event Management",
+      "pageDescription": "Aggregated gateway exception events, filterable by type, error code, service and time range.",
+      "emptyTitle": "No matching records",
+      "emptyDescription": "No exception events match the current filters. Adjust the time range or filters and try again.",
       "refresh": "Refresh",
       "cleanupExpired": "Clean Up Expired Data",
       "goStatistics": "Statistics",

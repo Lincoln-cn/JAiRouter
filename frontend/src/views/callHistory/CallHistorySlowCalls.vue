@@ -1,47 +1,64 @@
 <template>
-  <PageSkeleton :title="t('callHistory.slowCalls.pageTitle')">
-    <template #toolbar>
-      <el-form :inline="true" class="filter-form">
-        <el-form-item :label="t('callHistory.common.timeRange')">
-          <el-date-picker
-            v-model="dateRange"
-            type="datetimerange"
-            :range-separator="t('callHistory.common.rangeSeparator')"
-            :start-placeholder="t('callHistory.common.startTime')"
-            :end-placeholder="t('callHistory.common.endTime')"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            style="width: 400px"
-          />
-        </el-form-item>
-        <el-form-item :label="t('callHistory.slowCalls.thresholdLabel')">
-          <el-input-number
-            v-model="threshold"
-            :min="100"
-            :max="30000"
-            :step="100"
-            style="width: 140px"
-          />
-        </el-form-item>
-        <el-form-item :label="t('callHistory.slowCalls.displayCountLabel')">
-          <el-select v-model="limit" style="width: 100px">
-            <el-option :value="20" label="20" />
-            <el-option :value="50" label="50" />
-            <el-option :value="100" label="100" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" icon="Search" @click="loadData">{{ t('callHistory.common.query') }}</el-button>
-          <el-button icon="Refresh" @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
-        </el-form-item>
-      </el-form>
+  <ListPageLayout
+    :loading="loading"
+    :empty="!loading && slowCalls.length === 0"
+    :empty-title="t('callHistory.slowCalls.emptyTitle')"
+    :empty-description="t('callHistory.slowCalls.emptyDescription')"
+  >
+    <template #header>
+      <h2 class="page-title">{{ t('callHistory.slowCalls.pageTitle') }}</h2>
+      <p class="page-subtitle">{{ t('callHistory.slowCalls.pageDescription') }}</p>
     </template>
 
-    <template #stats>
+    <template #filters>
+      <FilterBar>
+        <el-form :inline="true" class="filter-form">
+          <el-form-item :label="t('callHistory.common.timeRange')">
+            <el-date-picker
+              v-model="dateRange"
+              type="datetimerange"
+              :range-separator="t('callHistory.common.rangeSeparator')"
+              :start-placeholder="t('callHistory.common.startTime')"
+              :end-placeholder="t('callHistory.common.endTime')"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              style="width: 400px"
+            />
+          </el-form-item>
+          <el-form-item :label="t('callHistory.slowCalls.thresholdLabel')">
+            <el-input-number
+              v-model="threshold"
+              :min="100"
+              :max="30000"
+              :step="100"
+              style="width: 140px"
+            />
+          </el-form-item>
+          <el-form-item :label="t('callHistory.slowCalls.displayCountLabel')">
+            <el-select v-model="limit" style="width: 100px">
+              <el-option :value="20" label="20" />
+              <el-option :value="50" label="50" />
+              <el-option :value="100" label="100" />
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" icon="Search" @click="loadData">{{ t('callHistory.common.query') }}</el-button>
+            <el-button icon="Refresh" @click="handleReset">{{ t('callHistory.common.reset') }}</el-button>
+          </el-form-item>
+        </el-form>
+      </FilterBar>
+    </template>
+
+    <template #toolbar>
+      <div class="list-toolbar">
+        <span class="chart-title">{{ t('callHistory.slowCalls.listTitle') }}</span>
+        <el-tag type="warning" size="small">{{ t('callHistory.slowCalls.thresholdTag', { value: threshold }) }}</el-tag>
+      </div>
+      <!-- 慢调用统计卡片（P1-2 再压缩，本轮保留内容） -->
       <el-row :gutter="20" class="stats-row">
         <el-col :span="8">
           <el-card shadow="hover" class="stat-card">
             <div class="stat-content">
-              <div class="stat-icon" style="background: #E6A23C;">
+              <div class="stat-icon" style="background: var(--ja-warning);">
                 <el-icon><Timer /></el-icon>
               </div>
               <div class="stat-info">
@@ -54,7 +71,7 @@
         <el-col :span="8">
           <el-card shadow="hover" class="stat-card">
             <div class="stat-content">
-              <div class="stat-icon" style="background: #F56C6C;">
+              <div class="stat-icon" style="background: var(--ja-danger);">
                 <el-icon><WarningFilled /></el-icon>
               </div>
               <div class="stat-info">
@@ -67,7 +84,7 @@
         <el-col :span="8">
           <el-card shadow="hover" class="stat-card">
             <div class="stat-content">
-              <div class="stat-icon" style="background: #409EFF;">
+              <div class="stat-icon" style="background: var(--ja-primary);">
                 <el-icon><DataAnalysis /></el-icon>
               </div>
               <div class="stat-info">
@@ -81,57 +98,48 @@
     </template>
 
     <!-- 慢调用列表 -->
-    <el-card shadow="hover">
-      <template #header>
-        <div class="table-header">
-          <span class="chart-title">{{ t('callHistory.slowCalls.listTitle') }}</span>
-          <el-tag type="warning" size="small">{{ t('callHistory.slowCalls.thresholdTag', { value: threshold }) }}</el-tag>
-        </div>
-      </template>
-
-      <el-table v-loading="loading" :data="slowCalls" border stripe :max-height="600">
-        <el-table-column :label="t('callHistory.common.time')" prop="createdAt" width="180">
-          <template #default="scope">
-            {{ formatTime(scope.row.createdAt) }}
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('callHistory.common.modelName')" prop="modelName" min-width="160" show-overflow-tooltip />
-        <el-table-column :label="t('callHistory.common.serviceType')" prop="serviceType" width="110">
-          <template #default="scope">
-            <el-tag size="small">{{ getServiceTypeLabel(scope.row.serviceType) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('callHistory.common.responseTimeMs')" prop="responseTimeMs" width="140" align="right" sortable>
-          <template #default="scope">
-            <el-tag type="danger" size="small">
-              {{ scope.row.responseTimeMs?.toFixed(0) || '-' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('callHistory.common.httpStatusCode')" prop="httpStatusCode" width="120" align="center">
-          <template #default="scope">
-            <el-tag :type="getStatusType(scope.row.httpStatusCode)" size="small">
-              {{ scope.row.httpStatusCode || '-' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('callHistory.common.token')" prop="totalTokens" width="100" align="right">
-          <template #default="scope">
-            {{ formatNumber(scope.row.totalTokens) }}
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('callHistory.common.callStatus')" width="100" align="center">
-          <template #default="scope">
-            <el-tag :type="scope.row.isSuccess ? 'success' : 'danger'" size="small">
-              {{ scope.row.isSuccess ? t('callHistory.common.success') : t('callHistory.common.failed') }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('callHistory.common.provider')" prop="provider" width="100" show-overflow-tooltip />
-        <el-table-column label="Trace ID" prop="traceId" width="140" show-overflow-tooltip />
-      </el-table>
-    </el-card>
-  </PageSkeleton>
+    <el-table v-loading="loading" :data="slowCalls" border stripe :max-height="600">
+      <el-table-column :label="t('callHistory.common.time')" prop="createdAt" width="180">
+        <template #default="scope">
+          <TimeText :value="scope.row.createdAt" />
+        </template>
+      </el-table-column>
+      <el-table-column :label="t('callHistory.common.modelName')" prop="modelName" min-width="160" show-overflow-tooltip />
+      <el-table-column :label="t('callHistory.common.serviceType')" prop="serviceType" width="110">
+        <template #default="scope">
+          <el-tag size="small">{{ getServiceTypeLabel(scope.row.serviceType) }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column :label="t('callHistory.common.responseTimeMs')" prop="responseTimeMs" width="140" align="right" sortable>
+        <template #default="scope">
+          <el-tag type="danger" size="small">
+            {{ scope.row.responseTimeMs?.toFixed(0) || '-' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column :label="t('callHistory.common.httpStatusCode')" prop="httpStatusCode" width="120" align="center">
+        <template #default="scope">
+          <el-tag :type="getStatusType(scope.row.httpStatusCode)" size="small">
+            {{ scope.row.httpStatusCode || '-' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column :label="t('callHistory.common.token')" prop="totalTokens" width="100" align="right">
+        <template #default="scope">
+          {{ formatNumber(scope.row.totalTokens) }}
+        </template>
+      </el-table-column>
+      <el-table-column :label="t('callHistory.common.callStatus')" width="100" align="center">
+        <template #default="scope">
+          <el-tag :type="scope.row.isSuccess ? 'success' : 'danger'" size="small">
+            {{ scope.row.isSuccess ? t('callHistory.common.success') : t('callHistory.common.failed') }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column :label="t('callHistory.common.provider')" prop="provider" width="100" show-overflow-tooltip />
+      <el-table-column label="Trace ID" prop="traceId" width="140" show-overflow-tooltip />
+    </el-table>
+  </ListPageLayout>
 </template>
 
 <script setup lang="ts">
@@ -142,7 +150,9 @@ import { getErrorMessage } from '@/utils/error'
 import { Timer, WarningFilled, DataAnalysis } from '@element-plus/icons-vue'
 import { getSlowCalls } from '@/api/callHistory'
 import type { ApiCallHistoryRecord } from '@/types/callHistory'
-import PageSkeleton from '@/components/PageSkeleton.vue'
+import ListPageLayout from '@/components/ListPageLayout.vue'
+import FilterBar from '@/components/FilterBar.vue'
+import TimeText from '@/components/TimeText.vue'
 
 const { t } = useI18n()
 
@@ -153,18 +163,12 @@ const limit = ref(50)
 
 // 慢调用数据
 const slowCalls = ref<ApiCallHistoryRecord[]>([])
-const loading = ref(false)
+const loading = ref(true)
 
 // 格式化数字
 const formatNumber = (num?: number): string => {
   if (!num && num !== 0) return '0'
   return num.toLocaleString()
-}
-
-// 格式化时间
-const formatTime = (time?: string) => {
-  if (!time) return '-'
-  return time.replace('T', ' ').substring(0, 19)
 }
 
 // 服务类型 key -> i18n 键名映射（保持原有顺序）
@@ -243,9 +247,31 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.page-subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--ja-ink-3);
+  line-height: 1.5;
+}
+
 .filter-form {
   display: flex;
   justify-content: center;
+  width: 100%;
+}
+
+.list-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--ja-space-2);
+  flex-wrap: wrap;
 }
 
 .stats-row {
@@ -281,14 +307,9 @@ onMounted(() => {
   margin-top: 5px;
 }
 
-.table-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .chart-title {
   font-size: 16px;
   font-weight: bold;
+  color: var(--ja-ink);
 }
 </style>
