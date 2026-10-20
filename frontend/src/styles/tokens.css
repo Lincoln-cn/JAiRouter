@@ -94,6 +94,22 @@
   --ja-stat-gradient-healthy: linear-gradient(135deg, #e6fffb, #f0f9ff);
   --ja-stat-gradient-error: linear-gradient(135deg, #fff0f0, #fff7e6);
   --ja-stat-gradient-user: linear-gradient(135deg, #f8eaff, #eef7ff);
+
+  /* ========== 中性阶与强调色（P0-1 品牌与令牌） ========== */
+  /* 中性阶：纸面 / 表面 / 三级文字。
+     分隔线不在此处新增：--ja-border 已在上方「边框」组定义（#e6e6e6），
+     且 element-override.css 把它映射为 --el-border-color，这里再声明会连带改掉
+     全站 Element Plus 边框色（超出「只做品牌面」范围），留待 P1-3 暗色语义色统一处理。 */
+  --ja-paper: #ffffff;
+  --ja-surface: #f7f8fa;
+  --ja-surface-2: #eef0f4;
+  --ja-ink: #10151c;
+  --ja-ink-2: #4b5563;
+  --ja-ink-3: #8b93a1;
+
+  /* 强调色：取自 logo 青色，只用于品牌面（不替代 --ja-primary / --ja-primary-*） */
+  --ja-accent: #34c8da;
+  --ja-accent-soft: rgba(52, 200, 218, 0.16);
 }
 
 /* ========== 暗色模式 ========== */
@@ -168,4 +184,17 @@ html.dark {
   --ja-stat-gradient-healthy: linear-gradient(135deg, #1a2e2e, #1a2233);
   --ja-stat-gradient-error: linear-gradient(135deg, #2e1a1a, #2a2a1a);
   --ja-stat-gradient-user: linear-gradient(135deg, #2a1a2e, #1a1f2e);
+
+  /* ========== 中性阶与强调色（P0-1 品牌与令牌） ========== */
+  /* 中性阶（--ja-border 沿用上方暗色「边框」组的值，理由同浅色块） */
+  --ja-paper: #0e1116;
+  --ja-surface: #151a21;
+  --ja-surface-2: #1c222b;
+  --ja-ink: #e8ecf2;
+  --ja-ink-2: #b6bfcc;
+  --ja-ink-3: #7d8797;
+
+  /* 强调色（暗色下略微提亮） */
+  --ja-accent: #6ee0e8;
+  --ja-accent-soft: rgba(110, 224, 232, 0.14);
 }
