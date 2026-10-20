@@ -10,9 +10,26 @@ import org.unreal.modelrouter.common.util.ApplicationContextProvider;
 
 /**
  * 适配器追踪支持工具类
- * 处理适配器调用、重试、转换错误的追踪记录
+ *
+ * <p>记录适配器调用、重试、转换错误在追踪上下文上的日志。
+ * <p><b>Deprecated / zero consumers:</b> nothing outside this file references it &mdash; the main + test
+ * reference count is 0 (scan on 2026-10-20).
+ *
+ * <p><b>What it used to do:</b> the per-adapter tracing helper &mdash; it looked
+ * {@code AdapterTracingEnhancer} up through {@code ApplicationContextProvider} and logged adapter call
+ * start / success / error plus retry and transform failures onto the current {@code TracingContext},
+ * no-oping when no span was active. Adapter tracing now goes through {@code AdapterTracingManager}
+ * (injected via {@code ResilienceSupport}) and through direct {@code AdapterTracingEnhancer} calls in
+ * {@code GpuStackAdapter} / {@code VllmAdapter}.
+ *
+ * <p><b>Before deleting:</b> it is constructed nowhere and named by no configuration key; a full compile
+ * plus the adapter tracing tests is enough.
+ *
+ * @deprecated No caller remains in main or test sources (scan 2026-10-20); kept only until the dead-code
+ *             sweep deletes it.
  */
 @Slf4j
+@Deprecated(forRemoval = true)
 public class TracingSupport {
 
     private final MetricsCollector metricsCollector;

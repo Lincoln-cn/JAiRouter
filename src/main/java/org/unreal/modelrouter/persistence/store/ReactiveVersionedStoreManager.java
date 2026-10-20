@@ -8,8 +8,25 @@ import java.util.Map;
 
 /**
  * 响应式版本化存储管理器接口
- * 扩展 ReactiveStoreManager 添加版本控制功能
+ *
+ * <p>在 ReactiveStoreManager 之上增加配置版本控制：保存版本、列出所有版本、按版本读取。
+ * <p><b>Deprecated / zero consumers:</b> nothing outside this file references it &mdash; the main + test
+ * reference count is 0 (scan on 2026-10-20).
+ *
+ * <p><b>What it used to do:</b> it was the reactive twin of the versioned store contract &mdash; reactive
+ * {@code saveConfigVersion} / {@code getConfigVersions} / {@code getConfigByVersion} on top of
+ * {@link ReactiveStoreManager}. Versioned persistence actually runs on the blocking side:
+ * {@code StoreManager} / {@code BaseStoreManager} with {@code FileStoreManager} and
+ * {@code JpaStoreManager}, consumed by {@code ConfigVersionManager}, {@code SecurityConfigMergeService},
+ * {@code ApiKeyPersistenceService} and {@code VersionSyncService}. No class implements this interface.
+ *
+ * <p><b>Before deleting:</b> an interface with no implementor &mdash; no bean, no configuration binding
+ * and no serialized shape; a full compile proves nothing can be constructed from it.
+ *
+ * @deprecated No caller remains in main or test sources (scan 2026-10-20); kept only until the dead-code
+ *             sweep deletes it.
  */
+@Deprecated(forRemoval = true)
 public interface ReactiveVersionedStoreManager extends ReactiveStoreManager {
 
     /**

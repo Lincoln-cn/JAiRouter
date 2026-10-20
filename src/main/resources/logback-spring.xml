@@ -13,10 +13,6 @@
     <property name="FILE_LOG_PATTERN" 
               value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{50} - %msg%n"/>
 
-    <!-- 注册自定义转换器 -->
-    <conversionRule conversionWord="traceId" class="org.unreal.modelrouter.tracing.logger.TraceIdConverter" />
-    <conversionRule conversionWord="spanId" class="org.unreal.modelrouter.tracing.logger.SpanIdConverter" />
-
     <!-- 控制台输出 -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>

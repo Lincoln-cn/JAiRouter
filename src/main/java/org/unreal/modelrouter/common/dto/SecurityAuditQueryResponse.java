@@ -8,8 +8,26 @@ import java.util.List;
 
 /**
  * 安全审计查询响应DTO
+ *
+ * <p>审计事件的分页结果包装（事件列表 + 分页信息 + 查询时间窗）。
+ * <p><b>Deprecated / zero consumers:</b> nothing outside this file references it &mdash; the main + test
+ * reference count is 0 (scan on 2026-10-20).
+ *
+ * <p><b>What it used to do:</b> it was the paged envelope of the first security-audit query API &mdash; a
+ * page of {@code SecurityAuditEvent} rows plus page / size / totalElements, the queried time window and a
+ * generation timestamp, with {@code hasNext()} / {@code hasPrevious()} conveniences and a builder. The
+ * audit query endpoints that exist today return {@link ExtendedAuditQueryResponse} (built in
+ * {@code ExtendedSecurityAuditController} from {@code AuditEvent} rows).
+ *
+ * <p><b>Before deleting:</b> it is a response DTO that no controller returns, so it never reaches the
+ * generated OpenAPI document &mdash; re-check {@code /v3/api-docs} for a schema of this name and confirm
+ * that no client parses this JSON shape.
+ *
+ * @deprecated No caller remains in main or test sources (scan 2026-10-20); kept only until the dead-code
+ *             sweep deletes it.
  */
 @Schema(description = "安全审计查询响应")
+@Deprecated(forRemoval = true)
 public final class SecurityAuditQueryResponse {
 
     @Schema(description = "审计事件列表")

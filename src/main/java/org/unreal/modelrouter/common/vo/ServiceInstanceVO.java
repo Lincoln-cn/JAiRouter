@@ -7,11 +7,29 @@ import lombok.NoArgsConstructor;
 
 /**
  * 服务实例 VO - 用于返回实例信息
+ *
+ * <p>实例列表的读模型：基础信息 + 请求头 + 嵌套的限流与熔断配置视图。
+ * <p><b>Deprecated / zero consumers:</b> nothing outside this file references it &mdash; the main + test
+ * reference count is 0 (scan on 2026-10-20).
+ *
+ * <p><b>What it used to do:</b> the read model for instance listing &mdash; string {@code instanceId},
+ * name / baseUrl / path / weight / status / healthStatus, raw {@code headers}, and nested rate-limit and
+ * circuit-breaker views. Instance responses now use {@link ServiceInstanceDTO} (built by
+ * {@code ServiceInstanceManager.convertToDTO}, returned by {@code ServiceTypeInstanceController}), so no
+ * controller emits this VO shape any more.
+ *
+ * <p><b>Before deleting:</b> it is a response VO &mdash; re-check any documented JSON shape for
+ * {@code rateLimit} / {@code circuitBreaker} (and the frontend's instance types, out of scope here)
+ * before deleting.
+ *
+ * @deprecated No caller remains in main or test sources (scan 2026-10-20); kept only until the dead-code
+ *             sweep deletes it.
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Deprecated(forRemoval = true)
 public class ServiceInstanceVO {
     
     /**
