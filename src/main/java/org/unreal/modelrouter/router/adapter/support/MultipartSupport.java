@@ -10,9 +10,25 @@ import org.unreal.modelrouter.common.dto.SttDTO;
 
 /**
  * 多部分表单支持工具类
- * 处理 STT、图像编辑等多部分请求
+ *
+ * <p>处理 STT、图像编辑等多部分请求的表单体构建。
+ * <p><b>Deprecated / zero consumers:</b> nothing outside this file references it &mdash; the main + test
+ * reference count is 0 (scan on 2026-10-20).
+ *
+ * <p><b>What it used to do:</b> static helpers that turned an STT request or an image-edit request into a
+ * {@code MultiValueMap} multipart body (file part, model, language, response format, size, n). Multipart
+ * bodies are now built by {@code MultipartRequestHandler}, the Spring bean injected into
+ * {@code BaseAdapter} and {@code NonStreamingRequestProcessor} (which also sets the multipart headers),
+ * while {@code RequestBuilder} keeps the still-used subset of the same helpers.
+ *
+ * <p><b>Before deleting:</b> static utility &mdash; no bean and no serialized shape; a full compile plus
+ * the STT / image-edit adapter tests is the behavioural net.
+ *
+ * @deprecated No caller remains in main or test sources (scan 2026-10-20); kept only until the dead-code
+ *             sweep deletes it.
  */
 @Slf4j
+@Deprecated(forRemoval = true)
 public class MultipartSupport {
 
     /**

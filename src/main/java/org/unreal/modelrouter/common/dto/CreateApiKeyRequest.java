@@ -16,11 +16,27 @@ import java.util.Map;
 
 /**
  * 创建API Key请求DTO
+ *
+ * <p>创建密钥的入参：keyId、描述、权限、启用标记、元数据与过期时间。
+ * <p><b>Deprecated / zero consumers:</b> nothing outside this file references it &mdash; the main + test
+ * reference count is 0 (scan on 2026-10-20).
+ *
+ * <p><b>What it used to do:</b> it was the create-key request body &mdash; keyId, description,
+ * permissions, enabled, metadata and expiresAt. Key creation now binds {@code ApiKeyCreateRequest} (the
+ * {@code @Valid @RequestBody} of {@code ApiKeyManagementController.createApiKey}), which adds IP
+ * allow-listing, quota limits and rotation period.
+ *
+ * <p><b>Before deleting:</b> it is a request DTO no controller takes &mdash; check external clients and
+ * the published API docs.
+ *
+ * @deprecated No caller remains in main or test sources (scan 2026-10-20); kept only until the dead-code
+ *             sweep deletes it.
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Deprecated(forRemoval = true)
 public final class CreateApiKeyRequest {
 
     private String keyId;

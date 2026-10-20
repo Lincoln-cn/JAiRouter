@@ -6,8 +6,25 @@ import java.time.LocalDateTime;
 
 /**
  * 安全审计查询请求DTO
+ *
+ * <p>审计查询的入参：时间窗、事件类型、用户、客户端 IP、成功标记、动作、资源、失败原因，以及分页与排序。
+ * <p><b>Deprecated / zero consumers:</b> nothing outside this file references it &mdash; the main + test
+ * reference count is 0 (scan on 2026-10-20).
+ *
+ * <p><b>What it used to do:</b> it was the mutable query bean of the first audit-query API &mdash; time
+ * window, eventType / userId / clientIp / success / action / resource / failureReason filters plus page,
+ * size and sort hints. Audit queries today bind {@link AuditEventQuery} (the advanced
+ * {@code /api/security/audit/**} endpoints) and read {@code AuditEvent} rows through
+ * {@code ExtendedSecurityAuditService.findAuditEvents} / {@code countAuditEvents}.
+ *
+ * <p><b>Before deleting:</b> no controller takes this body and no published API contract mentions it
+ * &mdash; confirm that no external client posts this shape.
+ *
+ * @deprecated No caller remains in main or test sources (scan 2026-10-20); kept only until the dead-code
+ *             sweep deletes it.
  */
 @Schema(description = "安全审计查询请求")
+@Deprecated(forRemoval = true)
 public final class SecurityAuditQueryRequest {
 
     @Schema(description = "开始时间", example = "2024-01-01T00:00:00")

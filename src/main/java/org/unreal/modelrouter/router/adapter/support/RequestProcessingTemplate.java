@@ -18,8 +18,27 @@ import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 
 /**
  * 请求处理模板 - 处理非流式和流式请求
+ *
+ * <p>下游调用的通用模板：转发请求、把下游状态码映射成平台异常、把下游响应用 RouterResponse 包装。
+ * <p><b>Deprecated / zero consumers:</b> nothing outside this file references it &mdash; the main + test
+ * reference count is 0 (scan on 2026-10-20).
+ *
+ * <p><b>What it used to do:</b> it was the generic downstream call template &mdash; POST the transformed
+ * body with the instance's {@code Authorization} header, map 5xx to {@code ResponseStatusException}, map
+ * 401 / 400 / 503 to {@code DownstreamServiceException} with user-facing messages, then wrap the parsed
+ * downstream JSON in {@code RouterResponse.success(data, "请求成功")}. That role moved to
+ * {@code NonStreamingRequestProcessor} (v2.26.6), which adds response transformation, multipart, metrics,
+ * call history and the v3.1 {@code /v1} native-JSON passthrough this template never had. Note that the
+ * old javadoc promised streaming support the class never implemented.
+ *
+ * <p><b>Before deleting:</b> no bean and no controller references it; a full compile plus the adapter
+ * request-processing tests is enough.
+ *
+ * @deprecated No caller remains in main or test sources (scan 2026-10-20); kept only until the dead-code
+ *             sweep deletes it.
  */
 @Slf4j
+@Deprecated(forRemoval = true)
 public class RequestProcessingTemplate {
 
     private final ObjectMapper objectMapper;

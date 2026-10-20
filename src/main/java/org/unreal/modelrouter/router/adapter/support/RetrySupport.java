@@ -8,9 +8,27 @@ import org.springframework.web.server.ResponseStatusException;
 
 /**
  * 适配器重试支持工具类
- * 提供重试策略、延迟计算等功能
+ *
+ * <p>提供重试策略、延迟计算等功能。
+ * <p><b>Deprecated / zero consumers:</b> nothing outside this file references it &mdash; the main + test
+ * reference count is 0 (scan on 2026-10-20).
+ *
+ * <p><b>What it used to do:</b> it was the adapter-side retry helper &mdash;
+ * {@code getMaxRetries(serviceType)} hard-coded per-service limits (chat 2, embedding 2, rerank 1, ...),
+ * and it decided whether an error was retryable, computed the backoff delay and recorded retry metrics.
+ * Retries now run through {@link org.unreal.modelrouter.router.adapter.retry.RetryPolicy} (Reactor
+ * {@code Retry} with exponential backoff and a max-delay cap), reached via
+ * {@code ResilienceSupport.getRetryPolicy()}, with adapter metrics recorded by
+ * {@code AdapterMetricsRecorder}.
+ *
+ * <p><b>Before deleting:</b> a plain helper &mdash; no bean, no configuration binding and no serialized
+ * shape; a full compile plus the adapter suites is enough.
+ *
+ * @deprecated No caller remains in main or test sources (scan 2026-10-20); kept only until the dead-code
+ *             sweep deletes it.
  */
 @Slf4j
+@Deprecated(forRemoval = true)
 public class RetrySupport {
 
     private final MetricsCollector metricsCollector;

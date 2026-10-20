@@ -14,17 +14,29 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 追踪Span构建器包装器
- * 
- * 简化Span创建过程，提供：
- * - 链式调用API
- * - 常用属性的便捷设置
- * - 自动属性注入
- * - 错误处理和降级
- * 
+ *
+ * <p>简化Span创建过程，提供链式调用、常用属性便捷设置、自动属性注入、错误处理和降级。
+ * <p><b>Deprecated / zero consumers:</b> nothing outside this file references it &mdash; the main + test
+ * reference count is 0 (scan on 2026-10-20).
+ *
+ * <p><b>What it used to do:</b> it was the fluent wrapper around the OpenTelemetry {@code SpanBuilder}
+ * &mdash; operation name, {@code SpanKind} presets (server / client / producer / consumer), parent
+ * context and span, attributes, start time, exception recording &mdash; written for the first tracing
+ * iteration. Spans are now started straight on the {@code Tracer} by {@link SpanManager}
+ * ({@code createHttpServerSpan}, {@code createHttpClientSpan}, {@code createInternalSpan}, ...) and by
+ * {@code TracingContext.createChildSpan}, with the active ids published through {@link TracingContextHolder}.
+ *
+ * <p><b>Before deleting:</b> it is a plain builder &mdash; no Spring bean, no serialized shape, and no
+ * configuration key or reflective lookup loads it by name (main has no {@code Class.forName} /
+ * {@code getBean(String)} / {@code loadClass}); a full main + test compile is the only gate.
+ *
  * @author JAiRouter Team
  * @since 1.0.0
+ * @deprecated No caller remains in main or test sources (scan 2026-10-20); kept only until the dead-code
+ *             sweep deletes it.
  */
 @Slf4j
+@Deprecated(forRemoval = true)
 public final class TracingSpanBuilder {
     
     private final Tracer tracer;

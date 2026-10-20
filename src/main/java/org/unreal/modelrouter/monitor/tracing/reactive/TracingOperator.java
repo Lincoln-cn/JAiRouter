@@ -15,17 +15,29 @@ import java.util.function.Function;
 
 /**
  * 追踪操作符
- * 
- * 为Mono和Flux提供追踪增强功能，包括：
- * - 自动创建和管理Span
- * - 响应式流中的上下文传播
- * - 错误处理和Span状态管理
- * - 性能指标收集
- * 
+ *
+ * <p>为Mono和Flux提供追踪增强：自动创建和管理Span、响应式流中的上下文传播、错误处理和Span状态管理。
+ * <p><b>Deprecated / zero consumers:</b> nothing outside this file references it &mdash; the main + test
+ * reference count is 0 (scan on 2026-10-20).
+ *
+ * <p><b>What it used to do:</b> it was the reactive tracing helper &mdash; {@code trace(Mono|Flux, ...)}
+ * wrapped a publisher in a {@code CoreSubscriber} that opened a span on subscribe and closed it on
+ * terminate, with {@code monoTracer} / {@code fluxTracer} / {@code webClientTracer} /
+ * {@code databaseTracer} / {@code messageTracer} as per-layer variants. Reactive tracing now runs through
+ * {@link WebFluxTracingContextPropagator} (it copies the trace/span ids carried in the Reactor context
+ * into the tracing holder) plus {@code TracingWebFilter}, and spans are created by
+ * {@link org.unreal.modelrouter.monitor.tracing.SpanManager}.
+ *
+ * <p><b>Before deleting:</b> no bean, no configuration binding and no serialized shape; a full
+ * main + test compile is the only gate.
+ *
  * @author JAiRouter Team
  * @since 1.0.0
+ * @deprecated No caller remains in main or test sources (scan 2026-10-20); kept only until the dead-code
+ *             sweep deletes it.
  */
 @Slf4j
+@Deprecated(forRemoval = true)
 public class TracingOperator {
     /** Private constructor to prevent instantiation. */
     private TracingOperator() {}
