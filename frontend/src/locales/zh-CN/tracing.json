@@ -75,6 +75,9 @@
     },
     "search": {
       "title": "追踪搜索",
+      "pageDescription": "按时间、服务、Trace ID 与状态检索链路追踪，点开可查看调用链甘特图与 Span 明细。",
+      "emptyTitle": "没有符合条件的记录",
+      "emptyDescription": "当前条件下没有追踪数据，可调整时间范围或筛选条件后重试，或点击「获取最近追踪」。",
       "search": "搜索",
       "export": "导出",
       "getRecent": "获取最近追踪",

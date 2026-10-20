@@ -2,33 +2,36 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import TimeText from '@/components/TimeText.vue'
+import { i18n } from '@/i18n'
 
 const BASE = new Date('2026-10-20T12:00:00+08:00')
 const BASE_MS = BASE.getTime()
 const HOUR = 3_600_000
 const DAY = 86_400_000
 
-const rtf = new Intl.RelativeTimeFormat('zh-CN', { numeric: 'always' })
-const absolute = (date: Date, withSeconds = false): string =>
-  new Intl.DateTimeFormat('zh-CN', {
+const rtf = (locale: string) => new Intl.RelativeTimeFormat(locale, { numeric: 'always' })
+const absolute = (date: Date, withSeconds = false, locale = 'zh-CN'): string =>
+  new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: withSeconds ? 'medium' : 'short'
   }).format(date)
-const full = (date: Date): string =>
-  new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'medium' }).format(date)
+const full = (date: Date, locale = 'zh-CN'): string =>
+  new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'medium' }).format(date)
 
 const mountTime = (
   value: string | number | Date | null | undefined,
   props: Record<string, unknown> = {}
-) => mount(TimeText, { props: { value, ...props } })
+) => mount(TimeText, { props: { value, ...props }, global: { plugins: [i18n] } })
 
 beforeEach(() => {
   vi.useFakeTimers()
   vi.setSystemTime(BASE)
+  i18n.global.locale.value = 'zh-CN'
 })
 
 afterEach(() => {
   vi.useRealTimers()
+  i18n.global.locale.value = 'zh-CN'
 })
 
 describe('TimeText', () => {
@@ -52,7 +55,7 @@ describe('TimeText', () => {
 
     expect(mountTime(value).text()).toBe('刚刚')
     expect(mountTime(value, { precision: 'second' }).text()).toBe(
-      rtf.format(-30, 'second')
+      rtf('zh-CN').format(-30, 'second')
     )
   })
 
@@ -61,7 +64,7 @@ describe('TimeText', () => {
     const wrapper = mountTime(value)
 
     expect(wrapper.text()).toBe('2小时前')
-    expect(wrapper.text()).toBe(rtf.format(-2, 'hour'))
+    expect(wrapper.text()).toBe(rtf('zh-CN').format(-2, 'hour'))
     expect(wrapper.attributes('title')).toBe(full(value))
   })
 
@@ -93,7 +96,7 @@ describe('TimeText', () => {
     const value = BASE_MS - 59_000
     const wrapper = mountTime(value, { precision: 'second' })
 
-    expect(wrapper.text()).toBe(rtf.format(-59, 'second'))
+    expect(wrapper.text()).toBe(rtf('zh-CN').format(-59, 'second'))
 
     vi.advanceTimersByTime(30_000)
     await nextTick()
@@ -107,5 +110,32 @@ describe('TimeText', () => {
     expect(vi.getTimerCount()).toBe(1)
     wrapper.unmount()
     expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('切换语言后相对时间与 title 跟随当前语言（组件内不硬编码 zh-CN）', async () => {
+    const twoHoursAgo = new Date(BASE_MS - 2 * HOUR)
+    i18n.global.locale.value = 'en-US'
+    const wrapper = mountTime(twoHoursAgo)
+
+    expect(wrapper.text()).toBe(rtf('en-US').format(-2, 'hour'))
+    expect(wrapper.attributes('title')).toBe(full(twoHoursAgo, 'en-US'))
+
+    i18n.global.locale.value = 'zh-CN'
+    await nextTick()
+
+    expect(wrapper.text()).toBe(rtf('zh-CN').format(-2, 'hour'))
+    expect(wrapper.attributes('title')).toBe(full(twoHoursAgo, 'zh-CN'))
+  })
+
+  it('不足一分钟在英文下显示 Just now', () => {
+    i18n.global.locale.value = 'en-US'
+    expect(mountTime(BASE_MS - 30_000).text()).toBe('Just now')
+  })
+
+  it('absolute 模式同样跟随语言', () => {
+    const value = new Date('2026-10-20T09:30:15+08:00')
+    i18n.global.locale.value = 'en-US'
+
+    expect(mountTime(value, { mode: 'absolute' }).text()).toBe(absolute(value, false, 'en-US'))
   })
 })

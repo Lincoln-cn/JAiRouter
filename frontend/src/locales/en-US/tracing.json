@@ -75,6 +75,9 @@
     },
     "search": {
       "title": "Trace Search",
+      "pageDescription": "Search traces by time, service, Trace ID and status; open one to inspect the call-chain gantt chart and span details.",
+      "emptyTitle": "No matching records",
+      "emptyDescription": "No trace data matches the current filters. Adjust the time range or filters and try again, or click \"Fetch Recent Traces\".",
       "search": "Search",
       "export": "Export",
       "getRecent": "Fetch Recent Traces",
