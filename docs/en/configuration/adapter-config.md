@@ -227,7 +227,7 @@ adapter-definitions:
 
 ### Via Web UI
 
-1. Navigate to **AI Playground → Chat**
+1. Navigate to **Developer Tools → AI Playground → Chat Playground**
 2. Select the service and model using the new adapter
 3. Send a test message
 

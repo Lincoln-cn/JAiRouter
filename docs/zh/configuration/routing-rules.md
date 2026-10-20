@@ -247,7 +247,7 @@ curl -X POST http://localhost:8080/api/config/rules/validate \
 
 ## 验证规则
 
-1. 通过 **AI 试验场 → 对话测试** 发送请求验证路由效果
+1. 通过 **开发工具 → AI 试验场 → 对话测试** 发送请求验证路由效果
 2. 观察后端日志中的 `Selected adapter` / 路由选择信息确认命中规则
 3. 或直接调用 `/v1/*` API 带/不带条件请求头对比路由结果
 

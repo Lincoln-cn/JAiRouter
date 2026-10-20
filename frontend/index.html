@@ -8,74 +8,99 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/src/assets/brand/favicon-32.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/src/assets/brand/favicon-180.png" />
     <style>
+      /* 首帧启动屏：与 tokens.css 的中性色令牌同值（此时 CSS 变量还没加载）。
+         亮色：--ja-surface #f7f8fa / --ja-paper #ffffff / --ja-border #e6e6e6 / --ja-ink #10151c
+         暗色：--ja-paper #0e1116 / --ja-surface-2 #1c222b / --ja-ink #e8ecf2 */
       body {
         margin: 0;
         padding: 0;
-        /* 与 src/styles/tokens.css 中 --ja-login-gradient-start/end 一致 */
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #f7f8fa;
+        color: #10151c;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         min-height: 100vh;
         display: flex;
         align-items: center;
         justify-content: center;
       }
-      
+
       #app {
         width: 100%;
         padding: 20px;
       }
-      
+
       .loading-container {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        backdrop-filter: blur(10px);
+        background: #ffffff;
+        border: 1px solid #e6e6e6;
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(16, 21, 28, 0.04);
         padding: 40px;
         text-align: center;
-        animation: fadeIn 0.8s ease-out;
+        animation: fadeIn 0.4s ease-out;
       }
-      
+
+      .boot-logo {
+        display: block;
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        margin: 0 auto 16px;
+      }
+
       @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-20px); }
-        to { opacity: 1; transform: translateY(0); }
+        from { opacity: 0; }
+        to { opacity: 1; }
       }
-      
+
       .loading-spinner {
-        width: 50px;
-        height: 50px;
-        border: 4px solid rgba(102, 126, 234, 0.3);
-        border-top: 4px solid #667eea;
+        width: 28px;
+        height: 28px;
+        border: 2px solid rgba(52, 200, 218, 0.25);
+        border-top: 2px solid #34c8da;
         border-radius: 50%;
         animation: spin 1s linear infinite;
         margin: 0 auto 20px;
       }
-      
+
       @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
       }
-      
+
       h2 {
-        color: #333;
-        margin-bottom: 15px;
+        color: #10151c;
+        margin: 0 0 12px;
+        font-size: 18px;
         font-weight: 600;
       }
-      
+
       p {
-        color: #666;
+        color: #4b5563;
+        font-size: 13px;
         line-height: 1.6;
-        margin: 10px 0;
+        margin: 6px 0;
       }
-      
+
       .brand {
-        color: #667eea;
-        font-weight: bold;
+        color: #34c8da;
+        font-weight: 600;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body { background: #0e1116; }
+        .loading-container {
+          background: #151a21;
+          border-color: #1c222b;
+          box-shadow: none;
+        }
+        h2 { color: #e8ecf2; }
+        p { color: #b6bfcc; }
       }
     </style>
   </head>
   <body>
     <div id="app">
       <div class="loading-container">
+        <img class="boot-logo" src="/src/assets/brand/logo-mark-64.png" width="44" height="44" alt="" />
         <div class="loading-spinner"></div>
         <h2 id="boot-title">正在加载 <span class="brand">JAiRouter</span> 管理界面</h2>
         <p id="boot-sub">系统正在初始化，请稍候...</p>

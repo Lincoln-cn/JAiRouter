@@ -17,7 +17,7 @@ JAiRouter ships a **quota ledger**: it tracks request counts and token usage acr
 |------|-------|--------------|
 | 1. Set limits | **Security → API Keys** edit form | `dailyRequestLimit` / `dailyTokenLimit` / `rateLimitPerMinute` / `quotaAlertThreshold` — **not** on the Quota config page |
 | 2. Enable ledger (optional) | **Traffic → Quota Runtime Config** `/config/quota` | Hot-edit `enabled` / `failOpen` / `windows`; ledger defaults to off |
-| 3. Observe usage | **Data Records → Quota Usage Monitoring** `/monitoring/quota` | Multi-dimensional usage + limit/progress columns |
+| 3. Observe usage | **Observability → Usage → Quota Usage** `/monitoring/quota` | Multi-dimensional usage + limit/progress columns |
 | 4. Alerts & reset | **Security → API Keys** | Quota alerts list, reset daily counters |
 
 - Limit mapping: DAY window → daily request/token caps; MINUTE window → rate limit; `0` means unlimited.

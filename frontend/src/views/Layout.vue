@@ -20,9 +20,6 @@
             <span>{{ t(group.title) }}</span>
           </template>
           <el-menu-item v-for="item in group.children" :key="item.path" :index="item.path">
-            <el-icon v-if="item.icon">
-              <component :is="itemIconMap[item.icon]" />
-            </el-icon>
             {{ t(item.title) }}
           </el-menu-item>
         </el-sub-menu>
@@ -33,10 +30,21 @@
       <el-header class="layout-header">
         <div class="header-left">
           <el-breadcrumb separator="/">
-            <el-breadcrumb-item v-for="item in breadcrumbs" :key="item.path" :to="item.path">
-              {{ t(item.title) }}
+            <el-breadcrumb-item v-for="(item, index) in breadcrumbs" :key="`${index}-${item.title}`">
+              <router-link v-if="item.path && index < breadcrumbs.length - 1" :to="item.path">
+                {{ displayTitle(item.title) }}
+              </router-link>
+              <span v-else>{{ displayTitle(item.title) }}</span>
             </el-breadcrumb-item>
           </el-breadcrumb>
+          <!-- 多 tab 菜单项的切换条：40 → 28 后被收起的页面在这里进入，URL 不变 -->
+          <div v-if="currentTabs.length > 1" class="nav-tabs" role="tablist">
+            <button v-for="tab in currentTabs" :key="tab.key" type="button" role="tab" class="nav-tab"
+              :class="{ active: tab.to === route.path }" :aria-selected="tab.to === route.path"
+              @click="handleTabSelect(tab.to)">
+              {{ displayTitle(tab.labelKey) }}
+            </button>
+          </div>
         </div>
         <div class="header-right">
           <LanguageSwitcher class="lang-toggle" />
@@ -75,7 +83,13 @@ import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { useTheme } from '@/composables/useTheme'
 import { usePermission } from '@/composables/usePermission'
-import { menuGroups } from '@/config/menu'
+import {
+  menuGroups,
+  findMenuEntry,
+  findMenuTab,
+  resolveMenuPath
+} from '@/config/menu'
+import type { MenuItem } from '@/config/menu'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 import {
   House,
@@ -83,14 +97,8 @@ import {
   Lock,
   User,
   Connection,
-  Monitor,
-  ChatDotRound,
-  DataLine,
-  Sort,
-  Headset,
-  Picture,
-  Position,
-  Document,
+  DataAnalysis,
+  Tools,
   Moon,
   Sunny
 } from '@element-plus/icons-vue'
@@ -98,147 +106,132 @@ import {
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
-const { t } = useI18n()
+const { t, te } = useI18n()
 const { isDark, toggleTheme } = useTheme()
-const { filterMenuByPermission } = usePermission()
+const { filterMenuByPermission, getAccessibleTabs, resolveLandingPath } = usePermission()
 
 // v2.10.3: 显示真实用户名（JWT sub），缺省回退「管理员」
 const displayName = computed(() => userStore.userInfo?.username || t('layout.admin'))
 
-// v2.9.8 Phase 4: 菜单数据驱动 + 权限过滤（menu.ts 提供 8 组 34 项结构与权限码）
+// 菜单数据驱动 + 权限过滤（menu.ts 提供 7 组 28 项结构与权限码；数组权限为「或」）
 const filteredMenuGroups = computed(() => filterMenuByPermission(menuGroups))
 
-// 组图标名 → 图标组件（menu.ts 的 icon 为 kebab-case 名）
+// 组图标名 → 图标组件（menu.ts 的 icon 为 kebab-case 名，7 组各一）
 const groupIconMap: Record<string, Component> = {
   house: House,
-  setting: Setting,
+  'data-analysis': DataAnalysis,
   connection: Connection,
-  document: Document,
-  position: Position,
+  setting: Setting,
   lock: Lock,
   user: User,
-  monitor: Monitor
-}
-
-// 子项图标名 → 图标组件（仅 AI 试验场子项使用）
-const itemIconMap: Record<string, Component> = {
-  'chat-dot-round': ChatDotRound,
-  'data-line': DataLine,
-  sort: Sort,
-  headset: Headset,
-  picture: Picture
+  tools: Tools
 }
 
 // 防止快速连续点击导致的导航问题
 const isNavigating = ref(false)
 
-// 计算当前激活的菜单项
+// 当前激活的菜单项：深链查表 + 未命中回退 route.path（menu.ts 的 ROUTE_TO_MENU 由 tabs 派生）
 const activeMenu = computed(() => {
   const { path } = route
-  // 对于根路径，激活概览菜单项
   if (path === '/') {
     return '/dashboard/main'
   }
-  // 对于仪表板路径，激活概览菜单项
-  if (path === '/dashboard/main') {
-    return '/dashboard/main'
-  }
-  return path
+  return resolveMenuPath(path)
 })
 
-// 计算默认打开的子菜单（v2.9.8 Phase 4：8 组结构，/config 子路由按组拆分归属）
+// 默认展开的组：由「当前路由反查所属组」得到，不再维护一份前缀表
 const defaultOpeneds = computed(() => {
-  const { path } = route
-  const openeds: string[] = []
-
-  if (path === '/dashboard/main') {
-    openeds.push('dashboard')
-  } else if (path.startsWith('/config/state-persistence')) {
-    // 状态持久化归属「系统管理」
-    openeds.push('system')
-  } else if (path.startsWith('/config/rules') || path.startsWith('/config/pools')) {
-    // 路由规则 / 资源池归属「流量治理」
-    openeds.push('traffic')
-  } else if (path.startsWith('/config')) {
-    // 服务 / 实例 / 版本 / Adapter 归属「模型服务」
-    openeds.push('model-services')
-  } else if (
-    path.startsWith('/load-balancers') ||
-    path.startsWith('/circuit-breakers') ||
-    path.startsWith('/rate-limiters')
-  ) {
-    openeds.push('traffic')
-  } else if (path.startsWith('/call-history') || path.startsWith('/exceptions')) {
-    openeds.push('records')
-  } else if (path.startsWith('/tracing')) {
-    openeds.push('tracing')
-  } else if (path.startsWith('/security')) {
-    openeds.push('security')
-  } else if (path.startsWith('/system')) {
-    openeds.push('system')
-  } else if (path.startsWith('/playground')) {
-    openeds.push('playground')
-  } else if (path.startsWith('/tools')) {
-    openeds.push('tools')
-  }
-
-  return openeds
+  const entry = findMenuEntry(route.path)
+  return entry ? [entry.group.index] : []
 })
 
-// 面包屑导航
-const breadcrumbs = computed(() => {
-  const pathArray = route.path.split('/').filter(item => item)
-  const breadcrumbArray = []
-
-  // 添加首页面包屑（v2.10.3: title 存 i18n key，模板 t() 渲染）
-  breadcrumbArray.push({ path: '/dashboard/main', title: 'layout.home' })
-
-  // 特殊处理仪表板页面
-  if (route.path === '/dashboard/main') {
-    breadcrumbArray.push({ path: '/dashboard', title: 'menu.dashboard' })
-    breadcrumbArray.push({ path: '/dashboard/main', title: 'route.dashboardMain' })
-    return breadcrumbArray
-
-  }
-
-  // 处理其他路径的面包屑
-  let path = ''
-  for (let i = 0; i < pathArray.length; i++) {
-    path += `/${  pathArray[i]}`
-    const routeMatched = router.options.routes?.find(r => r.path === path)
-    if (routeMatched) {
-      breadcrumbArray.push({
-        path,
-        title: (routeMatched.meta?.titleKey as string) || (routeMatched.name as string)
-      })
-    } else {
-      // 查找子路由
-      const parentPath = pathArray.slice(0, i).join('/')
-      const parentRoute = router.options.routes?.find(r => r.path === `/${  parentPath}`)
-      if (parentRoute && parentRoute.children) {
-        const childRoute = parentRoute.children.find(child => child.path === pathArray[i])
-        if (childRoute) {
-          breadcrumbArray.push({
-            path,
-            title: (childRoute.meta?.titleKey as string) || (childRoute.name as string)
-          })
-        }
+// 菜单项反查（el-menu-item 的 index 即菜单项主路径）
+const findItemByPath = (path: string): MenuItem | undefined => {
+  for (const group of menuGroups) {
+    for (const item of group.children) {
+      if (item.path === path) {
+        return item
       }
     }
   }
+  return undefined
+}
 
-  return breadcrumbArray
+/**
+ * 面包屑：「组 → 菜单项 → 当前 tab」
+ *
+ * - 最后一段不带链接（模板里只有非末段才渲染 router-link）；
+ * - 单页菜单项的 tab 与菜单项同名（labelKey 相同）时去重，避免「路由规则 / 路由规则」；
+ * - 详情页等非 tab 路由：追加 `#<id>` 作为末段；
+ * - 完全不在菜单里的路由：回退「首页 → meta.titleKey / 路由 name」。
+ */
+const breadcrumbs = computed<{ path?: string; title: string }[]>(() => {
+  const entry = findMenuEntry(route.path)
+  if (!entry) {
+    const fallbackTitle =
+      (route.meta?.titleKey as string | undefined) ||
+      (typeof route.name === 'string' ? route.name : undefined) ||
+      route.path
+    return [
+      { path: '/dashboard/main', title: 'layout.home' },
+      { title: fallbackTitle }
+    ]
+  }
+
+  const { group, item } = entry
+  const landing = resolveLandingPath(item)
+  const crumbs: { path?: string; title: string }[] = [
+    { path: landing, title: group.title },
+    { path: landing, title: item.title }
+  ]
+
+  const tab = findMenuTab(route.path)
+  if (tab) {
+    if (tab.labelKey !== item.title) {
+      crumbs.push({ title: tab.labelKey })
+    }
+  } else if (route.path !== item.path) {
+    // 详情页：末段不可点，用 #id 标识具体记录
+    const detailId = String(route.params.id ?? '')
+    crumbs.push({ title: detailId ? `#${detailId}` : route.path })
+  }
+
+  return crumbs
 })
 
-// 处理菜单选择
+// i18n key 存在才翻译，否则原样显示（详情页的 #id、meta 未配置 titleKey 时的路由名）
+const displayTitle = (key: string): string => (te(key) ? t(key) : key)
+
+// 当前菜单项下、当前用户可见的 tab（单 tab 项不渲染切换条）
+const currentTabs = computed(() => {
+  const entry = findMenuEntry(route.path)
+  return entry ? getAccessibleTabs(entry.item) : []
+})
+
+// tab 切换（被收起的 12 个页面在这里进入，路由路径与单独成项时完全一致）
+const handleTabSelect = async (to: string) => {
+  if (route.path === to) {
+    return
+  }
+  try {
+    await router.push(to)
+  } catch (error) {
+    console.error('路由跳转失败:', error)
+  }
+}
+
+// 处理菜单选择：进入该菜单项下「第一个当前用户有权限的 tab」，无权限则回退第一个 tab
 const handleMenuSelect = async (index: string) => {
   // 防止快速连续点击
   if (isNavigating.value) {
     return
   }
 
+  const item = findItemByPath(index)
+  const target = item ? resolveLandingPath(item) : index
+
   // 如果已经在目标路由，不进行跳转
-  if (route.path === index) {
+  if (route.path === target) {
     return
   }
 
@@ -246,7 +239,7 @@ const handleMenuSelect = async (index: string) => {
 
   try {
     // 使用编程式导航而不是让Element Plus处理
-    await router.push(index)
+    await router.push(target)
   } catch (error) {
     console.error('路由跳转失败:', error)
     // 如果是导航重复错误，可以忽略
@@ -355,6 +348,49 @@ const handleUserCommand = async (command: string) => {
   padding: 0 20px;
 }
 
+/* 面包屑 + tab 切换条同排：多 tab 项才出现切换条，单 tab 项视觉不变 */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-tab {
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: var(--ja-text-secondary);
+  font-size: 13px;
+  line-height: 1;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.nav-tab:hover {
+  background-color: var(--el-fill-color-light);
+  color: var(--ja-text-primary);
+}
+
+.nav-tab.active {
+  background-color: var(--ja-primary);
+  color: #fff;
+}
+
 .theme-toggle {
   margin-right: 12px;
 }
@@ -377,5 +413,21 @@ const handleUserCommand = async (command: string) => {
 .layout-main {
   background-color: var(--ja-main-bg);
   padding: 20px;
+}
+
+/* 面包屑链接与末段文字统一用主题前景色，避免默认 link 蓝与深色侧栏主题冲突 */
+.layout-header :deep(.el-breadcrumb__inner a),
+.layout-header :deep(.el-breadcrumb__inner.is-link) {
+  color: var(--ja-text-secondary);
+  font-weight: 400;
+}
+
+.layout-header :deep(.el-breadcrumb__inner a:hover) {
+  color: var(--ja-primary);
+}
+
+.layout-header :deep(.el-breadcrumb__item:last-child .el-breadcrumb__inner) {
+  color: var(--ja-text-primary);
+  font-weight: 500;
 }
 </style>

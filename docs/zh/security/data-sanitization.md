@@ -21,7 +21,7 @@ JAiRouter 的数据脱敏功能可以自动识别和处理请求和响应中的�
 
 | 能力 | 说明 |
 |------|------|
-| 控制台 | 安全管理 → **PII 脱敏管理**（`/security/sanitization`） |
+| 控制台 | 安全 → **PII 脱敏管理**（`/security/sanitization`） |
 | 权限 | `security:sanitization:manage`（ADMIN） |
 | 管理 API | `GET/PUT /api/config/sanitization`、`GET .../rules`、`POST .../test` |
 | 网关响应过滤器 | 默认关闭；管理台 `/api/**` 与 AI 实时路径 `/api/v1/**`、`/v1/**` 排除 |

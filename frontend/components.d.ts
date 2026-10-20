@@ -9,6 +9,8 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     CircuitBreakerConfig: typeof import('./src/components/CircuitBreakerConfig.vue')['default']
+    ConfirmAction: typeof import('./src/components/ConfirmAction.vue')['default']
+    DetailDrawer: typeof import('./src/components/DetailDrawer.vue')['default']
     ElAlert: typeof import('element-plus/es')['ElAlert']
     ElAside: typeof import('element-plus/es')['ElAside']
     ElAvatar: typeof import('element-plus/es')['ElAvatar']
@@ -74,12 +76,18 @@ declare module 'vue' {
     ElTooltip: typeof import('element-plus/es')['ElTooltip']
     ElTree: typeof import('element-plus/es')['ElTree']
     ElUpload: typeof import('element-plus/es')['ElUpload']
+    EmptyState: typeof import('./src/components/EmptyState.vue')['default']
+    FilterBar: typeof import('./src/components/FilterBar.vue')['default']
     LanguageSwitcher: typeof import('./src/components/LanguageSwitcher.vue')['default']
+    ListPageLayout: typeof import('./src/components/ListPageLayout.vue')['default']
     PageSkeleton: typeof import('./src/components/PageSkeleton.vue')['default']
+    PageTabs: typeof import('./src/components/PageTabs.vue')['default']
     RateLimitConfig: typeof import('./src/components/RateLimitConfig.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     StatCard: typeof import('./src/components/StatCard.vue')['default']
+    StatusPill: typeof import('./src/components/StatusPill.vue')['default']
+    TimeText: typeof import('./src/components/TimeText.vue')['default']
   }
   export interface GlobalDirectives {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']
