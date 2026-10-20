@@ -7,43 +7,17 @@
       </el-button>
     </template>
 
-    <!-- 顶部状态卡片 -->
+    <!-- 顶部状态指标条（P2-1：四张彩卡压成一行中性指标，语义色只落在「降级放行」为真时） -->
     <template #stats>
-      <el-row :gutter="16">
-        <el-col :span="6">
-          <StatCard
-            :icon="config?.enabled ? 'CircleCheck' : 'CircleClose'"
-            :label="t('quotaConfig.enabledLabel')"
-            :value="config?.enabled ? t('quotaConfig.enabled') : t('quotaConfig.disabled')"
-            :tone="config?.enabled ? 'success' : 'info'"
-          />
-        </el-col>
-        <el-col :span="6">
-          <StatCard
-            icon="Coin"
-            :label="t('quotaConfig.backendLabel')"
-            :value="config?.backendName ?? '—'"
-            tone="primary"
-          />
-        </el-col>
-        <el-col :span="6">
-          <StatCard
-            icon="Warning"
-            :label="t('quotaConfig.failOpenLabel')"
-            :value="config?.failOpen ? t('quotaConfig.failOpenEnabled') : t('quotaConfig.failOpenDisabled')"
-            :tone="config?.failOpen ? 'warning' : 'info'"
-          />
-        </el-col>
-        <el-col :span="6">
-          <StatCard
-            icon="Timer"
-            :label="t('quotaConfig.flushIntervalLabel')"
-            :value="config?.flushIntervalSeconds ?? '—'"
-            :unit="t('quotaConfig.flushIntervalUnit')"
-            tone="primary"
-          />
-        </el-col>
-      </el-row>
+      <MetricStrip :items="summaryItems" :columns="4" />
+    </template>
+
+    <!-- 页头提示：区分「即时生效」与「需重启」两类配置 -->
+    <template #toolbar>
+      <p class="restart-hint">
+        <el-icon><InfoFilled /></el-icon>
+        <span>{{ t('quotaConfig.restartHint') }}</span>
+      </p>
     </template>
 
     <!-- 未就绪提示 -->
@@ -93,7 +67,7 @@
       <div class="config-actions">
         <el-button
           v-if="canWrite"
-          type="primary"
+          :type="configChanged ? 'primary' : 'default'"
           :loading="saving"
           :disabled="!configChanged"
           v-permission="'config:quota:write'" @click="handleSaveConfig"
@@ -107,106 +81,29 @@
       </div>
     </el-card>
 
-    <!-- 需重启生效（只读区） -->
-    <el-card v-if="config" shadow="hover">
-      <template #header>
-        <span class="card-title">{{ t('quotaConfig.restartRequiredTitle') }}</span>
-      </template>
-
-      <div class="readonly-grid">
-        <!-- backendName -->
-        <div class="readonly-item">
-          <span class="readonly-label">{{ t('quotaConfig.backendNameLabel') }}</span>
-          <span class="readonly-value">{{ config.backendName }}</span>
-        </div>
-        <!-- distributed.enabled -->
-        <div class="readonly-item">
-          <span class="readonly-label">
-            {{ t('quotaConfig.distributedEnabledLabel') }}
-            <el-tag v-if="isRestartRequired('distributed.enabled')" size="small" type="warning">
-              {{ t('quotaConfig.restartRequiredBadge') }}
+    <!-- 需重启生效（只读区）：折叠 + 降对比，避免与可编辑网格同权 -->
+    <el-card v-if="config" shadow="never" class="readonly-card">
+      <el-collapse v-model="readonlyOpen">
+        <el-collapse-item name="readonly">
+          <template #title>
+            <span class="card-title">{{ t('quotaConfig.restartRequiredTitle') }}</span>
+            <el-tag size="small" type="info" effect="plain" class="readonly-count">
+              {{ t('quotaConfig.readonlyCount', { count: readonlyFields.length }) }}
             </el-tag>
-          </span>
-          <span class="readonly-value">{{ config.distributed.enabled ? '✓' : '✗' }}</span>
-        </div>
-        <!-- distributed.keyPrefix -->
-        <div class="readonly-item">
-          <span class="readonly-label">
-            {{ t('quotaConfig.distributedKeyPrefixLabel') }}
-            <el-tag v-if="isRestartRequired('distributed.keyPrefix')" size="small" type="warning">
-              {{ t('quotaConfig.restartRequiredBadge') }}
-            </el-tag>
-          </span>
-          <span class="readonly-value">{{ config.distributed.keyPrefix }}</span>
-        </div>
-        <!-- distributed.timeoutMs -->
-        <div class="readonly-item">
-          <span class="readonly-label">
-            {{ t('quotaConfig.distributedTimeoutLabel') }}
-            <el-tag v-if="isRestartRequired('distributed.timeoutMs')" size="small" type="warning">
-              {{ t('quotaConfig.restartRequiredBadge') }}
-            </el-tag>
-          </span>
-          <span class="readonly-value">{{ config.distributed.timeoutMs }} {{ t('quotaConfig.distributedTimeoutUnit') }}</span>
-        </div>
-        <!-- distributed.degradeToLocal -->
-        <div class="readonly-item">
-          <span class="readonly-label">
-            {{ t('quotaConfig.distributedDegradeLabel') }}
-            <el-tag v-if="isRestartRequired('distributed.degradeToLocal')" size="small" type="warning">
-              {{ t('quotaConfig.restartRequiredBadge') }}
-            </el-tag>
-          </span>
-          <span class="readonly-value">{{ config.distributed.degradeToLocal ? '✓' : '✗' }}</span>
-        </div>
-        <!-- retention.* -->
-        <div class="readonly-item">
-          <span class="readonly-label">
-            {{ t('quotaConfig.retentionMinuteLabel') }}
-            <el-tag v-if="isRestartRequired('retention.minute')" size="small" type="warning">
-              {{ t('quotaConfig.restartRequiredBadge') }}
-            </el-tag>
-          </span>
-          <span class="readonly-value">{{ config.retention.minute }}</span>
-        </div>
-        <div class="readonly-item">
-          <span class="readonly-label">
-            {{ t('quotaConfig.retentionHourLabel') }}
-            <el-tag v-if="isRestartRequired('retention.hour')" size="small" type="warning">
-              {{ t('quotaConfig.restartRequiredBadge') }}
-            </el-tag>
-          </span>
-          <span class="readonly-value">{{ config.retention.hour }}</span>
-        </div>
-        <div class="readonly-item">
-          <span class="readonly-label">
-            {{ t('quotaConfig.retentionDayLabel') }}
-            <el-tag v-if="isRestartRequired('retention.day')" size="small" type="warning">
-              {{ t('quotaConfig.restartRequiredBadge') }}
-            </el-tag>
-          </span>
-          <span class="readonly-value">{{ config.retention.day }}</span>
-        </div>
-        <div class="readonly-item">
-          <span class="readonly-label">
-            {{ t('quotaConfig.retentionMonthLabel') }}
-            <el-tag v-if="isRestartRequired('retention.month')" size="small" type="warning">
-              {{ t('quotaConfig.restartRequiredBadge') }}
-            </el-tag>
-          </span>
-          <span class="readonly-value">{{ config.retention.month }}</span>
-        </div>
-        <!-- flushIntervalSeconds -->
-        <div class="readonly-item">
-          <span class="readonly-label">
-            {{ t('quotaConfig.flushIntervalSecondsLabel') }}
-            <el-tag v-if="isRestartRequired('flushIntervalSeconds')" size="small" type="warning">
-              {{ t('quotaConfig.restartRequiredBadge') }}
-            </el-tag>
-          </span>
-          <span class="readonly-value">{{ config.flushIntervalSeconds }} {{ t('quotaConfig.flushIntervalUnit') }}</span>
-        </div>
-      </div>
+          </template>
+          <div class="readonly-grid">
+            <div v-for="field in readonlyFields" :key="field.path" class="readonly-item">
+              <span class="readonly-label">
+                {{ field.label }}
+                <el-tag v-if="isRestartRequired(field.path)" size="small" type="info" effect="plain">
+                  {{ t('quotaConfig.restartRequiredBadge') }}
+                </el-tag>
+              </span>
+              <span class="readonly-value">{{ field.value }}</span>
+            </div>
+          </div>
+        </el-collapse-item>
+      </el-collapse>
     </el-card>
   </PageSkeleton>
 </template>
@@ -215,9 +112,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { Refresh, Check } from '@element-plus/icons-vue'
+import { Refresh, Check, InfoFilled } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
-import StatCard from '@/components/StatCard.vue'
+import MetricStrip, { type MetricStripItem } from '@/components/MetricStrip.vue'
 import { useUserStore } from '@/stores/user'
 import {
   getQuotaConfig,
@@ -237,6 +134,37 @@ const canWrite = computed(() => userStore.hasPermission('config:quota:write'))
 const loading = ref(false)
 const saving = ref(false)
 const config = ref<QuotaConfig | null>(null)
+
+/** 顶部指标条：只呈现后端已返回的运行时状态，不新增统计口径 */
+const summaryItems = computed<MetricStripItem[]>(() => {
+  const c = config.value
+  return [
+    {
+      key: 'enabled',
+      label: t('quotaConfig.enabledLabel'),
+      value: c ? (c.enabled ? t('quotaConfig.enabled') : t('quotaConfig.disabled')) : '—',
+    },
+    {
+      key: 'backend',
+      label: t('quotaConfig.backendLabel'),
+      value: c?.backendName ?? '—',
+    },
+    {
+      key: 'failOpen',
+      label: t('quotaConfig.failOpenLabel'),
+      value: c ? (c.failOpen ? t('quotaConfig.failOpenEnabled') : t('quotaConfig.failOpenDisabled')) : '—',
+      tone: c?.failOpen ? 'warning' : 'default',
+    },
+    {
+      key: 'flushInterval',
+      label: t('quotaConfig.flushIntervalLabel'),
+      value:
+        c?.flushIntervalSeconds != null
+          ? `${c.flushIntervalSeconds} ${t('quotaConfig.flushIntervalUnit')}`
+          : '—',
+    },
+  ]
+})
 
 const windowOptions = ['MINUTE', 'HOUR', 'DAY', 'MONTH']
 
@@ -263,6 +191,55 @@ const syncFormFromConfig = (c: QuotaConfig) => {
 const resetRuntimeForm = () => {
   if (config.value) syncFormFromConfig(config.value)
 }
+
+// ── 只读区（需重启生效） ──
+
+interface ReadonlyField {
+  /** 对应后端 restartRequiredFields 中的字段路径 */
+  path: string
+  label: string
+  value: string
+}
+
+const readonlyOpen = ref<string[]>([])
+
+/** 只读项集中声明，模板只负责渲染，避免十段重复标记 */
+const readonlyFields = computed<ReadonlyField[]>(() => {
+  const c = config.value
+  if (!c) return []
+  return [
+    { path: 'backendName', label: t('quotaConfig.backendNameLabel'), value: c.backendName },
+    {
+      path: 'distributed.enabled',
+      label: t('quotaConfig.distributedEnabledLabel'),
+      value: c.distributed.enabled ? '✓' : '✗',
+    },
+    {
+      path: 'distributed.keyPrefix',
+      label: t('quotaConfig.distributedKeyPrefixLabel'),
+      value: c.distributed.keyPrefix,
+    },
+    {
+      path: 'distributed.timeoutMs',
+      label: t('quotaConfig.distributedTimeoutLabel'),
+      value: `${c.distributed.timeoutMs} ${t('quotaConfig.distributedTimeoutUnit')}`,
+    },
+    {
+      path: 'distributed.degradeToLocal',
+      label: t('quotaConfig.distributedDegradeLabel'),
+      value: c.distributed.degradeToLocal ? '✓' : '✗',
+    },
+    { path: 'retention.minute', label: t('quotaConfig.retentionMinuteLabel'), value: c.retention.minute },
+    { path: 'retention.hour', label: t('quotaConfig.retentionHourLabel'), value: c.retention.hour },
+    { path: 'retention.day', label: t('quotaConfig.retentionDayLabel'), value: c.retention.day },
+    { path: 'retention.month', label: t('quotaConfig.retentionMonthLabel'), value: c.retention.month },
+    {
+      path: 'flushIntervalSeconds',
+      label: t('quotaConfig.flushIntervalSecondsLabel'),
+      value: `${c.flushIntervalSeconds} ${t('quotaConfig.flushIntervalUnit')}`,
+    },
+  ]
+})
 
 /** 判断字段是否在重启生效列表中 */
 const isRestartRequired = (fieldPath: string): boolean => {
@@ -390,30 +367,55 @@ onMounted(loadConfig)
 .readonly-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px 32px;
+  gap: 0 32px;
 }
 
+/* 只读区降对比：无填充块、仅用细分隔线，与可编辑网格区分权重 */
 .readonly-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  border-radius: var(--ja-radius-md, 8px);
-  background: var(--ja-bg-hover, var(--el-fill-color-light));
+  gap: 12px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--ja-border, var(--el-border-color-lighter));
 }
 
 .readonly-label {
-  font-size: 14px;
-  color: var(--ja-text-primary);
-  font-weight: 500;
+  font-size: 13px;
+  color: var(--ja-ink-3, var(--el-text-color-secondary));
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
 .readonly-value {
-  font-size: 14px;
-  color: var(--el-text-color-regular);
-  font-family: var(--el-font-family-monospace, monospace);
+  font-size: 13px;
+  color: var(--ja-ink-2, var(--el-text-color-regular));
+  text-align: right;
+  word-break: break-all;
+}
+
+.readonly-count {
+  margin-left: 8px;
+}
+
+.readonly-card :deep(.el-collapse) {
+  border-top: none;
+  border-bottom: none;
+}
+
+.readonly-card :deep(.el-collapse-item__header) {
+  border-bottom: none;
+  height: auto;
+  min-height: 32px;
+}
+
+.restart-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 12px;
+  color: var(--ja-ink-2, var(--el-text-color-secondary));
 }
 </style>

@@ -26,6 +26,8 @@
     "saveFailedError": "Save failed, please try again later",
     "restartRequiredTitle": "Restart Required (Read-only)",
     "restartRequiredBadge": "Restart",
+    "restartHint": "The hot-editable section applies on save; fields marked \"Restart\" require a YAML change and a service restart.",
+    "readonlyCount": "{count} items",
     "backendNameLabel": "Storage Backend",
     "distributedEnabledLabel": "Distributed Enabled",
     "distributedKeyPrefixLabel": "Distributed Key Prefix",

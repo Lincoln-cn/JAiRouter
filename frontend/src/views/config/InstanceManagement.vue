@@ -40,9 +40,15 @@
     </template>
 
     <div class="tabs-wrap">
-      <el-tabs v-model="activeServiceType" class="service-tabs" type="card">
-        <el-tab-pane v-for="serviceType in serviceTypes" :key="serviceType"
-          :label="serviceTypeLabel(serviceType)" :name="serviceType">
+      <!-- 服务类型切换：真正的 tab（下划线指示器 + 每项计数），键盘可达 -->
+      <el-tabs v-model="activeServiceType" class="service-tabs">
+        <el-tab-pane v-for="serviceType in serviceTypes" :key="serviceType" :name="serviceType">
+          <template #label>
+            <span class="tab-label">
+              {{ serviceTypeLabel(serviceType) }}
+              <span v-if="tabCounts[serviceType] !== undefined" class="tab-count">{{ tabCounts[serviceType] }}</span>
+            </span>
+          </template>
           <div class="table-area">
             <el-skeleton :loading="loading && !hasInstances" :rows="6" animated>
               <template #default>
@@ -50,9 +56,15 @@
                   <el-table-column prop="name" :label="t('instance.name')" min-width="180" />
                   <el-table-column prop="baseUrl" :label="t('instance.baseUrl')" min-width="260">
                     <template #default="scope">
-                      <el-tooltip :content="scope.row.baseUrl" placement="top">
-                        <div class="ellipsis">{{ scope.row.baseUrl }}</div>
-                      </el-tooltip>
+                      <div class="url-cell">
+                        <el-tooltip :content="scope.row.baseUrl" placement="top">
+                          <span class="ellipsis">{{ scope.row.baseUrl }}</span>
+                        </el-tooltip>
+                        <el-button link class="copy-btn" :title="t('instance.copyUrl')"
+                          :aria-label="t('instance.copyUrl')" @click.stop="copyUrl(scope.row.baseUrl)">
+                          <el-icon><CopyDocument /></el-icon>
+                        </el-button>
+                      </div>
                     </template>
                   </el-table-column>
                   <el-table-column prop="path" :label="t('instance.path')" min-width="160">
@@ -63,9 +75,7 @@
                   <el-table-column prop="weight" :label="t('instance.weight')" width="90" align="center" />
                   <el-table-column prop="adapter" :label="t('instance.adapter')" width="140" align="center">
                     <template #default="scope">
-                      <el-tag :type="scope.row.adapter ? 'primary' : 'warning'" class="table-tag" size="small">
-                        {{ scope.row.adapter || globalAdapter || t('instance.notConfigured') }}
-                      </el-tag>
+                      <span class="cell-text">{{ scope.row.adapter || globalAdapter || t('instance.notConfigured') }}</span>
                       <div v-if="!scope.row.adapter && globalAdapter" class="adapter-note">
                         {{ t('instance.globalNote') }}
                       </div>
@@ -76,13 +86,11 @@
                       <el-tooltip v-if="scope.row.headers && Object.keys(scope.row.headers).length > 0"
                         :content="Object.entries(scope.row.headers).map(([k, v]) => `${k}: ${v}`).join('\n')"
                         placement="top">
-                        <el-tag type="success" class="table-tag" size="small">
+                        <span class="cell-text">
                           {{ t('instance.headersCount', { count: Object.keys(scope.row.headers).length }) }}
-                        </el-tag>
+                        </span>
                       </el-tooltip>
-                      <el-tag v-else type="info" class="table-tag" size="small">
-                        {{ t('instance.none') }}
-                      </el-tag>
+                      <span v-else class="cell-muted">{{ t('instance.none') }}</span>
                     </template>
                   </el-table-column>
                   <el-table-column prop="tags" :label="t('instance.tags')" width="120" align="center">
@@ -90,39 +98,37 @@
                       <el-tooltip v-if="scope.row.tags && Object.keys(scope.row.tags).length > 0"
                         :content="Object.entries(scope.row.tags).map(([k, v]) => `${k}=${v}`).join('\n')"
                         placement="top">
-                        <el-tag type="primary" class="table-tag" size="small">
+                        <span class="cell-text">
                           {{ t('instance.tagsCount', { count: Object.keys(scope.row.tags).length }) }}
-                        </el-tag>
+                        </span>
                       </el-tooltip>
-                      <el-tag v-else type="info" class="table-tag" size="small">
-                        {{ t('instance.none') }}
-                      </el-tag>
+                      <span v-else class="cell-muted">{{ t('instance.none') }}</span>
                     </template>
                   </el-table-column>
                   <el-table-column prop="status" :label="t('instance.status')" width="110" align="center">
                     <template #default="scope">
-                      <el-tag :type="scope.row.status === 'active' ? 'success' : 'info'" class="table-tag">
+                      <el-tag :type="scope.row.status === 'active' ? 'success' : 'info'" size="small">
                         {{ scope.row.status === 'active' ? t('instance.enabled') : t('instance.disabled') }}
                       </el-tag>
                     </template>
                   </el-table-column>
 
-                  <el-table-column :label="t('instance.actions')" width="200" align="center" fixed="right">
+                  <el-table-column :label="t('instance.actions')" width="280" align="center" fixed="right">
                     <template #default="scope">
-                      <el-button size="small" v-permission="'config:instances:write'" @click="handleEdit(scope.row)" type="primary" plain circle :title="t('instance.editInstance')">
-                        <el-icon><Edit /></el-icon>
+                      <el-button link type="primary" size="small" v-permission="'config:instances:write'" @click="handleEdit(scope.row)">
+                        {{ t('common.edit') }}
                       </el-button>
 
-                      <el-button size="small" v-permission="'config:instances:write'" @click="openRateLimitConfig(scope.row)" type="warning" plain circle :title="t('instance.rateLimitConfig')">
-                        <el-icon><Timer /></el-icon>
+                      <el-button link size="small" v-permission="'config:instances:write'" @click="openRateLimitConfig(scope.row)">
+                        {{ t('instance.rateLimitAction') }}
                       </el-button>
 
-                      <el-button size="small" v-permission="'config:instances:write'" @click="openCircuitBreakerConfig(scope.row)" type="danger" plain circle :title="t('instance.circuitBreakerConfig')">
-                        <el-icon><WarningFilled /></el-icon>
+                      <el-button link size="small" v-permission="'config:instances:write'" @click="openCircuitBreakerConfig(scope.row)">
+                        {{ t('instance.circuitBreakerAction') }}
                       </el-button>
 
-                      <el-button size="small" type="info" v-permission="'config:instances:write'" @click="handleDelete(scope.row)" plain circle :title="t('instance.delete')">
-                        <el-icon><Delete /></el-icon>
+                      <el-button link size="small" v-permission="'config:instances:write'" @click="handleDelete(scope.row)">
+                        {{ t('common.delete') }}
                       </el-button>
                     </template>
                   </el-table-column>
@@ -390,7 +396,7 @@ import {
 import { getServiceTypes } from '@/api/dashboard'
 import { getAdapters, getAllConfigurations } from '@/api/service'
 import { clearCache } from '@/stores/playgroundCache'
-import { Plus, Delete, Close, Key, Timer, WarningFilled, Edit } from '@element-plus/icons-vue'
+import { Plus, Delete, Close, Key, CopyDocument } from '@element-plus/icons-vue'
 import RateLimitConfig from '@/components/RateLimitConfig.vue'
 import CircuitBreakerConfig from '@/components/CircuitBreakerConfig.vue'
 import OnboardingSteps from './adapter/OnboardingSteps.vue'
@@ -468,8 +474,28 @@ const formRef = ref<FormInstance>()
 // 搜索/过滤/分页
 const searchQuery = ref('')
 const statusFilter = ref('')
-const pageSize = ref(10)
+const pageSize = ref(20)
 const currentPage = ref(1)
+
+// 每个服务类型 tab 的实例数量（数据按 tab 惰性加载，未加载过的类型不显示计数）
+const tabCounts = computed<Record<string, number>>(() => {
+  const result: Record<string, number> = {}
+  for (const [type, list] of Object.entries(instances.value)) {
+    result[type] = list.length
+  }
+  return result
+})
+
+// 复制基础 URL（表格内长 URL 截断，复制按钮补齐可用性）
+const copyUrl = async (url: string) => {
+  if (!url) return
+  try {
+    await navigator.clipboard.writeText(url)
+    ElMessage.success(t('instance.copySuccess'))
+  } catch {
+    ElMessage.error(t('instance.copyFailed'))
+  }
+}
 
 // 表单数据
 const form = reactive<ServiceInstance>({
@@ -1112,11 +1138,31 @@ onMounted(() => {
   padding: 0;
 }
 
+/* 服务类型 tab：下划线指示器 + 计数（选中态靠主色下划线，不靠底色） */
+.service-tabs ::v-deep(.el-tabs__item) {
+  font-size: 14px;
+}
+
+.tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tab-count {
+  min-width: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background-color: var(--el-fill-color);
+  color: var(--ja-text-secondary);
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* 表格容器与服务/版本页保持同一语言：不再套一层带阴影的卡片 */
 .table-area {
-  background: var(--ja-bg-card);
-  border-radius: 8px;
-  padding: 12px;
-  box-shadow: var(--ja-shadow-sm);
+  padding: 0;
 }
 
 /* table */
@@ -1138,12 +1184,34 @@ onMounted(() => {
   background-color: var(--el-fill-color-light);
 }
 
-.table-tag {
-  font-size: 13px;
-  padding: 6px 10px;
+.cell-text {
+  color: var(--ja-text-primary);
+}
+
+.cell-muted {
+  color: var(--ja-text-secondary);
+}
+
+/* URL 列：截断保留 + 复制按钮 */
+.url-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.copy-btn {
+  flex: none;
+  padding: 0 4px;
+  color: var(--ja-text-secondary);
+}
+
+.copy-btn:hover {
+  color: var(--ja-primary);
 }
 
 .ellipsis {
+  display: inline-block;
   max-width: 420px;
   white-space: nowrap;
   overflow: hidden;

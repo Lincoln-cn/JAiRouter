@@ -5,6 +5,9 @@
       "controlTitle": "Circuit Breaker Monitoring Control",
       "resumeMonitoring": "Resume Monitoring",
       "pauseMonitoring": "Pause Monitoring",
+      "refreshAll": "Refresh",
+      "moreActions": "More",
+      "eventsScrollHint": "More columns than fit — scroll horizontally to see the full event",
       "clearHistory": "Clear History",
       "export": "Export",
       "exportJson": "Export JSON",
@@ -75,7 +78,10 @@
         "resetFilteredMessage": "Reset the {count} circuit breakers in the current filter scope ({scope})? They become CLOSED and their persisted state is deleted.",
         "confirmClear": "Clear",
         "clearHistoryTitle": "Confirm Clearing History",
-        "clearHistoryMessage": "Clear all circuit breaker monitoring history? This cannot be undone."
+        "clearHistoryMessage": "Clear all circuit breaker monitoring history? This cannot be undone.",
+        "pauseMonitorTitle": "Confirm Pausing Monitoring",
+        "pauseMonitorMessage": "Pausing stops sampling and event recording until you resume it manually. Pause monitoring now?",
+        "confirmPause": "Pause"
       },
       "drawer": {
         "title": "Circuit Breaker Details",
@@ -131,6 +137,14 @@
         "successCount": "Successes",
         "changedAt": "Changed At"
       },
+      "triggerReasons": {
+        "FAILURE_THRESHOLD": "Failure threshold reached",
+        "SUCCESS_THRESHOLD": "Success threshold reached",
+        "TIMEOUT": "Timed out — moved to HALF_OPEN",
+        "MANUAL_RESET": "Manual reset",
+        "MANUAL_FORCE_OPEN": "Manually forced open",
+        "MANUAL_FORCE_CLOSE": "Manually forced closed"
+      },
       "confirmations": {
         "cleanupTitle": "Confirm",
         "cleanupMessage": "Are you sure you want to clean up the expired history records?",
@@ -146,12 +160,25 @@
     "globalConfig": {
       "title": "Circuit Breaker Global Configuration",
       "adaptiveThresholdEnabled": "Enable Adaptive Threshold Adjustment",
-      "stateSyncInterval": "State Sync Interval (minutes)",
-      "cleanupInterval": "Expired Cleanup Interval (minutes)",
-      "historyRetentionDays": "History Retention (days)",
+      "stateSyncInterval": "State Sync Interval",
+      "cleanupInterval": "Expired Cleanup Interval",
+      "historyRetentionDays": "History Retention",
       "defaultFailureThreshold": "Default Failure Threshold",
       "defaultSuccessThreshold": "Default Success Threshold",
-      "defaultTimeout": "Default Timeout (ms)",
+      "defaultTimeout": "Default Timeout",
+      "unitMs": "ms",
+      "unitMinutes": "min",
+      "unitDays": "days",
+      "sections": {
+        "thresholds": "Thresholds",
+        "timeouts": "Timeouts",
+        "halfOpen": "Half-Open Recovery",
+        "sync": "Sync",
+        "retention": "History Maintenance"
+      },
+      "successThresholdHint": "Consecutive successes required in HALF_OPEN before returning to CLOSED",
+      "dirtyCount": "{count} unsaved change(s)",
+      "noChanges": "No unsaved changes",
       "enabled": "Enabled",
       "disabled": "Disabled",
       "adaptiveHint": "Thresholds are adjusted automatically based on the failure rate",

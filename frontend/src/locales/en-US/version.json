@@ -2,6 +2,7 @@
   "version": {
     "title": "Version Management",
     "refresh": "Refresh",
+    "description": "History of configuration changes. Preview a version, make a historical version current again, or delete versions you no longer need.",
     "help": {
       "title": "How It Works",
       "apply": "Apply",

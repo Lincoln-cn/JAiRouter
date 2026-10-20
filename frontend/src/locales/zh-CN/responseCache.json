@@ -27,6 +27,7 @@
     "maxSizeHintAfter": "只读，调整需改 yaml 后重启",
     "invalidationTitle": "缓存失效操作",
     "clearAllCache": "清空全部缓存",
+    "clearAllCacheHint": "删除所有已缓存的响应，操作不可撤销，需二次确认。",
     "clearAllConfirmTitle": "确认清空全部响应缓存？",
     "confirm": "确认",
     "cancel": "取消",

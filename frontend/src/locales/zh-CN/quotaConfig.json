@@ -26,6 +26,8 @@
     "saveFailedError": "保存失败，请稍后重试",
     "restartRequiredTitle": "需重启生效（只读）",
     "restartRequiredBadge": "需重启",
+    "restartHint": "上方热编辑区保存后即时生效；标注「需重启」的只读项需修改 yaml 并重启服务后生效。",
+    "readonlyCount": "共 {count} 项",
     "backendNameLabel": "存储后端",
     "distributedEnabledLabel": "分布式启用",
     "distributedKeyPrefixLabel": "分布式 Key 前缀",

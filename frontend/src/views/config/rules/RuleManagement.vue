@@ -2,7 +2,7 @@
   <PageSkeleton :title="t('rule.pageTitle')">
     <template #actions>
       <el-button :icon="Refresh" circle @click="refresh" :title="t('rule.refreshTooltip')" />
-      <el-button type="success" plain @click="templateDialogVisible = true">
+      <el-button plain @click="templateDialogVisible = true">
         <el-icon><MagicStick /></el-icon>&nbsp;{{ t('rule.createFromTemplate') }}
       </el-button>
       <el-button type="primary" v-permission="'config:rules:write'" @click="handleCreate">
@@ -10,53 +10,85 @@
       </el-button>
     </template>
 
-    <el-table ref="tableRef" :data="rules" v-loading="loading" style="width: 100%" row-key="id">
-      <el-table-column :label="t('rule.sort')" width="60" align="center">
-        <template #default="{ row }">
-          <el-icon v-if="row.source !== 'YAML' && canWrite" class="drag-handle"><Rank /></el-icon>
+    <el-card shadow="never" class="table-card">
+      <el-table
+        v-show="loading || rules.length > 0"
+        ref="tableRef"
+        :data="rules"
+        v-loading="loading"
+        style="width: 100%"
+        row-key="id"
+      >
+        <el-table-column :label="t('rule.sort')" width="60" align="center">
+          <template #default="{ row }">
+            <el-icon
+              v-if="row.source !== 'YAML' && canWrite"
+              class="drag-handle"
+              :title="t('rule.dragToSort')"
+            >
+              <Rank />
+            </el-icon>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('rule.enabled')" width="70" align="center">
+          <template #default="{ row }">
+            <el-switch :model-value="row.enabled" v-permission="'config:rules:write'" @change="(val: boolean) => handleToggle(row, val)" />
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('rule.name')" min-width="140">
+          <template #default="{ row }">
+            {{ row.name }}
+            <el-tag v-if="row.source === 'YAML'" size="small" type="info" style="margin-left: 6px">YAML</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="priority" :label="t('rule.priority')" width="80" align="center" />
+        <el-table-column :label="t('rule.hits')" width="90" align="center">
+          <template #default="{ row }">
+            <el-badge v-if="statsMap[row.id]" :value="statsMap[row.id]" type="success" />
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('rule.condition')" min-width="200">
+          <template #default="{ row }">{{ formatConditions(row.conditions) }}</template>
+        </el-table-column>
+        <el-table-column :label="t('rule.action')" min-width="160">
+          <template #default="{ row }">
+            <el-link
+              v-if="row.action && (row.action.type === 'TARGET_MODEL' || row.action.type === 'TARGET_INSTANCE' || row.action.type === 'TARGET_ADAPTER')"
+              type="primary"
+              :underline="false"
+              @click.stop="navigateActionTarget(row.action)"
+            >
+              {{ formatAction(row.action) }}
+            </el-link>
+            <span v-else>{{ formatAction(row.action) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('rule.operations')" width="160" align="right">
+          <template #default="{ row }">
+            <!-- 行内操作统一为文字按钮（与 服务管理/实例管理 一致）：危险语义仍在，但不给整行加一块红 -->
+            <el-button link size="small" v-permission="'config:rules:write'" @click="handleEdit(row)">{{ t('rule.edit') }}</el-button>
+            <el-button link size="small" type="danger" v-permission="'config:rules:write'" @click="handleDelete(row)">{{ t('rule.delete') }}</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <EmptyState
+        v-if="!loading && rules.length === 0"
+        icon="Files"
+        :title="t('rule.emptyTitle')"
+        :description="t('rule.emptyDescription')"
+      >
+        <template #actions>
+          <el-button @click="templateDialogVisible = true">
+            <el-icon><MagicStick /></el-icon>&nbsp;{{ t('rule.createFromTemplate') }}
+          </el-button>
+          <el-button type="primary" v-permission="'config:rules:write'" @click="handleCreate">
+            <el-icon><Plus /></el-icon>&nbsp;{{ t('rule.addRule') }}
+          </el-button>
         </template>
-      </el-table-column>
-      <el-table-column :label="t('rule.enabled')" width="70" align="center">
-        <template #default="{ row }">
-          <el-switch :model-value="row.enabled" v-permission="'config:rules:write'" @change="(val: boolean) => handleToggle(row, val)" />
-        </template>
-      </el-table-column>
-      <el-table-column :label="t('rule.name')" min-width="140">
-        <template #default="{ row }">
-          {{ row.name }}
-          <el-tag v-if="row.source === 'YAML'" size="small" type="info" style="margin-left: 6px">YAML</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="priority" :label="t('rule.priority')" width="80" align="center" />
-      <el-table-column :label="t('rule.hits')" width="90" align="center">
-        <template #default="{ row }">
-          <el-badge v-if="statsMap[row.id]" :value="statsMap[row.id]" type="success" />
-          <span v-else>-</span>
-        </template>
-      </el-table-column>
-      <el-table-column :label="t('rule.condition')" min-width="200">
-        <template #default="{ row }">{{ formatConditions(row.conditions) }}</template>
-      </el-table-column>
-      <el-table-column :label="t('rule.action')" min-width="160">
-        <template #default="{ row }">
-          <el-link
-            v-if="row.action && (row.action.type === 'TARGET_MODEL' || row.action.type === 'TARGET_INSTANCE' || row.action.type === 'TARGET_ADAPTER')"
-            type="primary"
-            :underline="false"
-            @click.stop="navigateActionTarget(row.action)"
-          >
-            {{ formatAction(row.action) }}
-          </el-link>
-          <span v-else>{{ formatAction(row.action) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :label="t('rule.operations')" width="200" align="center">
-        <template #default="{ row }">
-          <el-button size="small" v-permission="'config:rules:write'" @click="handleEdit(row)">{{ t('rule.edit') }}</el-button>
-          <el-button size="small" type="danger" v-permission="'config:rules:write'" @click="handleDelete(row)">{{ t('rule.delete') }}</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+      </EmptyState>
+    </el-card>
   </PageSkeleton>
 
   <RuleFormDialog
@@ -89,6 +121,7 @@ import {
 import RuleFormDialog from './RuleFormDialog.vue'
 import RuleTemplateDialog from './RuleTemplateDialog.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import EmptyState from '@/components/EmptyState.vue'
 import { usePermission } from '@/composables/usePermission'
 
 const rules = ref<RuleDefinition[]>([])
@@ -307,7 +340,40 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 表格容器：把表格从灰底上「托」起来，避免整页无内容容器的观感 */
+.table-card {
+  border: 1px solid var(--ja-border);
+  border-radius: var(--ja-radius-lg);
+  background: var(--ja-paper);
+  /* 中性投影：让容器从灰底上「浮」起来，不用语义色 */
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  overflow: hidden;
+}
+
+.table-card :deep(.el-card__body) {
+  padding: 0;
+}
+
+/* 拖拽手柄：放大点击区 + hover 变色（不改拖拽逻辑，Sortable 仍绑 .drag-handle） */
 .drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ja-radius-sm);
+  color: var(--ja-ink-3);
+  font-size: 16px;
   cursor: grab;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.drag-handle:hover {
+  color: var(--ja-ink);
+  background: var(--ja-surface-2);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
 }
 </style>

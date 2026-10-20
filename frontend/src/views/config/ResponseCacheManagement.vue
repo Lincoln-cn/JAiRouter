@@ -7,69 +7,9 @@
       </el-button>
     </template>
 
-    <!-- 顶部状态卡片 -->
+    <!-- 顶部核心指标条：把散落的命中率/次数/条目数汇总成一行 -->
     <template #stats>
-      <el-row :gutter="16">
-        <el-col :span="6">
-          <StatCard
-            :icon="status?.enabled ? 'CircleCheck' : 'CircleClose'"
-            :label="t('responseCache.cacheStatusLabel')"
-            :value="status?.enabled ? t('responseCache.enabled') : t('responseCache.disabled')"
-            :tone="status?.enabled ? 'success' : 'info'"
-          />
-        </el-col>
-        <el-col :span="6">
-          <StatCard
-            icon="Timer"
-            :label="t('responseCache.ttlLabel')"
-            :value="status?.ttlSeconds ?? '—'"
-            :unit="t('responseCache.ttlUnit')"
-            tone="primary"
-          />
-        </el-col>
-        <el-col :span="6">
-          <StatCard
-            icon="Box"
-            :label="t('responseCache.maxEntriesLabel')"
-            :value="status?.maxSize ?? '—'"
-            tone="warning"
-          />
-        </el-col>
-        <el-col :span="6">
-          <StatCard
-            icon="DataLine"
-            :label="t('responseCache.currentEntriesLabel')"
-            :value="status?.size ?? '—'"
-            tone="info"
-          />
-        </el-col>
-      </el-row>
-      <el-row :gutter="16" style="margin-top: 16px">
-        <el-col :span="8">
-          <StatCard
-            icon="SuccessFilled"
-            :label="t('responseCache.hitsLabel')"
-            :value="status?.hits ?? '—'"
-            tone="success"
-          />
-        </el-col>
-        <el-col :span="8">
-          <StatCard
-            icon="CircleCloseFilled"
-            :label="t('responseCache.missesLabel')"
-            :value="status?.misses ?? '—'"
-            tone="danger"
-          />
-        </el-col>
-        <el-col :span="8">
-          <StatCard
-            icon="TrendCharts"
-            :label="t('responseCache.hitRateLabel')"
-            :value="hitRatioDisplay"
-            tone="primary"
-          />
-        </el-col>
-      </el-row>
+      <MetricStrip :items="metricItems" :loading="loading && !status" />
     </template>
 
     <!-- 状态未就绪提示 -->
@@ -118,7 +58,7 @@
 
       <div class="config-actions">
         <el-button
-          type="primary"
+          :type="configChanged ? 'primary' : 'default'"
           :loading="savingConfig"
           :disabled="!configChanged"
           @click="handleSaveConfig"
@@ -149,26 +89,6 @@
       <template #header>
         <span class="card-title">{{ t('responseCache.invalidationTitle') }}</span>
       </template>
-
-      <!-- 清空全部 -->
-      <div class="action-section">
-        <div class="action-label">{{ t('responseCache.clearAllCache') }}</div>
-        <el-popconfirm
-          :title="t('responseCache.clearAllConfirmTitle')"
-          :confirm-button-text="t('responseCache.confirm')"
-          :cancel-button-text="t('responseCache.cancel')"
-          @confirm="handleInvalidateAll"
-        >
-          <template #reference>
-            <el-button type="danger" :loading="invalidating" :disabled="!status?.enabled">
-              <el-icon><Delete /></el-icon>
-              {{ t('responseCache.clearAllCache') }}
-            </el-button>
-          </template>
-        </el-popconfirm>
-      </div>
-
-      <el-divider />
 
       <!-- 按服务类型失效 -->
       <div class="action-section">
@@ -222,6 +142,29 @@
           </el-button>
         </div>
       </div>
+
+      <el-divider />
+
+      <!-- 危险区：清空全部缓存（破坏性操作降级为描边按钮，与页面主操作区分权级） -->
+      <div class="danger-zone">
+        <div class="danger-zone__text">
+          <div class="action-label">{{ t('responseCache.clearAllCache') }}</div>
+          <p class="danger-zone__hint">{{ t('responseCache.clearAllCacheHint') }}</p>
+        </div>
+        <el-popconfirm
+          :title="t('responseCache.clearAllConfirmTitle')"
+          :confirm-button-text="t('responseCache.confirm')"
+          :cancel-button-text="t('responseCache.cancel')"
+          @confirm="handleInvalidateAll"
+        >
+          <template #reference>
+            <el-button type="danger" plain :loading="invalidating" :disabled="!status?.enabled">
+              <el-icon><Delete /></el-icon>
+              {{ t('responseCache.clearAllCache') }}
+            </el-button>
+          </template>
+        </el-popconfirm>
+      </div>
     </el-card>
 
     <!-- 提示 -->
@@ -250,7 +193,7 @@ import {
   Check,
 } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
-import StatCard from '@/components/StatCard.vue'
+import MetricStrip, { type MetricStripItem } from '@/components/MetricStrip.vue'
 import {
   getCacheStatus,
   invalidateCache,
@@ -301,11 +244,40 @@ const resetRuntimeForm = () => {
   if (status.value) syncFormFromStatus(status.value)
 }
 
-/** 命中率显示 */
+/** 命中率显示：无统计数据时用「—」占位（指标条里的值是 20px 数字位，写「暂无数据」会像个大标题） */
 const hitRatioDisplay = computed(() => {
   const ratio = status.value?.hitRatio ?? null
-  if (ratio === null) return t('responseCache.noData')
+  if (ratio === null) return '—'
   return `${(ratio * 100).toFixed(1)}%`
+})
+
+/** 顶部指标条：只聚合已有数据，不新增统计口径 */
+const metricItems = computed<MetricStripItem[]>(() => {
+  const s = status.value
+  return [
+    {
+      key: 'hitRatio',
+      label: t('responseCache.hitRateLabel'),
+      value: hitRatioDisplay.value,
+      hint: `${t('responseCache.missesLabel')} ${s?.misses ?? '—'}`,
+    },
+    {
+      key: 'hits',
+      label: t('responseCache.hitsLabel'),
+      value: s?.hits ?? '—',
+    },
+    {
+      key: 'entries',
+      label: t('responseCache.currentEntriesLabel'),
+      value: s?.size ?? '—',
+      hint: `${t('responseCache.maxEntriesLabel')} ${s?.maxSize ?? '—'}`,
+    },
+    {
+      key: 'ttl',
+      label: t('responseCache.ttlLabel'),
+      value: s?.ttlSeconds != null ? `${s.ttlSeconds} ${t('responseCache.ttlUnit')}` : '—',
+    },
+  ]
 })
 
 /**
@@ -519,5 +491,29 @@ onMounted(loadStatus)
   align-items: center;
   gap: 12px;
   margin-bottom: 4px;
+}
+
+/* 危险区：破坏性操作单独分区、描边按钮，避免与页面主操作同权 */
+.danger-zone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border: 1px solid var(--ja-border, var(--el-border-color));
+  border-radius: var(--ja-radius-md, 8px);
+  background: var(--ja-surface-2, var(--el-fill-color-light));
+}
+
+.danger-zone__text {
+  min-width: 220px;
+}
+
+.danger-zone__hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ja-text-secondary, var(--el-text-color-secondary));
 }
 </style>

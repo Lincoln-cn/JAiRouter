@@ -1,125 +1,111 @@
 <template>
-  <div class="version-management">
-    <el-card class="version-card">
-      <template #header>
-        <div class="card-header">
-          <div class="header-title">
-            <el-icon>
-              <History />
-            </el-icon>
-            <span>{{ t('version.title') }}</span>
-          </div>
-          <el-button type="primary" @click="handleRefresh">
-            <el-icon>
-              <Refresh />
-            </el-icon>
-            {{ t('version.refresh') }}
-          </el-button>
-        </div>
-      </template>
+  <PageSkeleton>
+    <template #title>
+      <h2 class="page-heading">{{ t('version.title') }}</h2>
+      <p class="page-subtitle">{{ t('version.description') }}</p>
+    </template>
 
-      <el-alert :closable="false" class="desc-alert" show-icon :title="t('version.help.title')" type="info">
-        <template #description>
-          <ul class="desc-list">
-            <li><b>{{ t('version.help.apply') }}</b>{{ t('version.help.applyBody') }}</li>
-            <li><b>{{ t('version.help.delete') }}</b>{{ t('version.help.deleteBody') }}</li>
-            <li><b>{{ t('version.help.view') }}</b>{{ t('version.help.viewBody') }}</li>
-          </ul>
+    <template #actions>
+      <el-button :loading="loading" type="primary" @click="handleRefresh">
+        <el-icon>
+          <Refresh />
+        </el-icon>
+        {{ t('version.refresh') }}
+      </el-button>
+    </template>
+
+    <!-- 操作说明：原 el-alert 占一整块高度，收成一行提示 -->
+    <p class="page-hint">
+      <span class="hint-item"><b>{{ t('version.help.apply') }}</b>{{ t('version.help.applyBody') }}</span>
+      <span class="hint-item"><b>{{ t('version.help.delete') }}</b>{{ t('version.help.deleteBody') }}</span>
+      <span class="hint-item"><b>{{ t('version.help.view') }}</b>{{ t('version.help.viewBody') }}</span>
+    </p>
+
+    <el-table v-loading="loading" :data="versions" border class="version-table" fit>
+      <el-table-column align="center" :label="t('version.versionNo')" prop="version" width="110" />
+      <el-table-column align="center" :label="t('version.status')" prop="status" width="120">
+        <template #default="scope">
+          <el-tag :type="scope.row.status === 'current' ? 'primary' : 'info'" size="small">
+            <el-icon v-if="scope.row.status === 'current'" style="margin-right:2px">
+              <SuccessFilled />
+            </el-icon>
+            {{ scope.row.status === 'current' ? t('version.currentStatus') : t('version.historyStatus') }}
+          </el-tag>
         </template>
-      </el-alert>
+      </el-table-column>
+      <el-table-column align="center" :label="t('version.operationType')" prop="operation" width="130">
+        <template #default="scope">
+          <span class="cell-text">{{ getOperationDisplayName(scope.row.operation) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column :label="t('version.operationDetail')" min-width="180" prop="operationDetail" show-overflow-tooltip>
+        <template #default="scope">
+          <span v-if="scope.row.operationDetail">{{ scope.row.operationDetail }}</span>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
+      <el-table-column align="center" :label="t('version.time')" prop="timestamp" width="170">
+        <template #default="scope">
+          <span class="timestamp">{{ formatTimestamp(scope.row.timestamp) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column align="center" fixed="right" :label="t('version.actions')" width="240">
+        <template #default="scope">
+          <el-button link size="small" @click="handleView(scope.row)">
+            {{ t('version.view') }}
+          </el-button>
+          <!-- 切流是破坏性动作：secondary 按钮 + handleApply 内已有的二次确认 -->
+          <el-button plain size="small" :disabled="scope.row.status === 'current' || applyingVersions.has(scope.row.version)"
+            :loading="applyingVersions.has(scope.row.version)" v-permission="'config:versions:write'" @click="handleApply(scope.row)">
+            {{ t('version.apply') }}
+          </el-button>
+          <el-button link type="danger" size="small" :disabled="scope.row.status === 'current' || deletingVersions.has(scope.row.version)"
+            :loading="deletingVersions.has(scope.row.version)" v-permission="'config:versions:write'" @click="handleDelete(scope.row)">
+            {{ t('version.delete') }}
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+  </PageSkeleton>
 
-      <div class="table-wrap">
-        <el-table v-loading="loading" :data="versions" border class="version-table" fit>
-          <el-table-column align="center" :label="t('version.versionNo')" prop="version" width="110" />
-          <el-table-column align="center" :label="t('version.status')" prop="status" width="120">
-            <template #default="scope">
-              <el-tag :type="scope.row.status === 'current' ? 'success' : 'info'" size="large">
-                <el-icon v-if="scope.row.status === 'current'" style="margin-right:2px">
-                  <SuccessFilled />
-                </el-icon>
-                {{ scope.row.status === 'current' ? t('version.currentStatus') : t('version.historyStatus') }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column align="center" :label="t('version.operationType')" prop="operation" width="130">
-            <template #default="scope">
-              <el-tag :type="getOperationTagType(scope.row.operation)" effect="plain">
-                {{ getOperationDisplayName(scope.row.operation) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('version.operationDetail')" min-width="180" prop="operationDetail" show-overflow-tooltip>
-            <template #default="scope">
-              <span v-if="scope.row.operationDetail">{{ scope.row.operationDetail }}</span>
-              <span v-else>-</span>
-            </template>
-          </el-table-column>
-          <el-table-column align="center" :label="t('version.time')" prop="timestamp" width="170">
-            <template #default="scope">
-              <span class="timestamp">{{ formatTimestamp(scope.row.timestamp) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column align="center" fixed="right" :label="t('version.actions')" width="360">
-            <template #default="scope">
-              <el-button @click="handleView(scope.row)"
-              >
-                {{ t('version.view') }}
-              </el-button>
-              <el-button :disabled="scope.row.status === 'current' || applyingVersions.has(scope.row.version)"
-                :loading="applyingVersions.has(scope.row.version)" type="primary" v-permission="'config:versions:write'" @click="handleApply(scope.row)">
-                {{ t('version.apply') }}
-              </el-button>
-              <el-button :disabled="scope.row.status === 'current' || deletingVersions.has(scope.row.version)"
-                :loading="deletingVersions.has(scope.row.version)" type="danger" v-permission="'config:versions:write'" @click="handleDelete(scope.row)">
-                {{ t('version.delete') }}
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+  <!-- 查看版本详情对话框 -->
+  <el-dialog v-model="detailDialogVisible" class="version-dialog" :title="t('version.detailTitle')" width="620px">
+    <el-descriptions :column="1" border>
+      <el-descriptions-item :label="t('version.versionNo')">{{ currentVersion.version }}</el-descriptions-item>
+      <el-descriptions-item :label="t('version.status')">
+        <el-tag :type="currentVersion.status === 'current' ? 'primary' : 'info'">
+          {{ currentVersion.status === 'current' ? t('version.currentStatus') : t('version.historyStatus') }}
+        </el-tag>
+      </el-descriptions-item>
+      <el-descriptions-item :label="t('version.operationType')">
+        <span class="cell-text">{{ getOperationDisplayName(currentVersion.operation) }}</span>
+      </el-descriptions-item>
+      <el-descriptions-item v-if="currentVersion.operationDetail" :label="t('version.operationDetail')">
+        {{ currentVersion.operationDetail }}
+      </el-descriptions-item>
+      <el-descriptions-item v-if="currentVersion.timestamp" :label="t('version.timestamp')">
+        {{ formatTimestamp(currentVersion.timestamp) }}
+      </el-descriptions-item>
+    </el-descriptions>
+
+    <el-divider />
+
+    <div class="config-preview">
+      <div class="preview-title">
+        <el-icon>
+          <Document />
+        </el-icon>
+        {{ t('version.configPreview') }}
       </div>
-    </el-card>
+      <pre>{{ JSON.stringify(currentVersion.config, null, 2) }}</pre>
+    </div>
 
-    <!-- 查看版本详情对话框 -->
-    <el-dialog v-model="detailDialogVisible" class="version-dialog" :title="t('version.detailTitle')" width="620px">
-      <el-descriptions :column="1" border>
-        <el-descriptions-item :label="t('version.versionNo')">{{ currentVersion.version }}</el-descriptions-item>
-        <el-descriptions-item :label="t('version.status')">
-          <el-tag :type="currentVersion.status === 'current' ? 'success' : 'info'">
-            {{ currentVersion.status === 'current' ? t('version.currentStatus') : t('version.historyStatus') }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('version.operationType')">
-          <el-tag :type="getOperationTagType(currentVersion.operation)">
-            {{ getOperationDisplayName(currentVersion.operation) }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item v-if="currentVersion.operationDetail" :label="t('version.operationDetail')">
-          {{ currentVersion.operationDetail }}
-        </el-descriptions-item>
-        <el-descriptions-item v-if="currentVersion.timestamp" :label="t('version.timestamp')">
-          {{ formatTimestamp(currentVersion.timestamp) }}
-        </el-descriptions-item>
-      </el-descriptions>
-
-      <el-divider />
-
-      <div class="config-preview">
-        <div class="preview-title">
-          <el-icon>
-            <Document />
-          </el-icon>
-          {{ t('version.configPreview') }}
-        </div>
-        <pre>{{ JSON.stringify(currentVersion.config, null, 2) }}</pre>
-      </div>
-
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="detailDialogVisible = false">{{ t('version.close') }}</el-button>
-        </span>
-      </template>
-    </el-dialog>
-  </div>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="detailDialogVisible = false">{{ t('version.close') }}</el-button>
+      </span>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -130,6 +116,7 @@ import type { VersionInfo } from '@/api/version'
 import { getErrorMessage } from '@/utils/error'
 import { applyVersion, deleteConfigVersion, getAllVersionInfo, type Version } from '@/api/version.ts'
 import { formatDateTime } from '@/utils/format'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 
 const { t } = useI18n()
 const versions = ref<Version[]>([])
@@ -138,40 +125,6 @@ const currentVersion = ref({} as Version)
 const loading = ref(false)
 const applyingVersions = ref<Set<number>>(new Set())
 const deletingVersions = ref<Set<number>>(new Set())
-
-// 获取操作类型标签类型
-const getOperationTagType = (operation: string | undefined) => {
-  switch (operation) {
-    case 'init':
-      return 'success'
-    case 'instanceChange':
-      return 'primary'
-    case 'apply':
-      return 'primary'
-    case 'serviceConfigChange':
-      return 'info'
-    case 'createService':
-      return 'success'
-    case 'updateService':
-      return 'info'
-    case 'deleteService':
-      return 'danger'
-    case 'addInstance':
-      return 'success'
-    case 'updateInstance':
-      return 'info'
-    case 'deleteInstance':
-      return 'danger'
-    case 'updateTracingSampling':
-      return 'info'
-    case 'rateLimitChange':
-      return 'warning'
-    case 'circuitBreakerChange':
-      return 'warning'
-    default:
-      return 'info'
-  }
-}
 
 // 获取操作类型显示名称
 const getOperationDisplayName = (operation: string | undefined) => {
@@ -493,56 +446,44 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.version-management {
-  padding: 24px;
-  background: var(--ja-main-bg-gradient);
-  min-height: calc(100vh - 80px);
-}
-
-.version-card {
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
-  border-radius: 12px;
-  padding: 0;
-  width: 100%;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18px 22px;
-  gap: 12px;
-  flex-wrap: wrap;
-  border-bottom: 1px solid var(--ja-border-lighter);
-}
-
-.header-title {
-  display: flex;
-  align-items: center;
-  font-size: 20px;
-  font-weight: 700;
+/* 与其它配置页同形：18px/600 的页标题（PageSkeleton 的 scoped 样式作用不到插槽内容） */
+.page-heading {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
   color: var(--ja-text-primary);
-  gap: 10px;
 }
 
-.desc-alert {
-  margin: 22px 22px 18px 22px;
+.page-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ja-text-secondary);
 }
 
-.desc-list {
-  margin: 0 0 0 20px;
-  padding: 0;
-  font-size: 14px;
+/* 操作说明：一行提示，替代原来的整块 el-alert */
+.page-hint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ja-text-secondary);
+}
+
+.hint-item b {
+  font-weight: 600;
   color: var(--ja-text-regular);
-  line-height: 1.9;
 }
 
-.table-wrap {
-  padding: 0 22px 20px 22px;
+.cell-text {
+  color: var(--ja-text-primary);
 }
 
 .version-table {
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--ja-bg-card);
   font-size: 14px;
 }
@@ -553,10 +494,10 @@ onMounted(() => {
 }
 
 .version-table :deep(.el-table__header th) {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--ja-text-primary);
-  background-color: var(--ja-primary-light-9, #fbfdff);
+  background-color: var(--el-fill-color-light);
 }
 
 .timestamp {

@@ -1,38 +1,38 @@
 <template>
   <PageSkeleton :title="t('circuitBreaker.monitoring.pageTitle')">
     <template #actions>
-      <el-button
-        v-if="canWrite"
-        :type="monitorStatus.paused ? 'success' : 'warning'"
-        @click="toggleMonitor"
-        :loading="togglingMonitor"
-      >
-        {{ monitorStatus.paused ? t('circuitBreaker.monitoring.resumeMonitoring') : t('circuitBreaker.monitoring.pauseMonitoring') }}
+      <!-- 页头收敛为「1 个主操作 + 更多」：影响运行状态的操作（暂停监控）不再常驻首屏 -->
+      <el-button type="primary" :loading="refreshing" @click="refreshAll">
+        <el-icon><RefreshRight /></el-icon>
+        {{ t('circuitBreaker.monitoring.refreshAll') }}
       </el-button>
-      <el-button v-if="canWrite" @click="clearHistory" :loading="clearingHistory">
-        {{ t('circuitBreaker.monitoring.clearHistory') }}
-      </el-button>
-      <el-dropdown @command="handleExport">
-        <el-button type="primary">
-          {{ t('circuitBreaker.monitoring.export') }} <el-icon class="el-icon--right"><Download /></el-icon>
+      <el-dropdown trigger="click" @command="handleHeaderCommand">
+        <el-button>
+          {{ t('circuitBreaker.monitoring.moreActions') }}
+          <el-icon class="el-icon--right"><ArrowDown /></el-icon>
         </el-button>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item command="json">{{ t('circuitBreaker.monitoring.exportJson') }}</el-dropdown-item>
-            <el-dropdown-item command="csv">{{ t('circuitBreaker.monitoring.exportCsv') }}</el-dropdown-item>
+            <el-dropdown-item v-if="canWrite" command="toggle-monitor">
+              {{ monitorStatus.paused ? t('circuitBreaker.monitoring.resumeMonitoring') : t('circuitBreaker.monitoring.pauseMonitoring') }}
+            </el-dropdown-item>
+            <el-dropdown-item command="export-json" :divided="canWrite">
+              {{ t('circuitBreaker.monitoring.exportJson') }}
+            </el-dropdown-item>
+            <el-dropdown-item command="export-csv">{{ t('circuitBreaker.monitoring.exportCsv') }}</el-dropdown-item>
+            <el-dropdown-item divided command="history">
+              {{ t('circuitBreaker.monitoring.actions.history') }}
+            </el-dropdown-item>
+            <el-dropdown-item command="global-config">
+              {{ t('circuitBreaker.monitoring.actions.globalConfig') }}
+            </el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
-      <el-button type="primary" plain @click="router.push({ name: 'circuit-breaker-global-config' })">
-        {{ t('circuitBreaker.monitoring.actions.globalConfig') }}
-      </el-button>
-      <el-button type="primary" plain @click="router.push({ name: 'circuit-breaker-history' })">
-        {{ t('circuitBreaker.monitoring.actions.history') }}
-      </el-button>
     </template>
 
     <!-- 监控控制面板 -->
-    <el-card class="control-panel" shadow="hover">
+    <el-card class="control-panel" shadow="never">
       <template #header>
         <div class="card-header">
           <span class="card-title">{{ t('circuitBreaker.monitoring.controlTitle') }}</span>
@@ -40,7 +40,7 @@
       </template>
 
       <el-row :gutter="20">
-        <el-col :span="6">
+        <el-col :xs="24" :sm="12" :md="6">
           <div class="config-item">
             <label>{{ t('circuitBreaker.monitoring.sampleRate') }}</label>
             <el-slider
@@ -53,7 +53,7 @@
             />
           </div>
         </el-col>
-        <el-col :span="6">
+        <el-col :xs="24" :sm="12" :md="6">
           <div class="config-item">
             <label>{{ t('circuitBreaker.monitoring.historySize') }}</label>
             <el-input-number
@@ -66,7 +66,7 @@
             />
           </div>
         </el-col>
-        <el-col :span="12">
+        <el-col :xs="24" :sm="24" :md="12">
           <div class="connection-status">
             <el-tag :type="wsConnected ? 'success' : 'danger'">
               {{ wsConnected ? t('circuitBreaker.monitoring.wsConnected') : t('circuitBreaker.monitoring.wsDisconnected') }}
@@ -80,31 +80,33 @@
     </el-card>
 
     <!-- 熔断器实例：概览数字 + 筛选 + 批量/单个重置 -->
-    <el-card class="instances-card" style="margin-top: 16px" shadow="hover">
+    <el-card class="instances-card" style="margin-top: 16px" shadow="never">
       <template #header>
         <div class="card-header">
           <span class="card-title">{{ t('circuitBreaker.monitoring.instancesTitle') }}</span>
-          <el-button type="primary" size="small" :loading="loadingInstances" @click="loadInstances">
+          <el-button plain size="small" :loading="loadingInstances" @click="loadInstances">
             {{ t('circuitBreaker.monitoring.refreshStatus') }}
           </el-button>
         </div>
       </template>
 
-      <el-row :gutter="16" class="summary-row">
-        <el-col :span="6" v-for="summary in stateSummary" :key="summary.state">
-          <div
-            class="summary-card"
-            :class="[`summary-${summary.state.toLowerCase()}`, { 'is-active': filterState === summary.state }]"
-            role="button"
-            tabindex="0"
-            @click="toggleStateFilter(summary.state)"
-            @keydown.enter="toggleStateFilter(summary.state)"
-          >
-            <div class="summary-count">{{ summary.count }}</div>
-            <div class="summary-label">{{ stateLabel(summary.state) }}</div>
-          </div>
-        </el-col>
-      </el-row>
+      <!-- 4 张 ~110px 彩色统计卡 → 一行 MetricStrip；点击筛选能力由外层可点区保留 -->
+      <div class="summary-strip" role="group" :aria-label="t('circuitBreaker.monitoring.instancesTitle')">
+        <div
+          v-for="summary in stateSummary"
+          :key="summary.state"
+          class="summary-card"
+          :class="{ 'is-active': isStateSummaryActive(summary.state) }"
+          role="button"
+          tabindex="0"
+          :aria-pressed="isStateSummaryActive(summary.state)"
+          @click="toggleStateFilter(summary.state)"
+          @keydown.enter.prevent="toggleStateFilter(summary.state)"
+          @keydown.space.prevent="toggleStateFilter(summary.state)"
+        >
+          <MetricStrip :items="[toMetricItem(summary)]" :columns="1" />
+        </div>
+      </div>
 
       <div class="instance-toolbar">
         <el-select
@@ -137,7 +139,7 @@
         <div class="toolbar-spacer" />
         <template v-if="canWrite">
           <el-button
-            type="warning"
+            plain
             :disabled="selectedInstances.length === 0"
             :loading="resettingInstances"
             @click="resetSelected"
@@ -249,25 +251,32 @@
     </el-card>
 
     <!-- 实时事件流 -->
-    <el-card class="events-card" style="margin-top: 16px" shadow="hover">
+    <el-card class="events-card" style="margin-top: 16px" shadow="never">
       <template #header>
         <div class="card-header">
           <span class="card-title">{{ t('circuitBreaker.monitoring.eventsTitle') }}</span>
-          <el-select v-model="selectedEventType" :placeholder="t('circuitBreaker.monitoring.eventTypePlaceholder')" clearable style="width: 150px">
-            <el-option :label="t('circuitBreaker.monitoring.eventTypes.stateChange')" value="STATE_CHANGE" />
-            <el-option :label="t('circuitBreaker.monitoring.eventTypes.success')" value="SUCCESS" />
-            <el-option :label="t('circuitBreaker.monitoring.eventTypes.failure')" value="FAILURE" />
-          </el-select>
+          <div class="events-actions">
+            <el-select v-model="selectedEventType" :placeholder="t('circuitBreaker.monitoring.eventTypePlaceholder')" clearable style="width: 150px">
+              <el-option :label="t('circuitBreaker.monitoring.eventTypes.stateChange')" value="STATE_CHANGE" />
+              <el-option :label="t('circuitBreaker.monitoring.eventTypes.success')" value="SUCCESS" />
+              <el-option :label="t('circuitBreaker.monitoring.eventTypes.failure')" value="FAILURE" />
+            </el-select>
+            <!-- 清空历史仍留在页面主区域（真实 button）：既有 E2E 按 `.layout-main button` 命中并验证二次确认 -->
+            <el-button v-if="canWrite" plain :loading="clearingHistory" @click="clearHistory">
+              {{ t('circuitBreaker.monitoring.clearHistory') }}
+            </el-button>
+          </div>
         </div>
       </template>
 
-      <el-table
-        :data="filteredEvents"
-        stripe
-        max-height="400"
-        v-loading="loadingEvents"
-        class="events-table"
-      >
+      <div class="table-scroll">
+        <el-table
+          :data="filteredEvents"
+          stripe
+          max-height="400"
+          v-loading="loadingEvents"
+          class="events-table"
+        >
         <el-table-column prop="timestamp" :label="t('circuitBreaker.monitoring.columns.time')" width="180">
           <template #default="{ row }">
             {{ formatTimestamp(row.timestamp) }}
@@ -316,7 +325,9 @@
             {{ row.triggerReason || '-' }}
           </template>
         </el-table-column>
-      </el-table>
+        </el-table>
+      </div>
+      <p class="scroll-hint">{{ t('circuitBreaker.monitoring.eventsScrollHint') }}</p>
     </el-card>
 
     <!-- 单实例详情 -->
@@ -374,9 +385,11 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Download, RefreshRight, Search } from '@element-plus/icons-vue'
+import { ArrowDown, RefreshRight, Search } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import MetricStrip from '@/components/MetricStrip.vue'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import { usePermission } from '@/composables/usePermission'
 import {
   getCircuitBreakerInstances,
@@ -448,6 +461,7 @@ const detailRow = ref<CircuitBreakerInstance | null>(null)
 
 const wsConnected = ref(false)
 const togglingMonitor = ref(false)
+const refreshing = ref(false)
 const updatingConfig = ref(false)
 const clearingHistory = ref(false)
 const loadingEvents = ref(false)
@@ -476,6 +490,25 @@ const stateSummary = computed<StateSummary[]>(() => {
   const total = { state: 'TOTAL', count: instances.value.length }
   return [total, ...Object.entries(counts).map(([state, count]) => ({ state, count }))]
 })
+
+/** 摘要条的 tone 只表达真实状态（CLOSED / OPEN / HALF_OPEN），TOTAL 保持中性。 */
+const toMetricItem = (summary: StateSummary): MetricStripItem => ({
+  key: summary.state,
+  label: stateLabel(summary.state),
+  value: summary.count,
+  tone:
+    summary.state === 'CLOSED'
+      ? 'success'
+      : summary.state === 'OPEN'
+        ? 'danger'
+        : summary.state === 'HALF_OPEN'
+          ? 'warning'
+          : 'default'
+})
+
+/** 「全部」在未筛选时呈选中态；其余状态与 filterState 精确匹配。 */
+const isStateSummaryActive = (state: string) =>
+  state === 'TOTAL' ? filterState.value === '' : filterState.value === state
 
 const hasActiveFilter = computed(() => Boolean(filterServiceType.value || filterState.value || keyword.value.trim()))
 
@@ -738,7 +771,52 @@ const disconnectWebSocket = () => {
   }
 }
 
+const refreshAll = async () => {
+  refreshing.value = true
+  try {
+    await Promise.all([loadStatus(), loadInstances(), loadHistory()])
+  } finally {
+    refreshing.value = false
+  }
+}
+
+const handleHeaderCommand = (command: string) => {
+  switch (command) {
+    case 'toggle-monitor':
+      void toggleMonitor()
+      break
+    case 'export-json':
+      void handleExport('json')
+      break
+    case 'export-csv':
+      void handleExport('csv')
+      break
+    case 'history':
+      router.push({ name: 'circuit-breaker-history' })
+      break
+    case 'global-config':
+      router.push({ name: 'circuit-breaker-global-config' })
+      break
+  }
+}
+
 const toggleMonitor = async () => {
+  // 暂停会停掉采样（影响运行面）⇒ 必须二次确认；恢复不拦。
+  if (!monitorStatus.value.paused) {
+    try {
+      await ElMessageBox.confirm(
+        t('circuitBreaker.monitoring.confirmations.pauseMonitorMessage'),
+        t('circuitBreaker.monitoring.confirmations.pauseMonitorTitle'),
+        {
+          confirmButtonText: t('circuitBreaker.monitoring.confirmations.confirmPause'),
+          cancelButtonText: t('circuitBreaker.monitoring.confirmations.cancel'),
+          type: 'warning'
+        }
+      )
+    } catch {
+      return
+    }
+  }
   togglingMonitor.value = true
   try {
     const action = monitorStatus.value.paused ? 'resume' : 'pause'
@@ -979,63 +1057,63 @@ onUnmounted(() => {
   color: var(--ja-text-secondary);
 }
 
-.summary-row {
+/* 摘要条：一行 4 格、中性容器；状态色只落在数值（MetricStrip tone），不再整块铺色 */
+.summary-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-bottom: 16px;
+  border: 1px solid var(--ja-border);
+  border-radius: var(--ja-radius-lg);
+  background: var(--ja-paper);
+  overflow: hidden;
 }
 
 .summary-card {
-  text-align: center;
-  padding: 20px;
-  border-radius: 8px;
-  background: var(--ja-primary-light-9, #f5f7fa);
+  min-width: 0;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-  border: 2px solid transparent;
+  background: transparent;
+  /* 透明下边框占位：选中时只换颜色，不产生布局跳动 */
+  border-bottom: 2px solid transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.summary-card + .summary-card {
+  border-left: 1px solid var(--ja-border);
 }
 
 .summary-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  background: var(--ja-surface-2);
+}
+
+.summary-card:focus-visible {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: -2px;
 }
 
 .summary-card.is-active {
-  border-color: var(--el-color-primary);
+  border-bottom-color: var(--el-color-primary);
 }
 
-.summary-card.summary-closed {
-  background: var(--el-color-success-light-9);
-  color: var(--el-color-success);
+/* MetricStrip 自带外框与内边距，嵌进可点区时收敛掉，避免双层边框 */
+.summary-card :deep(.metric-strip) {
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
-.summary-card.summary-open {
-  background: var(--el-color-danger-light-9);
-  color: var(--el-color-danger);
-}
+@media (max-width: 767px) {
+  .summary-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 
-.summary-card.summary-half_open {
-  background: var(--el-color-warning-light-9);
-  color: var(--el-color-warning);
-}
+  .summary-card:nth-child(2n + 1) {
+    border-left: none;
+  }
 
-.summary-card.summary-closed .summary-count,
-.summary-card.summary-open .summary-count,
-.summary-card.summary-half_open .summary-count,
-.summary-card.summary-closed .summary-label,
-.summary-card.summary-open .summary-label,
-.summary-card.summary-half_open .summary-label {
-  color: inherit;
-}
-
-.summary-count {
-  font-size: 32px;
-  font-weight: bold;
-  color: var(--ja-text-primary);
-}
-
-.summary-label {
-  font-size: 14px;
-  color: var(--ja-text-regular);
-  margin-top: 8px;
+  .summary-card:nth-child(n + 3) {
+    border-top: 1px solid var(--ja-border);
+  }
 }
 
 .instance-toolbar {
@@ -1099,6 +1177,30 @@ onUnmounted(() => {
 .events-card {
   box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
   border-radius: 12px;
+}
+
+.events-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.scroll-hint {
+  display: none;
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--ja-ink-3);
+}
+
+@media (max-width: 767px) {
+  .scroll-hint {
+    display: block;
+  }
 }
 
 .events-table {

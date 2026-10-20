@@ -5,6 +5,9 @@
       "controlTitle": "熔断器监控控制",
       "resumeMonitoring": "恢复监控",
       "pauseMonitoring": "暂停监控",
+      "refreshAll": "刷新",
+      "moreActions": "更多",
+      "eventsScrollHint": "列较多，可横向滑动查看完整事件",
       "clearHistory": "清空历史",
       "export": "导出",
       "exportJson": "导出 JSON",
@@ -75,7 +78,10 @@
         "resetFilteredMessage": "确定要重置当前筛选范围内的 {count} 个熔断器吗？范围：{scope}。重置后状态为 CLOSED，并同步清理持久化状态。",
         "confirmClear": "确定清除",
         "clearHistoryTitle": "清空历史确认",
-        "clearHistoryMessage": "确定要清空全部熔断器监控历史吗？此操作不可恢复。"
+        "clearHistoryMessage": "确定要清空全部熔断器监控历史吗？此操作不可恢复。",
+        "pauseMonitorTitle": "暂停监控确认",
+        "pauseMonitorMessage": "暂停后将停止采样与事件记录，直到手动恢复。确定要暂停监控吗？",
+        "confirmPause": "确定暂停"
       },
       "drawer": {
         "title": "熔断器详情",
@@ -131,6 +137,14 @@
         "successCount": "成功次数",
         "changedAt": "变化时间"
       },
+      "triggerReasons": {
+        "FAILURE_THRESHOLD": "失败次数达到阈值",
+        "SUCCESS_THRESHOLD": "成功次数达到阈值",
+        "TIMEOUT": "超时后自动进入半开",
+        "MANUAL_RESET": "手动重置",
+        "MANUAL_FORCE_OPEN": "手动强制打开",
+        "MANUAL_FORCE_CLOSE": "手动强制关闭"
+      },
       "confirmations": {
         "cleanupTitle": "确认操作",
         "cleanupMessage": "确定要清理过期的历史记录吗？",
@@ -146,12 +160,25 @@
     "globalConfig": {
       "title": "熔断器全局配置",
       "adaptiveThresholdEnabled": "启用自适应阈值调整",
-      "stateSyncInterval": "状态同步间隔(分钟)",
-      "cleanupInterval": "过期清理间隔(分钟)",
+      "stateSyncInterval": "状态同步间隔",
+      "cleanupInterval": "过期清理间隔",
       "historyRetentionDays": "历史记录保留天数",
       "defaultFailureThreshold": "默认失败阈值",
       "defaultSuccessThreshold": "默认成功阈值",
-      "defaultTimeout": "默认超时(ms)",
+      "defaultTimeout": "默认超时",
+      "unitMs": "ms",
+      "unitMinutes": "分钟",
+      "unitDays": "天",
+      "sections": {
+        "thresholds": "阈值",
+        "timeouts": "超时",
+        "halfOpen": "半开恢复",
+        "sync": "同步",
+        "retention": "历史维护"
+      },
+      "successThresholdHint": "半开状态下连续成功达到该次数后恢复为 CLOSED",
+      "dirtyCount": "已修改 {count} 项",
+      "noChanges": "无未保存修改",
       "enabled": "已启用",
       "disabled": "已禁用",
       "adaptiveHint": "系统将根据失败率自动调整阈值",
