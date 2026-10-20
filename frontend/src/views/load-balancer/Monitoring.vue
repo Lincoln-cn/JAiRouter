@@ -75,13 +75,13 @@
       </el-row>
     </el-card>
 
-    <!-- 实时路由监控统计卡片 -->
-    <el-row :gutter="16" style="margin-top: 16px">
+    <!-- 实时路由监控统计卡片：中性容器，状态色只落在「已暂停」标签上 -->
+    <el-row :gutter="16" style="margin-top: var(--ja-space-4)">
       <el-col :span="6" v-for="(serviceStats, serviceType) in routingStats" :key="serviceType">
         <el-card shadow="hover" class="stats-card">
           <div class="service-stats">
             <div class="service-header">
-              <el-tag type="primary" size="large">{{ serviceType }}</el-tag>
+              <el-tag type="info" size="large">{{ serviceType }}</el-tag>
               <el-tag
                 :type="getServicePausedType(serviceType)"
                 size="small"
@@ -172,7 +172,7 @@
     </el-row>
 
     <!-- 实时路由事件流 -->
-    <el-card class="events-card" style="margin-top: 16px" shadow="hover">
+    <el-card class="events-card" style="margin-top: var(--ja-space-4)" shadow="hover">
       <template #header>
         <div class="card-header">
           <span class="card-title">{{ t('loadBalancer.monitoring.eventsTitle') }}</span>
@@ -206,7 +206,7 @@
         </el-table-column>
         <el-table-column prop="strategy" :label="t('loadBalancer.monitoring.columns.strategy')" width="150">
           <template #default="{ row }">
-            <el-tag :type="getStrategyTagType(row.strategy)" size="small">
+            <el-tag type="info" size="small">
               {{ row.strategy }}
             </el-tag>
           </template>
@@ -339,17 +339,6 @@ const getInstanceShortName = (instanceId: string) => {
 const getPercentage = (count: number, total: number) => {
   if (!total) return 0
   return Math.round((count / total) * 100)
-}
-
-const getStrategyTagType = (strategy: string) => {
-  const typeMap: Record<string, string> = {
-    'RandomLoadBalancer': 'info',
-    'RoundRobinLoadBalancer': 'primary',
-    'LeastConnectionsLoadBalancer': 'success',
-    'IpHashLoadBalancer': 'warning',
-    'ConsistentHashLoadBalancer': 'danger'
-  }
-  return typeMap[strategy] || ''
 }
 
 const isServicePaused = (serviceType: string) => {
@@ -597,7 +586,7 @@ onUnmounted(() => {
 
 <style scoped>
 .control-panel {
-  margin-bottom: 16px;
+  margin-bottom: var(--ja-space-4);
 }
 
 .card-header {
@@ -609,31 +598,31 @@ onUnmounted(() => {
 .card-title {
   font-size: 16px;
   font-weight: 600;
-  color: var(--ja-text-primary);
+  color: var(--ja-ink);
 }
 
 .config-item {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--ja-space-2);
 }
 
 .config-item label {
   font-size: 14px;
-  color: var(--ja-text-regular);
+  color: var(--ja-ink-2);
   font-weight: 500;
 }
 
 .connection-status {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding-top: 24px;
+  gap: var(--ja-space-4);
+  padding-top: var(--ja-space-6);
 }
 
 .sampled-count {
   font-size: 14px;
-  color: var(--ja-text-secondary);
+  color: var(--ja-ink-3);
 }
 
 .stats-card {
@@ -641,17 +630,17 @@ onUnmounted(() => {
 }
 
 .service-stats {
-  padding: 8px;
+  padding: var(--ja-space-2);
 }
 
 .service-header {
   display: flex;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: var(--ja-space-3);
 }
 
 .stats-content {
-  margin-bottom: 12px;
+  margin-bottom: var(--ja-space-3);
 }
 
 .stat-row {
@@ -667,28 +656,28 @@ onUnmounted(() => {
 
 .stat-label {
   font-size: 13px;
-  color: var(--ja-text-secondary);
+  color: var(--ja-ink-3);
 }
 
 .stat-value {
   font-size: 13px;
   font-weight: 500;
-  color: var(--ja-text-primary);
+  color: var(--ja-ink);
 }
 
 .instance-distribution {
-  background: var(--ja-primary-light-9, #f5f7fa);
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 12px;
+  background: var(--ja-surface-2);
+  border-radius: var(--ja-radius);
+  padding: var(--ja-space-3);
+  margin-bottom: var(--ja-space-3);
   max-height: 300px;
   overflow-y: auto;
 }
 
 .distribution-title {
   font-size: 12px;
-  color: var(--ja-text-secondary);
-  margin-bottom: 8px;
+  color: var(--ja-ink-3);
+  margin-bottom: var(--ja-space-2);
 }
 
 .distribution-title .hint-icon {
@@ -698,7 +687,7 @@ onUnmounted(() => {
 }
 
 .model-group {
-  margin-bottom: 12px;
+  margin-bottom: var(--ja-space-3);
   padding-bottom: 8px;
   border-bottom: 1px dashed var(--ja-border-dark);
 }
@@ -715,8 +704,8 @@ onUnmounted(() => {
   gap: 4px;
   font-size: 12px;
   font-weight: 500;
-  color: var(--ja-primary);
-  margin-bottom: 6px;
+  color: var(--ja-ink-2);
+  margin-bottom: var(--ja-space-1);
 }
 
 .fallback-distribution {
@@ -726,8 +715,8 @@ onUnmounted(() => {
 .distribution-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: var(--ja-space-2);
+  margin-bottom: var(--ja-space-1);
 }
 
 .distribution-item:last-child {
@@ -736,7 +725,7 @@ onUnmounted(() => {
 
 .instance-name {
   font-size: 12px;
-  color: var(--ja-text-regular);
+  color: var(--ja-ink-2);
   width: 80px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -749,7 +738,7 @@ onUnmounted(() => {
 
 .instance-count {
   font-size: 12px;
-  color: var(--ja-primary);
+  color: var(--ja-ink-2);
   width: 40px;
   text-align: right;
 }
@@ -759,8 +748,8 @@ onUnmounted(() => {
 }
 
 .events-card {
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
-  border-radius: 12px;
+  box-shadow: var(--ja-shadow-sm);
+  border-radius: var(--ja-radius-lg);
 }
 
 .events-table {
@@ -775,7 +764,7 @@ onUnmounted(() => {
 .client-id {
   font-family: monospace;
   font-size: 12px;
-  color: var(--ja-text-secondary);
+  color: var(--ja-ink-3);
 }
 
 .slow-select {

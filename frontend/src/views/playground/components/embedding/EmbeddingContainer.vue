@@ -184,7 +184,7 @@
         >
           <el-icon
             :size="48"
-            color="var(--ja-text-secondary)"
+            color="var(--ja-ink-3)"
           >
             <DataLine />
           </el-icon>
@@ -453,7 +453,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   height: calc(100vh - 100px);
-  background-color: var(--ja-main-bg);
+  background-color: var(--ja-surface);
 }
 
 .service-toolbar {
@@ -461,15 +461,15 @@ defineExpose({
   justify-content: space-between;
   align-items: center;
   padding: var(--ja-space-3) var(--ja-space-4);
-  background-color: var(--ja-bg-page);
-  border-bottom: 1px solid var(--el-border-color);
-  border-radius: 4px 4px 0 0;
+  background-color: var(--ja-paper);
+  border-bottom: 1px solid var(--ja-border);
+  border-radius: var(--ja-radius-sm) var(--ja-radius-sm) 0 0;
 }
 
 .toolbar-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--ja-space-3);
 }
 
 .model-select {
@@ -478,25 +478,25 @@ defineExpose({
 
 .toolbar-right {
   display: flex;
-  gap: 4px;
+  gap: var(--ja-space-1);
 }
 
 .config-panel {
   padding: var(--ja-space-3) var(--ja-space-4);
-  background-color: var(--ja-bg-page);
-  border-bottom: 1px solid var(--el-border-color);
+  background-color: var(--ja-paper);
+  border-bottom: 1px solid var(--ja-border);
 }
 
 .config-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--ja-space-2);
 }
 
 .config-label {
   font-size: 12px;
   font-weight: 600;
-  color: var(--ja-text-regular);
+  color: var(--ja-ink-2);
 }
 
 .slide-down-enter-active,
@@ -518,34 +518,35 @@ defineExpose({
 
 .input-card,
 .result-card {
-  background-color: var(--ja-bg-page);
-  border-radius: 4px;
-  padding: 16px;
-  margin-bottom: 16px;
+  background-color: var(--ja-paper);
+  border: 1px solid var(--ja-border);
+  border-radius: var(--ja-radius-sm);
+  padding: var(--ja-space-4);
+  margin-bottom: var(--ja-space-4);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: var(--ja-space-3);
 }
 
 .card-title {
   font-size: 14px;
   font-weight: 600;
-  color: var(--ja-text-primary);
+  color: var(--ja-ink);
 }
 
 .input-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--ja-space-3);
 }
 
 .input-item {
   display: flex;
-  gap: 8px;
+  gap: var(--ja-space-2);
   align-items: flex-start;
 }
 
@@ -560,7 +561,7 @@ defineExpose({
 .action-bar {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: var(--ja-space-3);
   padding: 12px 0;
 }
 
@@ -574,9 +575,9 @@ defineExpose({
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 0;
-  gap: 12px;
-  color: var(--ja-text-secondary);
+  padding: var(--ja-space-8) 0;
+  gap: var(--ja-space-3);
+  color: var(--ja-ink-3);
 }
 
 .empty-text {
@@ -589,71 +590,71 @@ defineExpose({
 
 .result-stats {
   display: flex;
-  gap: 24px;
-  padding: 12px;
-  background-color: var(--ja-main-bg);
-  border-radius: 4px;
-  margin-bottom: 16px;
+  gap: var(--ja-space-6);
+  padding: var(--ja-space-3);
+  background-color: var(--ja-surface-2);
+  border-radius: var(--ja-radius-sm);
+  margin-bottom: var(--ja-space-4);
 }
 
 .stat-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--ja-space-1);
 }
 
 .stat-label {
   font-size: 12px;
-  color: var(--ja-text-secondary);
+  color: var(--ja-ink-3);
 }
 
 .stat-value {
   font-size: 16px;
   font-weight: 600;
-  color: var(--ja-text-primary);
+  color: var(--ja-ink);
 }
 
 .vector-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--ja-space-3);
 }
 
 .vector-item {
-  padding: 12px;
-  background-color: var(--el-fill-color-light);
-  border-radius: 4px;
-  border: 1px solid var(--el-border-color);
+  padding: var(--ja-space-3);
+  background-color: var(--ja-surface-2);
+  border-radius: var(--ja-radius-sm);
+  border: 1px solid var(--ja-border);
 }
 
 .vector-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: var(--ja-space-2);
 }
 
 .vector-index {
   font-size: 13px;
   font-weight: 600;
-  color: var(--ja-text-primary);
+  color: var(--ja-ink);
 }
 
 .vector-value {
   font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
   font-size: 12px;
-  color: var(--ja-text-regular);
+  color: var(--ja-ink-2);
   line-height: 1.6;
   word-break: break-all;
-  background-color: var(--ja-bg-page);
-  padding: 8px 12px;
-  border-radius: 4px;
+  background-color: var(--ja-paper);
+  padding: var(--ja-space-2) var(--ja-space-3);
+  border-radius: var(--ja-radius-sm);
 }
 /* 健康状态指示器样式 */
 .instance-option {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--ja-space-2);
 }
 
 .health-indicator {
@@ -669,7 +670,7 @@ defineExpose({
 }
 
 .health-unknown {
-  color: var(--ja-text-secondary);
+  color: var(--ja-ink-3);
 }
 
 .instance-name {
@@ -682,6 +683,6 @@ defineExpose({
 }
 
 .health-status-text.unknown {
-  color: var(--ja-text-secondary);
+  color: var(--ja-ink-3);
 }
 </style>

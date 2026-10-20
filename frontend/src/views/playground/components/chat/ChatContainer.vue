@@ -98,7 +98,7 @@
       >
         <el-icon
           :size="64"
-          :color="'var(--ja-text-secondary)'"
+          :color="'var(--ja-ink-3)'"
         >
           <ChatDotRound />
         </el-icon>
@@ -519,24 +519,24 @@ defineExpose({
   display: flex;
   flex-direction: column;
   height: calc(100vh - 100px);
-  background-color: var(--ja-main-bg);
-  border-radius: 4px;
+  background-color: var(--ja-surface);
+  border-radius: var(--ja-radius-sm);
 }
 
 .chat-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background-color: var(--ja-bg-card);
-  border-bottom: 1px solid var(--ja-border-dark);
-  border-radius: 4px 4px 0 0;
+  padding: var(--ja-space-3) var(--ja-space-4);
+  background-color: var(--ja-paper);
+  border-bottom: 1px solid var(--ja-border);
+  border-radius: var(--ja-radius-sm) var(--ja-radius-sm) 0 0;
 }
 
 .toolbar-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--ja-space-3);
 }
 
 .model-select {
@@ -546,13 +546,13 @@ defineExpose({
 .toolbar-right {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--ja-space-1);
 }
 
 .config-panel {
-  padding: 12px 16px;
-  background-color: var(--ja-bg-card);
-  border-bottom: 1px solid var(--ja-border-dark);
+  padding: var(--ja-space-3) var(--ja-space-4);
+  background-color: var(--ja-paper);
+  border-bottom: 1px solid var(--ja-border);
 }
 
 .slide-down-enter-active,
@@ -569,7 +569,7 @@ defineExpose({
 .message-list {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: var(--ja-space-4);
   min-height: 0;
 }
 
@@ -578,56 +578,56 @@ defineExpose({
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  padding: var(--ja-space-8) var(--ja-space-5);
   text-align: center;
 }
 
 .empty-title {
   font-size: 18px;
   font-weight: 600;
-  color: var(--ja-text-primary);
-  margin-top: 16px;
-  margin-bottom: 8px;
+  color: var(--ja-ink);
+  margin-top: var(--ja-space-4);
+  margin-bottom: var(--ja-space-2);
 }
 
 .empty-subtitle {
   font-size: 14px;
-  color: var(--ja-text-secondary);
-  margin-bottom: 24px;
+  color: var(--ja-ink-3);
+  margin-bottom: var(--ja-space-6);
 }
 
 .suggestions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--ja-space-2);
   max-width: 600px;
 }
 
 .input-area {
-  padding: 12px 16px;
-  background-color: var(--ja-bg-card);
-  border-top: 1px solid var(--ja-border-dark);
-  border-radius: 0 0 4px 4px;
+  padding: var(--ja-space-3) var(--ja-space-4);
+  background-color: var(--ja-paper);
+  border-top: 1px solid var(--ja-border);
+  border-radius: 0 0 var(--ja-radius-sm) var(--ja-radius-sm);
 }
 
 .input-tips {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 8px;
+  margin-top: var(--ja-space-2);
   font-size: 12px;
-  color: var(--ja-text-secondary);
+  color: var(--ja-ink-3);
 }
 
 .tip-warning {
-  color: var(--ja-danger);
+  color: var(--ja-warning);
 }
 
 /* 健康状态指示器样式 */
 .instance-option {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--ja-space-2);
 }
 
 .health-indicator {
@@ -643,7 +643,7 @@ defineExpose({
 }
 
 .health-unknown {
-  color: var(--ja-text-secondary);
+  color: var(--ja-ink-3);
 }
 
 .instance-name {
@@ -656,6 +656,6 @@ defineExpose({
 }
 
 .health-status-text.unknown {
-  color: var(--ja-text-secondary);
+  color: var(--ja-ink-3);
 }
 </style>

@@ -26,7 +26,7 @@
                 <el-descriptions-item :label="t('tracing.management.serviceName')">{{ statusInfo.serviceName }}</el-descriptions-item>
                 <el-descriptions-item :label="t('tracing.management.serviceVersion')">{{ statusInfo.serviceVersion }}</el-descriptions-item>
                 <el-descriptions-item label="OpenTelemetry">
-                  <el-tag :type="statusInfo.openTelemetryEnabled ? 'success' : 'danger'" size="small">
+                  <el-tag :type="statusInfo.openTelemetryEnabled ? 'info' : 'danger'" size="small">
                     {{ statusInfo.openTelemetryEnabled ? t('tracing.management.enabled') : t('tracing.management.disabled') }}
                   </el-tag>
                 </el-descriptions-item>
@@ -49,21 +49,21 @@
               </template>
               <el-descriptions :column="1" border>
                 <el-descriptions-item :label="t('tracing.management.overallStatus')">
-                  <el-tag :type="healthStatus.status === 'UP' ? 'success' : 'danger'">
+                  <el-tag :type="healthStatus.status === 'UP' ? 'info' : 'danger'">
                     {{ healthStatus.status }}
                   </el-tag>
                 </el-descriptions-item>
                 <el-descriptions-item :label="t('tracing.management.memoryUsage')">
                   <el-progress
                     :percentage="healthStatus.memoryUsage"
-                    :status="healthStatus.memoryUsage > 80 ? 'exception' : 'success'"
+                    :status="healthStatus.memoryUsage > 80 ? 'exception' : ''"
                   />
                 </el-descriptions-item>
                 <el-descriptions-item :label="t('tracing.management.activeTraces')">{{ healthStatus.activeTraces }}</el-descriptions-item>
                 <el-descriptions-item :label="t('tracing.management.bufferUsage')">
                   <el-progress
                     :percentage="healthStatus.bufferUsage"
-                    :status="healthStatus.bufferUsage > 90 ? 'exception' : 'success'"
+                    :status="healthStatus.bufferUsage > 90 ? 'exception' : ''"
                   />
                 </el-descriptions-item>
               </el-descriptions>
@@ -204,13 +204,13 @@
           <el-divider content-position="left">{{ t('tracing.management.dataManagement') }}</el-divider>
 
           <div class="action-buttons">
-            <el-button type="warning" @click="handleClearCache" :loading="clearingCache">
+            <el-button type="danger" @click="handleClearCache" :loading="clearingCache">
               {{ t('tracing.management.clearCache') }}
             </el-button>
             <el-button type="danger" @click="handleCleanupExpired" :loading="cleaningUp">
               {{ t('tracing.management.cleanupExpired') }}
             </el-button>
-            <el-button type="success" @click="handleExportConfig">
+            <el-button @click="handleExportConfig">
               {{ t('tracing.management.exportConfig') }}
             </el-button>
           </div>
@@ -556,7 +556,7 @@ onMounted(() => {
 
 .form-hint {
   margin-top: 4px;
-  color: var(--el-text-color-secondary);
+  color: var(--ja-ink-3);
   font-size: 12px;
   line-height: 1.5;
 }

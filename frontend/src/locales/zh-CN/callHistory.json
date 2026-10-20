@@ -50,7 +50,8 @@
         "hourlyDistributionTitle": "24 小时请求分布",
         "statusCodeDistributionTitle": "HTTP 状态码分布",
         "errorCodeDistributionTitle": "错误码分布",
-        "recentCallsTitle": "最近调用记录"
+        "recentCallsTitle": "最近调用记录",
+        "singleCategoryHint": "该时间范围内只有一种分类，占比图无法体现对比关系，因此直接显示调用量。"
       }
     },
     "list": {

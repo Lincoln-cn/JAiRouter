@@ -7,42 +7,9 @@
       </el-button>
     </template>
 
-    <!-- 顶部状态卡片 -->
+    <!-- 顶部指标条 -->
     <template #stats>
-      <el-row :gutter="16">
-        <el-col :span="6">
-          <StatCard
-            :icon="status?.enabled ? 'CircleCheck' : 'CircleClose'"
-            :label="t('quotaMonitoring.enabledLabel')"
-            :value="status?.enabled ? t('quotaMonitoring.enabled') : t('quotaMonitoring.disabled')"
-            :tone="status?.enabled ? 'success' : 'info'"
-          />
-        </el-col>
-        <el-col :span="6">
-          <StatCard
-            icon="Coin"
-            :label="t('quotaMonitoring.backendTypeLabel')"
-            :value="status?.backendName ?? '—'"
-            tone="primary"
-          />
-        </el-col>
-        <el-col :span="6">
-          <StatCard
-            :icon="status?.degraded ? 'WarningFilled' : 'SuccessFilled'"
-            :label="t('quotaMonitoring.degradedLabel')"
-            :value="status?.degraded ? t('quotaMonitoring.degradedYes') : t('quotaMonitoring.degradedNo')"
-            :tone="status?.degraded ? 'danger' : 'success'"
-          />
-        </el-col>
-        <el-col :span="6">
-          <StatCard
-            icon="Calendar"
-            :label="t('quotaMonitoring.windowCountLabel')"
-            :value="status?.windows?.length ?? 0"
-            tone="info"
-          />
-        </el-col>
-      </el-row>
+      <MetricStrip :items="summaryItems" :loading="loading" :columns="4" />
     </template>
 
     <!-- 降级预警 -->
@@ -52,23 +19,23 @@
       type="warning"
       :closable="false"
       show-icon
-      style="margin-bottom: 16px"
+      class="section-gap"
     >
       <template #default>
-        <p v-if="status.degradedReason" style="margin: 0 0 4px">
+        <p v-if="status.degradedReason" class="alert-line">
           <strong>{{ t('quotaMonitoring.degradedReasonLabel') }}：</strong>{{ status.degradedReason }}
         </p>
-        <p v-if="status.redisProbe?.reason" style="margin: 0 0 4px">
+        <p v-if="status.redisProbe?.reason" class="alert-line">
           <strong>{{ t('quotaMonitoring.redisProbeFailLabel') }}：</strong>{{ status.redisProbe.reason }}
         </p>
-        <p v-if="status.counterMetrics" style="margin: 0">
+        <p v-if="status.counterMetrics" class="alert-line alert-line--last">
           <strong>{{ t('quotaMonitoring.degradationCountLabel') }}：</strong>{{ status.counterMetrics.degradationCount }}
         </p>
       </template>
     </el-alert>
 
     <!-- 筛选区域 -->
-    <el-card shadow="hover" style="margin-bottom: 16px">
+    <el-card shadow="hover" class="section-gap">
       <template #header>
         <span class="card-title">{{ t('quotaMonitoring.filterTitle') }}</span>
       </template>
@@ -142,7 +109,7 @@
     </el-card>
 
     <!-- 用量明细表格 -->
-    <el-card shadow="hover" style="margin-bottom: 16px">
+    <el-card shadow="hover" class="section-gap">
       <template #header>
         <div class="card-header-row">
           <span class="card-title">{{ t('quotaMonitoring.usageTitle') }}</span>
@@ -152,6 +119,7 @@
         </div>
       </template>
       <el-table
+        v-if="loadingUsage || usageList.length > 0"
         :data="usageList"
         v-loading="loadingUsage"
         stripe
@@ -209,13 +177,13 @@
       type="warning"
       :closable="false"
       show-icon
-      style="margin-top: 16px"
+      class="section-gap-top"
     />
   </PageSkeleton>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { computed, ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   Refresh,
@@ -223,7 +191,7 @@ import {
   RefreshRight,
 } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
-import StatCard from '@/components/StatCard.vue'
+import MetricStrip, { type MetricStripItem } from '@/components/MetricStrip.vue'
 import { useRouter } from 'vue-router'
 import {
   getQuotaStatus,
@@ -244,6 +212,31 @@ const errorOccurred = ref(false)
 const status = ref<QuotaStatus | null>(null)
 const usageList = ref<QuotaUsageItem[]>([])
 const limitMap = ref(new Map<string, QuotaUsageDetail>())
+
+const summaryItems = computed<MetricStripItem[]>(() => [
+  {
+    key: 'enabled',
+    label: t('quotaMonitoring.enabledLabel'),
+    value: status.value?.enabled ? t('quotaMonitoring.enabled') : t('quotaMonitoring.disabled'),
+  },
+  {
+    key: 'backend',
+    label: t('quotaMonitoring.backendTypeLabel'),
+    value: status.value?.backendName ?? '—',
+  },
+  {
+    key: 'degraded',
+    label: t('quotaMonitoring.degradedLabel'),
+    value: status.value?.degraded ? t('quotaMonitoring.degradedYes') : t('quotaMonitoring.degradedNo'),
+    // 只有「已降级」属真语义（失败/降级），正常态不给色
+    tone: status.value?.degraded ? 'danger' : 'default',
+  },
+  {
+    key: 'windows',
+    label: t('quotaMonitoring.windowCountLabel'),
+    value: status.value?.windows?.length ?? 0,
+  },
+])
 
 const goApiKeyLimits = () => {
   router.push('/security/api-keys')
@@ -349,5 +342,21 @@ onMounted(loadAll)
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.section-gap {
+  margin-bottom: var(--ja-space-4);
+}
+
+.section-gap-top {
+  margin-top: var(--ja-space-4);
+}
+
+.alert-line {
+  margin: 0 0 var(--ja-space-1);
+}
+
+.alert-line--last {
+  margin-bottom: 0;
 }
 </style>

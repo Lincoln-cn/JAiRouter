@@ -21,21 +21,10 @@
       </el-button>
     </template>
 
-    <!-- 统计信息 -->
-    <el-row :gutter="20" style="margin-bottom: 20px;">
-      <el-col :span="6">
-        <el-statistic :title="t('accounts.totalAccounts')" :value="accounts.length" />
-      </el-col>
-      <el-col :span="6">
-        <el-statistic :title="t('accounts.enabledAccounts')" :value="accounts.filter(a => a.enabled).length" />
-      </el-col>
-      <el-col :span="6">
-        <el-statistic :title="t('accounts.disabledAccounts')" :value="accounts.filter(a => !a.enabled).length" />
-      </el-col>
-      <el-col :span="6">
-        <el-statistic :title="t('accounts.adminAccounts')" :value="accounts.filter(a => a.roles?.includes('ADMIN')).length" />
-      </el-col>
-    </el-row>
+    <template #stats>
+      <!-- 账户指标：中性指标条；只有「已禁用 > 0」属于状态，才给语义色 -->
+      <MetricStrip :items="metricItems" :loading="loading" :columns="4" />
+    </template>
 
     <!-- 账户列表 -->
     <el-table :data="filteredAccounts" style="width: 100%" v-loading="loading" stripe border>
@@ -45,7 +34,8 @@
           <el-tag
             v-for="role in scope.row.roles"
             :key="role"
-            :type="role === 'ADMIN' ? 'danger' : 'primary'"
+            :type="role === 'ADMIN' ? 'danger' : 'info'"
+            effect="plain"
             size="small"
             style="margin-right: 5px;"
           >
@@ -74,10 +64,10 @@
       </el-table-column>
       <el-table-column :label="t('accounts.actions')" min-width="140" fixed="right">
         <template #default="scope">
-          <el-button-group>
+          <span class="row-actions">
             <el-button
+              link
               size="small"
-              type="primary"
               :title="t('accounts.editAccount')"
               :aria-label="t('accounts.editAccount')"
               @click="editAccount(scope.row)"
@@ -85,8 +75,9 @@
               <el-icon><Edit /></el-icon>
             </el-button>
             <el-button
-              size="small"
+              link
               type="danger"
+              size="small"
               :title="t('accounts.messages.confirmDelete')"
               :aria-label="t('accounts.messages.confirmDelete')"
               :disabled="scope.row.username === 'admin'"
@@ -94,7 +85,7 @@
             >
               <el-icon><Delete /></el-icon>
             </el-button>
-          </el-button-group>
+          </span>
         </template>
       </el-table-column>
     </el-table>
@@ -144,12 +135,12 @@
         <el-form-item :label="t('accounts.roles')" prop="roles">
           <el-select v-model="accountForm.roles" multiple :placeholder="t('accounts.rolesPlaceholder')" style="width: 100%;">
             <el-option :label="t('accounts.adminOptionLabel')" value="ADMIN">
-              <el-tag type="danger" size="small">{{ t('accounts.adminRole') }}</el-tag>
-              <span style="margin-left: 10px; color: var(--ja-text-regular);">{{ t('accounts.adminPermissionDescription') }}</span>
+              <el-tag type="danger" effect="plain" size="small">{{ t('accounts.adminRole') }}</el-tag>
+              <span style="margin-left: 10px; color: var(--ja-ink-2);">{{ t('accounts.adminPermissionDescription') }}</span>
             </el-option>
             <el-option :label="t('accounts.userOptionLabel')" value="USER">
-              <el-tag type="primary" size="small">{{ t('accounts.userRole') }}</el-tag>
-              <span style="margin-left: 10px; color: var(--ja-text-regular);">{{ t('accounts.userPermissionDescription') }}</span>
+              <el-tag type="info" effect="plain" size="small">{{ t('accounts.userRole') }}</el-tag>
+              <span style="margin-left: 10px; color: var(--ja-ink-2);">{{ t('accounts.userPermissionDescription') }}</span>
             </el-option>
           </el-select>
         </el-form-item>
@@ -175,6 +166,8 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { Plus, Refresh, Search, Edit, Delete } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import MetricStrip from '@/components/MetricStrip.vue'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import {
   getJwtAccounts,
   createJwtAccount,
@@ -208,6 +201,25 @@ const filteredAccounts = computed(() => {
   return accounts.value.filter(a =>
     a.username.toLowerCase().includes(searchKeyword.value.toLowerCase())
   )
+})
+
+/** 顶部指标条：四项与原统计数值完全一致，只有「已禁用 > 0」是状态（warning） */
+const metricItems = computed<MetricStripItem[]>(() => {
+  const total = accounts.value.length
+  const enabled = accounts.value.filter(a => a.enabled).length
+  const disabled = accounts.value.filter(a => !a.enabled).length
+  const admins = accounts.value.filter(a => a.roles?.includes('ADMIN')).length
+  return [
+    { key: 'total', label: t('accounts.totalAccounts'), value: total },
+    { key: 'enabled', label: t('accounts.enabledAccounts'), value: enabled },
+    {
+      key: 'disabled',
+      label: t('accounts.disabledAccounts'),
+      value: disabled,
+      tone: disabled > 0 ? 'warning' : 'default'
+    },
+    { key: 'admin', label: t('accounts.adminAccounts'), value: admins }
+  ]
 })
 
 // 格式化日期时间
@@ -409,17 +421,12 @@ onMounted(() => {
   margin-top: 4px;
   font-size: 12px;
   line-height: 1.4;
-  color: var(--ja-text-secondary, var(--el-text-color-secondary));
-}
-
-/* 统计卡片样式 */
-.el-statistic {
-  text-align: center;
+  color: var(--ja-ink-3);
 }
 
 /* 表格样式 */
 .el-table {
-  margin-top: 20px;
+  margin-top: var(--ja-space-4);
 }
 
 /* 角色标签样式 */
@@ -427,8 +434,10 @@ onMounted(() => {
   margin-right: 5px;
 }
 
-/* 确保表格操作按钮紧凑 */
-.el-button-group .el-button {
-  padding: 5px 10px;
+/* 行内操作：两个 link 文字按钮并排 */
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ja-space-2);
 }
 </style>

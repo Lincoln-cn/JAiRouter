@@ -51,50 +51,10 @@
     <template #toolbar>
       <div class="list-toolbar">
         <span class="chart-title">{{ t('callHistory.slowCalls.listTitle') }}</span>
-        <el-tag type="warning" size="small">{{ t('callHistory.slowCalls.thresholdTag', { value: threshold }) }}</el-tag>
+        <el-tag type="info" size="small">{{ t('callHistory.slowCalls.thresholdTag', { value: threshold }) }}</el-tag>
       </div>
-      <!-- 慢调用统计卡片（P1-2 再压缩，本轮保留内容） -->
-      <el-row :gutter="20" class="stats-row">
-        <el-col :span="8">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-content">
-              <div class="stat-icon" style="background: var(--ja-warning);">
-                <el-icon><Timer /></el-icon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-value">{{ slowCalls.length }}</div>
-                <div class="stat-label">{{ t('callHistory.slowCalls.slowCallCountLabel') }}</div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :span="8">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-content">
-              <div class="stat-icon" style="background: var(--ja-danger);">
-                <el-icon><WarningFilled /></el-icon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-value">{{ getMaxResponseTime() }}</div>
-                <div class="stat-label">{{ t('callHistory.slowCalls.maxResponseTimeLabel') }}</div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :span="8">
-          <el-card shadow="hover" class="stat-card">
-            <div class="stat-content">
-              <div class="stat-icon" style="background: var(--ja-primary);">
-                <el-icon><DataAnalysis /></el-icon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-value">{{ getAvgResponseTime() }}</div>
-                <div class="stat-label">{{ t('callHistory.slowCalls.avgResponseTimeLabel') }}</div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+      <!-- 慢调用指标：3 张彩色图标卡 → 一条中性 MetricStrip（本页数字没有失败语义，全部 default） -->
+      <MetricStrip :items="kpiItems" :loading="loading" :columns="3" />
     </template>
 
     <!-- 慢调用列表 -->
@@ -131,7 +91,7 @@
       </el-table-column>
       <el-table-column :label="t('callHistory.common.callStatus')" width="100" align="center">
         <template #default="scope">
-          <el-tag :type="scope.row.isSuccess ? 'success' : 'danger'" size="small">
+          <el-tag :type="scope.row.isSuccess ? 'info' : 'danger'" size="small">
             {{ scope.row.isSuccess ? t('callHistory.common.success') : t('callHistory.common.failed') }}
           </el-tag>
         </template>
@@ -143,16 +103,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { getErrorMessage } from '@/utils/error'
-import { Timer, WarningFilled, DataAnalysis } from '@element-plus/icons-vue'
 import { getSlowCalls } from '@/api/callHistory'
 import type { ApiCallHistoryRecord } from '@/types/callHistory'
 import ListPageLayout from '@/components/ListPageLayout.vue'
 import FilterBar from '@/components/FilterBar.vue'
 import TimeText from '@/components/TimeText.vue'
+import MetricStrip from '@/components/MetricStrip.vue'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
 
 const { t } = useI18n()
 
@@ -188,13 +149,10 @@ const getServiceTypeLabel = (type?: string) => {
   return serviceTypeKeyMap[type] ? t(`serviceTypes.${serviceTypeKeyMap[type]}`) : type
 }
 
-// 获取 HTTP 状态码标签类型
+// 获取 HTTP 状态码标签类型（成功/失败两态：4xx 与 5xx 都是失败，其余中性）
 const getStatusType = (code?: number) => {
   if (!code) return 'info'
-  if (code >= 200 && code < 300) return 'success'
-  if (code >= 400 && code < 500) return 'warning'
-  if (code >= 500) return 'danger'
-  return 'info'
+  return code >= 400 ? 'danger' : 'info'
 }
 
 // 计算最长响应时间
@@ -210,6 +168,30 @@ const getAvgResponseTime = (): string => {
   const total = slowCalls.value.reduce((sum, item) => sum + (item.responseTimeMs || 0), 0)
   return (total / slowCalls.value.length).toFixed(0)
 }
+
+/**
+ * 指标条数据。
+ *
+ * 三项都是「慢调用统计量」：慢调用数量本身是查询条件的结果，不是失败计数，
+ * 最长/平均耗时是耗时度量而非告警阈值 ⇒ 全部保持 default，不给语义色。
+ */
+const kpiItems = computed<MetricStripItem[]>(() => [
+  {
+    key: 'slowCallCount',
+    label: t('callHistory.slowCalls.slowCallCountLabel'),
+    value: slowCalls.value.length
+  },
+  {
+    key: 'maxResponseTime',
+    label: t('callHistory.slowCalls.maxResponseTimeLabel'),
+    value: `${getMaxResponseTime()} ms`
+  },
+  {
+    key: 'avgResponseTime',
+    label: t('callHistory.slowCalls.avgResponseTimeLabel'),
+    value: `${getAvgResponseTime()} ms`
+  }
+])
 
 // 加载数据
 const loadData = async () => {
@@ -272,39 +254,6 @@ onMounted(() => {
   align-items: center;
   gap: var(--ja-space-2);
   flex-wrap: wrap;
-}
-
-.stats-row {
-  margin-bottom: 20px;
-}
-
-.stats-row .stat-card .stat-content {
-  display: flex;
-  align-items: center;
-}
-
-.stats-row .stat-card .stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 15px;
-  color: white;
-  font-size: 28px;
-}
-
-.stats-row .stat-card .stat-info .stat-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: var(--ja-text-primary);
-}
-
-.stats-row .stat-card .stat-info .stat-label {
-  font-size: 14px;
-  color: var(--ja-text-regular);
-  margin-top: 5px;
 }
 
 .chart-title {

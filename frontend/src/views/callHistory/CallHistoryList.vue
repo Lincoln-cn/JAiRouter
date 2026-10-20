@@ -208,7 +208,7 @@
       </el-table-column>
       <el-table-column :label="t('callHistory.common.status')" :width="isCompact ? 60 : 80" align="center">
         <template #default="scope">
-          <el-tag :type="scope.row.isSuccess ? 'success' : 'danger'" size="small">
+          <el-tag :type="scope.row.isSuccess ? 'info' : 'danger'" size="small">
             {{ scope.row.isSuccess ? t('callHistory.common.success') : t('callHistory.common.failed') }}
           </el-tag>
         </template>
@@ -236,7 +236,7 @@
             <el-link type="primary" class="record-card__title" @click="handleTraceIdClick(row.traceId)">
               {{ row.traceId?.substring(0, 8) }}...
             </el-link>
-            <el-tag :type="row.isSuccess ? 'success' : 'danger'" size="small">
+            <el-tag :type="row.isSuccess ? 'info' : 'danger'" size="small">
               {{ row.isSuccess ? t('callHistory.common.success') : t('callHistory.common.failed') }}
             </el-tag>
           </div>
@@ -349,7 +349,7 @@
               {{ selectedRecord.responseTimeMs?.toFixed(0) || '-' }} ms
             </el-descriptions-item>
             <el-descriptions-item :label="t('callHistory.common.callStatus')">
-              <el-tag :type="selectedRecord.isSuccess ? 'success' : 'danger'">
+              <el-tag :type="selectedRecord.isSuccess ? 'info' : 'danger'">
                 {{ selectedRecord.isSuccess ? t('callHistory.common.success') : t('callHistory.common.failed') }}
               </el-tag>
             </el-descriptions-item>
@@ -364,8 +364,8 @@
             </el-descriptions-item>
             <el-descriptions-item :label="t('callHistory.list.tokenStatsTitle')" :span="2">
               <el-tag type="info" size="small">{{ t('callHistory.list.tokenStats.input', { value: selectedRecord.promptTokens }) }}</el-tag>
-              <el-tag type="success" size="small">{{ t('callHistory.list.tokenStats.output', { value: selectedRecord.completionTokens }) }}</el-tag>
-              <el-tag type="warning" size="small">{{ t('callHistory.list.tokenStats.total', { value: selectedRecord.totalTokens }) }}</el-tag>
+              <el-tag type="info" size="small">{{ t('callHistory.list.tokenStats.output', { value: selectedRecord.completionTokens }) }}</el-tag>
+              <el-tag type="info" size="small">{{ t('callHistory.list.tokenStats.total', { value: selectedRecord.totalTokens }) }}</el-tag>
             </el-descriptions-item>
             <el-descriptions-item :label="t('callHistory.list.rateLimitedStatus')">
               <el-tag :type="selectedRecord.rateLimited ? 'danger' : 'info'" size="small">
@@ -516,21 +516,16 @@ const getServiceTypeLabel = (type?: string) => {
   return serviceTypeKeyMap[type] ? t(`serviceTypes.${serviceTypeKeyMap[type]}`) : type
 }
 
-// 获取 HTTP 状态码标签类型
+// 获取 HTTP 状态码标签类型（只有 4xx/5xx 是真语义，2xx/3xx 保持中性）
 const getStatusType = (code?: number) => {
   if (!code) return 'info'
-  if (code >= 200 && code < 300) return 'success'
-  if (code >= 400 && code < 500) return 'warning'
-  if (code >= 500) return 'danger'
-  return 'info'
+  return code >= 400 ? 'danger' : 'info'
 }
 
-// 获取响应时间标签类型
+// 获取响应时间标签类型（≥1000ms 才算慢，其余中性，避免绿/橙/红三色并存）
 const getResponseTimeType = (ms?: number) => {
   if (!ms) return 'info'
-  if (ms < 500) return 'success'
-  if (ms < 1000) return 'warning'
-  return 'danger'
+  return ms >= 1000 ? 'danger' : 'info'
 }
 
 // 加载数据
@@ -672,11 +667,11 @@ onMounted(() => {
 
 .total-count {
   font-size: 14px;
-  color: var(--ja-text-secondary);
+  color: var(--ja-ink-3);
 }
 
 .error-message {
-  color: var(--el-color-danger);
+  color: var(--ja-danger);
   font-size: 12px;
   word-break: break-all;
 }
@@ -691,12 +686,12 @@ onMounted(() => {
 
 .summary-label {
   font-weight: bold;
-  color: var(--ja-text-regular);
+  color: var(--ja-ink-2);
   margin-bottom: 4px;
 }
 
 .summary-content {
-  background-color: var(--el-fill-color-light);
+  background-color: var(--ja-surface-2);
   padding: 8px 12px;
   border-radius: 4px;
   font-size: 12px;
