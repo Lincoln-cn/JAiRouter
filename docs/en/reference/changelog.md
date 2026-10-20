@@ -21,7 +21,9 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 ## Version History
 
-### [Unreleased] - Console navigation information-architecture rework (P0-3, part 2)
+### [Unreleased] - Console UI overhaul (brand, sign-in page, information architecture, neutral palette)
+
+#### Console navigation information architecture (P0-3)
 
 - The sidebar menu shrinks from **9 groups / 40 entries** to **7 groups / 28 items** (Overview / Observability / Traffic Governance / Model & Instances / Security / System / Developer Tools). Twelve pages became tabs of a sibling item; **every URL is unchanged**, so deep links, bookmarks, and older paths in the docs keep working. No backend or API change and no data migration.
 - The 12 folded entries: Call History Dashboard, Tracing Dashboard, Exception Statistics, Slow Query Analysis, Quota Usage Monitoring, Load Balancer Strategy, Circuit Breaker History, Circuit Breaker Global Config, and the playground's Embedding / Rerank / Audio / Image pages.
@@ -29,6 +31,59 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - Sidebar highlighting is driven by a `ROUTE_TO_MENU` lookup derived from the tabs (never hand-written), with unmapped routes falling back to their own path; group expansion is derived from the current route, and the hard-coded prefix table is gone.
 - The breadcrumb is now "group to menu item to current tab", with the last segment not clickable; detail pages (such as `/exceptions/detail/:id`) append `#id` to the last segment.
 - Documentation correction: exception management is in fact gated by `monitoring:exceptions:read` (it used to be documented as having no permission code).
+
+#### Brand assets and first paint (P0-1)
+
+- New brand asset folder `frontend/src/assets/brand/` (`logo-mark-64.png`, `logo-badge-256.png`, `favicon-32.png`, `favicon-180.png`); `frontend/index.html` now declares `<link rel="icon">` and `<link rel="apple-touch-icon">`; the sidebar badge replaces the placeholder icon (the image keeps an empty `alt`, since the adjacent `JAiRouter` text carries the name).
+- New neutral-scale and accent tokens (`--ja-paper`, `--ja-surface`, `--ja-surface-2`, `--ja-ink`, `--ja-ink-2`, `--ja-ink-3`, `--ja-accent`, `--ja-accent-soft`). **The primary color `#409eff` is unchanged**, and `--ja-border` is unchanged too (the dark border correction is deferred).
+- The boot animation drops the purple gradient for a neutral background, the badge, and a cyan progress ring, with a dark-mode branch.
+
+#### Sign-in page (P0-2)
+
+- The sign-in page is now a two-column layout: a brand wall on the left (badge, one-line summary, three facts, footer version) and the form on the right, over a Canvas topology animation.
+- Two escape hatches: `?static` in the URL, or the system `prefers-reduced-motion: reduce` setting, renders a single static frame with no animation or parallax.
+- The form contract is unchanged: still a `.login-form` container, two inputs (username then password), and a `button.login-button` with `type=submit`; a failed sign-in shows an inline message and no longer raises an extra toast.
+
+#### Observability list pages (P1-1)
+
+- Call History, Slow Requests, Token Usage, Tracing Search, and Exceptions now share the list-page skeleton (title and description, actions, filters, toolbar, table, pagination, drawer).
+- The relative-time component `TimeText` follows the interface language (new `common.justNow`); the exception list no longer renders an empty pagination bar when there are zero rows.
+
+#### Heavy pages and chart skin (P1-2)
+
+- Three shared pieces: the metric strip `MetricStrip`, the chart card `ChartCard` (built-in loading and empty states, with the default slot always mounted so an ECharts instance is never lost), and the chart skin `useChartSkin` (palette, axes, grid, and tooltip all read design tokens and follow dark mode).
+- API Key page: the four metric cards become a metric strip; the quota-alert card collapses into a one-line summary when nothing is alerting; a permission column with more than three entries folds into "N items" with a popover; the row actions keep "Quota" and move the rest into "More".
+- Audit Log page: the four gradient cards become a metric strip; the event-type donut becomes a horizontal Top 5; localization is added for the 12 audit event types that were missing.
+
+#### Collapsible sidebar, dark semantic colors, narrow screens (P1-3)
+
+- The sidebar collapses between 200px and 64px, remembered in `localStorage['ja-sidebar-collapsed']`; below 768px it is forced collapsed and the user preference is not overwritten.
+- The dark theme now has proper elevation (page darker than cards) and two chart-only colors (`--ja-chart-series-neutral`, `--ja-chart-axis`), fixing the case where a divider color had been reused as a data-series color and became invisible in dark mode.
+- Three list pages switch to card lists below 768px (`TableCards`); between 768 and 1024px secondary columns are hidden so the table does not scroll sideways.
+
+#### Neutral palette across the console (P2-1, three batches, 33 pages)
+
+- KPI cards become metric strips, charts become chart cards with the shared skin, and decorative gradients and multi-color tags collapse into neutrals; semantic colors are reserved for real semantics (failure, over-quota, danger, in progress).
+- The API Key page is split from a single 1696-line file into nine sub-components (table, cards, form dialog, quota drawer, import dialog, alert card, permission tags, and helpers), with behavior and wording unchanged.
+
+#### Global search and status bar (P3)
+
+- `⌘K` or `Ctrl+K` opens global search across menus, service types, instances, API keys, trace IDs, and exceptions; arrow keys move, Enter opens, Esc closes.
+- The header status bar shows the number of open circuit breakers and the 24-hour exception count, and both link to the matching monitoring page.
+
+#### Configuration and API fix (#575)
+
+- `GET /api/loadbalancer/config/{serviceType}` now returns **200 with the global defaults** (`isGlobal: true`) when a service type has no dedicated load-balancer configuration, instead of 500. The strategy page no longer drops rows for service types such as Image Generation and Image Editing, and the browser console no longer logs 500s. The front end still tolerates 404 for older backends.
+
+#### Tests and code hygiene (TA1 / TA5)
+
+- New sanitization corpus regression suite (20 cases covering masked, missed, false-positive, and pass-through behavior) plus response-sanitization coverage tests.
+- Ten backend classes with no callers are marked `@Deprecated(forRemoval = true)` with their replacement noted; two Logback converter registrations that never took effect were removed (the `conversionRule` entries pointed at a non-existent package and the patterns never used `%traceId`).
+
+#### Upgrade notes
+
+- No breaking API change and no data migration; every old URL still works.
+- Automation that depends on the menu structure should switch to URL- or permission-based checks: the menu went from 9 groups / 40 entries to 7 groups / 28 items.
 
 ### [3.3.6] - 2026-10-19 - Patch Release (schema migration + two authorization restrictions + in-page write gating and contract slimming)
 
