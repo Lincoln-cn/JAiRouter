@@ -22,7 +22,9 @@
     "updateTime": "更新时间",
     "enabled": "已启用",
     "disabled": "已禁用",
-    "justNow": "刚刚"
+    "justNow": "刚刚",
+    "chartEmpty": "暂无数据",
+    "chartEmptyHint": "调整筛选条件或时间范围后重试"
   },
   "layout": {
     "home": "首页",

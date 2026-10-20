@@ -9,6 +9,10 @@
     "createApiKey": "创建API密钥",
     "gotoQuotaMonitoring": "配额用量监控",
     "quota": "配额",
+    "quotaAlertSummaryNone": "配额告警：无",
+    "quotaAlertSummaryCount": "配额告警：{count} 项",
+    "permissionsCount": "{count} 项",
+    "moreActions": "更多",
     "quotaDrawerTitle": "配额管理",
     "quotaPresets": {
       "unlimited": "不限制",

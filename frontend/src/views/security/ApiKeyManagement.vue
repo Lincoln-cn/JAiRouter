@@ -1,41 +1,30 @@
 <template>
   <PageSkeleton :title="t('apiKeys.title')">
     <template #actions>
-      <el-button icon="Download" type="success" @click="handleExport">{{ t('apiKeys.exportConfig') }}</el-button>
-      <el-button icon="Upload" type="warning" @click="showImportDialog">{{ t('apiKeys.importConfig') }}</el-button>
+      <el-button icon="Download" @click="handleExport">{{ t('apiKeys.exportConfig') }}</el-button>
+      <el-button icon="Upload" @click="showImportDialog">{{ t('apiKeys.importConfig') }}</el-button>
       <el-button icon="Plus" type="primary" @click="handleCreateApiKey">{{ t('apiKeys.createApiKey') }}</el-button>
       <el-button icon="DataAnalysis" @click="goQuotaMonitoring">{{ t('apiKeys.gotoQuotaMonitoring') }}</el-button>
     </template>
 
-    <!-- 统计卡片 -->
-    <el-row :gutter="20" class="stats-row">
-      <el-col :span="6">
-        <StatCard :icon="Key" :label="t('apiKeys.stats.total')" :value="listData.total" tone="primary" />
-      </el-col>
-      <el-col :span="6">
-        <StatCard :icon="CircleCheck" :label="t('apiKeys.stats.enabled')" :value="listData.enabledCount" tone="success" />
-      </el-col>
-      <el-col :span="6">
-        <StatCard :icon="CircleClose" :label="t('apiKeys.stats.disabled')" :value="listData.disabledCount" tone="danger" />
-      </el-col>
-      <el-col :span="6">
-        <StatCard :icon="Warning" :label="t('apiKeys.stats.expired')" :value="listData.expiredCount" tone="warning" />
-      </el-col>
-    </el-row>
+    <!-- 配额告警摘要：无告警时只留一行文本，不占整卡 -->
+    <p class="quota-alert-line">
+      {{ quotaAlerts.length > 0
+        ? t('apiKeys.quotaAlertSummaryCount', { count: quotaAlerts.length })
+        : t('apiKeys.quotaAlertSummaryNone') }}
+    </p>
 
-    <!-- 配额告警区 -->
-    <el-card class="quota-alerts-card" shadow="hover" v-loading="quotaAlertsLoading">
+    <!-- KPI 指标条（P1-2）：中性色，仅「已禁用/已过期 > 0」时着色 -->
+    <MetricStrip class="kpi-strip" :items="kpiItems" />
+
+    <!-- 配额告警区：仅在有告警时渲染整卡 -->
+    <el-card v-if="quotaAlerts.length > 0" class="quota-alerts-card" shadow="hover" v-loading="quotaAlertsLoading">
       <template #header>
         <div class="card-header">
           <span class="main-title">
             <el-icon><Warning /></el-icon>
             {{ t('apiKeys.quotaAlertsTitle') }}
-            <el-badge
-              v-if="quotaAlerts.length > 0"
-              :value="quotaAlerts.length"
-              type="danger"
-              style="margin-left: 8px"
-            />
+            <el-badge :value="quotaAlerts.length" type="danger" style="margin-left: 8px" />
           </span>
           <el-button
             icon="Refresh"
@@ -48,50 +37,40 @@
         </div>
       </template>
 
-      <template v-if="quotaAlerts.length > 0">
-        <el-table :data="quotaAlerts" stripe size="small" style="width: 100%">
-          <el-table-column prop="keyId" :label="t('apiKeys.columns.keyId')" width="180" show-overflow-tooltip>
-            <template #default="{ row }">
-              <el-tag effect="plain" type="info">{{ row.keyId }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="description" :label="t('apiKeys.columns.description')" min-width="140" show-overflow-tooltip>
-            <template #default="{ row }">
-              {{ row.description || '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="alertType" :label="t('apiKeys.columns.alertType')" width="120" align="center">
-            <template #default="{ row }">
-              <el-tag :type="getAlertTypeTag(row.alertType)" size="small">
-                {{ formatAlertType(row.alertType) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('apiKeys.columns.requestUsage')" width="110" align="center">
-            <template #default="{ row }">
-              <span :class="{ 'alert-high': row.dailyRequestUsagePercent >= 90 }">
-                {{ formatPercent(row.dailyRequestUsagePercent) }}
-              </span>
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('apiKeys.columns.tokenUsage')" width="110" align="center">
-            <template #default="{ row }">
-              <span :class="{ 'alert-high': row.dailyTokenUsagePercent >= 90 }">
-                {{ formatPercent(row.dailyTokenUsagePercent) }}
-              </span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="message" :label="t('apiKeys.columns.alertDetail')" min-width="200" show-overflow-tooltip />
-        </el-table>
-      </template>
-      <template v-else>
-        <div class="no-alerts">
-          <el-icon style="font-size: 32px; color: var(--ja-success); margin-bottom: 8px;">
-            <CircleCheck />
-          </el-icon>
-          <div class="no-alerts-text">{{ t('apiKeys.noQuotaAlerts') }}</div>
-        </div>
-      </template>
+      <el-table :data="quotaAlerts" stripe size="small" style="width: 100%">
+        <el-table-column prop="keyId" :label="t('apiKeys.columns.keyId')" width="180" show-overflow-tooltip>
+          <template #default="{ row }">
+            <el-tag effect="plain" type="info">{{ row.keyId }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="description" :label="t('apiKeys.columns.description')" min-width="140" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ row.description || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="alertType" :label="t('apiKeys.columns.alertType')" width="120" align="center">
+          <template #default="{ row }">
+            <el-tag :type="getAlertTypeTag(row.alertType)" size="small">
+              {{ formatAlertType(row.alertType) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('apiKeys.columns.requestUsage')" width="110" align="center">
+          <template #default="{ row }">
+            <span :class="{ 'alert-high': row.dailyRequestUsagePercent >= 90 }">
+              {{ formatPercent(row.dailyRequestUsagePercent) }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('apiKeys.columns.tokenUsage')" width="110" align="center">
+          <template #default="{ row }">
+            <span :class="{ 'alert-high': row.dailyTokenUsagePercent >= 90 }">
+              {{ formatPercent(row.dailyTokenUsagePercent) }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="message" :label="t('apiKeys.columns.alertDetail')" min-width="200" show-overflow-tooltip />
+      </el-table>
     </el-card>
 
     <!-- 主卡片 -->
@@ -111,7 +90,24 @@
         </el-table-column>
         <el-table-column :label="t('apiKeys.columns.permissions')" prop="permissions" width="160">
           <template #default="scope">
-            <div class="permission-tags">
+            <el-popover
+                v-if="(scope.row.permissions?.length ?? 0) > 3"
+                trigger="click"
+                :width="260"
+                placement="left"
+            >
+              <template #reference>
+                <el-tag size="small" class="permission-count">
+                  {{ t('apiKeys.permissionsCount', { count: scope.row.permissions.length }) }}
+                </el-tag>
+              </template>
+              <div class="permission-popover">
+                <el-tag v-for="permission in scope.row.permissions" :key="permission" size="small">
+                  {{ formatPermission(permission) }}
+                </el-tag>
+              </div>
+            </el-popover>
+            <div v-else-if="scope.row.permissions?.length" class="permission-tags">
               <el-tag
                   v-for="permission in scope.row.permissions"
                   :key="permission"
@@ -121,7 +117,7 @@
                 {{ formatPermission(permission) }}
               </el-tag>
             </div>
-            <span v-if="!scope.row.permissions?.length">-</span>
+            <span v-else>-</span>
           </template>
         </el-table-column>
         <el-table-column :label="t('apiKeys.columns.createdAt')" width="160">
@@ -186,20 +182,24 @@
             />
           </template>
         </el-table-column>
-        <el-table-column fixed="right" :label="t('apiKeys.columns.actions')" width="260">
+        <el-table-column fixed="right" :label="t('apiKeys.columns.actions')" width="150">
           <template #default="scope">
-            <div class="action-buttons">
-              <el-button icon="Edit" size="small" @click="handleEdit(scope.row)">{{ t('apiKeys.actions.edit') }}</el-button>
-              <el-button icon="RefreshRight" size="small" type="warning" @click="handleRotate(scope.row)"
-                         :disabled="scope.row.expired">{{ t('apiKeys.actions.rotate') }}</el-button>
-              <el-button icon="Refresh" size="small" type="info" @click="handleReset(scope.row)">{{ t('apiKeys.actions.reset') }}</el-button>
-              <el-tooltip :content="t('apiKeys.actions.quotaResetTooltip')" placement="top">
-                <el-button icon="Timer" size="small" type="success" @click="handleResetQuota(scope.row)">{{ t('apiKeys.actions.quotaReset') }}</el-button>
-              </el-tooltip>
-              <el-button icon="Coin" size="small" type="primary" @click="openQuotaDrawer(scope.row)">
-                {{ t('apiKeys.quota') }}
-              </el-button>
-              <el-button icon="Delete" size="small" type="danger" @click="handleDelete(scope.row)">{{ t('apiKeys.actions.delete') }}</el-button>
+            <div class="row-actions">
+              <el-button icon="Coin" size="small" type="primary" @click="openQuotaDrawer(scope.row)">{{ t('apiKeys.quota') }}</el-button>
+              <el-dropdown trigger="click" @command="(command: string) => handleRowCommand(command, scope.row)">
+                <el-button size="small">{{ t('apiKeys.moreActions') }}<el-icon class="el-icon--right"><ArrowDown /></el-icon></el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="edit" icon="Edit">{{ t('apiKeys.actions.edit') }}</el-dropdown-item>
+                    <el-dropdown-item command="rotate" icon="RefreshRight" :disabled="scope.row.expired">{{ t('apiKeys.actions.rotate') }}</el-dropdown-item>
+                    <el-dropdown-item command="reset" icon="Refresh">{{ t('apiKeys.actions.reset') }}</el-dropdown-item>
+                    <el-dropdown-item command="resetQuota" icon="Timer">{{ t('apiKeys.actions.quotaReset') }}</el-dropdown-item>
+                    <el-dropdown-item command="delete" icon="Delete" divided>
+                      <span class="text-danger">{{ t('apiKeys.actions.delete') }}</span>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </div>
           </template>
         </el-table-column>
@@ -516,15 +516,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, reactive } from 'vue'
+import { onMounted, ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { UploadFile } from 'element-plus'
 import { getErrorMessage } from '@/utils/error'
 import { useI18n } from 'vue-i18n'
-import { Key, CircleCheck, CircleClose, Warning, UploadFilled } from '@element-plus/icons-vue'
-import StatCard from '@/components/StatCard.vue'
+import { Key, Warning, UploadFilled } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import MetricStrip, { type MetricStripItem } from '@/components/MetricStrip.vue'
 import { formatDateTime } from '@/utils/format'
 import {
   createApiKey,
@@ -672,6 +672,24 @@ const listData = reactive<ApiKeyListVO>({
   }
 })
 
+// KPI 指标条（P1-2）：默认中性，仅「已禁用 / 已过期 > 0」时给该项的值着色
+const kpiItems = computed<MetricStripItem[]>(() => [
+  { key: 'total', label: t('apiKeys.stats.total'), value: listData.total },
+  { key: 'enabled', label: t('apiKeys.stats.enabled'), value: listData.enabledCount },
+  {
+    key: 'disabled',
+    label: t('apiKeys.stats.disabled'),
+    value: listData.disabledCount,
+    tone: listData.disabledCount > 0 ? 'warning' : 'default'
+  },
+  {
+    key: 'expired',
+    label: t('apiKeys.stats.expired'),
+    value: listData.expiredCount,
+    tone: listData.expiredCount > 0 ? 'danger' : 'default'
+  }
+])
+
 const apiKeys = ref<ApiKeyVO[]>([])
 const loading = ref(false)
 const saveLoading = ref(false)
@@ -770,8 +788,6 @@ const formatTokenCount = (count: number): string => {
 }
 
 // 分页数据
-import { computed } from 'vue'
-
 const pagedApiKeys = computed(() => {
   const start = (pagination.currentPage - 1) * pagination.pageSize
   const end = start + pagination.pageSize
@@ -1014,6 +1030,27 @@ const handleResetQuota = (row: ApiKeyVO) => {
   })
 }
 
+// 行操作「更多」下拉的命令分发：统一转交既有 handler，不复制业务逻辑
+const handleRowCommand = (command: string, row: ApiKeyVO) => {
+  switch (command) {
+    case 'edit':
+      handleEdit(row)
+      break
+    case 'rotate':
+      handleRotate(row)
+      break
+    case 'reset':
+      handleReset(row)
+      break
+    case 'resetQuota':
+      handleResetQuota(row)
+      break
+    case 'delete':
+      handleDelete(row)
+      break
+  }
+}
+
 // 创建成功后弹窗及密钥值处理
 const showKeyValueDialog = ref(false)
 const createdKeyValue = ref('')
@@ -1220,8 +1257,14 @@ onMounted(() => {
   gap: 16px;
 }
 
-.stats-row {
-  flex-shrink: 0;
+.quota-alert-line {
+  margin: 0;
+  color: var(--ja-ink-3);
+  font-size: 13px;
+}
+
+.kpi-strip {
+  margin-bottom: 16px;
 }
 
 .quota-alerts-card {
@@ -1250,19 +1293,6 @@ onMounted(() => {
 
 .quota-drawer-actions .el-button {
   min-width: 96px;
-}
-
-.no-alerts {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 24px 0;
-}
-
-.no-alerts-text {
-  font-size: 14px;
-  color: var(--ja-success, #67c23a);
-  font-weight: 500;
 }
 
 .alert-high {
@@ -1339,6 +1369,16 @@ onMounted(() => {
   margin: 0;
 }
 
+.permission-count {
+  cursor: pointer;
+}
+
+.permission-popover {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .expired-text {
   color: var(--ja-danger);
 }
@@ -1360,16 +1400,21 @@ onMounted(() => {
   margin-top: 4px;
 }
 
-.action-buttons {
+/* 行操作：1 个主操作（配额）+ 1 个「更多」下拉，列宽收紧到 150 */
+.row-actions {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 4px;
-  width: 140px;
 }
 
-.action-buttons .el-button {
-  width: calc(50% - 2px);
+.row-actions .el-button {
   margin: 0;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.text-danger {
+  color: var(--ja-danger);
 }
 
 .dialog-footer {

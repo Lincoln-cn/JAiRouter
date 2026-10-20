@@ -29,187 +29,108 @@
       </FilterBar>
     </template>
 
-    <!-- 概览统计卡片（P1-2 另行压缩，本轮保留） -->
-<el-row :gutter="20" class="stats-row">
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #409EFF;">
-              <el-icon><DataAnalysis /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ formatNumber(statistics.totalTokens) }}</div>
-              <div class="stat-label">{{ t('callHistory.tokenUsage.stats.totalTokenUsed') }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #67C23A;">
-              <el-icon><Document /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ formatNumber(statistics.totalPromptTokens) }}</div>
-              <div class="stat-label">{{ t('callHistory.tokenUsage.stats.inputTokens') }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #E6A23C;">
-              <el-icon><ChatDotSquare /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ formatNumber(statistics.totalCompletionTokens) }}</div>
-              <div class="stat-label">{{ t('callHistory.tokenUsage.stats.outputTokens') }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #909399;">
-              <el-icon><Clock /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.avgResponseTimeMs?.toFixed(0) || 0 }}</div>
-              <div class="stat-label">{{ t('callHistory.tokenUsage.stats.avgResponseTimeMs') }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <!-- 概览指标：8 张彩色图标 KPI 卡 → 一条中性 MetricStrip（P1-2） -->
+    <MetricStrip :items="kpiItems" :loading="loading" />
 
-    <!-- 第二行统计卡片 -->
-    <el-row :gutter="20" class="stats-row">
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #F56C6C;">
-              <el-icon><Tickets /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ formatNumber(statistics.totalRequests) }}</div>
-              <div class="stat-label">{{ t('callHistory.tokenUsage.stats.totalRequests') }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #67C23A;">
-              <el-icon><CircleCheck /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.successRate?.toFixed(2) || 0 }}%</div>
-              <div class="stat-label">{{ t('callHistory.tokenUsage.stats.successRate') }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #409EFF;">
-              <el-icon><Grid /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.byModel?.length || 0 }}</div>
-              <div class="stat-label">{{ t('callHistory.tokenUsage.stats.modelUsedCount') }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-content">
-            <div class="stat-icon" style="background: #E6A23C;">
-              <el-icon><Service /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.byServiceType?.length || 0 }}</div>
-              <div class="stat-label">{{ t('callHistory.tokenUsage.stats.serviceTypeCount') }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <!-- 图表区域 -->
+    <!-- 图表：每张图一张 ChartCard（自带边框，不再套 el-card） -->
     <el-row :gutter="20">
       <!-- 按模型统计 -->
       <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <span class="chart-title">{{ t('callHistory.tokenUsage.chart.modelTokenTopTitle') }}</span>
-          </template>
-          <div ref="modelChartRef" class="chart-container"></div>
-        </el-card>
+        <ChartCard
+          :title="t('callHistory.tokenUsage.chart.modelTokenTopTitle')"
+          :loading="loading"
+          :empty="modelEmpty"
+          :empty-title="t('common.chartEmpty')"
+          :empty-description="t('common.chartEmptyHint')"
+          :height="320"
+        >
+          <!-- 单类数据：环形图无意义 ⇒ 「大数字 + 说明」，且不渲染图表容器 -->
+          <div v-if="modelSingle" class="chart-single">
+            <div class="chart-single__value">{{ formatNumber(modelSingleItem?.totalTokens) }}</div>
+            <div class="chart-single__label">{{ modelSingleItem?.modelName || t('callHistory.common.unknown') }}</div>
+            <div class="chart-single__hint">{{ t('callHistory.tokenUsage.chart.singleCategoryHint') }}</div>
+          </div>
+          <div v-else ref="modelChartRef" class="chart-container"></div>
+        </ChartCard>
       </el-col>
 
       <!-- 按服务类型统计 -->
       <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <span class="chart-title">{{ t('callHistory.tokenUsage.chart.serviceTypeTokenTitle') }}</span>
-          </template>
+        <ChartCard
+          :title="t('callHistory.tokenUsage.chart.serviceTypeTokenTitle')"
+          :loading="loading"
+          :empty="serviceTypeEmpty"
+          :empty-title="t('common.chartEmpty')"
+          :empty-description="t('common.chartEmptyHint')"
+          :height="320"
+        >
           <div ref="serviceTypeChartRef" class="chart-container"></div>
-        </el-card>
+        </ChartCard>
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px;">
+    <el-row :gutter="20">
       <!-- 按日统计 -->
       <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <span class="chart-title">{{ t('callHistory.tokenUsage.chart.dailyTrendTitle') }}</span>
-          </template>
+        <ChartCard
+          :title="t('callHistory.tokenUsage.chart.dailyTrendTitle')"
+          :loading="loading"
+          :empty="dailyEmpty"
+          :empty-title="t('common.chartEmpty')"
+          :empty-description="t('common.chartEmptyHint')"
+          :height="320"
+        >
           <div ref="dailyChartRef" class="chart-container"></div>
-        </el-card>
+        </ChartCard>
       </el-col>
 
       <!-- 按周统计 -->
       <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <span class="chart-title">{{ t('callHistory.tokenUsage.chart.weeklyTrendTitle') }}</span>
-          </template>
+        <ChartCard
+          :title="t('callHistory.tokenUsage.chart.weeklyTrendTitle')"
+          :loading="loading"
+          :empty="weeklyEmpty"
+          :empty-title="t('common.chartEmpty')"
+          :empty-description="t('common.chartEmptyHint')"
+          :height="320"
+        >
           <div ref="weeklyChartRef" class="chart-container"></div>
-        </el-card>
+        </ChartCard>
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px;">
+    <el-row :gutter="20">
       <!-- 按月统计 -->
       <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <span class="chart-title">{{ t('callHistory.tokenUsage.chart.monthlyTrendTitle') }}</span>
-          </template>
+        <ChartCard
+          :title="t('callHistory.tokenUsage.chart.monthlyTrendTitle')"
+          :loading="loading"
+          :empty="monthlyEmpty"
+          :empty-title="t('common.chartEmpty')"
+          :empty-description="t('common.chartEmptyHint')"
+          :height="320"
+        >
           <div ref="monthlyChartRef" class="chart-container"></div>
-        </el-card>
+        </ChartCard>
       </el-col>
 
       <!-- 小时分布 -->
       <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <span class="chart-title">{{ t('callHistory.tokenUsage.chart.hourlyDistributionTitle') }}</span>
-          </template>
+        <ChartCard
+          :title="t('callHistory.tokenUsage.chart.hourlyDistributionTitle')"
+          :loading="loading"
+          :empty="hourlyEmpty"
+          :empty-title="t('common.chartEmpty')"
+          :empty-description="t('common.chartEmptyHint')"
+          :height="320"
+        >
           <div ref="hourlyChartRef" class="chart-container"></div>
-        </el-card>
+        </ChartCard>
       </el-col>
     </el-row>
 
     <!-- 最近使用记录 -->
-    <el-card shadow="hover" style="margin-top: 20px;">
+    <el-card shadow="hover">
       <template #header>
         <span class="chart-title">{{ t('callHistory.tokenUsage.chart.recentUsageTitle') }}</span>
       </template>
@@ -259,37 +180,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { getErrorMessage } from '@/utils/error'
-import {
-  DataAnalysis,
-  Document,
-  ChatDotSquare,
-  Clock,
-  Tickets,
-  CircleCheck,
-  Grid,
-  Service,
-} from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import type { ECharts } from 'echarts'
 import {
   getTokenUsageStatistics,
   getRecentUsage
 } from '@/api/tokenUsage'
-import type { TokenUsageStatistics, TokenUsageRecord } from '@/types/tokenUsage'
+import type {
+  ModelTokenStats,
+  TokenUsageStatistics,
+  TokenUsageRecord
+} from '@/types/tokenUsage'
 import { formatNumber as formatNumberBase } from '@/utils/format'
 import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
+import { useChartSkin } from '@/composables/useChartSkin'
 import ListPageLayout from '@/components/ListPageLayout.vue'
 import FilterBar from '@/components/FilterBar.vue'
+import MetricStrip from '@/components/MetricStrip.vue'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
+import ChartCard from '@/components/ChartCard.vue'
 import TimeText from '@/components/TimeText.vue'
 
 const { t } = useI18n()
 
+/** 图表统一皮肤（分类色板只含主色相 + 中性阶，语义色不进分类着色）。 */
+const { skin } = useChartSkin()
+
 // 时间范围
 const dateRange = ref<[string, string] | null>(null)
+
+// 加载中（驱动 MetricStrip 骨架与 ChartCard 加载覆盖层）
+const loading = ref(false)
 
 // 统计数据
 const statistics = ref<TokenUsageStatistics>({
@@ -339,6 +264,74 @@ const formatNumber = (num?: number): string => {
   return formatNumberBase(num)
 }
 
+/** 平均响应时间：整数毫秒，不参与千分位（长度固定，指标条不需要分隔符）。 */
+const avgResponseTimeText = computed(() => (statistics.value.avgResponseTimeMs || 0).toFixed(0))
+
+/** 成功率：两位小数百分比。 */
+const successRateText = computed(() => `${(statistics.value.successRate || 0).toFixed(2)}%`)
+
+/**
+ * 指标条数据。
+ *
+ * 8 项都只是「用量 / 计数」，没有异常状态语义 ⇒ `tone` 一律缺省（default）。
+ */
+const kpiItems = computed<MetricStripItem[]>(() => [
+  {
+    key: 'totalTokens',
+    label: t('callHistory.tokenUsage.stats.totalTokenUsed'),
+    value: formatNumber(statistics.value.totalTokens)
+  },
+  {
+    key: 'promptTokens',
+    label: t('callHistory.tokenUsage.stats.inputTokens'),
+    value: formatNumber(statistics.value.totalPromptTokens)
+  },
+  {
+    key: 'completionTokens',
+    label: t('callHistory.tokenUsage.stats.outputTokens'),
+    value: formatNumber(statistics.value.totalCompletionTokens)
+  },
+  {
+    key: 'avgResponseTime',
+    label: t('callHistory.tokenUsage.stats.avgResponseTimeMs'),
+    value: avgResponseTimeText.value
+  },
+  {
+    key: 'totalRequests',
+    label: t('callHistory.tokenUsage.stats.totalRequests'),
+    value: formatNumber(statistics.value.totalRequests)
+  },
+  {
+    key: 'successRate',
+    label: t('callHistory.tokenUsage.stats.successRate'),
+    value: successRateText.value
+  },
+  {
+    key: 'modelCount',
+    label: t('callHistory.tokenUsage.stats.modelUsedCount'),
+    value: statistics.value.byModel?.length ?? 0
+  },
+  {
+    key: 'serviceTypeCount',
+    label: t('callHistory.tokenUsage.stats.serviceTypeCount'),
+    value: statistics.value.byServiceType?.length ?? 0
+  }
+])
+
+// 每张图的空态判定：只看各自的原始数据源是否为空
+const modelEmpty = computed(() => (statistics.value.byModel || []).length === 0)
+const serviceTypeEmpty = computed(() => (statistics.value.byServiceType || []).length === 0)
+const dailyEmpty = computed(() => (statistics.value.byDay || []).length === 0)
+const weeklyEmpty = computed(() => (statistics.value.byWeek || []).length === 0)
+const monthlyEmpty = computed(() => (statistics.value.byMonth || []).length === 0)
+const hourlyEmpty = computed(() => (statistics.value.byHour || []).length === 0)
+
+// 模型占比的单类情形：环形图只剩一整圈（无对比意义）⇒ 改渲染「大数字」
+const modelSingle = computed(() => (statistics.value.byModel || []).length === 1)
+const modelSingleItem = computed<ModelTokenStats | null>(() =>
+  modelSingle.value ? statistics.value.byModel[0] || null : null
+)
+
 // 服务类型 key -> i18n 键名映射（保持原有顺序）
 const serviceTypeKeyMap: Record<string, string> = {
   chat: 'chat',
@@ -356,83 +349,92 @@ const getServiceTypeLabel = (type?: string) => {
   return serviceTypeKeyMap[type] ? t(`serviceTypes.${serviceTypeKeyMap[type]}`) : type
 }
 
-// 初始化图表
+// 初始化图表（容器存在才建实例；单类情形下 modelChartRef 为空，直接跳过）
 const initCharts = () => {
   nextTick(() => {
-    if (modelChartRef.value) {
+    if (modelChartRef.value && !modelChart) {
       modelChart = echarts.init(modelChartRef.value)
-      updateModelChart()
     }
-    if (serviceTypeChartRef.value) {
+    if (serviceTypeChartRef.value && !serviceTypeChart) {
       serviceTypeChart = echarts.init(serviceTypeChartRef.value)
-      updateServiceTypeChart()
     }
-    if (dailyChartRef.value) {
+    if (dailyChartRef.value && !dailyChart) {
       dailyChart = echarts.init(dailyChartRef.value)
-      updateDailyChart()
     }
-    if (weeklyChartRef.value) {
+    if (weeklyChartRef.value && !weeklyChart) {
       weeklyChart = echarts.init(weeklyChartRef.value)
-      updateWeeklyChart()
     }
-    if (monthlyChartRef.value) {
+    if (monthlyChartRef.value && !monthlyChart) {
       monthlyChart = echarts.init(monthlyChartRef.value)
-      updateMonthlyChart()
     }
-    if (hourlyChartRef.value) {
+    if (hourlyChartRef.value && !hourlyChart) {
       hourlyChart = echarts.init(hourlyChartRef.value)
-      updateHourlyChart()
     }
+
+    updateModelChart()
+    updateServiceTypeChart()
+    updateDailyChart()
+    updateWeeklyChart()
+    updateMonthlyChart()
+    updateHourlyChart()
   })
 }
 
-// 更新模型图表
+// 更新模型图表（环形图；分类色板来自皮肤）
 const updateModelChart = () => {
   if (!modelChart) return
 
   const data = (statistics.value.byModel || [])
     .slice(0, 10)
     .map(item => ({
-      name: item.modelName,
+      name: item.modelName || t('callHistory.common.unknown'),
       value: item.totalTokens
     }))
 
+  const chartSkin = skin.value
+
   const option = {
+    // 饼图各扇区没有系列级颜色可设，必须给 option 级 `color`，
+    // 否则 ECharts 会回落到内置调色板（红绿蓝），与本页统一皮肤冲突。
+    color: chartSkin.palette,
     tooltip: {
+      ...chartSkin.tooltip,
       trigger: 'item',
       formatter: '{b}: {c} ({d}%)'
     },
     legend: {
+      ...chartSkin.legend,
+      type: 'scroll',
       orient: 'vertical',
-      right: 10,
-      top: 'center',
-      type: 'scroll'
+      right: 0,
+      top: 'middle'
     },
     series: [
       {
         type: 'pie',
-        radius: ['40%', '70%'],
-        left: '15%',
+        radius: ['46%', '68%'],
+        center: ['40%', '52%'],
+        avoidLabelOverlap: true,
         data,
-        label: {
-          show: true,
-          formatter: '{b}: {c}'
+        itemStyle: {
+          borderColor: chartSkin.surface,
+          borderWidth: 2
         },
+        label: { show: false },
+        labelLine: { show: false },
         emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
-          }
+          scale: true,
+          scaleSize: 4,
+          label: { show: true, fontWeight: 600, color: chartSkin.text, fontSize: 13 }
         }
       }
     ]
   }
 
-  modelChart.setOption(option)
+  modelChart.setOption(option, { notMerge: true })
 }
 
-// 更新服务类型图表
+// 更新服务类型图表（纵向柱图 + 基线）
 const updateServiceTypeChart = () => {
   if (!serviceTypeChart) return
 
@@ -441,43 +443,48 @@ const updateServiceTypeChart = () => {
     value: item.totalTokens
   }))
 
+  const chartSkin = skin.value
+
   const option = {
     tooltip: {
+      ...chartSkin.tooltip,
       trigger: 'axis',
-      axisPointer: {
-        type: 'shadow'
-      }
+      axisPointer: { type: 'shadow' }
     },
+    grid: { ...chartSkin.grid },
     xAxis: {
+      ...chartSkin.categoryAxis,
       type: 'category',
       data: data.map(item => item.name),
-      axisLabel: {
-        interval: 0,
-        rotate: 0
-      }
+      axisLabel: { color: chartSkin.textMuted, fontSize: 12, interval: 0, rotate: 0 }
     },
     yAxis: {
+      ...chartSkin.valueAxis,
       type: 'value'
     },
     series: [
       {
         type: 'bar',
         data: data.map(item => item.value),
+        barMaxWidth: 32,
         itemStyle: {
-          color: '#409EFF'
+          color: chartSkin.palette[0],
+          borderRadius: [4, 4, 0, 0]
         },
         label: {
           show: true,
-          position: 'top'
+          position: 'top',
+          color: chartSkin.textMuted,
+          fontSize: 12
         }
       }
     ]
   }
 
-  serviceTypeChart.setOption(option)
+  serviceTypeChart.setOption(option, { notMerge: true })
 }
 
-// 更新每日趋势图表
+// 更新每日趋势图表（输入 / 输出堆叠面 + 总量线）
 const updateDailyChart = () => {
   if (!dailyChart) return
 
@@ -488,49 +495,65 @@ const updateDailyChart = () => {
     completionTokens: item.completionTokens
   }))
 
+  const chartSkin = skin.value
+  const inputLabel = t('callHistory.tokenUsage.stats.inputTokens')
+  const outputLabel = t('callHistory.tokenUsage.stats.outputTokens')
+  const totalLabel = t('callHistory.common.totalToken')
+
   const option = {
     tooltip: {
+      ...chartSkin.tooltip,
       trigger: 'axis'
     },
     legend: {
-      data: [t('callHistory.tokenUsage.stats.inputTokens'), t('callHistory.tokenUsage.stats.outputTokens'), t('callHistory.common.totalToken')]
+      ...chartSkin.legend,
+      data: [inputLabel, outputLabel, totalLabel]
     },
+    grid: { ...chartSkin.grid },
     xAxis: {
+      ...chartSkin.categoryAxis,
       type: 'category',
       data: data.map(item => item.date),
       boundaryGap: false
     },
     yAxis: {
+      ...chartSkin.valueAxis,
       type: 'value'
     },
     series: [
       {
-        name: t('callHistory.tokenUsage.stats.inputTokens'),
+        name: inputLabel,
         type: 'line',
         stack: 'Total',
-        areaStyle: { opacity: 0.3 },
+        smooth: true,
+        showSymbol: false,
+        areaStyle: { opacity: 0.2 },
         data: data.map(item => item.promptTokens),
-        itemStyle: { color: '#67C23A' }
+        itemStyle: { color: chartSkin.palette[0] }
       },
       {
-        name: t('callHistory.tokenUsage.stats.outputTokens'),
+        name: outputLabel,
         type: 'line',
         stack: 'Total',
-        areaStyle: { opacity: 0.3 },
+        smooth: true,
+        showSymbol: false,
+        areaStyle: { opacity: 0.2 },
         data: data.map(item => item.completionTokens),
-        itemStyle: { color: '#E6A23C' }
+        itemStyle: { color: chartSkin.palette[1] }
       },
       {
-        name: t('callHistory.common.totalToken'),
+        name: totalLabel,
         type: 'line',
+        smooth: true,
+        showSymbol: false,
         data: data.map(item => item.totalTokens),
-        itemStyle: { color: '#409EFF' },
-        lineStyle: { width: 3 }
+        itemStyle: { color: chartSkin.palette[4] },
+        lineStyle: { width: 2 }
       }
     ]
   }
 
-  dailyChart.setOption(option)
+  dailyChart.setOption(option, { notMerge: true })
 }
 
 // 更新每周趋势图表
@@ -542,16 +565,22 @@ const updateWeeklyChart = () => {
     totalTokens: item.totalTokens
   }))
 
+  const chartSkin = skin.value
+
   const option = {
     tooltip: {
+      ...chartSkin.tooltip,
       trigger: 'axis'
     },
+    grid: { ...chartSkin.grid },
     xAxis: {
+      ...chartSkin.categoryAxis,
       type: 'category',
       data: data.map(item => item.week),
       boundaryGap: false
     },
     yAxis: {
+      ...chartSkin.valueAxis,
       type: 'value'
     },
     series: [
@@ -559,14 +588,15 @@ const updateWeeklyChart = () => {
         name: t('callHistory.common.totalToken'),
         type: 'line',
         smooth: true,
-        areaStyle: { opacity: 0.3 },
+        showSymbol: false,
+        areaStyle: { opacity: 0.2 },
         data: data.map(item => item.totalTokens),
-        itemStyle: { color: '#409EFF' }
+        itemStyle: { color: chartSkin.palette[0] }
       }
     ]
   }
 
-  weeklyChart.setOption(option)
+  weeklyChart.setOption(option, { notMerge: true })
 }
 
 // 更新每月趋势图表
@@ -578,16 +608,22 @@ const updateMonthlyChart = () => {
     totalTokens: item.totalTokens
   }))
 
+  const chartSkin = skin.value
+
   const option = {
     tooltip: {
+      ...chartSkin.tooltip,
       trigger: 'axis'
     },
+    grid: { ...chartSkin.grid },
     xAxis: {
+      ...chartSkin.categoryAxis,
       type: 'category',
       data: data.map(item => item.month),
       boundaryGap: false
     },
     yAxis: {
+      ...chartSkin.valueAxis,
       type: 'value'
     },
     series: [
@@ -595,17 +631,18 @@ const updateMonthlyChart = () => {
         name: t('callHistory.common.totalToken'),
         type: 'line',
         smooth: true,
-        areaStyle: { opacity: 0.3 },
+        showSymbol: false,
+        areaStyle: { opacity: 0.2 },
         data: data.map(item => item.totalTokens),
-        itemStyle: { color: '#E6A23C' }
+        itemStyle: { color: chartSkin.palette[0] }
       }
     ]
   }
 
-  monthlyChart.setOption(option)
+  monthlyChart.setOption(option, { notMerge: true })
 }
 
-// 更新小时分布图表
+// 更新小时分布图表（24 根柱 + 基线，不再用渐变填充）
 const updateHourlyChart = () => {
   if (!hourlyChart) return
 
@@ -618,19 +655,22 @@ const updateHourlyChart = () => {
   })
 
   const hours = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`)
+  const chartSkin = skin.value
 
   const option = {
     tooltip: {
+      ...chartSkin.tooltip,
       trigger: 'axis',
-      axisPointer: {
-        type: 'shadow'
-      }
+      axisPointer: { type: 'shadow' }
     },
+    grid: { ...chartSkin.grid },
     xAxis: {
+      ...chartSkin.categoryAxis,
       type: 'category',
       data: hours
     },
     yAxis: {
+      ...chartSkin.valueAxis,
       type: 'value'
     },
     series: [
@@ -638,25 +678,22 @@ const updateHourlyChart = () => {
         name: t('callHistory.tokenUsage.chart.tokenUsage'),
         type: 'bar',
         data: hourlyData,
+        barMaxWidth: 20,
         itemStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#83bff6' },
-            { offset: 0.5, color: '#188df0' },
-            { offset: 1, color: '#188df0' }
-          ])
+          color: chartSkin.palette[0],
+          borderRadius: [4, 4, 0, 0]
         },
-        label: {
-          show: false
-        }
+        label: { show: false }
       }
     ]
   }
 
-  hourlyChart.setOption(option)
+  hourlyChart.setOption(option, { notMerge: true })
 }
 
 // 加载数据
 const loadData = async () => {
+  loading.value = true
   try {
     let startTime: string | undefined
     let endTime: string | undefined
@@ -678,6 +715,8 @@ const loadData = async () => {
   } catch (error) {
     console.error('加载统计数据失败:', error)
     ElMessage.error(t('callHistory.tokenUsage.loadFailed', { message: getErrorMessage(error) || t('callHistory.common.unknownError') }))
+  } finally {
+    loading.value = false
   }
 }
 
@@ -712,6 +751,35 @@ const rebuildAll = () => {
   updateHourlyChart()
 }
 
+/**
+ * 单类 ⇄ 多类切换时维护环形图实例。
+ *
+ * 模型占比容器只在「多于 1 个模型」时渲染（单类改渲染大数字）：
+ * - ≤1 → >1：等 DOM 挂上容器后再 init + setOption，否则 ref 为空、图空白；
+ * - >1 → ≤1：容器被卸载，必须 dispose，否则实例随节点一起泄漏。
+ *
+ * 注意 ≤1 期间容器是被 `v-if` 卸载的，旧实例即使还活着也绑在已脱离文档的节点上，
+ * 所以进入 >1 分支时先无条件 dispose 再重建，不能只判 `!modelChart`。
+ */
+watch(
+  () => (statistics.value.byModel || []).length,
+  async (length, previous) => {
+    const prev = previous ?? 0
+    if (length > 1 && prev <= 1) {
+      await nextTick()
+      modelChart?.dispose()
+      modelChart = null
+      if (modelChartRef.value) {
+        modelChart = echarts.init(modelChartRef.value)
+      }
+      updateModelChart()
+    } else if (length <= 1 && modelChart) {
+      modelChart.dispose()
+      modelChart = null
+    }
+  }
+)
+
 // 初始化
 onMounted(() => {
   useChartAutoRefresh(rebuildAll)
@@ -728,6 +796,12 @@ onBeforeUnmount(() => {
   weeklyChart?.dispose()
   monthlyChart?.dispose()
   hourlyChart?.dispose()
+  modelChart = null
+  serviceTypeChart = null
+  dailyChart = null
+  weeklyChart = null
+  monthlyChart = null
+  hourlyChart = null
 })
 </script>
 
@@ -747,50 +821,51 @@ onBeforeUnmount(() => {
 }
 
 .filter-form {
+  display: flex;
+  justify-content: center;
   width: 100%;
 }
 
-.filter-form {
-  display: flex;
-  justify-content: center;
-}
-
-.stats-row {
-  margin-bottom: 20px;
-}
-
-.stats-row .stat-card .stat-content {
-  display: flex;
-  align-items: center;
-}
-
-.stats-row .stat-card .stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 15px;
-  color: white;
-  font-size: 28px;
-}
-
-.stats-row .stat-card .stat-info .stat-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: var(--ja-text-primary);
-}
-
-.stats-row .stat-card .stat-info .stat-label {
-  font-size: 14px;
-  color: var(--ja-text-regular);
-  margin-top: 5px;
-}
-
+/* 图表容器撑满 ChartCard 的固定高度 body，保证 echarts 初始化时尺寸已确定 */
 .chart-container {
-  height: 300px;
   width: 100%;
+  height: 100%;
+}
+
+/* 单类数据：大数字 + 说明（替代无意义的单圈环形图） */
+.chart-single {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ja-space-2);
+  height: 100%;
+  min-width: 0;
+  text-align: center;
+}
+
+.chart-single__value {
+  color: var(--ja-ink);
+  font-size: 34px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.chart-single__label {
+  color: var(--ja-ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.chart-single__hint {
+  max-width: 26em;
+  color: var(--ja-ink-3);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .chart-title {

@@ -134,7 +134,8 @@
         "monthlyTrendTitle": "Monthly Token Usage Trend",
         "hourlyDistributionTitle": "24-Hour Token Usage Distribution",
         "recentUsageTitle": "Recent Token Usage",
-        "tokenUsage": "Tokens used"
+        "tokenUsage": "Tokens used",
+        "singleCategoryHint": "Only one model produced token usage in this range, so a share chart would show no comparison. The usage is shown directly instead."
       }
     }
   }

@@ -134,7 +134,8 @@
         "monthlyTrendTitle": "每月 Token 使用趋势",
         "hourlyDistributionTitle": "24 小时 Token 使用分布",
         "recentUsageTitle": "最近 Token 使用记录",
-        "tokenUsage": "Token 使用量"
+        "tokenUsage": "Token 使用量",
+        "singleCategoryHint": "该时间范围内只有一个模型产生了 Token 用量，占比图无法体现对比关系，因此直接显示用量。"
       }
     }
   }
