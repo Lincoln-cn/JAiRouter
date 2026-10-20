@@ -8,6 +8,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ChartCard: typeof import('./src/components/ChartCard.vue')['default']
     CircuitBreakerConfig: typeof import('./src/components/CircuitBreakerConfig.vue')['default']
     ConfirmAction: typeof import('./src/components/ConfirmAction.vue')['default']
     DetailDrawer: typeof import('./src/components/DetailDrawer.vue')['default']
@@ -51,6 +52,7 @@ declare module 'vue' {
     ElOptionGroup: typeof import('element-plus/es')['ElOptionGroup']
     ElPagination: typeof import('element-plus/es')['ElPagination']
     ElPopconfirm: typeof import('element-plus/es')['ElPopconfirm']
+    ElPopover: typeof import('element-plus/es')['ElPopover']
     ElProgress: typeof import('element-plus/es')['ElProgress']
     ElRadio: typeof import('element-plus/es')['ElRadio']
     ElRadioButton: typeof import('element-plus/es')['ElRadioButton']
@@ -80,6 +82,7 @@ declare module 'vue' {
     FilterBar: typeof import('./src/components/FilterBar.vue')['default']
     LanguageSwitcher: typeof import('./src/components/LanguageSwitcher.vue')['default']
     ListPageLayout: typeof import('./src/components/ListPageLayout.vue')['default']
+    MetricStrip: typeof import('./src/components/MetricStrip.vue')['default']
     PageSkeleton: typeof import('./src/components/PageSkeleton.vue')['default']
     PageTabs: typeof import('./src/components/PageTabs.vue')['default']
     RateLimitConfig: typeof import('./src/components/RateLimitConfig.vue')['default']

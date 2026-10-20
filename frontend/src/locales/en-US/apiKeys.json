@@ -9,6 +9,10 @@
     "createApiKey": "Create API Key",
     "gotoQuotaMonitoring": "Quota Usage Monitoring",
     "quota": "Quota",
+    "quotaAlertSummaryNone": "Quota alerts: none",
+    "quotaAlertSummaryCount": "{count} quota alert(s)",
+    "permissionsCount": "{count} items",
+    "moreActions": "More",
     "quotaDrawerTitle": "Quota Management",
     "quotaPresets": {
       "unlimited": "Unlimited",

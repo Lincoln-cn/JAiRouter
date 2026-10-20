@@ -371,13 +371,33 @@ export async function selectOption(page, selectLocator, optionRe) {
   return true
 }
 
-/** 在表格行中点击与名称匹配的按钮（删除/编辑等） */
+/**
+ * 在表格行中点击与名称匹配的按钮（删除/编辑等）。
+ *
+ * 行内没有直接命中时，回落到「更多 / More」下拉里的菜单项 —— 否则页面把
+ * 低频操作折叠进下拉后，调用方会静默退化成 API 兜底，UI 路径就没被测到了。
+ */
 export async function clickRowAction(page, rowTextRe, actionRe) {
   const row = page.locator('.el-table__body tr').filter({ hasText: rowTextRe }).first()
   if ((await row.count().catch(() => 0)) === 0) return false
   const btn = row.locator('button').filter({ hasText: actionRe }).first()
-  if ((await btn.count().catch(() => 0)) === 0) return false
-  await btn.click()
+  if ((await btn.count().catch(() => 0)) > 0) {
+    await btn.click()
+    return true
+  }
+  const more = row.locator('button').filter({ hasText: /更多|More/ }).first()
+  if ((await more.count().catch(() => 0)) === 0) return false
+  await more.click()
+  await page.waitForTimeout(300)
+  const item = page
+    .locator('.el-dropdown-menu:visible .el-dropdown-menu__item')
+    .filter({ hasText: actionRe })
+    .first()
+  if ((await item.count().catch(() => 0)) === 0) {
+    await page.keyboard.press('Escape').catch(() => {})
+    return false
+  }
+  await item.click()
   return true
 }
 

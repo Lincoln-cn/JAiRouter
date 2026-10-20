@@ -19,169 +19,149 @@
     </template>
 
     <template #stats>
-      <!-- 统计概览卡片 -->
-      <el-row :gutter="20">
-        <el-col :span="6">
-          <el-card shadow="hover" class="stats-card jwt-card">
-            <div class="stats-content">
-              <div class="stats-icon">
-                <el-icon size="32"><Key /></el-icon>
-              </div>
-              <div class="stats-info">
-                <div class="stats-value">{{ stats.jwtOperations }}</div>
-                <div class="stats-label">{{ t('auditLog.jwtOperations') }}</div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :span="6">
-          <el-card shadow="hover" class="stats-card api-card">
-            <div class="stats-content">
-              <div class="stats-icon">
-                <el-icon size="32"><Connection /></el-icon>
-              </div>
-              <div class="stats-info">
-                <div class="stats-value">{{ stats.apiKeyOperations }}</div>
-                <div class="stats-label">{{ t('auditLog.apiKeyOperations') }}</div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :span="6">
-          <el-card shadow="hover" class="stats-card fail-card">
-            <div class="stats-content">
-              <div class="stats-icon">
-                <el-icon size="32"><WarningFilled /></el-icon>
-              </div>
-              <div class="stats-info">
-                <div class="stats-value">{{ stats.failedAuthentications }}</div>
-                <div class="stats-label">{{ t('auditLog.failedAuth') }}</div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :span="6">
-          <el-card shadow="hover" class="stats-card alert-card">
-            <div class="stats-content">
-              <div class="stats-icon">
-                <el-icon size="32"><Bell /></el-icon>
-              </div>
-              <div class="stats-info">
-                <div class="stats-value">{{ stats.suspiciousActivities }}</div>
-                <div class="stats-label">{{ t('auditLog.suspicious') }}</div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+      <!-- 统计概览：4 张渐变图标卡 → 一条中性 MetricStrip（仅异常计数带语义色） -->
+      <MetricStrip :items="kpiItems" :columns="4" />
 
       <el-row :gutter="20" style="margin-top: 16px;">
-        <!-- 事件类型分布图 -->
+        <!-- 事件类型分布：环形图 → 横向条形 Top5 -->
         <el-col :span="12">
-          <el-card shadow="hover" :header="t('auditLog.chartEventTypes')">
-            <div ref="eventTypeChartRef" style="height: 300px"></div>
-          </el-card>
+          <ChartCard
+            :title="t('auditLog.chartEventTypes')"
+            :loading="loading"
+            :empty="eventTypeEmpty"
+            :empty-title="t('common.chartEmpty')"
+            :empty-description="t('common.chartEmptyHint')"
+            :height="300"
+          >
+            <div ref="eventTypeChartRef" class="chart-container"></div>
+          </ChartCard>
         </el-col>
         <!-- 操作趋势图 -->
         <el-col :span="12">
-          <el-card shadow="hover" :header="t('auditLog.chartTrend')">
-            <div ref="trendChartRef" style="height: 300px"></div>
-          </el-card>
+          <ChartCard
+            :title="t('auditLog.chartTrend')"
+            :loading="loading"
+            :empty="trendEmpty"
+            :empty-title="t('common.chartEmpty')"
+            :empty-description="t('common.chartEmptyHint')"
+            :height="300"
+          >
+            <div ref="trendChartRef" class="chart-container"></div>
+          </ChartCard>
         </el-col>
       </el-row>
     </template>
 
     <template #toolbar>
-      <!-- 搜索条件 -->
-      <el-form :model="searchForm" class="search-form">
-        <el-row :gutter="20">
-          <el-col :span="6">
-            <el-form-item :label="t('auditLog.timeRange')">
-              <el-select v-model="searchForm.quickTime" :placeholder="t('auditLog.quickTimePlaceholder')" @change="handleQuickTimeChange" clearable>
-                <el-option :label="t('auditLog.today')" value="today" />
-                <el-option :label="t('auditLog.yesterday')" value="yesterday" />
-                <el-option :label="t('auditLog.thisWeek')" value="week" />
-                <el-option :label="t('auditLog.thisMonth')" value="month" />
-                <el-option :label="t('auditLog.last7Days')" value="last7days" />
-                <el-option :label="t('auditLog.last30Days')" value="last30days" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item :label="t('auditLog.startTime')">
-              <el-date-picker
-                v-model="searchForm.startTime"
-                type="datetime"
-                :placeholder="t('auditLog.startTimePlaceholder')"
-                format="YYYY-MM-DD HH:mm:ss"
-                value-format="YYYY-MM-DD HH:mm:ss"
-                style="width: 100%"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item :label="t('auditLog.endTime')">
-              <el-date-picker
-                v-model="searchForm.endTime"
-                type="datetime"
-                :placeholder="t('auditLog.endTimePlaceholder')"
-                format="YYYY-MM-DD HH:mm:ss"
-                value-format="YYYY-MM-DD HH:mm:ss"
-                style="width: 100%"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item :label="t('auditLog.eventType')">
-              <el-select v-model="searchForm.eventType" :placeholder="t('auditLog.eventTypePlaceholder')" clearable filterable>
-                <el-option-group :label="t('auditLog.groupJwtTokens')">
-                  <el-option :label="t('auditLog.eventTypes.JWT_TOKEN_ISSUED')" value="JWT_TOKEN_ISSUED" />
-                  <el-option :label="t('auditLog.eventTypes.JWT_TOKEN_REFRESHED')" value="JWT_TOKEN_REFRESHED" />
-                  <el-option :label="t('auditLog.eventTypes.JWT_TOKEN_REVOKED')" value="JWT_TOKEN_REVOKED" />
-                  <el-option :label="t('auditLog.eventTypes.JWT_TOKEN_VALIDATED')" value="JWT_TOKEN_VALIDATED" />
-                </el-option-group>
-                <el-option-group :label="t('auditLog.groupApiKey')">
-                  <el-option :label="t('auditLog.eventTypes.API_KEY_CREATED')" value="API_KEY_CREATED" />
-                  <el-option :label="t('auditLog.eventTypes.API_KEY_USED')" value="API_KEY_USED" />
-                  <el-option :label="t('auditLog.eventTypes.API_KEY_REVOKED')" value="API_KEY_REVOKED" />
-                </el-option-group>
-                <el-option-group :label="t('auditLog.groupSecurityEvents')">
-                  <el-option :label="t('auditLog.eventTypes.AUTHENTICATION_FAILED')" value="AUTHENTICATION_FAILED" />
-                  <el-option :label="t('auditLog.eventTypes.AUTHORIZATION_FAILED')" value="AUTHORIZATION_FAILED" />
-                  <el-option :label="t('auditLog.eventTypes.SUSPICIOUS_ACTIVITY')" value="SUSPICIOUS_ACTIVITY" />
-                  <el-option :label="t('auditLog.eventTypes.SECURITY_ALERT')" value="SECURITY_ALERT" />
-                </el-option-group>
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="6">
-            <el-form-item :label="t('auditLog.userId')">
-              <el-input v-model="searchForm.userId" :placeholder="t('auditLog.userIdPlaceholder')" clearable />
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item :label="t('auditLog.clientIp')">
-              <el-input v-model="searchForm.clientIp" :placeholder="t('auditLog.clientIpPlaceholder')" clearable />
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item :label="t('auditLog.result')">
-              <el-select v-model="searchForm.success" :placeholder="t('auditLog.resultPlaceholder')" clearable>
-                <el-option :label="t('auditLog.success')" :value="true" />
-                <el-option :label="t('auditLog.failed')" :value="false" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label=" ">
-              <el-button type="primary" @click="handleSearch">{{ t('auditLog.search') }}</el-button>
-              <el-button @click="handleReset">{{ t('auditLog.reset') }}</el-button>
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
+      <!-- 搜索条件：并入 FilterBar（白底面板，不再用第三套容器样式） -->
+      <FilterBar :collapsible="false" class="toolbar-filter">
+        <el-form :model="searchForm" class="search-form">
+          <el-row :gutter="20">
+            <el-col :span="6">
+              <el-form-item :label="t('auditLog.timeRange')">
+                <el-select v-model="searchForm.quickTime" :placeholder="t('auditLog.quickTimePlaceholder')" @change="handleQuickTimeChange" clearable>
+                  <el-option :label="t('auditLog.today')" value="today" />
+                  <el-option :label="t('auditLog.yesterday')" value="yesterday" />
+                  <el-option :label="t('auditLog.thisWeek')" value="week" />
+                  <el-option :label="t('auditLog.thisMonth')" value="month" />
+                  <el-option :label="t('auditLog.last7Days')" value="last7days" />
+                  <el-option :label="t('auditLog.last30Days')" value="last30days" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item :label="t('auditLog.startTime')">
+                <el-date-picker
+                  v-model="searchForm.startTime"
+                  type="datetime"
+                  :placeholder="t('auditLog.startTimePlaceholder')"
+                  format="YYYY-MM-DD HH:mm:ss"
+                  value-format="YYYY-MM-DD HH:mm:ss"
+                  style="width: 100%"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item :label="t('auditLog.endTime')">
+                <el-date-picker
+                  v-model="searchForm.endTime"
+                  type="datetime"
+                  :placeholder="t('auditLog.endTimePlaceholder')"
+                  format="YYYY-MM-DD HH:mm:ss"
+                  value-format="YYYY-MM-DD HH:mm:ss"
+                  style="width: 100%"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item :label="t('auditLog.eventType')">
+                <el-select v-model="searchForm.eventType" :placeholder="t('auditLog.eventTypePlaceholder')" clearable filterable>
+                  <el-option-group :label="t('auditLog.groupJwtTokens')">
+                    <el-option :label="t('auditLog.eventTypes.JWT_TOKEN_ISSUED')" value="JWT_TOKEN_ISSUED" />
+                    <el-option :label="t('auditLog.eventTypes.JWT_TOKEN_REFRESHED')" value="JWT_TOKEN_REFRESHED" />
+                    <el-option :label="t('auditLog.eventTypes.JWT_TOKEN_REVOKED')" value="JWT_TOKEN_REVOKED" />
+                    <el-option :label="t('auditLog.eventTypes.JWT_TOKEN_VALIDATED')" value="JWT_TOKEN_VALIDATED" />
+                    <el-option :label="t('auditLog.eventTypes.JWT_TOKEN_EXPIRED')" value="JWT_TOKEN_EXPIRED" />
+                  </el-option-group>
+                  <el-option-group :label="t('auditLog.groupApiKey')">
+                    <el-option :label="t('auditLog.eventTypes.API_KEY_CREATED')" value="API_KEY_CREATED" />
+                    <el-option :label="t('auditLog.eventTypes.API_KEY_USED')" value="API_KEY_USED" />
+                    <el-option :label="t('auditLog.eventTypes.API_KEY_REVOKED')" value="API_KEY_REVOKED" />
+                    <el-option :label="t('auditLog.eventTypes.API_KEY_EXPIRED')" value="API_KEY_EXPIRED" />
+                    <el-option :label="t('auditLog.eventTypes.API_KEY_UPDATED')" value="API_KEY_UPDATED" />
+                    <el-option :label="t('auditLog.eventTypes.API_KEY_ROTATED')" value="API_KEY_ROTATED" />
+                    <el-option :label="t('auditLog.eventTypes.API_KEY_BATCH_IMPORT')" value="API_KEY_BATCH_IMPORT" />
+                    <el-option :label="t('auditLog.eventTypes.API_KEY_MISSING')" value="API_KEY_MISSING" />
+                    <el-option :label="t('auditLog.eventTypes.API_KEY_INVALID')" value="API_KEY_INVALID" />
+                    <el-option :label="t('auditLog.eventTypes.API_KEY_VALIDATION_FAILED')" value="API_KEY_VALIDATION_FAILED" />
+                  </el-option-group>
+                  <el-option-group :label="t('auditLog.groupSecurityEvents')">
+                    <el-option :label="t('auditLog.eventTypes.AUTHENTICATION_FAILED')" value="AUTHENTICATION_FAILED" />
+                    <el-option :label="t('auditLog.eventTypes.AUTHORIZATION_FAILED')" value="AUTHORIZATION_FAILED" />
+                    <el-option :label="t('auditLog.eventTypes.BRUTE_FORCE_ATTEMPT')" value="BRUTE_FORCE_ATTEMPT" />
+                    <el-option :label="t('auditLog.eventTypes.SUSPICIOUS_ACTIVITY')" value="SUSPICIOUS_ACTIVITY" />
+                    <el-option :label="t('auditLog.eventTypes.SECURITY_ALERT')" value="SECURITY_ALERT" />
+                  </el-option-group>
+                  <el-option-group :label="t('auditLog.groupDataAndSystem')">
+                    <el-option :label="t('auditLog.eventTypes.DATA_SANITIZATION')" value="DATA_SANITIZATION" />
+                    <el-option :label="t('auditLog.eventTypes.RESPONSE_SANITIZATION')" value="RESPONSE_SANITIZATION" />
+                    <el-option :label="t('auditLog.eventTypes.FULL_CONTENT_ACCESS')" value="FULL_CONTENT_ACCESS" />
+                    <el-option :label="t('auditLog.eventTypes.RECORD_LEVEL_CHANGE')" value="RECORD_LEVEL_CHANGE" />
+                    <el-option :label="t('auditLog.eventTypes.SYSTEM_CLEANUP')" value="SYSTEM_CLEANUP" />
+                    <el-option :label="t('auditLog.eventTypes.SYSTEM_MAINTENANCE')" value="SYSTEM_MAINTENANCE" />
+                  </el-option-group>
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="6">
+              <el-form-item :label="t('auditLog.userId')">
+                <el-input v-model="searchForm.userId" :placeholder="t('auditLog.userIdPlaceholder')" clearable />
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item :label="t('auditLog.clientIp')">
+                <el-input v-model="searchForm.clientIp" :placeholder="t('auditLog.clientIpPlaceholder')" clearable />
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item :label="t('auditLog.result')">
+                <el-select v-model="searchForm.success" :placeholder="t('auditLog.resultPlaceholder')" clearable>
+                  <el-option :label="t('auditLog.success')" :value="true" />
+                  <el-option :label="t('auditLog.failed')" :value="false" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label=" ">
+                <el-button type="primary" @click="handleSearch">{{ t('auditLog.search') }}</el-button>
+                <el-button @click="handleReset">{{ t('auditLog.reset') }}</el-button>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
+      </FilterBar>
     </template>
 
     <!-- 日志表格 -->
@@ -285,11 +265,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { computed, ref, reactive, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getErrorMessage } from '@/utils/error'
 import { useI18n } from 'vue-i18n'
-import { Refresh, ArrowDown, Key, Connection, WarningFilled, Bell } from '@element-plus/icons-vue'
+import { Refresh, ArrowDown } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import {
   queryAuditEventsAdvanced,
@@ -299,14 +279,19 @@ import {
   type SecurityReport,
 } from '@/api/auditLog'
 import { addToBlacklist } from '@/api/blacklist'
-import { useChartTheme } from '@/composables/useChartTheme'
+import { useChartSkin } from '@/composables/useChartSkin'
 import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import MetricStrip from '@/components/MetricStrip.vue'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
+import ChartCard from '@/components/ChartCard.vue'
+import FilterBar from '@/components/FilterBar.vue'
 import { formatDateTime as formatDateTimeBase } from '@/utils/format'
 
 const { t } = useI18n()
 
-const { getChartTheme } = useChartTheme()
+/** 图表统一皮肤（分类色板只含主色相 + 中性阶，语义色只给状态）。 */
+const { skin } = useChartSkin()
 
 // 搜索表单
 const searchForm = reactive({
@@ -346,8 +331,43 @@ const eventTypeChartRef = ref<HTMLElement>()
 const trendChartRef = ref<HTMLElement>()
 let eventTypeChart: echarts.ECharts | null = null
 let trendChart: echarts.ECharts | null = null
-// 最近一次统计图表数据源（供语言/主题切换时纯重绘复用，不重新请求）
-let lastOperationsByType: Record<string, number> = {}
+// 最近一次统计图表数据源（响应式：语言/主题切换时纯重绘复用，不重新请求）
+const lastOperationsByType = ref<Record<string, number>>({})
+
+/**
+ * 指标条数据。
+ *
+ * 前两项只是操作计数；后两项是「异常状态」⇒ 只有计数 > 0 时才带语义色
+ * （0 用中性色，避免常态下满屏红黄）。
+ */
+const kpiItems = computed<MetricStripItem[]>(() => [
+  {
+    key: 'jwtOperations',
+    label: t('auditLog.jwtOperations'),
+    value: stats.jwtOperations
+  },
+  {
+    key: 'apiKeyOperations',
+    label: t('auditLog.apiKeyOperations'),
+    value: stats.apiKeyOperations
+  },
+  {
+    key: 'failedAuthentications',
+    label: t('auditLog.failedAuth'),
+    value: stats.failedAuthentications,
+    tone: stats.failedAuthentications > 0 ? 'danger' : 'default'
+  },
+  {
+    key: 'suspiciousActivities',
+    label: t('auditLog.suspicious'),
+    value: stats.suspiciousActivities,
+    tone: stats.suspiciousActivities > 0 ? 'warning' : 'default'
+  }
+])
+
+// 两张图的空态判定：都取自同一份 operationsByType（事件类型分布 / 趋势）
+const eventTypeEmpty = computed(() => Object.keys(lastOperationsByType.value || {}).length === 0)
+const trendEmpty = computed(() => Object.keys(lastOperationsByType.value || {}).length === 0)
 
 // 快捷时间选择
 const handleQuickTimeChange = (value: string) => {
@@ -573,7 +593,7 @@ const loadStatistics = async () => {
     stats.suspiciousActivities = report.suspiciousActivities
     
     // 更新图表
-    lastOperationsByType = report.operationsByType || {}
+    lastOperationsByType.value = report.operationsByType || {}
     updateEventTypeChart(report.operationsByType)
     updateTrendChart(report.operationsByType)
   } catch (error) {
@@ -581,54 +601,93 @@ const loadStatistics = async () => {
   }
 }
 
-// 更新事件类型图表
+// 更新事件类型图表（横向条形 Top5：环形图在图例压环、单类整圈两个方向上都不成立）
 const updateEventTypeChart = (data: Record<string, number>) => {
   if (!eventTypeChartRef.value) return
-  
+
   if (!eventTypeChart) {
     eventTypeChart = echarts.init(eventTypeChartRef.value)
   }
-  
-  const chartData = Object.entries(data || {}).map(([name, value]) => ({ name, value }))
-  
+
+  const chartSkin = skin.value
+
+  // 按数量降序取前 5 类；类目轴自下而上排列，故倒序后「最多的一类」落在最上方
+  const top5 = Object.entries(data || {})
+    .map(([type, count]) => ({ type, count: Number(count) || 0 }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+    .reverse()
+
   eventTypeChart.setOption({
-    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-    legend: { orient: 'vertical', right: 10, top: 'center' },
+    tooltip: {
+      ...chartSkin.tooltip,
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' }
+    },
+    // 类别名较长：containLabel + 独立的左右留白（left 8 会让中文类型名被裁）
+    grid: { ...chartSkin.grid, left: 8, right: 40 },
+    xAxis: { ...chartSkin.valueAxis, type: 'value' },
+    yAxis: {
+      ...chartSkin.categoryAxis,
+      type: 'category',
+      data: top5.map(item => getEventTypeText(item.type)),
+      axisLabel: { color: chartSkin.textMuted, fontSize: 12 }
+    },
     series: [{
-      type: 'pie',
-      radius: ['40%', '70%'],
-      avoidLabelOverlap: false,
-      itemStyle: { borderRadius: 10, borderColor: 'var(--ja-bg-card, #fff)', borderWidth: 2 },
-      label: { show: false },
-      emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
-      labelLine: { show: false },
-      data: chartData
+      type: 'bar',
+      data: top5.map(item => item.count),
+      barMaxWidth: 16,
+      itemStyle: {
+        color: chartSkin.palette[0],
+        borderRadius: [0, 4, 4, 0]
+      },
+      label: {
+        show: true,
+        position: 'right',
+        color: chartSkin.textMuted,
+        fontSize: 12
+      }
     }]
-  })
+  }, { notMerge: true })
 }
 
-// 更新趋势图表
+// 更新趋势图表（保留纵向柱图；颜色统一到皮肤主色）
 const updateTrendChart = (data: Record<string, number>) => {
   if (!trendChartRef.value) return
-  
+
   if (!trendChart) {
     trendChart = echarts.init(trendChartRef.value)
   }
-  
-  const categories = Object.keys(data || {})
+
+  const chartSkin = skin.value
+  const categories = Object.keys(data || {}).map(type => getEventTypeText(type))
   const values = Object.values(data || {})
-  const theme = getChartTheme()
-  
+
   trendChart.setOption({
-    tooltip: { trigger: 'axis' },
-    xAxis: { type: 'category', data: categories, axisLabel: { rotate: 45 } },
-    yAxis: { type: 'value' },
+    tooltip: {
+      ...chartSkin.tooltip,
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' }
+    },
+    grid: { ...chartSkin.grid },
+    xAxis: {
+      ...chartSkin.categoryAxis,
+      type: 'category',
+      data: categories,
+      axisLabel: { color: chartSkin.textMuted, fontSize: 12, rotate: 45, interval: 0 }
+    },
+    yAxis: { ...chartSkin.valueAxis, type: 'value' },
     series: [{
       data: values,
       type: 'bar',
-      itemStyle: { color: theme.primary, borderRadius: [4, 4, 0, 0] }
+      barMaxWidth: 24,
+      itemStyle: {
+        color: chartSkin.palette[0],
+        borderRadius: [4, 4, 0, 0]
+      },
+      label: { show: false }
     }]
-  })
+  }, { notMerge: true })
 }
 
 // 格式化日期时间（委托共享 format.ts）
@@ -656,7 +715,7 @@ const getRiskLevelColor = (level: string) => {
   }
 }
 
-// 获取事件类型文本
+// 获取事件类型文本（覆盖后端 AuditEventType 全部 26 个枚举值；未知类型回退原枚举名）
 const getEventTypeText = (type: string) => {
   const typeMap: Record<string, string> = {
     'JWT_TOKEN_ISSUED': t('auditLog.eventBadges.JWT_TOKEN_ISSUED'),
@@ -668,10 +727,23 @@ const getEventTypeText = (type: string) => {
     'API_KEY_USED': t('auditLog.eventBadges.API_KEY_USED'),
     'API_KEY_REVOKED': t('auditLog.eventBadges.API_KEY_REVOKED'),
     'API_KEY_EXPIRED': t('auditLog.eventBadges.API_KEY_EXPIRED'),
+    'API_KEY_UPDATED': t('auditLog.eventBadges.API_KEY_UPDATED'),
+    'API_KEY_ROTATED': t('auditLog.eventBadges.API_KEY_ROTATED'),
+    'API_KEY_BATCH_IMPORT': t('auditLog.eventBadges.API_KEY_BATCH_IMPORT'),
+    'API_KEY_MISSING': t('auditLog.eventBadges.API_KEY_MISSING'),
+    'API_KEY_INVALID': t('auditLog.eventBadges.API_KEY_INVALID'),
+    'API_KEY_VALIDATION_FAILED': t('auditLog.eventBadges.API_KEY_VALIDATION_FAILED'),
     'AUTHENTICATION_FAILED': t('auditLog.eventBadges.AUTHENTICATION_FAILED'),
     'AUTHORIZATION_FAILED': t('auditLog.eventBadges.AUTHORIZATION_FAILED'),
+    'BRUTE_FORCE_ATTEMPT': t('auditLog.eventBadges.BRUTE_FORCE_ATTEMPT'),
     'SUSPICIOUS_ACTIVITY': t('auditLog.eventBadges.SUSPICIOUS_ACTIVITY'),
-    'SECURITY_ALERT': t('auditLog.eventBadges.SECURITY_ALERT')
+    'SECURITY_ALERT': t('auditLog.eventBadges.SECURITY_ALERT'),
+    'DATA_SANITIZATION': t('auditLog.eventBadges.DATA_SANITIZATION'),
+    'RESPONSE_SANITIZATION': t('auditLog.eventBadges.RESPONSE_SANITIZATION'),
+    'FULL_CONTENT_ACCESS': t('auditLog.eventBadges.FULL_CONTENT_ACCESS'),
+    'RECORD_LEVEL_CHANGE': t('auditLog.eventBadges.RECORD_LEVEL_CHANGE'),
+    'SYSTEM_CLEANUP': t('auditLog.eventBadges.SYSTEM_CLEANUP'),
+    'SYSTEM_MAINTENANCE': t('auditLog.eventBadges.SYSTEM_MAINTENANCE')
   }
   return typeMap[type] || type
 }
@@ -691,8 +763,8 @@ const handleResize = () => {
 
 // 语言 / 主题切换后基于最近统计结果重绘图表（纯重绘，无网络请求）
 const rebuildAll = () => {
-  updateEventTypeChart(lastOperationsByType)
-  updateTrendChart(lastOperationsByType)
+  updateEventTypeChart(lastOperationsByType.value)
+  updateTrendChart(lastOperationsByType.value)
 }
 
 onMounted(async () => {
@@ -710,69 +782,23 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.stats-card {
-  border-radius: 8px;
+/* ChartCard body 内的图表容器：撑满固定高度，保证 echarts 初始化时尺寸已确定 */
+.chart-container {
+  width: 100%;
+  height: 100%;
 }
 
-.stats-card :deep(.el-card__body) {
-  padding: 20px;
-}
-
-.stats-content {
-  display: flex;
-  align-items: center;
-}
-
-.stats-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 16px;
-}
-
-.jwt-card .stats-icon {
-  background: linear-gradient(135deg, var(--ja-login-gradient-start) 0%, var(--ja-login-gradient-end) 100%);
-  color: white;
-}
-
-.api-card .stats-icon {
-  background: linear-gradient(135deg, var(--ja-success) 0%, var(--ja-primary) 100%);
-  color: white;
-}
-
-.fail-card .stats-icon {
-  background: linear-gradient(135deg, var(--ja-danger) 0%, var(--ja-warning) 100%);
-  color: white;
-}
-
-.alert-card .stats-icon {
-  background: linear-gradient(135deg, var(--ja-primary-light-3) 0%, var(--ja-danger) 100%);
-  color: white;
-}
-
-.stats-info {
-  flex: 1;
-}
-
-.stats-value {
-  font-size: 28px;
-  font-weight: bold;
-  color: var(--ja-text-primary);
-}
-
-.stats-label {
-  font-size: 14px;
-  color: var(--ja-text-secondary);
-  margin-top: 4px;
+/* FilterBar 落在 page-toolbar 这个 flex 容器里，需要占满整行 */
+.toolbar-filter {
+  width: 100%;
 }
 
 .search-form {
+  width: 100%;
   padding: 16px;
-  background-color: var(--ja-primary-light-9, var(--el-fill-color-light));
-  border-radius: 4px;
+  background-color: var(--ja-paper);
+  border: 1px solid var(--ja-border);
+  border-radius: var(--ja-radius);
 }
 
 .metadata-pre {

@@ -22,7 +22,9 @@
     "updateTime": "Update Time",
     "enabled": "Enabled",
     "disabled": "Disabled",
-    "justNow": "Just now"
+    "justNow": "Just now",
+    "chartEmpty": "No data",
+    "chartEmptyHint": "Adjust filters or the time range and try again"
   },
   "layout": {
     "home": "Home",
