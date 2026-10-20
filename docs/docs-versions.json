@@ -524,10 +524,10 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.32",
-      "LastModified": "2026-10-19T14:03:07.764860",
-      "ContentHash": "e12027594d3858d6",
-      "GitCommit": "8d9e5a5a",
+      "Version": "1.0.33",
+      "LastModified": "2026-10-20T21:09:10.070712",
+      "ContentHash": "1d22615abd795df7",
+      "GitCommit": "eac10c21",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1161,10 +1161,10 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.32",
-      "LastModified": "2026-10-19T14:03:08.346657",
-      "ContentHash": "cc67b09a43ef566f",
-      "GitCommit": "8d9e5a5a",
+      "Version": "1.0.33",
+      "LastModified": "2026-10-20T21:09:10.776087",
+      "ContentHash": "ef38d80b17114baf",
+      "GitCommit": "eac10c21",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1216,10 +1216,10 @@
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
-      "Version": "1.0.31",
-      "LastModified": "2026-10-19T14:03:08.377774",
-      "ContentHash": "40266de4df36cfbd",
-      "GitCommit": "8d9e5a5a",
+      "Version": "1.0.32",
+      "LastModified": "2026-10-20T21:09:10.812238",
+      "ContentHash": "c670c9588d35004e",
+      "GitCommit": "b54650d4",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1534,10 +1534,10 @@
     },
     "docs/zh/security/api-key-management.md": {
       "FilePath": "docs/zh/security/api-key-management.md",
-      "Version": "1.0.12",
-      "LastModified": "2026-10-13T13:53:09.517705",
-      "ContentHash": "a29dd8987918d6a5",
-      "GitCommit": "2435f7d0",
+      "Version": "1.0.13",
+      "LastModified": "2026-10-20T21:09:10.814975",
+      "ContentHash": "99e14d90df37bb20",
+      "GitCommit": "b54650d4",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1549,10 +1549,10 @@
     },
     "docs/zh/security/data-sanitization.md": {
       "FilePath": "docs/zh/security/data-sanitization.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-10-13T16:58:02.237933",
-      "ContentHash": "4a0c3a23c5f5ebba",
-      "GitCommit": "a0a38c66",
+      "Version": "1.0.8",
+      "LastModified": "2026-10-20T21:09:10.837333",
+      "ContentHash": "57e376f1101b7979",
+      "GitCommit": "b54650d4",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2034,30 +2034,30 @@
     },
     "docs/en/configuration/adapter-config.md": {
       "FilePath": "docs/en/configuration/adapter-config.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-14T16:37:22.821848",
-      "ContentHash": "0cabe2495f9a3cd0",
-      "GitCommit": "5efa6892",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-20T21:09:09.606776",
+      "ContentHash": "060a063b44216610",
+      "GitCommit": "b54650d4",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/configuration/adapter-config.md": {
       "FilePath": "docs/zh/configuration/adapter-config.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-14T16:37:23.340562",
-      "ContentHash": "87cd1474cab34d45",
-      "GitCommit": "5efa6892",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-20T21:09:10.315421",
+      "ContentHash": "a28a1ca6d9866b4d",
+      "GitCommit": "b54650d4",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/configuration/routing-rules.md": {
       "FilePath": "docs/en/configuration/routing-rules.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-14T16:22:38.089060",
-      "ContentHash": "103f2d5b7a925f97",
-      "GitCommit": "70bc7d88",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-20T21:09:09.703108",
+      "ContentHash": "ad777dcc751db18e",
+      "GitCommit": "b54650d4",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2107,10 +2107,10 @@
     },
     "docs/zh/configuration/routing-rules.md": {
       "FilePath": "docs/zh/configuration/routing-rules.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-14T16:22:38.563668",
-      "ContentHash": "bf35a2c472d1a083",
-      "GitCommit": "70bc7d88",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-20T21:09:10.413127",
+      "ContentHash": "345575892d7acc22",
+      "GitCommit": "b54650d4",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2162,10 +2162,10 @@
     },
     "docs/en/security/rbac-permissions.md": {
       "FilePath": "docs/en/security/rbac-permissions.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-19T12:45:59.306490",
-      "ContentHash": "4fefea918f8145db",
-      "GitCommit": "94a6ffcc",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-20T21:09:10.168074",
+      "ContentHash": "a4a5413f65d4e3c7",
+      "GitCommit": "b54650d4",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2192,10 +2192,10 @@
     },
     "docs/zh/security/rbac-permissions.md": {
       "FilePath": "docs/zh/security/rbac-permissions.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-19T12:45:59.945603",
-      "ContentHash": "16d1b761a8a58796",
-      "GitCommit": "94a6ffcc",
+      "Version": "1.0.7",
+      "LastModified": "2026-10-20T21:09:10.860033",
+      "ContentHash": "8db26b0e9669500d",
+      "GitCommit": "b54650d4",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2239,10 +2239,10 @@
     },
     "docs/en/configuration/quota.md": {
       "FilePath": "docs/en/configuration/quota.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-14T15:01:33.314774",
-      "ContentHash": "79e6bb96fcdfcf70",
-      "GitCommit": "6bc8ba38",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-20T21:09:09.684438",
+      "ContentHash": "7e859fd1a92b94f9",
+      "GitCommit": "b54650d4",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2254,10 +2254,10 @@
     },
     "docs/en/getting-started/web-console.md": {
       "FilePath": "docs/en/getting-started/web-console.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-19T12:45:59.095786",
-      "ContentHash": "c8a23ab00bdcb29a",
-      "GitCommit": "94a6ffcc",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-20T21:09:09.942615",
+      "ContentHash": "92f1870ae9aa42ab",
+      "GitCommit": "b54650d4",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2266,10 +2266,10 @@
     },
     "docs/zh/configuration/quota.md": {
       "FilePath": "docs/zh/configuration/quota.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-14T15:01:33.644766",
-      "ContentHash": "e07b7d462b8773a1",
-      "GitCommit": "6bc8ba38",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-20T21:09:10.393312",
+      "ContentHash": "a75ef23481df8c5e",
+      "GitCommit": "b54650d4",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2281,10 +2281,10 @@
     },
     "docs/zh/getting-started/web-console.md": {
       "FilePath": "docs/zh/getting-started/web-console.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-19T12:45:59.727039",
-      "ContentHash": "a8d7f0345e79ba1a",
-      "GitCommit": "94a6ffcc",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-20T21:09:10.635112",
+      "ContentHash": "523c90821ce0c646",
+      "GitCommit": "b54650d4",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -9138,7 +9138,127 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-19T16:58:28.129009",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/adapter-config.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-20T21:09:09.606786",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/quota.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-20T21:09:09.684448",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/routing-rules.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-20T21:09:09.703113",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/web-console.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-20T21:09:09.942626",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.32",
+      "NewVersion": "1.0.33",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-20T21:09:10.070722",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/rbac-permissions.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-20T21:09:10.168085",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/adapter-config.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-20T21:09:10.315431",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/quota.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-20T21:09:10.393322",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/routing-rules.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-20T21:09:10.413135",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/web-console.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-20T21:09:10.635122",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.32",
+      "NewVersion": "1.0.33",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-20T21:09:10.776097",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/roadmap.md",
+      "OldVersion": "1.0.31",
+      "NewVersion": "1.0.32",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-20T21:09:10.812245",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/api-key-management.md",
+      "OldVersion": "1.0.12",
+      "NewVersion": "1.0.13",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-20T21:09:10.814980",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/data-sanitization.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-20T21:09:10.837340",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/rbac-permissions.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-20T21:09:10.860040",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-20T07:10:26.025221"
+  "last_updated": "2026-10-20T21:09:10.977286"
 }
