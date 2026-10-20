@@ -15,7 +15,7 @@ JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问
 2. **角色模板**：启动时自动在 `role_permissions` 表种入 4 个内置角色模板（ADMIN / OPERATOR / USER / VIEWER），每个角色对应一组权限码（表为空则全量播种；表非空则执行只增不删的增量收敛，见「角色模板」一节）。
 3. **JWT 内嵌**：登录成功后，服务端按角色从 `role_permissions` 查询权限码并写入 JWT 的 `permissions` claim（角色仍保留在 `roles` claim；权限码无 `ROLE_` 前缀）。
 4. **URL 权限矩阵**：`PermissionRuleRegistry` 登记 66 条「{HTTP 方法, URL 模式} → 权限码」规则，`PermissionAuthorizationManager` 在网关层对每个 `/api/**` 请求完成权限判定。
-5. **菜单与路由**：前端 `menu.ts` 数据驱动渲染（v2.9.8 由 11 组重分类为 8 组），`usePermission` 过滤菜单、路由守卫 `meta.permissions` 拦截无权限访问。
+5. **菜单与路由**：前端 `menu.ts` 数据驱动渲染（当前 7 组 28 项；v2.9.8 为 8 组 34 项），`usePermission` 过滤菜单、路由守卫 `meta.permissions` 拦截无权限访问。
 
 核心设计原则：
 
@@ -314,33 +314,34 @@ ADMIN 直接返回全量 55 码；其他角色返回其 JWT `permissions` claim 
 
 ## 权限管理 UI
 
-「系统管理 → 权限管理」页面（路由 `/system/permissions`，需 `system:permissions:manage`）提供图形化权限配置：
+「系统 → 权限管理」页面（路由 `/system/permissions`，需 `system:permissions:manage`）提供图形化权限配置：
 
 1. **角色下拉**：选择 ADMIN / OPERATOR / USER / VIEWER，自动加载该角色当前权限码并回显勾选。
 2. **权限码树**：55 个权限码按模块分组的树形勾选（叶子为权限码，父节点自动联动）。
 3. **保存权限**：点击「保存权限」调用 `PUT /api/security/permissions/roles/{roleName}`，整体替换该角色权限。
 4. **生效说明**：保存成功后提示「权限变更后需重新登录方可生效」——权限内嵌于 JWT；服务端角色权限缓存约 5 分钟过期（仅影响后续登录的令牌签发）。
 
-> 权限管理页入口位于系统管理菜单组；账户（YAML 静态账户 / Web 账户管理创建的数据库账户）由「系统管理 → 账户管理」维护。
+> 权限管理页入口位于系统菜单组；账户（YAML 静态账户 / Web 账户管理创建的数据库账户）由「系统 → 账户管理」维护。
 
 ## 菜单与路由
 
-v2.9.8 将 Web 菜单由 11 组重分类为 **8 组 34 项**，前端 `menu.ts` 数据驱动 + 权限过滤：
+当前（P0-3 信息架构重构）前端菜单为 **7 组 28 项**，由 `menu.ts` 数据驱动 + 权限过滤。v2.9.8 的「11 组 → 8 组 34 项」是历史形态，已被本次收敛取代：
 
-| 菜单组 | 子项数 | 子项（权限码） |
-|--------|:-----:|----------------|
+| 菜单组 | 菜单项数 | 菜单项（括号内为 tab，`｜` 分隔；附权限码） |
+|--------|:-------:|---------------------------------------------|
 | 概览 | 1 | 仪表板（`overview:dashboard:read`） |
-| 模型服务 | 4 | 服务管理 / 实例管理 / 版本管理 / Adapter 管理（对应 `config:services|instances|versions|adapters:read`） |
-| 流量治理 | 8 | 路由规则（`config:rules:read`）/ 负载均衡监控（`lb:monitoring:read`）/ 负载均衡策略（`lb:config:write`）/ 熔断器监控（`cb:monitoring:read`）/ 熔断器历史（`cb:history:read`）/ 熔断器配置（`config:circuitbreaker:read`）/ 限流监控（`rl:monitoring:read`）/ 资源池（`config:pools:read`） |
-| 数据记录 | 6 | 调用历史仪表盘、调用列表（`callhistory:view`）/ Token 统计（`monitoring:tokenusage:read`）/ 慢调用（`monitoring:slowquery:read`）/ 异常事件管理、异常统计分析（无权限码，所有已登录用户可见） |
-| 链路追踪 | 3 | 追踪仪表盘（`tracing:dashboard:read`）/ 追踪搜索（`tracing:search:read`）/ 追踪配置（`tracing:config:manage`） |
-| 安全管理 | 4 | API 密钥管理 / JWT 令牌管理 / 黑名单管理（`security:apikeys|jwttokens|blacklist:manage`）/ 审计日志（`security:audit:read`） |
-| 系统管理 | 3 | 账户管理（`system:accounts:manage`）/ 权限管理（`system:permissions:manage`）/ 状态持久化（`config:persistence:read`） |
-| AI 试验场 | 5 | 对话测试 / 向量生成 / 重排序 / 语音服务 / 图像服务（均为 `ai:playground:use`） |
+| 运行观测 | 5 | 调用历史（调用记录 ｜ 调用历史仪表盘，`callhistory:view`）/ 链路追踪（链路搜索 `tracing:search:read` ｜ 追踪仪表盘 `tracing:dashboard:read`）/ 异常管理（异常列表 ｜ 统计分析，`monitoring:exceptions:read`）/ 慢请求（慢调用 ｜ 慢 SQL，`monitoring:slowquery:read`）/ 用量统计（Token 用量 `monitoring:tokenusage:read` ｜ 配额使用 `monitoring:quota:read`） |
+| 流量治理 | 7 | 路由规则（`config:rules:read`）/ 负载均衡（实时监控 `lb:monitoring:read` ｜ 策略配置 `lb:config:write`）/ 限流（限流监控 `rl:monitoring:read`）/ 熔断（熔断监控 `cb:monitoring:read` ｜ 熔断历史 `cb:history:read` ｜ 全局配置 `config:circuitbreaker:read`）/ 响应缓存管理（`config:cache:write`）/ 配额运行时配置（`config:quota:read`）/ 资源池（`config:pools:read`） |
+| 模型与实例 | 4 | 服务管理 / 实例管理 / 版本管理 / Adapter管理（对应 `config:services|instances|versions|adapters:read`） |
+| 安全 | 5 | API 密钥管理（`security:apikeys:manage`）/ PII 脱敏管理（`security:sanitization:manage`）/ JWT 令牌管理（`security:jwttokens:manage`）/ 黑名单管理（`security:blacklist:manage`）/ 审计日志（`security:audit:read`） |
+| 系统 | 4 | 账户管理（`system:accounts:manage`）/ 权限管理（`system:permissions:manage`）/ 追踪配置（`tracing:config:manage`）/ 状态持久化（`config:persistence:read`） |
+| 开发工具 | 2 | AI 试验场（对话测试 / 向量生成 / 重排序 / 语音服务 / 图像服务，均为 `ai:playground:use`）/ 客户端接入指南（无权限码，所有已登录用户可见） |
 
 可见性控制机制：
 
-- **菜单过滤**：`menu.ts` 中每项可带 `permission` 字段（采用「读」语义码）；`usePermission`（内部调用 user store 的 `hasPermission`）过滤子项，组内子项全部被过滤时整组隐藏。无 `permission` 字段的项对所有已登录用户可见。
+- **菜单过滤**：`menu.ts` 中每项可带 `permission` 字段（采用「读」语义码）；类型可以是单个权限码或数组，**数组是「或」语义**（任一命中即显示）。`usePermission`（内部调用 user store 的 `hasPermission`）过滤子项，组内子项全部被过滤时整组隐藏。无 `permission` 字段的项对所有已登录用户可见。
+- **tab 单独门控**：一个菜单项内的 tab 各自带 `permission`，只拥有部分 tab 权限时该项仍显示，落地页取「第一个有权限的 tab」；点击菜单项不会跳到无权限的页面。
+- **深链高亮**：`ROUTE_TO_MENU` 由 `menu.ts` 的 tabs 派生（不手写），未命中的路由回退到自身路径；因此直接打开 `/monitoring/quota` 这类被收起的 URL 时，侧栏仍高亮「用量统计」。
 - **路由守卫**：路由 `meta.permissions` 声明所需权限码数组，`router.beforeEach` 要求**全部满足**（ADMIN 恒通过），不满足时跳转仪表板。
 - **空权限数据兼容**：旧版本签发的令牌无 `permissions` claim（或角色未在 `role_permissions` 登记）时，前端权限列表为空且**不限制**菜单/路由，避免菜单整体消失。注意这是**前端**的兼容行为（前端无法判定 URL 规则）；后端对未命中规则的 `/api/**` 已改为 fail-closed，两者独立。
 

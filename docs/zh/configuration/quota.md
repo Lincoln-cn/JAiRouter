@@ -15,10 +15,10 @@ JAiRouter 从 **v3.1.0** 起提供**配额账本（quota ledger）**：在请求
 
 | 步骤 | 位置 | 作用 |
 |------|------|------|
-| 1. 设置限额 | **安全管理 → API 密钥** 编辑表单 | `dailyRequestLimit` / `dailyTokenLimit` / `rateLimitPerMinute` / `quotaAlertThreshold`，**配额不在 Quota 配置页设置** |
+| 1. 设置限额 | **安全 → API 密钥** 编辑表单 | `dailyRequestLimit` / `dailyTokenLimit` / `rateLimitPerMinute` / `quotaAlertThreshold`，**配额不在 Quota 配置页设置** |
 | 2. 开启账本（可选） | **流量治理 → 配额运行时配置** `/config/quota` | 热改 `enabled` / `failOpen` / `windows`；账本默认关闭 |
-| 3. 查看用量 | **数据记录 → 配额用量监控** `/monitoring/quota` | 多维用量 + 与 API Key 限额对照（进度条） |
-| 4. 告警与重置 | **安全管理 → API 密钥** | 配额告警列表、重置每日计数 |
+| 3. 查看用量 | **运行观测 → 用量统计 → 配额使用** `/monitoring/quota` | 多维用量 + 与 API Key 限额对照（进度条） |
+| 4. 告警与重置 | **安全 → API 密钥** | 配额告警列表、重置每日计数 |
 
 - 限额判定映射：DAY 窗口 → 日请求/日 Token；MINUTE 窗口 → 每分钟速率；`0` 表示不限制。
 - 账本关闭时仍走 API Key 认证路径的既有校验（内存统计 + TokenBucket）。

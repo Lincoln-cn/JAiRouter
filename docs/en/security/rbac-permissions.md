@@ -15,7 +15,7 @@ Since **v2.9.8**, JAiRouter provides a **data-driven RBAC (role-based access con
 2. **Role template**: On startup the system seeds 4 built-in role templates (ADMIN / OPERATOR / USER / VIEWER) into the `role_permissions` table — full seeding when the table is empty, and insert-only additive reconcile when it is not (see "Role Templates").
 3. **JWT embedding**: After a successful login, the backend resolves permission codes per role from `role_permissions` and writes them into the JWT `permissions` claim (roles stay in the `roles` claim; permission codes carry no `ROLE_` prefix).
 4. **URL permission matrix**: `PermissionRuleRegistry` holds 66 `{HTTP method, URL pattern} → permission code` rules, and `PermissionAuthorizationManager` evaluates every `/api/**` request at the gateway layer.
-5. **Menu and routing**: the frontend renders menus from `menu.ts` in a data-driven way (re-grouped from 11 to 8 groups in v2.9.8); `usePermission` filters the menu and the route guard `meta.permissions` blocks unauthorized access.
+5. **Menu and routing**: the frontend renders menus from `menu.ts` in a data-driven way (currently 7 groups / 28 items; v2.9.8 had 8 groups / 34 items); `usePermission` filters the menu and the route guard `meta.permissions` blocks unauthorized access.
 
 Core design principles:
 
@@ -314,33 +314,34 @@ ADMIN receives the full 55 codes; other roles receive the codes from their JWT `
 
 ## Permission Management UI
 
-The "System Management → Permission Management" page (route `/system/permissions`, requires `system:permissions:manage`) provides graphical permission configuration:
+The "System → Permission Management" page (route `/system/permissions`, requires `system:permissions:manage`) provides graphical permission configuration:
 
 1. **Role dropdown**: select ADMIN / OPERATOR / USER / VIEWER; the role's current permission codes are loaded and reflected in the tree.
 2. **Permission code tree**: 55 codes grouped by module as a checkable tree (leaf nodes are permission codes; parent nodes toggle automatically).
 3. **Save permissions**: clicking "Save" calls `PUT /api/security/permissions/roles/{roleName}` to replace the role's permissions wholesale.
 4. **Effect notice**: after saving, the UI reminds you that "permission changes take effect only after re-login" — permissions are embedded in the JWT; the server-side role-permission cache expires in about 5 minutes (it only affects tokens issued by later logins).
 
-> The permission management page lives in the System Management menu group; accounts (YAML static accounts / database accounts created via the web account management API) are maintained under "System Management → Account Management".
+> The permission management page lives in the System menu group; accounts (YAML static accounts / database accounts created via the web account management API) are maintained under "System → Account Management".
 
 ## Menu and Route Guarding
 
-v2.9.8 re-grouped the web menu from 11 groups into **8 groups with 34 items**, driven by `menu.ts` plus permission filtering:
+The web menu currently has **7 groups and 28 items** (P0-3 information-architecture rework), driven by `menu.ts` plus permission filtering. The v2.9.8 shape ("11 groups to 8 groups / 34 items") is historical and has been superseded:
 
-| Menu group | Items | Menu items (permission code) |
-|------------|:-----:|------------------------------|
+| Menu group | Items | Menu items (tabs in parentheses, `｜` separated; permission code) |
+|------------|:-----:|------------------------------------------------------------------|
 | Overview | 1 | Dashboard (`overview:dashboard:read`) |
-| Model Services | 4 | Service Management / Instance Management / Version Management / Adapter Management (corresponding `config:services|instances|versions|adapters:read`) |
-| Traffic Governance | 8 | Routing Rules (`config:rules:read`) / Load Balancer Monitoring (`lb:monitoring:read`) / Load Balancer Strategy (`lb:config:write`) / Circuit Breaker Monitoring (`cb:monitoring:read`) / Circuit Breaker History (`cb:history:read`) / Circuit Breaker Config (`config:circuitbreaker:read`) / Rate Limiter Monitoring (`rl:monitoring:read`) / Resource Pools (`config:pools:read`) |
-| Data Records | 6 | Call History Dashboard, Call List (`callhistory:view`) / Token Usage (`monitoring:tokenusage:read`) / Slow Calls (`monitoring:slowquery:read`) / Exception Event Management, Exception Statistics (no permission code — visible to every authenticated user) |
-| Distributed Tracing | 3 | Tracing Dashboard (`tracing:dashboard:read`) / Tracing Search (`tracing:search:read`) / Tracing Config (`tracing:config:manage`) |
-| Security Management | 4 | API Key Management / JWT Token Management / Blacklist Management (`security:apikeys|jwttokens|blacklist:manage`) / Audit Logs (`security:audit:read`) |
-| System Management | 3 | Account Management (`system:accounts:manage`) / Permission Management (`system:permissions:manage`) / State Persistence (`config:persistence:read`) |
-| AI Playground | 5 | Chat Test / Embedding / Rerank / Audio / Image (all `ai:playground:use`) |
+| Observability | 5 | Call History (Call Records ｜ Call History Dashboard, `callhistory:view`) / Distributed Tracing (Trace Search `tracing:search:read` ｜ Tracing Dashboard `tracing:dashboard:read`) / Exceptions (Exception List ｜ Statistics, `monitoring:exceptions:read`) / Slow Requests (Slow Calls ｜ Slow SQL, `monitoring:slowquery:read`) / Usage (Token Usage `monitoring:tokenusage:read` ｜ Quota Usage `monitoring:quota:read`) |
+| Traffic Governance | 7 | Routing Rules (`config:rules:read`) / Load Balancing (Real-time Monitoring `lb:monitoring:read` ｜ Strategy Config `lb:config:write`) / Rate Limiting (Rate Limit Monitoring `rl:monitoring:read`) / Circuit Breakers (Circuit Monitoring `cb:monitoring:read` ｜ Circuit History `cb:history:read` ｜ Global Config `config:circuitbreaker:read`) / Response Cache Management (`config:cache:write`) / Quota Runtime Config (`config:quota:read`) / Resource Pools (`config:pools:read`) |
+| Model & Instances | 4 | Service Management / Instance Management / Version Management / Adapter Management (corresponding to `config:services|instances|versions|adapters:read`) |
+| Security | 5 | API Key Management (`security:apikeys:manage`) / PII Sanitization (`security:sanitization:manage`) / JWT Token Management (`security:jwttokens:manage`) / Blacklist Management (`security:blacklist:manage`) / Audit Logs (`security:audit:read`) |
+| System | 4 | Account Management (`system:accounts:manage`) / Permission Management (`system:permissions:manage`) / Tracing Config (`tracing:config:manage`) / State Persistence (`config:persistence:read`) |
+| Developer Tools | 2 | AI Playground (Chat Playground / Embedding / Rerank / Audio / Image, all `ai:playground:use`) / Client Access Guide (no permission code — visible to every authenticated user) |
 
 Visibility control mechanisms:
 
-- **Menu filtering**: each item in `menu.ts` may carry a `permission` field (read-semantics codes); `usePermission` (which delegates to `hasPermission` in the user store) filters items out, and a group disappears entirely when all of its items are filtered. Items without a `permission` field stay visible to every authenticated user.
+- **Menu filtering**: each item in `menu.ts` may carry a `permission` field (read-semantics codes). The type is a single code or an array, and **an array means OR** (visible when any code matches). `usePermission` (which delegates to `hasPermission` in the user store) filters items out, and a group disappears entirely when all of its items are filtered. Items without a `permission` field stay visible to every authenticated user.
+- **Per-tab gating**: each tab inside a menu item carries its own `permission`. A user who can only see some tabs still sees the item, and the landing tab is the first one the user is allowed to open, so clicking a menu item never navigates to a forbidden page.
+- **Deep-link highlighting**: `ROUTE_TO_MENU` is derived from the `tabs` in `menu.ts` (never hand-written) and unmapped routes fall back to their own path. Opening a folded URL such as `/monitoring/quota` therefore still highlights "Usage" in the sidebar.
 - **Route guard**: the route `meta.permissions` declares the required permission code array; `router.beforeEach` requires **all** of them (ADMIN always passes) and redirects to the dashboard otherwise.
 - **Empty-permission compatibility**: when a token was issued by an older version (no `permissions` claim) or the roles are not registered in `role_permissions`, the frontend permission list is empty and imposes **no restriction** on menus/routes, so the menu does not vanish. Note this is a **frontend** compatibility behavior (the frontend cannot evaluate URL rules); the backend now fail-closes unmatched `/api/**` paths — the two are independent.
 

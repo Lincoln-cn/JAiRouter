@@ -61,34 +61,36 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 ### 2.1 左侧导航
 
-控制台左侧为可折叠侧边栏，包含 **9 个菜单分组**，共 **39 个页面**。菜单可见性由权限码控制——缺少对应权限码的分组/页面不会显示。
+控制台左侧为可折叠侧边栏，包含 **7 个菜单分组**、**28 个菜单项**。同一菜单项下的多个页面收为 **tab**（如「调用历史」下的「调用记录 / 调用历史仪表盘」），tab 按固定顺序排列，可点击切换。
+
+菜单可见性由权限码控制：缺少对应权限码的分组/菜单项不会显示；**tab 逐项单独校验**——只拥有部分 tab 权限时，该菜单项仍显示，但落地页取「第一个有权限的 tab」。
 
 ![仪表板界面](images/dashboard-zh-CN.png)
 
-| # | 分组（zh） | 分组（en） | 子页面 |
-|---|-----------|-----------|--------|
+| # | 分组（zh） | 分组（en） | 菜单项（括号内为 tab，按顺序，`｜` 分隔） |
+|---|-----------|-----------|------------------------------------------|
 | 1 | 概览 | Overview | 仪表板 |
-| 2 | 模型服务 | Model Services | 服务管理、实例管理、版本管理、Adapter管理 |
-| 3 | 流量治理 | Traffic Governance | 路由规则、负载均衡监控、负载均衡策略、熔断器监控、熔断器历史、熔断器配置、限流监控、资源池、响应缓存管理、配额运行时配置 |
-| 4 | 数据记录 | Data Records | 调用历史仪表盘、调用列表、Token 统计、慢调用、慢查询分析、配额用量监控、异常事件管理、异常统计分析 |
-| 5 | 链路追踪 | Distributed Tracing | 追踪仪表盘、追踪搜索、追踪配置 |
-| 6 | 安全管理 | Security | API 密钥管理、PII 脱敏管理、JWT 令牌管理、黑名单管理、审计日志 |
-| 7 | 系统管理 | System | 账户管理、权限管理、状态持久化 |
-| 8 | AI 试验场 | AI Playground | 对话测试、向量生成、重排序、语音服务、图像服务 |
-| 9 | 开发者工具 | Developer Tools | 客户端接入指南 |
+| 2 | 运行观测 | Observability | 调用历史（调用记录 ｜ 调用历史仪表盘）、链路追踪（链路搜索 ｜ 追踪仪表盘）、异常管理（异常列表 ｜ 统计分析）、慢请求（慢调用 ｜ 慢 SQL）、用量统计（Token 用量 ｜ 配额使用） |
+| 3 | 流量治理 | Traffic Governance | 路由规则、负载均衡（实时监控 ｜ 策略配置）、限流（限流监控）、熔断（熔断监控 ｜ 熔断历史 ｜ 全局配置）、响应缓存管理、配额运行时配置、资源池 |
+| 4 | 模型与实例 | Model & Instances | 服务管理、实例管理、版本管理、Adapter管理 |
+| 5 | 安全 | Security | API 密钥管理、PII 脱敏管理、JWT 令牌管理、黑名单管理、审计日志 |
+| 6 | 系统 | System | 账户管理、权限管理、追踪配置、状态持久化 |
+| 7 | 开发工具 | Developer Tools | AI 试验场（对话测试 ｜ 向量生成 ｜ 重排序 ｜ 语音服务 ｜ 图像服务）、客户端接入指南 |
+
+> 本次信息架构（IA）由 9 组 40 项收敛为 7 组 28 项：12 个入口降级为同组菜单项的 tab，**URL 一律不变**，深链、书签与本文附录里的路径全部继续有效，只是不再单独占用侧栏一行。
 
 ### 2.2 顶栏
 
 | 区域 | 元素 | 说明 |
 |------|------|------|
-| 左侧 | 面包屑 | 格式：首页 / 分组名 / 当前页名 |
+| 左侧 | 面包屑 | 格式：分组名 / 菜单项 / 当前 tab（单 tab 时自动去重） |
 | 右侧 | 语言切换 | 胶囊按钮，下拉选择「中文」或「English」，切换即时生效 |
 | 右侧 | 主题切换 | 圆形按钮，☀️/🌙 图标，切换亮色/暗色主题 |
 | 右侧 | 用户菜单 | 头像 + 用户名（如 `admin`），下拉包含「个人资料」（Profile）和「退出登录」（Log Out） |
 
 ### 2.3 面包屑
 
-页面顶部显示当前导航路径，如：`首页 / 概览 / 仪表板`。面包屑随页面切换自动更新。
+页面顶部显示当前导航路径，如：`概览 / 仪表板`、`运行观测 / 调用历史 / 调用记录`。最后一段是当前页面，不可点击；前两段可点击回跳。详情页（如异常详情 `/exceptions/detail/:id`）在末段追加 `#<id>`。面包屑随页面切换自动更新。
 
 ---
 
@@ -100,7 +102,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 ### 步骤 1：配置服务
 
-**菜单路径**：模型服务 → 服务管理
+**菜单路径**：模型与实例 → 服务管理
 
 1. 进入「**服务管理**」页面；
 2. 点击「**添加服务**」（**Add Service**）按钮；
@@ -118,7 +120,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 ### 步骤 2：配置实例
 
-**菜单路径**：模型服务 → 实例管理
+**菜单路径**：模型与实例 → 实例管理
 
 ![实例管理页](images/instance-management-zh-CN.png)
 
@@ -150,8 +152,8 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 ### 步骤 3：版本与 Adapter（如需）
 
-- **版本管理**（模型服务 → 版本管理）：如果模型服务需要指定版本信息，可在此配置。非必须步骤。
-- **Adapter管理**（模型服务 → Adapter管理）：查看和管理已注册的适配器。如果步骤 1 中已正确选择适配器，此步可跳过。
+- **版本管理**（模型与实例 → 版本管理）：如果模型服务需要指定版本信息，可在此配置。非必须步骤。
+- **Adapter管理**（模型与实例 → Adapter管理）：查看和管理已注册的适配器。如果步骤 1 中已正确选择适配器，此步可跳过。
 
 ### 步骤 4：验证连通性
 
@@ -163,7 +165,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 ### 步骤 5：在 Playground 试调用
 
-**菜单路径**：AI 试验场 → 对话测试
+**菜单路径**：开发工具 → AI 试验场 → 对话测试
 
 1. 进入「**对话测试**」（**Chat Playground**）页面；
 2. 选择模型（Model）为步骤 1 中配置的服务类型对应的模型；
@@ -212,7 +214,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 ### 4.2 配额用量监控
 
-**菜单路径**：数据记录 → 配额用量监控
+**菜单路径**：运行观测 → 用量统计 → 配额使用
 
 进入「**配额用量监控**」页面可以：
 
@@ -226,7 +228,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 ## 5. 观测与排查
 
-### 5.1 数据记录分组
+### 5.1 调用历史与异常（运行观测）
 
 | 页面 | 路径 | 回答什么问题 |
 |------|------|-------------|
@@ -234,18 +236,18 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 | 调用列表 | `/call-history/list` | 每一笔请求的详细记录（时间、服务、状态码、耗时） |
 | Token 统计 | `/call-history/token-usage` | 各模型/服务的 Token 消耗量 |
 | 慢调用 | `/call-history/slow-calls` | 哪些请求耗时过长 |
-| 慢查询分析 | `/monitoring/slow-queries` | 慢请求的深度分析（需 `monitoring:slowquery:read` 权限） |
+| 慢 SQL | `/monitoring/slow-queries` | 慢请求的深度分析（需 `monitoring:slowquery:read` 权限） |
 | 配额用量监控 | `/monitoring/quota` | 配额消耗明细 |
-| 异常事件管理 | `/exceptions/list` | 所有异常事件的列表（所有已登录用户可见） |
-| 异常统计分析 | `/exceptions/statistics` | 异常按类型/时间的分布统计 |
+| 异常列表 | `/exceptions/list` | 所有异常事件的列表（需 `monitoring:exceptions:read`） |
+| 统计分析 | `/exceptions/statistics` | 异常按类型/时间的分布统计 |
 
-### 5.2 链路追踪分组
+### 5.2 链路追踪（运行观测）
 
 | 页面 | 路径 | 回答什么问题 |
 |------|------|-------------|
 | 追踪仪表盘 | `/tracing/dashboard` | 追踪量趋势、延迟分布、错误率趋势、吞吐量 |
 | 追踪搜索 | `/tracing/search` | 按 Trace ID / 服务名 / 时间范围定位具体请求链路 |
-| 追踪配置 | `/tracing/management` | 追踪开关、采样率、导出器配置（Logging / OTLP / Jaeger） |
+| 追踪配置 | `/tracing/management` | 追踪开关、采样率、导出器配置（Logging / OTLP / Jaeger）；已迁入「系统」分组 |
 
 ### 5.3 仪表板总览
 
@@ -281,7 +283,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 **解决方式**：
 
-1. **系统管理** → **权限管理**页面（需 `system:permissions:manage` 权限，仅 ADMIN）；
+1. **系统** → **权限管理**页面（需 `system:permissions:manage` 权限，仅 ADMIN）；
 2. 找到目标角色，勾选缺失的权限码并保存。
 
 > 💡 `/v1/**`（OpenAI 兼容推理端点）独立于 RBAC 体系，仅要求认证，不受权限码限制。
@@ -292,7 +294,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 ### 7.1 客户端接入指南
 
-**菜单路径**：开发者工具 → 客户端接入指南
+**菜单路径**：开发工具 → 客户端接入指南
 
 该页面提供 OpenAI 兼容接口和 Anthropic 兼容接口的完整接入示例，包括 Base URL、认证方式、curl 示例和 SDK 示例。
 
@@ -333,7 +335,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 **处理**：
 
-- 用 `admin` 账号登录，进入「系统管理 → 权限管理」为对应角色补充权限码；
+- 用 `admin` 账号登录，进入「系统 → 权限管理」为对应角色补充权限码；
 - 参考 [RBAC 权限管理](../security/rbac-permissions.md) 文档了解权限码体系。
 
 ### 8.3 看不到某些菜单页
@@ -355,7 +357,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 **处理**：
 
 - 使用 `X-API-Key` 头而非 `Authorization` 头传递 API Key；
-- 参考「开发者工具 → 客户端接入指南」页面的 SDK 示例。
+- 参考「开发工具 → 客户端接入指南」页面的 SDK 示例。
 
 ### 8.5 Redis 不可用时的降级提示
 
@@ -384,52 +386,40 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 ## 附录：页面路径速查表
 
-| 分组 | 页面 | 路由路径 |
-|------|------|----------|
+| 分组 | 菜单项 | Tab 与路由路径（顺序即 tab 顺序） |
+|------|--------|-----------------------------------|
 | 概览 | 仪表板 | `/dashboard/main` |
-| 模型服务 | 服务管理 | `/config/services` |
-| 模型服务 | 实例管理 | `/config/instances` |
-| 模型服务 | 版本管理 | `/config/versions` |
-| 模型服务 | Adapter管理 | `/config/adapters` |
+| 运行观测 | 调用历史 | 调用记录 `/call-history/list` ｜ 调用历史仪表盘 `/call-history/dashboard` |
+| 运行观测 | 链路追踪 | 链路搜索 `/tracing/search` ｜ 追踪仪表盘 `/tracing/dashboard` |
+| 运行观测 | 异常管理 | 异常列表 `/exceptions/list` ｜ 统计分析 `/exceptions/statistics`（详情 `/exceptions/detail/:id` 为独立深链，不出现在侧栏） |
+| 运行观测 | 慢请求 | 慢调用 `/call-history/slow-calls` ｜ 慢 SQL `/monitoring/slow-queries` |
+| 运行观测 | 用量统计 | Token 用量 `/call-history/token-usage` ｜ 配额使用 `/monitoring/quota` |
 | 流量治理 | 路由规则 | `/config/rules` |
-| 流量治理 | 负载均衡监控 | `/load-balancers/monitoring` |
-| 流量治理 | 负载均衡策略 | `/load-balancers/strategy-config` |
-| 流量治理 | 熔断器监控 | `/circuit-breakers/monitoring` |
-| 流量治理 | 熔断器历史 | `/circuit-breakers/history` |
-| 流量治理 | 熔断器配置 | `/circuit-breakers/global-config` |
-| 流量治理 | 限流监控 | `/rate-limiters/monitoring` |
-| 流量治理 | 资源池 | `/config/pools` |
+| 流量治理 | 负载均衡 | 实时监控 `/load-balancers/monitoring` ｜ 策略配置 `/load-balancers/strategy-config` |
+| 流量治理 | 限流 | 限流监控 `/rate-limiters/monitoring` |
+| 流量治理 | 熔断 | 熔断监控 `/circuit-breakers/monitoring` ｜ 熔断历史 `/circuit-breakers/history` ｜ 全局配置 `/circuit-breakers/global-config` |
 | 流量治理 | 响应缓存管理 | `/config/cache` |
 | 流量治理 | 配额运行时配置 | `/config/quota` |
-| 数据记录 | 调用历史仪表盘 | `/call-history/dashboard` |
-| 数据记录 | 调用列表 | `/call-history/list` |
-| 数据记录 | Token 统计 | `/call-history/token-usage` |
-| 数据记录 | 慢调用 | `/call-history/slow-calls` |
-| 数据记录 | 慢查询分析 | `/monitoring/slow-queries` |
-| 数据记录 | 配额用量监控 | `/monitoring/quota` |
-| 数据记录 | 异常事件管理 | `/exceptions/list` |
-| 数据记录 | 异常统计分析 | `/exceptions/statistics` |
-| 链路追踪 | 追踪仪表盘 | `/tracing/dashboard` |
-| 链路追踪 | 追踪搜索 | `/tracing/search` |
-| 链路追踪 | 追踪配置 | `/tracing/management` |
-| 安全管理 | API 密钥管理 | `/security/api-keys` |
-| 安全管理 | PII 脱敏管理 | `/security/sanitization` |
-| 安全管理 | JWT 令牌管理 | `/security/jwt-tokens` |
-| 安全管理 | 黑名单管理 | `/security/blacklist` |
-| 安全管理 | 审计日志 | `/security/audit-logs` |
-| 系统管理 | 账户管理 | `/system/accounts` |
-| 系统管理 | 权限管理 | `/system/permissions` |
-| 系统管理 | 状态持久化 | `/config/state-persistence` |
-| AI 试验场 | 对话测试 | `/playground/chat` |
-| AI 试验场 | 向量生成 | `/playground/embedding` |
-| AI 试验场 | 重排序 | `/playground/rerank` |
-| AI 试验场 | 语音服务 | `/playground/audio` |
-| AI 试验场 | 图像服务 | `/playground/image` |
-| 开发者工具 | 客户端接入指南 | `/tools/client-access` |
+| 流量治理 | 资源池 | `/config/pools` |
+| 模型与实例 | 服务管理 | `/config/services` |
+| 模型与实例 | 实例管理 | `/config/instances` |
+| 模型与实例 | 版本管理 | `/config/versions` |
+| 模型与实例 | Adapter管理 | `/config/adapters` |
+| 安全 | API 密钥管理 | `/security/api-keys` |
+| 安全 | PII 脱敏管理 | `/security/sanitization` |
+| 安全 | JWT 令牌管理 | `/security/jwt-tokens` |
+| 安全 | 黑名单管理 | `/security/blacklist` |
+| 安全 | 审计日志 | `/security/audit-logs` |
+| 系统 | 账户管理 | `/system/accounts` |
+| 系统 | 权限管理 | `/system/permissions` |
+| 系统 | 追踪配置 | `/tracing/management` |
+| 系统 | 状态持久化 | `/config/state-persistence` |
+| 开发工具 | AI 试验场 | 对话测试 `/playground/chat` ｜ 向量生成 `/playground/embedding` ｜ 重排序 `/playground/rerank` ｜ 语音服务 `/playground/audio` ｜ 图像服务 `/playground/image` |
+| 开发工具 | 客户端接入指南 | `/tools/client-access` |
 
 ### PII 脱敏管理（v3.2.0）
 
-路径：**安全管理 → PII 脱敏管理** `/security/sanitization`（权限 `security:sanitization:manage`）
+路径：**安全 → PII 脱敏管理** `/security/sanitization`（权限 `security:sanitization:manage`）
 
 操作动线：
 1. 查看 request/response 子配置（PII 正则、敏感词、掩码字符）
@@ -439,7 +429,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 ### API 密钥配额操作（v3.2.0）
 
-路径：**安全管理 → API 密钥** 列表操作列 **「配额」**
+路径：**安全 → API 密钥** 列表操作列 **「配额」**
 
 操作动线：
 1. 打开配额抽屉：今日用量 / 剩余量 + 预设（不限制/开发/标准/严格）
@@ -449,7 +439,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 ### 配额用量监控（交叉入口）
 
-路径：**数据记录 → 配额用量监控** `/monitoring/quota`
+路径：**运行观测 → 用量统计 → 配额使用** `/monitoring/quota`
 
 - 展示多维用量与日请求/Token 限额、进度
 - 「到 API Key 设置限额」跳转 `/security/api-keys`

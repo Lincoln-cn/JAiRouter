@@ -61,34 +61,36 @@ After a successful login, the JWT is stored in the browser `localStorage` under 
 
 ### 2.1 Left Navigation
 
-The console has a collapsible sidebar containing **9 menu groups** with a total of **39 pages**. Menu visibility is controlled by permission codes — groups and pages for which the user lacks the required permission code are hidden.
+The console has a collapsible sidebar containing **7 menu groups** with **28 menu items**. Pages that belong together are folded into **tabs** (for example, "Call History" holds "Call Records / Call History Dashboard"); tabs are ordered and switch in place.
+
+Menu visibility is controlled by permission codes: groups/menu items for which the user lacks the required code are hidden, and **each tab is gated separately** — if the user can only see some tabs, the item still shows and the landing tab is the first one the user is allowed to open.
 
 ![Dashboard interface](images/dashboard-en-US.png)
 
-| # | Group (en) | Group (zh) | Pages |
-|---|-----------|-----------|-------|
+| # | Group (en) | Group (zh) | Menu items (tabs in parentheses, `｜` separated) |
+|---|-----------|-----------|--------------------------------------------------|
 | 1 | Overview | 概览 | Dashboard |
-| 2 | Model Services | 模型服务 | Service Management, Instance Management, Version Management, Adapters |
-| 3 | Traffic Governance | 流量治理 | Routing Rules, Load Balancer Monitoring, Load Balancer Strategy, Circuit Breaker Monitoring, Circuit Breaker History, Circuit Breaker Config, Rate Limit Monitoring, Resource Pools, Response Cache Management, Quota Runtime Config |
-| 4 | Data Records | 数据记录 | Call History Dashboard, Call List, Token Usage, Slow Calls, Slow Query Analysis, Quota Usage Monitoring, Exception Management, Exception Statistics |
-| 5 | Distributed Tracing | 链路追踪 | Tracing Dashboard, Tracing Search, Tracing Config |
-| 6 | Security | 安全管理 | API Key Management, PII Sanitization, JWT Token Management, Blacklist Management, Audit Logs |
-| 7 | System | 系统管理 | Account Management, Permission Management, State Persistence |
-| 8 | AI Playground | AI 试验场 | Chat Playground, Embedding, Rerank, Audio Service, Image Service |
-| 9 | Developer Tools | 开发者工具 | Client Access Guide |
+| 2 | Observability | 运行观测 | Call History (Call Records ｜ Call History Dashboard), Distributed Tracing (Trace Search ｜ Tracing Dashboard), Exceptions (Exception List ｜ Statistics), Slow Requests (Slow Calls ｜ Slow SQL), Usage (Token Usage ｜ Quota Usage) |
+| 3 | Traffic Governance | 流量治理 | Routing Rules, Load Balancing (Real-time Monitoring ｜ Strategy Config), Rate Limiting (Rate Limit Monitoring), Circuit Breakers (Circuit Monitoring ｜ Circuit History ｜ Global Config), Response Cache Management, Quota Runtime Config, Resource Pools |
+| 4 | Model & Instances | 模型与实例 | Service Management, Instance Management, Version Management, Adapters |
+| 5 | Security | 安全 | API Key Management, PII Sanitization, JWT Token Management, Blacklist Management, Audit Logs |
+| 6 | System | 系统 | Account Management, Permission Management, Tracing Config, State Persistence |
+| 7 | Developer Tools | 开发工具 | AI Playground (Chat Playground ｜ Embedding ｜ Rerank ｜ Audio Service ｜ Image Service), Client Access Guide |
+
+> This information architecture (IA) change folds 9 groups / 40 entries into 7 groups / 28 items: 12 entries became tabs of a sibling item, and **every URL stays the same**. Deep links, bookmarks, and the paths in the appendix keep working; they simply no longer occupy a sidebar row of their own.
 
 ### 2.2 Top Bar
 
 | Area | Element | Description |
 |------|---------|-------------|
-| Left | Breadcrumb | Format: Home / Group Name / Current Page |
+| Left | Breadcrumb | Format: Group / Menu item / Current tab (duplicates collapsed) |
 | Right | Language Switcher | Capsule button with dropdown to select 中文 or English; change takes effect immediately |
 | Right | Theme Toggle | Round button with ☀️/🌙 icon to switch between light and dark themes |
 | Right | User Menu | Avatar + username (e.g. `admin`); dropdown contains **Profile** and **Log Out** |
 
 ### 2.3 Breadcrumb
 
-The top of the page displays the current navigation path, e.g. `Home / Overview / Dashboard`. The breadcrumb updates automatically when navigating between pages.
+The top of the page displays the current navigation path, e.g. `Overview / Dashboard` or `Observability / Call History / Call Records`. The last segment is the current page and is not clickable; the preceding segments are. Detail pages (e.g. `/exceptions/detail/:id`) append `#<id>` to the last segment. The breadcrumb updates automatically when navigating between pages.
 
 ---
 
@@ -100,7 +102,7 @@ The following steps are ordered by dependency, using an Ollama model service as 
 
 ### Step 1: Configure a Service
 
-**Menu path**: Model Services → Service Management
+**Menu path**: Model & Instances → Service Management
 
 1. Go to the **Service Management** page;
 2. Click the **Add Service** button;
@@ -118,7 +120,7 @@ The following steps are ordered by dependency, using an Ollama model service as 
 
 ### Step 2: Configure an Instance
 
-**Menu path**: Model Services → Instance Management
+**Menu path**: Model & Instances → Instance Management
 
 ![Instance Management page](images/instance-management-en-US.png)
 
@@ -150,8 +152,8 @@ The following steps are ordered by dependency, using an Ollama model service as 
 
 ### Step 3: Version and Adapter (If Needed)
 
-- **Version Management** (Model Services → Version Management): Configure version information if needed. This is not a required step.
-- **Adapters** (Model Services → Adapters): View and manage registered adapters. Skip this step if the adapter was correctly selected in Step 1.
+- **Version Management** (Model & Instances → Version Management): Configure version information if needed. This is not a required step.
+- **Adapters** (Model & Instances → Adapters): View and manage registered adapters. Skip this step if the adapter was correctly selected in Step 1.
 
 ### Step 4: Verify Connectivity
 
@@ -163,7 +165,7 @@ After configuration, verify using these methods:
 
 ### Step 5: Test in Playground
 
-**Menu path**: AI Playground → Chat Playground
+**Menu path**: Developer Tools → AI Playground → Chat Playground
 
 1. Go to the **Chat Playground** page;
 2. Select the model matching the service type configured in Step 1;
@@ -212,7 +214,7 @@ The quota feature is **disabled by default**. To enable it:
 
 ### 4.2 Quota Usage Monitoring
 
-**Menu path**: Data Records → Quota Usage Monitoring
+**Menu path**: Observability → Usage → Quota Usage
 
 On the **Quota Usage Monitoring** page you can:
 
@@ -226,7 +228,7 @@ On the **Quota Usage Monitoring** page you can:
 
 ## 5. Observability and Troubleshooting
 
-### 5.1 Data Records Group
+### 5.1 Call History and Exceptions (Observability)
 
 | Page | Path | What It Answers |
 |------|------|-----------------|
@@ -234,18 +236,18 @@ On the **Quota Usage Monitoring** page you can:
 | Call List | `/call-history/list` | Detailed record of every request (time, service, status code, latency) |
 | Token Usage | `/call-history/token-usage` | Token consumption per model/service |
 | Slow Calls | `/call-history/slow-calls` | Which requests took too long |
-| Slow Query Analysis | `/monitoring/slow-queries` | Deep analysis of slow requests (requires `monitoring:slowquery:read`) |
+| Slow SQL | `/monitoring/slow-queries` | Deep analysis of slow requests (requires `monitoring:slowquery:read`) |
 | Quota Usage Monitoring | `/monitoring/quota` | Quota consumption details |
-| Exception Management | `/exceptions/list` | List of all exception events (visible to all authenticated users) |
-| Exception Statistics | `/exceptions/statistics` | Exception distribution by type/time |
+| Exception List | `/exceptions/list` | List of all exception events (requires `monitoring:exceptions:read`) |
+| Statistics | `/exceptions/statistics` | Exception distribution by type/time |
 
-### 5.2 Distributed Tracing Group
+### 5.2 Distributed Tracing (Observability)
 
 | Page | Path | What It Answers |
 |------|------|-----------------|
 | Tracing Dashboard | `/tracing/dashboard` | Trace volume trends, latency distribution, error rate trends, throughput |
 | Tracing Search | `/tracing/search` | Locate specific request traces by Trace ID / service name / time range |
-| Tracing Config | `/tracing/management` | Tracing toggle, sampling rate, exporter configuration (Logging / OTLP / Jaeger) |
+| Tracing Config | `/tracing/management` | Tracing toggle, sampling rate, exporter configuration (Logging / OTLP / Jaeger); moved to the **System** group |
 
 ### 5.3 Dashboard Overview
 
@@ -384,34 +386,25 @@ This page provides complete access examples for the OpenAI-compatible API and th
 
 ## Appendix: Page Path Quick Reference
 
-| Group | Page | Route Path |
-|-------|------|-----------|
+| Group | Menu Item | Tabs and Route Paths (order = tab order) |
+|-------|-----------|-----------------------------------------|
 | Overview | Dashboard | `/dashboard/main` |
-| Model Services | Service Management | `/config/services` |
-| Model Services | Instance Management | `/config/instances` |
-| Model Services | Version Management | `/config/versions` |
-| Model Services | Adapters | `/config/adapters` |
+| Observability | Call History | Call Records `/call-history/list` ｜ Call History Dashboard `/call-history/dashboard` |
+| Observability | Distributed Tracing | Trace Search `/tracing/search` ｜ Tracing Dashboard `/tracing/dashboard` |
+| Observability | Exceptions | Exception List `/exceptions/list` ｜ Statistics `/exceptions/statistics` (detail `/exceptions/detail/:id` is a deep link, not a sidebar entry) |
+| Observability | Slow Requests | Slow Calls `/call-history/slow-calls` ｜ Slow SQL `/monitoring/slow-queries` |
+| Observability | Usage | Token Usage `/call-history/token-usage` ｜ Quota Usage `/monitoring/quota` |
 | Traffic Governance | Routing Rules | `/config/rules` |
-| Traffic Governance | Load Balancer Monitoring | `/load-balancers/monitoring` |
-| Traffic Governance | Load Balancer Strategy | `/load-balancers/strategy-config` |
-| Traffic Governance | Circuit Breaker Monitoring | `/circuit-breakers/monitoring` |
-| Traffic Governance | Circuit Breaker History | `/circuit-breakers/history` |
-| Traffic Governance | Circuit Breaker Config | `/circuit-breakers/global-config` |
-| Traffic Governance | Rate Limit Monitoring | `/rate-limiters/monitoring` |
-| Traffic Governance | Resource Pools | `/config/pools` |
+| Traffic Governance | Load Balancing | Real-time Monitoring `/load-balancers/monitoring` ｜ Strategy Config `/load-balancers/strategy-config` |
+| Traffic Governance | Rate Limiting | Rate Limit Monitoring `/rate-limiters/monitoring` |
+| Traffic Governance | Circuit Breakers | Circuit Monitoring `/circuit-breakers/monitoring` ｜ Circuit History `/circuit-breakers/history` ｜ Global Config `/circuit-breakers/global-config` |
 | Traffic Governance | Response Cache Management | `/config/cache` |
 | Traffic Governance | Quota Runtime Config | `/config/quota` |
-| Data Records | Call History Dashboard | `/call-history/dashboard` |
-| Data Records | Call List | `/call-history/list` |
-| Data Records | Token Usage | `/call-history/token-usage` |
-| Data Records | Slow Calls | `/call-history/slow-calls` |
-| Data Records | Slow Query Analysis | `/monitoring/slow-queries` |
-| Data Records | Quota Usage Monitoring | `/monitoring/quota` |
-| Data Records | Exception Management | `/exceptions/list` |
-| Data Records | Exception Statistics | `/exceptions/statistics` |
-| Distributed Tracing | Tracing Dashboard | `/tracing/dashboard` |
-| Distributed Tracing | Tracing Search | `/tracing/search` |
-| Distributed Tracing | Tracing Config | `/tracing/management` |
+| Traffic Governance | Resource Pools | `/config/pools` |
+| Model & Instances | Service Management | `/config/services` |
+| Model & Instances | Instance Management | `/config/instances` |
+| Model & Instances | Version Management | `/config/versions` |
+| Model & Instances | Adapters | `/config/adapters` |
 | Security | API Key Management | `/security/api-keys` |
 | Security | PII Sanitization | `/security/sanitization` |
 | Security | JWT Token Management | `/security/jwt-tokens` |
@@ -419,12 +412,9 @@ This page provides complete access examples for the OpenAI-compatible API and th
 | Security | Audit Logs | `/security/audit-logs` |
 | System | Account Management | `/system/accounts` |
 | System | Permission Management | `/system/permissions` |
+| System | Tracing Config | `/tracing/management` |
 | System | State Persistence | `/config/state-persistence` |
-| AI Playground | Chat Playground | `/playground/chat` |
-| AI Playground | Embedding | `/playground/embedding` |
-| AI Playground | Rerank | `/playground/rerank` |
-| AI Playground | Audio Service | `/playground/audio` |
-| AI Playground | Image Service | `/playground/image` |
+| Developer Tools | AI Playground | Chat Playground `/playground/chat` ｜ Embedding `/playground/embedding` ｜ Rerank `/playground/rerank` ｜ Audio Service `/playground/audio` ｜ Image Service `/playground/image` |
 | Developer Tools | Client Access Guide | `/tools/client-access` |
 
 ### PII Sanitization (v3.2.0)
@@ -447,7 +437,7 @@ Path: **Security → API Key Management** → row action **Quota**
 
 ### Quota Usage Monitoring
 
-Path: **Data Records → Quota Usage Monitoring** `/monitoring/quota`
+Path: **Observability → Usage → Quota Usage** `/monitoring/quota`
 
 - Shows multi-dimensional usage plus daily request/token limits and progress
 - **Set limits on API Keys** navigates to `/security/api-keys`

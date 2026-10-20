@@ -4,17 +4,19 @@
 import { createAuthedContext, gotoApp, currentPathname } from '../harness.mjs'
 import { ALL_ROUTES } from '../routes.mjs'
 
+// P0-3 IA：7 组 28 项（顺序与 src/config/menu.ts 的 menuGroups 一致）
 const MENU_GROUPS = [
   'dashboard',
-  'model-services',
+  'observability',
   'traffic',
-  'records',
-  'tracing',
+  'model-services',
   'security',
   'system',
-  'playground',
-  'tools'
+  'dev-tools'
 ]
+
+// 每组菜单项数（合计 28）：40 → 28 后 12 个页面收进 tabs，不再单独占侧栏
+const MENU_ITEMS_PER_GROUP = [1, 5, 7, 4, 5, 4, 2]
 
 export default {
   id: 'layout-nav',
@@ -35,7 +37,20 @@ export default {
     // 菜单组
     const subMenus = page.locator('.el-sub-menu')
     const subCount = await subMenus.count()
-    check('layout-menu-groups', subCount >= 8, `sub-menus=${subCount}`)
+    check('layout-menu-groups', subCount === 7, `sub-menus=${subCount}`)
+
+    // 菜单项总数与逐组项数（7 组 28 项）
+    const allItems = await page.locator('.layout-menu .el-menu-item').count()
+    check('layout-menu-item-total', allItems === 28, `items=${allItems}`)
+    for (let i = 0; i < MENU_GROUPS.length; i++) {
+      const group = page.locator('.layout-menu .el-sub-menu').nth(i)
+      const count = await group.locator('.el-menu-item').count()
+      check(
+        `layout-menu-group-items-${MENU_GROUPS[i]}`,
+        count === MENU_ITEMS_PER_GROUP[i],
+        `${MENU_GROUPS[i]}: ${count}/${MENU_ITEMS_PER_GROUP[i]}`
+      )
+    }
 
     const menuText = await page.locator('.layout-menu').innerText().catch(() => '')
     const missing = MENU_GROUPS.filter(() => false) // text is i18n; check structure via count only
@@ -117,7 +132,7 @@ export default {
       return (await visible()) > 0
     }
 
-    for (let i = 0; i < Math.min(subCount, MENU_GROUPS.length); i++) {
+    for (let i = 0; i < MENU_GROUPS.length; i++) {
       const group = page.locator('.layout-menu .el-sub-menu').nth(i)
       const title = await group.locator('.el-sub-menu__title').innerText().catch(() => `#${i}`)
       try {
@@ -139,6 +154,26 @@ export default {
 
     // 面包屑存在
     check('layout-breadcrumb', (await page.locator('.el-breadcrumb').count()) > 0)
+
+    // 多 tab 菜单项：切换条出现，被收起的页面可经切换条进入（URL 与单独成项时一致）
+    await gotoApp(page, '/call-history/list', { waitMs: 400 })
+    const tabStrip = page.locator('.nav-tabs .nav-tab')
+    const tabCount = await tabStrip.count()
+    check('layout-tabs-render', tabCount === 2, `tabs=${tabCount}`)
+    if (tabCount === 2) {
+      await tabStrip.nth(1).click()
+      await page.waitForTimeout(500)
+      check(
+        'layout-tabs-switch',
+        currentPathname(page).endsWith('/call-history/dashboard'),
+        currentPathname(page)
+      )
+    }
+
+    // 单 tab 菜单项不渲染切换条（视觉与改造前一致）
+    await gotoApp(page, '/config/services', { waitMs: 400 })
+    const singleStrips = await page.locator('.nav-tabs').count()
+    check('layout-tabs-single-hidden', singleStrips === 0, `strips=${singleStrips}`)
 
     // 所有路由可通过直接 URL 访达（与菜单权限无关的兜底已在 route-smoke）
     const sample = ALL_ROUTES.filter(r => r.group === 'security' || r.group === 'tools')

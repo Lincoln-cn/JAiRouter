@@ -247,7 +247,7 @@ When nothing matches, `matched=false`. The rule form in the Web console also has
 
 ## Verification
 
-1. Use **AI Playground → Chat Test** to send requests and observe routing
+1. Use **Developer Tools → AI Playground → Chat Playground** to send requests and observe routing
 2. Check backend logs for `Selected adapter` / routing selection info
 3. Or call `/v1/*` APIs with/without the conditional header and compare routing
 

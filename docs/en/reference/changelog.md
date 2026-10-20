@@ -21,6 +21,15 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 ## Version History
 
+### [Unreleased] - Console navigation information-architecture rework (P0-3, part 2)
+
+- The sidebar menu shrinks from **9 groups / 40 entries** to **7 groups / 28 items** (Overview / Observability / Traffic Governance / Model & Instances / Security / System / Developer Tools). Twelve pages became tabs of a sibling item; **every URL is unchanged**, so deep links, bookmarks, and older paths in the docs keep working. No backend or API change and no data migration.
+- The 12 folded entries: Call History Dashboard, Tracing Dashboard, Exception Statistics, Slow Query Analysis, Quota Usage Monitoring, Load Balancer Strategy, Circuit Breaker History, Circuit Breaker Global Config, and the playground's Embedding / Rerank / Audio / Image pages.
+- `MenuItem.permission` in `menu.ts` now accepts `string | string[]` (**an array means OR**); every tab carries its own permission and is gated separately, and clicking a menu item lands on the first tab the user may open.
+- Sidebar highlighting is driven by a `ROUTE_TO_MENU` lookup derived from the tabs (never hand-written), with unmapped routes falling back to their own path; group expansion is derived from the current route, and the hard-coded prefix table is gone.
+- The breadcrumb is now "group to menu item to current tab", with the last segment not clickable; detail pages (such as `/exceptions/detail/:id`) append `#id` to the last segment.
+- Documentation correction: exception management is in fact gated by `monitoring:exceptions:read` (it used to be documented as having no permission code).
+
 ### [3.3.6] - 2026-10-19 - Patch Release (schema migration + two authorization restrictions + in-page write gating and contract slimming)
 
 > ⚠️ **Behavior changes to check** (one by one, for clients and operators):

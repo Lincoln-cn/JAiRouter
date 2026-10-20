@@ -162,7 +162,7 @@ JAiRouter 致力于成为最优秀的开源 AI 模型服务路由网关，为用
 |------|------|
 | PII 记录链路 | `sanitizeForStorage` 与网关 request/response 开关解耦；调用历史 SUMMARY / 追踪使用该路径 |
 | 管理 API | `GET/PUT /api/config/sanitization`、规则列表、试脱敏（全链路响应式；非 JSON 样例按文本掩码） |
-| 控制台 | 安全管理 → PII 脱敏管理；权限 `security:sanitization:manage`（权限码 49） |
+| 控制台 | 安全 → PII 脱敏管理；权限 `security:sanitization:manage` |
 | 排除路径 | 管理台 `/api/**` 与 AI 实时路径排除网关响应脱敏 |
 | 配额 UX | 监控页限额/进度对照 + 与 API Key 页交叉链接；文档：`0`=不限制，阈值 `0.0–1.0` |
 | 质量 | Redis TTL flaky 断言修复；vitest 单测/API/组件；页面冒烟 10/10 |
