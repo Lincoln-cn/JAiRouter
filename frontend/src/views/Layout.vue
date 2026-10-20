@@ -60,6 +60,8 @@
           </div>
         </div>
         <div class="header-right">
+          <StatusBar />
+          <GlobalSearch ref="globalSearchRef" />
           <LanguageSwitcher class="lang-toggle" />
           <el-button class="theme-toggle" circle @click="toggleTheme">
             <el-icon :size="18">
@@ -90,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, type Component } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
@@ -105,6 +107,8 @@ import {
 } from '@/config/menu'
 import type { MenuItem } from '@/config/menu'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+import StatusBar from '@/components/StatusBar.vue'
+import GlobalSearch from '@/components/GlobalSearch.vue'
 import {
   House,
   Setting,
@@ -128,6 +132,31 @@ const { filterMenuByPermission, getAccessibleTabs, resolveLandingPath } = usePer
 
 // v2.10.3: 显示真实用户名（JWT sub），缺省回退「管理员」
 const displayName = computed(() => userStore.userInfo?.username || t('layout.admin'))
+
+/* ========== ⌘K / Ctrl+K 全局搜索 ==========
+ * 快捷键挂在 document 上：输入框聚焦时也要能唤起（命令面板的常见行为），
+ * 面板自身负责 Esc 关闭与 ↑↓/Enter 导航，这里只负责打开。
+ */
+const globalSearchRef = ref<{ open: () => Promise<void>; close: () => void } | null>(null)
+
+const onGlobalShortcut = (event: KeyboardEvent): void => {
+  if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) {
+    return
+  }
+  if (event.key.toLowerCase() !== 'k') {
+    return
+  }
+  event.preventDefault()
+  void globalSearchRef.value?.open()
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', onGlobalShortcut)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', onGlobalShortcut)
+})
 
 /* ========== 侧栏折叠（状态持久化 + 无侧栏滚动条） ==========
  * 展开 200px / 折叠 64px（与 Element Plus 的 --el-menu-collapse-width 一致），
