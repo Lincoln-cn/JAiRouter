@@ -7,129 +7,34 @@
     </template>
 
     <template #stats>
-      <!-- 顶部统计卡片 -->
-      <el-row class="stats-wrap" :gutter="18" justify="center">
-        <el-col v-for="item in statCards" :key="item.key" :xs="12" :sm="8" :md="6" :lg="4">
-          <StatCard
-            :icon="item.icon"
-            :label="item.label"
-            :value="item.value"
-            :tone="item.tone"
-          />
-        </el-col>
-      </el-row>
+      <!-- 概览指标：一条中性 MetricStrip，只有「异常实例」带语义色 -->
+      <div class="stats-wrap">
+        <MetricStrip :items="metricItems" :columns="6" />
+      </div>
     </template>
 
     <!-- 主体图表与监控详情 -->
     <el-row class="main-row" :gutter="20">
       <el-col :xs="24" :lg="16">
-        <el-card class="card-panel" shadow="always">
-          <template #header>
-            <div class="card-title">{{ t('dashboard.systemOverview') }}</div>
-          </template>
+        <ChartCard
+          :title="t('dashboard.systemOverview')"
+          :empty="!dashboardMetrics"
+          :empty-title="t('common.chartEmpty')"
+          :empty-description="t('common.chartEmptyHint')"
+          :height="320"
+        >
+          <!-- 默认槽常驻：ChartCard 的 empty/loading 是覆盖层，echarts 容器不能因 v-if 消失 -->
           <div ref="systemChart" class="chart-area" />
-        </el-card>
+        </ChartCard>
       </el-col>
 
-      <el-col :xs="24" :lg="8" :gutter="20">
-        <el-card class="card-panel" shadow="always">
+      <el-col :xs="24" :lg="8">
+        <el-card class="card-panel metrics-panel" shadow="never">
           <template #header>
             <div class="card-title">{{ t('dashboard.systemMetrics') }}</div>
           </template>
 
-          <div v-if="dashboardMetrics" class="monitoring-box">
-            <!-- JVM 内存 -->
-            <el-descriptions :column="1" border size="small">
-              <el-descriptions-item :label="t('dashboard.metrics.jvmMemory')">
-                <div class="row-inline">
-                  <el-progress
-                    :percentage="dashboardMetrics.jvm?.heapUsagePercent || 0"
-                    :status="(dashboardMetrics.jvm?.heapUsagePercent || 0) > 80 ? 'exception' : 'success'"
-                    stroke-width="12"
-                    style="flex:1; margin-right:12px"
-                  />
-                  <el-tag size="small" type="info">
-                    {{ dashboardMetrics.jvm?.heapUsedMB || 0 }} / {{ dashboardMetrics.jvm?.heapMaxMB || 0 }} MB
-                  </el-tag>
-                </div>
-              </el-descriptions-item>
-
-              <el-descriptions-item :label="t('dashboard.metrics.threads')">
-                <div class="row-inline">
-                  <el-tag type="primary">{{ t('dashboard.metrics.countUnit', { count: dashboardMetrics.jvm?.threadCount || 0 }) }}</el-tag>
-                  <el-tag size="small" type="info" style="margin-left:8px">
-                    {{ t('dashboard.metrics.peakPrefix', { count: dashboardMetrics.jvm?.peakThreadCount || 0 }) }}
-                  </el-tag>
-                </div>
-              </el-descriptions-item>
-
-              <el-descriptions-item :label="t('dashboard.metrics.httpRequests')">
-                <div class="row-inline">
-                  <el-tag type="primary">{{ t('dashboard.metrics.timesUnit', { count: dashboardMetrics.http?.totalRequests || 0 }) }}</el-tag>
-                  <el-tag size="small" type="info" style="margin-left:8px">
-                    {{ t('dashboard.metrics.avgResponse', { value: (dashboardMetrics.http?.avgResponseTimeMs || 0).toFixed(1) }) }}
-                  </el-tag>
-                </div>
-              </el-descriptions-item>
-
-              <el-descriptions-item :label="t('dashboard.metrics.authentication')">
-                <div class="row-inline">
-                  <el-tag type="success">{{ t('dashboard.metrics.successUnit', { count: dashboardMetrics.security?.authSuccesses || 0 }) }}</el-tag>
-                  <el-tag :type="(dashboardMetrics.security?.authFailures || 0) > 0 ? 'danger' : 'info'" style="margin-left:8px">
-                    {{ t('dashboard.metrics.failureUnit', { count: dashboardMetrics.security?.authFailures || 0 }) }}
-                  </el-tag>
-                  <el-tag size="small" type="warning" style="margin-left:8px">
-                    {{ t('dashboard.metrics.activePrefix', { count: Math.round(dashboardMetrics.security?.activeUsers || 0) }) }}
-                  </el-tag>
-                </div>
-              </el-descriptions-item>
-
-              <el-descriptions-item :label="t('dashboard.metrics.securityCache')">
-                <div class="row-inline">
-                  <el-tag type="primary">{{ t('dashboard.metrics.hitsPrefix', { count: Math.round(dashboardMetrics.security?.cacheHits || 0) }) }}</el-tag>
-                  <el-tag size="small" type="info" style="margin-left:8px">
-                    {{ t('dashboard.metrics.missesPrefix', { count: Math.round(dashboardMetrics.security?.cacheMisses || 0) }) }}
-                  </el-tag>
-                  <el-tag size="small" type="warning" style="margin-left:8px">
-                    {{ t('dashboard.metrics.sizePrefix', { count: Math.round(dashboardMetrics.security?.cacheSize || 0) }) }}
-                  </el-tag>
-                </div>
-              </el-descriptions-item>
-
-              <el-descriptions-item :label="t('dashboard.metrics.auditEvents')">
-                <div class="row-inline">
-                  <el-tag type="primary">{{ t('dashboard.metrics.totalUnit', { count: Math.round(dashboardMetrics.audit?.totalEvents || 0) }) }}</el-tag>
-                  <el-tag type="success" size="small" style="margin-left:8px">
-                    {{ t('dashboard.metrics.successUnit', { count: Math.round(dashboardMetrics.audit?.successEvents || 0) }) }}
-                  </el-tag>
-                  <el-tag :type="(dashboardMetrics.audit?.failureEvents || 0) > 0 ? 'danger' : 'info'" size="small" style="margin-left:8px">
-                    {{ t('dashboard.metrics.failureUnit', { count: Math.round(dashboardMetrics.audit?.failureEvents || 0) }) }}
-                  </el-tag>
-                </div>
-              </el-descriptions-item>
-
-              <el-descriptions-item :label="t('dashboard.metrics.systemLoad')">
-                <div class="row-inline">
-                  <el-tag type="primary">{{ (dashboardMetrics.system?.systemLoadAverage || 0).toFixed(2) }}</el-tag>
-                  <el-tag size="small" type="info" style="margin-left:8px">
-                    {{ t('dashboard.metrics.cpuPrefix', { value: ((dashboardMetrics.system?.processCpuUsage || 0) * 100).toFixed(1) }) }}
-                  </el-tag>
-                  <el-tag size="small" type="warning" style="margin-left:8px">
-                    {{ t('dashboard.metrics.coresPrefix', { count: dashboardMetrics.system?.availableProcessors || 0 }) }}
-                  </el-tag>
-                </div>
-              </el-descriptions-item>
-
-              <el-descriptions-item :label="t('dashboard.metrics.uptime')">
-                <el-tag type="primary">{{ formatUptime(dashboardMetrics.system?.uptimeSeconds) }}</el-tag>
-              </el-descriptions-item>
-            </el-descriptions>
-          </div>
-
-          <div v-else class="empty-placeholder">
-            <el-icon><Loading /></el-icon>
-            <div>{{ t('dashboard.loadingMetrics') }}</div>
-          </div>
+          <SystemMetricsPanel :metrics="dashboardMetrics" />
         </el-card>
       </el-col>
     </el-row>
@@ -137,7 +42,7 @@
     <!-- ════════════ 治理链路面板 ════════════ -->
     <el-row class="governance-row" :gutter="20">
       <el-col :xs="24">
-        <el-card class="governance-card" shadow="hover">
+        <el-card class="governance-card" shadow="never">
           <template #header>
             <div class="governance-header">
               <span class="card-title">{{ t('dashboard.governanceChain') }}</span>
@@ -149,7 +54,7 @@
             <el-col :xs="24" :sm="12" :lg="6">
               <div class="gov-section">
                 <div class="gov-section-head">
-                  <el-icon class="gov-icon gov-icon--primary"><SetUp /></el-icon>
+                  <el-icon class="gov-icon"><SetUp /></el-icon>
                   <span class="gov-label">{{ t('dashboard.ruleHits') }}</span>
                   <el-button link type="primary" size="small" class="gov-jump" @click="router.push('/config/rules')">
                     {{ t('dashboard.jumpViewRules') }} <el-icon><ArrowRight /></el-icon>
@@ -162,7 +67,7 @@
                   </div>
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">{{ t('dashboard.totalHitsCount') }}</span>
-                    <span class="gov-metric-value gov-metric-value--primary">{{ ruleStats.totalHits }}</span>
+                    <span class="gov-metric-value">{{ ruleStats.totalHits }}</span>
                   </div>
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">{{ t('dashboard.triggeredRuleCount') }}</span>
@@ -176,7 +81,7 @@
             <el-col :xs="24" :sm="12" :lg="6">
               <div class="gov-section">
                 <div class="gov-section-head">
-                  <el-icon class="gov-icon gov-icon--warning"><DataBoard /></el-icon>
+                  <el-icon class="gov-icon"><DataBoard /></el-icon>
                   <span class="gov-label">{{ t('dashboard.rateLimit') }}</span>
                   <el-button link type="primary" size="small" class="gov-jump" @click="router.push('/rate-limiters/monitoring')">
                     {{ t('dashboard.jumpMonitorRateLimit') }} <el-icon><ArrowRight /></el-icon>
@@ -205,7 +110,7 @@
             <el-col :xs="24" :sm="12" :lg="6">
               <div class="gov-section">
                 <div class="gov-section-head">
-                  <el-icon class="gov-icon gov-icon--danger"><Warning /></el-icon>
+                  <el-icon class="gov-icon"><Warning /></el-icon>
                   <span class="gov-label">{{ t('dashboard.circuitBreaker') }}</span>
                   <el-button link type="primary" size="small" class="gov-jump" @click="router.push('/circuit-breakers/monitoring')">
                     {{ t('dashboard.jumpMonitorCircuitBreaker') }} <el-icon><ArrowRight /></el-icon>
@@ -214,7 +119,7 @@
                 <div class="gov-metrics">
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">CLOSED</span>
-                    <span class="gov-metric-value gov-metric-value--success">{{ cbStateCounts.CLOSED }}</span>
+                    <span class="gov-metric-value">{{ cbStateCounts.CLOSED }}</span>
                   </div>
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">OPEN</span>
@@ -224,7 +129,9 @@
                   </div>
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">HALF_OPEN</span>
-                    <span class="gov-metric-value gov-metric-value--warning">{{ cbStateCounts.HALF_OPEN }}</span>
+                    <span :class="['gov-metric-value', cbStateCounts.HALF_OPEN > 0 ? 'gov-metric-value--warning' : '']">
+                      {{ cbStateCounts.HALF_OPEN }}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -234,7 +141,7 @@
             <el-col :xs="24" :sm="12" :lg="6">
               <div class="gov-section">
                 <div class="gov-section-head">
-                  <el-icon class="gov-icon gov-icon--success"><Connection /></el-icon>
+                  <el-icon class="gov-icon"><Connection /></el-icon>
                   <span class="gov-label">{{ t('dashboard.loadBalancing') }}</span>
                   <el-button link type="primary" size="small" class="gov-jump" @click="router.push('/load-balancers/monitoring')">
                     {{ t('dashboard.jumpMonitorLoadBalancer') }} <el-icon><ArrowRight /></el-icon>
@@ -247,7 +154,7 @@
                   </div>
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">{{ t('dashboard.healthyInstanceCount') }}</span>
-                    <span class="gov-metric-value gov-metric-value--success">{{ lbSummary.healthyInstances }}</span>
+                    <span class="gov-metric-value">{{ lbSummary.healthyInstances }}</span>
                   </div>
                   <div class="gov-metric-row">
                     <span class="gov-metric-label">{{ t('dashboard.serviceCount') }}</span>
@@ -263,7 +170,7 @@
             <el-col :xs="24" :sm="12" :lg="6">
               <router-link class="gov-entry-card" :to="{ name: 'response-cache-management' }">
                 <div class="gov-entry-inner">
-                  <el-icon class="gov-icon gov-entry-icon--primary"><Coin /></el-icon>
+                  <el-icon class="gov-icon"><Coin /></el-icon>
                   <span class="gov-entry-label">{{ t('dashboard.governance.responseCache') }}</span>
                   <span class="gov-entry-desc">{{ t('dashboard.governance.responseCacheDesc') }}</span>
                 </div>
@@ -274,7 +181,7 @@
             <el-col :xs="24" :sm="12" :lg="6">
               <router-link class="gov-entry-card" :to="{ name: 'slow-query-analysis' }">
                 <div class="gov-entry-inner">
-                  <el-icon class="gov-icon gov-entry-icon--warning"><Timer /></el-icon>
+                  <el-icon class="gov-icon"><Timer /></el-icon>
                   <span class="gov-entry-label">{{ t('dashboard.governance.slowQuery') }}</span>
                   <span class="gov-entry-desc">{{ t('dashboard.governance.slowQueryDesc') }}</span>
                 </div>
@@ -285,7 +192,7 @@
             <el-col :xs="24" :sm="12" :lg="6">
               <router-link class="gov-entry-card" :to="{ name: 'call-history-token-usage' }">
                 <div class="gov-entry-inner">
-                  <el-icon class="gov-icon gov-entry-icon--success"><DataLine /></el-icon>
+                  <el-icon class="gov-icon"><DataLine /></el-icon>
                   <span class="gov-entry-label">{{ t('dashboard.governance.tokenUsage') }}</span>
                   <span class="gov-entry-desc">{{ t('dashboard.governance.tokenUsageDesc') }}</span>
                 </div>
@@ -296,7 +203,7 @@
             <el-col :xs="24" :sm="12" :lg="6">
               <router-link class="gov-entry-card" :to="{ name: 'tracing-dashboard' }">
                 <div class="gov-entry-inner">
-                  <el-icon class="gov-icon gov-entry-icon--info"><TrendCharts /></el-icon>
+                  <el-icon class="gov-icon"><TrendCharts /></el-icon>
                   <span class="gov-entry-label">{{ t('dashboard.governance.tracing') }}</span>
                   <span class="gov-entry-desc">{{ t('dashboard.governance.tracingDesc') }}</span>
                 </div>
@@ -311,11 +218,11 @@
     <!-- ════════════ 异常/告警摘要 ════════════ -->
     <el-row class="alert-row" :gutter="20">
       <el-col :xs="24">
-        <el-card class="alert-card" shadow="hover">
+        <el-card class="alert-card" shadow="never">
           <template #header>
             <div class="alert-header">
               <span class="card-title">
-                <el-icon class="alert-title-icon"><WarningFilled /></el-icon>
+                <el-icon :class="['alert-title-icon', { 'alert-title-icon--danger': stats.alertCount > 0 }]"><WarningFilled /></el-icon>
                 {{ t('dashboard.exceptionSummary') }}
               </span>
               <span class="alert-count-tag">{{ t('dashboard.securityAlertsLast24h', { count: stats.alertCount }) }}</span>
@@ -369,7 +276,7 @@
     <!-- 服务配置详情 -->
     <el-row class="config-row" :gutter="20">
       <el-col :xs="24">
-        <el-card class="config-card" shadow="hover">
+        <el-card class="config-card" shadow="never">
           <template #header>
             <div class="config-header">
               <div class="config-title">{{ t('dashboard.serviceOverview') }}</div>
@@ -389,7 +296,7 @@
                 <el-descriptions-item :label="t('dashboard.hashAlgorithm')">{{ serviceConfigData?.loadBalance?.hashAlgorithm || 'N/A' }}</el-descriptions-item>
 
                 <el-descriptions-item :label="t('dashboard.globalRateLimit')">
-                  <el-tag :type="serviceConfigData?.rateLimit?.enabled ? 'success' : 'info'">
+                  <el-tag type="info">
                     {{ serviceConfigData?.rateLimit?.enabled ? t('dashboard.enabledStatus') : t('dashboard.disabledStatus') }}
                   </el-tag>
                 </el-descriptions-item>
@@ -400,7 +307,7 @@
                 </el-descriptions-item>
 
                 <el-descriptions-item :label="t('dashboard.circuitBreakerConfig')">
-                  <el-tag :type="serviceConfigData?.circuitBreaker?.enabled ? 'success' : 'info'">
+                  <el-tag type="info">
                     {{ serviceConfigData?.circuitBreaker?.enabled ? t('dashboard.enabledStatus') : t('dashboard.disabledStatus') }}
                   </el-tag>
                 </el-descriptions-item>
@@ -451,7 +358,7 @@
                 <el-table-column prop="weight" :label="t('dashboard.weight')" width="80" align="center" />
                 <el-table-column :label="t('dashboard.health')" width="110" align="center">
                   <template #default="scope">
-                    <el-tag :type="scope.row.health ? 'success' : 'danger'" size="small">
+                    <el-tag :type="scope.row.health ? 'info' : 'danger'" size="small">
                       {{ scope.row.health ? t('dashboard.health') : t('dashboard.unhealthyStatus') }}
                     </el-tag>
                   </template>
@@ -481,7 +388,7 @@
                 <el-table-column prop="weight" :label="t('dashboard.weight')" width="80" align="center" />
                 <el-table-column :label="t('dashboard.health')" width="110" align="center">
                   <template #default="scope">
-                    <el-tag :type="scope.row.health ? 'success' : 'danger'" size="small">
+                    <el-tag :type="scope.row.health ? 'info' : 'danger'" size="small">
                       {{ scope.row.health ? t('dashboard.health') : t('dashboard.unhealthyStatus') }}
                     </el-tag>
                   </template>
@@ -531,7 +438,6 @@ import { ElMessage } from 'element-plus'
 import { getErrorMessage } from '@/utils/error'
 import {
   Refresh,
-  Loading,
   ArrowRight,
   SetUp,
   DataBoard,
@@ -550,13 +456,16 @@ import { connectSSE, disconnectSSE, addSSEListener, removeSSEListener } from '@/
 
 // 组件
 import PageSkeleton from '@/components/PageSkeleton.vue'
-import StatCard from '@/components/StatCard.vue'
+import MetricStrip from '@/components/MetricStrip.vue'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
+import ChartCard from '@/components/ChartCard.vue'
+import SystemMetricsPanel from './dashboard/SystemMetricsPanel.vue'
 
-// 图表主题
-import { useChartTheme } from '@/composables/useChartTheme'
+// 图表皮肤：颜色/字号/网格/提示框统一从令牌派生，页面不再持有色值
+import { useChartSkin } from '@/composables/useChartSkin'
 import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 
-const { getChartTheme } = useChartTheme()
+const { skin } = useChartSkin()
 const router = useRouter()
 const { t } = useI18n()
 
@@ -697,8 +606,8 @@ const otherServiceInstances = computed(() => {
   return res
 })
 
-// 统计卡片数据计算
-const statCards = computed(() => {
+// 概览指标（顶部 MetricStrip）：六项取值与原统计卡完全一致
+const metricItems = computed<MetricStripItem[]>(() => {
   const serviceCount = serviceConfigData.value?.services ? Object.keys(serviceConfigData.value.services).length : stats.value.serviceCount
   const instances = (() => {
     if (!serviceConfigData.value?.services) return stats.value.instanceCount
@@ -714,18 +623,22 @@ const statCards = computed(() => {
     })
     return c
   })()
-  const error = instances - healthy
-
-  const healthyCount = healthy
-  const errorCount = error
+  const errorDiff = instances - healthy
+  const errorCount = errorDiff < 0 ? 0 : errorDiff
 
   return [
-    { key: 'service', icon: 'Flag', label: t('dashboard.serviceQuantity'), value: serviceCount, tone: 'primary' as const },
-    { key: 'instance', icon: 'Cpu', label: t('dashboard.instanceQuantity'), value: instances, tone: 'success' as const },
-    { key: 'model', icon: 'Monitor', label: t('dashboard.modelQuantity'), value: stats.value.totalModels || 0, tone: 'default' as const },
-    { key: 'healthy', icon: 'Check', label: t('dashboard.healthyInstanceCount'), value: healthyCount, tone: 'success' as const },
-    { key: 'error', icon: 'Warning', label: t('dashboard.errorInstanceCount'), value: errorCount < 0 ? 0 : errorCount, tone: 'danger' as const },
-    { key: 'user', icon: 'User', label: t('dashboard.accountQuantity'), value: stats.value.userCount || 0, tone: 'info' as const }
+    { key: 'service', label: t('dashboard.serviceQuantity'), value: serviceCount },
+    { key: 'instance', label: t('dashboard.instanceQuantity'), value: instances },
+    { key: 'model', label: t('dashboard.modelQuantity'), value: stats.value.totalModels || 0 },
+    { key: 'healthy', label: t('dashboard.healthyInstanceCount'), value: healthy },
+    // 唯一允许着色的指标：有异常实例时才升级为 danger
+    {
+      key: 'error',
+      label: t('dashboard.errorInstanceCount'),
+      value: errorCount,
+      tone: errorCount > 0 ? 'danger' : 'default'
+    },
+    { key: 'user', label: t('dashboard.accountQuantity'), value: stats.value.userCount || 0 }
   ]
 })
 
@@ -733,99 +646,91 @@ const statCards = computed(() => {
 const systemChart = ref<HTMLElement | null>(null)
 let systemChartInstance: echarts.ECharts | null = null
 
+/** 从皮肤里取轴标签样式（类型上是 Record<string, unknown>，取值需断言） */
+const axisLabelStyle = (axis: Record<string, unknown>) =>
+  (axis.axisLabel ?? {}) as { color?: string; fontSize?: number }
+
 const getChartOption = () => {
-  const { primary, success, warning, danger, textColor } = getChartTheme()
-
-  if (!dashboardMetrics.value) {
-    return {
-      title: { text: t('dashboard.chart.statusOverview'), left: 'center', textStyle: { fontSize: 14, color: textColor } },
-      tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: [t('dashboard.chart.memory'), t('dashboard.chart.cpu'), t('dashboard.metrics.authentication'), t('dashboard.chart.requests')] },
-      yAxis: { type: 'value', max: 100, axisLabel: { formatter: '{value}%' } },
-      series: [
-        { name: t('dashboard.chart.usageRate'), data: [0, 0, 0, 0], type: 'bar', barWidth: '40%' }
-      ]
-    }
-  }
-
+  const chartSkin = skin.value
   const m = dashboardMetrics.value
-  const jvm = m.jvm || {}
-  const sys = m.system || {}
-  const sec = m.security || {}
-  const http = m.http || {}
+  const jvm = m?.jvm || {}
+  const sys = m?.system || {}
+  const sec = m?.security || {}
+  const http = m?.http || {}
 
   const memoryUsage = jvm.heapUsagePercent || 0
   const cpuUsage = (sys.processCpuUsage || 0) * 100
   const attempts = sec.authAttempts ?? 0
-    const authSuccess = attempts > 0 ? ((sec.authSuccesses || 0) / attempts * 100) : 100
+  const authSuccess = attempts > 0 ? ((sec.authSuccesses || 0) / attempts * 100) : 100
   const requestRate = Math.min((http.totalRequests || 0) / 1000 * 10, 100)
 
+  const categories = [
+    t('dashboard.metrics.jvmMemory'),
+    t('dashboard.chart.cpuUsage'),
+    t('dashboard.chart.authSuccess'),
+    t('dashboard.chart.requestVolume')
+  ]
+  const labels = [
+    t('dashboard.metrics.jvmMemory'),
+    t('dashboard.chart.cpuUsageRate'),
+    t('dashboard.chart.authSuccessRate'),
+    t('dashboard.chart.requestVolume')
+  ]
+  const values = [memoryUsage, cpuUsage, authSuccess, requestRate]
+  // 只有越过阈值的指标才升级为语义色，其余一律主色（全屏 ≤ 3 个色相）
+  const breached = [memoryUsage > 80, cpuUsage > 80, authSuccess < 80, false]
+
+  const categoryLabel = axisLabelStyle(chartSkin.categoryAxis)
+  const valueLabel = axisLabelStyle(chartSkin.valueAxis)
+
   return {
-    title: { text: t('dashboard.chart.resourceOverview'), left: 'center', textStyle: { fontSize: 14, color: textColor } },
+    backgroundColor: 'transparent',
+    textStyle: { color: chartSkin.text, fontSize: valueLabel.fontSize },
     tooltip: {
-      trigger: 'axis',
+      ...chartSkin.tooltip,
       formatter: (params: unknown) => {
         const p = (params as Array<{ dataIndex: number }>)[0]
-        const labels = [
-          t('dashboard.metrics.jvmMemory'),
-          t('dashboard.chart.cpuUsageRate'),
-          t('dashboard.chart.authSuccessRate'),
-          t('dashboard.chart.requestVolume')
-        ]
-        const values = [
+        const detail = [
           `${memoryUsage}% (${jvm.heapUsedMB || 0}/${jvm.heapMaxMB || 0} MB)`,
           `${cpuUsage.toFixed(1)}%`,
           `${authSuccess.toFixed(1)}%`,
           t('dashboard.metrics.timesUnit', { count: http.totalRequests || 0 })
         ]
-        return `<strong>${labels[p.dataIndex]}</strong><br/>${values[p.dataIndex]}`
+        return `<strong>${labels[p.dataIndex]}</strong><br/>${detail[p.dataIndex]}`
       }
     },
-    legend: { bottom: 0, data: [t('dashboard.chart.resourceUsage')], textStyle: { color: textColor } },
-    grid: { left: 30, right: 30, bottom: 50, top: 60 },
+    grid: chartSkin.grid,
     xAxis: {
-      type: 'category',
-      data: [t('dashboard.metrics.jvmMemory'), t('dashboard.chart.cpuUsage'), t('dashboard.chart.authSuccess'), t('dashboard.chart.requestVolume')],
-      axisLabel: { interval: 0, rotate: 0, fontSize: 11, color: textColor }
+      ...chartSkin.categoryAxis,
+      data: categories,
+      axisLabel: {
+        ...categoryLabel,
+        interval: 0,
+        // 窄屏（容器 < 420px）四个中文类目名会互相压住，斜置 35° 换可读性；
+        // resize 时会重算 option，故旋转角随容器宽度自适应。
+        rotate: (systemChart.value?.clientWidth ?? 0) > 0 && (systemChart.value?.clientWidth ?? 0) < 420 ? 35 : 0
+      }
     },
     yAxis: {
-      type: 'value',
+      ...chartSkin.valueAxis,
       max: 100,
-      axisLabel: {
-        color: textColor,
-        formatter: (v: number) => `${v}%`
-      }
+      axisLabel: { ...valueLabel, formatter: (v: number) => `${v}%` }
     },
     series: [
       {
         name: t('dashboard.chart.resourceUsage'),
         type: 'bar',
         barWidth: '50%',
-        data: [
-          {
-            value: memoryUsage,
-            itemStyle: { color: memoryUsage > 80 ? danger : memoryUsage > 60 ? warning : success },
-            name: `${memoryUsage}%`
-          },
-          {
-            value: cpuUsage,
-            itemStyle: { color: cpuUsage > 80 ? danger : cpuUsage > 60 ? warning : primary },
-            name: `${cpuUsage.toFixed(1)}%`
-          },
-          {
-            value: authSuccess,
-            itemStyle: { color: authSuccess < 50 ? danger : authSuccess < 80 ? warning : success },
-            name: `${authSuccess.toFixed(1)}%`
-          },
-          {
-            value: requestRate,
-            itemStyle: { color: primary },
-            name: `${http.totalRequests || 0}`
-          }
-        ],
+        data: values.map((value, index) => ({
+          value,
+          name: labels[index],
+          itemStyle: { color: breached[index] ? chartSkin.emphasis : chartSkin.palette[0] }
+        })),
         label: {
           show: true,
           position: 'top',
+          color: chartSkin.textMuted,
+          fontSize: valueLabel.fontSize,
           formatter: (p: unknown) => {
             const item = p as { dataIndex: number; value: number }
             if (item.dataIndex === 3) return `${http.totalRequests || 0}`
@@ -1070,17 +975,6 @@ const formatAlertTime = (iso: string | undefined) => {
   }
 }
 
-const formatUptime = (seconds: number | undefined) => {
-  if (seconds === undefined || seconds === null) return 'N/A'
-  const s = Math.round(seconds)
-  const days = Math.floor(s / 86400)
-  const hours = Math.floor((s % 86400) / 3600)
-  const mins = Math.floor((s % 3600) / 60)
-  if (days > 0) return t('dashboard.metrics.uptimeDaysHours', { days, hours })
-  if (hours > 0) return t('dashboard.metrics.uptimeHoursMinutes', { hours, minutes: mins })
-  return t('dashboard.metrics.uptimeMinutes', { minutes: mins })
-}
-
 const fetchDashboardData = async () => {
   try {
     const statsRes = await getServiceStats()
@@ -1148,288 +1042,202 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* 统计卡片 */
-.stats-wrap { margin-bottom: 16px; }
+/* ════════════ 概览指标 ════════════ */
+.stats-wrap { min-width: 0; }
 
-/* 主体卡片 */
-.card-panel { min-height: 330px; border-radius: var(--ja-radius-lg); }
-.chart-area { width:100%; height:320px; }
+/* ════════════ 主体两栏 ════════════ */
+.main-row { align-items: stretch; }
+.main-row > .el-col { display: flex; flex-direction: column; }
 
-/* 监控侧栏 */
-.monitoring-box { padding:4px 0; }
-.row-inline { display:flex; align-items:center; gap:8px; }
-
-/* 配置区域 */
-.config-row { margin-top:22px; }
-.config-card { border-radius: var(--ja-radius-lg); padding-bottom: 6px; }
-.config-header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
-.config-title { font-weight:700; color: var(--ja-dashboard-config-title); }
-.config-actions { display:flex; align-items:center; }
-
-/* 表格样式 */
-:deep(.el-table .row-error) { background: var(--ja-dashboard-error-row) !important; }
-:deep(.el-table th) { background: transparent; }
-
-/* Empty */
-.empty-placeholder { text-align:center; padding:24px 12px; color: var(--ja-dashboard-empty-color); }
-
-/* 使主行的列高度一致，并让卡片伸展占满列 */
-.main-row {
-  align-items: stretch;
-}
-
-.main-row > .el-col {
-  display: flex;
-  flex-direction: column;
-}
-
+/* 与 ChartCard 同一套外壳：纸面 + 1px 分隔线，不使用投影 */
 .card-panel {
   display: flex;
-  flex-direction: column;
   flex: 1 1 auto;
+  flex-direction: column;
   min-height: 320px;
+  border: 1px solid var(--ja-border);
+  border-radius: var(--ja-radius-lg);
+  background: var(--ja-paper);
 }
 
-:deep(.card-panel .el-card__body) {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  padding: 12px 16px;
+:deep(.el-card__header) {
+  padding: var(--ja-space-3) var(--ja-space-4);
+  border-bottom: 1px solid var(--ja-border);
+  background: var(--ja-paper);
 }
 
-.chart-area {
-  width: 100%;
-  height: 100%;
-  min-height: 220px;
-  flex: 1 1 auto;
-}
+:deep(.el-card__body) { padding: var(--ja-space-4); }
 
-/* 卡片标题 */
 .card-title {
+  color: var(--ja-ink);
+  font-size: 14px;
   font-weight: 600;
-  color: var(--ja-text-primary);
+  line-height: 1.4;
 }
 
-/* ════════════ 治理链路面板 ════════════ */
-.governance-row {
-  margin-top: 22px;
-}
+.chart-area { width: 100%; height: 100%; min-height: 240px; }
 
-.governance-card {
+/* ════════════ 系统指标（明细见 ./dashboard/SystemMetricsPanel.vue） ════════════ */
+.metrics-panel :deep(.el-card__body) { flex: 1 1 auto; }
+
+/* ════════════ 治理链路 ════════════ */
+.governance-row { margin-top: var(--ja-space-5); }
+
+/* 三块内容卡与 ChartCard 同壳：纸面 + 1px 边界，不投影 */
+.governance-card,
+.alert-card,
+.config-card {
+  background: var(--ja-paper);
+  border: 1px solid var(--ja-border);
   border-radius: var(--ja-radius-lg);
 }
 
-.governance-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+.governance-header { display: flex; align-items: center; gap: var(--ja-space-2); }
 
 .gov-section {
-  padding: 8px 4px;
-  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  min-height: 132px;
+  padding: var(--ja-space-2) 0;
 }
 
 .gov-section-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--ja-border-light, #ebeef5);
+  gap: var(--ja-space-2);
+  padding-bottom: var(--ja-space-2);
+  margin-bottom: var(--ja-space-3);
+  border-bottom: 1px solid var(--ja-border);
 }
 
+/* 四类小节的图标底一律中性：identity 由文案承担，颜色只留给异常数值 */
 .gov-icon {
-  font-size: 18px;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ja-space-1);
+  font-size: 16px;
+  color: var(--ja-ink-3);
+  background: var(--ja-surface-2);
+  border: 1px solid var(--ja-border);
+  border-radius: var(--ja-radius-sm);
 }
 
-.gov-icon--primary { color: var(--ja-primary); }
-.gov-icon--warning { color: var(--ja-warning); }
-.gov-icon--danger  { color: var(--ja-danger); }
-.gov-icon--success { color: var(--ja-success); }
+.gov-label { color: var(--ja-ink); font-size: 14px; font-weight: 600; }
+.gov-jump { margin-left: auto; font-size: 12px; }
+.gov-jump:focus-visible { outline: 2px solid var(--ja-primary); outline-offset: 2px; }
 
-.gov-label {
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--ja-text-primary);
-}
-
-.gov-jump {
-  margin-left: auto;
-  font-size: 12px;
-}
-
-.gov-metrics {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+.gov-metrics { display: flex; flex-direction: column; gap: var(--ja-space-1); }
 
 .gov-metric-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--ja-space-2);
   padding: 2px 0;
 }
 
-.gov-metric-label {
-  font-size: 12px;
-  color: var(--ja-text-secondary, #909399);
-}
-
-.gov-metric-value {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ja-text-primary);
-  font-variant-numeric: tabular-nums;
-}
-
-.gov-metric-value--primary { color: var(--ja-primary); }
-.gov-metric-value--success { color: var(--ja-success); }
+.gov-metric-label { color: var(--ja-ink-3); font-size: 12px; }
+.gov-metric-value { color: var(--ja-ink); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.gov-metric-value--danger { color: var(--ja-danger); }
 .gov-metric-value--warning { color: var(--ja-warning); }
-.gov-metric-value--danger  { color: var(--ja-danger); }
 
-/* ════════════ 治理入口卡（纯导航） ════════════ */
-.gov-entry-row {
-  margin-top: 12px;
-}
+/* 能力入口卡：纯导航，hover 才出现主色 */
+.gov-entry-row { margin-top: var(--ja-space-3); }
 
 .gov-entry-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  min-height: 80px;
-  border: 1px solid var(--ja-border-light, #ebeef5);
-  border-radius: 8px;
-  cursor: pointer;
+  gap: var(--ja-space-2);
+  min-height: 88px;
+  padding: var(--ja-space-3) var(--ja-space-4);
+  color: inherit;
   text-decoration: none;
+  background: var(--ja-paper);
+  border: 1px solid var(--ja-border);
+  border-radius: var(--ja-radius);
   transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
 }
 
 .gov-entry-card:hover {
+  background: var(--ja-surface-2);
   border-color: var(--ja-primary);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  background-color: var(--ja-primary-bg, rgba(64, 158, 255, 0.04));
+  box-shadow: var(--ja-shadow-sm);
 }
 
-.gov-entry-inner {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
+.gov-entry-card:focus-visible { outline: 2px solid var(--ja-primary); outline-offset: 2px; }
 
-.gov-entry-icon--primary { color: var(--ja-primary); font-size: 20px; }
-.gov-entry-icon--warning { color: var(--ja-warning); font-size: 20px; }
-.gov-entry-icon--success { color: var(--ja-success); font-size: 20px; }
-.gov-entry-icon--info    { color: var(--ja-info, #909399); font-size: 20px; }
+.gov-entry-inner { display: flex; flex-direction: column; gap: var(--ja-space-1); min-width: 0; }
+.gov-entry-label { color: var(--ja-ink); font-size: 14px; font-weight: 600; }
+.gov-entry-desc { color: var(--ja-ink-3); font-size: 12px; line-height: 1.5; }
 
-.gov-entry-label {
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--ja-text-primary);
-}
-
-.gov-entry-desc {
-  font-size: 12px;
-  color: var(--ja-text-secondary, #909399);
-  line-height: 1.4;
+/* 入口卡的图标只是行首标记，不再套用上面小节的底/边框 */
+.gov-entry-inner .gov-icon {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  font-size: 15px;
 }
 
 .gov-entry-arrow {
-  color: var(--ja-text-secondary, #909399);
-  font-size: 16px;
   flex-shrink: 0;
-  margin-left: 8px;
+  margin-left: var(--ja-space-2);
+  font-size: 16px;
+  color: var(--ja-ink-3);
   transition: color 0.2s, transform 0.2s;
 }
 
-.gov-entry-card:hover .gov-entry-arrow {
-  color: var(--ja-primary);
-  transform: translateX(2px);
-}
+.gov-entry-card:hover .gov-entry-arrow { color: var(--ja-primary); transform: translateX(2px); }
 
 /* ════════════ 异常/告警摘要 ════════════ */
-.alert-row {
-  margin-top: 22px;
-}
+.alert-row { margin-top: var(--ja-space-5); }
 
-.alert-card {
-  border-radius: var(--ja-radius-lg);
-}
-
-.alert-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.alert-title-icon {
-  color: var(--ja-warning);
-  margin-right: 4px;
-  vertical-align: middle;
-}
-
-.alert-count-tag {
-  margin-left: 10px;
-  font-size: 12px;
-  color: var(--ja-text-secondary, #667085);
-}
-
-.alert-time {
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  color: var(--ja-text-secondary, #909399);
-}
+.alert-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ja-space-2); }
+.alert-title-icon { margin-right: var(--ja-space-1); color: var(--ja-ink-3); vertical-align: middle; }
+.alert-title-icon--danger { color: var(--ja-danger); }
+.alert-count-tag { color: var(--ja-ink-3); font-size: 12px; font-variant-numeric: tabular-nums; }
+.alert-time { color: var(--ja-ink-3); font-size: 12px; font-variant-numeric: tabular-nums; }
 
 .alert-empty {
-  text-align: center;
-  padding: 32px 16px;
-  color: var(--ja-success);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--ja-space-2);
+  padding: var(--ja-space-7) var(--ja-space-4);
+  color: var(--ja-ink-3);
   font-size: 14px;
 }
 
-.alert-empty-icon {
-  font-size: 20px;
+.alert-empty-icon { font-size: 20px; }
+.alert-table { width: 100%; }
+
+/* ════════════ 服务配置 ════════════ */
+.config-row { margin-top: var(--ja-space-5); }
+.config-header { display: flex; align-items: center; justify-content: space-between; gap: var(--ja-space-3); }
+.config-title { color: var(--ja-ink); font-size: 14px; font-weight: 600; }
+.config-actions { display: flex; align-items: center; }
+
+/* 失败/异常行才用中性底强调，正常行保持纸面 */
+:deep(.el-table .row-error td) { background: var(--ja-surface-2) !important; }
+:deep(.el-table th) { background: transparent; }
+
+.service-tab-link { color: inherit; text-decoration: none; cursor: pointer; }
+.service-tab-link:hover { color: var(--ja-primary); }
+.instance-link { color: var(--ja-primary); font-size: 13px; text-decoration: none; cursor: pointer; }
+.instance-link:hover { text-decoration: underline; }
+
+/* el-row 只处理横向 gutter：窄屏堆叠时补纵向间距 */
+@media (max-width: 1199px) {
+  .main-row > .el-col + .el-col { margin-top: var(--ja-space-4); }
+  .gov-section { margin-bottom: var(--ja-space-3); }
+  .gov-entry-row > .el-col { margin-bottom: var(--ja-space-3); }
 }
 
-.alert-table {
-  width: 100%;
-}
-
-/* ════════════ 服务配置链接 ════════════ */
-.service-tab-link {
-  text-decoration: none;
-  color: inherit;
-  cursor: pointer;
-}
-
-.service-tab-link:hover {
-  color: var(--ja-primary);
-}
-
-.instance-link {
-  text-decoration: none;
-  color: var(--ja-primary);
-  cursor: pointer;
-  font-size: 13px;
-}
-
-.instance-link:hover {
-  text-decoration: underline;
-}
-
-/* 响应式 */
 @media (max-width: 992px) {
-  .chart-area { height: 220px; }
   .card-panel { min-height: 220px; }
-}
-@media (max-width: 640px) {
-  .chart-area { height: 200px; }
+  .chart-area { min-height: 200px; }
+  .gov-section { min-height: 0; }
 }
 </style>
