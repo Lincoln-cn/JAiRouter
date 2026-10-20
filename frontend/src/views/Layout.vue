@@ -1,16 +1,19 @@
 <template>
   <el-container class="layout-container">
-    <el-aside width="200px" class="layout-aside">
+    <el-aside id="layout-sidebar" :width="asideWidth" class="layout-aside"
+      :class="{ 'is-collapsed': collapsed }">
       <div class="logo">
         <div class="logo-icon">
           <!-- 浅底圆角方块版徽标：透明圆形徽标在深色侧栏上轮廓会消失，故用带底色的组合图 -->
           <img class="logo-mark" src="@/assets/brand/logo-mark-64.png" alt="" width="32" height="32" />
         </div>
-        <h2 class="logo-text">JAiRouter</h2>
+        <!-- 折叠态只留图标：64px 宽度放不下文字，且 el-menu 折叠后也只显示图标 -->
+        <h2 v-if="!collapsed" class="logo-text">JAiRouter</h2>
       </div>
 
-      <el-menu :default-active="activeMenu" :default-openeds="defaultOpeneds" class="layout-menu"
-        background-color="transparent" text-color="var(--ja-sidebar-text)" active-text-color="var(--ja-sidebar-active)" :router="false"
+      <el-menu :default-active="activeMenu" :default-openeds="defaultOpeneds" :collapse="collapsed"
+        :collapse-transition="false" class="layout-menu" background-color="transparent"
+        text-color="var(--ja-sidebar-text)" active-text-color="var(--ja-sidebar-active)" :router="false"
         @select="handleMenuSelect">
         <el-sub-menu v-for="group in filteredMenuGroups" :key="group.index" :index="group.index">
           <template #title>
@@ -26,9 +29,19 @@
       </el-menu>
     </el-aside>
 
-    <el-container>
+    <el-container class="layout-body">
       <el-header class="layout-header">
         <div class="header-left">
+          <!-- 侧栏折叠开关：放在最前（面包屑之前），折叠后仍留在头部，始终可见可点。
+               窄屏下侧栏是强制折叠态，开关没有意义，直接隐藏。 -->
+          <el-button v-if="!isNarrow" class="sidebar-toggle" circle :aria-label="sidebarToggleLabel"
+            :title="sidebarToggleLabel" :aria-expanded="!collapsed" aria-controls="layout-sidebar"
+            @click="toggleSidebar">
+            <el-icon :size="18">
+              <Expand v-if="collapsed" />
+              <Fold v-else />
+            </el-icon>
+          </el-button>
           <el-breadcrumb separator="/">
             <el-breadcrumb-item v-for="(item, index) in breadcrumbs" :key="`${index}-${item.title}`">
               <router-link v-if="item.path && index < breadcrumbs.length - 1" :to="item.path">
@@ -83,6 +96,7 @@ import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { useTheme } from '@/composables/useTheme'
 import { usePermission } from '@/composables/usePermission'
+import { useViewport } from '@/composables/useViewport'
 import {
   menuGroups,
   findMenuEntry,
@@ -100,7 +114,9 @@ import {
   DataAnalysis,
   Tools,
   Moon,
-  Sunny
+  Sunny,
+  Expand,
+  Fold
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -112,6 +128,53 @@ const { filterMenuByPermission, getAccessibleTabs, resolveLandingPath } = usePer
 
 // v2.10.3: 显示真实用户名（JWT sub），缺省回退「管理员」
 const displayName = computed(() => userStore.userInfo?.username || t('layout.admin'))
+
+/* ========== 侧栏折叠（状态持久化 + 无侧栏滚动条） ==========
+ * 展开 200px / 折叠 64px（与 Element Plus 的 --el-menu-collapse-width 一致），
+ * 宽度由 :width 绑定，过渡写在 scoped 样式里（并尊重 prefers-reduced-motion）。
+ */
+const SIDEBAR_COLLAPSED_KEY = 'ja-sidebar-collapsed'
+const SIDEBAR_WIDTH_EXPANDED = '200px'
+const SIDEBAR_WIDTH_COLLAPSED = '64px'
+
+/**
+ * 读取持久化折叠状态。
+ *
+ * localStorage 在隐私模式 / 站点数据被禁用的环境下 getItem 会直接抛异常，
+ * 手工改过的键值也可能是任意字符串 ⇒ 一律容错为「展开」，不允许它阻断布局渲染。
+ */
+const readSidebarCollapsed = (): boolean => {
+  try {
+    return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1'
+  } catch {
+    // 存储不可用：本次会话按默认展开渲染，不抛出
+    return false
+  }
+}
+
+const userCollapsed = ref(readSidebarCollapsed())
+
+// 窄屏（≤767px）强制折叠：200px 侧栏放进 390px 视口后内容区只剩 190px，
+// 表格与筛选表单必然横向溢出。强制态只影响渲染，不写回 localStorage，
+// 也不允许用切换按钮改回展开 —— 视口变宽后自动恢复用户偏好。
+const { isNarrow } = useViewport()
+const collapsed = computed(() => isNarrow.value || userCollapsed.value)
+
+const asideWidth = computed(() => (collapsed.value ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED))
+
+// aria-label / title 体现「点击后会发生什么」：展开时提示收起，折叠时提示展开
+const sidebarToggleLabel = computed(() =>
+  collapsed.value ? t('common.expandSidebar') : t('common.collapseSidebar')
+)
+
+const toggleSidebar = (): void => {
+  userCollapsed.value = !userCollapsed.value
+  try {
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, userCollapsed.value ? '1' : '0')
+  } catch {
+    // 写入失败只影响「下次进入是否记住」，当前这次折叠/展开照常生效
+  }
+}
 
 // 菜单数据驱动 + 权限过滤（menu.ts 提供 7 组 28 项结构与权限码；数组权限为「或」）
 const filteredMenuGroups = computed(() => filterMenuByPermission(menuGroups))
@@ -280,11 +343,29 @@ const handleUserCommand = async (command: string) => {
   flex-direction: column;
   /* 覆盖 EP 默认 .el-aside { overflow: auto }，避免侧栏整体滚动 */
   overflow: hidden;
+  /* 宽度来自 :width 绑定的 200px / 64px，这里只负责过渡（不写死宽度，避免与内联样式打架） */
+  transition: width 0.2s ease;
   background-image: var(--ja-sidebar-bg);
   background-color: var(--ja-sidebar-solid-bg);
   box-shadow:
     inset 0 0 20px rgba(0, 0, 0, 0.3),
     2px 0 10px rgba(0, 0, 0, 0.2);
+}
+
+/* 折叠态：logo 只剩图标，去掉文字留下的底部间距，让徽标垂直居中 */
+.layout-aside.is-collapsed .logo-icon {
+  margin-bottom: 0;
+}
+
+/* 折叠后主列可收缩：flex 子项默认 min-width:auto，宽内容会把布局撑出横向滚动 */
+.layout-body {
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .layout-aside {
+    transition: none;
+  }
 }
 
 /* hover 保持静态，无 box-shadow 跳动 */
@@ -295,6 +376,10 @@ const handleUserCommand = async (command: string) => {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  /* 折叠态菜单宽度固定 64px，Windows 经典滚动条会占掉约 15px：
+     若放任 overflow-x 取 auto，竖向滚动条出现时会在侧栏内再冒一条横向滚动条。
+     这里显式裁掉横向溢出（折叠后只显示图标，右侧多出的留白无信息） */
+  overflow-x: hidden;
   background-color: transparent;
   border-right: none;
 }
@@ -356,6 +441,36 @@ const handleUserCommand = async (command: string) => {
   min-width: 0;
 }
 
+/* 右侧操作区：语言 / 主题 / 账户三项固定不换行，窄屏时由左侧 tab 让位 */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+/* 窄屏（≤767px，与侧栏强制折叠同一断点）：面包屑三行会在 60px 头部里溢出并压住右侧
+   语言/主题/账户区，这里只保留 tab 切换条；路由位置由 tab 与侧栏高亮表达。 */
+@media (max-width: 767px) {
+  .layout-header {
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .header-left :deep(.el-breadcrumb) {
+    display: none;
+  }
+
+  .header-left {
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  .nav-tabs {
+    flex: 1 1 auto;
+  }
+}
+
 .nav-tabs {
   display: flex;
   align-items: center;
@@ -391,6 +506,10 @@ const handleUserCommand = async (command: string) => {
   color: #fff;
 }
 
+.sidebar-toggle {
+  flex: 0 0 auto;
+}
+
 .theme-toggle {
   margin-right: 12px;
 }
@@ -411,6 +530,7 @@ const handleUserCommand = async (command: string) => {
 }
 
 .layout-main {
+  min-width: 0;
   background-color: var(--ja-main-bg);
   padding: 20px;
 }

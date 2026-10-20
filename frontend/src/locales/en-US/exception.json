@@ -72,7 +72,10 @@
       "selectCutoffTime": "Please select a cutoff time",
       "cleanupConfirmMessage": "Are you sure you want to clean up the selected exception events? This action cannot be undone!",
       "deleteSuccess": "Deleted {count} exception events",
-      "cleanupFailed": "Cleanup failed: {message}"
+      "cleanupFailed": "Cleanup failed: {message}",
+      "cards": {
+        "ariaLabel": "Exception event card list"
+      }
     },
     "detail": {
       "title": "Exception Event Details",

@@ -13,6 +13,12 @@
     "quotaAlertSummaryCount": "配额告警：{count} 项",
     "permissionsCount": "{count} 项",
     "moreActions": "更多",
+    "cards": {
+      "ariaLabel": "API 密钥卡片列表",
+      "emptyTitle": "暂无 API 密钥",
+      "emptyDescription": "当前没有可显示的 API 密钥。",
+      "toggleStatusAria": "切换 API 密钥启用状态"
+    },
     "quotaDrawerTitle": "配额管理",
     "quotaPresets": {
       "unlimited": "不限制",

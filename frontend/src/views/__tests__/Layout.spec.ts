@@ -45,12 +45,13 @@ describe('Layout 多 tab 切换条', () => {
     expect(tabs.map(tab => tab.text())).toEqual(['调用记录', '调用历史仪表盘'])
 
     await tabs[1].trigger('click')
-    // 懒加载路由组件在 vitest 里要跨若干个宏任务才落定，用 waitFor 等真实导航完成
+    // 懒加载路由组件在 vitest 里要跨若干个宏任务才落定；整库并行跑时冷启动可能 >5s，
+    // 这里给足余量（超时会让下一条用例继承未完成的导航，形成假失败）
     await vi.waitFor(() => {
       expect(router.currentRoute.value.path).toBe('/call-history/dashboard')
-    }, { timeout: 5000 })
+    }, { timeout: 15000 })
     wrapper.unmount()
-  })
+  }, 20000)
 
   it('tab 级权限缺失时不渲染该 tab，只显示有权限的那些', async () => {
     const wrapper = await mountAt('/circuit-breakers/monitoring', [
@@ -81,5 +82,89 @@ describe('Layout 多 tab 切换条', () => {
     expect(wrapper.findAll('.el-breadcrumb__inner a')).toHaveLength(2)
     expect(wrapper.findAll('.el-breadcrumb__item').at(-1)?.find('a').exists()).toBe(false)
     wrapper.unmount()
+  })
+})
+
+/**
+ * P1-3：侧栏折叠（200px ⇄ 64px）与 localStorage 持久化。
+ *
+ * 宽度断言看 el-aside 的 `--el-aside-width` 内联变量（Element Plus 用 CSS 变量承载 width），
+ * 折叠态同时断言 el-menu 的 `el-menu--collapse` 类与 logo 文字的 v-if，
+ * 持久化键固定为 `ja-sidebar-collapsed`（'1' / '0'）。
+ */
+describe('Layout 侧栏折叠', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    i18n.global.locale.value = 'zh-CN'
+    vi.restoreAllMocks()
+    localStorage.removeItem('ja-sidebar-collapsed')
+  })
+
+  it('默认展开，点击折叠到 64px 并写 localStorage，再点恢复 200px', async () => {
+    const wrapper = await mountAt('/monitoring/quota', ['monitoring:quota:read'])
+
+    const aside = wrapper.find('#layout-sidebar')
+    const toggle = wrapper.find('.sidebar-toggle')
+    expect(aside.attributes('style')).toContain('200px')
+    expect(wrapper.find('.logo-text').exists()).toBe(true)
+    expect(wrapper.find('.layout-menu').classes()).not.toContain('el-menu--collapse')
+    expect(toggle.attributes('aria-label')).toBe('收起侧栏')
+    expect(toggle.attributes('aria-expanded')).toBe('true')
+
+    await toggle.trigger('click')
+    expect(aside.attributes('style')).toContain('64px')
+    expect(wrapper.find('.logo-text').exists()).toBe(false)
+    expect(wrapper.find('.layout-menu').classes()).toContain('el-menu--collapse')
+    expect(toggle.attributes('aria-label')).toBe('展开侧栏')
+    expect(toggle.attributes('aria-expanded')).toBe('false')
+    expect(localStorage.getItem('ja-sidebar-collapsed')).toBe('1')
+
+    await toggle.trigger('click')
+    expect(aside.attributes('style')).toContain('200px')
+    expect(wrapper.find('.logo-text').exists()).toBe(true)
+    expect(localStorage.getItem('ja-sidebar-collapsed')).toBe('0')
+    wrapper.unmount()
+  })
+
+  it('初始化读取持久化状态：已折叠时首屏即 64px（不闪出 logo 文字）', async () => {
+    localStorage.setItem('ja-sidebar-collapsed', '1')
+    const wrapper = await mountAt('/monitoring/quota', ['monitoring:quota:read'])
+
+    expect(wrapper.find('#layout-sidebar').attributes('style')).toContain('64px')
+    expect(wrapper.find('.logo-text').exists()).toBe(false)
+    expect(wrapper.find('.layout-menu').classes()).toContain('el-menu--collapse')
+    // 折叠态下按钮仍在头部且变成「展开」语义，保证可点回去
+    expect(wrapper.find('.sidebar-toggle').attributes('aria-label')).toBe('展开侧栏')
+    wrapper.unmount()
+  })
+
+  it('非法存储值 / 读取抛异常时回退展开，写入抛异常时折叠仍生效', async () => {
+    localStorage.setItem('ja-sidebar-collapsed', 'yes-please')
+    const invalid = await mountAt('/monitoring/quota', ['monitoring:quota:read'])
+    expect(invalid.find('#layout-sidebar').attributes('style')).toContain('200px')
+    expect(invalid.find('.logo-text').exists()).toBe(true)
+    invalid.unmount()
+
+    const originalGetItem = localStorage.getItem.bind(localStorage)
+    vi.spyOn(localStorage, 'getItem').mockImplementation((key: string) => {
+      if (key === 'ja-sidebar-collapsed') throw new Error('storage disabled')
+      return originalGetItem(key)
+    })
+    const blockedRead = await mountAt('/monitoring/quota', ['monitoring:quota:read'])
+    expect(blockedRead.find('#layout-sidebar').attributes('style')).toContain('200px')
+    expect(blockedRead.find('.logo-text').exists()).toBe(true)
+    blockedRead.unmount()
+    vi.restoreAllMocks()
+
+    vi.spyOn(localStorage, 'setItem').mockImplementation((key: string, value: string) => {
+      if (key === 'ja-sidebar-collapsed') throw new Error('quota exceeded')
+      // 其余键（主题等）保持可写
+      Object.getPrototypeOf(localStorage).setItem.call(localStorage, key, value)
+    })
+    const blockedWrite = await mountAt('/monitoring/quota', ['monitoring:quota:read'])
+    await blockedWrite.find('.sidebar-toggle').trigger('click')
+    expect(blockedWrite.find('#layout-sidebar').attributes('style')).toContain('64px')
+    expect(blockedWrite.find('.sidebar-toggle').attributes('aria-label')).toBe('展开侧栏')
+    blockedWrite.unmount()
   })
 })

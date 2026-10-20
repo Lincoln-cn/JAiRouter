@@ -110,27 +110,50 @@
     </div>
 
     <el-table
+      v-if="!isNarrow"
+      :key="isCompact ? 'compact' : 'wide'"
       v-loading="loading"
       :data="tableData"
       border
       stripe
       :max-height="600"
+      :class="{ 'compact-table': isCompact }"
       @sort-change="handleSortChange"
     >
-      <el-table-column :label="t('callHistory.common.time')" prop="createdAt" width="180" sortable="custom">
+      <el-table-column
+        :label="t('callHistory.common.time')"
+        prop="createdAt"
+        :width="isCompact ? 120 : 180"
+        sortable="custom"
+      >
         <template #default="scope">
           <TimeText :value="scope.row.createdAt" />
         </template>
       </el-table-column>
-      <el-table-column label="Trace ID" prop="traceId" width="140" show-overflow-tooltip>
+      <el-table-column
+        label="Trace ID"
+        prop="traceId"
+        :width="isCompact ? 85 : 140"
+        show-overflow-tooltip
+      >
         <template #default="scope">
           <el-link type="primary" @click="handleTraceIdClick(scope.row.traceId)">
             {{ scope.row.traceId?.substring(0, 8) }}...
           </el-link>
         </template>
       </el-table-column>
-      <el-table-column :label="t('callHistory.common.modelName')" prop="modelName" min-width="160" show-overflow-tooltip />
-      <el-table-column :label="t('callHistory.common.serviceType')" prop="serviceType" width="110">
+      <el-table-column
+        :label="t('callHistory.common.modelName')"
+        prop="modelName"
+        :min-width="isCompact ? 85 : 160"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        v-if="!isCompact"
+        :label="t('callHistory.common.serviceType')"
+        prop="serviceType"
+        width="110"
+      >
         <template #default="scope">
           <el-link
             v-if="scope.row.serviceType"
@@ -143,34 +166,54 @@
           <el-tag v-else size="small">{{ getServiceTypeLabel(scope.row.serviceType) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column :label="t('callHistory.common.provider')" prop="provider" width="100" show-overflow-tooltip />
-      <el-table-column :label="t('callHistory.common.httpStatus')" prop="httpStatusCode" width="100" align="center" sortable="custom">
+      <el-table-column v-if="!isCompact" :label="t('callHistory.common.provider')" prop="provider" width="100" show-overflow-tooltip />
+      <el-table-column
+        :label="t('callHistory.common.httpStatus')"
+        prop="httpStatusCode"
+        :width="isCompact ? 65 : 100"
+        align="center"
+        sortable="custom"
+      >
         <template #default="scope">
           <el-tag :type="getStatusType(scope.row.httpStatusCode)" size="small">
             {{ scope.row.httpStatusCode || '-' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column :label="t('callHistory.common.token')" prop="totalTokens" width="100" align="right" sortable="custom">
+      <el-table-column
+        v-if="!isCompact"
+        :label="t('callHistory.common.token')"
+        prop="totalTokens"
+        width="100"
+        align="right"
+        sortable="custom"
+      >
         <template #default="scope">
           {{ formatNumber(scope.row.totalTokens) }}
         </template>
       </el-table-column>
-      <el-table-column :label="t('callHistory.common.responseTimeMs')" prop="responseTimeMs" width="120" align="right" sortable="custom">
+      <el-table-column
+        v-if="!isCompact"
+        :label="t('callHistory.common.responseTimeMs')"
+        prop="responseTimeMs"
+        width="120"
+        align="right"
+        sortable="custom"
+      >
         <template #default="scope">
           <el-tag :type="getResponseTimeType(scope.row.responseTimeMs)" size="small">
             {{ scope.row.responseTimeMs?.toFixed(0) || '-' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column :label="t('callHistory.common.status')" width="80" align="center">
+      <el-table-column :label="t('callHistory.common.status')" :width="isCompact ? 60 : 80" align="center">
         <template #default="scope">
           <el-tag :type="scope.row.isSuccess ? 'success' : 'danger'" size="small">
             {{ scope.row.isSuccess ? t('callHistory.common.success') : t('callHistory.common.failed') }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column :label="t('callHistory.common.action')" width="80" fixed="right" align="center">
+      <el-table-column :label="t('callHistory.common.action')" :width="isCompact ? 60 : 80" fixed="right" align="center">
         <template #default="scope">
           <el-button type="primary" link size="small" @click="handleDetail(scope.row)">
             {{ t('callHistory.common.details') }}
@@ -178,6 +221,59 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <TableCards
+      v-else
+      :rows="tableData"
+      row-key="requestId"
+      :aria-label="t('callHistory.cards.ariaLabel')"
+      :empty-title="t('callHistory.list.emptyTitle')"
+      :empty-description="t('callHistory.list.emptyDescription')"
+    >
+      <template #default="{ row }">
+        <div class="record-card">
+          <div class="record-card__head">
+            <el-link type="primary" class="record-card__title" @click="handleTraceIdClick(row.traceId)">
+              {{ row.traceId?.substring(0, 8) }}...
+            </el-link>
+            <el-tag :type="row.isSuccess ? 'success' : 'danger'" size="small">
+              {{ row.isSuccess ? t('callHistory.common.success') : t('callHistory.common.failed') }}
+            </el-tag>
+          </div>
+          <div class="record-card__meta">
+            <div class="record-card__field">
+              <span class="record-card__label">{{ t('callHistory.common.time') }}</span>
+              <span class="record-card__value"><TimeText :value="row.createdAt" /></span>
+            </div>
+            <div class="record-card__field">
+              <span class="record-card__label">{{ t('callHistory.common.modelName') }}</span>
+              <span class="record-card__value">{{ row.modelName || '-' }}</span>
+            </div>
+            <div class="record-card__field">
+              <span class="record-card__label">{{ t('callHistory.common.serviceType') }}</span>
+              <span class="record-card__value">{{ getServiceTypeLabel(row.serviceType) }}</span>
+            </div>
+            <div class="record-card__field">
+              <span class="record-card__label">{{ t('callHistory.common.provider') }}</span>
+              <span class="record-card__value">{{ row.provider || '-' }}</span>
+            </div>
+            <div class="record-card__field">
+              <span class="record-card__label">{{ t('callHistory.common.httpStatus') }}</span>
+              <span class="record-card__value">
+                <el-tag :type="getStatusType(row.httpStatusCode)" size="small">
+                  {{ row.httpStatusCode || '-' }}
+                </el-tag>
+              </span>
+            </div>
+          </div>
+          <div class="record-card__actions">
+            <el-button type="primary" link size="small" @click="handleDetail(row)">
+              {{ t('callHistory.common.details') }}
+            </el-button>
+          </div>
+        </div>
+      </template>
+    </TableCards>
 
     <template #footer>
       <el-pagination
@@ -325,9 +421,12 @@ import type { ApiCallHistoryRecord, CallHistoryQuery } from '@/types/callHistory
 import ListPageLayout from '@/components/ListPageLayout.vue'
 import FilterBar from '@/components/FilterBar.vue'
 import TimeText from '@/components/TimeText.vue'
+import TableCards from '@/components/TableCards.vue'
+import { useViewport } from '@/composables/useViewport'
 
 const router = useRouter()
 const { t } = useI18n()
+const { isNarrow, isCompact } = useViewport()
 
 // 查询表单
 const queryForm = reactive<CallHistoryQuery>({
@@ -606,5 +705,71 @@ onMounted(() => {
   max-height: 200px;
   overflow-y: auto;
   margin: 0;
+}
+
+/* compact：收窄单元格内边距与字号，保证 768px 下不出现横向滚动 */
+.compact-table :deep(.cell) {
+  padding: 0 4px;
+  font-size: 12px;
+}
+
+/* 窄屏卡片（TableCards 内由本页插槽渲染） */
+.record-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ja-space-2, 8px);
+  min-width: 0;
+}
+
+.record-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ja-space-2, 8px);
+}
+
+.record-card__title {
+  font-size: 15px;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.record-card__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ja-space-1, 4px) var(--ja-space-3, 12px);
+}
+
+.record-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.record-card__label {
+  font-size: 12px;
+  color: var(--ja-ink-3);
+}
+
+.record-card__value {
+  font-size: 13px;
+  color: var(--ja-ink);
+  overflow-wrap: anywhere;
+}
+
+.record-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ja-space-1, 4px);
+  padding-top: var(--ja-space-2, 8px);
+  border-top: 1px solid var(--ja-border-light);
+}
+
+@media (max-width: 420px) {
+  .record-card__meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

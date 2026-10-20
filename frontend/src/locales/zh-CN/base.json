@@ -24,7 +24,9 @@
     "disabled": "已禁用",
     "justNow": "刚刚",
     "chartEmpty": "暂无数据",
-    "chartEmptyHint": "调整筛选条件或时间范围后重试"
+    "chartEmptyHint": "调整筛选条件或时间范围后重试",
+    "collapseSidebar": "收起侧栏",
+    "expandSidebar": "展开侧栏"
   },
   "layout": {
     "home": "首页",

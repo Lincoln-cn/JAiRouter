@@ -109,6 +109,27 @@ const emit = defineEmits<{
   min-width: 0;
 }
 
+/* 筛选区在窄屏必须能收缩：页面的 el-form 是 inline 布局，日期区间等控件带固定宽度，
+   容器不设 min-width:0 时会把内容区撑出横向滚动（P1-3 实测 390px 下溢出 216px）。 */
+.list-page-layout__filters {
+  min-width: 0;
+}
+
+.list-page-layout__filters :deep(.el-form-item) {
+  max-width: 100%;
+}
+
+.list-page-layout__filters :deep(.el-form-item__content) {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.list-page-layout__filters :deep(.el-date-editor),
+.list-page-layout__filters :deep(.el-input),
+.list-page-layout__filters :deep(.el-select) {
+  max-width: 100%;
+}
+
 .list-page-layout__footer {
   display: flex;
   justify-content: flex-end;
