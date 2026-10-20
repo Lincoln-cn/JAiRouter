@@ -205,22 +205,42 @@ public class LoadBalancerManagementController {
                 response.ewmaAlpha = globalConfig != null ? globalConfig.getEwmaAlpha() : 0.2;
             } else {
                 // 使用全局配置
-                ModelRouterProperties.LoadBalanceConfig globalConfig = properties.getLoadBalance();
-                response.type = globalConfig != null ? globalConfig.getType() : "random";
-                response.hashAlgorithm = globalConfig != null ? globalConfig.getHashAlgorithm() : "md5";
-                response.virtualNodes = globalConfig != null && globalConfig.getVirtualNodes() != null
-                        ? globalConfig.getVirtualNodes() : 150;
-                response.ewmaAlpha = globalConfig != null ? globalConfig.getEwmaAlpha() : 0.2;
-                response.isGlobal = true;
+                response = globalDefaultConfig(serviceType);
             }
 
             return ResponseEntity.ok(RouterResponse.success(response));
+        } catch (ServiceConfigManager.NotFoundException e) {
+            // issue #575：该服务类型没有服务级 LB 配置属正常情形（例如 imggen / imgedit 走全局默认），
+            // 不能被下面的通用 catch 吞成 500，也不该用 404 让调用方（前端策略表）把整行丢掉：
+            // 本端点的语义是「该服务类型的生效配置」，没有服务级配置时生效的就是全局默认（isGlobal=true）。
+            log.debug("服务级负载均衡配置不存在，按全局默认处理: serviceType={}, message={}",
+                    serviceType, e.getMessage());
+            return ResponseEntity.ok(RouterResponse.success(globalDefaultConfig(serviceType)));
         } catch (Exception e) {
             log.error("获取服务负载均衡配置失败: {}", e.getMessage());
             return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.INTERNAL_ERROR.code()))
                     .body(RouterResponse.error("获取服务负载均衡配置失败: " + e.getMessage(),
                             ErrorCode.INTERNAL_ERROR.code()));
         }
+    }
+
+    /**
+     * 按全局负载均衡配置构造「服务级未配置」时的生效配置（{@code isGlobal=true}）。
+     *
+     * @param serviceType 服务类型
+     * @return 回落到全局默认的配置响应
+     */
+    private LoadBalanceConfigResponse globalDefaultConfig(final String serviceType) {
+        LoadBalanceConfigResponse response = new LoadBalanceConfigResponse();
+        response.serviceType = serviceType;
+        ModelRouterProperties.LoadBalanceConfig globalConfig = properties.getLoadBalance();
+        response.type = globalConfig != null ? globalConfig.getType() : "random";
+        response.hashAlgorithm = globalConfig != null ? globalConfig.getHashAlgorithm() : "md5";
+        response.virtualNodes = globalConfig != null && globalConfig.getVirtualNodes() != null
+                ? globalConfig.getVirtualNodes() : 150;
+        response.ewmaAlpha = globalConfig != null ? globalConfig.getEwmaAlpha() : 0.2;
+        response.isGlobal = true;
+        return response;
     }
 
     /**

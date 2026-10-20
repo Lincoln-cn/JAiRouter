@@ -411,4 +411,77 @@ class LoadBalancerManagementControllerTest {
             assertEquals(ErrorCode.INTERNAL_ERROR.code(), result.getBody().getErrorCode());
         }
     }
+
+    // ==================== issue #575：服务级配置缺失要回落到全局默认，不能被兜底吞成 500 ====================
+
+    @Nested
+    @DisplayName("issue #575 - 服务级配置缺失时回落到全局默认")
+    class J575ServiceConfigNotFoundTests {
+
+        @Test
+        @DisplayName("LB-575-001: 服务级 LB 配置不存在 ⇒ 200 + 全局默认 + isGlobal=true")
+        void testGetServiceConfig_notFound() {
+            // Given: imggen 这类服务没有服务级 LB 配置，ServiceConfigManager 抛 NotFoundException
+            when(serviceConfigManager.getServiceConfiguration("imggen"))
+                    .thenThrow(new ServiceConfigManager.NotFoundException("服务配置不存在：imggen"));
+
+            // When
+            ResponseEntity<RouterResponse<LoadBalancerManagementController.LoadBalanceConfigResponse>> result =
+                    controller.getServiceConfig("imggen");
+
+            // Then: 缺失配置是正常情形（生效的就是全局默认），既不能报 500，
+            // 也不该用 404 让前端策略表把整行丢掉（issue #575）
+            assertEquals(HttpStatus.OK, result.getStatusCode());
+            assertNotNull(result.getBody());
+            assertTrue(result.getBody().isSuccess());
+            assertEquals("imggen", result.getBody().getData().serviceType);
+            assertEquals("random", result.getBody().getData().type);
+            assertEquals("md5", result.getBody().getData().hashAlgorithm);
+            assertTrue(result.getBody().getData().isGlobal);
+        }
+
+        @Test
+        @DisplayName("LB-575-002: 有服务级配置 ⇒ 200 + isGlobal=false，采用服务级策略")
+        void testGetServiceConfig_serviceLevelConfig() {
+            // Given
+            LoadBalanceConfiguration lbConfig = mock(LoadBalanceConfiguration.class);
+            when(lbConfig.type()).thenReturn("round-robin");
+            when(lbConfig.hashAlgorithm()).thenReturn("sha256");
+
+            ServiceConfiguration serviceConfig = mock(ServiceConfiguration.class);
+            when(serviceConfig.loadBalance()).thenReturn(lbConfig);
+            when(serviceConfigManager.getServiceConfiguration("chat")).thenReturn(serviceConfig);
+
+            // When
+            ResponseEntity<RouterResponse<LoadBalancerManagementController.LoadBalanceConfigResponse>> result =
+                    controller.getServiceConfig("chat");
+
+            // Then
+            assertEquals(HttpStatus.OK, result.getStatusCode());
+            assertTrue(result.getBody().isSuccess());
+            assertEquals("chat", result.getBody().getData().serviceType);
+            assertEquals("round-robin", result.getBody().getData().type);
+            assertEquals("sha256", result.getBody().getData().hashAlgorithm);
+            assertFalse(result.getBody().getData().isGlobal);
+        }
+
+        @Test
+        @DisplayName("LB-575-003: serviceConfig 为 null ⇒ 200 + 全局默认，isGlobal=true（既有行为）")
+        void testGetServiceConfig_fallbackToGlobalConfig() {
+            // Given: 不抛 NotFoundException，只是返回 null（既有兜底分支）
+            when(serviceConfigManager.getServiceConfiguration("imggen")).thenReturn(null);
+
+            // When
+            ResponseEntity<RouterResponse<LoadBalancerManagementController.LoadBalanceConfigResponse>> result =
+                    controller.getServiceConfig("imggen");
+
+            // Then
+            assertEquals(HttpStatus.OK, result.getStatusCode());
+            assertTrue(result.getBody().isSuccess());
+            assertEquals("imggen", result.getBody().getData().serviceType);
+            assertEquals("random", result.getBody().getData().type);
+            assertEquals("md5", result.getBody().getData().hashAlgorithm);
+            assertTrue(result.getBody().getData().isGlobal);
+        }
+    }
 }

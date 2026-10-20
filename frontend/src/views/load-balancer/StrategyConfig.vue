@@ -179,6 +179,8 @@ interface LoadBalanceConfig {
   type: string
   hashAlgorithm: string
   virtualNodes: number
+  /** 后端全局配置里可带该字段；「按全局默认」的兜底行沿用（issue #575） */
+  ewmaAlpha?: number
 }
 
 const apiBaseUrl = '/loadbalancer'
@@ -213,6 +215,8 @@ const globalConfig = ref<LoadBalanceConfig>({
   hashAlgorithm: 'md5',
   virtualNodes: 150
 })
+/** 全局配置是否已从服务端加载过（初值非空，不能用值判空代替，见 loadServiceConfigs） */
+const globalConfigLoaded = ref(false)
 const serviceConfigs = ref<ServiceConfig[]>([])
 const loadingConfigs = ref(false)
 const configDialogVisible = ref(false)
@@ -226,6 +230,19 @@ const serviceConfig = ref<LoadBalanceConfig>({
 
 const isHashStrategy = (strategy: string) => {
   return strategy === 'ip-hash' || strategy === 'consistent-hash'
+}
+
+/**
+ * 从 catch 到的未知异常里取 HTTP 状态码。
+ *
+ * `frontend/src/utils/request.ts` 的响应拦截器对非 2xx 一律 `Promise.reject(error)`，
+ * error 是 axios 的 `AxiosError` ⇒ 真实状态码在 `error.response.status`
+ * （网络层失败没有 `response`，此处返回 undefined）。
+ * 收窄成具名形状而不是 `error: any`，与 `src/utils/error.ts` 的做法一致。
+ */
+const getResponseStatus = (error: unknown): number | undefined => {
+  if (typeof error !== 'object' || error === null) return undefined
+  return (error as { response?: { status?: number } }).response?.status
 }
 
 const loadStrategies = async () => {
@@ -262,10 +279,18 @@ const loadGlobalConfig = async () => {
     }
   } catch (error) {
     console.error('Failed to load global config:', error)
+  } finally {
+    // 无论成功失败都置位：404 兜底行不该因为一次全局配置失败而反复重拉
+    globalConfigLoaded.value = true
   }
 }
 
 const loadServiceConfigs = async () => {
+  // 404 兜底行要沿用服务端全局配置。`globalConfig` 的初值是本地默认（random/md5/150）且非空，
+  // 所以不能用 `!globalConfig.value` 判断「是否已加载」，否则兜底行会显示本地默认而不是后端真实值。
+  if (!globalConfigLoaded.value) {
+    await loadGlobalConfig()
+  }
   loadingConfigs.value = true
   try {
     const statusResponse = await request.get(`${apiBaseUrl}/status`)
@@ -278,6 +303,18 @@ const loadServiceConfigs = async () => {
             return configResponse.data.data
           }
         } catch (error) {
+          // 404 = 该服务类型没有专属 LB 配置，后端语义是「按全局默认」。
+          // 不能整行丢掉（issue #575），否则图像生成/图像编辑这类服务在表里根本不出现。
+          if (getResponseStatus(error) === 404) {
+            return {
+              serviceType: service.serviceType,
+              type: globalConfig.value?.type ?? 'random',
+              hashAlgorithm: globalConfig.value?.hashAlgorithm ?? 'md5',
+              virtualNodes: globalConfig.value?.virtualNodes ?? 150,
+              ewmaAlpha: globalConfig.value?.ewmaAlpha ?? 0.2,
+              isGlobal: true
+            } as ServiceConfig
+          }
           console.error(`Failed to load config for ${service.serviceType}:`, error)
         }
         return null
