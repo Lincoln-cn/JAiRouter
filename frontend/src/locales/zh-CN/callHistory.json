@@ -96,7 +96,10 @@
       "saveSuccess": "记录级别已更新",
       "loadFailed": "加载调用历史失败：{message}",
       "emptyTitle": "没有符合条件的记录",
-      "emptyDescription": "当前筛选条件下没有调用记录，可调整时间范围或筛选条件后重试。"
+      "emptyDescription": "当前筛选条件下没有调用记录，可调整时间范围或筛选条件后重试。",
+      "cards": {
+        "ariaLabel": "调用记录卡片列表"
+      }
     },
     "slowCalls": {
       "pageTitle": "慢调用分析",

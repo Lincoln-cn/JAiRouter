@@ -2,9 +2,18 @@
  * Element Plus CSS 变量覆盖
  * 覆盖 EP 的 CSS 变量使其与 tokens.css 保持一致
  * 同时定义 html.dark 暗色模式覆盖
+ *
+ * P1-3 去重：浅/暗两块曾重复声明了同一批 `--el-*`，值都是 `var(--ja-*)`，
+ * 而 `--ja-*` 自身已在 `html.dark` 内切换 ⇒ 这些声明合并为下面**一个**选择器组
+ * `:root, html.dark`（同一份声明同时命中明/暗）。
+ * 必须带上 `html.dark` 而不是只写 `:root`：Element Plus 自带的
+ * theme-chalk/dark/css-vars.css 用 `html.dark` 声明同名 `--el-*`（特异性 0,1,1），
+ * 只写 `:root` 会被它压过去；选择器组与之同特异性、且本文件加载更晚 ⇒ 覆盖成立。
+ * 下方 html.dark 块只保留「明暗取值真的不同」的 EP 中性色，避免同一变量声明两次。
  */
 
-:root {
+:root,
+html.dark {
   /* ========== 主色 ========== */
   --el-color-primary: var(--ja-primary);
   --el-color-primary-light-3: var(--ja-primary-light-3);
@@ -64,41 +73,17 @@
 }
 
 /* ========== 暗色模式 Element Plus 覆盖 ========== */
+/* 只保留与上方取值不同的变量（同值声明已合并到 `:root, html.dark`，随 --ja-* 自动切换） */
 html.dark {
-  --el-color-primary: var(--ja-primary);
-  --el-color-primary-dark-2: var(--ja-primary-dark-2);
-
-  --el-bg-color: var(--ja-bg-page);
-  --el-bg-color-overlay: var(--ja-bg-overlay);
-  --el-bg-color-mask: var(--ja-bg-mask);
-
-  --el-fill-color-blank: var(--ja-bg-card);
   --el-fill-color: #303030;
   --el-fill-color-light: #262727;
   --el-fill-color-lighter: #1d1d1d;
   --el-fill-color-extra-light: #191919;
   --el-fill-color-dark: #393939;
 
-  --el-text-color-primary: var(--ja-text-primary);
-  --el-text-color-regular: var(--ja-text-regular);
-  --el-text-color-secondary: var(--ja-text-secondary);
-  --el-text-color-placeholder: var(--ja-text-placeholder);
   --el-text-color-disabled: #73767a;
 
-  --el-border-color: var(--ja-border);
-  --el-border-color-light: var(--ja-border-light);
-  --el-border-color-lighter: var(--ja-border-lighter);
-  --el-border-color-dark: var(--ja-border-dark);
   --el-border-color-extra-light: #363637;
-
-  --el-box-shadow: var(--ja-shadow);
-  --el-box-shadow-light: var(--ja-shadow-sm);
-  --el-box-shadow-dark: var(--ja-shadow-lg);
-
-  --el-color-success: var(--ja-success);
-  --el-color-warning: var(--ja-warning);
-  --el-color-danger: var(--ja-danger);
-  --el-color-info: var(--ja-info);
 }
 
 /* v2.10.3 暗色对比收口：卡片头 h2 标题跟随主题文字色（无继承色的裸 h2 不再显 #333 近黑） */

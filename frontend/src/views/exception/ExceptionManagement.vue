@@ -118,27 +118,29 @@
       </el-row>
     </template>
 
-    <!-- 表格 -->
-    <div class="table-wrapper">
+    <!-- 表格（窄屏不渲染，改用下方卡片列表） -->
+    <div v-if="!isNarrow" class="table-wrapper">
       <el-table
+        :key="isCompact ? 'compact' : 'wide'"
         v-loading="loading"
         :data="exceptionList"
         border
         stripe
         :max-height="500"
+        :class="{ 'compact-table': isCompact }"
         @row-click="handleRowClick"
       >
-        <el-table-column :label="t('exception.list.eventId')" prop="eventId" width="200" show-overflow-tooltip>
+        <el-table-column :label="t('exception.list.eventId')" prop="eventId" :width="isCompact ? 75 : 200" show-overflow-tooltip>
           <template #default="scope">
             <el-tag effect="plain" type="info">{{ scope.row.eventId }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column :label="t('exception.list.exceptionType')" prop="exceptionType" min-width="180" show-overflow-tooltip>
+        <el-table-column :label="t('exception.list.exceptionType')" prop="exceptionType" :min-width="isCompact ? 75 : 180" show-overflow-tooltip>
           <template #default="scope">
             <span class="exception-type">{{ scope.row.exceptionType }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('exception.list.serviceType')" prop="serviceType" width="100">
+        <el-table-column :label="t('exception.list.serviceType')" prop="serviceType" :width="isCompact ? 55 : 100">
           <template #default="scope">
             <el-link
               v-if="scope.row.serviceType"
@@ -151,51 +153,51 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('exception.list.modelName')" prop="modelName" min-width="140" show-overflow-tooltip>
+        <el-table-column :label="t('exception.list.modelName')" prop="modelName" :min-width="isCompact ? 55 : 140" show-overflow-tooltip>
           <template #default="scope">
             <span>{{ scope.row.modelName || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('exception.list.provider')" prop="provider" width="100" show-overflow-tooltip>
+        <el-table-column v-if="!isCompact" :label="t('exception.list.provider')" prop="provider" width="100" show-overflow-tooltip>
           <template #default="scope">
             <span>{{ scope.row.provider || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('exception.list.responseTime')" prop="responseTimeMs" width="120" sortable>
+        <el-table-column v-if="!isCompact" :label="t('exception.list.responseTime')" prop="responseTimeMs" width="120" sortable>
           <template #default="scope">
             <span>{{ scope.row.responseTimeMs != null ? scope.row.responseTimeMs : '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('exception.list.errorCode')" prop="errorCode" width="100">
+        <el-table-column :label="t('exception.list.errorCode')" prop="errorCode" :width="isCompact ? 45 : 100">
           <template #default="scope">
             <el-tag :type="getErrorTagType(scope.row.errorCode)" size="small">
               {{ scope.row.errorCode }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column :label="t('exception.list.errorCategory')" prop="errorCategory" width="120">
+        <el-table-column v-if="!isCompact" :label="t('exception.list.errorCategory')" prop="errorCategory" width="120">
           <template #default="scope">
             <el-tag :type="getCategoryTagType(scope.row.errorCategory)" size="small">
               {{ formatCategory(scope.row.errorCategory) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column :label="t('exception.list.exceptionMessage')" prop="sanitizedMessage" min-width="200" show-overflow-tooltip>
+        <el-table-column :label="t('exception.list.exceptionMessage')" prop="sanitizedMessage" :min-width="isCompact ? 70 : 200" show-overflow-tooltip>
           <template #default="scope">
             <span>{{ scope.row.sanitizedMessage || scope.row.exceptionMessage || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('exception.list.clientIp')" prop="clientIp" width="140">
+        <el-table-column v-if="!isCompact" :label="t('exception.list.clientIp')" prop="clientIp" width="140">
           <template #default="scope">
             <span>{{ scope.row.clientIp || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('exception.list.occurredAt')" prop="occurredAt" width="180">
+        <el-table-column :label="t('exception.list.occurredAt')" prop="occurredAt" :width="isCompact ? 75 : 180">
           <template #default="scope">
             <TimeText :value="scope.row.occurredAt" />
           </template>
         </el-table-column>
-        <el-table-column :label="t('exception.list.actions')" width="100" fixed="right">
+        <el-table-column :label="t('exception.list.actions')" :width="isCompact ? 45 : 100" fixed="right">
           <template #default="scope">
             <el-button link type="primary" size="small" @click.stop="handleViewDetail(scope.row)">
               {{ t('exception.list.detail') }}
@@ -204,6 +206,63 @@
         </el-table-column>
       </el-table>
     </div>
+
+    <!-- 窄屏卡片列表 -->
+    <TableCards
+      v-else
+      class="table-wrapper"
+      :rows="exceptionList"
+      row-key="eventId"
+      :aria-label="t('exception.list.cards.ariaLabel')"
+      :empty-title="t('exception.list.emptyTitle')"
+      :empty-description="t('exception.list.emptyDescription')"
+    >
+      <template #default="{ row }">
+        <div class="exception-card">
+          <div class="exception-card__head">
+            <span class="exception-card__title">{{ row.eventId }}</span>
+            <el-tag :type="getErrorTagType(row.errorCode)" size="small">
+              {{ row.errorCode || '-' }}
+            </el-tag>
+          </div>
+          <div class="exception-card__meta">
+            <div class="exception-card__field">
+              <span class="exception-card__label">{{ t('exception.list.occurredAt') }}</span>
+              <span class="exception-card__value"><TimeText :value="row.occurredAt" /></span>
+            </div>
+            <div class="exception-card__field">
+              <span class="exception-card__label">{{ t('exception.list.exceptionType') }}</span>
+              <span class="exception-card__value">{{ row.exceptionType || '-' }}</span>
+            </div>
+            <div class="exception-card__field">
+              <span class="exception-card__label">{{ t('exception.list.errorCategory') }}</span>
+              <span class="exception-card__value">
+                <el-tag :type="getCategoryTagType(row.errorCategory)" size="small">
+                  {{ formatCategory(row.errorCategory) }}
+                </el-tag>
+              </span>
+            </div>
+            <div class="exception-card__field">
+              <span class="exception-card__label">{{ t('exception.list.serviceType') }}</span>
+              <span class="exception-card__value">{{ row.serviceType || '-' }}</span>
+            </div>
+            <div class="exception-card__field">
+              <span class="exception-card__label">{{ t('exception.list.clientIp') }}</span>
+              <span class="exception-card__value">{{ row.clientIp || '-' }}</span>
+            </div>
+            <div class="exception-card__field exception-card__field--full">
+              <span class="exception-card__label">{{ t('exception.list.exceptionMessage') }}</span>
+              <span class="exception-card__value">{{ row.sanitizedMessage || row.exceptionMessage || '-' }}</span>
+            </div>
+          </div>
+          <div class="exception-card__actions">
+            <el-button link type="primary" size="small" @click="handleViewDetail(row)">
+              {{ t('exception.list.detail') }}
+            </el-button>
+          </div>
+        </div>
+      </template>
+    </TableCards>
 
     <!-- 分页（空态由骨架承担，0 条时不渲染无意义的分页条） -->
     <template #footer>
@@ -362,10 +421,13 @@ import StatCard from '@/components/StatCard.vue'
 import ListPageLayout from '@/components/ListPageLayout.vue'
 import FilterBar from '@/components/FilterBar.vue'
 import TimeText from '@/components/TimeText.vue'
+import TableCards from '@/components/TableCards.vue'
+import { useViewport } from '@/composables/useViewport'
 
 const router = useRouter()
 
 const { t } = useI18n()
+const { isNarrow, isCompact } = useViewport()
 
 // Cross-link: 将大写服务类型转为小写路由参数
 const normalizeServiceType = (st?: string): string => {
@@ -659,5 +721,77 @@ onMounted(() => {
 .table-wrapper .exception-type {
   font-family: 'Courier New', monospace;
   font-size: 13px;
+}
+
+/* compact：收窄单元格内边距与字号，尽量在 768px 下不出现横向滚动 */
+.compact-table :deep(.cell) {
+  padding: 0 3px;
+  font-size: 11px;
+}
+
+/* 窄屏卡片（TableCards 内由本页插槽渲染） */
+.exception-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ja-space-2, 8px);
+  min-width: 0;
+}
+
+.exception-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ja-space-2, 8px);
+}
+
+.exception-card__title {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  word-break: break-all;
+  color: var(--ja-ink);
+}
+
+.exception-card__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ja-space-1, 4px) var(--ja-space-3, 12px);
+}
+
+.exception-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.exception-card__field--full {
+  grid-column: 1 / -1;
+}
+
+.exception-card__label {
+  font-size: 12px;
+  color: var(--ja-ink-3);
+}
+
+.exception-card__value {
+  font-size: 13px;
+  color: var(--ja-ink);
+  overflow-wrap: anywhere;
+}
+
+.exception-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ja-space-1, 4px);
+  padding-top: var(--ja-space-2, 8px);
+  border-top: 1px solid var(--ja-border-light);
+}
+
+@media (max-width: 420px) {
+  .exception-card__meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

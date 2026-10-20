@@ -96,7 +96,10 @@
       "saveSuccess": "Record level updated",
       "loadFailed": "Failed to load call history: {message}",
       "emptyTitle": "No matching records",
-      "emptyDescription": "No call records match the current filters. Adjust the time range or filters and try again."
+      "emptyDescription": "No call records match the current filters. Adjust the time range or filters and try again.",
+      "cards": {
+        "ariaLabel": "Call history card list"
+      }
     },
     "slowCalls": {
       "pageTitle": "Slow Call Analysis",

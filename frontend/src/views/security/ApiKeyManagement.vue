@@ -77,18 +77,27 @@
     <el-card class="main-card" shadow="hover">
 
       <div class="table-wrapper">
-        <el-table v-loading="loading" :data="pagedApiKeys" border stripe style="width: 100%">
-        <el-table-column :label="t('apiKeys.columns.keyId')" prop="keyId" width="180">
+        <el-table
+          v-if="!isNarrow"
+          :key="isCompact ? 'compact' : 'wide'"
+          v-loading="loading"
+          :data="pagedApiKeys"
+          border
+          stripe
+          style="width: 100%"
+          :class="{ 'compact-table': isCompact }"
+        >
+        <el-table-column :label="t('apiKeys.columns.keyId')" prop="keyId" :width="isCompact ? undefined : 180" :min-width="isCompact ? 80 : undefined">
           <template #default="scope">
             <el-tag effect="plain" type="info">{{ scope.row.keyId }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column :label="t('apiKeys.columns.description')" min-width="150" show-overflow-tooltip>
+        <el-table-column v-if="!isCompact" :label="t('apiKeys.columns.description')" min-width="150" show-overflow-tooltip>
           <template #default="scope">
             <span>{{ scope.row.description || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('apiKeys.columns.permissions')" prop="permissions" width="160">
+        <el-table-column v-if="!isCompact" :label="t('apiKeys.columns.permissions')" prop="permissions" width="160">
           <template #default="scope">
             <el-popover
                 v-if="(scope.row.permissions?.length ?? 0) > 3"
@@ -120,42 +129,42 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('apiKeys.columns.createdAt')" width="160">
+        <el-table-column :label="t('apiKeys.columns.createdAt')" :width="isCompact ? undefined : 160" :min-width="isCompact ? 75 : undefined">
           <template #default="scope">
             {{ formatDateTime(scope.row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column :label="t('apiKeys.columns.createdBy')" width="150" show-overflow-tooltip>
+        <el-table-column v-if="!isCompact" :label="t('apiKeys.columns.createdBy')" width="150" show-overflow-tooltip>
           <template #default="scope">
             <span v-if="scope.row.createdBy">{{ scope.row.createdBy }}</span>
             <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('apiKeys.columns.expiresAt')" prop="expiresAt" width="160">
+        <el-table-column :label="t('apiKeys.columns.expiresAt')" prop="expiresAt" :width="isCompact ? undefined : 160" :min-width="isCompact ? 75 : undefined">
           <template #default="scope">
             <span :class="{ 'expired-text': scope.row.expired }">
               {{ formatDateTime(scope.row.expiresAt) || t('apiKeys.neverExpires') }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('apiKeys.columns.remainingDays')" width="100" align="center">
+        <el-table-column v-if="!isCompact" :label="t('apiKeys.columns.remainingDays')" width="100" align="center">
           <template #default="scope">
             <el-tag :type="getRemainingDaysType(scope.row)" size="small">
               {{ getRemainingDaysText(scope.row) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column :label="t('apiKeys.columns.usage')" width="140" align="center">
+        <el-table-column :label="t('apiKeys.columns.usage')" :width="isCompact ? 50 : 140" align="center">
           <template #default="scope">
             <el-tooltip :content="t('apiKeys.usageTooltip', { success: scope.row.successfulRequests, failed: scope.row.failedRequests })">
               <span class="usage-stat">
                 {{ scope.row.totalRequests }}
-                <span class="usage-detail">({{ scope.row.successfulRequests }}/{{ scope.row.failedRequests }})</span>
+                <span v-if="!isCompact" class="usage-detail">({{ scope.row.successfulRequests }}/{{ scope.row.failedRequests }})</span>
               </span>
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column :label="t('apiKeys.columns.todayToken')" width="120" align="center">
+        <el-table-column :label="t('apiKeys.columns.todayToken')" :width="isCompact ? 45 : 120" align="center">
           <template #default="scope">
             <span v-if="scope.row.todayTokenUsage !== undefined && scope.row.todayTokenUsage !== null">
               {{ formatTokenCount(scope.row.todayTokenUsage) }}
@@ -163,15 +172,15 @@
             <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('apiKeys.columns.alertStatus')" width="100" align="center">
+        <el-table-column :label="t('apiKeys.columns.alertStatus')" :width="isCompact ? 45 : 100" align="center">
           <template #default="scope">
             <el-tag v-if="scope.row.quotaAlertTriggered" type="danger" size="small">
-              <el-icon><Warning /></el-icon> {{ t('apiKeys.status.alert') }}
+              <el-icon v-if="!isCompact"><Warning /></el-icon> {{ t('apiKeys.status.alert') }}
             </el-tag>
             <el-tag v-else type="success" size="small">{{ t('apiKeys.status.normal') }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column :label="t('apiKeys.columns.status')" prop="enabled" width="80" align="center">
+        <el-table-column :label="t('apiKeys.columns.status')" prop="enabled" :width="isCompact ? 50 : 80" align="center">
           <template #default="scope">
             <el-switch
                 v-model="scope.row.enabled"
@@ -182,12 +191,32 @@
             />
           </template>
         </el-table-column>
-        <el-table-column fixed="right" :label="t('apiKeys.columns.actions')" width="150">
+        <el-table-column fixed="right" :label="t('apiKeys.columns.actions')" :width="isCompact ? 75 : 150">
           <template #default="scope">
             <div class="row-actions">
-              <el-button icon="Coin" size="small" type="primary" @click="openQuotaDrawer(scope.row)">{{ t('apiKeys.quota') }}</el-button>
+              <el-button
+                v-if="!isCompact"
+                icon="Coin"
+                size="small"
+                type="primary"
+                @click="openQuotaDrawer(scope.row)"
+              >{{ t('apiKeys.quota') }}</el-button>
+              <el-button
+                v-else
+                icon="Coin"
+                size="small"
+                type="primary"
+                :aria-label="t('apiKeys.quota')"
+                :title="t('apiKeys.quota')"
+                @click="openQuotaDrawer(scope.row)"
+              />
               <el-dropdown trigger="click" @command="(command: string) => handleRowCommand(command, scope.row)">
-                <el-button size="small">{{ t('apiKeys.moreActions') }}<el-icon class="el-icon--right"><ArrowDown /></el-icon></el-button>
+                <el-button size="small" :aria-label="t('apiKeys.moreActions')" :title="t('apiKeys.moreActions')">
+                  <template v-if="!isCompact">
+                    {{ t('apiKeys.moreActions') }}<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                  </template>
+                  <el-icon v-else><ArrowDown /></el-icon>
+                </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item command="edit" icon="Edit">{{ t('apiKeys.actions.edit') }}</el-dropdown-item>
@@ -204,6 +233,102 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <!-- 窄屏卡片列表：一行一卡，保留该页主要操作 -->
+      <div v-else v-loading="loading" class="api-key-cards">
+        <TableCards
+          v-if="!loading || pagedApiKeys.length > 0"
+          :rows="pagedApiKeys"
+          row-key="keyId"
+          :aria-label="t('apiKeys.cards.ariaLabel')"
+          :empty-title="t('apiKeys.cards.emptyTitle')"
+          :empty-description="t('apiKeys.cards.emptyDescription')"
+        >
+          <template #default="{ row }">
+            <div class="api-key-card">
+              <div class="api-key-card__head">
+                <span class="api-key-card__title">{{ row.keyId }}</span>
+                <div class="api-key-card__head-actions">
+                  <el-switch
+                    v-model="row.enabled"
+                    :disabled="row.expired"
+                    active-color="var(--ja-success)"
+                    inactive-color="var(--ja-danger)"
+                    :aria-label="t('apiKeys.cards.toggleStatusAria')"
+                    @change="handleStatusChange(row)"
+                  />
+                  <el-tag v-if="row.quotaAlertTriggered" type="danger" size="small">
+                    <el-icon><Warning /></el-icon> {{ t('apiKeys.status.alert') }}
+                  </el-tag>
+                  <el-tag v-else type="success" size="small">{{ t('apiKeys.status.normal') }}</el-tag>
+                </div>
+              </div>
+              <div class="api-key-card__meta">
+                <div class="api-key-card__field api-key-card__field--full">
+                  <span class="api-key-card__label">{{ t('apiKeys.columns.description') }}</span>
+                  <span class="api-key-card__value">{{ row.description || '-' }}</span>
+                </div>
+                <div class="api-key-card__field">
+                  <span class="api-key-card__label">{{ t('apiKeys.columns.createdAt') }}</span>
+                  <span class="api-key-card__value">{{ formatDateTime(row.createdAt) }}</span>
+                </div>
+                <div class="api-key-card__field">
+                  <span class="api-key-card__label">{{ t('apiKeys.columns.expiresAt') }}</span>
+                  <span class="api-key-card__value">{{ formatDateTime(row.expiresAt) || t('apiKeys.neverExpires') }}</span>
+                </div>
+                <div class="api-key-card__field">
+                  <span class="api-key-card__label">{{ t('apiKeys.columns.remainingDays') }}</span>
+                  <span class="api-key-card__value">
+                    <el-tag :type="getRemainingDaysType(row)" size="small">{{ getRemainingDaysText(row) }}</el-tag>
+                  </span>
+                </div>
+                <div class="api-key-card__field">
+                  <span class="api-key-card__label">{{ t('apiKeys.columns.permissions') }}</span>
+                  <span class="api-key-card__value">
+                    {{ t('apiKeys.permissionsCount', { count: row.permissions?.length ?? 0 }) }}
+                  </span>
+                </div>
+                <div class="api-key-card__field">
+                  <span class="api-key-card__label">{{ t('apiKeys.columns.usage') }}</span>
+                  <span class="api-key-card__value">
+                    {{ row.totalRequests }} ({{ row.successfulRequests }}/{{ row.failedRequests }})
+                  </span>
+                </div>
+                <div class="api-key-card__field">
+                  <span class="api-key-card__label">{{ t('apiKeys.columns.todayToken') }}</span>
+                  <span class="api-key-card__value">
+                    {{ row.todayTokenUsage !== undefined && row.todayTokenUsage !== null
+                      ? formatTokenCount(row.todayTokenUsage)
+                      : '-' }}
+                  </span>
+                </div>
+              </div>
+              <div class="api-key-card__actions">
+                <el-button icon="Coin" size="small" type="primary" @click="openQuotaDrawer(row)">
+                  {{ t('apiKeys.quota') }}
+                </el-button>
+                <el-dropdown trigger="click" @command="(command: string) => handleRowCommand(command, row)">
+                  <el-button size="small">
+                    {{ t('apiKeys.moreActions') }}<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="edit" icon="Edit">{{ t('apiKeys.actions.edit') }}</el-dropdown-item>
+                      <el-dropdown-item command="rotate" icon="RefreshRight" :disabled="row.expired">{{ t('apiKeys.actions.rotate') }}</el-dropdown-item>
+                      <el-dropdown-item command="reset" icon="Refresh">{{ t('apiKeys.actions.reset') }}</el-dropdown-item>
+                      <el-dropdown-item command="resetQuota" icon="Timer">{{ t('apiKeys.actions.quotaReset') }}</el-dropdown-item>
+                      <el-dropdown-item command="delete" icon="Delete" divided>
+                        <span class="text-danger">{{ t('apiKeys.actions.delete') }}</span>
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
+            </div>
+          </template>
+        </TableCards>
+      </div>
+
       <!-- 分页组件 -->
       <div class="pagination-wrapper">
         <el-pagination
@@ -525,6 +650,8 @@ import { useI18n } from 'vue-i18n'
 import { Key, Warning, UploadFilled } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import MetricStrip, { type MetricStripItem } from '@/components/MetricStrip.vue'
+import TableCards from '@/components/TableCards.vue'
+import { useViewport } from '@/composables/useViewport'
 import { formatDateTime } from '@/utils/format'
 import {
   createApiKey,
@@ -559,6 +686,7 @@ import type {
 
 const { t } = useI18n()
 const router = useRouter()
+const { isNarrow, isCompact } = useViewport()
 
 const goQuotaMonitoring = () => {
   router.push('/monitoring/quota')
@@ -1411,6 +1539,100 @@ onMounted(() => {
   margin: 0;
   padding-left: 8px;
   padding-right: 8px;
+}
+
+/* compact：收窄单元格内边距与字号，保证 768–1024px 下不出现横向滚动 */
+.compact-table :deep(.cell) {
+  padding: 0 3px;
+  font-size: 11px;
+}
+
+.compact-table :deep(.el-tag) {
+  padding: 0 4px;
+}
+
+/* 窄屏卡片列表：占满表格区域并独立滚动，分页仍固定在底部 */
+.api-key-cards {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--ja-space-4);
+  position: relative;
+}
+
+.api-key-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ja-space-2, 8px);
+  min-width: 0;
+}
+
+.api-key-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ja-space-2, 8px);
+}
+
+.api-key-card__head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ja-space-2, 8px);
+}
+
+.api-key-card__title {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ja-ink);
+  word-break: break-all;
+}
+
+.api-key-card__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ja-space-1, 4px) var(--ja-space-3, 12px);
+}
+
+.api-key-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.api-key-card__field--full {
+  grid-column: 1 / -1;
+}
+
+.api-key-card__label {
+  font-size: 12px;
+  color: var(--ja-ink-3);
+}
+
+.api-key-card__value {
+  font-size: 13px;
+  color: var(--ja-ink);
+  overflow-wrap: anywhere;
+}
+
+.api-key-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ja-space-2, 8px);
+  padding-top: var(--ja-space-2, 8px);
+  border-top: 1px solid var(--ja-border-light);
+}
+
+.api-key-card__actions .el-button {
+  margin: 0;
+}
+
+@media (max-width: 420px) {
+  .api-key-card__meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .text-danger {

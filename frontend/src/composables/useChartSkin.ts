@@ -56,6 +56,10 @@ function buildSkin(theme: EChartsColorPalette): ChartSkin {
   const primaryLight5 = cssVar('--ja-primary-light-5', FALLBACK_PALETTE[2])
   const primaryLight7 = cssVar('--ja-primary-light-7', FALLBACK_PALETTE[3])
   const ink3 = cssVar('--ja-ink-3', FALLBACK_PALETTE[4])
+  // 第 6 个分类色与轴线/网格线必须用图表专用中性阶：--ja-border 是面与面的分界，
+  // 暗色下只有约 1.2:1，当数据系列会看不见（P1-3 语义色校正后暴露出这一点）。
+  const seriesNeutral = cssVar('--ja-chart-series-neutral', FALLBACK_PALETTE[5])
+  const axis = cssVar('--ja-chart-axis', FALLBACK_PALETTE[5])
   const border = cssVar('--ja-border', FALLBACK_PALETTE[5])
   const emphasis = cssVar('--ja-danger', FALLBACK_EMPHASIS)
   // --ja-ink 缺失时退回 useChartTheme 已解析的正文色，避免图表文字不可见
@@ -63,7 +67,7 @@ function buildSkin(theme: EChartsColorPalette): ChartSkin {
   const surface = cssVar('--ja-paper', FALLBACK_SURFACE)
 
   return {
-    palette: [primary, primaryLight3, primaryLight5, primaryLight7, ink3, border],
+    palette: [primary, primaryLight3, primaryLight5, primaryLight7, ink3, seriesNeutral],
     emphasis,
     text,
     textMuted: ink3,
@@ -72,7 +76,7 @@ function buildSkin(theme: EChartsColorPalette): ChartSkin {
     grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },
     categoryAxis: {
       type: 'category',
-      axisLine: { lineStyle: { color: border } },
+      axisLine: { lineStyle: { color: axis } },
       axisTick: { show: false },
       axisLabel: { color: ink3, fontSize: 12 }
     },
@@ -81,15 +85,15 @@ function buildSkin(theme: EChartsColorPalette): ChartSkin {
       axisLine: { show: false },
       axisTick: { show: false },
       axisLabel: { color: ink3, fontSize: 12 },
-      splitLine: { lineStyle: { color: border, type: 'dashed' } }
+      splitLine: { lineStyle: { color: axis, type: 'dashed' } }
     },
     tooltip: {
       trigger: 'axis',
       backgroundColor: surface,
-      borderColor: border,
+      borderColor: axis,
       borderWidth: 1,
       textStyle: { color: text, fontSize: 12 },
-      axisPointer: { type: 'line', lineStyle: { color: border } }
+      axisPointer: { type: 'line', lineStyle: { color: axis } }
     },
     legend: {
       top: 0,

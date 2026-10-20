@@ -2,6 +2,17 @@
  * JAiRouter 设计令牌 (Design Tokens)
  * 所有语义化 CSS 自定义属性，基于 Element Plus 默认调色板
  * 通过 html.dark 类切换暗色模式
+ *
+ * ── 层级约定（P1-3 起唯一口径，页面/组件只消费语义令牌）───────────────────
+ * 承载层级 = page < card：卡片恒比页底亮一档（明色面 / 暗色面），否则卡片会塌成「洞」。
+ *   明色：--ja-surface #f7f8fa（页底）→ --ja-paper #ffffff（卡片面）
+ *   暗色：--ja-surface #0e1116（页底）→ --ja-paper #151a21（卡片面）
+ * 交互层级 = --ja-surface-2 是叠加在 page/card 之上的悬停/次级填充（明色压暗 #eef0f4、
+ *   暗色提亮 #1c222b），只表达状态，不表示更高的承载面。
+ * 边框只由 surface 系列推导：--ja-border(-light/-lighter/-dark) 是同一色相在
+ *   surface 与 paper 之间的中间阶，不引入独立色相；页面层不要写死 hex。
+ * 旧令牌 --ja-bg-page/card/overlay 与 --ja-text-* 已降级为别名（见各分组注释），
+ *   新代码请直接用 --ja-paper / --ja-surface(-2) / --ja-ink(-2/-3)。
  */
 
 :root {
@@ -27,15 +38,20 @@
   --ja-main-bg-gradient: linear-gradient(180deg, #f6f9ff 0%, #fbfdff 100%);
 
   /* ========== 文字 ========== */
-  --ja-text-primary: #303133;
-  --ja-text-regular: #606266;
-  --ja-text-secondary: #909399;
+  /* 新令牌 ink 阶梯是源头，这里只做别名（P1-3）：
+     primary/regular/secondary → ink/ink-2/ink-3；
+     placeholder 不在这三级阶梯内（需要比 secondary 再浅一档给输入框占位），
+     保留独立色值，未并入 ink 阶梯。 */
+  --ja-text-primary: var(--ja-ink);
+  --ja-text-regular: var(--ja-ink-2);
+  --ja-text-secondary: var(--ja-ink-3);
   --ja-text-placeholder: #a8abb2;
 
   /* ========== 背景 ========== */
-  --ja-bg-page: #ffffff;
-  --ja-bg-card: #ffffff;
-  --ja-bg-overlay: #ffffff;
+  /* 新令牌 paper/surface 是源头：card/overlay 是纸面，page 是页底（P1-3） */
+  --ja-bg-page: var(--ja-surface);
+  --ja-bg-card: var(--ja-paper);
+  --ja-bg-overlay: var(--ja-paper);
   --ja-bg-mask: rgba(0, 0, 0, 0.5);
 
   /* ========== 边框 ========== */
@@ -96,10 +112,9 @@
   --ja-stat-gradient-user: linear-gradient(135deg, #f8eaff, #eef7ff);
 
   /* ========== 中性阶与强调色（P0-1 品牌与令牌） ========== */
-  /* 中性阶：纸面 / 表面 / 三级文字。
-     分隔线不在此处新增：--ja-border 已在上方「边框」组定义（#e6e6e6），
-     且 element-override.css 把它映射为 --el-border-color，这里再声明会连带改掉
-     全站 Element Plus 边框色（超出「只做品牌面」范围），留待 P1-3 暗色语义色统一处理。 */
+  /* 中性阶（源头令牌）：paper = 卡片承载体，surface = 页底，surface-2 = 悬停/次级面。
+     边框不在此处新增：--ja-border* 已在上方「边框」组定义，并被 element-override.css
+     映射为 --el-border-color*；暗色取值按同一色相在 surface 与 paper 之间推导（P1-3）。 */
   --ja-paper: #ffffff;
   --ja-surface: #f7f8fa;
   --ja-surface-2: #eef0f4;
@@ -110,6 +125,12 @@
   /* 强调色：取自 logo 青色，只用于品牌面（不替代 --ja-primary / --ja-primary-*） */
   --ja-accent: #34c8da;
   --ja-accent-soft: rgba(52, 200, 218, 0.16);
+
+  /* 图表专用中性色（P1-3）：分类色板第 6 位与轴线/网格线不能直接借用 --ja-border ——
+     边框是「面与面的分界」，在暗色下刻意压到 1.2:1 左右；当作数据系列或网格线会几乎不可见。
+     这里给图表独立的两个中性阶，保证暗色下系列可辨、网格线只做弱提示。 */
+  --ja-chart-series-neutral: #9aa3b2;
+  --ja-chart-axis: #dfe3ea;
 }
 
 /* ========== 暗色模式 ========== */
@@ -136,22 +157,26 @@ html.dark {
   --ja-main-bg-gradient: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
 
   /* 文字 */
-  --ja-text-primary: #e5eaf3;
-  --ja-text-regular: #cfd3dc;
-  --ja-text-secondary: #a3a6ad;
-  --ja-text-placeholder: #8d9095;
+  /* 与浅色同一套别名；实际颜色由本块下方 ink 阶梯覆写（P1-3） */
+  --ja-text-primary: var(--ja-ink);
+  --ja-text-regular: var(--ja-ink-2);
+  --ja-text-secondary: var(--ja-ink-3);
+  /* placeholder 保留独立档位：暗色下取比 ink-3 再暗一档的 #7a8492，
+     与明色「placeholder 比 secondary 浅」的层级方向一致；对 --ja-paper #151a21 约 4.6:1 */
+  --ja-text-placeholder: #7a8492;
 
   /* 背景 */
-  --ja-bg-page: #141414;
-  --ja-bg-card: #1d1e1f;
-  --ja-bg-overlay: #1d1e1f;
+  --ja-bg-page: var(--ja-surface);
+  --ja-bg-card: var(--ja-paper);
+  --ja-bg-overlay: var(--ja-paper);
   --ja-bg-mask: rgba(0, 0, 0, 0.7);
 
-  /* 边框 */
-  --ja-border: #4c4d4f;
-  --ja-border-light: #414243;
-  --ja-border-lighter: #363637;
-  --ja-border-dark: #636466;
+  /* 边框：按 surface #0e1116 → paper #151a21 的层级重算（同一色相，仅在 surface 间取值）。
+     border 在卡片面上可见但不刺眼；light/lighter 依次贴近 surface，dark 用于需要更明确边界处。 */
+  --ja-border: #232b36;
+  --ja-border-light: #1c242e;
+  --ja-border-lighter: #161d25;
+  --ja-border-dark: #33404f;
 
   /* 阴影（暗色模式下更突出） */
   --ja-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
@@ -186,9 +211,11 @@ html.dark {
   --ja-stat-gradient-user: linear-gradient(135deg, #2a1a2e, #1a1f2e);
 
   /* ========== 中性阶与强调色（P0-1 品牌与令牌） ========== */
-  /* 中性阶（--ja-border 沿用上方暗色「边框」组的值，理由同浅色块） */
-  --ja-paper: #0e1116;
-  --ja-surface: #151a21;
+  /* 中性阶（源头令牌，P1-3 修正层级）：页底最深 #0e1116 → 卡片提亮 #151a21 → 悬停/次级面 #1c222b。
+     修正前 paper(#0e1116) 比页底(#141414) 更暗，ChartCard/MetricStrip 等卡片看起来像「洞」。
+     --ja-border* 沿用上方暗色「边框」组的值（按同一层级推导）。 */
+  --ja-paper: #151a21;
+  --ja-surface: #0e1116;
   --ja-surface-2: #1c222b;
   --ja-ink: #e8ecf2;
   --ja-ink-2: #b6bfcc;
@@ -197,4 +224,9 @@ html.dark {
   /* 强调色（暗色下略微提亮） */
   --ja-accent: #6ee0e8;
   --ja-accent-soft: rgba(110, 224, 232, 0.14);
+
+  /* 图表专用中性色（P1-3）：暗色下系列中性阶对卡片 #151a21 约 4.2:1，
+     轴线/网格线刻意压暗（约 1.35:1），只做弱提示，不与数据争注意力。 */
+  --ja-chart-series-neutral: #8b96a6;
+  --ja-chart-axis: #2b3542;
 }

@@ -24,7 +24,9 @@
     "disabled": "Disabled",
     "justNow": "Just now",
     "chartEmpty": "No data",
-    "chartEmptyHint": "Adjust filters or the time range and try again"
+    "chartEmptyHint": "Adjust filters or the time range and try again",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar"
   },
   "layout": {
     "home": "Home",

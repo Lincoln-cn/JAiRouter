@@ -90,6 +90,7 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     StatCard: typeof import('./src/components/StatCard.vue')['default']
     StatusPill: typeof import('./src/components/StatusPill.vue')['default']
+    TableCards: typeof import('./src/components/TableCards.vue')['default']
     TimeText: typeof import('./src/components/TimeText.vue')['default']
   }
   export interface GlobalDirectives {

@@ -13,6 +13,12 @@
     "quotaAlertSummaryCount": "{count} quota alert(s)",
     "permissionsCount": "{count} items",
     "moreActions": "More",
+    "cards": {
+      "ariaLabel": "API key card list",
+      "emptyTitle": "No API keys",
+      "emptyDescription": "There are no API keys to display.",
+      "toggleStatusAria": "Toggle API key status"
+    },
     "quotaDrawerTitle": "Quota Management",
     "quotaPresets": {
       "unlimited": "Unlimited",

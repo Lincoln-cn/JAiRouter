@@ -72,7 +72,10 @@
       "selectCutoffTime": "请选择截止时间",
       "cleanupConfirmMessage": "确定要清理选定的异常事件吗？此操作不可恢复！",
       "deleteSuccess": "成功删除 {count} 条异常事件",
-      "cleanupFailed": "清理失败：{message}"
+      "cleanupFailed": "清理失败：{message}",
+      "cards": {
+        "ariaLabel": "异常事件卡片列表"
+      }
     },
     "detail": {
       "title": "异常事件详情",
