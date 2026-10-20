@@ -3,9 +3,8 @@
     <el-aside width="200px" class="layout-aside">
       <div class="logo">
         <div class="logo-icon">
-          <el-icon :size="32">
-            <Connection />
-          </el-icon>
+          <!-- 浅底圆角方块版徽标：透明圆形徽标在深色侧栏上轮廓会消失，故用带底色的组合图 -->
+          <img class="logo-mark" src="@/assets/brand/logo-mark-64.png" alt="" width="32" height="32" />
         </div>
         <h2 class="logo-text">JAiRouter</h2>
       </div>
@@ -319,18 +318,14 @@ const handleUserCommand = async (command: string) => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* P0-1：占位字形换成真徽标后，旧的蓝色圆底与 glow 不再需要（会与方形图标叠出光晕） */
 .logo-icon {
   margin-bottom: 10px;
-  color: var(--ja-primary);
-  background: rgba(64, 158, 255, 0.1);
-  border-radius: 50%;
-  padding: 12px;
   width: 56px;
   height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 10px rgba(64, 158, 255, 0.3);
 }
 
 .logo-text {
@@ -340,6 +335,15 @@ const handleUserCommand = async (command: string) => {
   margin: 0;
   text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
   letter-spacing: 1px;
+}
+
+/* P0-1 品牌与令牌：真 logo（32px 显示尺寸，64px 位图供 2x 屏；圆角与素材自身的 25% 一致） */
+.logo-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: contain;
+  display: block;
 }
 
 .layout-header {
