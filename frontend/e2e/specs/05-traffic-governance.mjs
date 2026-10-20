@@ -68,6 +68,30 @@ export default {
       }
     }
 
+    // ── 策略表不得丢行（issue #575 的守卫） ─────────────────────────────────
+    // 后端曾经把「该服务类型没有专属 LB 配置」抛成 500，前端 catch 后整行丢弃，
+    // 于是 imggen / imgedit 这类没单独配置过的服务在表里根本不出现。
+    // 这里用 /status 返回的服务类型清单做交叉核对，不写死行数（各环境服务类型不同）。
+    await gotoApp(page, '/load-balancers/strategy-config', { waitMs: 700 })
+    const statusRes = await api(page, '/api/loadbalancer/status')
+    const statusTypes = Array.isArray(statusRes.body?.data)
+      ? statusRes.body.data.map((s) => s?.serviceType).filter(Boolean)
+      : []
+    if (statusTypes.length > 0) {
+      const rowTypes = await page
+        .locator('.el-table__row td:first-child')
+        .allInnerTexts()
+        .catch(() => [])
+      const missing = statusTypes.filter((t) => !rowTypes.some((cell) => cell.trim() === t))
+      check(
+        'traffic:lb-strategy:no-missing-rows',
+        missing.length === 0,
+        `rows=${rowTypes.length} types=${statusTypes.length} missing=${missing.join(',') || '-'}`
+      )
+    } else {
+      check('traffic:lb-strategy:no-missing-rows', true, 'skip: /status 未返回服务类型')
+    }
+
     // 限流页常见刷新按钮
     await gotoApp(page, '/rate-limiters/monitoring', { waitMs: 500 })
     const refresh = page
