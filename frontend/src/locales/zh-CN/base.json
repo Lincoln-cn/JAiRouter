@@ -43,7 +43,22 @@
     "forgotPassword": "忘记密码？",
     "usernamePlaceholder": "请输入用户名",
     "passwordPlaceholder": "请输入密码",
-    "submitting": "登录中…"
+    "submitting": "登录中…",
+    "eyebrow": "LLM GATEWAY",
+    "lede": "面向生产的 LLM 网关 —— 统一入口、按策略路由、全程可审计。",
+    "factProtocol": "协议",
+    "factProtocolDesc": "OpenAI 与 Anthropic 兼容，客户端零改造接入。",
+    "factGovernance": "治理",
+    "factGovernanceDesc": "多实例负载均衡、熔断、限流与配额。",
+    "factAudit": "审计",
+    "factAuditDesc": "RBAC 权限模型与全量审计日志。",
+    "consoleTitle": "登录控制台",
+    "consoleSubtitle": "使用管理员账号登录",
+    "forgotHint": "忘记密码？请联系管理员",
+    "auditNotice": "登录行为将写入审计日志",
+    "docs": "文档",
+    "releases": "版本发布",
+    "language": "界面语言"
   },
   "menu": {
     "dashboard": "概览",
