@@ -119,6 +119,7 @@
         </div>
       </template>
       <el-table
+        v-if="loadingUsage || usageList.length > 0"
         :data="usageList"
         v-loading="loadingUsage"
         stripe
