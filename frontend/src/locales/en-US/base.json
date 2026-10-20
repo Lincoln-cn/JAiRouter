@@ -43,7 +43,22 @@
     "forgotPassword": "Forgot password?",
     "usernamePlaceholder": "Enter username",
     "passwordPlaceholder": "Enter password",
-    "submitting": "Signing in…"
+    "submitting": "Signing in…",
+    "eyebrow": "LLM GATEWAY",
+    "lede": "A production-grade LLM gateway — one endpoint, policy-based routing, fully auditable.",
+    "factProtocol": "Protocols",
+    "factProtocolDesc": "OpenAI and Anthropic compatible, no client changes required.",
+    "factGovernance": "Governance",
+    "factGovernanceDesc": "Multi-instance load balancing, circuit breaking, rate limits and quotas.",
+    "factAudit": "Audit",
+    "factAuditDesc": "RBAC permission model with a full audit trail.",
+    "consoleTitle": "Sign in",
+    "consoleSubtitle": "Use an administrator account",
+    "forgotHint": "Forgot password? Contact your administrator",
+    "auditNotice": "Sign-in activity is written to the audit log",
+    "docs": "Docs",
+    "releases": "Releases",
+    "language": "Language"
   },
   "menu": {
     "dashboard": "Overview",
