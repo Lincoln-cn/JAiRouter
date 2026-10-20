@@ -11,6 +11,7 @@
       "all": "All"
     },
     "unset": "Not set",
+    "guideDismiss": "Hide guide",
     "loading": "Loading...",
     "table": {
       "serviceType": "Service Type",

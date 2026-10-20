@@ -27,6 +27,7 @@
     "maxSizeHintAfter": "is read-only; adjust it in the YAML and restart",
     "invalidationTitle": "Cache Invalidation",
     "clearAllCache": "Clear All Cache",
+    "clearAllCacheHint": "Deletes every cached response. This cannot be undone and asks for confirmation.",
     "clearAllConfirmTitle": "Clear all response cache?",
     "confirm": "Confirm",
     "cancel": "Cancel",

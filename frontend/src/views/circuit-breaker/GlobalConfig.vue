@@ -2,82 +2,135 @@
   <PageSkeleton :title="t('circuitBreaker.globalConfig.title')">
     <el-card class="config-card">
       <el-form :model="globalConfig" label-width="150px" class="config-form">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item :label="t('circuitBreaker.globalConfig.adaptiveThresholdEnabled')">
-              <div class="adaptive-switch-container">
-                <el-switch v-model="globalConfig.adaptiveThresholdEnabled" />
-                <span class="adaptive-hint" v-if="globalConfig.adaptiveThresholdEnabled">
-                  <el-tag type="success" size="small">{{ t('circuitBreaker.globalConfig.enabled') }}</el-tag>
-                  <span class="hint-text">{{ t('circuitBreaker.globalConfig.adaptiveHint') }}</span>
-                </span>
-                <span class="adaptive-hint" v-else>
-                  <el-tag type="info" size="small">{{ t('circuitBreaker.globalConfig.disabled') }}</el-tag>
-                </span>
-              </div>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item :label="t('circuitBreaker.globalConfig.stateSyncInterval')">
-              <el-input-number
-                v-model="globalConfig.stateSyncIntervalMinutes"
-                :min="1"
-                :max="60"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <!-- 分组：阈值 / 超时 / 半开 / 同步 / 历史维护（后两项原属「同步」之外的独立语义，单列以免混读） -->
+        <section class="form-section">
+          <h3 class="form-section__title">{{ t('circuitBreaker.globalConfig.sections.thresholds') }}</h3>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item :label="t('circuitBreaker.globalConfig.adaptiveThresholdEnabled')">
+                <div class="adaptive-switch-container">
+                  <el-switch v-model="globalConfig.adaptiveThresholdEnabled" />
+                  <span class="adaptive-hint" v-if="globalConfig.adaptiveThresholdEnabled">
+                    <el-tag type="success" size="small">{{ t('circuitBreaker.globalConfig.enabled') }}</el-tag>
+                    <span class="hint-text">{{ t('circuitBreaker.globalConfig.adaptiveHint') }}</span>
+                  </span>
+                  <span class="adaptive-hint" v-else>
+                    <el-tag type="info" size="small">{{ t('circuitBreaker.globalConfig.disabled') }}</el-tag>
+                  </span>
+                </div>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item :label="t('circuitBreaker.globalConfig.defaultFailureThreshold')">
+                <el-input-number v-model="globalConfig.defaultFailureThreshold" :min="1" :max="100" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </section>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item :label="t('circuitBreaker.globalConfig.cleanupInterval')">
-              <el-input-number
-                v-model="globalConfig.cleanupIntervalMinutes"
-                :min="1"
-                :max="120"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item :label="t('circuitBreaker.globalConfig.historyRetentionDays')">
-              <el-input-number
-                v-model="globalConfig.historyRetentionDays"
-                :min="1"
-                :max="365"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <el-divider />
 
-        <el-row :gutter="20">
-          <el-col :span="8">
-            <el-form-item :label="t('circuitBreaker.globalConfig.defaultFailureThreshold')">
-              <el-input-number v-model="globalConfig.defaultFailureThreshold" :min="1" :max="100" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item :label="t('circuitBreaker.globalConfig.defaultSuccessThreshold')">
-              <el-input-number v-model="globalConfig.defaultSuccessThreshold" :min="1" :max="20" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item :label="t('circuitBreaker.globalConfig.defaultTimeout')">
-              <el-input-number v-model="globalConfig.defaultTimeoutMs" :min="1000" :max="300000" :step="1000" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <section class="form-section">
+          <h3 class="form-section__title">{{ t('circuitBreaker.globalConfig.sections.timeouts') }}</h3>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item :label="t('circuitBreaker.globalConfig.defaultTimeout')">
+                <div class="field-with-unit">
+                  <el-input-number v-model="globalConfig.defaultTimeoutMs" :min="1000" :max="300000" :step="1000" />
+                  <span class="field-unit">{{ t('circuitBreaker.globalConfig.unitMs') }}</span>
+                </div>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </section>
 
-        <el-form-item>
-          <el-button type="primary" @click="saveGlobalConfig" :loading="savingConfig">{{ t('circuitBreaker.globalConfig.save') }}</el-button>
-          <el-button @click="resetGlobalConfig">{{ t('circuitBreaker.globalConfig.resetToDefaults') }}</el-button>
-        </el-form-item>
+        <el-divider />
+
+        <section class="form-section">
+          <h3 class="form-section__title">{{ t('circuitBreaker.globalConfig.sections.halfOpen') }}</h3>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item :label="t('circuitBreaker.globalConfig.defaultSuccessThreshold')">
+                <div class="field-with-hint">
+                  <el-input-number v-model="globalConfig.defaultSuccessThreshold" :min="1" :max="20" />
+                  <p class="field-hint">{{ t('circuitBreaker.globalConfig.successThresholdHint') }}</p>
+                </div>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </section>
+
+        <el-divider />
+
+        <section class="form-section">
+          <h3 class="form-section__title">{{ t('circuitBreaker.globalConfig.sections.sync') }}</h3>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item :label="t('circuitBreaker.globalConfig.stateSyncInterval')">
+                <div class="field-with-unit">
+                  <el-input-number
+                    v-model="globalConfig.stateSyncIntervalMinutes"
+                    :min="1"
+                    :max="60"
+                  />
+                  <span class="field-unit">{{ t('circuitBreaker.globalConfig.unitMinutes') }}</span>
+                </div>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </section>
+
+        <el-divider />
+
+        <section class="form-section">
+          <h3 class="form-section__title">{{ t('circuitBreaker.globalConfig.sections.retention') }}</h3>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item :label="t('circuitBreaker.globalConfig.cleanupInterval')">
+                <div class="field-with-unit">
+                  <el-input-number
+                    v-model="globalConfig.cleanupIntervalMinutes"
+                    :min="1"
+                    :max="120"
+                  />
+                  <span class="field-unit">{{ t('circuitBreaker.globalConfig.unitMinutes') }}</span>
+                </div>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item :label="t('circuitBreaker.globalConfig.historyRetentionDays')">
+                <div class="field-with-unit">
+                  <el-input-number
+                    v-model="globalConfig.historyRetentionDays"
+                    :min="1"
+                    :max="365"
+                  />
+                  <span class="field-unit">{{ t('circuitBreaker.globalConfig.unitDays') }}</span>
+                </div>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </section>
+
+        <!-- 保存操作收进卡片内底部，并显式告知未保存改动数 -->
+        <div class="config-footer">
+          <span class="dirty-indicator" :class="{ 'is-dirty': dirtyCount > 0 }">
+            {{ dirtyCount > 0 ? t('circuitBreaker.globalConfig.dirtyCount', { count: dirtyCount }) : t('circuitBreaker.globalConfig.noChanges') }}
+          </span>
+          <div class="config-footer__actions">
+            <el-button @click="resetGlobalConfig">{{ t('circuitBreaker.globalConfig.resetToDefaults') }}</el-button>
+            <el-button type="primary" @click="saveGlobalConfig" :loading="savingConfig">
+              {{ t('circuitBreaker.globalConfig.save') }}
+            </el-button>
+          </div>
+        </div>
       </el-form>
     </el-card>
   </PageSkeleton>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
@@ -93,6 +146,16 @@ interface GlobalConfig {
   defaultTimeoutMs: number
 }
 
+const CONFIG_KEYS: (keyof GlobalConfig)[] = [
+  'adaptiveThresholdEnabled',
+  'stateSyncIntervalMinutes',
+  'cleanupIntervalMinutes',
+  'historyRetentionDays',
+  'defaultFailureThreshold',
+  'defaultSuccessThreshold',
+  'defaultTimeoutMs'
+]
+
 const globalConfig = ref<GlobalConfig>({
   adaptiveThresholdEnabled: false,
   stateSyncIntervalMinutes: 5,
@@ -103,9 +166,27 @@ const globalConfig = ref<GlobalConfig>({
   defaultTimeoutMs: 60000
 })
 
+/** 最近一次已保存/已加载的快照，仅用于「已修改 N 项」，不参与提交。 */
+const savedConfig = ref<GlobalConfig | null>(null)
 const savingConfig = ref(false)
 
 const { t } = useI18n()
+
+const normalizeConfig = (config: Partial<GlobalConfig> | null | undefined): GlobalConfig => ({
+  adaptiveThresholdEnabled: config?.adaptiveThresholdEnabled || false,
+  stateSyncIntervalMinutes: config?.stateSyncIntervalMinutes || 5,
+  cleanupIntervalMinutes: config?.cleanupIntervalMinutes || 30,
+  historyRetentionDays: config?.historyRetentionDays || 30,
+  defaultFailureThreshold: config?.defaultFailureThreshold || 5,
+  defaultSuccessThreshold: config?.defaultSuccessThreshold || 2,
+  defaultTimeoutMs: config?.defaultTimeoutMs || 60000
+})
+
+const dirtyCount = computed(() => {
+  const saved = savedConfig.value
+  if (!saved) return 0
+  return CONFIG_KEYS.filter(key => globalConfig.value[key] !== saved[key]).length
+})
 
 const loadGlobalConfig = async () => {
   try {
@@ -113,15 +194,8 @@ const loadGlobalConfig = async () => {
     if (response.data?.success) {
       const config = response.data.data
       if (config) {
-        globalConfig.value = {
-          adaptiveThresholdEnabled: config.adaptiveThresholdEnabled || false,
-          stateSyncIntervalMinutes: config.stateSyncIntervalMinutes || 5,
-          cleanupIntervalMinutes: config.cleanupIntervalMinutes || 30,
-          historyRetentionDays: config.historyRetentionDays || 30,
-          defaultFailureThreshold: config.defaultFailureThreshold || 5,
-          defaultSuccessThreshold: config.defaultSuccessThreshold || 2,
-          defaultTimeoutMs: config.defaultTimeoutMs || 60000
-        }
+        globalConfig.value = normalizeConfig(config)
+        savedConfig.value = { ...globalConfig.value }
       }
     }
   } catch (error) {
@@ -135,6 +209,7 @@ const saveGlobalConfig = async () => {
     const response = await request.put('/config/circuit-breaker/global-config', globalConfig.value)
     if (response.data?.success) {
       ElMessage.success(t('circuitBreaker.globalConfig.messages.saveSuccess'))
+      savedConfig.value = { ...globalConfig.value }
     } else {
       ElMessage.error(response.data?.message || t('circuitBreaker.globalConfig.messages.saveFailed'))
     }
@@ -163,7 +238,10 @@ const resetGlobalConfig = () => {
       if (response.data?.success) {
         const config = response.data.data
         if (config) {
-          globalConfig.value = config
+          globalConfig.value = normalizeConfig(config)
+          savedConfig.value = { ...globalConfig.value }
+        } else {
+          await loadGlobalConfig()
         }
         ElMessage.info(t('circuitBreaker.globalConfig.messages.resetSuccess'))
       }
@@ -171,6 +249,8 @@ const resetGlobalConfig = () => {
       console.error('Failed to reset global config:', error)
       ElMessage.error(t('circuitBreaker.globalConfig.messages.resetFailed'))
     }
+  }).catch(() => {
+    // 用户取消（ElMessageBox 以 'cancel' reject）不当作错误，也不发任何请求
   })
 }
 
@@ -189,6 +269,17 @@ onMounted(() => {
   padding: 20px;
 }
 
+.form-section__title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ja-text-primary);
+}
+
+.config-form :deep(.el-divider) {
+  margin: 8px 0 20px;
+}
+
 .adaptive-switch-container {
   display: flex;
   align-items: center;
@@ -204,5 +295,62 @@ onMounted(() => {
 .hint-text {
   color: var(--ja-text-regular);
   font-size: 12px;
+}
+
+.field-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.field-unit {
+  font-size: 12px;
+  color: var(--ja-text-secondary);
+  white-space: nowrap;
+}
+
+.field-with-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.field-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ja-text-secondary);
+}
+
+.config-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ja-border);
+}
+
+.dirty-indicator {
+  font-size: 13px;
+  color: var(--ja-text-secondary);
+}
+
+.dirty-indicator.is-dirty {
+  color: var(--el-color-primary);
+}
+
+.config-footer__actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.config-footer__actions :deep(.el-button + .el-button) {
+  margin-left: 0;
 }
 </style>

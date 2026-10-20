@@ -11,6 +11,7 @@
       "all": "全部"
     },
     "unset": "未设置",
+    "guideDismiss": "收起引导",
     "loading": "加载中...",
     "table": {
       "serviceType": "服务类型",

@@ -15,14 +15,22 @@
       style="margin-bottom: 16px"
     />
 
-    <el-table :data="pools" v-loading="loading" style="width: 100%" row-key="poolName">
+    <el-card class="table-card" shadow="never">
+      <el-table :data="pools" v-loading="loading" style="width: 100%" row-key="poolName">
         <el-table-column :label="t('pool.enabled')" width="70" align="center">
           <template #default="{ row }">
             <el-switch :model-value="row.enabled" @change="(val: boolean) => handleToggle(row, val)" />
           </template>
         </el-table-column>
-        <el-table-column prop="poolName" :label="t('pool.poolNameCol')" min-width="150" />
-        <el-table-column prop="name" :label="t('pool.displayName')" min-width="120" />
+        <el-table-column prop="poolName" :label="t('pool.poolNameCol')" min-width="200">
+          <template #default="{ row }">
+            <!-- 合并「显示名称」列：多数池未填该项，空列占比高 -->
+            <div class="pool-name">
+              <span class="pool-name__main">{{ row.poolName }}</span>
+              <span v-if="row.name" class="pool-name__sub">{{ row.name }}</span>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column prop="serviceType" :label="t('pool.serviceType')" width="110" align="center">
           <template #default="{ row }">
             <el-link
@@ -46,13 +54,15 @@
             </el-link>
           </template>
         </el-table-column>
-        <el-table-column :label="t('pool.actions')" width="180" align="center">
+        <el-table-column :label="t('pool.actions')" width="140" align="right">
           <template #default="{ row }">
-            <el-button size="small" v-permission="'config:pools:write'" @click="handleEdit(row)">{{ t('pool.edit') }}</el-button>
-            <el-button size="small" type="danger" v-permission="'config:pools:write'" @click="handleDelete(row)">{{ t('pool.delete') }}</el-button>
+            <!-- 与服务管理/路由规则一致：行内操作用文字按钮 -->
+            <el-button link size="small" v-permission="'config:pools:write'" @click="handleEdit(row)">{{ t('pool.edit') }}</el-button>
+            <el-button link size="small" type="danger" v-permission="'config:pools:write'" @click="handleDelete(row)">{{ t('pool.delete') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
+    </el-card>
   </PageSkeleton>
 
     <el-dialog v-model="dialogVisible" :title="isEdit ? t('pool.editPool') : t('pool.addPool')" width="640px" destroy-on-close>
@@ -306,9 +316,36 @@ onMounted(() => { fetchPools() })
 </script>
 
 <style scoped>
+/* 表格套中性卡片容器，与 服务管理 / 路由规则 保持一致 */
+.table-card {
+  border: 1px solid var(--ja-border);
+  border-radius: var(--ja-radius-lg);
+  background: var(--ja-paper);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.table-card :deep(.el-card__body) {
+  padding: 0;
+}
+
 .form-tip {
   margin-top: 6px;
   font-size: 12px;
   color: var(--ja-text-secondary);
+}
+
+.pool-name {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.4;
+}
+
+.pool-name__main {
+  color: var(--ja-ink, var(--ja-text-primary));
+}
+
+.pool-name__sub {
+  font-size: 12px;
+  color: var(--ja-ink-3, var(--ja-text-secondary));
 }
 </style>

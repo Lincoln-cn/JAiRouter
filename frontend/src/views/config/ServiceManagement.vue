@@ -18,7 +18,15 @@
     </template>
 
     <template #stats>
-      <OnboardingSteps :current-step="2" />
+      <!-- 4 步引导条默认展示；老用户可关闭（localStorage: ja-services-guide-dismissed），关闭后不再占位 -->
+      <div v-if="!guideDismissed" class="guide-bar">
+        <OnboardingSteps :current-step="2" />
+        <div class="guide-bar-footer">
+          <el-button link size="small" class="guide-dismiss" @click="dismissGuide">
+            {{ t('service.guideDismiss') }}
+          </el-button>
+        </div>
+      </div>
     </template>
 
     <template #toolbar>
@@ -94,21 +102,19 @@
           border
           fit
         >
-          <el-table-column prop="type" :label="t('service.table.serviceType')" sortable>
+          <el-table-column prop="type" :label="t('service.table.serviceType')" sortable min-width="140">
             <template #default="scope">
               <router-link
                 :to="{ name: 'instance-management', query: { serviceType: scope.row.type } }"
                 class="cell-link"
                 @click.stop
               >
-                <el-tag type="info" class="table-tag">
-                  {{ serviceTypeLabel(scope.row.type) }}
-                </el-tag>
+                {{ serviceTypeLabel(scope.row.type) }}
               </router-link>
             </template>
           </el-table-column>
 
-          <el-table-column prop="adapter" :label="t('service.table.adapter')" sortable>
+          <el-table-column prop="adapter" :label="t('service.table.adapter')" sortable min-width="160">
             <template #default="scope">
               <el-tooltip :content="scope.row.adapter || t('service.unset')" placement="top">
                 <router-link
@@ -117,44 +123,50 @@
                   class="cell-link"
                   @click.stop
                 >
-                  <el-tag type="success" class="table-tag">
-                    {{ scope.row.adapter }}
-                  </el-tag>
+                  {{ scope.row.adapter }}
                 </router-link>
-                <el-tag v-else type="warning" class="table-tag">
+                <!-- 唯一保留的中性 chip：标记「未设置」这一状态，不带色彩语义 -->
+                <el-tag v-else type="info" effect="plain" size="small" class="unset-chip">
                   {{ t('service.unset') }}
                 </el-tag>
               </el-tooltip>
             </template>
           </el-table-column>
 
-          <el-table-column prop="loadBalanceType" :label="t('service.table.loadBalanceType')" sortable>
+          <el-table-column prop="loadBalanceType" :label="t('service.table.loadBalanceType')" sortable min-width="150">
             <template #default="scope">
-              <el-tag :type="getLoadBalanceTagType(scope.row.loadBalanceType)" class="table-tag">
-                {{ formatLoadBalanceType(scope.row.loadBalanceType) }}
-              </el-tag>
+              <span class="cell-text">{{ formatLoadBalanceType(scope.row.loadBalanceType) }}</span>
             </template>
           </el-table-column>
 
-          <el-table-column :label="t('service.table.actions')" fixed="right" width="180">
+          <el-table-column :label="t('service.table.actions')" fixed="right" width="140">
             <template #default="scope">
-              <el-button size="small" v-permission="'config:instances:write'" @click="handleEdit(scope.row)" type="primary" plain circle :title="t('service.edit')">
-                <el-icon><Edit /></el-icon>
+              <el-button
+                link
+                type="primary"
+                size="small"
+                v-permission="'config:instances:write'"
+                @click="handleEdit(scope.row)"
+              >
+                {{ t('service.edit') }}
               </el-button>
 
-              <el-button size="small" type="danger" v-permission="'config:instances:write'" @click="handleDelete(scope.row)" plain circle :title="t('service.delete')">
-                <el-icon><Delete /></el-icon>
+              <el-button
+                link
+                size="small"
+                v-permission="'config:instances:write'"
+                @click="handleDelete(scope.row)"
+              >
+                {{ t('service.delete') }}
               </el-button>
             </template>
           </el-table-column>
         </el-table>
 
         <div v-if="filteredServices.length === 0 && !loading" class="empty-wrap">
-          <el-empty :description="t('service.table.notFound')">
-            <template #image>
-              <img src="https://static-element.eleme.cn/e/element-ui/empty.svg" alt="empty" />
-            </template>
-          </el-empty>
+          <!-- 空态图用 Element Plus 自带的（随包打入产物）；此前这里挂的是
+               https://static-element.eleme.cn/... 的远程图，离线/内网部署会 404 并污染控制台。 -->
+          <el-empty :description="t('service.table.notFound')" />
         </div>
       </template>
     </el-skeleton>
@@ -427,7 +439,30 @@ const searchQuery = ref('')
 const filterLoadBalance = ref('')
 const filterAdapter = ref<string | undefined>(undefined)
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(20)
+
+// 引导条关闭状态（老用户不再需要 4 步引导）：仅记在本地，默认展示
+const GUIDE_DISMISS_KEY = 'ja-services-guide-dismissed'
+
+const readGuideDismissed = (): boolean => {
+  try {
+    return window.localStorage.getItem(GUIDE_DISMISS_KEY) === '1'
+  } catch {
+    // 隐私模式/禁用存储时按「未关闭」处理，不影响功能
+    return false
+  }
+}
+
+const guideDismissed = ref(readGuideDismissed())
+
+const dismissGuide = () => {
+  guideDismissed.value = true
+  try {
+    window.localStorage.setItem(GUIDE_DISMISS_KEY, '1')
+  } catch {
+    // 写不进去也不影响本次会话的关闭效果
+  }
+}
 
 // v2.10.4: SERVICE_TYPE_LABELS 值 = 顶层 serviceTypes.* i18n key，渲染点用 t() 翻译；未知类型回退原值
 const serviceTypeMap: Record<string, string> = SERVICE_TYPE_LABELS as Record<string, string>
@@ -494,15 +529,6 @@ const rules = computed<FormRules<ServiceForm>>(() => ({
 // 修复表格行键的类型问题
 const rowKey = (row: Service) => row.type
 
-const getLoadBalanceTagType = (type: string) => {
-  switch (type) {
-    case 'random': return 'primary'
-    case 'round-robin': return 'success'
-    case 'least-connections': return 'warning'
-    case 'ip-hash': return 'info'
-    default: return 'info'
-  }
-}
 const formatLoadBalanceType = (type: string) => {
   switch (type) {
     case 'random': return t('service.loadBalance.random')
@@ -887,15 +913,39 @@ onMounted(() => { fetchServices() })
   background-color: var(--ja-main-bg);
 }
 
-.table-tag {
-  font-size: 13px;
-  padding: 6px 10px;
+/* 引导条：默认展示，可关闭（避免长期占位） */
+.guide-bar {
+  position: relative;
+}
+
+.guide-bar-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.guide-dismiss {
+  color: var(--ja-text-secondary);
+  font-size: 12px;
 }
 
 /* Cross-link: 单元格内可点击链接 */
 .cell-link {
   text-decoration: none;
   cursor: pointer;
+  color: var(--ja-primary);
+}
+
+.cell-link:hover {
+  text-decoration: underline;
+}
+
+.cell-text {
+  color: var(--ja-text-primary);
+}
+
+.unset-chip {
+  font-size: 12px;
 }
 
 /* 底栏/分页 */
