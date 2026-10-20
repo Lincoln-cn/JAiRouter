@@ -23,13 +23,13 @@
                   :label="strategyDisplayLabel(strategy)"
                   :value="strategy.name"
                 >
-                  <div style="display: flex; align-items: center; gap: 8px">
+                  <div style="display: flex; align-items: center; gap: var(--ja-space-2)">
                     <span>{{ strategyDisplayLabel(strategy) }}</span>
                     <span
                       style="
                         margin-left: auto;
                         text-align: right;
-                        color: var(--ja-text-secondary);
+                        color: var(--ja-ink-3);
                         font-size: 12px;
                       "
                     >
@@ -78,12 +78,12 @@
       <el-table :data="serviceConfigs" stripe v-loading="loadingConfigs" class="flex-table">
         <el-table-column prop="serviceType" :label="t('loadBalancer.strategyConfig.columns.serviceType')" min-width="120">
           <template #default="{ row }">
-            <el-tag type="primary">{{ row.serviceType }}</el-tag>
+            <el-tag type="info">{{ row.serviceType }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="type" :label="t('loadBalancer.strategyConfig.columns.strategy')" min-width="150">
           <template #default="{ row }">
-            <el-tag :type="getStrategyTagType(row.type)">
+            <el-tag type="info">
               {{ getStrategyDisplayName(row.type) }}
             </el-tag>
             <el-tag v-if="row.isGlobal" type="info" size="small" style="margin-left: 8px">{{ t('loadBalancer.strategyConfig.defaultTag') }}</el-tag>
@@ -92,13 +92,13 @@
         <el-table-column prop="hashAlgorithm" :label="t('loadBalancer.strategyConfig.columns.hashAlgorithm')" min-width="100">
           <template #default="{ row }">
             <span v-if="row.hashAlgorithm">{{ row.hashAlgorithm }}</span>
-            <span v-else style="color: var(--ja-text-secondary)">-</span>
+            <span v-else style="color: var(--ja-ink-3)">-</span>
           </template>
         </el-table-column>
         <el-table-column prop="virtualNodes" :label="t('loadBalancer.strategyConfig.columns.virtualNodes')" min-width="80">
           <template #default="{ row }">
             <span v-if="row.virtualNodes">{{ row.virtualNodes }}</span>
-            <span v-else style="color: var(--ja-text-secondary)">-</span>
+            <span v-else style="color: var(--ja-ink-3)">-</span>
           </template>
         </el-table-column>
         <el-table-column :label="t('loadBalancer.strategyConfig.columns.actions')" min-width="100" fixed="right">
@@ -254,23 +254,6 @@ const getStrategyDisplayName = (strategy: string) => {
   return found ? found.displayName : strategy
 }
 
-const getStrategyTagType = (strategy: string) => {
-  switch (strategy) {
-    case 'random':
-      return 'info'
-    case 'round-robin':
-      return 'primary'
-    case 'least-connections':
-      return 'success'
-    case 'ip-hash':
-      return 'warning'
-    case 'consistent-hash':
-      return 'danger'
-    default:
-      return ''
-  }
-}
-
 const loadGlobalConfig = async () => {
   try {
     const response = await request.get(`${apiBaseUrl}/config/global`)
@@ -354,7 +337,7 @@ onMounted(() => {
 <style scoped>
 .config-card,
 .service-config-card {
-  margin-bottom: 20px;
+  margin-bottom: var(--ja-space-5);
   box-shadow: var(--ja-shadow-lg);
   border-radius: var(--ja-radius-lg);
 }
@@ -368,11 +351,11 @@ onMounted(() => {
 .card-title {
   font-size: 16px;
   font-weight: 600;
-  color: var(--ja-text-primary);
+  color: var(--ja-ink);
 }
 
 .config-form {
-  padding: 20px;
+  padding: var(--ja-space-5);
 }
 
 .flex-table {

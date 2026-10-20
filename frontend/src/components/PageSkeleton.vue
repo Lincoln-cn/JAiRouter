@@ -82,6 +82,36 @@ defineProps<{
   flex-wrap: wrap;
 }
 
+/* 窄屏：工具条里的内联表单默认把表单项排成一行（el-form--inline 的子项不换行），
+   单个日期范围选择器就能把 390px 撑出 300px 横向滚动。断点与侧栏强制折叠一致。 */
+@media (max-width: 767px) {
+  .page-toolbar {
+    min-width: 0;
+  }
+
+  .page-toolbar :deep(.el-form--inline) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ja-space-2);
+    width: 100%;
+  }
+
+  .page-toolbar :deep(.el-form-item) {
+    margin-right: 0;
+    max-width: 100%;
+  }
+
+  .page-toolbar :deep(.el-form-item__content) {
+    min-width: 0;
+  }
+
+  .page-toolbar :deep(.el-date-editor),
+  .page-toolbar :deep(.el-input),
+  .page-toolbar :deep(.el-select) {
+    max-width: 100%;
+  }
+}
+
 .page-content {
   /* 主内容区无需额外间距，由子元素自行控制 */
 }

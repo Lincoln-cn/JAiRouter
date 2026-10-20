@@ -21,7 +21,7 @@
       <el-table-column prop="name" :label="t('adapter.name')" min-width="150" />
       <el-table-column prop="type" :label="t('adapter.type')" min-width="120">
         <template #default="{ row }">
-          <el-tag :type="row.source === 'builtin' ? 'info' : 'success'" size="small">
+          <el-tag type="info" effect="plain" size="small">
             {{ row.source === 'builtin' ? t('adapter.builtin') : t('adapter.configDriven') }}
           </el-tag>
         </template>
@@ -29,14 +29,14 @@
       <el-table-column :label="t('adapter.capabilityColumn')" min-width="280">
         <template #default="{ row }">
           <div class="capability-tags">
-            <el-tag v-if="row.capabilities?.chat" size="small" type="primary">{{ t('adapter.capability.chat') }}</el-tag>
-            <el-tag v-if="row.capabilities?.embedding" size="small" type="success">{{ t('adapter.capability.embedding') }}</el-tag>
-            <el-tag v-if="row.capabilities?.rerank" size="small" type="warning">{{ t('adapter.capability.rerank') }}</el-tag>
-            <el-tag v-if="row.capabilities?.tts" size="small" type="danger">{{ t('adapter.capability.tts') }}</el-tag>
-            <el-tag v-if="row.capabilities?.stt" size="small" type="danger">{{ t('adapter.capability.stt') }}</el-tag>
-            <el-tag v-if="row.capabilities?.imgGen" size="small" type="info">{{ t('adapter.capability.imgGen') }}</el-tag>
-            <el-tag v-if="row.capabilities?.imgEdit" size="small" type="info">{{ t('adapter.capability.imgEdit') }}</el-tag>
-            <el-tag v-if="row.capabilities?.streaming" size="small" type="primary">{{ t('adapter.capability.streaming') }}</el-tag>
+            <el-tag v-if="row.capabilities?.chat" size="small" type="info" effect="plain">{{ t('adapter.capability.chat') }}</el-tag>
+            <el-tag v-if="row.capabilities?.embedding" size="small" type="info" effect="plain">{{ t('adapter.capability.embedding') }}</el-tag>
+            <el-tag v-if="row.capabilities?.rerank" size="small" type="info" effect="plain">{{ t('adapter.capability.rerank') }}</el-tag>
+            <el-tag v-if="row.capabilities?.tts" size="small" type="info" effect="plain">{{ t('adapter.capability.tts') }}</el-tag>
+            <el-tag v-if="row.capabilities?.stt" size="small" type="info" effect="plain">{{ t('adapter.capability.stt') }}</el-tag>
+            <el-tag v-if="row.capabilities?.imgGen" size="small" type="info" effect="plain">{{ t('adapter.capability.imgGen') }}</el-tag>
+            <el-tag v-if="row.capabilities?.imgEdit" size="small" type="info" effect="plain">{{ t('adapter.capability.imgEdit') }}</el-tag>
+            <el-tag v-if="row.capabilities?.streaming" size="small" type="info" effect="plain">{{ t('adapter.capability.streaming') }}</el-tag>
           </div>
         </template>
       </el-table-column>
@@ -52,7 +52,6 @@
             {{ t('adapter.edit') }}
           </el-button>
           <el-button
-            type="success"
             link
             size="small"
             @click="handleTest(row)"
@@ -70,7 +69,6 @@
           </el-button>
           <el-button
             v-if="row.source === 'builtin'"
-            type="info"
             link
             size="small"
             @click="handleView(row)"
@@ -183,7 +181,7 @@
         <el-descriptions-item :label="t('adapter.name')">{{ viewData.name }}</el-descriptions-item>
         <el-descriptions-item :label="t('adapter.type')">{{ viewData.type }}</el-descriptions-item>
         <el-descriptions-item :label="t('adapter.source')">
-          <el-tag :type="viewData.source === 'builtin' ? 'info' : 'success'" size="small">
+          <el-tag type="info" effect="plain" size="small">
             {{ viewData.source === 'builtin' ? t('adapter.builtin') : t('adapter.configDriven') }}
           </el-tag>
         </el-descriptions-item>
@@ -418,19 +416,19 @@ onMounted(() => {
 .capability-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--ja-space-1);
 }
 
 .capability-checkboxes {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: var(--ja-space-4);
 }
 
 .type-hint {
   font-size: 12px;
-  color: var(--ja-text-secondary);
-  margin-top: 4px;
+  color: var(--ja-ink-3);
+  margin-top: var(--ja-space-1);
   line-height: 1.4;
 }
 </style>

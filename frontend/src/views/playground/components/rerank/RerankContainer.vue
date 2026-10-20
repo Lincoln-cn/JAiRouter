@@ -179,7 +179,7 @@
         >
           <el-icon
             :size="48"
-            color="var(--ja-text-secondary)"
+            color="var(--ja-ink-3)"
           >
             <Sort />
           </el-icon>
@@ -384,7 +384,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   height: calc(100vh - 100px);
-  background-color: var(--ja-main-bg);
+  background-color: var(--ja-surface);
 }
 
 .service-toolbar {
@@ -392,15 +392,15 @@ defineExpose({
   justify-content: space-between;
   align-items: center;
   padding: var(--ja-space-3) var(--ja-space-4);
-  background-color: var(--ja-bg-page);
-  border-bottom: 1px solid var(--el-border-color);
-  border-radius: 4px 4px 0 0;
+  background-color: var(--ja-paper);
+  border-bottom: 1px solid var(--ja-border);
+  border-radius: var(--ja-radius-sm) var(--ja-radius-sm) 0 0;
 }
 
 .toolbar-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--ja-space-3);
 }
 
 .model-select {
@@ -409,25 +409,25 @@ defineExpose({
 
 .toolbar-right {
   display: flex;
-  gap: 4px;
+  gap: var(--ja-space-1);
 }
 
 .config-panel {
   padding: var(--ja-space-3) var(--ja-space-4);
-  background-color: var(--ja-bg-page);
-  border-bottom: 1px solid var(--el-border-color);
+  background-color: var(--ja-paper);
+  border-bottom: 1px solid var(--ja-border);
 }
 
 .config-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--ja-space-2);
 }
 
 .config-label {
   font-size: 12px;
   font-weight: 600;
-  color: var(--ja-text-regular);
+  color: var(--ja-ink-2);
 }
 
 .slide-down-enter-active,
@@ -449,57 +449,58 @@ defineExpose({
 
 .input-card,
 .result-card {
-  background-color: var(--ja-bg-page);
-  border-radius: 4px;
-  padding: 16px;
-  margin-bottom: 16px;
+  background-color: var(--ja-paper);
+  border: 1px solid var(--ja-border);
+  border-radius: var(--ja-radius-sm);
+  padding: var(--ja-space-4);
+  margin-bottom: var(--ja-space-4);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: var(--ja-space-3);
 }
 
 .card-title {
   font-size: 14px;
   font-weight: 600;
-  color: var(--ja-text-primary);
+  color: var(--ja-ink);
 }
 
 .document-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--ja-space-3);
 }
 
 .document-item {
-  padding: 12px;
-  background-color: var(--ja-main-bg);
-  border-radius: 4px;
+  padding: var(--ja-space-3);
+  background-color: var(--ja-surface-2);
+  border-radius: var(--ja-radius-sm);
 }
 
 .document-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: var(--ja-space-2);
 }
 
 .document-index {
   font-size: 12px;
   font-weight: 600;
-  color: var(--ja-text-regular);
-  background-color: var(--el-fill-color-dark);
+  color: var(--ja-ink-2);
+  background-color: var(--ja-surface-2);
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--ja-radius-sm);
 }
 
 .action-bar {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: var(--ja-space-3);
   padding: 12px 0;
 }
 
@@ -513,9 +514,9 @@ defineExpose({
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 0;
-  gap: 12px;
-  color: var(--ja-text-secondary);
+  padding: var(--ja-space-8) 0;
+  gap: var(--ja-space-3);
+  color: var(--ja-ink-3);
 }
 
 .empty-text {
@@ -528,29 +529,29 @@ defineExpose({
 
 .result-stats {
   display: flex;
-  gap: 16px;
-  padding: 8px 12px;
-  background-color: var(--ja-main-bg);
-  border-radius: 4px;
-  margin-bottom: 16px;
+  gap: var(--ja-space-4);
+  padding: var(--ja-space-2) var(--ja-space-3);
+  background-color: var(--ja-surface-2);
+  border-radius: var(--ja-radius-sm);
+  margin-bottom: var(--ja-space-4);
   font-size: 12px;
-  color: var(--ja-text-regular);
+  color: var(--ja-ink-2);
 }
 
 .result-item {
-  padding: 12px;
-  background-color: var(--ja-main-bg);
-  border-radius: 4px;
-  margin-bottom: 8px;
+  padding: var(--ja-space-3);
+  background-color: var(--ja-surface-2);
+  border-radius: var(--ja-radius-sm);
+  margin-bottom: var(--ja-space-2);
 }
 
 .result-header {
-  margin-bottom: 8px;
+  margin-bottom: var(--ja-space-2);
 }
 
 .result-rank {
   display: flex;
-  gap: 8px;
+  gap: var(--ja-space-2);
 }
 
 .rank-badge {
@@ -561,15 +562,15 @@ defineExpose({
 
 .score-badge {
   font-size: 12px;
-  color: var(--ja-success);
-  background-color: var(--el-color-success-light-9);
+  color: var(--ja-ink-2);
+  background-color: var(--ja-surface-2);
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--ja-radius-sm);
 }
 
 .result-document {
   font-size: 13px;
-  color: var(--ja-text-regular);
+  color: var(--ja-ink-2);
   line-height: 1.6;
   word-break: break-word;
 }
@@ -578,7 +579,7 @@ defineExpose({
 .instance-option {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--ja-space-2);
 }
 
 .health-indicator {
@@ -594,7 +595,7 @@ defineExpose({
 }
 
 .health-unknown {
-  color: var(--ja-text-secondary);
+  color: var(--ja-ink-3);
 }
 
 .instance-name {
@@ -607,6 +608,6 @@ defineExpose({
 }
 
 .health-status-text.unknown {
-  color: var(--ja-text-secondary);
+  color: var(--ja-ink-3);
 }
 </style>

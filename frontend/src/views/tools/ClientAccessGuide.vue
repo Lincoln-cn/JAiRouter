@@ -1,7 +1,7 @@
 <template>
   <PageSkeleton :title="t('clientAccess.pageTitle')">
     <!-- OpenAI 兼容接口 -->
-    <el-card shadow="hover" style="margin-bottom: 16px">
+    <el-card shadow="hover" class="section-gap">
       <template #header>
         <span class="card-title">{{ t('clientAccess.openaiSection') }}</span>
       </template>
@@ -52,7 +52,7 @@
     </el-card>
 
     <!-- Anthropic 兼容接口 -->
-    <el-card shadow="hover" style="margin-bottom: 16px">
+    <el-card shadow="hover" class="section-gap">
       <template #header>
         <span class="card-title">{{ t('clientAccess.anthropicSection') }}</span>
       </template>
@@ -123,7 +123,7 @@
         type="info"
         :closable="false"
         show-icon
-        style="margin-top: 12px"
+        class="section-gap-sm"
       />
       <el-empty
         v-if="!loadingModels && !modelLoadFailed && modelList.length === 0"
@@ -245,34 +245,34 @@ onMounted(loadModels)
 }
 
 .info-section {
-  margin-bottom: 16px;
+  margin-bottom: var(--ja-space-4);
 }
 
 .info-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--ja-space-2);
   padding: 6px 0;
   font-size: 14px;
 }
 
 .info-label {
   font-weight: 500;
-  color: var(--ja-text-primary);
+  color: var(--ja-ink);
   white-space: nowrap;
 }
 
 .info-value {
-  color: var(--el-text-color-regular);
+  color: var(--ja-ink-2);
 }
 
 .stream-note {
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  color: var(--ja-ink-3);
 }
 
 .code-section {
-  margin-bottom: 16px;
+  margin-bottom: var(--ja-space-4);
 }
 
 .code-section:last-child {
@@ -283,20 +283,22 @@ onMounted(loadModels)
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: var(--ja-space-2);
 }
 
 .code-title {
   font-size: 14px;
   font-weight: 600;
-  color: var(--ja-text-primary);
+  color: var(--ja-ink);
 }
 
+/* 代码块改成中性浅底（原实现是深色玻璃底 + Element 内部色），配色只用 --ja-* 令牌 */
 .code-block {
-  background: var(--el-fill-color-dark, #1e1e1e);
-  color: var(--el-text-color-primary, #d4d4d4);
-  padding: 16px;
-  border-radius: var(--ja-radius-md, 8px);
+  background: var(--ja-surface-2);
+  color: var(--ja-ink-2);
+  padding: var(--ja-space-4);
+  border: 1px solid var(--ja-border);
+  border-radius: var(--ja-radius);
   overflow-x: auto;
   font-size: 13px;
   line-height: 1.6;
@@ -306,5 +308,14 @@ onMounted(loadModels)
 
 .code-block code {
   white-space: pre;
+}
+
+/* ── 区块间距 ── */
+.section-gap {
+  margin-bottom: var(--ja-space-4);
+}
+
+.section-gap-sm {
+  margin-top: var(--ja-space-3);
 }
 </style>

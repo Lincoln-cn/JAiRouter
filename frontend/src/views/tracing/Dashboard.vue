@@ -2,7 +2,7 @@
   <PageSkeleton>
     <template #title>
       <h2>{{ t('tracing.dashboard.title') }}</h2>
-      <el-tag :type="tracingEnabled ? 'success' : 'danger'" size="small">
+      <el-tag :type="tracingEnabled ? 'info' : 'danger'" size="small">
         {{ tracingEnabled ? t('tracing.dashboard.enabledTag') : t('tracing.dashboard.disabledTag') }}
       </el-tag>
     </template>
@@ -34,79 +34,9 @@
     </template>
 
     <template #stats>
-      <!-- 关键指标卡片 -->
-      <el-row :gutter="16" class="metrics-row">
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card class="metric-card" shadow="hover">
-            <div class="metric-content">
-              <div class="metric-icon primary">
-                <el-icon><DataLine /></el-icon>
-              </div>
-              <div class="metric-info">
-                <div class="metric-value">{{ formatNumber(stats.totalTraces) }}</div>
-                <div class="metric-label">{{ t('tracing.dashboard.totalTraces') }}</div>
-              </div>
-            </div>
-            <div class="metric-trend" v-if="trendData.totalTracesTrend">
-              <span :class="trendData.totalTracesTrend >= 0 ? 'up' : 'down'">
-                {{ trendData.totalTracesTrend >= 0 ? '+' : '' }}{{ trendData.totalTracesTrend }}%
-              </span>
-              {{ t('tracing.dashboard.vsPreviousPeriod') }}
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card class="metric-card" shadow="hover" @click="goToSearch('error')">
-            <div class="metric-content">
-              <div class="metric-icon danger">
-                <el-icon><Warning /></el-icon>
-              </div>
-              <div class="metric-info">
-                <div class="metric-value">{{ formatNumber(stats.errorTraces) }}</div>
-                <div class="metric-label">{{ t('tracing.dashboard.errorTraces') }}</div>
-              </div>
-            </div>
-            <div class="metric-trend" v-if="trendData.errorTrend">
-              <span :class="trendData.errorTrend <= 0 ? 'up' : 'down'">
-                {{ trendData.errorTrend >= 0 ? '+' : '' }}{{ trendData.errorTrend }}%
-              </span>
-              {{ t('tracing.dashboard.vsPreviousPeriod') }}
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card class="metric-card" shadow="hover">
-            <div class="metric-content">
-              <div class="metric-icon success">
-                <el-icon><Timer /></el-icon>
-              </div>
-              <div class="metric-info">
-                <div class="metric-value">{{ stats.avgDuration }}<span class="unit">ms</span></div>
-                <div class="metric-label">{{ t('tracing.dashboard.avgLatency') }}</div>
-              </div>
-            </div>
-            <div class="metric-trend" v-if="trendData.avgDurationTrend">
-              <span :class="trendData.avgDurationTrend <= 0 ? 'up' : 'down'">
-                {{ trendData.avgDurationTrend >= 0 ? '+' : '' }}{{ trendData.avgDurationTrend }}%
-              </span>
-              {{ t('tracing.dashboard.vsPreviousPeriod') }}
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card class="metric-card" shadow="hover">
-            <div class="metric-content">
-              <div class="metric-icon warning">
-                <el-icon><PieChart /></el-icon>
-              </div>
-              <div class="metric-info">
-                <div class="metric-value">{{ stats.samplingRate }}<span class="unit">%</span></div>
-                <div class="metric-label">{{ t('tracing.dashboard.samplingRate') }}</div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+      <!-- 关键指标：4 张彩色渐变图标卡 → 一条中性 MetricStrip；
+           只有「错误链路数 > 0」是真语义，其余保持 default -->
+      <MetricStrip :items="kpiItems" :loading="loading" />
     </template>
 
     <!-- Tab 区域 -->
@@ -115,25 +45,33 @@
         <el-tab-pane :label="t('tracing.dashboard.tabs.overview')" name="overview">
           <el-row :gutter="16">
             <el-col :xs="24" :lg="12">
-              <div class="chart-wrapper">
-                <div class="chart-header">
-                  <h4>{{ t('tracing.dashboard.chart.traceVolume') }}</h4>
+              <ChartCard
+                :title="t('tracing.dashboard.chart.traceVolume')"
+                :loading="loading"
+                :empty="traceTrendEmpty"
+                :empty-title="t('common.chartEmpty')"
+                :empty-description="t('common.chartEmptyHint')"
+              >
+                <template #actions>
                   <el-radio-group v-model="chartInterval" size="small" @change="updateTrendChart">
                     <el-radio-button label="5m">{{ t('tracing.dashboard.chart.intervals.5m') }}</el-radio-button>
                     <el-radio-button label="1h">{{ t('tracing.dashboard.chart.intervals.1h') }}</el-radio-button>
                     <el-radio-button label="1d">{{ t('tracing.dashboard.chart.intervals.1d') }}</el-radio-button>
                   </el-radio-group>
-                </div>
+                </template>
                 <div ref="traceTrendChart" class="chart-container"></div>
-              </div>
+              </ChartCard>
             </el-col>
             <el-col :xs="24" :lg="12">
-              <div class="chart-wrapper">
-                <div class="chart-header">
-                  <h4>{{ t('tracing.dashboard.chart.latencyDistribution') }}</h4>
-                </div>
+              <ChartCard
+                :title="t('tracing.dashboard.chart.latencyDistribution')"
+                :loading="loading"
+                :empty="latencyDistEmpty"
+                :empty-title="t('common.chartEmpty')"
+                :empty-description="t('common.chartEmptyHint')"
+              >
                 <div ref="latencyDistributionChart" class="chart-container"></div>
-              </div>
+              </ChartCard>
             </el-col>
           </el-row>
 
@@ -182,7 +120,7 @@
                 <template #default="{ row }">
                   <el-progress
                     :percentage="row.errorRate"
-                    :status="row.errorRate > 5 ? 'exception' : 'success'"
+                    :status="row.errorRate > 5 ? 'exception' : ''"
                     :stroke-width="8"
                     :show-text="false"
                   />
@@ -207,12 +145,15 @@
         <el-tab-pane :label="t('tracing.dashboard.tabs.latency')" name="latency">
           <el-row :gutter="16">
             <el-col :xs="24" :lg="12">
-              <div class="chart-wrapper">
-                <div class="chart-header">
-                  <h4>{{ t('tracing.dashboard.chart.p95P99LatencyTrend') }}</h4>
-                </div>
+              <ChartCard
+                :title="t('tracing.dashboard.chart.p95P99LatencyTrend')"
+                :loading="loading"
+                :empty="latencyTrendEmpty"
+                :empty-title="t('common.chartEmpty')"
+                :empty-description="t('common.chartEmptyHint')"
+              >
                 <div ref="latencyTrendChart" class="chart-container"></div>
-              </div>
+              </ChartCard>
             </el-col>
             <el-col :xs="24" :lg="12">
               <div class="chart-wrapper">
@@ -243,12 +184,15 @@
         <el-tab-pane :label="t('tracing.dashboard.tabs.error')" name="error">
           <el-row :gutter="16">
             <el-col :xs="24" :lg="12">
-              <div class="chart-wrapper">
-                <div class="chart-header">
-                  <h4>{{ t('tracing.dashboard.chart.errorRateTrend') }}</h4>
-                </div>
+              <ChartCard
+                :title="t('tracing.dashboard.chart.errorRateTrend')"
+                :loading="loading"
+                :empty="errorTrendEmpty"
+                :empty-title="t('common.chartEmpty')"
+                :empty-description="t('common.chartEmptyHint')"
+              >
                 <div ref="errorTrendChart" class="chart-container"></div>
-              </div>
+              </ChartCard>
             </el-col>
             <el-col :xs="24" :lg="12">
               <div class="chart-wrapper">
@@ -276,20 +220,26 @@
         <el-tab-pane :label="t('tracing.dashboard.tabs.throughput')" name="throughput">
           <el-row :gutter="16">
             <el-col :xs="24" :lg="12">
-              <div class="chart-wrapper">
-                <div class="chart-header">
-                  <h4>{{ t('tracing.dashboard.chart.requestVolume') }}</h4>
-                </div>
+              <ChartCard
+                :title="t('tracing.dashboard.chart.requestVolume')"
+                :loading="loading"
+                :empty="throughputTrendEmpty"
+                :empty-title="t('common.chartEmpty')"
+                :empty-description="t('common.chartEmptyHint')"
+              >
                 <div ref="throughputChart" class="chart-container"></div>
-              </div>
+              </ChartCard>
             </el-col>
             <el-col :xs="24" :lg="12">
-              <div class="chart-wrapper">
-                <div class="chart-header">
-                  <h4>{{ t('tracing.dashboard.chart.serviceThroughput') }}</h4>
-                </div>
-                <div ref="throughputDistChart" class="chart-container"></div>
-              </div>
+              <!-- 后端尚未提供「按服务的吞吐分布」数据源，这里显式渲染空态而不是留一块空白画布 -->
+              <ChartCard
+                :title="t('tracing.dashboard.chart.serviceThroughput')"
+                :empty="true"
+                :empty-title="t('common.chartEmpty')"
+                :empty-description="t('common.chartEmptyHint')"
+              >
+                <div class="chart-container"></div>
+              </ChartCard>
             </el-col>
           </el-row>
         </el-tab-pane>
@@ -313,9 +263,10 @@ import { ref, onMounted, onBeforeUnmount, nextTick, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import * as echarts from 'echarts'
+import type { ECharts } from 'echarts'
 import { ElMessage } from 'element-plus'
 import {
-  DataLine, Warning, Timer, PieChart, Refresh, Search, Setting, Monitor,
+  Refresh, Search, Setting, Monitor,
   CircleCheckFilled, WarningFilled, CircleCloseFilled
 } from '@element-plus/icons-vue'
 import {
@@ -331,12 +282,17 @@ import type { LocationQueryRaw } from 'vue-router'
 import type { CommonError, ErrorAnalysis, LatencyAnalysis, LatencyTrendData, ThroughputAnalysis, TimeSeriesData } from '@/types'
 import TraceDetail from './components/TraceDetail.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
-import { useChartTheme } from '@/composables/useChartTheme'
+import MetricStrip from '@/components/MetricStrip.vue'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
+import ChartCard from '@/components/ChartCard.vue'
+import { useChartSkin } from '@/composables/useChartSkin'
 import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 import { formatNumber as formatNumberBase } from '@/utils/format'
 
-const { getChartTheme } = useChartTheme()
 const { t } = useI18n()
+
+/** 图表统一皮肤：一次 computed 复用到全部 5 张图。 */
+const { skin } = useChartSkin()
 
 const router = useRouter()
 
@@ -377,18 +333,58 @@ const latencyDistributionChart = ref<HTMLElement | null>(null)
 const latencyTrendChart = ref<HTMLElement | null>(null)
 const errorTrendChart = ref<HTMLElement | null>(null)
 const throughputChart = ref<HTMLElement | null>(null)
-const throughputDistChart = ref<HTMLElement | null>(null)
 
-let traceTrendEcharts: echarts.ECharts | null = null
-let latencyDistEcharts: echarts.ECharts | null = null
-let latencyTrendEcharts: echarts.ECharts | null = null
-let errorTrendEcharts: echarts.ECharts | null = null
-let throughputEcharts: echarts.ECharts | null = null
-const throughputDistEcharts: echarts.ECharts | null = null
+let traceTrendEcharts: ECharts | null = null
+let latencyDistEcharts: ECharts | null = null
+let latencyTrendEcharts: ECharts | null = null
+let errorTrendEcharts: ECharts | null = null
+let throughputEcharts: ECharts | null = null
 
 // 追踪详情
 const traceDetailVisible = ref(false)
 const selectedTrace = ref<TraceSpan | null>(null)
+
+// 数据空态：各图只看自己的数据源
+// 追踪趋势图当前没有后端时序接口（issue #253），恒定空态，不用占位数据伪造曲线。
+const traceTrendEmpty = true
+const latencyDistEmpty = computed(() => serviceStats.value.length === 0)
+const latencyTrendEmpty = computed(() => (latencyAnalysis.value?.trend?.timestamps || []).length === 0)
+const errorTrendEmpty = computed(() => (errorAnalysis.value?.errorTrend || []).length === 0)
+const throughputTrendEmpty = computed(() => (throughputAnalysis.value?.qpsTrend || []).length === 0)
+
+/** 环比提示文案（有变化才显示，避免每格都挂一条 0%）。 */
+const formatTrendHint = (value: number): string | undefined => {
+  if (!value) return undefined
+  return `${value > 0 ? '+' : ''}${value}% ${t('tracing.dashboard.vsPreviousPeriod')}`
+}
+
+/** 指标条：成功率/用量类数字一律中性，只有错误链路数是真语义。 */
+const kpiItems = computed<MetricStripItem[]>(() => [
+  {
+    key: 'totalTraces',
+    label: t('tracing.dashboard.totalTraces'),
+    value: formatNumber(stats.value.totalTraces),
+    hint: formatTrendHint(trendData.value.totalTracesTrend)
+  },
+  {
+    key: 'errorTraces',
+    label: t('tracing.dashboard.errorTraces'),
+    value: formatNumber(stats.value.errorTraces),
+    hint: formatTrendHint(trendData.value.errorTrend),
+    tone: stats.value.errorTraces > 0 ? 'danger' : 'default'
+  },
+  {
+    key: 'avgDuration',
+    label: t('tracing.dashboard.avgLatency'),
+    value: `${stats.value.avgDuration} ms`,
+    hint: formatTrendHint(trendData.value.avgDurationTrend)
+  },
+  {
+    key: 'samplingRate',
+    label: t('tracing.dashboard.samplingRate'),
+    value: `${stats.value.samplingRate}%`
+  }
+])
 
 // 时间快捷选项
 const timeShortcuts = computed(() => [
@@ -487,19 +483,21 @@ const loadTracingStatus = async () => {
   }
 }
 
+/** 复用已创建的实例，避免重复 echarts.init 造成实例泄漏与警告。 */
+const ensureChart = (element: HTMLElement | null, current: ECharts | null): ECharts | null => {
+  if (current) return current
+  return element ? echarts.init(element) : null
+}
+
 // 初始化图表
 const initCharts = () => {
   // 追踪趋势图表
-  if (traceTrendChart.value) {
-    traceTrendEcharts = echarts.init(traceTrendChart.value)
-    traceTrendEcharts.setOption(getTraceTrendOption())
-  }
+  traceTrendEcharts = ensureChart(traceTrendChart.value, traceTrendEcharts)
+  traceTrendEcharts?.setOption(getTraceTrendOption(), { notMerge: true })
 
   // 延迟分布图表
-  if (latencyDistributionChart.value) {
-    latencyDistEcharts = echarts.init(latencyDistributionChart.value)
-    latencyDistEcharts.setOption(getLatencyDistributionOption())
-  }
+  latencyDistEcharts = ensureChart(latencyDistributionChart.value, latencyDistEcharts)
+  latencyDistEcharts?.setOption(getLatencyDistributionOption(), { notMerge: true })
 }
 
 // 图表配置
@@ -508,45 +506,40 @@ const initCharts = () => {
 // /tracing/performance/metrics/dashboard 返回处理器与内存快照。故此处渲染空序列，
 // 待后端提供时序接口后再接线；不得用随机数占位（issue #253）。
 const getTraceTrendOption = () => {
-  const { primary, danger } = getChartTheme()
+  const chartSkin = skin.value
   return {
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: { type: 'cross' }
-    },
+    tooltip: { ...chartSkin.tooltip, trigger: 'axis', axisPointer: { type: 'cross' } },
     legend: {
+      ...chartSkin.legend,
       data: [t('tracing.dashboard.columns.traces'), t('tracing.dashboard.columns.errors')],
-      bottom: 0
+      bottom: 0,
+      top: 'auto',
+      right: 'auto',
+      left: 'center'
     },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '15%',
-      top: '10%',
-      containLabel: true
-    },
+    grid: { ...chartSkin.grid },
     xAxis: {
-      type: 'category',
+      ...chartSkin.categoryAxis,
       boundaryGap: false,
       data: generateTimeLabels()
     },
-    yAxis: {
-      type: 'value'
-    },
+    yAxis: { ...chartSkin.valueAxis },
     series: [
       {
         name: t('tracing.dashboard.columns.traces'),
         type: 'line',
         smooth: true,
-        areaStyle: { opacity: 0.3 },
-        itemStyle: { color: primary },
+        showSymbol: false,
+        areaStyle: { opacity: 0.12 },
+        itemStyle: { color: chartSkin.palette[0] },
         data: []
       },
       {
         name: t('tracing.dashboard.columns.errors'),
         type: 'line',
         smooth: true,
-        itemStyle: { color: danger },
+        showSymbol: false,
+        itemStyle: { color: chartSkin.emphasis },
         data: []
       }
     ]
@@ -555,30 +548,40 @@ const getTraceTrendOption = () => {
 
 // 延迟趋势（P95/P99）——数据来自 /tracing/query/performance/latency
 const getLatencyTrendOption = () => {
-  const { primary, warning } = getChartTheme()
+  const chartSkin = skin.value
   const trend: Partial<LatencyTrendData> = latencyAnalysis.value?.trend ?? {}
   return {
-    tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+    tooltip: { ...chartSkin.tooltip, trigger: 'axis', axisPointer: { type: 'cross' } },
     legend: {
+      ...chartSkin.legend,
       data: [t('tracing.dashboard.columns.p95Latency'), t('tracing.dashboard.columns.p99Latency')],
-      bottom: 0
+      bottom: 0,
+      top: 'auto',
+      right: 'auto',
+      left: 'center'
     },
-    grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
-    xAxis: { type: 'category', boundaryGap: false, data: trend.timestamps || [] },
-    yAxis: { type: 'value' },
+    grid: { ...chartSkin.grid },
+    xAxis: {
+      ...chartSkin.categoryAxis,
+      boundaryGap: false,
+      data: trend.timestamps || []
+    },
+    yAxis: { ...chartSkin.valueAxis },
     series: [
       {
         name: t('tracing.dashboard.columns.p95Latency'),
         type: 'line',
         smooth: true,
-        itemStyle: { color: primary },
+        showSymbol: false,
+        itemStyle: { color: chartSkin.palette[0] },
         data: trend.p95Latency || []
       },
       {
         name: t('tracing.dashboard.columns.p99Latency'),
         type: 'line',
         smooth: true,
-        itemStyle: { color: warning },
+        showSymbol: false,
+        itemStyle: { color: chartSkin.palette[4] },
         data: trend.p99Latency || []
       }
     ]
@@ -587,20 +590,32 @@ const getLatencyTrendOption = () => {
 
 // 错误率趋势——数据来自 /tracing/query/performance/errors
 const getErrorTrendOption = () => {
-  const { danger } = getChartTheme()
+  const chartSkin = skin.value
   const points: TimeSeriesData[] = errorAnalysis.value?.errorTrend || []
   return {
-    tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
-    legend: { data: [t('tracing.dashboard.columns.errorRate')], bottom: 0 },
-    grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
-    xAxis: { type: 'category', boundaryGap: false, data: points.map(p => p.timestamp) },
-    yAxis: { type: 'value' },
+    tooltip: { ...chartSkin.tooltip, trigger: 'axis', axisPointer: { type: 'cross' } },
+    legend: {
+      ...chartSkin.legend,
+      data: [t('tracing.dashboard.columns.errorRate')],
+      bottom: 0,
+      top: 'auto',
+      right: 'auto',
+      left: 'center'
+    },
+    grid: { ...chartSkin.grid },
+    xAxis: {
+      ...chartSkin.categoryAxis,
+      boundaryGap: false,
+      data: points.map(p => p.timestamp)
+    },
+    yAxis: { ...chartSkin.valueAxis },
     series: [
       {
         name: t('tracing.dashboard.columns.errorRate'),
         type: 'line',
         smooth: true,
-        itemStyle: { color: danger },
+        showSymbol: false,
+        itemStyle: { color: chartSkin.emphasis },
         data: points.map(p => p.value)
       }
     ]
@@ -609,20 +624,32 @@ const getErrorTrendOption = () => {
 
 // 请求量趋势——数据来自 /tracing/query/performance/throughput
 const getThroughputTrendOption = () => {
-  const { primary } = getChartTheme()
+  const chartSkin = skin.value
   const points: TimeSeriesData[] = throughputAnalysis.value?.qpsTrend || []
   return {
-    tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
-    legend: { data: [t('tracing.dashboard.columns.requests')], bottom: 0 },
-    grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
-    xAxis: { type: 'category', boundaryGap: false, data: points.map(p => p.timestamp) },
-    yAxis: { type: 'value' },
+    tooltip: { ...chartSkin.tooltip, trigger: 'axis', axisPointer: { type: 'cross' } },
+    legend: {
+      ...chartSkin.legend,
+      data: [t('tracing.dashboard.columns.requests')],
+      bottom: 0,
+      top: 'auto',
+      right: 'auto',
+      left: 'center'
+    },
+    grid: { ...chartSkin.grid },
+    xAxis: {
+      ...chartSkin.categoryAxis,
+      boundaryGap: false,
+      data: points.map(p => p.timestamp)
+    },
+    yAxis: { ...chartSkin.valueAxis },
     series: [
       {
         name: t('tracing.dashboard.columns.requests'),
         type: 'line',
         smooth: true,
-        itemStyle: { color: primary },
+        showSymbol: false,
+        itemStyle: { color: chartSkin.palette[0] },
         data: points.map(p => p.value)
       }
     ]
@@ -661,47 +688,49 @@ const loadThroughputAnalysis = async () => {
 }
 
 const getLatencyDistributionOption = () => {
-  const { primary, warning } = getChartTheme()
+  const chartSkin = skin.value
   const services = serviceStats.value.map(s => s.name)
   const avgDurations = serviceStats.value.map(s => s.avgDuration || 0)
   const p95Durations = serviceStats.value.map(s => s.p95Duration || 0)
 
   return {
     tooltip: {
+      ...chartSkin.tooltip,
       trigger: 'axis',
       axisPointer: { type: 'shadow' }
     },
     legend: {
+      ...chartSkin.legend,
       data: [t('tracing.dashboard.avgLatency'), t('tracing.dashboard.columns.p95Latency')],
-      bottom: 0
+      bottom: 0,
+      top: 'auto',
+      right: 'auto',
+      left: 'center'
     },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '15%',
-      top: '10%',
-      containLabel: true
-    },
+    grid: { ...chartSkin.grid },
     xAxis: {
-      type: 'category',
+      ...chartSkin.categoryAxis,
       data: services.length > 0 ? services : [t('tracing.dashboard.chart.noData')],
-      axisLabel: { rotate: 30 }
+      axisLabel: { color: chartSkin.textMuted, fontSize: 12, rotate: 30 }
     },
     yAxis: {
-      type: 'value',
-      name: t('tracing.dashboard.chart.latencyUnit')
+      ...chartSkin.valueAxis,
+      name: t('tracing.dashboard.chart.latencyUnit'),
+      nameTextStyle: { color: chartSkin.textMuted, fontSize: 12 }
     },
     series: [
       {
         name: t('tracing.dashboard.avgLatency'),
         type: 'bar',
-        itemStyle: { color: primary },
+        barMaxWidth: 28,
+        itemStyle: { color: chartSkin.palette[0], borderRadius: [4, 4, 0, 0] },
         data: avgDurations
       },
       {
         name: t('tracing.dashboard.columns.p95Latency'),
         type: 'bar',
-        itemStyle: { color: warning },
+        barMaxWidth: 28,
+        itemStyle: { color: chartSkin.palette[4], borderRadius: [4, 4, 0, 0] },
         data: p95Durations
       }
     ]
@@ -726,9 +755,9 @@ const formatNumber = (num: number) => {
   return formatNumberBase(num)
 }
 
+// 只有「慢到 1s 以上」才标红；原来 500ms 的 warning 档会带出第 4 个色相
 const getLatencyClass = (duration: number) => {
   if (duration > 1000) return 'text-danger'
-  if (duration > 500) return 'text-warning'
   return ''
 }
 
@@ -738,11 +767,9 @@ const getRowClassName = ({ row }: { row: TracingServiceStat }) => {
   return ''
 }
 
+// 服务状态图标：只有真错误上语义色，健康/偏慢用中性墨色（图标形状+tooltip 已能区分）
 const getServiceStatusColor = (row: TracingServiceStat) => {
-  const { danger, warning, success } = getChartTheme()
-  if ((row.errorRate ?? 0) > 5) return danger
-  if ((row.avgDuration ?? 0) > 1000) return warning
-  return success
+  return (row.errorRate ?? 0) > 5 ? skin.value.emphasis : skin.value.textMuted
 }
 
 const getServiceStatusIcon = (row: TracingServiceStat) => {
@@ -774,15 +801,15 @@ const handleTimeRangeChange = () => {
 
 const handleTabChange = (tab: string) => {
   nextTick(() => {
-    if (tab === 'latency' && latencyTrendChart.value) {
-      latencyTrendEcharts = echarts.init(latencyTrendChart.value)
-      latencyTrendEcharts.setOption(getLatencyTrendOption())
-    } else if (tab === 'error' && errorTrendChart.value) {
-      errorTrendEcharts = echarts.init(errorTrendChart.value)
-      errorTrendEcharts.setOption(getErrorTrendOption())
-    } else if (tab === 'throughput' && throughputChart.value) {
-      throughputEcharts = echarts.init(throughputChart.value)
-      throughputEcharts.setOption(getThroughputTrendOption())
+    if (tab === 'latency') {
+      latencyTrendEcharts = ensureChart(latencyTrendChart.value, latencyTrendEcharts)
+      latencyTrendEcharts?.setOption(getLatencyTrendOption(), { notMerge: true })
+    } else if (tab === 'error') {
+      errorTrendEcharts = ensureChart(errorTrendChart.value, errorTrendEcharts)
+      errorTrendEcharts?.setOption(getErrorTrendOption(), { notMerge: true })
+    } else if (tab === 'throughput') {
+      throughputEcharts = ensureChart(throughputChart.value, throughputEcharts)
+      throughputEcharts?.setOption(getThroughputTrendOption(), { notMerge: true })
     }
   })
 }
@@ -809,29 +836,25 @@ const viewTraceDetail = (trace: TraceSpan) => {
 }
 
 const updateTrendChart = () => {
-  if (traceTrendEcharts) {
-    traceTrendEcharts.setOption(getTraceTrendOption())
-  }
+  traceTrendEcharts?.setOption(getTraceTrendOption(), { notMerge: true })
 }
 
 // 语言 / 主题切换后重绘所有已创建图表（纯重绘，无网络请求；未创建/隐藏页签图表自动跳过）
 const rebuildAll = () => {
-  if (traceTrendEcharts) traceTrendEcharts.setOption(getTraceTrendOption())
-  if (latencyDistEcharts) latencyDistEcharts.setOption(getLatencyDistributionOption())
-  if (latencyTrendEcharts) latencyTrendEcharts.setOption(getLatencyTrendOption())
-  if (errorTrendEcharts) errorTrendEcharts.setOption(getErrorTrendOption())
-  if (throughputEcharts) throughputEcharts.setOption(getThroughputTrendOption())
+  traceTrendEcharts?.setOption(getTraceTrendOption(), { notMerge: true })
+  latencyDistEcharts?.setOption(getLatencyDistributionOption(), { notMerge: true })
+  latencyTrendEcharts?.setOption(getLatencyTrendOption(), { notMerge: true })
+  errorTrendEcharts?.setOption(getErrorTrendOption(), { notMerge: true })
+  throughputEcharts?.setOption(getThroughputTrendOption(), { notMerge: true })
 }
 
 // 窗口大小变化处理
 const handleResize = () => {
-  if (traceTrendEcharts) traceTrendEcharts.resize()
-  if (latencyDistEcharts) latencyDistEcharts.resize()
-  if (latencyTrendEcharts) latencyTrendEcharts.resize()
-  if (errorTrendEcharts) errorTrendEcharts.resize()
-  if (throughputEcharts) throughputEcharts.resize()
-  // @ts-expect-error - Vue template ref causes type conflict
-  if (throughputDistEcharts) throughputDistEcharts.resize()
+  traceTrendEcharts?.resize()
+  latencyDistEcharts?.resize()
+  latencyTrendEcharts?.resize()
+  errorTrendEcharts?.resize()
+  throughputEcharts?.resize()
 }
 
 // 生命周期
@@ -843,160 +866,88 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
-  if (traceTrendEcharts) traceTrendEcharts.dispose()
-  if (latencyDistEcharts) latencyDistEcharts.dispose()
-  if (latencyTrendEcharts) latencyTrendEcharts.dispose()
-  if (errorTrendEcharts) errorTrendEcharts.dispose()
-  if (throughputEcharts) throughputEcharts.dispose()
-  // @ts-expect-error - Vue template ref causes type conflict
-  if (throughputDistEcharts) throughputDistEcharts.dispose()
+  traceTrendEcharts?.dispose()
+  latencyDistEcharts?.dispose()
+  latencyTrendEcharts?.dispose()
+  errorTrendEcharts?.dispose()
+  throughputEcharts?.dispose()
+  traceTrendEcharts = null
+  latencyDistEcharts = null
+  latencyTrendEcharts = null
+  errorTrendEcharts = null
+  throughputEcharts = null
 })
 </script>
 
 <style scoped>
-.metrics-row {
-  margin-bottom: 16px;
-}
-
-.metric-card {
-  height: 120px;
-}
-
-.metric-content {
-  display: flex;
-  align-items: center;
-}
-
-.metric-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 16px;
-  font-size: 24px;
-}
-
-.metric-icon.primary {
-  background: linear-gradient(135deg, var(--ja-primary) 0%, var(--ja-primary-light-3) 100%);
-  color: white;
-}
-
-.metric-icon.success {
-  background: linear-gradient(135deg, var(--ja-success) 0%, var(--el-color-success-light-3) 100%);
-  color: white;
-}
-
-.metric-icon.warning {
-  background: linear-gradient(135deg, var(--ja-warning) 0%, var(--el-color-warning-light-3) 100%);
-  color: white;
-}
-
-.metric-icon.danger {
-  background: linear-gradient(135deg, var(--ja-danger) 0%, var(--el-color-danger-light-3) 100%);
-  color: white;
-}
-
-.metric-value {
-  font-size: 28px;
-  font-weight: 600;
-  color: var(--ja-text-primary);
-}
-
-.metric-value .unit {
-  font-size: 14px;
-  font-weight: normal;
-  color: var(--ja-text-secondary);
-  margin-left: 4px;
-}
-
-.metric-label {
-  font-size: 14px;
-  color: var(--ja-text-secondary);
-  margin-top: 4px;
-}
-
-.metric-trend {
-  font-size: 12px;
-  color: var(--ja-text-secondary);
-  margin-top: 8px;
-}
-
-.metric-trend .up {
-  color: var(--ja-success);
-}
-
-.metric-trend .down {
-  color: var(--ja-danger);
-}
-
 .tab-card {
-  margin-bottom: 16px;
+  margin-bottom: var(--ja-space-4);
 }
 
+/* 表格类面板沿用同一套容器样式（图表面板由 ChartCard 自带） */
 .chart-wrapper {
-  padding: 16px;
+  padding: var(--ja-space-4);
 }
 
 .chart-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: var(--ja-space-3);
 }
 
 .chart-header h4 {
   margin: 0;
   font-size: 16px;
-  color: var(--ja-text-primary);
+  color: var(--ja-ink);
 }
 
+/* 撑满 ChartCard 的固定高度 body，保证 echarts.init 时尺寸已确定 */
 .chart-container {
-  height: 300px;
+  width: 100%;
+  height: 100%;
 }
 
 .service-stats-section {
-  margin-top: 24px;
+  margin-top: var(--ja-space-6);
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: var(--ja-space-4);
 }
 
 .section-header h4 {
   margin: 0;
   font-size: 16px;
+  color: var(--ja-ink);
 }
 
 .service-name {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--ja-space-2);
 }
 
 .error-rate-text {
   font-size: 12px;
   margin-top: 4px;
   display: block;
+  color: var(--ja-ink-3);
 }
 
 .text-danger {
   color: var(--ja-danger);
 }
 
-.text-warning {
-  color: var(--ja-warning);
-}
-
 :deep(.error-row) {
   background-color: var(--ja-dashboard-error-row);
 }
 
+/* 偏慢行只做中性底纹（原来用橙色 light-9，属第 4 色相） */
 :deep(.slow-row) {
-  background-color: var(--el-color-warning-light-9, #fdf6ec);
+  background-color: var(--ja-surface-2);
 }
 </style>

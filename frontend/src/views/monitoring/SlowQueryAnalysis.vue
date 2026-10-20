@@ -21,46 +21,13 @@
       </el-popconfirm>
     </template>
 
-    <!-- 汇总卡片 -->
+    <!-- 汇总指标条 -->
     <template #stats>
-      <el-row :gutter="16">
-        <el-col :span="6">
-          <StatCard
-            icon="Warning"
-            :label="t('slowQuery.totalSlowQueriesLabel')"
-            :value="totalCount"
-            tone="danger"
-          />
-        </el-col>
-        <el-col :span="6">
-          <StatCard
-            icon="Histogram"
-            :label="t('slowQuery.operationTypesLabel')"
-            :value="Object.keys(stats).length"
-            tone="primary"
-          />
-        </el-col>
-        <el-col :span="6">
-          <StatCard
-            icon="Bell"
-            :label="t('slowQuery.alertsTriggeredLabel')"
-            :value="alertStats.totalAlertsTriggered"
-            tone="warning"
-          />
-        </el-col>
-        <el-col :span="6">
-          <StatCard
-            icon="Mute"
-            :label="t('slowQuery.alertsSuppressedLabel')"
-            :value="alertStats.totalAlertsSuppressed"
-            tone="info"
-          />
-        </el-col>
-      </el-row>
+      <MetricStrip :items="summaryItems" :loading="loading" :columns="4" />
     </template>
 
     <!-- 筛选区域 -->
-    <el-card shadow="hover" style="margin-bottom: 16px">
+    <el-card shadow="hover" class="section-gap">
       <el-form :inline="true" class="filter-form">
         <el-form-item :label="t('slowQuery.minCountLabel')">
           <el-input-number
@@ -101,7 +68,7 @@
     </el-card>
 
     <!-- 慢查询列表表格 -->
-    <el-card shadow="hover" style="margin-bottom: 16px">
+    <el-card shadow="hover" class="section-gap">
       <template #header>
         <span class="card-title">{{ t('slowQuery.tableTitle') }}</span>
       </template>
@@ -138,7 +105,7 @@
     </el-card>
 
     <!-- 性能热点 -->
-    <el-card shadow="hover" style="margin-bottom: 16px">
+    <el-card shadow="hover" class="section-gap">
       <template #header>
         <div class="card-header">
           <span class="card-title">{{ t('slowQuery.hotspotsTitle', { limit: hotspotLimit }) }}</span>
@@ -213,7 +180,7 @@
       type="info"
       :closable="false"
       show-icon
-      style="margin-top: 16px"
+      class="section-gap-top"
     />
     <el-alert
       v-if="errorOccurred"
@@ -222,7 +189,7 @@
       type="warning"
       :closable="false"
       show-icon
-      style="margin-top: 16px"
+      class="section-gap-top"
     />
   </PageSkeleton>
 </template>
@@ -233,7 +200,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Refresh, Delete, Search, RefreshRight } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
-import StatCard from '@/components/StatCard.vue'
+import MetricStrip, { type MetricStripItem } from '@/components/MetricStrip.vue'
 import { usePermission } from '@/composables/usePermission'
 import {
   getSlowQueryStats,
@@ -286,6 +253,32 @@ const filterOperation = ref('')
 const hotspotLimit = ref(10)
 
 const allOperations = computed(() => Object.keys(stats.value))
+
+const summaryItems = computed<MetricStripItem[]>(() => [
+  {
+    key: 'total',
+    label: t('slowQuery.totalSlowQueriesLabel'),
+    value: totalCount.value,
+    // 慢查询存在即需关注，0 条时保持中性
+    tone: totalCount.value > 0 ? 'warning' : 'default',
+  },
+  {
+    key: 'operations',
+    label: t('slowQuery.operationTypesLabel'),
+    value: Object.keys(stats.value).length,
+  },
+  {
+    key: 'alertsTriggered',
+    label: t('slowQuery.alertsTriggeredLabel'),
+    value: alertStats.value.totalAlertsTriggered,
+    tone: alertStats.value.totalAlertsTriggered > 0 ? 'warning' : 'default',
+  },
+  {
+    key: 'alertsSuppressed',
+    label: t('slowQuery.alertsSuppressedLabel'),
+    value: alertStats.value.totalAlertsSuppressed,
+  },
+])
 
 const tableData = computed<TableRow[]>(() => {
   return Object.entries(stats.value).map(([operationName, s]) => ({
@@ -405,7 +398,15 @@ onMounted(loadAll)
 }
 
 .danger-text {
-  color: var(--el-color-danger);
+  color: var(--ja-danger);
   font-weight: 600;
+}
+
+.section-gap {
+  margin-bottom: var(--ja-space-4);
+}
+
+.section-gap-top {
+  margin-top: var(--ja-space-4);
 }
 </style>

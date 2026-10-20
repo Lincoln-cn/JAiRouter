@@ -1,32 +1,8 @@
 <template>
   <PageSkeleton :title="t('rateLimiter.monitoring.pageTitle')">
     <template #stats>
-      <!-- 概览统计卡片 -->
-      <el-row :gutter="16">
-        <el-col :span="4">
-          <StatCard :icon="DataBoard" :label="t('rateLimiter.monitoring.totalLimiters')" :value="summary.totalLimiters" tone="primary" />
-        </el-col>
-        <el-col :span="4">
-          <StatCard :icon="Grid" :label="t('rateLimiter.monitoring.globalLimiters')" :value="summary.globalLimiters" tone="success" />
-        </el-col>
-        <el-col :span="4">
-          <StatCard :icon="Service" :label="t('rateLimiter.monitoring.serviceLimiters')" :value="summary.serviceLimiters" tone="warning" />
-        </el-col>
-        <el-col :span="4">
-          <StatCard :icon="Monitor" :label="t('rateLimiter.monitoring.instanceLimiters')" :value="summary.instanceLimiters" tone="info" />
-        </el-col>
-        <el-col :span="4">
-          <StatCard :icon="TrendCharts" :label="t('rateLimiter.monitoring.averageUsage')" :value="summary.averageUsageRatio" unit="%" tone="primary" />
-        </el-col>
-        <el-col :span="4">
-          <StatCard
-            :icon="summary.highUsageLimiters > 0 ? WarningFilled : CircleCheckFilled"
-            :label="t('rateLimiter.monitoring.highUsage')"
-            :value="summary.highUsageLimiters"
-            :tone="summary.highUsageLimiters > 0 ? 'danger' : 'success'"
-          />
-        </el-col>
-      </el-row>
+      <!-- 概览统计：一行式中性指标条；只有「高使用率实例」带语义色 -->
+      <MetricStrip :items="metricItems" :columns="6" />
     </template>
 
     <!-- 限流器详细指标 -->
@@ -67,7 +43,7 @@
         </el-table-column>
         <el-table-column prop="scope" :label="t('rateLimiter.monitoring.columns.scope')" width="90">
           <template #default="{ row }">
-            <el-tag :type="getScopeTagType(row.scope)" size="small">
+            <el-tag type="info" size="small">
               {{ getScopeLabel(row.scope) }}
             </el-tag>
           </template>
@@ -81,7 +57,7 @@
         </el-table-column>
         <el-table-column prop="algorithm" :label="t('rateLimiter.monitoring.columns.algorithm')" width="130">
           <template #default="{ row }">
-            <el-tag :type="getAlgorithmTagType(row.algorithm)" size="small" effect="plain">
+            <el-tag type="info" size="small" effect="plain">
               {{ getAlgorithmLabel(row.algorithm) }}
             </el-tag>
           </template>
@@ -108,7 +84,7 @@
             <div class="usage-cell">
               <el-progress
                 :percentage="row.usageRatio"
-                :color="getUsageColor(row.usageRatio)"
+                :status="getUsageStatus(row.usageRatio)"
                 :stroke-width="10"
               />
               <span class="usage-text">{{ row.usageRatio }}%</span>
@@ -153,21 +129,11 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import {
-  DataBoard,
-  Grid,
-  Monitor,
-  TrendCharts,
-  WarningFilled,
-  CircleCheckFilled,
-  Service
-} from '@element-plus/icons-vue'
 import request from '@/utils/request'
-import StatCard from '@/components/StatCard.vue'
-import { useChartTheme } from '@/composables/useChartTheme'
+import MetricStrip from '@/components/MetricStrip.vue'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 
-const { getChartTheme } = useChartTheme()
 const { t } = useI18n()
 
 interface RateLimiterMetrics {
@@ -227,6 +193,27 @@ const filteredMetrics = computed(() => {
   return result
 })
 
+/**
+ * 指标条数据：默认态一律中性；只有「高使用率实例 > 0」是告警语义，给 warning。
+ */
+const metricItems = computed<MetricStripItem[]>(() => [
+  { key: 'total', label: t('rateLimiter.monitoring.totalLimiters'), value: summary.value.totalLimiters },
+  { key: 'global', label: t('rateLimiter.monitoring.globalLimiters'), value: summary.value.globalLimiters },
+  { key: 'service', label: t('rateLimiter.monitoring.serviceLimiters'), value: summary.value.serviceLimiters },
+  { key: 'instance', label: t('rateLimiter.monitoring.instanceLimiters'), value: summary.value.instanceLimiters },
+  {
+    key: 'averageUsage',
+    label: t('rateLimiter.monitoring.averageUsage'),
+    value: `${summary.value.averageUsageRatio}%`
+  },
+  {
+    key: 'highUsage',
+    label: t('rateLimiter.monitoring.highUsage'),
+    value: summary.value.highUsageLimiters,
+    tone: summary.value.highUsageLimiters > 0 ? 'warning' : 'default'
+  }
+])
+
 const loadMetrics = async () => {
   loading.value = true
   try {
@@ -247,19 +234,6 @@ const loadMetrics = async () => {
   }
 }
 
-const getScopeTagType = (scope: string) => {
-  switch (scope) {
-    case 'global':
-      return 'primary'
-    case 'service':
-      return 'success'
-    case 'instance':
-      return 'warning'
-    default:
-      return 'info'
-  }
-}
-
 const getScopeLabel = (scope: string) => {
   switch (scope) {
     case 'global':
@@ -270,21 +244,6 @@ const getScopeLabel = (scope: string) => {
       return t('rateLimiter.monitoring.scopeOptions.instance')
     default:
       return scope
-  }
-}
-
-const getAlgorithmTagType = (algorithm: string) => {
-  switch (algorithm) {
-    case 'TOKEN_BUCKET':
-      return 'primary'
-    case 'LEAKY_BUCKET':
-      return 'success'
-    case 'SLIDING_WINDOW':
-      return 'warning'
-    case 'WARM_UP':
-      return 'danger'
-    default:
-      return 'info'
   }
 }
 
@@ -320,12 +279,14 @@ const formatNumber = (num: number) => {
   return num.toString()
 }
 
-const getUsageColor = (percentage: number) => {
-  const theme = getChartTheme()
-  if (percentage >= 90) return theme.danger
-  if (percentage >= 80) return theme.warning
-  if (percentage >= 50) return theme.primary
-  return theme.success
+/**
+ * 使用率的语义色走 el-progress 的内置 status，不再自造 4 段色阶：
+ * ≥90% 视为异常（exception），≥80% 视为告警（warning），其余用主色。
+ */
+const getUsageStatus = (percentage: number): '' | 'warning' | 'exception' => {
+  if (percentage >= 90) return 'exception'
+  if (percentage >= 80) return 'warning'
+  return ''
 }
 
 onMounted(() => {
@@ -350,11 +311,11 @@ onUnmounted(() => {
 }
 
 .metrics-card {
-  margin-top: 16px;
+  margin-top: var(--ja-space-4);
 }
 
 .prometheus-card {
-  margin-top: 16px;
+  margin-top: var(--ja-space-4);
 }
 
 .card-header {
@@ -366,7 +327,7 @@ onUnmounted(() => {
 .card-title {
   font-size: 16px;
   font-weight: 600;
-  color: var(--ja-text-primary);
+  color: var(--ja-ink);
 }
 
 .control-buttons {
@@ -381,13 +342,13 @@ onUnmounted(() => {
 .identifier-text {
   font-family: monospace;
   font-size: 12px;
-  color: var(--ja-text-regular);
+  color: var(--ja-ink-2);
 }
 
 .metric-value {
   font-family: 'Monaco', 'Menlo', monospace;
   font-size: 13px;
-  color: var(--ja-text-primary);
+  color: var(--ja-ink);
 }
 
 .text-warning {
@@ -397,7 +358,7 @@ onUnmounted(() => {
 .usage-cell {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--ja-space-3);
 }
 
 .usage-cell .el-progress {
@@ -407,7 +368,7 @@ onUnmounted(() => {
 .usage-text {
   font-size: 12px;
   font-weight: 500;
-  color: var(--ja-text-regular);
+  color: var(--ja-ink-2);
   min-width: 45px;
   text-align: right;
 }
@@ -415,7 +376,7 @@ onUnmounted(() => {
 .metric-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--ja-space-2);
 }
 
 .metric-tag {

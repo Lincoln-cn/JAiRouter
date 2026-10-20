@@ -7,6 +7,11 @@
       </el-button>
     </template>
 
+    <!-- 顶部指标条 -->
+    <template #stats>
+      <MetricStrip :items="summaryItems" :columns="4" />
+    </template>
+
     <!-- 存储层状态卡片 -->
     <el-card class="tier-card">
       <template #header>
@@ -88,42 +93,6 @@
       </div>
     </el-card>
 
-    <!-- 状态统计卡片 -->
-    <el-card class="stats-card">
-      <template #header>
-        <div class="card-header">
-          <span class="card-title">{{ t('statePersistence.statsTitle') }}</span>
-        </div>
-      </template>
-
-      <el-row :gutter="20">
-        <el-col :span="6">
-          <div class="stat-item">
-            <div class="stat-value">{{ stats.circuitBreakerCount }}</div>
-            <div class="stat-label">{{ t('statePersistence.cbStatLabel') }}</div>
-          </div>
-        </el-col>
-        <el-col :span="6">
-          <div class="stat-item">
-            <div class="stat-value">{{ stats.loadBalancerCount }}</div>
-            <div class="stat-label">{{ t('statePersistence.lbStatLabel') }}</div>
-          </div>
-        </el-col>
-        <el-col :span="6">
-          <div class="stat-item">
-            <div class="stat-value">{{ stats.rateLimiterCount }}</div>
-            <div class="stat-label">{{ t('statePersistence.rlStatLabel') }}</div>
-          </div>
-        </el-col>
-        <el-col :span="6">
-          <div class="stat-item">
-            <div class="stat-value">{{ stats.pendingSync }}</div>
-            <div class="stat-label">{{ t('statePersistence.pendingSyncLabel') }}</div>
-          </div>
-        </el-col>
-      </el-row>
-    </el-card>
-
     <!-- 操作卡片 -->
     <el-card class="actions-card">
       <template #header>
@@ -140,7 +109,8 @@
           </el-button>
         </el-col>
         <el-col :span="6">
-          <el-button type="warning" v-permission="'config:persistence:write'" @click="showSwitchTierDialog">
+          <!-- 切换存储层是「可逆的运维操作」而非告警/危险动作，故不给语义色 -->
+          <el-button v-permission="'config:persistence:write'" @click="showSwitchTierDialog">
             <el-icon><Switch /></el-icon>
             {{ t('statePersistence.switchTier') }}
           </el-button>
@@ -178,7 +148,8 @@
         </el-table-column>
         <el-table-column prop="stateType" :label="t('statePersistence.type')" min-width="120">
           <template #default="{ row }">
-            <el-tag :type="getStateTypeTag(row.stateType)" size="small">
+            <!-- 状态类型是分类维度，不是语义状态 ⇒ 中性标签；语义色只留给「状态」列 -->
+            <el-tag type="info" size="small">
               {{ getStateTypeDisplayName(row.stateType) }}
             </el-tag>
           </template>
@@ -269,6 +240,7 @@ import {
   type PersistenceStats
 } from '@/api/statePersistence'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import MetricStrip, { type MetricStripItem } from '@/components/MetricStrip.vue'
 
 const { t } = useI18n()
 
@@ -287,6 +259,19 @@ const stats = ref<PersistenceStats>({
   pendingSync: 0
 })
 const stateDetails = ref<StateDetail[]>([])
+
+const summaryItems = computed<MetricStripItem[]>(() => [
+  { key: 'circuitBreaker', label: t('statePersistence.cbStatLabel'), value: stats.value.circuitBreakerCount },
+  { key: 'loadBalancer', label: t('statePersistence.lbStatLabel'), value: stats.value.loadBalancerCount },
+  { key: 'rateLimiter', label: t('statePersistence.rlStatLabel'), value: stats.value.rateLimiterCount },
+  {
+    key: 'pendingSync',
+    label: t('statePersistence.pendingSyncLabel'),
+    value: stats.value.pendingSync,
+    // 「有未同步积压」属真语义（需要关注），为 0 时保持中性
+    tone: stats.value.pendingSync > 0 ? 'warning' : 'default',
+  },
+])
 
 const loadingDetails = ref(false)
 const recovering = ref(false)
@@ -322,15 +307,6 @@ const getStateTypeDisplayName = (type?: string) => {
     case 'LOAD_BALANCER': return t('statePersistence.stateTypes.loadBalancer')
     case 'RATE_LIMITER': return t('statePersistence.stateTypes.rateLimiter')
     default: return type || '-'
-  }
-}
-
-const getStateTypeTag = (type?: string) => {
-  switch (type) {
-    case 'CIRCUIT_BREAKER': return 'danger'
-    case 'LOAD_BALANCER': return 'success'
-    case 'RATE_LIMITER': return 'warning'
-    default: return 'info'
   }
 }
 
@@ -518,44 +494,45 @@ onMounted(() => {
 
 <style scoped>
 .tier-card,
-.stats-card,
 .actions-card,
 .details-card {
-  margin-bottom: 20px;
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
-  border-radius: 12px;
+  margin-bottom: var(--ja-space-5);
+  box-shadow: var(--ja-shadow-lg);
+  border-radius: var(--ja-radius-lg);
 }
 
 .card-title {
   font-size: 16px;
   font-weight: 600;
-  color: var(--ja-text-primary);
+  color: var(--ja-ink);
 }
 
+/* 存储层卡片一律中性底；只有「当前生效层」用主色描边，不用背景渐变 */
 .tier-box {
-  padding: 20px;
-  border-radius: 12px;
-  background: var(--ja-primary-light-9, #f5f7fa);
-  border: 2px solid transparent;
-  transition: all 0.3s ease;
+  padding: var(--ja-space-5);
+  border-radius: var(--ja-radius-lg);
+  background: var(--ja-surface-2);
+  border: 1px solid var(--ja-border);
+  transition: border-color 0.3s ease;
 }
 
 .tier-box.tier-active {
   border-color: var(--ja-primary);
-  background: linear-gradient(135deg, var(--ja-primary-light-9, #f0f7ff) 0%, var(--ja-primary-light-8, #e6f4ff) 100%);
+  background: var(--ja-paper);
 }
 
 .tier-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: var(--ja-space-2);
+  margin-bottom: var(--ja-space-2);
 }
 
 .tier-icon {
   font-size: 24px;
 }
 
+/* 健康/异常是真语义：绿/红只落在这一处图标与 UP/DOWN 标签上 */
 .tier-icon.healthy {
   color: var(--ja-success);
 }
@@ -567,52 +544,31 @@ onMounted(() => {
 .tier-name {
   font-size: 16px;
   font-weight: 600;
-  color: var(--ja-text-primary);
+  color: var(--ja-ink);
 }
 
 .tier-status {
-  margin-bottom: 10px;
+  margin-bottom: var(--ja-space-2);
 }
 
 .tier-info {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--ja-space-1);
 }
 
 .tier-priority {
   font-size: 12px;
-  color: var(--ja-text-secondary);
+  color: var(--ja-ink-3);
 }
 
 .tier-message {
   font-size: 12px;
-  color: var(--ja-text-regular);
+  color: var(--ja-ink-2);
 }
 
 .current-tier-info {
-  margin-top: 20px;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px;
-  background: var(--ja-primary-light-9, #f5f7fa);
-  border-radius: 8px;
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: 600;
-  color: var(--ja-primary);
-  margin-bottom: 8px;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: var(--ja-text-regular);
+  margin-top: var(--ja-space-5);
 }
 
 .flex-table {

@@ -8,7 +8,7 @@
     </template>
 
     <!-- 角色选择 -->
-    <el-form label-width="80px" style="margin-bottom: 12px;">
+    <el-form label-width="80px" style="margin-bottom: var(--ja-space-3);">
       <el-form-item :label="t('permissions.role')">
         <el-select
           v-model="selectedRole"
@@ -212,17 +212,18 @@ loadRoles()
   max-height: calc(100vh - 380px);
   overflow: auto;
   border: 1px solid var(--ja-border);
-  border-radius: 4px;
-  padding: 12px;
-  margin-bottom: 16px;
+  border-radius: var(--ja-radius);
+  padding: var(--ja-space-3);
+  margin-bottom: var(--ja-space-4);
 }
 
+/* 悬停底色走中性命中色（原 --ja-bg-hover 令牌并不存在，一直落到硬编码蓝色 rgba） */
 .permission-tree {
-  --el-tree-node-hover-bg-color: var(--ja-bg-hover, rgba(64, 158, 255, 0.08));
+  --el-tree-node-hover-bg-color: var(--ja-surface-2);
 }
 
 .footer-actions {
   display: flex;
-  gap: 12px;
+  gap: var(--ja-space-3);
 }
 </style>

@@ -8,40 +8,8 @@
     </template>
 
     <template #stats>
-      <el-row :gutter="16">
-        <el-col :span="6">
-          <StatCard
-            icon="Document"
-            :label="t('sanitization.ruleCountLabel')"
-            :value="config?.ruleCount ?? '—'"
-            tone="primary"
-          />
-        </el-col>
-        <el-col :span="6">
-          <StatCard
-            :icon="config?.request?.enabled ? 'CircleCheck' : 'CircleClose'"
-            :label="t('sanitization.requestEnabledLabel')"
-            :value="config?.request?.enabled ? t('common.enabled') : t('common.disabled')"
-            :tone="config?.request?.enabled ? 'success' : 'info'"
-          />
-        </el-col>
-        <el-col :span="6">
-          <StatCard
-            :icon="config?.response?.enabled ? 'CircleCheck' : 'CircleClose'"
-            :label="t('sanitization.responseEnabledLabel')"
-            :value="config?.response?.enabled ? t('common.enabled') : t('common.disabled')"
-            :tone="config?.response?.enabled ? 'success' : 'info'"
-          />
-        </el-col>
-        <el-col :span="6">
-          <StatCard
-            icon="Lock"
-            :label="t('sanitization.recordNote')"
-            :value="t('sanitization.recordNoteValue')"
-            tone="warning"
-          />
-        </el-col>
-      </el-row>
+      <!-- 脱敏指标：中性指标条；只有「未启用」属于风险状态，才给 warning -->
+      <MetricStrip :items="metricItems" :loading="loading" :columns="4" />
     </template>
 
     <el-alert
@@ -50,10 +18,10 @@
       show-icon
       :title="t('sanitization.pageTitle')"
       :description="t('sanitization.primaryUseCaseHint')"
-      style="margin-bottom: 16px"
+      style="margin-bottom: var(--ja-space-4)"
     />
 
-    <el-row :gutter="16" style="margin-bottom: 16px">
+    <el-row :gutter="16" style="margin-bottom: var(--ja-space-4)">
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
@@ -141,7 +109,7 @@
       </el-col>
     </el-row>
 
-    <el-card shadow="hover" style="margin-bottom: 16px">
+    <el-card shadow="hover" style="margin-bottom: var(--ja-space-4)">
       <div class="config-actions">
         <el-button type="primary" :loading="saving" @click="handleSave">
           <el-icon><Check /></el-icon>
@@ -165,7 +133,7 @@
             <el-table-column prop="pattern" :label="t('sanitization.patternColumn')" min-width="160" show-overflow-tooltip />
             <el-table-column prop="enabled" :label="t('sanitization.enabledColumn')" width="90" align="center">
               <template #default="{ row }">
-                <el-tag :type="row.enabled ? 'success' : 'info'" size="small">
+                <el-tag :type="row.enabled ? 'success' : 'info'" effect="plain" size="small">
                   {{ row.enabled ? t('common.enabled') : t('common.disabled') }}
                 </el-tag>
               </template>
@@ -188,7 +156,7 @@
               />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" :loading="testing" @click="handleTest">
+              <el-button :loading="testing" @click="handleTest">
                 {{ t('sanitization.runTest') }}
               </el-button>
             </el-form-item>
@@ -219,13 +187,14 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getErrorMessage } from '@/utils/error'
 import { Refresh, Check } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import PageSkeleton from '@/components/PageSkeleton.vue'
-import StatCard from '@/components/StatCard.vue'
+import MetricStrip from '@/components/MetricStrip.vue'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import {
   getSanitizationConfig,
   getSanitizationRules,
@@ -273,6 +242,36 @@ const emptySide = (): SideForm => ({
 const form = reactive<{ request: SideForm; response: SideForm }>({
   request: emptySide(),
   response: emptySide()
+})
+
+/** 顶部指标条：数值语义与原 4 张 KPI 卡一致，只有「未启用」是风险状态 */
+const metricItems = computed<MetricStripItem[]>(() => {
+  const requestEnabled = config.value?.request?.enabled ?? false
+  const responseEnabled = config.value?.response?.enabled ?? false
+  return [
+    {
+      key: 'ruleCount',
+      label: t('sanitization.ruleCountLabel'),
+      value: config.value?.ruleCount ?? '—'
+    },
+    {
+      key: 'requestEnabled',
+      label: t('sanitization.requestEnabledLabel'),
+      value: requestEnabled ? t('common.enabled') : t('common.disabled'),
+      tone: requestEnabled ? 'default' : 'warning'
+    },
+    {
+      key: 'responseEnabled',
+      label: t('sanitization.responseEnabledLabel'),
+      value: responseEnabled ? t('common.enabled') : t('common.disabled'),
+      tone: responseEnabled ? 'default' : 'warning'
+    },
+    {
+      key: 'recordNote',
+      label: t('sanitization.recordNote'),
+      value: t('sanitization.recordNoteValue')
+    }
+  ]
 })
 
 const linesToArr = (text: string): string[] =>
@@ -373,6 +372,6 @@ onMounted(loadAll)
 }
 .config-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--ja-space-2);
 }
 </style>

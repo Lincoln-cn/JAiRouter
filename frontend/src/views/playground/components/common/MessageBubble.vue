@@ -1,10 +1,7 @@
 <template>
   <div :class="['message-bubble', `message-${role}`]">
     <div class="message-avatar">
-      <el-avatar
-        :size="36"
-        :style="{ backgroundColor: avatarColor }"
-      >
+      <el-avatar :size="36" class="message-avatar__badge">
         <el-icon :size="20">
           <component :is="avatarIcon" />
         </el-icon>
@@ -100,10 +97,6 @@ const avatarIcon = computed(() => {
   return props.role === 'user' ? User : Monitor
 })
 
-const avatarColor = computed(() => {
-  return props.role === 'user' ? '#409eff' : '#67c23a'
-})
-
 const formatTime = (time: string) => {
   const date = new Date(time)
   return date.toLocaleTimeString('zh-CN', {
@@ -130,8 +123,15 @@ const handleRegenerate = () => {
 <style scoped>
 .message-bubble {
   display: flex;
-  gap: 12px;
-  padding: 16px 0;
+  gap: var(--ja-space-3);
+  padding: var(--ja-space-4) 0;
+}
+
+/* 头像块：中性底 + 中性图标，不再是蓝/绿双色身份标识 */
+.message-avatar__badge {
+  background-color: var(--ja-surface-2);
+  color: var(--ja-ink-2);
+  border: 1px solid var(--ja-border);
 }
 
 .message-user {
@@ -157,8 +157,8 @@ const handleRegenerate = () => {
 .message-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: var(--ja-space-2);
+  margin-bottom: var(--ja-space-1);
 }
 
 .message-user .message-header {
@@ -168,29 +168,33 @@ const handleRegenerate = () => {
 .message-role {
   font-weight: 600;
   font-size: 14px;
-  color: var(--el-text-color-primary);
+  color: var(--ja-ink);
 }
 
 .message-time {
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  color: var(--ja-ink-3);
 }
 
+/* 助手：paper 底 + 描边；用户：中性 surface-2 底 + ink 文字 */
 .message-body {
-  padding: 12px 16px;
-  border-radius: 12px;
-  background-color: var(--el-fill-color-light);
+  padding: var(--ja-space-3) var(--ja-space-4);
+  border-radius: var(--ja-radius-lg);
+  background-color: var(--ja-paper);
+  border: 1px solid var(--ja-border);
+  color: var(--ja-ink);
   line-height: 1.6;
   word-wrap: break-word;
 }
 
 .message-user .message-body {
-  background-color: var(--el-color-primary-light-9);
-  border-bottom-right-radius: 4px;
+  background-color: var(--ja-surface-2);
+  color: var(--ja-ink);
+  border-bottom-right-radius: var(--ja-radius-sm);
 }
 
 .message-assistant .message-body {
-  border-bottom-left-radius: 4px;
+  border-bottom-left-radius: var(--ja-radius-sm);
 }
 
 .message-text {
@@ -199,15 +203,15 @@ const handleRegenerate = () => {
 
 .message-loading {
   display: inline-flex;
-  gap: 4px;
-  padding: 4px 0;
+  gap: var(--ja-space-1);
+  padding: var(--ja-space-1) 0;
 }
 
 .loading-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: var(--el-color-primary);
+  background-color: var(--ja-ink-3);
   animation: bounce 1.4s infinite ease-in-out both;
 }
 
@@ -232,8 +236,8 @@ const handleRegenerate = () => {
 
 .message-actions {
   display: flex;
-  gap: 4px;
-  margin-top: 8px;
+  gap: var(--ja-space-1);
+  margin-top: var(--ja-space-2);
   opacity: 0;
   transition: opacity 0.2s;
 }

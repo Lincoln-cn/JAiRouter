@@ -2,10 +2,10 @@
   <PageSkeleton :title="t('jwtTokens.title')">
     <template #actions>
       <el-button :loading="loading" type="primary" @click="handleRefreshTokens">{{ t('jwtTokens.refreshList') }}</el-button>
-      <el-button :disabled="selectedTokens.length === 0" type="danger" @click="handleOpenBatchRevoke">
+      <el-button :disabled="selectedTokens.length === 0" plain @click="handleOpenBatchRevoke">
         {{ t('jwtTokens.batchRevokeCount', { count: selectedTokens.length }) }}
       </el-button>
-      <el-button type="warning" @click="handleCleanupExpiredTokens">{{ t('jwtTokens.cleanupExpired') }}</el-button>
+      <el-button plain @click="handleCleanupExpiredTokens">{{ t('jwtTokens.cleanupExpired') }}</el-button>
     </template>
 
     <template #toolbar>
@@ -26,7 +26,7 @@
         <el-option :label="t('jwtTokens.statusRevoked')" value="REVOKED" />
         <el-option :label="t('jwtTokens.statusExpired')" value="EXPIRED" />
       </el-select>
-      <el-button type="primary" @click="handleSearch">{{ t('jwtTokens.search') }}</el-button>
+      <el-button plain @click="handleSearch">{{ t('jwtTokens.search') }}</el-button>
       <el-button @click="handleResetSearch">{{ t('jwtTokens.reset') }}</el-button>
     </template>
 
@@ -62,7 +62,7 @@
       </el-table-column>
       <el-table-column prop="status" :label="t('jwtTokens.status')" width="100">
         <template #default="scope">
-          <el-tag :type="getStatusTagType(scope.row.status)">
+          <el-tag :type="getStatusTagType(scope.row.status)" effect="plain">
             {{ getStatusText(scope.row.status) }}
           </el-tag>
         </template>
@@ -70,7 +70,7 @@
       <el-table-column :label="t('jwtTokens.blacklist')" width="120" fixed="right">
         <template #default="scope">
           <el-dropdown trigger="click" @command="(cmd: string) => handleAddToBlacklist(scope.row, cmd)">
-            <el-button size="small" type="warning">
+            <el-button size="small" link type="danger">
               <el-icon><Warning /></el-icon>{{ t('jwtTokens.join') }}
             </el-button>
             <template #dropdown>
@@ -87,13 +87,14 @@
         <template #default="scope">
           <el-button 
             size="small" 
-            type="primary"
+            link
             @click="handleViewDetails(scope.row)"
           >
             {{ t('jwtTokens.details') }}
           </el-button>
           <el-button 
             size="small" 
+            link
             type="danger" 
             :disabled="scope.row.status !== 'ACTIVE'"
             @click="handleRevoke(scope.row)"
@@ -132,7 +133,7 @@
         <el-descriptions-item :label="t('jwtTokens.createdAt')">{{ formatDateTime(selectedTokenDetails.createdAt) }}</el-descriptions-item>
         <el-descriptions-item :label="t('jwtTokens.updatedAt')">{{ formatDateTime(selectedTokenDetails.updatedAt) }}</el-descriptions-item>
         <el-descriptions-item :label="t('jwtTokens.status')">
-          <el-tag :type="getStatusTagType(selectedTokenDetails.status)">
+          <el-tag :type="getStatusTagType(selectedTokenDetails.status)" effect="plain">
             {{ getStatusText(selectedTokenDetails.status) }}
           </el-tag>
         </el-descriptions-item>

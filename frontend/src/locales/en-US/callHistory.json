@@ -50,7 +50,8 @@
         "hourlyDistributionTitle": "24-Hour Request Distribution",
         "statusCodeDistributionTitle": "HTTP Status Code Distribution",
         "errorCodeDistributionTitle": "Error Code Distribution",
-        "recentCallsTitle": "Recent Call Records"
+        "recentCallsTitle": "Recent Call Records",
+        "singleCategoryHint": "Only one category was recorded in this range, so a share chart would show no comparison. Its call volume is shown directly instead."
       }
     },
     "list": {

@@ -208,22 +208,22 @@ const handleClear = () => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: var(--el-bg-color-page);
+  background-color: var(--ja-surface);
 }
 
 .service-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 20px;
-  background-color: var(--el-bg-color);
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  padding: var(--ja-space-3) var(--ja-space-5);
+  background-color: var(--ja-paper);
+  border-bottom: 1px solid var(--ja-border);
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--ja-space-3);
   flex: 1;
   max-width: 400px;
 }
@@ -231,7 +231,7 @@ const handleClear = () => {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--ja-space-2);
 }
 
 .service-main {
@@ -242,9 +242,9 @@ const handleClear = () => {
 }
 
 .config-panel {
-  padding: 16px 20px;
-  background-color: var(--el-bg-color);
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  padding: var(--ja-space-4) var(--ja-space-5);
+  background-color: var(--ja-paper);
+  border-bottom: 1px solid var(--ja-border);
 }
 
 .slide-enter-active,
@@ -264,40 +264,40 @@ const handleClear = () => {
 }
 
 .service-footer {
-  padding: 8px 20px;
-  background-color: var(--el-bg-color);
-  border-top: 1px solid var(--el-border-color-lighter);
+  padding: var(--ja-space-2) var(--ja-space-5);
+  background-color: var(--ja-paper);
+  border-top: 1px solid var(--ja-border);
 }
 
 .status-bar {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--ja-space-4);
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  color: var(--ja-ink-3);
 }
 
 .status-item {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--ja-space-1);
 }
 
 .status-idle {
-  color: var(--el-text-color-placeholder);
+  color: var(--ja-ink-3);
 }
 
 .status-loading {
-  color: var(--el-color-primary);
+  color: var(--ja-primary);
   animation: pulse 1s infinite;
 }
 
 .status-success {
-  color: var(--el-color-success);
+  color: var(--ja-success);
 }
 
 .status-error {
-  color: var(--el-color-danger);
+  color: var(--ja-danger);
 }
 
 @keyframes pulse {

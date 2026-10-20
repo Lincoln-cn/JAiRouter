@@ -7,45 +7,14 @@
       <el-button :loading="loading" @click="handleRefresh">
         <el-icon><Refresh /></el-icon>{{ t('blacklist.refresh') }}
       </el-button>
-      <el-button type="warning" @click="handleCleanup">
+      <el-button @click="handleCleanup">
         <el-icon><Delete /></el-icon>{{ t('blacklist.cleanupExpired') }}
       </el-button>
     </template>
 
     <template #stats>
-      <!-- 统计卡片 -->
-      <div class="stats-section">
-        <el-row :gutter="20">
-          <el-col :span="6">
-            <el-statistic :title="t('blacklist.totalActiveTitle')" :value="stats.totalActive">
-              <template #suffix>
-                <el-tag type="success" size="small">{{ t('blacklist.entryUnit') }}</el-tag>
-              </template>
-            </el-statistic>
-          </el-col>
-          <el-col :span="6">
-            <el-statistic :title="t('blacklist.tokenBlacklistTitle')" :value="stats.tokenCount">
-              <template #suffix>
-                <el-tag type="warning" size="small">{{ t('blacklist.tokenUnit') }}</el-tag>
-              </template>
-            </el-statistic>
-          </el-col>
-          <el-col :span="6">
-            <el-statistic :title="t('blacklist.ipBlacklistTitle')" :value="stats.ipCount">
-              <template #suffix>
-                <el-tag type="danger" size="small">{{ t('blacklist.addressUnit') }}</el-tag>
-              </template>
-            </el-statistic>
-          </el-col>
-          <el-col :span="6">
-            <el-statistic :title="t('blacklist.deviceBlacklistTitle')" :value="stats.deviceCount">
-              <template #suffix>
-                <el-tag type="info" size="small">{{ t('blacklist.deviceUnit') }}</el-tag>
-              </template>
-            </el-statistic>
-          </el-col>
-        </el-row>
-      </div>
+      <!-- 黑名单指标：中性指标条；「当前生效条目数」本身不是状态，不给语义色 -->
+      <MetricStrip :items="metricItems" :loading="loading" :columns="4" />
     </template>
 
     <template #toolbar>
@@ -63,7 +32,7 @@
         <el-option :label="t('blacklist.statusRemoved')" value="REMOVED" />
       </el-select>
       <el-input v-model="filterForm.userId" :placeholder="t('blacklist.userIdPlaceholder')" clearable @keyup.enter="handleSearch" style="width: 200px" />
-      <el-button type="primary" @click="handleSearch">{{ t('blacklist.search') }}</el-button>
+      <el-button plain @click="handleSearch">{{ t('blacklist.search') }}</el-button>
       <el-button @click="handleResetFilter">{{ t('blacklist.reset') }}</el-button>
     </template>
 
@@ -72,7 +41,7 @@
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="blacklistType" :label="t('blacklist.type')" width="100">
         <template #default="scope">
-          <el-tag :type="getTypeTagType(scope.row.blacklistType)">
+          <el-tag type="info" effect="plain">
             {{ scope.row.blacklistType }}
           </el-tag>
         </template>
@@ -84,7 +53,7 @@
         </el-table-column>
       <el-table-column prop="riskLevel" :label="t('blacklist.riskLevel')" width="100">
         <template #default="scope">
-          <el-tag :type="getRiskTagType(scope.row.riskLevel)" size="small">
+          <el-tag :type="getRiskTagType(scope.row.riskLevel)" effect="plain" size="small">
             {{ scope.row.riskLevel }}
           </el-tag>
         </template>
@@ -103,17 +72,17 @@
       </el-table-column>
       <el-table-column prop="status" :label="t('blacklist.status')" width="80">
         <template #default="scope">
-          <el-tag :type="getStatusTagType(scope.row.status)" size="small">
+          <el-tag :type="getStatusTagType(scope.row.status)" effect="plain" size="small">
             {{ scope.row.status }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column :label="t('blacklist.actions')" width="120" fixed="right">
         <template #default="scope">
-          <el-button v-if="scope.row.status === 'ACTIVE'" type="danger" size="small" @click="handleRemove(scope.row)">
+          <el-button v-if="scope.row.status === 'ACTIVE'" link type="danger" size="small" @click="handleRemove(scope.row)">
             {{ t('blacklist.remove') }}
           </el-button>
-          <el-button type="primary" size="small" link @click="handleViewDetail(scope.row)">
+          <el-button size="small" link @click="handleViewDetail(scope.row)">
             {{ t('blacklist.detail') }}
           </el-button>
         </template>
@@ -298,14 +267,14 @@
       <el-descriptions :column="1" border>
         <el-descriptions-item label="ID">{{ detailData?.id }}</el-descriptions-item>
         <el-descriptions-item :label="t('blacklist.type')">
-          <el-tag :type="getTypeTagType(detailData?.blacklistType)">{{ detailData?.blacklistType }}</el-tag>
+          <el-tag type="info" effect="plain">{{ detailData?.blacklistType }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item :label="t('blacklist.target')">{{ detailData?.targetValue }}</el-descriptions-item>
         <el-descriptions-item :label="t('blacklist.maskedTarget')">{{ detailData?.targetValueMasked }}</el-descriptions-item>
         <el-descriptions-item :label="t('blacklist.relatedUser')">{{ detailData?.userId || '-' }}</el-descriptions-item>
         <el-descriptions-item :label="t('blacklist.addReason')">{{ detailData?.reason || '-' }}</el-descriptions-item>
         <el-descriptions-item :label="t('blacklist.riskLevel')">
-          <el-tag :type="getRiskTagType(detailData?.riskLevel)">{{ detailData?.riskLevel }}</el-tag>
+          <el-tag :type="getRiskTagType(detailData?.riskLevel)" effect="plain">{{ detailData?.riskLevel }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item :label="t('blacklist.addedBy')">{{ detailData?.addedBy }}</el-descriptions-item>
         <el-descriptions-item :label="t('blacklist.addedAt')">{{ formatDateTime(detailData?.addedAt) }}</el-descriptions-item>
@@ -316,7 +285,7 @@
           {{ detailData?.permanent ? t('blacklist.permanentValid') : formatRemainingTime(detailData?.remainingSeconds) }}
         </el-descriptions-item>
         <el-descriptions-item :label="t('blacklist.status')">
-          <el-tag :type="getStatusTagType(detailData?.status)">{{ detailData?.status }}</el-tag>
+          <el-tag :type="getStatusTagType(detailData?.status)" effect="plain">{{ detailData?.status }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item :label="t('blacklist.source')">{{ detailData?.source }}</el-descriptions-item>
       </el-descriptions>
@@ -345,6 +314,8 @@ import {
 import { getTokens, type JwtTokenInfo } from '@/api/jwtToken'
 import { getJwtAccounts, type JwtAccount } from '@/api/account'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import MetricStrip from '@/components/MetricStrip.vue'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import { formatDateTime as formatDateTimeBase } from '@/utils/format'
 
 const { t } = useI18n()
@@ -402,6 +373,34 @@ const stats = reactive<BlacklistStats>({
   ipCount: 0,
   deviceCount: 0
 })
+
+/** 顶部指标条：数值与原统计卡一致，单位从彩色标签改为 hint 文本（全部中性） */
+const metricItems = computed<MetricStripItem[]>(() => [
+  {
+    key: 'totalActive',
+    label: t('blacklist.totalActiveTitle'),
+    value: stats.totalActive,
+    hint: t('blacklist.entryUnit')
+  },
+  {
+    key: 'tokenCount',
+    label: t('blacklist.tokenBlacklistTitle'),
+    value: stats.tokenCount,
+    hint: t('blacklist.tokenUnit')
+  },
+  {
+    key: 'ipCount',
+    label: t('blacklist.ipBlacklistTitle'),
+    value: stats.ipCount,
+    hint: t('blacklist.addressUnit')
+  },
+  {
+    key: 'deviceCount',
+    label: t('blacklist.deviceBlacklistTitle'),
+    value: stats.deviceCount,
+    hint: t('blacklist.deviceUnit')
+  }
+])
 
 // 分页数据
 const pageData = reactive<PagedResult<BlacklistEntry>>({
@@ -687,17 +686,7 @@ function formatRemainingTime(seconds: number | undefined) {
   return t('blacklist.remainingHours', { hours })
 }
 
-// 类型标签颜色
-function getTypeTagType(type: BlacklistType | undefined) {
-  switch (type) {
-    case 'TOKEN': return 'warning'
-    case 'IP': return 'danger'
-    case 'DEVICE': return 'info'
-    default: return ''
-  }
-}
-
-// 状态标签颜色
+// 状态标签颜色：只有真状态（启用 / 过期 / 移除）带语义色
 function getStatusTagType(status: BlacklistStatus | undefined) {
   switch (status) {
     case 'ACTIVE': return 'success'
@@ -707,10 +696,10 @@ function getStatusTagType(status: BlacklistStatus | undefined) {
   }
 }
 
-// 风险等级标签颜色
+// 风险等级标签颜色：低风险不需要绿色（中性），只标出中/高风险
 function getRiskTagType(level: RiskLevel | undefined) {
   switch (level) {
-    case 'LOW': return 'success'
+    case 'LOW': return 'info'
     case 'MEDIUM': return 'warning'
     case 'HIGH': return 'danger'
     case 'CRITICAL': return 'danger'
@@ -720,13 +709,6 @@ function getRiskTagType(level: RiskLevel | undefined) {
 </script>
 
 <style scoped>
-.stats-section {
-  margin-bottom: 16px;
-  padding: 20px;
-  background: var(--el-fill-color-light);
-  border-radius: 4px;
-}
-
 /* 选择器容器 */
 .selector-container {
   display: flex;
@@ -751,7 +733,7 @@ function getRiskTagType(level: RiskLevel | undefined) {
 }
 
 .token-time {
-  color: var(--ja-text-secondary);
+  color: var(--ja-ink-3);
   font-size: 12px;
   margin-left: auto;
 }
@@ -769,7 +751,7 @@ function getRiskTagType(level: RiskLevel | undefined) {
 }
 
 .ip-count {
-  color: var(--ja-text-secondary);
+  color: var(--ja-ink-3);
   font-size: 12px;
   margin-left: auto;
 }
