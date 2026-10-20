@@ -18,641 +18,105 @@
     <MetricStrip class="kpi-strip" :items="kpiItems" />
 
     <!-- 配额告警区：仅在有告警时渲染整卡 -->
-    <el-card v-if="quotaAlerts.length > 0" class="quota-alerts-card" shadow="hover" v-loading="quotaAlertsLoading">
-      <template #header>
-        <div class="card-header">
-          <span class="main-title">
-            <el-icon><Warning /></el-icon>
-            {{ t('apiKeys.quotaAlertsTitle') }}
-            <el-badge :value="quotaAlerts.length" type="danger" style="margin-left: 8px" />
-          </span>
-          <el-button
-            icon="Refresh"
-            size="small"
-            @click="fetchQuotaAlerts"
-            :loading="quotaAlertsLoading"
-          >
-            {{ t('apiKeys.refresh') }}
-          </el-button>
-        </div>
-      </template>
-
-      <el-table :data="quotaAlerts" stripe size="small" style="width: 100%">
-        <el-table-column prop="keyId" :label="t('apiKeys.columns.keyId')" width="180" show-overflow-tooltip>
-          <template #default="{ row }">
-            <el-tag effect="plain" type="info">{{ row.keyId }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="description" :label="t('apiKeys.columns.description')" min-width="140" show-overflow-tooltip>
-          <template #default="{ row }">
-            {{ row.description || '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="alertType" :label="t('apiKeys.columns.alertType')" width="120" align="center">
-          <template #default="{ row }">
-            <el-tag :type="getAlertTypeTag(row.alertType)" size="small">
-              {{ formatAlertType(row.alertType) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('apiKeys.columns.requestUsage')" width="110" align="center">
-          <template #default="{ row }">
-            <span :class="{ 'alert-high': row.dailyRequestUsagePercent >= 90 }">
-              {{ formatPercent(row.dailyRequestUsagePercent) }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('apiKeys.columns.tokenUsage')" width="110" align="center">
-          <template #default="{ row }">
-            <span :class="{ 'alert-high': row.dailyTokenUsagePercent >= 90 }">
-              {{ formatPercent(row.dailyTokenUsagePercent) }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="message" :label="t('apiKeys.columns.alertDetail')" min-width="200" show-overflow-tooltip />
-      </el-table>
-    </el-card>
+    <QuotaAlertsCard
+      v-if="quotaAlerts.length > 0"
+      :alerts="quotaAlerts"
+      :loading="quotaAlertsLoading"
+      @refresh="fetchQuotaAlerts"
+    />
 
     <!-- 主卡片 -->
     <el-card class="main-card" shadow="hover">
 
       <div class="table-wrapper">
-        <el-table
+        <ApiKeyTable
           v-if="!isNarrow"
-          :key="isCompact ? 'compact' : 'wide'"
-          v-loading="loading"
-          :data="pagedApiKeys"
-          border
-          stripe
-          style="width: 100%"
-          :class="{ 'compact-table': isCompact }"
-        >
-        <el-table-column :label="t('apiKeys.columns.keyId')" prop="keyId" :width="isCompact ? undefined : 180" :min-width="isCompact ? 80 : undefined">
-          <template #default="scope">
-            <el-tag effect="plain" type="info">{{ scope.row.keyId }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column v-if="!isCompact" :label="t('apiKeys.columns.description')" min-width="150" show-overflow-tooltip>
-          <template #default="scope">
-            <span>{{ scope.row.description || '-' }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column v-if="!isCompact" :label="t('apiKeys.columns.permissions')" prop="permissions" width="160">
-          <template #default="scope">
-            <el-popover
-                v-if="(scope.row.permissions?.length ?? 0) > 3"
-                trigger="click"
-                :width="260"
-                placement="left"
-            >
-              <template #reference>
-                <el-tag size="small" class="permission-count">
-                  {{ t('apiKeys.permissionsCount', { count: scope.row.permissions.length }) }}
-                </el-tag>
-              </template>
-              <div class="permission-popover">
-                <el-tag v-for="permission in scope.row.permissions" :key="permission" size="small">
-                  {{ formatPermission(permission) }}
-                </el-tag>
-              </div>
-            </el-popover>
-            <div v-else-if="scope.row.permissions?.length" class="permission-tags">
-              <el-tag
-                  v-for="permission in scope.row.permissions"
-                  :key="permission"
-                  :type="getPermissionTagType(permission)"
-                  size="small"
-              >
-                {{ formatPermission(permission) }}
-              </el-tag>
-            </div>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('apiKeys.columns.createdAt')" :width="isCompact ? undefined : 160" :min-width="isCompact ? 75 : undefined">
-          <template #default="scope">
-            {{ formatDateTime(scope.row.createdAt) }}
-          </template>
-        </el-table-column>
-        <el-table-column v-if="!isCompact" :label="t('apiKeys.columns.createdBy')" width="150" show-overflow-tooltip>
-          <template #default="scope">
-            <span v-if="scope.row.createdBy">{{ scope.row.createdBy }}</span>
-            <span v-else class="text-muted">-</span>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('apiKeys.columns.expiresAt')" prop="expiresAt" :width="isCompact ? undefined : 160" :min-width="isCompact ? 75 : undefined">
-          <template #default="scope">
-            <span :class="{ 'expired-text': scope.row.expired }">
-              {{ formatDateTime(scope.row.expiresAt) || t('apiKeys.neverExpires') }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column v-if="!isCompact" :label="t('apiKeys.columns.remainingDays')" width="100" align="center">
-          <template #default="scope">
-            <el-tag :type="getRemainingDaysType(scope.row)" size="small">
-              {{ getRemainingDaysText(scope.row) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('apiKeys.columns.usage')" :width="isCompact ? 50 : 140" align="center">
-          <template #default="scope">
-            <el-tooltip :content="t('apiKeys.usageTooltip', { success: scope.row.successfulRequests, failed: scope.row.failedRequests })">
-              <span class="usage-stat">
-                {{ scope.row.totalRequests }}
-                <span v-if="!isCompact" class="usage-detail">({{ scope.row.successfulRequests }}/{{ scope.row.failedRequests }})</span>
-              </span>
-            </el-tooltip>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('apiKeys.columns.todayToken')" :width="isCompact ? 45 : 120" align="center">
-          <template #default="scope">
-            <span v-if="scope.row.todayTokenUsage !== undefined && scope.row.todayTokenUsage !== null">
-              {{ formatTokenCount(scope.row.todayTokenUsage) }}
-            </span>
-            <span v-else class="text-muted">-</span>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('apiKeys.columns.alertStatus')" :width="isCompact ? 45 : 100" align="center">
-          <template #default="scope">
-            <el-tag v-if="scope.row.quotaAlertTriggered" type="danger" size="small">
-              <el-icon v-if="!isCompact"><Warning /></el-icon> {{ t('apiKeys.status.alert') }}
-            </el-tag>
-            <el-tag v-else type="success" size="small">{{ t('apiKeys.status.normal') }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('apiKeys.columns.status')" prop="enabled" :width="isCompact ? 50 : 80" align="center">
-          <template #default="scope">
-            <el-switch
-                v-model="scope.row.enabled"
-                :disabled="scope.row.expired"
-                active-color="var(--ja-success)"
-                inactive-color="var(--ja-danger)"
-                @change="handleStatusChange(scope.row)"
-            />
-          </template>
-        </el-table-column>
-        <el-table-column fixed="right" :label="t('apiKeys.columns.actions')" :width="isCompact ? 75 : 150">
-          <template #default="scope">
-            <div class="row-actions">
-              <el-button
-                v-if="!isCompact"
-                icon="Coin"
-                size="small"
-                type="primary"
-                @click="openQuotaDrawer(scope.row)"
-              >{{ t('apiKeys.quota') }}</el-button>
-              <el-button
-                v-else
-                icon="Coin"
-                size="small"
-                type="primary"
-                :aria-label="t('apiKeys.quota')"
-                :title="t('apiKeys.quota')"
-                @click="openQuotaDrawer(scope.row)"
-              />
-              <el-dropdown trigger="click" @command="(command: string) => handleRowCommand(command, scope.row)">
-                <el-button size="small" :aria-label="t('apiKeys.moreActions')" :title="t('apiKeys.moreActions')">
-                  <template v-if="!isCompact">
-                    {{ t('apiKeys.moreActions') }}<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                  </template>
-                  <el-icon v-else><ArrowDown /></el-icon>
-                </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item command="edit" icon="Edit">{{ t('apiKeys.actions.edit') }}</el-dropdown-item>
-                    <el-dropdown-item command="rotate" icon="RefreshRight" :disabled="scope.row.expired">{{ t('apiKeys.actions.rotate') }}</el-dropdown-item>
-                    <el-dropdown-item command="reset" icon="Refresh">{{ t('apiKeys.actions.reset') }}</el-dropdown-item>
-                    <el-dropdown-item command="resetQuota" icon="Timer">{{ t('apiKeys.actions.quotaReset') }}</el-dropdown-item>
-                    <el-dropdown-item command="delete" icon="Delete" divided>
-                      <span class="text-danger">{{ t('apiKeys.actions.delete') }}</span>
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <!-- 窄屏卡片列表：一行一卡，保留该页主要操作 -->
-      <div v-else v-loading="loading" class="api-key-cards">
-        <TableCards
-          v-if="!loading || pagedApiKeys.length > 0"
           :rows="pagedApiKeys"
-          row-key="keyId"
-          :aria-label="t('apiKeys.cards.ariaLabel')"
-          :empty-title="t('apiKeys.cards.emptyTitle')"
-          :empty-description="t('apiKeys.cards.emptyDescription')"
-        >
-          <template #default="{ row }">
-            <div class="api-key-card">
-              <div class="api-key-card__head">
-                <span class="api-key-card__title">{{ row.keyId }}</span>
-                <div class="api-key-card__head-actions">
-                  <el-switch
-                    v-model="row.enabled"
-                    :disabled="row.expired"
-                    active-color="var(--ja-success)"
-                    inactive-color="var(--ja-danger)"
-                    :aria-label="t('apiKeys.cards.toggleStatusAria')"
-                    @change="handleStatusChange(row)"
-                  />
-                  <el-tag v-if="row.quotaAlertTriggered" type="danger" size="small">
-                    <el-icon><Warning /></el-icon> {{ t('apiKeys.status.alert') }}
-                  </el-tag>
-                  <el-tag v-else type="success" size="small">{{ t('apiKeys.status.normal') }}</el-tag>
-                </div>
-              </div>
-              <div class="api-key-card__meta">
-                <div class="api-key-card__field api-key-card__field--full">
-                  <span class="api-key-card__label">{{ t('apiKeys.columns.description') }}</span>
-                  <span class="api-key-card__value">{{ row.description || '-' }}</span>
-                </div>
-                <div class="api-key-card__field">
-                  <span class="api-key-card__label">{{ t('apiKeys.columns.createdAt') }}</span>
-                  <span class="api-key-card__value">{{ formatDateTime(row.createdAt) }}</span>
-                </div>
-                <div class="api-key-card__field">
-                  <span class="api-key-card__label">{{ t('apiKeys.columns.expiresAt') }}</span>
-                  <span class="api-key-card__value">{{ formatDateTime(row.expiresAt) || t('apiKeys.neverExpires') }}</span>
-                </div>
-                <div class="api-key-card__field">
-                  <span class="api-key-card__label">{{ t('apiKeys.columns.remainingDays') }}</span>
-                  <span class="api-key-card__value">
-                    <el-tag :type="getRemainingDaysType(row)" size="small">{{ getRemainingDaysText(row) }}</el-tag>
-                  </span>
-                </div>
-                <div class="api-key-card__field">
-                  <span class="api-key-card__label">{{ t('apiKeys.columns.permissions') }}</span>
-                  <span class="api-key-card__value">
-                    {{ t('apiKeys.permissionsCount', { count: row.permissions?.length ?? 0 }) }}
-                  </span>
-                </div>
-                <div class="api-key-card__field">
-                  <span class="api-key-card__label">{{ t('apiKeys.columns.usage') }}</span>
-                  <span class="api-key-card__value">
-                    {{ row.totalRequests }} ({{ row.successfulRequests }}/{{ row.failedRequests }})
-                  </span>
-                </div>
-                <div class="api-key-card__field">
-                  <span class="api-key-card__label">{{ t('apiKeys.columns.todayToken') }}</span>
-                  <span class="api-key-card__value">
-                    {{ row.todayTokenUsage !== undefined && row.todayTokenUsage !== null
-                      ? formatTokenCount(row.todayTokenUsage)
-                      : '-' }}
-                  </span>
-                </div>
-              </div>
-              <div class="api-key-card__actions">
-                <el-button icon="Coin" size="small" type="primary" @click="openQuotaDrawer(row)">
-                  {{ t('apiKeys.quota') }}
-                </el-button>
-                <el-dropdown trigger="click" @command="(command: string) => handleRowCommand(command, row)">
-                  <el-button size="small">
-                    {{ t('apiKeys.moreActions') }}<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                  </el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item command="edit" icon="Edit">{{ t('apiKeys.actions.edit') }}</el-dropdown-item>
-                      <el-dropdown-item command="rotate" icon="RefreshRight" :disabled="row.expired">{{ t('apiKeys.actions.rotate') }}</el-dropdown-item>
-                      <el-dropdown-item command="reset" icon="Refresh">{{ t('apiKeys.actions.reset') }}</el-dropdown-item>
-                      <el-dropdown-item command="resetQuota" icon="Timer">{{ t('apiKeys.actions.quotaReset') }}</el-dropdown-item>
-                      <el-dropdown-item command="delete" icon="Delete" divided>
-                        <span class="text-danger">{{ t('apiKeys.actions.delete') }}</span>
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
-              </div>
-            </div>
-          </template>
-        </TableCards>
-      </div>
-
-      <!-- 分页组件 -->
-      <div class="pagination-wrapper">
-        <el-pagination
-          v-model:current-page="pagination.currentPage"
-          v-model:page-size="pagination.pageSize"
-          :page-sizes="pagination.pageSizes"
-          :total="pagination.total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
+          :loading="loading"
+          :compact="isCompact"
+          @quota="openQuotaDrawer"
+          @command="handleRowCommand"
+          @status-change="handleStatusChange"
         />
-      </div>
+
+        <!-- 窄屏卡片列表：一行一卡，保留该页主要操作 -->
+        <ApiKeyCards
+          v-else
+          :rows="pagedApiKeys"
+          :loading="loading"
+          @quota="openQuotaDrawer"
+          @command="handleRowCommand"
+          @status-change="handleStatusChange"
+        />
+
+        <!-- 分页组件 -->
+        <div class="pagination-wrapper">
+          <el-pagination
+            v-model:current-page="pagination.currentPage"
+            v-model:page-size="pagination.pageSize"
+            :page-sizes="pagination.pageSizes"
+            :total="pagination.total"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+        </div>
       </div>
     </el-card>
 
     <!-- 配额快捷抽屉（v3.2.1） -->
-    <el-drawer
-      v-model="quotaDrawerVisible"
-      :title="t('apiKeys.quotaDrawerTitle')"
-      size="420px"
-    >
-      <div class="quota-drawer-body">
-        <p class="quota-key-id">{{ quotaDrawer.keyId }}</p>
-        <el-alert v-if="quotaDrawer.detail" type="info" :closable="false" style="margin-bottom: 12px">
-          <div>
-            {{ t('apiKeys.quotaForm.todayRequests') }}：
-            {{ quotaDrawer.detail.todayRequestCount }} /
-            {{ formatQuotaLimit(quotaDrawer.detail.dailyRequestLimit, t('apiKeys.quotaPresets.unlimited')) }}
-            （{{ t('apiKeys.quotaForm.remainingRequests') }}：
-            {{ formatRemaining(quotaDrawer.detail.remainingRequests, quotaDrawer.detail.dailyRequestLimit, t('apiKeys.quotaPresets.unlimited')) }}）
-          </div>
-          <div>
-            {{ t('apiKeys.quotaForm.todayTokens') }}：
-            {{ quotaDrawer.detail.todayTokenUsage }} /
-            {{ formatQuotaLimit(quotaDrawer.detail.dailyTokenLimit, t('apiKeys.quotaPresets.unlimited')) }}
-            （{{ t('apiKeys.quotaForm.remainingTokens') }}：
-            {{ formatRemaining(quotaDrawer.detail.remainingTokens, quotaDrawer.detail.dailyTokenLimit, t('apiKeys.quotaPresets.unlimited')) }}）
-          </div>
-        </el-alert>
-        <el-alert
-          v-else-if="quotaDrawerLoading"
-          type="info"
-          :closable="false"
-          :title="t('common.loading')"
-          style="margin-bottom: 12px"
-        />
-
-        <el-form label-width="140px">
-          <el-form-item :label="t('apiKeys.quotaForm.applyPreset')">
-            <el-select v-model="quotaDrawer.presetId" style="width: 100%" @change="applyQuotaPreset">
-              <el-option
-                v-for="p in QUOTA_PRESETS"
-                :key="p.id"
-                :label="t(p.labelKey)"
-                :value="p.id"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item :label="t('apiKeys.quotaForm.dailyRequestLimit')">
-            <el-input-number v-model="quotaDrawer.form.dailyRequestLimit" :min="0" :step="100" style="width: 100%" />
-          </el-form-item>
-          <el-form-item :label="t('apiKeys.quotaForm.dailyTokenLimit')">
-            <el-input-number v-model="quotaDrawer.form.dailyTokenLimit" :min="0" :step="1000" style="width: 100%" />
-          </el-form-item>
-          <el-form-item :label="t('apiKeys.quotaForm.rateLimitPerMinute')">
-            <el-input-number v-model="quotaDrawer.form.rateLimitPerMinute" :min="0" :step="10" style="width: 100%" />
-          </el-form-item>
-          <el-form-item :label="t('apiKeys.quotaForm.quotaAlertThreshold')">
-            <el-slider
-              v-model="quotaDrawer.form.quotaAlertThreshold"
-              :min="0.05"
-              :max="1"
-              :step="0.05"
-              show-input
-              :format-tooltip="(val: number) => `${Math.round(val * 100)}%`"
-            />
-          </el-form-item>
-        </el-form>
-        <div class="quota-drawer-actions">
-          <el-button type="primary" :loading="quotaDrawerSaving" @click="saveQuotaFromDrawer">
-            {{ t('apiKeys.quotaForm.saveQuota') }}
-          </el-button>
-          <el-button type="warning" @click="handleResetQuotaFromDrawer">
-            {{ t('apiKeys.quotaForm.resetQuota') }}
-          </el-button>
-        </div>
-      </div>
-    </el-drawer>
+    <QuotaDrawer
+      ref="quotaDrawerRef"
+      :refresh="refreshAfterQuotaChange"
+    />
   </PageSkeleton>
 
-    <!-- 创建/编辑API密钥对话框 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" center width="680px">
-      <el-form ref="formRef" :model="form" label-width="120px" status-icon>
-        <el-form-item :label="t('apiKeys.form.keyId')" prop="keyId" :rules="keyIdRules">
-          <el-input v-model="form.keyId" :disabled="isEdit" maxlength="64" :placeholder="t('apiKeys.form.keyIdPlaceholder')"
-                    show-word-limit/>
-        </el-form-item>
-        <el-form-item :label="t('apiKeys.form.description')">
-          <el-input v-model="form.description" maxlength="128" :placeholder="t('apiKeys.form.descriptionPlaceholder')" show-word-limit
-                    type="textarea"/>
-        </el-form-item>
-        <el-form-item :label="t('apiKeys.form.expiresAt')">
-          <el-date-picker
-              v-model="form.expiresAt"
-              clearable
-              format="YYYY-MM-DD HH:mm:ss"
-              :placeholder="t('apiKeys.form.expiresAtPlaceholder')"
-              style="width: 100%;"
-              type="datetime"
-              value-format="YYYY-MM-DD HH:mm:ss"
-          />
-        </el-form-item>
-        <el-form-item :label="t('apiKeys.form.permissions')">
-          <el-checkbox-group v-model="form.permissions">
-            <el-checkbox label="chat">{{ t('apiKeys.permissions.chat') }}</el-checkbox>
-            <el-checkbox label="embedding">{{ t('apiKeys.permissions.embedding') }}</el-checkbox>
-            <el-checkbox label="rerank">{{ t('apiKeys.permissions.rerank') }}</el-checkbox>
-            <el-checkbox label="tts">{{ t('apiKeys.permissions.tts') }}</el-checkbox>
-            <el-checkbox label="stt">{{ t('apiKeys.permissions.stt') }}</el-checkbox>
-            <el-checkbox label="imgGen">{{ t('apiKeys.permissions.imgGen') }}</el-checkbox>
-            <el-checkbox label="imgEdit">{{ t('apiKeys.permissions.imgEdit') }}</el-checkbox>
-          </el-checkbox-group>
-        </el-form-item>
-        <el-form-item :label="t('apiKeys.form.ipWhitelist')">
-          <el-select
-              v-model="form.allowedIpAddresses"
-              allow-create
-              clearable
-              filterable
-              multiple
-              :placeholder="t('apiKeys.form.ipWhitelistPlaceholder')"
-              style="width: 100%;"
-          >
-          </el-select>
-          <div class="form-hint">{{ t('apiKeys.form.ipWhitelistHint') }}</div>
-        </el-form-item>
-        <el-form-item :label="t('apiKeys.form.dailyRequestLimit')">
-          <el-input-number v-model="form.dailyRequestLimit" :min="0" :step="100" :placeholder="t('apiKeys.form.zeroMeansUnlimitedPlaceholder')"/>
-          <div class="form-hint">{{ t('apiKeys.form.zeroMeansUnlimited') }}</div>
-        </el-form-item>
-        <el-form-item :label="t('apiKeys.form.dailyTokenLimit')">
-          <el-input-number v-model="form.dailyTokenLimit" :min="0" :step="1000" :placeholder="t('apiKeys.form.zeroMeansUnlimitedPlaceholder')"/>
-          <div class="form-hint">{{ t('apiKeys.form.tokenLimitHint') }}</div>
-        </el-form-item>
-        <el-form-item :label="t('apiKeys.form.rateLimitPerMinute')">
-          <el-input-number v-model="form.rateLimitPerMinute" :min="0" :step="10" :placeholder="t('apiKeys.form.zeroMeansUnlimitedPlaceholder')"/>
-          <div class="form-hint">{{ t('apiKeys.form.rateLimitHint') }}</div>
-        </el-form-item>
-        <el-form-item :label="t('apiKeys.form.quotaAlertThreshold')">
-          <el-slider v-model="form.quotaAlertThreshold" :min="0.05" :max="1" :step="0.05" show-input :format-tooltip="(val: number) => `${Math.round(val * 100)}%`"/>
-          <div class="form-hint">{{ t('apiKeys.form.thresholdHint') }}</div>
-        </el-form-item>
-        <el-form-item :label="t('apiKeys.form.rotationPeriod')">
-          <el-input-number v-model="form.rotationPeriodDays" :min="0" :step="30" :placeholder="t('apiKeys.form.rotationPeriodPlaceholder')"/>
-          <div class="form-hint">{{ t('apiKeys.form.rotationPeriodHint') }}</div>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">{{ t('apiKeys.actions.cancel') }}</el-button>
-          <el-button type="primary" @click="handleSave" :loading="saveLoading">{{ t('apiKeys.actions.save') }}</el-button>
-        </span>
-      </template>
-    </el-dialog>
+  <!-- 创建/编辑API密钥对话框 -->
+  <ApiKeyFormDialog
+    ref="formDialogRef"
+    v-model:visible="dialogVisible"
+    v-model:key-id="form.keyId"
+    v-model:description="form.description"
+    v-model:expires-at="form.expiresAt"
+    v-model:permissions="form.permissions"
+    v-model:allowed-ip-addresses="form.allowedIpAddresses"
+    v-model:daily-request-limit="form.dailyRequestLimit"
+    v-model:daily-token-limit="form.dailyTokenLimit"
+    v-model:rate-limit-per-minute="form.rateLimitPerMinute"
+    v-model:quota-alert-threshold="form.quotaAlertThreshold"
+    v-model:rotation-period-days="form.rotationPeriodDays"
+    :model="form"
+    :title="dialogTitle"
+    :is-edit="isEdit"
+    :rules="keyIdRules"
+    :saving="saveLoading"
+    @save="handleSave"
+  />
 
-    <!-- 创建成功后弹窗，展示密钥值 -->
-    <el-dialog v-model="showKeyValueDialog" :close-on-click-modal="false" center :title="t('apiKeys.apiKeyCreatedTitle')" width="450px">
-      <div class="key-value-dialog-content">
-        <el-icon style="font-size: 48px; color: var(--ja-primary); margin-bottom: 16px;">
-          <Key />
-        </el-icon>
-        <p class="key-value-tip">{{ t('apiKeys.keyValueDialog.tip') }}</p>
-        <el-input v-model="createdKeyValue" readonly size="large">
-          <template #append>
-            <el-button icon="CopyDocument" type="primary" @click="copyKeyValue">{{ t('apiKeys.actions.copy') }}</el-button>
-          </template>
-        </el-input>
-        <el-alert :closable="false" show-icon style="margin-top: 16px;" type="warning">
-          <template #title>
-            <strong>{{ t('apiKeys.keyValueDialog.important') }}</strong>
-          </template>
-          {{ t('apiKeys.keyValueDialog.warning') }}
-        </el-alert>
-      </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button type="primary" @click="closeKeyValueDialog" size="large">{{ t('apiKeys.actions.savedClose') }}</el-button>
-        </span>
-      </template>
-    </el-dialog>
+  <!-- 创建成功后弹窗，展示密钥值 -->
+  <KeyValueDialog
+    v-model:visible="showKeyValueDialog"
+    :key-value="createdKeyValue"
+    @copy="copyKeyValue"
+    @close="closeKeyValueDialog"
+  />
 
-    <!-- 导入配置对话框 -->
-    <el-dialog v-model="showImportDialogVisible" :close-on-click-modal="false" center :title="t('apiKeys.importConfigTitle')" width="600px">
-      <div class="import-dialog-content">
-        <el-alert :closable="false" show-icon style="margin-bottom: 20px;" type="info">
-          <template #title>
-            <strong>{{ t('apiKeys.import.guideTitle') }}</strong>
-          </template>
-          {{ t('apiKeys.import.note1') }}
-          <br/>
-          {{ t('apiKeys.import.mergeNote') }}
-          <br/>
-          {{ t('apiKeys.import.replaceNote') }}
-        </el-alert>
-        <el-form label-width="100px">
-          <el-form-item :label="t('apiKeys.import.modeLabel')">
-            <el-radio-group v-model="importMode">
-              <el-radio label="MERGE">{{ t('apiKeys.import.mergeOption') }}</el-radio>
-              <el-radio label="REPLACE">{{ t('apiKeys.import.replaceOption') }}</el-radio>
-            </el-radio-group>
-          </el-form-item>
-          <el-form-item :label="t('apiKeys.import.fileLabel')">
-            <el-upload
-              ref="uploadRef"
-              :auto-upload="false"
-              :limit="1"
-              accept=".json"
-              :on-change="handleImportFileChange"
-              drag
-            >
-              <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-              <div class="el-upload__text">
-                {{ t('apiKeys.import.uploadText') }}<em>{{ t('apiKeys.import.uploadClick') }}</em>
-              </div>
-              <template #tip>
-                <div class="el-upload__tip">{{ t('apiKeys.import.jsonTip') }}</div>
-              </template>
-            </el-upload>
-          </el-form-item>
-        </el-form>
-        <div v-if="importPreviewKeys.length > 0" class="import-preview">
-          <h4>{{ t('apiKeys.import.previewTitle', { count: importPreviewKeys.length }) }}</h4>
-          <el-table :data="importPreviewKeys" max-height="300" border stripe>
-            <el-table-column prop="keyId" :label="t('apiKeys.columns.keyId')" width="150"/>
-            <el-table-column prop="description" :label="t('apiKeys.columns.description')" show-overflow-tooltip/>
-            <el-table-column prop="permissions" :label="t('apiKeys.columns.permissions')" width="150">
-              <template #default="scope">
-                <el-tag v-for="p in scope.row.permissions" :key="p" size="small" style="margin-right: 4px;">
-                  {{ p }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="enabled" :label="t('apiKeys.columns.enabled')" width="80">
-              <template #default="scope">
-                <el-tag :type="scope.row.enabled ? 'success' : 'danger'" size="small">
-                  {{ scope.row.enabled ? t('apiKeys.yes') : t('apiKeys.no') }}
-                </el-tag>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-      </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showImportDialogVisible = false">{{ t('apiKeys.actions.cancel') }}</el-button>
-          <el-button
-            type="primary"
-            @click="handleImport"
-            :loading="importLoading"
-            :disabled="importPreviewKeys.length === 0"
-          >
-            {{ t('apiKeys.actions.confirmImport') }}
-          </el-button>
-        </span>
-      </template>
-    </el-dialog>
-
-    <!-- 导入结果对话框 -->
-    <el-dialog v-model="showImportResultDialog" :close-on-click-modal="false" center :title="t('apiKeys.importResultTitle')" width="700px">
-      <div class="import-result-content">
-        <el-descriptions :column="3" border>
-          <el-descriptions-item :label="t('apiKeys.result.attempted')">{{ importResult?.totalAttempted }}</el-descriptions-item>
-          <el-descriptions-item :label="t('apiKeys.result.success')">{{ importResult?.successCount }}</el-descriptions-item>
-          <el-descriptions-item :label="t('apiKeys.result.failure')">{{ importResult?.failureCount }}</el-descriptions-item>
-        </el-descriptions>
-        <div v-if="importResult?.importedKeys && importResult.importedKeys.length > 0" class="imported-keys-section">
-          <el-alert :closable="false" show-icon style="margin-top: 20px; margin-bottom: 16px;" type="warning">
-            <template #title>
-              <strong>{{ t('apiKeys.import.newKeysTitle') }}</strong>
-            </template>
-          </el-alert>
-          <el-table :data="importResult?.importedKeys" max-height="300" border stripe>
-            <el-table-column prop="keyId" :label="t('apiKeys.columns.keyId')" width="150"/>
-            <el-table-column prop="keyValue" :label="t('apiKeys.columns.keyValue')" width="300">
-              <template #default="scope">
-                <el-input v-model="scope.row.keyValue" readonly size="small">
-                  <template #append>
-                    <el-button icon="CopyDocument" @click="copyImportedKey(scope.row.keyValue)" size="small"/>
-                  </template>
-                </el-input>
-              </template>
-            </el-table-column>
-            <el-table-column prop="description" :label="t('apiKeys.columns.description')" show-overflow-tooltip/>
-          </el-table>
-        </div>
-        <div v-if="importResult?.errors && importResult.errors.length > 0" class="import-errors-section">
-          <h4 style="margin-top: 20px; color: var(--ja-danger);">{{ t('apiKeys.import.failedTitle') }}</h4>
-          <el-table :data="importResult?.errors" border stripe>
-            <el-table-column prop="keyId" :label="t('apiKeys.columns.keyId')" width="150"/>
-            <el-table-column prop="reason" :label="t('apiKeys.columns.failureReason')"/>
-          </el-table>
-        </div>
-      </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button type="primary" @click="closeImportResultDialog" size="large">{{ t('apiKeys.actions.savedClose') }}</el-button>
-        </span>
-      </template>
-    </el-dialog>
+  <!-- 导入配置 / 导入结果对话框 -->
+  <ImportConfigDialog
+    ref="importDialogRef"
+    :refresh="refreshAfterImport"
+  />
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { UploadFile } from 'element-plus'
 import { getErrorMessage } from '@/utils/error'
 import { useI18n } from 'vue-i18n'
-import { Key, Warning, UploadFilled } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import MetricStrip, { type MetricStripItem } from '@/components/MetricStrip.vue'
-import TableCards from '@/components/TableCards.vue'
 import { useViewport } from '@/composables/useViewport'
-import { formatDateTime } from '@/utils/format'
 import {
   createApiKey,
   deleteApiKey,
@@ -663,26 +127,27 @@ import {
   resetApiKey,
   rotateApiKey,
   exportApiKeys,
-  importApiKeys,
-  resetApiKeyQuota,
   getQuotaOverview,
-  getQuotaAlerts
+  getQuotaAlerts,
+  resetApiKeyQuota
 } from '@/api/apiKey'
-import { getApiKeyQuota } from '@/api/apiKey'
-import { updateApiKeyQuota } from '@/api/apiKeyQuotaOps'
-import { QUOTA_PRESETS, formatQuotaLimit, formatRemaining } from '@/utils/quotaOps'
 import type {
   ApiKeyVO,
   ApiKeyListVO,
   ApiKeyCreationVO,
   ApiKeyCreateRequest,
   ApiKeyUpdateRequest,
-  ApiKeyBatchImportRequest,
-  ApiKeyBatchImportResult,
-  ApiKeyImportItem,
   QuotaUsageDetail,
   QuotaAlertInfo
 } from '@/types'
+import QuotaAlertsCard from './apikeys/QuotaAlertsCard.vue'
+import ApiKeyTable from './apikeys/ApiKeyTable.vue'
+import ApiKeyCards from './apikeys/ApiKeyCards.vue'
+import QuotaDrawer from './apikeys/QuotaDrawer.vue'
+import ApiKeyFormDialog from './apikeys/ApiKeyFormDialog.vue'
+import KeyValueDialog from './apikeys/KeyValueDialog.vue'
+import ImportConfigDialog from './apikeys/ImportConfigDialog.vue'
+import type { ApiKeyFormModel } from './apikeys/types'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -693,97 +158,17 @@ const goQuotaMonitoring = () => {
 }
 
 // ===== v3.2.1 配额抽屉 =====
-const quotaDrawerVisible = ref(false)
-const quotaDrawerLoading = ref(false)
-const quotaDrawerSaving = ref(false)
-const quotaDrawer = reactive({
-  keyId: '',
-  presetId: 'standard',
-  detail: null as QuotaUsageDetail | null,
-  form: {
-    dailyRequestLimit: 0,
-    dailyTokenLimit: 0,
-    rateLimitPerMinute: 0,
-    quotaAlertThreshold: 0.8
-  }
-})
+// 抽屉的表单/详情状态与保存、重置逻辑都搬进了 apikeys/QuotaDrawer.vue；
+// 这里只保留「打开某一行」的入口与「变更后刷新列表/告警」的回调。
+const quotaDrawerRef = ref<InstanceType<typeof QuotaDrawer> | null>(null)
 
-const openQuotaDrawer = async (row: ApiKeyVO) => {
-  quotaDrawer.keyId = row.keyId
-  quotaDrawer.presetId = ''
-  quotaDrawer.detail = null
-  // 先用列表数据填表单，立即可操作；详情异步刷新，不阻塞打开
-  quotaDrawer.form = {
-    dailyRequestLimit: row.dailyRequestLimit || 0,
-    dailyTokenLimit: row.dailyTokenLimit || 0,
-    rateLimitPerMinute: row.rateLimitPerMinute || 0,
-    quotaAlertThreshold: row.quotaAlertThreshold ?? 0.8
-  }
-  quotaDrawerVisible.value = true
-  quotaDrawerLoading.value = true
-  try {
-    const detail = await getApiKeyQuota(row.keyId)
-    quotaDrawer.detail = detail
-    quotaDrawer.form = {
-      dailyRequestLimit: detail.dailyRequestLimit || 0,
-      dailyTokenLimit: detail.dailyTokenLimit || 0,
-      rateLimitPerMinute: detail.rateLimitPerMinute || 0,
-      quotaAlertThreshold: detail.quotaAlertThreshold ?? 0.8
-    }
-  } catch (error) {
-    console.error('获取配额详情失败:', error)
-  } finally {
-    quotaDrawerLoading.value = false
-  }
+const openQuotaDrawer = (row: ApiKeyVO) => {
+  void quotaDrawerRef.value?.open(row)
 }
 
-const applyQuotaPreset = (presetId: string) => {
-  const preset = QUOTA_PRESETS.find(p => p.id === presetId)
-  if (!preset) return
-  quotaDrawer.form = { ...preset.limits }
-}
-
-const saveQuotaFromDrawer = async () => {
-  if (!quotaDrawer.keyId) return
-  quotaDrawerSaving.value = true
-  try {
-    const detail = await updateApiKeyQuota(quotaDrawer.keyId, { ...quotaDrawer.form })
-    quotaDrawer.detail = detail
-    ElMessage.success(t('apiKeys.quotaForm.saveSuccess'))
-    await Promise.all([fetchApiKeys(), fetchQuotaAlerts()])
-  } catch (e) {
-    ElMessage.error(getErrorMessage(e) || t('apiKeys.quotaForm.saveQuota'))
-  } finally {
-    quotaDrawerSaving.value = false
-  }
-}
-
-// 重置配额计数器会清零今日请求数与 Token 用量 ⇒ 必须二次确认。
-// 审计 #460：**同一个操作在本文件里有两套入口，只有表格行那套有确认**（:989 用了
-// apiKeys.confirmations.quotaResetTitle/Message），抽屉里这套没有 —— 典型的
-// 「同语义不同入口不一致」。这里复用同一组键，不新增文案。
-// 守卫见 11-deep-security-quota.mjs 的 deep-quota-drawer-reset-confirm:*。
-const handleResetQuotaFromDrawer = () => {
-  if (!quotaDrawer.keyId) return
-  const keyId = quotaDrawer.keyId
-  ElMessageBox.confirm(
-    t('apiKeys.confirmations.quotaResetMessage', { keyId }),
-    t('apiKeys.confirmations.quotaResetTitle'),
-    {
-      confirmButtonText: t('apiKeys.confirmations.confirmReset'),
-      cancelButtonText: t('apiKeys.actions.cancel'),
-      type: 'warning'
-    }
-  ).then(async () => {
-    try {
-      await resetApiKeyQuota(keyId)
-      quotaDrawer.detail = await getApiKeyQuota(keyId)
-      ElMessage.success(t('apiKeys.quotaForm.resetSuccess'))
-      await Promise.all([fetchApiKeys(), fetchQuotaAlerts()])
-    } catch (e) {
-      ElMessage.error(getErrorMessage(e) || t('apiKeys.quotaForm.resetQuota'))
-    }
-  })
+// 保存/重置配额成功后的刷新：与原 `await Promise.all([fetchApiKeys(), fetchQuotaAlerts()])` 等价
+const refreshAfterQuotaChange = async (): Promise<void> => {
+  await Promise.all([fetchApiKeys(), fetchQuotaAlerts()])
 }
 
 // 列表数据
@@ -824,7 +209,7 @@ const saveLoading = ref(false)
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const isEdit = ref(false)
-const formRef = ref()
+const formDialogRef = ref<InstanceType<typeof ApiKeyFormDialog> | null>(null)
 
 // 分页状态
 const pagination = reactive({
@@ -834,8 +219,8 @@ const pagination = reactive({
   total: 0
 })
 
-// 表单数据
-const form = ref({
+// 表单数据（弹窗通过逐字段 v-model 写回，见 apikeys/ApiKeyFormDialog.vue）
+const form = ref<ApiKeyFormModel>({
   keyId: '',
   description: '',
   expiresAt: '',
@@ -853,67 +238,6 @@ const form = ref({
 const keyIdRules = computed(() => [
   { max: 64, message: t('apiKeys.messages.keyIdTooLong'), trigger: 'blur' }
 ])
-
-// 获取权限标签类型
-const getPermissionTagType = (permission: string) => {
-  switch (permission) {
-    case 'chat':
-      return 'primary'
-    case 'embedding':
-      return 'success'
-    case 'rerank':
-      return 'warning'
-    case 'tts':
-      return 'info'
-    case 'stt':
-      return 'info'
-    case 'imgGen':
-      return 'danger'
-    case 'imgEdit':
-      return 'danger'
-    // 兼容旧权限格式
-    case 'image':
-      return 'danger'
-    case 'audio':
-      return 'info'
-    case 'admin':
-      return 'danger'
-    default:
-      return 'info'
-  }
-}
-
-// 格式化权限显示（后端权限值与 i18n key 同名；未知值原样返回）
-const formatPermission = (permission: string) => {
-  return t(`apiKeys.permissions.${permission}`, permission)
-}
-
-// 获取剩余天数文本
-const getRemainingDaysText = (row: ApiKeyVO): string => {
-  if (row.remainingDays === null || row.remainingDays === undefined) return t('apiKeys.remainingDaysText.permanent')
-  if (row.remainingDays < 0) return t('apiKeys.remainingDaysText.expired')
-  return t('apiKeys.remainingDaysText.days', { count: row.remainingDays })
-}
-
-// 获取剩余天数标签类型
-const getRemainingDaysType = (row: ApiKeyVO): 'success' | 'warning' | 'danger' | 'info' => {
-  if (row.remainingDays === null || row.remainingDays === undefined) return 'info'
-  if (row.remainingDays < 0) return 'danger'
-  if (row.remainingDays < 7) return 'danger'
-  if (row.remainingDays < 30) return 'warning'
-  return 'success'
-}
-
-// 格式化 Token 数量
-const formatTokenCount = (count: number): string => {
-  if (count >= 1000000) {
-    return `${(count / 1000000).toFixed(1)  }M`
-  }
-  if (count >= 1000) {
-    return `${(count / 1000).toFixed(1)  }K`
-  }
-  return count.toString()
-}
 
 // 分页数据
 const pagedApiKeys = computed(() => {
@@ -1001,37 +325,6 @@ const fetchQuotaAlerts = async () => {
   } finally {
     quotaAlertsLoading.value = false
   }
-}
-
-/**
- * 格式化告警类型显示
- */
-const formatAlertType = (alertType: string): string => {
-  switch (alertType) {
-    case 'REQUEST_QUOTA': return t('apiKeys.alertTypes.request')
-    case 'TOKEN_QUOTA': return t('apiKeys.alertTypes.token')
-    case 'GENERAL': return t('apiKeys.alertTypes.general')
-    default: return alertType || t('apiKeys.alertTypes.unknown')
-  }
-}
-
-/**
- * 获取告警类型标签类型
- */
-const getAlertTypeTag = (alertType: string): 'danger' | 'warning' | 'info' => {
-  switch (alertType) {
-    case 'REQUEST_QUOTA': return 'danger'
-    case 'TOKEN_QUOTA': return 'warning'
-    default: return 'info'
-  }
-}
-
-/**
- * 格式化百分比
- */
-const formatPercent = (val: number): string => {
-  if (val < 0) return '-'
-  return `${val.toFixed(1)}%`
 }
 
 // 创建API密钥弹窗
@@ -1187,10 +480,9 @@ const createdKeyValue = ref('')
 const handleSave = async () => {
   saveLoading.value = true
   try {
-    if (formRef.value) {
-      await formRef.value.validate()
-    }
-    
+    // 校验仍在弹窗组件内部完成（与原 `if (formRef.value) await formRef.value.validate()` 等价）
+    await formDialogRef.value?.validate()
+
     if (isEdit.value) {
       // 编辑
       const updateData: ApiKeyUpdateRequest = {
@@ -1251,88 +543,18 @@ const closeKeyValueDialog = () => {
 }
 
 // ============ 批量导入/导出功能 ============
-
-const showImportDialogVisible = ref(false)
-const showImportResultDialog = ref(false)
-const importMode = ref<'MERGE' | 'REPLACE'>('MERGE')
-const importPreviewKeys = ref<ApiKeyImportItem[]>([])
-const importLoading = ref(false)
-const importResult = ref<ApiKeyBatchImportResult | null>(null)
-const uploadRef = ref()
+// 导入对话框及其文件解析、预览、结果展示都在 apikeys/ImportConfigDialog.vue 内；
+// 这里只保留「打开」入口与「导入成功后刷新列表」的回调。
+const importDialogRef = ref<InstanceType<typeof ImportConfigDialog> | null>(null)
 
 // 显示导入对话框
 const showImportDialog = () => {
-  importMode.value = 'MERGE'
-  importPreviewKeys.value = []
-  showImportDialogVisible.value = true
+  importDialogRef.value?.open()
 }
 
-// 处理导入文件选择
-const handleImportFileChange = (file: UploadFile) => {
-  // Element Plus 的 UploadFile.raw 是可选（仅「选择后未上传」时存在）；没有原始文件就没法读内容
-  const rawFile = file.raw
-  if (!rawFile) {
-    ElMessage.warning(t('apiKeys.messages.importSelectFile'))
-    return
-  }
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    try {
-      const content = JSON.parse(e.target?.result as string)
-      // 支持两种格式：直接数组或包含 keys 字段的导出格式
-      if (Array.isArray(content)) {
-        importPreviewKeys.value = content
-      } else if (content.keys && Array.isArray(content.keys)) {
-        importPreviewKeys.value = content.keys
-      } else {
-        ElMessage.error(t('apiKeys.messages.importBadFormat'))
-        importPreviewKeys.value = []
-      }
-    } catch (error) {
-      ElMessage.error(t('apiKeys.messages.importParseFailed'))
-      importPreviewKeys.value = []
-    }
-  }
-  reader.readAsText(rawFile)
-}
-
-// 执行导入
-const handleImport = async () => {
-  if (importPreviewKeys.value.length === 0) {
-    ElMessage.warning(t('apiKeys.messages.importSelectFile'))
-    return
-  }
-
-  importLoading.value = true
-  try {
-    const request: ApiKeyBatchImportRequest = {
-      keys: importPreviewKeys.value,
-      mode: importMode.value
-    }
-    const result = await importApiKeys(request)
-    importResult.value = result
-    showImportDialogVisible.value = false
-    showImportResultDialog.value = true
-    await fetchApiKeys()
-    ElMessage.success(t('apiKeys.messages.importCompleted', { success: result.successCount, failure: result.failureCount }))
-  } catch (error) {
-    ElMessage.error(t('apiKeys.messages.importFailedDetail', { message: getErrorMessage(error) || '' }))
-  } finally {
-    importLoading.value = false
-  }
-}
-
-// 复制导入的密钥值
-const copyImportedKey = (keyValue: string) => {
-  navigator.clipboard.writeText(keyValue)
-    .then(() => ElMessage.success(t('apiKeys.messages.keyCopied')))
-    .catch(() => ElMessage.error(t('apiKeys.messages.copyFailed')))
-}
-
-// 关闭导入结果对话框
-const closeImportResultDialog = () => {
-  showImportResultDialog.value = false
-  importResult.value = null
+// 导入成功后的刷新（原 `await fetchApiKeys()`）
+const refreshAfterImport = async (): Promise<void> => {
+  await fetchApiKeys()
 }
 
 // 执行导出
@@ -1395,39 +617,6 @@ onMounted(() => {
   margin-bottom: 16px;
 }
 
-.quota-alerts-card {
-  margin-bottom: 16px;
-}
-
-.quota-drawer-body {
-  display: flex;
-  flex-direction: column;
-}
-
-.quota-key-id {
-  font-family: monospace;
-  color: var(--ja-text-secondary, #888);
-  margin-bottom: 8px;
-}
-
-.quota-drawer-actions {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  margin-top: 20px;
-  padding-top: 8px;
-}
-
-.quota-drawer-actions .el-button {
-  min-width: 96px;
-}
-
-.alert-high {
-  color: var(--ja-danger, #f56c6c);
-  font-weight: 600;
-}
-
 .main-card {
   flex: 1;
   display: flex;
@@ -1444,32 +633,11 @@ onMounted(() => {
   padding: 0;
 }
 
-.card-header {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .table-wrapper {
   flex: 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-}
-
-.table-wrapper .el-table {
-  flex: 1;
-  overflow: auto;
-}
-
-.main-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--ja-text-primary);
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .desc-text {
@@ -1485,212 +653,7 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.permission-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  max-width: 140px;
-  line-height: 1.8;
-}
-
-.permission-tags .el-tag {
-  margin: 0;
-}
-
-.permission-count {
-  cursor: pointer;
-}
-
-.permission-popover {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.expired-text {
-  color: var(--ja-danger);
-}
-
-.usage-stat {
-  font-weight: 500;
-  color: var(--ja-primary);
-}
-
-.usage-detail {
-  font-size: 12px;
-  color: var(--ja-text-secondary);
-  margin-left: 4px;
-}
-
-.form-hint {
-  font-size: 12px;
-  color: var(--ja-text-secondary);
-  margin-top: 4px;
-}
-
-/* 行操作：1 个主操作（配额）+ 1 个「更多」下拉，列宽收紧到 150 */
-.row-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.row-actions .el-button {
-  margin: 0;
-  padding-left: 8px;
-  padding-right: 8px;
-}
-
-/* compact：收窄单元格内边距与字号，保证 768–1024px 下不出现横向滚动 */
-.compact-table :deep(.cell) {
-  padding: 0 3px;
-  font-size: 11px;
-}
-
-.compact-table :deep(.el-tag) {
-  padding: 0 4px;
-}
-
-/* 窄屏卡片列表：占满表格区域并独立滚动，分页仍固定在底部 */
-.api-key-cards {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: var(--ja-space-4);
-  position: relative;
-}
-
-.api-key-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ja-space-2, 8px);
-  min-width: 0;
-}
-
-.api-key-card__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--ja-space-2, 8px);
-}
-
-.api-key-card__head-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--ja-space-2, 8px);
-}
-
-.api-key-card__title {
-  font-family: 'Courier New', monospace;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ja-ink);
-  word-break: break-all;
-}
-
-.api-key-card__meta {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--ja-space-1, 4px) var(--ja-space-3, 12px);
-}
-
-.api-key-card__field {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.api-key-card__field--full {
-  grid-column: 1 / -1;
-}
-
-.api-key-card__label {
-  font-size: 12px;
-  color: var(--ja-ink-3);
-}
-
-.api-key-card__value {
-  font-size: 13px;
-  color: var(--ja-ink);
-  overflow-wrap: anywhere;
-}
-
-.api-key-card__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--ja-space-2, 8px);
-  padding-top: var(--ja-space-2, 8px);
-  border-top: 1px solid var(--ja-border-light);
-}
-
-.api-key-card__actions .el-button {
-  margin: 0;
-}
-
-@media (max-width: 420px) {
-  .api-key-card__meta {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.text-danger {
-  color: var(--ja-danger);
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.key-value-dialog-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px;
-  text-align: center;
-}
-
-.key-value-tip {
-  font-size: 16px;
-  color: var(--ja-text-primary);
-  margin-bottom: 16px;
-  font-weight: 500;
-}
-
 :deep(.el-table) {
   border-radius: 8px;
-}
-
-:deep(.el-dialog__header) {
-  border-bottom: 1px solid var(--ja-border-light);
-  padding-bottom: 16px;
-}
-
-:deep(.el-dialog__footer) {
-  border-top: 1px solid var(--ja-border-light);
-  padding-top: 16px;
-}
-
-.import-dialog-content,
-.import-result-content {
-  padding: 10px 0;
-}
-
-.import-preview {
-  margin-top: 20px;
-  padding-top: 10px;
-}
-
-.import-preview h4 {
-  margin-bottom: 10px;
-  color: var(--ja-text-primary);
-}
-
-.imported-keys-section,
-.import-errors-section {
-  margin-top: 20px;
 }
 </style>

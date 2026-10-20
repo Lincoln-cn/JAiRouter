@@ -23,6 +23,16 @@ export default {
     check('overview-governance', hasGovernance)
 
     // 治理链路跳转：按钮文案是「查看/监控」，需按区块标签定位
+    // 治理链路的四个跳转都用 waitForURL 等路由真正换掉：
+    // 目标路由是懒加载 chunk，全量跑批时可能 >700ms 才落地，
+    // 固定 sleep 会把「慢」误判成「跳转失败」（本轮全量实测 469/470 的唯一红项）。
+    const jumpTo = async (pathFragment) => {
+      await page
+        .waitForURL((u) => u.pathname.includes(pathFragment), { timeout: 5000 })
+        .catch(() => {})
+      await page.waitForTimeout(150)
+    }
+
     const ruleJump = page
       .locator('.gov-section')
       .filter({ has: page.locator('.gov-label', { hasText: /规则/ }) })
@@ -30,7 +40,7 @@ export default {
       .first()
     if ((await ruleJump.count()) > 0) {
       await ruleJump.click()
-      await page.waitForTimeout(700)
+      await jumpTo('/config/rules')
       const path = currentPathname(page)
       check('overview-jump-rules', path.includes('/config/rules'), path)
       await gotoApp(page, '/dashboard/main', { waitMs: 400 })
@@ -45,7 +55,7 @@ export default {
       .first()
     if ((await rlJump.count()) > 0) {
       await rlJump.click()
-      await page.waitForTimeout(700)
+      await jumpTo('/rate-limiters')
       check('overview-jump-rl', currentPathname(page).includes('/rate-limiters'), page.url())
     } else {
       check('overview-jump-rl', false, 'rl jump not found')
@@ -59,7 +69,7 @@ export default {
       .first()
     if ((await cbJump.count()) > 0) {
       await cbJump.click()
-      await page.waitForTimeout(700)
+      await jumpTo('/circuit-breakers')
       check('overview-jump-cb', currentPathname(page).includes('/circuit-breakers'), page.url())
     } else {
       check('overview-jump-cb', false, 'cb jump not found')
@@ -73,7 +83,7 @@ export default {
       .first()
     if ((await lbJump.count()) > 0) {
       await lbJump.click()
-      await page.waitForTimeout(800)
+      await jumpTo('/load-balancers')
       check('overview-jump-lb', currentPathname(page).includes('/load-balancers'), page.url())
     } else {
       // 页面可能仍在 hydrate，再等一次
@@ -85,7 +95,7 @@ export default {
         .first()
       if ((await retry.count()) > 0) {
         await retry.click()
-        await page.waitForTimeout(800)
+        await jumpTo('/load-balancers')
         check('overview-jump-lb', currentPathname(page).includes('/load-balancers'), page.url())
       } else {
         check('overview-jump-lb', false, 'lb jump not found')
