@@ -56,6 +56,22 @@
         <el-input-number v-model="rateLimitPerMinute" :min="0" :step="10" :placeholder="t('apiKeys.form.zeroMeansUnlimitedPlaceholder')"/>
         <div class="form-hint">{{ t('apiKeys.form.rateLimitHint') }}</div>
       </el-form-item>
+      <el-form-item :label="t('apiKeys.form.hourlyRequestLimit')">
+        <el-input-number v-model="hourlyRequestLimit" :min="0" :step="100" :placeholder="t('apiKeys.form.zeroMeansUnlimitedPlaceholder')"/>
+        <div class="form-hint">{{ t('apiKeys.form.hourlyLimitHint') }}</div>
+      </el-form-item>
+      <el-form-item :label="t('apiKeys.form.hourlyTokenLimit')">
+        <el-input-number v-model="hourlyTokenLimit" :min="0" :step="1000" :placeholder="t('apiKeys.form.zeroMeansUnlimitedPlaceholder')"/>
+        <div class="form-hint">{{ t('apiKeys.form.hourlyTokenLimitHint') }}</div>
+      </el-form-item>
+      <el-form-item :label="t('apiKeys.form.monthlyRequestLimit')">
+        <el-input-number v-model="monthlyRequestLimit" :min="0" :step="1000" :placeholder="t('apiKeys.form.zeroMeansUnlimitedPlaceholder')"/>
+        <div class="form-hint">{{ t('apiKeys.form.monthlyLimitHint') }}</div>
+      </el-form-item>
+      <el-form-item :label="t('apiKeys.form.monthlyTokenLimit')">
+        <el-input-number v-model="monthlyTokenLimit" :min="0" :step="10000" :placeholder="t('apiKeys.form.zeroMeansUnlimitedPlaceholder')"/>
+        <div class="form-hint">{{ t('apiKeys.form.monthlyTokenLimitHint') }}</div>
+      </el-form-item>
       <el-form-item :label="t('apiKeys.form.quotaAlertThreshold')">
         <el-slider v-model="quotaAlertThreshold" :min="0.05" :max="1" :step="0.05" show-input :format-tooltip="(val: number) => `${Math.round(val * 100)}%`"/>
         <div class="form-hint">{{ t('apiKeys.form.thresholdHint') }}</div>
@@ -111,6 +127,10 @@ const allowedIpAddresses = defineModel<string[]>('allowedIpAddresses', { require
 const dailyRequestLimit = defineModel<number>('dailyRequestLimit', { required: true })
 const dailyTokenLimit = defineModel<number>('dailyTokenLimit', { required: true })
 const rateLimitPerMinute = defineModel<number>('rateLimitPerMinute', { required: true })
+const hourlyRequestLimit = defineModel<number>('hourlyRequestLimit', { required: true })
+const hourlyTokenLimit = defineModel<number>('hourlyTokenLimit', { required: true })
+const monthlyRequestLimit = defineModel<number>('monthlyRequestLimit', { required: true })
+const monthlyTokenLimit = defineModel<number>('monthlyTokenLimit', { required: true })
 const quotaAlertThreshold = defineModel<number>('quotaAlertThreshold', { required: true })
 const rotationPeriodDays = defineModel<number>('rotationPeriodDays', { required: true })
 

@@ -43,8 +43,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # the local/git directory name differs from the product name
 artifact:        model-router            # Maven artifactId
-project_version: 3.3.6                   # pom.xml
-latest_release:  v3.3.6 (2026-10-19)
+project_version: 3.4.0                   # pom.xml
+latest_release:  v3.4.0 (2026-10-21)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5 (WebFlux / reactive)
   frontend: Vue 3 + TypeScript + Vite, bilingual zh-CN / en-US
@@ -232,7 +232,7 @@ Error bodies are protocol-shaped per surface: on `/v1/messages` an Anthropic-sha
 - **API key** — header `X-API-Key`. Gateway credentials are separate from downstream provider keys:
   `x-api-key` is consumed by the gateway and never forwarded, so per-instance downstream credentials
   belong in the instance's own `headers.Authorization`.
-- **RBAC** — data-driven: 53 permission codes, 4 role templates (`ADMIN` / `OPERATOR` / `USER` /
+- **RBAC** — data-driven: 63 permission codes, 4 role templates (`ADMIN` / `OPERATOR` / `USER` /
   `VIEWER`), a URL rule matrix plus method-level `@PreAuthorize`. Requests that match no rule follow
   `jairouter.security.rbac.unmatched-policy`, whose default is `DENY_ALL`; `ROLE_ADMIN` short-circuits
   everything. `/v1/**` is authenticated but intentionally outside the permission matrix.
@@ -367,7 +367,20 @@ delivery. See [Status and recent work](#status-and-recent-work) for the open led
 
 ## Status and recent work
 
-**Latest release: v3.3.6 (2026-10-19)** — the patch that follows `v3.3.5`. It ships a **schema migration**
+**Latest release: v3.4.0 (2026-10-21)** — the feature release that follows `v3.3.6`. It completes the console
+overhaul (P0-1 → P3) and lands three backend capabilities, with **one schema migration** and **one authorization
+semantics change**.
+
+| Theme | What changed |
+|-------|--------------|
+| **Console overhaul (33 pages)** | Menu 9 groups / 40 entries → 7 groups / 28 items with **every URL unchanged** (12 pages became tabs), collapsible sidebar (200px ↔ 64px, forced below 767px), dark-mode hierarchy fixed (page < card) plus chart-only series colors, card lists below 767px, and 33 pages moved off decorative gradients onto a neutral palette. Adds a shared metric strip / chart card / chart skin, a global search on `⌘K` / `Ctrl+K`, and a top status bar |
+| **Permission semantics (55 → 63)** | Eight read-only codes added, and the URL rule table grows 68 → 75 entries: GET requests stop riding on write codes. `RolePermissionSeeder` now enforces "holding `:write`/`:manage` implies holding the matching `:read`", so no built-in role loses visibility after the upgrade |
+| **Persisted sanitization config** | Console edits to rules / sensitive words / PII patterns land in a new `sanitization_config` table (**Flyway V4**, both dialects) and are loaded from the database on startup, falling back to yml. Saving is "persist first, rebuild second", with an in-memory rollback and a 500 when persisting fails |
+| **Hourly / monthly quota limits** | Four new API key limits (`hourlyRequestLimit`, `hourlyTokenLimit`, `monthlyRequestLimit`, `monthlyTokenLimit`; `0` = unlimited), enforced HOUR → DAY → MONTH → MINUTE, with the ledger, detail responses and the console quota drawer extended. Window percentages stay empty when the ledger has no data |
+
+See the [`[3.4.0]` changelog entry](docs/en/reference/changelog.md). Released as GitHub Release `v3.4.0` with multi-arch images (`v3.4.0` / `3.4.0` / `latest`).
+
+**`v3.3.6` (2026-10-19)** was the patch that follows `v3.3.5`. It ships a **schema migration**
 (blacklist reasons become language-neutral codes), two authorization restrictions (the "view" code no longer
 authorizes call-history writes/deletes; the state-persistence test write endpoint is absent from `prod`), two
 new permission codes, in-page write gating driven by those codes, and a contract-slimming pass that deletes
@@ -383,7 +396,7 @@ fields which were always empty.
 | **Observability (#456 / #495)** | Ten security meters wired to real call sites (authentication 4, JWT 4, sanitization 2); the never-incremented `sanitization.rule.matches` counter and the zero-caller `SanitizationMetrics` class (9 more series) removed |
 | **Docs & gates (#457 / #547)** | `/v3/api-docs` used to be an empty document (springdoc scanned a package that does not exist); 18 stale documents reviewed and three classes of outdated facts fixed; the release cadence and "read the gates correctly" rules are written down in the contribution guide |
 
-See the [`[3.3.6]` changelog entry](docs/en/reference/changelog.md). Released as GitHub Release `v3.3.6` with multi-arch images (`v3.3.6` / `3.3.6` / `latest`).
+Released as GitHub Release `v3.3.6` with multi-arch images (`v3.3.6` / `3.3.6` / `latest`).
 
 **`v3.3.5` (2026-10-17)** was itself a four-version bundle (`v3.3.2` → `v3.3.5`, 149 commits) that fixed
 zero-byte `/v1` streams, made deleting the last entry of a store-backed collection persist, stopped

@@ -42,8 +42,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # 本地/仓库目录名与产品名不同
 artifact:        model-router            # Maven artifactId
-project_version: 3.3.6                   # pom.xml
-latest_release:  v3.3.6 (2026-10-19)
+project_version: 3.4.0                   # pom.xml
+latest_release:  v3.4.0 (2026-10-21)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5（WebFlux / 响应式）
   frontend: Vue 3 + TypeScript + Vite，中英双语（zh-CN / en-US）
@@ -221,7 +221,7 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 - **JWT** —— 头名可配置，默认 `Jairouter_Token`。
 - **API Key** —— 头 `X-API-Key`。网关凭据与下游供应商密钥彻底分离：`x-api-key` 只被网关消费、
   绝不透传，实例级下游凭据请放在该实例自己的 `headers.Authorization`。
-- **RBAC** —— 数据驱动：53 个权限码、4 个角色模板（`ADMIN` / `OPERATOR` / `USER` / `VIEWER`）、
+- **RBAC** —— 数据驱动：63 个权限码、4 个角色模板（`ADMIN` / `OPERATOR` / `USER` / `VIEWER`）、
   URL 规则矩阵 + 方法级 `@PreAuthorize`。未命中任何规则的请求按
   `jairouter.security.rbac.unmatched-policy` 处理，默认 `DENY_ALL`；`ROLE_ADMIN` 恒直通。
   `/v1/**` 需要认证，但有意不进权限矩阵。
@@ -351,7 +351,18 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 
 ## 状态与近期工作
 
-**最新发布：v3.3.6（2026-10-19）** —— 跟 `v3.3.5` 的补丁版：带一次**库结构迁移**（黑名单原因改稳定码）、
+**最新发布：v3.4.0（2026-10-21）** —— 跟 `v3.3.6` 的功能版：完成控制台重构（P0-1 → P3）并补齐后端三项能力，带**一次库结构迁移**与**一处授权语义变更**。
+
+| 主题 | 变更内容 |
+|------|----------|
+| **控制台重构（33 页）** | 侧栏 9 组 40 项 → 7 组 28 项（12 页降级为 tab，**所有 URL 不变**）；侧栏可折叠（200px ↔ 64px，767px 以下强制折叠）；暗色层级修正（页面底色深于卡片）并新增图表专用色；767px 以下三个列表页改卡片列表；33 个页面从装饰性渐变改为中性色板。另新增共享的指标条 / 图表卡 / 图表皮肤、`⌘K` 全局搜索与顶部状态条 |
+| **权限语义化（55 → 63）** | 新增 8 个只读权限码，URL 规则表 68 → 75 条：GET 请求不再借用写码。`RolePermissionSeeder` 增加不变式「持有 `:write`/`:manage` 即必须持有对应 `:read`」，升级后内置角色的可见面不会变小 |
+| **脱敏配置持久化** | 控制台改的规则 / 敏感词 / PII 模式落库到新表 `sanitization_config`（**Flyway V4**，双方言），启动时数据库优先、无行回落 yml；保存改为「先落库、后重建」，落库失败回滚内存并返回 500 |
+| **配额小时 / 月限额** | API Key 新增 4 个限额（`hourlyRequestLimit`、`hourlyTokenLimit`、`monthlyRequestLimit`、`monthlyTokenLimit`；`0` = 不限制），判定顺序 HOUR → DAY → MONTH → MINUTE；账本、详情回显与控制台配额抽屉同步扩展，无账本数据时窗口百分比留空而不是 0% |
+
+`[3.4.0]` 的 changelog 条目见 [更新日志](docs/zh/reference/changelog.md)；以 GitHub Release `v3.4.0` 发布，并触发多架构镜像（`v3.4.0` / `3.4.0` / `latest`）。
+
+**`v3.3.6`（2026-10-19）** 是跟 `v3.3.5` 的补丁版：带一次**库结构迁移**（黑名单原因改稳定码）、
 两处授权收紧（`callhistory:view` 不再放行调用历史的写/删；状态持久化的测试写端点在 `prod` 下不存在）、
 两个新权限码 + 由它们驱动的页内写门控，以及一轮把「恒空字段」删掉的契约瘦身。
 

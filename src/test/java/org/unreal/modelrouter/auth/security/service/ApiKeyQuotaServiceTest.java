@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
+import org.unreal.modelrouter.auth.security.dto.ApiKeyUpdateRequest;
 import org.unreal.modelrouter.auth.security.model.UsageStatistics;
 import reactor.test.StepVerifier;
 
@@ -136,6 +137,61 @@ class ApiKeyQuotaServiceTest {
     }
 
     @Test
+    @DisplayName("getQuotaUsage - 小时/月窗口限额回显；未配限额的窗口百分比为 null（TA3）")
+    void getQuotaUsage_shouldEchoHourlyAndMonthlyLimits() {
+        final ApiKey apiKey = ApiKey.builder()
+            .keyId("key-window")
+            .keyHash("hash-key-window")
+            .hourlyRequestLimit(100L)
+            .hourlyTokenLimit(10000L)
+            .monthlyRequestLimit(100000L)
+            .monthlyTokenLimit(1000000L)
+            .enabled(true)
+            .usage(UsageStatistics.builder().build())
+            .build();
+        apiKeyCache.put("hash-key-window", apiKey);
+        keyIdIndex.put("key-window", "hash-key-window");
+
+        final ApiKeyQuotaService.QuotaUsageDetail detail = quotaService.getQuotaUsage("key-window").orElseThrow();
+
+        assertEquals(100L, detail.getHourlyRequestLimit());
+        assertEquals(10000L, detail.getHourlyTokenLimit());
+        assertEquals(100000L, detail.getMonthlyRequestLimit());
+        assertEquals(1000000L, detail.getMonthlyTokenLimit());
+        // 账本未装配（本测试无 QuotaLedgerService Bean）⇒ 用量计数保持 0，但百分比必须是 null：
+        // 账本没开时配额根本没在执行，画成 0% 会让人以为「额度还很充裕」。
+        assertEquals(0L, detail.getCurrentHourRequestCount());
+        assertEquals(0L, detail.getCurrentMonthTokenUsage());
+        assertNull(detail.getHourlyRequestUsagePercent());
+        assertNull(detail.getMonthlyTokenUsagePercent());
+    }
+
+    @Test
+    @DisplayName("getQuotaUsage - 小时/月限额为 0（不限）时百分比为 null 而非 0")
+    void getQuotaUsage_unlimitedWindowPercentShouldBeNull() {
+        createMockApiKey("key-window-off", 0, 0, 0);
+
+        final ApiKeyQuotaService.QuotaUsageDetail detail =
+            quotaService.getQuotaUsage("key-window-off").orElseThrow();
+
+        assertNull(detail.getHourlyRequestUsagePercent());
+        assertNull(detail.getHourlyTokenUsagePercent());
+        assertNull(detail.getMonthlyRequestUsagePercent());
+        assertNull(detail.getMonthlyTokenUsagePercent());
+    }
+
+    @Test
+    @DisplayName("updateQuotaLimits - 小时/月限额为负时拒绝，错误文案点名该字段")
+    void updateQuotaLimits_negativeHourlyOrMonthly_shouldThrow() {
+        createMockApiKey("key-neg", 0, 0, 0);
+
+        assertRejected(ApiKeyUpdateRequest.builder().hourlyRequestLimit(-1L).build(), "hourlyRequestLimit");
+        assertRejected(ApiKeyUpdateRequest.builder().hourlyTokenLimit(-1L).build(), "hourlyTokenLimit");
+        assertRejected(ApiKeyUpdateRequest.builder().monthlyRequestLimit(-1L).build(), "monthlyRequestLimit");
+        assertRejected(ApiKeyUpdateRequest.builder().monthlyTokenLimit(-1L).build(), "monthlyTokenLimit");
+    }
+
+    @Test
     @DisplayName("getQuotaUsage - 超过告警阈值触发告警")
     void getQuotaUsage_exceedThreshold_shouldTriggerAlert() {
         createMockApiKey("key-alert", 100, 100000, 10);
@@ -244,5 +300,18 @@ class ApiKeyQuotaServiceTest {
         assertNotNull(dailyUsage.get(recentDate));
         assertNull(dailyTokenUsage.get(oldDate));
         assertNotNull(dailyTokenUsage.get(recentDate));
+    }
+
+    /**
+     * 断言配额更新请求被负值校验拒绝，且错误文案点名该字段。
+     *
+     * @param request 更新请求
+     * @param field   期望出现在错误文案中的字段名
+     */
+    private void assertRejected(final ApiKeyUpdateRequest request, final String field) {
+        final IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+            () -> quotaService.updateQuotaLimits("key-neg", request));
+        assertTrue(error.getMessage().contains(field),
+            "错误文案应点名 " + field + "，实际: " + error.getMessage());
     }
 }

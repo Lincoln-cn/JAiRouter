@@ -28,7 +28,7 @@ public final class PermissionCodes {
     /** 概览仪表盘 */
     public static final String OVERVIEW_DASHBOARD_READ = "overview:dashboard:read";
 
-    // ==================== config（配置，10 个资源 × read/write） ====================
+    // ==================== config（配置，12 个资源 × read/write） ====================
 
     /** 服务配置-读 */
     public static final String CONFIG_SERVICES_READ = "config:services:read";
@@ -83,6 +83,8 @@ public final class PermissionCodes {
 
     /** 负载均衡监控-读 */
     public static final String LB_MONITORING_READ = "lb:monitoring:read";
+    /** 负载均衡策略配置-读（#567：此前查看策略配置只能靠写码） */
+    public static final String LB_CONFIG_READ = "lb:config:read";
     /** 负载均衡策略配置-写 */
     public static final String LB_CONFIG_WRITE = "lb:config:write";
     /** 熔断器监控-读 */
@@ -128,28 +130,42 @@ public final class PermissionCodes {
     public static final String TRACING_DASHBOARD_READ = "tracing:dashboard:read";
     /** 追踪检索-读 */
     public static final String TRACING_SEARCH_READ = "tracing:search:read";
+    /** 追踪配置-读（#567：此前查看追踪配置只能靠管理码） */
+    public static final String TRACING_CONFIG_READ = "tracing:config:read";
     /** 追踪配置-管理 */
     public static final String TRACING_CONFIG_MANAGE = "tracing:config:manage";
 
     // ==================== security（安全管理） ====================
 
+    /** API Key 查看-读（#567：此前列表/详情只能靠管理码） */
+    public static final String SECURITY_APIKEYS_READ = "security:apikeys:read";
     /** API Key 管理 */
     public static final String SECURITY_APIKEYS_MANAGE = "security:apikeys:manage";
+    /** JWT 令牌查看-读（#567：此前令牌列表/详情只能靠管理码） */
+    public static final String SECURITY_JWTTOKENS_READ = "security:jwttokens:read";
     /** JWT 令牌管理 */
     public static final String SECURITY_JWTTOKENS_MANAGE = "security:jwttokens:manage";
+    /** 黑名单查看-读（#567：此前黑名单列表/统计只能靠管理码） */
+    public static final String SECURITY_BLACKLIST_READ = "security:blacklist:read";
     /** 黑名单管理 */
     public static final String SECURITY_BLACKLIST_MANAGE = "security:blacklist:manage";
     /** 安全审计-读 */
     public static final String SECURITY_AUDIT_READ = "security:audit:read";
     /** 安全审计-写（#116：扩展审计查询/批量写入/测试数据） */
     public static final String SECURITY_AUDIT_WRITE = "security:audit:write";
+    /** PII / 数据脱敏配置-读（#567：此前查看脱敏配置只能靠管理码） */
+    public static final String SECURITY_SANITIZATION_READ = "security:sanitization:read";
     /** PII / 数据脱敏配置管理 */
     public static final String SECURITY_SANITIZATION_MANAGE = "security:sanitization:manage";
 
     // ==================== system（系统管理） ====================
 
+    /** 账户查看-读（#567：此前账户列表只能靠管理码） */
+    public static final String SYSTEM_ACCOUNTS_READ = "system:accounts:read";
     /** 账户管理 */
     public static final String SYSTEM_ACCOUNTS_MANAGE = "system:accounts:manage";
+    /** 权限查看-读（#567：此前权限矩阵只能靠管理码） */
+    public static final String SYSTEM_PERMISSIONS_READ = "system:permissions:read";
     /** 权限管理 */
     public static final String SYSTEM_PERMISSIONS_MANAGE = "system:permissions:manage";
 
@@ -181,7 +197,7 @@ public final class PermissionCodes {
             CONFIG_CACHE_READ, CONFIG_CACHE_WRITE,
             CONFIG_VALIDATION_READ, CONFIG_VALIDATION_WRITE,
             CONFIG_QUOTA_READ, CONFIG_QUOTA_WRITE,
-            LB_MONITORING_READ, LB_CONFIG_WRITE,
+            LB_MONITORING_READ, LB_CONFIG_READ, LB_CONFIG_WRITE,
             CB_MONITORING_READ, CB_HISTORY_READ,
             RL_MONITORING_READ,
             CALLHISTORY_VIEW,
@@ -192,11 +208,12 @@ public final class PermissionCodes {
             MONITORING_QUOTA_READ,
             MONITORING_EXCEPTIONS_READ, MONITORING_EXCEPTIONS_WRITE,
             MONITORING_CONFIG_WRITE,
-            TRACING_DASHBOARD_READ, TRACING_SEARCH_READ, TRACING_CONFIG_MANAGE,
-            SECURITY_APIKEYS_MANAGE, SECURITY_JWTTOKENS_MANAGE,
-            SECURITY_BLACKLIST_MANAGE, SECURITY_AUDIT_READ, SECURITY_AUDIT_WRITE,
-            SECURITY_SANITIZATION_MANAGE,
-            SYSTEM_ACCOUNTS_MANAGE, SYSTEM_PERMISSIONS_MANAGE,
+            TRACING_DASHBOARD_READ, TRACING_SEARCH_READ, TRACING_CONFIG_READ, TRACING_CONFIG_MANAGE,
+            SECURITY_APIKEYS_READ, SECURITY_APIKEYS_MANAGE,
+            SECURITY_JWTTOKENS_READ, SECURITY_JWTTOKENS_MANAGE,
+            SECURITY_BLACKLIST_READ, SECURITY_BLACKLIST_MANAGE, SECURITY_AUDIT_READ, SECURITY_AUDIT_WRITE,
+            SECURITY_SANITIZATION_READ, SECURITY_SANITIZATION_MANAGE,
+            SYSTEM_ACCOUNTS_READ, SYSTEM_ACCOUNTS_MANAGE, SYSTEM_PERMISSIONS_READ, SYSTEM_PERMISSIONS_MANAGE,
             AI_PLAYGROUND_USE,
             ACTUATOR_ADMIN_MANAGE
     );

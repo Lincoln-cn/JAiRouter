@@ -129,6 +129,10 @@ export interface ApiKeyVO {
   dailyRequestLimit?: number     // 每日请求限制
   dailyTokenLimit?: number       // 每日 Token 使用上限
   rateLimitPerMinute?: number    // 每分钟请求速率限制
+  hourlyRequestLimit?: number    // 每小时请求限制（TA3，0 = 不限）
+  hourlyTokenLimit?: number      // 每小时 Token 使用上限（TA3，0 = 不限）
+  monthlyRequestLimit?: number   // 每月请求限制（TA3，0 = 不限）
+  monthlyTokenLimit?: number     // 每月 Token 使用上限（TA3，0 = 不限）
   quotaAlertThreshold?: number   // 配额告警阈值 (0.0-1.0)
   todayRequestCount?: number     // 今日请求次数
   todayTokenUsage?: number       // 今日 Token 使用量
@@ -175,6 +179,10 @@ export interface ApiKeyCreateRequest {
   dailyRequestLimit?: number
   dailyTokenLimit?: number       // 每日 Token 使用上限
   rateLimitPerMinute?: number    // 每分钟请求速率限制
+  hourlyRequestLimit?: number    // 每小时请求限制（TA3，0 = 不限）
+  hourlyTokenLimit?: number      // 每小时 Token 使用上限（TA3，0 = 不限）
+  monthlyRequestLimit?: number   // 每月请求限制（TA3，0 = 不限）
+  monthlyTokenLimit?: number     // 每月 Token 使用上限（TA3，0 = 不限）
   quotaAlertThreshold?: number   // 配额告警阈值 (0.0-1.0)
   rotationPeriodDays?: number   // 密钥轮换周期（天数）
 }
@@ -188,6 +196,10 @@ export interface ApiKeyUpdateRequest {
   dailyRequestLimit?: number
   dailyTokenLimit?: number       // 每日 Token 使用上限
   rateLimitPerMinute?: number    // 每分钟请求速率限制
+  hourlyRequestLimit?: number    // 每小时请求限制（TA3，0 = 不限）
+  hourlyTokenLimit?: number      // 每小时 Token 使用上限（TA3，0 = 不限）
+  monthlyRequestLimit?: number   // 每月请求限制（TA3，0 = 不限）
+  monthlyTokenLimit?: number     // 每月 Token 使用上限（TA3，0 = 不限）
   quotaAlertThreshold?: number   // 配额告警阈值 (0.0-1.0)
   rotationPeriodDays?: number   // 密钥轮换周期（天数）
 }
@@ -261,6 +273,20 @@ export interface QuotaUsageDetail {
   remainingRequests?: number
   /** 剩余 Token 数；限额 0 时为 -1（v3.2.1） */
   remainingTokens?: number
+  // TA3：小时 / 月窗口限额与用量（限额 0 表示不限）
+  hourlyRequestLimit: number
+  hourlyTokenLimit: number
+  monthlyRequestLimit: number
+  monthlyTokenLimit: number
+  currentHourRequestCount: number
+  currentHourTokenUsage: number
+  currentMonthRequestCount: number
+  currentMonthTokenUsage: number
+  /** 小时/月用量百分比；限额 0（不限）或账本未启用时为 null */
+  hourlyRequestUsagePercent?: number | null
+  hourlyTokenUsagePercent?: number | null
+  monthlyRequestUsagePercent?: number | null
+  monthlyTokenUsagePercent?: number | null
 }
 
 export interface QuotaAlertInfo {

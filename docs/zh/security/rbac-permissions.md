@@ -11,10 +11,10 @@
 
 JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问控制）**体系：以 `module:resource:action` 权限码为唯一权限原子，将「权限码 → 角色 → JWT → URL 权限矩阵 → 菜单」串成一条完整链路：
 
-1. **权限码**：55 个 `module:resource:action` 权限码（`action` ∈ `read` / `write` / `manage` / `view`），同时驱动后端 URL 访问判定与前端菜单/路由可见性。
+1. **权限码**：63 个 `module:resource:action` 权限码（`action` ∈ `read` / `write` / `manage` / `view`），同时驱动后端 URL 访问判定与前端菜单/路由可见性。
 2. **角色模板**：启动时自动在 `role_permissions` 表种入 4 个内置角色模板（ADMIN / OPERATOR / USER / VIEWER），每个角色对应一组权限码（表为空则全量播种；表非空则执行只增不删的增量收敛，见「角色模板」一节）。
 3. **JWT 内嵌**：登录成功后，服务端按角色从 `role_permissions` 查询权限码并写入 JWT 的 `permissions` claim（角色仍保留在 `roles` claim；权限码无 `ROLE_` 前缀）。
-4. **URL 权限矩阵**：`PermissionRuleRegistry` 登记 66 条「{HTTP 方法, URL 模式} → 权限码」规则，`PermissionAuthorizationManager` 在网关层对每个 `/api/**` 请求完成权限判定。
+4. **URL 权限矩阵**：`PermissionRuleRegistry` 登记 75 条「{HTTP 方法, URL 模式} → 权限码」规则，`PermissionAuthorizationManager` 在网关层对每个 `/api/**` 请求完成权限判定。
 5. **菜单与路由**：前端 `menu.ts` 数据驱动渲染（当前 7 组 28 项；v2.9.8 为 8 组 34 项），`usePermission` 过滤菜单、路由守卫 `meta.permissions` 拦截无权限访问。
 
 核心设计原则：
@@ -46,7 +46,7 @@ JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问
 | `manage` | 管理 | 管理类操作，用于安全/系统等敏感模块（如 `security:*:manage`、`system:*:manage`） |
 | `view` | 查看 | 专用查看动作，目前仅 `callhistory:view`；独立于 read/write 过滤器 |
 
-### 全量权限码清单（55 个）
+### 全量权限码清单（63 个）
 
 | 模块 | 权限码 | 说明 |
 |------|--------|------|
@@ -64,6 +64,7 @@ JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问
 | config | `config:quota:read` / `config:quota:write` | 配额账本配置读/写 |
 | config | `config:validation:read` / `config:validation:write` | 配置校验读/写 |
 | lb | `lb:monitoring:read` | 负载均衡监控 |
+| lb | `lb:config:read` | 负载均衡策略配置（读；`#567` 新增） |
 | lb | `lb:config:write` | 负载均衡策略配置（写） |
 | cb | `cb:monitoring:read` | 熔断器监控 |
 | cb | `cb:history:read` | 熔断器历史 |
@@ -82,23 +83,30 @@ JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问
 | monitoring | `monitoring:config:write` | 监控/运维配置写 |
 | tracing | `tracing:dashboard:read` | 追踪仪表盘 |
 | tracing | `tracing:search:read` | 追踪搜索 |
+| tracing | `tracing:config:read` | 追踪安全配置只读（`#567` 新增） |
 | tracing | `tracing:config:manage` | 追踪安全配置管理 |
+| security | `security:apikeys:read` | API Key 列表/详情/配额只读（`#567` 新增） |
 | security | `security:apikeys:manage` | API Key 管理 |
+| security | `security:jwttokens:read` | JWT 令牌统计/详情只读（`#567` 新增） |
 | security | `security:jwttokens:manage` | JWT 令牌管理 |
+| security | `security:blacklist:read` | 黑名单列表/统计/查询只读（`#567` 新增） |
 | security | `security:blacklist:manage` | 黑名单管理 |
 | security | `security:audit:read` | 安全审计日志（只读） |
 | security | `security:audit:write` | 安全审计日志（写） |
+| security | `security:sanitization:read` | PII / 脱敏配置只读（`#567` 新增） |
 | security | `security:sanitization:manage` | PII / 脱敏配置管理 |
+| system | `system:accounts:read` | 账户只读（`#567` 新增） |
 | system | `system:accounts:manage` | 账户管理 |
+| system | `system:permissions:read` | 权限码/角色权限只读（`#567` 新增） |
 | system | `system:permissions:manage` | 权限管理 |
 | ai | `ai:playground:use` | AI 试验场使用 |
 | actuator | `actuator:admin:manage` | Actuator 基础设施管理 |
 
 说明：
 
-- 合计 55 个：config 模块 12 个资源全部 read/write 成对 = 24 码，其余模块见上表。
+- 合计 63 个：config 模块 12 个资源全部 read/write 成对 = 24 码，其余模块见上表。
 - 上表顺序即全量列表（`GET /api/security/permissions`）与权限管理 UI 权限树的展示顺序。
-- 少数权限码天然不成对（如 `lb:config:write`、`callhistory:view`、`ai:playground:use`），按其资源语义定义，不强行补 read/write。
+- `#567` 起，原先只挂写/管理码的 8 个资源补齐了 `:read` 码（`lb:config:read`、`tracing:config:read`、`security:apikeys:read`、`security:jwttokens:read`、`security:blacklist:read`、`security:sanitization:read`、`system:accounts:read`、`system:permissions:read`），并各有一条 GET 规则挂在该码上；因此除 `callhistory:view`、`ai:playground:use` 这类按资源语义单独定义的码外，权限码均已按方法拆分（读面 `:read`、写/管理面 `:write` / `:manage`）。
 - 部分权限码仅供菜单/路由可见性使用（如 `overview:dashboard:read`、`ai:playground:use`）；`ai:playground:use` 当前不被任何 URL 规则引用，试验场实际通过豁免路径 `/api/v1/**` 访问（见「调用方对照矩阵」）。
 - 未登记 URL 规则的 `/api/**` 端点不再默认放行，按「授权决策」一节的姿态判定（默认拒绝）。
 
@@ -108,10 +116,10 @@ JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问
 
 | 角色 | 权限码数 | 权限范围 | 说明 |
 |------|:-------:|----------|------|
-| ADMIN | 55 | 全量权限码 | 超集；URL 规则直通，JWT 签发时内嵌全量码 |
-| OPERATOR | 43 | 全部 `:read` + `:write` 码 | 排除 `system:*`、`security:*:manage`、`actuator:*`；保留 `security:audit:read` / `security:audit:write`，不含 `callhistory:view` |
-| USER | 28 | 仪表盘 + config 只读 + lb/cb/rl + monitoring 只读（含 exceptions:read）+ tracing dashboard/search + AI 试验场 | 只读为主，唯一写码 `lb:config:write`；不含调用历史查看 |
-| VIEWER | 27 | 全部 `:read` 权限码 | 纯只读角色；不含 `callhistory:view`、`ai:playground:use` 等非 `:read` 码 |
+| ADMIN | 63 | 全量权限码 | 超集；URL 规则直通，JWT 签发时内嵌全量码 |
+| OPERATOR | 46 | 全部 `:read` + `:write` 码 | 排除 `system:*`、`security:*:manage`、`actuator:*`；另按 B11 排除与这些管理码配对的 5 个只读码（`security:apikeys:read`、`security:jwttokens:read`、`security:blacklist:read`、`security:sanitization:read`、`tracing:config:read`），避免凭空获得管理面读权限；保留 `security:audit:read` / `security:audit:write`，不含 `callhistory:view` |
+| USER | 29 | 仪表盘 + config 只读 + lb/cb/rl + monitoring 只读（含 exceptions:read）+ tracing dashboard/search + AI 试验场 | 只读为主，唯一写码 `lb:config:write`；不含调用历史查看 |
+| VIEWER | 27 | 全部 `:read` 码，唯排除与写/管理面配对的 8 个 `#567` 新码 | 纯只读角色；不含 `callhistory:view`、`ai:playground:use` 等非 `:read` 码，也不含 `security:*:read` / `system:*:read` 等 8 个新码（`#567` 只向已持有对应写/管理码的角色补授读码，避免只读角色被凭空扩权） |
 
 ### 角色差异
 
@@ -132,7 +140,7 @@ JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问
 
 收敛只执行 `INSERT`，**绝不删除或修改既有行**。写入后会清空 `RolePermissionService` 权限缓存，避免启动窗口内已签发 JWT 的旧权限集合继续生效。
 
-运维影响：已初始化部署在升级后启动时，缺失的「规则所需」权限码会被自动回填。真实数据库上实测：OPERATOR +9、USER +4、VIEWER +4、ADMIN +10。手工定制过的角色不受影响（整个跳过）。
+运维影响：已初始化部署在升级后启动时，缺失的「规则所需」权限码会被自动回填。真实数据库上实测（阶段 2 时点）：OPERATOR +9、USER +4、VIEWER +4、ADMIN +10。`#567` 的新模板在此基础上再增 ADMIN +8、OPERATOR +1（`lb:config:read`）、USER +1（`lb:config:read`）、VIEWER +0；该增量未在真实数据库复测。手工定制过的角色不受影响（整个跳过）。
 
 ## 工作流程
 
@@ -140,7 +148,7 @@ JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问
 
 1. **登录签发 JWT**：客户端 `POST /api/auth/jwt/login`。`AccountManager` 校验凭据（v2.9.8：YAML 静态账户优先，未命中时回退数据库账户——Web 账户管理 API 创建的账户可直接登录），随后按用户角色经 `RolePermissionService` 查询 `role_permissions` 表（Caffeine 缓存 5 分钟；ADMIN 短路返回全量码），将权限码写入 JWT `permissions` claim 并返回令牌。
 2. **令牌解析**：请求携带 `Authorization: Bearer {token}`（或自定义 JWT 头）。`DefaultJwtTokenValidator` 解析令牌：`roles` claim → `ROLE_` 前缀 authority；`permissions` claim → 无前缀 authority（两者语义隔离，避免与 API Key 的 `ROLE_*` 权限冲突）。
-3. **URL 规则匹配**：`SecurityConfiguration` 将 `/api/**` 全部交给 `PermissionAuthorizationManager`；其从 `PermissionRuleRegistry` 按「HTTP 方法 + URL 模式」首条命中查找所需权限码（共 66 条规则）。
+3. **URL 规则匹配**：`SecurityConfiguration` 将 `/api/**` 全部交给 `PermissionAuthorizationManager`；其从 `PermissionRuleRegistry` 按「HTTP 方法 + URL 模式」首条命中查找所需权限码（共 75 条规则）。
 4. **权限判定**：按下节「授权决策」的三步判定执行。
 5. **结果**：放行进入 Controller；拒绝则返回 403。
 
@@ -207,11 +215,11 @@ JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问
 
 | 端点 | 所需权限码 |
 |------|-----------|
-| `GET /api/auth/jwt/blacklist/stats` | `security:blacklist:manage` |
-| `GET /api/auth/jwt/cleanup/stats` | `security:jwttokens:manage` |
+| `GET /api/auth/jwt/blacklist/stats` | `security:blacklist:read`（`#567` 前为 `security:blacklist:manage`） |
+| `GET /api/auth/jwt/cleanup/stats` | `security:jwttokens:read`（`#567` 前为 `security:jwttokens:manage`） |
 | `POST /api/auth/jwt/cleanup` | `security:jwttokens:manage` |
 | `POST /api/auth/jwt/revoke/batch` | `security:jwttokens:manage` |
-| `GET /api/auth/jwt/tokens/{tokenId}` | `security:jwttokens:manage` |
+| `GET /api/auth/jwt/tokens/{tokenId}` | `security:jwttokens:read`（`#567` 前为 `security:jwttokens:manage`） |
 
 **这没有收窄任何人的访问**：这 5 个端点的方法级 `@PreAuthorize` 本来就是 `hasRole('ADMIN')`，且四个角色模板中只有 ADMIN 持有 `security:*:manage` 码（ADMIN 还会直通）。
 
@@ -255,10 +263,10 @@ API-Key 调用方要点（外部集成方必读）：
 
 | 方法 | 路径 | 说明 | 所需权限 |
 |------|------|------|----------|
-| GET | `/api/security/permissions` | 全部权限码（55 个，按清单顺序） | `system:permissions:manage` |
+| GET | `/api/security/permissions` | 全部权限码（63 个，按清单顺序） | `system:permissions:manage` |
 | GET | `/api/security/permissions/roles` | 全部角色及其权限码（角色名 → 权限码列表） | `system:permissions:manage` |
 | PUT | `/api/security/permissions/roles/{roleName}` | 整体替换指定角色的权限码集合 | `system:permissions:manage` |
-| GET | `/api/auth/permissions` | 当前登录用户权限码（ADMIN 返回全量 55 码） | 任意已登录用户（豁免清单） |
+| GET | `/api/auth/permissions` | 当前登录用户权限码（ADMIN 返回全量 63 码） | 任意已登录用户（豁免清单） |
 
 > `/api/security/permissions/**` 由 URL 规则保护（`system:permissions:manage`）；`GET /api/auth/permissions` 在豁免清单中，仅要求登录（控制台菜单渲染依赖）。
 
@@ -279,7 +287,7 @@ curl http://localhost:8080/api/security/permissions \
      -H "Authorization: Bearer {token}"
 ```
 
-响应 `data` 为 55 个权限码数组（顺序与全量清单一致）。
+响应 `data` 为 63 个权限码数组（顺序与全量清单一致）。
 
 ### 3. 查询角色权限
 
@@ -310,14 +318,14 @@ curl http://localhost:8080/api/auth/permissions \
      -H "Authorization: Bearer {token}"
 ```
 
-ADMIN 直接返回全量 55 码；其他角色返回其 JWT `permissions` claim 中的权限码。
+ADMIN 直接返回全量 63 码；其他角色返回其 JWT `permissions` claim 中的权限码。
 
 ## 权限管理 UI
 
 「系统 → 权限管理」页面（路由 `/system/permissions`，需 `system:permissions:manage`）提供图形化权限配置：
 
 1. **角色下拉**：选择 ADMIN / OPERATOR / USER / VIEWER，自动加载该角色当前权限码并回显勾选。
-2. **权限码树**：55 个权限码按模块分组的树形勾选（叶子为权限码，父节点自动联动）。
+2. **权限码树**：63 个权限码按模块分组的树形勾选（叶子为权限码，父节点自动联动）。
 3. **保存权限**：点击「保存权限」调用 `PUT /api/security/permissions/roles/{roleName}`，整体替换该角色权限。
 4. **生效说明**：保存成功后提示「权限变更后需重新登录方可生效」——权限内嵌于 JWT；服务端角色权限缓存约 5 分钟过期（仅影响后续登录的令牌签发）。
 
@@ -331,10 +339,10 @@ ADMIN 直接返回全量 55 码；其他角色返回其 JWT `permissions` claim 
 |--------|:-------:|---------------------------------------------|
 | 概览 | 1 | 仪表板（`overview:dashboard:read`） |
 | 运行观测 | 5 | 调用历史（调用记录 ｜ 调用历史仪表盘，`callhistory:view`）/ 链路追踪（链路搜索 `tracing:search:read` ｜ 追踪仪表盘 `tracing:dashboard:read`）/ 异常管理（异常列表 ｜ 统计分析，`monitoring:exceptions:read`）/ 慢请求（慢调用 ｜ 慢 SQL，`monitoring:slowquery:read`）/ 用量统计（Token 用量 `monitoring:tokenusage:read` ｜ 配额使用 `monitoring:quota:read`） |
-| 流量治理 | 7 | 路由规则（`config:rules:read`）/ 负载均衡（实时监控 `lb:monitoring:read` ｜ 策略配置 `lb:config:write`）/ 限流（限流监控 `rl:monitoring:read`）/ 熔断（熔断监控 `cb:monitoring:read` ｜ 熔断历史 `cb:history:read` ｜ 全局配置 `config:circuitbreaker:read`）/ 响应缓存管理（`config:cache:write`）/ 配额运行时配置（`config:quota:read`）/ 资源池（`config:pools:read`） |
+| 流量治理 | 7 | 路由规则（`config:rules:read`）/ 负载均衡（实时监控 `lb:monitoring:read` ｜ 策略配置 `lb:config:read` / `lb:config:write`）/ 限流（限流监控 `rl:monitoring:read`）/ 熔断（熔断监控 `cb:monitoring:read` ｜ 熔断历史 `cb:history:read` ｜ 全局配置 `config:circuitbreaker:read`）/ 响应缓存管理（`config:cache:read` / `config:cache:write`）/ 配额运行时配置（`config:quota:read`）/ 资源池（`config:pools:read`） |
 | 模型与实例 | 4 | 服务管理 / 实例管理 / 版本管理 / Adapter管理（对应 `config:services|instances|versions|adapters:read`） |
-| 安全 | 5 | API 密钥管理（`security:apikeys:manage`）/ PII 脱敏管理（`security:sanitization:manage`）/ JWT 令牌管理（`security:jwttokens:manage`）/ 黑名单管理（`security:blacklist:manage`）/ 审计日志（`security:audit:read`） |
-| 系统 | 4 | 账户管理（`system:accounts:manage`）/ 权限管理（`system:permissions:manage`）/ 追踪配置（`tracing:config:manage`）/ 状态持久化（`config:persistence:read`） |
+| 安全 | 5 | API 密钥管理（`security:apikeys:read` / `security:apikeys:manage`）/ PII 脱敏管理（`security:sanitization:read` / `security:sanitization:manage`）/ JWT 令牌管理（`security:jwttokens:read` / `security:jwttokens:manage`）/ 黑名单管理（`security:blacklist:read` / `security:blacklist:manage`）/ 审计日志（`security:audit:read`） |
+| 系统 | 4 | 账户管理（`system:accounts:read` / `system:accounts:manage`）/ 权限管理（`system:permissions:read` / `system:permissions:manage`）/ 追踪配置（`tracing:config:read` / `tracing:config:manage`）/ 状态持久化（`config:persistence:read`） |
 | 开发工具 | 2 | AI 试验场（对话测试 / 向量生成 / 重排序 / 语音服务 / 图像服务，均为 `ai:playground:use`）/ 客户端接入指南（无权限码，所有已登录用户可见） |
 
 可见性控制机制：
@@ -343,13 +351,14 @@ ADMIN 直接返回全量 55 码；其他角色返回其 JWT `permissions` claim 
 - **tab 单独门控**：一个菜单项内的 tab 各自带 `permission`，只拥有部分 tab 权限时该项仍显示，落地页取「第一个有权限的 tab」；点击菜单项不会跳到无权限的页面。
 - **深链高亮**：`ROUTE_TO_MENU` 由 `menu.ts` 的 tabs 派生（不手写），未命中的路由回退到自身路径；因此直接打开 `/monitoring/quota` 这类被收起的 URL 时，侧栏仍高亮「用量统计」。
 - **路由守卫**：路由 `meta.permissions` 声明所需权限码数组，`router.beforeEach` 要求**全部满足**（ADMIN 恒通过），不满足时跳转仪表板。
+  - ⚠️ 菜单是「或」、路由守卫是「与」，两者语义不同：`#567` 把 9 个入口的 `permission` 改成「读码或写/管理码」，但这些页面的 `meta.permissions` 仍只声明写/管理码 ⇒ **只持读码的用户会看到入口、点进去被重定向回仪表板**。要真正让只读用户进入这些页面，需同步收敛路由守卫语义（本次未改 `router/index.ts`）。
 - **空权限数据兼容**：旧版本签发的令牌无 `permissions` claim（或角色未在 `role_permissions` 登记）时，前端权限列表为空且**不限制**菜单/路由，避免菜单整体消失。注意这是**前端**的兼容行为（前端无法判定 URL 规则）；后端对未命中规则的 `/api/**` 已改为 fail-closed，两者独立。
 
 ## 升级与迁移
 
 ### 非 ADMIN 控制台用户会失去什么
 
-**在今天的端点集合上什么也不会失去。** 覆盖自检在当前代码中报告 **MISSING = 0**（所有已映射 `/api/**` 端点要么命中 URL 规则，要么在显式豁免清单中），因此非 ADMIN 用户今天能访问的端点在 `DENY_ALL` 下仍然可访问。请以启动日志的自检结果与 `/actuator/health` 的 `rbacEndpointCoverage` 为准确认。
+**在今天的端点集合上几乎什么也不会失去。** 唯一例外是 `GET /api/loadbalancer/config/**`：`#567` 把它从 `lb:monitoring:read` 收敛到 `lb:config:read`，因此只持 `lb:monitoring:read` 的 VIEWER 不再能读该端点（它只服务「策略配置」页，而该页本身需要 `lb:config:write`）。 覆盖自检在当前代码中报告 **MISSING = 0**（所有已映射 `/api/**` 端点要么命中 URL 规则，要么在显式豁免清单中），因此非 ADMIN 用户今天能访问的端点在 `DENY_ALL` 下仍然可访问。请以启动日志的自检结果与 `/actuator/health` 的 `rbacEndpointCoverage` 为准确认。
 
 ### API-Key 集成方检查清单
 

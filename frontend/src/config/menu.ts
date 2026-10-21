@@ -19,7 +19,7 @@
  * - 数组 = **或**（任一命中即显示），用于「聚合了不同权限码页面」的菜单项；
  * - tab 必须再单独门控：菜单可见 ≠ 每个 tab 可用（例：只有 `cb:history:read` 的用户
  *   看得到「熔断」，但落地页是「历史」而不是「状态与重置」）。
- * - 权限码以 `PermissionCodes.java` 的 `ALL_PERMISSION_CODES` 为权威全集（当前 55 个）。
+ * - 权限码以 `PermissionCodes.java` 的 `ALL_PERMISSION_CODES` 为权威全集（当前 63 个）。
  *   设计文档 §3.1 表里的 `security:jwt:manage` / `system:users:manage` / `system:roles:manage`
  *   在代码里不存在，已分别替换为 `security:jwttokens:manage` / `system:accounts:manage` /
  *   `system:permissions:manage`。
@@ -206,7 +206,7 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/load-balancers/monitoring',
         title: 'menu.loadBalancing',
-        permission: ['lb:monitoring:read', 'lb:config:write'],
+        permission: ['lb:monitoring:read', 'lb:config:write', 'lb:config:read'],
         tabs: [
           {
             key: 'monitoring',
@@ -218,7 +218,7 @@ export const menuGroups: MenuGroup[] = [
             key: 'strategy',
             labelKey: 'tabs.lbStrategy',
             to: '/load-balancers/strategy-config',
-            permission: 'lb:config:write'
+            permission: ['lb:config:read', 'lb:config:write']
           }
         ]
       },
@@ -263,13 +263,13 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/config/cache',
         title: 'menu.responseCache',
-        permission: 'config:cache:write',
+        permission: ['config:cache:read', 'config:cache:write'],
         tabs: [
           {
             key: 'cache',
             labelKey: 'menu.responseCache',
             to: '/config/cache',
-            permission: 'config:cache:write'
+            permission: ['config:cache:read', 'config:cache:write']
           }
         ]
       },
@@ -368,52 +368,52 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/security/api-keys',
         title: 'menu.apiKeys',
-        permission: 'security:apikeys:manage',
+        permission: ['security:apikeys:read', 'security:apikeys:manage'],
         tabs: [
           {
             key: 'api-keys',
             labelKey: 'menu.apiKeys',
             to: '/security/api-keys',
-            permission: 'security:apikeys:manage'
+            permission: ['security:apikeys:read', 'security:apikeys:manage']
           }
         ]
       },
       {
         path: '/security/sanitization',
         title: 'menu.sanitization',
-        permission: 'security:sanitization:manage',
+        permission: ['security:sanitization:read', 'security:sanitization:manage'],
         tabs: [
           {
             key: 'sanitization',
             labelKey: 'menu.sanitization',
             to: '/security/sanitization',
-            permission: 'security:sanitization:manage'
+            permission: ['security:sanitization:read', 'security:sanitization:manage']
           }
         ]
       },
       {
         path: '/security/jwt-tokens',
         title: 'menu.jwtTokens',
-        permission: 'security:jwttokens:manage',
+        permission: ['security:jwttokens:read', 'security:jwttokens:manage'],
         tabs: [
           {
             key: 'jwt-tokens',
             labelKey: 'menu.jwtTokens',
             to: '/security/jwt-tokens',
-            permission: 'security:jwttokens:manage'
+            permission: ['security:jwttokens:read', 'security:jwttokens:manage']
           }
         ]
       },
       {
         path: '/security/blacklist',
         title: 'menu.blacklist',
-        permission: 'security:blacklist:manage',
+        permission: ['security:blacklist:read', 'security:blacklist:manage'],
         tabs: [
           {
             key: 'blacklist',
             labelKey: 'menu.blacklist',
             to: '/security/blacklist',
-            permission: 'security:blacklist:manage'
+            permission: ['security:blacklist:read', 'security:blacklist:manage']
           }
         ]
       },
@@ -440,39 +440,39 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/system/accounts',
         title: 'menu.accounts',
-        permission: 'system:accounts:manage',
+        permission: ['system:accounts:read', 'system:accounts:manage'],
         tabs: [
           {
             key: 'accounts',
             labelKey: 'menu.accounts',
             to: '/system/accounts',
-            permission: 'system:accounts:manage'
+            permission: ['system:accounts:read', 'system:accounts:manage']
           }
         ]
       },
       {
         path: '/system/permissions',
         title: 'menu.permissions',
-        permission: 'system:permissions:manage',
+        permission: ['system:permissions:read', 'system:permissions:manage'],
         tabs: [
           {
             key: 'permissions',
             labelKey: 'menu.permissions',
             to: '/system/permissions',
-            permission: 'system:permissions:manage'
+            permission: ['system:permissions:read', 'system:permissions:manage']
           }
         ]
       },
       {
         path: '/tracing/management',
         title: 'menu.tracingManagement',
-        permission: 'tracing:config:manage',
+        permission: ['tracing:config:read', 'tracing:config:manage'],
         tabs: [
           {
             key: 'management',
             labelKey: 'menu.tracingManagement',
             to: '/tracing/management',
-            permission: 'tracing:config:manage'
+            permission: ['tracing:config:read', 'tracing:config:manage']
           }
         ]
       },

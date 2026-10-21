@@ -21,6 +21,20 @@
           （{{ t('apiKeys.quotaForm.remainingTokens') }}：
           {{ formatRemaining(quotaDrawer.detail.remainingTokens, quotaDrawer.detail.dailyTokenLimit, t('apiKeys.quotaPresets.unlimited')) }}）
         </div>
+        <div>
+          {{ t('apiKeys.quotaForm.hourlyUsage') }}：
+          {{ formatQuotaLimit(quotaDrawer.detail.currentHourRequestCount, '0') }} /
+          {{ formatQuotaLimit(quotaDrawer.detail.hourlyRequestLimit, t('apiKeys.quotaPresets.unlimited')) }}
+          · Token {{ quotaDrawer.detail.currentHourTokenUsage }} /
+          {{ formatQuotaLimit(quotaDrawer.detail.hourlyTokenLimit, t('apiKeys.quotaPresets.unlimited')) }}
+        </div>
+        <div>
+          {{ t('apiKeys.quotaForm.monthlyUsage') }}：
+          {{ formatQuotaLimit(quotaDrawer.detail.currentMonthRequestCount, '0') }} /
+          {{ formatQuotaLimit(quotaDrawer.detail.monthlyRequestLimit, t('apiKeys.quotaPresets.unlimited')) }}
+          · Token {{ quotaDrawer.detail.currentMonthTokenUsage }} /
+          {{ formatQuotaLimit(quotaDrawer.detail.monthlyTokenLimit, t('apiKeys.quotaPresets.unlimited')) }}
+        </div>
       </el-alert>
       <el-alert
         v-else-if="quotaDrawerLoading"
@@ -49,6 +63,19 @@
         </el-form-item>
         <el-form-item :label="t('apiKeys.quotaForm.rateLimitPerMinute')">
           <el-input-number v-model="quotaDrawer.form.rateLimitPerMinute" :min="0" :step="10" style="width: 100%" />
+        </el-form-item>
+        <el-divider content-position="left">{{ t('apiKeys.quotaForm.windowLimits') }}</el-divider>
+        <el-form-item :label="t('apiKeys.quotaForm.hourlyRequestLimit')">
+          <el-input-number v-model="quotaDrawer.form.hourlyRequestLimit" :min="0" :step="100" style="width: 100%" />
+        </el-form-item>
+        <el-form-item :label="t('apiKeys.quotaForm.hourlyTokenLimit')">
+          <el-input-number v-model="quotaDrawer.form.hourlyTokenLimit" :min="0" :step="1000" style="width: 100%" />
+        </el-form-item>
+        <el-form-item :label="t('apiKeys.quotaForm.monthlyRequestLimit')">
+          <el-input-number v-model="quotaDrawer.form.monthlyRequestLimit" :min="0" :step="1000" style="width: 100%" />
+        </el-form-item>
+        <el-form-item :label="t('apiKeys.quotaForm.monthlyTokenLimit')">
+          <el-input-number v-model="quotaDrawer.form.monthlyTokenLimit" :min="0" :step="10000" style="width: 100%" />
         </el-form-item>
         <el-form-item :label="t('apiKeys.quotaForm.quotaAlertThreshold')">
           <el-slider
@@ -115,6 +142,10 @@ const quotaDrawer = reactive({
     dailyRequestLimit: 0,
     dailyTokenLimit: 0,
     rateLimitPerMinute: 0,
+    hourlyRequestLimit: 0,
+    hourlyTokenLimit: 0,
+    monthlyRequestLimit: 0,
+    monthlyTokenLimit: 0,
     quotaAlertThreshold: 0.8
   }
 })
@@ -128,6 +159,10 @@ const openQuotaDrawer = async (row: ApiKeyVO) => {
     dailyRequestLimit: row.dailyRequestLimit || 0,
     dailyTokenLimit: row.dailyTokenLimit || 0,
     rateLimitPerMinute: row.rateLimitPerMinute || 0,
+    hourlyRequestLimit: row.hourlyRequestLimit || 0,
+    hourlyTokenLimit: row.hourlyTokenLimit || 0,
+    monthlyRequestLimit: row.monthlyRequestLimit || 0,
+    monthlyTokenLimit: row.monthlyTokenLimit || 0,
     quotaAlertThreshold: row.quotaAlertThreshold ?? 0.8
   }
   quotaDrawerVisible.value = true
@@ -139,6 +174,10 @@ const openQuotaDrawer = async (row: ApiKeyVO) => {
       dailyRequestLimit: detail.dailyRequestLimit || 0,
       dailyTokenLimit: detail.dailyTokenLimit || 0,
       rateLimitPerMinute: detail.rateLimitPerMinute || 0,
+      hourlyRequestLimit: detail.hourlyRequestLimit || 0,
+      hourlyTokenLimit: detail.hourlyTokenLimit || 0,
+      monthlyRequestLimit: detail.monthlyRequestLimit || 0,
+      monthlyTokenLimit: detail.monthlyTokenLimit || 0,
       quotaAlertThreshold: detail.quotaAlertThreshold ?? 0.8
     }
   } catch (error) {

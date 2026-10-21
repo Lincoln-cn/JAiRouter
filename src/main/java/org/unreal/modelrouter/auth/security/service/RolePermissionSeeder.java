@@ -35,14 +35,19 @@ import java.util.stream.Collectors;
  * {@link PermissionRule#permissionCode()}，使后续版本新增权限码并登记 URL 规则后，
  * 已初始化部署不再因种子跳过而静默失去访问（#144）。
  *
- * <p>角色模板（权限码共 55 个，以实现 {@link PermissionCodes} 为准）：
+ * <p>角色模板（权限码共 63 个，以实现 {@link PermissionCodes} 为准）：
  * <ul>
  *   <li>ADMIN：全量权限码（超集，兼容现有 ADMIN）</li>
  *   <li>OPERATOR：所有 :read + :write（排除 system:* / security:*:manage / actuator:*）</li>
  *   <li>USER：dashboard + config:*:read + lb/cb/rl + monitoring:*:read（含 exceptions:read） +
  *   tracing dashboard+search + ai:playground:use</li>
- *   <li>VIEWER：仅所有 :read</li>
+ *   <li>VIEWER：仅所有 :read（#567 的 8 个「管理面 read」除外，见 {@link #MANAGE_PAIRED_READ_CODES}）</li>
  * </ul>
+ *
+ * <p><b>#567 / B11 不变式</b>：任何模板只要持有某个 {@code x:write} 或 {@code x:manage}，
+ * 就必须同时持有与之配对的 {@code x:read}（若该 read 码存在）。这样「读一眼」不再需要写权限，
+ * 且升级后没有任何角色的可见面会变小；对不持写码的只读角色（VIEWER）则反向成立 ——
+ * 不凭空补发管理面的 read 码，避免造出「菜单可见、路由按 manage 码重定向」的死入口。
  *
  * @author JAiRouter Team
  * @since 2.9.8
@@ -50,6 +55,37 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 public class RolePermissionSeeder implements ApplicationRunner {
+
+    /**
+     * #567：8 个「管理面 read」权限码 → 与之配对的写/管理码。
+     *
+     * <p>引入这 8 个码是为了让「读」不再被「写」权限绑架（B11）：<b>凡是持有右侧写/管理码的
+     * 角色，都必须同时持有左侧 read 码</b>，保证升级后没有任何角色的可见面变小。反方向不成立
+     * —— 只读角色（VIEWER）不持任何写码，因此不会被配发这 8 个码，否则会把账户/权限/密钥等
+     * 管理页暴露成「菜单可见、但路由守卫按 manage 码重定向」的死入口，等于凭空扩权。
+     *
+     * <p>{@link #operatorCodes()} 用同一张表做一致性判定：OPERATOR 的口径是「全部 :read + :write」，
+     * 其中 6 个新 read 码配对的是 OPERATOR 按设计不持有的管理码，必须按配对关系排除，
+     * 否则 OPERATOR 会凭空获得密钥/脱敏/令牌/黑名单/追踪配置的读面。
+     *
+     * <p><b>声明顺序不能后移</b>：{@link #DEFAULT_ROLE_TEMPLATES} 的静态初始化会调用
+     * {@link #operatorCodes()} 与 {@link #viewerCodes()}，若本字段在其后声明，读到的会是
+     * {@code null}（静态初始化顺序陷阱）。
+     */
+    private static final Map<String, String> MANAGE_PAIRED_READ_TO_WRITE = Map.of(
+            PermissionCodes.LB_CONFIG_READ, PermissionCodes.LB_CONFIG_WRITE,
+            PermissionCodes.TRACING_CONFIG_READ, PermissionCodes.TRACING_CONFIG_MANAGE,
+            PermissionCodes.SECURITY_APIKEYS_READ, PermissionCodes.SECURITY_APIKEYS_MANAGE,
+            PermissionCodes.SECURITY_JWTTOKENS_READ, PermissionCodes.SECURITY_JWTTOKENS_MANAGE,
+            PermissionCodes.SECURITY_BLACKLIST_READ, PermissionCodes.SECURITY_BLACKLIST_MANAGE,
+            PermissionCodes.SECURITY_SANITIZATION_READ, PermissionCodes.SECURITY_SANITIZATION_MANAGE,
+            PermissionCodes.SYSTEM_ACCOUNTS_READ, PermissionCodes.SYSTEM_ACCOUNTS_MANAGE,
+            PermissionCodes.SYSTEM_PERMISSIONS_READ, PermissionCodes.SYSTEM_PERMISSIONS_MANAGE);
+
+    /**
+     * 上述 8 个 read 码的集合（{@link #MANAGE_PAIRED_READ_TO_WRITE} 的键集），只读角色需整体排除。
+     */
+    private static final Set<String> MANAGE_PAIRED_READ_CODES = MANAGE_PAIRED_READ_TO_WRITE.keySet();
 
     /**
      * 默认角色模板：角色名（大写）→ 权限码列表（顺序同 {@link PermissionCodes#ALL_PERMISSION_CODES}）。
@@ -188,13 +224,22 @@ public class RolePermissionSeeder implements ApplicationRunner {
 
     /**
      * OPERATOR：所有 :read + :write，排除 system:* / security:*:manage / actuator:*
+     *
+     * <p>#567：再排除「配对的写/管理码不在本模板内」的管理面 read 码 —— OPERATOR 按设计不持有
+     * {@code security:*:manage} 等管理码，若照样带上对应 read 码，既凭空放宽了对密钥/脱敏/令牌/
+     * 黑名单/追踪配置的读面，又会把「需要 manage 码才能打开」的页面变成死入口。
+     * {@code lb:config:read} 例外：OPERATOR 持有 {@code lb:config:write} ⇒ 按 B11 必须配发。
      */
     private static List<String> operatorCodes() {
-        return PermissionCodes.ALL_PERMISSION_CODES.stream()
+        List<String> base = PermissionCodes.ALL_PERMISSION_CODES.stream()
                 .filter(code -> code.endsWith(":read") || code.endsWith(":write"))
                 .filter(code -> !code.startsWith("system:"))
                 .filter(code -> !code.startsWith("actuator:"))
                 .filter(code -> !(code.startsWith("security:") && code.endsWith(":manage")))
+                .collect(Collectors.toList());
+        return base.stream()
+                .filter(code -> !MANAGE_PAIRED_READ_CODES.contains(code)
+                        || base.contains(MANAGE_PAIRED_READ_TO_WRITE.get(code)))
                 .collect(Collectors.toList());
     }
 
@@ -217,6 +262,7 @@ public class RolePermissionSeeder implements ApplicationRunner {
                 PermissionCodes.CONFIG_CACHE_READ,
                 PermissionCodes.CONFIG_VALIDATION_READ,
                 PermissionCodes.LB_MONITORING_READ,
+                PermissionCodes.LB_CONFIG_READ,
                 PermissionCodes.LB_CONFIG_WRITE,
                 PermissionCodes.CB_MONITORING_READ,
                 PermissionCodes.CB_HISTORY_READ,
@@ -236,11 +282,15 @@ public class RolePermissionSeeder implements ApplicationRunner {
     }
 
     /**
-     * VIEWER：仅所有 :read
+     * VIEWER：仅所有 :read（#567 的 8 个管理面 read 除外）
+     *
+     * <p>排除理由见 {@link #MANAGE_PAIRED_READ_CODES}：VIEWER 不持任何 :write / :manage，
+     * 按 B11「只读角色不凭空扩权」不给它管理面的只读入口。
      */
     private static List<String> viewerCodes() {
         return PermissionCodes.ALL_PERMISSION_CODES.stream()
                 .filter(code -> code.endsWith(":read"))
+                .filter(code -> !MANAGE_PAIRED_READ_CODES.contains(code))
                 .collect(Collectors.toList());
     }
 }

@@ -143,19 +143,19 @@ class PermissionRuleRegistryRbacGapTest {
     // ==================== #128 Phase 2: JWT 令牌运维端点 ====================
 
     @Test
-    @DisplayName("/api/auth/jwt/cleanup 与 cleanup/stats 必须登记 security:jwttokens:manage（#128）")
+    @DisplayName("/api/auth/jwt/cleanup 必须登记 security:jwttokens:manage；cleanup/stats 读面改挂 :read（#128 / #567）")
     void jwtCleanupEndpoints_haveTokenManageRule() {
         assertRuleCode(HttpMethod.POST, "/api/auth/jwt/cleanup",
                 PermissionCodes.SECURITY_JWTTOKENS_MANAGE, "手动清理过期令牌");
         assertRuleCode(HttpMethod.GET, "/api/auth/jwt/cleanup/stats",
-                PermissionCodes.SECURITY_JWTTOKENS_MANAGE, "清理统计");
+                PermissionCodes.SECURITY_JWTTOKENS_READ, "清理统计（#567：读面不再要求 manage）");
     }
 
     @Test
-    @DisplayName("/api/auth/jwt/blacklist/stats 必须登记 security:blacklist:manage（#128）")
+    @DisplayName("/api/auth/jwt/blacklist/stats 读面登记 security:blacklist:read（#128 / #567）")
     void blacklistStats_hasBlacklistManageRule() {
         assertRuleCode(HttpMethod.GET, "/api/auth/jwt/blacklist/stats",
-                PermissionCodes.SECURITY_BLACKLIST_MANAGE, "黑名单统计");
+                PermissionCodes.SECURITY_BLACKLIST_READ, "黑名单统计（#567：读面不再要求 manage）");
     }
 
     @Test
@@ -166,10 +166,10 @@ class PermissionRuleRegistryRbacGapTest {
     }
 
     @Test
-    @DisplayName("/api/auth/jwt/tokens/{tokenId} 必须登记 security:jwttokens:manage（#128，管理员查看详情）")
+    @DisplayName("/api/auth/jwt/tokens/{tokenId} 读面登记 security:jwttokens:read（#128 / #567）")
     void tokenDetails_hasTokenManageRule() {
         assertRuleCode(HttpMethod.GET, "/api/auth/jwt/tokens/abc-123",
-                PermissionCodes.SECURITY_JWTTOKENS_MANAGE, "令牌详情");
+                PermissionCodes.SECURITY_JWTTOKENS_READ, "令牌详情（#567：读面不再要求 manage）");
     }
 
     @Test

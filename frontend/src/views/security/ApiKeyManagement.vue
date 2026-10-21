@@ -83,6 +83,10 @@
     v-model:daily-request-limit="form.dailyRequestLimit"
     v-model:daily-token-limit="form.dailyTokenLimit"
     v-model:rate-limit-per-minute="form.rateLimitPerMinute"
+    v-model:hourly-request-limit="form.hourlyRequestLimit"
+    v-model:hourly-token-limit="form.hourlyTokenLimit"
+    v-model:monthly-request-limit="form.monthlyRequestLimit"
+    v-model:monthly-token-limit="form.monthlyTokenLimit"
     v-model:quota-alert-threshold="form.quotaAlertThreshold"
     v-model:rotation-period-days="form.rotationPeriodDays"
     :model="form"
@@ -230,6 +234,10 @@ const form = ref<ApiKeyFormModel>({
   dailyRequestLimit: 0,
   dailyTokenLimit: 0,
   rateLimitPerMinute: 0,
+  hourlyRequestLimit: 0,
+  hourlyTokenLimit: 0,
+  monthlyRequestLimit: 0,
+  monthlyTokenLimit: 0,
   quotaAlertThreshold: 0.8,
   rotationPeriodDays: 0
 })
@@ -341,6 +349,10 @@ const handleCreateApiKey = () => {
     dailyRequestLimit: 0,
     dailyTokenLimit: 0,
     rateLimitPerMinute: 0,
+    hourlyRequestLimit: 0,
+    hourlyTokenLimit: 0,
+    monthlyRequestLimit: 0,
+    monthlyTokenLimit: 0,
     quotaAlertThreshold: 0.8,
     rotationPeriodDays: 0
   }
@@ -361,6 +373,10 @@ const handleEdit = (row: ApiKeyVO) => {
     dailyRequestLimit: row.dailyRequestLimit || 0,
     dailyTokenLimit: row.dailyTokenLimit || 0,
     rateLimitPerMinute: row.rateLimitPerMinute || 0,
+    hourlyRequestLimit: row.hourlyRequestLimit || 0,
+    hourlyTokenLimit: row.hourlyTokenLimit || 0,
+    monthlyRequestLimit: row.monthlyRequestLimit || 0,
+    monthlyTokenLimit: row.monthlyTokenLimit || 0,
     quotaAlertThreshold: row.quotaAlertThreshold ?? 0.8,
     rotationPeriodDays: row.rotationPeriodDays || 0
   }
@@ -494,6 +510,10 @@ const handleSave = async () => {
         dailyRequestLimit: form.value.dailyRequestLimit,
         dailyTokenLimit: form.value.dailyTokenLimit,
         rateLimitPerMinute: form.value.rateLimitPerMinute,
+        hourlyRequestLimit: form.value.hourlyRequestLimit,
+        hourlyTokenLimit: form.value.hourlyTokenLimit,
+        monthlyRequestLimit: form.value.monthlyRequestLimit,
+        monthlyTokenLimit: form.value.monthlyTokenLimit,
         quotaAlertThreshold: form.value.quotaAlertThreshold,
         rotationPeriodDays: form.value.rotationPeriodDays
       }
@@ -511,6 +531,10 @@ const handleSave = async () => {
         dailyRequestLimit: form.value.dailyRequestLimit,
         dailyTokenLimit: form.value.dailyTokenLimit,
         rateLimitPerMinute: form.value.rateLimitPerMinute,
+        hourlyRequestLimit: form.value.hourlyRequestLimit,
+        hourlyTokenLimit: form.value.hourlyTokenLimit,
+        monthlyRequestLimit: form.value.monthlyRequestLimit,
+        monthlyTokenLimit: form.value.monthlyTokenLimit,
         quotaAlertThreshold: form.value.quotaAlertThreshold,
         rotationPeriodDays: form.value.rotationPeriodDays
       }

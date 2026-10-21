@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.3.6
-> **Last Updated**: 2026-10-19
+> **Document Version**: 3.4.0
+> **Last Updated**: 2026-10-21
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -21,7 +21,28 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 ## Version History
 
-### [Unreleased] - Console UI overhaul (brand, sign-in page, information architecture, neutral palette)
+### [3.4.0] - 2026-10-21 - Feature Release (console overhaul + permission semantics + persisted sanitization config + hourly/monthly quota limits)
+
+#### Permission semantics: eight read-only codes (TA4 / #567)
+
+- Eight read-only permission codes are added (`lb:config:read`, `tracing:config:read`, `security:apikeys:read`, `security:sanitization:read`, `security:jwttokens:read`, `security:blacklist:read`, `system:accounts:read`, `system:permissions:read`), taking the total from **55 to 63**.
+- The URL rule table grows from 68 to 75 entries: the seven rules that used `any()` to bind GET requests to a write code are split into "GET → read code / write → manage code", and a narrow `GET /api/loadbalancer/config/** → lb:config:read` rule is inserted ahead of the `/api/loadbalancer/**` wildcard.
+- Read-only roles no longer need a write code to list data: the incremental convergence in `RolePermissionSeeder` now enforces one invariant — **if a role template holds `:write`/`:manage` for a resource it must also hold the matching `:read`** (no built-in role loses visibility after the upgrade: admin 63 codes, operator 46, user 29, viewer 27).
+- Nine console menu entries that only carried write codes now show up when *either* the read or the write code is held; the router guard changed from "all required" to "any required" and seven route declarations were widened to `[read, manage]`.
+
+#### Persisted sanitization configuration (TA2)
+
+- Rules, sensitive words and PII patterns edited in the console are now **persisted** (new `sanitization_config` table keyed by `config_scope` (request / response), Flyway `V4` for both dialects) and loaded from the database on startup, falling back to yml when the table is empty. Previously these edits lived only in memory, so they vanished on restart and rule IDs were reused.
+- Saving is now "persist first, rebuild rules second": if persisting fails the in-memory configuration is rolled back to its pre-update snapshot and the request returns 500, so the running state can no longer diverge from the persisted state.
+- `updated_at` / `updated_by` record the last writer (an absent authentication context is stored as `system`).
+
+#### Hourly and monthly quota limits (TA3)
+
+- API keys gain four limits: `hourlyRequestLimit`, `hourlyTokenLimit`, `monthlyRequestLimit`, `monthlyTokenLimit` (`0` means unlimited). The `QuotaWindow` enum already supported MINUTE/HOUR/DAY/MONTH; this release completes the limit model, enforcement, ledger writes and detail responses.
+- Enforcement order is HOUR → DAY → MONTH → MINUTE; the first exhausted window rejects the request with a dimension-specific violation. Resetting a key's quota still clears every window.
+- The console's API key "Quota" drawer and create/edit form expose the four new inputs (hourly requests/tokens, monthly requests/tokens); window percentages stay empty when the ledger has no data instead of showing 0%.
+
+#### Console overhaul (P0-1 to P3, 33 pages + sign-in page + navigation)
 
 #### Console navigation information architecture (P0-3)
 
@@ -82,7 +103,9 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 #### Upgrade notes
 
-- No breaking API change and no data migration; every old URL still works.
+- **One schema change**: Flyway `V4__sanitization_config.sql` (one script per dialect; it only adds the `sanitization_config` table and touches no existing table). The normal startup migration path applies it; no manual step.
+- **One authorization semantics change**: a write code no longer doubles as a read path — read endpoints are gated by their `:read` code. On upgrade `RolePermissionSeeder` adds the matching read code to built-in roles that hold a write code; custom roles that only carry write codes and need to list data must be granted the read code in role management.
+- No breaking API change; every old URL still works and the menu restructure does not affect deep links.
 - Automation that depends on the menu structure should switch to URL- or permission-based checks: the menu went from 9 groups / 40 entries to 7 groups / 28 items.
 
 ### [3.3.6] - 2026-10-19 - Patch Release (schema migration + two authorization restrictions + in-page write gating and contract slimming)

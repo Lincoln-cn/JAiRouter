@@ -1,9 +1,9 @@
 # Roadmap
 
 <!-- 版本信息 -->
-> **Doc Version**: 2.2.2
-> **Last Updated**: 2026-10-19
-> **Git Tag**: v3.3.6
+> **Doc Version**: 2.2.3
+> **Last Updated**: 2026-10-21
+> **Git Tag**: v3.4.0
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -23,6 +23,17 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 - **Observability**: Comprehensive monitoring, logging, and distributed tracing
 
 ## Current Version Status
+
+### ✅ v3.4.0 (Feature: console overhaul + permission semantics + persisted sanitization config + hourly/monthly quota limits, **released 2026-10-21**)
+
+**Status**: Released (GitHub Release `v3.4.0`, 2026-10-21; multi-arch Docker images rebuilt by CI on release: `v3.4.0` / `3.4.0` / `latest`)
+**Scope**: everything merged after `v3.3.6` (released 10-19), i.e. the console overhaul (P0-1 to P3: 33 pages + sign-in page + navigation) plus three backend capabilities
+**Highlights**:
+
+- **Permission semantics**: eight read-only codes added (55 → 63) and the URL rule table grows from 68 to 75 entries, so read-only roles no longer need a write code to list data; built-in role templates gain the invariant "holding a write code implies holding the matching read code".
+- **Persisted sanitization configuration**: a new `sanitization_config` table (Flyway `V4`) stores console edits and is loaded preferentially on startup; saving is now "persist first, rebuild second" with an in-memory rollback when persisting fails.
+- **Hourly/monthly quota limits**: four new API key limits (hourly requests/tokens, monthly requests/tokens), enforced in the order HOUR → DAY → MONTH → MINUTE.
+- **Console overhaul**: menu 9 groups / 40 entries → 7 groups / 28 items (URLs unchanged), collapsible sidebar, dark-mode hierarchy fix, card lists on narrow screens, 33 pages moved to a neutral palette, global search (⌘K) and a top status bar.
 
 ### ✅ v3.3.6 (Patch: schema migration + two authorization restrictions + in-page write gating and contract slimming, **released 2026-10-19**)
 
@@ -520,7 +531,7 @@ JAiRouter will continue to uphold the open-source spirit and is committed to pro
 10. ✅ v3.2.1 audit remediation patch (released 2026-09-21): Reactor/SSE de-blocking, quota TOCTOU and Redis Lua CAS, spurious 401 fix, tracing chain double-execution fix, JWT blacklist degradation convergence, production fail-fast, SSRF guard, RBAC/debug-endpoint tightening, user-regex ReDoS hardening. **Known remaining (P2)**: `QuotaLedgerService` distributed path still blocks synchronously; frontend temporary IDs use `Math.random`
 11. ✅ v3.2.2 patch (released 2026-09-22): fixed the user-reported API Key quota display (#84) and routing-monitor counter (#83); console business failures now return 4xx/5xx instead of HTTP 200 (#94, response-body compatible), plus quota endpoint `block` failure (#92), over-permissive e2e assertions (#95), alert-threshold inconsistency (#96) and monitoring error-code inconsistency (#98). **Known remaining (P2)**: `QuotaLedgerService` distributed path still blocks synchronously; frontend temporary IDs use `Math.random`
 12. ✅ v3.3.0 minor (released 2026-10-07): PostgreSQL and versioned migration (PG on `ddl-auto: validate`, H2 gets versioned migration too, both startup patch components deleted); multi-replica cluster (cross-replica event broadcast and sliding-window counting, shared-state self-check, per-class scheduled jobs); RBAC closed out to fail-closed GETs; four batches of tracing config honesty (57 zero-consumer fields deleted, 3 wired up); structured JSON stdout and Kustomize manifests; documentation facts checked and corrected (#160–#248)
-13. 📋 v3.4.0 candidates: rule persistence versioning, HOUR/MONTH quota limits, FULL encryption strategy UI, dry-run regression set
+13. ✅ v3.4.0 feature release (released 2026-10-21): console overhaul (7 groups / 28 items navigation, collapsible sidebar, dark-mode hierarchy, card lists on narrow screens, 33 pages on a neutral palette, global search and status bar); permission semantics (eight read-only codes, 55 → 63); persisted sanitization configuration (Flyway V4); hourly/monthly quota limits. **Deferred**: the record-level FULL encryption strategy UI moves with the frontend track (v3.5.x)
 14. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.2.x
 
 ### Long-term Vision

@@ -11,10 +11,10 @@
 
 Since **v2.9.8**, JAiRouter provides a **data-driven RBAC (role-based access control)** system built around the `module:resource:action` permission code as the single permission atom. It chains **permission code → role → JWT → URL permission matrix → menu** into one complete pipeline:
 
-1. **Permission code**: 55 `module:resource:action` codes (`action` ∈ `read` / `write` / `manage` / `view`) drive both backend URL access decisions and frontend menu/route visibility.
+1. **Permission code**: 63 `module:resource:action` codes (`action` ∈ `read` / `write` / `manage` / `view`) drive both backend URL access decisions and frontend menu/route visibility.
 2. **Role template**: On startup the system seeds 4 built-in role templates (ADMIN / OPERATOR / USER / VIEWER) into the `role_permissions` table — full seeding when the table is empty, and insert-only additive reconcile when it is not (see "Role Templates").
 3. **JWT embedding**: After a successful login, the backend resolves permission codes per role from `role_permissions` and writes them into the JWT `permissions` claim (roles stay in the `roles` claim; permission codes carry no `ROLE_` prefix).
-4. **URL permission matrix**: `PermissionRuleRegistry` holds 66 `{HTTP method, URL pattern} → permission code` rules, and `PermissionAuthorizationManager` evaluates every `/api/**` request at the gateway layer.
+4. **URL permission matrix**: `PermissionRuleRegistry` holds 75 `{HTTP method, URL pattern} → permission code` rules, and `PermissionAuthorizationManager` evaluates every `/api/**` request at the gateway layer.
 5. **Menu and routing**: the frontend renders menus from `menu.ts` in a data-driven way (currently 7 groups / 28 items; v2.9.8 had 8 groups / 34 items); `usePermission` filters the menu and the route guard `meta.permissions` blocks unauthorized access.
 
 Core design principles:
@@ -46,7 +46,7 @@ A permission code has the format `module:resource:action`:
 | `manage` | Manage | Management operations for sensitive modules (e.g. `security:*:manage`, `system:*:manage`) |
 | `view` | View | Dedicated view action; currently only `callhistory:view`, which sits outside the `:read`/`:write` filters |
 
-### Full Permission Code List (55)
+### Full Permission Code List (63)
 
 | Module | Permission code | Description |
 |--------|-----------------|-------------|
@@ -64,6 +64,7 @@ A permission code has the format `module:resource:action`:
 | config | `config:quota:read` / `config:quota:write` | Quota ledger configuration read/write |
 | config | `config:validation:read` / `config:validation:write` | Configuration validation read/write |
 | lb | `lb:monitoring:read` | Load balancer monitoring |
+| lb | `lb:config:read` | Load balancer strategy configuration (read; added by `#567`) |
 | lb | `lb:config:write` | Load balancer strategy configuration (write) |
 | cb | `cb:monitoring:read` | Circuit breaker monitoring |
 | cb | `cb:history:read` | Circuit breaker history |
@@ -82,23 +83,30 @@ A permission code has the format `module:resource:action`:
 | monitoring | `monitoring:config:write` | Monitoring/operations configuration write |
 | tracing | `tracing:dashboard:read` | Tracing dashboard |
 | tracing | `tracing:search:read` | Tracing search |
+| tracing | `tracing:config:read` | Tracing security configuration (read-only; added by `#567`) |
 | tracing | `tracing:config:manage` | Tracing security configuration management |
+| security | `security:apikeys:read` | API Key list/detail/quota (read-only; added by `#567`) |
 | security | `security:apikeys:manage` | API Key management |
+| security | `security:jwttokens:read` | JWT token stats/detail (read-only; added by `#567`) |
 | security | `security:jwttokens:manage` | JWT token management |
+| security | `security:blacklist:read` | Blacklist list/stats/check (read-only; added by `#567`) |
 | security | `security:blacklist:manage` | Blacklist management |
 | security | `security:audit:read` | Security audit log (read-only) |
 | security | `security:audit:write` | Security audit log (write) |
+| security | `security:sanitization:read` | PII / data sanitization configuration (read-only; added by `#567`) |
 | security | `security:sanitization:manage` | PII / data sanitization configuration management |
+| system | `system:accounts:read` | Accounts (read-only; added by `#567`) |
 | system | `system:accounts:manage` | Account management |
+| system | `system:permissions:read` | Permission catalogue / role permissions (read-only; added by `#567`) |
 | system | `system:permissions:manage` | Permission management |
 | ai | `ai:playground:use` | AI playground usage |
 | actuator | `actuator:admin:manage` | Actuator infrastructure management |
 
 Notes:
 
-- 55 codes in total: the config module contributes 12 resources × read/write = 24 codes; the remaining modules are shown above.
+- 63 codes in total: the config module contributes 12 resources × read/write = 24 codes; the remaining modules are shown above.
 - The order above is the order used by the full list (`GET /api/security/permissions`) and the permission tree in the permission management UI.
-- A few codes are naturally unpaired (e.g. `lb:config:write`, `callhistory:view`, `ai:playground:use`) and follow the semantics of their resource rather than a forced read/write pair.
+- Since `#567`, the 8 resources that previously had only a write/manage code also carry a `:read` code (`lb:config:read`, `tracing:config:read`, `security:apikeys:read`, `security:jwttokens:read`, `security:blacklist:read`, `security:sanitization:read`, `system:accounts:read`, `system:permissions:read`), each bound to a GET rule. Apart from codes defined by resource semantics rather than a method split (such as `callhistory:view` and `ai:playground:use`), the catalogue now splits by method: `:read` for read surfaces, `:write` / `:manage` for write and management surfaces.
 - Some codes exist only for menu/route visibility (e.g. `overview:dashboard:read`, `ai:playground:use`); `ai:playground:use` is currently referenced by no URL rule, and the playground is in fact reached through the exempt `/api/v1/**` path (see "Caller Comparison Matrix").
 - `/api/**` endpoints without a registered URL rule are **no longer** allowed through by default; they follow the posture described under "Authorization Decision" (deny by default).
 
@@ -108,10 +116,10 @@ The system ships 4 built-in role templates (seeded automatically at startup by `
 
 | Role | Permission count | Permission scope | Notes |
 |------|:----------------:|------------------|-------|
-| ADMIN | 55 | All permission codes | Superset; bypasses URL rules, and full codes are embedded at JWT issuance |
-| OPERATOR | 43 | All `:read` + `:write` codes | Excludes `system:*`, `security:*:manage`, `actuator:*`; keeps `security:audit:read` / `security:audit:write`, no `callhistory:view` |
-| USER | 28 | Dashboard + config read + full lb/cb/rl + monitoring read (incl. exceptions:read) + tracing dashboard/search + AI playground | Read-oriented; only write code is `lb:config:write`; no call history view |
-| VIEWER | 27 | All `:read` codes | Pure read-only role; no `callhistory:view`, `ai:playground:use`, or other non-`:read` codes |
+| ADMIN | 63 | All permission codes | Superset; bypasses URL rules, and full codes are embedded at JWT issuance |
+| OPERATOR | 46 | All `:read` + `:write` codes | Excludes `system:*`, `security:*:manage`, `actuator:*`, plus the 5 read codes paired with those manage codes (`security:apikeys:read`, `security:jwttokens:read`, `security:blacklist:read`, `security:sanitization:read`, `tracing:config:read`) so the role does not silently gain read access to admin-only surfaces; keeps `security:audit:read` / `security:audit:write`, no `callhistory:view` |
+| USER | 29 | Dashboard + config read + full lb/cb/rl + monitoring read (incl. exceptions:read) + tracing dashboard/search + AI playground | Read-oriented; only write code is `lb:config:write`; no call history view |
+| VIEWER | 27 | All `:read` codes except the 8 new `#567` codes paired with write/manage surfaces | Pure read-only role; no `callhistory:view`, `ai:playground:use`, or other non-`:read` codes, and none of the 8 new `security:*:read` / `system:*:read` codes (`#567` grants a read code only to roles that already hold its write/manage counterpart, so read-only roles are never widened) |
 
 ### Role Differences
 
@@ -132,7 +140,7 @@ When the `role_permissions` table is **non-empty**, `RolePermissionSeeder` no lo
 
 Reconcile performs `INSERT` only — it **never deletes or updates existing rows**. After writing, the `RolePermissionService` permission cache is invalidated so that already-issued JWTs cannot keep a stale permission set during the startup window.
 
-Operator impact: on an already-initialized deployment, missing rule-required codes are backfilled at startup. Verified live on a real database: OPERATOR +9, USER +4, VIEWER +4, ADMIN +10. Hand-customized roles are untouched (skipped entirely).
+Operator impact: on an already-initialized deployment, missing rule-required codes are backfilled at startup. Verified live on a real database (as of phase 2): OPERATOR +9, USER +4, VIEWER +4, ADMIN +10. The `#567` templates add ADMIN +8, OPERATOR +1 (`lb:config:read`), USER +1 (`lb:config:read`), VIEWER +0 on top of that; this delta was not re-measured on a real database. Hand-customized roles are untouched (skipped entirely).
 
 ## Workflow
 
@@ -140,7 +148,7 @@ The full flow of a permission-checked request:
 
 1. **Login and JWT issuance**: the client calls `POST /api/auth/jwt/login`. `AccountManager` verifies credentials (v2.9.8: YAML static accounts take priority, falling back to database accounts — accounts created through the web account management API can log in directly). It then resolves permission codes per role via `RolePermissionService` from the `role_permissions` table (Caffeine cache of 5 minutes; ADMIN short-circuits to the full code list) and embeds them into the JWT `permissions` claim before returning the token.
 2. **Token parsing**: the request carries `Authorization: Bearer {token}` (or a custom JWT header). `DefaultJwtTokenValidator` parses the token: the `roles` claim becomes `ROLE_`-prefixed authorities; the `permissions` claim becomes authorities **without** a prefix (the two are isolated so they never collide with API Key `ROLE_*` permissions).
-3. **URL rule matching**: `SecurityConfiguration` routes every `/api/**` request to `PermissionAuthorizationManager`, which looks up the required permission code in `PermissionRuleRegistry` by "HTTP method + URL pattern" (first match wins; 66 rules in total).
+3. **URL rule matching**: `SecurityConfiguration` routes every `/api/**` request to `PermissionAuthorizationManager`, which looks up the required permission code in `PermissionRuleRegistry` by "HTTP method + URL pattern" (first match wins; 75 rules in total).
 4. **Permission decision**: follow the three-step decision in the next section.
 5. **Result**: granted requests reach the controller; denied requests get a 403.
 
@@ -207,11 +215,11 @@ The following 5 endpoints gained explicit URL rules in phase 2 (to close coverag
 
 | Endpoint | Required permission code |
 |----------|--------------------------|
-| `GET /api/auth/jwt/blacklist/stats` | `security:blacklist:manage` |
-| `GET /api/auth/jwt/cleanup/stats` | `security:jwttokens:manage` |
+| `GET /api/auth/jwt/blacklist/stats` | `security:blacklist:read` (was `security:blacklist:manage` before `#567`) |
+| `GET /api/auth/jwt/cleanup/stats` | `security:jwttokens:read` (was `security:jwttokens:manage` before `#567`) |
 | `POST /api/auth/jwt/cleanup` | `security:jwttokens:manage` |
 | `POST /api/auth/jwt/revoke/batch` | `security:jwttokens:manage` |
-| `GET /api/auth/jwt/tokens/{tokenId}` | `security:jwttokens:manage` |
+| `GET /api/auth/jwt/tokens/{tokenId}` | `security:jwttokens:read` (was `security:jwttokens:manage` before `#567`) |
 
 **This did not reduce anyone's access**: these 5 endpoints already carried method-level `@PreAuthorize('ADMIN')`, none of the four role templates contains a `security:*:manage` code (only ADMIN does), and ADMIN bypasses anyway.
 
@@ -255,10 +263,10 @@ Permission management exposes 3 management endpoints plus 1 current-user endpoin
 
 | Method | Path | Description | Required permission |
 |--------|------|-------------|---------------------|
-| GET | `/api/security/permissions` | All permission codes (55, in catalog order) | `system:permissions:manage` |
+| GET | `/api/security/permissions` | All permission codes (63, in catalog order) | `system:permissions:manage` |
 | GET | `/api/security/permissions/roles` | All roles with their permission codes (role name → code list) | `system:permissions:manage` |
 | PUT | `/api/security/permissions/roles/{roleName}` | Replace the permission code set of a role wholesale | `system:permissions:manage` |
-| GET | `/api/auth/permissions` | Permission codes of the current user (ADMIN gets the full 55) | Any authenticated user (exemption list) |
+| GET | `/api/auth/permissions` | Permission codes of the current user (ADMIN gets the full 63) | Any authenticated user (exemption list) |
 
 > `/api/security/permissions/**` is protected by a URL rule (`system:permissions:manage`); `GET /api/auth/permissions` sits in the exemption list and only requires a login (console menu rendering depends on it).
 
@@ -279,7 +287,7 @@ curl http://localhost:8080/api/security/permissions \
      -H "Authorization: Bearer {token}"
 ```
 
-The `data` field of the response is an array of the 55 permission codes (same order as the full catalog).
+The `data` field of the response is an array of the 63 permission codes (same order as the full catalog).
 
 ### 3. Get Role Permissions
 
@@ -310,14 +318,14 @@ curl http://localhost:8080/api/auth/permissions \
      -H "Authorization: Bearer {token}"
 ```
 
-ADMIN receives the full 55 codes; other roles receive the codes from their JWT `permissions` claim.
+ADMIN receives the full 63 codes; other roles receive the codes from their JWT `permissions` claim.
 
 ## Permission Management UI
 
 The "System → Permission Management" page (route `/system/permissions`, requires `system:permissions:manage`) provides graphical permission configuration:
 
 1. **Role dropdown**: select ADMIN / OPERATOR / USER / VIEWER; the role's current permission codes are loaded and reflected in the tree.
-2. **Permission code tree**: 55 codes grouped by module as a checkable tree (leaf nodes are permission codes; parent nodes toggle automatically).
+2. **Permission code tree**: 63 codes grouped by module as a checkable tree (leaf nodes are permission codes; parent nodes toggle automatically).
 3. **Save permissions**: clicking "Save" calls `PUT /api/security/permissions/roles/{roleName}` to replace the role's permissions wholesale.
 4. **Effect notice**: after saving, the UI reminds you that "permission changes take effect only after re-login" — permissions are embedded in the JWT; the server-side role-permission cache expires in about 5 minutes (it only affects tokens issued by later logins).
 
@@ -331,10 +339,10 @@ The web menu currently has **7 groups and 28 items** (P0-3 information-architect
 |------------|:-----:|------------------------------------------------------------------|
 | Overview | 1 | Dashboard (`overview:dashboard:read`) |
 | Observability | 5 | Call History (Call Records ｜ Call History Dashboard, `callhistory:view`) / Distributed Tracing (Trace Search `tracing:search:read` ｜ Tracing Dashboard `tracing:dashboard:read`) / Exceptions (Exception List ｜ Statistics, `monitoring:exceptions:read`) / Slow Requests (Slow Calls ｜ Slow SQL, `monitoring:slowquery:read`) / Usage (Token Usage `monitoring:tokenusage:read` ｜ Quota Usage `monitoring:quota:read`) |
-| Traffic Governance | 7 | Routing Rules (`config:rules:read`) / Load Balancing (Real-time Monitoring `lb:monitoring:read` ｜ Strategy Config `lb:config:write`) / Rate Limiting (Rate Limit Monitoring `rl:monitoring:read`) / Circuit Breakers (Circuit Monitoring `cb:monitoring:read` ｜ Circuit History `cb:history:read` ｜ Global Config `config:circuitbreaker:read`) / Response Cache Management (`config:cache:write`) / Quota Runtime Config (`config:quota:read`) / Resource Pools (`config:pools:read`) |
+| Traffic Governance | 7 | Routing Rules (`config:rules:read`) / Load Balancing (Real-time Monitoring `lb:monitoring:read` ｜ Strategy Config `lb:config:read` / `lb:config:write`) / Rate Limiting (Rate Limit Monitoring `rl:monitoring:read`) / Circuit Breakers (Circuit Monitoring `cb:monitoring:read` ｜ Circuit History `cb:history:read` ｜ Global Config `config:circuitbreaker:read`) / Response Cache Management (`config:cache:read` / `config:cache:write`) / Quota Runtime Config (`config:quota:read`) / Resource Pools (`config:pools:read`) |
 | Model & Instances | 4 | Service Management / Instance Management / Version Management / Adapter Management (corresponding to `config:services|instances|versions|adapters:read`) |
-| Security | 5 | API Key Management (`security:apikeys:manage`) / PII Sanitization (`security:sanitization:manage`) / JWT Token Management (`security:jwttokens:manage`) / Blacklist Management (`security:blacklist:manage`) / Audit Logs (`security:audit:read`) |
-| System | 4 | Account Management (`system:accounts:manage`) / Permission Management (`system:permissions:manage`) / Tracing Config (`tracing:config:manage`) / State Persistence (`config:persistence:read`) |
+| Security | 5 | API Key Management (`security:apikeys:read` / `security:apikeys:manage`) / PII Sanitization (`security:sanitization:read` / `security:sanitization:manage`) / JWT Token Management (`security:jwttokens:read` / `security:jwttokens:manage`) / Blacklist Management (`security:blacklist:read` / `security:blacklist:manage`) / Audit Logs (`security:audit:read`) |
+| System | 4 | Account Management (`system:accounts:read` / `system:accounts:manage`) / Permission Management (`system:permissions:read` / `system:permissions:manage`) / Tracing Config (`tracing:config:read` / `tracing:config:manage`) / State Persistence (`config:persistence:read`) |
 | Developer Tools | 2 | AI Playground (Chat Playground / Embedding / Rerank / Audio / Image, all `ai:playground:use`) / Client Access Guide (no permission code — visible to every authenticated user) |
 
 Visibility control mechanisms:
@@ -343,13 +351,14 @@ Visibility control mechanisms:
 - **Per-tab gating**: each tab inside a menu item carries its own `permission`. A user who can only see some tabs still sees the item, and the landing tab is the first one the user is allowed to open, so clicking a menu item never navigates to a forbidden page.
 - **Deep-link highlighting**: `ROUTE_TO_MENU` is derived from the `tabs` in `menu.ts` (never hand-written) and unmapped routes fall back to their own path. Opening a folded URL such as `/monitoring/quota` therefore still highlights "Usage" in the sidebar.
 - **Route guard**: the route `meta.permissions` declares the required permission code array; `router.beforeEach` requires **all** of them (ADMIN always passes) and redirects to the dashboard otherwise.
+  - ⚠️ The menu is OR-based while the route guard is AND-based, and the two differ semantically: `#567` turned the `permission` of 9 entries into "read code OR write/manage code", but the `meta.permissions` of those pages still declares only the write/manage code ⇒ **a user holding only the read code sees the entry and is redirected back to the dashboard when clicking it**. Making those pages truly reachable for read-only users requires aligning the route-guard semantics (this change deliberately did not touch `router/index.ts`).
 - **Empty-permission compatibility**: when a token was issued by an older version (no `permissions` claim) or the roles are not registered in `role_permissions`, the frontend permission list is empty and imposes **no restriction** on menus/routes, so the menu does not vanish. Note this is a **frontend** compatibility behavior (the frontend cannot evaluate URL rules); the backend now fail-closes unmatched `/api/**` paths — the two are independent.
 
 ## Upgrade and Migration Notes
 
 ### What a non-ADMIN console user loses
 
-**Nothing on today's endpoint set.** The coverage self-check currently reports **MISSING = 0** (every mapped `/api/**` endpoint either matches a URL rule or sits in the explicit exemption list), so anything a non-ADMIN user can reach today stays reachable under `DENY_ALL`. Confirm via the startup self-check log and the `rbacEndpointCoverage` entry on `/actuator/health`.
+**Almost nothing on today's endpoint set.** The one exception is `GET /api/loadbalancer/config/**`: `#567` moved it from `lb:monitoring:read` to `lb:config:read`, so VIEWER — which holds only `lb:monitoring:read` — can no longer read that endpoint (it only serves the "Strategy Config" page, which itself requires `lb:config:write`). The coverage self-check currently reports **MISSING = 0** (every mapped `/api/**` endpoint either matches a URL rule or sits in the explicit exemption list), so anything a non-ADMIN user can reach today stays reachable under `DENY_ALL`. Confirm via the startup self-check log and the `rbacEndpointCoverage` entry on `/actuator/health`.
 
 ### API-Key integrator checklist
 

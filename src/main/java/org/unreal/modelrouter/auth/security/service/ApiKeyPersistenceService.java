@@ -453,5 +453,18 @@ public class ApiKeyPersistenceService {
         if (apiKey.getDailyRequestLimit() <= 0L) {
             apiKey.setDailyRequestLimit(0L);
         }
+        // TA3：小时 / 月限额的负值同样归一为 0（不限制），与每日限额口径一致
+        if (apiKey.getHourlyRequestLimit() <= 0L) {
+            apiKey.setHourlyRequestLimit(0L);
+        }
+        if (apiKey.getHourlyTokenLimit() <= 0L) {
+            apiKey.setHourlyTokenLimit(0L);
+        }
+        if (apiKey.getMonthlyRequestLimit() <= 0L) {
+            apiKey.setMonthlyRequestLimit(0L);
+        }
+        if (apiKey.getMonthlyTokenLimit() <= 0L) {
+            apiKey.setMonthlyTokenLimit(0L);
+        }
     }
 }

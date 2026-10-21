@@ -3,10 +3,12 @@ package org.unreal.modelrouter.auth.sanitization.controller;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.unreal.modelrouter.auth.sanitization.SanitizationService;
 import org.unreal.modelrouter.auth.sanitization.impl.DefaultSanitizationService;
+import org.unreal.modelrouter.auth.sanitization.persistence.SanitizationConfigStore;
 import org.unreal.modelrouter.auth.security.config.properties.SanitizationConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.model.RuleType;
@@ -20,9 +22,15 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @DisplayName("SanitizationConfigController 测试")
@@ -31,6 +39,7 @@ class SanitizationConfigControllerTest {
     private SecurityProperties securityProperties;
     private SanitizationService sanitizationService;
     private DefaultSanitizationService defaultSanitizationService;
+    private SanitizationConfigStore configStore;
     private SanitizationConfigController controller;
 
     @BeforeEach
@@ -38,6 +47,7 @@ class SanitizationConfigControllerTest {
         securityProperties = new SecurityProperties();
         sanitizationService = mock(SanitizationService.class);
         defaultSanitizationService = mock(DefaultSanitizationService.class);
+        configStore = mock(SanitizationConfigStore.class);
         when(defaultSanitizationService.rebuildRulesFromProperties()).thenReturn(Mono.empty());
         when(sanitizationService.getAllRules()).thenReturn(Mono.just(List.of(
                 SanitizationRule.builder()
@@ -52,7 +62,8 @@ class SanitizationConfigControllerTest {
         )));
         when(sanitizationService.sanitizeForStorage(anyString(), anyString()))
                 .thenAnswer(inv -> Mono.just(inv.getArgument(0, String.class).replaceAll("\\d{11}", "***********")));
-        controller = new SanitizationConfigController(securityProperties, sanitizationService, defaultSanitizationService);
+        controller = new SanitizationConfigController(
+                securityProperties, sanitizationService, defaultSanitizationService, configStore);
     }
 
     @Test
@@ -195,5 +206,85 @@ class SanitizationConfigControllerTest {
         assertEquals(1, rules.size());
         assertEquals("request-pii-pattern-1", rules.get(0).get("ruleId"));
         assertEquals("PII_PATTERN", rules.get(0).get("type"));
+    }
+
+    // ==================== TA2：脱敏配置持久化 ====================
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void updateConfig_shouldPersistExplicitScopeBeforeRebuild() {
+        SanitizationConfigController.SanitizationUpdateRequest request =
+                new SanitizationConfigController.SanitizationUpdateRequest();
+        SanitizationConfigController.SanitizationSubUpdate req =
+                new SanitizationConfigController.SanitizationSubUpdate();
+        req.enabled = false;
+        req.sensitiveWords = List.of("secret-word");
+        request.request = req;
+
+        ResponseEntity<RouterResponse<Map<String, Object>>> resp = controller.updateConfig(request).block();
+        assertEquals(200, resp.getStatusCode().value());
+        assertEquals("脱敏配置已更新", resp.getBody().getMessage());
+
+        // 只写显式指定的 scope（本次只改了 request），且操作者来自认证上下文（无上下文 = system）
+        InOrder order = inOrder(configStore, defaultSanitizationService);
+        order.verify(configStore).persist(securityProperties, true, false, "system");
+        order.verify(defaultSanitizationService).rebuildRulesFromProperties();
+        assertFalse(securityProperties.getSanitization().getRequest().isEnabled());
+    }
+
+    @Test
+    void updateConfig_shouldRejectInvalidRegexWithoutTouchingMemoryOrDatabase() {
+        SanitizationConfigController.SanitizationUpdateRequest request =
+                new SanitizationConfigController.SanitizationUpdateRequest();
+        SanitizationConfigController.SanitizationSubUpdate req =
+                new SanitizationConfigController.SanitizationSubUpdate();
+        req.enabled = false;
+        req.maskingChar = "#";
+        req.piiPatterns = List.of("([unclosed");
+        request.request = req;
+
+        ApiException ex = assertThrows(ApiException.class, () -> controller.updateConfig(request).block());
+        assertEquals("INVALID_REQUEST", ex.getErrorCode());
+
+        // 旧实现先写 enabled/maskingChar 再校验 piiPatterns，校验失败会留下半更新；现在一个字段都不改。
+        SanitizationConfig.RequestSanitization current = securityProperties.getSanitization().getRequest();
+        assertTrue(current.isEnabled());
+        assertEquals("*", current.getMaskingChar());
+        assertEquals(List.of(), current.getPiiPatterns());
+        verify(configStore, never()).persist(any(SecurityProperties.class), anyBoolean(), anyBoolean(), anyString());
+        verify(defaultSanitizationService, never()).rebuildRulesFromProperties();
+    }
+
+    @Test
+    void updateConfig_shouldRollbackMemoryWhenPersistFails() {
+        securityProperties.getSanitization().getRequest().setEnabled(true);
+        securityProperties.getSanitization().getRequest().setSensitiveWords(List.of("old-word"));
+        securityProperties.getSanitization().getRequest().setPiiPatterns(List.of("\\d{11}"));
+        securityProperties.getSanitization().getRequest().setMaskingChar("*");
+
+        doThrow(new IllegalStateException("database down"))
+                .when(configStore).persist(any(SecurityProperties.class), anyBoolean(), anyBoolean(), anyString());
+
+        SanitizationConfigController.SanitizationUpdateRequest request =
+                new SanitizationConfigController.SanitizationUpdateRequest();
+        SanitizationConfigController.SanitizationSubUpdate req =
+                new SanitizationConfigController.SanitizationSubUpdate();
+        req.enabled = false;
+        req.sensitiveWords = List.of("new-word");
+        req.piiPatterns = List.of("[a-z]+");
+        req.maskingChar = "#";
+        request.request = req;
+
+        ApiException ex = assertThrows(ApiException.class, () -> controller.updateConfig(request).block());
+        assertEquals("INTERNAL_ERROR", ex.getErrorCode());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getStatus());
+
+        // 落库失败 ⇒ 内存回到更新前，且不重建规则（否则运行态会按未持久化的配置生效）
+        SanitizationConfig.RequestSanitization after = securityProperties.getSanitization().getRequest();
+        assertTrue(after.isEnabled());
+        assertEquals(List.of("old-word"), after.getSensitiveWords());
+        assertEquals(List.of("\\d{11}"), after.getPiiPatterns());
+        assertEquals("*", after.getMaskingChar());
+        verify(defaultSanitizationService, never()).rebuildRulesFromProperties();
     }
 }

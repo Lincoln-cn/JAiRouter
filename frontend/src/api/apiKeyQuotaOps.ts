@@ -9,6 +9,14 @@ export interface QuotaLimitsPayload {
   dailyRequestLimit?: number
   dailyTokenLimit?: number
   rateLimitPerMinute?: number
+  /** 每小时请求上限（TA3，0 = 不限） */
+  hourlyRequestLimit?: number
+  /** 每小时 Token 上限（TA3，0 = 不限） */
+  hourlyTokenLimit?: number
+  /** 每月请求上限（TA3，0 = 不限） */
+  monthlyRequestLimit?: number
+  /** 每月 Token 上限（TA3，0 = 不限） */
+  monthlyTokenLimit?: number
   quotaAlertThreshold?: number
 }
 

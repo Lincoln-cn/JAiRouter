@@ -49,11 +49,13 @@ class QuotaEnforcementServiceTest {
     private static final String KEY_HASH = "hash-key-1";
     private static final ZoneId ZONE = ZoneId.of("Asia/Shanghai");
 
-    /** 固定时刻 2026-03-14 13:45:30（分钟窗口剩 30 秒、当天剩 10h14m30s） */
+    /** 固定时刻 2026-03-14 13:45:30（分钟剩 30 秒、小时剩 14m30s、当天剩 10h14m30s、当月剩 17d10h14m30s） */
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 3, 14, 13, 45, 30);
 
     private static final long SECONDS_TO_NEXT_MINUTE = 30L;
+    private static final long SECONDS_TO_NEXT_HOUR = 870L;
     private static final long SECONDS_TO_NEXT_DAY = 36870L;
+    private static final long SECONDS_TO_NEXT_MONTH = 1505670L;
 
     @Mock
     private ApiKeyService apiKeyService;
@@ -159,7 +161,7 @@ class QuotaEnforcementServiceTest {
     }
 
     @Test
-    @DisplayName("判定优先级：日请求数 → 日 token → 每分钟，命中即返回")
+    @DisplayName("判定优先级：小时请求数 → 日请求数 → 日 token → 月限额 → 每分钟，命中即返回")
     void evaluation_shouldReportFirstHitByPriority() {
         seedUsage(5, 5000L);
         registerApiKey(1L, 1L, 1);
@@ -167,6 +169,106 @@ class QuotaEnforcementServiceTest {
         final QuotaLimitViolation violation = enforcementService.evaluate(KEY_ID, 10L).orElseThrow();
 
         assertEquals(QuotaLimitViolation.METRIC_DAILY_REQUESTS, violation.metric());
+    }
+
+    // ==================== 小时 / 月限额（TA3） ====================
+
+    @Test
+    @DisplayName("小时请求限额：预留请求数触达 hourlyRequestLimit 时拒绝并给出 HOUR 窗口信息")
+    void hourlyRequestLimit_shouldRejectWhenReached() {
+        seedUsage(3, 0L);
+        registerApiKeyWithWindows(3L, 0L, 0L, 0L, 0L, 0L, 0);
+
+        final Optional<QuotaLimitViolation> violation = enforcementService.tryReserve(request, KEY_ID, 0L);
+
+        assertTrue(violation.isPresent(), "第 4 个请求应被小时限额拒绝");
+        final QuotaLimitViolation result = violation.get();
+        assertEquals(QuotaLimitViolation.METRIC_HOURLY_REQUESTS, result.metric());
+        assertEquals(QuotaWindow.HOUR, result.window());
+        assertEquals(3L, result.limit());
+        assertEquals(3L, result.used());
+        assertEquals(0L, result.remaining());
+        assertEquals(SECONDS_TO_NEXT_HOUR, result.retryAfterSeconds(), "Retry-After 应指向下一小时边界");
+        assertTrue(result.describe().contains("hourlyRequestLimit"));
+        assertEquals(3L, requestCount(QuotaWindow.HOUR), "拒绝时不得记账");
+    }
+
+    @Test
+    @DisplayName("小时 token 限额：账本用量 + 本次估算 token 超限时拒绝（含估算参与判定）")
+    void hourlyTokenLimit_shouldAccountForEstimatedTokens() {
+        seedUsage(1, 900L);
+        registerApiKeyWithWindows(0L, 1000L, 0L, 0L, 0L, 0L, 0);
+
+        final Optional<QuotaLimitViolation> exceeded = enforcementService.evaluate(KEY_ID, 150L);
+
+        assertTrue(exceeded.isPresent(), "900 + 150 > 1000 应拒绝");
+        assertEquals(QuotaLimitViolation.METRIC_HOURLY_TOKENS, exceeded.get().metric());
+        assertEquals(QuotaWindow.HOUR, exceeded.get().window());
+        assertEquals(1000L, exceeded.get().limit());
+        assertEquals(900L, exceeded.get().used());
+        assertEquals(100L, exceeded.get().remaining());
+        assertEquals(SECONDS_TO_NEXT_HOUR, exceeded.get().retryAfterSeconds());
+
+        assertTrue(enforcementService.evaluate(KEY_ID, 100L).isEmpty(), "900 + 100 == 1000 应放行");
+    }
+
+    @Test
+    @DisplayName("月请求限额：预留请求数触达 monthlyRequestLimit 时拒绝并给出 MONTH 窗口信息")
+    void monthlyRequestLimit_shouldRejectWhenReached() {
+        seedUsage(3, 0L);
+        registerApiKeyWithWindows(0L, 0L, 0L, 0L, 3L, 0L, 0);
+
+        final Optional<QuotaLimitViolation> violation = enforcementService.tryReserve(request, KEY_ID, 0L);
+
+        assertTrue(violation.isPresent(), "第 4 个请求应被月限额拒绝");
+        final QuotaLimitViolation result = violation.get();
+        assertEquals(QuotaLimitViolation.METRIC_MONTHLY_REQUESTS, result.metric());
+        assertEquals(QuotaWindow.MONTH, result.window());
+        assertEquals(3L, result.limit());
+        assertEquals(3L, result.used());
+        assertEquals(0L, result.remaining());
+        assertEquals(SECONDS_TO_NEXT_MONTH, result.retryAfterSeconds(), "Retry-After 应指向下月 1 日 00:00");
+        assertEquals(3L, requestCount(QuotaWindow.MONTH), "拒绝时不得记账");
+    }
+
+    @Test
+    @DisplayName("月 token 限额：账本用量 + 本次估算 token 超限时拒绝")
+    void monthlyTokenLimit_shouldAccountForEstimatedTokens() {
+        seedUsage(1, 900L);
+        registerApiKeyWithWindows(0L, 0L, 0L, 0L, 0L, 1000L, 0);
+
+        final Optional<QuotaLimitViolation> exceeded = enforcementService.evaluate(KEY_ID, 150L);
+
+        assertTrue(exceeded.isPresent(), "900 + 150 > 1000 应拒绝");
+        assertEquals(QuotaLimitViolation.METRIC_MONTHLY_TOKENS, exceeded.get().metric());
+        assertEquals(QuotaWindow.MONTH, exceeded.get().window());
+        assertEquals(900L, exceeded.get().used());
+        assertEquals(100L, exceeded.get().remaining());
+        assertEquals(SECONDS_TO_NEXT_MONTH, exceeded.get().retryAfterSeconds());
+
+        assertTrue(enforcementService.evaluate(KEY_ID, 100L).isEmpty(), "900 + 100 == 1000 应放行");
+    }
+
+    @Test
+    @DisplayName("判定顺序：小时窗先于日窗（同时触顶时报 HOUR）")
+    void evaluation_shouldReportHourBeforeDay() {
+        seedUsage(5, 0L);
+        registerApiKeyWithWindows(1L, 0L, 1L, 0L, 0L, 0L, 0);
+
+        final QuotaLimitViolation violation = enforcementService.evaluate(KEY_ID, 0L).orElseThrow();
+
+        assertEquals(QuotaLimitViolation.METRIC_HOURLY_REQUESTS, violation.metric());
+    }
+
+    @Test
+    @DisplayName("判定顺序：月窗先于分钟窗（同时触顶时报 MONTH）")
+    void evaluation_shouldReportMonthBeforeMinute() {
+        seedUsage(5, 0L);
+        registerApiKeyWithWindows(0L, 0L, 0L, 0L, 1L, 0L, 1);
+
+        final QuotaLimitViolation violation = enforcementService.evaluate(KEY_ID, 0L).orElseThrow();
+
+        assertEquals(QuotaLimitViolation.METRIC_MONTHLY_REQUESTS, violation.metric());
     }
 
     @Test
@@ -265,6 +367,27 @@ class QuotaEnforcementServiceTest {
         registerApiKey(0L, 0L, 1);
 
         assertTrue(enforcementService.evaluate(KEY_ID, 0L).isEmpty());
+    }
+
+    @Test
+    @DisplayName("HOUR 窗口未启用：小时限额无法度量，按 fail-open 跳过（日限额仍生效）")
+    void hourWindowDisabled_shouldSkipHourlyLimits() {
+        properties.setWindows(List.of(QuotaWindow.DAY));
+        seedUsage(5, 0L);
+        registerApiKeyWithWindows(1L, 1L, 0L, 0L, 0L, 0L, 0);
+
+        assertTrue(enforcementService.evaluate(KEY_ID, 1000L).isEmpty(), "HOUR 未启用时不得按小时限额拒绝");
+        assertTrue(enforcementService.tryReserve(request, KEY_ID, 0L).isEmpty(), "CAS 预留同样跳过未启用窗口");
+    }
+
+    @Test
+    @DisplayName("MONTH 窗口未启用：月限额无法度量，按 fail-open 跳过")
+    void monthWindowDisabled_shouldSkipMonthlyLimits() {
+        properties.setWindows(List.of(QuotaWindow.DAY));
+        seedUsage(5, 0L);
+        registerApiKeyWithWindows(0L, 0L, 0L, 0L, 1L, 1L, 0);
+
+        assertTrue(enforcementService.evaluate(KEY_ID, 1000L).isEmpty(), "MONTH 未启用时不得按月限额拒绝");
     }
 
     // ==================== 结算（冲正 / 回滚 / 恰一次） ====================
@@ -386,6 +509,39 @@ class QuotaEnforcementServiceTest {
             .keyHash(KEY_HASH)
             .dailyRequestLimit(dailyRequestLimit)
             .dailyTokenLimit(dailyTokenLimit)
+            .rateLimitPerMinute(rateLimitPerMinute)
+            .enabled(true)
+            .build());
+        keyIdIndex.put(KEY_ID, KEY_HASH);
+    }
+
+    /**
+     * 注册一个带四窗口限额的 API Key（TA3：小时 / 日 / 月 / 每分钟）。
+     *
+     * @param hourlyRequestLimit  小时请求限额（0 = 不限）
+     * @param hourlyTokenLimit    小时 token 限额（0 = 不限）
+     * @param dailyRequestLimit   日请求限额（0 = 不限）
+     * @param dailyTokenLimit     日 token 限额（0 = 不限）
+     * @param monthlyRequestLimit 月请求限额（0 = 不限）
+     * @param monthlyTokenLimit   月 token 限额（0 = 不限）
+     * @param rateLimitPerMinute  每分钟请求限额（0 = 不限）
+     */
+    private void registerApiKeyWithWindows(final long hourlyRequestLimit,
+                                           final long hourlyTokenLimit,
+                                           final long dailyRequestLimit,
+                                           final long dailyTokenLimit,
+                                           final long monthlyRequestLimit,
+                                           final long monthlyTokenLimit,
+                                           final int rateLimitPerMinute) {
+        apiKeyCache.put(KEY_HASH, ApiKey.builder()
+            .keyId(KEY_ID)
+            .keyHash(KEY_HASH)
+            .hourlyRequestLimit(hourlyRequestLimit)
+            .hourlyTokenLimit(hourlyTokenLimit)
+            .dailyRequestLimit(dailyRequestLimit)
+            .dailyTokenLimit(dailyTokenLimit)
+            .monthlyRequestLimit(monthlyRequestLimit)
+            .monthlyTokenLimit(monthlyTokenLimit)
             .rateLimitPerMinute(rateLimitPerMinute)
             .enabled(true)
             .build());

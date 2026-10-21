@@ -14,6 +14,10 @@ export interface ApiKeyFormModel {
   dailyRequestLimit: number
   dailyTokenLimit: number
   rateLimitPerMinute: number
+  hourlyRequestLimit: number
+  hourlyTokenLimit: number
+  monthlyRequestLimit: number
+  monthlyTokenLimit: number
   quotaAlertThreshold: number
   rotationPeriodDays: number
 }

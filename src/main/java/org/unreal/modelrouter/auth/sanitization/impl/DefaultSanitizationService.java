@@ -9,6 +9,7 @@ import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.exception.SanitizationException;
 import org.unreal.modelrouter.auth.sanitization.SanitizationRuleEngine;
 import org.unreal.modelrouter.auth.sanitization.SanitizationService;
+import org.unreal.modelrouter.auth.sanitization.persistence.SanitizationConfigStore;
 import org.unreal.modelrouter.auth.security.config.properties.SanitizationConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.model.RuleType;
@@ -39,6 +40,13 @@ public class DefaultSanitizationService implements SanitizationService {
      */
     @Autowired(required = false)
     private SecurityMetrics securityMetrics;
+
+    /**
+     * 脱敏配置持久化存储（TA2）。可选依赖：单测直接 new 出本类时该字段为 null，
+     * 启动装载就只按 yml 配置派生规则。
+     */
+    @Autowired(required = false)
+    private SanitizationConfigStore configStore;
     
     /**
      * 脱敏规则存储
@@ -60,7 +68,18 @@ public class DefaultSanitizationService implements SanitizationService {
     @PostConstruct
     public void initializeRules() {
         log.info("初始化脱敏规则");
-        
+
+        // TA2：启动装载 DB 优先 —— DB 里存在该 scope 的配置快照时用它覆盖 yml 的值，
+        // 没有行则沿用 yml。规则随后一律由内存中的配置派生，因此重启后规则与配置自然一致。
+        if (configStore != null) {
+            try {
+                configStore.loadInto(securityProperties);
+            } catch (RuntimeException e) {
+                // 读库失败不阻断启动：回退到 yml，但必须把「本次运行可能不是管理员保存的配置」记进日志。
+                log.error("脱敏配置快照装载失败，回退到 yml 配置", e);
+            }
+        }
+
         // 从配置中加载请求脱敏规则
         loadRequestRules();
         

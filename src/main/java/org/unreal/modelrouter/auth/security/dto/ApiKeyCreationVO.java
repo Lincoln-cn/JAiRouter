@@ -79,6 +79,16 @@ public class ApiKeyCreationVO {
     private LocalDateTime lastRotatedAt;
 
     /**
+     * 每小时请求上限
+     */
+    private Long hourlyRequestLimit;
+
+    /**
+     * 每小时 Token 使用上限
+     */
+    private Long hourlyTokenLimit;
+
+    /**
      * 每日请求上限
      */
     private Long dailyRequestLimit;
@@ -87,6 +97,16 @@ public class ApiKeyCreationVO {
      * 每日 Token 使用上限
      */
     private Long dailyTokenLimit;
+
+    /**
+     * 每月请求上限
+     */
+    private Long monthlyRequestLimit;
+
+    /**
+     * 每月 Token 使用上限
+     */
+    private Long monthlyTokenLimit;
 
     /**
      * 每分钟请求速率限制

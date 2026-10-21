@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.3.6
-> **最后更新**: 2026-10-19
+> **文档版本**: 3.4.0
+> **最后更新**: 2026-10-21
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -22,7 +22,28 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 ## 版本历史
 
-### [Unreleased] - 未发布 - 控制台 UI 改造（品牌、登录页、信息架构、全站去彩虹化）
+### [3.4.0] - 2026-10-21 - 功能发布（控制台重构 + 权限语义化 + 脱敏配置持久化 + 配额小时/月限额）
+
+#### 权限语义化：补齐 8 个只读码（TA4 / #567）
+
+- 新增 8 个只读权限码（`lb:config:read`、`tracing:config:read`、`security:apikeys:read`、`security:sanitization:read`、`security:jwttokens:read`、`security:blacklist:read`、`system:accounts:read`、`system:permissions:read`），权限码总数 **55 → 63**。
+- URL 规则表由 68 条增至 75 条：原先用 `any()` 把读请求绑定到写码的 7 条规则拆成「GET → read 码 / 写 → manage 码」；新增 `GET /api/loadbalancer/config/** → lb:config:read` 窄规则，插在 `/api/loadbalancer/**` 通配之前。
+- 只读角色不再需要持写码就能看列表：`RolePermissionSeeder` 的增量收敛补一条不变式 —— **角色模板里持有某个 `:write`/`:manage` 时，必须同时持有对应的 `:read`**（升级后各内置角色的可见面不会变小；管理角色 63 码、操作员 46、普通用户 29、只读 27）。
+- 控制台 9 个只挂写码的菜单入口改为「读或写」任一命中即可显示；前端路由守卫同步由「全部满足」改为「任一满足」，7 条路由的权限声明补成 `[read, manage]`。
+
+#### 脱敏配置持久化（TA2）
+
+- 控制台改的脱敏规则、敏感词、PII 模式现在**落库**（新表 `sanitization_config`，按 `config_scope`（request / response）自然主键，Flyway `V4` 双方言脚本），重启后由数据库优先装载，数据库无行时回落 yml —— 此前这些改动只存在内存里，重启即丢且规则 ID 会复用。
+- 保存顺序改为「先落库、后重建规则」：落库失败时把内存配置回滚到本次更新前并返回 500，避免「运行态按新配置生效、重启后又回旧值」的不一致。
+- `updated_at` / `updated_by` 记录最后一次修改时间与操作者（无认证上下文时记 `system`）。
+
+#### 配额小时 / 月限额（TA3）
+
+- API Key 新增 4 个限额：`hourlyRequestLimit`、`hourlyTokenLimit`、`monthlyRequestLimit`、`monthlyTokenLimit`（`0` = 不限制）。窗口枚举 `QuotaWindow` 本就支持 MINUTE/HOUR/DAY/MONTH，本次把限额模型与判定、账本写入、详情回显补齐。
+- 判定顺序为 HOUR → DAY → MONTH → MINUTE，命中即拒并给出对应维度的限额违规；重置配额仍按 Key 清空全部窗口。
+- 控制台 API Key 的「配额」抽屉与新建/编辑表单增加四个输入（小时请求/Token、月请求/Token）；没有账本数据时窗口百分比显示为空而不是 0%，避免把「不知道」画成「用了 0%」。
+
+#### 控制台重构（P0-1 ～ P3，33 页 + 登录页 + 导航）
 
 #### 控制台导航信息架构（P0-3）
 
@@ -83,7 +104,9 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 #### 升级提示
 
-- 无破坏性接口变更、无数据迁移；旧 URL 全部有效。
+- **有一处数据库结构变更**：Flyway `V4__sanitization_config.sql`（H2 与 PostgreSQL 各一份，只新增 `sanitization_config` 表，不改既有表）。按既有迁移流程启动即可，无需手工操作。
+- **有一处授权语义变更**：写码不再隐含读权限的替代路径 —— 读接口改由 `:read` 码把关；升级时 `RolePermissionSeeder` 会为持有写码的内置角色补上对应读码，自定义角色若只配了写码且需要看列表，请在角色管理里补只读码。
+- 无破坏性接口变更；旧 URL 全部有效，菜单结构变化不影响深链。
 - 若有自动化脚本依赖菜单结构，请改为按 URL 或权限判断：菜单已由 9 组 40 项变为 7 组 28 项。
 
 ### [3.3.6] - 2026-10-19 - 补丁发布（库结构迁移 + 两处授权收紧 + 页内写门控与契约瘦身）
