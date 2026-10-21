@@ -42,6 +42,8 @@
     "message": "消息",
     "details": "详情",
     "serviceOverview": "服务配置速览",
+    "instanceTotal": "共 {count} 个实例",
+    "viewInstances": "查看实例配置",
     "globalConfig": "全局配置",
     "others": "其他",
     "adapter": "适配器",

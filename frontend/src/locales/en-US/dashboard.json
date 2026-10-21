@@ -42,6 +42,8 @@
     "message": "Message",
     "details": "Details",
     "serviceOverview": "Service Configuration Overview",
+    "instanceTotal": "{count} instances",
+    "viewInstances": "View instances",
     "globalConfig": "Global Configuration",
     "others": "Others",
     "adapter": "Adapter",

@@ -102,6 +102,31 @@ export default {
       }
     }
 
+    // 服务配置速览：页签必须能切换（页签曾做成 router-link，点一下整页跳走、表格不换 —— 用户 2026-10-21 反馈）
+    await gotoApp(page, '/dashboard/main', { waitMs: 800 })
+    const svcCard = page.locator('.config-card').first()
+    const svcTabs = svcCard.locator('.el-tabs__item')
+    // 服务类型页签来自 /api/monitoring/overview 的异步数据：等它渲染出来（最多 8s），否则只有「全局配置」一个页签
+    for (let i = 0; i < 16; i += 1) {
+      if ((await svcTabs.count()) > 2) break
+      await page.waitForTimeout(500)
+    }
+    const svcTabCount = await svcTabs.count()
+    if (svcTabCount > 2) {
+      const beforePath = currentPathname(page)
+      await svcTabs.nth(2).click()
+      await page.waitForTimeout(400)
+      const activeLabel = (await svcCard.locator('.el-tabs__item.is-active').first().innerText().catch(() => '')).trim()
+      const afterPath = currentPathname(page)
+      check(
+        'overview-service-tab-switch',
+        activeLabel.length > 0 && afterPath === beforePath,
+        `active=${activeLabel} path=${afterPath} tabs=${svcTabCount}`
+      )
+    } else {
+      check('overview-service-tab-switch', false, `tabs=${svcTabCount}`)
+    }
+
     await page.close()
   }
 }
