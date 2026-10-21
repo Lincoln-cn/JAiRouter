@@ -6,6 +6,7 @@
       "resumeMonitoring": "Resume Monitoring",
       "pauseMonitoring": "Pause Monitoring",
       "clearHistory": "Clear History",
+      "moreActions": "More",
       "export": "Export",
       "exportJson": "Export JSON",
       "exportCsv": "Export CSV",

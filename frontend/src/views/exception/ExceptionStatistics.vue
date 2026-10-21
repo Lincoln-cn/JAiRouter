@@ -22,64 +22,65 @@
       </el-form>
     </el-card>
 
-    <!-- 统计概览 -->
-    <el-row :gutter="20" class="stats-row">
-      <el-col :span="6">
-        <StatCard :icon="Warning" :label="t('exception.statistics.totalEventsLabel')" :value="statistics.totalEvents" tone="danger" />
-      </el-col>
-      <el-col :span="6">
-        <StatCard :icon="DataAnalysis" :label="t('exception.statistics.totalTypesLabel')" :value="statistics.totalTypes" tone="primary" />
-      </el-col>
-      <el-col :span="6">
-        <StatCard :icon="TrendCharts" :label="t('exception.statistics.topErrorTypeLabel')" :value="topErrorType?.count || 0" tone="warning" />
-      </el-col>
-      <el-col :span="6">
-        <StatCard :icon="CircleCheck" :label="t('exception.statistics.successRateLabel')" :value="successRate" unit="%" tone="success" />
-      </el-col>
-    </el-row>
+    <!-- 统计概览：中性指标条，异常总数 > 0 才上语义色 -->
+    <div class="stats-row">
+      <MetricStrip :items="metricItems" :columns="4" />
+    </div>
 
     <!-- 图表区域 -->
     <el-row :gutter="20">
       <!-- 按类型统计 -->
       <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <span class="chart-title">{{ t('exception.statistics.typeDistribution') }}</span>
-          </template>
+        <ChartCard
+          :title="t('exception.statistics.typeDistribution')"
+          :empty="typeEmpty"
+          :empty-title="t('common.chartEmpty')"
+          :empty-description="t('common.chartEmptyHint')"
+          :height="300"
+        >
           <div ref="typeChartRef" class="chart-container"></div>
-        </el-card>
+        </ChartCard>
       </el-col>
 
       <!-- 按分类统计 -->
       <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <span class="chart-title">{{ t('exception.statistics.categoryStatistics') }}</span>
-          </template>
+        <ChartCard
+          :title="t('exception.statistics.categoryStatistics')"
+          :empty="categoryEmpty"
+          :empty-title="t('common.chartEmpty')"
+          :empty-description="t('common.chartEmptyHint')"
+          :height="300"
+        >
           <div ref="categoryChartRef" class="chart-container"></div>
-        </el-card>
+        </ChartCard>
       </el-col>
     </el-row>
 
     <el-row :gutter="20" style="margin-top: 20px;">
       <!-- 按 HTTP 状态码统计 -->
       <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <span class="chart-title">{{ t('exception.statistics.httpStatusDistribution') }}</span>
-          </template>
+        <ChartCard
+          :title="t('exception.statistics.httpStatusDistribution')"
+          :empty="httpStatusEmpty"
+          :empty-title="t('common.chartEmpty')"
+          :empty-description="t('common.chartEmptyHint')"
+          :height="300"
+        >
           <div ref="httpStatusChartRef" class="chart-container"></div>
-        </el-card>
+        </ChartCard>
       </el-col>
 
       <!-- 小时分布 -->
       <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <span class="chart-title">{{ t('exception.statistics.hourlyDistribution') }}</span>
-          </template>
+        <ChartCard
+          :title="t('exception.statistics.hourlyDistribution')"
+          :empty="hourlyEmpty"
+          :empty-title="t('common.chartEmpty')"
+          :empty-description="t('common.chartEmptyHint')"
+          :height="300"
+        >
           <div ref="hourlyChartRef" class="chart-container"></div>
-        </el-card>
+        </ChartCard>
       </el-col>
     </el-row>
 
@@ -148,12 +149,6 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { getErrorMessage } from '@/utils/error'
-import {
-  Warning,
-  DataAnalysis,
-  TrendCharts,
-  CircleCheck,
-} from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import type { ECharts } from 'echarts'
 import {
@@ -161,15 +156,18 @@ import {
   getRecentExceptionEvents
 } from '@/api/exception'
 import type { ExceptionEvent, ExceptionStatistics } from '@/types/exception'
-import StatCard from '@/components/StatCard.vue'
+import MetricStrip, { type MetricStripItem } from '@/components/MetricStrip.vue'
+import ChartCard from '@/components/ChartCard.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import { useChartTheme } from '@/composables/useChartTheme'
+import { useChartSkin } from '@/composables/useChartSkin'
 import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 import { formatDateTime as formatDateTimeBase } from '@/utils/format'
 
 const { getChartTheme } = useChartTheme()
+const { skin } = useChartSkin()
 
-const { t } = useI18n()
+const { t, te } = useI18n()
 
 const router = useRouter()
 
@@ -227,6 +225,44 @@ const topClientIps = computed(() => {
   return statistics.value.topClientIps || []
 })
 
+// 顶部指标条：只有真异常才上语义色；无事件时成功率给「—」而不是 100%
+const metricItems = computed<MetricStripItem[]>(() => {
+  const s = statistics.value
+  const hasEvents = s.totalEvents > 0
+  return [
+    {
+      key: 'total',
+      label: t('exception.statistics.totalEventsLabel'),
+      value: s.totalEvents,
+      tone: hasEvents ? 'danger' : 'default'
+    },
+    {
+      key: 'types',
+      label: t('exception.statistics.totalTypesLabel'),
+      value: s.totalTypes
+    },
+    {
+      key: 'topType',
+      label: t('exception.statistics.topErrorTypeLabel'),
+      value: topErrorType.value.count,
+      hint: hasEvents ? topErrorType.value.type.split('.').pop() : undefined
+    },
+    {
+      key: 'successRate',
+      label: t('exception.statistics.successRateLabel'),
+      value: hasEvents ? `${successRate.value}%` : '—'
+    }
+  ]
+})
+
+const hasKeys = (obj?: Record<string, number>) => Object.keys(obj ?? {}).length > 0
+
+// 四张图各自的空态判定（空态由 ChartCard 覆盖层渲染，图表容器始终挂载）
+const typeEmpty = computed(() => !hasKeys(statistics.value.eventsByType))
+const categoryEmpty = computed(() => !hasKeys(statistics.value.eventsByCategory))
+const httpStatusEmpty = computed(() => !hasKeys(statistics.value.eventsByHttpStatus))
+const hourlyEmpty = computed(() => (statistics.value.hourlyDistribution ?? []).length === 0)
+
 // 索引方法
 const indexMethod = (index: number) => index + 1
 
@@ -259,10 +295,11 @@ const getCategoryTagType = (category?: string) => {
   }
 }
 
-// 格式化分类
+// 格式化分类：优先用 i18n 里的中文名，未知分类退化为「去掉下划线」的可读文本
 const formatCategory = (category?: string) => {
   if (!category) return '-'
-  return category.replace(/_/g, '')
+  const key = `exception.list.errorCategories.${category}`
+  return te(key) ? t(key) : category.replace(/_/g, ' ')
 }
 
 // 计算百分比
@@ -313,7 +350,6 @@ const initCharts = () => {
 const updateTypeChart = () => {
   if (!typeChart) return
 
-  const theme = getChartTheme()
   const data = Object.entries(statistics.value.eventsByType || {})
     .map(([type, count]) => ({ 
       name: type, 
@@ -325,13 +361,14 @@ const updateTypeChart = () => {
     .slice(0, 10) // 只显示前 10
 
   const option = {
+    color: skin.value.palette,
     tooltip: {
       trigger: 'item',
       formatter: (params: unknown) => {
         const p = params as { data: { shortName?: string }; name?: string; value?: number; percent?: number }
         return `<div style="max-width: 300px;">
           <div style="font-weight: bold; margin-bottom: 5px;">${p.data.shortName}</div>
-          <div style="font-size: 12px; color: ${theme.info};">${p.name}</div>
+          <div style="font-size: 12px; color: ${skin.value.textMuted};">${p.name}</div>
           <div style="margin-top: 5px;">${t('exception.statistics.tooltipCount')}<strong>${p.value}</strong> (${p.percent}%)</div>
         </div>`
       }
@@ -353,90 +390,74 @@ const updateTypeChart = () => {
     series: [
       {
         type: 'pie',
-        radius: ['40%', '70%'],
-        left: '15%',
+        radius: ['42%', '68%'],
+        center: ['32%', '52%'],
+        // 引线标签会与右侧图例打架（长类名尤其明显）⇒ 只留图例 + tooltip
+        label: { show: false },
+        labelLine: { show: false },
         data: data.map(d => ({ ...d, name: d.shortName })),
-        label: {
-          show: true,
-          position: 'outside',
-          formatter: (params: unknown) => {
-            const p = params as { name?: string; value?: number; percent?: number }
-            return `{name|${p.name}}\n{value|${p.value} (${p.percent}%)}`
-          },
-          rich: {
-            name: {
-              fontSize: 12,
-              lineHeight: 18,
-              width: 120,
-              overflow: 'truncate'
-            },
-            value: {
-              fontSize: 11,
-              color: theme.info,
-              lineHeight: 16
-            }
-          }
-        },
         emphasis: {
           itemStyle: {
             shadowBlur: 10,
             shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
-          },
-          label: {
-            fontSize: 14,
-            fontWeight: 'bold'
+            shadowColor: 'rgba(0, 0, 0, 0.35)'
           }
         }
       }
     ]
   }
 
-  typeChart.setOption(option)
+  typeChart.setOption(option, { notMerge: true })
 }
 
 // 更新分类统计图
 const updateCategoryChart = () => {
   if (!categoryChart) return
 
-  const theme = getChartTheme()
   const data = Object.entries(statistics.value.eventsByCategory || {})
     .map(([category, count]) => ({ name: formatCategory(category), value: count }))
 
   const option = {
+    grid: skin.value.grid,
     tooltip: {
+      ...skin.value.tooltip,
       trigger: 'axis',
       axisPointer: {
         type: 'shadow'
       }
     },
     xAxis: {
+      ...skin.value.categoryAxis,
       type: 'category',
       data: data.map(item => item.name),
       axisLabel: {
+        ...(skin.value.categoryAxis.axisLabel as Record<string, unknown>),
         interval: 0,
         rotate: 0
       }
     },
     yAxis: {
+      ...skin.value.valueAxis,
       type: 'value'
     },
     series: [
       {
         type: 'bar',
         data: data.map(item => item.value),
+        barMaxWidth: 24,
         itemStyle: {
-          color: theme.primary
+          color: skin.value.palette[0]
         },
         label: {
           show: true,
-          position: 'top'
+          position: 'top',
+          color: skin.value.textMuted
         }
       }
     ]
   }
 
-  categoryChart.setOption(option)
+  categoryChart.setOption(option, { notMerge: true })
 }
 
 // 更新 HTTP 状态码图
@@ -449,23 +470,28 @@ const updateHttpStatusChart = () => {
     .sort((a, b) => parseInt(a.name) - parseInt(b.name))
 
   const option = {
+    grid: skin.value.grid,
     tooltip: {
+      ...skin.value.tooltip,
       trigger: 'axis',
       axisPointer: {
         type: 'shadow'
       }
     },
     xAxis: {
+      ...skin.value.categoryAxis,
       type: 'category',
       data: data.map(item => item.name)
     },
     yAxis: {
+      ...skin.value.valueAxis,
       type: 'value'
     },
     series: [
       {
         type: 'bar',
         data: data.map(item => item.value),
+        barMaxWidth: 24,
         itemStyle: {
           color: (params: unknown) => {
             const status = parseInt(String((params as { name?: string }).name ?? ''), 10)
@@ -476,20 +502,20 @@ const updateHttpStatusChart = () => {
         },
         label: {
           show: true,
-          position: 'top'
+          position: 'top',
+          color: skin.value.textMuted
         }
       }
     ]
   }
 
-  httpStatusChart.setOption(option)
+  httpStatusChart.setOption(option, { notMerge: true })
 }
 
 // 更新小时分布图
 const updateHourlyChart = () => {
   if (!hourlyChart) return
 
-  const theme = getChartTheme()
   // 初始化 24 小时数据
   const hourlyData = new Array(24).fill(0)
   ;(statistics.value.hourlyDistribution || []).forEach(item => {
@@ -502,21 +528,26 @@ const updateHourlyChart = () => {
   const hours = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`)
 
   const option = {
+    grid: skin.value.grid,
     tooltip: {
+      ...skin.value.tooltip,
       trigger: 'axis',
       axisPointer: {
         type: 'shadow'
       }
     },
     xAxis: {
+      ...skin.value.categoryAxis,
       type: 'category',
       data: hours,
       axisLabel: {
+        ...(skin.value.categoryAxis.axisLabel as Record<string, unknown>),
         interval: 1,
         rotate: 45
       }
     },
     yAxis: {
+      ...skin.value.valueAxis,
       type: 'value'
     },
     series: [
@@ -525,10 +556,11 @@ const updateHourlyChart = () => {
         data: hourlyData,
         smooth: true,
         areaStyle: {
-          opacity: 0.3
+          opacity: 0.18,
+          color: skin.value.palette[0]
         },
         itemStyle: {
-          color: theme.warning
+          color: skin.value.palette[0]
         },
         label: {
           show: false
@@ -537,7 +569,7 @@ const updateHourlyChart = () => {
     ]
   }
 
-  hourlyChart.setOption(option)
+  hourlyChart.setOption(option, { notMerge: true })
 }
 
 // 加载数据
@@ -631,7 +663,7 @@ onBeforeUnmount(() => {
 }
 
 .chart-container {
-  height: 300px;
+  height: 100%;
   width: 100%;
 }
 

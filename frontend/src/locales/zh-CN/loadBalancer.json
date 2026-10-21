@@ -6,6 +6,7 @@
       "resumeMonitoring": "恢复监控",
       "pauseMonitoring": "暂停监控",
       "clearHistory": "清空历史",
+      "moreActions": "更多",
       "export": "导出",
       "exportJson": "导出 JSON",
       "exportCsv": "导出 CSV",

@@ -11,6 +11,7 @@
     <template #toolbar>
       <el-input
         v-model="searchForm.userId"
+        class="filter-input"
         :placeholder="t('jwtTokens.searchUserIdPlaceholder')"
         clearable
         @clear="handleSearch"
@@ -20,14 +21,20 @@
           <el-icon><Search /></el-icon>
         </template>
       </el-input>
-      <el-select v-model="searchForm.status" :placeholder="t('jwtTokens.statusFilter')" clearable @change="handleSearch">
+      <el-select
+        v-model="searchForm.status"
+        class="filter-select"
+        :placeholder="t('jwtTokens.statusFilter')"
+        clearable
+        @change="handleSearch"
+      >
         <el-option :label="t('jwtTokens.all')" value="" />
         <el-option :label="t('jwtTokens.statusActive')" value="ACTIVE" />
         <el-option :label="t('jwtTokens.statusRevoked')" value="REVOKED" />
         <el-option :label="t('jwtTokens.statusExpired')" value="EXPIRED" />
       </el-select>
-      <el-button plain @click="handleSearch">{{ t('jwtTokens.search') }}</el-button>
-      <el-button @click="handleResetSearch">{{ t('jwtTokens.reset') }}</el-button>
+      <el-button type="primary" @click="handleSearch">{{ t('jwtTokens.search') }}</el-button>
+      <el-button plain @click="handleResetSearch">{{ t('jwtTokens.reset') }}</el-button>
     </template>
 
     <el-table
@@ -552,5 +559,21 @@ onMounted(async () => {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+/* 工具条：输入框/下拉给定宽度，避免 el-input 默认 width:100% 各占一整行 */
+.filter-input {
+  width: 240px;
+}
+
+.filter-select {
+  width: 160px;
+}
+
+@media (max-width: 767px) {
+  .filter-input,
+  .filter-select {
+    width: 100%;
+  }
 }
 </style>
