@@ -58,10 +58,16 @@ jairouter:
 ```bash
 # 生产环境 JWT 密钥配置
 export JWT_SECRET="your-very-strong-production-jwt-secret-key-at-least-32-characters-long"
+```
 
-# 可选的过期时间配置
-export JWT_EXPIRATION_MINUTES=15
-export JWT_REFRESH_EXPIRATION_DAYS=30
+令牌有效期**不走环境变量**，请在 `config/auth/jwt.yml` 里设置：
+
+```yaml
+jairouter:
+  security:
+    jwt:
+      expiration-minutes: 15        # 访问令牌有效期
+      refresh-expiration-days: 30   # 刷新令牌有效期
 ```
 
 #### 非对称密钥（RS256/RS384/RS512）
@@ -251,14 +257,25 @@ jairouter:
   security:
     jwt:
       persistence:
-        enabled: true
-        primary-storage: h2    # h2, redis, memory
-        fallback-storage: memory
+        enabled: true              # 持久化总开关
+        storage-path: config-store # 默认持久化实现使用的文件存储目录
+        memory:
+          max-tokens: 50000        # 内存缓存上限
+          cleanup-threshold: 0.8   # 缓存占用到 80% 时开始清理
+          lru-enabled: true
+        startup-recovery:
+          enabled: true            # 启动时从存储恢复令牌
+        composite:
+          enabled: false           # 文件 + Redis 组合存储
+        sync:
+          enabled: false           # 各存储之间的后台同步
         cleanup:
           enabled: true
-          schedule: "0 0 2 * * ?"  # 每天凌晨2点
+          schedule: "0 0 2 * * ?"   # 每天凌晨 2 点
           retention-days: 30
           batch-size: 1000
+        redis:
+          enabled: false           # Redis 连接信息来自 spring.data.redis.*
 ```
 
 ### H2 数据库存储优势
@@ -283,10 +300,9 @@ jairouter:
       blacklist:
         persistence:
           enabled: true
-          primary-storage: h2
-          fallback-storage: memory
-          max-memory-size: 10000
-          cleanup-interval: 3600
+          storage-path: config-store/jwt-blacklist
+          max-memory-size: 10000   # 内存中最多保留的条目数
+          cleanup-interval: 3600   # 清理间隔（秒）
 ```
 
 ### 令牌撤销

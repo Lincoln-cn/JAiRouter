@@ -41,11 +41,11 @@
     "operationFailed": "操作失败",
     "operationFailedDetail": "操作失败: {error}",
     "capability": {
-      "chat": "Chat",
-      "embedding": "Embedding",
-      "rerank": "Rerank",
-      "tts": "TTS",
-      "stt": "STT",
+      "chat": "聊天",
+      "embedding": "嵌入",
+      "rerank": "重排序",
+      "tts": "语音合成",
+      "stt": "语音识别",
       "imgGen": "图像生成",
       "imgEdit": "图像编辑",
       "streaming": "流式"
