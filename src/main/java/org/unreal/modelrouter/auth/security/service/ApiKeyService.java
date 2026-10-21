@@ -103,8 +103,12 @@ public class ApiKeyService {
                 .expiresAt(req.getExpiresAt()).createdAt(LocalDateTime.now()).createdBy(by).creatorIpAddress(ip)
                 .rotationPeriodDays(req.getRotationPeriodDays() != null ? req.getRotationPeriodDays() : 0)
                 .allowedIpAddresses(req.getAllowedIpAddresses())
+                .hourlyRequestLimit(req.getHourlyRequestLimit() != null ? req.getHourlyRequestLimit() : 0L)
+                .hourlyTokenLimit(req.getHourlyTokenLimit() != null ? req.getHourlyTokenLimit() : 0L)
                 .dailyRequestLimit(req.getDailyRequestLimit() != null ? req.getDailyRequestLimit() : 0L)
                 .dailyTokenLimit(req.getDailyTokenLimit() != null ? req.getDailyTokenLimit() : 0L)
+                .monthlyRequestLimit(req.getMonthlyRequestLimit() != null ? req.getMonthlyRequestLimit() : 0L)
+                .monthlyTokenLimit(req.getMonthlyTokenLimit() != null ? req.getMonthlyTokenLimit() : 0L)
                 .rateLimitPerMinute(req.getRateLimitPerMinute() != null ? req.getRateLimitPerMinute() : 0)
                 .quotaAlertThreshold(req.getQuotaAlertThreshold() != null ? req.getQuotaAlertThreshold() : 0.8)
                 .usage(UsageStatistics.builder().totalRequests(0L).successfulRequests(0L).failedRequests(0L)
@@ -117,8 +121,12 @@ public class ApiKeyService {
                 .createdBy(by)
                 .permissions(ak.getPermissions()).enabled(ak.isEnabled()).createdAt(ak.getCreatedAt())
                 .expiresAt(ak.getExpiresAt())
+                .hourlyRequestLimit(ak.getHourlyRequestLimit())
+                .hourlyTokenLimit(ak.getHourlyTokenLimit())
                 .dailyRequestLimit(ak.getDailyRequestLimit())
                 .dailyTokenLimit(ak.getDailyTokenLimit())
+                .monthlyRequestLimit(ak.getMonthlyRequestLimit())
+                .monthlyTokenLimit(ak.getMonthlyTokenLimit())
                 .rateLimitPerMinute(ak.getRateLimitPerMinute())
                 .quotaAlertThreshold(ak.getQuotaAlertThreshold())
                 .warning("密钥值只会显示一次，请妥善保存！").build();
@@ -136,9 +144,13 @@ public class ApiKeyService {
             if (req.getExpiresAt() != null) ak.setExpiresAt(req.getExpiresAt());
             if (req.getPermissions() != null) ak.setPermissions(validatePermissions(req.getPermissions()));
             if (req.getAllowedIpAddresses() != null) ak.setAllowedIpAddresses(req.getAllowedIpAddresses());
+            if (req.getHourlyRequestLimit() != null) ak.setHourlyRequestLimit(req.getHourlyRequestLimit());
+            if (req.getHourlyTokenLimit() != null) ak.setHourlyTokenLimit(req.getHourlyTokenLimit());
             if (req.getDailyRequestLimit() != null) ak.setDailyRequestLimit(req.getDailyRequestLimit());
             if (req.getRotationPeriodDays() != null) ak.setRotationPeriodDays(req.getRotationPeriodDays());
             if (req.getDailyTokenLimit() != null) ak.setDailyTokenLimit(req.getDailyTokenLimit());
+            if (req.getMonthlyRequestLimit() != null) ak.setMonthlyRequestLimit(req.getMonthlyRequestLimit());
+            if (req.getMonthlyTokenLimit() != null) ak.setMonthlyTokenLimit(req.getMonthlyTokenLimit());
             if (req.getRateLimitPerMinute() != null) ak.setRateLimitPerMinute(req.getRateLimitPerMinute());
             if (req.getQuotaAlertThreshold() != null) {
                 // issue #96：更新路径与创建路径统一区间
@@ -402,8 +414,12 @@ public class ApiKeyService {
             .createdAt(ak.getCreatedAt()).createdBy(ak.getCreatedBy()).creatorIpAddress(ak.getCreatorIpAddress())
             .rotationPeriodDays(ak.getRotationPeriodDays()).lastRotatedAt(ak.getLastRotatedAt())
             .needsRotation(ak.needsRotation()).expiresAt(ak.getExpiresAt())
+            .hourlyRequestLimit(ak.getHourlyRequestLimit())
+            .hourlyTokenLimit(ak.getHourlyTokenLimit())
             .dailyRequestLimit(ak.getDailyRequestLimit())
             .dailyTokenLimit(ak.getDailyTokenLimit())
+            .monthlyRequestLimit(ak.getMonthlyRequestLimit())
+            .monthlyTokenLimit(ak.getMonthlyTokenLimit())
             .rateLimitPerMinute(ak.getRateLimitPerMinute())
             .quotaAlertThreshold(ak.getQuotaAlertThreshold())
             .todayRequestCount(ak.getTodayRequestCount())

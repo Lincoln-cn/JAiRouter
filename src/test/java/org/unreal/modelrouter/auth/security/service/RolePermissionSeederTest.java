@@ -75,8 +75,11 @@ class RolePermissionSeederTest {
             // 45 = 44 + monitoring:slowquery:write（#468 新增；OPERATOR 的规则是「所有 :read/:write 码」，
             // 所以新写码会自动进运维角色——与 #454 的 monitoring:metrics:write 同一分工：
             // 运维能重置慢查询统计 / 注册指标，USER/VIEWER 不能）
-            assertEquals(45L, counts.get("OPERATOR"));
-            assertEquals(28L, counts.get("USER"));
+            // #567（B11）：OPERATOR / USER 都持 lb:config:write ⇒ 必须补 lb:config:read，故 45+1 / 28+1；
+            // VIEWER 仍是 27：它是「所有 :read」，但 #567 的 8 个管理面 read 只发给持有对应 manage 的角色，
+            // 只读角色不凭空扩权（见 RolePermissionSeeder.MANAGE_PAIRED_READ_CODES）
+            assertEquals(46L, counts.get("OPERATOR"));
+            assertEquals(29L, counts.get("USER"));
             assertEquals(27L, counts.get("VIEWER"));
         }
 
@@ -95,6 +98,8 @@ class RolePermissionSeederTest {
             assertTrue(codes.contains(PermissionCodes.CONFIG_SERVICES_READ));
             assertTrue(codes.contains(PermissionCodes.CONFIG_SERVICES_WRITE));
             assertTrue(codes.contains(PermissionCodes.LB_CONFIG_WRITE));
+            assertTrue(codes.contains(PermissionCodes.LB_CONFIG_READ),
+                    "#567/B11：OPERATOR 持 lb:config:write，必须同时持 lb:config:read");
             assertTrue(codes.contains(PermissionCodes.SECURITY_AUDIT_READ));
             assertFalse(codes.contains(PermissionCodes.SYSTEM_ACCOUNTS_MANAGE));
             assertFalse(codes.contains(PermissionCodes.SYSTEM_PERMISSIONS_MANAGE));
@@ -119,6 +124,8 @@ class RolePermissionSeederTest {
             }
             assertTrue(codes.contains(PermissionCodes.LB_MONITORING_READ));
             assertTrue(codes.contains(PermissionCodes.LB_CONFIG_WRITE));
+            assertTrue(codes.contains(PermissionCodes.LB_CONFIG_READ),
+                    "#567/B11：持 lb:config:write 必须同时持 lb:config:read");
             assertTrue(codes.contains(PermissionCodes.CB_MONITORING_READ));
             assertTrue(codes.contains(PermissionCodes.CB_HISTORY_READ));
             assertTrue(codes.contains(PermissionCodes.RL_MONITORING_READ));
@@ -151,6 +158,58 @@ class RolePermissionSeederTest {
             assertFalse(codes.contains(PermissionCodes.LB_CONFIG_WRITE));
             assertFalse(codes.contains(PermissionCodes.AI_PLAYGROUND_USE));
             assertFalse(codes.contains(PermissionCodes.TRACING_CONFIG_MANAGE));
+            // #567/B11 反向：只读角色不持任何写/管理码 ⇒ 也不发管理面的 read 码
+            for (String managePairedRead : MANAGE_PAIRED_READ_CODES) {
+                assertFalse(codes.contains(managePairedRead),
+                        "VIEWER 不持写码，不应获得管理面读码: " + managePairedRead);
+            }
+        }
+    }
+
+    /**
+     * #567 / B11 权限语义不变式（不变量级断言，防止后续加码时被无声打破）
+     */
+    @Nested
+    @DisplayName("#567 权限语义不变式（B11）")
+    class PermissionSemanticsInvariantTests {
+
+        @Test
+        @DisplayName("任何模板只要持有 :write / :manage，就必须同时持有配对的 :read")
+        void writeOrManageCodeImpliesPairedReadCode() {
+            List<String> violations = new ArrayList<>();
+            for (Map.Entry<String, List<String>> entry : RolePermissionSeeder.DEFAULT_ROLE_TEMPLATES.entrySet()) {
+                Set<String> held = new LinkedHashSet<>(entry.getValue());
+                for (String code : held) {
+                    String readCode = pairedReadCodeOf(code);
+                    if (readCode == null || !PermissionCodes.ALL_PERMISSION_CODES.contains(readCode)) {
+                        continue;
+                    }
+                    if (!held.contains(readCode)) {
+                        violations.add(entry.getKey() + " 持有 " + code + " 却缺少 " + readCode);
+                    }
+                }
+            }
+            assertTrue(violations.isEmpty(), "#567/B11 不变式被打破（持写码者必须持读码）: " + violations);
+        }
+
+        @Test
+        @DisplayName("8 个新 read 码的增量授权矩阵：只补给已持对应写/管理码的角色")
+        void newReadCodesGrantedOnlyWhereWriteCodeHeld() {
+            Map<String, Set<String>> expected = Map.of(
+                    "ADMIN", Set.copyOf(MANAGE_PAIRED_READ_CODES),
+                    "OPERATOR", Set.of(PermissionCodes.LB_CONFIG_READ),
+                    "USER", Set.of(PermissionCodes.LB_CONFIG_READ),
+                    "VIEWER", Set.of());
+
+            Map<String, List<String>> templates = RolePermissionSeeder.DEFAULT_ROLE_TEMPLATES;
+            assertEquals(expected.keySet(), templates.keySet());
+            for (Map.Entry<String, Set<String>> entry : expected.entrySet()) {
+                List<String> template = templates.get(entry.getKey());
+                for (String code : MANAGE_PAIRED_READ_CODES) {
+                    assertEquals(entry.getValue().contains(code), template.contains(code),
+                            entry.getKey() + " 对 " + code + " 的授权与预期矩阵不符");
+                }
+            }
         }
     }
 
@@ -315,6 +374,37 @@ class RolePermissionSeederTest {
                     "补种后必须通过缓存失效读到新权限码，而不是 5 分钟内的陈旧缓存");
             assertTrue(refreshed.contains(PermissionCodes.SECURITY_AUDIT_WRITE));
         }
+    }
+
+    /**
+     * #567 新增的 8 个「管理面 read」码。
+     * {@code RolePermissionSeeder.MANAGE_PAIRED_READ_CODES} 是私有的，测试内复制一份（集合内容由下面两条
+     * 不变式测试与 {@link PermissionCodes} 双向约束，不会无声漂移）。
+     */
+    private static final Set<String> MANAGE_PAIRED_READ_CODES = Set.of(
+            PermissionCodes.LB_CONFIG_READ,
+            PermissionCodes.TRACING_CONFIG_READ,
+            PermissionCodes.SECURITY_APIKEYS_READ,
+            PermissionCodes.SECURITY_JWTTOKENS_READ,
+            PermissionCodes.SECURITY_BLACKLIST_READ,
+            PermissionCodes.SECURITY_SANITIZATION_READ,
+            PermissionCodes.SYSTEM_ACCOUNTS_READ,
+            PermissionCodes.SYSTEM_PERMISSIONS_READ);
+
+    /**
+     * 若 {@code code} 形如 {@code x:write} / {@code x:manage} 且存在配对的 {@code x:read}，返回该 read 码；
+     * 否则返回 {@code null}（例：{@code actuator:admin:manage} 没有配对 read 码）。
+     */
+    private static String pairedReadCodeOf(final String code) {
+        String suffix;
+        if (code.endsWith(":write")) {
+            suffix = ":write";
+        } else if (code.endsWith(":manage")) {
+            suffix = ":manage";
+        } else {
+            return null;
+        }
+        return code.substring(0, code.length() - suffix.length()) + ":read";
     }
 
     private Set<String> requiredByRealRules() {

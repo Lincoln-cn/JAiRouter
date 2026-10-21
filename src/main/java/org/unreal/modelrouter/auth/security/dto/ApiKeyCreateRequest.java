@@ -63,6 +63,18 @@ public final class ApiKeyCreateRequest {
     private List<String> allowedIpAddresses;
 
     /**
+     * 每小时请求上限（可选，0 表示无限制）
+     */
+    @Builder.Default
+    private Long hourlyRequestLimit = 0L;
+
+    /**
+     * 每小时 Token 使用上限（可选，0 表示无限制）
+     */
+    @Builder.Default
+    private Long hourlyTokenLimit = 0L;
+
+    /**
      * 每日请求上限（可选，0 表示无限制）
      */
     @Builder.Default
@@ -73,6 +85,18 @@ public final class ApiKeyCreateRequest {
      */
     @Builder.Default
     private Long dailyTokenLimit = 0L;
+
+    /**
+     * 每月请求上限（可选，0 表示无限制）
+     */
+    @Builder.Default
+    private Long monthlyRequestLimit = 0L;
+
+    /**
+     * 每月 Token 使用上限（可选，0 表示无限制）
+     */
+    @Builder.Default
+    private Long monthlyTokenLimit = 0L;
 
     /**
      * 每分钟请求速率限制（可选，0 表示无限制）

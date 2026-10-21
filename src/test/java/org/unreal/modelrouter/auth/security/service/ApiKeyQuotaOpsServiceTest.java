@@ -77,6 +77,19 @@ class ApiKeyQuotaOpsServiceTest {
             if (req.getQuotaAlertThreshold() != null) {
                 key.setQuotaAlertThreshold(req.getQuotaAlertThreshold());
             }
+            // TA3：小时 / 月限额同样按部分更新语义回填
+            if (req.getHourlyRequestLimit() != null) {
+                key.setHourlyRequestLimit(req.getHourlyRequestLimit());
+            }
+            if (req.getHourlyTokenLimit() != null) {
+                key.setHourlyTokenLimit(req.getHourlyTokenLimit());
+            }
+            if (req.getMonthlyRequestLimit() != null) {
+                key.setMonthlyRequestLimit(req.getMonthlyRequestLimit());
+            }
+            if (req.getMonthlyTokenLimit() != null) {
+                key.setMonthlyTokenLimit(req.getMonthlyTokenLimit());
+            }
             return Mono.just(ApiKeyVO.builder().keyId("key-1").build());
         });
         when(apiKeyService.resetDailyQuota(anyString())).thenReturn(Mono.empty());
@@ -108,6 +121,39 @@ class ApiKeyQuotaOpsServiceTest {
     void updateQuotaLimits_unknownKey_throws() {
         assertThrows(IllegalArgumentException.class,
                 () -> quotaService.updateQuotaLimits("missing", ApiKeyUpdateRequest.builder().dailyRequestLimit(1L).build()));
+    }
+
+    @Test
+    @DisplayName("updateQuotaLimits: 小时 / 月限额可更新并回显（TA3）")
+    void updateQuotaLimits_shouldPatchHourlyAndMonthlyLimits() {
+        final ApiKeyUpdateRequest req = ApiKeyUpdateRequest.builder()
+                .hourlyRequestLimit(10L)
+                .hourlyTokenLimit(2000L)
+                .monthlyRequestLimit(10000L)
+                .monthlyTokenLimit(2000000L)
+                .build();
+
+        final ApiKeyQuotaService.QuotaUsageDetail detail = quotaService.updateQuotaLimits("key-1", req);
+
+        assertEquals(10L, detail.getHourlyRequestLimit());
+        assertEquals(2000L, detail.getHourlyTokenLimit());
+        assertEquals(10000L, detail.getMonthlyRequestLimit());
+        assertEquals(2000000L, detail.getMonthlyTokenLimit());
+        assertNull(detail.getHourlyRequestUsagePercent(), "账本未装配时小时百分比应为 null");
+        assertNull(detail.getMonthlyTokenUsagePercent(), "账本未装配时月百分比应为 null");
+    }
+
+    @Test
+    @DisplayName("updateQuotaLimits: 四个新限额为负时拒绝（0 表示不限制）")
+    void updateQuotaLimits_negativeWindowLimits_shouldThrow() {
+        assertThrows(IllegalArgumentException.class, () -> quotaService.updateQuotaLimits("key-1",
+                ApiKeyUpdateRequest.builder().hourlyRequestLimit(-1L).build()));
+        assertThrows(IllegalArgumentException.class, () -> quotaService.updateQuotaLimits("key-1",
+                ApiKeyUpdateRequest.builder().hourlyTokenLimit(-1L).build()));
+        assertThrows(IllegalArgumentException.class, () -> quotaService.updateQuotaLimits("key-1",
+                ApiKeyUpdateRequest.builder().monthlyRequestLimit(-1L).build()));
+        assertThrows(IllegalArgumentException.class, () -> quotaService.updateQuotaLimits("key-1",
+                ApiKeyUpdateRequest.builder().monthlyTokenLimit(-1L).build()));
     }
 
     @Test

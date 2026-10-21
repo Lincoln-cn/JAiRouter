@@ -211,22 +211,48 @@ class PermissionAuthorizationManagerTest {
         }
 
         @Test
-        @DisplayName("账户管理规则：/api/security/jwt/accounts/** 需 system:accounts:manage")
-        void jwtAccountsRuleRequiresSystemAccountsManage() {
+        @DisplayName("账户读面规则：GET /api/security/jwt/accounts/** 需 system:accounts:read（#567）")
+        void jwtAccountsGetRuleRequiresSystemAccountsRead() {
             AuthorizationContext context = context(HttpMethod.GET, "/api/security/jwt/accounts");
-            JwtAuthentication holder = authenticated(
-                    "operator", List.of("OPERATOR"), List.of(PermissionCodes.SYSTEM_ACCOUNTS_MANAGE));
+            JwtAuthentication reader = authenticated(
+                    "operator", List.of("OPERATOR"), List.of(PermissionCodes.SYSTEM_ACCOUNTS_READ));
+            JwtAuthentication manageOnly = authenticated(
+                    "manager", List.of("OPERATOR"), List.of(PermissionCodes.SYSTEM_ACCOUNTS_MANAGE));
             JwtAuthentication tokenManager = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.SECURITY_JWTTOKENS_MANAGE));
 
-            // 携带 system:accounts:manage -> 放行
-            StepVerifier.create(manager.check(Mono.just(holder), context))
+            // 携带 system:accounts:read -> 放行（#567 之前这里要的是 :manage）
+            StepVerifier.create(manager.check(Mono.just(reader), context))
                     .expectNextMatches(AuthorizationDecision::isGranted)
+                    .verifyComplete();
+            // 仅携带 system:accounts:manage -> 拒绝：URL 层按方法拆分，读面只认 :read
+            // （B11 由角色模板保证「持 manage 者同时持 read」，因此内置角色不会因此失去读能力）
+            StepVerifier.create(manager.check(Mono.just(manageOnly), context))
+                    .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
             // 仅携带 security:jwttokens:manage -> 拒绝（账户管理不归 JWT 令牌管理）
             StepVerifier.create(manager.check(Mono.just(tokenManager), context))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("账户写面规则：写方法仍需 system:accounts:manage（#567 不放松写语义）")
+        void jwtAccountsWriteStillRequiresSystemAccountsManage() {
+            JwtAuthentication reader = authenticated(
+                    "operator", List.of("OPERATOR"), List.of(PermissionCodes.SYSTEM_ACCOUNTS_READ));
+            JwtAuthentication accountManager = authenticated(
+                    "manager", List.of("OPERATOR"), List.of(PermissionCodes.SYSTEM_ACCOUNTS_MANAGE));
+
+            for (HttpMethod method : List.of(HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE)) {
+                AuthorizationContext context = context(method, "/api/security/jwt/accounts");
+                StepVerifier.create(manager.check(Mono.just(reader), context))
+                        .expectNextMatches(decision -> !decision.isGranted())
+                        .verifyComplete();
+                StepVerifier.create(manager.check(Mono.just(accountManager), context))
+                        .expectNextMatches(AuthorizationDecision::isGranted)
+                        .verifyComplete();
+            }
         }
     }
 

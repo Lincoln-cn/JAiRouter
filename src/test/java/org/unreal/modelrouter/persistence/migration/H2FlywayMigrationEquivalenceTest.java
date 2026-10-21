@@ -59,10 +59,10 @@ class H2FlywayMigrationEquivalenceTest {
                     "「fresh」与「legacy」的 " + section + " 不一致");
         }
 
-        assertEquals(List.of("1|SQL|true", "2|SQL|true", "3|SQL|true"), history(freshUrl),
-                "空库应顺序执行 V1、V2、V3（V3 = #455 黑名单原因改稳定码）");
-        assertEquals(List.of("1|BASELINE|true", "2|SQL|true", "3|SQL|true"), history(legacyUrl),
-                "老库应记为基线 1 且不重放 V1，再执行 V2");
+        assertEquals(List.of("1|SQL|true", "2|SQL|true", "3|SQL|true", "4|SQL|true"), history(freshUrl),
+                "空库应顺序执行 V1、V2、V3、V4（V4 = 脱敏配置持久化）");
+        assertEquals(List.of("1|BASELINE|true", "2|SQL|true", "3|SQL|true", "4|SQL|true"), history(legacyUrl),
+                "老库应记为基线 1 且不重放 V1，再执行 V2、V3、V4");
     }
 
     // ==================== 迁移执行 ====================

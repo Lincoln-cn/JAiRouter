@@ -127,7 +127,7 @@ const router = createRouter({
           path: 'cache',
           name: 'response-cache-management',
           component: () => import('../views/config/ResponseCacheManagement.vue'),
-          meta: { titleKey: 'route.responseCacheManagement', icon: 'coin', permissions: ['config:cache:write'] }
+          meta: { titleKey: 'route.responseCacheManagement', icon: 'coin', permissions: ['config:cache:read', 'config:cache:write'] }
         },
         {
           path: 'quota',
@@ -200,25 +200,25 @@ const router = createRouter({
           path: 'api-keys',
           name: 'api-key-management',
           component: () => import('../views/security/ApiKeyManagement.vue'),
-          meta: { titleKey: 'route.apiKeyManagement', icon: 'key', permissions: ['security:apikeys:manage'] }
+          meta: { titleKey: 'route.apiKeyManagement', icon: 'key', permissions: ['security:apikeys:read', 'security:apikeys:manage'] }
         },
         {
           path: 'sanitization',
           name: 'sanitization-management',
           component: () => import('../views/security/SanitizationManagement.vue'),
-          meta: { titleKey: 'route.sanitizationManagement', icon: 'lock', permissions: ['security:sanitization:manage'] }
+          meta: { titleKey: 'route.sanitizationManagement', icon: 'lock', permissions: ['security:sanitization:read', 'security:sanitization:manage'] }
         },
         {
           path: 'jwt-tokens',
           name: 'jwt-token-management',
           component: () => import('../views/security/JwtTokenManagement.vue'),
-          meta: { titleKey: 'route.jwtTokenManagement', icon: 'lock', permissions: ['security:jwttokens:manage'] }
+          meta: { titleKey: 'route.jwtTokenManagement', icon: 'lock', permissions: ['security:jwttokens:read', 'security:jwttokens:manage'] }
         },
         {
           path: 'blacklist',
           name: 'blacklist-management',
           component: () => import('../views/security/BlacklistManagement.vue'),
-          meta: { titleKey: 'route.blacklistManagement', icon: 'warning', permissions: ['security:blacklist:manage'] }
+          meta: { titleKey: 'route.blacklistManagement', icon: 'warning', permissions: ['security:blacklist:read', 'security:blacklist:manage'] }
         },
         {
           path: 'audit-logs',
@@ -239,13 +239,13 @@ const router = createRouter({
           path: 'accounts',
           name: 'account-management',
           component: () => import('../views/security/JwtAccountManagement.vue'),
-          meta: { titleKey: 'route.accountManagement', icon: 'user', permissions: ['system:accounts:manage'] }
+          meta: { titleKey: 'route.accountManagement', icon: 'user', permissions: ['system:accounts:read', 'system:accounts:manage'] }
         },
         {
           path: 'permissions',
           name: 'permission-management',
           component: () => import('../views/system/PermissionManagement.vue'),
-          meta: { titleKey: 'route.permissionManagement', icon: 'key', permissions: ['system:permissions:manage'] }
+          meta: { titleKey: 'route.permissionManagement', icon: 'key', permissions: ['system:permissions:read', 'system:permissions:manage'] }
         }
       ]
     },
@@ -476,11 +476,11 @@ router.beforeEach((to, from, next) => {
       }
     }
 
-    // v2.9.8 RBAC: 检查权限码（meta.permissions，需全部拥有；ADMIN 恒通过）
+    // v2.9.8 RBAC: 检查权限码（meta.permissions 为「或」：任一命中即放行，与菜单/按钮的 v-permission 数组语义一致；ADMIN 恒通过）
     const requiredPermissions = to.meta.permissions
     if (requiredPermissions && requiredPermissions.length > 0) {
-      const hasAllPermissions = requiredPermissions.every(code => userStore.hasPermission(code))
-      if (!hasAllPermissions) {
+      const hasAnyPermission = requiredPermissions.some(code => userStore.hasPermission(code))
+      if (!hasAnyPermission) {
         // 无权限，跳转到仪表板
         next({ name: 'dashboard-main' })
         return

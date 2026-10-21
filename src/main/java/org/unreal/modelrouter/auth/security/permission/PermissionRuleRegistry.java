@@ -68,11 +68,16 @@ public class PermissionRuleRegistry {
     private static List<PermissionRule> buildDefaultRules() {
         return List.of(
                 // ===== security 模块（原硬编码 ADMIN 规则迁移） =====
-                // 账户管理（JwtAccountController，同步）→ system:accounts:manage（菜单「系统管理-账户管理」）
-                PermissionRule.any("/api/security/jwt/accounts/**", PermissionCodes.SYSTEM_ACCOUNTS_MANAGE),
-                PermissionRule.any("/api/security/blacklist/**", PermissionCodes.SECURITY_BLACKLIST_MANAGE),
-                // v2.9.8 Phase 2: 权限管理 API（PermissionManagementController）→ system:permissions:manage
-                PermissionRule.any("/api/security/permissions/**", PermissionCodes.SYSTEM_PERMISSIONS_MANAGE),
+                // 账户管理（JwtAccountController，同步）→ 读走 system:accounts:read、写走 system:accounts:manage
+                // （#567：此前 GET 也要求管理码，等于「看一眼账户列表」必须拿到写权限；现在按方法语义拆开）
+                PermissionRule.get("/api/security/jwt/accounts/**", PermissionCodes.SYSTEM_ACCOUNTS_READ),
+                PermissionRule.write("/api/security/jwt/accounts/**", PermissionCodes.SYSTEM_ACCOUNTS_MANAGE),
+                // 黑名单（SecurityBlacklistController）→ GET（list/stats/{id}/check）读、POST/DELETE 写
+                PermissionRule.get("/api/security/blacklist/**", PermissionCodes.SECURITY_BLACKLIST_READ),
+                PermissionRule.write("/api/security/blacklist/**", PermissionCodes.SECURITY_BLACKLIST_MANAGE),
+                // v2.9.8 Phase 2: 权限管理 API（PermissionManagementController）→ 读 :read、写（PUT 角色权限）:manage
+                PermissionRule.get("/api/security/permissions/**", PermissionCodes.SYSTEM_PERMISSIONS_READ),
+                PermissionRule.write("/api/security/permissions/**", PermissionCodes.SYSTEM_PERMISSIONS_MANAGE),
 
                 // ===== 调用历史（原硬编码 ADMIN 规则迁移） =====
                 // issue #514：这里原来是 any(...)（空方法集 = 所有方法），于是「查看」权限码
@@ -85,7 +90,10 @@ public class PermissionRuleRegistry {
                 PermissionRule.write("/api/config/call-history/**", PermissionCodes.CONFIG_CALLHISTORY_WRITE),
 
                 // ===== 追踪安全配置（原硬编码 ADMIN 规则迁移） =====
-                PermissionRule.any("/api/config/tracing/security/**", PermissionCodes.TRACING_CONFIG_MANAGE),
+                // #567：GET（敏感字段清单 / 访问历史 / 概览）收敛到 tracing:config:read；
+                // POST/DELETE（改敏感字段、清访问缓存、轮换密钥、清理加密数据）仍要 tracing:config:manage。
+                PermissionRule.get("/api/config/tracing/security/**", PermissionCodes.TRACING_CONFIG_READ),
+                PermissionRule.write("/api/config/tracing/security/**", PermissionCodes.TRACING_CONFIG_MANAGE),
 
                 // ===== 服务子路径规则（保留：前端 service.ts 仍在使用） =====
                 PermissionRule.get("/api/services/*/circuitbreaker/**", PermissionCodes.CONFIG_CIRCUITBREAKER_READ),
@@ -136,6 +144,10 @@ public class PermissionRuleRegistry {
                 PermissionRule.write("/api/monitoring/metrics/**", PermissionCodes.MONITORING_METRICS_WRITE),
 
                 // ===== 负载均衡 =====
+                // #567：/config/**（全局配置 + 按服务类型的策略配置）属于「配置读取」，用 lb:config:read；
+                // /status、/strategies、/stats 仍是监控读（lb:monitoring:read）。
+                // 具体路径必须先于下面那条宽泛 GET 登记（首条命中优先）。
+                PermissionRule.get("/api/loadbalancer/config/**", PermissionCodes.LB_CONFIG_READ),
                 PermissionRule.get("/api/loadbalancer/**", PermissionCodes.LB_MONITORING_READ),
                 PermissionRule.write("/api/loadbalancer/**", PermissionCodes.LB_CONFIG_WRITE),
 
@@ -144,7 +156,11 @@ public class PermissionRuleRegistry {
                 PermissionRule.write("/api/config/cache/**", PermissionCodes.CONFIG_CACHE_WRITE),
 
                 // ===== B2b 渐进补齐：API Key 管理（ApiKeyManagementController → 菜单「安全管理-API Key」） =====
-                PermissionRule.any("/api/auth/api-keys/**", PermissionCodes.SECURITY_APIKEYS_MANAGE),
+                // #567：GET（列表/详情/导出/配额）走 security:apikeys:read，写与轮换仍走 :manage。
+                // 注意：该 controller 每个方法另有 @PreAuthorize("hasRole('ADMIN')")，所以 URL 规则放宽到
+                // read 码并不会真的让非 ADMIN 读到 —— 方法级注解是第二道闸，属既有设计。
+                PermissionRule.get("/api/auth/api-keys/**", PermissionCodes.SECURITY_APIKEYS_READ),
+                PermissionRule.write("/api/auth/api-keys/**", PermissionCodes.SECURITY_APIKEYS_MANAGE),
 
                 // ===== B2b 渐进补齐：安全审计扩展（ExtendedSecurityAuditController → 菜单「安全管理-审计日志」） =====
                 PermissionRule.get("/api/security/audit/extended/**", PermissionCodes.SECURITY_AUDIT_READ),
@@ -206,18 +222,23 @@ public class PermissionRuleRegistry {
                 PermissionRule.get("/api/config/validation-rules", PermissionCodes.CONFIG_VALIDATION_READ),
 
                 // ===== PII / 脱敏配置管理（SanitizationConfigController） =====
-                PermissionRule.any("/api/config/sanitization/**", PermissionCodes.SECURITY_SANITIZATION_MANAGE),
+                // #567：GET（当前配置 / 规则清单）走 security:sanitization:read；
+                // PUT 配置、POST /test 仍走 :manage。
+                PermissionRule.get("/api/config/sanitization/**", PermissionCodes.SECURITY_SANITIZATION_READ),
+                PermissionRule.write("/api/config/sanitization/**", PermissionCodes.SECURITY_SANITIZATION_MANAGE),
 
                 // ===== #128 Phase 2: JWT 令牌运维端点（方法级 @PreAuthorize 均为 hasRole('ADMIN')） =====
                 // 登记规则使覆盖自检不再报缺口，且与 ApiKeyManagementController 同风格（URL 规则 + 方法级双保险）。
                 // 注意：GET /api/auth/jwt/tokens（自助列表）与 POST /api/auth/jwt/revoke（自助撤销）不在此列，
                 // 它们在 RbacExemptEndpoints 豁免清单中（方法级 @PreAuthorize 约束属主）。
                 // 具体路径必须登记在任何更宽泛模式之前（首条命中优先）。
-                PermissionRule.get("/api/auth/jwt/blacklist/stats", PermissionCodes.SECURITY_BLACKLIST_MANAGE),
-                PermissionRule.get("/api/auth/jwt/cleanup/stats", PermissionCodes.SECURITY_JWTTOKENS_MANAGE),
+                // #567：这三个 GET 原先挂的是 manage 码（「用写码读」的错配），现改挂对应 :read；
+                // 写端点（cleanup / revoke/batch）仍要 security:jwttokens:manage。
+                PermissionRule.get("/api/auth/jwt/blacklist/stats", PermissionCodes.SECURITY_BLACKLIST_READ),
+                PermissionRule.get("/api/auth/jwt/cleanup/stats", PermissionCodes.SECURITY_JWTTOKENS_READ),
                 PermissionRule.write("/api/auth/jwt/cleanup", PermissionCodes.SECURITY_JWTTOKENS_MANAGE),
                 PermissionRule.write("/api/auth/jwt/revoke/batch", PermissionCodes.SECURITY_JWTTOKENS_MANAGE),
-                PermissionRule.get("/api/auth/jwt/tokens/{tokenId}", PermissionCodes.SECURITY_JWTTOKENS_MANAGE)
+                PermissionRule.get("/api/auth/jwt/tokens/{tokenId}", PermissionCodes.SECURITY_JWTTOKENS_READ)
         );
     }
 

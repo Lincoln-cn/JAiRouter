@@ -120,6 +120,16 @@ public class ApiKeyVO {
     // ===== 配额配置 =====
 
     /**
+     * 每小时请求上限（0 表示无限制）
+     */
+    private Long hourlyRequestLimit;
+
+    /**
+     * 每小时 Token 使用上限（0 表示无限制）
+     */
+    private Long hourlyTokenLimit;
+
+    /**
      * 每日请求上限（0 表示无限制）
      */
     private Long dailyRequestLimit;
@@ -128,6 +138,16 @@ public class ApiKeyVO {
      * 每日 Token 使用上限（0 表示无限制）
      */
     private Long dailyTokenLimit;
+
+    /**
+     * 每月请求上限（0 表示无限制）
+     */
+    private Long monthlyRequestLimit;
+
+    /**
+     * 每月 Token 使用上限（0 表示无限制）
+     */
+    private Long monthlyTokenLimit;
 
     /**
      * 每分钟请求速率限制（0 表示无限制）

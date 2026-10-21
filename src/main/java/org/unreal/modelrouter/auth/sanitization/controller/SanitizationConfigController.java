@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.auth.sanitization.SanitizationService;
 import org.unreal.modelrouter.auth.sanitization.impl.DefaultSanitizationService;
+import org.unreal.modelrouter.auth.sanitization.persistence.SanitizationConfigStore;
 import org.unreal.modelrouter.auth.security.config.properties.SanitizationConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.model.RuleType;
@@ -20,7 +21,9 @@ import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.common.util.SafeRegexValidator;
+import org.unreal.modelrouter.common.util.SecurityUtils;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -31,8 +34,10 @@ import java.util.regex.Pattern;
 /**
  * PII / 数据脱敏运行时管理控制器（全链路响应式，禁止 block()）.
  *
- * <p>管理面聚焦「聊天调用历史 / 日志 / 追踪记录」中的 PII：规则热改后同步到
- * {@link DefaultSanitizationService} 内存规则库，SUMMARY 记录链路立即生效。</p>
+ * <p>管理面聚焦「聊天调用历史 / 日志 / 追踪记录」中的 PII：保存时先把配置快照落库
+ * （{@link SanitizationConfigStore}），落库成功后同步 {@link DefaultSanitizationService}
+ * 内存规则库，SUMMARY 记录链路立即生效；进程重启时按「DB 优先、无行回落 yml」装载，
+ * 因此管理员保存的配置不会静默回退。</p>
  */
 @Slf4j
 @RestController
@@ -43,13 +48,16 @@ public class SanitizationConfigController {
     private final SecurityProperties securityProperties;
     private final SanitizationService sanitizationService;
     private final DefaultSanitizationService defaultSanitizationService;
+    private final SanitizationConfigStore sanitizationConfigStore;
 
     public SanitizationConfigController(final SecurityProperties securityProperties,
                                         final SanitizationService sanitizationService,
-                                        final DefaultSanitizationService defaultSanitizationService) {
+                                        final DefaultSanitizationService defaultSanitizationService,
+                                        final SanitizationConfigStore sanitizationConfigStore) {
         this.securityProperties = securityProperties;
         this.sanitizationService = sanitizationService;
         this.defaultSanitizationService = defaultSanitizationService;
+        this.sanitizationConfigStore = sanitizationConfigStore;
     }
 
     @GetMapping
@@ -63,7 +71,7 @@ public class SanitizationConfigController {
 
     @PutMapping
     @Operation(summary = "热更新脱敏配置",
-            description = "部分更新 request/response，并热重建 DefaultSanitizationService 规则")
+            description = "部分更新 request/response，先落库再热重建 DefaultSanitizationService 规则")
     public Mono<ResponseEntity<RouterResponse<Map<String, Object>>>> updateConfig(
             @RequestBody final SanitizationUpdateRequest request) {
         if (request == null) {
@@ -73,23 +81,113 @@ public class SanitizationConfigController {
             return Mono.error(ApiException.of(ErrorCode.INVALID_REQUEST.code(), "至少需要指定 request 或 response 子配置"));
         }
 
+        // 先改副本再整体替换：校验失败时内存配置一个字段都不会被改动（旧实现会留下半更新）。
+        final SanitizationConfig config = securityProperties.getSanitization();
+        final SanitizationConfig.RequestSanitization requestBefore = copyRequest(config.getRequest());
+        final SanitizationConfig.ResponseSanitization responseBefore = copyResponse(config.getResponse());
+        final SanitizationConfig.RequestSanitization requestAfter = copyRequest(requestBefore);
+        final SanitizationConfig.ResponseSanitization responseAfter = copyResponse(responseBefore);
+
         final List<String> errors = new ArrayList<>();
         if (request.request != null) {
-            applySubConfig(request.request, securityProperties.getSanitization().getRequest(), "request", errors);
+            applySubConfig(request.request, requestAfter, "request", errors);
         }
         if (request.response != null) {
-            applySubConfig(request.response, securityProperties.getSanitization().getResponse(), "response", errors);
+            applySubConfig(request.response, responseAfter, "response", errors);
         }
         if (!errors.isEmpty()) {
             return Mono.error(ApiException.of(ErrorCode.INVALID_REQUEST.code(), String.join("; ", errors)));
         }
 
-        return defaultSanitizationService.rebuildRulesFromProperties()
+        final boolean persistRequest = request.request != null;
+        final boolean persistResponse = request.response != null;
+        if (persistRequest) {
+            config.setRequest(requestAfter);
+        }
+        if (persistResponse) {
+            config.setResponse(responseAfter);
+        }
+
+        return SecurityUtils.getCurrentUserIdReactive()
+                .flatMap(actor -> persistAndRebuild(
+                        actor, persistRequest, persistResponse, requestBefore, responseBefore));
+    }
+
+    /**
+     * 先落库、后重建规则；落库失败时把内存配置回滚到本次更新前的快照。
+     *
+     * <p>顺序不可颠倒：先重建规则再落库时，一旦落库失败，内存里的规则已经按新配置编译过，
+     * 而重启后又回到旧配置 —— 正是本缺陷要消除的「运行态与持久态不一致」。</p>
+     */
+    private Mono<ResponseEntity<RouterResponse<Map<String, Object>>>> persistAndRebuild(
+            final String actor,
+            final boolean persistRequest,
+            final boolean persistResponse,
+            final SanitizationConfig.RequestSanitization requestBefore,
+            final SanitizationConfig.ResponseSanitization responseBefore) {
+        return Mono.<Void>fromRunnable(() -> sanitizationConfigStore.persist(
+                        securityProperties, persistRequest, persistResponse, actor))
+                .subscribeOn(Schedulers.boundedElastic())
+                .onErrorResume(error -> {
+                    restore(securityProperties.getSanitization(), persistRequest, persistResponse,
+                            requestBefore, responseBefore);
+                    log.error("脱敏配置持久化失败，已回滚内存配置：request={}, response={}",
+                            persistRequest, persistResponse, error);
+                    return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(),
+                            "脱敏配置持久化失败，内存配置已回滚"));
+                })
+                // 必须 defer：rebuildRulesFromProperties() 是立即执行的调用，直接当 then(...) 的实参会在
+                // 组装链时就跑完 —— 那时 persist 还没执行，等于「先重建规则、后落库」，落库失败也拦不住。
+                .then(Mono.defer(defaultSanitizationService::rebuildRulesFromProperties))
                 .then(sanitizationService.getAllRules().defaultIfEmpty(List.of()))
                 .map(rules -> {
-                    log.info("脱敏配置已热更新并重建规则");
+                    log.info("脱敏配置已落库并热重建规则：request={}, response={}",
+                            persistRequest, persistResponse);
                     return ResponseEntity.ok(RouterResponse.success(buildSnapshot(rules), "脱敏配置已更新"));
                 });
+    }
+
+    private static void restore(final SanitizationConfig config,
+                                final boolean restoreRequest,
+                                final boolean restoreResponse,
+                                final SanitizationConfig.RequestSanitization requestBefore,
+                                final SanitizationConfig.ResponseSanitization responseBefore) {
+        if (restoreRequest) {
+            config.setRequest(requestBefore);
+        }
+        if (restoreResponse) {
+            config.setResponse(responseBefore);
+        }
+    }
+
+    private static SanitizationConfig.RequestSanitization copyRequest(
+            final SanitizationConfig.RequestSanitization source) {
+        final SanitizationConfig.RequestSanitization copy = new SanitizationConfig.RequestSanitization();
+        copy.setEnabled(source.isEnabled());
+        copy.setSensitiveWords(copyList(source.getSensitiveWords()));
+        copy.setPiiPatterns(copyList(source.getPiiPatterns()));
+        copy.setMaskingChar(source.getMaskingChar());
+        copy.setWhitelistUsers(copyList(source.getWhitelistUsers()));
+        copy.setLogSanitization(source.isLogSanitization());
+        copy.setFailOnError(source.isFailOnError());
+        return copy;
+    }
+
+    private static SanitizationConfig.ResponseSanitization copyResponse(
+            final SanitizationConfig.ResponseSanitization source) {
+        final SanitizationConfig.ResponseSanitization copy = new SanitizationConfig.ResponseSanitization();
+        copy.setEnabled(source.isEnabled());
+        copy.setSensitiveWords(copyList(source.getSensitiveWords()));
+        copy.setPiiPatterns(copyList(source.getPiiPatterns()));
+        copy.setMaskingChar(source.getMaskingChar());
+        copy.setLogSanitization(source.isLogSanitization());
+        copy.setFailOnError(source.isFailOnError());
+        copy.setPreserveJsonStructure(source.isPreserveJsonStructure());
+        return copy;
+    }
+
+    private static List<String> copyList(final List<String> source) {
+        return source == null ? new ArrayList<>() : new ArrayList<>(source);
     }
 
     @GetMapping("/rules")

@@ -89,59 +89,98 @@ public class ApiKeyQuotaService {
 
         // v3.1 PR-1：账本启用时优先读取账本的今日（DAY 窗口）用量；
         // 账本未启用、无今日数据或读取失败时回退上面的内存路径，既有返回结构不变。
-        final Optional<LedgerDayUsage> ledgerUsage = readTodayUsageFromLedger(keyId);
+        // TA3：同一次内存扫描顺带取出 HOUR / MONTH 窗口用量（不额外读账本，列表页开销不变）。
+        final Optional<LedgerWindowUsage> ledgerUsage = readWindowUsageFromLedger(keyId);
+        long hourRequests = 0L;
+        long hourTokens = 0L;
+        long monthRequests = 0L;
+        long monthTokens = 0L;
         if (ledgerUsage.isPresent()) {
-            todayRequests = ledgerUsage.get().requests();
-            todayTokens = ledgerUsage.get().tokens();
+            todayRequests = ledgerUsage.get().dayRequests();
+            todayTokens = ledgerUsage.get().dayTokens();
+            hourRequests = ledgerUsage.get().hourRequests();
+            hourTokens = ledgerUsage.get().hourTokens();
+            monthRequests = ledgerUsage.get().monthRequests();
+            monthTokens = ledgerUsage.get().monthTokens();
         }
 
         QuotaUsageDetail detail = QuotaUsageDetail.builder()
             .keyId(keyId)
             .description(apiKey.getDescription())
+            .hourlyRequestLimit(apiKey.getHourlyRequestLimit())
+            .hourlyTokenLimit(apiKey.getHourlyTokenLimit())
             .dailyRequestLimit(apiKey.getDailyRequestLimit())
             .dailyTokenLimit(apiKey.getDailyTokenLimit())
+            .monthlyRequestLimit(apiKey.getMonthlyRequestLimit())
+            .monthlyTokenLimit(apiKey.getMonthlyTokenLimit())
             .rateLimitPerMinute(apiKey.getRateLimitPerMinute())
             .quotaAlertThreshold(apiKey.getQuotaAlertThreshold())
             .todayRequestCount(todayRequests)
             .todayTokenUsage(todayTokens)
+            .currentHourRequestCount(hourRequests)
+            .currentHourTokenUsage(hourTokens)
+            .currentMonthRequestCount(monthRequests)
+            .currentMonthTokenUsage(monthTokens)
             .currentRatePerMinute(currentRate)
             .totalRequests(usage != null ? usage.getTotalRequests() : 0L)
             .build();
 
-        // 计算使用百分比
+        // 计算使用百分比（窗口百分比需要知道「有没有真实账本数据」，无数据时留 null 而不是 0%）
         detail.calculateUsagePercent();
         detail.calculateRemaining();
+        detail.calculateExtendedUsagePercent(ledgerUsage.isPresent());
 
         return Optional.of(detail);
     }
 
     /**
-     * 从配额账本读取指定 API Key 今日（DAY 窗口）的聚合用量（v3.1 PR-1）。
+     * 从配额账本读取指定 API Key 的 DAY / HOUR / MONTH 窗口聚合用量（v3.1 PR-1，TA3 扩展）.
      *
-     * <p>账本未启用、无今日数据或读取异常时返回 {@link Optional#empty()}，调用方回退既有内存路径。
-     * 账本读库失败时其内部会降级为“仅内存态”，表现为无今日数据，同样触发回退。</p>
+     * <p>账本未启用、无窗口数据或读取异常时返回 {@link Optional#empty()}，调用方回退既有内存路径。
+     * 账本读库失败时其内部会降级为“仅内存态”，表现为无窗口数据，同样触发回退。</p>
+     *
+     * <p>三个窗口共用一次 {@link QuotaLedgerService#usageAllFromMemory(String)} 扫描
+     * （只读内存账本，避免 Redis/JPA 慢查询拖死列表页），因此新增的小时 / 月用量不增加 IO 次数。</p>
      *
      * @param keyId API Key ID
-     * @return 今日聚合用量，无法从账本读取时返回 empty
+     * @return 三个窗口的聚合用量，无法从账本读取时返回 empty
      */
-    private Optional<LedgerDayUsage> readTodayUsageFromLedger(final String keyId) {
+    private Optional<LedgerWindowUsage> readWindowUsageFromLedger(final String keyId) {
         if (quotaLedgerService == null || !quotaLedgerService.isEnabled()) {
             return Optional.empty();
         }
         try {
-            final LocalDateTime dayStart = QuotaWindow.DAY.windowStart(LocalDateTime.now());
-            long requests = 0;
-            long tokens = 0;
+            final LocalDateTime now = LocalDateTime.now();
+            final LocalDateTime dayStart = QuotaWindow.DAY.windowStart(now);
+            final LocalDateTime hourStart = QuotaWindow.HOUR.windowStart(now);
+            final LocalDateTime monthStart = QuotaWindow.MONTH.windowStart(now);
+            long dayRequests = 0;
+            long dayTokens = 0;
+            long hourRequests = 0;
+            long hourTokens = 0;
+            long monthRequests = 0;
+            long monthTokens = 0;
             boolean found = false;
             // 管理面聚合：仅读内存账本，避免 Redis/JPA 慢查询拖死列表页
             for (final QuotaUsage usage : quotaLedgerService.usageAllFromMemory(keyId)) {
                 if (usage.window() == QuotaWindow.DAY && dayStart.equals(usage.windowStart())) {
-                    requests += usage.requestCount();
-                    tokens += usage.tokenCount();
+                    dayRequests += usage.requestCount();
+                    dayTokens += usage.tokenCount();
+                    found = true;
+                } else if (usage.window() == QuotaWindow.HOUR && hourStart.equals(usage.windowStart())) {
+                    hourRequests += usage.requestCount();
+                    hourTokens += usage.tokenCount();
+                    found = true;
+                } else if (usage.window() == QuotaWindow.MONTH && monthStart.equals(usage.windowStart())) {
+                    monthRequests += usage.requestCount();
+                    monthTokens += usage.tokenCount();
                     found = true;
                 }
             }
-            return found ? Optional.of(new LedgerDayUsage(requests, tokens)) : Optional.empty();
+            return found
+                ? Optional.of(new LedgerWindowUsage(dayRequests, dayTokens,
+                    hourRequests, hourTokens, monthRequests, monthTokens))
+                : Optional.empty();
         } catch (Exception e) {
             log.warn("读取配额账本失败，回退内存用量统计: keyId={}, error={}", keyId, e.toString());
             return Optional.empty();
@@ -168,12 +207,18 @@ public class ApiKeyQuotaService {
     }
 
     /**
-     * 账本读取出的今日聚合用量（v3.1 PR-1）。
+     * 账本读取出的窗口聚合用量（v3.1 PR-1 的 DAY，TA3 增加 HOUR / MONTH）。
      *
-     * @param requests 今日请求数
-     * @param tokens   今日 token 数
+     * @param dayRequests    今日请求数
+     * @param dayTokens      今日 token 数
+     * @param hourRequests   本小时请求数
+     * @param hourTokens     本小时 token 数
+     * @param monthRequests  本月请求数
+     * @param monthTokens    本月 token 数
      */
-    private record LedgerDayUsage(long requests, long tokens) {
+    private record LedgerWindowUsage(long dayRequests, long dayTokens,
+                                     long hourRequests, long hourTokens,
+                                     long monthRequests, long monthTokens) {
     }
 
     /**
@@ -256,6 +301,18 @@ public class ApiKeyQuotaService {
         }
         if (request.getDailyTokenLimit() != null && request.getDailyTokenLimit() < 0) {
             throw new IllegalArgumentException("dailyTokenLimit 不能为负（0 表示不限制）");
+        }
+        if (request.getHourlyRequestLimit() != null && request.getHourlyRequestLimit() < 0) {
+            throw new IllegalArgumentException("hourlyRequestLimit 不能为负（0 表示不限制）");
+        }
+        if (request.getHourlyTokenLimit() != null && request.getHourlyTokenLimit() < 0) {
+            throw new IllegalArgumentException("hourlyTokenLimit 不能为负（0 表示不限制）");
+        }
+        if (request.getMonthlyRequestLimit() != null && request.getMonthlyRequestLimit() < 0) {
+            throw new IllegalArgumentException("monthlyRequestLimit 不能为负（0 表示不限制）");
+        }
+        if (request.getMonthlyTokenLimit() != null && request.getMonthlyTokenLimit() < 0) {
+            throw new IllegalArgumentException("monthlyTokenLimit 不能为负（0 表示不限制）");
         }
         if (request.getRateLimitPerMinute() != null && request.getRateLimitPerMinute() < 0) {
             throw new IllegalArgumentException("rateLimitPerMinute 不能为负（0 表示不限制）");
@@ -388,12 +445,20 @@ public class ApiKeyQuotaService {
     public static class QuotaUsageDetail {
         private String keyId;
         private String description;
+        private long hourlyRequestLimit;
+        private long hourlyTokenLimit;
         private long dailyRequestLimit;
         private long dailyTokenLimit;
+        private long monthlyRequestLimit;
+        private long monthlyTokenLimit;
         private int rateLimitPerMinute;
         private double quotaAlertThreshold;
         private long todayRequestCount;
         private long todayTokenUsage;
+        private long currentHourRequestCount;
+        private long currentHourTokenUsage;
+        private long currentMonthRequestCount;
+        private long currentMonthTokenUsage;
         private int currentRatePerMinute;
         private long totalRequests;
 
@@ -407,6 +472,15 @@ public class ApiKeyQuotaService {
         private long remainingRequests = -1L;
         /** 剩余 Token 数；限额 0（不限制）时为 -1 */
         private long remainingTokens = -1L;
+
+        /** 小时请求配额使用百分比 (0.0-100.0)；无限或账本不可用时为 {@code null} */
+        private Double hourlyRequestUsagePercent;
+        /** 小时 Token 配额使用百分比 (0.0-100.0)；无限或账本不可用时为 {@code null} */
+        private Double hourlyTokenUsagePercent;
+        /** 月请求配额使用百分比 (0.0-100.0)；无限或账本不可用时为 {@code null} */
+        private Double monthlyRequestUsagePercent;
+        /** 月 Token 配额使用百分比 (0.0-100.0)；无限或账本不可用时为 {@code null} */
+        private Double monthlyTokenUsagePercent;
 
         public void calculateUsagePercent() {
             dailyRequestUsagePercent = dailyRequestLimit > 0
@@ -429,6 +503,37 @@ public class ApiKeyQuotaService {
             remainingTokens = dailyTokenLimit > 0
                 ? Math.max(0L, dailyTokenLimit - todayTokenUsage)
                 : -1L;
+        }
+
+        /**
+         * 计算小时 / 月窗口的使用百分比（TA3）.
+         *
+         * <p>与日窗口不同，这四个字段是 {@link Double} 且可空：没有账本数据时保持 {@code null}
+         * （用 0 会把「不知道用量」画成「用了 0%」），限额为 0（不限制）时同样保持
+         * {@code null}，避免前端把「不限制」画成 0%。日窗口的 {@code -1} 语义保持不变。</p>
+         *
+         * @param hasUsageData 账本是否返回了该 Key 的窗口用量
+         */
+        public void calculateExtendedUsagePercent(final boolean hasUsageData) {
+            if (!hasUsageData) {
+                hourlyRequestUsagePercent = null;
+                hourlyTokenUsagePercent = null;
+                monthlyRequestUsagePercent = null;
+                monthlyTokenUsagePercent = null;
+                return;
+            }
+            hourlyRequestUsagePercent = hourlyRequestLimit > 0
+                ? (double) currentHourRequestCount / hourlyRequestLimit * 100
+                : null;
+            hourlyTokenUsagePercent = hourlyTokenLimit > 0
+                ? (double) currentHourTokenUsage / hourlyTokenLimit * 100
+                : null;
+            monthlyRequestUsagePercent = monthlyRequestLimit > 0
+                ? (double) currentMonthRequestCount / monthlyRequestLimit * 100
+                : null;
+            monthlyTokenUsagePercent = monthlyTokenLimit > 0
+                ? (double) currentMonthTokenUsage / monthlyTokenLimit * 100
+                : null;
         }
     }
 
