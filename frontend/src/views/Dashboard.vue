@@ -318,21 +318,24 @@
               </el-descriptions>
             </el-tab-pane>
 
-            <!-- 每个服务类型单独Tab -->
+            <!-- 每个服务类型单独 Tab（label 用纯文本：做成 router-link 会让 tab 点不动，直接跳走） -->
             <el-tab-pane
               v-for="serviceName in orderedServiceNames"
               :key="serviceName"
               :name="serviceName"
+              :label="getServiceTypeName(serviceName)"
             >
-              <template #label>
+              <div class="service-pane-bar">
+                <span class="service-pane-count">
+                  {{ t('dashboard.instanceTotal', { count: (serviceConfigData?.services?.[serviceName]?.instances || []).length }) }}
+                </span>
                 <router-link
-                  class="service-tab-link"
-                  :to="{ path: '/config/services', query: { serviceType: serviceName } }"
-                  @click.stop
+                  class="instance-link"
+                  :to="{ path: '/config/instances', query: { serviceType: serviceName } }"
                 >
-                  {{ getServiceTypeName(serviceName) }}
+                  {{ t('dashboard.viewInstances') }} →
                 </router-link>
-              </template>
+              </div>
               <el-table
                 :data="serviceConfigData?.services?.[serviceName]?.instances || []"
                 stripe
@@ -1223,8 +1226,14 @@ onBeforeUnmount(() => {
 :deep(.el-table .row-error td) { background: var(--ja-surface-2) !important; }
 :deep(.el-table th) { background: transparent; }
 
-.service-tab-link { color: inherit; text-decoration: none; cursor: pointer; }
-.service-tab-link:hover { color: var(--ja-primary); }
+.service-pane-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ja-space-2);
+  margin-bottom: var(--ja-space-2);
+}
+.service-pane-count { color: var(--ja-ink-3); font-size: 13px; }
 .instance-link { color: var(--ja-primary); font-size: 13px; text-decoration: none; cursor: pointer; }
 .instance-link:hover { text-decoration: underline; }
 
