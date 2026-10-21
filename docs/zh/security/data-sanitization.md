@@ -92,7 +92,7 @@ curl -H "X-API-Key: your-api-key" \
 
 ## 详细配置
 
-> ⚠️ **本节的示例配置并非全部可用键**。当前实现只绑定这些键：`enabled`、`sensitive-words`、`pii-patterns`、`masking-char`、`whitelist-users`（仅请求侧）、`log-sanitization`、`fail-on-error`、`preserve-json-structure`（仅响应侧）。
+> ⚠️ **本节的示例配置并非全部可用键**。当前实现只绑定这些键：`enabled`、`sensitive-words`、`pii-patterns`、`masking-char`、`whitelist-users`（仅请求侧）、`log-sanitization`、`fail-on-error`、`preserve-json-structure`（仅响应侧）、`scope`（仅响应侧）。
 > 举例里出现的 `strategies`（`keep-prefix-suffix` / `keep-domain` 等）、`rule-priorities`、`whitelist-ips`、`service-specific-rules` **尚未实现**：写进 YAML 不会报错，但也不会生效。
 > 实际可用的替换策略是规则上的 `strategy` 字段（`MASK` / `REPLACE` / `REMOVE` / `HASH`），默认规则统一用 `MASK`（整段等长替换，例如 11 位手机号 → `***********`）。
 
@@ -171,24 +171,46 @@ jairouter:
           - "error"         # 错误详情
           - "exception"     # 异常信息
         
-        # 响应 PII 模式
+        # 响应 PII 模式（顺序 = 执行顺序，先长后短）
         pii-patterns:
-          - "\\d{11}"
+          - "(?<!\\d)\\d{17}[\\dXx](?!\\d)"
+          - "(?<!\\d)(?:\\d{16}|\\d{19})(?!\\d)"
+          - "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"
+          - "(?<!\\d)1[3-9]\\d{9}(?!\\d)"
           - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
         
         # 保持 JSON 结构
         preserve-json-structure: true
         
-        # 服务特定规则
-        service-specific-rules:
-          chat:
-            additional-patterns:
-              - "\\b(?:QQ|微信|WeChat)[:：]?\\s*\\d+\\b"
-          embedding:
-            enabled: false
-          rerank:
-            preserve-ranking-scores: true
+        # 生效范围（只作用于 HTTP 响应脱敏过滤器）
+        # mode=exclude（默认）时 patterns 是「不脱敏」的例外，留空则用内置排除集合；
+        # mode=include 时只有命中 patterns 的路径才脱敏，留空 = 一条都不脱敏（会打 WARN）。
+        scope:
+          mode: exclude
+          patterns:
+            - "/actuator"
+            - "/swagger-ui"
 ```
+
+### 响应脱敏生效范围（scope）
+
+响应脱敏只处理 `application/json`，并且会按路径过滤。默认排除集合覆盖管理台、Actuator、Swagger、静态资源等；`/v1` 的非流式 JSON **在生效范围内**，`text/event-stream`（SSE）按内容类型跳过。
+
+```yaml
+jairouter:
+  security:
+    sanitization:
+      response:
+        scope:
+          mode: exclude       # exclude（默认）| include
+          patterns: []        # 留空 = 用内置排除集合
+```
+
+- `exclude`：`patterns` 里的路径跳过脱敏，其余全脱敏；`patterns` 为空时用内置集合（与未配置 `scope` 完全等价）。
+- `include`：只有命中 `patterns` 的路径脱敏；**`patterns` 为空时一条都不脱敏**，启动日志会 WARN。
+- 匹配规则：不含通配符按前缀匹配（`/actuator` 命中 `/actuator/health`）；含 `*` / `**` 按 Ant 风格匹配，`/v1/**` 同时命中 `/v1` 本身。
+- 该配置**目前只读**：控制台「PII 脱敏管理 → 响应脱敏生效范围」卡片会回显当前模式、来源（内置默认 / 配置指定）与规则列表，并提供路径预览（`POST /api/config/sanitization/scope/preview`）；修改需改配置文件并重启。
+- 记录侧脱敏（调用历史 / 日志 / 追踪）不受该范围影响。
 
 ## 脱敏策略详解
 

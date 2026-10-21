@@ -18,6 +18,15 @@ export interface SanitizationSubConfig {
   failOnError: boolean
   preserveJsonStructure?: boolean
   whitelistUsers?: string[]
+  scope?: SanitizationScope
+}
+
+/** 响应脱敏的路径生效范围（issue #560 可配置化 A 档，只读回显） */
+export interface SanitizationScope {
+  mode: 'exclude' | 'include'
+  patterns: string[]
+  usingBuiltInDefaults: boolean
+  warning: string
 }
 
 export interface SanitizationConfig {
@@ -26,6 +35,16 @@ export interface SanitizationConfig {
   ruleCount: number
   primaryUseCase?: string
   gatewayResponseFilter?: string
+  scopeSource?: string
+}
+
+export interface SanitizationScopePreview {
+  path: string
+  mode: 'exclude' | 'include'
+  shouldSanitize: boolean
+  matchedPattern: string | null
+  usingBuiltInDefaults: boolean
+  warning: string
 }
 
 export interface SanitizationRuleItem {
@@ -71,4 +90,13 @@ export const testSanitization = async (sample: string, contentType = 'text/plain
     contentType
   })
   return response.data.data as SanitizationTestResult
+}
+
+/** 预览某个路径是否落在脱敏生效范围内（与服务端同一套 Ant/前缀匹配） */
+export const previewSanitizationScope = async (path: string): Promise<SanitizationScopePreview> => {
+  const response = await request.post<RouterResponse<SanitizationScopePreview>>(
+    '/config/sanitization/scope/preview',
+    { path }
+  )
+  return response.data.data as SanitizationScopePreview
 }

@@ -287,4 +287,57 @@ class SanitizationConfigControllerTest {
         assertEquals("*", after.getMaskingChar());
         verify(defaultSanitizationService, never()).rebuildRulesFromProperties();
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void getConfig_shouldExposeEffectiveScope() {
+        // 默认（未配置 scope.patterns）⇒ 走内置排除集合，回显必须标明来源，避免运维误以为「已自定义」
+        ResponseEntity<RouterResponse<Map<String, Object>>> resp = controller.getConfig().block();
+        Map<String, Object> response = (Map<String, Object>) resp.getBody().getData().get("response");
+        Map<String, Object> scope = (Map<String, Object>) response.get("scope");
+        assertEquals("exclude", scope.get("mode"));
+        assertEquals(true, scope.get("usingBuiltInDefaults"));
+        assertEquals("builtin-defaults", response.get("scopeSource"));
+
+        // 显式配置后来源翻转为 configuration
+        securityProperties.getSanitization().getResponse().getScope().setMode("include");
+        securityProperties.getSanitization().getResponse().getScope().setPatterns(List.of("/v1/**"));
+        resp = controller.getConfig().block();
+        response = (Map<String, Object>) resp.getBody().getData().get("response");
+        scope = (Map<String, Object>) response.get("scope");
+        assertEquals("include", scope.get("mode"));
+        assertEquals(false, scope.get("usingBuiltInDefaults"));
+        assertEquals(List.of("/v1/**"), scope.get("patterns"));
+        assertEquals("configuration", response.get("scopeSource"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void previewScope_shouldRespectIncludeMode() {
+        securityProperties.getSanitization().getResponse().getScope().setMode("include");
+        securityProperties.getSanitization().getResponse().getScope().setPatterns(List.of("/v1/**"));
+
+        SanitizationConfigController.ScopePreviewRequest inScope =
+                new SanitizationConfigController.ScopePreviewRequest();
+        inScope.path = "/v1/chat/completions";
+        Map<String, Object> hit = (Map<String, Object>) controller.previewScope(inScope).block().getBody().getData();
+        assertEquals(true, hit.get("shouldSanitize"));
+        assertEquals("/v1/**", hit.get("matchedPattern"));
+
+        SanitizationConfigController.ScopePreviewRequest outOfScope =
+                new SanitizationConfigController.ScopePreviewRequest();
+        outOfScope.path = "/api/security/sanitization/config";
+        Map<String, Object> miss = (Map<String, Object>) controller.previewScope(outOfScope).block().getBody().getData();
+        assertEquals(false, miss.get("shouldSanitize"));
+        assertNull(miss.get("matchedPattern"));
+    }
+
+    @Test
+    void previewScope_shouldRejectBlankPath() {
+        SanitizationConfigController.ScopePreviewRequest request =
+                new SanitizationConfigController.ScopePreviewRequest();
+        request.path = "  ";
+        ApiException ex = assertThrows(ApiException.class, () -> controller.previewScope(request).block());
+        assertEquals("INVALID_REQUEST", ex.getErrorCode());
+    }
 }

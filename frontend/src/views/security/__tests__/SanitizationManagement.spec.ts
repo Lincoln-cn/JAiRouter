@@ -47,15 +47,30 @@ vi.mock('@/api/sanitization', () => ({
       maskingChar: '#',
       logSanitization: false,
       failOnError: false,
-      preserveJsonStructure: true
+      preserveJsonStructure: true,
+      scope: {
+        mode: 'include',
+        patterns: ['/v1/**'],
+        usingBuiltInDefaults: false,
+        warning: ''
+      }
     },
-    ruleCount: 2
+    ruleCount: 2,
+    scopeSource: 'configuration'
   }),
   getSanitizationRules: vi.fn().mockResolvedValue([
     { ruleId: 'r1', type: 'PII_PATTERN', pattern: '\\d{11}', enabled: true }
   ]),
   updateSanitizationConfig: vi.fn().mockResolvedValue({ ruleCount: 2 }),
-  testSanitization: vi.fn()
+  testSanitization: vi.fn(),
+  previewSanitizationScope: vi.fn().mockResolvedValue({
+    path: '/v1/chat/completions',
+    mode: 'include',
+    shouldSanitize: true,
+    matchedPattern: '/v1/**',
+    usingBuiltInDefaults: false,
+    warning: ''
+  })
 }))
 
 import SanitizationManagement from '@/views/security/SanitizationManagement.vue'
@@ -104,7 +119,21 @@ const i18n = createI18n({
         beforeLabel: '前',
         afterLabel: '后',
         matchedLabel: '命中',
-        loadFailed: 'load fail'
+        loadFailed: 'load fail',
+        scopeTitle: '响应脱敏生效范围',
+        scopeModeExclude: '排除模式',
+        scopeModeInclude: '包含模式',
+        scopeSourceBuiltin: '内置默认',
+        scopeSourceConfig: '配置指定',
+        scopeDesc: 'scope desc',
+        scopePatternsLabel: '路径规则',
+        scopeEmptyPatterns: '未配置',
+        scopePreviewPlaceholder: '输入路径',
+        scopePreviewButton: '预览',
+        scopePreviewSanitized: '会脱敏',
+        scopePreviewSkipped: '跳过脱敏',
+        scopePreviewMatched: '命中规则',
+        scopeNotConfigurableHint: '只读'
       }
     }
   }
@@ -123,7 +152,7 @@ const stubs = {
   'el-input': true,
   'el-table': true,
   'el-table-column': true,
-  'el-tag': true,
+  'el-tag': { template: '<span><slot /></span>' },
   'el-button': true,
   'el-icon': true
 }
@@ -144,5 +173,22 @@ describe('SanitizationManagement.vue', () => {
     expect(vm.form.request.piiPatternsText).toContain('\\d{11}')
     expect(vm.form.response.enabled).toBe(false)
     expect(vm.form.response.maskingChar).toBe('#')
+  })
+
+  it('回显响应脱敏生效范围（模式/来源/规则）', async () => {
+    const wrapper = mount(SanitizationManagement, {
+      global: {
+        plugins: [i18n],
+        stubs
+      }
+    })
+
+    await flushPromises()
+    const text = wrapper.text()
+    expect(text).toContain('响应脱敏生效范围')
+    expect(text).toContain('包含模式')
+    expect(text).toContain('配置指定')
+    expect(text).toContain('/v1/**')
+    expect(text).toContain('只读')
   })
 })

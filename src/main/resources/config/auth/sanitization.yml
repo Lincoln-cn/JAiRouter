@@ -41,4 +41,20 @@ jairouter:
         
         # 是否保留 JSON 结构
         preserve-json-structure: true
+
+        # 生效范围（哪些路径的响应进入脱敏）—— issue #560 可配置化 A 档
+        # mode=exclude（默认）：patterns 是「不脱敏」的例外；不写 patterns 时使用内置排除集合
+        #   （/api/**、/admin/**、/actuator/**、/health、/metrics、/swagger-ui/ 等），
+        #   其余路径（含 /v1/** 的非流式 JSON）脱敏。
+        # mode=include：只有命中 patterns 的路径才脱敏（用于只放开某几个入口）。
+        #   ⚠️ include 且 patterns 为空 = 一条响应都不脱敏，服务端会打 WARN、控制台会显红。
+        # 匹配规则：带 * / ? 的按 Ant 风格；不带通配符的按前缀匹配（与旧内置集合语义一致）。
+        # 注意：本项只影响 HTTP 响应过滤器；记录侧 sanitizeForStorage 不受它控制。
+        scope:
+          mode: exclude
+          patterns: []
+          # 例：只放开 AI 入口的脱敏
+          # mode: include
+          # patterns:
+          #   - /v1/**
         

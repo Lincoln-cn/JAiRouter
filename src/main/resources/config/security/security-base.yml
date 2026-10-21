@@ -57,6 +57,13 @@ jairouter:
         masking-char: "*"
         log-sanitization: false
         preserve-json-structure: true
+        # 生效范围（#560 可配置化 A 档）：只作用于 HTTP 响应脱敏过滤器。
+        # mode=exclude（默认）时 patterns 是「不脱敏」的例外，为空则用内置集合；
+        # mode=include 时只有命中 patterns 的路径才脱敏，patterns 为空 = 一条都不脱敏。
+        # 支持前缀（/actuator）与 Ant 风格（/v1/**）；改动需重启生效。
+        scope:
+          mode: exclude
+          patterns: []
     
     # ========================================
     # 安全审计基础配置

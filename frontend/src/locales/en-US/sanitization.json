@@ -41,6 +41,20 @@
     "beforeLabel": "Before",
     "afterLabel": "After",
     "matchedLabel": "Matched Rules",
-    "loadFailed": "Failed to load sanitization config"
+    "loadFailed": "Failed to load sanitization config",
+    "scopeTitle": "Response sanitization scope",
+    "scopeModeExclude": "Exclude mode",
+    "scopeModeInclude": "Include mode",
+    "scopeSourceBuiltin": "Built-in defaults",
+    "scopeSourceConfig": "From configuration",
+    "scopeDesc": "In exclude mode the listed paths are skipped and everything else (including non-streaming JSON on /v1) is sanitized; in include mode only the listed paths are sanitized. Config key: jairouter.security.sanitization.response.scope.",
+    "scopePatternsLabel": "Path patterns",
+    "scopeEmptyPatterns": "Not configured (exclude mode falls back to the built-in exclusion set; an empty include list sanitizes nothing)",
+    "scopePreviewPlaceholder": "Enter a path, e.g. /v1/chat/completions",
+    "scopePreviewButton": "Preview",
+    "scopePreviewSanitized": "Sanitized",
+    "scopePreviewSkipped": "Skipped",
+    "scopePreviewMatched": "Matched",
+    "scopeNotConfigurableHint": "Read-only for now: change the configuration file and restart. It only affects HTTP responses; record-side sanitization is unaffected."
   }
 }

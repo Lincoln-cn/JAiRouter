@@ -41,6 +41,20 @@
     "beforeLabel": "脱敏前",
     "afterLabel": "脱敏后",
     "matchedLabel": "命中规则",
-    "loadFailed": "加载脱敏配置失败"
+    "loadFailed": "加载脱敏配置失败",
+    "scopeTitle": "响应脱敏生效范围",
+    "scopeModeExclude": "排除模式",
+    "scopeModeInclude": "包含模式",
+    "scopeSourceBuiltin": "内置默认",
+    "scopeSourceConfig": "配置指定",
+    "scopeDesc": "排除模式下，列表里的路径不脱敏，其余路径（含 /v1 的非流式 JSON）脱敏；包含模式下只有列表里的路径脱敏。配置项：jairouter.security.sanitization.response.scope。",
+    "scopePatternsLabel": "路径规则",
+    "scopeEmptyPatterns": "未配置（排除模式使用内置排除集合；包含模式下为空则一条都不脱敏）",
+    "scopePreviewPlaceholder": "输入路径预览，例如 /v1/chat/completions",
+    "scopePreviewButton": "预览",
+    "scopePreviewSanitized": "会脱敏",
+    "scopePreviewSkipped": "跳过脱敏",
+    "scopePreviewMatched": "命中规则",
+    "scopeNotConfigurableHint": "生效范围目前只读，改配置文件后重启生效；该范围只作用于 HTTP 响应，记录侧脱敏不受影响。"
   }
 }
