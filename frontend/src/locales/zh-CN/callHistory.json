@@ -36,7 +36,7 @@
         "totalRequests": "总请求数",
         "successRate": "成功率",
         "avgResponseTime": "平均响应时间",
-        "totalTokenConsumed": "总 Token 消耗",
+        "totalTokenConsumed": "总 Token 使用量",
         "failedRequests": "失败请求数",
         "modelCount": "模型数量",
         "serviceTypeCount": "服务类型数",

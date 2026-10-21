@@ -36,6 +36,16 @@ html.dark {
   --el-fill-color-extra-light: #fafcff;
   --el-fill-color-dark: #ebedf0;
 
+  /* ========== 表格 ==========
+     Element Plus 默认让表体行沿用 --el-bg-color（= 页底色），
+     页底改成 #f2f4f7 后整张表看起来等于「没有底色、直接铺在页面上」。
+     这里把表格自己的面固定为纸面，表头比表体深一档，悬停再用页底色区分。 */
+  --el-table-bg-color: var(--ja-paper);
+  --el-table-tr-bg-color: var(--ja-paper);
+  --el-table-header-bg-color: var(--ja-surface-2);
+  --el-table-row-hover-bg-color: var(--ja-surface);
+  --el-table-border-color: var(--ja-border);
+
   /* ========== 文字色 ========== */
   --el-text-color-primary: var(--ja-text-primary);
   --el-text-color-regular: var(--ja-text-regular);
@@ -97,3 +107,47 @@ html.dark .el-slider__marks-text { color: var(--ja-text-regular); }
    此处以同权选择器 + 更晚加载顺序收敛为文字令牌（正文 p 用 regular，标题 h2 用 primary）。 */
 h2 { color: var(--ja-text-primary); }
 p { color: var(--ja-text-regular); }
+
+/* ── 多卡片 / 多图表页面的纵向节奏（2026-10-21）────────────────────────────
+   el-row 只提供横向 gutter，换行/相邻行之间没有纵向间距；页面里 MetricStrip、
+   多个图表行、尾部表格相连时会糊成一片（用户反馈「多卡片布局上下间距没有」）。
+   这里在列表页骨架的正文槽统一补：兄弟节点之间 16px，el-row 换行时行间也是 16px。
+   页面内已有的 margin-top（如 .chart-row）与这里的外边距会按 CSS 折叠规则取较大值。 */
+.list-page-layout__body > * + * {
+  margin-top: var(--ja-space-4, 16px);
+}
+
+.list-page-layout__body .el-row {
+  row-gap: var(--ja-space-4, 16px);
+}
+
+/* ── 列表 = 卡片（2026-10-21 用户反馈「列表没卡片、没背景色，直接铺在页底灰上不好看」）──
+   列表页的表格默认没有容器，页底改成 #f2f4f7 后表格会像"浮在灰底上"。
+   这里给「不在卡片/抽屉/弹窗里」的表格补一层卡片面：纸面底 + 1px 边框 + 圆角，
+   已经用 el-card / .table-card 包过的表格（规则页、资源池等）不受影响。 */
+.layout-main .el-table:not(.el-card .el-table):not(.el-drawer .el-table):not(.el-dialog .el-table) {
+  background-color: var(--ja-paper);
+  border: 1px solid var(--ja-border);
+  border-radius: var(--ja-radius, 8px);
+  overflow: hidden;
+}
+
+/* 表头与"暂无数据"行跟着卡片面走，避免表头灰块与白底割裂 */
+.layout-main .el-table:not(.el-card .el-table):not(.el-drawer .el-table):not(.el-dialog .el-table) .el-table__header-wrapper th.el-table__cell {
+  background-color: var(--ja-surface-2);
+}
+
+/* 表格卡片面补一层与 el-card 一致的轻微阴影，避免"表格是卡、别的卡有影"的割裂 */
+.layout-main .el-table:not(.el-card .el-table):not(.el-drawer .el-table):not(.el-dialog .el-table) {
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+/* 表格自己的面：EP 在 .el-table 作用域内把表体行绑到 --el-bg-color（页底色），
+   :root 上的同名变量会被这条元素级声明压住，所以必须直接写在 .el-table 上。 */
+.el-table {
+  --el-table-bg-color: var(--ja-paper);
+  --el-table-tr-bg-color: var(--ja-paper);
+  --el-table-header-bg-color: var(--ja-surface-2);
+  --el-table-row-hover-bg-color: var(--ja-surface);
+  --el-table-border-color: var(--ja-border);
+}

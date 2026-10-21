@@ -306,6 +306,20 @@ export const menuGroups: MenuGroup[] = [
     title: 'menu.modelServices',
     icon: 'setting',
     children: [
+      // 顺序 = 实例管理页引导条的顺序（配置适配器 → 创建服务 → 添加实例 → 版本）
+      {
+        path: '/config/adapters',
+        title: 'menu.configAdapters',
+        permission: 'config:adapters:read',
+        tabs: [
+          {
+            key: 'adapters',
+            labelKey: 'menu.configAdapters',
+            to: '/config/adapters',
+            permission: 'config:adapters:read'
+          }
+        ]
+      },
       {
         path: '/config/services',
         title: 'menu.configServices',
@@ -342,19 +356,6 @@ export const menuGroups: MenuGroup[] = [
             labelKey: 'menu.configVersions',
             to: '/config/versions',
             permission: 'config:versions:read'
-          }
-        ]
-      },
-      {
-        path: '/config/adapters',
-        title: 'menu.configAdapters',
-        permission: 'config:adapters:read',
-        tabs: [
-          {
-            key: 'adapters',
-            labelKey: 'menu.configAdapters',
-            to: '/config/adapters',
-            permission: 'config:adapters:read'
           }
         ]
       }

@@ -343,6 +343,9 @@ type: Opaque
 data:
   # Base64 encoded keys
   api-key: eW91ci1hcGkta2V5LWhlcmU=  # your-api-key-here
+  # Both required by the production startup gate
+  jwt-secret: eW91ci1wcm9kdWN0aW9uLWp3dC1zZWNyZXQtaGVyZQ==        # your-production-jwt-secret-here
+  initial-admin-password: eW91ci1zdHJvbmctYWRtaW4tcGFzc3dvcmQ=    # your-strong-admin-password
   database-password: cGFzc3dvcmQ=     # password
   redis-password: cGFzc3dvcmQ=     # your-redis-password (base64)
 ```
@@ -448,6 +451,16 @@ spec:
           value: "prod"
         - name: JAVA_OPTS
           value: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jairouter-secret
+              key: jwt-secret
+        - name: INITIAL_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: jairouter-secret
+              key: initial-admin-password
         # Secret name/key must match the Secret created above (jairouter-secret)
         - name: API_KEY
           valueFrom:
@@ -1330,6 +1343,16 @@ spec:
           value: "prod"
         - name: JAVA_OPTS
           value: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jairouter-secret
+              key: jwt-secret
+        - name: INITIAL_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: jairouter-secret
+              key: initial-admin-password
         - name: API_KEY
           valueFrom:
             secretKeyRef:
@@ -1415,7 +1438,8 @@ type: Opaque
 data:
   # Base64 encoded keys
   api-key: eW91ci1hcGkta2V5LWhlcmU=  # your-api-key-here
-  jwt-secret: eW91ci1qd3Qtc2VjcmV0LWtleQ==  # your-jwt-secret-key
+  jwt-secret: eW91ci1wcm9kdWN0aW9uLWp3dC1zZWNyZXQtaGVyZQ==        # your-production-jwt-secret-here
+  initial-admin-password: eW91ci1zdHJvbmctYWRtaW4tcGFzc3dvcmQ=    # your-strong-admin-password
   database-password: cGFzc3dvcmQ=     # password
   redis-password: cGFzc3dvcmQ=     # your-redis-password (base64)
 
@@ -1466,7 +1490,7 @@ data:
         issuer: jairouter
         accounts:
           - username: admin
-            password: ${ADMIN_PASSWORD}
+            password: ${INITIAL_ADMIN_PASSWORD}
             roles: [ADMIN, USER]
             enabled: true
           - username: user

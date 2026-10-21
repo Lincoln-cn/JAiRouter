@@ -59,7 +59,7 @@ const DIALOG_PAGES = [
   {
     tag: 'adapters',
     path: '/config/adapters',
-    openRe: /新增Adapter|新增 Adapter|Add Adapter/,
+    openRe: /新增适配器|新增Adapter|新增 Adapter|Add Adapter/,
     minForms: 0,
     minInputs: 0,
     minButtons: 1

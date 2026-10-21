@@ -20,10 +20,10 @@
             <el-icon>
               <component :is="groupIconMap[group.icon]" />
             </el-icon>
-            <span>{{ t(group.title) }}</span>
+            <span class="menu-label" :title="t(group.title)">{{ t(group.title) }}</span>
           </template>
           <el-menu-item v-for="item in group.children" :key="item.path" :index="item.path">
-            {{ t(item.title) }}
+            <span class="menu-label" :title="t(item.title)">{{ t(item.title) }}</span>
           </el-menu-item>
         </el-sub-menu>
       </el-menu>
@@ -159,11 +159,13 @@ onBeforeUnmount(() => {
 })
 
 /* ========== 侧栏折叠（状态持久化 + 无侧栏滚动条） ==========
- * 展开 200px / 折叠 64px（与 Element Plus 的 --el-menu-collapse-width 一致），
+ * 展开 220px / 折叠 64px（折叠宽度与 Element Plus 的 --el-menu-collapse-width 一致）。
+ * 展开态从 200px 提到 220px：英文菜单里「Traffic Governance / Model & Instances」
+ * 在 200px 下（减去图标与箭头预留后只剩约 80px 文本宽度）会被省略号截断。
  * 宽度由 :width 绑定，过渡写在 scoped 样式里（并尊重 prefers-reduced-motion）。
  */
 const SIDEBAR_COLLAPSED_KEY = 'ja-sidebar-collapsed'
-const SIDEBAR_WIDTH_EXPANDED = '200px'
+const SIDEBAR_WIDTH_EXPANDED = '220px'
 const SIDEBAR_WIDTH_COLLAPSED = '64px'
 
 /**
@@ -361,7 +363,6 @@ const handleUserCommand = async (command: string) => {
 .layout-container {
   height: 100vh;
   background: var(--ja-sidebar-bg);
-  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
 
@@ -374,11 +375,10 @@ const handleUserCommand = async (command: string) => {
   overflow: hidden;
   /* 宽度来自 :width 绑定的 200px / 64px，这里只负责过渡（不写死宽度，避免与内联样式打架） */
   transition: width 0.2s ease;
-  background-image: var(--ja-sidebar-bg);
+  background: var(--ja-sidebar-bg);
   background-color: var(--ja-sidebar-solid-bg);
-  box-shadow:
-    inset 0 0 20px rgba(0, 0, 0, 0.3),
-    2px 0 10px rgba(0, 0, 0, 0.2);
+  border-right: 1px solid var(--ja-sidebar-border);
+  box-shadow: var(--ja-sidebar-shadow);
 }
 
 /* 折叠态：logo 只剩图标，去掉文字留下的底部间距，让徽标垂直居中 */
@@ -411,6 +411,84 @@ const handleUserCommand = async (command: string) => {
   overflow-x: hidden;
   background-color: transparent;
   border-right: none;
+  /* 滚动条与侧栏同色系、仅在滚动时可见：Windows 经典滚动条会在浅色侧栏上留一条
+     高对比度的灰槽，割裂感明显（2026-10-21 用户反馈） */
+  scrollbar-width: thin;
+  scrollbar-color: var(--ja-sidebar-scrollbar) transparent;
+  scrollbar-gutter: stable;
+}
+
+.layout-menu::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.layout-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.layout-menu::-webkit-scrollbar-thumb {
+  background-color: var(--ja-sidebar-scrollbar);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.layout-menu::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ja-sidebar-scrollbar);
+}
+
+/* 菜单项：选中用「淡主色底 + 主色深阶文字」，悬停用次级面。
+   Element Plus 默认只改文字色，不加底，浅色侧栏下选中项辨识度不够。 */
+.layout-menu :deep(.el-menu-item),
+.layout-menu :deep(.el-sub-menu__title) {
+  border-radius: var(--ja-radius, 8px);
+  margin: 2px 6px;
+}
+
+/* 分组标题右侧 Element Plus 预留 44px 给箭头，吃掉了英文标题的空间：
+   收到 30px 并把箭头贴近右边，配合 220px 展开宽度，英文标题可完整显示。
+   只在展开态生效 —— 折叠态只显示图标，不该被这个内边距推偏。 */
+.layout-menu:not(.el-menu--collapse) :deep(.el-sub-menu__title) {
+  padding-right: 30px;
+}
+
+.layout-menu:not(.el-menu--collapse) :deep(.el-sub-menu__icon-arrow) {
+  right: 10px;
+}
+
+.layout-menu :deep(.el-menu-item:hover),
+.layout-menu :deep(.el-sub-menu__title:hover) {
+  background-color: var(--ja-surface-2);
+}
+
+.layout-menu :deep(.el-menu-item.is-active) {
+  background-color: var(--ja-sidebar-active-bg);
+}
+
+/* 文案溢出兜底：英文菜单项比中文长，超长时省略而不是顶出侧栏（node_modules 里的
+   Element Plus 不给菜单项做省略，展开态下文本会照原样溢出）。
+   菜单文字统一包在 .menu-label 里，才能吃到 text-overflow。 */
+.layout-menu:not(.el-menu--collapse) :deep(.el-menu-item),
+.layout-menu:not(.el-menu--collapse) :deep(.el-sub-menu__title) {
+  overflow: hidden;
+}
+
+.layout-menu :deep(.menu-label) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 菜单项占满整行（下划线式高亮需要），分组标题按内容宽度、只在放不下时才收缩 */
+.layout-menu :deep(.el-menu-item .menu-label) {
+  flex: 1 1 auto;
+}
+
+/* 子菜单容器不再叠加背景，避免与侧栏底色出现色块 */
+.layout-menu :deep(.el-sub-menu .el-menu) {
+  background-color: transparent;
 }
 
 .logo {
@@ -422,7 +500,6 @@ const handleUserCommand = async (command: string) => {
   padding: 20px 0;
   background: var(--ja-sidebar-logo-bg);
   border-bottom: 1px solid var(--ja-sidebar-logo-border);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* P0-1：占位字形换成真徽标后，旧的蓝色圆底与 glow 不再需要（会与方形图标叠出光晕） */
@@ -440,7 +517,6 @@ const handleUserCommand = async (command: string) => {
   font-size: 20px;
   font-weight: 600;
   margin: 0;
-  text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
   letter-spacing: 1px;
 }
 

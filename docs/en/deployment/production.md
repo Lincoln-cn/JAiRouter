@@ -259,6 +259,8 @@ services:
     
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      - JWT_SECRET=${JWT_SECRET:?set a strong jwt secret}
+      - INITIAL_ADMIN_PASSWORD=${INITIAL_ADMIN_PASSWORD:?set a strong password}
       - JAVA_OPTS=-Xms1g -Xmx2g -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
       - INSTANCE_ID=${INSTANCE_ID:-1}
       - CLUSTER_NODES=${CLUSTER_NODES}
@@ -991,6 +993,31 @@ server {
 ```
 
 ### 3. Application Security Hardening
+
+#### Environment Variables
+
+Create a `.env.prod` file:
+
+```bash
+# API keys
+OPENAI_API_KEY=sk-your-openai-api-key
+ANTHROPIC_API_KEY=your-anthropic-api-key
+
+# Database password
+DB_PASSWORD=your-secure-password
+
+# JWT secret and initial admin password
+JWT_SECRET=your-jwt-secret-key
+INITIAL_ADMIN_PASSWORD=your-strong-admin-password
+
+# Monitoring password
+GRAFANA_ADMIN_PASSWORD=your-grafana-password
+```
+
+> **About `PROD_JWT_SECRET`**: the compose file above passes the secret as `JWT_SECRET` because that is the
+> name the startup gate reads. `application-prod.yml` resolves `jairouter.security.jwt.secret` from
+> `${JWT_SECRET:${PROD_JWT_SECRET:}}`, so the legacy `PROD_JWT_SECRET` still works as a config-binding
+> fallback, but it cannot satisfy the gate (`StartupSecretKeyChecker`); set `JWT_SECRET` in production.
 
 #### Input Validation
 

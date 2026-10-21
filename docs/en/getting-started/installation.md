@@ -73,22 +73,36 @@ docker run -d \
 **Production (prod profile — key required)**:
 
 ```bash
-# Production requires your own JWT secret (at least 32 characters)
+# Production requires your own JWT secret (at least 32 characters) and initial admin password
 docker run -d \
   --name jairouter \
   -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
   -e JWT_SECRET="<your-secret-at-least-32-characters>" \
+  -e INITIAL_ADMIN_PASSWORD="<your-strong-admin-password>" \
   sodlinken/jairouter:latest
 
 # With custom config directory mounted
 docker run -d \
   --name jairouter \
   -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
   -e JWT_SECRET="<your-secret-at-least-32-characters>" \
+  -e INITIAL_ADMIN_PASSWORD="<your-strong-admin-password>" \
   -v $(pwd)/config:/app/config:ro \
   -v $(pwd)/logs:/app/logs \
   sodlinken/jairouter:latest
 ```
+
+A production-profile start requires all three of the following; two of them must not keep their factory default value:
+
+| Required | Notes |
+| --- | --- |
+| `SPRING_PROFILES_ACTIVE` | Set to `prod` (or a combination such as `prod,json-logs`) to enable the production gate |
+| `JWT_SECRET` | A strong random secret of at least 32 characters |
+| `INITIAL_ADMIN_PASSWORD` | A strong initial admin password (not `ChangeMeOnFirstStartup123456`) |
+
+If any item is missing, left at its factory default, or too weak, the process exits during startup with `IllegalStateException`. See [Production Deployment](../deployment/production.md).
 
 ### 4. Verify the Installation
 

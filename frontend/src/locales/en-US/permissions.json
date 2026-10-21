@@ -11,7 +11,7 @@
     "save": "Save Permissions",
     "reset": "Reset",
     "roleDescriptions": {
-      "ADMIN": "All permissions (45 codes, superset)",
+      "ADMIN": "All permissions (63 codes, superset)",
       "OPERATOR": "All read/write permissions, excluding system management, security management manage, and infrastructure",
       "USER": "Dashboard + configuration read-only + traffic governance + monitoring read-only + tracing search + AI playground",
       "VIEWER": "Read-only: all :read permissions only"
@@ -28,11 +28,66 @@
       "ai": "AI",
       "infrastructure": "Infrastructure"
     },
+    "modules": {
+      "overview": "Overview",
+      "config": "Configuration",
+      "lb": "Load Balancing",
+      "cb": "Circuit Breaker",
+      "rl": "Rate Limiter",
+      "callhistory": "Call History",
+      "monitoring": "Observability",
+      "tracing": "Tracing",
+      "security": "Security",
+      "system": "System",
+      "ai": "AI Playground",
+      "actuator": "Actuator"
+    },
+    "resources": {
+      "dashboard": "Dashboard",
+      "services": "Service configs",
+      "instances": "Instances",
+      "versions": "Versions",
+      "persistence": "State persistence",
+      "adapters": "Adapters",
+      "rules": "Routing rules",
+      "pools": "Resource pools",
+      "circuitbreaker": "Circuit breaker config",
+      "callhistory": "Call history",
+      "cache": "Response cache",
+      "validation": "Config validation",
+      "quota": "Quota",
+      "monitoring": "Monitoring",
+      "config": "Configuration",
+      "history": "History events",
+      "metrics": "Runtime metrics",
+      "slowquery": "Slow queries",
+      "tokenusage": "Token usage",
+      "modelstats": "Model stats",
+      "routing": "Routing stats",
+      "exceptions": "Exceptions",
+      "search": "Trace search",
+      "apikeys": "API keys",
+      "jwttokens": "JWT tokens",
+      "blacklist": "Blacklist",
+      "audit": "Audit log",
+      "sanitization": "Sanitization rules",
+      "accounts": "Accounts",
+      "permissions": "Permissions",
+      "playground": "Playground",
+      "admin": "Actuator admin"
+    },
+    "actions": {
+      "read": "View",
+      "view": "View",
+      "write": "Edit",
+      "manage": "Manage",
+      "use": "Use"
+    },
     "messages": {
-      "loadRolesFailed": "Failed to load role permissions, please try again",
-      "saveSuccess": "Permissions saved; changes take effect after you log in again",
-      "saveFailed": "Failed to save permissions, please try again",
-      "resetApplied": "Reset to the latest permissions saved on the server"
+      "loadRolesFailed": "Failed to load role permissions, please retry",
+      "saveSuccess": "Permissions saved; changes take effect after re-login",
+      "saveFailed": "Failed to save permissions, please retry",
+      "resetApplied": "Reset to the permissions saved on the server"
     }
   }
 }

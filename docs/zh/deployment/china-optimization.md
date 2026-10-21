@@ -366,6 +366,9 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
 ```
 
+> 镜像内不写任何密钥：运行时用 `-e JWT_SECRET=... -e INITIAL_ADMIN_PASSWORD=...` 注入。
+> `SPRING_PROFILES_ACTIVE=prod` 下这两个变量缺失或过弱会 fail-fast，详见 [生产环境部署](production.md)。
+
 ## 网络连接优化
 
 ### 1. 应用配置优化
@@ -1087,7 +1090,8 @@ export PROD_SERVICE_API_KEY="your-production-service-api-key-here"
 export PROD_READONLY_API_KEY="your-production-readonly-api-key-here"
 
 # 生产环境 JWT 配置
-export PROD_JWT_SECRET="your-production-jwt-secret-here"
+export JWT_SECRET="your-production-jwt-secret-here"
+export INITIAL_ADMIN_PASSWORD="your-strong-admin-password"
 
 # Redis 配置
 export REDIS_HOST="your-redis-host"
@@ -1114,7 +1118,8 @@ docker run -d \
   -e PROD_ADMIN_API_KEY="your-production-admin-api-key-here" \
   -e PROD_SERVICE_API_KEY="your-production-service-api-key-here" \
   -e PROD_READONLY_API_KEY="your-production-readonly-api-key-here" \
-  -e PROD_JWT_SECRET="your-production-jwt-secret-here" \
+  -e JWT_SECRET="your-production-jwt-secret-here" \
+  -e INITIAL_ADMIN_PASSWORD="<强密码>" \
   -e REDIS_HOST="your-redis-host" \
   -e REDIS_PORT="your-redis-port" \
   -e REDIS_PASSWORD="your-redis-password" \

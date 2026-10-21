@@ -207,8 +207,9 @@ export PROD_READONLY_API_KEY="your-production-readonly-api-key-here"
 # JWT 配置
 export JWT_SECRET="your-jwt-secret-key-here"
 
-# 生产环境 JWT 配置
-export PROD_JWT_SECRET="your-production-jwt-secret-key-here"
+# 生产环境额外需要管理员初始密码（缺失或过弱会 fail-fast）
+export INITIAL_ADMIN_PASSWORD="your-strong-admin-password"
+# 注：旧变量名 PROD_JWT_SECRET 仅为配置绑定兜底，启动门闩只读 JWT_SECRET
 
 # Redis 配置（如果启用）
 export REDIS_HOST="localhost"

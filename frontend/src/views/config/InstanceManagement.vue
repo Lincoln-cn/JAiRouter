@@ -53,8 +53,8 @@
             <el-skeleton :loading="loading && !hasInstances" :rows="6" animated>
               <template #default>
                 <el-table :data="paginated" style="width: 100%" class="instance-table" row-key="id" border fit>
-                  <el-table-column prop="name" :label="t('instance.name')" min-width="180" />
-                  <el-table-column prop="baseUrl" :label="t('instance.baseUrl')" min-width="260">
+                  <el-table-column prop="name" :label="t('instance.name')" min-width="170" />
+                  <el-table-column prop="baseUrl" :label="t('instance.baseUrl')" min-width="230">
                     <template #default="scope">
                       <div class="url-cell">
                         <el-tooltip :content="scope.row.baseUrl" placement="top">
@@ -67,13 +67,13 @@
                       </div>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="path" :label="t('instance.path')" min-width="160">
+                  <el-table-column prop="path" :label="t('instance.path')" min-width="140">
                     <template #default="scope">
                       <div class="ellipsis">{{ scope.row.path || '—' }}</div>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="weight" :label="t('instance.weight')" width="90" align="center" />
-                  <el-table-column prop="adapter" :label="t('instance.adapter')" width="140" align="center">
+                  <el-table-column prop="weight" :label="t('instance.weight')" width="80" align="center" />
+                  <el-table-column prop="adapter" :label="t('instance.adapter')" width="110" align="center">
                     <template #default="scope">
                       <span class="cell-text">{{ scope.row.adapter || globalAdapter || t('instance.notConfigured') }}</span>
                       <div v-if="!scope.row.adapter && globalAdapter" class="adapter-note">
@@ -81,7 +81,7 @@
                       </div>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="headers" :label="t('instance.headers')" width="120" align="center">
+                  <el-table-column prop="headers" :label="t('instance.headers')" width="100" align="center">
                     <template #default="scope">
                       <el-tooltip v-if="scope.row.headers && Object.keys(scope.row.headers).length > 0"
                         :content="Object.entries(scope.row.headers).map(([k, v]) => `${k}: ${v}`).join('\n')"
@@ -93,7 +93,7 @@
                       <span v-else class="cell-muted">{{ t('instance.none') }}</span>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="tags" :label="t('instance.tags')" width="120" align="center">
+                  <el-table-column prop="tags" :label="t('instance.tags')" width="100" align="center">
                     <template #default="scope">
                       <el-tooltip v-if="scope.row.tags && Object.keys(scope.row.tags).length > 0"
                         :content="Object.entries(scope.row.tags).map(([k, v]) => `${k}=${v}`).join('\n')"
@@ -105,7 +105,7 @@
                       <span v-else class="cell-muted">{{ t('instance.none') }}</span>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="status" :label="t('instance.status')" width="110" align="center">
+                  <el-table-column prop="status" :label="t('instance.status')" width="90" align="center">
                     <template #default="scope">
                       <el-tag :type="scope.row.status === 'active' ? 'success' : 'info'" size="small">
                         {{ scope.row.status === 'active' ? t('instance.enabled') : t('instance.disabled') }}
@@ -113,7 +113,7 @@
                     </template>
                   </el-table-column>
 
-                  <el-table-column :label="t('instance.actions')" width="280" align="center" fixed="right">
+                  <el-table-column :label="t('instance.actions')" width="250" align="center" fixed="right">
                     <template #default="scope">
                       <el-button link type="primary" size="small" v-permission="'config:instances:write'" @click="handleEdit(scope.row)">
                         {{ t('common.edit') }}
@@ -477,9 +477,14 @@ const statusFilter = ref('')
 const pageSize = ref(20)
 const currentPage = ref(1)
 
-// 每个服务类型 tab 的实例数量（数据按 tab 惰性加载，未加载过的类型不显示计数）
+// 每个服务类型 tab 的实例数量
+// 数据按 tab 惰性加载，未加载过的类型原本不显示计数（用户反馈「初次进来没有数量」），
+// 因此进入页面时另开一次静默预取补齐各类型数量（见 prefetchTypeCounts）。
+const typeCounts = ref<Record<string, number>>({})
+
 const tabCounts = computed<Record<string, number>>(() => {
-  const result: Record<string, number> = {}
+  const result: Record<string, number> = { ...typeCounts.value }
+  // 已加载的类型以 instances 为准：新增/删除后立即反映，不被预取的旧值覆盖
   for (const [type, list] of Object.entries(instances.value)) {
     result[type] = list.length
   }
@@ -743,6 +748,8 @@ const fetchServiceTypes = async () => {
           activeServiceType.value = serviceTypes.value[0]
         }
         fetchServiceInstances(activeServiceType.value)
+        // 首屏就把各 tab 的实例数补齐（不阻塞当前 tab 的加载）
+        void prefetchTypeCounts(serviceTypes.value)
       }
     }
   } catch (error) {
@@ -789,6 +796,24 @@ const fetchServiceInstances = (serviceType: string) => {
       loading.value = false
     }
   }, 200)
+}
+
+// 静默预取各服务类型的实例数量，供 tab 标签在首屏就显示计数。
+// 只读长度、不写 instances 缓存（避免把未访问的 tab 当成已加载）；失败静默，计数只是装饰。
+const prefetchTypeCounts = async (types: string[]) => {
+  await Promise.all(
+    types.map(async (type) => {
+      if (typeCounts.value[type] !== undefined || instancesCache.value[type]) return
+      try {
+        const response = await getServiceInstances(type)
+        if (response.data?.success) {
+          typeCounts.value[type] = (response.data.data ?? []).length
+        }
+      } catch {
+        // 计数缺失不影响主流程
+      }
+    })
+  )
 }
 
 // 刷新当前 tab

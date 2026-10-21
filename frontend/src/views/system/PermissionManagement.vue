@@ -36,7 +36,7 @@
       style="margin-bottom: 16px"
     />
 
-    <!-- 权限树（按模块分组展示 48 个权限码） -->
+    <!-- 权限树（按模块分组展示 63 个权限码：中文名 + 弱化的原始码） -->
     <div v-loading="loading" class="tree-wrapper">
       <el-tree
         ref="permissionTreeRef"
@@ -46,7 +46,14 @@
         default-expand-all
         :props="treeProps"
         class="permission-tree"
-      />
+      >
+        <template #default="{ data }">
+          <span class="perm-node" :title="data.code || data.label">
+            <span class="perm-name">{{ data.label }}</span>
+            <code v-if="data.code" class="perm-code">{{ data.code }}</code>
+          </span>
+        </template>
+      </el-tree>
     </div>
 
     <template #footer>
@@ -78,12 +85,14 @@ import {
 } from '@/api/permission'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 
-const { t } = useI18n()
+const { t, te } = useI18n()
 
 /** 权限树节点 */
 interface PermissionTreeNode {
   key: string
   label: string
+  /** 仅叶子节点带原始权限码（用于弱化展示与 tooltip） */
+  code?: string
   children?: PermissionTreeNode[]
 }
 
@@ -105,12 +114,34 @@ const roleOptions = computed<{ value: RoleName; label: string }[]>(() =>
   }))
 )
 
+/**
+ * 权限码 → 「资源 · 动作」的中文/英文名（模块名由分组标题承担）。
+ * 命名口径：模块 · 资源 · 动作（如 config:services:read ⇒ 服务配置 · 查看）；
+ * 没有资源段的码（如 callhistory:view）用模块名当资源，避免出现「· 查看」这种半截文案。
+ * 找不到词条时回退成码片段本身，保证不漏显示。
+ */
+const PERMISSION_ACTIONS = ['read', 'view', 'write', 'manage', 'use']
+
+const permissionLabel = (code: string): string => {
+  const segments = code.split(':')
+  const last = segments[segments.length - 1]
+  const action = PERMISSION_ACTIONS.includes(last) ? last : ''
+  const moduleKey = segments[0]
+  const resourceRaw = action
+    ? segments.slice(1, -1).join(':') || moduleKey
+    : segments.slice(1).join(':') || moduleKey
+  const resourceKey = `permissions.resources.${resourceRaw}`
+  const resourceLabel = te(resourceKey) ? t(resourceKey) : resourceRaw
+  const actionLabel = action && te(`permissions.actions.${action}`) ? t(`permissions.actions.${action}`) : ''
+  return actionLabel ? `${resourceLabel} · ${actionLabel}` : resourceLabel
+}
+
 // 权限树数据（模块分组 → 权限码叶子；模块标题按当前语言翻译）
 const treeData = computed<PermissionTreeNode[]>(() =>
   PERMISSION_GROUPS.map(group => ({
     key: `group:${group.module}`,
     label: t(group.module),
-    children: group.codes.map(code => ({ key: code, label: code }))
+    children: group.codes.map(code => ({ key: code, label: permissionLabel(code), code }))
   }))
 )
 
@@ -220,6 +251,28 @@ loadRoles()
 /* 悬停底色走中性命中色（原 --ja-bg-hover 令牌并不存在，一直落到硬编码蓝色 rgba） */
 .permission-tree {
   --el-tree-node-hover-bg-color: var(--ja-surface-2);
+}
+
+/* 叶子节点：中文名 + 等宽弱化码，扫读靠中文名、核对靠码 */
+.perm-node {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ja-space-2, 8px);
+  min-width: 0;
+}
+
+.perm-name {
+  color: var(--ja-ink);
+}
+
+.perm-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--ja-ink-3);
+  background: var(--ja-surface-2);
+  border-radius: var(--ja-radius-sm, 4px);
+  padding: 0 6px;
 }
 
 .footer-actions {

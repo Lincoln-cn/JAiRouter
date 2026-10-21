@@ -170,7 +170,8 @@ docker run -d \
   -e SPRING_PROFILES_ACTIVE=prod \
   -e JAIROUTER_SECURITY_ENABLED=true \
   -e JAIROUTER_SECURITY_JWT_ENABLED=true \
-  -e JAIROUTER_SECURITY_JWT_SECRET="your-32-char-secret-key-here" \
+  -e JWT_SECRET="your-32-char-secret-key-here" \
+  -e INITIAL_ADMIN_PASSWORD="<强密码>" \
   sodlinken/jairouter:latest-optimized
 ```
 
@@ -183,7 +184,8 @@ docker run -d \
   -e SPRING_PROFILES_ACTIVE=prod \
   -e JAIROUTER_SECURITY_ENABLED=true \
   -e JAIROUTER_SECURITY_JWT_ENABLED=true \
-  -e JAIROUTER_SECURITY_JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
+  -e JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
+  -e INITIAL_ADMIN_PASSWORD="<强密码>" \
   -e JAIROUTER_SECURITY_API_KEY_ENABLED=true \
   -v $(pwd)/config:/app/config:ro \
   -v $(pwd)/logs:/app/logs \

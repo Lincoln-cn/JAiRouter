@@ -179,7 +179,8 @@ docker run -d \
   -e JAIROUTER_SECURITY_ENABLED=true \
   -e JAIROUTER_SECURITY_API_KEY_ENABLED=true \
   -e JAIROUTER_SECURITY_JWT_ENABLED=true \
-  -e PROD_JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
+  -e JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
+  -e INITIAL_ADMIN_PASSWORD="<强密码>" \
   -e JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"\
   -v $(pwd)/config:/app/config:ro \
   -v $(pwd)/logs:/app/logs \
@@ -193,6 +194,7 @@ docker run -d \
   sodlinken/jairouter:latest
 ```
 
+```
 docker run  \
   --name jairouter \
   -p 8080:8080 \
@@ -203,7 +205,8 @@ docker run  \
   -e JAIROUTER_SECURITY_ENABLED=true \
   -e JAIROUTER_SECURITY_API_KEY_ENABLED=true \
   -e JAIROUTER_SECURITY_JWT_ENABLED=true \
-  -e PROD_JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
+  -e JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
+  -e INITIAL_ADMIN_PASSWORD="<强密码>" \
   -e JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0" \
   --restart unless-stopped \
   --health-cmd="curl -f http://localhost:8080/actuator/health || exit 1" \
@@ -212,6 +215,7 @@ docker run  \
   --health-retries=3 \
   --health-start-period=60s \
   sodlinken/jairouter:latest
+```
 
 ### 2. 开发环境运行
 
@@ -265,7 +269,8 @@ services:
       - JAIROUTER_SECURITY_ENABLED=true 
       - JAIROUTER_SECURITY_API_KEY_ENABLED=true 
       - JAIROUTER_SECURITY_JWT_ENABLED=true 
-      - PROD_JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" 
+      - JWT_SECRET=${JWT_SECRET:?set a strong jwt secret}
+      - INITIAL_ADMIN_PASSWORD=${INITIAL_ADMIN_PASSWORD:?set a strong password}
       - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
     volumes:
       - ./config:/app/config:ro
@@ -307,7 +312,8 @@ services:
       - JAIROUTER_SECURITY_ENABLED=true 
       - JAIROUTER_SECURITY_API_KEY_ENABLED=true 
       - JAIROUTER_SECURITY_JWT_ENABLED=true 
-      - PROD_JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" 
+      - JWT_SECRET=${JWT_SECRET:?set a strong jwt secret}
+      - INITIAL_ADMIN_PASSWORD=${INITIAL_ADMIN_PASSWORD:?set a strong password}
       - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
     volumes:
       - ./config:/app/config:ro
@@ -420,16 +426,19 @@ docker-compose down
 | `SPRING_PROFILES_ACTIVE` | `prod`      | Spring 激活的配置文件 |
 | `JAVA_OPTS`              | 见下表         | JVM 参数         |
 | `SERVER_PORT`            | `8080`      | 应用端口           |
-| `JWT_SECRET`             | 无           | 开发环境JWT密钥      |
-| `PROD_JWT_SECRET`         | 无  | 生产环境环境JWT密钥    |
+| `JWT_SECRET`             | 无           | 生产环境 JWT 密钥（至少 32 字符） |
+| `INITIAL_ADMIN_PASSWORD` | 无           | 生产环境管理员初始密码    |
 | `MANAGEMENT_PORT`        | `8081`      | 管理端口（可选）       |
 | `PROD_ADMIN_API_KEY`     | 无           | 生产环境管理员API密钥   |
 | `PROD_SERVICE_API_KEY`   | 无           | 生产环境服务API密钥    |
 | `PROD_READONLY_API_KEY`  | 无           | 生产环境只读API密钥    |
-| `PROD_JWT_SECRET`        | 无           | 生产环境JWT密钥      |
+| `PROD_JWT_SECRET`        | 无           | 旧变量名，仅作配置绑定兜底；启动门闩只读 `JWT_SECRET` |
 | `REDIS_HOST`             | `localhost` | Redis主机地址      |
 | `REDIS_PORT`             | `6379`      | Redis端口        |
 | `REDIS_PASSWORD`         | 无           | Redis密码        |
+
+> `PROD_JWT_SECRET` 只为兼容旧配置保留：`application-prod.yml` 用它兜底绑定 `jairouter.security.jwt.secret`，
+> 但生产启动门闩（`StartupSecretKeyChecker`）只读环境变量 `JWT_SECRET`，因此上面的启动命令一律传 `JWT_SECRET`。
 
 ### 2. JVM 参数配置
 

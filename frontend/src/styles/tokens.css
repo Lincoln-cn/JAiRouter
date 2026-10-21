@@ -25,16 +25,23 @@
   --ja-primary-light-9: #ecf5ff;
   --ja-primary-dark-2: #337ecc;
 
-  /* ========== 侧边栏 ========== */
-  --ja-sidebar-bg: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-  --ja-sidebar-solid-bg: #2c3e50;
-  --ja-sidebar-text: #ffffff;
-  --ja-sidebar-active: #ffd04b;
-  --ja-sidebar-logo-bg: linear-gradient(135deg, #434b52 0%, #2c3e50 100%);
-  --ja-sidebar-logo-border: #3d444d;
+  /* ========== 侧边栏 ==========
+     明色下侧栏与内容区同一套面：白底 + 右侧 1px 分界，避免「浅色界面配深色导轨」的割裂感。
+     选中态用主色深阶文字 + 淡主色底，保证白底上可读（#2563c9 on #fff ≈ 5.6:1）。 */
+  --ja-sidebar-bg: var(--ja-paper, #ffffff);
+  --ja-sidebar-solid-bg: #ffffff;
+  --ja-sidebar-text: #3d4757;
+  --ja-sidebar-active: #2563c9;
+  --ja-sidebar-active-bg: rgba(37, 99, 201, 0.1);
+  --ja-sidebar-group-text: #616c7c;
+  --ja-sidebar-border: #dde3ea;
+  --ja-sidebar-shadow: 2px 0 12px rgba(16, 24, 40, 0.04);
+  --ja-sidebar-logo-bg: transparent;
+  --ja-sidebar-logo-border: #e7ecf2;
+  --ja-sidebar-scrollbar: rgba(16, 24, 40, 0.18);
 
   /* ========== 主内容区 ========== */
-  --ja-main-bg: #f5f5f5;
+  --ja-main-bg: var(--ja-surface);
   --ja-main-bg-gradient: linear-gradient(180deg, #f6f9ff 0%, #fbfdff 100%);
 
   /* ========== 文字 ========== */
@@ -45,7 +52,7 @@
   --ja-text-primary: var(--ja-ink);
   --ja-text-regular: var(--ja-ink-2);
   --ja-text-secondary: var(--ja-ink-3);
-  --ja-text-placeholder: #a8abb2;
+  --ja-text-placeholder: #97a1af;
 
   /* ========== 背景 ========== */
   /* 新令牌 paper/surface 是源头：card/overlay 是纸面，page 是页底（P1-3） */
@@ -55,10 +62,10 @@
   --ja-bg-mask: rgba(0, 0, 0, 0.5);
 
   /* ========== 边框 ========== */
-  --ja-border: #e6e6e6;
-  --ja-border-light: #ebeef5;
-  --ja-border-lighter: #f2f6fc;
-  --ja-border-dark: #d4d7de;
+  --ja-border: #dde3ea;
+  --ja-border-light: #e7ecf2;
+  --ja-border-lighter: #f0f3f7;
+  --ja-border-dark: #c8d1dc;
 
   /* ========== 间距梯度 (4pt) ========== */
   --ja-space-1: 4px;
@@ -111,16 +118,21 @@
   --ja-stat-gradient-error: linear-gradient(135deg, #fff0f0, #fff7e6);
   --ja-stat-gradient-user: linear-gradient(135deg, #f8eaff, #eef7ff);
 
-  /* ========== 中性阶与强调色（P0-1 品牌与令牌） ========== */
+  /* 中性阶与强调色（P0-1 品牌与令牌） */
   /* 中性阶（源头令牌）：paper = 卡片承载体，surface = 页底，surface-2 = 悬停/次级面。
      边框不在此处新增：--ja-border* 已在上方「边框」组定义，并被 element-override.css
-     映射为 --el-border-color*；暗色取值按同一色相在 surface 与 paper 之间推导（P1-3）。 */
+     映射为 --el-border-color*；暗色取值按同一色相在 surface 与 paper 之间推导（P1-3）。
+
+     明色对比度校正（2026-10-21 用户反馈「背景色/字体/卡片太难辨识」）：
+     页底从 #f7f8fa 压到 #f2f4f7（与白卡片的亮度差 1.02 → 1.08，卡片边界靠边框补齐），
+     ink 阶梯整体下压一档：ink-3 从 #8b93a1（3.09:1）提到 #616c7c（5.3:1），
+     ink-2 从 #4b5563 提到 #3d4757（7.9:1），边框加深到 #dde3ea。 */
   --ja-paper: #ffffff;
-  --ja-surface: #f7f8fa;
-  --ja-surface-2: #eef0f4;
-  --ja-ink: #10151c;
-  --ja-ink-2: #4b5563;
-  --ja-ink-3: #8b93a1;
+  --ja-surface: #f2f4f7;
+  --ja-surface-2: #e7ecf2;
+  --ja-ink: #0f172a;
+  --ja-ink-2: #3d4757;
+  --ja-ink-3: #616c7c;
 
   /* 强调色：取自 logo 青色，只用于品牌面（不替代 --ja-primary / --ja-primary-*） */
   --ja-accent: #34c8da;
@@ -149,11 +161,16 @@ html.dark {
   --ja-sidebar-solid-bg: #1a1f2e;
   --ja-sidebar-text: #e0e0e0;
   --ja-sidebar-active: #ffd04b;
+  --ja-sidebar-active-bg: rgba(255, 255, 255, 0.07);
+  --ja-sidebar-group-text: #9aa4b2;
+  --ja-sidebar-border: transparent;
+  --ja-sidebar-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3), 2px 0 10px rgba(0, 0, 0, 0.2);
   --ja-sidebar-logo-bg: linear-gradient(135deg, #1e2536 0%, #1a1f2e 100%);
   --ja-sidebar-logo-border: #2a3040;
+  --ja-sidebar-scrollbar: rgba(255, 255, 255, 0.18);
 
   /* 主内容区 */
-  --ja-main-bg: #0d1117;
+  --ja-main-bg: var(--ja-surface);
   --ja-main-bg-gradient: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
 
   /* 文字 */

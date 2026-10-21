@@ -66,7 +66,9 @@ export default {
         try {
           await waitTableSettled(page, 12000)
         } catch {
-          ok = false
+          // 空态会把表格整体隐藏（v-if，见配额用量页），此时「表格已消失」本身就等于加载结束；
+          // 若表格还在 DOM 里，则确实超时，按失败记。
+          ok = (await page.locator('.el-table').count()) === 0
         }
         check(`records:${p.tag}:table-settled`, ok)
       }

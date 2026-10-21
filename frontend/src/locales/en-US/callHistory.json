@@ -36,7 +36,7 @@
         "totalRequests": "Total Requests",
         "successRate": "Success Rate",
         "avgResponseTime": "Avg. Response Time",
-        "totalTokenConsumed": "Total Tokens Consumed",
+        "totalTokenConsumed": "Total Tokens Used",
         "failedRequests": "Failed Requests",
         "modelCount": "Models",
         "serviceTypeCount": "Service Types",

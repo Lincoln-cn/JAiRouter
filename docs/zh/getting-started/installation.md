@@ -73,22 +73,36 @@ docker run -d \
 **生产环境（prod profile，必须提供密钥）**：
 
 ```bash
-# 生产环境需自行提供 JWT 密钥（至少 32 字符）
+# 生产环境需自行提供 JWT 密钥（至少 32 字符）与管理员初始密码
 docker run -d \
   --name jairouter \
   -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
   -e JWT_SECRET="<至少32字符的密钥>" \
+  -e INITIAL_ADMIN_PASSWORD="<强密码>" \
   sodlinken/jairouter:latest
 
 # 挂载自定义配置目录
 docker run -d \
   --name jairouter \
   -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
   -e JWT_SECRET="<至少32字符的密钥>" \
+  -e INITIAL_ADMIN_PASSWORD="<强密码>" \
   -v $(pwd)/config:/app/config:ro \
   -v $(pwd)/logs:/app/logs \
   sodlinken/jairouter:latest
 ```
+
+生产 profile 启动时必须同时满足以下三项，其中两项的取值不能沿用出厂默认值：
+
+| 必需项 | 说明 |
+| --- | --- |
+| `SPRING_PROFILES_ACTIVE` | 设为 `prod`（或其组合，如 `prod,json-logs`）才会启用生产门闩 |
+| `JWT_SECRET` | 至少 32 字符的强随机密钥 |
+| `INITIAL_ADMIN_PASSWORD` | 管理员初始密码，强度足够（不能是 `ChangeMeOnFirstStartup123456`） |
+
+缺任一项、沿用出厂默认值或强度不足，进程都会在启动阶段直接退出（`IllegalStateException`）。详见 [生产环境部署](../deployment/production.md)。
 
 ### 4. 验证安装
 

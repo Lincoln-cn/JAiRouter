@@ -33,7 +33,7 @@ export const ROLE_DESCRIPTIONS: Record<RoleName, string> = {
 }
 
 /**
- * 48 权限码按模块展示分组（与后端 PermissionCodes 全量一致）。
+ * 63 权限码按模块展示分组（与后端 PermissionCodes 全量一致，含 TA4 新增的 8 个 read 码）。
  * 仅用于 UI 展示（权限树分组），不代表后端授权语义。
  * module 为分组标题的 i18n key（页面以 t(group.module) 渲染），
  * 文案位于 locales/{zh-CN,en-US}/permissions.json 的 groups 节点。
@@ -60,7 +60,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
   {
     module: 'permissions.groups.trafficGovernance',
     codes: [
-      'lb:monitoring:read', 'lb:config:write',
+      'lb:monitoring:read', 'lb:config:read', 'lb:config:write',
       'cb:monitoring:read', 'cb:history:read',
       'rl:monitoring:read'
     ]
@@ -69,30 +69,37 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
   {
     module: 'permissions.groups.monitoring',
     codes: [
-      'monitoring:metrics:read', 'monitoring:slowquery:read',
+      'monitoring:metrics:read', 'monitoring:metrics:write',
+      'monitoring:slowquery:read', 'monitoring:slowquery:write',
       'monitoring:quota:read',
       'monitoring:tokenusage:read', 'monitoring:modelstats:read',
-      'monitoring:routing:read'
+      'monitoring:routing:read',
+      'monitoring:exceptions:read', 'monitoring:exceptions:write',
+      'monitoring:config:write'
     ]
   },
   {
     module: 'permissions.groups.tracing',
     codes: [
-      'tracing:dashboard:read', 'tracing:search:read', 'tracing:config:manage'
+      'tracing:dashboard:read', 'tracing:search:read',
+      'tracing:config:read', 'tracing:config:manage'
     ]
   },
   {
     module: 'permissions.groups.security',
     codes: [
-      'security:apikeys:manage', 'security:sanitization:manage',
-      'security:jwttokens:manage',
-      'security:blacklist:manage', 'security:audit:read'
+      'security:apikeys:read', 'security:apikeys:manage',
+      'security:sanitization:read', 'security:sanitization:manage',
+      'security:jwttokens:read', 'security:jwttokens:manage',
+      'security:blacklist:read', 'security:blacklist:manage',
+      'security:audit:read', 'security:audit:write'
     ]
   },
   {
     module: 'permissions.groups.system',
     codes: [
-      'system:accounts:manage', 'system:permissions:manage'
+      'system:accounts:read', 'system:accounts:manage',
+      'system:permissions:read', 'system:permissions:manage'
     ]
   },
   { module: 'permissions.groups.ai', codes: ['ai:playground:use'] },
