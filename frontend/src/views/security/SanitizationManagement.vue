@@ -27,9 +27,18 @@
           <template #header>
             <span class="card-title">{{ t('sanitization.requestSection') }}</span>
           </template>
+          <!-- 开启状态常驻警示：脱敏每个命中都做正则匹配 + 文本重写，有性能开销 -->
+          <el-alert
+            v-if="form.request.enabled"
+            type="warning"
+            :closable="false"
+            show-icon
+            :title="t('sanitization.enabledPerformanceWarning')"
+            style="margin-bottom: var(--ja-space-3)"
+          />
           <el-form label-width="140px">
             <el-form-item :label="t('sanitization.enabledLabel')">
-              <el-switch v-model="form.request.enabled" />
+              <el-switch v-model="form.request.enabled" :before-change="() => confirmEnable('request')" />
             </el-form-item>
             <el-form-item :label="t('sanitization.maskingCharLabel')">
               <el-input v-model="form.request.maskingChar" maxlength="5" style="width: 120px" />
@@ -72,9 +81,18 @@
           <template #header>
             <span class="card-title">{{ t('sanitization.responseSection') }}</span>
           </template>
+          <!-- 同一条常驻警示：响应侧在出站做正则匹配 + 文本重写 -->
+          <el-alert
+            v-if="form.response.enabled"
+            type="warning"
+            :closable="false"
+            show-icon
+            :title="t('sanitization.enabledPerformanceWarning')"
+            style="margin-bottom: var(--ja-space-3)"
+          />
           <el-form label-width="140px">
             <el-form-item :label="t('sanitization.enabledLabel')">
-              <el-switch v-model="form.response.enabled" />
+              <el-switch v-model="form.response.enabled" :before-change="() => confirmEnable('response')" />
             </el-form-item>
             <el-form-item :label="t('sanitization.maskingCharLabel')">
               <el-input v-model="form.response.maskingChar" maxlength="5" style="width: 120px" />
@@ -188,7 +206,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { getErrorMessage } from '@/utils/error'
 import { Refresh, Check } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
@@ -297,6 +315,29 @@ const syncForm = () => {
   if (!config.value) return
   form.request = sideToForm(config.value.request)
   form.response = sideToForm(config.value.response)
+}
+
+/**
+ * 开启脱敏前的二次确认（挂到 `el-switch` 的 `before-change`）。
+ * 关闭（true → false）无需确认，直接放行；只有 false → true 才弹确认框。
+ * 取消时返回 false ⇒ Element Plus 不更新 v-model，开关保持关闭。
+ */
+const confirmEnable = async (side: 'request' | 'response'): Promise<boolean> => {
+  if (form[side].enabled) return true
+  try {
+    await ElMessageBox.confirm(
+      t('sanitization.enableConfirmMessage'),
+      t('sanitization.enableConfirmTitle'),
+      {
+        type: 'warning',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel')
+      }
+    )
+    return true
+  } catch {
+    return false
+  }
 }
 
 const loadAll = async () => {

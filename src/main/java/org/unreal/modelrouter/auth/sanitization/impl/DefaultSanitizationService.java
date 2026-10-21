@@ -57,6 +57,20 @@ public class DefaultSanitizationService implements SanitizationService {
      * 规则ID生成器
      */
     private final AtomicInteger ruleIdGenerator = new AtomicInteger(1);
+
+    /**
+     * 敏感词规则的起始 priority：同一列表内按索引递增，保证「列表顺序 = 执行顺序」。
+     */
+    private static final int WORD_PRIORITY_BASE = 1;
+
+    /**
+     * PII 规则的起始 priority：必须整体大于敏感词规则，且同一列表内按索引递增。
+     *
+     * <p>引擎按 {@code priority} 排序后逐条替换，若同组规则共用一个 priority，
+     * 实际执行顺序取决于 {@link ConcurrentHashMap} 的迭代顺序、与 yml 列表顺序无关
+     * ⇒ 「身份证 → 银行卡 → 手机号」这种先长后短的顺序要求无法被保证（#561）。</p>
+     */
+    private static final int PII_PRIORITY_BASE = 1000;
     
     @Autowired
     public DefaultSanitizationService(
@@ -105,8 +119,10 @@ public class DefaultSanitizationService implements SanitizationService {
         SanitizationConfig.RequestSanitization requestConfig =
                 securityProperties.getSanitization().getRequest();
 
-        // 加载敏感词规则
-        for (String sensitiveWord : requestConfig.getSensitiveWords()) {
+        // 加载敏感词规则（priority 按列表顺序递增，保证执行顺序可预期）
+        List<String> sensitiveWords = requestConfig.getSensitiveWords();
+        for (int i = 0; i < sensitiveWords.size(); i++) {
+            String sensitiveWord = sensitiveWords.get(i);
             SanitizationRule rule = SanitizationRule.builder()
                     .ruleId("request-sensitive-word-" + ruleIdGenerator.getAndIncrement())
                     .name("请求敏感词: " + sensitiveWord)
@@ -115,7 +131,7 @@ public class DefaultSanitizationService implements SanitizationService {
                     .pattern(sensitiveWord)
                     .strategy(SanitizationStrategy.MASK)
                     .enabled(true)
-                    .priority(1)
+                    .priority(WORD_PRIORITY_BASE + i)
                     .applicableContentTypes(List.of("application/json", "application/xml", "text/plain"))
                     .replacementChar(requestConfig.getMaskingChar())
                     .build();
@@ -123,8 +139,10 @@ public class DefaultSanitizationService implements SanitizationService {
             rules.put(rule.getRuleId(), rule);
         }
         
-        // 加载PII模式规则
-        for (String piiPattern : requestConfig.getPiiPatterns()) {
+        // 加载PII模式规则（priority 按列表顺序递增：先长后短靠这个顺序实现，#561）
+        List<String> piiPatterns = requestConfig.getPiiPatterns();
+        for (int i = 0; i < piiPatterns.size(); i++) {
+            String piiPattern = piiPatterns.get(i);
             SanitizationRule rule = SanitizationRule.builder()
                     .ruleId("request-pii-pattern-" + ruleIdGenerator.getAndIncrement())
                     .name("请求PII模式: " + piiPattern)
@@ -133,7 +151,7 @@ public class DefaultSanitizationService implements SanitizationService {
                     .pattern(piiPattern)
                     .strategy(SanitizationStrategy.MASK)
                     .enabled(true)
-                    .priority(2)
+                    .priority(PII_PRIORITY_BASE + i)
                     .applicableContentTypes(List.of("application/json", "application/xml", "text/plain"))
                     .replacementChar(requestConfig.getMaskingChar())
                     .build();
@@ -151,8 +169,10 @@ public class DefaultSanitizationService implements SanitizationService {
         SanitizationConfig.ResponseSanitization responseConfig =
                 securityProperties.getSanitization().getResponse();
 
-        // 加载敏感词规则
-        for (String sensitiveWord : responseConfig.getSensitiveWords()) {
+        // 加载敏感词规则（priority 按列表顺序递增）
+        List<String> sensitiveWords = responseConfig.getSensitiveWords();
+        for (int i = 0; i < sensitiveWords.size(); i++) {
+            String sensitiveWord = sensitiveWords.get(i);
             SanitizationRule rule = SanitizationRule.builder()
                     .ruleId("response-sensitive-word-" + ruleIdGenerator.getAndIncrement())
                     .name("响应敏感词: " + sensitiveWord)
@@ -161,7 +181,7 @@ public class DefaultSanitizationService implements SanitizationService {
                     .pattern(sensitiveWord)
                     .strategy(SanitizationStrategy.MASK)
                     .enabled(true)
-                    .priority(1)
+                    .priority(WORD_PRIORITY_BASE + i)
                     .applicableContentTypes(List.of("application/json", "application/xml", "text/plain"))
                     .replacementChar(responseConfig.getMaskingChar())
                     .build();
@@ -169,8 +189,10 @@ public class DefaultSanitizationService implements SanitizationService {
             rules.put(rule.getRuleId(), rule);
         }
         
-        // 加载PII模式规则
-        for (String piiPattern : responseConfig.getPiiPatterns()) {
+        // 加载PII模式规则（priority 按列表顺序递增：先长后短靠这个顺序实现，#561）
+        List<String> piiPatterns = responseConfig.getPiiPatterns();
+        for (int i = 0; i < piiPatterns.size(); i++) {
+            String piiPattern = piiPatterns.get(i);
             SanitizationRule rule = SanitizationRule.builder()
                     .ruleId("response-pii-pattern-" + ruleIdGenerator.getAndIncrement())
                     .name("响应PII模式: " + piiPattern)
@@ -179,7 +201,7 @@ public class DefaultSanitizationService implements SanitizationService {
                     .pattern(piiPattern)
                     .strategy(SanitizationStrategy.MASK)
                     .enabled(true)
-                    .priority(2)
+                    .priority(PII_PRIORITY_BASE + i)
                     .applicableContentTypes(List.of("application/json", "application/xml", "text/plain"))
                     .replacementChar(responseConfig.getMaskingChar())
                     .build();

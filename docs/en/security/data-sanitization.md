@@ -67,7 +67,7 @@ jairouter:
           - "password"
           - "secret"
         pii-patterns:
-          - "\\d{11}"  # Phone number
+          - "(?<!\\d)1[3-9]\\d{9}(?!\\d)"                       # Phone number (digit boundaries, never cuts a longer number)
           - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"  # Email
         masking-char: "*"
 ```
@@ -86,10 +86,14 @@ curl -H "X-API-Key: your-api-key" \
 
 The actual content sent to the AI model will be sanitized to:
 ```
-My phone number is 138****5678, email is u***@example.com
+My phone number is ***********, email is *******************
 ```
 
 ## Detailed Configuration
+
+> ⚠️ **Not every key in the examples below is supported.** The implementation only binds `enabled`, `sensitive-words`, `pii-patterns`, `masking-char`, `whitelist-users` (request side only), `log-sanitization`, `fail-on-error` and `preserve-json-structure` (response side only).
+> Keys such as `strategies` (`keep-prefix-suffix` / `keep-domain`), `rule-priorities`, `whitelist-ips` and `service-specific-rules` are **not implemented**: adding them to YAML does not fail, but has no effect.
+> The strategy actually applied comes from each rule's `strategy` field (`MASK` / `REPLACE` / `REMOVE` / `HASH`); the shipped rules all use `MASK` (same-length replacement, e.g. an 11-digit phone number becomes `***********`).
 
 ### Request Data Sanitization Configuration
 
@@ -109,12 +113,14 @@ jairouter:
           - "credential"    # Credential
           - "private"       # Private information
         
-        # PII regex patterns
+        # PII regex patterns (list order = execution order: longest first, otherwise the first
+        # 11 digits of a longer number are consumed by the phone rule and the tail leaks — see #561)
         pii-patterns:
-          - "\\d{11}"                                                    # Phone number
-          - "\\d{18}"                                                    # ID card number
-          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"          # Email address
-          - "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"      # Bank card number
+          - "(?<!\\d)\\d{17}[\\dXx](?!\\d)"                             # ID card (18 chars, trailing X allowed)
+          - "(?<!\\d)(?:\\d{16}|\\d{19})(?!\\d)"                        # Bank card (16/19 digits, no separators)
+          - "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"       # Bank card (groups of 4 with space/dash)
+          - "(?<!\\d)1[3-9]\\d{9}(?!\\d)"                               # Mobile number (11 digits starting 13-19)
+          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"           # Email address
         
         # Masking character
         masking-char: "*"
@@ -410,6 +416,49 @@ jairouter:
             additional-patterns:
               - "\\b(?:风格|style)[:：]?\\s*[\\w\\d]+\\b"
 ```
+
+## Performance Impact and Capacity Planning
+
+Sanitization is **not a zero-cost bypass**: every match runs regex matching and text rewriting over the whole body. The request side is designed for **inbound** traffic (`SanitizationService.sanitizeRequest`), the response side for **outbound** traffic (`ResponseSanitizationFilter`), and the recording side (`sanitizeForStorage`, run before call history and traces are persisted) executes the same matching.
+
+### Current coverage (size with this in mind, not with "everything is sanitized")
+
+| Location | Hook | Status |
+|----------|------|--------|
+| Response | Outbound response body filter | **`application/json` responses only**; SSE / streaming responses (`text/event-stream`) never take this path |
+| Response paths | Path filter | `/v1/**`, `/api/**`, `/admin/**`, `/actuator/**` and static assets are **excluded by default** in `ExcludedPathsConfig` |
+| Request | Inbound request body (`sanitizeRequest`) | Switch and whitelist logic exist, but **no caller is wired into the current request chain**, so no inbound cost is paid today |
+| Recording | Before persistence (`sanitizeForStorage`) | Controlled by `record-level` and call-history settings, independent of `request/response.enabled` |
+
+So even with the response switch on, responses from the main inference entry (`/v1/chat/completions`) and from management endpoints are **not** rewritten by this filter (gap tracked as issue #560). Do not base a capacity plan on "every response is sanitized".
+
+In JSON mode the values of `traceId` / `spanId` / `requestId` / `traceparent` / `tracestate` are kept as-is (key match is case-insensitive): masking troubleshooting identifiers breaks the correlation between responses and logs, which is more harm than protection (issue #561). Values under other keys are still sanitized, and plain text has no key to infer, so its behavior is unchanged.
+
+### What drives the cost
+
+- **Number of rules**: every enabled rule attempts at least one match against every text to inspect, so cost scales roughly with rules multiplied by text length.
+- **Regex complexity**: expressions with nested quantifiers or many backtracking branches can degrade into catastrophic backtracking on long text, where a single match burns tens of milliseconds.
+- **Body size**: the filter reads the whole response body into memory and rewrites it, so cost is close to linear in bytes; MB-scale bodies also hold an extra copy on the heap.
+- **Request rate**: per-request cost grows into CPU usage and higher average and tail latency under concurrency; with `fail-on-error=true`, retries amplify it once more.
+
+### Rough numbers (a starting point only, not a conclusion)
+
+- A small response (**< 10KB**) plus 3-5 PII patterns: usually **sub-millisecond** (< 1 ms), negligible against inference time.
+- **MB-scale** bodies, or **dozens** of complex patterns: **milliseconds to tens of milliseconds**; decide whether to enable it, and which side to enable first, from measured load-test results.
+
+### Recommendations
+
+1. **Load-test in staging with real traffic**: compare average and tail latency and CPU with the switch on and off using production samples (long sessions, large bodies) before you roll out.
+2. **Start from a minimal rule set**: enable only the PII patterns you need, verify the effect, then add rules one at a time instead of importing every sample from the rule library.
+3. **Avoid catastrophic backtracking**: `SafeRegexValidator` screens dangerous patterns on the engine side, but it is **not a performance guarantee** and does not cover every degraded shape; validate custom patterns yourself against long worst-case text.
+4. **Enable per side**: request and response sides switch independently, so start with the side whose benefit is clearest.
+5. **The console warns you**: the "PII Sanitization" page asks for confirmation before enabling a switch (naming the performance cost) and keeps a warning alert on top of each configuration card while it is on.
+
+### Zero overhead when disabled
+
+When `request.enabled` / `response.enabled` is `false`, the filter passes the exchange through at its first check (`ResponseSanitizationFilter.filter()`): it reads no body and runs no regex matching or rewriting.
+
+That zero-overhead guarantee covers gateway paths only: the recording side (`sanitizeForStorage`) **does not check these two switches**. Rules are always loaded, so any applicable rule still runs before content is persisted (the javadoc of `DefaultSanitizationService.loadRequestRules` records this trade-off). Turning the switches off removes the outbound response cost, but not the recording cost: with heavy call history or trace volume, the number of rules still affects write-side latency.
 
 ## Performance Optimization
 

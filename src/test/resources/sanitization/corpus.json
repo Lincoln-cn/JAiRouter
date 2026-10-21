@@ -1,12 +1,14 @@
 {
-  "version": 1,
-  "description": "TA1 脱敏回归语料：按仓库默认配置（config/auth/sanitization.yml + security-base.yml）记录命中、误伤与已知漏检。改默认规则时必须同步改本文件与 SanitizationCorpusRegressionTest 的期望。",
+  "version": 2,
+  "description": "TA1 脱敏回归语料：按仓库默认配置（config/auth/sanitization.yml + security-base.yml）记录命中、误伤与已知漏检。改默认规则时必须同步改本文件与 SanitizationCorpusRegressionTest 的期望。#561 起：PII 模式先长后短（身份证 → 银行卡 → 手机号 → 邮箱），并新增 traceId/spanId/requestId/traceParent/traceState 键名豁免。",
   "config": {
-    "sensitiveWords": ["password", "account", "secret", "token", "key"],
+    "sensitiveWords": ["password", "account", "secret", "token"],
     "piiPatterns": [
-      "\\d{11}",
-      "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
-      "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"
+      "(?<!\\d)\\d{17}[\\dXx](?!\\d)",
+      "(?<!\\d)(?:\\d{16}|\\d{19})(?!\\d)",
+      "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b",
+      "(?<!\\d)1[3-9]\\d{9}(?!\\d)",
+      "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
     ],
     "maskingChar": "*",
     "preserveJsonStructure": true
@@ -74,25 +76,23 @@
     },
     {
       "id": "resp-json-bank-compact",
-      "kind": "gap",
+      "kind": "hit",
       "direction": "response",
       "contentType": "application/json",
       "input": "{\"card\":\"6222021234567890\"}",
-      "mustBeMasked": ["62220212345"],
-      "knownGaps": ["67890"],
+      "mustBeMasked": ["6222021234567890", "62220212345", "67890"],
       "mustRemain": ["\"card\""],
-      "note": "已知漏检：无分隔符的 16 位卡号先被手机号规则 \\d{11} 命中前 11 位，银行卡规则随后无法整段匹配，末 5 位可见"
+      "note": "无分隔符 16 位卡号整段命中（#561：银行卡模式 (?:\\d{16}|\\d{19}) 排在手机号之前）。mustBeMasked 同时列「前 11 位」和「末 5 位」—— 旧行为只打码前 11 位、末 5 位可见，只断言整串会漏检这种部分打码"
     },
     {
       "id": "resp-json-idcard-18",
-      "kind": "gap",
+      "kind": "hit",
       "direction": "response",
       "contentType": "application/json",
       "input": "{\"idCard\":\"110101199003071234\"}",
-      "mustBeMasked": ["11010119900"],
-      "knownGaps": ["3071234"],
+      "mustBeMasked": ["110101199003071234", "11010119900", "3071234"],
       "mustRemain": ["\"idCard\""],
-      "note": "已知漏检：默认规则里没有 18 位身份证模式，仅 \\d{11} 命中前 11 位，出生日期段与顺序码可见"
+      "note": "18 位身份证整段命中（#561：新增身份证模式，排在银行卡/手机号之前）。mustBeMasked 同时列「前 11 位」与「出生日期 + 顺序码」—— 旧行为只打码前 11 位"
     },
     {
       "id": "resp-json-sensitive-word-value",
@@ -152,37 +152,117 @@
       "input": "{\"ts\":1735689600000}",
       "mustBeMasked": [],
       "mustRemain": ["1735689600000", "\"ts\""],
-      "note": "数字字面量不走正则 ⇒ 13 位毫秒时间戳不会被 \\d{11} 误伤"
+      "note": "数字字面量不走正则 ⇒ 13 位毫秒时间戳不会被 PII 规则误伤"
     },
     {
       "id": "resp-json-uuid-traced",
-      "kind": "false-positive",
+      "kind": "hit",
       "direction": "response",
       "contentType": "application/json",
       "input": "{\"traceId\":\"550e8400-e29b-41d4-a716-446655440000\"}",
-      "mustBeMasked": ["446655440000"],
-      "mustRemain": ["\"traceId\"", "550e8400-e29b-41d4"],
-      "note": "误伤：UUID 末段是 12 位数字，被 \\d{11} 打掉 11 位 ⇒ traceId 值被破坏、无法与日志对齐"
+      "mustBeMasked": [],
+      "mustRemain": ["\"traceId\"", "550e8400-e29b-41d4-a716-446655440000"],
+      "note": "traceId（traceId 形状的 UUID）原样保留（#561：键名豁免；此前末段 12 位数字被 \\d{11} 打掉，无法与日志对齐）"
     },
     {
       "id": "resp-json-order-no",
-      "kind": "false-positive",
+      "kind": "hit",
       "direction": "response",
       "contentType": "application/json",
       "input": "{\"orderNo\":\"20261020123\"}",
-      "mustBeMasked": ["20261020123"],
-      "mustRemain": ["\"orderNo\""],
-      "note": "误伤：11 位业务单号/时间戳被当作手机号整段打掉"
+      "mustBeMasked": [],
+      "mustRemain": ["\"orderNo\"", "20261020123"],
+      "note": "11 位业务单号原样保留（#561：手机号要求 1[3-9] 开头，2026… 不是手机号）"
     },
     {
       "id": "resp-json-generic-word-key",
-      "kind": "false-positive",
+      "kind": "hit",
       "direction": "response",
       "contentType": "application/json",
       "input": "{\"text\":\"press any key to continue\"}",
-      "mustBeMasked": ["key"],
-      "mustRemain": ["press any ", " to continue"],
-      "note": "误伤：通用英文词 key 出现在正常文案里也会被打码（词表按单词命中）"
+      "mustBeMasked": [],
+      "mustRemain": ["press any key to continue"],
+      "note": "普通文案原样（#561：通用英文词 key 已从 sensitive-words 词表移除）"
+    },
+    {
+      "id": "resp-json-traceid-exempt",
+      "kind": "hit",
+      "direction": "response",
+      "contentType": "application/json",
+      "input": "{\"traceId\":\"20261020123\"}",
+      "mustBeMasked": [],
+      "mustRemain": ["\"traceId\"", "20261020123"],
+      "note": "新增：traceId 键的值不做任何规则替换（该值本身形似 11 位数字，若走规则会被打码）"
+    },
+    {
+      "id": "resp-json-traceid-exempt-uppercase",
+      "kind": "hit",
+      "direction": "response",
+      "contentType": "application/json",
+      "input": "{\"TRACEID\":\"6222021234567890\"}",
+      "mustBeMasked": [],
+      "mustRemain": ["\"TRACEID\"", "6222021234567890"],
+      "note": "新增：键名豁免大小写不敏感（TRACEID 同样原样；该值形似 16 位卡号，若走规则会被整段打码）"
+    },
+    {
+      "id": "resp-json-spanid-exempt",
+      "kind": "hit",
+      "direction": "response",
+      "contentType": "application/json",
+      "input": "{\"spanId\":\"6222021234567890\"}",
+      "mustBeMasked": [],
+      "mustRemain": ["\"spanId\"", "6222021234567890"],
+      "note": "新增：spanId 键的值原样保留（形似 16 位卡号，证明豁免优先于银行卡规则）"
+    },
+    {
+      "id": "resp-json-requestid-exempt",
+      "kind": "hit",
+      "direction": "response",
+      "contentType": "application/json",
+      "input": "{\"requestId\":\"110101199003071234\"}",
+      "mustBeMasked": [],
+      "mustRemain": ["\"requestId\"", "110101199003071234"],
+      "note": "新增：requestId 键的值原样保留（形似 18 位身份证，证明豁免优先于身份证规则）"
+    },
+    {
+      "id": "resp-json-traceparent-exempt",
+      "kind": "hit",
+      "direction": "response",
+      "contentType": "application/json",
+      "input": "{\"traceparent\":\"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\"}",
+      "mustBeMasked": [],
+      "mustRemain": ["\"traceparent\"", "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"],
+      "note": "新增：W3C traceparent 键的值原样保留"
+    },
+    {
+      "id": "resp-json-tracestate-exempt",
+      "kind": "hit",
+      "direction": "response",
+      "contentType": "application/json",
+      "input": "{\"traceState\":\"congo=t61rcWkgMzE\"}",
+      "mustBeMasked": [],
+      "mustRemain": ["\"traceState\"", "congo=t61rcWkgMzE"],
+      "note": "新增：W3C traceState 键的值原样保留"
+    },
+    {
+      "id": "resp-json-non-exempt-traceid-value",
+      "kind": "hit",
+      "direction": "response",
+      "contentType": "application/json",
+      "input": "{\"correlationId\":\"13800138000\"}",
+      "mustBeMasked": ["13800138000"],
+      "mustRemain": ["\"correlationId\""],
+      "note": "新增（反向对照）：键名不在豁免清单里，即使语义像关联 ID 也照常脱敏 —— 限制豁免面，避免「长得像 trace 就放过」"
+    },
+    {
+      "id": "resp-text-traceid-not-exempt",
+      "kind": "hit",
+      "direction": "response",
+      "contentType": "text/plain",
+      "input": "traceId=13800138000",
+      "mustBeMasked": ["13800138000"],
+      "mustRemain": ["traceId="],
+      "note": "新增：非 JSON 文本不做键名推断，同样的键名+值照常脱敏"
     },
     {
       "id": "resp-text-phone-list",

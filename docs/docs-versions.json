@@ -1349,11 +1349,11 @@
     },
     "docs/en/security/data-sanitization.md": {
       "FilePath": "docs/en/security/data-sanitization.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-13T13:53:09.065996",
-      "ContentHash": "eb9978f9d5cfabe3",
-      "GitCommit": "2435f7d0",
-      "Author": "Leo Lin",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-21T22:49:49.180204",
+      "ContentHash": "c865cff69cfe2104",
+      "GitCommit": "57cae64e",
+      "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/management-api.md",
@@ -1549,11 +1549,11 @@
     },
     "docs/zh/security/data-sanitization.md": {
       "FilePath": "docs/zh/security/data-sanitization.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-10-21T21:07:48.706781",
-      "ContentHash": "7d77ec54a24e0d03",
-      "GitCommit": "537f419c",
-      "Author": "Leo Lin",
+      "Version": "1.0.10",
+      "LastModified": "2026-10-21T22:49:56.410931",
+      "ContentHash": "1876cef2454c7f6e",
+      "GitCommit": "57cae64e",
+      "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/management-api.md",
@@ -2358,6 +2358,16 @@
       "ContentHash": "704dcfe6e212fbe5",
       "GitCommit": "76b2a9d2",
       "Author": "Leo Lin",
+      "ChangeSummary": "",
+      "Dependencies": []
+    },
+    "AGENTS.md": {
+      "FilePath": "AGENTS.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-10-21T22:49:43.575805",
+      "ContentHash": "cbd03d2d6a9f9dfa",
+      "GitCommit": "",
+      "Author": "",
       "ChangeSummary": "",
       "Dependencies": []
     }
@@ -9562,7 +9572,31 @@
       "ChangeType": "DELETED",
       "Timestamp": "2026-10-21T13:35:24.012152",
       "Description": "文档已删除"
+    },
+    {
+      "FilePath": "AGENTS.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-10-21T22:49:43.575805",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/en/security/data-sanitization.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-21T22:49:49.180204",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/data-sanitization.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-21T22:49:56.410931",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-21T13:35:24.012670"
+  "last_updated": "2026-10-21T22:49:57.902798"
 }

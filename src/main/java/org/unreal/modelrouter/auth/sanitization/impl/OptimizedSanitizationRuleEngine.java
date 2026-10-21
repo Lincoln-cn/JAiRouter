@@ -130,6 +130,10 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
             StringBuilder result = new StringBuilder(content.length());
             int i = 0;
 
+            // 当前字符串值所属的键名（原样，比较时转小写）。JSON 键名本就不脱敏，
+            // 这里复用同一处「键名 vs 值」判定顺带记下来，供 JsonKeyExemption 豁免使用。
+            String currentKey = null;
+
             while (i < content.length()) {
                 if (content.charAt(i) == '"') {
                     int j = i + 1;
@@ -155,6 +159,10 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
                             && content.charAt(afterQuote) == ':';
 
                     if (isKey) {
+                        currentKey = stringValue;
+                        result.append(content, i, j + 1);
+                    } else if (JsonKeyExemption.isExempt(currentKey)) {
+                        // 键名豁免：原样拷贝（连转义序列也不动），不做任何规则替换（#561）
                         result.append(content, i, j + 1);
                     } else {
                         String masked = stringValue;
