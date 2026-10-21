@@ -36,8 +36,10 @@ import java.time.LocalDateTime;
  * <p><b>设计边界</b>：聊天/调用历史/日志中的 PII 由
  * {@code SanitizationService.sanitizeForStorage} 在记录链路处理，不依赖本过滤器。
  * 本过滤器默认关闭（{@code jairouter.security.sanitization.response.enabled=false}），
- * 且 {@link ExcludedPathsConfig#isDataMaskExcluded(String)} 已排除管理台 {@code /api/**}
- * 与 AI 实时路径 {@code /api/v1/**}、{@code /v1/**}，避免改写客户端模型输出或管理响应。</p>
+ * 且 {@link ExcludedPathsConfig#isDataMaskExcluded(String)} 排除管理台 {@code /api/**}
+ * 与运维端点。{@code /v1/**} 的<b>非流式 JSON</b> 响应自 issue #560（方案 C 第一阶段）起
+ * <b>纳入</b>脱敏；其 SSE（{@code text/event-stream}）响应仍由「只处理 application/json」
+ * 的内容类型判定跳过（{@code shouldSanitizeContentType}），流式覆盖留待后续阶段。</p>
  */
 @Slf4j
 @Component
