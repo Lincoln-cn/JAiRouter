@@ -139,6 +139,62 @@
       </div>
     </el-card>
 
+    <el-card shadow="hover" style="margin-bottom: var(--ja-space-4)">
+      <template #header>
+        <div class="scope-header">
+          <span class="card-title">{{ t('sanitization.scopeTitle') }}</span>
+          <el-tag size="small" effect="plain" :type="scopeInfo?.mode === 'include' ? 'warning' : 'info'">
+            {{ scopeInfo?.mode === 'include' ? t('sanitization.scopeModeInclude') : t('sanitization.scopeModeExclude') }}
+          </el-tag>
+          <el-tag size="small" effect="plain" type="info">
+            {{ scopeInfo?.usingBuiltInDefaults ? t('sanitization.scopeSourceBuiltin') : t('sanitization.scopeSourceConfig') }}
+          </el-tag>
+        </div>
+      </template>
+      <p class="scope-desc">{{ t('sanitization.scopeDesc') }}</p>
+      <el-alert
+        v-if="scopeInfo?.warning"
+        type="error"
+        :closable="false"
+        show-icon
+        :title="scopeInfo.warning"
+        style="margin-bottom: var(--ja-space-3)"
+      />
+      <div class="scope-patterns">
+        <span class="scope-label">{{ t('sanitization.scopePatternsLabel') }}</span>
+        <template v-if="scopeInfo?.patterns?.length">
+          <el-tag
+            v-for="pattern in scopeInfo.patterns"
+            :key="pattern"
+            size="small"
+            effect="plain"
+            class="scope-pattern"
+          >{{ pattern }}</el-tag>
+        </template>
+        <span v-else class="scope-empty">{{ t('sanitization.scopeEmptyPatterns') }}</span>
+      </div>
+      <div class="scope-preview">
+        <el-input
+          v-model="scopePreviewPath"
+          :placeholder="t('sanitization.scopePreviewPlaceholder')"
+          class="scope-preview-input"
+          @keyup.enter="handlePreviewScope"
+        />
+        <el-button :loading="previewing" @click="handlePreviewScope">
+          {{ t('sanitization.scopePreviewButton') }}
+        </el-button>
+        <span v-if="scopePreview" class="scope-preview-result">
+          <el-tag size="small" :type="scopePreview.shouldSanitize ? 'success' : 'info'" effect="plain">
+            {{ scopePreview.shouldSanitize ? t('sanitization.scopePreviewSanitized') : t('sanitization.scopePreviewSkipped') }}
+          </el-tag>
+          <span v-if="scopePreview.matchedPattern" class="scope-preview-matched">
+            {{ t('sanitization.scopePreviewMatched') }} <code>{{ scopePreview.matchedPattern }}</code>
+          </span>
+        </span>
+      </div>
+      <p class="scope-hint">{{ t('sanitization.scopeNotConfigurableHint') }}</p>
+    </el-card>
+
     <el-row :gutter="16">
       <el-col :span="12">
         <el-card shadow="hover">
@@ -216,10 +272,12 @@ import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import {
   getSanitizationConfig,
   getSanitizationRules,
+  previewSanitizationScope,
   testSanitization,
   updateSanitizationConfig,
   type SanitizationConfig,
   type SanitizationRuleItem,
+  type SanitizationScopePreview,
   type SanitizationSubConfig,
   type SanitizationTestResult
 } from '@/api/sanitization'
@@ -234,6 +292,11 @@ const config = ref<SanitizationConfig | null>(null)
 const rules = ref<SanitizationRuleItem[]>([])
 const testSample = ref('联系人手机 13800138000，邮箱 user@example.com')
 const testResult = ref<SanitizationTestResult | null>(null)
+
+const scopeInfo = computed(() => config.value?.response?.scope ?? null)
+const scopePreviewPath = ref('/v1/chat/completions')
+const scopePreview = ref<SanitizationScopePreview | null>(null)
+const previewing = ref(false)
 
 interface SideForm {
   enabled: boolean
@@ -404,6 +467,20 @@ const handleTest = async () => {
   }
 }
 
+/** 预览某个路径是否会被脱敏（服务端同一套匹配，避免前后端判定漂移） */
+const handlePreviewScope = async () => {
+  const path = scopePreviewPath.value.trim()
+  if (!path) return
+  previewing.value = true
+  try {
+    scopePreview.value = await previewSanitizationScope(path)
+  } catch (e) {
+    ElMessage.error(getErrorMessage(e) || t('sanitization.loadFailed'))
+  } finally {
+    previewing.value = false
+  }
+}
+
 onMounted(loadAll)
 </script>
 
@@ -414,5 +491,61 @@ onMounted(loadAll)
 .config-actions {
   display: flex;
   gap: var(--ja-space-2);
+}
+.scope-header {
+  display: flex;
+  align-items: center;
+  gap: var(--ja-space-2);
+}
+.scope-desc {
+  margin: 0 0 var(--ja-space-3);
+  color: var(--ja-ink-2);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.scope-patterns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ja-space-2);
+  margin-bottom: var(--ja-space-3);
+}
+.scope-label {
+  color: var(--ja-ink-2);
+  font-size: 13px;
+}
+.scope-pattern {
+  font-family: var(--ja-font-mono, monospace);
+}
+.scope-empty {
+  color: var(--ja-ink-3);
+  font-size: 13px;
+}
+.scope-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ja-space-2);
+}
+.scope-preview-input {
+  width: 320px;
+  max-width: 100%;
+}
+.scope-preview-result {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ja-space-2);
+  font-size: 13px;
+}
+.scope-preview-matched code {
+  font-family: var(--ja-font-mono, monospace);
+  background: var(--ja-surface-2);
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+.scope-hint {
+  margin: var(--ja-space-3) 0 0;
+  color: var(--ja-ink-3);
+  font-size: 12px;
 }
 </style>

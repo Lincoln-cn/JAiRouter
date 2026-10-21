@@ -25,6 +25,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -60,6 +61,7 @@ class ResponseSanitizationFilterTest {
     private SecurityProperties securityProperties;
     private SanitizationConfig sanitizationConfig;
     private SanitizationConfig.ResponseSanitization responseConfig;
+    private SanitizationConfig.Scope scope;
     private ResponseSanitizationFilter filter;
 
     @BeforeEach
@@ -70,8 +72,10 @@ class ResponseSanitizationFilterTest {
 
         sanitizationConfig = mock(SanitizationConfig.class);
         responseConfig = mock(SanitizationConfig.ResponseSanitization.class);
+        scope = new SanitizationConfig.Scope();
         when(securityProperties.getSanitization()).thenReturn(sanitizationConfig);
         when(sanitizationConfig.getResponse()).thenReturn(responseConfig);
+        when(responseConfig.getScope()).thenReturn(scope);
         // 生产/预发 profile 的真实取值（issue #307）：dev 与 legacy 才是 false
         when(responseConfig.isEnabled()).thenReturn(true);
         when(responseConfig.isLogSanitization()).thenReturn(false);
@@ -168,6 +172,51 @@ class ResponseSanitizationFilterTest {
 
             assertNotDecorated(chain, exchange);
             verifyNoInteractions(sanitizationService);
+        }
+
+        @Test
+        @DisplayName("FILT-002c: scope=include 时未列出的管理台路径同样不脱敏")
+        void testIncludeScopeSkipsUnlistedPath() {
+            scope.setMode("include");
+            scope.setPatterns(List.of("/v1/**"));
+
+            MockServerWebExchange exchange = newExchange("/api/config/quota", MediaType.APPLICATION_JSON);
+            WebFilterChain chain = writingChain("{\"enabled\":true}");
+
+            StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
+
+            assertNotDecorated(chain, exchange);
+            verifyNoInteractions(sanitizationService);
+        }
+
+        @Test
+        @DisplayName("FILT-002d: scope 自定义 exclude 集合整体替换内置集合")
+        void testCustomExcludeScopeReplacesDefaults() {
+            scope.setPatterns(List.of("/v1/**"));
+
+            MockServerWebExchange exchange = newExchange("/v1/chat/completions", MediaType.APPLICATION_JSON);
+            WebFilterChain chain = writingChain("{\"phone\":\"13800138000\"}");
+
+            StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
+
+            assertNotDecorated(chain, exchange);
+            verifyNoInteractions(sanitizationService);
+        }
+
+        @Test
+        @DisplayName("FILT-002e: scope=include 时列出的 /v1 路径仍进入脱敏")
+        void testIncludeScopeSanitizesListedPath() {
+            scope.setMode("include");
+            scope.setPatterns(List.of("/v1/**"));
+            when(sanitizationService.sanitizeResponse(anyString(), anyString()))
+                    .thenReturn(Mono.just(SANITIZED_BODY));
+
+            MockServerWebExchange exchange = newExchange("/v1/chat/completions", MediaType.APPLICATION_JSON);
+            WebFilterChain chain = writingChain("{\"phone\":\"13800138000\"}");
+
+            StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
+
+            verify(sanitizationService).sanitizeResponse(anyString(), anyString());
         }
     }
 

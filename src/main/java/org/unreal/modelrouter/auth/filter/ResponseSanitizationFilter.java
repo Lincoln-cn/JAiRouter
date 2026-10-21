@@ -21,7 +21,8 @@ import org.unreal.modelrouter.common.exception.SanitizationException;
 import org.unreal.modelrouter.common.util.ClientIpResolver;
 import org.unreal.modelrouter.auth.sanitization.SanitizationService;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
-import org.unreal.modelrouter.auth.security.config.ExcludedPathsConfig;
+import org.unreal.modelrouter.auth.security.config.DataMaskingScope;
+import org.unreal.modelrouter.auth.security.config.properties.SanitizationConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import reactor.core.publisher.Flux;
@@ -29,6 +30,7 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 响应数据脱敏过滤器（网关 HTTP JSON 响应路径，可选）。
@@ -51,6 +53,11 @@ public class ResponseSanitizationFilter implements WebFilter {
     private final SanitizationService sanitizationService;
     private final SecurityAuditService auditService;
     private final SecurityProperties securityProperties;
+
+    /** 生效范围缓存：配置热改后下一次请求自动重建（issue #560 A 档）。 */
+    private volatile DataMaskingScope cachedScope;
+    private volatile String cachedMode;
+    private volatile List<String> cachedPatterns;
     
     @Autowired
     public ResponseSanitizationFilter(final SanitizationService sanitizationService,
@@ -215,11 +222,39 @@ public class ResponseSanitizationFilter implements WebFilter {
     }
 
     /**
-     * 检查是否为排除的路径
+     * 检查路径是否落在「不脱敏」一侧。
+     *
+     * <p>判定交给 {@link DataMaskingScope}：默认仍用内置排除集合，配置了
+     * {@code jairouter.security.sanitization.response.scope} 时按配置生效（issue #560 A 档）。
+     * 生效范围按 (mode, patterns) 缓存，避免每个请求都重建匹配器。</p>
      */
     private boolean isExcludedPath(final String path) {
-        // 使用统一的排除路径配置
-        return ExcludedPathsConfig.isDataMaskExcluded(path);
+        return !currentScope().shouldSanitize(path);
+    }
+
+    private DataMaskingScope currentScope() {
+        final SanitizationConfig.ResponseSanitization config = securityProperties.getSanitization().getResponse();
+        final SanitizationConfig.Scope scopeConfig = config == null ? null : config.getScope();
+        final String mode = scopeConfig == null ? null : scopeConfig.getMode();
+        final List<String> patterns = scopeConfig == null || scopeConfig.getPatterns() == null
+                ? null
+                : List.copyOf(scopeConfig.getPatterns());
+
+        final DataMaskingScope cached = this.cachedScope;
+        if (cached != null
+                && java.util.Objects.equals(mode, this.cachedMode)
+                && java.util.Objects.equals(patterns, this.cachedPatterns)) {
+            return cached;
+        }
+
+        final DataMaskingScope rebuilt = DataMaskingScope.from(config);
+        this.cachedMode = mode;
+        this.cachedPatterns = patterns;
+        this.cachedScope = rebuilt;
+        if (rebuilt.warning() != null) {
+            log.warn("{}", rebuilt.warning());
+        }
+        return rebuilt;
     }
 
     /**

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.auth.sanitization.SanitizationService;
 import org.unreal.modelrouter.auth.sanitization.impl.DefaultSanitizationService;
 import org.unreal.modelrouter.auth.sanitization.persistence.SanitizationConfigStore;
+import org.unreal.modelrouter.auth.security.config.DataMaskingScope;
 import org.unreal.modelrouter.auth.security.config.properties.SanitizationConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.model.RuleType;
@@ -190,10 +191,29 @@ public class SanitizationConfigController {
         return source == null ? new ArrayList<>() : new ArrayList<>(source);
     }
 
+    @PostMapping("/scope/preview")
+    @Operation(summary = "预览路径是否在脱敏生效范围内",
+            description = "按当前 response.scope 配置判定给定路径，用于控制台只读回显与排障")
+    public Mono<ResponseEntity<RouterResponse<Map<String, Object>>>> previewScope(
+            @RequestBody final ScopePreviewRequest request) {
+        if (request == null || request.path == null || request.path.isBlank()) {
+            return Mono.error(ApiException.of(ErrorCode.INVALID_REQUEST.code(), "path 不能为空"));
+        }
+        final String path = request.path.trim();
+        final DataMaskingScope scope = DataMaskingScope.from(securityProperties.getSanitization().getResponse());
+        final Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("path", path);
+        payload.put("mode", scope.getMode());
+        payload.put("shouldSanitize", scope.shouldSanitize(path));
+        payload.put("matchedPattern", scope.matchedPattern(path));
+        payload.put("usingBuiltInDefaults", scope.isUsingBuiltInDefaults());
+        payload.put("warning", scope.warning() == null ? "" : scope.warning());
+        return Mono.just(ResponseEntity.ok(RouterResponse.success(payload)));
+    }
+
     @GetMapping("/rules")
     @Operation(summary = "列出当前脱敏规则")
-    public Mono<ResponseEntity<RouterResponse<List<Map<String, Object>>>>> getRules() {
-        return sanitizationService.getAllRules()
+    public Mono<ResponseEntity<RouterResponse<List<Map<String, Object>>>>> getRules() {        return sanitizationService.getAllRules()
                 .defaultIfEmpty(List.of())
                 .map(rules -> {
                     final List<Map<String, Object>> payload = new ArrayList<>();
@@ -322,6 +342,9 @@ public class SanitizationConfigController {
         map.put("logSanitization", res.isLogSanitization());
         map.put("failOnError", res.isFailOnError());
         map.put("preserveJsonStructure", res.isPreserveJsonStructure());
+        final DataMaskingScope scope = DataMaskingScope.from(res);
+        map.put("scope", scope.describe());
+        map.put("scopeSource", scope.isUsingBuiltInDefaults() ? "builtin-defaults" : "configuration");
         return map;
     }
 
@@ -416,5 +439,10 @@ public class SanitizationConfigController {
     public static class SanitizationTestRequest {
         public String sample;
         public String contentType;
+    }
+
+    /** 生效范围预览请求 */
+    public static class ScopePreviewRequest {
+        public String path;
     }
 }

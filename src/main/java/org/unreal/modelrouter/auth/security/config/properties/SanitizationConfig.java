@@ -113,5 +113,29 @@ public class SanitizationConfig {
          * 为 true 时，正则匹配仅作用于 JSON 字符串字面量内部，不破坏数值和结构
          */
         private boolean preserveJsonStructure = true;
+
+        /**
+         * 生效范围（issue #560 可配置化 A 档）。
+         *
+         * <p>不配置时沿用内置排除集合，行为与历史版本一致。解析逻辑见
+         * {@code org.unreal.modelrouter.auth.security.config.DataMaskingScope}。</p>
+         */
+        private Scope scope = new Scope();
+    }
+
+    /**
+     * 响应脱敏的路径生效范围。
+     */
+    @Data
+    public static class Scope {
+        /**
+         * {@code exclude}（默认）= patterns 是不脱敏的例外；{@code include} = 只有命中 patterns 才脱敏。
+         */
+        private String mode = "exclude";
+
+        /**
+         * Ant 风格路径模式；为空且 mode=exclude 时使用内置排除集合。
+         */
+        private List<String> patterns = new ArrayList<>();
     }
 }

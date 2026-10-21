@@ -91,7 +91,7 @@ My phone number is ***********, email is *******************
 
 ## Detailed Configuration
 
-> ⚠️ **Not every key in the examples below is supported.** The implementation only binds `enabled`, `sensitive-words`, `pii-patterns`, `masking-char`, `whitelist-users` (request side only), `log-sanitization`, `fail-on-error` and `preserve-json-structure` (response side only).
+> ⚠️ **Not every key in the examples below is supported.** The implementation only binds `enabled`, `sensitive-words`, `pii-patterns`, `masking-char`, `whitelist-users` (request side only), `log-sanitization`, `fail-on-error`, `preserve-json-structure` (response side only) and `scope` (response side only).
 > Keys such as `strategies` (`keep-prefix-suffix` / `keep-domain`), `rule-priorities`, `whitelist-ips` and `service-specific-rules` are **not implemented**: adding them to YAML does not fail, but has no effect.
 > The strategy actually applied comes from each rule's `strategy` field (`MASK` / `REPLACE` / `REMOVE` / `HASH`); the shipped rules all use `MASK` (same-length replacement, e.g. an 11-digit phone number becomes `***********`).
 
@@ -170,24 +170,47 @@ jairouter:
           - "error"         # Error details
           - "exception"     # Exception information
         
-        # Response PII patterns
+        # Response PII patterns (list order = execution order, longest first)
         pii-patterns:
-          - "\\d{11}"
+          - "(?<!\\d)\\d{17}[\\dXx](?!\\d)"
+          - "(?<!\\d)(?:\\d{16}|\\d{19})(?!\\d)"
+          - "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"
+          - "(?<!\\d)1[3-9]\\d{9}(?!\\d)"
           - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
         
         # Preserve JSON structure
         preserve-json-structure: true
         
-        # Service-specific rules
-        service-specific-rules:
-          chat:
-            additional-patterns:
-              - "\\b(?:QQ|微信|WeChat)[:：]?\\s*\\d+\\b"
-          embedding:
-            enabled: false
-          rerank:
-            preserve-ranking-scores: true
+        # Effective scope (only affects the HTTP response sanitization filter)
+        # mode=exclude (default): patterns are the paths to SKIP; empty means the
+        # built-in exclusion set is used. mode=include: only matching paths are
+        # sanitized, and an empty list sanitizes nothing (a WARN is logged).
+        scope:
+          mode: exclude
+          patterns:
+            - "/actuator"
+            - "/swagger-ui"
 ```
+
+### Response Sanitization Scope (`scope`)
+
+Response sanitization only processes `application/json` and only for paths that fall inside the scope. The built-in exclusion set covers the admin console, Actuator, Swagger and static assets; non-streaming JSON on `/v1` **is** in scope, `text/event-stream` (SSE) is skipped by content type.
+
+```yaml
+jairouter:
+  security:
+    sanitization:
+      response:
+        scope:
+          mode: exclude       # exclude (default) | include
+          patterns: []        # empty = use the built-in exclusion set
+```
+
+- `exclude`: paths in `patterns` are skipped, everything else is sanitized; an empty list means the built-in set (identical to not configuring `scope` at all).
+- `include`: only paths matching `patterns` are sanitized; **an empty list sanitizes nothing** and logs a WARN at startup.
+- Matching: entries without wildcards match by prefix (`/actuator` covers `/actuator/health`); entries with `*` / `**` use Ant-style matching, and `/v1/**` also matches `/v1` itself.
+- The scope is **read-only for now**: the console page (Security > PII sanitization > Response sanitization scope) shows the effective mode, its source (built-in defaults / configuration) and the pattern list, and offers a path preview (`POST /api/config/sanitization/scope/preview`). Changing it requires editing the configuration file and restarting.
+- Record-side sanitization (call history, logs, tracing) is not affected by this scope.
 
 ## Sanitization Strategy Details
 
