@@ -1352,7 +1352,7 @@
       "Version": "1.0.8",
       "LastModified": "2026-10-22T00:38:45.512756",
       "ContentHash": "876c6a104a9fd7fd",
-      "GitCommit": "287fe140",
+      "GitCommit": "89e7060f",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1552,7 +1552,7 @@
       "Version": "1.0.12",
       "LastModified": "2026-10-22T00:38:53.060626",
       "ContentHash": "258568f4ab64b578",
-      "GitCommit": "287fe140",
+      "GitCommit": "89e7060f",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2358,16 +2358,6 @@
       "ContentHash": "704dcfe6e212fbe5",
       "GitCommit": "76b2a9d2",
       "Author": "Leo Lin",
-      "ChangeSummary": "",
-      "Dependencies": []
-    },
-    "AGENTS.md": {
-      "FilePath": "AGENTS.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-21T22:49:43.575805",
-      "ContentHash": "cbd03d2d6a9f9dfa",
-      "GitCommit": "",
-      "Author": "",
       "ChangeSummary": "",
       "Dependencies": []
     }
@@ -9628,7 +9618,15 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-22T00:38:53.060626",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "AGENTS.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-10-21T16:53:10.046418",
+      "Description": "文档已删除"
     }
   ],
-  "last_updated": "2026-10-22T00:38:54.525728"
+  "last_updated": "2026-10-21T16:53:10.046789"
 }
