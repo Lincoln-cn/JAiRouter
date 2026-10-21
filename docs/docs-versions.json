@@ -160,7 +160,7 @@
       "Version": "1.0.6",
       "LastModified": "2026-10-21T21:13:39.390702",
       "ContentHash": "9547774bedf46339",
-      "GitCommit": "537f419c",
+      "GitCommit": "9d7b7666",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -782,7 +782,7 @@
       "Version": "1.0.8",
       "LastModified": "2026-10-21T21:13:50.654443",
       "ContentHash": "5df1a6b9c1a1b072",
-      "GitCommit": "537f419c",
+      "GitCommit": "9d7b7666",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1385,7 +1385,7 @@
       "Version": "1.0.8",
       "LastModified": "2026-10-21T21:07:37.940122",
       "ContentHash": "e5f757597ed7757f",
-      "GitCommit": "e9a82173",
+      "GitCommit": "9d7b7666",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1585,7 +1585,7 @@
       "Version": "1.0.7",
       "LastModified": "2026-10-21T21:07:48.979762",
       "ContentHash": "b9e3087d142908ce",
-      "GitCommit": "e9a82173",
+      "GitCommit": "9d7b7666",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2358,16 +2358,6 @@
       "ContentHash": "704dcfe6e212fbe5",
       "GitCommit": "76b2a9d2",
       "Author": "Leo Lin",
-      "ChangeSummary": "",
-      "Dependencies": []
-    },
-    "AGENTS.md": {
-      "FilePath": "AGENTS.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-21T21:07:26.117075",
-      "ContentHash": "cbd03d2d6a9f9dfa",
-      "GitCommit": "",
-      "Author": "",
       "ChangeSummary": "",
       "Dependencies": []
     }
@@ -9564,7 +9554,15 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-21T21:13:50.654443",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "AGENTS.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-10-21T13:35:24.012152",
+      "Description": "文档已删除"
     }
   ],
-  "last_updated": "2026-10-21T21:13:59.014512"
+  "last_updated": "2026-10-21T13:35:24.012670"
 }
