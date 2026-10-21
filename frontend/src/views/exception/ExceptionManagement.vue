@@ -12,8 +12,8 @@
 
     <template #actions>
       <el-button icon="Refresh" @click="handleRefresh">{{ t('exception.list.refresh') }}</el-button>
-      <el-button icon="Delete" type="danger" v-permission="'monitoring:exceptions:write'" @click="showCleanupDialog">{{ t('exception.list.cleanupExpired') }}</el-button>
-      <el-button icon="DataAnalysis" type="success" @click="goToStatistics">{{ t('exception.list.goStatistics') }}</el-button>
+      <el-button icon="Delete" type="danger" plain v-permission="'monitoring:exceptions:write'" @click="showCleanupDialog">{{ t('exception.list.cleanupExpired') }}</el-button>
+      <el-button icon="DataAnalysis" type="primary" @click="goToStatistics">{{ t('exception.list.goStatistics') }}</el-button>
     </template>
 
     <!-- 筛选条件 -->
@@ -100,22 +100,11 @@
       </FilterBar>
     </template>
 
-    <!-- 统计卡片（本轮保留原样，P1-2 再压缩） -->
+    <!-- 统计指标条：中性为主，「异常总数 > 0」才上语义色 -->
     <template #toolbar>
-      <el-row :gutter="20" class="stats-row">
-        <el-col :span="6">
-          <StatCard :icon="Warning" :label="t('exception.list.totalExceptionsLabel')" :value="listData.totalElements" tone="danger" />
-        </el-col>
-        <el-col :span="6">
-          <StatCard :icon="DataLine" :label="t('exception.list.totalTypesLabel')" :value="listData.totalTypes" tone="warning" />
-        </el-col>
-        <el-col :span="6">
-          <StatCard :icon="Monitor" :label="t('exception.list.topExceptionTypeLabel')" :value="listData.topExceptionType || '-'" tone="primary" />
-        </el-col>
-        <el-col :span="6">
-          <StatCard :icon="TrendCharts" :label="t('exception.list.topClientIpLabel')" :value="listData.topClientIp || '-'" tone="info" />
-        </el-col>
-      </el-row>
+      <div class="stats-row">
+        <MetricStrip :items="metricItems" :columns="4" />
+      </div>
     </template>
 
     <!-- 表格（窄屏不渲染，改用下方卡片列表） -->
@@ -400,24 +389,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getErrorMessage } from '@/utils/error'
-import {
-  Warning,
-  DataLine,
-  Monitor,
-  TrendCharts,
-} from '@element-plus/icons-vue'
 import {
   queryExceptionEvents,
   getExceptionStatistics,
   deleteOldExceptionEvents,
 } from '@/api/exception'
 import type { ExceptionEvent, ExceptionQueryParams } from '@/types/exception'
-import StatCard from '@/components/StatCard.vue'
+import MetricStrip, { type MetricStripItem } from '@/components/MetricStrip.vue'
 import ListPageLayout from '@/components/ListPageLayout.vue'
 import FilterBar from '@/components/FilterBar.vue'
 import TimeText from '@/components/TimeText.vue'
@@ -472,6 +455,31 @@ const listData = ref({
   topExceptionType: '',
   topClientIp: ''
 })
+
+// 顶部指标条：异常总数只有真的大于 0 才上语义色，其余中性
+const metricItems = computed<MetricStripItem[]>(() => [
+  {
+    key: 'total',
+    label: t('exception.list.totalExceptionsLabel'),
+    value: listData.value.totalElements,
+    tone: listData.value.totalElements > 0 ? 'danger' : 'default'
+  },
+  {
+    key: 'types',
+    label: t('exception.list.totalTypesLabel'),
+    value: listData.value.totalTypes
+  },
+  {
+    key: 'topType',
+    label: t('exception.list.topExceptionTypeLabel'),
+    value: listData.value.topExceptionType || '—'
+  },
+  {
+    key: 'topIp',
+    label: t('exception.list.topClientIpLabel'),
+    value: listData.value.topClientIp || '—'
+  }
+])
 
 // 详情对话框
 const detailVisible = ref(false)

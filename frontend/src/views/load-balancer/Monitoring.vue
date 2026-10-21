@@ -1,16 +1,8 @@
 <template>
   <PageSkeleton :title="t('loadBalancer.monitoring.pageTitle')">
     <template #actions>
-      <el-button
-        :type="monitorStatus.paused ? 'success' : 'warning'"
-        @click="toggleMonitor"
-        :loading="togglingMonitor"
-      >
-        {{ monitorStatus.paused ? t('loadBalancer.monitoring.resumeMonitoring') : t('loadBalancer.monitoring.pauseMonitoring') }}
-      </el-button>
-      <el-button @click="clearHistory" :loading="clearingHistory">
-        {{ t('loadBalancer.monitoring.clearHistory') }}
-      </el-button>
+      <!-- 页头只留一个主操作（导出），其余收进「更多」；「清空历史」保持为真实按钮，
+           因为 E2E 05-traffic-governance 用 .layout-main button + 文案定位它并断言二次确认 -->
       <el-dropdown @command="handleExport">
         <el-button type="primary">
           {{ t('loadBalancer.monitoring.export') }} <el-icon class="el-icon--right"><Download /></el-icon>
@@ -22,9 +14,25 @@
           </el-dropdown-menu>
         </template>
       </el-dropdown>
-      <el-button type="primary" plain @click="router.push({ name: 'load-balancer-strategy-config' })">
-        {{ t('loadBalancer.monitoring.actions.strategyConfig') }}
+      <el-button @click="clearHistory" :loading="clearingHistory">
+        {{ t('loadBalancer.monitoring.clearHistory') }}
       </el-button>
+      <el-dropdown @command="handleMoreCommand">
+        <el-button :loading="togglingMonitor">
+          {{ t('loadBalancer.monitoring.moreActions') }}
+          <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+        </el-button>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="toggle">
+              {{ monitorStatus.paused ? t('loadBalancer.monitoring.resumeMonitoring') : t('loadBalancer.monitoring.pauseMonitoring') }}
+            </el-dropdown-item>
+            <el-dropdown-item command="strategy" divided>
+              {{ t('loadBalancer.monitoring.actions.strategyConfig') }}
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
     </template>
 
     <!-- 路由监控控制面板 -->
@@ -36,7 +44,7 @@
       </template>
 
       <el-row :gutter="20">
-        <el-col :span="6">
+        <el-col :xs="24" :sm="12" :md="6">
           <div class="config-item">
             <label>{{ t('loadBalancer.monitoring.sampleRate') }}</label>
             <el-slider
@@ -49,7 +57,7 @@
             />
           </div>
         </el-col>
-        <el-col :span="6">
+        <el-col :xs="24" :sm="12" :md="6">
           <div class="config-item">
             <label>{{ t('loadBalancer.monitoring.historySize') }}</label>
             <el-input-number
@@ -62,7 +70,7 @@
             />
           </div>
         </el-col>
-        <el-col :span="12">
+        <el-col :xs="24" :sm="24" :md="12">
           <div class="connection-status">
             <el-tag :type="wsConnected ? 'success' : 'danger'">
               {{ wsConnected ? t('loadBalancer.monitoring.wsConnected') : t('loadBalancer.monitoring.wsDisconnected') }}
@@ -77,7 +85,7 @@
 
     <!-- 实时路由监控统计卡片：中性容器，状态色只落在「已暂停」标签上 -->
     <el-row :gutter="16" style="margin-top: var(--ja-space-4)">
-      <el-col :span="6" v-for="(serviceStats, serviceType) in routingStats" :key="serviceType">
+      <el-col :xs="24" :sm="12" :md="6" v-for="(serviceStats, serviceType) in routingStats" :key="serviceType">
         <el-card shadow="hover" class="stats-card">
           <div class="service-stats">
             <div class="service-header">
@@ -241,7 +249,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Download, Box, InfoFilled } from '@element-plus/icons-vue'
+import { Download, ArrowDown, Box, InfoFilled } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 
@@ -569,6 +577,17 @@ const handleExport = async (command: string) => {
     ElMessage.success(t('loadBalancer.monitoring.messages.exportSuccess', { format: command.toUpperCase() }))
   } catch (error) {
     ElMessage.error(t('loadBalancer.monitoring.messages.exportFailed'))
+  }
+}
+
+// 「更多」菜单：暂停/恢复监控、跳到策略配置
+const handleMoreCommand = (command: string) => {
+  if (command === 'toggle') {
+    void toggleMonitor()
+    return
+  }
+  if (command === 'strategy') {
+    router.push({ name: 'load-balancer-strategy-config' })
   }
 }
 
