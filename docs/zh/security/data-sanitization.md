@@ -465,7 +465,7 @@ security:
   # JWT 配置
   jwt:
     enabled: true
-    secret: "${PROD_JWT_SECRET:}"
+    secret: "${JWT_SECRET:${PROD_JWT_SECRET:}}"
     algorithm: HS256
     expiration-minutes: 15
     issuer: jairouter-prod

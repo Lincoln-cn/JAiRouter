@@ -336,7 +336,8 @@ stringData:
   PROD_ADMIN_API_KEY: "your-production-admin-api-key-here"
   PROD_SERVICE_API_KEY: "your-production-service-api-key-here"
   PROD_READONLY_API_KEY: "your-production-readonly-api-key-here"
-  PROD_JWT_SECRET: "your-production-jwt-secret-here"
+  JWT_SECRET: "your-production-jwt-secret-here"
+  INITIAL_ADMIN_PASSWORD: "your-strong-admin-password"
   REDIS_PASSWORD: "your-redis-password"
 
 ---
@@ -474,11 +475,16 @@ spec:
             secretKeyRef:
               name: jairouter-prod-secret
               key: PROD_READONLY_API_KEY
-        - name: PROD_JWT_SECRET
+        - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
               name: jairouter-prod-secret
-              key: PROD_JWT_SECRET
+              key: JWT_SECRET
+        - name: INITIAL_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: jairouter-prod-secret
+              key: INITIAL_ADMIN_PASSWORD
         # Redis 环境变量：单副本下非必需，多副本下必需（共享态开关见上文）
         - name: REDIS_HOST
           value: "your-redis-host"
@@ -926,8 +932,9 @@ env:
   PROD_SERVICE_API_KEY: "your-production-service-api-key-here"
   PROD_READONLY_API_KEY: "your-production-readonly-api-key-here"
   
-  # 生产环境 JWT 配置
-  PROD_JWT_SECRET: "your-production-jwt-secret-here"
+  # 生产环境 JWT 配置与管理员初始密码
+  JWT_SECRET: "your-production-jwt-secret-here"
+  INITIAL_ADMIN_PASSWORD: "your-strong-admin-password"
   
   # Redis 配置
   REDIS_HOST: "your-redis-host"
@@ -1274,11 +1281,16 @@ spec:
             secretKeyRef:
               name: jairouter-prod-secret
               key: PROD_READONLY_API_KEY
-        - name: PROD_JWT_SECRET
+        - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
               name: jairouter-prod-secret
-              key: PROD_JWT_SECRET
+              key: JWT_SECRET
+        - name: INITIAL_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: jairouter-prod-secret
+              key: INITIAL_ADMIN_PASSWORD
         - name: REDIS_HOST
           value: "your-redis-host"
         - name: REDIS_PORT
@@ -1416,7 +1428,7 @@ data:
       # JWT 配置
       jwt:
         enabled: true
-        secret: "${PROD_JWT_SECRET:}"
+        secret: "${JWT_SECRET:${PROD_JWT_SECRET:}}"
         algorithm: HS256
         expiration-minutes: 15
         issuer: jairouter-prod

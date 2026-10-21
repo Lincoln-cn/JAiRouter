@@ -231,7 +231,8 @@ docker run -d \
   -e PROD_ADMIN_API_KEY="your-production-admin-api-key-here" \
   -e PROD_SERVICE_API_KEY="your-production-service-api-key-here" \
   -e PROD_READONLY_API_KEY="your-production-readonly-api-key-here" \
-  -e PROD_JWT_SECRET="your-production-jwt-secret-here" \
+  -e JWT_SECRET="your-production-jwt-secret-here" \
+  -e INITIAL_ADMIN_PASSWORD="<强密码>" \
   -e REDIS_HOST="your-redis-host" \
   -e REDIS_PORT="your-redis-port" \
   -e REDIS_PASSWORD="your-redis-password" \

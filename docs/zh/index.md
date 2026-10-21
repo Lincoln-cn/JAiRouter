@@ -63,7 +63,7 @@
 # 启动服务（开发模式，零配置）
 docker run -d --name jairouter -p 8080:8080 -e SPRING_PROFILES_ACTIVE=dev sodlinken/jairouter:latest
 
-# 生产环境请提供 JWT 密钥：-e JWT_SECRET=<至少32字符>
+# 生产环境请同时提供 JWT_SECRET 与 INITIAL_ADMIN_PASSWORD（各至少 32 字符 / 强密码），否则进程启动即退出
 
 # 访问控制台
 open http://localhost:8080

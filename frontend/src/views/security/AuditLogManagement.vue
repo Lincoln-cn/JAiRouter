@@ -197,18 +197,22 @@
         </template>
       </el-table-column>
       <el-table-column prop="details" :label="t('auditLog.description')" show-overflow-tooltip />
-      <el-table-column :label="t('auditLog.actions')" width="140" fixed="right">
+      <el-table-column :label="t('auditLog.actions')" width="150" fixed="right">
         <template #default="scope">
-          <el-button size="small" type="primary" link @click="handleViewDetail(scope.row)">{{ t('auditLog.detail') }}</el-button>
-          <el-dropdown v-if="scope.row.ipAddress" trigger="click" @command="(cmd: string) => handleAddToBlacklist(scope.row, cmd)">
-            <el-button size="small" type="warning" link>{{ t('auditLog.blacklist') }}</el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="IP">{{ t('auditLog.banIp') }}</el-dropdown-item>
-                <el-dropdown-item command="USER" :disabled="!scope.row.userId">{{ t('auditLog.banUser') }}</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+          <!-- 两个 link 按钮放在同一 flex 行：下拉触发器自带 <span> 包裹，直接并列会与
+               前一个按钮基数线错位（用户反馈「详情 和 黑名单 没有对齐」） -->
+          <div class="row-actions">
+            <el-button size="small" type="primary" link @click="handleViewDetail(scope.row)">{{ t('auditLog.detail') }}</el-button>
+            <el-dropdown v-if="scope.row.ipAddress" trigger="click" @command="(cmd: string) => handleAddToBlacklist(scope.row, cmd)">
+              <el-button size="small" type="warning" link>{{ t('auditLog.blacklist') }}</el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="IP">{{ t('auditLog.banIp') }}</el-dropdown-item>
+                  <el-dropdown-item command="USER" :disabled="!scope.row.userId">{{ t('auditLog.banUser') }}</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -799,6 +803,24 @@ onUnmounted(() => {
   background-color: var(--ja-paper);
   border: 1px solid var(--ja-border);
   border-radius: var(--ja-radius);
+}
+
+/* 操作列：两个 link 按钮同基线对齐（下拉触发器的 <span> 包裹会让第二个按钮下沉） */
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ja-space-2, 8px);
+}
+
+.row-actions :deep(.el-dropdown) {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.row-actions :deep(.el-button) {
+  margin-left: 0;
+  vertical-align: baseline;
 }
 
 .metadata-pre {

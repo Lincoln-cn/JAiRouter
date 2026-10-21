@@ -208,6 +208,8 @@ services:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      - JWT_SECRET=${JWT_SECRET:?set a strong jwt secret}
+      - INITIAL_ADMIN_PASSWORD=${INITIAL_ADMIN_PASSWORD:?set a strong password}
       - MONITORING_METRICS_ENABLED=true
     volumes:
       - ./config:/app/config

@@ -179,7 +179,8 @@ docker run -d \
   -e JAIROUTER_SECURITY_ENABLED=true \
   -e JAIROUTER_SECURITY_API_KEY_ENABLED=true \
   -e JAIROUTER_SECURITY_JWT_ENABLED=true \
-  -e PROD_JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
+  -e JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
+  -e INITIAL_ADMIN_PASSWORD="<your-strong-admin-password>" \
   -e JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"\
   -v $(pwd)/config:/app/config:ro \
   -v $(pwd)/logs:/app/logs \
@@ -204,7 +205,8 @@ docker run  \
   -e JAIROUTER_SECURITY_ENABLED=true \
   -e JAIROUTER_SECURITY_API_KEY_ENABLED=true \
   -e JAIROUTER_SECURITY_JWT_ENABLED=true \
-  -e PROD_JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
+  -e JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
+  -e INITIAL_ADMIN_PASSWORD="<your-strong-admin-password>" \
   -e JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0" \
   --restart unless-stopped \
   --health-cmd="curl -f http://localhost:8080/actuator/health || exit 1" \
@@ -267,7 +269,8 @@ services:
       - JAIROUTER_SECURITY_ENABLED=true 
       - JAIROUTER_SECURITY_API_KEY_ENABLED=true 
       - JAIROUTER_SECURITY_JWT_ENABLED=true 
-      - PROD_JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" 
+      - JWT_SECRET=${JWT_SECRET:?set a strong jwt secret}
+      - INITIAL_ADMIN_PASSWORD=${INITIAL_ADMIN_PASSWORD:?set a strong password}
       - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
     volumes:
       - ./config:/app/config:ro
@@ -309,7 +312,8 @@ services:
       - JAIROUTER_SECURITY_ENABLED=true 
       - JAIROUTER_SECURITY_API_KEY_ENABLED=true 
       - JAIROUTER_SECURITY_JWT_ENABLED=true 
-      - PROD_JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" 
+      - JWT_SECRET=${JWT_SECRET:?set a strong jwt secret}
+      - INITIAL_ADMIN_PASSWORD=${INITIAL_ADMIN_PASSWORD:?set a strong password}
       - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
     volumes:
       - ./config:/app/config:ro
@@ -422,16 +426,20 @@ docker-compose down
 | `SPRING_PROFILES_ACTIVE` | `prod` | Active Spring profile |
 | `JAVA_OPTS` | See the table below | JVM arguments |
 | `SERVER_PORT` | `8080` | Application port |
-| `JWT_SECRET` | None | JWT secret for the development environment |
-| `PROD_JWT_SECRET` | None | JWT secret for the production environment |
+| `JWT_SECRET` | None | JWT secret for the production environment (at least 32 characters) |
+| `INITIAL_ADMIN_PASSWORD` | None | Initial admin password for the production environment |
 | `MANAGEMENT_PORT` | `8081` | Management port (optional) |
 | `PROD_ADMIN_API_KEY` | None | Admin API key for the production environment |
 | `PROD_SERVICE_API_KEY` | None | Service API key for the production environment |
 | `PROD_READONLY_API_KEY` | None | Read-only API key for the production environment |
-| `PROD_JWT_SECRET` | None | JWT secret for the production environment |
+| `PROD_JWT_SECRET` | None | Legacy name, config-binding fallback only; the startup gate reads `JWT_SECRET` |
 | `REDIS_HOST` | `localhost` | Redis host address |
 | `REDIS_PORT` | `6379` | Redis port |
 | `REDIS_PASSWORD` | None | Redis password |
+
+> `PROD_JWT_SECRET` is kept for backward compatibility only: `application-prod.yml` uses it as the fallback
+> binding for `jairouter.security.jwt.secret`, but the production startup gate (`StartupSecretKeyChecker`)
+> reads the `JWT_SECRET` environment variable, so the start commands above all pass `JWT_SECRET`.
 
 ### 2. JVM Parameter Configuration
 

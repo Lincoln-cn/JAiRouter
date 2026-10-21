@@ -366,6 +366,10 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
 ```
 
+> Never bake secrets into the image: inject them at runtime with
+> `-e JWT_SECRET=... -e INITIAL_ADMIN_PASSWORD=...`. Under `SPRING_PROFILES_ACTIVE=prod` a missing or weak
+> value fails fast; see [Production Deployment](production.md).
+
 ## Network Connection Optimization
 
 ### 1. Application Configuration Optimization

@@ -86,7 +86,7 @@ describe('Layout 多 tab 切换条', () => {
 })
 
 /**
- * P1-3：侧栏折叠（200px ⇄ 64px）与 localStorage 持久化。
+ * P1-3：侧栏折叠（220px ⇄ 64px）与 localStorage 持久化。
  *
  * 宽度断言看 el-aside 的 `--el-aside-width` 内联变量（Element Plus 用 CSS 变量承载 width），
  * 折叠态同时断言 el-menu 的 `el-menu--collapse` 类与 logo 文字的 v-if，
@@ -100,12 +100,12 @@ describe('Layout 侧栏折叠', () => {
     localStorage.removeItem('ja-sidebar-collapsed')
   })
 
-  it('默认展开，点击折叠到 64px 并写 localStorage，再点恢复 200px', async () => {
+  it('默认展开，点击折叠到 64px 并写 localStorage，再点恢复 220px', async () => {
     const wrapper = await mountAt('/monitoring/quota', ['monitoring:quota:read'])
 
     const aside = wrapper.find('#layout-sidebar')
     const toggle = wrapper.find('.sidebar-toggle')
-    expect(aside.attributes('style')).toContain('200px')
+    expect(aside.attributes('style')).toContain('220px')
     expect(wrapper.find('.logo-text').exists()).toBe(true)
     expect(wrapper.find('.layout-menu').classes()).not.toContain('el-menu--collapse')
     expect(toggle.attributes('aria-label')).toBe('收起侧栏')
@@ -120,7 +120,7 @@ describe('Layout 侧栏折叠', () => {
     expect(localStorage.getItem('ja-sidebar-collapsed')).toBe('1')
 
     await toggle.trigger('click')
-    expect(aside.attributes('style')).toContain('200px')
+    expect(aside.attributes('style')).toContain('220px')
     expect(wrapper.find('.logo-text').exists()).toBe(true)
     expect(localStorage.getItem('ja-sidebar-collapsed')).toBe('0')
     wrapper.unmount()
@@ -141,7 +141,7 @@ describe('Layout 侧栏折叠', () => {
   it('非法存储值 / 读取抛异常时回退展开，写入抛异常时折叠仍生效', async () => {
     localStorage.setItem('ja-sidebar-collapsed', 'yes-please')
     const invalid = await mountAt('/monitoring/quota', ['monitoring:quota:read'])
-    expect(invalid.find('#layout-sidebar').attributes('style')).toContain('200px')
+    expect(invalid.find('#layout-sidebar').attributes('style')).toContain('220px')
     expect(invalid.find('.logo-text').exists()).toBe(true)
     invalid.unmount()
 
@@ -151,7 +151,7 @@ describe('Layout 侧栏折叠', () => {
       return originalGetItem(key)
     })
     const blockedRead = await mountAt('/monitoring/quota', ['monitoring:quota:read'])
-    expect(blockedRead.find('#layout-sidebar').attributes('style')).toContain('200px')
+    expect(blockedRead.find('#layout-sidebar').attributes('style')).toContain('220px')
     expect(blockedRead.find('.logo-text').exists()).toBe(true)
     blockedRead.unmount()
     vi.restoreAllMocks()

@@ -63,7 +63,7 @@
 # Start the service (dev mode, zero config)
 docker run -d --name jairouter -p 8080:8080 -e SPRING_PROFILES_ACTIVE=dev sodlinken/jairouter:latest
 
-# For production, provide a JWT secret: -e JWT_SECRET=<at-least-32-characters>
+# For production, also provide JWT_SECRET and INITIAL_ADMIN_PASSWORD (at least 32 characters / a strong password), otherwise the process exits at startup
 
 # Access the console
 open http://localhost:8080

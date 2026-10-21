@@ -264,7 +264,8 @@ services:
       - JAIROUTER_SECURITY_ENABLED=true
       - JAIROUTER_SECURITY_API_KEY_ENABLED=true
       - JAIROUTER_SECURITY_JWT_ENABLED=true
-      - PROD_JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long"
+      - JWT_SECRET=${JWT_SECRET:?set a strong jwt secret}
+      - INITIAL_ADMIN_PASSWORD=${INITIAL_ADMIN_PASSWORD:?set a strong password}
       - JAVA_OPTS=-Xms1g -Xmx2g -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
       - INSTANCE_ID=${INSTANCE_ID:-1}
       - CLUSTER_NODES=${CLUSTER_NODES}
@@ -437,7 +438,7 @@ jairouter:
     # 生产环境 JWT 配置
     jwt:
       enabled: true
-      secret: "${PROD_JWT_SECRET:}"
+      secret: "${JWT_SECRET:${PROD_JWT_SECRET:}}"
       issuer: "jairouter-prod"
       blacklist-cache:
         max-size: 50000  # 生产环境更大的黑名单缓存
@@ -845,12 +846,18 @@ ANTHROPIC_API_KEY=your-anthropic-api-key
 # 数据库密码
 DB_PASSWORD=your-secure-password
 
-# JWT 密钥
+# JWT 密钥与管理员初始密码
 JWT_SECRET=your-jwt-secret-key
+INITIAL_ADMIN_PASSWORD=your-strong-admin-password
 
 # 监控密码
 GRAFANA_ADMIN_PASSWORD=your-grafana-password
 ```
+
+> **关于 `PROD_JWT_SECRET`**：上面的 compose 统一传 `JWT_SECRET`，因为启动门闩只认这个变量名。
+> `application-prod.yml` 里 `jairouter.security.jwt.secret` 的写法是 `${JWT_SECRET:${PROD_JWT_SECRET:}}`，
+> 旧变量名 `PROD_JWT_SECRET` 仍可作为配置绑定的兜底，但**启动门闩只读环境变量 `JWT_SECRET`**
+> （`StartupSecretKeyChecker`），生产请直接设 `JWT_SECRET`。
 
 #### 容器安全
 
@@ -894,7 +901,8 @@ security:
     # 账户配置
     accounts:
       - username: admin
-        password: ${ADMIN_PASSWORD:admin}
+        # 生产必须显式设置 INITIAL_ADMIN_PASSWORD（门闩只认这个名字，且拒绝出厂默认值）
+        password: "${INITIAL_ADMIN_PASSWORD:ChangeMeOnFirstStartup123456}"
         roles: [ADMIN, USER]
         enabled: true
       - username: user

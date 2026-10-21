@@ -65,6 +65,10 @@ Configure JAiRouter using environment variables:
 export SERVER_PORT=8080
 export SPRING_PROFILES_ACTIVE=prod
 
+# Required for production startup (the gate fails fast without them)
+export JWT_SECRET="<at-least-32-characters>"
+export INITIAL_ADMIN_PASSWORD="<your-strong-admin-password>"
+
 # Service configuration
 export MODEL_SERVICES_CHAT_LOAD_BALANCE_TYPE=least-connections
 export MODEL_SERVICES_CHAT_RATE_LIMIT_CAPACITY=1000
@@ -91,6 +95,8 @@ services:
       - ./logs:/app/logs
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      - JWT_SECRET=${JWT_SECRET:?set a strong jwt secret}
+      - INITIAL_ADMIN_PASSWORD=${INITIAL_ADMIN_PASSWORD:?set a strong password}
     restart: unless-stopped
 ```
 
