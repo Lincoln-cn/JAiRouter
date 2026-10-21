@@ -32,7 +32,13 @@
           </el-form-item>
 
           <el-form-item :label="t('tracing.search.serviceName')">
-            <el-select v-model="searchForm.serviceName" :placeholder="t('tracing.search.serviceNamePlaceholder')" clearable filterable>
+            <el-select
+              v-model="searchForm.serviceName"
+              class="filter-select filter-select--service"
+              :placeholder="t('tracing.search.serviceNamePlaceholder')"
+              clearable
+              filterable
+            >
               <el-option
                 v-for="service in availableServices"
                 :key="service"
@@ -43,11 +49,21 @@
           </el-form-item>
 
           <el-form-item :label="t('tracing.search.traceId')">
-            <el-input v-model="searchForm.traceId" :placeholder="t('tracing.search.traceIdPlaceholder')" clearable />
+            <el-input
+              v-model="searchForm.traceId"
+              class="filter-input"
+              :placeholder="t('tracing.search.traceIdPlaceholder')"
+              clearable
+            />
           </el-form-item>
 
           <el-form-item :label="t('tracing.search.status')">
-            <el-select v-model="searchForm.hasError" :placeholder="t('tracing.search.statusPlaceholder')" clearable>
+            <el-select
+              v-model="searchForm.hasError"
+              class="filter-select filter-select--status"
+              :placeholder="t('tracing.search.statusPlaceholder')"
+              clearable
+            >
               <el-option :label="t('tracing.search.success')" :value="false" />
               <el-option :label="t('tracing.search.error')" :value="true" />
             </el-select>
@@ -859,6 +875,34 @@ onBeforeUnmount(() => {
 
 .search-form :deep(.el-form-item) {
   margin-bottom: 15px;
+}
+
+/* 查询控件显式宽度：el-select 在 inline 表单里会按内容收缩，状态选择器因此只剩箭头（实测 44px） */
+.search-form :deep(.filter-select--service) { width: 220px; }
+.search-form :deep(.filter-select--status) { width: 160px; }
+.search-form :deep(.filter-input) { width: 240px; }
+
+@media (max-width: 767px) {
+  .search-form {
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: 12px;
+  }
+
+  .search-form :deep(.el-form-item) {
+    margin-right: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .search-form :deep(.el-date-editor) {
+    width: 100% !important;
+    max-width: 100%;
+  }
+
+  .search-form :deep(.filter-select--service),
+  .search-form :deep(.filter-select--status),
+  .search-form :deep(.filter-input) { width: 100%; }
 }
 
 .high-latency {

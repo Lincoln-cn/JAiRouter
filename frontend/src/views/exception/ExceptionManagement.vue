@@ -713,13 +713,21 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
+/* 两行查询条件：用 flex + row-gap 控制行距，并给整块一个面板底（原来 item 的 margin-bottom 被清零 ⇒ 两行 32px 控件之间 0 间距、整块贴在页头上） */
 .filter-form {
   width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 18px;
+  row-gap: 12px;
+  padding: 14px 16px;
+  background: var(--ja-paper);
+  border: 1px solid var(--ja-border);
+  border-radius: var(--ja-radius-lg);
 }
 
 .filter-form .el-form-item {
-  margin-bottom: 0;
-  margin-right: 15px;
+  margin: 0;
 }
 
 .table-wrapper {
