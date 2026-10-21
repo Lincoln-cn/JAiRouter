@@ -24,7 +24,7 @@ JAiRouter 的数据脱敏功能可以自动识别和处理请求和响应中的�
 | 控制台 | 安全 → **PII 脱敏管理**（`/security/sanitization`） |
 | 权限 | `security:sanitization:manage`（ADMIN） |
 | 管理 API | `GET/PUT /api/config/sanitization`、`GET .../rules`、`POST .../test` |
-| 网关响应过滤器 | 默认关闭；管理台 `/api/**` 与 AI 实时路径 `/api/v1/**`、`/v1/**` 排除 |
+| 网关响应过滤器 | 默认关闭；`/api/**` 管理面与运维端点排除；`/v1/**` 的**非流式 JSON** 自 #560 起脱敏，SSE 仍不脱敏 |
 | 试脱敏 | 样例非 JSON 时按 `text/plain` 掩码，便于粘贴聊天原文 |
 
 **调用历史**：`record-level=SUMMARY` 时，适配器层用 `sanitizeForStorage` 落库前脱敏。
@@ -427,11 +427,11 @@ jairouter:
 | 位置 | 生效点 | 现状 |
 |------|--------|------|
 | 响应侧 | 出站响应体过滤器 | **只处理 `application/json` 响应**；SSE / 流式响应（`text/event-stream`）不经过该路径 |
-| 响应侧路径 | 路径过滤 | `/v1/**`、`/api/**`、`/admin/**`、`/actuator/**` 与静态资源在 `ExcludedPathsConfig` 中被**默认排除** |
+| 响应侧路径 | 路径过滤 | `/v1/**` 的**非流式 JSON** 自 issue #560 起**纳入**脱敏；`/api/**`、`/admin/**`、`/actuator/**` 与静态资源仍在 `ExcludedPathsConfig` 中被**默认排除** |
 | 请求侧 | 入站请求体（`sanitizeRequest`） | 开关与白名单逻辑已实现，但**当前网关请求链路上没有调用方**，因此今天不产生入站开销 |
 | 记录侧 | 落库前（`sanitizeForStorage`） | 受 `record-level` 与调用历史配置影响，与 `request/response.enabled` 无关 |
 
-因此，即使打开响应侧开关，AI 实时推理主入口（`/v1/chat/completions`）与管理接口的响应也**不会**被该过滤器改写（相关缺口见 issue #560）。做容量评估时不要按「所有响应都被脱敏」来估算。
+因此，打开响应侧开关后，容量评估要按**两档**算：① 所有非 SSE 的 `application/json` 响应 —— 含 AI 实时推理主入口（`/v1/chat/completions`）的**非流式**返回 —— 都会过一次脱敏（issue #560 方案 C 第一阶段已把 `/v1/**` 的 JSON 放开）；② 管理面（`/api/**`）、运维端点与静态资源仍不改写，SSE / 流式响应（`text/event-stream`）也仍不经过该路径（SSE 覆盖留待 issue #560 的后续阶段）。做容量评估时不要按「所有响应都被脱敏」来估算，也不要再按「`/v1` 全都不脱敏」来估算。
 
 另外，JSON 模式下 `traceId` / `spanId` / `requestId` / `traceparent` / `tracestate` 这几个**键**的值默认原样保留（键名大小写不敏感）：把排障标识打码会让响应体与日志对不上，属于「多破坏」（issue #561）。其它键的值照旧按规则脱敏，非 JSON 文本没有键名可推断、行为不变。
 

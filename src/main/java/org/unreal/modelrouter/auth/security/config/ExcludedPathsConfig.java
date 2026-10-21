@@ -6,7 +6,12 @@ import java.util.Set;
 import org.springframework.util.AntPathMatcher;
 
 /**
- * 统一管理所有需要排除认证和数据脱敏的路径配置
+ * 统一管理所有需要排除认证和数据脱敏的路径配置。
+ *
+ * <p>数据脱敏侧的排除面见 {@link #DATA_MASKING_EXCLUDED_PATHS} 上方的注释：自 issue #560
+ * （方案 C 第一阶段）起 {@code /v1/**} 的<b>非流式 JSON</b> 响应纳入脱敏，SSE
+ * （{@code text/event-stream}）仍由内容类型判定跳过、留待 #560 后续期；管理台 {@code /api/**}
+ * （含 {@code /api/v1/**}）与运维端点继续排除。</p>
  */
 public class ExcludedPathsConfig {
     /** Private constructor to prevent instantiation. */
@@ -72,12 +77,18 @@ public class ExcludedPathsConfig {
         
         // 数据脱敏排除路径（ResponseSanitizationFilter 网关响应过滤器）
         //
-        // 设计裁决（v3.1.x）：PII 主战场是「聊天调用历史 / 日志 / 追踪记录」中的用户数据，
-        // 由 SanitizationService.sanitizeForStorage 在 SUMMARY 记录链路处理，不经本过滤器。
-        // 本过滤器只作用于「未被排除的 HTTP JSON 响应」，因此：
-        //  1) AI 实时推理路径（/api/v1/**）排除 —— 不改写客户端模型输出；
-        //  2) 管理台 /api/** 全部排除 —— 管理接口返回配置/密钥元数据时不得被掩码破坏；
-        //  3) 静态资源与运维端点排除。
+        // PII 主战场仍是「聊天调用历史 / 日志 / 追踪记录」中的用户数据，由
+        // SanitizationService.sanitizeForStorage 在 SUMMARY 记录链路处理，不经本过滤器。
+        // 本过滤器只作用于「未被排除的 HTTP JSON 响应」。
+        //
+        // issue #560（方案 C 第一阶段）：排除面按「是否改写协议输出」重新划线，取代 v3.1.x
+        // 「AI 实时推理路径整体排除」的旧裁决：
+        //  1) /v1/**（AI 入口）的**非流式 JSON** 响应纳入脱敏 —— 旧口径下明文 PII 直接到达客户端；
+        //  2) /v1/** 的 SSE（text/event-stream）响应仍不脱敏 —— 由 ResponseSanitizationFilter
+        //     .shouldSanitizeContentType 只认 application/json 天然跳过，流式分支本期不动，
+        //     SSE 覆盖留待 issue #560 的后续阶段；
+        //  3) 管理台 /api/** 全部排除 —— 管理接口返回配置/密钥元数据时不得被掩码破坏（原裁决不变）；
+        //  4) 运维端点（/actuator/**、/health、/metrics）、API 文档与静态资源继续排除。
         DATA_MASKING_EXCLUDED_PATHS = Set.of(
             "/actuator/",
             "/health",
@@ -91,17 +102,15 @@ public class ExcludedPathsConfig {
             "/js/",
             "/images/",
             "/admin",
-            // 管理台与配置 API：管理控制台需要看到真实配置值
-            "/api/",
-            // AI 实时推理（覆盖 /api/v1/chat 等；若未来有非 /api 的 AI 入口再单独登记）
-            "/v1/"
+            // 管理台与配置 API：管理控制台需要看到真实配置值（/api/v1/** 也由本前缀覆盖）
+            "/api/"
         );
 
         // 数据脱敏排除路径模式（Ant 风格，补充前缀集合未覆盖的形态）
+        // /v1/** 自 issue #560 起不再排除：非流式 JSON 需脱敏，SSE 由内容类型判定跳过。
         DATA_MASKING_EXCLUDED_PATTERNS = List.of(
             "/actuator/**",
             "/api/**",
-            "/v1/**",
             "/admin/**"
         );
     }

@@ -9,12 +9,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * 数据脱敏排除路径契约（v3.2.0 设计裁决）.
+ * 数据脱敏排除路径契约（v3.2.0 设计裁决，issue #560 修订）.
  *
  * <p>PII 主战场是聊天调用历史/日志/追踪记录，经
  * {@code SanitizationService.sanitizeForStorage} 处理；
- * ResponseSanitizationFilter 只作用于未排除的 HTTP JSON 响应，
- * 且必须排除管理台与 AI 实时路径。</p>
+ * ResponseSanitizationFilter 只作用于未排除的 HTTP JSON 响应。
+ * 自 issue #560（方案 C 第一阶段）起 {@code /v1/**} 的<b>非流式 JSON</b> 不再排除
+ * （SSE 仍由内容类型判定跳过），管理面 {@code /api/**}（含 {@code /api/v1/**}）
+ * 与运维端点继续排除。</p>
  */
 @DisplayName("ExcludedPathsConfig 脱敏排除路径")
 class ExcludedPathsConfigTest {
@@ -34,16 +36,28 @@ class ExcludedPathsConfigTest {
                 path + " 不应被网关响应脱敏改写");
     }
 
-    @ParameterizedTest(name = "[{index}] AI 实时路径应排除网关响应脱敏: {0}")
+    @ParameterizedTest(name = "[{index}] 管理面路径（含 /api/v1）应排除网关响应脱敏: {0}")
     @ValueSource(strings = {
             "/api/v1/chat/completions",
             "/api/v1/embeddings",
+            "/api/v1/models"
+    })
+    void managementPaths_shouldBeExcluded(String path) {
+        // issue #560："/v1/" 前缀已撤销，但 /api/v1/** 由 "/api/" 前缀覆盖 ⇒ 管理面仍不得被掩码。
+        assertTrue(ExcludedPathsConfig.isDataMaskExcluded(path),
+                path + " 属管理面（/api/ 前缀），管理响应不得被网关脱敏改写");
+    }
+
+    @ParameterizedTest(name = "[{index}] /v1 非流式路径不再排除网关响应脱敏（issue #560）: {0}")
+    @ValueSource(strings = {
+            "/v1/chat/completions",
             "/v1/messages",
             "/v1/models"
     })
-    void aiRealtimePaths_shouldBeExcludedFromGatewayMasking(String path) {
-        assertTrue(ExcludedPathsConfig.isDataMaskExcluded(path),
-                path + " 不应被网关响应脱敏改写（客户端模型输出完整性）");
+    void v1NonStreamingPaths_noLongerExcluded(String path) {
+        // issue #560 方案 C 第一阶段：/v1/** 的 JSON 响应纳入脱敏；SSE 仍由内容类型判定跳过。
+        assertFalse(ExcludedPathsConfig.isDataMaskExcluded(path),
+                path + " 必须进入脱敏链路（管理面 /api/v1/** 另由 /api/ 前缀排除）");
     }
 
     @ParameterizedTest(name = "[{index}] 运维端点应排除: {0}")

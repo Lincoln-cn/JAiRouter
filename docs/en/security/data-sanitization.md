@@ -24,7 +24,7 @@ The **primary** PII surface is chat call-history / logs / tracing records, handl
 | Console | Security → **PII Sanitization** (`/security/sanitization`) |
 | Permission | `security:sanitization:manage` (ADMIN) |
 | Admin API | `GET/PUT /api/config/sanitization`, `GET .../rules`, `POST .../test` |
-| Gateway response filter | Off by default; admin `/api/**` and AI realtime paths excluded |
+| Gateway response filter | Off by default; admin `/api/**` and ops endpoints excluded; **non-streaming JSON** on `/v1/**` is sanitized since #560, SSE still is not |
 | Dry-run | Non-JSON samples mask as `text/plain` for chat-log pastes |
 
 **Call history**: with `record-level=SUMMARY`, the adapter sanitizes via `sanitizeForStorage` before persist.
@@ -426,11 +426,11 @@ Sanitization is **not a zero-cost bypass**: every match runs regex matching and 
 | Location | Hook | Status |
 |----------|------|--------|
 | Response | Outbound response body filter | **`application/json` responses only**; SSE / streaming responses (`text/event-stream`) never take this path |
-| Response paths | Path filter | `/v1/**`, `/api/**`, `/admin/**`, `/actuator/**` and static assets are **excluded by default** in `ExcludedPathsConfig` |
+| Response paths | Path filter | **Non-streaming JSON** on `/v1/**` is **in scope** since issue #560; `/api/**`, `/admin/**`, `/actuator/**` and static assets are still **excluded by default** in `ExcludedPathsConfig` |
 | Request | Inbound request body (`sanitizeRequest`) | Switch and whitelist logic exist, but **no caller is wired into the current request chain**, so no inbound cost is paid today |
 | Recording | Before persistence (`sanitizeForStorage`) | Controlled by `record-level` and call-history settings, independent of `request/response.enabled` |
 
-So even with the response switch on, responses from the main inference entry (`/v1/chat/completions`) and from management endpoints are **not** rewritten by this filter (gap tracked as issue #560). Do not base a capacity plan on "every response is sanitized".
+So with the response switch on, plan capacity in **two tiers**: (1) every non-SSE `application/json` response — including the **non-streaming** return of the main inference entry (`/v1/chat/completions`) — goes through sanitization (issue #560 phase 1 opened up `/v1/**` JSON); (2) management endpoints (`/api/**`), ops endpoints and static assets are still not rewritten, and SSE / streaming responses (`text/event-stream`) still never take this path (SSE coverage is deferred to a later phase of issue #560). Do not base a capacity plan on "every response is sanitized", nor on "/v1 is never sanitized".
 
 In JSON mode the values of `traceId` / `spanId` / `requestId` / `traceparent` / `tracestate` are kept as-is (key match is case-insensitive): masking troubleshooting identifiers breaks the correlation between responses and logs, which is more harm than protection (issue #561). Values under other keys are still sanitized, and plain text has no key to infer, so its behavior is unchanged.
 
