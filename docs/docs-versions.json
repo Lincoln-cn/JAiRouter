@@ -2,10 +2,10 @@
   "versions": {
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.55",
-      "LastModified": "2026-10-19T14:34:38.381958",
-      "ContentHash": "940eb941f5ef8596",
-      "GitCommit": "950727a2",
+      "Version": "1.0.56",
+      "LastModified": "2026-10-21T07:46:56.818574",
+      "ContentHash": "8861cd8e4b26776e",
+      "GitCommit": "7e492bc5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -524,10 +524,10 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.33",
-      "LastModified": "2026-10-20T21:09:10.070712",
-      "ContentHash": "1d22615abd795df7",
-      "GitCommit": "eac10c21",
+      "Version": "1.0.34",
+      "LastModified": "2026-10-21T07:46:57.295382",
+      "ContentHash": "686f0de14a637863",
+      "GitCommit": "7e492bc5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -578,10 +578,10 @@
     },
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
-      "Version": "1.0.32",
-      "LastModified": "2026-10-19T14:03:07.793825",
-      "ContentHash": "834601a49f13d930",
-      "GitCommit": "8d9e5a5a",
+      "Version": "1.0.33",
+      "LastModified": "2026-10-21T07:46:57.329783",
+      "ContentHash": "925f708905b9391f",
+      "GitCommit": "7e492bc5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1161,10 +1161,10 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.33",
-      "LastModified": "2026-10-20T21:09:10.776087",
-      "ContentHash": "ef38d80b17114baf",
-      "GitCommit": "eac10c21",
+      "Version": "1.0.34",
+      "LastModified": "2026-10-21T07:46:58.011285",
+      "ContentHash": "eb2bcc6c3c6cb490",
+      "GitCommit": "7e492bc5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1216,10 +1216,10 @@
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
-      "Version": "1.0.32",
-      "LastModified": "2026-10-20T21:09:10.812238",
-      "ContentHash": "c670c9588d35004e",
-      "GitCommit": "b54650d4",
+      "Version": "1.0.33",
+      "LastModified": "2026-10-21T07:46:58.047042",
+      "ContentHash": "5680e5c9d821059d",
+      "GitCommit": "7e492bc5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1775,10 +1775,10 @@
     },
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.46",
-      "LastModified": "2026-10-19T14:34:38.379757",
-      "ContentHash": "6ccbe3ebb0ed5be2",
-      "GitCommit": "950727a2",
+      "Version": "1.0.47",
+      "LastModified": "2026-10-21T07:46:56.816272",
+      "ContentHash": "27377b967c2e2208",
+      "GitCommit": "7e492bc5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2162,10 +2162,10 @@
     },
     "docs/en/security/rbac-permissions.md": {
       "FilePath": "docs/en/security/rbac-permissions.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-10-20T21:09:10.168074",
-      "ContentHash": "a4a5413f65d4e3c7",
-      "GitCommit": "b54650d4",
+      "Version": "1.0.8",
+      "LastModified": "2026-10-21T07:46:57.386688",
+      "ContentHash": "579f005a66eb3b00",
+      "GitCommit": "7e492bc5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2192,10 +2192,10 @@
     },
     "docs/zh/security/rbac-permissions.md": {
       "FilePath": "docs/zh/security/rbac-permissions.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-10-20T21:09:10.860033",
-      "ContentHash": "8db26b0e9669500d",
-      "GitCommit": "b54650d4",
+      "Version": "1.0.8",
+      "LastModified": "2026-10-21T07:46:58.095729",
+      "ContentHash": "59bd015d7e39107a",
+      "GitCommit": "7e492bc5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2254,10 +2254,10 @@
     },
     "docs/en/getting-started/web-console.md": {
       "FilePath": "docs/en/getting-started/web-console.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-20T21:09:09.942615",
-      "ContentHash": "92f1870ae9aa42ab",
-      "GitCommit": "b54650d4",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-21T07:46:57.166083",
+      "ContentHash": "e41b86c29198af06",
+      "GitCommit": "7e492bc5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2281,10 +2281,10 @@
     },
     "docs/zh/getting-started/web-console.md": {
       "FilePath": "docs/zh/getting-started/web-console.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-20T21:09:10.635112",
-      "ContentHash": "523c90821ce0c646",
-      "GitCommit": "b54650d4",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-21T07:46:57.871719",
+      "ContentHash": "8785d122a3c1906c",
+      "GitCommit": "7e492bc5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -9258,7 +9258,87 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-20T21:09:10.860040",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.46",
+      "NewVersion": "1.0.47",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-21T07:46:56.816283",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.55",
+      "NewVersion": "1.0.56",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-21T07:46:56.818580",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/web-console.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-21T07:46:57.166093",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.33",
+      "NewVersion": "1.0.34",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-21T07:46:57.295393",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/roadmap.md",
+      "OldVersion": "1.0.32",
+      "NewVersion": "1.0.33",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-21T07:46:57.329793",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/rbac-permissions.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-21T07:46:57.386699",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/web-console.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-21T07:46:57.871728",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.33",
+      "NewVersion": "1.0.34",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-21T07:46:58.011295",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/roadmap.md",
+      "OldVersion": "1.0.32",
+      "NewVersion": "1.0.33",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-21T07:46:58.047052",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/rbac-permissions.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-21T07:46:58.095739",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-21T07:03:36.402885"
+  "last_updated": "2026-10-21T07:46:58.211745"
 }
