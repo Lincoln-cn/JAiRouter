@@ -1,4 +1,4 @@
-﻿# China Network Environment Optimization Deployment
+# China Network Environment Optimization Deployment
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -336,7 +336,6 @@ FROM registry.cn-hangzhou.aliyuncs.com/acs/openjdk:17-jre-alpine
 
 LABEL maintainer="JAiRouter Team"
 LABEL description="JAiRouter - AI Model Service Routing and Load Balancing Gateway (China Optimized)"
-LABEL version="1.0-SNAPSHOT"
 
 # Create application user
 RUN addgroup -g 1001 jairouter && \
@@ -358,6 +357,8 @@ ENV SERVER_PORT=8080
 
 EXPOSE 8080
 
+# The prod profile fails fast without secrets: pass them at run time, never bake them into the image.
+#   docker run -e JWT_SECRET=<secret> -e INITIAL_ADMIN_PASSWORD=<password> ...
 USER jairouter
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \

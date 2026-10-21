@@ -46,10 +46,16 @@ jairouter:
 ```bash
 # Production Environment JWT Key Configuration
 export JWT_SECRET="your-very-strong-production-jwt-secret-key-at-least-32-characters-long"
+```
 
-# Optional Expiration Time Configuration
-export JWT_EXPIRATION_MINUTES=15
-export JWT_REFRESH_EXPIRATION_DAYS=30
+Token lifetimes are **not** configurable through environment variables — set them in `config/auth/jwt.yml`:
+
+```yaml
+jairouter:
+  security:
+    jwt:
+      expiration-minutes: 15        # access token lifetime
+      refresh-expiration-days: 30   # refresh token lifetime
 ```
 
 #### Asymmetric Key (RS256/RS384/RS512)
@@ -239,14 +245,25 @@ jairouter:
   security:
     jwt:
       persistence:
-        enabled: true
-        primary-storage: h2    # h2, redis, memory
-        fallback-storage: memory
+        enabled: true              # master switch for token persistence
+        storage-path: config-store # file store used by the default persistence impl
+        memory:
+          max-tokens: 50000        # in-memory cache bound
+          cleanup-threshold: 0.8   # evict when the cache is 80% full
+          lru-enabled: true
+        startup-recovery:
+          enabled: true            # reload persisted tokens on boot
+        composite:
+          enabled: false           # combine file + Redis stores
+        sync:
+          enabled: false           # background sync between stores
         cleanup:
           enabled: true
-          schedule: "0 0 2 * * ?"  # Daily at 2 AM
+          schedule: "0 0 2 * * ?"   # daily at 02:00
           retention-days: 30
           batch-size: 1000
+        redis:
+          enabled: false           # Redis connection comes from spring.data.redis.*
 ```
 
 ### H2 Database Storage Advantages
@@ -271,10 +288,9 @@ jairouter:
       blacklist:
         persistence:
           enabled: true
-          primary-storage: h2
-          fallback-storage: memory
-          max-memory-size: 10000
-          cleanup-interval: 3600
+          storage-path: config-store/jwt-blacklist
+          max-memory-size: 10000   # in-memory entries kept before eviction
+          cleanup-interval: 3600   # seconds between cleanup runs
 ```
 
 ### Token Revocation

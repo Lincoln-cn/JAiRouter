@@ -336,7 +336,6 @@ FROM registry.cn-hangzhou.aliyuncs.com/acs/openjdk:17-jre-alpine
 
 LABEL maintainer="JAiRouter Team"
 LABEL description="JAiRouter - AI Model Service Routing and Load Balancing Gateway (China Optimized)"
-LABEL version="3.1.1"
 
 # 创建应用用户
 RUN addgroup -g 10010 jairouter && \
@@ -358,6 +357,8 @@ ENV SERVER_PORT=8080
 
 EXPOSE 8080
 
+# prod profile 缺密钥会 fail-fast：运行时注入，不要写进镜像
+#   docker run -e JWT_SECRET=<密钥> -e INITIAL_ADMIN_PASSWORD=<密码> ...
 USER jairouter
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
