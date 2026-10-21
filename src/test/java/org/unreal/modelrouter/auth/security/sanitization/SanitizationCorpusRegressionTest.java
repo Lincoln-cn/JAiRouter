@@ -7,9 +7,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.springframework.core.io.ClassPathResource;
+import org.unreal.modelrouter.auth.sanitization.SanitizationRuleEngine;
 import org.unreal.modelrouter.auth.sanitization.SanitizationService;
 import org.unreal.modelrouter.auth.sanitization.impl.DefaultSanitizationRuleEngine;
 import org.unreal.modelrouter.auth.sanitization.impl.DefaultSanitizationService;
+import org.unreal.modelrouter.auth.sanitization.impl.OptimizedSanitizationRuleEngine;
 import org.unreal.modelrouter.auth.security.config.properties.SanitizationConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.model.SanitizationRule;
@@ -52,6 +54,7 @@ class SanitizationCorpusRegressionTest {
 
     private static Corpus corpus;
     private static SanitizationService service;
+    private static SanitizationService optimizedService;
 
     @BeforeAll
     static void loadCorpusAndService() throws Exception {
@@ -60,7 +63,8 @@ class SanitizationCorpusRegressionTest {
         }
         assertNotNull(corpus, "语料文件解析失败: " + CORPUS_RESOURCE);
         assertFalse(corpus.cases.isEmpty(), "语料不得为空");
-        service = newService(corpus.config);
+        service = newService(corpus.config, new DefaultSanitizationRuleEngine());
+        optimizedService = newService(corpus.config, new OptimizedSanitizationRuleEngine());
     }
 
     @Test
@@ -85,6 +89,24 @@ class SanitizationCorpusRegressionTest {
                 assertions.add(() -> assertTrue(actual.contains(gap),
                         c.id + " 的已知缺口【" + gap + "】已不存在 —— 若本次改动修好了它，"
                                 + "请更新 corpus.json 的 knownGaps 与对应 issue；实际输出=" + actual));
+            }
+        }
+        org.junit.jupiter.api.Assertions.assertAll(assertions);
+    }
+
+    @Test
+    @DisplayName("同一份语料在生产实际装配的 Optimized 引擎上同样成立")
+    void everyCorpusCaseHoldsOnOptimizedEngine() {
+        final List<Executable> assertions = new ArrayList<>();
+        for (final Case c : corpus.cases) {
+            final String actual = sanitize(optimizedService, c);
+            for (final String masked : c.mustBeMasked) {
+                assertions.add(() -> assertFalse(actual.contains(masked),
+                        c.id + " [Optimized] 期望被打码但仍出现【" + masked + "】；实际输出=" + actual));
+            }
+            for (final String remain : c.mustRemain) {
+                assertions.add(() -> assertTrue(actual.contains(remain),
+                        c.id + " [Optimized] 期望保留【" + remain + "】但已消失；实际输出=" + actual));
             }
         }
         org.junit.jupiter.api.Assertions.assertAll(assertions);
@@ -121,11 +143,27 @@ class SanitizationCorpusRegressionTest {
                 ((Map<String, Object>) root.get("jairouter")).get("security")).get("sanitization")).get("response");
 
         assertEquals(response.get("pii-patterns"), corpus.config.piiPatterns,
-                "语料的 PII 模式必须与 config/auth/sanitization.yml 完全一致（顺序也一致，先手机号后银行卡）");
+                "语料的 PII 模式必须与 config/auth/sanitization.yml 完全一致（顺序也一致：#561 起为"
+                        + "身份证 → 银行卡 → 手机号 → 邮箱，先长后短）");
         assertEquals(response.get("masking-char"), corpus.config.maskingChar, "掩码字符不一致");
         assertEquals(Boolean.TRUE, response.get("preserve-json-structure"), "JSON 结构保留开关应为 true");
         assertTrue(corpus.config.sensitiveWords.containsAll((List<String>) response.get("sensitive-words")),
                 "语料的敏感词必须覆盖 config/auth/sanitization.yml 的全部词条");
+    }
+
+    @Test
+    @DisplayName("PII 规则的 priority 严格跟随语料/yml 的列表顺序（「先长后短」的执行基础）")
+    void piiRulePriorityFollowsListOrder() {
+        final List<SanitizationRule> rules = service.getAllRules().block(Duration.ofSeconds(5));
+        assertNotNull(rules, "规则列表读取失败");
+        final List<String> byPriority = rules.stream()
+                .filter(rule -> rule.getRuleId().startsWith("response-pii-pattern-"))
+                .sorted(java.util.Comparator.comparingInt(SanitizationRule::getPriority))
+                .map(SanitizationRule::getPattern)
+                .toList();
+        assertEquals(corpus.config.piiPatterns, byPriority,
+                "引擎按 priority 升序逐条替换，priority 必须随列表索引递增 —— 同组共用同一 priority 时"
+                        + "执行顺序取决于 HashMap 迭代顺序，#561 的「身份证 → 银行卡 → 手机号」无法保证");
     }
 
     @Test
@@ -140,9 +178,13 @@ class SanitizationCorpusRegressionTest {
     // ============ 夹具 ============
 
     private static String sanitize(final Case c) {
+        return sanitize(service, c);
+    }
+
+    private static String sanitize(final SanitizationService target, final Case c) {
         final Mono<String> result = "request".equals(c.direction)
-                ? service.sanitizeRequest(c.input, c.contentType, "corpus-tester")
-                : service.sanitizeResponse(c.input, c.contentType);
+                ? target.sanitizeRequest(c.input, c.contentType, "corpus-tester")
+                : target.sanitizeResponse(c.input, c.contentType);
         final String actual = result.block(Duration.ofSeconds(5));
         if (actual == null) {
             fail(c.id + " 返回了空结果");
@@ -156,7 +198,7 @@ class SanitizationCorpusRegressionTest {
      * <p>request 侧刻意留空 —— 生产配置（{@code config/auth/sanitization.yml}）只有 response 块，
      * 这样语料里的 request 用例才能反映真实行为。</p>
      */
-    private static SanitizationService newService(final Config cfg) {
+    private static SanitizationService newService(final Config cfg, final SanitizationRuleEngine engine) {
         final SecurityProperties properties = new SecurityProperties();
 
         final SanitizationConfig.ResponseSanitization response = properties.getSanitization().getResponse();
@@ -174,7 +216,7 @@ class SanitizationCorpusRegressionTest {
         request.setWhitelistUsers(new ArrayList<>());
 
         final DefaultSanitizationService sanitizationService =
-                new DefaultSanitizationService(new DefaultSanitizationRuleEngine(), properties);
+                new DefaultSanitizationService(engine, properties);
         sanitizationService.initializeRules();
         return sanitizationService;
     }

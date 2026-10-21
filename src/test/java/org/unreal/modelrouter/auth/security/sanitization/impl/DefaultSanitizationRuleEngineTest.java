@@ -627,13 +627,96 @@ class DefaultSanitizationRuleEngineTest {
 
     @Test
     void testShippedDefaultPatternsPassSafetyCheck() {
-        assertTrue(SafeRegexValidator.isSafeUserPattern("\\d{11}"),
-                "手机号模式应通过安全校验");
+        assertTrue(SafeRegexValidator.isSafeUserPattern("(?<!\\d)\\d{17}[\\dXx](?!\\d)"),
+                "身份证模式应通过安全校验");
+        assertTrue(SafeRegexValidator.isSafeUserPattern("(?<!\\d)(?:\\d{16}|\\d{19})(?!\\d)"),
+                "无分隔符银行卡模式应通过安全校验");
         assertTrue(SafeRegexValidator.isSafeUserPattern(
                 "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"),
                 "邮箱模式应通过安全校验");
         assertTrue(SafeRegexValidator.isSafeUserPattern(
                 "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"),
                 "银行卡模式应通过安全校验");
+        assertTrue(SafeRegexValidator.isSafeUserPattern("(?<!\\d)1[3-9]\\d{9}(?!\\d)"),
+                "手机号模式应通过安全校验");
+    }
+
+    // ========== JSON 键名豁免测试（#561） ==========
+
+    private SanitizationRule phoneRule() {
+        return SanitizationRule.builder()
+                .ruleId("phone-mask")
+                .name("Phone Mask")
+                .type(RuleType.PII_PATTERN)
+                .pattern("(?<!\\d)1[3-9]\\d{9}(?!\\d)")
+                .strategy(SanitizationStrategy.MASK)
+                .enabled(true)
+                .priority(1)
+                .applicableContentTypes(List.of("application/json", "text/plain"))
+                .replacementChar("*")
+                .build();
+    }
+
+    @Test
+    void testJsonAware_ExemptKeyTraceIdKeepsValue() {
+        String content = "{\"traceId\":\"13800138000\"}";
+
+        StepVerifier.create(ruleEngine.applySanitizationRules(
+                        content, List.of(phoneRule()), "application/json", true))
+                .expectNext(content)
+                .verifyComplete();
+    }
+
+    @Test
+    void testJsonAware_ExemptKeyIsCaseInsensitive() {
+        String content = "{\"SPANID\":\"13800138000\",\"REQUESTID\":\"13800138000\"}";
+
+        StepVerifier.create(ruleEngine.applySanitizationRules(
+                        content, List.of(phoneRule()), "application/json", true))
+                .expectNext(content)
+                .verifyComplete();
+    }
+
+    @Test
+    void testJsonAware_ExemptKeyAppliesNoRuleAtAll() {
+        // 豁免是「该值不做任何规则替换」，不只是不做 PII 替换：敏感词同样不碰
+        SanitizationRule wordRule = SanitizationRule.builder()
+                .ruleId("word-mask")
+                .name("Word Mask")
+                .type(RuleType.SENSITIVE_WORD)
+                .pattern("password")
+                .strategy(SanitizationStrategy.MASK)
+                .enabled(true)
+                .priority(1)
+                .applicableContentTypes(List.of("application/json"))
+                .replacementChar("*")
+                .build();
+        String content = "{\"traceState\":\"password\"}";
+
+        StepVerifier.create(ruleEngine.applySanitizationRules(
+                        content, List.of(wordRule), "application/json", true))
+                .expectNext(content)
+                .verifyComplete();
+    }
+
+    @Test
+    void testJsonAware_NonExemptKeyStillMasked() {
+        SanitizationRule rule = phoneRule();
+
+        StepVerifier.create(ruleEngine.applySanitizationRules(
+                        "{\"phone\":\"13800138000\"}", List.of(rule), "application/json", true))
+                .expectNext("{\"phone\":\"***********\"}")
+                .verifyComplete();
+    }
+
+    @Test
+    void testNonJson_NoKeyExemption() {
+        // 非 JSON 文本没有键名可推断 ⇒ 同样的 traceId 前缀照常脱敏
+        SanitizationRule rule = phoneRule();
+
+        StepVerifier.create(ruleEngine.applySanitizationRules(
+                        "traceId=13800138000", List.of(rule), "text/plain"))
+                .expectNext("traceId=***********")
+                .verifyComplete();
     }
 }

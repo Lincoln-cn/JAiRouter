@@ -41,13 +41,19 @@ jairouter:
     sanitization:
       response:
         enabled: false
+        # PII 模式与 config/auth/sanitization.yml 同步（顺序即执行顺序）。
+        # 词表保持本文件原有的 password/account：#561 起不再含通用英文词 key，
+        # 避免 "press any key to continue" 这类正常文案被误伤。
         sensitive-words:
           - "password"
           - "account"
+        # ⚠️ 顺序 = 执行顺序，先长后短：身份证 → 银行卡 → 手机号 → 邮箱（#561）。
         pii-patterns:
-          - "\\d{11}"
-          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
+          - "(?<!\\d)\\d{17}[\\dXx](?!\\d)"
+          - "(?<!\\d)(?:\\d{16}|\\d{19})(?!\\d)"
           - "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"
+          - "(?<!\\d)1[3-9]\\d{9}(?!\\d)"
+          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
         masking-char: "*"
         log-sanitization: false
         preserve-json-structure: true
