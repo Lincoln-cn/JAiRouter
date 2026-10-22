@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.auth.security.config.properties;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -121,6 +122,23 @@ public class SanitizationConfig {
          * {@code org.unreal.modelrouter.auth.security.config.DataMaskingScope}。</p>
          */
         private Scope scope = new Scope();
+
+        /**
+         * 单次响应允许缓冲的字节上限（issue #594）。
+         *
+         * <p>响应脱敏需要把整个响应体读进内存做正则替换，因此必须给缓冲设上限，否则
+         * 大响应 + 高并发会把堆打满。超过上限时的行为分两种：</p>
+         * <ul>
+         *   <li><b>长度已知</b>（有 {@code Content-Length}）：跳过脱敏、原样放行，并记告警与审计
+         *       —— 这是「宁可漏脱敏也不破坏响应」的既定降级口径；</li>
+         *   <li><b>长度未知</b>（chunked）：无法在已消费流之后回放原始内容，按脱敏失败处理，
+         *       由中央异常处理器渲染错误响应（不会输出部分内容）。</li>
+         * </ul>
+         *
+         * <p>下限 1 KiB，默认 1 MiB。</p>
+         */
+        @Min(1024)
+        private long maxBufferedBytes = 1048576L;
     }
 
     /**

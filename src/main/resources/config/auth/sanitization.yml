@@ -57,4 +57,12 @@ jairouter:
           # mode: include
           # patterns:
           #   - /v1/**
+
+        # 单次响应允许缓冲的字节上限 —— issue #594
+        # 脱敏要把整个响应体读进内存做正则替换，必须设上限，否则大响应 + 高并发会打满堆。
+        # 超过上限时：
+        #   - 有 Content-Length ⇒ 跳过脱敏、原样放行（记告警与审计，宁可漏脱敏也不破坏响应）；
+        #   - 无 Content-Length（chunked）⇒ 无法回放原始内容，按脱敏失败终止（不会输出半截内容）。
+        # 下限 1 KiB；默认 1 MiB。
+        max-buffered-bytes: 1048576
         
