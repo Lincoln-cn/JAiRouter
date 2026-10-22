@@ -8,6 +8,7 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.core.io.buffer.DataBufferLimitException;
 import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -41,8 +42,9 @@ import java.util.List;
  * 本过滤器默认关闭（{@code jairouter.security.sanitization.response.enabled=false}），
  * 且 {@link ExcludedPathsConfig#isDataMaskExcluded(String)} 排除管理台 {@code /api/**}
  * 与运维端点。{@code /v1/**} 的<b>非流式 JSON</b> 响应自 issue #560（方案 C 第一阶段）起
- * <b>纳入</b>脱敏；其 SSE（{@code text/event-stream}）响应仍由「只处理 application/json」
- * 的内容类型判定跳过（{@code shouldSanitizeContentType}），流式覆盖留待后续阶段。</p>
+ * <b>纳入</b>脱敏；其 SSE（{@code text/event-stream}）响应自 issue #560 第二阶段起由
+ * {@link SseResponseSanitizer} <b>逐帧</b>脱敏（{@code response.sanitize-sse} 可关，
+ * 关闭后按原内容类型判定跳过）。</p>
  */
 @Slf4j
 @Component
@@ -91,6 +93,36 @@ public class ResponseSanitizationFilter implements WebFilter {
         // 创建响应装饰器来拦截响应数据
         ServerHttpResponse originalResponse = exchange.getResponse();
         ServerHttpResponseDecorator decoratedResponse = new ServerHttpResponseDecorator(originalResponse) {
+            /**
+             * SSE 在 WebFlux 里走 {@code writeAndFlushWith}（外层每次 flush 一个 Publisher），
+             * 不是 {@code writeWith}。只覆盖 {@code writeWith} 会漏掉全部流式响应 ——
+             * 健康状态这类 {@code Flux<ServerSentEvent>} 就属于这种情况。
+             */
+            @Override
+            public Mono<Void> writeAndFlushWith(
+                    final org.reactivestreams.Publisher<? extends org.reactivestreams.Publisher<? extends DataBuffer>> body) {
+                if (getDelegate().isCommitted()) {
+                    return super.writeAndFlushWith(body);
+                }
+                final String contentType = resolveContentType(getResponseContentType(), request);
+                if (!isSseContentType(contentType)
+                        || !securityProperties.getSanitization().getResponse().isSanitizeSse()) {
+                    return super.writeAndFlushWith(body);
+                }
+                log.debug("SSE 响应逐帧脱敏（writeAndFlushWith）: {}", request.getPath().value());
+                final int maxLineBytes = (int) Math.min(resolveMaxBufferedBytes(), Integer.MAX_VALUE);
+                // 同一个实例跨 flush 复用：一个事件可能被拆到两次 flush，残行必须延续
+                final SseResponseSanitizer sseSanitizer = new SseResponseSanitizer(
+                        sanitizationService,
+                        originalResponse.bufferFactory(),
+                        maxLineBytes,
+                        message -> recordSanitizationEvent(request, contentType, false, message));
+                final Flux<Flux<DataBuffer>> sanitized = Flux.from(body)
+                        .map(chunk -> sseSanitizer.sanitizeSegment(Flux.from(chunk)))
+                        .concatWith(Flux.just(sseSanitizer.tail()));
+                return super.writeAndFlushWith(sanitized);
+            }
+
             @Override
             public Mono<Void> writeWith(final org.reactivestreams.Publisher<? extends DataBuffer> body) {
                 // 检查响应是否已经提交
@@ -100,7 +132,23 @@ public class ResponseSanitizationFilter implements WebFilter {
                 }
                 
                 // 检查是否需要处理响应内容
-                String contentType = getResponseContentType();
+                String contentType = resolveContentType(getResponseContentType(), request);
+                // issue #560 第二阶段：SSE 是无限流，绝不能走下面的整段缓冲，必须按行流式处理
+                if (isSseContentType(contentType)) {
+                    if (!securityProperties.getSanitization().getResponse().isSanitizeSse()) {
+                        log.debug("SSE 逐帧脱敏未开启，跳过: {}", request.getPath().value());
+                        return super.writeWith(body);
+                    }
+                    log.debug("SSE 响应逐帧脱敏: {}", request.getPath().value());
+                    // 单行上限复用 max-buffered-bytes：整段 JSON 只允许占这么多内存，单帧也不该更大
+                    final int maxLineBytes = (int) Math.min(resolveMaxBufferedBytes(), Integer.MAX_VALUE);
+                    final SseResponseSanitizer sseSanitizer = new SseResponseSanitizer(
+                            sanitizationService,
+                            originalResponse.bufferFactory(),
+                            maxLineBytes,
+                            message -> recordSanitizationEvent(request, contentType, false, message));
+                    return super.writeWith(sseSanitizer.sanitize(Flux.from(body)));
+                }
                 if (!shouldSanitizeContentType(contentType)) {
                     return super.writeWith(body);
                 }
@@ -227,15 +275,19 @@ public class ResponseSanitizationFilter implements WebFilter {
             }
             
             /**
-             * 获取响应内容类型
+             * 获取响应内容类型；尚未确定时返回 {@code null}。
+             *
+             * <p>不能回退成 {@code application/octet-stream}：那会让「编解码器稍后才写
+             * {@code Content-Type}」的 SSE 响应在判定阶段看起来「既不是 JSON 也不是事件流」，
+             * 直接被放行（健康状态 SSE 就是这样漏掉的）。</p>
              */
             private String getResponseContentType() {
                 try {
                     MediaType mediaType = getHeaders().getContentType();
-                    return mediaType != null ? mediaType.toString() : "application/octet-stream";
+                    return mediaType != null ? mediaType.toString() : null;
                 } catch (Exception e) {
                     log.warn("获取响应内容类型失败: {}", e.getMessage());
-                    return "application/octet-stream";
+                    return null;
                 }
             }
         };
@@ -301,6 +353,29 @@ public class ResponseSanitizationFilter implements WebFilter {
         
         // 只处理JSON类型的内容
         return contentType.startsWith("application/json");
+    }
+
+    /**
+     * 解析响应的有效内容类型。
+     *
+     * <p>SSE 有一类写法（控制器返回 {@code Flux<ServerSentEvent<T>>}、未显式声明 produces）由
+     * 编解码器在写响应时才设置 {@code Content-Type}，此时装饰器拿到的响应头还没带类型 ——
+     * 只看响应头会把这类流式响应误判成「未知类型」而放过。因此再回退看请求的
+     * {@code Accept: text/event-stream}：客户端要的就是事件流，按 SSE 处理语义一致。</p>
+     */
+    private String resolveContentType(final String responseType, final ServerHttpRequest request) {
+        if (responseType != null && !responseType.isBlank()) {
+            return responseType;
+        }
+        final String accept = request.getHeaders().getFirst(HttpHeaders.ACCEPT);
+        return isSseContentType(accept) ? accept : null;
+    }
+
+    /**
+     * 是否为 SSE 响应（{@code text/event-stream}）。
+     */
+    private boolean isSseContentType(final String contentType) {
+        return contentType != null && contentType.startsWith("text/event-stream");
     }
     
     /**

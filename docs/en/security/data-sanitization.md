@@ -24,7 +24,7 @@ The **primary** PII surface is chat call-history / logs / tracing records, handl
 | Console | Security → **PII Sanitization** (`/security/sanitization`) |
 | Permission | `security:sanitization:manage` (ADMIN) |
 | Admin API | `GET/PUT /api/config/sanitization`, `GET .../rules`, `POST .../test` |
-| Gateway response filter | Off by default; admin `/api/**` and ops endpoints excluded; **non-streaming JSON** on `/v1/**` is sanitized since #560, SSE still is not |
+| Gateway response filter | Off by default; admin `/api/**` and ops endpoints excluded; **non-streaming JSON** on `/v1/**` is sanitized since #560; SSE (`text/event-stream`) is sanitized **frame by frame** since #560 phase 2 (`response.sanitize-sse`, on by default) |
 | Dry-run | Non-JSON samples mask as `text/plain` for chat-log pastes |
 
 **Call history**: with `record-level=SUMMARY`, the adapter sanitizes via `sanitizeForStorage` before persist.
@@ -194,7 +194,7 @@ jairouter:
 
 ### Response Sanitization Scope (`scope`)
 
-Response sanitization only processes `application/json` and only for paths that fall inside the scope. The built-in exclusion set covers the admin console, Actuator, Swagger and static assets; non-streaming JSON on `/v1` **is** in scope, `text/event-stream` (SSE) is skipped by content type.
+Response sanitization filters by **path** first, then splits by **content type**: `application/json` is sanitized as a whole body; `text/event-stream` (SSE) is sanitized frame by frame (see below); anything else passes through untouched. The built-in exclusion set covers the admin console, Actuator, Swagger and static assets; both non-streaming JSON and SSE on `/v1` are in scope.
 
 ```yaml
 jairouter:
@@ -448,12 +448,12 @@ Sanitization is **not a zero-cost bypass**: every match runs regex matching and 
 
 | Location | Hook | Status |
 |----------|------|--------|
-| Response | Outbound response body filter | **`application/json` responses only**; SSE / streaming responses (`text/event-stream`) never take this path |
+| Response | Outbound response body filter | `application/json` is sanitized as a **whole body**; `text/event-stream` (SSE) is sanitized **frame by frame** (since issue #560 phase 2, `response.sanitize-sse`, on by default) |
 | Response paths | Path filter | **Non-streaming JSON** on `/v1/**` is **in scope** since issue #560; `/api/**`, `/admin/**`, `/actuator/**` and static assets are still **excluded by default** in `ExcludedPathsConfig` |
 | Request | Inbound request body (`sanitizeRequest`) | Switch and whitelist logic exist, but **no caller is wired into the current request chain**, so no inbound cost is paid today |
 | Recording | Before persistence (`sanitizeForStorage`) | Controlled by `record-level` and call-history settings, independent of `request/response.enabled` |
 
-So with the response switch on, plan capacity in **two tiers**: (1) every non-SSE `application/json` response — including the **non-streaming** return of the main inference entry (`/v1/chat/completions`) — goes through sanitization (issue #560 phase 1 opened up `/v1/**` JSON); (2) management endpoints (`/api/**`), ops endpoints and static assets are still not rewritten, and SSE / streaming responses (`text/event-stream`) still never take this path (SSE coverage is deferred to a later phase of issue #560). Do not base a capacity plan on "every response is sanitized", nor on "/v1 is never sanitized".
+So with the response switch on, plan capacity in **three tiers**: (1) every `application/json` response — including the **non-streaming** return of the main inference entry (`/v1/chat/completions`) — is sanitized as a whole body (issue #560 phase 1 opened up `/v1/**` JSON); (2) SSE (`text/event-stream`) is sanitized **per frame**, costing in proportion to frame count and frame size but **without buffering the whole stream** (issue #560 phase 2: line by line, `data:` payloads are rewritten, other lines and the `[DONE]` sentinel pass through); (3) management endpoints (`/api/**`), ops endpoints and static assets are still not rewritten. Do not base a capacity plan on "every response is sanitized", nor on "/v1 or SSE is never sanitized".
 
 In JSON mode the values of `traceId` / `spanId` / `requestId` / `traceparent` / `tracestate` are kept as-is (key match is case-insensitive): masking troubleshooting identifiers breaks the correlation between responses and logs, which is more harm than protection (issue #561). Values under other keys are still sanitized, and plain text has no key to infer, so its behavior is unchanged.
 
@@ -568,7 +568,29 @@ Response-side sanitization has to read the entire response body into memory for 
 
 Raising the limit increases per-request memory linearly — budget the heap as "concurrency × limit". Lowering it pushes more large responses into the "skip sanitization" branch. The limit applies only to the HTTP response filter, not to `sanitizeForStorage`.
 
-### 5. Security Considerations
+### 5. SSE Streaming Frame-by-Frame Sanitization
+
+Streaming responses (`text/event-stream`) cannot be buffered as a whole — a long-lived connection may keep emitting for minutes, and `DataBufferUtils.join` would read the entire stream into memory until it ends. SSE therefore takes a **per-frame** path (issue #560 phase 2):
+
+```yaml
+jairouter:
+  security:
+    sanitization:
+      response:
+        sanitize-sse: true      # enabled by default
+```
+
+Rules:
+
+- Lines are split on newlines; only the payload after `data:` on `data:` lines is rewritten. `event:` / `id:` / `retry:` / comment lines (`:`) and the `data: [DONE]` sentinel pass through unchanged;
+- Framing semantics are preserved: line terminators (`\n` / `\r\n`), blank-line separators and field order are not rewritten;
+- A frame may span network chunks: partial lines are carried into the next chunk, so a JSON frame is never cut in half;
+- **A failing frame never aborts the stream**: if sanitizing one frame throws, that frame is emitted as-is with a warning and later frames keep being processed;
+- The **per-line limit** reuses `max-buffered-bytes` (minimum 1 KiB): a line larger than the limit switches to pass-through for that line with a single warning — no bytes are dropped and later lines are unaffected.
+
+Cost and boundaries: the cost moves from "once per response" to "once per frame"; with many frames CPU and latency rise slightly (a frame is usually tens to a few hundred bytes). With `sanitize-sse=false` SSE is not sanitized at all (the pre-#560 behavior) and is not recommended when sanitization is required. The switch is independent of `scope`: paths excluded by `scope` are not sanitized even for SSE.
+
+### 6. Security Considerations
 
 - **Log Security**: Ensure sanitization logs themselves don't contain sensitive information
 - **Rule Confidentiality**: Protect sanitization rule configuration security

@@ -33,24 +33,24 @@ import static org.mockito.Mockito.when;
 /**
  * 响应脱敏过滤器的「覆盖面」特征化测试.
  *
- * <p>用<b>真实</b>脱敏服务 + 真实过滤器，钉住 issue #560 方案 C 第一阶段的新口径：</p>
+ * <p>用<b>真实</b>脱敏服务 + 真实过滤器，钉住 issue #560 的新口径：</p>
  * <ol>
  *   <li>{@code /v1/**} 的<b>非流式 JSON</b> 响应<b>进入</b>脱敏链路（COV-001）；</li>
- *   <li>{@code /v1/**} 的 SSE（{@code text/event-stream}）响应<b>本期仍原样透传</b> ——
- *       为下一期 SSE 覆盖留基线（COV-004）；</li>
+ *   <li>{@code /v1/**} 的 SSE（{@code text/event-stream}）响应<b>逐帧</b>脱敏 ——
+ *       issue #560 第二阶段，只改 data 行、非 data 行与 [DONE] 原样（COV-004）；</li>
  *   <li>{@code /api/**}（管理台）仍被 {@code ExcludedPathsConfig.DATA_MASKING_EXCLUDED_PATHS}
  *       排除，管理响应不得被掩码（COV-002）；</li>
  *   <li>运维端点（{@code /actuator/health}）仍排除（COV-007）；</li>
- *   <li>其余未被排除的路径上，只有 {@code application/json} 会被脱敏（COV-003 / COV-005 / COV-006
- *       是反空转对照）。</li>
+ *   <li>其余未被排除的路径上，{@code application/json} 与 SSE 都会被脱敏（COV-003 / COV-005 /
+ *       COV-006 是反空转对照）；{@code sanitize-sse=false} 时 SSE 回落原样透传（COV-005b）。</li>
  * </ol>
  *
  * <p>线上 PII 的主防线仍是记录侧 {@code SanitizationService.sanitizeForStorage}，不是本过滤器。
- * 将来若再调整排除面、或把脱敏接进流式链路（下一期），本类会红，从而强制同步修改语料与对应 issue。</p>
+ * 将来若再调整排除面或流式口径，本类会红，从而强制同步修改语料与对应 issue。</p>
  *
  * @since 3.4.0
  */
-@DisplayName("响应脱敏覆盖面（/v1 非流式 JSON 纳入、/api 与运维端点排除、SSE 本期仍跳过）")
+@DisplayName("响应脱敏覆盖面（/v1 非流式 JSON 与 SSE 逐帧纳入、/api 与运维端点排除）")
 class ResponseSanitizationCoverageTest {
 
     private static final String PHONE = "13800138000";
@@ -120,20 +120,49 @@ class ResponseSanitizationCoverageTest {
     }
 
     @Test
-    @DisplayName("COV-004: /v1 的 SSE 本期仍原样透传（sseStillBypassedInThisPhase，下一期基线）")
-    void sseStillBypassedInThisPhaseOnV1Path() {
-        final String body = run(V1_CHAT_PATH, MediaType.TEXT_EVENT_STREAM, SSE_BODY);
-        assertEquals(SSE_BODY, body,
-                "SSE 由 shouldSanitizeContentType 的 JSON 判定跳过；本期不得改动流式行为");
-        assertTrue(body.contains(PHONE), "缺口实证（下一期处理）：SSE 帧里的手机号仍为明文");
+    @DisplayName("COV-004: /v1 的 SSE 逐帧脱敏（issue #560 第二阶段），非 data 行与哨兵原样保留")
+    void sseOnV1PathIsSanitizedFrameByFrame() {
+        final String body = run(V1_CHAT_PATH, MediaType.TEXT_EVENT_STREAM,
+                "event: message\ndata: " + JSON_BODY + "\n\ndata: [DONE]\n\n");
+
+        assertFalse(body.contains(PHONE), "SSE 帧里的手机号必须被打码，实际=" + body);
+        assertTrue(body.contains(MASKED_PHONE), "手机号应替换为等长掩码，实际=" + body);
+        assertTrue(body.contains("event: message"), "非 data 行必须原样保留，实际=" + body);
+        assertTrue(body.contains("data: [DONE]"), "[DONE] 哨兵必须原样保留，实际=" + body);
     }
 
     @Test
-    @DisplayName("COV-005: 未被排除的路径 + SSE ⇒ 原样透传（流式返回不脱敏）")
-    void sseOnNonExcludedPathIsNotSanitized() {
+    @DisplayName("COV-005: 未被排除的路径 + SSE ⇒ 同样逐帧脱敏")
+    void sseOnNonExcludedPathIsSanitized() {
         final String body = run("/custom/stream", MediaType.TEXT_EVENT_STREAM, SSE_BODY);
-        assertEquals(SSE_BODY, body, "text/event-stream 不在 JSON 内容类型判断内，直接放行");
-        assertTrue(body.contains(PHONE), "缺口实证：SSE 帧里的手机号明文");
+
+        assertFalse(body.contains(PHONE), "SSE 帧里的手机号必须被打码，实际=" + body);
+        assertTrue(body.contains(MASKED_PHONE), "手机号应替换为等长掩码，实际=" + body);
+    }
+
+    @Test
+    @DisplayName("COV-005b: sanitize-sse=false 时 SSE 原样透传（关闭开关的基线，等同 #560 之前的行为）")
+    void ssePassesThroughWhenSanitizeSseDisabled() {
+        final SecurityProperties properties = new SecurityProperties();
+        final SanitizationConfig.ResponseSanitization response = properties.getSanitization().getResponse();
+        response.setEnabled(true);
+        response.setSensitiveWords(List.of("password"));
+        response.setPiiPatterns(List.of("\\d{11}"));
+        response.setSanitizeSse(false);
+
+        final SanitizationService sanitizationService =
+                new DefaultSanitizationService(new DefaultSanitizationRuleEngine(), properties);
+        ((DefaultSanitizationService) sanitizationService).initializeRules();
+        final SecurityAuditService auditService = mock(SecurityAuditService.class);
+        when(auditService.recordEvent(any())).thenReturn(Mono.empty());
+        final ResponseSanitizationFilter sseOffFilter =
+                new ResponseSanitizationFilter(sanitizationService, auditService, properties);
+
+        final MockServerWebExchange exchange = newExchange(V1_CHAT_PATH, MediaType.TEXT_EVENT_STREAM);
+        StepVerifier.create(sseOffFilter.filter(exchange, writingChain(SSE_BODY))).verifyComplete();
+
+        final String body = exchange.getResponse().getBodyAsString().block();
+        assertEquals(SSE_BODY, body, "sanitize-sse=false 时 SSE 必须原样透传");
     }
 
     @Test

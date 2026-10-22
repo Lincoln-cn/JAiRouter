@@ -24,7 +24,7 @@ JAiRouter 的数据脱敏功能可以自动识别和处理请求和响应中的�
 | 控制台 | 安全 → **PII 脱敏管理**（`/security/sanitization`） |
 | 权限 | `security:sanitization:manage`（ADMIN） |
 | 管理 API | `GET/PUT /api/config/sanitization`、`GET .../rules`、`POST .../test` |
-| 网关响应过滤器 | 默认关闭；`/api/**` 管理面与运维端点排除；`/v1/**` 的**非流式 JSON** 自 #560 起脱敏，SSE 仍不脱敏 |
+| 网关响应过滤器 | 默认关闭；`/api/**` 管理面与运维端点排除；`/v1/**` 的**非流式 JSON** 自 #560 起脱敏；SSE（`text/event-stream`）自 #560 第二阶段起**逐帧脱敏**（`response.sanitize-sse`，默认开） |
 | 试脱敏 | 样例非 JSON 时按 `text/plain` 掩码，便于粘贴聊天原文 |
 
 **调用历史**：`record-level=SUMMARY` 时，适配器层用 `sanitizeForStorage` 落库前脱敏。
@@ -194,7 +194,7 @@ jairouter:
 
 ### 响应脱敏生效范围（scope）
 
-响应脱敏只处理 `application/json`，并且会按路径过滤。默认排除集合覆盖管理台、Actuator、Swagger、静态资源等；`/v1` 的非流式 JSON **在生效范围内**，`text/event-stream`（SSE）按内容类型跳过。
+响应脱敏按**路径**过滤，再按**内容类型**分流：`application/json` 整段脱敏；`text/event-stream`（SSE）逐帧脱敏（见下节）；其余内容类型原样透传。默认排除集合覆盖管理台、Actuator、Swagger、静态资源等；`/v1` 的非流式 JSON 与 SSE 都在生效范围内。
 
 ```yaml
 jairouter:
@@ -448,12 +448,12 @@ jairouter:
 
 | 位置 | 生效点 | 现状 |
 |------|--------|------|
-| 响应侧 | 出站响应体过滤器 | **只处理 `application/json` 响应**；SSE / 流式响应（`text/event-stream`）不经过该路径 |
-| 响应侧路径 | 路径过滤 | `/v1/**` 的**非流式 JSON** 自 issue #560 起**纳入**脱敏；`/api/**`、`/admin/**`、`/actuator/**` 与静态资源仍在 `ExcludedPathsConfig` 中被**默认排除** |
+| 响应侧 | 出站响应体过滤器 | `application/json` **整段**脱敏；`text/event-stream`（SSE）**逐帧**脱敏（自 issue #560 第二阶段起，`response.sanitize-sse`，默认开） |
+| 响应侧路径 | 路径过滤 | `/v1/**` 的非流式 JSON 与 SSE 自 issue #560 起**纳入**脱敏；`/api/**`、`/admin/**`、`/actuator/**` 与静态资源仍在 `ExcludedPathsConfig` 中被**默认排除** |
 | 请求侧 | 入站请求体（`sanitizeRequest`） | 开关与白名单逻辑已实现，但**当前网关请求链路上没有调用方**，因此今天不产生入站开销 |
 | 记录侧 | 落库前（`sanitizeForStorage`） | 受 `record-level` 与调用历史配置影响，与 `request/response.enabled` 无关 |
 
-因此，打开响应侧开关后，容量评估要按**两档**算：① 所有非 SSE 的 `application/json` 响应 —— 含 AI 实时推理主入口（`/v1/chat/completions`）的**非流式**返回 —— 都会过一次脱敏（issue #560 方案 C 第一阶段已把 `/v1/**` 的 JSON 放开）；② 管理面（`/api/**`）、运维端点与静态资源仍不改写，SSE / 流式响应（`text/event-stream`）也仍不经过该路径（SSE 覆盖留待 issue #560 的后续阶段）。做容量评估时不要按「所有响应都被脱敏」来估算，也不要再按「`/v1` 全都不脱敏」来估算。
+因此，打开响应侧开关后，容量评估要按**三档**算：① 所有 `application/json` 响应 —— 含 AI 实时推理主入口（`/v1/chat/completions`）的**非流式**返回 —— 都会整段过一次脱敏（issue #560 方案 C 第一阶段已把 `/v1/**` 的 JSON 放开）；② SSE（`text/event-stream`）按**帧**脱敏，成本随帧数与单帧大小增长，但**不需要整段缓冲**，长连接不会把整个流读进内存（issue #560 第二阶段：逐行处理，`data:` 行替换、其它行与 `[DONE]` 原样透传）；③ 管理面（`/api/**`）、运维端点与静态资源仍不改写。做容量评估时不要按「所有响应都被脱敏」来估算，也不要再按「`/v1` 全都不脱敏」或「SSE 不脱敏」来估算。
 
 另外，JSON 模式下 `traceId` / `spanId` / `requestId` / `traceparent` / `tracestate` 这几个**键**的值默认原样保留（键名大小写不敏感）：把排障标识打码会让响应体与日志对不上，属于「多破坏」（issue #561）。其它键的值照旧按规则脱敏，非 JSON 文本没有键名可推断、行为不变。
 
@@ -631,7 +631,29 @@ jairouter:
 
 调大上限会线性抬高单请求的内存占用，按「并发数 × 上限」估算堆预算；调小则更多大响应落到「跳过脱敏」。该上限只作用于 HTTP 响应过滤器，不影响记录侧的 `sanitizeForStorage`。
 
-### 5. 安全考虑
+### 5. SSE 流式响应逐帧脱敏
+
+流式响应（`text/event-stream`）不能整段缓冲 —— 长连接可能持续输出数分钟，`DataBufferUtils.join` 会把整个流读进内存直到连接结束。因此 SSE 走**逐帧**路径（issue #560 第二阶段）：
+
+```yaml
+jairouter:
+  security:
+    sanitization:
+      response:
+        sanitize-sse: true      # 默认开启
+```
+
+处理规则：
+
+- 按行切分，只替换以 `data:` 开头的行里 `data:` 之后的负载；`event:` / `id:` / `retry:` / 注释行（`:`）与 `data: [DONE]` 哨兵行**原样透传**；
+- 分帧语义不变：行尾（`\n` / `\r\n`）、空行分隔符、字段顺序都不改写；
+- 帧可以跨网络块：残行会拼到下一块再处理，不会把一帧 JSON 切断；
+- **单帧失败不中断整条流**：某一帧脱敏抛异常时回退该帧原文并记告警，后续帧继续处理；
+- **单行上限**沿用 `max-buffered-bytes`（下限 1 KiB）：单行超过上限时该行切「直通模式」原样输出并记一次告警，不会截断字节，也不影响后续行。
+
+代价与边界：成本从「每响应一次」变成「每帧一次」，帧多时 CPU 与延迟会小幅上升（单帧通常只有几十到几百字节）；`sanitize-sse=false` 时 SSE 完全不过脱敏（等同 #560 之前的旧行为），不建议在需要脱敏的场景关闭。该开关与 `scope` 独立：路径被 `scope` 排除时，SSE 也不会脱敏。
+
+### 6. 安全考虑
 
 - **日志安全**：确保脱敏日志本身不包含敏感信息
 - **规则保密**：保护脱敏规则配置的安全性

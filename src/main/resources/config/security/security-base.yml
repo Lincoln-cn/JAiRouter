@@ -68,6 +68,10 @@ jairouter:
         # 单次响应缓冲上限（#594）：脱敏需整包读入内存，超过上限时
         # 有 Content-Length ⇒ 跳过脱敏原样放行；无长度（chunked）⇒ 按失败终止。
         max-buffered-bytes: 1048576
+
+        # 是否对 text/event-stream 流式响应逐帧脱敏 —— #560 第二阶段
+        # 只替换 data: 行负载，event:/id:/retry:/注释与 [DONE] 原样透传；不做整段缓冲。
+        sanitize-sse: true
     
     # ========================================
     # 安全审计基础配置

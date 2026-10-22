@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -470,6 +471,82 @@ class ResponseSanitizationFilterTest {
             StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
 
             verifyNoInteractions(sanitizationService);
+        }
+    }
+
+    @Nested
+    @DisplayName("SSE 逐帧脱敏测试（issue #560 第二阶段）")
+    class SseStreamingTests {
+
+        private static final String SSE_FRAMES =
+                "event: delta\n"
+                + "id: 1\n"
+                + "data: {\"phone\":\"13800000000\"}\n"
+                + "\n"
+                + "data: [DONE]\n"
+                + "\n";
+
+        @Test
+        @DisplayName("FILT-011: 只脱敏 data: 行负载，event/id/空行/[DONE] 与分帧原样保留")
+        void sseDataFramesAreSanitized() {
+            when(responseConfig.isSanitizeSse()).thenReturn(true);
+            when(sanitizationService.sanitizeResponse(anyString(), anyString()))
+                    .thenAnswer(invocation -> Mono.just(
+                            invocation.<String>getArgument(0).replace("13800000000", "***********")));
+
+            MockServerWebExchange exchange = newExchange("/v1/chat/completions", MediaType.TEXT_EVENT_STREAM);
+            StepVerifier.create(filter.filter(exchange, writingChain(SSE_FRAMES))).verifyComplete();
+
+            assertEquals(
+                    "event: delta\nid: 1\ndata: {\"phone\":\"***********\"}\n\ndata: [DONE]\n\n",
+                    exchange.getResponse().getBodyAsString().block());
+            // 帧数与行序不能变：两次 data: 行只有第一条被当作 JSON 处理
+            verify(sanitizationService, times(1)).sanitizeResponse(anyString(), anyString());
+        }
+
+        @Test
+        @DisplayName("FILT-012: sanitize-sse=false 时 SSE 原样透传，不调用脱敏服务")
+        void sseDisabledPassesThrough() {
+            when(responseConfig.isSanitizeSse()).thenReturn(false);
+
+            MockServerWebExchange exchange = newExchange("/v1/chat/completions", MediaType.TEXT_EVENT_STREAM);
+            StepVerifier.create(filter.filter(exchange, writingChain(SSE_FRAMES))).verifyComplete();
+
+            assertEquals(SSE_FRAMES, exchange.getResponse().getBodyAsString().block());
+            verifyNoInteractions(sanitizationService);
+        }
+
+        @Test
+        @DisplayName("FILT-013: SSE 不走整段缓冲 —— 分块到达且总量超过 max-buffered-bytes 仍能正常脱敏")
+        void sseIsStreamedNotBufferedAsWholeBody() {
+            when(responseConfig.isSanitizeSse()).thenReturn(true);
+            when(responseConfig.getMaxBufferedBytes()).thenReturn(1024L);
+            when(sanitizationService.sanitizeResponse(anyString(), anyString()))
+                    .thenAnswer(invocation -> Mono.just(
+                            invocation.<String>getArgument(0).replace("13800000000", "***********")));
+
+            // 每块 900 字节，合计 1800 > 1024：若是整段缓冲（#594 的 join 路径）会被判超限
+            String filler = "x".repeat(860);
+            String frameOne = "data: {\"phone\":\"13800000000\",\"pad\":\"" + filler + "\"}\n\n";
+            String frameTwo = "data: {\"phone\":\"13800000000\",\"pad\":\"" + filler + "\"}\n\n";
+
+            MockServerWebExchange exchange = newExchange("/v1/chat/completions", MediaType.TEXT_EVENT_STREAM);
+            WebFilterChain chain = mock(WebFilterChain.class);
+            when(chain.filter(any())).thenAnswer(invocation -> {
+                ServerWebExchange target = invocation.getArgument(0);
+                return target.getResponse().writeWith(Flux.just(
+                        target.getResponse().bufferFactory().wrap(frameOne.getBytes(StandardCharsets.UTF_8)),
+                        target.getResponse().bufferFactory().wrap(frameTwo.getBytes(StandardCharsets.UTF_8))));
+            });
+
+            StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
+
+            String body = exchange.getResponse().getBodyAsString().block();
+            assertNotNull(body);
+            assertEquals(2, body.split("\\n\\n").length, "两帧必须都还在");
+            assertFalse(body.contains("13800000000"), "两块帧都必须完成脱敏");
+            // 跨块的残行也要能拼回来：第二帧若被当成半个 JSON，就换不出号码
+            assertEquals(2, body.split("\\*{11}").length - 1);
         }
     }
 }

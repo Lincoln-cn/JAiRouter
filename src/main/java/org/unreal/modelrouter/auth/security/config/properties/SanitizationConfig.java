@@ -139,6 +139,17 @@ public class SanitizationConfig {
          */
         @Min(1024)
         private long maxBufferedBytes = 1048576L;
+
+        /**
+         * 是否对 {@code text/event-stream} 流式响应逐帧脱敏（issue #560 第二阶段）。
+         *
+         * <p>开启后只处理 SSE 的 {@code data:} 行负载，按行流式替换、不做整段缓冲；
+         * {@code event:}/{@code id:}/{@code retry:}/注释行与 {@code [DONE]} 哨兵原样透传，
+         * 分帧语义不变。单帧解析失败只回退该帧，不会中断整条流。</p>
+         *
+         * <p>默认开启：开启前 SSE 完全在脱敏覆盖之外，等于「开关为开、流式不设防」。</p>
+         */
+        private boolean sanitizeSse = true;
     }
 
     /**
