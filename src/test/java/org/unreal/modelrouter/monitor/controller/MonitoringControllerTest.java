@@ -47,6 +47,7 @@ import static org.mockito.Mockito.*;
 @DisplayName("MonitoringController RESTful 接口测试")
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
+@SuppressWarnings("deprecation") // 兼容别名路径仍需被测试覆盖（#555）
 class MonitoringControllerTest {
 
     @Mock
@@ -468,6 +469,104 @@ class MonitoringControllerTest {
                         assertTrue(response.isSuccess());
                     })
                     .verifyComplete();
+        }
+    }
+
+    // ==================== 指标处理链路熔断器作用域测试（#555） ====================
+
+    @Nested
+    @DisplayName("指标处理链路熔断器：新旧路径共用同一个 MetricsCircuitBreaker（#555）")
+    class MetricsPipelineCircuitBreakerScopeTests {
+
+        @Test
+        @DisplayName("MONITOR-025: 规范路径 force-open 命中同一个熔断器且响应说明作用域")
+        void testMetricsPipelineForceOpen_hitsSameCircuitBreaker() {
+            // When
+            var result = controller.forceOpenMetricsPipelineCircuitBreaker();
+
+            // Then
+            StepVerifier.create(result)
+                    .assertNext(response -> {
+                        assertTrue(response.isSuccess());
+                        assertNotNull(response.getMessage());
+                        assertTrue(response.getMessage().contains("指标处理链路"),
+                                "响应文案必须写明作用于指标处理链路，实际: " + response.getMessage());
+                    })
+                    .verifyComplete();
+            // 新旧路径委派同一私有实现，因此对同一个 MetricsCircuitBreaker 只应触发一次
+            verify(circuitBreaker, times(1)).forceOpen();
+        }
+
+        @Test
+        @DisplayName("MONITOR-026: 旧路径 force-open 是兼容别名，命中同一个熔断器")
+        void testLegacyForceOpen_hitsSameCircuitBreaker() {
+            // When
+            var result = controller.forceOpenCircuitBreaker();
+
+            // Then
+            StepVerifier.create(result)
+                    .assertNext(response -> {
+                        assertTrue(response.isSuccess());
+                        assertTrue(response.getMessage().contains("指标处理链路"));
+                    })
+                    .verifyComplete();
+            verify(circuitBreaker, times(1)).forceOpen();
+        }
+
+        @Test
+        @DisplayName("MONITOR-027: 规范路径 force-close 命中同一个熔断器且响应说明作用域")
+        void testMetricsPipelineForceClose_hitsSameCircuitBreaker() {
+            // When
+            var result = controller.forceCloseMetricsPipelineCircuitBreaker();
+
+            // Then
+            StepVerifier.create(result)
+                    .assertNext(response -> {
+                        assertTrue(response.isSuccess());
+                        assertNotNull(response.getMessage());
+                        assertTrue(response.getMessage().contains("指标处理链路"));
+                    })
+                    .verifyComplete();
+            verify(circuitBreaker, times(1)).forceClose();
+        }
+
+        @Test
+        @DisplayName("MONITOR-028: 旧路径 force-close 是兼容别名，命中同一个熔断器")
+        void testLegacyForceClose_hitsSameCircuitBreaker() {
+            // When
+            var result = controller.forceCloseCircuitBreaker();
+
+            // Then
+            StepVerifier.create(result)
+                    .assertNext(response -> assertTrue(response.isSuccess()))
+                    .verifyComplete();
+            verify(circuitBreaker, times(1)).forceClose();
+        }
+
+        @Test
+        @DisplayName("MONITOR-029: 规范路径 stats 与旧路径读取同一个熔断器")
+        void testMetricsPipelineStats_hitsSameCircuitBreaker() {
+            // Given
+            MetricsCircuitBreaker.CircuitBreakerStats stats = mock(MetricsCircuitBreaker.CircuitBreakerStats.class);
+            when(stats.getState()).thenReturn("OPEN");
+            when(circuitBreaker.getStats()).thenReturn(stats);
+
+            // When
+            var newPathResult = controller.getMetricsPipelineCircuitBreakerStats();
+            var legacyPathResult = controller.getCircuitBreakerStats();
+
+            // Then
+            StepVerifier.create(newPathResult)
+                    .assertNext(response -> {
+                        assertTrue(response.isSuccess());
+                        assertEquals("OPEN", response.getData().get("state"));
+                    })
+                    .verifyComplete();
+            StepVerifier.create(legacyPathResult)
+                    .assertNext(response -> assertTrue(response.isSuccess()))
+                    .verifyComplete();
+            // 两条路径都读同一个 MetricsCircuitBreaker 单例
+            verify(circuitBreaker, times(2)).getStats();
         }
     }
 

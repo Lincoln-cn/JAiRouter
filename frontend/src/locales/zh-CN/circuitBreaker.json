@@ -160,7 +160,6 @@
     "globalConfig": {
       "title": "熔断器全局配置",
       "adaptiveThresholdEnabled": "启用自适应阈值调整",
-      "stateSyncInterval": "状态同步间隔",
       "cleanupInterval": "过期清理间隔",
       "historyRetentionDays": "历史记录保留天数",
       "defaultFailureThreshold": "默认失败阈值",
@@ -173,7 +172,6 @@
         "thresholds": "阈值",
         "timeouts": "超时",
         "halfOpen": "半开恢复",
-        "sync": "同步",
         "retention": "历史维护"
       },
       "successThresholdHint": "半开状态下连续成功达到该次数后恢复为 CLOSED",

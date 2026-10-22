@@ -42,13 +42,6 @@ public class CircuitBreakerGlobalConfigEntity {
     private Boolean adaptiveThresholdEnabled = false;
 
     /**
-     * 状态同步间隔（分钟）
-     * 多实例部署时，熔断器状态同步到数据库的间隔
-     */
-    @Column(name = "state_sync_interval_minutes")
-    private Integer stateSyncIntervalMinutes = 5;
-
-    /**
      * 过期清理间隔（分钟）
      * 清理过期历史记录的间隔
      */

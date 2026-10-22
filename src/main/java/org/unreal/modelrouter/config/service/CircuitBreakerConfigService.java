@@ -52,9 +52,6 @@ public class CircuitBreakerConfigService {
         if (config.getAdaptiveThresholdEnabled() != null) {
             entity.setAdaptiveThresholdEnabled(config.getAdaptiveThresholdEnabled());
         }
-        if (config.getStateSyncIntervalMinutes() != null) {
-            entity.setStateSyncIntervalMinutes(config.getStateSyncIntervalMinutes());
-        }
         if (config.getCleanupIntervalMinutes() != null) {
             entity.setCleanupIntervalMinutes(config.getCleanupIntervalMinutes());
         }
@@ -85,7 +82,6 @@ public class CircuitBreakerConfigService {
         CircuitBreakerGlobalConfigEntity entity = CircuitBreakerGlobalConfigEntity.builder()
                 .id(1L)
                 .adaptiveThresholdEnabled(false)
-                .stateSyncIntervalMinutes(5)
                 .cleanupIntervalMinutes(30)
                 .historyRetentionDays(30)
                 .defaultFailureThreshold(5)
@@ -215,7 +211,6 @@ public class CircuitBreakerConfigService {
     private CircuitBreakerGlobalConfigDTO toDTO(final CircuitBreakerGlobalConfigEntity entity) {
         return CircuitBreakerGlobalConfigDTO.builder()
                 .adaptiveThresholdEnabled(entity.getAdaptiveThresholdEnabled())
-                .stateSyncIntervalMinutes(entity.getStateSyncIntervalMinutes())
                 .cleanupIntervalMinutes(entity.getCleanupIntervalMinutes())
                 .historyRetentionDays(entity.getHistoryRetentionDays())
                 .defaultFailureThreshold(entity.getDefaultFailureThreshold())

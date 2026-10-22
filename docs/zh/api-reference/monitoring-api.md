@@ -327,13 +327,20 @@ GET /api/monitoring/health
 GET /api/monitoring/config
 ```
 
-### 熔断器统计
+### 指标处理链路熔断器统计
 
-获取熔断器统计信息：
+获取指标处理链路熔断器（`MetricsCircuitBreaker`）的统计信息：
 
 ```http
-GET /api/monitoring/circuit-breaker/stats
+GET /api/monitoring/metrics-pipeline/circuit-breaker/stats
 ```
+
+> **作用域**：该熔断器保护的是**监控指标处理链路**（指标异步处理），与实例路由使用的
+> `CircuitBreakerManager` **不是同一个对象**。这里的统计与开关都不会改变任何实例的路由熔断状态，
+> 也不会让实例被熔断。
+>
+> 旧路径 `GET /api/monitoring/circuit-breaker/stats` 为**兼容别名**（代码中已标记 `@Deprecated`），
+> 与新路径共用同一实现，行为完全一致。
 
 ### 降级状态
 

@@ -204,6 +204,58 @@ class CircuitBreakerAdminServiceTest {
         verify(circuitBreakerManager, never()).resetCircuitBreakerInPlace(any());
     }
 
+    @Test
+    @DisplayName("重置全部：以内存注册表的全部实例为目标，逐个走完整重置并返回命中数")
+    void resetAllResetsEveryInstanceInRegistry() {
+        when(circuitBreakerManager.getAllCircuitBreakerDetails()).thenReturn(Map.of(
+                "uuid-1", Map.of("state", "OPEN", "failureCount", 5, "successCount", 0,
+                        "failureThreshold", 3, "successThreshold", 2, "timeout", 60000L),
+                "uuid-2", Map.of("state", "HALF_OPEN", "failureCount", 2, "successCount", 1,
+                        "failureThreshold", 3, "successThreshold", 2, "timeout", 60000L)));
+        when(serviceInstanceRepository.findAll()).thenReturn(List.of(
+                instance("uuid-1", 5L), instance("uuid-2", 5L)));
+        when(serviceConfigRepository.findAll()).thenReturn(List.of(config(5L, "chat")));
+        when(serviceInstanceRepository.findByInstanceId("uuid-1")).thenReturn(Optional.of(instance("uuid-1", 5L)));
+        when(serviceInstanceRepository.findByInstanceId("uuid-2")).thenReturn(Optional.of(instance("uuid-2", 5L)));
+        when(serviceConfigRepository.findById(5L)).thenReturn(Optional.of(config(5L, "chat")));
+        when(circuitBreakerManager.resetCircuitBreakerInPlace("uuid-1")).thenReturn(CircuitBreaker.State.OPEN);
+        when(circuitBreakerManager.resetCircuitBreakerInPlace("uuid-2")).thenReturn(CircuitBreaker.State.HALF_OPEN);
+        when(persistenceAdapter.deleteCircuitBreakerState("uuid-1")).thenReturn(Mono.just(true));
+        when(persistenceAdapter.deleteCircuitBreakerState("uuid-2")).thenReturn(Mono.just(true));
+
+        CircuitBreakerBatchResetResult result = adminService.resetAll("清空全部").block();
+
+        assertNotNull(result);
+        assertEquals(2, result.matched());
+        assertEquals(2, result.reset().size());
+        List<String> resetIds = result.reset().stream().map(CircuitBreakerResetResult::instanceId).toList();
+        assertTrue(resetIds.containsAll(List.of("uuid-1", "uuid-2")), "两个实例都必须被重置");
+        assertTrue(result.reset().stream().allMatch(CircuitBreakerResetResult::persistedStateDeleted),
+                "持久化状态必须逐个删除");
+        verify(circuitBreakerConfigService).recordStateChange("uuid-1", "instance-1", "chat",
+                CircuitBreaker.State.OPEN, CircuitBreaker.State.CLOSED, "MANUAL_RESET", 0, 0);
+        verify(circuitBreakerConfigService).recordStateChange("uuid-2", "instance-1", "chat",
+                CircuitBreaker.State.HALF_OPEN, CircuitBreaker.State.CLOSED, "MANUAL_RESET", 0, 0);
+        verify(persistenceAdapter).deleteCircuitBreakerState("uuid-1");
+        verify(persistenceAdapter).deleteCircuitBreakerState("uuid-2");
+    }
+
+    @Test
+    @DisplayName("重置全部：内存里没有熔断器时返回 total=0 且不做任何重置")
+    void resetAllWithoutInstancesDoesNothing() {
+        when(circuitBreakerManager.getAllCircuitBreakerDetails()).thenReturn(Map.of());
+        when(serviceInstanceRepository.findAll()).thenReturn(List.of());
+        when(serviceConfigRepository.findAll()).thenReturn(List.of());
+
+        CircuitBreakerBatchResetResult result = adminService.resetAll(null).block();
+
+        assertNotNull(result);
+        assertEquals(0, result.matched());
+        assertTrue(result.reset().isEmpty());
+        verify(circuitBreakerManager, never()).resetCircuitBreakerInPlace(any());
+        verifyNoInteractions(persistenceAdapter, circuitBreakerConfigService, monitorService);
+    }
+
     private ServiceInstanceEntity instance(final String uuid, final Long configId) {
         return ServiceInstanceEntity.builder()
                 .id(1L)

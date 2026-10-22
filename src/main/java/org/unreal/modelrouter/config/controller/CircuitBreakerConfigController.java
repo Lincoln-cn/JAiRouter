@@ -58,8 +58,8 @@ public class CircuitBreakerConfigController {
     @PutMapping("/global-config")
     public ResponseEntity<RouterResponse<CircuitBreakerGlobalConfigDTO>> saveGlobalConfig(
             @RequestBody final CircuitBreakerGlobalConfigDTO config) {
-        log.info("Saving circuit breaker global config: adaptiveThresholdEnabled={}, stateSyncIntervalMinutes={}",
-                config.getAdaptiveThresholdEnabled(), config.getStateSyncIntervalMinutes());
+        log.info("Saving circuit breaker global config: adaptiveThresholdEnabled={}",
+                config.getAdaptiveThresholdEnabled());
 
         CircuitBreakerGlobalConfigDTO saved = circuitBreakerConfigService.saveGlobalConfig(config);
 
