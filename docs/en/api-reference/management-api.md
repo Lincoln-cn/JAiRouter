@@ -328,14 +328,24 @@ Get cache statistics.
 #### `POST /api/monitoring/cache/clear`
 Clear cache.
 
-#### `GET /api/monitoring/circuit-breaker/stats`
-Get circuit breaker statistics.
+#### `GET /api/monitoring/metrics-pipeline/circuit-breaker/stats`
+Get statistics for the **metrics pipeline** circuit breaker (`MetricsCircuitBreaker`).
 
-#### `POST /api/monitoring/circuit-breaker/force-open`
-Force open circuit breaker.
+> The legacy path `GET /api/monitoring/circuit-breaker/stats` is a compatibility alias.
 
-#### `POST /api/monitoring/circuit-breaker/force-close`
-Force close circuit breaker.
+#### `POST /api/monitoring/metrics-pipeline/circuit-breaker/force-open`
+Force open the **metrics pipeline** circuit breaker.
+
+> Scope: this only affects the monitoring metrics processing pipeline. It does **not** affect
+> the per-instance routing circuit breaker (`CircuitBreakerManager`) and never puts an instance
+> into the open state; the response message states this scope explicitly.
+> The legacy path `POST /api/monitoring/circuit-breaker/force-open` is a compatibility alias.
+
+#### `POST /api/monitoring/metrics-pipeline/circuit-breaker/force-close`
+Force close the **metrics pipeline** circuit breaker.
+
+> Scope: same as above, metrics pipeline only.
+> The legacy path `POST /api/monitoring/circuit-breaker/force-close` is a compatibility alias.
 
 ---
 

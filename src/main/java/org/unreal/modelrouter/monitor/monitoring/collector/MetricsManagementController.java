@@ -123,7 +123,10 @@ public class MetricsManagementController {
     }
 
     /**
-     * 获取熔断器统计信息
+     * 获取熔断器统计信息。
+     *
+     * <p>作用域：这里的熔断器是 {@link MetricsCircuitBreaker}，保护的是监控指标处理链路，
+     * 与实例路由使用的 {@code CircuitBreakerManager} 无关；返回的统计不描述任何实例的路由熔断状态。</p>
      */
     @GetMapping("/circuit-breaker")
     public ResponseEntity<MetricsCircuitBreaker.CircuitBreakerStats> getCircuitBreakerStats() {
@@ -257,28 +260,52 @@ public class MetricsManagementController {
     }
 
     /**
-     * 熔断器控制
+     * 熔断器控制（规范路径）。
+     *
+     * <p>作用域：这里的熔断器是 {@link MetricsCircuitBreaker}，保护的是监控指标处理链路，
+     * 与实例路由使用的 {@code CircuitBreakerManager} 无关；本接口不会改变任何实例的路由熔断状态。</p>
      */
+    @PostMapping("/metrics-pipeline/circuit-breaker/{action}")
+    public ResponseEntity<String> controlMetricsPipelineCircuitBreaker(
+            @PathVariable("action") final String action) {
+        return controlCircuitBreakerInternal(action);
+    }
+
+    /**
+     * 熔断器控制。
+     *
+     * @deprecated 兼容别名，作用于指标处理链路，不是实例路由熔断器；请改用
+     *             {@code POST /actuator/metrics/metrics-pipeline/circuit-breaker/{action}}。
+     */
+    @Deprecated
     @PostMapping("/circuit-breaker/{action}")
     public ResponseEntity<String> controlCircuitBreaker(
             @PathVariable("action") final String action) {
+        return controlCircuitBreakerInternal(action);
+    }
+
+    private ResponseEntity<String> controlCircuitBreakerInternal(final String action) {
         try {
             switch (action.toLowerCase()) {
                 case "open":
                     circuitBreaker.forceOpen();
-                    logger.info("Circuit breaker forced to OPEN state");
-                    return ResponseEntity.ok("Circuit breaker opened");
-                    
+                    logger.info("Metrics pipeline circuit breaker forced to OPEN state");
+                    return ResponseEntity.ok("Circuit breaker opened (metrics pipeline only; "
+                            + "instance routing circuit breakers are NOT affected)");
+
                 case "close":
                     circuitBreaker.forceClose();
-                    logger.info("Circuit breaker forced to CLOSED state");
-                    return ResponseEntity.ok("Circuit breaker closed");
-                    
+                    logger.info("Metrics pipeline circuit breaker forced to CLOSED state");
+                    return ResponseEntity.ok("Circuit breaker closed (metrics pipeline only; "
+                            + "instance routing circuit breakers are NOT affected)");
+
                 default:
-                    return ResponseEntity.badRequest().body("Invalid action. Use 'open' or 'close'");
+                    return ResponseEntity.badRequest().body("Invalid action. Use 'open' or 'close' "
+                            + "(this endpoint controls the metrics pipeline circuit breaker, "
+                            + "not the instance routing circuit breaker)");
             }
         } catch (Exception e) {
-            logger.error("Error controlling circuit breaker", e);
+            logger.error("Error controlling metrics pipeline circuit breaker", e);
             return ResponseEntity.internalServerError().body("Circuit breaker control failed");
         }
     }

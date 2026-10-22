@@ -2,7 +2,7 @@
   <PageSkeleton :title="t('circuitBreaker.globalConfig.title')">
     <el-card class="config-card">
       <el-form :model="globalConfig" label-width="150px" class="config-form">
-        <!-- 分组：阈值 / 超时 / 半开 / 同步 / 历史维护（后两项原属「同步」之外的独立语义，单列以免混读） -->
+        <!-- 分组：阈值 / 超时 / 半开 / 历史维护（清理间隔与保留天数同属历史维护语义，合并为一组） -->
         <section class="form-section">
           <h3 class="form-section__title">{{ t('circuitBreaker.globalConfig.sections.thresholds') }}</h3>
           <el-row :gutter="20">
@@ -54,26 +54,6 @@
                 <div class="field-with-hint">
                   <el-input-number v-model="globalConfig.defaultSuccessThreshold" :min="1" :max="20" />
                   <p class="field-hint">{{ t('circuitBreaker.globalConfig.successThresholdHint') }}</p>
-                </div>
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </section>
-
-        <el-divider />
-
-        <section class="form-section">
-          <h3 class="form-section__title">{{ t('circuitBreaker.globalConfig.sections.sync') }}</h3>
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item :label="t('circuitBreaker.globalConfig.stateSyncInterval')">
-                <div class="field-with-unit">
-                  <el-input-number
-                    v-model="globalConfig.stateSyncIntervalMinutes"
-                    :min="1"
-                    :max="60"
-                  />
-                  <span class="field-unit">{{ t('circuitBreaker.globalConfig.unitMinutes') }}</span>
                 </div>
               </el-form-item>
             </el-col>
@@ -138,7 +118,6 @@ import PageSkeleton from '@/components/PageSkeleton.vue'
 
 interface GlobalConfig {
   adaptiveThresholdEnabled: boolean
-  stateSyncIntervalMinutes: number
   cleanupIntervalMinutes: number
   historyRetentionDays: number
   defaultFailureThreshold: number
@@ -148,7 +127,6 @@ interface GlobalConfig {
 
 const CONFIG_KEYS: (keyof GlobalConfig)[] = [
   'adaptiveThresholdEnabled',
-  'stateSyncIntervalMinutes',
   'cleanupIntervalMinutes',
   'historyRetentionDays',
   'defaultFailureThreshold',
@@ -158,7 +136,6 @@ const CONFIG_KEYS: (keyof GlobalConfig)[] = [
 
 const globalConfig = ref<GlobalConfig>({
   adaptiveThresholdEnabled: false,
-  stateSyncIntervalMinutes: 5,
   cleanupIntervalMinutes: 30,
   historyRetentionDays: 30,
   defaultFailureThreshold: 5,
@@ -174,7 +151,6 @@ const { t } = useI18n()
 
 const normalizeConfig = (config: Partial<GlobalConfig> | null | undefined): GlobalConfig => ({
   adaptiveThresholdEnabled: config?.adaptiveThresholdEnabled || false,
-  stateSyncIntervalMinutes: config?.stateSyncIntervalMinutes || 5,
   cleanupIntervalMinutes: config?.cleanupIntervalMinutes || 30,
   historyRetentionDays: config?.historyRetentionDays || 30,
   defaultFailureThreshold: config?.defaultFailureThreshold || 5,

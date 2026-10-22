@@ -405,11 +405,41 @@ public class MonitoringController {
         });
     }
 
+    // ==================== 指标处理链路熔断器（#555） ====================
+    //
+    // 作用域说明：下面这一组端点操作的都是 MetricsCircuitBreaker —— 它保护的是监控指标
+    // 异步处理链路（AsyncMetricsProcessor），与实例路由使用的 CircuitBreakerManager
+    // 是两个不同的对象。因此 force-open 只会让指标处理被拒绝，不会熔断任何实例。
+
     /**
-     * 获取熔断器状态
+     * 获取指标处理链路熔断器状态（规范路径）。
+     *
+     * <p>作用域：{@link MetricsCircuitBreaker} 保护的是监控指标异步处理链路，与实例路由使用的
+     * {@code CircuitBreakerManager} 无关。这里返回的统计只描述指标处理链路，不描述任何实例的
+     * 路由熔断状态。</p>
      */
+    @GetMapping("/metrics-pipeline/circuit-breaker/stats")
+    public Mono<RouterResponse<Map<String, Object>>> getMetricsPipelineCircuitBreakerStats() {
+        return getCircuitBreakerStatsInternal();
+    }
+
+    /**
+     * 获取指标处理链路熔断器状态。
+     *
+     * @deprecated 兼容别名，作用于指标处理链路，不是实例路由熔断器；请改用
+     *             {@code GET /api/monitoring/metrics-pipeline/circuit-breaker/stats}。
+     *             旧路径保留只为不破坏既有前端与脚本，行为与新路径完全一致。
+     */
+    @Deprecated
     @GetMapping("/circuit-breaker/stats")
     public Mono<RouterResponse<Map<String, Object>>> getCircuitBreakerStats() {
+        return getCircuitBreakerStatsInternal();
+    }
+
+    /**
+     * 指标处理链路熔断器状态的共用实现，新旧路径都委派到这里。
+     */
+    private Mono<RouterResponse<Map<String, Object>>> getCircuitBreakerStatsInternal() {
         return Mono.fromCallable(() -> {
             MetricsCircuitBreaker.CircuitBreakerStats stats = circuitBreaker.getStats();
 
@@ -422,35 +452,73 @@ public class MonitoringController {
 
             return RouterResponse.success(response);
         }).onErrorResume(e -> {
-            logger.error("获取熔断器统计信息失败: {}", e.getMessage());
-            return Mono.just(RouterResponse.<Map<String, Object>>error("获取熔断器统计信息失败"));
+            logger.error("获取指标处理链路熔断器统计信息失败: {}", e.getMessage());
+            return Mono.just(RouterResponse.<Map<String, Object>>error("获取指标处理链路熔断器统计信息失败"));
         });
     }
 
     /**
-     * 强制开启熔断器
+     * 强制打开指标处理链路熔断器（规范路径）。
+     *
+     * <p>作用域：仅作用于监控指标处理链路（{@link MetricsCircuitBreaker}），不影响实例路由熔断器，
+     * 也不会使任何实例进入熔断状态。</p>
      */
+    @PostMapping("/metrics-pipeline/circuit-breaker/force-open")
+    public Mono<RouterResponse<Object>> forceOpenMetricsPipelineCircuitBreaker() {
+        return forceOpenCircuitBreakerInternal();
+    }
+
+    /**
+     * 强制打开指标处理链路熔断器。
+     *
+     * @deprecated 兼容别名，作用于指标处理链路，不是实例路由熔断器；请改用
+     *             {@code POST /api/monitoring/metrics-pipeline/circuit-breaker/force-open}。
+     */
+    @Deprecated
     @PostMapping("/circuit-breaker/force-open")
     public Mono<RouterResponse<Object>> forceOpenCircuitBreaker() {
+        return forceOpenCircuitBreakerInternal();
+    }
+
+    private Mono<RouterResponse<Object>> forceOpenCircuitBreakerInternal() {
         return Mono.fromCallable(() -> {
             circuitBreaker.forceOpen();
-            return RouterResponse.<Object>success("熔断器已强制开启");
+            // 文案必须写明作用域：旧文案「熔断器已强制开启」会被误读为「强制熔断某个实例」
+            return RouterResponse.<Object>success("已强制打开指标处理链路熔断器（仅影响监控指标处理，不影响实例路由熔断器）");
         }).onErrorResume(e -> {
-            logger.error("强制开启熔断器失败: {}", e.getMessage());
+            logger.error("强制打开指标处理链路熔断器失败: {}", e.getMessage());
             return Mono.error(ApiExceptions.wrap(e, "操作失败"));
         });
     }
 
     /**
-     * 强制关闭熔断器
+     * 强制关闭指标处理链路熔断器（规范路径）。
+     *
+     * <p>作用域：仅作用于监控指标处理链路（{@link MetricsCircuitBreaker}），不影响实例路由熔断器。</p>
      */
+    @PostMapping("/metrics-pipeline/circuit-breaker/force-close")
+    public Mono<RouterResponse<Object>> forceCloseMetricsPipelineCircuitBreaker() {
+        return forceCloseCircuitBreakerInternal();
+    }
+
+    /**
+     * 强制关闭指标处理链路熔断器。
+     *
+     * @deprecated 兼容别名，作用于指标处理链路，不是实例路由熔断器；请改用
+     *             {@code POST /api/monitoring/metrics-pipeline/circuit-breaker/force-close}。
+     */
+    @Deprecated
     @PostMapping("/circuit-breaker/force-close")
     public Mono<RouterResponse<Object>> forceCloseCircuitBreaker() {
+        return forceCloseCircuitBreakerInternal();
+    }
+
+    private Mono<RouterResponse<Object>> forceCloseCircuitBreakerInternal() {
         return Mono.fromCallable(() -> {
             circuitBreaker.forceClose();
-            return RouterResponse.<Object>success("熔断器已强制关闭");
+            return RouterResponse.<Object>success("已强制关闭指标处理链路熔断器（仅影响监控指标处理，不影响实例路由熔断器）");
         }).onErrorResume(e -> {
-            logger.error("强制关闭熔断器失败: {}", e.getMessage());
+            logger.error("强制关闭指标处理链路熔断器失败: {}", e.getMessage());
             return Mono.error(ApiExceptions.wrap(e, "操作失败"));
         });
     }

@@ -22,11 +22,6 @@ public final class CircuitBreakerGlobalConfigDTO {
     private Boolean adaptiveThresholdEnabled;
 
     /**
-     * 状态同步间隔（分钟）
-     */
-    private Integer stateSyncIntervalMinutes;
-
-    /**
      * 过期清理间隔（分钟）
      */
     private Integer cleanupIntervalMinutes;

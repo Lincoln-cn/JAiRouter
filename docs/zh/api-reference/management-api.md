@@ -342,14 +342,23 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 #### `POST /api/monitoring/cache/clear`
 清空缓存。
 
-#### `GET /api/monitoring/circuit-breaker/stats`
-获取熔断器统计。
+#### `GET /api/monitoring/metrics-pipeline/circuit-breaker/stats`
+获取**指标处理链路**熔断器（`MetricsCircuitBreaker`）的统计。
 
-#### `POST /api/monitoring/circuit-breaker/force-open`
-强制打开熔断器。
+> 旧路径 `GET /api/monitoring/circuit-breaker/stats` 为兼容别名。
 
-#### `POST /api/monitoring/circuit-breaker/force-close`
-强制关闭熔断器。
+#### `POST /api/monitoring/metrics-pipeline/circuit-breaker/force-open`
+强制打开**指标处理链路**熔断器。
+
+> 作用域：仅作用于监控指标处理链路，**不影响**实例路由熔断器（`CircuitBreakerManager`），
+> 不会让任何实例进入熔断状态；响应 message 已写明作用域。
+> 旧路径 `POST /api/monitoring/circuit-breaker/force-open` 为兼容别名。
+
+#### `POST /api/monitoring/metrics-pipeline/circuit-breaker/force-close`
+强制关闭**指标处理链路**熔断器。
+
+> 作用域：同上，仅作用于监控指标处理链路。
+> 旧路径 `POST /api/monitoring/circuit-breaker/force-close` 为兼容别名。
 
 ---
 

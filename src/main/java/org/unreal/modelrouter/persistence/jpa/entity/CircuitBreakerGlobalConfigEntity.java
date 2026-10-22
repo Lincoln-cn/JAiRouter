@@ -42,9 +42,15 @@ public class CircuitBreakerGlobalConfigEntity {
     private Boolean adaptiveThresholdEnabled = false;
 
     /**
-     * 状态同步间隔（分钟）
-     * 多实例部署时，熔断器状态同步到数据库的间隔
+     * 状态同步间隔（分钟）。
+     *
+     * <p>历史遗留列：全仓没有任何消费方（没有定时任务读它），因此从 #554 起已从配置 DTO、
+     * 服务层与前端移除，不再可设置、不再回显。字段本身保留映射，是因为
+     * {@code h2/V1__baseline.sql} 已发布且不可回改（Flyway 按校验和判定），
+     * 删字段会让 {@code H2BaselineMatchesEntityModelTest} 报 schema 漂移；
+     * 真要删列需另加一份增量迁移，属独立变更。</p>
      */
+    @Deprecated
     @Column(name = "state_sync_interval_minutes")
     private Integer stateSyncIntervalMinutes = 5;
 
