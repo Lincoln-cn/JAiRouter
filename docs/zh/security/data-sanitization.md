@@ -85,7 +85,7 @@ curl -H "X-API-Key: your-api-key" \
      http://localhost:8080/v1/chat/completions
 ```
 
-实际发送到 AI 模型的内容将被脱敏为：
+当前版本**不会**改写发往 AI 模型的请求体，上面的请求会原样到达上游；同一套请求侧规则在**调用记录 / 日志落库前**的脱敏效果如下（示例）：
 ```
 我的手机号是***********，邮箱是*******************
 ```
@@ -97,6 +97,12 @@ curl -H "X-API-Key: your-api-key" \
 > 实际可用的替换策略是规则上的 `strategy` 字段（`MASK` / `REPLACE` / `REMOVE` / `HASH`），默认规则统一用 `MASK`（整段等长替换，例如 11 位手机号 → `***********`）。
 
 ### 请求数据脱敏配置
+
+> ⚠️ **请求侧脱敏在当前版本不接入入站链路**：`SanitizationService.sanitizeRequest` 在 `src/main` 中**没有任何生产调用方**，网关不会改写发往上游的请求体 —— 因此 `request.enabled` 开关对真实调用**没有效果**（控制台「PII 脱敏管理」已把该开关置为只读，并标注「未接入入站」）。
+>
+> **请求侧规则仍然参与落库脱敏**：`DefaultSanitizationService.sanitizeForStorage` 直接使用**全部已启用规则**，既不检查 `request.enabled` 也不检查 `response.enabled`，因此调用历史 / 日志 / 追踪在写入前照旧脱敏，且这条路径不受这两个开关控制。
+>
+> **响应侧脱敏已经生效**：`/v1` 的非流式 JSON 整段脱敏，SSE（`text/event-stream`）逐帧脱敏（见下文「响应脱敏生效范围」与「SSE 流式响应逐帧脱敏」）。
 
 ```
 jairouter:

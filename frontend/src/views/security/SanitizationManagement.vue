@@ -25,20 +25,25 @@
       <el-col :span="12">
         <el-card shadow="hover">
           <template #header>
-            <span class="card-title">{{ t('sanitization.requestSection') }}</span>
+            <div class="card-title-row">
+              <span class="card-title">{{ t('sanitization.requestSection') }}</span>
+              <el-tag type="info" size="small">{{ t('sanitization.requestSideNotWiredTag') }}</el-tag>
+            </div>
           </template>
-          <!-- 开启状态常驻警示：脱敏每个命中都做正则匹配 + 文本重写，有性能开销 -->
+          <!-- 如实标注（issue #592）：请求侧脱敏未接入入站链路，开启开关不会改写发往上游的请求体 -->
           <el-alert
-            v-if="form.request.enabled"
-            type="warning"
+            type="info"
             :closable="false"
             show-icon
-            :title="t('sanitization.enabledPerformanceWarning')"
+            :title="t('sanitization.requestSideNotWiredTitle')"
+            :description="t('sanitization.requestSideNotWiredMessage')"
             style="margin-bottom: var(--ja-space-3)"
           />
+          <!-- 请求侧不再展示「已启用：影响性能」警示：入站链路未接入，开启该开关没有任何实际开销（issue #592） -->
           <el-form label-width="140px">
+            <!-- 开关置灰（issue #592）：开启它不会改变任何真实调用行为；绑定与保存 payload 保留，避免影响配置字段往返 -->
             <el-form-item :label="t('sanitization.enabledLabel')">
-              <el-switch v-model="form.request.enabled" :before-change="() => confirmEnable('request')" />
+              <el-switch v-model="form.request.enabled" disabled />
             </el-form-item>
             <el-form-item :label="t('sanitization.maskingCharLabel')">
               <el-input v-model="form.request.maskingChar" maxlength="5" style="width: 120px" />
@@ -339,7 +344,8 @@ const metricItems = computed<MetricStripItem[]>(() => {
       key: 'requestEnabled',
       label: t('sanitization.requestEnabledLabel'),
       value: requestEnabled ? t('common.enabled') : t('common.disabled'),
-      tone: requestEnabled ? 'default' : 'warning'
+      // 未接入入站链路（issue #592）：该值只是库里的存量配置，不代表「本应开启却没开」的风险态，故固定中性色
+      tone: 'default'
     },
     {
       key: 'responseEnabled',
@@ -487,6 +493,12 @@ onMounted(loadAll)
 <style scoped>
 .card-title {
   font-weight: 600;
+}
+/* 卡片标题与事实标签同一行 */
+.card-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ja-space-2);
 }
 .config-actions {
   display: flex;

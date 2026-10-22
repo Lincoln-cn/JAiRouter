@@ -91,6 +91,9 @@ const i18n = createI18n({
         recordNote: '记录侧',
         recordNoteValue: 'SUMMARY',
         requestSection: '请求',
+        requestSideNotWiredTitle: '未接入提示标题（i18n）',
+        requestSideNotWiredMessage: '未接入提示正文（i18n）',
+        requestSideNotWiredTag: '标签取自 i18n：未接入入站',
         responseSection: '响应',
         enabledLabel: '启用',
         piiPatternsLabel: 'PII',
@@ -190,5 +193,33 @@ describe('SanitizationManagement.vue', () => {
     expect(text).toContain('配置指定')
     expect(text).toContain('/v1/**')
     expect(text).toContain('只读')
+  })
+
+  it('标注请求侧脱敏未接入入站链路：提示条与标签文案均取自 i18n', async () => {
+    const wrapper = mount(SanitizationManagement, {
+      global: {
+        plugins: [i18n],
+        stubs: {
+          ...stubs,
+          // el-row / el-col 的 `true` 桩不渲染子节点，请求/响应两张配置卡会整块消失；
+          // 这两个桩必须显式转出默认插槽，卡内的提示条与标签才可断言。
+          'el-row': { template: '<div><slot /></div>' },
+          'el-col': { template: '<div><slot /></div>' },
+          // 默认 stub 不渲染 title/description，这里让提示条把两者渲染成文本，才能断言文案来源
+          'el-alert': {
+            props: ['title', 'description'],
+            template: '<div class="alert-stub">{{ title }}|{{ description }}</div>'
+          }
+        }
+      }
+    })
+
+    await flushPromises()
+
+    // 提示条渲染，且标题 / 正文都来自 i18n（sentinels 只存在于测试 messages 里）
+    const alertTexts = wrapper.findAll('.alert-stub').map(node => node.text())
+    expect(alertTexts).toContain('未接入提示标题（i18n）|未接入提示正文（i18n）')
+    // 请求侧卡片标题旁的「未接入入站」标签存在
+    expect(wrapper.text()).toContain('标签取自 i18n：未接入入站')
   })
 })
