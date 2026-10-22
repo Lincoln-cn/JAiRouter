@@ -66,3 +66,9 @@ jairouter:
         # 下限 1 KiB；默认 1 MiB。
         max-buffered-bytes: 1048576
         
+
+        # 是否对 text/event-stream 流式响应逐帧脱敏 —— issue #560 第二阶段
+        # 开启后按行处理：只替换 data: 行的负载，event:/id:/retry:/注释行与 [DONE] 哨兵原样透传，
+        # 分帧语义不变；不做整段缓冲，因此不受 max-buffered-bytes 的「整段」限制（单行仍受限）。
+        # 单帧脱敏失败只回退该帧，不中断整条流。默认开启 —— 关闭等于「开关为开、流式不设防」。
+        sanitize-sse: true

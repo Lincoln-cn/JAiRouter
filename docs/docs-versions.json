@@ -944,11 +944,11 @@
     },
     "docs/en/security/data-sanitization.md": {
       "FilePath": "docs/en/security/data-sanitization.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:35.600281",
-      "ContentHash": "182816348e8b40ac",
-      "GitCommit": "bcf3ff5c",
-      "Author": "Lincoln",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-23T00:49:13.433826",
+      "ContentHash": "b4652a05c85f4e5c",
+      "GitCommit": "9b9b30b9",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/management-api.md",
@@ -2103,11 +2103,11 @@
     },
     "docs/zh/security/data-sanitization.md": {
       "FilePath": "docs/zh/security/data-sanitization.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:41.423914",
-      "ContentHash": "1da273556c2a6bf4",
-      "GitCommit": "bcf3ff5c",
-      "Author": "Lincoln",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-23T00:48:17.870339",
+      "ContentHash": "c5af85bbedacd0a3",
+      "GitCommit": "9b9b30b9",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/management-api.md",
@@ -3732,7 +3732,31 @@
       "ChangeType": "CREATED",
       "Timestamp": "2026-10-22T21:05:42.645843",
       "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/en/security/data-sanitization.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-23T00:48:09.107710",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/data-sanitization.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-23T00:48:17.870339",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/data-sanitization.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-23T00:49:13.433826",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-22T21:06:20.402694"
+  "last_updated": "2026-10-23T00:49:25.168895"
 }

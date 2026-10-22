@@ -9,8 +9,8 @@ import org.springframework.util.AntPathMatcher;
  * 统一管理所有需要排除认证和数据脱敏的路径配置。
  *
  * <p>数据脱敏侧的排除面见 {@link #DATA_MASKING_EXCLUDED_PATHS} 上方的注释：自 issue #560
- * （方案 C 第一阶段）起 {@code /v1/**} 的<b>非流式 JSON</b> 响应纳入脱敏，SSE
- * （{@code text/event-stream}）仍由内容类型判定跳过、留待 #560 后续期；管理台 {@code /api/**}
+ * 起 {@code /v1/**} 的<b>非流式 JSON</b> 与 <b>SSE</b>（{@code text/event-stream}，
+ * 第二阶段起逐帧脱敏）均纳入脱敏；管理台 {@code /api/**}
  * （含 {@code /api/v1/**}）与运维端点继续排除。</p>
  */
 public class ExcludedPathsConfig {
@@ -84,9 +84,8 @@ public class ExcludedPathsConfig {
         // issue #560（方案 C 第一阶段）：排除面按「是否改写协议输出」重新划线，取代 v3.1.x
         // 「AI 实时推理路径整体排除」的旧裁决：
         //  1) /v1/**（AI 入口）的**非流式 JSON** 响应纳入脱敏 —— 旧口径下明文 PII 直接到达客户端；
-        //  2) /v1/** 的 SSE（text/event-stream）响应仍不脱敏 —— 由 ResponseSanitizationFilter
-        //     .shouldSanitizeContentType 只认 application/json 天然跳过，流式分支本期不动，
-        //     SSE 覆盖留待 issue #560 的后续阶段；
+        //  2) /v1/** 的 SSE（text/event-stream）响应自 issue #560 第二阶段起**逐帧脱敏**
+        //     （SseResponseSanitizer，response.sanitize-sse 可关），不再属于「不脱敏」面；
         //  3) 管理台 /api/** 全部排除 —— 管理接口返回配置/密钥元数据时不得被掩码破坏（原裁决不变）；
         //  4) 运维端点（/actuator/**、/health、/metrics）、API 文档与静态资源继续排除。
         DATA_MASKING_EXCLUDED_PATHS = Set.of(
@@ -107,7 +106,7 @@ public class ExcludedPathsConfig {
         );
 
         // 数据脱敏排除路径模式（Ant 风格，补充前缀集合未覆盖的形态）
-        // /v1/** 自 issue #560 起不再排除：非流式 JSON 需脱敏，SSE 由内容类型判定跳过。
+        // /v1/** 自 issue #560 起不再排除：非流式 JSON 整段脱敏，SSE 逐帧脱敏（第二阶段）。
         DATA_MASKING_EXCLUDED_PATTERNS = List.of(
             "/actuator/**",
             "/api/**",
