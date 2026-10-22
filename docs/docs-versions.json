@@ -56,8 +56,8 @@
       "Version": "1.0.1",
       "LastModified": "2026-10-23T01:39:59.519229",
       "ContentHash": "6e7eacbfebce4785",
-      "GitCommit": "44ea5a6d",
-      "Author": "Lincoln",
+      "GitCommit": "6c486285",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/error-codes.md",
@@ -69,8 +69,8 @@
       "Version": "1.0.1",
       "LastModified": "2026-10-23T01:39:59.583969",
       "ContentHash": "37d52034f77312f9",
-      "GitCommit": "44ea5a6d",
-      "Author": "Lincoln",
+      "GitCommit": "6c486285",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/management-api.md",
@@ -1210,8 +1210,8 @@
       "Version": "1.0.1",
       "LastModified": "2026-10-23T01:40:06.338645",
       "ContentHash": "c9d8dcfe8ffb36a8",
-      "GitCommit": "44ea5a6d",
-      "Author": "Lincoln",
+      "GitCommit": "6c486285",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/error-codes.md",
@@ -1223,8 +1223,8 @@
       "Version": "1.0.1",
       "LastModified": "2026-10-23T01:40:06.404286",
       "ContentHash": "b780da1222f98b01",
-      "GitCommit": "44ea5a6d",
-      "Author": "Lincoln",
+      "GitCommit": "6c486285",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/management-api.md",
@@ -2334,16 +2334,6 @@
       "ContentHash": "7c8f9f134bb73efa",
       "GitCommit": "98b5e27a",
       "Author": "Leo Lin",
-      "ChangeSummary": "",
-      "Dependencies": []
-    },
-    "AGENTS.md": {
-      "FilePath": "AGENTS.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-23T01:39:59.132386",
-      "ContentHash": "cbd03d2d6a9f9dfa",
-      "GitCommit": "",
-      "Author": "",
       "ChangeSummary": "",
       "Dependencies": []
     }
@@ -3812,7 +3802,15 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-23T01:40:06.404286",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "AGENTS.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-10-22T18:08:41.024030",
+      "Description": "文档已删除"
     }
   ],
-  "last_updated": "2026-10-23T01:40:13.793765"
+  "last_updated": "2026-10-22T18:08:41.024226"
 }
