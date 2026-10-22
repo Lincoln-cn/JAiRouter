@@ -64,6 +64,10 @@ jairouter:
         scope:
           mode: exclude
           patterns: []
+
+        # 单次响应缓冲上限（#594）：脱敏需整包读入内存，超过上限时
+        # 有 Content-Length ⇒ 跳过脱敏原样放行；无长度（chunked）⇒ 按失败终止。
+        max-buffered-bytes: 1048576
     
     # ========================================
     # 安全审计基础配置

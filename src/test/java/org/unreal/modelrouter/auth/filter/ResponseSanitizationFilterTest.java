@@ -21,6 +21,7 @@ import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.common.exception.SanitizationException;
 import org.unreal.modelrouter.common.exceptionhandler.ReactiveGlobalExceptionHandler;
 import org.unreal.modelrouter.monitor.monitoring.error.ErrorTracker;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -413,6 +414,62 @@ class ResponseSanitizationFilterTest {
             StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
 
             verifyNoInteractions(auditService);
+        }
+    }
+
+    @Nested
+    @DisplayName("响应缓冲上限测试（issue #594）")
+    class BufferLimitTests {
+
+        @Test
+        @DisplayName("FILT-008: Content-Length 超过上限时原样放行，不进入脱敏")
+        void oversizeByContentLengthPassesThrough() {
+            when(responseConfig.getMaxBufferedBytes()).thenReturn(1024L);
+            MockServerWebExchange exchange = newExchange(JSON_PATH, MediaType.APPLICATION_JSON);
+            exchange.getResponse().getHeaders().setContentLength(4096);
+            WebFilterChain chain = writingChain(ORIGINAL_BODY);
+
+            StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
+
+            verifyNoInteractions(sanitizationService);
+            assertEquals(ORIGINAL_BODY, exchange.getResponse().getBodyAsString().block(),
+                    "超限时必须原样输出，不能因为跳过脱敏而丢内容");
+        }
+
+        @Test
+        @DisplayName("FILT-009: 长度未知（chunked）且超过上限时按脱敏失败终止，不回写半截内容")
+        void oversizeWithoutContentLengthFailsClosed() {
+            when(responseConfig.getMaxBufferedBytes()).thenReturn(1024L);
+            MockServerWebExchange exchange = newExchange(JSON_PATH, MediaType.APPLICATION_JSON);
+
+            byte[] chunk = new byte[800];
+            java.util.Arrays.fill(chunk, (byte) 'a');
+            WebFilterChain chain = mock(WebFilterChain.class);
+            when(chain.filter(any())).thenAnswer(invocation -> {
+                ServerWebExchange target = invocation.getArgument(0);
+                return target.getResponse().writeWith(Flux.just(
+                        target.getResponse().bufferFactory().wrap(chunk),
+                        target.getResponse().bufferFactory().wrap(chunk)));
+            });
+
+            StepVerifier.create(filter.filter(exchange, chain))
+                    .expectErrorMatches(e -> e instanceof SanitizationException)
+                    .verify();
+
+            verifyNoInteractions(sanitizationService);
+        }
+
+        @Test
+        @DisplayName("FILT-010: 上限配置为 0 时按 1 KiB 下限生效，不会退化成无上限")
+        void nonPositiveLimitFallsBackToFloor() {
+            when(responseConfig.getMaxBufferedBytes()).thenReturn(0L);
+            MockServerWebExchange exchange = newExchange(JSON_PATH, MediaType.APPLICATION_JSON);
+            exchange.getResponse().getHeaders().setContentLength(2048);
+            WebFilterChain chain = writingChain(ORIGINAL_BODY);
+
+            StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
+
+            verifyNoInteractions(sanitizationService);
         }
     }
 }

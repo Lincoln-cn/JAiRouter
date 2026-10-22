@@ -559,7 +559,16 @@ jairouter:
 - **Streaming Processing**: Enable streaming processing for large files
 - **Performance Monitoring**: Continuously monitor sanitization performance impact
 
-### 4. Security Considerations
+### 4. Response Buffer Limit
+
+Response-side sanitization has to read the entire response body into memory for regex replacement, so there is a hard limit: `jairouter.security.sanitization.response.max-buffered-bytes` (default 1 MiB, floor 1 KiB).
+
+- **`Content-Length` present and above the limit**: sanitization is skipped and the response is passed through unchanged, with a WARN log and an audit event — better to miss masking than to buffer a huge response.
+- **Chunked response (no `Content-Length`) above the limit**: the original bytes are already consumed and cannot be replayed, so the request fails as a sanitization error and the global exception handler renders the error body. A truncated body is never emitted.
+
+Raising the limit increases per-request memory linearly — budget the heap as "concurrency × limit". Lowering it pushes more large responses into the "skip sanitization" branch. The limit applies only to the HTTP response filter, not to `sanitizeForStorage`.
+
+### 5. Security Considerations
 
 - **Log Security**: Ensure sanitization logs themselves don't contain sensitive information
 - **Rule Confidentiality**: Protect sanitization rule configuration security

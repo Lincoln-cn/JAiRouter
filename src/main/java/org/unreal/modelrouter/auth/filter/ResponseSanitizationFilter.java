@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
+import org.springframework.core.io.buffer.DataBufferLimitException;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -103,9 +104,23 @@ public class ResponseSanitizationFilter implements WebFilter {
                 if (!shouldSanitizeContentType(contentType)) {
                     return super.writeWith(body);
                 }
+
+                // issue #594：脱敏必须把响应体整体读进内存，先给缓冲设上限。
+                // 长度已知且超限时直接原样放行（宁可漏脱敏，也不把响应读进堆）。
+                final long maxBufferedBytes = resolveMaxBufferedBytes();
+                final long declaredLength = getDelegate().getHeaders().getContentLength();
+                if (declaredLength > maxBufferedBytes) {
+                    log.warn("响应体长度 {} 字节超过脱敏缓冲上限 {} 字节，跳过脱敏并原样放行: {}",
+                            declaredLength, maxBufferedBytes, request.getPath().value());
+                    recordSanitizationEvent(request, contentType, false,
+                            "响应体超过脱敏缓冲上限，已跳过脱敏: " + declaredLength + " > " + maxBufferedBytes);
+                    return super.writeWith(body);
+                }
                 
                 // 处理响应体脱敏
-                return DataBufferUtils.join(Flux.from(body))
+                // DataBufferUtils.join 的上限参数是 int，先夹到 int 范围（配置侧已限下限 1 KiB）
+                final int joinLimit = (int) Math.min(maxBufferedBytes, Integer.MAX_VALUE);
+                return DataBufferUtils.join(Flux.from(body), joinLimit)
                         .flatMap(dataBuffer -> {
                             try {
                                 // 读取原始响应内容
@@ -124,8 +139,6 @@ public class ResponseSanitizationFilter implements WebFilter {
                                             // 检查响应是否已经提交
                                             if (getDelegate().isCommitted()) {
                                                 log.warn("响应已提交，无法写入脱敏后的内容");
-                                                // 释放缓冲区并返回空
-                                                DataBufferUtils.release(dataBuffer);
                                                 return Mono.empty();
                                             }
                                             
@@ -148,7 +161,6 @@ public class ResponseSanitizationFilter implements WebFilter {
                                                 // 检查响应是否已经提交
                                                 if (getDelegate().isCommitted()) {
                                                     log.warn("响应已提交，无法写入原始内容");
-                                                    DataBufferUtils.release(dataBuffer);
                                                     return Mono.empty();
                                                 }
                                                 // 重新创建原始内容的DataBuffer
@@ -182,7 +194,6 @@ public class ResponseSanitizationFilter implements WebFilter {
                                                 // 检查响应是否已经提交
                                                 if (getDelegate().isCommitted()) {
                                                     log.warn("响应已提交，无法写入原始内容");
-                                                    DataBufferUtils.release(dataBuffer);
                                                     return Mono.empty();
                                                 }
                                                 // 返回原始内容
@@ -196,11 +207,23 @@ public class ResponseSanitizationFilter implements WebFilter {
                                 return Mono.error(new SanitizationException("响应内容读取失败", e, 
                                         ErrorCode.CONTENT_PROCESSING_FAILED.code()));
                             } finally {
-                                // 确保DataBuffer被释放
+                                // 确保DataBuffer被释放（唯一释放点，issue #594：错误分支不得重复释放）
                                 DataBufferUtils.release(dataBuffer);
                             }
                         })
-                        .switchIfEmpty(Mono.defer(() -> super.writeWith(body)));
+                        .onErrorResume(DataBufferLimitException.class, ex -> {
+                            // 长度未知（chunked）且超限：原始字节已被消费，无法回放，
+                            // 只能按脱敏失败终止，由中央异常处理器渲染错误体（绝不输出半截内容）。
+                            log.error("响应体超过脱敏缓冲上限 {} 字节且未声明 Content-Length，"
+                                            + "无法回放原始内容，终止响应: {}",
+                                    maxBufferedBytes, request.getPath().value());
+                            recordSanitizationEvent(request, contentType, false,
+                                    "响应体超过脱敏缓冲上限且长度未知: " + maxBufferedBytes);
+                            return Mono.error(new SanitizationException("响应体超过脱敏缓冲上限", ex,
+                                    ErrorCode.CONTENT_PROCESSING_FAILED.code()));
+                        })
+                        // issue #594：body 已被 join 消费，空体时不能再把同一个 body 写一次
+                        .switchIfEmpty(Mono.defer(() -> super.writeWith(Flux.empty())));
             }
             
             /**
@@ -255,6 +278,17 @@ public class ResponseSanitizationFilter implements WebFilter {
             log.warn("{}", rebuilt.warning());
         }
         return rebuilt;
+    }
+
+    /**
+     * 响应缓冲上限（issue #594）。
+     *
+     * <p>取配置值并夹到下限 1 KiB —— 配置成 0 或负数时不能让上限失效（那正是要防的 OOM 场景）。</p>
+     */
+    private long resolveMaxBufferedBytes() {
+        final SanitizationConfig.ResponseSanitization config = securityProperties.getSanitization().getResponse();
+        final long configured = config == null ? 0L : config.getMaxBufferedBytes();
+        return Math.max(1024L, configured);
     }
 
     /**
