@@ -84,7 +84,7 @@ curl -H "X-API-Key: your-api-key" \
      http://localhost:8080/v1/chat/completions
 ```
 
-The actual content sent to the AI model will be sanitized to:
+This version does **not** rewrite the request body sent to the AI model — the request above reaches the upstream unchanged. The same request-side rules sanitize **records / logs before they are stored**, as shown below (example):
 ```
 My phone number is ***********, email is *******************
 ```
@@ -96,6 +96,12 @@ My phone number is ***********, email is *******************
 > The strategy actually applied comes from each rule's `strategy` field (`MASK` / `REPLACE` / `REMOVE` / `HASH`); the shipped rules all use `MASK` (same-length replacement, e.g. an 11-digit phone number becomes `***********`).
 
 ### Request Data Sanitization Configuration
+
+> ⚠️ **Request-side sanitization is not wired to the inbound path in this version**: `SanitizationService.sanitizeRequest` has **no production caller** under `src/main`, so the gateway never rewrites the request body sent upstream — the `request.enabled` switch therefore has **no effect** on real calls (the "PII Sanitization" console page renders that switch read-only and marks it "Not wired").
+>
+> **Request-side rules still take part in record sanitization**: `DefaultSanitizationService.sanitizeForStorage` uses **all enabled rules** directly and checks neither `request.enabled` nor `response.enabled`, so call history / logs / traces are still sanitized before they are stored, and that path is not controlled by these two switches.
+>
+> **Response-side sanitization is in effect**: non-streaming JSON on `/v1` is sanitized as a whole body, and SSE (`text/event-stream`) is sanitized frame by frame (see "Response Sanitization Scope" and "SSE Streaming Frame-by-Frame Sanitization" below).
 
 ```yaml
 jairouter:
