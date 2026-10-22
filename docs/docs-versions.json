@@ -1,15 +1,5 @@
 {
   "versions": {
-    "AGENTS.md": {
-      "FilePath": "AGENTS.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:30.764919",
-      "ContentHash": "cbd03d2d6a9f9dfa",
-      "GitCommit": "",
-      "Author": "",
-      "ChangeSummary": "",
-      "Dependencies": []
-    },
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
       "Version": "1.0.0",
@@ -944,11 +934,11 @@
     },
     "docs/en/security/data-sanitization.md": {
       "FilePath": "docs/en/security/data-sanitization.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-23T00:49:13.433826",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-23T00:53:29.266557",
       "ContentHash": "b4652a05c85f4e5c",
-      "GitCommit": "9b9b30b9",
-      "Author": "Leo Lin",
+      "GitCommit": "1add0e3f",
+      "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/management-api.md",
@@ -2104,10 +2094,10 @@
     "docs/zh/security/data-sanitization.md": {
       "FilePath": "docs/zh/security/data-sanitization.md",
       "Version": "1.0.1",
-      "LastModified": "2026-10-23T00:48:17.870339",
+      "LastModified": "2026-10-23T00:53:40.357901",
       "ContentHash": "c5af85bbedacd0a3",
-      "GitCommit": "9b9b30b9",
-      "Author": "Leo Lin",
+      "GitCommit": "1add0e3f",
+      "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/management-api.md",
@@ -2344,6 +2334,16 @@
       "ContentHash": "7c8f9f134bb73efa",
       "GitCommit": "98b5e27a",
       "Author": "Leo Lin",
+      "ChangeSummary": "",
+      "Dependencies": []
+    },
+    "AGENTS.md": {
+      "FilePath": "AGENTS.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-10-23T00:53:20.490222",
+      "ContentHash": "cbd03d2d6a9f9dfa",
+      "GitCommit": "",
+      "Author": "",
       "ChangeSummary": "",
       "Dependencies": []
     }
@@ -3734,11 +3734,27 @@
       "Description": "文档created"
     },
     {
+      "FilePath": "AGENTS.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-10-22T13:20:49.870902",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "AGENTS.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-10-23T00:53:20.490222",
+      "Description": "文档created"
+    },
+    {
       "FilePath": "docs/en/security/data-sanitization.md",
       "OldVersion": "1.0.0",
       "NewVersion": "1.0.1",
       "ChangeType": "MODIFIED",
-      "Timestamp": "2026-10-23T00:48:09.107710",
+      "Timestamp": "2026-10-23T00:53:29.266557",
       "Description": "文档modified"
     },
     {
@@ -3746,17 +3762,9 @@
       "OldVersion": "1.0.0",
       "NewVersion": "1.0.1",
       "ChangeType": "MODIFIED",
-      "Timestamp": "2026-10-23T00:48:17.870339",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/security/data-sanitization.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-10-23T00:49:13.433826",
+      "Timestamp": "2026-10-23T00:53:40.357901",
       "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-23T00:49:25.168895"
+  "last_updated": "2026-10-23T00:53:42.225573"
 }
