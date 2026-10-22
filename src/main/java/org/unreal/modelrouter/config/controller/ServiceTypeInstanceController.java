@@ -24,6 +24,7 @@ import org.unreal.modelrouter.config.core.ServiceInstanceManager;
 import org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker;
 import org.unreal.modelrouter.router.circuitbreaker.CircuitBreakerManager;
 import org.unreal.modelrouter.router.circuitbreaker.monitor.CircuitBreakerAdminService;
+import org.unreal.modelrouter.router.circuitbreaker.monitor.CircuitBreakerBatchResetResult;
 import org.unreal.modelrouter.router.circuitbreaker.monitor.CircuitBreakerResetResult;
 import reactor.core.publisher.Mono;
 
@@ -215,13 +216,23 @@ public class ServiceTypeInstanceController {
     }
 
     /**
-     * 清除所有实例的内存熔断器状态
+     * 重置全部实例的熔断器（保留旧路径以兼容既有调用方）
+     *
+     * <p>内部委派给 {@link CircuitBreakerAdminService#resetAll(String)}：对当前内存里的每个实例都走完整重置
+     * （内存就地置 CLOSED、删除持久化状态、写 MANUAL_RESET 历史、清自适应阈值），不再只清内存。</p>
+     *
+     * @return 命中数与逐个结果
+     * @deprecated 语义等价于「重置全部实例」，但缺少作用域过滤；
+     *             请改用 {@code POST /api/v1/circuit-breaker-monitor/instances/reset}
+     *             （可传 serviceType / states / instanceIds）
      */
+    @Deprecated
     @PostMapping("/circuit-breaker/clear-all")
-    public ResponseEntity<RouterResponse<Object>> clearAllCircuitBreakers() {
-        log.info("Clearing all circuit breakers");
-        circuitBreakerManager.clearAllCircuitBreakers();
-        return ResponseEntity.ok(RouterResponse.success(null, "所有熔断器状态已清除"));
+    public Mono<ResponseEntity<RouterResponse<CircuitBreakerBatchResetResult>>> clearAllCircuitBreakers() {
+        log.info("Resetting all circuit breakers via deprecated clear-all endpoint");
+        return circuitBreakerAdminService.resetAll("旧端点 /api/config/instance/circuit-breaker/clear-all")
+                .map(result -> ResponseEntity.ok(RouterResponse.success(result,
+                        "已重置 " + result.matched() + " 个熔断器")));
     }
 
     /**

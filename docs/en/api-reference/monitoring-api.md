@@ -335,13 +335,21 @@ Get the current monitoring configuration:
 GET /api/monitoring/config
 ```
 
-### Circuit Breaker Statistics
+### Metrics Pipeline Circuit Breaker Statistics
 
-Get circuit breaker statistics:
+Get statistics for the metrics pipeline circuit breaker (`MetricsCircuitBreaker`):
 
 ```http
-GET /api/monitoring/circuit-breaker/stats
+GET /api/monitoring/metrics-pipeline/circuit-breaker/stats
 ```
+
+> **Scope**: this circuit breaker protects the **monitoring metrics processing pipeline**
+> (asynchronous metrics handling). It is **not** the per-instance routing circuit breaker
+> (`CircuitBreakerManager`). Neither the statistics nor the force-open / force-close switches
+> below change the routing circuit-breaker state of any instance.
+>
+> The legacy path `GET /api/monitoring/circuit-breaker/stats` is a **compatibility alias**
+> (marked `@Deprecated` in code) that shares the same implementation.
 
 ### Degradation Status
 

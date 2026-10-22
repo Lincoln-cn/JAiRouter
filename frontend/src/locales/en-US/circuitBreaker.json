@@ -160,7 +160,6 @@
     "globalConfig": {
       "title": "Circuit Breaker Global Configuration",
       "adaptiveThresholdEnabled": "Enable Adaptive Threshold Adjustment",
-      "stateSyncInterval": "State Sync Interval",
       "cleanupInterval": "Expired Cleanup Interval",
       "historyRetentionDays": "History Retention",
       "defaultFailureThreshold": "Default Failure Threshold",
@@ -173,7 +172,6 @@
         "thresholds": "Thresholds",
         "timeouts": "Timeouts",
         "halfOpen": "Half-Open Recovery",
-        "sync": "Sync",
         "retention": "History Maintenance"
       },
       "successThresholdHint": "Consecutive successes required in HALF_OPEN before returning to CLOSED",

@@ -137,6 +137,32 @@ public class CircuitBreakerAdminService {
                 .map(results -> new CircuitBreakerBatchResetResult(targets.size(), results));
     }
 
+    /**
+     * 重置全部实例：以当前内存注册表里的所有实例为目标。
+     *
+     * <p>与 {@link #resetBatch(List, String, List, String)} 的差别只在「目标如何确定」：本方法不接受作用域过滤，
+     * 直接把 {@link #listInstances()} 里的全部 instanceId 作为目标；副作用完全复用
+     * {@link #reset(String, String)}（内存就地置 CLOSED、删除持久化状态、写 MANUAL_RESET 历史、清自适应阈值），
+     * 不另写一套。</p>
+     *
+     * @param reason 操作者备注（可为空），仅写入日志，不落库
+     * @return 命中数与逐个结果；内存里没有任何熔断器时返回 0 与空列表
+     */
+    public Mono<CircuitBreakerBatchResetResult> resetAll(final String reason) {
+        List<String> targets = listInstances().stream()
+                .map(CircuitBreakerInstanceView::instanceId)
+                .filter(instanceId -> instanceId != null && !instanceId.isBlank())
+                .distinct()
+                .toList();
+        if (targets.isEmpty()) {
+            return Mono.just(new CircuitBreakerBatchResetResult(0, List.of()));
+        }
+        return Flux.fromIterable(targets)
+                .concatMap(instanceId -> reset(instanceId, reason))
+                .collectList()
+                .map(results -> new CircuitBreakerBatchResetResult(targets.size(), results));
+    }
+
     private List<String> resolveTargets(final List<String> instanceIds, final String serviceType, final List<String> states) {
         if (instanceIds != null && !instanceIds.isEmpty()) {
             return instanceIds.stream().filter(id -> id != null && !id.isBlank()).distinct().toList();

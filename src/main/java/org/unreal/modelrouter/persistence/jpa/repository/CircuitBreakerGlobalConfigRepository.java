@@ -23,7 +23,6 @@ public interface CircuitBreakerGlobalConfigRepository extends JpaRepository<Circ
             CircuitBreakerGlobalConfigEntity config = CircuitBreakerGlobalConfigEntity.builder()
                 .id(1L)
                 .adaptiveThresholdEnabled(false)
-                .stateSyncIntervalMinutes(5)
                 .cleanupIntervalMinutes(30)
                 .historyRetentionDays(30)
                 .defaultFailureThreshold(5)
