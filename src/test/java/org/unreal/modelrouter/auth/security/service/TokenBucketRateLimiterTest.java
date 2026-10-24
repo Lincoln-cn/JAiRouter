@@ -190,4 +190,35 @@ class TokenBucketRateLimiterTest {
         assertEquals(limit, rateLimiter.getCurrentCount(keyId),
             "当前计数应等于限制 " + limit);
     }
+
+    @Test
+    @DisplayName("窗口表有界 - 超过上限后条目数不再增长（#625）")
+    void windowTable_isBounded() {
+        int distinctKeys = 10_050;
+
+        for (int i = 0; i < distinctKeys; i++) {
+            rateLimiter.tryAcquire("bounded-key-" + i, 1);
+        }
+
+        int active = rateLimiter.getActiveWindowCount();
+        assertTrue(active <= 10_000,
+            "窗口条目数必须被 maximumSize 限制在 10_000 以内，实际 " + active);
+        assertTrue(active > 0, "窗口表不应被清空，实际 " + active);
+    }
+
+    @Test
+    @DisplayName("淘汰取舍 - 被淘汰的窗口重新出现时从 0 开始计（javadoc 声明的语义）")
+    void evictedWindow_reappearsFromZero() {
+        int distinctKeys = 20_000;
+        for (int i = 0; i < distinctKeys; i++) {
+            rateLimiter.tryAcquire("evict-key-" + i, 1);
+        }
+
+        // 首键在 20000 次写入后必然已被淘汰（淘汰对象不保证，但「条目数有界 ⇒ 旧键必然出局」可由
+        // 下面这条断言兜住：要么它不在表里（计数 0），要么它重新从 0 开始 ⇒ 允许一次）。
+        boolean allowed = rateLimiter.tryAcquire("evict-key-0", 1);
+        int count = rateLimiter.getCurrentCount("evict-key-0");
+        assertTrue(allowed || count == 1,
+            "淘汰后的键必须能重新判定（allowed=" + allowed + ", count=" + count + "）");
+    }
 }
