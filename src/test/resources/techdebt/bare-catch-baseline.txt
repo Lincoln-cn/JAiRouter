@@ -2,7 +2,7 @@
 #
 # 由 BareCatchCeilingTest 读取：任何文件不得高于基线计数，任何新文件带裸捕获即失败。
 # 技术债清理（#604）让计数下降时**不需要**改本文件；只有为了让守卫放行才改 —— 那等于放宽守卫，PR 里要说明理由。
-TOTAL 835
+TOTAL 786
 org/unreal/modelrouter/auth/controller/SecurityBlacklistController.java 1
 org/unreal/modelrouter/auth/filter/ResponseSanitizationFilter.java 3
 org/unreal/modelrouter/auth/filter/SpringSecurityAuthenticationFilter.java 2
@@ -117,9 +117,9 @@ org/unreal/modelrouter/monitor/monitoring/WebFluxMetricsInterceptor.java 2
 org/unreal/modelrouter/monitor/monitoring/alert/SlowQueryAlertService.java 3
 org/unreal/modelrouter/monitor/monitoring/circuitbreaker/MetricsCacheAndRetry.java 3
 org/unreal/modelrouter/monitor/monitoring/circuitbreaker/MonitoringHealthChecker.java 8
-org/unreal/modelrouter/monitor/monitoring/collector/AsyncMetricsCollector.java 29
+org/unreal/modelrouter/monitor/monitoring/collector/AsyncMetricsCollector.java 0
 org/unreal/modelrouter/monitor/monitoring/collector/DefaultMetricsCollector.java 8
-org/unreal/modelrouter/monitor/monitoring/collector/MetricsManagementController.java 20
+org/unreal/modelrouter/monitor/monitoring/collector/MetricsManagementController.java 0
 org/unreal/modelrouter/monitor/monitoring/collector/TracingMetricsDelegate.java 9
 org/unreal/modelrouter/monitor/monitoring/config/DynamicMonitoringConfigUpdater.java 4
 org/unreal/modelrouter/monitor/monitoring/config/MonitoringConfigurationValidator.java 1
