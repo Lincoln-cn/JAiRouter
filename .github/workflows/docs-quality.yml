@@ -66,6 +66,16 @@ jobs:
           **/*.md
           !node_modules/**
     
+    - name: 自测围栏配平检查脚本
+      run: |
+        echo "🧪 运行围栏配平检查自测（配平通过 / 奇数围栏 / 两反引号开栏 / 两反引号闭栏）..."
+        python3 scripts/docs/test_check_fence_parity.py
+
+    - name: 检查代码围栏配平
+      run: |
+        echo "🔍 检查每篇文档的 markdown 围栏是否配平（奇数会让整篇自错位点起被当作代码渲染）..."
+        python3 scripts/docs/check-fence-parity.py --dir docs --fail-on-error
+
     - name: 检查链接有效性 (第三方工具)
       uses: tcort/github-action-markdown-link-check@v1
       with:

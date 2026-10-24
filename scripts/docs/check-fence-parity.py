@@ -30,6 +30,15 @@ TWO_TICKS_OPENER = re.compile(r"^\s*" + chr(96) * 2 + r"(?!" + chr(96) + r")(\w+
 TWO_TICKS_BARE = re.compile(r"^\s*" + chr(96) * 2 + r"\s*$")
 
 
+def _relative_to(path, repo_root):
+    """相对仓库根的展示路径；**跨盘符时回退为绝对路径**（Windows 上 ``os.path.relpath`` 会抛
+    ``ValueError: path is on mount 'C:', start on mount 'D:'`` —— 自测可能在系统临时目录里建夹具）。"""
+    try:
+        return os.path.relpath(path, repo_root).replace("\\", "/")
+    except ValueError:
+        return os.path.abspath(path).replace("\\", "/")
+
+
 def is_ignored(paths, repo_root):
     """用 git 过滤掉被 .gitignore 的本地产物（CI 里它们不存在，本地会误报）。"""
     if not paths:
@@ -96,10 +105,10 @@ def main():
                 targets.append(os.path.join(dirpath, name))
 
     if not args.include_ignored:
-        ignored = is_ignored([os.path.relpath(t, repo_root).replace("\\", "/") for t in targets], repo_root)
+        ignored = is_ignored([_relative_to(t, repo_root) for t in targets], repo_root)
         kept = []
         for t in targets:
-            rel = os.path.relpath(t, repo_root).replace("\\", "/")
+            rel = _relative_to(t, repo_root)
             if rel not in ignored:
                 kept.append(t)
         seen = sorted(ignored)
@@ -112,7 +121,7 @@ def main():
         if not problems:
             continue
         bad_files += 1
-        rel = os.path.relpath(path, repo_root).replace("\\", "/")
+        rel = _relative_to(path, repo_root)
         print("❌ %s（%d 行，围栏 %d 个）" % (rel, nlines, fences))
         for lineno, kind, msg in problems:
             total_problems += 1
