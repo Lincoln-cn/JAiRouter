@@ -252,10 +252,10 @@
     },
     "docs/en/configuration/rate-limiting.md": {
       "FilePath": "docs/en/configuration/rate-limiting.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-24T15:19:24.815045",
-      "ContentHash": "8f5da5d679a6d3ed",
-      "GitCommit": "923f3ae1",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-24T15:35:00.635816",
+      "ContentHash": "a6b6702f14991285",
+      "GitCommit": "0b4f76c3",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -263,6 +263,7 @@
         "docs/en/configuration/routing-rules.md",
         "docs/en/deployment/multi-replica.md",
         "docs/en/monitoring/index.md",
+        "docs/en/reference/roadmap.md",
         "docs/en/troubleshooting/index.md",
         "docs/en/troubleshooting/performance.md"
       ]
@@ -437,10 +438,10 @@
     },
     "docs/en/deployment/kubernetes.md": {
       "FilePath": "docs/en/deployment/kubernetes.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-24T14:36:26.843385",
-      "ContentHash": "b879cbcbb16425c2",
-      "GitCommit": "1adbad44",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-24T15:35:00.720370",
+      "ContentHash": "fc4ee3c4931ba6d3",
+      "GitCommit": "0b4f76c3",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -452,10 +453,10 @@
     },
     "docs/en/deployment/multi-replica.md": {
       "FilePath": "docs/en/deployment/multi-replica.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-24T14:36:26.845160",
-      "ContentHash": "1864cda9d5937818",
-      "GitCommit": "1adbad44",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-24T15:35:00.722374",
+      "ContentHash": "388d0d5eb4618bbd",
+      "GitCommit": "0b4f76c3",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -878,10 +879,10 @@
     },
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-24T14:36:27.068189",
-      "ContentHash": "9ec261c57d788739",
-      "GitCommit": "1adbad44",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-24T15:35:01.002080",
+      "ContentHash": "76adf396ded7adfb",
+      "GitCommit": "0b4f76c3",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1406,10 +1407,10 @@
     },
     "docs/zh/configuration/rate-limiting.md": {
       "FilePath": "docs/zh/configuration/rate-limiting.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-24T15:19:25.346340",
-      "ContentHash": "873119f5246ab35a",
-      "GitCommit": "923f3ae1",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-24T15:35:01.269927",
+      "ContentHash": "e1453e224fe1a9b6",
+      "GitCommit": "0b4f76c3",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1417,6 +1418,7 @@
         "docs/zh/configuration/routing-rules.md",
         "docs/zh/deployment/multi-replica.md",
         "docs/zh/monitoring/index.md",
+        "docs/zh/reference/roadmap.md",
         "docs/zh/troubleshooting/index.md",
         "docs/zh/troubleshooting/performance.md"
       ]
@@ -1590,10 +1592,10 @@
     },
     "docs/zh/deployment/kubernetes.md": {
       "FilePath": "docs/zh/deployment/kubernetes.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-24T14:36:27.364513",
-      "ContentHash": "efa73153186438e6",
-      "GitCommit": "1adbad44",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-24T15:35:01.362987",
+      "ContentHash": "19469d6564c937e1",
+      "GitCommit": "0b4f76c3",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1605,10 +1607,10 @@
     },
     "docs/zh/deployment/multi-replica.md": {
       "FilePath": "docs/zh/deployment/multi-replica.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-24T14:36:27.366689",
-      "ContentHash": "4fecbdb0ff6cd302",
-      "GitCommit": "1adbad44",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-24T15:35:01.364986",
+      "ContentHash": "59736e2650698abf",
+      "GitCommit": "0b4f76c3",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2039,10 +2041,10 @@
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-24T14:36:27.597380",
-      "ContentHash": "2c34e9110087a16e",
-      "GitCommit": "1adbad44",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-24T15:35:01.642007",
+      "ContentHash": "49c7352ba136a7ce",
+      "GitCommit": "0b4f76c3",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -4182,7 +4184,71 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-24T15:19:25.346350",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/rate-limiting.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T15:35:00.635826",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/kubernetes.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T15:35:00.720377",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/multi-replica.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T15:35:00.722379",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/roadmap.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T15:35:01.002089",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/rate-limiting.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T15:35:01.269935",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/kubernetes.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T15:35:01.362995",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/multi-replica.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T15:35:01.364990",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/roadmap.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T15:35:01.642016",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-24T15:19:25.790282"
+  "last_updated": "2026-10-24T15:35:01.796039"
 }
