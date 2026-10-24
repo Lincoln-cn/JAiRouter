@@ -225,6 +225,16 @@ const router = createRouter({
           name: 'audit-log-management',
           component: () => import('../views/security/AuditLogManagement.vue'),
           meta: { titleKey: 'route.auditLogManagement', icon: 'document-checked', permissions: ['security:audit:read'] }
+        },
+        {
+          path: 'record-governance',
+          name: 'record-governance',
+          component: () => import('../views/security/RecordGovernance.vue'),
+          meta: {
+            titleKey: 'route.recordGovernance',
+            icon: 'lock',
+            permissions: ['config:callhistory:read', 'config:callhistory:write']
+          }
         }
       ]
     },

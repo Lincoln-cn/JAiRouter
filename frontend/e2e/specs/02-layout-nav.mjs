@@ -4,7 +4,7 @@
 import { createAuthedContext, gotoApp, currentPathname } from '../harness.mjs'
 import { ALL_ROUTES } from '../routes.mjs'
 
-// P0-3 IA：7 组 28 项（顺序与 src/config/menu.ts 的 menuGroups 一致）
+// P0-3 IA：7 组 29 项（v3.5.1 新增「记录治理」；顺序与 src/config/menu.ts 的 menuGroups 一致）
 const MENU_GROUPS = [
   'dashboard',
   'observability',
@@ -15,8 +15,8 @@ const MENU_GROUPS = [
   'dev-tools'
 ]
 
-// 每组菜单项数（合计 28）：40 → 28 后 12 个页面收进 tabs，不再单独占侧栏
-const MENU_ITEMS_PER_GROUP = [1, 5, 7, 4, 5, 4, 2]
+// 每组菜单项数（合计 29）：40 → 29 后 12 个页面收进 tabs，不再单独占侧栏
+const MENU_ITEMS_PER_GROUP = [1, 5, 7, 4, 6, 4, 2]
 
 export default {
   id: 'layout-nav',

@@ -46,12 +46,12 @@ describe('filterMenuByPermission', () => {
     expect(groups.map(group => group.index)).toEqual(['dashboard', 'dev-tools'])
   })
 
-  it('ADMIN 拥有全部权限 ⇒ 7 组 28 项全在', () => {
+  it('ADMIN 拥有全部权限 ⇒ 7 组 29 项全在', () => {
     setup([], ['ADMIN'])
     const { filterMenuByPermission } = usePermission()
     const groups = filterMenuByPermission(menuGroups)
     expect(groups).toHaveLength(7)
-    expect(groups.reduce((total, group) => total + group.children.length, 0)).toBe(28)
+    expect(groups.reduce((total, group) => total + group.children.length, 0)).toBe(29)
   })
 
   it('无 permission 声明的菜单项（客户端接入）对所有已登录用户可见', () => {

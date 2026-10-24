@@ -17,9 +17,11 @@ import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.AuditEventType;
 import org.unreal.modelrouter.monitor.callhistory.config.CallHistoryProperties;
 import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
+import org.unreal.modelrouter.monitor.callhistory.crypto.RecordContentCipher;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -39,6 +41,7 @@ public class CallHistoryConfigController {
 
     private final CallHistoryProperties callHistoryProperties;
     private final SecurityAuditService securityAuditService;
+    private final RecordContentCipher recordContentCipher;
 
     /**
      * 获取调用历史配置
@@ -92,17 +95,32 @@ public class CallHistoryConfigController {
 
     /**
      * 构建配置响应 Map
+     *
+     * <p>除可写的 {@code recordLevel} 外，其余字段都是只读观测值。其中加密相关字段来自
+     * {@link RecordContentCipher} 的实际装配结果，而不是配置里的期望值 ——
+     * 这样「配置请求 env、实际回退 auto」这类漂移会在控制台直接可见。
      */
     private Map<String, Object> buildConfigMap() {
         Map<String, Object> config = new LinkedHashMap<>();
         config.put("recordLevel", callHistoryProperties.getRecordLevel().name());
         config.put("maxContentLength", callHistoryProperties.getMaxContentLength());
         config.put("retentionDays", callHistoryProperties.getRetentionDays());
+        config.put("maxRecords", callHistoryProperties.getMaxRecords());
         config.put("enabled", callHistoryProperties.isEnabled());
         config.put("requestBodySummaryEnabled", callHistoryProperties.isRequestBodySummaryEnabled());
         config.put("responseBodySummaryEnabled", callHistoryProperties.isResponseBodySummaryEnabled());
         config.put("slowCallThresholdMs", callHistoryProperties.getSlowCallThresholdMs());
         config.put("encryptionKeySource", callHistoryProperties.getEncryptionKeySource());
+        config.put("contentStoredEncrypted", callHistoryProperties.getRecordLevel() == RecordLevel.FULL);
+        if (recordContentCipher != null) {
+            config.put("encryptionKeySourceRequested", recordContentCipher.keySourceRequested());
+            config.put("encryptionKeySourceEffective", recordContentCipher.keySourceEffective());
+            config.put("encryptionKeySourceHonored", Objects.equals(
+                    recordContentCipher.keySourceRequested(), recordContentCipher.keySourceEffective()));
+            config.put("environmentKeyPresent", recordContentCipher.environmentKeyPresent());
+            config.put("encryptionAlgorithm", recordContentCipher.algorithm());
+            config.put("encryptionKeyFingerprint", recordContentCipher.keyFingerprint());
+        }
         return config;
     }
 
