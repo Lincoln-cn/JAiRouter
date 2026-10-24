@@ -381,7 +381,7 @@ The v3.0 microservices architecture transformation has been indefinitely postpon
 #### Implemented ✅ (cont.)
 - ✅ API-key-level rate limiting (per-key `rateLimitPerMinute` + token bucket; over-limit answers **429** with `RATE_LIMITED_API_KEY`, #404)
 - ✅ End-user rate limiting (v3.5.2: per-`(API key × end user)` per-minute allowance, off by default; identity from `X-End-User-Id` or the request-body `user`; over-limit answers 429 with `Retry-After` / `X-RateLimit-*`; cross-replica counting via `jairouter.ratelimit.distributed.enabled`)
-- ⚠️ Client-dimension rate limiting: `RedisSlidingWindowRateLimiter` (1-second window) exists, but the **default request path never calls it** (#623), so `client-ip-enable` / `key-dimension` currently change nothing
+- ⚠️ Client-dimension rate limiting (`RedisSlidingWindowRateLimiter`, 1-second window): the implementation exists, but the **default request path never calls it** (#623), so `client-ip-enable` / `key-dimension` currently change nothing
 
 #### Planned 📋
 - 📋 Wire up client-dimension limiting (#623): call `RateLimitManager.tryAcquireClientIp` from the request path, and re-evaluate whether the key dimension holds in a cluster without an L7 proxy

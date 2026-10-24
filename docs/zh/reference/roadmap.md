@@ -381,7 +381,7 @@ v3.0 为 Web 完整流程里程碑（对外 /api/v1 保持兼容，无 breaking�
 #### 已实现 ✅（续）
 - ✅ API Key 级限流（每键 `rateLimitPerMinute` + 令牌桶；超限返回 **429** 与 `RATE_LIMITED_API_KEY`，#404）
 - ✅ 终端用户级限流（v3.5.2：按 `(API Key × 终端用户)` 计每分钟额度，默认关闭；身份取 `X-End-User-Id` 或请求体 `user`；超限 429 带 `Retry-After` / `X-RateLimit-*`；Redis 跨副本计数由 `jairouter.ratelimit.distributed.enabled` 控制）
-- ⚠️ 客户端维度限流：`RedisSlidingWindowRateLimiter`（1 秒窗口）已实现，但**默认主链路没有调用点**（#623），`client-ip-enable` / `key-dimension` 当前不产生限流效果
+- ⚠️ 客户端维度限流（`RedisSlidingWindowRateLimiter`，1 秒窗口）：实现存在，但**默认主链路没有调用点**（#623），`client-ip-enable` / `key-dimension` 当前不产生限流效果
 
 #### 计划实现 📋
 - 📋 客户端维度限流接线（#623）：把 `RateLimitManager.tryAcquireClientIp` 接进主链路，并重新评估「集群 + 无 L7 反代」下键维度是否成立
