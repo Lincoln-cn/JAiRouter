@@ -42,8 +42,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # 本地/仓库目录名与产品名不同
 artifact:        model-router            # Maven artifactId
-project_version: 3.5.0                   # pom.xml
-latest_release:  v3.5.0 (2026-10-24)
+project_version: 3.5.1                   # pom.xml
+latest_release:  v3.5.1 (2026-10-24)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5（WebFlux / 响应式）
   frontend: Vue 3 + TypeScript + Vite，中英双语（zh-CN / en-US）
@@ -351,7 +351,18 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 
 ## 状态与近期工作
 
-**最新发布：v3.5.0（2026-10-24）** —— 跟 `v3.4.0` 的功能版：把响应脱敏的覆盖面从「几乎为零」补到「非流式 JSON + SSE 逐帧」并做成可配置，同时收口熔断器治理，带**一次破坏性接口变更**与**一次不可回滚的库结构迁移**。
+**最新发布：v3.5.1（2026-10-24）** —— 同日跟 `v3.5.0` 的补丁版：新增记录治理页、让 call-history 的密钥来源配置真正生效，并清掉技术债前四个批次（#604）。**无破坏性变更。**
+
+| 主题 | 变更内容 |
+|------|----------|
+| **记录治理（#617 / #618）** | `jairouter.call-history.encryption-key-source: env` 此前能设、能回显却永不生效（`RecordContentCipher` 走的是无参构造器）。改为按配置解析密钥来源，并在 `GET /api/config/call-history` 上给出只读观测（`encryptionKeySourceRequested` / `…Effective` / `…Honored`、`environmentKeyPresent`、`encryptionAlgorithm`、`encryptionKeyFingerprint`）；控制台新增 `/security/record-governance`（三档记录级别、切 `FULL` 二次确认、加密与存储只读卡、解密审计入口），菜单 28 → 29 项 |
+| **配置快照（#605 / #619）** | `GET /api/config/sanitization` 的 `gatewayResponseFilter` 改为按当前配置实时拼装（`enabled=…;scopeMode=…;sanitizeSse=…;failOnError=…`），不再返回写死的旧语义字符串 |
+| **技术债 A～D（#604）** | 新增走真 HTTP 栈的端到端 400 用例与裸捕获上限守卫（基线 835 处 / 257 文件）；`QuotaLedgerService` 1268 → 1094 行、`ServiceRequestHandler` 1027 → 785 行（靠抽类，行为不变）；两个热点文件的 49 处裸捕获清零（基线 835 → 786） |
+| **文档与门闩（#606 / #607）** | 网关入口面统一写成 `/api/v1/*`（`/v1/*` 只有 4 个 OpenAI 原生端点）；代码围栏配平检查接入 `docs-quality.yml`；控制台截图按 v3.5.0 重拍 |
+
+`[3.5.1]` 的 changelog 条目见 [更新日志](docs/zh/reference/changelog.md)；以 GitHub Release `v3.5.1` 发布，并触发多架构镜像（`v3.5.1` / `3.5.1` / `latest`）。
+
+**`v3.5.0`（2026-10-24）** 是跟 `v3.4.0` 的功能版：把响应脱敏的覆盖面从「几乎为零」补到「非流式 JSON + SSE 逐帧」并做成可配置，同时收口熔断器治理，带**一次破坏性接口变更**与**一次不可回滚的库结构迁移**（按 semver 严格判定应为 `4.0.0`；当时为不打断 3.x 线按 `3.5.0` 发布，tag 与 Release 保持原样不回改）。
 
 | 主题 | 变更内容 |
 |------|----------|

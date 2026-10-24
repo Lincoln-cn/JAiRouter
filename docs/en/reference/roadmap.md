@@ -1,9 +1,9 @@
 # Roadmap
 
 <!-- 版本信息 -->
-> **Doc Version**: 2.3.0
+> **Doc Version**: 2.3.1
 > **Last Updated**: 2026-10-24
-> **Git Tag**: v3.5.0
+> **Git Tag**: v3.5.1
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -24,7 +24,20 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 
 ## Current Version Status
 
+### ✅ v3.5.1 (Patch: record-governance page + live config snapshot + tech-debt batches A–D, **released 2026-10-24**)
+
+**Status**: Released (GitHub Release `v3.5.1`, 2026-10-24; multi-arch Docker images rebuilt by CI on release: `v3.5.1` / `3.5.1` / `latest`)
+**Scope**: the 9 PRs merged after `v3.5.0` (released the same day) — record governance #617 / #618, config snapshot #605 / #619, API path wording #606 / #620, tech-debt batches A–D of #604, docs gate #607 / #621 and re-shot screenshots #609 / #610; **no breaking changes relative to 3.5.0**
+**Highlights**:
+
+- **Record governance (#617 / #618)**: `jairouter.call-history.encryption-key-source: env` was settable and echoed back but never applied (`RecordContentCipher` was wired through its no-arg constructor, which hard-coded `auto`); the key source is now resolved from configuration and falls back — truthfully recorded — when the `JAIR_CALL_HISTORY_KEY` environment variable is unavailable. `GET /api/config/call-history` gains 8 read-only observation fields and the console gains `/security/record-governance` (menu 28 → 29 items).
+- **Live config snapshot (#605 / #619)**: `gatewayResponseFilter` in `GET /api/config/sanitization` is composed from the current configuration (`enabled=…;scopeMode=…;sanitizeSse=…;failOnError=…`) instead of a hard-coded string.
+- **Tech-debt batches A–D (#604)**: end-to-end 400 case through the real HTTP stack (with a 500 control case) plus a bare-catch ceiling (baseline 835 occurrences / 257 files); `QuotaLedgerService` 1268 → 1094 lines; `ServiceRequestHandler` 1027 → 785 lines; bare catches in the two hottest files drop to zero (baseline 835 → 786, **the remaining 786 stay parked**).
+- **Docs and gates (#606 / #607)**: the gateway entry surface is documented as `/api/v1/*` (`/v1/*` covers only the 4 OpenAI-native endpoints); `check-fence-parity.py` is wired into `docs-quality.yml`.
+
 ### ✅ v3.5.0 (Feature: response sanitization coverage + circuit-breaker governance + request-side config surface removed, **released 2026-10-24**)
+
+> **Version-semantics note (recorded 2026-10-24, together with v3.5.1)**: this release contains **breaking changes** — the request-side sanitization configuration surface was removed (#601 / #602) and Flyway `V5` deletes historical data — which under strict semver should have shipped as `4.0.0`. It shipped as `3.5.0` to avoid interrupting the 3.x line; the **tag and Release are left as-is and will not be rewritten** (this note only makes the version semantics traceable). Upgrading from 3.4.x straight to `3.5.x` therefore still has to be treated as a **breaking** upgrade: `GET/PUT /api/config/sanitization` handles `response` only, and the `V5` migration cannot be rolled back automatically.
 
 **Status**: Released (GitHub Release `v3.5.0`, 2026-10-24; multi-arch Docker images rebuilt by CI on release: `v3.5.0` / `3.5.0` / `latest`)
 **Scope**: everything merged after `v3.4.0` (released 10-21), i.e. the four stages of the #560 sanitization series, three circuit-breaker fixes and a console acceptance pass
@@ -545,7 +558,8 @@ JAiRouter will continue to uphold the open-source spirit and is committed to pro
 12. ✅ v3.3.0 minor (released 2026-10-07): PostgreSQL and versioned migration (PG on `ddl-auto: validate`, H2 gets versioned migration too, both startup patch components deleted); multi-replica cluster (cross-replica event broadcast and sliding-window counting, shared-state self-check, per-class scheduled jobs); RBAC closed out to fail-closed GETs; four batches of tracing config honesty (57 zero-consumer fields deleted, 3 wired up); structured JSON stdout and Kustomize manifests; documentation facts checked and corrected (#160–#248)
 13. ✅ v3.4.0 feature release (released 2026-10-21): console overhaul (7 groups / 28 items navigation, collapsible sidebar, dark-mode hierarchy, card lists on narrow screens, 33 pages on a neutral palette, global search and status bar); permission semantics (eight read-only codes, 55 → 63); persisted sanitization configuration (Flyway V4); hourly/monthly quota limits. **Deferred**: the record-level FULL encryption strategy UI moves with the frontend track (v3.5.x)
 14. ✅ v3.5.0 feature release (released 2026-10-24): response sanitization coverage closed out (non-streaming JSON under `/v1/**`, configurable `response.scope`, buffer limit, per-frame SSE), default PII rules and JSON key exemptions corrected, request-side configuration surface removed (Flyway V5), three circuit-breaker fixes, console acceptance fixes
-15. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.2.x
+15. ✅ v3.5.1 patch (released 2026-10-24): record-governance page and call-history key-source wiring (`encryption-key-source: env` went from "settable but inert" to actually effective, `GET /api/config/call-history` gains 8 read-only observation fields, new page `/security/record-governance`); live `gatewayResponseFilter` in the config snapshot; tech-debt batches A–D of #604 (end-to-end 400 case + bare-catch ceiling 835 → 786, `QuotaLedgerService` 1268 → 1094, `ServiceRequestHandler` 1027 → 785); API paths unified on `/api/v1/*`; fence-parity check wired into the docs gate
+16. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.2.x
 
 ### Long-term Vision
 1. Become the standard in AI model routing
@@ -555,6 +569,6 @@ JAiRouter will continue to uphold the open-source spirit and is committed to pro
 
 ---
 
-**Last Updated**: September 22, 2026
+**Last Updated**: October 24, 2026
 
 For any suggestions or ideas, feel free to communicate with us via [GitHub Discussions](https://github.com/Lincoln-cn/JAiRouter/discussions).

@@ -43,8 +43,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # the local/git directory name differs from the product name
 artifact:        model-router            # Maven artifactId
-project_version: 3.5.0                   # pom.xml
-latest_release:  v3.5.0 (2026-10-24)
+project_version: 3.5.1                   # pom.xml
+latest_release:  v3.5.1 (2026-10-24)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5 (WebFlux / reactive)
   frontend: Vue 3 + TypeScript + Vite, bilingual zh-CN / en-US
@@ -367,10 +367,23 @@ delivery. See [Status and recent work](#status-and-recent-work) for the open led
 
 ## Status and recent work
 
-**Latest release: v3.5.0 (2026-10-24)** — the feature release that follows `v3.4.0`. It takes response
+**Latest release: v3.5.1 (2026-10-24)** — a patch release that follows `v3.5.0` on the same day. It adds the
+record-governance page, makes the call-history encryption key source actually honor its configuration, and clears
+the first four tech-debt batches (#604). **No breaking changes.**
+
+| Theme | What changed |
+|-------|--------------|
+| **Record governance (#617 / #618)** | `jairouter.call-history.encryption-key-source: env` used to be settable and echoed back but never applied (`RecordContentCipher` was wired through its no-arg constructor). It is now resolved from configuration, with read-only observations (`encryptionKeySourceRequested` / `…Effective` / `…Honored`, `environmentKeyPresent`, `encryptionAlgorithm`, `encryptionKeyFingerprint`) on `GET /api/config/call-history`; the console gains `/security/record-governance` (three record levels, `FULL` behind a second confirmation, read-only encryption & storage card, decryption-audit entry) and the menu grows 28 → 29 items |
+| **Config snapshot (#605 / #619)** | `GET /api/config/sanitization`'s `gatewayResponseFilter` is composed live (`enabled=…;scopeMode=…;sanitizeSse=…;failOnError=…`) instead of returning a hard-coded legacy string |
+| **Tech debt A–D (#604)** | End-to-end 400 case through the real HTTP stack plus a bare-catch ceiling (baseline 835 / 257 files); `QuotaLedgerService` 1268 → 1094 and `ServiceRequestHandler` 1027 → 785 lines via extraction; the two hottest files go from 49 bare catches to 0 (baseline 835 → 786) |
+| **Docs and gates (#606 / #607)** | Gateway entry surface documented as `/api/v1/*` (with `/v1/*` covering only the 4 OpenAI-native endpoints); the code-fence parity check is wired into `docs-quality.yml`; console screenshots re-shot on v3.5.0 |
+
+See the [`[3.5.1]` changelog entry](docs/en/reference/changelog.md). Released as GitHub Release `v3.5.1` with multi-arch images (`v3.5.1` / `3.5.1` / `latest`).
+
+**`v3.5.0` (2026-10-24)** was the feature release that follows `v3.4.0`. It takes response
 sanitization from "practically no coverage" to "non-streaming JSON plus SSE frames, and configurable", closes out
 circuit-breaker governance, and brings **one breaking API change** and **one schema migration that cannot be rolled
-back automatically**.
+back automatically** (which under strict semver would make it `4.0.0`; it shipped as `3.5.0` and the tag is left as-is).
 
 | Theme | What changed |
 |-------|--------------|
