@@ -63,7 +63,10 @@ public final class MultiReplicaSharedStateGate {
                     "配额计数每副本一份，实际放行量约为配置值 × 副本数"),
             new SharedStateSwitch(
                     "jairouter.persistence.redis.enabled",
-                    "状态持久化退坡到本机 H2/文件，不做跨节点共享"));
+                    "状态持久化退坡到本机 H2/文件，不做跨节点共享"),
+            new SharedStateSwitch(
+                    "jairouter.ratelimit.distributed.enabled",
+                    "终端用户限流计数每副本一份，实际放行量约为配置值 × 副本数"));
 
     private MultiReplicaSharedStateGate() {
     }
