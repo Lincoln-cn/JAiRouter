@@ -13,13 +13,15 @@ JAiRouter provides OpenAI-compatible APIs for various AI services, along with ma
 
 ## API Categories
 
-### 1. Universal APIs (`/v1/*`)
+### 1. Universal APIs (`/api/v1/*`)
 
-OpenAI-compatible endpoints for AI services:
+The unified entry point for AI services (OpenAI-compatible plus audio, image and rerank endpoints):
 
-- **[Universal API](universal-api.md)** - Chat, embeddings, TTS, STT, image generation
-- Compatible with OpenAI SDKs and tools
+- **[Universal API](universal-api.md)** - Chat, embeddings, rerank, TTS, STT, image generation and editing
+- Compatible with OpenAI SDKs and tools (the path prefix is `/api/v1`)
 - Consistent request/response format
+
+> There is also a small set of OpenAI-native paths under `/v1/*`, covering only `models`, `chat/completions`, `embeddings` and `rerank`; the audio and image endpoints exist only under `/api/v1/*`.
 
 ### 2. Management APIs (`/api/*`)
 
