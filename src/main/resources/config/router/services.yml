@@ -29,7 +29,7 @@ model:
         capacity: 100
         rate: 10
         scope: "service"
-        client-ip-enable: true
+        client-ip-enable: false  # v3.5.2(#623): 默认关闭——该维度已接线，但按 IP 计数在集群/无反代下会合并不同客户端
       instances:
         - name: "qwen2.5:1.5b"
           instance-id: "c09eb43b-5084-48bb-8fc8-3e5ab2505c31"
@@ -51,7 +51,7 @@ model:
         capacity: 200
         rate: 20
         scope: "service"
-        client-ip-enable: true
+        client-ip-enable: false  # v3.5.2(#623): 默认关闭——该维度已接线，但按 IP 计数在集群/无反代下会合并不同客户端
       circuit-breaker:
         enabled: true
         failureThreshold: 10
@@ -98,7 +98,7 @@ model:
         capacity: 50
         rate: 5
         scope: "service"
-        client-ip-enable: true
+        client-ip-enable: false  # v3.5.2(#623): 默认关闭——该维度已接线，但按 IP 计数在集群/无反代下会合并不同客户端
       instances:
         - name: "bge-reranker-v2-m3"
           instance-id: "f239e248-f6cb-4738-820e-f5428fa59e9a"
@@ -120,7 +120,7 @@ model:
         capacity: 30
         rate: 3
         scope: "service"
-        client-ip-enable: true
+        client-ip-enable: false  # v3.5.2(#623): 默认关闭——该维度已接线，但按 IP 计数在集群/无反代下会合并不同客户端
       instances:
         - name: "cosyvoice-300m"
           instance-id: "bf463e1b-c18a-4f19-847a-6054f21aeb3c"
@@ -142,7 +142,7 @@ model:
         capacity: 30
         rate: 3
         scope: "service"
-        client-ip-enable: true
+        client-ip-enable: false  # v3.5.2(#623): 默认关闭——该维度已接线，但按 IP 计数在集群/无反代下会合并不同客户端
       instances:
         - name: "faster-whisper-tiny"
           instance-id: "fe0d9d76-9eaf-4776-8d46-8fca38e6ec29"
@@ -164,7 +164,7 @@ model:
         capacity: 10
         rate: 1
         scope: "service"
-        client-ip-enable: true
+        client-ip-enable: false  # v3.5.2(#623): 默认关闭——该维度已接线，但按 IP 计数在集群/无反代下会合并不同客户端
       instances:
         - name: "stable-diffusion-2-1"
           instance-id: "317c09eb-aa36-41b1-912b-4925411d01b9"
@@ -186,7 +186,7 @@ model:
         capacity: 10
         rate: 1
         scope: "service"
-        client-ip-enable: true
+        client-ip-enable: false  # v3.5.2(#623): 默认关闭——该维度已接线，但按 IP 计数在集群/无反代下会合并不同客户端
       instances:
         - name: "stable-diffusion-2-1"
           instance-id: "ca43a926-0b63-4b2e-b89e-cc226073f31b"

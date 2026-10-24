@@ -381,10 +381,12 @@ v3.0 为 Web 完整流程里程碑（对外 /api/v1 保持兼容，无 breaking�
 #### 已实现 ✅（续）
 - ✅ API Key 级限流（每键 `rateLimitPerMinute` + 令牌桶；超限返回 **429** 与 `RATE_LIMITED_API_KEY`，#404）
 - ✅ 终端用户级限流（v3.5.2：按 `(API Key × 终端用户)` 计每分钟额度，默认关闭；身份取 `X-End-User-Id` 或请求体 `user`；超限 429 带 `Retry-After` / `X-RateLimit-*`；Redis 跨副本计数由 `jairouter.ratelimit.distributed.enabled` 控制）
-- ⚠️ 客户端维度限流（`RedisSlidingWindowRateLimiter`，1 秒窗口）：实现存在，但**默认主链路没有调用点**（#623），`client-ip-enable` / `key-dimension` 当前不产生限流效果
+- ✅ 客户端维度限流（`RedisSlidingWindowRateLimiter`，1 秒窗口）：**v3.5.2 起已接进主链路**（#623），由
+  `model.rate-limit.client-ip-enable` 或服务级同名开关控制，**仓库自带配置一律为 `false`**；键维度
+  `client-ip` / `api-key` / `tenant`（`tenant` 目前等同 `api-key`，系统还没有租户身份）
 
 #### 计划实现 📋
-- 📋 客户端维度限流接线（#623）：把 `RateLimitManager.tryAcquireClientIp` 接进主链路，并重新评估「集群 + 无 L7 反代」下键维度是否成立
+- 📋 限流键维度的租户语义（#623 遗留）：`tenant` 维度当前等同 `api-key`；要按真实租户计数，得先引入租户标识
 
 > **2026-10-16 审计更正**：「API Key 级别的限流」与「分布式限流」原先都列在计划里，实际**都已实现**
 > （前者见 `ApiKeyValidator.validateRateLimit`，后者见 `RateLimitManager` 对 `RedisSlidingWindowRateLimiter` 的装配）。
@@ -396,6 +398,10 @@ v3.0 为 Web 完整流程里程碑（对外 /api/v1 保持兼容，无 breaking�
 > **2026-10-24 更正**：上面第二轮所说的「分布式限流已实现」需要收窄 —— 实现确实在仓库里，但**客户端维度那条
 > 路径没有生产调用点**（#623），开关与文档口径此前给出了「已生效」的错觉；同期落地的终端用户级限流才是
 > 第一处真正使用 Redis 共享计数的限流路径。
+>
+> **2026-10-24 更正（接线完成）**：上面那条缺口已补 —— `RateLimitManager.tryAcquireClientIp` 现由主链路在
+> 认证之后、服务级预扣之前调用；为避免集群/无反代部署下按 IP 合并客户端，**仓库自带配置把
+> `client-ip-enable` 一律置为 `false`**，需要时由运维显式开启。
 
 ### 监控和可观测性
 

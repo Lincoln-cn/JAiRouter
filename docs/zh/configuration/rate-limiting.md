@@ -415,13 +415,14 @@ model:
     capacity: 1000
     rate: 100
     scope: "service"
-    client-ip-enable: true      # 启用客户端IP限流
+    client-ip-enable: true      # 按需开启；仓库自带配置默认为 false
 ```
 
-> **当前实现状态（2026-10-24 核实，#623）**：`client-ip-enable` / `key-dimension` 目前只是配置项，
-> **客户端维度限流在默认主链路上没有被调用** —— `RateLimitManager.tryAcquireClientIp` 除测试外没有调用方，
-> 所以开启上述开关**不会**产生「每个 IP 一个独立限流器」的效果，真正生效的仍是服务级与实例级限流。
-> 需要限制共用同一个 API Key 的下游用户时，请使用下文「终端用户限流」一节。
+> **实现状态（v3.5.2 起已接线，#623）**：`client-ip-enable` / `key-dimension` 过去「能设、能回显、但主链路不调用」，
+> 现已接进请求主链路（认证之后、服务级限流预扣与缓存读取之前）。**仓库自带配置一律为 `false`**——集群 + 无 L7 反代
+> 时所有客户端共用一个出口 IP，按 IP 计数会把它们合并成一个桶；这种部署请改用 `key-dimension: api-key`。
+> 注意 `tenant` 维度当前等同 `api-key`（系统还没有租户身份），见 [roadmap](../reference/roadmap.md)。
+> 需要限制「共用同一个 API Key 的下游用户」时，仍应使用下文「终端用户限流」一节（按 (API Key × 终端用户) 计数）。
 
 ### 服务级别 IP 限流
 

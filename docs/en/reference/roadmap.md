@@ -381,10 +381,14 @@ The v3.0 microservices architecture transformation has been indefinitely postpon
 #### Implemented ✅ (cont.)
 - ✅ API-key-level rate limiting (per-key `rateLimitPerMinute` + token bucket; over-limit answers **429** with `RATE_LIMITED_API_KEY`, #404)
 - ✅ End-user rate limiting (v3.5.2: per-`(API key × end user)` per-minute allowance, off by default; identity from `X-End-User-Id` or the request-body `user`; over-limit answers 429 with `Retry-After` / `X-RateLimit-*`; cross-replica counting via `jairouter.ratelimit.distributed.enabled`)
-- ⚠️ Client-dimension rate limiting (`RedisSlidingWindowRateLimiter`, 1-second window): the implementation exists, but the **default request path never calls it** (#623), so `client-ip-enable` / `key-dimension` currently change nothing
+- ✅ Client-dimension rate limiting (`RedisSlidingWindowRateLimiter`, 1-second window): **wired into the request
+  path since v3.5.2** (#623), controlled by `model.rate-limit.client-ip-enable` (or the service-level twin), with
+  **every bundled configuration setting it to `false`**; key dimensions are `client-ip` / `api-key` / `tenant`
+  (`tenant` currently equals `api-key` — there is no tenant identity yet)
 
 #### Planned 📋
-- 📋 Wire up client-dimension limiting (#623): call `RateLimitManager.tryAcquireClientIp` from the request path, and re-evaluate whether the key dimension holds in a cluster without an L7 proxy
+- 📋 Tenant semantics for the rate-limit key dimension (left over from #623): `tenant` currently equals `api-key`;
+  counting per real tenant needs a tenant identifier first
 
 > **Correction, 2026-10-16**: both "API-key-level" and "distributed" rate limiting were listed as planned but are
 > **already implemented** (see `ApiKeyValidator.validateRateLimit` and `RateLimitManager`'s wiring of `RedisSlidingWindowRateLimiter`).
@@ -397,6 +401,11 @@ The v3.0 microservices architecture transformation has been indefinitely postpon
 > implementation exists, but **the client-dimension path has no production caller** (#623), which is why the
 > switches and docs used to read as if it were live. The end-user limiting shipped alongside is the first
 > rate-limiting path that really shares counters through Redis.
+>
+> **Correction, 2026-10-24 (wiring landed)**: that gap is closed — the request path now calls
+> `RateLimitManager.tryAcquireClientIp` after authentication and before the service-level pre-deduct. To avoid
+> merging clients behind a cluster without an L7 proxy, **every bundled configuration sets `client-ip-enable`
+> to `false`**; operators turn it on explicitly when the topology allows.
 
 ### Monitoring and Observability
 

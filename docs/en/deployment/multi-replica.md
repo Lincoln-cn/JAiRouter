@@ -146,14 +146,12 @@ shared storage every `jairouter.security.api-key.cache-refresh-interval-seconds`
 
 ## Rate-limit key dimension and multi-replica semantics
 
-Rate-limit state lives **in the JVM by default**. Two Redis-backed counting paths exist, and only one of
-them is reachable today:
+Rate-limit state lives **in the JVM by default**. Two Redis-backed counting paths exist:
 
-- **end-user rate limiting (v3.5.2)** — live: with `jairouter.ratelimit.distributed.enabled=true`,
+- **end-user rate limiting (v3.5.2)** — with `jairouter.ratelimit.distributed.enabled=true`,
   per-`(API key, end user)` counters are shared across replicas.
-- **client-dimension limiting (not wired, #623)** — `RedisSlidingWindowRateLimiter` is in the tree, but
-  the default request path never calls `RateLimitManager.tryAcquireClientIp`, so `client-ip-enable` /
-  `key-dimension` are bound and displayed but change nothing today.
+- **client-dimension limiting (wired since v3.5.2, off by default, #623)** — `RedisSlidingWindowRateLimiter`
+  is now called from the request path, but **every bundled configuration sets `client-ip-enable` to `false`**.
 
 Everything else (service / instance / rule level limiters) is still per replica. Under multiple replicas:
 
@@ -167,12 +165,16 @@ L7 ingress, `remoteAddress` is the **node IP**, not the real client IP — count
 by noise, either merging a whole node into one client or, behind a proxy, merging everything into the
 gateway.
 
+**Status of that decision (v3.5.2, #623)**: the call site is wired now, but the key-dimension problem is not
+solved — which is why every bundled configuration keeps `client-ip-enable` at `false` and operators must opt in
+deliberately once the topology provides real client IPs.
+
 ### Configuration
 
 ```yaml
 model:
   rate-limit:
-    client-ip-enable: true          # enables "client-dimension" limiting
+    client-ip-enable: false         # off by default; enable only when real client IPs reach the pod
     key-dimension: "client-ip"      # client-ip (default) / api-key / tenant
 ```
 
@@ -199,10 +201,10 @@ operators could not see "affinity is nominal" from metrics.
 With `jairouter.ratelimit.distributed.enabled=true`, rate-limit counters live in Redis and every replica
 shares one counter — allowed volume equals the configured value instead of `configured value × replicas`.
 
-**Today the only consumer of this switch is end-user rate limiting (v3.5.2)**: the client-dimension path
-(`RedisSlidingWindowRateLimiter`, 1-second window, limit = `rate`) is still in the tree, but the default
-request path never calls it (#623), so the switch has no effect on it. End-user rate limiting itself is
-gated by `jairouter.ratelimit.end-user.enabled` and is off by default.
+**Today the switch covers two paths**: end-user rate limiting (gated by
+`jairouter.ratelimit.end-user.enabled`, off by default) and client-dimension limiting (wired since v3.5.2,
+disabled in every bundled configuration). With the switch off, both fall back to a bounded local counter,
+so each replica counts on its own.
 
 - **Atomic Lua**: `INCR` → set the TTL on first write → on overflow `DECR` the counter back and return a
   rejection from the same script, so concurrent replicas cannot over-issue.
@@ -216,9 +218,9 @@ gated by `jairouter.ratelimit.end-user.enabled` and is off by default.
 
 ### Still not done
 
-Cross-replica counting currently covers only **end-user rate limiting**. The service / instance / rule level
-limiters remain per replica, so their allowed volume still scales with the replica count and needs the
-same treatment.
+Cross-replica counting currently covers **end-user rate limiting** and **client-dimension limiting** (the
+latter only when `client-ip-enable` is switched on). The service / instance / rule level limiters remain
+per replica, so their allowed volume still scales with the replica count and needs the same treatment.
 
 ## Cross-replica real-time event broadcast
 

@@ -82,7 +82,7 @@ schema 迁移 Job 完成**，所以部署顺序是：**Job 跑完 → 应用 Pod
 
 | 能力 | 现状 | 多副本后果 |
 |------|------|------------|
-| 限流 | 状态全在 JVM 内，仓库无分布式限流实现；键维度可配置（`model.rate-limit.key-dimension`）| 放行量约等于配置值乘以副本数，窗口重置各算各的。键维度不成立时（无 L7 反代）按 IP 计数等于按垃圾计数 |
+| 限流 | 状态默认在 JVM 内；终端用户限流与客户端维度限流可走 Redis 共享计数（`jairouter.ratelimit.distributed.enabled`），客户端维度那条仓库默认关闭；键维度可配置（`model.rate-limit.key-dimension`）| 放行量约等于配置值乘以副本数，窗口重置各算各的。键维度不成立时（无 L7 反代）按 IP 计数等于按垃圾计数 |
 | 配额账本 | 默认关闭；开启 `quota.distributed.enabled` 后走 Redis 原子计数 | 不开则超支约乘以 N |
 | JWT 黑名单 | 默认回落本机存储；可切 Redis | 不开则撤销只在签发 Pod 生效（安全缺口） |
 | API-Key 缓存 | 本副本内存镜像，按 `cache-refresh-interval-seconds`（默认 60s）从共享存储刷新 | 吊销/新建最迟一个刷新间隔后跨 Pod 生效 |
