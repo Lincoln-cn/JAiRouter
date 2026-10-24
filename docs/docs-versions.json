@@ -2,10 +2,10 @@
   "versions": {
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:30.838801",
-      "ContentHash": "27377b967c2e2208",
-      "GitCommit": "7e492bc5",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-24T05:15:14.265372",
+      "ContentHash": "2a66a9f444cd4f65",
+      "GitCommit": "e48e4c71",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -14,10 +14,10 @@
     },
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:30.904725",
-      "ContentHash": "8861cd8e4b26776e",
-      "GitCommit": "7e492bc5",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-24T05:15:14.267800",
+      "ContentHash": "0c006d2bf5e6daf8",
+      "GitCommit": "e48e4c71",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -53,10 +53,10 @@
     },
     "docs/en/api-reference/management-api.md": {
       "FilePath": "docs/en/api-reference/management-api.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-24T03:01:53.354282",
-      "ContentHash": "448c4507be9071ba",
-      "GitCommit": "9d35190e",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-24T05:15:14.280886",
+      "ContentHash": "fafff99d67c0ad28",
+      "GitCommit": "e48e4c71",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -825,10 +825,10 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:35.047600",
-      "ContentHash": "686f0de14a637863",
-      "GitCommit": "7e492bc5",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-24T05:15:14.695351",
+      "ContentHash": "2107e31f187eac13",
+      "GitCommit": "e48e4c71",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -877,10 +877,10 @@
     },
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-24T03:01:53.727187",
-      "ContentHash": "4fab205388a2114f",
-      "GitCommit": "9d35190e",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-24T05:15:14.729885",
+      "ContentHash": "007d08e49431dda0",
+      "GitCommit": "e48e4c71",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1207,10 +1207,10 @@
     },
     "docs/zh/api-reference/management-api.md": {
       "FilePath": "docs/zh/api-reference/management-api.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-24T03:01:53.859076",
-      "ContentHash": "5a60a3984212b937",
-      "GitCommit": "9d35190e",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-24T05:15:14.884109",
+      "ContentHash": "daf35abed8e0d3a0",
+      "GitCommit": "e48e4c71",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1982,10 +1982,10 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:40.876614",
-      "ContentHash": "eb2bcc6c3c6cb490",
-      "GitCommit": "7e492bc5",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-24T05:15:15.312249",
+      "ContentHash": "07835e45e83261eb",
+      "GitCommit": "e48e4c71",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2035,10 +2035,10 @@
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-24T03:01:54.251078",
-      "ContentHash": "0f8f0afa2a135df8",
-      "GitCommit": "9d35190e",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-24T05:15:15.346909",
+      "ContentHash": "676c5155afed158d",
+      "GitCommit": "e48e4c71",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -3946,7 +3946,71 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-24T03:01:54.280213",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T05:15:14.265379",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T05:15:14.267806",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/management-api.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T05:15:14.280891",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T05:15:14.695361",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/roadmap.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T05:15:14.729892",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/management-api.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T05:15:14.884117",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T05:15:15.312259",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/roadmap.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T05:15:15.346915",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-24T03:01:54.370049"
+  "last_updated": "2026-10-24T05:15:15.487117"
 }
