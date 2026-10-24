@@ -903,16 +903,16 @@ Primary path is **record-side** `sanitizeForStorage` for chat call-history/logs.
 
 #### `GET /api/config/sanitization`
 
-Snapshot of request/response sub-config, `ruleCount`, and design notes.
+Snapshot of the response sub-config, `ruleCount`, and design notes.
 
 #### `PUT /api/config/sanitization`
 
-Hot-update request/response (non-null fields) and rebuild in-memory rules.
+Hot-update the response sub-config (non-null fields) and rebuild in-memory rules.
 
 **Request body example:**
 ```json
 {
-  "request": {
+  "response": {
     "enabled": true,
     "piiPatterns": ["\\d{11}"],
     "sensitiveWords": ["password"],

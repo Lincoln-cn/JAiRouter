@@ -171,7 +171,7 @@ see the [changelog](changelog.md#332---2026-10-14)
 
 | Area | Delivered |
 |------|-----------|
-| PII record path | `sanitizeForStorage` decoupled from gateway request/response switches; call-history SUMMARY & tracing use it |
+| PII record path | `sanitizeForStorage` decoupled from the gateway response switch; call-history SUMMARY & tracing use it |
 | Management API | `GET/PUT /api/config/sanitization`, rules list, dry-run test (reactive; non-JSON samples masked as text) |
 | Console | Security → PII Sanitization page; permission `security:sanitization:manage` (49 codes) |
 | Exclusions | Admin `/api/**` and AI realtime paths excluded from gateway response masking |

@@ -445,12 +445,6 @@ jairouter:
     
     # 生产环境数据脱敏配置（严格模式）
     sanitization:
-      request:
-        enabled: true
-        log-sanitization: false  # 生产环境不记录脱敏详情
-        whitelist-users: []      # 生产环境不设置白名单用户
-        whitelist-ips: []        # 生产环境不设置白名单IP
-      
       response:
         enabled: true
         log-sanitization: false

@@ -4,7 +4,7 @@ import type { RouterResponse } from '@/types'
 /**
  * PII / 脱敏配置管理 API
  * - GET  /api/config/sanitization        配置快照
- * - PUT  /api/config/sanitization        热改 request/response
+ * - PUT  /api/config/sanitization        热改 response
  * - GET  /api/config/sanitization/rules  当前规则
  * - POST /api/config/sanitization/test   试脱敏
  */
@@ -17,7 +17,6 @@ export interface SanitizationSubConfig {
   logSanitization: boolean
   failOnError: boolean
   preserveJsonStructure?: boolean
-  whitelistUsers?: string[]
   scope?: SanitizationScope
 }
 
@@ -30,7 +29,6 @@ export interface SanitizationScope {
 }
 
 export interface SanitizationConfig {
-  request: SanitizationSubConfig
   response: SanitizationSubConfig
   ruleCount: number
   primaryUseCase?: string
@@ -72,8 +70,7 @@ export const getSanitizationConfig = async (): Promise<SanitizationConfig | null
 }
 
 export const updateSanitizationConfig = async (payload: {
-  request?: Partial<SanitizationSubConfig>
-  response?: Partial<SanitizationSubConfig>
+  response: Partial<SanitizationSubConfig>
 }): Promise<SanitizationConfig> => {
   const response = await request.put<RouterResponse<SanitizationConfig>>('/config/sanitization', payload)
   return response.data.data as SanitizationConfig

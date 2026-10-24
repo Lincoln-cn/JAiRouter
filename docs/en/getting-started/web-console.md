@@ -421,7 +421,7 @@ This page provides complete access examples for the OpenAI-compatible API and th
 
 Path: **Security → PII Sanitization** `/security/sanitization` (permission `security:sanitization:manage`)
 
-1. Review request/response PII patterns, sensitive words, masking char
+1. Review the response-side sub-config (PII patterns, sensitive words, masking char, scope)
 2. Save to hot-rebuild the rule set (record-path SUMMARY applies immediately)
 3. Dry-run with a chat sample; expect `****` in the result
 4. Gateway live responses are not masked by default; admin `/api/**` and AI paths are excluded

@@ -16,7 +16,6 @@ import org.unreal.modelrouter.auth.security.config.properties.SanitizationConfig
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.model.SanitizationRule;
 import org.yaml.snakeyaml.Yaml;
-import reactor.core.publisher.Mono;
 
 import java.io.InputStream;
 import java.time.Duration;
@@ -73,8 +72,9 @@ class SanitizationCorpusRegressionTest {
         final List<Executable> assertions = new ArrayList<>();
         for (final Case c : corpus.cases) {
             assertNotNull(c.id, "语料缺少 id");
-            assertTrue("request".equals(c.direction) || "response".equals(c.direction),
-                    c.id + " 的 direction 只能是 request / response，实际=" + c.direction);
+            assertEquals("response", c.direction,
+                    c.id + " 的 direction 只能是 response —— 请求侧脱敏已移除（issue #601），"
+                            + "语料里不再有 request 方向");
 
             final String actual = sanitize(c);
             for (final String masked : c.mustBeMasked) {
@@ -182,10 +182,7 @@ class SanitizationCorpusRegressionTest {
     }
 
     private static String sanitize(final SanitizationService target, final Case c) {
-        final Mono<String> result = "request".equals(c.direction)
-                ? target.sanitizeRequest(c.input, c.contentType, "corpus-tester")
-                : target.sanitizeResponse(c.input, c.contentType);
-        final String actual = result.block(Duration.ofSeconds(5));
+        final String actual = target.sanitizeResponse(c.input, c.contentType).block(Duration.ofSeconds(5));
         if (actual == null) {
             fail(c.id + " 返回了空结果");
         }
@@ -195,8 +192,8 @@ class SanitizationCorpusRegressionTest {
     /**
      * 按仓库默认配置装配真实服务.
      *
-     * <p>request 侧刻意留空 —— 生产配置（{@code config/auth/sanitization.yml}）只有 response 块，
-     * 这样语料里的 request 用例才能反映真实行为。</p>
+     * <p>只装配 response 配置 —— 请求侧脱敏已移除（issue #601），
+     * {@code config/auth/sanitization.yml} 也只有 response 块。</p>
      */
     private static SanitizationService newService(final Config cfg, final SanitizationRuleEngine engine) {
         final SecurityProperties properties = new SecurityProperties();
@@ -209,11 +206,6 @@ class SanitizationCorpusRegressionTest {
         response.setPreserveJsonStructure(cfg.preserveJsonStructure);
         response.setLogSanitization(false);
         response.setFailOnError(false);
-
-        final SanitizationConfig.RequestSanitization request = properties.getSanitization().getRequest();
-        request.setSensitiveWords(new ArrayList<>());
-        request.setPiiPatterns(new ArrayList<>());
-        request.setWhitelistUsers(new ArrayList<>());
 
         final DefaultSanitizationService sanitizationService =
                 new DefaultSanitizationService(engine, properties);

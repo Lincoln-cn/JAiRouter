@@ -32,13 +32,6 @@ jairouter:
     
     # 数据脱敏配置 - 向后兼容模式
     sanitization:
-      request:
-        enabled: false
-        sensitive-words: []
-        pii-patterns: []
-        log-sanitization: false
-        whitelist-users: []
-      
       response:
         enabled: false
         sensitive-words: []

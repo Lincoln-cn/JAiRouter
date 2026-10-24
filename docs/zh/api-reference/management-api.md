@@ -974,28 +974,24 @@ POST /api/v1/circuit-breaker-monitor/instances/reset              # config:circu
 
 #### `GET /api/config/sanitization`
 
-返回 request/response 子配置快照、`ruleCount` 与设计说明字段。
+返回 response 子配置快照、`ruleCount` 与设计说明字段。
 
 **响应示例:**
 ```json
 {
   "success": true,
   "data": {
-    "request": {
-      "enabled": true,
-      "piiPatterns": ["\\d{11}"],
-      "sensitiveWords": ["password"],
-      "maskingChar": "*",
-      "logSanitization": false,
-      "failOnError": false,
-      "whitelistUsers": []
-    },
     "response": {
       "enabled": false,
       "piiPatterns": [],
       "sensitiveWords": [],
       "maskingChar": "*",
-      "preserveJsonStructure": true
+      "preserveJsonStructure": true,
+      "scope": {
+        "mode": "exclude",
+        "patterns": []
+      },
+      "scopeSource": "builtin-defaults"
     },
     "ruleCount": 5,
     "primaryUseCase": "chat-call-history-logs-and-user-data-records"
@@ -1005,12 +1001,12 @@ POST /api/v1/circuit-breaker-monitor/instances/reset              # config:circu
 
 #### `PUT /api/config/sanitization`
 
-热改 request/response（非 null 字段生效），并重建内存规则库。
+热改 response（非 null 字段生效），并重建内存规则库。
 
 **请求体示例:**
 ```json
 {
-  "request": {
+  "response": {
     "enabled": true,
     "piiPatterns": ["\\d{11}", "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"],
     "sensitiveWords": ["password"],

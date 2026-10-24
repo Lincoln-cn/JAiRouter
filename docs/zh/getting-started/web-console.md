@@ -422,7 +422,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 路径：**安全 → PII 脱敏管理** `/security/sanitization`（权限 `security:sanitization:manage`）
 
 操作动线：
-1. 查看 request/response 子配置（PII 正则、敏感词、掩码字符）
+1. 查看响应侧子配置（PII 正则、敏感词、掩码字符、生效范围）
 2. 热改后点保存（同步重建规则库，记录侧 SUMMARY 立即生效）
 3. 「试脱敏」粘贴聊天样例，确认脱敏后出现 `****`
 4. 说明：网关实时响应默认不脱敏；管理台 `/api/**` 与 AI 路径已排除

@@ -11,13 +11,13 @@
 
 ## Overview
 
-JAiRouter's data sanitization feature can automatically identify and process sensitive information in requests and responses, including Personally Identifiable Information (PII) and sensitive words.
+JAiRouter's data sanitization feature can automatically identify and process sensitive information in responses and call records, including Personally Identifiable Information (PII) and sensitive words.
 
 ### Since v3.2.0: Record-path primary + console management
 
 The **primary** PII surface is chat call-history / logs / tracing records, handled by
-`SanitizationService.sanitizeForStorage`. This path is **not** gated by gateway
-`request/response.enabled` flags (configured PII/sensitive words are always loaded into the rule set).
+`SanitizationService.sanitizeForStorage`. This path is **not** gated by the gateway
+`response.enabled` flag (configured PII/sensitive words are always loaded into the rule set).
 
 | Capability | Description |
 |------------|-------------|
@@ -33,10 +33,9 @@ See [management API](../api-reference/management-api.md) and [web-console.md](..
 
 ## Features
 
-- **Bidirectional Sanitization**: Supports sanitization of both request and response data
+- **Response and Record Sanitization**: Gateway outbound responses (JSON / SSE) and call history, logs, and traces are sanitized before persistence
 - **Multiple Sanitization Strategies**: Supports masking, replacement, deletion, hashing, and other strategies
 - **Regular Expression Support**: Supports complex pattern matching
-- **Whitelist Mechanism**: Supports user and IP whitelists
 - **Performance Optimization**: Supports parallel processing and cache optimization
 - **Service Differentiation**: Different AI services can use different sanitization rules
 
@@ -49,8 +48,6 @@ jairouter:
   security:
     enabled: true
     sanitization:
-      request:
-        enabled: true
       response:
         enabled: true
 ```
@@ -61,7 +58,7 @@ jairouter:
 jairouter:
   security:
     sanitization:
-      request:
+      response:
         enabled: true
         sensitive-words:
           - "password"
@@ -84,80 +81,16 @@ curl -H "X-API-Key: your-api-key" \
      http://localhost:8080/v1/chat/completions
 ```
 
-This version does **not** rewrite the request body sent to the AI model — the request above reaches the upstream unchanged. The same request-side rules sanitize **records / logs before they are stored**, as shown below (example):
+This version does **not** rewrite the request body sent to the AI model — the request above reaches the upstream unchanged. Response-side rules apply to **the response body** and to **records / logs before they are stored**. With response sanitization enabled, the phone number and email in the returned content are masked, for example:
 ```
 My phone number is ***********, email is *******************
 ```
 
 ## Detailed Configuration
 
-> ⚠️ **Not every key in the examples below is supported.** The implementation only binds `enabled`, `sensitive-words`, `pii-patterns`, `masking-char`, `whitelist-users` (request side only), `log-sanitization`, `fail-on-error`, `preserve-json-structure` (response side only) and `scope` (response side only).
-> Keys such as `strategies` (`keep-prefix-suffix` / `keep-domain`), `rule-priorities`, `whitelist-ips` and `service-specific-rules` are **not implemented**: adding them to YAML does not fail, but has no effect.
+> ⚠️ **Not every key in the examples below is supported.** The implementation only binds these keys under `response`: `enabled`, `sensitive-words`, `pii-patterns`, `masking-char`, `log-sanitization`, `fail-on-error`, `preserve-json-structure`, `scope`, `max-buffered-bytes` and `sanitize-sse`.
+> Keys such as `strategies` (`keep-prefix-suffix` / `keep-domain`), `rule-priorities` and `service-specific-rules` are **not implemented**: adding them to YAML does not fail, but has no effect.
 > The strategy actually applied comes from each rule's `strategy` field (`MASK` / `REPLACE` / `REMOVE` / `HASH`); the shipped rules all use `MASK` (same-length replacement, e.g. an 11-digit phone number becomes `***********`).
-
-### Request Data Sanitization Configuration
-
-> ⚠️ **Request-side sanitization is not wired to the inbound path in this version**: `SanitizationService.sanitizeRequest` has **no production caller** under `src/main`, so the gateway never rewrites the request body sent upstream — the `request.enabled` switch therefore has **no effect** on real calls (the "PII Sanitization" console page renders that switch read-only and marks it "Not wired").
->
-> **Request-side rules still take part in record sanitization**: `DefaultSanitizationService.sanitizeForStorage` uses **all enabled rules** directly and checks neither `request.enabled` nor `response.enabled`, so call history / logs / traces are still sanitized before they are stored, and that path is not controlled by these two switches.
->
-> **Response-side sanitization is in effect**: non-streaming JSON on `/v1` is sanitized as a whole body, and SSE (`text/event-stream`) is sanitized frame by frame (see "Response Sanitization Scope" and "SSE Streaming Frame-by-Frame Sanitization" below).
-
-```yaml
-jairouter:
-  security:
-    sanitization:
-      request:
-        # Enable request sanitization
-        enabled: true
-        
-        # Sensitive word list
-        sensitive-words:
-          - "password"      # Password
-          - "secret"        # Secret
-          - "token"         # Token
-          - "credential"    # Credential
-          - "private"       # Private information
-        
-        # PII regex patterns (list order = execution order: longest first, otherwise the first
-        # 11 digits of a longer number are consumed by the phone rule and the tail leaks — see #561)
-        pii-patterns:
-          - "(?<!\\d)\\d{17}[\\dXx](?!\\d)"                             # ID card (18 chars, trailing X allowed)
-          - "(?<!\\d)(?:\\d{16}|\\d{19})(?!\\d)"                        # Bank card (16/19 digits, no separators)
-          - "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"       # Bank card (groups of 4 with space/dash)
-          - "(?<!\\d)1[3-9]\\d{9}(?!\\d)"                               # Mobile number (11 digits starting 13-19)
-          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"           # Email address
-        
-        # Masking character
-        masking-char: "*"
-        
-        # Sanitization strategies
-        strategies:
-          phone: "keep-prefix-suffix"    # Keep prefix and suffix
-          email: "keep-domain"           # Keep domain
-          id-card: "keep-prefix-suffix"  # Keep prefix and suffix
-          default: "full-mask"           # Full mask
-        
-        # Log sanitization
-        log-sanitization: true
-        
-        # Whitelist users
-        whitelist-users:
-          - "admin-key-001"
-        
-        # Whitelist IPs
-        whitelist-ips:
-          - "127.0.0.1"
-          - "192.168.0.0/16"
-        
-        # Rule priorities
-        rule-priorities:
-          phone: 1
-          email: 2
-          id-card: 3
-          bank-card: 4
-          sensitive-word: 5
-```
 
 ### Response Data Sanitization Configuration
 
@@ -346,58 +279,6 @@ pii-patterns:
   - "[京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-Z][A-Z0-9]{4}[A-Z0-9挂学警港澳]"
 ```
 
-## Whitelist Configuration
-
-### User Whitelist
-
-Specified users can skip sanitization processing:
-
-```yaml
-jairouter:
-  security:
-    sanitization:
-      request:
-        whitelist-users:
-          - "admin-key-001"      # API Key ID
-          - "system-service"     # System service
-          - "data-analyst"       # Data analyst
-```
-
-### IP Whitelist
-
-Specified IP addresses can skip sanitization processing:
-
-```yaml
-jairouter:
-  security:
-    sanitization:
-      request:
-        whitelist-ips:
-          - "127.0.0.1"          # Local loopback
-          - "::1"                # IPv6 local loopback
-          - "192.168.0.0/16"     # Intranet IP range
-          - "10.0.0.0/8"         # Intranet IP range
-          - "172.16.0.0/12"      # Intranet IP range
-```
-
-### Dynamic Whitelist
-
-Supports runtime dynamic addition of whitelists:
-
-```bash
-# Add user to whitelist
-curl -X POST http://localhost:8080/admin/security/whitelist/users \
-     -H "Authorization: Bearer admin-token" \
-     -H "Content-Type: application/json" \
-     -d '{"user_id": "new-user", "reason": "Temporary data analysis requirement"}'
-
-# Add IP to whitelist
-curl -X POST http://localhost:8080/admin/security/whitelist/ips \
-     -H "Authorization: Bearer admin-token" \
-     -H "Content-Type: application/json" \
-     -d '{"ip": "203.0.113.1", "reason": "Partner access"}'
-```
-
 ## Service Differentiation Configuration
 
 Different AI services can use different sanitization rules:
@@ -448,7 +329,7 @@ jairouter:
 
 ## Performance Impact and Capacity Planning
 
-Sanitization is **not a zero-cost bypass**: every match runs regex matching and text rewriting over the whole body. The request side is designed for **inbound** traffic (`SanitizationService.sanitizeRequest`), the response side for **outbound** traffic (`ResponseSanitizationFilter`), and the recording side (`sanitizeForStorage`, run before call history and traces are persisted) executes the same matching.
+Sanitization is **not a zero-cost bypass**: every match runs regex matching and text rewriting over the whole body. The response side covers **outbound** traffic (`ResponseSanitizationFilter`), and the recording side (`sanitizeForStorage`, run before call history and traces are persisted) executes the same matching.
 
 ### Current coverage (size with this in mind, not with "everything is sanitized")
 
@@ -456,8 +337,7 @@ Sanitization is **not a zero-cost bypass**: every match runs regex matching and 
 |----------|------|--------|
 | Response | Outbound response body filter | `application/json` is sanitized as a **whole body**; `text/event-stream` (SSE) is sanitized **frame by frame** (since issue #560 phase 2, `response.sanitize-sse`, on by default) |
 | Response paths | Path filter | **Non-streaming JSON** on `/v1/**` is **in scope** since issue #560; `/api/**`, `/admin/**`, `/actuator/**` and static assets are still **excluded by default** in `ExcludedPathsConfig` |
-| Request | Inbound request body (`sanitizeRequest`) | Switch and whitelist logic exist, but **no caller is wired into the current request chain**, so no inbound cost is paid today |
-| Recording | Before persistence (`sanitizeForStorage`) | Controlled by `record-level` and call-history settings, independent of `request/response.enabled` |
+| Recording | Before persistence (`sanitizeForStorage`) | Controlled by `record-level` and call-history settings, independent of `response.enabled` |
 
 So with the response switch on, plan capacity in **three tiers**: (1) every `application/json` response — including the **non-streaming** return of the main inference entry (`/v1/chat/completions`) — is sanitized as a whole body (issue #560 phase 1 opened up `/v1/**` JSON); (2) SSE (`text/event-stream`) is sanitized **per frame**, costing in proportion to frame count and frame size but **without buffering the whole stream** (issue #560 phase 2: line by line, `data:` payloads are rewritten, other lines and the `[DONE]` sentinel pass through); (3) management endpoints (`/api/**`), ops endpoints and static assets are still not rewritten. Do not base a capacity plan on "every response is sanitized", nor on "/v1 or SSE is never sanitized".
 
@@ -473,21 +353,21 @@ In JSON mode the values of `traceId` / `spanId` / `requestId` / `traceparent` / 
 ### Rough numbers (a starting point only, not a conclusion)
 
 - A small response (**< 10KB**) plus 3-5 PII patterns: usually **sub-millisecond** (< 1 ms), negligible against inference time.
-- **MB-scale** bodies, or **dozens** of complex patterns: **milliseconds to tens of milliseconds**; decide whether to enable it, and which side to enable first, from measured load-test results.
+- **MB-scale** bodies, or **dozens** of complex patterns: **milliseconds to tens of milliseconds**; decide whether to enable it from measured load-test results.
 
 ### Recommendations
 
 1. **Load-test in staging with real traffic**: compare average and tail latency and CPU with the switch on and off using production samples (long sessions, large bodies) before you roll out.
 2. **Start from a minimal rule set**: enable only the PII patterns you need, verify the effect, then add rules one at a time instead of importing every sample from the rule library.
 3. **Avoid catastrophic backtracking**: `SafeRegexValidator` screens dangerous patterns on the engine side, but it is **not a performance guarantee** and does not cover every degraded shape; validate custom patterns yourself against long worst-case text.
-4. **Enable per side**: request and response sides switch independently, so start with the side whose benefit is clearest.
-5. **The console warns you**: the "PII Sanitization" page asks for confirmation before enabling a switch (naming the performance cost) and keeps a warning alert on top of each configuration card while it is on.
+4. **Separate gateway from recording**: `response.enabled` controls only the HTTP response filter; the recording side (call history / logs / traces) always sanitizes with all enabled rules and is not turned off by that switch.
+5. **The console warns you**: the "PII Sanitization" page asks for confirmation before enabling the switch (naming the performance cost) and keeps a warning alert on top of the response configuration card while it is on.
 
 ### Zero overhead when disabled
 
-When `request.enabled` / `response.enabled` is `false`, the filter passes the exchange through at its first check (`ResponseSanitizationFilter.filter()`): it reads no body and runs no regex matching or rewriting.
+When `response.enabled` is `false`, the response filter passes the exchange through at its first check (`ResponseSanitizationFilter.filter()`): it reads no body and runs no regex matching or rewriting.
 
-That zero-overhead guarantee covers gateway paths only: the recording side (`sanitizeForStorage`) **does not check these two switches**. Rules are always loaded, so any applicable rule still runs before content is persisted (the javadoc of `DefaultSanitizationService.loadRequestRules` records this trade-off). Turning the switches off removes the outbound response cost, but not the recording cost: with heavy call history or trace volume, the number of rules still affects write-side latency.
+That zero-overhead guarantee covers the gateway response path only: the recording side (`sanitizeForStorage`) **does not check this switch**. Rules are always loaded, so any applicable rule still runs before content is persisted. Turning the switch off removes the outbound response cost, but not the recording cost: with heavy call history or trace volume, the number of rules still affects write-side latency.
 
 ## Performance Optimization
 
@@ -551,21 +431,14 @@ jairouter:
 - **Priority Setting**: Set rule priorities appropriately
 - **Testing and Validation**: Thoroughly test sanitization rule effectiveness
 
-### 2. Whitelist Management
-
-- **Least Privilege Principle**: Only set whitelists for necessary users and IPs
-- **Regular Review**: Regularly review whitelist necessity
-- **Temporary Whitelists**: Set time-limited whitelists for temporary needs
-- **Audit Records**: Record whitelist usage
-
-### 3. Performance Optimization
+### 2. Performance Optimization
 
 - **Reasonable Thread Pool Configuration**: Configure thread pool size based on system resources
 - **Enable Caching**: Enable regex caching to improve performance
 - **Streaming Processing**: Enable streaming processing for large files
 - **Performance Monitoring**: Continuously monitor sanitization performance impact
 
-### 4. Response Buffer Limit
+### 3. Response Buffer Limit
 
 Response-side sanitization has to read the entire response body into memory for regex replacement, so there is a hard limit: `jairouter.security.sanitization.response.max-buffered-bytes` (default 1 MiB, floor 1 KiB).
 
@@ -574,7 +447,7 @@ Response-side sanitization has to read the entire response body into memory for 
 
 Raising the limit increases per-request memory linearly — budget the heap as "concurrency × limit". Lowering it pushes more large responses into the "skip sanitization" branch. The limit applies only to the HTTP response filter, not to `sanitizeForStorage`.
 
-### 5. SSE Streaming Frame-by-Frame Sanitization
+### 4. SSE Streaming Frame-by-Frame Sanitization
 
 Streaming responses (`text/event-stream`) cannot be buffered as a whole — a long-lived connection may keep emitting for minutes, and `DataBufferUtils.join` would read the entire stream into memory until it ends. SSE therefore takes a **per-frame** path (issue #560 phase 2):
 
@@ -596,7 +469,7 @@ Rules:
 
 Cost and boundaries: the cost moves from "once per response" to "once per frame"; with many frames CPU and latency rise slightly (a frame is usually tens to a few hundred bytes). With `sanitize-sse=false` SSE is not sanitized at all (the pre-#560 behavior) and is not recommended when sanitization is required. The switch is independent of `scope`: paths excluded by `scope` are not sanitized even for SSE.
 
-### 6. Security Considerations
+### 5. Security Considerations
 
 - **Log Security**: Ensure sanitization logs themselves don't contain sensitive information
 - **Rule Confidentiality**: Protect sanitization rule configuration security
@@ -612,14 +485,12 @@ Cost and boundaries: the cost moves from "once per response" to "once per frame"
 **Possible Causes**:
 - Sanitization feature not enabled
 - Regular expression not matching
-- User in whitelist
 - Rule priority issues
 
 **Solutions**:
 1. Check if sanitization feature is enabled
 2. Test if regular expression is correct
-3. Check whitelist configuration
-4. Adjust rule priorities
+3. Adjust rule priorities
 
 #### 2. Performance Issues
 
@@ -682,11 +553,6 @@ jairouter:
   security:
     enabled: true
     sanitization:
-      request:
-        enabled: true
-        sensitive-words: ["password", "secret", "token"]
-        pii-patterns: ["\\d{11}", "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"]
-        masking-char: "*"
       response:
         enabled: true
         sensitive-words: ["internal", "debug", "error"]
@@ -699,29 +565,6 @@ jairouter:
 jairouter:
   security:
     sanitization:
-      request:
-        enabled: true
-        sensitive-words:
-          - "password"
-          - "secret"
-          - "token"
-          - "credential"
-        pii-patterns:
-          - "\\b(?:13[0-9]|14[5-9]|15[0-3,5-9]|16[2,5,6,7]|17[0-8]|18[0-9]|19[1,3,5,8,9])\\d{8}\\b"
-          - "\\b[1-9]\\d{5}(18|19|20)\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])\\d{3}[0-9Xx]\\b"
-          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
-        strategies:
-          phone: "keep-prefix-suffix"
-          email: "keep-domain"
-          id-card: "keep-prefix-suffix"
-          default: "full-mask"
-        whitelist-users: ["admin-key-001"]
-        whitelist-ips: ["127.0.0.1", "192.168.0.0/16"]
-        rule-priorities:
-          phone: 1
-          email: 2
-          id-card: 3
-          sensitive-word: 4
       response:
         enabled: true
         service-specific-rules:

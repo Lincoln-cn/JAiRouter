@@ -7,18 +7,9 @@ import java.util.List;
 
 /**
  * 数据脱敏服务接口
- * 提供请求和响应数据的脱敏处理功能
+ * 提供响应数据与落库内容的脱敏处理功能
  */
 public interface SanitizationService {
-    
-    /**
-     * 对请求内容进行脱敏处理
-     * @param content 原始内容
-     * @param contentType 内容类型
-     * @param userId 用户ID（用于白名单检查）
-     * @return 脱敏后的内容
-     */
-    Mono<String> sanitizeRequest(String content, String contentType, String userId);
     
     /**
      * 对响应内容进行脱敏处理
@@ -31,21 +22,14 @@ public interface SanitizationService {
     /**
      * 面向「聊天日志 / 调用历史 / 追踪记录」存储前的 PII 脱敏。
      *
-     * <p>与网关请求/响应脱敏开关解密：只要规则库中存在已启用规则即可生效，
-     * 不因 {@code sanitization.request/response.enabled=false} 而跳过。</p>
+     * <p>与网关响应脱敏开关解耦：只要规则库中存在已启用规则即可生效，
+     * 不因 {@code sanitization.response.enabled=false} 而跳过。</p>
      *
      * @param content 原始内容
      * @param contentType 内容类型
      * @return 脱敏后的内容
      */
     Mono<String> sanitizeForStorage(String content, String contentType);
-    
-    /**
-     * 检查用户是否在白名单中
-     * @param userId 用户ID
-     * @return 是否在白名单中
-     */
-    Mono<Boolean> isUserWhitelisted(String userId);
     
     /**
      * 获取所有脱敏规则

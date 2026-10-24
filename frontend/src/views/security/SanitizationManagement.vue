@@ -9,7 +9,7 @@
 
     <template #stats>
       <!-- 脱敏指标：中性指标条；只有「未启用」属于风险状态，才给 warning -->
-      <MetricStrip :items="metricItems" :loading="loading" :columns="4" />
+      <MetricStrip :items="metricItems" :loading="loading" :columns="3" />
     </template>
 
     <el-alert
@@ -22,66 +22,7 @@
     />
 
     <el-row :gutter="16" style="margin-bottom: var(--ja-space-4)">
-      <el-col :span="12">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="card-title-row">
-              <span class="card-title">{{ t('sanitization.requestSection') }}</span>
-              <el-tag type="info" size="small">{{ t('sanitization.requestSideNotWiredTag') }}</el-tag>
-            </div>
-          </template>
-          <!-- 如实标注（issue #592）：请求侧脱敏未接入入站链路，开启开关不会改写发往上游的请求体 -->
-          <el-alert
-            type="info"
-            :closable="false"
-            show-icon
-            :title="t('sanitization.requestSideNotWiredTitle')"
-            :description="t('sanitization.requestSideNotWiredMessage')"
-            style="margin-bottom: var(--ja-space-3)"
-          />
-          <!-- 请求侧不再展示「已启用：影响性能」警示：入站链路未接入，开启该开关没有任何实际开销（issue #592） -->
-          <el-form label-width="140px">
-            <!-- 开关置灰（issue #592）：开启它不会改变任何真实调用行为；绑定与保存 payload 保留，避免影响配置字段往返 -->
-            <el-form-item :label="t('sanitization.enabledLabel')">
-              <el-switch v-model="form.request.enabled" disabled />
-            </el-form-item>
-            <el-form-item :label="t('sanitization.maskingCharLabel')">
-              <el-input v-model="form.request.maskingChar" maxlength="5" style="width: 120px" />
-            </el-form-item>
-            <el-form-item :label="t('sanitization.piiPatternsLabel')">
-              <el-input
-                v-model="form.request.piiPatternsText"
-                type="textarea"
-                :rows="5"
-                :placeholder="t('sanitization.piiPatternsPlaceholder')"
-              />
-            </el-form-item>
-            <el-form-item :label="t('sanitization.sensitiveWordsLabel')">
-              <el-input
-                v-model="form.request.sensitiveWordsText"
-                type="textarea"
-                :rows="4"
-                :placeholder="t('sanitization.sensitiveWordsPlaceholder')"
-              />
-            </el-form-item>
-            <el-form-item :label="t('sanitization.whitelistUsersLabel')">
-              <el-input
-                v-model="form.request.whitelistUsersText"
-                type="textarea"
-                :rows="2"
-                :placeholder="t('sanitization.whitelistUsersPlaceholder')"
-              />
-            </el-form-item>
-            <el-form-item :label="t('sanitization.logSanitizationLabel')">
-              <el-switch v-model="form.request.logSanitization" />
-            </el-form-item>
-            <el-form-item :label="t('sanitization.failOnErrorLabel')">
-              <el-switch v-model="form.request.failOnError" />
-            </el-form-item>
-          </el-form>
-        </el-card>
-      </el-col>
-      <el-col :span="12">
+      <el-col :span="24">
         <el-card shadow="hover">
           <template #header>
             <span class="card-title">{{ t('sanitization.responseSection') }}</span>
@@ -97,7 +38,7 @@
           />
           <el-form label-width="140px">
             <el-form-item :label="t('sanitization.enabledLabel')">
-              <el-switch v-model="form.response.enabled" :before-change="() => confirmEnable('response')" />
+              <el-switch v-model="form.response.enabled" :before-change="confirmEnable" />
             </el-form-item>
             <el-form-item :label="t('sanitization.maskingCharLabel')">
               <el-input v-model="form.response.maskingChar" maxlength="5" style="width: 120px" />
@@ -308,7 +249,6 @@ interface SideForm {
   maskingChar: string
   piiPatternsText: string
   sensitiveWordsText: string
-  whitelistUsersText: string
   logSanitization: boolean
   failOnError: boolean
   preserveJsonStructure: boolean
@@ -319,33 +259,23 @@ const emptySide = (): SideForm => ({
   maskingChar: '*',
   piiPatternsText: '',
   sensitiveWordsText: '',
-  whitelistUsersText: '',
   logSanitization: false,
   failOnError: false,
   preserveJsonStructure: true
 })
 
-const form = reactive<{ request: SideForm; response: SideForm }>({
-  request: emptySide(),
+const form = reactive<{ response: SideForm }>({
   response: emptySide()
 })
 
-/** 顶部指标条：数值语义与原 4 张 KPI 卡一致，只有「未启用」是风险状态 */
+/** 顶部指标条：数值语义与原 KPI 卡一致，只有「未启用」是风险状态 */
 const metricItems = computed<MetricStripItem[]>(() => {
-  const requestEnabled = config.value?.request?.enabled ?? false
   const responseEnabled = config.value?.response?.enabled ?? false
   return [
     {
       key: 'ruleCount',
       label: t('sanitization.ruleCountLabel'),
       value: config.value?.ruleCount ?? '—'
-    },
-    {
-      key: 'requestEnabled',
-      label: t('sanitization.requestEnabledLabel'),
-      value: requestEnabled ? t('common.enabled') : t('common.disabled'),
-      // 未接入入站链路（issue #592）：该值只是库里的存量配置，不代表「本应开启却没开」的风险态，故固定中性色
-      tone: 'default'
     },
     {
       key: 'responseEnabled',
@@ -374,7 +304,6 @@ const sideToForm = (side: SanitizationSubConfig | undefined): SideForm => ({
   maskingChar: side?.maskingChar ?? '*',
   piiPatternsText: arrToLines(side?.piiPatterns).join('\n'),
   sensitiveWordsText: arrToLines(side?.sensitiveWords).join('\n'),
-  whitelistUsersText: arrToLines(side?.whitelistUsers).join('\n'),
   logSanitization: side?.logSanitization ?? false,
   failOnError: side?.failOnError ?? false,
   preserveJsonStructure: side?.preserveJsonStructure ?? true
@@ -382,17 +311,16 @@ const sideToForm = (side: SanitizationSubConfig | undefined): SideForm => ({
 
 const syncForm = () => {
   if (!config.value) return
-  form.request = sideToForm(config.value.request)
   form.response = sideToForm(config.value.response)
 }
 
 /**
- * 开启脱敏前的二次确认（挂到 `el-switch` 的 `before-change`）。
+ * 开启响应脱敏前的二次确认（挂到 `el-switch` 的 `before-change`）。
  * 关闭（true → false）无需确认，直接放行；只有 false → true 才弹确认框。
  * 取消时返回 false ⇒ Element Plus 不更新 v-model，开关保持关闭。
  */
-const confirmEnable = async (side: 'request' | 'response'): Promise<boolean> => {
-  if (form[side].enabled) return true
+const confirmEnable = async (): Promise<boolean> => {
+  if (form.response.enabled) return true
   try {
     await ElMessageBox.confirm(
       t('sanitization.enableConfirmMessage'),
@@ -429,15 +357,6 @@ const handleSave = async () => {
   saving.value = true
   try {
     const updated = await updateSanitizationConfig({
-      request: {
-        enabled: form.request.enabled,
-        maskingChar: form.request.maskingChar,
-        piiPatterns: linesToArr(form.request.piiPatternsText),
-        sensitiveWords: linesToArr(form.request.sensitiveWordsText),
-        whitelistUsers: linesToArr(form.request.whitelistUsersText),
-        logSanitization: form.request.logSanitization,
-        failOnError: form.request.failOnError
-      },
       response: {
         enabled: form.response.enabled,
         maskingChar: form.response.maskingChar,
@@ -493,12 +412,6 @@ onMounted(loadAll)
 <style scoped>
 .card-title {
   font-weight: 600;
-}
-/* 卡片标题与事实标签同一行 */
-.card-title-row {
-  display: flex;
-  align-items: center;
-  gap: var(--ja-space-2);
 }
 .config-actions {
   display: flex;

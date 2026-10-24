@@ -23,7 +23,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -33,6 +32,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * {@link SanitizationConfigController} 测试。
+ *
+ * <p>请求侧配置面已在 issue #601 中整体移除：控制器只读写 response，请求体只接受
+ * {@code {"response": {...}}}，多传 {@code request} 会被 Jackson 忽略。</p>
+ */
 @DisplayName("SanitizationConfigController 测试")
 class SanitizationConfigControllerTest {
 
@@ -51,7 +56,7 @@ class SanitizationConfigControllerTest {
         when(defaultSanitizationService.rebuildRulesFromProperties()).thenReturn(Mono.empty());
         when(sanitizationService.getAllRules()).thenReturn(Mono.just(List.of(
                 SanitizationRule.builder()
-                        .ruleId("request-pii-pattern-1")
+                        .ruleId("response-pii-pattern-1")
                         .name("phone")
                         .type(RuleType.PII_PATTERN)
                         .pattern("\\d{11}")
@@ -68,13 +73,13 @@ class SanitizationConfigControllerTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void getConfig_shouldReturnSnapshot() {
+    void getConfig_shouldReturnResponseOnlySnapshot() {
         ResponseEntity<RouterResponse<Map<String, Object>>> resp = controller.getConfig().block();
         assertEquals(200, resp.getStatusCode().value());
         Map<String, Object> data = resp.getBody().getData();
         assertNotNull(data);
-        assertTrue(data.containsKey("request"));
         assertTrue(data.containsKey("response"));
+        assertFalse(data.containsKey("request"), "请求侧配置面已移除");
         assertEquals(1, data.get("ruleCount"));
     }
 
@@ -83,18 +88,30 @@ class SanitizationConfigControllerTest {
     void updateConfig_shouldApplyHotFields() {
         SanitizationConfigController.SanitizationUpdateRequest request =
                 new SanitizationConfigController.SanitizationUpdateRequest();
-        SanitizationConfigController.SanitizationSubUpdate req =
+        SanitizationConfigController.SanitizationSubUpdate res =
                 new SanitizationConfigController.SanitizationSubUpdate();
-        req.enabled = true;
-        req.piiPatterns = List.of("\\d{11}");
-        req.maskingChar = "*";
-        request.request = req;
+        res.enabled = false;
+        res.piiPatterns = List.of("\\d{11}");
+        res.maskingChar = "#";
+        request.response = res;
 
         ResponseEntity<RouterResponse<Map<String, Object>>> resp = controller.updateConfig(request).block();
         assertEquals(200, resp.getStatusCode().value());
-        SanitizationConfig.RequestSanitization updated = securityProperties.getSanitization().getRequest();
-        assertTrue(updated.isEnabled());
+        SanitizationConfig.ResponseSanitization updated = securityProperties.getSanitization().getResponse();
+        assertFalse(updated.isEnabled());
         assertEquals(List.of("\\d{11}"), updated.getPiiPatterns());
+        assertEquals("#", updated.getMaskingChar());
+    }
+
+    @Test
+    void updateConfig_shouldRequireResponseSubConfig() {
+        SanitizationConfigController.SanitizationUpdateRequest request =
+                new SanitizationConfigController.SanitizationUpdateRequest();
+
+        ApiException ex = assertThrows(ApiException.class, () -> controller.updateConfig(request).block());
+        assertEquals("INVALID_REQUEST", ex.getErrorCode());
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        assertTrue(ex.getMessage().contains("response"));
     }
 
     @Test
@@ -113,40 +130,61 @@ class SanitizationConfigControllerTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void updateConfig_shouldRejectRedosAndBlankPatterns() {
         SanitizationConfigController.SanitizationUpdateRequest request =
                 new SanitizationConfigController.SanitizationUpdateRequest();
-        SanitizationConfigController.SanitizationSubUpdate req =
+        SanitizationConfigController.SanitizationSubUpdate res =
                 new SanitizationConfigController.SanitizationSubUpdate();
-        req.piiPatterns = List.of("(a+)+", " ");
-        request.request = req;
+        res.piiPatterns = List.of("(a+)+", " ");
+        request.response = res;
 
-        // issue #94：参数校验失败以 ApiException 形式抛出（400），而不是 200 + success=false。
         ApiException ex = assertThrows(ApiException.class, () -> controller.updateConfig(request).block());
         assertEquals("INVALID_REQUEST", ex.getErrorCode());
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-        String message = ex.getMessage();
-        assertTrue(message.contains("request.piiPatterns"));
+        assertTrue(ex.getMessage().contains("response.piiPatterns"));
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void updateConfig_shouldAcceptDefaultPiiPatterns() {
         SanitizationConfigController.SanitizationUpdateRequest request =
                 new SanitizationConfigController.SanitizationUpdateRequest();
-        SanitizationConfigController.SanitizationSubUpdate req =
+        SanitizationConfigController.SanitizationSubUpdate res =
                 new SanitizationConfigController.SanitizationSubUpdate();
-        req.piiPatterns = List.of(
+        res.piiPatterns = List.of(
                 "\\d{11}",
                 "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
                 "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"
         );
-        request.request = req;
+        request.response = res;
 
         ResponseEntity<RouterResponse<Map<String, Object>>> resp = controller.updateConfig(request).block();
         assertEquals(200, resp.getStatusCode().value());
-        assertEquals(3, securityProperties.getSanitization().getRequest().getPiiPatterns().size());
+        assertEquals(3, securityProperties.getSanitization().getResponse().getPiiPatterns().size());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void updateConfig_shouldPreserveFieldsNotExposedByUpdateApi() {
+        SanitizationConfig.ResponseSanitization response = securityProperties.getSanitization().getResponse();
+        response.getScope().setMode("include");
+        response.getScope().setPatterns(List.of("/v1/**"));
+        response.setMaxBufferedBytes(2048L);
+        response.setSanitizeSse(false);
+
+        SanitizationConfigController.SanitizationUpdateRequest request =
+                new SanitizationConfigController.SanitizationUpdateRequest();
+        SanitizationConfigController.SanitizationSubUpdate res =
+                new SanitizationConfigController.SanitizationSubUpdate();
+        res.enabled = false;
+        request.response = res;
+
+        controller.updateConfig(request).block();
+
+        SanitizationConfig.ResponseSanitization updated = securityProperties.getSanitization().getResponse();
+        assertEquals("include", updated.getScope().getMode(), "热更新不得重置 #560 的生效范围");
+        assertEquals(List.of("/v1/**"), updated.getScope().getPatterns());
+        assertEquals(2048L, updated.getMaxBufferedBytes(), "热更新不得重置 #594 的缓冲上限");
+        assertFalse(updated.isSanitizeSse());
     }
 
     @Test
@@ -159,7 +197,7 @@ class SanitizationConfigControllerTest {
         assertEquals(200, resp.getStatusCode().value());
         Map<String, Object> data = resp.getBody().getData();
         assertEquals("phone ***********", data.get("after"));
-        assertTrue(((List<String>) data.get("matchedRuleIds")).contains("request-pii-pattern-1"));
+        assertTrue(((List<String>) data.get("matchedRuleIds")).contains("response-pii-pattern-1"));
     }
 
     @Test
@@ -204,7 +242,7 @@ class SanitizationConfigControllerTest {
         assertEquals(200, resp.getStatusCode().value());
         List<Map<String, Object>> rules = resp.getBody().getData();
         assertEquals(1, rules.size());
-        assertEquals("request-pii-pattern-1", rules.get(0).get("ruleId"));
+        assertEquals("response-pii-pattern-1", rules.get(0).get("ruleId"));
         assertEquals("PII_PATTERN", rules.get(0).get("type"));
     }
 
@@ -212,75 +250,75 @@ class SanitizationConfigControllerTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void updateConfig_shouldPersistExplicitScopeBeforeRebuild() {
+    void updateConfig_shouldPersistBeforeRebuild() {
         SanitizationConfigController.SanitizationUpdateRequest request =
                 new SanitizationConfigController.SanitizationUpdateRequest();
-        SanitizationConfigController.SanitizationSubUpdate req =
+        SanitizationConfigController.SanitizationSubUpdate res =
                 new SanitizationConfigController.SanitizationSubUpdate();
-        req.enabled = false;
-        req.sensitiveWords = List.of("secret-word");
-        request.request = req;
+        res.enabled = false;
+        res.sensitiveWords = List.of("secret-word");
+        request.response = res;
 
         ResponseEntity<RouterResponse<Map<String, Object>>> resp = controller.updateConfig(request).block();
         assertEquals(200, resp.getStatusCode().value());
         assertEquals("脱敏配置已更新", resp.getBody().getMessage());
 
-        // 只写显式指定的 scope（本次只改了 request），且操作者来自认证上下文（无上下文 = system）
         InOrder order = inOrder(configStore, defaultSanitizationService);
-        order.verify(configStore).persist(securityProperties, true, false, "system");
+        order.verify(configStore).persist(securityProperties, "system");
         order.verify(defaultSanitizationService).rebuildRulesFromProperties();
-        assertFalse(securityProperties.getSanitization().getRequest().isEnabled());
+        assertFalse(securityProperties.getSanitization().getResponse().isEnabled());
     }
 
     @Test
     void updateConfig_shouldRejectInvalidRegexWithoutTouchingMemoryOrDatabase() {
         SanitizationConfigController.SanitizationUpdateRequest request =
                 new SanitizationConfigController.SanitizationUpdateRequest();
-        SanitizationConfigController.SanitizationSubUpdate req =
+        SanitizationConfigController.SanitizationSubUpdate res =
                 new SanitizationConfigController.SanitizationSubUpdate();
-        req.enabled = false;
-        req.maskingChar = "#";
-        req.piiPatterns = List.of("([unclosed");
-        request.request = req;
+        res.enabled = false;
+        res.maskingChar = "#";
+        res.piiPatterns = List.of("([unclosed");
+        request.response = res;
 
         ApiException ex = assertThrows(ApiException.class, () -> controller.updateConfig(request).block());
         assertEquals("INVALID_REQUEST", ex.getErrorCode());
 
         // 旧实现先写 enabled/maskingChar 再校验 piiPatterns，校验失败会留下半更新；现在一个字段都不改。
-        SanitizationConfig.RequestSanitization current = securityProperties.getSanitization().getRequest();
+        SanitizationConfig.ResponseSanitization current = securityProperties.getSanitization().getResponse();
         assertTrue(current.isEnabled());
         assertEquals("*", current.getMaskingChar());
         assertEquals(List.of(), current.getPiiPatterns());
-        verify(configStore, never()).persist(any(SecurityProperties.class), anyBoolean(), anyBoolean(), anyString());
+        verify(configStore, never()).persist(any(SecurityProperties.class), anyString());
         verify(defaultSanitizationService, never()).rebuildRulesFromProperties();
     }
 
     @Test
     void updateConfig_shouldRollbackMemoryWhenPersistFails() {
-        securityProperties.getSanitization().getRequest().setEnabled(true);
-        securityProperties.getSanitization().getRequest().setSensitiveWords(List.of("old-word"));
-        securityProperties.getSanitization().getRequest().setPiiPatterns(List.of("\\d{11}"));
-        securityProperties.getSanitization().getRequest().setMaskingChar("*");
+        SanitizationConfig.ResponseSanitization response = securityProperties.getSanitization().getResponse();
+        response.setEnabled(true);
+        response.setSensitiveWords(List.of("old-word"));
+        response.setPiiPatterns(List.of("\\d{11}"));
+        response.setMaskingChar("*");
 
         doThrow(new IllegalStateException("database down"))
-                .when(configStore).persist(any(SecurityProperties.class), anyBoolean(), anyBoolean(), anyString());
+                .when(configStore).persist(any(SecurityProperties.class), anyString());
 
         SanitizationConfigController.SanitizationUpdateRequest request =
                 new SanitizationConfigController.SanitizationUpdateRequest();
-        SanitizationConfigController.SanitizationSubUpdate req =
+        SanitizationConfigController.SanitizationSubUpdate res =
                 new SanitizationConfigController.SanitizationSubUpdate();
-        req.enabled = false;
-        req.sensitiveWords = List.of("new-word");
-        req.piiPatterns = List.of("[a-z]+");
-        req.maskingChar = "#";
-        request.request = req;
+        res.enabled = false;
+        res.sensitiveWords = List.of("new-word");
+        res.piiPatterns = List.of("[a-z]+");
+        res.maskingChar = "#";
+        request.response = res;
 
         ApiException ex = assertThrows(ApiException.class, () -> controller.updateConfig(request).block());
         assertEquals("INTERNAL_ERROR", ex.getErrorCode());
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getStatus());
 
         // 落库失败 ⇒ 内存回到更新前，且不重建规则（否则运行态会按未持久化的配置生效）
-        SanitizationConfig.RequestSanitization after = securityProperties.getSanitization().getRequest();
+        SanitizationConfig.ResponseSanitization after = securityProperties.getSanitization().getResponse();
         assertTrue(after.isEnabled());
         assertEquals(List.of("old-word"), after.getSensitiveWords());
         assertEquals(List.of("\\d{11}"), after.getPiiPatterns());
