@@ -49,3 +49,27 @@ jairouter:
       # selectInstance 调用），不会卡住 Netty EventLoop；超时值决定最坏情况下
       # 每个被限流请求额外等待多久。
       timeout-ms: 50
+
+    # ========================================
+    # 终端用户级限流（用户级限流，默认关闭）
+    # ========================================
+    # 目标：同一个 API Key 被多个终端用户共享时，按用户分配配额（公平性），
+    # 而不是让一个用户打满整把 Key 的每分钟桶。
+    #
+    # 身份来源（按优先级）：请求头 X-End-User-Id -> 请求体 user（Chat / Embedding /
+    # 图片生成 / 图片编辑）-> Anthropic metadata.user_id。
+    # 身份由调用方自报，**这不是安全边界**；只用于配额分配，不能用来鉴定调用者。
+    end-user:
+      # 默认 false：不解析身份、不计数、不写响应头（零行为变更）。
+      enabled: false
+      # 每用户每分钟请求上限（钳制在 1 ~ 1000000）。
+      requests-per-minute: 60
+      # 是否读取请求头 X-End-User-Id。部署环境中该头若可能由客户端直传且不可信，
+      # 可关掉它，只用请求体 user 字段。
+      header-enabled: true
+      # 标识缺失时的处置：skip（放行并记指标）/ reject（返回 429）。
+      missing-identity: skip
+      # 本地计数缓存条目上限（Caffeine maximumSize，钳制在 1 ~ 1000000）。
+      local-cache-size: 50000
+      # 摘要长度（hex 字符数，钳制在 8 ~ 32）：日志与 Redis key 里只出现不可逆摘要。
+      fingerprint-length: 16
