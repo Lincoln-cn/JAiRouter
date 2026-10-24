@@ -1,9 +1,9 @@
 # Roadmap
 
 <!-- 版本信息 -->
-> **Doc Version**: 2.3.1
+> **Doc Version**: 2.4.0
 > **Last Updated**: 2026-10-24
-> **Git Tag**: v3.5.1
+> **Git Tag**: v3.5.2
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -23,6 +23,17 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 - **Observability**: Comprehensive monitoring, logging, and distributed tracing
 
 ## Current Version Status
+
+### ✅ v3.5.2 (Feature: end-user rate limiting + client-dimension wiring, **released 2026-10-24**)
+
+**Status**: Released (GitHub Release `v3.5.2`, 2026-10-24; multi-arch Docker images rebuilt by CI on release: `v3.5.2` / `3.5.2` / `latest`)
+**Scope**: everything merged after `v3.5.1` — end-user rate limiting #627 / #628 / #629, client-dimension wiring #632 (#623), retry hints on service/instance rejections #631 (#624), bounded token-bucket window table #630 (#625); **no breaking changes relative to 3.5.1**
+**Highlights**:
+
+- **End-user rate limiting (#627 / #628)**: a per-minute allowance counted per `(API key × end user)` — the only way to limit several people who share one API key without issuing one key per person. Identity comes from `X-End-User-Id`, then the request-body `user`, then Anthropic `metadata.user_id`; values that are malformed or too long are replaced by a SHA-256 fingerprint, and **the raw value never enters Redis keys, logs or error responses**. Fixed minute window, bounded in-process Caffeine counter by default; with `jairouter.ratelimit.distributed.enabled` it switches to a single-script atomic Redis counter (fail-open). Over-limit answers 429 with `Retry-After` / `X-RateLimit-*`. **Off by default**, and the identity is self-reported, so it is **not a security boundary**.
+- **Client-dimension wiring (#632 / #623)**: `RateLimitManager.tryAcquireClientIp` was "fully implemented but never called from the request path"; it is now invoked after authentication, before the service-level pre-deduct and the cache read. All 16 bundled `client-ip-enable: true` entries became `false` — behind a cluster without an L7 proxy, counting by IP merges different clients; the switch did nothing before, so the default change alters no actual admission behavior.
+- **Retry hints (#631 / #624)**: service-level 429 and all-instances-limited 503 now carry `Retry-After: 1`; `X-RateLimit-*` is still not emitted because that layer's limiter does not expose remaining capacity.
+- **Bounded token-bucket table (#630 / #625)**: `auth/security/service/TokenBucketRateLimiter` moved from an unbounded `ConcurrentHashMap` to Caffeine (10,000 entries / 2× window expiry); an evicted key restarts its window, which may allow one extra burst — use `jairouter.quota.*` for strict counting.
 
 ### ✅ v3.5.1 (Patch: record-governance page + live config snapshot + tech-debt batches A–D, **released 2026-10-24**)
 
@@ -573,8 +584,9 @@ JAiRouter will continue to uphold the open-source spirit and is committed to pro
 12. ✅ v3.3.0 minor (released 2026-10-07): PostgreSQL and versioned migration (PG on `ddl-auto: validate`, H2 gets versioned migration too, both startup patch components deleted); multi-replica cluster (cross-replica event broadcast and sliding-window counting, shared-state self-check, per-class scheduled jobs); RBAC closed out to fail-closed GETs; four batches of tracing config honesty (57 zero-consumer fields deleted, 3 wired up); structured JSON stdout and Kustomize manifests; documentation facts checked and corrected (#160–#248)
 13. ✅ v3.4.0 feature release (released 2026-10-21): console overhaul (7 groups / 28 items navigation, collapsible sidebar, dark-mode hierarchy, card lists on narrow screens, 33 pages on a neutral palette, global search and status bar); permission semantics (eight read-only codes, 55 → 63); persisted sanitization configuration (Flyway V4); hourly/monthly quota limits. **Deferred**: the record-level FULL encryption strategy UI moves with the frontend track (v3.5.x)
 14. ✅ v3.5.0 feature release (released 2026-10-24): response sanitization coverage closed out (non-streaming JSON under `/v1/**`, configurable `response.scope`, buffer limit, per-frame SSE), default PII rules and JSON key exemptions corrected, request-side configuration surface removed (Flyway V5), three circuit-breaker fixes, console acceptance fixes
-15. ✅ v3.5.1 patch (released 2026-10-24): record-governance page and call-history key-source wiring (`encryption-key-source: env` went from "settable but inert" to actually effective, `GET /api/config/call-history` gains 8 read-only observation fields, new page `/security/record-governance`); live `gatewayResponseFilter` in the config snapshot; tech-debt batches A–D of #604 (end-to-end 400 case + bare-catch ceiling 835 → 786, `QuotaLedgerService` 1268 → 1094, `ServiceRequestHandler` 1027 → 785); API paths unified on `/api/v1/*`; fence-parity check wired into the docs gate
-16. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.2.x
+15. ✅ v3.5.2 feature release (released 2026-10-24): end-user rate limiting (per-`(API key × end user)` per-minute allowance, off by default, self-reported identity so not a security boundary, bounded local counter or cross-replica Redis counting); client-dimension wiring (#623, off in every bundled configuration so a cluster without an L7 proxy does not merge clients by IP); `Retry-After` on service-level 429 and all-instances-limited 503 (#624); bounded window table in `TokenBucketRateLimiter` (#625)
+16. ✅ v3.5.1 patch (released 2026-10-24): record-governance page and call-history key-source wiring (`encryption-key-source: env` went from "settable but inert" to actually effective, `GET /api/config/call-history` gains 8 read-only observation fields, new page `/security/record-governance`); live `gatewayResponseFilter` in the config snapshot; tech-debt batches A–D of #604 (end-to-end 400 case + bare-catch ceiling 835 → 786, `QuotaLedgerService` 1268 → 1094, `ServiceRequestHandler` 1027 → 785); API paths unified on `/api/v1/*`; fence-parity check wired into the docs gate
+17. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.2.x
 
 ### Long-term Vision
 1. Become the standard in AI model routing

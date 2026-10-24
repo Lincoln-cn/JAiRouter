@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.5.1
+> **文档版本**: 3.5.2
 > **最后更新**: 2026-10-24
 > **作者**: JAiRouter Team
 
@@ -21,6 +21,36 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.5.2] - 2026-10-24 - 功能发布（终端用户级限流 + 客户端维度限流接线）
+
+#### 终端用户级限流（#627 / #628 / #629）
+
+- **新能力**：按 `(调用方 API Key × 终端用户)` 计每分钟额度。这是「多人共用一个 API Key」场景下唯一不需要一人一 Key 的办法 —— 共享 Key 此前只能靠「按 IP 计」或干脆不限。
+- **身份取值顺序**：请求头 `X-End-User-Id` → 请求体 `user`（`ChatDTO.Request` / `EmbeddingDTO.Request` / `ImageGenerateDTO.Request` / `ImageEditDTO.Request`）→ Anthropic `metadata.user_id`。只接受 `[A-Za-z0-9._:@/-]` 且 ≤64 字符；不合规或超长取 SHA-256 前 16 位。**原始标识绝不进入 Redis 键、日志或错误响应**（日志只打 8 位指纹）。
+- **计数**：固定分钟窗口（按钟对齐）。键 = `sha256(apiKeyId|userId)` 前 16 位。默认本机 Caffeine 有界计数器（条目上限 `local-cache-size`，默认 50000）；开启 `jairouter.ratelimit.distributed.enabled` 后改用 Redis 单脚本原子计数（`INCR` → 首次写入设 TTL → 超限 `DECR` 回滚），Redis 故障 fail-open 并计 `degraded`。
+- **超限响应**：429 + `Retry-After` / `X-RateLimit-Limit` / `X-RateLimit-Remaining` / `X-RateLimit-Reset`；响应体沿用中央异常处理器与 `V1ErrorBodyMapper`（`/v1/**` 上是 `rate_limit_error`），不新增错误码、消息里不含用户标识。
+- **配置**：`jairouter.ratelimit.end-user.*` —— `enabled`（默认 `false`）、`requests-per-minute`（默认 60）、`header-enabled`、`missing-identity`（`skip` / `reject`）、`local-cache-size`、`fingerprint-length`。
+- **不是安全边界**：身份由调用方自报，可被伪造。要防冒用，需要在网关层做鉴权；本层只解决「同一 Key 下的公平分配」。
+
+#### 客户端维度限流接线与退避头（#623 / #624 / #625）
+
+- **接线（#623）**：`RateLimitManager.tryAcquireClientIp` 长期「实现完整但主链路没有调用方」，配置与文档因此长期给出「已生效」的错觉。现在它被接进主链路（认证之后、服务级预扣与缓存读之前），拒绝时返回 429。
+- **默认值反转（16 处 yml）**：仓库自带的 `client-ip-enable` 一律改为 `false` —— 集群 + 无 L7 反代时 `remoteAddress` 是节点 IP，按 IP 计数会把不同客户端合并成一个桶。**该开关此前不生效，所以这次默认值调整不改变任何实际放行行为**；要按 IP / Key 限流需运维显式开启。
+- **退避头（#624）**：服务级 429 与实例全限 503 现在带 `Retry-After: 1`（滑动窗口窗格 1 秒，对令牌桶也是安全上界）。`X-RateLimit-*` 仍不提供 —— 该层限流器不暴露剩余量，硬编一个值会让客户端读错。
+- **窗口表有界（#625）**：`auth/security/service/TokenBucketRateLimiter` 的窗口表由无界 `ConcurrentHashMap` 改为 Caffeine 有界缓存（10000 条、2×窗口过期）。代价是被淘汰的 Key 窗口会重置、可能带来一次额外突发；需要严格计数请用 `jairouter.quota.*`（javadoc 已写明）。
+
+#### 文档与门闩
+
+- 中英对称改写的页面：`configuration/rate-limiting.md`（新增「终端用户限流」一节、重写「客户端 IP 限流」的实现状态）、`deployment/multi-replica.md`（两条 Redis 计数路径与开关语义）、`deployment/kubernetes.md`（限流态那一行）、`reference/roadmap.md`（v3.5.2 块 + 「接线完成」更正）。
+- `scripts/docs/check-capability-claims.py`：更新限流能力的展示名与 `EXTRA_ANCHORS`，让「路线图 ↔ 代码」双向对账继续成立。
+- 新增两道守卫测试：`DimensionRateLimitDefaultGuardTest`（仓库 yml 不得再出现 `client-ip-enable: true`，带反空转断言）、`ServiceRequestHandlerDimensionRateLimitTest`（接线路径的 429 与退避头）。
+
+#### 升级提示
+
+- **无破坏性变更**：终端用户限流默认关闭；`client-ip-enable` 默认值调整不改变实际放行行为（此前该开关不生效）。
+- 若你此前**以为** `client-ip-enable: true` 在生效，升级后需要显式保留该值才会按 IP / Key 限流；同时请确认拓扑能让真实客户端 IP 到达 Pod，否则请改用 `key-dimension: api-key` 或终端用户限流。
+- 需要按终端用户限流时：设 `jairouter.ratelimit.end-user.enabled=true`，并让客户端在 `X-End-User-Id`（或 OpenAI 兼容的 `user` 字段）里带上稳定的用户标识。
 
 ### [3.5.1] - 2026-10-24 - 补丁发布（记录治理页 + 配置快照实时化 + 技术债批次 A～D）
 
