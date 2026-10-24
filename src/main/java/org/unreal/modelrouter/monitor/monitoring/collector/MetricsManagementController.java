@@ -27,6 +27,10 @@ import java.util.Map;
 /**
  * 监控管理控制器
  * 提供监控配置管理和性能统计查询的API接口
+ *
+ * <p><b>为什么这里捕获 {@link RuntimeException} 而不是 {@code Exception}</b>（#604 批次 D）：本类只做
+ * 参数校验与委托调用（collector / memory manager / circuit breaker / 配置对象），这些委托不抛受检
+ * 异常；控制器边界的兜底语义（记录日志 + 500）保持不变，只是把“预期失败集合”写明。</p>
  */
 @RestController
 @RequestMapping("/actuator/metrics")
@@ -88,7 +92,7 @@ public class MetricsManagementController {
             status.put("circuitBreakerStats", circuitBreaker.getStats());
             
             return ResponseEntity.ok(status);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error getting monitoring status", e);
             return ResponseEntity.internalServerError().build();
         }
@@ -102,7 +106,7 @@ public class MetricsManagementController {
         try {
             AsyncMetricsCollector.PerformanceStats stats = asyncMetricsCollector.getPerformanceStats();
             return ResponseEntity.ok(stats);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error getting performance stats", e);
             return ResponseEntity.internalServerError().build();
         }
@@ -116,7 +120,7 @@ public class MetricsManagementController {
         try {
             MetricsMemoryManager.MemoryStats stats = memoryManager.getMemoryStats();
             return ResponseEntity.ok(stats);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error getting memory stats", e);
             return ResponseEntity.internalServerError().build();
         }
@@ -133,7 +137,7 @@ public class MetricsManagementController {
         try {
             MetricsCircuitBreaker.CircuitBreakerStats stats = circuitBreaker.getStats();
             return ResponseEntity.ok(stats);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error getting circuit breaker stats", e);
             return ResponseEntity.internalServerError().build();
         }
@@ -147,7 +151,7 @@ public class MetricsManagementController {
         try {
             MonitoringProperties.Sampling config = monitoringProperties.getSampling();
             return ResponseEntity.ok(config);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error getting sampling config", e);
             return ResponseEntity.internalServerError().build();
         }
@@ -179,7 +183,7 @@ public class MetricsManagementController {
                        sampling.getInfrastructureMetrics(), sampling.getTraceMetrics());
             
             return ResponseEntity.ok("Sampling configuration updated successfully");
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error updating sampling config", e);
             return ResponseEntity.internalServerError()
                     .body("Failed to update sampling configuration");
@@ -194,7 +198,7 @@ public class MetricsManagementController {
         try {
             MonitoringProperties.Performance config = monitoringProperties.getPerformance();
             return ResponseEntity.ok(config);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error getting performance config", e);
             return ResponseEntity.internalServerError().build();
         }
@@ -222,7 +226,7 @@ public class MetricsManagementController {
                        performance.isAsyncProcessing(), performance.getBatchSize(), performance.getBufferSize());
             
             return ResponseEntity.ok("Performance configuration updated successfully");
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error updating performance config", e);
             return ResponseEntity.internalServerError()
                     .body("Failed to update performance configuration");
@@ -238,7 +242,7 @@ public class MetricsManagementController {
             memoryManager.performMemoryCheck();
             logger.info("Manual memory cleanup triggered");
             return ResponseEntity.ok("Memory cleanup completed");
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error during manual memory cleanup", e);
             return ResponseEntity.internalServerError().body("Memory cleanup failed");
         }
@@ -253,7 +257,7 @@ public class MetricsManagementController {
             memoryManager.clearCache();
             logger.info("Metrics cache cleared manually");
             return ResponseEntity.ok("Metrics cache cleared");
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error clearing metrics cache", e);
             return ResponseEntity.internalServerError().body("Failed to clear cache");
         }
@@ -304,7 +308,7 @@ public class MetricsManagementController {
                             + "(this endpoint controls the metrics pipeline circuit breaker, "
                             + "not the instance routing circuit breaker)");
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error controlling metrics pipeline circuit breaker", e);
             return ResponseEntity.internalServerError().body("Circuit breaker control failed");
         }
@@ -318,7 +322,7 @@ public class MetricsManagementController {
         try {
             MetricsErrorHandler.MetricsErrorStats stats = errorHandler.getErrorStats();
             return ResponseEntity.ok(stats);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error getting error handler stats", e);
             return ResponseEntity.internalServerError().build();
         }
@@ -335,7 +339,7 @@ public class MetricsManagementController {
             errorHandler.resetErrorState(component, operation);
             logger.info("Reset error state for component: {}, operation: {}", component, operation);
             return ResponseEntity.ok("Error state reset successfully");
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error resetting error state", e);
             return ResponseEntity.internalServerError().body("Failed to reset error state");
         }
@@ -349,7 +353,7 @@ public class MetricsManagementController {
         try {
             MetricsDegradationStrategy.DegradationStatus status = degradationStrategy.getDegradationStatus();
             return ResponseEntity.ok(status);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error getting degradation status", e);
             return ResponseEntity.internalServerError().build();
         }
@@ -368,7 +372,7 @@ public class MetricsManagementController {
             return ResponseEntity.ok("Degradation level set to: " + degradationLevel.getDescription());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Invalid degradation level");
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error setting degradation level", e);
             return ResponseEntity.internalServerError().body("Failed to set degradation level");
         }
@@ -383,7 +387,7 @@ public class MetricsManagementController {
             degradationStrategy.setAutoModeEnabled(enabled);
             logger.info("Auto degradation mode: {}", enabled ? "enabled" : "disabled");
             return ResponseEntity.ok("Auto mode " + (enabled ? "enabled" : "disabled"));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error setting auto mode", e);
             return ResponseEntity.internalServerError().body("Failed to set auto mode");
         }
@@ -398,7 +402,7 @@ public class MetricsManagementController {
             degradationStrategy.forceRecovery();
             logger.info("Forced recovery to normal mode");
             return ResponseEntity.ok("Forced recovery completed");
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error during forced recovery", e);
             return ResponseEntity.internalServerError().body("Forced recovery failed");
         }
@@ -412,7 +416,7 @@ public class MetricsManagementController {
         try {
             MetricsCacheAndRetry.CacheStats stats = cacheAndRetry.getCacheStats();
             return ResponseEntity.ok(stats);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error getting cache retry stats", e);
             return ResponseEntity.internalServerError().build();
         }
@@ -427,7 +431,7 @@ public class MetricsManagementController {
             cacheAndRetry.clearCache();
             logger.info("Metrics cache cleared");
             return ResponseEntity.ok("Cache cleared successfully");
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error clearing cache", e);
             return ResponseEntity.internalServerError().body("Failed to clear cache");
         }
@@ -447,7 +451,7 @@ public class MetricsManagementController {
             health.put("issues", result.getIssues());
             
             return ResponseEntity.ok(health);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error getting health status", e);
             Map<String, Object> errorHealth = new HashMap<>();
             errorHealth.put("status", "DOWN");
