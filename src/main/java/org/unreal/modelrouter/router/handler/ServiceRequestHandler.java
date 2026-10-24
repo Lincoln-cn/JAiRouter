@@ -175,6 +175,16 @@ public class ServiceRequestHandler {
      */
     public static final String END_USER_HEADER_RESET = "X-RateLimit-Reset";
 
+    /**
+     * v3.5.2: 服务级 / 实例级限流拒绝时的 {@code Retry-After} 秒数（#624）。
+     *
+     * <p>这两层由 {@link org.unreal.modelrouter.router.ratelimit.RateLimitManager} 的限流器判定，
+     * 对外不暴露剩余量，因此只补一个保守的退避提示：滑动窗口实现的窗口是 1 秒，取「1 秒」
+     * 对更快的补充速率（token-bucket）也是安全上界。{@code X-RateLimit-*} 需要限流器暴露
+     * 剩余量，不在本次射程内（见 #624）。</p>
+     */
+    private static final String SERVICE_RATE_LIMIT_RETRY_AFTER_SECONDS = "1";
+
     private final AdapterRegistry adapterRegistry;
     private final ModelServiceRegistry registry;
     private final ServiceStateManager serviceStateManager;
@@ -430,6 +440,8 @@ public class ServiceRequestHandler {
 
         if (cachePathActive && rateLimitManager != null) {
             if (!rateLimitManager.tryAcquireService(serviceType, clientIp, modelName)) {
+                // v3.5.2 (#624): 服务级限流拒绝补退避提示，客户端才知道该等多久
+                applyRateLimitRetryHints(exchange, HttpStatus.TOO_MANY_REQUESTS.value());
                 return Mono.error(new ResponseStatusException(
                         HttpStatus.TOO_MANY_REQUESTS,
                         "Service rate limit exceeded for service type '" + serviceType + "'"));
@@ -460,6 +472,11 @@ public class ServiceRequestHandler {
             } catch (Exception e) {
                 logger.error("Failed to select instance for service: {}, model: {}",
                         serviceType, modelName, e);
+                // v3.5.2 (#624): selectInstance 内部的限流拒绝（服务级 429 / 实例全限 503）
+                // 也只带状态码与消息，这里补 Retry-After；其余异常不受影响
+                if (e instanceof ResponseStatusException statusError) {
+                    applyRateLimitRetryHints(exchange, statusError.getStatusCode().value());
+                }
                 return Mono.error(e);
             } finally {
                 // v2.9.0: 请求实例选择完成后清理亲和性上下文
@@ -770,6 +787,37 @@ public class ServiceRequestHandler {
         }
         return Mono.error(new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
                 "End-user rate limit exceeded (limit=" + decision.limit() + "/min)"));
+    }
+
+    /**
+     * v3.5.2: 给服务级 / 实例级的限流拒绝补 {@code Retry-After}（#624）.
+     *
+     * <p>两处拒绝原本只有状态码与消息，客户端无法判断该等多久。这里在抛异常前把
+     * {@code Retry-After} 写到响应头（与 {@link #rejectByQuota} / {@link #rejectByEndUserLimit}
+     * 同一手法：全局异常处理器只负责渲染响应体，不会补业务头）。</p>
+     *
+     * <p>只处理 429（服务级超限）与 503（实例全被限流）两种状态，其余异常原样放行；
+     * 若上游已设置过 {@code Retry-After} 则不覆盖。</p>
+     *
+     * @param exchange   原始交换对象，可为 {@code null}
+     * @param statusCode 拒绝的状态码
+     */
+    private static void applyRateLimitRetryHints(final ServerWebExchange exchange, final int statusCode) {
+        if (exchange == null) {
+            return;
+        }
+        if (statusCode != HttpStatus.TOO_MANY_REQUESTS.value()
+                && statusCode != HttpStatus.SERVICE_UNAVAILABLE.value()) {
+            return;
+        }
+        try {
+            final HttpHeaders headers = exchange.getResponse().getHeaders();
+            if (!headers.containsKey(HttpHeaders.RETRY_AFTER)) {
+                headers.set(HttpHeaders.RETRY_AFTER, SERVICE_RATE_LIMIT_RETRY_AFTER_SECONDS);
+            }
+        } catch (RuntimeException e) {
+            logger.debug("设置服务级限流 Retry-After 失败: {}", e.getMessage());
+        }
     }
 
     /**
