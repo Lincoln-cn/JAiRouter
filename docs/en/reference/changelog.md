@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.5.0
+> **Document Version**: 3.5.1
 > **Last Updated**: 2026-10-24
 > **Git Commit**: -
 > **Author**: Lincoln
@@ -21,7 +21,40 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 ## Version History
 
+### [3.5.1] - 2026-10-24 - Patch Release (record-governance page + live config snapshot + tech-debt batches A–D)
+
+#### Record governance and call-history key source (#617 / #618)
+
+- **Fixed a setting that could be configured, echoed back, and still never apply**: `jairouter.call-history.encryption-key-source` did nothing when set to `env` — `RecordContentCipher` is a `@Component` but only exposed a no-arg constructor, which is exactly what Spring used (it hard-coded `auto` and read only the local key file). It now takes `@Autowired RecordContentCipher(CallHistoryProperties)` and resolves the key source from configuration; when the environment variable is unavailable it **falls back to `auto` and records that faithfully** (requested source / effective source / whether the environment key is present) instead of staying silent.
+- New read-only observations: `keySourceRequested()`, `keySourceEffective()`, `environmentKeyPresent()`, `keyFingerprint()` (first 8 hex chars of SHA-256, never the key itself) and `algorithm()`.
+- `GET /api/config/call-history` gains `encryptionKeySourceRequested`, `encryptionKeySourceEffective`, `encryptionKeySourceHonored`, `environmentKeyPresent`, `encryptionAlgorithm`, `encryptionKeyFingerprint`, `contentStoredEncrypted` and `maxRecords` (all read-only).
+- New console page "Record Governance" at `/security/record-governance` (6th item of the Security group): the three record levels (`FULL` requires a second confirmation), a read-only encryption & storage card (configured source vs effective source, fallback warning, key fingerprint, content limit, retention, max records) and an entry point to the decryption audit. The menu grows 28 → 29 items (29 tabs + 12 = 41 in total); `menu.spec.ts`, `usePermission.spec.ts` and the E2E route lists are updated.
+
+#### Config snapshot and API path wording (#605 / #619, #606 / #620)
+
+- `gatewayResponseFilter` in `GET /api/config/sanitization` no longer returns a hard-coded legacy string; it is composed live as `enabled=…;scopeMode=…;sanitizeSse=…;failOnError=…` (#605) — previously the description disagreed with the actual behavior once the configuration had been changed.
+- Docs now use the real prefix `/api/v1/*` for the gateway entry surface and state that `/v1/*` exposes only the 4 OpenAI-native endpoints (#606). The "default paths" table in `configuration/index.md` and `instances[].path` in `first-steps.md` describe **upstream service paths** and were intentionally left unchanged.
+
+#### Tech-debt batches A–D (#604 / #611 / #614 / #615 / #616)
+
+- **A (#611)**: added an end-to-end case that drives the real HTTP stack (controller → `ReactiveGlobalExceptionHandler` → 400) for a missing request body, with a 500 control case, plus the bare-catch baseline `src/test/resources/techdebt/bare-catch-baseline.txt` (835 occurrences / 257 files) and `BareCatchCeilingTest`, which turns red as soon as a new bare catch appears.
+- **B (#614)**: `QuotaLedgerService` 1268 → 1094 lines, with `QuotaUsageMapper`, `QuotaLedgerRepositoryGateway`, `QuotaDegradationState` and `QuotaDistributedWriter` extracted; behavior unchanged.
+- **C (#615)**: `ServiceRequestHandler` 1027 → 785 lines, with the cache read path extracted into `router/handler/ResponseCacheResolver` (220 lines).
+- **D (#616)**: only the two hottest files — bare catches in `AsyncMetricsCollector` 29 → 0 and `MetricsManagementController` 20 → 0 (the metrics/monitoring boundary now catches checked exceptions only), baseline 835 → **786**; the **remaining 786 stay parked** for later batches.
+
+#### Docs gates and assets (#607 / #621, #609 / #610)
+
+- `scripts/docs/check-fence-parity.py` is wired into `docs-quality.yml` (4 self-test cases + full scan); the same change fixes a `ValueError` from `os.path.relpath` when paths cross drives (#607). The script existed before but had never run in CI.
+- Re-shot the 10 console screenshots (v3.5.0 light theme, one zh-CN and one en-US set) (#609 / #610).
+
+#### Upgrade notes
+
+- **No breaking changes** relative to `3.5.0`: no endpoints removed, no config keys removed, no schema migration; every new `GET /api/config/call-history` field is read-only.
+- `encryption-key-source: env` now **actually takes effect** (before, setting it was a no-op): before switching from `auto` to `env`, make sure `JAIR_CALL_HISTORY_KEY` is set and holds the key your stored records were encrypted with, otherwise existing records cannot be decrypted. When a fallback happens, both the API and the page show "requested ≠ effective".
+
 ### [3.5.0] - 2026-10-24 - Feature Release (response sanitization coverage + circuit-breaker governance + request-side config surface removed)
+
+> **Version-semantics note (recorded 2026-10-24, together with 3.5.1)**: this release contains breaking changes (the request-side sanitization config surface was removed and Flyway `V5` deletes historical data), which under strict semver would be `4.0.0`. It shipped as `3.5.0` to avoid interrupting the 3.x line; the **tag and Release are left as-is and will not be rewritten**.
 
 #### Response sanitization coverage (#560 series)
 

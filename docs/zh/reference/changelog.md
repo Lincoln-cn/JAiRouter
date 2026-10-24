@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.5.0
+> **文档版本**: 3.5.1
 > **最后更新**: 2026-10-24
 > **作者**: JAiRouter Team
 
@@ -22,7 +22,40 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 ## 版本历史
 
+### [3.5.1] - 2026-10-24 - 补丁发布（记录治理页 + 配置快照实时化 + 技术债批次 A～D）
+
+#### 记录治理与 call-history 密钥来源（#617 / #618）
+
+- **修掉一处「能设、能回显、永不生效」的配置**：`jairouter.call-history.encryption-key-source` 设成 `env` 也不生效 —— `RecordContentCipher` 是 `@Component` 但只有无参构造器，Spring 装配走的正是它（内部写死 `auto`，只读本地密钥文件）。改为 `@Autowired RecordContentCipher(CallHistoryProperties)` 按配置解析密钥来源；环境变量不可用时**回退 `auto` 并如实记录**「请求的来源 / 实际生效的来源 / 环境变量是否可用」，不再静默。
+- 新增只读观测：`keySourceRequested()`、`keySourceEffective()`、`environmentKeyPresent()`、`keyFingerprint()`（SHA-256 前 8 位，不暴露密钥本体）、`algorithm()`。
+- `GET /api/config/call-history` 新增 `encryptionKeySourceRequested`、`encryptionKeySourceEffective`、`encryptionKeySourceHonored`、`environmentKeyPresent`、`encryptionAlgorithm`、`encryptionKeyFingerprint`、`contentStoredEncrypted`、`maxRecords`（全部只读）。
+- 控制台新增「记录治理」页 `/security/record-governance`（安全组第 6 项）：三档记录级别（切 `FULL` 需二次确认）、加密与存储只读卡（配置来源 vs 实际生效、回退警告、密钥指纹、内容上限、保留期、最大记录数）、解密审计入口。菜单 28 → 29 项（tab 总数 29 + 12 = 41），`menu.spec.ts` / `usePermission.spec.ts` / E2E 路由清单同步。
+
+#### 配置快照与 API 路径口径（#605 / #619、#606 / #620）
+
+- `GET /api/config/sanitization` 的 `gatewayResponseFilter` 不再返回写死的旧语义字符串，改为按当前配置实时拼装 `enabled=…;scopeMode=…;sanitizeSse=…;failOnError=…`（#605）—— 此前改过配置之后，该字段描述的行为与实际不一致。
+- 文档把网关入口面统一写成真实前缀 `/api/v1/*`，并说明 `/v1/*` 只有 4 个 OpenAI 原生端点（#606）。`configuration/index.md` 的「默认路径」表与 `first-steps.md` 的 `instances[].path` 描述的是**上游服务路径**，刻意未改。
+
+#### 技术债批次 A～D（#604 / #611 / #614 / #615 / #616）
+
+- **A（#611）**：新增走真 HTTP 栈的「控制器 → `ReactiveGlobalExceptionHandler` → 400」端到端用例（请求体缺失，含 500 对照组），并落下裸捕获基线 `src/test/resources/techdebt/bare-catch-baseline.txt`（起点 835 处 / 257 个文件）与 `BareCatchCeilingTest` —— 新增裸捕获会立刻红。
+- **B（#614）**：`QuotaLedgerService` 1268 → 1094 行，拆出 `QuotaUsageMapper`、`QuotaLedgerRepositoryGateway`、`QuotaDegradationState`、`QuotaDistributedWriter`；行为不变。
+- **C（#615）**：`ServiceRequestHandler` 1027 → 785 行，缓存读侧抽出 `router/handler/ResponseCacheResolver`（220 行）。
+- **D（#616）**：只处理两个热点文件 —— `AsyncMetricsCollector` 29 → 0、`MetricsManagementController` 20 → 0 处裸捕获（指标与监控边界只捕获非受检异常），基线 835 → **786**；**其余 786 处挂起**，按批次后续清理。
+
+#### 文档门闩与素材（#607 / #621、#609 / #610）
+
+- `scripts/docs/check-fence-parity.py` 接入 `docs-quality.yml`（自检 4 例 + 全量检查）；同批修掉跨盘符时 `os.path.relpath` 抛 `ValueError` 的崩溃（#607）。此前该脚本存在但从未在 CI 执行。
+- 重拍控制台 10 张界面截图（v3.5.0 亮色主题，中英各一套）（#609 / #610）。
+
+#### 升级提示
+
+- 相对 `3.5.0` **无破坏性变更**：无接口删除、无配置键删除、无库结构迁移；`GET /api/config/call-history` 新增字段全部只读。
+- `encryption-key-source: env` 现在**真的生效**（此前设了等于没设）：从 `auto` 切到 `env` 前请确认环境变量 `JAIR_CALL_HISTORY_KEY` 已配置且与历史密文所用密钥一致，否则既有记录无法解密。发生回退时接口与页面都会如实显示「请求的来源 ≠ 实际生效」。
+
 ### [3.5.0] - 2026-10-24 - 功能发布（响应脱敏覆盖面收口 + 熔断器治理 + 请求侧配置面移除）
+
+> **版本语义追记（2026-10-24，随 3.5.1 补记）**：本版含破坏性变更（移除请求侧脱敏配置面 + Flyway `V5` 删除历史数据），按 semver 严格判定应为 `4.0.0`；当时为不打断 3.x 线按 `3.5.0` 发布，**tag 与 Release 保持原样不回改**。
 
 #### 响应脱敏覆盖面（#560 系列）
 
