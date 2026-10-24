@@ -615,10 +615,10 @@
     },
     "docs/en/getting-started/web-console.md": {
       "FilePath": "docs/en/getting-started/web-console.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-24T03:01:53.596396",
-      "ContentHash": "5103567268bb7925",
-      "GitCommit": "9d35190e",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-24T09:11:30.633715",
+      "ContentHash": "cbccb5522e8b543d",
+      "GitCommit": "ed07942d",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1768,10 +1768,10 @@
     },
     "docs/zh/getting-started/web-console.md": {
       "FilePath": "docs/zh/getting-started/web-console.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-24T03:01:54.107647",
-      "ContentHash": "5d5fc1e7a50c165c",
-      "GitCommit": "9d35190e",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-24T09:11:31.251313",
+      "ContentHash": "39e7c0411aa63b5f",
+      "GitCommit": "ed07942d",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -4010,7 +4010,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-24T05:15:15.346915",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/web-console.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T09:11:30.633725",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/web-console.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T09:11:31.251322",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-24T06:52:18.454109"
+  "last_updated": "2026-10-24T09:11:31.569478"
 }
