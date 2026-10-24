@@ -48,6 +48,9 @@ import org.unreal.modelrouter.router.cache.ResponseCacheService;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
 import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
 import org.unreal.modelrouter.router.ratelimit.ServiceRateLimitHolder;
+import org.unreal.modelrouter.router.ratelimit.enduser.EndUserRateLimitCounter;
+import org.unreal.modelrouter.router.ratelimit.enduser.EndUserRateLimitProperties;
+import org.unreal.modelrouter.router.ratelimit.enduser.EndUserRateLimitService;
 import org.unreal.modelrouter.router.loadbalancer.AffinityContextHolder;
 import org.unreal.modelrouter.router.loadbalancer.SelectedInstanceHolder;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
@@ -56,6 +59,7 @@ import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -153,6 +157,24 @@ public class ServiceRequestHandler {
      */
     public static final String QUOTA_HEADER_WINDOW = "X-Quota-Window";
 
+    /**
+     * v3.5.2: 终端用户级限流 429 响应头 — 该窗口允许的请求数。
+     *
+     * <p>与配额层的 {@code X-Quota-*} 刻意分开命名：两层语义不同（配额 = 计量额度，
+     * 限流 = 速率），客户端可据前缀稳定分流。</p>
+     */
+    public static final String END_USER_HEADER_LIMIT = "X-RateLimit-Limit";
+
+    /**
+     * v3.5.2: 终端用户级限流 429 响应头 — 本窗口剩余可放行数。
+     */
+    public static final String END_USER_HEADER_REMAINING = "X-RateLimit-Remaining";
+
+    /**
+     * v3.5.2: 终端用户级限流 429 响应头 — 窗口重置的绝对时刻（epoch 秒）。
+     */
+    public static final String END_USER_HEADER_RESET = "X-RateLimit-Reset";
+
     private final AdapterRegistry adapterRegistry;
     private final ModelServiceRegistry registry;
     private final ServiceStateManager serviceStateManager;
@@ -181,6 +203,16 @@ public class ServiceRequestHandler {
      */
     @Autowired(required = false)
     private QuotaEnforcementService quotaEnforcementService;
+
+    /**
+     * v3.5.2: 终端用户级限流服务（可选注入）。
+     *
+     * <p>未注入或 {@code jairouter.ratelimit.end-user.enabled=false}（默认）时不判定、不设响应头，
+     * 请求行为与 v3.5.1 完全一致。判定开启后按 (API Key, 终端用户) 的固定分钟窗口计数，
+     * 超限返回 429 + {@code Retry-After} / {@code X-RateLimit-*}。</p>
+     */
+    @Autowired(required = false)
+    private EndUserRateLimitService endUserRateLimitService;
 
     /**
      * v3.1 PR-4c: 全局 ObjectMapper（可选注入）。
@@ -367,6 +399,23 @@ public class ServiceRequestHandler {
                     requestHeaders.put(key, values.get(0));
                 }
             });
+        }
+
+        // v3.5.2: 终端用户级限流（默认关闭）——按 (API Key, 终端用户) 的固定分钟窗口计数。
+        // 位置刻意早于缓存预扣与缓存读：限流是硬边界，超限 429 不得被缓存命中绕过。
+        // 未装配该服务（或 enabled=false）时此块整段跳过，零行为变更。
+        if (endUserRateLimitService != null) {
+            final String endUserHeader = httpRequest.getHeaders() == null
+                    ? null : httpRequest.getHeaders().getFirst(EndUserRateLimitProperties.HEADER_NAME);
+            final Optional<EndUserRateLimitCounter.Decision> endUserDecision = endUserRateLimitService.evaluate(
+                    callerId,
+                    httpRequest.getAttributes().get(REQUEST_DTO_ATTRIBUTE),
+                    endUserHeader,
+                    serviceType,
+                    isJwtCaller(callerId));
+            if (endUserDecision.isPresent() && !endUserDecision.get().allowed()) {
+                return rejectByEndUserLimit(exchange, endUserDecision.get());
+            }
         }
 
         // v2.9.10: 服务级限流预扣 + 缓存提前短路
@@ -693,6 +742,34 @@ public class ServiceRequestHandler {
         }
         logger.warn("API Key 配额超限，返回 429: {}", violation.describe());
         return Mono.error(new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, violation.describe()));
+    }
+
+    /**
+     * v3.5.2: 终端用户限流超限响应（429 + Retry-After + X-RateLimit-*）.
+     *
+     * <p>与 {@link #rejectByQuota} 同形：头写在响应对象上，响应体交给全局异常处理器，
+     * 消息只含限额值、不含终端用户标识（标识是调用方自报的，回显它等于把它写进日志与响应）。</p>
+     *
+     * @param exchange 原始交换对象，可为 {@code null}
+     * @param decision 拒绝判定
+     * @return 429 错误的 Mono
+     */
+    private Mono<ResponseEntity<?>> rejectByEndUserLimit(final ServerWebExchange exchange,
+                                                         final EndUserRateLimitCounter.Decision decision) {
+        if (exchange != null) {
+            try {
+                final HttpHeaders headers = exchange.getResponse().getHeaders();
+                headers.set(END_USER_HEADER_LIMIT, String.valueOf(decision.limit()));
+                headers.set(END_USER_HEADER_REMAINING, String.valueOf(decision.remaining()));
+                headers.set(END_USER_HEADER_RESET,
+                        String.valueOf(Instant.now().getEpochSecond() + decision.retryAfterSeconds()));
+                headers.set(HttpHeaders.RETRY_AFTER, String.valueOf(decision.retryAfterSeconds()));
+            } catch (RuntimeException e) {
+                logger.debug("设置终端用户限流响应头失败: {}", e.getMessage());
+            }
+        }
+        return Mono.error(new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                "End-user rate limit exceeded (limit=" + decision.limit() + "/min)"));
     }
 
     /**

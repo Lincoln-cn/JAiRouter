@@ -153,6 +153,7 @@ class K8sManifestTest {
             "jairouter.security.cache.redis.enabled",
             "jairouter.quota.distributed.enabled",
             "jairouter.persistence.redis.enabled",
+            "jairouter.ratelimit.distributed.enabled",
         };
         for (String key : requiredSwitches) {
             String leaf = key.substring(key.lastIndexOf('.') + 1);

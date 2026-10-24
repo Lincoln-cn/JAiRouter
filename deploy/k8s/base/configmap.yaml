@@ -43,6 +43,9 @@ data:
         enabled: true
         distributed:
           enabled: true
+      ratelimit:
+        distributed:
+          enabled: true
       persistence:
         redis:
           enabled: true

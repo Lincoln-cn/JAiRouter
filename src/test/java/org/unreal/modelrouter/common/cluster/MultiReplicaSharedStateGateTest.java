@@ -12,6 +12,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -194,5 +195,23 @@ class MultiReplicaSharedStateGateTest {
         assertTrue(message.contains("在副本 A 吊销的令牌在副本 B 仍被放行"));
         assertTrue(message.contains("multi-replica.md"));
         assertTrue(message.contains("OFF"));
+    }
+
+    // ---------- v3.5.2: 终端用户限流共享态 ----------
+
+    @Test
+    @DisplayName("终端用户限流计数登记在共享态清单内，且写明放行量随副本数放大")
+    void endUserRateLimitSwitchIsListed() {
+        final SharedStateSwitch entry = MultiReplicaSharedStateGate.SHARED_STATE_SWITCHES.stream()
+                .filter(item -> "jairouter.ratelimit.distributed.enabled".equals(item.key()))
+                .findFirst()
+                .orElse(null);
+
+        assertNotNull(entry, "终端用户限流的分布式开关必须登记在共享态清单内");
+        assertTrue(entry.consequence().contains("副本数"),
+                "后果说明必须让人看出放行量随副本数放大: " + entry.consequence());
+        assertTrue(MultiReplicaSharedStateGate.describe(MultiReplicaSharedStateGate.assess(true, null))
+                        .contains("jairouter.ratelimit.distributed.enabled"),
+                "多副本告警消息应包含该开关");
     }
 }
