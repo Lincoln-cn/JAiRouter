@@ -284,12 +284,31 @@ public class SanitizationConfigController {
 
     private Map<String, Object> buildSnapshot(final List<SanitizationRule> rules) {
         final SanitizationConfig config = securityProperties.getSanitization();
+        final SanitizationConfig.ResponseSanitization response = config.getResponse();
         final Map<String, Object> snap = new LinkedHashMap<>();
-        snap.put("response", responseToMap(config.getResponse()));
+        snap.put("response", responseToMap(response));
         snap.put("ruleCount", rules == null ? 0 : rules.size());
         snap.put("primaryUseCase", "chat-call-history-logs-and-user-data-records");
-        snap.put("gatewayResponseFilter", "optional-default-off-management-and-ai-paths-excluded");
+        snap.put("gatewayResponseFilter", describeGatewayResponseFilter(response));
         return snap;
+    }
+
+    /**
+     * 网关响应过滤器的实际生效描述（#605）。
+     *
+     * <p>该字段曾写死为 {@code optional-default-off-management-and-ai-paths-excluded}，
+     * 在 #593 / #595 / #598 之后已与实现不符：生产 profile 默认开启，{@code /v1/**} 的
+     * 非流式 JSON 与 SSE 都在覆盖范围内，管理面则由 {@code response.scope} 的默认排除集合挡住。
+     * 现在按当前配置实时拼装，避免再次漂移。</p>
+     *
+     * @param response 响应侧脱敏配置
+     * @return 形如 {@code enabled=true;scopeMode=exclude;sanitizeSse=true;failOnError=false} 的描述
+     */
+    private static String describeGatewayResponseFilter(final SanitizationConfig.ResponseSanitization response) {
+        return "enabled=" + response.isEnabled()
+                + ";scopeMode=" + DataMaskingScope.from(response).getMode()
+                + ";sanitizeSse=" + response.isSanitizeSse()
+                + ";failOnError=" + response.isFailOnError();
     }
 
     private static Map<String, Object> responseToMap(final SanitizationConfig.ResponseSanitization res) {
