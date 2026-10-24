@@ -1,9 +1,9 @@
 # Roadmap
 
 <!-- 版本信息 -->
-> **Doc Version**: 2.2.3
-> **Last Updated**: 2026-10-21
-> **Git Tag**: v3.4.0
+> **Doc Version**: 2.3.0
+> **Last Updated**: 2026-10-24
+> **Git Tag**: v3.5.0
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -23,6 +23,18 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 - **Observability**: Comprehensive monitoring, logging, and distributed tracing
 
 ## Current Version Status
+
+### ✅ v3.5.0 (Feature: response sanitization coverage + circuit-breaker governance + request-side config surface removed, **released 2026-10-24**)
+
+**Status**: Released (GitHub Release `v3.5.0`, 2026-10-24; multi-arch Docker images rebuilt by CI on release: `v3.5.0` / `3.5.0` / `latest`)
+**Scope**: everything merged after `v3.4.0` (released 10-21), i.e. the four stages of the #560 sanitization series, three circuit-breaker fixes and a console acceptance pass
+**Highlights**:
+
+- **Sanitization coverage**: non-streaming JSON under `/v1/**` is sanitized (#593), the effective scope becomes configurable (#595, `response.scope`), the response buffer gains a limit while double-release and empty-body defects are fixed (#594 / #597), and SSE streams are sanitized frame by frame (#598, `sanitize-sse` on by default).
+- **Default PII rules**: five bounded patterns replace the old set (#561), so mobile-number matching stops hitting UUIDs and ID-card / card-number tails stop leaking; JSON keys such as `traceId` keep their values, and a "tests green, production still masked" wiring gap in `OptimizedSanitizationRuleEngine` is closed.
+- **Breaking change (#601 / #602)**: the request-side sanitization configuration surface is removed, `GET/PUT /api/config/sanitization` handles `response` only, and Flyway `V5` deletes historical `request` rows plus the `whitelist_users` column.
+- **Circuit-breaker governance (#551 / #554 / #555)**: `clear-all` performs a full reset (`resetAll`, response carries `matched`); force-open/close gain canonical paths under `/api/monitoring/metrics-pipeline/circuit-breaker/*` with `@Deprecated` aliases; the never-effective `stateSyncIntervalMinutes` is removed.
+- **Console and docs**: exception pages off gradients, JWT filters inline, load-balancer header tightened, overview tabs fixed, acceptance-batch UI fixes (#584 / #585 / #589); JWT docs use real config keys and Chinese capability labels are unified (#590).
 
 ### ✅ v3.4.0 (Feature: console overhaul + permission semantics + persisted sanitization config + hourly/monthly quota limits, **released 2026-10-21**)
 
@@ -532,7 +544,8 @@ JAiRouter will continue to uphold the open-source spirit and is committed to pro
 11. ✅ v3.2.2 patch (released 2026-09-22): fixed the user-reported API Key quota display (#84) and routing-monitor counter (#83); console business failures now return 4xx/5xx instead of HTTP 200 (#94, response-body compatible), plus quota endpoint `block` failure (#92), over-permissive e2e assertions (#95), alert-threshold inconsistency (#96) and monitoring error-code inconsistency (#98). **Known remaining (P2)**: `QuotaLedgerService` distributed path still blocks synchronously; frontend temporary IDs use `Math.random`
 12. ✅ v3.3.0 minor (released 2026-10-07): PostgreSQL and versioned migration (PG on `ddl-auto: validate`, H2 gets versioned migration too, both startup patch components deleted); multi-replica cluster (cross-replica event broadcast and sliding-window counting, shared-state self-check, per-class scheduled jobs); RBAC closed out to fail-closed GETs; four batches of tracing config honesty (57 zero-consumer fields deleted, 3 wired up); structured JSON stdout and Kustomize manifests; documentation facts checked and corrected (#160–#248)
 13. ✅ v3.4.0 feature release (released 2026-10-21): console overhaul (7 groups / 28 items navigation, collapsible sidebar, dark-mode hierarchy, card lists on narrow screens, 33 pages on a neutral palette, global search and status bar); permission semantics (eight read-only codes, 55 → 63); persisted sanitization configuration (Flyway V4); hourly/monthly quota limits. **Deferred**: the record-level FULL encryption strategy UI moves with the frontend track (v3.5.x)
-14. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.2.x
+14. ✅ v3.5.0 feature release (released 2026-10-24): response sanitization coverage closed out (non-streaming JSON under `/v1/**`, configurable `response.scope`, buffer limit, per-frame SSE), default PII rules and JSON key exemptions corrected, request-side configuration surface removed (Flyway V5), three circuit-breaker fixes, console acceptance fixes
+15. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.2.x
 
 ### Long-term Vision
 1. Become the standard in AI model routing

@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.4.0
-> **Last Updated**: 2026-10-21
+> **Document Version**: 3.5.0
+> **Last Updated**: 2026-10-24
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,53 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.5.0] - 2026-10-24 - Feature Release (response sanitization coverage + circuit-breaker governance + request-side config surface removed)
+
+#### Response sanitization coverage (#560 series)
+
+- **Non-streaming JSON** responses under `/v1/**` are now sanitized (#593): the `/v1/` and `/v1/**` entries are removed from `ExcludedPathsConfig`, while `/api/**` (including `/api/v1/**`), `/actuator/**`, `/health`, `/metrics`, Swagger and static resources stay excluded. Only the exclusion table changed; no filter branch was touched, so streaming behavior was unchanged at that point.
+- The effective scope is configurable (#595, tier A): new `jairouter.security.sanitization.response.scope.{mode,patterns}`. With `mode=exclude` (the default) `patterns` lists the paths that are **not** sanitized and an empty list falls back to the built-in set (behavior identical to before); with `mode=include` only matching paths are sanitized and an empty list means **nothing** is sanitized (server logs a WARN and the console shows a red banner). Matching: entries without wildcards match by prefix (`/actuator` covers `/actuator/health`), entries with `*`/`**` use Ant matching (`/v1/**` also matches `/v1` itself). The scope applies **only to the HTTP response filter**; record-side sanitization is unaffected.
+- Console and API: `GET /api/config/sanitization` exposes `scope` (with `usingBuiltInDefaults` and `warning`) under `response` plus a top-level `scopeSource`; new `POST /api/config/sanitization/scope/preview` previews path decisions; the PII masking page gains a read-only card. Scope is read-only for now — changing it requires a restart.
+- Response buffer limit (#594 / #597): new `jairouter.security.sanitization.response.max-buffered-bytes`, default **1 MiB**, minimum 1 KiB (a smaller value fails startup). Over-limit behavior is twofold: with a `Content-Length` the response is passed through **without sanitization** (WARN plus an audit event); for chunked responses the bytes have already been consumed and cannot be replayed, so the request is terminated as a sanitization failure (the central error handler renders the body) and **no truncated body is emitted**. The same patch removes a double `DataBuffer` release in `finally` (Netty pooled buffers could raise `IllegalReferenceCountException`) and a double write of an already-consumed body via `switchIfEmpty`.
+- SSE per-frame sanitization (#560 phase two / #598): new `SseResponseSanitizer` splits the SSE stream per line and sanitizes only `data:` payloads via `sanitizeResponse(payload, "application/json")`; `event:` / `id:` / comments / blank lines / `[DONE]` pass through untouched, partial lines are carried across chunks, an over-limit line passes through and is warned about once, and a single frame failure only rolls back that frame instead of tearing down the stream. `ResponseSanitizationFilter` now overrides `writeAndFlushWith`; the previous fallback to `application/octet-stream` when the response header carried no type (which silently let SSE through) is replaced by `null` plus an `Accept: text/event-stream` fallback. New setting `jairouter.security.sanitization.response.sanitize-sse`, default `true`.
+- Default PII rules fixed (#561 / #591): the shipped `pii-patterns` become five bounded patterns — 18-digit ID cards `(?<!\d)\d{17}[\dXx](?!\d)`, 16/19-digit cards without separators, 4-group card numbers, mobile numbers `(?<!\d)1[3-9]\d{9}(?!\d)`, and email. **List order is execution order**: longer numbers must precede the mobile rule (otherwise the first 11 digits are consumed and the tail leaks), and a test pins that order. The sensitive-word list drops `key` (it masked ordinary text such as `press any key`). JSON keys `traceId` / `spanId` / `requestId` / `traceparent` / `tracestate` keep their values verbatim by default (key match is case-insensitive); every other key is still masked.
+- A "tests green, production unchanged" gap was closed in the same batch (#591): the default-wired `OptimizedSanitizationRuleEngine` (`@Primary`) had no JSON key-exemption branch while the corpus test instantiated `DefaultSanitizationRuleEngine` ⇒ `traceId` was still masked in production. `JsonKeyExemption` is now shared by both engines, `SanitizationRuleEngineWiringTest` asserts that Optimized is the default wiring, and the 28-case corpus is replayed on the Optimized engine.
+- Performance warning (#591): enabling sanitization in the console now asks for confirmation (disabling does not), the cards keep a persistent notice while it is on, and `security/data-sanitization.md` gains a performance and capacity section (the response side only covers `application/json`; cost grows with body size, rule count and QPS; `SafeRegexValidator` rejects dangerous patterns but does not guarantee speed).
+
+#### Breaking: request-side sanitization configuration removed (#601 / #602)
+
+- The request-side switch and whitelist were configurable but the inbound path never called them (`sanitizeRequest` had zero callers, see #592 / #600). This release removes the request-side configuration surface entirely and keeps only the response side and the record side (`sanitizeForStorage`) that actually run: `SanitizationConfig` loses the `request` field and its nested class, `SanitizationService` loses `sanitizeRequest` / `isUserWhitelisted`, and `SanitizationConfigStore` / `SanitizationConfigEntity` become response-only.
+- `GET /api/config/sanitization` no longer returns `request`; `PUT` accepts `response` only, and a payload carrying just `request` is rejected with 400 (the error message asks for the `response` sub-configuration). Saving preserves `scope` / `maxBufferedBytes` / `sanitizeSse`, so one save cannot reset the #560 and #594 configuration to defaults.
+- New Flyway migration `V5__remove_request_sanitization_scope.sql` (H2 and PostgreSQL): deletes historical `request` configuration rows and the `whitelist_users` column that only served the request-side whitelist.
+- The console drops the request-side card and the `requestEnabled` indicator, renders the response side full width, and submits `response` only.
+
+#### Circuit-breaker governance (#551 / #554 / #555 / #599)
+
+- `POST /api/config/instance/circuit-breaker/clear-all` now performs a full reset: new `CircuitBreakerAdminService.resetAll(reason)` resets every instance in the registry (in-memory state to CLOSED, persisted state deleted, a `MANUAL_RESET` history entry written, adaptive thresholds cleared) and returns `matched=0` for an empty registry. The endpoint is `@Deprecated` in favor of `POST /api/v1/circuit-breaker-monitor/instances/reset`, which accepts `serviceType` / `states` / `instanceIds`.
+- The scope of force-open / force-close is now explicit (#555): these endpoints operate on the **metrics-pipeline** singleton breaker, which is not the instance-routing breaker. Canonical paths `GET/POST /api/monitoring/metrics-pipeline/circuit-breaker/{stats,force-open,force-close}` are added (the `/actuator` side mirrors them), the old paths remain as `@Deprecated` aliases, and the response text states that only metrics processing is affected.
+- `stateSyncIntervalMinutes` is removed (#554): it could be set and echoed back, but no scheduled task ever read it. The DTO, service, repository default and the console "sync" group are gone; the entity field stays and is marked `@Deprecated` (`h2/V1__baseline.sql` is published and immutable — dropping the column would trip the baseline drift check).
+
+#### Console fixes (#584 / #585 / #586 / #589 / #590)
+
+- The exception management and exception statistics pages drop their decorative gradients (`MetricStrip` / `ChartCard` / `useChartSkin`); the JWT token filters are inline; the load-balancer monitoring header moves pause/resume and policy configuration into a "more" dropdown (the clear-history button stays a real button because the `05-traffic-governance` E2E spec depends on it).
+- The service-type tabs of the overview "service configuration" panel are plain text again (they had been treated as a filter, which broke tab switching), with `instanceTotal` / `viewInstances` copy and a tab-switching case in `03-overview`.
+- Acceptance-batch UI fixes: filter spacing, list-page card surface, light-theme contrast, menu grouping, and permission semantics (`api/permission.ts` plus a new unit test).
+- Cleanup (#590): the two environment variables with no consumer and several non-existent persistence / blacklist keys in `jwt-authentication.md` are replaced with the real keys; Chinese capability labels are unified; the embedded Dockerfile example in `china-optimization.md` loses its stale version label and gains a note that prod fails fast without secrets and that `JWT_SECRET` / `INITIAL_ADMIN_PASSWORD` must be injected at `docker run`.
+
+#### Security and CI
+
+- `.github/workflows/frontend-tests.yml` is restricted to `permissions: contents: read` (CodeQL `actions/missing-workflow-permissions` alerts #82 / #84).
+- Dependency updates: `vite` 8.0.16 → 8.3.5; `follow-redirects` 1.16.0 → 1.16.1.
+
+#### Upgrade notes
+
+- **Breaking API change**: `GET/PUT /api/config/sanitization` handles `response` only (see above).
+- **Database change**: Flyway `V5__remove_request_sanitization_scope.sql` **deletes** historical `request` configuration rows and the `whitelist_users` column, and cannot be rolled back automatically. Deployments that once saved request-side rules used them for record-side masking through `sanitizeForStorage`; those rules stop applying after the upgrade — migrate anything you want to keep into the `response` configuration (response rules are used for record-side masking as well).
+- **Behavior change**: SSE streaming responses are sanitized frame by frame by default (`sanitize-sse: true`), which adds CPU cost on long streams; set it to `false` to pass them through untouched.
+- **Already on in production**: `sanitization.response.enabled` is `true` in `application-prod.yml` / `application-staging.yml`, so after the upgrade non-streaming JSON under `/v1/**` and SSE frames **start being masked immediately** (visible to clients). Deployments that must return content verbatim should add the paths to `response.scope.patterns` (`mode=exclude`) or turn the switch off.
+- **Behavior change**: the default PII rules and JSON key exemptions changed — identifiers such as `traceId` that used to be masked are now preserved, while ID-card tails and long card numbers that used to leak are now masked in full.
+- **Removed setting**: `stateSyncIntervalMinutes` can no longer be set (it never had any effect).
 
 ### [3.4.0] - 2026-10-21 - Feature Release (console overhaul + permission semantics + persisted sanitization config + hourly/monthly quota limits)
 

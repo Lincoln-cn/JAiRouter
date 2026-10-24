@@ -42,8 +42,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # 本地/仓库目录名与产品名不同
 artifact:        model-router            # Maven artifactId
-project_version: 3.4.0                   # pom.xml
-latest_release:  v3.4.0 (2026-10-21)
+project_version: 3.5.0                   # pom.xml
+latest_release:  v3.5.0 (2026-10-24)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5（WebFlux / 响应式）
   frontend: Vue 3 + TypeScript + Vite，中英双语（zh-CN / en-US）
@@ -351,7 +351,18 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 
 ## 状态与近期工作
 
-**最新发布：v3.4.0（2026-10-21）** —— 跟 `v3.3.6` 的功能版：完成控制台重构（P0-1 → P3）并补齐后端三项能力，带**一次库结构迁移**与**一处授权语义变更**。
+**最新发布：v3.5.0（2026-10-24）** —— 跟 `v3.4.0` 的功能版：把响应脱敏的覆盖面从「几乎为零」补到「非流式 JSON + SSE 逐帧」并做成可配置，同时收口熔断器治理，带**一次破坏性接口变更**与**一次不可回滚的库结构迁移**。
+
+| 主题 | 变更内容 |
+|------|----------|
+| **响应脱敏覆盖面（#560 系列）** | `/v1/**` 非流式 JSON 纳入脱敏；生效范围可配置（`jairouter.security.sanitization.response.scope.mode` = exclude / include，配合 `patterns`，留空回落内置集合）；响应缓冲上限 `max-buffered-bytes`（默认 1 MiB，超限按「放行」或「终止」两种口径处理）；SSE 流式响应逐帧脱敏（`sanitize-sse`，默认开）；默认 PII 规则换成 5 条带边界模式（手机号不再误伤 UUID、身份证与卡号不再漏尾部），`traceId` 等 JSON 键的值豁免 |
+| **破坏性变更（#601 / #602）** | 请求侧脱敏配置面整体移除：`GET/PUT /api/config/sanitization` 只处理 `response`；**Flyway V5** 删除历史 `request` 配置行与 `whitelist_users` 列（不可自动回滚）；记录侧 `sanitizeForStorage` 语义不变 |
+| **熔断器治理（#551 / #554 / #555）** | `clear-all` 改走完整重置（`CircuitBreakerAdminService.resetAll`，响应带 `matched`）；force-open / force-close 新增规范路径 `/api/monitoring/metrics-pipeline/circuit-breaker/*`，旧路径保留为 `@Deprecated` 别名；删除从不生效的 `stateSyncIntervalMinutes` |
+| **控制台、文档与 CI** | 异常两页去彩虹化、JWT 筛选内联、负载均衡页头收敛、概览页签修回、验收批次界面问题（45 文件）；JWT 文档改成真实配置键、中文能力标签统一、Dockerfile 示例补密钥注入说明；前端测试 workflow 权限收敛为只读 |
+
+`[3.5.0]` 的 changelog 条目见 [更新日志](docs/zh/reference/changelog.md)；以 GitHub Release `v3.5.0` 发布，并触发多架构镜像（`v3.5.0` / `3.5.0` / `latest`）。
+
+**`v3.4.0`（2026-10-21）** 是跟 `v3.3.6` 的功能版：完成控制台重构（P0-1 → P3）并补齐后端三项能力，带**一次库结构迁移**与**一处授权语义变更**。
 
 | 主题 | 变更内容 |
 |------|----------|

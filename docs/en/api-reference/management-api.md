@@ -899,7 +899,7 @@ Reset all keys' daily quotas and rate limits.
 
 **Permission:** `security:sanitization:manage` (ADMIN)
 
-Primary path is **record-side** `sanitizeForStorage` for chat call-history/logs. The gateway response filter is off by default and excludes `/api/**` and AI realtime paths.
+Two surfaces apply — **record-side** `sanitizeForStorage` (masking for call-history / log / trace persistence, not controlled by the response switch) and the gateway response filter (`jairouter.security.sanitization.response.*`, off by default and on in the prod profile). The response scope is governed by `response.scope`: management paths such as `/api/**` and `/actuator/**` are excluded by default, while non-streaming JSON under `/v1/**` and SSE frames are covered. This endpoint configures the response side only (the request-side configuration surface was removed in 3.5.0).
 
 #### `GET /api/config/sanitization`
 
