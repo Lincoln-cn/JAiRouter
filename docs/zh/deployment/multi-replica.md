@@ -19,7 +19,7 @@
 
 ## 必开配置项
 
-多副本部署需同时开启以下 5 项，并配好 Redis 连接：
+多副本部署需同时开启以下 6 项，并配好 Redis 连接：
 
 | 配置项 | 默认 | 多副本应设为 | 不开的后果 |
 |---|---|---|---|
@@ -28,8 +28,9 @@
 | `jairouter.security.cache.redis.enabled` | `false` | `true` | API Key 缓存各副本独立，吊销/新建不跨副本生效 |
 | `jairouter.quota.distributed.enabled` | `false` | `true` | 配额计数每副本一份，放行量约为配置值 × 副本数 |
 | `jairouter.persistence.redis.enabled` | `false` | `true` | 状态持久化退坡到本机 H2/文件，不做跨节点共享 |
+| `jairouter.ratelimit.distributed.enabled` | `false` | `true` | 终端用户限流计数每副本一份，放行量约为配置值 × 副本数 |
 
-开启配额分布式计数时还需 `jairouter.quota.enabled=true`（配额功能本身的总开关）。
+开启配额分布式计数时还需 `jairouter.quota.enabled=true`（配额功能本身的总开关）；终端用户限流另由 `jairouter.ratelimit.end-user.enabled` 控制（默认关），上表那条只决定它的计数是否跨副本共享。
 
 Redis 连接信息统一由 `REDIS_HOST`、`REDIS_PORT`、`REDIS_PASSWORD`（以及 `REDIS_DATABASE`）环境变量，
 或 Spring 的 `spring.data.redis.*` 提供 —— 上面的开关只决定**用不用** Redis，不再各自读一份
@@ -120,8 +121,10 @@ API Key 校验走的是各副本自己的内存镜像，只在本进程内更新
 
 ## 限流键维度与多副本语义
 
-限流状态**全部在 JVM 内**，且仓库**不存在分布式限流实现**（无 Redis 限流器）——这一点与配额账本、
-JWT 黑名单不同，后两者都有现成的 Redis 实现、只差开关。因此多副本下：
+限流状态**默认在 JVM 内**。仓库里有两条 Redis 计数路径，但今天只有一条是可达的：终端用户限流（v3.5.2，
+打开 `jairouter.ratelimit.distributed.enabled` 后跨副本共享同一份计数）；客户端维度那条
+（`RedisSlidingWindowRateLimiter`）实现仍在，但主链路没有调用点（#623）。其余服务级 / 实例级 / 规则级
+限流器仍是每副本一份。因此多副本下：
 
 > 同一客户端的实际放行量 ≈ 配置值 × 副本数，且窗口重置各副本独立，突发形态还会随请求落到哪个
 > Pod 而变化（等价于每 Pod 各发一个满额桶）。
@@ -129,6 +132,11 @@ JWT 黑名单不同，后两者都有现成的 Redis 实现、只差开关。因
 **当前决策：先修正键维度，分布式计数待评估。** 理由是键维度不成立时做了分布式计数也是错的：
 集群 + 无 L7 Ingress 的部署下 `remoteAddress` 是**节点 IP** 而非真实客户端 IP，按 IP 计数等于
 按垃圾数据计数——要么把整个节点的流量算作一个客户端，要么在反代后把所有流量算作网关。
+
+> **实现状态（2026-10-24 核实，#623）**：下面这套「客户端维度限流」在当前主链路上**没有调用点** ——
+> `RateLimitManager.tryAcquireClientIp` 除测试外无调用方，`client-ip-enable` / `key-dimension` 只被绑定、
+> 不产生任何限流效果。真正按「调用方 × 下游用户」维度生效的是 v3.5.2 的终端用户限流
+> （见[限流配置](../configuration/rate-limiting.md)）。保留本节是为了固定键维度与回退语义，将来接线时按此实现。
 
 ### 配置
 
@@ -157,19 +165,19 @@ WARN 日志与 `recordLoadBalancer(..., "random-fallback-no-client-ip")` 指标�
 
 ### 跨副本计数（可选）
 
-开启 `jairouter.ratelimit.distributed.enabled` 后，客户端维度的滑动窗口状态放到 Redis，各副本共享同一份计数 —— 放行量等于配置值，而不是配置值 × 副本数。
+`jairouter.ratelimit.distributed.enabled=true` 时，限流计数写到 Redis，各副本共享同一份 —— 放行量等于配置值，而不是配置值 × 副本数。
 
-- **与本地实现严格对齐**：窗口 1 秒、上限 `rate` 次/秒；切换实现只改变计数范围，不改变限流行为。
-- **Lua 原子**：判定（`ZCARD`）与记录（`ZADD`）在同一段脚本内完成，多副本并发不会超发。
+**当前真正消费这个开关的只有终端用户限流（v3.5.2）**：客户端维度那条路径（`RedisSlidingWindowRateLimiter`，窗口 1 秒、上限 `rate`）实现仍在仓库里，但主链路没有调用点（#623），开关对它不产生任何效果。终端用户限流本身另由 `jairouter.ratelimit.end-user.enabled` 控制，默认关闭。
+
+- **Lua 原子**：`INCR` → 首次写入时设置 TTL → 超过上限则 `DECR` 回滚并在同一段脚本里返回拒绝，多副本并发不会超发。
 - **fail-open**：Redis 不可用（连接失败/超时）时放行并告警 —— 全站拒绝比放宽限流更糟，与配额侧 `degradeToLocal` 的取向一致。
-- **有界阻塞**：该调用发生在 `Schedulers.boundedElastic` 上（见 `ServiceRequestHandler` 的 `selectInstance` 调用），不会卡住 Netty EventLoop；超时默认 50ms。
-- 桶带 TTL 自动过期，无需清理任务。
-
-**前提仍然是键维度成立**：无 L7 反代时按 IP 计数，分布式化只是更精确地统计垃圾数据。
+- **有界阻塞**：超时默认 50ms，不阻塞 Netty EventLoop。
+- 键带 TTL 自动过期，无需清理任务。
+- 未开启该开关时用本机有界计数器（Caffeine，条目上限由 `local-cache-size` 决定），多副本下各算各的。
 
 ### 仍未做
 
-跨副本计数只覆盖了**客户端维度**；服务级 / 实例级 / 规则级限流器仍是每副本一份，多副本下这几级的放行量仍会随副本数放大，需要按同样思路改造。
+跨副本计数目前只覆盖**终端用户限流**；服务级 / 实例级 / 规则级限流器仍是每副本一份，多副本下这几级的放行量仍会随副本数放大，需要按同样思路改造。
 
 ## 实时事件跨副本广播
 

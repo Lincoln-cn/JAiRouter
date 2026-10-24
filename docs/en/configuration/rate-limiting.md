@@ -417,7 +417,11 @@ model:
     client-ip-enable: true      # Enable client IP rate limiting
 ```
 
-When enabled, each client IP gets its own rate limiter instance using the same algorithm, capacity, and rate as the parent configuration. The cache holds up to 10,000 client entries with 30-minute idle expiry.
+> **Current implementation status (verified 2026-10-24, #623)**: `client-ip-enable` / `key-dimension` are
+> configuration-only today — the client-dimension limiter is **not called from the default request path**
+> (`RateLimitManager.tryAcquireClientIp` has no production caller), so enabling the switches above does
+> **not** give you "one limiter per client IP"; service- and instance-level limits are what actually apply.
+> To limit downstream users that share one API key, use the "End-User Rate Limiting" section below.
 
 ### Service-Level IP Rate Limiting
 
@@ -460,6 +464,61 @@ curl "http://localhost:8080/api/rate-limiter/status"
 # View rate limiter metrics (remaining capacity, usage ratio)
 curl "http://localhost:8080/api/rate-limiter/metrics"
 ```
+
+## End-User Rate Limiting (v3.5.2, disabled by default)
+
+For the case where one API key is shared by many end users: counts per `(API key, end user)` so that each
+user gets an independent per-minute quota. Disabled by default; it is an **availability guard, not a
+security boundary** (see the end of this section).
+
+### Identity resolution order
+
+1. the `X-End-User-Id` request header (honoured when `header-enabled: true`, which is the default);
+2. the `user` field in the request body (Chat Completions, Embeddings, image generation, image edit);
+3. `metadata.user_id` on Anthropic Messages.
+
+The value is normalized first: only `[A-Za-z0-9._:@/-]`, at most 64 characters; anything else is replaced
+by the first 16 hex characters of its SHA-256. **The raw value never enters a Redis key, a log line or an
+error response.**
+
+### Configuration
+
+Add the block below under `jairouter:` in `config/router/ratelimit.yml` (full prefix
+`jairouter.ratelimit.end-user`):
+
+```yaml
+ratelimit:
+  end-user:
+    enabled: true                # master switch, default false
+    requests-per-minute: 60      # per (API key x end user), per minute
+    header-enabled: true         # honour X-End-User-Id
+    missing-identity: skip       # skip = pass through uncounted; reject = 429
+    local-cache-size: 50000      # bounded local counter entries
+    fingerprint-length: 16       # digest length used for rejected identities
+```
+
+### Where it runs and how a rejection looks
+
+The check runs after authentication and **before** the service-level pre-acquire and the response-cache
+read, so a cache hit cannot bypass it. Over-limit requests get `429` with `Retry-After` (time until the next
+full minute), `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`.
+
+### Multiple replicas
+
+Each replica counts on its own by default, so the effective allowance is roughly the configured value times
+the replica count. Set `jairouter.ratelimit.distributed.enabled=true` to count in Redis with an atomic
+single-script check — see [Multi-replica deployment](../deployment/multi-replica.md).
+
+### Boundaries and non-goals
+
+- **Not a security boundary**: `X-End-User-Id` is self-reported, so the holder of an API key can switch
+  identifiers to bypass the quota. Real per-user isolation still requires one key per user.
+- **Who is exempt**: console JWT sessions (Playground and friends) are always skipped, and so are requests
+  without an API key.
+- **Difference from quotas**: quota limits (`jairouter.quota.*`) meter **volume** (requests / tokens) per
+  window and answer with `X-Quota-*`; this layer meters **rate** per minute and answers with `X-RateLimit-*`.
+- **No per-key overrides in v1**: there is one global allowance; per-key tuning is deferred until there is a
+  real need.
 
 ## Multi-Layer Rate Limiting Configuration
 

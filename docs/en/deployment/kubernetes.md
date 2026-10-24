@@ -164,6 +164,7 @@ The repository already ships Redis shared-state implementations (quota `RedisCou
 | `jairouter.security.jwt.persistence.redis.enabled` | JWT token persistence | `false` |
 | `jairouter.security.jwt.blacklist.redis.enabled` | JWT blacklist across nodes | `false` |
 | `jairouter.security.cache.redis.enabled` | API-Key distributed cache | `false` |
+| `jairouter.ratelimit.distributed.enabled` | End-user rate-limit counting shared across nodes | `false` |
 
 ## Kubernetes Deployment Overview
 

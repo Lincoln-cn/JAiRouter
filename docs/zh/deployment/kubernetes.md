@@ -142,6 +142,7 @@ crash-loop。已实测两个 JVM 进程并发打开 `jdbc:h2:file:./data/jairout
 | `jairouter.security.jwt.persistence.redis.enabled` | JWT 令牌持久化 | `false` |
 | `jairouter.security.jwt.blacklist.redis.enabled` | JWT 黑名单跨节点 | `false` |
 | `jairouter.security.cache.redis.enabled` | API-Key 分布式缓存 | `false` |
+| `jairouter.ratelimit.distributed.enabled` | 终端用户限流计数跨节点共享 | `false` |
 
 ## Kubernetes 部署概述
 
