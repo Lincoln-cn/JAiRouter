@@ -4,7 +4,6 @@ import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.persistence.jpa.entity.QuotaLedgerEntity;
@@ -13,7 +12,6 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.Clock;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -21,7 +19,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
 /**
@@ -111,7 +108,7 @@ public class QuotaLedgerService {
     /** 开启分布式计数但未装配计数后端 Bean（配置错误），已降级为本地计数 */
     public static final String REASON_REDIS_NOT_CONFIGURED = "quota-counter-redis-not-configured";
 
-    private final QuotaLedgerRepository repository;
+    private final QuotaLedgerRepositoryGateway repositoryGateway;
     private final QuotaProperties properties;
     private final Clock clock;
 
@@ -126,11 +123,11 @@ public class QuotaLedgerService {
 
     private final QuotaCounterMetrics metrics;
 
-    /** 是否处于降级状态（最近一次分布式操作失败） */
-    private volatile boolean degraded;
+    /** 降级状态（最近一次分布式操作失败的原因）；读、写两条路径共享同一份状态 */
+    private final QuotaDegradationState degradation = new QuotaDegradationState();
 
-    /** 降级原因，未降级时为空串 */
-    private volatile String degradedReason = "";
+    /** 分布式写路径；{@code null} 表示本地模式（不做任何 Redis 调用） */
+    private final QuotaDistributedWriter distributedWriter;
 
     /**
      * Spring 使用的主构造器。
@@ -164,16 +161,19 @@ public class QuotaLedgerService {
                               final Clock clock,
                               final QuotaCounterBackend distributedBackend,
                               final QuotaCounterMetrics metrics) {
-        this.repository = repository;
+        this.repositoryGateway = new QuotaLedgerRepositoryGateway(repository);
         this.properties = properties;
         this.clock = clock;
         this.metrics = metrics == null ? QuotaCounterMetrics.noop() : metrics;
         this.localBackend = new LocalCounterBackend(this::loadBaseline);
         this.distributedBackend = distributedBackend;
         this.distributed = properties.isEnabled() && properties.distributedEnabled() && distributedBackend != null;
+        this.distributedWriter = this.distributed
+            ? new QuotaDistributedWriter(distributedBackend, properties, this.metrics, localBackend, degradation,
+                backendName())
+            : null;
         if (properties.isEnabled() && properties.distributedEnabled() && distributedBackend == null) {
-            this.degraded = true;
-            this.degradedReason = REASON_REDIS_NOT_CONFIGURED;
+            degradation.mark(REASON_REDIS_NOT_CONFIGURED);
             this.metrics.recordDegradation(REASON_REDIS_NOT_CONFIGURED);
             log.warn("已开启配额分布式计数但未装配 QuotaCounterBackend，账本保持本地模式: reason={}",
                 REASON_REDIS_NOT_CONFIGURED);
@@ -239,7 +239,7 @@ public class QuotaLedgerService {
      * @return 降级时返回 {@code true}
      */
     public boolean isDegraded() {
-        return degraded;
+        return degradation.degraded();
     }
 
     /**
@@ -248,7 +248,7 @@ public class QuotaLedgerService {
      * @return 降级原因，未降级时为空串
      */
     public String degradedReason() {
-        return degradedReason;
+        return degradation.reason();
     }
 
     /**
@@ -301,8 +301,8 @@ public class QuotaLedgerService {
                 try {
                     publish(key, 1L, tokens, properties.isFailOpen());
                 } catch (Exception e) {
-                    failure = classify(e);
-                    if (degraded) {
+                    failure = QuotaDistributedWriter.classify(e);
+                    if (degradation.degraded()) {
                         log.debug("Redis 计数写入持续失败: apiKeyId={}, window={}, reason={}, error={}",
                             dimension.apiKeyId(), window, failure, e.toString());
                     } else {
@@ -399,9 +399,9 @@ public class QuotaLedgerService {
                             publish(key, 1L, tokens, true);
                             committed.add(new ReserveCommit(key, false, true));
                         } catch (Exception e) {
-                            markDegraded(classify(e));
+                            markDegraded(QuotaDistributedWriter.classify(e));
                             // 明确失败时增量已放回待补写（冲正可与之抵消）；超时结果未知，不冲正
-                            if (!isTimeout(e)) {
+                            if (!QuotaDistributedWriter.isTimeout(e)) {
                                 committed.add(new ReserveCommit(key, false, true));
                             }
                         }
@@ -431,7 +431,7 @@ public class QuotaLedgerService {
                     committed.add(new ReserveCommit(key, true, true));
                     clearDegraded();
                 } catch (Exception e) {
-                    final String reason = classify(e);
+                    final String reason = QuotaDistributedWriter.classify(e);
                     markDegraded(reason);
                     metrics.recordDegradation(reason);
                     if (properties.isFailOpen()) {
@@ -439,7 +439,7 @@ public class QuotaLedgerService {
                         localBackend.incrementLocal(key, 1L, tokens);
                         localBackend.addPending(key, 1L, tokens);
                         // 明确失败：待补写增量由冲正的 publish(-1) 抵消；超时结果未知，不冲正
-                        committed.add(new ReserveCommit(key, true, !isTimeout(e)));
+                        committed.add(new ReserveCommit(key, true, !QuotaDistributedWriter.isTimeout(e)));
                     } else {
                         rollbackCommitted(committed, tokens);
                         return buildLimitViolation(window, maxRequests, maxTokens, key, now);
@@ -628,7 +628,7 @@ public class QuotaLedgerService {
                 try {
                     publish(key, requestDelta, tokenDelta, true);
                 } catch (Exception e) {
-                    failure = classify(e);
+                    failure = QuotaDistributedWriter.classify(e);
                     log.warn("Redis 计数结算补写失败，降级为本地计数: apiKeyId={}, window={}, reason={}, error={}",
                         dimension.apiKeyId(), window, failure, e.toString());
                 }
@@ -695,14 +695,14 @@ public class QuotaLedgerService {
             final Optional<long[]> remote = executeRedis(() -> distributedBackend.read(key));
             clearDegraded();
             if (remote.isPresent()) {
-                return Optional.of(toUsage(key, withPending(key, remote.get())));
+                return Optional.of(QuotaUsageMapper.toUsage(key, withPending(key, remote.get())));
             }
             // Redis 无该桶（未记账 / 已过期 / 数据被清）→ 与本地模式一致回退数据库快照
             return usageFromDatabase(key);
         } catch (Exception e) {
-            final String reason = classify(e);
+            final String reason = QuotaDistributedWriter.classify(e);
             metrics.recordDegradation(reason);
-            if (degraded) {
+            if (degradation.degraded()) {
                 log.debug("Redis 计数读取持续失败: apiKeyId={}, window={}, reason={}, error={}",
                     dimension.apiKeyId(), window, reason, e.toString());
             } else {
@@ -742,7 +742,7 @@ public class QuotaLedgerService {
             inMemoryKeys.add(new QuotaCounterKey(usage.dimension(), usage.window(), usage.windowStart()));
         }
         try {
-            for (final QuotaLedgerEntity row : repository.findByApiKeyId(apiKeyId)) {
+            for (final QuotaLedgerEntity row : repositoryGateway.findByApiKeyId(apiKeyId)) {
                 if (row.getWindowStart() == null) {
                     continue;
                 }
@@ -750,11 +750,12 @@ public class QuotaLedgerService {
                 if (window.isEmpty()) {
                     continue;
                 }
-                final QuotaCounterKey key = new QuotaCounterKey(dimensionOf(row), window.get(), row.getWindowStart());
+                final QuotaCounterKey key = new QuotaCounterKey(
+                    QuotaUsageMapper.dimensionOf(row), window.get(), row.getWindowStart());
                 if (inMemoryKeys.contains(key)) {
                     continue;
                 }
-                result.add(toUsage(key, row));
+                result.add(QuotaUsageMapper.toUsage(key, row));
             }
         } catch (Exception e) {
             log.warn("配额账本 usageAll 读库失败，降级为仅返回内存态: apiKeyId={}, error={}", apiKeyId, e.toString());
@@ -790,7 +791,7 @@ public class QuotaLedgerService {
             if (totals == null) {
                 continue;
             }
-            result.add(toUsage(key, totals));
+            result.add(QuotaUsageMapper.toUsage(key, totals));
         }
         return result;
     }
@@ -810,16 +811,16 @@ public class QuotaLedgerService {
         }
         int cleared = localBackend.resetLocal(apiKeyId);
         try {
-            cleared += repository.deleteByApiKeyId(apiKeyId);
+            cleared += repositoryGateway.deleteByApiKeyId(apiKeyId);
         } catch (Exception e) {
             log.warn("配额账本 reset 删除数据库快照失败（本地槽位已清空）: apiKeyId={}, error={}",
                 apiKeyId, e.toString());
         }
         if (distributed) {
             try {
-                cleared += (int) nullToZero(executeRedis(() -> distributedBackend.reset(apiKeyId)));
+                cleared += (int) QuotaUsageMapper.nullToZero(executeRedis(() -> distributedBackend.reset(apiKeyId)));
             } catch (Exception e) {
-                final String reason = classify(e);
+                final String reason = QuotaDistributedWriter.classify(e);
                 metrics.recordDegradation(reason);
                 markDegraded(reason);
                 log.warn("配额账本 reset 删除分布式计数失败（本地槽位与快照已清空）: apiKeyId={}, reason={}, error={}",
@@ -914,7 +915,7 @@ public class QuotaLedgerService {
     private Optional<QuotaUsage> usageFromLocal(final QuotaCounterKey key) {
         final long[] totals = localBackend.totals(key);
         if (totals != null) {
-            return Optional.of(toUsage(key, totals));
+            return Optional.of(QuotaUsageMapper.toUsage(key, totals));
         }
         return usageFromDatabase(key);
     }
@@ -926,11 +927,7 @@ public class QuotaLedgerService {
      * @return 用量；无记录时返回 {@link Optional#empty()}
      */
     private Optional<QuotaUsage> usageFromDatabase(final QuotaCounterKey key) {
-        final QuotaDimension dimension = key.dimension();
-        return repository.findByTenantIdAndApiKeyIdAndUserIdAndServiceTypeAndModelAndWindowTypeAndWindowStart(
-                dimension.tenantId(), dimension.apiKeyId(), dimension.userId(), dimension.serviceType(),
-                dimension.model(), key.window().name(), key.windowStart())
-            .map(row -> toUsage(key, row));
+        return repositoryGateway.findUsage(key);
     }
 
     /**
@@ -950,9 +947,8 @@ public class QuotaLedgerService {
     /**
      * 把增量（含降级期间累积的待补写增量）发布到分布式后端。
      *
-     * <p>成功即返回；失败时向上抛异常由调用方按 fail-open 降级，并恢复此前取出的待补写增量：
-     * 明确失败（连接失败 / 脚本错误）时连同本次增量一起放回待补写队列；超时属“结果未知”，
-     * 整批放弃以避免重复计数。</p>
+     * <p>实现见 {@link QuotaDistributedWriter#publish}：待补写合并、超时与明确失败的区分都在那里，
+     * 本方法只保留一个调用点级的方法名，避免账本服务里散落 Redis 细节。</p>
      *
      * @param key             计数键
      * @param requests        本次请求数增量
@@ -963,38 +959,11 @@ public class QuotaLedgerService {
                          final long requests,
                          final long tokens,
                          final boolean registerPending) {
-        final long[] pending = localBackend.takePending(key);
-        final long requestDelta = requests + (pending == null ? 0L : pending[0]);
-        final long tokenDelta = tokens + (pending == null ? 0L : pending[1]);
-        if (requestDelta == 0L && tokenDelta == 0L) {
-            return;
-        }
-        try {
-            executeRedis(() -> distributedBackend.increment(key, requestDelta, tokenDelta));
-        } catch (RuntimeException e) {
-            if (isTimeout(e)) {
-                log.warn("Redis 计数命令超时（结果未知），放弃补写该增量以避免重复计数: window={}, windowStart={},"
-                    + " requests={}, tokens={}", key.window(), key.windowStart(), requestDelta, tokenDelta);
-            } else {
-                final long restoreRequests = pending == null ? 0L : pending[0];
-                final long restoreTokens = pending == null ? 0L : pending[1];
-                localBackend.addPending(key,
-                    restoreRequests + (registerPending ? requests : 0L),
-                    restoreTokens + (registerPending ? tokens : 0L));
-            }
-            throw e;
-        }
+        distributedWriter.publish(key, requests, tokens, registerPending);
     }
 
     /**
-     * 阻塞执行一次 Redis 命令并统计耗时（超时由 {@code distributed.timeout} 控制）。
-     *
-     * <p>本方法只能运行在可阻塞线程上：Reactor 会在非阻塞线程上直接拒绝 {@code Mono.block()}，
-     * 其异常信息只说明“block 不被支持”，不含任何账本上下文（issue #105 中表现为 Redis 冲正静默丢失）。
-     * 因此这里先做显式守卫，抛出可定位的异常——异常信息带上当前线程名与后端名，调用方
-     * （{@code reserve} / {@code usageStrict} / {@code reset} / {@code cleanupExpired}）的
-     * {@code classify} 会把它归类为 {@link #REASON_REDIS_UNAVAILABLE} 并打出降级告警，
-     * 使“误在事件循环上调用”与“Redis 真的不可用”至少在日志里可区分。</p>
+     * 阻塞执行一次 Redis 命令并统计耗时（实现在 {@link QuotaDistributedWriter#execute}）。
      *
      * @param command 命令工厂
      * @param <T>     结果类型
@@ -1002,35 +971,18 @@ public class QuotaLedgerService {
      * @throws IllegalStateException 当前线程为 Reactor 非阻塞线程（事件循环无法阻塞等待 Redis）
      */
     private <T> T executeRedis(final Supplier<Mono<T>> command) {
-        final long start = System.nanoTime();
-        boolean success = false;
-        try {
-            if (Schedulers.isInNonBlockingThread()) {
-                throw new IllegalStateException("配额账本 Redis 命令不能在 Reactor 非阻塞线程上同步阻塞执行"
-                    + "（否则 block() 会被拒绝且冲正量静默丢失）: thread=" + Thread.currentThread().getName()
-                    + ", backend=" + backendName());
-            }
-            final T value = command.get().block(properties.distributedTimeout());
-            success = true;
-            return value;
-        } finally {
-            metrics.recordRedisCommand(Duration.ofNanos(System.nanoTime() - start), success);
-        }
+        return distributedWriter.execute(command);
     }
 
     /**
-     * 把 Redis 权威读数与本节点尚未补写的增量合并（避免降级期间低估用量）。
+     * 把 Redis 权威读数与本节点尚未补写的增量合并（实现在 {@link QuotaDistributedWriter#withPending}）。
      *
      * @param key    计数键
      * @param remote Redis 读到的 {@code [requests, tokens]}
      * @return 合并后的 {@code [requests, tokens]}
      */
     private long[] withPending(final QuotaCounterKey key, final long[] remote) {
-        final long[] pending = localBackend.peekPending(key);
-        if (pending == null) {
-            return remote;
-        }
-        return new long[]{remote[0] + pending[0], remote[1] + pending[1]};
+        return distributedWriter.withPending(key, remote);
     }
 
     /**
@@ -1041,13 +993,9 @@ public class QuotaLedgerService {
      * @throws RuntimeException 读取数据库失败时（由 {@link #reserve(QuotaRequest)} 按 fail-open 处理）
      */
     private long[] loadBaseline(final QuotaCounterKey key) {
-        final QuotaDimension dimension = key.dimension();
-        final Optional<QuotaLedgerEntity> row =
-            repository.findByTenantIdAndApiKeyIdAndUserIdAndServiceTypeAndModelAndWindowTypeAndWindowStart(
-                dimension.tenantId(), dimension.apiKeyId(), dimension.userId(), dimension.serviceType(),
-                dimension.model(), key.window().name(), key.windowStart());
-        final long baselineRequests = row.isPresent() ? nullToZero(row.get().getRequestCount()) : 0L;
-        final long baselineTokens = row.isPresent() ? nullToZero(row.get().getTokenCount()) : 0L;
+        final Optional<QuotaLedgerEntity> row = repositoryGateway.findByKey(key);
+        final long baselineRequests = row.isPresent() ? QuotaUsageMapper.nullToZero(row.get().getRequestCount()) : 0L;
+        final long baselineTokens = row.isPresent() ? QuotaUsageMapper.nullToZero(row.get().getTokenCount()) : 0L;
         return new long[]{baselineRequests, baselineTokens};
     }
 
@@ -1065,10 +1013,8 @@ public class QuotaLedgerService {
         }
         final QuotaDimension dimension = key.dimension();
         try {
-            final int updated = repository.accumulate(
-                dimension.tenantId(), dimension.apiKeyId(), dimension.userId(), dimension.serviceType(),
-                dimension.model(), key.window().name(), key.windowStart(), snapshot[2], snapshot[3], now);
-            final boolean persisted = updated > 0 || insertRow(key, snapshot[0], snapshot[1], now);
+            final int updated = repositoryGateway.accumulate(key, snapshot[2], snapshot[3], now);
+            final boolean persisted = updated > 0 || repositoryGateway.insert(key, snapshot[0], snapshot[1], now);
             if (!persisted) {
                 return false;
             }
@@ -1082,57 +1028,14 @@ public class QuotaLedgerService {
     }
 
     /**
-     * 插入账本行（首次落库写入绝对值）。
-     *
-     * @param key      计数键
-     * @param requests 累计请求数
-     * @param tokens   累计 token 数
-     * @param now      当前时间
-     * @return 是否插入成功
-     */
-    private boolean insertRow(final QuotaCounterKey key,
-                              final long requests,
-                              final long tokens,
-                              final LocalDateTime now) {
-        final QuotaDimension dimension = key.dimension();
-        try {
-            repository.save(QuotaLedgerEntity.builder()
-                .tenantId(dimension.tenantId())
-                .apiKeyId(dimension.apiKeyId())
-                .userId(dimension.userId())
-                .serviceType(dimension.serviceType())
-                .model(dimension.model())
-                .windowType(key.window().name())
-                .windowStart(key.windowStart())
-                .requestCount(requests)
-                .tokenCount(tokens)
-                .updatedAt(now)
-                .build());
-            return true;
-        } catch (DataIntegrityViolationException e) {
-            log.debug("配额账本行已存在（并发插入），下轮以累加方式落库: apiKeyId={}", dimension.apiKeyId());
-            return false;
-        } catch (Exception e) {
-            log.warn("配额账本行插入失败: apiKeyId={}, window={}, error={}",
-                dimension.apiKeyId(), key.window(), e.toString());
-            return false;
-        }
-    }
-
-    /**
-     * 删除指定窗口的过期数据库行。
+     * 删除指定窗口的过期数据库行（实现在 {@link QuotaLedgerRepositoryGateway#deleteExpired}）。
      *
      * @param window 窗口类型
      * @param now    当前时间
      * @return 删除行数
      */
     private int deleteExpiredRows(final QuotaWindow window, final LocalDateTime now) {
-        try {
-            return repository.deleteExpired(window.name(), properties.retentionCutoff(window, now));
-        } catch (Exception e) {
-            log.warn("配额账本过期行清理失败: window={}, error={}", window, e.toString());
-            return 0;
-        }
+        return repositoryGateway.deleteExpired(window, properties.retentionCutoff(window, now));
     }
 
     /**
@@ -1147,9 +1050,10 @@ public class QuotaLedgerService {
         long purged = 0L;
         if (distributed) {
             try {
-                purged += nullToZero(executeRedis(() -> distributedBackend.deleteExpired(window, cutoff)));
+                purged += QuotaUsageMapper.nullToZero(
+                    executeRedis(() -> distributedBackend.deleteExpired(window, cutoff)));
             } catch (Exception e) {
-                final String reason = classify(e);
+                final String reason = QuotaDistributedWriter.classify(e);
                 metrics.recordDegradation(reason);
                 markDegraded(reason);
                 log.warn("Redis 过期计数清理失败（忽略，下轮重试）: window={}, reason={}, error={}",
@@ -1160,24 +1064,21 @@ public class QuotaLedgerService {
     }
 
     /**
-     * 标记降级状态。
+     * 标记降级状态（实现见 {@link QuotaDegradationState#mark}）。
      *
      * @param reason 降级原因
      */
     private void markDegraded(final String reason) {
-        this.degradedReason = reason;
-        this.degraded = true;
+        degradation.mark(reason);
     }
 
     /**
      * 清除降级状态（一次成功的分布式操作即视为恢复）。
      */
     private void clearDegraded() {
-        if (this.degraded) {
+        if (degradation.clear()) {
             log.info("配额分布式计数已恢复: backend={}", backendName());
         }
-        this.degraded = false;
-        this.degradedReason = "";
     }
 
     /**
@@ -1193,76 +1094,4 @@ public class QuotaLedgerService {
         return QuotaDecision.failClosed(reason);
     }
 
-    /**
-     * 判断异常是否为超时（Reactor {@code block(timeout)} 把超时包装成
-     * {@link IllegalStateException}，真实超时在因果链中）。
-     *
-     * @param error 异常
-     * @return 因果链中存在 {@link TimeoutException} 时返回 {@code true}
-     */
-    private static boolean isTimeout(final Throwable error) {
-        Throwable cause = error;
-        while (cause != null) {
-            if (cause instanceof TimeoutException) {
-                return true;
-            }
-            cause = cause.getCause();
-        }
-        return false;
-    }
-
-    /**
-     * 把异常归类为降级原因。
-     *
-     * @param error 异常
-     * @return {@link #REASON_REDIS_TIMEOUT} 或 {@link #REASON_REDIS_UNAVAILABLE}
-     */
-    private static String classify(final Throwable error) {
-        return isTimeout(error) ? REASON_REDIS_TIMEOUT : REASON_REDIS_UNAVAILABLE;
-    }
-
-    /**
-     * 计数键 → 用量读数（非负钳制）。
-     *
-     * @param key    计数键
-     * @param totals 计数值
-     * @return 用量读数
-     */
-    private static QuotaUsage toUsage(final QuotaCounterKey key, final long[] totals) {
-        return new QuotaUsage(key.dimension(), key.window(), key.windowStart(),
-            Math.max(0L, totals[0]), Math.max(0L, totals[1]));
-    }
-
-    /**
-     * 数据库行 → 用量读数。
-     *
-     * @param key 计数键
-     * @param row 数据库行
-     * @return 用量读数
-     */
-    private static QuotaUsage toUsage(final QuotaCounterKey key, final QuotaLedgerEntity row) {
-        return new QuotaUsage(key.dimension(), key.window(), key.windowStart(),
-            Math.max(0L, nullToZero(row.getRequestCount())), Math.max(0L, nullToZero(row.getTokenCount())));
-    }
-
-    /**
-     * 数据库行 → 维度（空值折叠为空串哨兵值）。
-     *
-     * @param row 数据库行
-     * @return 维度
-     */
-    private static QuotaDimension dimensionOf(final QuotaLedgerEntity row) {
-        return new QuotaDimension(row.getTenantId(), row.getApiKeyId(), row.getUserId(),
-            row.getServiceType(), row.getModel());
-    }
-
-    /**
-     * {@code Long} → {@code long} 空值兜底。
-     *
-     * @param value 可能为 {@code null} 的计数
-     * @return 非 {@code null} 的计数
-     */
-    private static long nullToZero(final Long value) {
-        return value == null ? 0L : value;
-    }
 }
