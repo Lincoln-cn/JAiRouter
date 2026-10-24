@@ -53,10 +53,10 @@
     },
     "docs/en/api-reference/management-api.md": {
       "FilePath": "docs/en/api-reference/management-api.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-23T01:39:59.519229",
-      "ContentHash": "6e7eacbfebce4785",
-      "GitCommit": "6c486285",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-24T03:01:53.354282",
+      "ContentHash": "448c4507be9071ba",
+      "GitCommit": "9d35190e",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -615,10 +615,10 @@
     },
     "docs/en/getting-started/web-console.md": {
       "FilePath": "docs/en/getting-started/web-console.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:34.008883",
-      "ContentHash": "e41b86c29198af06",
-      "GitCommit": "7e492bc5",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-24T03:01:53.596396",
+      "ContentHash": "5103567268bb7925",
+      "GitCommit": "9d35190e",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -877,10 +877,10 @@
     },
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:35.336932",
-      "ContentHash": "925f708905b9391f",
-      "GitCommit": "7e492bc5",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-24T03:01:53.727187",
+      "ContentHash": "4fab205388a2114f",
+      "GitCommit": "9d35190e",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -934,10 +934,10 @@
     },
     "docs/en/security/data-sanitization.md": {
       "FilePath": "docs/en/security/data-sanitization.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-23T02:11:47.446825",
-      "ContentHash": "6609408efa26b016",
-      "GitCommit": "1cb493d2",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-24T03:01:53.747542",
+      "ContentHash": "c8ecf601618b4091",
+      "GitCommit": "9d35190e",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -951,10 +951,10 @@
     },
     "docs/en/security/index.md": {
       "FilePath": "docs/en/security/index.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:35.665011",
-      "ContentHash": "99cf54411e799bd2",
-      "GitCommit": "537f419c",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-24T03:01:53.749631",
+      "ContentHash": "64c4e24488c6cb3d",
+      "GitCommit": "9d35190e",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -992,10 +992,10 @@
     },
     "docs/en/security/troubleshooting.md": {
       "FilePath": "docs/en/security/troubleshooting.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:35.861694",
-      "ContentHash": "de60c07cdb0422e5",
-      "GitCommit": "98b5e27a",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-24T03:01:53.755892",
+      "ContentHash": "443a053196b1740d",
+      "GitCommit": "9d35190e",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1207,10 +1207,10 @@
     },
     "docs/zh/api-reference/management-api.md": {
       "FilePath": "docs/zh/api-reference/management-api.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-23T01:40:06.338645",
-      "ContentHash": "c9d8dcfe8ffb36a8",
-      "GitCommit": "6c486285",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-24T03:01:53.859076",
+      "ContentHash": "5a60a3984212b937",
+      "GitCommit": "9d35190e",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1613,10 +1613,10 @@
     },
     "docs/zh/deployment/production.md": {
       "FilePath": "docs/zh/deployment/production.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:39.060246",
-      "ContentHash": "2ad8942a58a07698",
-      "GitCommit": "537f419c",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-24T03:01:54.024135",
+      "ContentHash": "f09c3e93927e1f5d",
+      "GitCommit": "9d35190e",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1768,10 +1768,10 @@
     },
     "docs/zh/getting-started/web-console.md": {
       "FilePath": "docs/zh/getting-started/web-console.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:39.828725",
-      "ContentHash": "8785d122a3c1906c",
-      "GitCommit": "7e492bc5",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-24T03:01:54.107647",
+      "ContentHash": "5d5fc1e7a50c165c",
+      "GitCommit": "9d35190e",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2035,10 +2035,10 @@
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:41.147158",
-      "ContentHash": "5680e5c9d821059d",
-      "GitCommit": "7e492bc5",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-24T03:01:54.251078",
+      "ContentHash": "0f8f0afa2a135df8",
+      "GitCommit": "9d35190e",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2093,10 +2093,10 @@
     },
     "docs/zh/security/data-sanitization.md": {
       "FilePath": "docs/zh/security/data-sanitization.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-23T02:11:55.827830",
-      "ContentHash": "46ec7e78ee5fa9ed",
-      "GitCommit": "1cb493d2",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-24T03:01:54.272089",
+      "ContentHash": "c70a1c557e120973",
+      "GitCommit": "9d35190e",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2110,10 +2110,10 @@
     },
     "docs/zh/security/index.md": {
       "FilePath": "docs/zh/security/index.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:41.497775",
-      "ContentHash": "341b04b0828cd51c",
-      "GitCommit": "537f419c",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-24T03:01:54.274042",
+      "ContentHash": "a95b4ca73656a2d4",
+      "GitCommit": "9d35190e",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2151,10 +2151,10 @@
     },
     "docs/zh/security/troubleshooting.md": {
       "FilePath": "docs/zh/security/troubleshooting.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:41.746712",
-      "ContentHash": "42f1a9997208ac09",
-      "GitCommit": "98b5e27a",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-24T03:01:54.280209",
+      "ContentHash": "583de8063ed5662f",
+      "GitCommit": "9d35190e",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -3842,7 +3842,111 @@
       "ChangeType": "DELETED",
       "Timestamp": "2026-10-22T18:25:41.777951",
       "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/en/api-reference/management-api.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T03:01:53.354290",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/web-console.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T03:01:53.596406",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/roadmap.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T03:01:53.727196",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/data-sanitization.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T03:01:53.747550",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/index.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T03:01:53.749636",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/troubleshooting.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T03:01:53.755897",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/management-api.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T03:01:53.859084",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/production.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T03:01:54.024145",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/web-console.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T03:01:54.107656",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/roadmap.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T03:01:54.251086",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/data-sanitization.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T03:01:54.272096",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/index.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T03:01:54.274046",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/troubleshooting.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-24T03:01:54.280213",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-23T06:57:38.186121"
+  "last_updated": "2026-10-24T03:01:54.370049"
 }
