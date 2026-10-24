@@ -46,6 +46,7 @@ import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.ServiceCapability;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
+import org.unreal.modelrouter.router.ratelimit.RateLimitContext;
 import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
 import org.unreal.modelrouter.router.ratelimit.ServiceRateLimitHolder;
 import org.unreal.modelrouter.router.ratelimit.enduser.EndUserRateLimitCounter;
@@ -426,6 +427,20 @@ public class ServiceRequestHandler {
             if (endUserDecision.isPresent() && !endUserDecision.get().allowed()) {
                 return rejectByEndUserLimit(exchange, endUserDecision.get());
             }
+        }
+
+        // v3.5.2 (#623): 客户端维度限流（client-ip / api-key / tenant）—— 之前实现完整但主链路
+        // 从未调用（tryAcquireClientIp 只被测试调用），配置与文档口径因此长期失真。
+        // 是否生效由 model.rate-limit.client-ip-enable（或服务级同名开关）决定，仓库默认全部为
+        // false：集群 + 无反代场景下所有客户端共用一个出口 IP，按 IP 计数会把它们合并限流。
+        // 与终端用户层同理，位置早于缓存预扣与缓存读（限流是硬边界）。
+        if (rateLimitManager != null
+                && !rateLimitManager.tryAcquireClientIp(
+                        new RateLimitContext(serviceType, modelName, clientIp, 1, null, null))) {
+            applyRateLimitRetryHints(exchange, HttpStatus.TOO_MANY_REQUESTS.value());
+            return Mono.error(new ResponseStatusException(
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    "Client-dimension rate limit exceeded for service type '" + serviceType + "'"));
         }
 
         // v2.9.10: 服务级限流预扣 + 缓存提前短路

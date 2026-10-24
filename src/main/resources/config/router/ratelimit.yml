@@ -23,7 +23,7 @@ model:
     scope: "service"
     
     # 是否启用客户端维度限流（按下方 key-dimension 指定的维度区分被限流对象）
-    client-ip-enable: true
+    client-ip-enable: false  # v3.5.2(#623): 默认关闭——该维度已接线，但按 IP 计数在集群/无反代下会合并不同客户端
 
     # 限流键维度（#161）：client-ip（默认，与历史行为一致）/ api-key / tenant
     #

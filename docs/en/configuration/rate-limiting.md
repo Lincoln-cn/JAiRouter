@@ -416,14 +416,18 @@ model:
     capacity: 1000
     rate: 100
     scope: "service"
-    client-ip-enable: true      # Enable client IP rate limiting
+    client-ip-enable: true      # opt-in; bundled configurations default to false
 ```
 
-> **Current implementation status (verified 2026-10-24, #623)**: `client-ip-enable` / `key-dimension` are
-> configuration-only today — the client-dimension limiter is **not called from the default request path**
-> (`RateLimitManager.tryAcquireClientIp` has no production caller), so enabling the switches above does
-> **not** give you "one limiter per client IP"; service- and instance-level limits are what actually apply.
-> To limit downstream users that share one API key, use the "End-User Rate Limiting" section below.
+> **Implementation status (wired since v3.5.2, #623)**: `client-ip-enable` / `key-dimension` used to be
+> "configurable, echoed back, but never called from the request path"; the client-dimension limiter is now
+> invoked by the main path (after authentication, before the service-level pre-deduct and the cache read).
+> **Every bundled configuration sets it to `false`** — behind a cluster without an L7 proxy all clients share
+> one egress IP, so counting per IP merges them into a single bucket; such deployments should use
+> `key-dimension: api-key` instead. Note that the `tenant` dimension currently equals `api-key` (there is no
+> tenant identity yet), see the [roadmap](../reference/roadmap.md).
+> To limit downstream users that share one API key, keep using "End-User Rate Limiting" below (counted per
+> (API key × end user)).
 
 ### Service-Level IP Rate Limiting
 

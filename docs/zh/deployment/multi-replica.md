@@ -121,10 +121,10 @@ API Key 校验走的是各副本自己的内存镜像，只在本进程内更新
 
 ## 限流键维度与多副本语义
 
-限流状态**默认在 JVM 内**。仓库里有两条 Redis 计数路径，但今天只有一条是可达的：终端用户限流（v3.5.2，
-打开 `jairouter.ratelimit.distributed.enabled` 后跨副本共享同一份计数）；客户端维度那条
-（`RedisSlidingWindowRateLimiter`）实现仍在，但主链路没有调用点（#623）。其余服务级 / 实例级 / 规则级
-限流器仍是每副本一份。因此多副本下：
+限流状态**默认在 JVM 内**。仓库里有两条 Redis 计数路径：终端用户限流（v3.5.2，打开
+`jairouter.ratelimit.distributed.enabled` 后跨副本共享同一份计数）与客户端维度限流
+（`RedisSlidingWindowRateLimiter`，窗口 1 秒，v3.5.2 起已接进主链路、但**仓库默认关闭**，见 #623）。
+其余服务级 / 实例级 / 规则级限流器仍是每副本一份。因此多副本下：
 
 > 同一客户端的实际放行量 ≈ 配置值 × 副本数，且窗口重置各副本独立，突发形态还会随请求落到哪个
 > Pod 而变化（等价于每 Pod 各发一个满额桶）。
@@ -133,17 +133,18 @@ API Key 校验走的是各副本自己的内存镜像，只在本进程内更新
 集群 + 无 L7 Ingress 的部署下 `remoteAddress` 是**节点 IP** 而非真实客户端 IP，按 IP 计数等于
 按垃圾数据计数——要么把整个节点的流量算作一个客户端，要么在反代后把所有流量算作网关。
 
-> **实现状态（2026-10-24 核实，#623）**：下面这套「客户端维度限流」在当前主链路上**没有调用点** ——
-> `RateLimitManager.tryAcquireClientIp` 除测试外无调用方，`client-ip-enable` / `key-dimension` 只被绑定、
-> 不产生任何限流效果。真正按「调用方 × 下游用户」维度生效的是 v3.5.2 的终端用户限流
-> （见[限流配置](../configuration/rate-limiting.md)）。保留本节是为了固定键维度与回退语义，将来接线时按此实现。
+> **实现状态（v3.5.2 起已接线，#623）**：主链路在认证之后、服务级预扣之前调用
+> `RateLimitManager.tryAcquireClientIp`，键维度由 `key-dimension` 决定（回退语义见下表）。
+> **仓库自带配置把 `client-ip-enable` 一律置为 `false`** —— 集群 + 无 L7 反代时 `remoteAddress` 是节点 IP，
+> 按 IP 计数会把不同客户端合并；这种部署请改用 `key-dimension: api-key`。真正按「调用方 × 下游用户」
+> 计数的是 v3.5.2 的终端用户限流（见[限流配置](../configuration/rate-limiting.md)）。
 
 ### 配置
 
 ```yaml
 model:
   rate-limit:
-    client-ip-enable: true          # 启用「客户端维度」限流
+    client-ip-enable: false         # 默认关闭；仅在真实客户端 IP 能到达 Pod 时开启
     key-dimension: "client-ip"      # client-ip（默认）/ api-key / tenant
 ```
 
@@ -167,7 +168,8 @@ WARN 日志与 `recordLoadBalancer(..., "random-fallback-no-client-ip")` 指标�
 
 `jairouter.ratelimit.distributed.enabled=true` 时，限流计数写到 Redis，各副本共享同一份 —— 放行量等于配置值，而不是配置值 × 副本数。
 
-**当前真正消费这个开关的只有终端用户限流（v3.5.2）**：客户端维度那条路径（`RedisSlidingWindowRateLimiter`，窗口 1 秒、上限 `rate`）实现仍在仓库里，但主链路没有调用点（#623），开关对它不产生任何效果。终端用户限流本身另由 `jairouter.ratelimit.end-user.enabled` 控制，默认关闭。
+**该开关今天同时作用在两条路径上**：终端用户限流（`jairouter.ratelimit.end-user.enabled`，默认关闭）与
+客户端维度限流（v3.5.2 起已接线、仓库自带配置默认关闭）。两者未开启该开关时都用本机有界计数器，各副本各算各的。
 
 - **Lua 原子**：`INCR` → 首次写入时设置 TTL → 超过上限则 `DECR` 回滚并在同一段脚本里返回拒绝，多副本并发不会超发。
 - **fail-open**：Redis 不可用（连接失败/超时）时放行并告警 —— 全站拒绝比放宽限流更糟，与配额侧 `degradeToLocal` 的取向一致。
@@ -177,7 +179,7 @@ WARN 日志与 `recordLoadBalancer(..., "random-fallback-no-client-ip")` 指标�
 
 ### 仍未做
 
-跨副本计数目前只覆盖**终端用户限流**；服务级 / 实例级 / 规则级限流器仍是每副本一份，多副本下这几级的放行量仍会随副本数放大，需要按同样思路改造。
+跨副本计数目前覆盖**终端用户限流**与**客户端维度限流**（后者需显式开启 `client-ip-enable`）；服务级 / 实例级 / 规则级限流器仍是每副本一份，多副本下这几级的放行量仍会随副本数放大，需要按同样思路改造。
 
 ## 实时事件跨副本广播
 

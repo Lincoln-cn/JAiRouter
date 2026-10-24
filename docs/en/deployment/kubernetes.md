@@ -94,7 +94,7 @@ still per replica; enable the shared-state switches described in
 
 | Capability | Current state | Multi-replica consequence |
 |------------|---------------|---------------------------|
-| Rate limiting | All state in-JVM; no distributed rate limiter; key dimension is configurable (`model.rate-limit.key-dimension`) | Allowed throughput ≈ configured value × replicas, window resets counted per Pod. When the key dimension is meaningless (no L7 proxy) counting by IP counts noise |
+| Rate limiting | State lives in-JVM by default; end-user and client-dimension limiting can share counters through Redis (`jairouter.ratelimit.distributed.enabled`), and the client-dimension path is off in every bundled configuration; key dimension is configurable (`model.rate-limit.key-dimension`) | Allowed throughput ≈ configured value × replicas, window resets counted per Pod. When the key dimension is meaningless (no L7 proxy) counting by IP counts noise |
 | Quota ledger | Off by default; Redis atomic counting once `quota.distributed.enabled` is on | Left off, overuse is about N times the limit |
 | JWT blacklist | Falls back to local storage by default; Redis available | Left off, revocation only applies on the issuing Pod (a security gap) |
 | API-key cache | Per-replica mirror, refreshed from shared storage every `cache-refresh-interval-seconds` (default 60s) | Revocations/creates take effect across Pods within one refresh interval |
