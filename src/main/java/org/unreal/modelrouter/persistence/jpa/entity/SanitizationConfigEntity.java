@@ -14,19 +14,16 @@ import java.time.LocalDateTime;
 /**
  * 脱敏配置快照实体（TA2 / v3.4.0）。
  *
- * <p>一行 = 一个 scope（{@code request} / {@code response}）当前生效的脱敏配置。
+ * <p>一行 = 一个 scope（当前只有 {@code response}）当前生效的脱敏配置。
  * 规则本身**不落库**：{@code DefaultSanitizationService} 在启动时由配置确定性派生规则
  * （sensitive-words → SENSITIVE_WORD、pii-patterns → PII_PATTERN），所以只要配置一致，
  * 重启后规则集与规则 ID 也一致。</p>
  *
  * <p>主键是自然键 {@code config_scope}（取值见
  * {@code org.unreal.modelrouter.auth.sanitization.persistence.SanitizationConfigStore} 的
- * {@code SCOPE_REQUEST} / {@code SCOPE_RESPONSE}），天然保证「每个 scope 最多一行」，
- * 不需要自增 ID，也就不存在重启后 ID 复用的问题。</p>
- *
- * <p>两个 scope 的字段集不同（request 有 {@code whitelist_users}，response 有
- * {@code preserve_json_structure}），因此用**按 scope 各建一行、差异列可空**的形态：
- * 空值表示「该 scope 没有这个概念」，读取侧按各自默认值处理。</p>
+ * {@code SCOPE_RESPONSE}），天然保证「每个 scope 最多一行」，
+ * 不需要自增 ID，也就不存在重启后 ID 复用的问题。历史上的 request 行与
+ * {@code whitelist_users} 列已由 V5 迁移删除。</p>
  *
  * <p>列表列用 TEXT 存 JSON（由 {@code SanitizationConfigStore} 用项目既有
  * {@code ObjectMapper} 序列化），不用 json / jsonb：快照是运维排障对象，
@@ -45,7 +42,7 @@ import java.time.LocalDateTime;
 public class SanitizationConfigEntity {
 
     /**
-     * 配置作用域（request / response）
+     * 配置作用域（response）
      */
     @Id
     @Column(name = "config_scope", nullable = false, length = 16)
@@ -76,13 +73,7 @@ public class SanitizationConfigEntity {
     private String maskingChar;
 
     /**
-     * 白名单用户列表（JSON 数组文本，仅 request scope）
-     */
-    @Column(name = "whitelist_users", columnDefinition = "TEXT")
-    private String whitelistUsers;
-
-    /**
-     * 是否保留 JSON 结构（仅 response scope；null = 沿用默认值 true）
+     * 是否保留 JSON 结构（null = 沿用默认值 true）
      */
     @Column(name = "preserve_json_structure")
     private Boolean preserveJsonStructure;

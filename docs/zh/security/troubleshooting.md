@@ -208,8 +208,7 @@ curl -X PUT -H "Authorization: Bearer admin-token" \
 #### 可能原因
 1. 脱敏功能未启用
 2. 正则表达式不匹配
-3. 用户在白名单中
-4. 规则优先级问题
+3. 规则优先级问题
 
 #### 诊断步骤
 
@@ -223,10 +222,6 @@ curl -X POST -H "Authorization: Bearer admin-token" \
      -H "Content-Type: application/json" \
      -d '{"text": "我的手机号是13812345678", "rules": ["phone"]}' \
      http://localhost:8080/admin/security/sanitization/test
-
-# 3. 检查白名单
-curl -H "Authorization: Bearer admin-token" \
-     http://localhost:8080/admin/security/sanitization/whitelist
 ```
 
 #### 解决方案
@@ -236,8 +231,6 @@ curl -H "Authorization: Bearer admin-token" \
 jairouter:
   security:
     sanitization:
-      request:
-        enabled: true
       response:
         enabled: true
 ```
@@ -247,16 +240,9 @@ jairouter:
 jairouter:
   security:
     sanitization:
-      request:
+      response:
         pii-patterns:
           - "\\b(?:13[0-9]|14[5-9]|15[0-3,5-9]|16[2,5,6,7]|17[0-8]|18[0-9]|19[1,3,5,8,9])\\d{8}\\b"
-```
-
-3. **检查白名单**
-```bash
-# 从白名单中移除用户
-curl -X DELETE -H "Authorization: Bearer admin-token" \
-     http://localhost:8080/admin/security/sanitization/whitelist/users/your-user-id
 ```
 
 ### 问题 5：误脱敏
@@ -293,7 +279,7 @@ pii-patterns:
 jairouter:
   security:
     sanitization:
-      request:
+      response:
         rule-priorities:
           specific-pattern: 1    # 高优先级
           general-pattern: 10    # 低优先级
@@ -304,7 +290,7 @@ jairouter:
 jairouter:
   security:
     sanitization:
-      request:
+      response:
         exception-patterns:
           - "订单号:\\d+"  # 订单号不脱敏
 ```

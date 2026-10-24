@@ -63,7 +63,7 @@ public class SanitizationConfigController {
 
     @GetMapping
     @Operation(summary = "查询脱敏配置快照",
-            description = "返回 request/response 子配置、当前生效规则数与记录脱敏说明")
+            description = "返回 response 子配置、当前生效规则数与记录脱敏说明")
     public Mono<ResponseEntity<RouterResponse<Map<String, Object>>>> getConfig() {
         return sanitizationService.getAllRules()
                 .defaultIfEmpty(List.of())
@@ -72,46 +72,31 @@ public class SanitizationConfigController {
 
     @PutMapping
     @Operation(summary = "热更新脱敏配置",
-            description = "部分更新 request/response，先落库再热重建 DefaultSanitizationService 规则")
+            description = "部分更新 response，先落库再热重建 DefaultSanitizationService 规则")
     public Mono<ResponseEntity<RouterResponse<Map<String, Object>>>> updateConfig(
             @RequestBody final SanitizationUpdateRequest request) {
         if (request == null) {
             return Mono.error(ApiException.of(ErrorCode.INVALID_REQUEST.code(), "请求体不能为空"));
         }
-        if (request.request == null && request.response == null) {
-            return Mono.error(ApiException.of(ErrorCode.INVALID_REQUEST.code(), "至少需要指定 request 或 response 子配置"));
+        if (request.response == null) {
+            return Mono.error(ApiException.of(ErrorCode.INVALID_REQUEST.code(), "需要指定 response 子配置"));
         }
 
         // 先改副本再整体替换：校验失败时内存配置一个字段都不会被改动（旧实现会留下半更新）。
         final SanitizationConfig config = securityProperties.getSanitization();
-        final SanitizationConfig.RequestSanitization requestBefore = copyRequest(config.getRequest());
         final SanitizationConfig.ResponseSanitization responseBefore = copyResponse(config.getResponse());
-        final SanitizationConfig.RequestSanitization requestAfter = copyRequest(requestBefore);
         final SanitizationConfig.ResponseSanitization responseAfter = copyResponse(responseBefore);
 
         final List<String> errors = new ArrayList<>();
-        if (request.request != null) {
-            applySubConfig(request.request, requestAfter, "request", errors);
-        }
-        if (request.response != null) {
-            applySubConfig(request.response, responseAfter, "response", errors);
-        }
+        applySubConfig(request.response, responseAfter, "response", errors);
         if (!errors.isEmpty()) {
             return Mono.error(ApiException.of(ErrorCode.INVALID_REQUEST.code(), String.join("; ", errors)));
         }
 
-        final boolean persistRequest = request.request != null;
-        final boolean persistResponse = request.response != null;
-        if (persistRequest) {
-            config.setRequest(requestAfter);
-        }
-        if (persistResponse) {
-            config.setResponse(responseAfter);
-        }
+        config.setResponse(responseAfter);
 
         return SecurityUtils.getCurrentUserIdReactive()
-                .flatMap(actor -> persistAndRebuild(
-                        actor, persistRequest, persistResponse, requestBefore, responseBefore));
+                .flatMap(actor -> persistAndRebuild(actor, responseBefore));
     }
 
     /**
@@ -122,18 +107,13 @@ public class SanitizationConfigController {
      */
     private Mono<ResponseEntity<RouterResponse<Map<String, Object>>>> persistAndRebuild(
             final String actor,
-            final boolean persistRequest,
-            final boolean persistResponse,
-            final SanitizationConfig.RequestSanitization requestBefore,
             final SanitizationConfig.ResponseSanitization responseBefore) {
         return Mono.<Void>fromRunnable(() -> sanitizationConfigStore.persist(
-                        securityProperties, persistRequest, persistResponse, actor))
+                        securityProperties, actor))
                 .subscribeOn(Schedulers.boundedElastic())
                 .onErrorResume(error -> {
-                    restore(securityProperties.getSanitization(), persistRequest, persistResponse,
-                            requestBefore, responseBefore);
-                    log.error("脱敏配置持久化失败，已回滚内存配置：request={}, response={}",
-                            persistRequest, persistResponse, error);
+                    restore(securityProperties.getSanitization(), responseBefore);
+                    log.error("脱敏配置持久化失败，已回滚内存配置：response=true", error);
                     return Mono.error(ApiException.of(ErrorCode.INTERNAL_ERROR.code(),
                             "脱敏配置持久化失败，内存配置已回滚"));
                 })
@@ -142,36 +122,14 @@ public class SanitizationConfigController {
                 .then(Mono.defer(defaultSanitizationService::rebuildRulesFromProperties))
                 .then(sanitizationService.getAllRules().defaultIfEmpty(List.of()))
                 .map(rules -> {
-                    log.info("脱敏配置已落库并热重建规则：request={}, response={}",
-                            persistRequest, persistResponse);
+                    log.info("脱敏配置已落库并热重建规则：response=true");
                     return ResponseEntity.ok(RouterResponse.success(buildSnapshot(rules), "脱敏配置已更新"));
                 });
     }
 
     private static void restore(final SanitizationConfig config,
-                                final boolean restoreRequest,
-                                final boolean restoreResponse,
-                                final SanitizationConfig.RequestSanitization requestBefore,
                                 final SanitizationConfig.ResponseSanitization responseBefore) {
-        if (restoreRequest) {
-            config.setRequest(requestBefore);
-        }
-        if (restoreResponse) {
-            config.setResponse(responseBefore);
-        }
-    }
-
-    private static SanitizationConfig.RequestSanitization copyRequest(
-            final SanitizationConfig.RequestSanitization source) {
-        final SanitizationConfig.RequestSanitization copy = new SanitizationConfig.RequestSanitization();
-        copy.setEnabled(source.isEnabled());
-        copy.setSensitiveWords(copyList(source.getSensitiveWords()));
-        copy.setPiiPatterns(copyList(source.getPiiPatterns()));
-        copy.setMaskingChar(source.getMaskingChar());
-        copy.setWhitelistUsers(copyList(source.getWhitelistUsers()));
-        copy.setLogSanitization(source.isLogSanitization());
-        copy.setFailOnError(source.isFailOnError());
-        return copy;
+        config.setResponse(responseBefore);
     }
 
     private static SanitizationConfig.ResponseSanitization copyResponse(
@@ -184,6 +142,20 @@ public class SanitizationConfigController {
         copy.setLogSanitization(source.isLogSanitization());
         copy.setFailOnError(source.isFailOnError());
         copy.setPreserveJsonStructure(source.isPreserveJsonStructure());
+        // 这三个字段不在 SanitizationSubUpdate 的可改面里，但整体替换 response 时必须原样带过去，
+        // 否则任何一次热更新都会把 #560 的 scope / #594 的缓冲上限 / SSE 开关重置成默认值。
+        copy.setScope(copyScope(source.getScope()));
+        copy.setMaxBufferedBytes(source.getMaxBufferedBytes());
+        copy.setSanitizeSse(source.isSanitizeSse());
+        return copy;
+    }
+
+    private static SanitizationConfig.Scope copyScope(final SanitizationConfig.Scope source) {
+        final SanitizationConfig.Scope copy = new SanitizationConfig.Scope();
+        if (source != null) {
+            copy.setMode(source.getMode());
+            copy.setPatterns(copyList(source.getPatterns()));
+        }
         return copy;
     }
 
@@ -313,24 +285,11 @@ public class SanitizationConfigController {
     private Map<String, Object> buildSnapshot(final List<SanitizationRule> rules) {
         final SanitizationConfig config = securityProperties.getSanitization();
         final Map<String, Object> snap = new LinkedHashMap<>();
-        snap.put("request", subToMap(config.getRequest()));
         snap.put("response", responseToMap(config.getResponse()));
         snap.put("ruleCount", rules == null ? 0 : rules.size());
         snap.put("primaryUseCase", "chat-call-history-logs-and-user-data-records");
         snap.put("gatewayResponseFilter", "optional-default-off-management-and-ai-paths-excluded");
         return snap;
-    }
-
-    private static Map<String, Object> subToMap(final SanitizationConfig.RequestSanitization req) {
-        final Map<String, Object> map = new LinkedHashMap<>();
-        map.put("enabled", req.isEnabled());
-        map.put("piiPatterns", req.getPiiPatterns());
-        map.put("sensitiveWords", req.getSensitiveWords());
-        map.put("maskingChar", req.getMaskingChar());
-        map.put("logSanitization", req.isLogSanitization());
-        map.put("failOnError", req.isFailOnError());
-        map.put("whitelistUsers", req.getWhitelistUsers());
-        return map;
     }
 
     private static Map<String, Object> responseToMap(final SanitizationConfig.ResponseSanitization res) {
@@ -349,7 +308,7 @@ public class SanitizationConfigController {
     }
 
     private static void applySubConfig(final SanitizationSubUpdate update,
-                                       final Object target,
+                                       final SanitizationConfig.ResponseSanitization target,
                                        final String side,
                                        final List<String> errors) {
         final String mask = update.maskingChar;
@@ -370,60 +329,35 @@ public class SanitizationConfigController {
             }
         }
 
-        if (target instanceof SanitizationConfig.RequestSanitization req) {
-            if (update.enabled != null) {
-                req.setEnabled(update.enabled);
-            }
-            if (update.piiPatterns != null) {
-                req.setPiiPatterns(new ArrayList<>(update.piiPatterns));
-            }
-            if (update.sensitiveWords != null) {
-                req.setSensitiveWords(new ArrayList<>(update.sensitiveWords));
-            }
-            if (mask != null) {
-                req.setMaskingChar(mask);
-            }
-            if (update.logSanitization != null) {
-                req.setLogSanitization(update.logSanitization);
-            }
-            if (update.failOnError != null) {
-                req.setFailOnError(update.failOnError);
-            }
-            if (update.whitelistUsers != null) {
-                req.setWhitelistUsers(new ArrayList<>(update.whitelistUsers));
-            }
-        } else if (target instanceof SanitizationConfig.ResponseSanitization res) {
-            if (update.enabled != null) {
-                res.setEnabled(update.enabled);
-            }
-            if (update.piiPatterns != null) {
-                res.setPiiPatterns(new ArrayList<>(update.piiPatterns));
-            }
-            if (update.sensitiveWords != null) {
-                res.setSensitiveWords(new ArrayList<>(update.sensitiveWords));
-            }
-            if (mask != null) {
-                res.setMaskingChar(mask);
-            }
-            if (update.logSanitization != null) {
-                res.setLogSanitization(update.logSanitization);
-            }
-            if (update.failOnError != null) {
-                res.setFailOnError(update.failOnError);
-            }
-            if (update.preserveJsonStructure != null) {
-                res.setPreserveJsonStructure(update.preserveJsonStructure);
-            }
+        if (update.enabled != null) {
+            target.setEnabled(update.enabled);
+        }
+        if (update.piiPatterns != null) {
+            target.setPiiPatterns(new ArrayList<>(update.piiPatterns));
+        }
+        if (update.sensitiveWords != null) {
+            target.setSensitiveWords(new ArrayList<>(update.sensitiveWords));
+        }
+        if (mask != null) {
+            target.setMaskingChar(mask);
+        }
+        if (update.logSanitization != null) {
+            target.setLogSanitization(update.logSanitization);
+        }
+        if (update.failOnError != null) {
+            target.setFailOnError(update.failOnError);
+        }
+        if (update.preserveJsonStructure != null) {
+            target.setPreserveJsonStructure(update.preserveJsonStructure);
         }
     }
 
     /** 配置热更请求体（部分更新） */
     public static class SanitizationUpdateRequest {
-        public SanitizationSubUpdate request;
         public SanitizationSubUpdate response;
     }
 
-    /** request/response 子配置更新字段 */
+    /** response 子配置更新字段 */
     public static class SanitizationSubUpdate {
         public Boolean enabled;
         public List<String> piiPatterns;
@@ -432,7 +366,6 @@ public class SanitizationConfigController {
         public Boolean logSanitization;
         public Boolean failOnError;
         public Boolean preserveJsonStructure;
-        public List<String> whitelistUsers;
     }
 
     /** 试脱敏请求 */

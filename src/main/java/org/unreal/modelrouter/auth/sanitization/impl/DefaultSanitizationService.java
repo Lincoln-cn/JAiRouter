@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 默认脱敏服务实现
- * 提供请求和响应数据的脱敏处理功能，支持动态规则更新和白名单管理
+ * 提供响应数据与落库内容的脱敏处理功能，支持动态规则更新
  */
 @Slf4j
 @Service
@@ -94,9 +94,6 @@ public class DefaultSanitizationService implements SanitizationService {
             }
         }
 
-        // 从配置中加载请求脱敏规则
-        loadRequestRules();
-        
         // 从配置中加载响应脱敏规则
         loadResponseRules();
         
@@ -109,61 +106,9 @@ public class DefaultSanitizationService implements SanitizationService {
     }
     
     /**
-     * 加载请求脱敏规则.
-     *
-     * <p>v3.2.0：配置中的敏感词/PII 始终加载进规则库（供记录侧
-     * {@link #sanitizeForStorage} 与管理端展示）；网关路径仍由
-     * {@code sanitizeRequest} 的 enabled 开关短路。</p>
-     */
-    private void loadRequestRules() {
-        SanitizationConfig.RequestSanitization requestConfig =
-                securityProperties.getSanitization().getRequest();
-
-        // 加载敏感词规则（priority 按列表顺序递增，保证执行顺序可预期）
-        List<String> sensitiveWords = requestConfig.getSensitiveWords();
-        for (int i = 0; i < sensitiveWords.size(); i++) {
-            String sensitiveWord = sensitiveWords.get(i);
-            SanitizationRule rule = SanitizationRule.builder()
-                    .ruleId("request-sensitive-word-" + ruleIdGenerator.getAndIncrement())
-                    .name("请求敏感词: " + sensitiveWord)
-                    .description("请求中的敏感词脱敏")
-                    .type(RuleType.SENSITIVE_WORD)
-                    .pattern(sensitiveWord)
-                    .strategy(SanitizationStrategy.MASK)
-                    .enabled(true)
-                    .priority(WORD_PRIORITY_BASE + i)
-                    .applicableContentTypes(List.of("application/json", "application/xml", "text/plain"))
-                    .replacementChar(requestConfig.getMaskingChar())
-                    .build();
-            
-            rules.put(rule.getRuleId(), rule);
-        }
-        
-        // 加载PII模式规则（priority 按列表顺序递增：先长后短靠这个顺序实现，#561）
-        List<String> piiPatterns = requestConfig.getPiiPatterns();
-        for (int i = 0; i < piiPatterns.size(); i++) {
-            String piiPattern = piiPatterns.get(i);
-            SanitizationRule rule = SanitizationRule.builder()
-                    .ruleId("request-pii-pattern-" + ruleIdGenerator.getAndIncrement())
-                    .name("请求PII模式: " + piiPattern)
-                    .description("请求中的PII数据脱敏")
-                    .type(RuleType.PII_PATTERN)
-                    .pattern(piiPattern)
-                    .strategy(SanitizationStrategy.MASK)
-                    .enabled(true)
-                    .priority(PII_PRIORITY_BASE + i)
-                    .applicableContentTypes(List.of("application/json", "application/xml", "text/plain"))
-                    .replacementChar(requestConfig.getMaskingChar())
-                    .build();
-            
-            rules.put(rule.getRuleId(), rule);
-        }
-    }
-    
-    /**
      * 加载响应脱敏规则.
      *
-     * <p>与请求侧相同：配置规则始终加载；网关响应路径由 enabled 开关短路。</p>
+     * <p>配置规则始终加载；网关响应路径由 enabled 开关短路。</p>
      */
     private void loadResponseRules() {
         SanitizationConfig.ResponseSanitization responseConfig =
@@ -211,32 +156,6 @@ public class DefaultSanitizationService implements SanitizationService {
     }
     
     @Override
-    public Mono<String> sanitizeRequest(final String content, final String contentType, final String userId) {
-        if (content == null || content.isEmpty()) {
-            return Mono.justOrEmpty(content);
-        }
-        
-        if (!securityProperties.getSanitization().getRequest().isEnabled()) {
-            log.debug("请求脱敏已关闭，跳过脱敏处理");
-            return Mono.just(content);
-        }
-        
-        // 检查白名单
-        if (userId != null) {
-            return isUserWhitelisted(userId)
-                    .flatMap(isWhitelisted -> {
-                        if (isWhitelisted) {
-                            log.debug("用户在白名单中，跳过请求脱敏: userId={}", userId);
-                            return Mono.just(content);
-                        }
-                        return performSanitization(content, contentType, "request");
-                    });
-        }
-        
-        return performSanitization(content, contentType, "request");
-    }
-    
-    @Override
     public Mono<String> sanitizeResponse(final String content, final String contentType) {
         if (content == null || content.isEmpty()) {
             return Mono.justOrEmpty(content);
@@ -274,10 +193,8 @@ public class DefaultSanitizationService implements SanitizationService {
      */
     public Mono<Void> rebuildRulesFromProperties() {
         return Mono.fromRunnable(() -> {
-            rules.entrySet().removeIf(entry ->
-                    entry.getKey().startsWith("request-") || entry.getKey().startsWith("response-"));
+            rules.entrySet().removeIf(entry -> entry.getKey().startsWith("response-"));
             ruleIdGenerator.set(1);
-            loadRequestRules();
             loadResponseRules();
             final List<SanitizationRule> allRules = new ArrayList<>(rules.values());
             ruleEngine.compileRules(allRules).subscribe(
@@ -291,7 +208,7 @@ public class DefaultSanitizationService implements SanitizationService {
      * 执行脱敏处理
      */
     private Mono<String> performSanitization(final String content, final String contentType, final String type) {
-        // issue #456：请求/响应/存储三条脱敏都走这里，是脱敏指标的唯一天然埋点。
+        // issue #456：网关响应脱敏走这里，是脱敏指标的天然埋点。
         // 只记录 operations 与耗时；ruleMatch 需要规则引擎回传命中数（当前签名只有内容），另批处理。
         final Timer.Sample sample = securityMetrics != null ? securityMetrics.startSanitizationTimer() : null;
         if (securityMetrics != null) {
@@ -321,22 +238,9 @@ public class DefaultSanitizationService implements SanitizationService {
         
         return ruleEngine.applySanitizationRules(content, applicableRules, contentType, preserveJson)
                 .onErrorMap(throwable -> new SanitizationException(
-                        String.format("%s脱敏处理失败", type.equals("request") ? "请求" : "响应"), 
+                        "响应脱敏处理失败",
                         throwable, 
                         ErrorCode.SANITIZATION_FAILED.code()));
-    }
-    
-    @Override
-    public Mono<Boolean> isUserWhitelisted(final String userId) {
-        if (userId == null || userId.trim().isEmpty()) {
-            return Mono.just(false);
-        }
-        
-        List<String> whitelistUsers = securityProperties.getSanitization().getRequest().getWhitelistUsers();
-        boolean isWhitelisted = whitelistUsers.contains(userId);
-        
-        log.debug("检查用户白名单: userId={}, isWhitelisted={}", userId, isWhitelisted);
-        return Mono.just(isWhitelisted);
     }
     
     @Override
@@ -437,11 +341,9 @@ public class DefaultSanitizationService implements SanitizationService {
             log.info("重新加载配置中的脱敏规则");
             
             // 清除现有的配置规则（保留手动添加的规则）
-            rules.entrySet().removeIf(entry -> 
-                    entry.getKey().startsWith("request-") || entry.getKey().startsWith("response-"));
+            rules.entrySet().removeIf(entry -> entry.getKey().startsWith("response-"));
             
             // 重新加载配置规则
-            loadRequestRules();
             loadResponseRules();
             
             // 重新编译所有规则
@@ -452,30 +354,4 @@ public class DefaultSanitizationService implements SanitizationService {
             );
         });
     }
-    
-    /**
-     * 获取规则统计信息
-     */
-    public Mono<RuleStatistics> getRuleStatistics() {
-        return Mono.fromCallable(() -> {
-            long totalRules = rules.size();
-            long enabledRules = rules.values().stream().filter(SanitizationRule::isEnabled).count();
-            long requestRules = rules.keySet().stream().filter(id -> id.startsWith("request-")).count();
-            long responseRules = rules.keySet().stream().filter(id -> id.startsWith("response-")).count();
-            
-            return new RuleStatistics(totalRules, enabledRules, requestRules, responseRules);
-        });
-    }
-
-    /**
-         * 规则统计信息
-         */
-        public record RuleStatistics(long totalRules, long enabledRules, long requestRules, long responseRules) {
-
-        @Override
-            public String toString() {
-                return String.format("RuleStatistics{total=%d, enabled=%d, request=%d, response=%d}",
-                        totalRules, enabledRules, requestRules, responseRules);
-            }
-        }
 }

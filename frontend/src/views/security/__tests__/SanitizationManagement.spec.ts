@@ -1,5 +1,7 @@
 /**
  * SanitizationManagement 组件表单同步单测
+ *
+ * 请求侧配置卡片已在 issue #601 中移除，本文件不再断言 request 表单。
  */
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
@@ -11,7 +13,6 @@ import { createI18n } from 'vue-i18n'
  */
 interface SanitizationPageVm {
   form: {
-    request: { enabled: boolean; maskingChar: string; piiPatternsText: string }
     response: { enabled: boolean; maskingChar: string }
   }
 }
@@ -31,15 +32,6 @@ vi.mock('@element-plus/icons-vue', () => ({
 
 vi.mock('@/api/sanitization', () => ({
   getSanitizationConfig: vi.fn().mockResolvedValue({
-    request: {
-      enabled: true,
-      piiPatterns: ['\\d{11}'],
-      sensitiveWords: ['password'],
-      maskingChar: '*',
-      logSanitization: true,
-      failOnError: false,
-      whitelistUsers: []
-    },
     response: {
       enabled: false,
       piiPatterns: [],
@@ -86,14 +78,9 @@ const i18n = createI18n({
         primaryUseCaseHint: 'hint',
         refresh: '刷新',
         ruleCountLabel: '生效规则数',
-        requestEnabledLabel: '请求侧',
         responseEnabledLabel: '响应侧',
         recordNote: '记录侧',
         recordNoteValue: 'SUMMARY',
-        requestSection: '请求',
-        requestSideNotWiredTitle: '未接入提示标题（i18n）',
-        requestSideNotWiredMessage: '未接入提示正文（i18n）',
-        requestSideNotWiredTag: '标签取自 i18n：未接入入站',
         responseSection: '响应',
         enabledLabel: '启用',
         piiPatternsLabel: 'PII',
@@ -104,8 +91,6 @@ const i18n = createI18n({
         logSanitizationLabel: '日志',
         failOnErrorLabel: '中断',
         preserveJsonLabel: 'JSON',
-        whitelistUsersLabel: '白名单',
-        whitelistUsersPlaceholder: 'u',
         save: '保存',
         reset: '重置',
         saveSuccess: 'ok',
@@ -161,7 +146,7 @@ const stubs = {
 }
 
 describe('SanitizationManagement.vue', () => {
-  it('挂载后根据配置同步表单（开关与掩码）', async () => {
+  it('挂载后根据配置同步响应侧表单（开关与掩码）', async () => {
     const wrapper = mount(SanitizationManagement, {
       global: {
         plugins: [i18n],
@@ -171,9 +156,6 @@ describe('SanitizationManagement.vue', () => {
 
     await flushPromises()
     const vm = wrapper.vm as unknown as SanitizationPageVm
-    expect(vm.form.request.enabled).toBe(true)
-    expect(vm.form.request.maskingChar).toBe('*')
-    expect(vm.form.request.piiPatternsText).toContain('\\d{11}')
     expect(vm.form.response.enabled).toBe(false)
     expect(vm.form.response.maskingChar).toBe('#')
   })
@@ -195,17 +177,14 @@ describe('SanitizationManagement.vue', () => {
     expect(text).toContain('只读')
   })
 
-  it('标注请求侧脱敏未接入入站链路：提示条与标签文案均取自 i18n', async () => {
+  it('不再渲染请求侧配置卡片与「未接入入站」提示', async () => {
     const wrapper = mount(SanitizationManagement, {
       global: {
         plugins: [i18n],
         stubs: {
           ...stubs,
-          // el-row / el-col 的 `true` 桩不渲染子节点，请求/响应两张配置卡会整块消失；
-          // 这两个桩必须显式转出默认插槽，卡内的提示条与标签才可断言。
           'el-row': { template: '<div><slot /></div>' },
           'el-col': { template: '<div><slot /></div>' },
-          // 默认 stub 不渲染 title/description，这里让提示条把两者渲染成文本，才能断言文案来源
           'el-alert': {
             props: ['title', 'description'],
             template: '<div class="alert-stub">{{ title }}|{{ description }}</div>'
@@ -215,11 +194,7 @@ describe('SanitizationManagement.vue', () => {
     })
 
     await flushPromises()
-
-    // 提示条渲染，且标题 / 正文都来自 i18n（sentinels 只存在于测试 messages 里）
-    const alertTexts = wrapper.findAll('.alert-stub').map(node => node.text())
-    expect(alertTexts).toContain('未接入提示标题（i18n）|未接入提示正文（i18n）')
-    // 请求侧卡片标题旁的「未接入入站」标签存在
-    expect(wrapper.text()).toContain('标签取自 i18n：未接入入站')
+    expect(wrapper.text()).not.toContain('请求侧')
+    expect(wrapper.text()).not.toContain('未接入')
   })
 })

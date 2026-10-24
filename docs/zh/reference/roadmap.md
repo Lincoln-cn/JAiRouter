@@ -171,7 +171,7 @@ JAiRouter 致力于成为最优秀的开源 AI 模型服务路由网关，为用
 
 | 领域 | 交付 |
 |------|------|
-| PII 记录链路 | `sanitizeForStorage` 与网关 request/response 开关解耦；调用历史 SUMMARY / 追踪使用该路径 |
+| PII 记录链路 | `sanitizeForStorage` 与网关响应脱敏开关解耦；调用历史 SUMMARY / 追踪使用该路径 |
 | 管理 API | `GET/PUT /api/config/sanitization`、规则列表、试脱敏（全链路响应式；非 JSON 样例按文本掩码） |
 | 控制台 | 安全 → PII 脱敏管理；权限 `security:sanitization:manage` |
 | 排除路径 | 管理台 `/api/**` 与 AI 实时路径排除网关响应脱敏 |
@@ -243,7 +243,7 @@ v3.0 为 Web 完整流程里程碑（对外 /api/v1 保持兼容，无 breaking�
 - ✅ JWT Token 支持
 - ✅ OAuth 2.0 集成
 - ✅ 基于角色的访问控制 (RBAC)
-- ✅ 请求/响应数据脱敏
+- ✅ 响应数据脱敏（含记录侧脱敏）
 - ✅ 安全审计日志
 - ✅ H2 嵌入式数据库（当前唯一受支持的持久化数据库）
 - 📋 PostgreSQL/MySQL 支持（规划中；当前 `pom.xml` 仅引入 H2 驱动，配置与方言均硬编码为 H2，尚无外部数据库适配）

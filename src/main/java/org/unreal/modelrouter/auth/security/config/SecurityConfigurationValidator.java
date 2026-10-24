@@ -210,43 +210,9 @@ public class SecurityConfigurationValidator {
      * 验证脱敏配置
      */
     private void validateSanitizationConfig(final SanitizationConfig config, final ValidationResult result) {
-        // 验证请求脱敏配置
-        if (config.getRequest() != null) {
-            validateRequestSanitizationConfig(config.getRequest(), result);
-        }
-
         // 验证响应脱敏配置
         if (config.getResponse() != null) {
             validateResponseSanitizationConfig(config.getResponse(), result);
-        }
-    }
-
-    /**
-     * 验证请求脱敏配置
-     */
-    private void validateRequestSanitizationConfig(
-            final SanitizationConfig.RequestSanitization config, final ValidationResult result) {
-        
-        // 验证掩码字符
-        if (config.getMaskingChar() == null || config.getMaskingChar().trim().isEmpty()) {
-            result.addError("请求脱敏掩码字符不能为空");
-        } else if (config.getMaskingChar().length() > 5) {
-            result.addError("请求脱敏掩码字符长度不能超过5个字符");
-        }
-
-        // 验证敏感词列表
-        if (config.getSensitiveWords() != null) {
-            validateSensitiveWords(config.getSensitiveWords(), "请求脱敏", result);
-        }
-
-        // 验证PII模式列表
-        if (config.getPiiPatterns() != null) {
-            validatePiiPatterns(config.getPiiPatterns(), "请求脱敏", result);
-        }
-
-        // 验证白名单用户
-        if (config.getWhitelistUsers() != null) {
-            validateWhitelistUsers(config.getWhitelistUsers(), result);
         }
     }
 
@@ -317,20 +283,6 @@ public class SecurityConfigurationValidator {
             if (reason != null) {
                 result.addError(context + "PII模式[" + i + "] " + reason
                         + (pattern.length() <= 80 ? ": " + pattern : ""));
-            }
-        }
-    }
-
-    /**
-     * 验证白名单用户列表
-     */
-    private void validateWhitelistUsers(final List<String> whitelistUsers, final ValidationResult result) {
-        for (int i = 0; i < whitelistUsers.size(); i++) {
-            String user = whitelistUsers.get(i);
-            if (user == null || user.trim().isEmpty()) {
-                result.addError("白名单用户[" + i + "]不能为空");
-            } else if (user.length() > 100) {
-                result.addError("白名单用户[" + i + "]长度不能超过100个字符");
             }
         }
     }

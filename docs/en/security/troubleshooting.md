@@ -208,8 +208,7 @@ curl -X PUT -H "Authorization: Bearer admin-token" \
 #### Possible Causes
 1. Sanitization feature is not enabled
 2. Regular expression does not match
-3. User is in the whitelist
-4. Rule priority issue
+3. Rule priority issue
 
 #### Diagnosis Steps
 
@@ -223,10 +222,6 @@ curl -X POST -H "Authorization: Bearer admin-token" \
      -H "Content-Type: application/json" \
      -d '{"text": "My phone number is 13812345678", "rules": ["phone"]}' \
      http://localhost:8080/admin/security/sanitization/test
-
-# 3. Check whitelist
-curl -H "Authorization: Bearer admin-token" \
-     http://localhost:8080/admin/security/sanitization/whitelist
 ```
 
 #### Solutions
@@ -236,8 +231,6 @@ curl -H "Authorization: Bearer admin-token" \
 jairouter:
   security:
     sanitization:
-      request:
-        enabled: true
       response:
         enabled: true
 ```
@@ -247,16 +240,9 @@ jairouter:
 jairouter:
   security:
     sanitization:
-      request:
+      response:
         pii-patterns:
           - "\\b(?:13[0-9]|14[5-9]|15[0-3,5-9]|16[2,5,6,7]|17[0-8]|18[0-9]|19[1,3,5,8,9])\\d{8}\\b"
-```
-
-3. **Check whitelist**
-```bash
-# Remove user from whitelist
-curl -X DELETE -H "Authorization: Bearer admin-token" \
-     http://localhost:8080/admin/security/sanitization/whitelist/users/your-user-id
 ```
 
 ### Issue 5: False Positive Sanitization
@@ -293,7 +279,7 @@ pii-patterns:
 jairouter:
   security:
     sanitization:
-      request:
+      response:
         rule-priorities:
           specific-pattern: 1    # High priority
           general-pattern: 10    # Low priority
@@ -304,7 +290,7 @@ jairouter:
 jairouter:
   security:
     sanitization:
-      request:
+      response:
         exception-patterns:
           - "Order number:\\d+"  # Order numbers not sanitized
 ```

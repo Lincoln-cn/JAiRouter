@@ -20,10 +20,9 @@ JAiRouter 提供了企业级的安全功能，包括身份认证、数据脱敏�
 - **缓存优化**：支持 Redis 和本地缓存提升性能
 
 ### 🛡️ 数据脱敏
-- **双向脱敏**：支持请求和响应数据脱敏
+- **响应脱敏**：对出站 HTTP 响应与调用历史/日志记录做脱敏
 - **智能识别**：自动识别 PII 数据和敏感词汇
 - **多种策略**：支持掩码、替换、删除、哈希等脱敏策略
-- **白名单机制**：支持用户和 IP 白名单
 
 ### 📊 安全审计
 - **全面记录**：记录所有安全相关事件
@@ -68,7 +67,7 @@ jairouter:
 jairouter:
   security:
     sanitization:
-      request:
+      response:
         enabled: true
         sensitive-words: ["password", "secret"]
         pii-patterns: ["\\d{11}", "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"]
@@ -133,9 +132,8 @@ jairouter:
           key-value: "dev-admin-key-12345"
           permissions: ["admin", "read", "write"]
     sanitization:
-      request:
+      response:
         enabled: true
-        whitelist-users: ["dev-admin"]
     audit:
       enabled: true
       log-level: "DEBUG"
@@ -158,11 +156,9 @@ jairouter:
       enabled: true
       secret: "${JWT_SECRET}"
     sanitization:
-      request:
-        enabled: true
-        sensitive-words: ["password", "secret", "token"]
       response:
         enabled: true
+        sensitive-words: ["password", "secret", "token"]
     audit:
       enabled: true
       retention-days: 365
@@ -183,7 +179,6 @@ jairouter:
 ### 数据保护
 - 根据业务需求配置脱敏规则
 - 定期审查和更新脱敏模式
-- 合理设置白名单
 - 确保合规性
 
 ### 运维安全

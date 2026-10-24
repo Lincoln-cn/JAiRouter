@@ -268,7 +268,7 @@ export default {
     await gotoApp(page, '/security/sanitization')
     await page.waitForTimeout(1000)
     const piiCfg = await api(page, '/api/config/sanitization')
-    check('deep-pii-config-api', piiCfg.status === 200 && !!piiCfg.body?.data?.request, `HTTP ${piiCfg.status}`)
+    check('deep-pii-config-api', piiCfg.status === 200 && !!piiCfg.body?.data?.response, `HTTP ${piiCfg.status}`)
 
     const testApi = await api(page, '/api/config/sanitization/test', {
       method: 'POST',
@@ -294,15 +294,15 @@ export default {
     }
 
     const beforePii = piiCfg.body?.data
-    if (beforePii?.request) {
+    if (beforePii?.response) {
       const restorePii = await api(page, '/api/config/sanitization', {
         method: 'PUT',
         body: {
-          request: {
-            enabled: beforePii.request.enabled,
-            piiPatterns: beforePii.request.piiPatterns || [],
-            sensitiveWords: beforePii.request.sensitiveWords || [],
-            maskingChar: beforePii.request.maskingChar || '*'
+          response: {
+            enabled: beforePii.response.enabled,
+            piiPatterns: beforePii.response.piiPatterns || [],
+            sensitiveWords: beforePii.response.sensitiveWords || [],
+            maskingChar: beforePii.response.maskingChar || '*'
           }
         }
       })

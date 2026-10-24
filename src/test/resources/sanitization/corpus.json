@@ -283,16 +283,6 @@
       "mustBeMasked": ["password"],
       "mustRemain": ["abc123"],
       "note": "纯文本里敏感词命中，等号至少一个边界仍成立"
-    },
-    {
-      "id": "req-passthrough-no-rules",
-      "kind": "passthrough",
-      "direction": "request",
-      "contentType": "application/json",
-      "input": "{\"password\":\"hunter2\",\"phone\":\"13800138000\"}",
-      "mustBeMasked": [],
-      "mustRemain": ["hunter2", "13800138000"],
-      "note": "生产配置的 request 侧没有任何敏感词/PII（config/auth/sanitization.yml 只有 response 块）⇒ 请求方向整体透传；这是「未配置」而不是规则失效"
     }
   ]
 }

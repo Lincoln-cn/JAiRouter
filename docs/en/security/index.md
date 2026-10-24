@@ -1,4 +1,4 @@
-﻿# Security Features
+# Security Features
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -20,10 +20,9 @@ JAiRouter provides enterprise-grade security features, including authentication,
 - **Cache Optimization**: Supports Redis and local caching for performance improvement
 
 ### 🛡️ Data Sanitization
-- **Bidirectional Sanitization**: Supports sanitization of both request and response data
+- **Response Sanitization**: Sanitizes outbound HTTP responses and call-history/log records
 - **Smart Recognition**: Automatically identifies PII data and sensitive keywords
 - **Multiple Strategies**: Supports masking, replacement, deletion, hashing, and other sanitization strategies
-- **Whitelist Mechanism**: Supports user and IP whitelists
 
 ### 📊 Security Auditing
 - **Comprehensive Logging**: Records all security-related events
@@ -68,7 +67,7 @@ jairouter:
 jairouter:
   security:
     sanitization:
-      request:
+      response:
         enabled: true
         sensitive-words: ["password", "secret"]
         pii-patterns: ["\\d{11}", "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"]
@@ -133,9 +132,8 @@ jairouter:
           key-value: "dev-admin-key-12345"
           permissions: ["admin", "read", "write"]
     sanitization:
-      request:
+      response:
         enabled: true
-        whitelist-users: ["dev-admin"]
     audit:
       enabled: true
       log-level: "DEBUG"
@@ -158,11 +156,9 @@ jairouter:
       enabled: true
       secret: "${JWT_SECRET}"
     sanitization:
-      request:
-        enabled: true
-        sensitive-words: ["password", "secret", "token"]
       response:
         enabled: true
+        sensitive-words: ["password", "secret", "token"]
     audit:
       enabled: true
       retention-days: 365
@@ -179,7 +175,6 @@ jairouter:
 ### Data Protection
 - Configure sanitization rules according to business needs
 - Regularly review and update sanitization patterns
-- Set whitelists appropriately
 - Ensure compliance
 
 ### Operations Security

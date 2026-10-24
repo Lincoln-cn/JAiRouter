@@ -349,7 +349,7 @@ try {
   const piiCfg = await api(page, '/api/config/sanitization')
   check(
     'e2e-pii-config-api',
-    piiCfg.status === 200 && !!piiCfg.body?.data?.request,
+    piiCfg.status === 200 && !!piiCfg.body?.data?.response,
     `HTTP ${piiCfg.status}`
   )
 
@@ -378,15 +378,15 @@ try {
 
   // PII 热改：保持原 piiPatterns，仅回写一次验证 PUT 闭环
   const beforePii = piiCfg.body?.data
-  if (beforePii?.request) {
+  if (beforePii?.response) {
     const restorePii = await api(page, '/api/config/sanitization', {
       method: 'PUT',
       body: {
-        request: {
-          enabled: beforePii.request.enabled,
-          piiPatterns: beforePii.request.piiPatterns || [],
-          sensitiveWords: beforePii.request.sensitiveWords || [],
-          maskingChar: beforePii.request.maskingChar || '*'
+        response: {
+          enabled: beforePii.response.enabled,
+          piiPatterns: beforePii.response.piiPatterns || [],
+          sensitiveWords: beforePii.response.sensitiveWords || [],
+          maskingChar: beforePii.response.maskingChar || '*'
         }
       }
     })

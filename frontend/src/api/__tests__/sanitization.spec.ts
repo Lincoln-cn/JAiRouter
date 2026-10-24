@@ -32,14 +32,6 @@ describe('sanitization API client', () => {
 
   it('GET /config/sanitization 解析 RouterResponse.data', async () => {
     const payload = {
-      request: {
-        enabled: true,
-        piiPatterns: ['\\d{11}'],
-        sensitiveWords: ['password'],
-        maskingChar: '*',
-        logSanitization: false,
-        failOnError: false
-      },
       response: {
         enabled: false,
         piiPatterns: [],
@@ -56,14 +48,13 @@ describe('sanitization API client', () => {
     const cfg = await getSanitizationConfig()
     expect(get).toHaveBeenCalledWith('/config/sanitization')
     expect(cfg?.ruleCount).toBe(3)
-    expect(cfg?.request.piiPatterns).toEqual(['\\d{11}'])
+    expect(cfg?.response.failOnError).toBe(true)
   })
 
-  it('PUT /config/sanitization 提交 request+response 部分更新', async () => {
+  it('PUT /config/sanitization 只提交 response 部分更新', async () => {
     put.mockResolvedValue({
       data: {
         data: {
-          request: { enabled: true },
           response: { enabled: false },
           ruleCount: 1
         }
@@ -71,12 +62,10 @@ describe('sanitization API client', () => {
     })
 
     await updateSanitizationConfig({
-      request: { enabled: true, piiPatterns: ['\\d{11}'] },
       response: { enabled: false, preserveJsonStructure: true }
     })
 
     expect(put).toHaveBeenCalledWith('/config/sanitization', {
-      request: { enabled: true, piiPatterns: ['\\d{11}'] },
       response: { enabled: false, preserveJsonStructure: true }
     })
   })
@@ -86,7 +75,7 @@ describe('sanitization API client', () => {
       data: {
         data: [
           {
-            ruleId: 'request-pii-pattern-1',
+            ruleId: 'response-pii-pattern-1',
             type: 'PII_PATTERN',
             pattern: '\\d{11}',
             enabled: true
@@ -98,7 +87,7 @@ describe('sanitization API client', () => {
     const rules = await getSanitizationRules()
     expect(get).toHaveBeenCalledWith('/config/sanitization/rules')
     expect(rules).toHaveLength(1)
-    expect(rules[0].ruleId).toBe('request-pii-pattern-1')
+    expect(rules[0].ruleId).toBe('response-pii-pattern-1')
   })
 
   it('POST /config/sanitization/test 提交样例并返回 before/after', async () => {
@@ -107,7 +96,7 @@ describe('sanitization API client', () => {
         data: {
           before: 'phone 13800138000',
           after: 'phone ***********',
-          matchedRuleIds: ['request-pii-pattern-1'],
+          matchedRuleIds: ['response-pii-pattern-1'],
           contentType: 'text/plain'
         }
       }
@@ -119,6 +108,6 @@ describe('sanitization API client', () => {
       contentType: 'text/plain'
     })
     expect(result.after).toContain('***')
-    expect(result.matchedRuleIds).toContain('request-pii-pattern-1')
+    expect(result.matchedRuleIds).toContain('response-pii-pattern-1')
   })
 })
