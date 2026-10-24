@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.4.0
-> **最后更新**: 2026-10-21
+> **文档版本**: 3.5.0
+> **最后更新**: 2026-10-24
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,53 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.5.0] - 2026-10-24 - 功能发布（响应脱敏覆盖面收口 + 熔断器治理 + 请求侧配置面移除）
+
+#### 响应脱敏覆盖面（#560 系列）
+
+- `/v1/**` 的**非流式 JSON** 响应纳入脱敏（#593）：`ExcludedPathsConfig` 删掉 `/v1/` 与 `/v1/**` 两条排除项；`/api/**`（含 `/api/v1/**`）、`/actuator/**`、`/health`、`/metrics`、Swagger 与静态资源仍排除。只改排除表、不改过滤器分支，流式行为当时零变化。
+- 生效范围可配置（#595，A 档）：新增 `jairouter.security.sanitization.response.scope.{mode,patterns}`。`mode=exclude`（默认）时 `patterns` 是「不脱敏的例外」，留空回落内置集合（行为与改造前逐字一致）；`mode=include` 时只有命中 `patterns` 的路径脱敏，留空 = 一条都不脱敏（服务端 WARN、控制台显红条）。匹配规则：不带通配符按前缀（`/actuator` 命中 `/actuator/health`），带 `*` / `**` 按 Ant（`/v1/**` 同时命中 `/v1` 本身）。该范围**只作用于 HTTP 响应过滤器**，记录侧脱敏不受影响。
+- 控制台与接口：`GET /api/config/sanitization` 的 `response` 增加 `scope`（含 `usingBuiltInDefaults` 与 `warning`）与顶层 `scopeSource`；新增 `POST /api/config/sanitization/scope/preview` 做路径预览；「PII 脱敏管理」页新增只读卡片。本期只读，改配置需重启。
+- 响应缓冲上限（#594 / #597）：新增 `jairouter.security.sanitization.response.max-buffered-bytes`，默认 **1 MiB**、下限 1 KiB（配小于 1 KiB 会启动失败）。超限分两种：有 `Content-Length` ⇒ 跳过脱敏、原样放行并记 WARN 与审计事件；chunked（无长度）⇒ 原始字节已消费无法回放，按脱敏失败终止（错误体由中央处理器渲染），**不会输出半截内容**。同批修掉 `finally` 里重复释放 `DataBuffer`（Netty 池化缓冲可能抛 `IllegalReferenceCountException`）与 `switchIfEmpty` 二次写已消费 body 两个缺陷。
+- SSE 逐帧脱敏（#560 第二阶段 / #598）：新增 `SseResponseSanitizer`，按行切分 SSE 流、只对 `data:` 负载调用 `sanitizeResponse(payload, "application/json")`；`event:` / `id:` / 注释 / 空行 / `[DONE]` 原样透传，跨块残行保留，单行超上限时该行原样直通并只告警一次，单帧脱敏失败只回退该帧、不中断整条流。`ResponseSanitizationFilter` 覆写 `writeAndFlushWith` 接入；另修「响应头未定类型时回落 `application/octet-stream` ⇒ SSE 被静默放行」的判定缺陷（改为返回 `null` 并用请求 `Accept: text/event-stream` 兜底）。新配置 `jairouter.security.sanitization.response.sanitize-sse`，默认 `true`。
+- 默认 PII 规则修正（#561 / #591）：出厂 `pii-patterns` 换成 5 条带边界模式 —— 18 位身份证 `(?<!\d)\d{17}[\dXx](?!\d)`、无分隔 16/19 位卡号、4 位一组卡号、手机号 `(?<!\d)1[3-9]\d{9}(?!\d)`、邮箱。**列表顺序即执行顺序**，长号码必须排在手机号之前（否则前 11 位先被手机号规则吃掉），有测试钉住该顺序。敏感词表去掉 `key`（会命中 `press any key` 之类正常文案）。JSON 键 `traceId` / `spanId` / `requestId` / `traceparent` / `tracestate` 的值默认原样保留（键名大小写不敏感），其余键照旧脱敏。
+- 同批修掉一个「测试全绿但生产没生效」的缺口（#591）：默认装配的 `OptimizedSanitizationRuleEngine`（`@Primary`）此前没有 JSON 键名豁免分支，而语料测试 `new` 的是 `DefaultSanitizationRuleEngine` ⇒ 生产上 `traceId` 仍会被打码。抽出 `JsonKeyExemption` 供两个引擎共用，新增 `SanitizationRuleEngineWiringTest`（断言默认装配的是 Optimized）与「同一份 28 条语料在 Optimized 引擎上重跑」。
+- 性能警示（#591）：控制台**开启**脱敏前弹二次确认（关闭方向不拦），开启后两张卡片常驻提示；`security/data-sanitization.md` 新增「性能影响与容量评估」（响应侧只覆盖 `application/json`、开销随响应体大小 / 规则条数 / QPS 增长、`SafeRegexValidator` 只拦危险模式不保证性能）。
+
+#### 破坏性变更：移除请求侧脱敏配置面（#601 / #602）
+
+- 请求侧脱敏开关与白名单一直可配置，但入站链路从未调用（`sanitizeRequest` 零调用方，见 #592 / #600）。本版按维护者裁定**整体移除请求侧配置面**，只保留真正生效的响应侧与记录侧（`sanitizeForStorage`）：`SanitizationConfig` 删 `request` 字段与内部类，`SanitizationService` 删 `sanitizeRequest` / `isUserWhitelisted`，`SanitizationConfigStore` / `SanitizationConfigEntity` 收敛为 response-only。
+- `GET /api/config/sanitization` 的 `data` 不再包含 `request`；`PUT` 只接受 `response`，只传 `request` 返回 400「需要指定 response 子配置」。保存时保留 `scope` / `maxBufferedBytes` / `sanitizeSse`，不会因为一次保存把 #560、#594 的配置重置为默认值。
+- 新增 Flyway `V5__remove_request_sanitization_scope.sql`（H2 与 PostgreSQL 各一份）：删除历史 `request` 配置行、删除只服务于请求侧白名单的 `whitelist_users` 列。
+- 控制台删除「请求侧配置」卡片与顶部 `requestEnabled` 指标，响应侧改为整行宽度，保存 payload 只提交 `response`。
+
+#### 熔断器治理（#551 / #554 / #555 / #599）
+
+- `POST /api/config/instance/circuit-breaker/clear-all` 改走完整重置：新增 `CircuitBreakerAdminService.resetAll(reason)`，对注册表里每个实例执行 `reset`（内存置 CLOSED + 删持久化 + 写 `MANUAL_RESET` 历史 + 清自适应阈值），空表返回 `matched=0`。该端点标 `@Deprecated`，建议改用可传 `serviceType` / `states` / `instanceIds` 的 `POST /api/v1/circuit-breaker-monitor/instances/reset`。
+- force-open / force-close 的作用域可辨识（#555）：这三个端点操作的是**指标处理链路**的单例熔断器，与实例路由熔断器不是同一对象。新增规范路径 `GET/POST /api/monitoring/metrics-pipeline/circuit-breaker/{stats,force-open,force-close}`（`/actuator` 侧同理），旧路径保留为 `@Deprecated` 兼容别名；响应文案标明「仅影响监控指标处理，不影响实例路由熔断器」。
+- 删除 `stateSyncIntervalMinutes`（#554）：可设置、可回显，但全仓没有任何定时任务读它。后端 DTO / Service / Repository 默认值与前端「同步」分组一并删除；实体字段保留并标 `@Deprecated`（`h2/V1__baseline.sql` 已发布不可回改，删列会触发基线漂移检查）。
+
+#### 控制台修正（#584 / #585 / #586 / #589 / #590）
+
+- 异常管理与异常统计两页去掉彩虹化（改 `MetricStrip` / `ChartCard` / `useChartSkin`），JWT 管理的筛选行内联，负载均衡监控页头把「暂停 / 恢复」与策略配置收进「更多」下拉（`清空历史` 保留为真按钮，E2E `05-traffic-governance` 依赖它）。
+- 概览页「服务配置速览」的服务类型页签改回纯文本（此前被误当成筛选导致切页失效），补 `instanceTotal` / `viewInstances` 文案与 `03-overview` 的页签切换用例。
+- 验收批次界面问题：筛选条间距、列表页卡片底色、浅色主题对比、菜单分组、权限语义化（`api/permission.ts` 与新增单测）。
+- 清理项（#590）：`jwt-authentication.md` 里两个零消费方的环境变量与若干不存在的持久化 / 黑名单键改成真实键；中文界面的适配器能力标签统一为中文；`china-optimization.md` 的 Dockerfile 示例去掉过期版本号，并补「prod 缺密钥 fail-fast，`docker run` 注入 `JWT_SECRET` / `INITIAL_ADMIN_PASSWORD`」说明。
+
+#### 安全与 CI
+
+- `.github/workflows/frontend-tests.yml` 收敛权限为 `permissions: contents: read`（CodeQL `actions/missing-workflow-permissions` 告警 #82 / #84）。
+- 依赖更新：`vite` 8.0.16 → 8.3.5；`follow-redirects` 1.16.0 → 1.16.1。
+
+#### 升级提示
+
+- **破坏性接口变更**：`GET/PUT /api/config/sanitization` 只处理 `response`（见上）。
+- **数据库结构变更**：Flyway `V5__remove_request_sanitization_scope.sql` 会**删除**历史 `request` 配置行与 `whitelist_users` 列，不可自动回滚。曾保存过请求侧规则的部署：这些规则此前通过 `sanitizeForStorage` 影响调用历史 / 日志 / 追踪的落库脱敏，升级后不再生效 —— 需要保留的请迁移到 `response` 配置（响应规则同样用于记录侧脱敏）。
+- **行为变化**：SSE 流式响应默认开始逐帧脱敏（`sanitize-sse: true`），长流会有额外 CPU 开销；需要原样透传可显式关掉。
+- **生产默认已开启**：`application-prod.yml` / `application-staging.yml` 里 `sanitization.response.enabled` 本来就是 `true` ⇒ 升级后 `/v1/**` 的非流式 JSON 与 SSE 帧**立刻开始掩码**（客户端可见）。要原样返回的部署，请把路径加进 `response.scope.patterns`（`mode=exclude`）或关闭该开关。
+- **行为变化**：默认 PII 规则与 JSON 键豁免变了 —— 原先会被打码的 `traceId` 等标识现在保留，原先漏检的 18 位身份证尾部与长卡号现在会被完整打码。
+- **配置项移除**：`stateSyncIntervalMinutes` 不再可设（此前设了也不生效）。
 
 ### [3.4.0] - 2026-10-21 - 功能发布（控制台重构 + 权限语义化 + 脱敏配置持久化 + 配额小时/月限额）
 

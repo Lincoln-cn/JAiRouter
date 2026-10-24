@@ -43,8 +43,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # the local/git directory name differs from the product name
 artifact:        model-router            # Maven artifactId
-project_version: 3.4.0                   # pom.xml
-latest_release:  v3.4.0 (2026-10-21)
+project_version: 3.5.0                   # pom.xml
+latest_release:  v3.5.0 (2026-10-24)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5 (WebFlux / reactive)
   frontend: Vue 3 + TypeScript + Vite, bilingual zh-CN / en-US
@@ -367,8 +367,22 @@ delivery. See [Status and recent work](#status-and-recent-work) for the open led
 
 ## Status and recent work
 
-**Latest release: v3.4.0 (2026-10-21)** — the feature release that follows `v3.3.6`. It completes the console
-overhaul (P0-1 → P3) and lands three backend capabilities, with **one schema migration** and **one authorization
+**Latest release: v3.5.0 (2026-10-24)** — the feature release that follows `v3.4.0`. It takes response
+sanitization from "practically no coverage" to "non-streaming JSON plus SSE frames, and configurable", closes out
+circuit-breaker governance, and brings **one breaking API change** and **one schema migration that cannot be rolled
+back automatically**.
+
+| Theme | What changed |
+|-------|--------------|
+| **Sanitization coverage (#560 series)** | Non-streaming JSON under `/v1/**` is sanitized; the effective scope is configurable (`jairouter.security.sanitization.response.scope.mode` = exclude / include with `patterns`, falling back to the built-in set when empty); a response buffer limit (`max-buffered-bytes`, 1 MiB by default) decides between pass-through and termination; SSE streams are sanitized frame by frame (`sanitize-sse`, on by default); the shipped PII rules become five bounded patterns (mobile numbers stop hitting UUIDs, ID-card and card-number tails stop leaking) and JSON keys such as `traceId` keep their values |
+| **Breaking change (#601 / #602)** | The request-side sanitization configuration surface is removed: `GET/PUT /api/config/sanitization` handles `response` only, and **Flyway V5** deletes historical `request` rows plus the `whitelist_users` column (no automatic rollback). Record-side `sanitizeForStorage` semantics are unchanged |
+| **Circuit-breaker governance (#551 / #554 / #555)** | `clear-all` now performs a full reset (`CircuitBreakerAdminService.resetAll`, response carries `matched`); force-open / force-close gain canonical paths under `/api/monitoring/metrics-pipeline/circuit-breaker/*` with `@Deprecated` aliases; the never-effective `stateSyncIntervalMinutes` is removed |
+| **Console, docs and CI** | Exception pages off gradients, JWT filters inline, load-balancer header tightened, overview tabs fixed, acceptance-batch UI fixes (45 files); JWT docs now use real config keys, Chinese capability labels unified, Dockerfile example documents secret injection; the frontend test workflow is restricted to read-only permissions |
+
+See the [`[3.5.0]` changelog entry](docs/en/reference/changelog.md). Released as GitHub Release `v3.5.0` with multi-arch images (`v3.5.0` / `3.5.0` / `latest`).
+
+**`v3.4.0` (2026-10-21)** was the feature release that follows `v3.3.6`. It completed the console
+overhaul (P0-1 → P3) and landed three backend capabilities, with **one schema migration** and **one authorization
 semantics change**.
 
 | Theme | What changed |

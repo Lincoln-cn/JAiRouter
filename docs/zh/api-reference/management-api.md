@@ -970,7 +970,7 @@ POST /api/v1/circuit-breaker-monitor/instances/reset              # config:circu
 
 **权限:** `security:sanitization:manage`（ADMIN）
 
-**语义:** 主路径为聊天调用历史/日志记录侧 `sanitizeForStorage`；网关响应过滤器默认关闭且排除 `/api/**` 与 AI 实时路径。
+**语义:** 两个生效面 —— 记录侧 `sanitizeForStorage`（调用历史 / 日志 / 追踪的落库脱敏，不受响应开关控制）与网关响应过滤器（`jairouter.security.sanitization.response.*`，默认关闭、生产 profile 为开）。响应侧生效范围由 `response.scope` 决定：默认排除 `/api/**`、`/actuator/**` 等管理面，`/v1/**` 的非流式 JSON 与 SSE 帧在覆盖内。本接口只管响应侧配置（自 3.5.0 起请求侧配置面已移除）。
 
 #### `GET /api/config/sanitization`
 
