@@ -50,6 +50,8 @@ graph TB
 ```
 
 > **Layer order (v2.8.8)**: Requests pass through **service-level → instance-level** checks (global / client-IP limits apply when enabled). Exceeding the service limit returns `429 Too Many Requests`; exceeding an instance limit skips to the next instance, and `503` is returned only when all instances are limited. The rule engine's **RATE_LIMIT** action additionally provides per-rule-ID limiting (see [routing-rules.md](./routing-rules.md)).
+>
+> **Back-off hint (since v3.5.2, #624)**: service-level `429` and all-instances-limited `503` now both carry `Retry-After: 1` (seconds). Those two layers are decided by the limiter and do not expose remaining capacity, so **only the back-off hint is added** — no `X-RateLimit-*` (the quota layer keeps `X-Quota-*`, the end-user layer uses `X-RateLimit-*`; the three prefixes are deliberately distinct).
 
 ## Service-Level Dynamic Rate Limiting Configuration (v2.8.8)
 
