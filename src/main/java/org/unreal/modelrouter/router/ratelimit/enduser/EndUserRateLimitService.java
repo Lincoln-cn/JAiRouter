@@ -153,8 +153,8 @@ public class EndUserRateLimitService {
             final String algorithm = decision.degraded() ? ALGORITHM + DEGRADED_SUFFIX : ALGORITHM;
             metricsCollector.recordRateLimit(serviceType.name().toLowerCase(Locale.ROOT),
                     algorithm, decision.allowed());
-        } catch (Exception e) {
-            // 指标记录异常不影响业务判定
+        } catch (RuntimeException e) {
+            // 指标记录异常不影响业务判定；只吞运行时异常，错误（Error）照常冒泡
         }
     }
 

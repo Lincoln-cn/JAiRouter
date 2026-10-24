@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.router.ratelimit.enduser;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.script.RedisScript;
 
@@ -98,7 +99,9 @@ public final class RedisEndUserRateLimitCounter implements EndUserRateLimitCount
                 return new Decision(false, effectiveLimit, effectiveLimit, retryAfter, false);
             }
             return new Decision(true, used, effectiveLimit, retryAfter, false);
-        } catch (Exception e) {
+        } catch (DataAccessException | IllegalStateException e) {
+            // DataAccessException = 连接/序列化/脚本执行失败；IllegalStateException = blockFirst 超时。
+            // 只捕获这两类可预期的故障，其余异常继续冒泡（#604 不以 catch(Exception) 兜底）。
             log.warn("终端用户限流 Redis 调用失败，按 fail-open 放行: key={}, error={}", key, e.getMessage());
             return new Decision(true, 0L, effectiveLimit, retryAfter, true);
         }
