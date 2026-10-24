@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.5.1
+> **Document Version**: 3.5.2
 > **Last Updated**: 2026-10-24
 > **Git Commit**: -
 > **Author**: Lincoln
@@ -20,6 +20,36 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.5.2] - 2026-10-24 - Feature Release (end-user rate limiting + client-dimension wiring)
+
+#### End-user rate limiting (#627 / #628 / #629)
+
+- **New capability**: a per-minute allowance counted per `(caller API key × end user)`. This is the only way to limit several people who share one API key without issuing one key per person — a shared key could previously only be limited "per IP" or not at all.
+- **Identity order**: header `X-End-User-Id` → request body `user` (`ChatDTO.Request` / `EmbeddingDTO.Request` / `ImageGenerateDTO.Request` / `ImageEditDTO.Request`) → Anthropic `metadata.user_id`. Only `[A-Za-z0-9._:@/-]` with ≤64 characters is accepted; anything else becomes the first 16 hex chars of SHA-256. **The raw identifier never enters Redis keys, logs or error responses** (logs carry an 8-char fingerprint only).
+- **Counting**: fixed minute windows aligned to the clock. Key = first 16 hex chars of `sha256(apiKeyId|userId)`. By default a bounded in-process Caffeine counter (`local-cache-size`, default 50000); with `jairouter.ratelimit.distributed.enabled` it becomes a single-script atomic Redis counter (`INCR` → set TTL on first write → `DECR` rollback on overflow), failing open and reporting `degraded` when Redis is unavailable.
+- **Over-limit response**: 429 with `Retry-After` / `X-RateLimit-Limit` / `X-RateLimit-Remaining` / `X-RateLimit-Reset`; the body goes through the central exception handler and `V1ErrorBodyMapper` (`rate_limit_error` under `/v1/**`), with no new error code and no user identifier in the message.
+- **Configuration**: `jairouter.ratelimit.end-user.*` — `enabled` (default `false`), `requests-per-minute` (default 60), `header-enabled`, `missing-identity` (`skip` / `reject`), `local-cache-size`, `fingerprint-length`.
+- **Not a security boundary**: the identity is self-reported and can be forged. Preventing impersonation needs authentication at the gateway; this layer only provides fair sharing within one key.
+
+#### Client-dimension wiring and retry hints (#623 / #624 / #625)
+
+- **Wiring (#623)**: `RateLimitManager.tryAcquireClientIp` was "fully implemented but never called from the request path", which is why the switches and docs read as if they worked. It is now invoked by the main path (after authentication, before the service-level pre-deduct and the cache read), rejecting with 429.
+- **Default flipped (16 yml entries)**: every bundled `client-ip-enable` became `false` — behind a cluster without an L7 proxy, `remoteAddress` is the node IP and counting by IP merges different clients into one bucket. **The switch did nothing before, so this default change alters no actual admission behavior**; enabling IP/key-based limiting is now an explicit operator decision.
+- **Retry hints (#624)**: service-level 429 and all-instances-limited 503 now carry `Retry-After: 1` (the sliding-window pane is 1 second, which is a safe upper bound for token buckets too). `X-RateLimit-*` is still not emitted — that layer's limiter does not expose remaining capacity, and a hard-coded value would mislead clients.
+- **Bounded window table (#625)**: `auth/security/service/TokenBucketRateLimiter` moved from an unbounded `ConcurrentHashMap` to a bounded Caffeine cache (10,000 entries, 2× window expiry). The cost is that an evicted key restarts its window and may allow one extra burst; strict counting belongs to `jairouter.quota.*` (documented in the javadoc).
+
+#### Documentation and gates
+
+- Rewritten symmetrically (zh/en): `configuration/rate-limiting.md` (a new "End-User Rate Limiting" section and a rewritten implementation status for client IP limiting), `deployment/multi-replica.md` (the two Redis counting paths and the switch semantics), `deployment/kubernetes.md` (the rate-limit row) and `reference/roadmap.md` (the v3.5.2 block plus a "wiring landed" correction).
+- `scripts/docs/check-capability-claims.py`: rate-limit display names and `EXTRA_ANCHORS` updated so the roadmap ↔ code cross-check keeps holding.
+- Two new guard tests: `DimensionRateLimitDefaultGuardTest` (no `client-ip-enable: true` may reappear in bundled yml, with an anti-vacuity assertion) and `ServiceRequestHandlerDimensionRateLimitTest` (429 and retry header on the wiring path).
+
+#### Upgrade notes
+
+- **No breaking changes**: end-user rate limiting is off by default, and the `client-ip-enable` default change does not alter admission behavior (the switch was inert before).
+- If you **assumed** `client-ip-enable: true` was in effect, keep the value explicitly after upgrading to get IP/key-based limiting — and make sure the topology actually lets real client IPs reach the pod; otherwise use `key-dimension: api-key` or end-user rate limiting.
+- To limit per end user: set `jairouter.ratelimit.end-user.enabled=true` and have clients send a stable identifier in `X-End-User-Id` (or the OpenAI-compatible `user` field).
 
 ### [3.5.1] - 2026-10-24 - Patch Release (record-governance page + live config snapshot + tech-debt batches A–D)
 

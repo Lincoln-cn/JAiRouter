@@ -43,8 +43,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # the local/git directory name differs from the product name
 artifact:        model-router            # Maven artifactId
-project_version: 3.5.1                   # pom.xml
-latest_release:  v3.5.1 (2026-10-24)
+project_version: 3.5.2                   # pom.xml
+latest_release:  v3.5.2 (2026-10-24)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5 (WebFlux / reactive)
   frontend: Vue 3 + TypeScript + Vite, bilingual zh-CN / en-US
@@ -367,9 +367,24 @@ delivery. See [Status and recent work](#status-and-recent-work) for the open led
 
 ## Status and recent work
 
-**Latest release: v3.5.1 (2026-10-24)** — a patch release that follows `v3.5.0` on the same day. It adds the
-record-governance page, makes the call-history encryption key source actually honor its configuration, and clears
-the first four tech-debt batches (#604). **No breaking changes.**
+**Latest release: v3.5.2 (2026-10-24)** — a feature release that adds **end-user rate limiting** (a per-minute
+allowance counted per API key × end user, which is the only way to limit several people who share one key) and
+**wires up client-dimension rate limiting**, which was fully implemented but never called. Both are off by default.
+It also gives the remaining rate-limit rejections a `Retry-After` header and bounds the API-key limiter's window
+table. **No breaking changes.**
+
+| Theme | What changed |
+|-------|--------------|
+| **End-user rate limiting (#627 / #628)** | New layer counted per `(API key × end user)`, disabled by default. Identity from `X-End-User-Id`, then the request-body `user`, then Anthropic `metadata.user_id`; malformed or over-long values become a SHA-256 fingerprint and the raw value never reaches Redis keys, logs or error responses. Fixed minute windows, bounded local Caffeine counter, or atomic single-script Redis counting when `jairouter.ratelimit.distributed.enabled=true` (fail-open). Over-limit answers 429 with `Retry-After` / `X-RateLimit-*`. The identity is self-reported, so this is **not a security boundary** |
+| **Client-dimension wiring (#623)** | `RateLimitManager.tryAcquireClientIp` is now called from the request path (after authentication, before the service-level pre-deduct and the cache read). All 16 bundled `client-ip-enable: true` entries became `false`, because counting by IP behind a cluster without an L7 proxy merges different clients — and since the switch was inert before, no admission behavior changes |
+| **Retry hints and bounded windows (#624 / #625)** | Service-level 429 and all-instances-limited 503 now carry `Retry-After: 1`; `TokenBucketRateLimiter`'s window table moved from an unbounded `ConcurrentHashMap` to Caffeine (10,000 entries / 2× window expiry), with strict counting left to `jairouter.quota.*` |
+| **Docs and gates** | `configuration/rate-limiting.md`, `deployment/multi-replica.md`, `deployment/kubernetes.md` and `reference/roadmap.md` rewritten (zh/en) to match reality; capability-claims gate updated; two new guard tests pin the defaults and the 429 path |
+
+See the [`[3.5.2]` changelog entry](docs/en/reference/changelog.md). Released as GitHub Release `v3.5.2` with multi-arch images (`v3.5.2` / `3.5.2` / `latest`).
+
+**`v3.5.1` (2026-10-24)** was a patch release that follows `v3.5.0` on the same day. It added the
+record-governance page, made the call-history encryption key source actually honor its configuration, and cleared
+the first four tech-debt batches (#604).
 
 | Theme | What changed |
 |-------|--------------|

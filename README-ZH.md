@@ -42,8 +42,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # 本地/仓库目录名与产品名不同
 artifact:        model-router            # Maven artifactId
-project_version: 3.5.1                   # pom.xml
-latest_release:  v3.5.1 (2026-10-24)
+project_version: 3.5.2                   # pom.xml
+latest_release:  v3.5.2 (2026-10-24)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5（WebFlux / 响应式）
   frontend: Vue 3 + TypeScript + Vite，中英双语（zh-CN / en-US）
@@ -351,7 +351,18 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 
 ## 状态与近期工作
 
-**最新发布：v3.5.1（2026-10-24）** —— 同日跟 `v3.5.0` 的补丁版：新增记录治理页、让 call-history 的密钥来源配置真正生效，并清掉技术债前四个批次（#604）。**无破坏性变更。**
+**最新发布：v3.5.2（2026-10-24）** —— 新增**终端用户级限流**（按「API Key × 终端用户」计每分钟额度，是多人共用一个 Key 时唯一不必一人一 Key 的办法），并把**客户端维度限流接进主链路**（此前实现完整但从未被调用）。两者默认都关闭。同批给其余限流拒绝补上 `Retry-After`，并把 API Key 限速器的窗口表改成有界缓存。**无破坏性变更。**
+
+| 主题 | 变更内容 |
+|------|----------|
+| **终端用户级限流（#627 / #628）** | 新增一层，按 `(API Key × 终端用户)` 计每分钟额度，默认关闭。身份取 `X-End-User-Id` → 请求体 `user` → Anthropic `metadata.user_id`；不合规或超长取 SHA-256 指纹，**原始值不进 Redis 键、日志与错误响应**。固定分钟窗口 + 本机有界 Caffeine 计数；开 `jairouter.ratelimit.distributed.enabled` 后改 Redis 单脚本原子计数（fail-open）。超限 429 带 `Retry-After` / `X-RateLimit-*`。身份由调用方自报，**不是安全边界** |
+| **客户端维度限流接线（#623）** | `RateLimitManager.tryAcquireClientIp` 现在由主链路调用（认证之后、服务级预扣与缓存读之前）。仓库自带 16 处 `client-ip-enable: true` 一律改为 `false` —— 集群 + 无 L7 反代时按 IP 计数会把不同客户端合并；该开关此前不生效，因此不改变任何实际放行行为 |
+| **退避头与有界窗口（#624 / #625）** | 服务级 429 与实例全限 503 现在带 `Retry-After: 1`；`TokenBucketRateLimiter` 的窗口表由无界 `ConcurrentHashMap` 改为 Caffeine（10000 条 / 2×窗口过期），严格计数交给 `jairouter.quota.*` |
+| **文档与门闩** | `configuration/rate-limiting.md`、`deployment/multi-replica.md`、`deployment/kubernetes.md`、`reference/roadmap.md` 中英对称改写以匹配真实行为；能力门闩脚本同步；新增两道守卫测试钉住默认值与 429 路径 |
+
+`[3.5.2]` 的 changelog 条目见 [更新日志](docs/zh/reference/changelog.md)；以 GitHub Release `v3.5.2` 发布，并触发多架构镜像（`v3.5.2` / `3.5.2` / `latest`）。
+
+**`v3.5.1`（2026-10-24）** 是同日跟 `v3.5.0` 的补丁版：新增记录治理页、让 call-history 的密钥来源配置真正生效，并清掉技术债前四个批次（#604）。
 
 | 主题 | 变更内容 |
 |------|----------|
