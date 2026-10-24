@@ -13,13 +13,15 @@ JAiRouter 为各种 AI 服务提供 OpenAI 兼容的 API，以及用于配置和
 
 ## API 分类
 
-### 1. 统一 API (`/v1/*`)
+### 1. 统一 API (`/api/v1/*`)
 
-AI 服务的 OpenAI 兼容端点：
+AI 服务的统一入口（含 OpenAI 兼容端点与多模态端点）：
 
-- **[统一 API](universal-api.md)** - 聊天、嵌入、TTS、STT、图像生成
-- 与 OpenAI SDK 和工具兼容
+- **[统一 API](universal-api.md)** - 聊天、嵌入、重排、TTS、STT、图像生成与编辑
+- 与 OpenAI SDK 和工具兼容（路径前缀为 `/api/v1`）
 - 一致的请求/响应格式
+
+> 另有一组 OpenAI 原生路径 `/v1/*`，只覆盖 `models`、`chat/completions`、`embeddings`、`rerank` 四个端点；音频与图像端点只在 `/api/v1/*` 下提供。
 
 ### 2. 管理 API (`/api/*`)
 
