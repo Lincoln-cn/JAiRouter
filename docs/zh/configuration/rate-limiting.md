@@ -416,7 +416,10 @@ model:
     client-ip-enable: true      # 启用客户端IP限流
 ```
 
-启用后，每个客户端 IP 拥有独立的限流器实例，使用与父配置相同的算法、容量和速率。缓存最多保留 10,000 个客户端条目，30 分钟无访问自动过期。
+> **当前实现状态（2026-10-24 核实，#623）**：`client-ip-enable` / `key-dimension` 目前只是配置项，
+> **客户端维度限流在默认主链路上没有被调用** —— `RateLimitManager.tryAcquireClientIp` 除测试外没有调用方，
+> 所以开启上述开关**不会**产生「每个 IP 一个独立限流器」的效果，真正生效的仍是服务级与实例级限流。
+> 需要限制共用同一个 API Key 的下游用户时，请使用下文「终端用户限流」一节。
 
 ### 服务级别 IP 限流
 
@@ -459,6 +462,48 @@ curl "http://localhost:8080/api/rate-limiter/status"
 # 查看限流器指标（剩余容量、使用率）
 curl "http://localhost:8080/api/rate-limiter/metrics"
 ```
+
+## 终端用户限流（v3.5.2，默认关闭）
+
+面向「一个 API Key 被多个终端用户共用」的场景：按 `(API Key, 终端用户)` 计数，给每个终端用户一份独立的每分钟额度。默认关闭，属于**可用性护栏**，不是安全边界（原因见本节末尾）。
+
+### 身份解析顺序
+
+1. 请求头 `X-End-User-Id`（`header-enabled: true` 时生效，默认开）；
+2. 请求体里的 `user` 字段（Chat Completions、Embeddings、图片生成、图片编辑四类请求体）；
+3. Anthropic Messages 的 `metadata.user_id`。
+
+取到的值先做规范化：只接受 `[A-Za-z0-9._:@/-]` 组成、长度不超过 64 的标识；不满足时替换为 SHA-256 前 16 位摘要。**原始值既不进 Redis 键，也不进日志与错误响应**。
+
+### 配置
+
+在 `config/router/ratelimit.yml` 的 `jairouter:` 下追加以下块（完整前缀 `jairouter.ratelimit.end-user`）：
+
+```yaml
+ratelimit:
+  end-user:
+    enabled: true                # 总开关，默认 false
+    requests-per-minute: 60      # 每 (API Key × 终端用户) 的每分钟额度
+    header-enabled: true         # 是否接受 X-End-User-Id
+    missing-identity: skip       # skip = 不计数直接放行；reject = 直接 429
+    local-cache-size: 50000      # 本地计数器条目上限（有界，不会无界增长）
+    fingerprint-length: 16       # 非法标识的摘要长度
+```
+
+### 执行位置与超限响应
+
+判定发生在**认证之后、服务级限流预扣与响应缓存读取之前** —— 缓存命中同样受限流约束，限流是硬边界。超限返回 `429`，并带 `Retry-After`（到下一整分钟）、`X-RateLimit-Limit`、`X-RateLimit-Remaining`、`X-RateLimit-Reset`。
+
+### 多副本
+
+默认每副本各自计数，多副本下实际放行量约为配置值 × 副本数。要精确计数需打开 `jairouter.ratelimit.distributed.enabled=true`（Redis 单脚本原子计数），见[多副本部署](../deployment/multi-replica.md)。
+
+### 边界与不做的事
+
+- **不是安全边界**：`X-End-User-Id` 由调用方自报，API Key 的持有者可以随意切换标识来规避额度。要真正隔离终端用户，仍需一人一 Key。
+- **不受它约束的调用方**：控制台 JWT 登录态（Playground 等）一律跳过；取不到 API Key 时也跳过。
+- **与配额层的区别**：配额层（`jairouter.quota.*`）按窗口计**量**（请求数 / token），失败时返回 `X-Quota-*`；本层只按分钟计**速率**，返回 `X-RateLimit-*`。
+- **v1 不做每 Key 覆盖**：额度是全局一份；按 Key 定制额度留待出现真实需求后再做。
 
 ## 多层限流配置
 

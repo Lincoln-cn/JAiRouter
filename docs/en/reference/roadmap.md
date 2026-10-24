@@ -380,17 +380,23 @@ The v3.0 microservices architecture transformation has been indefinitely postpon
 
 #### Implemented ✅ (cont.)
 - ✅ API-key-level rate limiting (per-key `rateLimitPerMinute` + token bucket; over-limit answers **429** with `RATE_LIMITED_API_KEY`, #404)
-- ✅ Distributed rate limiting (Redis sliding window `RedisSlidingWindowRateLimiter`, wired by `RateLimitManager`; **requires Redis**)
+- ✅ End-user rate limiting (v3.5.2: per-`(API key × end user)` per-minute allowance, off by default; identity from `X-End-User-Id` or the request-body `user`; over-limit answers 429 with `Retry-After` / `X-RateLimit-*`; cross-replica counting via `jairouter.ratelimit.distributed.enabled`)
+- ⚠️ Client-dimension rate limiting (`RedisSlidingWindowRateLimiter`, 1-second window): the implementation exists, but the **default request path never calls it** (#623), so `client-ip-enable` / `key-dimension` currently change nothing
 
 #### Planned 📋
-- 📋 User-based Rate Limiting
+- 📋 Wire up client-dimension limiting (#623): call `RateLimitManager.tryAcquireClientIp` from the request path, and re-evaluate whether the key dimension holds in a cluster without an L7 proxy
 
-> **Audit correction, 2026-10-16**: both "API-key-level" and "distributed" rate limiting were listed as planned but are
+> **Correction, 2026-10-16**: both "API-key-level" and "distributed" rate limiting were listed as planned but are
 > **already implemented** (see `ApiKeyValidator.validateRateLimit` and `RateLimitManager`'s wiring of `RedisSlidingWindowRateLimiter`).
 >
 > **Audit correction, 2026-10-16 (second pass)**: "Adaptive Rate Limiting" was listed as implemented, but there is
 > **no such implementation** anywhere in the repository (no such algorithm under `router/ratelimit/**`, and the other
 > documentation pages list only token-bucket / leaky-bucket / sliding-window / warm-up) — the line was removed.
+>
+> **Correction, 2026-10-24**: the "distributed rate limiting is implemented" statement above needs narrowing — the
+> implementation exists, but **the client-dimension path has no production caller** (#623), which is why the
+> switches and docs used to read as if it were live. The end-user limiting shipped alongside is the first
+> rate-limiting path that really shares counters through Redis.
 
 ### Monitoring and Observability
 

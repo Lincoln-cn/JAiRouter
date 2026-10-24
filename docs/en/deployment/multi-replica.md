@@ -22,7 +22,7 @@ inflated quota is a billing and rate-limiting distortion.
 
 ## Required configuration
 
-A multi-replica deployment must enable all five items below and point them at a shared Redis:
+A multi-replica deployment must enable all six items below and point them at a shared Redis:
 
 | Configuration key | Default | Set to | Consequence if left off |
 |---|---|---|---|
@@ -31,8 +31,11 @@ A multi-replica deployment must enable all five items below and point them at a 
 | `jairouter.security.cache.redis.enabled` | `false` | `true` | API key cache stays local; revocations and creates do not propagate |
 | `jairouter.quota.distributed.enabled` | `false` | `true` | Quota is counted per replica; allowed volume ≈ configured value × replicas |
 | `jairouter.persistence.redis.enabled` | `false` | `true` | State persistence falls back to local H2/file, never shared |
+| `jairouter.ratelimit.distributed.enabled` | `false` | `true` | End-user rate-limit counting stays per replica; allowed volume ≈ configured value × replicas |
 
 Enabling distributed quota also requires `jairouter.quota.enabled=true` (the feature's master switch).
+End-user rate limiting has its own switch, `jairouter.ratelimit.end-user.enabled` (off by default); the
+row above only decides whether **its** counting is shared across replicas.
 
 Connection details come from the `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` (and `REDIS_DATABASE`)
 environment variables, or from Spring's `spring.data.redis.*`. The switches above only decide
@@ -143,15 +146,22 @@ shared storage every `jairouter.security.api-key.cache-refresh-interval-seconds`
 
 ## Rate-limit key dimension and multi-replica semantics
 
-Rate-limit state lives **entirely in the JVM**, and the repository contains **no distributed rate
-limiter** (no Redis-backed implementation) — unlike the quota ledger and JWT blacklist, which ship
-Redis implementations and only need their switches turned on. Under multiple replicas:
+Rate-limit state lives **in the JVM by default**. Two Redis-backed counting paths exist, and only one of
+them is reachable today:
+
+- **end-user rate limiting (v3.5.2)** — live: with `jairouter.ratelimit.distributed.enabled=true`,
+  per-`(API key, end user)` counters are shared across replicas.
+- **client-dimension limiting (not wired, #623)** — `RedisSlidingWindowRateLimiter` is in the tree, but
+  the default request path never calls `RateLimitManager.tryAcquireClientIp`, so `client-ip-enable` /
+  `key-dimension` are bound and displayed but change nothing today.
+
+Everything else (service / instance / rule level limiters) is still per replica. Under multiple replicas:
 
 > the effective allowed volume for one client is roughly `configured value × replica count`, window
 > resets are per replica, and burst shape depends on which pod a request lands on (equivalent to
 > handing each pod its own full bucket).
 
-**Current decision: fix the key dimension first, evaluate distributed counting later.** With a
+**Current decision for the client dimension: fix the key dimension before relying on counting.** With a
 meaningless key, distributed counting would be correct arithmetic over garbage: in a cluster with no
 L7 ingress, `remoteAddress` is the **node IP**, not the real client IP — counting by IP means counting
 by noise, either merging a whole node into one client or, behind a proxy, merging everything into the
@@ -186,27 +196,27 @@ operators could not see "affinity is nominal" from metrics.
 
 ### Cross-replica counting (optional)
 
-With `jairouter.ratelimit.distributed.enabled` on, the client-dimension sliding window lives in Redis and
-every replica shares one counter — allowed volume equals the configured value instead of
-`configured value × replicas`.
+With `jairouter.ratelimit.distributed.enabled=true`, rate-limit counters live in Redis and every replica
+shares one counter — allowed volume equals the configured value instead of `configured value × replicas`.
 
-- **Strictly aligned with the local implementation**: 1-second window, limit of `rate` per second.
-  Switching implementations changes the counting scope, not the limiting behavior.
-- **Atomic Lua**: the decision (`ZCARD`) and the record (`ZADD`) happen inside one script, so
-  concurrent replicas cannot over-issue.
+**Today the only consumer of this switch is end-user rate limiting (v3.5.2)**: the client-dimension path
+(`RedisSlidingWindowRateLimiter`, 1-second window, limit = `rate`) is still in the tree, but the default
+request path never calls it (#623), so the switch has no effect on it. End-user rate limiting itself is
+gated by `jairouter.ratelimit.end-user.enabled` and is off by default.
+
+- **Atomic Lua**: `INCR` → set the TTL on first write → on overflow `DECR` the counter back and return a
+  rejection from the same script, so concurrent replicas cannot over-issue.
 - **fail-open**: when Redis is unavailable (connection failure/timeout) requests are allowed with a
   warning — rejecting everything is worse than relaxing the limit, matching the quota side's
   `degradeToLocal`.
-- **Bounded blocking**: the call happens on `Schedulers.boundedElastic` (see the `selectInstance` call
-  in `ServiceRequestHandler`), so it does not stall the Netty event loop; the timeout defaults to 50ms.
-- Buckets carry a TTL and expire on their own, so no cleanup job is needed.
-
-**The precondition is still a meaningful key dimension**: with no L7 proxy, counting by IP means
-counting noise more precisely.
+- **Bounded blocking**: the timeout defaults to 50ms and does not stall the Netty event loop.
+- Counters carry a TTL and expire on their own, so no cleanup job is needed.
+- With the switch off, a bounded local counter is used (Caffeine; entry cap comes from `local-cache-size`),
+  so each replica counts on its own.
 
 ### Still not done
 
-Cross-replica counting covers only the **client dimension**. The service / instance / rule level
+Cross-replica counting currently covers only **end-user rate limiting**. The service / instance / rule level
 limiters remain per replica, so their allowed volume still scales with the replica count and needs the
 same treatment.
 

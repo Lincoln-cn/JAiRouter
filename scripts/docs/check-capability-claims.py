@@ -99,13 +99,16 @@ LOADBALANCER_LABELS: Dict[str, Dict[str, List[str]]] = {
     "StickyLoadBalancer": {"zh": ["Sticky"], "en": ["Sticky"]},
 }
 
-# 限流实现类 → 展示名。`分布式限流` 落到 RedisSlidingWindowRateLimiter（RateLimitManager 装配）。
+# 限流实现类 → 展示名。`客户端维度限流` 落到 RedisSlidingWindowRateLimiter —— 该类是「按客户端
+# 维度」的 Redis 滑动窗口实现（RateLimitManager 装配），但今天主链路没有调用它（#623），路线图里因此
+# 标成「实现存在、未接线」。终端用户限流用的是自己的计数器（EndUserRateLimitService），没有
+# `*RateLimiter` 命名的实现类 ⇒ 登记在 EXTRA_ANCHORS。
 RATELIMITER_LABELS: Dict[str, Dict[str, List[str]]] = {
     "TokenBucketRateLimiter": {"zh": ["Token Bucket"], "en": ["Token Bucket"]},
     "LeakyBucketRateLimiter": {"zh": ["Leaky Bucket"], "en": ["Leaky Bucket"]},
     "SlidingWindowRateLimiter": {"zh": ["Sliding Window"], "en": ["Sliding Window"]},
     "WarmUpRateLimiter": {"zh": ["Warm Up"], "en": ["Warm Up"]},
-    "RedisSlidingWindowRateLimiter": {"zh": ["分布式限流"], "en": ["Distributed rate limiting"]},
+    "RedisSlidingWindowRateLimiter": {"zh": ["客户端维度限流"], "en": ["Client-dimension rate limiting"]},
 }
 
 # 横切能力：路线图上有声明、代码里**没有同名类**，但确实有实现载体 ⇒ 用显式锚点登记，
@@ -116,6 +119,12 @@ EXTRA_ANCHORS: Dict[str, Dict[str, object]] = {
         "en": ["API-key-level rate limiting"],
         "source": "src/main/java/org/unreal/modelrouter/auth/security/service/ApiKeyValidator.java",
         "symbol": "validateRateLimit",
+    },
+    "EndUserRateLimitService#evaluate": {
+        "zh": ["终端用户级限流"],
+        "en": ["End-user rate limiting"],
+        "source": "src/main/java/org/unreal/modelrouter/router/ratelimit/enduser/EndUserRateLimitService.java",
+        "symbol": "evaluate",
     },
 }
 
@@ -154,7 +163,7 @@ AREAS: List[dict] = [
         "headings": {"zh": ("限流算法",), "en": ("Rate Limiting Algorithms",)},
         "kind": "ratelimiter",
         "labels": RATELIMITER_LABELS,
-        "labels_note": "实现类 → 展示名；「API Key 级限流」没有同名类，登记在 EXTRA_ANCHORS",
+        "labels_note": "实现类 → 展示名；「API Key 级限流」「终端用户级限流」没有同名类，登记在 EXTRA_ANCHORS",
         "extra_anchors": EXTRA_ANCHORS,
         "candidates": {"zh": "Token Bucket", "en": "Token Bucket"},
         "min_code_items": 5,

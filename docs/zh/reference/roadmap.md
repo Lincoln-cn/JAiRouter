@@ -380,10 +380,11 @@ v3.0 为 Web 完整流程里程碑（对外 /api/v1 保持兼容，无 breaking�
 
 #### 已实现 ✅（续）
 - ✅ API Key 级限流（每键 `rateLimitPerMinute` + 令牌桶；超限返回 **429** 与 `RATE_LIMITED_API_KEY`，#404）
-- ✅ 分布式限流（Redis 滑动窗口 `RedisSlidingWindowRateLimiter`，由 `RateLimitManager` 装配；**依赖 Redis**）
+- ✅ 终端用户级限流（v3.5.2：按 `(API Key × 终端用户)` 计每分钟额度，默认关闭；身份取 `X-End-User-Id` 或请求体 `user`；超限 429 带 `Retry-After` / `X-RateLimit-*`；Redis 跨副本计数由 `jairouter.ratelimit.distributed.enabled` 控制）
+- ⚠️ 客户端维度限流（`RedisSlidingWindowRateLimiter`，1 秒窗口）：实现存在，但**默认主链路没有调用点**（#623），`client-ip-enable` / `key-dimension` 当前不产生限流效果
 
 #### 计划实现 📋
-- 📋 User-based Rate Limiting (用户级限流)
+- 📋 客户端维度限流接线（#623）：把 `RateLimitManager.tryAcquireClientIp` 接进主链路，并重新评估「集群 + 无 L7 反代」下键维度是否成立
 
 > **2026-10-16 审计更正**：「API Key 级别的限流」与「分布式限流」原先都列在计划里，实际**都已实现**
 > （前者见 `ApiKeyValidator.validateRateLimit`，后者见 `RateLimitManager` 对 `RedisSlidingWindowRateLimiter` 的装配）。
@@ -391,6 +392,10 @@ v3.0 为 Web 完整流程里程碑（对外 /api/v1 保持兼容，无 breaking�
 > **2026-10-16 审计更正（第二轮）**：「Adaptive Rate Limiting（自适应限流）」原先列在「已实现」里，
 > 但全仓**没有该实现**（`router/ratelimit/**` 下没有这个算法，其余文档也只列了
 > token-bucket / leaky-bucket / sliding-window / warm-up 四种）⇒ 该行已删除。
+>
+> **2026-10-24 更正**：上面第二轮所说的「分布式限流已实现」需要收窄 —— 实现确实在仓库里，但**客户端维度那条
+> 路径没有生产调用点**（#623），开关与文档口径此前给出了「已生效」的错觉；同期落地的终端用户级限流才是
+> 第一处真正使用 Redis 共享计数的限流路径。
 
 ### 监控和可观测性
 
