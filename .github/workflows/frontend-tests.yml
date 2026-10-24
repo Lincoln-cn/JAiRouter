@@ -1,5 +1,10 @@
 name: 前端单元测试
 
+# CodeQL `actions/missing-workflow-permissions`（告警 #82/#84）：
+# 两个 job 只需要检出代码，显式收敛为只读，避免继承仓库默认的宽权限。
+permissions:
+  contents: read
+
 # issue #392：前端单测（vitest，14 文件 / 45 例）此前**只在开发机跑**：
 # image-smoke-test 只做「构建 + 镜像产物校验」（`mvn -Pfast -DskipTests ... package`），
 # java-tests 的 paths 又不含 frontend/** ⇒ 控制台的逻辑回归没有任何 CI 保障。
