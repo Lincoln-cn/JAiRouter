@@ -85,6 +85,30 @@ class SanitizationConfigControllerTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void getConfig_shouldDescribeGatewayResponseFilterFromCurrentConfig() {
+        ResponseEntity<RouterResponse<Map<String, Object>>> resp = controller.getConfig().block();
+        Map<String, Object> data = resp.getBody().getData();
+        String described = String.valueOf(data.get("gatewayResponseFilter"));
+        assertTrue(described.contains("enabled=true"), described);
+        assertTrue(described.contains("scopeMode="), described);
+        assertTrue(described.contains("sanitizeSse=true"), described);
+        assertFalse(described.contains("default-off"),
+                "该字段曾写死为 default-off，与生产默认开启的实现不符（#605）");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void getConfig_shouldReflectDisabledGatewayResponseFilter() {
+        securityProperties.getSanitization().getResponse().setEnabled(false);
+
+        ResponseEntity<RouterResponse<Map<String, Object>>> resp = controller.getConfig().block();
+        Map<String, Object> data = resp.getBody().getData();
+        String described = String.valueOf(data.get("gatewayResponseFilter"));
+        assertTrue(described.contains("enabled=false"), described);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void updateConfig_shouldApplyHotFields() {
         SanitizationConfigController.SanitizationUpdateRequest request =
                 new SanitizationConfigController.SanitizationUpdateRequest();
