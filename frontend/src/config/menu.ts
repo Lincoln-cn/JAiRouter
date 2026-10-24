@@ -430,6 +430,19 @@ export const menuGroups: MenuGroup[] = [
             permission: 'security:audit:read'
           }
         ]
+      },
+      {
+        path: '/security/record-governance',
+        title: 'menu.recordGovernance',
+        permission: ['config:callhistory:read', 'config:callhistory:write'],
+        tabs: [
+          {
+            key: 'record-governance',
+            labelKey: 'menu.recordGovernance',
+            to: '/security/record-governance',
+            permission: ['config:callhistory:read', 'config:callhistory:write']
+          }
+        ]
       }
     ]
   },

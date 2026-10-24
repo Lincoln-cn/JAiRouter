@@ -73,11 +73,11 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 | 2 | 运行观测 | Observability | 调用历史（调用记录 ｜ 调用历史仪表盘）、链路追踪（链路搜索 ｜ 追踪仪表盘）、异常管理（异常列表 ｜ 统计分析）、慢请求（慢调用 ｜ 慢 SQL）、用量统计（Token 用量 ｜ 配额使用） |
 | 3 | 流量治理 | Traffic Governance | 路由规则、负载均衡（实时监控 ｜ 策略配置）、限流（限流监控）、熔断（熔断监控 ｜ 熔断历史 ｜ 全局配置）、响应缓存管理、配额运行时配置、资源池 |
 | 4 | 模型与实例 | Model & Instances | 服务管理、实例管理、版本管理、Adapter管理 |
-| 5 | 安全 | Security | API 密钥管理、PII 脱敏管理、JWT 令牌管理、黑名单管理、审计日志 |
+| 5 | 安全 | Security | API 密钥管理、PII 脱敏管理、JWT 令牌管理、黑名单管理、审计日志、记录治理 |
 | 6 | 系统 | System | 账户管理、权限管理、追踪配置、状态持久化 |
 | 7 | 开发工具 | Developer Tools | AI 试验场（对话测试 ｜ 向量生成 ｜ 重排序 ｜ 语音服务 ｜ 图像服务）、客户端接入指南 |
 
-> 本次信息架构（IA）由 9 组 40 项收敛为 7 组 28 项：12 个入口降级为同组菜单项的 tab，**URL 一律不变**，深链、书签与本文附录里的路径全部继续有效，只是不再单独占用侧栏一行。
+> 本次信息架构（IA）由 9 组 40 项收敛为 7 组 28 项（v3.5.1 新增「记录治理」后为 29 项）：12 个入口降级为同组菜单项的 tab，**URL 一律不变**，深链、书签与本文附录里的路径全部继续有效，只是不再单独占用侧栏一行。
 
 ### 2.2 顶栏
 
@@ -410,6 +410,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 | 安全 | JWT 令牌管理 | `/security/jwt-tokens` |
 | 安全 | 黑名单管理 | `/security/blacklist` |
 | 安全 | 审计日志 | `/security/audit-logs` |
+| 安全 | 记录治理 | `/security/record-governance` |
 | 系统 | 账户管理 | `/system/accounts` |
 | 系统 | 权限管理 | `/system/permissions` |
 | 系统 | 追踪配置 | `/tracing/management` |
@@ -426,6 +427,17 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 2. 热改后点保存（同步重建规则库，记录侧 SUMMARY 立即生效）
 3. 「试脱敏」粘贴聊天样例，确认脱敏后出现 `****`
 4. 说明：网关实时响应默认不脱敏；管理台 `/api/**` 与 AI 路径已排除
+
+### 记录治理（v3.5.1）
+
+路径：**安全 → 记录治理** `/security/record-governance`（权限 `config:callhistory:read` / `config:callhistory:write`）
+
+操作动线：
+1. 「记录级别」三档单选：`METADATA_ONLY`（仅元数据）/ `SUMMARY`（摘要）/ `FULL`（完整内容，加密落库）；切到 `FULL` 会二次确认
+2. 「加密与存储」只读区同时显示**配置请求的密钥来源**与**实际生效的密钥来源**，以及密钥指纹、单条内容上限（默认 64 KB）、保留期与最大记录数
+3. 若配置请求 `env` 但环境变量 `JAIR_CALL_HISTORY_KEY` 不可用，页面顶部出现回退警告，且「实际生效」显示 `auto` —— 此时内容用的是 `~/.jairouter/call-history.key` 文件密钥
+4. 保存只提交 `recordLevel`，其余字段由 `jairouter.call-history.*` 配置决定，页面不可改
+5. 在 `FULL` 级别下查看单条调用详情会触发服务端解密，并写入 `FULL_CONTENT_ACCESS` 审计（可在「审计日志」页查询）
 
 ### API 密钥配额操作（v3.2.0）
 

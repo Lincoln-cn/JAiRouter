@@ -48,6 +48,7 @@ export const ALL_ROUTES = [
   { path: '/security/jwt-tokens', name: 'jwt-token-management', group: 'security', expectAny: ['.el-table', '.el-card', '.el-button'] },
   { path: '/security/blacklist', name: 'blacklist-management', group: 'security', expectAny: ['.el-table', '.el-card', '.el-button'] },
   { path: '/security/audit-logs', name: 'audit-log-management', group: 'security', expectAny: ['.el-table', '.el-card', '.el-button'] },
+  { path: '/security/record-governance', name: 'record-governance', group: 'security', expectAny: ['.el-card', '.el-button', '.el-radio-group'] },
 
   // 系统
   { path: '/system/accounts', name: 'account-management', group: 'system', expectAny: ['.el-table', '.el-card', '.el-button'] },

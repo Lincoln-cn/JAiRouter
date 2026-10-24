@@ -86,6 +86,25 @@ export interface CallHistoryConfig {
   maxContentLength?: number
   retentionDays?: number
   enabled?: boolean
+  maxRecords?: number
+  requestBodySummaryEnabled?: boolean
+  responseBodySummaryEnabled?: boolean
+  slowCallThresholdMs?: number
+  /** 配置里请求的密钥来源（env / auto） */
+  encryptionKeySource?: string
+  /** 实现实际请求的密钥来源（与配置值同源，便于对照） */
+  encryptionKeySourceRequested?: string
+  /** 实现实际生效的密钥来源：请求 env 但环境变量缺失时会回退为 auto */
+  encryptionKeySourceEffective?: string
+  /** 请求来源是否被真正采纳（false 表示已回退） */
+  encryptionKeySourceHonored?: boolean
+  /** env 模式下环境变量 JAIR_CALL_HISTORY_KEY 是否可用 */
+  environmentKeyPresent?: boolean
+  encryptionAlgorithm?: string
+  /** 密钥指纹（SHA-256 前 8 位），用于核对多副本是否同一把密钥 */
+  encryptionKeyFingerprint?: string | null
+  /** 当前级别是否把内容加密落库（仅 FULL 为 true） */
+  contentStoredEncrypted?: boolean
 }
 
 /**

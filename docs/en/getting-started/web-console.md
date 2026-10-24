@@ -73,11 +73,11 @@ Menu visibility is controlled by permission codes: groups/menu items for which t
 | 2 | Observability | 运行观测 | Call History (Call Records ｜ Call History Dashboard), Distributed Tracing (Trace Search ｜ Tracing Dashboard), Exceptions (Exception List ｜ Statistics), Slow Requests (Slow Calls ｜ Slow SQL), Usage (Token Usage ｜ Quota Usage) |
 | 3 | Traffic Governance | 流量治理 | Routing Rules, Load Balancing (Real-time Monitoring ｜ Strategy Config), Rate Limiting (Rate Limit Monitoring), Circuit Breakers (Circuit Monitoring ｜ Circuit History ｜ Global Config), Response Cache Management, Quota Runtime Config, Resource Pools |
 | 4 | Model & Instances | 模型与实例 | Service Management, Instance Management, Version Management, Adapters |
-| 5 | Security | 安全 | API Key Management, PII Sanitization, JWT Token Management, Blacklist Management, Audit Logs |
+| 5 | Security | 安全 | API Key Management, PII Sanitization, JWT Token Management, Blacklist Management, Audit Logs, Record Governance |
 | 6 | System | 系统 | Account Management, Permission Management, Tracing Config, State Persistence |
 | 7 | Developer Tools | 开发工具 | AI Playground (Chat Playground ｜ Embedding ｜ Rerank ｜ Audio Service ｜ Image Service), Client Access Guide |
 
-> This information architecture (IA) change folds 9 groups / 40 entries into 7 groups / 28 items: 12 entries became tabs of a sibling item, and **every URL stays the same**. Deep links, bookmarks, and the paths in the appendix keep working; they simply no longer occupy a sidebar row of their own.
+> This information architecture (IA) change folds 9 groups / 40 entries into 7 groups / 28 items (29 since v3.5.1 added Record Governance): 12 entries became tabs of a sibling item, and **every URL stays the same**. Deep links, bookmarks, and the paths in the appendix keep working; they simply no longer occupy a sidebar row of their own.
 
 ### 2.2 Top Bar
 
@@ -410,6 +410,7 @@ This page provides complete access examples for the OpenAI-compatible API and th
 | Security | JWT Token Management | `/security/jwt-tokens` |
 | Security | Blacklist Management | `/security/blacklist` |
 | Security | Audit Logs | `/security/audit-logs` |
+| Security | Record Governance | `/security/record-governance` |
 | System | Account Management | `/system/accounts` |
 | System | Permission Management | `/system/permissions` |
 | System | Tracing Config | `/tracing/management` |
@@ -426,8 +427,17 @@ Path: **Security → PII Sanitization** `/security/sanitization` (permission `se
 3. Dry-run with a chat sample; expect `****` in the result
 4. Gateway live responses are not masked by default; admin `/api/**` and AI paths are excluded
 
-### API Key Quota Ops (v3.2.0)
+### Record Governance (v3.5.1)
 
+Path: **Security → Record Governance** `/security/record-governance` (permissions `config:callhistory:read` / `config:callhistory:write`)
+
+1. Pick one of three record levels: `METADATA_ONLY` / `SUMMARY` / `FULL` (full content, encrypted at rest); switching to `FULL` asks for confirmation
+2. The read-only "Encryption and storage" card shows both the **configured** key source and the **effective** key source, plus the key fingerprint, per-record content limit (64 KB by default), retention and max records
+3. If the configuration requests `env` but `JAIR_CALL_HISTORY_KEY` is unavailable, a fallback warning appears and "effective" reads `auto` — content is then encrypted with the key file at `~/.jairouter/call-history.key`
+4. Save submits `recordLevel` only; every other field is driven by `jairouter.call-history.*` and is read-only here
+5. At the `FULL` level, viewing a record detail decrypts it on the server and writes a `FULL_CONTENT_ACCESS` audit event (queryable on the Audit Logs page)
+
+### API Key Quota Ops (v3.2.0)
 Path: **Security → API Key Management** → row action **Quota**
 
 1. Open the quota drawer: today usage / remaining + presets

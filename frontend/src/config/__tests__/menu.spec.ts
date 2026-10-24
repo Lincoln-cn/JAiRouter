@@ -15,7 +15,7 @@ import {
  * 一旦结构漂移（多一项、少一组、tab 路由写错、反查表漏项），先在这里红。
  */
 describe('menu.ts 信息架构', () => {
-  it('7 组 28 项，组顺序与设计文档一致', () => {
+  it('7 组 29 项，组顺序与设计文档一致', () => {
     expect(menuGroups.map(g => g.index)).toEqual([
       'dashboard',
       'observability',
@@ -25,8 +25,8 @@ describe('menu.ts 信息架构', () => {
       'system',
       'dev-tools'
     ])
-    expect(menuGroups.map(g => g.children.length)).toEqual([1, 5, 7, 4, 5, 4, 2])
-    expect(menuGroups.reduce((total, g) => total + g.children.length, 0)).toBe(28)
+    expect(menuGroups.map(g => g.children.length)).toEqual([1, 5, 7, 4, 6, 4, 2])
+    expect(menuGroups.reduce((total, g) => total + g.children.length, 0)).toBe(29)
   })
 
   it('每项主路径 = 第一个 tab 的路由，且 tab 路由全局唯一', () => {
@@ -40,8 +40,8 @@ describe('menu.ts 信息架构', () => {
       }
     }
     const routes = items.flatMap(item => item.tabs.map(tab => tab.to))
-    // 40 → 28 的 12 个被收起页面仍在 tabs 里，因此 tab 总数 = 28 + 12 = 40
-    expect(routes.length).toBe(40)
+    // 40 → 29：12 个被收起页面仍在 tabs 里，因此 tab 总数 = 29 + 12 = 41
+    expect(routes.length).toBe(41)
     expect(new Set(routes).size).toBe(routes.length)
   })
 
@@ -53,7 +53,7 @@ describe('menu.ts 信息架构', () => {
         }
       }
     }
-    expect(Object.keys(ROUTE_TO_MENU)).toHaveLength(40)
+    expect(Object.keys(ROUTE_TO_MENU)).toHaveLength(41)
   })
 
   it('深链未命中回退 route.path；异常详情归到异常列表', () => {
