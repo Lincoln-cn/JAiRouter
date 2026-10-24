@@ -84,6 +84,11 @@ final class QuotaLedgerRepositoryGateway {
      *
      * <p>并发插入撞唯一约束时返回 {@code false}（下一轮以累加方式落库），其余异常同样只告警。</p>
      *
+     * <p>捕获范围是 {@link RuntimeException} 而非 {@code Exception}：Spring Data 仓储边界只会抛
+     * 非受检异常，这里不吞受检异常。吞掉运行时异常是既有的 fail-open 契约（见
+     * {@code QuotaLedgerServiceTest.reserve_whenRepositoryFails_shouldFailOpen}），
+     * 收窄到具体数据访问异常会改变该契约。</p>
+     *
      * @param key      计数键
      * @param requests 累计请求数
      * @param tokens   累计 token 数
@@ -109,7 +114,7 @@ final class QuotaLedgerRepositoryGateway {
         } catch (DataIntegrityViolationException e) {
             log.debug("配额账本行已存在（并发插入），下轮以累加方式落库: apiKeyId={}", dimension.apiKeyId());
             return false;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.warn("配额账本行插入失败: apiKeyId={}, window={}, error={}",
                 dimension.apiKeyId(), key.window(), e.toString());
             return false;
@@ -142,11 +147,13 @@ final class QuotaLedgerRepositoryGateway {
      * @param window 窗口类型
      * @param cutoff 保留期截止时间
      * @return 删除行数；异常时返回 0 并告警
+     *
+     * <p>捕获范围与 {@link #insert} 一致：只吞非受检异常，保留 fail-open 语义。</p>
      */
     int deleteExpired(final QuotaWindow window, final LocalDateTime cutoff) {
         try {
             return repository.deleteExpired(window.name(), cutoff);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.warn("配额账本过期行清理失败: window={}, error={}", window, e.toString());
             return 0;
         }
