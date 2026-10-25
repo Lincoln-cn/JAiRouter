@@ -27,6 +27,9 @@ public class CircuitBreakerManager {
     // 存储所有实例的熔断器
     private final Map<String, CircuitBreaker> circuitBreakers = new ConcurrentHashMap<>();
 
+    // v3.5.4（#653）：自适应阈值按实例覆盖全局配置，在熔断器创建（含重建）时生效
+    private final Map<String, Integer> adaptiveFailureThresholds = new ConcurrentHashMap<>();
+
     // 全局熔断器配置
     private int failureThreshold = DEFAULT_FAILURE_THRESHOLD;
     private long timeout = DEFAULT_TIMEOUT;
@@ -99,13 +102,52 @@ public class CircuitBreakerManager {
      */
     public CircuitBreaker getCircuitBreaker(final String instanceId, final String instanceUrl) {
         // 使用实例ID作为唯一标识符，如果ID为空则使用URL
+        String key = resolveKey(instanceId, instanceUrl);
+
+        return circuitBreakers.computeIfAbsent(key,
+                k -> new LockFreeCircuitBreaker(k, resolveFailureThreshold(k), timeout, successThreshold));
+    }
+
+    /**
+     * 按实例更新熔断失败阈值（v3.5.4，#653）。
+     *
+     * <p>阈值在熔断器创建时是 final 的，所以这里先记录覆盖值、再丢弃该实例的熔断器，
+     * 下一次 {@link #getCircuitBreaker(String, String)} 会用新阈值重建。重建意味着该实例的失败计数
+     * 与状态从 CLOSED 重新开始 —— 这是「判定基准变了」的必然结果；与旧实现的关键区别是
+     * 只在阈值真的变化时发生一次，而不是每个自适应周期都清空一次。</p>
+     *
+     * @param instanceId 实例 ID
+     * @param instanceUrl 实例 URL（instanceId 为空时作为键）
+     * @param newFailureThreshold 新的失败阈值，&lt;=0 时忽略
+     * @return 是否已接受该调整
+     */
+    public boolean updateFailureThreshold(final String instanceId, final String instanceUrl,
+                                          final int newFailureThreshold) {
+        if (newFailureThreshold <= 0) {
+            logger.warn("忽略非法的熔断失败阈值: {}", newFailureThreshold);
+            return false;
+        }
+        final String key = resolveKey(instanceId, instanceUrl);
+        adaptiveFailureThresholds.put(key, newFailureThreshold);
+        circuitBreakers.remove(key);
+        logger.info("实例 {} 的熔断失败阈值已更新为 {}", key, newFailureThreshold);
+        return true;
+    }
+
+    /**
+     * 实例键：优先 instanceId，缺失时退化成 instanceUrl（与 {@link #getCircuitBreaker} 一致）。
+     */
+    private String resolveKey(final String instanceId, final String instanceUrl) {
         String key = instanceId != null && !instanceId.trim().isEmpty() ? instanceId : instanceUrl;
         if (key == null || key.trim().isEmpty()) {
             throw new IllegalArgumentException("Both instanceId and instanceUrl cannot be null or empty");
         }
+        return key;
+    }
 
-        return circuitBreakers.computeIfAbsent(key,
-                k -> new LockFreeCircuitBreaker(k, failureThreshold, timeout, successThreshold));
+    private int resolveFailureThreshold(final String key) {
+        Integer override = adaptiveFailureThresholds.get(key);
+        return override != null ? override : failureThreshold;
     }
 
     /**
@@ -404,6 +446,7 @@ public class CircuitBreakerManager {
      */
     public void clearAllCircuitBreakers() {
         circuitBreakers.clear();
+        adaptiveFailureThresholds.clear();
         logger.info("Cleared all circuit breakers");
     }
 

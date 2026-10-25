@@ -233,26 +233,24 @@ public class AdaptiveThresholdManager {
     /**
      * 应用阈值调整
      */
-    private void applyThresholdAdjustment(final String instanceId, final int oldThreshold, 
+    private void applyThresholdAdjustment(final String instanceId, final int oldThreshold,
             final int newThreshold, final double failureRate) {
-        
-        String reason = String.format("自适应调整: 失败率 %.2f%%, 阈值 %d -> %d", 
+        final String reason = String.format("自适应调整: 失败率 %.2f%%, 阈值 %d -> %d",
                 failureRate * 100, oldThreshold, newThreshold);
 
-        log.info("实例 {} 阈值调整: {} (失败率: {:.2f}%)", instanceId, 
-                oldThreshold + " -> " + newThreshold, failureRate * 100);
+        log.info("实例 {} 阈值调整: {} -> {}（失败率 {}%）", instanceId,
+                oldThreshold, newThreshold, String.format("%.2f", failureRate * 100));
 
-        // 更新数据库记录
+        // v3.5.4（#653）：先真正写进熔断器，再按实际结果落库（此前这里只记日志、DB 永远 applied=false）
+        final boolean applied = updateCircuitBreakerThreshold(instanceId, newThreshold);
+
         metricsRepository.findFirstByInstanceIdOrderByWindowEndDesc(instanceId)
                 .ifPresent(entity -> {
                     entity.setAdjustedFailureThreshold(newThreshold);
                     entity.setAdjustmentReason(reason);
-                    entity.setAdjustmentApplied(false);
+                    entity.setAdjustmentApplied(applied);
                     metricsRepository.save(entity);
                 });
-
-        // 更新内存中的熔断器阈值
-        updateCircuitBreakerThreshold(instanceId, newThreshold);
     }
 
     /**
@@ -269,26 +267,29 @@ public class AdaptiveThresholdManager {
     /**
      * 更新熔断器阈值
      */
-    private void updateCircuitBreakerThreshold(final String instanceId, final int newThreshold) {
-        // 获取熔断器并更新阈值
-        // 注意：这里需要 CircuitBreaker 支持动态更新阈值
-        // 目前通过重置熔断器来实现
+    boolean updateCircuitBreakerThreshold(final String instanceId, final int newThreshold) {
+        if (instanceId == null || instanceId.isBlank()) {
+            return false;
+        }
         try {
-            Map<String, Object> detail = circuitBreakerManager.getCircuitBreakerDetail(instanceId);
-            if (detail != null) {
-                // 获取当前状态信息
-                CircuitBreaker.State state = CircuitBreaker.State.valueOf((String) detail.get("state"));
-                int successCount = (Integer) detail.get("successCount");
-                long timeout = ((Number) detail.get("timeout")).longValue();
-                int successThreshold = (Integer) detail.get("successThreshold");
-
-                // 重置并使用新阈值创建
-                circuitBreakerManager.resetCircuitBreaker(instanceId, null);
-                
-                log.debug("已更新实例 {} 的熔断器阈值为 {}", instanceId, newThreshold);
+            final Map<String, Object> detail = circuitBreakerManager.getCircuitBreakerDetail(instanceId);
+            if (detail == null) {
+                log.debug("实例 {} 尚无熔断器，阈值 {} 会在创建时通过覆盖表生效", instanceId, newThreshold);
+                return circuitBreakerManager.updateFailureThreshold(instanceId, null, newThreshold);
             }
-        } catch (Exception e) {
+            final int current = ((Number) detail.get("failureThreshold")).intValue();
+            if (current == newThreshold) {
+                return true;
+            }
+            // 旧实现只 resetCircuitBreaker，newThreshold 从未写入；而且每个调整周期都会清空一次熔断状态
+            final boolean applied = circuitBreakerManager.updateFailureThreshold(instanceId, null, newThreshold);
+            if (applied) {
+                log.debug("已更新实例 {} 的熔断器阈值: {} -> {}", instanceId, current, newThreshold);
+            }
+            return applied;
+        } catch (RuntimeException e) {
             log.warn("更新实例 {} 熔断器阈值失败: {}", instanceId, e.getMessage());
+            return false;
         }
     }
 
