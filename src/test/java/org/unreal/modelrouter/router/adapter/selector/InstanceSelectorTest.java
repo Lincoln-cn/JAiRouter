@@ -89,6 +89,21 @@ class InstanceSelectorTest {
     }
 
     @Test
+    @DisplayName("测试 9: 未配置 instance-id 时键回退 baseUrl，与写入侧一致（#655）")
+    void isInstanceHealthy_shouldFallBackToBaseUrlWhenInstanceIdMissing() {
+        ModelRouterProperties.ModelInstance instance = new ModelRouterProperties.ModelInstance();
+        instance.setName("qwen3:4b");
+        instance.setBaseUrl("http://172.16.30.7:9090");
+        when(serviceStateManager.isInstanceHealthyByKey("chat:http://172.16.30.7:9090")).thenReturn(true);
+
+        boolean result = instanceSelector.isInstanceHealthy(ModelServiceRegistry.ServiceType.chat, instance);
+
+        assertTrue(result);
+        verify(serviceStateManager).isInstanceHealthyByKey("chat:http://172.16.30.7:9090");
+        verify(serviceStateManager, never()).isInstanceHealthyByKey("chat:null");
+    }
+
+    @Test
     @DisplayName("测试 5: getModelPath 应调用 registry")
     void getModelPath_shouldCallRegistry() {
         when(registry.getModelPath(any(), anyString())).thenReturn("/v1/chat/completions");

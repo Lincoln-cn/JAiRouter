@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
+import org.unreal.modelrouter.router.model.InstanceKeys;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 
@@ -95,10 +96,12 @@ public class InstanceSelector {
         }
 
         // 使用 ServiceStateManager 缓存的健康状态（非阻塞）
-        String instanceKey = serviceType.name() + ":" + instance.getInstanceId();
+        // v3.5.4(#655)：健康状态的写入方（ServerChecker）用的是 InstanceKeys.healthKey，
+        // 这里此前自行拼 instanceId，未配置 instance-id 的实例会查不到（#636 修的是写入侧）。
+        String instanceKey = InstanceKeys.healthKey(serviceType.name(), instance);
         boolean healthy = serviceStateManager.isInstanceHealthyByKey(instanceKey);
 
-        logger.debug("使用缓存的健康状态：instanceId={}, healthy={}", instance.getInstanceId(), healthy);
+        logger.debug("使用缓存的健康状态：instanceKey={}, healthy={}", instanceKey, healthy);
 
         return healthy;
     }

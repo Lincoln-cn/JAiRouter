@@ -21,8 +21,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public class LoadBalancerManager {
     private static final Logger logger = LoggerFactory.getLogger(LoadBalancerManager.class);
 
+    /**
+     * 服务类型 → 负载均衡器。
+     *
+     * <p>v3.5.4(#655)：原先是 {@link EnumMap}。{@link #updateConfiguration()} 会 {@code clear()} +
+     * 重填，而 {@link #getLoadBalancer} 是每个请求都会走的读路径 —— 读写并发时 EnumMap 既不安全，
+     * 读方也可能在 clear 与重填之间拿到 null（随后又往非线程安全的 map 里 put）。
+     * 换成并发容器后，惰性兜底也改成 computeIfAbsent，不会重复创建。</p>
+     */
     private final Map<ModelServiceRegistry.ServiceType, LoadBalancer> loadBalancers =
-            new EnumMap<>(ModelServiceRegistry.ServiceType.class);
+            new ConcurrentHashMap<>();
 
     /**
      * 按策略名缓存的负载均衡器（v3.5.4，#649）。
@@ -101,14 +109,11 @@ public class LoadBalancerManager {
      * 获取指定服务类型的负载均衡器
      */
     public LoadBalancer getLoadBalancer(final ModelServiceRegistry.ServiceType serviceType) {
-        LoadBalancer loadBalancer = loadBalancers.get(serviceType);
-        if (loadBalancer == null) {
-            logger.warn("No load balancer found for service type: {}, creating default", serviceType);
-            loadBalancer = componentFactory.createLoadBalancer(
+        return loadBalancers.computeIfAbsent(serviceType, type -> {
+            logger.warn("No load balancer found for service type: {}, creating default", type);
+            return componentFactory.createLoadBalancer(
                     configConverterHelper.createDefaultLoadBalanceConfig());
-            loadBalancers.put(serviceType, loadBalancer);
-        }
-        return loadBalancer;
+        });
     }
 
     /**
@@ -164,7 +169,7 @@ public class LoadBalancerManager {
         logger.info("Updating load balancer configuration");
 
         Map<ModelServiceRegistry.ServiceType, LoadBalancer> oldLoadBalancers =
-                new EnumMap<>(loadBalancers);
+                new ConcurrentHashMap<>(loadBalancers);
 
         try {
             loadBalancers.clear();

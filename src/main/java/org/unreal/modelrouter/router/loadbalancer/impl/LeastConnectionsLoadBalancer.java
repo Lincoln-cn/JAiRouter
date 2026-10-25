@@ -74,13 +74,29 @@ public class LeastConnectionsLoadBalancer implements LoadBalancer {
 
     @Override
     public void recordCallComplete(final ModelRouterProperties.ModelInstance instance) {
+        releaseConnection(instance, "completed");
+    }
+
+    /**
+     * 记录调用失败（v3.5.4，#655）。
+     *
+     * <p>失败路径只会走 {@code recordCallFailure}，在此之前本类没有覆盖它，
+     * 「在途连接数」只增不减 —— 一个持续失败的实例会永久停在高位，恢复后也很难被重新选中。
+     * 与完成路径一样释放计数，并把下限钳在 0，避免重复回调减成负数。</p>
+     */
+    @Override
+    public void recordCallFailure(final ModelRouterProperties.ModelInstance instance) {
+        releaseConnection(instance, "failed");
+    }
+
+    private void releaseConnection(final ModelRouterProperties.ModelInstance instance, final String outcome) {
         String key = getInstanceKey(instance);
         AtomicLong count = connectionCounts.get(key);
         if (count != null) {
-            long currentCount = count.decrementAndGet();
-            logger.info("Instance {} call completed. Current connections: {}", key, currentCount);
+            long currentCount = count.updateAndGet(value -> value > 0 ? value - 1 : 0);
+            logger.info("Instance {} call {}. Current connections: {}", key, outcome, currentCount);
         } else {
-            logger.info("Instance {} call completed. No active connection count found.", key);
+            logger.info("Instance {} call {}. No active connection count found.", key, outcome);
         }
     }
 
