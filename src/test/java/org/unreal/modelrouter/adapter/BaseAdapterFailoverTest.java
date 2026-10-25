@@ -128,8 +128,6 @@ class BaseAdapterFailoverTest {
         // Arrange: instanceSelector always returns A initially
         when(instanceSelector.selectInstance(any(), anyString(), anyString()))
                 .thenReturn(instanceA);
-        when(instanceSelector.getModelPath(any(), anyString()))
-                .thenReturn("/v1/chat/completions");
 
         // RetryPolicy: allow 1 retry (retryCount 0)
         when(retryPolicy.canRetry(eq(0), any())).thenReturn(true);
@@ -174,8 +172,6 @@ class BaseAdapterFailoverTest {
     void shouldFallbackWhenAllReselectCandidatesAlreadyFailed() {
         when(instanceSelector.selectInstance(any(), anyString(), anyString()))
                 .thenReturn(instanceA);
-        when(instanceSelector.getModelPath(any(), anyString()))
-                .thenReturn("/v1/chat/completions");
 
         // canRetry: allow retryCount 0 and 1, reject 2
         when(retryPolicy.canRetry(anyInt(), any()))
@@ -218,8 +214,6 @@ class BaseAdapterFailoverTest {
     void shouldRetrySameInstanceWhenNoAlternativeAvailable() {
         when(instanceSelector.selectInstance(any(), anyString(), anyString()))
                 .thenReturn(instanceA);
-        when(instanceSelector.getModelPath(any(), anyString()))
-                .thenReturn("/v1/chat/completions");
 
         // Allow retryCount 0 and 1, reject 2
         when(retryPolicy.canRetry(anyInt(), any()))
@@ -266,8 +260,6 @@ class BaseAdapterFailoverTest {
     void shouldNotRetryOrReselectOnNonRetryableError() {
         when(instanceSelector.selectInstance(any(), anyString(), anyString()))
                 .thenReturn(instanceA);
-        when(instanceSelector.getModelPath(any(), anyString()))
-                .thenReturn("/v1/chat/completions");
 
         // canRetry returns true, but isRetryable returns false
         when(retryPolicy.canRetry(eq(0), any())).thenReturn(true);
@@ -296,8 +288,6 @@ class BaseAdapterFailoverTest {
     void shouldStopReselectAfterCapAndFallbackToCurrentInstance() {
         when(instanceSelector.selectInstance(any(), anyString(), anyString()))
                 .thenReturn(instanceA);
-        when(instanceSelector.getModelPath(any(), anyString()))
-                .thenReturn("/v1/chat/completions");
 
         // Allow retryCount 0 and 1, reject 2
         when(retryPolicy.canRetry(anyInt(), any()))
