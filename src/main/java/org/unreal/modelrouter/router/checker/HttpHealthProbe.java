@@ -1,5 +1,6 @@
 package org.unreal.modelrouter.router.checker;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -60,7 +61,8 @@ public class HttpHealthProbe {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return new Result(false, "HTTP 探活被中断");
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
+            // #604：只捕获可预期的失败（连接被拒 / 超时 / 协议错），其余异常继续冒泡
             return new Result(false, "HTTP 探活失败: " + e.getClass().getSimpleName()
                     + (e.getMessage() == null ? "" : " " + e.getMessage()));
         }

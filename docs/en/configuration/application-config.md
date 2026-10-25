@@ -38,6 +38,7 @@ config/
 │   ├── adapter.yml      # Adapter configuration
 │   ├── loadbalancer.yml # Load balancer configuration
 │   ├── ratelimit.yml    # Rate limiting configuration
+│   ├── health-check.yml # Health check configuration
 │   ├── circuitbreaker.yml # Circuit breaker configuration
 │   ├── fallback.yml     # Fallback configuration
 │   ├── pools.yml        # Resource pool configuration
@@ -89,6 +90,7 @@ spring:
       - classpath:config/router/adapter.yml
       - classpath:config/router/loadbalancer.yml
       - classpath:config/router/ratelimit.yml
+- classpath:config/router/health-check.yml
       - classpath:config/router/circuitbreaker.yml
       - classpath:config/router/fallback.yml
       - classpath:config/router/services.yml
