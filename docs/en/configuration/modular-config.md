@@ -73,11 +73,6 @@ config/
 spring:
   config:
     import:
-      # External configuration (highest priority)
-      - optional:file:/app/config/application.yml
-      - optional:file:/app/config/auth/jwt.yml
-      - optional:file:/app/config/router/services.yml
-
       # common module
       - classpath:config/common/server.yml
       - classpath:config/common/webclient.yml
@@ -121,20 +116,27 @@ spring:
       - classpath:config/base/model-services-base.yml
       - classpath:config/security/security-base.yml
       - classpath:config/security/persistence-base.yml
+
+      # External configuration (highest priority: later import wins, must stay last)
+      - optional:file:/app/config/application.yml
+      - optional:file:/app/config/auth/jwt.yml
+      - optional:file:/app/config/router/services.yml
 ```
 
 ---
 
 ## Configuration Priority
 
-Configuration loading follows this priority order (higher priority overrides lower priority):
+`spring.config.import` follows a simple rule: **within one list, later entries win** — a later import overrides the same keys from an earlier one. That is why `application.yml` orders them as:
 
-1. Command-line arguments (highest priority)
-2. Environment variables
-3. External configuration files (`/app/config/`)
-4. Environment-specific configuration files (`application-{profile}.yml`)
-5. Module configuration files (`config/{module}/*.yml`)
-6. Base configuration modules (lowest priority)
+1. Classpath module configuration (`config/**`, priority increases top to bottom)
+2. **External mounted configuration** (`/app/config/application.yml`, `/app/config/auth/jwt.yml`, `/app/config/router/services.yml` — deliberately the last three entries)
+
+Above the imports, normal Spring Boot precedence still applies: `application-{profile}.yml` < environment variables < command-line arguments.
+
+> **Upgrade note (v3.5.2+, #634)**: previously the external imports came **first**, so same-named keys in mounted files were silently overridden by classpath defaults; now they take effect. Before upgrading, make sure the keys under `/app/config` hold the values you want — the startup log prints `外部配置已生效（按后导入者优先覆盖 classpath 同名键）: …`, and the absence of that line means the mount was not read.
+>
+> **Known leftover (#643)**: `config/router/services.yml` and `config/base/model-services-base.yml` both define `model.services`, and the latter is imported later ⇒ **the latter currently wins**. "Base configuration modules have the lowest priority" was the older wording; actual precedence is decided by import order and is tracked in #643.
 
 ---
 
