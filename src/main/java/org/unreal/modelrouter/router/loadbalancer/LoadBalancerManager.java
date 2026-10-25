@@ -11,6 +11,7 @@ import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 重构后的负载均衡管理器
@@ -22,6 +23,15 @@ public class LoadBalancerManager {
 
     private final Map<ModelServiceRegistry.ServiceType, LoadBalancer> loadBalancers =
             new EnumMap<>(ModelServiceRegistry.ServiceType.class);
+
+    /**
+     * 按策略名缓存的负载均衡器（v3.5.4，#649）。
+     *
+     * <p>池路由与规则策略会用策略名取用负载均衡器，而 round-robin / least-connections
+     * 的计数与在途连接数都在实例内部，若每个请求都新建实例，计数永远从零开始，
+     * 等价于固定选第一个候选。缓存键是策略名本身，配置只有 {@code type}，因此不随配置热更失效。</p>
+     */
+    private final Map<String, LoadBalancer> strategyLoadBalancers = new ConcurrentHashMap<>();
 
     private final ComponentFactory componentFactory;
     private final ServiceTypeResolver serviceTypeResolver;
@@ -261,14 +271,22 @@ public class LoadBalancerManager {
         if (strategy == null || strategy.isBlank()) {
             return null;
         }
+        final String normalized = strategy.trim().toLowerCase();
         try {
-            ModelRouterProperties.LoadBalanceConfig config = new ModelRouterProperties.LoadBalanceConfig();
-            config.setType(strategy.trim().toLowerCase());
-            return componentFactory.createLoadBalancer(config);
+            return strategyLoadBalancers.computeIfAbsent(normalized, this::createLoadBalancerByStrategy);
         } catch (Exception e) {
-            logger.warn("创建负载均衡器失败, strategy: {}, fallback to null", strategy);
+            logger.warn("创建负载均衡器失败, strategy: {}, fallback to null", strategy, e);
             return null;
         }
+    }
+
+    /**
+     * 按策略名创建一个不保留状态的负载均衡器（只在缓存未命中时调用一次）。
+     */
+    private LoadBalancer createLoadBalancerByStrategy(final String strategy) {
+        ModelRouterProperties.LoadBalanceConfig config = new ModelRouterProperties.LoadBalanceConfig();
+        config.setType(strategy);
+        return componentFactory.createLoadBalancer(config);
     }
 
     /**
