@@ -35,7 +35,7 @@ ready** (so a failure shows up as the **process exiting**).
 | Property | Default | Scope |
 |---|---|---|
 | `jairouter.config.validation.enabled` | `true` | Read by both validators; **read slightly differently** (see below) |
-| `jairouter.config.validation.strict-mode` | `false` | Governs whether findings block startup in `SensitiveConfigValidator` and `AdapterReferenceValidator` |
+| `jairouter.config.validation.strict-mode` | `false` | **Only** affects `SensitiveConfigValidator` |
 
 ```yaml
 jairouter:
@@ -110,31 +110,6 @@ Therefore:
 > the process). Production therefore usually **never reaches** this validator; it mainly helps in
 > dev/test environments.
 
-### 1.3 `AdapterReferenceValidator` — adapter-reference check-up (**errors logged, startup not blocked by default**)
-
-`router/adapter/AdapterReferenceValidator.java` (since `#638`). During `ApplicationReadyEvent` it walks
-`model.adapter` (global), `model.services.*.adapter` (service level) and
-`model.services.*.instances[].adapter` (instance level) and compares every name against the **registered**
-adapter list exactly once.
-
-**Why it exists**: before this, adapters were only resolved on the request path
-(`AdapterRegistry.getAdapter`). A typo therefore left startup, health checks and `/v1/models` all healthy and
-surfaced as a 500 **only when real traffic hit that service/instance**; with several instances under one
-service, only the misconfigured ones failed, which looks like random upstream flakiness.
-
-| Switch | Default | Effect |
-|---|---|---|
-| `jairouter.config.validation.enabled` | `true` | turn it off to skip this validator entirely |
-| `jairouter.config.validation.strict-mode` | `false` | `true`: an unknown reference **fails the startup**; `false`: one `ERROR` line per finding and startup continues |
-
-Log/exception entries carry the location, e.g.
-`scope=instance service=chat instance=qwen3:4b adapter=openai-compat`, and the request-time exception now
-includes context too (`Unsupported adapter: xxx (service=chat, instance=qwen3:4b; registered=[...])`).
-
-> Not blocking startup by default is deliberate: bricking an existing deployment over a single typo during an
-> upgrade costs more than starting up and reading the log. For production, enable `strict-mode` in staging, or
-> watch for the `adapter 引用校验通过` `INFO` line as part of the startup check.
-
 ---
 
 ## 2. Runtime validation (configuration-API path)
@@ -177,9 +152,8 @@ export JAIRouter_CONFIG_VALIDATION_ENABLED=true
 export JAIRouter_CONFIG_VALIDATION_STRICT_MODE=true
 ```
 
-> ⚠️ `strict-mode` affects two validators — `SensitiveConfigValidator` (whether sensitive-value findings
-> block startup) and `AdapterReferenceValidator` (whether adapter-reference findings block startup). The
-> errors of `ConfigIntegrityValidator` are always fatal for startup; there is no strict-mode switch for them.
+> ⚠️ `strict-mode` affects **only** `SensitiveConfigValidator`. The errors of `ConfigIntegrityValidator` are
+> always fatal for startup; there is no strict-mode switch for them.
 
 ---
 

@@ -231,20 +231,6 @@ adapter-definitions:
 2. 选择使用了新adapter的服务和模型
 3. 发送测试消息
 
-### 通过启动日志验证（推荐）
-
-启动完成时 `AdapterReferenceValidator` 会把 `model.adapter`、服务级 `adapter`、实例级 `adapter` 逐个与
-**已注册**清单比对一次：
-
-```text
-✓ adapter 引用校验通过（未发现未注册的 adapter）
-```
-
-名字写错时（例如 `openai-compat` 少一个 `ible`）会逐条打印
-`scope=instance service=chat instance=qwen3:4b adapter=openai-compat`；默认只报错不拦启动，
-打开 `jairouter.config.validation.strict-mode=true` 则直接启动失败。详见
-[配置校验规则](validation-rules.md)。
-
 ### 通过API验证
 
 ```bash

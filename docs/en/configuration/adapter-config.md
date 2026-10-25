@@ -231,20 +231,6 @@ adapter-definitions:
 2. Select the service and model using the new adapter
 3. Send a test message
 
-### Via the startup log (recommended)
-
-On startup, `AdapterReferenceValidator` compares `model.adapter`, every service-level `adapter` and every
-instance-level `adapter` against the **registered** adapter list once:
-
-```text
-✓ adapter 引用校验通过（未发现未注册的 adapter）
-```
-
-A typo (for example `openai-compat` missing its `ible`) is reported per finding as
-`scope=instance service=chat instance=qwen3:4b adapter=openai-compat`. By default it only logs; set
-`jairouter.config.validation.strict-mode=true` to fail the startup instead. See
-[validation rules](validation-rules.md).
-
 ### Via API
 
 ```bash

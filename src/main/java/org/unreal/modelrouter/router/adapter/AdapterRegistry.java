@@ -306,8 +306,7 @@ public class AdapterRegistry {
         ServiceCapability adapter = adapters.get(adapterName.toLowerCase());
 
         if (adapter == null) {
-            throw new IllegalArgumentException("Unsupported adapter: " + adapterName
-                    + " (service=" + serviceType + "; " + describeRegisteredAdapters() + ")");
+            throw new IllegalArgumentException("Unsupported adapter: " + adapterName);
         }
 
         return adapter;
@@ -322,24 +321,10 @@ public class AdapterRegistry {
         ServiceCapability adapter = adapters.get(adapterName.toLowerCase());
 
         if (adapter == null) {
-            String instanceName = instance != null ? instance.getName() : null;
-            throw new IllegalArgumentException("Unsupported adapter: " + adapterName
-                    + " (service=" + serviceType
-                    + (instanceName != null ? ", instance=" + instanceName : "")
-                    + "; " + describeRegisteredAdapters() + ")");
+            throw new IllegalArgumentException("Unsupported adapter: " + adapterName);
         }
 
         return adapter;
-    }
-
-    /**
-     * 已注册 adapter 名清单，用于把「写错了名字」的报错直接指到可用取值上（#638）.
-     *
-     * @return 形如 {@code registered=[normal, claude, ...]} 的描述
-     */
-    private String describeRegisteredAdapters() {
-        final java.util.TreeSet<String> names = new java.util.TreeSet<>(adapters.keySet());
-        return "registered=" + names;
     }
 
     /**
