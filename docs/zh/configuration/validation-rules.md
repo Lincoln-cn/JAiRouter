@@ -105,6 +105,28 @@ jairouter:
 > 在 `CommandLineRunner` 阶段就 fail-fast，缺失、出厂默认值或强度不足都会让进程起不来）
 > ⇒ 生产环境通常**跑不到**这个校验器。开发/测试环境才主要靠它给提示。
 
+### 3. `AdapterReferenceValidator` —— adapter 引用体检（默认只报错、不拦启动）
+
+`router/adapter/AdapterReferenceValidator.java`（`#638` 起）。在 `ApplicationReadyEvent` 阶段扫描
+`model.adapter`（全局）、`model.services.*.adapter`（服务级）、`model.services.*.instances[].adapter`
+（实例级），把每个名字与**已注册**的 adapter 清单比对一次。
+
+**为什么需要它**：旧实现只在请求路径上解析 adapter（`AdapterRegistry.getAdapter`），名字写错时启动、
+健康检查、`/v1/models` 全部正常，**只有真实流量命中才 500**；一个服务下多个实例只有个别写错时，
+表现为「按权重随机一部分请求 500」，很容易被误判成上游抖动。
+
+| 开关 | 默认 | 效果 |
+|---|---|---|
+| `jairouter.config.validation.enabled` | `true` | 关掉则本校验器整体跳过 |
+| `jairouter.config.validation.strict-mode` | `false` | `true`：存在未注册引用 ⇒ **启动失败**；`false`：只逐条打 `ERROR` 日志并继续启动 |
+
+日志/异常里的定位信息形如
+`scope=instance service=chat instance=qwen3:4b adapter=openai-compat`，而请求期的异常消息也补齐了上下文
+（`Unsupported adapter: xxx (service=chat, instance=qwen3:4b; registered=[...])`），可以直接看到可用取值。
+
+> 默认不拦启动是刻意的取舍：升级瞬间因为一个拼写错误把存量部署拦在门口，代价高于「先起、再看日志」。
+> 生产环境建议在预发就把 `strict-mode` 打开，或把 `adapter 引用校验通过` 这条 `INFO` 日志纳入启动检查。
+
 ---
 
 ## 二、运行时校验（配置 API 路径）
@@ -146,7 +168,8 @@ export JAIRouter_CONFIG_VALIDATION_ENABLED=true
 export JAIRouter_CONFIG_VALIDATION_STRICT_MODE=true
 ```
 
-> ⚠️ 注意：`strict-mode` **只**影响 `SensitiveConfigValidator`。`ConfigIntegrityValidator` 的错误
+> ⚠️ 注意：`strict-mode` 影响两个校验器 —— `SensitiveConfigValidator`（敏感值的「错误」是否阻断启动）
+> 与 `AdapterReferenceValidator`（adapter 引用错误是否阻断启动）。`ConfigIntegrityValidator` 的错误
 > 一直是「启动失败」，没有严格模式开关。
 
 ---
