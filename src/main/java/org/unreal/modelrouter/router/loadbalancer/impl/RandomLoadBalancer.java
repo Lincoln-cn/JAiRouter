@@ -3,30 +3,31 @@ package org.unreal.modelrouter.router.loadbalancer.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker;
-import org.unreal.modelrouter.router.circuitbreaker.DefaultCircuitBreaker;
-import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
-import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.router.loadbalancer.utils.WeightCalculator;
+import org.unreal.modelrouter.router.model.ModelRouterProperties;
 
+import java.security.SecureRandom;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
- * 随机负载均衡策略
+ * 随机负载均衡策略（加权）。
+ *
+ * <p>本类刻意保持**无状态**：实例的可用性（状态、健康检查、熔断）由
+ * {@link org.unreal.modelrouter.router.model.InstanceAvailability} 与
+ * {@link org.unreal.modelrouter.router.model.SelectInstanceOptimizer} 在选路之前统一判定，
+ * 负载均衡器只负责「在给定候选里挑一个」。v3.5.4（#648）之前本类自带一套私有的
+ * 熔断器（阈值硬编码 {@code 5/60s/2}，且忽略实例级 {@code circuit-breaker.enabled}），
+ * 与 {@code CircuitBreakerManager} 形成双轨记账：同一实例在两个熔断器里状态不同步，
+ * 出现「管理器认为已熔断、随机负载均衡仍把请求打过去」或相反的情况。</p>
  */
-// 修改 RandomLoadBalancer 实现
 public class RandomLoadBalancer implements LoadBalancer {
+
     private static final Logger logger = LoggerFactory.getLogger(RandomLoadBalancer.class);
-    private final java.security.SecureRandom random = new java.security.SecureRandom();
-    private final Map<String, CircuitBreaker> circuitBreakers = new ConcurrentHashMap<>();
-    private final int failureThreshold = 5;
-    private final long timeout = 60000; // 60秒
-    private final int successThreshold = 2;
-    
+
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     @Autowired(required = false)
     private MetricsCollector metricsCollector;
 
@@ -46,47 +47,18 @@ public class RandomLoadBalancer implements LoadBalancer {
             throw new IllegalArgumentException("No instances available");
         }
 
-        // 过滤掉熔断状态的实例
-        List<ModelRouterProperties.ModelInstance> availableInstances =
-                instances.stream()
-                        .filter(instance -> {
-                            CircuitBreaker cb = circuitBreakers.computeIfAbsent(
-                                    instance.getBaseUrl(),
-                                    id -> new DefaultCircuitBreaker(id, failureThreshold, timeout, successThreshold));
-                            return cb.canExecute();
-                        })
-                        .collect(Collectors.toList());
-
-        if (availableInstances.isEmpty()) {
-            logger.warn("No available instances (all are in circuit breaker state)");
-            throw new RuntimeException("All instances are unavailable");
-        }
-
-        // 考虑权重的随机选择 - 使用安全的权重计算
-        long totalWeight = WeightCalculator.calculateTotalWeight(availableInstances);
-
+        long totalWeight = WeightCalculator.calculateTotalWeight(instances);
         if (totalWeight <= 0) {
-            // 如果没有权重，使用简单随机
-            ModelRouterProperties.ModelInstance selected =
-                    availableInstances.get(random.nextInt(availableInstances.size()));
+            ModelRouterProperties.ModelInstance selected = instances.get(RANDOM.nextInt(instances.size()));
             logger.debug("Selected instance {} using simple random strategy for service {}",
                     selected.getName(), serviceType);
             recordLoadBalancerSelection(serviceType, "random", selected.getName());
             return selected;
         }
 
-        long randomWeight;
-        try {
-            randomWeight = (long) (java.security.SecureRandom.getInstanceStrong().nextDouble() * totalWeight);
-        } catch (java.security.NoSuchAlgorithmException e) {
-            // 如果安全随机数算法不可用，回退到类中的 SecureRandom 实例
-            randomWeight = (long) (random.nextDouble() * totalWeight);
-            logger.warn("SecureRandom.getInstanceStrong() not available, "
-                    + "using class SecureRandom instance: {}", e.getMessage());
-        }
+        long randomWeight = nextWeight(totalWeight);
         long currentWeight = 0;
-
-        for (ModelRouterProperties.ModelInstance instance : availableInstances) {
+        for (ModelRouterProperties.ModelInstance instance : instances) {
             currentWeight += Math.max(0, instance.getWeight());
             if (randomWeight < currentWeight) {
                 logger.debug("Selected instance {} using weighted random strategy for service {}",
@@ -96,28 +68,20 @@ public class RandomLoadBalancer implements LoadBalancer {
             }
         }
 
-        // 兜底返回最后一个
-        ModelRouterProperties.ModelInstance lastInstance =
-                availableInstances.get(availableInstances.size() - 1);
+        ModelRouterProperties.ModelInstance lastInstance = instances.get(instances.size() - 1);
         logger.debug("Fallback selection of instance {} for service {}", lastInstance.getName(), serviceType);
         recordLoadBalancerSelection(serviceType, "random", lastInstance.getName());
         return lastInstance;
     }
 
-    @Override
-    public void recordCallComplete(final ModelRouterProperties.ModelInstance instance) {
-        CircuitBreaker cb = circuitBreakers.get(instance.getBaseUrl());
-        if (cb != null) {
-            cb.onSuccess();
-        }
-    }
-
-    @Override
-    public void recordCallFailure(final ModelRouterProperties.ModelInstance instance) {
-        CircuitBreaker cb = circuitBreakers.get(instance.getBaseUrl());
-        if (cb != null) {
-            cb.onFailure();
-        }
+    /**
+     * 取 [0, totalWeight) 上的随机权重。
+     *
+     * <p>使用类级 {@link SecureRandom} 实例（线程安全）。v3.5.4（#648/#655）之前每个请求都调用
+     * {@code SecureRandom.getInstanceStrong()}，在 Linux 上会反复走 provider 解析、甚至阻塞在熵池上。</p>
+     */
+    private static long nextWeight(final long totalWeight) {
+        return (long) (RANDOM.nextDouble() * totalWeight);
     }
 
     /**
