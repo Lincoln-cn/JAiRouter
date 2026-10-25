@@ -57,6 +57,28 @@ public class AdapterMetricsRecorder {
     }
 
     /**
+     * 调用结果分类（v3.5.4，#647）。
+     *
+     * <p>在此之前调用结果只有「成功 / 失败」二元，4xx（客户端错误）与 5xx（实例故障）走同一条失败路径，
+     * 于是客户端传错参数、上游对单个 key 返 429 都会累加实例的熔断失败次数，5 次即可把健康实例熔断 60 秒。</p>
+     *
+     * <ul>
+     *   <li>{@link #SUCCESS}：2xx，计入成功、重置失败计数；</li>
+     *   <li>{@link #CLIENT_ERROR}：4xx（含上游 429），记统计与调用历史，但<b>不</b>计入实例熔断失败；</li>
+     *   <li>{@link #INSTANCE_FAILURE}：5xx / 连接超时 / DNS / 连接拒绝等实例侧故障，计入熔断失败。</li>
+     * </ul>
+     */
+    public enum CallOutcome {
+        SUCCESS,
+        CLIENT_ERROR,
+        INSTANCE_FAILURE;
+
+        public boolean isSuccess() {
+            return this == SUCCESS;
+        }
+    }
+
+    /**
      * 记录请求开始
      * 
      * @param adapterType 适配器类型（如 gpustack, ollama 等）
@@ -289,6 +311,36 @@ public class AdapterMetricsRecorder {
     }
 
     /**
+     * v3.5.4（#647）：记录「客户端侧错误」到服务注册。
+     *
+     * <p>4xx 属于调用方输入问题，与实例健康无关：这里只把请求标记为「已完成」（让负载均衡器
+     * 递减在途计数），<b>不</b>累加熔断失败次数。上游 429 默认也按此处理，避免把上游限流放大成熔断。</p>
+     *
+     * @param serviceType 服务类型
+     * @param instance 实例
+     * @param durationMs 调用耗时（毫秒）
+     * @param errorCode 错误码
+     * @since v3.5.4
+     */
+    public void recordCallClientErrorToRegistry(
+            final ModelServiceRegistry.ServiceType serviceType,
+            final ModelRouterProperties.ModelInstance instance,
+            final long durationMs,
+            final String errorCode) {
+
+        if (registry != null && serviceType != null && instance != null) {
+            // success=false 只是「不算成功」：ModelServiceRegistry 仅在该值为 true 时记熔断成功，
+            // 负载均衡器的在途计数无论如何都会递减（#647 顺带修掉 least-connections 只增不减）。
+            registry.recordCallComplete(serviceType, instance, durationMs, false);
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("记录客户端错误：service={}, instance={}, duration={}ms, errorCode={}",
+                    serviceType, instance.getName(), durationMs, errorCode);
+        }
+    }
+
+    /**
      * 完整的调用成功记录（统一入口，不含请求/响应体）
      * 
      * 同时更新：Registry + MetricsCollector + StatsRepository
@@ -312,7 +364,33 @@ public class AdapterMetricsRecorder {
             final String modelName,
             final ModelServiceRegistry.ServiceType serviceType,
             final ModelRouterProperties.ModelInstance instance) {
-        recordCompleteCall(adapterType, instanceId, durationMs, success, errorCode,
+        recordCompleteCall(adapterType, instanceId, durationMs, fromBoolean(success), errorCode,
+                modelName, serviceType, instance);
+    }
+
+    /**
+     * v3.5.4（#647）：按调用结果分类记录（不含请求/响应体）。
+     *
+     * @param adapterType 适配器类型
+     * @param instanceId 实例ID
+     * @param durationMs 耗时（毫秒）
+     * @param outcome 调用结果分类
+     * @param errorCode 错误代码（失败时）
+     * @param modelName 模型名称
+     * @param serviceType 服务类型
+     * @param instance 实例对象
+     * @since v3.5.4
+     */
+    public void recordCompleteCall(
+            final String adapterType,
+            final String instanceId,
+            final long durationMs,
+            final CallOutcome outcome,
+            final String errorCode,
+            final String modelName,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final ModelRouterProperties.ModelInstance instance) {
+        recordCompleteCall(adapterType, instanceId, durationMs, outcome, errorCode,
                 modelName, serviceType, instance, null, null);
     }
 
@@ -340,12 +418,42 @@ public class AdapterMetricsRecorder {
             final String modelName,
             final ModelServiceRegistry.ServiceType serviceType,
             final ModelRouterProperties.ModelInstance instance) {
-        recordStats(adapterType, instanceId, durationMs, success, errorCode, modelName, serviceType, instance);
+        recordCompleteCallStats(adapterType, instanceId, durationMs, fromBoolean(success), errorCode,
+                modelName, serviceType, instance);
+    }
+
+    /**
+     * v3.5.4（#647）：按调用结果分类记录统计（不含调用历史）。
+     *
+     * @param adapterType  适配器类型
+     * @param instanceId   实例ID
+     * @param durationMs   耗时（毫秒）
+     * @param outcome      调用结果分类
+     * @param errorCode    错误代码（失败时）
+     * @param modelName    模型名称
+     * @param serviceType  服务类型
+     * @param instance     实例对象
+     * @since v3.5.4
+     */
+    public void recordCompleteCallStats(
+            final String adapterType,
+            final String instanceId,
+            final long durationMs,
+            final CallOutcome outcome,
+            final String errorCode,
+            final String modelName,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final ModelRouterProperties.ModelInstance instance) {
+        recordStats(adapterType, instanceId, durationMs, outcome, errorCode, modelName, serviceType, instance);
 
         if (log.isDebugEnabled()) {
-            log.debug("完整调用统计记录：adapter={}, instance={}, duration={}ms, success={}, errorCode={}",
-                    adapterType, instanceId, durationMs, success, errorCode);
+            log.debug("完整调用统计记录：adapter={}, instance={}, duration={}ms, outcome={}, errorCode={}",
+                    adapterType, instanceId, durationMs, outcome, errorCode);
         }
+    }
+
+    private static CallOutcome fromBoolean(final boolean success) {
+        return success ? CallOutcome.SUCCESS : CallOutcome.INSTANCE_FAILURE;
     }
 
     /**
@@ -378,9 +486,41 @@ public class AdapterMetricsRecorder {
             final ModelRouterProperties.ModelInstance instance,
             final String requestBody,
             final String responseBody) {
+        recordCompleteCall(adapterType, instanceId, durationMs, fromBoolean(success), errorCode,
+                modelName, serviceType, instance, requestBody, responseBody);
+    }
+
+    /**
+     * v3.5.4（#647）：按调用结果分类记录（含请求/响应体捕获）。
+     *
+     * @param adapterType  适配器类型
+     * @param instanceId   实例ID
+     * @param durationMs   耗时（毫秒）
+     * @param outcome      调用结果分类
+     * @param errorCode    错误代码（失败时）
+     * @param modelName    模型名称
+     * @param serviceType  服务类型
+     * @param instance     实例对象
+     * @param requestBody  请求体原始内容（可为 null，METADATA_ONLY 时忽略）
+     * @param responseBody 响应体原始内容（可为 null，METADATA_ONLY 时忽略）
+     * @since v3.5.4
+     */
+    public void recordCompleteCall(
+            final String adapterType,
+            final String instanceId,
+            final long durationMs,
+            final CallOutcome outcome,
+            final String errorCode,
+            final String modelName,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final ModelRouterProperties.ModelInstance instance,
+            final String requestBody,
+            final String responseBody) {
+
+        final boolean success = outcome.isSuccess();
 
         // v2.9.2: 统计更新（Registry + MetricsCollector + StatsRepository）
-        recordStats(adapterType, instanceId, durationMs, success, errorCode, modelName, serviceType, instance);
+        recordStats(adapterType, instanceId, durationMs, outcome, errorCode, modelName, serviceType, instance);
 
         // v2.7.8: 记录 API 调用历史（v2.9.2: 含请求/响应体）
         // 脱敏与落库移到 boundedElastic，避免在 EventLoop / 回调线程上 block
@@ -438,17 +578,21 @@ public class AdapterMetricsRecorder {
             final String adapterType,
             final String instanceId,
             final long durationMs,
-            final boolean success,
+            final CallOutcome outcome,
             final String errorCode,
             final String modelName,
             final ModelServiceRegistry.ServiceType serviceType,
             final ModelRouterProperties.ModelInstance instance) {
 
+        final boolean success = outcome.isSuccess();
+
         // 更新 Registry（v2.9.3: 传递 durationMs 到负载均衡器钩子）
-        if (success) {
-            recordCallSuccessToRegistry(serviceType, instance, durationMs, success);
-        } else {
-            recordCallFailureToRegistry(serviceType, instance, durationMs, errorCode);
+        // v3.5.4（#647）：客户端错误不计入熔断失败，只完成在途计数
+        switch (outcome) {
+            case SUCCESS -> recordCallSuccessToRegistry(serviceType, instance, durationMs, true);
+            case CLIENT_ERROR -> recordCallClientErrorToRegistry(serviceType, instance, durationMs, errorCode);
+            case INSTANCE_FAILURE -> recordCallFailureToRegistry(serviceType, instance, durationMs, errorCode);
+            default -> recordCallFailureToRegistry(serviceType, instance, durationMs, errorCode);
         }
 
         // 更新 MetricsCollector

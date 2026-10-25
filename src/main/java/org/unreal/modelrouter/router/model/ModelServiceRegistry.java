@@ -463,7 +463,12 @@ public class ModelServiceRegistry {
         if (loadBalancer != null) {
             loadBalancer.recordCallComplete(instance, durationMs, success);
         }
-        circuitBreakerManager.recordSuccess(instance.getInstanceId(), instance.getBaseUrl());
+        // v3.5.4（#647）：只有真正成功才重置熔断失败计数。此前无条件 recordSuccess，
+        // 导致「完成了但不算成功」的调用（如 4xx 客户端错误）被记成成功，掩盖了实例故障；
+        // 同时签名里的 success 形同虚设（#655 第 7 条）。
+        if (success) {
+            circuitBreakerManager.recordSuccess(instance.getInstanceId(), instance.getBaseUrl());
+        }
     }
 
     /**
