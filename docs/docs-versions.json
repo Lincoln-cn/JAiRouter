@@ -90,10 +90,10 @@
     },
     "docs/en/api-reference/universal-api.md": {
       "FilePath": "docs/en/api-reference/universal-api.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:31.292108",
-      "ContentHash": "649d749794b04e52",
-      "GitCommit": "32369bde",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-25T02:21:33.187219",
+      "ContentHash": "25f973c3ce6549cf",
+      "GitCommit": "b1631fc5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1246,10 +1246,10 @@
     },
     "docs/zh/api-reference/universal-api.md": {
       "FilePath": "docs/zh/api-reference/universal-api.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:37.160496",
-      "ContentHash": "97e0d4b5c9ab87c5",
-      "GitCommit": "32369bde",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-25T02:21:33.819868",
+      "ContentHash": "ad109f049b9276af",
+      "GitCommit": "b1631fc5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -4296,7 +4296,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-24T15:46:27.714479",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/universal-api.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-25T02:21:33.187226",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/universal-api.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-25T02:21:33.819877",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-24T15:46:27.867888"
+  "last_updated": "2026-10-25T02:21:34.434059"
 }
