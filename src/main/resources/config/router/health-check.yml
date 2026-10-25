@@ -1,0 +1,21 @@
+# ========================================
+# 健康检查配置 (router 模块)
+# ========================================
+# 由 router/checker/ServerChecker 每轮读取；v3.5.4 起可配（#650 #651）。
+# 位置：org.unreal.modelrouter.router.checker.HealthCheckProperties
+#
+# 说明：检查只影响「实例是否可被选中」，不会主动摘除实例；
+# 实例被判定不健康后，请求会跳过它，恢复后自动回到候选集。
+
+jairouter:
+  health-check:
+    # 探活方式：tcp = 只探端口连通；http = 额外校验状态码（<500 视为可用）
+    mode: tcp
+    # 两轮检查之间的固定延迟（毫秒）；上一轮没跑完时本轮触发会被跳过，不会叠加
+    interval-ms: 30000
+    # 单个实例的探活超时（毫秒）
+    timeout-ms: 5000
+    # 同时检查几个服务类型（1-16）
+    parallelism: 4
+    # mode=http 时的探活路径；留空则使用实例自己配置的 path
+    http-path: ""

@@ -44,8 +44,8 @@ class ServerCheckerTest {
         // Given
         when(modelServiceRegistry.getAllInstances()).thenReturn(new HashMap<>());
 
-        // When
-        serverChecker.checkAllServices();
+        // When（v3.5.4：调度入口改为异步提交，测试直接跑批次体）
+        serverChecker.runHealthCheckBatch();
 
         // Then
         // 验证没有执行任何检查
@@ -66,8 +66,8 @@ class ServerCheckerTest {
         instanceRegistry.put(ModelServiceRegistry.ServiceType.chat, instances);
         when(modelServiceRegistry.getAllInstances()).thenReturn(instanceRegistry);
 
-        // When
-        serverChecker.checkAllServices();
+        // When（v3.5.4：调度入口改为异步提交，测试直接跑批次体）
+        serverChecker.runHealthCheckBatch();
 
         // Then
         // 验证检查了实例的健康状态

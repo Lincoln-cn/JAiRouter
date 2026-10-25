@@ -22,7 +22,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import jakarta.annotation.PreDestroy;
 
 @Component
 public class ServerChecker {
@@ -31,6 +37,16 @@ public class ServerChecker {
 
     private final ModelServiceRegistry modelServiceRegistry;
     private final ServiceStateManager serviceStateManager;
+    private final HealthCheckProperties healthCheckProperties;
+    /** 懒创建：只有 mode: http 真正用到时才建 HttpClient（构建它要走系统代理探测，成本不低）。 */
+    private volatile HttpHealthProbe httpHealthProbe;
+
+    /** 批次协调者：只负责「跑完一轮」，与调度线程解耦（v3.5.4，#651）。 */
+    private final ExecutorService batchCoordinator;
+    /** 服务级检查的工作线程池；并发度见 {@code jairouter.health-check.parallelism}。 */
+    private final ExecutorService healthCheckExecutor;
+    /** 上一轮还没结束就跳过本轮触发，避免批次堆积。 */
+    private final AtomicBoolean batchRunning = new AtomicBoolean(false);
 
     @Autowired(required = false)
     private MetricsCollector metricsCollector;
@@ -43,8 +59,37 @@ public class ServerChecker {
 
     public ServerChecker(final ModelServiceRegistry modelServiceRegistry,
                          final ServiceStateManager serviceStateManager) {
+        this(modelServiceRegistry, serviceStateManager, new HealthCheckProperties());
+    }
+
+    @Autowired
+    public ServerChecker(final ModelServiceRegistry modelServiceRegistry,
+                         final ServiceStateManager serviceStateManager,
+                         final HealthCheckProperties healthCheckProperties) {
         this.modelServiceRegistry = modelServiceRegistry;
         this.serviceStateManager = serviceStateManager;
+        this.healthCheckProperties = healthCheckProperties != null
+                ? healthCheckProperties : new HealthCheckProperties();
+        this.batchCoordinator = Executors.newSingleThreadExecutor(runnable -> {
+            Thread thread = new Thread(runnable, "health-check-batch");
+            thread.setDaemon(true);
+            return thread;
+        });
+        this.healthCheckExecutor = Executors.newFixedThreadPool(
+                this.healthCheckProperties.effectiveParallelism(), runnable -> {
+                    Thread thread = new Thread(runnable, "health-check-worker");
+                    thread.setDaemon(true);
+                    return thread;
+                });
+    }
+
+    /**
+     * 关闭健康检查专用线程（v3.5.4，#651：不再占用 Spring 默认的单线程 scheduler）。
+     */
+    @PreDestroy
+    public void shutdownExecutors() {
+        batchCoordinator.shutdownNow();
+        healthCheckExecutor.shutdownNow();
     }
 
     /**
@@ -60,9 +105,26 @@ public class ServerChecker {
      * 定时检查所有服务实例的健康状态
      * 每30秒执行一次
      */
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedDelayString = "${jairouter.health-check.interval-ms:30000}")
     public void checkAllServices() {
-        long batchStartTime = System.currentTimeMillis();
+        if (!batchRunning.compareAndSet(false, true)) {
+            log.debug("上一轮健康检查尚未结束，跳过本轮触发");
+            return;
+        }
+        try {
+            batchCoordinator.execute(this::runHealthCheckBatch);
+        } catch (RuntimeException e) {
+            batchRunning.set(false);
+            log.error("提交健康检查批次失败", e);
+        }
+    }
+
+    /**
+     * 跑完一轮健康检查（v3.5.4：由调度线程提交到 coordinator 执行；测试可直接调用）。
+     */
+    void runHealthCheckBatch() {
+        try {
+            long batchStartTime = System.currentTimeMillis();
         log.info("开始检查所有服务实例的健康状态");
         
         Map<ModelServiceRegistry.ServiceType, List<ModelRouterProperties.ModelInstance>> instanceRegistry =
@@ -104,14 +166,16 @@ public class ServerChecker {
         int healthyServices = 0;
         int healthyInstances = 0;
 
-        // 执行所有检查任务
+        // v3.5.4（#651）：服务级检查并发执行，单个服务异常不影响其它服务
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
         for (Runnable task : tasks) {
-            try {
-                task.run();
-            } catch (Exception e) {
-                log.error("执行服务检查任务时发生错误", e);
-            }
+            futures.add(CompletableFuture.runAsync(task, healthCheckExecutor)
+                    .exceptionally(ex -> {
+                        log.error("执行服务检查任务时发生错误", ex);
+                        return null;
+                    }));
         }
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         
         // 统计健康状态
         for (Map.Entry<ModelServiceRegistry.ServiceType,
@@ -147,6 +211,9 @@ public class ServerChecker {
 
         log.debug("所有服务实例健康检查完成，健康服务: {}/{}, 健康实例: {}/{}, 耗时: {}ms",
             healthyServices, totalServices, healthyInstances, totalInstances, batchDuration);
+        } finally {
+            batchRunning.set(false);
+        }
     }
 
     private List<Runnable> getRunnable(
@@ -186,91 +253,67 @@ public class ServerChecker {
                 log.error("无法创建健康检查追踪上下文: {}", e.getMessage());
             }
             
+            // v3.5.4（#650）：无效 / 缺失的 base-url 一律判不健康，且单个实例的异常不再中断同服务其它实例的检查
+            ProbeOutcome probe;
             try {
-                URI uri = new URI(instance.getBaseUrl());
-                String host = uri.getHost();
-                int port = uri.getPort();
+                probe = probeInstance(instance);
+            } catch (RuntimeException e) {
+                probe = new ProbeOutcome(false, 0L, "健康检查异常: "
+                        + e.getClass().getSimpleName()
+                        + (e.getMessage() != null ? ": " + e.getMessage() : ""));
+            }
 
-                // 如果端口未指定，使用协议默认端口
-                if (port == -1) {
-                    String scheme = uri.getScheme();
-                    if ("http".equals(scheme)) {
-                        port = 80;
-                    } else if ("https".equals(scheme)) {
-                        port = 443;
-                    }
-                }
+            // 创建实例的唯一标识符（#636：instanceId 缺失时回退 baseUrl，避免所有实例共用 chat:null）
+            String instanceKey = InstanceKeys.healthKey(serviceType, instance);
 
-                // 使用 NetUtils 检查 socket 连接（同步方法）
-                long startTime = System.currentTimeMillis();
-                NetUtils.NetConnect result = NetUtils.testSocketConnect(host, port);
-                long responseTime = System.currentTimeMillis() - startTime;
+            // 获取之前的健康状态
+            boolean previousHealthStatus = previousInstanceStates.getOrDefault(instanceKey, true);
+            boolean currentHealthStatus = probe.healthy();
 
-                // 创建实例的唯一标识符（#636：instanceId 缺失时回退 baseUrl，避免所有实例共用 chat:null）
-                String instanceKey = InstanceKeys.healthKey(serviceType, instance);
-                
-                // 获取之前的健康状态
-                boolean previousHealthStatus = previousInstanceStates.getOrDefault(instanceKey, true);
-                boolean currentHealthStatus = result.isConnect();
-
-                if (result.isConnect()) {
+            try {
+                if (currentHealthStatus) {
                     hasHealthyInstance = true;
                     serviceStateManager.updateInstanceHealthStatus(serviceType, instance, true);
-                    updateDatabaseHealthStatus(instance.getName(), instance.getInstanceId(), "HEALTHY", null);
-                    log.debug("实例 {} 连接成功: {}", instance.getName(), result.getMsg());
-                    recordHealthCheckMetrics(getAdapterType(instance), instance.getName(), true, responseTime);
-                    
-                    // 记录健康检查完成事件
-                    if (tracingEnhancer != null && tracingContext != null) {
-                        tracingEnhancer.logHealthCheckComplete(
-                                serviceType, instance, true, responseTime,
-                                result.getMsg(), tracingContext);
-                    }
+                    updateDatabaseHealthStatus(instance.getName(), instance.getInstanceId(),
+                            instance.getBaseUrl(), "HEALTHY", null);
+                    log.debug("实例 {} 探活成功: {}", instance.getName(), probe.detail());
                 } else {
                     serviceStateManager.updateInstanceHealthStatus(serviceType, instance, false);
-                    updateDatabaseHealthStatus(instance.getName(),
-                            instance.getInstanceId(), "UNHEALTHY", result.getMsg());
-                    log.warn("实例 {} 连接失败: {}", instance.getName(), result.getMsg());
-                    recordHealthCheckMetrics(
-                            getAdapterType(instance), instance.getName(), false, responseTime);
-                    
-                    // 记录健康检查完成事件
-                    if (tracingEnhancer != null && tracingContext != null) {
-                        tracingEnhancer.logHealthCheckComplete(
-                                serviceType, instance, false, responseTime,
-                                result.getMsg(), tracingContext);
-                    }
+                    updateDatabaseHealthStatus(instance.getName(), instance.getInstanceId(),
+                            instance.getBaseUrl(), "UNHEALTHY", probe.detail());
+                    log.warn("实例 {} 探活失败: {}（base-url={}）",
+                            instance.getName(), probe.detail(), instance.getBaseUrl());
                 }
-                
-                // 检查实例状态是否发生变化
-                if (previousHealthStatus != currentHealthStatus) {
-                    // 记录状态变更事件
-                    if (tracingEnhancer != null) {
-                        tracingEnhancer.logInstanceStateChange(
-                            serviceType, 
-                            instance, 
-                            previousHealthStatus, 
-                            currentHealthStatus, 
-                            result.getMsg()
-                        );
-                    }
-                    log.info("实例 {} 状态发生变化: {} -> {}", 
-                        instance.getName(), 
-                        previousHealthStatus ? "健康" : "不健康", 
-                        currentHealthStatus ? "健康" : "不健康");
-                }
-                
-                // 更新缓存的状态
-                previousInstanceStates.put(instanceKey, currentHealthStatus);
 
-            } catch (URISyntaxException e) {
-                log.error("无效的URL格式: {}", instance.getBaseUrl(), e);
-                // 记录健康检查完成事件（失败）
+                recordHealthCheckMetrics(getAdapterType(instance), instance.getName(),
+                        currentHealthStatus, probe.responseTimeMs());
+
+                // 记录健康检查完成事件
                 if (tracingEnhancer != null && tracingContext != null) {
                     tracingEnhancer.logHealthCheckComplete(
-                            serviceType, instance, false, 0,
-                            "无效的URL格式: " + e.getMessage(), tracingContext);
+                            serviceType, instance, currentHealthStatus, probe.responseTimeMs(),
+                            probe.detail(), tracingContext);
                 }
+
+                // 检查实例状态是否发生变化
+                if (previousHealthStatus != currentHealthStatus) {
+                    if (tracingEnhancer != null) {
+                        tracingEnhancer.logInstanceStateChange(
+                            serviceType,
+                            instance,
+                            previousHealthStatus,
+                            currentHealthStatus,
+                            probe.detail()
+                        );
+                    }
+                    log.info("实例 {} 状态发生变化: {} -> {}",
+                        instance.getName(),
+                        previousHealthStatus ? "健康" : "不健康",
+                        currentHealthStatus ? "健康" : "不健康");
+                }
+
+                // 更新缓存的状态
+                previousInstanceStates.put(instanceKey, currentHealthStatus);
             } finally {
                 // 完成追踪上下文
                 if (tracingContext != null) {
@@ -312,6 +355,81 @@ public class ServerChecker {
         } else {
             log.warn("{} 服务所有实例都不可达", serviceType);
         }
+    }
+
+    /**
+     * 探活单个实例（v3.5.4，#650/#651）。
+     *
+     * <p>解析失败、URL 指向本机但端口缺失等情况一律返回「不健康」，而不是沿用上一次的状态；
+     * 探活方式由 {@code jairouter.health-check.mode} 决定：{@code TCP} 只看端口连通，
+     * {@code HTTP} 还会校验状态码（&lt;500 视为可用）。</p>
+     */
+    private HttpHealthProbe httpProbe() {
+        HttpHealthProbe probe = this.httpHealthProbe;
+        if (probe == null) {
+            synchronized (this) {
+                probe = this.httpHealthProbe;
+                if (probe == null) {
+                    probe = new HttpHealthProbe(healthCheckProperties.effectiveTimeoutMs());
+                    this.httpHealthProbe = probe;
+                }
+            }
+        }
+        return probe;
+    }
+
+    private ProbeOutcome probeInstance(final ModelRouterProperties.ModelInstance instance) {
+        final String baseUrl = instance.getBaseUrl();
+        final int timeoutMs = healthCheckProperties.effectiveTimeoutMs();
+
+        if (baseUrl == null || baseUrl.isBlank()) {
+            return new ProbeOutcome(false, 0L, "base-url 为空");
+        }
+
+        if (healthCheckProperties.getMode() == HealthCheckProperties.Mode.HTTP) {
+            final String configured = healthCheckProperties.getHttpPath();
+            final String path = configured == null || configured.isBlank()
+                    ? instance.getPath() : configured;
+            final long start = System.currentTimeMillis();
+            final HttpHealthProbe.Result result = httpProbe().probe(baseUrl, path, timeoutMs);
+            return new ProbeOutcome(result.healthy(),
+                    System.currentTimeMillis() - start, result.detail());
+        }
+
+        final URI uri;
+        try {
+            uri = new URI(baseUrl);
+        } catch (URISyntaxException e) {
+            return new ProbeOutcome(false, 0L, "无效的 base-url: " + e.getMessage());
+        }
+
+        final String host = uri.getHost();
+        if (host == null || host.isBlank()) {
+            return new ProbeOutcome(false, 0L, "base-url 缺少主机名");
+        }
+
+        int port = uri.getPort();
+        if (port == -1) {
+            final String scheme = uri.getScheme();
+            if ("http".equalsIgnoreCase(scheme)) {
+                port = 80;
+            } else if ("https".equalsIgnoreCase(scheme)) {
+                port = 443;
+            }
+        }
+        if (port <= 0 || port > 65535) {
+            return new ProbeOutcome(false, 0L, "base-url 端口无效: " + uri.getPort());
+        }
+
+        final long start = System.currentTimeMillis();
+        final NetUtils.NetConnect result = NetUtils.testSocketConnect(host, port, timeoutMs);
+        return new ProbeOutcome(result.isConnect(), System.currentTimeMillis() - start, result.getMsg());
+    }
+
+    /**
+     * 单个实例一次探活的结果。
+     */
+    record ProbeOutcome(boolean healthy, long responseTimeMs, String detail) {
     }
 
     /**
@@ -394,7 +512,7 @@ public class ServerChecker {
      * @param errorMessage 错误信息
      */
     private void updateDatabaseHealthStatus(
-            final String instanceName, final String instanceId,
+            final String instanceName, final String instanceId, final String baseUrl,
             final String healthStatus, final String errorMessage) {
         if (serviceInstanceRepository == null) {
             return;
@@ -402,28 +520,69 @@ public class ServerChecker {
         try {
             // v2.x: 优先使用 instanceId 查找，避免同名实例导致的重复记录错误
             if (instanceId != null && !instanceId.isEmpty()) {
-                serviceInstanceRepository.findByInstanceId(instanceId).ifPresent(entity -> {
-                    entity.setHealthStatus(healthStatus);
-                    entity.setErrorMessage(errorMessage);
-                    serviceInstanceRepository.save(entity);
-                    log.debug("更新数据库实例 {} (instanceId={}) 健康状态: {}", instanceName, instanceId, healthStatus);
-                });
-            } else {
-                // v2.x: 如果 instanceId 为空（内存对象从 YAML 加载），更新所有同名实例
-                List<ServiceInstanceEntity> entities = serviceInstanceRepository.findAllByInstanceName(instanceName);
-                if (entities.isEmpty()) {
-                    log.debug("未找到实例 {} 的数据库记录", instanceName);
+                serviceInstanceRepository.findByInstanceId(instanceId).ifPresent(entity ->
+                        persistIfChanged(entity, instanceName, healthStatus, errorMessage));
+                return;
+            }
+
+            // v3.5.4（#652）：instanceId 为空（内存对象从 YAML 加载）时不能「按名字批量更新」，
+            // 否则同名副本会互相覆盖状态；改为在同名记录里按 base-url 精确定位。
+            List<ServiceInstanceEntity> entities =
+                    serviceInstanceRepository.findAllByInstanceName(instanceName);
+            if (entities.isEmpty()) {
+                log.debug("未找到实例 {} 的数据库记录", instanceName);
+                return;
+            }
+            if (entities.size() == 1) {
+                persistIfChanged(entities.get(0), instanceName, healthStatus, errorMessage);
+                return;
+            }
+
+            final String normalizedBaseUrl = normalizeBaseUrl(baseUrl);
+            for (ServiceInstanceEntity entity : entities) {
+                if (normalizedBaseUrl != null
+                        && normalizedBaseUrl.equals(normalizeBaseUrl(entity.getBaseUrl()))) {
+                    persistIfChanged(entity, instanceName, healthStatus, errorMessage);
                     return;
                 }
-                for (ServiceInstanceEntity entity : entities) {
-                    entity.setHealthStatus(healthStatus);
-                    entity.setErrorMessage(errorMessage);
-                    serviceInstanceRepository.save(entity);
-                }
-                log.debug("更新数据库实例 {} (共{}个同名实例) 健康状态: {}", instanceName, entities.size(), healthStatus);
             }
+            log.warn("实例 {} 在库中有 {} 条同名记录，但没有 base-url={} 的匹配行，跳过健康状态入库",
+                    instanceName, entities.size(), baseUrl);
         } catch (Exception e) {
             log.error("更新数据库实例健康状态失败: {}", e.getMessage());
         }
+    }
+
+    /**
+     * 状态与错误信息都没变时不写库（v3.5.4，#652：30 秒一轮的空写会持续占用连接池）。
+     */
+    private void persistIfChanged(final ServiceInstanceEntity entity, final String instanceName,
+                                  final String healthStatus, final String errorMessage) {
+        final boolean sameStatus = healthStatus.equals(entity.getHealthStatus());
+        final boolean sameMessage = errorMessage == null
+                ? entity.getErrorMessage() == null
+                : errorMessage.equals(entity.getErrorMessage());
+        if (sameStatus && sameMessage) {
+            return;
+        }
+        entity.setHealthStatus(healthStatus);
+        entity.setErrorMessage(errorMessage);
+        serviceInstanceRepository.save(entity);
+        log.debug("更新数据库实例 {} (instanceId={}) 健康状态: {}",
+                instanceName, entity.getInstanceId(), healthStatus);
+    }
+
+    /**
+     * 归一化 base-url：去掉尾部斜杠并转小写，便于同名实例之间比对。
+     */
+    private static String normalizeBaseUrl(final String baseUrl) {
+        if (baseUrl == null || baseUrl.isBlank()) {
+            return null;
+        }
+        String normalized = baseUrl.trim();
+        while (normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        return normalized.toLowerCase(java.util.Locale.ROOT);
     }
 }

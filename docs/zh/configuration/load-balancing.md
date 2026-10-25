@@ -590,16 +590,23 @@ webclient:
 
 ### 1. 实例故障自动处理
 
+健康检查由 `ServerChecker` 周期执行，判定为不健康的实例会从候选集中剔除、恢复后自动回归。
+v3.5.4 起检查方式与节奏都可配置（默认值见 `config/router/health-check.yml`）：
+
 ```yaml
-model:
-  load-balance:
-    health-check:
-      enabled: true
-      interval: 15s             # 更频繁的健康检查
-      timeout: 3s
-      failure-threshold: 2      # 更敏感的故障检测
-      success-threshold: 1      # 更快的恢复检测
+jairouter:
+  health-check:
+    mode: tcp          # tcp = 只探端口连通；http = 额外校验状态码（<500 视为可用）
+    interval-ms: 30000 # 两轮之间固定延迟；上一轮没跑完时本轮触发会被跳过
+    timeout-ms: 5000   # 单个实例探活超时
+    parallelism: 4     # 同时检查几个服务类型（1-16）
+    http-path: ""      # mode=http 时的探活路径；留空则用实例自己的 path
 ```
+
+- `mode: tcp` 只判断端口能否连上，**不校验状态码**：上游进程活着但返回 5xx / 鉴权失败时仍会被判健康。
+  需要按响应判断时改用 `mode: http`。
+- `base-url` 缺失或格式非法会被直接判定为不健康（v3.5.4 之前只会打一条日志、沿用上一次状态）。
+- 检查批次运行在专用线程池里，不再占用 Spring 默认的单线程调度器；间隔按「上一轮结束后」计算。
 
 ### 2. 故障转移配置
 

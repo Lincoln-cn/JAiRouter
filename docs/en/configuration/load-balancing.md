@@ -590,16 +590,26 @@ webclient:
 
 ### 1. Automatic Instance Fault Handling
 
+`ServerChecker` runs health checks periodically; an instance judged unhealthy is dropped from the
+candidate set and comes back automatically once it recovers. Since v3.5.4 both the probe mode and
+the cadence are configurable (defaults live in `config/router/health-check.yml`):
+
 ```yaml
-model:
-  load-balance:
-    health-check:
-      enabled: true
-      interval: 15s             # More frequent health checks
-      timeout: 3s
-      failure-threshold: 2      # More sensitive fault detection
-      success-threshold: 1      # Faster recovery detection
+jairouter:
+  health-check:
+    mode: tcp          # tcp = port reachability only; http = also checks the status code (<500 is healthy)
+    interval-ms: 30000 # fixed delay between rounds; a tick is skipped while the previous round is still running
+    timeout-ms: 5000   # per-instance probe timeout
+    parallelism: 4     # how many service types are checked concurrently (1-16)
+    http-path: ""      # probe path for mode=http; empty means the instance's own path
 ```
+
+- `mode: tcp` only proves the port is reachable and **does not check the status code**: a live process
+  returning 5xx or rejecting auth is still reported healthy. Use `mode: http` when the response matters.
+- A missing or malformed `base-url` is now treated as unhealthy (before v3.5.4 it only logged and kept the
+  previous state).
+- The batch runs on its own executors instead of the shared single-threaded Spring scheduler, and the
+  interval is measured from the end of the previous round.
 
 ### 2. Failover Configuration
 

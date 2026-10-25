@@ -388,12 +388,8 @@ model:
   # Global configuration
   load-balance:
     type: least-connections
-    health-check:
-      enabled: true
-      interval: 30s
-      timeout: 5s
-      failure-threshold: 3
-      success-threshold: 2
+    # NOTE: health checking is NOT configured under model.load-balance.
+    # It lives in jairouter.health-check.* (mode / interval-ms / timeout-ms / parallelism).
   
   rate-limit:
     enabled: true

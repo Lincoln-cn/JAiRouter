@@ -391,14 +391,18 @@ model:
 ### 3. Configure Health Checks
 
 ```
-# ✅ Good - enable health monitoring
-model:
-  load-balance:
-    health-check:
-      enabled: true
-      interval: 30000
-      timeout: 5000
+# ✅ Good - declare the probe mode and cadence (defaults live in config/router/health-check.yml)
+jairouter:
+  health-check:
+    mode: http          # tcp = port only; http also checks the status code (<500 is healthy)
+    interval-ms: 30000  # wait this long after the previous round finished
+    timeout-ms: 5000    # per-instance probe timeout
+    parallelism: 4      # how many service types are checked concurrently
 ```
+
+> The older `model.load-balance.health-check.*` block (enabled / interval / timeout / failure-threshold /
+> success-threshold) was never bound, so it had no effect; since v3.5.4 health checking is controlled by
+> `jairouter.health-check.*`.
 
 ### 4. Use Weights for Gradual Rollouts
 
