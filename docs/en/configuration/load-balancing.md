@@ -14,9 +14,10 @@ JAiRouter provides four load balancing strategies, supporting configuration at g
 Starting from v1.0.0, JAiRouter adopts a modular configuration structure with load balancing related configurations moved to separate configuration files:
 
 - Main configuration file: `application.yml`
-- Load balancing base configuration: `config/base/model-services-base.yml`
+- Global load-balancing policy: `config/base/model-services-base.yml`
+- Per-service load balancing and instance lists: `config/router/services.yml` (since v3.5.3 `model.services` is defined exactly once, in `config/router/services.yml`, see #643)
 
-You can find all load balancing related configurations in the `config/base/model-services-base.yml` file, including global configurations, service type configurations, and instance configurations.
+Global policy lives in `config/base/model-services-base.yml`; each service keeps its load-balancing type and its `instances` list together in `config/router/services.yml`.
 
 ## Load Balancing Overview
 
@@ -102,7 +103,7 @@ model:
 
 ### YAML Configuration Method
 
-Configure load balancing strategies for each service type in the `config/base/model-services-base.yml` file:
+Configure load balancing strategies for each service type in the `config/router/services.yml` file:
 
 ```yaml
 model:

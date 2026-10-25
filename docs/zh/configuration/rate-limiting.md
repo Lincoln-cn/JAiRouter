@@ -14,9 +14,10 @@ JAiRouter 提供多种限流算法，支持全局、服务级别和实例级别�
 从 v1.0.0 版本开始，JAiRouter 采用模块化配置结构，限流相关配置已移至独立的配置文件中：
 
 - 主配置文件: `application.yml`
-- 模型服务基础配置: `config/base/model-services-base.yml`
+- 全局限流策略: `config/base/model-services-base.yml`
+- 服务级 / 实例级限流配置: `config/router/services.yml`（v3.5.3 起 `model.services` 只在 `config/router/services.yml` 定义一次，见 #643）
 
-您可以在 `config/base/model-services-base.yml` 文件中找到所有限流相关配置，包括全局配置、各服务类型配置和实例配置。
+全局策略在 `config/base/model-services-base.yml`，每个服务的限流块与它下面的 `instances` 列表都在同一份 `config/router/services.yml` 里。
 
 ## 限流概述
 
@@ -79,9 +80,9 @@ graph TB
 
 ### 基础配置
 
-在 `config/base/model-services-base.yml` 文件中配置全局限流：
+在 `config/router/services.yml` 文件中配置全局限流：
 ```yaml
-# config/base/model-services-base.yml
+# config/router/services.yml
 model:
   # 全局限流配置
   rate-limit:
@@ -140,7 +141,7 @@ graph LR
 
 #### 配置示例
 
-在 `config/base/model-services-base.yml` 文件中配置令牌桶算法：
+在 `config/router/services.yml` 文件中配置令牌桶算法：
 
 ```yaml
 model:
@@ -221,7 +222,7 @@ graph TB
 
 #### 配置示例
 
-在 `config/base/model-services-base.yml` 文件中配置漏桶算法：
+在 `config/router/services.yml` 文件中配置漏桶算法：
 
 ```yaml
 model:
@@ -285,7 +286,7 @@ graph LR
 
 #### 配置示例
 
-在 `config/base/model-services-base.yml` 文件中配置滑动窗口算法：
+在 `config/router/services.yml` 文件中配置滑动窗口算法：
 
 ```yaml
 model:
@@ -352,7 +353,7 @@ graph LR
 
 #### 配置示例
 
-在 `config/base/model-services-base.yml` 文件中配置预热算法：
+在 `config/router/services.yml` 文件中配置预热算法：
 
 ```yaml
 model:
@@ -512,7 +513,7 @@ ratelimit:
 
 ### 分层限流策略
 
-在 `config/base/model-services-base.yml` 文件中配置多层限流：
+在 `config/router/services.yml` 文件中配置多层限流：
 
 ```yaml
 model:

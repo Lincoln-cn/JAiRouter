@@ -136,7 +136,7 @@ spring:
 
 > **升级提示（v3.5.2 起，#634）**：此前外部导入排在列表**最前面**，挂载文件里的同名键会被 classpath 静默覆盖；现在它们真正生效。升级前请确认 `/app/config` 下写的同名键就是你想生效的值 —— 启动日志会打印一行 `外部配置已生效（按后导入者优先覆盖 classpath 同名键）: …`，没有这行说明挂载没被读到。
 >
-> **已知遗留（#643）**：classpath 内 `config/router/services.yml` 与 `config/base/model-services-base.yml` 都定义 `model.services`，后者的导入位置更靠后 ⇒ 目前**后者生效**。「基础配置模块优先级最低」是历史口径，实际由导入顺序决定，待 #643 收口。
+> **单一定义（v3.5.3 起，#643）**：`model.services` 只在 `config/router/services.yml` 定义一次；`config/base/model-services-base.yml` 只保留全局聚合策略（`load-balance` / `adapter` / `rate-limit` / `circuit-breaker` / `fallback`）。此前两处重复定义、且 base 因导入更靠后而覆盖 router，已消除。
 
 ---
 

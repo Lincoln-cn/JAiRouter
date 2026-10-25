@@ -14,9 +14,10 @@ JAiRouter provides multiple rate limiting algorithms, supporting global, service
 Starting from v1.0.0, JAiRouter adopts a modular configuration structure with rate limiting related configurations moved to separate configuration files:
 
 - Main configuration file: `application.yml`
-- Model services base configuration: `config/base/model-services-base.yml`
+- Global rate-limiting policy: `config/base/model-services-base.yml`
+- Service-level / instance-level rate-limit settings: `config/router/services.yml` (since v3.5.3 `model.services` is defined exactly once, in `config/router/services.yml`, see #643)
 
-You can find all rate limiting related configurations in the `config/base/model-services-base.yml` file, including global configurations, service type configurations, and instance configurations.
+Global policy lives in `config/base/model-services-base.yml`; each service keeps its rate-limit block and its `instances` list together in `config/router/services.yml`.
 
 ## Rate Limiting Overview
 
@@ -79,10 +80,10 @@ Service-level limits can be configured **dynamically and hot-applied** from the 
 
 ### Basic Configuration
 
-Configure global rate limiting in the `config/base/model-services-base.yml` file:
+Configure global rate limiting in the `config/router/services.yml` file:
 
 ```yaml
-# config/base/model-services-base.yml
+# config/router/services.yml
 model:
   # Global rate limiting configuration
   rate-limit:
@@ -141,7 +142,7 @@ graph LR
 
 #### Configuration Example
 
-Configure the token bucket algorithm in the `config/base/model-services-base.yml` file:
+Configure the token bucket algorithm in the `config/router/services.yml` file:
 
 ```yaml
 model:
@@ -222,7 +223,7 @@ graph TB
 
 #### Configuration Example
 
-Configure the leaky bucket algorithm in the `config/base/model-services-base.yml` file:
+Configure the leaky bucket algorithm in the `config/router/services.yml` file:
 
 ```yaml
 model:
@@ -286,7 +287,7 @@ graph LR
 
 #### Configuration Example
 
-Configure the sliding window algorithm in the `config/base/model-services-base.yml` file:
+Configure the sliding window algorithm in the `config/router/services.yml` file:
 
 ```yaml
 model:
@@ -353,7 +354,7 @@ graph LR
 
 #### Configuration Example
 
-Configure the warm-up algorithm in the `config/base/model-services-base.yml` file:
+Configure the warm-up algorithm in the `config/router/services.yml` file:
 
 ```yaml
 model:
@@ -530,7 +531,7 @@ single-script check — see [Multi-replica deployment](../deployment/multi-repli
 
 ### Layered Rate Limiting Strategy
 
-Configure multi-layer rate limiting in the `config/base/model-services-base.yml` file:
+Configure multi-layer rate limiting in the `config/router/services.yml` file:
 
 ```yaml
 model:

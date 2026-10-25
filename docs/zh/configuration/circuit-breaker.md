@@ -14,9 +14,10 @@ JAiRouter 内置熔断器机制，用于防止服务雪崩和级联故障。当�
 从 v1.0.0 版本开始，JAiRouter 采用模块化配置结构，熔断器相关配置已移至独立的配置文件中：
 
 - 主配置文件: `application.yml`
-- 模型服务基础配置: `config/base/model-services-base.yml`
+- 全局熔断策略: `config/base/model-services-base.yml`
+- 服务级 / 实例级熔断配置: `config/router/services.yml`（v3.5.3 起 `model.services` 只在 `config/router/services.yml` 定义一次，见 #643）
 
-您可以在 `config/base/model-services-base.yml` 文件中找到所有熔断器相关配置，包括全局配置、各服务类型配置和实例配置。
+全局策略在 `config/base/model-services-base.yml`，各服务类型与各实例的覆写在同一份 `config/router/services.yml` 的服务条目内。
 
 ## 熔断器概述
 
@@ -58,10 +59,10 @@ stateDiagram-v2
 
 ### 基础配置
 
-在 `config/base/model-services-base.yml` 文件中配置全局熔断器：
+在 `config/router/services.yml` 文件中配置全局熔断器：
 
 ```yaml
-# config/base/model-services-base.yml
+# config/router/services.yml
 model:
   # 全局熔断配置
   circuit-breaker:
@@ -123,7 +124,7 @@ model:
 
 ### YAML 配置
 
-在 `config/base/model-services-base.yml` 文件中配置各服务类型的熔断器：
+在 `config/router/services.yml` 文件中配置各服务类型的熔断器：
 
 ```yaml
 model:
@@ -182,7 +183,7 @@ JAiRouter 也支持通过动态配置 API 更新熔断器配置：
 
 ### 独立实例熔断
 
-在 `config/base/model-services-base.yml` 文件中配置实例级别的熔断器：
+在 `config/router/services.yml` 文件中配置实例级别的熔断器：
 
 ```yaml
 model:
@@ -242,7 +243,7 @@ JAiRouter 也支持通过动态配置 API 更新实例级熔断器配置：
 
 ### 基础降级配置
 
-在 `config/base/model-services-base.yml` 文件中配置全局和服务级降级策略：
+在 `config/router/services.yml` 文件中配置全局和服务级降级策略：
 
 ```yaml
 model:
