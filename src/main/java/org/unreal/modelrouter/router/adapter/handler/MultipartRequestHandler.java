@@ -2,9 +2,12 @@ package org.unreal.modelrouter.router.adapter.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.client.reactive.ClientHttpRequest;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -13,7 +16,10 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.common.dto.ImageEditDTO;
 import org.unreal.modelrouter.common.dto.SttDTO;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -131,53 +137,105 @@ public class MultipartRequestHandler {
     }
 
     /**
-     * 创建图像编辑请求的multipart表单数据
+     * 创建图像编辑请求的multipart表单数据.
+     *
+     * <p>图像与掩码是 {@link FilePart}，WebClient 出站时不能直接作为部件值发送，
+     * 因此与 STT 一样先把内容读成内存资源再组部件（部件名遵循 OpenAI 契约：
+     * 多张图像用 {@code image[]}、掩码用 {@code mask}）。
      *
      * @param imageEditRequest 图像编辑请求对象
      * @return BodyInserter 用于插入multipart请求体
+     * @since v3.5.2 起改为资源化出站（#637）
      */
     private BodyInserter<?, ? super ClientHttpRequest> createImageEditMultipartBody(
             final ImageEditDTO.Request imageEditRequest) {
-        // 使用 MultipartBodyBuilder 构建 multipart 请求
-        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        return (outputMessage, context) -> buildImageEditParts(imageEditRequest)
+                .flatMap(parts -> BodyInserters.fromMultipartData(parts).insert(outputMessage, context));
+    }
 
-        // 根据ImageEditDTO.Request的实际结构添加字段
-        // 如果有image字段
-        if (imageEditRequest.image() != null) {
-            builder.part("image", imageEditRequest.image());
-            logger.debug("添加image字段");
+    /**
+     * 组图像编辑的 multipart 部件.
+     *
+     * @param imageEditRequest 图像编辑请求
+     * @return 部件映射（含 {@code image[]} 与 {@code mask} 文件部件、其余文本部件）
+     */
+    Mono<MultiValueMap<String, Object>> buildImageEditParts(final ImageEditDTO.Request imageEditRequest) {
+        final MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+        final List<FilePart> images = imageEditRequest.image() == null
+                ? List.of() : imageEditRequest.image();
+
+        final Mono<Void> imagesPart = Flux.fromIterable(images)
+                .concatMap(this::toResource)
+                .doOnNext(resource -> parts.add("image[]", resource))
+                .then();
+        final Mono<Void> maskPart = imageEditRequest.mask() == null
+                ? Mono.empty()
+                : toResource(imageEditRequest.mask())
+                        .doOnNext(resource -> parts.add("mask", resource))
+                        .then();
+
+        return imagesPart.then(maskPart).then(Mono.fromSupplier(() -> {
+            addFormField(parts, "model", imageEditRequest.model());
+            addFormField(parts, "prompt", imageEditRequest.prompt());
+            addFormField(parts, "background", imageEditRequest.background());
+            addFormField(parts, "input_fidelity", imageEditRequest.input_fidelity());
+            addFormField(parts, "n", imageEditRequest.n());
+            addFormField(parts, "output_compression", imageEditRequest.output_compression());
+            addFormField(parts, "output_format", imageEditRequest.output_format());
+            addFormField(parts, "partial_images", imageEditRequest.partial_images());
+            addFormField(parts, "quality", imageEditRequest.quality());
+            addFormField(parts, "response_format", imageEditRequest.response_format());
+            addFormField(parts, "size", imageEditRequest.size());
+            addFormField(parts, "stream", imageEditRequest.stream());
+            addFormField(parts, "user", imageEditRequest.user());
+            logger.debug("图像编辑Multipart表单数据创建完成，包含{}个字段", parts.size());
+            return parts;
+        }));
+    }
+
+    /**
+     * 把入站文件部件读成内存资源（保留原文件名，便于上游识别）.
+     *
+     * @param part 文件部件
+     * @return 内存资源
+     */
+    private Mono<ByteArrayResource> toResource(final FilePart part) {
+        return part.content()
+                .collectList()
+                .map(buffers -> {
+                    final int totalSize = buffers.stream()
+                            .mapToInt(DataBuffer::readableByteCount)
+                            .sum();
+                    final byte[] bytes = new byte[totalSize];
+                    int offset = 0;
+                    for (DataBuffer buffer : buffers) {
+                        final int length = buffer.readableByteCount();
+                        buffer.read(bytes, offset, length);
+                        offset += length;
+                        DataBufferUtils.release(buffer);
+                    }
+                    final String filename = part.filename();
+                    return new ByteArrayResource(bytes) {
+                        @Override
+                        public String getFilename() {
+                            return filename;
+                        }
+                    };
+                });
+    }
+
+    /**
+     * 添加非空表单字段.
+     *
+     * @param parts 部件映射
+     * @param key   字段名
+     * @param value 字段值（{@code null} 跳过）
+     */
+    private static void addFormField(final MultiValueMap<String, Object> parts,
+            final String key, final Object value) {
+        if (value != null) {
+            parts.add(key, String.valueOf(value));
         }
-
-        // 如果有mask字段
-        if (imageEditRequest.mask() != null) {
-            builder.part("mask", imageEditRequest.mask());
-            logger.debug("添加mask字段");
-        }
-
-        // 添加其他参数字段（字符串类型）
-        if (imageEditRequest.model() != null) {
-            builder.part("model", imageEditRequest.model());
-            logger.debug("添加model字段: {}", imageEditRequest.model());
-        }
-
-        if (imageEditRequest.prompt() != null) {
-            builder.part("prompt", imageEditRequest.prompt());
-            logger.debug("添加prompt字段: {}", imageEditRequest.prompt());
-        }
-
-        if (imageEditRequest.n() != null) {
-            // 转为字符串避免 Content-Type 问题
-            builder.part("n", imageEditRequest.n().toString());
-            logger.debug("添加n字段: {}", imageEditRequest.n());
-        }
-
-        if (imageEditRequest.size() != null) {
-            builder.part("size", imageEditRequest.size());
-            logger.debug("添加size字段: {}", imageEditRequest.size());
-        }
-
-        logger.debug("图像编辑Multipart表单数据创建完成");
-        return BodyInserters.fromMultipartData(builder.build());
     }
 
     /**

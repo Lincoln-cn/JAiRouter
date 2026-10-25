@@ -85,6 +85,11 @@ public final class RequestBuilder {
     /**
      * 创建图像编辑请求的 multipart 表单数据
      *
+     * <p><strong>非主链路</strong>：适配器出站请求体由 {@code MultipartRequestHandler} 组装
+     * （它负责把 {@code FilePart} 读成内存资源后再发送）。本方法把 {@code FilePart}
+     * 直接放进部件映射，只在单元测试与历史调用中使用，WebClient 出站会因无法编码
+     * 文件部件而失败，请勿新增调用方（见 #637）。
+     *
      * @param imageEditRequest 图像编辑请求对象
      * @return multipart 请求体
      */

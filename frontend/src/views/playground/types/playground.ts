@@ -123,6 +123,13 @@ export interface PlaygroundRequest {
   headers: Record<string, string>
   body?: Record<string, unknown>
   files?: File[]
+  /**
+   * 文件部件的字段名（#637）。
+   *
+   * 缺省为 `file`（STT 单文件契约：`file`、`file1`、`file2`…）。
+   * 图像编辑是多文件端点，OpenAI 契约要求 `image[]`，设置后所有文件都用该字段名。
+   */
+  fileField?: string
   responseType?: 'json' | 'blob' | 'text'
 }
 

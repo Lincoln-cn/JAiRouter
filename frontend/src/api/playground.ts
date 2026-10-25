@@ -104,9 +104,10 @@ export const sendPlaygroundRequest = async (request: PlaygroundRequest): Promise
     if (request.files && request.files.length > 0) {
       const formData = new FormData()
       
-      // 添加文件
+      // 添加文件（#637：图像编辑用 image[]，其余端点沿用 file/file1…）
       request.files.forEach((file, index) => {
-        formData.append(`file${index === 0 ? '' : index}`, file)
+        const field = request.fileField ?? `file${index === 0 ? '' : index}`
+        formData.append(field, file)
       })
       
       // 添加其他数据
@@ -243,6 +244,8 @@ export const sendServiceRequest = async <T extends PlaygroundRequestConfig>(
     delete request.body.file
   } else if (serviceType === 'imageEdit' && config.images) {
     request.files = config.images
+    // #637：后端 multipart 契约要求 image[]（多张）或 image（单张），不能沿用 file/image 自增命名
+    request.fileField = 'image[]'
     request.body = { ...apiBody }
     delete request.body.images
   }

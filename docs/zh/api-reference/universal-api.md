@@ -446,21 +446,31 @@ temperature: 0
 
 #### 请求参数
 
-**JSON** 请求体（`@RequestBody ImageEditDTO.Request`），**不是** `multipart/form-data`：
+**`multipart/form-data`**（v3.5.2 起，`consumes = MediaType.MULTIPART_FORM_DATA_VALUE`）。图像与掩码都是文件部件，其余字段是文本部件：
 
-```json
-{
-  "image": ["<图像引用>"],
-  "prompt": "编辑描述",
-  "model": "dall-e-2",
-  "n": 1,
-  "size": "1024x1024",
-  "response_format": "url",
-  "user": "user-123"
-}
+| 部件名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| `image` / `image[]` | 文件 | 是（至少一个） | 待编辑图像。单张可用 `image`，多张用 `image[]`；两者可同时出现，服务端会合并 |
+| `mask` | 文件 | 否 | 掩码图像 |
+| `model` | 文本 | 否 | 模型名（决定路由到哪个实例） |
+| `prompt` | 文本 | 否 | 编辑描述 |
+| `background` · `input_fidelity` · `output_format` · `quality` · `response_format` · `size` · `user` | 文本 | 否 | 原样透传给上游 |
+| `n` · `output_compression` · `partial_images` | 文本（整数） | 否 | 非整数值返回 400 |
+| `stream` | 文本（布尔） | 否 | `true` / `false` |
+
+> 缺少 `image` / `image[]` 部件时返回 400（`ServerWebInputException`）。文件部件会被读成内存资源后再转发给上游，文件名保持不变。
+
+```bash
+curl -X POST http://localhost:8080/api/v1/images/edits \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "model=gpt-image-1" \
+  -F "prompt=add a hat" \
+  -F "image[]=@body-lotion.png" \
+  -F "mask=@mask.png" \
+  -F "size=1024x1024"
 ```
 
-> 对照：`/api/v1/audio/transcriptions` **是** `multipart/form-data`，且那里的部件名是 `responseFormat`（驼峰）。
+> 对照：`/api/v1/audio/transcriptions` 同样是 `multipart/form-data`，但它的文件部件名是 `file`、参数部件名是 `responseFormat`（驼峰）；图像编辑按 OpenAI 契约用 `image[]` 与 `response_format`。
 
 #### 响应格式
 
