@@ -85,6 +85,38 @@ public abstract class BaseAdapter implements ServiceCapability {
         return resilienceSupport.getErrorHandler().classifyError(throwable);
     }
 
+    /**
+     * v3.5.4（#647）：把上游响应分类为「成功 / 客户端错误 / 实例故障」。
+     *
+     * <p>2xx 计成功；4xx（含 400/401/403/404/422 与上游 429）属于调用方输入或上游限流，
+     * 与实例健康无关，不计入熔断失败；其余（5xx）才是实例侧故障。</p>
+     */
+    private static AdapterMetricsRecorder.CallOutcome classifyResponse(final ResponseEntity<?> response) {
+        if (response == null || response.getStatusCode().is2xxSuccessful()) {
+            return AdapterMetricsRecorder.CallOutcome.SUCCESS;
+        }
+        if (response.getStatusCode().is4xxClientError()) {
+            return AdapterMetricsRecorder.CallOutcome.CLIENT_ERROR;
+        }
+        return AdapterMetricsRecorder.CallOutcome.INSTANCE_FAILURE;
+    }
+
+    /**
+     * v3.5.4（#647）：异常路径同样区分客户端错误与实例故障。
+     * 只有 4xx 类异常算客户端错误，其余（超时、连接失败、5xx）都算实例故障。
+     */
+    private static AdapterMetricsRecorder.CallOutcome classifyFailure(final Throwable throwable) {
+        if (throwable instanceof org.springframework.web.reactive.function.client.WebClientResponseException clientError
+                && clientError.getStatusCode().is4xxClientError()) {
+            return AdapterMetricsRecorder.CallOutcome.CLIENT_ERROR;
+        }
+        if (throwable instanceof org.springframework.web.server.ResponseStatusException statusError
+                && statusError.getStatusCode().is4xxClientError()) {
+            return AdapterMetricsRecorder.CallOutcome.CLIENT_ERROR;
+        }
+        return AdapterMetricsRecorder.CallOutcome.INSTANCE_FAILURE;
+    }
+
     public ModelServiceRegistry getRegistry() { return context.getRegistry(); }
 
     protected RetryPolicy getRetryPolicy() { return resilienceSupport.getRetryPolicy(); }
@@ -192,11 +224,13 @@ public abstract class BaseAdapter implements ServiceCapability {
         return processor.process(request, authorization, client, path, selectedInstance, serviceType)
                 .doOnSuccess(response -> {
                     long duration = System.currentTimeMillis() - startTime;
-                    boolean success = response != null && response.getStatusCode().is2xxSuccessful();
+                    // v3.5.4（#647）：4xx 是客户端错误，不计入实例熔断失败
+                    final AdapterMetricsRecorder.CallOutcome outcome = classifyResponse(response);
+                    final boolean success = outcome.isSuccess();
                     AdapterMetricsRecorder metricsRecorder = resilienceSupport.getMetricsRecorder();
                     if (metricsRecorder != null) {
                         // v2.9.2: 成功路径的调用历史由 RequestProcessor 层记录（含请求/响应体），此处仅更新统计，避免重复记录
-                        metricsRecorder.recordCompleteCallStats(adapterType, instanceName, duration, success,
+                        metricsRecorder.recordCompleteCallStats(adapterType, instanceName, duration, outcome,
                                 null, modelName, serviceType, selectedInstance);
                     }
                     resilienceSupport.getTracingManager().recordCallComplete(adapterType, selectedInstance, serviceType,
@@ -205,9 +239,11 @@ public abstract class BaseAdapter implements ServiceCapability {
                 .onErrorResume(throwable -> {
                     long duration = System.currentTimeMillis() - startTime;
                     String errorCode = classifyError(throwable);
+                    // v3.5.4（#647）：4xx 异常（如 WebClientResponseException 4xx）同样是客户端错误
+                    final AdapterMetricsRecorder.CallOutcome outcome = classifyFailure(throwable);
                     AdapterMetricsRecorder metricsRecorder = resilienceSupport.getMetricsRecorder();
                     if (metricsRecorder != null) {
-                        metricsRecorder.recordCompleteCall(adapterType, instanceName, duration, false,
+                        metricsRecorder.recordCompleteCall(adapterType, instanceName, duration, outcome,
                                 errorCode, modelName, serviceType, selectedInstance);
                     }
                     if (retryPolicy.canRetry(retryCount, throwable) && retryPolicy.isRetryable(throwable)) {
