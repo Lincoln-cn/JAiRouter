@@ -136,7 +136,7 @@ Above the imports, normal Spring Boot precedence still applies: `application-{pr
 
 > **Upgrade note (v3.5.2+, #634)**: previously the external imports came **first**, so same-named keys in mounted files were silently overridden by classpath defaults; now they take effect. Before upgrading, make sure the keys under `/app/config` hold the values you want — the startup log prints `外部配置已生效（按后导入者优先覆盖 classpath 同名键）: …`, and the absence of that line means the mount was not read.
 >
-> **Known leftover (#643)**: `config/router/services.yml` and `config/base/model-services-base.yml` both define `model.services`, and the latter is imported later ⇒ **the latter currently wins**. "Base configuration modules have the lowest priority" was the older wording; actual precedence is decided by import order and is tracked in #643.
+> **Single definition (v3.5.3+, #643)**: `model.services` is defined exactly once, in `config/router/services.yml`; `config/base/model-services-base.yml` now only holds the global policies (`load-balance` / `adapter` / `rate-limit` / `circuit-breaker` / `fallback`). The previous duplication — where the base file silently won because it was imported later — is gone.
 
 ---
 

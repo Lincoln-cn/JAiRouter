@@ -14,9 +14,10 @@ JAiRouter has a built-in circuit breaker mechanism to prevent service avalanches
 Starting from v1.0.0, JAiRouter adopts a modular configuration structure with circuit breaker related configurations moved to separate configuration files:
 
 - Main configuration file: `application.yml`
-- Model services base configuration: `config/base/model-services-base.yml`
+- Global circuit-breaker policy: `config/base/model-services-base.yml`
+- Service-level / instance-level circuit-breaker settings: `config/router/services.yml` (since v3.5.3 `model.services` is defined exactly once, in `config/router/services.yml`, see #643)
 
-You can find all circuit breaker related configurations in the `config/base/model-services-base.yml` file, including global configurations, service type configurations, and instance configurations.
+Global policy lives in `config/base/model-services-base.yml`; per-service and per-instance overrides sit next to their service entry in `config/router/services.yml`.
 
 ## Circuit Breaker Overview
 
@@ -58,10 +59,10 @@ stateDiagram-v2
 
 ### Basic Configuration
 
-Configure global circuit breaker in the `config/base/model-services-base.yml` file:
+Configure global circuit breaker in the `config/router/services.yml` file:
 
 ```yaml
-# config/base/model-services-base.yml
+# config/router/services.yml
 model:
   # Global circuit breaker configuration
   circuit-breaker:
@@ -123,7 +124,7 @@ model:
 
 ### YAML Configuration
 
-Configure circuit breaker for each service type in the `config/base/model-services-base.yml` file:
+Configure circuit breaker for each service type in the `config/router/services.yml` file:
 
 ```yaml
 model:
@@ -182,7 +183,7 @@ JAiRouter also supports updating circuit breaker configurations via the dynamic 
 
 ### Independent Instance Circuit Breaking
 
-Configure instance-level circuit breaker in the `config/base/model-services-base.yml` file:
+Configure instance-level circuit breaker in the `config/router/services.yml` file:
 
 ```yaml
 model:
@@ -242,7 +243,7 @@ JAiRouter also supports updating instance-level circuit breaker configurations v
 
 ### Basic Fallback Configuration
 
-Configure global and service-level fallback strategies in the `config/base/model-services-base.yml` file:
+Configure global and service-level fallback strategies in the `config/router/services.yml` file:
 
 ```yaml
 model:
