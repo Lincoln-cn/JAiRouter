@@ -5,7 +5,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -15,13 +19,19 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.ServerWebInputException;
 import org.unreal.modelrouter.common.dto.ChatDTO;
 import org.unreal.modelrouter.common.dto.EmbeddingDTO;
+import org.unreal.modelrouter.common.dto.ImageEditDTO;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.ServiceCapability;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
+import org.unreal.modelrouter.router.handler.ServiceEndpoint;
+import org.unreal.modelrouter.router.handler.ServiceRequestExecutor;
+import org.unreal.modelrouter.router.handler.ServiceRequestHandler;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
@@ -68,6 +78,9 @@ class UniversalControllerTest {
 
     @Mock
     private ControllerTracingInterceptor tracingInterceptor;
+
+    @Mock
+    private ServiceRequestHandler requestHandler;
 
     @Mock
     private ServerWebExchange exchange;
@@ -151,17 +164,66 @@ class UniversalControllerTest {
     // ==================== 图像编辑测试 ====================
 
     @Nested
-    @DisplayName("POST /api/v1/images/edits - 图像编辑测试")
+    @DisplayName("POST /api/v1/images/edits - 图像编辑（multipart）测试")
     class ImageEditsTests {
 
         @Test
-        @DisplayName("UNIVERSAL-004: 请求体为空抛出异常")
-        void testImageEdits_nullRequest() {
-            // When & Then
-            org.junit.jupiter.api.Assertions.assertThrows(
-                    org.springframework.web.server.ServerWebInputException.class,
-                    () -> controller.imageEdits("Bearer token", null, exchange)
-            );
+        @DisplayName("UNIVERSAL-004: 缺少图像部件抛出异常")
+        void imageEdits_withoutImages_throwsServerWebInputException() {
+            assertThrows(ServerWebInputException.class,
+                    () -> controller.imageEdits("Bearer token", null, null, null,
+                            "gpt-image-1", "add a hat", null, null, null, null,
+                            null, null, null, null, null, null, null, exchange));
+        }
+
+        @Test
+        @DisplayName("UNIVERSAL-005: image[] 部件合并后委托 handler，掩码与文本字段透传")
+        void imageEdits_withImageArrayPart_delegatesToHandler() throws Exception {
+            final FilePart imagePart = mock(FilePart.class);
+            final FilePart maskPart = mock(FilePart.class);
+            final ServiceCapability adapter = mock(ServiceCapability.class);
+            when(requestHandler.handleRequest(any(), any(), any(), any(ServerWebExchange.class), any()))
+                    .thenReturn(Mono.just(ResponseEntity.ok("ok")));
+            when(adapter.imageEdit(any(), any(), any()))
+                    .thenReturn(Mono.just(ResponseEntity.ok("edited")));
+
+            // handler 被 mock：控制器只负责把 multipart 部件组装成 DTO 并委托，
+            // 真正的执行器回调在这里单独捕获后验证（下面 executorCaptor）。
+            StepVerifier.create(controller.imageEdits("Bearer token", null, List.of(imagePart), maskPart,
+                            "gpt-image-1", "add a hat", null, null, "2", null,
+                            "png", null, "high", null, "1024x1024", "false", "alice", exchange))
+                    .expectNextMatches(response -> "ok".equals(response.getBody()))
+                    .verifyComplete();
+
+            final ArgumentCaptor<ServiceRequestExecutor> executorCaptor =
+                    ArgumentCaptor.forClass(ServiceRequestExecutor.class);
+            verify(requestHandler).handleRequest(eq(ServiceEndpoint.IMAGE_EDIT), eq("gpt-image-1"),
+                    eq("Bearer token"), eq(exchange), executorCaptor.capture());
+
+            StepVerifier.create(executorCaptor.getValue().execute(adapter, "Bearer token", httpRequest))
+                    .expectNextCount(1)
+                    .verifyComplete();
+
+            final ArgumentCaptor<ImageEditDTO.Request> requestCaptor =
+                    ArgumentCaptor.forClass(ImageEditDTO.Request.class);
+            verify(adapter).imageEdit(requestCaptor.capture(), eq("Bearer token"), eq(httpRequest));
+            final ImageEditDTO.Request captured = requestCaptor.getValue();
+            assertEquals(List.of(imagePart), captured.image());
+            assertSame(maskPart, captured.mask());
+            assertEquals(2, captured.n());
+            assertEquals(Boolean.FALSE, captured.stream());
+            assertEquals("high", captured.quality());
+            assertEquals("png", captured.output_format());
+        }
+
+        @Test
+        @DisplayName("UNIVERSAL-006: 非法整数部件抛出异常")
+        void imageEdits_invalidIntegerPart_throwsServerWebInputException() {
+            final FilePart imagePart = mock(FilePart.class);
+            assertThrows(ServerWebInputException.class,
+                    () -> controller.imageEdits("Bearer token", List.of(imagePart), null, null,
+                            "gpt-image-1", "add a hat", null, null, "abc", null,
+                            null, null, null, null, null, null, null, exchange));
         }
     }
 }

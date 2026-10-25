@@ -365,21 +365,31 @@ Edits existing images.
 
 #### Request Parameters
 
-A **JSON** request body (`@RequestBody ImageEditDTO.Request`) — **not** `multipart/form-data`:
+A **`multipart/form-data`** request (since v3.5.2, `consumes = MediaType.MULTIPART_FORM_DATA_VALUE`). Images and the mask are file parts; every other field is a text part:
 
-```json
-{
-  "image": ["<image reference>"],
-  "prompt": "Edit description",
-  "model": "dall-e-2",
-  "n": 1,
-  "size": "1024x1024",
-  "response_format": "url",
-  "user": "user-123"
-}
+| Part | Type | Required | Notes |
+|------|------|----------|-------|
+| `image` / `image[]` | file | yes (at least one) | Image(s) to edit. Use `image` for a single image and `image[]` for several; both may be present and the server merges them |
+| `mask` | file | no | Mask image |
+| `model` | text | no | Model name (selects the routed instance) |
+| `prompt` | text | no | Edit instruction |
+| `background` · `input_fidelity` · `output_format` · `quality` · `response_format` · `size` · `user` | text | no | Forwarded to the upstream as-is |
+| `n` · `output_compression` · `partial_images` | text (integer) | no | A non-integer value returns 400 |
+| `stream` | text (boolean) | no | `true` / `false` |
+
+> A missing `image` / `image[]` part returns 400 (`ServerWebInputException`). File parts are read into in-memory resources before forwarding; the filename is preserved.
+
+```bash
+curl -X POST http://localhost:8080/api/v1/images/edits \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "model=gpt-image-1" \
+  -F "prompt=add a hat" \
+  -F "image[]=@body-lotion.png" \
+  -F "mask=@mask.png" \
+  -F "size=1024x1024"
 ```
 
-> Contrast with `/api/v1/audio/transcriptions`, which **is** declared as `multipart/form-data`, and note the part name there is `responseFormat` (camelCase).
+> Contrast with `/api/v1/audio/transcriptions`, which is also `multipart/form-data` but names its file part `file` and its option part `responseFormat` (camelCase). Image editing follows the OpenAI contract with `image[]` and `response_format`.
 
 #### Response Format
 

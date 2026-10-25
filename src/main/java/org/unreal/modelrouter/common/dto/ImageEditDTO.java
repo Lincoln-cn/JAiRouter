@@ -19,11 +19,11 @@ public final class ImageEditDTO {
      * -F 'prompt=Create a lovely gift basket with these four items in it'
      */
     public record Request(
-            List<FilePart> image, // 可以是String或数组
+            List<FilePart> image, // 文件部件：单张用 image、多张用 image[]
             String prompt,
             String background,
             String input_fidelity,
-            String mask,
+            FilePart mask, // 掩码是文件部件（OpenAI -F "mask=@mask.png"）
             String model,
             Integer n,
             Integer output_compression,
