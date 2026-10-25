@@ -1,9 +1,9 @@
 # 发展路线图
 
 <!-- 版本信息 -->
-> **文档版本**: 2.4.0
+> **文档版本**: 2.5.0
 > **最后更新**: 2026-10-24
-> **Git 标签**: v3.5.2
+> **Git 标签**: v3.5.3
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
@@ -23,6 +23,19 @@ JAiRouter 致力于成为最优秀的开源 AI 模型服务路由网关，为用
 - **可观测性**: 全面的监控、日志和链路追踪
 
 ## 当前版本状态
+
+### ✅ v3.5.3（补丁：主流程审计五条修复 + 配置单源化，已发布 2026-10-25）
+
+**状态**: 已发布（GitHub Release `v3.5.3`，2026-10-25；多架构 Docker 镜像随 Release 由 CI 重建：`v3.5.3` / `3.5.3` / `latest`）
+**范围**: `v3.5.2` 之后合入的 6 个 PR —— 配置优先级 #644（#634）、图像编辑 multipart #639（#637）、实例健康键 #640（#636）、出站路径 #642（#635）、adapter 引用校验 #641（#638）、`model.services` 单源化 #645（#643）；**无 API 破坏性变更，但 #634 与 #637 改变运行时行为**
+**要点**:
+
+- **外部挂载配置真正覆盖（#644 / #634）**：`spring.config.import` 越靠后越优先，而外部导入曾排在最前 ⇒ `/app/config` 里的同名键被 classpath 默认值静默覆盖，与文档和 k8s ConfigMap 的承诺相反。现移到列表末尾，并新增 `ExternalConfigReporter` 在启动时打印「外部配置已生效…」，让「挂载到底读了没有」可观测。
+- **图像编辑改 multipart（#639 / #637）**：`/api/v1/images/edits` 由 `@RequestBody ImageEditDTO.Request`（含 `List<FilePart>`，JSON 根本反序列化不出来）改为 multipart（`image` / `image[]` / `mask` + 文本部件）；出站前把文件部件读成内存资源再组装（原来直接塞 `FilePart`，出站也会失败）。
+- **实例健康键（#640 / #636）**：新增 `InstanceKeys`（`instance-id` → `baseUrl` → `name` → `unknown`），未配 `instance-id` 的实例不再共用 `chat:null` 一个健康键，一个实例不健康不再连坐其它实例。
+- **出站路径取自选中实例（#642 / #635）**：`BaseAdapter` 不再按模型名反查 `path`；池名 / `auto-model` / 别名不是实例名，此前会取到空路径并把请求打到上游根地址。
+- **adapter 引用启动期校验（#641 / #638）**：新增 `AdapterReferenceValidator`，扫全局 / 服务级 / 实例级三层引用，默认只 `ERROR` 不拦启动（`jairouter.config.validation.strict-mode=true` 才阻断）。
+- **`model.services` 单源化（#645 / #643）**：`config/router/services.yml` 成为唯一定义处（搬运的是此前实际生效的那套值，默认实例不变），base 只留全局聚合策略；`ServiceDefinitionSingleSourceTest` 双向守卫结构与默认值。
 
 ### ✅ v3.5.2（功能：终端用户级限流 + 客户端维度限流接线，已发布 2026-10-24）
 
@@ -582,9 +595,10 @@ JAiRouter 项目将继续秉承开源精神，致力于为用户提供最优秀�
 12. ✅ v3.3.0 次版本（2026-10-07 发布）：PostgreSQL 与版本化迁移（PG 切 `ddl-auto: validate`、H2 也接上、删两个启动期补丁组件）；多副本集群（跨副本事件广播与滑动窗口计数、共享态自检、定时任务按类处置）；RBAC 收口到 GET 也 fail-closed；tracing 配置诚实性四批收口（删 57 个零消费方字段、接 3 个）；容器 stdout 结构化 JSON 与 Kustomize 制品；文档事实逐条核对修正（#160–#248）
 13. ✅ v3.4.0 功能版（2026-10-21 发布）：控制台重构（7 组 28 项导航、可折叠侧栏、暗色层级、窄屏卡片化、33 页去彩虹化、全局搜索与状态条）、权限语义化（8 个只读码，55 → 63）、脱敏配置持久化（Flyway V4）、配额小时/月限额。**顺延**：记录级 FULL 加密策略 UI 随前端轨道（v3.5.0 系列）落地
 14. ✅ v3.5.0 功能版（2026-10-24 发布）：响应脱敏覆盖面收口（`/v1/**` 非流式 JSON、`response.scope` 可配置、缓冲上限、SSE 逐帧）、默认 PII 规则与 JSON 键豁免修正、请求侧配置面移除（Flyway V5）、熔断器三项治理、控制台验收修正
-15. ✅ v3.5.2 功能版（2026-10-24 发布）：终端用户级限流（按 `(API Key × 终端用户)` 计每分钟额度，默认关闭、身份自报不构成安全边界，本机有界计数或 Redis 跨副本计数）；客户端维度限流接线（#623，仓库默认关闭，避免无 L7 反代时按 IP 合并客户端）；服务级 429 与实例全限 503 补 `Retry-After`（#624）；`TokenBucketRateLimiter` 窗口表改有界（#625）
-16. ✅ v3.5.1 补丁（2026-10-24 发布）：记录治理页与 call-history 密钥来源接线（`encryption-key-source: env` 由「能设不生效」改为真生效，`GET /api/config/call-history` 增 8 个只读观测字段，新页 `/security/record-governance`）；配置快照 `gatewayResponseFilter` 实时化；技术债 #604 的 A～D 批次（端到端 400 用例 + 裸捕获上限 835 → 786、`QuotaLedgerService` 1268 → 1094、`ServiceRequestHandler` 1027 → 785）；文档 API 路径统一 `/api/v1/*`、围栏配平检查接入文档门闩
-17. 📋 语义缓存评估（向量相似度复用，独立项目）；高可用地基（多节点/Redis）在 v3.2.x 后再评估
+15. ✅ v3.5.3 补丁（2026-10-25 发布）：主流程审计五条修复（外部挂载配置真正覆盖 #634、图像编辑改 multipart #637、实例健康键 #636、出站路径取自选中实例 #635、adapter 引用启动期校验 #638）+ `model.services` 单源化 #643；无 API 破坏性变更，但 #634 / #637 属行为变更
+16. ✅ v3.5.2 功能版（2026-10-24 发布）：终端用户级限流（按 `(API Key × 终端用户)` 计每分钟额度，默认关闭、身份自报不构成安全边界，本机有界计数或 Redis 跨副本计数）；客户端维度限流接线（#623，仓库默认关闭，避免无 L7 反代时按 IP 合并客户端）；服务级 429 与实例全限 503 补 `Retry-After`（#624）；`TokenBucketRateLimiter` 窗口表改有界（#625）
+17. ✅ v3.5.1 补丁（2026-10-24 发布）：记录治理页与 call-history 密钥来源接线（`encryption-key-source: env` 由「能设不生效」改为真生效，`GET /api/config/call-history` 增 8 个只读观测字段，新页 `/security/record-governance`）；配置快照 `gatewayResponseFilter` 实时化；技术债 #604 的 A～D 批次（端到端 400 用例 + 裸捕获上限 835 → 786、`QuotaLedgerService` 1268 → 1094、`ServiceRequestHandler` 1027 → 785）；文档 API 路径统一 `/api/v1/*`、围栏配平检查接入文档门闩
+18. 📋 语义缓存评估（向量相似度复用，独立项目）；高可用地基（多节点/Redis）在 v3.2.x 后再评估
 
 ### 长期愿景
 1. 成为 AI 模型路由领域的标准

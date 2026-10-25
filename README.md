@@ -43,8 +43,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # the local/git directory name differs from the product name
 artifact:        model-router            # Maven artifactId
-project_version: 3.5.2                   # pom.xml
-latest_release:  v3.5.2 (2026-10-24)
+project_version: 3.5.3                   # pom.xml
+latest_release:  v3.5.3 (2026-10-25)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5 (WebFlux / reactive)
   frontend: Vue 3 + TypeScript + Vite, bilingual zh-CN / en-US
@@ -367,11 +367,27 @@ delivery. See [Status and recent work](#status-and-recent-work) for the open led
 
 ## Status and recent work
 
-**Latest release: v3.5.2 (2026-10-24)** — a feature release that adds **end-user rate limiting** (a per-minute
-allowance counted per API key × end user, which is the only way to limit several people who share one key) and
-**wires up client-dimension rate limiting**, which was fully implemented but never called. Both are off by default.
-It also gives the remaining rate-limit rejections a `Retry-After` header and bounds the API-key limiter's window
-table. **No breaking changes.**
+**Latest release: v3.5.3 (2026-10-25)** — a bug-fix release from a full main-flow audit (service config →
+adapter config → instance config → console playground). It fixes five real defects, two of which change runtime
+behavior, plus one duplicated config source. **No API breaking changes; three upgrade notes matter.**
+
+| Theme | What changed |
+|-------|--------------|
+| **External config now overrides (#634)** | `spring.config.import` resolves later entries first, yet `application.yml` listed the three `/app/config` imports *first* — so same-named keys in mounted files were silently overridden by classpath defaults. The imports moved to the end of the list, and `ExternalConfigReporter` logs whether the mount was actually read |
+| **Image edits speak multipart (#637)** | `/api/v1/images/edits` declared `@RequestBody ImageEditDTO.Request` while the DTO carries `List<FilePart>` — JSON could never bind it, and the console sent multipart. It now mirrors STT, and outbound file parts are materialized before assembly |
+| **Health keys and outbound paths (#636 / #635)** | Instances without `instance-id` no longer share one `chat:null` health key (`InstanceKeys` falls back to `baseUrl` → `name`), and `BaseAdapter` uses the selected instance's own `path`, so pool names and `auto-model` no longer send requests to the upstream root |
+| **Adapter references validated at startup (#638)** | `AdapterReferenceValidator` scans global / service / instance references and logs `ERROR` by default (blocking only under `strict-mode`); request-time errors now list the registered adapters |
+| **One definition of `model.services` (#643)** | The duplicate in `model-services-base.yml` is gone; `router/services.yml` is the single source (carrying the previously effective values), guarded by `ServiceDefinitionSingleSourceTest` on both structure and defaults |
+
+See the [`[3.5.3]` changelog entry](docs/en/reference/changelog.md). Released as GitHub Release `v3.5.3` with multi-arch images (`v3.5.3` / `3.5.3` / `latest`).
+
+**Upgrade notes:** keys under `/app/config` that never took effect now do (the startup log line confirms the mount was read); `/api/v1/images/edits` accepts `multipart/form-data` only; health state for instances without `instance-id` resets once.
+
+**`v3.5.2` (2026-10-24)** was a feature release that added **end-user rate limiting** (a per-minute allowance
+counted per API key × end user — the only way to limit several people who share one key) and **wired up
+client-dimension rate limiting**, which was fully implemented but never called. Both are off by default. It also
+gave the remaining rate-limit rejections a `Retry-After` header and bounded the API-key limiter's window table.
+**No breaking changes.**
 
 | Theme | What changed |
 |-------|--------------|
