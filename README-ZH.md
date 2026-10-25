@@ -42,8 +42,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # 本地/仓库目录名与产品名不同
 artifact:        model-router            # Maven artifactId
-project_version: 3.5.2                   # pom.xml
-latest_release:  v3.5.2 (2026-10-24)
+project_version: 3.5.3                   # pom.xml
+latest_release:  v3.5.3 (2026-10-25)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5（WebFlux / 响应式）
   frontend: Vue 3 + TypeScript + Vite，中英双语（zh-CN / en-US）
@@ -351,7 +351,21 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 
 ## 状态与近期工作
 
-**最新发布：v3.5.2（2026-10-24）** —— 新增**终端用户级限流**（按「API Key × 终端用户」计每分钟额度，是多人共用一个 Key 时唯一不必一人一 Key 的办法），并把**客户端维度限流接进主链路**（此前实现完整但从未被调用）。两者默认都关闭。同批给其余限流拒绝补上 `Retry-After`，并把 API Key 限速器的窗口表改成有界缓存。**无破坏性变更。**
+**最新发布：v3.5.3（2026-10-25）** —— 主流程审计（服务配置 → adapter 配置 → 实例配置 → 控制台试验场）之后的缺陷修复版：修掉五处真实缺陷（其中两处会改变运行时行为），并把重复的配置来源合成一处。**无 API 破坏性变更；三条升级提示值得看一眼。**
+
+| 主题 | 变更内容 |
+|------|----------|
+| **外部配置真正覆盖（#634）** | `spring.config.import` 是「越靠后越优先」，而 `application.yml` 把三条 `/app/config` 外部导入排在最前 ⇒ 挂载文件里的同名键被 classpath 默认值静默覆盖，与文档和 k8s ConfigMap 的承诺相反。现移到列表末尾，并新增 `ExternalConfigReporter`：启动时打印「外部配置已生效…」，目录存在却没读到任何已知文件时告警 |
+| **图像编辑改 multipart（#637）** | `/api/v1/images/edits` 原先声明 `@RequestBody ImageEditDTO.Request`，而该 DTO 含 `List<FilePart>`（JSON 反序列化不出来），试验场发的又是 multipart ⇒ 两端都不成立。现与 STT 对齐（`image` / `image[]` / `mask` + 文本部件），且出站前把文件部件读成内存资源（原来直接塞 `FilePart`，出站同样会失败） |
+| **健康键与出站路径（#636 / #635）** | 未配 `instance-id` 的实例不再共用 `chat:null` 健康键（`InstanceKeys` 依次回退 `baseUrl` → `name`），一个实例不健康不再连坐；`BaseAdapter` 改用选中实例自己的 `path`，池名 / `auto-model` 不再把请求打到上游根地址 |
+| **adapter 引用启动期校验（#638）** | `AdapterReferenceValidator` 扫全局 / 服务级 / 实例级三层引用，默认只 `ERROR` 不拦启动（`strict-mode` 才阻断）；请求期报错补上 `registered=[…]` |
+| **`model.services` 单一来源（#643）** | 删掉 `model-services-base.yml` 里的重复定义，统一到 `router/services.yml`（搬运的是此前实际生效的那套值，默认实例不变）；`ServiceDefinitionSingleSourceTest` 同时守住结构与默认值 |
+
+`[3.5.3]` 的 changelog 条目见 [更新日志](docs/zh/reference/changelog.md)；以 GitHub Release `v3.5.3` 发布，并触发多架构镜像（`v3.5.3` / `3.5.3` / `latest`）。
+
+**升级提示**：此前写在 `/app/config` 却没生效的同名键，升级后真正生效（启动日志会打印「外部配置已生效…」）；`/api/v1/images/edits` 只接受 `multipart/form-data`；未配 `instance-id` 的实例，健康状态会重置一次。
+
+**`v3.5.2`（2026-10-24）** 是功能版：新增**终端用户级限流**（按「API Key × 终端用户」计每分钟额度，是多人共用一个 Key 时唯一不必一人一 Key 的办法），并把**客户端维度限流接进主链路**（此前实现完整但从未被调用）。两者默认都关闭。同批给其余限流拒绝补上 `Retry-After`，并把 API Key 限速器的窗口表改成有界缓存。**无破坏性变更。**
 
 | 主题 | 变更内容 |
 |------|----------|

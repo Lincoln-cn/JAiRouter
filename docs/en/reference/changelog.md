@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.5.2
-> **Last Updated**: 2026-10-24
+> **Document Version**: 3.5.3
+> **Last Updated**: 2026-10-25
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,28 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.5.3] - 2026-10-25 - Bug-fix release (main-flow audit: config precedence / image edits / health keys / outbound path / adapter checks)
+
+#### Main-flow audit and five fixes (#634 / #635 / #636 / #637 / #638)
+
+- **External mounted configuration now actually overrides (#634, P1)**: `spring.config.import` resolves later entries with higher precedence, but `application.yml` listed the three `/app/config` imports **first** ⇒ same-named keys in mounted files were silently overridden by classpath defaults, contradicting both the docs and the k8s ConfigMap comment. The three external imports now sit at the end of the list, and the new `ExternalConfigReporter` logs `外部配置已生效（按后导入者优先覆盖 classpath 同名键）: …` on startup (WARN when the mount directory exists but no known file was read).
+- **Image edits now use multipart (#637, P2)**: `/api/v1/images/edits` declared `@RequestBody ImageEditDTO.Request`, but that DTO carries `List<FilePart>` — impossible to deserialize from JSON — while the console sent multipart ⇒ the endpoint worked for neither side. It now mirrors STT (`image` / `image[]` / `mask` + text parts), and outbound parts are read into in-memory resources before assembly (the old `MultipartBodyBuilder` fed `FilePart` straight in, which would also fail outbound).
+- **Health keys no longer collapse (#636, P2)**: instances without `instance-id` shared the key `serviceType:null` in `ServiceStateManager` and `ServerChecker`, so one unhealthy instance dragged the others down. New `InstanceKeys` resolves `instance-id` → `baseUrl` → `name` → `unknown`.
+- **Outbound path comes from the selected instance (#635, P2)**: `BaseAdapter` used to look the path up by model name; pool names, `auto-model` and aliases are not instance names ⇒ empty path, request sent to the upstream root; with same-named replicas it could also use another instance's path. It now prefers the selected instance's own `path` and only falls back to the lookup when absent.
+- **Adapter names validated at startup (#638, P3)**: an unregistered adapter name used to surface only on the first request. New `AdapterReferenceValidator` (`ApplicationReadyEvent`) scans global / service-level / instance-level references, logs `ERROR` without blocking by default, and blocks only when `jairouter.config.validation.strict-mode=true`; request-time errors now include `registered=[…]`.
+
+#### Single-source service definitions (#643)
+
+- `model.services` was defined in both `config/router/services.yml` and `config/base/model-services-base.yml`; because base was imported later it silently won — the router copy was dead configuration. It is now single-sourced in `config/router/services.yml` (carrying the **currently effective** instance definitions), while base keeps only the global policies (`load-balance` / `adapter` / `rate-limit` / `circuit-breaker` / `fallback`).
+- New `ServiceDefinitionSingleSourceTest` guards both directions: exactly one definition of `model.services` (with an anti-vacuous scan assertion), and unchanged default instance values after the move.
+
+#### Upgrade notes
+
+- **#634 changes behavior**: same-named keys that were written under `/app/config` but never took effect will now apply. Review your mounted files before upgrading; the startup log line above confirms the mount was read. Keys absent from the mount still come from classpath (no tree replacement).
+- **#637 is a contract change**: `/api/v1/images/edits` accepts `multipart/form-data` only (e.g. `-F "image[]=@body-lotion.png" -F "mask=@mask.png" -F "prompt=…"`); JSON callers now get 415.
+- **#636 resets health state once**: keys for instances with `instance-id` are unchanged; ones without move from `chat:null` to `chat:<baseUrl>`.
+- **#635 only affects previously mis-routed requests** (pool routing / `auto-model` / same-named replicas); **#638 logs by default and does not block startup**; **#643 keeps effective values unchanged** (default instance remains `qwen3:4b` / `gpustack`).
 
 ### [3.5.2] - 2026-10-24 - Feature Release (end-user rate limiting + client-dimension wiring)
 

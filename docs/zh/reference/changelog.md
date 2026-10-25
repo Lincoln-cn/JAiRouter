@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.5.2
-> **最后更新**: 2026-10-24
+> **文档版本**: 3.5.3
+> **最后更新**: 2026-10-25
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,28 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.5.3] - 2026-10-25 - 缺陷修复（主流程审计：配置优先级 / 图像编辑 / 健康键 / 出站路径 / adapter 校验）
+
+#### 主流程审计与五条修复（#634 / #635 / #636 / #637 / #638）
+
+- **外部挂载配置现在真正覆盖（#634，P1）**：`spring.config.import` 的语义是「同一列表里越靠后越优先」，而 `application.yml` 曾把 `/app/config` 的三条外部导入排在最前面 ⇒ 挂载文件里的同名键被 classpath 默认值静默覆盖，与文档和 k8s ConfigMap 的承诺相反。现已把三条外部导入移到列表末尾；新增 `ExternalConfigReporter`，启动时打印「外部配置已生效（按后导入者优先覆盖 classpath 同名键）: …」，目录存在却读不到任何已知文件时告警。
+- **图像编辑改为 multipart（#637，P2）**：`/api/v1/images/edits` 此前声明 `@RequestBody ImageEditDTO.Request`，而该 DTO 含 `List<FilePart>`、JSON 根本反序列化不出来；试验场发的又是 multipart ⇒ 该端点对两端都不成立。现改为与 STT 一致的 multipart（`image` / `image[]` / `mask` + 文本部件），出站把文件部件读成内存资源再组装（此前 `MultipartBodyBuilder` 直接塞 `FilePart`，出站同样会失败）。
+- **健康状态键不再坍缩（#636，P2）**：实例未配 `instance-id` 时，`ServiceStateManager` 与 `ServerChecker` 用 `serviceType:null` 作键 ⇒ 同服务所有无 id 的实例共享一份健康状态，一个不健康会连坐其它实例。新增 `InstanceKeys`（`instance-id` → `baseUrl` → `name` → `unknown`）。
+- **出站路径取自被选中实例（#635，P2）**：`BaseAdapter` 原先按模型名反查 `path`，而池名 / `auto-model` / 别名并不是实例名 ⇒ 取到空串、请求被打到上游根路径；同名多实例时还会串用别人的 path。改为优先用选中实例自己的 `path`，缺失才回退反查。
+- **adapter 名启动期校验（#638，P3）**：未注册的 adapter 名原先要等首个请求才抛 `IllegalArgumentException`。新增 `AdapterReferenceValidator`（`ApplicationReadyEvent`）扫描全局 / 服务级 / 实例级三层引用，默认只 `ERROR` 不阻断启动，`jairouter.config.validation.strict-mode=true` 才阻断；请求期报错同时带上 `registered=[…]` 上下文。
+
+#### 配置单源化（#643）
+
+- `model.services` 曾在 `config/router/services.yml` 与 `config/base/model-services-base.yml` 各定义一次，因 base 导入更靠后而实际生效 —— router 那份是死配置，改它不生效且无任何提示。现单源化到 `config/router/services.yml`（搬运的是**当前实际生效**的那套实例定义），base 只保留全局聚合策略（`load-balance` / `adapter` / `rate-limit` / `circuit-breaker` / `fallback`）。
+- 新增 `ServiceDefinitionSingleSourceTest` 双向守卫：结构上只允许一处定义 `model.services`（带反空转断言），且默认实例值不得因搬家而变化。
+
+#### 升级提示
+
+- **#634 是行为变更**：此前「写在 `/app/config` 却没生效」的同名键，升级后真正生效。升级前请核对挂载文件的内容；启动日志里的「外部配置已生效…」可用来确认挂载被读到。挂载没写的键仍取 classpath 值（不是整树替换）。
+- **#637 是契约变更**：`/api/v1/images/edits` 现在只接受 `multipart/form-data`（例：`-F "image[]=@body-lotion.png" -F "mask=@mask.png" -F "prompt=…"`），JSON 调用方会收到 415。
+- **#636 会让健康状态重置一次**：已配 `instance-id` 的实例键完全不变；未配的从 `chat:null` 变为 `chat:<baseUrl>`。
+- **#635 只影响此前打错的请求**（池路由 / `auto-model` / 同名多实例）；**#638 默认只告警不拦启动**；**#643 的生效值保持不变**（默认实例仍是 `qwen3:4b` / `gpustack`）。
 
 ### [3.5.2] - 2026-10-24 - 功能发布（终端用户级限流 + 客户端维度限流接线）
 
