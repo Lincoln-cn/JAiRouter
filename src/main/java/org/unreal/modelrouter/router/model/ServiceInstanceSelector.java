@@ -77,7 +77,10 @@ public class ServiceInstanceSelector {
             final String modelName) {
 
         List<ModelRouterProperties.ModelInstance> candidateInstances = new ArrayList<>(availableInstances);
-        int maxAttempts = Math.min(candidateInstances.size(), 3);
+        // #654: 候选被限流拒绝就从列表里移除，因此上限取候选总数即可遍历全部实例；
+        // 原先硬编码 min(size, 3) 会在前 3 个实例都被限流时直接返回 null，
+        // 让后面仍在配额内的实例永远选不到（表现为「All instances rate limited」的假告警）。
+        int maxAttempts = candidateInstances.size();
 
         for (int attempt = 0; attempt < maxAttempts; attempt++) {
             if (candidateInstances.isEmpty()) {
@@ -91,6 +94,12 @@ public class ServiceInstanceSelector {
             } else {
                 candidate = loadBalancer.selectInstance(
                         candidateInstances, clientIp, serviceType.name().toLowerCase());
+            }
+
+            if (candidate == null) {
+                LOGGER.warn("Load balancer returned no instance for service: {}, candidates left: {}",
+                        serviceType, candidateInstances.size());
+                break;
             }
 
             // 实例级限流检查
