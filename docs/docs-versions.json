@@ -102,13 +102,15 @@
     },
     "docs/en/configuration/adapter-config.md": {
       "FilePath": "docs/en/configuration/adapter-config.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:31.355821",
-      "ContentHash": "060a063b44216610",
-      "GitCommit": "b54650d4",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-25T02:24:27.349680",
+      "ContentHash": "758fa074e0a161b7",
+      "GitCommit": "6c1c3b66",
       "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [
+        "docs/en/configuration/validation-rules.md"
+      ]
     },
     "docs/en/configuration/application-config.md": {
       "FilePath": "docs/en/configuration/application-config.md",
@@ -319,10 +321,10 @@
     },
     "docs/en/configuration/validation-rules.md": {
       "FilePath": "docs/en/configuration/validation-rules.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:32.461942",
-      "ContentHash": "1d22661683200780",
-      "GitCommit": "512509dc",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-25T02:24:27.471051",
+      "ContentHash": "a6285ff0ac479b8d",
+      "GitCommit": "6c1c3b66",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1258,13 +1260,15 @@
     },
     "docs/zh/configuration/adapter-config.md": {
       "FilePath": "docs/zh/configuration/adapter-config.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:37.238367",
-      "ContentHash": "a28a1ca6d9866b4d",
-      "GitCommit": "b54650d4",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-25T02:24:28.016190",
+      "ContentHash": "659982c91fd846e7",
+      "GitCommit": "6c1c3b66",
       "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [
+        "docs/zh/configuration/validation-rules.md"
+      ]
     },
     "docs/zh/configuration/application-config.md": {
       "FilePath": "docs/zh/configuration/application-config.md",
@@ -1474,10 +1478,10 @@
     },
     "docs/zh/configuration/validation-rules.md": {
       "FilePath": "docs/zh/configuration/validation-rules.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:38.325079",
-      "ContentHash": "f14afe42dd771924",
-      "GitCommit": "512509dc",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-25T02:24:28.134598",
+      "ContentHash": "e2db8c499a912a2c",
+      "GitCommit": "6c1c3b66",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -4312,7 +4316,39 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-25T02:21:33.819877",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/adapter-config.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-25T02:24:27.349690",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/validation-rules.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-25T02:24:27.471063",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/adapter-config.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-25T02:24:28.016199",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/validation-rules.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-25T02:24:28.134608",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-25T02:21:34.434059"
+  "last_updated": "2026-10-25T02:24:28.681087"
 }
