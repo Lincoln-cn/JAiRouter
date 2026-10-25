@@ -8,12 +8,6 @@
 spring:
   config:
     import:
-      # ====== 外部配置文件（最高优先级）======
-      # Docker 部署时挂载到 /app/config/
-      - optional:file:/app/config/application.yml
-      - optional:file:/app/config/auth/jwt.yml
-      - optional:file:/app/config/router/services.yml
-      
       # ====== common 模块配置 ======
       - classpath:config/common/server.yml
       - classpath:config/common/webclient.yml
@@ -57,6 +51,14 @@ spring:
       - classpath:config/base/model-services-base.yml
       - classpath:config/security/security-base.yml
       - classpath:config/security/persistence-base.yml
+
+      # ====== 外部配置文件（最高优先级，必须放在最后）======
+      # spring.config.import 的语义是「后导入者优先」：外部挂载文件放在 classpath 之后，
+      # 才能像文档承诺的那样覆盖同名键（/app/config 由 Docker/k8s 挂载）。
+      # 注意：历史上外部导入排在最前面，导致挂载配置里的同名键被 classpath 静默覆盖（#634）。
+      - optional:file:/app/config/application.yml
+      - optional:file:/app/config/auth/jwt.yml
+      - optional:file:/app/config/router/services.yml
 
 # ========================================
 # 配置模块说明（v2.8.x）

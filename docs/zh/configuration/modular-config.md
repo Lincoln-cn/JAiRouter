@@ -73,11 +73,6 @@ config/
 spring:
   config:
     import:
-      # 外部配置（最高优先级）
-      - optional:file:/app/config/application.yml
-      - optional:file:/app/config/auth/jwt.yml
-      - optional:file:/app/config/router/services.yml
-
       # common 模块
       - classpath:config/common/server.yml
       - classpath:config/common/webclient.yml
@@ -121,20 +116,27 @@ spring:
       - classpath:config/base/model-services-base.yml
       - classpath:config/security/security-base.yml
       - classpath:config/security/persistence-base.yml
+
+      # 外部配置（最高优先级：后导入者优先，必须放最后）
+      - optional:file:/app/config/application.yml
+      - optional:file:/app/config/auth/jwt.yml
+      - optional:file:/app/config/router/services.yml
 ```
 
 ---
 
 ## 配置优先级
 
-配置加载遵循以下优先级顺序（高优先级覆盖低优先级）：
+`spring.config.import` 的规则是「**同一列表里越靠后越优先**」—— 后导入的文件覆盖先导入文件的同名键。因此当前 `application.yml` 的顺序是：
 
-1. 命令行参数（最高优先级）
-2. 环境变量
-3. 外部配置文件（`/app/config/`）
-4. 环境特定配置文件（`application-{profile}.yml`）
-5. 模块配置文件（`config/{module}/*.yml`）
-6. 基础配置模块（最低优先级）
+1. 各模块的 classpath 配置（`config/**`，按导入列表自上而下递增）
+2. **外部挂载配置**（`/app/config/application.yml`、`/app/config/auth/jwt.yml`、`/app/config/router/services.yml`，被刻意放在列表最后三位）
+
+在 import 之上，仍是 Spring Boot 的常规优先级：`application-{profile}.yml` < 环境变量 < 命令行参数。
+
+> **升级提示（v3.5.2 起，#634）**：此前外部导入排在列表**最前面**，挂载文件里的同名键会被 classpath 静默覆盖；现在它们真正生效。升级前请确认 `/app/config` 下写的同名键就是你想生效的值 —— 启动日志会打印一行 `外部配置已生效（按后导入者优先覆盖 classpath 同名键）: …`，没有这行说明挂载没被读到。
+>
+> **已知遗留（#643）**：classpath 内 `config/router/services.yml` 与 `config/base/model-services-base.yml` 都定义 `model.services`，后者的导入位置更靠后 ⇒ 目前**后者生效**。「基础配置模块优先级最低」是历史口径，实际由导入顺序决定，待 #643 收口。
 
 ---
 
