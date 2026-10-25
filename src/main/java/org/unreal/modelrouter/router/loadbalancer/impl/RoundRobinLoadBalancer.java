@@ -63,7 +63,10 @@ public class RoundRobinLoadBalancer implements LoadBalancer {
             // 无权重场景：简单轮询
             String key = generateInstancesKey(instances);
             AtomicInteger counter = counters.computeIfAbsent(key, k -> new AtomicInteger(0));
-            int index = Math.abs(counter.getAndIncrement() % instances.size());
+            // v3.5.4(#655): 用 floorMod 代替 Math.abs(x % n)。旧写法实际上也不会越界
+            // （|x % n| < n，取绝对值后仍落在 [0, n-1]），这里只是把「任意 int 计数器都非负」
+            // 这件事写清楚，省得下一个人再怀疑一次溢出。见 #655 的更正评论。
+            int index = Math.floorMod(counter.getAndIncrement(), instances.size());
             selected = instances.get(index);
         }
 

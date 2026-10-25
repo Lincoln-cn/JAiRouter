@@ -256,6 +256,47 @@ class LeastConnectionsLoadBalancerTest {
             "高权重或第一个等权重实例应该被选中");
     }
 
+    @Test
+    @DisplayName("记录调用失败 - 释放在途连接（#655）")
+    void testRecordCallFailure_ReleasesConnection() {
+        // Given: 两个实例，把第二个的在途计数抬起来
+        List<ModelRouterProperties.ModelInstance> instances = new ArrayList<>();
+        ModelRouterProperties.ModelInstance first = createInstance("first", "http://first:8080", 1);
+        ModelRouterProperties.ModelInstance second = createInstance("second", "http://second:8080", 1);
+        instances.add(first);
+        instances.add(second);
+
+        loadBalancer.recordCall(second);
+        assertEquals("first", loadBalancer.selectInstance(instances, "127.0.0.1", "chat").getName(),
+                "second 有 1 个在途连接，应选 first");
+
+        // When: 这次调用失败（失败路径只会走 recordCallFailure）
+        loadBalancer.recordCallFailure(second);
+
+        // Then: 计数被释放，两个实例重新同一起点，选中列表里的第一个
+        assertEquals("first", loadBalancer.selectInstance(instances, "127.0.0.1", "chat").getName(),
+                "失败也应释放在途计数，否则 second 会永久停在高位");
+    }
+
+    @Test
+    @DisplayName("记录调用失败 - 计数不会被减成负数（#655）")
+    void testRecordCallFailure_DoesNotGoNegative() {
+        List<ModelRouterProperties.ModelInstance> instances = new ArrayList<>();
+        ModelRouterProperties.ModelInstance first = createInstance("first", "http://first:8080", 1);
+        ModelRouterProperties.ModelInstance second = createInstance("second", "http://second:8080", 1);
+        instances.add(first);
+        instances.add(second);
+
+        loadBalancer.recordCall(second);
+        for (int i = 0; i < 5; i++) {
+            loadBalancer.recordCallFailure(second);
+        }
+
+        // 计数若变成负数，second 会以「负连接数」压过 first 抢走所有流量
+        assertEquals("first", loadBalancer.selectInstance(instances, "127.0.0.1", "chat").getName(),
+                "计数应钳在 0，而不是变成负数");
+    }
+
     /**
      * 创建测试实例列表
      */
