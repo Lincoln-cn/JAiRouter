@@ -124,10 +124,10 @@
     },
     "docs/en/configuration/circuit-breaker.md": {
       "FilePath": "docs/en/configuration/circuit-breaker.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:31.490433",
-      "ContentHash": "53d7dea521201dfc",
-      "GitCommit": "98b5e27a",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-25T03:16:10.968402",
+      "ContentHash": "7c277c4674d01561",
+      "GitCommit": "3d57f5cc",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -213,10 +213,10 @@
     },
     "docs/en/configuration/load-balancing.md": {
       "FilePath": "docs/en/configuration/load-balancing.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:31.933061",
-      "ContentHash": "2df9d4751098dd45",
-      "GitCommit": "98b5e27a",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-25T03:16:11.021307",
+      "ContentHash": "d4b6c210498d343a",
+      "GitCommit": "3d57f5cc",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -229,10 +229,10 @@
     },
     "docs/en/configuration/modular-config.md": {
       "FilePath": "docs/en/configuration/modular-config.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-25T02:43:30.410353",
-      "ContentHash": "ab92f6b963e8ede6",
-      "GitCommit": "36998892",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-25T03:16:11.023334",
+      "ContentHash": "bdfc1653ca93e3f3",
+      "GitCommit": "3d57f5cc",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -254,10 +254,10 @@
     },
     "docs/en/configuration/rate-limiting.md": {
       "FilePath": "docs/en/configuration/rate-limiting.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-24T15:35:00.635816",
-      "ContentHash": "a6b6702f14991285",
-      "GitCommit": "0b4f76c3",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-25T03:16:11.029809",
+      "ContentHash": "bacfd817f90b4506",
+      "GitCommit": "3d57f5cc",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1282,10 +1282,10 @@
     },
     "docs/zh/configuration/circuit-breaker.md": {
       "FilePath": "docs/zh/configuration/circuit-breaker.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:37.371075",
-      "ContentHash": "d8bb0708512356f0",
-      "GitCommit": "98b5e27a",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-25T03:16:11.594455",
+      "ContentHash": "65d01c08be55d45e",
+      "GitCommit": "3d57f5cc",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1370,10 +1370,10 @@
     },
     "docs/zh/configuration/load-balancing.md": {
       "FilePath": "docs/zh/configuration/load-balancing.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:37.782703",
-      "ContentHash": "86d4c49349760706",
-      "GitCommit": "98b5e27a",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-25T03:16:11.648913",
+      "ContentHash": "e977226918e11869",
+      "GitCommit": "3d57f5cc",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1386,10 +1386,10 @@
     },
     "docs/zh/configuration/modular-config.md": {
       "FilePath": "docs/zh/configuration/modular-config.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-25T02:43:31.055471",
-      "ContentHash": "5678f57f48bd04d9",
-      "GitCommit": "36998892",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-25T03:16:11.650883",
+      "ContentHash": "e519364b182f0b16",
+      "GitCommit": "3d57f5cc",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1411,10 +1411,10 @@
     },
     "docs/zh/configuration/rate-limiting.md": {
       "FilePath": "docs/zh/configuration/rate-limiting.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-24T15:35:01.269927",
-      "ContentHash": "e1453e224fe1a9b6",
-      "GitCommit": "0b4f76c3",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-25T03:16:11.657329",
+      "ContentHash": "56be44f863e7ae9b",
+      "GitCommit": "3d57f5cc",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -4380,7 +4380,71 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-25T02:43:31.055516",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/circuit-breaker.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-25T03:16:10.968410",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/load-balancing.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-25T03:16:11.021315",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/modular-config.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-25T03:16:11.023339",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/rate-limiting.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-25T03:16:11.029815",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/circuit-breaker.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-25T03:16:11.594464",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/load-balancing.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-25T03:16:11.648922",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/modular-config.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-25T03:16:11.650888",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/rate-limiting.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-25T03:16:11.657334",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-25T02:43:31.595093"
+  "last_updated": "2026-10-25T03:16:12.194736"
 }
