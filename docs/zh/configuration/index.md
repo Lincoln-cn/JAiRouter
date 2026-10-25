@@ -391,14 +391,17 @@ model:
 ### 3. 配置健康检查
 
 ```
-# ✅ 好 - 启用健康监控
-model:
-  load-balance:
-    health-check:
-      enabled: true
-      interval: 30000
-      timeout: 5000
+# ✅ 好 - 显式声明探活方式与节奏（默认值见 config/router/health-check.yml）
+jairouter:
+  health-check:
+    mode: http          # tcp 只探端口；http 还会校验状态码（<500 算健康）
+    interval-ms: 30000  # 上一轮结束后再等这么久才跑下一轮
+    timeout-ms: 5000    # 单实例探活超时
+    parallelism: 4      # 同时检查几个服务类型
 ```
+
+> 早期文档里的 `model.load-balance.health-check.*`（enabled / interval / timeout / failure-threshold /
+> success-threshold）从未被绑定过，设了也不生效；v3.5.4 起健康检查统一由 `jairouter.health-check.*` 控制。
 
 ### 4. 使用权重进行渐进式部署
 

@@ -428,7 +428,6 @@ logging:
 #### Token Decoding Tools
 
 - https://jwt.io/
-- https://jwt-decoder.com/
 
 ---
 

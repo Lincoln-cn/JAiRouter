@@ -38,6 +38,7 @@ config/
 │   ├── adapter.yml      # 适配器配置
 │   ├── loadbalancer.yml # 负载均衡配置
 │   ├── ratelimit.yml    # 限流配置
+│   ├── health-check.yml # 健康检查配置
 │   ├── circuitbreaker.yml # 熔断器配置
 │   ├── fallback.yml     # 降级配置
 │   ├── pools.yml        # 资源池配置
@@ -89,6 +90,7 @@ spring:
       - classpath:config/router/adapter.yml
       - classpath:config/router/loadbalancer.yml
       - classpath:config/router/ratelimit.yml
+- classpath:config/router/health-check.yml
       - classpath:config/router/circuitbreaker.yml
       - classpath:config/router/fallback.yml
       - classpath:config/router/services.yml
