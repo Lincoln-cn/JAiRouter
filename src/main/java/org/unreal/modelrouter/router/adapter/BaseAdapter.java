@@ -126,7 +126,8 @@ public abstract class BaseAdapter implements ServiceCapability {
         }
         // 用已选中的实例构造 WebClient：客户端目标与指标归属实例保持一致
         WebClient client = getWebClientForInstance(selectedInstance);
-        String path = getModelPath(serviceType, modelName);
+        // #635: 目标路径必须取自**被选中的实例**，而不是按模型名反查（池名 / auto-model / 别名会查不到）
+        String path = resolvePath(selectedInstance, serviceType, modelName);
         long startTime = System.currentTimeMillis();
         String adapterType = getAdapterType();
         String modelNameFromRequest = ModelUtils.getModelNameFromRequest(request);
@@ -224,7 +225,7 @@ public abstract class BaseAdapter implements ServiceCapability {
                         WebClient nextClient = (nextInstance != selectedInstance)
                                 ? getWebClientForInstance(nextInstance) : client;
                         String nextPath = (nextInstance != selectedInstance)
-                                ? getModelPath(serviceType, modelName) : path;
+                                ? resolvePath(nextInstance, serviceType, modelName) : path;
                         return Mono.delay(Duration.ofMillis(retryDelay))
                                 .then(processRequestWithRetry(request, authorization, nextClient, nextPath,
                                         nextInstance, serviceType, modelName, processor,
@@ -468,6 +469,26 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     protected String getModelPath(final ModelServiceRegistry.ServiceType serviceType, final String modelName) {
         return requestSupport.getInstanceSelector().getModelPath(serviceType, modelName);
+    }
+
+    /**
+     * 解析本次请求发往上游的路径：优先用**被选中的实例**自己声明的 {@code path}。
+     *
+     * <p>#635：早期实现按 {@code modelName} 反查实例再取 path（{@link #getModelPath}），一旦请求里的
+     * model 不是实例名（资源池名、{@code auto-model}、别名），反查失败会得到空串，请求于是打到上游
+     * baseUrl 的根路径；同名多实例且 path 不同时，也会串用另一个实例的 path。</p>
+     *
+     * @param instance    本次实际被选中的实例（网关注入或本类自选）
+     * @param serviceType 服务类型（仅在回退反查时使用）
+     * @param modelName   请求里的模型名（仅在回退反查时使用）
+     * @return 目标路径；实例未声明 path 时回退为按模型名反查的结果（可能为空串，保持既有行为）
+     */
+    protected String resolvePath(final ModelRouterProperties.ModelInstance instance,
+            final ModelServiceRegistry.ServiceType serviceType, final String modelName) {
+        if (instance != null && instance.getPath() != null && !instance.getPath().isBlank()) {
+            return instance.getPath();
+        }
+        return getModelPath(serviceType, modelName);
     }
 
     protected Object transformRequest(final Object request, final String adapterType) {

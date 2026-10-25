@@ -120,8 +120,6 @@ class BaseAdapterInstanceSelectionTest {
         // 连续两次选择返回不同实例：用来同时暴露「重复选择」与「WebClient 目标漂移」
         when(instanceSelector.selectInstance(any(), anyString(), anyString()))
                 .thenReturn(instanceA, instanceB);
-        when(instanceSelector.getModelPath(any(), anyString()))
-                .thenReturn("/v1/chat/completions");
 
         AtomicReference<ModelRouterProperties.ModelInstance> usedInstance = new AtomicReference<>();
         BaseAdapter.RequestProcessor<Object> processor = (req, auth, client, path, instance, st) -> {
@@ -150,8 +148,6 @@ class BaseAdapterInstanceSelectionTest {
     void shouldReuseGatewaySelectedInstanceWithoutSelectingAgain() {
         // 模拟网关已选好实例：适配器不得再选，否则同一请求会重复计数/重复推进 LB 状态
         SelectedInstanceHolder.set(instanceB);
-        when(instanceSelector.getModelPath(any(), anyString()))
-                .thenReturn("/v1/chat/completions");
 
         AtomicReference<ModelRouterProperties.ModelInstance> usedInstance = new AtomicReference<>();
         BaseAdapter.RequestProcessor<Object> processor = (req, auth, client, path, instance, st) -> {
@@ -171,6 +167,66 @@ class BaseAdapterInstanceSelectionTest {
             verify(instanceSelector, never()).selectInstance(any(), anyString(), anyString());
             assertEquals(instanceB, usedInstance.get(), "处理器应复用网关已选中的实例 B");
             verify(tracingFactory, times(1)).createTracingWebClient(instanceB.getBaseUrl());
+        } finally {
+            SelectedInstanceHolder.clear();
+        }
+    }
+
+    /**
+     * #635：请求里的 model 不是实例名（资源池名、{@code auto-model}、别名）时，按模型名反查会得到空串，
+     * 请求被打到上游根路径。修复后目标路径取自**被选中的实例**，不再依赖反查。
+     */
+    @Test
+    void usesSelectedInstancePathEvenWhenModelNameMatchesNoInstance() {
+        ModelRouterProperties.ModelInstance poolMember =
+                createInstance("qwen3:4b", "http://pool-member:8080", "/v1/chat/completions");
+        SelectedInstanceHolder.set(poolMember);
+
+        AtomicReference<String> usedPath = new AtomicReference<>();
+        BaseAdapter.RequestProcessor<Object> processor = (req, auth, client, path, instance, st) -> {
+            usedPath.set(path);
+            return Mono.just(ResponseEntity.ok("{\"ok\":true}"));
+        };
+
+        try {
+            // model = 池名 "auto-model"，实例名是 "qwen3:4b" ⇒ 反查必然落空
+            Mono<?> result = adapter.doProcessRequest(
+                    new Object(), "Bearer test", httpRequest,
+                    ModelServiceRegistry.ServiceType.chat, "auto-model", processor);
+
+            StepVerifier.create(result)
+                    .expectNextCount(1)
+                    .verifyComplete();
+
+            assertEquals("/v1/chat/completions", usedPath.get(), "应使用选中实例声明的 path");
+            verify(instanceSelector, never()).getModelPath(any(), anyString());
+        } finally {
+            SelectedInstanceHolder.clear();
+        }
+    }
+
+    @Test
+    void fallsBackToModelLookupWhenSelectedInstanceHasNoPath() {
+        ModelRouterProperties.ModelInstance noPath = createInstance("instC", "http://host-c:8080", "");
+        SelectedInstanceHolder.set(noPath);
+        when(instanceSelector.getModelPath(any(), anyString())).thenReturn("/v1/fallback");
+
+        AtomicReference<String> usedPath = new AtomicReference<>();
+        BaseAdapter.RequestProcessor<Object> processor = (req, auth, client, path, instance, st) -> {
+            usedPath.set(path);
+            return Mono.just(ResponseEntity.ok("{\"ok\":true}"));
+        };
+
+        try {
+            Mono<?> result = adapter.doProcessRequest(
+                    new Object(), "Bearer test", httpRequest,
+                    ModelServiceRegistry.ServiceType.chat, "qwen3:4b", processor);
+
+            StepVerifier.create(result)
+                    .expectNextCount(1)
+                    .verifyComplete();
+
+            assertEquals("/v1/fallback", usedPath.get(), "实例未声明 path 时应回退按模型名反查");
         } finally {
             SelectedInstanceHolder.clear();
         }

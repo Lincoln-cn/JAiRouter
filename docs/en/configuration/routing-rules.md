@@ -1,4 +1,4 @@
-﻿# Routing Rules Configuration
+# Routing Rules Configuration
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.1
@@ -294,6 +294,7 @@ model:
 - **Strategies**: weighted-random (default) / round-robin / least-connections / ip-hash / consistent-hash (note: consistent hash ignores weights)
 - **Rule synergy**: a rule's TARGET_MODEL target can be a pool name — the matched request then routes through the pool
 - **Response echo**: after pool routing, the response and downstream request model field reflect the actual serving instance model (non-streaming; streaming outbound requests are rewritten too)
+- **Outbound path comes from the selected instance**: the request path is the instance's own `path` (falling back to a model-name lookup only when that instance declares none). A pool name / `auto-model` is not an instance name, so earlier versions looked up nothing, produced an empty path, and hit the upstream root; fixed in `v3.5.2` (see #635)
 - **Rate limiting & circuit breaker**: the pool-selected instance continues through the existing service/instance rate-limit and circuit-breaker chain
 
 ---
