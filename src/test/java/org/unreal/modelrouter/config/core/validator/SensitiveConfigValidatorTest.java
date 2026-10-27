@@ -90,30 +90,32 @@ class SensitiveConfigValidatorTest {
     }
 
     @Test
-    @DisplayName("缺 INITIAL_ADMIN_PASSWORD 的告警必须描述真实行为（issue #314）")
+    @DisplayName("缺 INITIAL_ADMIN_PASSWORD 的告警必须描述真实行为（issue #314 / #664）")
     void missingAdminPasswordWarningMatchesRealBehavior() throws Exception {
         String warning = SensitiveConfigValidator.missingAdminPasswordWarning();
 
-        // ① 不得再声称「会生成随机密码」—— 本仓不存在任何启动期随机密码生成
-        assertFalse(warning.contains("生成随机密码"),
-                "不存在启动期随机密码生成，告警不得再这么写");
-
-        // ② 必须写出真实的回落值，且该值与 config/auth/jwt.yml 的回落写法一致（交叉核对，不是自证）
+        // ① 基础配置的回落值必须是随机占位符 —— 任何公开字面量都会随发布包一起发出去（#664）
         String fallback = adminFallbackFromJwtYml();
-        assertEquals(SensitiveConfigValidator.FACTORY_DEFAULT_ADMIN_PASSWORD, fallback,
-                "Java 常量与 config/auth/jwt.yml 的回落值必须一致");
-        assertTrue(warning.contains(fallback),
-                "告警必须写出真实的回落值 " + fallback + "，运维才能判断风险；实际文案：" + warning);
+        assertEquals("${random.uuid}", fallback,
+                "config/auth/jwt.yml 的回落值必须是 ${random.uuid}，不能再是公开字面量");
 
-        // ③ 还要指出去哪生成强密码 —— 旧文案想表达的就是这件事，只是说反了
+        // ② 非生产环境确实会随机生成并把口令打出来 —— 这正是 #314 当时说反、现在已兑现的行为
+        assertTrue(warning.contains("随机"), "告警应说明非生产环境随机生成；实际文案：" + warning);
+        assertTrue(warning.contains("启动日志"), "告警应指向启动日志里的那行口令；实际文案：" + warning);
+
+        // ③ 生产仍必须 fail-fast，文案不能让运维以为生产也能起来
+        assertTrue(warning.contains("生产") && warning.contains("启动失败"),
+                "告警必须说明生产 profile 会启动失败；实际文案：" + warning);
+
+        // ④ 还要指出去哪生成强密码 —— 旧文案想表达的就是这件事，只是说反了
         assertTrue(warning.contains("--generate-password"), "应指向唯一真实的生成器");
     }
 
-    /** 从真实 yml 里读出 {@code ${INITIAL_ADMIN_PASSWORD:...}} 的回落值 */
+    /** 从真实 yml 里读出 {@code ${INITIAL_ADMIN_PASSWORD:...}} 的回落值（允许嵌套 {@code ${...}}） */
     private static String adminFallbackFromJwtYml() throws Exception {
         try (InputStream in = new ClassPathResource("config/auth/jwt.yml").getInputStream()) {
             String yml = new String(in.readAllBytes(), StandardCharsets.UTF_8);
-            Matcher matcher = Pattern.compile("\\$\\{INITIAL_ADMIN_PASSWORD:([^}]*)}").matcher(yml);
+            Matcher matcher = Pattern.compile("\\$\\{INITIAL_ADMIN_PASSWORD:(.*)}").matcher(yml);
             assertTrue(matcher.find(), "config/auth/jwt.yml 里应存在 ${INITIAL_ADMIN_PASSWORD:...} 的回落写法");
             return matcher.group(1);
         }
