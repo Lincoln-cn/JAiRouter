@@ -896,7 +896,8 @@ security:
     accounts:
       - username: admin
         # 生产必须显式设置 INITIAL_ADMIN_PASSWORD（门闩只认这个名字，且拒绝出厂默认值）
-        password: "${INITIAL_ADMIN_PASSWORD:ChangeMeOnFirstStartup123456}"
+        # 不要在这里写默认值：基础配置已改为缺省随机生成（#664），生产缺变量则拒绝启动
+        password: "{noop}${INITIAL_ADMIN_PASSWORD}"
         roles: [ADMIN, USER]
         enabled: true
       - username: user

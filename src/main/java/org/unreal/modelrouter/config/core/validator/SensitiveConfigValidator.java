@@ -132,28 +132,28 @@ public class SensitiveConfigValidator implements ApplicationListener<Application
     }
 
     /**
-     * {@code config/auth/jwt.yml} 里 {@code ${INITIAL_ADMIN_PASSWORD:...}} 的回落值。
+     * 本仓历史上用过的公开出厂默认管理员口令。
      *
-     * <p>它由 {@code SensitiveConfigValidatorTest} 从**真实 yml** 读出并交叉核对 —— 任何一侧改了默认值
-     * 而另一侧没跟上，测试都会红（避免这段文案变成第二种「撒谎的提示」）。</p>
+     * <p>基础配置 {@code config/auth/jwt.yml} 已不再用它兜底（issue #664）—— 缺失环境变量时回落为
+     * {@code ${random.uuid}}，由 {@code StartupSecretKeyChecker} 把本次生成的一次性口令打印在启动日志里。
+     * 该常量保留在此，只用于文案里点名「这个已知值会被门闩拒绝」，避免运维误以为把它设进去就能通过校验。</p>
      */
     static final String FACTORY_DEFAULT_ADMIN_PASSWORD = "ChangeMeOnFirstStartup123456";
 
     /**
-     * 未设置 {@code INITIAL_ADMIN_PASSWORD} 时的告警文案（包内可见：供测试断言，issue #314）。
+     * 未设置 {@code INITIAL_ADMIN_PASSWORD} 时的告警文案（包内可见：供测试断言，issue #314 / #664）。
      *
-     * <p><b>这段文案此前写的是「首次启动将生成随机密码」，与实现不符</b> —— 本仓库**不存在任何启动期随机
-     * 密码生成**：缺口令时 JWT 账户会沿用 {@code config/auth/jwt.yml} 里的出厂默认密码
-     * （见 {@link #FACTORY_DEFAULT_ADMIN_PASSWORD}），而生产 profile 下 {@code StartupSecurityGate}
-     * 会因此**直接启动失败**。唯一生成器是显式 CLI {@code --generate-password}（{@code KeyGeneratorCommandLine}）。</p>
+     * <p><b>这段文案必须与真实行为一致</b>：非生产 profile 下 JWT 账户口令回落为 {@code ${random.uuid}}，
+     * 并由 {@code StartupSecretKeyChecker} 在启动日志里打印一次（重启即换新值）；生产 profile 下
+     * {@code StartupSecurityGate} 会因此**直接启动失败**。唯一显式生成器是 CLI
+     * {@code --generate-password}（{@code KeyGeneratorCommandLine}）。</p>
      *
      * @return 描述真实后果的告警文案
      */
     static String missingAdminPasswordWarning() {
-        return "INITIAL_ADMIN_PASSWORD 未设置（将回落到配置里的出厂默认密码 "
-                + FACTORY_DEFAULT_ADMIN_PASSWORD
-                + "；生产 profile 会因此启动失败 —— 请设置该环境变量，"
-                + "或用 --generate-password 生成一个强密码）";
+        return "INITIAL_ADMIN_PASSWORD 未设置（非生产环境会随机生成一次性管理员口令并打印在启动日志里，"
+                + "生产 profile 会直接启动失败；已知出厂默认值 " + FACTORY_DEFAULT_ADMIN_PASSWORD
+                + " 会被门闩拒绝 —— 请设置该环境变量，或用 --generate-password 生成一个强密码）";
     }
 
     /**

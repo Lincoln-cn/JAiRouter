@@ -6,11 +6,14 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.auth.security.config.properties.JwtAccountProperties;
+import org.unreal.modelrouter.auth.security.config.properties.JwtConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.util.SecretKeyValidator;
 import org.unreal.modelrouter.auth.security.util.SecretKeyValidator.ValidationResult;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * 启动时密钥安全检查器
@@ -24,6 +27,8 @@ import java.util.Arrays;
 @Component
 @ConditionalOnProperty(name = "jairouter.security.startup-check.enabled", havingValue = "true", matchIfMissing = true)
 public class StartupSecretKeyChecker implements CommandLineRunner {
+
+    private static final String NOOP_PREFIX = "{noop}";
 
     private static final String ASCII_ART_BORDER = "\n"
             + "╔══════════════════════════════════════════════════════════════════════════════╗\n"
@@ -54,6 +59,10 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
         // 检查管理员密码
         allPassed &= checkAdminPassword();
 
+        // #664：非生产环境缺 INITIAL_ADMIN_PASSWORD 时，把本次随机生成的口令打印一次，
+        // 否则「配置里没有公开口令」会让非 dev/prod 的 profile 变成起得来但登不进。
+        reportGeneratedAdminPassword(isProduction);
+
         if (!allPassed) {
             log.error("\n"
                 + "╔══════════════════════════════════════════════════════════════════════════════╗\n"
@@ -80,6 +89,54 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
         // R4-P1：生产 fail-fast — 检查失败不得带着默认密钥/弱配置继续启动
         StartupSecurityGate.enforce(isProduction, allPassed,
                 System.getenv(StartupSecurityGate.SKIP_ENV));
+    }
+
+    /**
+     * 非生产环境缺 {@code INITIAL_ADMIN_PASSWORD} 时，打印本次启动实际生效的随机管理员口令。
+     *
+     * <p>背景（#664）：{@code config/auth/jwt.yml} 不再回落到公开文档口令，缺环境变量时用
+     * {@code ${random.uuid}} 随机生成（每次启动不同）。若不打印，非 dev/prod 的 profile 会变成
+     * “起得来、但不知道用什么口令登录”的死局；这里把用户名与明文口令打印一次，并提示如何固定下来。</p>
+     *
+     * <p>只在「非生产 + INITIAL_ADMIN_PASSWORD / ADMIN_PASSWORD 都没设」时打印；生产环境由
+     * {@link StartupSecurityGate} 直接拒绝启动，不会走到这里。只打印 {@code {noop}} 明文口令，
+     * 已编码（如 {@code {bcrypt}}）的口令不还原、不打印。</p>
+     */
+    private void reportGeneratedAdminPassword(final boolean isProduction) {
+        if (isProduction || isEnvSet("INITIAL_ADMIN_PASSWORD") || isEnvSet("ADMIN_PASSWORD")) {
+            return;
+        }
+        final JwtConfig jwt = securityProperties.getJwt();
+        final List<JwtAccountProperties> accounts = jwt == null ? null : jwt.getAccounts();
+        if (accounts == null || accounts.isEmpty()) {
+            return;
+        }
+        for (final JwtAccountProperties account : accounts) {
+            if (!isAdminAccount(account)) {
+                continue;
+            }
+            final String password = account.getPassword();
+            if (password == null || !password.startsWith(NOOP_PREFIX)) {
+                continue;
+            }
+            log.warn("=======================================================================");
+            log.warn(" 本次启动生成的管理员口令（随机生成、每次启动都不同）");
+            log.warn(" 用户名：{}", account.getUsername());
+            log.warn(" 密码  ：{}", password.substring(NOOP_PREFIX.length()));
+            log.warn(" 要固定下来：设置环境变量 INITIAL_ADMIN_PASSWORD 后重启。");
+            log.warn(" 生产环境（prod / production）必须设置，否则启动门闩会拒绝启动。");
+            log.warn("=======================================================================");
+        }
+    }
+
+    private static boolean isAdminAccount(final JwtAccountProperties account) {
+        return account != null && account.isEnabled()
+                && account.getRoles() != null && account.getRoles().contains("ADMIN");
+    }
+
+    private static boolean isEnvSet(final String name) {
+        final String value = System.getenv(name);
+        return value != null && !value.isEmpty();
     }
 
     /**
@@ -154,7 +211,10 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
         }
 
         if (jwtSecret == null || jwtSecret.isEmpty()) {
-            log.warn("⚠️  未设置 JWT_SECRET 环境变量，将使用默认配置（仅限开发环境）");
+            // #664：基础配置已不再回落到公开默认密钥，缺环境变量时用 ${random.uuid} 随机生成
+            // ⇒ 这里的提示必须如实说明「本次启动用的是一个一次性密钥」，而不是「默认配置」。
+            log.warn("⚠️  未设置 JWT_SECRET 环境变量：本次启动使用随机生成的一次性 JWT 密钥"
+                    + "（重启后旧令牌全部失效；仅限非生产）");
             log.warn("   生产环境必须设置 JWT_SECRET 环境变量！");
             // R4-P1：生产缺密钥 → 失败
             return StartupSecurityGate.jwtSecretOk(isProductionEnvironment(), null);
@@ -198,7 +258,9 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
         }
 
         if (adminPassword == null || adminPassword.isEmpty()) {
-            log.warn("⚠️  未设置 INITIAL_ADMIN_PASSWORD 环境变量");
+            // #664：非生产环境会为 admin 随机生成一次性口令（稍后由 reportGeneratedAdminPassword 打印）
+            log.warn("⚠️  未设置 INITIAL_ADMIN_PASSWORD 环境变量"
+                    + "（非生产环境将随机生成一次性口令并打印在下方日志；生产环境必须设置）");
             // R4-P1：生产必须配置管理员密码
             return StartupSecurityGate.adminPasswordOk(isProductionEnvironment(), null);
         }
