@@ -57,7 +57,7 @@ export INITIAL_ADMIN_PASSWORD="your-own-strong-password"
 ```
 
 > 💡 **Tip**: For quick local testing (dev profile), no key configuration is required — a built-in development key is included. The `JWT_SECRET` is only needed for production.
-> 🔐 **Default console login**: `admin` / `ChangeMeOnFirstStartup123456` (created automatically **only when the account table is empty**). In production, override it with `INITIAL_ADMIN_PASSWORD` as shown above; otherwise change it after the first login.
+> 🔐 **Default console login (dev profile only)**: `admin` / `ChangeMeOnFirstStartup123456` (created automatically **only when the account table is empty**). In production, override it with `INITIAL_ADMIN_PASSWORD` as shown above; otherwise change it after the first login. A start without the dev profile has no fixed password — the random one is printed in the startup log.
 
 ![Login Page](images/login-en-US.png)
 
@@ -102,7 +102,8 @@ curl -X POST http://localhost:8080/v1/embeddings \
 
 The commands in this section call the **management API**, which is authenticated — without a token they
 return `401 {"error":{"code":"AUTH_MISSING"}}`. Get a JWT once per shell and reuse it
-(the dev default account is `admin` / `ChangeMeOnFirstStartup123456`; change it in production):
+(with the dev profile the default account is `admin` / `ChangeMeOnFirstStartup123456`; change it in production,
+and outside the dev profile the password is the random value printed in the startup log):
 
 ```bash
 TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
