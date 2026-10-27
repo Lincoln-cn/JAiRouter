@@ -54,6 +54,7 @@ runtime:
   console:      /admin/
   swagger_ui:   dev profile only
   required_env_in_prod: [JWT_SECRET, INITIAL_ADMIN_PASSWORD]
+  required_env_in_staging: [JWT_SECRET]   # STAGING_JWT_SECRET is a legacy alias
 surfaces:
   - /v1/**        # client surface: OpenAI-native + Anthropic-compatible
   - /api/**       # management + legacy surface (RBAC-governed)

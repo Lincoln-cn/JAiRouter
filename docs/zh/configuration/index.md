@@ -287,6 +287,16 @@ JAiRouter 支持多种环境配置文件：
 
 环境配置文件只包含与基础配置的差异部分，遵循 Spring Boot 的配置覆盖机制。
 
+### 各 profile 的必填环境变量
+
+| Profile | 必填环境变量 | 缺失时的行为 |
+| --- | --- | --- |
+| `dev` / `default` | 无 | JWT 密钥与管理员口令回退为随机值，并打印在启动日志里（重启即换新值） |
+| `staging` | `JWT_SECRET`（兼容别名 `STAGING_JWT_SECRET`） | `jairouter.security.jwt.secret` 解析为空串，`@Size(min = 32)` 绑定校验失败，进程以退出码 1 结束 |
+| `prod` | `JWT_SECRET` + `INITIAL_ADMIN_PASSWORD` | 启动门闩（`StartupSecurityGate`）直接拒绝启动 |
+
+`JWT_SECRET` 优先于 `STAGING_JWT_SECRET`：两者同时设置时用前者。
+
 ## 环境变量
 
 使用环境变量覆盖配置：

@@ -53,6 +53,7 @@ runtime:
   console:      /admin/
   swagger_ui:   仅 dev profile
   required_env_in_prod: [JWT_SECRET, INITIAL_ADMIN_PASSWORD]
+  required_env_in_staging: [JWT_SECRET]   # STAGING_JWT_SECRET 为兼容别名
 surfaces:
   - /v1/**        # 客户端面：OpenAI 原生 + Anthropic 兼容
   - /api/**       # 管理面 + 历史面（受 RBAC 治理）
