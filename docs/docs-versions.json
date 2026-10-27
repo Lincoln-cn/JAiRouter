@@ -154,10 +154,10 @@
     },
     "docs/en/configuration/index.md": {
       "FilePath": "docs/en/configuration/index.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-27T16:24:26.294421",
-      "ContentHash": "c3c2471358920ae2",
-      "GitCommit": "d30a09bd",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-27T16:56:25.687418",
+      "ContentHash": "284f57cc5ef53a23",
+      "GitCommit": "3505ef08",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -170,7 +170,8 @@
         "docs/en/configuration/rate-limiting.md",
         "docs/en/configuration/response-cache.md",
         "docs/en/configuration/store-config.md",
-        "docs/en/configuration/version-management.md"
+        "docs/en/configuration/version-management.md",
+        "docs/en/deployment/environment-variables.md"
       ]
     },
     "docs/en/configuration/instance-examples.md": {
@@ -1312,10 +1313,10 @@
     },
     "docs/zh/configuration/index.md": {
       "FilePath": "docs/zh/configuration/index.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-27T16:24:26.950273",
-      "ContentHash": "6dc27e98c5141e52",
-      "GitCommit": "d30a09bd",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-27T16:56:26.239706",
+      "ContentHash": "2302006bbd17ae49",
+      "GitCommit": "3505ef08",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1327,7 +1328,8 @@
         "docs/zh/configuration/rate-limiting.md",
         "docs/zh/configuration/response-cache.md",
         "docs/zh/configuration/store-config.md",
-        "docs/zh/configuration/version-management.md"
+        "docs/zh/configuration/version-management.md",
+        "docs/zh/deployment/environment-variables.md"
       ]
     },
     "docs/zh/configuration/instance-examples.md": {
@@ -2346,6 +2348,30 @@
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
+    },
+    "docs/en/deployment/environment-variables.md": {
+      "FilePath": "docs/en/deployment/environment-variables.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-10-27T16:56:25.785921",
+      "ContentHash": "c643a8f4744cc1e4",
+      "GitCommit": "3505ef08",
+      "Author": "Leo Lin",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/en/deployment/multi-replica.md"
+      ]
+    },
+    "docs/zh/deployment/environment-variables.md": {
+      "FilePath": "docs/zh/deployment/environment-variables.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-10-27T16:56:26.338800",
+      "ContentHash": "cf6ecab5f86c1b48",
+      "GitCommit": "3505ef08",
+      "Author": "Leo Lin",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/zh/deployment/multi-replica.md"
+      ]
     }
   },
   "changes": [
@@ -4780,7 +4806,39 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-27T16:24:27.455920",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/index.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-27T16:56:25.687427",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/environment-variables.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-10-27T16:56:25.785936",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/zh/configuration/index.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-27T16:56:26.239714",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/environment-variables.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-10-27T16:56:26.338807",
+      "Description": "文档created"
     }
   ],
-  "last_updated": "2026-10-27T16:24:27.593330"
+  "last_updated": "2026-10-27T16:56:26.759434"
 }
