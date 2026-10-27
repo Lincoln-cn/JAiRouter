@@ -42,8 +42,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # 本地/仓库目录名与产品名不同
 artifact:        model-router            # Maven artifactId
-project_version: 3.5.3                   # pom.xml
-latest_release:  v3.5.3 (2026-10-25)
+project_version: 3.5.4                   # pom.xml
+latest_release:  v3.5.4 (2026-10-27)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5（WebFlux / 响应式）
   frontend: Vue 3 + TypeScript + Vite，中英双语（zh-CN / en-US）
@@ -352,19 +352,25 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 
 ## 状态与近期工作
 
-**最新发布：v3.5.3（2026-10-25）** —— 主流程审计（服务配置 → adapter 配置 → 实例配置 → 控制台试验场）之后的缺陷修复版：修掉五处真实缺陷（其中两处会改变运行时行为），并把重复的配置来源合成一处。**无 API 破坏性变更；三条升级提示值得看一眼。**
+**最新发布：v3.5.4（2026-10-27）** —— 覆盖三条线的缺陷修复版：路由与熔断记账、健康检查、以及随包分发的默认凭据。**无 API 破坏性变更；四条升级提示值得看一眼。**
 
 | 主题 | 变更内容 |
 |------|----------|
-| **外部配置真正覆盖（#634）** | `spring.config.import` 是「越靠后越优先」，而 `application.yml` 把三条 `/app/config` 外部导入排在最前 ⇒ 挂载文件里的同名键被 classpath 默认值静默覆盖，与文档和 k8s ConfigMap 的承诺相反。现移到列表末尾，并新增 `ExternalConfigReporter`：启动时打印「外部配置已生效…」，目录存在却没读到任何已知文件时告警 |
-| **图像编辑改 multipart（#637）** | `/api/v1/images/edits` 原先声明 `@RequestBody ImageEditDTO.Request`，而该 DTO 含 `List<FilePart>`（JSON 反序列化不出来），试验场发的又是 multipart ⇒ 两端都不成立。现与 STT 对齐（`image` / `image[]` / `mask` + 文本部件），且出站前把文件部件读成内存资源（原来直接塞 `FilePart`，出站同样会失败） |
-| **健康键与出站路径（#636 / #635）** | 未配 `instance-id` 的实例不再共用 `chat:null` 健康键（`InstanceKeys` 依次回退 `baseUrl` → `name`），一个实例不健康不再连坐；`BaseAdapter` 改用选中实例自己的 `path`，池名 / `auto-model` 不再把请求打到上游根地址 |
-| **adapter 引用启动期校验（#638）** | `AdapterReferenceValidator` 扫全局 / 服务级 / 实例级三层引用，默认只 `ERROR` 不拦启动（`strict-mode` 才阻断）；请求期报错补上 `registered=[…]` |
-| **`model.services` 单一来源（#643）** | 删掉 `model-services-base.yml` 里的重复定义，统一到 `router/services.yml`（搬运的是此前实际生效的那套值，默认实例不变）；`ServiceDefinitionSingleSourceTest` 同时守住结构与默认值 |
+| **4xx 不再算实例失败（#647）** | 上游 400/401/404/429 此前与 5xx 一样计入熔断失败 —— 客户端把请求写错就能把健康实例打进熔断。现在三分类 `SUCCESS` / `CLIENT_ERROR` / `INSTANCE_FAILURE`：4xx 只完成在途计数 |
+| **限流不再提前放弃（#654）** | `selectWithRateLimit` 此前最多试 `min(size, 3)` 个候选，几个实例被限流就误报 503「All instances rate limited」，而空闲实例还在；现在走完整个候选列表 |
+| **负载均衡器行为修正（#648 / #649）** | 随机负载均衡器移除自带的熔断器表，实例级 `circuit-breaker.enabled=false` 重新被尊重；负载均衡器按策略名缓存，池路由的 round-robin 真正轮转，不再永远选第一个实例 |
+| **自适应阈值真正落地（#653）** | `updateCircuitBreakerThreshold` 此前只把新阈值写进日志，且每个周期都会 reset 熔断状态；现在阈值真正传给 `CircuitBreakerManager.updateFailureThreshold(...)` |
+| **健康检查加固（#650 / #651 / #652）** | 单个实例异常不再中断同服务其它实例；探活方式 / 间隔 / 超时 / 并发可用 `jairouter.health-check.*` 配置；入库状态按 `base-url` 匹配同名副本 |
+| **发布包不再带公开凭据（#663 / #666）** | 内置测试 API Key 移到 dev profile；`config/common/server.yml` 里的 `spring.profiles.active: dev` 已删除 —— 它随包分发，导致任何未显式指定 profile 的启动都按 dev 跑、公开凭据随之生效 |
+| **密钥与口令不再有公开兜底（#664）** | `jwt.yml` 的回落改为 `${random.uuid}`，生成的管理员口令在启动日志里打印一次；生产仍由启动门闩拒绝启动 |
+| **其它 profile 的日志（#669）** | logback 的所有 root 都在 profile 块内，`staging` 因此一条应用日志都打不出来；现补一段兜底 root，覆盖四个已知 profile 之外的任何 profile |
 
-`[3.5.3]` 的 changelog 条目见 [更新日志](docs/zh/reference/changelog.md)；以 GitHub Release `v3.5.3` 发布，并触发多架构镜像（`v3.5.3` / `3.5.3` / `latest`）。
+`[3.5.4]` 的 changelog 条目见 [更新日志](docs/zh/reference/changelog.md)；以 GitHub Release `v3.5.4` 发布，并触发多架构镜像（`v3.5.4` / `3.5.4` / `latest`）。
 
-**升级提示**：此前写在 `/app/config` 却没生效的同名键，升级后真正生效（启动日志会打印「外部配置已生效…」）；`/api/v1/images/edits` 只接受 `multipart/form-data`；未配 `instance-id` 的实例，健康状态会重置一次。
+**升级提示**：裸跑不再进 dev（没有内置测试 Key、没有固定口令，随机口令打印一次）；非 prod 且未设 `JWT_SECRET` 时每次启动随机生成密钥 ⇒ 重启后旧令牌失效；`staging` 必填 `JWT_SECRET`；健康检查配置项移到 `jairouter.health-check.*`。
+
+**`v3.5.3`（2026-10-25）** 是主流程审计之后的缺陷修复版：外部挂载配置真正覆盖（#634）、图像编辑改 multipart（#637）、健康键回退 `baseUrl`（#636）、出站路径取自选中实例（#635）、adapter 引用启动期校验（#638），并把 `model.services` 收成单一来源（#643）。
+
 
 **`v3.5.2`（2026-10-24）** 是功能版：新增**终端用户级限流**（按「API Key × 终端用户」计每分钟额度，是多人共用一个 Key 时唯一不必一人一 Key 的办法），并把**客户端维度限流接进主链路**（此前实现完整但从未被调用）。两者默认都关闭。同批给其余限流拒绝补上 `Retry-After`，并把 API Key 限速器的窗口表改成有界缓存。**无破坏性变更。**
 

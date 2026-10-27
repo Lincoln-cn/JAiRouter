@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.5.3
-> **Last Updated**: 2026-10-25
+> **Document Version**: 3.5.4
+> **Last Updated**: 2026-10-27
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,46 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.5.4] - 2026-10-27 - Bug-fix release (routing and circuit accounting / health checks / default credentials and startup profile)
+
+#### Routing and circuit-breaker accounting (#647 / #648 / #649 / #653 / #654 / #655)
+
+- **4xx responses no longer count as instance failures (#647, P1)**: upstream 400/401/404/429 used to be recorded exactly like 5xx, so a client sending malformed requests could trip a healthy instance's circuit breaker. Call outcomes are now three-way (`SUCCESS` / `CLIENT_ERROR` / `INSTANCE_FAILURE`): 4xx (including upstream 429) only settles the in-flight counter, while 5xx, timeouts and connection failures still count. `ModelServiceRegistry.recordCallComplete` now honors its `success` argument (it previously recorded success unconditionally).
+- **Instance-level rate limiting no longer gives up after three candidates (#654, P1)**: the attempt cap in `selectWithRateLimit` moved from `min(size, 3)` to the whole candidate list, so a few rate-limited instances no longer produce a bogus 503 "All instances rate limited" while idle instances remain.
+- **The random load balancer no longer carries its own circuit breakers (#648, P2)**: its private `Map<String, CircuitBreaker>` and hard-coded 5-failure / 60 s / 2-half-open thresholds are gone; availability is decided by `CircuitBreakerManager` upstream ⇒ per-instance `circuit-breaker.enabled=false` is now honored. Empty candidate lists raise `IllegalArgumentException`, and `SecureRandom.getInstanceStrong()` is no longer called per request.
+- **Load balancers are cached per strategy name (#649, P2)**: under pool routing, round-robin used to build a fresh balancer per request ⇒ it always picked the first instance. Balancers are now cached with `computeIfAbsent` so counters accumulate across requests.
+- **Adaptive thresholds are actually applied (#653, P2)**: `AdaptiveThresholdManager.updateCircuitBreakerThreshold` previously only logged the new threshold, and every adaptive cycle reset the instance's breaker state. Thresholds now land in `CircuitBreakerManager.updateFailureThreshold(...)` (per-instance override table), and an unchanged threshold leaves existing state alone.
+- **Failed requests release their in-flight count (#655, P2)**: least-connections `recordCallFailure` only ever incremented ⇒ the counter drifted upwards and pushed the instance to the back of the queue forever; failures now release too and clamp at 0. `LoadBalancerManager` uses `ConcurrentHashMap` + `computeIfAbsent`, the round-robin index uses `Math.floorMod`, and `isInstanceHealthy` reuses `InstanceKeys.healthKey`.
+
+#### Health checks (#650 / #651 / #652)
+
+- **One instance no longer drags the others down (#650)**: an invalid or missing `base-url` is reported as unhealthy with a reason, and a single instance's exception no longer aborts the batch for its siblings.
+- **Probe settings are configurable (#651)**: new `jairouter.health-check.*` (probe mode / interval / timeout / concurrency); the batch runs off the default single-threaded scheduler, a still-running round is skipped, and the interval is measured from the previous round's end. The never-bound `model.load-balance.health-check.*` keys in the docs are corrected.
+- **State persistence matches replicas (#652)**: without `instance-id`, health state is matched by `base-url`, and unchanged state is not written back.
+
+#### Default credentials and the startup profile (#663 / #664 / #666)
+
+- **The built-in test API key left the base configuration (#663, P1)**: `config/auth/api-key.yml` no longer ships `sk-test-api-key-12345678`; it now lives in `application-dev.yml`. The key used to work under `prod` too (`/v1/**` only requires "authenticated"), i.e. everyone had a working call credential.
+- **The JWT secret and admin password no longer have public fallbacks (#664, P1)**: the base configuration falls back to `${random.uuid}` instead of a known literal, printing the generated value once in the startup log; `prod` still refuses to boot. The admin-password warning text is corrected as well (it claimed a random password would be generated while none was).
+- **No more implicit dev startup (#666, P1)**: `spring.profiles.active: dev` is gone from `config/common/server.yml` — it shipped with the artifact, so every startup that did not name a profile ran as dev with the public test credentials live. Not naming a profile now means `default`.
+
+#### Logging (#669)
+
+- **Logging is no longer lost on other profiles**: every `<root>` in `logback-spring.xml` lived inside a `<springProfile>` block, and only dev/default, test, prod and json-logs matched — the real `staging` profile fell outside, so every log destination was "not referenced" and neither application logs nor the startup failure stack appeared (measured: five logback warnings, then exit code 1). A fallback root keyed on `name="!(dev | default | test | prod | json-logs)"` (CONSOLE + ASYNC_FILE + ASYNC_ERROR) now covers every other profile.
+
+#### Dependencies (#612 / #613)
+
+- `frontend`: happy-dom 20.14.5 → 21.0.4 (GitHub advisory GHSA-834v-8h66-3h79) and vitest / @vitest/mocker → 5.0.5 (two advisories on the same package, both patched at 5.0.3); both Dependabot alerts are cleared.
+
+#### Upgrade notes
+
+- **Running without a profile no longer means dev**: `java -jar …` or `./mvnw spring-boot:run` starts with `default` — no built-in test key, no fixed password (a random one is printed in the startup log). Ask for dev explicitly with `--spring.profiles.active=dev` (or `-Dspring-boot.run.profiles=dev`); the docs follow suit.
+- **The built-in test API key only exists under dev**: `sk-test-api-key-12345678` is no longer part of the shipped package. Scripts that rely on it must enable the dev profile or bring their own key.
+- **Outside `prod`, a missing `JWT_SECRET` yields a fresh random secret per start** ⇒ tokens issued before a restart stop working. Set the variable explicitly for shared or multi-replica deployments.
+- **`staging` requires `JWT_SECRET`** (legacy alias `STAGING_JWT_SECRET`): without it startup fails during binding (`@Size(min = 32)`). The docs gained a "required environment variables per profile" table.
+- **Health-check configuration moved**: read `jairouter.health-check.*`; the old `model.load-balance.health-check.*` keys were never bound.
+- **Only previously mis-accounted or mis-routed cases change**: #647 (4xx no longer counts), #654 (keep trying after rate limiting), #655 (failures release in-flight counts), #649 (pool round-robin actually rotates), #653 (adaptive thresholds take effect — they used to appear only in logs). No API contract changes.
 
 ### [3.5.3] - 2026-10-25 - Bug-fix release (main-flow audit: config precedence / image edits / health keys / outbound path / adapter checks)
 
