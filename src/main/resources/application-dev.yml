@@ -79,6 +79,16 @@ jairouter:
     
     api-key:
       enabled: true
+
+      # 内置测试密钥：仅 dev profile 提供（#663）。
+      # 基础配置 config/auth/api-key.yml 的 keys 为 []，因此这条路是「本地一键可用」的唯一来源；
+      # 生产/预发不继承它，密钥必须经控制台或 API 创建。
+      keys:
+        - key-id: "test-key-001"
+          key-value: "sk-test-api-key-12345678"
+          description: "本地开发用 API Key"
+          permissions: "read,write"
+          enabled: true
       
     audit:
       log-level: "DEBUG"
