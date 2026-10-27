@@ -51,7 +51,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 #### 依赖（#612 / #613）
 
-- `frontend`：happy-dom 20.14.5 → 21.0.4（GHSA-834v-8h66-3h79），vitest / @vitest/mocker → 5.0.5（两条同源 advisory，受影响上限均为 5.0.3 以下）；两条 Dependabot alert 已清零。
+- `frontend`：happy-dom 20.14.5 → 21.0.4（GitHub advisory GHSA-834v-8h66-3h79），vitest / @vitest/mocker → 5.0.5（两条同源 advisory，受影响上限均为 5.0.3 以下）；两条 Dependabot alert 已清零。
 
 #### 升级提示
 

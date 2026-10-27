@@ -46,11 +46,11 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 #### Logging (#669)
 
-- **Logging is no longer lost on other profiles**: every `<root>` in `logback-spring.xml` lived inside a `<springProfile>` block, and only dev/default, test, prod and json-logs matched — the real `staging` profile fell outside, so all appenders were "not referenced" and neither application logs nor the startup failure stack appeared (measured: five logback warnings, then exit code 1). A fallback root keyed on `name="!(dev | default | test | prod | json-logs)"` (CONSOLE + ASYNC_FILE + ASYNC_ERROR) now covers every other profile.
+- **Logging is no longer lost on other profiles**: every `<root>` in `logback-spring.xml` lived inside a `<springProfile>` block, and only dev/default, test, prod and json-logs matched — the real `staging` profile fell outside, so every log destination was "not referenced" and neither application logs nor the startup failure stack appeared (measured: five logback warnings, then exit code 1). A fallback root keyed on `name="!(dev | default | test | prod | json-logs)"` (CONSOLE + ASYNC_FILE + ASYNC_ERROR) now covers every other profile.
 
 #### Dependencies (#612 / #613)
 
-- `frontend`: happy-dom 20.14.5 → 21.0.4 (GHSA-834v-8h66-3h79) and vitest / @vitest/mocker → 5.0.5 (two advisories on the same package, both patched at 5.0.3); both Dependabot alerts are cleared.
+- `frontend`: happy-dom 20.14.5 → 21.0.4 (GitHub advisory GHSA-834v-8h66-3h79) and vitest / @vitest/mocker → 5.0.5 (two advisories on the same package, both patched at 5.0.3); both Dependabot alerts are cleared.
 
 #### Upgrade notes
 
