@@ -432,14 +432,13 @@ docker-compose down
 | `PROD_ADMIN_API_KEY` | None | Admin API key for the production environment |
 | `PROD_SERVICE_API_KEY` | None | Service API key for the production environment |
 | `PROD_READONLY_API_KEY` | None | Read-only API key for the production environment |
-| `PROD_JWT_SECRET` | None | Legacy name, config-binding fallback only; the startup gate reads `JWT_SECRET` |
 | `REDIS_HOST` | `localhost` | Redis host address |
 | `REDIS_PORT` | `6379` | Redis port |
 | `REDIS_PASSWORD` | None | Redis password |
 
-> `PROD_JWT_SECRET` is kept for backward compatibility only: `application-prod.yml` uses it as the fallback
-> binding for `jairouter.security.jwt.secret`, but the production startup gate (`StartupSecretKeyChecker`)
-> reads the `JWT_SECRET` environment variable, so the start commands above all pass `JWT_SECRET`.
+> Production reads only `JWT_SECRET`: the legacy `PROD_JWT_SECRET` name was removed (#674), so the
+> configuration binding and the startup gate now read the same variable. Setting the old name still logs a
+> warning, but it is no longer read.
 
 ### 2. JVM Parameter Configuration
 

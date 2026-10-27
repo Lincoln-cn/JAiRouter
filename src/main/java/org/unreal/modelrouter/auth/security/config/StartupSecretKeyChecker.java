@@ -30,6 +30,31 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
 
     private static final String NOOP_PREFIX = "{noop}";
 
+    /**
+     * 已移除的兼容变量名（#674）。这些名字在配置绑定里从来就不生效或已不再绑定，
+     * 现在只用于启动时提醒运维「别再设它」。
+     */
+    static final List<String> REMOVED_ENV_NAMES = List.of(
+            "DEV_JWT_SECRET",
+            "STAGING_JWT_SECRET",
+            "PROD_JWT_SECRET",
+            "ADMIN_PASSWORD");
+
+    /**
+     * 从一组环境变量名里挑出仍在使用「已移除的兼容名字」的那些。
+     *
+     * <p>抽成纯函数是为了可单测：{@code System.getenv()} 在测试里不可控。</p>
+     *
+     * @param envNames 环境变量名集合（生产调用处传 {@code System.getenv().keySet()}）
+     * @return 命中的已移除变量名，按 {@link #REMOVED_ENV_NAMES} 的顺序；无命中则为空列表
+     */
+    static List<String> removedEnvNamesPresent(final java.util.Set<String> envNames) {
+        if (envNames == null || envNames.isEmpty()) {
+            return List.of();
+        }
+        return REMOVED_ENV_NAMES.stream().filter(envNames::contains).toList();
+    }
+
     private static final String ASCII_ART_BORDER = "\n"
             + "╔══════════════════════════════════════════════════════════════════════════════╗\n"
             + "║                                                                              ║\n"
@@ -58,6 +83,9 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
 
         // 检查管理员密码
         allPassed &= checkAdminPassword();
+
+        // #674：已移除的兼容变量名不再生效，必须明确告知，否则运维会以为设置成功
+        warnRemovedEnvNames();
 
         // #664：非生产环境缺 INITIAL_ADMIN_PASSWORD 时，把本次随机生成的口令打印一次，
         // 否则「配置里没有公开口令」会让非 dev/prod 的 profile 变成起得来但登不进。
@@ -98,12 +126,12 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
      * {@code ${random.uuid}} 随机生成（每次启动不同）。若不打印，非 dev/prod 的 profile 会变成
      * “起得来、但不知道用什么口令登录”的死局；这里把用户名与明文口令打印一次，并提示如何固定下来。</p>
      *
-     * <p>只在「非生产 + INITIAL_ADMIN_PASSWORD / ADMIN_PASSWORD 都没设」时打印；生产环境由
+     * <p>只在「非生产 + INITIAL_ADMIN_PASSWORD 没设」时打印；生产环境由
      * {@link StartupSecurityGate} 直接拒绝启动，不会走到这里。只打印 {@code {noop}} 明文口令，
      * 已编码（如 {@code {bcrypt}}）的口令不还原、不打印。</p>
      */
     private void reportGeneratedAdminPassword(final boolean isProduction) {
-        if (isProduction || isEnvSet("INITIAL_ADMIN_PASSWORD") || isEnvSet("ADMIN_PASSWORD")) {
+        if (isProduction || isEnvSet("INITIAL_ADMIN_PASSWORD")) {
             return;
         }
         final JwtConfig jwt = securityProperties.getJwt();
@@ -127,6 +155,22 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
             log.warn(" 生产环境（prod / production）必须设置，否则启动门闩会拒绝启动。");
             log.warn("=======================================================================");
         }
+    }
+
+    /**
+     * 提醒仍然设置着已移除兼容变量名的部署（#674）。
+     *
+     * <p>只 warn 不拦截：这些名字现在一律不生效，若因此缺了真正需要的变量，
+     * 会在上面的密钥/口令检查或配置绑定阶段以更具体的原因失败。</p>
+     */
+    private void warnRemovedEnvNames() {
+        final List<String> present = removedEnvNamesPresent(System.getenv().keySet());
+        if (present.isEmpty()) {
+            return;
+        }
+        log.warn("⚠️  以下环境变量已不再生效（#674）：{}", present);
+        log.warn("    JWT 密钥请用 JWT_SECRET，管理员口令请用 INITIAL_ADMIN_PASSWORD；"
+                + "别名不再被读取，删掉它们以免误判。");
     }
 
     private static boolean isAdminAccount(final JwtAccountProperties account) {
@@ -204,11 +248,10 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
     private boolean checkJwtSecrets() {
         log.info("正在检查 JWT 密钥配置...");
 
-        // 检查主 JWT 密钥
-        String jwtSecret = System.getenv("DEV_JWT_SECRET");
-        if (jwtSecret == null || jwtSecret.isEmpty()) {
-            jwtSecret = System.getenv("JWT_SECRET");
-        }
+        // #674：只读 JWT_SECRET。此前这里先读 DEV_JWT_SECRET 且不分 profile，
+        // 而配置绑定读的是 application-{dev,staging,prod}.yml 里的 ${JWT_SECRET:…}
+        // ⇒ 两个变量同时存在时，「检查的密钥」与「实际生效的密钥」不是同一个。
+        final String jwtSecret = System.getenv("JWT_SECRET");
 
         if (jwtSecret == null || jwtSecret.isEmpty()) {
             // #664：基础配置已不再回落到公开默认密钥，缺环境变量时用 ${random.uuid} 随机生成
@@ -252,10 +295,10 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
     private boolean checkAdminPassword() {
         log.info("正在检查管理员密码配置...");
 
-        String adminPassword = System.getenv("INITIAL_ADMIN_PASSWORD");
-        if (adminPassword == null || adminPassword.isEmpty()) {
-            adminPassword = System.getenv("ADMIN_PASSWORD");
-        }
+        // #674：只读 INITIAL_ADMIN_PASSWORD。ADMIN_PASSWORD 别名已移除——配置绑定
+        // （config/auth/jwt.yml 的 password）从来没读过它，只设它会让门闩以为口令已设置，
+        // 而实际生效的是随机生成、又不打印的值 ⇒ 控制台登不进去。
+        final String adminPassword = System.getenv("INITIAL_ADMIN_PASSWORD");
 
         if (adminPassword == null || adminPassword.isEmpty()) {
             // #664：非生产环境会为 admin 随机生成一次性口令（稍后由 reportGeneratedAdminPassword 打印）

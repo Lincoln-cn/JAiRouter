@@ -195,7 +195,7 @@ export JWT_SECRET="your-jwt-secret-key-here"
 
 # Production also requires the initial admin password (a missing or weak value fails fast)
 export INITIAL_ADMIN_PASSWORD="your-strong-admin-password"
-# Note: the legacy name PROD_JWT_SECRET is only a config-binding fallback; the startup gate reads JWT_SECRET
+# Note: only JWT_SECRET is read (the legacy PROD_JWT_SECRET name was removed, #674); binding and gate agree
 
 # Redis Configuration (if enabled)
 export REDIS_HOST="localhost"

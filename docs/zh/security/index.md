@@ -204,7 +204,7 @@ export JWT_SECRET="your-jwt-secret-key-here"
 
 # 生产环境额外需要管理员初始密码（缺失或过弱会 fail-fast）
 export INITIAL_ADMIN_PASSWORD="your-strong-admin-password"
-# 注：旧变量名 PROD_JWT_SECRET 仅为配置绑定兜底，启动门闩只读 JWT_SECRET
+# 注：只认 JWT_SECRET（旧变量名 PROD_JWT_SECRET 已移除，#674）；配置绑定与启动门闩读的是同一个变量
 
 # Redis 配置（如果启用）
 export REDIS_HOST="localhost"

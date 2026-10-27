@@ -432,13 +432,12 @@ docker-compose down
 | `PROD_ADMIN_API_KEY`     | 无           | 生产环境管理员API密钥   |
 | `PROD_SERVICE_API_KEY`   | 无           | 生产环境服务API密钥    |
 | `PROD_READONLY_API_KEY`  | 无           | 生产环境只读API密钥    |
-| `PROD_JWT_SECRET`        | 无           | 旧变量名，仅作配置绑定兜底；启动门闩只读 `JWT_SECRET` |
 | `REDIS_HOST`             | `localhost` | Redis主机地址      |
 | `REDIS_PORT`             | `6379`      | Redis端口        |
 | `REDIS_PASSWORD`         | 无           | Redis密码        |
 
-> `PROD_JWT_SECRET` 只为兼容旧配置保留：`application-prod.yml` 用它兜底绑定 `jairouter.security.jwt.secret`，
-> 但生产启动门闩（`StartupSecretKeyChecker`）只读环境变量 `JWT_SECRET`，因此上面的启动命令一律传 `JWT_SECRET`。
+> 生产环境只认 `JWT_SECRET`：旧变量名 `PROD_JWT_SECRET` 已移除（#674），配置绑定与启动门闩现在读同一个名字。
+> 仍然设置旧名字时启动日志会给出一条 warn，但它不会再被读取。
 
 ### 2. JVM 参数配置
 

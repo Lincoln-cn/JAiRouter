@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import java.util.regex.Pattern;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -46,6 +48,18 @@ class DefaultSecretConfigGuardTest {
     private static final String JWT_CONFIG = RESOURCES + "/config/auth/jwt.yml";
 
     private static final String DEV_PROFILE_CONFIG = RESOURCES + "/application-dev.yml";
+
+    /**
+     * 裸 {@code ADMIN_PASSWORD}（不算 {@code INITIAL_ADMIN_PASSWORD} 的子串）。
+     *
+     * <p>#674：管理员口令只认 {@code INITIAL_ADMIN_PASSWORD}，旧的 {@code ADMIN_PASSWORD}
+     * 别名会让门闩以为口令已设置、而绑定实际用的是随机生成值 ⇒ 必须确保它不再出现在随包配置里。</p>
+     */
+    private static final Pattern BARE_ADMIN_PASSWORD = Pattern.compile("(?<!INITIAL_)ADMIN_PASSWORD");
+
+    /** 已移除的 JWT 密钥兼容变量名（#674）。 */
+    private static final List<String> REMOVED_JWT_SECRET_ALIASES = List.of(
+            "DEV_JWT_SECRET", "STAGING_JWT_SECRET", "PROD_JWT_SECRET");
 
     @Test
     @DisplayName("随包配置（除 dev）不得再出现公开 JWT 密钥与公开管理员口令")
@@ -84,8 +98,8 @@ class DefaultSecretConfigGuardTest {
 
         assertTrue(dev.contains(LEGACY_PUBLIC_ADMIN_PASSWORD),
                 "application-dev.yml 必须仍含本地开发用的固定管理员口令，否则 e2e/截图脚本失效");
-        assertTrue(dev.contains("DEV_JWT_SECRET"),
-                "application-dev.yml 必须仍提供 dev 的 JWT 密钥兜底");
+        assertTrue(dev.contains("dev-secret-key-for-testing-only-32-characters-minimum"),
+                "application-dev.yml 必须仍提供 dev 的 JWT 密钥兜底字面量（#674 后不再有别名）");
     }
 
     @Test
@@ -102,6 +116,31 @@ class DefaultSecretConfigGuardTest {
                 "扫描面必须包含 config/auth/jwt.yml");
         assertFalse(names.contains("src/main/resources/application-dev.yml"),
                 "dev profile 是本地开发便利面，必须排除在扫描面之外");
+    }
+
+    @Test
+    @DisplayName("随包配置里不得再出现已移除的凭据别名（#674）")
+    void removedCredentialAliasesAreGone() throws IOException {
+        final List<Path> all = new ArrayList<>();
+        try (Stream<Path> tree = Files.walk(Path.of(RESOURCES))) {
+            tree.filter(Files::isRegularFile)
+                    .filter(p -> p.getFileName().toString().endsWith(".yml"))
+                    .sorted()
+                    .forEach(all::add);
+        }
+        assertTrue(all.size() >= 20,
+                "扫描面过小（" + all.size() + " 个 yml），疑似扫描逻辑失效");
+        for (final Path file : all) {
+            final String text = effectiveLines(file);
+            for (final String alias : REMOVED_JWT_SECRET_ALIASES) {
+                assertFalse(text.contains(alias),
+                        file + " 仍含已移除的兼容变量名 " + alias + "（#674：只认 JWT_SECRET）");
+            }
+            for (final String line : text.split("\n")) {
+                assertFalse(BARE_ADMIN_PASSWORD.matcher(line).find(),
+                        file + " 仍含裸 ADMIN_PASSWORD（#674：只认 INITIAL_ADMIN_PASSWORD）");
+            }
+        }
     }
 
     /**
