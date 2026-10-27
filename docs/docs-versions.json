@@ -2,10 +2,10 @@
   "versions": {
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-27T15:54:16.732507",
-      "ContentHash": "e9cb6554f03eafc7",
-      "GitCommit": "0813696e",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-27T16:24:26.246340",
+      "ContentHash": "cc540ff406971f03",
+      "GitCommit": "d30a09bd",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -14,10 +14,10 @@
     },
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-27T15:54:16.735409",
-      "ContentHash": "477d06c896ccb8e9",
-      "GitCommit": "0813696e",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-27T16:24:26.248964",
+      "ContentHash": "905da8f321736178",
+      "GitCommit": "d30a09bd",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -154,10 +154,10 @@
     },
     "docs/en/configuration/index.md": {
       "FilePath": "docs/en/configuration/index.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-27T15:54:16.779913",
-      "ContentHash": "02170daf041a144b",
-      "GitCommit": "598f1bb9",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-27T16:24:26.294421",
+      "ContentHash": "c3c2471358920ae2",
+      "GitCommit": "d30a09bd",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -384,10 +384,10 @@
     },
     "docs/en/deployment/docker.md": {
       "FilePath": "docs/en/deployment/docker.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:32.814102",
-      "ContentHash": "81827c4091d6c23e",
-      "GitCommit": "537f419c",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-27T16:24:26.410237",
+      "ContentHash": "cec481474d9fba08",
+      "GitCommit": "d30a09bd",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -465,10 +465,10 @@
     },
     "docs/en/deployment/production.md": {
       "FilePath": "docs/en/deployment/production.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-25T05:32:35.907631",
-      "ContentHash": "b7f2827c5a16f4bf",
-      "GitCommit": "58ace0af",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-27T16:24:26.439118",
+      "ContentHash": "535a577acc78f16b",
+      "GitCommit": "d30a09bd",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -955,10 +955,10 @@
     },
     "docs/en/security/index.md": {
       "FilePath": "docs/en/security/index.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-24T03:01:53.749631",
-      "ContentHash": "64c4e24488c6cb3d",
-      "GitCommit": "9d35190e",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-27T16:24:26.763587",
+      "ContentHash": "2abe97aba8c3e4c6",
+      "GitCommit": "d30a09bd",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1312,10 +1312,10 @@
     },
     "docs/zh/configuration/index.md": {
       "FilePath": "docs/zh/configuration/index.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-27T15:54:17.445535",
-      "ContentHash": "d6c0edc9ac3bb8e5",
-      "GitCommit": "598f1bb9",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-27T16:24:26.950273",
+      "ContentHash": "6dc27e98c5141e52",
+      "GitCommit": "d30a09bd",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1541,10 +1541,10 @@
     },
     "docs/zh/deployment/docker.md": {
       "FilePath": "docs/zh/deployment/docker.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:38.646526",
-      "ContentHash": "379909dced59961f",
-      "GitCommit": "537f419c",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-27T16:24:27.074644",
+      "ContentHash": "2726ab7194bfe224",
+      "GitCommit": "d30a09bd",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1596,10 +1596,10 @@
     },
     "docs/zh/deployment/kubernetes.md": {
       "FilePath": "docs/zh/deployment/kubernetes.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-24T15:35:01.362987",
-      "ContentHash": "19469d6564c937e1",
-      "GitCommit": "0b4f76c3",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-27T16:24:27.109619",
+      "ContentHash": "642a1b2dc59f448b",
+      "GitCommit": "d30a09bd",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1623,10 +1623,10 @@
     },
     "docs/zh/deployment/production.md": {
       "FilePath": "docs/zh/deployment/production.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-27T15:54:17.604017",
-      "ContentHash": "471944c941854fc3",
-      "GitCommit": "e8cf0761",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-27T16:24:27.115745",
+      "ContentHash": "3840380eee98ddbd",
+      "GitCommit": "d30a09bd",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2103,10 +2103,10 @@
     },
     "docs/zh/security/data-sanitization.md": {
       "FilePath": "docs/zh/security/data-sanitization.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-24T03:01:54.272089",
-      "ContentHash": "c70a1c557e120973",
-      "GitCommit": "9d35190e",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-27T16:24:27.453470",
+      "ContentHash": "1e076df2470a5431",
+      "GitCommit": "d30a09bd",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2120,10 +2120,10 @@
     },
     "docs/zh/security/index.md": {
       "FilePath": "docs/zh/security/index.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-24T03:01:54.274042",
-      "ContentHash": "a95b4ca73656a2d4",
-      "GitCommit": "9d35190e",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-27T16:24:27.455915",
+      "ContentHash": "55da95deb1616432",
+      "GitCommit": "d30a09bd",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -4684,7 +4684,103 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-27T15:54:17.904494",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-27T16:24:26.246347",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-27T16:24:26.248969",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/index.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-27T16:24:26.294427",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/docker.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-27T16:24:26.410245",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/production.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-27T16:24:26.439124",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-27T16:24:26.763596",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/index.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-27T16:24:26.950282",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/docker.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-27T16:24:27.074653",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/kubernetes.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-27T16:24:27.109628",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/production.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-27T16:24:27.115753",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/data-sanitization.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-27T16:24:27.453479",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-27T16:24:27.455920",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-27T15:54:18.074170"
+  "last_updated": "2026-10-27T16:24:27.593330"
 }
