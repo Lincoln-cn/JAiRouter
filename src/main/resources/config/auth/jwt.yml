@@ -16,9 +16,12 @@ jairouter:
       # JWT 令牌头名称
       jwt-header: "Jairouter_Token"
       
-      # JWT 密钥（必须使用环境变量，长度 >= 32 字符；禁止使用出厂默认值）
-      # R2-P0-01：默认占位仅用于本地开发；SecurityConfigurationValidator 会拒绝已知默认密钥
-      secret: "${JWT_SECRET:ThisIsADefaultSecretKeyForDevOnly12345678}"
+      # JWT 密钥（生产必须设置环境变量 JWT_SECRET，长度 >= 32 字符）
+      # R2-P0-01：不再提供“公开可用的默认密钥”（#664）——缺 JWT_SECRET 时用 ${random.uuid}
+      # 随机生成（每次启动不同，重启后旧令牌全部失效）；prod 由 StartupSecretKeyChecker /
+      # StartupSecurityGate 在缺 JWT_SECRET 时直接拒绝启动。
+      # dev profile 另有 ${DEV_JWT_SECRET:...} 兜底（仅本地开发用）。
+      secret: "${JWT_SECRET:${random.uuid}}"
       
       # JWT 算法
       algorithm: "HS256"
@@ -39,8 +42,10 @@ jairouter:
       accounts:
         - username: "admin"
           # 密码必须使用环境变量（首次启动时设置）
-          # R2-P0-02：生产必须替换 INITIAL_ADMIN_PASSWORD，禁止沿用文档默认值
-          password: "{noop}${INITIAL_ADMIN_PASSWORD:ChangeMeOnFirstStartup123456}"
+          # R2-P0-02：生产必须设置 INITIAL_ADMIN_PASSWORD，否则启动门闩直接拒绝启动。
+          # #664：非生产环境不再回落到公开口令，缺省时随机生成，并在启动日志中打印一次
+          # （见 StartupSecretKeyChecker#reportGeneratedAdminPassword）。
+          password: "{noop}${INITIAL_ADMIN_PASSWORD:${random.uuid}}"
           roles: ["ADMIN", "USER"]
           enabled: true
         # R2-P0-02：移除硬编码 user 账户口令；如需本地账号请通过管理 API 创建
