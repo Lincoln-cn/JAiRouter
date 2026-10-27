@@ -54,30 +54,6 @@ jairouter:
         #   roles: ["USER"]
         #   enabled: false
 
-      # JWT 持久化配置
-      persistence:
-        enabled: true
-        composite:
-          enabled: false
-        sync:
-          enabled: false
-        startup-recovery:
-          enabled: true
-        cleanup:
-          schedule: "0 */5 * * * ?"
-          retention-days: 7
-        redis:
-          # 只保留开关：连接信息统一由 REDIS_HOST/REDIS_PORT/REDIS_PASSWORD 或 spring.data.redis.* 提供。
-          # 原先这里的 host/port/password/database 自 issue #196（取消 JWT 独立 Redis）起已无消费者，
-          # 留着会让人以为改它有效（见 #202）。
-          enabled: false
-
-      # JWT 黑名单持久化配置
-      blacklist:
-        persistence:
-          enabled: true
-        composite:
-          enabled: false
-        redis:
-          # 同上：只保留开关
-          enabled: false
+      # JWT 令牌持久化与黑名单持久化配置不在此文件定义：
+      # 统一由 config/security/persistence-base.yml 提供。两处重复定义时按「后导入者优先」
+      # 静默覆盖（application.yml 先导入本文件、后导入 persistence-base.yml），改这里不会生效（#676）。

@@ -119,7 +119,7 @@ docker run --rm sodlinken/jairouter:latest --generate-key
 
 清理任务也是独立开关：`jwt.persistence.cleanup.enabled`（默认 `true`），随包生效值为**每天 02:00、保留 30 天**（实测日志 `JWT cleanup service initialized with schedule: 0 0 2 * * ?, retention days: 30`）。
 
-> 顺带提醒：`config/auth/jwt.yml` 里那份 `persistence` 段并不生效，实际生效值来自 `config/security/persistence-base.yml`，原因与取值差异见 [#676](https://github.com/Lincoln-cn/JAiRouter/issues/676)。
+> JWT 持久化与黑名单持久化只在**一个**文件里定义：`config/security/persistence-base.yml`。[#676](https://github.com/Lincoln-cn/JAiRouter/issues/676) 之后 `config/auth/jwt.yml` 不再重复定义这段配置，避免「后导入者优先」把前一份静默覆盖。
 
 ## 已移除或无效的名字
 

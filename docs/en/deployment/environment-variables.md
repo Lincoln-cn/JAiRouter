@@ -137,9 +137,9 @@ Cleanup is an independent switch, `jwt.persistence.cleanup.enabled` (default `tr
 **02:00 daily, 30-day retention** (measured: `JWT cleanup service initialized with schedule: 0 0 2 * * ?, retention
 days: 30`).
 
-> Note: the `persistence` block inside `config/auth/jwt.yml` is not effective. The values that win come from
-> `config/security/persistence-base.yml`; the reason and the full comparison are in
-> [#676](https://github.com/Lincoln-cn/JAiRouter/issues/676).
+> JWT persistence and blacklist persistence are defined in exactly one file:
+> `config/security/persistence-base.yml`. Since [#676](https://github.com/Lincoln-cn/JAiRouter/issues/676)
+> `config/auth/jwt.yml` no longer duplicates that block, so a later import cannot silently override it.
 
 ## Removed or ineffective names
 
