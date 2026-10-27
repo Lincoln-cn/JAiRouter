@@ -1010,10 +1010,10 @@ INITIAL_ADMIN_PASSWORD=your-strong-admin-password
 GRAFANA_ADMIN_PASSWORD=your-grafana-password
 ```
 
-> **About `PROD_JWT_SECRET`**: the compose file above passes the secret as `JWT_SECRET` because that is the
-> name the startup gate reads. `application-prod.yml` resolves `jairouter.security.jwt.secret` from
-> `${JWT_SECRET:${PROD_JWT_SECRET:}}`, so the legacy `PROD_JWT_SECRET` still works as a config-binding
-> fallback, but it cannot satisfy the gate (`StartupSecretKeyChecker`); set `JWT_SECRET` in production.
+> **Production reads only `JWT_SECRET`**: `application-prod.yml` resolves `jairouter.security.jwt.secret`
+> from `${JWT_SECRET:}`, and the startup gate (`StartupSecretKeyChecker`) reads the same environment
+> variable. The legacy `PROD_JWT_SECRET` name was removed (#674) — it only ever took part in config binding,
+> never in the gate check, which is exactly how the two readings diverged. Setting it still logs a warning.
 
 #### Input Validation
 

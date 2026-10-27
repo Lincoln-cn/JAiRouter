@@ -26,7 +26,7 @@ public final class JwtAccountProperties {
      * 1. {noop}明文密码 - 仅用于开发/测试环境，不推荐生产使用
      * 2. {bcrypt}$2a$10$... - BCrypt加密密码，生产环境推荐
      * 
-     * 推荐使用环境变量注入：password: "${ADMIN_PASSWORD}"
+     * 推荐使用环境变量注入：password: "{noop}${INITIAL_ADMIN_PASSWORD}"（#674：只认这个名字）
      * 并使用密码加密工具生成安全的BCrypt哈希
      */
     @NotBlank

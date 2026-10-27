@@ -30,7 +30,9 @@ jairouter:
 
     jwt:
       enabled: true
-      secret: "${JWT_SECRET:${STAGING_JWT_SECRET:}}"
+      # 只认 JWT_SECRET（#674）：STAGING_JWT_SECRET 兼容别名已移除。
+      # 缺变量时绑定为空串 → @Size(min = 32) 校验失败，进程以退出码 1 结束。
+      secret: "${JWT_SECRET:}"
       issuer: "jairouter-staging"
 
       persistence:

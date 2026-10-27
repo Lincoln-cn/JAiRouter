@@ -292,10 +292,14 @@ Environment configuration files only contain the differences from the base confi
 | Profile | Required | Behavior when missing |
 | --- | --- | --- |
 | `dev` / `default` | none | The JWT secret and the admin password fall back to random values and are printed once in the startup log (they change on every restart) |
-| `staging` | `JWT_SECRET` (legacy alias: `STAGING_JWT_SECRET`) | `jairouter.security.jwt.secret` resolves to an empty string, the `@Size(min = 32)` binding check fails and the process exits with code 1 |
+| `staging` | `JWT_SECRET` | `jairouter.security.jwt.secret` resolves to an empty string, the `@Size(min = 32)` binding check fails and the process exits with code 1 |
 | `prod` | `JWT_SECRET` + `INITIAL_ADMIN_PASSWORD` | The startup gate (`StartupSecurityGate`) refuses to boot |
 
-`JWT_SECRET` wins over `STAGING_JWT_SECRET` when both are set.
+Every profile reads only `JWT_SECRET` and, for the admin password, `INITIAL_ADMIN_PASSWORD`. The three
+per-profile aliases `DEV_JWT_SECRET` / `STAGING_JWT_SECRET` / `PROD_JWT_SECRET` and the secondary name
+`ADMIN_PASSWORD` were removed (#674): they were read in a different place than the configuration binding,
+so setting both made the checked credential differ from the effective one. Startup logs a warning when a
+removed name is still set.
 
 ## Environment Variables
 

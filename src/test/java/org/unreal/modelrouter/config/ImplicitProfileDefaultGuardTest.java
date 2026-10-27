@@ -96,7 +96,8 @@ class ImplicitProfileDefaultGuardTest {
         assertTrue(Files.exists(DEV_PROFILE_CONFIG), "application-dev.yml 应存在");
         List<String> devLines = effectiveLines(DEV_PROFILE_CONFIG);
 
-        assertTrue(devLines.stream().anyMatch(l -> l.contains("DEV_JWT_SECRET")),
+        assertTrue(devLines.stream()
+                        .anyMatch(l -> l.contains("dev-secret-key-for-testing-only-32-characters-minimum")),
                 "dev profile 应仍提供固定的开发 JWT 密钥兜底，否则本地启动体验退化");
         assertTrue(devLines.stream().anyMatch(l -> l.startsWith("org.unreal.modelrouter: DEBUG")),
                 "dev profile 应仍把应用日志开到 DEBUG，否则本地排查体验退化");

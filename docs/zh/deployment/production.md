@@ -438,7 +438,7 @@ jairouter:
     # 生产环境 JWT 配置
     jwt:
       enabled: true
-      secret: "${JWT_SECRET:${PROD_JWT_SECRET:}}"
+      secret: "${JWT_SECRET:}"
       issuer: "jairouter-prod"
       blacklist-cache:
         max-size: 50000  # 生产环境更大的黑名单缓存
@@ -848,10 +848,10 @@ INITIAL_ADMIN_PASSWORD=your-strong-admin-password
 GRAFANA_ADMIN_PASSWORD=your-grafana-password
 ```
 
-> **关于 `PROD_JWT_SECRET`**：上面的 compose 统一传 `JWT_SECRET`，因为启动门闩只认这个变量名。
-> `application-prod.yml` 里 `jairouter.security.jwt.secret` 的写法是 `${JWT_SECRET:${PROD_JWT_SECRET:}}`，
-> 旧变量名 `PROD_JWT_SECRET` 仍可作为配置绑定的兜底，但**启动门闩只读环境变量 `JWT_SECRET`**
-> （`StartupSecretKeyChecker`），生产请直接设 `JWT_SECRET`。
+> **生产只认 `JWT_SECRET`**：`application-prod.yml` 里 `jairouter.security.jwt.secret` 的写法是
+> `${JWT_SECRET:}`，启动门闩（`StartupSecretKeyChecker`）读的也是同一个环境变量。旧变量名
+> `PROD_JWT_SECRET` 已移除（#674）——它原本只参与配置绑定、从不参与门闩判定，是两套读法分叉的来源。
+> 仍设置旧名字时启动日志会给出一条 warn。
 
 #### 容器安全
 

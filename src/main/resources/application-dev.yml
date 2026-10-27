@@ -65,7 +65,9 @@ jairouter:
     
     jwt:
       enabled: true
-      secret: "${JWT_SECRET:${DEV_JWT_SECRET:dev-secret-key-for-testing-only-32-characters-minimum}}"
+      # #674：DEV_JWT_SECRET 兼容别名已移除，dev 也只认 JWT_SECRET；
+      # 缺省值仍是本文件里的开发字面量（不进 prod/staging）。
+      secret: "${JWT_SECRET:dev-secret-key-for-testing-only-32-characters-minimum}"
 
       accounts:
         - username: "admin"

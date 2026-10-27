@@ -292,10 +292,13 @@ JAiRouter 支持多种环境配置文件：
 | Profile | 必填环境变量 | 缺失时的行为 |
 | --- | --- | --- |
 | `dev` / `default` | 无 | JWT 密钥与管理员口令回退为随机值，并打印在启动日志里（重启即换新值） |
-| `staging` | `JWT_SECRET`（兼容别名 `STAGING_JWT_SECRET`） | `jairouter.security.jwt.secret` 解析为空串，`@Size(min = 32)` 绑定校验失败，进程以退出码 1 结束 |
+| `staging` | `JWT_SECRET` | `jairouter.security.jwt.secret` 解析为空串，`@Size(min = 32)` 绑定校验失败，进程以退出码 1 结束 |
 | `prod` | `JWT_SECRET` + `INITIAL_ADMIN_PASSWORD` | 启动门闩（`StartupSecurityGate`）直接拒绝启动 |
 
-`JWT_SECRET` 优先于 `STAGING_JWT_SECRET`：两者同时设置时用前者。
+所有 profile 都只读 `JWT_SECRET` 与（管理员口令）`INITIAL_ADMIN_PASSWORD`。曾经的三个 profile 别名
+`DEV_JWT_SECRET` / `STAGING_JWT_SECRET` / `PROD_JWT_SECRET` 以及备用名 `ADMIN_PASSWORD` 已移除（#674）：
+它们与配置绑定读的不是同一处，同时设置会让「检查的凭据」与「实际生效的凭据」分叉。仍然设置这些旧名字时，
+启动日志会给出明确的 warn。
 
 ## 环境变量
 

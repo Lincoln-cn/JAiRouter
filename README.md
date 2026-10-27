@@ -54,7 +54,7 @@ runtime:
   console:      /admin/
   swagger_ui:   dev profile only
   required_env_in_prod: [JWT_SECRET, INITIAL_ADMIN_PASSWORD]
-  required_env_in_staging: [JWT_SECRET]   # STAGING_JWT_SECRET is a legacy alias
+  required_env_in_staging: [JWT_SECRET]
 surfaces:
   - /v1/**        # client surface: OpenAI-native + Anthropic-compatible
   - /api/**       # management + legacy surface (RBAC-governed)
@@ -157,8 +157,8 @@ the equivalent YAML property is *not* enough to satisfy it:
 
 Details worth knowing:
 
-- **A missing `INITIAL_ADMIN_PASSWORD` is a hard failure in production.** `ADMIN_PASSWORD` is accepted
-  as a secondary variable name, but nothing is generated for you.
+- **A missing `INITIAL_ADMIN_PASSWORD` is a hard failure in production.** It is the only name the
+  configuration binding reads — the legacy `ADMIN_PASSWORD` alias is gone — and nothing is generated for you.
 - **No password is auto-generated in `prod`.** If neither variable is set, startup aborts; it does not
   fall back to the documented default. (The only generators are the explicit CLI flags
   `--generate-key` / `--generate-password`.) Outside `prod`, the base configuration falls back to a

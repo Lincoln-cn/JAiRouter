@@ -20,7 +20,7 @@ jairouter:
       # R2-P0-01：不再提供“公开可用的默认密钥”（#664）——缺 JWT_SECRET 时用 ${random.uuid}
       # 随机生成（每次启动不同，重启后旧令牌全部失效）；prod 由 StartupSecretKeyChecker /
       # StartupSecurityGate 在缺 JWT_SECRET 时直接拒绝启动。
-      # dev profile 另有 ${DEV_JWT_SECRET:...} 兜底（仅本地开发用）。
+      # dev profile 另有开发用字面量兜底（见 application-dev.yml）；所有 profile 都只读 JWT_SECRET（#674）。
       secret: "${JWT_SECRET:${random.uuid}}"
       
       # JWT 算法

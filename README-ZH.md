@@ -53,7 +53,7 @@ runtime:
   console:      /admin/
   swagger_ui:   仅 dev profile
   required_env_in_prod: [JWT_SECRET, INITIAL_ADMIN_PASSWORD]
-  required_env_in_staging: [JWT_SECRET]   # STAGING_JWT_SECRET 为兼容别名
+  required_env_in_staging: [JWT_SECRET]
 surfaces:
   - /v1/**        # 客户端面：OpenAI 原生 + Anthropic 兼容
   - /api/**       # 管理面 + 历史面（受 RBAC 治理）
@@ -150,8 +150,8 @@ print(response.choices[0].message.content)
 
 几点值得知道：
 
-- **生产环境缺 `INITIAL_ADMIN_PASSWORD` 是硬失败。** `ADMIN_PASSWORD` 作为备用变量名被接受，
-  但**系统不会替你生成任何密码**。
+- **生产环境缺 `INITIAL_ADMIN_PASSWORD` 是硬失败。** 配置绑定只读这个名字——旧的 `ADMIN_PASSWORD`
+  别名已移除——且**系统不会替你生成任何密码**。
 - **不存在「自动生成随机密码」这回事。** 两个变量都没设时启动直接中止——既不会随机生成，
   也不会回落到文档里的默认值。（唯一的生成器是显式 CLI 参数 `--generate-key` / `--generate-password`。）
 - 强度为 `MEDIUM` 的值会打警告并**允许**启动；`VERY_WEAK` / `WEAK` 会阻断启动。
