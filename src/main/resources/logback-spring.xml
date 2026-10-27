@@ -267,4 +267,25 @@
         <logger name="reactor.netty" level="WARN"/>
     </springProfile>
 
+    <!--
+      兜底（issue #669）：上面所有 root 都写在 <springProfile> 块里，只有 dev/default、test、
+      prod、json-logs 四种组合能匹配到。其它 profile（仓库里真实存在的 staging，以及部署方自定的
+      pre/uat 之类）下没有任何 root，appender 会全部「not referenced」，于是应用日志与启动失败栈
+      一行都不出现 —— 排障时只能看到「进程没了」。
+
+      这里给一个不依赖具体 profile 名字的兜底：级别与文件 appender 取 dev 同形，框架日志降级到 WARN，
+      和 prod 一样安静。要更安静时用 logging.level.* 覆盖（Spring Boot 最后应用）。
+    -->
+    <springProfile name="!(dev | default | test | prod | json-logs)">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR"/>
+        </root>
+
+        <logger name="org.springframework" level="WARN"/>
+        <logger name="io.netty" level="WARN"/>
+        <logger name="reactor.netty" level="WARN"/>
+    </springProfile>
+
 </configuration>
