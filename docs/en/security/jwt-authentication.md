@@ -240,6 +240,8 @@ curl -X POST http://localhost:8080/api/auth/jwt/refresh \
 
 ### Enable Token Persistence
 
+> These keys live in `config/security/persistence-base.yml`: `config/auth/jwt.yml` only carries the authentication keys and no longer duplicates the persistence block (see [#676](https://github.com/Lincoln-cn/JAiRouter/issues/676)).
+
 ```yaml
 jairouter:
   security:

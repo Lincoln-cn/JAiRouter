@@ -252,6 +252,8 @@ curl -X POST http://localhost:8080/api/auth/jwt/refresh \
 
 ### 启用令牌持久化
 
+> 下面这些键属于 `config/security/persistence-base.yml`：`config/auth/jwt.yml` 只放认证相关键，不再重复定义持久化段（见 [#676](https://github.com/Lincoln-cn/JAiRouter/issues/676)）。
+
 ```yaml
 jairouter:
   security:
