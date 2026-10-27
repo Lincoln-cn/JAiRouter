@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.5.3
-> **最后更新**: 2026-10-25
+> **文档版本**: 3.5.4
+> **最后更新**: 2026-10-27
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,46 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.5.4] - 2026-10-27 - 缺陷修复（路由与熔断记账 / 健康检查 / 默认凭据与启动 profile）
+
+#### 路由与熔断记账（#647 / #648 / #649 / #653 / #654 / #655）
+
+- **4xx 不再计入熔断失败（#647，P1）**：此前上游 400/401/404/429 与 5xx 一样记为实例失败 —— 客户端把请求写错，就能把健康实例打进熔断。现在调用结果三分类（`SUCCESS` / `CLIENT_ERROR` / `INSTANCE_FAILURE`）：4xx（含上游 429）只完成在途计数、不计失败；5xx、超时、连接失败才计入。`ModelServiceRegistry.recordCallComplete` 的 `success` 参数也真正生效了（此前无条件记成功）。
+- **实例级限流拒绝后继续尝试（#654，P1）**：`selectWithRateLimit` 的尝试上限从 `min(size, 3)` 改为候选总数 —— 前几个实例被限流时不再误报 503「All instances rate limited」，只要还有空闲实例就能选到。
+- **随机负载均衡器不再自带熔断器（#648，P2）**：移除类内的 `Map<String, CircuitBreaker>` 与硬编码 5 次 / 60 秒 / 2 次的阈值，可用性统一由 `CircuitBreakerManager` 与上游判定 ⇒ 实例级 `circuit-breaker.enabled=false` 现在真正被尊重；空候选统一抛 `IllegalArgumentException`；每请求 `SecureRandom.getInstanceStrong()` 改为类级实例。
+- **按策略名缓存负载均衡器（#649，P2）**：池路由下 round-robin 此前每请求新建负载均衡器 ⇒ 永远选第一个实例。现在按策略名 `computeIfAbsent` 缓存，计数跨请求累积（这才是它的语义）。
+- **自适应阈值真正写入熔断器（#653，P2）**：`AdaptiveThresholdManager.updateCircuitBreakerThreshold` 此前只把新阈值写进日志，而且每个自适应周期都会 reset 实例熔断状态。现在阈值经 `CircuitBreakerManager.updateFailureThreshold(...)` 落到实例覆盖表，阈值未变时不动现有状态。
+- **失败请求释放在途计数（#655，P2）**：最少连接策略的 `recordCallFailure` 此前只增不减 ⇒ 实例的在途计数持续上涨、会被永久压到队尾；现在失败同样释放并钳在 0。`LoadBalancerManager` 的容器改 `ConcurrentHashMap` + `computeIfAbsent`，轮询下标改 `Math.floorMod`，`isInstanceHealthy` 复用 `InstanceKeys.healthKey`。
+
+#### 健康检查（#650 / #651 / #652）
+
+- **实例不再连坐（#650）**：无效或缺失 `base-url` 的实例直接判不健康并给出原因；单个实例的异常不再中断同服务其它实例的检查。
+- **探活参数可配（#651）**：新增 `jairouter.health-check.*`（探活方式 / 间隔 / 超时 / 并发）；检查批次移出默认单线程调度器，上一轮未完成则跳过本轮，间隔按上一轮结束时间计。文档里从未绑定过的 `model.load-balance.health-check.*` 已更正。
+- **状态入库按副本匹配（#652）**：缺 `instance-id` 时按 `base-url` 匹配同名副本；状态未变不写库。
+
+#### 默认凭据与启动 profile（#663 / #664 / #666）
+
+- **内置测试 API Key 撤出基础配置（#663，P1）**：`config/auth/api-key.yml` 不再内置 `sk-test-api-key-12345678`，改由 `application-dev.yml` 提供。该密钥此前在 `prod` 也生效（`/v1/**` 只要求「已认证」），等于给所有人一条可用的调用凭据。
+- **JWT 密钥与管理员口令不再有公开兜底（#664，P1）**：基础配置的回落从已知字面量改为 `${random.uuid}`，随机值在启动日志里打印一次；生产仍由启动门闩拒绝启动。默认管理员口令的提示文案同步更正（此前它说「首次启动将生成随机密码」，而当时并没有随机生成）。
+- **不再隐式以 dev 启动（#666，P1）**：`config/common/server.yml` 里的 `spring.profiles.active: dev` 已删除 —— 它随发布包分发，导致任何未显式指定 profile 的启动都按 dev 跑、公开测试凭据随之生效。现在不指定即 `default` profile。
+
+#### 日志（#669）
+
+- **其它 profile 的日志不再全丢**：`logback-spring.xml` 的所有 root 都写在 `<springProfile>` 块内，只有 dev/default、test、prod、json-logs 能匹配 —— 仓库里真实存在的 `staging` 落在块外 ⇒ appender 全部「not referenced」，应用日志与启动失败栈一行都不出现（实测只有 5 行 logback 自身的警告，随后进程以退出码 1 结束）。现补一段 `name="!(dev | default | test | prod | json-logs)"` 的兜底 root（CONSOLE + ASYNC_FILE + ASYNC_ERROR）。
+
+#### 依赖（#612 / #613）
+
+- `frontend`：happy-dom 20.14.5 → 21.0.4（GHSA-834v-8h66-3h79），vitest / @vitest/mocker → 5.0.5（两条同源 advisory，受影响上限均为 5.0.3 以下）；两条 Dependabot alert 已清零。
+
+#### 升级提示
+
+- **裸跑不再进 dev**：`java -jar …` 或 `./mvnw spring-boot:run` 不带 profile 时按 `default` 启动 —— 没有内置测试 Key、没有固定口令（随机值打印在启动日志）。要 dev 的便利请显式加 `--spring.profiles.active=dev`（或 `-Dspring-boot.run.profiles=dev`）；文档已同步。
+- **内置测试 API Key 只在 dev**：`sk-test-api-key-12345678` 不再出现在发布包里。依赖它的脚本请显式启用 dev profile，或自带 Key。
+- **非 prod 且未设 `JWT_SECRET` 时密钥每次启动随机生成** ⇒ 重启后旧令牌全部失效；多副本或共享环境请显式设置。
+- **staging 必填 `JWT_SECRET`**（兼容别名 `STAGING_JWT_SECRET`）：缺了会在绑定阶段失败（`@Size(min = 32)`）。文档新增「各 profile 的必填环境变量」表。
+- **健康检查配置项换了位置**：现在读 `jairouter.health-check.*`；旧的 `model.load-balance.health-check.*` 从未绑定过。
+- **只影响此前记账或选路错误的场景**：#647（4xx 不再算失败）/ #654（限流后继续尝试）/ #655（失败释放在途计数）/ #649（池路由的 round-robin 真正轮转）/ #653（自适应阈值真正生效，此前新阈值只出现在日志里）。无 API 契约变更。
 
 ### [3.5.3] - 2026-10-25 - 缺陷修复（主流程审计：配置优先级 / 图像编辑 / 健康键 / 出站路径 / adapter 校验）
 

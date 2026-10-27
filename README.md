@@ -43,8 +43,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # the local/git directory name differs from the product name
 artifact:        model-router            # Maven artifactId
-project_version: 3.5.3                   # pom.xml
-latest_release:  v3.5.3 (2026-10-25)
+project_version: 3.5.4                   # pom.xml
+latest_release:  v3.5.4 (2026-10-27)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5 (WebFlux / reactive)
   frontend: Vue 3 + TypeScript + Vite, bilingual zh-CN / en-US
@@ -370,21 +370,26 @@ delivery. See [Status and recent work](#status-and-recent-work) for the open led
 
 ## Status and recent work
 
-**Latest release: v3.5.3 (2026-10-25)** — a bug-fix release from a full main-flow audit (service config →
-adapter config → instance config → console playground). It fixes five real defects, two of which change runtime
-behavior, plus one duplicated config source. **No API breaking changes; three upgrade notes matter.**
+**Latest release: v3.5.4 (2026-10-27)** — a bug-fix release across routing accounting, health checks
+and the credentials that ship inside the package. **No API breaking changes; four upgrade notes matter.**
 
 | Theme | What changed |
 |-------|--------------|
-| **External config now overrides (#634)** | `spring.config.import` resolves later entries first, yet `application.yml` listed the three `/app/config` imports *first* — so same-named keys in mounted files were silently overridden by classpath defaults. The imports moved to the end of the list, and `ExternalConfigReporter` logs whether the mount was actually read |
-| **Image edits speak multipart (#637)** | `/api/v1/images/edits` declared `@RequestBody ImageEditDTO.Request` while the DTO carries `List<FilePart>` — JSON could never bind it, and the console sent multipart. It now mirrors STT, and outbound file parts are materialized before assembly |
-| **Health keys and outbound paths (#636 / #635)** | Instances without `instance-id` no longer share one `chat:null` health key (`InstanceKeys` falls back to `baseUrl` → `name`), and `BaseAdapter` uses the selected instance's own `path`, so pool names and `auto-model` no longer send requests to the upstream root |
-| **Adapter references validated at startup (#638)** | `AdapterReferenceValidator` scans global / service / instance references and logs `ERROR` by default (blocking only under `strict-mode`); request-time errors now list the registered adapters |
-| **One definition of `model.services` (#643)** | The duplicate in `model-services-base.yml` is gone; `router/services.yml` is the single source (carrying the previously effective values), guarded by `ServiceDefinitionSingleSourceTest` on both structure and defaults |
+| **4xx is not an instance failure (#647)** | Upstream 400/401/404/429 used to count toward the circuit breaker exactly like 5xx, so a client sending malformed requests could trip a healthy instance. Outcomes are now `SUCCESS` / `CLIENT_ERROR` / `INSTANCE_FAILURE`: 4xx only settles the in-flight counter |
+| **Rate limiting stops giving up early (#654)** | `selectWithRateLimit` tried at most `min(size, 3)` candidates, so a few rate-limited instances produced a bogus 503 while idle ones remained; it now walks the whole candidate list |
+| **Load balancers behave (#648 / #649)** | The random balancer lost its private breaker map, so per-instance `circuit-breaker.enabled=false` is honored again; balancers are cached per strategy, so pool round-robin actually rotates instead of always picking the first instance |
+| **Adaptive thresholds land (#653)** | `updateCircuitBreakerThreshold` only logged the new value and reset breaker state every cycle; thresholds now reach `CircuitBreakerManager.updateFailureThreshold(...)` |
+| **Health checks hardened (#650 / #651 / #652)** | One bad instance no longer aborts its siblings, probe mode / interval / timeout / concurrency are configurable under `jairouter.health-check.*`, and persisted state matches replicas by `base-url` |
+| **No public credentials in the package (#663 / #666)** | The built-in test API key moved to the dev profile, and `spring.profiles.active: dev` left `config/common/server.yml` — an artifact that did not name a profile used to start as dev with those credentials live |
+| **No public secret fallbacks (#664)** | `jwt.yml` falls back to `${random.uuid}` instead of known literals and prints the generated admin password once in the startup log; `prod` still refuses to boot |
+| **Logging on other profiles (#669)** | Every logback `root` lived inside a profile-gated block, so `staging` produced no application logs at all; a fallback root now covers every profile outside the four known ones |
 
-See the [`[3.5.3]` changelog entry](docs/en/reference/changelog.md). Released as GitHub Release `v3.5.3` with multi-arch images (`v3.5.3` / `3.5.3` / `latest`).
+See the [`[3.5.4]` changelog entry](docs/en/reference/changelog.md). Released as GitHub Release `v3.5.4` with multi-arch images (`v3.5.4` / `3.5.4` / `latest`).
 
-**Upgrade notes:** keys under `/app/config` that never took effect now do (the startup log line confirms the mount was read); `/api/v1/images/edits` accepts `multipart/form-data` only; health state for instances without `instance-id` resets once.
+**Upgrade notes:** running without a profile no longer means dev (no test key, no fixed password — a random one is printed once); outside `prod` a missing `JWT_SECRET` yields a fresh random secret per start, invalidating previously issued tokens; `staging` requires `JWT_SECRET`; health-check keys moved to `jairouter.health-check.*`.
+
+**`v3.5.3` (2026-10-25)** was a bug-fix release from a main-flow audit: external mounts now override classpath defaults (#634), image edits speak multipart (#637), health keys fall back to `baseUrl` (#636), outbound paths come from the selected instance (#635), adapter references are validated at startup (#638), and `model.services` has a single definition (#643).
+
 
 **`v3.5.2` (2026-10-24)** was a feature release that added **end-user rate limiting** (a per-minute allowance
 counted per API key × end user — the only way to limit several people who share one key) and **wired up

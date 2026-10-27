@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 > **Doc Version**: 2.5.0
-> **Last Updated**: 2026-10-24
-> **Git Tag**: v3.5.3
+> **Last Updated**: 2026-10-27
+> **Git Tag**: v3.5.4
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -23,6 +23,21 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 - **Observability**: Comprehensive monitoring, logging, and distributed tracing
 
 ## Current Version Status
+
+### ✅ v3.5.4 (Patch: routing and circuit accounting / health checks / shipped credentials and startup profile, **released 2026-10-27**)
+
+**Status**: Released (GitHub Release `v3.5.4`, 2026-10-27; multi-arch Docker images rebuilt by CI on release: `v3.5.4` / `3.5.4` / `latest`)
+**Scope**: the 13 PRs merged after `v3.5.3` — routing and circuit accounting #656 (#647), #657 (#654), #658 (#648), #659 (#649), #661 (#653), #662 (#655); health checks #660 (#650 / #651 / #652); shipped credentials and the startup profile #665 (#663), #667 (#664), #668 (#666); logging fallback #671 (#669); docs #672 (#670); dependencies #612 / #613. **No API breaking changes.**
+**Highlights**:
+
+- **4xx no longer counts as an instance failure (#647)**: outcomes are three-way (`SUCCESS` / `CLIENT_ERROR` / `INSTANCE_FAILURE`); 4xx (including upstream 429) only settles the in-flight counter, while 5xx, timeouts and connection failures still count.
+- **Keep trying after a rate-limited instance (#654)**: the attempt cap in `selectWithRateLimit` moved from `min(size, 3)` to the whole candidate list, so idle instances are no longer masked by a bogus 503.
+- **Two load-balancer fixes (#648 / #649)**: the random balancer dropped its private breaker map and hard-coded thresholds (per-instance `circuit-breaker.enabled=false` is honored again), and balancers are cached per strategy so pool round-robin actually rotates.
+- **Adaptive thresholds actually applied (#653)**: new values reach the per-instance override table via `CircuitBreakerManager.updateFailureThreshold(...)` instead of only being logged, and no longer wipe breaker state every cycle.
+- **Failures release in-flight counts (#655)**: least-connections now releases on failure and clamps at 0; containers use `ConcurrentHashMap` and the rotation index uses `Math.floorMod`.
+- **Health checks hardened (#650 / #651 / #652)**: invalid base-urls are unhealthy without dragging siblings down, probe settings live under `jairouter.health-check.*`, and persisted state matches replicas by `base-url`.
+- **Shipped credentials closed out (#663 / #664 / #666)**: the built-in test API key moved to the dev profile; the public literal fallbacks for the JWT secret and admin password became `${random.uuid}` (printed once in the startup log); `spring.profiles.active: dev` left `config/common/server.yml`, so an unspecified profile means `default`.
+- **Logging fallback (#669)**: logback gained a root for every profile outside the four known ones, so environments like `staging` no longer run without a single application log line.
 
 ### ✅ v3.5.3 (Patch: five fixes from the main-flow audit + single-sourced config, **released 2026-10-25**)
 
@@ -600,7 +615,8 @@ JAiRouter will continue to uphold the open-source spirit and is committed to pro
 15. ✅ v3.5.3 patch (released 2026-10-25): five fixes from the main-flow audit (external mount override #634, image-edit multipart #637, instance health keys #636, outbound path from the selected instance #635, adapter reference validation #638) plus single-sourced `model.services` #643; no API breaking changes, but #634 and #637 change behavior
 16. ✅ v3.5.2 feature release (released 2026-10-24): end-user rate limiting (per-`(API key × end user)` per-minute allowance, off by default, self-reported identity so not a security boundary, bounded local counter or cross-replica Redis counting); client-dimension wiring (#623, off in every bundled configuration so a cluster without an L7 proxy does not merge clients by IP); `Retry-After` on service-level 429 and all-instances-limited 503 (#624); bounded window table in `TokenBucketRateLimiter` (#625)
 17. ✅ v3.5.1 patch (released 2026-10-24): record-governance page and call-history key-source wiring (`encryption-key-source: env` went from "settable but inert" to actually effective, `GET /api/config/call-history` gains 8 read-only observation fields, new page `/security/record-governance`); live `gatewayResponseFilter` in the config snapshot; tech-debt batches A–D of #604 (end-to-end 400 case + bare-catch ceiling 835 → 786, `QuotaLedgerService` 1268 → 1094, `ServiceRequestHandler` 1027 → 785); API paths unified on `/api/v1/*`; fence-parity check wired into the docs gate
-18. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.2.x
+18. ✅ v3.5.4 patch (released 2026-10-27): routing and circuit accounting (4xx no longer trips breakers #647, keep trying after rate limiting #654, random balancer lost its private breakers #648, balancers cached per strategy #649, adaptive thresholds actually applied #653, failures release in-flight counts #655), health checks hardened (#650–#652), shipped credentials closed out (built-in test API key moved to dev #663, random fallbacks for secret and password #664, implicit dev default removed #666), logback fallback (#669), staging requirements documented (#670); no API breaking changes
+19. 📋 Semantic cache evaluation (vector-similarity reuse, separate project); high-availability foundation (multi-node/Redis) re-assessed after v3.2.x
 
 ### Long-term Vision
 1. Become the standard in AI model routing
