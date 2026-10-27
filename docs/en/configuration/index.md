@@ -287,6 +287,16 @@ JAiRouter supports multiple environment configuration files:
 
 Environment configuration files only contain the differences from the base configuration, following Spring Boot's configuration override mechanism.
 
+### Required environment variables per profile
+
+| Profile | Required | Behavior when missing |
+| --- | --- | --- |
+| `dev` / `default` | none | The JWT secret and the admin password fall back to random values and are printed once in the startup log (they change on every restart) |
+| `staging` | `JWT_SECRET` (legacy alias: `STAGING_JWT_SECRET`) | `jairouter.security.jwt.secret` resolves to an empty string, the `@Size(min = 32)` binding check fails and the process exits with code 1 |
+| `prod` | `JWT_SECRET` + `INITIAL_ADMIN_PASSWORD` | The startup gate (`StartupSecurityGate`) refuses to boot |
+
+`JWT_SECRET` wins over `STAGING_JWT_SECRET` when both are set.
+
 ## Environment Variables
 
 Override configuration using environment variables:
