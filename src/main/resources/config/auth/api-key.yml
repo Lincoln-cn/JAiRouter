@@ -30,12 +30,12 @@ jairouter:
       cache-refresh-enabled: true
       cache-refresh-interval-seconds: 60
 
-      # API Key 列表（仅用于开发环境测试）
-      # 生产环境应通过 API 管理或环境变量配置
-      keys:
-        - key-id: "test-key-001"
-          key-value: "sk-test-api-key-12345678"
-          description: "测试用 API Key"
-          permissions: "read,write"
-          enabled: true
+      # API Key 列表：基础配置刻意留空（#663）。
+      #
+      # 这里曾经硬编码过一组测试凭据（key-id: test-key-001）。该文件由 application.yml 无条件导入，
+      # 而 application-prod.yml 只覆盖 enabled / default-expiration-days、不覆盖 keys，于是任何按
+      # prod 启动的实例都带着一个公开可查、可直接调用 /v1/** 的密钥。
+      #
+      # 现在：内置测试密钥只出现在 dev profile（application-dev.yml），其余环境一律由控制台/API 创建。
+      keys: []
 
