@@ -158,15 +158,17 @@ Details worth knowing:
 
 - **A missing `INITIAL_ADMIN_PASSWORD` is a hard failure in production.** `ADMIN_PASSWORD` is accepted
   as a secondary variable name, but nothing is generated for you.
-- **No password is auto-generated, ever.** If neither variable is set, startup aborts; it does not
-  invent a random password and it does not fall back to the documented default. (The only generators
-  are the explicit CLI flags `--generate-key` / `--generate-password`.)
+- **No password is auto-generated in `prod`.** If neither variable is set, startup aborts; it does not
+  fall back to the documented default. (The only generators are the explicit CLI flags
+  `--generate-key` / `--generate-password`.) Outside `prod`, the base configuration falls back to a
+  random value rather than a public one, and prints it once in the startup log.
 - A `MEDIUM`-strength value logs a warning and **allows** startup; `VERY_WEAK` / `WEAK` blocks it.
 - Escape hatch for trusted isolated networks: `JAIRouter_SKIP_AUTH_WARNING=true`. It must be set
   explicitly and it disables the gate for **all** of the checks above.
 - The `admin` account itself comes from `jairouter.security.jwt.accounts` in
   `src/main/resources/config/auth/jwt.yml`, whose password is
-  `{noop}${INITIAL_ADMIN_PASSWORD:ChangeMeOnFirstStartup123456}`. On first start those YAML accounts
+  `{noop}${INITIAL_ADMIN_PASSWORD:${random.uuid}}` (random fallback outside `prod`, no public literal).
+  On first start those YAML accounts
   are copied into the `jwt_accounts` table **only when that table is empty**
   (`JpaDatabaseInitializer.initializeJwtAccounts`); later starts leave the table untouched, so
   rotating `INITIAL_ADMIN_PASSWORD` does **not** change an account that already exists in the
