@@ -300,18 +300,29 @@ JAiRouter 支持多种环境配置文件：
 它们与配置绑定读的不是同一处，同时设置会让「检查的凭据」与「实际生效的凭据」分叉。仍然设置这些旧名字时，
 启动日志会给出明确的 warn。
 
+完整清单（含存储、Redis、上游凭据与多副本开关）见[环境变量参考](../deployment/environment-variables.md)。
+
 ## 环境变量
 
-使用环境变量覆盖配置：
+使用环境变量覆盖配置，例如：
 
-```
-# 服务器端口
+```bash
+# 服务器端口（Spring 宽松绑定到 server.port）
 export SERVER_PORT=8080
 
-# 模型服务配置
-export MODEL_LOAD_BALANCE_TYPE=round-robin
-export MODEL_RATE_LIMIT_TYPE=token-bucket
+# 关闭 JWT 认证（等价于 jairouter.security.jwt.enabled=false）
+export JAiROUTER_SECURITY_JWT_ENABLED=false
+
+# 指向外部 Redis（等价于 spring.data.redis.host / port）
+export SPRING_DATA_REDIS_HOST=redis.internal
+export SPRING_DATA_REDIS_PORT=6379
 ```
+
+变量名与配置键的对应关系、哪些变量必须设置、各 profile 的默认差异，见
+[环境变量参考](../deployment/environment-variables.md)。
+
+> 旧版本文档此处示例的 `MODEL_LOAD_BALANCE_TYPE` / `MODEL_RATE_LIMIT_TYPE` 在配置树中不存在，
+> 设置它们不会有任何效果。
 
 ## 命令行参数
 
@@ -320,7 +331,7 @@ export MODEL_RATE_LIMIT_TYPE=token-bucket
 ```
 java -jar jairouter.jar \
   --server.port=8080 \
-  --model.load-balance.type=round-robin \
+  --jairouter.security.audit.log-level=DEBUG \
   --spring.profiles.active=prod
 ```
 

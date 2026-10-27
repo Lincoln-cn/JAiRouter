@@ -380,6 +380,15 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/deployment/docker-optimized"/>
   </url>
   <url>
+    <loc>https://jairouter.comzh/deployment/environment-variables</loc>
+    <lastmod>2026-10-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/deployment/environment-variables"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/deployment/environment-variables"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/deployment/environment-variables"/>
+  </url>
+  <url>
     <loc>https://jairouter.comzh/deployment/github-pages</loc>
     <lastmod>2026-10-27</lastmod>
     <changefreq>monthly</changefreq>
@@ -657,6 +666,15 @@
     <xhtml:link rel="canonical" href="https://jairouter.comen/deployment/docker-optimized"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment/docker-optimized"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment/docker-optimized"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/deployment/environment-variables</loc>
+    <lastmod>2026-10-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/deployment/environment-variables"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/deployment/environment-variables"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/deployment/environment-variables"/>
   </url>
   <url>
     <loc>https://jairouter.comen/deployment/github-pages</loc>

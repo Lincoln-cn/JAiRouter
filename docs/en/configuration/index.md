@@ -303,16 +303,25 @@ removed name is still set.
 
 ## Environment Variables
 
-Override configuration using environment variables:
+Override configuration using environment variables, for example:
 
 ```bash
-# Server configuration
+# Server port (relaxed binding to server.port)
 export SERVER_PORT=8080
 
-# Model service configuration
-export MODEL_LOAD_BALANCE_TYPE=round-robin
-export MODEL_RATE_LIMIT_TYPE=token-bucket
+# Disable JWT authentication (equivalent to jairouter.security.jwt.enabled=false)
+export JAiROUTER_SECURITY_JWT_ENABLED=false
+
+# Point at an external Redis (equivalent to spring.data.redis.host / port)
+export SPRING_DATA_REDIS_HOST=redis.internal
+export SPRING_DATA_REDIS_PORT=6379
 ```
+
+For how variable names map to configuration keys, which variables are mandatory, and the per-profile
+defaults, see [Environment Variables Reference](../deployment/environment-variables.md).
+
+> The `MODEL_LOAD_BALANCE_TYPE` / `MODEL_RATE_LIMIT_TYPE` variables shown in older versions of this page do not
+> exist in the configuration tree; setting them has no effect.
 
 ## Command Line Arguments
 
@@ -321,7 +330,7 @@ Override configuration via command line:
 ```bash
 java -jar jairouter.jar \
   --server.port=8080 \
-  --model.load-balance.type=round-robin \
+  --jairouter.security.audit.log-level=DEBUG \
   --spring.profiles.active=prod
 ```
 
