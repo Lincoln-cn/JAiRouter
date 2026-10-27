@@ -394,14 +394,16 @@ brew install maven
 ### 4. 开发模式运行
 
 ```bash
-# 使用 Spring Boot Maven 插件
-./mvnw spring-boot:run
+# 使用 dev profile 启动（内置测试凭据、DEBUG 日志；本地开发推荐显式指定）
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 
 # 启用调试模式
-./mvnw spring-boot:run -Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005"
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005"
 
-# 使用开发配置
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+# 不指定 profile：按基础配置启动，不加载任何内置测试凭据，
+# JWT 密钥与管理员口令在启动时随机生成并打印在启动日志里
+# （要固定下来请设置 JWT_SECRET / INITIAL_ADMIN_PASSWORD）
+./mvnw spring-boot:run
 ```
 
 ## 故障排查

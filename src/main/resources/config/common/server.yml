@@ -40,5 +40,9 @@ spring:
       max-chunk-size: 8192
 
   # Profile 配置
-  profiles:
-    active: dev
+  # 不要在这里写 spring.profiles.active：本文件会被打进发布包，写 dev 等于让所有未显式指定
+  # profile 的启动（含 java -jar、IDE 直接运行）都按 dev 跑，从而连带启用内置测试 API Key、
+  # 文档里的固定管理员口令与 DEBUG 日志 —— 这是 #666 记录的问题。
+  # 本地开发请显式指定：--spring.profiles.active=dev 或 -Dspring-boot.run.profiles=dev；
+  # 不指定时按 Spring Boot 默认（default profile）启动：无内置测试凭据，JWT 密钥与管理员
+  # 口令随机生成并打印在启动日志里（见 #664）。

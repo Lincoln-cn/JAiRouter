@@ -394,14 +394,16 @@ The project integrates multiple code quality tools:
 ### 4. Run in Development Mode
 
 ```bash
-# Use the Spring Boot Maven plugin
-./mvnw spring-boot:run
+# Start with the dev profile (built-in test credentials, DEBUG logs — recommended for local work)
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 
 # Enable debug mode
-./mvnw spring-boot:run -Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005"
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev -Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005"
 
-# Use the development profile
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+# Without a profile: start from the base configuration, which loads no built-in test credentials.
+# The JWT secret and the administrator password are generated at startup and printed in the log
+# (set JWT_SECRET / INITIAL_ADMIN_PASSWORD to pin them).
+./mvnw spring-boot:run
 ```
 
 ## Troubleshooting

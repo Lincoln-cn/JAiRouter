@@ -74,7 +74,7 @@ export INITIAL_ADMIN_PASSWORD="your-own-strong-password"
 ```
 
 > 💡 **提示**: 快速体验（dev profile）无需配置密钥，内置了开发密钥可直接启动。生产环境才需要设置 `JWT_SECRET`。
-> 🔐 **控制台默认账号**: `admin` / `ChangeMeOnFirstStartup123456`（**仅在账号表为空时自动创建**）。生产环境请通过上文的 `INITIAL_ADMIN_PASSWORD` 覆盖，或在首次登录后立即修改。
+> 🔐 **控制台默认账号（仅 dev profile）**: `admin` / `ChangeMeOnFirstStartup123456`（**仅在账号表为空时自动创建**）。生产环境请通过上文的 `INITIAL_ADMIN_PASSWORD` 覆盖，或在首次登录后立即修改。不带 dev profile 启动时没有固定口令——见下方「方式二」的说明。
 
 ## 🚀 步骤 1：启动 JAiRouter
 
@@ -108,12 +108,15 @@ abc123def456   sodlinken/jairouter:latest   "java -jar /app/mode…"   2 seconds
 ### 方式二：JAR 文件直接运行
 
 ```bash
-# 如果已下载 JAR 文件
-java -jar model-router.jar
+# 如果已下载 JAR 文件（dev profile 才有内置测试凭据与固定测试口令）
+java -jar model-router.jar --spring.profiles.active=dev
 
 # 或指定配置文件
 java -jar model-router.jar --spring.config.location=classpath:/application.yml
 ```
+
+> 不带 `--spring.profiles.active=dev` 时按基础配置启动：**没有任何内置测试凭据**，JWT 密钥与管理员口令
+> 在启动时随机生成并打印在启动日志里（要固定下来请设置 `JWT_SECRET` / `INITIAL_ADMIN_PASSWORD`）。
 
 **预期输出**：
 ```
@@ -208,7 +211,7 @@ http://localhost:8080/swagger-ui/index.html
 
 本节命令调用的是**管理面 API**，它们需要认证 —— 不带 token 会返回
 `401 {"error":{"code":"AUTH_MISSING"}}`。先在当前 shell 里取一次 JWT 并复用
-（开发环境默认账户为 `admin` / `ChangeMeOnFirstStartup123456`；生产请务必更换）：
+（dev profile 默认账户为 `admin` / `ChangeMeOnFirstStartup123456`；生产请务必更换。非 dev 启动时口令是启动日志里那次随机值）：
 
 ```bash
 TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
