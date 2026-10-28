@@ -972,10 +972,10 @@
     },
     "docs/en/security/jwt-authentication.md": {
       "FilePath": "docs/en/security/jwt-authentication.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-25T05:32:36.232511",
-      "ContentHash": "6604f0ff5d79995a",
-      "GitCommit": "58ace0af",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-28T07:55:12.822986",
+      "ContentHash": "09796b19fb1f4cce",
+      "GitCommit": "ec39c83d",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2138,10 +2138,10 @@
     },
     "docs/zh/security/jwt-authentication.md": {
       "FilePath": "docs/zh/security/jwt-authentication.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-25T05:32:36.888944",
-      "ContentHash": "da2e08bb866c353e",
-      "GitCommit": "58ace0af",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-28T07:55:13.549056",
+      "ContentHash": "a2d84b37681ffbba",
+      "GitCommit": "ec39c83d",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2351,10 +2351,10 @@
     },
     "docs/en/deployment/environment-variables.md": {
       "FilePath": "docs/en/deployment/environment-variables.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-27T16:56:25.785921",
-      "ContentHash": "c643a8f4744cc1e4",
-      "GitCommit": "3505ef08",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-28T07:55:12.429910",
+      "ContentHash": "7d47d2bdae73782a",
+      "GitCommit": "ec39c83d",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2363,10 +2363,10 @@
     },
     "docs/zh/deployment/environment-variables.md": {
       "FilePath": "docs/zh/deployment/environment-variables.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-27T16:56:26.338800",
-      "ContentHash": "cf6ecab5f86c1b48",
-      "GitCommit": "3505ef08",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-28T07:55:13.152203",
+      "ContentHash": "d0267fb2be8af953",
+      "GitCommit": "ec39c83d",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -4838,7 +4838,39 @@
       "ChangeType": "CREATED",
       "Timestamp": "2026-10-27T16:56:26.338807",
       "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/en/deployment/environment-variables.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-28T07:55:12.429922",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/jwt-authentication.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-28T07:55:12.822996",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/environment-variables.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-28T07:55:13.152213",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/jwt-authentication.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-28T07:55:13.549066",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-27T16:56:26.759434"
+  "last_updated": "2026-10-28T07:55:13.922634"
 }
