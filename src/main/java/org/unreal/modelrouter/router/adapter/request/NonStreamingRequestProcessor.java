@@ -325,8 +325,11 @@ public class NonStreamingRequestProcessor {
                             downstreamData = objectMapper.readValue(bodyStr, Object.class);
 
                             // 提取并记录 token 使用量（v3.1 PR-2: 同时完成配额结算）
-                            tokenUsageExtractor.extractAndRecordTokenUsage(bodyStr, adapterType, instanceName,
-                                    capturedKeyId, quotaReservation);
+                            // #712：带上请求体，缺少 usage 时按文本估算 prompt
+                            tokenUsageExtractor.extractAndRecordTokenUsage(bodyStr,
+                                    capturedRequestBody != null
+                                            ? capturedRequestBody : serializeAndTruncate(transformedRequest),
+                                    adapterType, instanceName, capturedKeyId, quotaReservation);
                         }
 
                         // 响应转换
