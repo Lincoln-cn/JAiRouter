@@ -139,7 +139,7 @@ class PoolPersistenceServiceTest {
             stored.put("auto-model", pool("auto-model", "chat"));
             when(storeManager.getConfig("pool_definitions")).thenReturn(stored);
 
-            service.remove("auto-model");
+            assertTrue(service.remove("auto-model"), "持久化层确有该条目时 remove 必须返回 true");
 
             // 只断言「saveConfig 被调用过」是不够的：调用方传旧内容过来同样满足。
             // 这里钉住**载荷**——落库的那张表里不能再有 auto-model。
@@ -159,7 +159,7 @@ class PoolPersistenceServiceTest {
             real.save(pool("only-pool", "chat"));
             assertEquals(1, real.loadAll().size(), "前置：已有一条");
 
-            real.remove("only-pool");
+            assertTrue(real.remove("only-pool"), "真实 StoreManager 下删除也必须返回 true");
 
             assertTrue(real.loadAll().isEmpty(),
                     "删掉最后一个池后必须读回空集合；非空即说明空表被丢弃、条目会复活");
@@ -170,7 +170,10 @@ class PoolPersistenceServiceTest {
         void testRemove_missing_noSave() {
             when(storeManager.getConfig("pool_definitions")).thenReturn(new HashMap<>());
 
-            service.remove("nonexistent");
+            // #708: 返回值是调用方区分「YAML 只读 / 持久化层没有该条目」的唯一信号，
+            // 之前 remove 是 void，静默 no-op 也照样回 200。
+            assertFalse(service.remove("nonexistent"),
+                    "持久化层没有该条目时 remove 必须返回 false");
 
             verify(storeManager, never()).saveConfig(any(String.class), any(Map.class));
         }

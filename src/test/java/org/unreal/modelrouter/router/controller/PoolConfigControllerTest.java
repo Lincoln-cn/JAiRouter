@@ -19,6 +19,7 @@ import org.unreal.modelrouter.router.pool.model.PoolMember;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -61,8 +62,8 @@ class PoolConfigControllerTest {
         }
 
         @Override
-        public void remove(final String poolName) {
-            store.removeIf(p -> p.getPoolName() != null && p.getPoolName().equals(poolName));
+        public boolean remove(final String poolName) {
+            return store.removeIf(p -> p.getPoolName() != null && p.getPoolName().equals(poolName));
         }
     }
 
@@ -234,6 +235,62 @@ class PoolConfigControllerTest {
 
             List<PoolDefinition> pools = controller.getAllPools().getBody().getData();
             assertEquals(2, pools.size());
+        }
+
+        @Test
+        @DisplayName("POOL-API-014: 删除 YAML 池返回 409,池仍在路由里")
+        void testDelete_yamlPool_409() {
+            poolProperties.setPools(List.of(validPool("yaml-pool")));
+            controller = new PoolConfigController(
+                    poolProperties, persistenceService, poolSelector, new ServiceTypeResolver());
+
+            ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                    () -> controller.deletePool("yaml-pool"));
+
+            assertEquals(HttpStatus.CONFLICT, ex.getStatusCode(),
+                    "YAML 定义的资源池是只读的,删除必须回 409 而不是 200");
+            assertEquals(1, controller.getAllPools().getBody().getData().size(),
+                    "YAML 池删不掉,必须仍在生效列表里");
+        }
+
+        @Test
+        @DisplayName("POOL-API-015: 删除同池名持久化覆盖项返回 200 但标记 yamlPoolActive=true")
+        void testDelete_override_persistedRemovedYamlRevives() {
+            PoolDefinition yamlPool = validPool("auto-model");
+            yamlPool.setStrategy("round-robin");
+            poolProperties.setPools(List.of(yamlPool));
+            persistenceService.save(validPool("auto-model"));
+            controller = new PoolConfigController(
+                    poolProperties, persistenceService, poolSelector, new ServiceTypeResolver());
+            assertEquals("weighted-random", controller.getPool("auto-model").getBody().getData().getStrategy(),
+                    "前置:持久化覆盖项应生效");
+
+            ResponseEntity<RouterResponse<Map<String, Object>>> response =
+                    controller.deletePool("auto-model");
+
+            assertEquals(HttpStatus.OK, response.getStatusCode(),
+                    "删掉的是持久化覆盖项,操作本身成功,故仍是 200");
+            Map<String, Object> data = response.getBody().getData();
+            assertEquals(Boolean.TRUE, data.get("deleted"));
+            assertEquals(Boolean.TRUE, data.get("yamlPoolActive"),
+                    "覆盖项被删后 YAML 同池名池会重新生效,必须告知调用方");
+            assertEquals("round-robin", controller.getPool("auto-model").getBody().getData().getStrategy(),
+                    "列表应回到 YAML 版本");
+        }
+
+        @Test
+        @DisplayName("POOL-API-016: 删除普通持久化池返回 200 且 yamlPoolActive=false")
+        void testDelete_persistedPool_yamlPoolActiveFalse() {
+            controller.createPool(validPool("auto-model"));
+
+            ResponseEntity<RouterResponse<Map<String, Object>>> response =
+                    controller.deletePool("auto-model");
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertEquals(Boolean.TRUE, response.getBody().getData().get("deleted"));
+            assertEquals(Boolean.FALSE, response.getBody().getData().get("yamlPoolActive"));
+            assertNull(response.getBody().getData().get("message"));
+            assertTrue(controller.getAllPools().getBody().getData().isEmpty());
         }
     }
 }

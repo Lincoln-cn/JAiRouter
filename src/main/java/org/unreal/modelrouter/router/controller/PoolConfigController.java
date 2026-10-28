@@ -25,7 +25,9 @@ import org.unreal.modelrouter.router.pool.model.PoolDefinition;
 import org.unreal.modelrouter.router.pool.model.PoolMember;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -141,14 +143,49 @@ public class PoolConfigController {
 
     /**
      * 删除资源池
+     *
+     * <p>只删除持久化层的资源池。YAML 里定义的资源池是只读配置源，删除请求返回 409 而不是
+     * 假装成功（此前 {@code remove} 静默 no-op 后 reload 又把 YAML 池并回来，接口却回 200）。</p>
+     *
+     * <p>删除持久化池本身仍是 200：它确实删掉了，只是同池名的 YAML 定义会随之重新生效，
+     * 这一点通过响应体的 {@code yamlPoolActive} 告知调用方。</p>
      */
     @DeleteMapping("/{poolName}")
-    @Operation(summary = "删除资源池", description = "按池名删除资源池并热生效")
-    public ResponseEntity<RouterResponse<Void>> deletePool(@PathVariable final String poolName) {
+    @Operation(summary = "删除资源池",
+            description = "按池名删除持久化资源池并热生效;YAML 定义的池只读,删除返回 409;"
+                    + "若同池名的 YAML 池因此重新生效,响应体 yamlPoolActive=true")
+    public ResponseEntity<RouterResponse<Map<String, Object>>> deletePool(@PathVariable final String poolName) {
         findPool(poolName);
-        persistenceService.remove(poolName);
+        boolean yamlDefined = isYamlPool(poolName);
+        boolean removed = persistenceService.remove(poolName);
+        if (!removed) {
+            if (yamlDefined) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Pool '" + poolName + "' is defined in YAML and is read-only through this API; "
+                                + "edit the pools YAML file, or create a persisted pool with the same name to override it");
+            }
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Pool '" + poolName + "' is not present in the persisted pool store; "
+                            + "refusing to report a delete that would not take effect");
+        }
         reloadActivePools();
-        return ResponseEntity.ok(RouterResponse.success(null));
+        boolean yamlPoolActive = isYamlPool(poolName);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("poolName", poolName);
+        result.put("deleted", true);
+        result.put("yamlPoolActive", yamlPoolActive);
+        if (yamlPoolActive) {
+            result.put("message", "持久化资源池已删除,但 YAML 中同池名的只读池随即重新生效;"
+                    + "如需彻底停用,请在 YAML 中删除该池或改为写同池名的持久化覆盖项");
+            logger.info("删除持久化资源池 {} 后 YAML 同池名资源池重新生效", poolName);
+        }
+        return ResponseEntity.ok(RouterResponse.success(result));
+    }
+
+    private boolean isYamlPool(final String poolName) {
+        List<PoolDefinition> yamlPools = poolProperties.getPools();
+        return yamlPools != null && yamlPools.stream()
+                .anyMatch(p -> p.getPoolName() != null && p.getPoolName().equals(poolName));
     }
 
     private PoolDefinition findPool(final String poolName) {

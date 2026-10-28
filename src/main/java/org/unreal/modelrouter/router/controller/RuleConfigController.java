@@ -151,16 +151,46 @@ public class RuleConfigController {
 
     /**
      * 删除规则
+     *
+     * <p>只删除持久化层的规则。YAML 里定义的规则是只读配置源，删除请求返回 409 而不是
+     * 假装成功（此前 {@code remove} 静默 no-op 后 reload 又把 YAML 规则并回来，接口却回 200）。</p>
+     *
+     * <p>删除持久化规则本身仍是 200：它确实删掉了，只是同 id 的 YAML 定义会随之重新生效，
+     * 这一点通过响应体的 {@code yamlRuleActive} 告知调用方，见下方实现。</p>
      */
     @DeleteMapping("/{id}")
-    @Operation(summary = "删除规则", description = "按 ID 删除规则并热生效")
-    public ResponseEntity<RouterResponse<Void>> deleteRule(@PathVariable final String id) {
-        findRule(id);
-        persistenceService.remove(id);
+    @Operation(summary = "删除规则",
+            description = "按 ID 删除持久化规则并热生效;YAML 定义的规则只读,删除返回 409;"
+                    + "若同 id 的 YAML 规则因此重新生效,响应体 yamlRuleActive=true")
+    public ResponseEntity<RouterResponse<Map<String, Object>>> deleteRule(@PathVariable final String id) {
+        RuleDefinition existing = findRule(id);
+        boolean yamlDefined = existing.getSource() == RuleDefinition.Source.YAML;
+        boolean removed = persistenceService.remove(id);
+        if (!removed) {
+            if (yamlDefined) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Rule '" + id + "' is defined in YAML and is read-only through this API; "
+                                + "edit the rules YAML file, or create a persisted rule with the same id to override it");
+            }
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Rule '" + id + "' is not present in the persisted rule store; "
+                            + "refusing to report a delete that would not take effect");
+        }
         // v2.8.8: 清理规则级限流器,防泄漏
         rateLimitManager.removeRuleRateLimiter(id);
         reloadActiveRules();
-        return ResponseEntity.ok(RouterResponse.success(null));
+        boolean yamlRuleActive = ruleEngineService.getYamlRules().stream()
+                .anyMatch(r -> id.equals(r.getId()));
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", id);
+        result.put("deleted", true);
+        result.put("yamlRuleActive", yamlRuleActive);
+        if (yamlRuleActive) {
+            result.put("message", "持久化规则已删除,但 YAML 中同 id 的只读规则随即重新生效;"
+                    + "如需彻底停用,请在 YAML 中删除该规则或改为写同 id 的持久化覆盖项");
+            logger.info("删除持久化规则 {} 后 YAML 同 id 规则重新生效", id);
+        }
+        return ResponseEntity.ok(RouterResponse.success(result));
     }
 
     /**

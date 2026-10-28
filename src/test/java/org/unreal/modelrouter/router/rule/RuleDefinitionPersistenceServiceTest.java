@@ -155,7 +155,7 @@ class RuleDefinitionPersistenceServiceTest {
             saved.put("r1", r1);
             when(storeManager.getConfig("rule_definitions")).thenReturn(saved);
 
-            service.remove("r1");
+            assertTrue(service.remove("r1"), "持久化层确有该条目时 remove 必须返回 true");
 
             // 只断言「saveConfig 被调用过」不够：传旧载荷同样满足。这里钉住载荷本身。
             @SuppressWarnings("unchecked")
@@ -174,7 +174,7 @@ class RuleDefinitionPersistenceServiceTest {
             real.save(rule("only-rule", "rule-only"));
             assertEquals(1, real.loadAll().size(), "前置：已有一条");
 
-            real.remove("only-rule");
+            assertTrue(real.remove("only-rule"), "真实 StoreManager 下删除也必须返回 true");
 
             assertTrue(real.loadAll().isEmpty(),
                     "删掉最后一条规则后必须读回空集合；非空即说明空表被丢弃、条目会复活");
@@ -185,7 +185,10 @@ class RuleDefinitionPersistenceServiceTest {
         void testRemove_notExisting_noSave() {
             when(storeManager.getConfig("rule_definitions")).thenReturn(new HashMap<>());
 
-            service.remove("nonexistent");
+            // #708: 返回值是调用方区分「YAML 只读 / 持久化层没有该条目」的唯一信号，
+            // 之前 remove 是 void，静默 no-op 也照样回 200。
+            assertFalse(service.remove("nonexistent"),
+                    "持久化层没有该条目时 remove 必须返回 false");
 
             verify(storeManager, never()).saveConfig(any(String.class), any(Map.class));
         }
