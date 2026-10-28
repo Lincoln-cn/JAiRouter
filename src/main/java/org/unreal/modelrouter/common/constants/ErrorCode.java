@@ -124,6 +124,8 @@ public enum ErrorCode {
     EXPIRED_JWT_TOKEN("EXPIRED_JWT_TOKEN", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
             "JWT 令牌已过期（认证管理器按 expired 归类）"),
     INVALID_API_KEY("INVALID_API_KEY", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION, "无效的 API Key"),
+    JWT_ACCOUNT_DISABLED("JWT_ACCOUNT_DISABLED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
+            "JWT 令牌对应的账户不存在或已被禁用"),
     JWT_AUTH_FAILED("JWT_AUTH_FAILED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
             "JWT 令牌认证失败（认证管理器未预期异常）"),
     JWT_BLACKLISTED("JWT_BLACKLISTED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
