@@ -25,11 +25,11 @@ jairouter:
       
       # JWT 算法
       # #677：镜像导出的 JWT_ALGORITHM 必须有对应绑定，否则设置后静默无效
-  algorithm: ${JWT_ALGORITHM:HS256}
+      algorithm: "${JWT_ALGORITHM:HS256}"
       
       # 令牌过期时间（分钟）
       # #677：同上，JWT_EXPIRATION_MINUTES 此前只被 config-external 读，随包配置读不到
-  expiration-minutes: ${JWT_EXPIRATION_MINUTES:60}
+      expiration-minutes: "${JWT_EXPIRATION_MINUTES:60}"
       
       # 刷新令牌过期时间（天）
       refresh-expiration-days: 7
