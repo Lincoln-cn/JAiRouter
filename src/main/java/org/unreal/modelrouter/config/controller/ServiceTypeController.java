@@ -131,7 +131,9 @@ public class ServiceTypeController {
         final String backupKey;
         try {
             backupKey = configurationService.resetToDefaultConfig();
-        } catch (Exception e) {
+        } catch (IllegalStateException e) {
+            // 只捕获「清除持久化配置失败」这一条已定性的失败路径；其余运行时异常继续冒泡，
+            // 由全局异常处理器兜底，避免再新增一处裸 catch（见 BareCatchCeilingTest / #604）。
             logger.error("重置配置失败", e);
             throw ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "重置配置失败：" + e.getMessage());
         }
