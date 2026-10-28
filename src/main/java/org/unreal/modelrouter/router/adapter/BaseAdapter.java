@@ -386,6 +386,12 @@ public abstract class BaseAdapter implements ServiceCapability {
         String adapterType = getAdapterType();
         String finalPath = adaptModelName(path);
         String finalAuth = getAuthorizationHeader(adaptModelName(authorization), adapterType);
+        // #720：上游可能是任意形状（OpenAI 原生即 ChatDTO.Request，其它面由翻译器构造），
+        // 因此在这里、拿原始请求判定 switch，再以请求属性传给处理器（处理器只读属性，不依赖 DTO 形状）。
+        if (httpRequest != null && request instanceof ChatDTO.Request chatRequest) {
+            httpRequest.getAttributes().put(
+                    StreamingRequestProcessor.INCLUDE_USAGE_ATTRIBUTE, chatRequest.includeUsage());
+        }
         Object transformedRequest = transformRequest(request, adapterType);
         return processor.processStreamingRequest(transformedRequest, finalAuth, client,
                 finalPath, selectedInstance, serviceType, adapterType, httpRequest);

@@ -57,6 +57,15 @@ public class StreamingRequestProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(StreamingRequestProcessor.class);
 
+    /**
+     * #720：请求属性键 —— 客户端是否要求 usage 帧（{@code stream_options.include_usage}）。
+     *
+     * <p>放在请求属性上而不是参数列表里，是因为适配器拿到的 {@code request} 已被翻译成各自形状；
+     * 只有 {@code BaseAdapter} 在翻译前还持有 OpenAI 原生 DTO。</p>
+     */
+    public static final String INCLUDE_USAGE_ATTRIBUTE =
+            StreamingRequestProcessor.class.getName() + ".includeUsage";
+
     // Token 估算系数
     private static final double ENGLISH_CHARS_PER_TOKEN = 4.0;
     private static final double CHINESE_CHARS_PER_TOKEN = 2.0;
@@ -156,6 +165,14 @@ public class StreamingRequestProcessor {
             final ServerHttpRequest httpRequest) {
 
         final String capturedKeyId = captureApiKeyId(httpRequest);
+        // #720：客户端是否要求 usage 帧
+        final boolean includeUsage;
+        if (httpRequest != null) {
+            includeUsage = Boolean.TRUE.equals(
+                    httpRequest.getAttributes().get(INCLUDE_USAGE_ATTRIBUTE));
+        } else {
+            includeUsage = false;
+        }
         // v3.1 PR-2: 配额预留凭据（handler 在 selectInstance 前挂载；未预扣/账本未启用时为 null）
         final QuotaReservation quotaReservation = QuotaReservation.from(httpRequest);
 
@@ -240,9 +257,16 @@ public class StreamingRequestProcessor {
         // 因此链路入口从「固定 retrieve()」改为「由调用方传入原始 chunk 流」；
         // legacy /api/** 面仍以同样的 retrieve().onStatus(...) 进入（见下方分支），语义逐字节不变。
         final Function<Flux<String>, Flux<ServerSentEvent<String>>> decorateChunks = rawChunks -> {
+            // #720：上游若已经自带 usage 帧（部分 vLLM 会），就不再补第二帧
+            final java.util.concurrent.atomic.AtomicBoolean usageFrameSeen =
+                    new java.util.concurrent.atomic.AtomicBoolean(false);
             Flux<ServerSentEvent<String>> streamResponse = rawChunks
                 .map(chunk -> {
                     firstChunkEmitted.set(true);
+                    // #720：上游自带 usage 帧时只透传，不重复补
+                    if (includeUsage && chunk.contains("\"usage\"")) {
+                        usageFrameSeen.set(true);
+                    }
                     // 提取 usage 信息和累积内容。
                     // v3.2.3: contentBuilder 与 doOnCancel/doOnError 的缓冲释放共享监视器
                     // （Reactor 不保证 cancel 与 onNext 串行，StringBuilder 非线程安全）。
@@ -402,6 +426,17 @@ public class StreamingRequestProcessor {
                         ? StreamingErrorTermination.terminate(throwable, httpRequest, objectMapper)
                         : Flux.error(throwable));
 
+            if (includeUsage) {
+                // #720：OpenAI 语义要求 usage 帧出现在 [DONE] 之前、choices 为空数组。
+                // 上游的 [DONE] 由网关重新发（保持「只有正常结束才有 [DONE]」这条既有契约）。
+                streamResponse = streamResponse
+                        .filter(event -> !isDoneEvent(event))
+                        .concatWith(Flux.defer(() -> usageFrameSeen.get()
+                                ? Flux.just(doneEvent())
+                                : Flux.just(buildUsageEvent(modelRef.get(), promptTokens.get(),
+                                        completionTokens.get(), totalTokens.get()), doneEvent())));
+            }
+
             return streamResponse;
         };
 
@@ -469,6 +504,62 @@ public class StreamingRequestProcessor {
         return ServerSentEvent.<String>builder()
                 .data(transformed)
                 .build();
+    }
+
+    /**
+     * #720：判断一个 SSE 事件是不是终止帧 {@code [DONE]}。
+     *
+     * @param event SSE 事件
+     * @return 是否为终止帧
+     */
+    private static boolean isDoneEvent(final ServerSentEvent<String> event) {
+        final String data = event == null ? null : event.data();
+        return data != null && "[DONE]".equals(data.trim());
+    }
+
+    /**
+     * #720：构造终止帧。
+     *
+     * @return 只含 {@code [DONE]} 的 SSE 事件
+     */
+    private static ServerSentEvent<String> doneEvent() {
+        return ServerSentEvent.<String>builder().data("[DONE]").build();
+    }
+
+    /**
+     * #720：构造 usage 帧（OpenAI 语义：{@code choices} 为空数组，usage 三个计数）。
+     *
+     * @param model            模型名
+     * @param promptTokens     prompt tokens
+     * @param completionTokens completion tokens
+     * @param totalTokens      total tokens
+     * @return usage 帧
+     */
+    private ServerSentEvent<String> buildUsageEvent(final String model,
+                                                     final long promptTokens,
+                                                     final long completionTokens,
+                                                     final long totalTokens) {
+        final java.util.Map<String, Object> usage = new java.util.LinkedHashMap<>();
+        usage.put("prompt_tokens", promptTokens);
+        usage.put("completion_tokens", completionTokens);
+        usage.put("total_tokens", totalTokens > 0 ? totalTokens : promptTokens + completionTokens);
+
+        final java.util.Map<String, Object> payload = new java.util.LinkedHashMap<>();
+        payload.put("id", "chatcmpl-usage-" + java.util.UUID.randomUUID());
+        payload.put("object", "chat.completion.chunk");
+        payload.put("created", System.currentTimeMillis() / 1000L);
+        payload.put("model", model != null ? model : "");
+        payload.put("choices", java.util.List.of());
+        payload.put("usage", usage);
+
+        String json;
+        try {
+            json = objectMapper.writeValueAsString(payload);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            json = "{\"choices\":[],\"usage\":{\"prompt_tokens\":" + promptTokens
+                    + ",\"completion_tokens\":" + completionTokens + ",\"total_tokens\":" + usage.get("total_tokens") + "}}";
+        }
+        return ServerSentEvent.<String>builder().data(json).build();
     }
 
     /**
