@@ -482,6 +482,21 @@ class ConfigurationServiceTest {
             verify(configMergeService).resetToYamlConfig();
             verify(eventPublisher).publishEvent(any(ConfigSyncEvent.class));
         }
+
+        @Test
+        @DisplayName("CONFIG-017b: 清除失败时不刷新运行时配置，异常向上抛出")
+        void testResetFailureIsNotSwallowed() {
+            clearInvocations(eventPublisher);
+            when(configMergeService.resetToYamlConfig())
+                    .thenThrow(new IllegalStateException("清除持久化配置失败，配置可能只被部分清除"));
+
+            IllegalStateException error = assertThrows(IllegalStateException.class,
+                    () -> configurationService.resetToDefaultConfig());
+
+            assertTrue(error.getMessage().contains("配置可能只被部分清除"));
+            verify(configMergeService).resetToYamlConfig();
+            verify(eventPublisher, never()).publishEvent(any());
+        }
     }
 
     // ==================== 版本清理测试 ====================

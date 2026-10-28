@@ -23,6 +23,15 @@ public class ConfigMergeService {
     private static final Logger logger = LoggerFactory.getLogger(ConfigMergeService.class);
     private static final String CONFIG_KEY = "model-router-config";
 
+    /**
+     * 重置前的持久化配置备份键。
+     *
+     * <p>重置必须删除 {@link #CONFIG_KEY} 的全部版本（否则 {@link #getPersistedConfig()} 会回落到
+     * 最新版本，重置不会生效），因此重置前先把当前生效配置写入该键；运行时配置合并只读
+     * {@link #CONFIG_KEY}，不读该键，备份内容不会回流到运行时配置。</p>
+     */
+    public static final String PRE_RESET_BACKUP_KEY = "config_pre_reset_backup";
+
     private final StoreManager storeManager;
     private final ModelRouterProperties modelRouterProperties;
     private final ConfigConverterHelper configConverterHelper;
@@ -169,12 +178,28 @@ public class ConfigMergeService {
     }
 
     /**
-     * 清除持久化配置，恢复到YAML默认配置 注意：此方法仅用于清除存储中的配置，版本控制由ConfigurationService处理
+     * 清除持久化配置，恢复到YAML默认配置
+     *
+     * <p>重置前先把当前生效的持久化配置备份到 {@link #PRE_RESET_BACKUP_KEY}，便于人工恢复；
+     * 备份失败会直接抛出，此时还没有删除任何配置。清除过程中任一删除失败都会抛出
+     * {@link IllegalStateException}（原始异常保留为 cause），因为此时配置可能只被部分清除，
+     * 不能当作成功返回。</p>
+     *
+     * @return 备份键；没有持久化配置可备份时返回 {@code null}
+     * @throws IllegalStateException 清除持久化配置失败
      */
-    public void resetToYamlConfig() {
+    public String resetToYamlConfig() {
+        final Map<String, Object> effectiveConfig = readEffectivePersistedConfig();
+        String backupKey = null;
+        if (effectiveConfig != null && !effectiveConfig.isEmpty()) {
+            storeManager.saveConfig(PRE_RESET_BACKUP_KEY, effectiveConfig);
+            backupKey = PRE_RESET_BACKUP_KEY;
+            logger.info("已备份重置前的持久化配置到键 {}", backupKey);
+        }
+
         try {
-            // 删除所有版本的配置
-            List<Integer> versions = storeManager.getConfigVersions(CONFIG_KEY);
+            // 删除所有版本的配置：只删当前配置的话 getPersistedConfig() 会回落到最新版本
+            final List<Integer> versions = storeManager.getConfigVersions(CONFIG_KEY);
             for (Integer version : versions) {
                 storeManager.deleteConfigVersion(CONFIG_KEY, version);
             }
@@ -185,9 +210,30 @@ public class ConfigMergeService {
             }
 
             logger.info("已清除所有持久化配置，恢复到YAML默认配置");
+            return backupKey;
         } catch (Exception e) {
             logger.error("清除持久化配置时发生错误", e);
+            throw new IllegalStateException("清除持久化配置失败，配置可能只被部分清除", e);
         }
+    }
+
+    /**
+     * 读取当前生效的持久化配置，顺序与 {@link #getPersistedConfig()} 一致：
+     * 优先当前配置，其次最新版本；都没有时返回 {@code null}（表示没有可备份内容）。
+     */
+    private Map<String, Object> readEffectivePersistedConfig() {
+        if (storeManager.exists(CONFIG_KEY)) {
+            final Map<String, Object> current = storeManager.getConfig(CONFIG_KEY);
+            if (current != null && !current.isEmpty()) {
+                return current;
+            }
+        }
+        final List<Integer> versions = storeManager.getConfigVersions(CONFIG_KEY);
+        if (!versions.isEmpty()) {
+            final int latestVersion = versions.stream().mapToInt(Integer::intValue).max().orElse(0);
+            return storeManager.getConfigByVersion(CONFIG_KEY, latestVersion);
+        }
+        return null;
     }
 
     /**
