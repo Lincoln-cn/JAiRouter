@@ -34,7 +34,9 @@ public final class ResponseCacheProperties {
     private int maxSize = 10000;
 
     /**
-     * 仅缓存确定性请求（chat: temperature==0/null 且 n==1/null；默认 true）
+     * 仅缓存确定性请求（chat: 显式 temperature==0 且 n==1/null；默认 true）.
+     *
+     * <p>#723: 未显式指定 temperature 视为随机采样（协议缺省 1.0），不缓存。
      */
     private boolean onlyDeterministic = true;
 

@@ -91,6 +91,32 @@ class ResponseCacheServiceTest {
     }
 
     @Test
+    @DisplayName("#723: 未显式指定 temperature 视为随机采样，不生成缓存键")
+    void buildKeyTreatsMissingTemperatureAsNonDeterministic() {
+        ChatDTO.Request missingTemperature = chatRequest("hello", null, null);
+        ChatDTO.Request explicitGreedy = chatRequest("hello", 0.0, null);
+        ChatDTO.Request singleChoice = chatRequest("hello", 0.0, 1);
+        ChatDTO.Request randomTemperature = chatRequest("hello", 0.7, null);
+
+        assertNull(service.buildKey("tenant-a", ServiceType.chat, missingTemperature),
+                "temperature 缺省（协议等价 1.0）不应生成缓存键");
+        assertNotNull(service.buildKey("tenant-a", ServiceType.chat, explicitGreedy),
+                "显式 temperature=0 应生成缓存键");
+        assertNotNull(service.buildKey("tenant-a", ServiceType.chat, singleChoice),
+                "temperature=0 且 n=1 应生成缓存键");
+        assertNull(service.buildKey("tenant-a", ServiceType.chat, randomTemperature),
+                "temperature>0 不应生成缓存键");
+    }
+
+    @Test
+    @DisplayName("#723: only-deterministic=false 时缺省 temperature 仍可缓存（开关语义不变）")
+    void buildKeyCachesMissingTemperatureWhenDeterministicGateOff() {
+        properties.setOnlyDeterministic(false);
+
+        assertNotNull(service.buildKey("tenant-a", ServiceType.chat, chatRequest("hello", null, null)));
+    }
+
+    @Test
     @DisplayName("buildKey: embedding/rerank 天然可缓存，其他服务类型不可缓存")
     void buildKeySupportsP0ServiceTypesOnly() {
         EmbeddingDTO.Request embedding = new EmbeddingDTO.Request("text-embedding-3-small",
