@@ -9,6 +9,7 @@ import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -18,6 +19,7 @@ import org.springframework.web.server.ServerWebInputException;
 import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.exception.AuthenticationException;
+import org.unreal.modelrouter.common.exception.DownstreamServiceException;
 import org.unreal.modelrouter.common.exception.AuthorizationException;
 import org.unreal.modelrouter.common.exception.SanitizationException;
 import org.unreal.modelrouter.common.exception.SecurityException;
@@ -107,11 +109,24 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
             } else {
                 RouterResponse<Void> errorResponse;
                 HttpStatus status;
+                Long retryAfterSeconds = null;
                 
                 if (ex instanceof ServerWebInputException) {
                     logger.error("请求体读取异常: {}", ex.getMessage());
                     errorResponse = RouterResponse.error("请求体无效或缺失: " + ex.getMessage(), "400");
                     status = HttpStatus.BAD_REQUEST;
+                } else if (ex instanceof DownstreamServiceException downstreamError) {
+                    // #717：下游错误体已读回 —— 用下游状态码与错误码回给调用方，
+                    // 而不是落到「系统异常 500」把上游语义（超长/额度/退避）全部抹掉。
+                    logger.error("下游服务异常: status={}, code={}, message={}",
+                            downstreamError.getStatusCode(), downstreamError.getUpstreamCode(),
+                            downstreamError.getMessage());
+                    errorResponse = RouterResponse.error(downstreamError.getMessage(),
+                            downstreamError.getUpstreamCode() != null
+                                    ? downstreamError.getUpstreamCode()
+                                    : String.valueOf(downstreamError.getStatusCode().value()));
+                    status = downstreamError.getStatusCode();
+                    retryAfterSeconds = downstreamError.getRetryAfterSeconds();
                 } else if (ex instanceof ResponseStatusException) {
                     ResponseStatusException rse = (ResponseStatusException) ex;
                     logger.error("响应状态异常: status={}, message={}", rse.getStatusCode(), rse.getMessage());
@@ -136,7 +151,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
                 }
                 
                 // 安全地设置响应状态和头
-                return setResponse(exchange, errorResponse, status);
+                return setResponse(exchange, errorResponse, status, retryAfterSeconds);
             }
         } catch (Exception e) {
             logger.error("异常处理器本身发生异常", e);
@@ -196,6 +211,22 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     private Mono<Void> setResponse(
             final ServerWebExchange exchange,
             final RouterResponse<Void> errorResponse, final HttpStatus status) {
+        return setResponse(exchange, errorResponse, status, null);
+    }
+
+    /**
+     * #717：写错误响应，并按需下发 {@code Retry-After}。
+     *
+     * @param exchange          当前交换对象
+     * @param errorResponse     错误响应载体
+     * @param status            已确定的状态码
+     * @param retryAfterSeconds 下游要求的退避秒数；{@code null} 表示不下发该头
+     * @return 写响应完成信号
+     */
+    private Mono<Void> setResponse(
+            final ServerWebExchange exchange,
+            final RouterResponse<Void> errorResponse, final HttpStatus status,
+            final Long retryAfterSeconds) {
         try {
             final ServerHttpResponse response = exchange.getResponse();
             // 检查响应是否已提交
@@ -207,6 +238,11 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
             // 设置状态码
             response.setStatusCode(status);
             
+            // #717：下游要求退避时把等待时间回给调用方（同值、不做任何加工）
+            if (retryAfterSeconds != null && !response.getHeaders().containsKey(HttpHeaders.RETRY_AFTER)) {
+                response.getHeaders().set(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds));
+            }
+
             // 安全地设置响应头，避免重复设置
             if (!response.getHeaders().containsKey("Content-Type")) {
                 response.getHeaders().add("Content-Type", MediaType.APPLICATION_JSON_VALUE);

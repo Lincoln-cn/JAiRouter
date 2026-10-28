@@ -165,7 +165,9 @@ class NonStreamingRequestProcessorQuotaSettleTest {
             "{\"error\":\"boom\"}"));
 
         StepVerifier.create(invoke(client, httpRequest))
-            .expectErrorMatches(error -> error instanceof org.springframework.web.server.ResponseStatusException)
+            // #717：5xx 现在带下游错误体，异常类型改为 DownstreamServiceException（状态码仍为 500）
+        .expectErrorMatches(error -> error instanceof org.unreal.modelrouter.common.exception.DownstreamServiceException downstream
+                && downstream.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR)
             .verify(java.time.Duration.ofSeconds(10));
 
         final QuotaReservation reservation = QuotaReservation.from(httpRequest);

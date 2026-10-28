@@ -11,8 +11,12 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.unreal.modelrouter.common.exception.DownstreamServiceException;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.unreal.modelrouter.auth.sanitization.SanitizationService;
 import org.unreal.modelrouter.monitor.callhistory.config.CallHistoryProperties;
@@ -154,52 +158,59 @@ class NonStreamingRequestProcessorTest {
     @Nested
     @DisplayName("handle4xxError 测试")
     class Handle4xxErrorTests {
+
+        /**
+         * #717：handle4xxError 现在会读回下游错误体，因此 stub 必须覆盖 headers() 与 bodyToMono()。
+         * 空体用于验证「没有错误体时用兜底文案」这条路径。
+         */
+        private ClientResponse emptyBodyClientResponse(final HttpStatus status) {
+            final ClientResponse clientResponse = mock(ClientResponse.class);
+            when(clientResponse.statusCode()).thenReturn(status);
+            final ClientResponse.Headers clientHeaders = mock(ClientResponse.Headers.class);
+            when(clientHeaders.asHttpHeaders()).thenReturn(new HttpHeaders());
+            when(clientResponse.headers()).thenReturn(clientHeaders);
+            when(clientResponse.bodyToMono(String.class)).thenReturn(Mono.just(""));
+            return clientResponse;
+        }
+
+        private DownstreamServiceException invokeHandle4xxError(final ClientResponse clientResponse)
+                throws Exception {
+            final var method = NonStreamingRequestProcessor.class.getDeclaredMethod("handle4xxError",
+                    ClientResponse.class, String.class, String.class);
+            method.setAccessible(true);
+            final Mono<?> result = (Mono<?>) method.invoke(processor, clientResponse, "instance", "/path");
+            return (DownstreamServiceException) result.block();
+        }
+
         @Test
         @DisplayName("401 错误应返回认证失败异常")
         void shouldReturnAuthFailureFor401() throws Exception {
-            org.springframework.web.reactive.function.client.ClientResponse clientResponse =
-                    mock(org.springframework.web.reactive.function.client.ClientResponse.class);
-            when(clientResponse.statusCode()).thenReturn(HttpStatus.UNAUTHORIZED);
+            final DownstreamServiceException exception =
+                    invokeHandle4xxError(emptyBodyClientResponse(HttpStatus.UNAUTHORIZED));
 
-            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("handle4xxError",
-                    org.springframework.web.reactive.function.client.ClientResponse.class,
-                    String.class, String.class);
-            method.setAccessible(true);
-
-            var result = (reactor.core.publisher.Mono<?>) method.invoke(processor, clientResponse, "instance", "/path");
-            assertNotNull(result);
+            assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
+            assertEquals("下游服务认证失败，请检查下游服务的认证配置", exception.getMessage(),
+                    "空错误体时沿用原有兜底文案");
         }
 
         @Test
         @DisplayName("400 错误应返回请求错误异常")
         void shouldReturnBadRequestFor400() throws Exception {
-            org.springframework.web.reactive.function.client.ClientResponse clientResponse =
-                    mock(org.springframework.web.reactive.function.client.ClientResponse.class);
-            when(clientResponse.statusCode()).thenReturn(HttpStatus.BAD_REQUEST);
+            final DownstreamServiceException exception =
+                    invokeHandle4xxError(emptyBodyClientResponse(HttpStatus.BAD_REQUEST));
 
-            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("handle4xxError",
-                    org.springframework.web.reactive.function.client.ClientResponse.class,
-                    String.class, String.class);
-            method.setAccessible(true);
-
-            var result = (reactor.core.publisher.Mono<?>) method.invoke(processor, clientResponse, "instance", "/path");
-            assertNotNull(result);
+            assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+            assertEquals("下游服务请求参数错误，请检查请求内容", exception.getMessage());
         }
 
         @Test
         @DisplayName("503 错误应返回服务不可用异常")
         void shouldReturnServiceUnavailableFor503() throws Exception {
-            org.springframework.web.reactive.function.client.ClientResponse clientResponse =
-                    mock(org.springframework.web.reactive.function.client.ClientResponse.class);
-            when(clientResponse.statusCode()).thenReturn(HttpStatus.SERVICE_UNAVAILABLE);
+            final DownstreamServiceException exception =
+                    invokeHandle4xxError(emptyBodyClientResponse(HttpStatus.SERVICE_UNAVAILABLE));
 
-            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("handle4xxError",
-                    org.springframework.web.reactive.function.client.ClientResponse.class,
-                    String.class, String.class);
-            method.setAccessible(true);
-
-            var result = (reactor.core.publisher.Mono<?>) method.invoke(processor, clientResponse, "instance", "/path");
-            assertNotNull(result);
+            assertEquals(HttpStatus.SERVICE_UNAVAILABLE, exception.getStatusCode());
+            assertEquals("下游服务暂时不可用，请稍后重试", exception.getMessage());
         }
     }
 
