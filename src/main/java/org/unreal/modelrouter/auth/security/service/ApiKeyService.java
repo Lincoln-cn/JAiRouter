@@ -336,11 +336,10 @@ public class ApiKeyService {
                     .totalRequests(0L).successfulRequests(0L).failedRequests(0L)
                     .build());
         }
-        UsageStatistics st = ak.getUsage(); st.incrementRequest(succ);
-        String td = LocalDateTime.now().toLocalDate().toString();
-        Map<String, Long> du = st.getDailyUsage();
-        if (du == null) { du = new HashMap<>(); st.setDailyUsage(du); }
-        du.put(td, du.getOrDefault(td, 0L) + 1);
+        // #711：incrementRequest 内部已把当天的 dailyUsage 加 1（UsageStatistics:74-87），
+        // 这里再 put 一次会让同一请求被计两次，日配额提前用光、概览页今日请求数翻倍。
+        UsageStatistics st = ak.getUsage();
+        st.incrementRequest(succ);
         apiKeyPersistenceService.saveApiKeysToStore(apiKeyCache);
         log.debug("更新API Key使用统计: {} (成功: {})", kid, succ);
     }
