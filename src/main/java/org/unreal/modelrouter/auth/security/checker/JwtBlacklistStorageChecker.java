@@ -21,6 +21,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.env.Environment;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
@@ -34,7 +35,12 @@ import java.time.Duration;
  * 在存储恢复前不会被拦截</b>。该降级是既有的可用性优先取舍，但必须让运维在<b>启动阶段</b>
  * 就能看见，而不是等到第一个请求失败、或靠每请求告警刷屏才发现。</p>
  *
- * <p>本检查仅在黑名单开启（{@code jairouter.security.jwt.blacklist-enabled=true}）时执行；
+ * <p>本检查仅在黑名单开启（{@code jairouter.security.jwt.blacklist-enabled=true}）<b>且黑名单存储确实使用 Redis</b>
+ * （{@code jairouter.security.jwt.blacklist.redis.enabled=true}）时执行。随包默认配置走本地
+ * {@code StoreManager} 实现（{@code JwtServiceConfiguration#storeManagerJwtBlacklistService}），此时
+ * {@code ReactiveStringRedisTemplate} 只因 {@code spring.data.redis.*} 自动配置而存在，探测它会给出与事实相反的
+ * 降级告警（#678）。</p>
+ *
  * 探测失败只告警，既不影响启动，也不改变任何校验行为。</p>
  *
  * @author JAiRouter Team
@@ -51,14 +57,20 @@ public class JwtBlacklistStorageChecker {
     /** 探测键：仅用于探测存储是否可读，不写入任何数据。 */
     private static final String PROBE_KEY = "jwt:blacklist:__startup_probe__";
 
+    /** 是否使用 Redis 作为黑名单存储；该键没有绑定类，直接读环境（#678）。 */
+    private static final String REDIS_BLACKLIST_ENABLED = "jairouter.security.jwt.blacklist.redis.enabled";
+
     private final SecurityProperties securityProperties;
     private final ObjectProvider<ReactiveStringRedisTemplate> redisTemplateProvider;
+    private final Environment environment;
 
     public JwtBlacklistStorageChecker(
             final SecurityProperties securityProperties,
-            final ObjectProvider<ReactiveStringRedisTemplate> redisTemplateProvider) {
+            final ObjectProvider<ReactiveStringRedisTemplate> redisTemplateProvider,
+            final Environment environment) {
         this.securityProperties = securityProperties;
         this.redisTemplateProvider = redisTemplateProvider;
+        this.environment = environment;
     }
 
     /**
@@ -67,6 +79,12 @@ public class JwtBlacklistStorageChecker {
     @EventListener(ApplicationReadyEvent.class)
     public void checkBlacklistStorage() {
         if (!securityProperties.getJwt().isBlacklistEnabled()) {
+            return;
+        }
+
+        if (!environment.getProperty(REDIS_BLACKLIST_ENABLED, Boolean.class, Boolean.FALSE)) {
+            log.info("JWT 黑名单使用本地 StoreManager 存储（{}=false）：不依赖 Redis，跳过可用性探测",
+                    REDIS_BLACKLIST_ENABLED);
             return;
         }
 
