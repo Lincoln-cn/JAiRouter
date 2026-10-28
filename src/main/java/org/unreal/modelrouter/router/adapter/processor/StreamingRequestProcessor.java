@@ -24,6 +24,7 @@ import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitor.service.TokenUsageRecorder;
 import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
+import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
 import org.unreal.modelrouter.router.cache.CachedStreamingResponse;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
@@ -105,6 +106,10 @@ public class StreamingRequestProcessor {
     @Autowired(required = false)
     private ResponseCacheService responseCacheService;
     
+    // #716：流式调用的成败回报口（可选注入；未装配时只记既有 metrics）
+    @Autowired(required = false)
+    private AdapterMetricsRecorder adapterMetricsRecorder;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public StreamingRequestProcessor(final ResponseTransformer responseTransformer) {
@@ -156,6 +161,8 @@ public class StreamingRequestProcessor {
 
         String instanceName = selectedInstance.getName();
         long requestStartTime = System.currentTimeMillis();
+        // #716：流终端回调需要实例对象本身（记账要按实例落到熔断器与负载均衡器在途计数）
+        final ModelRouterProperties.ModelInstance accountedInstance = selectedInstance;
 
         logger.debug("开始流式请求: adapter={}, instance={}, path={}", adapterType, instanceName, path);
 
@@ -283,6 +290,9 @@ public class StreamingRequestProcessor {
         streamResponse = streamResponse
                 .doOnComplete(() -> {
                     recordStreamingComplete(serviceType, adapterType, instanceName, requestStartTime);
+                    // #716：流正常结束才是这次调用「成功」——建流时记成功会把熔断失败计数清零
+                    reportStreamOutcome(serviceType, adapterType, accountedInstance, instanceName,
+                            modelRef.get(), requestStartTime, AdapterMetricsRecorder.CallOutcome.SUCCESS, null);
 
                     // v2.9.10: 流式缓存写 — 完整成功流结束后缓存（错误/中断不触发 doOnComplete）
                     // v3.2.3 (#127): 超出缓存预算的响应不缓存
@@ -366,6 +376,11 @@ public class StreamingRequestProcessor {
                     releaseAccumulation(contentBuilder, transformedChunks);
                     recordStreamingError(serviceType, adapterType, instanceName,
                             requestStartTime, throwable);
+                    // #716：流内失败（含首块之后的 5xx / 空闲超时 / 连接中断）回挂到熔断器
+                    reportStreamOutcome(serviceType, adapterType, accountedInstance, instanceName,
+                            modelRef.get(), requestStartTime,
+                            AdapterMetricsRecorder.classifyFailure(throwable),
+                            throwable.getClass().getSimpleName());
                     // v3.1 PR-2: 流式中断/异常 — 回滚整笔配额预留
                     QuotaReservation.settleFailure(quotaReservation);
                 })
@@ -373,6 +388,10 @@ public class StreamingRequestProcessor {
                     // v3.2.3 (#126/#127): 同样释放累积缓冲（cancel 不与 onNext 串行，须持锁）
                     releaseAccumulation(contentBuilder, transformedChunks);
                     QuotaReservation.settleFailure(quotaReservation);
+                    // #716：客户端主动断开不是实例故障 —— 只把在途计数减掉，不累加熔断失败
+                    reportStreamOutcome(serviceType, adapterType, accountedInstance, instanceName,
+                            modelRef.get(), requestStartTime,
+                            AdapterMetricsRecorder.CallOutcome.CLIENT_ERROR, "CLIENT_CANCELLED");
                 })
                 // v3.2.x (#257): /v1 OpenAI 面在失败时先补一个协议形状 error 帧、再以异常终止
                 // （不补 [DONE]：它是「正常结束」的语汇，补上会让截断被读成成功；详见 StreamingErrorTermination）。
@@ -453,6 +472,34 @@ public class StreamingRequestProcessor {
     }
 
     /**
+     * #716：把流式调用的最终结果回报给记账层（服务注册 / 熔断 / 指标 / 统计）。
+     *
+     * <p>非流式路径由 {@code BaseAdapter} 在响应就绪时记账；流式路径的「成功」必须等流正常结束，
+     * 否则持续在首块之后失败的实例永远进不了 OPEN（#716）。</p>
+     */
+    private void reportStreamOutcome(final ModelServiceRegistry.ServiceType serviceType,
+                                     final String adapterType,
+                                     final ModelRouterProperties.ModelInstance instance,
+                                     final String instanceName,
+                                     final String modelName,
+                                     final long startTime,
+                                     final AdapterMetricsRecorder.CallOutcome outcome,
+                                     final String errorCode) {
+        final AdapterMetricsRecorder recorder = adapterMetricsRecorder;
+        if (recorder == null || instance == null || serviceType == null) {
+            return;
+        }
+        final long duration = System.currentTimeMillis() - startTime;
+        try {
+            recorder.recordCompleteCallStats(adapterType, instanceName, duration, outcome, errorCode,
+                    modelName, serviceType, instance);
+        } catch (RuntimeException e) {
+            // 记账失败不得影响已终止的响应（与 BaseAdapter 的既有姿态一致）
+            logger.debug("流式调用结果记账失败: {}", e.getMessage());
+        }
+    }
+
+    /**
      * 记录流式请求完成指标
      */
     private void recordStreamingComplete(final ModelServiceRegistry.ServiceType serviceType,
@@ -462,7 +509,7 @@ public class StreamingRequestProcessor {
         if (metricsCollector != null) {
             long responseTime = System.currentTimeMillis() - startTime;
             metricsCollector.recordRequest(serviceType.name(), "STREAM", responseTime, "200");
-            metricsCollector.recordBackendCall(adapterType, instanceName, responseTime, true);
+            // #716：后端调用计数改由 AdapterMetricsRecorder 在流终端统一记录，避免重复计数
             logger.debug("流式请求完成: adapter={}, instance={}, duration={}ms",
                     adapterType, instanceName, responseTime);
         }
@@ -478,7 +525,7 @@ public class StreamingRequestProcessor {
                                         final Throwable throwable) {
         if (metricsCollector != null) {
             long responseTime = System.currentTimeMillis() - startTime;
-            metricsCollector.recordBackendCall(adapterType, instanceName, responseTime, false);
+            // #716：失败计数同样由 AdapterMetricsRecorder 在流终端统一记录（只保留日志）
             logger.error("流式请求错误: adapter={}, instance={}, error={}",
                     adapterType, instanceName, throwable.getMessage());
         }

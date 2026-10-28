@@ -452,6 +452,28 @@ public class AdapterMetricsRecorder {
         }
     }
 
+    /**
+     * #716：把流式路径上的终止异常分类为「客户端错误 / 实例故障」。
+     *
+     * <p>与非流式的 {@code BaseAdapter#classifyFailure} 同一口径：4xx 类异常属调用方输入问题，
+     * 不计入实例熔断失败；其余（超时、连接失败、5xx）都是实例侧故障。</p>
+     *
+     * @param throwable 终止流式响应的异常
+     * @return 调用结果分类
+     * @since 3.5.5
+     */
+    public static CallOutcome classifyFailure(final Throwable throwable) {
+        if (throwable instanceof org.springframework.web.reactive.function.client.WebClientResponseException clientError
+                && clientError.getStatusCode().is4xxClientError()) {
+            return CallOutcome.CLIENT_ERROR;
+        }
+        if (throwable instanceof org.springframework.web.server.ResponseStatusException statusError
+                && statusError.getStatusCode().is4xxClientError()) {
+            return CallOutcome.CLIENT_ERROR;
+        }
+        return CallOutcome.INSTANCE_FAILURE;
+    }
+
     private static CallOutcome fromBoolean(final boolean success) {
         return success ? CallOutcome.SUCCESS : CallOutcome.INSTANCE_FAILURE;
     }

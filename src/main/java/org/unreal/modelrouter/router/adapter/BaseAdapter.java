@@ -106,15 +106,25 @@ public abstract class BaseAdapter implements ServiceCapability {
      * 只有 4xx 类异常算客户端错误，其余（超时、连接失败、5xx）都算实例故障。
      */
     private static AdapterMetricsRecorder.CallOutcome classifyFailure(final Throwable throwable) {
-        if (throwable instanceof org.springframework.web.reactive.function.client.WebClientResponseException clientError
-                && clientError.getStatusCode().is4xxClientError()) {
-            return AdapterMetricsRecorder.CallOutcome.CLIENT_ERROR;
+        return AdapterMetricsRecorder.classifyFailure(throwable);
+    }
+
+    /**
+     * #716：响应体是否为「尚未订阅的流」。
+     *
+     * <p>流式响应在 {@code doOnSuccess} 时刻只是建好了流，真正的成败要到流终端才知道；
+     * 因此这类响应的记账由 {@code StreamingRequestProcessor} 的终端回调完成。</p>
+     */
+    static boolean isStreamingResponse(final ResponseEntity<?> response) {
+        if (response == null) {
+            return false;
         }
-        if (throwable instanceof org.springframework.web.server.ResponseStatusException statusError
-                && statusError.getStatusCode().is4xxClientError()) {
-            return AdapterMetricsRecorder.CallOutcome.CLIENT_ERROR;
+        if (response.getBody() instanceof org.reactivestreams.Publisher) {
+            return true;
         }
-        return AdapterMetricsRecorder.CallOutcome.INSTANCE_FAILURE;
+        final org.springframework.http.MediaType contentType = response.getHeaders().getContentType();
+        return contentType != null
+                && org.springframework.http.MediaType.TEXT_EVENT_STREAM.isCompatibleWith(contentType);
     }
 
     public ModelServiceRegistry getRegistry() { return context.getRegistry(); }
@@ -227,8 +237,12 @@ public abstract class BaseAdapter implements ServiceCapability {
                     // v3.5.4（#647）：4xx 是客户端错误，不计入实例熔断失败
                     final AdapterMetricsRecorder.CallOutcome outcome = classifyResponse(response);
                     final boolean success = outcome.isSuccess();
+                    // #716：流式响应此时「只是建好了流」，成败要到流终端才知道（可能首块之后才 5xx）。
+                    // 在这里记成功会立刻把熔断失败计数重置为 0，导致持续失败的实例永远进不了 OPEN；
+                    // 因此流式响应的记账交给 StreamingRequestProcessor 的终端回调（完成/错误/取消）。
+                    final boolean streaming = isStreamingResponse(response);
                     AdapterMetricsRecorder metricsRecorder = resilienceSupport.getMetricsRecorder();
-                    if (metricsRecorder != null) {
+                    if (metricsRecorder != null && !streaming) {
                         // v2.9.2: 成功路径的调用历史由 RequestProcessor 层记录（含请求/响应体），此处仅更新统计，避免重复记录
                         metricsRecorder.recordCompleteCallStats(adapterType, instanceName, duration, outcome,
                                 null, modelName, serviceType, selectedInstance);
