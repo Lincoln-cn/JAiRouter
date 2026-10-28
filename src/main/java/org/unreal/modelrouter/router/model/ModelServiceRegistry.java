@@ -36,8 +36,10 @@ import org.unreal.modelrouter.router.loadbalancer.impl.StickyLoadBalancer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -206,17 +208,7 @@ public class ModelServiceRegistry {
         LOGGER.info("正在刷新运行时配置...");
 
         try {
-            Map<String, Object> mergedConfig = configMergeService.getPersistedConfig();
-
-            if (mergedConfig == null || mergedConfig.isEmpty()) {
-                LOGGER.info("未找到合并配置，使用默认配置");
-                if (originalProperties != null) {
-                    mergedConfig = configConverterHelper.convertModelRouterPropertiesToMap(originalProperties);
-                } else {
-                    LOGGER.warn("原始配置也为空，使用空配置");
-                    mergedConfig = new HashMap<>();
-                }
-            }
+            Map<String, Object> mergedConfig = loadMergedConfig();
 
             this.currentConfig = mergedConfig;
             updateOriginalPropertiesFromConfig(mergedConfig);
@@ -229,6 +221,191 @@ public class ModelServiceRegistry {
         } catch (Exception e) {
             LOGGER.error("刷新运行时配置失败", e);
         }
+    }
+
+    /**
+     * #707: 读取当前生效的配置（持久化配置优先；没有持久化配置时回落到 YAML 配置）。
+     *
+     * @return 合并后的配置，永不为 {@code null}
+     */
+    private Map<String, Object> loadMergedConfig() {
+        final Map<String, Object> persistedConfig = configMergeService.getPersistedConfig();
+        if (persistedConfig != null && !persistedConfig.isEmpty()) {
+            return persistedConfig;
+        }
+
+        LOGGER.info("未找到合并配置，使用默认配置");
+        if (originalProperties != null) {
+            final Map<String, Object> fromYaml =
+                    configConverterHelper.convertModelRouterPropertiesToMap(originalProperties);
+            if (fromYaml != null) {
+                return fromYaml;
+            }
+        }
+        LOGGER.warn("原始配置也为空，使用空配置");
+        return new HashMap<>();
+    }
+
+    /**
+     * #707: 精确刷新单个服务的运行时缓存。
+     *
+     * <p>{@link #refreshFromMergedConfig()} 会重建整张缓存表；配置写入通常只影响一个服务，用它会让
+     * 其它服务的 {@link ServiceRuntimeConfig} 对象被无谓替换。本方法只重建传入的服务。</p>
+     *
+     * @param serviceKey 服务配置键（{@code chat} / {@code img-gen} 等，支持别名与大小写差异）
+     * @return {@code true} 表示该服务的缓存条目已按最新配置重建
+     */
+    public boolean refreshServiceConfig(final String serviceKey) {
+        return !refreshServiceConfigs(Collections.singletonList(serviceKey)).isEmpty();
+    }
+
+    /**
+     * #707: 精确刷新多个服务的运行时缓存，只重建 {@code serviceKeys} 涉及的条目。
+     *
+     * <p>刷新范围与全量刷新保持一致（只是缩小到指定服务）：缓存条目、该服务的负载均衡器
+     * （有实例时）、该服务的限流器（配置里带 {@code rateLimit} 段时），以及
+     * {@link ModelRouterProperties} 里的服务配置副本（粘性会话判定读它）。</p>
+     *
+     * <p>键在合并后的配置里已经不存在时（例如批量更新把服务删掉了），对应缓存条目会被移除，
+     * 避免已删除的服务继续参与路由。</p>
+     *
+     * @param serviceKeys 服务配置键集合
+     * @return 实际被重建的服务键集合（不含被移除的键）
+     */
+    @SuppressWarnings("unchecked")
+    public Set<String> refreshServiceConfigs(final Collection<String> serviceKeys) {
+        if (serviceKeys == null || serviceKeys.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        final Map<String, Object> mergedConfig = loadMergedConfig();
+        final Map<String, Object> services = servicesOf(mergedConfig);
+        final Map<String, ServiceRuntimeConfig> newCache = new ConcurrentHashMap<>(
+                serviceConfigCache != null ? serviceConfigCache : Collections.emptyMap());
+        final Map<String, ModelRouterProperties.ServiceConfig> newPropertiesServices = new HashMap<>();
+        if (originalProperties != null && originalProperties.getServices() != null) {
+            newPropertiesServices.putAll(originalProperties.getServices());
+        }
+
+        final Map<String, Map<String, Object>> refreshedConfigs = new HashMap<>();
+        for (String requestedKey : serviceKeys) {
+            if (requestedKey == null || requestedKey.isBlank()) {
+                continue;
+            }
+            final String resolvedKey = resolveServiceKey(services, requestedKey);
+            if (resolvedKey == null) {
+                removeServiceFromCache(newCache, newPropertiesServices, requestedKey);
+                continue;
+            }
+            final Object rawServiceConfig = services.get(resolvedKey);
+            if (!(rawServiceConfig instanceof Map)) {
+                LOGGER.warn("服务 {} 的配置不是对象，跳过运行时缓存刷新", resolvedKey);
+                continue;
+            }
+            final Map<String, Object> serviceConfigMap = (Map<String, Object>) rawServiceConfig;
+            try {
+                newCache.put(resolvedKey, configBuilder.buildServiceRuntimeConfig(serviceConfigMap));
+                newPropertiesServices.put(resolvedKey,
+                        configConverterHelper.convertMapToServiceConfig(serviceConfigMap));
+            } catch (RuntimeException e) {
+                // 与全量刷新（ServiceConfigBuilder 逐个服务兜底）一致：单个服务配置写坏时保留旧缓存，
+                // 不让「已经落库成功」的写入对外报失败，但要留下证据
+                LOGGER.warn("重建服务 {} 的运行时配置失败，保留旧缓存: {}", resolvedKey, e.getMessage(), e);
+                continue;
+            }
+            refreshedConfigs.put(resolvedKey, serviceConfigMap);
+        }
+
+        this.currentConfig = mergedConfig;
+        this.serviceConfigCache = newCache;
+        if (originalProperties != null) {
+            originalProperties.setServices(newPropertiesServices);
+        }
+        applyTargetedRuntimeEffects(refreshedConfigs);
+
+        LOGGER.info("运行时缓存已按服务精确刷新，涉及 {} 个服务", refreshedConfigs.size());
+        return new HashSet<>(refreshedConfigs.keySet());
+    }
+
+    /**
+     * #707: 把「配置里已经没有」的服务从缓存与配置副本中摘掉（含别名/大小写同义键）。
+     */
+    private void removeServiceFromCache(final Map<String, ServiceRuntimeConfig> cache,
+                                        final Map<String, ModelRouterProperties.ServiceConfig> propertiesServices,
+                                        final String serviceKey) {
+        final ServiceType requestedType = serviceTypeResolver.parseServiceType(serviceKey);
+        for (String cachedKey : new ArrayList<>(cache.keySet())) {
+            final boolean sameKey = cachedKey.equalsIgnoreCase(serviceKey);
+            final boolean sameType = requestedType != null
+                    && requestedType == serviceTypeResolver.parseServiceType(cachedKey);
+            if (!sameKey && !sameType) {
+                continue;
+            }
+            cache.remove(cachedKey);
+            propertiesServices.remove(cachedKey);
+            LOGGER.info("服务 {} 已不在配置中，移除其运行时缓存（键 {}）", serviceKey, cachedKey);
+        }
+    }
+
+    /**
+     * #707: 对刚重建缓存的服务应用运行时副作用（负载均衡器 + 限流器），范围与全量刷新一致。
+     */
+    private void applyTargetedRuntimeEffects(final Map<String, Map<String, Object>> refreshedConfigs) {
+        for (Map.Entry<String, Map<String, Object>> entry : refreshedConfigs.entrySet()) {
+            final String serviceKey = entry.getKey();
+            final ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
+            final ServiceType type = serviceTypeResolver.parseServiceType(serviceKey);
+            if (runtimeConfig == null || type == null) {
+                LOGGER.warn("无法识别的服务键 {}，跳过负载均衡器/限流器刷新", serviceKey);
+                continue;
+            }
+            try {
+                if (!runtimeConfig.getInstances().isEmpty()) {
+                    loadBalancerManager.reinitializeLoadBalancer(type, runtimeConfig.getLoadBalanceConfig());
+                }
+                applyPersistedRateLimit(type, entry.getValue());
+            } catch (RuntimeException e) {
+                LOGGER.warn("服务 {} 的负载均衡/限流配置未能应用到运行时: {}", serviceKey, e.getMessage(), e);
+            }
+        }
+    }
+
+    /**
+     * #707: 取出合并配置里的 {@code services} 段（缺失或类型不符时返回空 Map）。
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> servicesOf(final Map<String, Object> mergedConfig) {
+        if (mergedConfig == null || !(mergedConfig.get("services") instanceof Map)) {
+            return Collections.emptyMap();
+        }
+        return (Map<String, Object>) mergedConfig.get("services");
+    }
+
+    /**
+     * #707: 把调用方给的服务键解析成配置里实际使用的键。
+     *
+     * <p>顺序：精确匹配 → 别名归一后的标准键（{@code imgGen} / {@code img_gen} → {@code img-gen}）
+     * → 忽略大小写匹配。都匹配不上返回 {@code null}。</p>
+     */
+    private String resolveServiceKey(final Map<String, Object> services, final String serviceKey) {
+        if (services.containsKey(serviceKey)) {
+            return serviceKey;
+        }
+
+        final ServiceType type = serviceTypeResolver.parseServiceType(serviceKey);
+        if (type != null) {
+            final String canonicalKey = serviceTypeResolver.getServiceConfigKey(type);
+            if (canonicalKey != null && services.containsKey(canonicalKey)) {
+                return canonicalKey;
+            }
+        }
+
+        for (String existingKey : services.keySet()) {
+            if (existingKey != null && existingKey.equalsIgnoreCase(serviceKey)) {
+                return existingKey;
+            }
+        }
+        return null;
     }
 
     /**
@@ -751,10 +928,18 @@ public class ModelServiceRegistry {
             if (type == null || !(entry.getValue() instanceof Map)) {
                 continue;
             }
-            Object rateLimit = ((Map<String, Object>) entry.getValue()).get("rateLimit");
-            if (rateLimit instanceof Map) {
-                rateLimitManager.setRateLimiter(type, RateLimitConfig.fromMap((Map<String, Object>) rateLimit));
-            }
+            applyPersistedRateLimit(type, (Map<String, Object>) entry.getValue());
+        }
+    }
+
+    /**
+     * #707: 把单个服务配置里的 {@code rateLimit} 段应用到运行时限流器（无该段时保持原限流器）。
+     */
+    @SuppressWarnings("unchecked")
+    private void applyPersistedRateLimit(final ServiceType type, final Map<String, Object> serviceConfigMap) {
+        Object rateLimit = serviceConfigMap.get("rateLimit");
+        if (rateLimit instanceof Map) {
+            rateLimitManager.setRateLimiter(type, RateLimitConfig.fromMap((Map<String, Object>) rateLimit));
         }
     }
 
