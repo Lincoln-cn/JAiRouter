@@ -46,11 +46,12 @@ class TracingWebClientFactoryTest {
     @DisplayName("测试 1: createTracingWebClient 应使用 WebClientPool")
     void createTracingWebClient_shouldUsePool() {
         String baseUrl = "http://localhost:8080";
-        when(webClientPool.getOrCreate(eq(baseUrl), any())).thenReturn(mockWebClient);
+        // #699：追踪客户端固定使用 "tracing" 变体，缓存键不再包含 lambda 的 identity hash
+        when(webClientPool.getOrCreate(eq(baseUrl), eq("tracing"), any())).thenReturn(mockWebClient);
 
         WebClient result = factory.createTracingWebClient(baseUrl);
 
-        verify(webClientPool).getOrCreate(eq(baseUrl), any());
+        verify(webClientPool).getOrCreate(eq(baseUrl), eq("tracing"), any());
         assertSame(mockWebClient, result);
     }
 
@@ -58,13 +59,13 @@ class TracingWebClientFactoryTest {
     @DisplayName("测试 2: 相同 baseUrl 多次调用应返回缓存实例")
     void createTracingWebClient_sameUrl_shouldReturnCachedInstance() {
         String baseUrl = "http://localhost:8080";
-        when(webClientPool.getOrCreate(eq(baseUrl), any())).thenReturn(mockWebClient);
+        when(webClientPool.getOrCreate(eq(baseUrl), eq("tracing"), any())).thenReturn(mockWebClient);
 
         WebClient result1 = factory.createTracingWebClient(baseUrl);
         WebClient result2 = factory.createTracingWebClient(baseUrl);
 
         assertSame(result1, result2);
-        verify(webClientPool, times(2)).getOrCreate(eq(baseUrl), any());
+        verify(webClientPool, times(2)).getOrCreate(eq(baseUrl), eq("tracing"), any());
     }
 
     @Test
