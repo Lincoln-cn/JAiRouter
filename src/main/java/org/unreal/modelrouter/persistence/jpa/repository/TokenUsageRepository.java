@@ -239,6 +239,18 @@ public interface TokenUsageRepository extends JpaRepository<TokenUsageEntity, Lo
     int deleteByOccurredAtBefore(@Param("cutoffTime") LocalDateTime cutoffTime);
 
     /**
+     * 统计指定时间范围内的记录数
+     *
+     * <p>成功率的分母必须与分子（{@link #countSuccessByTimeRange} / {@link #countFailedByTimeRange}）
+     * 同口径，否则历史数据越多比值越趋近 0（#714）。</p>
+     */
+    @Query("SELECT COUNT(t) FROM TokenUsageEntity t "
+            + "WHERE t.occurredAt BETWEEN :startTime AND :endTime")
+    long countByTimeRange(
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime);
+
+    /**
      * 统计总记录数
      */
     @Query("SELECT COUNT(t) FROM TokenUsageEntity t")

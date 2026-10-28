@@ -218,7 +218,7 @@ class TokenUsageServiceTest {
             LocalDateTime endTime = LocalDateTime.now();
 
             // Mock 所有统计查询
-            when(tokenUsageRepository.countAllUsage()).thenReturn(100L);
+            when(tokenUsageRepository.countByTimeRange(any(), any())).thenReturn(100L);
             when(tokenUsageRepository.countTotalTokensByTimeRange(any(), any())).thenReturn(1000L);
             when(tokenUsageRepository.countSuccessByTimeRange(any(), any())).thenReturn(95L);
             when(tokenUsageRepository.countFailedByTimeRange(any(), any())).thenReturn(5L);
@@ -246,7 +246,7 @@ class TokenUsageServiceTest {
         @Test
         @DisplayName("获取统计信息使用默认时间范围")
         void testGetTokenUsageStatisticsDefaultTimeRange() {
-            when(tokenUsageRepository.countAllUsage()).thenReturn(0L);
+            when(tokenUsageRepository.countByTimeRange(any(), any())).thenReturn(0L);
             when(tokenUsageRepository.countTotalTokensByTimeRange(any(), any())).thenReturn(0L);
             when(tokenUsageRepository.countSuccessByTimeRange(any(), any())).thenReturn(0L);
             when(tokenUsageRepository.countFailedByTimeRange(any(), any())).thenReturn(0L);
