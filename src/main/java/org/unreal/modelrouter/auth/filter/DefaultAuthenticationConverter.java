@@ -11,6 +11,7 @@ import org.unreal.modelrouter.auth.security.model.JwtAuthentication;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import org.unreal.modelrouter.common.util.IpUtils;
 
 /**
  * 默认的认证转换器
@@ -54,7 +55,9 @@ public final class DefaultAuthenticationConverter implements ServerAuthenticatio
             return Mono.just(new JwtAuthentication(jwtToken));
         } else if (apiKey != null) {
             log.debug("提取到API Key，创建API Key认证对象");
-            return Mono.just(new ApiKeyAuthentication(apiKey));
+            return Mono.just(new ApiKeyAuthentication(apiKey,
+                    IpUtils.getClientIp(exchange.getRequest()),
+                    exchange.getRequest().getPath().value()));
         }
 
         // 没有找到认证信息

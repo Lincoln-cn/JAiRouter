@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import org.unreal.modelrouter.common.util.IpUtils;
 
 /**
  * 统一的API Key数据模型
@@ -258,7 +259,24 @@ public class ApiKey {
         if (allowedIpAddresses == null || allowedIpAddresses.isEmpty()) {
             return true;
         }
-        return allowedIpAddresses.contains(ipAddress);
+        // #693：白名单判定统一做书写形式规范化后再比较——
+        // 上游传进来的可能是带端口的 "10.0.0.1:53124"、IPv6 的压缩/非压缩写法，直接 contains 匹配不上。
+        final String candidate = IpUtils.canonicalizeIp(ipAddress);
+        if ("unknown".equals(candidate)) {
+            // 无法判定来源（缺 remoteAddress、或调用方仍传 null）时按拒绝处理：白名单非空即应当 fail-closed。
+            return false;
+        }
+        for (final String allowed : allowedIpAddresses) {
+            if (allowed == null || allowed.isBlank()) {
+                continue;
+            }
+            final String entry = allowed.trim();
+            // matchesCidr 同时覆盖「精确 IP」（无后缀视为 /32）与 "10.0.0.0/8" 这类网段。
+            if (IpUtils.matchesCidr(candidate, entry) || candidate.equals(IpUtils.canonicalizeIp(entry))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
