@@ -7,7 +7,12 @@ import org.unreal.modelrouter.common.dto.EmbeddingDTO;
 import org.unreal.modelrouter.common.dto.RerankDTO;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -200,6 +205,97 @@ class ResponseCacheKeyBuilderTest {
                 "键应匹配服务类型前缀");
         assertTrue(key.startsWith(ResponseCacheKeyBuilder.buildPrefix(ServiceType.chat, MODEL)),
                 "键应匹配服务类型+模型前缀");
+    }
+
+    @Test
+    @DisplayName("#722: include_stop_str_in_output / ignore_eos 改变输出形状，必须换键")
+    void outputChangingOptionsArePartOfKey() {
+        String baselineKey = ResponseCacheKeyBuilder.build(TENANT_A, ServiceType.chat,
+                requestWithOptions(ChatDTO.Options.builder().build()));
+        String keepStopString = ResponseCacheKeyBuilder.build(TENANT_A, ServiceType.chat,
+                requestWithOptions(ChatDTO.Options.builder().includeStopStrInOutput(true).build()));
+        String dropStopString = ResponseCacheKeyBuilder.build(TENANT_A, ServiceType.chat,
+                requestWithOptions(ChatDTO.Options.builder().includeStopStrInOutput(false).build()));
+        String ignoreEos = ResponseCacheKeyBuilder.build(TENANT_A, ServiceType.chat,
+                requestWithOptions(ChatDTO.Options.builder().ignoreEos(true).build()));
+        String respectEos = ResponseCacheKeyBuilder.build(TENANT_A, ServiceType.chat,
+                requestWithOptions(ChatDTO.Options.builder().ignoreEos(false).build()));
+
+        assertNotEquals(baselineKey, keepStopString, "include_stop_str_in_output 未入键");
+        assertNotEquals(keepStopString, dropStopString, "include_stop_str_in_output 真假共用一键");
+        assertNotEquals(baselineKey, ignoreEos, "ignore_eos 未入键");
+        assertNotEquals(ignoreEos, respectEos, "ignore_eos 真假共用一键");
+    }
+
+    @Test
+    @DisplayName("#722: 元数据字段（requestId/priority/prefixCacheHash/enablePrefixCaching）不入键")
+    void metadataOptionsAreNotPartOfKey() {
+        String baselineKey = ResponseCacheKeyBuilder.build(TENANT_A, ServiceType.chat,
+                requestWithOptions(ChatDTO.Options.builder().build()));
+        String metadataKey = ResponseCacheKeyBuilder.build(TENANT_A, ServiceType.chat,
+                requestWithOptions(ChatDTO.Options.builder()
+                        .requestId("req-1")
+                        .priority(7)
+                        .prefixCacheHash("hash-1")
+                        .enablePrefixCaching(true)
+                        .build()));
+
+        assertEquals(baselineKey, metadataKey);
+    }
+
+    @Test
+    @DisplayName("#722 守卫: Options 的每个非元数据字段都必须参与缓存键")
+    void everyNonMetadataOptionsFieldIsPartOfKey() throws IllegalAccessException {
+        Set<String> metadata = Set.of("priority", "requestId", "cacheSalt",
+                "prefixCacheHash", "enablePrefixCaching");
+        String baseline = ResponseCacheKeyBuilder.build(TENANT_A, ServiceType.chat,
+                requestWithOptions(ChatDTO.Options.builder().build()));
+        List<String> missing = new ArrayList<>();
+        for (Field field : ChatDTO.Options.class.getDeclaredFields()) {
+            if (Modifier.isStatic(field.getModifiers())
+                    || Modifier.isTransient(field.getModifiers())
+                    || metadata.contains(field.getName())) {
+                continue;
+            }
+            ChatDTO.Options options = ChatDTO.Options.builder().build();
+            field.setAccessible(true);
+            field.set(options, sampleValue(field.getType()));
+            String key = ResponseCacheKeyBuilder.build(TENANT_A, ServiceType.chat,
+                    requestWithOptions(options));
+            if (baseline.equals(key)) {
+                missing.add(field.getName());
+            }
+        }
+        assertTrue(missing.isEmpty(),
+                "以下 Options 字段未参与缓存键（新增字段请补进 putChatOptions）: " + missing);
+    }
+
+    private Object sampleValue(final Class<?> type) {
+        if (type == Boolean.class || type == boolean.class) {
+            return Boolean.TRUE;
+        }
+        if (type == Integer.class || type == int.class) {
+            return 7;
+        }
+        if (type == Double.class || type == double.class) {
+            return 0.5d;
+        }
+        if (type == String.class) {
+            return "guard-sample";
+        }
+        if (List.class.isAssignableFrom(type)) {
+            return List.of("guard-sample");
+        }
+        if (Map.class.isAssignableFrom(type)) {
+            return Map.of("guardKey", "guard-sample");
+        }
+        return "guard-sample";
+    }
+
+    private ChatDTO.Request requestWithOptions(final ChatDTO.Options options) {
+        return new ChatDTO.Request(MODEL,
+                List.of(new ChatDTO.Message("user", "hello", null)),
+                false, 100, 0.0, null, null, null, null, null, null, options);
     }
 
     private ChatDTO.Request chatRequest(final String content) {
