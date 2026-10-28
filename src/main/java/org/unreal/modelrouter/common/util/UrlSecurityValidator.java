@@ -7,12 +7,17 @@ import java.net.UnknownHostException;
 import java.util.Locale;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 出站 URL 安全校验：限制协议、拒绝危险主机/云元数据地址。
  * 适配器测试需要访问内网 AI 服务，因此不默认封禁私网/回环地址；
  * 拦截云元数据与链路本地等明确危险目标。
  */
 public final class UrlSecurityValidator {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(UrlSecurityValidator.class);
 
     private static final Set<String> BLOCKED_HOSTS = Set.of(
             "metadata.google.internal",
@@ -68,11 +73,15 @@ public final class UrlSecurityValidator {
             // 解析失败留给连接阶段处理，保持现有超时/错误语义
         }
 
-        return normalize(scheme, host, uri.getPort(), uri.getRawPath());
+        if (uri.getRawFragment() != null && !uri.getRawFragment().isBlank()) {
+            LOGGER.warn("baseUrl 的 fragment 会被丢弃（#703）：host={}", host);
+        }
+        return normalize(scheme, host, uri.getPort(), uri.getRawPath(), uri.getRawQuery());
     }
 
     private static String normalize(final String scheme, final String host,
-                                    final int port, final String rawPath) {
+                                    final int port, final String rawPath,
+                                    final String rawQuery) {
         StringBuilder normalized = new StringBuilder();
         normalized.append(scheme).append("://");
         if (host.indexOf(':') >= 0 && !host.startsWith("[")) {
@@ -90,7 +99,14 @@ public final class UrlSecurityValidator {
             normalized.append(rawPath);
         }
         String result = normalized.toString();
-        return result.endsWith("/") ? result.substring(0, result.length() - 1) : result;
+        if (result.endsWith("/")) {
+            result = result.substring(0, result.length() - 1);
+        }
+        if (rawQuery != null && !rawQuery.isBlank()) {
+            // #703：以前这里只用 scheme/host/port/path 重建，带 ?api-version=… 的上游地址会被静默截断
+            result = result + "?" + rawQuery;
+        }
+        return result;
     }
 
     private static boolean isBlockedHostLiteral(final String host) {
