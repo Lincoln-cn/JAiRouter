@@ -212,8 +212,8 @@ class StreamingRequestProcessorQuotaSettleTest {
     }
 
     @Test
-    @DisplayName("流式中断（订阅取消）：回滚整笔预留")
-    void streamingCancelled_shouldRollbackReservation() {
+    @DisplayName("流式中断（订阅取消）：按已消耗部分结算，请求数保留、token 取已流出估算值")
+    void streamingCancelled_shouldSettleConsumedUsage() {
         final ServerHttpRequest httpRequest = requestWithReservation(ESTIMATED_TOKENS);
         final WebClient client = WebClient.builder()
             .exchangeFunction(ignored -> Mono.just(ClientResponse.create(HttpStatus.OK)
@@ -234,9 +234,38 @@ class StreamingRequestProcessorQuotaSettleTest {
             .thenCancel()
             .verify();
 
+        // #710：客户端断开时上游已经流出了内容，整笔回滚等于把已消耗 token 也退回去
+        //（可以「读几个块就断开」反复绕过每日 token 配额）。改为按已消耗部分结算：
+        // 本次只流出 1 个块（"hi" → 2 个非空白字符 → 估算 1 token），请求数按「已发生」保留。
         final QuotaReservation reservation = QuotaReservation.from(httpRequest);
         assertTrue(reservation.isSettled());
-        assertTrue(reservation.isFailed(), "中断应按失败回滚");
+        assertFalse(reservation.isFailed(), "中断应记为部分结算，而不是整笔回滚");
+        assertEquals(1L, requestCount(QuotaWindow.MINUTE), "已发生的请求不应被回滚掉");
+        assertEquals(1L, tokenCount(QuotaWindow.MINUTE), "token 应按已流出内容的估算值结算");
+    }
+
+    @Test
+    @DisplayName("流式中断且一个块都没流出：仍整笔回滚（空请求不占额度）")
+    void streamingCancelledBeforeAnyChunk_shouldRollbackReservation() {
+        final ServerHttpRequest httpRequest = requestWithReservation(ESTIMATED_TOKENS);
+        final WebClient client = WebClient.builder()
+            .exchangeFunction(ignored -> Mono.just(ClientResponse.create(HttpStatus.OK)
+                .header("Content-Type", "text/event-stream")
+                .body(Flux.never())
+                .build()))
+            .build();
+
+        final ResponseEntity<?> response = processor.processStreamingRequest(
+            chatRequest(), "Bearer downstream", client, "/v1/chat/completions",
+            instance, ServiceType.chat, "openai-compat", httpRequest).block(java.time.Duration.ofSeconds(10));
+
+        StepVerifier.create(sseBody(response))
+            .thenCancel()
+            .verify();
+
+        final QuotaReservation reservation = QuotaReservation.from(httpRequest);
+        assertTrue(reservation.isSettled());
+        assertTrue(reservation.isFailed(), "一个 token 都没流出时应整笔回滚，避免空请求占额度");
         assertEquals(0L, requestCount(QuotaWindow.MINUTE));
         assertEquals(0L, tokenCount(QuotaWindow.MINUTE));
     }
