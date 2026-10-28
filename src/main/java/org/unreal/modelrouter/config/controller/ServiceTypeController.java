@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.config.core.ConfigurationService;
@@ -109,16 +110,35 @@ public class ServiceTypeController {
 
     /**
      * 重置配置为默认值
+     *
+     * <p>重置会删除全部持久化配置版本且不可撤销，因此要求显式确认串 {@code confirm=RESET}；
+     * 缺少或取值不符时抛 {@link IllegalArgumentException}（400），且不会触碰任何配置。
+     * 清除失败时抛 {@link ApiException}（500），不再以「配置已重置为默认值」谎报成功。</p>
      */
     @PostMapping("/reset")
-    @Operation(summary = "重置配置", description = "将系统配置重置为默认值")
+    @Operation(summary = "重置配置", description = "将系统配置重置为默认值（需显式确认 confirm=RESET）")
     @ApiResponse(responseCode = "200", description = "配置重置成功",
             content = @Content(mediaType = "application/json",
                     schema = @Schema(implementation = RouterResponse.class)))
-    @ApiResponse(responseCode = "500", description = "服务器内部错误")
-    public ResponseEntity<RouterResponse<Void>> resetToDefaultConfig() {
-        configurationService.resetToDefaultConfig();
-        return ResponseEntity.ok(RouterResponse.success(null, "配置已重置为默认值"));
+    @ApiResponse(responseCode = "400", description = "缺少确认参数 confirm=RESET")
+    @ApiResponse(responseCode = "500", description = "重置失败，配置可能只被部分清除")
+    public ResponseEntity<RouterResponse<Void>> resetToDefaultConfig(
+            @Parameter(description = "显式确认串，必须为 RESET")
+            @RequestParam(value = "confirm", required = false) final String confirm) {
+        if (!"RESET".equals(confirm)) {
+            throw new IllegalArgumentException("重置配置需要显式确认：请传 confirm=RESET");
+        }
+        final String backupKey;
+        try {
+            backupKey = configurationService.resetToDefaultConfig();
+        } catch (Exception e) {
+            logger.error("重置配置失败", e);
+            throw ApiException.of(ErrorCode.INTERNAL_ERROR.code(), "重置配置失败：" + e.getMessage());
+        }
+        final String message = backupKey == null
+                ? "配置已重置为默认值"
+                : "配置已重置为默认值；重置前的配置已备份到键 " + backupKey;
+        return ResponseEntity.ok(RouterResponse.success(null, message));
     }
 
     /**

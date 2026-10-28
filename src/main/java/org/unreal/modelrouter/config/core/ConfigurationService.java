@@ -323,17 +323,21 @@ public class ConfigurationService {
 
     /**
      * 重置配置为YAML默认值
+     *
+     * @return 重置前配置的备份键；没有持久化配置可备份时返回 {@code null}
+     * @throws IllegalStateException 清除持久化配置失败（此时运行时配置不会被刷新）
      */
-    public void resetToDefaultConfig() {
+    public String resetToDefaultConfig() {
         logger.info("重置配置为YAML默认值");
 
-        // 清除持久化配置
-        configMergeService.resetToYamlConfig();
+        // 清除持久化配置：失败会抛出，不会继续刷新运行时配置
+        final String backupKey = configMergeService.resetToYamlConfig();
 
         // 刷新运行时配置
         instanceConfigService.refreshRuntimeConfig();
 
-        logger.info("配置已重置为默认值");
+        logger.info("配置已重置为默认值，重置前配置备份键: {}", backupKey);
+        return backupKey;
     }
 
     // ==================== 辅助方法 ====================

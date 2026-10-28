@@ -14,6 +14,7 @@ import org.unreal.modelrouter.config.core.ConfigurationService;
 import org.unreal.modelrouter.config.core.ServiceConfigManager;
 import org.unreal.modelrouter.config.core.ConfigurationValidator;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.config.dto.UpdateServiceConfigRequest;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -90,16 +91,40 @@ class ServiceTypeControllerTest {
     }
 
     @Test
-    @DisplayName("测试 3: 重置配置为默认值")
+    @DisplayName("测试 3: 重置配置为默认值（需显式确认，成功时告知备份位置）")
     void testResetToDefaultConfig() {
-        doNothing().when(configurationService).resetToDefaultConfig();
+        when(configurationService.resetToDefaultConfig()).thenReturn("config_pre_reset_backup");
 
-        ResponseEntity<RouterResponse<Void>> response = controller.resetToDefaultConfig();
+        ResponseEntity<RouterResponse<Void>> response = controller.resetToDefaultConfig("RESET");
 
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isSuccess());
+        assertTrue(response.getBody().getMessage().contains("config_pre_reset_backup"),
+                "成功响应必须告知重置前配置的备份位置");
 
+        verify(configurationService).resetToDefaultConfig();
+    }
+
+    @Test
+    @DisplayName("测试 3b: 缺少或错误 confirm 时拒绝重置且不触碰配置")
+    void testResetRequiresExplicitConfirmation() {
+        assertThrows(IllegalArgumentException.class, () -> controller.resetToDefaultConfig(null));
+        assertThrows(IllegalArgumentException.class, () -> controller.resetToDefaultConfig("reset"));
+
+        verify(configurationService, never()).resetToDefaultConfig();
+    }
+
+    @Test
+    @DisplayName("测试 3c: 清除失败时返回 500 错误码，而不是谎报成功")
+    void testResetFailureIsReportedAsError() {
+        when(configurationService.resetToDefaultConfig())
+                .thenThrow(new IllegalStateException("清除持久化配置失败，配置可能只被部分清除"));
+
+        ApiException error = assertThrows(ApiException.class, () -> controller.resetToDefaultConfig("RESET"));
+
+        assertEquals(ErrorCode.INTERNAL_ERROR.code(), error.getErrorCode());
+        assertTrue(error.getMessage().contains("重置配置失败"));
         verify(configurationService).resetToDefaultConfig();
     }
 
