@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.5.4
-> **Last Updated**: 2026-10-27
+> **Document Version**: 3.5.5
+> **Last Updated**: 2026-10-29
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,95 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.5.5] - 2026-10-29 - Bug fixes (eight-stage request-lifecycle audit: entry protocol / authentication / routing / outbound / response / accounting / console writes / failure semantics)
+
+This release lands one audit that followed a single request from the moment it arrives to the moment the response leaves, split into eight stages. Every finding that affects whether a call succeeds or whether the response is correct has been fixed; the rest stay tracked as issues.
+
+#### Entry protocol and error semantics (#681 / #682 / #683 / #685 / #686 / #717)
+
+- **Oversized request bodies terminate with 413 (#681, P1)**: previously the body was consumed and dropped, and the client received a "successful" empty response. Now the gateway answers `413 PAYLOAD_TOO_LARGE`.
+- **Missing chat-completions body returns 400 (#683, P1)**: an empty body used to NPE into a 500; it now returns 400 with "Request body is required".
+- **Authentication failures carry `Content-Type` (#686, P2)**: the 401 body was JSON without the header, so some clients failed to parse it.
+- **Downstream connection failures and timeouts return 502 / 504 (#682, P1)**: previously both became 500 with the upstream address and the raw "Connection refused" text echoed to the caller. They now return fixed messages without internal details.
+- **Non-streaming paths read the downstream error body (#717, P1)**: upstream 4xx/5xx bodies were discarded. The gateway now parses `error.message` / `error.code` / `Retry-After`, keeps the upstream status code and surfaces the upstream semantics.
+- **Anthropic error types follow the status code (#685, P2)**: 502 responses no longer claim `invalid_request_error`; 4xx maps to `invalid_request_error`, 5xx to `api_error`, and downstream bodies are translated.
+
+#### Authentication and authorization (#693 / #694 / #695 / #696 / #697 / #698 / #704 / #705 / #706)
+
+- **API Key IP allowlists actually work (#693, P1)**: the authentication chain never passed the client IP, so `ipAllowlist.contains(null)` was always false - **any key with an allowlist was rejected with 401**. The real client IP is now matched against CIDR ranges, and `unknown` fails closed.
+- **Refresh checks the blacklist (#694, P1)**: `/refresh` skipped the blacklist, so a revoked-but-unexpired token could be exchanged for a new one; the same change stops copying the old `jti`, which previously made a freshly issued token already blacklisted.
+- **Credentials no longer land in logs or spans (#695, P2)**: query strings are redacted everywhere except the WebSocket handshake path, which genuinely needs them.
+- **Self-service revocation is bound to the token owner (#696, P2)**: the check compared the `userId` in the request body instead of the token's real owner.
+- **Login failures are counted per user and IP (#697, P2)**: the login endpoint had no throttling and the only producer of `BRUTE_FORCE_ATTEMPT` audit events was a test endpoint. Failures now lock the account and emit real audit events.
+- **Call-history ingestion verifies ownership (#698, P2)**: `/api/call-history/record` accepted any `apiKeyId`; writes are now checked against the calling principal.
+- **Deleted or disabled accounts invalidate issued tokens (#704, P1)**: tokens stayed usable until expiry; both actions now blacklist the account's active tokens.
+- **Resetting an API Key keeps its settings (#705, P1)**: reset used to delete and recreate with only six fields, dropping IP allowlists, quotas and rate limits. It now reads the old settings and replaces atomically.
+- **Configuration reset requires explicit confirmation (#706, P1)**: the irreversible reset needed no confirmation and reported success even when it failed. It now requires confirmation, backs up first, and reports failures truthfully.
+
+#### Routing and load balancing (#687 / #688 / #689 / #690 / #691 / #692)
+
+- **Consistent-hash rings are immutable after construction (#687, P1)**: the ring was a class-level `TreeMap` mutated on every request, so concurrent selections could observe a half-updated structure. Rings are now cached immutable snapshots built with `computeIfAbsent` (bounded at 128).
+- **In-flight call accounting lands on the same balancer (#688, P1)**: increments went to the pool/sticky balancer while decrements went to the service-type default, so least-connections counters only grew. Both ends now use the same instance.
+- **Affinity context is cleared in one place (#689, P1)**: three early returns skipped cleanup, and `boundedElastic` thread reuse leaked the previous request's `apiKeyId` into the next one. Cleanup now happens in a single `try/finally`, and `set(null)` clears stale values.
+- **Sticky wrappers are reused per delegate (#690, P2)**: a new wrapper per selection meant its ring snapshot never hit. Wrappers are now cached per delegate.
+- **Virtual-node keys fall back to the instance identifier (#691, P2)**: with no `instanceId`, keys degenerated to `null#i` and instances overwrote each other. Keys now fall back through `instanceId -> baseUrl -> name`.
+- **ip-hash rings are cached per candidate set (#692, P3)**: rings were rebuilt per request and each node created a fresh `MessageDigest`; both are now cached or reused per thread.
+
+#### Outbound (#699 / #700 / #701 / #702 / #703)
+
+- **WebClient cache keys use a stable variant name (#699, P1)**: keys embedded a `Consumer` identity hash, so the tracing path missed every time and the cache grew unbounded. Keys are now `URL + variant`, with a size cap.
+- **Outbound response size limit is configurable (#700, P1)**: without `ExchangeStrategies` the default 256KB applied, so long responses, inline images and TTS audio failed with 500 (and the upstream call was still billed). The limit now defaults to 10MB, is configurable, and oversize bodies map to 502.
+- **Streaming uses its own transport timeout (#701, P1)**: `responseTimeout` bounds the gap between network reads, so 60 seconds of SSE silence was killed by the transport while the five-minute application watchdog never fired. Streaming variants now allow 10 minutes by default.
+- **The adapter test endpoint regains connect-time SSRF protection (#702, P2)**: it built its own `WebClient` behind a resolve-once check, so DNS rebinding could bypass it. It now goes through the shared pool and the connect-time resolver.
+- **URL normalization keeps the query string (#703, P3)**: upstream base URLs carrying `?api-version=` were truncated to a bare path. The query is preserved; fragments are still dropped but now logged.
+
+#### Accounting and quotas (#710 / #711 / #712 / #713 / #714 / #715 / #716 / #719)
+
+- **Interrupted streams are accounted (#710, P1)**: a client disconnect recorded no usage and rolled the whole reservation back, so "read a few chunks and hang up" could repeatedly bypass the daily token quota. Consumption is now settled and the failed call recorded.
+- **Today's request count is no longer double-incremented (#711, P2)**: one authentication incremented it twice, doubling daily quota and overview reads.
+- **Non-streaming responses without `usage` are estimated (#712, P2)**: nothing was recorded, leaving quotas at the estimate. Usage is now estimated from the request and response text, matching the streaming heuristic.
+- **TokenUsage records carry the API key id (#713, P1)**: the field was never set, so per-key token statistics were always empty.
+- **Success-rate denominator uses the same window (#714, P2)**: an all-time total mixed with a range numerator diluted the rate.
+- **Usage statistics are concurrency-safe (#715, P2)**: a plain `HashMap` with whole-store saves lost updates and amplified writes; the store now uses concurrent maps and persists only the updated key.
+- **Stream outcomes are recorded at the stream terminal (#716, P1)**: a streaming response counted as a success as soon as it was constructed, so failures looked like 200s and circuit breakers never acted.
+- **Quota settlements happen once, for the final outcome (#719, P2)**: the first failed attempt consumed the settlement CAS, so a later successful retry could no longer settle; settlement is now deferred until retries are exhausted, while cancellation still settles immediately.
+
+#### Response side and cache (#684 / #720 / #721 / #722 / #723 / #724 / #725)
+
+- **SSE sanitization decodes on UTF-8 character boundaries (#684, P2)**: multi-byte characters split across chunks turned into U+FFFD, garbling Chinese text and emoji.
+- **`stream_options.include_usage` is supported (#720, P1)**: the parameter was silently dropped, so clients never received a usage frame. A `usage` frame is now emitted before `[DONE]` when requested.
+- **Truncated streams are not cached (#721, P1)**: when the upstream ended abnormally, the partial response was cached for an hour. Only streams carrying a terminator (`[DONE]`, `finish_reason`, `message_stop`) are cached now.
+- **Two output-affecting parameters join the cache key (#722, P2)**: `include_stop_str_in_output` and `ignore_eos` were missing, so requests differing in them collided.
+- **Absent temperature no longer means deterministic (#723, P2)**: `temperature == null` means "use the upstream default", not determinism; such requests were cached and replayed for an hour.
+- **Responses carry `X-Request-Id` (#724, P3)**: `extractRequestId` had no caller, leaving clients without a traceable request identifier.
+- **Body-parse failures log a digest, not the body (#725, P3)**: user content and upstream details no longer reach the error log.
+
+#### Retry and failure semantics (#718)
+
+- **Client errors are not retried (#718, P1)**: the non-retryable list only recognized Spring's blocking exceptions and the gateway's own `DownstreamServiceException` was explicitly retryable, so an upstream 400/422 was replayed three times. The policy now also honours `Retry-After` when the exception carries it.
+
+#### Configuration and operations (#674 / #676 / #677 / #678 / #679)
+
+- **Credential environment variables use single names (#674, P2)**: `DEV_JWT_SECRET` / `STAGING_JWT_SECRET` / `PROD_JWT_SECRET` / `ADMIN_PASSWORD` were read by different consumers than the ones configuration binding uses - at worst the startup gate validated a strong key while binding used a weak one. Only `JWT_SECRET` and `INITIAL_ADMIN_PASSWORD` are honoured now; the old names only warn.
+- **JWT persistence configuration has one definition (#676, P2)**: the same tree existed in two YAML files and the later import won, so editing `config/auth/jwt.yml` had no effect. It now lives only in `config/security/persistence-base.yml`.
+- **JWT knobs exported by the image take effect (#677, P3)**: `JWT_ALGORITHM` and `JWT_EXPIRATION_MINUTES` had no binding; three never-read variables were removed.
+- **Blacklist storage checks only probe Redis when Redis is used (#678, P3)**: default deployments warned on every start that the blacklist store was unreachable and revocations would not be blocked, while the blacklist actually used local storage.
+- **New environment variable reference (#679)**: no page listed the complete set before; the same batch fixed two non-existent variables and a non-existent CLI flag in the configuration pages.
+
+#### Console and configuration writes (#707 / #708 / #709)
+
+- **Service-type writes refresh the local cache immediately (#707, P2)**: writes persisted and broadcast, but the local `ModelServiceRegistry` cache never invalidated, so that replica needed a restart (on multiple replicas some picked up the change and some did not). The cache is now rebuilt per service key, reloading load balancers and rate limits, and removed services are dropped.
+- **YAML-defined rules and pools no longer report a delete that did not happen (#708, P2)**: `remove` returned `void` and used `removeIf` silently, so entries that could not be deleted kept routing while the API answered 200. `remove` now reports whether it deleted anything, YAML-defined read-only entries and missing persisted entries return 409 with a reason, and successful deletes still return 200 with `yamlRuleActive` / `yamlPoolActive` flags warning that the YAML entry reappears once the same-id override is removed.
+- **Adapter creation validates before persisting (#709, P2)**: an explicit `null` inside `capabilities` NPE'd during construction, and `type=extend` without a parent was wrapped into 500 - after the definition had already been persisted, so retries always hit 409. Value- and field-level validation now run before construction, return 400 naming the field, and the order is validate -> construct -> persist -> publish. **Behavior tightening**: omitting `auth` / `capabilities` now returns 400 instead of 201 (the console wizard always sends them; direct API clients will notice).
+
+#### Upgrade notes
+
+- **Gateway endpoints still use the `Jairouter_Token` header** (`Authorization` is reserved for downstream services) - unchanged from 3.5.4.
+- **`jwt.persistence.enabled` semantics are now documented**: it controls the lifecycle service, expiration scheduler, health probe and two configuration properties, and does **not** control whether tokens are persisted.
+- **Configuration reset now requires explicit confirmation**; scripted callers must pass it or receive a parameter error.
+- **Streaming transport timeout and the idle watchdog remain two settings**: `jairouter.webclient.streaming-response-timeout-seconds` (default 600) and `jairouter.streaming.idle-timeout` (default 5 minutes); whichever comes first applies.
+
 
 ### [3.5.4] - 2026-10-27 - Bug-fix release (routing and circuit accounting / health checks / default credentials and startup profile)
 
