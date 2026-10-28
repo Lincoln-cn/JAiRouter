@@ -67,9 +67,25 @@ public class WebClientPool {
      */
     static final int DEFAULT_MAX_IN_MEMORY_SIZE_BYTES = 10 * 1024 * 1024;
 
+    /**
+     * 流式（SSE）客户端的变体名。
+     *
+     * <p>传输层的 {@code responseTimeout} 是「相邻两次网络读」的上限，SSE 每块都算一次读，
+     * 于是 60 秒的默认值会把「块间静默」压死在应用层 5 分钟看门狗之前（#701）。
+     * 流式客户端用独立的、远大于看门狗的超时值。</p>
+     */
+    static final String STREAMING_VARIANT = "streaming";
+
+    /** 带追踪的流式变体。 */
+    static final String STREAMING_TRACING_VARIANT = "streaming-tracing";
+
+    /** 流式客户端传输层超时默认值（秒）：比应用层 5 分钟的 idle 看门狗更长。 */
+    static final int DEFAULT_STREAMING_RESPONSE_TIMEOUT_SECONDS = 600;
+
     private final int connectTimeoutMs;
     private final int responseTimeoutSeconds;
     private final int maxInMemorySizeBytes;
+    private final int streamingResponseTimeoutSeconds;
     private final ConnectionProvider connectionProvider;
     private final AddressResolverGroup<InetSocketAddress> dnsResolverGroup;
 
@@ -105,9 +121,11 @@ public class WebClientPool {
             @Value("${jairouter.webclient.max-connections:500}") final int maxConnections,
             @Value("${jairouter.webclient.pending-acquire-timeout-ms:60000}") final long pendingAcquireTimeoutMs,
             @Value("${jairouter.webclient.max-idle-time-seconds:60}") final int maxIdleTimeSeconds,
-            @Value("${jairouter.webclient.max-in-memory-size-bytes:10485760}") final int maxInMemorySizeBytes) {
+            @Value("${jairouter.webclient.max-in-memory-size-bytes:10485760}") final int maxInMemorySizeBytes,
+            @Value("${jairouter.webclient.streaming-response-timeout-seconds:600}")
+            final int streamingResponseTimeoutSeconds) {
         this(connectTimeoutMs, responseTimeoutSeconds, maxConnections, pendingAcquireTimeoutMs, maxIdleTimeSeconds,
-                maxInMemorySizeBytes, SsrfGuardedAddressResolverGroup.instance());
+                maxInMemorySizeBytes, streamingResponseTimeoutSeconds, SsrfGuardedAddressResolverGroup.instance());
     }
 
     /**
@@ -122,7 +140,8 @@ public class WebClientPool {
     WebClientPool(final int connectTimeoutMs, final int responseTimeoutSeconds, final int maxConnections,
                   final long pendingAcquireTimeoutMs, final int maxIdleTimeSeconds) {
         this(connectTimeoutMs, responseTimeoutSeconds, maxConnections, pendingAcquireTimeoutMs, maxIdleTimeSeconds,
-                DEFAULT_MAX_IN_MEMORY_SIZE_BYTES, SsrfGuardedAddressResolverGroup.instance());
+                DEFAULT_MAX_IN_MEMORY_SIZE_BYTES, DEFAULT_STREAMING_RESPONSE_TIMEOUT_SECONDS,
+                SsrfGuardedAddressResolverGroup.instance());
     }
 
     /**
@@ -134,7 +153,7 @@ public class WebClientPool {
                   final long pendingAcquireTimeoutMs, final int maxIdleTimeSeconds,
                   final AddressResolverGroup<InetSocketAddress> dnsResolverGroup) {
         this(connectTimeoutMs, responseTimeoutSeconds, maxConnections, pendingAcquireTimeoutMs, maxIdleTimeSeconds,
-                DEFAULT_MAX_IN_MEMORY_SIZE_BYTES, dnsResolverGroup);
+                DEFAULT_MAX_IN_MEMORY_SIZE_BYTES, DEFAULT_STREAMING_RESPONSE_TIMEOUT_SECONDS, dnsResolverGroup);
     }
 
     /**
@@ -147,9 +166,25 @@ public class WebClientPool {
                   final long pendingAcquireTimeoutMs, final int maxIdleTimeSeconds,
                   final int maxInMemorySizeBytes,
                   final AddressResolverGroup<InetSocketAddress> dnsResolverGroup) {
+        this(connectTimeoutMs, responseTimeoutSeconds, maxConnections, pendingAcquireTimeoutMs, maxIdleTimeSeconds,
+                maxInMemorySizeBytes, DEFAULT_STREAMING_RESPONSE_TIMEOUT_SECONDS, dnsResolverGroup);
+    }
+
+    /**
+     * 内部构造器：可注入解析守卫、响应体内存上限与流式超时（包内可见，供测试用）。
+     *
+     * @param maxInMemorySizeBytes           出站响应体内存上限（字节）
+     * @param streamingResponseTimeoutSeconds 流式变体的传输层超时（秒）
+     * @param dnsResolverGroup               底层解析器
+     */
+    WebClientPool(final int connectTimeoutMs, final int responseTimeoutSeconds, final int maxConnections,
+                  final long pendingAcquireTimeoutMs, final int maxIdleTimeSeconds,
+                  final int maxInMemorySizeBytes, final int streamingResponseTimeoutSeconds,
+                  final AddressResolverGroup<InetSocketAddress> dnsResolverGroup) {
         this.connectTimeoutMs = connectTimeoutMs;
         this.responseTimeoutSeconds = responseTimeoutSeconds;
         this.maxInMemorySizeBytes = maxInMemorySizeBytes;
+        this.streamingResponseTimeoutSeconds = streamingResponseTimeoutSeconds;
         this.dnsResolverGroup = dnsResolverGroup;
         this.connectionProvider = ConnectionProvider.builder("jairouter-outbound")
                 .maxConnections(maxConnections)
@@ -171,7 +206,8 @@ public class WebClientPool {
     public WebClientPool() {
         this(DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_RESPONSE_TIMEOUT_SECONDS, DEFAULT_MAX_CONNECTIONS,
                 DEFAULT_PENDING_ACQUIRE_TIMEOUT_MS, DEFAULT_MAX_IDLE_TIME_SECONDS,
-                DEFAULT_MAX_IN_MEMORY_SIZE_BYTES, SsrfGuardedAddressResolverGroup.instance());
+                DEFAULT_MAX_IN_MEMORY_SIZE_BYTES, DEFAULT_STREAMING_RESPONSE_TIMEOUT_SECONDS,
+                SsrfGuardedAddressResolverGroup.instance());
     }
 
     /**
@@ -240,7 +276,8 @@ public class WebClientPool {
 
         missCount.incrementAndGet();
         evictWhenOversized(cacheKey);
-        return clientCache.computeIfAbsent(cacheKey, key -> createWebClient(normalizedBaseUrl, configurator));
+        return clientCache.computeIfAbsent(cacheKey,
+                key -> createWebClient(normalizedBaseUrl, variantKey, configurator));
     }
 
     /**
@@ -269,10 +306,31 @@ public class WebClientPool {
     }
 
     /**
-     * 创建带连接池的 WebClient
+     * 流式变体判定：{@code streaming} / {@code streaming-tracing}。
+     *
+     * @param variantKey 变体名
+     * @return true 表示使用流式超时
      */
-    private WebClient createWebClient(String baseUrl, Consumer<WebClient.Builder> configurator) {
-        logger.debug("创建 WebClient: baseUrl={}", baseUrl);
+    static boolean isStreamingVariant(final String variantKey) {
+        return variantKey != null && variantKey.startsWith("streaming");
+    }
+
+    /**
+     * 创建带连接池的 WebClient。
+     *
+     * @param baseUrl     目标 baseUrl
+     * @param variantKey  稳定变体名（决定传输层超时）
+     * @param configurator 额外配置，可为 null
+     * @return WebClient
+     */
+    private WebClient createWebClient(final String baseUrl, final String variantKey,
+                                      final Consumer<WebClient.Builder> configurator) {
+        final boolean streaming = isStreamingVariant(variantKey);
+        // #701：流式请求的相邻读间隔是「块间静默」，60 秒的默认值会压死应用层 5 分钟看门狗
+        final int effectiveResponseTimeoutSeconds = streaming
+                ? streamingResponseTimeoutSeconds : responseTimeoutSeconds;
+        logger.debug("创建 WebClient: baseUrl={}, variant={}, responseTimeoutSeconds={}",
+                baseUrl, variantKey, effectiveResponseTimeoutSeconds);
 
         HttpClient httpClient = HttpClient.create(connectionProvider)
                 // #266：把出站 SSRF 判据绑到连接期解析结果上（堵 DNS 重绑定）
@@ -280,7 +338,7 @@ public class WebClientPool {
                 .compress(true)
                 // #182：接上此前声明却未生效的连接超时
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutMs)
-                .responseTimeout(Duration.ofSeconds(responseTimeoutSeconds));
+                .responseTimeout(Duration.ofSeconds(effectiveResponseTimeoutSeconds));
 
         WebClient.Builder builder = WebClient.builder()
                 .baseUrl(baseUrl)
