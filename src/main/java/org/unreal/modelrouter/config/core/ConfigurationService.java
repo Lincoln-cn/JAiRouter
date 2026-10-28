@@ -21,6 +21,9 @@ import org.unreal.modelrouter.persistence.store.StoreManager;
 import org.unreal.modelrouter.monitor.tracing.config.SamplingConfigurationValidator;
 import org.unreal.modelrouter.common.util.SecurityUtils;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -263,6 +266,11 @@ public class ConfigurationService {
             storeManager.saveConfig("model-router-config", currentConfig);
             configVersionManager.saveAsNewVersion(
                     currentConfig, "更新服务配置: " + serviceType, SecurityUtils.getCurrentUserId());
+
+            // #707: 落库成功后立刻让本机运行时缓存跟上（只重建这一个服务），否则控制台报成功、
+            // 路由仍按旧 adapter/LB/限流跑，直到重启才生效
+            refreshLocalRuntimeConfig(Collections.singleton(serviceType));
+
             instanceConfigService.refreshRuntimeConfig();
 
             logger.info("服务 {} 配置更新成功", serviceType);
@@ -309,6 +317,13 @@ public class ConfigurationService {
 
         Map<String, Object> currentConfig = instanceConfigService.getCurrentPersistedConfig();
 
+        // #707: 批量负载若整体替换 services 段，写入前存在、写入后消失的服务也要从缓存里摘掉，
+        // 因此受影响的服务键 = 写入前 ∪ 写入后
+        final Set<String> affectedServiceKeys = new HashSet<>();
+        if (configs.containsKey("services")) {
+            affectedServiceKeys.addAll(serviceKeysOf(currentConfig));
+        }
+
         // 深度合并配置
         for (Map.Entry<String, Object> entry : configs.entrySet()) {
             currentConfig.put(entry.getKey(), entry.getValue());
@@ -316,6 +331,12 @@ public class ConfigurationService {
 
         // 保存为新版本并刷新配置
         configVersionManager.saveAsNewVersion(currentConfig);
+
+        if (configs.containsKey("services")) {
+            affectedServiceKeys.addAll(serviceKeysOf(currentConfig));
+            refreshLocalRuntimeConfig(affectedServiceKeys);
+        }
+
         instanceConfigService.refreshRuntimeConfig();
 
         logger.info("批量配置更新成功");
@@ -333,6 +354,10 @@ public class ConfigurationService {
         // 清除持久化配置：失败会抛出，不会继续刷新运行时配置
         final String backupKey = configMergeService.resetToYamlConfig();
 
+        // #707: 持久化配置已被整体清除，所有服务都回落到 YAML —— 这是「整体回退」，
+        // 精确刷新按服务生效，不适用于这里，必须整量重读
+        refreshLocalRuntimeConfig(null);
+
         // 刷新运行时配置
         instanceConfigService.refreshRuntimeConfig();
 
@@ -341,6 +366,39 @@ public class ConfigurationService {
     }
 
     // ==================== 辅助方法 ====================
+
+    /**
+     * #707: 让本机 {@link ModelServiceRegistry} 的运行时缓存与刚写入的持久化配置对齐。
+     *
+     * <p>只重建本次写入涉及的服务条目（{@link ModelServiceRegistry#refreshServiceConfigs}）：写一个
+     * 服务不该重建整张缓存，也不该重新初始化其它服务的负载均衡器。{@code serviceKeys} 为 {@code null}
+     * 表示「整体回退/替换」，此时才整量重读（{@link ModelServiceRegistry#refreshFromMergedConfig()}）。</p>
+     *
+     * @param serviceKeys 本次写入涉及的服务键；{@code null} 表示整量重读
+     */
+    private void refreshLocalRuntimeConfig(final Collection<String> serviceKeys) {
+        if (modelServiceRegistry == null) {
+            logger.warn("ModelServiceRegistry 尚未注入，跳过本机运行时缓存刷新：serviceKeys={}", serviceKeys);
+            return;
+        }
+        if (serviceKeys == null) {
+            modelServiceRegistry.refreshFromMergedConfig();
+            return;
+        }
+        final Set<String> refreshed = modelServiceRegistry.refreshServiceConfigs(serviceKeys);
+        logger.info("本机运行时缓存已按写入刷新：requested={}, refreshed={}", serviceKeys, refreshed);
+    }
+
+    /**
+     * #707: 取出配置里的服务键（{@code services} 段不是 Map 时返回空集合）。
+     */
+    @SuppressWarnings("unchecked")
+    private Set<String> serviceKeysOf(final Map<String, Object> config) {
+        if (config == null || !(config.get("services") instanceof Map)) {
+            return Collections.emptySet();
+        }
+        return new HashSet<>(((Map<String, Object>) config.get("services")).keySet());
+    }
 
     /**
      * 获取当前追踪配置

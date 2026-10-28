@@ -499,6 +499,128 @@ class ConfigurationServiceTest {
         }
     }
 
+    // ==================== 运行时缓存刷新测试（#707） ====================
+
+    @Nested
+    @DisplayName("运行时缓存刷新测试（#707）")
+    class RuntimeCacheRefreshTests {
+
+        private ModelServiceRegistry registry;
+
+        @BeforeEach
+        void setUpRegistry() {
+            registry = mock(ModelServiceRegistry.class);
+            configurationService.setModelServiceRegistry(registry);
+        }
+
+        @Test
+        @DisplayName("CONFIG-021: 更新单个服务配置后精确刷新该服务的运行时缓存")
+        void updateServiceConfigRefreshesLocalCache() {
+            // Given
+            UpdateServiceConfigRequest request = new UpdateServiceConfigRequest();
+            request.setAdapter("gpustack");
+
+            when(storeManager.getConfigVersions(anyString())).thenReturn(List.of(1));
+            when(storeManager.getConfigByVersion(anyString(), anyInt())).thenReturn(sampleConfig);
+            when(configMergeService.getDefaultConfig()).thenReturn(sampleConfig);
+            when(serviceConfigUpdateService.buildServiceConfigUpdate(any(), any())).thenReturn(new HashMap<>());
+            when(configVersionManager.saveAsNewVersion(any(), anyString(), any())).thenReturn(2);
+            when(registry.refreshServiceConfigs(any())).thenReturn(Set.of("gpustack"));
+
+            // When
+            configurationService.updateServiceConfigDto("gpustack", request);
+
+            // Then - 只精确失效这一个服务，不整表清空
+            verify(registry).refreshServiceConfigs(Set.of("gpustack"));
+            verify(registry, never()).refreshFromMergedConfig();
+            // 广播仍然保留
+            verify(eventPublisher).publishEvent(any(ConfigSyncEvent.class));
+        }
+
+        @Test
+        @DisplayName("CONFIG-022: 重置为默认配置后整量重读运行时缓存（所有服务都回落到 YAML）")
+        void resetToDefaultConfigRefreshesWholeCache() {
+            // When
+            configurationService.resetToDefaultConfig();
+
+            // Then - 整体回退不适用于按服务刷新
+            verify(registry).refreshFromMergedConfig();
+            verify(registry, never()).refreshServiceConfigs(any());
+            verify(eventPublisher).publishEvent(any(ConfigSyncEvent.class));
+        }
+
+        @Test
+        @DisplayName("CONFIG-023: 批量更新 services 段时刷新写入前与写入后涉及的全部服务")
+        void batchUpdateRefreshesUnionOfServiceKeys() {
+            // Given - 写入前配置里有 gpustack，写入后整体替换成 chat
+            Map<String, Object> updates = new HashMap<>();
+            Map<String, Object> newServices = new HashMap<>();
+            newServices.put("chat", new HashMap<String, Object>());
+            updates.put("services", newServices);
+
+            when(storeManager.getConfigVersions(anyString())).thenReturn(List.of(1));
+            when(storeManager.getConfigByVersion(anyString(), anyInt())).thenReturn(sampleConfig);
+            when(registry.refreshServiceConfigs(any())).thenReturn(Set.of("gpustack", "chat"));
+
+            // When
+            configurationService.batchUpdateConfigurations(updates);
+
+            // Then - 写入后消失的 gpustack 也要刷新（即从缓存里摘掉）
+            verify(registry).refreshServiceConfigs(Set.of("gpustack", "chat"));
+            verify(registry, never()).refreshFromMergedConfig();
+        }
+
+        @Test
+        @DisplayName("CONFIG-024: 批量更新不涉及 services 段时不碰运行时缓存")
+        void batchUpdateWithoutServicesDoesNotTouchCache() {
+            // Given
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("globalSetting", "newValue");
+
+            when(storeManager.getConfigVersions(anyString())).thenReturn(List.of(1));
+            when(storeManager.getConfigByVersion(anyString(), anyInt())).thenReturn(sampleConfig);
+
+            // When
+            configurationService.batchUpdateConfigurations(updates);
+
+            // Then
+            verify(registry, never()).refreshServiceConfigs(any());
+            verify(registry, never()).refreshFromMergedConfig();
+        }
+
+        @Test
+        @DisplayName("CONFIG-025: 重置失败时不刷新运行时缓存")
+        void resetFailureDoesNotRefreshCache() {
+            // Given
+            when(configMergeService.resetToYamlConfig())
+                    .thenThrow(new IllegalStateException("清除持久化配置失败，配置可能只被部分清除"));
+
+            // When & Then
+            assertThrows(IllegalStateException.class, () -> configurationService.resetToDefaultConfig());
+            verify(registry, never()).refreshFromMergedConfig();
+            verify(registry, never()).refreshServiceConfigs(any());
+        }
+
+        @Test
+        @DisplayName("CONFIG-026: ModelServiceRegistry 未注入时写入照常成功（不因刷新失败而失败）")
+        void missingRegistryDoesNotBreakWrites() {
+            // Given - 模拟启动早期：ConfigurationInitializer 还没把 registry 设进来
+            configurationService.setModelServiceRegistry(null);
+            UpdateServiceConfigRequest request = new UpdateServiceConfigRequest();
+            request.setAdapter("gpustack");
+
+            when(storeManager.getConfigVersions(anyString())).thenReturn(List.of(1));
+            when(storeManager.getConfigByVersion(anyString(), anyInt())).thenReturn(sampleConfig);
+            when(configMergeService.getDefaultConfig()).thenReturn(sampleConfig);
+            when(serviceConfigUpdateService.buildServiceConfigUpdate(any(), any())).thenReturn(new HashMap<>());
+            when(configVersionManager.saveAsNewVersion(any(), anyString(), any())).thenReturn(2);
+
+            // When & Then
+            assertDoesNotThrow(() -> configurationService.updateServiceConfigDto("gpustack", request));
+            verify(storeManager).saveConfig(anyString(), any());
+        }
+    }
+
     // ==================== 版本清理测试 ====================
 
     @Nested
