@@ -10,10 +10,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
+import org.unreal.modelrouter.router.http.WebClientPool;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -28,7 +30,7 @@ import static org.mockito.Mockito.*;
 class AdapterTestServiceTest {
 
     @Mock
-    private WebClient.Builder webClientBuilder;
+    private WebClientPool webClientPool;
 
     @Mock
     private AdapterRegistry adapterRegistry;
@@ -44,8 +46,7 @@ class AdapterTestServiceTest {
         WebClient.RequestHeadersSpec mockHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
         WebClient.ResponseSpec mockResponseSpec = mock(WebClient.ResponseSpec.class);
 
-        lenient().when(webClientBuilder.baseUrl(anyString())).thenReturn(webClientBuilder);
-        lenient().when(webClientBuilder.build()).thenReturn(mockWebClient);
+        lenient().when(webClientPool.getOrCreate(anyString(), anyString(), any())).thenReturn(mockWebClient);
         lenient().when(mockWebClient.get()).thenReturn(mockGetSpec);
         lenient().when(mockWebClient.post()).thenReturn(mock(WebClient.RequestBodyUriSpec.class));
         lenient().when(mockGetSpec.uri(anyString())).thenReturn(mockHeadersSpec);

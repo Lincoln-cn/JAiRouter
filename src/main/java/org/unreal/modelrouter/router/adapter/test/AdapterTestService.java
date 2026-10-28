@@ -7,6 +7,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.unreal.modelrouter.common.util.UrlSecurityValidator;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
+import org.unreal.modelrouter.router.http.WebClientPool;
 import reactor.core.publisher.Mono;
 
 import java.net.ConnectException;
@@ -26,12 +27,21 @@ public class AdapterTestService {
     private static final Logger logger = LoggerFactory.getLogger(AdapterTestService.class);
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
-    private final WebClient.Builder webClientBuilder;
+    /**
+     * 测试请求用的客户端变体名（#702）。
+     *
+     * <p>池里每个变体都装着 {@code SsrfGuardedAddressResolverGroup}：连接期解析出的地址再过一次内网/元数据
+     * 网段校验，能挡住「先解析成公网、建连时换成内网」的 DNS 重绑定。这里以前自己新建
+     * WebClient，只做了建连前的一次性解析校验。</p>
+     */
+    static final String TEST_CLIENT_VARIANT = "adapter-test";
+
+    private final WebClientPool webClientPool;
     private final AdapterRegistry adapterRegistry;
 
-    public AdapterTestService(final WebClient.Builder webClientBuilder,
+    public AdapterTestService(final WebClientPool webClientPool,
                               final AdapterRegistry adapterRegistry) {
-        this.webClientBuilder = webClientBuilder;
+        this.webClientPool = webClientPool;
         this.adapterRegistry = adapterRegistry;
     }
 
@@ -50,7 +60,7 @@ public class AdapterTestService {
             return Mono.just(AdapterTestResult.error("Base URL 不合法: " + ex.getMessage()));
         }
 
-        WebClient client = webClientBuilder.baseUrl(safeBaseUrl).build(); // lgtm[java/ssrf]
+        WebClient client = webClientPool.getOrCreate(safeBaseUrl, TEST_CLIENT_VARIANT, null);
 
         return client.get()
                 .uri("/models")
@@ -104,7 +114,7 @@ public class AdapterTestService {
             return Mono.just(AdapterTestResult.error("Base URL 不合法: " + ex.getMessage()));
         }
 
-        WebClient client = webClientBuilder.baseUrl(safeBaseUrl).build(); // lgtm[java/ssrf]
+        WebClient client = webClientPool.getOrCreate(safeBaseUrl, TEST_CLIENT_VARIANT, null);
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", model);
