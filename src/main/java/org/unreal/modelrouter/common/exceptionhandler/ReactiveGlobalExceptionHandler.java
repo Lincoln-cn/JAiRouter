@@ -127,6 +127,15 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
                                     : String.valueOf(downstreamError.getStatusCode().value()));
                     status = downstreamError.getStatusCode();
                     retryAfterSeconds = downstreamError.getRetryAfterSeconds();
+                } else if (ex instanceof org.springframework.core.io.buffer.DataBufferLimitException) {
+                    // #700：出站响应体超过网关内存上限时，此前会落到「系统异常 500」，
+                    // 让调用方误以为下游故障/可原样重试。这是网关侧的容量限制，回 502 + 可操作提示。
+                    logger.error("下游响应体超过网关内存上限: {}", ex.getMessage());
+                    errorResponse = RouterResponse.error(
+                            "下游响应体超过网关允许的内存上限，请调大 jairouter.webclient.max-in-memory-size-bytes"
+                                    + " 或改用流式接口",
+                            "502");
+                    status = HttpStatus.BAD_GATEWAY;
                 } else if (ex instanceof ResponseStatusException) {
                     ResponseStatusException rse = (ResponseStatusException) ex;
                     logger.error("响应状态异常: status={}, message={}", rse.getStatusCode(), rse.getMessage());

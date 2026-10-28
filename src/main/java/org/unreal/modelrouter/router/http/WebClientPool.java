@@ -59,8 +59,17 @@ public class WebClientPool {
     static final long DEFAULT_PENDING_ACQUIRE_TIMEOUT_MS = 60_000L;
     static final int DEFAULT_MAX_IDLE_TIME_SECONDS = 60;
 
+    /**
+     * 出站响应体的内存上限默认值（字节）。
+     *
+     * <p>此前未设 {@code ExchangeStrategies}，用的是 Reactor/WebFlux 默认的 256KB，
+     * 大响应（长输出、含 base64 图片、TTS 音频）会以 {@code DataBufferLimitException} 失败（#700）。</p>
+     */
+    static final int DEFAULT_MAX_IN_MEMORY_SIZE_BYTES = 10 * 1024 * 1024;
+
     private final int connectTimeoutMs;
     private final int responseTimeoutSeconds;
+    private final int maxInMemorySizeBytes;
     private final ConnectionProvider connectionProvider;
     private final AddressResolverGroup<InetSocketAddress> dnsResolverGroup;
 
@@ -95,9 +104,25 @@ public class WebClientPool {
             @Value("${jairouter.webclient.response-timeout-seconds:60}") final int responseTimeoutSeconds,
             @Value("${jairouter.webclient.max-connections:500}") final int maxConnections,
             @Value("${jairouter.webclient.pending-acquire-timeout-ms:60000}") final long pendingAcquireTimeoutMs,
-            @Value("${jairouter.webclient.max-idle-time-seconds:60}") final int maxIdleTimeSeconds) {
+            @Value("${jairouter.webclient.max-idle-time-seconds:60}") final int maxIdleTimeSeconds,
+            @Value("${jairouter.webclient.max-in-memory-size-bytes:10485760}") final int maxInMemorySizeBytes) {
         this(connectTimeoutMs, responseTimeoutSeconds, maxConnections, pendingAcquireTimeoutMs, maxIdleTimeSeconds,
-                SsrfGuardedAddressResolverGroup.instance());
+                maxInMemorySizeBytes, SsrfGuardedAddressResolverGroup.instance());
+    }
+
+    /**
+     * 内部构造器：只显式指定对外可配的几个参数（包内可见，供测试用）。
+     *
+     * @param connectTimeoutMs        连接超时（毫秒）
+     * @param responseTimeoutSeconds  响应超时（秒）
+     * @param maxConnections          连接池最大连接数
+     * @param pendingAcquireTimeoutMs 等待获取连接的排队超时（毫秒）
+     * @param maxIdleTimeSeconds      连接空闲回收时间（秒）
+     */
+    WebClientPool(final int connectTimeoutMs, final int responseTimeoutSeconds, final int maxConnections,
+                  final long pendingAcquireTimeoutMs, final int maxIdleTimeSeconds) {
+        this(connectTimeoutMs, responseTimeoutSeconds, maxConnections, pendingAcquireTimeoutMs, maxIdleTimeSeconds,
+                DEFAULT_MAX_IN_MEMORY_SIZE_BYTES, SsrfGuardedAddressResolverGroup.instance());
     }
 
     /**
@@ -108,8 +133,23 @@ public class WebClientPool {
     WebClientPool(final int connectTimeoutMs, final int responseTimeoutSeconds, final int maxConnections,
                   final long pendingAcquireTimeoutMs, final int maxIdleTimeSeconds,
                   final AddressResolverGroup<InetSocketAddress> dnsResolverGroup) {
+        this(connectTimeoutMs, responseTimeoutSeconds, maxConnections, pendingAcquireTimeoutMs, maxIdleTimeSeconds,
+                DEFAULT_MAX_IN_MEMORY_SIZE_BYTES, dnsResolverGroup);
+    }
+
+    /**
+     * 内部构造器：可注入解析守卫与响应体内存上限（包内可见，供测试用）。
+     *
+     * @param maxInMemorySizeBytes 出站响应体内存上限（字节）
+     * @param dnsResolverGroup     底层解析器（生产固定为 {@link SsrfGuardedAddressResolverGroup}）
+     */
+    WebClientPool(final int connectTimeoutMs, final int responseTimeoutSeconds, final int maxConnections,
+                  final long pendingAcquireTimeoutMs, final int maxIdleTimeSeconds,
+                  final int maxInMemorySizeBytes,
+                  final AddressResolverGroup<InetSocketAddress> dnsResolverGroup) {
         this.connectTimeoutMs = connectTimeoutMs;
         this.responseTimeoutSeconds = responseTimeoutSeconds;
+        this.maxInMemorySizeBytes = maxInMemorySizeBytes;
         this.dnsResolverGroup = dnsResolverGroup;
         this.connectionProvider = ConnectionProvider.builder("jairouter-outbound")
                 .maxConnections(maxConnections)
@@ -117,9 +157,9 @@ public class WebClientPool {
                 .maxIdleTime(Duration.ofSeconds(maxIdleTimeSeconds))
                 .build();
         logger.info("WebClientPool 初始化完成: connectTimeoutMs={}, responseTimeoutSeconds={}, "
-                        + "maxConnections={}, pendingAcquireTimeoutMs={}, maxIdleTimeSeconds={}",
+                        + "maxConnections={}, pendingAcquireTimeoutMs={}, maxIdleTimeSeconds={}, maxInMemorySizeBytes={}",
                 connectTimeoutMs, responseTimeoutSeconds, maxConnections,
-                pendingAcquireTimeoutMs, maxIdleTimeSeconds);
+                pendingAcquireTimeoutMs, maxIdleTimeSeconds, maxInMemorySizeBytes);
     }
 
     /**
@@ -131,7 +171,7 @@ public class WebClientPool {
     public WebClientPool() {
         this(DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_RESPONSE_TIMEOUT_SECONDS, DEFAULT_MAX_CONNECTIONS,
                 DEFAULT_PENDING_ACQUIRE_TIMEOUT_MS, DEFAULT_MAX_IDLE_TIME_SECONDS,
-                SsrfGuardedAddressResolverGroup.instance());
+                DEFAULT_MAX_IN_MEMORY_SIZE_BYTES, SsrfGuardedAddressResolverGroup.instance());
     }
 
     /**
@@ -244,6 +284,8 @@ public class WebClientPool {
 
         WebClient.Builder builder = WebClient.builder()
                 .baseUrl(baseUrl)
+                // #700：显式设置响应体内存上限，避免落到 WebFlux 默认的 256KB
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(maxInMemorySizeBytes))
                 .clientConnector(new ReactorClientHttpConnector(httpClient));
 
         // 应用自定义配置
