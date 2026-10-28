@@ -11,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.config.core.MonitoringProperties;
 import org.unreal.modelrouter.router.rule.RuleDefinitionPersistenceService;
+import org.unreal.modelrouter.router.rule.RuleDefinitionProperties;
 import org.unreal.modelrouter.router.rule.RuleEngineService;
 import org.unreal.modelrouter.router.rule.RuleStatsService;
 import org.unreal.modelrouter.router.rule.model.RuleDefinition;
@@ -23,6 +24,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -64,8 +66,8 @@ class RuleConfigControllerTest {
         }
 
         @Override
-        public void remove(final String id) {
-            store.removeIf(r -> r.getId().equals(id));
+        public boolean remove(final String id) {
+            return store.removeIf(r -> r.getId().equals(id));
         }
     }
 
@@ -564,6 +566,110 @@ class RuleConfigControllerTest {
             assertEquals(100L, action.get("capacity"));
             assertEquals(10L, action.get("rate"));
             assertEquals("rule", action.get("scope"));
+        }
+    }
+
+    // ==================== YAML 只读条目删除(#708) ====================
+
+    @Nested
+    @DisplayName("YAML 只读规则删除测试(#708)")
+    class YamlReadOnlyDeleteTests {
+
+        private RuleConfigController controllerWithYaml(final RuleDefinition... yamlRules) {
+            RuleDefinitionProperties props = new RuleDefinitionProperties();
+            props.setRules(List.of(yamlRules));
+            return new RuleConfigController(
+                    new RuleEngineService(props), persistenceService, ruleStatsService, rateLimitManager);
+        }
+
+        private RuleDefinition ruleWithId(final String id, final String name) {
+            RuleDefinition r = validRule(name);
+            r.setId(id);
+            return r;
+        }
+
+        @Test
+        @DisplayName("RULEC-035: 删除 YAML 规则返回 409,规则仍在且不清限流器")
+        void testDelete_yamlRule_409() {
+            RuleConfigController yamlController = controllerWithYaml(ruleWithId("yaml-1", "yaml-rule"));
+
+            ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                    () -> yamlController.deleteRule("yaml-1"));
+
+            assertEquals(HttpStatus.CONFLICT, ex.getStatusCode(),
+                    "YAML 定义的规则是只读的,删除必须回 409 而不是 200");
+            assertEquals("yaml-1", yamlController.getAllRules().getBody().getData().get(0).getId(),
+                    "YAML 规则删不掉,必须仍在生效列表里");
+            verify(rateLimitManager, never()).removeRuleRateLimiter("yaml-1");
+        }
+
+        @Test
+        @DisplayName("RULEC-036: 删除同 id 持久化覆盖项返回 200 但标记 yamlRuleActive=true")
+        void testDelete_override_persistedRemovedYamlRevives() {
+            RuleDefinition yamlRule = ruleWithId("shared-1", "yaml-version");
+            RuleDefinition override = ruleWithId("shared-1", "persisted-version");
+            persistenceService.save(override);
+            RuleConfigController yamlController = controllerWithYaml(yamlRule);
+            assertEquals("persisted-version",
+                    yamlController.getRule("shared-1").getBody().getData().getName(),
+                    "前置:持久化覆盖项应生效");
+
+            ResponseEntity<RouterResponse<Map<String, Object>>> response =
+                    yamlController.deleteRule("shared-1");
+
+            assertEquals(HttpStatus.OK, response.getStatusCode(),
+                    "删掉的是持久化覆盖项,操作本身成功,故仍是 200");
+            Map<String, Object> data = response.getBody().getData();
+            assertEquals(Boolean.TRUE, data.get("deleted"));
+            assertEquals(Boolean.TRUE, data.get("yamlRuleActive"),
+                    "覆盖项被删后 YAML 同 id 规则会重新生效,必须告知调用方");
+            assertNotNull(data.get("message"));
+            assertEquals("yaml-version", yamlController.getRule("shared-1").getBody().getData().getName(),
+                    "列表应回到 YAML 版本");
+        }
+
+        @Test
+        @DisplayName("RULEC-037: 删除普通持久化规则返回 200 且 yamlRuleActive=false")
+        void testDelete_persistedRule_yamlRuleActiveFalse() {
+            RuleDefinition created = controller.createRule(validRule("only-persisted")).getBody().getData();
+
+            ResponseEntity<RouterResponse<Map<String, Object>>> response =
+                    controller.deleteRule(created.getId());
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertEquals(Boolean.TRUE, response.getBody().getData().get("deleted"));
+            assertEquals(Boolean.FALSE, response.getBody().getData().get("yamlRuleActive"));
+            assertNull(response.getBody().getData().get("message"));
+            assertTrue(controller.getAllRules().getBody().getData().isEmpty());
+            verify(rateLimitManager).removeRuleRateLimiter(created.getId());
+        }
+
+        @Test
+        @DisplayName("RULEC-038: 列表有但持久化层没有时删除返回 409,不谎报成功")
+        void testDelete_notInPersistedStore_409() {
+            RuleDefinition ghost = ruleWithId("ghost-1", "ghost-rule");
+            RuleDefinitionPersistenceService lying = new RuleDefinitionPersistenceService(null, null) {
+                @Override
+                public List<RuleDefinition> loadAll() {
+                    return new ArrayList<>(List.of(ghost));
+                }
+
+                @Override
+                public boolean remove(final String id) {
+                    return false;
+                }
+            };
+            RuleConfigController ghostController = new RuleConfigController(
+                    new RuleEngineService(), lying, ruleStatsService, rateLimitManager);
+
+            ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                    () -> ghostController.deleteRule("ghost-1"));
+
+            assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
+            assertTrue(String.valueOf(ex.getReason()).contains("not present in the persisted rule store"),
+                    "非 YAML 情形应说明持久化层没有该条目,实际=" + ex.getReason());
+            assertEquals(1, ghostController.getAllRules().getBody().getData().size(),
+                    "删除没有生效,条目必须还在");
         }
     }
 }

@@ -95,12 +95,22 @@ public class PoolPersistenceService {
 
     /**
      * 删除单条资源池
+     *
+     * <p>返回值让调用方区分「持久化层确有该条目并已处理删除」与「持久化层本来就没有该条目」。
+     * 后者最常见的原因是资源池只定义在 YAML 里（YAML 是只读配置源，删除不应静默成功）。
+     * 落库失败仍沿用本类既有的「降级为仅内存模式」语义，不在此处转成异常。</p>
+     *
+     * @param poolName 资源池名（虚拟模型名）
+     * @return 持久化快照中确有该条目并已从快照摘除（含落库尝试）返回 {@code true}；否则 {@code false}
      */
-    public void remove(final String poolName) {
+    public boolean remove(final String poolName) {
         List<PoolDefinition> pools = loadAll();
         if (pools.removeIf(p -> p.getPoolName().equals(poolName))) {
             saveAll(pools);
             logger.debug("删除资源池定义: {}", poolName);
+            return true;
         }
+        logger.debug("资源池定义不在持久化层, 可能来自 YAML, 未做任何写入: {}", poolName);
+        return false;
     }
 }
