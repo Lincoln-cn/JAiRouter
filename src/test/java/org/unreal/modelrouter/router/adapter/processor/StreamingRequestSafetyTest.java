@@ -41,6 +41,7 @@ import reactor.test.StepVerifier;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -165,7 +166,10 @@ class StreamingRequestSafetyTest {
         safetyProperties.setMaxContentChars(10_000);
         safetyProperties.setMaxCacheChars(10_000);
 
-        final String[] chunks = contentChunks(3, 20);
+        final String[] contentOnly = contentChunks(3, 20);
+        // #721：写缓存要求流带终止标记，这里按真实上游在末尾补一个 [DONE]
+        final String[] chunks = Arrays.copyOf(contentOnly, contentOnly.length + 1);
+        chunks[chunks.length - 1] = "data: [DONE]";
         final String fullContent = "a".repeat(60);
         final long expectedTokens = 15L; // 60 / 4
 
@@ -194,7 +198,8 @@ class StreamingRequestSafetyTest {
         final ArgumentCaptor<Object> cacheCaptor = ArgumentCaptor.forClass(Object.class);
         verify(responseCacheService).store(eq("cache-key-safety"), cacheCaptor.capture());
         final CachedStreamingResponse cached = (CachedStreamingResponse) cacheCaptor.getValue();
-        assertEquals(chunks.length, cached.chunks().size(), "上界之下应缓存全部块");
+        assertEquals(chunks.length, cached.chunks().size(), "上界之下应缓存全部块（含终止标记）");
+        assertTrue(cached.complete(), "#721 之后写缓存的流必须带 complete 标记");
     }
 
     @Test
