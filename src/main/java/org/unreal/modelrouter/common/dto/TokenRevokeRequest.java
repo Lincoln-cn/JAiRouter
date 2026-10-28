@@ -3,7 +3,7 @@ package org.unreal.modelrouter.common.dto;
 public final class TokenRevokeRequest {
     private String token;
 
-    private String userId; // 可选，用于权限检查
+    private String userId; // 可选，仅作请求体兼容保留；授权按令牌属主判定（#696），本字段不参与校验
     private String reason; // 可选，撤销原因
 
     public TokenRevokeRequest() {
