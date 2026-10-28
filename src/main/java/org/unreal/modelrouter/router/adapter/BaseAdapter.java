@@ -137,11 +137,25 @@ public abstract class BaseAdapter implements ServiceCapability {
      */
     @SuppressWarnings("all")
     private WebClient getWebClientForInstance(final ModelRouterProperties.ModelInstance instance) {
+        return getWebClientForInstance(instance, false);
+    }
+
+    /**
+     * 取该实例对应的 WebClient。
+     *
+     * @param instance  目标实例
+     * @param streaming true 表示这是 SSE 流式请求，需要用更大的传输层超时（#701）
+     * @return WebClient
+     */
+    private WebClient getWebClientForInstance(final ModelRouterProperties.ModelInstance instance,
+                                              final boolean streaming) {
         String baseUrl = instance.getBaseUrl();
         try {
             var tracingFactory = org.unreal.modelrouter.common.util.ApplicationContextProvider.getBean(
                     org.unreal.modelrouter.monitor.tracing.client.TracingWebClientFactory.class);
-            return tracingFactory.createTracingWebClient(baseUrl);
+            return streaming
+                    ? tracingFactory.createTracingWebClient(baseUrl, true)
+                    : tracingFactory.createTracingWebClient(baseUrl);
         } catch (Exception e) {
             return org.unreal.modelrouter.common.util.ApplicationContextProvider.getBean(
                     org.unreal.modelrouter.router.model.WebClientCacheManager.class)
@@ -412,7 +426,8 @@ public abstract class BaseAdapter implements ServiceCapability {
         return processRequestWithFallback(request, authorization, httpRequest,
                 ModelServiceRegistry.ServiceType.chat, request.model(),
                 (req, auth, client, path, instance, st) -> Boolean.TRUE.equals(req.stream())
-                        ? processStreamingRequest(req, auth, client, path, instance, st, httpRequest)
+                        ? processStreamingRequest(req, auth,
+                                getWebClientForInstance(instance, true), path, instance, st, httpRequest)
                         : processNonStreamingRequest(req, auth, client, path, instance, st, String.class, httpRequest));
     }
 

@@ -28,6 +28,9 @@ public class TracingWebClientFactory {
     /** 缓存变体名：与其他出站客户端共享 baseUrl 时区分 tracing 拦截器配置（#699）。 */
     private static final String TRACING_VARIANT = "tracing";
 
+    /** 带追踪的流式变体：传输层超时远大于 SSE 块间静默（#701）。 */
+    private static final String STREAMING_TRACING_VARIANT = "streaming-tracing";
+
     private final BackendCallTracingInterceptor tracingInterceptor;
     private final WebClientPool webClientPool;
 
@@ -45,8 +48,20 @@ public class TracingWebClientFactory {
      * @return 配置了追踪拦截器的WebClient
      */
     public WebClient createTracingWebClient(final String baseUrl) {
+        return createTracingWebClient(baseUrl, false);
+    }
+
+    /**
+     * 创建带有追踪功能的 WebClient（可选流式变体）。
+     *
+     * @param baseUrl   基础URL
+     * @param streaming true 表示用于 SSE 流式请求（传输层超时更大，#701）
+     * @return 配置了追踪拦截器的 WebClient
+     */
+    public WebClient createTracingWebClient(final String baseUrl, final boolean streaming) {
         // #699：给出稳定变体名，避免用 lambda 的 identity hash 当缓存键
-        return webClientPool.getOrCreate(baseUrl, TRACING_VARIANT, builder -> {
+        final String variant = streaming ? STREAMING_TRACING_VARIANT : TRACING_VARIANT;
+        return webClientPool.getOrCreate(baseUrl, variant, builder -> {
             builder.filter(tracingInterceptor);
         });
     }
