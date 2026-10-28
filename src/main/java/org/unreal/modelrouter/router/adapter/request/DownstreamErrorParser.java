@@ -107,7 +107,7 @@ final class DownstreamErrorParser {
             }
             final com.fasterxml.jackson.databind.JsonNode message = root.get("message");
             return message != null && message.isTextual() ? message.asText() : null;
-        } catch (Exception ignored) {
+        } catch (com.fasterxml.jackson.core.JsonProcessingException ignored) {
             return null;
         }
     }
@@ -130,7 +130,7 @@ final class DownstreamErrorParser {
             }
             final com.fasterxml.jackson.databind.JsonNode code = root.get("code");
             return code != null && code.isTextual() ? code.asText() : null;
-        } catch (Exception ignored) {
+        } catch (com.fasterxml.jackson.core.JsonProcessingException ignored) {
             return null;
         }
     }
