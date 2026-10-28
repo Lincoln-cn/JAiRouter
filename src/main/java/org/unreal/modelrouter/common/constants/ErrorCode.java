@@ -77,6 +77,8 @@ public enum ErrorCode {
             "类型不合法；发出点用 resolveStatus 取状态"),
     LOGIN_FAILED("LOGIN_FAILED", HttpStatus.UNAUTHORIZED, RenderPath.API_EXCEPTION, "登录失败"),
     NOT_FOUND("NOT_FOUND", HttpStatus.NOT_FOUND, RenderPath.API_EXCEPTION, "资源未找到"),
+    RATE_LIMITED_LOGIN("RATE_LIMITED_LOGIN", HttpStatus.TOO_MANY_REQUESTS, RenderPath.API_EXCEPTION,
+            "登录失败次数达到阈值后的临时锁定（issue #697）；429 由 RATE_LIMITED_ 前缀的规则链推导"),
     SERVICE_NOT_AVAILABLE("SERVICE_NOT_AVAILABLE", HttpStatus.SERVICE_UNAVAILABLE, RenderPath.API_EXCEPTION,
             "服务不可用"),
     TOKEN_NOT_FOUND("TOKEN_NOT_FOUND", HttpStatus.NOT_FOUND, RenderPath.API_EXCEPTION, "令牌不存在"),

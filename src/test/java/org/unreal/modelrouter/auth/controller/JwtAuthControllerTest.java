@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.unreal.modelrouter.auth.security.config.properties.JwtConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
+import org.unreal.modelrouter.auth.security.ratelimit.LoginBruteForceGuard;
 import org.unreal.modelrouter.auth.security.service.AccountManager;
 import org.unreal.modelrouter.auth.security.service.JwtPersistenceService;
 import org.unreal.modelrouter.auth.security.service.JwtTokenRefreshService;
@@ -48,6 +49,9 @@ class JwtAuthControllerTest {
     @Mock
     private JwtPersistenceService jwtPersistenceService;
 
+    @Mock
+    private LoginBruteForceGuard loginBruteForceGuard;
+
     @InjectMocks
     private JwtAuthController controller;
 
@@ -66,6 +70,9 @@ class JwtAuthControllerTest {
         JwtConfig jwtConfig = mock(JwtConfig.class);
         lenient().when(jwtConfig.getExpirationMinutes()).thenReturn(60L);
         lenient().when(securityProperties.getJwt()).thenReturn(jwtConfig);
+        // issue #697：登录链先过一次失败频控，未锁定 = 空完成
+        lenient().when(loginBruteForceGuard.checkNotLocked(anyString(), anyString()))
+                .thenReturn(Mono.empty());
     }
 
     // ==================== 登录测试 ====================

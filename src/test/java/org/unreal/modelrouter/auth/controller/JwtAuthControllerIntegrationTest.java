@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.config.properties.JwtConfig;
+import org.unreal.modelrouter.auth.security.ratelimit.LoginBruteForceGuard;
 import org.unreal.modelrouter.auth.security.service.*;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.*;
@@ -51,6 +52,9 @@ class JwtAuthControllerIntegrationTest {
     private JwtPersistenceService jwtPersistenceService;
 
     @Mock
+    private LoginBruteForceGuard loginBruteForceGuard;
+
+    @Mock
     private Authentication authentication;
 
     @InjectMocks
@@ -66,6 +70,9 @@ class JwtAuthControllerIntegrationTest {
         jwtConfig.setEnabled(true);
         jwtConfig.setExpirationMinutes(60);
         lenient().when(securityProperties.getJwt()).thenReturn(jwtConfig);
+        // issue #697：登录链先过一次失败频控，未锁定 = 空完成
+        lenient().when(loginBruteForceGuard.checkNotLocked(anyString(), anyString()))
+                .thenReturn(Mono.empty());
     }
 
     // ==================== 登录测试 ====================

@@ -1,8 +1,8 @@
 # Error Codes Reference
 
 <!-- 版本信息 -->
-> **Document Version**: 1.2.0
-> **Last Updated**: 2026-10-15
+> **Document Version**: 1.3.0
+> **Last Updated**: 2026-10-29
 > **Applicable Version**: v3.3.3+
 > **Author**: AI Assistant
 
@@ -10,7 +10,7 @@ JAiRouter uses a standardized error code system to identify various error condit
 
 > ⚠️ **The response shape depends on the entry surface — and on `/api/**`, on who writes the response**: `/api/**` (console) normally uses the `RouterResponse` shape shown below (`errorCode` field); `/v1/**` (OpenAI surface) uses a nested `{"error":{"message","type","code"}}` (see [Universal API](universal-api.md)); `/v1/messages` (Anthropic surface) uses Anthropic's `{"type":"error","error":{...}}` shape. Known exceptions that do **not** use this table: **(1) the authentication filter renders its own body on every surface, `/api/**` included** — a missing or invalid credential (401) and a credential rate-limited during validation (429 `RATE_LIMITED_API_KEY`) come back as `{"error":{"message":…,"type":"authentication_error"|"rate_limit_error","code":…}}`, because that filter is the single render point for authentication-chain state and neither `@RestControllerAdvice` runs on that path; **(2) a 403 produced by the authorization layer** (URL permission matrix / `@PreAuthorize`) is Spring Security's default `text/plain` `Access Denied`, whereas a 403 thrown by a controller (for example `BUILTIN_READONLY`) *is* `RouterResponse` — so on `/api/**` this code's shape depends on the writer, not only on the surface; (3) the admin rate limiter returns a flat `{"code":"RATE_LIMIT_EXCEEDED","message":...}` body with 429; (4) exception-handler fallbacks return numeric codes (for example `{"code":"500"}`).
 >
-> 📌 **Code is the authority for this table**: it is reconciled entry by entry against `common/constants/ErrorCode.java` (the error-code registry, **63 codes that are actually emitted**), and `scripts/docs/check-error-codes.py` verifies it **both ways** in CI — a registry code missing from this table, or a table code that can never be emitted, fails the build. Which chain decides each code's HTTP status is registered too (its render path), so **change the registry before changing a code name or status**.
+> 📌 **Code is the authority for this table**: it is reconciled entry by entry against `common/constants/ErrorCode.java` (the error-code registry, **64 codes that are actually emitted**), and `scripts/docs/check-error-codes.py` verifies it **both ways** in CI — a registry code missing from this table, or a table code that can never be emitted, fails the build. Which chain decides each code's HTTP status is registered too (its render path), so **change the registry before changing a code name or status**.
 
 ## Error Response Format
 
@@ -171,12 +171,13 @@ JAiRouter uses a standardized error code system to identify various error condit
 
 ## Rate Limit Error Codes
 
-**HTTP Status**: 429 Too Many Requests (both the admin surface and the API Key validation chain)
+**HTTP Status**: 429 Too Many Requests (the admin surface, the API Key validation chain, and login brute-force protection)
 
 | Error Code | Description | Response Header | Solution |
 |------------|-------------|-----------------|----------|
 | `RATE_LIMIT_EXCEEDED` | Admin rate limit exceeded (`/api/auth/api-keys`) | `Retry-After` / `X-Quota-*` | Wait for the bucket to recover and retry |
 | `RATE_LIMITED_API_KEY` | API Key per-minute rate limit exceeded (validation chain) | none | Back off and retry |
+| `RATE_LIMITED_LOGIN` | Login locked after too many failures (`/api/auth/jwt/login`) | none | Wait for the lock window to expire or fix the credentials |
 
 > ✅ **The codes were split** (issue #404, decided 2026-10-15 as "429 plus a new code"): a rate limit is no longer
 > "one code, two statuses" — each entry surface has its own code and **both answer 429**:
@@ -187,6 +188,10 @@ JAiRouter uses a standardized error code system to identify various error condit
 > from the status to `rate_limit_error`).
 > So a client **no longer has to** treat 401 as a rate limit; branching on status 429 is enough. If you still
 > branch on codes, cover both.
+>
+> ③ the login endpoint (`/api/auth/jwt/login`) locks a username/IP after too many failures and answers
+> **429** with the error code `RATE_LIMITED_LOGIN` (a different source than the two above: it protects
+> console login, not API Keys or the admin surface).
 >
 > There is **no** `X-RateLimit-Reset` / `X-RateLimit-Remaining` header anywhere in the codebase; quota rejections
 > write `Retry-After` and the `X-Quota-*` family (limit / remaining / window).
@@ -323,6 +328,7 @@ log.error("Authentication failed: errorCode={}, message={}",
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.3.0 | 2026-10-29 | Added `RATE_LIMITED_LOGIN` (login brute-force lock, 429): #697 added failure counting and locking to the login endpoint, registry 63 → 64 codes, table synced |
 | 1.2.0 | 2026-10-15 | Split the rate-limit codes per issue #404: added `RATE_LIMITED_API_KEY` (API Key validation chain, 429) and turned `RATE_LIMIT_EXCEEDED` into the flat 429 the admin limiter writes (registry 62 → 63 codes; a rate limit is no longer one code with two statuses) |
 | 1.1.0 | 2026-10-15 | Rewritten against the error-code registry (`ErrorCode`, 62 emitted codes): added the 33 missing codes, removed 7 codes that can never be emitted, documented each render path and the two "endpoint returns 400 while code-name resolution derives 403" cases, and registered `DOWNSTREAM_SERVICE_ERROR` |
 | 1.0.2 | 2026-06-30 | Rewrote both tables from the code (issues #342/#348): dropped 17 non-existent codes, added the codes the authentication chain actually emits |
