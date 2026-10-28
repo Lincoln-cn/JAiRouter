@@ -16,6 +16,7 @@ import org.unreal.modelrouter.config.core.helper.ConfigConverterHelper;
 import org.unreal.modelrouter.config.core.helper.ServiceTypeResolver;
 import org.unreal.modelrouter.router.fallback.FallbackManager;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
+import org.unreal.modelrouter.router.loadbalancer.LoadBalancerCallTracker;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancerManager;
 import org.unreal.modelrouter.router.loadbalancer.monitor.RoutingMonitorService;
 import org.unreal.modelrouter.router.ratelimit.RateLimitConfig;
@@ -94,6 +95,9 @@ public class ModelServiceRegistry {
 
     // v2.7.0: 路由监控服务
     private final RoutingMonitorService routingMonitorService;
+
+    /** #688: 让「选择时加计数」与「完成时减计数」落在同一个 LB 实例上的记账器 */
+    private final LoadBalancerCallTracker callTracker = new LoadBalancerCallTracker();
 
     // v2.8.5: 规则引擎(延迟注入,避免循环依赖)
     private RuleEngineService ruleEngine;
@@ -354,6 +358,10 @@ public class ModelServiceRegistry {
             throw instanceSelector.createAppropriateException(serviceType, effectiveModelName, candidates);
         }
 
+        // #688: StickyLoadBalancer 的 recordCall/recordCallComplete 都直接委托给 delegate，
+        // 真正的在途计数发生在包装之前的那个 LB 上，因此这里先记住它，完成回调时按同一实例减计数。
+        final LoadBalancer accountingLoadBalancer = loadBalancer;
+
         // v2.9.0: 会话粘性路由 — 按 sticky.scope 配置解析亲和性键，用 StickyLoadBalancer 包装原 LB
         String stickyScope = getStickyScope(serviceType);
         String affinityKey = stickyScope != null
@@ -395,6 +403,8 @@ public class ModelServiceRegistry {
                 availableInstances.size());
 
         loadBalancer.recordCall(selectedInstance);
+        callTracker.track(LoadBalancerCallTracker.key(serviceType.name(), selectedInstance),
+                accountingLoadBalancer);
         return selectedInstance;
     }
 
@@ -437,7 +447,7 @@ public class ModelServiceRegistry {
     }
 
     public void recordCallComplete(final ServiceType serviceType, final ModelRouterProperties.ModelInstance instance) {
-        LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
+        LoadBalancer loadBalancer = accountingLoadBalancerFor(serviceType, instance);
         if (loadBalancer != null) {
             loadBalancer.recordCallComplete(instance);
         }
@@ -445,7 +455,7 @@ public class ModelServiceRegistry {
     }
 
     public void recordCallFailure(final ServiceType serviceType, final ModelRouterProperties.ModelInstance instance) {
-        LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
+        LoadBalancer loadBalancer = accountingLoadBalancerFor(serviceType, instance);
         if (loadBalancer != null) {
             loadBalancer.recordCallFailure(instance);
         }
@@ -459,7 +469,7 @@ public class ModelServiceRegistry {
                                    final ModelRouterProperties.ModelInstance instance,
                                    final long durationMs,
                                    final boolean success) {
-        LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
+        LoadBalancer loadBalancer = accountingLoadBalancerFor(serviceType, instance);
         if (loadBalancer != null) {
             loadBalancer.recordCallComplete(instance, durationMs, success);
         }
@@ -478,11 +488,49 @@ public class ModelServiceRegistry {
                                   final ModelRouterProperties.ModelInstance instance,
                                   final long durationMs,
                                   final String errorCode) {
-        LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
+        LoadBalancer loadBalancer = accountingLoadBalancerFor(serviceType, instance);
         if (loadBalancer != null) {
             loadBalancer.recordCallFailure(instance, durationMs, errorCode);
         }
         circuitBreakerManager.recordFailure(instance.getInstanceId(), instance.getBaseUrl());
+    }
+
+    /**
+     * #688: 取回该实例记账时使用的 LB 并把未完成数减一。
+     *
+     * <p>没有记账记录时（例如直接调用完成回调的测试或其它入口）退回按服务类型取 LB，
+     * 保持与修复前一致的行为。</p>
+     *
+     * @param serviceType 服务类型
+     * @param instance    实例
+     * @return 应当执行完成/失败回调的 LB，可能为 null
+     */
+    private LoadBalancer accountingLoadBalancerFor(final ServiceType serviceType,
+                                                   final ModelRouterProperties.ModelInstance instance) {
+        // 测试里有 mock(X.class, CALLS_REAL_METHODS) 构造的实例：不跑构造器 ⇒ 字段初始化器不生效，
+        // callTracker 会是 null。这里按「没有记账表就退回旧取法」处理，生产路径不受影响。
+        final LoadBalancerCallTracker tracker = callTracker;
+        if (instance == null || tracker == null) {
+            return loadBalancerManager.getLoadBalancer(serviceType);
+        }
+        final LoadBalancer tracked = tracker.take(
+                LoadBalancerCallTracker.key(serviceType.name(), instance));
+        return tracked != null ? tracked : loadBalancerManager.getLoadBalancer(serviceType);
+    }
+
+    /**
+     * #688: 该实例当前未完成的调用数（供测试与排障使用）。
+     *
+     * @param serviceType 服务类型
+     * @param instance    实例
+     * @return 未完成调用数
+     */
+    public int getOutstandingCalls(final ServiceType serviceType,
+                                   final ModelRouterProperties.ModelInstance instance) {
+        if (instance == null) {
+            return 0;
+        }
+        return callTracker.outstanding(LoadBalancerCallTracker.key(serviceType.name(), instance));
     }
 
     public CircuitBreaker.State getInstanceCircuitBreakerState(final ModelRouterProperties.ModelInstance instance) {
