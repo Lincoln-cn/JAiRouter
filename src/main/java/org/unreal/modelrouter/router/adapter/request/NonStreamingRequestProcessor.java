@@ -190,8 +190,9 @@ public class NonStreamingRequestProcessor {
                     capturedKeyId, responseCacheKey, requestedModel, capturedRequestBody, selectedInstance,
                     quotaReservation, isNativeResponse(httpRequest));
         }
+        // #719：失败结算交给 BaseAdapter 在「确定不再重试」时统一执行；这里只在取消时立刻回滚
+        // （取消不会重试，且不结算会让预留一直挂着）。
         return result
-                .doOnError(error -> QuotaReservation.settleFailure(quotaReservation))
                 .doOnCancel(() -> QuotaReservation.settleFailure(quotaReservation));
     }
 
