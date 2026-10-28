@@ -10,6 +10,7 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -29,6 +30,10 @@ import java.util.function.Consumer;
  *       绝不 {@code Mono.error} —— 流式响应中途终止对客户端来说比漏一行脱敏更糟。</li>
  *   <li><b>单行有上限</b>：超过 {@code maxLineBytes} 的行不再攒（防止一个超长 delta 把堆吃满），
  *       该行原样透传并告警一次。</li>
+ *   <li><b>按字符边界解码</b>（issue #684）：{@code DataBuffer} 的边界与 UTF-8 字符边界无关，
+ *       一个 3 字节汉字、4 字节 emoji 经常被切成两块。每块各自 {@code new String(bytes, UTF_8)}
+ *       会让两块都产出 U+FFFD 且原字节永久丢失，因此这里攒字节、只解到最后一个完整字符为止，
+ *       不完整的尾部（0–3 字节）留到下一块。</li>
  * </ol>
  *
  * <p>不是 Spring Bean：每个响应体构造一个实例，内部持有「未完成行」的缓冲状态。</p>
@@ -40,6 +45,8 @@ final class SseResponseSanitizer {
     private static final String DATA_PREFIX = "data:";
     /** OpenAI 协议流结束哨兵，不能被当成 JSON 去脱敏。 */
     private static final String DONE_SENTINEL = "[DONE]";
+    /** 「没有残留字节」的空数组，避免每次清空都新建对象。 */
+    private static final byte[] NO_INCOMPLETE_BYTES = new byte[0];
 
     private final SanitizationService sanitizationService;
     private final DataBufferFactory bufferFactory;
@@ -48,6 +55,8 @@ final class SseResponseSanitizer {
 
     /** 尚未遇到换行的残行（跨 DataBuffer）。 */
     private final StringBuilder pending = new StringBuilder();
+    /** 上一块末尾不完整的 UTF-8 字节（0–3 个），等下一块补齐再解码（issue #684）。 */
+    private byte[] incompleteBytes = NO_INCOMPLETE_BYTES;
     /** 当前残行已超上限：该行完成后原样透传。 */
     private boolean pendingOversized;
 
@@ -72,6 +81,7 @@ final class SseResponseSanitizer {
         return Flux.defer(() -> {
             pending.setLength(0);
             pendingOversized = false;
+            incompleteBytes = NO_INCOMPLETE_BYTES;
 
             // concatMap 保证「切行」与「脱敏」都按到达顺序串行，避免并发改 pending
             return sanitizeSegment(body).concatWith(tail());
@@ -100,15 +110,95 @@ final class SseResponseSanitizer {
 
     /**
      * 把一块字节转成完整行；末尾残行留在 {@link #pending} 里等下一块。
+     *
+     * <p>#684：解码走 {@link #decodeUtf8(byte[])}，只在 UTF-8 字符边界处切，不完整的尾部字节
+     * 留到下一块 —— 否则跨块的多字节字符会被两块各自替换成 U+FFFD。</p>
      */
     private Flux<Line> splitIntoLines(final DataBuffer buffer) {
         try {
             final byte[] bytes = new byte[buffer.readableByteCount()];
             buffer.read(bytes);
-            return Flux.fromIterable(appendAndExtract(new String(bytes, StandardCharsets.UTF_8)));
+            return Flux.fromIterable(appendAndExtract(decodeUtf8(bytes)));
         } finally {
             DataBufferUtils.release(buffer);
         }
+    }
+
+    /**
+     * 把本块字节接到上一次的残留字节后面，只解码到最后一个完整 UTF-8 字符为止（issue #684）。
+     *
+     * <p>残留长度最多 3 字节（UTF-8 最长 4 字节），所以这里的拼接成本是常数级，不会随流长度增长。</p>
+     *
+     * @param bytes 本块读到的字节（不含上次残留）
+     * @return 可安全解码的文本前缀；不完整的尾部存进 {@link #incompleteBytes}
+     */
+    private String decodeUtf8(final byte[] bytes) {
+        final byte[] source;
+        if (incompleteBytes.length == 0) {
+            source = bytes;
+        } else {
+            source = new byte[incompleteBytes.length + bytes.length];
+            System.arraycopy(incompleteBytes, 0, source, 0, incompleteBytes.length);
+            System.arraycopy(bytes, 0, source, incompleteBytes.length, bytes.length);
+        }
+        final int safeLength = completeUtf8PrefixLength(source);
+        incompleteBytes = safeLength == source.length
+                ? NO_INCOMPLETE_BYTES
+                : Arrays.copyOfRange(source, safeLength, source.length);
+        return new String(source, 0, safeLength, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * 计算字节数组里「最后一个完整 UTF-8 字符」的结束位置（issue #684）。
+     *
+     * <p>从尾部回退最多 3 个续字节（{@code 10xxxxxx}）找到首字节，再按首字节声明的长度判断它是否
+     * 已经收齐：收齐则整块可解；未收齐则从该首字节处切掉，留给下一块。</p>
+     *
+     * <p>非法字节序列（首字节后面跟了非续字节、或整块都是续字节）不在这里修正 —— 返回整块长度，
+     * 交给 {@link String#String(byte[], int, int, java.nio.charset.Charset)} 按 UTF-8 规则产出
+     * U+FFFD，这与 JDK 解码器的行为一致，也不会卡住流。</p>
+     *
+     * @param bytes 待解码字节
+     * @return 可安全解码的前缀长度（0 表示整块都还不完整）
+     */
+    static int completeUtf8PrefixLength(final byte[] bytes) {
+        int index = bytes.length - 1;
+        int continuations = 0;
+        while (index >= 0 && continuations < 3 && (bytes[index] & 0xC0) == 0x80) {
+            index--;
+            continuations++;
+        }
+        if (index < 0) {
+            return bytes.length;
+        }
+        final int expected = utf8SequenceLength(bytes[index] & 0xFF);
+        if (expected <= 0) {
+            return bytes.length;
+        }
+        final int available = bytes.length - index;
+        return available >= expected ? bytes.length : index;
+    }
+
+    /**
+     * UTF-8 首字节声明的序列总长度.
+     *
+     * @param lead 首字节（无符号）
+     * @return 1–4；非法首字节返回 -1
+     */
+    private static int utf8SequenceLength(final int lead) {
+        if ((lead & 0x80) == 0) {
+            return 1;
+        }
+        if ((lead & 0xE0) == 0xC0) {
+            return 2;
+        }
+        if ((lead & 0xF0) == 0xE0) {
+            return 3;
+        }
+        if ((lead & 0xF8) == 0xF0) {
+            return 4;
+        }
+        return -1;
     }
 
     /**
@@ -186,6 +276,11 @@ final class SseResponseSanitizer {
     }
 
     private Flux<DataBuffer> flushTail() {
+        if (incompleteBytes.length > 0) {
+            // 流到这里结束 ⇒ 尾部字节永远等不到补齐，只能按替换字符收尾（#684），不能静默丢弃
+            pending.append(new String(incompleteBytes, StandardCharsets.UTF_8));
+            incompleteBytes = NO_INCOMPLETE_BYTES;
+        }
         if (pending.length() == 0) {
             return Flux.empty();
         }
