@@ -384,7 +384,8 @@ public class ApiKeyService {
             return;
         }
         ak.getUsage().incrementTokens(tokens);
-        apiKeyPersistenceService.saveApiKeysToStore(apiKeyCache);
+        // #715：只落盘这一个 Key，避免每次用量更新都把全部 Key 整份序列化覆盖
+        apiKeyPersistenceService.saveSingleApiKey(apiKeyCache, kh);
         log.debug("更新API Key Token使用量: {} (tokens: {})", kid, tokens);
     }
 

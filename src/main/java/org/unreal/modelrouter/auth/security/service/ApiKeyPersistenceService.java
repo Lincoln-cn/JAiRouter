@@ -58,6 +58,51 @@ public class ApiKeyPersistenceService {
     }
 
     /**
+     * 只把单个 API Key 的最新状态写回存储（#715）.
+     *
+     * <p>此前每次 Token 用量更新都走 {@link #saveApiKeysToStore(Map)}：把内存缓存里的<b>全部</b>
+     * Key 序列化后整份覆盖存储。多副本下各副本的内存快照互不相同，整份覆盖会把别的副本刚写入的
+     * Key 状态一起回滚。本方法先读回存储里的最新文档、按 {@code keyHash} 替换目标条目后保存，
+     * 其余条目沿用存储里的版本，从而把「一次用量更新覆盖全部 Key」收敛成「只覆盖自己这一条」。</p>
+     *
+     * <p>仍属文档级最后写入者胜出：同一 Key 在两个副本同时更新时依旧可能互相覆盖，
+     * 跨副本原子计数需要 Redis/DB 侧 {@code INCR}（长期项，风险已由
+     * {@code MultiReplicaSharedStateGate} 的配额开关清单暴露）。</p>
+     *
+     * @param apiKeyCache API Key 缓存（keyHash -> ApiKey）
+     * @param keyHash     要落盘的那个 Key 的哈希
+     */
+    public void saveSingleApiKey(final Map<String, ApiKey> apiKeyCache, final String keyHash) {
+        final ApiKey current = apiKeyCache.get(keyHash);
+        if (current == null) {
+            log.warn("保存单个API Key失败：缓存中不存在 keyHash={}", keyHash);
+            return;
+        }
+        try {
+            final List<Object> merged = new ArrayList<>();
+            final Map<String, Object> stored = storeManager.getConfig(API_KEYS_STORE_KEY);
+            final Object storedKeys = stored == null ? null : stored.get(STORE_API_KEYS);
+            if (storedKeys instanceof List<?> list) {
+                for (final Object item : list) {
+                    final ApiKey existing = item instanceof ApiKey apiKey
+                            ? apiKey
+                            : objectMapper.convertValue(item, ApiKey.class);
+                    if (existing != null && !keyHash.equals(existing.getKeyHash())) {
+                        merged.add(existing);
+                    }
+                }
+            }
+            merged.add(current);
+            final Map<String, Object> config = new HashMap<>();
+            config.put(STORE_API_KEYS, merged);
+            storeManager.saveConfig(API_KEYS_STORE_KEY, config);
+            log.debug("保存单个API Key到存储: keyId={}, 文档内共 {} 条", current.getKeyId(), merged.size());
+        } catch (Exception e) {
+            log.error("保存单个API Key失败: keyHash={}", keyHash, e);
+        }
+    }
+
+    /**
      * 检查是否有持久化的 API Key 配置
      *
      * @return 是否存在持久化配置
