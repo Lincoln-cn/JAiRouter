@@ -163,6 +163,26 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
 
     @Override
     public Mono<String> refreshToken(final String token) {
+        // #694：刷新必须先过黑名单——否则已吊销但未过期的令牌仍能换出新令牌，
+        // 「吊销/登出」对未过期令牌形同虚设（校验路径 :85 有这一步，刷新路径此前漏了）。
+        return isTokenBlacklisted(token)
+            .flatMap(isBlacklisted -> {
+                if (Boolean.TRUE.equals(isBlacklisted)) {
+                    log.warn("拒绝刷新：令牌已在黑名单中");
+                    return Mono.error(new AuthenticationException(
+                            "JWT令牌已被列入黑名单", ErrorCode.JWT_BLACKLISTED.code()));
+                }
+                return doRefreshToken(token);
+            });
+    }
+
+    /**
+     * 刷新令牌的实际实现（不含黑名单判定，判定在 {@link #refreshToken(String)}）。
+     *
+     * @param token 旧令牌
+     * @return 新令牌
+     */
+    private Mono<String> doRefreshToken(final String token) {
         try {
             // 解析当前令牌
             Claims claims = parseToken(token);
@@ -184,11 +204,14 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
                     List<String> roles = extractRoles(claims);
                     Map<String, Object> additionalClaims = new HashMap<>();
 
-                    // 保留原有的自定义声明
+                    // 保留原有的自定义声明。
+                    // #694：必须排除 jti —— generateToken 已经生成新的 jti，若把旧 jti 当普通声明再写一遍，
+                    // 会把新令牌的 jti 覆盖回旧值：同一秒内刷新会产出与旧令牌完全相同的字符串，
+                    // 而旧 jti 刚刚被拉黑 ⇒ 新令牌立刻不可用。
                     claims.forEach((key, value) -> {
                         if (!key.equals("sub") && !key.equals("iss") 
                         && !key.equals("exp") && !key.equals("iat")
-                        && !key.equals("nbf")) {
+                        && !key.equals("nbf") && !key.equals("jti")) {
                             additionalClaims.put(key, value);
                         }
                     });
