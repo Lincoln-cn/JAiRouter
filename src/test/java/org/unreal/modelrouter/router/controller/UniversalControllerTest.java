@@ -125,6 +125,18 @@ class UniversalControllerTest {
             // 验证Controller已成功注入
             assertNotNull(controller);
         }
+
+        @Test
+        @DisplayName("UNIVERSAL-007: 请求体为空抛出 ServerWebInputException（⇒ 400，而不是 500）")
+        void testChatCompletions_nullRequest() {
+            // #683：此前 chatCompletions 不判空，request.model() 直接 NPE，被中央处理器
+            // 兜成 500「系统异常」；同文件 embeddings / rerank / audio / images 端点一律抛
+            // ServerWebInputException ⇒ 400。此处断言与兄弟端点同款行为。
+            org.junit.jupiter.api.Assertions.assertThrows(
+                    org.springframework.web.server.ServerWebInputException.class,
+                    () -> controller.chatCompletions("Bearer token", null, exchange)
+            );
+        }
     }
 
     // ==================== Embeddings 测试 ====================
