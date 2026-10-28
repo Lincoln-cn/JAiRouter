@@ -35,7 +35,8 @@ import java.util.TreeMap;
  *       temperature / topP / topK / frequencyPenalty / presencePenalty / n / stop
  *       + options 白名单（排除 requestId/priority/prefixCacheHash/enablePrefixCaching 元数据；
  *       cacheSalt 非空时整体返回 null 表示显式绕过；v3.1 PR-5 起含 tools / toolChoice /
- *       wireMessages——Anthropic 入口的工具会话消息，避免不同工具轮次互相命中）</li>
+ *       wireMessages——Anthropic 入口的工具会话消息，避免不同工具轮次互相命中；
+ *       #722 起 include_stop_str_in_output / ignore_eos 亦入键）</li>
  *   <li>EMBEDDING：input(String 或 List 稳定序) / encodingFormat / dimensions</li>
  *   <li>RERANK：query / documents(稳定序) / topN / returnDocuments</li>
  * </ul>
@@ -218,6 +219,9 @@ public final class ResponseCacheKeyBuilder {
         putIfNotNull(body, "minP", request.minP());
         putIfNotNull(body, "repetitionPenalty", request.repetitionPenalty());
         putIfNotNull(body, "lengthPenalty", request.lengthPenalty());
+        // #722: 这两个参数直接改变输出（stop 串是否保留、EOS 是否提前截断），必须入键
+        putIfNotNull(body, "includeStopStrInOutput", request.includeStopStrInOutput());
+        putIfNotNull(body, "ignoreEos", request.ignoreEos());
         putIfNotNull(body, "minTokens", request.minTokens());
         putIfNotNull(body, "skipSpecialTokens", request.skipSpecialTokens());
         putIfNotNull(body, "spacesBetweenSpecialTokens", request.spacesBetweenSpecialTokens());
