@@ -797,6 +797,7 @@ public class StreamingRequestProcessor {
                         adapterType,
                         instanceName,
                         null, // instanceUrl
+                        apiKeyId, // #713：按 Key 统计所需
                         finalPromptTokens,
                         finalCompletionTokens,
                         finalTotalTokens,
