@@ -173,6 +173,8 @@ class AnthropicMessagesControllerTest {
         assertNotNull(response);
         assertEquals(502, response.getStatusCode().value());
         assertEquals("error", assertInstanceOf(Map.class, response.getBody()).get("type"));
+        assertEquals("api_error", errorOf(response).get("type"),
+                "502 是网关/下游故障，不能报成 invalid_request_error");
     }
 
     @Test
@@ -330,8 +332,8 @@ class AnthropicMessagesControllerTest {
     }
 
     @Test
-    @DisplayName("下游非 2xx 原样透传（不二次包装）")
-    void nonSuccessfulResponsePassedThrough() throws Exception {
+    @DisplayName("#685 下游 429（OpenAI 形状错误体）→ 翻译为 Anthropic 错误体，状态码保持")
+    void nonSuccessfulResponseTranslatedToAnthropicError() throws Exception {
         stubHandler(ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"error\":\"rate limited\"}"));
@@ -342,7 +344,9 @@ class AnthropicMessagesControllerTest {
 
         assertNotNull(response);
         assertEquals(429, response.getStatusCode().value());
-        assertEquals("{\"error\":\"rate limited\"}", response.getBody());
+        Map<?, ?> error = errorOf(response);
+        assertEquals("rate_limit_error", error.get("type"), "429 不能写成 invalid_request_error");
+        assertEquals("rate limited", error.get("message"));
     }
 
     @Test
@@ -357,6 +361,145 @@ class AnthropicMessagesControllerTest {
         assertNotNull(response);
         assertEquals(502, response.getStatusCode().value());
         assertEquals("error", assertInstanceOf(Map.class, response.getBody()).get("type"));
+        assertEquals("api_error", errorOf(response).get("type"),
+                "502 是网关/下游故障，不能报成 invalid_request_error");
+    }
+
+    // ==================== issue #685：错误类型与下游错误体翻译 ====================
+
+    /**
+     * 取错误体里的 {@code error} 对象.
+     *
+     * @param response Anthropic 错误响应
+     * @return {@code error} 对象
+     */
+    private Map<?, ?> errorOf(final ResponseEntity<?> response) {
+        assertNotNull(response);
+        Map<?, ?> body = assertInstanceOf(Map.class, response.getBody());
+        assertEquals("error", body.get("type"));
+        return assertInstanceOf(Map.class, body.get("error"));
+    }
+
+    @Test
+    @DisplayName("#685 状态码 → Anthropic 错误类型（与共享映射表一致，另补 529）")
+    void errorTypeFollowsStatusCode() {
+        assertEquals("invalid_request_error", AnthropicMessagesController.errorTypeFor(400));
+        assertEquals("invalid_request_error", AnthropicMessagesController.errorTypeFor(422));
+        assertEquals("authentication_error", AnthropicMessagesController.errorTypeFor(401));
+        assertEquals("permission_error", AnthropicMessagesController.errorTypeFor(403));
+        assertEquals("not_found_error", AnthropicMessagesController.errorTypeFor(404));
+        assertEquals("rate_limit_error", AnthropicMessagesController.errorTypeFor(429));
+        assertEquals("api_error", AnthropicMessagesController.errorTypeFor(500));
+        assertEquals("api_error", AnthropicMessagesController.errorTypeFor(502));
+        assertEquals("api_error", AnthropicMessagesController.errorTypeFor(503));
+        assertEquals("api_error", AnthropicMessagesController.errorTypeFor(504));
+        assertEquals("overloaded_error", AnthropicMessagesController.errorTypeFor(529));
+    }
+
+    @Test
+    @DisplayName("#685 流式分支的下游 429 → 同样翻译为 Anthropic 错误体")
+    void streamingNonSuccessfulResponseTranslated() throws Exception {
+        stubHandler(ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"error\":{\"message\":\"slow down\",\"type\":\"requests\"}}"));
+        AnthropicMessagesRequest request = request("""
+                {"model":"deepseek-chat","stream":true,"messages":[{"role":"user","content":"hi"}]}""");
+
+        ResponseEntity<?> response = controller.messages(null, null, null, request, exchange()).block();
+
+        assertEquals(429, response.getStatusCode().value());
+        assertEquals(MediaType.APPLICATION_JSON, response.getHeaders().getContentType(),
+                "错误分支不能保留 text/event-stream");
+        Map<?, ?> error = errorOf(response);
+        assertEquals("rate_limit_error", error.get("type"));
+        assertEquals("slow down", error.get("message"));
+    }
+
+    @Test
+    @DisplayName("#685 下游 Anthropic 形状错误体 → 取出 message，类型按状态码重算")
+    void downstreamAnthropicShapeTranslated() throws Exception {
+        stubHandler(ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"type":"error","error":{"type":"invalid_request_error","message":"max_tokens: 过大"}}"""));
+        AnthropicMessagesRequest request = request("""
+                {"model":"deepseek-chat","messages":[{"role":"user","content":"hi"}]}""");
+
+        ResponseEntity<?> response = controller.messages(null, null, null, request, exchange()).block();
+
+        assertEquals(400, response.getStatusCode().value());
+        Map<?, ?> error = errorOf(response);
+        assertEquals("invalid_request_error", error.get("type"));
+        assertEquals("max_tokens: 过大", error.get("message"));
+    }
+
+    @Test
+    @DisplayName("#685 下游非 JSON 正文（HTML 错误页）→ 截断后透出，类型按状态码")
+    void downstreamPlainTextBodyTruncated() throws Exception {
+        String html = "<html>" + "x".repeat(2000) + "</html>";
+        stubHandler(ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .contentType(MediaType.TEXT_HTML)
+                .body(html));
+        AnthropicMessagesRequest request = request("""
+                {"model":"deepseek-chat","messages":[{"role":"user","content":"hi"}]}""");
+
+        ResponseEntity<?> response = controller.messages(null, null, null, request, exchange()).block();
+
+        assertEquals(502, response.getStatusCode().value());
+        Map<?, ?> error = errorOf(response);
+        assertEquals("api_error", error.get("type"));
+        String message = String.valueOf(error.get("message"));
+        assertTrue(message.length() <= 501, "错误消息必须截断，实际长度: " + message.length());
+        assertTrue(message.endsWith("…"), "截断后应有省略号: " + message);
+        assertTrue(message.startsWith("<html>"), "保留原文前缀便于定位: " + message);
+    }
+
+    @Test
+    @DisplayName("#685 下游 529 无响应体 → overloaded_error + 状态码兜底文案")
+    void downstream529WithoutBodyIsOverloaded() throws Exception {
+        stubHandler(ResponseEntity.status(529).build());
+        AnthropicMessagesRequest request = request("""
+                {"model":"deepseek-chat","messages":[{"role":"user","content":"hi"}]}""");
+
+        ResponseEntity<?> response = controller.messages(null, null, null, request, exchange()).block();
+
+        assertEquals(529, response.getStatusCode().value());
+        Map<?, ?> error = errorOf(response);
+        assertEquals("overloaded_error", error.get("type"));
+        assertTrue(String.valueOf(error.get("message")).contains("529"),
+                "无下游正文时应给出含状态码的兜底文案: " + error.get("message"));
+    }
+
+    @Test
+    @DisplayName("#685 下游网关 RouterResponse 形状 body → 取 message 字段")
+    void downstreamRouterResponseShapeTranslated() throws Exception {
+        stubHandler(ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("code", 429, "message", "今日额度已用尽")));
+        AnthropicMessagesRequest request = request("""
+                {"model":"deepseek-chat","messages":[{"role":"user","content":"hi"}]}""");
+
+        ResponseEntity<?> response = controller.messages(null, null, null, request, exchange()).block();
+
+        assertEquals(429, response.getStatusCode().value());
+        Map<?, ?> error = errorOf(response);
+        assertEquals("rate_limit_error", error.get("type"));
+        assertEquals("今日额度已用尽", error.get("message"));
+    }
+
+    @Test
+    @DisplayName("#685 下游 401 → authentication_error（不是 invalid_request_error）")
+    void downstream401IsAuthenticationError() throws Exception {
+        stubHandler(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"error\":{\"message\":\"invalid api key\"}}"));
+        AnthropicMessagesRequest request = request("""
+                {"model":"deepseek-chat","messages":[{"role":"user","content":"hi"}]}""");
+
+        ResponseEntity<?> response = controller.messages(null, null, null, request, exchange()).block();
+
+        assertEquals(401, response.getStatusCode().value());
+        assertEquals("authentication_error", errorOf(response).get("type"));
     }
 
     @Test
