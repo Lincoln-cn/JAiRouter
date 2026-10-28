@@ -294,7 +294,8 @@ public class NonStreamingRequestProcessor {
                 .onStatus(HttpStatusCode::is5xxServerError, clientResponse -> {
                     logger.error("下游服务5xx错误: instance={}, path={}, status={}",
                             instanceName, path, clientResponse.statusCode());
-                    return Mono.error(new ResponseStatusException(clientResponse.statusCode()));
+                    // #717：读回下游错误体（此前直接丢弃，客户端只剩状态行）
+                    return toDownstreamError(clientResponse, "下游服务暂时不可用，请稍后重试");
                 })
                 .onStatus(HttpStatusCode::is4xxClientError, clientResponse -> {
                     return handle4xxError(clientResponse, instanceName, path);
@@ -466,25 +467,55 @@ public class NonStreamingRequestProcessor {
     private Mono<Throwable> handle4xxError(final ClientResponse clientResponse,
                                             final String instanceName,
                                             final String path) {
-        HttpStatusCode statusCode = clientResponse.statusCode();
-
+        final HttpStatusCode statusCode = clientResponse.statusCode();
+        final String fallbackMessage;
         if (statusCode.value() == 401) {
             logger.error("下游服务认证失败 (401): instance={}, path={}", instanceName, path);
-            return Mono.error(new DownstreamServiceException(
-                    "下游服务认证失败，请检查下游服务的认证配置", HttpStatus.valueOf(401)));
+            fallbackMessage = "下游服务认证失败，请检查下游服务的认证配置";
         } else if (statusCode.value() == 400) {
             logger.error("下游服务请求错误 (400): instance={}, path={}", instanceName, path);
-            return Mono.error(new DownstreamServiceException(
-                    "下游服务请求参数错误，请检查请求内容", HttpStatus.valueOf(400)));
+            fallbackMessage = "下游服务请求参数错误，请检查请求内容";
         } else if (statusCode.value() == 503) {
             logger.error("下游服务不可用 (503): instance={}, path={}", instanceName, path);
-            return Mono.error(new DownstreamServiceException(
-                    "下游服务暂时不可用，请稍后重试", HttpStatus.valueOf(503)));
+            fallbackMessage = "下游服务暂时不可用，请稍后重试";
+        } else {
+            logger.error("下游服务4xx错误: instance={}, path={}, status={}",
+                    instanceName, path, statusCode);
+            fallbackMessage = "下游服务返回 " + statusCode.value();
         }
+        // #717：下游错误体里的 message/code 与 Retry-After 一并透出（此前 4xx 只留状态行）
+        return toDownstreamError(clientResponse, fallbackMessage).map(Throwable.class::cast);
+    }
 
-        logger.error("下游服务4xx错误: instance={}, path={}, status={}",
-                instanceName, path, statusCode);
-        return Mono.error(new ResponseStatusException(statusCode));
+    /**
+     * #717：读回下游错误体，构造带上游语义的异常。
+     *
+     * <p>5xx 与 4xx 共用：读 {@code bodyToMono(String.class)}（读失败按空体处理，绝不让读体异常
+     * 覆盖掉原始状态码），再把 {@code error.message}/{@code error.code} 与 {@code Retry-After}
+     * 挂到 {@link DownstreamServiceException} 上，由全局异常处理器透出给调用方。</p>
+     *
+     * @param clientResponse 下游响应
+     * @param fallbackMessage 下游错误体不可读时的兜底文案
+     * @return 承载状态码、上游错误码与退避秒数的异常
+     */
+    static Mono<DownstreamServiceException> toDownstreamError(final ClientResponse clientResponse,
+                                                              final String fallbackMessage) {
+        final HttpStatusCode rawStatus = clientResponse.statusCode();
+        final HttpStatus status = HttpStatus.resolve(rawStatus.value()) != null
+                ? HttpStatus.valueOf(rawStatus.value())
+                : HttpStatus.INTERNAL_SERVER_ERROR;
+        final org.springframework.http.HttpHeaders headers = clientResponse.headers().asHttpHeaders();
+        return clientResponse.bodyToMono(String.class)
+                .onErrorReturn("")
+                .defaultIfEmpty("")
+                .map(body -> {
+                    final String parsed = DownstreamErrorParser.extractMessage(body, rawStatus);
+                    final String message = parsed != null ? "下游服务错误: " + parsed : fallbackMessage;
+                    logger.debug("下游错误体解析: {}", DownstreamErrorParser.describe(rawStatus, parsed));
+                    return new DownstreamServiceException(message, status,
+                            DownstreamErrorParser.extractCode(body, rawStatus),
+                            DownstreamErrorParser.retryAfterSeconds(headers));
+                });
     }
 
     /**
