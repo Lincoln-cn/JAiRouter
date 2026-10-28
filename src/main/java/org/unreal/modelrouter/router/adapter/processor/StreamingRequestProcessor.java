@@ -213,6 +213,8 @@ public class StreamingRequestProcessor {
         // v3.2.3 (#127): 缓存字符预算 — 超预算的响应不缓存（缓存是优化，不是正确性）
         final AtomicLong cacheChars = new AtomicLong(0);
         final AtomicBoolean cacheOverBudget = new AtomicBoolean(false);
+        // #721：是否见过终止标记 —— 没有终止标记的流即使 doOnComplete 也不许写缓存
+        final AtomicBoolean terminatedSeen = new AtomicBoolean(false);
 
         // v3.1 修复: 与非流式路径保持一致——实例自定义 headers 优先（含下游 Authorization），
         // 仅在实例未提供 Authorization 时回退到请求传入的 authorization。
@@ -261,6 +263,10 @@ public class StreamingRequestProcessor {
                     // v2.9.10: 提取 finish_reason 用于流式缓存
                     if (cacheKeyForWrite != null) {
                         extractFinishReason(chunk, finishReasonRef);
+                        // #721：记录终止标记（[DONE] / message_stop），作为写缓存的必要条件
+                        if (isTerminatorChunk(chunk)) {
+                            terminatedSeen.set(true);
+                        }
                     }
                     ServerSentEvent<String> sse = transformAndWrapChunk(chunk, transformChunkFn);
                     // v2.9.10: 收集变换后 data 串用于流式缓存（v3.2.3: 受缓存字符预算约束）
@@ -296,9 +302,13 @@ public class StreamingRequestProcessor {
 
                     // v2.9.10: 流式缓存写 — 完整成功流结束后缓存（错误/中断不触发 doOnComplete）
                     // v3.2.3 (#127): 超出缓存预算的响应不缓存
+                    // #721：还必须见过终止标记 —— 上游干净关闭但没发 [DONE]/finish_reason 时，
+                    // 半截内容曾被按默认 1 小时 TTL 缓存，后续同参数请求回放的都是缺尾输出。
+                    final boolean terminated = terminatedSeen.get()
+                            || (finishReasonRef != null && finishReasonRef.get() != null);
                     if (cacheKeyForWrite != null && responseCacheService != null
                             && transformedChunks != null && !transformedChunks.isEmpty()
-                            && !cacheOverBudget.get()) {
+                            && !cacheOverBudget.get() && terminated) {
                         final List<String> chunksToCache;
                         synchronized (transformedChunks) {
                             chunksToCache = List.copyOf(transformedChunks);
@@ -309,7 +319,12 @@ public class StreamingRequestProcessor {
                                 promptTokens.get() > 0 ? promptTokens.get() : null,
                                 completionTokens.get() > 0 ? completionTokens.get() : null,
                                 totalTokens.get() > 0 ? totalTokens.get() : null,
-                                finishReasonRef != null ? finishReasonRef.get() : null));
+                                finishReasonRef != null ? finishReasonRef.get() : null,
+                                true));
+                    } else if (cacheKeyForWrite != null && !transformedChunks.isEmpty()
+                            && !cacheOverBudget.get() && !terminated) {
+                        logger.debug("#721 流未出现终止标记（[DONE]/finish_reason/message_stop），跳过写缓存: key={}",
+                                cacheKeyForWrite);
                     }
 
                     // 记录 token 使用量(含 KV 缓存指标)。
@@ -894,6 +909,24 @@ public class StreamingRequestProcessor {
             return streamingSafety.getIdleTimeout();
         }
         return DEFAULT_IDLE_TIMEOUT;
+    }
+
+    /**
+     * #721：判断一个 SSE 块是否携带终止标记。
+     *
+     * <p>认三种形态：OpenAI 的 {@code [DONE]}、任意协议的 {@code finish_reason} 非空块（由
+     * {@link #extractFinishReason} 单独处理）、Anthropic 的 {@code message_stop}。</p>
+     *
+     * @param chunk 原始 SSE 块（可能含 {@code data: } 前缀）
+     * @return 是否携带终止标记
+     */
+    static boolean isTerminatorChunk(final String chunk) {
+        if (chunk == null) {
+            return false;
+        }
+        final String payload = chunk.startsWith("data: ") ? chunk.substring(6) : chunk;
+        final String trimmed = payload.trim();
+        return "[DONE]".equals(trimmed) || trimmed.contains("\"message_stop\"");
     }
 
     /**
