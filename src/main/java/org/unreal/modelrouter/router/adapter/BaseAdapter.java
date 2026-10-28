@@ -153,7 +153,9 @@ public abstract class BaseAdapter implements ServiceCapability {
         try {
             var tracingFactory = org.unreal.modelrouter.common.util.ApplicationContextProvider.getBean(
                     org.unreal.modelrouter.monitor.tracing.client.TracingWebClientFactory.class);
-            return tracingFactory.createTracingWebClient(baseUrl, streaming);
+            return streaming
+                    ? tracingFactory.createTracingWebClient(baseUrl, true)
+                    : tracingFactory.createTracingWebClient(baseUrl);
         } catch (Exception e) {
             return org.unreal.modelrouter.common.util.ApplicationContextProvider.getBean(
                     org.unreal.modelrouter.router.model.WebClientCacheManager.class)
