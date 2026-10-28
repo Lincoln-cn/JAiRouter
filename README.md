@@ -43,8 +43,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # the local/git directory name differs from the product name
 artifact:        model-router            # Maven artifactId
-project_version: 3.5.4                   # pom.xml
-latest_release:  v3.5.4 (2026-10-27)
+project_version: 3.5.5                   # pom.xml
+latest_release:  v3.5.5 (2026-10-29)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5 (WebFlux / reactive)
   frontend: Vue 3 + TypeScript + Vite, bilingual zh-CN / en-US
@@ -370,23 +370,28 @@ delivery. See [Status and recent work](#status-and-recent-work) for the open led
 
 ## Status and recent work
 
-**Latest release: v3.5.4 (2026-10-27)** — a bug-fix release across routing accounting, health checks
-and the credentials that ship inside the package. **No API breaking changes; four upgrade notes matter.**
+**Latest release: v3.5.5 (2026-10-29)** — one audit that followed a request from entry to exit in eight
+stages (entry protocol / authentication / routing / outbound / response / accounting / console writes / failure
+semantics). Every finding that affected whether a call succeeds or a response is correct has been fixed.
+**No API breaking changes; three upgrade notes matter.**
 
 | Theme | What changed |
 |-------|--------------|
-| **4xx is not an instance failure (#647)** | Upstream 400/401/404/429 used to count toward the circuit breaker exactly like 5xx, so a client sending malformed requests could trip a healthy instance. Outcomes are now `SUCCESS` / `CLIENT_ERROR` / `INSTANCE_FAILURE`: 4xx only settles the in-flight counter |
-| **Rate limiting stops giving up early (#654)** | `selectWithRateLimit` tried at most `min(size, 3)` candidates, so a few rate-limited instances produced a bogus 503 while idle ones remained; it now walks the whole candidate list |
-| **Load balancers behave (#648 / #649)** | The random balancer lost its private breaker map, so per-instance `circuit-breaker.enabled=false` is honored again; balancers are cached per strategy, so pool round-robin actually rotates instead of always picking the first instance |
-| **Adaptive thresholds land (#653)** | `updateCircuitBreakerThreshold` only logged the new value and reset breaker state every cycle; thresholds now reach `CircuitBreakerManager.updateFailureThreshold(...)` |
-| **Health checks hardened (#650 / #651 / #652)** | One bad instance no longer aborts its siblings, probe mode / interval / timeout / concurrency are configurable under `jairouter.health-check.*`, and persisted state matches replicas by `base-url` |
-| **No public credentials in the package (#663 / #666)** | The built-in test API key moved to the dev profile, and `spring.profiles.active: dev` left `config/common/server.yml` — an artifact that did not name a profile used to start as dev with those credentials live |
-| **No public secret fallbacks (#664)** | `jwt.yml` falls back to `${random.uuid}` instead of known literals and prints the generated admin password once in the startup log; `prod` still refuses to boot |
-| **Logging on other profiles (#669)** | Every logback `root` lived inside a profile-gated block, so `staging` produced no application logs at all; a fallback root now covers every profile outside the four known ones |
+| **Entry and error semantics (#681 / #682 / #683 / #685 / #686 / #717)** | Oversized bodies answer 413, missing bodies 400, auth failures carry `Content-Type`, downstream connection failures and timeouts map to 502 / 504 without leaking internals, non-streaming paths read the downstream error body and translate it per protocol, and Anthropic error types follow the status code |
+| **Authentication (#693 / #694 / #695 / #696 / #697 / #698 / #704 / #705 / #706)** | IP allowlists actually work (a key with an allowlist used to fail with 401), refresh checks the blacklist and rotates `jti`, query credentials are redacted from logs and spans, revocation is bound to the token owner, login failures accumulate into a lockout with real audit events, deleted or disabled accounts invalidate tokens immediately, resetting a key keeps its allowlist and quotas, and configuration reset needs confirmation and reports failures truthfully |
+| **Routing and load balancing (#687-#692)** | Consistent-hash rings became immutable cached snapshots, in-flight accounting lands on the same balancer, affinity state is cleared in one place (fixing API key cross-talk), sticky wrappers are reused per delegate, virtual-node keys fall back to the instance identifier, and ip-hash rings and digests are cached |
+| **Outbound (#699-#703)** | WebClient cache keys use a stable variant name with a size cap, the response size limit is configurable (10MB default, oversize maps to 502), streaming gets its own transport timeout, the adapter test endpoint regains connect-time SSRF protection, and URL normalization keeps the query string |
+| **Accounting and quotas (#710-#716 / #719)** | Interrupted streams are accounted and settled by real consumption, today's request count is no longer double-incremented, missing `usage` falls back to text estimation, TokenUsage records carry the API key id, success rates use a windowed denominator, usage statistics are concurrency-safe, stream outcomes are recorded at the terminal, and quota settlements happen once for the final outcome |
+| **Response and cache (#684 / #720-#725)** | SSE sanitization decodes on UTF-8 character boundaries, `stream_options.include_usage` is supported, truncated streams are not cached, two output-affecting parameters join the cache key, an absent `temperature` no longer means deterministic, responses carry `X-Request-Id`, and parse failures log a digest instead of the body |
+| **Retry (#718)** | Client errors are no longer retried, and `Retry-After` carried by an exception is honoured |
+| **Console and configuration writes (#707 / #708 / #709)** | Service-type writes refresh the local cache immediately, YAML-defined rules and pools no longer report deletes that did not happen (409 with a reason instead), and adapter creation validates before persisting (missing fields become 400 instead of 500 with dirty data) |
+| **Configuration and operations (#674 / #676-#679)** | Credential environment variables honour only `JWT_SECRET` and `INITIAL_ADMIN_PASSWORD`, JWT persistence configuration has a single source, JWT knobs exported by the image take effect, blacklist storage checks follow the switch, and a complete environment variable reference was added |
 
-See the [`[3.5.4]` changelog entry](docs/en/reference/changelog.md). Released as GitHub Release `v3.5.4` with multi-arch images (`v3.5.4` / `3.5.4` / `latest`).
+See the [`[3.5.5]` changelog entry](docs/en/reference/changelog.md). Released as GitHub Release `v3.5.5` with multi-arch images (`v3.5.5` / `3.5.5` / `latest`).
 
-**Upgrade notes:** running without a profile no longer means dev (no test key, no fixed password — a random one is printed once); outside `prod` a missing `JWT_SECRET` yields a fresh random secret per start, invalidating previously issued tokens; `staging` requires `JWT_SECRET`; health-check keys moved to `jairouter.health-check.*`.
+**Upgrade notes:** configuration reset now requires explicit confirmation (scripted callers get a parameter error without it); the semantics of `jwt.persistence.enabled` are documented (it controls the lifecycle service, expiration scheduler, health probe and two properties, not whether tokens are persisted); the streaming transport timeout and the idle watchdog remain two settings (`jairouter.webclient.streaming-response-timeout-seconds` and `jairouter.streaming.idle-timeout`) and whichever comes first applies.
+
+**`v3.5.4` (2026-10-27)** was a bug-fix release across routing accounting, health checks and shipped credentials: 4xx no longer counts toward circuit breakers (#647), rate limiting keeps trying (#654), two load-balancer corrections (#648 / #649), adaptive thresholds land (#653), failures release in-flight counts (#655), hardened health checks (#650 / #651 / #652), no built-in test key or implicit dev default in the package (#663 / #666), no public secret fallbacks (#664), and a logging fallback for other profiles (#669).
 
 **`v3.5.3` (2026-10-25)** was a bug-fix release from a main-flow audit: external mounts now override classpath defaults (#634), image edits speak multipart (#637), health keys fall back to `baseUrl` (#636), outbound paths come from the selected instance (#635), adapter references are validated at startup (#638), and `model.services` has a single definition (#643).
 

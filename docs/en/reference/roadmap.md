@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 > **Doc Version**: 2.5.0
-> **Last Updated**: 2026-10-27
-> **Git Tag**: v3.5.4
+> **Last Updated**: 2026-10-29
+> **Git Tag**: v3.5.5
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -23,6 +23,17 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 - **Observability**: Comprehensive monitoring, logging, and distributed tracing
 
 ## Current Version Status
+
+### ✅ v3.5.5 (Patch: fixes from an eight-stage request-lifecycle audit, **released 2026-10-29**)
+
+**Status**: Released (GitHub Release `v3.5.5`, 2026-10-29; multi-arch Docker images rebuilt by CI on release: `v3.5.5` / `3.5.5` / `latest`)
+**Scope**: the 45 PRs merged after `v3.5.4` — entry protocol #747 (#681), #749 (#683), #753 (#686), #764 (#682), #735 (#717), #769 (#685); authentication #739 (#693), #740 (#694), #758 (#695), #762 (#696), #766 (#697), #770 (#698), #748 (#704), #750 (#705), #751 (#706); routing #726 / #729 (#687), #727 (#688), #732 (#689), #730 (#690), #733 (#691), #731 (#692); outbound #741 (#699), #742 (#700), #743 (#701), #772 (#702), #773 (#703); accounting and quotas #752 (#710), #754 (#711), #755 (#712), #744 (#713), #757 (#714), #768 (#715), #734 (#716), #760 (#719); response and cache #765 (#684), #737 (#720), #738 (#721), #756 (#722), #759 (#723), #763 (#724), #761 (#725); retry #736 (#718); configuration and docs #675 (#674), #680 (#676), #746 (#677), #745 (#678), #679; console writes #767 (#707), #771 (#708), #774 (#709). **No API breaking changes.**
+**Highlights**:
+
+- **Silent failures closed**: a key with an IP allowlist always failed with 401 (#693), streaming responses counted as success the moment they were constructed so circuit breakers never acted (#716), today's request count was double-incremented (#711), per-key token statistics were always empty (#713), the WebClient cache never hit and grew unbounded (#699), SSE was killed by the transport after 60 seconds of silence (#701), and truncated streams were cached for an hour (#721). None of these raised an error; they simply produced wrong results.
+- **Security**: refresh bypassed the blacklist (#694), query credentials reached logs and spans (#695), self-service revocation ignored the token owner (#696), call history accepted other keys (#698), tokens survived account deletion (#704), resetting a key dropped its allowlist and quotas (#705), and the adapter test endpoint bypassed connect-time SSRF protection (#702).
+- **Accounting correctness**: interrupted streams settle real consumption (#710), quotas settle once for the final outcome (#719), success rates use a windowed denominator (#714), and usage statistics use concurrent maps while persisting only the updated key (#715).
+- **Operability**: downstream connection failures and timeouts return 502 / 504 without leaking internals (#682), oversized bodies return 413 (#681), missing bodies return 400 (#683), responses carry `X-Request-Id` (#724), and a complete environment variable reference was added while fixing the fake examples in the configuration pages (#679).
 
 ### ✅ v3.5.4 (Patch: routing and circuit accounting / health checks / shipped credentials and startup profile, **released 2026-10-27**)
 
