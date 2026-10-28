@@ -22,6 +22,7 @@ import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.BatchTokenRevokeRequest;
 import org.unreal.modelrouter.common.dto.JwtApiResponse;
 import org.unreal.modelrouter.common.dto.JwtTokenInfo;
+import org.unreal.modelrouter.common.dto.JwtTokenInfo;
 import org.unreal.modelrouter.common.dto.PagedResult;
 import org.unreal.modelrouter.common.dto.TokenRevokeRequest;
 import org.unreal.modelrouter.common.dto.TokenStatus;
@@ -86,7 +87,9 @@ public class JwtTokenController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "请求参数错误"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "权限不足")
     })
-    @PreAuthorize("hasRole('ADMIN') or authentication.name == #request.userId")
+    // #696：授权不再依赖请求体自报的 userId —— 它与被撤销的令牌无关，填成自己即可通过。
+    // 真正的属主判定在方法体里按「令牌自身的属主」做，见 assertTokenOwnership(...)。
+    @PreAuthorize("isAuthenticated()")
     public Mono<RouterResponse<JwtApiResponse>> revokeToken(
             @Parameter(description = "令牌撤销请求") @RequestBody final TokenRevokeRequest request,
             final Authentication authentication) {
@@ -101,24 +104,27 @@ public class JwtTokenController {
         String tokenToRevoke = request.getToken();
         boolean isTokenHash = tokenToRevoke != null && !tokenToRevoke.contains(".") && tokenToRevoke.length() < 100;
         
-        Mono<Void> revokeMono;
-        if (isTokenHash) {
-            // 直接使用tokenHash进行撤销
-            revokeMono = jwtTokenManagementService != null
-                    ? jwtTokenManagementService.revokeTokenByHash(tokenToRevoke, request.getReason(),
-                            authentication != null ? authentication.getName() : "system")
-                    : Mono.empty();
-        } else {
+        // #696：撤销动作惰性构造 —— 属主校验不通过时，连「查哈希 / 更新状态」都不应发生
+        Mono<Void> revokeMono = Mono.defer(() -> {
+            if (isTokenHash) {
+                // 直接使用tokenHash进行撤销
+                return jwtTokenManagementService != null
+                        ? jwtTokenManagementService.revokeTokenByHash(tokenToRevoke, request.getReason(),
+                                authentication != null ? authentication.getName() : "system")
+                        : Mono.<Void>empty();
+            }
             // 使用完整token进行撤销
-            revokeMono = tokenRefreshService.revokeToken(tokenToRevoke)
+            return tokenRefreshService.revokeToken(tokenToRevoke)
                     .then(jwtTokenManagementService != null
                             ? jwtTokenManagementService.updateTokenStatus(tokenToRevoke, TokenStatus.REVOKED,
                                     request.getReason() != null ? request.getReason() : "手动撤销",
                                     authentication != null ? authentication.getName() : "system")
                             : Mono.empty());
-        }
+        });
 
-        return revokeMono
+        // #696：先按目标令牌自身的属主判权（ADMIN 放行；非 ADMIN 只能撤本人令牌）
+        return assertTokenOwnership(tokenToRevoke, authentication)
+                .then(revokeMono)
                 .then(Mono.fromCallable(() -> {
                     JwtApiResponse response = new JwtApiResponse();
                     response.setSuccess(true);
@@ -128,6 +134,11 @@ public class JwtTokenController {
                     return RouterResponse.success(response, "令牌撤销成功");
                 }))
                 .onErrorResume(ex -> {
+                    // #696：属主校验失败必须原样以 403 返回，不能被下面改写成 500 TOKEN_REVOKE_FAILED
+                    if (ex instanceof ApiException apiEx
+                            && ErrorCode.FORBIDDEN.code().equals(apiEx.getErrorCode())) {
+                        return Mono.error(apiEx);
+                    }
                     log.warn("JWT令牌撤销失败: {}", ex.getMessage());
 
                     JwtApiResponse response = new JwtApiResponse();
@@ -138,6 +149,79 @@ public class JwtTokenController {
                     return Mono.error(ApiException.of(
                             ErrorCode.TOKEN_REVOKE_FAILED.code(), "令牌撤销失败: " + ex.getMessage()));
                 });
+    }
+
+    /**
+     * 校验调用者有权撤销目标令牌（#696）。
+     *
+     * <p>旧实现把属主校验写进 {@code @PreAuthorize}：{@code hasRole('ADMIN') or
+     * authentication.name == #request.userId}。其中 {@code userId} 是请求体里自报的字段，
+     * 与真正被撤销的 {@code token} 毫无关系 —— 填成自己即可通过，能否拉黑他人令牌只取决于
+     * 是否拿到了对方的令牌（tokenHash 形态同理）。</p>
+     *
+     * <p>现在一律以<b>令牌自身的属主</b>为准：ADMIN 可撤销任意令牌；其余主体只能撤销
+     * 本人令牌；属主解析不出来（令牌畸形、持久化里查不到、服务不可用）时一律拒绝，
+     * 不放行也不 500。</p>
+     *
+     * @param tokenOrHash 完整 JWT 或 tokenHash（Base64，无 {@code .} 且短于 100 字符）
+     * @param authentication 当前认证主体
+     * @return 允许时完成于空；否则以 {@code FORBIDDEN} 终止
+     */
+    private Mono<Void> assertTokenOwnership(final String tokenOrHash, final Authentication authentication) {
+        if (isAdmin(authentication)) {
+            return Mono.empty();
+        }
+        final String caller = authentication != null ? authentication.getName() : null;
+        return resolveTokenOwner(tokenOrHash)
+                .defaultIfEmpty("")
+                .flatMap(owner -> isSameOwner(owner, caller)
+                        ? Mono.<Void>empty()
+                        : Mono.error(ApiException.of(ErrorCode.FORBIDDEN.code(),
+                                "只能撤销本人令牌：目标令牌的属主与当前主体不一致")));
+    }
+
+    /**
+     * 解析目标令牌的属主（用户 ID）。
+     *
+     * @param tokenOrHash 完整 JWT 或 tokenHash
+     * @return 属主；解析不出或解析失败时为空
+     */
+    private Mono<String> resolveTokenOwner(final String tokenOrHash) {
+        if (tokenOrHash == null || tokenOrHash.isBlank()) {
+            return Mono.empty();
+        }
+        final Mono<String> owner;
+        final boolean isTokenHash = !tokenOrHash.contains(".") && tokenOrHash.length() < 100;
+        if (isTokenHash) {
+            // tokenHash 无法从令牌本身解析 subject，只能回查持久化记录
+            owner = jwtPersistenceService != null
+                    ? jwtPersistenceService.findByTokenHash(tokenOrHash).map(JwtTokenInfo::getUserId)
+                    : Mono.empty();
+        } else {
+            owner = jwtTokenValidator.extractUserId(tokenOrHash);
+        }
+        return owner.onErrorResume(ex -> {
+            // 令牌畸形 / 已过期 / 服务不可用时不算通过，落回「属主为空 ⇒ 拒绝」
+            log.warn("无法解析待撤销令牌的属主，按拒绝处理（#696）: {}", ex.getMessage());
+            return Mono.empty();
+        });
+    }
+
+    /**
+     * 主体名与令牌属主是否一致。
+     */
+    private static boolean isSameOwner(final String owner, final String caller) {
+        return caller != null && !caller.isBlank() && caller.equals(owner);
+    }
+
+    /**
+     * 当前主体是否管理员。
+     */
+    private static boolean isAdmin(final Authentication authentication) {
+        return authentication != null
+                && authentication.getAuthorities() != null
+                && authentication.getAuthorities().stream()
+                        .anyMatch(granted -> "ROLE_ADMIN".equals(granted.getAuthority()));
     }
 
     /**

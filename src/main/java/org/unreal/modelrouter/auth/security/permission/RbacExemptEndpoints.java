@@ -107,7 +107,8 @@ public final class RbacExemptEndpoints {
                 Exemption.post("/api/auth/jwt/refresh",
                         "自助刷新本人令牌（前端 stores/user.ts），任意登录用户可用；无属主越权面（令牌即身份）"),
                 Exemption.post("/api/auth/jwt/revoke",
-                        "自助撤销本人令牌；方法级 @PreAuthorize(hasRole('ADMIN') or authentication.name == #request.userId) 已约束属主"),
+                        "自助撤销本人令牌；方法体内按目标令牌自身的属主判权（ADMIN 放行，其余主体只能撤本人令牌，"
+                                + "属主解析不出即拒绝，issue #696），不再依赖请求体自报的 userId"),
                 Exemption.get("/api/auth/jwt/tokens",
                         "自助令牌列表；方法级 @PreAuthorize(hasRole('ADMIN') or (hasRole('USER') and #userId == authentication.name)) 已约束属主，"
                                 + "登记权限码规则会破坏普通用户管理本人令牌"),
