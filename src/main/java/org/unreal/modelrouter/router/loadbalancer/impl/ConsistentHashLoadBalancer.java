@@ -8,14 +8,10 @@ import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * 一致性哈希负载均衡器
@@ -31,15 +27,79 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
     
     // 默认虚拟节点数量
     private static final int DEFAULT_VIRTUAL_NODES = 150;
-    
-    // 一致性哈希环
-    private final TreeMap<Long, ModelRouterProperties.ModelInstance> hashCircle = new TreeMap<>();
-    
-    // 虚拟节点映射，用于快速查找
-    private final Map<String, List<Long>> virtualNodesMap = new ConcurrentHashMap<>();
-    
+
+    // 环缓存的容量上限（#687：不同模型/服务类型的实例集合各自成环，避免无界增长）
+    private static final int MAX_CACHED_RINGS = 128;
+
+    /**
+     * 不可变哈希环（#687）。
+     *
+     * <p>构建完成后只读，可被多线程安全共享：环内的 {@link TreeMap} 不再被修改，
+     * 通过 {@link ConcurrentHashMap#putIfAbsent(Object, Object)} 发布，读线程看到的是完整对象。</p>
+     */
+    static final class HashRing {        private final TreeMap<Long, ModelRouterProperties.ModelInstance> circle;
+        private final int instanceCount;
+
+        HashRing(final TreeMap<Long, ModelRouterProperties.ModelInstance> circle, final int instanceCount) {
+            this.circle = circle;
+            this.instanceCount = instanceCount;
+        }
+
+        boolean isEmpty() {
+            return circle.isEmpty();
+        }
+
+        int size() {
+            return circle.size();
+        }
+
+        int getInstanceCount() {
+            return instanceCount;
+        }
+    }
+
+    /**
+     * 环缓存（#687）：键 = 服务类型 + 实例集合指纹，值 = 构建好的不可变环。
+     *
+     * <p>此前是一个本类级别的 {@link TreeMap} 环，每次请求都按入参增删节点，导致
+     * ① {@link TreeMap} 在并发读写时可能抛 {@code ConcurrentModificationException} 或读到结构性损坏
+     * ② 不同模型/服务类型共用同一个环，A 模型的请求会把 B 模型的节点从环上摘掉。</p>
+     */
+    private final Map<String, HashRing> ringCache = new ConcurrentHashMap<>();
+
+    // 环构建次数（#687）：只用于测试与可观测性，确认同一实例集合不会被反复重建
+    private final java.util.concurrent.atomic.AtomicLong ringBuildCount =
+            new java.util.concurrent.atomic.AtomicLong();
+
     // 虚拟节点数量
     private final int virtualNodeCount;
+
+    /**
+     * 供测试与可观测性使用：当前缓存的环数量（#687）。
+     *
+     * @return 已缓存的环个数
+     */
+    public int getCachedRingCount() {
+        return ringCache.size();
+    }
+
+    /**
+     * 供测试与可观测性使用：累计构建过的环数量（#687）。
+     *
+     * @return 构建次数
+     */
+    public long getRingBuildCount() {
+        return ringBuildCount.get();
+    }
+
+    /**
+     * 供测试与可观测性使用：缓存的环个数上限（#687）。
+     *
+     * @return 上限值
+     */
+    public static int getMaxCachedRings() {
+        return MAX_CACHED_RINGS;
+    }
     
     @Autowired(required = false)
     private MetricsCollector metricsCollector;
@@ -82,10 +142,10 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
             throw new IllegalArgumentException("No instances available");
         }
 
-        // 确保哈希环是最新的（使用所有实例构建哈希环）
-        updateHashRing(instances);
+        // 取本次实例集合对应的不可变环（同一集合复用，不修改共享状态）
+        final HashRing ring = ringFor(instances, serviceType);
 
-        if (hashCircle.isEmpty()) {
+        if (ring.isEmpty()) {
             logger.error("Hash circle is empty, unable to select instance");
             throw new RuntimeException("Hash circle is empty");
         }
@@ -94,15 +154,15 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
         long hash = hash(clientIp);
 
         // 在哈希环上找到大于等于该哈希值的第一个节点
-        Map.Entry<Long, ModelRouterProperties.ModelInstance> entry = hashCircle.higherEntry(hash);
+        Map.Entry<Long, ModelRouterProperties.ModelInstance> entry = ring.circle.higherEntry(hash);
 
         // 如果没有找到，则使用环上的第一个节点（形成环状结构）
         if (entry == null) {
-            entry = hashCircle.firstEntry();
+            entry = ring.circle.firstEntry();
         }
 
         // 从哈希环中选择健康实例，如果当前选中的是不健康的，则查找下一个健康的
-        ModelRouterProperties.ModelInstance selected = findHealthyInstance(entry, serviceType, instances);
+        ModelRouterProperties.ModelInstance selected = findHealthyInstance(ring, entry, serviceType);
 
         if (selected == null) {
             logger.warn("No healthy instance found, selecting any instance");
@@ -121,53 +181,53 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
     /**
      * 从哈希环中查找健康实例
      * 如果当前实例不健康，则继续查找下一个实例，直到找到健康实例或遍历完整个环
-     * 
+     *
+     * @param ring 不可变哈希环（只读）
      * @param startEntry 起始条目
      * @param serviceType 服务类型
-     * @param allInstances 所有实例列表
      * @return 健康实例或 null（如果没有健康实例）
      */
     private ModelRouterProperties.ModelInstance findHealthyInstance(
-            Map.Entry<Long, ModelRouterProperties.ModelInstance> startEntry,
-            final String serviceType,
-            final List<ModelRouterProperties.ModelInstance> allInstances) {
-        
+            final HashRing ring,
+            final Map.Entry<Long, ModelRouterProperties.ModelInstance> startEntry,
+            final String serviceType) {
+
         if (startEntry == null) {
             return null;
         }
-        
+
         // 如果起始实例是健康的，直接返回
         if (isInstanceHealthy(serviceType, startEntry.getValue())) {
             return startEntry.getValue();
         }
-        
+
         // 从哈希环中查找下一个健康实例
         Map.Entry<Long, ModelRouterProperties.ModelInstance> currentEntry = startEntry;
         int iterationCount = 0; // 防止无限循环
-        int maxIterations = hashCircle.size(); // 最大迭代次数为哈希环大小
-        
+        int maxIterations = ring.size(); // 最大迭代次数为哈希环大小
+
         do {
             // 找到下一个条目
-            currentEntry = hashCircle.higherEntry(currentEntry.getKey());
-            
+            currentEntry = ring.circle.higherEntry(currentEntry.getKey());
+
             // 如果到达末尾，回到开头（形成环状）
             if (currentEntry == null) {
-                currentEntry = hashCircle.firstEntry();
+                currentEntry = ring.circle.firstEntry();
             }
-            
+
             // 检查当前实例是否健康
             if (isInstanceHealthy(serviceType, currentEntry.getValue())) {
                 return currentEntry.getValue();
             }
-            
+
             iterationCount++;
-            
+
         } while (iterationCount < maxIterations && currentEntry != null
                 && !currentEntry.getKey().equals(startEntry.getKey()));
-        
+
         return null; // 没有找到健康实例
     }
-    
+
     /**
      * 检查实例是否健康
      *
@@ -184,93 +244,89 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
     }
 
     /**
-     * 更新哈希环，添加或移除实例及其虚拟节点
-     * 
+     * 取（必要时构建）实例集合对应的不可变哈希环（#687）。
+     *
+     * <p>同一实例集合（同一批实例对象 + 同一服务类型）复用同一个环，不再每请求增删节点。</p>
+     *
      * @param instances 实例列表
+     * @param serviceType 服务类型
+     * @return 不可变哈希环
      */
-    private void updateHashRing(List<ModelRouterProperties.ModelInstance> instances) {
-        // 获取当前哈希环中的实例ID
-        Set<String> currentInstanceIds = new HashSet<>();
-        for (ModelRouterProperties.ModelInstance instance : hashCircle.values()) {
-            currentInstanceIds.add(instance.getInstanceId());
+    HashRing ringFor(final List<ModelRouterProperties.ModelInstance> instances, final String serviceType) {
+        final String key = ringKey(instances, serviceType);
+        final HashRing cached = ringCache.get(key);
+        if (cached != null) {
+            return cached;
         }
 
-        // 获取目标实例ID
-        Set<String> targetInstanceIds = instances.stream()
-                .map(ModelRouterProperties.ModelInstance::getInstanceId)
-                .collect(Collectors.toSet());
-
-        // 计算需要移除的实例
-        Set<String> toRemove = new HashSet<>(currentInstanceIds);
-        toRemove.removeAll(targetInstanceIds);
-
-        // 计算需要添加的实例
-        Set<String> toAdd = new HashSet<>(targetInstanceIds);
-        toAdd.removeAll(currentInstanceIds);
-
-        // 移除不在目标列表中的实例及其虚拟节点
-        if (!toRemove.isEmpty()) {
-            removeInstances(toRemove);
+        final HashRing built = buildRing(instances);
+        ringBuildCount.incrementAndGet();
+        final HashRing existing = ringCache.putIfAbsent(key, built);
+        if (existing != null) {
+            return existing;
         }
 
-        // 添加新实例及其虚拟节点
-        if (!toAdd.isEmpty()) {
-            List<ModelRouterProperties.ModelInstance> newInstances = instances.stream()
-                    .filter(instance -> toAdd.contains(instance.getInstanceId()))
-                    .collect(Collectors.toList());
-            addInstances(newInstances);
+        if (ringCache.size() > MAX_CACHED_RINGS) {
+            logger.debug("Hash ring cache exceeded {} entries, clearing (key={})", MAX_CACHED_RINGS, key);
+            ringCache.clear();
         }
+        return built;
     }
 
     /**
-     * 添加实例及其虚拟节点到哈希环
-     * 
-     * @param instances 要添加的实例列表
+     * 计算实例集合指纹（#687）。
+     *
+     * <p>键包含服务类型、实例 ID、baseUrl 与对象身份哈希：同一批对象稳定复用同一个环；
+     * 配置重载生成新对象时键随之变化，自然重建，不会把节点指向已失效的旧对象。</p>
+     *
+     * @param instances 实例列表
+     * @param serviceType 服务类型
+     * @return 指纹字符串
      */
-    private void addInstances(List<ModelRouterProperties.ModelInstance> instances) {
+    static String ringKey(final List<ModelRouterProperties.ModelInstance> instances, final String serviceType) {
+        final StringBuilder builder = new StringBuilder(64 + instances.size() * 40);
+        builder.append(serviceType != null ? serviceType : "unknown").append('|');
+        instances.stream()
+                .map(ConsistentHashLoadBalancer::instanceToken)
+                .sorted()
+                .forEach(token -> builder.append(token).append(';'));
+        return builder.toString();
+    }
+
+    private static String instanceToken(final ModelRouterProperties.ModelInstance instance) {
+        return (instance.getInstanceId() != null ? instance.getInstanceId() : "")
+                + '@'
+                + (instance.getBaseUrl() != null ? instance.getBaseUrl() : "")
+                + '#'
+                + System.identityHashCode(instance);
+    }
+
+    /**
+     * 按实例列表构建不可变哈希环（#687）。
+     *
+     * @param instances 实例列表
+     * @return 构建好的环
+     */
+    private HashRing buildRing(final List<ModelRouterProperties.ModelInstance> instances) {
+        final TreeMap<Long, ModelRouterProperties.ModelInstance> circle = new TreeMap<>();
+        int distinctInstances = 0;
+
         for (ModelRouterProperties.ModelInstance instance : instances) {
-            addInstanceToHashRing(instance);
-        }
-    }
-
-    /**
-     * 添加单个实例及其虚拟节点到哈希环
-     * 
-     * @param instance 要添加的实例
-     */
-    private void addInstanceToHashRing(ModelRouterProperties.ModelInstance instance) {
-        List<Long> virtualNodeHashes = new ArrayList<>();
-        
-        for (int i = 0; i < virtualNodeCount; i++) {
-            String virtualNodeKey = instance.getInstanceId() + "#" + i;
-            long hash = hash(virtualNodeKey);
-            hashCircle.put(hash, instance);
-            virtualNodeHashes.add(hash);
-        }
-        
-        virtualNodesMap.put(instance.getInstanceId(), virtualNodeHashes);
-        
-        logger.debug("Added instance {} with {} virtual nodes to hash ring", 
-                instance.getName(), virtualNodeCount);
-    }
-
-    /**
-     * 从哈希环中移除实例及其虚拟节点
-     * 
-     * @param instanceIds 要移除的实例ID集合
-     */
-    private void removeInstances(Set<String> instanceIds) {
-        for (String instanceId : instanceIds) {
-            List<Long> virtualNodeHashes = virtualNodesMap.get(instanceId);
-            if (virtualNodeHashes != null) {
-                for (Long hash : virtualNodeHashes) {
-                    hashCircle.remove(hash);
-                }
-                virtualNodesMap.remove(instanceId);
-                logger.debug("Removed instance with ID {} and its virtual nodes from hash ring", instanceId);
+            if (instance == null) {
+                continue;
+            }
+            distinctInstances++;
+            for (int i = 0; i < virtualNodeCount; i++) {
+                final String virtualNodeKey = instance.getInstanceId() + "#" + i;
+                circle.put(hash(virtualNodeKey), instance);
             }
         }
+
+        logger.debug("Built consistent hash ring with {} instances and {} virtual nodes",
+                distinctInstances, circle.size());
+        return new HashRing(circle, distinctInstances);
     }
+
 
     /**
      * 计算字符串的哈希值
