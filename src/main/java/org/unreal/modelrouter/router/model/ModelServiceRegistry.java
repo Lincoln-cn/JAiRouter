@@ -507,10 +507,13 @@ public class ModelServiceRegistry {
      */
     private LoadBalancer accountingLoadBalancerFor(final ServiceType serviceType,
                                                    final ModelRouterProperties.ModelInstance instance) {
-        if (instance == null) {
+        // 测试里有 mock(X.class, CALLS_REAL_METHODS) 构造的实例：不跑构造器 ⇒ 字段初始化器不生效，
+        // callTracker 会是 null。这里按「没有记账表就退回旧取法」处理，生产路径不受影响。
+        final LoadBalancerCallTracker tracker = callTracker;
+        if (instance == null || tracker == null) {
             return loadBalancerManager.getLoadBalancer(serviceType);
         }
-        final LoadBalancer tracked = callTracker.take(
+        final LoadBalancer tracked = tracker.take(
                 LoadBalancerCallTracker.key(serviceType.name(), instance));
         return tracked != null ? tracked : loadBalancerManager.getLoadBalancer(serviceType);
     }
