@@ -32,6 +32,9 @@ import org.unreal.modelrouter.router.handler.ServiceRequestHandler;
 import org.unreal.modelrouter.router.model.ModelRouterProperties.ModelInstance;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -364,7 +367,8 @@ public class NonStreamingRequestProcessor {
                                         .body(finalResponse));
 
                     } catch (JsonProcessingException e) {
-                        logger.error("无法解析下游服务的响应体: {}", responseEntity.getBody(), e);
+                        // #725: 只记长度与摘要 —— 响应体含用户 prompt/补全内容，ERROR 日志会随采集外流
+                        logUnparseableResponseBody(responseEntity.getBody(), e);
                         return Mono.error(new ResponseStatusException(
                                 HttpStatus.INTERNAL_SERVER_ERROR, "无法解析下游服务响应"));
                     }
@@ -432,6 +436,55 @@ public class NonStreamingRequestProcessor {
         } catch (JsonProcessingException e) {
             logger.warn("原生响应序列化失败, 回退字符串输出: {}", e.getMessage());
             return String.valueOf(source);
+        }
+    }
+
+    /**
+     * #725: 响应体摘要的 SHA-256 前缀长度（够在服务端保全的原文里对齐，不构成内容泄漏）.
+     */
+    private static final int BODY_DIGEST_PREFIX = 16;
+
+    /**
+     * #725: 下游响应体解析失败时的日志出口 —— 只记长度与 SHA-256 摘要，正文一律不落日志.
+     *
+     * <p>响应体含用户 prompt / 模型补全内容（可能还有 PII），ERROR 级日志会随日志采集长期外流。
+     * 摘要足以与调用历史或服务端保全的原始响应做对齐，排障不再需要正文。</p>
+     *
+     * @param body  下游响应体（可能为 {@code null}）
+     * @param cause 解析异常（作为 throwable 打栈，保留排障所需的异常类型与行号）
+     */
+    static void logUnparseableResponseBody(final Object body, final Throwable cause) {
+        logger.error("无法解析下游服务的响应体（正文不入日志，#725）: {}",
+                summarizeBodyForLog(body), cause);
+    }
+
+    /**
+     * 把响应体压成可安全落日志的摘要：字符数/字节数 + SHA-256 前缀.
+     *
+     * @param body 响应体（可能为 {@code null}）
+     * @return 形如 {@code 42 chars/48 bytes sha256=1f3c9a...} 的摘要；{@code null} 体返回 {@code "null"}
+     */
+    static String summarizeBodyForLog(final Object body) {
+        if (body == null) {
+            return "null";
+        }
+        final String text = body.toString();
+        final byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
+        return text.length() + " chars/" + bytes.length + " bytes sha256=" + sha256Prefix(bytes);
+    }
+
+    private static String sha256Prefix(final byte[] bytes) {
+        try {
+            final byte[] digest = MessageDigest.getInstance("SHA-256").digest(bytes);
+            final StringBuilder hex = new StringBuilder(digest.length * 2);
+            for (byte b : digest) {
+                hex.append(Character.forDigit((b >> 4) & 0xF, 16));
+                hex.append(Character.forDigit(b & 0xF, 16));
+            }
+            return hex.substring(0, BODY_DIGEST_PREFIX);
+        } catch (NoSuchAlgorithmException e) {
+            // SHA-256 是 JDK 必带算法；真缺失时宁可不给摘要也不能退化成输出正文
+            return "unavailable";
         }
     }
 
