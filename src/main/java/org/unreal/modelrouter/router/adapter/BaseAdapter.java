@@ -9,6 +9,7 @@ import org.unreal.modelrouter.router.adapter.handler.MultipartRequestHandler;
 import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.router.adapter.processor.FallbackRequestProcessor;
 import org.unreal.modelrouter.monitor.monitoring.error.ErrorTracker;
+import org.unreal.modelrouter.auth.security.quota.QuotaReservation;
 import org.unreal.modelrouter.router.adapter.processor.StreamingRequestProcessor;
 import org.unreal.modelrouter.router.adapter.retry.RetryPolicy;
 import org.unreal.modelrouter.router.adapter.support.AdapterContext;
@@ -189,9 +190,10 @@ public abstract class BaseAdapter implements ServiceCapability {
         String modelNameFromRequest = ModelUtils.getModelNameFromRequest(request);
         resilienceSupport.getTracingManager()
                 .recordCallStart(adapterType, selectedInstance, serviceType, modelNameFromRequest);
+        final QuotaReservation quotaReservation = QuotaReservation.from(httpRequest);
         return processRequestWithRetry(request, authorization, client, path, selectedInstance,
                 serviceType, modelNameFromRequest, processor, startTime, 0,
-                new HashSet<>());
+                new HashSet<>(), quotaReservation);
     }
 
     /**
@@ -240,7 +242,7 @@ public abstract class BaseAdapter implements ServiceCapability {
             final WebClient client, final String path, final ModelRouterProperties.ModelInstance selectedInstance,
             final ModelServiceRegistry.ServiceType serviceType, final String modelName,
             final RequestProcessor<T> processor, final long startTime, final int retryCount,
-            final Set<String> failedKeys) {
+            final Set<String> failedKeys, final QuotaReservation quotaReservation) {
         String adapterType = getAdapterType();
         String instanceName = selectedInstance.getName();
         RetryPolicy retryPolicy = resilienceSupport.getRetryPolicy();
@@ -274,7 +276,13 @@ public abstract class BaseAdapter implements ServiceCapability {
                         metricsRecorder.recordCompleteCall(adapterType, instanceName, duration, outcome,
                                 errorCode, modelName, serviceType, selectedInstance);
                     }
-                    if (retryPolicy.canRetry(retryCount, throwable) && retryPolicy.isRetryable(throwable)) {
+                    final boolean willRetry = retryPolicy.canRetry(retryCount, throwable)
+                            && retryPolicy.isRetryable(throwable);
+                    // #719：结算只在最终结果落一次。首次尝试就 settleFailure 会把凭据的 CAS 置成已结算，
+                    // 之后重试成功的 settleSuccess 被静默忽略 —— 账本停在「失败回滚」（requests −1、tokens 0），
+                    // 而 token_usage 表记了实际用量，两处对同一次请求给出相反结论。
+                    settleOnFinalGiveUp(quotaReservation, willRetry);
+                    if (willRetry) {
                         resilienceSupport.getTracingManager()
                                 .recordRetry(adapterType, selectedInstance, retryCount + 1, maxRetries, throwable);
                         if (metricsRecorder != null) {
@@ -293,7 +301,8 @@ public abstract class BaseAdapter implements ServiceCapability {
                         return Mono.delay(Duration.ofMillis(retryDelay))
                                 .then(processRequestWithRetry(request, authorization, nextClient, nextPath,
                                         nextInstance, serviceType, modelName, processor,
-                                        System.currentTimeMillis(), retryCount + 1, failedKeys));
+                                        System.currentTimeMillis(), retryCount + 1, failedKeys,
+                                        quotaReservation));
                     }
                     if (errorTracker != null) {
                         Map<String, Object> errorContext = new HashMap<>();
@@ -309,6 +318,24 @@ public abstract class BaseAdapter implements ServiceCapability {
                     return resilienceSupport.getErrorResponseBuilder()
                             .buildErrorResponse(throwable).flatMap(Mono::error);
                 });
+    }
+
+
+    /**
+     * #719：重试场景下的失败结算入口。
+     *
+     * <p>重试复用同一个 {@link QuotaReservation}，而它的恰一次语义（CAS）不允许「先失败回滚、后成功冲正」。
+     * 因此重试期间不结算，只有在确定不会再重试时才回滚整笔预留。</p>
+     *
+     * @param quotaReservation 预留凭据，{@code null} 时空操作
+     * @param willRetry        {@code true} 表示还有下一次尝试，此时不结算
+     * @since 3.5.5
+     */
+    public static void settleOnFinalGiveUp(final QuotaReservation quotaReservation, final boolean willRetry) {
+        if (willRetry) {
+            return;
+        }
+        QuotaReservation.settleFailure(quotaReservation);
     }
 
     @SuppressWarnings({"all", "unchecked"})

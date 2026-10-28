@@ -190,8 +190,9 @@ public class NonStreamingRequestProcessor {
                     capturedKeyId, responseCacheKey, requestedModel, capturedRequestBody, selectedInstance,
                     quotaReservation, isNativeResponse(httpRequest));
         }
+        // #719：失败结算交给 BaseAdapter 在「确定不再重试」时统一执行；这里只在取消时立刻回滚
+        // （取消不会重试，且不结算会让预留一直挂着）。
         return result
-                .doOnError(error -> QuotaReservation.settleFailure(quotaReservation))
                 .doOnCancel(() -> QuotaReservation.settleFailure(quotaReservation));
     }
 
@@ -325,8 +326,11 @@ public class NonStreamingRequestProcessor {
                             downstreamData = objectMapper.readValue(bodyStr, Object.class);
 
                             // 提取并记录 token 使用量（v3.1 PR-2: 同时完成配额结算）
-                            tokenUsageExtractor.extractAndRecordTokenUsage(bodyStr, adapterType, instanceName,
-                                    capturedKeyId, quotaReservation);
+                            // #712：带上请求体，缺少 usage 时按文本估算 prompt
+                            tokenUsageExtractor.extractAndRecordTokenUsage(bodyStr,
+                                    capturedRequestBody != null
+                                            ? capturedRequestBody : serializeAndTruncate(transformedRequest),
+                                    adapterType, instanceName, capturedKeyId, quotaReservation);
                         }
 
                         // 响应转换

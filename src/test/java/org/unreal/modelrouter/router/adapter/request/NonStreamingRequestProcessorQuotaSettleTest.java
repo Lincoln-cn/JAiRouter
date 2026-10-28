@@ -29,6 +29,7 @@ import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.unreal.modelrouter.common.dto.ChatDTO;
 import org.unreal.modelrouter.monitor.service.TokenUsageRecorder;
 import org.unreal.modelrouter.monitor.service.TokenUsageService;
+import org.unreal.modelrouter.router.adapter.BaseAdapter;
 import org.unreal.modelrouter.router.handler.ServiceRequestHandler;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
@@ -141,8 +142,8 @@ class NonStreamingRequestProcessorQuotaSettleTest {
     }
 
     @Test
-    @DisplayName("响应无 usage：保留预留估算值（不冲正为 0），请求数照记")
-    void responseWithoutUsage_shouldKeepReservation() {
+    @DisplayName("响应无 usage：按文本估算后结算（#712），请求数照记")
+    void responseWithoutUsage_shouldSettleWithEstimatedUsage() {
         final ServerHttpRequest httpRequest = requestWithReservation();
 
         final WebClient client = clientOf(jsonResponse(HttpStatus.OK,
@@ -150,9 +151,12 @@ class NonStreamingRequestProcessorQuotaSettleTest {
         final ResponseEntity<?> response = invoke(client, httpRequest).block(java.time.Duration.ofSeconds(10));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(ESTIMATED_TOKENS, tokenCount(QuotaWindow.MINUTE), "无实际用量时保留估算值");
+        // #712 之后：没有 usage 时按文本估算并结算，账本不再是「保留预留」而是「按估算用量冲正」
+        final QuotaReservation settled = QuotaReservation.from(httpRequest);
+        assertTrue(settled.isSettled(), "无 usage 也必须结算，否则配额停在预留值");
+        assertFalse(settled.isFailed());
+        assertTrue(tokenCount(QuotaWindow.MINUTE) > 0L, "估算出的用量必须记入账本");
         assertEquals(1L, requestCount(QuotaWindow.MINUTE));
-        assertFalse(QuotaReservation.from(httpRequest).isSettled(), "未取到实际用量则不结算");
     }
 
     // ==================== 失败路径：整笔回滚 ====================
@@ -170,9 +174,12 @@ class NonStreamingRequestProcessorQuotaSettleTest {
                 && downstream.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR)
             .verify(java.time.Duration.ofSeconds(10));
 
+        // #719：处理器不再自行结算失败（否则重试成功的结算会被 CAS 吞掉），
+        // 由 BaseAdapter 在「确定不再重试」时统一回滚。
         final QuotaReservation reservation = QuotaReservation.from(httpRequest);
-        assertTrue(reservation.isSettled());
-        assertTrue(reservation.isFailed(), "下游错误应按失败回滚");
+        assertFalse(reservation.isSettled(), "处理器层不得结算，避免抢在重试之前把凭据置成失败");
+        BaseAdapter.settleOnFinalGiveUp(reservation, false);
+        assertTrue(reservation.isFailed(), "放弃重试后应按失败回滚");
         assertEquals(0L, requestCount(QuotaWindow.MINUTE), "回滚后请求数归零");
         assertEquals(0L, tokenCount(QuotaWindow.MINUTE), "回滚后 token 归零");
     }
@@ -190,9 +197,33 @@ class NonStreamingRequestProcessorQuotaSettleTest {
             .verify(java.time.Duration.ofSeconds(10));
 
         final QuotaReservation reservation = QuotaReservation.from(httpRequest);
+        assertFalse(reservation.isSettled(), "处理器层不得结算（#719）");
+        BaseAdapter.settleOnFinalGiveUp(reservation, false);
         assertTrue(reservation.isFailed());
         assertEquals(0L, requestCount(QuotaWindow.MINUTE));
         assertEquals(0L, tokenCount(QuotaWindow.MINUTE));
+    }
+
+    @Test
+    @DisplayName("重试：首次尝试失败不结算，重试成功后按实际用量结算一次")
+    void retryAfterError_shouldStillSettleSuccess() {
+        final ServerHttpRequest httpRequest = requestWithReservation();
+        final WebClient client = clientOf(jsonResponse(HttpStatus.INTERNAL_SERVER_ERROR, "{\"error\":\"boom\"}"));
+
+        // 第 1 次尝试失败：BaseAdapter 还有下一次尝试，处理器层不得结算
+        StepVerifier.create(invoke(client, httpRequest))
+            .expectError()
+            .verify(java.time.Duration.ofSeconds(10));
+
+        final QuotaReservation reservation = QuotaReservation.from(httpRequest);
+        assertFalse(reservation.isSettled(), "#719：重试期间不得结算，否则成功结算会被 CAS 吞掉");
+
+        // 第 2 次尝试成功（token 落库点结算）：账本必须按成功 + 实际用量落账
+        QuotaReservation.settleSuccess(reservation, REPORTED_TOKENS);
+
+        assertFalse(reservation.isFailed());
+        assertEquals(1L, requestCount(QuotaWindow.MINUTE), "成功请求必须计入请求数（不得退回）");
+        assertEquals(REPORTED_TOKENS, tokenCount(QuotaWindow.MINUTE), "账本必须记实际用量而不是 0");
     }
 
     // ==================== 不变量 ====================

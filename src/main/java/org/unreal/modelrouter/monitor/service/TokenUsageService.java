@@ -98,7 +98,8 @@ public class TokenUsageService {
                 .build();
 
         // 基本统计
-        dto.setTotalRequests(tokenUsageRepository.countAllUsage());
+        // 分母与分子同口径：都用请求的时间范围，避免历史数据把成功率稀释（#714）
+        dto.setTotalRequests(tokenUsageRepository.countByTimeRange(effectiveStartTime, effectiveEndTime));
         dto.setTotalTokens(tokenUsageRepository.countTotalTokensByTimeRange(effectiveStartTime, effectiveEndTime));
         dto.setSuccessfulRequests(tokenUsageRepository.countSuccessByTimeRange(effectiveStartTime, effectiveEndTime));
         dto.setFailedRequests(tokenUsageRepository.countFailedByTimeRange(effectiveStartTime, effectiveEndTime));
