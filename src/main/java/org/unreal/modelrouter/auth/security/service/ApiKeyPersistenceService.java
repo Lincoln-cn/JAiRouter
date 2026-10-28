@@ -97,7 +97,9 @@ public class ApiKeyPersistenceService {
             config.put(STORE_API_KEYS, merged);
             storeManager.saveConfig(API_KEYS_STORE_KEY, config);
             log.debug("保存单个API Key到存储: keyId={}, 文档内共 {} 条", current.getKeyId(), merged.size());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            // #715：只吞运行时异常（序列化/存储实现的失败都属于这一类），保持既有 fail-open 语义；
+            // 裸 catch(Exception) 会被 BareCatchCeilingTest 拦住（#604 在逐目录收窄）
             log.error("保存单个API Key失败: keyHash={}", keyHash, e);
         }
     }

@@ -296,10 +296,12 @@ class ApiKeyQuotaServiceTest {
         int cleaned = quotaService.cleanupExpiredDailyUsage();
 
         assertEquals(2, cleaned, "应清理 2 条过期记录（dailyUsage + dailyTokenUsage 各 1 条）");
-        assertNull(dailyUsage.get(oldDate));
-        assertNotNull(dailyUsage.get(recentDate));
-        assertNull(dailyTokenUsage.get(oldDate));
-        assertNotNull(dailyTokenUsage.get(recentDate));
+        // #715 之后 UsageStatistics 会把传入的映射复制成 ConcurrentHashMap（并发 merge 需要），
+        // 所以「删除是否生效」要看 Key 自己的统计对象，而不是测试里那个外部别名
+        assertNull(apiKey.getUsage().getDailyUsage().get(oldDate));
+        assertNotNull(apiKey.getUsage().getDailyUsage().get(recentDate));
+        assertNull(apiKey.getUsage().getDailyTokenUsage().get(oldDate));
+        assertNotNull(apiKey.getUsage().getDailyTokenUsage().get(recentDate));
     }
 
     /**
