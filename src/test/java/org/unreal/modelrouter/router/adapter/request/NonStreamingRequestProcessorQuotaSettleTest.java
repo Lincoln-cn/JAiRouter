@@ -141,8 +141,8 @@ class NonStreamingRequestProcessorQuotaSettleTest {
     }
 
     @Test
-    @DisplayName("响应无 usage：保留预留估算值（不冲正为 0），请求数照记")
-    void responseWithoutUsage_shouldKeepReservation() {
+    @DisplayName("响应无 usage：按文本估算后结算（#712），请求数照记")
+    void responseWithoutUsage_shouldSettleWithEstimatedUsage() {
         final ServerHttpRequest httpRequest = requestWithReservation();
 
         final WebClient client = clientOf(jsonResponse(HttpStatus.OK,
@@ -150,9 +150,12 @@ class NonStreamingRequestProcessorQuotaSettleTest {
         final ResponseEntity<?> response = invoke(client, httpRequest).block(java.time.Duration.ofSeconds(10));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(ESTIMATED_TOKENS, tokenCount(QuotaWindow.MINUTE), "无实际用量时保留估算值");
+        // #712 之后：没有 usage 时按文本估算并结算，账本不再是「保留预留」而是「按估算用量冲正」
+        final QuotaReservation settled = QuotaReservation.from(httpRequest);
+        assertTrue(settled.isSettled(), "无 usage 也必须结算，否则配额停在预留值");
+        assertFalse(settled.isFailed());
+        assertTrue(tokenCount(QuotaWindow.MINUTE) > 0L, "估算出的用量必须记入账本");
         assertEquals(1L, requestCount(QuotaWindow.MINUTE));
-        assertFalse(QuotaReservation.from(httpRequest).isSettled(), "未取到实际用量则不结算");
     }
 
     // ==================== 失败路径：整笔回滚 ====================
