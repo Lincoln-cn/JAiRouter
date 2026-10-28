@@ -147,6 +147,7 @@ public class TokenUsageExtractor {
                         adapterType,
                         instanceName,
                         null,
+                        apiKeyId,
                         promptTokens,
                         completionTokens,
                         totalTokens,

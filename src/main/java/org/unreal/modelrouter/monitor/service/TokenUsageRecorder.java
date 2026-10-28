@@ -81,6 +81,11 @@ public class TokenUsageRecorder {
      * 把工作整体交给 {@link Schedulers#boundedElastic()} 执行后立即返回；
      * 非 Reactor 线程仍内联执行，保持“方法返回即已落库”的既有语义。</p>
      */
+    /**
+     * 兼容重载：不携带 API Key 的调用（历史签名）。
+     *
+     * <p>实现上等价于 {@code apiKeyId = null}；按 Key 的统计只统计显式传了 Key 的调用（#713）。</p>
+     */
     public void recordTokenUsageNoAuth(
             final String serviceType,
             final String modelName,
@@ -96,20 +101,43 @@ public class TokenUsageRecorder {
             final String errorCode,
             final String errorMessage,
             final Long responseTimeMs) {
+        recordTokenUsageNoAuth(serviceType, modelName, provider, instanceName, instanceUrl, null,
+                promptTokens, completionTokens, totalTokens, traceId, clientIp,
+                isSuccess, errorCode, errorMessage, responseTimeMs);
+    }
+
+    public void recordTokenUsageNoAuth(
+            final String serviceType,
+            final String modelName,
+            final String provider,
+            final String instanceName,
+            final String instanceUrl,
+            final String apiKeyId,
+            final Long promptTokens,
+            final Long completionTokens,
+            final Long totalTokens,
+            final String traceId,
+            final String clientIp,
+            final Boolean isSuccess,
+            final String errorCode,
+            final String errorMessage,
+            final Long responseTimeMs) {
 
         // 阻塞 JPA 写入不得阻塞 EventLoop（issue #115）
         if (Schedulers.isInNonBlockingThread()) {
             Schedulers.boundedElastic().schedule(() -> doRecordTokenUsageWithClientIp(
                 serviceType, modelName, provider, instanceName, instanceUrl,
                 promptTokens, completionTokens, totalTokens, traceId,
-                clientIp, null, isSuccess, errorCode, errorMessage, responseTimeMs
+                clientIp, null, isSuccess, errorCode, errorMessage, responseTimeMs,
+                apiKeyId
             ));
             return;
         }
         doRecordTokenUsageWithClientIp(
             serviceType, modelName, provider, instanceName, instanceUrl,
             promptTokens, completionTokens, totalTokens, traceId,
-            clientIp, null, isSuccess, errorCode, errorMessage, responseTimeMs
+            clientIp, null, isSuccess, errorCode, errorMessage, responseTimeMs,
+            apiKeyId
         );
     }
 
@@ -177,7 +205,8 @@ public class TokenUsageRecorder {
             final Boolean isSuccess,
             final String errorCode,
             final String errorMessage,
-            final Long responseTimeMs) {
+            final Long responseTimeMs,
+            final String apiKeyId) {
 
         try {
             TokenUsageRecordDTO record = TokenUsageRecordDTO.builder()
@@ -192,6 +221,8 @@ public class TokenUsageRecorder {
                     .traceId(traceId)
                     .clientIp(clientIp)
                     .userId(userId)
+                    // #713：此前从不写 apiKeyId，导致「按 API Key 统计 token」恒为空
+                    .apiKeyId(apiKeyId)
                     .isSuccess(isSuccess)
                     .errorCode(errorCode)
                     .errorMessage(errorMessage)
