@@ -211,6 +211,15 @@ public class AdapterConfigController {
                                 "adapter名称已存在: " + request.getName(), ErrorCode.CONFLICT_EXISTS.code()));
             }
 
+            // issue #709：值级校验必须在构造 definition **之前** —— 下面的 caps.setChat(...) 会把
+            // getOrDefault 的结果直接拆箱成 boolean，而「键存在、值为 null」时 getOrDefault 仍返回
+            // null ⇒ 拆箱 NPE，被兜底 catch 包成 500，客户端完全看不出是哪个字段写错了。
+            final String valueError = validateRequestValues(request);
+            if (valueError != null) {
+                return ResponseEntity.badRequest()
+                        .body(RouterResponse.error(valueError, ErrorCode.INVALID_PARAM.code()));
+            }
+
             AdapterDefinitionProperties.AdapterDefinition definition =
                     new AdapterDefinitionProperties.AdapterDefinition();
             definition.setType(request.getType() != null ? request.getType() : "openai-compatible");
@@ -241,14 +250,24 @@ public class AdapterConfigController {
                 definition.setAdditionalHeaders(request.getAdditionalHeaders());
             }
 
-            // 保存到配置
-            adapterDefinitionProperties.getAdapterDefinitions().put(request.getName(), definition);
+            // issue #709：先校验「构造 adapter 时真正会被解引用」的必填字段，再做任何写入。
+            // 修复前的顺序是「先 put + saveDefinition，再 createAdapterByType」：缺 auth/capabilities 时
+            // 后者抛 NPE、被本方法兜底 catch 包成 500，而**不完整的定义已经落库** ⇒ 客户端重试只会撞上
+            // 「adapter名称已存在」的 409，永远拿不到 201，仓库里则留着一条重启后会加载失败的脏定义。
+            final String validationError = validateDefinitionRequest(request, definition);
+            if (validationError != null) {
+                return ResponseEntity.badRequest()
+                        .body(RouterResponse.error(validationError, ErrorCode.INVALID_PARAM.code()));
+            }
 
-            // 持久化到存储
+            // 先构造：构造函数只读入参、不触碰任何共享状态 ⇒ 抛错时仓库与注册表都保持原样
+            ServiceCapability adapter = createAdapterByType(request.getName(), definition);
+
+            // 再落库：写失败时内存里的定义表与注册表还没被改过
             persistenceService.saveDefinition(request.getName(), definition);
 
-            // 创建adapter并注册
-            ServiceCapability adapter = createAdapterByType(request.getName(), definition);
+            // 最后切换内存态
+            adapterDefinitionProperties.getAdapterDefinitions().put(request.getName(), definition);
             adapterRegistry.registerAdapter(request.getName(), adapter);
 
             Map<String, Object> result = new HashMap<>();
@@ -273,6 +292,7 @@ public class AdapterConfigController {
     @PutMapping("/{name}")
     @Operation(summary = "更新adapter", description = "更新配置驱动adapter的配置")
     @ApiResponse(responseCode = "200", description = "adapter更新成功")
+    @ApiResponse(responseCode = "400", description = "请求参数无效（缺 auth / capabilities 等必填字段）")
     @ApiResponse(responseCode = "404", description = "adapter不存在")
     @ApiResponse(responseCode = "403", description = "不能更新内置adapter")
     public ResponseEntity<RouterResponse<Map<String, Object>>> updateAdapter(
@@ -296,6 +316,16 @@ public class AdapterConfigController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(RouterResponse.error("adapter不存在: " + name, ErrorCode.NOT_FOUND.code()));
             }
+
+            // issue #709：值级校验必须在构造 definition **之前** —— 下面的 caps.setChat(...) 会把
+            // getOrDefault 的结果直接拆箱成 boolean，而「键存在、值为 null」时 getOrDefault 仍返回
+            // null ⇒ 拆箱 NPE，被兜底 catch 包成 500，客户端完全看不出是哪个字段写错了。
+            final String valueError = validateRequestValues(request);
+            if (valueError != null) {
+                return ResponseEntity.badRequest()
+                        .body(RouterResponse.error(valueError, ErrorCode.INVALID_PARAM.code()));
+            }
+
 
             AdapterDefinitionProperties.AdapterDefinition definition =
                     new AdapterDefinitionProperties.AdapterDefinition();
@@ -327,14 +357,20 @@ public class AdapterConfigController {
                 definition.setAdditionalHeaders(request.getAdditionalHeaders());
             }
 
-            // 更新配置
-            definitions.put(name, definition);
+            // issue #709：与 createAdapter 同一顺序 —— 先校验、再构造、再落库、最后切内存。
+            // 修复前是「先 definitions.put(name, ...) + saveDefinition，再 createAdapterByType」：
+            // 缺 auth/capabilities 时既把**原来可用的定义覆盖成不完整的**，又返回 500。
+            final String validationError = validateDefinitionRequest(request, definition);
+            if (validationError != null) {
+                return ResponseEntity.badRequest()
+                        .body(RouterResponse.error(validationError, ErrorCode.INVALID_PARAM.code()));
+            }
 
-            // 持久化到存储
+            ServiceCapability adapter = createAdapterByType(name, definition);
+
             persistenceService.saveDefinition(name, definition);
 
-            // 重新创建adapter
-            ServiceCapability adapter = createAdapterByType(name, definition);
+            definitions.put(name, definition);
             adapterRegistry.registerAdapter(name, adapter);
 
             Map<String, Object> result = new HashMap<>();
@@ -427,6 +463,84 @@ public class AdapterConfigController {
                     .body(RouterResponse.error("获取父adapter列表失败: " + e.getMessage(),
                             ErrorCode.INTERNAL_ERROR.code()));
         }
+    }
+
+    /**
+     * 校验请求体里「会以拆箱或原样透传方式进入 adapter 定义」的取值（issue #709）。
+     *
+     * <p>必须早于定义构造：{@code createAdapter} / {@code updateAdapter} 用
+     * {@code request.getCapabilities().getOrDefault("chat", false)} 填充布尔字段，而
+     * {@link java.util.Map#getOrDefault} 对「键存在但值为 {@code null}」仍然返回 {@code null}，
+     * 拆箱成 {@code boolean} 即抛 NPE ⇒ 修复前被兜底 {@code catch (Exception e)} 包成 500。</p>
+     *
+     * <p>{@code auth} 的取值也是原样透传进 {@code AuthConfig}，{@code null} 会被落库、运行时拼不出
+     * 鉴权头；空白 {@code headerName} 同理。</p>
+     *
+     * @param request 请求体
+     * @return 校验通过返回 {@code null}；否则返回要回给客户端的 400 消息
+     */
+    private String validateRequestValues(final AdapterDefinitionRequest request) {
+        if (request.getAuth() != null) {
+            for (Map.Entry<String, String> authEntry : request.getAuth().entrySet()) {
+                if (authEntry.getValue() == null) {
+                    return "auth 里 " + authEntry.getKey() + " 的取值不能为 null："
+                            + "null 会被原样写进 adapter 定义并落库，运行时据此拼不出鉴权头";
+                }
+            }
+            if (request.getAuth().containsKey("headerName")
+                    && request.getAuth().get("headerName").isBlank()) {
+                return "auth.headerName 不能为空白：它会原样用作向上游发请求时的 HTTP 头名";
+            }
+        }
+        if (request.getCapabilities() != null) {
+            for (Map.Entry<String, Boolean> capability : request.getCapabilities().entrySet()) {
+                if (capability.getValue() == null) {
+                    return "capabilities 里 " + capability.getKey() + " 的取值不能为 null："
+                            + "构造 adapter 时 getOrDefault 对「键存在但值为 null」仍返回 null，"
+                            + "拆箱成 boolean 即抛 NullPointerException（此前被兜底成 500）";
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 校验构造 adapter 所需、但此前只在 {@code createAdapterByType} 里被直接解引用的必填字段（issue #709）。
+     *
+     * <p>修复前：缺 {@code auth} 时 {@code definition.getAuth().getHeaderName()} 抛 NPE、缺
+     * {@code capabilities} 时 {@code definition.getCapabilities().isChat()} 抛 NPE，都被控制器的兜底
+     * {@code catch (Exception e)} 包成 500。这两个字段决定「向上游发请求时用哪个头、支持哪些能力」，
+     * 缺失属请求不合法 ⇒ 400，并且**不能**先把不完整定义写进仓库。</p>
+     *
+     * <p>{@code auth} 对所有类型必填：{@code openai-compatible} / {@code ollama-compatible} /
+     * {@code extend} 三条构造路径都会解引用它。{@code capabilities} 对非 {@code extend} 类型必填
+     * （{@code extend} 可省略 ⇒ 继承父 adapter 的能力）。{@code extend} 还要求 {@code parent}
+     * 非空且已注册，否则同样只在构造期抛 {@link IllegalArgumentException}（此前也是 500）。</p>
+     *
+     * @param request    请求体
+     * @param definition 由请求体构造出的定义（尚未落库、尚未注册）
+     * @return 校验通过返回 {@code null}；否则返回要回给客户端的 400 消息
+     */
+    private String validateDefinitionRequest(final AdapterDefinitionRequest request,
+                                             final AdapterDefinitionProperties.AdapterDefinition definition) {
+        if (request.getAuth() == null || request.getAuth().isEmpty()) {
+            return "auth 必填：请显式给出 auth（至少 headerName 或 headerPrefix；"
+                    + "缺省值 headerName=Authorization、headerPrefix=\"Bearer \"）";
+        }
+        if ("extend".equals(definition.getType())) {
+            final String parent = definition.getParent();
+            if (parent == null || parent.isBlank()) {
+                return "type=extend 时 parent 必填：请指定要继承的父 adapter";
+            }
+            if (adapterRegistry.getAdapterByName(parent) == null) {
+                return "parent adapter 不存在: " + parent;
+            }
+            return null;
+        }
+        if (request.getCapabilities() == null || request.getCapabilities().isEmpty()) {
+            return "capabilities 必填：请显式声明能力（chat/embedding/rerank/tts/stt/imgGen/imgEdit/streaming）";
+        }
+        return null;
     }
 
     private ServiceCapability createAdapterByType(
