@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
+import org.unreal.modelrouter.router.model.InstanceKeys;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
@@ -295,7 +296,8 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
     }
 
     private static String instanceToken(final ModelRouterProperties.ModelInstance instance) {
-        return (instance.getInstanceId() != null ? instance.getInstanceId() : "")
+        // #691: 令牌用统一标识（instanceId → baseUrl），避免未配 instanceId 时全退化成 "@url#hash"
+        return InstanceKeys.identifier(instance)
                 + '@'
                 + (instance.getBaseUrl() != null ? instance.getBaseUrl() : "")
                 + '#'
@@ -317,8 +319,11 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
                 continue;
             }
             distinctInstances++;
+            // #691: 虚拟节点键必须用「实例标识」而不是 instanceId —— instanceId 允许为空，
+            // 直接拼会得到 "null#i"，同服务下多个未配 id 的实例互相覆盖，环上只剩一个参与者。
+            final String identifier = InstanceKeys.identifier(instance);
             for (int i = 0; i < virtualNodeCount; i++) {
-                final String virtualNodeKey = instance.getInstanceId() + "#" + i;
+                final String virtualNodeKey = identifier + "#" + i;
                 circle.put(hash(virtualNodeKey), instance);
             }
         }
