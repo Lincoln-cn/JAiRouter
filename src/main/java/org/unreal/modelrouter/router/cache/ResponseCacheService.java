@@ -130,7 +130,7 @@ public class ResponseCacheService {
      * 请求是否可缓存（only-deterministic / skip-streaming 属性判定）.
      *
      * <p>chat 需满足：skipStreaming 关闭或非流式；onlyDeterministic 关闭或
-     * temperature==null/0 且 n==null/1。embedding/rerank 天然确定性（无采样参数）。
+     * 显式 temperature==0 且 n==null/1。embedding/rerank 天然确定性（无采样参数）。
      */
     private boolean isCacheEligible(final ServiceType serviceType, final Object requestDto) {
         switch (serviceType) {
@@ -155,14 +155,18 @@ public class ResponseCacheService {
     }
 
     /**
-     * chat 确定性判定：temperature==null/0 且 n==null/1.
+     * chat 确定性判定：显式 temperature==0 且 n==null/1.
+     *
+     * <p>#723: 未显式指定 temperature 不能视为确定性 —— OpenAI 兼容协议缺省为 1.0（随机采样），
+     * 把它当确定性会让普通请求在 TTL 内恒返回第一次的输出。temperature==0 即贪心解码，
+     * 此时 topP 不改变结果（截断后 argmax 不变），故不再单独判 topP。
      */
     private boolean isDeterministicChat(final ChatDTO.Request request) {
         Double temperature = request.temperature();
-        boolean temperatureZero = temperature == null || temperature == 0d;
+        boolean explicitGreedy = temperature != null && temperature == 0d;
         Integer n = request.n();
         boolean singleChoice = n == null || n == 1;
-        return temperatureZero && singleChoice;
+        return explicitGreedy && singleChoice;
     }
 
     /**
