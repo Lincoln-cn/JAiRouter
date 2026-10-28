@@ -182,6 +182,15 @@ public class ApiKeyManagementController {
     /**
      * 重置 API 密钥（生成新的 keyValue）
      * 旧的密钥值将失效，新的密钥值仅显示一次
+     *
+     * <p>issue #705：重置只应替换密钥值，其余属性（IP 白名单、小时/日/月配额、每分钟限流、
+     * 告警阈值、轮换周期、创建时间与用量统计）必须原样保留。这里复用轮换实现，
+     * 而不是「删旧密钥 + 按字段重建」——后者有三处结构性问题：</p>
+     * <ul>
+     *   <li>{@link ApiKeyVO} 根本没有暴露 {@code allowedIpAddresses}，逐字段复制必然漏掉白名单；</li>
+     *   <li>复制清单会随 {@link ApiKey} 新增字段继续漂移（本缺陷就是清单落后于模型）；</li>
+     *   <li>「删除后再创建」在创建失败时会让 keyId 直接消失，且历史用量被清零。</li>
+     * </ul>
      */
     @PostMapping("/{keyId}/reset")
     @Operation(summary = "重置API密钥",
@@ -189,23 +198,7 @@ public class ApiKeyManagementController {
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<ApiKeyCreationVO>> resetApiKey(
             @Parameter(description = "API密钥ID") @PathVariable("keyId") final String keyId) {
-        // 先删除旧的密钥，然后创建新的
-        return apiKeyService.getApiKeyByIdVO(keyId)
-                .flatMap(oldKey -> {
-                    // 创建新的密钥请求，保留原有属性
-                    ApiKeyCreateRequest newRequest = ApiKeyCreateRequest.builder()
-                            .keyId(keyId)  // 保持相同的 keyId
-                            .description(oldKey.getDescription())
-                            .permissions(oldKey.getPermissions())
-                            .enabled(oldKey.isEnabled())
-                            .expiresAt(oldKey.getExpiresAt())
-                            .rotationPeriodDays(oldKey.getRotationPeriodDays())
-                            .build();
-
-                    // 先删除旧密钥
-                    return apiKeyService.deleteApiKey(keyId)
-                            .then(apiKeyService.createApiKey(newRequest));
-                })
+        return apiKeyService.forceRotateKey(keyId, "admin")
                 .map(vo -> RouterResponse.success(vo,
                         "重置API密钥成功，请妥善保存新的密钥值，此密钥值仅此一次显示"))
                 .onErrorResume(e -> {
@@ -218,7 +211,8 @@ public class ApiKeyManagementController {
      * 强制轮换 API 密钥
      * 生成新的 keyValue 并更新 lastRotatedAt 时间戳
      * 旧的密钥值将失效，新的密钥值仅显示一次
-     * 与 reset 不同，rotate 保留原有 keyId 和所有属性，仅更新 keyValue 和 lastRotatedAt
+     * 与 reset 语义一致（reset 已改为复用本实现，见 issue #705）：保留原有 keyId 和所有属性，
+     * 仅更新 keyValue 和 lastRotatedAt；保留两个端点只为兼容既有调用方。
      */
     @PostMapping("/{keyId}/rotate")
     @Operation(summary = "强制轮换API密钥",
