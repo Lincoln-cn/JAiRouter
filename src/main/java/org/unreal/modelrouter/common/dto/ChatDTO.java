@@ -29,8 +29,50 @@ public final class ChatDTO {
             Object stop,
             String user,
             // 扩展选项（包含所有适配器特定参数）
-            Options options
+            Options options,
+            // #720: OpenAI 的 stream_options（目前只认 include_usage）
+            @JsonProperty("stream_options")
+            @com.fasterxml.jackson.annotation.JsonInclude(
+                    com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+            StreamOptions streamOptions
     ) {
+        /**
+         * #720：保持既有 12 参调用点不变（增加 stream_options 前的构造形状）。
+         */
+        @SuppressWarnings("checkstyle:ParameterNumber")
+        public Request(final String model,
+                       final List<Message> messages,
+                       final Boolean stream,
+                       final Integer maxTokens,
+                       final Double temperature,
+                       final Double topP,
+                       final Integer topK,
+                       final Double frequencyPenalty,
+                       final Double presencePenalty,
+                       final Object stop,
+                       final String user,
+                       final Options options) {
+            this(model, messages, stream, maxTokens, temperature, topP, topK,
+                    frequencyPenalty, presencePenalty, stop, user, options, null);
+        }
+
+        /**
+         * #720：OpenAI 的 {@code stream_options}。客户端传 {@code include_usage: true} 时，
+         * 网关在 {@code [DONE]} 之前补一帧 {@code choices} 为空的 usage。
+         *
+         * @param includeUsage 是否要求 usage 帧
+         */
+        public record StreamOptions(@JsonProperty("include_usage") Boolean includeUsage) {
+        }
+
+        /**
+         * #720：是否要求 usage 帧（缺省 false，与 OpenAI 一致）。
+         *
+         * @return 是否要求 usage 帧
+         */
+        public boolean includeUsage() {
+            return streamOptions != null && Boolean.TRUE.equals(streamOptions.includeUsage());
+        }
         /**
          * 获取扩展参数的便捷方法
          */
