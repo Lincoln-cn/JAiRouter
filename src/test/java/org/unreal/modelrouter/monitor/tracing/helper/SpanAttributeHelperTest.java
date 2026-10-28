@@ -301,4 +301,39 @@ class SpanAttributeHelperTest {
         assertEquals(1024L, attributes.get("http.response_content_length"));
         assertEquals("GET", attributes.get("http.method"));
     }
+
+    @Test
+    @DisplayName("http.url 属性抹掉 query 凭据（#695）")
+    void setHttpAttributes_shouldRedactQueryCredentials() {
+        // Given
+        setupRequestPath("/api/models");
+        when(request.getMethod()).thenReturn(HttpMethod.GET);
+        when(request.getURI()).thenReturn(URI.create("http://localhost:8080/api/models?token=jwt-secret&model=gpt-4o"));
+        when(request.getHeaders()).thenReturn(new org.springframework.http.HttpHeaders());
+        when(request.getRemoteAddress()).thenReturn(null);
+
+        // When
+        spanAttributeHelper.setHttpAttributes(span, request);
+
+        // Then：凭据不得进 APM span
+        verify(span).setAttribute("http.url", "http://localhost:8080/api/models?token=[REDACTED]&model=gpt-4o");
+    }
+
+    @Test
+    @DisplayName("extractRequestAttributes 的 http.url 同样抹掉 query 凭据（#695）")
+    void extractRequestAttributes_shouldRedactQueryCredentials() {
+        // Given
+        setupRequestPath("/api/models");
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        when(request.getMethod()).thenReturn(HttpMethod.GET);
+        when(request.getURI()).thenReturn(URI.create("http://localhost/api/models?api_key=sk-secret"));
+        when(request.getHeaders()).thenReturn(headers);
+        when(request.getRemoteAddress()).thenReturn(null);
+
+        // When
+        Map<String, Object> attributes = spanAttributeHelper.extractRequestAttributes(request);
+
+        // Then
+        assertEquals("http://localhost/api/models?api_key=[REDACTED]", attributes.get("http.url"));
+    }
 }
