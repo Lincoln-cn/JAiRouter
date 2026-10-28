@@ -33,22 +33,21 @@ public final class AffinityContextHolder {
      */
     public static void set(final String apiKeyId, final String clientIp,
                            final String serviceType, final String modelName) {
-        if (apiKeyId != null) {
-            API_KEY_ID.set(apiKeyId);
-        }
-        if (clientIp != null) {
-            CLIENT_IP.set(clientIp);
-        }
-        if (serviceType != null) {
-            SERVICE_TYPE.set(serviceType);
-        }
-        if (modelName != null) {
-            MODEL_NAME.set(modelName);
-        }
+        // #689: 入参为 null 时必须 remove 而不是跳过 —— 线程池会复用线程，跳过会把上一个
+        // 请求的标识（尤其是 apiKeyId，它同时是 api-key/tenant 维度限流的键）留给下一个请求。
+        setOrClear(API_KEY_ID, apiKeyId);
+        setOrClear(CLIENT_IP, clientIp);
+        setOrClear(SERVICE_TYPE, serviceType);
+        setOrClear(MODEL_NAME, modelName);
         // 同时设置默认 key(兼容直接 get() 的场景)
-        String key = AffinityKeyResolver.resolve(apiKeyId, clientIp, serviceType, modelName);
-        if (key != null) {
-            AFFINITY_KEY.set(key);
+        setOrClear(AFFINITY_KEY, AffinityKeyResolver.resolve(apiKeyId, clientIp, serviceType, modelName));
+    }
+
+    private static void setOrClear(final ThreadLocal<String> holder, final String value) {
+        if (value != null) {
+            holder.set(value);
+        } else {
+            holder.remove();
         }
     }
 
@@ -85,6 +84,11 @@ public final class AffinityContextHolder {
         return API_KEY_ID.get();
     }
 
+    /**
+     * 清理当前线程的全部亲和性上下文。
+     *
+     * <p>#689: 调用方把 {@link #set} 放在 try 内、{@link #clear} 放在 finally，早退路径因此也会清理。</p>
+     */
     public static void clear() {
         AFFINITY_KEY.remove();
         API_KEY_ID.remove();
