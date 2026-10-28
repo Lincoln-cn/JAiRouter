@@ -136,6 +136,19 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
                                     + " 或改用流式接口",
                             "502");
                     status = HttpStatus.BAD_GATEWAY;
+                } else if (isDownstreamTimeout(ex)) {
+                    // #682：上游读超时/整体超时此前落到「系统异常 500」，还把内部异常文本
+                    // （含下游地址）回给调用方。网关等不到上游属可重试的网关侧故障，回 504。
+                    logger.error("下游服务响应超时: {}", ex.getClass().getSimpleName());
+                    errorResponse = RouterResponse.error("下游服务响应超时，请稍后重试", "504");
+                    status = HttpStatus.GATEWAY_TIMEOUT;
+                } else if (isDownstreamUnavailable(ex)) {
+                    // #682：连接被拒/DNS 失败/TLS 握手失败同理，回 502 且只给固定外部文案，
+                    // 不把异常消息里的内部地址与实现细节带给客户端。
+                    logger.error("下游服务连接失败: {}", ex.getClass().getSimpleName());
+                    errorResponse = RouterResponse.error(
+                            "下游服务连接失败，请检查实例地址与网络连通性", "502");
+                    status = HttpStatus.BAD_GATEWAY;
                 } else if (ex instanceof ResponseStatusException) {
                     ResponseStatusException rse = (ResponseStatusException) ex;
                     logger.error("响应状态异常: status={}, message={}", rse.getStatusCode(), rse.getMessage());
@@ -169,6 +182,58 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
         }
     }
     
+    /**
+     * 判断异常链里是否出现「等不到上游」的超时（#682）.
+     *
+     * <p>同时认 JDK 的 {@link java.util.concurrent.TimeoutException} 与 Reactor Netty 的
+     * {@code io.netty.handler.timeout.TimeoutException}（前者覆盖整体超时，后者覆盖
+     * {@code ReadTimeoutException} 这类传输层读超时）。</p>
+     *
+     * @param ex 待判定异常
+     * @return 命中任一超时类型返回 {@code true}
+     */
+    private static boolean isDownstreamTimeout(final Throwable ex) {
+        return hasCause(ex, java.util.concurrent.TimeoutException.class)
+                || hasCause(ex, io.netty.handler.timeout.TimeoutException.class);
+    }
+
+    /**
+     * 判断异常链里是否出现「连不上下游」的网络故障（#682）.
+     *
+     * <p>典型来源：{@code WebClientRequestException}（Spring 对连接期 IO 故障的包装）、
+     * {@link java.net.ConnectException}、{@link java.net.UnknownHostException} 与
+     * {@link javax.net.ssl.SSLException}。命中后应回 502，而不是兜底 500。</p>
+     *
+     * @param ex 待判定异常
+     * @return 命中任一连接类故障返回 {@code true}
+     */
+    private static boolean isDownstreamUnavailable(final Throwable ex) {
+        return ex instanceof org.springframework.web.reactive.function.client.WebClientRequestException
+                || hasCause(ex, java.net.ConnectException.class)
+                || hasCause(ex, java.net.UnknownHostException.class)
+                || hasCause(ex, javax.net.ssl.SSLException.class);
+    }
+
+    /**
+     * 沿 {@code cause} 链查找指定类型的异常（#682）.
+     *
+     * @param ex   起始异常，可为 {@code null}
+     * @param type 目标类型
+     * @return 链上存在该类型返回 {@code true}
+     */
+    private static boolean hasCause(final Throwable ex, final Class<? extends Throwable> type) {
+        Throwable current = ex;
+        int depth = 0;
+        while (current != null && depth < 10) {
+            if (type.isInstance(current)) {
+                return true;
+            }
+            current = current.getCause();
+            depth++;
+        }
+        return false;
+    }
+
     /**
      * 记录错误信息
      */
