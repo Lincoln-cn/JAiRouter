@@ -100,6 +100,24 @@ public final class QuotaReservation {
     }
 
     /**
+     * 按中断时已消耗的用量结算（token 冲正量 = 实际 − 估算；请求数按「已发生」保留）。
+     *
+     * <p>#710：客户端读到一半就断开时，上游已经流出的 token 是真实成本。整笔
+     * {@link #settleFailure} 会把已消耗部分也退回去，于是「读几个块就断开」可以反复绕过
+     * 每日 token 配额。此入口只修正 token 差额、把这次请求计入用量，语义上等价于一次
+     * 用量偏小的成功结算，因此与成功结算共用同一套恰一次语义（二者只会有一次生效）。</p>
+     *
+     * @param reservation  预留凭据，{@code null} 时空操作
+     * @param actualTokens 中断前已消耗的 token 数（负数按 0 处理）
+     * @since 3.5.5
+     */
+    public static void settlePartial(final QuotaReservation reservation, final long actualTokens) {
+        if (reservation != null) {
+            reservation.settle(actualTokens, false);
+        }
+    }
+
+    /**
      * 回滚整笔预留（token 冲正量 = −估算，请求数冲正量 = −1）。
      *
      * @param reservation 预留凭据，{@code null} 时空操作

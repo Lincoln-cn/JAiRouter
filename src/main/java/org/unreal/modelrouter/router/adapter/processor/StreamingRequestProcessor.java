@@ -357,7 +357,7 @@ public class StreamingRequestProcessor {
                             promptTokens.get(), completionTokens.get(), totalTokens.get(),
                             cacheHitTokens.get(), cacheMissTokens.get(),
                             estimateTokensFromCounts(contentChineseChars.get(), contentOtherChars.get()),
-                            contentSawAnyChar.get(), capturedKeyId, quotaReservation);
+                            contentSawAnyChar.get(), capturedKeyId, true, quotaReservation);
 
                     // v2.9.2: 记录治理 - 记录含请求/响应体的调用历史
                     // 脱敏与落库不得阻塞 EventLoop（doOnComplete 可能在 IO 线程执行）
@@ -420,17 +420,54 @@ public class StreamingRequestProcessor {
                             modelRef.get(), requestStartTime,
                             AdapterMetricsRecorder.classifyFailure(throwable),
                             throwable.getClass().getSimpleName());
+                    // #710：已流出的 token 是真实成本 —— 异常路径也要入账并落一条失败调用记录
+                    final long errorEstimated = estimateTokensFromCounts(
+                            contentChineseChars.get(), contentOtherChars.get());
+                    final long errorCompletion = completionTokens.get() > 0
+                            ? completionTokens.get() : errorEstimated;
+                    final long errorPrompt = promptTokens.get();
+                    final long errorTotal = totalTokens.get() > 0
+                            ? totalTokens.get() : errorPrompt + errorCompletion;
+                    recordTokenUsage(adapterType, instanceName, modelRef.get(), errorPrompt, errorCompletion,
+                            errorTotal, cacheHitTokens.get(), cacheMissTokens.get(), errorEstimated,
+                            contentSawAnyChar.get(), capturedKeyId, false, null);
+                    recordInterruptedCallHistory(serviceType, adapterType, instanceName, modelRef.get(),
+                            accountedInstance != null ? accountedInstance.getBaseUrl() : null,
+                            requestStartTime, errorPrompt, errorCompletion, errorTotal, capturedKeyId,
+                            recordLevel, throwable.getClass().getSimpleName(), capturedRequestBody,
+                            recordedResponseBody(contentBuilder, contentTruncated.get()));
                     // v3.1 PR-2: 流式中断/异常 — 回滚整笔配额预留
                     QuotaReservation.settleFailure(quotaReservation);
                 })
                 .doOnCancel(() -> {
                     // v3.2.3 (#126/#127): 同样释放累积缓冲（cancel 不与 onNext 串行，须持锁）
                     releaseAccumulation(contentBuilder, transformedChunks);
-                    QuotaReservation.settleFailure(quotaReservation);
                     // #716：客户端主动断开不是实例故障 —— 只把在途计数减掉，不累加熔断失败
                     reportStreamOutcome(serviceType, adapterType, accountedInstance, instanceName,
                             modelRef.get(), requestStartTime,
                             AdapterMetricsRecorder.CallOutcome.CLIENT_ERROR, "CLIENT_CANCELLED");
+                    // #710：取消不是「这次请求没发生过」—— 已消耗部分入账并按实际结算，不再整笔回滚
+                    final long cancelEstimated = estimateTokensFromCounts(
+                            contentChineseChars.get(), contentOtherChars.get());
+                    final long cancelCompletion = completionTokens.get() > 0
+                            ? completionTokens.get() : cancelEstimated;
+                    final long cancelPrompt = promptTokens.get();
+                    final long cancelTotal = totalTokens.get() > 0
+                            ? totalTokens.get() : cancelPrompt + cancelCompletion;
+                    recordTokenUsage(adapterType, instanceName, modelRef.get(), cancelPrompt, cancelCompletion,
+                            cancelTotal, cacheHitTokens.get(), cacheMissTokens.get(), cancelEstimated,
+                            contentSawAnyChar.get(), capturedKeyId, false, null);
+                    recordInterruptedCallHistory(serviceType, adapterType, instanceName, modelRef.get(),
+                            accountedInstance != null ? accountedInstance.getBaseUrl() : null,
+                            requestStartTime, cancelPrompt, cancelCompletion, cancelTotal, capturedKeyId,
+                            recordLevel, "CLIENT_CANCELLED", capturedRequestBody,
+                            recordedResponseBody(contentBuilder, contentTruncated.get()));
+                    if (cancelTotal > 0) {
+                        // 已流出部分付费、未流出部分退回；空请求仍整笔回滚，避免占额度
+                        QuotaReservation.settlePartial(quotaReservation, cancelTotal);
+                    } else {
+                        QuotaReservation.settleFailure(quotaReservation);
+                    }
                 })
                 // v3.2.x (#257): /v1 OpenAI 面在失败时先补一个协议形状 error 帧、再以异常终止
                 // （不补 [DONE]：它是「正常结束」的语汇，补上会让截断被读成成功；详见 StreamingErrorTermination）。
@@ -638,6 +675,69 @@ public class StreamingRequestProcessor {
     }
 
     /**
+     * #710：为被打断的流落一条调用记录（{@code isSuccess=false} + 错误码）。
+     *
+     * <p>与完成路径的区别只在于成功标记与错误码；响应体取中断前已累积的内容。
+     * 记录等级为 {@code METADATA_ONLY} 或未注入记录器时直接跳过。</p>
+     *
+     * @param serviceType     服务类型
+     * @param adapterType     适配器类型
+     * @param instanceName    实例名
+     * @param model           模型名
+     * @param instanceUrl     实例地址（可为 null）
+     * @param requestStartTime 请求开始时间
+     * @param promptTokens    已用量：输入 token（可为 0）
+     * @param completionTokens 已用量：输出 token（可为 0）
+     * @param totalTokens     已用量：合计 token（可为 0）
+     * @param apiKeyId        API Key 标识（可为 null）
+     * @param recordLevel     记录等级（{@code METADATA_ONLY} 时跳过）
+     * @param errorCode       错误码
+     * @param requestBody     请求体（可为 null）
+     * @param responseBody    中断前已累积的响应体（可为 null）
+     * @since 3.5.5
+     */
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    private void recordInterruptedCallHistory(final ModelServiceRegistry.ServiceType serviceType,
+                                              final String adapterType,
+                                              final String instanceName,
+                                              final String model,
+                                              final String instanceUrl,
+                                              final long requestStartTime,
+                                              final long promptTokens,
+                                              final long completionTokens,
+                                              final long totalTokens,
+                                              final String apiKeyId,
+                                              final RecordLevel recordLevel,
+                                              final String errorCode,
+                                              final String requestBody,
+                                              final String responseBody) {
+        if (recordLevel == RecordLevel.METADATA_ONLY || callHistoryRecorder == null) {
+            return;
+        }
+        try {
+            final CallHistoryRecordDTO dto = CallHistoryRecordDTO.builder()
+                    .serviceType(serviceType != null ? serviceType.name() : null)
+                    .modelName(model)
+                    .provider(adapterType)
+                    .instanceName(instanceName)
+                    .instanceUrl(instanceUrl)
+                    .responseTimeMs(System.currentTimeMillis() - requestStartTime)
+                    .isSuccess(false)
+                    .errorCode(errorCode)
+                    .promptTokens(promptTokens > 0 ? promptTokens : null)
+                    .completionTokens(completionTokens > 0 ? completionTokens : null)
+                    .totalTokens(totalTokens > 0 ? totalTokens : null)
+                    .apiKeyId(apiKeyId)
+                    .requestBody(requestBody)
+                    .responseBody(responseBody)
+                    .build();
+            callHistoryRecorder.record(dto);
+        } catch (RuntimeException e) {
+            logger.debug("流式中断的调用历史记录失败: {}", e.getMessage());
+        }
+    }
+
+    /**
      * 获取默认的数据块转换器
      */
     public Function<String, String> getDefaultChunkTransformer(final String adapterType) {
@@ -765,6 +865,7 @@ public class StreamingRequestProcessor {
                                    final long estimatedCompletionTokens,
                                    final boolean sawContent,
                                    final String apiKeyId,
+                                   final boolean success,
                                    final QuotaReservation quotaReservation) {
         if (tokenUsageRecorder == null) {
             return;
@@ -803,7 +904,7 @@ public class StreamingRequestProcessor {
                         finalTotalTokens,
                         traceId,
                         null, // clientIp
-                        true, // isSuccess
+                        success, // #710：中断路径落 isSuccess=false，别把断流记成成功调用
                         null, // errorCode
                         null, // errorMessage
                         null  // responseTimeMs
