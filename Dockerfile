@@ -64,11 +64,13 @@ ENV JAIROUTER_SECURITY_SANITIZATION_RESPONSE_ENABLED=true
 ENV JAIROUTER_SECURITY_AUDIT_ENABLED=true
 
 # API Key 配置
-ENV ADMIN_API_KEY=""
-ENV USER_API_KEY=""
+# #677：ADMIN_API_KEY / USER_API_KEY 只被 config-external 与迁移脚本生成的配置以 ${…} 形式引用，
+# 随包配置里没有任何位置读它们，导出空值只会误导运维 —— 需要时由部署侧显式传（脚本会写进生成的 yml）。
 
 # JWT 配置（不要设置默认空值，让 Spring 使用配置文件中的默认值）
 # ENV JWT_SECRET=""
+# #677：这两个名字由 config/auth/jwt.yml 的 ${JWT_ALGORITHM:HS256} / ${JWT_EXPIRATION_MINUTES:60} 读取，
+# 与 config-external/auth/jwt.yml 保持一致。
 ENV JWT_ALGORITHM=HS256
 ENV JWT_EXPIRATION_MINUTES=60
 
@@ -77,7 +79,8 @@ ENV REDIS_HOST=localhost
 ENV REDIS_PORT=6379
 ENV REDIS_PASSWORD=""
 ENV REDIS_DATABASE=0
-ENV REDIS_TIMEOUT=2000
+# #677：不再导出 REDIS_TIMEOUT —— 随包配置里没有任何键读它（真实键是 spring.data.redis.timeout，
+# 由 config/security/persistence-base.yml 固定为 5000ms）。
 
 EXPOSE 8080
 
