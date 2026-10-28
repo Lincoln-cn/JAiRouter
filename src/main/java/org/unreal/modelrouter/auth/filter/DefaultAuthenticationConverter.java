@@ -18,6 +18,9 @@ import org.unreal.modelrouter.common.util.IpUtils;
  */
 public final class DefaultAuthenticationConverter implements ServerAuthenticationConverter {
 
+    /** 允许从 query 取凭据的路径前缀（WebSocket 握手，见 {@link #isWebSocketHandshake}）。 */
+    private static final String WEBSOCKET_PATH_PREFIX = "/ws/";
+
     private final SecurityProperties securityProperties;
 
     private static final Logger log = LoggerFactory.getLogger(DefaultAuthenticationConverter.class);
@@ -41,12 +44,17 @@ public final class DefaultAuthenticationConverter implements ServerAuthenticatio
             jwtToken = extractJwtToken(exchange);
         }
 
-        // 头缺失时回落 query（WebSocket 握手无法携带自定义头）
-        if (jwtToken == null && securityProperties.getJwt().isEnabled()) {
-            jwtToken = firstQueryParam(exchange, "token", "access_token");
-        }
-        if (apiKey == null && securityProperties.getApiKey().isEnabled()) {
-            apiKey = firstQueryParam(exchange, "api_key", "apiKey");
+        // 头缺失时回落 query —— 仅限 WebSocket 握手（#695）
+        //
+        // 浏览器 new WebSocket 无法携带自定义头，/ws/** 只能从 query 取凭据；其它路径的完整
+        // URL 会被结构化日志与 tracing span 原样记录，凭据放在 query 里等于明文落盘，故不再回退。
+        if (isWebSocketHandshake(exchange)) {
+            if (jwtToken == null && securityProperties.getJwt().isEnabled()) {
+                jwtToken = firstQueryParam(exchange, "token", "access_token");
+            }
+            if (apiKey == null && securityProperties.getApiKey().isEnabled()) {
+                apiKey = firstQueryParam(exchange, "api_key", "apiKey");
+            }
         }
 
         // 如果同时提供了API Key和JWT令牌，则优先使用JWT
@@ -109,6 +117,17 @@ public final class DefaultAuthenticationConverter implements ServerAuthenticatio
             }
         }
         return null;
+    }
+
+    /**
+     * 是否 WebSocket 握手请求。
+     *
+     * <p>只有 {@code /ws/**} 允许从 query 取凭据：这是浏览器 {@code new WebSocket} 无法设置
+     * 自定义头时唯一的传参通道；其余路径的 query 会随完整 URL 进入日志 / span（#695）。</p>
+     */
+    private static boolean isWebSocketHandshake(final ServerWebExchange exchange) {
+        final String path = exchange.getRequest().getPath().value();
+        return path != null && (path.equals("/ws") || path.startsWith(WEBSOCKET_PATH_PREFIX));
     }
 
     /**

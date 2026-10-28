@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.unreal.modelrouter.common.util.ClientIpResolver;
+import org.unreal.modelrouter.common.util.UrlQueryRedactor;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
@@ -68,7 +69,8 @@ public final class RequestLogBuilder {
         // HTTP请求信息
         builder.method(request.getMethod() != null ? request.getMethod().name() : "UNKNOWN");
         builder.path(sanitizeUrlPath(request.getPath().value()));
-        builder.url(request.getURI().toString());
+        // #695：url 会进结构化日志，query 里的凭据必须先抹掉（path 本身不含 query）
+        builder.url(UrlQueryRedactor.redact(request.getURI().toString()));
 
         // 客户端信息（脱敏处理）
         String clientIp = getClientIp(request);
@@ -147,18 +149,8 @@ public final class RequestLogBuilder {
             return null;
         }
 
-        // 移除查询参数中的敏感信息
-        if (path.contains("?")) {
-            String[] parts = path.split("\\?", 2);
-            String basePath = parts[0];
-            String queryString = parts[1];
-
-            // 脱敏查询参数
-            String sanitizedQuery = sanitizeQueryString(queryString);
-            return basePath + "?" + sanitizedQuery;
-        }
-
-        return path;
+        // 与 url 字段共用同一套 query 脱敏规则（#695）
+        return UrlQueryRedactor.redact(path);
     }
 
     /**
@@ -231,54 +223,6 @@ public final class RequestLogBuilder {
                || lowerName.contains("key")
                || lowerName.contains("secret")
                || lowerName.contains("password");
-    }
-
-    /**
-     * 脱敏查询参数
-     */
-    private String sanitizeQueryString(final String queryString) {
-        if (queryString == null || queryString.isEmpty()) {
-            return queryString;
-        }
-
-        StringBuilder sanitized = new StringBuilder();
-        String[] params = queryString.split("&");
-
-        for (int i = 0; i < params.length; i++) {
-            if (i > 0) {
-                sanitized.append("&");
-            }
-
-            String param = params[i];
-            if (param.contains("=")) {
-                String[] keyValue = param.split("=", 2);
-                String key = keyValue[0];
-                String value = keyValue.length > 1 ? keyValue[1] : "";
-
-                if (isSensitiveQueryParam(key)) {
-                    sanitized.append(key).append("=[REDACTED]");
-                } else {
-                    sanitized.append(param);
-                }
-            } else {
-                sanitized.append(param);
-            }
-        }
-
-        return sanitized.toString();
-    }
-
-    /**
-     * 检查是否为敏感查询参数
-     */
-    private boolean isSensitiveQueryParam(final String key) {
-        String lowerKey = key.toLowerCase();
-        return lowerKey.contains("token")
-               || lowerKey.contains("key")
-               || lowerKey.contains("password")
-               || lowerKey.contains("secret")
-               || lowerKey.contains("auth")
-               || lowerKey.contains("credential");
     }
 
     /**
