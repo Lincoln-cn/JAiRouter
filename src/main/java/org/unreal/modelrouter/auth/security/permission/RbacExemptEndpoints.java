@@ -136,7 +136,8 @@ public final class RbacExemptEndpoints {
                 // 现在显式登记为摄取面豁免，与 token-usage 同口径；理由同上：调用方可能是 API-Key。
                 Exemption.post("/api/call-history/record",
                         "调用记录摄取面（外部上报）：应用自身记录走进程内 ApiCallHistoryRecorder，不经此端点；"
-                                + "对外摄取 API 的调用方可能是 API-Key（仅 ROLE_<SERVICE>），登记权限码会阻断上报")
+                                + "对外摄取 API 的调用方可能是 API-Key（仅 ROLE_<SERVICE>），登记权限码会阻断上报；"
+                                + "方法体内按调用主体校验请求体声明的 apiKeyId 属主（issue #698）")
         );
     }
 

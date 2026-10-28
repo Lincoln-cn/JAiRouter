@@ -171,6 +171,101 @@ class ApiCallHistoryControllerRbacTest {
         }
     }
 
+    // ==================== 属主校验测试（issue #698） ====================
+
+    @Nested
+    @DisplayName("POST /record - 写入属主校验（issue #698）")
+    class OwnershipTests {
+
+        private org.springframework.security.core.Authentication apiKeyOf(final String keyId) {
+            return new org.unreal.modelrouter.auth.security.model.ApiKeyAuthentication(
+                    keyId, "sk-test", java.util.List.of("chat"));
+        }
+
+        private org.springframework.security.core.Authentication jwtPrincipal() {
+            return new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                    "admin", null, java.util.List.of(
+                            new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN")));
+        }
+
+        private org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO recordOf(final String apiKeyId) {
+            return org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO.builder()
+                    .traceId("trace-698")
+                    .requestId("req-698")
+                    .requestMethod("POST")
+                    .requestPath("/v1/chat/completions")
+                    .serviceType("chat")
+                    .modelName("gpt-4")
+                    .apiKeyId(apiKeyId)
+                    .build();
+        }
+
+        @Test
+        @DisplayName("CALLH-698-1: API Key 主体写他人 apiKeyId ⇒ 403 且不落库")
+        void apiKeyClaimingOtherKeyId_isRejected() {
+            final org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO record =
+                    recordOf("key-victim");
+
+            final ResponseEntity<RouterResponse<Void>> result = controller.record(record, apiKeyOf("key-attacker"));
+
+            assertEquals(org.springframework.http.HttpStatus.FORBIDDEN, result.getStatusCode());
+            assertNotNull(result.getBody());
+            assertFalse(result.getBody().isSuccess());
+            assertEquals(ErrorCode.FORBIDDEN.code(), result.getBody().getErrorCode());
+            assertTrue(result.getBody().getMessage().contains("只能写入自身"),
+                    "拒绝原因必须说明属主约束，实际: " + result.getBody().getMessage());
+            verify(callHistoryService, never()).record(any());
+        }
+
+        @Test
+        @DisplayName("CALLH-698-2: API Key 主体写自身 apiKeyId ⇒ 放行")
+        void apiKeyClaimingOwnKeyId_isAccepted() {
+            final org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO record =
+                    recordOf("key-self");
+
+            final ResponseEntity<RouterResponse<Void>> result = controller.record(record, apiKeyOf("key-self"));
+
+            assertEquals(org.springframework.http.HttpStatus.OK, result.getStatusCode());
+            verify(callHistoryService).record(record);
+        }
+
+        @Test
+        @DisplayName("CALLH-698-3: API Key 主体未声明 apiKeyId ⇒ 放行（无从矛盾）")
+        void apiKeyWithoutClaimedKeyId_isAccepted() {
+            final org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO record = recordOf(null);
+
+            final ResponseEntity<RouterResponse<Void>> result = controller.record(record, apiKeyOf("key-self"));
+
+            assertEquals(org.springframework.http.HttpStatus.OK, result.getStatusCode());
+            verify(callHistoryService).record(record);
+        }
+
+        @Test
+        @DisplayName("CALLH-698-4: JWT 管理面主体写他人 apiKeyId ⇒ 保持既有行为（放行）")
+        void jwtPrincipalClaimingOtherKeyId_isAcceptedForNow() {
+            final org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO record =
+                    recordOf("key-victim");
+
+            final ResponseEntity<RouterResponse<Void>> result = controller.record(record, jwtPrincipal());
+
+            assertEquals(org.springframework.http.HttpStatus.OK, result.getStatusCode(),
+                    "管理面代报属未定义的调用形态，本次刻意不收紧");
+            verify(callHistoryService).record(record);
+        }
+
+        @Test
+        @DisplayName("CALLH-698-5: 未注入认证主体（null）⇒ 放行，安全链已拦未认证请求")
+        void nullAuthentication_isAccepted() {
+            final org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO record =
+                    recordOf("key-victim");
+
+            final ResponseEntity<RouterResponse<Void>> result = controller.record(record, null);
+
+            assertEquals(org.springframework.http.HttpStatus.OK, result.getStatusCode());
+            verify(callHistoryService).record(record);
+        }
+    }
+
     // ==================== 基础端点功能测试 ====================
 
     @Nested

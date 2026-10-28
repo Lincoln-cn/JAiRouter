@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
+import org.unreal.modelrouter.auth.security.model.ApiKeyAuthentication;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
@@ -62,10 +64,48 @@ public class ApiCallHistoryController {
     @PostMapping("/record")
     @Operation(summary = "记录调用历史", description = "手动记录一次 API 调用历史")
     public ResponseEntity<RouterResponse<Void>> record(
-            @RequestBody final CallHistoryRecordDTO record) {
+            @RequestBody final CallHistoryRecordDTO record,
+            final Authentication authentication) {
+
+        final String rejection = crossPrincipalWriteError(authentication, record);
+        if (rejection != null) {
+            log.warn("拒绝跨主体写入调用历史: caller={}, declaredApiKeyId={}",
+                    authentication.getName(), record.getApiKeyId());
+            return ResponseEntity.status(ApiException.resolveStatus(ErrorCode.FORBIDDEN.code()))
+                    .body(RouterResponse.error(rejection, ErrorCode.FORBIDDEN.code()));
+        }
 
         callHistoryService.record(record);
         return ResponseEntity.ok(RouterResponse.success(null, "调用历史记录成功"));
+    }
+
+    /**
+     * 写入前的属主校验（issue #698）.
+     *
+     * <p>本端点在 RBAC 豁免清单上（仅要求已认证，见 {@code RbacExemptEndpoints}），而请求体里的
+     * {@code apiKeyId} / {@code userId} 完全由调用方控制（{@link CallHistoryRecordDTO}），服务层原样落库。
+     * 若不校验，任何持有效 API Key 的主体都能把调用记录记到<b>他人</b>的 Key 上，污染调用历史、统计与控制台看板，
+     * 且这种行为不会报错。</p>
+     *
+     * <p><b>收敛范围刻意最小</b>：仅当调用主体本身就是 API Key 时要求「只能写自己」
+     * （{@link ApiKeyAuthentication#getName()} 返回的是 keyId）；JWT / 管理面主体保持既有行为。
+     * 未声明 {@code apiKeyId} 时放行（无从矛盾）；主体为 {@code null} 时放行 —— 该端点仍要求认证，
+     * 未认证请求在安全链上已被拒绝。与 token-usage 的属主校验（issue #254）同口径。</p>
+     *
+     * @param authentication 当前认证主体，可为 {@code null}
+     * @param record         请求体，可为 {@code null}
+     * @return 拒绝原因；{@code null} 表示放行
+     */
+    private String crossPrincipalWriteError(final Authentication authentication, final CallHistoryRecordDTO record) {
+        if (!(authentication instanceof ApiKeyAuthentication)) {
+            return null;
+        }
+        final String ownKeyId = authentication.getName();
+        final String claimedApiKeyId = record != null ? record.getApiKeyId() : null;
+        if (ownKeyId == null || claimedApiKeyId == null || ownKeyId.equals(claimedApiKeyId)) {
+            return null;
+        }
+        return "API Key 主体只能写入自身的调用记录（声明的 apiKeyId 与当前 Key 不一致，已拒绝）";
     }
 
     /**
