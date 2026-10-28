@@ -34,6 +34,8 @@ import java.util.List;
  * @param completionTokens completion token 使用量（后端未提供时为 null）
  * @param totalTokens    total token 使用量（后端未提供时为 null）
  * @param finishReason   完成原因（如 {@code stop}、{@code length}，未获取时为 null）
+ * @param complete       流是否带终止标记（{@code [DONE]} / {@code finish_reason} / {@code message_stop}）；
+ *                       #721 起只有 complete 的流才允许写缓存
  * @author JAiRouter Team
  * @since 2.9.10
  */
@@ -43,6 +45,26 @@ public record CachedStreamingResponse(
         Long promptTokens,
         Long completionTokens,
         Long totalTokens,
-        String finishReason
+        String finishReason,
+        boolean complete
 ) {
+
+    /**
+     * 兼容既有调用点的六参构造器（#721 之前的形状）。
+     *
+     * <p>历史调用方没有终止标记信息，按「未确认完整」处理，避免把截断的血统当成完整流。</p>
+     *
+     * @param chunks           变换后的 SSE data 串列表
+     * @param model            模型名
+     * @param promptTokens     prompt token 数
+     * @param completionTokens completion token 数
+     * @param totalTokens      total token 数
+     * @param finishReason     完成原因
+     */
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public CachedStreamingResponse(final List<String> chunks, final String model,
+                                   final Long promptTokens, final Long completionTokens,
+                                   final Long totalTokens, final String finishReason) {
+        this(chunks, model, promptTokens, completionTokens, totalTokens, finishReason, false);
+    }
 }
