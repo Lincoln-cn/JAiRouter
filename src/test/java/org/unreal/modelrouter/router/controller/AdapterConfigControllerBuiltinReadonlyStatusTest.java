@@ -198,6 +198,10 @@ class AdapterConfigControllerBuiltinReadonlyStatusTest {
         final AdapterConfigController.AdapterDefinitionRequest request =
                 new AdapterConfigController.AdapterDefinitionRequest();
         request.setName(UNKNOWN_ADAPTER);
+        // issue #709 之后，缺 auth/capabilities 会在落库**之前**被校验拦成 400；
+        // 本用例要验的是兜底 catch 的 INTERNAL_ERROR，故补齐最小合法字段让它走到持久化。
+        request.setAuth(Map.of("headerName", "Authorization"));
+        request.setCapabilities(Map.of("chat", true));
 
         final ResponseEntity<RouterResponse<Map<String, Object>>> response = controller.createAdapter(request);
 
