@@ -6,7 +6,7 @@ import org.unreal.modelrouter.router.model.ModelRouterProperties;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -90,41 +90,47 @@ class ConsistentHashRingCacheTest {
     }
 
     @Test
-    @DisplayName("并发选择共享同一个环，不抛异常且只构建一次")
+    @DisplayName("并发选择共享同一个环：每轮只构建一次（20 轮不同实例集合）")
     void concurrentSelectionSharesASingleRing() throws Exception {
         ConsistentHashLoadBalancer loadBalancer = balancer();
-        List<ModelRouterProperties.ModelInstance> instances = instances("a", 5);
 
         int threads = 8;
-        int perThread = 100;
+        int rounds = 20;
+        int perThread = 10;
         ExecutorService pool = Executors.newFixedThreadPool(threads);
-        CountDownLatch start = new CountDownLatch(1);
-        List<Future<Integer>> futures = new ArrayList<>();
         try {
-            for (int t = 0; t < threads; t++) {
-                futures.add(pool.submit(() -> {
-                    start.await();
-                    int selected = 0;
-                    for (int i = 0; i < perThread; i++) {
-                        if (loadBalancer.selectInstance(instances, "10.0.1." + i, "chat") != null) {
-                            selected++;
+            for (int round = 0; round < rounds; round++) {
+                // 每轮换一批实例（不同的实例 ID），因此每轮都是一次「缓存未命中 + 并发构建」
+                List<ModelRouterProperties.ModelInstance> instances = instances("round" + round + "-", 20);
+                CyclicBarrier barrier = new CyclicBarrier(threads);
+                List<Future<Integer>> futures = new ArrayList<>();
+                for (int t = 0; t < threads; t++) {
+                    final int threadIndex = t;
+                    futures.add(pool.submit(() -> {
+                        barrier.await(30, TimeUnit.SECONDS);
+                        int selected = 0;
+                        for (int i = 0; i < perThread; i++) {
+                            String ip = "10." + threadIndex + ".1." + i;
+                            if (loadBalancer.selectInstance(instances, ip, "chat") != null) {
+                                selected++;
+                            }
                         }
-                    }
-                    return selected;
-                }));
-            }
-            start.countDown();
+                        return selected;
+                    }));
+                }
 
-            int total = 0;
-            for (Future<Integer> future : futures) {
-                total += future.get(30, TimeUnit.SECONDS);
+                int total = 0;
+                for (Future<Integer> future : futures) {
+                    total += future.get(30, TimeUnit.SECONDS);
+                }
+                assertEquals(threads * perThread, total, "每次选择都必须返回实例");
+                assertEquals(round + 1L, loadBalancer.getRingBuildCount(),
+                        "第 " + (round + 1) + " 轮并发选择只允许构建一次环");
             }
-            assertEquals(threads * perThread, total, "每次选择都必须返回实例");
         } finally {
             pool.shutdownNow();
         }
 
-        assertEquals(1L, loadBalancer.getRingBuildCount(), "并发选择只允许构建一次环");
         assertTrue(loadBalancer.getCachedRingCount() <= ConsistentHashLoadBalancer.getMaxCachedRings());
     }
 

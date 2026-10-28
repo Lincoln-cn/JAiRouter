@@ -259,18 +259,19 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
             return cached;
         }
 
-        final HashRing built = buildRing(instances);
-        ringBuildCount.incrementAndGet();
-        final HashRing existing = ringCache.putIfAbsent(key, built);
-        if (existing != null) {
-            return existing;
-        }
+        // 用 computeIfAbsent 而不是 get/build/putIfAbsent：后者在并发下会让多个线程同时构建同一个环
+        // （构建次数随并发线程数增长，且各自的对象被丢弃），CI 上已经抓到过一次（#687 收尾时修）。
+        final HashRing ring = ringCache.computeIfAbsent(key, ignored -> {
+            final HashRing built = buildRing(instances);
+            ringBuildCount.incrementAndGet();
+            return built;
+        });
 
         if (ringCache.size() > MAX_CACHED_RINGS) {
             logger.debug("Hash ring cache exceeded {} entries, clearing (key={})", MAX_CACHED_RINGS, key);
             ringCache.clear();
         }
-        return built;
+        return ring;
     }
 
     /**
