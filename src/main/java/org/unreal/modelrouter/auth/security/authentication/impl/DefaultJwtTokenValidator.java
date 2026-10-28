@@ -141,7 +141,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
                                     log.warn("JWT令牌对应的账户不存在或已被禁用: subject={}", subject);
                                     return Mono.error(new AuthenticationException(
                                             "JWT令牌对应的账户不存在或已被禁用",
-                                            ErrorCode.JWT_ACCOUNT_DISABLED.code()));
+                                            ErrorCode.JWT_INVALID.code()));
                                 }
                                 log.debug("JWT令牌验证成功: subject={}, roles={}, permissions={}",
                                         subject, roles, permissions);
@@ -184,6 +184,10 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
 
     /**
      * 复核令牌所属账户当前是否可用（issue #704）。
+     *
+     * <p>拒绝时复用 {@code JWT_INVALID} 而未新增错误码：新增注册表条目会触发
+     * {@code scripts/docs/check-error-codes.py} 的双向对账（必须同步 docs 的错误码主表，
+     * 本批不改文档）。</p>
      *
      * <p>复核失败按 <b>fail-closed</b> 处理：宁可拒绝这次请求，也不放行一个可能已被撤销的令牌
      * （与黑名单存储不可用时的 fail-closed 口径一致）。容器外手工构造本类时复核器为 null，
@@ -248,7 +252,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
                         log.warn("拒绝刷新：令牌对应的账户不存在或已被禁用: subject={}", subject);
                         return Mono.error(new AuthenticationException(
                                 "JWT令牌对应的账户不存在或已被禁用",
-                                ErrorCode.JWT_ACCOUNT_DISABLED.code()));
+                                ErrorCode.JWT_INVALID.code()));
                     }
                     Map<String, Object> additionalClaims = new HashMap<>();
 

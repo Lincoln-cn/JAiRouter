@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>修复前 {@code validateToken} 只查黑名单 + 验签 + 过期，完全不看账户状态：删掉或禁用账户后，
  * 旧令牌仍能在 {@code expiration-minutes}（默认 60 分钟）内通过鉴权，而且还能一路刷新续期。
- * 本测试在旧实现上是红的（会拿到正常的 {@link Authentication} 而不是 JWT_ACCOUNT_DISABLED）。</p>
+ * 本测试在旧实现上是红的（会拿到正常的 {@link Authentication} 而不是 JWT_INVALID）。</p>
  *
  * <p>账户解析顺序刻意与登录路径（{@code AccountManager}）一致：YAML 静态账户优先，DB 兜底。
  * 否则默认 {@code admin}（YAML 与 DB 双写）在 DB 行被删后会「能登录、但每次调用 401」。</p>
@@ -72,7 +72,7 @@ class JwtAccountStatusRevocationTest {
         when(jwtAccountRepository.findByUsername(USERNAME)).thenReturn(Optional.empty());
 
         StepVerifier.create(validator.validateToken(token()))
-                .expectErrorMatches(JwtAccountStatusRevocationTest::isAccountDisabledError)
+                .expectErrorMatches(JwtAccountStatusRevocationTest::isRejectedAsInvalidToken)
                 .verify();
     }
 
@@ -83,7 +83,7 @@ class JwtAccountStatusRevocationTest {
                 .thenReturn(Optional.of(account(USERNAME, Boolean.FALSE)));
 
         StepVerifier.create(validator.validateToken(token()))
-                .expectErrorMatches(JwtAccountStatusRevocationTest::isAccountDisabledError)
+                .expectErrorMatches(JwtAccountStatusRevocationTest::isRejectedAsInvalidToken)
                 .verify();
     }
 
@@ -127,7 +127,7 @@ class JwtAccountStatusRevocationTest {
         when(jwtAccountRepository.findByUsername(USERNAME)).thenReturn(Optional.empty());
 
         StepVerifier.create(validator.validateToken(token()))
-                .expectErrorMatches(JwtAccountStatusRevocationTest::isAccountDisabledError)
+                .expectErrorMatches(JwtAccountStatusRevocationTest::isRejectedAsInvalidToken)
                 .verify();
     }
 
@@ -137,7 +137,7 @@ class JwtAccountStatusRevocationTest {
         when(jwtAccountRepository.findByUsername(USERNAME)).thenReturn(Optional.empty());
 
         StepVerifier.create(validator.refreshToken(token()))
-                .expectErrorMatches(JwtAccountStatusRevocationTest::isAccountDisabledError)
+                .expectErrorMatches(JwtAccountStatusRevocationTest::isRejectedAsInvalidToken)
                 .verify();
     }
 
@@ -153,9 +153,9 @@ class JwtAccountStatusRevocationTest {
                 .verify();
     }
 
-    private static boolean isAccountDisabledError(final Throwable error) {
+    private static boolean isRejectedAsInvalidToken(final Throwable error) {
         return error instanceof SecurityException security
-                && ErrorCode.JWT_ACCOUNT_DISABLED.code().equals(security.getErrorCode());
+                && ErrorCode.JWT_INVALID.code().equals(security.getErrorCode());
     }
 
     private String token() {
