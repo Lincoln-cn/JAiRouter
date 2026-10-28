@@ -70,7 +70,8 @@ public class CustomReactiveAuthenticationManager implements ReactiveAuthenticati
             ));
         }
 
-        return apiKeyService.validateApiKey(apiKey)
+        // #693：此前调用单参重载，客户端 IP 恒为 null，配置了 IP 白名单的 Key 一律被判 401。
+        return apiKeyService.validateApiKey(apiKey, authentication.getEndpoint(), authentication.getClientIp())
                 .doOnNext(apiKeyInfo -> log.debug("API Key认证成功: {}", apiKeyInfo.getKeyId()))
                 .map(apiKeyInfo -> {
                     // 创建已认证的Authentication对象

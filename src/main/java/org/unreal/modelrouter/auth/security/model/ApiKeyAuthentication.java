@@ -23,6 +23,17 @@ public final class ApiKeyAuthentication implements Authentication {
     private final Collection<? extends GrantedAuthority> authorities;
     private boolean authenticated = false;
     private Object details;
+
+    /**
+     * 发起本次请求的客户端 IP（#693）。
+     *
+     * <p>由 {@link org.unreal.modelrouter.auth.filter.DefaultAuthenticationConverter} 从请求上下文解析后填入，
+     * 供认证链执行 IP 白名单判定与审计；不经过请求上下文直接构造（如单测）时为 {@code null}。</p>
+     */
+    private String clientIp;
+
+    /** 本次请求的路径，仅用于审计事件（#693）。 */
+    private String endpoint;
     
     /**
      * 构造函数 - 用于未认证的请求
@@ -33,6 +44,21 @@ public final class ApiKeyAuthentication implements Authentication {
         this.authorities = List.of();
     }
     
+    /**
+     * 构造函数 - 携带请求上下文（#693）。
+     *
+     * <p>认证链需要客户端 IP 才能执行 IP 白名单判定；此前单参构造只带 Key 值，白名单恒收到 null。</p>
+     *
+     * @param apiKey   未认证的 API Key 原值
+     * @param clientIp 客户端 IP
+     * @param endpoint 请求路径
+     */
+    public ApiKeyAuthentication(final String apiKey, final String clientIp, final String endpoint) {
+        this(apiKey);
+        this.clientIp = clientIp;
+        this.endpoint = endpoint;
+    }
+
     /**
      * 构造函数 - 用于已认证的请求
      */
