@@ -20,6 +20,7 @@ import org.unreal.modelrouter.common.dto.LoginRequest;
 import org.unreal.modelrouter.common.dto.LoginResponse;
 import org.unreal.modelrouter.common.dto.TokenRefreshRequest;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
+import org.unreal.modelrouter.auth.security.ratelimit.LoginBruteForceGuard;
 import org.unreal.modelrouter.auth.security.service.AccountManager;
 import org.unreal.modelrouter.auth.security.service.JwtTokenRefreshService;
 import org.unreal.modelrouter.auth.security.service.JwtPersistenceService;
@@ -43,6 +44,7 @@ public class JwtAuthController {
     private final JwtTokenRefreshService tokenRefreshService;
     private final AccountManager accountManager;
     private final SecurityProperties securityProperties;
+    private final LoginBruteForceGuard loginBruteForceGuard;
 
     @Autowired(required = false)
     private JwtPersistenceService jwtPersistenceService;
@@ -66,9 +68,12 @@ public class JwtAuthController {
         String clientIp = getClientIpAddress(exchange);
         String userAgent = exchange != null ? exchange.getRequest().getHeaders().getFirst("User-Agent") : null;
 
-        return accountManager.authenticateAndGenerateToken(
-                request.getUsername(), request.getPassword(),
-                securityProperties, clientIp, userAgent)
+        // issue #697：先查锁定态；accountManager 的调用放进 defer，锁定期间不会碰凭据校验
+        return loginBruteForceGuard.checkNotLocked(request.getUsername(), clientIp)
+                .then(Mono.defer(() -> accountManager.authenticateAndGenerateToken(
+                        request.getUsername(), request.getPassword(),
+                        securityProperties, clientIp, userAgent)))
+                .doOnNext(token -> loginBruteForceGuard.recordSuccess(request.getUsername(), clientIp))
                 .flatMap(token -> {
                     LoginResponse response = new LoginResponse();
                     response.setToken(token);
@@ -92,6 +97,12 @@ public class JwtAuthController {
                     }
                 })
                 .onErrorResume(ex -> {
+                    if (ex instanceof ApiException apiEx
+                            && ErrorCode.RATE_LIMITED_LOGIN.code().equals(apiEx.getErrorCode())) {
+                        // 锁定态原样返回 429，且不计入失败次数（否则锁定会被自己的拒绝无限延长）
+                        return Mono.error(apiEx);
+                    }
+                    loginBruteForceGuard.recordFailure(request.getUsername(), clientIp);
                     log.warn("用户登录失败: {}", ex.getMessage());
                     return Mono.error(ApiException.of(ErrorCode.LOGIN_FAILED.code(), "登录失败: " + ex.getMessage()));
                 });
