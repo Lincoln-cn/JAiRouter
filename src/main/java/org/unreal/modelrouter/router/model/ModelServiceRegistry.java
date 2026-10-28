@@ -99,6 +99,17 @@ public class ModelServiceRegistry {
     /** #688: 让「选择时加计数」与「完成时减计数」落在同一个 LB 实例上的记账器 */
     private final LoadBalancerCallTracker callTracker = new LoadBalancerCallTracker();
 
+    /**
+     * #690: 粘性包装器按「委托 LB」复用。
+     *
+     * <p>{@link StickyLoadBalancer} 内部用实例字段缓存
+     * 哈希环快照（指纹不变就不重建），在请求路径上每请求 new 一个等于缓存永不命中——每个请求都要
+     * 全量重建 {@code virtualNodes × 实例数} 次哈希。委托 LB 本身已按服务类型/策略缓存
+     * （#649），因此以它作键即可得到稳定复用；键的数量上界是「服务类型数 × 策略数」。</p>
+     */
+    private final java.util.Map<LoadBalancer, StickyLoadBalancer> stickyLoadBalancers =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     // v2.8.5: 规则引擎(延迟注入,避免循环依赖)
     private RuleEngineService ruleEngine;
 
@@ -368,7 +379,11 @@ public class ModelServiceRegistry {
                 ? AffinityContextHolder.resolveKey(stickyScope)
                 : AffinityContextHolder.get();
         if (affinityKey != null && stickyScope != null) {
-            loadBalancer = new StickyLoadBalancer(loadBalancer, serviceStateManager, circuitBreakerManager);
+            // #690: 复用粘性包装器，别每请求 new（内部哈希环快照缓存依赖实例复用）
+            final LoadBalancer sticky = stickyLoadBalancerFor(loadBalancer);
+            if (sticky != null) {
+                loadBalancer = sticky;
+            }
         }
 
         // v2.8.8: 服务级限流检查(每请求恰一次;实例级在 selectWithRateLimit 内;无配置零开销)
@@ -493,6 +508,32 @@ public class ModelServiceRegistry {
             loadBalancer.recordCallFailure(instance, durationMs, errorCode);
         }
         circuitBreakerManager.recordFailure(instance.getInstanceId(), instance.getBaseUrl());
+    }
+
+    /**
+     * #690: 取（必要时创建）委托 LB 对应的粘性包装器。
+     *
+     * <p>同一个委托 LB 永远拿到同一个包装器实例，因此其中的哈希环快照缓存能真正命中。
+     * 包装器本身无状态地按请求参数（affinityKey/instances）工作，复用不引入跨请求串扰。</p>
+     *
+     * @param delegate 被包装的负载均衡器
+     * @return 粘性包装器；{@code delegate} 为 null 时返回 null
+     */
+    LoadBalancer stickyLoadBalancerFor(final LoadBalancer delegate) {
+        if (delegate == null) {
+            return null;
+        }
+        return stickyLoadBalancers.computeIfAbsent(delegate,
+                key -> new StickyLoadBalancer(key, serviceStateManager, circuitBreakerManager));
+    }
+
+    /**
+     * #690: 当前缓存的粘性包装器数量（供测试与排障使用）。
+     *
+     * @return 缓存条目数
+     */
+    int getStickyLoadBalancerCacheSize() {
+        return stickyLoadBalancers.size();
     }
 
     /**
