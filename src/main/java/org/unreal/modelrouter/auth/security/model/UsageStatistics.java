@@ -11,8 +11,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * API Key使用统计数据模型
@@ -57,6 +57,60 @@ public class UsageStatistics {
     private Map<String, Long> dailyTokenUsage;
 
     /**
+     * 读取每日请求统计（并发安全的惰性初始化）.
+     *
+     * <p>#715：底层换成 {@link ConcurrentHashMap}，并在这里做一次「旧数据迁移」——
+     * 反序列化（Jackson）与历史落库数据里都可能是普通 {@code HashMap}，直接换成并发容器
+     * 才不会让并发的 {@code merge} 与 {@code clear} 相互踩踏。</p>
+     *
+     * @return 非空且并发安全的「日期 -> 请求数」映射
+     */
+    public Map<String, Long> getDailyUsage() {
+        if (dailyUsage == null) {
+            dailyUsage = new ConcurrentHashMap<>();
+        } else if (!(dailyUsage instanceof ConcurrentHashMap)) {
+            dailyUsage = new ConcurrentHashMap<>(dailyUsage);
+        }
+        return dailyUsage;
+    }
+
+    /**
+     * 设置每日请求统计（写入时统一复制成并发容器）.
+     *
+     * @param dailyUsage 外部传入的映射，可为 {@code null}
+     */
+    public void setDailyUsage(final Map<String, Long> dailyUsage) {
+        this.dailyUsage = dailyUsage == null
+                ? new ConcurrentHashMap<>()
+                : new ConcurrentHashMap<>(dailyUsage);
+    }
+
+    /**
+     * 读取每日 Token 统计（并发安全的惰性初始化）.
+     *
+     * @return 非空且并发安全的「日期 -> Token 数」映射
+     */
+    public Map<String, Long> getDailyTokenUsage() {
+        if (dailyTokenUsage == null) {
+            dailyTokenUsage = new ConcurrentHashMap<>();
+        } else if (!(dailyTokenUsage instanceof ConcurrentHashMap)) {
+            dailyTokenUsage = new ConcurrentHashMap<>(dailyTokenUsage);
+        }
+        return dailyTokenUsage;
+    }
+
+    /**
+     * 设置每日 Token 统计（写入时统一复制成并发容器）.
+     *
+     * @param dailyTokenUsage 外部传入的映射，可为 {@code null}
+     */
+    public void setDailyTokenUsage(final Map<String, Long> dailyTokenUsage) {
+        this.dailyTokenUsage = dailyTokenUsage == null
+                ? new ConcurrentHashMap<>()
+                : new ConcurrentHashMap<>(dailyTokenUsage);
+    }
+
+    /**
      * 获取成功率
      * @return 成功率（0-1之间的小数）
      */
@@ -71,7 +125,7 @@ public class UsageStatistics {
      * 增加请求统计
      * @param success 请求是否成功
      */
-    public void incrementRequest(final boolean success) {
+    public synchronized void incrementRequest(final boolean success) {
         totalRequests++;
         if (success) {
             successfulRequests++;
@@ -79,11 +133,9 @@ public class UsageStatistics {
             failedRequests++;
         }
         lastUsedAt = LocalDateTime.now();
-        String today = LocalDateTime.now().toLocalDate().toString();
-        if (dailyUsage == null) {
-            dailyUsage = new HashMap<>();
-        }
-        dailyUsage.put(today, dailyUsage.getOrDefault(today, 0L) + 1);
+        final String today = LocalDateTime.now().toLocalDate().toString();
+        // #715：merge 是 ConcurrentHashMap 上的原子读改写，替代 getOrDefault + put
+        getDailyUsage().merge(today, 1L, Long::sum);
     }
 
     /**
@@ -94,11 +146,8 @@ public class UsageStatistics {
         if (tokens <= 0) {
             return;
         }
-        String today = LocalDateTime.now().toLocalDate().toString();
-        if (dailyTokenUsage == null) {
-            dailyTokenUsage = new HashMap<>();
-        }
-        dailyTokenUsage.put(today, dailyTokenUsage.getOrDefault(today, 0L) + tokens);
+        final String today = LocalDateTime.now().toLocalDate().toString();
+        getDailyTokenUsage().merge(today, tokens, Long::sum);
     }
 
     /**

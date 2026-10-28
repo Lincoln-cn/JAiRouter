@@ -45,7 +45,10 @@ class ApiKeyServiceUpdateTokenUsageThreadingTest {
     private static final String KEY_HASH = "hash-1";
 
     /**
-     * 手写存根：捕获 {@code saveApiKeysToStore} 的执行线程与是否处于 Reactor 非阻塞线程。
+     * 手写存根：捕获 {@code saveSingleApiKey} 的执行线程与是否处于 Reactor 非阻塞线程。
+     *
+     * <p>#715 之后 {@code updateTokenUsage} 只落盘被更新的那一个 Key（不再整份覆盖），
+     * 所以拦截点从 {@code saveApiKeysToStore} 换成了 {@code saveSingleApiKey}。</p>
      */
     private static final class CapturingPersistenceService extends ApiKeyPersistenceService {
 
@@ -58,7 +61,7 @@ class ApiKeyServiceUpdateTokenUsageThreadingTest {
         }
 
         @Override
-        public void saveApiKeysToStore(final Map<String, ApiKey> apiKeyCache) {
+        public void saveSingleApiKey(final Map<String, ApiKey> apiKeyCache, final String keyHash) {
             threadName.set(Thread.currentThread().getName());
             nonBlocking.set(Schedulers.isInNonBlockingThread());
             latch.countDown();
@@ -94,7 +97,7 @@ class ApiKeyServiceUpdateTokenUsageThreadingTest {
         assertTrue(persistence.latch.await(AWAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS),
                 "存储写入必须最终在 boundedElastic 上完成");
         assertFalse(persistence.nonBlocking.get(),
-                "saveApiKeysToStore 不得在 Reactor 非阻塞线程（事件循环）上执行");
+                "saveSingleApiKey 不得在 Reactor 非阻塞线程（事件循环）上执行");
         assertTrue(persistence.threadName.get().contains("boundedElastic"),
                 "存储写入应在 boundedElastic 线程上执行，实际: " + persistence.threadName.get());
     }
