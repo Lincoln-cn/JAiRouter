@@ -66,6 +66,14 @@ public class WebClientPool {
 
     private final Map<String, WebClient> clientCache = new ConcurrentHashMap<>();
 
+    /**
+     * 缓存条目上限：正常部署应为「上游实例数 × 变体数」，触顶说明存在不稳定缓存键。
+     *
+     * <p>见 #699：缓存键曾包含配置器的 identity hash，导致 tracing 热路径每次请求都新建
+     * 一个 WebClient 且缓存无界增长。</p>
+     */
+    static final int MAX_CACHED_CLIENTS = 256;
+
     /** 统计：命中次数 */
     private final AtomicLong hitCount = new AtomicLong(0);
 
@@ -153,30 +161,71 @@ public class WebClientPool {
     }
 
     /**
-     * 获取或创建 WebClient 实例（带自定义配置）
-     * 
-     * 注意：配置器只在首次创建时调用，后续命中缓存时不会调用
-     * 
-     * @param baseUrl 基础 URL
+     * 获取或创建 WebClient 实例（带自定义配置，使用默认缓存变体）
+     *
+     * <p>注意：配置器只在首次创建时调用，后续命中缓存时不会调用。</p>
+     *
+     * @param baseUrl      基础 URL
      * @param configurator WebClient.Builder 配置器（可为 null）
      * @return 缓存或新创建的 WebClient 实例
      */
-    public WebClient getOrCreate(String baseUrl, Consumer<WebClient.Builder> configurator) {
+    public WebClient getOrCreate(final String baseUrl, final Consumer<WebClient.Builder> configurator) {
+        return getOrCreate(baseUrl, null, configurator);
+    }
+
+    /**
+     * 获取或创建 WebClient 实例（带稳定缓存变体名）
+     *
+     * <p>缓存键 = 规范化 baseUrl + 稳定变体名，**不再包含配置器的 hashCode**：配置器常是每次
+     * 调用新建的 lambda，identity hash 每次都不同，用它做键会让缓存永不命中、条目随请求线性
+     * 增长（#699）。同一个 baseUrl 需要不同配置器时，必须给一个稳定且有限的变体名
+     * （例如 tracing 拦截器传 {@code "tracing"}）。</p>
+     *
+     * @param baseUrl      基础 URL
+     * @param variantKey   稳定变体名；null 或空白表示默认变体
+     * @param configurator WebClient.Builder 配置器（可为 null，仅首次创建时调用）
+     * @return 缓存或新创建的 WebClient 实例
+     */
+    public WebClient getOrCreate(final String baseUrl, final String variantKey,
+                                 final Consumer<WebClient.Builder> configurator) {
         // SSRF 门闩收敛在此：所有出站 WebClient（含 tracing 热路径）都经此创建
         final String normalizedBaseUrl = SsrfGuard.validateOutboundBaseUrl(baseUrl);
-        // 使用规范化 baseUrl + configurator hashCode 作为缓存 key，等价 URL 不重复建池
-        String cacheKey = configurator != null 
-                ? normalizedBaseUrl + "#" + configurator.hashCode() 
-                : normalizedBaseUrl;
-        
-        WebClient cached = clientCache.get(cacheKey);
+        final String cacheKey = cacheKey(normalizedBaseUrl, variantKey);
+
+        final WebClient cached = clientCache.get(cacheKey);
         if (cached != null) {
             hitCount.incrementAndGet();
             return cached;
         }
 
         missCount.incrementAndGet();
+        evictWhenOversized(cacheKey);
         return clientCache.computeIfAbsent(cacheKey, key -> createWebClient(normalizedBaseUrl, configurator));
+    }
+
+    /**
+     * 组合缓存键：规范化 baseUrl + 稳定变体名。
+     *
+     * @param normalizedBaseUrl 规范化后的 baseUrl
+     * @param variantKey        稳定变体名，null 或空白表示默认变体
+     * @return 缓存键
+     */
+    static String cacheKey(final String normalizedBaseUrl, final String variantKey) {
+        return variantKey == null || variantKey.isBlank()
+                ? normalizedBaseUrl
+                : normalizedBaseUrl + "#" + variantKey;
+    }
+
+    /**
+     * 缓存条目触顶时整体清理：宁可重建，也不要让缓存无界增长。
+     *
+     * @param newKey 即将插入的键
+     */
+    private void evictWhenOversized(final String newKey) {
+        if (clientCache.size() >= MAX_CACHED_CLIENTS && !clientCache.containsKey(newKey)) {
+            logger.warn("WebClient 缓存条目达到上限 {}，整体清理（说明存在不稳定缓存键）", MAX_CACHED_CLIENTS);
+            clientCache.clear();
+        }
     }
 
     /**

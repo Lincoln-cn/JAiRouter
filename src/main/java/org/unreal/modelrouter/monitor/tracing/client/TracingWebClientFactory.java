@@ -25,6 +25,9 @@ import org.unreal.modelrouter.router.http.WebClientPool;
 @ConditionalOnProperty(name = "jairouter.tracing.enabled", havingValue = "true", matchIfMissing = true)
 public class TracingWebClientFactory {
 
+    /** 缓存变体名：与其他出站客户端共享 baseUrl 时区分 tracing 拦截器配置（#699）。 */
+    private static final String TRACING_VARIANT = "tracing";
+
     private final BackendCallTracingInterceptor tracingInterceptor;
     private final WebClientPool webClientPool;
 
@@ -42,7 +45,8 @@ public class TracingWebClientFactory {
      * @return 配置了追踪拦截器的WebClient
      */
     public WebClient createTracingWebClient(final String baseUrl) {
-        return webClientPool.getOrCreate(baseUrl, builder -> {
+        // #699：给出稳定变体名，避免用 lambda 的 identity hash 当缓存键
+        return webClientPool.getOrCreate(baseUrl, TRACING_VARIANT, builder -> {
             builder.filter(tracingInterceptor);
         });
     }
