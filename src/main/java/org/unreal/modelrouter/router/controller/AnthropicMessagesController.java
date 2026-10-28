@@ -16,6 +16,9 @@
 
 package org.unreal.modelrouter.router.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.common.dto.ChatDTO;
+import org.unreal.modelrouter.common.exceptionhandler.V1ErrorBodyMapper;
 import org.unreal.modelrouter.router.anthropic.AnthropicCountTokensResponse;
 import org.unreal.modelrouter.router.anthropic.AnthropicMessagesRequest;
 import org.unreal.modelrouter.router.anthropic.AnthropicMessagesResponse;
@@ -41,6 +45,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -86,14 +91,34 @@ import java.util.Map;
 public class AnthropicMessagesController {
 
     /**
-     * Anthropic 错误体中的错误类型：请求不合法.
-     */
-    private static final String ERROR_TYPE_INVALID_REQUEST = "invalid_request_error";
-
-    /**
      * Anthropic 错误体中的对象类型.
      */
     private static final String ERROR_OBJECT_TYPE = "error";
+
+    /**
+     * Anthropic 错误类型：上游过载（Anthropic 用 529 表示；网关自身不产出该状态码，只在下游透传时保留语义）.
+     */
+    private static final String ERROR_TYPE_OVERLOADED = "overloaded_error";
+
+    /**
+     * Anthropic 的「上游过载」状态码（{@link V1ErrorBodyMapper#errorTypeOf(int)} 未收录，需单独映射）.
+     */
+    private static final int HTTP_STATUS_OVERLOADED = 529;
+
+    /**
+     * 透出给客户端的下游错误消息上限（字符数）：下游错误体可能是整页 HTML，不能原样塞进错误体.
+     */
+    private static final int MAX_ERROR_MESSAGE_LENGTH = 500;
+
+    /**
+     * 下游错误体里可直接取作消息的字段（按优先级）.
+     */
+    private static final List<String> MESSAGE_FIELDS = List.of("message", "detail", "error_description");
+
+    /**
+     * 只读解析下游错误体用的 ObjectMapper（{@code readTree} 线程安全）.
+     */
+    private static final ObjectMapper ERROR_BODY_MAPPER = new ObjectMapper();
 
     private final ServiceRequestHandler requestHandler;
     private final AnthropicRequestTranslator requestTranslator;
@@ -219,7 +244,8 @@ public class AnthropicMessagesController {
      * 下游流式响应 → Anthropic 事件流响应.
      *
      * <p>成功分支要求响应体为 {@code Flux<ServerSentEvent<String>>}（流式处理器产出）；非 2xx
-     * 原样透传（与非流式分支同理）；形态异常降级为 502 + Anthropic 错误体。</p>
+     * 按状态码翻译为 Anthropic 错误体（{@link #toAnthropicError}，与本地错误同一张映射表）；
+     * 形态异常降级为 502 + Anthropic 错误体。</p>
      *
      * @param downstream     下游响应实体（body 为 SSE 流）
      * @param requestedModel 请求侧模型名（{@code message_start.message.model}）
@@ -234,7 +260,7 @@ public class AnthropicMessagesController {
             return anthropicError(HttpStatus.BAD_GATEWAY, "下游服务未返回响应");
         }
         if (!downstream.getStatusCode().is2xxSuccessful()) {
-            return downstream;
+            return toAnthropicError(downstream);
         }
         if (!(downstream.getBody() instanceof Flux<?> downstreamStream)) {
             final Object body = downstream.getBody();
@@ -251,7 +277,9 @@ public class AnthropicMessagesController {
      * 下游原生响应 → Anthropic Message 响应.
      *
      * <p>成功分支要求响应体为原生 JSON 字符串（置了原生标记后由 {@code NonStreamingRequestProcessor}
-     * 产出）；非 2xx 原样透传（其错误体与状态码由下游/网关既有机制给出，避免此处二次包装丢失语义）。</p>
+     * 产出）；非 2xx 按状态码翻译为 Anthropic 错误体（{@link #toAnthropicError}）—— 下游多为 OpenAI
+     * 形状（{@code {"error":{"message","type","code"}}}），原样透传会让 Anthropic 客户端解析不到错误
+     * 消息（issue #685）。</p>
      *
      * @param downstream     下游响应实体
      * @param requestedModel 请求侧模型名（下游缺 {@code model} 时回填）
@@ -263,7 +291,7 @@ public class AnthropicMessagesController {
             return anthropicError(HttpStatus.BAD_GATEWAY, "下游服务未返回响应");
         }
         if (!downstream.getStatusCode().is2xxSuccessful()) {
-            return downstream;
+            return toAnthropicError(downstream);
         }
         final Object body = downstream.getBody();
         if (!(body instanceof String nativeJson)) {
@@ -286,16 +314,184 @@ public class AnthropicMessagesController {
      * @return Anthropic 错误响应
      */
     private ResponseEntity<?> anthropicError(final HttpStatus status, final String message) {
+        return anthropicError(status.value(), message);
+    }
+
+    /**
+     * 构造 Anthropic 错误响应体（状态码以 {@code int} 给出，用于保留 529 等非枚举状态码）.
+     *
+     * <p>{@code error.type} 由<b>状态码</b>决定（{@link #errorTypeFor(int)}），不再一律写
+     * {@code invalid_request_error} —— 502 却报「请求不合法」会误导客户端按参数错误重试（issue #685）。</p>
+     *
+     * @param statusCode HTTP 状态码
+     * @param message    错误描述
+     * @return Anthropic 错误响应
+     */
+    private ResponseEntity<?> anthropicError(final int statusCode, final String message) {
         final Map<String, Object> error = new LinkedHashMap<>();
-        error.put("type", ERROR_TYPE_INVALID_REQUEST);
+        error.put("type", errorTypeFor(statusCode));
         error.put("message", message);
 
         final Map<String, Object> body = new LinkedHashMap<>();
         body.put("type", ERROR_OBJECT_TYPE);
         body.put("error", error);
 
-        return ResponseEntity.status(status)
+        return ResponseEntity.status(statusCode)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body);
+    }
+
+    /**
+     * HTTP 状态码 → Anthropic 错误类型.
+     *
+     * <p>与网关其余 {@code /v1/**} 错误体共用 {@link V1ErrorBodyMapper#errorTypeOf(int)} 这张表
+     * （400/401/403/404/429 逐项、其余 4xx → {@code invalid_request_error}、5xx → {@code api_error}），
+     * 仅补一个共享表里没有的 529（Anthropic 的「上游过载」，只在透传下游时出现）。</p>
+     *
+     * @param statusCode HTTP 状态码
+     * @return Anthropic 错误类型（{@code invalid_request_error} / {@code authentication_error} /
+     *         {@code permission_error} / {@code not_found_error} / {@code rate_limit_error} /
+     *         {@code api_error} / {@code overloaded_error}）
+     */
+    static String errorTypeFor(final int statusCode) {
+        return statusCode == HTTP_STATUS_OVERLOADED
+                ? ERROR_TYPE_OVERLOADED
+                : V1ErrorBodyMapper.errorTypeOf(statusCode);
+    }
+
+    /**
+     * 下游非 2xx 响应 → Anthropic 错误响应（状态码保持不变，错误体换成 Anthropic 形状）.
+     *
+     * @param downstream 下游响应（body 可能是下游原生 JSON 字符串、Map 或纯文本）
+     * @return Anthropic 错误响应
+     */
+    private ResponseEntity<?> toAnthropicError(final ResponseEntity<?> downstream) {
+        final int statusCode = downstream.getStatusCode().value();
+        final String message = downstreamErrorMessage(downstream.getBody(), statusCode);
+        log.warn("Anthropic /v1/messages: 下游返回非 2xx(status={}), 错误体已翻译为 Anthropic 形状", statusCode);
+        return anthropicError(statusCode, message);
+    }
+
+    /**
+     * 从下游错误体中取出可读消息（取不到时按状态码兜底）.
+     *
+     * <p>下游错误体至少有三类形状：OpenAI 形状 {@code {"error":{"message","type","code"}}}、Anthropic
+     * 形状 {@code {"type":"error","error":{"type","message"}}}、以及网关自身的
+     * {@code RouterResponse}（{@code {"message":...}}）；非 JSON 的下游正文（如 HTML 错误页）按原样取出。</p>
+     *
+     * @param body       下游响应体，可为 {@code null}
+     * @param statusCode 下游状态码（取不到消息时用于兜底文案）
+     * @return 截断后的可读消息
+     */
+    static String downstreamErrorMessage(final Object body, final int statusCode) {
+        String message = messageOf(body);
+        if (message == null || message.isBlank()) {
+            final HttpStatus resolved = HttpStatus.resolve(statusCode);
+            message = "下游服务返回错误: " + statusCode
+                    + (resolved == null || resolved.getReasonPhrase().isBlank()
+                            ? "" : " " + resolved.getReasonPhrase());
+        }
+        return truncateMessage(message);
+    }
+
+    /**
+     * 取出下游错误体里的消息（不保证非空）.
+     *
+     * @param body 下游响应体，可为 {@code null}
+     * @return 消息；取不到时为 {@code null}
+     */
+    private static String messageOf(final Object body) {
+        if (body == null) {
+            return null;
+        }
+        if (body instanceof String text) {
+            final JsonNode json = parseErrorJson(text);
+            final String fromJson = json == null ? null : messageFromJsonNode(json);
+            return fromJson != null ? fromJson : text;
+        }
+        return messageFromJsonNode(ERROR_BODY_MAPPER.valueToTree(body));
+    }
+
+    /**
+     * 把文本解析为 JSON（失败返回 {@code null}，调用方据此按纯文本处理）.
+     *
+     * @param text 待解析文本
+     * @return JSON 节点；非 JSON 时为 {@code null}
+     */
+    private static JsonNode parseErrorJson(final String text) {
+        final String trimmed = text.trim();
+        if (!trimmed.startsWith("{")) {
+            return null;
+        }
+        try {
+            return ERROR_BODY_MAPPER.readTree(trimmed);
+        } catch (JsonProcessingException | RuntimeException e) {
+            return null;
+        }
+    }
+
+    /**
+     * 按「{@code error.message} → {@code message}/{@code detail}/{@code error_description} → 文本本身」取值.
+     *
+     * @param node JSON 节点，可为 {@code null}
+     * @return 消息；取不到时为 {@code null}
+     */
+    private static String messageFromJsonNode(final JsonNode node) {
+        if (node == null || node.isNull()) {
+            return null;
+        }
+        if (node.isTextual()) {
+            return blankToNull(node.asText());
+        }
+        final JsonNode error = node.get("error");
+        if (error != null) {
+            if (error.isTextual()) {
+                final String asText = blankToNull(error.asText());
+                if (asText != null) {
+                    return asText;
+                }
+            } else {
+                final JsonNode nested = error.get("message");
+                if (nested != null && nested.isTextual()) {
+                    final String asText = blankToNull(nested.asText());
+                    if (asText != null) {
+                        return asText;
+                    }
+                }
+            }
+        }
+        for (final String field : MESSAGE_FIELDS) {
+            final JsonNode value = node.get(field);
+            if (value != null && value.isTextual()) {
+                final String asText = blankToNull(value.asText());
+                if (asText != null) {
+                    return asText;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 空白字符串归一为 {@code null}.
+     *
+     * @param value 原值
+     * @return 去空白后的值；空白时为 {@code null}
+     */
+    private static String blankToNull(final String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    /**
+     * 截断超长消息（下游可能返回整页 HTML）.
+     *
+     * @param message 原消息
+     * @return 长度不超过 {@link #MAX_ERROR_MESSAGE_LENGTH}（含省略号）的消息
+     */
+    private static String truncateMessage(final String message) {
+        final String trimmed = message.trim();
+        return trimmed.length() <= MAX_ERROR_MESSAGE_LENGTH
+                ? trimmed
+                : trimmed.substring(0, MAX_ERROR_MESSAGE_LENGTH) + "…";
     }
 }
