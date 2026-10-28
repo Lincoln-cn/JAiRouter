@@ -43,6 +43,9 @@ import java.util.Map;
  *
  * <p>issue #431：multipart 分支**外层** {@code onErrorResume} 的日志也并入同一分流口径（此前它自带
  * 「Multipart请求认证过程中发生认证异常」+ 栈的旧文案，见 {@link #handleMultipartAuthentication}）。</p>
+ *
+ * <p>issue #686：错误体是 JSON，写体前显式声明 {@code Content-Type: application/json}
+ * （此前该头缺失，客户端与中间件只能依赖内容嗅探）。错误体形状与状态码不变。</p>
  */
 @Slf4j
 public class SpringSecurityAuthenticationFilter implements WebFilter {
@@ -353,6 +356,8 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
             }
 
             response.setStatusCode(status);
+            // issue #686：错误体是 JSON，必须显式声明 Content-Type（此前缺失，客户端只能靠嗅探）
+            response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
             final String errorType = V1ErrorBodyMapper.errorTypeOf(status.value());
             final String path = exchange.getRequest().getPath().value();
             final String errorResponse;
