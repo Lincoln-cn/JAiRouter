@@ -400,157 +400,160 @@ public class ServiceRequestHandler {
         // v2.9.0: 存储亲和性上下文原始组件(callerId, clientIp, serviceType, modelName)
         // 在 ModelServiceRegistry 中按 sticky.scope 配置动态解析为正确粒度的亲和性键
         String callerId = extractCallerId(httpRequest);
-        AffinityContextHolder.set(callerId, clientIp, serviceType.name(), modelName);
+        // #689: 亲和性上下文在进入任何早退分支之前就写入，因此用 try/finally 保证
+        // 「写入了就一定清理」—— 限流 429 的三处早退也曾跳过清理，把上一个请求的标识
+        // 留给复用同一 boundedElastic 线程的下一个请求。
+        try {
+            AffinityContextHolder.set(callerId, clientIp, serviceType.name(), modelName);
 
-        // v2.8.5: 提取请求头用于规则引擎路由(仅用于规则匹配,不影响出站转发)
-        Map<String, String> requestHeaders = new HashMap<>();
-        if (httpRequest.getHeaders() != null) {
-            httpRequest.getHeaders().forEach((key, values) -> {
-                if (!values.isEmpty()) {
-                    requestHeaders.put(key, values.get(0));
-                }
-            });
-        }
-
-        // v3.5.2: 终端用户级限流（默认关闭）——按 (API Key, 终端用户) 的固定分钟窗口计数。
-        // 位置刻意早于缓存预扣与缓存读：限流是硬边界，超限 429 不得被缓存命中绕过。
-        // 未装配该服务（或 enabled=false）时此块整段跳过，零行为变更。
-        if (endUserRateLimitService != null) {
-            final String endUserHeader = httpRequest.getHeaders() == null
-                    ? null : httpRequest.getHeaders().getFirst(EndUserRateLimitProperties.HEADER_NAME);
-            final Optional<EndUserRateLimitCounter.Decision> endUserDecision = endUserRateLimitService.evaluate(
-                    callerId,
-                    httpRequest.getAttributes().get(REQUEST_DTO_ATTRIBUTE),
-                    endUserHeader,
-                    serviceType,
-                    isJwtCaller(callerId));
-            if (endUserDecision.isPresent() && !endUserDecision.get().allowed()) {
-                return rejectByEndUserLimit(exchange, endUserDecision.get());
+            // v2.8.5: 提取请求头用于规则引擎路由(仅用于规则匹配,不影响出站转发)
+            Map<String, String> requestHeaders = new HashMap<>();
+            if (httpRequest.getHeaders() != null) {
+                httpRequest.getHeaders().forEach((key, values) -> {
+                    if (!values.isEmpty()) {
+                        requestHeaders.put(key, values.get(0));
+                    }
+                });
             }
-        }
 
-        // v3.5.2 (#623): 客户端维度限流（client-ip / api-key / tenant）—— 之前实现完整但主链路
-        // 从未调用（tryAcquireClientIp 只被测试调用），配置与文档口径因此长期失真。
-        // 是否生效由 model.rate-limit.client-ip-enable（或服务级同名开关）决定，仓库默认全部为
-        // false：集群 + 无反代场景下所有客户端共用一个出口 IP，按 IP 计数会把它们合并限流。
-        // 与终端用户层同理，位置早于缓存预扣与缓存读（限流是硬边界）。
-        if (rateLimitManager != null
-                && !rateLimitManager.tryAcquireClientIp(
-                        new RateLimitContext(serviceType, modelName, clientIp, 1, null, null))) {
-            applyRateLimitRetryHints(exchange, HttpStatus.TOO_MANY_REQUESTS.value());
-            return Mono.error(new ResponseStatusException(
-                    HttpStatus.TOO_MANY_REQUESTS,
-                    "Client-dimension rate limit exceeded for service type '" + serviceType + "'"));
-        }
+            // v3.5.2: 终端用户级限流（默认关闭）——按 (API Key, 终端用户) 的固定分钟窗口计数。
+            // 位置刻意早于缓存预扣与缓存读：限流是硬边界，超限 429 不得被缓存命中绕过。
+            // 未装配该服务（或 enabled=false）时此块整段跳过，零行为变更。
+            if (endUserRateLimitService != null) {
+                final String endUserHeader = httpRequest.getHeaders() == null
+                        ? null : httpRequest.getHeaders().getFirst(EndUserRateLimitProperties.HEADER_NAME);
+                final Optional<EndUserRateLimitCounter.Decision> endUserDecision = endUserRateLimitService.evaluate(
+                        callerId,
+                        httpRequest.getAttributes().get(REQUEST_DTO_ATTRIBUTE),
+                        endUserHeader,
+                        serviceType,
+                        isJwtCaller(callerId));
+                if (endUserDecision.isPresent() && !endUserDecision.get().allowed()) {
+                    return rejectByEndUserLimit(exchange, endUserDecision.get());
+                }
+            }
 
-        // v2.9.10: 服务级限流预扣 + 缓存提前短路
-        // 当缓存键存在时（缓存启用+请求可缓存），在 selectInstance 前：
-        //   1. 预扣服务级限流（限流是硬边界，超限 429 优先于缓存——即使缓存有值也不放行）
-        //   2. 标记已限流（selectInstance 内部跳过重复扣减，保持恰一次语义）
-        //   3. 查缓存：命中直接返回（省去实例选择开销）；未命中继续 selectInstance
-        // 无缓存键时（disabled/非确定性/无 DTO）：不预扣、不标记——selectInstance 内部限流（行为与现状完全一致）
-        Object cacheKey = httpRequest != null
-                ? httpRequest.getAttributes().get(CACHE_KEY_ATTRIBUTE) : null;
-        boolean cachePathActive = cacheKey instanceof String key && !key.isBlank();
-
-        if (cachePathActive && rateLimitManager != null) {
-            if (!rateLimitManager.tryAcquireService(serviceType, clientIp, modelName)) {
-                // v3.5.2 (#624): 服务级限流拒绝补退避提示，客户端才知道该等多久
+            // v3.5.2 (#623): 客户端维度限流（client-ip / api-key / tenant）—— 之前实现完整但主链路
+            // 从未调用（tryAcquireClientIp 只被测试调用），配置与文档口径因此长期失真。
+            // 是否生效由 model.rate-limit.client-ip-enable（或服务级同名开关）决定，仓库默认全部为
+            // false：集群 + 无反代场景下所有客户端共用一个出口 IP，按 IP 计数会把它们合并限流。
+            // 与终端用户层同理，位置早于缓存预扣与缓存读（限流是硬边界）。
+            if (rateLimitManager != null
+                    && !rateLimitManager.tryAcquireClientIp(
+                            new RateLimitContext(serviceType, modelName, clientIp, 1, null, null))) {
                 applyRateLimitRetryHints(exchange, HttpStatus.TOO_MANY_REQUESTS.value());
                 return Mono.error(new ResponseStatusException(
                         HttpStatus.TOO_MANY_REQUESTS,
-                        "Service rate limit exceeded for service type '" + serviceType + "'"));
-            }
-            ServiceRateLimitHolder.markAcquired();
-        }
-
-        try {
-            // v2.9.10: 响应缓存读 — 限流预扣后、selectInstance 之前(命中直接跳过实例选择)
-            ResponseEntity<?> cachedResponse =
-                    cacheResolver().readCached(httpRequest, serviceType, modelName, exchange);
-            if (cachedResponse != null) {
-                return Mono.just(cachedResponse);
+                        "Client-dimension rate limit exceeded for service type '" + serviceType + "'"));
             }
 
-            // v3.1 PR-2: 配额限额判定 + 预留 — selectInstance 之前（缓存命中已先行短路）
-            Optional<QuotaLimitViolation> quotaViolation =
-                    reserveQuota(exchange, httpRequest, callerId);
-            if (quotaViolation.isPresent()) {
-                return rejectByQuota(exchange, quotaViolation.get());
-            }
+            // v2.9.10: 服务级限流预扣 + 缓存提前短路
+            // 当缓存键存在时（缓存启用+请求可缓存），在 selectInstance 前：
+            //   1. 预扣服务级限流（限流是硬边界，超限 429 优先于缓存——即使缓存有值也不放行）
+            //   2. 标记已限流（selectInstance 内部跳过重复扣减，保持恰一次语义）
+            //   3. 查缓存：命中直接返回（省去实例选择开销）；未命中继续 selectInstance
+            // 无缓存键时（disabled/非确定性/无 DTO）：不预扣、不标记——selectInstance 内部限流（行为与现状完全一致）
+            Object cacheKey = httpRequest != null
+                    ? httpRequest.getAttributes().get(CACHE_KEY_ATTRIBUTE) : null;
+            boolean cachePathActive = cacheKey instanceof String key && !key.isBlank();
 
-            // 1. 选择实例
-            ModelRouterProperties.ModelInstance selectedInstance;
-            try {
-                selectedInstance = selectInstance(
-                        serviceType, modelName, clientIp, tracingContext, requestHeaders);
-            } catch (Exception e) {
-                logger.error("Failed to select instance for service: {}, model: {}",
-                        serviceType, modelName, e);
-                // v3.5.2 (#624): selectInstance 内部的限流拒绝（服务级 429 / 实例全限 503）
-                // 也只带状态码与消息，这里补 Retry-After；其余异常不受影响
-                if (e instanceof ResponseStatusException statusError) {
-                    applyRateLimitRetryHints(exchange, statusError.getStatusCode().value());
+            if (cachePathActive && rateLimitManager != null) {
+                if (!rateLimitManager.tryAcquireService(serviceType, clientIp, modelName)) {
+                    // v3.5.2 (#624): 服务级限流拒绝补退避提示，客户端才知道该等多久
+                    applyRateLimitRetryHints(exchange, HttpStatus.TOO_MANY_REQUESTS.value());
+                    return Mono.error(new ResponseStatusException(
+                            HttpStatus.TOO_MANY_REQUESTS,
+                            "Service rate limit exceeded for service type '" + serviceType + "'"));
                 }
-                return Mono.error(e);
-            } finally {
-                // v2.9.0: 请求实例选择完成后清理亲和性上下文
-                AffinityContextHolder.clear();
+                ServiceRateLimitHolder.markAcquired();
             }
 
-            // 2. 获取适配器
-            ServiceCapability adapter;
-            String adapterName;
             try {
-                // v2.8.5: 规则引擎 TARGET_ADAPTER 动作 — 规则指定适配器名时按名取用
-                String ruleAdapterName = registry.resolveRuleAdapterName(
-                        serviceType, modelName, clientIp, requestHeaders);
-                if (ruleAdapterName != null && !ruleAdapterName.isBlank()) {
-                    ServiceCapability ruleAdapter = adapterRegistry.getAdapterByName(ruleAdapterName);
-                    if (ruleAdapter != null) {
-                        adapter = ruleAdapter;
-                        adapterName = ruleAdapterName;
-                        logger.info("Rule selected adapter '{}' for instance '{}' in service '{}'",
-                                adapterName, selectedInstance.getName(), serviceType);
+                // v2.9.10: 响应缓存读 — 限流预扣后、selectInstance 之前(命中直接跳过实例选择)
+                ResponseEntity<?> cachedResponse =
+                        cacheResolver().readCached(httpRequest, serviceType, modelName, exchange);
+                if (cachedResponse != null) {
+                    return Mono.just(cachedResponse);
+                }
+
+                // v3.1 PR-2: 配额限额判定 + 预留 — selectInstance 之前（缓存命中已先行短路）
+                Optional<QuotaLimitViolation> quotaViolation =
+                        reserveQuota(exchange, httpRequest, callerId);
+                if (quotaViolation.isPresent()) {
+                    return rejectByQuota(exchange, quotaViolation.get());
+                }
+
+                // 1. 选择实例
+                ModelRouterProperties.ModelInstance selectedInstance;
+                try {
+                    selectedInstance = selectInstance(
+                            serviceType, modelName, clientIp, tracingContext, requestHeaders);
+                } catch (Exception e) {
+                    logger.error("Failed to select instance for service: {}, model: {}",
+                            serviceType, modelName, e);
+                    // v3.5.2 (#624): selectInstance 内部的限流拒绝（服务级 429 / 实例全限 503）
+                    // 也只带状态码与消息，这里补 Retry-After；其余异常不受影响
+                    if (e instanceof ResponseStatusException statusError) {
+                        applyRateLimitRetryHints(exchange, statusError.getStatusCode().value());
+                    }
+                    return Mono.error(e);
+                }
+
+                // 2. 获取适配器
+                ServiceCapability adapter;
+                String adapterName;
+                try {
+                    // v2.8.5: 规则引擎 TARGET_ADAPTER 动作 — 规则指定适配器名时按名取用
+                    String ruleAdapterName = registry.resolveRuleAdapterName(
+                            serviceType, modelName, clientIp, requestHeaders);
+                    if (ruleAdapterName != null && !ruleAdapterName.isBlank()) {
+                        ServiceCapability ruleAdapter = adapterRegistry.getAdapterByName(ruleAdapterName);
+                        if (ruleAdapter != null) {
+                            adapter = ruleAdapter;
+                            adapterName = ruleAdapterName;
+                            logger.info("Rule selected adapter '{}' for instance '{}' in service '{}'",
+                                    adapterName, selectedInstance.getName(), serviceType);
+                        } else {
+                            logger.warn("Rule target adapter '{}' not registered, fallback to instance adapter",
+                                    ruleAdapterName);
+                            adapter = adapterRegistry.getAdapter(serviceType, selectedInstance);
+                            adapterName = selectedInstance.getAdapter() != null
+                                    ? selectedInstance.getAdapter()
+                                    : "default";
+                        }
                     } else {
-                        logger.warn("Rule target adapter '{}' not registered, fallback to instance adapter",
-                                ruleAdapterName);
                         adapter = adapterRegistry.getAdapter(serviceType, selectedInstance);
                         adapterName = selectedInstance.getAdapter() != null
-                                ? selectedInstance.getAdapter()
-                                : "default";
+                            ? selectedInstance.getAdapter()
+                            : "default";
                     }
-                } else {
-                    adapter = adapterRegistry.getAdapter(serviceType, selectedInstance);
-                    adapterName = selectedInstance.getAdapter() != null
-                        ? selectedInstance.getAdapter()
-                        : "default";
+                    logger.info("Selected adapter '{}' for instance '{}' in service '{}'",
+                               adapterName, selectedInstance.getName(), serviceType);
+                } catch (Exception e) {
+                    logger.error("Failed to get adapter for instance: {}", selectedInstance.getName(), e);
+                    return Mono.error(e);
                 }
-                logger.info("Selected adapter '{}' for instance '{}' in service '{}'",
-                           adapterName, selectedInstance.getName(), serviceType);
-            } catch (Exception e) {
-                logger.error("Failed to get adapter for instance: {}", selectedInstance.getName(), e);
-                return Mono.error(e);
-            }
 
-            // 3. 执行请求（带追踪和指标收集）
-            return executeWithTracingAndMetrics(
-                endpoint,
-                adapter,
-                adapterName,
-                authorization,
-                httpRequest,
-                tracingContext,
-                selectedInstance,
-                executor
-            );
+                // 3. 执行请求（带追踪和指标收集）
+                return executeWithTracingAndMetrics(
+                    endpoint,
+                    adapter,
+                    adapterName,
+                    authorization,
+                    httpRequest,
+                    tracingContext,
+                    selectedInstance,
+                    executor
+                );
+            } finally {
+                // v2.9.10: 清理服务级限流预扣标志（防 ThreadLocal 泄漏）
+                ServiceRateLimitHolder.clear();
+                // 清理请求级已选实例（适配器已同步复用完毕）
+                SelectedInstanceHolder.clear();
+            }
         } finally {
-            // v2.9.10: 清理服务级限流预扣标志（防 ThreadLocal 泄漏）
-            ServiceRateLimitHolder.clear();
-            // 缓存命中提前返回时 AffinityHolder 未被 selectInstance finally 清理，此处防御性清理
+            // #689: 亲和性上下文的唯一清理点 —— 覆盖限流早退、缓存命中、异常与正常返回
             AffinityContextHolder.clear();
-            // 清理请求级已选实例（适配器已同步复用完毕）
-            SelectedInstanceHolder.clear();
         }
     }
 
