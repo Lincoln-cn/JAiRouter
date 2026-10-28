@@ -20,6 +20,7 @@ import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties
 import org.unreal.modelrouter.auth.security.model.JwtAuthentication;
 import org.unreal.modelrouter.auth.security.model.JwtPrincipal;
 import org.unreal.modelrouter.auth.security.service.EnhancedJwtBlacklistService;
+import org.unreal.modelrouter.auth.security.service.JwtAccountStatusVerifier;
 import org.unreal.modelrouter.common.exception.SecurityException;
 import org.unreal.modelrouter.monitor.monitoring.security.SecurityMetrics;
 import reactor.core.publisher.Mono;
@@ -77,6 +78,15 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
     @Autowired(required = false)
     private SecurityMetrics securityMetrics;
 
+    /**
+     * 账户状态复核器（issue #704）。验签通过不代表签发对象仍是可用账户：账户被删除/禁用后，
+     * 旧令牌必须在剩余有效期内立刻失效。容器内为必需依赖（{@code @Autowired} 默认
+     * {@code required=true}，缺失即启动失败）；单元测试直接 new 出本类时该字段为 null，
+     * 复核会被跳过——与 {@link #enhancedBlacklistService} 同一惯例。
+     */
+    @Autowired
+    private JwtAccountStatusVerifier accountStatusVerifier;
+
     @Override
     public Mono<Authentication> validateToken(final String token) {
         // issue #456：每个受保护请求都会经过这里，是 JWT 指标的唯一天然埋点。
@@ -123,9 +133,20 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
                     authentication.setAuthenticated(true);
                     authentication.setDetails(principal);
 
-                    log.debug("JWT令牌验证成功: subject={}, roles={}, permissions={}",
-                            subject, roles, permissions);
-                    return Mono.just((Authentication) authentication);
+                    // issue #704：验签 + 未过期只证明「令牌是本站签发的」，不证明「账户此刻仍可用」。
+                    // 账户被删除/禁用后旧令牌必须立刻失效，而不是等 expiration-minutes 自然过期。
+                    return verifyAccountActive(subject)
+                            .flatMap(active -> {
+                                if (!active) {
+                                    log.warn("JWT令牌对应的账户不存在或已被禁用: subject={}", subject);
+                                    return Mono.error(new AuthenticationException(
+                                            "JWT令牌对应的账户不存在或已被禁用",
+                                            ErrorCode.JWT_INVALID.code()));
+                                }
+                                log.debug("JWT令牌验证成功: subject={}, roles={}, permissions={}",
+                                        subject, roles, permissions);
+                                return Mono.just((Authentication) authentication);
+                            });
 
                 } catch (JwtException e) {
                     log.warn("JWT令牌验证失败: {}", e.getMessage());
@@ -159,6 +180,32 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
                     securityMetrics.recordJwtValidationDuration(sample);
                 }
             });
+    }
+
+    /**
+     * 复核令牌所属账户当前是否可用（issue #704）。
+     *
+     * <p>拒绝时复用 {@code JWT_INVALID} 而未新增错误码：新增注册表条目会触发
+     * {@code scripts/docs/check-error-codes.py} 的双向对账（必须同步 docs 的错误码主表，
+     * 本批不改文档）。</p>
+     *
+     * <p>复核失败按 <b>fail-closed</b> 处理：宁可拒绝这次请求，也不放行一个可能已被撤销的令牌
+     * （与黑名单存储不可用时的 fail-closed 口径一致）。容器外手工构造本类时复核器为 null，
+     * 保持历史行为、不额外查库。</p>
+     *
+     * @param subject 令牌 subject
+     * @return {@code true} 表示账户仍可用
+     */
+    private Mono<Boolean> verifyAccountActive(final String subject) {
+        if (accountStatusVerifier == null) {
+            return Mono.just(true);
+        }
+        return accountStatusVerifier.isActive(subject)
+                .onErrorResume(error -> {
+                    log.error("JWT令牌账户状态复核失败（按 fail-closed 拒绝）: subject={}", subject, error);
+                    return Mono.error(new AuthenticationException(
+                            "JWT令牌验证过程中发生错误", ErrorCode.JWT_VALIDATION_ERROR.code()));
+                });
     }
 
     @Override
@@ -196,12 +243,17 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
                 return Mono.error(new AuthenticationException("JWT令牌超出刷新窗口", ErrorCode.JWT_REFRESH_EXPIRED.code()));
             }
 
-            // 将旧令牌加入黑名单
-            return blacklistToken(token)
-                .then(Mono.fromCallable(() -> {
-                    // 创建新令牌
-                    String subject = claims.getSubject();
-                    List<String> roles = extractRoles(claims);
+            // 创建新令牌（#704：账户被删除/禁用后连刷新也不许通过，否则撤销窗口可被无限续期）
+            final String subject = claims.getSubject();
+            final List<String> roles = extractRoles(claims);
+            return verifyAccountActive(subject)
+                .flatMap(active -> {
+                    if (!active) {
+                        log.warn("拒绝刷新：令牌对应的账户不存在或已被禁用: subject={}", subject);
+                        return Mono.error(new AuthenticationException(
+                                "JWT令牌对应的账户不存在或已被禁用",
+                                ErrorCode.JWT_INVALID.code()));
+                    }
                     Map<String, Object> additionalClaims = new HashMap<>();
 
                     // 保留原有的自定义声明。
@@ -216,8 +268,10 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
                         }
                     });
 
-                    return generateToken(subject, roles, additionalClaims);
-                }))
+                    // 将旧令牌加入黑名单，然后签发新令牌
+                    return blacklistToken(token)
+                            .then(Mono.fromCallable(() -> generateToken(subject, roles, additionalClaims)));
+                })
                 .doOnSuccess(refreshed -> {
                     if (securityMetrics != null) {
                         securityMetrics.recordJwtRefresh();
