@@ -10,6 +10,7 @@ import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.unreal.modelrouter.common.filter.CachedBodyWebFilter;
+import org.unreal.modelrouter.common.filter.RequestIdWebFilter;
 
 /**
  * WebFilter 配置类
@@ -36,6 +37,21 @@ public class WebFilterConfiguration {
     public WebFilter cachedBodyFilter() {
         log.info("注册 CachedBodyWebFilter，优先级: {}", Ordered.HIGHEST_PRECEDENCE);
         return new CachedBodyWebFilter();
+    }
+
+    /**
+     * 注册请求 ID 回写过滤器（issue #724）
+     *
+     * <p>在响应侧统一写 {@code X-Request-Id}：优先复用入站请求头，其次复用 tracing 的 traceId，
+     * 最后生成 UUID。排在 body 缓存与可写请求头之后，保证 401/400/5xx 等提前终止的响应也带上该头。</p>
+     *
+     * @return 请求 ID 过滤器
+     */
+    @Bean
+    @Order(Ordered.HIGHEST_PRECEDENCE + 2)
+    public WebFilter requestIdFilter() {
+        log.info("注册 RequestIdWebFilter，优先级: {}", Ordered.HIGHEST_PRECEDENCE + 2);
+        return new RequestIdWebFilter();
     }
 
     @Bean

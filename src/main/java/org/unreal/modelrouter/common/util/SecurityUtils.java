@@ -2,6 +2,7 @@ package org.unreal.modelrouter.common.util;
 
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
+import org.unreal.modelrouter.monitor.tracing.TracingConstants;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -95,15 +96,44 @@ public class SecurityUtils {
     }
     
     /**
-     * 从ServerWebExchange中提取请求ID
+     * 从ServerWebExchange中提取请求ID，并回写到响应头（issue #724）
+     *
      * @param exchange ServerWebExchange
      * @return 请求ID
      */
     public static String extractRequestId(final ServerWebExchange exchange) {
-        String requestId = exchange.getRequest().getHeaders().getFirst("X-Request-ID");
-        if (requestId == null || requestId.isEmpty()) {
+        return extractRequestId(exchange, null);
+    }
+
+    /**
+     * 从ServerWebExchange中提取请求ID，并**总是**回写到响应头（issue #724）
+     *
+     * <p>来源优先级：入站 {@link TracingConstants.Headers#X_REQUEST_ID} 请求头 → {@code fallbackId}
+     * （调用方给出的既有 trace/request id）→ 本响应已写入的值（重复调用必须幂等）→ 新生成的 UUID。</p>
+     *
+     * <p>#724 之前的实现只在「自己生成 ID」时才写响应头，客户端自带 ID 时反而不回显，
+     * 而且该方法本身全仓零调用 ⇒ 响应侧根本没有这个头。现在无论 ID 来自哪里都写回，
+     * 且用 {@code set} 而非 {@code add}，重复调用不会产生重名头。</p>
+     *
+     * @param exchange   ServerWebExchange
+     * @param fallbackId 请求头缺失时使用的备选 ID，可为 {@code null}
+     * @return 请求ID
+     */
+    public static String extractRequestId(final ServerWebExchange exchange, final String fallbackId) {
+        String requestId = exchange.getRequest().getHeaders().getFirst(TracingConstants.Headers.X_REQUEST_ID);
+        if (requestId == null || requestId.isBlank()) {
+            requestId = fallbackId;
+        }
+        if (requestId == null || requestId.isBlank()) {
+            requestId = exchange.getResponse().getHeaders()
+                    .getFirst(TracingConstants.Headers.X_REQUEST_ID);
+        }
+        if (requestId == null || requestId.isBlank()) {
             requestId = generateId();
-            exchange.getResponse().getHeaders().add("X-Request-ID", requestId);
+        }
+        requestId = requestId.trim();
+        if (!exchange.getResponse().isCommitted()) {
+            exchange.getResponse().getHeaders().set(TracingConstants.Headers.X_REQUEST_ID, requestId);
         }
         return requestId;
     }
