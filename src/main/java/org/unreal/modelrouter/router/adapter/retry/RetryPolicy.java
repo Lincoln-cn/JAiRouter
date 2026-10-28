@@ -150,13 +150,19 @@ public class RetryPolicy {
      * @return 是否可重试
      */
     public boolean isRetryable(final Throwable error) {
-        // 不可重试的错误类型
-        if (error instanceof org.springframework.web.client.HttpClientErrorException) {
-            logger.debug("客户端错误，不重试：{}", error.getMessage());
+        // #718：4xx 是调用方问题 —— 重试只会把同一个坏请求再打给上游两次，
+        // 既救不了这次调用，又把「1 次 400」放大成「3 次 400」。
+        // 此前只有阻塞式 HttpClientErrorException 在不可重试名单里，Reactor 侧的
+        // WebClientResponseException / ResponseStatusException 与 DownstreamServiceException(4xx)
+        // 全都落到末尾的「默认重试所有错误」。
+        final Integer status = statusOf(error);
+        if (status != null && status >= 400 && status < 500 && status != 408) {
+            logger.debug("调用方错误（{}），不重试：{}", status, status == 429
+                    ? "上游要求退避，重试会立刻再打一次" : error.getMessage());
             return false;
         }
 
-        // 可重试的错误类型
+        // 可重试的错误类型：超时 / 建连失败 / 下游 5xx 侧异常
         if (error instanceof java.util.concurrent.TimeoutException
             || error instanceof java.net.ConnectException
             || error instanceof java.net.SocketTimeoutException
@@ -165,9 +171,36 @@ public class RetryPolicy {
             return true;
         }
 
-        // 默认重试所有错误
+        // 其余仍按「默认重试」处理（HTTP 状态未知的传输层异常，如 WebClientRequestException）
         logger.debug("重试错误：{}", error.getClass().getSimpleName());
         return true;
+    }
+
+    /**
+     * #718：从异常里取下游 HTTP 状态码。
+     *
+     * <p>覆盖本仓链路上真实会出现的三类：{@code DownstreamServiceException}（适配器显式抛出）、
+     * {@code WebClientResponseException}（Reactor 侧）、{@code ResponseStatusException}（状态保真转译）。
+     * 取不到状态码（连接失败、TLS 失败、超时等）返回 {@code null}，由调用方按「未知 = 可重试」处理。</p>
+     *
+     * @param error 异常
+     * @return HTTP 状态码；无法判定时为 {@code null}
+     */
+    private static Integer statusOf(final Throwable error) {
+        if (error instanceof org.unreal.modelrouter.common.exception.DownstreamServiceException downstreamError) {
+            return downstreamError.getStatusCode() == null ? null : downstreamError.getStatusCode().value();
+        }
+        if (error instanceof org.springframework.web.reactive.function.client.WebClientResponseException
+                webClientError) {
+            return webClientError.getStatusCode().value();
+        }
+        if (error instanceof org.springframework.web.server.ResponseStatusException statusError) {
+            return statusError.getStatusCode().value();
+        }
+        if (error instanceof org.springframework.web.client.HttpClientErrorException clientError) {
+            return clientError.getStatusCode().value();
+        }
+        return null;
     }
 
     /**
