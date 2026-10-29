@@ -139,7 +139,8 @@ public class ServiceTypeController {
         }
         final String message = backupKey == null
                 ? "配置已重置为默认值"
-                : "配置已重置为默认值；重置前的配置已备份到键 " + backupKey;
+                : "配置已重置为默认值；重置前的配置已备份到键 " + backupKey
+                        + "（没有一键恢复接口，恢复需在配置存储层手工操作；每次重置会覆盖上一次的备份）";
         return ResponseEntity.ok(RouterResponse.success(null, message));
     }
 
