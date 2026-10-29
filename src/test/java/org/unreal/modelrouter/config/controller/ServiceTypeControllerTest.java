@@ -102,6 +102,9 @@ class ServiceTypeControllerTest {
         assertTrue(response.getBody().isSuccess());
         assertTrue(response.getBody().getMessage().contains("config_pre_reset_backup"),
                 "成功响应必须告知重置前配置的备份位置");
+        assertTrue(response.getBody().getMessage().contains("没有一键恢复接口"),
+                "#780：文案不能暗示有一键恢复，必须说明恢复需在存储层手工操作，实际："
+                        + response.getBody().getMessage());
 
         verify(configurationService).resetToDefaultConfig();
     }

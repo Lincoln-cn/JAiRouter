@@ -180,7 +180,10 @@ public class ConfigMergeService {
     /**
      * 清除持久化配置，恢复到YAML默认配置
      *
-     * <p>重置前先把当前生效的持久化配置备份到 {@link #PRE_RESET_BACKUP_KEY}，便于人工恢复；
+     * <p>重置前先把当前生效的持久化配置备份到 {@link #PRE_RESET_BACKUP_KEY}。该备份
+     * <b>没有恢复入口</b>（issue #780）：仓库里没有读取/恢复该键的端点，控制台也不提供一键恢复，
+     * 恢复必须直接操作配置存储（如存储层里的 {@code config_pre_reset_backup} 记录）。
+     * 另注意键是固定名 ⇒ 每次重置都会覆盖上一次的备份，只保留最近一次；
      * 备份失败会直接抛出，此时还没有删除任何配置。清除过程中任一删除失败都会抛出
      * {@link IllegalStateException}（原始异常保留为 cause），因为此时配置可能只被部分清除，
      * 不能当作成功返回。</p>

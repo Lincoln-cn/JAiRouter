@@ -53,6 +53,20 @@ public class AdapterConfigController {
 
     private static final Logger logger = LoggerFactory.getLogger(AdapterConfigController.class);
 
+    /**
+     * 服务能力键（与 {@code CapabilityChecker#getSupportedServices} 的 7 个服务类型一一对应）。
+     *
+     * <p>刻意不含 {@code streaming}：它是「是否支持流式返回」的修饰符而非服务类型，
+     * 只勾 streaming 的 adapter 仍然不会被任何服务选中（issue #782）。</p>
+     */
+    private static final List<String> SERVICE_CAPABILITY_KEYS = List.of(
+            "chat", "embedding", "rerank", "tts", "stt", "imgGen", "imgEdit");
+
+    /** capabilities 里一项服务能力都没有时回给客户端的 400 消息（#782）。 */
+    private static final String SERVICE_CAPABILITY_REQUIRED =
+            "capabilities 至少要有一项为 true（chat/embedding/rerank/tts/stt/imgGen/imgEdit 之一）："
+                    + "全部为 false 的 adapter 能注册成功，但没有任何服务类型会路由到它";
+
     private final AdapterRegistry adapterRegistry;
     private final AdapterDefinitionProperties adapterDefinitionProperties;
     private final AdapterDefinitionPersistenceService persistenceService;
@@ -515,7 +529,9 @@ public class AdapterConfigController {
      * <p>{@code auth} 对所有类型必填：{@code openai-compatible} / {@code ollama-compatible} /
      * {@code extend} 三条构造路径都会解引用它。{@code capabilities} 对非 {@code extend} 类型必填
      * （{@code extend} 可省略 ⇒ 继承父 adapter 的能力）。{@code extend} 还要求 {@code parent}
-     * 非空且已注册，否则同样只在构造期抛 {@link IllegalArgumentException}（此前也是 500）。</p>
+     * 非空且已注册，否则同样只在构造期抛 {@link IllegalArgumentException}（此前也是 500）。
+     * 二者都要求「至少一项**服务**能力为 true」（#782）：全 false 的定义能注册成功却永远选不到，
+     * 属同一类「写入成功但运行时不可用」的缺陷，因此前移到写入校验。</p>
      *
      * @param request    请求体
      * @param definition 由请求体构造出的定义（尚未落库、尚未注册）
@@ -535,12 +551,34 @@ public class AdapterConfigController {
             if (adapterRegistry.getAdapterByName(parent) == null) {
                 return "parent adapter 不存在: " + parent;
             }
+            if (request.getCapabilities() != null
+                    && !hasAnyServiceCapability(request.getCapabilities())) {
+                return SERVICE_CAPABILITY_REQUIRED;
+            }
             return null;
         }
         if (request.getCapabilities() == null || request.getCapabilities().isEmpty()) {
             return "capabilities 必填：请显式声明能力（chat/embedding/rerank/tts/stt/imgGen/imgEdit/streaming）";
         }
+        if (!hasAnyServiceCapability(request.getCapabilities())) {
+            return SERVICE_CAPABILITY_REQUIRED;
+        }
         return null;
+    }
+
+    /**
+     * 判定 capabilities 里是否至少声明了一项**服务**能力（issue #782）。
+     *
+     * <p>只看 {@link #SERVICE_CAPABILITY_KEYS}：{@code streaming} 由
+     * {@code CapabilityChecker#getSupportedServices} 明确排除在服务类型之外，
+     * 因此「只勾 streaming」与「全 false」对路由是同一个结果 —— 都选不到。</p>
+     *
+     * @param capabilities 请求体里的能力开关
+     * @return 至少一项服务能力为 {@code true} 时返回 {@code true}
+     */
+    private static boolean hasAnyServiceCapability(final Map<String, Boolean> capabilities) {
+        return SERVICE_CAPABILITY_KEYS.stream()
+                .anyMatch(key -> Boolean.TRUE.equals(capabilities.get(key)));
     }
 
     private ServiceCapability createAdapterByType(
