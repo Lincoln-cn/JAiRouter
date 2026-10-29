@@ -18,6 +18,7 @@ import org.unreal.modelrouter.persistence.jpa.repository.JwtAccountRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
+import org.unreal.modelrouter.auth.security.config.AdminBootstrapPasswordNotice;
 import org.unreal.modelrouter.auth.security.config.properties.JwtAccountProperties;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
@@ -273,10 +274,17 @@ public class JpaDatabaseInitializer {
         try {
             log.info("Initializing JWT accounts...");
 
-            // 检查数据库是否已有账户
+            // 检查数据库是否已有账户（issue #802）：这时 YAML 里的随机口令不会再被写库，
+            // 也就必然不是可用口令，因此不能再把它当作「管理员口令」打印出来。
             long accountCount = jwtAccountRepository.count();
             if (accountCount > 0) {
                 log.info("Database already has {} JWT accounts, skipping initialization", accountCount);
+                if (isInitialAdminPasswordEnvSet()) {
+                    log.warn("INITIAL_ADMIN_PASSWORD 已设置，但数据库已有账户：该环境变量只在首次初始化时生效，"
+                            + "本次不会改动已有口令（如需重置请走控制台或清理数据目录）。");
+                } else {
+                    log.warn(AdminBootstrapPasswordNotice.alreadyInitializedHint(accountCount));
+                }
                 return;
             }
 
@@ -325,11 +333,45 @@ public class JpaDatabaseInitializer {
                 jwtAccountRepository.save(entity);
                 savedCount++;
                 log.info("Created JWT account: {} with roles: {}", account.getUsername(), account.getRoles());
+                announceBootstrapPasswordIfNeeded(account);
             }
 
             log.info("JWT accounts initialization completed, saved {} accounts", savedCount);
         } catch (Exception e) {
             log.error("Failed to initialize JWT accounts: {}", e.getMessage(), e);
         }
+    }
+
+    /**
+     * 首次把 YAML 管理员账号写库时，把本次生效的口令打印一次（issue #802）。
+     *
+     * <p>只在该账户「这次真的被写进库」时打印：库已有账号的重启场景由
+     * {@link AdminBootstrapPasswordNotice#alreadyInitializedHint(long)} 明确告知
+     * 「本次没有生成可用的新口令」，不再打印一个必然登录失败的口令。</p>
+     */
+    private void announceBootstrapPasswordIfNeeded(final JwtAccountProperties account) {
+        if (!isAdminAccount(account)) {
+            return;
+        }
+        AdminBootstrapPasswordNotice
+                .plaintextToAnnounce(true, isInitialAdminPasswordEnvSet(), account.getPassword())
+                .ifPresent(plaintext -> log.warn("""
+                        ============================================================
+                         首次启动已创建管理员账号：{}
+                         本次初始口令（只出现在本日志里，库中已写入该值）：
+                         密码  ：{}
+                         请登录控制台后立即修改。重启后日志不会再打印可用口令。
+                        ============================================================""",
+                        account.getUsername(), plaintext));
+    }
+
+    private static boolean isAdminAccount(final JwtAccountProperties account) {
+        return account != null && account.getRoles() != null
+                && account.getRoles().stream().anyMatch(role -> "ADMIN".equalsIgnoreCase(role));
+    }
+
+    private static boolean isInitialAdminPasswordEnvSet() {
+        final String value = System.getenv("INITIAL_ADMIN_PASSWORD");
+        return value != null && !value.isBlank();
     }
 }

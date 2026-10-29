@@ -6,8 +6,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.auth.security.config.properties.JwtAccountProperties;
-import org.unreal.modelrouter.auth.security.config.properties.JwtConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.util.SecretKeyValidator;
 import org.unreal.modelrouter.auth.security.util.SecretKeyValidator.ValidationResult;
@@ -28,7 +26,6 @@ import java.util.List;
 @ConditionalOnProperty(name = "jairouter.security.startup-check.enabled", havingValue = "true", matchIfMissing = true)
 public class StartupSecretKeyChecker implements CommandLineRunner {
 
-    private static final String NOOP_PREFIX = "{noop}";
 
     /**
      * 已移除的兼容变量名（#674）。这些名字在配置绑定里从来就不生效或已不再绑定，
@@ -87,9 +84,9 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
         // #674：已移除的兼容变量名不再生效，必须明确告知，否则运维会以为设置成功
         warnRemovedEnvNames();
 
-        // #664：非生产环境缺 INITIAL_ADMIN_PASSWORD 时，把本次随机生成的口令打印一次，
-        // 否则「配置里没有公开口令」会让非 dev/prod 的 profile 变成起得来但登不进。
-        reportGeneratedAdminPassword(isProduction);
+        // #802：管理员口令的打印已移到 JpaDatabaseInitializer#initializeJwtAccounts ——
+        // 只有它知道「这次是否真的把账号写进了库」。留在这里会误导：库已有账号时，
+        // 本次 YAML 里的随机口令并不会生效（AccountManager 库内优先），打印出来必然登不进。
 
         if (!allPassed) {
             log.error("\n"
@@ -119,43 +116,6 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
                 System.getenv(StartupSecurityGate.SKIP_ENV));
     }
 
-    /**
-     * 非生产环境缺 {@code INITIAL_ADMIN_PASSWORD} 时，打印本次启动实际生效的随机管理员口令。
-     *
-     * <p>背景（#664）：{@code config/auth/jwt.yml} 不再回落到公开文档口令，缺环境变量时用
-     * {@code ${random.uuid}} 随机生成（每次启动不同）。若不打印，非 dev/prod 的 profile 会变成
-     * “起得来、但不知道用什么口令登录”的死局；这里把用户名与明文口令打印一次，并提示如何固定下来。</p>
-     *
-     * <p>只在「非生产 + INITIAL_ADMIN_PASSWORD 没设」时打印；生产环境由
-     * {@link StartupSecurityGate} 直接拒绝启动，不会走到这里。只打印 {@code {noop}} 明文口令，
-     * 已编码（如 {@code {bcrypt}}）的口令不还原、不打印。</p>
-     */
-    private void reportGeneratedAdminPassword(final boolean isProduction) {
-        if (isProduction || isEnvSet("INITIAL_ADMIN_PASSWORD")) {
-            return;
-        }
-        final JwtConfig jwt = securityProperties.getJwt();
-        final List<JwtAccountProperties> accounts = jwt == null ? null : jwt.getAccounts();
-        if (accounts == null || accounts.isEmpty()) {
-            return;
-        }
-        for (final JwtAccountProperties account : accounts) {
-            if (!isAdminAccount(account)) {
-                continue;
-            }
-            final String password = account.getPassword();
-            if (password == null || !password.startsWith(NOOP_PREFIX)) {
-                continue;
-            }
-            log.warn("=======================================================================");
-            log.warn(" 本次启动生成的管理员口令（随机生成、每次启动都不同）");
-            log.warn(" 用户名：{}", account.getUsername());
-            log.warn(" 密码  ：{}", password.substring(NOOP_PREFIX.length()));
-            log.warn(" 要固定下来：设置环境变量 INITIAL_ADMIN_PASSWORD 后重启。");
-            log.warn(" 生产环境（prod / production）必须设置，否则启动门闩会拒绝启动。");
-            log.warn("=======================================================================");
-        }
-    }
 
     /**
      * 提醒仍然设置着已移除兼容变量名的部署（#674）。
@@ -173,15 +133,6 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
                 + "别名不再被读取，删掉它们以免误判。");
     }
 
-    private static boolean isAdminAccount(final JwtAccountProperties account) {
-        return account != null && account.isEnabled()
-                && account.getRoles() != null && account.getRoles().contains("ADMIN");
-    }
-
-    private static boolean isEnvSet(final String name) {
-        final String value = System.getenv(name);
-        return value != null && !value.isEmpty();
-    }
 
     /**
      * 检查是否为生产环境
