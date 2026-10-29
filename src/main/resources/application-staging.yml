@@ -18,10 +18,6 @@ management:
   endpoint:
     health:
       show-details: when-authorized
-    jwt-tokens:
-      enabled: true
-    jwt-blacklist:
-      enabled: true
 
 # 安全配置（预发布环境）
 jairouter:

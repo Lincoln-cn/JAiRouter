@@ -51,12 +51,6 @@ management:
     health:
       show-details: always
       show-components: always
-    jwt-tokens:
-      enabled: true
-    jwt-blacklist:
-      enabled: true
-    jwt-persistence-health:
-      enabled: true
 
 # 安全配置（开发环境启用测试功能）
 jairouter:
