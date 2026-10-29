@@ -273,10 +273,10 @@
     },
     "docs/en/configuration/response-cache.md": {
       "FilePath": "docs/en/configuration/response-cache.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:32.199021",
-      "ContentHash": "00d70e386e894eaa",
-      "GitCommit": "88f67b49",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-29T16:06:20.878531",
+      "ContentHash": "49e56d62f2ee8f4d",
+      "GitCommit": "c7af27a1",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1431,10 +1431,10 @@
     },
     "docs/zh/configuration/response-cache.md": {
       "FilePath": "docs/zh/configuration/response-cache.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:38.043379",
-      "ContentHash": "98e4567b49522f4d",
-      "GitCommit": "88f67b49",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-29T16:06:21.438088",
+      "ContentHash": "c2186bdafdff736f",
+      "GitCommit": "c7af27a1",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -4934,7 +4934,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-28T18:27:57.001396",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/response-cache.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-29T16:06:20.878544",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/response-cache.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-29T16:06:21.438098",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-29T08:01:44.025513"
+  "last_updated": "2026-10-29T16:06:21.930361"
 }
