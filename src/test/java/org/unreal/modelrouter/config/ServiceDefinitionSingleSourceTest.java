@@ -89,8 +89,10 @@ class ServiceDefinitionSingleSourceTest {
                     assertEquals(1, chat.getInstances().size(), "chat 默认实例数量应保持 1 个");
                     assertEquals("qwen3:4b", chat.getInstances().get(0).getName(),
                             "chat 默认实例名应与合并前（base 文件生效时）一致");
-                    assertEquals("http://172.16.30.6:9090", chat.getInstances().get(0).getBaseUrl(),
-                            "chat 默认上游应与合并前一致");
+                    // #804：默认上游不再是内网示例地址 172.16.30.6:9090，
+                    // 而是 MODEL_UPSTREAM_BASE_URL 的兜底值（本机 Ollama）。
+                    assertEquals("http://localhost:11434", chat.getInstances().get(0).getBaseUrl(),
+                            "chat 默认上游应回落到 MODEL_UPSTREAM_BASE_URL 的默认值");
                     assertEquals("gpustack", chat.getAdapter(),
                             "chat 服务级 adapter 应与合并前一致");
 
