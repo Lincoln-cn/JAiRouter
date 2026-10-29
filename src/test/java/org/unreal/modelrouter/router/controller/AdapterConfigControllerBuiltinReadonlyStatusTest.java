@@ -183,7 +183,8 @@ class AdapterConfigControllerBuiltinReadonlyStatusTest {
         // issue #432：请求体缺失属客户端可归因的失败 ⇒ 方法开头就抛 ServerWebInputException，
         // 不再走到 request.getType() 的 NPE、被兜底 catch 吞成 500 + INTERNAL_ERROR。
         // 该异常由 ReactiveGlobalExceptionHandler 映射为 400（"请求体无效或缺失"），
-        // MVC 层的行为见 AdapterConfigControllerRequestBodyPrevalidationTest（走真实 HTTP 路径）。
+        // 本类只验异常类型；真实 HTTP 路径（控制器 -> 中央处理器 -> 400）见
+        // AdapterConfigRequestBodyEndToEndTest（#443 遗留项，已存在）。
         assertThrows(ServerWebInputException.class,
                 () -> controller.updateAdapter(CONFIGURED_ADAPTER, null),
                 "request 为 null 时必须抛 ServerWebInputException（⇒ 400），而不是返回 500");
