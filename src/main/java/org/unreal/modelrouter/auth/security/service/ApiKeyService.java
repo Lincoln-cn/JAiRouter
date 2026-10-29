@@ -444,7 +444,14 @@ public class ApiKeyService {
 
     private List<ApiKey> loadApiKeysFromConfig() {
         return securityProperties.getApiKey().getKeys().stream()
-            .peek(item -> apiKeyPersistenceService.initializeApiKeyFields(item)).toList();
+            .peek(item -> {
+                apiKeyPersistenceService.initializeApiKeyFields(item);
+                // #813：YAML 里写的还是旧权限（read/write/delete/admin），必须与「控制台创建」走同一套
+                // 归一化（:145 那条路径），否则内置 Key 只拿到 ROLE_READ / ROLE_WRITE，
+                // 调任何服务都会被 ServiceRequestHandler#hasServicePermission 判成 403。
+                item.setPermissions(validatePermissions(item.getPermissions()));
+            })
+            .toList();
     }
 
     public Map<String, ApiKey> getApiKeyCache() { return apiKeyCache; }
