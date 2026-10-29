@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -26,6 +27,8 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -307,24 +310,55 @@ class CachedBodyWebFilterTest {
         }
 
         @Test
-        @DisplayName("FILTER-012: 大请求体跳过缓存")
-        void testFilter_LargeBody_SkipsCache() {
-            // Given - 创建超过10MB的模拟请求（这里只测试逻辑，不实际创建大数据）
-            // 由于实际测试大文件比较困难，我们只验证过滤器可以处理正常请求
+        @DisplayName("FILTER-012: 小请求体缓存后重新包装，下游可再次读取")
+        void testFilter_SmallBody_IsRewrappedForDownstream() {
+            // issue #783：本例原名「大请求体跳过缓存」，但体只有 15 字节、也没有任何
+            // 「缓存/跳过」断言 —— 名字与覆盖不符。真实超限行为由
+            // CachedBodyWebFilterPayloadLimitTest（10MB+1 → 413、chain 不被调用）守着；
+            // 本例验证它真正覆盖的那条契约：过滤器把体读干缓存后必须**重新包装**请求交给下游，
+            // 下游才能再次读到完整字节。
+            // 真实容器的请求体只能消费一次，这里用「第二次订阅即为空」的 publisher 复刻该语义：
+            // 若过滤器直接把原始 exchange 交下去，下游读到空体 ⇒ 本例转红。
             String body = "{\"test\":\"data\"}";
+            byte[] original = body.getBytes(StandardCharsets.UTF_8);
+            DataBuffer buffer = new DefaultDataBufferFactory().wrap(original);
+            AtomicInteger subscriptions = new AtomicInteger();
+            Flux<DataBuffer> oneShotBody = Flux.defer(() -> subscriptions.incrementAndGet() == 1
+                ? Flux.just(buffer)
+                : Flux.empty());
             MockServerHttpRequest request = MockServerHttpRequest
                 .post("/api/test")
                 .contentType(MediaType.APPLICATION_JSON)
-                .contentLength(body.length())
-                .body(body);
+                .contentLength(original.length)
+                .body(oneShotBody);
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            AtomicReference<ServerWebExchange> downstream = new AtomicReference<>();
+            when(filterChain.filter(any())).thenAnswer(invocation -> {
+                downstream.set(invocation.getArgument(0));
+                return Mono.empty();
+            });
 
             // When
             Mono<Void> result = filter.filter(exchange, filterChain);
 
-            // Then
-            StepVerifier.create(result)
-                .verifyComplete();
+            // Then - 下游拿到的是重新包装过的请求，且读到的字节与原始完全一致
+            StepVerifier.create(result).verifyComplete();
+            assertNotNull(downstream.get(), "下游必须被调用");
+            assertNotSame(exchange.getRequest(), downstream.get().getRequest(),
+                "交给下游的必须是重新包装过的请求，否则一次性 body 已被过滤器读干");
+            assertNotSame(exchange.getRequest(), downstream.get().getRequest(),
+                "交给下游的必须是重新包装过的请求，否则一次性 body 已被过滤器读干");
+            byte[] seen = DataBufferUtils.join(downstream.get().getRequest().getBody())
+                .map(b -> {
+                    byte[] bytes = new byte[b.readableByteCount()];
+                    b.read(bytes);
+                    DataBufferUtils.release(b);
+                    return bytes;
+                })
+                .block();
+            assertNotNull(seen, "下游必须能读到请求体");
+            assertEquals(body, new String(seen, StandardCharsets.UTF_8));
         }
     }
 }
