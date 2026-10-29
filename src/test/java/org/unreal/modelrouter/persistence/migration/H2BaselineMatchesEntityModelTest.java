@@ -123,6 +123,11 @@ class H2BaselineMatchesEntityModelTest {
         List<String> normalized = new ArrayList<>(rows.size());
         for (String row : rows) {
             normalized.add(row
+                    // H2 在 ALTER TABLE 之后会把支撑 UNIQUE 约束的索引从
+                    // CONSTRAINT_INDEX_<表ID> 改名成 CONSTRAINT_<表ID>_INDEX_<新ID>
+                    // （2026-10-29 实测：V6 给 jwt_accounts 加了 deleted 列，同一张表上
+                    // username 的 unique 索引就换成了这个形状）—— 两种形状归一成同一个名字。
+                    .replaceAll("CONSTRAINT_[0-9A-F]+_INDEX_[0-9A-F]+", "CONSTRAINT_INDEX_<id>")
                     .replaceAll("(PRIMARY_KEY|CONSTRAINT_INDEX)_[0-9A-F]+", "$1_<id>")
                     .replaceAll("(_INDEX_)[0-9A-F]+\\b", "$1<id>"));
         }

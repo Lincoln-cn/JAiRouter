@@ -19,10 +19,11 @@ import java.util.List;
  * （默认 60）内通过鉴权——本类补上这一步复核，让账户状态变更对已签发令牌立即生效：既不需要等
  * 令牌自然过期，也不依赖「能否枚举某个账户已签发的全部令牌」。</p>
  *
- * <p><b>账户解析顺序与登录路径保持一致</b>（{@link AccountManager}）：先看 YAML 静态账户
- * （只认 {@code enabled=true}），未命中再看 {@code jwt_accounts} 表（{@code enabled} 为空视为启用）。
- * 这样保证「能登录的账户，令牌就一定有效」，不会出现「能拿到令牌但每次调用都被拒」的自锁；
- * 默认 {@code admin} 这类同时存在于 YAML 与数据库的账户，也不会因为 DB 镜像行被清掉就整体不可用。</p>
+ * <p><b>账户解析顺序与登录路径保持一致</b>（{@link AccountManager}，issue #789）：先看
+ * {@code jwt_accounts} 表，库里已有该账户时以库里的状态为准（{@code deleted=true} 或
+ * {@code enabled=false} 一律不可用，{@code enabled} 为空视为启用）；只有库里没有该账户时才回落到
+ * YAML 静态账户（只认 {@code enabled=true}）。这样既能保证「能登录的账户，令牌就一定有效」，
+ * 又不会出现自锁；同时控制台的禁用/删除能立即撤回 YAML 里那个默认 {@code admin}。</p>
  *
  * @since 3.5.5
  */
@@ -56,14 +57,22 @@ public class JwtAccountStatusVerifier {
      * @return 账户是否可用
      */
     private boolean resolveActive(final String username) {
+        // issue #789：库行优先。YAML 优先会让「YAML 里存在、控制台已禁用」的账户继续放行。
+        return jwtAccountRepository.findByUsername(username)
+                .map(account -> !account.isDeletedAccount() && !Boolean.FALSE.equals(account.getEnabled()))
+                .orElseGet(() -> yamlAccountEnabled(username));
+    }
+
+    /**
+     * 判断账户是否是 YAML 里「启用」的静态账户（仅在库里没有该账户时作为兜底）。
+     *
+     * @param username 账户名
+     * @return {@code true} 表示 YAML 里存在且启用
+     */
+    private boolean yamlAccountEnabled(final String username) {
         final List<JwtAccountProperties> yamlAccounts =
                 securityProperties.getJwt() != null ? securityProperties.getJwt().getAccounts() : null;
-        if (yamlAccounts != null && yamlAccounts.stream()
-                .anyMatch(account -> account.isEnabled() && username.equals(account.getUsername()))) {
-            return true;
-        }
-        return jwtAccountRepository.findByUsername(username)
-                .map(account -> !Boolean.FALSE.equals(account.getEnabled()))
-                .orElse(false);
+        return yamlAccounts != null && yamlAccounts.stream()
+                .anyMatch(account -> account.isEnabled() && username.equals(account.getUsername()));
     }
 }

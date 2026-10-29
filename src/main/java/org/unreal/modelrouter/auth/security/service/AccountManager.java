@@ -77,37 +77,42 @@ public class AccountManager implements UserDetailsService {
             return false;
         }
 
-        // 1. YAML 静态账户优先，行为与旧版本完全一致
-        List<JwtAccountProperties> accounts = securityProperties.getJwt().getAccounts();
-        if (accounts == null || accounts.isEmpty()) {
-            log.warn("未配置YAML JWT账户，尝试数据库账户");
-        } else {
-            log.info("验证用户凭据: username={}, accountsCount={}", username, accounts.size());
-            Optional<JwtAccountProperties> yamlAccount = accounts.stream()
-                    .filter(JwtAccountProperties::isEnabled)
-                    .filter(account -> account.getUsername().equals(username))
-                    .findFirst();
-            if (yamlAccount.isPresent()) {
-                boolean matches = passwordEncoder.matches(password, yamlAccount.get().getPassword());
-                log.info("YAML账户密码匹配结果: username={}, matches={}", username, matches);
-                return matches;
+        // 1. 数据库账户优先（issue #789）。反过来的顺序（YAML 优先）会让控制台的禁用/改密对
+        //    YAML 里存在的账户（默认 admin）完全无效：YAML 命中就直接返回，库里的行永远读不到。
+        Optional<JwtAccountEntity> dbAccount = jwtAccountRepository.findByUsername(username);
+        if (dbAccount.isPresent()) {
+            JwtAccountEntity entity = dbAccount.get();
+            if (entity.isDeletedAccount()) {
+                log.warn("数据库账户已被删除: username={}", username);
+                return false;
             }
-            log.info("YAML账户未命中，尝试数据库账户: username={}", username);
+            if (Boolean.FALSE.equals(entity.getEnabled())) {
+                log.warn("数据库账户已禁用: username={}", username);
+                return false;
+            }
+            boolean matches = passwordEncoder.matches(password, entity.getPassword());
+            log.info("数据库账户密码匹配结果: username={}, matches={}", username, matches);
+            return matches;
         }
 
-        // 2. DB 账户兜底（Web 账户管理 API 创建的账户）
-        Optional<JwtAccountEntity> dbAccount = jwtAccountRepository.findByUsername(username);
-        if (dbAccount.isEmpty()) {
-            log.info("数据库账户未找到: username={}", username);
+        // 2. YAML 静态账户兜底（issue #789）：只在库里没有该账户时才读它 —— 它同时是首次启动
+        //    的种子来源（JpaDatabaseInitializer#initializeJwtAccounts），不能被当成权威状态。
+        List<JwtAccountProperties> accounts = securityProperties.getJwt().getAccounts();
+        if (accounts == null || accounts.isEmpty()) {
+            log.info("数据库账户未找到，且未配置 YAML JWT 账户: username={}", username);
             return false;
         }
-        JwtAccountEntity entity = dbAccount.get();
-        if (Boolean.FALSE.equals(entity.getEnabled())) {
-            log.warn("数据库账户已禁用: username={}", username);
+        log.info("数据库账户未找到，尝试 YAML 账户: username={}, accountsCount={}", username, accounts.size());
+        Optional<JwtAccountProperties> yamlAccount = accounts.stream()
+                .filter(JwtAccountProperties::isEnabled)
+                .filter(account -> account.getUsername().equals(username))
+                .findFirst();
+        if (yamlAccount.isEmpty()) {
+            log.info("数据库与 YAML 配置均未命中账户: username={}", username);
             return false;
         }
-        boolean matches = passwordEncoder.matches(password, entity.getPassword());
-        log.info("数据库账户密码匹配结果: username={}, matches={}", username, matches);
+        boolean matches = passwordEncoder.matches(password, yamlAccount.get().getPassword());
+        log.info("YAML账户密码匹配结果: username={}, matches={}", username, matches);
         return matches;
     }
 
@@ -235,9 +240,24 @@ public class AccountManager implements UserDetailsService {
             throw new UsernameNotFoundException("JWT认证功能未启用");
         }
 
-        // 1. YAML 静态账户优先，行为与旧版本完全一致
+        // 1. 数据库账户优先（issue #789）：库里已有该账户时，禁用/删除/改角色都以库里的行为准，
+        //    否则签出的令牌会带着 YAML 侧的角色，与登录时的判定不一致。
+        Optional<JwtAccountEntity> dbAccount = jwtAccountRepository.findByUsername(username);
+        if (dbAccount.isPresent()) {
+            JwtAccountEntity entity = dbAccount.get();
+            if (entity.isDeletedAccount() || Boolean.FALSE.equals(entity.getEnabled())) {
+                throw new UsernameNotFoundException("用户不存在或已被禁用: " + username);
+            }
+            return User.builder()
+                    .username(entity.getUsername())
+                    .password(entity.getPassword())
+                    .authorities(buildAuthorities(parseRoles(entity.getRoles())))
+                    .build();
+        }
+
+        // 2. YAML 静态账户兜底（仅当库里没有该账户）
         List<JwtAccountProperties> accounts = securityProperties.getJwt().getAccounts();
-        if (accounts != null && !accounts.isEmpty()) {
+        if (accounts != null) {
             Optional<JwtAccountProperties> yamlAccount = accounts.stream()
                     .filter(account -> account.getUsername().equals(username) && account.isEnabled())
                     .findFirst();
@@ -251,16 +271,7 @@ public class AccountManager implements UserDetailsService {
             }
         }
 
-        // 2. DB 账户兜底（Web 账户管理 API 创建的账户）
-        JwtAccountEntity entity = jwtAccountRepository.findByUsername(username)
-                .filter(dbAccount -> dbAccount.getEnabled() == null || dbAccount.getEnabled())
-                .orElseThrow(() -> new UsernameNotFoundException("用户不存在或已被禁用: " + username));
-
-        return User.builder()
-                .username(entity.getUsername())
-                .password(entity.getPassword())
-                .authorities(buildAuthorities(parseRoles(entity.getRoles())))
-                .build();
+        throw new UsernameNotFoundException("用户不存在或已被禁用: " + username);
     }
 
     /**
