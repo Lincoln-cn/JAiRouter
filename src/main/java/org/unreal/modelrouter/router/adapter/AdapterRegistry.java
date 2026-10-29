@@ -24,9 +24,11 @@ import org.unreal.modelrouter.router.adapter.transformer.OpenAiResponseTransform
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Optional;
 import java.util.Set;
 
@@ -42,6 +44,14 @@ public class AdapterRegistry {
     private static final Set<String> BUILTIN_ADAPTER_NAMES = new HashSet<>();
 
     private final Map<String, ServiceCapability> adapters;
+
+    /**
+     * #778: 加载失败清单（adapter 名称 → 失败原因）。
+     *
+     * <p>修复前这里只有一行 {@code logger.error}，失败的适配器既不进注册表、也没有任何
+     * 「谁没加载成功」的出口 ⇒ 控制台写入侧全绿，直到真正路由时才发现「没有可用适配器」。</p>
+     */
+    private final Map<String, String> loadFailures = new ConcurrentHashMap<>();
     private final ModelRouterProperties properties;
     private final ModelServiceRegistry registry;
     private final AdapterContext context;
@@ -142,9 +152,11 @@ public class AdapterRegistry {
                     }
 
                     adapters.put(adapterName.toLowerCase(), adapter);
+                    loadFailures.remove(adapterName.toLowerCase());
                     logger.info("Loaded configurable adapter from {}: {} (type: {})", source, adapterName, type);
                 } catch (Exception e) {
-                    logger.error("Failed to load configurable adapter {}: {}", adapterName, e.getMessage());
+                    // #778: 除了日志，还要留下「谁没加载成功、为什么」的可查证据
+                    recordLoadFailure(adapterName, source, e);
                 }
             }
         }
@@ -158,10 +170,12 @@ public class AdapterRegistry {
                 try {
                     ServiceCapability adapter = createExtendedAdapter(adapterName, definition);
                     adapters.put(adapterName.toLowerCase(), adapter);
+                    loadFailures.remove(adapterName.toLowerCase());
                     logger.info("Loaded extended adapter from {}: {} (parent: {})",
                             source, adapterName, definition.getParent());
                 } catch (Exception e) {
-                    logger.error("Failed to load extended adapter {}: {}", adapterName, e.getMessage());
+                    // #778: extend 的 parent 缺失同样要能被上层查到
+                    recordLoadFailure(adapterName, source, e);
                 }
             }
         }
@@ -251,10 +265,43 @@ public class AdapterRegistry {
     }
 
     /**
+     * #778: 记录一次加载失败（adapter 名称 → {@code 来源: 原因}）。
+     */
+    private void recordLoadFailure(final String adapterName, final String source, final Exception cause) {
+        final String key = adapterName.toLowerCase();
+        loadFailures.put(key, source + ": " + describeCause(cause));
+        logger.error("Failed to load adapter {} from {}", adapterName, source, cause);
+    }
+
+    private static String describeCause(final Exception cause) {
+        final String message = cause.getMessage();
+        if (message != null && !message.isBlank()) {
+            return cause.getClass().getSimpleName() + ": " + message;
+        }
+        return cause.getClass().getSimpleName();
+    }
+
+    /**
+     * #778: 当前仍在「加载失败」状态的 adapter 清单（不可变副本，按名称小写为键）。
+     *
+     * <p>供健康检查与运维查询使用：列表非空即表示「配置里声明了这个 adapter，但运行时没有它」，
+     * 此时限制到该 adapter 的请求会失败。写入侧（{@code POST/PUT /api/config/adapter}）在保存前
+     * 就会尝试构造（#709），因此这里的条目大多来自 YAML / 历史持久化定义 / 父 adapter 被删后的
+     * extend 子项。</p>
+     *
+     * @return adapter 名称 → 失败原因（空 Map 表示全部加载成功）
+     */
+    public Map<String, String> getLoadFailures() {
+        return Collections.unmodifiableMap(new HashMap<>(loadFailures));
+    }
+
+    /**
      * 动态注册一个adapter
      */
     public void registerAdapter(final String name, final ServiceCapability adapter) {
         adapters.put(name.toLowerCase(), adapter);
+        // #778: 写入侧修好同一个 adapter 后，之前的加载失败记录不应继续挂着
+        loadFailures.remove(name.toLowerCase());
         logger.info("Registered adapter: {}", name);
     }
 
