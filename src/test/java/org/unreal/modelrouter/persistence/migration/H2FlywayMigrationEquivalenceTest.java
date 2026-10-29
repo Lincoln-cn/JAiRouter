@@ -25,8 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <ol>
  *   <li>{@code fresh}：空库，Flyway 从 {@code h2/V1__baseline.sql} 建起</li>
  *   <li>{@code legacy}：先按 V1 建好、再退化回「#192 之前的老库」形态（缺五个补丁列、
- *       {@code expires_at} 还是 NOT NULL）并**删掉 Flyway 历史表** —— 后者是关键，
- *       老库本来就没有它，这样 Flyway 才会走 baseline 路径</li>
+ *       {@code expires_at} 还是 NOT NULL、且没有 V6 的 {@code jwt_accounts.deleted}）并
+ *       **删掉 Flyway 历史表** —— 后者是关键，老库本来就没有它，这样 Flyway 才会走
+ *       baseline 路径</li>
  * </ol>
  *
  * <p>两者都必须落在同一套 schema 上。这条测试替代了原先由 Java 补丁组件承担的老库兼容覆盖
@@ -59,10 +60,13 @@ class H2FlywayMigrationEquivalenceTest {
                     "「fresh」与「legacy」的 " + section + " 不一致");
         }
 
-        assertEquals(List.of("1|SQL|true", "2|SQL|true", "3|SQL|true", "4|SQL|true", "5|SQL|true"), history(freshUrl),
-                "空库应顺序执行 V1~V5（V4 = 脱敏配置持久化，V5 = 移除请求侧脱敏配置面）");
-        assertEquals(List.of("1|BASELINE|true", "2|SQL|true", "3|SQL|true", "4|SQL|true", "5|SQL|true"), history(legacyUrl),
-                "老库应记为基线 1 且不重放 V1，再执行 V2~V5");
+        assertEquals(List.of("1|SQL|true", "2|SQL|true", "3|SQL|true", "4|SQL|true", "5|SQL|true",
+                        "6|SQL|true"), history(freshUrl),
+                "空库应顺序执行 V1~V6（V4 = 脱敏配置持久化，V5 = 移除请求侧脱敏配置面，"
+                        + "V6 = JWT 账户软删除列）");
+        assertEquals(List.of("1|BASELINE|true", "2|SQL|true", "3|SQL|true", "4|SQL|true", "5|SQL|true",
+                        "6|SQL|true"), history(legacyUrl),
+                "老库应记为基线 1 且不重放 V1，再执行 V2~V6");
     }
 
     // ==================== 迁移执行 ====================
@@ -82,6 +86,8 @@ class H2FlywayMigrationEquivalenceTest {
             statement.execute("ALTER TABLE service_instance DROP COLUMN tags");
             statement.execute("ALTER TABLE service_instance DROP COLUMN headers");
             statement.execute("ALTER TABLE security_blacklist ALTER COLUMN expires_at SET NOT NULL");
+            // V6 之前的库没有软删除列 —— 不退化掉它，重放 V6 会报 Duplicate column name "deleted"
+            statement.execute("ALTER TABLE jwt_accounts DROP COLUMN deleted");
             // 老库本来没有这张表 —— 删掉才能让 Flyway 把它当成「非空且无历史」的库
             statement.execute("DROP TABLE " + HISTORY_TABLE);
         }
@@ -129,13 +135,19 @@ class H2FlywayMigrationEquivalenceTest {
 
     /**
      * H2 给自动生成的索引/约束编的名字里带**库内部对象 ID**（{@code PRIMARY_KEY_B}、
-     * {@code CONSTRAINT_INDEX_7}、{@code uk_x_INDEX_F}），两个库之间必然不同 —— 直接比名字会假红。
+     * {@code CONSTRAINT_INDEX_7}、{@code uk_x_INDEX_F}、以及 ALTER TABLE 之后变形的
+     * {@code CONSTRAINT_9_INDEX_1}），两个库之间必然不同 —— 直接比名字会假红。
      * 这里把尾部的 ID 段归一化，只比较名字里有意义的部分（与 PG 侧排除 NOT NULL 伪约束同理）。
      */
     private static List<String> normalizeGeneratedNames(final List<String> rows) {
         List<String> normalized = new ArrayList<>(rows.size());
         for (String row : rows) {
             normalized.add(row
+                    // H2 在 ALTER TABLE 之后会把支撑 UNIQUE 约束的索引从
+                    // CONSTRAINT_INDEX_<表ID> 改名成 CONSTRAINT_<表ID>_INDEX_<新ID>
+                    // （2026-10-29 实测：V6 给 jwt_accounts 加了 deleted 列，同一张表上
+                    // username 的 unique 索引就换成了这个形状）—— 两种形状归一成同一个名字。
+                    .replaceAll("CONSTRAINT_[0-9A-F]+_INDEX_[0-9A-F]+", "CONSTRAINT_INDEX_<id>")
                     .replaceAll("(PRIMARY_KEY|CONSTRAINT_INDEX)_[0-9A-F]+", "$1_<id>")
                     .replaceAll("(_INDEX_)[0-9A-F]+\\b", "$1<id>"));
         }

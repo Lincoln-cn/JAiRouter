@@ -107,11 +107,12 @@ class AccountManagerTest {
     class ValidateCredentialsTests {
 
         @Test
-        @DisplayName("YAML 账户密码正确登录成功（回归）")
+        @DisplayName("库里没有该账户时凭 YAML 账户登录成功（回归：YAML 仍是兜底）")
         void yamlAccountLoginSucceeds() {
             // Given
             when(jwtConfig.getAccounts()).thenReturn(List.of(
                     yamlAccount("admin", "{noop}secret", true, List.of("ADMIN"))));
+            when(jwtAccountRepository.findByUsername("admin")).thenReturn(Optional.empty());
             when(passwordEncoder.matches("secret", "{noop}secret")).thenReturn(true);
 
             // When
@@ -119,7 +120,8 @@ class AccountManagerTest {
 
             // Then
             assertTrue(result);
-            verify(jwtAccountRepository, never()).findByUsername(anyString());
+            // issue #789：顺序反过来了 —— 先查库，库里没有才看 YAML
+            verify(jwtAccountRepository).findByUsername("admin");
         }
 
         @Test
@@ -200,19 +202,21 @@ class AccountManagerTest {
         }
 
         @Test
-        @DisplayName("YAML 存在同名账户时以 YAML 结果为准，不查 DB")
-        void yamlAccountTakesPriorityOverDb() {
+        @DisplayName("同名账户以 DB 行为准：YAML 口令不再生效（issue #789）")
+        void dbAccountTakesPriorityOverYaml() {
             // Given
             when(jwtConfig.getAccounts()).thenReturn(List.of(
                     yamlAccount("admin", "{noop}yamlpw", true, List.of("ADMIN"))));
-            when(passwordEncoder.matches("dbpw", "{noop}yamlpw")).thenReturn(false);
+            when(jwtAccountRepository.findByUsername("admin"))
+                    .thenReturn(Optional.of(dbAccount("admin", "{bcrypt}dbpw", "[\"ADMIN\"]", true)));
+            when(passwordEncoder.matches("yamlpw", "{bcrypt}dbpw")).thenReturn(false);
 
             // When
-            boolean result = accountManager.validateCredentials("admin", "dbpw");
+            boolean result = accountManager.validateCredentials("admin", "yamlpw");
 
             // Then
             assertFalse(result);
-            verify(jwtAccountRepository, never()).findByUsername(anyString());
+            verify(passwordEncoder).matches("yamlpw", "{bcrypt}dbpw");
         }
 
         @Test
@@ -318,8 +322,8 @@ class AccountManagerTest {
         }
 
         @Test
-        @DisplayName("YAML 账户优先于 DB 同名账户")
-        void yamlAccountTakesPriority() {
+        @DisplayName("同名账户的角色与口令取自 DB 行（issue #789）")
+        void dbAccountTakesPriority() {
             // Given
             when(jwtConfig.getAccounts()).thenReturn(List.of(
                     yamlAccount("admin", "{noop}secret", true, List.of("ADMIN"))));
@@ -331,9 +335,8 @@ class AccountManagerTest {
             UserDetails details = accountManager.loadUserByUsername("admin");
 
             // Then
-            assertEquals("{noop}secret", details.getPassword());
-            assertEquals(List.of("ADMIN"), authorities(details));
-            verify(jwtAccountRepository, never()).findByUsername(anyString());
+            assertEquals("{bcrypt}encoded", details.getPassword());
+            assertEquals(List.of("OPERATOR"), authorities(details));
         }
     }
 
@@ -384,6 +387,89 @@ class AccountManagerTest {
             // 成功计数器根本没被注册过 ⇒ 不存在，而不是"值为 0"
             assertNull(registry.find("jairouter.security.authentication.successes")
                     .tag("auth_type", "password").counter());
+        }
+    }
+
+    @Nested
+    @DisplayName("#789 控制台的禁用/删除必须对 YAML 账户生效")
+    class DbAuthorityOverYamlTests {
+
+        @Test
+        @DisplayName("YAML 里启用的 admin 被库中禁用后，登录失败")
+        void disabledDbRowRevokesEnabledYamlAccount() {
+            // Given
+            when(jwtConfig.getAccounts()).thenReturn(List.of(
+                    yamlAccount("admin", "{noop}secret", true, List.of("ADMIN"))));
+            when(jwtAccountRepository.findByUsername("admin"))
+                    .thenReturn(Optional.of(dbAccount("admin", "{bcrypt}encoded", "[\"ADMIN\"]", false)));
+
+            // When
+            boolean result = accountManager.validateCredentials("admin", "secret");
+
+            // Then
+            assertFalse(result);
+            // 不得退回 YAML 比对：一旦回退，控制台的禁用就被绕过了
+            verify(passwordEncoder, never()).matches("secret", "{noop}secret");
+        }
+
+        @Test
+        @DisplayName("YAML 里启用的 admin 被库中删除（deleted=true）后，登录失败")
+        void deletedDbRowRevokesEnabledYamlAccount() {
+            // Given
+            when(jwtConfig.getAccounts()).thenReturn(List.of(
+                    yamlAccount("admin", "{noop}secret", true, List.of("ADMIN"))));
+            JwtAccountEntity entity = dbAccount("admin", "{bcrypt}encoded", "[\"ADMIN\"]", true);
+            entity.setDeleted(Boolean.TRUE);
+            when(jwtAccountRepository.findByUsername("admin")).thenReturn(Optional.of(entity));
+
+            // When
+            boolean result = accountManager.validateCredentials("admin", "secret");
+
+            // Then
+            assertFalse(result);
+        }
+
+        @Test
+        @DisplayName("库中禁用后，loadUserByUsername 不得回落到 YAML")
+        void disabledDbRowBlocksLoadUserByUsername() {
+            // Given
+            when(jwtConfig.getAccounts()).thenReturn(List.of(
+                    yamlAccount("admin", "{noop}secret", true, List.of("ADMIN"))));
+            when(jwtAccountRepository.findByUsername("admin"))
+                    .thenReturn(Optional.of(dbAccount("admin", "{bcrypt}encoded", "[\"ADMIN\"]", false)));
+
+            // When & Then
+            assertThrows(UsernameNotFoundException.class, () -> accountManager.loadUserByUsername("admin"));
+        }
+
+        @Test
+        @DisplayName("库中删除后，loadUserByUsername 抛用户名不存在")
+        void deletedDbRowBlocksLoadUserByUsername() {
+            // Given
+            when(jwtConfig.getAccounts()).thenReturn(List.of(
+                    yamlAccount("admin", "{noop}secret", true, List.of("ADMIN"))));
+            JwtAccountEntity entity = dbAccount("admin", "{bcrypt}encoded", "[\"ADMIN\"]", true);
+            entity.setDeleted(Boolean.TRUE);
+            when(jwtAccountRepository.findByUsername("admin")).thenReturn(Optional.of(entity));
+
+            // When & Then
+            assertThrows(UsernameNotFoundException.class, () -> accountManager.loadUserByUsername("admin"));
+        }
+
+        @Test
+        @DisplayName("库里没有该账户时 YAML 作兜底仍可登录")
+        void yamlAccountStillWorksWithoutDbRow() {
+            // Given
+            when(jwtConfig.getAccounts()).thenReturn(List.of(
+                    yamlAccount("legacyadmin", "{noop}secret", true, List.of("ADMIN"))));
+            when(jwtAccountRepository.findByUsername("legacyadmin")).thenReturn(Optional.empty());
+            when(passwordEncoder.matches("secret", "{noop}secret")).thenReturn(true);
+
+            // When
+            boolean result = accountManager.validateCredentials("legacyadmin", "secret");
+
+            // Then
+            assertTrue(result);
         }
     }
 

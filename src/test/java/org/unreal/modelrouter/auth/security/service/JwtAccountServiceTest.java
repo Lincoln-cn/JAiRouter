@@ -183,7 +183,14 @@ class JwtAccountServiceTest {
         @DisplayName("JWT-ACC-006: 创建已存在的用户名抛出异常")
         void testCreateAccount_UsernameExists() {
             // Given
-            when(jwtAccountRepository.existsByUsername("existinguser")).thenReturn(true);
+            JwtAccountEntity existing = JwtAccountEntity.builder()
+                    .id(9L)
+                    .username("existinguser")
+                    .password("encoded-password")
+                    .roles("[\"USER\"]")
+                    .enabled(true)
+                    .build();
+            when(jwtAccountRepository.findByUsername("existinguser")).thenReturn(Optional.of(existing));
             createRequest.setUsername("existinguser");
 
             // When & Then
@@ -273,17 +280,18 @@ class JwtAccountServiceTest {
     class DeleteAccountTests {
 
         @Test
-        @DisplayName("JWT-ACC-011: 删除账户成功")
+        @DisplayName("JWT-ACC-011: 删除账户为软删除（issue #789：行必须留着，否则 YAML 会复活）")
         void testDeleteAccount_Success() {
             // Given
             when(jwtAccountRepository.findByUsername("testuser")).thenReturn(Optional.of(testEntity));
-            doNothing().when(jwtAccountRepository).delete(any(JwtAccountEntity.class));
 
             // When
             jwtAccountService.deleteAccount("testuser");
 
             // Then
-            verify(jwtAccountRepository).delete(testEntity);
+            assertTrue(testEntity.getDeleted());
+            verify(jwtAccountRepository).save(testEntity);
+            verify(jwtAccountRepository, never()).delete(any(JwtAccountEntity.class));
         }
 
         @Test
@@ -443,6 +451,103 @@ class JwtAccountServiceTest {
             List<String> roles = result.get(0).getRoles();
             assertNotNull(roles);
             assertTrue(roles.isEmpty());
+        }
+    }
+
+    // ==================== issue #789：软删除与 enabled 写入 ====================
+
+    @Nested
+    @DisplayName("#789 软删除与启用状态写入")
+    class SoftDeleteTests {
+
+        @Test
+        @DisplayName("#789-01: 已软删除的账户不出现在列表里")
+        void deletedAccountIsHiddenFromList() {
+            // Given
+            JwtAccountEntity deleted = JwtAccountEntity.builder()
+                    .id(3L)
+                    .username("gone")
+                    .password("encoded")
+                    .roles("[\"USER\"]")
+                    .enabled(false)
+                    .deleted(Boolean.TRUE)
+                    .build();
+            when(jwtAccountRepository.findAll()).thenReturn(List.of(testEntity, deleted));
+
+            // When
+            List<JwtAccountDTO> result = jwtAccountService.getAllAccounts();
+
+            // Then
+            assertEquals(1, result.size());
+            assertEquals("testuser", result.get(0).getUsername());
+        }
+
+        @Test
+        @DisplayName("#789-02: 已软删除的账户按不存在处理（getAccount 抛异常）")
+        void deletedAccountIsNotFound() {
+            // Given
+            testEntity.setDeleted(Boolean.TRUE);
+            when(jwtAccountRepository.findByUsername("testuser")).thenReturn(Optional.of(testEntity));
+
+            // When & Then
+            assertThrows(RuntimeException.class, () -> jwtAccountService.getAccount("testuser"));
+        }
+
+        @Test
+        @DisplayName("#789-03: 更新账户时 enabled 必须落库（此前被静默丢弃）")
+        void updateAccountAppliesEnabled() {
+            // Given
+            when(jwtAccountRepository.findByUsername("testuser")).thenReturn(Optional.of(testEntity));
+            when(jwtAccountRepository.save(any(JwtAccountEntity.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+            CreateJwtAccountRequest request = new CreateJwtAccountRequest();
+            request.setEnabled(false);
+
+            // When
+            JwtAccountDTO result = jwtAccountService.updateAccount("testuser", request);
+
+            // Then
+            assertFalse(testEntity.getEnabled());
+            assertFalse(result.getEnabled());
+            assertEquals("encoded-password", testEntity.getPassword());
+        }
+
+        @Test
+        @DisplayName("#789-04: 重建同名账户时复活被软删除的行（不撞唯一键、按新口令启用）")
+        void recreateRevivesSoftDeletedRow() {
+            // Given
+            JwtAccountEntity deleted = JwtAccountEntity.builder()
+                    .id(4L)
+                    .username("newuser")
+                    .password("old-encoded")
+                    .roles("[\"USER\"]")
+                    .enabled(false)
+                    .deleted(Boolean.TRUE)
+                    .build();
+            when(jwtAccountRepository.findByUsername("newuser")).thenReturn(Optional.of(deleted));
+            when(jwtAccountRepository.save(any(JwtAccountEntity.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+
+            // When
+            JwtAccountDTO result = jwtAccountService.createAccount(createRequest);
+
+            // Then
+            assertFalse(deleted.getDeleted());
+            assertEquals("encoded-password", deleted.getPassword());
+            assertEquals("newuser", result.getUsername());
+            assertTrue(result.getEnabled());
+        }
+
+        @Test
+        @DisplayName("#789-05: 已软删除的账户不能靠 verifyPassword 通过")
+        void deletedAccountFailsVerifyPassword() {
+            // Given
+            testEntity.setDeleted(Boolean.TRUE);
+            when(jwtAccountRepository.findByUsername("testuser")).thenReturn(Optional.of(testEntity));
+
+            // When & Then
+            assertFalse(jwtAccountService.verifyPassword("testuser", "password123"));
+            verify(passwordEncoder, never()).matches(anyString(), anyString());
         }
     }
 }

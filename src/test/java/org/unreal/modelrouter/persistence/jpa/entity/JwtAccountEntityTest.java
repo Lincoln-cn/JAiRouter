@@ -23,6 +23,8 @@ class JwtAccountEntityTest {
         assertNull(entity.getPassword());
         assertNull(entity.getRoles());
         assertNull(entity.getEnabled());
+        // issue #789：软删除标记默认 false（新行一律视为未删除）
+        assertFalse(entity.isDeletedAccount());
     }
 
     @Test
@@ -35,6 +37,7 @@ class JwtAccountEntityTest {
                 "password123",
                 "[\"ADMIN\",\"USER\"]",
                 true,
+                false,
                 now,
                 now
         );
@@ -90,6 +93,21 @@ class JwtAccountEntityTest {
         assertFalse(entity.getEnabled());
         assertEquals(now, entity.getCreatedAt());
         assertEquals(now, entity.getUpdatedAt());
+    }
+
+    @Test
+    @DisplayName("issue #789：软删除标记默认 false，置位后 isDeletedAccount 为 true")
+    void testDeletedFlag() {
+        JwtAccountEntity entity = JwtAccountEntity.builder()
+                .username("softdeleted")
+                .password("pass")
+                .build();
+
+        assertFalse(entity.isDeletedAccount());
+
+        entity.setDeleted(Boolean.TRUE);
+
+        assertTrue(entity.isDeletedAccount());
     }
 
     @Test

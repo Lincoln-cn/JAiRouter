@@ -41,6 +41,10 @@ jairouter:
       blacklist-enabled: true
       
       # 用户账户配置
+      #
+      # #789：这里的账户只是**首次启动的种子**。JpaDatabaseInitializer 会把它写进 jwt_accounts 表，
+      # 之后登录与令牌解析都以库里的行为准 —— 控制台的禁用/删除/改密会盖掉本文件；反过来，改本文件
+      # 不会改库里已存在的账户，删掉这里的条目也不会让库里的账户消失。
       accounts:
         - username: "admin"
           # 密码必须使用环境变量（首次启动时设置）

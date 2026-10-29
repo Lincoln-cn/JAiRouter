@@ -132,6 +132,30 @@ class JwtAccountStatusRevocationTest {
     }
 
     @Test
+    @DisplayName("#789 库中禁用优先：YAML 里仍启用也不能复活")
+    void disabledDbRowOverridesEnabledYamlAccount() {
+        when(jwtConfig.getAccounts()).thenReturn(List.of(yamlAccount(USERNAME, true)));
+        when(jwtAccountRepository.findByUsername(USERNAME))
+                .thenReturn(Optional.of(account(USERNAME, Boolean.FALSE)));
+
+        StepVerifier.create(validator.validateToken(token()))
+                .expectErrorMatches(JwtAccountStatusRevocationTest::isRejectedAsInvalidToken)
+                .verify();
+    }
+
+    @Test
+    @DisplayName("#789 库中软删除（deleted=true）后旧令牌失效")
+    void softDeletedDbRowIsRejected() {
+        JwtAccountEntity deleted = account(USERNAME, Boolean.TRUE);
+        deleted.setDeleted(Boolean.TRUE);
+        when(jwtAccountRepository.findByUsername(USERNAME)).thenReturn(Optional.of(deleted));
+
+        StepVerifier.create(validator.validateToken(token()))
+                .expectErrorMatches(JwtAccountStatusRevocationTest::isRejectedAsInvalidToken)
+                .verify();
+    }
+
+    @Test
     @DisplayName("账户被删除后，旧令牌也不能刷出新令牌")
     void deletedAccountCannotRefresh() {
         when(jwtAccountRepository.findByUsername(USERNAME)).thenReturn(Optional.empty());

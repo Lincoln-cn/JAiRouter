@@ -13,6 +13,7 @@ import org.unreal.modelrouter.persistence.jpa.entity.JwtAccountEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.JwtAccountRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +35,8 @@ public class JwtAccountService {
     public List<JwtAccountDTO> getAllAccounts() {
         return jwtAccountRepository.findAll()
                 .stream()
+                // issue #789：软删除的行等于「已不存在」，不能出现在账户列表里
+                .filter(account -> !account.isDeletedAccount())
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -43,6 +46,7 @@ public class JwtAccountService {
      */
     public JwtAccountDTO getAccount(final String username) {
         return jwtAccountRepository.findByUsername(username)
+                .filter(account -> !account.isDeletedAccount())
                 .map(this::convertToDTO)
                 .orElseThrow(() -> new RuntimeException("Account not found: " + username));
     }
@@ -52,17 +56,21 @@ public class JwtAccountService {
      */
     @Transactional
     public JwtAccountDTO createAccount(final CreateJwtAccountRequest request) {
-        if (jwtAccountRepository.existsByUsername(request.getUsername())) {
+        final Optional<JwtAccountEntity> existing = jwtAccountRepository.findByUsername(request.getUsername());
+        if (existing.isPresent() && !existing.get().isDeletedAccount()) {
             throw new RuntimeException("Username already exists: " + request.getUsername());
         }
 
         try {
-            JwtAccountEntity entity = JwtAccountEntity.builder()
+            // issue #789：同名行若已被软删除，就地复活 —— 直接再 save 会撞 username 唯一键，
+            // 而「覆盖密码/角色/启用状态」正是创建方想要的语义。
+            final JwtAccountEntity entity = existing.orElseGet(() -> JwtAccountEntity.builder()
                     .username(request.getUsername())
-                    .password(passwordEncoder.encode(request.getPassword()))
-                    .roles(objectMapper.writeValueAsString(request.getRoles()))
-                    .enabled(request.getEnabled() != null ? request.getEnabled() : true)
-                    .build();
+                    .build());
+            entity.setPassword(passwordEncoder.encode(request.getPassword()));
+            entity.setRoles(objectMapper.writeValueAsString(request.getRoles()));
+            entity.setEnabled(request.getEnabled() != null ? request.getEnabled() : true);
+            entity.setDeleted(Boolean.FALSE);
 
             JwtAccountEntity saved = jwtAccountRepository.save(entity);
             log.info("Created JWT account: {} with enabled={}", request.getUsername(), entity.getEnabled());
@@ -78,6 +86,7 @@ public class JwtAccountService {
     @Transactional
     public JwtAccountDTO updateAccount(final String username, final CreateJwtAccountRequest request) {
         JwtAccountEntity entity = jwtAccountRepository.findByUsername(username)
+                .filter(account -> !account.isDeletedAccount())
                 .orElseThrow(() -> new RuntimeException("Account not found: " + username));
 
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
@@ -90,6 +99,11 @@ public class JwtAccountService {
                 throw new RuntimeException("Failed to serialize roles", e);
             }
         }
+        // issue #789：PUT 请求体里的 enabled 此前被静默丢弃 —— 控制台「取消启用」后 save 成功，
+        // 但库里 enabled 没变，运行时不生效（#776/#778 抓的是同族的「写入成功但运行时不生效」）。
+        if (request.getEnabled() != null) {
+            entity.setEnabled(request.getEnabled());
+        }
 
         JwtAccountEntity saved = jwtAccountRepository.save(entity);
         log.info("Updated JWT account: {}", username);
@@ -101,10 +115,15 @@ public class JwtAccountService {
      */
     @Transactional
     public void deleteAccount(final String username) {
-        jwtAccountRepository.findByUsername(username).ifPresent(entity -> {
-            jwtAccountRepository.delete(entity);
-            log.info("Deleted JWT account: {}", username);
-        });
+        jwtAccountRepository.findByUsername(username)
+                .filter(account -> !account.isDeletedAccount())
+                .ifPresentOrElse(entity -> {
+                    // issue #789：软删除。物理删除会让 YAML 静态账户（默认 admin）在登录时重新
+                    // 走 YAML 分支，等于「控制台删了还能登录」；保留行才能让删除持续生效。
+                    entity.setDeleted(Boolean.TRUE);
+                    jwtAccountRepository.save(entity);
+                    log.info("Deleted JWT account (soft delete): {}", username);
+                }, () -> log.info("JWT account not found or already deleted: {}", username));
     }
 
     /**
@@ -112,6 +131,7 @@ public class JwtAccountService {
      */
     public boolean verifyPassword(final String username, final String password) {
         return jwtAccountRepository.findByUsername(username)
+                .filter(account -> !account.isDeletedAccount())
                 .map(entity -> passwordEncoder.matches(password, entity.getPassword()))
                 .orElse(false);
     }
@@ -122,6 +142,7 @@ public class JwtAccountService {
     @Transactional
     public JwtAccountDTO toggleAccountStatus(final String username, final boolean enabled) {
         JwtAccountEntity entity = jwtAccountRepository.findByUsername(username)
+                .filter(account -> !account.isDeletedAccount())
                 .orElseThrow(() -> new RuntimeException("Account not found: " + username));
         entity.setEnabled(enabled);
         JwtAccountEntity saved = jwtAccountRepository.save(entity);
