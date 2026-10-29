@@ -9,11 +9,13 @@ import org.springframework.http.ResponseEntity;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
+import org.unreal.modelrouter.router.adapter.ServiceCapability;
 import org.unreal.modelrouter.router.adapter.config.AdapterDefinitionProperties;
 import org.unreal.modelrouter.router.adapter.support.AdapterContext;
 import org.unreal.modelrouter.router.adapter.persistence.AdapterDefinitionPersistenceService;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -192,6 +194,62 @@ class AdapterConfigControllerCreateValidationTest {
     }
 
     @Test
+    @DisplayName("POST capabilities 全为 false ⇒ 400（#782：能注册成功却永远选不到）")
+    void createWithAllCapabilitiesFalseIsRejected() {
+        final AdapterConfigController.AdapterDefinitionRequest request = request(ADAPTER, "openai-compatible");
+        request.setAuth(Map.of("headerName", "Authorization"));
+        request.setCapabilities(allCapabilities(false));
+
+        final ResponseEntity<RouterResponse<Map<String, Object>>> response = controller.createAdapter(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode(),
+                "全 false 的定义注册成功后没有任何服务类型能路由到它 ⇒ 必须在写入前拒绝");
+        final RouterResponse<Map<String, Object>> body = response.getBody();
+        assertNotNull(body);
+        assertEquals(ErrorCode.INVALID_PARAM.code(), body.getErrorCode());
+        assertTrue(body.getMessage().contains("至少要有一项为 true"),
+                "400 消息应指出至少要勾选一项服务能力，实际：" + body.getMessage());
+        verify(persistenceService, never()).saveDefinition(anyString(), any());
+        assertFalse(definitions.containsKey(ADAPTER), "校验失败时不能让定义进入内存表");
+        verify(adapterRegistry, never()).registerAdapter(anyString(), any());
+    }
+
+    @Test
+    @DisplayName("POST 只勾 streaming ⇒ 400（#782：streaming 不是服务类型，单靠它仍路由不到）")
+    void createWithStreamingOnlyIsRejected() {
+        final AdapterConfigController.AdapterDefinitionRequest request = request(ADAPTER, "openai-compatible");
+        request.setAuth(Map.of("headerName", "Authorization"));
+        request.setCapabilities(Map.of("streaming", true));
+
+        final ResponseEntity<RouterResponse<Map<String, Object>>> response = controller.createAdapter(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode(),
+                "CapabilityChecker.getSupportedServices() 只把 7 个服务能力映射成服务类型，"
+                        + "只勾 streaming 与全 false 对路由是同一个结果");
+        assertNotNull(response.getBody());
+        assertEquals(ErrorCode.INVALID_PARAM.code(), response.getBody().getErrorCode());
+        verify(persistenceService, never()).saveDefinition(anyString(), any());
+    }
+
+    @Test
+    @DisplayName("POST type=extend 显式声明全 false 能力 ⇒ 400（继承模式也不接受不可路由的覆盖）")
+    void createExtendWithAllCapabilitiesFalseIsRejected() {
+        when(adapterRegistry.getAdapterByName(PARENT)).thenReturn(mock(ServiceCapability.class));
+        final AdapterConfigController.AdapterDefinitionRequest request = request(ADAPTER, "extend");
+        request.setParent(PARENT);
+        request.setAuth(Map.of("headerName", "Authorization"));
+        request.setCapabilities(allCapabilities(false));
+
+        final ResponseEntity<RouterResponse<Map<String, Object>>> response = controller.createAdapter(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(ErrorCode.INVALID_PARAM.code(), response.getBody().getErrorCode());
+        verify(persistenceService, never()).saveDefinition(anyString(), any());
+        assertFalse(definitions.containsKey(ADAPTER));
+    }
+
+    @Test
     @DisplayName("POST type=extend 缺 parent ⇒ 400 且零落库（修复前是 500）")
     void createExtendWithoutParentIsRejected() {
         final AdapterConfigController.AdapterDefinitionRequest request = request(ADAPTER, "extend");
@@ -328,6 +386,21 @@ class AdapterConfigControllerCreateValidationTest {
     }
 
     // ==================== 夹具 ====================
+
+    /**
+     * 构造 8 个能力键全为同一值的 capabilities 映射（#782）。
+     *
+     * @param value 每个能力开关的取值
+     * @return 8 个键的能力映射
+     */
+    private static Map<String, Boolean> allCapabilities(final boolean value) {
+        final Map<String, Boolean> capabilities = new HashMap<>();
+        for (String key : List.of("chat", "embedding", "rerank", "tts", "stt",
+                "imgGen", "imgEdit", "streaming")) {
+            capabilities.put(key, value);
+        }
+        return capabilities;
+    }
 
     /**
      * 构造一个「只填 name/type」的请求体 —— 其余字段按用例补。
