@@ -413,7 +413,9 @@ class ApiKeyServiceTest {
 
             assertEquals(1L, testApiKey.getUsage().getSuccessfulRequests());
             assertEquals(1L, testApiKey.getUsage().getTotalRequests());
-            verify(apiKeyPersistenceService).saveApiKeysToStore(any(Map.class));
+            // #811：用量统计只回写这一个 Key，不再整表覆盖
+            verify(apiKeyPersistenceService).saveSingleApiKey(any(Map.class), any());
+            verify(apiKeyPersistenceService, never()).saveApiKeysToStore(any(Map.class));
         }
 
         @Test
@@ -437,7 +439,7 @@ class ApiKeyServiceTest {
                 saveThread.set(Thread.currentThread().getName());
                 saved.countDown();
                 return null;
-            }).when(apiKeyPersistenceService).saveApiKeysToStore(any(Map.class));
+            }).when(apiKeyPersistenceService).saveSingleApiKey(any(Map.class), any());
 
             // EventLoop 语义：在 Reactor 非阻塞线程（Schedulers.parallel）上调用
             StepVerifier.create(Mono.fromRunnable(() -> {
