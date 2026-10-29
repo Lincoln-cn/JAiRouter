@@ -6,7 +6,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
-import org.springframework.core.io.buffer.DataBufferLimitException;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -32,7 +31,10 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 响应数据脱敏过滤器（网关 HTTP JSON 响应路径，可选）。
@@ -153,8 +155,11 @@ public class ResponseSanitizationFilter implements WebFilter {
                     return super.writeWith(body);
                 }
 
-                // issue #594：脱敏必须把响应体整体读进内存，先给缓冲设上限。
-                // 长度已知且超限时直接原样放行（宁可漏脱敏，也不把响应读进堆）。
+                // issue #822：不再用 DataBufferUtils.join 的硬上限 —— 那个 API 超限时抛
+                // DataBufferLimitException，此时已消费的字节无法回放，只能把整条响应判死
+                // （客户端拿到 500，而上游其实已经成功）。
+                // 改成「边收边攒」：未超限则攒完整体脱敏；一旦超限，把已攒的和后续字节原样透传，
+                // 只记录「已跳过脱敏」，绝不为体积打断一个本来成功的响应。
                 final long maxBufferedBytes = resolveMaxBufferedBytes();
                 final long declaredLength = getDelegate().getHeaders().getContentLength();
                 if (declaredLength > maxBufferedBytes) {
@@ -164,114 +169,100 @@ public class ResponseSanitizationFilter implements WebFilter {
                             "响应体超过脱敏缓冲上限，已跳过脱敏: " + declaredLength + " > " + maxBufferedBytes);
                     return super.writeWith(body);
                 }
-                
-                // 处理响应体脱敏
-                // DataBufferUtils.join 的上限参数是 int，先夹到 int 范围（配置侧已限下限 1 KiB）
-                final int joinLimit = (int) Math.min(maxBufferedBytes, Integer.MAX_VALUE);
-                return DataBufferUtils.join(Flux.from(body), joinLimit)
-                        .flatMap(dataBuffer -> {
-                            try {
-                                // 读取原始响应内容
-                                byte[] bytes = new byte[dataBuffer.readableByteCount()];
-                                dataBuffer.read(bytes);
-                                final byte[] originalBytes = bytes; // 创建final变量供lambda使用
-                                String originalContent = new String(originalBytes, StandardCharsets.UTF_8);
-                                
-                                // 执行脱敏
-                                return sanitizationService.sanitizeResponse(originalContent, contentType)
-                                        .flatMap(sanitizedContent -> {
-                                            // 记录脱敏操作
-                                            recordSanitizationEvent(request, contentType, 
-                                                                   !originalContent.equals(sanitizedContent));
-                                            
-                                            // 检查响应是否已经提交
-                                            if (getDelegate().isCommitted()) {
-                                                log.warn("响应已提交，无法写入脱敏后的内容");
-                                                return Mono.empty();
-                                            }
-                                            
-                                            // 创建新的响应体
-                                            DataBufferFactory bufferFactory = originalResponse.bufferFactory();
-                                            DataBuffer sanitizedBuffer = bufferFactory.wrap(
-                                                    sanitizedContent.getBytes(StandardCharsets.UTF_8));
-                                            
-                                            return super.writeWith(Mono.just(sanitizedBuffer));
-                                        })
-                                        .onErrorResume(SanitizationException.class, ex -> {
-                                            log.error("响应脱敏失败: {}", ex.getMessage(), ex);
-                                            recordSanitizationEvent(request, contentType, false, ex.getMessage());
-                                            
-                                            // 根据配置决定是否返回原始内容还是错误
-                                            if (securityProperties.getSanitization().getResponse().isFailOnError()) {
-                                                return handleSanitizationFailure(ex);
-                                            } else {
-                                                log.warn("响应脱敏失败但配置为继续处理，返回原始内容: {}", ex.getMessage());
-                                                // 检查响应是否已经提交
-                                                if (getDelegate().isCommitted()) {
-                                                    log.warn("响应已提交，无法写入原始内容");
-                                                    return Mono.empty();
-                                                }
-                                                // 重新创建原始内容的DataBuffer
-                                                DataBufferFactory bufferFactory = originalResponse.bufferFactory();
-                                                DataBuffer originalBuffer = bufferFactory.wrap(originalBytes);
-                                                return super.writeWith(Mono.just(originalBuffer));
-                                            }
-                                        })
-                                        .onErrorResume(Exception.class, ex -> {
-                                            // 记录更详细的错误信息
-                                            String errorMessage = "未知错误: "
-                                                    + (ex.getMessage() != null
-                                                    ? ex.getMessage()
-                                                    : ex.getClass().getName());
-                                            if (ex.getCause() != null) {
-                                                errorMessage += ", 原因: "
-                                                        + (ex.getCause().getMessage() != null
-                                                        ? ex.getCause().getMessage()
-                                                        : ex.getCause().getClass().getName());
-                                            }
-                                            
-                                            log.error("响应脱敏过程中发生未知错误: {}", errorMessage, ex);
-                                            recordSanitizationEvent(request, contentType, false, errorMessage);
-                                            
-                                            // 发生未知错误时，根据配置决定处理方式
-                                            if (securityProperties.getSanitization().getResponse().isFailOnError()) {
-                                                return handleSanitizationFailure(
-                                                        new SanitizationException("响应脱敏过程中发生未知错误", ex, 
-                                                                ErrorCode.CONTENT_PROCESSING_FAILED.code()));
-                                            } else {
-                                                // 检查响应是否已经提交
-                                                if (getDelegate().isCommitted()) {
-                                                    log.warn("响应已提交，无法写入原始内容");
-                                                    return Mono.empty();
-                                                }
-                                                // 返回原始内容
-                                                DataBufferFactory bufferFactory = originalResponse.bufferFactory();
-                                                DataBuffer originalBuffer = bufferFactory.wrap(originalBytes);
-                                                return super.writeWith(Mono.just(originalBuffer));
-                                            }
-                                        });
-                            } catch (Exception e) {
-                                log.error("响应内容读取失败", e);
-                                return Mono.error(new SanitizationException("响应内容读取失败", e, 
-                                        ErrorCode.CONTENT_PROCESSING_FAILED.code()));
-                            } finally {
-                                // 确保DataBuffer被释放（唯一释放点，issue #594：错误分支不得重复释放）
-                                DataBufferUtils.release(dataBuffer);
+
+                final List<DataBuffer> bufferedChunks = new ArrayList<>();
+                final AtomicLong bufferedBytes = new AtomicLong();
+                final AtomicBoolean overflowed = new AtomicBoolean(false);
+
+                final Flux<DataBuffer> accumulated = Flux.from(body)
+                        .concatMap(dataBuffer -> {
+                            if (overflowed.get()) {
+                                return Mono.just(dataBuffer);
                             }
+                            final long totalBytes = bufferedBytes.addAndGet(dataBuffer.readableByteCount());
+                            if (totalBytes > maxBufferedBytes) {
+                                overflowed.set(true);
+                                log.warn("响应体超过脱敏缓冲上限 {} 字节且未声明长度，跳过脱敏并原样放行: {}",
+                                        maxBufferedBytes, request.getPath().value());
+                                recordSanitizationEvent(request, contentType, false,
+                                        "响应体超过脱敏缓冲上限，已跳过脱敏: 未声明长度");
+                                final List<DataBuffer> passthrough = new ArrayList<>(bufferedChunks);
+                                bufferedChunks.clear();
+                                passthrough.add(dataBuffer);
+                                return Flux.fromIterable(passthrough);
+                            }
+                            bufferedChunks.add(dataBuffer);
+                            return Mono.empty();
                         })
-                        .onErrorResume(DataBufferLimitException.class, ex -> {
-                            // 长度未知（chunked）且超限：原始字节已被消费，无法回放，
-                            // 只能按脱敏失败终止，由中央异常处理器渲染错误体（绝不输出半截内容）。
-                            log.error("响应体超过脱敏缓冲上限 {} 字节且未声明 Content-Length，"
-                                            + "无法回放原始内容，终止响应: {}",
-                                    maxBufferedBytes, request.getPath().value());
-                            recordSanitizationEvent(request, contentType, false,
-                                    "响应体超过脱敏缓冲上限且长度未知: " + maxBufferedBytes);
-                            return Mono.error(new SanitizationException("响应体超过脱敏缓冲上限", ex,
-                                    ErrorCode.CONTENT_PROCESSING_FAILED.code()));
+                        .concatWith(Flux.defer(() -> {
+                            if (overflowed.get() || bufferedChunks.isEmpty()) {
+                                return Flux.empty();
+                            }
+                            final int size = (int) Math.min(bufferedBytes.get(), Integer.MAX_VALUE);
+                            final byte[] originalBytes = new byte[size];
+                            int offset = 0;
+                            for (DataBuffer chunk : bufferedChunks) {
+                                final int readable = chunk.readableByteCount();
+                                chunk.read(originalBytes, offset, readable);
+                                offset += readable;
+                            }
+                            bufferedChunks.forEach(DataBufferUtils::release);
+                            bufferedChunks.clear();
+                            return sanitizeAndWrite(originalBytes, contentType);
+                        }));
+
+                return super.writeWith(accumulated);
+            }
+
+            /**
+             * 把整段响应体交给脱敏服务并写出结果（issue #822 抽出，小体量与「攒到上限」两条路径共用）。
+             *
+             * @param originalBytes 原始响应字节
+             * @param contentType   响应内容类型
+             * @return 待写出的缓冲区；失败时按 {@code fail-on-error} 决定抛错还是回退原文
+             */
+            private Flux<DataBuffer> sanitizeAndWrite(final byte[] originalBytes, final String contentType) {
+                final String originalContent = new String(originalBytes, StandardCharsets.UTF_8);
+                return sanitizationService.sanitizeResponse(originalContent, contentType)
+                        .flatMapMany(sanitizedContent -> {
+                            recordSanitizationEvent(request, contentType,
+                                    !originalContent.equals(sanitizedContent));
+                            if (getDelegate().isCommitted()) {
+                                log.warn("响应已提交，无法写入脱敏后的内容");
+                                return Flux.empty();
+                            }
+                            final DataBuffer buffer = originalResponse.bufferFactory()
+                                    .wrap(sanitizedContent.getBytes(StandardCharsets.UTF_8));
+                            return Flux.just(buffer);
                         })
-                        // issue #594：body 已被 join 消费，空体时不能再把同一个 body 写一次
-                        .switchIfEmpty(Mono.defer(() -> super.writeWith(Flux.empty())));
+                        .onErrorResume(SanitizationException.class, ex -> {
+                            log.error("响应脱敏失败: {}", ex.getMessage(), ex);
+                            recordSanitizationEvent(request, contentType, false, ex.getMessage());
+                            if (securityProperties.getSanitization().getResponse().isFailOnError()) {
+                                return Flux.error(ex);
+                            }
+                            log.warn("响应脱敏失败但配置为继续处理，返回原始内容: {}", ex.getMessage());
+                            if (getDelegate().isCommitted()) {
+                                log.warn("响应已提交，无法写入原始内容");
+                                return Flux.empty();
+                            }
+                            return Flux.just(originalResponse.bufferFactory().wrap(originalBytes));
+                        })
+                        .onErrorResume(Exception.class, ex -> {
+                            final String errorMessage = "未知错误: "
+                                    + (ex.getMessage() != null ? ex.getMessage() : ex.getClass().getName());
+                            log.error("响应脱敏过程中发生未知错误: {}", errorMessage, ex);
+                            recordSanitizationEvent(request, contentType, false, errorMessage);
+                            if (securityProperties.getSanitization().getResponse().isFailOnError()) {
+                                return Flux.error(new SanitizationException("响应脱敏过程中发生未知错误", ex,
+                                        ErrorCode.CONTENT_PROCESSING_FAILED.code()));
+                            }
+                            if (getDelegate().isCommitted()) {
+                                log.warn("响应已提交，无法写入原始内容");
+                                return Flux.empty();
+                            }
+                            return Flux.just(originalResponse.bufferFactory().wrap(originalBytes));
+                        });
             }
             
             /**

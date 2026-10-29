@@ -438,8 +438,8 @@ class ResponseSanitizationFilterTest {
         }
 
         @Test
-        @DisplayName("FILT-009: 长度未知（chunked）且超过上限时按脱敏失败终止，不回写半截内容")
-        void oversizeWithoutContentLengthFailsClosed() {
+        @DisplayName("FILT-009: 长度未知（chunked）且超过上限时原样透传，不因体积把成功的响应判死（issue #822）")
+        void oversizeWithoutContentLengthPassesThrough() {
             when(responseConfig.getMaxBufferedBytes()).thenReturn(1024L);
             MockServerWebExchange exchange = newExchange(JSON_PATH, MediaType.APPLICATION_JSON);
 
@@ -450,14 +450,17 @@ class ResponseSanitizationFilterTest {
                 ServerWebExchange target = invocation.getArgument(0);
                 return target.getResponse().writeWith(Flux.just(
                         target.getResponse().bufferFactory().wrap(chunk),
+                        target.getResponse().bufferFactory().wrap(chunk),
                         target.getResponse().bufferFactory().wrap(chunk)));
             });
 
-            StepVerifier.create(filter.filter(exchange, chain))
-                    .expectErrorMatches(e -> e instanceof SanitizationException)
-                    .verify();
+            StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
 
             verifyNoInteractions(sanitizationService);
+            String written = exchange.getResponse().getBodyAsString().block();
+            assertNotNull(written, "超限透传必须写出内容");
+            assertEquals(2400, written.length(),
+                    "超限时必须原样输出全部字节：既不能丢内容，也不能因为体积把响应判死");
         }
 
         @Test
