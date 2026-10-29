@@ -15,6 +15,7 @@ import org.unreal.modelrouter.config.sync.converter.ServiceConfigConverter;
 import org.unreal.modelrouter.config.sync.merger.ConfigMerger;
 import org.unreal.modelrouter.config.sync.repository.StoreConfigRepository;
 import org.unreal.modelrouter.config.sync.validator.ServiceConfigValidator;
+import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,9 @@ public class ServiceConfigManager {
 
     // JPA Repository (保留现有数据库操作)
     private final ServiceConfigRepository jpaRepository;
+
+    // #776: 写入/删除成功后刷新运行时缓存；此前本类只写持久化，运行时按旧配置继续路由
+    private final ModelServiceRegistry modelServiceRegistry;
 
     // ========== API 层方法 (DTO 方式) ==========
 
@@ -106,6 +110,9 @@ public class ServiceConfigManager {
             log.warn("同步配置到 StoreManager 失败：error={}", e.getMessage());
         }
 
+        // 6. #776: 刷新运行时缓存（否则本次进程仍按旧配置路由）
+        refreshRuntimeConfig(serviceType);
+
         return converter.toDTO(saved);
     }
 
@@ -125,6 +132,9 @@ public class ServiceConfigManager {
 
         // 2. 从数据库删除
         jpaRepository.deleteAllByServiceType(serviceType);
+
+        // 3. #776: 刷新运行时缓存（服务已不存在 ⇒ 对应缓存条目被移除）
+        refreshRuntimeConfig(serviceType);
     }
 
     /**
@@ -157,6 +167,9 @@ public class ServiceConfigManager {
 
         // 5. 同步到数据库
         updateDatabaseEntity(serviceType, request);
+
+        // 6. #776: 刷新运行时缓存
+        refreshRuntimeConfig(serviceType);
         log.info("服务配置更新成功：serviceType={}", serviceType);
     }
 
@@ -202,6 +215,8 @@ public class ServiceConfigManager {
 
         // 5. 保存
         configRepository.save(serviceType, config);
+        // 6. #776: 刷新运行时缓存
+        refreshRuntimeConfig(serviceType);
         log.info("服务配置创建成功：serviceType={}", serviceType);
     }
 
@@ -232,6 +247,8 @@ public class ServiceConfigManager {
 
         // 5. 保存
         configRepository.save(serviceType, merged);
+        // 6. #776: 刷新运行时缓存
+        refreshRuntimeConfig(serviceType);
         log.info("服务配置更新成功：serviceType={}", serviceType);
 
         return merged;
@@ -251,10 +268,36 @@ public class ServiceConfigManager {
 
         // 2. 删除
         configRepository.delete(serviceType);
+        // 3. #776: 刷新运行时缓存（服务已不存在 ⇒ 对应缓存条目被移除）
+        refreshRuntimeConfig(serviceType);
         log.info("服务删除成功：serviceType={}", serviceType);
     }
 
     // ==================== 辅助方法 ====================
+
+    /**
+     * #776: 写入/删除成功后立即刷新运行时缓存，避免「接口返回成功、路由仍按旧配置工作」。
+     *
+     * <p>刷新精确到单个服务（{@link ModelServiceRegistry#refreshServiceConfig(String)}，沿用 #707
+     * 的实现），不重建其它服务的缓存条目；该服务在合并配置里已不存在时（删除路径），对应缓存条目
+     * 会被移除，避免已删除的服务继续参与路由。</p>
+     *
+     * <p>刷新失败不改变写入结果：配置已经落库，这里只补一条错误日志说明「本次写入尚未在运行时生效」，
+     * 不把「已持久化」的写入包装成失败（那样客户端重试只会撞上 409/重复创建）。</p>
+     *
+     * @param serviceType 服务类型（{@code chat} / {@code embedding} 等）
+     */
+    private void refreshRuntimeConfig(final String serviceType) {
+        try {
+            final boolean refreshed = modelServiceRegistry.refreshServiceConfig(serviceType);
+            if (!refreshed) {
+                log.info("运行时缓存中没有该服务的条目（已删除或配置里不含该服务）：serviceType={}", serviceType);
+            }
+        } catch (RuntimeException e) {
+            log.error("服务配置已保存，但运行时缓存刷新失败，本次写入尚未生效：serviceType={}", serviceType, e);
+        }
+    }
+
 
     /**
      * 更新数据库实体
