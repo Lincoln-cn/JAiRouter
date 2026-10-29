@@ -99,9 +99,14 @@ class SensitiveConfigValidatorTest {
         assertEquals("${random.uuid}", fallback,
                 "config/auth/jwt.yml 的回落值必须是 ${random.uuid}，不能再是公开字面量");
 
-        // ② 非生产环境确实会随机生成并把口令打出来 —— 这正是 #314 当时说反、现在已兑现的行为
+        // ② 非生产环境首次初始化会随机生成并打印口令，但只在「创建账号」的那一次（#802）：
+        //    库已有账号时既不再生成也不再打印，文案不能让人以为每次重启都能拿到可用口令。
         assertTrue(warning.contains("随机"), "告警应说明非生产环境随机生成；实际文案：" + warning);
         assertTrue(warning.contains("启动日志"), "告警应指向启动日志里的那行口令；实际文案：" + warning);
+        assertTrue(warning.contains("首次") || warning.contains("创建账号"),
+                "告警必须限定为「首次初始化 / 创建账号的那一次」；实际文案：" + warning);
+        assertTrue(warning.contains("已有账号") || warning.contains("不会再打印"),
+                "告警必须说明重启后不再打印可用口令；实际文案：" + warning);
 
         // ③ 生产仍必须 fail-fast，文案不能让运维以为生产也能起来
         assertTrue(warning.contains("生产") && warning.contains("启动失败"),

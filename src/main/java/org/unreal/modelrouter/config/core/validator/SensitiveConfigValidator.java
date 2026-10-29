@@ -143,15 +143,16 @@ public class SensitiveConfigValidator implements ApplicationListener<Application
     /**
      * 未设置 {@code INITIAL_ADMIN_PASSWORD} 时的告警文案（包内可见：供测试断言，issue #314 / #664）。
      *
-     * <p><b>这段文案必须与真实行为一致</b>：非生产 profile 下 JWT 账户口令回落为 {@code ${random.uuid}}，
-     * 并由 {@code StartupSecretKeyChecker} 在启动日志里打印一次（重启即换新值）；生产 profile 下
-     * {@code StartupSecurityGate} 会因此**直接启动失败**。唯一显式生成器是 CLI
-     * {@code --generate-password}（{@code KeyGeneratorCommandLine}）。</p>
+     * <p><b>这段文案必须与真实行为一致</b>（issue #314 / #664 / #802）：非生产 profile 下 JWT 账户口令
+     * 回落为 {@code ${random.uuid}}，但**只有创建账号的那一次启动**会把它写库并打印，
+     * 库已有账号时既不生效也不再打印；生产 profile 下 {@code StartupSecurityGate} 会因此**直接启动失败**。
+     * 唯一显式生成器是 CLI {@code --generate-password}（{@code KeyGeneratorCommandLine}）。</p>
      *
      * @return 描述真实后果的告警文案
      */
     static String missingAdminPasswordWarning() {
-        return "INITIAL_ADMIN_PASSWORD 未设置（非生产环境会随机生成一次性管理员口令并打印在启动日志里，"
+        return "INITIAL_ADMIN_PASSWORD 未设置（非生产环境首次初始化时会随机生成管理员口令，"
+                + "且只在创建账号的那一次启动日志里打印；库中已有账号时不会再打印任何可用口令。"
                 + "生产 profile 会直接启动失败；已知出厂默认值 " + FACTORY_DEFAULT_ADMIN_PASSWORD
                 + " 会被门闩拒绝 —— 请设置该环境变量，或用 --generate-password 生成一个强密码）";
     }
