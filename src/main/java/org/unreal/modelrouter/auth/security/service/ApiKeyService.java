@@ -340,7 +340,11 @@ public class ApiKeyService {
         // 这里再 put 一次会让同一请求被计两次，日配额提前用光、概览页今日请求数翻倍。
         UsageStatistics st = ak.getUsage();
         st.incrementRequest(succ);
-        apiKeyPersistenceService.saveApiKeysToStore(apiKeyCache);
+        // #811：这里原来是 saveApiKeysToStore(整表序列化 + 整份覆盖)。每个请求都会走到本方法，
+        // 多副本/多 Key 时有两个后果：① 每次请求把全部 Key 序列化一遍（写放大，Key 越多越慢）；
+        // ② 覆盖写会把存储里「别的副本刚创建/更新的 Key」按本副本的内存快照回滚掉。
+        // 用量统计只改自己这一条，因此改成「读回最新文档 + 只替换自己这条」。
+        apiKeyPersistenceService.saveSingleApiKey(apiKeyCache, kh);
         log.debug("更新API Key使用统计: {} (成功: {})", kid, succ);
     }
 
