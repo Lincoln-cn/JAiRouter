@@ -60,7 +60,7 @@ springdoc:
 > 这个失败是**静默**的，所以改动该键之后一定要看**路径数量**，不能只看状态码：
 >
 > ```bash
-> curl -s -H "Jairouter_Token: <ADMIN JWT>" http://localhost:8080/v3/api-docs | jq '.paths | length'
+> curl -s -H "X-Jairouter-Token: <ADMIN JWT>" http://localhost:8080/v3/api-docs | jq '.paths | length'
 > ```
 >
 > `/v3/api-docs` **默认不是匿名可访问的** —— 需要凭据，除非设了

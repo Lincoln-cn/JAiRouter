@@ -110,7 +110,7 @@ config/
 | 更新实例 | PUT | `/api/config/instance/{serviceType}/{instanceId}` | `{instanceId}` 是列表/新增返回的**数据库 id** |
 | 删除实例 | DELETE | `/api/config/instance/{serviceType}/{instanceId}` | 同一个数据库 id |
 
-**认证。** 这些是管理面端点：JWT 要放在 **`Jairouter_Token`** 头里（可用
+**认证。** 这些是管理面端点：JWT 要放在 **`X-Jairouter-Token`** 头里（可用
 `jairouter.security.jwt.jwt-header` 配置），**不是** `Authorization: Bearer`。不带它每个请求都会得到
 `401 {"error":{"code":"AUTH_MISSING"}}`。每个 shell 先取一次 token：
 
@@ -129,7 +129,7 @@ TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
 ### 1. 获取实例列表
 
 ```bash
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 ```
 
 数组里每个元素都是一个完整的 `ServiceInstanceDTO` —— **没有单独的「实例详情」端点**，列表里已经带着全量配置：
@@ -162,7 +162,7 @@ curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/cha
 ### 2. 添加实例
 
 ```bash
-curl -X POST -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
+curl -X POST -H "X-Jairouter-Token: $TOKEN" -H "Content-Type: application/json" \
   -d '{
     "name": "qwen2:7b",
     "baseUrl": "http://gpu-server:8080",
@@ -191,10 +191,10 @@ curl -X POST -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
 `{instanceId}` 就是上面那个数据库 `id`（也可以从列表响应里查）：
 
 ```bash
-ID=$(curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
+ID=$(curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
   | jq -r '.data[] | select(.name=="qwen2:7b") | .id')
 
-curl -X PUT -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
+curl -X PUT -H "X-Jairouter-Token: $TOKEN" -H "Content-Type: application/json" \
   -d '{"name":"qwen2:7b","baseUrl":"http://gpu-server:8080","path":"/v1/chat/completions","weight":3,"adapter":"normal"}' \
   "http://localhost:8080/api/config/instance/chat/$ID"
 ```
@@ -202,9 +202,9 @@ curl -X PUT -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
 ### 4. 删除实例
 
 ```bash
-ID=$(curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
+ID=$(curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
   | jq -r '.data[] | select(.name=="faulty-model") | .id')
-curl -X DELETE -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat/$ID"
+curl -X DELETE -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat/$ID"
 ```
 
 上面两步（更新、删除）在本页复查时都对着真实运行的实例执行过，均返回 `200`
@@ -239,26 +239,26 @@ curl -X DELETE -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/in
 实现位置：`config/controller/ConfigurationVersionController.java`（类级
 `@RequestMapping("/api/config/version")`），背后是 `config/version/VersionManagementService.java`。
 
-认证：与本页其它管理面 API 一样，JWT 放在 **`Jairouter_Token`** 头里
+认证：与本页其它管理面 API 一样，JWT 放在 **`X-Jairouter-Token`** 头里
 （见[实例管理 API](#实例管理-api)）；不带它这些调用会返回 `401 {"error":{"code":"AUTH_MISSING"}}`。
 
 ### 示例
 
 ```bash
 # 当前生效的版本
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/current"
 
 # 全部已存版本
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version"
 
 # 元信息 + 历史
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/info"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/info"
 
 # 当前配置与 3 号版本的差异
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/compare/3"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/compare/3"
 
 # 把运行期配置回滚到 3 号版本
-curl -X POST -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/apply/3"
+curl -X POST -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/apply/3"
 ```
 
 **版本是怎么产生的。** 不需要另外跑「合并文件」这一步：通过本页各管理面 API 做的配置变更，
@@ -272,13 +272,13 @@ curl -X POST -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/vers
 
 ```bash
 # 当前生效的配置来源，以及应用知道的校验规则 / 环境变量
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/sources"
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/validation-rules"
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/environment-variables"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/sources"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/validation-rules"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/environment-variables"
 
 # 版本状态（当前版本 / 历史 / 元信息）
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current"
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/info"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/current"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/info"
 ```
 
 需要运行期健康状态时，用（公开的）健康端点：`curl http://localhost:8080/actuator/health`。
@@ -290,7 +290,7 @@ curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/info
 ```bash
 # 1. Add new high-performance GPU instance
 curl -X POST "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "llama3.1:70b",
@@ -300,7 +300,7 @@ curl -X POST "http://localhost:8080/api/config/instance/chat" \
   }'
 
 # 2. Verify instance addition success
-curl -X GET -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
+curl -X GET -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 
 # 3. Test new instance
 curl -X POST "http://localhost:8080/v1/chat/completions" \
@@ -315,34 +315,34 @@ curl -X POST "http://localhost:8080/v1/chat/completions" \
 
 ```bash
 # 1. Get current instance configuration
-curl -X GET -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
+curl -X GET -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 
 # 2. Update instance weight (from 2 to 4)
-ID=$(curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
+ID=$(curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
   | jq -r '.data[] | select(.name=="qwen2:7b") | .id')
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name":"qwen2:7b","baseUrl":"http://gpu-server:8080","path":"/v1/chat/completions","weight":4}'
 
 # 3. Verify weight update
-curl -X GET -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
+curl -X GET -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 ```
 
 ### 场景 3：故障实例处理
 
 ```bash
 # 1. Check instance health status
-curl -X GET -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
+curl -X GET -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 
 # 2. Temporarily remove faulty instance
-ID=$(curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
+ID=$(curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
   | jq -r '.data[] | select(.name=="qwen2:7b") | .id')
 curl -X DELETE "http://localhost:8080/api/config/instance/chat/$ID"
 
 # 3. Add alternative instance
 curl -X POST "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "backup-model",
@@ -359,14 +359,14 @@ curl -X POST "http://localhost:8080/api/config/instance/chat" \
 
 ```bash
 # 当前生效的版本，以及存在哪些版本
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current"
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/current"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version"
 
 # 切换前先看清差异
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/compare/3"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/compare/3"
 
 # 回滚到某个更早的版本
-curl -X POST -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/apply/3"
+curl -X POST -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/apply/3"
 ```
 
 ## 最佳实践
@@ -385,22 +385,22 @@ curl -X POST -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/vers
 # Progressive Instance Replacement
 # 1. Add new instance (smaller weight)
 curl -X POST "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
+  -H "X-Jairouter-Token: $TOKEN" -H "Content-Type: application/json" \
   -d '{"name": "new-model", "weight": 1}'
 
 # 2. Observe new instance performance
 # Monitor metrics, error rate, response time
 
 # 3. Gradually increase new instance weight
-ID=$(curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
+ID=$(curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
   | jq -r '.data[] | select(.name=="new-model") | .id')
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
-  -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
+  -H "X-Jairouter-Token: $TOKEN" -H "Content-Type: application/json" \
   -d '{"name":"new-model","weight":3}'
 
 # 4. Gradually decrease old instance weight
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
-  -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
+  -H "X-Jairouter-Token: $TOKEN" -H "Content-Type: application/json" \
   -d '{"name":"old-model","weight":1}'
 
 # 5. Remove old instance
@@ -411,10 +411,10 @@ curl -X DELETE "http://localhost:8080/api/config/instance/chat/$ID"
 
 ```bash
 # Regularly check configuration status
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/current"
 
 # Validate configuration integrity
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/sources"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/sources"
 
 # Monitor instance health status
 curl -X GET "http://localhost:8080/actuator/health"
@@ -427,7 +427,7 @@ curl -X GET "http://localhost:8080/actuator/health"
 #!/bin/bash
 
 # Backup current configuration
-CURRENT_VERSION=$(curl -s -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current")
+CURRENT_VERSION=$(curl -s -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/current")
 
 if [[ $? -eq 0 ]]; then
     echo "Configuration backup successful"
@@ -473,7 +473,7 @@ fi
 ```bash
 # View detailed error information
 curl -v "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name": "test", ...}'
 

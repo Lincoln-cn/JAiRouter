@@ -236,7 +236,7 @@ jairouter:
   security:
     jwt:
       enabled: false                    # Enable JWT authentication
-      jwt-header: "Jairouter_Token"     # Custom JWT header
+      jwt-header: "X-Jairouter-Token"     # Custom JWT header
       secret: "${JWT_SECRET:}"          # JWT secret (use env var)
       algorithm: "HS256"                # Signing algorithm
       expiration-minutes: 60            # Access token expiration

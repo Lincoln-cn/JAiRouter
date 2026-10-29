@@ -63,7 +63,7 @@ print_success "获取令牌成功"
 print_step "2" "获取初始版本数量"
 
 INITIAL_VERSIONS_RESPONSE=$(curl -s -X GET "${BASE_URL}/api/config/version/info" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 INITIAL_VERSION_COUNT=$(echo "$INITIAL_VERSIONS_RESPONSE" | jq '.data | length')
 print_info "初始版本数量: $INITIAL_VERSION_COUNT"
@@ -109,7 +109,7 @@ CREATE_SERVICE_DATA='{
 }'
 
 CREATE_RESPONSE=$(curl -s -X POST "${BASE_URL}/api/config/type/services/${TEST_SERVICE_NAME}" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   --data-raw "$CREATE_SERVICE_DATA")
 
@@ -131,7 +131,7 @@ sleep 2
 print_step "4" "检查创建服务后的版本数量"
 
 AFTER_CREATE_RESPONSE=$(curl -s -X GET "${BASE_URL}/api/config/version/info" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 AFTER_CREATE_COUNT=$(echo "$AFTER_CREATE_RESPONSE" | jq '.data | length')
 print_info "创建服务后版本数量: $AFTER_CREATE_COUNT"
@@ -201,7 +201,7 @@ UPDATE_SERVICE_DATA='{
 }'
 
 UPDATE_RESPONSE=$(curl -s -X PUT "${BASE_URL}/api/config/type/services/${TEST_SERVICE_NAME}" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   --data-raw "$UPDATE_SERVICE_DATA")
 
@@ -222,7 +222,7 @@ sleep 2
 print_step "6" "检查更新服务后的版本数量"
 
 AFTER_UPDATE_RESPONSE=$(curl -s -X GET "${BASE_URL}/api/config/version/info" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 AFTER_UPDATE_COUNT=$(echo "$AFTER_UPDATE_RESPONSE" | jq '.data | length')
 print_info "更新服务后版本数量: $AFTER_UPDATE_COUNT"
@@ -281,7 +281,7 @@ if [ "$LATEST_VERSION_NUM" != "null" ] && [ -n "$LATEST_VERSION_NUM" ]; then
     print_info "查询版本 $LATEST_VERSION_NUM 的配置"
     
     VERSION_CONFIG_RESPONSE=$(curl -s -X GET "${BASE_URL}/api/config/version/${LATEST_VERSION_NUM}" \
-      -H "Jairouter_Token: $TOKEN")
+      -H "X-Jairouter-Token: $TOKEN")
     
     if echo "$VERSION_CONFIG_RESPONSE" | jq -e '.success' >/dev/null 2>&1; then
         print_success "查询版本配置成功"
@@ -317,7 +317,7 @@ fi
 print_step "8" "清理测试数据"
 
 DELETE_RESPONSE=$(curl -s -X DELETE "${BASE_URL}/api/config/type/services/${TEST_SERVICE_NAME}" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 if echo "$DELETE_RESPONSE" | jq -e '.success' >/dev/null 2>&1; then
     print_success "测试服务删除成功"
@@ -329,7 +329,7 @@ fi
 print_step "9" "最终验证"
 
 FINAL_VERSIONS_RESPONSE=$(curl -s -X GET "${BASE_URL}/api/config/version/info" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 FINAL_VERSION_COUNT=$(echo "$FINAL_VERSIONS_RESPONSE" | jq '.data | length')
 print_info "最终版本数量: $FINAL_VERSION_COUNT"

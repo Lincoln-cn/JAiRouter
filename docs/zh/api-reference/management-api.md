@@ -1102,7 +1102,7 @@ POST /api/v1/circuit-breaker-monitor/instances/reset              # config:circu
 
 ### JWT 令牌
 ```
-请求头: Jairouter_Token: <your-jwt-token>
+请求头: X-Jairouter-Token: <your-jwt-token>
 ```
 
 ### API 密钥

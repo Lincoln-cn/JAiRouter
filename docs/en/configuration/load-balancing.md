@@ -387,7 +387,7 @@ model:
 # But instance weights can be adjusted to influence load distribution
 # $ID = the instance's database id, taken from GET /api/config/instance/{serviceType}
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "high-perf-model@http://gpu-server:8080",
@@ -406,7 +406,7 @@ curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
 # Scenario: GPU server performance improved, increase weight
 # $ID = the instance's database id, taken from GET /api/config/instance/{serviceType}
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "gpu-model@http://gpu-server:8080",
@@ -418,7 +418,7 @@ curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
 # Scenario: CPU server overloaded, decrease weight
 # $ID = the instance's database id, taken from GET /api/config/instance/{serviceType}
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "cpu-model@http://cpu-server:8080",
@@ -447,7 +447,7 @@ JAiRouter provides the following load balancing related metrics:
 > TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/jwt/login \
 >   -H 'Content-Type: application/json' \
 >   -d '{"username":"admin","password":"<your admin password>"}' | jq -r .data.token)
-> curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
+> curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
 > ```
 
 ```bash
@@ -653,7 +653,7 @@ Since v2.9.6, when a call fails with a retryable error (connection error / 5xx /
 
 ```bash
 # Check instance status
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 
 # View load distribution
 curl "http://localhost:8080/actuator/metrics/jairouter_requests_total"

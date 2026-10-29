@@ -59,7 +59,7 @@ unless `jairouter.security.docs-public=true` (`ApiDocsAccessPolicy.java`).
 The gateway itself accepts two credential types:
 
 - `X-API-Key: <API key created in the console>`
-- `Jairouter_Token: <JWT>`
+- `X-Jairouter-Token: <JWT>`
 
 The `Authorization` header **does not participate in gateway authentication** — it is passed through
 to the downstream AI service (instance-level `headers` take precedence).

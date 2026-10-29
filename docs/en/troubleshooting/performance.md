@@ -1,4 +1,4 @@
-﻿# Performance Troubleshooting
+# Performance Troubleshooting
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -39,7 +39,7 @@ This document provides diagnostic methods and optimization strategies for JAiRou
 > TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/jwt/login \
 >   -H 'Content-Type: application/json' \
 >   -d '{"username":"admin","password":"<your admin password>"}' | jq -r .data.token)
-> curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
+> curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
 > ```
 
 ```bash

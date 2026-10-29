@@ -213,7 +213,7 @@ const loadModels = async () => {
       return
     }
     const resp = await fetch(`${origin}/v1/models`, {
-      headers: { 'Jairouter_Token': token },
+      headers: { 'X-Jairouter-Token': token },
     })
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
     const json = await resp.json()

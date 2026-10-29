@@ -144,7 +144,7 @@ The following steps are ordered by dependency, using an Ollama model service as 
 |-------------|-------------|-------------|
 | `Authorization` | `Bearer <your-api-key>` | Authentication credential transparently forwarded to the downstream model service |
 
-> 💡 The `Authorization` header is **forwarded transparently to the downstream service** — it is not the gateway's own credential. The gateway credential is `Jairouter_Token` (JWT).
+> 💡 The `Authorization` header is **forwarded transparently to the downstream service** — it is not the gateway's own credential. The gateway credential is `X-Jairouter-Token` (JWT).
 
 6. Optional: expand the **Tag Config** section and add tags for routing rule matching;
 7. Click **Save**;
@@ -304,7 +304,7 @@ This page provides complete access examples for the OpenAI-compatible API and th
 |-----------------|-------------------|-------------|
 | OpenAI-compatible | `X-API-Key: <Gateway API Key>` | Used for `/v1/*` endpoints |
 | Anthropic-compatible | `x-api-key: <Gateway API Key>` | Used for the Anthropic Messages API |
-| Console | `Jairouter_Token: <JWT>` | Management API credential after Web Console login |
+| Console | `X-Jairouter-Token: <JWT>` | Management API credential after Web Console login |
 | `Authorization` | — | **Forwarded transparently to the downstream model service**; not a gateway credential |
 
 > ⚠️ The `Authorization` header (e.g. `Bearer <token>`) is forwarded as-is to the downstream model service by the gateway — it is not used as the gateway's own authentication credential.

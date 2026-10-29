@@ -611,7 +611,7 @@ curl "http://localhost:8080/api/rate-limiter/summary"
 > TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/jwt/login \
 >   -H 'Content-Type: application/json' \
 >   -d '{"username":"admin","password":"<你的管理员密码>"}' | jq -r .data.token)
-> curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
+> curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
 > ```
 
 ```bash
@@ -772,7 +772,7 @@ model:
 3. **限流不生效**
    ```bash
    # 检查配置是否正确加载
-   curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
+   curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
    
    # 检查限流是否启用
    ```

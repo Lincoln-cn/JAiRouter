@@ -122,7 +122,7 @@ export function connectSSE() {
     // 如果有token，则添加到headers中
     if (token) {
       config.headers = {
-        'Jairouter_Token': token
+        'X-Jairouter-Token': token
       }
     }
     

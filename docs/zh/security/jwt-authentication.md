@@ -48,7 +48,7 @@ jairouter:
       secret: "${JWT_SECRET}"
       algorithm: "HS256"
       expiration-minutes: 60
-      jwt-header: "Jairouter_Token"  # 自定义 JWT 头
+      jwt-header: "X-Jairouter-Token"  # 自定义 JWT 头
 ```
 
 ### 2. 设置 JWT 密钥
@@ -108,7 +108,7 @@ jairouter:
 在 HTTP 请求头中添加 JWT 令牌：
 
 ```bash
-curl -H "Jairouter_Token: your-jwt-token-here" \
+curl -H "X-Jairouter-Token: your-jwt-token-here" \
      -X POST \
      -H "Content-Type: application/json" \
      -d '{"model": "gpt-3.5-turbo", "messages": [...]}' \
@@ -168,7 +168,7 @@ curl -X POST http://localhost:8080/api/auth/jwt/login \
 | `refresh-expiration-days` | int | 7 | 刷新令牌过期时间（天） |
 | `issuer` | string | "jairouter" | JWT 发行者标识 |
 | `blacklist-enabled` | boolean | true | 是否启用黑名单功能 |
-| `jwt-header` | string | "Jairouter_Token" | 自定义 JWT 头名称 |
+| `jwt-header` | string | "X-Jairouter-Token" | 自定义 JWT 头名称 |
 | `accounts` | array | [] | 用户账户列表 |
 
 ---
@@ -235,7 +235,7 @@ curl -X POST http://localhost:8080/api/auth/jwt/login \
 
 2. **使用访问令牌访问 API**
 ```bash
-curl -H "Jairouter_Token: access_token_here" \
+curl -H "X-Jairouter-Token: access_token_here" \
      http://localhost:8080/v1/chat/completions
 ```
 
@@ -311,7 +311,7 @@ jairouter:
 
 ```bash
 curl -X POST http://localhost:8080/api/auth/jwt/revoke \
-     -H "Jairouter_Token: token_to_revoke"
+     -H "X-Jairouter-Token: token_to_revoke"
 ```
 
 ### 存储不可用时的降级行为
@@ -333,13 +333,13 @@ curl -X POST http://localhost:8080/api/auth/jwt/revoke \
 ### 获取令牌列表
 ```bash
 curl -X GET "http://localhost:8080/api/auth/jwt/tokens?page=0&size=20&status=ACTIVE" \
-     -H "Jairouter_Token: admin_token"
+     -H "X-Jairouter-Token: admin_token"
 ```
 
 ### 撤销特定令牌
 ```bash
 curl -X POST "http://localhost:8080/api/auth/jwt/revoke" \
-     -H "Jairouter_Token: admin_token" \
+     -H "X-Jairouter-Token: admin_token" \
      -H "Content-Type: application/json" \
      -d '{"reason": "安全策略违规"}'
 ```
@@ -347,7 +347,7 @@ curl -X POST "http://localhost:8080/api/auth/jwt/revoke" \
 ### 批量令牌撤销
 ```bash
 curl -X POST "http://localhost:8080/api/auth/jwt/revoke/batch" \
-     -H "Jairouter_Token: admin_token" \
+     -H "X-Jairouter-Token: admin_token" \
      -H "Content-Type: application/json" \
      -d '{
        "tokenIds": ["token-uuid-123", "token-uuid-456"],
@@ -358,7 +358,7 @@ curl -X POST "http://localhost:8080/api/auth/jwt/revoke/batch" \
 ### 获取黑名单统计
 ```bash
 curl -X GET "http://localhost:8080/api/auth/jwt/blacklist/stats" \
-     -H "Jairouter_Token: admin_token"
+     -H "X-Jairouter-Token: admin_token"
 ```
 
 ---

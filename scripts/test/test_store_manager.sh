@@ -15,7 +15,7 @@ echo "Token: ${TOKEN:0:50}..."
 echo ""
 echo "=== 获取版本 0 配置 ==="
 curl -s -X GET "${BASE_URL}/api/config/version/0" \
-  -H "Jairouter_Token: $TOKEN" | jq '.data | keys'
+  -H "X-Jairouter-Token: $TOKEN" | jq '.data | keys'
 
 # 2. 直接测试版本保存 - 使用实例更新接口
 echo ""
@@ -23,7 +23,7 @@ echo "=== 测试实例更新（应该生成版本） ==="
 
 # 先获取 chat 服务的实例列表
 INSTANCES_RESPONSE=$(curl -s -X GET "${BASE_URL}/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 echo "当前 chat 服务实例:"
 echo "$INSTANCES_RESPONSE" | jq '.data[].name'
@@ -53,7 +53,7 @@ UPDATE_DATA='{
 }'
 
 curl -s -X PUT "${BASE_URL}/api/config/instance/chat/$INSTANCE_ID" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   --data-raw "$UPDATE_DATA" | jq '.'
 
@@ -64,10 +64,10 @@ sleep 3
 echo ""
 echo "=== 检查版本列表 ==="
 curl -s -X GET "${BASE_URL}/api/config/version" \
-  -H "Jairouter_Token: $TOKEN" | jq '.'
+  -H "X-Jairouter-Token: $TOKEN" | jq '.'
 
 # 4. 检查版本详细信息
 echo ""
 echo "=== 检查版本详细信息 ==="
 curl -s -X GET "${BASE_URL}/api/config/version/info" \
-  -H "Jairouter_Token: $TOKEN" | jq '.'
+  -H "X-Jairouter-Token: $TOKEN" | jq '.'

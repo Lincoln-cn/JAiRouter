@@ -36,7 +36,7 @@ jairouter:
       secret: "${JWT_SECRET}"
       algorithm: "HS256"
       expiration-minutes: 60
-      jwt-header: "Jairouter_Token"  # Custom JWT header
+      jwt-header: "X-Jairouter-Token"  # Custom JWT header
 ```
 
 ### 2. Set JWT Key
@@ -96,7 +96,7 @@ jairouter:
 Add the JWT token in the HTTP request header:
 
 ```bash
-curl -H "Jairouter_Token: your-jwt-token-here" \
+curl -H "X-Jairouter-Token: your-jwt-token-here" \
      -X POST \
      -H "Content-Type: application/json" \
      -d '{"model": "gpt-3.5-turbo", "messages": [...]}' \
@@ -156,7 +156,7 @@ curl -X POST http://localhost:8080/api/auth/jwt/login \
 | `refresh-expiration-days` | int | 7 | Refresh token expiration (days) |
 | `issuer` | string | "jairouter" | JWT issuer identifier |
 | `blacklist-enabled` | boolean | true | Enable blacklist functionality |
-| `jwt-header` | string | "Jairouter_Token" | Custom JWT header name |
+| `jwt-header` | string | "X-Jairouter-Token" | Custom JWT header name |
 | `accounts` | array | [] | User account list |
 
 ---
@@ -223,7 +223,7 @@ curl -X POST http://localhost:8080/api/auth/jwt/login \
 
 2. **Use Access Token to Access API**
 ```bash
-curl -H "Jairouter_Token: access_token_here" \
+curl -H "X-Jairouter-Token: access_token_here" \
      http://localhost:8080/v1/chat/completions
 ```
 
@@ -299,7 +299,7 @@ jairouter:
 
 ```bash
 curl -X POST http://localhost:8080/api/auth/jwt/logout \
-     -H "Jairouter_Token: token_to_revoke"
+     -H "X-Jairouter-Token: token_to_revoke"
 ```
 
 ### Behavior When Storage Is Unavailable
@@ -321,13 +321,13 @@ Blacklist checks depend on the storage backend (Redis). When it is unreachable, 
 ### Get Token List
 ```bash
 curl -X GET "http://localhost:8080/api/auth/jwt/tokens?page=0&size=20&status=ACTIVE" \
-     -H "Jairouter_Token: admin_token"
+     -H "X-Jairouter-Token: admin_token"
 ```
 
 ### Revoke Specific Token
 ```bash
 curl -X POST "http://localhost:8080/api/auth/jwt/tokens/token-uuid-123/revoke" \
-     -H "Jairouter_Token: admin_token" \
+     -H "X-Jairouter-Token: admin_token" \
      -H "Content-Type: application/json" \
      -d '{"reason": "Security policy violation"}'
 ```
@@ -335,7 +335,7 @@ curl -X POST "http://localhost:8080/api/auth/jwt/tokens/token-uuid-123/revoke" \
 ### Bulk Token Revocation
 ```bash
 curl -X POST "http://localhost:8080/api/auth/jwt/tokens/revoke-batch" \
-     -H "Jairouter_Token: admin_token" \
+     -H "X-Jairouter-Token: admin_token" \
      -H "Content-Type: application/json" \
      -d '{
        "tokenIds": ["token-uuid-123", "token-uuid-456"],
@@ -346,7 +346,7 @@ curl -X POST "http://localhost:8080/api/auth/jwt/tokens/revoke-batch" \
 ### Get Blacklist Statistics
 ```bash
 curl -X GET "http://localhost:8080/api/auth/jwt/blacklist/stats" \
-     -H "Jairouter_Token: admin_token"
+     -H "X-Jairouter-Token: admin_token"
 ```
 
 ---

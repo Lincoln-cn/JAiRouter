@@ -145,7 +145,7 @@ This release lands one audit that followed a single request from the moment it a
 
 #### Upgrade notes
 
-- **Gateway endpoints still use the `Jairouter_Token` header** (`Authorization` is reserved for downstream services) - unchanged from 3.5.4.
+- **Gateway endpoints still use the `X-Jairouter-Token` header** (`Authorization` is reserved for downstream services) - unchanged from 3.5.4.
 - **`jwt.persistence.enabled` semantics are now documented**: it controls the lifecycle service, expiration scheduler, health probe and two configuration properties, and does **not** control whether tokens are persisted.
 - **Configuration reset now requires explicit confirmation**; scripted callers must pass it or receive a parameter error.
 - **Streaming transport timeout and the idle watchdog remain two settings**: `jairouter.webclient.streaming-response-timeout-seconds` (default 600) and `jairouter.streaming.idle-timeout` (default 5 minutes); whichever comes first applies.
@@ -1025,7 +1025,7 @@ Parent issue #44 and its sub-issues #46 / #47 / #48
 
 #### Docs
 
-- Corrected `claude-code.md` (zh/en) false claim about native-surface authentication: `/v1/**` **accepts both** `X-API-Key` (OpenAI surface) / `x-api-key` (Anthropic surface) and `Jairouter_Token` (JWT); when both present JWT takes priority; previously incorrectly stated "only API Key authentication is supported"
+- Corrected `claude-code.md` (zh/en) false claim about native-surface authentication: `/v1/**` **accepts both** `X-API-Key` (OpenAI surface) / `x-api-key` (Anthropic surface) and `X-Jairouter-Token` (JWT); when both present JWT takes priority; previously incorrectly stated "only API Key authentication is supported"
 
 ---
 
@@ -1239,7 +1239,7 @@ Parent issue #44 and its sub-issues #46 / #47 / #48
 
 #### README & Docs
 
-- **README / README-ZH full refresh**: refreshed 7 UI screenshots (incl. dark theme and call-history dashboard; previously the 2026-08-26 UI); Core Features now cover response cache P1, RBAC 44 codes and dark/light theme; Roadmap permission codes 43→44; sample auth header unified to `Jairouter_Token`
+- **README / README-ZH full refresh**: refreshed 7 UI screenshots (incl. dark theme and call-history dashboard; previously the 2026-08-26 UI); Core Features now cover response cache P1, RBAC 44 codes and dark/light theme; Roadmap permission codes 43→44; sample auth header unified to `X-Jairouter-Token`
 - **rbac-permissions zh/en synced to 44 codes**: catalog gains `config:cache:write` (config module = 11 resources / 21 codes); role counts ADMIN 44 / OPERATOR 35; API & permission-tree descriptions updated
 
 #### Hallmark design audit (local innerdoc, input for v2.10.x)

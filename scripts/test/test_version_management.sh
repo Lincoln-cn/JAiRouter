@@ -72,7 +72,7 @@ print_info "Token: ${TOKEN:0:50}..."
 print_step "2" "获取版本列表 (/api/config/version)"
 
 VERSIONS_RESPONSE=$(curl -s -X GET "${BASE_URL}/api/config/version" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 echo "响应:"
 echo "$VERSIONS_RESPONSE" | jq '.'
@@ -90,7 +90,7 @@ print_step "3" "获取所有版本详细信息 (/api/config/version/info)"
 print_info "此接口测试充血模型 DTO 转换是否正确"
 
 VERSION_INFO_RESPONSE=$(curl -s -X GET "${BASE_URL}/api/config/version/info" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 echo "响应:"
 echo "$VERSION_INFO_RESPONSE" | jq '.'
@@ -182,7 +182,7 @@ if [ "$VERSION_COUNT" -eq 0 ]; then
     
     # 先获取当前配置（YAML 配置）
     CURRENT_CONFIG_RESPONSE=$(curl -s -X GET "${BASE_URL}/api/config/current" \
-      -H "Jairouter_Token: $TOKEN")
+      -H "X-Jairouter-Token: $TOKEN")
     
     echo "当前配置响应:"
     echo "$CURRENT_CONFIG_RESPONSE" | jq '.'
@@ -220,7 +220,7 @@ if [ "$VERSION_COUNT" -eq 0 ]; then
     }'
     
     CREATE_RESPONSE=$(curl -s -X POST "${BASE_URL}/api/config/type/services/test-service" \
-      -H "Jairouter_Token: $TOKEN" \
+      -H "X-Jairouter-Token: $TOKEN" \
       -H "Content-Type: application/json" \
       --data-raw "$CREATE_SERVICE_DATA")
     
@@ -235,7 +235,7 @@ if [ "$VERSION_COUNT" -eq 0 ]; then
         
         # 重新获取版本列表
         VERSION_INFO_RESPONSE=$(curl -s -X GET "${BASE_URL}/api/config/version/info" \
-          -H "Jairouter_Token: $TOKEN")
+          -H "X-Jairouter-Token: $TOKEN")
         
         NEW_VERSION_COUNT=$(echo "$VERSION_INFO_RESPONSE" | jq '.data | length')
         print_info "现在共有 $NEW_VERSION_COUNT 个版本"
@@ -251,7 +251,7 @@ fi
 print_step "5" "获取当前版本 (/api/config/version/current)"
 
 CURRENT_VERSION_RESPONSE=$(curl -s -X GET "${BASE_URL}/api/config/version/current" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 echo "响应:"
 echo "$CURRENT_VERSION_RESPONSE" | jq '.'
@@ -271,7 +271,7 @@ print_step "6" "重新获取版本详细信息"
 if [ "$VERSION_COUNT" -eq 0 ]; then
     print_info "重新获取版本信息..."
     VERSION_INFO_RESPONSE=$(curl -s -X GET "${BASE_URL}/api/config/version/info" \
-      -H "Jairouter_Token: $TOKEN")
+      -H "X-Jairouter-Token: $TOKEN")
     
     echo "响应:"
     echo "$VERSION_INFO_RESPONSE" | jq '.'
@@ -292,7 +292,7 @@ fi
 print_info "测试获取版本 $FIRST_VERSION 的配置"
 
 VERSION_CONFIG_RESPONSE=$(curl -s -X GET "${BASE_URL}/api/config/version/${FIRST_VERSION}" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 echo "响应:"
 echo "$VERSION_CONFIG_RESPONSE" | jq '.'
@@ -357,7 +357,7 @@ print_step "9" "清理测试数据"
 print_info "删除测试服务 test-service..."
 
 DELETE_RESPONSE=$(curl -s -X DELETE "${BASE_URL}/api/config/type/services/test-service" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 echo "删除响应:"
 echo "$DELETE_RESPONSE" | jq '.'

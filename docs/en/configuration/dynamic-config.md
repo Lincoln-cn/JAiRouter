@@ -110,7 +110,7 @@ config/
 | Update instance | PUT | `/api/config/instance/{serviceType}/{instanceId}` | `{instanceId}` = the **database id** returned by the list/add call |
 | Delete instance | DELETE | `/api/config/instance/{serviceType}/{instanceId}` | Same database id |
 
-**Authentication.** These are management endpoints: send the JWT in the **`Jairouter_Token`** header
+**Authentication.** These are management endpoints: send the JWT in the **`X-Jairouter-Token`** header
 (configurable via `jairouter.security.jwt.jwt-header`) — **not** `Authorization: Bearer`. Without it every
 call answers `401 {"error":{"code":"AUTH_MISSING"}}`. Get a token once per shell:
 
@@ -129,7 +129,7 @@ TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
 ### 1. List Instances
 
 ```bash
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 ```
 
 Each array element is a full `ServiceInstanceDTO` — there is **no separate "details" endpoint**, the list
@@ -163,7 +163,7 @@ already carries the whole configuration:
 ### 2. Add an Instance
 
 ```bash
-curl -X POST -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
+curl -X POST -H "X-Jairouter-Token: $TOKEN" -H "Content-Type: application/json" \
   -d '{
     "name": "qwen2:7b",
     "baseUrl": "http://gpu-server:8080",
@@ -193,10 +193,10 @@ The response `data` is the created instance — keep its `id`, the next two call
 `{instanceId}` is that database `id` (look it up from the list response):
 
 ```bash
-ID=$(curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
+ID=$(curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
   | jq -r '.data[] | select(.name=="qwen2:7b") | .id')
 
-curl -X PUT -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
+curl -X PUT -H "X-Jairouter-Token: $TOKEN" -H "Content-Type: application/json" \
   -d '{"name":"qwen2:7b","baseUrl":"http://gpu-server:8080","path":"/v1/chat/completions","weight":3,"adapter":"normal"}' \
   "http://localhost:8080/api/config/instance/chat/$ID"
 ```
@@ -204,7 +204,7 @@ curl -X PUT -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
 ### 4. Delete an Instance
 
 ```bash
-curl -X DELETE -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat/$ID"
+curl -X DELETE -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat/$ID"
 ```
 
 Both the update and the delete above returned `200` when this page was reviewed against a running
@@ -240,7 +240,7 @@ recorded change is kept as a numbered snapshot (`model-router-config@<version>.j
 Implementation: `config/controller/ConfigurationVersionController.java` (class-level
 `@RequestMapping("/api/config/version")`) backed by `config/version/VersionManagementService.java`.
 
-Authentication: like every other management API on this page, send the JWT in the **`Jairouter_Token`**
+Authentication: like every other management API on this page, send the JWT in the **`X-Jairouter-Token`**
 header (see [Instance Management API](#instance-management-api)); without it these calls answer
 `401 {"error":{"code":"AUTH_MISSING"}}`.
 
@@ -248,19 +248,19 @@ header (see [Instance Management API](#instance-management-api)); without it the
 
 ```bash
 # the version currently in effect
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/current"
 
 # every stored version
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version"
 
 # metadata + history
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/info"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/info"
 
 # what changed between the current configuration and version 3
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/compare/3"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/compare/3"
 
 # roll the runtime configuration back to version 3
-curl -X POST -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/apply/3"
+curl -X POST -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/apply/3"
 ```
 
 **Where versions come from.** You do not create them with a separate "merge" step: configuration changes
@@ -276,13 +276,13 @@ What the config side actually exposes for inspection is:
 
 ```bash
 # which config sources are in effect, and the validation rules / env vars the app knows about
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/sources"
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/validation-rules"
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/environment-variables"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/sources"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/validation-rules"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/environment-variables"
 
 # version state (current version / history / metadata)
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current"
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/info"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/current"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/info"
 ```
 
 Runtime health, when you want it, is the (public) health endpoint: `curl http://localhost:8080/actuator/health`.
@@ -294,7 +294,7 @@ Runtime health, when you want it, is the (public) health endpoint: `curl http://
 ```bash
 # 1. Add new high-performance GPU instance
 curl -X POST "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "llama3.1:70b",
@@ -304,7 +304,7 @@ curl -X POST "http://localhost:8080/api/config/instance/chat" \
   }'
 
 # 2. Verify instance addition success
-curl -X GET -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
+curl -X GET -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 
 # 3. Test new instance
 curl -X POST "http://localhost:8080/v1/chat/completions" \
@@ -319,34 +319,34 @@ curl -X POST "http://localhost:8080/v1/chat/completions" \
 
 ```bash
 # 1. Get current instance configuration
-curl -X GET -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
+curl -X GET -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 
 # 2. Update instance weight (from 2 to 4)
-ID=$(curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
+ID=$(curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
   | jq -r '.data[] | select(.name=="qwen2:7b") | .id')
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name":"qwen2:7b","baseUrl":"http://gpu-server:8080","path":"/v1/chat/completions","weight":4}'
 
 # 3. Verify weight update
-curl -X GET -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
+curl -X GET -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 ```
 
 ### Scenario 3: Fault Instance Handling
 
 ```bash
 # 1. Check instance health status
-curl -X GET -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
+curl -X GET -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 
 # 2. Temporarily remove faulty instance (the id comes from the list call in step 1)
-ID=$(curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
+ID=$(curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
   | jq -r '.data[] | select(.name=="faulty-model") | .id')
 curl -X DELETE "http://localhost:8080/api/config/instance/chat/$ID"
 
 # 3. Add alternative instance
 curl -X POST "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "backup-model",
@@ -363,14 +363,14 @@ The file-maintenance workflow this scenario used to show (`merge/backup` → `sc
 
 ```bash
 # what version is live now, and what versions exist
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current"
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/current"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version"
 
 # see what changed before switching
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/compare/3"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/compare/3"
 
 # roll back to a previous version
-curl -X POST -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/apply/3"
+curl -X POST -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/apply/3"
 ```
 
 ## Best Practices
@@ -387,11 +387,11 @@ curl -X POST -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/vers
 
 ```bash
 # Progressive Instance Replacement
-ID=$(curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
+ID=$(curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
   | jq -r '.data[] | select(.name=="new-model") | .id')
 # 1. Add new instance (smaller weight)
 curl -X POST "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
+  -H "X-Jairouter-Token: $TOKEN" -H "Content-Type: application/json" \
   -d '{"name": "new-model", "weight": 1}'
 
 # 2. Observe new instance performance
@@ -399,14 +399,14 @@ curl -X POST "http://localhost:8080/api/config/instance/chat" \
 
 # 3. Gradually increase new instance weight
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
-  -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
+  -H "X-Jairouter-Token: $TOKEN" -H "Content-Type: application/json" \
   -d '{"name":"new-model","weight":3}'
 
 # 4. Gradually decrease old instance weight
-ID=$(curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
+ID=$(curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
   | jq -r '.data[] | select(.name=="new-model") | .id')
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
-  -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
+  -H "X-Jairouter-Token: $TOKEN" -H "Content-Type: application/json" \
   -d '{"name":"old-model","weight":1}'
 
 # 5. Remove old instance
@@ -417,10 +417,10 @@ curl -X DELETE "http://localhost:8080/api/config/instance/chat/$ID"
 
 ```bash
 # Regularly check configuration status
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/current"
 
 # Validate configuration integrity
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/sources"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/sources"
 
 # Monitor instance health status
 curl -X GET "http://localhost:8080/actuator/health"
@@ -433,7 +433,7 @@ curl -X GET "http://localhost:8080/actuator/health"
 #!/bin/bash
 
 # Backup current configuration
-CURRENT_VERSION=$(curl -s -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/version/current")
+CURRENT_VERSION=$(curl -s -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/current")
 
 if [[ $? -eq 0 ]]; then
     echo "Configuration backup successful"
@@ -479,7 +479,7 @@ fi
 ```bash
 # View detailed error information
 curl -v "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name": "test", ...}'
 

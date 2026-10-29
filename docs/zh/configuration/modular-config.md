@@ -236,7 +236,7 @@ jairouter:
   security:
     jwt:
       enabled: false                    # 启用 JWT 认证
-      jwt-header: "Jairouter_Token"     # 自定义 JWT 头
+      jwt-header: "X-Jairouter-Token"     # 自定义 JWT 头
       secret: "${JWT_SECRET:}"          # JWT 密钥（使用环境变量）
       algorithm: "HS256"                # 签名算法
       expiration-minutes: 60            # 访问令牌过期时间

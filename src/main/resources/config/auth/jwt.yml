@@ -13,8 +13,10 @@ jairouter:
       # JWT 功能开关
       enabled: true
       
-      # JWT 令牌头名称
-      jwt-header: "Jairouter_Token"
+      # JWT 令牌头名称（issue #805）
+      # 不能用含下划线的名字：nginx 默认 underscores_in_headers off 会让该头在反代处被丢弃，
+      # 表现为「登录成功、之后所有管理接口 401」。旧名 Jairouter_Token（下划线）仍作为兼容别名被接受。
+      jwt-header: "X-Jairouter-Token"
       
       # JWT 密钥（生产必须设置环境变量 JWT_SECRET，长度 >= 32 字符）
       # R2-P0-01：不再提供“公开可用的默认密钥”（#664）——缺 JWT_SECRET 时用 ${random.uuid}

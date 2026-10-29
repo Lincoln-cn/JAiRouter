@@ -330,7 +330,7 @@ const handleSendMessage = async (content: string) => {
     const headers: Record<string, string> = {}
     const token = localStorage.getItem('admin_token')
     if (token) {
-      headers['Jairouter_Token'] = token
+      headers['X-Jairouter-Token'] = token
     }
 
     if (config.stream) {
@@ -454,7 +454,7 @@ const handleRegenerateMessage = async () => {
     const headers: Record<string, string> = {}
     const token = localStorage.getItem('admin_token')
     if (token) {
-      headers['Jairouter_Token'] = token
+      headers['X-Jairouter-Token'] = token
     }
 
     if (config.stream) {

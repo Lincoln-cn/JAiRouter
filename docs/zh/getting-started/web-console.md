@@ -144,7 +144,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 |--------|------|------|
 | `Authorization` | `Bearer <your-api-key>` | 透传给下游模型服务的认证凭据 |
 
-> 💡 `Authorization` 头是**透传给下游服务**的，不是网关自身的凭据。网关凭据为 `Jairouter_Token`（JWT）。
+> 💡 `Authorization` 头是**透传给下游服务**的，不是网关自身的凭据。网关凭据为 `X-Jairouter-Token`（JWT）。
 
 6. 可选：展开「**标签配置**」（**Tag Config**），添加标签用于路由规则筛选；
 7. 点击「**保存**」（**Save**）；
@@ -304,7 +304,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 |--------|--------|------|
 | OpenAI 兼容 | `X-API-Key: <网关 API Key>` | 用于 `/v1/*` 端点 |
 | Anthropic 兼容 | `x-api-key: <网关 API Key>` | 用于 Anthropic Messages API |
-| 控制台 | `Jairouter_Token: <JWT>` | Web 控制台登录后的管理 API 凭据 |
+| 控制台 | `X-Jairouter-Token: <JWT>` | Web 控制台登录后的管理 API 凭据 |
 | `Authorization` | — | **透传给下游模型服务**，不是网关凭据 |
 
 > ⚠️ `Authorization` 头（如 `Bearer <token>`）会被网关原样转发给下游模型服务，不会作为网关自身认证凭据使用。

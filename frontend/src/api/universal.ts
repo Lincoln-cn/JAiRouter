@@ -54,7 +54,7 @@ class UniversalApiClient {
       // 添加JWT token认证头
       const token = localStorage.getItem('admin_token')
       if (token && config.headers) {
-        config.headers['Jairouter_Token'] = token
+        config.headers['X-Jairouter-Token'] = token
       }
 
       // 处理请求体
@@ -162,7 +162,7 @@ class UniversalApiClient {
       // 添加JWT token认证头
       const token = localStorage.getItem('admin_token')
       if (token) {
-        headers['Jairouter_Token'] = token
+        headers['X-Jairouter-Token'] = token
       }
 
       // 构建完整URL（流式请求需要完整URL）
