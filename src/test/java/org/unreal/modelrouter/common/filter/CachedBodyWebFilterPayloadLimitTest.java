@@ -188,6 +188,33 @@ class CachedBodyWebFilterPayloadLimitTest {
         }
     }
 
+    @Test
+    @DisplayName("端到端 /v1/messages：413 + Anthropic 形状（type=request_too_large，无 code）")
+    void oversizedBody_onAnthropicFace_shouldRenderRequestTooLarge() throws Exception {
+        try (AnnotationConfigApplicationContext context =
+                     new AnnotationConfigApplicationContext(ProbeConfig.class)) {
+            final HttpHandler httpHandler = WebHttpHandlerBuilder.applicationContext(context).build();
+            final MockServerWebExchange exchange = dispatch(httpHandler, "/v1/messages", OVERSIZED);
+
+            assertEquals(HttpStatus.PAYLOAD_TOO_LARGE, exchange.getResponse().getStatusCode(),
+                    "Anthropic 面超限同样必须回 413");
+            assertEquals(MediaType.APPLICATION_JSON,
+                    exchange.getResponse().getHeaders().getContentType(),
+                    "413 错误体必须是 JSON，且显式声明 Content-Type");
+
+            final JsonNode json = singleJsonObject(bodyOf(exchange));
+            assertTrue(json.has("error"), "/v1/messages 面必须是 Anthropic 协议形状: " + json);
+            assertEquals("error", json.path("type").asText(),
+                    "Anthropic 外层 type 恒为 error: " + json);
+            assertEquals("request_too_large", json.path("error").path("type").asText(),
+                    "issue #781：Anthropic 面 413 必须用协议专用类型: " + json);
+            assertFalse(json.path("error").has("code"),
+                    "Anthropic 面按协议不带 code 字段: " + json);
+            assertTrue(json.path("error").path("message").asText().contains("10MB"),
+                    "消息应说明阈值大小: " + json);
+        }
+    }
+
     // ==================== 边界：恰好等于阈值仍然正常缓存并重放 ====================
 
     @Test
