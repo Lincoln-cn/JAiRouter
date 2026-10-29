@@ -43,18 +43,19 @@ jairouter:
 
 | 服务 | 可缓存条件 | 说明 |
 |------|-----------|------|
-| `chat`（非流式） | `temperature` 为 `0` 或 `null` **且** `n` 为 `1` 或 `null` | 采样确定性、结果可复现；其余参数（messages 等）全部进入缓存键 |
+| `chat`（非流式） | `temperature` 显式为 `0` **且** `n` 为 `1` 或省略 | 采样确定性、结果可复现；其余参数（messages 等）全部进入缓存键 |
 | `embedding` | 天然确定性 | 直接可缓存 |
 | `rerank` | 天然确定性 | 直接可缓存 |
 | `image` / `TTS` / `STT` | 不缓存 | 二进制 / 非 P0 服务，不参与缓存 |
 
-- `only-deterministic: true`（默认）时，`temperature > 0` 或 `n > 1` 的 chat 请求不缓存（每次生成结果不同，缓存无意义）
+- `only-deterministic: true`（默认）时，`temperature` 必须**显式**为 `0`。**未指定 `temperature` 的请求不缓存**：OpenAI 兼容协议里缺省值是 `1.0`（随机采样），把它当确定性会让普通请求在 TTL 内一直返回第一次的输出（#723）
+- `n` 必须为 `1` 或省略；`n > 1` 的请求不缓存（每次生成结果不同，缓存无意义）
 
 ### P1 流式缓存（v2.9.10）
 
 | 服务 | 可缓存条件 | 说明 |
 |------|-----------|------|
-| `chat`（流式，`stream=true`） | `skip-streaming: false` **且** `temperature` 为 `0` 或 `null` **且** `n` 为 `1` 或 `null` | 需显式关闭 `skip-streaming` 开启；确定性前提与非流式一致 |
+| `chat`（流式，`stream=true`） | `skip-streaming: false` **且** `temperature` 显式为 `0` **且** `n` 为 `1` 或省略 | 需显式关闭 `skip-streaming` 开启；确定性前提与非流式一致 |
 
 - `skip-streaming: true`（默认）时，流式请求不生成缓存键、不读写缓存
 - 流式与非流式缓存键天然分桶、互不干扰
@@ -104,7 +105,7 @@ SHA-256(tenantKey | [user?] | serviceType | model | canonicalJson(requestBody))
 v2.9.10 支持对 `stream=true` 的 chat 请求进行缓存，需满足以下条件：
 
 - `skip-streaming: false`（显式开启，**默认 `true` 跳过**）
-- `only-deterministic: true`（默认）时，`temperature` 必须为 `0` 或 `null`，`n` 必须为 `1` 或 `null`
+- `only-deterministic: true`（默认）时，`temperature` 必须显式为 `0`，`n` 必须为 `1` 或省略；未指定 `temperature` 视为非确定性，不缓存（#723）
 
 ### 存储
 

@@ -43,18 +43,19 @@ It takes effect as soon as it is enabled — no restart or extra setup needed. T
 
 | Service | Cacheable when | Notes |
 |---------|----------------|-------|
-| `chat` (non-streaming) | `temperature` is `0` or `null` **and** `n` is `1` or `null` | Sampling is deterministic and reproducible; all other parameters (messages, etc.) enter the cache key |
+| `chat` (non-streaming) | `temperature` is explicitly `0` **and** `n` is `1` or absent | Sampling is deterministic and reproducible; all other parameters (messages, etc.) enter the cache key |
 | `embedding` | Always (deterministic by nature) | Cached directly |
 | `rerank` | Always (deterministic by nature) | Cached directly |
 | `image` / `TTS` / `STT` | Never | Binary / non-P0 services are excluded from the cache |
 
-- With `only-deterministic: true` (default), chat requests with `temperature > 0` or `n > 1` are not cached (each generation differs, so caching adds no value)
+- With `only-deterministic: true` (default), `temperature` must be **explicitly** `0`. A request that omits `temperature` is **not** cached: the OpenAI-compatible default is `1.0` (random sampling), so treating it as deterministic would return the first output for the whole TTL (#723)
+- `n` must be `1` or absent; `n > 1` requests are not cached (each generation differs, so caching adds no value)
 
 ### P1 Streaming Cache (v2.9.10)
 
 | Service | Cacheable when | Notes |
 |---------|----------------|-------|
-| `chat` (streaming, `stream=true`) | `skip-streaming: false` **and** `temperature` is `0` or `null` **and** `n` is `1` or `null` | Requires explicitly disabling `skip-streaming`; same determinism constraints as non-streaming |
+| `chat` (streaming, `stream=true`) | `skip-streaming: false` **and** `temperature` is explicitly `0` **and** `n` is `1` or absent | Requires explicitly disabling `skip-streaming`; same determinism constraints as non-streaming |
 
 - With `skip-streaming: true` (default), streaming requests get no cache key and neither read nor write the cache
 - Streaming and non-streaming cache keys are natively separated into distinct buckets — no cross-contamination
@@ -104,7 +105,7 @@ cache key = SHA-256(tenantKey | [user?] | serviceType | model | canonicalJson(re
 v2.9.10 supports caching `stream=true` chat requests, subject to the following conditions:
 
 - `skip-streaming: false` (explicitly enabled — **defaults to `true`, skipping streaming**)
-- With `only-deterministic: true` (default), `temperature` must be `0` or `null` and `n` must be `1` or `null`
+- With `only-deterministic: true` (default), `temperature` must be explicitly `0` and `n` must be `1` or absent; omitting `temperature` means non-deterministic, i.e. no caching (#723)
 
 ### Storage
 
