@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 > **Doc Version**: 2.5.0
-> **Last Updated**: 2026-10-29
-> **Git Tag**: v3.5.5
+> **Last Updated**: 2026-10-30
+> **Git Tag**: v3.5.6
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -23,6 +23,18 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 - **Observability**: Comprehensive monitoring, logging, and distributed tracing
 
 ## Current Version Status
+
+### ✅ v3.5.6 (Patch: the 14 issues still open when the v3.5.5 audit closed, **released 2026-10-30**)
+
+**Status**: Released (GitHub Release `v3.5.6`, 2026-10-30; multi-arch Docker images rebuilt by CI on release: `v3.5.6` / `3.5.6` / `latest`)
+**Scope**: the 7 PRs merged after `v3.5.5` — accounts and permissions #790 (#789), #793 (#777); console writes that reach the runtime #791 (#776 / #778); entry protocol surface #792 (#779 / #781); configuration and test honesty #794 (#787 / #788 / #783 / #784); documentation #795 (#786); behavior decisions #796 (#780 / #782 / #785). **No API breaking changes; three behavior changes and one schema migration are noted below.**
+**Highlights**:
+
+- **"Saved, but nothing changed at runtime" closed out**: JWT accounts resolve from the database (#789 — console delete/disable used to have no effect on a YAML twin, and a delete was undone by seeding at restart; deletion is now a soft delete plus migration `V6`), service-configuration writes refresh the runtime registry (#776), adapter load failures are recorded and surfaced by the health check (#778), and the API key view echoes the IP allowlist (#777).
+- **Entry protocol surface**: empty bodies on `/v1/messages` answer 400 (#779), and 413 uses the Anthropic `request_too_large` type (#781).
+- **Honesty**: three unreachable management endpoint switches removed (#787), dead persistence property classes removed (#788), `FILTER-012` rewritten to really verify re-wrapping (#783), and a comment re-pointed at an end-to-end test that exists (#784).
+- **Behavior decisions**: the reset backup message tells the truth (#780), adapters with no service capability are rejected before being written (#782), and security error bodies carry the `requestId` (#785).
+- **Upgrade notes**: YAML JWT accounts are first-start seed data only; `V6__jwt_account_soft_delete.sql` adds `jwt_accounts.deleted`; console deletion is a soft delete; all-false `capabilities` now answer 400; the `/v1/messages` 413 type changed to `request_too_large`.
 
 ### ✅ v3.5.5 (Patch: fixes from an eight-stage request-lifecycle audit, **released 2026-10-29**)
 

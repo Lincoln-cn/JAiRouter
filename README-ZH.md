@@ -42,8 +42,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # 本地/仓库目录名与产品名不同
 artifact:        model-router            # Maven artifactId
-project_version: 3.5.5                   # pom.xml
-latest_release:  v3.5.5 (2026-10-29)
+project_version: 3.5.6                   # pom.xml
+latest_release:  v3.5.6 (2026-10-30)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5（WebFlux / 响应式）
   frontend: Vue 3 + TypeScript + Vite，中英双语（zh-CN / en-US）
@@ -352,7 +352,21 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 
 ## 状态与近期工作
 
-**最新发布：v3.5.5（2026-10-29）** —— 一次「按一次请求从进来到出去」的八段审计（入口协议 / 认证权限 / 路由决策 / 出站 / 响应侧 / 记账 / 控制台写入 / 失败语义）的落地版：45 条发现里影响调用成败与响应正确性的已全部修复。**无 API 破坏性变更；三条升级提示值得看一眼。**
+**最新发布：v3.5.6（2026-10-30）** —— `v3.5.5` 八段审计收口时仍开着的 14 条 issue（#776–#789）全部修完的补丁版：账户以数据库为准、写入真正在运行时生效、入口协议面补齐、配置与测试回归诚实，另有三条先定行为再动手的缺陷。**无 API 破坏性变更；三处行为变更与一条库结构迁移值得看一眼。**
+
+| 主题 | 变更内容 |
+|------|----------|
+| **账户与权限（#789 / #777）** | JWT 账户以数据库为准——控制台删除/禁用对同名 YAML 账户真正生效（此前删除还会被重启时的种子数据写回），删除改为软删除（新增迁移 `V6`）；API Key 视图回显 IP 白名单，编辑弹窗不再把白名单清空 |
+| **控制台写入的运行时生效（#776 / #778）** | 服务配置六条写路径刷新运行时注册表（此前「保存成功、路由仍用旧实例」）；适配器加载失败记进注册表并由 `/actuator/health` 的新指示器 `adapterLoad` 报告（默认只报告、不把容器拖成 unhealthy） |
+| **入口协议面（#779 / #781）** | `/v1/messages` 空体回 400（此前落 500）；413 改用 Anthropic 的 `request_too_large`，OpenAI 原生面仍是 `invalid_request_error` |
+| **配置与测试诚实性（#787 / #788 / #783 / #784）** | 删掉三处没有 `@Endpoint` 实现的管理端点开关、删掉零读取方的 `JwtPersistenceConfiguration`；`FILTER-012` 改成真正验证「小请求体缓存后被重新包装、下游读回同一份字节」；注释改指真实存在的端到端用例 |
+| **行为决策（#780 / #782 / #785）** | 重置备份文案如实说明（单槽覆盖、无一键恢复，恢复需在存储层手工操作）；`capabilities` 全 false 的 Adapter 写入前回 400；安全通知错误体回填与响应头/日志同一个 `requestId` |
+
+`[3.5.6]` 的 changelog 条目见 [更新日志](docs/zh/reference/changelog.md)；以 GitHub Release `v3.5.6` 发布，并触发多架构镜像（`v3.5.6` / `3.5.6` / `latest`）。
+
+**升级提示**：`auth/jwt.yml` 的 `accounts` 现在只是首次启动的种子数据（库里有同名行时改 yml 不生效，请到控制台改）；新增迁移 `V6__jwt_account_soft_delete.sql`（`jwt_accounts.deleted`，默认 false）；控制台删除账户是软删除（行仍在库里）；`capabilities` 全 false 的 Adapter 现在会被 400 拒绝；`/v1/messages` 的 413 错误类型由 `invalid_request_error` 改为 `request_too_large`。
+
+**`v3.5.5`（2026-10-29）** 是「按一次请求从进来到出去」八段审计（入口协议 / 认证权限 / 路由决策 / 出站 / 响应侧 / 记账 / 控制台写入 / 失败语义）的落地版：45 条发现里影响调用成败与响应正确性的已全部修复。**无 API 破坏性变更；三条升级提示值得看一眼。**
 
 | 主题 | 变更内容 |
 |------|----------|

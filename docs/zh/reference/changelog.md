@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.5.5
-> **最后更新**: 2026-10-29
+> **文档版本**: 3.5.6
+> **最后更新**: 2026-10-30
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,47 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.5.6] - 2026-10-30 - 缺陷修复（v3.5.5 八段审计收口时仍开着的 14 条：#776–#789）
+
+`v3.5.5` 的后续补丁版：审计收口时留下的 14 条开放 issue 全部修完，覆盖账户权限、配置写入的运行时生效、入口协议面、控制台回显、配置与测试诚实性，以及三条需要先定行为再动手的缺陷。**无 API 破坏性变更**，但有三处行为变更与一条库结构迁移值得在升级前看一眼（见文末「升级提示」）。
+
+#### 账户与权限（#789 / #777）
+
+- **JWT 账户以数据库为准（#789，P1）**：此前认证先查 `auth/jwt.yml` 的 YAML 账户，命中即不再看数据库 ⇒ 控制台删除或禁用某个账户后，同名的 YAML 账户仍然能登录（删除还会在下一次启动时被种子数据重新写回）。现在库里只要存在该账户就是权威：禁用即拒绝、删除即失效；YAML 账户退化为「首次启动的种子数据」（表为空时才写入），yml 里的注释也写明了这一点。
+- **控制台删除账户改为软删除（#789）**：硬删除后同名的 YAML 账户会在重启时被重新种回，等于「删了又回来」。现在改为打 `deleted` 标记（迁移 `V6__jwt_account_soft_delete.sql`，H2 与 PostgreSQL 各一份），列表与登录都过滤该标记；同名再建会复活该行，而不是插入重复用户名。
+- **API Key 视图回显 IP 白名单（#777，P3）**：`ApiKeyVO` 新增只读字段 `allowedIpAddresses`（无白名单时返回空数组），控制台编辑弹窗据此回填 —— 此前打开编辑后直接保存会把白名单清空。
+
+#### 控制台写入的运行时生效（#776 / #778）
+
+- **服务配置写入后刷新运行时注册表（#776，P2）**：保存、删除、更新服务配置只写库与本机缓存，运行时按服务类型缓存的实例集合没变 ⇒ 控制台显示「保存成功」，实际路由仍用旧实例，重启才生效。现在六条写路径都调用 `ModelServiceRegistry.refreshServiceConfig(serviceType)`，校验失败时不刷新。
+- **适配器加载失败不再静默（#778，P2）**：加载单个适配器时捕获异常只打日志，失败的定义从此消失、没人知道。现在失败被记进注册表（`loadFailures`），并由新增的 `/actuator/health` 指示器 `adapterLoad` 报告（`jairouter.router.adapter.health.enabled` 默认开启；`fail-health` 默认 false ⇒ 只报告、不把容器拖成 unhealthy，避免一个坏定义让整个实例退出负载均衡）。
+
+#### 入口协议面（#779 / #781）
+
+- **`/v1/messages` 空请求体回 400（#779，P2）**：此前空体在空指针上落 500。现在与 `/v1/chat/completions` 一致，返回 400。
+- **`/v1/messages` 的 413 用 Anthropic 的错误类型（#781，P3）**：超限请求体此前返回 `invalid_request_error`，Anthropic 客户端会当成「参数写错」。现在 413 在 Anthropic 面映射为 `request_too_large`，OpenAI 原生面仍为 `invalid_request_error`。
+
+#### 配置与测试诚实性（#787 / #788 / #783 / #784）
+
+- **删掉三处未接线的管理端点开关（#787，P3）**：`jwt-tokens` / `jwt-blacklist` / `jwt-persistence-health` 三个 `management.endpoint.*.enabled` 在仓库里没有任何 `@Endpoint` 实现 ⇒ 打开也访问不到。按「不能接线就删」从三个 yml 文件删除。
+- **删掉零消费方的持久化属性类（#788，P3）**：`JwtPersistenceConfiguration` 里的两个 `@ConfigurationProperties` 类与两个 `@Bean` 全仓无读取方，整文件删除；`jairouter.security.jwt.persistence.*` 键树本身仍是活的（多处 `@ConditionalOnProperty` 消费），未动。
+- **`FILTER-012` 改成真正验证它覆盖的契约（#783，P3）**：原名「大请求体跳过缓存」的用例实际只发 15 字节，且没有任何缓存断言。现在改名为「小请求体缓存后原样透传给下游」，并断言下游再读能拿到逐字节相同的 body（真实超限覆盖仍在 `CachedBodyWebFilterPayloadLimitTest`）。
+- **注释指向不存在的类（#784，P3）**：改为指向真实存在的 `AdapterConfigRequestBodyEndToEndTest`（真起 Netty、真控制器与真中央处理器的 400 路径）。
+
+#### 行为决策（#780 / #782 / #785）
+
+- **重置配置的备份文案如实说明（#780，P3）**：备份是单槽覆盖写、且没有一键恢复接口，响应 message 却说「已备份到键 xxx」。现在明确写出「没有一键恢复接口，恢复需在配置存储层手工操作；每次重置会覆盖上一次的备份」。
+- **服务能力全为 false 的适配器写入前拒绝（#782，P2）**：`capabilities` 全 false（或不传）此前能保存成功并注册，但没有任何服务类型会路由到它。现在前置校验并返回 400，说明「至少要有一项服务能力」。
+- **安全通知的错误体回填同一个请求 ID（#785，P3）**：响应头与结构化日志用的是 `resolveRequestId(exchange)`，错误体里的 `requestId` 却恒为 null。现在序列化前把同一个值填进 `requestId` / `request_id`，三方可以互相关联。
+
+#### 升级提示
+
+- **JWT 账户优先级变了**：`auth/jwt.yml` 的 `accounts` 现在只是首次启动的种子数据。库里已有同名账户时，改 yml **不会**改变该账户的口令、角色或启用状态——请到控制台改。
+- **库结构迁移**：新增 `V6__jwt_account_soft_delete.sql`（给 `jwt_accounts` 加 `deleted` 列，默认 false），Flyway 启动时自动执行。
+- **控制台删除账户是软删除**：行仍在库里（`deleted=true`），只是不再出现在列表与登录校验中；要彻底清除请在数据库里删掉该行。
+- **能力全为 false 的 Adapter 现在会被拒绝**：既有脚本或模板若提交全 false 的 `capabilities`，升级后会拿到 400；至少勾选 chat / embedding / rerank / tts / stt / imgGen / imgEdit 之一（只勾 `streaming` 不算）。
+- **`/v1/messages` 的 413 错误类型变了**：由 `invalid_request_error` 改为 `request_too_large`，按 `error.type` 分支的客户端需要兼容。
 
 ### [3.5.5] - 2026-10-29 - 缺陷修复（八段流程审计：入口协议 / 认证权限 / 路由决策 / 出站 / 响应侧 / 记账 / 控制台写入 / 失败语义）
 
