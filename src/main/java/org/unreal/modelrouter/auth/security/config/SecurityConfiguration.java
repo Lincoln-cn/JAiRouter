@@ -3,6 +3,7 @@ package org.unreal.modelrouter.auth.security.config;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.ApplicationContext;
@@ -19,6 +20,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.unreal.modelrouter.common.exceptionhandler.ReactiveGlobalExceptionHandler;
 import org.unreal.modelrouter.auth.filter.DefaultAuthenticationConverter;
 import org.unreal.modelrouter.auth.filter.SpringSecurityAuthenticationFilter;
@@ -28,6 +32,7 @@ import org.unreal.modelrouter.auth.security.permission.PermissionAuthorizationMa
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.unreal.modelrouter.monitor.tracing.config.TracingSecurityConfiguration;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -56,6 +61,16 @@ public class SecurityConfiguration {
 
     @Autowired(required = false)
     private TracingSecurityConfiguration.TracingSecurityFilterChainCustomizer tracingCustomizer;
+
+    /**
+     * 允许跨源访问的来源（逗号分隔的完整 origin）。为空表示不启用跨源支持（历史默认行为）。
+     *
+     * <p>issue #818：此前 {@code cors.disable()} 把跨源能力整体关掉，且预检 {@code OPTIONS}
+     * 也要过认证，于是「前端另起端口直连后端」这种部署方式必然 401。这里保留默认关闭，
+     * 只在显式配置来源时开启，并放行预检。</p>
+     */
+    @Value("${jairouter.security.cors.allowed-origins:}")
+    private String corsAllowedOrigins = "";
 
     // 使用setter注入JwtTokenValidator，使其成为可选依赖
     @Autowired(required = false)
@@ -93,8 +108,16 @@ public class SecurityConfiguration {
                 // CSRF 关闭：本服务为无状态 API 网关（Bearer/API Key，NoOpSecurityContextRepository），
                 // 不依赖 Cookie 会话，CSRF 不适用。若未来引入 Cookie 会话需重新评估并启用 CSRF。
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                // 启用CORS支持，允许Web管理界面跨域访问
-                .cors(cors -> cors.disable()) // 使用控制器级别的@CrossOrigin注解
+                // issue #818：未配置来源时保持历史行为（整链关闭 CORS，靠控制器级 @CrossOrigin）；
+                // 配置了 jairouter.security.cors.allowed-origins 才启用跨源支持。
+                .cors(cors -> {
+                    final List<String> allowedOrigins = parseCorsAllowedOrigins();
+                    if (allowedOrigins.isEmpty()) {
+                        cors.disable();
+                    } else {
+                        cors.configurationSource(corsConfigurationSource(allowedOrigins));
+                    }
+                })
                 // 禁用表单登录
                 .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
                 // 禁用HTTP Basic认证
@@ -125,6 +148,13 @@ public class SecurityConfiguration {
                 // /actuator/health/liveness、/actuator/health/readiness 这类**子路径**，只写精确路径
                 // 会让它们落进下面 /actuator/** 的 ADMIN 规则，pod 永远不就绪（issue #203）。
                 .pathMatchers(AnonymousEndpointPaths.HEALTH_AND_OPS.toArray(new String[0])).permitAll();
+
+        // issue #818：开启跨源后必须放行预检 —— 预检请求不带凭据头，
+        // 若继续走认证过滤器只会得到一个 401（浏览器侧表现为 CORS 失败）。
+        if (!parseCorsAllowedOrigins().isEmpty()) {
+            authorizeExchangeSpec
+                    .pathMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll();
+        }
 
         if (docsPublic) {
             authorizeExchangeSpec.pathMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll();
@@ -209,5 +239,43 @@ public class SecurityConfiguration {
     @Bean
     public ServerAuthenticationConverter serverAuthenticationConverter() {
         return new DefaultAuthenticationConverter(securityProperties);
+    }
+    /**
+     * 解析 {@code jairouter.security.cors.allowed-origins}：逗号分隔、忽略空白。
+     *
+     * @return 允许的来源列表；未配置时为空列表（表示不启用跨源支持）
+     */
+    List<String> parseCorsAllowedOrigins() {
+        if (corsAllowedOrigins == null || corsAllowedOrigins.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(corsAllowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toList();
+    }
+
+    /**
+     * 构造跨源配置：只允许显式列出的来源，方法覆盖本服务的 HTTP 面，
+     * 并暴露限流/配额相关的响应头供浏览器端读取。
+     *
+     * @param allowedOrigins 允许的来源
+     * @return 绑定到 {@code /**} 的配置源
+     */
+    CorsConfigurationSource corsConfigurationSource(final List<String> allowedOrigins) {
+        final CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(allowedOrigins);
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of(
+                "X-Quota-Limit", "X-Quota-Remaining", "X-Quota-Window",
+                "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset",
+                "Retry-After"));
+        // 网关凭据走自定义头而不是 Cookie，因此不需要 allowCredentials
+        config.setAllowCredentials(false);
+        config.setMaxAge(3600L);
+        final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 }
