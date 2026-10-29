@@ -4,10 +4,6 @@
 # 此配置文件确保在升级到安全增强版本时，现有部署不会受到影响
 # 使用方式: --spring.profiles.active=legacy 或 SPRING_PROFILES_ACTIVE=legacy
 
-spring:
-  profiles:
-    active: legacy
-
 # ========================================
 # 向后兼容模式安全配置覆盖
 # ========================================
@@ -27,7 +23,9 @@ jairouter:
     # JWT 认证配置 - 向后兼容模式
     jwt:
       enabled: false
-      secret: ""
+      # 不在此处把 secret 置空：JwtConfig#secret 有 @Size(min = 32) 约束，
+      # 空串会让 legacy profile 在绑定阶段直接启动失败（issue #803）。
+      # jwt.enabled=false 时不做强度校验，留空缺省即可继承 config/auth/jwt.yml 的值。
       blacklist-enabled: false
     
     # 数据脱敏配置 - 向后兼容模式
