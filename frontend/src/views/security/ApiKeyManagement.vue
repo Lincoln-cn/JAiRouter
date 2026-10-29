@@ -369,7 +369,7 @@ const handleEdit = (row: ApiKeyVO) => {
     expiresAt: row.expiresAt || '',
     enabled: row.enabled,
     permissions: row.permissions || [],
-    allowedIpAddresses: [],
+    allowedIpAddresses: row.allowedIpAddresses ?? [],
     dailyRequestLimit: row.dailyRequestLimit || 0,
     dailyTokenLimit: row.dailyTokenLimit || 0,
     rateLimitPerMinute: row.rateLimitPerMinute || 0,

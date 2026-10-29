@@ -411,6 +411,8 @@ public class ApiKeyService {
     private ApiKeyVO convertToVO(ApiKey ak) {
         ApiKeyVO vo = ApiKeyVO.builder().keyId(ak.getKeyId()).description(ak.getDescription())
             .permissions(ak.getPermissions()).enabled(ak.isEnabled()).expired(ak.isExpired())
+            .allowedIpAddresses(ak.getAllowedIpAddresses() == null
+                ? List.of() : List.copyOf(ak.getAllowedIpAddresses()))
             .createdAt(ak.getCreatedAt()).createdBy(ak.getCreatedBy()).creatorIpAddress(ak.getCreatorIpAddress())
             .rotationPeriodDays(ak.getRotationPeriodDays()).lastRotatedAt(ak.getLastRotatedAt())
             .needsRotation(ak.needsRotation()).expiresAt(ak.getExpiresAt())
