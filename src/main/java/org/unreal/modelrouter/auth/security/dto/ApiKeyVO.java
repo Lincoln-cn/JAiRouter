@@ -61,6 +61,14 @@ public class ApiKeyVO {
     private boolean expired;
 
     /**
+     * IP 白名单（空列表表示不限制来源；判定规则见 ApiKey#isIpAllowed）。
+     *
+     * <p>issue #777：写路径（创建/更新请求）一直支持该字段，读取路径此前未回显，
+     * 控制台既看不到也改不回来；这里只做只读回显，不参与任何放行判定。
+     */
+    private List<String> allowedIpAddresses;
+
+    /**
      * 创建时间
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

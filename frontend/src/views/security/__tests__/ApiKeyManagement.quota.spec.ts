@@ -26,6 +26,7 @@ interface QuotaPageVm {
     rateLimitPerMinute: number
     quotaAlertThreshold: number
     rotationPeriodDays: number
+    allowedIpAddresses: string[]
   }
 }
 
@@ -154,5 +155,25 @@ describe('ApiKeyManagement 配额提交（issue #84）', () => {
     expect(payload.rateLimitPerMinute).toBe(30)
     expect(payload.quotaAlertThreshold).toBe(0.7)
     expect(payload.rotationPeriodDays).toBe(10)
+  })
+
+  // issue #777：后端此前不回显 allowedIpAddresses，编辑对话框写死 [] 把它抹掉了。
+  it('编辑 API Key 时应回填并提交 IP 白名单', async () => {
+    const wrapper = mountPage()
+    await flushPromises()
+    const vm = wrapper.vm as unknown as QuotaPageVm
+
+    vm.handleEdit({
+      keyId: 'k1', description: 'd', enabled: true, permissions: ['chat'],
+      allowedIpAddresses: ['10.0.0.1', '192.168.0.0/16'],
+      dailyRequestLimit: 0, dailyTokenLimit: 0, rateLimitPerMinute: 0,
+      quotaAlertThreshold: 0.8, rotationPeriodDays: 0
+    })
+
+    expect(vm.form.allowedIpAddresses).toEqual(['10.0.0.1', '192.168.0.0/16'])
+
+    await vm.handleSave()
+    const payload = updateApiKey.mock.calls[0][1]
+    expect(payload.allowedIpAddresses).toEqual(['10.0.0.1', '192.168.0.0/16'])
   })
 })

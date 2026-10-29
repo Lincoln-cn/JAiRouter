@@ -256,6 +256,34 @@ class ApiKeyServiceTest {
         }
 
         @Test
+        @DisplayName("更新IP白名单 - 回显全部条目（issue #777）")
+        void updateApiKey_EchoesAllowedIpAddresses() {
+            ApiKeyUpdateRequest request = new ApiKeyUpdateRequest();
+            request.setAllowedIpAddresses(List.of("10.0.0.1", "192.168.0.0/16"));
+
+            Mono<ApiKeyVO> result = apiKeyService.updateApiKey("test-key-id", request);
+
+            StepVerifier.create(result)
+                    .assertNext(vo -> assertEquals(
+                            List.of("10.0.0.1", "192.168.0.0/16"), vo.getAllowedIpAddresses()))
+                    .verifyComplete();
+            verify(apiKeyPersistenceService).saveApiKeysToStore(any(Map.class));
+        }
+
+        @Test
+        @DisplayName("未配置白名单 - 回显空列表而非 null（issue #777）")
+        void getApiKeyByIdVO_WithoutWhitelist_ReturnsEmptyList() {
+            Mono<ApiKeyVO> result = apiKeyService.getApiKeyByIdVO("test-key-id");
+
+            StepVerifier.create(result)
+                    .assertNext(vo -> {
+                        assertNotNull(vo.getAllowedIpAddresses());
+                        assertTrue(vo.getAllowedIpAddresses().isEmpty());
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
         @DisplayName("更新不存在的API Key - 返回错误")
         void updateApiKey_NonExistent_ReturnsError() {
             ApiKeyUpdateRequest request = new ApiKeyUpdateRequest();
