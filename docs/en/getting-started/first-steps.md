@@ -1,4 +1,4 @@
-﻿# First Steps: Deep Dive into Configuration
+# First Steps: Deep Dive into Configuration
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2
@@ -518,7 +518,7 @@ Here is a complete configuration example that includes multiple service types:
 ```bash
 # Add a new instance
 curl -X POST "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "new-model",
@@ -530,7 +530,7 @@ curl -X POST "http://localhost:8080/api/config/instance/chat" \
 # Update an instance
 # $ID = the instance's database id, taken from GET /api/config/instance/{serviceType}
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "new-model@http://new-server:8080",
@@ -547,7 +547,7 @@ curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
 curl -X DELETE "http://localhost:8080/api/config/instance/chat/$ID"
 
 # View all instances
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 ```
 
 ### Configuration File Version Management
@@ -599,7 +599,7 @@ management:
 > TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/jwt/login \
 >   -H 'Content-Type: application/json' \
 >   -d '{"username":"admin","password":"<your admin password>"}' | jq -r .data.token)
-> curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
+> curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
 > ```
 
 ```bash

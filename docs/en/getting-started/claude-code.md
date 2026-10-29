@@ -76,7 +76,7 @@ different purposes:
 | Header | Belongs to | Forwarded downstream | Notes |
 |--------|-----------|----------------------|-------|
 | `x-api-key` (`X-API-Key` is equivalent) | **Gateway credential** | ❌ **No** | API Key created in the JAiRouter console; used for gateway auth + service permission (`ROLE_CHAT`) |
-| `Jairouter_Token` | **Gateway credential (JWT)** | ❌ No | JWT issued by the console/login endpoint; **takes precedence** when both are present |
+| `X-Jairouter-Token` | **Gateway credential (JWT)** | ❌ No | JWT issued by the console/login endpoint; **takes precedence** when both are present |
 | `Authorization` | **Downstream credential** | ✅ **Yes** | e.g. `Bearer sk-xxx` (OpenAI/DeepSeek), `Bearer <token>`; the gateway **never consumes** it |
 | Instance `headers` | **Downstream credential** | ✅ Injected by gateway | Custom request headers from instance config, used to pass `Authorization` / `x-api-key` etc. downstream |
 
@@ -87,11 +87,11 @@ Three rules to remember:
 2. **Configure the downstream key in instance `headers` (recommended), or send it per request via
    `Authorization: Bearer <downstream key>`.** When both are present, **instance `headers` win**
    (instance configuration overrides the incoming `Authorization`).
-3. **Credential precedence**: `Jairouter_Token` (JWT) > `X-API-Key` (API Key). `Authorization` is
+3. **Credential precedence**: `X-Jairouter-Token` (JWT) > `X-API-Key` (API Key). `Authorization` is
    unrelated to gateway authentication; it only affects the downstream.
 
 > **Native-surface authentication note**: `/v1/**` accepts both `X-API-Key` (API Key) and
-> `Jairouter_Token` (JWT). When both are present, **JWT takes precedence**. JWT must be enabled
+> `X-Jairouter-Token` (JWT). When both are present, **JWT takes precedence**. JWT must be enabled
 > (`jairouter.security.jwt.enabled`) and the token must not be expired or revoked.
 > For Claude Code, using `ANTHROPIC_API_KEY` (i.e. `x-api-key`) is the simplest approach; if you
 > prefer JWT, make sure the above conditions are met. The console surface `/api/**` is not affected.
@@ -109,7 +109,7 @@ Three rules to remember:
 ```bash
 # DeepSeek example: the downstream key lives in the instance headers (injected by the gateway)
 curl -X POST "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: <JAiRouter API Key>" \
   -d '{
@@ -145,7 +145,7 @@ header is overridden).
 
 ```bash
 curl -X POST "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: <JAiRouter API Key>" \
   -d '{
@@ -475,7 +475,7 @@ each `id` can be used as the `model` field.
 | **`model` must be a registered model name** | No aliases, no automatic routing prefixes; an unregistered name fails instance selection (404/503) | List `id`s via `GET /v1/models`, or map pool names such as `auto-model` in the console |
 | **Error body shapes differ between surfaces — and, on `/api`, between writers** | On `/v1/**` gateway errors are protocol-shaped: `{"error":{"message":"…","type":"…","code":"…"}}` (Anthropic shape `{"type":"error","error":{…}}` on `/v1/messages`). On `/api/**` the shape is normally `RouterResponse` `{"success":false,"message":"…","errorCode":"…","timestamp":"…"}`, **except** the authentication filter's own responses (401 for a missing/invalid credential, 429 `RATE_LIMITED_API_KEY`), which use the `{"error":{…}}` shape there too, and an authorization-layer 403, which is `text/plain` `Access Denied`; non-2xx downstream responses are **passed through** verbatim | Detect the shape by the presence of a top-level `error` field |
 | **`x-api-key` is never forwarded** | See "Authentication Layers": downstream keys must go to instance `headers` or `Authorization` | Option A / B |
-| **Native surface accepts both API Key and JWT** | `/v1/**` accepts `X-API-Key` (API Key) and `Jairouter_Token` (JWT); when both are present JWT takes precedence; JWT must be enabled and not expired/revoked | Either `x-api-key` (simplest) or `Jairouter_Token` works |
+| **Native surface accepts both API Key and JWT** | `/v1/**` accepts `X-API-Key` (API Key) and `X-Jairouter-Token` (JWT); when both are present JWT takes precedence; JWT must be enabled and not expired/revoked | Either `x-api-key` (simplest) or `X-Jairouter-Token` works |
 | **Streaming `message_start.id` / `model` come from the gateway** | `id` is a gateway-generated `msg_*` (the event is emitted before the first downstream chunk, so the downstream id is unknown yet); `model` is the **requested** model | Use the non-streaming endpoint when the real downstream `id` matters (it is passed through) |
 | **Streaming emits text blocks plus `tool_use` blocks** | The text block is always `index: 0` and tool blocks increment in order of appearance; no `thinking` / `redacted_thinking` blocks are emitted (a request `thinking` field is accepted but not consumed) | Connect to Anthropic directly when thinking is required |
 | **`tool_choice:"none"` omits `tools`** | Per protocol that value disables tools, so the gateway forwards neither `tools` nor `tool_choice` (instead of sending `"none"`) | Use it whenever you want "no tools at all" |
@@ -489,7 +489,7 @@ each `id` can be used as the `model` field.
 | `401 Unauthorized` | `x-api-key` is not a valid JAiRouter API Key, or a **downstream** key was put in `x-api-key` | Create/copy the console API Key; move the downstream key to instance `headers` or `Authorization` |
 | Request succeeds but downstream returns 401/403 | Downstream key missing or expired (`x-api-key` is not forwarded) | Check the instance `headers`; verify with `/api/config/instance/chat` |
 | `404` / `503` (model unavailable) | `model` not registered, instance unhealthy, or service circuit-broken | Cross-check the model name with `GET /v1/models`; check instance health and circuit breaker |
-| Claude Code reports an "empty response" / no output | `x-api-key` is invalid or missing, and `Jairouter_Token` is not enabled / expired / revoked | Set a valid `ANTHROPIC_API_KEY`, or confirm JWT is enabled and the token is valid |
+| Claude Code reports an "empty response" / no output | `x-api-key` is invalid or missing, and `X-Jairouter-Token` is not enabled / expired / revoked | Set a valid `ANTHROPIC_API_KEY`, or confirm JWT is enabled and the token is valid |
 | Tool use does not work | The downstream does not support function calling (`tools` ignored → plain text with `stop_reason: end_turn`), or the model chose not to call a tool | Switch to a downstream with function calling; force a call with `tool_choice:"any"` (mapped to downstream `required`) to verify the path |
 | `tool_use` blocks appear but Claude Code does not run the tool | `stop_reason` is not `tool_use` (odd downstream finish reason), or `tool_use.id` does not match `tool_result.tool_use_id` | Inspect `message_delta.delta.stop_reason` in the event stream; make sure the client echoes the same `tool_use_id` |
 | Tool `input` shows `{"raw_arguments": "…"}` | Downstream `function.arguments` is not valid JSON (downstream bug or truncation) | Check the gateway warn log to identify the downstream; tolerate the raw field client-side or retry |

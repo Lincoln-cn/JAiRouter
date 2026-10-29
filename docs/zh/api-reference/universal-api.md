@@ -51,7 +51,7 @@ JAiRouter 提供兼容 OpenAI 格式的统一 API 接口，支持多种 AI 模�
 
 **鉴权约定**
 
-- 网关凭据：`X-API-Key: <管理台创建的 API Key>`，或 `Jairouter_Token: <JWT>`。
+- 网关凭据：`X-API-Key: <管理台创建的 API Key>`，或 `X-Jairouter-Token: <JWT>`。
 - `Authorization` 头**保留并透传给下游 AI 服务**；**实例级 `headers` 优先级更高**——因此可以把下游密钥只配在实例上（`headers: {Authorization: "Bearer <下游密钥>"}`），客户端无需重复提供。
 - 服务级权限：API Key 需具备 `CHAT` / `EMBEDDING` / `RERANK` 等服务权限（或 `ADMIN`）。
 - 未携带凭据返回 `401`，权限不足返回 `403`，配额超限返回 `429`（带 `Retry-After` 与 `X-Quota-*`）。

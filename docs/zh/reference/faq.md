@@ -193,7 +193,7 @@ model:
 ```bash
 # 添加实例
 curl -X POST http://localhost:8080/api/config/instance/chat \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "new-model",
@@ -205,7 +205,7 @@ curl -X POST http://localhost:8080/api/config/instance/chat \
 # 更新实例
 # $ID = 该实例的数据库 id，从 GET /api/config/instance/{serviceType} 的响应里取
 curl -X PUT http://localhost:8080/api/config/instance/chat/$ID \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "new-model@http://new-server:9090",
@@ -421,7 +421,7 @@ grep -i "connection\|timeout" logs/jairouter-debug.log
 > TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/jwt/login \
 >   -H 'Content-Type: application/json' \
 >   -d '{"username":"admin","password":"<你的管理员密码>"}' | jq -r .data.token)
-> curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
+> curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
 > ```
 
 ```bash

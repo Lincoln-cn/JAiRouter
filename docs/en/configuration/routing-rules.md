@@ -183,7 +183,7 @@ Base path: `/api/config/rules`
 ```bash
 curl -X POST http://localhost:8080/api/config/rules \
   -H "Content-Type: application/json" \
-  -H "Jairouter_Token: your-admin-token" \
+  -H "X-Jairouter-Token: your-admin-token" \
   -d '{
     "name": "Route to vLLM by header",
     "priority": 100,
@@ -200,7 +200,7 @@ curl -X POST http://localhost:8080/api/config/rules \
 ```bash
 curl -X PUT http://localhost:8080/api/config/rules/priority \
   -H "Content-Type: application/json" \
-  -H "Jairouter_Token: your-admin-token" \
+  -H "X-Jairouter-Token: your-admin-token" \
   -d '[{"id": "rule-id-1", "priority": 200}, {"id": "rule-id-2", "priority": 100}]'
 ```
 
@@ -211,7 +211,7 @@ Before saving a rule, verify it matches as expected using a sample request — *
 ```bash
 curl -X POST http://localhost:8080/api/config/rules/validate \
   -H "Content-Type: application/json" \
-  -H "Jairouter_Token: your-admin-token" \
+  -H "X-Jairouter-Token: your-admin-token" \
   -d '{
     "serviceType": "chat",
     "modelName": "gpt-4",

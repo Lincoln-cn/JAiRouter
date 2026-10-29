@@ -21,7 +21,7 @@ JAiRouter provides a unified API interface compatible with OpenAI format, suppor
 
 **Authentication**
 
-- Gateway credential: `X-API-Key: <API key created in the console>`, or `Jairouter_Token: <JWT>`.
+- Gateway credential: `X-API-Key: <API key created in the console>`, or `X-Jairouter-Token: <JWT>`.
 - The `Authorization` header is **forwarded to the downstream AI service**; **instance-level `headers` take precedence** — so the downstream key can live only on the instance (`headers: {Authorization: "Bearer <downstream-key>"}`) with no client-side duplication.
 - Service permission: the API key must carry the matching service role (`CHAT` / `EMBEDDING` / `RERANK`, or `ADMIN`).
 - Missing credentials → `401`; insufficient permission → `403`; quota exceeded → `429` (with `Retry-After` and `X-Quota-*`).

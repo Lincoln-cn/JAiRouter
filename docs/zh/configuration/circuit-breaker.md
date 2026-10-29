@@ -1,4 +1,4 @@
-﻿# 熔断器配置
+# 熔断器配置
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.3  
@@ -345,7 +345,7 @@ JAiRouter 也支持通过动态配置 API 更新降级策略：
 > TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/jwt/login \
 >   -H 'Content-Type: application/json' \
 >   -d '{"username":"admin","password":"<你的管理员密码>"}' | jq -r .data.token)
-> curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
+> curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
 > ```
 
 ```bash

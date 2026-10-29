@@ -21,6 +21,12 @@ public final class DefaultAuthenticationConverter implements ServerAuthenticatio
     /** 允许从 query 取凭据的路径前缀（WebSocket 握手，见 {@link #isWebSocketHandshake}）。 */
     private static final String WEBSOCKET_PATH_PREFIX = "/ws/";
 
+    /**
+     * 历史 JWT 头名（issue #805）：下划线形式会被 nginx 默认配置丢弃，已不是默认值，
+     * 但仍接受，避免老客户端升级后突然全部 401。
+     */
+    private static final List<String> LEGACY_JWT_HEADERS = List.of("Jairouter_Token");
+
     private final SecurityProperties securityProperties;
 
     private static final Logger log = LoggerFactory.getLogger(DefaultAuthenticationConverter.class);
@@ -88,12 +94,29 @@ public final class DefaultAuthenticationConverter implements ServerAuthenticatio
 
     /**
      * 提取JWT令牌
-     * 注意：Authorization 头保留给下游 AI 服务使用，JAiRouter 认证使用 Jairouter_Token
+     * 注意：Authorization 头保留给下游 AI 服务使用，JAiRouter 认证使用配置的 JWT 头
+     * （默认 {@code X-Jairouter-Token}，见 issue #805）。
      */
     private String extractJwtToken(final ServerWebExchange exchange) {
-        // 从配置的自定义头中提取（大小写不敏感）
         String jwtHeader = securityProperties.getJwt().getJwtHeader();
-        return getHeaderIgnoreCase(exchange, jwtHeader);
+        String token = getHeaderIgnoreCase(exchange, jwtHeader);
+        if (token != null) {
+            return token;
+        }
+        // 历史头名兜底（issue #805）：默认头名曾叫 Jairouter_Token，含下划线；nginx 默认
+        // underscores_in_headers off 会把这个头直接丢掉（客户端看到「登录成功但后续 401」）。
+        // 头名已改为连字符形式，但老客户端/旧脚本仍可能只发送下划线头，这里继续接受。
+        for (String legacyHeader : LEGACY_JWT_HEADERS) {
+            if (legacyHeader.equalsIgnoreCase(jwtHeader)) {
+                continue;
+            }
+            token = getHeaderIgnoreCase(exchange, legacyHeader);
+            if (token != null) {
+                log.debug("使用历史 JWT 头名 {}（建议迁移到 {}）", legacyHeader, jwtHeader);
+                return token;
+            }
+        }
+        return null;
     }
 
     /**

@@ -954,7 +954,7 @@ These are the **current** endpoints (implemented by `ServiceTypeInstanceControll
 `/api/instance-configs` controller was removed in **v3.0.2** — see the changelog entry "Removed 4 deprecated
 controllers"; if you still call that path you will get `404`.
 
-All of them need authentication: send the JWT in the **`Jairouter_Token`** header (configurable via
+All of them need authentication: send the JWT in the **`X-Jairouter-Token`** header (configurable via
 `jairouter.security.jwt.jwt-header`) — it is **not** `Authorization: Bearer`. Without it every call below
 returns `401 {"error":{"code":"AUTH_MISSING"}}`.
 
@@ -1015,20 +1015,20 @@ TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
   http://localhost:8080/api/auth/jwt/login | jq -r .data.token)
 
 # 1. add
-curl -X POST -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
+curl -X POST -H "X-Jairouter-Token: $TOKEN" -H "Content-Type: application/json" \
   -d '{"name":"qwen2:7b","baseUrl":"http://gpu-server:8080","path":"/v1/chat/completions","weight":2,"adapter":"normal"}' \
   http://localhost:8080/api/config/instance/chat
 
 # 2. list, and take the database id of the instance you just added
-curl -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat
-ID=$(curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
+curl -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/api/config/instance/chat
+ID=$(curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/api/config/instance/chat \
   | jq -r '.data[] | select(.name=="qwen2:7b") | .id')
 
 # 3. update / 4. delete by that id
-curl -X PUT -H "Jairouter_Token: $TOKEN" -H "Content-Type: application/json" \
+curl -X PUT -H "X-Jairouter-Token: $TOKEN" -H "Content-Type: application/json" \
   -d '{"name":"qwen2:7b","baseUrl":"http://gpu-server:8080","path":"/v1/chat/completions","weight":3,"adapter":"normal"}' \
   "http://localhost:8080/api/config/instance/chat/$ID"
-curl -X DELETE -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat/$ID"
+curl -X DELETE -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat/$ID"
 ```
 
 ⚠️ Do not use a `/type/`, `/add/`, `/update/`, `/del/` or `/info/` sub-path: those shapes were never routes
@@ -1082,7 +1082,7 @@ All management APIs require authentication. Use one of the following methods:
 
 ### JWT Token
 ```
-Header: Jairouter_Token: <your-jwt-token>
+Header: X-Jairouter-Token: <your-jwt-token>
 ```
 
 ### API Key

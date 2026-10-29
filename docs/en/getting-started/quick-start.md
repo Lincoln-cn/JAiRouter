@@ -111,8 +111,8 @@ TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
   http://localhost:8080/api/auth/jwt/login | jq -r .data.token)
 ```
 
-Every command below then sends it as `-H "Jairouter_Token: $TOKEN"`.
-Note the header name: the JWT header is **`Jairouter_Token`** (configurable via
+Every command below then sends it as `-H "X-Jairouter-Token: $TOKEN"`.
+Note the header name: the JWT header is **`X-Jairouter-Token`** (configurable via
 `jairouter.security.jwt.jwt-header`), not `Authorization: Bearer`.
 
 ## Common Configuration Examples
@@ -122,7 +122,7 @@ Note the header name: the JWT header is **`Jairouter_Token`** (configurable via
 **OpenAI GPT**
 ```bash
 curl -X POST "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "gpt-4o",
@@ -138,7 +138,7 @@ curl -X POST "http://localhost:8080/api/config/instance/chat" \
 **DeepSeek**
 ```bash
 curl -X POST "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "deepseek-chat",
@@ -154,7 +154,7 @@ curl -X POST "http://localhost:8080/api/config/instance/chat" \
 **Anthropic Claude**
 ```bash
 curl -X POST "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "claude-sonnet",
@@ -172,7 +172,7 @@ curl -X POST "http://localhost:8080/api/config/instance/chat" \
 **Google Gemini**
 ```bash
 curl -X POST "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "gemini-pro",
@@ -190,7 +190,7 @@ curl -X POST "http://localhost:8080/api/config/instance/chat" \
 **Ollama**
 ```bash
 curl -X POST "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "llama3.2:3b",
@@ -203,7 +203,7 @@ curl -X POST "http://localhost:8080/api/config/instance/chat" \
 **vLLM**
 ```bash
 curl -X POST "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "vllm-qwen",
@@ -221,7 +221,7 @@ curl -X POST "http://localhost:8080/api/config/instance/chat" \
 
 ```bash
 # Get all chat service instances
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 ```
 
 ### View Monitoring Metrics
@@ -239,7 +239,7 @@ curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/cha
 > TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/jwt/login \
 >   -H 'Content-Type: application/json' \
 >   -d '{"username":"admin","password":"<your admin password>"}' | jq -r .data.token)
-> curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
+> curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
 > ```
 
 ```bash
@@ -257,7 +257,7 @@ Add a second service instance to experience load balancing:
 ```bash
 # Add another instance
 curl -X POST "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "llama3.2:1b",

@@ -15,13 +15,13 @@ echo "Token: ${TOKEN:0:50}..."
 echo ""
 echo "=== 初始版本列表 ==="
 curl -s -X GET "${BASE_URL}/api/config/version" \
-  -H "Jairouter_Token: $TOKEN" | jq '.'
+  -H "X-Jairouter-Token: $TOKEN" | jq '.'
 
 # 2. 获取初始版本详细信息
 echo ""
 echo "=== 初始版本详细信息 ==="
 curl -s -X GET "${BASE_URL}/api/config/version/info" \
-  -H "Jairouter_Token: $TOKEN" | jq '.'
+  -H "X-Jairouter-Token: $TOKEN" | jq '.'
 
 # 3. 创建一个服务（使用现有的 chat 服务）
 echo ""
@@ -64,7 +64,7 @@ UPDATE_DATA='{
 }'
 
 curl -s -X PUT "${BASE_URL}/api/config/type/services/chat" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   --data-raw "$UPDATE_DATA" | jq '.'
 
@@ -75,10 +75,10 @@ sleep 3
 echo ""
 echo "=== 更新后的版本列表 ==="
 curl -s -X GET "${BASE_URL}/api/config/version" \
-  -H "Jairouter_Token: $TOKEN" | jq '.'
+  -H "X-Jairouter-Token: $TOKEN" | jq '.'
 
 # 5. 获取更新后的版本详细信息
 echo ""
 echo "=== 更新后的版本详细信息 ==="
 curl -s -X GET "${BASE_URL}/api/config/version/info" \
-  -H "Jairouter_Token: $TOKEN" | jq '.'
+  -H "X-Jairouter-Token: $TOKEN" | jq '.'

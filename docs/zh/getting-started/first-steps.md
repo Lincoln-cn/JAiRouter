@@ -1,4 +1,4 @@
-﻿# 第一步：深入配置
+# 第一步：深入配置
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.3  
@@ -518,7 +518,7 @@ JAiRouter 支持两种配置存储方式：
 ```bash
 # 添加新实例
 curl -X POST "http://localhost:8080/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "new-model",
@@ -530,7 +530,7 @@ curl -X POST "http://localhost:8080/api/config/instance/chat" \
 # 更新实例
 # $ID = 该实例的数据库 id，从 GET /api/config/instance/{serviceType} 的响应里取
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "new-model@http://new-server:8080",
@@ -547,7 +547,7 @@ curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
 curl -X DELETE "http://localhost:8080/api/config/instance/chat/$ID"
 
 # 查看所有实例
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 ```
 
 ### 配置文件版本管理
@@ -597,7 +597,7 @@ management:
 > TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/jwt/login \
 >   -H 'Content-Type: application/json' \
 >   -d '{"username":"admin","password":"<你的管理员密码>"}' | jq -r .data.token)
-> curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
+> curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
 > ```
 
 ```bash

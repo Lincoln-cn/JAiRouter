@@ -70,7 +70,7 @@ JAiRouter uses a standardized error code system to identify various error condit
 | `JWT_AUTH_FAILED` | JWT authentication failed | The authentication manager threw an unexpected exception | Check server logs |
 | `JWT_DISABLED` | JWT authentication is disabled | The server turned JWT auth off | Enable it on the server |
 | `TOKEN_REQUIRED` | The current token is required for refresh | The refresh request carries no current token | Send the current token with the refresh |
-| `EMPTY_JWT_TOKEN` | No JWT carried | The request is missing the `Jairouter_Token` header | Add the `Jairouter_Token` header |
+| `EMPTY_JWT_TOKEN` | No JWT carried | The request is missing the `X-Jairouter-Token` header | Add the `X-Jairouter-Token` header |
 | `AUTH_MISSING` | No credentials carried | Neither an API Key nor a JWT was supplied | Supply credentials |
 | `AUTH_FAILED` | Authentication failed (default code) | The authentication filter's fallback | Check server logs for the concrete cause |
 | `AUTH_ERROR` | Unknown error during authentication | The authentication chain threw an unrecognized exception | Check server logs |

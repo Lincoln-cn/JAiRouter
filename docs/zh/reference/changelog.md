@@ -146,7 +146,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 #### 升级提示
 
-- **`/api/auth/jwt/tokens` 等网关自身端点仍用 `Jairouter_Token` 头**（`Authorization` 留给下游）——与 3.5.4 一致，本次未改。
+- **`/api/auth/jwt/tokens` 等网关自身端点仍用 `X-Jairouter-Token` 头**（`Authorization` 留给下游）——与 3.5.4 一致，本次未改。
 - **`jwt.persistence.enabled` 的语义已在文档里写明**：它只控制生命周期服务、过期调度器、健康探针与两个配置属性，**不控制令牌是否落库**。
 - **配置重置现在需要显式确认**：脚本化调用请带上确认参数，否则返回参数错误。
 - **流式传输层超时与空闲看门狗仍是两处配置**：`jairouter.webclient.streaming-response-timeout-seconds`（默认 600）与 `jairouter.streaming.idle-timeout`（默认 5 分钟），二者都会生效，取先到者。
@@ -945,7 +945,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 #### 文档
 
-- 纠正 `claude-code.md`（zh/en）关于原生面认证的错误声称：`/v1/**` **同时接受** `X-API-Key`（OpenAI 面）/ `x-api-key`（Anthropic 面）与 `Jairouter_Token`（JWT），两者同存时 JWT 优先；此前误称"仅支持 API Key 认证"
+- 纠正 `claude-code.md`（zh/en）关于原生面认证的错误声称：`/v1/**` **同时接受** `X-API-Key`（OpenAI 面）/ `x-api-key`（Anthropic 面）与 `X-Jairouter-Token`（JWT），两者同存时 JWT 优先；此前误称"仅支持 API Key 认证"
 
 ---
 
@@ -1159,7 +1159,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 #### README 与文档
 
-- **README / README-ZH 全面更新**：重拍并替换 7 张界面截图（含暗色主题与调用历史仪表盘，此前为 2026-08-26 旧 UI）；Core Features 补充响应缓存 P1、RBAC 44 权限码、暗色/亮色主题；Roadmap 权限码 43→44；示例认证头统一为 `Jairouter_Token`
+- **README / README-ZH 全面更新**：重拍并替换 7 张界面截图（含暗色主题与调用历史仪表盘，此前为 2026-08-26 旧 UI）；Core Features 补充响应缓存 P1、RBAC 44 权限码、暗色/亮色主题；Roadmap 权限码 43→44；示例认证头统一为 `X-Jairouter-Token`
 - **rbac-permissions zh/en 同步 44 码**：全量清单新增 `config:cache:write`（config 模块 11 资源 = 21 码）；角色计数 ADMIN 44 / OPERATOR 35；接口与权限树描述同步
 
 #### hallmark 设计审计（本地 innerdoc，v2.10.x 重构输入）

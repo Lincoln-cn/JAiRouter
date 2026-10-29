@@ -53,7 +53,7 @@ http://localhost:8080
 网关自身的凭据有两种：
 
 - `X-API-Key: <控制台创建的 API Key>`
-- `Jairouter_Token: <JWT>`
+- `X-Jairouter-Token: <JWT>`
 
 `Authorization` 头**不参与网关认证**，它被透传给下游 AI 服务（实例级 `headers` 优先）。
 

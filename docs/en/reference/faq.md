@@ -175,7 +175,7 @@ The circuit breaker has three states:
 ```bash
 # Add instance
 curl -X POST http://localhost:8080/api/config/instance/chat \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "new-model",
@@ -187,7 +187,7 @@ curl -X POST http://localhost:8080/api/config/instance/chat \
 # Update instance
 # $ID = the instance's database id, taken from GET /api/config/instance/{serviceType}
 curl -X PUT http://localhost:8080/api/config/instance/chat/$ID \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "new-model@http://new-server:9090",
@@ -402,7 +402,7 @@ grep -i "connection\|timeout" logs/jairouter-debug.log
 > TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/jwt/login \
 >   -H 'Content-Type: application/json' \
 >   -d '{"username":"admin","password":"<your admin password>"}' | jq -r .data.token)
-> curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
+> curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
 > ```
 
 ```bash

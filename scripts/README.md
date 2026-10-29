@@ -222,11 +222,11 @@ node scripts/test/mock-model-server.mjs --fail-rate 0.5
 `/v1/embeddings`、`/v1/rerank`、`/v1/audio/speech`、`/v1/audio/transcriptions`、
 `/v1/images/generations`、`/v1/images/edits`。其余路径一律返回 200，保证健康检查通过。
 
-在 JAiRouter 里把它挂成实例（`Jairouter_Token` 为控制台登录后的 JWT）：
+在 JAiRouter 里把它挂成实例（`X-Jairouter-Token` 为控制台登录后的 JWT）：
 
 ```bash
 curl -X POST http://127.0.0.1:8080/api/config/instance/chat \
-  -H "Jairouter_Token: <admin-jwt>" -H 'Content-Type: application/json' \
+  -H "X-Jairouter-Token: <admin-jwt>" -H 'Content-Type: application/json' \
   -d '{"name":"qwen3.8-flash","baseUrl":"http://127.0.0.1:9099",
        "path":"/v1/chat/completions","weight":1,"status":"active","adapter":"gpustack"}'
 ```
@@ -235,7 +235,7 @@ curl -X POST http://127.0.0.1:8080/api/config/instance/chat \
 
 ```bash
 curl -X POST http://127.0.0.1:8080/v1/chat/completions \
-  -H "Jairouter_Token: <admin-jwt>" -H 'Content-Type: application/json' \
+  -H "X-Jairouter-Token: <admin-jwt>" -H 'Content-Type: application/json' \
   -d '{"model":"qwen3.8-flash","messages":[{"role":"user","content":"hi"}],"stream":false}'
 ```
 
@@ -243,7 +243,7 @@ curl -X POST http://127.0.0.1:8080/v1/chat/completions \
 
 ```bash
 curl -X DELETE http://127.0.0.1:8080/api/config/instance/chat/<instanceDbId> \
-  -H "Jairouter_Token: <admin-jwt>"
+  -H "X-Jairouter-Token: <admin-jwt>"
 ```
 
 ### 监控部署

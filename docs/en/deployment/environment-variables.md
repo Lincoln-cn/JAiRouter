@@ -155,6 +155,6 @@ days: 30`).
 - Search the startup log for `JWT cleanup service initialized with schedule:` and
   `The following 1 profile is active:` — that confirms the effective profile and cleanup parameters.
 - `GET /actuator/health`: whether Redis is probed depends on `REDIS_ENABLED`.
-- `GET /api/auth/jwt/cleanup/stats` and `GET /api/auth/jwt/blacklist/stats` need the `Jairouter_Token` header
+- `GET /api/auth/jwt/cleanup/stats` and `GET /api/auth/jwt/blacklist/stats` need the `X-Jairouter-Token` header
   (JAiRouter's own JWTs travel in that header; `Authorization` is reserved for downstream services).
 - To enumerate every placeholder and its default: `git grep -n '\${' -- src/main/resources`.

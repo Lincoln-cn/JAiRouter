@@ -134,5 +134,5 @@ docker run --rm sodlinken/jairouter:latest --generate-key
 
 - 启动日志里搜 `JWT cleanup service initialized with schedule:`、`The following 1 profile is active:`，可确认当前生效的 profile 与清理参数。
 - `GET /actuator/health`：Redis 探针是否开启取决于 `REDIS_ENABLED`。
-- `GET /api/auth/jwt/cleanup/stats`、`GET /api/auth/jwt/blacklist/stats`：需要 `Jairouter_Token` 头（网关自己的 JWT 走这个头，`Authorization` 留给下游）。
+- `GET /api/auth/jwt/cleanup/stats`、`GET /api/auth/jwt/blacklist/stats`：需要 `X-Jairouter-Token` 头（网关自己的 JWT 走这个头，`Authorization` 留给下游）。
 - 变量清单一览可用 `scripts` 之外的方式复核：`git grep -n '\${' -- src/main/resources` 会列出全部占位符及其默认值。

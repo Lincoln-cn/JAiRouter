@@ -1,4 +1,4 @@
-﻿# 监控设置指南
+# 监控设置指南
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.3  
@@ -309,7 +309,7 @@ curl http://localhost:9090/api/v1/targets
 > TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/jwt/login \
 >   -H 'Content-Type: application/json' \
 >   -d '{"username":"admin","password":"<你的管理员密码>"}' | jq -r .data.token)
-> curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
+> curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
 > ```
 
 ```bash

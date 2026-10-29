@@ -37,7 +37,7 @@ echo ""
 # 1. 获取实例列表
 echo "步骤 1: 获取 $SERVICE_TYPE 服务的实例列表"
 LIST_RESPONSE=$(curl -s -X GET "$BASE_URL/api/config/instance/$SERVICE_TYPE" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 if [ $? -eq 0 ] && echo "$LIST_RESPONSE" | grep -q "success\|data"; then
     echo "✓ 成功获取实例列表"
@@ -56,7 +56,7 @@ fi
 echo ""
 echo "步骤 2: 创建测试实例 $INSTANCE_NAME"
 CREATE_RESPONSE=$(curl -s -X PUT "$BASE_URL/api/config/instance/$SERVICE_TYPE/test" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H 'Content-Type: application/json' \
   --data-raw "{
     \"name\":\"$INSTANCE_NAME\",
@@ -100,7 +100,7 @@ sleep 2
 echo ""
 echo "步骤 3: 检查实例是否正确创建并包含限流器和熔断器配置"
 CHECK_CREATE_RESPONSE=$(curl -s -X GET "$BASE_URL/api/config/instance/$SERVICE_TYPE" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 # 查找刚创建的实例
 INSTANCE_DATA=$(echo "$CHECK_CREATE_RESPONSE" | jq ".data[] | select(.name==\"$INSTANCE_NAME\")" 2>/dev/null)
@@ -143,7 +143,7 @@ fi
 echo ""
 echo "步骤 4: 更新实例配置 (禁用限流器，启用熔断器)"
 UPDATE_RESPONSE=$(curl -s -X PUT "$BASE_URL/api/config/instance/$SERVICE_TYPE/$INSTANCE_ID" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H 'Content-Type: application/json' \
   --data-raw "{
     \"instanceId\":\"$INSTANCE_ID\",
@@ -188,7 +188,7 @@ sleep 2
 echo ""
 echo "步骤 5: 检查实例配置是否正确更新"
 CHECK_UPDATE_RESPONSE=$(curl -s -X GET "$BASE_URL/api/config/instance/$SERVICE_TYPE" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 UPDATED_INSTANCE_DATA=$(echo "$CHECK_UPDATE_RESPONSE" | jq ".data[] | select(.name==\"$INSTANCE_NAME\")" 2>/dev/null)
 
@@ -243,7 +243,7 @@ fi
 echo ""
 echo "步骤 6: 清理测试数据"
 DELETE_RESPONSE=$(curl -s -X DELETE "$BASE_URL/api/config/instance/$SERVICE_TYPE/$INSTANCE_ID" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 if echo "$DELETE_RESPONSE" | grep -q "success.*true\|删除成功\|实例删除成功"; then
     echo "✓ 测试实例已成功删除"
@@ -254,7 +254,7 @@ fi
 
 # 最终验证：再次检查列表确认实例已被删除
 FINAL_LIST_RESPONSE=$(curl -s -X GET "$BASE_URL/api/config/instance/$SERVICE_TYPE" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 FINAL_INSTANCE_DATA=$(echo "$FINAL_LIST_RESPONSE" | jq ".data[] | select(.name==\"$INSTANCE_NAME\")" 2>/dev/null)
 

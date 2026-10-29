@@ -70,7 +70,7 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 | `JWT_AUTH_FAILED` | JWT 认证失败 | 认证管理器抛出未预期异常 | 查服务端日志 |
 | `JWT_DISABLED` | JWT 认证功能未启用 | 服务端关闭了 JWT 认证 | 打开服务端开关 |
 | `TOKEN_REQUIRED` | 刷新时未携带当前令牌 | 刷新请求缺少当前令牌 | 携带当前令牌再刷新 |
-| `EMPTY_JWT_TOKEN` | 未携带 JWT 令牌 | 请求头缺少 `Jairouter_Token` | 添加 `Jairouter_Token` 请求头 |
+| `EMPTY_JWT_TOKEN` | 未携带 JWT 令牌 | 请求头缺少 `X-Jairouter-Token` | 添加 `X-Jairouter-Token` 请求头 |
 | `AUTH_MISSING` | 请求缺少认证信息 | 既未带 API Key 也未带 JWT | 补齐认证凭据 |
 | `AUTH_FAILED` | 认证失败（默认码） | 认证过滤器兜底 | 查服务端日志确认具体原因 |
 | `AUTH_ERROR` | 认证过程中发生未知错误 | 认证链抛出未识别异常 | 查服务端日志 |

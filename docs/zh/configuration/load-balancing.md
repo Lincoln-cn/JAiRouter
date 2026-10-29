@@ -387,7 +387,7 @@ model:
 # 但可以通过调整实例权重来影响负载分布
 # $ID = 该实例的数据库 id，从 GET /api/config/instance/{serviceType} 的响应里取
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "high-perf-model@http://gpu-server:8080",
@@ -406,7 +406,7 @@ curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
 # 场景：GPU 服务器性能提升，增加权重
 # $ID = 该实例的数据库 id，从 GET /api/config/instance/{serviceType} 的响应里取
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "gpu-model@http://gpu-server:8080",
@@ -418,7 +418,7 @@ curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
 # 场景：CPU 服务器负载过高，降低权重
 # $ID = 该实例的数据库 id，从 GET /api/config/instance/{serviceType} 的响应里取
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "instanceId": "cpu-model@http://cpu-server:8080",
@@ -445,7 +445,7 @@ JAiRouter 提供以下负载均衡相关指标：
 > TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/jwt/login \
 >   -H 'Content-Type: application/json' \
 >   -d '{"username":"admin","password":"<你的管理员密码>"}' | jq -r .data.token)
-> curl -s -H "Jairouter_Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
+> curl -s -H "X-Jairouter-Token: $TOKEN" http://localhost:8080/actuator/metrics | jq
 > ```
 
 ```bash
@@ -650,7 +650,7 @@ model:
 
 ```bash
 # 检查实例状态
-curl -H "Jairouter_Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
+curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/instance/chat"
 
 # 查看负载分布
 curl "http://localhost:8080/actuator/metrics/jairouter_requests_total"

@@ -62,7 +62,7 @@ springdoc:
 > code:
 >
 > ```bash
-> curl -s -H "Jairouter_Token: <ADMIN JWT>" http://localhost:8080/v3/api-docs | jq '.paths | length'
+> curl -s -H "X-Jairouter-Token: <ADMIN JWT>" http://localhost:8080/v3/api-docs | jq '.paths | length'
 > ```
 >
 > `/v3/api-docs` is **not** anonymous by default — it needs a credential unless

@@ -32,7 +32,7 @@ echo ""
 echo "步骤 2: 获取 chat 服务实例列表"
 echo "----------------------------------------"
 LIST_RESPONSE=$(curl -s -X GET "${BASE_URL}/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 echo "响应:"
 echo "$LIST_RESPONSE" | jq '.data[] | {instanceId, name, status, rateLimit, circuitBreaker}'
@@ -83,7 +83,7 @@ echo "请求数据:"
 echo "$RATE_LIMIT_DATA" | jq '.'
 
 UPDATE_RESPONSE=$(curl -s -X PUT "${BASE_URL}/api/config/instance/chat/$INSTANCE_ID" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   --data-raw "$RATE_LIMIT_DATA")
 
@@ -105,7 +105,7 @@ echo "----------------------------------------"
 sleep 2
 
 VERIFY_RESPONSE=$(curl -s -X GET "${BASE_URL}/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 echo "响应:"
 echo "$VERIFY_RESPONSE" | jq ".data[] | select(.instanceId==\"$INSTANCE_ID\") | {name, rateLimit, circuitBreaker}"
@@ -158,7 +158,7 @@ echo "请求数据:"
 echo "$CIRCUIT_BREAKER_DATA" | jq '.'
 
 UPDATE_CB_RESPONSE=$(curl -s -X PUT "${BASE_URL}/api/config/instance/chat/$INSTANCE_ID" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   --data-raw "$CIRCUIT_BREAKER_DATA")
 
@@ -180,7 +180,7 @@ echo "----------------------------------------"
 sleep 2
 
 VERIFY_CB_RESPONSE=$(curl -s -X GET "${BASE_URL}/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 echo "响应:"
 echo "$VERIFY_CB_RESPONSE" | jq ".data[] | select(.instanceId==\"$INSTANCE_ID\") | {name, rateLimit, circuitBreaker}"
@@ -228,7 +228,7 @@ EOF
 )
 
 DISABLE_RESPONSE=$(curl -s -X PUT "${BASE_URL}/api/config/instance/chat/$INSTANCE_ID" \
-  -H "Jairouter_Token: $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
   --data-raw "$DISABLE_DATA")
 
@@ -249,7 +249,7 @@ echo "----------------------------------------"
 sleep 2
 
 FINAL_RESPONSE=$(curl -s -X GET "${BASE_URL}/api/config/instance/chat" \
-  -H "Jairouter_Token: $TOKEN")
+  -H "X-Jairouter-Token: $TOKEN")
 
 echo "最终配置状态:"
 echo "$FINAL_RESPONSE" | jq ".data[] | select(.instanceId==\"$INSTANCE_ID\") | {
