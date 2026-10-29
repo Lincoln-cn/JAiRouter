@@ -33,7 +33,7 @@
     "pinia": "^2.3.1",
     "sortablejs": "^1.15.7",
     "vue": "^3.5.44",
-    "vue-i18n": "^11.1.2",
+    "vue-i18n": "^11.4.14",
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
