@@ -9,11 +9,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.dto.SecurityErrorResponse;
+import org.unreal.modelrouter.common.filter.RequestIdWebFilter;
 import org.unreal.modelrouter.common.exception.AuthenticationException;
 import org.unreal.modelrouter.common.exception.DownstreamServiceException;
 import org.unreal.modelrouter.common.exception.AuthorizationException;
 import org.unreal.modelrouter.common.exception.SanitizationException;
 import org.unreal.modelrouter.common.exception.SecurityException;
+import org.unreal.modelrouter.monitor.tracing.TracingConstants;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
@@ -33,6 +35,11 @@ import java.time.LocalDateTime;
  *   <li>非 {@code /v1} 路径（含 {@code /api/**}）→ 逐字节保持既有 {@link SecurityErrorResponse} 形状。</li>
  * </ul>
  * <p>状态码与日志语义不变（状态码原样透传，仅错误体形状随路径切换）。</p>
+ *
+ * <p>#785：非 {@code /v1} 路径的 {@link SecurityErrorResponse} 会回填 {@code requestId} ——
+ * 取值只复用 {@link RequestIdWebFilter} 已经放好的那个 ID（交换属性
+ * {@link RequestIdWebFilter#REQUEST_ID_ATTRIBUTE}，缺失时回落到入站 {@code X-Request-Id} 头），
+ * <b>不在这里生成第二个 ID</b>；两处都没有时保持 {@code null}（全局 {@code NON_NULL} 会省略该键）。</p>
  */
 @RestControllerAdvice
 @Order(1) // 确保安全异常处理器优先于通用异常处理器
@@ -70,6 +77,7 @@ public class SecurityExceptionHandler {
                 .message(ex.getMessage())
                 .errorCode(ex.getErrorCode())
                 .path(getCurrentPath())
+                .requestId(resolveRequestId(exchange))
                 .build();
 
         return ResponseEntity.status(ex.getHttpStatus()).body(errorResponse);
@@ -100,6 +108,7 @@ public class SecurityExceptionHandler {
                 .message(ex.getMessage())
                 .errorCode(ex.getErrorCode())
                 .path(getCurrentPath())
+                .requestId(resolveRequestId(exchange))
                 .build();
 
         return ResponseEntity.status(ex.getHttpStatus()).body(errorResponse);
@@ -131,6 +140,7 @@ public class SecurityExceptionHandler {
                 .message(SANITIZATION_ERROR_MESSAGE)  // 不暴露具体的脱敏错误信息
                 .errorCode(ex.getErrorCode())
                 .path(getCurrentPath())
+                .requestId(resolveRequestId(exchange))
                 .build();
 
         return ResponseEntity.status(ex.getHttpStatus()).body(errorResponse);
@@ -161,6 +171,7 @@ public class SecurityExceptionHandler {
                 .message(ex.getMessage())
                 .errorCode(ex.getErrorCode())
                 .path(getCurrentPath())
+                .requestId(resolveRequestId(exchange))
                 .build();
 
         return ResponseEntity.status(ex.getHttpStatus()).body(errorResponse);
@@ -197,9 +208,33 @@ public class SecurityExceptionHandler {
                 .error(ex.getStatusCode().getReasonPhrase())
                 .message(ex.getMessage())
                 .errorCode(ErrorCode.DOWNSTREAM_SERVICE_ERROR.code())
+                .requestId(resolveRequestId(exchange))
                 .build();
 
         return ResponseEntity.status(status).body(errorResponse);
+    }
+
+    /**
+     * 取这次请求的 ID（#785）：优先用 {@link RequestIdWebFilter} 放进交换属性的值，
+     * 缺失时回落到入站 {@code X-Request-Id} 头；两处都没有返回 {@code null}。
+     *
+     * <p>刻意不生成新 ID：{@link RequestIdWebFilter} 已保证「每个请求一个 ID，且与响应头一致」，
+     * 在这里另生成一个会让错误体与响应头/日志对不上，比字段为空更难排查。</p>
+     *
+     * @param exchange 当前交换，可为 {@code null}
+     * @return 请求 ID；来源缺失时为 {@code null}
+     */
+    private static String resolveRequestId(final ServerWebExchange exchange) {
+        if (exchange == null) {
+            return null;
+        }
+        final Object attribute = exchange.getAttributes().get(RequestIdWebFilter.REQUEST_ID_ATTRIBUTE);
+        if (attribute instanceof String id && !id.isEmpty()) {
+            return id;
+        }
+        final String header = exchange.getRequest().getHeaders()
+                .getFirst(TracingConstants.Headers.X_REQUEST_ID);
+        return header == null || header.isEmpty() ? null : header;
     }
 
     /**

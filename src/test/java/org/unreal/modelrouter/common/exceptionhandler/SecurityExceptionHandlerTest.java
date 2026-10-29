@@ -34,6 +34,8 @@ import org.unreal.modelrouter.common.exception.AuthorizationException;
 import org.unreal.modelrouter.common.exception.DownstreamServiceException;
 import org.unreal.modelrouter.common.exception.SanitizationException;
 import org.unreal.modelrouter.common.exception.SecurityException;
+import org.unreal.modelrouter.common.filter.RequestIdWebFilter;
+import org.unreal.modelrouter.monitor.tracing.TracingConstants;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -801,6 +803,56 @@ class SecurityExceptionHandlerTest {
         assertNotNull(json);
         assertNull(parser.nextToken(), "响应体应只包含一个 JSON 对象（未重复写入）: " + body);
         return json;
+    }
+
+    @Nested
+    @DisplayName("requestId 回填测试（#785）")
+    class RequestIdTests {
+
+        @Test
+        @DisplayName("交换属性里有请求 ID ⇒ 安全错误体回填同一个值")
+        void requestIdComesFromExchangeAttribute() {
+            // Arrange
+            final MockServerWebExchange withId = exchangeOf(LEGACY_PATH);
+            withId.getAttributes().put(RequestIdWebFilter.REQUEST_ID_ATTRIBUTE, "req-attribute-1");
+
+            // Act
+            final ResponseEntity<?> response = handler.handleAuthorizationException(
+                    new AuthorizationException("无权限", "FORBIDDEN"), withId);
+
+            // Assert
+            assertEquals("req-attribute-1", legacyBody(response).getRequestId(),
+                    "错误体必须与响应头/日志用同一个请求 ID，否则排障时对不上号");
+        }
+
+        @Test
+        @DisplayName("属性缺失但入站头带 X-Request-Id ⇒ 回落到该头")
+        void requestIdFallsBackToInboundHeader() {
+            // Arrange：RequestIdWebFilter 未跑（例如单测直调 handler）时头仍应可用
+            final MockServerWebExchange withHeader = MockServerWebExchange.from(
+                    MockServerHttpRequest.post(LEGACY_PATH)
+                            .header(TracingConstants.Headers.X_REQUEST_ID, "req-header-1")
+                            .build());
+
+            // Act
+            final ResponseEntity<?> response = handler.handleAuthenticationException(
+                    new AuthenticationException("Invalid credentials", "AUTH_001"), withHeader);
+
+            // Assert
+            assertEquals("req-header-1", legacyBody(response).getRequestId());
+        }
+
+        @Test
+        @DisplayName("属性与头都没有 ⇒ 保持 null（不在这里生成第二个 ID）")
+        void requestIdStaysNullWhenAbsent() {
+            // Arrange：exchange 既没有属性也没有 X-Request-Id
+            final ResponseEntity<?> response = handler.handleAuthenticationException(
+                    new AuthenticationException("Invalid credentials", "AUTH_001"), exchange);
+
+            // Assert
+            assertNull(legacyBody(response).getRequestId(),
+                    "生成第二个 ID 会让错误体和响应头指向不同值，保持 null 更诚实");
+        }
     }
 
     /**
