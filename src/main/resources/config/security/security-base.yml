@@ -22,12 +22,10 @@ jairouter:
     # ========================================
     # API Key 认证基础配置
     # ========================================
-    api-key:
-      enabled: false
-      header-name: "X-API-Key"
-      default-expiration-days: 365
-      cache-expiration-seconds: 3600
-      keys: []  # 具体密钥由各环境配置定义
+    # 此处刻意不设置 api-key.* 任何键：API Key 的开关、头名、有效期与密钥列表
+    # 全部由 config/auth/api-key.yml 持有（该文件在 application.yml 中先导入，
+    # 后导入者优先，任何写在这里的同名键都会覆盖它）。
+    # 历史问题：这里曾写死 enabled: false，导致不带 profile 启动时 API Key 认证整体失效。
     
     # ========================================
     # JWT 认证配置
