@@ -43,8 +43,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # the local/git directory name differs from the product name
 artifact:        model-router            # Maven artifactId
-project_version: 3.5.5                   # pom.xml
-latest_release:  v3.5.5 (2026-10-29)
+project_version: 3.5.6                   # pom.xml
+latest_release:  v3.5.6 (2026-10-30)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5 (WebFlux / reactive)
   frontend: Vue 3 + TypeScript + Vite, bilingual zh-CN / en-US
@@ -370,8 +370,26 @@ delivery. See [Status and recent work](#status-and-recent-work) for the open led
 
 ## Status and recent work
 
-**Latest release: v3.5.5 (2026-10-29)** — one audit that followed a request from entry to exit in eight
-stages (entry protocol / authentication / routing / outbound / response / accounting / console writes / failure
+**Latest release: v3.5.6 (2026-10-30)** — the patch that closes all 14 issues still open when the
+`v3.5.5` eight-stage audit closed (#776–#789): accounts now resolve from the database, writes take effect at
+runtime, the entry protocol surface is complete, configuration and tests are honest again, and three defects
+that needed a behavior decision first are fixed. **No API breaking changes; three behavior changes and one
+schema migration are worth reading before upgrading.**
+
+| Theme | What changed |
+|-------|--------------|
+| **Accounts and permissions (#789 / #777)** | JWT accounts resolve from the database — deleting or disabling one in the console now beats its YAML twin (a delete also used to be undone by the seeding step at restart), and deletion became a soft delete (new `V6` migration); the API key view echoes the IP allowlist so the edit dialog no longer wipes it |
+| **Console writes that reach the runtime (#776 / #778)** | All six service-configuration write paths refresh the runtime registry (saving used to succeed while routing kept the old instances); adapter load failures are recorded in the registry and reported by a new `/actuator/health` indicator `adapterLoad` (reports by default without turning the container unhealthy) |
+| **Entry protocol surface (#779 / #781)** | Empty bodies on `/v1/messages` answer 400 instead of ending as a 500; 413 uses the Anthropic `request_too_large` type while the OpenAI-native surface keeps `invalid_request_error` |
+| **Configuration and test honesty (#787 / #788 / #783 / #784)** | Three management endpoint switches with no `@Endpoint` implementation are gone, as is the unread `JwtPersistenceConfiguration`; `FILTER-012` now really checks that a small body is cached, re-wrapped and read back byte-for-byte; a comment points at an end-to-end test that exists |
+| **Behavior decisions (#780 / #782 / #785)** | The reset backup message tells the truth (single overwritten slot, no one-click restore); adapters with all-false `capabilities` answer 400 before being written; security notification error bodies carry the same `requestId` as the header and the log |
+
+See the [`[3.5.6]` changelog entry](docs/en/reference/changelog.md). Released as GitHub Release `v3.5.6` with multi-arch images (`v3.5.6` / `3.5.6` / `latest`).
+
+**Upgrade notes:** `accounts` in `auth/jwt.yml` is now first-start seed data only (editing the yml does nothing once the row exists — use the console); a new migration `V6__jwt_account_soft_delete.sql` adds `jwt_accounts.deleted` (default false); console deletion is a soft delete (the row stays); adapters whose `capabilities` are all false are rejected with 400; the 413 error type on `/v1/messages` changed from `invalid_request_error` to `request_too_large`.
+
+**`v3.5.5` (2026-10-29)** — one audit that followed a request from entry to exit in eight stages
+(entry protocol / authentication / routing / outbound / response / accounting / console writes / failure
 semantics). Every finding that affected whether a call succeeds or a response is correct has been fixed.
 **No API breaking changes; three upgrade notes matter.**
 

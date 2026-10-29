@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.5.5
-> **Last Updated**: 2026-10-29
+> **Document Version**: 3.5.6
+> **Last Updated**: 2026-10-30
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,47 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.5.6] - 2026-10-30 - Bug fixes (the 14 issues left open when the v3.5.5 audit closed: #776-#789)
+
+A follow-up patch to `v3.5.5`: every one of the 14 issues still open when the audit closed is now fixed — accounts and permissions, configuration writes that did not reach the runtime, the entry protocol surface, a console field that was never echoed back, configuration and test honesty, and three defects that needed a behavior decision before any code could change. **No API breaking changes**, but three behavior changes and one schema migration are worth reading before upgrading (see "Upgrade notes").
+
+#### Accounts and permissions (#789 / #777)
+
+- **JWT accounts resolve from the database (#789, P1)**: authentication looked at the `auth/jwt.yml` accounts first and, on a hit, never consulted the database — so an account deleted or disabled in the console could still sign in through its YAML twin (and a delete was undone at the next start by the seeding step). A database row is now authoritative whenever it exists: disabled means rejected, deleted means gone. The YAML accounts are reduced to first-start seed data (written only while the table is empty), and the file says so in a comment.
+- **Console account deletion is a soft delete (#789)**: a hard delete let the seeding step resurrect the YAML twin after a restart — "deleted, then back again". Deletion now sets a `deleted` flag (migration `V6__jwt_account_soft_delete.sql`, one for H2 and one for PostgreSQL); listing and login both filter on it, and re-creating a deleted username revives the row instead of inserting a duplicate.
+- **The API key view echoes the IP allowlist (#777, P3)**: `ApiKeyVO` gains a read-only `allowedIpAddresses` list (empty when there is no allowlist) and the console edit dialog seeds it — saving the dialog used to wipe the allowlist.
+
+#### Console writes that reach the runtime (#776 / #778)
+
+- **Service configuration writes refresh the runtime registry (#776, P2)**: saving, deleting or updating a service configuration persisted it and refreshed a local cache, but the per-service instance set cached by the router was untouched — the console reported success while routing kept the old instances until a restart. All six write paths now call `ModelServiceRegistry.refreshServiceConfig(serviceType)`; validation failures do not refresh.
+- **Adapter load failures are no longer silent (#778, P2)**: a definition that failed to load was caught, logged, and then simply missing. Failures are now recorded in the registry (`loadFailures`) and surfaced by a new `/actuator/health` indicator `adapterLoad` (`jairouter.router.adapter.health.enabled` defaults to on; `fail-health` defaults to false, so it reports without turning the container unhealthy and dropping the replica out of rotation because of one bad definition).
+
+#### Entry protocol surface (#779 / #781)
+
+- **Empty bodies on `/v1/messages` answer 400 (#779, P2)**: an empty body used to end as an NPE-driven 500. It now behaves like `/v1/chat/completions` and returns 400.
+- **413 on `/v1/messages` uses the Anthropic error type (#781, P3)**: an oversized body used to answer `invalid_request_error`, which Anthropic clients read as "your parameters are wrong". 413 now maps to `request_too_large` on the Anthropic surface; the OpenAI-native surface keeps `invalid_request_error`.
+
+#### Configuration and test honesty (#787 / #788 / #783 / #784)
+
+- **Three unreachable management endpoint switches removed (#787, P3)**: `jwt-tokens`, `jwt-blacklist` and `jwt-persistence-health` had no `@Endpoint` implementation anywhere in the repository — enabling them exposed nothing. Removed from three yml files.
+- **Dead persistence property classes removed (#788, P3)**: the two `@ConfigurationProperties` classes and the two `@Bean` methods in `JwtPersistenceConfiguration` had no readers; the file is gone. The `jairouter.security.jwt.persistence.*` key tree itself is still live (several `@ConditionalOnProperty` consumers) and was left untouched.
+- **`FILTER-012` now checks the contract it names (#783, P3)**: the test called "large body skips the cache" sent 15 bytes and asserted nothing about caching. It is renamed and now asserts that a small body is cached, re-wrapped, and read back byte-for-byte identically downstream (real oversize coverage lives in `CachedBodyWebFilterPayloadLimitTest`).
+- **A comment pointing at a non-existent class (#784, P3)**: it now points at `AdapterConfigRequestBodyEndToEndTest`, which really does start Netty with the real controller and the central exception handler for the 400 path.
+
+#### Behavior decisions (#780 / #782 / #785)
+
+- **The reset backup message tells the truth (#780, P3)**: the backup is a single overwritten slot and there is no restore endpoint, yet the response said "backed up to key xxx". It now states that there is no one-click restore, that restoring requires manual work in the configuration store, and that each reset overwrites the previous backup.
+- **Adapters with no service capability are rejected before being written (#782, P2)**: a definition whose `capabilities` were all false (or absent) used to persist and register, while no service type would ever route to it. It is now validated up front and answered with 400.
+- **Security notification error bodies carry the same request id (#785, P3)**: the response header and the structured log used `resolveRequestId(exchange)` while the error body's `requestId` stayed null. The same value is now written into `requestId` / `request_id`, so the three can be correlated.
+
+#### Upgrade notes
+
+- **JWT account precedence changed**: `accounts` in `auth/jwt.yml` is now first-start seed data only. When a row with the same username already exists, editing the yml **does not** change that account's password, roles or enabled state — use the console instead.
+- **Schema migration**: `V6__jwt_account_soft_delete.sql` adds a `deleted` column (default false) to `jwt_accounts`. Flyway runs it at startup.
+- **Console deletion is a soft delete**: the row stays in the table with `deleted=true`; it disappears from the list and from login checks. Delete the row in the database if you need a hard delete.
+- **Adapters with no service capability are rejected**: a script or template that submits all-false `capabilities` now gets 400; enable at least one of chat / embedding / rerank / tts / stt / imgGen / imgEdit (`streaming` alone does not count).
+- **The 413 error type on `/v1/messages` changed** from `invalid_request_error` to `request_too_large`; clients that branch on `error.type` should accept the new value.
 
 ### [3.5.5] - 2026-10-29 - Bug fixes (eight-stage request-lifecycle audit: entry protocol / authentication / routing / outbound / response / accounting / console writes / failure semantics)
 
