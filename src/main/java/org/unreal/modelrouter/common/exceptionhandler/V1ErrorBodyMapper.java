@@ -39,7 +39,9 @@ import java.util.regex.Pattern;
  *       {@code {"error":{"message":"<原消息>","type":"<映射>","code":"<原 errorCode>"}}}。</li>
  * </ul>
  *
- * <p>两侧共用同一张「HTTP 状态 → type」映射表（{@link #errorTypeOf(int)}）；Anthropic 面按协议
+ * <p>两侧共用同一张「HTTP 状态 → type」映射表（{@link #errorTypeOf(int)}），唯一分面差异是
+ * 413：Anthropic 面用协议专用的 {@code request_too_large}（issue #781），OpenAI 面仍归
+ * {@code invalid_request_error}（见 {@link #errorTypeOf(String, int)}）；Anthropic 面按协议
  * <b>不带</b> {@code code} 字段，OpenAI 面保留。{@code /api/**}（控制台面）与其它路径不参与映射，
  * {@link #toErrorBody(String, int, String, String)} 返回 {@code null}，由调用方沿用
  * {@code RouterResponse} 形状。</p>
@@ -100,6 +102,16 @@ public final class V1ErrorBodyMapper {
      * 网关/下游内部错误（5xx）.
      */
     private static final String TYPE_API = "api_error";
+
+    /**
+     * 错误类型：请求体过大（413，仅 Anthropic Messages 面，issue #781）.
+     *
+     * <p>Anthropic 官方错误类型枚举里有 {@code request_too_large}，而 OpenAI 面没有对应取值
+     * （OpenAI 用 {@code invalid_request_error} + 413 状态码表达同一件事）。因此该类型
+     * <b>只</b>用于 {@code /v1/messages}（含其子路径），OpenAI 面与其它路径的 413 映射保持
+     * 改动前行为，避免影响既有客户端。</p>
+     */
+    private static final String TYPE_REQUEST_TOO_LARGE = "request_too_large";
 
     /**
      * Legacy 消息模式（含状态码）：{@code 请求处理失败: <code> <phrase> "<reason>"}.
@@ -180,6 +192,28 @@ public final class V1ErrorBodyMapper {
     }
 
     /**
+     * HTTP 状态码 + 请求路径 → 客户端错误类型（协议分面后的映射）.
+     *
+     * <p>issue #781：413 在两面语义不同 —— Anthropic 官方有专用类型
+     * {@code request_too_large}，OpenAI 面没有对应取值、既有客户端按
+     * {@code invalid_request_error} 解析（{@code CachedBodyWebFilterPayloadLimitTest}
+     * 已把这一行为钉成断言）。因此 413 <b>只在</b> Anthropic Messages 面
+     * （{@link #isAnthropicPath(String)}）映射为 {@code request_too_large}；其余路径与其余
+     * 状态码沿用 {@link #errorTypeOf(int)} 的表，保证 {@code /v1/chat/completions} 等既有
+     * 客户端行为不变。</p>
+     *
+     * @param path       请求路径，可为 {@code null}（视为非 Anthropic 面）
+     * @param statusCode HTTP 状态码
+     * @return 映射后的错误类型
+     */
+    public static String errorTypeOf(final String path, final int statusCode) {
+        if (statusCode == 413 && isAnthropicPath(path)) {
+            return TYPE_REQUEST_TOO_LARGE;
+        }
+        return errorTypeOf(statusCode);
+    }
+
+    /**
      * 净化 legacy 错误消息（仅对 {@code /v1/**} 生效）.
      *
      * <p>剥除 {@code "请求处理失败: ..."} 包装，只留可读 reason：
@@ -226,7 +260,7 @@ public final class V1ErrorBodyMapper {
             return null;
         }
         final String cleanMessage = sanitizeMessage(message, path);
-        final String errorType = errorTypeOf(statusCode);
+        final String errorType = errorTypeOf(path, statusCode);
         final Map<String, Object> body = new LinkedHashMap<>();
         final Map<String, Object> error = new LinkedHashMap<>();
         if (isAnthropicPath(path)) {
