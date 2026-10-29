@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.ServerWebInputException;
 import org.unreal.modelrouter.common.dto.ChatDTO;
 import org.unreal.modelrouter.common.dto.EmbeddingDTO;
 import org.unreal.modelrouter.common.dto.RerankDTO;
@@ -102,13 +103,12 @@ public class OpenAiNativeController {
             final ServerWebExchange exchange) {
 
         exchange.getAttributes().put(ServiceRequestHandler.NATIVE_RESPONSE_ATTRIBUTE, Boolean.TRUE);
-        if (request != null) {
-            exchange.getAttributes().put(ServiceRequestHandler.REQUEST_DTO_ATTRIBUTE, request);
-        }
+        requireRequestBody(request);
+        exchange.getAttributes().put(ServiceRequestHandler.REQUEST_DTO_ATTRIBUTE, request);
 
         return requestHandler.handleRequest(
             ServiceEndpoint.CHAT,
-            request != null ? request.model() : null,
+            request.model(),
             authorization,
             exchange,
             (adapter, auth, httpRequest) -> adapter.chat(request, auth, httpRequest)
@@ -130,13 +130,12 @@ public class OpenAiNativeController {
             final ServerWebExchange exchange) {
 
         exchange.getAttributes().put(ServiceRequestHandler.NATIVE_RESPONSE_ATTRIBUTE, Boolean.TRUE);
-        if (request != null) {
-            exchange.getAttributes().put(ServiceRequestHandler.REQUEST_DTO_ATTRIBUTE, request);
-        }
+        requireRequestBody(request);
+        exchange.getAttributes().put(ServiceRequestHandler.REQUEST_DTO_ATTRIBUTE, request);
 
         return requestHandler.handleRequest(
             ServiceEndpoint.EMBEDDING,
-            request != null ? request.model() : null,
+            request.model(),
             authorization,
             exchange,
             (adapter, auth, httpRequest) -> adapter.embedding(request, auth, httpRequest)
@@ -158,16 +157,34 @@ public class OpenAiNativeController {
             final ServerWebExchange exchange) {
 
         exchange.getAttributes().put(ServiceRequestHandler.NATIVE_RESPONSE_ATTRIBUTE, Boolean.TRUE);
-        if (request != null) {
-            exchange.getAttributes().put(ServiceRequestHandler.REQUEST_DTO_ATTRIBUTE, request);
-        }
+        requireRequestBody(request);
+        exchange.getAttributes().put(ServiceRequestHandler.REQUEST_DTO_ATTRIBUTE, request);
 
         return requestHandler.handleRequest(
             ServiceEndpoint.RERANK,
-            request != null ? request.model() : null,
+            request.model(),
             authorization,
             exchange,
             (adapter, auth, httpRequest) -> adapter.rerank(request, auth, httpRequest)
         );
+    }
+
+    /**
+     * 空请求体（或缺失）必须以客户端错误终止，而不是把 {@code null} 交给下游适配器.
+     *
+     * <p>issue #779：三个原生入口此前用 {@code @RequestBody(required = false)}，空体时把
+     * {@code null} 直接透传给适配器，adapter 内部 NPE 被中央处理器归为 500，调用方拿不到
+     * 「请求体为空」这一可自我修正的信息。改为在入口处抛
+     * {@link ServerWebInputException}：{@code ReactiveGlobalExceptionHandler} 把它映射为
+     * 400，{@code /v1/**} 再由 {@code V1ErrorBodyMapper} 渲染成
+     * {@code invalid_request_error}（与既有 400 口径一致）。</p>
+     *
+     * @param request 请求体
+     * @throws ServerWebInputException 请求体为 {@code null}
+     */
+    private static void requireRequestBody(final Object request) {
+        if (request == null) {
+            throw new ServerWebInputException("Request body is required");
+        }
     }
 }

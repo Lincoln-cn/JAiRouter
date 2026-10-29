@@ -29,7 +29,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 
 /**
@@ -92,18 +91,5 @@ class OpenAiNativeControllerTest {
                 "必须置原生响应标记，否则非流式会被包成 RouterResponse");
         assertEquals(request, exchange.getAttribute(ServiceRequestHandler.REQUEST_DTO_ATTRIBUTE),
                 "原始 DTO 必须挂到 exchange（响应缓存键依赖）");
-    }
-
-    @Test
-    @DisplayName("body 缺失时不抛 NPE（model 传 null 交给 handler 处理）")
-    void chatCompletions_shouldTolerateMissingBody() {
-        final MockServerWebExchange exchange = MockServerWebExchange.from(
-                MockServerHttpRequest.post("/v1/chat/completions").build());
-        when(requestHandler.handleRequest(any(), isNull(), any(),
-                any(ServerWebExchange.class), any(ServiceRequestExecutor.class)))
-                .thenReturn(Mono.just(ResponseEntity.ok("ok")));
-
-        assertNotNull(controller.chatCompletions(null, null, exchange).block());
-        assertEquals(Boolean.TRUE, exchange.getAttribute(ServiceRequestHandler.NATIVE_RESPONSE_ATTRIBUTE));
     }
 }
