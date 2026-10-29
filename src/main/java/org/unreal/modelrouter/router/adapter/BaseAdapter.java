@@ -373,8 +373,11 @@ public abstract class BaseAdapter implements ServiceCapability {
                 errorContext.put("provider", adapterType);
                 errorTracker.trackError(throwable, adapterType + ".fallback", errorContext);
             }
-            return fallbackStrategy.fallback((Exception) throwable) != null
-                ? Mono.just(fallbackStrategy.fallback((Exception) throwable))
+            // #816：降级策略只能求值一次。此前写成 fallback() != null ? Mono.just(fallback()) : error，
+            // 有状态的策略（例如按请求取缓存条目、带一次性计数）会第二次取到 null 或取到别的条目。
+            final ResponseEntity<?> fallbackResponse = fallbackStrategy.fallback((Exception) throwable);
+            return fallbackResponse != null
+                ? Mono.just(fallbackResponse)
                 : Mono.error(new org.springframework.web.server.ResponseStatusException(
                         org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE, "服务降级且无缓存"));
         });
