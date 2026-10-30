@@ -178,8 +178,12 @@ class V1ClientErrorBodyMappingTest {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exchange.getResponse().getStatusCode());
         final JsonNode json = singleJsonObject(body);
         assertEquals("api_error", json.path("error").path("type").asText());
-        assertTrue(json.path("error").path("message").asText().contains("downstream reset by peer"),
-                "必须是原错误消息: " + body);
+        // #856：兜底 500 不再回显异常原文，只给固定文案 —— 原断言（必须含 downstream reset by peer）
+        // 正是要修掉的行为，这里反过来钉住「不得泄漏」。
+        final String message = json.path("error").path("message").asText();
+        assertTrue(message.contains("系统异常"), "兜底 500 应给出可识别的服务端错误文案: " + body);
+        assertFalse(message.contains("downstream reset by peer"),
+                "兜底 500 不得回显异常原文（#856）: " + body);
     }
 
     @Test
