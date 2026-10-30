@@ -45,6 +45,19 @@ public class HealthCheckProperties {
     private int parallelism = 4;
 
     /**
+     * 连续失败多少轮才把实例判为不健康（滞回，#855）。
+     *
+     * <p>默认 2：单轮探活的偶发失败（一次 GC 停顿、上游瞬时排队、丢一个包）不该把整个服务打成
+     * 503 —— 一个服务的所有实例都被判不健康时，{@code ServiceRequestHandler} 会直接对该类型的
+     * 全部请求返回 503，直到下一轮检查把实例判回来（默认 30 秒）。要求连续两轮都失败，能把
+     * 「偶发抖动」与「真的挂了」区分开。</p>
+     *
+     * <p>设为 1 表示沿用「单轮失败即摘除」的旧语义。恢复方向不做滞回：一次探活成功即恢复，
+     * 因为把健康实例误判为健康只会多分一点流量，而把恢复的实例继续挡在外面会白白丢请求。</p>
+     */
+    private int failureThreshold = 2;
+
+    /**
      * 检查间隔，下限 1 秒（避免误配成 0 导致空转）。
      */
     public long effectiveIntervalMs() {
@@ -63,5 +76,12 @@ public class HealthCheckProperties {
      */
     public int effectiveParallelism() {
         return Math.min(16, Math.max(1, parallelism));
+    }
+
+    /**
+     * 连续失败阈值，钳制在 1 ~ 10（1 = 单轮失败即摘除）。
+     */
+    public int effectiveFailureThreshold() {
+        return Math.min(10, Math.max(1, failureThreshold));
     }
 }
