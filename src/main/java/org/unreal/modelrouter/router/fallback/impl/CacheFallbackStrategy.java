@@ -1,31 +1,60 @@
+/*
+ * Copyright (c) 2025 JAiRouter Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.unreal.modelrouter.router.fallback.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.unreal.modelrouter.router.fallback.FallbackRequestKey;
 import org.unreal.modelrouter.router.fallback.FallbackStrategy;
-import org.unreal.modelrouter.router.model.ModelServiceRegistry;
-import org.unreal.modelrouter.common.util.IpUtils;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
-import java.security.MessageDigest;
-import java.util.Base64;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 基于缓存的降级策略实现
- * 当服务不可用时，返回最近的缓存结果
+ * 基于缓存的降级策略：同一个请求成功过、后来上游不可用时，回放上一次的成功响应.
+ *
+ * <p>#823：缓存必须按请求键隔离。修改前 {@code fallback(Exception)} 完全忽略请求，
+ * 直接返回 {@code cache.values().iterator().next()} —— 一旦真的接入缓存，就会把
+ * 别的调用方的响应发给当前调用方。现在的语义是：</p>
+ *
+ * <ul>
+ *   <li>键为 {@code null}（请求体不可序列化）⇒ 不缓存、不命中，直接 503；</li>
+ *   <li>键命中 ⇒ 回放该条响应，并加上 {@code X-Fallback: cache} 响应头，命中计数 +1；</li>
+ *   <li>键未命中 ⇒ 503 + 结构化 JSON 错误体。</li>
+ * </ul>
+ *
+ * @author JAiRouter Team
  */
 public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>> {
+
     private static final Logger logger = LoggerFactory.getLogger(CacheFallbackStrategy.class);
 
+
     private final String serviceType;
-    private final ConcurrentMap<String, ResponseEntity<?>> cache = new ConcurrentHashMap<>();
+
     private final int maxCacheSize;
+
+    private final ConcurrentMap<String, ResponseEntity<?>> cache = new ConcurrentHashMap<>();
+
+    private final AtomicLong hits = new AtomicLong();
 
     public CacheFallbackStrategy(final String serviceType, final int maxCacheSize) {
         this.serviceType = serviceType;
@@ -33,114 +62,75 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
     }
 
     @Override
-    public ResponseEntity<?> fallback(final Exception cause) {
-        logger.warn("Service {} fallback triggered due to: {}", serviceType, cause.getMessage());
+    public ResponseEntity<?> fallback(final FallbackRequestKey key, final Exception cause) {
+        logger.warn("Service {} fallback triggered due to: {} (key={})",
+                serviceType, cause == null ? null : cause.getMessage(), key);
 
-        // 返回缓存中的数据（如果有）
-        // 这里只是一个示例，实际应用中需要根据具体请求参数查找缓存
-        if (!cache.isEmpty()) {
-            ResponseEntity<?> cachedResponse = cache.values().iterator().next();
-            logger.info("Returning cached response for service {}", serviceType);
-            return cachedResponse;
+        final ResponseEntity<?> cached = key == null ? null : cache.get(key.asCacheKey());
+        if (cached == null) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(DefaultFallbackStrategy.degradedBody());
         }
-
-        return ResponseEntity.status(503)
-                .header("Content-Type", "application/json")
-                .body("Service is currently degraded and no cached data available");
+        hits.incrementAndGet();
+        logger.info("Returning cached response for service {} (key={})", serviceType, key);
+        return ResponseEntity.status(cached.getStatusCode())
+                .headers(headers -> {
+                    headers.putAll(cached.getHeaders());
+                    headers.set(FallbackStrategy.FALLBACK_HEADER, FallbackStrategy.FALLBACK_HEADER_CACHE_VALUE);
+                })
+                .body(cached.getBody());
     }
 
     /**
-     * 缓存响应结果
+     * 缓存一次成功响应.
      *
-     * @param serviceType
-     * @param modelName
-     * @param httpRequest
-     * @param response    响应结果
+     * <p>只缓存 2xx 且带响应体的结果；键为 {@code null} 时直接跳过（该请求不参与降级缓存）。</p>
+     *
+     * @param key      请求键
+     * @param response 成功响应
      */
-    public void cacheResponse(
-            final ModelServiceRegistry.ServiceType serviceType,
-            final String modelName, final ServerHttpRequest httpRequest,
-            final ResponseEntity<?> response) {
-        if (cache.size() >= maxCacheSize) {
-            // 简单的LRU实现：移除第一个元素
-            cache.remove(cache.keySet().iterator().next());
+    public void cacheResponse(final FallbackRequestKey key, final ResponseEntity<?> response) {
+        if (key == null || response == null || response.getBody() == null
+                || !response.getStatusCode().is2xxSuccessful()) {
+            return;
         }
-        // 由于generateCacheKey现在是异步的，我们需要使用不同的方式处理
-        String cacheKey = generateCacheKeySync(serviceType, modelName, httpRequest);
-        cache.put(cacheKey, response);
+        evictIfFull();
+        cache.put(key.asCacheKey(), response);
     }
 
     /**
-     * 同步生成缓存键（用于缓存响应）
+     * 已缓存条目数（测试与指标用）.
+     *
+     * @return 条目数
      */
-    protected String generateCacheKeySync(
-            final ModelServiceRegistry.ServiceType serviceType,
-            final String modelName,
-            final ServerHttpRequest httpRequest) {
-        String clientIp = IpUtils.getClientIp(httpRequest);
-        String requestHash = calculateRequestHashSync(httpRequest);
-        return serviceType.name() + ":" + clientIp + ":" + modelName + ":" + requestHash;
+    public int getCachedCount() {
+        return cache.size();
     }
 
     /**
-     * 异步生成缓存键
+     * 降级缓存命中次数.
+     *
+     * @return 累计命中次数
      */
-    protected Mono<String> generateCacheKey(
-            final ModelServiceRegistry.ServiceType serviceType,
-            final String modelName,
-            final ServerHttpRequest httpRequest) {
-        return calculateRequestHash(httpRequest)
-                .map(hash -> {
-                    String clientIp = IpUtils.getClientIp(httpRequest);
-                    return serviceType.name() + ":" + clientIp + ":" + modelName + ":" + hash;
-                });
+    public long getHitCount() {
+        return hits.get();
     }
 
     /**
-     * 异步计算请求体的SHA256哈希值
+     * 清空缓存（配置热更新 / 测试用）.
      */
-    private Mono<String> calculateRequestHash(final ServerHttpRequest httpRequest) {
-        try {
-            Flux<DataBuffer> body = httpRequest.getBody();
-            return body
-                    .map(dataBuffer -> {
-                        try {
-                            byte[] bytes = new byte[dataBuffer.readableByteCount()];
-                            dataBuffer.read(bytes);
-                            return bytes;
-                        } catch (Exception e) {
-                            logger.warn("读取请求体数据时出错", e);
-                            return new byte[0];
-                        }
-                    })
-                    .reduce(new byte[0], (bytes1, bytes2) -> {
-                        byte[] result = new byte[bytes1.length + bytes2.length];
-                        System.arraycopy(bytes1, 0, result, 0, bytes1.length);
-                        System.arraycopy(bytes2, 0, result, bytes1.length, bytes2.length);
-                        return result;
-                    })
-                    .map(bytes -> {
-                        try {
-                            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-                            byte[] hash = digest.digest(bytes);
-                            return Base64.getEncoder().encodeToString(hash);
-                        } catch (Exception e) {
-                            logger.warn("计算SHA256哈希值时出错", e);
-                            return "";
-                        }
-                    });
-        } catch (Exception e) {
-            logger.warn("处理请求体时出错", e);
-            return Mono.just("");
+    public void clear() {
+        cache.clear();
+    }
+
+    private void evictIfFull() {
+        if (maxCacheSize <= 0) {
+            return;
         }
-    }
-
-    /**
-     * 同步计算请求体的SHA256哈希值（用于缓存响应）
-     * 注意：这种方法在响应式流中可能不适用，因为请求体可能已经被消费
-     */
-    private String calculateRequestHashSync(final ServerHttpRequest httpRequest) {
-        // 对于同步方法，我们返回一个简单的标识符，因为请求体可能已经被消费
-        return "sync-request";
+        while (cache.size() >= maxCacheSize) {
+            final String oldest = cache.keySet().iterator().next();
+            cache.remove(oldest);
+        }
     }
 }

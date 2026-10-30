@@ -16,6 +16,7 @@ import org.unreal.modelrouter.router.adapter.support.RequestProcessingSupport;
 import org.unreal.modelrouter.router.adapter.support.ResilienceSupport;
 import org.unreal.modelrouter.router.adapter.selector.InstanceSelector;
 import org.unreal.modelrouter.router.fallback.FallbackManager;
+import org.unreal.modelrouter.router.fallback.FallbackRequestKey;
 import org.unreal.modelrouter.router.fallback.FallbackStrategy;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
@@ -61,7 +62,7 @@ class BaseAdapterFallbackEvaluationTest {
     @DisplayName("816-001 降级策略只被调用一次（非空返回）")
     void fallbackIsEvaluatedOnce() {
         final AtomicInteger calls = new AtomicInteger();
-        when(strategy.fallback(any(Exception.class))).thenAnswer(invocation -> {
+        when(strategy.fallback(any(FallbackRequestKey.class), any(Exception.class))).thenAnswer(invocation -> {
             calls.incrementAndGet();
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("degraded");
         });
@@ -79,7 +80,7 @@ class BaseAdapterFallbackEvaluationTest {
     @DisplayName("816-002 降级策略返回 null 时退化为 503，且同样只调用一次")
     void nullFallbackBecomesServiceUnavailable() {
         final AtomicInteger calls = new AtomicInteger();
-        when(strategy.fallback(any(Exception.class))).thenAnswer(invocation -> {
+        when(strategy.fallback(any(FallbackRequestKey.class), any(Exception.class))).thenAnswer(invocation -> {
             calls.incrementAndGet();
             return null;
         });

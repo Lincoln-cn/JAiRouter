@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.unreal.modelrouter.router.fallback.FallbackRequestKey;
 import org.unreal.modelrouter.router.fallback.FallbackStrategy;
 import org.unreal.modelrouter.common.exception.DownstreamServiceException;
 import org.unreal.modelrouter.monitor.monitoring.error.ErrorTracker;
@@ -55,16 +56,18 @@ public class FallbackRequestProcessor {
      *
      * @param throwable 原始异常
      * @param fallbackStrategy 降级策略
+     * @param key 当前请求的降级缓存键（#823），{@code null} 表示不参与降级缓存
      * @return 降级响应或错误
      */
     public Mono<? extends ResponseEntity<?>> handleFallbackError(
             final Throwable throwable,
-            final FallbackStrategy<ResponseEntity<?>> fallbackStrategy) {
+            final FallbackStrategy<ResponseEntity<?>> fallbackStrategy,
+            final FallbackRequestKey key) {
 
         try {
             logger.debug("执行降级策略: strategy={}", fallbackStrategy.getClass().getSimpleName());
 
-            ResponseEntity<?> fallbackResponse = fallbackStrategy.fallback((Exception) throwable);
+            ResponseEntity<?> fallbackResponse = fallbackStrategy.fallback(key, (Exception) throwable);
 
             if (fallbackResponse == null || fallbackResponse.getBody() == null) {
                 logger.warn("降级响应为空");

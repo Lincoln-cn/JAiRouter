@@ -205,6 +205,40 @@ public class AdapterMetricsRecorder {
     }
 
     /**
+     * 记录一次「降级命中缓存」（#823）.
+     *
+     * <p>命中与未命中分开计数，便于判断降级到底是「有兜底」还是「兜底也不可用」。</p>
+     *
+     * @param serviceType 服务类型
+     * @param modelName   模型名
+     */
+    public void recordFallbackHit(final ModelServiceRegistry.ServiceType serviceType, final String modelName) {
+        final String service = serviceType == null ? "unknown" : serviceType.name();
+        if (log.isDebugEnabled()) {
+            log.debug("降级缓存命中：service={}, model={}", service, modelName);
+        }
+        if (metricsCollector != null) {
+            metricsCollector.recordFallbackHit(service, modelName);
+        }
+    }
+
+    /**
+     * 记录一次「降级且未命中缓存」（#823）.
+     *
+     * @param serviceType 服务类型
+     * @param modelName   模型名
+     */
+    public void recordFallbackMiss(final ModelServiceRegistry.ServiceType serviceType, final String modelName) {
+        final String service = serviceType == null ? "unknown" : serviceType.name();
+        if (log.isDebugEnabled()) {
+            log.debug("降级但未命中缓存：service={}, model={}", service, modelName);
+        }
+        if (metricsCollector != null) {
+            metricsCollector.recordFallbackMiss(service, modelName);
+        }
+    }
+
+    /**
      * 记录请求大小
      * 
      * @param serviceType 服务类型

@@ -1,142 +1,132 @@
 package org.unreal.modelrouter.router.fallback.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.unreal.modelrouter.router.model.ModelServiceRegistry;
+import org.unreal.modelrouter.router.fallback.FallbackRequestKey;
+import org.unreal.modelrouter.router.fallback.FallbackStrategy;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * CacheFallbackStrategy 单元测试
+ * #823：降级缓存必须按请求隔离，并且命中时给出可观测的标记。
  *
- * 测试内容：
- * 1. 无缓存时的降级响应
- * 2. 有缓存时的降级响应
- * 3. 缓存大小限制
- * 4. 缓存响应
+ * <p>修改前 {@code fallback(Exception)} 忽略请求，直接取 {@code cache.values().iterator().next()}；
+ * 这些用例在旧实现下会因为「不同请求互相命中」与「缺少 X-Fallback 头」而变红。</p>
  */
-@DisplayName("CacheFallbackStrategy 测试")
+@DisplayName("#823 降级缓存按请求键隔离")
 class CacheFallbackStrategyTest {
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private CacheFallbackStrategy strategy;
 
-    @Mock
-    private ServerHttpRequest httpRequest;
-
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        strategy = new CacheFallbackStrategy("chat", 100);
-
-        // Mock httpRequest.getHeaders() 返回空 HttpHeaders
-        when(httpRequest.getHeaders()).thenReturn(new HttpHeaders());
-        when(httpRequest.getRemoteAddress()).thenReturn(null);
+        strategy = new CacheFallbackStrategy("chat", 10);
     }
 
     @Test
-    @DisplayName("测试 1: 无缓存时返回 503")
-    void testFallbackWithNoCache() {
-        ResponseEntity<?> response = strategy.fallback(new RuntimeException("Service unavailable"));
+    @DisplayName("823-001 没有缓存时返回 503 与结构化 JSON 错误体")
+    void noCacheReturnsStructuredServiceUnavailable() {
+        final ResponseEntity<?> response = strategy.fallback(
+                FallbackRequestKey.of("chat", "gpt-4", "key-a", request("hello"), objectMapper),
+                new RuntimeException("upstream down"));
 
         assertNotNull(response);
-        assertEquals(503, response.getStatusCodeValue());
-        assertTrue(response.getBody().toString().contains("no cached data available"));
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
+        assertEquals(MediaType.APPLICATION_JSON, response.getHeaders().getContentType());
+        final String body = String.valueOf(response.getBody());
+        assertTrue(body.contains("\"type\":\"service_unavailable\""), body);
+        assertTrue(body.contains("\"code\":\"503\""), body);
     }
 
     @Test
-    @DisplayName("测试 2: 有缓存时返回缓存响应")
-    void testFallbackWithCache() {
-        // 缓存一个响应
-        ResponseEntity<?> cachedResponse = ResponseEntity.ok("cached data");
-        strategy.cacheResponse(ModelServiceRegistry.ServiceType.chat, "gpt-4", httpRequest, cachedResponse);
+    @DisplayName("823-002 同键命中：回放响应体并带上 X-Fallback: cache")
+    void sameKeyHitsAndMarksResponse() {
+        final FallbackRequestKey key = key("key-a", request("hello"));
+        strategy.cacheResponse(key, ResponseEntity.ok("cached data"));
 
-        // 降级时应该返回缓存数据
-        ResponseEntity<?> response = strategy.fallback(new RuntimeException("Service unavailable"));
+        final ResponseEntity<?> response = strategy.fallback(key, new RuntimeException("upstream down"));
 
-        assertNotNull(response);
-        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("cached data", response.getBody());
+        assertEquals(FallbackStrategy.FALLBACK_HEADER_CACHE_VALUE,
+                response.getHeaders().getFirst(FallbackStrategy.FALLBACK_HEADER));
+        assertEquals(1L, strategy.getHitCount());
     }
 
     @Test
-    @DisplayName("测试 3: 缓存大小限制")
-    void testCacheSizeLimit() {
-        CacheFallbackStrategy smallCacheStrategy = new CacheFallbackStrategy("chat", 2);
+    @DisplayName("823-003 不同请求体不互相命中")
+    void differentRequestBodyDoesNotHit() {
+        strategy.cacheResponse(key("key-a", request("hello")), ResponseEntity.ok("answer-for-hello"));
 
-        // 添加 3 个缓存项
-        smallCacheStrategy.cacheResponse(ModelServiceRegistry.ServiceType.chat, "model1", httpRequest, ResponseEntity.ok("data1"));
-        smallCacheStrategy.cacheResponse(ModelServiceRegistry.ServiceType.chat, "model2", httpRequest, ResponseEntity.ok("data2"));
-        smallCacheStrategy.cacheResponse(ModelServiceRegistry.ServiceType.chat, "model3", httpRequest, ResponseEntity.ok("data3"));
+        final ResponseEntity<?> response = strategy.fallback(
+                key("key-a", request("something else")), new RuntimeException("upstream down"));
 
-        // 降级应该返回某个缓存数据
-        ResponseEntity<?> response = smallCacheStrategy.fallback(new RuntimeException("Error"));
-        assertNotNull(response);
-        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode(),
+                "别的请求的缓存响应不能发给当前请求");
+        assertEquals(0L, strategy.getHitCount());
     }
 
     @Test
-    @DisplayName("测试 4: 不同服务类型")
-    void testDifferentServiceTypes() {
-        CacheFallbackStrategy chatStrategy = new CacheFallbackStrategy("chat", 100);
-        CacheFallbackStrategy embeddingStrategy = new CacheFallbackStrategy("embedding", 100);
+    @DisplayName("823-004 不同调用方不互相命中")
+    void differentCallerDoesNotHit() {
+        strategy.cacheResponse(key("key-a", request("hello")), ResponseEntity.ok("answer-for-key-a"));
 
-        ResponseEntity<?> chatResponse = chatStrategy.fallback(new RuntimeException("Error"));
-        ResponseEntity<?> embeddingResponse = embeddingStrategy.fallback(new RuntimeException("Error"));
+        final ResponseEntity<?> response = strategy.fallback(
+                key("key-b", request("hello")), new RuntimeException("upstream down"));
 
-        assertEquals(503, chatResponse.getStatusCodeValue());
-        assertEquals(503, embeddingResponse.getStatusCodeValue());
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode(),
+                "跨租户复用降级响应等于泄漏别人拿到的答案");
     }
 
     @Test
-    @DisplayName("测试 5: 缓存后多次降级返回相同数据")
-    void testMultipleFallbackAfterCache() {
-        ResponseEntity<?> cachedResponse = ResponseEntity.ok("cached data");
-        strategy.cacheResponse(ModelServiceRegistry.ServiceType.chat, "gpt-4", httpRequest, cachedResponse);
+    @DisplayName("823-005 键为 null 时既不缓存也不命中")
+    void nullKeyIsNeverCachedNorHit() {
+        strategy.cacheResponse(null, ResponseEntity.ok("should not be cached"));
+        assertEquals(0, strategy.getCachedCount());
 
-        ResponseEntity<?> response1 = strategy.fallback(new RuntimeException("Error 1"));
-        ResponseEntity<?> response2 = strategy.fallback(new RuntimeException("Error 2"));
+        final FallbackRequestKey key = key("key-a", request("hello"));
+        strategy.cacheResponse(key, ResponseEntity.ok("cached"));
 
-        assertEquals(response1.getBody(), response2.getBody());
+        final ResponseEntity<?> response = strategy.fallback(null, new RuntimeException("upstream down"));
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
+        assertEquals(0L, strategy.getHitCount());
     }
 
     @Test
-    @DisplayName("测试 6: 空异常消息的降级")
-    void testFallbackWithNullExceptionMessage() {
-        ResponseEntity<?> response = strategy.fallback(new RuntimeException());
+    @DisplayName("823-006 超过容量时按写入顺序淘汰最旧条目")
+    void evictsOldestWhenFull() {
+        final CacheFallbackStrategy small = new CacheFallbackStrategy("chat", 2);
+        small.cacheResponse(key("key-a", request("one")), ResponseEntity.ok("v1"));
+        small.cacheResponse(key("key-b", request("two")), ResponseEntity.ok("v2"));
+        small.cacheResponse(key("key-c", request("three")), ResponseEntity.ok("v3"));
 
-        assertNotNull(response);
-        assertEquals(503, response.getStatusCodeValue());
+        assertEquals(2, small.getCachedCount());
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE,
+                small.fallback(key("key-a", request("one")), new RuntimeException("down")).getStatusCode(),
+                "最旧条目应已被淘汰");
+        assertEquals(HttpStatus.OK,
+                small.fallback(key("key-c", request("three")), new RuntimeException("down")).getStatusCode());
     }
 
-    @Test
-    @DisplayName("测试 7: 缓存空响应不影响降级")
-    void testCacheNullResponseDoesNotAffectFallback() {
-        // 由于 ConcurrentHashMap 不允许 null 值，缓存 null 响应会抛出 NPE
-        // 这是预期行为，我们跳过缓存 null 的测试
-        // 直接测试无缓存情况下的降级
-        ResponseEntity<?> response = strategy.fallback(new RuntimeException("Error"));
-        assertNotNull(response);
-        assertEquals(503, response.getStatusCodeValue());
+    private FallbackRequestKey key(final String callerId, final Object request) {
+        return FallbackRequestKey.of("chat", "gpt-4", callerId, request, objectMapper);
     }
 
-    @Test
-    @DisplayName("测试 8: 同步缓存键生成")
-    void testGenerateCacheKeySync() {
-        String cacheKey = strategy.generateCacheKeySync(
-                ModelServiceRegistry.ServiceType.chat,
-                "gpt-4",
-                httpRequest
-        );
-
-        assertNotNull(cacheKey);
-        assertTrue(cacheKey.contains("chat"));
-        assertTrue(cacheKey.contains("gpt-4"));
+    private Map<String, Object> request(final String content) {
+        final Map<String, Object> body = new LinkedHashMap<>();
+        body.put("content", content);
+        return body;
     }
 }
