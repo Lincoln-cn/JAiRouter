@@ -154,10 +154,10 @@
     },
     "docs/en/configuration/index.md": {
       "FilePath": "docs/en/configuration/index.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-27T16:56:25.687418",
-      "ContentHash": "284f57cc5ef53a23",
-      "GitCommit": "3505ef08",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-30T14:32:21.625807",
+      "ContentHash": "4fab9502386ee3fb",
+      "GitCommit": "7b098081",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -214,10 +214,10 @@
     },
     "docs/en/configuration/load-balancing.md": {
       "FilePath": "docs/en/configuration/load-balancing.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-30T00:17:54.111899",
-      "ContentHash": "311cef13e5a5d38a",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-30T14:32:21.674595",
+      "ContentHash": "c27c937c2e4ae00c",
+      "GitCommit": "850bb5d1",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1313,10 +1313,10 @@
     },
     "docs/zh/configuration/index.md": {
       "FilePath": "docs/zh/configuration/index.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-27T16:56:26.239706",
-      "ContentHash": "2302006bbd17ae49",
-      "GitCommit": "3505ef08",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-30T14:32:22.299011",
+      "ContentHash": "ae9615c27b5a6e6c",
+      "GitCommit": "7b098081",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1372,10 +1372,10 @@
     },
     "docs/zh/configuration/load-balancing.md": {
       "FilePath": "docs/zh/configuration/load-balancing.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-30T00:17:54.742659",
-      "ContentHash": "a917765ed35e9e6c",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-30T14:32:22.347948",
+      "ContentHash": "df97208703337169",
+      "GitCommit": "850bb5d1",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -5542,7 +5542,39 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-30T00:30:38.467570",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/index.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T14:32:21.625816",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/load-balancing.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T14:32:21.674603",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/index.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T14:32:22.299020",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/load-balancing.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T14:32:22.347957",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-30T08:03:14.107756"
+  "last_updated": "2026-10-30T14:32:22.929462"
 }
