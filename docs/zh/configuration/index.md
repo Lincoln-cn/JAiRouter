@@ -418,7 +418,8 @@ model:
 # ✅ 好 - 显式声明探活方式与节奏（默认值见 config/router/health-check.yml）
 jairouter:
   health-check:
-    mode: http          # tcp 只探端口；http 还会校验状态码（<500 算健康）
+    mode: http          # 默认值；tcp 只探端口，http 还会校验状态码（<500 算健康）
+    http-path: /v1/models  # HTTP 探活的路径；404/405 也算健康（端点不存在但进程活着）
     interval-ms: 30000  # 上一轮结束后再等这么久才跑下一轮
     timeout-ms: 5000    # 单实例探活超时
     parallelism: 4      # 同时检查几个服务类型

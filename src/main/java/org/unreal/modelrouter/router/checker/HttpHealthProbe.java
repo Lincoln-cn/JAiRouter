@@ -13,7 +13,10 @@ import java.time.Duration;
  * <p>TCP 只能证明端口能连上：进程僵死、鉴权配置错、上游 5xx 都仍会被判「健康」。
  * 开启 {@code jairouter.health-check.mode=http} 后会真正请求一次实例路径，
  * 判定规则是「能拿到响应且状态码 &lt; 500」——4xx 说明网关链路是通的（鉴权/参数问题不是实例可用性问题），
- * 5xx 与连接/超时才判不健康。</p>
+ * 其中 404 / 405 也算健康（端点不存在或方法不允许，但进程在处理请求），5xx 与连接/超时才判不健康。</p>
+ *
+ * <p>#833 起该模式成为默认：默认请求 {@code /v1/models}，可用
+ * {@code jairouter.health-check.http-path} 改成上游自己的健康端点。</p>
  *
  * @since v3.5.4
  */
