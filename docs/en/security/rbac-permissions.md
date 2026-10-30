@@ -147,7 +147,7 @@ Operator impact: on an already-initialized deployment, missing rule-required cod
 The full flow of a permission-checked request:
 
 1. **Login and JWT issuance**: the client calls `POST /api/auth/jwt/login`. `AccountManager` verifies credentials (v2.9.8: YAML static accounts take priority, falling back to database accounts — accounts created through the web account management API can log in directly). It then resolves permission codes per role via `RolePermissionService` from the `role_permissions` table (Caffeine cache of 5 minutes; ADMIN short-circuits to the full code list) and embeds them into the JWT `permissions` claim before returning the token.
-2. **Token parsing**: the request carries `Authorization: Bearer {token}` (or a custom JWT header). `DefaultJwtTokenValidator` parses the token: the `roles` claim becomes `ROLE_`-prefixed authorities; the `permissions` claim becomes authorities **without** a prefix (the two are isolated so they never collide with API Key `ROLE_*` permissions).
+2. **Token parsing**: the request carries `X-Jairouter-Token: {token}` (or a custom JWT header). `DefaultJwtTokenValidator` parses the token: the `roles` claim becomes `ROLE_`-prefixed authorities; the `permissions` claim becomes authorities **without** a prefix (the two are isolated so they never collide with API Key `ROLE_*` permissions).
 3. **URL rule matching**: `SecurityConfiguration` routes every `/api/**` request to `PermissionAuthorizationManager`, which looks up the required permission code in `PermissionRuleRegistry` by "HTTP method + URL pattern" (first match wins; 75 rules in total).
 4. **Permission decision**: follow the three-step decision in the next section.
 5. **Result**: granted requests reach the controller; denied requests get a 403.
@@ -284,7 +284,7 @@ curl -X POST http://localhost:8080/api/auth/jwt/login \
 
 ```bash
 curl http://localhost:8080/api/security/permissions \
-     -H "Authorization: Bearer {token}"
+     -H "X-Jairouter-Token: {token}"
 ```
 
 The `data` field of the response is an array of the 63 permission codes (same order as the full catalog).
@@ -293,7 +293,7 @@ The `data` field of the response is an array of the 63 permission codes (same or
 
 ```bash
 curl http://localhost:8080/api/security/permissions/roles \
-     -H "Authorization: Bearer {token}"
+     -H "X-Jairouter-Token: {token}"
 ```
 
 The `data` field is an object: `{"ADMIN": [...], "OPERATOR": [...], ...}`.
@@ -302,7 +302,7 @@ The `data` field is an object: `{"ADMIN": [...], "OPERATOR": [...], ...}`.
 
 ```bash
 curl -X PUT http://localhost:8080/api/security/permissions/roles/OPERATOR \
-     -H "Authorization: Bearer {token}" \
+     -H "X-Jairouter-Token: {token}" \
      -H "Content-Type: application/json" \
      -d '["config:services:read", "config:services:write", "monitoring:metrics:read"]'
 ```
@@ -315,7 +315,7 @@ curl -X PUT http://localhost:8080/api/security/permissions/roles/OPERATOR \
 
 ```bash
 curl http://localhost:8080/api/auth/permissions \
-     -H "Authorization: Bearer {token}"
+     -H "X-Jairouter-Token: {token}"
 ```
 
 ADMIN receives the full 63 codes; other roles receive the codes from their JWT `permissions` claim.

@@ -1479,8 +1479,7 @@ data:
       # API Key configuration
       api-key:
         enabled: true
-        header: X-API-Key
-        file: /app/config/api-keys.yml
+        header: X-API-Key: file: /app/config/api-keys.yml
       
       # JWT configuration
       jwt:

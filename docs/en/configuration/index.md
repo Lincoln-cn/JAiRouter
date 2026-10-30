@@ -417,7 +417,8 @@ model:
 # ✅ Good - declare the probe mode and cadence (defaults live in config/router/health-check.yml)
 jairouter:
   health-check:
-    mode: http          # tcp = port only; http also checks the status code (<500 is healthy)
+    mode: http          # the default; tcp = port only, http also checks the status code (<500 is healthy)
+    http-path: /v1/models  # probe path for http mode; 404/405 also count as healthy (process is serving)
     interval-ms: 30000  # wait this long after the previous round finished
     timeout-ms: 5000    # per-instance probe timeout
     parallelism: 4      # how many service types are checked concurrently

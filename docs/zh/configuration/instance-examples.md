@@ -20,7 +20,7 @@
 | 基础 URL | `https://api.openai.com` |
 | 路径 | `/v1/chat/completions` |
 | 适配器 | `normal` |
-| 请求头 | `Authorization: Bearer sk-xxx` |
+| 请求头 | `X-API-Key: sk-xxx` |
 
 ```
 基础 URL:    https://api.openai.com
@@ -42,7 +42,7 @@ DeepSeek 兼容 OpenAI API 格式，使用 `normal` 适配器。
 | 基础 URL | `https://api.deepseek.com` |
 | 路径 | `/v1/chat/completions` |
 | 适配器 | `normal` |
-| 请求头 | `Authorization: Bearer sk-xxx` |
+| 请求头 | `X-API-Key: sk-xxx` |
 
 ```
 基础 URL:    https://api.deepseek.com
@@ -88,7 +88,7 @@ Gemini 兼容 OpenAI API 格式，使用 `normal` 适配器。
 | 基础 URL | `https://generativelanguage.googleapis.com/v1beta/openai` |
 | 路径 | `/chat/completions` |
 | 适配器 | `normal` |
-| 请求头 | `Authorization: Bearer xxx` |
+| 请求头 | `X-Jairouter-Token: xxx` |
 
 ```
 基础 URL:    https://generativelanguage.googleapis.com/v1beta/openai
@@ -108,7 +108,7 @@ Gemini 兼容 OpenAI API 格式，使用 `normal` 适配器。
 | 基础 URL | `https://dashscope.aliyuncs.com/compatible-mode` |
 | 路径 | `/v1/chat/completions` |
 | 适配器 | `normal` |
-| 请求头 | `Authorization: Bearer sk-xxx` |
+| 请求头 | `X-API-Key: sk-xxx` |
 
 ```
 基础 URL:    https://dashscope.aliyuncs.com/compatible-mode
@@ -128,7 +128,7 @@ Gemini 兼容 OpenAI API 格式，使用 `normal` 适配器。
 | 基础 URL | `https://api.hunyuan.cloud.tencent.com` |
 | 路径 | `/v1/chat/completions` |
 | 适配器 | `normal` |
-| 请求头 | `Authorization: Bearer sk-xxx` |
+| 请求头 | `X-API-Key: sk-xxx` |
 
 ```
 基础 URL:    https://api.hunyuan.cloud.tencent.com
@@ -148,7 +148,7 @@ Gemini 兼容 OpenAI API 格式，使用 `normal` 适配器。
 | 基础 URL | `https://aip.baidubce.com` |
 | 路径 | `/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/ernie-4.0-8k` |
 | 适配器 | `normal` |
-| 请求头 | `Authorization: Bearer access_token` |
+| 请求头 | `X-Jairouter-Token: access_token` |
 
 > **注意**：百度 API 需要先获取 access_token，不是 API Key 直接使用。
 
@@ -205,7 +205,7 @@ Gemini 兼容 OpenAI API 格式，使用 `normal` 适配器。
 | 基础 URL | `http://localhost:8080` |
 | 路径 | `/v1/chat/completions` |
 | 适配器 | `gpustack` |
-| 请求头 | `Authorization: Bearer sk-xxx`（如果配置了 API Key） |
+| 请求头 | `X-API-Key: sk-xxx`（如果配置了 API Key） |
 
 ```
 基础 URL:    http://localhost:8080
@@ -282,7 +282,7 @@ Gemini 兼容 OpenAI API 格式，使用 `normal` 适配器。
 | 基础 URL | `https://api.openai.com` |
 | 路径 | `/v1/embeddings` |
 | 适配器 | `normal` |
-| 请求头 | `Authorization: Bearer sk-xxx` |
+| 请求头 | `X-API-Key: sk-xxx` |
 
 ### Ollama Embedding
 

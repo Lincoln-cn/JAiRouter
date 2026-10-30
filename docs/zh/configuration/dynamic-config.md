@@ -111,7 +111,7 @@ config/
 | 删除实例 | DELETE | `/api/config/instance/{serviceType}/{instanceId}` | 同一个数据库 id |
 
 **认证。** 这些是管理面端点：JWT 要放在 **`X-Jairouter-Token`** 头里（可用
-`jairouter.security.jwt.jwt-header` 配置），**不是** `Authorization: Bearer`。不带它每个请求都会得到
+`jairouter.security.jwt.jwt-header` 配置），**不是** `X-Jairouter-Token`。不带它每个请求都会得到
 `401 {"error":{"code":"AUTH_MISSING"}}`。每个 shell 先取一次 token：
 
 ```bash

@@ -20,7 +20,7 @@ This document provides configuration examples for common AI services to help use
 | Base URL | `https://api.openai.com` |
 | Path | `/v1/chat/completions` |
 | Adapter | `normal` |
-| Headers | `Authorization: Bearer sk-xxx` |
+| Headers | `X-API-Key: sk-xxx` |
 
 ```
 Base URL:     https://api.openai.com
@@ -42,7 +42,7 @@ DeepSeek is compatible with OpenAI API format, use `normal` adapter.
 | Base URL | `https://api.deepseek.com` |
 | Path | `/v1/chat/completions` |
 | Adapter | `normal` |
-| Headers | `Authorization: Bearer sk-xxx` |
+| Headers | `X-API-Key: sk-xxx` |
 
 ```
 Base URL:     https://api.deepseek.com
@@ -88,7 +88,7 @@ Gemini is compatible with OpenAI API format, use `normal` adapter.
 | Base URL | `https://generativelanguage.googleapis.com/v1beta/openai` |
 | Path | `/chat/completions` |
 | Adapter | `normal` |
-| Headers | `Authorization: Bearer xxx` |
+| Headers | `X-Jairouter-Token: xxx` |
 
 ```
 Base URL:     https://generativelanguage.googleapis.com/v1beta/openai
@@ -108,7 +108,7 @@ Header Value: Bearer AIzaSyxxxxx
 | Base URL | `https://dashscope.aliyuncs.com/compatible-mode` |
 | Path | `/v1/chat/completions` |
 | Adapter | `normal` |
-| Headers | `Authorization: Bearer sk-xxx` |
+| Headers | `X-API-Key: sk-xxx` |
 
 ```
 Base URL:     https://dashscope.aliyuncs.com/compatible-mode
@@ -128,7 +128,7 @@ Header Value: Bearer sk-xxxxxxxx
 | Base URL | `https://api.hunyuan.cloud.tencent.com` |
 | Path | `/v1/chat/completions` |
 | Adapter | `normal` |
-| Headers | `Authorization: Bearer sk-xxx` |
+| Headers | `X-API-Key: sk-xxx` |
 
 ```
 Base URL:     https://api.hunyuan.cloud.tencent.com
@@ -190,7 +190,7 @@ Headers:      None required
 | Base URL | `http://localhost:8080` |
 | Path | `/v1/chat/completions` |
 | Adapter | `gpustack` |
-| Headers | `Authorization: Bearer sk-xxx` (if configured) |
+| Headers | `X-API-Key: sk-xxx` (if configured) |
 
 ```
 Base URL:     http://localhost:8080
@@ -267,7 +267,7 @@ Headers:      None required
 | Base URL | `https://api.openai.com` |
 | Path | `/v1/embeddings` |
 | Adapter | `normal` |
-| Headers | `Authorization: Bearer sk-xxx` |
+| Headers | `X-API-Key: sk-xxx` |
 
 ### Ollama Embedding
 

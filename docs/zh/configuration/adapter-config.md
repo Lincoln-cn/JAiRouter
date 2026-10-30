@@ -55,7 +55,7 @@ JAiRouter 支持通过配置驱动的方式添加新的 adapter，无需编写�
 
 - **适配器** 下拉框中选择刚创建的 adapter（如 `deepseek`）
 - **基础URL** 填写 API 地址（如 `https://api.deepseek.com`）
-- **自定义头** 添加认证信息：`Authorization: Bearer sk-你的密钥`
+- **自定义头** 添加认证信息：`X-API-Key: sk-你的密钥`
 
 ### 流程示意
 
@@ -179,7 +179,7 @@ adapter-definitions:
       chat: true
       streaming: true
     auth:
-      header-name: X-API-Key    # 自定义认证头名称
+      header-name: X-API-Key: # 自定义认证头名称
       header-prefix: ""          # 无前缀
 ```
 
@@ -213,7 +213,7 @@ adapter-definitions:
       rerank: true            # 新增rerank支持
       streaming: true
     auth:
-      header-name: X-API-Key  # 覆盖认证方式
+      header-name: X-API-Key: # 覆盖认证方式
       header-prefix: ""
     additional-headers:
       X-Custom-Header: "value"
@@ -250,7 +250,7 @@ adapter-definitions:
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer sk-your-api-key" \
+  -H "X-API-Key: sk-your-api-key" \
   -d '{
     "model": "deepseek-chat",
     "messages": [{"role": "user", "content": "Hello"}],
@@ -300,4 +300,4 @@ curl -X POST http://localhost:8080/api/config/adapter \
 1. **adapter名称**：只能包含字母、数字、下划线和横线
 2. **内置adapter不可删除**：`normal`、`claude`、`gemini`、`ollama` 等是内置的
 3. **配置驱动adapter可随时修改**：通过Web页面或API修改后立即生效
-4. **认证方式**：大多数云端API使用 `Authorization: Bearer {key}`，无需修改默认配置
+4. **认证方式**：大多数云端API使用 `X-Jairouter-Token: {key}`，无需修改默认配置

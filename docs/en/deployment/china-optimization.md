@@ -1022,8 +1022,7 @@ security:
   # API Key configuration for domestic services
   api-key:
     enabled: true
-    header: X-API-Key
-    keys:
+    header: X-API-Key: keys:
       - name: domestic-frontend
         value: sk-domestic-frontend-key
         permissions:

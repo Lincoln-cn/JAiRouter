@@ -60,6 +60,10 @@ jairouter:
       mode: WARN
       # In WARN mode, also report /actuator/health as DOWN
       fail-health: false
+      # When a Redis-backed shared-state switch is on, probe Redis at startup (staging/prod only)
+      # FAIL (default) = abort startup when unreachable; WARN = log only; OFF = skip
+      redis-reachability: FAIL
+      redis-timeout-ms: 2000
 ```
 
 **How multi-replica is determined**: an explicit `replicas > 1` wins; when it is not declared, the
@@ -77,6 +81,23 @@ Behavior of the three modes:
   `/actuator/health` status is **not** changed.
 - `FAIL`: startup aborts with an `IllegalStateException`; the application never serves traffic while
   misconfigured.
+
+### Dependency reachability (staging / prod only, v3.5.7+)
+
+The check above only looks at *whether switches are on*, not *whether the Redis behind them exists*.
+`staging` enables `jairouter.security.jwt.persistence.redis.enabled` by default; with no Redis deployed
+the application still starts, and only fails on the first token-state write — by which time users are
+already logging in.
+
+So under `staging` / `prod` there is one more startup check: **if any Redis-backed shared-state switch
+is enabled, probe `spring.data.redis.host:port`**, and abort startup when it is unreachable
+(`jairouter.cluster.shared-state-check.redis-reachability: FAIL` by default).
+
+- The probe is a plain TCP connect with a 2-second default timeout (`redis-timeout-ms`, clamped to
+  200 ms–30 s);
+- `dev` / `test` **skip** this check (locally it is normal to have switches on without Redis);
+- It is skipped when no Redis-backed switch is enabled (`prod` defaults);
+- Escape hatches: `WARN` (log only) and `OFF` (skip entirely).
 
 ### About the health endpoint
 

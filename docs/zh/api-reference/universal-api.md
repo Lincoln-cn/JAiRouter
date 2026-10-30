@@ -462,7 +462,7 @@ temperature: 0
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/images/edits \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -F "model=gpt-image-1" \
   -F "prompt=add a hat" \
   -F "image[]=@body-lotion.png" \

@@ -147,7 +147,7 @@ JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问
 一次带权限判定的完整请求流程如下：
 
 1. **登录签发 JWT**：客户端 `POST /api/auth/jwt/login`。`AccountManager` 校验凭据（v2.9.8：YAML 静态账户优先，未命中时回退数据库账户——Web 账户管理 API 创建的账户可直接登录），随后按用户角色经 `RolePermissionService` 查询 `role_permissions` 表（Caffeine 缓存 5 分钟；ADMIN 短路返回全量码），将权限码写入 JWT `permissions` claim 并返回令牌。
-2. **令牌解析**：请求携带 `Authorization: Bearer {token}`（或自定义 JWT 头）。`DefaultJwtTokenValidator` 解析令牌：`roles` claim → `ROLE_` 前缀 authority；`permissions` claim → 无前缀 authority（两者语义隔离，避免与 API Key 的 `ROLE_*` 权限冲突）。
+2. **令牌解析**：请求携带 `X-Jairouter-Token: {token}`（或自定义 JWT 头）。`DefaultJwtTokenValidator` 解析令牌：`roles` claim → `ROLE_` 前缀 authority；`permissions` claim → 无前缀 authority（两者语义隔离，避免与 API Key 的 `ROLE_*` 权限冲突）。
 3. **URL 规则匹配**：`SecurityConfiguration` 将 `/api/**` 全部交给 `PermissionAuthorizationManager`；其从 `PermissionRuleRegistry` 按「HTTP 方法 + URL 模式」首条命中查找所需权限码（共 75 条规则）。
 4. **权限判定**：按下节「授权决策」的三步判定执行。
 5. **结果**：放行进入 Controller；拒绝则返回 403。
@@ -284,7 +284,7 @@ curl -X POST http://localhost:8080/api/auth/jwt/login \
 
 ```bash
 curl http://localhost:8080/api/security/permissions \
-     -H "Authorization: Bearer {token}"
+     -H "X-Jairouter-Token: {token}"
 ```
 
 响应 `data` 为 63 个权限码数组（顺序与全量清单一致）。
@@ -293,7 +293,7 @@ curl http://localhost:8080/api/security/permissions \
 
 ```bash
 curl http://localhost:8080/api/security/permissions/roles \
-     -H "Authorization: Bearer {token}"
+     -H "X-Jairouter-Token: {token}"
 ```
 
 响应 `data` 为对象：`{"ADMIN": [...], "OPERATOR": [...], ...}`。
@@ -302,7 +302,7 @@ curl http://localhost:8080/api/security/permissions/roles \
 
 ```bash
 curl -X PUT http://localhost:8080/api/security/permissions/roles/OPERATOR \
-     -H "Authorization: Bearer {token}" \
+     -H "X-Jairouter-Token: {token}" \
      -H "Content-Type: application/json" \
      -d '["config:services:read", "config:services:write", "monitoring:metrics:read"]'
 ```
@@ -315,7 +315,7 @@ curl -X PUT http://localhost:8080/api/security/permissions/roles/OPERATOR \
 
 ```bash
 curl http://localhost:8080/api/auth/permissions \
-     -H "Authorization: Bearer {token}"
+     -H "X-Jairouter-Token: {token}"
 ```
 
 ADMIN 直接返回全量 63 码；其他角色返回其 JWT `permissions` claim 中的权限码。

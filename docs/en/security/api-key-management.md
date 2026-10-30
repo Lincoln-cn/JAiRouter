@@ -471,7 +471,7 @@ Generate comprehensive security reports:
 ```bash
 # Get security report for the last 30 days
 curl -X GET "http://localhost:8080/api/security/audit/report?from=2025-01-01&to=2025-01-31" \
-     -H "Authorization: Bearer admin_token"
+     -H "X-Jairouter-Token: admin_token"
 ```
 
 Response includes:

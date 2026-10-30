@@ -46,7 +46,7 @@ Access the blacklist management console at `/api/security/blacklist/list` to:
 
 ```bash
 curl -X POST "http://localhost:8080/api/security/blacklist" \
-     -H "Authorization: Bearer admin_token" \
+     -H "X-Jairouter-Token: admin_token" \
      -H "Content-Type: application/json" \
      -d '{
        "type": "IP",
@@ -127,7 +127,7 @@ curl -X POST "http://localhost:8080/api/security/blacklist" \
 
 ```http
 POST /api/security/blacklist
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 Content-Type: application/json
 ```
 
@@ -161,7 +161,7 @@ Response:
 
 ```http
 GET /api/security/blacklist?type={type}&page={page}&size={size}&status={status}
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 ```
 
 Query Parameters:
@@ -198,14 +198,14 @@ Response:
 
 ```http
 GET /api/security/blacklist/{entryId}
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 ```
 
 ### Update Blacklist Entry
 
 ```http
 PUT /api/security/blacklist/{entryId}
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 Content-Type: application/json
 ```
 
@@ -221,14 +221,14 @@ Request Body:
 
 ```http
 DELETE /api/security/blacklist/{entryId}
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 ```
 
 ### Batch Add Blacklist
 
 ```http
 POST /api/security/blacklist/batch
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 Content-Type: application/json
 ```
 
@@ -260,7 +260,7 @@ Response:
 
 ```http
 GET /api/security/blacklist/stats
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 ```
 
 Response:
@@ -291,7 +291,7 @@ Response:
 
 ```http
 POST /api/security/blacklist/cleanup
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 ```
 
 Response:

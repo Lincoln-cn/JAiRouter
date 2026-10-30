@@ -939,8 +939,7 @@ security:
   # API Key configuration
   api-key:
     enabled: true
-    header: X-API-Key
-    keys:
+    header: X-API-Key: keys:
       - name: default
         value: your-api-key-here
   

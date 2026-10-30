@@ -494,7 +494,7 @@ jairouter:
 ```bash
 # 获取最近30天的安全报告
 curl -X GET "http://localhost:8080/api/security/audit/report?from=2025-01-01&to=2025-01-31" \
-     -H "Authorization: Bearer admin_token"
+     -H "X-Jairouter-Token: admin_token"
 ```
 
 响应包括：
@@ -620,7 +620,7 @@ JAiRouter 支持批量导入导出 API Key，便于迁移、备份和批量管�
 ```bash
 # 导出所有 API Key
 curl -X GET "http://localhost:8080/api/auth/api-keys/export" \
-     -H "Authorization: Bearer admin_token"
+     -H "X-Jairouter-Token: admin_token"
 ```
 
 响应格式：
@@ -648,7 +648,7 @@ curl -X GET "http://localhost:8080/api/auth/api-keys/export" \
 ```bash
 # 导入 API Key（MERGE 模式 - 保留现有密钥）
 curl -X POST "http://localhost:8080/api/auth/api-keys/import" \
-     -H "Authorization: Bearer admin_token" \
+     -H "X-Jairouter-Token: admin_token" \
      -H "Content-Type: application/json" \
      -d '{
        "mode": "MERGE",
@@ -664,7 +664,7 @@ curl -X POST "http://localhost:8080/api/auth/api-keys/import" \
 
 # 导入 API Key（REPLACE 模式 - 替换所有现有密钥）
 curl -X POST "http://localhost:8080/api/auth/api-keys/import" \
-     -H "Authorization: Bearer admin_token" \
+     -H "X-Jairouter-Token: admin_token" \
      -H "Content-Type: application/json" \
      -d '{
        "mode": "REPLACE",
@@ -714,7 +714,7 @@ jairouter:
 ```bash
 # 手动重置密钥值
 curl -X POST "http://localhost:8080/api/auth/api-keys/{keyId}/reset" \
-     -H "Authorization: Bearer admin_token"
+     -H "X-Jairouter-Token: admin_token"
 ```
 
 ### IP 白名单 (v1.6.1+)
@@ -741,7 +741,7 @@ jairouter:
 ```bash
 # 更新 IP 白名单
 curl -X PUT "http://localhost:8080/api/auth/api-keys/{keyId}" \
-     -H "Authorization: Bearer admin_token" \
+     -H "X-Jairouter-Token: admin_token" \
      -H "Content-Type: application/json" \
      -d '{
        "allowedIpAddresses": ["192.168.1.100", "10.0.0.0/8"]

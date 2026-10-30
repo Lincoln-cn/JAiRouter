@@ -107,7 +107,7 @@ JAiRouter 审计日志功能记录了系统中所有重要的安全相关操作�
 
 ```http
 GET /api/security/audit-logs?operation={operation}&resourceType={type}&operator={user}&page={page}&size={size}
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 ```
 
 参数说明：
@@ -145,14 +145,14 @@ Authorization: Bearer {token}
 
 ```http
 GET /api/security/audit-logs/{logId}
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 ```
 
 #### 导出审计日志
 
 ```http
 POST /api/security/audit-logs/export
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 Content-Type: application/json
 ```
 
@@ -244,7 +244,7 @@ jairouter:
 ```bash
 # 导出最近 30 天的审计日志
 curl -X POST "http://localhost:8080/api/security/audit-logs/export" \
-     -H "Authorization: Bearer admin_token" \
+     -H "X-Jairouter-Token: admin_token" \
      -H "Content-Type: application/json" \
      -d '{
        "filters": {

@@ -111,7 +111,7 @@ Supported state types for persistence:
 **Get storage tier status**:
 ```bash
 curl -X GET http://localhost:8080/api/state-persistence/status \
-  -H "Authorization: Bearer {token}"
+  -H "X-Jairouter-Token: {token}"
 ```
 
 **Response example**:
