@@ -3,6 +3,7 @@ package org.unreal.modelrouter.monitor.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 健康状态SSE推送控制器
@@ -42,6 +44,22 @@ public class HealthStatusSseController {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /** 快照生成次数，仅用于测试断言「多个订阅者是否共享同一次计算」 */
+    private final AtomicLong snapshotComputations = new AtomicLong();
+
+    /** 周期快照间隔（毫秒），默认 5 秒 */
+    @Value("${jairouter.health-status.stream-interval-ms:5000}")
+    private long streamIntervalMs = 5_000L;
+
+    /**
+     * 周期快照流：所有 SSE 连接共享同一条热点流。
+     *
+     * <p>此前每个连接各自 `Flux.interval` 并各自调用 {@link #generateHealthStatusData()}，
+     * 每次都要两次全表扫描（服务配置表 + 实例表）⇒ N 个控制台标签页就是每 5 秒 2N 次全表查询。
+     * 改为 `share()`（refCount(1)）后：无订阅者时定时器不跑，有订阅者时每轮只算一次、广播给所有连接。</p>
+     */
+    private volatile Flux<ServerSentEvent<String>> sharedPeriodicUpdates;
+
     // 监控推送：有界缓冲（256），溢出由 tryEmitNext 返回失败并丢弃，避免内存无界增长
     private final Sinks.Many<ServerSentEvent<String>> eventSink =
             Sinks.many().multicast().onBackpressureBuffer(256, false);
@@ -56,10 +74,7 @@ public class HealthStatusSseController {
         log.debug("SSE连接已建立");
 
         // 定时快照：JPA 为阻塞 API，必须在 boundedElastic 上生成，避免卡住 Netty EventLoop
-        Flux<ServerSentEvent<String>> periodicUpdates = Flux.interval(Duration.ofSeconds(5))
-                .onBackpressureLatest()
-                .concatMap(sequence -> Mono.fromCallable(() -> createHealthUpdateEvent(sequence, "periodic"))
-                        .subscribeOn(Schedulers.boundedElastic()));
+        final Flux<ServerSentEvent<String>> periodicUpdates = periodicUpdates();
 
         // 主动推送：慢消费者时丢弃积压 tick，避免无界缓冲
         Flux<ServerSentEvent<String>> manualUpdates = eventSink.asFlux()
@@ -68,6 +83,39 @@ public class HealthStatusSseController {
         return Flux.merge(periodicUpdates, manualUpdates)
                 .doOnCancel(() -> log.debug("SSE连接已取消"))
                 .doOnComplete(() -> log.debug("SSE连接已完成"));
+    }
+
+    /**
+     * 取共享的周期快照流（首次使用时构建）。
+     */
+    private Flux<ServerSentEvent<String>> periodicUpdates() {
+        Flux<ServerSentEvent<String>> current = sharedPeriodicUpdates;
+        if (current == null) {
+            synchronized (this) {
+                if (sharedPeriodicUpdates == null) {
+                    sharedPeriodicUpdates = buildPeriodicUpdates();
+                }
+                current = sharedPeriodicUpdates;
+            }
+        }
+        return current;
+    }
+
+    private Flux<ServerSentEvent<String>> buildPeriodicUpdates() {
+        final long intervalMs = Math.max(100L, streamIntervalMs);
+        return Flux.interval(Duration.ofMillis(intervalMs))
+                .onBackpressureLatest()
+                .concatMap(sequence -> Mono.fromCallable(() -> createHealthUpdateEvent(sequence, "periodic"))
+                        .subscribeOn(Schedulers.boundedElastic()))
+                // refCount(1)：最后一个订阅者离开时停表，新连接到来时重新开始
+                .share();
+    }
+
+    /**
+     * 已生成的快照次数（供测试断言共享行为）。
+     */
+    long snapshotComputations() {
+        return snapshotComputations.get();
     }
 
     /**
@@ -98,6 +146,7 @@ public class HealthStatusSseController {
      * key 格式为 serviceType:instanceId (UUID)
      */
     private Map<String, Object> generateHealthStatusData() {
+        snapshotComputations.incrementAndGet();
         Map<String, Object> data = new HashMap<>();
         data.put("timestamp", LocalDateTime.now().toString());
         data.put("type", "health-update");

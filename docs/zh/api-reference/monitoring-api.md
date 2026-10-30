@@ -635,6 +635,10 @@ management:
 |---|---|---|
 | `GET` | `/api/health-status/stream` | 已认证即可（`/api/health-status/**` → `authenticated()`） |
 
+> 该 SSE 通道每 5 秒推送一次实例健康快照。快照在**所有连接之间共享同一次计算**（`#866` 起），
+> 打开多个控制台标签页不会再成倍放大数据库查询；推送间隔可用
+> `jairouter.health-status.stream-interval-ms`（默认 `5000`，下限 `100`）调整。
+
 ### 限流监控（RateLimitMonitorController）
 
 | 方法 | 路径 | 生效的权限码 |
