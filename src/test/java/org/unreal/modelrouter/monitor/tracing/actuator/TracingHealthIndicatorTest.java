@@ -184,14 +184,18 @@ class TracingHealthIndicatorTest {
     class DisabledTests {
 
         @Test
-        @DisplayName("OFF-001: 追踪被显式禁用时 DOWN（原语义保持不变）")
-        void tracingDisabledIsDown() {
+        @DisplayName("OFF-001: 追踪被显式禁用时 UP（#849：关闭追踪是合法运行态，不得拉垮存活探针）")
+        void tracingDisabledIsUp() {
             when(tracingConfiguration.isEnabled()).thenReturn(false);
 
             Health health = indicator.health();
 
-            assertEquals(Status.DOWN, health.getStatus());
-            assertEquals("追踪系统已禁用", health.getDetails().get("reason"));
+            // 旧断言是 DOWN。实测证据（#849）：Dockerfile / Dockerfile.china 的 HEALTHCHECK
+            // 打的是聚合 /actuator/health，DOWN ⇒ 容器被判 unhealthy；docker-compose 默认
+            // restart 策略下会反复重启，而重启并不解决「追踪被关掉」。追踪是可选组件，
+            // 关掉它只应体现在 details 里，不应影响存活判定。
+            assertEquals(Status.UP, health.getStatus());
+            assertEquals("追踪系统已禁用（可选组件，不影响请求处理）", health.getDetails().get("reason"));
         }
     }
 }
