@@ -121,7 +121,7 @@ curl -X POST http://localhost:8080/api/auth/jwt/login \
      -d '{"username":"admin","password":"admin123"}'
 
 # 测试令牌管理 API
-curl -H "Authorization: Bearer <token>" \
+curl -H "X-Jairouter-Token: <token>" \
      http://localhost:8080/api/auth/jwt/tokens
 ```
 

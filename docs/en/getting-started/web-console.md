@@ -352,7 +352,7 @@ This page provides complete access examples for the OpenAI-compatible API and th
 
 **Symptom**: Using the OpenAI SDK returns 401.
 
-**Possible cause**: The SDK defaults to using the `Authorization: Bearer <key>` header rather than `X-API-Key`. The gateway's OpenAI-compatible endpoint requires the `X-API-Key` header for API Key authentication.
+**Possible cause**: The SDK defaults to using the `X-Jairouter-Token: <key>` header rather than `X-API-Key`. The gateway's OpenAI-compatible endpoint requires the `X-API-Key` header for API Key authentication.
 
 **Resolution**:
 

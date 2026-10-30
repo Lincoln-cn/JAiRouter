@@ -85,7 +85,7 @@ Three rules to remember:
 1. **`x-api-key` = gateway credential, not forwarded downstream.** If you put a *downstream* key in
    `x-api-key`, the downstream receives a request with **no credentials** → **401 / unauthenticated failure**.
 2. **Configure the downstream key in instance `headers` (recommended), or send it per request via
-   `Authorization: Bearer <downstream key>`.** When both are present, **instance `headers` win**
+   `Authorization: <downstream key>`.** When both are present, **instance `headers` win**
    (instance configuration overrides the incoming `Authorization`).
 3. **Credential precedence**: `X-Jairouter-Token` (JWT) > `X-API-Key` (API Key). `Authorization` is
    unrelated to gateway authentication; it only affects the downstream.
@@ -101,7 +101,7 @@ Three rules to remember:
 | Option | Where the downstream key lives | Use case | Pros | Notes |
 |--------|-------------------------------|----------|------|-------|
 | **A (recommended)** | Instance `headers` | Production / shared gateway | Keys stay centralized; clients hold nothing; instance config wins | Switch downstream keys by editing config only |
-| B | Request `Authorization: Bearer <downstream key>` | Trials / per-request keys | No gateway config change | Claude Code can only attach it via `ANTHROPIC_CUSTOM_HEADERS` etc.; only one `Authorization` slot exists |
+| B | Request `Authorization: <downstream key>` | Trials / per-request keys | No gateway config change | Claude Code can only attach it via `ANTHROPIC_CUSTOM_HEADERS` etc.; only one `Authorization` slot exists |
 | C | Instance `headers` with a custom header name (e.g. `api-key`) | Downstream is not `Authorization`-style | Works with any downstream protocol | Verify which header the downstream expects |
 
 ### Option A: downstream key in instance `headers` (recommended)

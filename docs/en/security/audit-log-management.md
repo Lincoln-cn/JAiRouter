@@ -107,7 +107,7 @@ Visit the admin console `/api/security/audit/extended/query` to:
 
 ```http
 GET /api/security/audit-logs?operation={operation}&resourceType={type}&operator={user}&page={page}&size={size}
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 ```
 
 Parameters:
@@ -145,14 +145,14 @@ Response:
 
 ```http
 GET /api/security/audit-logs/{logId}
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 ```
 
 #### Export Audit Logs
 
 ```http
 POST /api/security/audit-logs/export
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 Content-Type: application/json
 ```
 
@@ -244,7 +244,7 @@ Regularly backing up audit logs is recommended for compliance auditing:
 ```bash
 # Export audit logs from the last 30 days
 curl -X POST "http://localhost:8080/api/security/audit-logs/export" \
-     -H "Authorization: Bearer admin_token" \
+     -H "X-Jairouter-Token: admin_token" \
      -H "Content-Type: application/json" \
      -d '{
        "filters": {

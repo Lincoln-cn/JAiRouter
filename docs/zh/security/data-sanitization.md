@@ -409,8 +409,7 @@ security:
   # API Key 配置
   api-key:
     enabled: true
-    header: X-API-Key
-    keys:
+    header: X-API-Key: keys:
       # 生产环境使用环境变量配置
       - name: "prod-admin"
         value: "${PROD_ADMIN_API_KEY:}"

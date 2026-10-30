@@ -22,7 +22,7 @@ This document provides diagnosis and solutions for common JAiRouter security fea
 curl http://localhost:8080/actuator/health
 
 # Check security configuration
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/api/monitoring/health
 ```
 
@@ -71,7 +71,7 @@ curl http://localhost:8080/actuator/prometheus | grep sanitization
 
 ```bash
 # 1. Check API Key configuration
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/api-keys
 
 # 2. Verify request header
@@ -79,7 +79,7 @@ curl -v -H "X-API-Key: your-api-key" \
      http://localhost:8080/v1/models
 
 # 3. Check API Key status
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/api-keys/your-key-id/status
 ```
 
@@ -100,7 +100,7 @@ jairouter:
 2. **Check expiration time**
 ```bash
 # Update expiration time
-curl -X PUT -H "Authorization: Bearer admin-token" \
+curl -X PUT -H "X-Jairouter-Token: admin-token" \
      -H "Content-Type: application/json" \
      -d '{"expires_at": "2027-12-31T23:59:59"}' \
      http://localhost:8080/admin/security/api-keys/your-key-id
@@ -108,7 +108,7 @@ curl -X PUT -H "Authorization: Bearer admin-token" \
 
 3. **Enable API Key**
 ```bash
-curl -X PUT -H "Authorization: Bearer admin-token" \
+curl -X PUT -H "X-Jairouter-Token: admin-token" \
      -H "Content-Type: application/json" \
      -d '{"enabled": true}' \
      http://localhost:8080/admin/security/api-keys/your-key-id
@@ -134,13 +134,13 @@ curl -X PUT -H "Authorization: Bearer admin-token" \
 echo "your-jwt-token" | cut -d'.' -f2 | base64 -d | jq
 
 # 2. Check token status
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      -H "Content-Type: application/json" \
      -d '{"token": "your-jwt-token"}' \
      http://localhost:8080/admin/security/jwt/validate
 
 # 3. Check blacklist
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/jwt/blacklist
 ```
 
@@ -165,7 +165,7 @@ curl -X POST -H "Content-Type: application/json" \
 
 3. **Clear blacklist**
 ```bash
-curl -X DELETE -H "Authorization: Bearer admin-token" \
+curl -X DELETE -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/jwt/blacklist/clear
 ```
 
@@ -179,11 +179,11 @@ curl -X DELETE -H "Authorization: Bearer admin-token" \
 
 ```bash
 # Check user permissions
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/permissions/your-user-id
 
 # Check endpoint permission requirements
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/endpoints
 ```
 
@@ -191,7 +191,7 @@ curl -H "Authorization: Bearer admin-token" \
 
 ```bash
 # Update user permissions
-curl -X PUT -H "Authorization: Bearer admin-token" \
+curl -X PUT -H "X-Jairouter-Token: admin-token" \
      -H "Content-Type: application/json" \
      -d '{"permissions": ["read", "write", "admin"]}' \
      http://localhost:8080/admin/security/api-keys/your-key-id/permissions
@@ -214,11 +214,11 @@ curl -X PUT -H "Authorization: Bearer admin-token" \
 
 ```bash
 # 1. Check sanitization configuration
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/sanitization/config
 
 # 2. Test sanitization rules
-curl -X POST -H "Authorization: Bearer admin-token" \
+curl -X POST -H "X-Jairouter-Token: admin-token" \
      -H "Content-Type: application/json" \
      -d '{"text": "My phone number is 13812345678", "rules": ["phone"]}' \
      http://localhost:8080/admin/security/sanitization/test
@@ -255,7 +255,7 @@ jairouter:
 
 ```bash
 # Test sanitization result for specific text
-curl -X POST -H "Authorization: Bearer admin-token" \
+curl -X POST -H "X-Jairouter-Token: admin-token" \
      -H "Content-Type: application/json" \
      -d '{"text": "your-test-text"}' \
      http://localhost:8080/admin/security/sanitization/test
@@ -333,7 +333,7 @@ jairouter:
 3. **Reduce API Key count**
 ```bash
 # Clean up unused API Keys
-curl -X DELETE -H "Authorization: Bearer admin-token" \
+curl -X DELETE -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/api-keys/unused-key-id
 ```
 
@@ -406,7 +406,7 @@ jairouter:
 
 ```bash
 # Check current configuration
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/api/monitoring/config
 
 # Check configuration file
@@ -558,15 +558,15 @@ logging:
 
 ```bash
 # Security status check
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/api/monitoring/health
 
 # Configuration check
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/config/validate
 
 # Performance analysis
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/performance/analyze
 ```
 
@@ -605,7 +605,7 @@ echo "=== System Health Check ==="
 curl -s "$BASE_URL/actuator/health" | jq '.status'
 
 echo "=== Security Feature Status ==="
-curl -s -H "Authorization: Bearer $ADMIN_TOKEN" \
+curl -s -H "X-Jairouter-Token: $ADMIN_TOKEN" \
      "$BASE_URL/admin/security/status" | jq
 
 echo "=== Authentication Performance Metrics ==="
@@ -623,15 +623,15 @@ curl -s "$BASE_URL/actuator/prometheus" | \
 
 ```bash
 # Reload configuration
-curl -X POST -H "Authorization: Bearer admin-token" \
+curl -X POST -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/config/reload
 
 # Validate configuration
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/config/validate
 
 # Backup configuration
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/config/backup > config-backup.json
 ```
 
@@ -639,15 +639,15 @@ curl -H "Authorization: Bearer admin-token" \
 
 ```bash
 # Clear authentication cache
-curl -X DELETE -H "Authorization: Bearer admin-token" \
+curl -X DELETE -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/cache/authentication
 
 # Clear sanitization cache
-curl -X DELETE -H "Authorization: Bearer admin-token" \
+curl -X DELETE -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/cache/sanitization
 
 # View cache statistics
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/cache/stats
 ```
 
@@ -655,13 +655,13 @@ curl -H "Authorization: Bearer admin-token" \
 
 ```bash
 # Set log level
-curl -X POST -H "Authorization: Bearer admin-token" \
+curl -X POST -H "X-Jairouter-Token: admin-token" \
      -H "Content-Type: application/json" \
      -d '{"level": "DEBUG"}' \
      http://localhost:8080/actuator/loggers/org.unreal.modelrouter.auth
 
 # Download logs
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/logs/security-audit.log > audit.log
 ```
 

@@ -352,7 +352,7 @@ export INITIAL_ADMIN_PASSWORD="YourStr0ngPassword#2026"
 
 **现象**：使用 OpenAI SDK 调用时返回 401。
 
-**可能原因**：SDK 默认使用 `Authorization: Bearer <key>` 头，而非 `X-API-Key`。网关的 OpenAI 兼容端点要求 `X-API-Key` 头携带 API Key。
+**可能原因**：SDK 默认使用 `X-Jairouter-Token: <key>` 头，而非 `X-API-Key`。网关的 OpenAI 兼容端点要求 `X-API-Key` 头携带 API Key。
 
 **处理**：
 

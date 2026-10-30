@@ -46,7 +46,7 @@ JAiRouter 安全黑名单功能提供了一种主动防御机制，允许管理�
 
 ```bash
 curl -X POST "http://localhost:8080/api/security/blacklist/add" \
-     -H "Authorization: Bearer admin_token" \
+     -H "X-Jairouter-Token: admin_token" \
      -H "Content-Type: application/json" \
      -d '{
        "type": "IP",
@@ -127,7 +127,7 @@ curl -X POST "http://localhost:8080/api/security/blacklist/add" \
 
 ```http
 POST /api/security/blacklist/add
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 Content-Type: application/json
 ```
 
@@ -161,7 +161,7 @@ Content-Type: application/json
 
 ```http
 GET /api/security/blacklist/list?type={type}&page={page}&size={size}&status={status}
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 ```
 
 参数说明：
@@ -198,21 +198,21 @@ Authorization: Bearer {token}
 
 ```http
 GET /api/security/blacklist/{entryId}
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 ```
 
 ### 删除黑名单条目
 
 ```http
 DELETE /api/security/blacklist/{entryId}
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 ```
 
 ### 批量添加黑名单
 
 ```http
 POST /api/security/blacklist/batch-add
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 Content-Type: application/json
 ```
 
@@ -248,7 +248,7 @@ Content-Type: application/json
 
 ```http
 GET /api/security/blacklist/stats
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 ```
 
 响应：
@@ -279,7 +279,7 @@ Authorization: Bearer {token}
 
 ```http
 POST /api/security/blacklist/cleanup
-Authorization: Bearer {token}
+X-Jairouter-Token: {token}
 ```
 
 响应：

@@ -698,7 +698,7 @@ jairouter:
 ```bash
 # Trigger manual cleanup
 curl -X POST http://localhost:8080/api/auth/jwt/cleanup \
-     -H "Authorization: Bearer admin_token" \
+     -H "X-Jairouter-Token: admin_token" \
      -H "Content-Type: application/json" \
      -d '{"cleanupType": "ALL"}'
 ```

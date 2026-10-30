@@ -22,7 +22,7 @@
 curl http://localhost:8080/actuator/health
 
 # 检查安全配置
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/api/monitoring/health
 ```
 
@@ -71,7 +71,7 @@ curl http://localhost:8080/actuator/prometheus | grep sanitization
 
 ```bash
 # 1. 检查 API Key 配置
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/api-keys
 
 # 2. 验证请求头
@@ -79,7 +79,7 @@ curl -v -H "X-API-Key: your-api-key" \
      http://localhost:8080/v1/models
 
 # 3. 检查 API Key 状态
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/api-keys/your-key-id/status
 ```
 
@@ -100,7 +100,7 @@ jairouter:
 2. **检查过期时间**
 ```bash
 # 更新过期时间
-curl -X PUT -H "Authorization: Bearer admin-token" \
+curl -X PUT -H "X-Jairouter-Token: admin-token" \
      -H "Content-Type: application/json" \
      -d '{"expires_at": "2027-12-31T23:59:59"}' \
      http://localhost:8080/admin/security/api-keys/your-key-id
@@ -108,7 +108,7 @@ curl -X PUT -H "Authorization: Bearer admin-token" \
 
 3. **启用 API Key**
 ```bash
-curl -X PUT -H "Authorization: Bearer admin-token" \
+curl -X PUT -H "X-Jairouter-Token: admin-token" \
      -H "Content-Type: application/json" \
      -d '{"enabled": true}' \
      http://localhost:8080/admin/security/api-keys/your-key-id
@@ -134,13 +134,13 @@ curl -X PUT -H "Authorization: Bearer admin-token" \
 echo "your-jwt-token" | cut -d'.' -f2 | base64 -d | jq
 
 # 2. 检查令牌状态
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      -H "Content-Type: application/json" \
      -d '{"token": "your-jwt-token"}' \
      http://localhost:8080/api/auth/jwt/validate
 
 # 3. 检查黑名单
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/api/security/blacklist/list
 ```
 
@@ -165,7 +165,7 @@ curl -X POST -H "Content-Type: application/json" \
 
 3. **清除黑名单**
 ```bash
-curl -X DELETE -H "Authorization: Bearer admin-token" \
+curl -X DELETE -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/jwt/blacklist/clear
 ```
 
@@ -179,11 +179,11 @@ curl -X DELETE -H "Authorization: Bearer admin-token" \
 
 ```bash
 # 检查用户权限
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/permissions/your-user-id
 
 # 检查接口权限要求
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/endpoints
 ```
 
@@ -191,7 +191,7 @@ curl -H "Authorization: Bearer admin-token" \
 
 ```bash
 # 更新用户权限
-curl -X PUT -H "Authorization: Bearer admin-token" \
+curl -X PUT -H "X-Jairouter-Token: admin-token" \
      -H "Content-Type: application/json" \
      -d '{"permissions": ["read", "write", "admin"]}' \
      http://localhost:8080/admin/security/api-keys/your-key-id/permissions
@@ -214,11 +214,11 @@ curl -X PUT -H "Authorization: Bearer admin-token" \
 
 ```bash
 # 1. 检查脱敏配置
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/sanitization/config
 
 # 2. 测试脱敏规则
-curl -X POST -H "Authorization: Bearer admin-token" \
+curl -X POST -H "X-Jairouter-Token: admin-token" \
      -H "Content-Type: application/json" \
      -d '{"text": "我的手机号是13812345678", "rules": ["phone"]}' \
      http://localhost:8080/admin/security/sanitization/test
@@ -255,7 +255,7 @@ jairouter:
 
 ```bash
 # 测试具体文本的脱敏结果
-curl -X POST -H "Authorization: Bearer admin-token" \
+curl -X POST -H "X-Jairouter-Token: admin-token" \
      -H "Content-Type: application/json" \
      -d '{"text": "your-test-text"}' \
      http://localhost:8080/admin/security/sanitization/test
@@ -333,7 +333,7 @@ jairouter:
 3. **减少 API Key 数量**
 ```bash
 # 清理无用的 API Key
-curl -X DELETE -H "Authorization: Bearer admin-token" \
+curl -X DELETE -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/api-keys/unused-key-id
 ```
 
@@ -404,7 +404,7 @@ jairouter:
 
 ```bash
 # 检查当前配置
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/api/monitoring/config
 
 # 检查配置文件
@@ -554,15 +554,15 @@ logging:
 
 ```bash
 # 安全状态检查
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/api/monitoring/health
 
 # 配置检查
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/config/validate
 
 # 性能分析
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/performance/analyze
 ```
 
@@ -601,7 +601,7 @@ echo "=== 系统健康检查 ==="
 curl -s "$BASE_URL/actuator/health" | jq '.status'
 
 echo "=== 安全功能状态 ==="
-curl -s -H "Authorization: Bearer $ADMIN_TOKEN" \
+curl -s -H "X-Jairouter-Token: $ADMIN_TOKEN" \
      "$BASE_URL/api/monitoring/health" | jq
 
 echo "=== 认证性能指标 ==="
@@ -619,15 +619,15 @@ curl -s "$BASE_URL/actuator/prometheus" | \
 
 ```bash
 # 重新加载配置
-curl -X POST -H "Authorization: Bearer admin-token" \
+curl -X POST -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/config/reload
 
 # 验证配置
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/config/validate
 
 # 备份配置
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/config/backup > config-backup.json
 ```
 
@@ -635,15 +635,15 @@ curl -H "Authorization: Bearer admin-token" \
 
 ```bash
 # 清除认证缓存
-curl -X DELETE -H "Authorization: Bearer admin-token" \
+curl -X DELETE -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/cache/authentication
 
 # 清除脱敏缓存
-curl -X DELETE -H "Authorization: Bearer admin-token" \
+curl -X DELETE -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/cache/sanitization
 
 # 查看缓存统计
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/security/cache/stats
 ```
 
@@ -651,13 +651,13 @@ curl -H "Authorization: Bearer admin-token" \
 
 ```bash
 # 设置日志级别
-curl -X POST -H "Authorization: Bearer admin-token" \
+curl -X POST -H "X-Jairouter-Token: admin-token" \
      -H "Content-Type: application/json" \
      -d '{"level": "DEBUG"}' \
      http://localhost:8080/actuator/loggers/org.unreal.modelrouter.auth
 
 # 下载日志
-curl -H "Authorization: Bearer admin-token" \
+curl -H "X-Jairouter-Token: admin-token" \
      http://localhost:8080/admin/logs/security-audit.log > audit.log
 ```
 

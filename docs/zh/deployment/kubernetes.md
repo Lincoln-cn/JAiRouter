@@ -1410,8 +1410,7 @@ data:
       # API Key 配置
       api-key:
         enabled: true
-        header: X-API-Key
-        # 生产环境使用环境变量配置
+        header: X-API-Key: # 生产环境使用环境变量配置
         keys:
           - key-id: "prod-admin"
             key-value: "${PROD_ADMIN_API_KEY:}"

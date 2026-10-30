@@ -76,7 +76,7 @@ Claude Code 会把 `ANTHROPIC_API_KEY` 放进 **`x-api-key`** 请求头。HTTP �
 三条必须记住的规则：
 
 1. **`x-api-key` = 网关凭据，不会透传下游。** 把*下游*密钥放在 `x-api-key` 上，下游会收到**没有任何凭据**的请求 → **401 / 无凭据失败**。
-2. **下游密钥配在实例 `headers`（推荐），或由客户端用 `Authorization: Bearer <下游密钥>` 按请求携带。** 两者同时存在时**实例级 `headers` 优先**（实例配置覆盖请求传入的 `Authorization`）。
+2. **下游密钥配在实例 `headers`（推荐），或由客户端用 `Authorization: <下游密钥>` 按请求携带。** 两者同时存在时**实例级 `headers` 优先**（实例配置覆盖请求传入的 `Authorization`）。
 3. **认证优先级**：`X-Jairouter-Token`（JWT） > `X-API-Key`（API Key）。`Authorization` 与网关认证**无关**，它只影响下游。
 
 > **原生面认证说明**：`/v1/**` 同时接受 `X-API-Key`（API Key）与 `X-Jairouter-Token`（JWT），
@@ -89,7 +89,7 @@ Claude Code 会把 `ANTHROPIC_API_KEY` 放进 **`x-api-key`** 请求头。HTTP �
 | 方案 | 下游密钥放哪 | 适用场景 | 优点 | 注意 |
 |------|--------------|----------|------|------|
 | **A（推荐）** | 实例 `headers` | 生产/多用户共享网关 | 密钥集中管理，客户端无需持有下游密钥；实例级优先 | 改配置即可切换下游密钥 |
-| B | 请求 `Authorization: Bearer <下游密钥>` | 临时试用 / 每请求换密钥 | 无需改网关配置 | Claude Code 只能通过 `ANTHROPIC_CUSTOM_HEADERS` 等方式附加；且只有 `Authorization` 一个槽位，无法区分多个下游 |
+| B | 请求 `Authorization: <下游密钥>` | 临时试用 / 每请求换密钥 | 无需改网关配置 | Claude Code 只能通过 `ANTHROPIC_CUSTOM_HEADERS` 等方式附加；且只有 `Authorization` 一个槽位，无法区分多个下游 |
 | C | 实例 `headers` 用自定义头名（如 `api-key`） | 下游不是 `Authorization` 风格 | 兼容任意下游协议 | 需确认下游认哪个头名 |
 
 ### 方案 A：下游密钥配在实例 `headers`（推荐）

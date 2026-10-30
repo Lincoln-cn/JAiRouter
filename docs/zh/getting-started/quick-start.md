@@ -221,7 +221,7 @@ TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
 
 下面每条命令都用 `-H "X-Jairouter-Token: $TOKEN"` 带上它。
 注意头名：JWT 头是 **`X-Jairouter-Token`**（可用 `jairouter.security.jwt.jwt-header` 配置），
-**不是** `Authorization: Bearer`。
+**不是** `X-Jairouter-Token`。
 
 ## ⚙️ 步骤 4：配置第一个 AI 服务
 

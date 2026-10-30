@@ -784,8 +784,7 @@ Configure API key authentication for service-to-service communication:
 security:
   api-key:
     enabled: true
-    header: X-API-Key
-    keys:
+    header: X-API-Key: keys:
       - name: frontend-service
         value: sk-frontend-key-here
         permissions:
@@ -1049,8 +1048,7 @@ security:
       allowed-headers:
         - Content-Type
         - Authorization
-        - X-API-Key
-      allow-credentials: true
+        - X-API-Key: allow-credentials: true
 ```
 
 #### Security Audit Logging

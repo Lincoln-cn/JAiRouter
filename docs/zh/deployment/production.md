@@ -881,8 +881,7 @@ security:
   # API Key 配置
   api-key:
     enabled: true
-    header: X-API-Key
-    # API 密钥存储路径
+    header: X-API-Key: # API 密钥存储路径
     file: /app/config/api-keys.yml
   
   # JWT 配置

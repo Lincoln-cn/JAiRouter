@@ -938,8 +938,7 @@ security:
   # API Key 配置
   api-key:
     enabled: true
-    header: X-API-Key
-    keys:
+    header: X-API-Key: keys:
       - name: default
         value: your-api-key-here
   

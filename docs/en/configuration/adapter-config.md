@@ -55,7 +55,7 @@ Navigate to **Configuration → Instance Management**, add or edit an instance:
 
 - Select the created adapter (e.g., `deepseek`) in the **Adapter** dropdown
 - Fill in **Base URL** (e.g., `https://api.deepseek.com`)
-- Add authentication in **Custom Headers**: `Authorization: Bearer sk-your-api-key`
+- Add authentication in **Custom Headers**: `X-API-Key: sk-your-api-key`
 
 ### Workflow
 
@@ -179,7 +179,7 @@ adapter-definitions:
       chat: true
       streaming: true
     auth:
-      header-name: X-API-Key    # Custom auth header name
+      header-name: X-API-Key: # Custom auth header name
       header-prefix: ""          # No prefix
 ```
 
@@ -213,7 +213,7 @@ adapter-definitions:
       rerank: true            # Add rerank support
       streaming: true
     auth:
-      header-name: X-API-Key  # Override authentication
+      header-name: X-API-Key: # Override authentication
       header-prefix: ""
     additional-headers:
       X-Custom-Header: "value"
@@ -250,7 +250,7 @@ A typo (for example `openai-compat` missing its `ible`) is reported per finding 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer sk-your-api-key" \
+  -H "X-API-Key: sk-your-api-key" \
   -d '{
     "model": "deepseek-chat",
     "messages": [{"role": "user", "content": "Hello"}],
@@ -300,4 +300,4 @@ curl -X POST http://localhost:8080/api/config/adapter \
 1. **Adapter name**: Only letters, numbers, underscores and hyphens allowed
 2. **Built-in adapters cannot be deleted**: `normal`, `claude`, `gemini`, `ollama`, etc.
 3. **Configurable adapters can be modified anytime**: Changes take effect immediately
-4. **Authentication**: Most cloud APIs use `Authorization: Bearer {key}`, no need to change defaults
+4. **Authentication**: Most cloud APIs use `X-Jairouter-Token: {key}`, no need to change defaults

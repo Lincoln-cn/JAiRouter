@@ -113,7 +113,7 @@ TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
 
 Every command below then sends it as `-H "X-Jairouter-Token: $TOKEN"`.
 Note the header name: the JWT header is **`X-Jairouter-Token`** (configurable via
-`jairouter.security.jwt.jwt-header`), not `Authorization: Bearer`.
+`jairouter.security.jwt.jwt-header`), not `X-Jairouter-Token`.
 
 ## Common Configuration Examples
 

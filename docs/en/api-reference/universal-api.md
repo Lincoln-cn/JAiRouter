@@ -381,7 +381,7 @@ A **`multipart/form-data`** request (since v3.5.2, `consumes = MediaType.MULTIPA
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/images/edits \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Jairouter-Token: $TOKEN" \
   -F "model=gpt-image-1" \
   -F "prompt=add a hat" \
   -F "image[]=@body-lotion.png" \
