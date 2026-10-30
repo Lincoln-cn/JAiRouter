@@ -163,12 +163,10 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
                     errorResponse = RouterResponse.error("参数验证失败：" + ex.getMessage(), "400");
                     status = HttpStatus.BAD_REQUEST;
                 } else {
+                    // #856：兜底分支只给固定文案，异常原文（可能含类名 / SQL / 路径）只进日志。
+                    // 与脱敏失败分支「数据处理失败」的既有约定一致：客户端可见体不得暴露内部细节。
                     logger.error("系统异常", ex);
-                    String errorMessage = ex.getMessage();
-                    if (errorMessage == null) {
-                        errorMessage = ex.getClass().getSimpleName();
-                    }
-                    errorResponse = RouterResponse.error("系统异常: " + errorMessage, "500");
+                    errorResponse = RouterResponse.error("系统异常，请稍后重试", "500");
                     status = HttpStatus.INTERNAL_SERVER_ERROR;
                 }
                 
