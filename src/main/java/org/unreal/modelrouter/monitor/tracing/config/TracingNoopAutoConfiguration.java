@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
  * <p>背景：真正提供 {@link Tracer} 的 {@link OpenTelemetryAutoConfiguration} 带
  * {@code @ConditionalOnProperty(jairouter.tracing.enabled=true, matchIfMissing=true)}，
  * 而 {@code TracingService}、{@code TracingController}、{@code SpanManager}、
- * {@code TracingSpanBuilder}、{@code ExporterHealthChecker}、{@code HealthCheckTracingEnhancer}
+ * 同包内的其它追踪消费方、{@code ExporterHealthChecker}、{@code HealthCheckTracingEnhancer}
  * 等消费方都是<b>无条件</b> Bean，构造参数硬依赖 {@link Tracer}。于是把追踪关掉时上下文
  * 直接刷新失败、进程退出：</p>
  *
