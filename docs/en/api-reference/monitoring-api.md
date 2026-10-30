@@ -645,6 +645,11 @@ None of these endpoints is called by the console, and none was documented (the `
 |---|---|---|
 | `GET` | `/api/health-status/stream` | Authenticated only |
 
+> This SSE channel pushes an instance-health snapshot every 5 seconds. Since `#866` the snapshot is
+> computed **once per tick and shared by all connections**, so opening more console tabs no longer
+> multiplies the database queries. The interval is configurable through
+> `jairouter.health-status.stream-interval-ms` (default `5000`, minimum `100`).
+
 ### Rate limit monitor
 
 | Method | Path | Effective permission code |
