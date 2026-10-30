@@ -894,10 +894,10 @@
     },
     "docs/en/security/api-key-management.md": {
       "FilePath": "docs/en/security/api-key-management.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T15:24:48.397365",
-      "ContentHash": "a11596b3f4d88a16",
-      "GitCommit": "51b84ed6",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-30T16:00:39.002724",
+      "ContentHash": "040cddfa1d0222ac",
+      "GitCommit": "14156038",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2059,10 +2059,10 @@
     },
     "docs/zh/security/api-key-management.md": {
       "FilePath": "docs/zh/security/api-key-management.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T15:24:51.668086",
-      "ContentHash": "115fb7c1e52949a9",
-      "GitCommit": "51b84ed6",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-30T16:00:39.540745",
+      "ContentHash": "fe1df68f353398b3",
+      "GitCommit": "14156038",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -5894,7 +5894,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-30T15:55:51.457359",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/api-key-management.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T16:00:39.002739",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/api-key-management.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T16:00:39.540757",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-30T15:55:51.975776"
+  "last_updated": "2026-10-30T16:00:39.644128"
 }
