@@ -7,7 +7,8 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.core.MonitoringProperties;
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsCircuitBreaker;
-import org.unreal.modelrouter.monitor.monitoring.collector.DefaultMetricsCollector;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitor.monitoring.config.MonitoringEnabledCondition;
 import org.unreal.modelrouter.monitor.monitoring.event.BackendCallMetricsEvent;
 import org.unreal.modelrouter.monitor.monitoring.event.CircuitBreakerMetricsEvent;
@@ -49,7 +50,8 @@ public class AsyncMetricsProcessor {
     private static final Logger logger = LoggerFactory.getLogger(AsyncMetricsProcessor.class);
 
     private final MonitoringProperties monitoringProperties;
-    private final DefaultMetricsCollector metricsCollector;
+    // #848：必须是同步采集器；用限定符锁定实现，避免 @Primary 的异步采集器把事件回灌给本处理器
+    private final MetricsCollector metricsCollector;
     private final MetricsCircuitBreaker circuitBreaker;
 
     // 异步处理相关
@@ -67,7 +69,7 @@ public class AsyncMetricsProcessor {
     private final SecureRandom secureRandom = new SecureRandom();
 
     public AsyncMetricsProcessor(final MonitoringProperties monitoringProperties,
-                               final DefaultMetricsCollector metricsCollector,
+                               @Qualifier("defaultMetricsCollector") final MetricsCollector metricsCollector,
                                final MetricsCircuitBreaker circuitBreaker) {
         this.monitoringProperties = monitoringProperties;
         this.metricsCollector = metricsCollector;
