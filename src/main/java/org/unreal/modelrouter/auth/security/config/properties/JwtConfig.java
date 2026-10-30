@@ -28,9 +28,18 @@ public class JwtConfig {
     private String jwtHeader = "Jairouter_Token";
 
     /**
-     * JWT签名密钥
+     * JWT签名密钥。
+     *
+     * <p>issue #821：这里刻意不加 {@code @Size(min = 32)}。带约束的校验会在上下文启动时由
+     * Bean Validation 先于 {@link org.unreal.modelrouter.auth.security.config.StartupSecurityGate}
+     * （{@code CommandLineRunner}）失败，于是 {@code JAIRouter_SKIP_AUTH_WARNING=true} 这个逃生舱
+     * 还没运行就已被绕过 —— 用户明明是「知道自己在做什么、只想先起来」，却拿到一条无法跳过的
+     * 通用校验错误。</p>
+     *
+     * <p>长度/强度判定保留在两处运行期入口：{@code SecurityConfigurationValidator}（配置保存与
+     * 校验 API 的报错文案不变）与 {@code StartupSecretKeyChecker}（生产环境 fail-fast，且尊重
+     * 逃生舱）。</p>
      */
-    @Size(min = 32, message = "JWT密钥长度至少32个字符；请设置环境变量 JWT_SECRET（可用 openssl rand -base64 32 或镜像内置 --generate-key 生成）")
     private String secret;
 
     /**

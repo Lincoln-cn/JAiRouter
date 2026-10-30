@@ -143,8 +143,11 @@ jobs:
             echo "::error::prod without JWT_SECRET should fail to start"
             exit 1
           fi
-          if ! echo "$out" | grep -q 'JWT密钥长度至少32个字符'; then
-            echo "::error::expected the JWT secret length error message"
+          # #821：JWT secret 的长度/强度判定已从 Bean Validation 移回启动门闩
+          # （@Size 会先于门闩失败，把逃生舱 JAIRouter_SKIP_AUTH_WARNING 一并废掉）。
+          # 因此这里接受两种可自助的报错形态，但都必须点名需要哪个环境变量。
+          if ! echo "$out" | grep -qE 'JWT密钥长度至少32个字符|Production security startup checks failed'; then
+            echo "::error::expected an actionable JWT secret failure message"
             exit 1
           fi
           if ! echo "$out" | grep -q 'JWT_SECRET'; then
