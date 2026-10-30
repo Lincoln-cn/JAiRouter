@@ -359,7 +359,7 @@ public abstract class BaseAdapter implements ServiceCapability {
                 AffinityContextHolder.apiKeyId(), request, objectMapper);
         Mono<ResponseEntity<?>> requestMono = ((Mono<ResponseEntity<?>>) (Mono) processRequest(
                 request, authorization, httpRequest, serviceType, modelName, processor))
-                .doOnNext(response -> cacheSuccessfulResponse(serviceType, modelName, request, response));
+                .doOnNext(response -> cacheSuccessfulResponse(serviceType, requestKey, response));
         if (fallbackRequestProcessor != null) {
             return requestMono.onErrorResume(throwable -> {
                 if (errorTracker != null) {
@@ -649,18 +649,22 @@ public abstract class BaseAdapter implements ServiceCapability {
      * @param response    成功响应
      */
     protected void cacheSuccessfulResponse(final ModelServiceRegistry.ServiceType serviceType,
-            final String modelName, final Object request, final ResponseEntity<?> response) {
+            final FallbackRequestKey requestKey, final ResponseEntity<?> response) {
         if (serviceType == null) {
+            return;
+        }
+        // #850：键必须用「装配期算好的那一个」，不能在这里重算。
+        // 重算会再读一次 AffinityContextHolder.apiKeyId()，而该方法在同步段结束时就被
+        // ServiceRequestHandler 的 finally 清空了（响应到达时早已是 null）⇒ 写键的调用方
+        // 恒为 "anonymous"，与读键里的真实 callerId 永不相等，缓存降级命中率恒 0。
+        if (requestKey == null) {
             return;
         }
         ModelRouterProperties.ServiceConfig serviceConfig = getRegistry().getServiceConfig(serviceType);
         FallbackStrategy<ResponseEntity<?>> fallbackStrategy =
                 getRegistry().getFallbackManager().getFallbackStrategy(serviceType.name(), serviceConfig);
         if (fallbackStrategy instanceof CacheFallbackStrategy) {
-            ((CacheFallbackStrategy) fallbackStrategy).cacheResponse(
-                    FallbackRequestKey.of(serviceType.name(), modelName,
-                            AffinityContextHolder.apiKeyId(), request, objectMapper),
-                    response);
+            ((CacheFallbackStrategy) fallbackStrategy).cacheResponse(requestKey, response);
         }
     }
 
