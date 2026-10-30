@@ -47,6 +47,8 @@ class ServerCheckerDatabaseHealthTest {
     void setUp() throws Exception {
         final HealthCheckProperties properties = new HealthCheckProperties();
         properties.setTimeoutMs(300);
+        // 本类测的是 TCP 探活语义；#833 之后默认已改为 HTTP，这里必须显式指定。
+        properties.setMode(HealthCheckProperties.Mode.TCP);
         serverChecker = new ServerChecker(modelServiceRegistry, serviceStateManager, properties);
         final Field field = ServerChecker.class.getDeclaredField("serviceInstanceRepository");
         field.setAccessible(true);

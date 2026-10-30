@@ -15,6 +15,7 @@ import org.springframework.core.io.ClassPathResource;
 import java.io.IOException;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,11 +32,14 @@ class HealthCheckPropertiesTest {
     void defaults() {
         final HealthCheckProperties properties = new HealthCheckProperties();
 
-        assertEquals(HealthCheckProperties.Mode.TCP, properties.getMode());
-        assertEquals(30_000L, properties.getIntervalMs());
-        assertEquals(5_000, properties.getTimeoutMs());
-        assertEquals(4, properties.getParallelism());
-        assertEquals("", properties.getHttpPath());
+        assertAll(
+                () -> assertEquals(HealthCheckProperties.Mode.HTTP, properties.getMode(),
+                        "#833：默认改为 HTTP 探活，否则进程僵死仍判健康"),
+                () -> assertEquals(30_000L, properties.getIntervalMs()),
+                () -> assertEquals(5_000, properties.getTimeoutMs()),
+                () -> assertEquals(4, properties.getParallelism()),
+                () -> assertEquals("/v1/models", properties.getHttpPath(),
+                        "#833：默认探活路径是 OpenAI 兼容上游的通用端点"));
     }
 
     @Test
@@ -77,9 +81,10 @@ class HealthCheckPropertiesTest {
                         new NoUnboundElementsBindHandler(BindHandler.DEFAULT))
                 .orElseThrow(() -> new AssertionError("jairouter.health-check 未绑定成功"));
 
-        assertEquals(HealthCheckProperties.Mode.TCP, bound.getMode());
+        assertEquals(HealthCheckProperties.Mode.HTTP, bound.getMode());
         assertEquals(30_000L, bound.getIntervalMs());
         assertEquals(5_000, bound.getTimeoutMs());
         assertEquals(4, bound.getParallelism());
+        assertEquals("/v1/models", bound.getHttpPath());
     }
 }
