@@ -174,4 +174,22 @@ public interface MetricsCollector {
     default void recordResponseCacheMiss(String service, String model) {
         // 默认空实现(向后兼容)
     }
+
+    /**
+     * 降级缓存命中（#823）.
+     *
+     * @param service 服务类型
+     * @param model   模型名
+     */
+    default void recordFallbackHit(String service, String model) {
+    }
+
+    /**
+     * 降级但未命中缓存（#823）.
+     *
+     * @param service 服务类型
+     * @param model   模型名
+     */
+    default void recordFallbackMiss(String service, String model) {
+    }
 }

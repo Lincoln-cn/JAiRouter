@@ -26,8 +26,10 @@ import org.unreal.modelrouter.common.dto.TtsDTO;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.common.util.IpUtils;
+import org.unreal.modelrouter.router.fallback.FallbackRequestKey;
 import org.unreal.modelrouter.router.fallback.FallbackStrategy;
 import org.unreal.modelrouter.router.fallback.impl.CacheFallbackStrategy;
+import org.unreal.modelrouter.router.loadbalancer.AffinityContextHolder;
 import org.unreal.modelrouter.router.loadbalancer.SelectedInstanceHolder;
 import reactor.core.publisher.Mono;
 import org.slf4j.Logger;
@@ -350,8 +352,14 @@ public abstract class BaseAdapter implements ServiceCapability {
         if (fallbackStrategy == null) {
             return processRequest(request, authorization, httpRequest, serviceType, modelName, processor);
         }
-        Mono<ResponseEntity<?>> requestMono = (Mono<ResponseEntity<?>>) (Mono) processRequest(
-                request, authorization, httpRequest, serviceType, modelName, processor);
+        // #823：降级缓存按请求键隔离 —— 服务 + 模型 + 调用方 + 请求体哈希，
+        // 请求体不可序列化时 key 为 null，此时既不缓存也不命中（宁可 503，也不串响应）。
+        final FallbackRequestKey requestKey = FallbackRequestKey.of(
+                serviceType == null ? null : serviceType.name(), modelName,
+                AffinityContextHolder.apiKeyId(), request, objectMapper);
+        Mono<ResponseEntity<?>> requestMono = ((Mono<ResponseEntity<?>>) (Mono) processRequest(
+                request, authorization, httpRequest, serviceType, modelName, processor))
+                .doOnNext(response -> cacheSuccessfulResponse(serviceType, modelName, request, response));
         if (fallbackRequestProcessor != null) {
             return requestMono.onErrorResume(throwable -> {
                 if (errorTracker != null) {
@@ -362,7 +370,8 @@ public abstract class BaseAdapter implements ServiceCapability {
                     errorContext.put("provider", adapterType);
                     errorTracker.trackError(throwable, adapterType + ".fallback", errorContext);
                 }
-                return fallbackRequestProcessor.handleFallbackError(throwable, fallbackStrategy);
+                return fallbackRequestProcessor.handleFallbackError(throwable, fallbackStrategy, requestKey)
+                        .doOnNext(response -> recordFallbackOutcome(serviceType, modelName, response));
             });
         }
         return requestMono.onErrorResume(throwable -> {
@@ -376,12 +385,34 @@ public abstract class BaseAdapter implements ServiceCapability {
             }
             // #816：降级策略只能求值一次。此前写成 fallback() != null ? Mono.just(fallback()) : error，
             // 有状态的策略（例如按请求取缓存条目、带一次性计数）会第二次取到 null 或取到别的条目。
-            final ResponseEntity<?> fallbackResponse = fallbackStrategy.fallback((Exception) throwable);
+            final ResponseEntity<?> fallbackResponse = fallbackStrategy.fallback(requestKey, (Exception) throwable);
+            recordFallbackOutcome(serviceType, modelName, fallbackResponse);
             return fallbackResponse != null
                 ? Mono.just(fallbackResponse)
                 : Mono.error(new org.springframework.web.server.ResponseStatusException(
                         org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE, "服务降级且无缓存"));
         });
+    }
+
+    /**
+     * 记录降级结果是否命中缓存（#823）。
+     *
+     * <p>命中时响应带 {@code X-Fallback: cache}；这里按同一个判据打点，
+     * 避免「日志说命中、指标说未命中」两套口径。</p>
+     */
+    private void recordFallbackOutcome(final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName, final ResponseEntity<?> response) {
+        final AdapterMetricsRecorder metricsRecorder = resilienceSupport.getMetricsRecorder();
+        if (metricsRecorder == null) {
+            return;
+        }
+        final String marker = response == null ? null
+                : response.getHeaders().getFirst(FallbackStrategy.FALLBACK_HEADER);
+        if (FallbackStrategy.FALLBACK_HEADER_CACHE_VALUE.equals(marker)) {
+            metricsRecorder.recordFallbackHit(serviceType, modelName);
+        } else {
+            metricsRecorder.recordFallbackMiss(serviceType, modelName);
+        }
     }
 
     // ==================== 非流式请求处理 ====================
@@ -609,13 +640,27 @@ public abstract class BaseAdapter implements ServiceCapability {
         return authorization;
     }
 
+    /**
+     * 把成功响应写进降级缓存（#823）.
+     *
+     * @param serviceType 服务类型
+     * @param modelName   模型名
+     * @param request     原始请求（参与请求键计算）
+     * @param response    成功响应
+     */
     protected void cacheSuccessfulResponse(final ModelServiceRegistry.ServiceType serviceType,
-            final String modelName, final ResponseEntity<?> response, final ServerHttpRequest httpRequest) {
+            final String modelName, final Object request, final ResponseEntity<?> response) {
+        if (serviceType == null) {
+            return;
+        }
         ModelRouterProperties.ServiceConfig serviceConfig = getRegistry().getServiceConfig(serviceType);
         FallbackStrategy<ResponseEntity<?>> fallbackStrategy =
                 getRegistry().getFallbackManager().getFallbackStrategy(serviceType.name(), serviceConfig);
         if (fallbackStrategy instanceof CacheFallbackStrategy) {
-            ((CacheFallbackStrategy) fallbackStrategy).cacheResponse(serviceType, modelName, httpRequest, response);
+            ((CacheFallbackStrategy) fallbackStrategy).cacheResponse(
+                    FallbackRequestKey.of(serviceType.name(), modelName,
+                            AffinityContextHolder.apiKeyId(), request, objectMapper),
+                    response);
         }
     }
 

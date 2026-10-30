@@ -84,16 +84,18 @@ public class FallbackManager {
      * 执行降级处理
      * @param serviceType 服务类型
      * @param serviceConfig 服务配置
+     * @param key 请求键（#823，{@code null} 表示不参与降级缓存）
      * @param cause 异常原因
      * @return 降级响应
      */
     public ResponseEntity<?> fallback(final String serviceType,
                                       final ModelRouterProperties.ServiceConfig serviceConfig,
+                                      final FallbackRequestKey key,
                                       final Exception cause) {
         try {
             FallbackStrategy<ResponseEntity<?>> strategy = getFallbackStrategy(serviceType, serviceConfig);
             if (strategy != null) {
-                return strategy.fallback(cause);
+                return strategy.fallback(key, cause);
             }
         } catch (Exception e) {
             logger.warn("Failed to execute fallback for service: {}", serviceType, e);

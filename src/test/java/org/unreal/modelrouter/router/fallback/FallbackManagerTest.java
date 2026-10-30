@@ -13,6 +13,7 @@ import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.*;
 
 /**
@@ -104,15 +105,15 @@ class FallbackManagerTest {
         when(componentFactory.createFallbackStrategy(any(), eq("chat")))
                 .thenReturn(fallbackStrategy);
         ResponseEntity<ResponseEntity<?>> expectedResponse = (ResponseEntity<ResponseEntity<?>>) (ResponseEntity<?>) ResponseEntity.status(503).body("Service degraded");
-        doReturn(expectedResponse).when(fallbackStrategy).fallback(any(Exception.class));
+        doReturn(expectedResponse).when(fallbackStrategy).fallback(nullable(FallbackRequestKey.class), any(Exception.class));
 
         // 执行
-        ResponseEntity<?> response = fallbackManager.fallback("chat", null, new RuntimeException("Test error"));
+        ResponseEntity<?> response = fallbackManager.fallback("chat", null, null, new RuntimeException("Test error"));
 
         // 验证
         assertNotNull(response);
         assertEquals(503, response.getStatusCodeValue());
-        verify(fallbackStrategy, times(1)).fallback(any(Exception.class));
+        verify(fallbackStrategy, times(1)).fallback(nullable(FallbackRequestKey.class), any(Exception.class));
     }
 
     @Test
@@ -121,7 +122,7 @@ class FallbackManagerTest {
         when(componentFactory.createFallbackStrategy(any(), eq("chat")))
                 .thenReturn(null);
 
-        ResponseEntity<?> response = fallbackManager.fallback("chat", null, new RuntimeException("Test error"));
+        ResponseEntity<?> response = fallbackManager.fallback("chat", null, null, new RuntimeException("Test error"));
 
         assertNull(response);
     }
@@ -216,9 +217,9 @@ class FallbackManagerTest {
     void testFallbackExecutionException() {
         when(componentFactory.createFallbackStrategy(any(), eq("chat")))
                 .thenReturn(fallbackStrategy);
-        when(fallbackStrategy.fallback(any())).thenThrow(new RuntimeException("Strategy error"));
+        when(fallbackStrategy.fallback(nullable(FallbackRequestKey.class), any())).thenThrow(new RuntimeException("Strategy error"));
 
-        ResponseEntity<?> response = fallbackManager.fallback("chat", null, new RuntimeException("Test error"));
+        ResponseEntity<?> response = fallbackManager.fallback("chat", null, null, new RuntimeException("Test error"));
 
         assertNull(response);
     }
