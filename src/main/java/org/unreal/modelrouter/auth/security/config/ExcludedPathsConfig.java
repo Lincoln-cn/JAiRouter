@@ -125,15 +125,28 @@ public class ExcludedPathsConfig {
         if (apiDocsAuthExcluded && isApiDocsPath(path)) {
             return true;
         }
-        // 检查精确匹配和前缀匹配
-        if (AUTH_EXCLUDED_PATHS.stream().anyMatch(excludedPath ->
-            path.equals(excludedPath) || path.startsWith(excludedPath))) {
+        // issue #834：只做「精确匹配 + 分隔符边界的子路径」，不再做裸前缀匹配。
+        // 旧实现的 path.startsWith("/health") 会把 /healthz、/health-detail 这类同前缀端点
+        // 一并排除出认证链（静默匿名），而这条清单里的 /health、/metrics 本就是精确端点。
+        if (AUTH_EXCLUDED_PATHS.stream().anyMatch(excludedPath -> matchesExactOrChild(path, excludedPath))) {
             return true;
         }
 
         // 检查Ant路径模式匹配
         return AUTH_EXCLUDED_PATTERNS.stream().anyMatch(pattern ->
             pathMatcher.match(pattern, path));
+    }
+
+    /**
+     * 路径是否等于 {@code excludedPath}，或是它以 {@code /} 分隔的子路径。
+     *
+     * <p>判据是「分隔符边界」：{@code /health} 命中 {@code /health} 与 {@code /health/deep}，
+     * 但不命中 {@code /healthz}、{@code /health-detail}。issue #834 之前这里用的是裸
+     * {@code startsWith}，于是任何以 {@code /health} 开头的新端点都会被静默排除在认证链之外
+     * （当前没有现实端点被误命中，属设计脆弱）。</p>
+     */
+    private static boolean matchesExactOrChild(final String path, final String excludedPath) {
+        return path.equals(excludedPath) || path.startsWith(excludedPath + "/");
     }
 
     private static boolean isApiDocsPath(final String path) {
