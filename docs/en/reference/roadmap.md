@@ -3,7 +3,7 @@
 <!-- 版本信息 -->
 > **Doc Version**: 2.5.0
 > **Last Updated**: 2026-10-30
-> **Git Tag**: v3.5.6
+> **Git Tag**: v3.5.7
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -23,6 +23,17 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 - **Observability**: Comprehensive monitoring, logging, and distributed tracing
 
 ## Current Version Status
+
+### ✅ v3.5.7 (Patch: P0s from a core-path audit, plus capability gaps, **released 2026-10-31**)
+
+**Status**: Released (GitHub Release `v3.5.7`, 2026-10-31; multi-arch Docker images rebuilt by CI on release: `v3.5.7` / `3.5.7` / `latest`)
+**Scope**: the 21 PRs merged after the audit (#806-#845) — five P0s, four P1s, twelve P2/P3 items. **No API breaking changes; five upgrade notes are in the changelog.**
+**Highlights**:
+
+- **The five blocking P0s**: API-key authentication was disabled by the security base template under the default profile (#801), the admin password printed at startup stopped working after a restart (#802), the `legacy` profile could not start (#803), default services pointed at an internal example address (#804), and the JWT header name contained an underscore that reverse proxies drop (#805 / #846).
+- **Core path**: oversized responses stream through instead of failing (#822), CORS is configurable and preflight is accepted (#818), the fallback cache is keyed per request with `X-Fallback` on hits (#823), runtime configuration is replaced as a snapshot with rollback (#819), media services no longer retry requests that were already sent (#827), staging/prod validate shared-state Redis reachability at startup (#825), and JWT secret validation no longer defeats the startup escape hatch (#821).
+- **Capability gaps**: `/v1` gained native audio and image endpoints (#835), keys embed their keyId so authentication is one indexed lookup (#826), and health checks default to HTTP (#833).
+- **Honesty and visibility**: API-key usage statistics write a single record (#811), YAML keys normalize legacy permissions (#813), shared rate-limit buckets are announced at startup (#824), auth exclusions match on a path boundary (#834), and documentation header examples were unified (#820).
 
 ### ✅ v3.5.6 (Patch: the 14 issues still open when the v3.5.5 audit closed, **released 2026-10-30**)
 
