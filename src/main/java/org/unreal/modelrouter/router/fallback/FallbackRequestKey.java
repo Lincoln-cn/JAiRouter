@@ -16,12 +16,14 @@
 
 package org.unreal.modelrouter.router.fallback;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
 
 /**
@@ -80,7 +82,7 @@ public final class FallbackRequestKey {
         } else {
             try {
                 payload = objectMapper.writeValueAsString(request);
-            } catch (final Exception e) {
+            } catch (final JsonProcessingException | RuntimeException e) {
                 logger.debug("降级请求键无法序列化请求体，本条请求不参与降级缓存: {}", e.getMessage());
                 return null;
             }
@@ -156,7 +158,7 @@ public final class FallbackRequestKey {
                 builder.append(Character.forDigit(value & 0xF, 16));
             }
             return builder.toString();
-        } catch (final Exception e) {
+        } catch (final NoSuchAlgorithmException e) {
             logger.warn("计算降级请求键哈希失败，本条请求不参与降级缓存: {}", e.getMessage());
             return null;
         }
