@@ -207,19 +207,28 @@ public class ModelServiceRegistry {
     public void refreshFromMergedConfig() {
         LOGGER.info("正在刷新运行时配置...");
 
+        // #819：快照式整体替换 + 失败回滚。刷新前的配置/缓存/services 副本先留底，
+        // 中途任何一步抛错都退回旧快照，不留「缓存已换、负载均衡器/限流器没跟上」的半更新状态。
+        final Map<String, Object> previousConfig = this.currentConfig;
+        final Map<String, ServiceRuntimeConfig> previousCache = this.serviceConfigCache;
+        final Map<String, ModelRouterProperties.ServiceConfig> previousServices = snapshotServices();
         try {
             Map<String, Object> mergedConfig = loadMergedConfig();
 
+            final Map<String, ServiceRuntimeConfig> newCache = configBuilder.rebuildServiceConfigCache(mergedConfig);
             this.currentConfig = mergedConfig;
             updateOriginalPropertiesFromConfig(mergedConfig);
-            this.serviceConfigCache = configBuilder.rebuildServiceConfigCache(mergedConfig);
+            this.serviceConfigCache = newCache;
             reinitializeLoadBalancers();
             // v2.8.8: 合并配置中的限流配置应用到运行时限流器(重启后持久化配置生效;YAML 无覆盖时不变)
             applyPersistedRateLimits(mergedConfig);
 
-            LOGGER.info("运行时配置刷新完成，当前包含 {} 个服务", serviceConfigCache.size());
+            LOGGER.info("运行时配置刷新完成，当前包含 {} 个服务", newCache.size());
         } catch (Exception e) {
-            LOGGER.error("刷新运行时配置失败", e);
+            this.currentConfig = previousConfig;
+            this.serviceConfigCache = previousCache;
+            restoreServices(previousServices);
+            LOGGER.error("刷新运行时配置失败，已回滚到刷新前的快照", e);
         }
     }
 
@@ -316,12 +325,24 @@ public class ModelServiceRegistry {
             refreshedConfigs.put(resolvedKey, serviceConfigMap);
         }
 
-        this.currentConfig = mergedConfig;
-        this.serviceConfigCache = newCache;
-        if (originalProperties != null) {
-            originalProperties.setServices(newPropertiesServices);
+        final Map<String, Object> previousConfig = this.currentConfig;
+        final Map<String, ServiceRuntimeConfig> previousCache = this.serviceConfigCache;
+        final Map<String, ModelRouterProperties.ServiceConfig> previousServices = snapshotServices();
+        try {
+            this.currentConfig = mergedConfig;
+            this.serviceConfigCache = newCache;
+            if (originalProperties != null) {
+                originalProperties.setServices(newPropertiesServices);
+            }
+            applyTargetedRuntimeEffects(refreshedConfigs);
+        } catch (RuntimeException e) {
+            // #819：一次刷新要么整体生效、要么整体回退，不能只把缓存换掉而让 LB/限流器停在旧配置
+            this.currentConfig = previousConfig;
+            this.serviceConfigCache = previousCache;
+            restoreServices(previousServices);
+            LOGGER.error("运行时缓存刷新失败，已回滚到刷新前的快照: {}", e.getMessage(), e);
+            throw e;
         }
-        applyTargetedRuntimeEffects(refreshedConfigs);
 
         LOGGER.info("运行时缓存已按服务精确刷新，涉及 {} 个服务", refreshedConfigs.size());
         return new HashSet<>(refreshedConfigs.keySet());
@@ -351,6 +372,7 @@ public class ModelServiceRegistry {
      * #707: 对刚重建缓存的服务应用运行时副作用（负载均衡器 + 限流器），范围与全量刷新一致。
      */
     private void applyTargetedRuntimeEffects(final Map<String, Map<String, Object>> refreshedConfigs) {
+        final List<String> failed = new ArrayList<>();
         for (Map.Entry<String, Map<String, Object>> entry : refreshedConfigs.entrySet()) {
             final String serviceKey = entry.getKey();
             final ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
@@ -366,7 +388,31 @@ public class ModelServiceRegistry {
                 applyPersistedRateLimit(type, entry.getValue());
             } catch (RuntimeException e) {
                 LOGGER.warn("服务 {} 的负载均衡/限流配置未能应用到运行时: {}", serviceKey, e.getMessage(), e);
+                failed.add(serviceKey);
             }
+        }
+        if (!failed.isEmpty()) {
+            // #819：把「派生组件没跟上」变成可回滚的失败，而不是静默的半更新
+            throw new IllegalStateException("以下服务的负载均衡器/限流器未能应用: " + String.join(", ", failed));
+        }
+    }
+
+    /**
+     * #819：快照当前 services 副本；{@code originalProperties} 或 services 为 null 时返回 {@code null}。
+     */
+    private Map<String, ModelRouterProperties.ServiceConfig> snapshotServices() {
+        if (originalProperties == null || originalProperties.getServices() == null) {
+            return null;
+        }
+        return new HashMap<>(originalProperties.getServices());
+    }
+
+    /**
+     * #819：把 services 回滚到刷新前的副本（{@code services} 为 {@code null} 表示刷新前没有副本）。
+     */
+    private void restoreServices(final Map<String, ModelRouterProperties.ServiceConfig> services) {
+        if (originalProperties != null && services != null) {
+            originalProperties.setServices(services);
         }
     }
 
@@ -828,7 +874,10 @@ public class ModelServiceRegistry {
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 
         if (runtimeConfig != null) {
-            runtimeConfig.setInstances(new ArrayList<>(instances));
+            // #819：写时复制 + 单次 put 发布，避免并发请求读到「实例已换、适配器还是旧的」
+            final ServiceRuntimeConfig updated = runtimeConfig.copy();
+            updated.setInstances(new ArrayList<>(instances));
+            serviceConfigCache.put(serviceKey, updated);
             LOGGER.info("已更新服务 {} 的实例，共 {} 个实例", serviceType, instances.size());
         }
     }
@@ -838,7 +887,10 @@ public class ModelServiceRegistry {
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 
         if (runtimeConfig != null) {
-            runtimeConfig.setAdapter(adapter);
+            // #819：写时复制 + 单次 put 发布（同上）
+            final ServiceRuntimeConfig updated = runtimeConfig.copy();
+            updated.setAdapter(adapter);
+            serviceConfigCache.put(serviceKey, updated);
             LOGGER.info("已更新服务 {} 的适配器为: {}", serviceType, adapter);
         }
     }
