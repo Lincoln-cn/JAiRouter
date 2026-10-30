@@ -233,6 +233,14 @@ jairouter:
   security:
 ```
 
+## Key Format and Lookup Cost (#826)
+
+Newly created keys look like `sk-<keyId>.<random>`: the `keyId` is embedded in the key text, so the gateway resolves the single matching record through the `keyId` index and performs exactly one hash comparison, instead of scanning the whole cache on every request. Authentication cost no longer grows linearly with the number of keys.
+
+Legacy keys of the form `sk-<32 random characters>` contain no `keyId` and keep working; they simply fall back to the scan path. Both formats coexist, and no data migration is required. Keys that do not start with `sk-` are still rejected by the format check.
+
+If you need stronger isolation or faster validation, issue a new key in the console and disable the old one instead of keeping a legacy key around.
+
 ## API Key Persistence Storage
 
 ### Enable API Key Persistence
