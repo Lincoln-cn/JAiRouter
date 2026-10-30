@@ -83,7 +83,22 @@ JAiRouter 的 API 按功能分为以下几个主要分组：
   - 图像生成 (`POST /api/v1/images/generations`)
   - 图像编辑 (`POST /api/v1/images/edits`)
 
-> `/v1` 面（`OpenAiNativeController`）只注册了 `GET /v1/models`、`POST /v1/chat/completions`、`POST /v1/embeddings`、`POST /v1/rerank` —— 音频与图像接口**不在** `/v1` 下。
+#### 两个 HTTP 面的对照
+
+| 能力 | OpenAI 原生面（`/v1`，可直接作为 SDK 的 `base_url`） | 控制台面（`/api/v1`，响应为 `RouterResponse`） |
+| --- | --- | --- |
+| 模型列表 | `GET /v1/models` | — |
+| 聊天完成 | `POST /v1/chat/completions`（含 `stream=true` 的原生 SSE） | `POST /api/v1/chat/completions` |
+| 文本嵌入 | `POST /v1/embeddings` | `POST /api/v1/embeddings` |
+| 重排序 | `POST /v1/rerank` | `POST /api/v1/rerank` |
+| 文本转语音 | 未开放（返回 501 并给出下方路径） | `POST /api/v1/audio/speech` |
+| 语音转文本 | 未开放（同上） | `POST /api/v1/audio/transcriptions` |
+| 图像生成 | 未开放（同上） | `POST /api/v1/images/generations` |
+| 图像编辑 | 未开放（同上） | `POST /api/v1/images/edits` |
+
+> 音频与图像四类能力目前只在控制台面（`/api/v1`）开放，响应包裹在 `RouterResponse` 的 `data` 字段里。
+> 从 SDK 访问 `/v1/audio/**`、`/v1/images/**` 会得到 **501**，错误体的 `message` 会直接给出对应的 `/api/v1/...` 路径，
+> 而不是一个没有线索的 404。
 
 ### 2. 服务类型管理
 - **标签**: `服务类型管理`

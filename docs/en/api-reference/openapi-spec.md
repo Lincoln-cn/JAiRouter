@@ -85,7 +85,23 @@ JAiRouter's APIs are divided into the following main groups by function:
   - Image Generation (`POST /api/v1/images/generations`)
   - Image Editing (`POST /api/v1/images/edits`)
 
-> The `/v1` surface (`OpenAiNativeController`) registers only `GET /v1/models`, `POST /v1/chat/completions`, `POST /v1/embeddings` and `POST /v1/rerank` — the audio and image interfaces are **not** under `/v1`.
+#### Comparison of the two HTTP surfaces
+
+| Capability | OpenAI-native surface (`/v1`, usable as an SDK `base_url`) | Console surface (`/api/v1`, `RouterResponse` envelope) |
+| --- | --- | --- |
+| Model list | `GET /v1/models` | — |
+| Chat completions | `POST /v1/chat/completions` (native SSE for `stream=true`) | `POST /api/v1/chat/completions` |
+| Embeddings | `POST /v1/embeddings` | `POST /api/v1/embeddings` |
+| Rerank | `POST /v1/rerank` | `POST /api/v1/rerank` |
+| Text to speech | not exposed (returns 501 with the path below) | `POST /api/v1/audio/speech` |
+| Speech to text | not exposed (same) | `POST /api/v1/audio/transcriptions` |
+| Image generation | not exposed (same) | `POST /api/v1/images/generations` |
+| Image edits | not exposed (same) | `POST /api/v1/images/edits` |
+
+> The four audio and image capabilities are currently exposed only on the console surface (`/api/v1`),
+> with the payload wrapped in the `data` field of `RouterResponse`.
+> Calling `/v1/audio/**` or `/v1/images/**` returns **501**, and the error `message` names the corresponding
+> `/api/v1/...` path instead of leaving you with a bare 404.
 
 ### 2. Service Type Management
 - **Tag**: `服务类型管理` — the tag literal is Chinese in code (`ServiceTypeController.java:47`)
