@@ -131,7 +131,7 @@ class BaseAdapterFailoverTest {
 
         // RetryPolicy: allow 1 retry (retryCount 0)
         when(retryPolicy.canRetry(eq(0), any())).thenReturn(true);
-        when(retryPolicy.isRetryable(any(ConnectException.class))).thenReturn(true);
+        when(retryPolicy.isRetryableForService(any(ConnectException.class), any())).thenReturn(true);
 
         // tryReselectInstance calls registry.selectInstance(st, mn, null) -> B
         when(registry.selectInstance(any(), anyString(), isNull()))
@@ -176,7 +176,7 @@ class BaseAdapterFailoverTest {
         // canRetry: allow retryCount 0 and 1, reject 2
         when(retryPolicy.canRetry(anyInt(), any()))
                 .thenAnswer(inv -> (int) inv.getArgument(0) < 2);
-        when(retryPolicy.isRetryable(any(ConnectException.class))).thenReturn(true);
+        when(retryPolicy.isRetryableForService(any(ConnectException.class), any())).thenReturn(true);
 
         // tryReselectInstance call sequence:
         // Call 1 (after A fails, failedKeys={A}): returns B (not in failedKeys) -> B selected
@@ -218,7 +218,7 @@ class BaseAdapterFailoverTest {
         // Allow retryCount 0 and 1, reject 2
         when(retryPolicy.canRetry(anyInt(), any()))
                 .thenAnswer(inv -> (int) inv.getArgument(0) < 2);
-        when(retryPolicy.isRetryable(any(ConnectException.class))).thenReturn(true);
+        when(retryPolicy.isRetryableForService(any(ConnectException.class), any())).thenReturn(true);
 
         // Single instance: registry always returns A (which is already in failedKeys)
         // Each tryReselectInstance loops failedKeys.size()+2 times, all returning A (in failedKeys)
@@ -263,7 +263,7 @@ class BaseAdapterFailoverTest {
 
         // canRetry returns true, but isRetryable returns false
         when(retryPolicy.canRetry(eq(0), any())).thenReturn(true);
-        when(retryPolicy.isRetryable(any(IllegalArgumentException.class))).thenReturn(false);
+        when(retryPolicy.isRetryableForService(any(IllegalArgumentException.class), any())).thenReturn(false);
 
         BaseAdapter.RequestProcessor<Object> processor = (req, auth, client, path, instance, st) ->
                 Mono.error(new IllegalArgumentException("Bad request: 4xx"));
@@ -292,7 +292,7 @@ class BaseAdapterFailoverTest {
         // Allow retryCount 0 and 1, reject 2
         when(retryPolicy.canRetry(anyInt(), any()))
                 .thenAnswer(inv -> (int) inv.getArgument(0) < 2);
-        when(retryPolicy.isRetryable(any(ConnectException.class))).thenReturn(true);
+        when(retryPolicy.isRetryableForService(any(ConnectException.class), any())).thenReturn(true);
 
         // Scenario: A fails. tryReselectInstance with failedKeys={A}, maxAttempts=3.
         // Registry returns C (not in failedKeys) on 3rd attempt.

@@ -648,6 +648,7 @@ Since v2.9.6, when a call fails with a retryable error (connection error / 5xx /
 - **All-failed fallback**: if all instances failed or only one exists, fall back to retrying the same instance (existing behavior); retry count remains bounded by `RetryPolicy`
 - **Non-retryable errors** (e.g. 4xx) do not switch instance or retry
 - Enabled by default, no extra config; retry limit follows the per-service-type retry configuration
+- **Non-idempotent services retry only when the request never reached the upstream** (#827): `tts` / `stt` / `imgGen` / `imgEdit` may already have produced and billed a result, so retries are limited to connection-level failures (connection refused / DNS failure / no route). 5xx and read timeouts are returned as-is. `chat` / `embedding` / `rerank` are unaffected.
 
 ### 3. Load Balancing Issue Diagnosis
 
