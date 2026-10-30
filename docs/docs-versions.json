@@ -255,10 +255,10 @@
     },
     "docs/en/configuration/rate-limiting.md": {
       "FilePath": "docs/en/configuration/rate-limiting.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-30T00:17:54.122694",
-      "ContentHash": "c86a0f58cf20e4a1",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-30T00:30:37.732263",
+      "ContentHash": "15959f29c6d1ea93",
+      "GitCommit": "770361cd",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1413,10 +1413,10 @@
     },
     "docs/zh/configuration/rate-limiting.md": {
       "FilePath": "docs/zh/configuration/rate-limiting.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-10-30T00:17:54.753750",
-      "ContentHash": "e8c90d3f8b014784",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.6",
+      "LastModified": "2026-10-30T00:30:38.467559",
+      "ContentHash": "000935e715837cf4",
+      "GitCommit": "770361cd",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -5526,7 +5526,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-30T00:17:55.304003",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/rate-limiting.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T00:30:37.732276",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/rate-limiting.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T00:30:38.467570",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-30T00:17:55.304467"
+  "last_updated": "2026-10-30T00:30:39.111666"
 }
