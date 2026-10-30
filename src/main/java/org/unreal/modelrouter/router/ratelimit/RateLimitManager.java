@@ -16,9 +16,11 @@ import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.router.ratelimit.impl.RedisSlidingWindowRateLimiter;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -96,6 +98,9 @@ public class RateLimitManager {
 
         int svcCnt = 0, instCnt = 0;
 
+        /* #824: 服务级限流桶按服务类型共享，未开启 client-ip-enable 时就是该服务的全局上限 */
+        final List<String> sharedBucketServices = new ArrayList<>();
+
         /* 服务级 & 实例级 */
         for (var entry : properties.getServices().entrySet()) {
             String serviceKey = entry.getKey();
@@ -112,6 +117,9 @@ public class RateLimitManager {
                 serviceLimiters.put(type, componentFactory.createScopedRateLimiter(
                         configConverterHelper.convertRateLimitConfig(svcCfg.getRateLimit())));
                 svcCnt++;
+                if (!Boolean.TRUE.equals(svcCfg.getRateLimit().getClientIpEnable())) {
+                    sharedBucketServices.add(serviceKey);
+                }
             }
 
             /* 实例级 */
@@ -129,6 +137,8 @@ public class RateLimitManager {
         }
 
         LOGGER.info("Initialization complete. Service: {}, Instance: {}", svcCnt, instCnt);
+
+        sharedBucketWarning(sharedBucketServices).ifPresent(LOGGER::warn);
     }
 
     /* ===================== 优先级限流 ===================== */
@@ -165,6 +175,29 @@ public class RateLimitManager {
 
         LOGGER.debug("All levels passed");
         return true;
+    }
+
+    /**
+     * 服务级限流桶的共享语义说明（#824）。
+     *
+     * <p>服务级限流器按「服务类型」取桶（{@code serviceLimiters}），因此未开启
+     * {@code rate-limit.client-ip-enable} 时，配置里的 {@code capacity}/{@code rate}
+     * 就是该服务的**全局**吞吐上限：同一服务下的所有客户端共用同一个令牌桶，
+     * 一方打满后其余调用方一并被拒（429）。这与「每个调用方各自限流」是两种不同语义，
+     * 默认配置下极易误判，故在启动时显式说明。
+     *
+     * @param services 未开启客户端维度限流的服务名列表
+     * @return 需要打印的提示；列表为空时返回 {@link Optional#empty()}
+     */
+    static Optional<String> sharedBucketWarning(final List<String> services) {
+        if (services == null || services.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of("服务级限流桶按服务类型共享（这些服务未开启 rate-limit.client-ip-enable）："
+                + String.join(", ", services)
+                + " —— 其 capacity/rate 是该服务的全局上限，所有客户端共用同一配额；"
+                + "需要按调用方公平分配时，请为对应服务设置 rate-limit.client-ip-enable: true"
+                + "（或配置键维度 key-dimension）。");
     }
 
     /* ---------------- 单一级别限流 ---------------- */
