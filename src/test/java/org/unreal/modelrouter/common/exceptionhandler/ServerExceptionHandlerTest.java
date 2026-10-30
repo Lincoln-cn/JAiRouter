@@ -122,8 +122,9 @@ class ServerExceptionHandlerTest {
             // Assert
             assertNotNull(response);
             assertEquals("500", response.getErrorCode());
-            // 当消息为null时，应返回类名
-            assertTrue(response.getMessage().contains("RuntimeException"));
+            // #856：兜底文案固定，消息为 null 时也不再回显类名（异常原文只进日志）
+            assertTrue(response.getMessage().contains("系统异常"));
+            assertFalse(response.getMessage().contains("RuntimeException"));
         }
 
         @Test

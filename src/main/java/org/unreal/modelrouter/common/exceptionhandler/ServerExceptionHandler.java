@@ -67,14 +67,9 @@ public class ServerExceptionHandler {
                     String.valueOf(rse.getStatusCode().value()));
         }
         
+        // #856：兜底分支只给固定文案，异常原文只进日志，避免把类名 / SQL / 路径回显给调用方。
         logger.error("系统异常", e);
         
-        // 安全地格式化错误消息，避免null值导致的问题
-        String errorMessage = e.getMessage();
-        if (errorMessage == null) {
-            errorMessage = e.getClass().getSimpleName();
-        }
-        
-        return RouterResponse.error("系统异常: " + errorMessage, "500");
+        return RouterResponse.error("系统异常，请稍后重试", "500");
     }
 }
