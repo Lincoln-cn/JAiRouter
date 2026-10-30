@@ -78,6 +78,12 @@
         <Bug pattern="UNENCRYPTED_SOCKET"/>
     </Match>
     
+    <!-- 共享态依赖探测：只做 TCP 建连判断 Redis 在不在，不发任何业务数据，明文 socket 可接受（#825） -->
+    <Match>
+        <Class name="org.unreal.modelrouter.common.cluster.SharedStateReachabilityGate"/>
+        <Bug pattern="UNENCRYPTED_SOCKET"/>
+    </Match>
+
     <!-- 排除正则表达式ReDoS警告 - 已优化正则表达式 -->
     <Match>
         <Bug pattern="REDOS"/>
