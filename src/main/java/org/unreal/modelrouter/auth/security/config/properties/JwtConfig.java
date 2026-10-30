@@ -25,7 +25,7 @@ public class JwtConfig {
      */
     @NotBlank
     @Size(min = 1, max = 100)
-    private String jwtHeader = "Jairouter_Token";
+    private String jwtHeader = "X-Jairouter-Token";
 
     /**
      * JWT签名密钥。
