@@ -6,6 +6,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.unreal.modelrouter.persistence.jpa.entity.ExceptionEventEntity;
@@ -42,6 +43,19 @@ public class ExceptionPersistenceService {
     private final ObjectMapper objectMapper;
     private final ErrorCodeResolver errorCodeResolver;
 
+    /**
+     * 自身代理引用（#857）。
+     *
+     * <p>{@link #flushHourlyStatsToDatabase()} 上有 {@code @Transactional}，但如果从本类内部直接
+     * 调用（{@code this::flushHourlyStatsToDatabase}），调用不会经过 Spring 的代理，
+     * 事务根本不会开启 —— {@code entityManager.merge(...)} 会因为没有活动事务抛
+     * {@code TransactionRequiredException}，被 catch 成一条 warn，于是小时统计永远不落库。
+     *
+     * <p>这里用 {@link ObjectProvider} 拿到的是容器里的代理对象，调用会经过事务拦截器；
+     * 用 ObjectProvider 而不是直接注入自身，是为了避免构造期循环依赖。
+     */
+    private final ObjectProvider<ExceptionPersistenceService> selfProvider;
+
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -60,7 +74,9 @@ public class ExceptionPersistenceService {
     @jakarta.annotation.PostConstruct
     public void init() {
         // 每 5 分钟将缓存的小时统计数据写入数据库
-        scheduler.scheduleAtFixedRate(this::flushHourlyStatsToDatabase, 5, 5, TimeUnit.MINUTES);
+        // 必须经由代理调用，否则 @Transactional 不生效（#857）
+        scheduler.scheduleAtFixedRate(
+                () -> selfProvider.getObject().flushHourlyStatsToDatabase(), 5, 5, TimeUnit.MINUTES);
         
         // 每小时清理一次聚合缓存
         scheduler.scheduleAtFixedRate(this::cleanupAggregationCache, 1, 1, TimeUnit.HOURS);
@@ -426,8 +442,8 @@ public class ExceptionPersistenceService {
     @jakarta.annotation.PreDestroy
     public void shutdown() {
         try {
-            // 刷新剩余数据
-            flushHourlyStatsToDatabase();
+            // 刷新剩余数据（同样经由代理，保证事务生效，#857）
+            selfProvider.getObject().flushHourlyStatsToDatabase();
             
             // 关闭调度器
             scheduler.shutdown();
