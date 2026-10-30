@@ -150,6 +150,18 @@ server:
     h2c-max-content-length: 0   # H2C maximum content length
 ```
 
+### Upload Size Limit
+
+Audio transcription and image editing read the uploaded content into memory before forwarding it upstream, so a global limit applies (#862): requests above it are rejected with `413`, and the error body reports the file name, actual size and the limit.
+
+```yaml
+jairouter:
+  multipart:
+    max-file-size-bytes: 26214400   # default 25 MiB, shared by audio and images
+```
+
+Size the limit with concurrency in mind: limit x concurrent uploads is the worst-case heap footprint. If larger files are genuinely required, prefer a "spool to a temp file, stream upstream" implementation over raising the limit.
+
 ---
 
 ## WebClient Configuration

@@ -2,6 +2,7 @@ package org.unreal.modelrouter.router.adapter.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
@@ -15,12 +16,15 @@ import org.springframework.web.reactive.function.BodyInserter;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.common.dto.ImageEditDTO;
+import org.unreal.modelrouter.common.exception.MultipartPayloadTooLargeException;
 import org.unreal.modelrouter.common.dto.SttDTO;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Multipart请求处理器
@@ -33,6 +37,15 @@ import java.util.Map;
 public class MultipartRequestHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(MultipartRequestHandler.class);
+
+    /**
+     * 单个上传文件的体积上限（字节），默认 25 MiB。
+     *
+     * <p>超过上限时不再把内容读进堆内存，而是直接回 413（#862）：此前的实现会对
+     * {@code FilePart} 无上限 {@code collectList()}，并发大文件上传可以把堆打满。</p>
+     */
+    @Value("${jairouter.multipart.max-file-size-bytes:26214400}")
+    private long maxFileSizeBytes = 26_214_400L;
 
     /**
      * 创建请求体
@@ -76,24 +89,11 @@ public class MultipartRequestHandler {
         // 使用 LinkedMultiValueMap 配合资源对象构建 multipart 请求
         // 注意：FilePart 需要特殊处理，使用 InMemoryResource 包装文件内容
         return (outputMessage, context) -> {
-            // 读取文件内容到内存
-            return sttRequest.file().content()
-                    .collectList()
-                    .flatMap(dataBuffers -> {
-                        // 合并所有 DataBuffer 为字节数组
-                        int totalSize = dataBuffers.stream()
-                                .mapToInt(db -> db.readableByteCount())
-                                .sum();
-                        byte[] bytes = new byte[totalSize];
-                        int offset = 0;
-                        for (org.springframework.core.io.buffer.DataBuffer db : dataBuffers) {
-                            int len = db.readableByteCount();
-                            java.nio.ByteBuffer byteBuffer = db.asByteBuffer();
-                            byteBuffer.get(bytes, offset, len);
-                            offset += len;
-                            org.springframework.core.io.buffer.DataBufferUtils.release(db);
-                        }
-                        
+            // 读取文件内容（带上限：超限抛 413，见 #862）
+            return readBounded(sttRequest.file())
+                    .flatMap(bytes -> {
+                        final int totalSize = bytes.length;
+
                         // 创建内存资源
                         org.springframework.core.io.buffer.DefaultDataBufferFactory factory = 
                                 new org.springframework.core.io.buffer.DefaultDataBufferFactory();
@@ -193,37 +193,88 @@ public class MultipartRequestHandler {
         }));
     }
 
+
     /**
      * 把入站文件部件读成内存资源（保留原文件名，便于上游识别）.
+     *
+     * <p>读取受 {@code jairouter.multipart.max-file-size-bytes} 约束（#862）：
+     * 超限时抛出 {@link MultipartPayloadTooLargeException}（映射为 413），避免把任意大小的文件读进堆内存。</p>
      *
      * @param part 文件部件
      * @return 内存资源
      */
     private Mono<ByteArrayResource> toResource(final FilePart part) {
-        return part.content()
-                .collectList()
-                .map(buffers -> {
-                    final int totalSize = buffers.stream()
-                            .mapToInt(DataBuffer::readableByteCount)
-                            .sum();
-                    final byte[] bytes = new byte[totalSize];
-                    int offset = 0;
-                    for (DataBuffer buffer : buffers) {
-                        final int length = buffer.readableByteCount();
-                        buffer.read(bytes, offset, length);
-                        offset += length;
-                        DataBufferUtils.release(buffer);
-                    }
-                    final String filename = part.filename();
-                    return new ByteArrayResource(bytes) {
-                        @Override
-                        public String getFilename() {
-                            return filename;
-                        }
-                    };
-                });
+        return readBounded(part).map(bytes -> new ByteArrayResource(bytes) {
+            @Override
+            public String getFilename() {
+                return part.filename();
+            }
+        });
     }
 
+    /**
+     * 有上限地读取文件部件内容（#862）.
+     *
+     * <p>累积超过 {@link #maxFileSizeBytes} 时立即释放已缓存的 {@link DataBuffer} 并终止，
+     * 由调用方把 413 透出给客户端；空部件返回空数组。</p>
+     *
+     * @param part 文件部件
+     * @return 文件内容
+     */
+    Mono<byte[]> readBounded(final FilePart part) {
+        return Mono.defer(() -> {
+            final List<DataBuffer> chunks = new ArrayList<>();
+            final AtomicLong total = new AtomicLong();
+            return part.content()
+                    .handle((buffer, sink) -> {
+                        final long size = total.addAndGet(buffer.readableByteCount());
+                        if (size > maxFileSizeBytes) {
+                            releaseAll(chunks);
+                            DataBufferUtils.release(buffer);
+                            sink.error(tooLarge(part, size));
+                            return;
+                        }
+                        chunks.add(buffer);
+                    })
+                    .then(Mono.fromSupplier(() -> mergeChunks(chunks, (int) total.get())))
+                    .doOnError(error -> releaseAll(chunks));
+        });
+    }
+
+    /** 释放并清空已缓存的块. */
+    private static void releaseAll(final List<DataBuffer> chunks) {
+        for (final DataBuffer chunk : chunks) {
+            DataBufferUtils.release(chunk);
+        }
+        chunks.clear();
+    }
+
+    /** 把已缓存的块合并成一个字节数组（并释放原块）. */
+    private static byte[] mergeChunks(final List<DataBuffer> chunks, final int totalSize) {
+        final byte[] bytes = new byte[totalSize];
+        int offset = 0;
+        for (final DataBuffer chunk : chunks) {
+            final int length = chunk.readableByteCount();
+            chunk.read(bytes, offset, length);
+            offset += length;
+            DataBufferUtils.release(chunk);
+        }
+        chunks.clear();
+        return bytes;
+    }
+
+    /** 构造超限异常，文案里给出文件名、实际大小与上限，便于客户端自我纠正（映射为 413，见 #862）. */
+    private MultipartPayloadTooLargeException tooLarge(final FilePart part, final long actualBytes) {
+        final long mib = 1024L * 1024L;
+        final String limitText = maxFileSizeBytes >= mib
+                ? (maxFileSizeBytes / mib) + " MiB"
+                : (maxFileSizeBytes / 1024L) + " KiB";
+        final String message = String.format(
+                "上传文件过大：%s（%d 字节）超过上限 %d 字节（%s）",
+                part.filename(), actualBytes, maxFileSizeBytes, limitText);
+        logger.warn("拒绝过大的上传文件: file={}, size={}B, limit={}B", part.filename(), actualBytes, maxFileSizeBytes);
+        return new MultipartPayloadTooLargeException(part.filename(), actualBytes, maxFileSizeBytes, message);
+    }
     /**
      * 添加非空表单字段.
      *
