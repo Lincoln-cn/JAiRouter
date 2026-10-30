@@ -423,6 +423,7 @@ jairouter:
     interval-ms: 30000  # 上一轮结束后再等这么久才跑下一轮
     timeout-ms: 5000    # 单实例探活超时
     parallelism: 4      # 同时检查几个服务类型
+    failure-threshold: 2  # 连续失败几轮才摘除实例（#855）；单轮抖动不摘除，避免整服务 503
 ```
 
 > 早期文档里的 `model.load-balance.health-check.*`（enabled / interval / timeout / failure-threshold /

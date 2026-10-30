@@ -57,6 +57,15 @@ public class ServerChecker {
     // 缓存实例之前的状态，用于检测状态变化
     private final Map<String, Boolean> previousInstanceStates = new ConcurrentHashMap<>();
 
+    /**
+     * 每个实例连续探活失败的轮数（#855 滞回）。
+     *
+     * <p>只有连续失败达到 {@link HealthCheckProperties#effectiveFailureThreshold()} 才把实例判为不健康；
+     * 一次成功即清零。键与 {@link InstanceKeys#healthKey} 一致，和 {@link #previousInstanceStates} 同生命周期
+     * （两者都由 {@code cleanupExpiredStates} 一起清理）。</p>
+     */
+    private final Map<String, Integer> consecutiveFailures = new ConcurrentHashMap<>();
+
     public ServerChecker(final ModelServiceRegistry modelServiceRegistry,
                          final ServiceStateManager serviceStateManager) {
         this(modelServiceRegistry, serviceStateManager, new HealthCheckProperties());
@@ -98,6 +107,7 @@ public class ServerChecker {
     public void clearExpiredInstanceStates() {
         log.info("清理过期的实例状态缓存，清理前缓存大小: {}", previousInstanceStates.size());
         previousInstanceStates.clear();
+        consecutiveFailures.clear();
         log.info("实例状态缓存清理完成");
     }
 
@@ -268,7 +278,22 @@ public class ServerChecker {
 
             // 获取之前的健康状态
             boolean previousHealthStatus = previousInstanceStates.getOrDefault(instanceKey, true);
-            boolean currentHealthStatus = probe.healthy();
+            boolean probeHealthy = probe.healthy();
+
+            // #855：连续失败阈值（滞回）。单轮抖动不摘除实例，避免整个服务被误判 503。
+            final int failureThreshold = healthCheckProperties.effectiveFailureThreshold();
+            if (probeHealthy) {
+                consecutiveFailures.remove(instanceKey);
+            } else {
+                consecutiveFailures.merge(instanceKey, 1, Integer::sum);
+            }
+            final int failureStreak = consecutiveFailures.getOrDefault(instanceKey, 0);
+            final boolean currentHealthStatus = probeHealthy || failureStreak < failureThreshold;
+            if (!probeHealthy && currentHealthStatus) {
+                log.warn("实例 {} 探活失败（第 {}/{} 次，未达阈值，本轮仍视为可用）: {}（base-url={}）",
+                        instance.getName(), failureStreak, failureThreshold,
+                        probe.detail(), instance.getBaseUrl());
+            }
 
             try {
                 if (currentHealthStatus) {
@@ -281,8 +306,8 @@ public class ServerChecker {
                     serviceStateManager.updateInstanceHealthStatus(serviceType, instance, false);
                     updateDatabaseHealthStatus(instance.getName(), instance.getInstanceId(),
                             instance.getBaseUrl(), "UNHEALTHY", probe.detail());
-                    log.warn("实例 {} 探活失败: {}（base-url={}）",
-                            instance.getName(), probe.detail(), instance.getBaseUrl());
+                    log.warn("实例 {} 连续 {} 次探活失败，判为不健康: {}（base-url={}）",
+                            instance.getName(), failureStreak, probe.detail(), instance.getBaseUrl());
                 }
 
                 recordHealthCheckMetrics(getAdapterType(instance), instance.getName(),

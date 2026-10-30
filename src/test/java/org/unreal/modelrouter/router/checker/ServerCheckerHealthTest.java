@@ -47,6 +47,9 @@ class ServerCheckerHealthTest {
         properties.setTimeoutMs(300);
         // 本类测的是 TCP 探活语义；#833 之后默认已改为 HTTP，这里必须显式指定。
         properties.setMode(HealthCheckProperties.Mode.TCP);
+        // 本类断言的是「单轮探活失败即摘除」这一层语义；#855 的连续失败滞回由
+        // ServerCheckerHysteresisTest 覆盖，这里显式把阈值降为 1 保持用例聚焦。
+        properties.setFailureThreshold(1);
         serverChecker = new ServerChecker(modelServiceRegistry, serviceStateManager, properties);
     }
 

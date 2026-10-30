@@ -422,6 +422,7 @@ jairouter:
     interval-ms: 30000  # wait this long after the previous round finished
     timeout-ms: 5000    # per-instance probe timeout
     parallelism: 4      # how many service types are checked concurrently
+    failure-threshold: 2  # consecutive failed rounds before an instance is evicted (#855)
 ```
 
 > The older `model.load-balance.health-check.*` block (enabled / interval / timeout / failure-threshold /
