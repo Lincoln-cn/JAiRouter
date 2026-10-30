@@ -1,5 +1,6 @@
 package org.unreal.modelrouter.auth.security.config.properties;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -68,5 +69,16 @@ class JwtConfigConstraintTest {
         assertTrue(violations.stream()
                         .anyMatch(violation -> "jwtHeader".equals(violation.getPropertyPath().toString())),
                 () -> "违规字段应指向 jwtHeader，实际: " + violations);
+    }
+
+    @Test
+    @DisplayName("#805 收尾: Java 默认头名与配置默认值一致，且不含下划线")
+    void defaultJwtHeaderHasNoUnderscore() {
+        final String defaultHeader = new JwtConfig().getJwtHeader();
+
+        assertEquals("X-Jairouter-Token", defaultHeader,
+                "Java 默认值必须与 config/auth/jwt.yml 的默认值一致；否则缺该配置键的部署会退回下划线头名");
+        assertFalse(defaultHeader.contains("_"),
+                "nginx 默认 underscores_in_headers off 会丢弃含下划线的头，默认值不能带下划线");
     }
 }

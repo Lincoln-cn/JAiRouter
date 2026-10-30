@@ -76,7 +76,7 @@ import java.util.Map;
  * </ul>
  *
  * <p>鉴权：沿用 {@code /v1/**} 的既有策略（{@code X-API-Key}/{@code x-api-key} 网关凭据或
- * {@code Jairouter_Token} JWT）；{@code Authorization} 透传下游且<b>实例级 headers 优先</b>。
+ * {@code X-Jairouter-Token} JWT）；{@code Authorization} 透传下游且<b>实例级 headers 优先</b>。
  * 客户端放在 {@code x-api-key} 的是<b>网关凭据</b>（由安全层消费），因此不向下游转发——下游鉴权
  * 依赖实例级 headers 配置。{@code anthropic-version} / {@code anthropic-beta} 头仅接收不校验。</p>
  *
