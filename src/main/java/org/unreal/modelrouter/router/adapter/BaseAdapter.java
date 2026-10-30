@@ -276,8 +276,9 @@ public abstract class BaseAdapter implements ServiceCapability {
                         metricsRecorder.recordCompleteCall(adapterType, instanceName, duration, outcome,
                                 errorCode, modelName, serviceType, selectedInstance);
                     }
+                    // #827：媒体类服务（TTS/STT/生图/编辑）不幂等，只在建连失败时重试
                     final boolean willRetry = retryPolicy.canRetry(retryCount, throwable)
-                            && retryPolicy.isRetryable(throwable);
+                            && retryPolicy.isRetryableForService(throwable, serviceType);
                     // #719：结算只在最终结果落一次。首次尝试就 settleFailure 会把凭据的 CAS 置成已结算，
                     // 之后重试成功的 settleSuccess 被静默忽略 —— 账本停在「失败回滚」（requests −1、tokens 0），
                     // 而 token_usage 表记了实际用量，两处对同一次请求给出相反结论。

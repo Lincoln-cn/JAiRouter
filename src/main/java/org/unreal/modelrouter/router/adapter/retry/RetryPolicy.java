@@ -204,6 +204,76 @@ public class RetryPolicy {
     }
 
     /**
+     * #827：按服务类型判断是否重试 —— 不幂等的服务只在「请求根本没发出去」时重试。
+     *
+     * <p>TTS / STT / 生图 / 图像编辑的请求不可重复下发：上游可能已经生成内容并计费，
+     * 只是响应没回到网关。对这类服务重试 5xx 或读超时，会把「1 次失败」放大成
+     * 「2 次计费」，用户拿到的是其中一次的结果，另一次白付钱。</p>
+     *
+     * <p>唯一安全的例外是「连接建立失败」——请求连上游的 TCP 连接都没建起来，
+     * 可以确定上游没有收到请求（见 {@link #neverReachedUpstream(Throwable)}）。</p>
+     *
+     * @param error       异常
+     * @param serviceType 服务类型
+     * @return 是否允许重试
+     */
+    public boolean isRetryableForService(final Throwable error,
+            final ModelServiceRegistry.ServiceType serviceType) {
+        if (!isRetryable(error)) {
+            return false;
+        }
+        if (!isNonIdempotent(serviceType)) {
+            return true;
+        }
+        if (neverReachedUpstream(error)) {
+            logger.debug("媒体类服务（{}）仅在建连失败时重试：{}", serviceType, error.getClass().getSimpleName());
+            return true;
+        }
+        logger.warn("媒体类服务（{}）不重试非建连失败，避免重复下发与重复计费：{}",
+                serviceType, error.getClass().getSimpleName());
+        return false;
+    }
+
+    /**
+     * 该服务类型的请求是否不幂等（重复下发会产生副作用）。
+     *
+     * @param serviceType 服务类型
+     * @return true 表示不幂等
+     */
+    static boolean isNonIdempotent(final ModelServiceRegistry.ServiceType serviceType) {
+        return serviceType == ModelServiceRegistry.ServiceType.tts
+                || serviceType == ModelServiceRegistry.ServiceType.stt
+                || serviceType == ModelServiceRegistry.ServiceType.imgGen
+                || serviceType == ModelServiceRegistry.ServiceType.imgEdit;
+    }
+
+    /**
+     * 请求是否根本没到达上游：连接被拒 / 域名解析失败 / 无路由。
+     *
+     * <p>沿着 cause 链找，因为 Reactor 侧会把真实原因包在
+     * {@code WebClientRequestException} 或 {@code RetryExhaustedException} 里面。
+     * 读超时（{@code SocketTimeoutException} / {@code TimeoutException}）<b>不</b>属于这一类：
+     * 请求已经发出去了，上游可能已经处理完。</p>
+     *
+     * @param error 异常
+     * @return true 表示可以确定上游没有收到请求
+     */
+    static boolean neverReachedUpstream(final Throwable error) {
+        Throwable current = error;
+        int depth = 0;
+        while (current != null && depth < 8) {
+            if (current instanceof java.net.ConnectException
+                    || current instanceof java.net.UnknownHostException
+                    || current instanceof java.net.NoRouteToHostException) {
+                return true;
+            }
+            current = current.getCause();
+            depth++;
+        }
+        return false;
+    }
+
+    /**
      * 获取最大重试次数
      */
     public int getMaxRetries() {
