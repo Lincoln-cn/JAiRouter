@@ -55,6 +55,25 @@ public final class ServiceRuntimeConfig {
         this.circuitBreakerConfig = circuitBreakerConfig;
     }
 
+    /**
+     * #819：快照复制的浅副本 —— 实例列表独立复制，其余配置对象按不可变共享。
+     *
+     * <p>动态更新走「复制 → 改副本 → 单次发布」而不是就地 set，避免并发请求读到
+     * 「实例已换、适配器还是旧的」这类半更新状态。</p>
+     *
+     * @return 与当前对象互不影响的可写副本
+     */
+    public ServiceRuntimeConfig copy() {
+        final ServiceRuntimeConfig copy = new ServiceRuntimeConfig();
+        copy.instances = new ArrayList<>(instances);
+        copy.adapter = adapter;
+        copy.loadBalanceConfig = loadBalanceConfig;
+        copy.rateLimitConfig = rateLimitConfig;
+        copy.circuitBreakerConfig = circuitBreakerConfig;
+        copy.fallbackConfig = fallbackConfig;
+        return copy;
+    }
+
     public ModelRouterProperties.FallbackConfig getFallbackConfig() {
         return fallbackConfig;
     }
