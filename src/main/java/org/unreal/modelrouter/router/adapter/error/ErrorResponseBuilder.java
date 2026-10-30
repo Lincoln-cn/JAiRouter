@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.common.exception.DownstreamServiceException;
+import org.unreal.modelrouter.common.exception.MultipartPayloadTooLargeException;
 import reactor.core.publisher.Mono;
 
 /**
@@ -135,6 +136,13 @@ public final class ErrorResponseBuilder {
      * - 其他: 转换为 500 INTERNAL_SERVER_ERROR
      */
     private ResponseStatusException convertToResponseStatusException(final Throwable throwable) {
+        final MultipartPayloadTooLargeException tooLarge = findCause(throwable, MultipartPayloadTooLargeException.class);
+        if (tooLarge != null) {
+            // #862：上传超限在写请求体阶段抛出，WebClient 会把它包成 WebClientRequestException，
+            // 必须沿 cause 链识别，否则客户端会拿到 500 + 一段内部异常文本。
+            return new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, tooLarge.getMessage(), throwable);
+        }
+
         if (throwable instanceof WebClientResponseException) {
             WebClientResponseException webEx = (WebClientResponseException) throwable;
             return new ResponseStatusException(
@@ -157,9 +165,33 @@ public final class ErrorResponseBuilder {
     }
 
     /**
+     * 沿 cause 链查找指定类型的异常（含自身）.
+     *
+     * @param throwable 异常
+     * @param type      目标类型
+     * @param <T>       目标类型
+     * @return 命中的异常，未命中返回 {@code null}
+     */
+    private static <T extends Throwable> T findCause(final Throwable throwable, final Class<T> type) {
+        Throwable current = throwable;
+        int depth = 0;
+        while (current != null && depth < 8) {
+            if (type.isInstance(current)) {
+                return type.cast(current);
+            }
+            current = current.getCause();
+            depth++;
+        }
+        return null;
+    }
+
+    /**
      * 从异常中提取 HTTP 状态码
      */
     private HttpStatus extractHttpStatus(final Throwable throwable) {
+        if (findCause(throwable, MultipartPayloadTooLargeException.class) != null) {
+            return HttpStatus.PAYLOAD_TOO_LARGE;
+        }
         if (throwable instanceof WebClientResponseException) {
             HttpStatusCode statusCode = ((WebClientResponseException) throwable).getStatusCode();
             return HttpStatus.valueOf(statusCode.value());
