@@ -17,6 +17,7 @@
 package org.unreal.modelrouter.router.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
@@ -35,6 +37,7 @@ import org.unreal.modelrouter.router.handler.ServiceRequestHandler;
 import org.unreal.modelrouter.router.model.ModelCatalogService;
 import reactor.core.publisher.Mono;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -167,6 +170,43 @@ public class OpenAiNativeController {
             exchange,
             (adapter, auth, httpRequest) -> adapter.rerank(request, auth, httpRequest)
         );
+    }
+
+    /**
+     * 媒体能力的兜底入口（issue #830）.
+     *
+     * <p>音频与图像四类能力落在 {@code /api/v1} 控制台面（响应被 {@code RouterResponse} 包裹），
+     * 本面没有对应映射。此前这类请求得到的是默认 404（「No static resource」），
+     * 对把 {@code base_url} 指过来的 SDK 用户而言等同于「网关没有这个能力」。
+     * 这里显式返回 501，并在正文里给出对应的 {@code /api/v1/...} 路径。</p>
+     *
+     * <p>如果将来把图像端点提升为一等公民（OpenAI 原生面），直接把对应映射加在
+     * 本方法之前即可，Spring 会优先匹配更具体的映射。</p>
+     *
+     * @param exchange 当前交换对象（用于取原始路径）
+     * @return 501 + OpenAI 形状的错误体
+     */
+    @RequestMapping(path = {"/audio/**", "/images/**"},
+            method = {RequestMethod.GET, RequestMethod.POST})
+    public Mono<ResponseEntity<Map<String, Object>>> mediaOnConsoleSurface(
+            final ServerWebExchange exchange) {
+
+        final String originalPath = exchange.getRequest().getPath().pathWithinApplication().value();
+        final String consolePath = "/api/v1" + originalPath.substring("/v1".length());
+
+        final Map<String, Object> error = new LinkedHashMap<>();
+        error.put("message", "音频与图像接口不在 /v1 下：请改用 POST " + consolePath
+                + "（控制台面，响应包裹在 RouterResponse.data 里）。"
+                + "详见 docs/zh/api-reference/openapi-spec.md");
+        error.put("type", "invalid_request_error");
+        error.put("code", "not_implemented_on_v1");
+
+        final Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", error);
+
+        return Mono.just(ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(body));
     }
 
     /**
