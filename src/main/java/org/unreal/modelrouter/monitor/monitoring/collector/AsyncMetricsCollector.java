@@ -373,9 +373,21 @@ public class AsyncMetricsCollector implements MetricsCollector {
      * 判断是否应该使用异步处理
      */
     private boolean shouldUseAsyncProcessing() {
+        // #848：处理器线程内绝不能再走异步路径 —— 否则「处理事件」会再次入队，形成自持队列。
+        // 实测（v3.5.7 默认配置）：71 秒自产 167 万个事件、metrics-processor 单核 75% CPU，
+        // 而真实业务指标一条都没进 Micrometer。这里是第二道保险，第一道是处理器只依赖
+        // DefaultMetricsCollector（见 AsyncMetricsProcessor 的构造参数）。
         return monitoringProperties.getPerformance().isAsyncProcessing()
                && asyncProcessor != null
-               && memoryManager != null;
+               && memoryManager != null
+               && !isMetricsProcessorThread();
+    }
+
+    /**
+     * 当前线程是否是异步指标处理线程（{@code metrics-processor-*}）。
+     */
+    private static boolean isMetricsProcessorThread() {
+        return Thread.currentThread().getName().startsWith("metrics-processor");
     }
 
 

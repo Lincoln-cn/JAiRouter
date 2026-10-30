@@ -4,11 +4,10 @@ import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.core.MonitoringProperties;
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsCircuitBreaker;
-import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.monitor.monitoring.collector.DefaultMetricsCollector;
 import org.unreal.modelrouter.monitor.monitoring.config.MonitoringEnabledCondition;
 import org.unreal.modelrouter.monitor.monitoring.event.BackendCallMetricsEvent;
 import org.unreal.modelrouter.monitor.monitoring.event.CircuitBreakerMetricsEvent;
@@ -50,7 +49,7 @@ public class AsyncMetricsProcessor {
     private static final Logger logger = LoggerFactory.getLogger(AsyncMetricsProcessor.class);
 
     private final MonitoringProperties monitoringProperties;
-    private final MetricsCollector metricsCollector;
+    private final DefaultMetricsCollector metricsCollector;
     private final MetricsCircuitBreaker circuitBreaker;
 
     // 异步处理相关
@@ -68,7 +67,7 @@ public class AsyncMetricsProcessor {
     private final SecureRandom secureRandom = new SecureRandom();
 
     public AsyncMetricsProcessor(final MonitoringProperties monitoringProperties,
-                               @Lazy final MetricsCollector metricsCollector,
+                               final DefaultMetricsCollector metricsCollector,
                                final MetricsCircuitBreaker circuitBreaker) {
         this.monitoringProperties = monitoringProperties;
         this.metricsCollector = metricsCollector;
