@@ -93,6 +93,10 @@ class ServerCheckerHttpModeTest {
 
         final HealthCheckProperties properties = new HealthCheckProperties();
         properties.setTimeoutMs(2_000);
+        // 本类测的是单轮探活语义（#833）；#855 引入的连续失败滞回默认阈值是 2，
+        // 这里显式降为 1，好让「一次 5xx 即判不健康」这条判定能在单轮内被断言
+        // （滞回本身由 ServerCheckerHysteresisTest 覆盖）。
+        properties.setFailureThreshold(1);
         // 不显式设置 mode：这里测的就是 #833 之后的默认值。
         new ServerChecker(modelServiceRegistry, serviceStateManager, properties).runHealthCheckBatch();
 
