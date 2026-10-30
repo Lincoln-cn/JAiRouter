@@ -63,6 +63,7 @@ public class MultiReplicaSharedStateChecker implements ApplicationListener<Appli
      * 执行自检。包级可见，便于测试直接驱动而不必启动完整上下文。
      */
     void check() {
+        checkRedisReachability();
         MultiReplicaSharedStateGate.Mode mode =
                 MultiReplicaSharedStateGate.parseMode(environment.getProperty(MODE_KEY));
         failHealth = Boolean.parseBoolean(environment.getProperty(FAIL_HEALTH_KEY, "false"));
@@ -90,6 +91,51 @@ public class MultiReplicaSharedStateChecker implements ApplicationListener<Appli
         MultiReplicaSharedStateGate.enforce(mode, assessment);
         log.warn("{}{}", MultiReplicaSharedStateGate.describe(assessment),
                 failHealth ? "（按配置，/actuator/health 将一并报告 DOWN）" : "");
+    }
+
+    /**
+     * #825：已开启的共享态开关依赖 Redis，但 Redis 在不在？
+     *
+     * <p>只在 staging / prod 生效：dev / test 常见「开关默认开、Redis 没起」的组合，
+     * 在那里 fail-fast 会把本地开发直接堵死。默认 {@code FAIL} —— staging 默认把
+     * {@code jwt.persistence.redis.enabled} 设成 true，若没部署 Redis 就该在启动期失败，
+     * 而不是等用户登录时才 500。</p>
+     */
+    private void checkRedisReachability() {
+        final SharedStateReachabilityGate.Mode mode = SharedStateReachabilityGate
+                .parseMode(environment.getProperty(SharedStateReachabilityGate.MODE_KEY));
+        if (mode == SharedStateReachabilityGate.Mode.OFF) {
+            log.debug("共享态依赖可达性检查已关闭（{} = OFF）", SharedStateReachabilityGate.MODE_KEY);
+            return;
+        }
+
+        final List<String> enabled = SharedStateReachabilityGate.enabledSwitches(readSwitches());
+        if (enabled.isEmpty()) {
+            log.debug("没有开启任何依赖 Redis 的共享态开关，跳过可达性检查");
+            return;
+        }
+
+        final String[] profiles = environment.getActiveProfiles();
+        if (!SharedStateReachabilityGate.appliesTo(profiles)) {
+            log.debug("当前 profile 不是 staging/prod，跳过共享态依赖可达性检查");
+            return;
+        }
+
+        final String host = environment.getProperty("spring.data.redis.host", "localhost");
+        final int port = environment.getProperty("spring.data.redis.port", Integer.class, 6379);
+        final long timeoutMs = SharedStateReachabilityGate
+                .parseTimeoutMs(environment.getProperty(SharedStateReachabilityGate.TIMEOUT_KEY));
+
+        if (SharedStateReachabilityGate.isReachable(host, port, timeoutMs)) {
+            log.info("共享态依赖可达性检查通过：Redis {}:{} 可连接", host, port);
+            return;
+        }
+
+        final String message = SharedStateReachabilityGate.describe(host, port, enabled, profiles);
+        if (mode == SharedStateReachabilityGate.Mode.FAIL) {
+            throw new IllegalStateException(message);
+        }
+        log.warn(message);
     }
 
     private Map<String, Boolean> readSwitches() {
