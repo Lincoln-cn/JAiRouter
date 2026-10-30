@@ -54,6 +54,13 @@ graph TB
 >
 > **Back-off hint (since v3.5.2, #624)**: service-level `429` and all-instances-limited `503` now both carry `Retry-After: 1` (seconds). Those two layers are decided by the limiter and do not expose remaining capacity, so **only the back-off hint is added** — no `X-RateLimit-*` (the quota layer keeps `X-Quota-*`, the end-user layer uses `X-RateLimit-*`; the three prefixes are deliberately distinct).
 
+### The service-level bucket is shared (global) (#824)
+
+The service-level limiter keys its bucket by **service type**: `rate-limit.capacity` / `rate` is the **global** ceiling for that service, so every client and every model under it shares one token bucket. With the default `client-ip-enable: false`, once one client saturates the bucket every other caller also receives `429` (with `Retry-After: 1`).
+
+- **Fair share per caller**: set `rate-limit.client-ip-enable: true` for that service (one bucket per caller), or — in cluster deployments behind no proxy — point `rate-limit.key-dimension` at API key / tenant (see [Client IP Rate Limiting](#client-ip-rate-limiting)).
+- **Startup visibility**: if any service has service-level limiting enabled without the client dimension, the startup log prints one `WARN` naming them, so "global protection" is not mistaken for "a quota per caller".
+
 ## Service-Level Dynamic Rate Limiting Configuration (v2.8.8)
 
 Service-level limits can be configured **dynamically and hot-applied** from the Web console (no restart):
