@@ -45,3 +45,19 @@ jairouter:
       # （K8s 探针用的是 /actuator/health/liveness 与 /actuator/health/readiness，
       #   自定义健康指标不在这两个分组内，因此不受影响。）
       fail-health: ${JAIROUTER_SHARED_STATE_FAIL_HEALTH:false}
+
+      # 已开启的共享态开关依赖 Redis 时，启动期探测 Redis 是否连得上（#825）。
+      #
+      # 只在 staging / prod 生效：dev / test 常见「开关默认开、Redis 没起」的组合，
+      # 在那里 fail-fast 会把本地开发直接堵死。
+      #
+      #   FAIL（默认）= 连不上直接 fail-fast，应用不启动
+      #   WARN        = 只告警，继续启动
+      #   OFF         = 不检查（显式接受「开关开着但依赖不在」的风险）
+      #
+      # staging 默认把 jwt.persistence.redis.enabled 设成 true，所以 staging 必须真的部署 Redis，
+      # 否则启动会失败——这是有意的：带病启动比启动失败更难排查。
+      redis-reachability: ${JAIROUTER_SHARED_STATE_REDIS_REACHABILITY:FAIL}
+
+      # 探测超时（毫秒），钳在 200..30000
+      redis-timeout-ms: ${JAIROUTER_SHARED_STATE_REDIS_TIMEOUT_MS:2000}

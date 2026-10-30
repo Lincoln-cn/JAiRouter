@@ -53,6 +53,10 @@ jairouter:
       mode: WARN
       # WARN 模式下是否同时把 /actuator/health 置为 DOWN
       fail-health: false
+      # 已开启的共享态开关依赖 Redis 时，启动期探测 Redis 是否连得上（仅 staging/prod 生效）
+      # FAIL（默认）= 连不上就启动失败；WARN = 只告警；OFF = 不检查
+      redis-reachability: FAIL
+      redis-timeout-ms: 2000
 ```
 
 **多副本的判定依据**：显式 `replicas > 1` 优先；未显式声明时，存在 `KUBERNETES_SERVICE_HOST`
@@ -79,6 +83,21 @@ jairouter:
 
 K8s 探针用的是 `/actuator/health/liveness` 与 `/actuator/health/readiness`，
 自定义健康指标不在这两个分组内，因此无论 `fail-health` 取何值都**不会**影响 K8s 探针与重启策略。
+
+### 依赖可达性（仅 staging / prod，v3.5.7+）
+
+上面的判定只看「开关开没开」，不看「开关背后的 Redis 在不在」。`staging` 默认就把
+`jairouter.security.jwt.persistence.redis.enabled` 设成 `true`，如果那里没有部署 Redis，
+应用仍会正常启动，直到第一次写令牌状态才报错——那时用户已经在登录了。
+
+所以 `staging` / `prod` 下还有一道启动检查：**只要有一个依赖 Redis 的共享态开关是开启的，
+就探测 `spring.data.redis.host:port` 是否可连**，连不上直接启动失败（默认
+`jairouter.cluster.shared-state-check.redis-reachability: FAIL`）。
+
+- 探测只做 TCP 建连，超时默认 2 秒（`redis-timeout-ms`，钳在 200ms–30s）；
+- `dev` / `test` **不做**这项检查（本地常见「开关开、Redis 没起」）；
+- 没有开启任何 Redis 开关时跳过（`prod` 默认即如此）；
+- 逃生口：`WARN` 只告警不阻断，`OFF` 完全跳过。
 
 ## Redis 不可用时的行为并不统一
 
