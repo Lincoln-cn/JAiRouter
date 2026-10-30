@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.5.6
-> **最后更新**: 2026-10-30
+> **文档版本**: 3.5.7
+> **最后更新**: 2026-10-31
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,47 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.5.7] - 2026-10-31 - 阻断可用的五条 P0 收口 + 四项能力补齐（#801–#846）
+
+一次核心链路审计之后的整批修复：五条会直接挡住业务使用的 P0 全部修掉，另有 16 条 P1–P3 一并收口。**没有 API 破坏性变更**，但升级前请读文末「升级提示」——健康检查默认模式、默认上游地址、JWT 头名、新密钥格式四处会影响既有部署。
+
+#### 阻断可用的五条（P0）
+
+- **API Key 认证在默认 profile 下失效（#801）**：`security-base.yml` 在 `config/auth/api-key.yml` 之后导入，且写死了 `api-key.enabled: false` ⇒ 不带 profile 裸跑时 API Key 全部 401。现在安全基础模板不再声明任何 `api-key.*` 键，并加了守卫测试防止再被覆盖。
+- **重启后启动日志打印的管理员口令不生效（#802）**：口令只在首启写库时有效，但旧实现每次启动都把当时的环境变量/随机值打印一遍，重启后照着日志输必然失败。现在只在**真正创建账号**的那次启动打印，已有账号时改为明确提示「本次不再生成口令，请用首启口令或控制台重置」。
+- **`--spring.profiles.active=legacy` 必然启动失败（#803）**：`application-legacy.yml` 里自引用 `spring.profiles.active: legacy`（profile 文件不能设置 active profile），且把 `jwt.secret` 清空撞上长度校验。两处都已移除，legacy profile 可以正常启动。
+- **默认 services 配置指向内网示例地址（#804）**：九个实例的 `base-url` 全是 `http://172.16.30.6:9090`，配合健康检查 ⇒ 所有端点 503。现在改为 `${MODEL_UPSTREAM_BASE_URL:http://localhost:11434}`。
+- **JWT 默认头名含下划线，反向代理会丢（#805 / #846）**：`Jairouter_Token` 在 nginx 默认 `underscores_in_headers off` 下会被丢弃 ⇒ 登录成功但后续请求全 401。默认头名改为 `X-Jairouter-Token`，旧名保留为兼容兜底（含 Java 侧字段默认值）。
+
+#### 核心链路正确性
+
+- **超过脱敏缓冲上限的响应改为原样透传（#822）**：旧实现里带 `Content-Length` 的超限响应被静默跳过脱敏，不带长度（chunked）的直接 500。现在改为「边收边攒」，超限时把已收到的字节原样透传，不丢数据也不失败。
+- **跨源部署的预检请求不再被鉴权层拒（#818）**：新增 `jairouter.security.cors.allowed-origins`，配置后启用 CORS 并放行 `OPTIONS` 预检；默认仍不开启跨源。
+- **降级缓存按请求键隔离（#823）**：`FallbackStrategy` 契约改为带 `FallbackRequestKey`（服务 + 模型 + 调用方 + 请求体哈希），成功响应在 2xx 时写入缓存，命中回放时加 `X-Fallback: cache` 并计数；实现了「不缓存、不跨请求命中」的硬约束。
+- **运行时配置改为快照替换并支持回滚（#819）**：`ModelServiceRegistry` 的实例/适配器更新改为「复制 → 改副本 → 单次发布」，刷新失败时三处引用一起回滚；派生组件（负载均衡器/限流器）失败不再只打日志。
+- **媒体类服务不再重试非建连失败（#827）**：`tts` / `stt` / `imgGen` / `imgEdit` 只在连接未建立（`ConnectException` / `UnknownHostException` / `NoRouteToHostException`）时重试，避免读超时后重复下发带来的重复计费。
+- **staging/prod 启动期校验共享态依赖可达（#825）**：开关打开却没部署 Redis 时，启动阶段直接给出可行动的失败；`OFF`/`WARN`/`FAIL` 三档可配，仅 staging/prod 生效。
+- **JWT 密钥长度不再由 Bean Validation 拦截（#821）**：`@Size` 会先于启动门闩失败，导致 `JAIRouter_SKIP_AUTH_WARNING=true` 逃生舱失效；长度与强度判定保留在 `SecurityConfigurationValidator` 与 `StartupSecretKeyChecker`。
+- **API Key 用量统计只回写单个 Key（#811）**，以及 **YAML 内置 Key 的旧权限也走归一化（#813）**：前者消掉每请求整表序列化与多副本回滚风险，后者修好 dev 内置 Key 调服务 403。
+- **降级策略只求值一次（#816）**：`fallbackStrategy.fallback(...)` 不再被调用两次。
+
+#### 能力补齐与观测
+
+- **`/v1` 原生面补齐音频与图像（#835）**：`POST /v1/audio/speech`、`/v1/audio/transcriptions`、`/v1/images/generations`、`/v1/images/edits` 四个端点可用，响应不再被 `RouterResponse` 包裹；仍未映射的媒体路径给出 501 与 `/api/v1/...` 指引（#830）。
+- **密钥格式编入 keyId（#826）**：新密钥形如 `sk-<keyId>.<secret>`，校验从「遍历整个缓存逐个比对哈希」降为「按 keyId 取唯一候选比对一次」；旧格式继续可用。
+- **健康检查默认改为 HTTP 探活（#833）**：默认 `mode: http` + `http-path: /v1/models`，2xx/3xx/404/405 视为健康，5xx/超时/连不上视为不健康 —— 解决「进程僵死但端口还开着仍判健康」。
+- **服务级限流桶的全局语义可见（#824）**：启动时点名未开启 `client-ip-enable` 的服务，并补了文档说明该桶是全局上限。
+- **认证排除清单改为分隔符边界匹配（#834）**：`/health` 不再顺带把 `/healthz` 之类的新端点变成匿名。
+- **文档认证头示例统一（#820）**：143 处 `Authorization: Bearer` 示例改写为 `X-API-Key` / `X-Jairouter-Token`，保留 8 处确实指下游凭据的示例。
+
+#### 升级提示
+
+1. **健康检查默认改为 HTTP**：升级后默认会 `GET <base-url>/v1/models`，上游返回 5xx 会被判不健康。想保留旧语义请设 `jairouter.health-check.mode: tcp`。
+2. **JWT 头名默认改为 `X-Jairouter-Token`**：旧头名仍被接受（兜底），但建议客户端一并迁移。
+3. **默认上游改为 `http://localhost:11434`**：`config/router/services.yml` 的九个实例全部改用 `${MODEL_UPSTREAM_BASE_URL:...}`，请按实际部署设置该环境变量。
+4. **新密钥格式 `sk-<keyId>.<secret>`**：新签发的密钥形态变化，旧密钥继续可用；请在客户端按「不透明字符串」处理，不要解析前缀。
+5. **staging/prod 会校验共享态 Redis 可达性**：若依赖 Redis 却没部署，启动会失败；可用 `jairouter.cluster.shared-state-check.redis-reachability: OFF` 关闭。
 
 ### [3.5.6] - 2026-10-30 - 缺陷修复（v3.5.5 八段审计收口时仍开着的 14 条：#776–#789）
 

@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.5.6
-> **Last Updated**: 2026-10-30
+> **Document Version**: 3.5.7
+> **Last Updated**: 2026-10-31
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,46 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.5.7] - 2026-10-31 - Five blocking P0s closed, plus four capability gaps (#801-#846)
+
+A batch of fixes that followed an audit of the core request path: the five P0 defects that could block real usage are fixed, along with 16 P1-P3 items. **No API breaking changes**, but four items affect existing deployments — health-check mode, default upstream, JWT header name and the new key format (see "Upgrade notes").
+
+#### The five blocking defects (P0)
+
+- **API-key authentication was off under the default profile (#801)**: `security-base.yml` was imported after `config/auth/api-key.yml` and pinned `api-key.enabled: false`, so running without a profile rejected every API key with 401. The security base template no longer declares any `api-key.*` key, and a guard test keeps it that way.
+- **The admin password printed at startup did not work after a restart (#802)**: the password only matches while the account row is first created, yet every start printed the current environment/random value. It is now printed only on the start that actually creates the account; later starts say so explicitly.
+- **`--spring.profiles.active=legacy` could not start (#803)**: the profile file set `spring.profiles.active` on itself and blanked `jwt.secret`. Both are gone; the legacy profile starts normally.
+- **Default services pointed at an internal example address (#804)**: all nine instances used `http://172.16.30.6:9090`, which together with the health gate produced 503 on every endpoint. They now use `${MODEL_UPSTREAM_BASE_URL:http://localhost:11434}`.
+- **JWT header name contained an underscore (#805 / #846)**: nginx drops such headers by default (`underscores_in_headers off`), so login succeeded and every later call returned 401. The default is now `X-Jairouter-Token`, with the old name kept as a fallback (including the Java field default).
+
+#### Core path correctness
+
+- **Oversized responses pass through instead of being skipped or failing (#822)**: responses above the sanitization buffer are streamed through unchanged; chunked responses no longer end in 500.
+- **Cross-origin preflight is accepted when configured (#818)**: new `jairouter.security.cors.allowed-origins`; CORS stays off by default.
+- **Fallback cache is keyed per request (#823)**: `FallbackStrategy` now takes a `FallbackRequestKey` (service + model + caller + request hash); 2xx responses are cached, hits replay with `X-Fallback: cache` and are counted. Responses are never shared across callers.
+- **Runtime configuration is replaced as a snapshot with rollback (#819)**: instance/adapter updates copy-modify-publish; a failed refresh rolls back all three references; derived components (load balancers, rate limiters) no longer fail silently.
+- **Media services no longer retry after the request was sent (#827)**: `tts` / `stt` / `imgGen` / `imgEdit` retry only when the connection was never established.
+- **staging/prod validate shared-state reachability at startup (#825)**: enabling a Redis-backed switch without Redis now fails fast with an actionable message (`OFF`/`WARN`/`FAIL`, staging/prod only).
+- **JWT secret length is no longer enforced by Bean Validation (#821)**: the constraint failed before the startup gate, making `JAIRouter_SKIP_AUTH_WARNING=true` useless; strength checks stay in `SecurityConfigurationValidator` and `StartupSecretKeyChecker`.
+- **API-key usage statistics write one record instead of the whole table (#811)**, and **YAML-provided keys normalize legacy permissions (#813)**.
+- **The fallback strategy is evaluated once (#816)**.
+
+#### Capability and observability gaps
+
+- **`/v1` gained native audio and image endpoints (#835)**: `POST /v1/audio/speech`, `/v1/audio/transcriptions`, `/v1/images/generations`, `/v1/images/edits`; unmapped media paths still answer 501 with a `/api/v1/...` pointer (#830).
+- **Keys embed their keyId (#826)**: new keys look like `sk-<keyId>.<secret>`, turning the per-request full-cache scan into a single indexed lookup; legacy keys keep working.
+- **Health checks default to HTTP (#833)**: `mode: http` with `/v1/models`; 2xx/3xx/404/405 count as healthy, 5xx/timeouts/refused as unhealthy.
+- **Shared service-level rate-limit buckets are announced (#824)**, and **auth exclusions match on a path boundary (#834)** so `/health` no longer makes `/healthz` anonymous.
+- **Documentation header examples were unified (#820)**: 143 `Authorization: Bearer` examples became `X-API-Key` / `X-Jairouter-Token`; the 8 that genuinely describe downstream credentials were kept.
+
+#### Upgrade notes
+
+1. **Health checks default to HTTP**: the gateway now sends `GET <base-url>/v1/models`; a 5xx from upstream marks the instance unhealthy. Set `jairouter.health-check.mode: tcp` to keep the old behavior.
+2. **JWT header name is `X-Jairouter-Token`**: the old name still works as a fallback, but migrate clients.
+3. **Default upstream is `http://localhost:11434`**: set `MODEL_UPSTREAM_BASE_URL` for real deployments.
+4. **New key format `sk-<keyId>.<secret>`**: treat keys as opaque strings; legacy keys keep working.
+5. **staging/prod validate shared-state Redis reachability**: set `jairouter.cluster.shared-state-check.redis-reachability: OFF` if the check does not apply.
 
 ### [3.5.6] - 2026-10-30 - Bug fixes (the 14 issues left open when the v3.5.5 audit closed: #776-#789)
 
