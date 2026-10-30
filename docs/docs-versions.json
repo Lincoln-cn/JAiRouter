@@ -90,10 +90,10 @@
     },
     "docs/en/api-reference/universal-api.md": {
       "FilePath": "docs/en/api-reference/universal-api.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-30T00:17:54.048213",
-      "ContentHash": "230f1f2edecba3a5",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-30T15:24:45.959087",
+      "ContentHash": "7c1a6478d684f89a",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -102,10 +102,10 @@
     },
     "docs/en/configuration/adapter-config.md": {
       "FilePath": "docs/en/configuration/adapter-config.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-25T02:24:27.349680",
-      "ContentHash": "758fa074e0a161b7",
-      "GitCommit": "6c1c3b66",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-30T15:24:45.971660",
+      "ContentHash": "15e3bc1606567c29",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -176,11 +176,11 @@
     },
     "docs/en/configuration/instance-examples.md": {
       "FilePath": "docs/en/configuration/instance-examples.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:31.701014",
-      "ContentHash": "5ff5cf0ed8cb45bc",
-      "GitCommit": "f5d673e2",
-      "Author": "Lincoln",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-30T15:24:46.049091",
+      "ContentHash": "fbb30d3bc85057ec",
+      "GitCommit": "51b84ed6",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -298,10 +298,10 @@
     },
     "docs/en/configuration/state-persistence.md": {
       "FilePath": "docs/en/configuration/state-persistence.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:32.325627",
-      "ContentHash": "3f7770a8cd657443",
-      "GitCommit": "da2c4618",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-30T15:24:46.337682",
+      "ContentHash": "8c1948d565631d65",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -346,10 +346,10 @@
     },
     "docs/en/deployment/china-optimization.md": {
       "FilePath": "docs/en/deployment/china-optimization.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:32.594217",
-      "ContentHash": "9547774bedf46339",
-      "GitCommit": "9d7b7666",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-30T15:24:46.509911",
+      "ContentHash": "931f5d0ddcac853b",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -385,10 +385,10 @@
     },
     "docs/en/deployment/docker.md": {
       "FilePath": "docs/en/deployment/docker.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-27T16:24:26.410237",
-      "ContentHash": "cec481474d9fba08",
-      "GitCommit": "d30a09bd",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-30T15:24:46.621786",
+      "ContentHash": "16abd82dabeff76d",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -426,10 +426,10 @@
     },
     "docs/en/deployment/jwt-persistence-deployment-checklist.md": {
       "FilePath": "docs/en/deployment/jwt-persistence-deployment-checklist.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T00:17:54.209354",
-      "ContentHash": "9bdac3cceff1df19",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-30T15:24:46.737969",
+      "ContentHash": "53d82b63c53ed21e",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -441,10 +441,10 @@
     },
     "docs/en/deployment/kubernetes.md": {
       "FilePath": "docs/en/deployment/kubernetes.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-24T15:35:00.720370",
-      "ContentHash": "fc4ee3c4931ba6d3",
-      "GitCommit": "0b4f76c3",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-30T15:24:46.751035",
+      "ContentHash": "320b7a88ddd3f7ce",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -466,10 +466,10 @@
     },
     "docs/en/deployment/production.md": {
       "FilePath": "docs/en/deployment/production.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-27T16:24:26.439118",
-      "ContentHash": "535a577acc78f16b",
-      "GitCommit": "d30a09bd",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-30T15:24:46.776160",
+      "ContentHash": "ad331a0a12baf3f3",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -537,10 +537,10 @@
     },
     "docs/en/getting-started/claude-code.md": {
       "FilePath": "docs/en/getting-started/claude-code.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T00:17:54.302456",
-      "ContentHash": "005fcb89472acf60",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-30T15:24:47.217800",
+      "ContentHash": "653e071855689213",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -603,10 +603,10 @@
     },
     "docs/en/getting-started/quick-start.md": {
       "FilePath": "docs/en/getting-started/quick-start.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-30T00:17:54.327877",
-      "ContentHash": "c2d35ff27fda78e6",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-30T15:24:47.359439",
+      "ContentHash": "9444b25a9a903b8e",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -620,10 +620,10 @@
     },
     "docs/en/getting-started/web-console.md": {
       "FilePath": "docs/en/getting-started/web-console.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-30T00:17:54.330210",
-      "ContentHash": "7ac111647ebe67d0",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-30T15:24:47.371689",
+      "ContentHash": "f7518f66b3ff146a",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -894,10 +894,10 @@
     },
     "docs/en/security/api-key-management.md": {
       "FilePath": "docs/en/security/api-key-management.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:35.400020",
-      "ContentHash": "cdd9738835bcce1f",
-      "GitCommit": "537f419c",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-30T15:24:48.397365",
+      "ContentHash": "a11596b3f4d88a16",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -909,10 +909,10 @@
     },
     "docs/en/security/audit-log-management.md": {
       "FilePath": "docs/en/security/audit-log-management.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:35.471046",
-      "ContentHash": "9078b003e4e785ce",
-      "GitCommit": "4d91f794",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-30T15:24:48.410062",
+      "ContentHash": "25d822daa5234146",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -924,11 +924,11 @@
     },
     "docs/en/security/blacklist-management.md": {
       "FilePath": "docs/en/security/blacklist-management.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:35.542045",
-      "ContentHash": "764370dbeeb73c14",
-      "GitCommit": "2e651835",
-      "Author": "Lincoln",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-30T15:24:48.422568",
+      "ContentHash": "67417ea1b92d2200",
+      "GitCommit": "51b84ed6",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/security/api-key-management.md",
@@ -982,10 +982,10 @@
     },
     "docs/en/security/rbac-permissions.md": {
       "FilePath": "docs/en/security/rbac-permissions.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:35.793148",
-      "ContentHash": "579f005a66eb3b00",
-      "GitCommit": "7e492bc5",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-30T15:24:48.504734",
+      "ContentHash": "89314d856ad9091c",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -997,10 +997,10 @@
     },
     "docs/en/security/troubleshooting.md": {
       "FilePath": "docs/en/security/troubleshooting.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-30T00:17:54.562941",
-      "ContentHash": "64c988759a689c79",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-30T15:24:48.517243",
+      "ContentHash": "a3ac74472f413fd6",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1124,10 +1124,10 @@
     },
     "docs/en/troubleshooting/common-issues.md": {
       "FilePath": "docs/en/troubleshooting/common-issues.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T00:17:54.638475",
-      "ContentHash": "e0e262ee883ee50d",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-30T15:24:48.918237",
+      "ContentHash": "f7c6e8a42c0ca840",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1249,10 +1249,10 @@
     },
     "docs/zh/api-reference/universal-api.md": {
       "FilePath": "docs/zh/api-reference/universal-api.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-30T00:17:54.678521",
-      "ContentHash": "787655c3ac0a3483",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-30T15:24:49.145187",
+      "ContentHash": "a8585e1296343fa5",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1261,10 +1261,10 @@
     },
     "docs/zh/configuration/adapter-config.md": {
       "FilePath": "docs/zh/configuration/adapter-config.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-25T02:24:28.016190",
-      "ContentHash": "659982c91fd846e7",
-      "GitCommit": "6c1c3b66",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-30T15:24:49.156984",
+      "ContentHash": "427785b7c2db78e5",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1298,10 +1298,10 @@
     },
     "docs/zh/configuration/dynamic-config.md": {
       "FilePath": "docs/zh/configuration/dynamic-config.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T00:17:54.690021",
-      "ContentHash": "6ee5b5957a5940a1",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-30T15:24:49.198466",
+      "ContentHash": "8008fc2ec2194fcf",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1334,11 +1334,11 @@
     },
     "docs/zh/configuration/instance-examples.md": {
       "FilePath": "docs/zh/configuration/instance-examples.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:37.575858",
-      "ContentHash": "dee8366054e2bb46",
-      "GitCommit": "f5d673e2",
-      "Author": "Lincoln",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-30T15:24:49.225026",
+      "ContentHash": "1bb30364d3b226fa",
+      "GitCommit": "51b84ed6",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -1456,10 +1456,10 @@
     },
     "docs/zh/configuration/state-persistence.md": {
       "FilePath": "docs/zh/configuration/state-persistence.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:38.176302",
-      "ContentHash": "4582fc802316f2fe",
-      "GitCommit": "da2c4618",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-30T15:24:49.503702",
+      "ContentHash": "1f1b918765998e0b",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1543,10 +1543,10 @@
     },
     "docs/zh/deployment/docker.md": {
       "FilePath": "docs/zh/deployment/docker.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-27T16:24:27.074644",
-      "ContentHash": "2726ab7194bfe224",
-      "GitCommit": "d30a09bd",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-30T15:24:49.806602",
+      "ContentHash": "c5842faf19b4d0be",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1583,10 +1583,10 @@
     },
     "docs/zh/deployment/jwt-persistence-deployment-checklist.md": {
       "FilePath": "docs/zh/deployment/jwt-persistence-deployment-checklist.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T00:17:54.843217",
-      "ContentHash": "e9f960e75032eff3",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-30T15:24:49.935759",
+      "ContentHash": "be0a6d115f8bfac4",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1598,10 +1598,10 @@
     },
     "docs/zh/deployment/kubernetes.md": {
       "FilePath": "docs/zh/deployment/kubernetes.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-27T16:24:27.109619",
-      "ContentHash": "642a1b2dc59f448b",
-      "GitCommit": "d30a09bd",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-30T15:24:49.950209",
+      "ContentHash": "faefe2f77a8ad411",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1625,10 +1625,10 @@
     },
     "docs/zh/deployment/production.md": {
       "FilePath": "docs/zh/deployment/production.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-27T16:24:27.115745",
-      "ContentHash": "3840380eee98ddbd",
-      "GitCommit": "d30a09bd",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-30T15:24:49.977055",
+      "ContentHash": "7874f46c93aadb1a",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1696,10 +1696,10 @@
     },
     "docs/zh/getting-started/claude-code.md": {
       "FilePath": "docs/zh/getting-started/claude-code.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T00:17:54.930143",
-      "ContentHash": "8df2797fa33a9d0b",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.2",
+      "LastModified": "2026-10-30T15:24:50.381032",
+      "ContentHash": "c71739b7437a6626",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1762,10 +1762,10 @@
     },
     "docs/zh/getting-started/quick-start.md": {
       "FilePath": "docs/zh/getting-started/quick-start.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-30T00:17:54.956489",
-      "ContentHash": "1b05dc08e089b155",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-30T15:24:50.526291",
+      "ContentHash": "4395caea88416dc3",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1780,10 +1780,10 @@
     },
     "docs/zh/getting-started/web-console.md": {
       "FilePath": "docs/zh/getting-started/web-console.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-30T00:17:54.958937",
-      "ContentHash": "9a1f0b3e3b5c2de7",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-30T15:24:50.539347",
+      "ContentHash": "c401b2847cbdcf5e",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2059,10 +2059,10 @@
     },
     "docs/zh/security/api-key-management.md": {
       "FilePath": "docs/zh/security/api-key-management.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:41.207692",
-      "ContentHash": "b7ce9687e631e89e",
-      "GitCommit": "537f419c",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-30T15:24:51.668086",
+      "ContentHash": "115fb7c1e52949a9",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2074,10 +2074,10 @@
     },
     "docs/zh/security/audit-log-management.md": {
       "FilePath": "docs/zh/security/audit-log-management.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:41.280518",
-      "ContentHash": "eca9e6733b6da99b",
-      "GitCommit": "4d91f794",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-30T15:24:51.680435",
+      "ContentHash": "be20586d557ecf18",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2089,11 +2089,11 @@
     },
     "docs/zh/security/blacklist-management.md": {
       "FilePath": "docs/zh/security/blacklist-management.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:41.357508",
-      "ContentHash": "156a5536d9b7b144",
-      "GitCommit": "2e651835",
-      "Author": "Lincoln",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-30T15:24:51.693055",
+      "ContentHash": "ec03983c2ab45b6f",
+      "GitCommit": "51b84ed6",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/security/api-key-management.md",
@@ -2105,10 +2105,10 @@
     },
     "docs/zh/security/data-sanitization.md": {
       "FilePath": "docs/zh/security/data-sanitization.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-27T16:24:27.453470",
-      "ContentHash": "1e076df2470a5431",
-      "GitCommit": "d30a09bd",
+      "Version": "1.0.5",
+      "LastModified": "2026-10-30T15:24:51.707675",
+      "ContentHash": "6f858cfbcb314251",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2148,10 +2148,10 @@
     },
     "docs/zh/security/rbac-permissions.md": {
       "FilePath": "docs/zh/security/rbac-permissions.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:41.623386",
-      "ContentHash": "59bd015d7e39107a",
-      "GitCommit": "7e492bc5",
+      "Version": "1.0.1",
+      "LastModified": "2026-10-30T15:24:51.759856",
+      "ContentHash": "bf185d9c6b073fd0",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2163,10 +2163,10 @@
     },
     "docs/zh/security/troubleshooting.md": {
       "FilePath": "docs/zh/security/troubleshooting.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-30T00:17:55.208017",
-      "ContentHash": "1b7dea79d785f5b0",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.3",
+      "LastModified": "2026-10-30T15:24:51.772570",
+      "ContentHash": "de7ab6100d5a6af0",
+      "GitCommit": "51b84ed6",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -5590,7 +5590,295 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-30T14:57:23.103233",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/universal-api.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:45.959124",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/adapter-config.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:45.971688",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/instance-examples.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:46.049125",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/state-persistence.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:46.337719",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/china-optimization.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:46.509947",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/docker.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:46.621817",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/jwt-persistence-deployment-checklist.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:46.737998",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/kubernetes.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:46.751055",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/production.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:46.776180",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/claude-code.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:47.217834",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/quick-start.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:47.359473",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/web-console.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:47.371710",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/api-key-management.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:48.397400",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/audit-log-management.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:48.410081",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/blacklist-management.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:48.422586",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/rbac-permissions.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:48.504761",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/troubleshooting.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:48.517260",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/troubleshooting/common-issues.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:48.918273",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/universal-api.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:49.145222",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/adapter-config.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:49.157003",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/dynamic-config.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:49.198531",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/instance-examples.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:49.225049",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/state-persistence.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:49.503736",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/docker.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:49.806637",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/jwt-persistence-deployment-checklist.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:49.935794",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/kubernetes.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:49.950229",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/production.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:49.977081",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/claude-code.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:50.381070",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/quick-start.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:50.526324",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/web-console.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:50.539366",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/api-key-management.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:51.668123",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/audit-log-management.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:51.680456",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/blacklist-management.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:51.693073",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/data-sanitization.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:51.707694",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/rbac-permissions.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:51.759881",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/troubleshooting.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-30T15:24:51.772589",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-30T14:57:23.591926"
+  "last_updated": "2026-10-30T15:24:52.309872"
 }
