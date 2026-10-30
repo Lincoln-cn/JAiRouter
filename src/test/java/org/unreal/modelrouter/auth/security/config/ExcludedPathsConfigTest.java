@@ -130,4 +130,33 @@ class ExcludedPathsConfigTest {
         // （此处仅断言排除列表不会误伤「非 HTTP 记录」场景的概念边界）
         assertFalse(ExcludedPathsConfig.isDataMaskExcluded("call-history:record:summary"));
     }
+
+    // ------------------------------------------------------------------ issue #834
+
+    @ParameterizedTest(name = "[{index}] 精确端点与其子路径仍免认证: {0}")
+    @ValueSource(strings = {
+            "/health",
+            "/health/deep",
+            "/metrics",
+            "/metrics/prometheus",
+            "/.well-known/jwks.json"
+    })
+    void exactAndChildPaths_stayAuthExcluded(String path) {
+        assertTrue(ExcludedPathsConfig.isAuthExcluded(path),
+                path + " 是清单里的精确端点或其子路径，必须保持免认证（issue #834）");
+    }
+
+    @ParameterizedTest(name = "[{index}] 同前缀的其它端点不得被放行: {0}")
+    @ValueSource(strings = {
+            "/healthz",
+            "/health-deep",
+            "/healthcheck",
+            "/metrics-x",
+            "/.well-knownx"
+    })
+    void prefixLookalikes_mustNotBeAuthExcluded(String path) {
+        // issue #834：旧实现用裸 startsWith("/health")，这些路径会被静默排除出认证链。
+        assertFalse(ExcludedPathsConfig.isAuthExcluded(path),
+                path + " 不是 /health、/metrics 的分隔符子路径，必须走认证链（issue #834）");
+    }
 }
