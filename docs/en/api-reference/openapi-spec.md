@@ -93,15 +93,15 @@ JAiRouter's APIs are divided into the following main groups by function:
 | Chat completions | `POST /v1/chat/completions` (native SSE for `stream=true`) | `POST /api/v1/chat/completions` |
 | Embeddings | `POST /v1/embeddings` | `POST /api/v1/embeddings` |
 | Rerank | `POST /v1/rerank` | `POST /api/v1/rerank` |
-| Text to speech | not exposed (returns 501 with the path below) | `POST /api/v1/audio/speech` |
-| Speech to text | not exposed (same) | `POST /api/v1/audio/transcriptions` |
-| Image generation | not exposed (same) | `POST /api/v1/images/generations` |
-| Image edits | not exposed (same) | `POST /api/v1/images/edits` |
+| Text to speech | `POST /v1/audio/speech` (returns the audio bytes, forwarding the downstream `Content-Type`) | `POST /api/v1/audio/speech` |
+| Speech to text | `POST /v1/audio/transcriptions` (`multipart/form-data`) | `POST /api/v1/audio/transcriptions` |
+| Image generation | `POST /v1/images/generations` | `POST /api/v1/images/generations` |
+| Image edits | `POST /v1/images/edits` (`multipart/form-data`) | `POST /api/v1/images/edits` |
 
-> The four audio and image capabilities are currently exposed only on the console surface (`/api/v1`),
-> with the payload wrapped in the `data` field of `RouterResponse`.
-> Calling `/v1/audio/**` or `/v1/images/**` returns **501**, and the error `message` names the corresponding
-> `/api/v1/...` path instead of leaving you with a bare 404.
+> All four media capabilities are available on both surfaces: `/v1` returns the downstream native response
+> (audio bytes for speech, native JSON otherwise), while the console surface wraps it in `RouterResponse.data`.
+> Media paths that are still unmapped under `/v1` (for example `/v1/audio/translations`) return **501**,
+> and the error `message` names the corresponding `/api/v1/...` path instead of a bare 404.
 
 ### 2. Service Type Management
 - **Tag**: `服务类型管理` — the tag literal is Chinese in code (`ServiceTypeController.java:47`)
