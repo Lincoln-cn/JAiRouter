@@ -15,7 +15,7 @@ import static org.mockito.Mockito.when;
 /**
  * {@code /v1} 媒体能力兜底入口的测试（issue #830）.
  *
- * <p>断言三件事：音频/图像路径返回 501 且错误体里带对应的 {@code /api/v1/...} 路径、
+ * <p>断言三件事：仍未映射的媒体路径返回 501 且错误体里带对应的 {@code /api/v1/...} 路径、
  * 错误类型是 OpenAI 的 {@code invalid_request_error}、既有映射（{@code GET /v1/models}）不受影响。</p>
  */
 class OpenAiNativeControllerMediaHintTest {
@@ -30,9 +30,9 @@ class OpenAiNativeControllerMediaHintTest {
     }
 
     @Test
-    @DisplayName("MEDIA-001: /v1/images/generations 返回 501 并指向 /api/v1 控制台面")
-    void imagesGenerationPointsToConsoleSurface() {
-        client().post().uri("/v1/images/generations")
+    @DisplayName("MEDIA-001: /v1/images/variations 返回 501 并指向 /api/v1 控制台面")
+    void imagesVariationsPointsToConsoleSurface() {
+        client().post().uri("/v1/images/variations")
                 .exchange()
                 .expectStatus().isEqualTo(501)
                 .expectBody()
@@ -40,22 +40,22 @@ class OpenAiNativeControllerMediaHintTest {
                 .jsonPath("$.error.code").isEqualTo("not_implemented_on_v1")
                 .jsonPath("$.error.message").value(message -> {
                     org.junit.jupiter.api.Assertions.assertTrue(
-                            String.valueOf(message).contains("/api/v1/images/generations"),
+                            String.valueOf(message).contains("/api/v1/images/variations"),
                             "错误信息必须给出可直接替换的路径，实际: " + message);
                 });
     }
 
     @Test
-    @DisplayName("MEDIA-002: /v1/audio/speech 返回 501 并指向 /api/v1/audio/speech")
-    void audioSpeechPointsToConsoleSurface() {
-        client().post().uri("/v1/audio/speech")
+    @DisplayName("MEDIA-002: /v1/audio/translations 返回 501 并指向 /api/v1/audio/translations")
+    void audioTranslationsPointsToConsoleSurface() {
+        client().post().uri("/v1/audio/translations")
                 .exchange()
                 .expectStatus().isEqualTo(501)
                 .expectBody()
                 .jsonPath("$.error.code").isEqualTo("not_implemented_on_v1")
                 .jsonPath("$.error.message").value(message -> {
                     org.junit.jupiter.api.Assertions.assertTrue(
-                            String.valueOf(message).contains("/api/v1/audio/speech"),
+                            String.valueOf(message).contains("/api/v1/audio/translations"),
                             "错误信息必须给出可直接替换的路径，实际: " + message);
                 });
     }

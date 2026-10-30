@@ -91,14 +91,15 @@ JAiRouter 的 API 按功能分为以下几个主要分组：
 | 聊天完成 | `POST /v1/chat/completions`（含 `stream=true` 的原生 SSE） | `POST /api/v1/chat/completions` |
 | 文本嵌入 | `POST /v1/embeddings` | `POST /api/v1/embeddings` |
 | 重排序 | `POST /v1/rerank` | `POST /api/v1/rerank` |
-| 文本转语音 | 未开放（返回 501 并给出下方路径） | `POST /api/v1/audio/speech` |
-| 语音转文本 | 未开放（同上） | `POST /api/v1/audio/transcriptions` |
-| 图像生成 | 未开放（同上） | `POST /api/v1/images/generations` |
-| 图像编辑 | 未开放（同上） | `POST /api/v1/images/edits` |
+| 文本转语音 | `POST /v1/audio/speech`（直接返回音频字节，透传下游 `Content-Type`） | `POST /api/v1/audio/speech` |
+| 语音转文本 | `POST /v1/audio/transcriptions`（`multipart/form-data`） | `POST /api/v1/audio/transcriptions` |
+| 图像生成 | `POST /v1/images/generations` | `POST /api/v1/images/generations` |
+| 图像编辑 | `POST /v1/images/edits`（`multipart/form-data`） | `POST /api/v1/images/edits` |
 
-> 音频与图像四类能力目前只在控制台面（`/api/v1`）开放，响应包裹在 `RouterResponse` 的 `data` 字段里。
-> 从 SDK 访问 `/v1/audio/**`、`/v1/images/**` 会得到 **501**，错误体的 `message` 会直接给出对应的 `/api/v1/...` 路径，
-> 而不是一个没有线索的 404。
+> 四类媒体能力在两个面都可用：`/v1` 返回下游原生响应（音频直出字节、其余为原生 JSON），
+> 控制台面则包裹在 `RouterResponse` 的 `data` 字段里。
+> `/v1` 下仍未映射的媒体路径（例如 `/v1/audio/translations`）会得到 **501**，
+> 错误体的 `message` 直接给出对应的 `/api/v1/...` 路径，而不是一个没有线索的 404。
 
 ### 2. 服务类型管理
 - **标签**: `服务类型管理`

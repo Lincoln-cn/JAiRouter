@@ -17,6 +17,8 @@
 package org.unreal.modelrouter.router.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.codec.multipart.FilePart;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +32,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
 import org.unreal.modelrouter.common.dto.ChatDTO;
+import org.unreal.modelrouter.common.dto.ImageEditDTO;
+import org.unreal.modelrouter.common.dto.ImageGenerateDTO;
+import org.unreal.modelrouter.common.dto.SttDTO;
+import org.unreal.modelrouter.common.dto.TtsDTO;
 import org.unreal.modelrouter.common.dto.EmbeddingDTO;
 import org.unreal.modelrouter.common.dto.RerankDTO;
 import org.unreal.modelrouter.router.handler.ServiceEndpoint;
@@ -37,7 +43,9 @@ import org.unreal.modelrouter.router.handler.ServiceRequestHandler;
 import org.unreal.modelrouter.router.model.ModelCatalogService;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -173,6 +181,198 @@ public class OpenAiNativeController {
     }
 
     /**
+     * 语音合成接口（OpenAI 原生格式，issue #835）.
+     *
+     * <p>返回下游的原始音频字节（透传 {@code Content-Type}，例如 {@code audio/mpeg}），
+     * 与 {@code /api/v1/audio/speech} 的差别只在于不包 {@code RouterResponse}，
+     * 因此 OpenAI SDK 的 {@code audio.speech.create(...)} 可以直接使用。</p>
+     *
+     * @param authorization 透传给下游的 Authorization 头（可为空；实例级 headers 优先）
+     * @param request       语音合成请求体
+     * @param exchange      当前交换对象
+     * @return 音频字节流
+     * @since v3.5.7
+     */
+    @PostMapping("/audio/speech")
+    public Mono<ResponseEntity<?>> textToSpeech(
+            @RequestHeader(value = "Authorization", required = false) final String authorization,
+            @RequestBody(required = false) final TtsDTO.Request request,
+            final ServerWebExchange exchange) {
+
+        exchange.getAttributes().put(ServiceRequestHandler.NATIVE_RESPONSE_ATTRIBUTE, Boolean.TRUE);
+        requireRequestBody(request);
+
+        return requestHandler.handleRequest(
+            ServiceEndpoint.TTS,
+            request.model(),
+            authorization,
+            exchange,
+            (adapter, auth, httpRequest) -> adapter.tts(request, auth, httpRequest)
+        );
+    }
+
+    /**
+     * 语音转写接口（OpenAI 原生格式 {@code multipart/form-data}，issue #835）.
+     *
+     * <p>部件名遵循 OpenAI 契约：{@code file}/{@code model} 必填，其余可选；
+     * {@code response_format} 同时接受驼峰形式，兼容此前按控制台面写的客户端。</p>
+     *
+     * @param model          模型名
+     * @param file           音频文件部件
+     * @param language       语言
+     * @param prompt         提示词
+     * @param responseFormat 响应格式（蛇形部件名）
+     * @param responseFormatCamel 响应格式（驼峰部件名，兼容用）
+     * @param temperatureStr 温度（字符串部件，手动解析）
+     * @param authorization  透传给下游的 Authorization 头（可为空；实例级 headers 优先）
+     * @param exchange       当前交换对象
+     * @return 原生 JSON 转写结果
+     * @since v3.5.7
+     */
+    @PostMapping(value = "/audio/transcriptions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Mono<ResponseEntity<?>> speechToText(
+            @RequestPart("model") final String model,
+            @RequestPart("file") final FilePart file,
+            @RequestPart(value = "language", required = false) final String language,
+            @RequestPart(value = "prompt", required = false) final String prompt,
+            @RequestPart(value = "response_format", required = false) final String responseFormat,
+            @RequestPart(value = "responseFormat", required = false) final String responseFormatCamel,
+            @RequestPart(value = "temperature", required = false) final String temperatureStr,
+            @RequestHeader(value = "Authorization", required = false) final String authorization,
+            final ServerWebExchange exchange) {
+
+        exchange.getAttributes().put(ServiceRequestHandler.NATIVE_RESPONSE_ATTRIBUTE, Boolean.TRUE);
+
+        final SttDTO.Request request = new SttDTO.Request(
+                model, file, language, prompt,
+                responseFormat != null ? responseFormat : responseFormatCamel,
+                parseDoublePart(temperatureStr, "temperature"));
+
+        return requestHandler.handleRequest(
+            ServiceEndpoint.STT,
+            request.model(),
+            authorization,
+            exchange,
+            (adapter, auth, httpRequest) -> adapter.stt(request, auth, httpRequest)
+        );
+    }
+
+    /**
+     * 图像生成接口（OpenAI 原生格式，issue #835）.
+     *
+     * @param authorization 透传给下游的 Authorization 头（可为空；实例级 headers 优先）
+     * @param request       图像生成请求体
+     * @param exchange      当前交换对象
+     * @return 原生 JSON 响应（{@code b64_json} 或 {@code url}）
+     * @since v3.5.7
+     */
+    @PostMapping("/images/generations")
+    public Mono<ResponseEntity<?>> imageGenerate(
+            @RequestHeader(value = "Authorization", required = false) final String authorization,
+            @RequestBody(required = false) final ImageGenerateDTO.Request request,
+            final ServerWebExchange exchange) {
+
+        exchange.getAttributes().put(ServiceRequestHandler.NATIVE_RESPONSE_ATTRIBUTE, Boolean.TRUE);
+        requireRequestBody(request);
+
+        return requestHandler.handleRequest(
+            ServiceEndpoint.IMAGE_GEN,
+            request.model(),
+            authorization,
+            exchange,
+            (adapter, auth, httpRequest) -> adapter.imageGenerate(request, auth, httpRequest)
+        );
+    }
+
+    /**
+     * 图像编辑接口（OpenAI 原生格式 {@code multipart/form-data}，issue #835）.
+     *
+     * <p>图像部件名同时接受 {@code image} 与 {@code image[]}，掩码用 {@code mask}，
+     * 其余为文本部件（数字/布尔部件手动解析）。</p>
+     *
+     * @param authorization      透传给下游的 Authorization 头（可为空；实例级 headers 优先）
+     * @param image              图像部件（单张形态）
+     * @param imageArray         图像部件（数组形态）
+     * @param mask               可选掩码文件部件
+     * @param model              模型名
+     * @param prompt             编辑描述
+     * @param background         背景
+     * @param inputFidelity      输入保真度
+     * @param nPart              生成张数（字符串部件）
+     * @param outputCompressionPart 输出压缩（字符串部件）
+     * @param outputFormat       输出格式
+     * @param partialImagesPart  部分图像数量（字符串部件）
+     * @param quality            质量
+     * @param responseFormat     响应格式
+     * @param size               尺寸
+     * @param streamPart         是否流式（字符串部件）
+     * @param user               终端用户标识
+     * @param exchange           当前交换对象
+     * @return 原生 JSON 响应
+     * @since v3.5.7
+     */
+    @PostMapping(value = "/images/edits", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Mono<ResponseEntity<?>> imageEdits(
+            @RequestHeader(value = "Authorization", required = false) final String authorization,
+            @RequestPart(value = "image", required = false) final List<FilePart> image,
+            @RequestPart(value = "image[]", required = false) final List<FilePart> imageArray,
+            @RequestPart(value = "mask", required = false) final FilePart mask,
+            @RequestPart(value = "model", required = false) final String model,
+            @RequestPart(value = "prompt", required = false) final String prompt,
+            @RequestPart(value = "background", required = false) final String background,
+            @RequestPart(value = "input_fidelity", required = false) final String inputFidelity,
+            @RequestPart(value = "n", required = false) final String nPart,
+            @RequestPart(value = "output_compression", required = false) final String outputCompressionPart,
+            @RequestPart(value = "output_format", required = false) final String outputFormat,
+            @RequestPart(value = "partial_images", required = false) final String partialImagesPart,
+            @RequestPart(value = "quality", required = false) final String quality,
+            @RequestPart(value = "response_format", required = false) final String responseFormat,
+            @RequestPart(value = "size", required = false) final String size,
+            @RequestPart(value = "stream", required = false) final String streamPart,
+            @RequestPart(value = "user", required = false) final String user,
+            final ServerWebExchange exchange) {
+
+        exchange.getAttributes().put(ServiceRequestHandler.NATIVE_RESPONSE_ATTRIBUTE, Boolean.TRUE);
+
+        final List<FilePart> images = new ArrayList<>();
+        if (image != null) {
+            images.addAll(image);
+        }
+        if (imageArray != null) {
+            images.addAll(imageArray);
+        }
+        if (images.isEmpty()) {
+            throw new ServerWebInputException(
+                    "Multipart part 'image' (or 'image[]') is required");
+        }
+
+        final ImageEditDTO.Request request = new ImageEditDTO.Request(
+                images,
+                prompt,
+                background,
+                inputFidelity,
+                mask,
+                model,
+                parseIntegerPart(nPart, "n"),
+                parseIntegerPart(outputCompressionPart, "output_compression"),
+                outputFormat,
+                parseIntegerPart(partialImagesPart, "partial_images"),
+                quality,
+                responseFormat,
+                size,
+                parseBooleanPart(streamPart, "stream"),
+                user);
+
+        return requestHandler.handleRequest(
+            ServiceEndpoint.IMAGE_EDIT,
+            request.model(),
+            authorization,
+            exchange,
+            (adapter, auth, httpRequest) -> adapter.imageEdit(request, auth, httpRequest)
+        );
+    }
+
+    /**
      * 媒体能力的兜底入口（issue #830）.
      *
      * <p>音频与图像四类能力落在 {@code /api/v1} 控制台面（响应被 {@code RouterResponse} 包裹），
@@ -195,8 +395,9 @@ public class OpenAiNativeController {
         final String consolePath = "/api/v1" + originalPath.substring("/v1".length());
 
         final Map<String, Object> error = new LinkedHashMap<>();
-        error.put("message", "音频与图像接口不在 /v1 下：请改用 POST " + consolePath
+        error.put("message", "该接口在 /v1 下未提供：请改用 POST " + consolePath
                 + "（控制台面，响应包裹在 RouterResponse.data 里）。"
+                + "语音合成/转写与图像生成/编辑已提供 /v1 原生映射。"
                 + "详见 docs/zh/api-reference/openapi-spec.md");
         error.put("type", "invalid_request_error");
         error.put("code", "not_implemented_on_v1");
@@ -226,5 +427,65 @@ public class OpenAiNativeController {
         if (request == null) {
             throw new ServerWebInputException("Request body is required");
         }
+    }
+
+    /**
+     * 解析可选的浮点部件.
+     *
+     * @param raw       部件原始文本
+     * @param fieldName 字段名（用于错误信息）
+     * @return 解析结果，空文本返回 {@code null}
+     * @since v3.5.7
+     */
+    private static Double parseDoublePart(final String raw, final String fieldName) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return Double.valueOf(raw.trim());
+        } catch (NumberFormatException e) {
+            throw new ServerWebInputException(
+                    "Multipart part '" + fieldName + "' must be a number: " + raw);
+        }
+    }
+
+    /**
+     * 解析可选的整数部件.
+     *
+     * @param raw       部件原始文本
+     * @param fieldName 字段名（用于错误信息）
+     * @return 解析结果，空文本返回 {@code null}
+     * @since v3.5.7
+     */
+    private static Integer parseIntegerPart(final String raw, final String fieldName) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(raw.trim());
+        } catch (NumberFormatException e) {
+            throw new ServerWebInputException(
+                    "Multipart part '" + fieldName + "' must be an integer: " + raw);
+        }
+    }
+
+    /**
+     * 解析可选的布尔部件.
+     *
+     * @param raw       部件原始文本
+     * @param fieldName 字段名（用于错误信息）
+     * @return 解析结果，空文本返回 {@code null}
+     * @since v3.5.7
+     */
+    private static Boolean parseBooleanPart(final String raw, final String fieldName) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        final String value = raw.trim();
+        if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
+            return Boolean.valueOf(value);
+        }
+        throw new ServerWebInputException(
+                "Multipart part '" + fieldName + "' must be true or false: " + raw);
     }
 }
