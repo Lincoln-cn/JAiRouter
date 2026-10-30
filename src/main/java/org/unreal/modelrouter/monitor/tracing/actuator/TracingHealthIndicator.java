@@ -56,9 +56,12 @@ public class TracingHealthIndicator implements HealthIndicator {
             details.put("checkTime", LocalDateTime.now());
             
             if (!tracingEnabled) {
-                return Health.down()
+                // #849：关闭追踪是合法运行态（配置项就是为此存在），不能把实例判成 unhealthy：
+                // Dockerfile 的 HEALTHCHECK 与不少部署都把 /actuator/health 当存活探针，
+                // 一旦这里 DOWN，容器会被反复重启，而重启根本不解决「追踪被关掉」。
+                return Health.up()
                     .withDetails(details)
-                    .withDetail("reason", "追踪系统已禁用")
+                    .withDetail("reason", "追踪系统已禁用（可选组件，不影响请求处理）")
                     .build();
             }
             
