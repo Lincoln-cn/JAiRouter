@@ -5,11 +5,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
+import org.unreal.modelrouter.auth.security.util.ApiKeyFormat;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.constants.ErrorCode.RenderPath;
 import org.unreal.modelrouter.common.exception.AuthenticationException;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * API Key 验证组件
@@ -56,6 +58,33 @@ public class ApiKeyValidator {
      * @return 匹配的 ApiKey，如果未找到返回 null
      */
     public ApiKey findMatchingKey(final String keyValue, final Map<String, ApiKey> apiKeyCache) {
+        return findMatchingKey(keyValue, apiKeyCache, null);
+    }
+
+    /**
+     * 查找匹配的 API Key（#826：新格式按键内 keyId 直接定位，旧格式回退为遍历）.
+     *
+     * <p>新格式 {@code sk-<keyId>.<secret>} 可以先用 keyId 从索引里取唯一一条候选，
+     * 再做一次哈希比较；因此密钥数量增长不再线性拖慢认证路径。密钥文本里声明的 keyId
+     * 在索引里不存在时直接判无效，不做全表遍历 —— 否则攻击者构造 {@code sk-<随便>.<随便>}
+     * 依然能触发遍历，抵消这次优化的安全意义。</p>
+     *
+     * @param keyValue 原始 API Key 值
+     * @param apiKeyCache API Key 缓存（keyHash -> ApiKey）
+     * @param keyIdIndex keyId -> keyHash 索引，为 {@code null} 时按旧行为遍历
+     * @return 匹配的 ApiKey，如果未找到返回 null
+     */
+    public ApiKey findMatchingKey(final String keyValue, final Map<String, ApiKey> apiKeyCache,
+                                  final Map<String, String> keyIdIndex) {
+        final Optional<String> encodedKeyId = ApiKeyFormat.keyIdOf(keyValue);
+        if (encodedKeyId.isPresent() && keyIdIndex != null) {
+            final String keyHash = keyIdIndex.get(encodedKeyId.get());
+            if (keyHash == null) {
+                return null;
+            }
+            final ApiKey candidate = apiKeyCache.get(keyHash);
+            return candidate != null && candidate.verifyKey(keyValue) ? candidate : null;
+        }
         for (ApiKey apiKey : apiKeyCache.values()) {
             if (apiKey.verifyKey(keyValue)) {
                 return apiKey;
@@ -166,6 +195,22 @@ public class ApiKeyValidator {
     public FullValidationResult validateFully(final String keyValue,
                                                final Map<String, ApiKey> apiKeyCache,
                                                final String ipAddress) {
+        return validateFully(keyValue, apiKeyCache, null, ipAddress);
+    }
+
+    /**
+     * 执行完整的 API Key 验证流程（#826：带 keyId 索引，新格式走 O(1) 查找）.
+     *
+     * @param keyValue 原始 API Key 值
+     * @param apiKeyCache API Key 缓存
+     * @param keyIdIndex keyId -> keyHash 索引，为 {@code null} 时按旧行为遍历
+     * @param ipAddress 客户端 IP 地址
+     * @return 验证结果，包含匹配的 ApiKey（如果验证成功）
+     */
+    public FullValidationResult validateFully(final String keyValue,
+                                               final Map<String, ApiKey> apiKeyCache,
+                                               final Map<String, String> keyIdIndex,
+                                               final String ipAddress) {
         // 1. 格式验证
         ValidationResult formatResult = validateFormat(keyValue);
         if (!formatResult.isSuccess()) {
@@ -173,7 +218,7 @@ public class ApiKeyValidator {
         }
 
         // 2. 查找匹配的 Key
-        ApiKey matchedKey = findMatchingKey(keyValue, apiKeyCache);
+        ApiKey matchedKey = findMatchingKey(keyValue, apiKeyCache, keyIdIndex);
         if (matchedKey == null) {
             return FullValidationResult.notFound();
         }

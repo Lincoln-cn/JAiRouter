@@ -141,7 +141,7 @@ class ApiKeyServiceTest {
             ApiKeyValidator.FullValidationResult successResult =
                     ApiKeyValidator.FullValidationResult.success(secureCopy);
 
-            when(apiKeyValidator.validateFully(anyString(), any(Map.class), any()))
+            when(apiKeyValidator.validateFully(anyString(), any(Map.class), any(Map.class), any()))
                     .thenReturn(successResult);
 
             Mono<ApiKey> result = apiKeyService.validateApiKey(testKeyValue);
@@ -162,7 +162,7 @@ class ApiKeyServiceTest {
             ApiKeyValidator.FullValidationResult formatError =
                     ApiKeyValidator.FullValidationResult.formatError("API Key 不能为空");
 
-            when(apiKeyValidator.validateFully(anyString(), any(Map.class), any()))
+            when(apiKeyValidator.validateFully(anyString(), any(Map.class), any(Map.class), any()))
                     .thenReturn(formatError);
 
             Mono<ApiKey> result = apiKeyService.validateApiKey("");
@@ -180,7 +180,7 @@ class ApiKeyServiceTest {
             ApiKeyValidator.FullValidationResult notFound =
                     ApiKeyValidator.FullValidationResult.notFound();
 
-            when(apiKeyValidator.validateFully(anyString(), any(Map.class), any()))
+            when(apiKeyValidator.validateFully(anyString(), any(Map.class), any(Map.class), any()))
                     .thenReturn(notFound);
 
             Mono<ApiKey> result = apiKeyService.validateApiKey("sk-invalid-key");

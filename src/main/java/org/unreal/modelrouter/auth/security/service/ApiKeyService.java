@@ -22,6 +22,7 @@ import org.unreal.modelrouter.auth.security.dto.ApiKeyVO;
 import org.unreal.modelrouter.auth.security.event.ApiKeyAuditEvent;
 import org.unreal.modelrouter.auth.security.model.UsageStatistics;
 import org.unreal.modelrouter.auth.security.quota.QuotaLimits;
+import org.unreal.modelrouter.auth.security.util.ApiKeyFormat;
 import org.unreal.modelrouter.auth.security.util.ApiKeyHashUtil;
 import org.unreal.modelrouter.common.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.common.dto.AuditEventType;
@@ -66,7 +67,7 @@ public class ApiKeyService {
 
     public Mono<ApiKey> validateApiKey(String kv, String ep, String ip) {
         return Mono.defer(() -> {
-            var r = apiKeyValidator.validateFully(kv, apiKeyCache, ip);
+            var r = apiKeyValidator.validateFully(kv, apiKeyCache, keyIdIndex, ip);
             if (r.isSuccess()) {
                 updateUsageStatistics(r.getApiKey().getKeyId(), true);
                 eventPublisher.publishEvent(ApiKeyAuditEvent.used(r.getApiKey().getKeyId(), ep, ip, true));
@@ -95,7 +96,11 @@ public class ApiKeyService {
                     ? req.getKeyId()
                     : "key-" + UUID.randomUUID().toString().substring(0, 8);
             if (keyIdIndex.containsKey(kid)) throw new IllegalArgumentException("API Key ID已存在: " + kid);
-            String kv = ApiKey.generateApiKey("sk-", 32);
+            // #826：新格式把 keyId 编进密钥文本，校验时可按索引直接定位；
+            // 自定义 keyId 若含分隔符等无法编码的字符，退回旧格式（仍可用，只是校验需要遍历）
+            String kv = ApiKeyFormat.canEmbed(kid)
+                    ? ApiKeyFormat.compose(kid, 32)
+                    : ApiKey.generateApiKey("sk-", 32);
             String kh = ApiKeyHashUtil.hashApiKey(kv);
             List<String> validatedPermissions = validatePermissions(req.getPermissions());
             ApiKey ak = ApiKey.builder().keyId(kid).keyHash(kh).keyPrefix("sk-").description(req.getDescription())

@@ -10,6 +10,7 @@ import org.unreal.modelrouter.auth.security.dto.ApiKeyBatchImportRequest;
 import org.unreal.modelrouter.auth.security.dto.ApiKeyBatchImportResult;
 import org.unreal.modelrouter.auth.security.dto.ApiKeyCreationVO;
 import org.unreal.modelrouter.auth.security.model.UsageStatistics;
+import org.unreal.modelrouter.auth.security.util.ApiKeyFormat;
 import org.unreal.modelrouter.auth.security.util.ApiKeyHashUtil;
 import reactor.core.publisher.Mono;
 
@@ -201,7 +202,9 @@ public class ApiKeyBatchService {
             }
 
             // 生成新的 keyValue
-            String originalKeyValue = ApiKey.generateApiKey("sk-", 32);
+            String originalKeyValue = ApiKeyFormat.canEmbed(keyId)
+                    ? ApiKeyFormat.compose(keyId, 32)
+                    : ApiKey.generateApiKey("sk-", 32);
             String newKeyHash = ApiKeyHashUtil.hashApiKey(originalKeyValue);
 
             // 更新缓存：移除旧的 keyHash，添加新的
@@ -351,7 +354,9 @@ public class ApiKeyBatchService {
         }
 
         // 生成原始 keyValue
-        String originalKeyValue = ApiKey.generateApiKey("sk-", 32);
+        String originalKeyValue = ApiKeyFormat.canEmbed(keyId)
+                ? ApiKeyFormat.compose(keyId, 32)
+                : ApiKey.generateApiKey("sk-", 32);
         String keyHash = ApiKeyHashUtil.hashApiKey(originalKeyValue);
 
         // 解析过期时间
@@ -426,7 +431,9 @@ public class ApiKeyBatchService {
         String oldKeyHash = apiKey.getKeyHash();
 
         // 生成新的 keyValue
-        String originalKeyValue = ApiKey.generateApiKey("sk-", 32);
+        String originalKeyValue = ApiKeyFormat.canEmbed(keyId)
+                ? ApiKeyFormat.compose(keyId, 32)
+                : ApiKey.generateApiKey("sk-", 32);
         String newKeyHash = ApiKeyHashUtil.hashApiKey(originalKeyValue);
 
         // 更新缓存
