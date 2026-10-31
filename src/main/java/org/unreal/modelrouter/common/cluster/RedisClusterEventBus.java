@@ -3,6 +3,7 @@ package org.unreal.modelrouter.common.cluster;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
@@ -66,6 +67,7 @@ public class RedisClusterEventBus implements ClusterEventBus {
     /** 每个逻辑通道共享一个 Redis 订阅，避免每个客户端各建一条。 */
     private final Map<String, Flux<ClusterEvent>> subscriptions = new ConcurrentHashMap<>();
 
+    @Autowired
     public RedisClusterEventBus(final ObjectProvider<ReactiveRedisConnectionFactory> connectionFactoryProvider,
                                 final ObjectMapper objectMapper) {
         this(connectionFactoryProvider, objectMapper, InstanceIdentity.id());
