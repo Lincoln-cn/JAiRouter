@@ -625,8 +625,12 @@ public class ModelServiceRegistry {
                         availableInstances, loadBalancer, affinityKey, clientIp, serviceType, effectiveModelName);
 
         if (selectedInstance == null) {
+            // #901: 实例级限流拒绝是「限流」，不是「服务不可用」。原先回 503 会让客户端与
+            // 各自的 SDK 把它当成 5xx 故障重试（OpenAI SDK 默认重试 5xx），在限流桶已经
+            // 空的情况下继续打上来；同时监控/负载均衡会把 503 记成实例故障。
+            // 服务级限流在同一方法内一直回 429，这里对齐成同一语义。
             throw new ResponseStatusException(
-                    HttpStatus.SERVICE_UNAVAILABLE,
+                    HttpStatus.TOO_MANY_REQUESTS,
                     "All instances rate limited for model '" + effectiveModelName + "'");
         }
 
