@@ -16,6 +16,7 @@
 
 package org.unreal.modelrouter.router.fallback.impl;
 
+import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -108,6 +109,14 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
             logger.info("缓存的降级响应已过期，按未命中处理: service={}, key={}, ttl={}ms",
                     serviceType, key, ttlMillis);
         }
+        // #892：防御历史数据 —— 早期版本会把流式响应写进来，这类条目永远不可能正确回放
+        if (entry != null && isStreamingBody(entry.response().getBody())) {
+            cache.remove(key.asCacheKey());
+            logger.debug("丢弃缓存的流式响应条目（无法回放）: service={}, key={}", serviceType, key);
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(DefaultFallbackStrategy.degradedBody());
+        }
         final ResponseEntity<?> cached = entry == null || isExpired(entry) ? null : entry.response();
         if (cached == null) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
@@ -139,6 +148,13 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
         }
         if (key == null || response == null || response.getBody() == null
                 || !response.getStatusCode().is2xxSuccessful()) {
+            return;
+        }
+        // #892：流式响应的 body 是 Flux<DataBuffer>，只能被订阅一次；缓存它等于缓存一个
+        // 「已经消费过的网络流」，降级命中时客户端会拿到 200 + 空流（比 503 更糟）
+        if (isStreamingBody(response.getBody())) {
+            logger.debug("跳过流式响应的降级缓存: service={}, key={}, bodyType={}",
+                    serviceType, key, response.getBody().getClass().getName());
             return;
         }
         final String cacheKey = key.asCacheKey();
@@ -200,6 +216,16 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
     public void clear() {
         cache.clear();
         insertionOrder.clear();
+    }
+
+    /**
+     * 判断响应体是否是一次性可消费的流（#892）.
+     *
+     * @param body 响应体
+     * @return true 表示流式体，不能进降级缓存
+     */
+    private static boolean isStreamingBody(final Object body) {
+        return body instanceof Publisher;
     }
 
     private boolean isExpired(final CachedResponse entry) {
