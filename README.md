@@ -598,6 +598,8 @@ If something is neither described above nor in the tracker, treat it as **unknow
 
 Contributions are welcome — see the [Contributing Guide](https://jairouter.com/en/development/contributing/).
 
+Security issues: please do not open a public issue — report them privately per [SECURITY.md](SECURITY.md).
+
 Before opening a pull request:
 
 ```bash
