@@ -11,7 +11,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -144,6 +146,15 @@ public class RoutingStatsAggregator {
         private final Map<String, AtomicLong> clientRequestCounts = new ConcurrentHashMap<>();
 
         /**
+         * 客户端键的写入顺序，用于淘汰最早出现的客户端（#877）。
+         *
+         * <p>clientToInstanceMap / clientRequestCounts 的键来自客户端标识，属于无界输入：
+         * 历史实现只 put 不删，进程长期运行、客户端 IP 滚动时内存会一直涨到 OOM。
+         * 这里按写入顺序保留最近 {@code maxTrackedClients} 个客户端。</p>
+         */
+        private final Queue<String> clientOrder = new ConcurrentLinkedQueue<>();
+
+        /**
          * 统计开始时间
          */
         private volatile Instant startTime = Instant.now();
@@ -153,8 +164,20 @@ public class RoutingStatsAggregator {
          */
         private static final int MAX_RECENT_SELECTIONS = 100;
 
+        /**
+         * 默认跟踪的客户端数量上限（#877）。单条客户端记录只有几十字节，1 万条约 1MB 以内。
+         */
+        public static final int DEFAULT_MAX_TRACKED_CLIENTS = 10_000;
+
+        private final int maxTrackedClients;
+
         public ServiceRoutingStats(String serviceType) {
+            this(serviceType, DEFAULT_MAX_TRACKED_CLIENTS);
+        }
+
+        public ServiceRoutingStats(String serviceType, int maxTrackedClients) {
             this.serviceType = serviceType;
+            this.maxTrackedClients = maxTrackedClients > 0 ? maxTrackedClients : DEFAULT_MAX_TRACKED_CLIENTS;
         }
 
         /**
@@ -189,12 +212,37 @@ public class RoutingStatsAggregator {
                 }
             }
 
-            // 更新客户端到实例的映射
+            // 更新客户端到实例的映射（有界，见 #877）
             if (clientId != null && !clientId.isEmpty()) {
-                clientToInstanceMap.put(clientId, instance);
-                clientRequestCounts.computeIfAbsent(clientId, k -> new AtomicLong(0))
-                    .incrementAndGet();
+                trackClient(clientId, instance);
             }
+        }
+
+        /**
+         * 记录客户端与实例的映射，并淘汰最早的客户端记录（#877）。
+         */
+        private void trackClient(final String clientId, final String instance) {
+            clientRequestCounts.computeIfAbsent(clientId, key -> {
+                clientOrder.add(key);
+                return new AtomicLong(0);
+            }).incrementAndGet();
+            clientToInstanceMap.put(clientId, instance);
+
+            while (clientOrder.size() > maxTrackedClients) {
+                final String oldest = clientOrder.poll();
+                if (oldest == null) {
+                    break;
+                }
+                clientToInstanceMap.remove(oldest);
+                clientRequestCounts.remove(oldest);
+            }
+        }
+
+        /**
+         * 当前跟踪的客户端数量（#877 用于验证上限生效）。
+         */
+        public int getTrackedClientCount() {
+            return clientToInstanceMap.size();
         }
 
         /**
