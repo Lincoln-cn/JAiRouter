@@ -7,6 +7,7 @@ import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -34,6 +35,13 @@ public class LockFreeCircuitBreaker implements CircuitBreaker {
     // 使用 AtomicLong 记录时间戳
     private final AtomicLong lastFailureTime;
 
+    // #870：半开态只放行一个探测请求。熔断打开到超时后如果全部并发放行，
+    // 故障实例会在恢复窗口被重新打满，等于熔断在恢复期失效。
+    private final AtomicBoolean halfOpenProbeInFlight;
+
+    // 探测开始时间：探测方异常退出（没回报成功/失败）时，超过 timeout 允许下一轮探测，避免永久拒绝。
+    private final AtomicLong halfOpenProbeStartedAt;
+
     @Autowired(required = false)
     private MetricsCollector metricsCollector;
 
@@ -47,6 +55,8 @@ public class LockFreeCircuitBreaker implements CircuitBreaker {
         this.failureCount = new AtomicInteger(0);
         this.successCount = new AtomicInteger(0);
         this.lastFailureTime = new AtomicLong(0);
+        this.halfOpenProbeInFlight = new AtomicBoolean(false);
+        this.halfOpenProbeStartedAt = new AtomicLong(0);
     }
 
     @Override
@@ -64,6 +74,8 @@ public class LockFreeCircuitBreaker implements CircuitBreaker {
                     // CAS 操作尝试转为半开状态
                     if (stateRef.compareAndSet(State.OPEN, State.HALF_OPEN)) {
                         successCount.set(0);
+                        halfOpenProbeStartedAt.set(System.currentTimeMillis());
+                        halfOpenProbeInFlight.set(true);
                         logger.debug("熔断器转为半开状态：instanceId={}, elapsed={}ms", instanceId, elapsed);
                         return true;
                     }
@@ -73,7 +85,13 @@ public class LockFreeCircuitBreaker implements CircuitBreaker {
                 return false;
                 
             case HALF_OPEN:
-                return true;
+                // 只放行一个探测；其余请求快速拒绝，由上层换实例或直接失败
+                if (halfOpenProbeInFlight.compareAndSet(false, true)) {
+                    halfOpenProbeStartedAt.set(System.currentTimeMillis());
+                    return true;
+                }
+                // 探测方没有回报（异常路径吞掉了 onSuccess/onFailure）时，超过 timeout 放行下一轮
+                return System.currentTimeMillis() - halfOpenProbeStartedAt.get() >= timeout;
                 
             default:
                 return true;
@@ -95,6 +113,7 @@ public class LockFreeCircuitBreaker implements CircuitBreaker {
                 break;
                 
             case HALF_OPEN:
+                halfOpenProbeInFlight.set(false);
                 int newSuccessCount = successCount.incrementAndGet();
                 if (newSuccessCount >= successThreshold) {
                     // CAS 操作尝试转为关闭状态
@@ -146,6 +165,7 @@ public class LockFreeCircuitBreaker implements CircuitBreaker {
                 
             case HALF_OPEN:
                 lastFailureTime.set(System.currentTimeMillis());
+                halfOpenProbeInFlight.set(false);
                 // 失败则重新进入打开状态
                 if (stateRef.compareAndSet(State.HALF_OPEN, State.OPEN)) {
                     logger.info("熔断器重新打开：instanceId={}, failure in HALF_OPEN state", instanceId);
@@ -168,6 +188,8 @@ public class LockFreeCircuitBreaker implements CircuitBreaker {
         failureCount.set(0);
         successCount.set(0);
         lastFailureTime.set(0);
+        halfOpenProbeInFlight.set(false);
+        halfOpenProbeStartedAt.set(0);
         logger.info("熔断器已重置：instanceId={}", instanceId);
         recordCircuitBreakerEvent("reset", "CLOSED");
     }
