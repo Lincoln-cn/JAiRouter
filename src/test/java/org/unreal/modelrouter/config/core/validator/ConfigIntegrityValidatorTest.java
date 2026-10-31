@@ -228,12 +228,14 @@ class ConfigIntegrityValidatorTest {
         }
 
         @Test
-        @DisplayName("VAL-218: 存储配置 - 有效类型redis")
+        @DisplayName("VAL-218: 存储配置 - redis 不再被接受（工程只有 JPA 实现，见 #875）")
         void testValidStoreTypeRedis() {
             setField(validator, "storeType", "redis");
 
             ApplicationReadyEvent event = mock(ApplicationReadyEvent.class);
-            assertDoesNotThrow(() -> validator.onApplicationEvent(event));
+            // #875：redis/memory 从未实现，StoreManagerConfiguration 无论取值都返回 JPA，
+            // 静默不生效比启动期直接报错更难排查，所以这里改为必须报错。
+            assertThrows(RuntimeException.class, () -> validator.onApplicationEvent(event));
         }
 
         @Test

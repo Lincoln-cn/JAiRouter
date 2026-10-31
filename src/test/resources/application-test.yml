@@ -2,11 +2,7 @@ store:
   type: h2
 
 spring:
-  # R2DBC 配置 (响应式数据库)
-  r2dbc:
-    url: r2dbc:h2:mem:///testdb
-    username: sa
-    password:
+  # 说明：这里曾有 spring.r2dbc.* 配置，但工程没有 R2DBC 驱动依赖，从未生效（#875 已删除）
 
   # JDBC 配置 (JPA Repository 测试)
   datasource:

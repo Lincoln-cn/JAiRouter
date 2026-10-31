@@ -3,7 +3,8 @@
 # ========================================
 # H2 数据库存储配置
 store:
-  type: h2  # 默认使用 H2 数据库存储
+  # 存储实现只有 JPA 一种（h2 只是 JPA 用的数据库）；redis/memory 从未实现（#875）
+  type: h2
 
 jairouter:
   security:
@@ -57,18 +58,11 @@ jairouter:
       retentionDays: 30
 
 # ========================================
-# Spring 配置（R2DBC 和 Redis）
+# Spring 配置（Redis）
 # ========================================
 spring:
-  # Spring Data R2DBC 配置
-  r2dbc:
-    username: sa
-    password:
-    pool:
-      initial-size: 10
-      max-size: 20
-      max-idle-time: 30m
-  
+  # 说明：这里曾有 spring.r2dbc.* 配置，但工程从未引入 R2DBC 驱动（pom 无依赖），
+  # 整段配置从未被任何代码读取（#875 已删除）。
   # SQL 初始化配置已移除
   # 使用 JPA ddl-auto: update 自动管理表结构，避免 schema.sql 与 Entity 不同步问题
   # 参见: skill schema-sql-jpa-sync
