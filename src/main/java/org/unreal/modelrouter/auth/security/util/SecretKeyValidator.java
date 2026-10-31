@@ -157,10 +157,13 @@ public class SecretKeyValidator {
             return ValidationResult.failure(StrengthLevel.VERY_WEAK, "密钥不能为空");
         }
 
-        // 检查常见弱密钥
-        if (isCommonWeakSecret(secret)) {
-            return ValidationResult.failure(StrengthLevel.VERY_WEAK, 
-                "检测到常见弱密钥，请使用随机生成的密钥");
+        // 检查常见弱密钥（#879：文案必须点名命中的片段与占比，否则运维无从判断该改哪一段）
+        final String weakPattern = matchedWeakPattern(secret);
+        if (weakPattern != null) {
+            final int share = Math.max(1, Math.round(weakPattern.length() * 100f / secret.length()));
+            return ValidationResult.failure(StrengthLevel.VERY_WEAK, String.format(
+                "检测到常见弱密钥片段「%s」（占密钥长度的约 %d%%），请改用随机生成的密钥"
+                    + "（例如 openssl rand -base64 48）", weakPattern, share));
         }
 
         // 检查密钥长度（Base64 解码后）
@@ -256,40 +259,67 @@ public class SecretKeyValidator {
     /**
      * 检查是否为常见弱密钥
      */
-    private static boolean isCommonWeakSecret(final String secret) {
-        String lower = secret.toLowerCase();
+    static boolean isCommonWeakSecret(final String secret) {
+        return matchedWeakPattern(secret) != null;
+    }
+
+    /**
+     * 返回命中的弱片段（未命中返回 {@code null}），用于把「命中哪条规则」写进失败文案（#879）。
+     *
+     * <p>判定口径：</p>
+     * <ul>
+     *   <li>高熵（随机生成）密钥：片段必须占主导（≥15%）才算命中，避免随机串里的偶然子串；</li>
+     *   <li>人择低熵密钥：任意弱子串算命中，但太短（≤4 字符）的片段在长密钥里不单独构成风险
+     *       （例如 32 位强口令里出现 {@code key}），仍需占主导才判弱；</li>
+     *   <li>出厂默认密钥与「大小写单一的纯字母数字串」单独成条。</li>
+     * </ul>
+     */
+    private static String matchedWeakPattern(final String secret) {
+        final String lower = secret.toLowerCase();
 
         // 常见弱密钥模式
-        String[] weakPatterns = {
+        final String[] weakPatterns = {
             "secret", "key", "token", "password", "admin",
             "123456", "qwerty", "abcdef",
             "your-", "change", "default",
             "test", "dev", "demo"
         };
 
-        // 高熵密钥（如 SecretKeyGenerator 产出的随机 Base64）中短模式/长模式均可能偶然出现，
-        // 仅当模式在密钥中占主导时才判定弱；人择低熵密钥则任意弱子串都算命中
+        // 出厂默认密钥优先单独成条：它的名字里同时含 change/123456 等片段，
+        // 先跑片段匹配会把文案说成「123456」而不是「你在用出厂默认密钥」（#879）
+        if ("ChangeMeOnFirstStartup123456".equals(secret)) {
+            return secret;
+        }
+
         final boolean highEntropy = isHighEntropy(secret);
         final int secretLength = secret.length();
 
-        for (String pattern : weakPatterns) {
-            if (isWeakPatternHit(lower, pattern, secretLength, highEntropy)) {
-                return true;
+        for (final String pattern : weakPatterns) {
+            if (!lower.contains(pattern)) {
+                continue;
             }
-        }
-
-        // 检查是否为默认密钥
-        if ("ChangeMeOnFirstStartup123456".equals(secret)) {
-            return true;
+            final boolean dominant = pattern.length() * DOMINANCE_DENOMINATOR
+                >= secretLength * DOMINANCE_NUMERATOR;
+            if (highEntropy) {
+                if (dominant) {
+                    return pattern;
+                }
+                continue;
+            }
+            // #879：长密钥里的短片段（key/dev/test/demo 之类）不单独构成风险
+            if (pattern.length() <= 4 && secretLength >= 24 && !dominant) {
+                continue;
+            }
+            return pattern;
         }
 
         // 检查连续字符
         if (secret.matches("^[a-zA-Z0-9]{1,}$")
         && (secret.equals(secret.toLowerCase()) || secret.equals(secret.toUpperCase()))) {
-            return true;
+            return "大小写单一的纯字母数字串";
         }
 
-        return false;
+        return null;
     }
 
     /**
