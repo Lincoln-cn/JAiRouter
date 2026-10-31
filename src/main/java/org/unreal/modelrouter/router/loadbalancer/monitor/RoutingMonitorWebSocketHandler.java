@@ -6,8 +6,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketSession;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContext;
 import org.unreal.modelrouter.common.cluster.ClusterEventBus;
 import org.unreal.modelrouter.common.util.InstanceIdentity;
+import org.unreal.modelrouter.common.ws.WsControlAuthorization;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
@@ -64,6 +67,14 @@ public class RoutingMonitorWebSocketHandler implements WebSocketHandler {
     public Mono<Void> handle(WebSocketSession session) {
         log.info("WebSocket client connected: {}", session.getId());
 
+        // #916：控制消息只允许平台管理员。主体只在握手时解析一次并缓存，
+        // 逐条消息再解析既浪费又容易在事件循环里误用阻塞 API。
+        final Mono<Boolean> adminCaller = ReactiveSecurityContextHolder.getContext()
+                .map(SecurityContext::getAuthentication)
+                .map(WsControlAuthorization::hasAdminAuthority)
+                .defaultIfEmpty(false)
+                .cache();
+
         // 注册事件回调（首次连接时）
         registerEventCallback();
 
@@ -103,26 +114,35 @@ public class RoutingMonitorWebSocketHandler implements WebSocketHandler {
                 Flux.merge(heartbeat, eventStream)
         );
 
-        return session.send(
+        return adminCaller.flatMap(admin -> session.send(
                 output.map(session::textMessage)
         ).and(
                 session.receive()
                         .doOnNext(message -> {
                             String payload = message.getPayloadAsText();
                             log.debug("Received from client: {}", payload);
-                            handleClientMessage(payload);
+                            handleClientMessage(session, admin, payload);
                         })
                         .doOnError(e -> log.warn("WebSocket error: {}", e.getMessage()))
                         .doOnTerminate(() -> log.info("WebSocket client disconnected: {}", session.getId()))
-        );
+        ));
     }
 
     /**
      * 处理客户端消息
      */
-    private void handleClientMessage(String payload) {
+    // package-private：供同包单测直接驱动控制消息（#916）
+    void handleClientMessage(WebSocketSession session, boolean adminCaller, String payload) {
         try {
             ClientMessage message = objectMapper.readValue(payload, ClientMessage.class);
+
+            // #916：推送对所有人开放，但暂停/恢复/改采样率是写操作，与 REST 侧的
+            // LB_CONFIG_WRITE 等同，只允许平台管理员。
+            if (WsControlAuthorization.isControlMessage(message.type())
+                    && !adminCaller) {
+                log.warn("拒绝非管理员的监控控制消息: session={}, type={}", session.getId(), message.type());
+                return;
+            }
 
             switch (message.type()) {
                 case "pause" -> {
@@ -153,6 +173,7 @@ public class RoutingMonitorWebSocketHandler implements WebSocketHandler {
             log.warn("Failed to parse client message: {}", e.getMessage());
         }
     }
+
 
     // ==================== DTO ====================
 
