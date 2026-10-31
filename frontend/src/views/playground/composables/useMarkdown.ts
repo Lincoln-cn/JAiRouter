@@ -1,5 +1,6 @@
 import { marked } from 'marked'
 import hljs from 'highlight.js'
+import DOMPurify from 'dompurify'
 
 // 配置 marked
 marked.setOptions({
@@ -42,9 +43,18 @@ export function useMarkdown() {
         }
       )
 
-      return html
+      // #899：模型输出是不可信内容。marked 从 v5 起不再消毒、原样透传 HTML，
+      // 而这里的结果会经 v-html 注入，等于把上游模型（或提示注入）给出的
+      // <img onerror> / <script> 放进控制台源执行 —— 而 admin_token 就在
+      // localStorage 里，所以必须在返回前统一消毒。hljs 产物是转义过的
+      // <span class="hljs-*">，默认允许类名与 span，不受影响。
+      return DOMPurify.sanitize(html, {
+        USE_PROFILES: { html: true },
+        ADD_ATTR: ['target', 'rel']
+      })
     } catch {
-      return text
+      // 解析失败时同样不能把原文交给 v-html
+      return DOMPurify.sanitize(text, { USE_PROFILES: { html: true } })
     }
   }
 
@@ -65,17 +75,28 @@ export function useMarkdown() {
   }
 
   /**
+   * 消毒着色器产物（#899）：只保留 highlight.js 需要的 span/类名。
+   */
+  const sanitizeHighlighted = (html: string): string =>
+    DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['span'],
+      ALLOWED_ATTR: ['class']
+    })
+
+  /**
    * 高亮代码
    */
   const highlightCode = (code: string, language?: string): string => {
+    // hljs 的 value 已对 < > & 做转义，这里再消毒一次是为了防止
+    // 将来换成别的着色器（或 hljs 行为变化）时把未转义内容带进 v-html。
     if (language && hljs.getLanguage(language)) {
       try {
-        return hljs.highlight(code, { language }).value
+        return sanitizeHighlighted(hljs.highlight(code, { language }).value)
       } catch {
         // ignore
       }
     }
-    return hljs.highlightAuto(code).value
+    return sanitizeHighlighted(hljs.highlightAuto(code).value)
   }
 
   return {
