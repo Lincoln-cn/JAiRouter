@@ -171,8 +171,10 @@ public class ConfigIntegrityValidator implements ApplicationListener<Application
     }
 
     private void validateStorageConfig(List<String> errors, List<String> warnings) {
-        // 存储类型校验 (v2.26.1: h2也是有效类型，通过JPA实现)
-        List<String> validStoreTypes = List.of("jpa", "redis", "memory", "h2");
+        // 存储类型校验（#875）：工程里只有 JPA 实现，h2 只是 JPA 使用的数据库。
+        // 历史上这里还接受 redis/memory，但 StoreManagerConfiguration 无论取值都返回 JPA，
+        // 于是「设了 redis 却仍在用 JPA」——静默不生效比直接拒绝更难排查。
+        List<String> validStoreTypes = List.of("jpa", "h2");
         if (!validStoreTypes.contains(storeType.toLowerCase())) {
             errors.add("store.type 无效（当前: " + storeType + "，有效值: " + validStoreTypes + ")");
         } else {

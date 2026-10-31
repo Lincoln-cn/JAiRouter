@@ -33,7 +33,12 @@ public class StoreManagerConfiguration {
     @Bean
     @Primary
     public StoreManager storeManager(final JpaStoreManager jpaStoreManager) {
-        log.info("Initializing StoreManager with JPA (v1.5.1)");
+        // #875：store.type 目前只有 JPA 一种实现，h2 只是 JPA 使用的数据库。
+        // 配置成其他取值时不再静默忽略，启动日志里明确提示实际使用的实现。
+        if (!"jpa".equalsIgnoreCase(type) && !"h2".equalsIgnoreCase(type)) {
+            log.warn("store.type={} 未被实现，实际仍使用 JPA 存储；可选值只有 jpa / h2", type);
+        }
+        log.info("Initializing StoreManager with JPA (v1.5.1), configured store.type={}", type);
         return jpaStoreManager;
     }
 
