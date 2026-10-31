@@ -215,7 +215,11 @@ public class ModelServiceRegistry {
         try {
             Map<String, Object> mergedConfig = loadMergedConfig();
 
-            final Map<String, ServiceRuntimeConfig> newCache = configBuilder.rebuildServiceConfigCache(mergedConfig);
+            // #905：缓存键统一为「规范化服务键」。配置里的键可能是驼峰（imgGen / imgEdit），
+            // 而读取侧一律用 ServiceTypeResolver.getServiceConfigKey(...) 的连字符小写形式，
+            // 两边口径不一致会让 imgGen / imgEdit 的运行时配置读不到（图像能力整体 404）。
+            final Map<String, ServiceRuntimeConfig> newCache =
+                    canonicalizeCacheKeys(configBuilder.rebuildServiceConfigCache(mergedConfig));
             this.currentConfig = mergedConfig;
             updateOriginalPropertiesFromConfig(mergedConfig);
             this.serviceConfigCache = newCache;
@@ -312,9 +316,11 @@ public class ModelServiceRegistry {
                 continue;
             }
             final Map<String, Object> serviceConfigMap = (Map<String, Object>) rawServiceConfig;
+            // #905：与全量刷新一致，写入缓存与配置副本都用规范化键
+            final String cacheKey = canonicalCacheKey(resolvedKey);
             try {
-                newCache.put(resolvedKey, configBuilder.buildServiceRuntimeConfig(serviceConfigMap));
-                newPropertiesServices.put(resolvedKey,
+                newCache.put(cacheKey, configBuilder.buildServiceRuntimeConfig(serviceConfigMap));
+                newPropertiesServices.put(cacheKey,
                         configConverterHelper.convertMapToServiceConfig(serviceConfigMap));
             } catch (RuntimeException e) {
                 // 与全量刷新（ServiceConfigBuilder 逐个服务兜底）一致：单个服务配置写坏时保留旧缓存，
@@ -322,7 +328,7 @@ public class ModelServiceRegistry {
                 LOGGER.warn("重建服务 {} 的运行时配置失败，保留旧缓存: {}", resolvedKey, e.getMessage(), e);
                 continue;
             }
-            refreshedConfigs.put(resolvedKey, serviceConfigMap);
+            refreshedConfigs.put(cacheKey, serviceConfigMap);
         }
 
         final Map<String, Object> previousConfig = this.currentConfig;
@@ -346,6 +352,52 @@ public class ModelServiceRegistry {
 
         LOGGER.info("运行时缓存已按服务精确刷新，涉及 {} 个服务", refreshedConfigs.size());
         return new HashSet<>(refreshedConfigs.keySet());
+    }
+
+    /**
+     * #905: 规范化缓存键。
+     *
+     * <p>配置里的服务键可能是驼峰（{@code imgGen}）、下划线或连字符写法，而读取侧
+     * （{@link #selectInstance}、负载均衡器、模型清单）统一用
+     * {@code ServiceTypeResolver#getServiceConfigKey} 得到的连字符小写形式（{@code img-gen}）。
+     * 写入与读取必须用同一口径，否则服务配置写进缓存后永远读不到。</p>
+     *
+     * @param serviceKey 配置里的原始键
+     * @return 规范化后的键；无法识别为已知服务类型时原样返回
+     */
+    private String canonicalCacheKey(final String serviceKey) {
+        if (serviceKey == null || serviceKey.isBlank()) {
+            return serviceKey;
+        }
+        final ServiceType type = serviceTypeResolver.parseServiceType(serviceKey);
+        if (type == null) {
+            return serviceKey;
+        }
+        final String canonical = serviceTypeResolver.getServiceConfigKey(type);
+        return canonical != null && !canonical.isBlank() ? canonical : serviceKey;
+    }
+
+    /**
+     * #905: 把整张缓存按规范化键重建；两个原始键规范化后相同则保留先出现的那个并打 warn。
+     */
+    private Map<String, ServiceRuntimeConfig> canonicalizeCacheKeys(
+            final Map<String, ServiceRuntimeConfig> rawCache) {
+        if (rawCache == null || rawCache.isEmpty()) {
+            return rawCache;
+        }
+        final Map<String, ServiceRuntimeConfig> normalized = new java.util.LinkedHashMap<>(rawCache.size());
+        for (Map.Entry<String, ServiceRuntimeConfig> entry : rawCache.entrySet()) {
+            final String key = canonicalCacheKey(entry.getKey());
+            if (key == null) {
+                continue;
+            }
+            final ServiceRuntimeConfig previous = normalized.putIfAbsent(key, entry.getValue());
+            if (previous != null) {
+                LOGGER.warn("服务配置键 {} 规范化后为 {}，与已存在的同名键冲突，保留先出现的那个",
+                        entry.getKey(), key);
+            }
+        }
+        return new ConcurrentHashMap<>(normalized);
     }
 
     /**
