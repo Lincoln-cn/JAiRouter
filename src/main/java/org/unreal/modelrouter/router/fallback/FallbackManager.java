@@ -21,6 +21,10 @@ public class FallbackManager {
     // 存储所有服务的降级策略
     private final Map<String, FallbackStrategy<ResponseEntity<?>>> fallbackStrategies = new ConcurrentHashMap<>();
 
+    // #873：策略缓存对应的配置指纹。配置改了（enabled/strategy/cache-size/cache-ttl）就必须重建，
+    // 否则控制台保存成功、路由还按旧策略跑，直到进程重启。
+    private final Map<String, String> strategyFingerprints = new ConcurrentHashMap<>();
+
     private final ComponentFactory componentFactory;
 
     // 全局降级配置
@@ -52,12 +56,6 @@ public class FallbackManager {
             final String serviceType,
             final ModelRouterProperties.ServiceConfig serviceConfig) {
 
-        // 先从缓存中获取
-        FallbackStrategy<ResponseEntity<?>> strategy = fallbackStrategies.get(serviceType);
-        if (strategy != null) {
-            return strategy;
-        }
-
         // 检查服务级别配置
         ModelRouterProperties.FallbackConfig fallbackConfig = null;
         if (serviceConfig != null) {
@@ -69,12 +67,25 @@ public class FallbackManager {
             fallbackConfig = globalFallbackConfig;
         }
 
+        final String fingerprint = fingerprintOf(fallbackConfig);
+
+        // 命中缓存且配置指纹没变才复用
+        FallbackStrategy<ResponseEntity<?>> strategy = fallbackStrategies.get(serviceType);
+        if (strategy != null && fingerprint.equals(strategyFingerprints.get(serviceType))) {
+            return strategy;
+        }
+
         // 创建降级策略
         strategy = componentFactory.createFallbackStrategy(fallbackConfig, serviceType);
 
-        // 缓存策略（如果存在）
+        // 缓存策略（如果存在）；配置变了就换成新实例
         if (strategy != null) {
             fallbackStrategies.put(serviceType, strategy);
+            strategyFingerprints.put(serviceType, fingerprint);
+            logger.debug("降级策略已按最新配置重建: service={}, fingerprint={}", serviceType, fingerprint);
+        } else {
+            fallbackStrategies.remove(serviceType);
+            strategyFingerprints.remove(serviceType);
         }
 
         return strategy;
@@ -111,6 +122,7 @@ public class FallbackManager {
      */
     public void clearFallbackStrategy(final String serviceType) {
         fallbackStrategies.remove(serviceType);
+        strategyFingerprints.remove(serviceType);
         logger.info("Cleared fallback strategy for service: {}", serviceType);
     }
 
@@ -119,6 +131,7 @@ public class FallbackManager {
      */
     public void clearAllFallbackStrategies() {
         fallbackStrategies.clear();
+        strategyFingerprints.clear();
         logger.info("Cleared all fallback strategies");
     }
 
@@ -128,6 +141,19 @@ public class FallbackManager {
      */
     public int getFallbackStrategyCount() {
         return fallbackStrategies.size();
+    }
+
+    /**
+     * #873：把「会影响策略行为」的字段拼成指纹；任一字段变化都要重建策略.
+     */
+    private static String fingerprintOf(final ModelRouterProperties.FallbackConfig config) {
+        if (config == null) {
+            return "disabled";
+        }
+        return "enabled=" + config.getEnabled()
+                + ";strategy=" + config.getStrategy()
+                + ";cacheSize=" + config.getCacheSize()
+                + ";cacheTtl=" + config.getCacheTtl();
     }
 
     public ModelRouterProperties.FallbackConfig getDefaultFallbackConfig() {
