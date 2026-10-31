@@ -3,7 +3,7 @@
 <!-- 版本信息 -->
 > **Doc Version**: 2.5.0
 > **Last Updated**: 2026-10-30
-> **Git Tag**: v3.5.7
+> **Git Tag**: v3.5.8
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -23,6 +23,17 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 - **Observability**: Comprehensive monitoring, logging, and distributed tracing
 
 ## Current Version Status
+
+### ✅ v3.5.8 (Patch: two P0s in the observability path, plus nineteen fixes, **released 2026-10-31**)
+
+**Status**: Released (GitHub Release `v3.5.8`, 2026-10-31; multi-arch Docker images rebuilt by CI on release: `v3.5.8` / `3.5.8` / `latest`)
+**Scope**: 21 PRs (#851-#897) from the second audit pass — two P0s and nineteen P1/P2 items, plus dependency bumps and a security policy. **No API breaking changes; six behavior changes are listed in the changelog upgrade notes.**
+**Highlights**:
+
+- **The two P0s (observability)**: the async metrics processor fed its own output back into its queue (#848 — a core pinned at ~75% with every business metric lost), and disabling tracing failed startup (#849).
+- **Request-path correctness**: fallback-cache writes reuse the assembly-time key (#850), health decisions gained hysteresis (#855), generic 500s stopped echoing the exception message (#856), hourly statistics now go through the transaction proxy (#857), uploads are capped at 25 MiB with a 413 (#862), the health SSE stream shares one snapshot (#866), the half-open breaker admits a single probe (#870), and management endpoints moved off the event loop (#854 / #864).
+- **Data and configuration honesty**: audit event types completed by migration V7 (#868), fallback cache honours TTL (#872), strategies rebuild on config change (#873), first-start initialization heals and rolls back (#874), `store.type` narrowed with the dead R2DBC config removed (#875), config versions derived from history (#876), routing statistics and client-IP limiters bounded and atomic (#877 / #878), weak-secret messages name the fragment (#879), ephemeral encryption keys reported (#880), cache capacity and eviction fixed (#890), streamed responses no longer cached (#892).
+- **Repository hygiene**: `SECURITY.md` added (#894), the dead `HttpRequestProcessor` removed (#896), `vue-i18n` and its `@intlify/*` packages bumped to 11.4.16 (#799 / #800).
 
 ### ✅ v3.5.7 (Patch: P0s from a core-path audit, plus capability gaps, **released 2026-10-31**)
 

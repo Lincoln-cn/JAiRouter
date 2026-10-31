@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.5.7
+> **Document Version**: 3.5.8
 > **Last Updated**: 2026-10-31
 > **Git Commit**: -
 > **Author**: Lincoln
@@ -20,6 +20,56 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.5.8] - 2026-10-31 - Two P0s in the observability path, plus nineteen correctness and honesty fixes (#848-#897)
+
+The second audit pass: the observability path first, then every remaining surface. **No API breaking changes**,
+but six behavior changes are listed under "Upgrade notes" below.
+
+#### Blocking (P0, both in the observability path)
+
+- **The async metrics processor fed its own output back into its queue (#848)**: `AsyncMetricsProcessor` injected a `@Lazy MetricsCollector`, which resolved to the `@Primary` async collector itself, so every processed event enqueued another one. Measured: 1.67 million self-produced events in 71 seconds, the `metrics-processor` thread burning ~75% of a core, and not a single `jairouter_requests_total` in `/actuator/prometheus` — business metrics were drowned by its own noise. The processor now injects the synchronous collector and has a fuse that keeps processor-thread work synchronous.
+- **Disabling tracing failed startup (#849)**: beans such as `TracingService` required a `Tracer`, which is only provided under `@ConditionalOnProperty(tracing.enabled=true)`, so the `enabled: false` shown in the docs exited with `APPLICATION FAILED TO START`. A no-op `Tracer` is now supplied when tracing is off, and `TracingHealthIndicator` reports UP instead of DOWN for a disabled optional component (the Docker HEALTHCHECK uses the aggregate endpoint, so DOWN caused restart loops).
+
+#### Request-path correctness
+
+- **The fallback cache recomputed its write key from a cleared ThreadLocal (#850)**: the read key was built during assembly while the write key was rebuilt when the response arrived, after `AffinityContextHolder` had been cleared, so writes were keyed `anonymous` and `strategy: cache` never hit. Writes now reuse the assembly-time key.
+- **Health decisions had no hysteresis (#855)**: one bad round marked a whole service 503. An instance is now removed only after `failure-threshold` (default 2) consecutive failures.
+- **Generic 500s echoed the exception message (#856)**: `"系统异常: " + ex.getMessage()` leaked details such as `jdbc:...password=…` to clients. The body is now the fixed text 「系统异常，请稍后重试」 while the original goes to the log.
+- **Hourly audit statistics bypassed the transaction proxy (#857)**: `this::flushHourlyStatsToDatabase` no longer goes through the Spring proxy, so `@Transactional` did not apply, `merge` threw `TransactionRequiredException`, and the exception was swallowed — statistics never reached the database. The call now goes through an `ObjectProvider` proxy.
+- **Uploads had no size limit (#862)**: audio and image uploads were read fully into the heap before being forwarded (`spring.codec.multipart.max-in-memory-size` does not cover `FilePart.content()`); an 80 MiB upload was accepted end to end. The default limit is now 25 MiB (`jairouter.multipart.max-file-size-bytes`), and oversized uploads answer 413 after releasing the buffered `DataBuffer`s.
+- **The health SSE stream created one timer per connection (#866)**: N console tabs meant 2N full-table scans every 5 seconds. One shared snapshot is now used (`share()` with ref counting) and the timer stops when nobody listens.
+- **The half-open circuit breaker let all concurrent requests through (#870)**: after `OPEN → HALF_OPEN` it returned true for everyone, so the backlog after a 60-second open period hit a just-recovered instance at once. A single probe is now admitted; the rest fall back to the timeout rule.
+- **Management endpoints blocked the event loop (#854 / #864)**: seven monitor controllers and other synchronous controllers returned `ResponseEntity` while doing JPA on a Netty thread. They were first offloaded by an allow-list (#854) and then by an inverse rule: everything under `/api/**` is offloaded except `/api/v1/**` (streaming), `/api/health-status/**` (SSE) and `/actuator/metrics`.
+
+#### Data and configuration honesty
+
+- **The audit event-type constraint allowed only 16 values (#868)**: `AuditEventType` has 26 constants but H2's `enum(...)` and PostgreSQL's `check` allowed 16, so ten event types could never be written and the hot paths swallow the failure — the audit trail silently lost those rows. Migration `V7` rewrites the constraint on both databases.
+- **The fallback cache never honoured `cache-ttl` (#872)**: `ComponentFactory` only passed `cache-size`. TTL now applies and expired entries count as misses.
+- **Fallback strategies were never rebuilt on config change (#873)**: they were cached per `serviceType`. A configuration fingerprint now decides whether to rebuild.
+- **First-start initialization was not atomic (#874)**: the condition was "both tables are empty", so a failure after writing `config_data` skipped `service_config` forever. Each store is now checked independently and a failed attempt rolls back its own writes.
+- **`store.type` and `spring.r2dbc.*` had no consumer (#875)**: `store.type` only ever selected JPA, and `spring.r2dbc.*` had no dependency behind it. Accepted values are now `jpa` / `h2`, the R2DBC block is gone, and other values log a warning.
+- **Config versions were an in-process counter with no rollback (#876)**: versions are now derived from persisted history and rollback appends the old snapshot as a new version.
+- **Routing statistics and client-IP limiters were unbounded or non-atomic (#877 / #878)**: the client map is capped (10,000 default) and evicts in insertion order; Caffeine's `get(key, loader)` loads atomically so concurrent first accesses share one token bucket.
+- **Weak-secret detection did not say what matched (#879)**: a long passphrase that happens to contain `abcdef` was judged VERY_WEAK and refused startup. A fragment now has to dominate (15% or more) and the message names it with its share.
+- **An ephemeral encryption key was used silently (#880)**: without `jairouter.security.encryption.key` the service generated a throwaway key, so backups written in that process could not be decrypted after a restart. Startup now warns, logs only a key fingerprint, and decryption failures name the configuration key to set.
+- **A zero-capacity fallback cache had no limit and arbitrary eviction (#890)**: `cache-size <= 0` now disables caching and eviction follows insertion order.
+- **Streaming responses were cached as fallback entries (#892)**: a `Flux` body was held as an ordinary response, and replaying it subscribed a second time, producing an empty stream. The write side now rejects `Publisher` bodies and the read side treats historical entries as misses.
+
+#### Repository and dependency hygiene
+
+- **`SECURITY.md` added (#894)**: reporting channel (private vulnerability reporting), supported versions, scope, the two accepted CodeQL findings, and a hardening checklist; both READMEs link to it.
+- **`HttpRequestProcessor` removed (#896)**: a 170-line third "send layer" whose `getHttpRequestProcessor()` had zero callers.
+- **Dependency bumps (#799 / #800)**: `vue-i18n`, `@intlify/shared` and `@intlify/core-base` to 11.4.16.
+
+#### Upgrade notes
+
+1. Health checks need `failure-threshold` consecutive failures (default 2) before marking an instance down; set it to 1 for the previous behavior.
+2. Uploads above `jairouter.multipart.max-file-size-bytes` (25 MiB default) answer 413 instead of being read into the heap.
+3. Flyway migration `V7__audit_event_type_values.sql` rewrites the `security_audit.event_type` constraint on H2 and PostgreSQL; compare with any manual change you made to that constraint.
+4. `store.type` accepts only `jpa` / `h2`; `redis` / `memory` now fail at startup and `spring.r2dbc.*` is gone.
+5. `fallback.cache-size <= 0` now disables caching, and the cache honours `cache-ttl` (300000 ms default).
+6. Generic 500 responses are the fixed text 「系统异常，请稍后重试」 and no longer contain the exception message.
 
 ### [3.5.7] - 2026-10-31 - Five blocking P0s closed, plus four capability gaps (#801-#846)
 

@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.5.7
+> **文档版本**: 3.5.8
 > **最后更新**: 2026-10-31
 > **作者**: JAiRouter Team
 
@@ -21,6 +21,55 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.5.8] - 2026-10-31 - 可观测性面两条 P0 + 十九项正确性与诚实性修复（#848–#897）
+
+第二轮审计（先审可观测性链路，再把剩余面逐个过一遍）的落地版。**没有 API 破坏性变更**，但有六处行为变化，见文末「升级提示」。
+
+#### 阻断级（P0，都在可观测性面）
+
+- **异步指标采集器把处理结果回灌自身（#848）**：`AsyncMetricsProcessor` 注入的是 `@Lazy MetricsCollector`，解析到 `@Primary` 的异步采集器自身；每处理一个事件就再入队一个。实测 71 秒自产 167 万事件、`metrics-processor` 线程吃满约 75% 单核，而 `/actuator/prometheus` 里 `jairouter_requests_total` 一条都没有——业务指标全被自产事件淹没。现在处理器改注入同步采集器，并在处理器线程内加保险丝（一律走同步采集）。
+- **关闭追踪导致应用启动失败（#849）**：`TracingService` 等 Bean 无条件依赖 `Tracer`，而 `Tracer` 由 `@ConditionalOnProperty(tracing.enabled=true)` 提供；文档里示范的 `enabled: false` 会让应用以 `APPLICATION FAILED TO START` 退出。现在关闭追踪时补 `TracerProvider.noop()`，且 `TracingHealthIndicator` 的「追踪已禁用」由 DOWN 改为 UP（Docker HEALTHCHECK 用聚合端点，DOWN 会让容器反复重启）。
+
+#### 请求链路正确性
+
+- **降级缓存写侧用已被清空的 ThreadLocal 重算键（#850）**：读键在装配期算好，写键却在响应到达时重算，此时 `AffinityContextHolder` 已被清理 ⇒ 写键恒 `anonymous`，`strategy: cache` 永不命中。现在写侧复用装配期的键。
+- **健康判定没有滞回（#855）**：单轮探活全失败就把整类服务判 503。现在需要连续 `failure-threshold`（默认 2）次失败才摘除实例。
+- **兜底 500 回显异常原文（#856）**：`"系统异常: " + ex.getMessage()` 会把 `jdbc:...password=…` 这类内部细节写给客户端。现在固定为「系统异常，请稍后重试」，原文只进日志。
+- **小时审计统计因自调用绕过事务（#857）**：`this::flushHourlyStatsToDatabase` 不经过 Spring 代理，`@Transactional` 不生效，`merge` 抛 `TransactionRequiredException` 被吞掉 ⇒ 统计永不落库。改为 `ObjectProvider` 拿代理调用。
+- **上传没有体积上限（#862）**：音频/图像上传被整份读进堆再转发（`spring.codec.multipart.max-in-memory-size` 对 `FilePart.content()` 无效），80 MiB 可被完整接收。现在默认上限 25 MiB（`jairouter.multipart.max-file-size-bytes`），超限 413 并释放已缓冲的 `DataBuffer`。
+- **健康状态 SSE 每个连接一条定时器（#866）**：N 个控制台标签页 = 每 5 秒 2N 次全表扫描。现在共享一份快照（`share()` + refCount），无人订阅时停表。
+- **熔断半开态放行全部并发（#870）**：`OPEN → HALF_OPEN` 之后直接 `return true`，60 秒积压的请求同时打向刚恢复的实例。现在只放行一个探测，其余按超时兜底。
+- **管理端点阻塞事件循环（#854 / #864）**：监控包 7 个控制器与其余同步控制器直接返回 `ResponseEntity` 并在 Netty 线程上做 JPA。先按监控白名单卸载（#854），随后改为反向规则：`/api/**` 一律卸载，只排除 `/api/v1/**`（流式）、`/api/health-status/**`（SSE）与 `/actuator/metrics`。
+
+#### 数据与配置诚实性
+
+- **审计事件类型库约束只有 16 个取值（#868）**：`AuditEventType` 有 26 个常量，但 H2 的 `enum(...)` 与 PostgreSQL 的 `check` 只允许 16 个 ⇒ 10 类事件写库必失败，而热路径都吞异常，表现为审计静默丢失。新增 `V7` 迁移在两侧补齐。
+- **降级缓存 `cache-ttl` 从未生效（#872）**：`ComponentFactory` 只把 `cache-size` 传给策略。现在 TTL 真正生效，过期按未命中处理。
+- **降级策略热更新后不重建（#873）**：策略按 `serviceType` 缓存，改配置后仍用旧实例。现在按配置指纹判断，变化即重建。
+- **首启初始化非原子（#874）**：判据是「两张表都空」，`config` 写成功而 `service_config` 失败后，下次启动永久跳过。现在按存储各自判空，失败回滚本次写入。
+- **`store.type` 与 `spring.r2dbc.*` 没有消费方（#875）**：`store.type` 只有 JPA 一条实现，`spring.r2dbc.*` 连依赖都没有。现在合法值收窄为 `jpa` / `h2`，删除 R2DBC 配置并在非 JPA 值上打 warn。
+- **配置版本号是进程内自增、回滚不实现（#876）**：现在版本号从持久化历史推导，回滚 = 把旧版本追加为新版本。
+- **路由统计与客户端限流器无界 / 非原子（#877 / #878）**：客户端映射加上限（默认 10000）并按写入顺序淘汰；Caffeine `get(key, loader)` 原子装载，避免并发首次访问各建一个令牌桶。
+- **弱密钥判定不说明命中什么（#879）**：长口令里偶然出现 `abcdef` 就被判 VERY_WEAK 且拒绝启动。现在要求片段占主导（≥15%）并点名片段与占比。
+- **临时加密密钥静默使用（#880）**：未配置 `jairouter.security.encryption.key` 时用临时密钥，重启后备份解不开。现在启动即 warn、只打印密钥指纹，解密失败给出「配置固定密钥」的提示。
+- **降级缓存容量 0 时无上限、淘汰不确定（#890）**：`cache-size <= 0` 现在表示关闭缓存；淘汰改为按写入顺序。
+- **流式响应被写进降级缓存（#892）**：`Flux` 体被当普通响应长期持有，回放时二次订阅得到空流。现在写入侧拒绝 `Publisher` 体，读取侧遇到历史条目按未命中处理。
+
+#### 仓库与依赖卫生
+
+- **新增 `SECURITY.md`（#894）**：报告渠道（private vulnerability reporting）、支持版本、范围、两条按设计接受的 CodeQL 告警解释、上线加固清单；双语 README 各挂一行。
+- **删除零调用方的 `HttpRequestProcessor`（#896）**：170 行的第三份「发送层」实现，`getHttpRequestProcessor()` 全仓零调用。
+- **依赖升级（#799 / #800）**：`vue-i18n`、`@intlify/shared`、`@intlify/core-base` 到 11.4.16。
+
+#### 升级提示
+
+1. 健康判定需要连续 `failure-threshold` 次失败（默认 2）才摘除实例；要恢复旧语义把它设为 1。
+2. 上传超过 `jairouter.multipart.max-file-size-bytes`（默认 25 MiB）回 413，不再整份读进堆。
+3. 新增 Flyway 迁移 `V7__audit_event_type_values.sql`（H2 与 PostgreSQL 都重写 `security_audit.event_type` 约束）；若曾手工改过该约束，请先比对。
+4. `store.type` 只接受 `jpa` / `h2`，写 `redis` / `memory` 会在启动期报错；`spring.r2dbc.*` 已删除。
+5. `fallback.cache-size <= 0` 现在表示不缓存；降级缓存的 `cache-ttl` 生效（默认 300000 ms）。
+6. 兜底 500 的响应体固定为「系统异常，请稍后重试」，不再包含异常消息。
 
 ### [3.5.7] - 2026-10-31 - 阻断可用的五条 P0 收口 + 四项能力补齐（#801–#846）
 

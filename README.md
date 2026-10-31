@@ -43,8 +43,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # the local/git directory name differs from the product name
 artifact:        model-router            # Maven artifactId
-project_version: 3.5.7                   # pom.xml
-latest_release:  v3.5.7 (2026-10-31)
+project_version: 3.5.8                   # pom.xml
+latest_release:  v3.5.8 (2026-10-31)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5 (WebFlux / reactive)
   frontend: Vue 3 + TypeScript + Vite, bilingual zh-CN / en-US
@@ -370,20 +370,25 @@ delivery. See [Status and recent work](#status-and-recent-work) for the open led
 
 ## Status and recent work
 
-**Latest release: v3.5.7 (2026-10-31)** — the batch that followed an audit of the core request path:
-the five P0 defects that could block real usage are gone, along with 16 P1-P3 items. **No API breaking changes;
-five upgrade notes matter (health-check mode, default upstream, JWT header, key format, shared-state check).**
+**Latest release: v3.5.8 (2026-10-31)** — the second audit pass: first the observability path, then every
+remaining surface, which turned up two P0s in metrics/tracing and 19 correctness or honesty fixes.
+**No API breaking changes; the upgrade notes below matter (health hysteresis, upload limit, audit-table migration).**
 
 | Theme | What changed |
 |-------|--------------|
-| **The five blocking P0s (#801-#805, #846)** | The security base template no longer overrides `api-key.enabled`, so API keys work without a profile; the admin password is printed only on the start that creates the account; the `legacy` profile starts again; default upstream becomes `${MODEL_UPSTREAM_BASE_URL:http://localhost:11434}`; the JWT header is `X-Jairouter-Token` (nginx drops underscored headers) |
-| **Core path (#822 / #818 / #823 / #819 / #827 / #825 / #821)** | Oversized responses stream through instead of failing; CORS is configurable and preflight is allowed; the fallback cache is keyed per request and marks hits with `X-Fallback`; runtime configuration is replaced as a snapshot with rollback; media services no longer retry after the request was sent; staging/prod validate shared-state reachability at startup; JWT secret checks no longer defeat the startup escape hatch |
-| **Capability gaps (#835 / #826 / #833 / #830)** | `/v1` gained native audio and image endpoints; keys embed their keyId so authentication is one indexed lookup instead of a full scan; health checks default to HTTP against `/v1/models`; unmapped media paths answer 501 with a pointer to `/api/v1/...` |
-| **Honesty and visibility (#811 / #813 / #824 / #834 / #820 / #816)** | API-key usage statistics write one record instead of the whole table; YAML keys normalize legacy permissions; shared rate-limit buckets are announced at startup; auth exclusions match on a path boundary; documentation header examples were unified |
+| **The two P0s (#848 / #849)** | The async metrics processor no longer feeds its own output back into its queue (it pinned a core at ~75% and lost every business metric); disabling tracing no longer breaks startup, and a disabled tracing component reports UP instead of dragging the container unhealthy |
+| **Request-path correctness (#850 / #854 / #855 / #856 / #857 / #862 / #866 / #870)** | Fallback-cache writes reuse the assembly-time request key; health checks need consecutive failures before a service is marked down; generic 500s no longer echo the exception message; hourly audit statistics flush through the proxy so `@Transactional` applies; uploads are capped at 25 MiB and answer 413; the health SSE stream shares one snapshot across connections; the circuit breaker lets a single probe through in half-open; management endpoints no longer run blocking JPA on the event loop |
+| **Data and configuration honesty (#868 / #872 / #873 / #874 / #875 / #876 / #877 / #878 / #879 / #880 / #890 / #892)** | `security_audit.event_type` accepts all 26 event types (migration V7); the fallback cache honours `cache-ttl`, rebuilds on config change, treats `cache-size <= 0` as disabled and never stores streamed responses; first-start initialization heals per store and rolls back; `store.type` only accepts implemented values; config versions are derived from persisted history; routing statistics and client-IP limiters are bounded and atomic; weak-secret detection names the matched fragment; an ephemeral encryption key is reported as such |
+| **Repository hygiene (#894 / #896 / #799 / #800)** | `SECURITY.md` documents the reporting channel and the two accepted CodeQL findings; the dead `HttpRequestProcessor` (170 lines, zero callers) is gone; `vue-i18n` and its `@intlify/*` dependencies are on 11.4.16 |
 
-See the [`[3.5.7]` changelog entry](docs/en/reference/changelog.md). Released as GitHub Release `v3.5.7` with multi-arch images (`v3.5.7` / `3.5.7` / `latest`).
+See the [`[3.5.8]` changelog entry](docs/en/reference/changelog.md). Released as GitHub Release `v3.5.8` with multi-arch images (`v3.5.8` / `3.5.8` / `latest`).
 
-**3.5.7 upgrade notes:** health checks default to `mode: http` with `/v1/models` (set `jairouter.health-check.mode: tcp` for the old semantics); the JWT header is `X-Jairouter-Token` (the old name still works as a fallback); set `MODEL_UPSTREAM_BASE_URL` for real deployments; new keys look like `sk-<keyId>.<secret>` (treat keys as opaque; legacy keys keep working); staging/prod validate shared-state Redis reachability (`redis-reachability: OFF` to disable).
+**3.5.8 upgrade notes:** health checks now need `failure-threshold` consecutive failures (default 2) before an instance is marked down — set it to 1 for the old behavior; uploads above `jairouter.multipart.max-file-size-bytes` (25 MiB) answer 413; Flyway migration `V7__audit_event_type_values.sql` rewrites the `security_audit.event_type` constraint on H2 and PostgreSQL; `store.type` accepts only `jpa` / `h2`; `fallback.cache-size <= 0` now means "do not cache"; generic 500 responses no longer include the exception message.
+
+**`v3.5.7` (2026-10-31)** — the patch that followed the first audit of the core request path: the five P0 defects
+that could block real usage, plus 16 P1-P3 items. Its upgrade notes still apply when jumping from `v3.5.6`.
+
+**3.5.7 upgrade notes (apply if you are coming from v3.5.6):** health checks default to `mode: http` with `/v1/models` (set `jairouter.health-check.mode: tcp` for the old semantics); the JWT header is `X-Jairouter-Token` (the old name still works as a fallback); set `MODEL_UPSTREAM_BASE_URL` for real deployments; new keys look like `sk-<keyId>.<secret>` (treat keys as opaque; legacy keys keep working); staging/prod validate shared-state Redis reachability (`redis-reachability: OFF` to disable).
 
 **`v3.5.6` (2026-10-30)** — the patch that closed all 14 issues left open when the `v3.5.5` eight-stage audit
 closed (#776–#789): accounts resolve from the database, console writes reach the runtime, the entry protocol
