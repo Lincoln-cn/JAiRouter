@@ -61,12 +61,12 @@ class H2FlywayMigrationEquivalenceTest {
         }
 
         assertEquals(List.of("1|SQL|true", "2|SQL|true", "3|SQL|true", "4|SQL|true", "5|SQL|true",
-                        "6|SQL|true"), history(freshUrl),
-                "空库应顺序执行 V1~V6（V4 = 脱敏配置持久化，V5 = 移除请求侧脱敏配置面，"
-                        + "V6 = JWT 账户软删除列）");
+                        "6|SQL|true", "7|SQL|true"), history(freshUrl),
+                "空库应顺序执行 V1~V7（V4 = 脱敏配置持久化，V5 = 移除请求侧脱敏配置面，"
+                        + "V6 = JWT 账户软删除列，V7 = 审计事件类型取值补齐）");
         assertEquals(List.of("1|BASELINE|true", "2|SQL|true", "3|SQL|true", "4|SQL|true", "5|SQL|true",
-                        "6|SQL|true"), history(legacyUrl),
-                "老库应记为基线 1 且不重放 V1，再执行 V2~V6");
+                        "6|SQL|true", "7|SQL|true"), history(legacyUrl),
+                "老库应记为基线 1 且不重放 V1，再执行 V2~V7");
     }
 
     // ==================== 迁移执行 ====================
