@@ -180,4 +180,35 @@ class DockerComposeDeployConfigTest {
         assertTrue(content.contains("/app/data"),
                 "Makefile 应把宿主 data 目录挂到 /app/data");
     }
+    @Test
+    @DisplayName("#903: prod profile 的 compose 必须传入 INITIAL_ADMIN_PASSWORD，否则启动门闩直接退出")
+    void testProdComposePassesInitialAdminPassword() throws Exception {
+        for (Map.Entry<Path, String> entry : Map.of(BASE, "jairouter", PROD, "jairouter").entrySet()) {
+            Map<String, Object> service = loadService(entry.getKey(), entry.getValue());
+            List<String> env = stringList(service, "environment");
+            assertTrue(env.stream().anyMatch(e -> e.startsWith("SPRING_PROFILES_ACTIVE=prod")),
+                    entry.getKey() + " 应以 prod profile 启动，当前环境: " + env);
+            String adminEntry = env.stream()
+                    .filter(e -> e.startsWith("INITIAL_ADMIN_PASSWORD="))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError(entry.getKey()
+                            + " 缺少 INITIAL_ADMIN_PASSWORD：prod profile 下 StartupSecurityGate 会抛"
+                            + " IllegalStateException 使进程以退出码 1 结束，容器永远起不来。当前环境: " + env));
+            assertTrue(adminEntry.contains(":?"),
+                    entry.getKey() + " 的 INITIAL_ADMIN_PASSWORD 应是必填插值（${INITIAL_ADMIN_PASSWORD:?...}），"
+                            + "否则缺变量时会静默回落到 YAML 里的出厂口令，随后被门闩判为弱口令。当前: " + adminEntry);
+        }
+    }
+
+    @Test
+    @DisplayName("#903: 文档给的 compose 示例必须与仓库里的 compose 口径一致")
+    void testDocumentedComposeRequiresAdminPassword() throws Exception {
+        for (String doc : List.of("docs/zh/deployment/docker.md", "docs/en/deployment/docker.md")) {
+            Path path = Path.of(doc);
+            assertTrue(Files.exists(path), doc + " 应存在");
+            String content = Files.readString(path);
+            assertTrue(content.contains("INITIAL_ADMIN_PASSWORD="),
+                    doc + " 的 compose 示例应传入 INITIAL_ADMIN_PASSWORD（prod 必填）");
+        }
+    }
 }
