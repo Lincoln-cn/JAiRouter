@@ -149,7 +149,9 @@ public class ComponentFactory {
         }
         
         return switch (config.getStrategy().toLowerCase()) {
-            case "cache" -> new CacheFallbackStrategy(serviceType, config.getCacheSize());
+            // #872：cache-ttl 配置此前没有任何消费方，条目永不过期；这里把它接到策略上
+            case "cache" -> new CacheFallbackStrategy(serviceType, config.getCacheSize(),
+                    config.getCacheTtl() == null ? CacheFallbackStrategy.DEFAULT_TTL_MILLIS : config.getCacheTtl());
             case "default" -> new DefaultFallbackStrategy(serviceType);
             default -> new DefaultFallbackStrategy(serviceType);
         };

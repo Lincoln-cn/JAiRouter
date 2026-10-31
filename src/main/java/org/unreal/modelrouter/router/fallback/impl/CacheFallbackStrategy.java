@@ -27,6 +27,7 @@ import org.unreal.modelrouter.router.fallback.FallbackStrategy;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.LongSupplier;
 
 /**
  * 基于缓存的降级策略：同一个请求成功过、后来上游不可用时，回放上一次的成功响应.
@@ -47,18 +48,42 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
 
     private static final Logger logger = LoggerFactory.getLogger(CacheFallbackStrategy.class);
 
+    /** 未显式配置 TTL 时的默认值，与 {@code FallbackConfig#cacheTtl} 的默认值一致. */
+    public static final long DEFAULT_TTL_MILLIS = 300_000L;
 
     private final String serviceType;
 
     private final int maxCacheSize;
 
-    private final ConcurrentMap<String, ResponseEntity<?>> cache = new ConcurrentHashMap<>();
+    /** 条目存活时间；{@code <= 0} 表示永不过期（仅在显式配置时出现）. */
+    private final long ttlMillis;
+
+    private final LongSupplier clock;
+
+    private final ConcurrentMap<String, CachedResponse> cache = new ConcurrentHashMap<>();
 
     private final AtomicLong hits = new AtomicLong();
 
+    private final AtomicLong expired = new AtomicLong();
+
     public CacheFallbackStrategy(final String serviceType, final int maxCacheSize) {
+        this(serviceType, maxCacheSize, DEFAULT_TTL_MILLIS);
+    }
+
+    public CacheFallbackStrategy(final String serviceType, final int maxCacheSize, final long ttlMillis) {
+        this(serviceType, maxCacheSize, ttlMillis, System::currentTimeMillis);
+    }
+
+    CacheFallbackStrategy(final String serviceType, final int maxCacheSize, final long ttlMillis,
+                          final LongSupplier clock) {
         this.serviceType = serviceType;
         this.maxCacheSize = maxCacheSize;
+        this.ttlMillis = ttlMillis;
+        this.clock = clock;
+    }
+
+    /** 一条缓存的成功响应与其写入时间. */
+    private record CachedResponse(ResponseEntity<?> response, long cachedAtMillis) {
     }
 
     @Override
@@ -66,7 +91,14 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
         logger.warn("Service {} fallback triggered due to: {} (key={})",
                 serviceType, cause == null ? null : cause.getMessage(), key);
 
-        final ResponseEntity<?> cached = key == null ? null : cache.get(key.asCacheKey());
+        final CachedResponse entry = key == null ? null : cache.get(key.asCacheKey());
+        if (entry != null && isExpired(entry)) {
+            cache.remove(key.asCacheKey());
+            expired.incrementAndGet();
+            logger.info("缓存的降级响应已过期，按未命中处理: service={}, key={}, ttl={}ms",
+                    serviceType, key, ttlMillis);
+        }
+        final ResponseEntity<?> cached = entry == null || isExpired(entry) ? null : entry.response();
         if (cached == null) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                     .contentType(MediaType.APPLICATION_JSON)
@@ -96,7 +128,7 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
             return;
         }
         evictIfFull();
-        cache.put(key.asCacheKey(), response);
+        cache.put(key.asCacheKey(), new CachedResponse(response, clock.getAsLong()));
     }
 
     /**
@@ -118,10 +150,32 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
     }
 
     /**
+     * 因过期而被丢弃的条目数（测试与指标用）.
+     *
+     * @return 累计过期条数
+     */
+    public long getExpiredCount() {
+        return expired.get();
+    }
+
+    /**
+     * 当前生效的条目存活时间（毫秒）.
+     *
+     * @return TTL；{@code <= 0} 表示永不过期
+     */
+    public long getTtlMillis() {
+        return ttlMillis;
+    }
+
+    /**
      * 清空缓存（配置热更新 / 测试用）.
      */
     public void clear() {
         cache.clear();
+    }
+
+    private boolean isExpired(final CachedResponse entry) {
+        return ttlMillis > 0 && clock.getAsLong() - entry.cachedAtMillis() > ttlMillis;
     }
 
     private void evictIfFull() {
