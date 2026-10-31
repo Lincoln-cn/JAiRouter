@@ -491,6 +491,23 @@ Four supporting rules:
 - [ ] **Version number updated**: `pom.xml`, the facts block in `README.md` / `README-ZH.md`, and the
       document version block in `docs/{zh,en}/reference/changelog.md` — **all four must agree**
 
+### One-click release script
+
+Seven places carry the version (the `pom.xml` project version, `frontend/package.json`, the facts block of both READMEs,
+the document-version block of both changelogs, and the tag line of both roadmaps). Editing them by hand drifts easily,
+so use the script — it defaults to dry-run:
+
+```bash
+python scripts/release/release.py check                 # read-only, same judgment as the ReleaseVersionConsistencyTest guard
+python scripts/release/release.py bump --version 3.5.9  # preview: prints which line of which file changes
+python scripts/release/release.py bump --version 3.5.9 --write
+python scripts/release/release.py tag --version 3.5.9 --notes release-notes.md --yes
+```
+
+The script **does not write release notes**: the `### [X.Y.Z]` section in the changelog is still written by hand
+(only the changes of this range), and `check` fails while that section is missing. `tag` only runs on master,
+with a clean worktree and a version matching `pom.xml`, and reminds you that the image build is triggered by the Release.
+
 ## Community Participation
 
 ### Reporting Issues

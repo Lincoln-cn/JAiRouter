@@ -499,6 +499,22 @@ scripts\test\local-gates.cmd -SkipMaven
 - [ ] **版本号已更新**：`pom.xml`、`README.md` / `README-ZH.md` 的事实块、
       `docs/{zh,en}/reference/changelog.md` 的文档版本块 —— **四处必须一致**
 
+### 一键发布脚本
+
+七处版本号（`pom.xml` 项目版本、`frontend/package.json`、两个 README 的事实块、两份 changelog 的文档版本块、两份 roadmap 的标签行）
+手工改容易漏。用脚本串起来，默认 dry-run：
+
+```bash
+python scripts/release/release.py check                 # 只读校验（与 CI 的 ReleaseVersionConsistencyTest 同一套判据）
+python scripts/release/release.py bump --version 3.5.9  # 预演：打印将改哪些文件的哪一行
+python scripts/release/release.py bump --version 3.5.9 --write
+python scripts/release/release.py tag --version 3.5.9 --notes release-notes.md --yes
+```
+
+脚本**不替你写发布说明**：changelog 的 `### [X.Y.Z]` 段落仍要按「只写本区间变化」手工补，`check` 会因为缺条目报红。
+`tag` 子命令只在 master、工作区干净、版本号与 `pom.xml` 一致时才执行，并提示「Release 创建后才触发镜像构建」。
+
+
 ## 社区参与
 
 ### 报告问题
