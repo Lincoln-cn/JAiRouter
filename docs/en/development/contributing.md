@@ -494,7 +494,7 @@ Four supporting rules:
 ### One-click release script
 
 Seven places carry the version (the `pom.xml` project version, `frontend/package.json`, the facts block of both READMEs,
-the document-version block of both changelogs, and the tag line of both roadmaps). Editing them by hand drifts easily,
+the document-version block of both changelogs, and the tag line of both roadmap files). Editing them by hand drifts easily,
 so use the script — it defaults to dry-run:
 
 ```bash
@@ -506,7 +506,7 @@ python scripts/release/release.py tag --version 3.5.9 --notes release-notes.md -
 
 The script **does not write release notes**: the `### [X.Y.Z]` section in the changelog is still written by hand
 (only the changes of this range), and `check` fails while that section is missing. `tag` only runs on master,
-with a clean worktree and a version matching `pom.xml`, and reminds you that the image build is triggered by the Release.
+with a clean working tree and a version matching `pom.xml`, and reminds you that the image build is triggered by the Release.
 
 ## Community Participation
 
