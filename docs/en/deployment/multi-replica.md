@@ -20,6 +20,20 @@ degrades each replica into an **isolated single-node instance**:
 These are not performance issues but **correctness** issues: a stale revocation is a security gap, and
 inflated quota is a billing and rate-limiting distortion.
 
+## Prerequisite: one shared `JWT_SECRET`
+
+Beyond the six switches below, multi-replica deployments have one hard prerequisite that is **not**
+a switch: `JWT_SECRET` must be **the same value on every replica**.
+
+The default of `jairouter.security.jwt.secret` in `config/auth/jwt.yml` is `${JWT_SECRET:${random.uuid}}`:
+when the environment variable is unset, **every replica generates its own random UUID**. A token signed on
+replica A then fails verification on replica B, which shows up as **intermittent 401s** (roughly `(n-1)/n`
+of requests, with a log line that only says the token is invalid).
+
+The production profile enforces `JWT_SECRET` at startup and is not affected; **dev / staging multi-replica
+deployments have no such gate**, so the startup self-check emits a WARN when it sees multi-replica without
+`JWT_SECRET`.
+
 ## Required configuration
 
 A multi-replica deployment must enable all six items below and point them at a shared Redis:
@@ -165,6 +179,13 @@ shared storage every `jairouter.security.api-key.cache-refresh-interval-seconds`
   every valid key and take the service down.
 - Set `cache-refresh-enabled: false` to return to the "load at startup only" behavior.
 
+**Measured behavior (2026-10-31, three replicas + shared PostgreSQL 16 + Redis 7)**: a key created on
+replica A became visible on replica B after about **28.5 seconds** (inside the refresh window). Revocation
+is bounded by the refresh interval in theory, but we observed cases that took **longer than one interval**
+(one key was still accepted after 80 seconds; another had not converged within a 300-second window and only
+started returning `INVALID_API_KEY` minutes later). When debugging, first confirm the refresh task is running
+on every replica (log keyword: "刷新 API Key 缓存") before suspecting configuration.
+
 ## Rate-limit key dimension and multi-replica semantics
 
 Rate-limit state lives **in the JVM by default**. Two Redis-backed counting paths exist:
@@ -173,6 +194,13 @@ Rate-limit state lives **in the JVM by default**. Two Redis-backed counting path
   per-`(API key, end user)` counters are shared across replicas.
 - **client-dimension limiting (wired since v3.5.2, off by default, #623)** — `RedisSlidingWindowRateLimiter`
   is now called from the request path, but **every bundled configuration sets `client-ip-enable` to `false`**.
+
+**The per-API-key `rateLimitPerMinute` quota is per replica** and is *not* covered by
+`jairouter.ratelimit.distributed.enabled`: each replica keeps its own local token bucket. Measured with
+`rateLimitPerMinute=10` on three replicas, 18 concurrent requests (6 per replica) were **all accepted
+(18/18, zero 429)**, and no `jairouter:ratelimit:*` keys appeared in Redis. On a single replica the same
+key returned `[200×9, 429×5]`. Budget accordingly (or front the deployment with a shared limiter) if the
+per-key quota is meant to be a global cap.
 
 Everything else (service / instance / rule level limiters) is still per replica. Under multiple replicas:
 
