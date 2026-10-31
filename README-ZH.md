@@ -42,8 +42,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # 本地/仓库目录名与产品名不同
 artifact:        model-router            # Maven artifactId
-project_version: 3.5.6                   # pom.xml
-latest_release:  v3.5.6 (2026-10-30)
+project_version: 3.5.8                   # pom.xml
+latest_release:  v3.5.8 (2026-10-31)
 stack:
   backend:  Java 17 + Spring Boot 3.5.5（WebFlux / 响应式）
   frontend: Vue 3 + TypeScript + Vite，中英双语（zh-CN / en-US）
@@ -352,19 +352,24 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 
 ## 状态与近期工作
 
-**最新发布：v3.5.6（2026-10-30）** —— `v3.5.5` 八段审计收口时仍开着的 14 条 issue（#776–#789）全部修完的补丁版：账户以数据库为准、写入真正在运行时生效、入口协议面补齐、配置与测试回归诚实，另有三条先定行为再动手的缺陷。**无 API 破坏性变更；三处行为变更与一条库结构迁移值得看一眼。**
+**最新发布：v3.5.8（2026-10-31）** —— 第二轮审计（先审可观测性链路，再把剩余面逐个过一遍）的落地版：指标/追踪层两条 P0，外加 19 条正确性与诚实性修复。**无 API 破坏性变更；下面的升级提示要看（健康判定滞回、上传上限、审计表迁移）。**
 
 | 主题 | 变更内容 |
 |------|----------|
-| **账户与权限（#789 / #777）** | JWT 账户以数据库为准——控制台删除/禁用对同名 YAML 账户真正生效（此前删除还会被重启时的种子数据写回），删除改为软删除（新增迁移 `V6`）；API Key 视图回显 IP 白名单，编辑弹窗不再把白名单清空 |
-| **控制台写入的运行时生效（#776 / #778）** | 服务配置六条写路径刷新运行时注册表（此前「保存成功、路由仍用旧实例」）；适配器加载失败记进注册表并由 `/actuator/health` 的新指示器 `adapterLoad` 报告（默认只报告、不把容器拖成 unhealthy） |
-| **入口协议面（#779 / #781）** | `/v1/messages` 空体回 400（此前落 500）；413 改用 Anthropic 的 `request_too_large`，OpenAI 原生面仍是 `invalid_request_error` |
-| **配置与测试诚实性（#787 / #788 / #783 / #784）** | 删掉三处没有 `@Endpoint` 实现的管理端点开关、删掉零读取方的 `JwtPersistenceConfiguration`；`FILTER-012` 改成真正验证「小请求体缓存后被重新包装、下游读回同一份字节」；注释改指真实存在的端到端用例 |
-| **行为决策（#780 / #782 / #785）** | 重置备份文案如实说明（单槽覆盖、无一键恢复，恢复需在存储层手工操作）；`capabilities` 全 false 的 Adapter 写入前回 400；安全通知错误体回填与响应头/日志同一个 `requestId` |
+| **两条 P0（#848 / #849）** | 异步指标处理器不再把自己处理的事件回灌队列（此前把单核压到约 75% 且业务指标全丢）；关闭追踪不再导致启动失败，追踪被禁用时健康项报 UP 而不是把容器拖成 unhealthy |
+| **请求链路正确性（#850 / #854 / #855 / #856 / #857 / #862 / #866 / #870）** | 降级缓存写侧复用装配期的请求键；健康判定需要连续失败才摘除实例；兜底 500 不再回显异常原文；小时审计统计经代理调用使 `@Transactional` 生效；上传上限 25 MiB、超限回 413；健康状态 SSE 所有连接共享一份快照；熔断半开态只放行一个探测；管理端点不再在事件循环上做阻塞 JPA |
+| **数据与配置诚实性（#868 / #872 / #873 / #874 / #875 / #876 / #877 / #878 / #879 / #880 / #890 / #892）** | `security_audit.event_type` 补齐 26 个取值（迁移 V7）；降级缓存遵守 `cache-ttl`、配置变更即重建、`cache-size <= 0` 视为关闭、流式响应不再写入；首启初始化按存储各自判断且失败回滚；`store.type` 只接受已实现的值；配置版本号改为持久化推导；路由统计与客户端限流器加上限并改原子装载；弱密钥判定点名命中片段；临时加密密钥如实告知 |
+| **仓库卫生（#894 / #896 / #799 / #800）** | 新增 `SECURITY.md`（报告渠道 + 两条按设计接受的 CodeQL 告警说明）；删除零调用方的 `HttpRequestProcessor`（170 行）；`vue-i18n` 及 `@intlify/*` 升到 11.4.16 |
 
-`[3.5.6]` 的 changelog 条目见 [更新日志](docs/zh/reference/changelog.md)；以 GitHub Release `v3.5.6` 发布，并触发多架构镜像（`v3.5.6` / `3.5.6` / `latest`）。
+`[3.5.8]` 的 changelog 条目见 [更新日志](docs/zh/reference/changelog.md)；以 GitHub Release `v3.5.8` 发布，并触发多架构镜像（`v3.5.8` / `3.5.8` / `latest`）。
 
-**升级提示**：`auth/jwt.yml` 的 `accounts` 现在只是首次启动的种子数据（库里有同名行时改 yml 不生效，请到控制台改）；新增迁移 `V6__jwt_account_soft_delete.sql`（`jwt_accounts.deleted`，默认 false）；控制台删除账户是软删除（行仍在库里）；`capabilities` 全 false 的 Adapter 现在会被 400 拒绝；`/v1/messages` 的 413 错误类型由 `invalid_request_error` 改为 `request_too_large`。
+**3.5.8 升级提示**：健康判定需要连续 `failure-threshold` 次（默认 2）失败才摘除实例，要恢复旧语义设为 1；上传超过 `jairouter.multipart.max-file-size-bytes`（25 MiB）回 413；新增 Flyway 迁移 `V7__audit_event_type_values.sql`（H2 与 PostgreSQL 都重写 `security_audit.event_type` 约束）；`store.type` 只接受 `jpa` / `h2`；`fallback.cache-size <= 0` 现在表示不缓存；兜底 500 不再包含异常原文。
+
+**`v3.5.7`（2026-10-31）** —— 第一次核心链路审计后的补丁：五条会挡住业务使用的 P0 与 16 条 P1–P3。若从 3.5.6 直接升到 3.5.8，3.5.7 的升级提示仍然适用，见[更新日志](docs/zh/reference/changelog.md)。
+
+**`v3.5.6`（2026-10-30）** —— `v3.5.5` 八段审计收口时仍开着的 14 条 issue（#776–#789）全部修完的补丁版，见[更新日志](docs/zh/reference/changelog.md)。
+
+**升级提示（3.5.6）**：`auth/jwt.yml` 的 `accounts` 现在只是首次启动的种子数据（库里有同名行时改 yml 不生效，请到控制台改）；新增迁移 `V6__jwt_account_soft_delete.sql`（`jwt_accounts.deleted`，默认 false）；控制台删除账户是软删除（行仍在库里）；`capabilities` 全 false 的 Adapter 现在会被 400 拒绝；`/v1/messages` 的 413 错误类型由 `invalid_request_error` 改为 `request_too_large`。
 
 **`v3.5.5`（2026-10-29）** 是「按一次请求从进来到出去」八段审计（入口协议 / 认证权限 / 路由决策 / 出站 / 响应侧 / 记账 / 控制台写入 / 失败语义）的落地版：45 条发现里影响调用成败与响应正确性的已全部修复。**无 API 破坏性变更；三条升级提示值得看一眼。**
 
