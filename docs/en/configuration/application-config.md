@@ -335,6 +335,25 @@ jairouter:
 
 ---
 
+## Encryption Key for Security Configuration Backups
+
+Security configuration backups (`SecurityConfigurationBackupService`) are encrypted with AES-256-GCM
+before being stored. The key comes from `jairouter.security.encryption.key` (Base64, 32 bytes):
+
+```yaml
+jairouter:
+  security:
+    encryption:
+      key: "${JAIR_SECURITY_ENCRYPTION_KEY:}"   # inject from the environment
+```
+
+- **When unset**: a per-process temporary key is generated; startup logs a warning that encrypted data
+  written during this run cannot be decrypted after a restart, and only the key fingerprint is logged
+  (never the key itself). After a restart, old backups can no longer be decrypted (#880).
+- **When set**: decryption works across restarts and replicas. Generate it with `openssl rand -base64 32`.
+
+---
+
 ## Environment-Specific Configuration
 
 ### Development (`application-dev.yml`)

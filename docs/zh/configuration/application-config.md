@@ -335,6 +335,24 @@ jairouter:
 
 ---
 
+## 安全配置备份的加密密钥
+
+安全配置备份（`SecurityConfigurationBackupService`）用 AES-256-GCM 加密后落库，密钥来自
+`jairouter.security.encryption.key`（Base64 编码的 32 字节）：
+
+```yaml
+jairouter:
+  security:
+    encryption:
+      key: "${JAIR_SECURITY_ENCRYPTION_KEY:}"   # 建议从环境变量注入
+```
+
+- **不配置时**：进程内生成临时密钥，启动日志会 warn「重启后将无法解密本次启动期间写入的加密数据」，
+  并只打印密钥指纹（不打印密钥本身）。此后重启即无法解密旧备份（#880）。
+- **配置后**：跨重启、跨副本都能解密；请用 `openssl rand -base64 32` 生成，并妥善保管。
+
+---
+
 ## 环境特定配置
 
 ### 开发环境（`application-dev.yml`）
