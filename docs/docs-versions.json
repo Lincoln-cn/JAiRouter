@@ -2,25 +2,27 @@
   "versions": {
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-10-29T16:38:23.510979",
-      "ContentHash": "be632eea7f1ea96e",
-      "GitCommit": "4b6b48a7",
+      "Version": "1.0.9",
+      "LastModified": "2026-10-31T10:54:14.613876",
+      "ContentHash": "855ff7d19caad9d1",
+      "GitCommit": "0707f0bc",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
+        "SECURITY.md",
         "docs/zh/reference/changelog.md"
       ]
     },
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-10-30T16:14:05.831763",
-      "ContentHash": "f78d30a056f287fa",
-      "GitCommit": "243cd47d",
+      "Version": "1.0.10",
+      "LastModified": "2026-10-31T10:54:14.616969",
+      "ContentHash": "4a7ba5a803c454d3",
+      "GitCommit": "0707f0bc",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
+        "SECURITY.md",
         "docs/en/reference/changelog.md"
       ]
     },
@@ -2372,6 +2374,16 @@
       "Dependencies": [
         "docs/zh/deployment/multi-replica.md"
       ]
+    },
+    "SECURITY.md": {
+      "FilePath": "SECURITY.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-10-31T10:54:14.619003",
+      "ContentHash": "8fedb6a3944a538e",
+      "GitCommit": "0707f0bc",
+      "Author": "Leo Lin",
+      "ChangeSummary": "",
+      "Dependencies": []
     }
   },
   "changes": [
@@ -6014,7 +6026,31 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-31T02:17:52.353554",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-31T10:54:14.613885",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-31T10:54:14.616975",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "SECURITY.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-10-31T10:54:14.619008",
+      "Description": "文档created"
     }
   ],
-  "last_updated": "2026-10-31T07:59:09.430050"
+  "last_updated": "2026-10-31T10:54:15.983251"
 }
