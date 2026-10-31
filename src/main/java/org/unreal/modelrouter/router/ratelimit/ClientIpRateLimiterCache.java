@@ -67,20 +67,21 @@ public final class ClientIpRateLimiterCache {
     public RateLimiter get(final ServiceType serviceType, final RateLimitKeyDimension dimension,
                            final String keyValue,
                            final java.util.function.Function<String, RateLimiter> loader) {
-        String key = generateKey(serviceType, dimension, keyValue);
-        RateLimiter limiter = cache.getIfPresent(key);
+        final String key = generateKey(serviceType, dimension, keyValue);
+        final RateLimiter existing = cache.getIfPresent(key);
 
-        if (limiter != null) {
+        if (existing != null) {
             hitCount.incrementAndGet();
-            return limiter;
+            return existing;
         }
 
-        missCount.incrementAndGet();
-        limiter = loader.apply(key);
-        if (limiter != null) {
-            cache.put(key, limiter);
-        }
-        return limiter;
+        // #878：用 Caffeine 的原子 get(key, loader) 装载。旧实现是「getIfPresent 为 null 后各线程
+        // 自己 new 一个再 put」，并发首次访问同一键时会造出多个限流器，各自持有独立令牌桶，
+        // 于是同一个客户端在窗口内能拿到 N 倍的配额（N = 并发数）。
+        return cache.get(key, ignored -> {
+            missCount.incrementAndGet();
+            return loader.apply(key);
+        });
     }
 
     /**
