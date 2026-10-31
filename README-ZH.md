@@ -546,6 +546,8 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 
 欢迎贡献——见[贡献指南](https://jairouter.com/development/contributing/)。
 
+安全问题请不要开公开 issue，按 [SECURITY.md](SECURITY.md) 私下报告。
+
 提 PR 前请先跑：
 
 ```bash
