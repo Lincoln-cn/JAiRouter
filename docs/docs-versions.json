@@ -114,10 +114,10 @@
     },
     "docs/en/configuration/application-config.md": {
       "FilePath": "docs/en/configuration/application-config.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-30T20:01:22.735585",
-      "ContentHash": "f433e990a669683d",
-      "GitCommit": "8ccffb5e",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-31T02:17:51.663877",
+      "ContentHash": "173d945b780b7d0b",
+      "GitCommit": "e9981bfa",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1273,10 +1273,10 @@
     },
     "docs/zh/configuration/application-config.md": {
       "FilePath": "docs/zh/configuration/application-config.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-30T20:01:23.305062",
-      "ContentHash": "cc7fdb24ddb9ced4",
-      "GitCommit": "8ccffb5e",
+      "Version": "1.0.4",
+      "LastModified": "2026-10-31T02:17:52.353544",
+      "ContentHash": "1b2c8c4e56e57289",
+      "GitCommit": "e9981bfa",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -5998,7 +5998,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-30T20:28:42.946333",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/application-config.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-31T02:17:51.663888",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/application-config.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-10-31T02:17:52.353554",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-10-30T20:28:43.591514"
+  "last_updated": "2026-10-31T02:17:53.034955"
 }
