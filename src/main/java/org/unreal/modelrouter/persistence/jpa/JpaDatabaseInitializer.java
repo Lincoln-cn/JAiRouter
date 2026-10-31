@@ -25,6 +25,7 @@ import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.unreal.modelrouter.common.util.JacksonHelper;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -102,36 +103,60 @@ public class JpaDatabaseInitializer {
     }
 
     /**
-     * 初始化模型配置（直接执行，不使用事务注解）
+     * 初始化模型配置。
+     *
+     * <p>#874：两个存储各自判断是否为空，而不是「两个都空才初始化」。历史实现里
+     * 只要 {@code config_data} 写成功、{@code service_config} 写失败（进程被杀、数据库
+     * 连接中断），下次启动就会因为 {@code configCount > 0} 永久跳过初始化，
+     * 服务配置再也补不回来。现在每个存储独立补写，半初始化的库能自愈。</p>
      */
     private void initializeModelConfig() {
-        // 检查是否需要初始化
-        long configCount = configRepository.count();
-        long serviceConfigCount = serviceConfigRepository.count();
+        final long configCount = configRepository.count();
+        final long serviceConfigCount = serviceConfigRepository.count();
 
         if (configCount == 0 && serviceConfigCount == 0) {
             log.info("Database is empty, initializing from YAML configuration...");
-            initializeFromYaml();
+        } else if (configCount == 0 || serviceConfigCount == 0) {
+            log.warn("Database is partially initialized (config records: {}, service configs: {}), "
+                    + "filling the empty store from YAML (#874)", configCount, serviceConfigCount);
         } else {
             log.info("Database already initialized with {} config records, {} service configs",
                     configCount, serviceConfigCount);
+            return;
         }
+
+        if (configCount == 0) {
+            saveModelRouterConfig();
+        }
+        if (serviceConfigCount == 0) {
+            saveServiceConfigsWithRollback();
+        }
+
+        log.info("YAML configuration persisted to database");
     }
 
     /**
-     * 从 YAML 配置初始化数据库
+     * 保存服务配置与实例，失败时回滚本次已写入的行。
+     *
+     * <p>#874：{@code @PostConstruct} 里没有外层事务，服务配置是逐条写入的；中途失败
+     * 会留下「部分 service_config」，而下次启动看到 {@code serviceConfigCount > 0}
+     * 就不会再补，等于永久半初始化。这里记录本次写入的 config id，失败时先删实例再删配置。</p>
      */
-    private void initializeFromYaml() {
+    private void saveServiceConfigsWithRollback() {
+        final List<Long> savedConfigIds = new ArrayList<>();
         try {
-            // 1. 保存完整的模型路由配置
-            saveModelRouterConfig();
-
-            // 2. 保存服务配置和实例
-            saveServiceConfigs();
-
-            log.info("YAML configuration successfully persisted to database");
-        } catch (Exception e) {
-            log.error("Failed to initialize database from YAML: {}", e.getMessage(), e);
+            saveServiceConfigs(savedConfigIds);
+        } catch (RuntimeException e) {
+            log.error("Failed to initialize service configs, rolling back {} config rows: {}",
+                    savedConfigIds.size(), e.getMessage(), e);
+            for (Long configId : savedConfigIds) {
+                try {
+                    serviceInstanceRepository.deleteAll(serviceInstanceRepository.findByServiceConfigId(configId));
+                    serviceConfigRepository.deleteById(configId);
+                } catch (RuntimeException rollbackError) {
+                    log.error("Rollback of service config {} failed: {}", configId, rollbackError.getMessage());
+                }
+            }
             throw new RuntimeException("Database initialization failed", e);
         }
     }
@@ -175,7 +200,7 @@ public class JpaDatabaseInitializer {
     /**
      * 保存服务配置和实例到 service_config 和 service_instance 表
      */
-    private void saveServiceConfigs() {
+    private void saveServiceConfigs(final List<Long> savedConfigIds) {
         Map<String, ModelRouterProperties.ServiceConfig> services = modelRouterProperties.getServices();
 
         if (services == null || services.isEmpty()) {
@@ -204,6 +229,7 @@ public class JpaDatabaseInitializer {
                     .build();
 
             ServiceConfigEntity savedConfig = serviceConfigRepository.save(configEntity);
+            savedConfigIds.add(savedConfig.getId());
             log.debug("Saved service config for type: {} with id: {}", serviceType, savedConfig.getId());
 
             // 保存实例
