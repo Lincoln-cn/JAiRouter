@@ -113,7 +113,7 @@ class BaseAdapterFallbackEvaluationTest {
         private TestAdapter(final ModelServiceRegistry registry) {
             super(
                     new AdapterContext(registry, new ObjectMapper(), null),
-                    new RequestProcessingSupport(null, null, null, null, null, null, null, null),
+                    new RequestProcessingSupport(null, null, null, null, null, null, null),
                     new ResilienceSupport(null, null, null, null, null, null));
         }
 

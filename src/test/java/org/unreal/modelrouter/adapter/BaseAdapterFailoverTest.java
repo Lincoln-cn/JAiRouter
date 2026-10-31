@@ -101,7 +101,7 @@ class BaseAdapterFailoverTest {
         // Build aggregated support objects (matching real constructor signatures)
         AdapterContext context = new AdapterContext(registry, new ObjectMapper(), null);
         RequestProcessingSupport requestSupport = new RequestProcessingSupport(
-                null, null, instanceSelector, null, null, null, null, null);
+                null, null, instanceSelector, null, null, null, null);
         ResilienceSupport resilienceSupport = new ResilienceSupport(
                 capabilityChecker, errorHandler, retryPolicy, metricsRecorder,
                 tracingManager, errorResponseBuilder);

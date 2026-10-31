@@ -28,7 +28,7 @@ class BaseAdapterMetricsTest {
         ObjectMapper objectMapper = new ObjectMapper();
         AdapterContext context = new AdapterContext(registry, objectMapper, null);
         RequestProcessingSupport requestSupport = new RequestProcessingSupport(
-                null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null);
         ResilienceSupport resilienceSupport = new ResilienceSupport(
                 null, null, null, null, null, null);
         TestAdapter adapter = new TestAdapter(context, requestSupport, resilienceSupport);
@@ -49,7 +49,7 @@ class BaseAdapterMetricsTest {
         ObjectMapper objectMapper = new ObjectMapper();
         AdapterContext context = new AdapterContext(registry, objectMapper, null);
         RequestProcessingSupport requestSupport = new RequestProcessingSupport(
-                null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null);
         ResilienceSupport resilienceSupport = new ResilienceSupport(
                 null, null, null, null, null, null);
         TestAdapter adapter = new TestAdapter(context, requestSupport, resilienceSupport);
