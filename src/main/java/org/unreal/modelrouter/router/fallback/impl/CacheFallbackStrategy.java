@@ -24,7 +24,9 @@ import org.springframework.http.ResponseEntity;
 import org.unreal.modelrouter.router.fallback.FallbackRequestKey;
 import org.unreal.modelrouter.router.fallback.FallbackStrategy;
 
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongSupplier;
@@ -61,6 +63,14 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
     private final LongSupplier clock;
 
     private final ConcurrentMap<String, CachedResponse> cache = new ConcurrentHashMap<>();
+
+    /**
+     * 写入顺序（#890）：淘汰时按它挑最早的条目，而不是从 hash 表里随便挑一个.
+     *
+     * <p>并发下顺序表可能落后于缓存（条目已被覆盖或删除），淘汰循环会跳过这种空条目，
+     * 顺序表耗尽时退回「任意一条」，保证容量一定收敛。</p>
+     */
+    private final Queue<String> insertionOrder = new ConcurrentLinkedQueue<>();
 
     private final AtomicLong hits = new AtomicLong();
 
@@ -123,12 +133,29 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
      * @param response 成功响应
      */
     public void cacheResponse(final FallbackRequestKey key, final ResponseEntity<?> response) {
+        // #890：容量配成 0 或负数时的语义是「关闭降级缓存」，此前会被当成「不设上限」而不限增长
+        if (maxCacheSize <= 0) {
+            return;
+        }
         if (key == null || response == null || response.getBody() == null
                 || !response.getStatusCode().is2xxSuccessful()) {
             return;
         }
-        evictIfFull();
-        cache.put(key.asCacheKey(), new CachedResponse(response, clock.getAsLong()));
+        final String cacheKey = key.asCacheKey();
+        cache.put(cacheKey, new CachedResponse(response, clock.getAsLong()));
+        insertionOrder.add(cacheKey);
+        evictIfNeeded();
+    }
+
+    /**
+     * 当前是否真正启用了缓存（容量 &gt; 0 且 TTL 未显式关闭）.
+     *
+     * <p>#890：{@code cache-size: 0} 表示关闭缓存，此时 {@link #cacheResponse} 不写入任何条目。</p>
+     *
+     * @return 是否启用
+     */
+    public boolean isCacheEnabled() {
+        return maxCacheSize > 0;
     }
 
     /**
@@ -172,19 +199,32 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
      */
     public void clear() {
         cache.clear();
+        insertionOrder.clear();
     }
 
     private boolean isExpired(final CachedResponse entry) {
         return ttlMillis > 0 && clock.getAsLong() - entry.cachedAtMillis() > ttlMillis;
     }
 
-    private void evictIfFull() {
-        if (maxCacheSize <= 0) {
-            return;
-        }
-        while (cache.size() >= maxCacheSize) {
-            final String oldest = cache.keySet().iterator().next();
-            cache.remove(oldest);
+    /**
+     * 超出容量时按写入顺序淘汰最早的条目（#890）.
+     *
+     * <p>修改前用 {@code cache.keySet().iterator().next()} 当作「最早」，ConcurrentHashMap 的遍历顺序
+     * 与写入顺序无关，因此淘汰的可能是任意条目；而且容量为 0/负数时直接 return，等于关闭上限。</p>
+     */
+    private void evictIfNeeded() {
+        while (cache.size() > maxCacheSize) {
+            final String evicted = insertionOrder.poll();
+            if (evicted != null) {
+                cache.remove(evicted);
+                continue;
+            }
+            // 顺序表已用完（条目由更早的实例写入）时退回任意一条，保证不会死循环
+            final String fallbackKey = cache.keySet().stream().findFirst().orElse(null);
+            if (fallbackKey == null) {
+                return;
+            }
+            cache.remove(fallbackKey);
         }
     }
 }

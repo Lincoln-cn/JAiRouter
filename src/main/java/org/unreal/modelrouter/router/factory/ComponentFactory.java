@@ -135,6 +135,9 @@ public class ComponentFactory {
         return cfg != null && cfg.getEnabled() != null;
     }
     
+    /** #890：降级配置没写 cache-size 时使用的缓存容量，与 {@code FallbackConfig#cacheSize} 的默认值一致. */
+    public static final int DEFAULT_FALLBACK_CACHE_SIZE = 100;
+
     /**
      * 创建降级策略
      * @param config 降级配置
@@ -148,9 +151,19 @@ public class ComponentFactory {
             return null;
         }
         
-        return switch (config.getStrategy().toLowerCase()) {
+        // #890：strategy / cacheSize 都是包装类型，YAML 写空值或控制台传 null 时会是 null；
+        // 修改前直接 config.getStrategy().toLowerCase() / getCacheSize() 拆箱会抛 NPE，
+        // 而这段代码跑在降级路径上 —— 一个配置笔误会把「有降级」变成「降级时 500」
+        final String configuredStrategy = config.getStrategy();
+        final String strategyName = configuredStrategy == null || configuredStrategy.isBlank()
+                ? "default"
+                : configuredStrategy.trim().toLowerCase();
+        final Integer configuredCacheSize = config.getCacheSize();
+        final int cacheSize = configuredCacheSize == null ? DEFAULT_FALLBACK_CACHE_SIZE : configuredCacheSize;
+
+        return switch (strategyName) {
             // #872：cache-ttl 配置此前没有任何消费方，条目永不过期；这里把它接到策略上
-            case "cache" -> new CacheFallbackStrategy(serviceType, config.getCacheSize(),
+            case "cache" -> new CacheFallbackStrategy(serviceType, cacheSize,
                     config.getCacheTtl() == null ? CacheFallbackStrategy.DEFAULT_TTL_MILLIS : config.getCacheTtl());
             case "default" -> new DefaultFallbackStrategy(serviceType);
             default -> new DefaultFallbackStrategy(serviceType);
