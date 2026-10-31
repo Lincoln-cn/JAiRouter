@@ -40,6 +40,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -81,7 +82,7 @@ class ConfigBindingSweepTest {
             "@ConfigurationProperties\\s*\\(\\s*(?:prefix\\s*=\\s*)?\"([^\"]+)\"");
     private static final Pattern RE_PROP_CONST = Pattern.compile(
             "static\\s+final\\s+String\\s+(\\w+)\\s*=\\s*\"([a-zA-Z][\\w.\\-]*)\"");
-    private static final Pattern RE_GETPROP_IDENT = Pattern.compile("\\.getProperty\\s*\\(\\s*(\\w+)\\s*[,)]");
+    private static final Pattern RE_GETPROP_IDENT = Pattern.compile("\\.getProperty\\s*\\(\\s*([\\w.]+)\\s*[,)]");
     private static final Pattern RE_GETPROP_LITERAL = Pattern.compile("\\.getProperty\\s*\\(\\s*\"([^\"]+)\"");
     private static final Pattern RE_VALUE = Pattern.compile("@Value\\s*\\(\\s*\"\\$\\{([^}:]+)");
     // 任何 ${...} 占位符都算「读了这个属性」：除了 @Value，还包括
@@ -174,8 +175,36 @@ class ConfigBindingSweepTest {
                         + "必须单独计量而不是当成缺陷");
     }
 
+    /**
+     * 「不绑定但有非绑定消费方」的登记表：这些键没有被 {@code @ConfigurationProperties} 绑定，
+     * 但被 {@code @Value} / {@code @ConditionalOnProperty} / {@code Environment#getProperty} 真实消费。
+     *
+     * <p><b>这张表是双向的</b>：多一个键（新增了未登记的非绑定键）或少了某个键（该键的消费方被删掉、
+     * 或改成了绑定字段）都会让 {@code writeSweepReport} 失败。要改就必须显式改这里 —— 否则这类键
+     * 会在下一次「配置面瘦身」时被当成没人读的孤儿键删掉（#295/#312/#320 三次都是这么踩的）。</p>
+     */
+    static final Set<String> REGISTERED_UNBOUND_KEYS = Set.of(
+            "jairouter.security.audit.extended.enabled",
+            "jairouter.security.jwt.blacklist-enabled",
+            "jairouter.security.jwt.blacklist.composite.enabled",
+            "jairouter.security.jwt.blacklist.persistence.enabled",
+            "jairouter.security.jwt.blacklist.redis.enabled",
+            "jairouter.security.jwt.persistence.cleanup.batch-size",
+            "jairouter.security.jwt.persistence.cleanup.enabled",
+            "jairouter.security.jwt.persistence.cleanup.retention-days",
+            "jairouter.security.jwt.persistence.cleanup.schedule",
+            "jairouter.security.jwt.persistence.composite.enabled",
+            "jairouter.security.jwt.persistence.enabled",
+            "jairouter.security.jwt.persistence.redis.enabled",
+            "jairouter.security.jwt.persistence.startup-recovery.enabled",
+            "jairouter.security.jwt.persistence.sync.enabled",
+            "jairouter.security.monitoring.alerts.enabled",
+            "jairouter.security.monitoring.alerts.window-check-interval-ms",
+            "jairouter.tracing.performance.scheduler.queue-capacity",
+            "jairouter.tracing.performance.scheduler.thread-cap");
+
     @Test
-    @DisplayName("审计报告：孤儿键 + 严格绑定不上的键（当前为审计模式，人工仲裁后收敛成登记表）")
+    @DisplayName("审计报告：孤儿键 + 严格绑定不上的键（真发现必须为 0，非绑定键必须与登记表一致）")
     void writeSweepReport() throws IOException {
         StandardEnvironment env = loadAllYml();
         Set<String> keys = leafPropertyNames(env);
@@ -207,6 +236,19 @@ class ConfigBindingSweepTest {
             }
         }
 
+        long distinct = findings.values().stream().flatMap(Set::stream).distinct().count();
+
+        // ---- 收敛后的硬断言（不再只是审计：任何新增/减少都必须同步登记表或修掉）----
+        assertEquals(REGISTERED_UNBOUND_KEYS, consumedOnly,
+                "「不绑定但有非绑定消费方」的键集合与登记表不一致：多出来的键要么需要登记，要么其实已无人读取；"
+                        + "少掉的键说明消费方被删了、或改成了绑定字段。改登记表前请先确认该键真的还有人读。");
+        Set<String> orphansWithoutConsumer = orphans.stream()
+                .filter(k -> matchesConsumer(k, consumers).isEmpty())
+                .collect(Collectors.toCollection(TreeSet::new));
+        assertEquals(Set.of(), orphansWithoutConsumer,
+                "存在既不绑定、也没有任何非绑定消费方的键（真·孤儿键）：应从 yml 删除或补上绑定字段");
+        assertEquals(0L, distinct,
+                "存在严格绑定不上、也没有任何非绑定消费方的键：它们能被设置、能回显，但没有任何代码读取");
         StringBuilder sb = new StringBuilder();
         sb.append("== 全树配置绑定审计 ==\n");
         sb.append("yml 叶子属性总数        : ").append(keys.size()).append('\n');
@@ -226,7 +268,6 @@ class ConfigBindingSweepTest {
         sb.append("**过滤后的真发现**      : ")
                 .append(findings.values().stream().mapToInt(Set::size).sum())
                 .append("（按前缀分组，同一键可能出现在多个前缀下）\n");
-        long distinct = findings.values().stream().flatMap(Set::stream).distinct().count();
         sb.append("**真发现去重后**        : ").append(distinct).append('\n');
         sb.append('\n');
 
@@ -407,37 +448,104 @@ class ConfigBindingSweepTest {
     }
 
     private static Map<String, List<String>> propertyConsumers() {
-        Map<String, String> consts = new TreeMap<>();
-        List<Path> files = javaSources();
-        for (Path f : files) {
-            Matcher m = RE_PROP_CONST.matcher(read(f));
-            while (m.find()) {
-                consts.putIfAbsent(m.group(1), m.group(2));
-            }
-        }
+        return propertyConsumers(constantIndex());
+    }
+
+    private static Map<String, List<String>> propertyConsumers(final ConstIndex consts) {
         Map<String, List<String>> consumers = new TreeMap<>();
-        for (Path f : files) {
+        for (Path f : javaSources()) {
             String text = read(f);
             String where = f.toString().replace('\\', '/');
-            addAll(consumers, text, RE_VALUE, 1, where, consts);
-            addAll(consumers, text, RE_PLACEHOLDER, 1, where, consts);
-            addAll(consumers, text, RE_GETPROP_LITERAL, 1, where, consts);
-            addAll(consumers, text, RE_GETPROP_IDENT, 1, where, consts);
-            addAll(consumers, text, RE_COND_NAME_LITERAL, 1, where, consts);
-            addAll(consumers, text, RE_COND_NAME_IDENT, 1, where, consts);
+            String fileName = f.getFileName().toString();
+            String className = fileName.substring(0, fileName.length() - ".java".length());
+            final Map<String, String> local = consts.localConstants(className);
+            java.util.function.Function<String, String> resolve = raw -> {
+                String v = consts.resolve(raw, local);
+                return v != null ? v : (!raw.contains(".") ? raw : null);
+            };
+            addAll(consumers, text, RE_VALUE, 1, where, resolve);
+            addAll(consumers, text, RE_PLACEHOLDER, 1, where, resolve);
+            addAll(consumers, text, RE_GETPROP_LITERAL, 1, where, resolve);
+            addAll(consumers, text, RE_GETPROP_IDENT, 1, where, resolve);
+            addAll(consumers, text, RE_COND_NAME_LITERAL, 1, where, resolve);
+            addAll(consumers, text, RE_COND_NAME_IDENT, 1, where, resolve);
             addConditionalOnPropertyConsumers(consumers, text, where);
         }
         return consumers;
     }
 
     /**
-     * {@code @ConditionalOnProperty(prefix = "a.b", name = "enabled")} 读的是 **{@code a.b.enabled}**，
-     * 而 {@link #RE_COND_NAME_LITERAL} 只能抓到光秃秃的 {@code enabled}（不含点号、会被
-     * {@link #addAll} 跳过）⇒ 这类消费方长期没被登记。
+     * 常量索引：三种解析方式，按优先级依次尝试。
+     *
+     * <ol>
+     *   <li>{@code Class.FIELD} 限定引用 —— 直接查</li>
+     *   <li>同一文件内声明的常量 —— 与 Java 的作用域最接近</li>
+     *   <li>全局唯一简单名 —— 只在全仓只有一个取值时才认</li>
+     * </ol>
+     *
+     * <p><b>为什么必须这么细</b>：{@code MODE_KEY} / {@code PROPERTIES_PREFIX} 这类名字在多个类里复用
+     * （{@code MultiReplicaSharedStateChecker.MODE_KEY} = {@code …shared-state-check.mode}，
+     * {@code SharedStateReachabilityGate.MODE_KEY} = {@code …shared-state-check.redis-reachability}）。
+     * 早期实现按简单名 {@code putIfAbsent}，先出现的静默覆盖后者 ⇒ 后者被误报成「无消费方的孤儿键」；
+     * 后来改成「歧义就不解析」又反过来把 18 个真实消费方丢掉。现在是三级解析。</p>
+     */
+    static final class ConstIndex {
+        private final Map<String, String> qualified = new TreeMap<>();
+        private final Map<String, Map<String, String>> perClass = new TreeMap<>();
+        private final Map<String, Set<String>> bySimpleName = new TreeMap<>();
+
+        void add(final String className, final String field, final String value) {
+            qualified.put(className + "." + field, value);
+            perClass.computeIfAbsent(className, k -> new TreeMap<>()).put(field, value);
+            bySimpleName.computeIfAbsent(field, k -> new TreeSet<>()).add(value);
+        }
+
+        Map<String, String> localConstants(final String className) {
+            return perClass.getOrDefault(className, Map.of());
+        }
+
+        String resolve(final String raw, final Map<String, String> local) {
+            if (raw == null || raw.isBlank()) {
+                return null;
+            }
+            if (raw.contains(".")) {
+                // 形如 Class.FIELD 的限定引用先查索引；查不到就当作字面量属性名（@Value 的 ${a.b.c} 走这里）
+                String qualifiedHit = qualified.get(raw);
+                return qualifiedHit != null ? qualifiedHit : raw;
+            }
+            String own = local.get(raw);
+            if (own != null) {
+                return own;
+            }
+            Set<String> values = bySimpleName.get(raw);
+            return values != null && values.size() == 1 ? values.iterator().next() : null;
+        }
+
+        int ambiguousSimpleNames() {
+            return (int) bySimpleName.values().stream().filter(v -> v.size() > 1).count();
+        }
+    }
+
+    private static ConstIndex constantIndex() {
+        ConstIndex index = new ConstIndex();
+        for (Path f : javaSources()) {
+            String fileName = f.getFileName().toString();
+            String className = fileName.substring(0, fileName.length() - ".java".length());
+            Matcher m = RE_PROP_CONST.matcher(read(f));
+            while (m.find()) {
+                index.add(className, m.group(1), m.group(2));
+            }
+        }
+        return index;
+    }
+
+    /**
+     * {@code @ConditionalOnProperty(prefix = "a.b", name = "enabled")} 读的是 {@code a.b.enabled}，
+     * 而 {@link #RE_COND_NAME_LITERAL} 只能抓到光秃秃的 {@code enabled}（不含点号、会被跳过）。
      *
      * <p>实测后果：{@code jairouter.security.monitoring.alerts.enabled} 被
-     * {@code SecurityAlertService} / {@code SecurityAlertScheduler} 的 {@code @ConditionalOnProperty}
-     * 真实消费，却被报成"无任何消费方"，差点在配置瘦身时被误删。</p>
+     * {@code SecurityAlertService} / {@code SecurityAlertScheduler} 真实消费，却被报成「无任何消费方」，
+     * 差点在配置瘦身时被误删。</p>
      */
     private static void addConditionalOnPropertyConsumers(
             final Map<String, List<String>> consumers, final String text, final String where) {
@@ -455,11 +563,10 @@ class ConfigBindingSweepTest {
 
     private static void addAll(final Map<String, List<String>> consumers, final String text,
                                final Pattern pattern, final int group, final String where,
-                               final Map<String, String> consts) {
+                               final java.util.function.Function<String, String> resolve) {
         Matcher m = pattern.matcher(text);
         while (m.find()) {
-            String raw = m.group(group);
-            String value = consts.getOrDefault(raw, raw);
+            String value = resolve.apply(m.group(group));
             if (value == null || value.isBlank() || !value.contains(".")) {
                 continue;
             }
