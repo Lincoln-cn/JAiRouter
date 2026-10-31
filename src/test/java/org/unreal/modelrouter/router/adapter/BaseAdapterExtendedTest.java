@@ -32,7 +32,6 @@ import org.unreal.modelrouter.router.adapter.error.AdapterErrorHandler;
 import org.unreal.modelrouter.router.adapter.handler.ResponseHandler;
 import org.unreal.modelrouter.router.adapter.mapper.ResponseMapper;
 import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
-import org.unreal.modelrouter.router.adapter.processor.HttpRequestProcessor;
 import org.unreal.modelrouter.router.adapter.retry.RetryPolicy;
 import org.unreal.modelrouter.router.adapter.selector.InstanceSelector;
 import org.unreal.modelrouter.router.adapter.support.AdapterContext;
@@ -1040,7 +1039,7 @@ class BaseAdapterExtendedTest {
                     new AdapterContext(registry, objectMapper, statsRepository),
                     new RequestProcessingSupport(
                             null, null, instanceSelector, responseTransformer,
-                            null, null, null, null),
+                            null, null, null),
                     new ResilienceSupport(
                             capabilityChecker, errorHandler, retryPolicy,
                             null, null, null)

@@ -5,7 +5,6 @@ import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.router.adapter.builder.RequestBuilder;
 import org.unreal.modelrouter.router.adapter.handler.ResponseHandler;
 import org.unreal.modelrouter.router.adapter.mapper.ResponseMapper;
-import org.unreal.modelrouter.router.adapter.processor.HttpRequestProcessor;
 import org.unreal.modelrouter.router.adapter.processor.StreamingRequestProcessor;
 import org.unreal.modelrouter.router.adapter.request.NonStreamingRequestProcessor;
 import org.unreal.modelrouter.router.adapter.selector.InstanceSelector;
@@ -24,7 +23,6 @@ public final class RequestProcessingSupport {
     private final ResponseHandler responseHandler;
     private final InstanceSelector instanceSelector;
     private final ResponseTransformer responseTransformer;
-    private final HttpRequestProcessor httpRequestProcessor;
     private final ResponseMapper responseMapper;
     private final NonStreamingRequestProcessor nonStreamingProcessor;
     private final StreamingRequestProcessor streamingProcessor;
@@ -33,7 +31,6 @@ public final class RequestProcessingSupport {
                                     final ResponseHandler responseHandler,
                                     final InstanceSelector instanceSelector,
                                     final ResponseTransformer responseTransformer,
-                                    final HttpRequestProcessor httpRequestProcessor,
                                     final ResponseMapper responseMapper,
                                     final NonStreamingRequestProcessor nonStreamingProcessor,
                                     @Autowired(required = false) final StreamingRequestProcessor streamingProcessor) {
@@ -41,7 +38,6 @@ public final class RequestProcessingSupport {
         this.responseHandler = responseHandler;
         this.instanceSelector = instanceSelector;
         this.responseTransformer = responseTransformer;
-        this.httpRequestProcessor = httpRequestProcessor;
         this.responseMapper = responseMapper;
         this.nonStreamingProcessor = nonStreamingProcessor;
         this.streamingProcessor = streamingProcessor;
@@ -61,10 +57,6 @@ public final class RequestProcessingSupport {
 
     public ResponseTransformer getResponseTransformer() {
         return responseTransformer;
-    }
-
-    public HttpRequestProcessor getHttpRequestProcessor() {
-        return httpRequestProcessor;
     }
 
     public ResponseMapper getResponseMapper() {

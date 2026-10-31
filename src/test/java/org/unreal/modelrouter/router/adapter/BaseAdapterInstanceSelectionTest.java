@@ -98,7 +98,7 @@ class BaseAdapterInstanceSelectionTest {
 
         AdapterContext context = new AdapterContext(registry, new ObjectMapper(), null);
         RequestProcessingSupport requestSupport = new RequestProcessingSupport(
-                null, null, instanceSelector, null, null, null, null, null);
+                null, null, instanceSelector, null, null, null, null);
         ResilienceSupport resilienceSupport = new ResilienceSupport(
                 capabilityChecker, errorHandler, retryPolicy, metricsRecorder,
                 tracingManager, errorResponseBuilder);
