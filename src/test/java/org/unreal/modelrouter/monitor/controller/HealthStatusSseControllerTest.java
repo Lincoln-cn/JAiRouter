@@ -9,10 +9,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.unreal.modelrouter.monitor.monitoring.metrics.SseConnectionMetrics;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
 
+import org.junit.jupiter.api.BeforeEach;
+import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -30,6 +35,16 @@ class HealthStatusSseControllerTest {
 
     @Mock
     private ServiceConfigRepository serviceConfigRepository;
+
+    @Mock
+    private SseConnectionMetrics sseConnectionMetrics;
+
+    @BeforeEach
+    void setUpMetrics() {
+        // track 只做计数包装，测试里让它原样透传
+        when(sseConnectionMetrics.track(any(), anyString()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+    }
 
     @InjectMocks
     private HealthStatusSseController controller;

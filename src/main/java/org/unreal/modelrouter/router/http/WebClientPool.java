@@ -1,5 +1,8 @@
 package org.unreal.modelrouter.router.http;
 
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.netty.channel.ChannelOption;
 import io.netty.resolver.AddressResolverGroup;
 import jakarta.annotation.PreDestroy;
@@ -9,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.config.core.helper.SsrfGuard;
 import reactor.netty.http.client.HttpClient;
@@ -18,6 +22,7 @@ import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
@@ -102,6 +107,12 @@ public class WebClientPool {
     /** 统计：命中次数 */
     private final AtomicLong hitCount = new AtomicLong(0);
 
+    /** 出站请求当前在途数（#947：上游饱和与排队的第一手信号） */
+    private final AtomicInteger outboundInFlight = new AtomicInteger(0);
+
+    /** 指标注册表；包内构造器（测试）传 null 时不注册任何指标 */
+    private final MeterRegistry meterRegistry;
+
     /** 统计：未命中次数 */
     private final AtomicLong missCount = new AtomicLong(0);
 
@@ -123,9 +134,11 @@ public class WebClientPool {
             @Value("${jairouter.webclient.max-idle-time-seconds:60}") final int maxIdleTimeSeconds,
             @Value("${jairouter.webclient.max-in-memory-size-bytes:10485760}") final int maxInMemorySizeBytes,
             @Value("${jairouter.webclient.streaming-response-timeout-seconds:600}")
-            final int streamingResponseTimeoutSeconds) {
+            final int streamingResponseTimeoutSeconds,
+            final MeterRegistry meterRegistry) {
         this(connectTimeoutMs, responseTimeoutSeconds, maxConnections, pendingAcquireTimeoutMs, maxIdleTimeSeconds,
-                maxInMemorySizeBytes, streamingResponseTimeoutSeconds, SsrfGuardedAddressResolverGroup.instance());
+                maxInMemorySizeBytes, streamingResponseTimeoutSeconds, SsrfGuardedAddressResolverGroup.instance(),
+                meterRegistry);
     }
 
     /**
@@ -141,7 +154,7 @@ public class WebClientPool {
                   final long pendingAcquireTimeoutMs, final int maxIdleTimeSeconds) {
         this(connectTimeoutMs, responseTimeoutSeconds, maxConnections, pendingAcquireTimeoutMs, maxIdleTimeSeconds,
                 DEFAULT_MAX_IN_MEMORY_SIZE_BYTES, DEFAULT_STREAMING_RESPONSE_TIMEOUT_SECONDS,
-                SsrfGuardedAddressResolverGroup.instance());
+                SsrfGuardedAddressResolverGroup.instance(), null);
     }
 
     /**
@@ -153,7 +166,7 @@ public class WebClientPool {
                   final long pendingAcquireTimeoutMs, final int maxIdleTimeSeconds,
                   final AddressResolverGroup<InetSocketAddress> dnsResolverGroup) {
         this(connectTimeoutMs, responseTimeoutSeconds, maxConnections, pendingAcquireTimeoutMs, maxIdleTimeSeconds,
-                DEFAULT_MAX_IN_MEMORY_SIZE_BYTES, DEFAULT_STREAMING_RESPONSE_TIMEOUT_SECONDS, dnsResolverGroup);
+                DEFAULT_MAX_IN_MEMORY_SIZE_BYTES, DEFAULT_STREAMING_RESPONSE_TIMEOUT_SECONDS, dnsResolverGroup, null);
     }
 
     /**
@@ -167,7 +180,20 @@ public class WebClientPool {
                   final int maxInMemorySizeBytes,
                   final AddressResolverGroup<InetSocketAddress> dnsResolverGroup) {
         this(connectTimeoutMs, responseTimeoutSeconds, maxConnections, pendingAcquireTimeoutMs, maxIdleTimeSeconds,
-                maxInMemorySizeBytes, DEFAULT_STREAMING_RESPONSE_TIMEOUT_SECONDS, dnsResolverGroup);
+                maxInMemorySizeBytes, DEFAULT_STREAMING_RESPONSE_TIMEOUT_SECONDS, dnsResolverGroup, null);
+    }
+
+    /**
+     * 内部构造器：可注入解析守卫、响应体内存上限与流式超时；不注册指标（包内可见，供测试用）。
+     *
+     * <p>保留这个不带 {@link MeterRegistry} 的形态，避免既有测试与调用方因新增指标而改动。</p>
+     */
+    WebClientPool(final int connectTimeoutMs, final int responseTimeoutSeconds, final int maxConnections,
+                  final long pendingAcquireTimeoutMs, final int maxIdleTimeSeconds,
+                  final int maxInMemorySizeBytes, final int streamingResponseTimeoutSeconds,
+                  final AddressResolverGroup<InetSocketAddress> dnsResolverGroup) {
+        this(connectTimeoutMs, responseTimeoutSeconds, maxConnections, pendingAcquireTimeoutMs, maxIdleTimeSeconds,
+                maxInMemorySizeBytes, streamingResponseTimeoutSeconds, dnsResolverGroup, null);
     }
 
     /**
@@ -176,21 +202,34 @@ public class WebClientPool {
      * @param maxInMemorySizeBytes           出站响应体内存上限（字节）
      * @param streamingResponseTimeoutSeconds 流式变体的传输层超时（秒）
      * @param dnsResolverGroup               底层解析器
+     * @param meterRegistry                  指标注册表；null 表示不注册指标（测试用构造器）
      */
     WebClientPool(final int connectTimeoutMs, final int responseTimeoutSeconds, final int maxConnections,
                   final long pendingAcquireTimeoutMs, final int maxIdleTimeSeconds,
                   final int maxInMemorySizeBytes, final int streamingResponseTimeoutSeconds,
-                  final AddressResolverGroup<InetSocketAddress> dnsResolverGroup) {
+                  final AddressResolverGroup<InetSocketAddress> dnsResolverGroup,
+                  final MeterRegistry meterRegistry) {
         this.connectTimeoutMs = connectTimeoutMs;
         this.responseTimeoutSeconds = responseTimeoutSeconds;
         this.maxInMemorySizeBytes = maxInMemorySizeBytes;
         this.streamingResponseTimeoutSeconds = streamingResponseTimeoutSeconds;
         this.dnsResolverGroup = dnsResolverGroup;
-        this.connectionProvider = ConnectionProvider.builder("jairouter-outbound")
+        this.meterRegistry = meterRegistry;
+        // #947：把出站连接池的排队/分配延迟交给 Reactor Netty 自带的 Micrometer 记录器
+        // （它注册到 Metrics.globalRegistry，Spring Boot 默认 use-global-registry=true 会桥接到 prometheus）。
+        final ConnectionProvider.Builder providerBuilder = ConnectionProvider.builder("jairouter-outbound")
                 .maxConnections(maxConnections)
                 .pendingAcquireTimeout(Duration.ofMillis(pendingAcquireTimeoutMs))
-                .maxIdleTime(Duration.ofSeconds(maxIdleTimeSeconds))
-                .build();
+                .maxIdleTime(Duration.ofSeconds(maxIdleTimeSeconds));
+        if (meterRegistry != null) {
+            providerBuilder.metrics(true);
+        }
+        this.connectionProvider = providerBuilder.build();
+        if (meterRegistry != null) {
+            Gauge.builder("jairouter.outbound.requests.inflight", outboundInFlight, AtomicInteger::doubleValue)
+                    .description("当前在途的出站请求数（含排队等待连接）")
+                    .register(meterRegistry);
+        }
         logger.info("WebClientPool 初始化完成: connectTimeoutMs={}, responseTimeoutSeconds={}, "
                         + "maxConnections={}, pendingAcquireTimeoutMs={}, maxIdleTimeSeconds={}, maxInMemorySizeBytes={}",
                 connectTimeoutMs, responseTimeoutSeconds, maxConnections,
@@ -207,7 +246,7 @@ public class WebClientPool {
         this(DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_RESPONSE_TIMEOUT_SECONDS, DEFAULT_MAX_CONNECTIONS,
                 DEFAULT_PENDING_ACQUIRE_TIMEOUT_MS, DEFAULT_MAX_IDLE_TIME_SECONDS,
                 DEFAULT_MAX_IN_MEMORY_SIZE_BYTES, DEFAULT_STREAMING_RESPONSE_TIMEOUT_SECONDS,
-                SsrfGuardedAddressResolverGroup.instance());
+                SsrfGuardedAddressResolverGroup.instance(), null);
     }
 
     /**
@@ -344,6 +383,8 @@ public class WebClientPool {
                 .baseUrl(baseUrl)
                 // #700：显式设置响应体内存上限，避免落到 WebFlux 默认的 256KB
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(maxInMemorySizeBytes))
+                // #947：在途请求数与首字节延迟（放在 configurator 之前，业务自定义过滤器仍可覆盖）
+                .filters(filters -> filters.add(outboundMetricsFilter()))
                 .clientConnector(new ReactorClientHttpConnector(httpClient));
 
         // 应用自定义配置
@@ -352,6 +393,30 @@ public class WebClientPool {
         }
 
         return builder.build();
+    }
+
+    /**
+     * 出站请求指标过滤器（#947）。
+     *
+     * <p>只度量到「响应头到达」为止：{@code next.exchange(request)} 的完成时刻即首字节延迟，
+     * 流式响应的 body 消费过程不计入 —— 对容量判断而言，首字节延迟比总时长更能反映上游/连接池压力。</p>
+     *
+     * <p>{@code doFinally} 覆盖完成、错误、取消三种终止，因此取消与超时也会把在途数减回去，
+     * 不会出现「失败路径漏减导致在途数只增不减」。</p>
+     *
+     * @return 指标过滤器
+     */
+    private ExchangeFilterFunction outboundMetricsFilter() {
+        return (request, next) -> {
+            outboundInFlight.incrementAndGet();
+            final Timer.Sample sample = meterRegistry == null ? null : Timer.start(meterRegistry);
+            return next.exchange(request).doFinally(signal -> {
+                outboundInFlight.decrementAndGet();
+                if (sample != null) {
+                    sample.stop(meterRegistry.timer("jairouter.outbound.request.duration"));
+                }
+            });
+        };
     }
 
     /**

@@ -8,6 +8,7 @@ import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.unreal.modelrouter.monitor.monitoring.metrics.SseConnectionMetrics;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
 import org.unreal.modelrouter.persistence.jpa.entity.ServiceInstanceEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;
@@ -41,6 +42,10 @@ public class HealthStatusSseController {
 
     @Autowired(required = false)
     private ServiceConfigRepository serviceConfigRepository;
+
+    // #947：SSE 连接数指标（连接维度的容量信号）
+    @Autowired
+    private SseConnectionMetrics sseConnectionMetrics;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -80,7 +85,8 @@ public class HealthStatusSseController {
         Flux<ServerSentEvent<String>> manualUpdates = eventSink.asFlux()
                 .onBackpressureLatest();
 
-        return Flux.merge(periodicUpdates, manualUpdates)
+        return sseConnectionMetrics
+                .track(Flux.merge(periodicUpdates, manualUpdates), "health-status")
                 .doOnCancel(() -> log.debug("SSE连接已取消"))
                 .doOnComplete(() -> log.debug("SSE连接已完成"));
     }

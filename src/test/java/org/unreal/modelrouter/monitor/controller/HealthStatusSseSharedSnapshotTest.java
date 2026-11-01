@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.unreal.modelrouter.monitor.monitoring.metrics.SseConnectionMetrics;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
@@ -19,6 +20,8 @@ import reactor.test.StepVerifier;
 import java.time.Duration;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -40,6 +43,9 @@ class HealthStatusSseSharedSnapshotTest {
     @Mock
     private ServiceConfigRepository serviceConfigRepository;
 
+    @Mock
+    private SseConnectionMetrics sseConnectionMetrics;
+
     private HealthStatusSseController controller;
 
     @BeforeEach
@@ -48,6 +54,9 @@ class HealthStatusSseSharedSnapshotTest {
         ReflectionTestUtils.setField(controller, "serviceStateManager", serviceStateManager);
         ReflectionTestUtils.setField(controller, "serviceInstanceRepository", serviceInstanceRepository);
         ReflectionTestUtils.setField(controller, "serviceConfigRepository", serviceConfigRepository);
+        ReflectionTestUtils.setField(controller, "sseConnectionMetrics", sseConnectionMetrics);
+        when(sseConnectionMetrics.track(any(), anyString()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
         ReflectionTestUtils.setField(controller, "streamIntervalMs", 100L);
         when(serviceConfigRepository.findAll()).thenReturn(List.of());
         when(serviceInstanceRepository.findAll()).thenReturn(List.of());
