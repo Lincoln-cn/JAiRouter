@@ -1,0 +1,84 @@
+name: 依赖安全扫描
+
+# issue #931 / #933：本仓 13 个 workflow 里此前没有任何依赖漏洞扫描，Spring Boot BOM 的补丁版本
+# 长期落后也无人察觉（一次性扫出 102 条 advisory、4 条 CRITICAL）。这里做两件事：
+#   1. 用 OSV.dev 对「运行时依赖」做漏洞扫描，达到 high 及以上即判红（baseline 里的已接受项除外）；
+#   2. 产出 CycloneDX SBOM，作为发布物的一部分留档（不参与门闩判定）。
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 每周一 03:00 UTC：依赖漏洞是随时间出现的，只在改 pom 时扫会漏掉「上游新披露」
+    - cron: '0 3 * * 1'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'pom.xml'
+      - 'scripts/audit/**'
+      - '.github/workflows/dependency-scan.yml'
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'pom.xml'
+      - 'scripts/audit/**'
+      - '.github/workflows/dependency-scan.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  osv-scan:
+    name: OSV 漏洞扫描 + SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: 导出运行时依赖清单
+        run: |
+          mvn -B -q dependency:list \
+            -DincludeScope=runtime \
+            -DoutputFile=deps.txt \
+            -DappendOutput=false
+          echo "依赖行数：$(wc -l < deps.txt)"
+
+      - name: OSV 扫描（high 及以上判红）
+        run: |
+          python3 scripts/audit/osv-scan.py \
+            --deps deps.txt \
+            --baseline scripts/audit/osv-baseline.json \
+            --fail-on high \
+            --json osv-report.json
+
+      - name: 生成 CycloneDX SBOM
+        # SBOM 只是留档，插件下载失败不该把门闩拖红
+        continue-on-error: true
+        run: |
+          mvn -B org.cyclonedx:cyclonedx-maven-plugin:2.9.3:makeAggregateBom \
+            -DskipTests \
+            -DoutputFormat=json \
+            -DoutputName=sbom
+
+      - name: 上传扫描结果与 SBOM
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-scan
+          path: |
+            osv-report.json
+            deps.txt
+            target/sbom.json
+          if-no-files-found: warn
+          retention-days: 30

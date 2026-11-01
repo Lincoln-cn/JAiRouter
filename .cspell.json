@@ -324,7 +324,9 @@
     "authorizeExchange",
     "Kustomize",
     "kustomization",
-    "datasource"
+    "datasource",
+    "cyclonedx",
+    "vulns"
   ],
   "ignoreWords": [
     "CNAME",
@@ -380,5 +382,8 @@
         "/\\$\\{[^}]*\\}/g"
       ]
     }
+  ],
+  "ignoreRegExpList": [
+    "-D\\w+"
   ]
 }
