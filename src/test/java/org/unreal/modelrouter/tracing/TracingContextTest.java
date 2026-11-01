@@ -17,6 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import org.unreal.modelrouter.support.TestTracerProviders;
+
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
@@ -44,7 +46,7 @@ class TracingContextTest {
     @BeforeEach
     void setUp() {
         // 使用真实的SDK Tracer Provider进行测试
-        SdkTracerProvider tracerProvider = SdkTracerProvider.builder().build();
+        SdkTracerProvider tracerProvider = TestTracerProviders.sdk();
         tracer = tracerProvider.get("test-tracer");
         tracingContext = new DefaultTracingContext(tracer);
     }

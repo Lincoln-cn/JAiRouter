@@ -36,6 +36,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
+import org.unreal.modelrouter.support.TestTracerProviders;
 import org.unreal.modelrouter.monitor.tracing.DefaultTracingContext;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
@@ -89,7 +90,7 @@ class BackendCallTracingTest {
     @BeforeEach
     void setUp() {
         // 创建真实的TracingContext
-        SdkTracerProvider tracerProvider = SdkTracerProvider.builder().build();
+        SdkTracerProvider tracerProvider = TestTracerProviders.sdk();
         Tracer tracer = tracerProvider.get("test-tracer");
         tracingContext = new DefaultTracingContext(tracer);
         

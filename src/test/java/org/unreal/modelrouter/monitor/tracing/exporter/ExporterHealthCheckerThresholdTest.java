@@ -7,6 +7,7 @@ import io.opentelemetry.sdk.trace.export.SpanExporter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.actuate.health.Status;
+import org.unreal.modelrouter.support.TestTracerProviders;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -38,7 +39,7 @@ class ExporterHealthCheckerThresholdTest {
     }
 
     private static ExporterHealthChecker checkerFor(final SpanExporter exporter) {
-        final SdkTracerProvider provider = SdkTracerProvider.builder().build();
+        final SdkTracerProvider provider = TestTracerProviders.sdk();
         final Tracer tracer = provider.get("health-threshold-test");
         return new ExporterHealthChecker(exporter, configuration(), tracer);
     }

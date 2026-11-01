@@ -9,6 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.unreal.modelrouter.support.TestTracerProviders;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.DefaultTracingContext;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
@@ -60,7 +61,7 @@ class TracingEncryptionServiceTest {
         // 原 encryptionConfig.getDataRetention() 整段（数据保留策略）零消费方，已随 issue #224 批 B 删除
 
         // 创建测试用的Tracer
-        SdkTracerProvider tracerProvider = SdkTracerProvider.builder().build();
+        SdkTracerProvider tracerProvider = TestTracerProviders.sdk();
         tracer = tracerProvider.get("test");
 
         // 创建服务实例

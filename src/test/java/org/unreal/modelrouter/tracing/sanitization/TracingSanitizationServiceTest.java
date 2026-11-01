@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.unreal.modelrouter.support.TestTracerProviders;
 import org.unreal.modelrouter.auth.sanitization.SanitizationService;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.DefaultTracingContext;
@@ -72,7 +73,7 @@ class TracingSanitizationServiceTest {
         when(loggingConfig.getSensitiveFields()).thenReturn(Set.of("password", "token"));
 
         // 创建测试用的Tracer
-        SdkTracerProvider tracerProvider = SdkTracerProvider.builder().build();
+        SdkTracerProvider tracerProvider = TestTracerProviders.sdk();
         tracer = tracerProvider.get("test");
 
         // 创建服务实例
