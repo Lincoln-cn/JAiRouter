@@ -131,6 +131,7 @@ JAiRouter uses a standardized error code system to identify various error condit
 |------------|-------------|--------------|----------|
 | `INVALID_REQUEST` | Invalid request data | Parameter format or value error | Check the request parameters |
 | `INVALID_PARAM` | Invalid parameter | Parameter value out of range | Check the parameter constraints |
+| `INVALID_BASE_URL` | Outbound base URL rejected | The instance/service `baseUrl` uses a non-http(s) scheme, carries credentials, or targets a cloud metadata address (issue #928) | Point it at a valid upstream |
 | `INVALID_PAGE` | Invalid page parameter | Negative page number | Send a valid page number |
 | `INVALID_SIZE` | Invalid page size | Page size outside 1-100 | Send a valid page size |
 | `INVALID_TOKEN_ID` | Invalid token id | Empty or malformed token id | Check the token id |

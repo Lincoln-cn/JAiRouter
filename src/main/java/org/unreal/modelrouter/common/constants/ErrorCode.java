@@ -68,6 +68,8 @@ public enum ErrorCode {
             "获取令牌详情失败"),
     INTERNAL_ERROR("INTERNAL_ERROR", HttpStatus.INTERNAL_SERVER_ERROR, RenderPath.API_EXCEPTION, "服务器内部错误"),
     INVALID_PAGE("INVALID_PAGE", HttpStatus.BAD_REQUEST, RenderPath.API_EXCEPTION, "分页参数不合法"),
+    INVALID_BASE_URL("INVALID_BASE_URL", HttpStatus.BAD_REQUEST, RenderPath.RESPONSE_BODY,
+            "出站 base URL 不合法（协议、凭据或目标地址被拒）"),
     INVALID_PARAM("INVALID_PARAM", HttpStatus.BAD_REQUEST, RenderPath.API_EXCEPTION,
             "参数无效；发出点用 resolveStatus 取状态"),
     INVALID_REQUEST("INVALID_REQUEST", HttpStatus.BAD_REQUEST, RenderPath.API_EXCEPTION, "请求不合法"),
