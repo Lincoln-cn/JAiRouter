@@ -94,6 +94,7 @@ spring:
       - classpath:config/router/services.yml
       - classpath:config/router/rules.yml
       - classpath:config/router/pools.yml
+      - classpath:config/router/guard.yml
 
       # auth module
       - classpath:config/auth/jwt.yml

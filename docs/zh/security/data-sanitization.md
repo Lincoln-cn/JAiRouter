@@ -327,6 +327,41 @@ jairouter:
               - "\\b(?:风格|style)[:：]?\\s*[\\w\\d]+\\b"
 ```
 
+## 流式响应护栏（SSE）
+
+请求/响应侧的脱敏只能看到**完整的**响应体；流式响应（`stream: true`）的每个 chunk 是独立下发的，
+上面的脱敏不会逐块生效。要覆盖这条路径，用独立的流式护栏（`jairouter.guard.*`）：
+
+| 判定 | 含义 | 客户端看到什么 |
+| --- | --- | --- |
+| ALLOW | 未命中任何规则 | 原样 chunk |
+| REDACT | 命中脱敏规则 | 改写后的 chunk（`replacement` 默认 `[REDACTED]`） |
+| ABORT | 命中阻断规则 | 终止帧 `[DONE]`，整条流立即结束 |
+
+配置示例（默认关闭；规则为空时即便打开也不介入）：
+
+```yaml
+jairouter:
+  guard:
+    enabled: true
+    redact:
+      patterns:
+        - name: phone-cn
+          regex: '\b1[3-9]\d{9}\b'
+          replacement: '[PHONE]'
+    block:
+      patterns:
+        - name: provider-key-leak
+          regex: '(?i)sk-[a-z0-9]{16,}'
+```
+
+几条行为约定：
+
+- **阻断不写缓存**：命中 ABORT 的流即便上游已经发出终止标记，也不会写入响应缓存 —— 否则后续同参数请求会回放被截断的内容。
+- **失败降级**：护栏内部异常（例如规则配置改坏）只记一条 warn，本块按放行处理；护栏不得成为中断源。
+- **指标**：`jairouter.guard.decisions{action,policy}` 按动作与规则名计数（ALLOW 不计数）。
+- **已知边界**：判定按 chunk 进行，不做跨 chunk 拼接 —— 敏感串正好被上游切在两个子块之间时，单块正则匹配不到。需要更强保证时，应在请求侧先脱敏，或改用非流式调用。
+
 ## 性能影响与容量评估
 
 脱敏**不是零成本的旁路**：每一次命中都要对整段文本做正则匹配与文本重写。响应侧在**出站**（`ResponseSanitizationFilter`）；此外记录侧（`sanitizeForStorage`，用于调用历史与链路追踪落库前）也执行同一套匹配。

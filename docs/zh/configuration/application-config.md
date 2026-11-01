@@ -43,6 +43,7 @@ config/
 │   ├── fallback.yml     # 降级配置
 │   ├── pools.yml        # 资源池配置
 │   ├── rules.yml        # 路由规则配置
+│   ├── guard.yml        # 流式护栏规则
 │   └── services.yml     # 服务实例配置
 ├── auth/                # 认证服务
 │   ├── jwt.yml          # JWT 认证配置

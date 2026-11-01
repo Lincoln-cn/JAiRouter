@@ -327,6 +327,42 @@ jairouter:
               - "\\b(?:风格|style)[:：]?\\s*[\\w\\d]+\\b"
 ```
 
+## Streaming Response Guard (SSE)
+
+Request/response sanitization only ever sees a **complete** response body. A streaming response
+(`stream: true`) sends each chunk separately, so the sanitizer above does not run per chunk. To cover
+that path, enable the dedicated streaming guard (`jairouter.guard.*`):
+
+| Decision | Meaning | What the client receives |
+| --- | --- | --- |
+| ALLOW | no rule matched | the chunk unchanged |
+| REDACT | a redaction rule matched | the rewritten chunk (`replacement` defaults to `[REDACTED]`) |
+| ABORT | a block rule matched | a `[DONE]` frame; the stream ends immediately |
+
+Example configuration (disabled by default; with no patterns configured it stays inert even when enabled):
+
+```yaml
+jairouter:
+  guard:
+    enabled: true
+    redact:
+      patterns:
+        - name: phone-cn
+          regex: '\b1[3-9]\d{9}\b'
+          replacement: '[PHONE]'
+    block:
+      patterns:
+        - name: provider-key-leak
+          regex: '(?i)sk-[a-z0-9]{16,}'
+```
+
+Behavior worth knowing:
+
+- **Aborted streams are not cached.** Even if the upstream already emitted a terminator, a stream that hit ABORT is never written to the response cache; otherwise a later request with the same parameters would replay the truncated content.
+- **Failures degrade, they do not break the stream.** An internal guard error (a broken rule, say) logs one warning and treats the chunk as allowed; the guard must never become a source of interruption.
+- **Metrics.** `jairouter.guard.decisions{action,policy}` counts by action and rule name (ALLOW is not counted).
+- **Known limit.** Decisions are made per chunk with no cross-chunk buffering, so a sensitive string split across two upstream chunks is not matched. When you need a stronger guarantee, sanitize on the request side or use a non-streaming call.
+
 ## Performance Impact and Capacity Planning
 
 Sanitization is **not a zero-cost bypass**: every match runs regex matching and text rewriting over the whole body. The response side covers **outbound** traffic (`ResponseSanitizationFilter`), and the recording side (`sanitizeForStorage`, run before call history and traces are persisted) executes the same matching.

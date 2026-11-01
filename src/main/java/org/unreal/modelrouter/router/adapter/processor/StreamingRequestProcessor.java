@@ -124,6 +124,10 @@ public class StreamingRequestProcessor {
     @Autowired(required = false)
     private SseConnectionMetrics sseConnectionMetrics;
 
+    // 流式护栏（可选注入；未装配或未启用时链路完全不介入）
+    @Autowired(required = false)
+    private org.unreal.modelrouter.router.guard.StreamGuardService streamGuardService;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public StreamingRequestProcessor(final ResponseTransformer responseTransformer) {
@@ -267,6 +271,11 @@ public class StreamingRequestProcessor {
             // #720：上游若已经自带 usage 帧（部分 vLLM 会），就不再补第二帧
             final java.util.concurrent.atomic.AtomicBoolean usageFrameSeen =
                     new java.util.concurrent.atomic.AtomicBoolean(false);
+            // 流式护栏：guardAborted 一旦为 true，本流不再产出上游内容，也不写缓存。
+            final java.util.concurrent.atomic.AtomicBoolean guardAborted =
+                    new java.util.concurrent.atomic.AtomicBoolean(false);
+            final java.util.concurrent.atomic.AtomicReference<String> guardPolicy =
+                    new java.util.concurrent.atomic.AtomicReference<>(null);
             Flux<ServerSentEvent<String>> streamResponse = rawChunks
                 .map(chunk -> {
                     firstChunkEmitted.set(true);
@@ -297,7 +306,24 @@ public class StreamingRequestProcessor {
                             terminatedSeen.set(true);
                         }
                     }
-                    ServerSentEvent<String> sse = transformAndWrapChunk(chunk, transformChunkFn);
+                    // 流式护栏：ABORT 时用终止帧替换本块并让整条流到此为止；
+                    // REDACT 时把改写后的文本交给后续的适配器变换（顺序：先脱敏，再变换）。
+                    String guardedChunk = chunk;
+                    if (streamGuardService != null && streamGuardService.enabled()) {
+                        final org.unreal.modelrouter.router.guard.GuardDecision guardDecision =
+                                streamGuardService.evaluate(chunk);
+                        if (guardDecision.aborting()) {
+                            guardAborted.set(true);
+                            guardPolicy.set(guardDecision.policy());
+                            logger.warn("流式响应被护栏阻断：policy={}, instance={}, adapter={}",
+                                    guardDecision.policy(), instanceName, adapterType);
+                            return ServerSentEvent.<String>builder().data("[DONE]").build();
+                        }
+                        if (guardDecision.redacted()) {
+                            guardedChunk = guardDecision.output();
+                        }
+                    }
+                    ServerSentEvent<String> sse = transformAndWrapChunk(guardedChunk, transformChunkFn);
                     // v2.9.10: 收集变换后 data 串用于流式缓存（v3.2.3: 受缓存字符预算约束）
                     if (transformedChunks != null && !cacheOverBudget.get()) {
                         final String data = sse.data();
@@ -317,6 +343,9 @@ public class StreamingRequestProcessor {
         // v3.2.3 (#126): 块间空闲看门狗 — 超时向上游 cancel（释放连接），
         // 向下游发出终止错误（TimeoutException），经 doOnError 回滚配额并释放累积缓冲。
         // 空闲型而非总时长型：长但持续产出的流不受影响。PT0S/负值可禁用。
+        // 流式护栏：阻断帧发出后立即结束，不再等待上游后续内容。
+        streamResponse = streamResponse.takeUntil(event -> guardAborted.get());
+
         final Duration idleTimeout = idleTimeout();
         if (idleTimeout != null && !idleTimeout.isZero() && !idleTimeout.isNegative()) {
             streamResponse = streamResponse.timeout(idleTimeout);
@@ -335,9 +364,13 @@ public class StreamingRequestProcessor {
                     // 半截内容曾被按默认 1 小时 TTL 缓存，后续同参数请求回放的都是缺尾输出。
                     final boolean terminated = terminatedSeen.get()
                             || (finishReasonRef != null && finishReasonRef.get() != null);
+                    if (guardAborted.get() && cacheKeyForWrite != null) {
+                        logger.debug("流式响应被护栏阻断，跳过写缓存: key={}, policy={}",
+                                cacheKeyForWrite, guardPolicy.get());
+                    }
                     if (cacheKeyForWrite != null && responseCacheService != null
                             && transformedChunks != null && !transformedChunks.isEmpty()
-                            && !cacheOverBudget.get() && terminated) {
+                            && !cacheOverBudget.get() && terminated && !guardAborted.get()) {
                         final List<String> chunksToCache;
                         synchronized (transformedChunks) {
                             chunksToCache = List.copyOf(transformedChunks);
