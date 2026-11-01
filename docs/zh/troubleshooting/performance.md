@@ -608,3 +608,72 @@ wrk -t12 -c400 -d30s --script=post.lua http://localhost:8080/v1/chat/completions
 ```
 
 通过遵循这些性能优化指南，可以确保 JAiRouter 在生产环境中提供稳定、高效的服务。
+
+## 本仓的测量方法（可复现）
+
+> 上面的 KPI 表是**目标**，不是实测值。这一节给出仓库自带的测量手段与一次基线记录，任何维护者都能复现。
+
+### 为什么要自备脚本
+
+压测工具（k6 / wrk / jmeter）不属于本仓依赖。为了让「怎么测」不依赖个人环境，`scripts/perf/` 提供两个零依赖的 Node 脚本：
+
+- `scripts/perf/mock-upstream.mjs`：OpenAI 兼容的最小上游（`/v1/models` 探活、非流式 JSON、流式 SSE），把**上游模型延迟**从结果里剔除；
+- `scripts/perf/loadtest.mjs`：固定并发 + 固定时长的压测器，输出 RPS、p50/p95/p99 与失败样例。
+
+### 前置：先把「护栏」关掉
+
+默认配置里三层限流会先把请求挡回去，测不到网关本身的吞吐：
+
+| 层级 | 配置键 | 压测时的环境变量 |
+| --- | --- | --- |
+| 全局 | `model.rate-limit.enabled` | `MODEL_RATELIMIT_ENABLED=false` |
+| 服务级 | `model.services.chat.rate-limit.enabled` | `MODEL_SERVICES_CHAT_RATELIMIT_ENABLED=false` |
+| 实例级 | `model.services.chat.instances[0].rate-limit.enabled` | `MODEL_SERVICES_CHAT_INSTANCES_0_RATELIMIT_ENABLED=false` |
+
+**这几个开关本身是产品功能**，压测关掉它们只是为了测「无护栏时的上限」；要测「限流生效时客户端看到什么」，保留默认值即可。
+
+建议同时用独立数据库，避免污染本地开发库：
+
+```bash
+DATABASE_URL='jdbc:h2:file:./data/perf;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=FALSE'
+```
+
+### 命令
+
+```bash
+# 1) 上游 mock（默认 127.0.0.1:18080，20ms 延迟）
+node scripts/perf/mock-upstream.mjs
+
+# 2) 网关（dev profile，指向 mock，三层限流关闭）
+MODEL_UPSTREAM_BASE_URL=http://127.0.0.1:18080 \
+MODEL_RATELIMIT_ENABLED=false \
+MODEL_SERVICES_CHAT_RATELIMIT_ENABLED=false \
+MODEL_SERVICES_CHAT_INSTANCES_0_RATELIMIT_ENABLED=false \
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+
+# 3) 压测（model 用 services.yml 里的实例名）
+node scripts/perf/loadtest.mjs --url http://127.0.0.1:8080/v1/chat/completions \
+  --api-key sk-test-api-key-12345678 --model "qwen3:4b" --concurrency 50 --duration 20
+```
+
+### 一次基线记录（2026-11-01）
+
+环境：8 逻辑核 / 16 GB / i7-8550U（笔记本）、Windows、JDK 17、H2 文件库、dev profile、mock 上游 20 ms、压测器与网关**同机**。
+
+| 并发 | RPS | p50 | p95 | p99 | 错误率 |
+| --- | --- | --- | --- | --- | --- |
+| 10 | 127.0 | 75 ms | 116 ms | 144 ms | 0% |
+| 20 | 111.4 | 171 ms | 259 ms | 324 ms | 0% |
+| 50 | 97.2 | 493 ms | 756 ms | 912 ms | 0% |
+| 100 | 101.5 | 931 ms | 1508 ms | 1792 ms | 0% |
+
+### 怎么读这些数字
+
+- 吞吐在 **约 100 RPS** 附近饱和，继续加并发只增加排队（p50 从 75 ms 涨到 931 ms），不增加吞吐 —— 说明存在**串行瓶颈**，而不是 CPU 打满。
+- 下一步定位：抓 `/actuator/prometheus` 的 `hikaricp_connections_pending`（数据库池排队）与 `jairouter_outbound_requests_inflight`、`reactor_netty_connection_provider_pending_connections`（出站池排队），区分「数据库池」与「事件循环」。
+- 这些数字**不代表生产容量**：mock 上游、单机压测（压测器与网关抢同一个 CPU）、H2 文件库，都会让结果偏离真实部署。
+
+### 已知限制
+
+- **流式（SSE）场景本轮未跑通**：高并发下 mock 上游的分块节奏导致失败率升高，实例熔断器打开后后续请求全部 503（状态持久化在库里，重启不会自动清）。要测流式，需要更接近真实上游的分块节奏，或先解决熔断器的重置方式（见下一条）。
+- 熔断器一旦打开，用 `/api/config/instance/circuit-breaker/reset` 重置时**需要传 `instanceId`**（不是实例名），而该值在实例列表里未必与 `id` 一致，目前容易弄错。
