@@ -364,8 +364,10 @@ public class ApiKeyValidator {
          * <p><b>耦合声明（显式）</b>：状态取自 {@link ErrorCode} 注册表里
          * {@link RenderPath#AUTHENTICATION} 渲染路径登记的 {@link ErrorCode#status()} ——
          * 校验链上抛出的异常状态**不在本类另立一张表**（否则「注册表说 429、异常携带 401」会再次分叉）。
-         * 未登记、或不属于认证链渲染路径的码一律回落到 {@link HttpStatus#UNAUTHORIZED}，
-         * 因此除 {@link ErrorCode#RATE_LIMITED_API_KEY} 外，本链上所有码的状态仍是 401（零行为变化）。</p>
+         * 未登记、或不属于认证链渲染路径的码一律回落到 {@link HttpStatus#UNAUTHORIZED}。
+         * 当前认证链上取 429 的码有三个：{@link ErrorCode#RATE_LIMITED_API_KEY}（每分钟限速）与
+         * 两个配额码 {@link ErrorCode#DAILY_QUOTA_EXCEEDED} / {@link ErrorCode#TOKEN_QUOTA_EXCEEDED}
+         * （配额耗尽不是认证失败，402/401 会让客户端把 Key 判成失效），其余码仍是 401。</p>
          *
          * @param errorCode 校验失败的错误码，可为 {@code null}
          * @return 注册表登记的认证链状态；未登记或非认证链码 → 401
@@ -409,9 +411,8 @@ public class ApiKeyValidator {
         /**
          * 转换为 AuthenticationException.
          *
-         * <p>走 3 参构造器把状态一并带进异常：认证链上唯一非 401 的码是
-         * {@link ErrorCode#RATE_LIMITED_API_KEY}（429），其余码经
-         * {@link #statusFromRegistry(String)} 仍是 401。</p>
+         * <p>走 3 参构造器把状态一并带进异常：限速码与两个配额码经
+         * {@link #statusFromRegistry(String)} 取到 429，其余认证链码仍是 401。</p>
          */
         public AuthenticationException toException() {
             if (success) {
