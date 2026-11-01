@@ -43,6 +43,7 @@ config/
 │   ├── fallback.yml     # Fallback configuration
 │   ├── pools.yml        # Resource pool configuration
 │   ├── rules.yml        # Routing rule configuration
+│   ├── guard.yml        # Streaming guard rules
 │   └── services.yml     # Service instance configuration
 ├── auth/                # Authentication service
 │   ├── jwt.yml          # JWT authentication configuration
