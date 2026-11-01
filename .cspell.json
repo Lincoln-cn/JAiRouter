@@ -155,6 +155,7 @@
     "logback",
     "appender",
     "appenders",
+    "jmeter",
     "Appender",
     "Millis",
     "Concat",

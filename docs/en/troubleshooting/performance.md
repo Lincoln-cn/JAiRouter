@@ -610,3 +610,72 @@ wrk -t12 -c400 -d30s --script=post.lua http://localhost:8080/v1/chat/completions
 ```
 
 By following these performance optimization guidelines, you can ensure that JAiRouter provides stable and efficient services in production environments.
+
+## How to measure (reproducible)
+
+> The KPI table above is a **target**, not a measurement. This section documents the tooling shipped with the repository and one recorded baseline, so anyone can reproduce it.
+
+### Why the repository ships its own scripts
+
+Load-testing tools (k6 / wrk / jmeter) are not project dependencies. To keep "how to measure" independent of personal setups, `scripts/perf/` contains two zero-dependency Node scripts:
+
+- `scripts/perf/mock-upstream.mjs`: a minimal OpenAI-compatible upstream (`/v1/models` probe, non-streaming JSON, streaming SSE) that removes **model latency** from the result;
+- `scripts/perf/loadtest.mjs`: a fixed-concurrency, fixed-duration load generator that reports RPS, p50/p95/p99 and sample failures.
+
+### Prerequisite: switch the guardrails off
+
+The default configuration has three rate-limit layers that will reject requests before they reach the gateway logic:
+
+| Layer | Configuration key | Environment variable for load testing |
+| --- | --- | --- |
+| Global | `model.rate-limit.enabled` | `MODEL_RATELIMIT_ENABLED=false` |
+| Service | `model.services.chat.rate-limit.enabled` | `MODEL_SERVICES_CHAT_RATELIMIT_ENABLED=false` |
+| Instance | `model.services.chat.instances[0].rate-limit.enabled` | `MODEL_SERVICES_CHAT_INSTANCES_0_RATELIMIT_ENABLED=false` |
+
+**These switches are product features.** Disabling them only measures "the ceiling without guardrails"; to observe what a client sees while rate limiting is active, keep the defaults.
+
+Use a dedicated database as well, so the local development store stays untouched:
+
+```bash
+DATABASE_URL='jdbc:h2:file:./data/perf;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=FALSE'
+```
+
+### Commands
+
+```bash
+# 1) upstream mock (127.0.0.1:18080, 20 ms delay by default)
+node scripts/perf/mock-upstream.mjs
+
+# 2) gateway (dev profile, pointed at the mock, all three rate limits off)
+MODEL_UPSTREAM_BASE_URL=http://127.0.0.1:18080 \
+MODEL_RATELIMIT_ENABLED=false \
+MODEL_SERVICES_CHAT_RATELIMIT_ENABLED=false \
+MODEL_SERVICES_CHAT_INSTANCES_0_RATELIMIT_ENABLED=false \
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+
+# 3) load test (`model` must match an instance name from services.yml)
+node scripts/perf/loadtest.mjs --url http://127.0.0.1:8080/v1/chat/completions \
+  --api-key sk-test-api-key-12345678 --model "qwen3:4b" --concurrency 50 --duration 20
+```
+
+### Recorded baseline (2026-11-01)
+
+Environment: 8 logical cores / 16 GB / i7-8550U (laptop), Windows, JDK 17, H2 file database, dev profile, mock upstream at 20 ms, load generator running **on the same machine** as the gateway.
+
+| Concurrency | RPS | p50 | p95 | p99 | Error rate |
+| --- | --- | --- | --- | --- | --- |
+| 10 | 127.0 | 75 ms | 116 ms | 144 ms | 0% |
+| 20 | 111.4 | 171 ms | 259 ms | 324 ms | 0% |
+| 50 | 97.2 | 493 ms | 756 ms | 912 ms | 0% |
+| 100 | 101.5 | 931 ms | 1508 ms | 1792 ms | 0% |
+
+### Reading the numbers
+
+- Throughput saturates around **~100 RPS**; adding concurrency only adds queueing (p50 rises from 75 ms to 931 ms) instead of throughput, which points at a **serialized bottleneck** rather than a saturated CPU.
+- Next step: read `hikaricp_connections_pending` (database pool queueing) plus `jairouter_outbound_requests_inflight` and `reactor_netty_connection_provider_pending_connections` (outbound pool queueing) from `/actuator/prometheus`, to tell the database pool apart from the event loop.
+- These numbers **do not represent production capacity**: a mock upstream, a co-located load generator and the H2 file database all shift the result away from a real deployment.
+
+### Known limitations
+
+- **Streaming (SSE) was not measured in this round**: under high concurrency the mock's chunk pacing raised the failure rate, the instance circuit breaker opened, and every later request returned 503 (the state is persisted in the database and survives a restart). Measuring streaming needs a chunk cadence closer to a real upstream, or a workable way to reset the breaker (see the next point).
+- Resetting an open breaker through `/api/config/instance/circuit-breaker/reset` requires an `instanceId` (not the instance name), and that value does not always match the `id` shown in the instance list, which is easy to get wrong.
