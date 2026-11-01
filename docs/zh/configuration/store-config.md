@@ -15,21 +15,13 @@ JAiRouter 使用存储管理器来持久化配置数据和版本控制。本页�
 
 ## 存储类型
 
-JAiRouter 支持多种存储类型，默认使用 H2 数据库存储。
+JAiRouter 通过 **JPA** 持久化配置数据，默认连本机的 H2 文件库。`store.type` 的合法值只有两个：`jpa`（默认）与 `h2` —— 两者走的是同一套 JPA 实现，`h2` 只表示「JPA 连的是 H2」，不是另一套存储引擎；真正的区别在数据源 URL 与 `ddl-auto` 策略，见[数据库部署](../deployment/database.md)。
 
-### H2 数据库存储 (h2)
+> 历史文档里写过 `file` 与 `memory` 两种存储类型：它们从来没有对应实现（`StoreManagerConfiguration` 无论取值都返回 JPA）。从 #875 起启动校验只接受 `jpa` / `h2`，设成别的值会在校验阶段直接报错 —— 与其「设了不生效」，不如当场拒绝。
 
-H2 数据库存储是默认的存储方式，将配置数据保存在嵌入式 H2 数据库中，提供更好的性能、事务支持和查询能力。
+### H2 数据库（h2）
 
-H2 数据库现在是项目的**默认存储方式**，适用于所有环境（dev、test、prod）。
-
-### 文件存储 (file)
-
-文件存储将配置数据保存在本地文件系统中，适用于简单的使用场景。
-
-### 内存存储 (memory)
-
-内存存储将配置数据保存在内存中，适用于临时或测试场景。
+默认形态 = JPA + 嵌入式 H2 文件库，适用于所有环境（dev、test、prod）。
 
 ## 配置选项
 
@@ -46,23 +38,23 @@ store:
 
 | 配置项 | 默认值 | 说明 |
 |-------|--------|------|
-| `store.type` | `jpa` | 存储类型，支持 h2、file、memory |
-| `store.path` | `config/` | 配置文件存储的目录路径（仅文件存储时使用） |
+| `store.type` | `jpa` | 存储类型，合法值只有 `jpa` 与 `h2`（均为 JPA 实现） |
+| `store.path` | `config/` | 配置文件导入/导出的目录路径 |
 
 ### H2 数据库存储高级配置
 
 ```yaml
 store:
-  type: h2  # 默认使用 H2 数据库
+  type: h2  # 默认值即为 jpa；h2 表示同一套 JPA 连 H2
 
 spring:
-  r2dbc:
-    url: r2dbc:h2:file:///./data/config
+  datasource:
+    url: jdbc:h2:file:./data/jairouter;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=FALSE
     username: sa
     password:
-    pool:
-      initial-size: 10
-      max-size: 20
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
   h2:
     console:
       enabled: false
@@ -78,14 +70,14 @@ store:
   type: h2
 
 spring:
-  r2dbc:
-    url: r2dbc:h2:file:///./data/config
+  datasource:
+    url: jdbc:h2:file:./data/jairouter;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=FALSE
     username: sa
     password:
-    pool:
-      initial-size: 10
-      max-size: 20
-      max-idle-time: 30m
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
+      max-lifetime: 1800000
   h2:
     console:
       enabled: false
@@ -105,10 +97,10 @@ store:
   type: h2
 
 spring:
-  r2dbc:
-    pool:
-      initial-size: 10
-      max-size: 20
+  datasource:
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
   h2:
     console:
       enabled: true
@@ -120,36 +112,27 @@ spring:
 
 ```yaml
 store:
-  type: h2
+  type: jpa          # 生产连 PostgreSQL 时用 jpa；h2 只适合单机
 
 spring:
   h2:
     console:
       enabled: false
-  r2dbc:
-    pool:
-      initial-size: 20
-      max-size: 50
-      max-idle-time: 30m
+  datasource:
+    url: ${DATABASE_URL}          # PostgreSQL JDBC URL，由环境变量注入
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    hikari:
+      maximum-pool-size: 20
+      connection-timeout: 30000
 
 ```
 
-## 自动合并配置
+## 配置合并
 
-自动合并功能用于扫描和处理配置目录中的多版本配置文件。
+`ConfigMergeService` 把**应用配置**（`application*.yml` 与各模块配置）与**持久化存储中的配置**合并成运行时生效的那一份，**持久化存储里的值优先**。它没有开关、也不需要目录：每次读取配置时按这个优先级合成；重置配置前会把当前配置备份到 `config_pre_reset_backup` 键。
 
-### 功能说明
-
-当启用自动合并功能时，系统会定期扫描配置目录中的多版本配置文件，并提供合并功能。
-
-### 使用示例
-
-```yaml
-# 启用自动合并功能并指定配置目录
-store:
-  type: file
-  path: "/var/lib/jairouter/config/"
-```
+> 早前的文档把这一节写成「扫描配置目录中的多版本文件」，那是文件存储时期的形态。文件存储已不存在（`store.type` 只接受 `jpa` / `h2`），合并也不依赖任何额外配置。
 
 ## H2 数据库管理
 
@@ -168,7 +151,7 @@ spring:
 访问 `http://localhost:8080/h2-console` 进行管理。
 
 连接信息：
-- JDBC URL: `jdbc:h2:file:./data/config`
+- JDBC URL: `jdbc:h2:file:./data/jairouter`
 - Username: `sa`
 - Password: (留空)
 
@@ -297,14 +280,15 @@ store:
 
 ```yaml
 spring:
-  r2dbc:
-    pool:
-      initial-size: 10
-      max-size: 20
-      max-idle-time: 30m
-      max-acquire-time: 3s
-      max-create-connection-time: 5s
+  datasource:
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      max-lifetime: 1800000
 ```
+
+> 池大小**不是**吞吐旋钮：实测把它从 10 调到 32，吞吐没有上升（384.7 → 368.6 RPS）而 p99 翻倍。容量规划请先按 `实例数 × maximum-pool-size < PostgreSQL max_connections` 折算，再到真实库上复测，见[数据库部署](../deployment/database.md#连接池)。
 
 ### 索引优化
 
@@ -333,10 +317,10 @@ SELECT * FROM INFORMATION_SCHEMA.INDEXES;
 
 ### 备份
 
-H2 数据库文件位于 `./data/config.mv.db`，可以直接复制该文件进行备份：
+H2 数据库文件位于 `./data/jairouter.mv.db`，可以直接复制该文件进行备份：
 
 ```bash
-cp ./data/config.mv.db ./backup/config-$(date +%Y%m%d).mv.db
+cp ./data/jairouter.mv.db ./backup/config-$(date +%Y%m%d).mv.db
 ```
 
 ### 恢复
@@ -344,7 +328,7 @@ cp ./data/config.mv.db ./backup/config-$(date +%Y%m%d).mv.db
 停止应用，替换数据库文件后重启：
 
 ```bash
-cp ./backup/config-20241120.mv.db ./data/config.mv.db
+cp ./backup/config-20241120.mv.db ./data/jairouter.mv.db
 ```
 
 ### 生产环境备份策略
@@ -355,7 +339,7 @@ cp ./backup/config-20241120.mv.db ./data/config.mv.db
 
 DATE=$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR="/var/backups/jairouter"
-DB_FILE="/var/lib/jairouter/data/config.mv.db"
+DB_FILE="/var/lib/jairouter/data/jairouter.mv.db"
 
 mkdir -p $BACKUP_DIR
 cp $DB_FILE $BACKUP_DIR/config_$DATE.mv.db
@@ -417,10 +401,10 @@ echo "Backup completed: config_$DATE.mv.db.gz"
 
 ```bash
 # 尝试恢复
-java -cp h2*.jar org.h2.tools.Recover -dir ./data -db config
+java -cp h2*.jar org.h2.tools.Recover -dir ./data -db jairouter
 
 # 如果恢复失败，使用备份
-cp ./backup/config-latest.mv.db ./data/config.mv.db
+cp ./backup/config-latest.mv.db ./data/jairouter.mv.db
 ```
 
 ### 连接池耗尽
@@ -435,7 +419,9 @@ ERROR: Pool is exhausted
 
 ```yaml
 spring:
-  r2dbc:
-    pool:
-      max-size: 100  # 增加连接池大小
+  datasource:
+    hikari:
+      maximum-pool-size: 20   # 先按 实例数 × 该值 < max_connections 折算，再到真实库复测
 ```
+
+> 注意文案：Hikari 报的是 `Connection is not available, request timed out after 30000ms`，不是 `Pool is exhausted`（那是 R2DBC 时期的措辞，R2DBC 已在 #875 移除）。调大池之前先确认不是慢查询或长事务占着连接。
