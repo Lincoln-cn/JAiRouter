@@ -260,20 +260,31 @@ model:
 
 ### 6. 存储配置
 
-配置动态配置的持久化方式：
+动态配置由 JPA 持久化到数据库。`store.type` 的合法值只有 `jpa`（默认）与 `h2` ——
+两者是同一套 JPA 实现，`h2` 只表示「JPA 连的是 H2」，不是另一套存储引擎。
+其他取值会在启动期被 `ConfigIntegrityValidator` 直接拒绝：
 
-```
+```yaml
 store:
-  type: file              # memory 或 file
-  path: ./config          # 文件存储目录
-  auto-backup: true       # 启用自动备份
-  backup-interval: 3600   # 备份间隔（秒）
+  type: jpa                  # jpa（生产）或 h2（嵌入式，开发与单机）
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/jairouter
+    username: jairouter
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      max-lifetime: 1800000
 ```
 
-**存储类型：**
+连接池这四个值是显式写出的默认值（`config/config-service/core.yml`），改之前先看
+[数据库部署](../deployment/database.md) 里的实测口径 —— 加池并不会提高吞吐。
 
-- **memory**: 内存存储（重启后丢失）
-- **file**: 基于文件的存储（重启后保持）
+**没有「自动备份」开关**：不存在 `store.path`、`auto-backup`、`backup-interval` 这类配置键，
+备份与恢复是运维动作（`pg_dump` / 停机拷贝 H2 数据文件），步骤见
+[数据库部署](../deployment/database.md) 与 [存储配置](store-config.md)。
 
 ## 环境特定配置
 
