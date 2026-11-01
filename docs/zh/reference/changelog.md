@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.5.8
-> **最后更新**: 2026-10-31
+> **文档版本**: 3.5.9
+> **最后更新**: 2026-11-01
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,60 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.5.9] - 2026-11-01 - 依赖安全基线、客户端错误语义与多副本启动修复（#899–#941）
+
+v3.5.8 之后的一批收口：供应链安全、客户端可感知的错误语义、多副本启动与凭据、前端 XSS 与一批守卫测试。
+**没有 API 破坏性变更**，但有五处行为变化，见文末「升级提示」。
+
+#### 依赖与供应链安全
+
+- **运行时依赖升到安全修复线（#931）**：Spring Boot 3.5.5 → 3.5.16，并覆盖 BOM 仍落后的 netty 4.1.139、jackson 2.21.7、postgresql 42.7.14、log4j2 2.26.1、commons-lang3 3.19.0。按 `mvn dependency:list` 逐条查 OSV，命中从 **27 个 artifact / 102 条 advisory（4 条 CRITICAL）降到 3 个 artifact / 4 条**，未接受风险 0。
+- **新增依赖门闩（#931 / #941）**：`scripts/audit/osv-scan.py` + `osv-baseline.json` + `.github/workflows/dependency-scan.yml`，每周一与改 `pom.xml` / `package*.json` 时自动扫；同一条 workflow 补前端 `npm audit --omit=dev --audit-level=high`，只对进产物的依赖判红，开发链 advisory 只记录。同时产出 CycloneDX SBOM 作为发布物留档。
+- **前端三条传递依赖收口（#96 / #98）**：`follow-redirects` 1.16.1 → 1.16.2（high，axios 链）、`minimatch` 10.2.5 → 11.0.3、`glob` 13.0.6 → 14.0.3（后两条 moderate）。`npm audit` 从 21 条降到 0，lint / build / 221 例单测全绿。
+
+#### 客户端可感知的错误语义
+
+- **每日配额耗尽由 401 改为 429（#926）**：401 的语义是「凭据不可用」，OpenAI / Anthropic 客户端收到 401 不会重试，还会把 Key 标记为失效；而配额只是当天额度用尽、次日恢复。`DAILY_QUOTA_EXCEEDED` 与 `TOKEN_QUOTA_EXCEEDED` 现在都映到 429。
+- **上游超时映射 504、连接失败映射 502（#924）**：此前两者都落进兜底 500，客户端还会看到 Netty 原文。现在按 cause 链区分，`extractHttpStatus` 同步，指标不再把 504 记成 500。
+- **实例 baseUrl 被 SSRF 守卫拒绝时返回 400（#928）**：写入侧抛的是 JDK `SecurityException`，全局处理器只认仓库自己的异常类型，于是管理员配到危险地址只看到「500 系统异常」。新增 `INVALID_BASE_URL`（400），把 JDK 异常归一为仓库异常。
+- **安全错误体的 `path` 字段改回真实请求路径（#930）**：`getCurrentPath()` 此前恒返回占位值 `/api/security`，与真实请求无关；现在读 `ServerWebExchange` 的实际路径，无 exchange 时返回 `null` 而不编造。
+
+#### 多副本与凭据
+
+- **开启集群事件广播即启动失败（#918）**：`RedisClusterEventBus` 有两个 public 构造器却都没标 `@Autowired`，Spring 退回无参构造器而该类没有，`jairouter.cluster.events.enabled=true` 时直接 `No default constructor found`。双参构造器已标注；新增上下文测试覆盖「有 Redis」与「无 Redis 降级」两例。
+- **多副本未共用 `JWT_SECRET` 现在会告警（#919）**：`secret` 默认 `${JWT_SECRET:${random.uuid}}`，不设环境变量时每个副本各自生成密钥，表现为约 `(n-1)/n` 的请求间歇性 401。多副本自检新增一条 WARN，写明「令牌无法跨副本验证」，不改变健康状态。
+- **多副本口径写进文档（#920）**：`multi-replica.md`（中英）新增「所有副本共用同一个 JWT_SECRET」前提；补实测数字——新建 Key 跨副本可见约 28.5 秒、吊销收敛以刷新间隔为上界但出现过超 80 秒未收敛、API Key 的 `rateLimitPerMinute` 是每副本独立的本机令牌桶（不受 `ratelimit.distributed.enabled` 影响）。
+
+#### 安全
+
+- **监控 WebSocket 的控制消息只允许管理员（#916）**：两个 WS 端点既推送事件也接受 `pause` / `resume` / `updateConfig`，但安全规则只有 `authenticated()`；REST 侧同一组动作要求 `MONITORING_ROUTING_READ` / `LB_CONFIG_WRITE`。结果是一把只有 `ROLE_CHAT` 的 Key 走 REST 会被 403、走 WS 却能暂停监控。控制消息现在在入口处判定 `ROLE_ADMIN`，非管理员只记 warn 后忽略。
+- **控制台渲染模型输出前统一消毒（#899）**：Playground 的助手消息经 `marked` 渲染后直接 `v-html` 注入，`marked` 自 v5 起不再自带 `sanitize` ⇒ 模型输出里的 HTML 会以管理员身份执行。现由 `useMarkdown` 统一走 `DOMPurify`。
+
+#### 可观测性与日志
+
+- **默认 profile 的应用日志降到 INFO，且 stdout 只输出一次（#932）**：默认档继承 root 的 DEBUG 且同一行经两个 appender 各打一遍；按 3 rps 跑 6.5 小时产出 2.9 GB。现在默认 INFO、stdout 单写，需要 DEBUG 时显式开。
+
+#### 守卫与工具
+
+- **一键发布脚本 + 七处版本号一致性守卫（#914）**：`scripts/release/release.py`（`check` / `bump` / `tag`，默认 dry-run）与 `ReleaseVersionConsistencyTest`，发布检查清单从「四处」更正为七处。
+- **三个对外错误面的键集合逐键钉死（#912）**：新增 `ErrorBodyContractSnapshotTest`，OpenAI 面 9 个状态码的顶层键、Anthropic 面不得出现 `code`、控制台面不被 `/v1` 形状接管，各面逐键断言。
+- **配置键绑定扫描从审计模式转为硬断言（#911）**：非绑定键集合必须等于登记表、无消费方孤儿键必须为空；同时修掉「`redis-reachability` / `redis-timeout-ms` 被误报为孤儿键」的常量解析假阳性。
+- **两套迁移脚本的成对性守卫（#908）**：新增 `MigrationScriptParityTest`，断言 H2 与 PostgreSQL 的版本号集合与描述完全一致、同方言内不重复，并带反空转断言。
+- **外链检查的站侧抖动源登记（#934）**：`regexr.com` 归为抖动源，避免改文档时被站点侧不稳定反复判红。
+- **发布脚本的 `latest_release` 行修复（#942）**：`bump` 此前只替换到左括号，旧日期残留在行尾（`v3.5.9 ( 2026-11-01)2026-10-31)`），且 `check` 的正则同样只读版本号、看不出来；现在整行替换，`check` 改为整行严格匹配（版本 + 日期 + 行尾）。
+
+#### 文档
+
+- **Kubernetes Secret 收敛成一套口径（#939）**：旧示例用 `jairouter-secret`（单数）与 `api-key` / `jwt-secret` / `database-password`，与清单里的 `jairouter-secrets` + `envFrom.secretRef` 不兼容，照抄会 `CreateContainerConfigError`。统一为 `jairouter-secrets`，键改为环境变量名（`JWT_SECRET` / `INITIAL_ADMIN_PASSWORD` / `REDIS_PASSWORD`），并删掉配置里不存在的 `PROD_*_API_KEY` 与已不存在的 `api-key.keys` 形状。
+
+#### 升级提示（行为变化）
+
+1. **配额耗尽的状态码变了**：`DAILY_QUOTA_EXCEEDED` / `TOKEN_QUOTA_EXCEEDED` 由 401 改为 429。若你的客户端按 401 做「Key 失效」处理，需要同步调整。
+2. **上游故障的状态码变了**：上游超时现在是 504、上游连接失败是 502（此前都是 500）。
+3. **默认日志级别是 INFO**：默认 profile 不再输出 DEBUG。排查问题需显式设置 `logging.level.*`。
+4. **依赖门闩会判红**：新增的 OSV / `npm audit` 步骤在 `high` 及以上时会让 PR 失败；确有未修复项时走 `scripts/audit/osv-baseline.json` 登记（附理由）。
+5. **WebSocket 控制消息只允许管理员**：以低权限主体调用 `pause` / `resume` / `updateConfig` 将被忽略并记 warn。
 
 ### [3.5.8] - 2026-10-31 - 可观测性面两条 P0 + 十九项正确性与诚实性修复（#848–#897）
 
