@@ -530,6 +530,42 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.13</version>
+                <!--
+                    覆盖率门闩（#949）。
+
+                    规则放在**插件级** configuration 里，而不是某个 execution 内：
+                    CI 用 `mvn -B jacoco:check` 直接调用 goal，Maven 直接调用时不读
+                    execution 级 configuration，放进去会静默退化成「没有规则 = 永远通过」。
+
+                    阈值口径是「不许比接入时更低」，不是「达到某个理想值」：
+                    接入时实测（`mvnw -o test` 全量，569 个测试类 / 4896 个 @Test）为
+                    行 54.22% / 分支 32.47% / 复杂度 36.46%，三条 limit 各留约 1.5–2 个点缓冲。
+                    要下调，必须在 PR 里写明理由并在本文件改；上调随时欢迎。
+                -->
+                <configuration>
+                    <rules>
+                        <rule>
+                            <element>BUNDLE</element>
+                            <limits>
+                                <limit>
+                                    <counter>LINE</counter>
+                                    <value>COVEREDRATIO</value>
+                                    <minimum>0.52</minimum>
+                                </limit>
+                                <limit>
+                                    <counter>BRANCH</counter>
+                                    <value>COVEREDRATIO</value>
+                                    <minimum>0.31</minimum>
+                                </limit>
+                                <limit>
+                                    <counter>COMPLEXITY</counter>
+                                    <value>COVEREDRATIO</value>
+                                    <minimum>0.35</minimum>
+                                </limit>
+                            </limits>
+                        </rule>
+                    </rules>
+                </configuration>
                 <executions>
                     <execution>
                         <id>default-prepare-agent</id>
@@ -549,20 +585,6 @@
                         <goals>
                             <goal>check</goal>
                         </goals>
-                        <configuration>
-                            <rules>
-                                <rule>
-                                    <element>BUNDLE</element>
-                                    <limits>
-                                        <limit>
-                                            <counter>COMPLEXITY</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.60</minimum>
-                                        </limit>
-                                    </limits>
-                                </rule>
-                            </rules>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
