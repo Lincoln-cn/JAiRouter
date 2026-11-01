@@ -28,10 +28,10 @@
     },
     "docs/en/api-reference/error-codes.md": {
       "FilePath": "docs/en/api-reference/error-codes.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-30T00:17:54.036442",
-      "ContentHash": "8bd8212d57b83f8a",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.3",
+      "LastModified": "2026-11-01T04:22:05.455825",
+      "ContentHash": "eadcab9a5c88c90e",
+      "GitCommit": "98446fb8",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1187,10 +1187,10 @@
     },
     "docs/zh/api-reference/error-codes.md": {
       "FilePath": "docs/zh/api-reference/error-codes.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-30T00:17:54.666561",
-      "ContentHash": "3912263254aeb9e0",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.3",
+      "LastModified": "2026-11-01T04:22:06.142140",
+      "ContentHash": "f56fff2ad58e02f4",
+      "GitCommit": "98446fb8",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -6130,7 +6130,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-10-31T17:18:16.739704",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/error-codes.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T04:22:05.455834",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/error-codes.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T04:22:06.142149",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-01T04:07:17.842197"
+  "last_updated": "2026-11-01T04:22:06.842324"
 }
