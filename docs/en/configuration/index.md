@@ -260,20 +260,34 @@ model:
 
 ### 6. Storage Configuration
 
-Configure how dynamic configuration is persisted:
+Dynamic configuration is persisted to a database through JPA. `store.type` accepts exactly
+two values: `jpa` (default) and `h2` — both are the same JPA implementation, and `h2` only
+means "JPA is pointed at H2", not a different storage engine. Any other value is rejected at
+startup by `ConfigIntegrityValidator`:
 
 ```yaml
 store:
-  type: file              # memory or file
-  path: ./config          # File storage directory
-  auto-backup: true       # Enable automatic backups
-  backup-interval: 3600   # Backup interval in seconds
+  type: jpa                  # jpa (production) or h2 (embedded, dev and single node)
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/jairouter
+    username: jairouter
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      max-lifetime: 1800000
 ```
 
-**Storage Types:**
+Those four pool values are the explicitly written defaults (`config/config-service/core.yml`).
+Read the measured guidance in [Database deployment](../deployment/database.md) before changing
+them — a bigger pool does not raise throughput.
 
-- **memory**: In-memory storage (lost on restart)
-- **file**: File-based storage (persisted across restarts)
+**There is no "automatic backup" switch**: keys such as `store.path`, `auto-backup` and
+`backup-interval` do not exist. Backup and restore are operational actions (`pg_dump`, or
+copying the H2 data file while stopped); see [Database deployment](../deployment/database.md)
+and [Storage configuration](store-config.md).
 
 ## Environment-Specific Configuration
 
