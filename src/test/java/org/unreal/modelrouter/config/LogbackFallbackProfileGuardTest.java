@@ -47,13 +47,14 @@ class LogbackFallbackProfileGuardTest {
     }
 
     @Test
-    @DisplayName("反空转：既有的四个 profile 块必须仍能被检出，否则上面的断言可能扫了个空文件")
+    @DisplayName("反空转：既有的五个 profile 块必须仍能被检出，否则上面的断言可能扫了个空文件")
     void knownProfileBlocksAreStillDetected() throws IOException {
         String xml = readLogback();
 
         assertTrue(xml.contains("<configuration"), "读到的应该是 logback 配置本身");
-        assertTrue(xml.contains("<springProfile name=\"(dev | default) &amp; !json-logs\">"),
-                "dev/default 块应存在");
+        assertTrue(xml.contains("<springProfile name=\"dev &amp; !json-logs\">"), "dev 块应存在");
+        assertTrue(xml.contains("<springProfile name=\"default &amp; !json-logs\">"),
+                "default 块应存在（#932：默认档与 dev 拆开后必须仍然有块，否则默认档一行日志都没有）");
         assertTrue(xml.contains("<springProfile name=\"test &amp; !json-logs\">"), "test 块应存在");
         assertTrue(xml.contains("<springProfile name=\"prod &amp; !json-logs\">"), "prod 块应存在");
         assertTrue(xml.contains("<springProfile name=\"json-logs\">"), "json-logs 块应存在");
@@ -61,6 +62,24 @@ class LogbackFallbackProfileGuardTest {
         // 兜底块不应把 json-logs 也算进去（那条路径只会重复输出 JSON）
         assertFalse(xml.contains("<springProfile name=\"!\">"),
                 "兜底块不能是空排除集 —— 那样会把 json-logs 的 stdout 契约也一并覆盖");
+    }
+
+    @Test
+    @DisplayName("#932：默认档的 stdout 只由 CONSOLE 输出一次，不再挂 TRACING（否则每条日志两行）")
+    void defaultProfileDoesNotDoubleWriteStdout() throws IOException {
+        String xml = readLogback();
+
+        Matcher matcher = Pattern.compile(
+                "<springProfile\s+name=\"default &amp; !json-logs\">(.*?)</springProfile>",
+                Pattern.DOTALL).matcher(xml);
+        assertTrue(matcher.find(), "应存在 default & !json-logs 块");
+
+        String body = matcher.group(1);
+        assertTrue(body.contains("ref=\"CONSOLE\""), "默认档的 stdout 由 CONSOLE 输出；实际：" + body.trim());
+        assertFalse(body.contains("ref=\"ASYNC_TRACING\""),
+                "默认档不得挂 ASYNC_TRACING：TracingLogbackAppender 直接写 System.out，会与 CONSOLE 双写；实际："
+                        + body.trim());
+        assertTrue(body.contains("level=\"INFO\""), "默认档的应用 logger 应为 INFO（#932）；实际：" + body.trim());
     }
 
     private static String readLogback() throws IOException {

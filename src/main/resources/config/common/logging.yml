@@ -13,7 +13,7 @@ logging:
   # 默认日志级别
   level:
     root: INFO
-    org.unreal.modelrouter: DEBUG
+    org.unreal.modelrouter: INFO
     org.springframework: INFO
     org.apache.http: INFO
     io.netty: INFO
