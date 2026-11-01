@@ -2,10 +2,10 @@
   "versions": {
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.10",
-      "LastModified": "2026-10-31T11:33:36.945834",
-      "ContentHash": "09519a8821330154",
-      "GitCommit": "79b4b639",
+      "Version": "1.0.11",
+      "LastModified": "2026-11-01T05:15:16.348991",
+      "ContentHash": "8ee13a193ca28104",
+      "GitCommit": "b1965c85",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -15,10 +15,10 @@
     },
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.11",
-      "LastModified": "2026-10-31T11:33:36.948183",
-      "ContentHash": "2e97995c7ced475c",
-      "GitCommit": "79b4b639",
+      "Version": "1.0.12",
+      "LastModified": "2026-11-01T05:15:16.351954",
+      "ContentHash": "11b03b461f28006b",
+      "GitCommit": "b1965c85",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -504,10 +504,10 @@
     },
     "docs/en/development/contributing.md": {
       "FilePath": "docs/en/development/contributing.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-31T14:59:00.691646",
-      "ContentHash": "e5d1837575f03d86",
-      "GitCommit": "7c2b102b",
+      "Version": "1.0.2",
+      "LastModified": "2026-11-01T05:15:16.599317",
+      "ContentHash": "148748fe22e3cd06",
+      "GitCommit": "b1965c85",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1663,10 +1663,10 @@
     },
     "docs/zh/development/contributing.md": {
       "FilePath": "docs/zh/development/contributing.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-31T14:59:01.355930",
-      "ContentHash": "4cd62efa02217f42",
-      "GitCommit": "7c2b102b",
+      "Version": "1.0.2",
+      "LastModified": "2026-11-01T05:15:17.289499",
+      "ContentHash": "eca2a620f1dba5f0",
+      "GitCommit": "b1965c85",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -6146,7 +6146,39 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-01T04:22:06.142149",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.10",
+      "NewVersion": "1.0.11",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T05:15:16.348999",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.11",
+      "NewVersion": "1.0.12",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T05:15:16.351959",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/development/contributing.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T05:15:16.599329",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/development/contributing.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T05:15:17.289509",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-01T04:22:06.842324"
+  "last_updated": "2026-11-01T05:15:17.748886"
 }
