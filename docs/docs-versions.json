@@ -2,10 +2,10 @@
   "versions": {
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.11",
-      "LastModified": "2026-11-01T05:15:16.348991",
-      "ContentHash": "8ee13a193ca28104",
-      "GitCommit": "b1965c85",
+      "Version": "1.0.12",
+      "LastModified": "2026-11-01T07:30:48.353964",
+      "ContentHash": "29b73eddfa7d57f6",
+      "GitCommit": "71205fbf",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -15,10 +15,10 @@
     },
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.12",
-      "LastModified": "2026-11-01T05:15:16.351954",
-      "ContentHash": "11b03b461f28006b",
-      "GitCommit": "b1965c85",
+      "Version": "1.0.13",
+      "LastModified": "2026-11-01T07:30:48.356089",
+      "ContentHash": "569d0161469bab50",
+      "GitCommit": "71205fbf",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -832,10 +832,10 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.10",
-      "LastModified": "2026-10-31T11:33:37.353371",
-      "ContentHash": "9212752ee65d72bd",
-      "GitCommit": "79b4b639",
+      "Version": "1.0.11",
+      "LastModified": "2026-11-01T07:30:48.701874",
+      "ContentHash": "1eaf48c5c2abbd9c",
+      "GitCommit": "71205fbf",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -884,10 +884,10 @@
     },
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
-      "Version": "1.0.12",
-      "LastModified": "2026-10-31T11:33:37.387084",
-      "ContentHash": "9761b2f4f018bc9b",
-      "GitCommit": "79b4b639",
+      "Version": "1.0.13",
+      "LastModified": "2026-11-01T07:30:48.729868",
+      "ContentHash": "39a5a61dde5496b1",
+      "GitCommit": "71205fbf",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1996,10 +1996,10 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.10",
-      "LastModified": "2026-10-31T11:33:37.930243",
-      "ContentHash": "00dcbc6f37630b90",
-      "GitCommit": "79b4b639",
+      "Version": "1.0.11",
+      "LastModified": "2026-11-01T07:30:49.204016",
+      "ContentHash": "be3437e2c0fb58d0",
+      "GitCommit": "71205fbf",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2049,10 +2049,10 @@
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
-      "Version": "1.0.12",
-      "LastModified": "2026-10-31T11:33:37.965183",
-      "ContentHash": "48e1cc3b32449a64",
-      "GitCommit": "79b4b639",
+      "Version": "1.0.13",
+      "LastModified": "2026-11-01T07:30:49.232501",
+      "ContentHash": "9584a6752c6b7329",
+      "GitCommit": "71205fbf",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -6210,7 +6210,55 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-01T07:08:08.711128",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.11",
+      "NewVersion": "1.0.12",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T07:30:48.353970",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.12",
+      "NewVersion": "1.0.13",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T07:30:48.356092",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.10",
+      "NewVersion": "1.0.11",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T07:30:48.701885",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/roadmap.md",
+      "OldVersion": "1.0.12",
+      "NewVersion": "1.0.13",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T07:30:48.729872",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.10",
+      "NewVersion": "1.0.11",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T07:30:49.204026",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/roadmap.md",
+      "OldVersion": "1.0.12",
+      "NewVersion": "1.0.13",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T07:30:49.232505",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-01T07:08:09.045692"
+  "last_updated": "2026-11-01T07:30:49.337735"
 }
