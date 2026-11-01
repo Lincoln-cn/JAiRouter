@@ -363,10 +363,10 @@
     },
     "docs/en/deployment/database.md": {
       "FilePath": "docs/en/deployment/database.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:32.682230",
-      "ContentHash": "7f85ceb046b3ebc7",
-      "GitCommit": "803a140c",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-01T11:39:56.827880",
+      "ContentHash": "b565f4a43e7ffd39",
+      "GitCommit": "ca9ce71b",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1177,10 +1177,10 @@
     },
     "docs/en/troubleshooting/performance.md": {
       "FilePath": "docs/en/troubleshooting/performance.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-11-01T10:14:14.153904",
-      "ContentHash": "14347ff0ecfccfa9",
-      "GitCommit": "258dd9bd",
+      "Version": "1.0.3",
+      "LastModified": "2026-11-01T11:39:57.360971",
+      "ContentHash": "d2a04b56535e6766",
+      "GitCommit": "ca9ce71b",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1521,10 +1521,10 @@
     },
     "docs/zh/deployment/database.md": {
       "FilePath": "docs/zh/deployment/database.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:38.525064",
-      "ContentHash": "50e3d693a78f8c92",
-      "GitCommit": "803a140c",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-01T11:39:57.514988",
+      "ContentHash": "c278973d5c5ea7ef",
+      "GitCommit": "ca9ce71b",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2343,10 +2343,10 @@
     },
     "docs/zh/troubleshooting/performance.md": {
       "FilePath": "docs/zh/troubleshooting/performance.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-11-01T10:14:14.775448",
-      "ContentHash": "71bac938b5960062",
-      "GitCommit": "258dd9bd",
+      "Version": "1.0.3",
+      "LastModified": "2026-11-01T11:39:58.065767",
+      "ContentHash": "139cf97f8772573c",
+      "GitCommit": "ca9ce71b",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -6274,7 +6274,39 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-01T10:14:14.775458",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/database.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T11:39:56.827890",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/troubleshooting/performance.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T11:39:57.360980",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/database.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T11:39:57.514997",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/troubleshooting/performance.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T11:39:58.065777",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-01T10:14:14.775797"
+  "last_updated": "2026-11-01T11:39:58.066126"
 }
