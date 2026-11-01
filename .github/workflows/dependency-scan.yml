@@ -14,12 +14,16 @@ on:
     branches: [ main, master ]
     paths:
       - 'pom.xml'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
       - 'scripts/audit/**'
       - '.github/workflows/dependency-scan.yml'
   push:
     branches: [ main, master ]
     paths:
       - 'pom.xml'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
       - 'scripts/audit/**'
       - '.github/workflows/dependency-scan.yml'
 
@@ -62,6 +66,17 @@ jobs:
             --fail-on high \
             --json osv-report.json
 
+      - name: 前端依赖审计（high 及以上判红）
+        # 只看 production 依赖：eslint / vitest 这类开发链上的 advisory 不应该拦住发布，
+        # 但它们仍然会被 npm audit 的完整报告记录下来（见下面的 artifact）。
+        working-directory: frontend
+        run: |
+          npm ci --no-audit --no-fund
+          echo "--- 生产依赖（门闩） ---"
+          npm audit --omit=dev --audit-level=high
+          echo "--- 全量依赖（仅记录） ---"
+          npm audit --json > ../npm-audit-full.json || true
+
       - name: 生成 CycloneDX SBOM
         # SBOM 只是留档，插件下载失败不该把门闩拖红
         continue-on-error: true
@@ -79,6 +94,7 @@ jobs:
           path: |
             osv-report.json
             deps.txt
+            npm-audit-full.json
             target/sbom.json
           if-no-files-found: warn
           retention-days: 30

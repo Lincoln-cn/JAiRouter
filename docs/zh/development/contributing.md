@@ -296,12 +296,13 @@ Closes #123
 |---|---|---|
 | `docs/**`、`*.md`、`.cspell.json` | `拼写检查`、`文档质量检查`、`文档代码同步检查` 等 | `test`（java-tests.yml 按代码路径过滤） |
 | `src/**`（Java）、`pom.xml`、资源文件 | `test`、`qodana`、`smoke` 等 | `拼写检查`、`文档质量检查`（docs-quality.yml 按文档路径过滤） |
-| `pom.xml`、`scripts/audit/**` | `OSV 漏洞扫描 + SBOM`（dependency-scan.yml） | 其余（它只按依赖相关路径过滤） |
+| `pom.xml`、`frontend/package*.json`、`scripts/audit/**` | `OSV 漏洞扫描 + SBOM`（dependency-scan.yml） | 其余（它只按依赖相关路径过滤） |
 | `.gitignore` 等两边都不匹配的路径 | 只有 CodeQL / Analyze | 上述两者 |
 
 也就是说：**只改 docs 的 PR 没有 `test` 行是正常的**，**只改代码的 PR 没有 `拼写检查` 行也是正常的**。
 
 **依赖门闩的口径**：`OSV 漏洞扫描 + SBOM` 会对 `mvn dependency:list` 导出的运行时依赖查 OSV，达到 **high 及以上判红**；只有 `scripts/audit/osv-baseline.json` 里**写明了理由**的条目才降级为记录（例如「该修复只在下一代大版本，本仓代码路径不可达」）。要往 baseline 里加条目，先说清为什么不能靠升级解决。
+前端侧同一环节跑 `npm audit --omit=dev --audit-level=high`（只看进产物的依赖；eslint/vitest 这类开发链的 advisory 只记录不判红）。
 
 **陷阱：机器人提交会把门闩藏起来。** 当机器人往你的分支追加提交（例如 `Auto-update sitemap.xml`）时，
 由它触发的 run 可能停在 `action_required`（耗时 0s、没有任何 job），而**这些 run 完全不出现在

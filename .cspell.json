@@ -326,7 +326,8 @@
     "kustomization",
     "datasource",
     "cyclonedx",
-    "vulns"
+    "vulns",
+    "vitest"
   ],
   "ignoreWords": [
     "CNAME",
