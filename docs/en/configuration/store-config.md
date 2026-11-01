@@ -15,21 +15,13 @@ JAiRouter uses a storage manager to persist configuration data and version contr
 
 ## Storage Types
 
-JAiRouter supports multiple storage types, with H2 database storage as the default.
+JAiRouter persists configuration data through **JPA**, pointing at the local H2 file database by default. `store.type` accepts exactly two values: `jpa` (the default) and `h2` — both are the same JPA implementation; `h2` only says "the JPA datasource is H2", it is not a second storage engine. What actually differs is the datasource URL and the `ddl-auto` strategy, see [database deployment](../deployment/database.md).
 
-### H2 Database Storage (h2)
+> Earlier revisions of this page described `file` and `memory` storage types. Neither ever had an implementation (`StoreManagerConfiguration` returns the JPA one whatever the value). Since #875 the startup validator accepts only `jpa` / `h2` and rejects anything else outright — better a hard failure than a setting that silently does nothing.
 
-H2 database storage is the default storage method, saving configuration data in an embedded H2 database, providing better performance, transaction support, and query capabilities.
+### H2 Database (h2)
 
-H2 database is now the **default storage method** for the project, suitable for all environments (dev, test, prod).
-
-### File Storage (file)
-
-File storage saves configuration data in the local file system, suitable for simple use cases.
-
-### Memory Storage (memory)
-
-Memory storage saves configuration data in memory, suitable for temporary or testing scenarios.
+The default shape = JPA over an embedded H2 file database, suitable for all environments (dev, test, prod).
 
 ## Configuration Options
 
@@ -46,23 +38,23 @@ store:
 
 | Configuration Item | Default Value | Description |
 |--------------------|---------------|-------------|
-| `store.type` | `jpa` | Storage type, supports h2, file, memory |
-| `store.path` | `config/` | Configuration file storage directory path (only used for file storage) |
+| `store.type` | `jpa` | Storage type; only `jpa` and `h2` are accepted (both are the JPA implementation) |
+| `store.path` | `config/` | Directory used to import/export configuration files |
 
 ### H2 Database Storage Advanced Configuration
 
 ```yaml
 store:
-  type: h2  # Default storage type
+  type: h2  # the default is jpa; h2 means the same JPA implementation over H2
 
 spring:
-  r2dbc:
-    url: r2dbc:h2:file:///./data/config
+  datasource:
+    url: jdbc:h2:file:./data/jairouter;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=FALSE
     username: sa
     password:
-    pool:
-      initial-size: 10
-      max-size: 20
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
   h2:
     console:
       enabled: false
@@ -78,14 +70,14 @@ store:
   type: h2
 
 spring:
-  r2dbc:
-    url: r2dbc:h2:file:///./data/config
+  datasource:
+    url: jdbc:h2:file:./data/jairouter;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=FALSE
     username: sa
     password:
-    pool:
-      initial-size: 10
-      max-size: 20
-      max-idle-time: 30m
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
+      max-lifetime: 1800000
   h2:
     console:
       enabled: false
@@ -105,10 +97,10 @@ store:
   type: h2
 
 spring:
-  r2dbc:
-    pool:
-      initial-size: 10
-      max-size: 20
+  datasource:
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
   h2:
     console:
       enabled: true
@@ -120,36 +112,27 @@ spring:
 
 ```yaml
 store:
-  type: h2
+  type: jpa          # use jpa when production points at PostgreSQL; h2 is single-node only
 
 spring:
   h2:
     console:
       enabled: false
-  r2dbc:
-    pool:
-      initial-size: 20
-      max-size: 50
-      max-idle-time: 30m
+  datasource:
+    url: ${DATABASE_URL}          # PostgreSQL JDBC URL, injected through the environment
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    hikari:
+      maximum-pool-size: 20
+      connection-timeout: 30000
 
 ```
 
-## Auto-Merge Configuration
+## Configuration Merging
 
-The auto-merge function is used to scan and process multi-version configuration files in the configuration directory.
+`ConfigMergeService` merges the **application configuration** (`application*.yml` plus the per-module files) with the **configuration held in persistent storage**, and the persisted values win. There is no switch and no directory: every configuration read composes the two in that order, and a reset first backs up the effective configuration under the `config_pre_reset_backup` key.
 
-### Function Description
-
-When the auto-merge function is enabled, the system will periodically scan multi-version configuration files in the configuration directory and provide merge functionality.
-
-### Usage Example
-
-```yaml
-# Enable auto-merge function and specify configuration directory
-store:
-  type: file
-  path: "/var/lib/jairouter/config/"
-```
+> Earlier revisions described this section as "scanning multi-version files in the configuration directory", which was the shape of the removed file storage. File storage no longer exists (`store.type` accepts only `jpa` / `h2`), and merging needs no extra configuration.
 
 ## H2 Database Management
 
@@ -168,7 +151,7 @@ spring:
 Access `http://localhost:8080/h2-console` for management.
 
 Connection information:
-- JDBC URL: `jdbc:h2:file:./data/config`
+- JDBC URL: `jdbc:h2:file:./data/jairouter`
 - Username: `sa`
 - Password: (empty)
 
@@ -297,14 +280,15 @@ It is recommended to manually migrate in production environments:
 
 ```yaml
 spring:
-  r2dbc:
-    pool:
-      initial-size: 10
-      max-size: 20
-      max-idle-time: 30m
-      max-acquire-time: 3s
-      max-create-connection-time: 5s
+  datasource:
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      max-lifetime: 1800000
 ```
+
+> Pool size is **not** a throughput knob: in measurement, raising it from 10 to 32 did not raise throughput (384.7 to 368.6 RPS) and doubled p99. Budget it against `replicas x maximum-pool-size < PostgreSQL max_connections` first, then re-measure on a real database, see [database deployment](../deployment/database.md).
 
 ### Index Optimization
 
@@ -333,10 +317,10 @@ SELECT * FROM INFORMATION_SCHEMA.INDEXES;
 
 ### Backup
 
-The H2 database file is located at `./data/config.mv.db` and can be backed up by directly copying the file:
+The H2 database file is located at `./data/jairouter.mv.db` and can be backed up by directly copying the file:
 
 ```bash
-cp ./data/config.mv.db ./backup/config-$(date +%Y%m%d).mv.db
+cp ./data/jairouter.mv.db ./backup/config-$(date +%Y%m%d).mv.db
 ```
 
 ### Recovery
@@ -344,7 +328,7 @@ cp ./data/config.mv.db ./backup/config-$(date +%Y%m%d).mv.db
 Stop the application, replace the database file, and restart:
 
 ```bash
-cp ./backup/config-20241120.mv.db ./data/config.mv.db
+cp ./backup/config-20241120.mv.db ./data/jairouter.mv.db
 ```
 
 ### Production Environment Backup Strategy
@@ -355,7 +339,7 @@ cp ./backup/config-20241120.mv.db ./data/config.mv.db
 
 DATE=$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR="/var/backups/jairouter"
-DB_FILE="/var/lib/jairouter/data/config.mv.db"
+DB_FILE="/var/lib/jairouter/data/jairouter.mv.db"
 
 mkdir -p $BACKUP_DIR
 cp $DB_FILE $BACKUP_DIR/config_$DATE.mv.db
@@ -417,10 +401,10 @@ If you encounter database connection issues, please check:
 
 ```bash
 # Try recovery
-java -cp h2*.jar org.h2.tools.Recover -dir ./data -db config
+java -cp h2*.jar org.h2.tools.Recover -dir ./data -db jairouter
 
 # If recovery fails, use backup
-cp ./backup/config-latest.mv.db ./data/config.mv.db
+cp ./backup/config-latest.mv.db ./data/jairouter.mv.db
 ```
 
 ### Connection Pool Exhaustion
@@ -435,7 +419,9 @@ Solution:
 
 ```yaml
 spring:
-  r2dbc:
-    pool:
-      max-size: 100  # Increase connection pool size
+  datasource:
+    hikari:
+      maximum-pool-size: 20   # budget replicas x this value < max_connections, then re-measure
 ```
+
+> Mind the wording: Hikari reports `Connection is not available, request timed out after 30000ms`, not `Pool is exhausted` (that was R2DBC phrasing, and R2DBC was removed in #875). Before raising the pool, rule out a slow query or a long transaction holding connections.
