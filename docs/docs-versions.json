@@ -314,13 +314,15 @@
     },
     "docs/en/configuration/store-config.md": {
       "FilePath": "docs/en/configuration/store-config.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:32.390498",
-      "ContentHash": "3f055d53e79ef889",
-      "GitCommit": "06b43058",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-01T12:00:41.833397",
+      "ContentHash": "c6fa2c5716f9eb5a",
+      "GitCommit": "ca46e701",
       "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [
+        "docs/en/deployment/database.md"
+      ]
     },
     "docs/en/configuration/validation-rules.md": {
       "FilePath": "docs/en/configuration/validation-rules.md",
@@ -1472,13 +1474,15 @@
     },
     "docs/zh/configuration/store-config.md": {
       "FilePath": "docs/zh/configuration/store-config.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:38.248029",
-      "ContentHash": "cb4d165a53d9f6f6",
-      "GitCommit": "06b43058",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-01T12:00:42.544390",
+      "ContentHash": "531408c6f4dd12ea",
+      "GitCommit": "ca46e701",
       "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [
+        "docs/zh/deployment/database.md"
+      ]
     },
     "docs/zh/configuration/validation-rules.md": {
       "FilePath": "docs/zh/configuration/validation-rules.md",
@@ -6306,7 +6310,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-01T11:39:58.065777",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/store-config.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T12:00:41.833411",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/store-config.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T12:00:42.544400",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-01T11:39:58.066126"
+  "last_updated": "2026-11-01T12:00:43.154178"
 }
