@@ -61,18 +61,21 @@ Notes:
 
 ### Connection pool
 
-No connection pool is configured explicitly today, so Spring Boot's `HikariCP` defaults apply (maximum 10 connections). Before deploying multiple replicas, budget the total connections against PostgreSQL's `max_connections`:
+The pool size is now stated explicitly in `src/main/resources/config/config-service/core.yml` (10, the same as the HikariCP default). Stating it matters twice: it shows up in the configuration surface, and `SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE` can override it, instead of it being an invisible implicit default.
 
 ```yaml
 spring:
   datasource:
     hikari:
-      maximum-pool-size: 10      # example; keep replicas x this value < max_connections
+      maximum-pool-size: 10       # with replicas: replicas x this value < PostgreSQL max_connections
+      minimum-idle: 2
       connection-timeout: 30000
+      max-lifetime: 1800000
 ```
 
-> The pool settings have **not been validated under load**. Tune them to your own capacity plan.
+**What was measured (2026-11-01, H2 file database plus a mock upstream; method in the performance troubleshooting page)**: raising the pool from 10 to 32 did not raise throughput (384.7 to 368.6 RPS) and made p99 worse (1.2 s to 2.6 s). At pool size 10, `hikaricp_connections_pending` peaked at 72, so write concurrency is genuinely high, but **a bigger pool is not the same as more speed**: the queue comes from the per-request fixed cost (three database writes plus serialization plus metric recording), not from the connection count.
 
+=> Recommendation: budget against PostgreSQL's `max_connections` first (with replicas, `replicas x maximum-pool-size` must leave headroom for operational connections), then re-measure against a real database. **These numbers have not been re-measured on PostgreSQL**; the repository baseline runs on H2.
 ## Cross-database caveats
 
 The following two differences between H2 and PostgreSQL are real and were verified by automated tests against a real PostgreSQL instance.

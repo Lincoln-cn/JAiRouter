@@ -660,17 +660,28 @@ node scripts/perf/loadtest.mjs --url http://127.0.0.1:8080/v1/chat/completions \
 
 环境：8 逻辑核 / 16 GB / i7-8550U（笔记本）、Windows、JDK 17、H2 文件库、dev profile、mock 上游 20 ms、压测器与网关**同机**。
 
+> ⚠️ **压测前必须先把业务 DEBUG 日志关掉。** `application-dev.yml` 把 `org.unreal.modelrouter` 设为 `DEBUG`，压测时每个请求会打数十行日志（实测每请求约 200 行），吞吐被日志 I/O 压到原来的三分之一左右。用 Actuator 动态切换即可：
+>
+> ```bash
+> curl -X POST http://127.0.0.1:8080/actuator/loggers/org.unreal.modelrouter \
+>   -H 'Content-Type: application/json' -H "X-Jairouter-Token: $TOKEN" \
+>   -d '{"configuredLevel":"WARN"}'
+> ```
+>
+> 下表的数字**只在关闭 DEBUG 后成立**；不关 DEBUG 得到的基线（并发 20 只有 111 RPS）是被日志污染的假象，不要拿去比对容量。
+
 | 并发 | RPS | p50 | p95 | p99 | 错误率 |
 | --- | --- | --- | --- | --- | --- |
-| 10 | 127.0 | 75 ms | 116 ms | 144 ms | 0% |
-| 20 | 111.4 | 171 ms | 259 ms | 324 ms | 0% |
-| 50 | 97.2 | 493 ms | 756 ms | 912 ms | 0% |
-| 100 | 101.5 | 931 ms | 1508 ms | 1792 ms | 0% |
+| 20 | 370.3 | 43 ms | 109 ms | 286 ms | 0% |
+| 50 | 388.5 | 64 ms | 450 ms | 837 ms | 0% |
+| 100 | 368.6 | 120 ms | 867 ms | 2552 ms | 0% |
 
 ### 怎么读这些数字
 
-- 吞吐在 **约 100 RPS** 附近饱和，继续加并发只增加排队（p50 从 75 ms 涨到 931 ms），不增加吞吐 —— 说明存在**串行瓶颈**，而不是 CPU 打满。
-- 下一步定位：抓 `/actuator/prometheus` 的 `hikaricp_connections_pending`（数据库池排队）与 `jairouter_outbound_requests_inflight`、`reactor_netty_connection_provider_pending_connections`（出站池排队），区分「数据库池」与「事件循环」。
+- 真实饱和点在 **约 370–390 RPS**（本机，压测器与网关同机）。并发从 20 加到 100，吞吐基本持平，p50 从 43 ms 涨到 120 ms、p99 涨到 2.5 s —— 依旧是**排队**，不是吞吐增长。
+- **数据库连接池不是这个瓶颈**：把 `hikaricp.maximum-pool-size` 从默认 10 调到 32，吞吐没有提升（384.7 → 368.6 RPS），p99 反而从 1.2 s 涨到 2.6 s。池 10 时 `hikaricp_connections_pending` 峰值 72（写库并发确实高），但加池只是把排队挪个地方。
+- 事件循环没有被阻塞：压测期间连抓三份线程栈，`reactor-http-nio-*` 全部停在 `Selector.select`、`boundedElastic-*` 全部 parked ⇒ 瓶颈不在「事件循环上做同步调用」。
+- 单请求的固定开销（JSON 序列化、指标记录、每请求 3 次写库：token 用量 / 调用历史 / 配额账本）是目前最可疑的一段；要再往下定位，需要在 `process_cpu_usage` 打到 5–6 核的前提下做 CPU 采样（async-profiler 之类）。
 - 这些数字**不代表生产容量**：mock 上游、单机压测（压测器与网关抢同一个 CPU）、H2 文件库，都会让结果偏离真实部署。
 
 ### 已知限制

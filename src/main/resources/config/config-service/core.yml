@@ -18,6 +18,18 @@ spring:
     url: ${DATABASE_URL:jdbc:h2:file:./data/jairouter;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=FALSE}
     username: ${DATABASE_USERNAME:sa}
     password: ${DATABASE_PASSWORD:}
+    
+    # 连接池（#945）。显式写出 HikariCP 的默认值，让它出现在配置面上、可被放宽，
+    # 而不是一个看不见的隐式默认。
+    # 实测（2026-11-01，H2 + mock 上游）：把池从 10 调到 32 不提升吞吐（384.7 → 368.6 RPS），
+    # p99 反而变差；排队的根因是单请求的固定开销（每请求 3 次写库），不是连接数。
+    # 方法见 docs/zh/troubleshooting/performance.md；覆盖请用 Spring 标准环境变量
+    # SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE 等，不必改这里。
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      max-lifetime: 1800000
   
   # JPA 配置
   jpa:
