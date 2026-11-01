@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.5.9
+> **文档版本**: 3.5.10
 > **最后更新**: 2026-11-01
 > **作者**: JAiRouter Team
 
@@ -21,6 +21,40 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+### [3.5.10] - 2026-11-01 - 性能基线落地、E2E 与覆盖率门闩接入、OpenTelemetry 迁移（#940–#959）
+
+v3.5.9 之后补上三块此前从未系统治理的面：性能容量第一次有了可复现的压测资产与实测数字，
+控制台 E2E 真正进了 CI，覆盖率门闩从「配了但从不执行」变成真门闩；同时完成 OpenTelemetry
+1.35 → 1.67 的迁移。**没有 API 破坏性变更**，有四处需要知道的变化，见文末「升级提示」。
+
+#### 性能与容量
+
+- **压测资产与实测基线（#944）**：新增 `scripts/perf/mock-upstream.mjs`（零依赖的 OpenAI 兼容上游）与 `scripts/perf/loadtest.mjs`（零依赖压测器，输出 RPS / p50 / p95 / p99 / 错误率）。`troubleshooting/performance.md`（中英）新增「本仓的测量方法（可复现）」：三层限流开关、独立库建议、三步命令、基线表与读法。此前文档里的「RPS > 100」从未在真实构建上测过。
+- **连接池参数从隐式默认变显式（#945）**：`config-service/core.yml` 新增 `hikari` 块（`maximum-pool-size: 10`、`minimum-idle: 2`、`connection-timeout: 30000`、`max-lifetime: 1800000`），值等于 Hikari 此前的隐式默认，**不改运行时行为**，只是让「池多大」变成一个能审阅的决定。新增 `HikariPoolSettingsTest` 直接绑真实 YAML 断言四个值（10 → 20 会红）。
+- **饱和的根因不是连接池（#945）**：压测到约 100 RPS 饱和时，连接池不是瓶颈 —— 池从 10 加到 32、并发 100 下吞吐 384.7 vs 368.6，p99 反而从 1160 ms 涨到 2552 ms；reactor 出站连接池 pending 全程为 0；三份 jstack 显示 8 个 `reactor-http-nio-*` 全在 `Selector.select`。真正的原因是 **dev profile 把 `org.unreal.modelrouter` 开到 DEBUG**：压测 20 秒写 425,210 行日志（约 21k 行/秒），调到 WARN 后同并发吞吐 97.2 → 320.5 RPS、p50 493 → 79.8 ms。文档已改为「压测前先关 DEBUG」。
+- **容量指标补齐（#947）**：出站连接池注册 `jairouter.outbound.requests.inflight` 与 `outbound.request.duration`，并打开 reactor 内建指标（`reactor.netty.connection.provider.*`，带 `name=jairouter-outbound` 标签）；SSE 长连接新增 `jairouter.sse.active.connections`，按端点标注，已接入 `v1-chat-completions` / `chat-completions` / `anthropic-messages` / `health-status` 四处；响应缓存新增 `jairouter.cache.response.size`（按需估算，不触发清理）。
+
+#### CI 门闩
+
+- **覆盖率门闩第一次真正执行（#949）**：JaCoCo 规则此前写在 execution 里、而 CI 只跑 `mvn -B test`，`check` 从未被触发；实测覆盖率是行 54.23% / 分支 32.47%。现在规则提到插件级、CI 显式执行 `mvn -B jacoco:check`，阈值取现状下沿（行 0.52 / 分支 0.31 / 复杂度 0.35）。
+- **控制台 E2E 接入 CI（#948）**：新增 `.github/workflows/e2e-smoke.yml`，在改动前端或后端时起一个真后端跑 `smoke,overview` 两组 spec，失败导出后端日志。`harness.mjs` 去掉写死在开发机上的 Chromium 路径，改读 `CHROMIUM_PATH` 或 playwright 自报路径；`runner.mjs` 新增 `E2E_MIN_CHECKS` 反空转守卫（执行的检查项低于下限即 `exit 1`，避免「只跑了一条也算绿」）。概览页四个跳转的定位改成中英双语，不再依赖浏览器 locale。
+
+#### 依赖
+
+- **OpenTelemetry 1.35 → 1.67（#940）**：升级后 tracing 测试 17 例红，根因不是 span 语义，而是**没有任何 SpanProcessor 的 `SdkTracerProvider` 会退化成 noop**（`PropagatedSpan`，`isValid()` 为 false）。生产代码总挂 `BatchSpanProcessor` 所以不受影响，改的是 5 个测试夹具（新增 `TestTracerProviders.sdk()`）。`zipkin` 导出器自 1.65 起移出 BOM，本仓保留该导出路径并把版本显式钉在最后一个发布版 `1.64.0`，另加 `ZipkinExporterCompatibilityTest` 用真实 `SpanData` 跑一次导出，守住混用的二进制兼容。OSV 扫描命中从未接受 4 条降到 **0 条**。
+
+#### 文档
+
+- **存储配置示例迁到真实配置面（#946）**：`store-config.md`（中英）的 6 处 `spring.r2dbc.*` 改为 `spring.datasource.*` + `spring.datasource.hikari.*`；`store.type` 只认 `jpa` / `h2`（由 `ConfigIntegrityValidator` 启动期拒绝其他值），删掉 file / memory 两节；补 Hikari 的真实报错文案 `Connection is not available, request timed out after 30000ms`；H2 数据文件路径更正为 `./data/jairouter`。
+- **配置概览的虚构小节（#955）**：`configuration/index.md` 第 6 节整段是虚构的（`store.type: file`、`auto-backup`、`backup-interval` 全部查无此键），改为真实配置面，并写明「没有自动备份开关」。
+
+#### 升级提示
+
+1. **没有 API 破坏性变更**：错误码、协议形状、端点都没动。
+2. **连接池参数变成显式值**：`spring.datasource.hikari.*` 现在写死在 `config-service/core.yml`（10 / 2 / 30000 / 1800000）。要调池大小改这里，不再依赖 Hikari 的隐式默认。
+3. **OpenTelemetry 升到 1.67**：`tracing.exporter.type=zipkin` 的用户无需操作，导出器已钉在兼容版本；用自定义 `SdkTracerProvider` 的二次开发代码需要确认挂了 SpanProcessor。
+4. **两个新 CI 门闩**：改代码要过 `jacoco:check`（行 52% / 分支 31%），改前端或后端要过 `e2e-smoke`。本地复现方法写在 `development/contributing.md`。
+
 
 ### [3.5.9] - 2026-11-01 - 依赖安全基线、客户端错误语义与多副本启动修复（#899–#941）
 
