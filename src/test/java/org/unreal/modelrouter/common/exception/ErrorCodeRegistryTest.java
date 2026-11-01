@@ -110,7 +110,7 @@ class ErrorCodeRegistryTest {
                         "登记状态 ≠ 401 的认证码必须由校验链显式携带该状态: " + code);
             }
         }
-        assertEquals(Set.of("RATE_LIMITED_API_KEY"), nonDefault,
+        assertEquals(Set.of("DAILY_QUOTA_EXCEEDED", "RATE_LIMITED_API_KEY", "TOKEN_QUOTA_EXCEEDED"), nonDefault,
                 "凡登记状态 ≠ 401 的认证码都必须在此清单里明列（新增或消除都要改这张清单）");
         assertTrue(checked.contains("JWT_EXPIRED"), "反空转：" + checked);
     }
