@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.5.8
-> **Last Updated**: 2026-10-31
+> **Document Version**: 3.5.9
+> **Last Updated**: 2026-11-01
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,112 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.5.9] - 2026-11-01 - Dependency security baseline, client-visible error semantics, and multi-replica startup fixes (#899-#941)
+
+A batch of follow-ups after v3.5.8: supply-chain security, client-visible error semantics, multi-replica startup and
+credentials, a frontend XSS fix, and a set of guard tests. **No API breaking changes**, but five behavior changes are
+listed under "Upgrade notes" below.
+
+#### Dependencies and supply chain
+
+- **Runtime dependencies moved to the security fix line (#931)**: Spring Boot 3.5.5 → 3.5.16, plus pins the BOM still
+  lagged on: netty 4.1.139, jackson 2.21.7, postgresql 42.7.14, log4j2 2.26.1, commons-lang3 3.19.0. Querying
+  `mvn dependency:list` against OSV dropped **27 artifacts / 102 advisories (4 CRITICAL) to 3 artifacts / 4 advisories**,
+  with zero unaccepted risk.
+- **A dependency gate now exists (#931 / #941)**: `scripts/audit/osv-scan.py` + `osv-baseline.json` +
+  `.github/workflows/dependency-scan.yml`, running weekly and on any `pom.xml` / `package*.json` change. The same
+  workflow adds a frontend `npm audit --omit=dev --audit-level=high` step that only fails on production dependencies;
+  development-chain advisories are recorded but do not fail the build. A CycloneDX SBOM is produced as a release artifact.
+- **Three frontend transitive dependencies closed out (#96 / #98)**: `follow-redirects` 1.16.1 → 1.16.2 (high, via
+  axios), `minimatch` 10.2.5 → 11.0.3 and `glob` 13.0.6 → 14.0.3 (moderate). `npm audit` went from 21 findings to 0;
+  lint, build, and 221 unit tests pass.
+
+#### Client-visible error semantics
+
+- **Daily quota exhaustion returns 429 instead of 401 (#926)**: 401 means "the credential is unusable", and OpenAI /
+  Anthropic clients do not retry it — they mark the key invalid. A daily quota only resets the next day.
+  `DAILY_QUOTA_EXCEEDED` and `TOKEN_QUOTA_EXCEEDED` now both map to 429.
+- **Upstream timeouts map to 504 and connection failures to 502 (#924)**: both previously fell into the generic 500 and
+  leaked the raw Netty text. They are now distinguished by the cause chain, `extractHttpStatus` follows suit, and
+  metrics no longer record a 504 as a 500.
+- **An instance baseUrl rejected by the SSRF guard returns 400 (#928)**: the write-side check threw a JDK
+  `SecurityException` while the global handler only recognizes the repository's own exception type, so an administrator
+  aiming at a forbidden address saw "500 system error". A new `INVALID_BASE_URL` (400) normalizes the JDK exception.
+- **The `path` field of security error bodies is the real request path again (#930)**: `getCurrentPath()` always
+  returned the placeholder `/api/security`, unrelated to the request. It now reads the actual path from
+  `ServerWebExchange`, or `null` when there is no exchange — no invented values.
+
+#### Multi-replica and credentials
+
+- **Enabling cluster event broadcasting failed startup (#918)**: `RedisClusterEventBus` has two public constructors and
+  neither was annotated `@Autowired`, so Spring fell back to a no-arg constructor that does not exist; with
+  `jairouter.cluster.events.enabled=true` startup died with `No default constructor found`. The two-argument
+  constructor is now annotated, and a context test covers both "Redis available" and "degraded without Redis".
+- **Replicas that do not share `JWT_SECRET` now warn (#919)**: the default is `${JWT_SECRET:${random.uuid}}`, so
+  without the environment variable each replica signs with its own key and roughly `(n-1)/n` of requests intermittently
+  get 401. The multi-replica self-check emits a WARN stating that tokens cannot be verified across replicas; health
+  status is unchanged.
+- **The multi-replica contract is documented (#920)**: `multi-replica.md` (zh/en) gains an "all replicas must share one
+  `JWT_SECRET`" precondition, plus measured numbers — a newly created key becomes visible across replicas in about
+  28.5 seconds, revocation convergence is bounded by the refresh interval but one case took over 80 seconds, and a key's
+  `rateLimitPerMinute` is a per-replica local token bucket regardless of `ratelimit.distributed.enabled`.
+
+#### Security
+
+- **Monitor WebSocket control messages are now administrator-only (#916)**: both WS endpoints push events and accept
+  `pause` / `resume` / `updateConfig`, but the security rule was only `authenticated()`, while the REST side requires
+  `MONITORING_ROUTING_READ` / `LB_CONFIG_WRITE`. A key holding only `ROLE_CHAT` got 403 over REST yet could pause
+  monitoring over WS. Control messages are now checked for `ROLE_ADMIN` at the entry point; others are logged as a
+  warning and ignored.
+- **The console sanitizes model output before rendering (#899)**: Playground assistant messages were rendered by
+  `marked` and injected with `v-html`, and `marked` has shipped no `sanitize` since v5 — so HTML produced by a model ran
+  with administrator privileges. `useMarkdown` now routes everything through `DOMPurify`.
+
+#### Observability and logging
+
+- **The default profile logs at INFO, and stdout is written once (#932)**: the default inherited DEBUG from root and
+  printed each line twice through two appenders; at 3 rps that produced 2.9 GB in 6.5 hours. The default is now INFO
+  with a single stdout writer; enable DEBUG explicitly when needed.
+
+#### Guards and tooling
+
+- **One-command release script plus a seven-place version guard (#914)**: `scripts/release/release.py`
+  (`check` / `bump` / `tag`, dry-run by default) and `ReleaseVersionConsistencyTest`; the release checklist is corrected
+  from four places to seven.
+- **The key sets of three external error surfaces are pinned key by key (#912)**: a new
+  `ErrorBodyContractSnapshotTest` asserts the top-level keys for nine status codes on the OpenAI surface, that the
+  Anthropic surface never carries `code`, and that the console surface is not taken over by the `/v1` shape.
+- **The config-binding scan is now a hard assertion instead of an audit mode (#911)**: the unbound-key set must equal
+  the registry and the orphan-key set must be empty; it also fixes the constant-resolution false positive that reported
+  `redis-reachability` / `redis-timeout-ms` as orphans.
+- **A parity guard for the two migration sets (#908)**: `MigrationScriptParityTest` asserts that the H2 and PostgreSQL
+  version sets and descriptions match exactly and that no version repeats within a dialect, with an anti-vacuity check.
+- **Known-flaky external hosts are registered (#934)**: `regexr.com` is treated as a site-side flake so document-only
+  changes are not repeatedly failed by it.
+- **The release script no longer leaves a stale date on `latest_release` (#942)**: `bump` used to replace only
+  up to the opening parenthesis, leaving the previous date behind, and `check` only read the version so it never
+  noticed; the line is now replaced whole and `check` matches the full line (version + date + end of line).
+
+#### Documentation
+
+- **One Kubernetes Secret convention (#939)**: the old examples used `jairouter-secret` (singular) with
+  `api-key` / `jwt-secret` / `database-password` keys, incompatible with the manifests' `jairouter-secrets` +
+  `envFrom.secretRef`, so copying them produced `CreateContainerConfigError`. Everything now uses `jairouter-secrets`
+  with environment-variable key names (`JWT_SECRET` / `INITIAL_ADMIN_PASSWORD` / `REDIS_PASSWORD`), and the examples no
+  longer mention the non-existent `PROD_*_API_KEY` or the removed `api-key.keys` shape.
+
+#### Upgrade notes (behavior changes)
+
+1. **Quota exhaustion changed status codes**: `DAILY_QUOTA_EXCEEDED` / `TOKEN_QUOTA_EXCEEDED` now return 429 instead of
+   401. Clients that treat 401 as "key invalid" must be updated.
+2. **Upstream failures changed status codes**: timeouts are now 504 and connection failures 502 (both were 500).
+3. **The default log level is INFO**: the default profile no longer emits DEBUG; set `logging.level.*` explicitly when
+   troubleshooting.
+4. **The dependency gate can fail a PR**: the new OSV / `npm audit` steps fail on `high` and above. Genuinely
+   unfixable items go into `scripts/audit/osv-baseline.json` with a reason.
+5. **WebSocket control messages are administrator-only**: `pause` / `resume` / `updateConfig` from a low-privilege
+   principal are ignored and logged as a warning.
 
 ### [3.5.8] - 2026-10-31 - Two P0s in the observability path, plus nineteen correctness and honesty fixes (#848-#897)
 

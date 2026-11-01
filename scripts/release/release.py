@@ -102,7 +102,10 @@ def latest_release_versions() -> list[tuple[str, str]]:
     out: list[tuple[str, str]] = []
     for rel in (README, README_ZH):
         text = read(rel)
-        match = re.search(r"^latest_release:\s*v(\S+?)\s*\(", text, re.MULTILINE)
+        # 整行匹配：版本号与括号日期都必须存在且紧贴行尾。
+        # 只抓 "... v(\S+?)\s*\(" 会放过旧日期残留（如 "v3.5.9 ( 2026-11-01)2026-10-31)"）。
+        match = re.search(r"^latest_release:\s*v(\S+)\s*\((\d{4}-\d{2}-\d{2})\)\s*$",
+                          text, re.MULTILINE)
         out.append((f"{rel}: latest_release", match.group(1).strip() if match else "<未找到>"))
     return out
 
@@ -182,8 +185,11 @@ def cmd_bump(args: argparse.Namespace) -> int:
     for rel in (README, README_ZH):
         text = read(rel)
         text = sub_once(text, r"^project_version:\s*\S+", f"project_version: {version}", rel, re.MULTILINE)
-        text = sub_once(text, r"^latest_release:\s*v\S+?(\s*\()",
-                        f"latest_release:  v{version} ( {date})", rel, re.MULTILINE)
+        text = sub_once(text, r"(?m)^latest_release:[^\r\n]*",
+                        f"latest_release:  v{version} ({date})", rel)
+        expected_line = f"latest_release:  v{version} ({date})"
+        if expected_line not in text:
+            raise SystemExit(f"{rel}: latest_release 行替换结果不符合预期（期望含 {expected_line!r}）")
         plan.append((rel, text, f"project_version / latest_release → {version} ({date})", 0))
 
     zh = read(CHANGELOG_ZH)
