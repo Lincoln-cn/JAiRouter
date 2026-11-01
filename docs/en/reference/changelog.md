@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.5.9
+> **Document Version**: 3.5.10
 > **Last Updated**: 2026-11-01
 > **Git Commit**: -
 > **Author**: Lincoln
@@ -20,6 +20,42 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+### [3.5.10] - 2026-11-01 - Measured performance baseline, E2E and coverage gates, OpenTelemetry migration (#940-#959)
+
+The batch after v3.5.9 closes three areas that had never been systematically covered:
+performance capacity now has reproducible load-test assets and measured numbers, the console
+E2E suite actually runs in CI, and the coverage gate went from "configured but never executed"
+to a real gate. The OpenTelemetry 1.35 to 1.67 migration is included as well.
+**No API-breaking changes**; four things worth knowing are listed in "Upgrade notes" below.
+
+#### Performance and capacity
+
+- **Load-test assets and a measured baseline (#944)**: added `scripts/perf/mock-upstream.mjs` (a dependency-free OpenAI-compatible upstream) and `scripts/perf/loadtest.mjs` (a dependency-free load generator reporting RPS / p50 / p95 / p99 / error rate). `troubleshooting/performance.md` (zh/en) gained a "How we measure in this repository (reproducible)" section: the three rate-limit switches, a dedicated database recommendation, the three commands, the baseline table and how to read it. The "RPS > 100" claim in the docs had never been measured on a real build.
+- **Connection pool parameters made explicit (#945)**: `config-service/core.yml` now carries a `hikari` block (`maximum-pool-size: 10`, `minimum-idle: 2`, `connection-timeout: 30000`, `max-lifetime: 1800000`). These are the values Hikari used implicitly, so **runtime behavior is unchanged**; the point is that pool sizing becomes a reviewable decision. `HikariPoolSettingsTest` binds the real YAML and asserts all four values (10 to 20 turns it red).
+- **The saturation was not the connection pool (#945)**: at the ~100 RPS saturation point the pool is not the bottleneck. Raising it from 10 to 32 at concurrency 100 gave 384.7 versus 368.6 RPS while p99 went from 1160 ms to 2552 ms; the outbound reactor pool never had a pending connection; three jstack samples showed all 8 `reactor-http-nio-*` threads parked in `Selector.select`. The actual cause was **dev profile logging `org.unreal.modelrouter` at DEBUG**: a 20-second run wrote 425,210 lines (about 21k lines per second). Switching to WARN raised throughput from 97.2 to 320.5 RPS and dropped p50 from 493 ms to 79.8 ms at the same concurrency. The docs now say "turn off DEBUG before load testing".
+- **Capacity metrics filled in (#947)**: the outbound pool now publishes `jairouter.outbound.requests.inflight` and `outbound.request.duration`, and reactor's built-in metrics are enabled (`reactor.netty.connection.provider.*` tagged `name=jairouter-outbound`). SSE long connections publish `jairouter.sse.active.connections` labelled by endpoint, wired into `v1-chat-completions`, `chat-completions`, `anthropic-messages` and `health-status`. The response cache publishes `jairouter.cache.response.size` (estimated on demand, without triggering cleanup).
+
+#### CI gates
+
+- **The coverage gate runs for the first time (#949)**: the JaCoCo rules were defined inside an execution while CI only ran `mvn -B test`, so `check` never fired. Measured coverage was 54.23% lines and 32.47% branches. The rules are now plugin-level, CI runs `mvn -B jacoco:check` explicitly, and the thresholds sit just below the current values (0.52 lines, 0.31 branches, 0.35 complexity).
+- **Console E2E in CI (#948)**: added `.github/workflows/e2e-smoke.yml`, which boots a real backend and runs the `smoke,overview` specs whenever frontend or backend code changes, dumping backend logs on failure. `harness.mjs` no longer hard-codes a Chromium path from the developer machine (it reads `CHROMIUM_PATH` or asks playwright); `runner.mjs` gained an `E2E_MIN_CHECKS` anti-vacuous-pass guard (fewer checks than the floor exits 1, so "one check ran" cannot look green). The four overview-page jump assertions now match both Chinese and English labels instead of depending on browser locale.
+
+#### Dependencies
+
+- **OpenTelemetry 1.35 to 1.67 (#940)**: after the upgrade 17 tracing tests failed. The root cause was not span semantics but that **an `SdkTracerProvider` with no SpanProcessor degrades to a noop provider** (`PropagatedSpan`, `isValid()` false). Production code always installs a `BatchSpanProcessor`, so only the 5 test fixtures were affected (they now use `TestTracerProviders.sdk()`). The `zipkin` exporter left the BOM at 1.65; this repository keeps that export path and pins the last published release `1.64.0`, with `ZipkinExporterCompatibilityTest` exercising a real `SpanData` export to guard the binary compatibility of the mix. OSV findings dropped from 4 unaccepted advisories to **0**.
+
+#### Documentation
+
+- **Storage examples moved to the real configuration surface (#946)**: the 6 `spring.r2dbc.*` examples in `store-config.md` (zh/en) became `spring.datasource.*` plus `spring.datasource.hikari.*`; `store.type` accepts only `jpa` / `h2` (rejected at startup by `ConfigIntegrityValidator`), so the file and memory sections are gone; the Hikari failure message quoted is now the real `Connection is not available, request timed out after 30000ms`; the H2 data file path is corrected to `./data/jairouter`.
+- **A fabricated section in the configuration overview (#955)**: section 6 of `configuration/index.md` was entirely invented (`store.type: file`, `auto-backup`, `backup-interval` match nothing in the code). It now describes the real configuration surface and states that there is no automatic backup switch.
+
+#### Upgrade notes
+
+1. **No API-breaking changes**: error codes, protocol shapes and endpoints are untouched.
+2. **Connection pool parameters are now explicit**: `spring.datasource.hikari.*` is written out in `config-service/core.yml` (10 / 2 / 30000 / 1800000). Change pool size there instead of relying on Hikari's implicit defaults.
+3. **OpenTelemetry moved to 1.67**: users of `tracing.exporter.type=zipkin` need to do nothing, the exporter is pinned to a compatible version. Code that builds its own `SdkTracerProvider` should make sure it installs a SpanProcessor.
+4. **Two new CI gates**: code changes must pass `jacoco:check` (52% lines, 31% branches); frontend or backend changes must pass `e2e-smoke`. Local reproduction steps are in `development/contributing.md`.
+
 
 ### [3.5.9] - 2026-11-01 - Dependency security baseline, client-visible error semantics, and multi-replica startup fixes (#899-#941)
 
