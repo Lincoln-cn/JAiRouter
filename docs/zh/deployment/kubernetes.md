@@ -311,32 +311,37 @@ kubectl apply -f configmap.yaml
 
 ### 3. 创建 Secret
 
-```
-# secret.yaml
+```yaml
+# secret.yaml —— 键名必须是环境变量名：Deployment 用 envFrom.secretRef 整包注入，
+# 键名写错（例如 api-key / jwt-secret）不会报错，只会让那个变量根本不存在。
+# 本文件不要入库（仓库不提供 Secret 实体）。
 apiVersion: v1
 kind: Secret
 metadata:
-  name: jairouter-secret
+  name: jairouter-secrets      # 与 deploy/k8s/base/deployment.yaml 引用的名字一致
   namespace: jairouter
 type: Opaque
-data:
-  # Base64 编码的密钥
-  api-key: eW91ci1hcGkta2V5LWhlcmU=  # your-api-key-here
-  jwt-secret: eW91ci1qd3Qtc2VjcmV0LWtleQ==  # your-jwt-secret-key
-  database-password: cGFzc3dvcmQ=     # password
+stringData:                    # 明文书写，kubectl apply 时由 API Server 负责编码
+  JWT_SECRET: "<openssl rand -base64 48 的输出>"
+  INITIAL_ADMIN_PASSWORD: "<强密码，≠ 出厂默认值>"
+  REDIS_PASSWORD: "<redis 密码>"
+```
 
-# 生产环境推荐使用环境变量配置
+> 更省事的等价做法是快速开始里那条 `kubectl create secret generic jairouter-secrets ... --from-literal=...`，
+> 两者产出的对象相同，二选一即可。
+
 ---
+
+# 生产环境可以给 Secret 换名字，但本节的示例统一用 `jairouter-secrets`，
+# 且**键名必须是环境变量名**，并与下面 Deployment 里 secretKeyRef 的 key 逐项对应。
+```yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: jairouter-prod-secret
+  name: jairouter-secrets
   namespace: jairouter
 type: Opaque
 stringData:
-  PROD_ADMIN_API_KEY: "your-production-admin-api-key-here"
-  PROD_SERVICE_API_KEY: "your-production-service-api-key-here"
-  PROD_READONLY_API_KEY: "your-production-readonly-api-key-here"
   JWT_SECRET: "your-production-jwt-secret-here"
   INITIAL_ADMIN_PASSWORD: "your-strong-admin-password"
   REDIS_PASSWORD: "your-redis-password"
@@ -460,31 +465,17 @@ spec:
           value: "prod"
         - name: JAVA_OPTS
           value: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
-        # 密钥引用必须与上方创建的 Secret 名/键一致（jairouter-prod-secret）
-        - name: PROD_ADMIN_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: jairouter-prod-secret
-              key: PROD_ADMIN_API_KEY
-        - name: PROD_SERVICE_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: jairouter-prod-secret
-              key: PROD_SERVICE_API_KEY
-        - name: PROD_READONLY_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: jairouter-prod-secret
-              key: PROD_READONLY_API_KEY
+        # 密钥引用必须与上方创建的 Secret 名/键一致（jairouter-secrets；键=环境变量名）
+        # API Key 不通过环境变量注入：它在控制台创建，落库后由网关校验。
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
-              name: jairouter-prod-secret
+              name: jairouter-secrets
               key: JWT_SECRET
         - name: INITIAL_ADMIN_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: jairouter-prod-secret
+              name: jairouter-secrets
               key: INITIAL_ADMIN_PASSWORD
         # Redis 环境变量：单副本下非必需，多副本下必需（共享态开关见上文）
         - name: REDIS_HOST
@@ -494,7 +485,7 @@ spec:
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: jairouter-prod-secret
+              name: jairouter-secrets
               key: REDIS_PASSWORD
         volumeMounts:
         - name: config-volume
@@ -929,9 +920,6 @@ env:
   SPRING_PROFILES_ACTIVE: "prod"
   
   # 生产环境 API Key 配置
-  PROD_ADMIN_API_KEY: "your-production-admin-api-key-here"
-  PROD_SERVICE_API_KEY: "your-production-service-api-key-here"
-  PROD_READONLY_API_KEY: "your-production-readonly-api-key-here"
   
   # 生产环境 JWT 配置与管理员初始密码
   JWT_SECRET: "your-production-jwt-secret-here"
@@ -1267,30 +1255,15 @@ spec:
           value: "prod"
         - name: JAVA_OPTS
           value: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
-        - name: PROD_ADMIN_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: jairouter-prod-secret
-              key: PROD_ADMIN_API_KEY
-        - name: PROD_SERVICE_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: jairouter-prod-secret
-              key: PROD_SERVICE_API_KEY
-        - name: PROD_READONLY_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: jairouter-prod-secret
-              key: PROD_READONLY_API_KEY
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
-              name: jairouter-prod-secret
+              name: jairouter-secrets
               key: JWT_SECRET
         - name: INITIAL_ADMIN_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: jairouter-prod-secret
+              name: jairouter-secrets
               key: INITIAL_ADMIN_PASSWORD
         - name: REDIS_HOST
           value: "your-redis-host"
@@ -1299,7 +1272,7 @@ spec:
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: jairouter-prod-secret
+              name: jairouter-secrets
               key: REDIS_PASSWORD
         volumeMounts:
         - name: config-volume
@@ -1361,32 +1334,10 @@ spec:
 
 创建 `secret.yaml`：
 
-```
-# Secret 配置
-apiVersion: v1
-kind: Secret
-metadata:
-  name: jairouter-secret
-  namespace: jairouter
-type: Opaque
-data:
-  # Base64 编码的密钥
-  api-key: eW91ci1hcGkta2V5LWhlcmU=  # your-api-key-here
-  jwt-secret: eW91ci1qd3Qtc2VjcmV0LWtleQ==  # your-jwt-secret-key
-  database-password: cGFzc3dvcmQ=     # password
+> Secret 的形态见本节开头的「创建 Secret」——名字统一为 `jairouter-secrets`，
+> 键名必须是环境变量名（`JWT_SECRET` / `INITIAL_ADMIN_PASSWORD` / `REDIS_PASSWORD`）。
+> 本文件不要入库。
 
----
-# TLS Secret 配置
-apiVersion: v1
-kind: Secret
-metadata:
-  name: jairouter-tls
-  namespace: jairouter
-type: kubernetes.io/tls
-data:
-  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCiMKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
-  tls.key: LS0tLS1CRUdJTiBSU0EgUFJJV
-```
 
 ```
 kubectl apply -f secret.yaml
@@ -1411,19 +1362,8 @@ data:
       api-key:
         enabled: true
         header: X-API-Key: # 生产环境使用环境变量配置
-        keys:
-          - key-id: "prod-admin"
-            key-value: "${PROD_ADMIN_API_KEY:}"
-            permissions: ["admin", "read", "write", "delete"]
-            enabled: true
-          - key-id: "prod-service"
-            key-value: "${PROD_SERVICE_API_KEY:}"
-            permissions: ["read", "write"]
-            enabled: true
-          - key-id: "prod-readonly"
-            key-value: "${PROD_READONLY_API_KEY:}"
-            permissions: ["read"]
-            enabled: true
+        # 注意：API Key 不在配置文件里声明。控制台创建 → 落库 → 网关校验；
+        # 这一段历史上的 `keys:` 列表（及其 PROD_*_API_KEY 环境变量）已随 #907 #931 一并删除。
       
       # JWT 配置
       jwt:
