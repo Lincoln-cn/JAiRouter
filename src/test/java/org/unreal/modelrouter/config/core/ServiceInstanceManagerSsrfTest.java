@@ -8,7 +8,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.http.HttpStatus;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.dto.ServiceInstanceDTO;
+import org.unreal.modelrouter.common.exception.SecurityException;
 import org.unreal.modelrouter.common.util.UrlSecurityValidator;
 import org.unreal.modelrouter.config.core.helper.SsrfGuard;
 import org.unreal.modelrouter.config.dto.CreateServiceInstanceRequest;
@@ -83,6 +86,9 @@ class ServiceInstanceManagerSsrfTest {
                 () -> manager.createInstance(1L, request));
         assertTrue(ex.getMessage().contains("not allowed") || ex.getMessage().contains("blocked")
                 || ex.getMessage().contains("host") || ex.getMessage().contains("Base URL"));
+        // issue #928：写入侧校验失败必须是 400 + INVALID_BASE_URL，而不是被兜底成 500
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getHttpStatus());
+        assertEquals(ErrorCode.INVALID_BASE_URL.code(), ex.getErrorCode());
         verify(serviceInstanceRepository, never()).save(any());
     }
 
@@ -121,7 +127,8 @@ class ServiceInstanceManagerSsrfTest {
     @DisplayName("SsrfGuard 工具：validate 静态入口委托 UrlSecurityValidator")
     void ssrfGuard_delegates() {
         assertDoesNotThrow(() -> SsrfGuard.validateOutboundBaseUrl("https://api.example.com"));
-        assertThrows(SecurityException.class,
+        // 工具层保持抛 JDK SecurityException（写入侧才归一为仓库异常，见 safeBaseUrl）
+        assertThrows(java.lang.SecurityException.class,
                 () -> SsrfGuard.validateOutboundBaseUrl("http://metadata.google.internal/computeMetadata/v1/"));
         assertDoesNotThrow(() -> UrlSecurityValidator.validateOutboundBaseUrl("http://10.0.0.5:8000"));
     }

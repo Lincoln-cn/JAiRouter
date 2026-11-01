@@ -95,13 +95,31 @@ public class ServiceInstanceManager {
     }
 
     /**
+     * 出站 baseUrl 写入侧校验：把 {@code UrlSecurityValidator} 抛出的 JDK
+     * {@link java.lang.SecurityException} 归一为仓库的 {@code SecurityException}（400 + INVALID_BASE_URL）。
+     *
+     * <p>此前该异常直接冒泡到全局处理器：仓库的处理器只认
+     * {@code org.unreal.modelrouter.common.exception.SecurityException}，JDK 那个走兜底分支
+     * ⇒ 管理员配了个被拒的地址拿到的是「500 系统异常，请稍后重试」，既看不出原因也不像入参错误（issue #928）。</p>
+     */
+    private static String safeBaseUrl(final String rawBaseUrl) {
+        try {
+            return org.unreal.modelrouter.config.core.helper.SsrfGuard.validateOutboundBaseUrl(rawBaseUrl);
+        } catch (java.lang.SecurityException ex) {
+            throw new org.unreal.modelrouter.common.exception.SecurityException(
+                    ex.getMessage(),
+                    org.unreal.modelrouter.common.constants.ErrorCode.INVALID_BASE_URL.code(),
+                    org.springframework.http.HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    /**
      * 创建实例
      */
     @Transactional
     public ServiceInstanceDTO createInstance(final Long serviceConfigId, final CreateServiceInstanceRequest request) {
         // R3-P0 SSRF：落库前校验出站 baseUrl
-        final String safeBaseUrl = org.unreal.modelrouter.config.core.helper.SsrfGuard
-                .validateOutboundBaseUrl(request.getBaseUrl());
+        final String safeBaseUrl = safeBaseUrl(request.getBaseUrl());
         // v2.x: 生成 UUID 作为实例唯一标识符，用于熔断器等组件的 key
         String instanceUuid = java.util.UUID.randomUUID().toString();
 
@@ -149,8 +167,7 @@ public class ServiceInstanceManager {
         }
         if (request.getBaseUrl() != null) {
             // R3-P0 SSRF
-            entity.setBaseUrl(org.unreal.modelrouter.config.core.helper.SsrfGuard
-                    .validateOutboundBaseUrl(request.getBaseUrl()));
+            entity.setBaseUrl(safeBaseUrl(request.getBaseUrl()));
         }
         if (request.getPath() != null) {
             entity.setPath(request.getPath());
