@@ -57,6 +57,33 @@ curl -s http://localhost:8080/actuator/metrics/jvm.gc.pause | jq
 curl -s http://localhost:8080/actuator/metrics/system.cpu.usage | jq
 ```
 
+## Capacity saturation metrics
+
+When troubleshooting, the first question is "which layer is slow". These metrics exist so
+that answer is something you read rather than guess — all of them are available on
+`/actuator/prometheus` with no extra configuration.
+
+| Metric | Meaning | What saturation looks like |
+| --- | --- | --- |
+| `jairouter.outbound.requests.inflight` | Outbound requests sent but whose response headers have not arrived | Persistently high ⇒ slow upstream or too few connections |
+| `jairouter.outbound.request.duration` | Time from sending to response headers arriving | p99 rising while inflight stays low ⇒ upstream jitter |
+| `reactor.netty.connection.provider.pending.connections{name="jairouter-outbound"}` | Requests waiting for an outbound connection | Greater than 0 and growing ⇒ pool queuing |
+| `reactor.netty.connection.provider.active.connections{name="jairouter-outbound"}` | Outbound connections currently in use | Sitting at `max-connections` ⇒ the ceiling is reached |
+| `hikaricp_connections_pending` | Threads waiting for a database connection | Greater than 0 ⇒ database pool queuing (see [Database deployment](../deployment/database.md)) |
+| `jairouter.sse.active.connections{endpoint}` | SSE connections currently open | Approaching your operational ceiling ⇒ long connections piling up |
+| `jairouter.cache.response.size` | Response cache entries (estimated) | At `maxSize` ⇒ hit rate starts to drop |
+
+Suggested order: check the two "queuing" metrics first
+(`hikaricp_connections_pending` and
+`reactor.netty.connection.provider.pending.connections`). Only when one of them is
+non-zero is the bottleneck in a pool; if both are zero while `inflight` is high, the
+bottleneck is upstream; if none of the three moves but latency climbs, look at the event
+loop and GC.
+
+The `endpoint` label of `jairouter.sse.active.connections` takes:
+`health-status`, `v1-chat-completions`, `chat-completions` (the legacy face) and
+`anthropic-messages`.
+
 ## Performance Issue Classification
 
 ### 1. Slow Response Time
