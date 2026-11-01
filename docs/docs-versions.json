@@ -1179,13 +1179,15 @@
     },
     "docs/en/troubleshooting/performance.md": {
       "FilePath": "docs/en/troubleshooting/performance.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-11-01T11:39:57.360971",
-      "ContentHash": "d2a04b56535e6766",
-      "GitCommit": "ca9ce71b",
+      "Version": "1.0.4",
+      "LastModified": "2026-11-01T13:39:07.451429",
+      "ContentHash": "c6924c3562380c1e",
+      "GitCommit": "1fe3ad10",
       "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [
+        "docs/en/deployment/database.md"
+      ]
     },
     "docs/zh/api-reference/error-codes.md": {
       "FilePath": "docs/zh/api-reference/error-codes.md",
@@ -2347,13 +2349,15 @@
     },
     "docs/zh/troubleshooting/performance.md": {
       "FilePath": "docs/zh/troubleshooting/performance.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-11-01T11:39:58.065767",
-      "ContentHash": "139cf97f8772573c",
-      "GitCommit": "ca9ce71b",
+      "Version": "1.0.4",
+      "LastModified": "2026-11-01T13:39:08.179380",
+      "ContentHash": "ceda629485c118e2",
+      "GitCommit": "1fe3ad10",
       "Author": "Leo Lin",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [
+        "docs/zh/deployment/database.md"
+      ]
     },
     "docs/en/deployment/environment-variables.md": {
       "FilePath": "docs/en/deployment/environment-variables.md",
@@ -6342,7 +6346,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-01T12:54:56.697193",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/troubleshooting/performance.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T13:39:07.451441",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/troubleshooting/performance.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T13:39:08.179391",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-01T12:54:57.194911"
+  "last_updated": "2026-11-01T13:39:08.179812"
 }
