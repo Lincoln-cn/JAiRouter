@@ -156,10 +156,10 @@
     },
     "docs/en/configuration/index.md": {
       "FilePath": "docs/en/configuration/index.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-30T19:32:14.065250",
-      "ContentHash": "0b64de53e56b4345",
-      "GitCommit": "3878d76e",
+      "Version": "1.0.7",
+      "LastModified": "2026-11-01T13:58:16.354705",
+      "ContentHash": "54eebd073c64283d",
+      "GitCommit": "1a6e61ba",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -173,6 +173,7 @@
         "docs/en/configuration/response-cache.md",
         "docs/en/configuration/store-config.md",
         "docs/en/configuration/version-management.md",
+        "docs/en/deployment/database.md",
         "docs/en/deployment/environment-variables.md"
       ]
     },
@@ -1319,10 +1320,10 @@
     },
     "docs/zh/configuration/index.md": {
       "FilePath": "docs/zh/configuration/index.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-30T19:32:14.718799",
-      "ContentHash": "eafed04909dd42d4",
-      "GitCommit": "3878d76e",
+      "Version": "1.0.7",
+      "LastModified": "2026-11-01T13:58:16.976129",
+      "ContentHash": "4c94e07345829e58",
+      "GitCommit": "1a6e61ba",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1335,6 +1336,7 @@
         "docs/zh/configuration/response-cache.md",
         "docs/zh/configuration/store-config.md",
         "docs/zh/configuration/version-management.md",
+        "docs/zh/deployment/database.md",
         "docs/zh/deployment/environment-variables.md"
       ]
     },
@@ -6362,7 +6364,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-01T13:39:08.179391",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/index.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T13:58:16.354715",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/index.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-01T13:58:16.976138",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-01T13:39:08.179812"
+  "last_updated": "2026-11-01T13:58:17.578276"
 }
