@@ -36,6 +36,9 @@ TOLERATED_FLAKY_URL_PREFIXES = (
     "https://jairouter.com/",
     "https://lincoln-cn.github.io/JAiRouter",
     "https://github.com/Lincoln-cn/JAiRouter/blob/master/LICENSE",
+    # issue #934：站点侧对机房出口 IP 直接断开（CI 上稳定复现 socket hang up，
+    # 浏览器打开正常，重试 2 次也无效）。链接本身有效，属目标站点侧限制。
+    "https://regexr.com/",
 )
 
 # 第 2、3 次尝试前的等待（秒）；超出长度的重试沿用最后一个值。

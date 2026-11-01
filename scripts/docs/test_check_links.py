@@ -112,7 +112,19 @@ def main():
     case("503,503,200 重试后判为有效并标注重试次数", t_flaky_passes_after_retry)
     case("已登记抖动源的恒 503 ⇒ 警告（并确实重试了 2 次）", t_tolerated_5xx_is_warning)
     case("未登记主机的恒 503 ⇒ 仍然判红并给出登记指引", t_untolerated_5xx_still_fails)
+    def t_registry_covers_known_site_side_flakes():
+        """登记表必须覆盖已确认的站点侧抖动源，且不重复（防止它退化成随手加的白名单）。
+
+        issue #934：regexr.com 对 CI 出口 IP 稳定断开（socket hang up），链接本身可用；
+        这类只能靠登记降级，否则每次改 docs 的 PR 都会被它判红。
+        """
+        registry = module.TOLERATED_FLAKY_URL_PREFIXES
+        for expected in ("https://regexr.com/", "https://jairouter.com/"):
+            assert expected in registry, f"登记表缺少已知抖动源: {expected}（实际: {registry}）"
+        assert len(registry) == len(set(registry)), f"登记表不应有重复项: {registry}"
+
     case("404 判红、不重试、不降级", t_404_stays_invalid_without_retry)
+    case("抖动源登记表覆盖已知站点侧失败", t_registry_covers_known_site_side_flakes)
 
     failures = []
     try:
