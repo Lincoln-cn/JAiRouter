@@ -120,8 +120,8 @@
         <neverBlock>true</neverBlock>
     </appender>
 
-    <!-- 开发环境配置 -->
-    <springProfile name="(dev | default) &amp; !json-logs">
+    <!-- 开发环境配置（dev：详细日志 + 结构化事件流，一条事件同时进 stdout 文本与 JSON） -->
+    <springProfile name="dev &amp; !json-logs">
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="ASYNC_FILE"/>
@@ -135,6 +135,33 @@
             <appender-ref ref="ASYNC_ERROR"/>
             <appender-ref ref="ASYNC_STRUCTURED"/>
             <appender-ref ref="ASYNC_TRACING"/>
+        </logger>
+        
+        <!-- 框架日志适当降级 -->
+        <logger name="org.springframework" level="INFO"/>
+        <logger name="org.apache.http" level="INFO"/>
+        <logger name="io.netty" level="INFO"/>
+        <logger name="reactor.netty" level="INFO"/>
+    </springProfile>
+
+    <!--
+      默认 profile（裸 jar / 未设 SPRING_PROFILES_ACTIVE，issue #932）：INFO 级别，且 stdout 只由
+      CONSOLE 输出一次 —— 不再挂 ASYNC_TRACING，因为它把 JSON 直接写 System.out，与 CONSOLE 同时
+      挂载会让每条日志在 stdout 出现两行（实测 3 rps 跑 6.5 小时产出 2.9 GB）。需要结构化事件流
+      （一行一个 JSON）请用 json-logs profile。
+    -->
+    <springProfile name="default &amp; !json-logs">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR"/>
+        </root>
+        
+        <logger name="org.unreal.modelrouter" level="INFO" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR"/>
+            <appender-ref ref="ASYNC_STRUCTURED"/>
         </logger>
         
         <!-- 框架日志适当降级 -->
@@ -221,7 +248,7 @@
     <springProfile name="prod &amp; !json-logs">
         <logger name="org.unreal.modelrouter.ratelimit" level="ERROR"/>
     </springProfile>
-    <springProfile name="!prod">
+    <springProfile name="dev">
         <logger name="org.unreal.modelrouter.ratelimit" level="DEBUG"/>
     </springProfile>
     
@@ -229,7 +256,7 @@
     <springProfile name="prod &amp; !json-logs">
         <logger name="org.unreal.modelrouter.loadbalancer" level="ERROR"/>
     </springProfile>
-    <springProfile name="!prod">
+    <springProfile name="dev">
         <logger name="org.unreal.modelrouter.loadbalancer" level="DEBUG"/>
     </springProfile>
     
