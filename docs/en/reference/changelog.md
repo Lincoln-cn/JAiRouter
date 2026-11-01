@@ -122,8 +122,8 @@ listed under "Upgrade notes" below.
 2. **Upstream failures changed status codes**: timeouts are now 504 and connection failures 502 (both were 500).
 3. **The default log level is INFO**: the default profile no longer emits DEBUG; set `logging.level.*` explicitly when
    troubleshooting.
-4. **The dependency gate can fail a PR**: the new OSV / `npm audit` steps fail on `high` and above. Genuinely
-   unfixable items go into `scripts/audit/osv-baseline.json` with a reason.
+4. **The dependency gate can fail a PR**: the new OSV / `npm audit` steps fail on `high` and above. Items that
+   cannot be fixed go into `scripts/audit/osv-baseline.json` with a reason.
 5. **WebSocket control messages are administrator-only**: `pause` / `resume` / `updateConfig` from a low-privilege
    principal are ignored and logged as a warning.
 
