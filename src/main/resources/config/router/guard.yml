@@ -1,0 +1,32 @@
+# 流式护栏（#961）
+#
+# 关卡位置：下游 SSE 每个 chunk 在交给适配器变换之前经过护栏链，判定结果三选一：
+#   ALLOW  —— 原样下发
+#   REDACT —— 命中脱敏规则，把文本改写后下发
+#   ABORT  —— 命中阻断规则，本块替换为终止帧 [DONE]，整条流立即结束
+#
+# 默认关闭。打开后网关会改写下游看到的内容，属于「改变响应字节」的开关，必须由运维显式开启；
+# 被阻断的流不会写入响应缓存（避免把被截断的内容回放给后续请求）。
+#
+# 已知边界：判定按 chunk 进行，不做跨 chunk 的拼接 —— 若敏感串恰好被上游切在两个 chunk 之间，
+# 单块正则匹配不到。需要更高强度时请配合请求/响应侧脱敏（jairouter.security.sanitization）。
+jairouter:
+  guard:
+    # 总开关；false 时热路径上只有一次布尔判断，链完全不介入
+    enabled: false
+    redact:
+      enabled: true
+      patterns: []
+      # 规则示例（默认不启用，按需打开）：
+      # - name: phone-cn
+      #   regex: '\b1[3-9]\d{9}\b'
+      #   replacement: '[PHONE]'
+      # - name: id-card-cn
+      #   regex: '\b\d{17}[\dXx]\b'
+      #   replacement: '[ID]'
+    block:
+      enabled: true
+      patterns: []
+      # 规则示例（默认不启用，按需打开）：
+      # - name: provider-key-leak
+      #   regex: '(?i)sk-[a-z0-9]{16,}'

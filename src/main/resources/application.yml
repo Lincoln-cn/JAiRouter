@@ -28,6 +28,7 @@ spring:
       - classpath:config/router/services.yml
       - classpath:config/router/rules.yml
       - classpath:config/router/pools.yml
+      - classpath:config/router/guard.yml
       
       # ====== auth 模块配置 ======
       - classpath:config/auth/jwt.yml
