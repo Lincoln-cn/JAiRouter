@@ -334,22 +334,28 @@ kubectl apply -f configmap.yaml
 ### 3. Create Secret
 
 ```yaml
-# secret.yaml
+# secret.yaml — keys must be environment-variable names: the Deployment injects the
+# whole Secret via envFrom.secretRef, so a wrong key name (e.g. api-key / jwt-secret)
+# never fails loudly, it just means the variable does not exist.
+# Never commit this file (the repository does not ship the Secret itself).
 apiVersion: v1
 kind: Secret
 metadata:
-  name: jairouter-secret
+  name: jairouter-secrets      # same name the manifests in deploy/k8s/base reference
   namespace: jairouter
 type: Opaque
-data:
-  # Base64 encoded keys
-  api-key: eW91ci1hcGkta2V5LWhlcmU=  # your-api-key-here
-  # Both required by the production startup gate
-  jwt-secret: eW91ci1wcm9kdWN0aW9uLWp3dC1zZWNyZXQtaGVyZQ==        # your-production-jwt-secret-here
-  initial-admin-password: eW91ci1zdHJvbmctYWRtaW4tcGFzc3dvcmQ=    # your-strong-admin-password
-  database-password: cGFzc3dvcmQ=     # password
-  redis-password: cGFzc3dvcmQ=     # your-redis-password (base64)
+stringData:                    # written in plaintext; the API server encodes it on apply
+  JWT_SECRET: "<output of openssl rand -base64 48>"
+  INITIAL_ADMIN_PASSWORD: "<strong password, not the factory default>"
+  REDIS_PASSWORD: "<redis password>"
 ```
+
+> The equivalent one-liner is the `kubectl create secret generic jairouter-secrets ... --from-literal=...`
+> call from the quick start; both produce the same object, pick one.
+>
+> Later sections reuse the same name (`jairouter-secrets`). The name is free, but the
+> **keys must be environment-variable names** and must match the `secretKeyRef` keys in
+> that Deployment one-for-one.
 
 ```bash
 kubectl apply -f secret.yaml
@@ -455,19 +461,15 @@ spec:
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
-              name: jairouter-secret
-              key: jwt-secret
+              name: jairouter-secrets
+              key: JWT_SECRET
         - name: INITIAL_ADMIN_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: jairouter-secret
-              key: initial-admin-password
-        # Secret name/key must match the Secret created above (jairouter-secret)
-        - name: API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: jairouter-secret
-              key: api-key
+              name: jairouter-secrets
+              key: INITIAL_ADMIN_PASSWORD
+        # API keys are not injected through environment variables: they are created in the
+        # console, stored in the database, and validated by the gateway.
         # Redis environment variables: optional for single replica, required for multi-replica
         - name: REDIS_HOST
           value: "your-redis-host"
@@ -476,8 +478,8 @@ spec:
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: jairouter-secret
-              key: redis-password
+              name: jairouter-secrets
+              key: REDIS_PASSWORD
         volumeMounts:
         - name: config-volume
           mountPath: /app/config
@@ -1347,17 +1349,17 @@ spec:
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
-              name: jairouter-secret
-              key: jwt-secret
+              name: jairouter-secrets
+              key: JWT_SECRET
         - name: INITIAL_ADMIN_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: jairouter-secret
-              key: initial-admin-password
+              name: jairouter-secrets
+              key: INITIAL_ADMIN_PASSWORD
         - name: API_KEY
           valueFrom:
             secretKeyRef:
-              name: jairouter-secret
+              name: jairouter-secrets
               key: api-key
         - name: REDIS_HOST
           value: "your-redis-host"
@@ -1366,8 +1368,8 @@ spec:
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: jairouter-secret
-              key: redis-password
+              name: jairouter-secrets
+              key: REDIS_PASSWORD
         volumeMounts:
         - name: config-volume
           mountPath: /app/config
@@ -1429,20 +1431,19 @@ spec:
 Create `secret.yaml`:
 
 ```yaml
-# Secret configuration
+# Secret configuration — see "Create Secret" above: one name (jairouter-secrets),
+# keys are environment-variable names, injected through envFrom.secretRef.
 apiVersion: v1
 kind: Secret
 metadata:
-  name: jairouter-secret
+  name: jairouter-secrets
   namespace: jairouter
 type: Opaque
-data:
-  # Base64 encoded keys
-  api-key: eW91ci1hcGkta2V5LWhlcmU=  # your-api-key-here
-  jwt-secret: eW91ci1wcm9kdWN0aW9uLWp3dC1zZWNyZXQtaGVyZQ==        # your-production-jwt-secret-here
-  initial-admin-password: eW91ci1zdHJvbmctYWRtaW4tcGFzc3dvcmQ=    # your-strong-admin-password
-  database-password: cGFzc3dvcmQ=     # password
-  redis-password: cGFzc3dvcmQ=     # your-redis-password (base64)
+stringData:
+  JWT_SECRET: "<output of openssl rand -base64 48>"
+  INITIAL_ADMIN_PASSWORD: "<strong password, not the factory default>"
+  REDIS_PASSWORD: "<redis password>"
+
 
 ---
 # TLS Secret configuration
