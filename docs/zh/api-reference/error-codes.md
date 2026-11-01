@@ -47,7 +47,7 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 
 > 这一节的码由认证异常承载（注册表里的渲染路径是认证链）：客户端可见状态来自异常携带的 401，
 > **不是**由错误码命名规则推导的 —— 例如 `INVALID_API_KEY` 的规则链推导值是 400，但客户端拿到的是 401。
-> 认证链上唯一不返回 401 的码是 `RATE_LIMITED_API_KEY`（每分钟限速超限，**429**），它按状态归入下面的「限流错误码」一节。
+> 认证链上返回 429 的码有三个：`RATE_LIMITED_API_KEY`（每分钟限速超限）与 `DAILY_QUOTA_EXCEEDED` / `TOKEN_QUOTA_EXCEEDED`（每日请求/Token 配额耗尽，issue #926），它们按状态归入下面的「限流错误码」一节。
 
 | 错误码 | 描述 | 常见原因 | 解决方案 |
 |--------|------|----------|----------|
@@ -56,8 +56,6 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 | `EMPTY_API_KEY` | 未携带 API Key | 请求头缺少 `X-API-Key` | 添加 `X-API-Key` 请求头 |
 | `API_KEY_DISABLED` | API Key 认证功能未启用 | 服务端关闭了 API Key 认证 | 打开服务端开关 |
 | `API_KEY_AUTH_FAILED` | API Key 认证失败 | 校验链抛出未预期异常 | 查服务端日志定位根因 |
-| `DAILY_QUOTA_EXCEEDED` | 超过每日请求配额 | Key 的每日请求数已用尽 | 等次日重置或提升配额 |
-| `TOKEN_QUOTA_EXCEEDED` | 超过每日 Token 配额 | Key 的每日 Token 数已用尽 | 等次日重置或提升配额 |
 | `JWT_INVALID` | JWT 令牌校验失败 | 签名不匹配或格式错误 | 重新登录获取新令牌 |
 | `JWT_EXPIRED` | JWT 令牌已过期 | 令牌超过有效期 | 刷新或重新登录 |
 | `EXPIRED_JWT_TOKEN` | JWT 令牌已过期（按 expired 归类） | 校验链报 expired 时由认证管理器归类 | 重新登录 |
@@ -174,6 +172,8 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 | `RATE_LIMIT_EXCEEDED` | 管理面限流超限（`/api/auth/api-keys`） | `Retry-After` / `X-Quota-*` | 等待令牌恢复后重试 |
 | `RATE_LIMITED_API_KEY` | API Key 每分钟限速超限（校验链） | 无 | 退避后重试 |
 | `RATE_LIMITED_LOGIN` | 登录失败次数超阈值被临时锁定（`/api/auth/jwt/login`） | 无 | 等待锁定窗口结束或改用正确凭据 |
+| `DAILY_QUOTA_EXCEEDED` | 每日请求配额耗尽（校验链，issue #926） | 无 | 等次日重置或提升配额 |
+| `TOKEN_QUOTA_EXCEEDED` | 每日 Token 配额耗尽（校验链，issue #926） | 无 | 等次日重置或提升配额 |
 
 > ✅ **拆码已完成**（issue #404，2026-10-15 裁定「429 + 拆新码」）：限流不再「同码两状态」——
 > 两个入口面各有一个码，且**状态都是 429**：
@@ -184,6 +184,10 @@ JAiRouter 使用标准化的错误码系统来标识各种错误情况，便于�
 >
 > ③ 登录端点（`/api/auth/jwt/login`）在失败次数达到阈值后按用户名/IP 锁定，返回 **429** 且错误码为
 > `RATE_LIMITED_LOGIN`（与上两个码不同源：它保护的是控制台登录，不是 API Key 或管理面限流）。
+>
+> ④ 配额耗尽（`DAILY_QUOTA_EXCEEDED` / `TOKEN_QUOTA_EXCEEDED`）此前返回 **401**，issue #926 起改为 **429**：
+> 401 的语义是「凭据不可用」，OpenAI/Anthropic 客户端会在 401 上把 Key 判为失效、不再退避，而配额只是当天额度用尽、
+> 次日即恢复。**码名未变**，只改状态码与 `type`（`/v1/**` 上按状态映射为 `rate_limit_error`）。
 >
 > 响应头**没有** `X-RateLimit-Reset` / `X-RateLimit-Remaining`（全仓无此头）；配额超限实际写
 > `Retry-After` 与 `X-Quota-*`（limit / remaining / window）。原表里的 `GLOBAL_RATE_LIMIT` /

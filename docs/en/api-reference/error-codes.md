@@ -46,8 +46,9 @@ JAiRouter uses a standardized error code system to identify various error condit
 > The codes in this section are carried by authentication exceptions (their render path in the registry is the
 > authentication chain): the client-visible status comes from the exception's 401, and is **not** derived from the
 > code's naming rule — `INVALID_API_KEY`, for example, would resolve to 400 by rule, but clients receive 401.
-> The one authentication-chain code that does **not** answer 401 is `RATE_LIMITED_API_KEY` (per-minute rate limit
-> exceeded, **429**); it is grouped by status under "Rate Limit Error Codes" below.
+> Three authentication-chain codes answer **429** instead of 401: `RATE_LIMITED_API_KEY` (per-minute rate limit
+> exceeded) and `DAILY_QUOTA_EXCEEDED` / `TOKEN_QUOTA_EXCEEDED` (daily request/token quota exhausted, issue #926);
+> they are grouped by status under "Rate Limit Error Codes" below.
 
 | Error Code | Description | Common Cause | Solution |
 |------------|-------------|--------------|----------|
@@ -56,8 +57,6 @@ JAiRouter uses a standardized error code system to identify various error condit
 | `EMPTY_API_KEY` | No API Key carried | The request is missing the `X-API-Key` header | Add the `X-API-Key` header |
 | `API_KEY_DISABLED` | API Key authentication is disabled | The server turned API Key auth off | Enable it on the server |
 | `API_KEY_AUTH_FAILED` | API Key authentication failed | The validation chain threw an unexpected exception | Check server logs for the root cause |
-| `DAILY_QUOTA_EXCEEDED` | Daily request quota exceeded | The key used up its daily requests | Wait for the daily reset or raise the quota |
-| `TOKEN_QUOTA_EXCEEDED` | Daily token quota exceeded | The key used up its daily tokens | Wait for the daily reset or raise the quota |
 | `JWT_INVALID` | JWT validation failed | Signature mismatch or malformed token | Sign in again to obtain a new token |
 | `JWT_EXPIRED` | JWT token expired | The token exceeded its validity period | Refresh it or sign in again |
 | `EXPIRED_JWT_TOKEN` | JWT token expired (classified as expired) | The authentication manager classifies expired failures with this code | Sign in again |
@@ -178,6 +177,8 @@ JAiRouter uses a standardized error code system to identify various error condit
 | `RATE_LIMIT_EXCEEDED` | Admin rate limit exceeded (`/api/auth/api-keys`) | `Retry-After` / `X-Quota-*` | Wait for the bucket to recover and retry |
 | `RATE_LIMITED_API_KEY` | API Key per-minute rate limit exceeded (validation chain) | none | Back off and retry |
 | `RATE_LIMITED_LOGIN` | Login locked after too many failures (`/api/auth/jwt/login`) | none | Wait for the lock window to expire or fix the credentials |
+| `DAILY_QUOTA_EXCEEDED` | Daily request quota exhausted (validation chain, issue #926) | none | Wait for the daily reset or raise the quota |
+| `TOKEN_QUOTA_EXCEEDED` | Daily token quota exhausted (validation chain, issue #926) | none | Wait for the daily reset or raise the quota |
 
 > ✅ **The codes were split** (issue #404, decided 2026-10-15 as "429 plus a new code"): a rate limit is no longer
 > "one code, two statuses" — each entry surface has its own code and **both answer 429**:

@@ -107,7 +107,7 @@ public enum ErrorCode {
     TEMPLATE_NOT_FOUND("TEMPLATE_NOT_FOUND", HttpStatus.NOT_FOUND, RenderPath.RESPONSE_BODY, "模板不存在"),
 
     // ===================================================================================
-    // 3) AUTHENTICATION：状态由异常携带（经校验链的码今天均为 401，唯一例外见 RATE_LIMITED_API_KEY）
+    // 3) AUTHENTICATION：状态由异常携带（经校验链的码多数为 401；RATE_LIMITED_API_KEY 与两个配额码为 429）
     // ===================================================================================
     API_KEY_AUTH_FAILED("API_KEY_AUTH_FAILED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
             "API Key 认证失败（校验链未预期异常）"),
@@ -118,8 +118,8 @@ public enum ErrorCode {
     AUTH_FAILED("AUTH_FAILED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
             "认证失败（认证过滤器默认码）"),
     AUTH_MISSING("AUTH_MISSING", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION, "请求缺少认证信息"),
-    DAILY_QUOTA_EXCEEDED("DAILY_QUOTA_EXCEEDED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
-            "超过每日请求配额限制"),
+    DAILY_QUOTA_EXCEEDED("DAILY_QUOTA_EXCEEDED", HttpStatus.TOO_MANY_REQUESTS, RenderPath.AUTHENTICATION,
+            "超过每日请求配额限制（429：配额耗尽不是认证失败，客户端应据此退避而不是判 Key 失效）"),
     EMPTY_API_KEY("EMPTY_API_KEY", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION, "未携带 API Key"),
     EMPTY_JWT_TOKEN("EMPTY_JWT_TOKEN", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION, "未携带 JWT 令牌"),
     EXPIRED_API_KEY("EXPIRED_API_KEY", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION, "API Key 已过期"),
@@ -145,8 +145,8 @@ public enum ErrorCode {
             "JWT 令牌验证过程中发生错误"),
     RATE_LIMITED_API_KEY("RATE_LIMITED_API_KEY", HttpStatus.TOO_MANY_REQUESTS, RenderPath.AUTHENTICATION,
             "API Key 每分钟限速超限（校验链，429）；管理面限流器见 RATE_LIMIT_EXCEEDED（issue #404 拆码）"),
-    TOKEN_QUOTA_EXCEEDED("TOKEN_QUOTA_EXCEEDED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
-            "超过每日 Token 使用配额限制"),
+    TOKEN_QUOTA_EXCEEDED("TOKEN_QUOTA_EXCEEDED", HttpStatus.TOO_MANY_REQUESTS, RenderPath.AUTHENTICATION,
+            "超过每日 Token 使用配额限制（429，同 DAILY_QUOTA_EXCEEDED）"),
     TOKEN_REQUIRED("TOKEN_REQUIRED", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,
             "刷新令牌时未携带当前令牌"),
     UNSUPPORTED_AUTH_TYPE("UNSUPPORTED_AUTH_TYPE", HttpStatus.UNAUTHORIZED, RenderPath.AUTHENTICATION,

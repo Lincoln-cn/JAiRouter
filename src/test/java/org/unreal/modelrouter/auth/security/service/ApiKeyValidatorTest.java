@@ -364,6 +364,31 @@ class ApiKeyValidatorTest {
             assertFalse(result.isSuccess());
             assertEquals(ValidationFailureType.VALIDATION_ERROR, result.getFailureType());
             assertEquals("超过每日请求限制", result.getErrorMessage());
+            // issue #926：配额耗尽不是认证失败 —— 客户端可见状态必须是 429（此前是 401，
+            // SDK 会把它当成 Key 失效而不退避），码不变
+            assertEquals(ErrorCode.DAILY_QUOTA_EXCEEDED.code(), result.getErrorCode());
+            assertEquals(HttpStatus.TOO_MANY_REQUESTS, result.toException().getHttpStatus());
+        }
+
+        @Test
+        @DisplayName("VAL-024b: 完整验证 - 超过每日 Token 配额同样携带 429")
+        void testValidateFullyTokenLimitExceeded() {
+            ApiKey apiKey = createMockApiKey("key-002", "sk-test-key-123456", true);
+            when(apiKey.verifyKey("sk-test-key-123456")).thenReturn(true);
+            when(apiKey.isExpired()).thenReturn(false);
+            when(apiKey.isIpAllowed("192.168.1.1")).thenReturn(true);
+            when(apiKey.isDailyLimitExceeded()).thenReturn(false);
+            when(apiKey.isDailyTokenLimitExceeded()).thenReturn(true);
+
+            apiKeyCache.put("hash1", apiKey);
+
+            FullValidationResult result = validator.validateFully(
+                    "sk-test-key-123456", apiKeyCache, "192.168.1.1");
+
+            assertFalse(result.isSuccess());
+            assertEquals(ErrorCode.TOKEN_QUOTA_EXCEEDED.code(), result.getErrorCode());
+            assertEquals(HttpStatus.TOO_MANY_REQUESTS, result.toException().getHttpStatus(),
+                    "配额码经注册表取 429，与 DAILY_QUOTA_EXCEEDED 一致");
         }
     }
 
