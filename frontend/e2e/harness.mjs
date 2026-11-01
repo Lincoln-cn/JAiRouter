@@ -3,24 +3,29 @@
  */
 import { chromium } from 'playwright-core'
 import { randomBytes } from 'node:crypto'
-import { existsSync } from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export const BASE = process.env.E2E_BASE_URL || 'http://127.0.0.1:8080/admin'
 export const USER = process.env.E2E_USER || 'admin'
 export const PASS = process.env.E2E_PASS || 'ChangeMeOnFirstStartup123456'
 
-const DEFAULT_EXE =
-  'C:\\Users\\Administrator\\AppData\\Local\\ms-playwright\\chromium_headless_shell-1208\\chrome-headless-shell-win64\\chrome-headless-shell.exe'
-const EXE =
-  process.env.CHROMIUM_PATH ||
-  [DEFAULT_EXE, path.resolve(__dirname, '../../.mimocode/pw/node_modules/.bin/chrome')].find(
-    p => p && existsSync(p)
-  ) ||
-  undefined
+/**
+ * 浏览器可执行文件（#948）：不再写死某台开发机的绝对路径。
+ *
+ * 解析顺序：显式 CHROMIUM_PATH → playwright-core 的浏览器 registry。
+ * registry 里没有浏览器时 launch 会直接报「Executable doesn't exist」，
+ * 这比静默挑一个不存在的路径更容易定位。CI 里配合
+ * `npx playwright-core install --with-deps chromium` 准备浏览器。
+ */
+function resolveExecutable() {
+  if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH
+  try {
+    return chromium.executablePath()
+  } catch {
+    return undefined
+  }
+}
+
+const EXE = resolveExecutable()
 
 export function createReporter(suiteId = 'e2e') {
   const results = []

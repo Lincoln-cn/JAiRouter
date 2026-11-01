@@ -1,0 +1,105 @@
+name: 控制台 E2E（smoke）
+
+# issue #948：前端有一整套自研 E2E（16 个 spec + harness + runner），但从未在 CI 跑过，
+# 只存在于开发机的 `npm run test:e2e`。选择器改名、路由变更、权限门控失效这类问题
+# 只有 E2E 能抓；脚本长期无人执行就会腐烂，而没有任何机制会告诉维护者「它坏了」。
+#
+# 本 workflow 先只接一个稳定子集（smoke + overview），跑通后再扩。慢或易 flaky 的组
+# 仍留在本地 / workflow_dispatch，不放进 PR 门闩。
+#
+# 反空转：runner 的 E2E_MIN_CHECKS 要求实际执行的检查项不得低于下限 —— 后端没起来、
+# 登录失败、spec 全线中途退出时结果集为空，那种情况必须报红而不是绿。
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'src/main/java/**'
+      - 'src/main/resources/**'
+      - 'pom.xml'
+      - '.github/workflows/e2e-smoke.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-smoke:
+    name: e2e-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: 设置 Node.js（与 pom 的 frontend-maven-plugin 一致）
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.14.0'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 构建前端（产出 frontend/dist）
+        working-directory: frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: 打包后端（前端产物由 copy-frontend-build 打进 jar）
+        run: ./mvnw -B -DskipTests -Dfrontend.build.skip=true package
+        env:
+          MAVEN_OPTS: -Xmx2g
+
+      - name: 安装 Chromium
+        working-directory: frontend
+        run: npx playwright-core install --with-deps chromium
+
+      - name: 启动后端（dev profile + H2 文件库）
+        run: |
+          jar=$(ls target/model-router-*.jar | grep -v original | head -1)
+          echo "jar: $jar"
+          nohup java -jar "$jar" --spring.profiles.active=dev > "$RUNNER_TEMP/backend.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/backend.pid"
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:8080/actuator/health > /dev/null; then
+              echo "后端在约 $((i * 5)) 秒后就绪"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::后端 300 秒内未就绪"
+          tail -80 "$RUNNER_TEMP/backend.log"
+          exit 1
+
+      - name: 跑 E2E smoke 子集
+        working-directory: frontend
+        env:
+          E2E_BASE_URL: http://127.0.0.1:8080/admin
+          E2E_USER: admin
+          E2E_PASS: ChangeMeOnFirstStartup123456
+          E2E_MIN_CHECKS: '200'
+        run: node e2e/runner.mjs --only smoke,overview
+
+      - name: 失败时导出后端日志
+        if: failure()
+        run: |
+          echo "===== 后端日志尾部 ====="
+          tail -150 "$RUNNER_TEMP/backend.log" || true
+
+      - name: 停止后端
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/backend.pid" ]; then
+            kill "$(cat "$RUNNER_TEMP/backend.pid")" 2>/dev/null || true
+          fi

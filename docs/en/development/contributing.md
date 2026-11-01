@@ -192,6 +192,24 @@ class UniversalControllerIntegrationTest {
 }
 ```
 
+#### Console E2E
+
+`frontend/e2e/` holds a self-contained E2E suite (16 specs plus harness and runner). CI runs only the stable subset (`smoke` + `overview`) in the `e2e-smoke` job defined in `.github/workflows/e2e-smoke.yml`. It needs a real backend and a browser, so it is far slower than the unit tests and does not belong in `前端单元测试`.
+
+Reproduce the same run locally:
+
+```bash
+cd frontend
+npx playwright-core install chromium        # once
+E2E_BASE_URL=http://127.0.0.1:8080/admin \
+  E2E_PASS=<the admin password of your dev instance> node e2e/runner.mjs --only smoke,overview
+```
+
+Two conventions:
+
+- `E2E_MIN_CHECKS` is the anti-vacuity floor (200 in CI, 251 checks measured). Fewer executed checks than the floor fails the run: when the backend is down, login fails, or every spec aborts, the result set is empty and that must go red rather than green.
+- `02-layout-nav.mjs` hard-codes the menu group count and the total item count (currently 7 groups, 29 items). Adding or removing a menu item turns that assertion red; update the numbers together with the comment.
+
 ### 4. Commit Standards
 
 #### Commit Message Format

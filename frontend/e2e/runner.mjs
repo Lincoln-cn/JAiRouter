@@ -8,9 +8,11 @@
  *   node e2e/runner.mjs --list
  *
  * 环境变量:
- *   E2E_BASE_URL  默认 http://127.0.0.1:8080/admin
+ *   E2E_BASE_URL   默认 http://127.0.0.1:8080/admin
  *   E2E_USER / E2E_PASS
- *   CHROMIUM_PATH 可选 headless shell 路径
+ *   CHROMIUM_PATH  可选，浏览器可执行文件路径（缺省交给 playwright-core 的 registry）
+ *   E2E_MIN_CHECKS 反空转下限：实际执行的检查项少于该值即判失败（默认 1）。
+ *                  防止「页面根本没打开、一条 check 都没跑」被当成绿灯。
  */
 import { readdirSync } from 'node:fs'
 import path from 'node:path'
@@ -27,6 +29,8 @@ function parseArgs(argv) {
     if (a === '--list') args.list = true
     else if (a === '--only') args.only = String(argv[++i] || '').split(',').map(s => s.trim()).filter(Boolean)
     else if (a.startsWith('--only=')) args.only = a.slice(7).split(',').map(s => s.trim()).filter(Boolean)
+    else if (a === '--min-checks') args.minChecks = Number(argv[++i] || 0)
+    else if (a.startsWith('--min-checks=')) args.minChecks = Number(a.slice(13) || 0)
     else if (!a.startsWith('-')) args.specs.push(a)
   }
   return args
@@ -113,6 +117,18 @@ try {
 
 const failed = allResults.filter(r => !r.ok)
 const passed = allResults.length - failed.length
+
+// 反空转（#948）：0 个检查项时不能算通过 —— 连不上后端、选择器全没匹配上、
+// spec 被中途 abort 都会让结果集为空，那正是最需要报红的时候。
+const minChecks = Number(process.env.E2E_MIN_CHECKS || args.minChecks || 1)
+if (allResults.length < minChecks) {
+  console.error(
+    `\nE2E GUARD: 只执行了 ${allResults.length} 个检查项，低于下限 ${minChecks} —— 判定失败。` +
+      '常见原因：后端没起来 / 登录失败 / spec 全部中途退出。'
+  )
+  process.exit(1)
+}
+
 console.log(`\n${'='.repeat(48)}`)
 console.log(`E2E SUMMARY: ${passed}/${allResults.length} PASS`)
 if (failed.length) {
