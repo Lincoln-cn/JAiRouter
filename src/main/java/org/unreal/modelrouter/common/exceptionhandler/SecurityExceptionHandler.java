@@ -76,7 +76,7 @@ public class SecurityExceptionHandler {
                 .error(ex.getHttpStatus().getReasonPhrase())
                 .message(ex.getMessage())
                 .errorCode(ex.getErrorCode())
-                .path(getCurrentPath())
+                .path(getCurrentPath(exchange))
                 .requestId(resolveRequestId(exchange))
                 .build();
 
@@ -107,7 +107,7 @@ public class SecurityExceptionHandler {
                 .error(ex.getHttpStatus().getReasonPhrase())
                 .message(ex.getMessage())
                 .errorCode(ex.getErrorCode())
-                .path(getCurrentPath())
+                .path(getCurrentPath(exchange))
                 .requestId(resolveRequestId(exchange))
                 .build();
 
@@ -139,7 +139,7 @@ public class SecurityExceptionHandler {
                 .error(ex.getHttpStatus().getReasonPhrase())
                 .message(SANITIZATION_ERROR_MESSAGE)  // 不暴露具体的脱敏错误信息
                 .errorCode(ex.getErrorCode())
-                .path(getCurrentPath())
+                .path(getCurrentPath(exchange))
                 .requestId(resolveRequestId(exchange))
                 .build();
 
@@ -170,7 +170,7 @@ public class SecurityExceptionHandler {
                 .error(ex.getHttpStatus().getReasonPhrase())
                 .message(ex.getMessage())
                 .errorCode(ex.getErrorCode())
-                .path(getCurrentPath())
+                .path(getCurrentPath(exchange))
                 .requestId(resolveRequestId(exchange))
                 .build();
 
@@ -238,14 +238,19 @@ public class SecurityExceptionHandler {
     }
 
     /**
-     * 获取当前请求路径
-     * 在WebFlux环境中，可以通过ServerRequest获取路径信息
+     * 获取当前请求路径（issue #930）。
      *
-     * @return 路径（既有实现返回固定值，非 /v1 错误体形状保持不变）
+     * <p>此前这里返回固定的 {@code "/api/security"}，与真实请求无关：客户端拿到的 {@code path} 恒等于一个
+     * 不存在的路径，排障时无法据此定位是哪个入口触发。现在改为读 {@link ServerWebExchange} 上的真实路径；
+     * 没有 exchange（例如单元测试直接调用）时返回 {@code null}，保持「字段可缺失」的既有语义，不编造路径。</p>
+     *
+     * @param exchange 当前请求上下文，可为 {@code null}
+     * @return 真实请求路径；无上下文时为 {@code null}
      */
-    private String getCurrentPath() {
-        // 在实际的WebFlux环境中，可以通过ServerRequest获取路径
-        // 这里先返回一个默认值，后续可以通过RequestContextHolder或其他方式获取
-        return "/api/security";
+    private String getCurrentPath(final ServerWebExchange exchange) {
+        if (exchange == null) {
+            return null;
+        }
+        return exchange.getRequest().getPath().value();
     }
 }

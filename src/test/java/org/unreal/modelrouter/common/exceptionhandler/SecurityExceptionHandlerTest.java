@@ -592,8 +592,22 @@ class SecurityExceptionHandlerTest {
             assertEquals("Unauthorized", body.getError());
             assertEquals("Invalid credentials", body.getMessage());
             assertEquals("AUTH_001", body.getErrorCode());
-            assertEquals("/api/security", body.getPath(), "既有 path 字段语义不变");
+            assertEquals("/api/v1/chat/completions", body.getPath(),
+                    "path 应是真实请求路径（#930），不再是固定的 /api/security");
             assertNotNull(body.getTimestamp());
+        }
+
+        @Test
+        @DisplayName("#930：不同入口触发同类异常时，path 反映各自的真实请求路径")
+        void pathShouldReflectActualRequestPath() {
+            for (final String path : new String[] {"/api/v1/models", "/api/v1/chat/completions", "/api/auth/login"}) {
+                final AuthenticationException ex = new AuthenticationException("Invalid credentials", "AUTH_001");
+
+                final SecurityErrorResponse body =
+                        legacyBody(handler.handleAuthenticationException(ex, exchangeOf(path)));
+
+                assertEquals(path, body.getPath(), "path 必须等于实际请求路径: " + path);
+            }
         }
 
         @Test
