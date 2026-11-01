@@ -61,18 +61,21 @@ export DATABASE_PASSWORD="<强密码>"
 
 ### 连接池
 
-当前**未显式配置连接池**，使用的是 Spring Boot 的 `HikariCP` 默认值（最大 10 个连接）。多副本部署前请按实例数折算总连接数，避免超过 PostgreSQL 的 `max_connections`：
+连接池的大小现在**显式写在 `src/main/resources/config/config-service/core.yml`**（10，与 Hikari 默认值相同）。写出来的意义有两个：它出现在配置面里，运维能看见；它可被环境变量 `SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE` 覆盖，不再是一次性的隐形默认值。
 
 ```yaml
 spring:
   datasource:
     hikari:
-      maximum-pool-size: 10      # 示例值；按 实例数 × 该值 < max_connections 估算
+      maximum-pool-size: 10       # 多副本时：实例数 × 该值 < PostgreSQL max_connections
+      minimum-idle: 2
       connection-timeout: 30000
+      max-lifetime: 1800000
 ```
 
-> 连接池参数的实际取值**未在负载下验证**，请按自己的容量规划调整。
+**实测口径（2026-11-01，H2 文件库 + mock 上游；方法见「性能故障排查」）**：把池从 10 调到 32，吞吐没有上升（384.7 → 368.6 RPS），p99 反而从 1.2 s 涨到 2.6 s。池 10 时 `hikaricp_connections_pending` 峰值到过 72，说明写库并发确实高，但**加池并不等于变快** —— 排队的根因在单请求的固定开销（每请求 3 次写库 + 序列化 + 指标记录），不在连接数。
 
+⇒ 建议：先按 PostgreSQL 的 `max_connections` 折算上限（多副本时 `实例数 × maximum-pool-size` 要给运维连接留余量），再到真实库上复测。**这组数字尚未在 PostgreSQL 上复测**，本仓的压测基线跑在 H2 上。
 ## 跨库注意事项
 
 以下两点是 H2 与 PostgreSQL 的真实差异，均由自动化测试在真实 PG 上验证：

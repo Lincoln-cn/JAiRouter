@@ -662,17 +662,28 @@ node scripts/perf/loadtest.mjs --url http://127.0.0.1:8080/v1/chat/completions \
 
 Environment: 8 logical cores / 16 GB / i7-8550U (laptop), Windows, JDK 17, H2 file database, dev profile, mock upstream at 20 ms, load generator running **on the same machine** as the gateway.
 
+> ⚠️ **Turn off the business DEBUG logging before measuring.** `application-dev.yml` sets `org.unreal.modelrouter` to `DEBUG`, which prints dozens of lines per request (about 200 lines per request in practice) and cuts throughput to roughly a third. Switch it at runtime through Actuator:
+>
+> ```bash
+> curl -X POST http://127.0.0.1:8080/actuator/loggers/org.unreal.modelrouter \
+>   -H 'Content-Type: application/json' -H "X-Jairouter-Token: $TOKEN" \
+>   -d '{"configuredLevel":"WARN"}'
+> ```
+>
+> The numbers below **only hold with DEBUG off**; a baseline taken with DEBUG on (111 RPS at concurrency 20) is an artefact of log I/O and must not be compared against capacity.
+
 | Concurrency | RPS | p50 | p95 | p99 | Error rate |
 | --- | --- | --- | --- | --- | --- |
-| 10 | 127.0 | 75 ms | 116 ms | 144 ms | 0% |
-| 20 | 111.4 | 171 ms | 259 ms | 324 ms | 0% |
-| 50 | 97.2 | 493 ms | 756 ms | 912 ms | 0% |
-| 100 | 101.5 | 931 ms | 1508 ms | 1792 ms | 0% |
+| 20 | 370.3 | 43 ms | 109 ms | 286 ms | 0% |
+| 50 | 388.5 | 64 ms | 450 ms | 837 ms | 0% |
+| 100 | 368.6 | 120 ms | 867 ms | 2552 ms | 0% |
 
 ### Reading the numbers
 
-- Throughput saturates around **~100 RPS**; adding concurrency only adds queueing (p50 rises from 75 ms to 931 ms) instead of throughput, which points at a **serialized bottleneck** rather than a saturated CPU.
-- Next step: read `hikaricp_connections_pending` (database pool queueing) plus `jairouter_outbound_requests_inflight` and `reactor_netty_connection_provider_pending_connections` (outbound pool queueing) from `/actuator/prometheus`, to tell the database pool apart from the event loop.
+- The real saturation point is **around 370-390 RPS** on this machine, with the load generator co-located. Going from concurrency 20 to 100 leaves throughput flat while p50 rises from 43 ms to 120 ms and p99 to 2.5 s, i.e. more queueing rather than more throughput.
+- **The database pool is not this bottleneck**: raising `hikaricp.maximum-pool-size` from the default 10 to 32 did not raise throughput (384.7 to 368.6 RPS) and made p99 worse (1.2 s to 2.6 s). At pool size 10, `hikaricp_connections_pending` peaked at 72, so write concurrency is genuinely high, but a bigger pool only moves the queue.
+- The event loop is not blocked: three thread dumps taken during the run show every `reactor-http-nio-*` thread parked in `Selector.select` and every `boundedElastic-*` thread parked, so the bottleneck is not synchronous calls on the event loop.
+- The per-request fixed cost (JSON serialization, metric recording, three database writes per request: token usage, call history, quota ledger) is the most suspicious part; narrowing it further needs CPU sampling while `process_cpu_usage` sits at 5-6 cores.
 - These numbers **do not represent production capacity**: a mock upstream, a co-located load generator and the H2 file database all shift the result away from a real deployment.
 
 ### Known limitations
