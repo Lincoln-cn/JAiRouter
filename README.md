@@ -46,7 +46,7 @@ artifact:        model-router            # Maven artifactId
 project_version: 3.5.8                   # pom.xml
 latest_release:  v3.5.8 (2026-10-31)
 stack:
-  backend:  Java 17 + Spring Boot 3.5.5 (WebFlux / reactive)
+  backend:  Java 17 + Spring Boot 3.5.16 (WebFlux / reactive)
   frontend: Vue 3 + TypeScript + Vite, bilingual zh-CN / en-US
   build:    Maven wrapper — ./mvnw (Unix) · .\mvnw.cmd (Windows)
 runtime:

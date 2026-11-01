@@ -297,9 +297,12 @@ Merge only when **every** row of `gh pr checks <n>` is `pass` or `skipping` — 
 |---|---|---|
 | `docs/**`, `*.md`, `.cspell.json` | `拼写检查`, `文档质量检查`, `文档代码同步检查`, … | `test` (java-tests.yml filters on code paths) |
 | `src/**` (Java), `pom.xml`, resources | `test`, `qodana`, `smoke`, … | `拼写检查`, `文档质量检查` (docs-quality.yml filters on docs paths) |
+| `pom.xml`, `scripts/audit/**` | `OSV 漏洞扫描 + SBOM` (dependency-scan.yml) | everything else (it filters on dependency paths) |
 | `.gitignore` and other unmatched paths | CodeQL / Analyze only | both of the above |
 
 So a docs-only PR with no `test` row is expected, and a code-only PR with no `拼写检查` row is expected.
+
+**Dependency gate semantics**: `OSV 漏洞扫描 + SBOM` looks up the runtime dependencies exported by `mvn dependency:list` against OSV and **fails at high and above**; only entries listed in `scripts/audit/osv-baseline.json` **with a written reason** are downgraded to a record (for example "the fix only lands in the next major line and this code path is unreachable"). If you want to add a baseline entry, explain first why upgrading cannot solve it.
 
 **Trap: bot commits can hide gates.** When a bot pushes to your branch (for example
 `Auto-update sitemap.xml`), the runs it triggers can stop at `action_required` — 0s, no jobs —
