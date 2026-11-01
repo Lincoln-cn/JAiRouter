@@ -42,6 +42,9 @@ public class MultiReplicaSharedStateChecker implements ApplicationListener<Appli
     /** 副本数配置键。 */
     public static final String REPLICAS_KEY = "jairouter.cluster.replicas";
 
+    /** JWT 签名密钥环境变量名；未设置时各副本各自随机生成，令牌无法跨副本验证（#919）。 */
+    static final String JWT_SECRET_ENV = "JWT_SECRET";
+
     private final Environment environment;
 
     /** 最近一次自检结果；未执行检查时为空评估。 */
@@ -76,6 +79,7 @@ public class MultiReplicaSharedStateChecker implements ApplicationListener<Appli
 
         int replicas = MultiReplicaSharedStateGate.parseReplicas(environment.getProperty(REPLICAS_KEY));
         boolean multiReplica = MultiReplicaSharedStateGate.detectMultiReplica(replicas, System.getenv());
+        warnIfJwtSecretNotShared(multiReplica, System.getenv(JWT_SECRET_ENV));
         assessment = MultiReplicaSharedStateGate.assess(multiReplica, readSwitches());
 
         if (!assessment.needsAttention()) {
@@ -91,6 +95,26 @@ public class MultiReplicaSharedStateChecker implements ApplicationListener<Appli
         MultiReplicaSharedStateGate.enforce(mode, assessment);
         log.warn("{}{}", MultiReplicaSharedStateGate.describe(assessment),
                 failHealth ? "（按配置，/actuator/health 将一并报告 DOWN）" : "");
+    }
+
+    /**
+     * #919：多副本下 JWT 签名密钥必须是同一个。
+     *
+     * <p>{@code config/auth/jwt.yml} 里 {@code jairouter.security.jwt.secret} 的默认值是
+     * {@code ${JWT_SECRET:${random.uuid}}}：不设环境变量时每个副本各自生成一个随机 UUID，
+     * 于是副本 A 签发的令牌在副本 B 上验签失败，表现为间歇性 401（约 {@code (n-1)/n} 的请求）。
+     * 生产 profile 有启动门闩强制要求 JWT_SECRET，dev / staging 没有，故这里补一条告警。</p>
+     */
+    void warnIfJwtSecretNotShared(final boolean multiReplica, final String envSecret) {
+        if (!multiReplica) {
+            return;
+        }
+        if (envSecret != null && !envSecret.isBlank()) {
+            return;
+        }
+        log.warn("检测到多副本部署，但未设置 JWT_SECRET：各副本会各自生成签名密钥，"
+                + "在副本 A 签发的令牌到副本 B 会被判为无效（表现为间歇性 401）。"
+                + "请为所有副本配置同一个 JWT_SECRET。");
     }
 
     /**
