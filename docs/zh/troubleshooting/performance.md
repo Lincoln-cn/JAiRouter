@@ -55,6 +55,30 @@ curl -s http://localhost:8080/actuator/metrics/jvm.gc.pause | jq
 curl -s http://localhost:8080/actuator/metrics/system.cpu.usage | jq
 ```
 
+## 容量饱和面指标
+
+排障时最先要回答的是「慢在哪一层」。下面这些指标就是为了把这个问题从猜变成看 ——
+它们都在 `/actuator/prometheus` 里直接可读，不需要额外配置。
+
+| 指标 | 含义 | 饱和时的表现 |
+| --- | --- | --- |
+| `jairouter.outbound.requests.inflight` | 已发出、尚未收到响应头的出站请求数 | 持续高位 ⇒ 上游慢或连接池不够 |
+| `jairouter.outbound.request.duration` | 出站到响应头到达的耗时 | p99 上升但 inflight 不高 ⇒ 上游抖动 |
+| `reactor.netty.connection.provider.pending.connections{name="jairouter-outbound"}` | 等待出站连接的请求数 | 大于 0 且持续增长 ⇒ 连接池排队 |
+| `reactor.netty.connection.provider.active.connections{name="jairouter-outbound"}` | 已占用的出站连接数 | 贴着 `max-connections` ⇒ 到上限了 |
+| `hikaricp_connections_pending` | 等待数据库连接的线程数 | 大于 0 ⇒ 数据库池排队（见 [数据库部署](../deployment/database.md)） |
+| `jairouter.sse.active.connections{endpoint}` | 当前打开的 SSE 连接数 | 逼近运维上限 ⇒ 长连接堆积 |
+| `jairouter.cache.response.size` | 响应缓存条目数（估算值） | 贴着 `maxSize` ⇒ 命中率开始掉 |
+
+判读顺序建议：先看 `hikaricp_connections_pending` 与
+`reactor.netty.connection.provider.pending.connections` 这两个「排队」指标 ——
+它们都不为 0 才说明瓶颈在池；都为 0 而 `inflight` 高，瓶颈在上游；
+三者都不高但延迟涨，去查事件循环与 GC。
+
+`jairouter.sse.active.connections` 的 `endpoint` 标签取值：
+`health-status`（健康巡检）、`v1-chat-completions`、`chat-completions`（legacy 面）、
+`anthropic-messages`。
+
 ## 性能问题分类
 
 ### 1. 响应时间过长

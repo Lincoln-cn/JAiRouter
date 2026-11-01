@@ -21,7 +21,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,6 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.common.dto.ChatDTO;
 import org.unreal.modelrouter.common.exceptionhandler.V1ErrorBodyMapper;
+import org.unreal.modelrouter.monitor.monitoring.metrics.SseConnectionMetrics;
 import org.unreal.modelrouter.router.anthropic.AnthropicCountTokensResponse;
 import org.unreal.modelrouter.router.anthropic.AnthropicMessagesRequest;
 import org.unreal.modelrouter.router.anthropic.AnthropicMessagesResponse;
@@ -124,6 +127,10 @@ public class AnthropicMessagesController {
     private final AnthropicRequestTranslator requestTranslator;
     private final AnthropicResponseTranslator responseTranslator;
     private final AnthropicStreamingTranslator streamingTranslator;
+
+    /** #947：流式端点连接计数（可选注入；未装配时流语义完全不变） */
+    @Autowired(required = false)
+    private SseConnectionMetrics sseConnectionMetrics;
 
     /**
      * 构造函数.
@@ -270,7 +277,7 @@ public class AnthropicMessagesController {
         }
         return ResponseEntity.status(downstream.getStatusCode())
                 .contentType(MediaType.TEXT_EVENT_STREAM)
-                .body(streamingTranslator.toEventStream(downstreamStream, requestedModel, inputTokens));
+                .body(trackStream(streamingTranslator.toEventStream(downstreamStream, requestedModel, inputTokens)));
     }
 
     /**
@@ -488,6 +495,18 @@ public class AnthropicMessagesController {
      * @param message 原消息
      * @return 长度不超过 {@link #MAX_ERROR_MESSAGE_LENGTH}（含省略号）的消息
      */
+    /**
+     * #947：给流式响应包一层活跃连接计数（未装配指标时原样返回）。
+     *
+     * @param stream 翻译后的 SSE 流
+     * @return 计数包装后的流
+     */
+    private Flux<ServerSentEvent<String>> trackStream(final Flux<ServerSentEvent<String>> stream) {
+        return sseConnectionMetrics == null
+                ? stream
+                : sseConnectionMetrics.track(stream, "anthropic-messages");
+    }
+
     private static String truncateMessage(final String message) {
         final String trimmed = message.trim();
         return trimmed.length() <= MAX_ERROR_MESSAGE_LENGTH

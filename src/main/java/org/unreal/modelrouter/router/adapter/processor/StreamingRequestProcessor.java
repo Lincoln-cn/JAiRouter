@@ -25,6 +25,7 @@ import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitor.service.TokenUsageRecorder;
 import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
 import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
+import org.unreal.modelrouter.monitor.monitoring.metrics.SseConnectionMetrics;
 import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
 import org.unreal.modelrouter.router.cache.CachedStreamingResponse;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
@@ -118,6 +119,10 @@ public class StreamingRequestProcessor {
     // #716：流式调用的成败回报口（可选注入；未装配时只记既有 metrics）
     @Autowired(required = false)
     private AdapterMetricsRecorder adapterMetricsRecorder;
+
+    // #947：流式端点连接计数（可选注入；未装配时流语义完全不变）
+    @Autowired(required = false)
+    private SseConnectionMetrics sseConnectionMetrics;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -517,7 +522,7 @@ public class StreamingRequestProcessor {
 
             return Mono.just(ResponseEntity.ok()
                     .contentType(MediaType.TEXT_EVENT_STREAM)
-                    .body(v1Stream));
+                    .body(trackStream(v1Stream, "v1-chat-completions")));
         }
 
         // legacy /api/** 面（与 Anthropic 面之外的其余路径）：保持既有语义 —— 200 + 流，异常在流内终止
@@ -538,7 +543,21 @@ public class StreamingRequestProcessor {
 
         return Mono.just(ResponseEntity.ok()
                 .contentType(MediaType.TEXT_EVENT_STREAM)
-                .body(legacyStream));
+                .body(trackStream(legacyStream, "chat-completions")));
+    }
+
+    /**
+     * #947：给流式端点包一层活跃连接计数。
+     *
+     * <p>指标未装配时原样返回 —— 计数是观测能力，不能成为流式链路的必要条件。</p>
+     *
+     * @param stream   原始事件流
+     * @param endpoint 端点标识（作为 gauge 标签）
+     * @return 计数包装后的事件流
+     */
+    Flux<ServerSentEvent<String>> trackStream(final Flux<ServerSentEvent<String>> stream,
+                                                      final String endpoint) {
+        return sseConnectionMetrics == null ? stream : sseConnectionMetrics.track(stream, endpoint);
     }
 
     /**

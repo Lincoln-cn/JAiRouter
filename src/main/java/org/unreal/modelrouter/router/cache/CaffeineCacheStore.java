@@ -3,8 +3,11 @@ package org.unreal.modelrouter.router.cache;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.core.ResponseCacheProperties;
 
@@ -39,7 +42,14 @@ public final class CaffeineCacheStore implements CacheStore {
 
     private static final Logger logger = LoggerFactory.getLogger(CaffeineCacheStore.class);
 
+    /** 指标名（#947）：当前缓存条目数的估算值，用于容量规划与命中面排查 */
+    static final String SIZE_METRIC = "jairouter.cache.response.size";
+
     private final Cache<String, CacheEntry> cache;
+
+    /** 指标注册表（可选；单元测试直接构造实例时为空） */
+    @Autowired(required = false)
+    private MeterRegistry meterRegistry;
 
     public CaffeineCacheStore(final ResponseCacheProperties properties) {
         this.cache = Caffeine.newBuilder()
@@ -66,6 +76,25 @@ public final class CaffeineCacheStore implements CacheStore {
                 })
                 .build();
         logger.info("CaffeineCacheStore initialized: maxSize={}", properties.getMaxSize());
+    }
+
+    /**
+     * #947：把缓存条目数注册成 gauge。
+     *
+     * <p>用 {@code estimatedSize()} 而不是 {@link #size()}：后者为求精确会先
+     * {@code cleanUp()} 再全量迭代（O(n) 且有副作用），放进 gauge 的取值回调里
+     * 等于让每次抓指标都跑一轮清理。容量规划看的是量级，估算值足够。</p>
+     *
+     * <p>由 Spring 在依赖注入完成后调用；未装配 {@code MeterRegistry} 时不做任何事。</p>
+     */
+    @jakarta.annotation.PostConstruct
+    void registerSizeMetric() {
+        if (meterRegistry == null) {
+            return;
+        }
+        Gauge.builder(SIZE_METRIC, cache, Cache::estimatedSize)
+                .description("响应缓存中的条目数（估算值）")
+                .register(meterRegistry);
     }
 
     @Override
