@@ -12,14 +12,6 @@
     {
       "id": "GHSA-j9f9-w8pj-32f8",
       "reason": "同上：修复只在 7.0.9；该 advisory 是「渲染片段时 SSE 流损坏」，本仓不渲染视图（无 Thymeleaf/模板），SSE 是原样透传上游字节 ⇒ 不可达。"
-    },
-    {
-      "id": "GHSA-ccrj-gw8r-854m",
-      "reason": "opentelemetry-api 1.35.0 是 pom 里显式 pin 的版本，升级到 1.62.0 需同步升级 opentelemetry-instrumentation 1.32.0（两者 API 不兼容），属单独一次升级任务；该条为 MODERATE（W3C Baggage 无界内存），仅在启用 baggage 传播时可达，本仓未开启。"
-    },
-    {
-      "id": "GHSA-rcgg-9c38-7xpx",
-      "reason": "同 opentelemetry-api 1.35.0：MODERATE，且本仓未启用 W3C Baggage 传播路径。"
     }
   ]
 }
