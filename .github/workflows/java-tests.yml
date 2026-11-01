@@ -71,6 +71,12 @@ jobs:
       - name: 运行单元与集成测试
         run: mvn -B test
 
+      # #949：JaCoCo 规则此前只写在 pom 里、从未执行（check 默认绑 verify，而本 job 只跑 test）。
+      # 规则现在放插件级 configuration，这里显式调用 goal —— 不要改成 `mvn verify`，
+      # 那会把打包等不相关阶段一起拖进来。
+      - name: 覆盖率门闩
+        run: mvn -B jacoco:check
+
       - name: 校验门控测试未被跳过
         if: always()
         run: |
@@ -103,5 +109,13 @@ jobs:
         with:
           name: surefire-reports
           path: target/surefire-reports/
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: 上传覆盖率报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
           retention-days: 7
           if-no-files-found: ignore
