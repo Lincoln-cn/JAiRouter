@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.common.exception.DownstreamServiceException;
@@ -159,9 +160,44 @@ public final class ErrorResponseBuilder {
             return (ResponseStatusException) throwable;
         }
 
+        // #924：上游超时与连接失败各有明确语义，不再落进兜底 500
+        if (isUpstreamTimeout(throwable)) {
+            return new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, UPSTREAM_TIMEOUT_MESSAGE, throwable);
+        }
+
+        final WebClientRequestException requestError = findCause(throwable, WebClientRequestException.class);
+        if (requestError != null) {
+            return new ResponseStatusException(HttpStatus.BAD_GATEWAY, UPSTREAM_CONNECT_MESSAGE, throwable);
+        }
+
         // 默认转换为 500
         return new ResponseStatusException(
                 HttpStatus.INTERNAL_SERVER_ERROR, throwable.getMessage(), throwable);
+    }
+
+    /**
+     * 上游超时 / 连接失败的两句客户端文案（#924）.
+     *
+     * <p>此前这两类传输层异常落到兜底分支，客户端拿到 500 与 Netty 原文
+     * （如 {@code Connection prematurely closed BEFORE response}）；网关无法区分
+     * 「上游超时」（504）、「上游连不上」（502）与「网关自身出错」（500），
+     * OpenAI SDK 之类的重试中间件也会把 500 当成网关 bug。</p>
+     */
+    private static final String UPSTREAM_TIMEOUT_MESSAGE = "下游服务响应超时";
+    private static final String UPSTREAM_CONNECT_MESSAGE = "下游服务连接失败";
+
+    /**
+     * 是否为上游超时（整体超时或传输层读超时）.
+     *
+     * <p>同时认 JDK 的 {@link java.util.concurrent.TimeoutException} 与 Reactor Netty 的
+     * {@code io.netty.handler.timeout.TimeoutException}（{@code ReadTimeoutException} 属于后者）。</p>
+     *
+     * @param throwable 异常
+     * @return 命中返回 {@code true}
+     */
+    private static boolean isUpstreamTimeout(final Throwable throwable) {
+        return findCause(throwable, java.util.concurrent.TimeoutException.class) != null
+                || findCause(throwable, io.netty.handler.timeout.TimeoutException.class) != null;
     }
 
     /**
@@ -202,6 +238,13 @@ public final class ErrorResponseBuilder {
         if (throwable instanceof ResponseStatusException) {
             HttpStatusCode statusCode = ((ResponseStatusException) throwable).getStatusCode();
             return HttpStatus.valueOf(statusCode.value());
+        }
+        // #924：与 convertToResponseStatusException 保持一致，避免「错误体 504、指标记 500」
+        if (isUpstreamTimeout(throwable)) {
+            return HttpStatus.GATEWAY_TIMEOUT;
+        }
+        if (findCause(throwable, WebClientRequestException.class) != null) {
+            return HttpStatus.BAD_GATEWAY;
         }
         return HttpStatus.INTERNAL_SERVER_ERROR;
     }
