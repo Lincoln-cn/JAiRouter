@@ -191,6 +191,24 @@ class UniversalControllerIntegrationTest {
 }
 ```
 
+#### 控制台 E2E
+
+`frontend/e2e/` 下有一套自研 E2E（16 个 spec + harness + runner），CI 里只跑稳定子集（`smoke` + `overview`），job 名 `e2e-smoke`，定义在 `.github/workflows/e2e-smoke.yml`。它需要真实后端与浏览器，比单测慢得多，所以不放进 `前端单元测试`。
+
+本地复现同一套：
+
+```bash
+cd frontend
+npx playwright-core install chromium        # 只需一次
+E2E_BASE_URL=http://127.0.0.1:8080/admin \
+  E2E_PASS=<dev 环境 admin 口令> node e2e/runner.mjs --only smoke,overview
+```
+
+两点约定：
+
+- `E2E_MIN_CHECKS` 是反空转下限（CI 设 200，实测 251 项）。实际执行的检查项低于它即判失败 —— 后端没起来、登录失败、spec 全线中途退出时结果集为空，那种情况必须报红，不能当成绿。
+- `02-layout-nav.mjs` 里硬编码了菜单组数与菜单项总数（当前 7 组 29 项）。增删菜单时这条断言会红，改断言的同时记得更新注释里的数字。
+
 ### 4. 提交规范
 
 #### Commit Message 格式

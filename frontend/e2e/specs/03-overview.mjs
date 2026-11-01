@@ -35,7 +35,7 @@ export default {
 
     const ruleJump = page
       .locator('.gov-section')
-      .filter({ has: page.locator('.gov-label', { hasText: /规则/ }) })
+      .filter({ has: page.locator('.gov-label', { hasText: /规则|Rule/i }) })
       .locator('.gov-jump')
       .first()
     if ((await ruleJump.count()) > 0) {
@@ -50,7 +50,7 @@ export default {
 
     const rlJump = page
       .locator('.gov-section')
-      .filter({ has: page.locator('.gov-label', { hasText: /限流/ }) })
+      .filter({ has: page.locator('.gov-label', { hasText: /限流|Rate/i }) })
       .locator('.gov-jump')
       .first()
     if ((await rlJump.count()) > 0) {
@@ -64,7 +64,7 @@ export default {
 
     const cbJump = page
       .locator('.gov-section')
-      .filter({ has: page.locator('.gov-label', { hasText: /熔断/ }) })
+      .filter({ has: page.locator('.gov-label', { hasText: /熔断|Circuit/i }) })
       .locator('.gov-jump')
       .first()
     if ((await cbJump.count()) > 0) {
@@ -78,7 +78,7 @@ export default {
 
     const lbJump = page
       .locator('.gov-section')
-      .filter({ has: page.locator('.gov-label', { hasText: /负载/ }) })
+      .filter({ has: page.locator('.gov-label', { hasText: /负载|Load/i }) })
       .locator('.gov-jump')
       .first()
     if ((await lbJump.count()) > 0) {
@@ -90,7 +90,7 @@ export default {
       await page.waitForTimeout(800)
       const retry = page
         .locator('.gov-section')
-        .filter({ has: page.locator('.gov-label', { hasText: /负载/ }) })
+        .filter({ has: page.locator('.gov-label', { hasText: /负载|Load/i }) })
         .locator('.gov-jump')
         .first()
       if ((await retry.count()) > 0) {
