@@ -352,7 +352,7 @@ stringData:                    # written in plaintext; the API server encodes it
 
 > The equivalent one-liner is the `kubectl create secret generic jairouter-secrets ... --from-literal=...`
 > call from the quick start; both produce the same object, pick one.
-
+>
 > Later sections reuse the same name (`jairouter-secrets`). The name is free, but the
 > **keys must be environment-variable names** and must match the `secretKeyRef` keys in
 > that Deployment one-for-one.
