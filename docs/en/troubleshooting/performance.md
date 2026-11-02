@@ -87,6 +87,43 @@ The `endpoint` label of `jairouter.sse.active.connections` takes:
 
 `endpoint` label values for `jairouter.ws.active.sessions`: `circuit-breaker-monitor`, `routing-monitor`.
 
+## Measured numbers when the database is PostgreSQL (single-machine Docker)
+
+The baseline above is an H2 file database. Numbers change noticeably on PostgreSQL; this section records why, so nobody plans a PostgreSQL deployment from the H2 figures.
+
+### How it was measured
+
+- PostgreSQL 16.15 in Docker on the same machine (`-p 55432:5432`), gateway and load generator on that machine too.
+- The three rate-limit layers must be turned off first: **the switches are persisted into the stored configuration, after which environment variables no longer override them** — edit the three `enabled: false` sites in the YAML and start against a brand-new database name.
+- The DEBUG logging of the dev profile has to be switched to WARN as well, otherwise the measurement reflects logging rather than capacity.
+- 8 logical cores / 16 GB / i7-8550U / Windows / JDK 17, mock upstream pinned at 20 ms.
+
+### Results
+
+Pool of 10 (default):
+
+| Concurrency | RPS | p50 | p95 | p99 | Errors |
+| --- | --- | --- | --- | --- | --- |
+| 20 | 61.8 | 247.6 ms | 873.4 ms | 1222.6 ms | 0% |
+| 50 | 94.4 | 469.9 ms | 1157.7 ms | 1571.3 ms | 0% |
+| 100 | 95.7 | 967.0 ms | 1898.6 ms | 2411.3 ms | 0% |
+
+Pool of 32 (`hikari.maximum-pool-size` raised temporarily):
+
+| Concurrency | RPS | p50 | p95 | p99 | Errors |
+| --- | --- | --- | --- | --- | --- |
+| 20 | 79.0 | 161.3 ms | 811.4 ms | 1113.5 ms | 0% |
+| 50 | 86.5 | 501.1 ms | 1335.4 ms | 1877.2 ms | 0% |
+| 100 | 93.0 | 979.8 ms | 1975.7 ms | 2518.1 ms | 0% |
+
+For comparison, H2 gives 370.3 / 388.5 / 368.6 RPS at concurrency 20 / 50 / 100.
+
+### Three conclusions
+
+1. **The connection pool is still not the bottleneck.** Going from 10 to 32 leaves every tier inside 60-96 RPS, and p99 gets worse. The metrics do show `hikaricp_connections_active` pinned and `hikaricp_connections_pending` peaking at 77, but a bigger pool only moves the queue somewhere else.
+2. **The hot spot is the database container.** During the run the JVM reported `process_cpu_usage` of 0.18 cores while the PostgreSQL container sat at 127% CPU. Every request writes token usage, call history and quota ledger rows, and those writes saturate first on this machine's Docker.
+3. **These numbers do not represent production PostgreSQL.** Load generator, gateway and the containerized database share the same 8 cores, so CPU is a common bottleneck for all three. They only bound what this deployment shape can do. A baseline usable for capacity planning needs the load generator and the database on separate machines.
+
 ## Performance Issue Classification
 
 ### 1. Slow Response Time
