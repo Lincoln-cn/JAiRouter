@@ -3,7 +3,9 @@ package org.unreal.modelrouter.router.loadbalancer.monitor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.monitor.monitoring.metrics.WebSocketSessionMetrics;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketSession;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
@@ -36,6 +38,10 @@ public class RoutingMonitorWebSocketHandler implements WebSocketHandler {
     private final RoutingMonitorService monitorService;
     private final ObjectMapper objectMapper;
     private final ClusterEventBus clusterEventBus;
+
+    /** #947：WS 活跃会话计数；为 null 时退化为不计数（测试装配） */
+    @Autowired(required = false)
+    private WebSocketSessionMetrics webSocketSessionMetrics;
 
     /**
      * 事件广播器 - 有界多播缓冲（256），溢出由 emit 失败路径丢弃，避免无界占内存
@@ -114,7 +120,7 @@ public class RoutingMonitorWebSocketHandler implements WebSocketHandler {
                 Flux.merge(heartbeat, eventStream)
         );
 
-        return adminCaller.flatMap(admin -> session.send(
+        final Mono<Void> sessionStream = adminCaller.flatMap(admin -> session.send(
                 output.map(session::textMessage)
         ).and(
                 session.receive()
@@ -126,6 +132,10 @@ public class RoutingMonitorWebSocketHandler implements WebSocketHandler {
                         .doOnError(e -> log.warn("WebSocket error: {}", e.getMessage()))
                         .doOnTerminate(() -> log.info("WebSocket client disconnected: {}", session.getId()))
         ));
+
+        return webSocketSessionMetrics == null
+                ? sessionStream
+                : webSocketSessionMetrics.track(sessionStream, "routing-monitor");
     }
 
     /**
