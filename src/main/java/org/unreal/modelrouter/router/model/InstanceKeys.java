@@ -58,4 +58,59 @@ public final class InstanceKeys {
     public static String healthKey(final String serviceType, final ModelRouterProperties.ModelInstance instance) {
         return serviceType + ":" + identifier(instance);
     }
+
+    /**
+     * 实例在指标与日志里的展示标识：{@code name@host}.
+     *
+     * <p>同名实例是「同一模型的多个副本」的正常形态（请求体里的 {@code model} 就是按
+     * {@code name} 匹配），所以单看 {@code name} 无法区分副本。指标面板与日志里
+     * 需要的是一个「人能读、又能区分副本」的标识，因此这里拼成 {@code name@host:port}。
+     *
+     * <p>与 {@link #identifier} 的分工：{@code identifier} 是运行态缓存的键（优先
+     * {@code instanceId}，可能是 UUID，不适合直接进面板）；本方法是给人看的标签。
+     *
+     * @param instance 模型实例（可为 {@code null}）
+     * @return {@code name@host}；只有其一时退化为该部分；都没有时为
+     *         {@link #UNKNOWN_IDENTIFIER}
+     */
+    public static String label(final ModelRouterProperties.ModelInstance instance) {
+        if (instance == null) {
+            return UNKNOWN_IDENTIFIER;
+        }
+        final String name = trimToNull(instance.getName());
+        final String host = hostOf(instance.getBaseUrl());
+        if (name == null && host == null) {
+            return UNKNOWN_IDENTIFIER;
+        }
+        if (host == null) {
+            return name;
+        }
+        if (name == null) {
+            return host;
+        }
+        return name + "@" + host;
+    }
+
+    /** 从 base-url 取 authority（含端口）；解析不了就原样返回，不抛异常。 */
+    private static String hostOf(final String baseUrl) {
+        final String trimmed = trimToNull(baseUrl);
+        if (trimmed == null) {
+            return null;
+        }
+        try {
+            final String authority = java.net.URI.create(trimmed).getAuthority();
+            return authority == null || authority.isBlank() ? trimmed : authority;
+        } catch (IllegalArgumentException ex) {
+            return trimmed;
+        }
+    }
+
+    private static String trimToNull(final String value) {
+        if (value == null) {
+            return null;
+        }
+        final String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
 }
