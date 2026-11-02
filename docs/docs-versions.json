@@ -156,10 +156,10 @@
     },
     "docs/en/configuration/index.md": {
       "FilePath": "docs/en/configuration/index.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-11-01T13:58:16.354705",
-      "ContentHash": "54eebd073c64283d",
-      "GitCommit": "1a6e61ba",
+      "Version": "1.0.8",
+      "LastModified": "2026-11-02T13:55:56.307623",
+      "ContentHash": "7ffaa9bf97e37e4e",
+      "GitCommit": "4c38c641",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1322,10 +1322,10 @@
     },
     "docs/zh/configuration/index.md": {
       "FilePath": "docs/zh/configuration/index.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-11-01T13:58:16.976129",
-      "ContentHash": "4c94e07345829e58",
-      "GitCommit": "1a6e61ba",
+      "Version": "1.0.8",
+      "LastModified": "2026-11-02T13:55:57.064989",
+      "ContentHash": "3de44ceada4745bb",
+      "GitCommit": "4c38c641",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -6592,7 +6592,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-02T12:45:19.116638",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/index.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-02T13:55:56.307634",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/index.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-02T13:55:57.065000",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-02T12:45:19.256931"
+  "last_updated": "2026-11-02T13:55:57.755503"
 }
