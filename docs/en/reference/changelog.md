@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.5.10
-> **Last Updated**: 2026-11-01
+> **Document Version**: 3.6.0
+> **Last Updated**: 2026-11-02
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,50 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+### [3.6.0] - 2026-11-02 - Streaming response guard, remaining capacity metrics, and throughput figures replaced with measurements (#944-#966)
+
+The headline of this release is the **streaming response guard**: until now response sanitization only covered non-streaming paths, so `stream=true` sent sensitive content through untouched. This release also adds the last missing capacity metrics and replaces three throughput figures that had no measurement behind them.
+
+#### New capabilities
+
+* **Streaming response guard (SSE)**: with `stream=true`, every chunk is evaluated before it reaches the adapter transformer, with three possible outcomes: allow, redact, or abort. On redact, the rewritten text continues through the normal transformation; on abort, the stream is closed with a terminal frame and the response is **not written to cache** (otherwise a truncated body would be replayed later). Internal guard failures degrade to allow with a warning — the guard must never become the source of an interruption. Disabled by default.
+
+  ```yaml
+  jairouter:
+    guard:
+      enabled: true
+      redact:
+        patterns:
+          - name: phone
+            regex: '\b1[3-9]\d{9}\b'
+            replacement: '[PHONE]'
+      block:
+        patterns:
+          - name: api-key
+            regex: '(?i)sk-[a-z0-9]{8,}'
+  ```
+
+* **WebSocket active session count**: new `jairouter.ws.active.sessions{endpoint}`, covering the circuit breaker and load balancer monitoring channels.
+
+#### Observability
+
+* Two metric families are now documented: `jairouter.sse.active.connections{endpoint}` and `jairouter.ws.active.sessions{endpoint}`.
+* The docs now state the reading order: check the two queueing metrics first (outbound pool pending, Hikari pending), then the long-lived connection counts.
+
+#### Documentation and figures
+
+* `troubleshooting/performance.md` gains a **streaming** baseline (concurrency 10 / 50 / 100: 111.4 / 599.7 / 465.3 RPS) together with the precondition that all three rate-limit layers and the circuit breaker must be disabled before measuring.
+* Three unsourced throughput figures are replaced: `reference/faq.md` claimed "1000+ RPS, P95 < 100 ms, 1000+ concurrent connections"; `monitoring/performance.md` claimed "950 RPS with monitoring enabled, 5% overhead" and told readers to run a benchmark test class that **does not exist**. Both now point at measured numbers and reproducible commands.
+* Storage examples in `configuration/store-config.md` and `configuration/index.md` use the real `spring.datasource.*` / `spring.datasource.hikari.*` keys (the old examples used removed R2DBC keys and a nonexistent `store.type: file`).
+
+#### Upgrade notes
+
+1. **The guard is disabled by default** — this release does not change the response body of any existing deployment. Validate your rules in staging before enabling.
+2. A new `config/router/guard.yml` is imported through `spring.config.import`; deployments without custom rules need no action.
+3. Aborted streams never populate the response cache — that is an intentional contract, so cached entries can never be truncated bodies.
+4. The guard evaluates chunk by chunk and does not carry state across chunks: a sensitive string split across two chunks will not match. This is a documented boundary; evaluate separately if you need cross-chunk buffering.
+5. Throughput numbers in the docs are now measured values. If earlier capacity planning cited "1000+ RPS", recompute against the new table.
+
 ### [3.5.10] - 2026-11-01 - Measured performance baseline, E2E and coverage gates, OpenTelemetry migration (#940-#959)
 
 The batch after v3.5.9 closes three areas that had never been systematically covered:
