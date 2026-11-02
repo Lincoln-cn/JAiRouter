@@ -73,13 +73,14 @@ that answer is something you read rather than guess — all of them are availabl
 | `jairouter.sse.active.connections{endpoint}` | SSE connections currently open | Approaching your operational ceiling ⇒ long connections piling up |
 | `jairouter.ws.active.sessions{endpoint}` | WebSocket sessions currently open (monitoring push) | Only ever increasing means clients vanished without closing, or the counter is not released |
 | `jairouter.cache.response.size` | Response cache entries (estimated) | At `maxSize` ⇒ hit rate starts to drop |
+| `jairouter.eventloop.delay` | Time from submitting a task to an event loop until that task runs (sampled once a second) | p99 climbs while CPU stays low ⇒ the event loop is blocked by synchronous work or by queuing |
 
 Suggested order: check the two "queuing" metrics first
 (`hikaricp_connections_pending` and
 `reactor.netty.connection.provider.pending.connections`). Only when one of them is
 non-zero is the bottleneck in a pool; if both are zero while `inflight` is high, the
-bottleneck is upstream; if none of the three moves but latency climbs, look at the event
-loop and GC.
+bottleneck is upstream; if none of the three moves but latency climbs, look at the p99 of
+`jairouter.eventloop.delay` and at GC pauses.
 
 The `endpoint` label of `jairouter.sse.active.connections` takes:
 `health-status`, `v1-chat-completions`, `chat-completions` (the legacy face) and
