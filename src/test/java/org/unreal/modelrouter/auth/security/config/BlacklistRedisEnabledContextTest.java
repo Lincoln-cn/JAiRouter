@@ -6,14 +6,14 @@ import org.mockito.Mockito;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.data.jpa.autoconfigure.JpaRepositoriesAutoConfiguration;
-import org.springframework.boot.data.redis.autoconfigure.RedisAutoConfiguration;
-import org.springframework.boot.data.redis.autoconfigure.RedisReactiveAutoConfiguration;
-import org.springframework.boot.data.redis.autoconfigure.RedisRepositoriesAutoConfiguration;
+import org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration;
+import org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration;
+import org.springframework.boot.data.redis.autoconfigure.DataRedisReactiveAutoConfiguration;
+import org.springframework.boot.data.redis.autoconfigure.DataRedisRepositoriesAutoConfiguration;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceTransactionManagerAutoConfiguration;
 import org.springframework.boot.jpa.autoconfigure.HibernateJpaAutoConfiguration;
-import org.springframework.boot.autoconfigure.security.oauth2.resource.reactive.ReactiveOAuth2ResourceServerAutoConfiguration;
+import org.springframework.boot.security.oauth2.server.resource.autoconfigure.reactive.ReactiveOAuth2ResourceServerAutoConfiguration;
 import org.springframework.boot.security.autoconfigure.web.reactive.ReactiveSecurityAutoConfiguration;
 import org.springframework.boot.security.autoconfigure.web.reactive.ReactiveUserDetailsServiceAutoConfiguration;
 import org.springframework.boot.security.autoconfigure.actuate.web.reactive.ReactiveManagementWebSecurityAutoConfiguration;
@@ -105,10 +105,10 @@ class BlacklistRedisEnabledContextTest {
             DataSourceAutoConfiguration.class,
             DataSourceTransactionManagerAutoConfiguration.class,
             HibernateJpaAutoConfiguration.class,
-            JpaRepositoriesAutoConfiguration.class,
-            RedisAutoConfiguration.class,
-            RedisReactiveAutoConfiguration.class,
-            RedisRepositoriesAutoConfiguration.class,
+            DataJpaRepositoriesAutoConfiguration.class,
+            DataRedisAutoConfiguration.class,
+            DataRedisReactiveAutoConfiguration.class,
+            DataRedisRepositoriesAutoConfiguration.class,
             ReactiveSecurityAutoConfiguration.class,
             ReactiveUserDetailsServiceAutoConfiguration.class,
             ReactiveManagementWebSecurityAutoConfiguration.class,
