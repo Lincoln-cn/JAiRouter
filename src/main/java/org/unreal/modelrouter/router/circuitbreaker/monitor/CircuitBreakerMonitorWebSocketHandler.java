@@ -3,7 +3,9 @@ package org.unreal.modelrouter.router.circuitbreaker.monitor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.monitor.monitoring.metrics.WebSocketSessionMetrics;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketSession;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
@@ -35,6 +37,10 @@ public class CircuitBreakerMonitorWebSocketHandler implements WebSocketHandler {
     private final CircuitBreakerMonitorService monitorService;
     private final ObjectMapper objectMapper;
     private final ClusterEventBus clusterEventBus;
+
+    /** #947：WS 活跃会话计数；为 null 时退化为不计数（测试装配） */
+    @Autowired(required = false)
+    private WebSocketSessionMetrics webSocketSessionMetrics;
 
     /** 监控事件：有界多播缓冲（256），溢出由 emit 失败路径丢弃，避免无界内存增长 */
     private final Sinks.Many<String> eventSink = Sinks.many().multicast()
@@ -101,7 +107,7 @@ public class CircuitBreakerMonitorWebSocketHandler implements WebSocketHandler {
                 Flux.merge(heartbeat, eventStream)
         );
 
-        return adminCaller.flatMap(admin -> session.send(
+        final Mono<Void> sessionStream = adminCaller.flatMap(admin -> session.send(
                 output.map(session::textMessage)
         ).and(
                 session.receive()
@@ -113,6 +119,10 @@ public class CircuitBreakerMonitorWebSocketHandler implements WebSocketHandler {
                         .doOnError(e -> log.warn("WebSocket error: {}", e.getMessage()))
                         .doOnTerminate(() -> log.info("WebSocket client disconnected: {}", session.getId()))
         ));
+
+        return webSocketSessionMetrics == null
+                ? sessionStream
+                : webSocketSessionMetrics.track(sessionStream, "circuit-breaker-monitor");
     }
 
     // package-private：供同包单测直接驱动控制消息（#916）

@@ -68,6 +68,7 @@ curl -s http://localhost:8080/actuator/metrics/system.cpu.usage | jq
 | `reactor.netty.connection.provider.active.connections{name="jairouter-outbound"}` | 已占用的出站连接数 | 贴着 `max-connections` ⇒ 到上限了 |
 | `hikaricp_connections_pending` | 等待数据库连接的线程数 | 大于 0 ⇒ 数据库池排队（见 [数据库部署](../deployment/database.md)） |
 | `jairouter.sse.active.connections{endpoint}` | 当前打开的 SSE 连接数 | 逼近运维上限 ⇒ 长连接堆积 |
+| `jairouter.ws.active.sessions{endpoint}` | 当前打开的 WebSocket 会话数（监控推送） | 只增不减 ⇒ 客户端异常断开或计数未释放 |
 | `jairouter.cache.response.size` | 响应缓存条目数（估算值） | 贴着 `maxSize` ⇒ 命中率开始掉 |
 
 判读顺序建议：先看 `hikaricp_connections_pending` 与
@@ -78,6 +79,8 @@ curl -s http://localhost:8080/actuator/metrics/system.cpu.usage | jq
 `jairouter.sse.active.connections` 的 `endpoint` 标签取值：
 `health-status`（健康巡检）、`v1-chat-completions`、`chat-completions`（legacy 面）、
 `anthropic-messages`。
+
+`jairouter.ws.active.sessions` 的 `endpoint` 标签取值：`circuit-breaker-monitor`、`routing-monitor`。
 
 ## 性能问题分类
 

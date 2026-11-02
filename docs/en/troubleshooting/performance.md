@@ -71,6 +71,7 @@ that answer is something you read rather than guess — all of them are availabl
 | `reactor.netty.connection.provider.active.connections{name="jairouter-outbound"}` | Outbound connections currently in use | Sitting at `max-connections` ⇒ the ceiling is reached |
 | `hikaricp_connections_pending` | Threads waiting for a database connection | Greater than 0 ⇒ database pool queuing (see [Database deployment](../deployment/database.md)) |
 | `jairouter.sse.active.connections{endpoint}` | SSE connections currently open | Approaching your operational ceiling ⇒ long connections piling up |
+| `jairouter.ws.active.sessions{endpoint}` | WebSocket sessions currently open (monitoring push) | Only ever increasing means clients vanished without closing, or the counter is not released |
 | `jairouter.cache.response.size` | Response cache entries (estimated) | At `maxSize` ⇒ hit rate starts to drop |
 
 Suggested order: check the two "queuing" metrics first
@@ -83,6 +84,8 @@ loop and GC.
 The `endpoint` label of `jairouter.sse.active.connections` takes:
 `health-status`, `v1-chat-completions`, `chat-completions` (the legacy face) and
 `anthropic-messages`.
+
+`endpoint` label values for `jairouter.ws.active.sessions`: `circuit-breaker-monitor`, `routing-monitor`.
 
 ## Performance Issue Classification
 
