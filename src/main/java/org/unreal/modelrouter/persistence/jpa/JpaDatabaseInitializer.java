@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.config.core.ModelInstanceConfigValidator;
 import org.unreal.modelrouter.config.core.helper.ConfigConverterHelper;
 import org.unreal.modelrouter.persistence.jpa.entity.ConfigEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.JwtAccountEntity;
@@ -54,6 +55,10 @@ public class JpaDatabaseInitializer {
     @PostConstruct
     public void initialize() {
         log.info("Initializing JPA database...");
+
+        // 0. 实例配置完整性校验（#963）：环境变量覆盖 instances[0].xxx 会把整个列表
+        // 换成只有一个空壳元素的列表，这里先拦下来，避免报错落在 JDBC 的 NOT NULL 约束上。
+        ModelInstanceConfigValidator.assertValid(modelRouterProperties);
 
         // 1. 初始化模型配置
         initializeModelConfig();
