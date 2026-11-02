@@ -705,6 +705,27 @@ Environment: 8 logical cores / 16 GB / i7-8550U (laptop), Windows, JDK 17, H2 fi
 | 50 | 388.5 | 64 ms | 450 ms | 837 ms | 0% |
 | 100 | 368.6 | 120 ms | 867 ms | 2552 ms | 0% |
 
+### Streaming (SSE) Baseline (2026-11-02)
+
+Same machine, DEBUG also off, with **all three rate-limit layers disabled** and `model.circuit-breaker.enabled=false`:
+
+| Concurrency | RPS | p50 | p95 | p99 | Error rate |
+| --- | --- | --- | --- | --- | --- |
+| 10 | 111.4 | 91.8 ms | 109.2 ms | 123.9 ms | 0% |
+| 50 | 599.7 | 52.2 ms | 225.2 ms | 377.5 ms | 0% |
+| 100 | 465.3 | 196.4 ms | 506.3 ms | 733.4 ms | 0% |
+
+- Streaming throughput is higher than the non-streaming numbers: the server does not aggregate or assemble the whole response body on this path, chunks are forwarded as they arrive, and connections stay reusable for longer.
+- Concurrency 10 yields *less* RPS than 50: each streaming request lasts as long as the upstream chunk cadence dictates (the mock uses a fixed interval), so too few concurrent requests cannot fill a connection's capacity.
+- The concurrency-20 run hung once in this round (the load generator never returned; a rerun with identical parameters did not reproduce it) and is excluded from the table.
+
+**Two things must be done before measuring streaming**, otherwise the numbers describe rate limiting and circuit breaking rather than gateway capacity:
+
+1. Disable all three rate-limit layers (global `model.rate-limit`, service-level `model.services.chat.rate-limit`, instance-level `model.services.chat.instances[0].rate-limit`). With only the first two disabled, 95% of requests at concurrency 10 return 429.
+2. Disable the circuit breaker (`model.circuit-breaker.enabled=false`). Once the failure rate rises under load the per-instance breaker opens and **persists its state**, after which every request returns 503 until the state is cleared.
+
+> ⚠️ **Do not disable instance-level rate limiting with environment variables.** A variable such as `MODEL_SERVICES_CHAT_INSTANCES_0_RATELIMIT_ENABLED` replaces the whole `instances` list with a single element carrying only that property, leaving `name` / `base-url` / `path` empty; **on a fresh database the first startup then fails outright** (`NULL not allowed for column "base_url"`). Edit the YAML or use the configuration API instead.
+
 ### Reading the numbers
 
 - The real saturation point is **around 370-390 RPS** on this machine, with the load generator co-located. Going from concurrency 20 to 100 leaves throughput flat while p50 rises from 43 ms to 120 ms and p99 to 2.5 s, i.e. more queueing rather than more throughput.
@@ -715,5 +736,5 @@ Environment: 8 logical cores / 16 GB / i7-8550U (laptop), Windows, JDK 17, H2 fi
 
 ### Known limitations
 
-- **Streaming (SSE) was not measured in this round**: under high concurrency the mock's chunk pacing raised the failure rate, the instance circuit breaker opened, and every later request returned 503 (the state is persisted in the database and survives a restart). Measuring streaming needs a chunk cadence closer to a real upstream, or a workable way to reset the breaker (see the next point).
+- **Streaming (SSE)** is measurable, provided all three rate-limit layers and the circuit breaker are disabled (see the streaming baseline above). Measuring streaming with the breaker enabled only tells you when the breaker opens.
 - Resetting an open breaker through `/api/config/instance/circuit-breaker/reset` requires an `instanceId` (not the instance name), and that value does not always match the `id` shown in the instance list, which is easy to get wrong.
