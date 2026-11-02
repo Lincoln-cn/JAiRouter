@@ -42,14 +42,14 @@ monitoring:
 
 #### Benchmark Test Results
 ```bash
-# Run Performance Test
-./mvnw test -Dtest=MonitoringPerformanceBenchmarkTest
-
-# Typical Results
-- No Monitoring: 1000 RPS, 50ms P95 Latency
-- With Monitoring: 950 RPS, 52ms P95 Latency
-- Performance Impact: 5% throughput decrease, 4% latency increase
+# Use the bundled load generator (start the service and the mock upstream first;
+# see troubleshooting/performance.md for the steps)
+node scripts/perf/loadtest.mjs \
+  --url http://127.0.0.1:8080/v1/chat/completions \
+  --api-key "$API_KEY" --model qwen3:4b --concurrency 50 --duration 20
 ```
+
+Recording a metric is an in-memory operation, and this repository has no switch that turns monitoring off wholesale, so **no percentage is given for the throughput cost of monitoring**: such a number would either be illustrative or valid only for one version. To interpret a measurement, see the baseline and the "capacity saturation metrics" section in [Performance Tuning](../troubleshooting/performance.md).
 
 ## Metric Collection Optimization
 

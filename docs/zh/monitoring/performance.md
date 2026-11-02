@@ -42,14 +42,13 @@ monitoring:
 
 #### 基准测试结果
 ```bash
-# 运行性能测试
-./mvnw test -Dtest=MonitoringPerformanceBenchmarkTest
-
-# 典型结果
-- 无监控: 1000 RPS, 50ms P95 延迟
-- 启用监控: 950 RPS, 52ms P95 延迟
-- 性能影响: 5% 吞吐量下降, 4% 延迟增加
+# 用仓库自带的压测器（先起服务与 mock 上游，步骤见 troubleshooting/performance.md）
+node scripts/perf/loadtest.mjs \
+  --url http://127.0.0.1:8080/v1/chat/completions \
+  --api-key "$API_KEY" --model qwen3:4b --concurrency 50 --duration 20
 ```
+
+指标记录是内存操作，本仓也没有「整体关掉监控再跑一遍」的开关，因此**这里不给出监控对吞吐的影响百分比** —— 那种数字要么是示意值、要么只对某个版本成立。要判读实测结果，见[性能调优](../troubleshooting/performance.md)的基线记录与「容量饱和面指标」一节。
 
 ## 指标收集优化
 

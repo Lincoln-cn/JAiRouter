@@ -280,11 +280,12 @@ docker restart jairouter
 
 ### Q16: How is JAiRouter's performance?
 
-**A**: Performance metrics (based on standard test environment):
-- **Throughput**: 1000+ RPS
-- **Latency**: P95 < 100ms
-- **Concurrency**: Supports 1000+ concurrent connections
-- **Memory**: Base runtime approximately 200MB
+**A**: This repository publishes no authoritative capacity figure: the numbers depend heavily on hardware, upstream service, and how you measure, so a hard-coded "1000+ RPS" only misleads capacity planning. A reproducible measurement is recorded in [Performance Tuning](../troubleshooting/performance.md): on an 8-core / 16 GB laptop with an H2 file database, a mock upstream, and the load generator co-located with the gateway, **non-streaming runs at roughly 370-390 RPS and streaming at roughly 600 RPS (concurrency 50)**.
+
+- **Throughput**: see above (measured on one machine, not a specification)
+- **Latency**: likewise; P95 at concurrency 50 is about 450 ms (non-streaming) / 225 ms (streaming)
+- **Concurrency**: no connection-count ceiling was observed to trigger first (outbound pool limit 500, observed in-flight <= 18)
+- **Memory**: base runtime about 200 MB (not re-measured on v3.5.x; kept from the older record)
 
 Actual performance depends on:
 - Hardware configuration
