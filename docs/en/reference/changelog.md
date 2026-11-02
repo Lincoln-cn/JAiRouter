@@ -53,7 +53,7 @@ The headline of this release is the **streaming response guard**: until now resp
 #### Documentation and figures
 
 * `troubleshooting/performance.md` gains a **streaming** baseline (concurrency 10 / 50 / 100: 111.4 / 599.7 / 465.3 RPS) together with the precondition that all three rate-limit layers and the circuit breaker must be disabled before measuring.
-* Three unsourced throughput figures are replaced: `reference/faq.md` claimed "1000+ RPS, P95 < 100 ms, 1000+ concurrent connections"; `monitoring/performance.md` claimed "950 RPS with monitoring enabled, 5% overhead" and told readers to run a benchmark test class that **does not exist**. Both now point at measured numbers and reproducible commands.
+* Three throughput figures with no measurement behind them are replaced: `reference/faq.md` claimed "1000+ RPS, P95 < 100 ms, 1000+ concurrent connections"; `monitoring/performance.md` claimed "950 RPS with monitoring enabled, 5% overhead" and told readers to run a benchmark test class that **does not exist**. Both now point at measured numbers and reproducible commands.
 * Storage examples in `configuration/store-config.md` and `configuration/index.md` use the real `spring.datasource.*` / `spring.datasource.hikari.*` keys (the old examples used removed R2DBC keys and a nonexistent `store.type: file`).
 
 #### Upgrade notes
