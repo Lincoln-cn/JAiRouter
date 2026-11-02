@@ -41,6 +41,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import org.unreal.modelrouter.router.model.InstanceKeys;
 
 /**
  * BaseAdapter - v2.28.0 重构版
@@ -246,7 +247,7 @@ public abstract class BaseAdapter implements ServiceCapability {
             final RequestProcessor<T> processor, final long startTime, final int retryCount,
             final Set<String> failedKeys, final QuotaReservation quotaReservation) {
         String adapterType = getAdapterType();
-        String instanceName = selectedInstance.getName();
+        String instanceName = InstanceKeys.label(selectedInstance);
         RetryPolicy retryPolicy = resilienceSupport.getRetryPolicy();
         int maxRetries = retryPolicy.getMaxRetriesByServiceType(serviceType);
         return processor.process(request, authorization, client, path, selectedInstance, serviceType)
@@ -675,7 +676,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         AdapterMetricsRecorder metricsRecorder = resilienceSupport.getMetricsRecorder();
         if (metricsRecorder != null) {
             metricsRecorder.recordRetry(adapterType,
-                    instance != null ? instance.getName() : "unknown", retryCount, error);
+                    InstanceKeys.label(instance), retryCount, error);
         }
     }
 

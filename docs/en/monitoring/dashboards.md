@@ -156,6 +156,12 @@ Displays usage of different strategies:
 #### 3. Request Distribution Uniformity
 **Query**: `sum by (instance) (rate(jairouter_backend_calls_total[5m]))`
 
+> The `instance` label is `name@host:port` (for example `qwen3:4b@10.0.0.1:8000`).
+> Replicas of the same model normally share an instance name, so the name alone cannot
+> tell them apart and the host is included. Alert rules that match `instance` exactly
+> need updating after upgrading to 3.6.1.
+
+
 - Distribution of requests received by each instance
 - Identifies load imbalance issues
 - Evaluates load balancing strategy effectiveness

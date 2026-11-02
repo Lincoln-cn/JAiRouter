@@ -16,6 +16,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
+import org.unreal.modelrouter.router.model.InstanceKeys;
 
 /**
  * 适配器监控记录器
@@ -315,7 +316,7 @@ public class AdapterMetricsRecorder {
         }
         
         if (log.isDebugEnabled()) {
-            log.debug("记录调用成功：service={}, instance={}, duration={}ms", serviceType, instance.getName(), durationMs);
+            log.debug("记录调用成功：service={}, instance={}, duration={}ms", serviceType, InstanceKeys.label(instance), durationMs);
         }
     }
 

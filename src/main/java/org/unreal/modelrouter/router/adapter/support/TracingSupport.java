@@ -7,6 +7,7 @@ import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
 import org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer;
 import org.unreal.modelrouter.common.util.ApplicationContextProvider;
+import org.unreal.modelrouter.router.model.InstanceKeys;
 
 /**
  * 适配器追踪支持工具类
@@ -96,7 +97,7 @@ public class TracingSupport {
 
         if (metricsCollector != null) {
             metricsCollector.recordBackendCall(adapterType,
-                    instance != null ? instance.getName() : "unknown", 0, false);
+                    InstanceKeys.label(instance), 0, false);
         }
     }
 
