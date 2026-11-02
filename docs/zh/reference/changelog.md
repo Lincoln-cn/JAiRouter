@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.5.10
-> **最后更新**: 2026-11-01
+> **文档版本**: 3.6.0
+> **最后更新**: 2026-11-02
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,50 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+### [3.6.0] - 2026-11-02 - 流式响应护栏、容量指标补齐与吞吐口径纠偏（#944–#966）
+
+这一版的主项是**流式响应护栏**：在此之前，响应脱敏只覆盖非流式路径，`stream=true` 时敏感内容原样下发给客户端。同时补齐了最后几处容量指标，并把三处没有出处的吞吐数字换成了实测值。
+
+#### 新能力
+
+* **流式响应护栏（SSE）**：`stream=true` 时每个 chunk 在交给适配器变换之前先过判定链，支持放行 / 脱敏改写 / 阻断终止三种结果。命中脱敏时把改写后的文本继续交给后续变换；命中阻断时以终止帧收尾并结束整条流，且**不写响应缓存**（否则回放的是被截断的内容）。护栏内部异常降级为放行并打 warn —— 它不能成为中断源。默认关闭。
+
+  ```yaml
+  jairouter:
+    guard:
+      enabled: true
+      redact:
+        patterns:
+          - name: phone
+            regex: '\b1[3-9]\d{9}\b'
+            replacement: '[PHONE]'
+      block:
+        patterns:
+          - name: api-key
+            regex: '(?i)sk-[a-z0-9]{8,}'
+  ```
+
+* **WebSocket 活跃会话计数**：新增 `jairouter.ws.active.sessions{endpoint}`，覆盖断路器监控与负载均衡监控两条推送通道。
+
+#### 可观测性
+
+* 指标清单新增两条：`jairouter.ws.active.sessions{endpoint}`（当前打开的 WebSocket 会话数）与上一版已有的 `jairouter.sse.active.connections{endpoint}`。
+* 文档里补了判读顺序：饱和度排查先看两个排队指标（出站连接池 pending、Hikari pending），再看长连接计数。
+
+#### 文档与口径
+
+* `troubleshooting/performance.md` 补上**流式**压测基线（并发 10 / 50 / 100：111.4 / 599.7 / 465.3 RPS），并写明测前必须关掉三层限流与熔断。
+* 清掉三处没有出处的吞吐数字：`reference/faq.md` 的「1000+ RPS / P95 < 100ms / 1000+ 并发连接」、`monitoring/performance.md` 的「启用监控 950 RPS / 性能影响 5%」，以及该文里教读者运行一个**并不存在**的基准测试类的那段说明。全部换成实测记录与可复现命令。
+* `configuration/store-config.md`、`configuration/index.md` 的存储示例改为真实可用的 `spring.datasource.*` / `spring.datasource.hikari.*`（原示例写的是已移除的 R2DBC 键与不存在的 `store.type: file`）。
+
+#### 升级提示
+
+1. **护栏默认关闭**，本版不改变任何现有部署的响应内容。启用前请先在预发环境确认规则不会误伤。
+2. 新增 `config/router/guard.yml`，已通过 `spring.config.import` 自动导入；没有自定义需求的部署无需改动。
+3. 阻断的流不写缓存属于**有意的行为约定**：缓存里不会出现被截断的响应。
+4. 护栏按 chunk 判定、不做跨 chunk 拼接 —— 敏感串被上游切在两个字块之间时匹配不到，这是当前明确的边界，需要跨 chunk 缓冲的场合请单独评估。
+5. 文档里的 RPS 数字整体下调为实测值；若过去的容量规划引用了「1000+ RPS」，请按新表重算。
+
 ### [3.5.10] - 2026-11-01 - 性能基线落地、E2E 与覆盖率门闩接入、OpenTelemetry 迁移（#940–#959）
 
 v3.5.9 之后补上三块此前从未系统治理的面：性能容量第一次有了可复现的压测资产与实测数字，
