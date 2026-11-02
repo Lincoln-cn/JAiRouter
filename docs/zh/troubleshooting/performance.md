@@ -82,6 +82,43 @@ curl -s http://localhost:8080/actuator/metrics/system.cpu.usage | jq
 
 `jairouter.ws.active.sessions` 的 `endpoint` 标签取值：`circuit-breaker-monitor`、`routing-monitor`。
 
+## 数据库换成 PostgreSQL 时的实测（单机 Docker）
+
+上面的基线是 H2 文件库。换成 PostgreSQL 后数字会明显变化，这一节记录原因 —— 省得有人拿 H2 的数去规划 PG 部署。
+
+### 怎么测的
+
+- PostgreSQL 16.15 跑在本机 Docker（`-p 55432:5432`），网关与压测器在同一台机器上。
+- 必须先关三层限流：**限流开关会被持久化成配置落库，之后环境变量覆盖不生效**，所以要在 yml 里改完三处 `enabled: false`，再用一个全新的库名启动。
+- dev profile 的 DEBUG 日志同样要切到 WARN，否则测的是日志而不是容量。
+- 机型 8 逻辑核 / 16 GB / i7-8550U / Windows / JDK 17，mock 上游固定 20 ms。
+
+### 结果
+
+连接池 10（默认）：
+
+| 并发 | RPS | p50 | p95 | p99 | 错误率 |
+| --- | --- | --- | --- | --- | --- |
+| 20 | 61.8 | 247.6 ms | 873.4 ms | 1222.6 ms | 0% |
+| 50 | 94.4 | 469.9 ms | 1157.7 ms | 1571.3 ms | 0% |
+| 100 | 95.7 | 967.0 ms | 1898.6 ms | 2411.3 ms | 0% |
+
+连接池 32（把 `hikari.maximum-pool-size` 临时改大）：
+
+| 并发 | RPS | p50 | p95 | p99 | 错误率 |
+| --- | --- | --- | --- | --- | --- |
+| 20 | 79.0 | 161.3 ms | 811.4 ms | 1113.5 ms | 0% |
+| 50 | 86.5 | 501.1 ms | 1335.4 ms | 1877.2 ms | 0% |
+| 100 | 93.0 | 979.8 ms | 1975.7 ms | 2518.1 ms | 0% |
+
+对照 H2：并发 20 / 50 / 100 分别是 370.3 / 388.5 / 368.6 RPS。
+
+### 三条结论
+
+1. **连接池仍然不是瓶颈。** 池从 10 加到 32，三档 RPS 都在 60–96 之间，p99 反而更差。指标上确实看到 `hikaricp_connections_active` 打满、`hikaricp_connections_pending` 峰值 77，但加大池子只是把排队位置从连接池挪到了别处。
+2. **热点在数据库容器本身。** 压测期间 JVM 的 `process_cpu_usage` 只有 0.18 核，而 PG 容器 `docker stats` 是 127% CPU。每个请求要写 token 用量、调用历史、配额账本，这些写入在这台机器的 Docker 里先饱和。
+3. **这组数字不代表生产 PostgreSQL 的表现。** 压测器、网关、Docker 里的 PG 共享同一 8 核，CPU 是三者共同的瓶颈。它只能说明「这种部署形态下的上界」。要拿可用于容量规划的 PG 基线，得把压测器和数据库放到别的机器上跑。
+
 ## 性能问题分类
 
 ### 1. 响应时间过长
