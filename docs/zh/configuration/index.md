@@ -335,6 +335,25 @@ export SPRING_DATA_REDIS_PORT=6379
 > 旧版本文档此处示例的 `MODEL_LOAD_BALANCE_TYPE` / `MODEL_RATE_LIMIT_TYPE` 在配置树中不存在，
 > 设置它们不会有任何效果。
 
+### 列表型配置不能用环境变量逐项覆盖
+
+`model.services.<type>.instances` 是一个列表。用环境变量只覆盖其中某一项时，Spring Boot 会把整个列表
+替换成「只含被覆盖字段的一个元素」，其余字段留空：
+
+```bash
+# 意图：只关掉 chat 第 1 个实例的限流
+# 实际：instances 变成只有一个 rate-limit 字段的空壳实例，name 与 baseUrl 都为 null
+export MODEL_SERVICES_CHAT_INSTANCES_0_RATELIMIT_ENABLED=false
+```
+
+从 v3.6.1 起，实例缺少 `name` 或 `baseUrl` 时应用会在启动期直接中止，并打印出问题清单（哪个服务的第几个
+实例、缺了什么），不再等到落库时撞上 `NULL not allowed for column "base_url"`。
+
+要改实例级配置，请二选一：
+
+- 直接改配置文件（`config/router/services.yml`）；
+- 或者提供完整的实例列表 —— 每个实例的 `name`、`base-url` 等字段都要写全。
+
 ## 命令行参数
 
 通过命令行参数覆盖配置：

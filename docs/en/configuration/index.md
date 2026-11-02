@@ -337,6 +337,24 @@ defaults, see [Environment Variables Reference](../deployment/environment-variab
 > The `MODEL_LOAD_BALANCE_TYPE` / `MODEL_RATE_LIMIT_TYPE` variables shown in older versions of this page do not
 > exist in the configuration tree; setting them has no effect.
 
+### List-typed settings cannot be overridden item by item through environment variables
+
+`model.services.<type>.instances` is a list. Overriding a single item through an environment variable makes
+Spring Boot replace the whole list with a one-element list containing only the overridden field; every other
+field is left null:
+
+```bash
+# Intended: turn off rate limiting for the first chat instance only
+# Actual: instances becomes a single stub entry with only rate-limit set, name and baseUrl are null
+export MODEL_SERVICES_CHAT_INSTANCES_0_RATELIMIT_ENABLED=false
+```
+
+Since v3.6.1 the application stops at startup when an instance has no `name` or `baseUrl`, printing which
+service and which position is broken, instead of failing later on `NULL not allowed for column "base_url"`.
+
+To change instance-level settings, either edit the configuration file (`config/router/services.yml`) or supply
+the complete instance list, with `name`, `base-url` and the other fields filled in for every entry.
+
 ## Command Line Arguments
 
 Override configuration via command line:
