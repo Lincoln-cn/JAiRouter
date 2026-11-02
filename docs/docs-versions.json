@@ -751,17 +751,18 @@
     },
     "docs/en/monitoring/performance.md": {
       "FilePath": "docs/en/monitoring/performance.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:34.625663",
-      "ContentHash": "9b565923839e3010",
-      "GitCommit": "06b43058",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-02T12:15:53.227810",
+      "ContentHash": "fba0c5b7c9e843b4",
+      "GitCommit": "b90f5790",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/monitoring/metrics.md",
         "docs/en/monitoring/setup.md",
         "docs/en/monitoring/testing.md",
-        "docs/en/monitoring/troubleshooting.md"
+        "docs/en/monitoring/troubleshooting.md",
+        "docs/en/troubleshooting/performance.md"
       ]
     },
     "docs/en/monitoring/setup.md": {
@@ -845,15 +846,16 @@
     },
     "docs/en/reference/faq.md": {
       "FilePath": "docs/en/reference/faq.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T00:17:54.477027",
-      "ContentHash": "4163aef06f979cb0",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.2",
+      "LastModified": "2026-11-02T12:15:53.294596",
+      "ContentHash": "0a6df42cae9a6c7d",
+      "GitCommit": "b90f5790",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/development/contributing.md",
-        "docs/en/reference/roadmap.md"
+        "docs/en/reference/roadmap.md",
+        "docs/en/troubleshooting/performance.md"
       ]
     },
     "docs/en/reference/glossary.md": {
@@ -1180,10 +1182,10 @@
     },
     "docs/en/troubleshooting/performance.md": {
       "FilePath": "docs/en/troubleshooting/performance.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-11-01T13:39:07.451429",
-      "ContentHash": "c6924c3562380c1e",
-      "GitCommit": "1fe3ad10",
+      "Version": "1.0.5",
+      "LastModified": "2026-11-02T12:15:53.484381",
+      "ContentHash": "c98f23ce65c2eaa9",
+      "GitCommit": "b90f5790",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1920,17 +1922,18 @@
     },
     "docs/zh/monitoring/performance.md": {
       "FilePath": "docs/zh/monitoring/performance.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:40.469080",
-      "ContentHash": "2234990afc33723f",
-      "GitCommit": "06b43058",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-02T12:15:53.933774",
+      "ContentHash": "02a6e7b3f808f492",
+      "GitCommit": "b90f5790",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/monitoring/metrics.md",
         "docs/zh/monitoring/setup.md",
         "docs/zh/monitoring/testing.md",
-        "docs/zh/monitoring/troubleshooting.md"
+        "docs/zh/monitoring/troubleshooting.md",
+        "docs/zh/troubleshooting/performance.md"
       ]
     },
     "docs/zh/monitoring/setup.md": {
@@ -2014,15 +2017,16 @@
     },
     "docs/zh/reference/faq.md": {
       "FilePath": "docs/zh/reference/faq.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T00:17:55.124626",
-      "ContentHash": "099a27465c40e2d8",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.2",
+      "LastModified": "2026-11-02T12:15:54.001875",
+      "ContentHash": "eac8f5ff3500e704",
+      "GitCommit": "b90f5790",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/development/contributing.md",
-        "docs/zh/reference/roadmap.md"
+        "docs/zh/reference/roadmap.md",
+        "docs/zh/troubleshooting/performance.md"
       ]
     },
     "docs/zh/reference/glossary.md": {
@@ -2351,10 +2355,10 @@
     },
     "docs/zh/troubleshooting/performance.md": {
       "FilePath": "docs/zh/troubleshooting/performance.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-11-01T13:39:08.179380",
-      "ContentHash": "ceda629485c118e2",
-      "GitCommit": "1fe3ad10",
+      "Version": "1.0.5",
+      "LastModified": "2026-11-02T12:15:54.199418",
+      "ContentHash": "f9c8a35e5b756a2d",
+      "GitCommit": "b90f5790",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -6476,7 +6480,55 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-01T18:05:18.183988",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/performance.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-02T12:15:53.227822",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/faq.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-02T12:15:53.294605",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/troubleshooting/performance.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-02T12:15:53.484390",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/performance.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-02T12:15:53.933783",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/faq.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-02T12:15:54.001884",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/troubleshooting/performance.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-02T12:15:54.199428",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-02T08:53:15.507848"
+  "last_updated": "2026-11-02T12:15:54.199820"
 }
