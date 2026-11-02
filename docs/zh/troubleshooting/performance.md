@@ -70,11 +70,12 @@ curl -s http://localhost:8080/actuator/metrics/system.cpu.usage | jq
 | `jairouter.sse.active.connections{endpoint}` | 当前打开的 SSE 连接数 | 逼近运维上限 ⇒ 长连接堆积 |
 | `jairouter.ws.active.sessions{endpoint}` | 当前打开的 WebSocket 会话数（监控推送） | 只增不减 ⇒ 客户端异常断开或计数未释放 |
 | `jairouter.cache.response.size` | 响应缓存条目数（估算值） | 贴着 `maxSize` ⇒ 命中率开始掉 |
+| `jairouter.eventloop.delay` | 事件循环「投递到执行」的耗时（每秒采样一次） | p99 抬升而 CPU 不高 ⇒ 事件循环被同步调用或排队压住 |
 
 判读顺序建议：先看 `hikaricp_connections_pending` 与
 `reactor.netty.connection.provider.pending.connections` 这两个「排队」指标 ——
 它们都不为 0 才说明瓶颈在池；都为 0 而 `inflight` 高，瓶颈在上游；
-三者都不高但延迟涨，去查事件循环与 GC。
+三者都不高但延迟涨，看 `jairouter.eventloop.delay` 的 p99 与 GC 停顿。
 
 `jairouter.sse.active.connections` 的 `endpoint` 标签取值：
 `health-status`（健康巡检）、`v1-chat-completions`、`chat-completions`（legacy 面）、
