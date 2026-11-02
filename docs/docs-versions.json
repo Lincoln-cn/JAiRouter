@@ -695,11 +695,11 @@
     },
     "docs/en/monitoring/dashboards.md": {
       "FilePath": "docs/en/monitoring/dashboards.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:34.351957",
-      "ContentHash": "9fcbc85c9230d7d2",
-      "GitCommit": "e75f4909",
-      "Author": "Lincoln",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-02T16:57:16.850309",
+      "ContentHash": "d2f70a7c9ee48cfb",
+      "GitCommit": "00fd96c1",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/monitoring/alerts.md",
@@ -1862,11 +1862,11 @@
     },
     "docs/zh/monitoring/dashboards.md": {
       "FilePath": "docs/zh/monitoring/dashboards.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:40.166447",
-      "ContentHash": "d168374d901e7518",
-      "GitCommit": "e75f4909",
-      "Author": "Lincoln",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-02T16:57:17.535178",
+      "ContentHash": "0e121ef5522b5856",
+      "GitCommit": "00fd96c1",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/monitoring/alerts.md",
@@ -6640,7 +6640,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-02T15:58:21.508416",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/dashboards.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-02T16:57:16.850319",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/dashboards.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-02T16:57:17.535187",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-02T15:58:21.508861"
+  "last_updated": "2026-11-02T16:57:17.853216"
 }
