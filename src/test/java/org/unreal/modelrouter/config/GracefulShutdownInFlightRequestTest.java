@@ -5,7 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;
+import org.springframework.boot.security.autoconfigure.web.reactive.ReactiveWebSecurityAutoConfiguration;
+import org.unreal.modelrouter.support.TestHttpClient;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,17 +52,17 @@ class GracefulShutdownInFlightRequestTest {
                 "--spring.lifecycle.timeout-per-shutdown-phase=10s",
                 "--management.endpoints.enabled=false",
                 "--spring.autoconfigure.exclude="
-                        + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
-                        + "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration,"
-                        + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
-                        + "org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration,"
-                        + "org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,"
-                        + "org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration,"
-                        + "org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration,"
-                        + "org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration,"
-                        + "org.springframework.boot.autoconfigure.security.reactive.ReactiveUserDetailsServiceAutoConfiguration,"
-                        + "org.springframework.boot.actuate.autoconfigure.security.reactive.ReactiveManagementWebSecurityAutoConfiguration,"
-                        + "org.springframework.boot.autoconfigure.security.oauth2.resource.reactive.ReactiveOAuth2ResourceServerAutoConfiguration,"
+                        + "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration,"
+                        + "org.springframework.boot.jdbc.autoconfigure.DataSourceTransactionManagerAutoConfiguration,"
+                        + "org.springframework.boot.jpa.autoconfigure.HibernateJpaAutoConfiguration,"
+                        + "org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration,"
+                        + "org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration,"
+                        + "org.springframework.boot.data.redis.autoconfigure.DataRedisReactiveAutoConfiguration,"
+                        + "org.springframework.boot.data.redis.autoconfigure.DataRedisRepositoriesAutoConfiguration,"
+                        + "org.springframework.boot.security.autoconfigure.web.reactive.ReactiveSecurityAutoConfiguration,"
+                        + "org.springframework.boot.security.autoconfigure.web.reactive.ReactiveUserDetailsServiceAutoConfiguration,"
+                        + "org.springframework.boot.security.autoconfigure.actuate.web.reactive.ReactiveManagementWebSecurityAutoConfiguration,"
+                        + "org.springframework.boot.security.oauth2.server.resource.autoconfigure.reactive.ReactiveOAuth2ResourceServerAutoConfiguration,"
                         + "org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration,"
                         + "org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration");
 
@@ -68,7 +70,7 @@ class GracefulShutdownInFlightRequestTest {
             int port = context.getEnvironment().getProperty("local.server.port", Integer.class);
             assertNotNull(port, "应拿到随机端口");
 
-            TestRestTemplate restTemplate = new TestRestTemplate();
+            TestHttpClient restTemplate = new TestHttpClient();
             String url = "http://127.0.0.1:" + port + "/slow";
             AtomicReference<ResponseEntity<String>> responseRef = new AtomicReference<>();
             AtomicReference<Throwable> errorRef = new AtomicReference<>();
@@ -105,7 +107,8 @@ class GracefulShutdownInFlightRequestTest {
     }
 
     @SpringBootConfiguration
-    @EnableAutoConfiguration
+    @EnableAutoConfiguration(exclude = {SecurityAutoConfiguration.class,
+            ReactiveWebSecurityAutoConfiguration.class})
     static class IsolatedApp {
 
         @RestController

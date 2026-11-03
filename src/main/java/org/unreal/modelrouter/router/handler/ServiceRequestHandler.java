@@ -830,7 +830,7 @@ public class ServiceRequestHandler {
         }
         try {
             final HttpHeaders headers = exchange.getResponse().getHeaders();
-            if (!headers.containsKey(HttpHeaders.RETRY_AFTER)) {
+            if (!headers.containsHeader(HttpHeaders.RETRY_AFTER)) {
                 headers.set(HttpHeaders.RETRY_AFTER, SERVICE_RATE_LIMIT_RETRY_AFTER_SECONDS);
             }
         } catch (RuntimeException e) {

@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.authorization.ReactiveAuthorizationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -121,14 +122,14 @@ public class PermissionAuthorizationManager
     }
 
     @Override
-    public Mono<AuthorizationDecision> check(
+    public Mono<AuthorizationResult> authorize(
             final Mono<Authentication> authentication, final AuthorizationContext context) {
         HttpMethod method = context.getExchange().getRequest().getMethod();
         String path = context.getExchange().getRequest().getPath().value();
 
         Optional<PermissionRule> rule = permissionRuleRegistry.findRule(method, path);
         if (rule.isEmpty()) {
-            return checkUnmatched(authentication, method, path);
+            return checkUnmatched(authentication, method, path).map(x -> (AuthorizationResult) x);
         }
 
         String requiredCode = rule.get().permissionCode();
@@ -139,6 +140,7 @@ public class PermissionAuthorizationManager
                                 || hasAuthority(auth, requiredCode))))
                 .doOnNext(decision -> log.debug("URL 权限判定: method={}, path={}, code={}, decision={}",
                         method, path, requiredCode, decision.isGranted()))
+                .map(x -> (AuthorizationResult) x)
                 .defaultIfEmpty(new AuthorizationDecision(false));
     }
 

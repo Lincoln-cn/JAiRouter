@@ -154,7 +154,7 @@ public class TracingInfoContributor implements InfoContributor {
                 runtime.put("memory", memoryInfo);
                 
                 // 性能监控统计
-                org.springframework.boot.actuate.health.Health health = performanceMonitor.health();
+                org.springframework.boot.health.contributor.Health health = performanceMonitor.health();
                 Map<String, Object> healthInfo = new HashMap<>();
                 healthInfo.put("status", health.getStatus().getCode());
                 healthInfo.put("details", health.getDetails());

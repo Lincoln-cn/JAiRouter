@@ -59,7 +59,7 @@ public class WebFilterConfiguration {
     public WebFilter writeableHeaders() {
         log.info("注册 writeableHeaders WebFilter，优先级: {}", Ordered.HIGHEST_PRECEDENCE + 1);
         return (exchange, chain) -> {
-            HttpHeaders writeableHeaders = HttpHeaders.writableHttpHeaders(
+            HttpHeaders writeableHeaders = HttpHeaders.copyOf(
                     exchange.getRequest().getHeaders());
             ServerHttpRequestDecorator writeableRequest = new ServerHttpRequestDecorator(
                     exchange.getRequest()) {

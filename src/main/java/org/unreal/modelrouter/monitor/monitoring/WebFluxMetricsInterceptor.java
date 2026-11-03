@@ -169,7 +169,7 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
                 requestSize.set(Long.parseLong(contentLength));
             } else {
                 // 如果没有Content-Length，估算请求头大小
-                long headerSize = request.getHeaders().entrySet().stream()
+                long headerSize = request.getHeaders().asMultiValueMap().entrySet().stream()
                     .mapToLong(entry -> entry.getKey().length()
                               + entry.getValue().stream().mapToInt(String::length).sum() + 4) // +4 for ": " and "\r\n"
                     .sum();

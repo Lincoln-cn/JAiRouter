@@ -131,7 +131,7 @@ public final class DefaultAuthenticationConverter implements ServerAuthenticatio
 
         // 如果直接获取失败，进行大小写不敏感的搜索
         String lowerHeaderName = headerName.toLowerCase();
-        for (String key : exchange.getRequest().getHeaders().keySet()) {
+        for (String key : exchange.getRequest().getHeaders().headerNames()) {
             if (key.toLowerCase().equals(lowerHeaderName)) {
                 List<String> headerValues = exchange.getRequest().getHeaders().get(key);
                 if (headerValues != null && !headerValues.isEmpty()) {

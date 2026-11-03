@@ -5,7 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
+import org.springframework.boot.webflux.error.ErrorWebExceptionHandler;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
@@ -311,12 +311,12 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
             response.setStatusCode(status);
             
             // #717：下游要求退避时把等待时间回给调用方（同值、不做任何加工）
-            if (retryAfterSeconds != null && !response.getHeaders().containsKey(HttpHeaders.RETRY_AFTER)) {
+            if (retryAfterSeconds != null && !response.getHeaders().containsHeader(HttpHeaders.RETRY_AFTER)) {
                 response.getHeaders().set(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds));
             }
 
             // 安全地设置响应头，避免重复设置
-            if (!response.getHeaders().containsKey("Content-Type")) {
+            if (!response.getHeaders().containsHeader("Content-Type")) {
                 response.getHeaders().add("Content-Type", MediaType.APPLICATION_JSON_VALUE);
             }
             
@@ -532,7 +532,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
             response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
             
             // 安全地设置响应头，避免重复设置
-            if (!response.getHeaders().containsKey("Content-Type")) {
+            if (!response.getHeaders().containsHeader("Content-Type")) {
                 response.getHeaders().add("Content-Type", MediaType.APPLICATION_JSON_VALUE);
             }
             

@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.server.RequestPath;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.web.server.authorization.AuthorizationContext;
 import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.auth.security.model.ApiKeyAuthentication;
@@ -63,7 +63,7 @@ class PermissionWriteFailClosedTest {
                     "探针路径必须未豁免");
 
             JwtAuthentication user = authenticated("user", List.of("USER"), List.of());
-            StepVerifier.create(phase2Manager().check(Mono.just(user), context(HttpMethod.POST, unmatched)))
+            StepVerifier.create(phase2Manager().authorize(Mono.just(user), context(HttpMethod.POST, unmatched)))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -76,7 +76,7 @@ class PermissionWriteFailClosedTest {
                 assertFalse(registry.findRule(method, unmatched).isPresent());
                 assertFalse(RbacExemptEndpoints.isExempt(method, unmatched));
                 JwtAuthentication user = authenticated("user", List.of("USER"), List.of());
-                StepVerifier.create(phase2Manager().check(Mono.just(user), context(method, unmatched)))
+                StepVerifier.create(phase2Manager().authorize(Mono.just(user), context(method, unmatched)))
                         .expectNextMatches(decision -> !decision.isGranted())
                         .verifyComplete();
             }
@@ -88,7 +88,7 @@ class PermissionWriteFailClosedTest {
             String unmatched = "/api/unmatched-write-with-code-probe";
             JwtAuthentication holder = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.CONFIG_SERVICES_READ));
-            StepVerifier.create(phase2Manager().check(Mono.just(holder), context(HttpMethod.POST, unmatched)))
+            StepVerifier.create(phase2Manager().authorize(Mono.just(holder), context(HttpMethod.POST, unmatched)))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -108,15 +108,15 @@ class PermissionWriteFailClosedTest {
             assertFalse(RbacExemptEndpoints.isExempt(HttpMethod.GET, unmatched));
 
             JwtAuthentication user = authenticated("user", List.of("USER"), List.of());
-            StepVerifier.create(phase2Manager().check(Mono.just(user), context(HttpMethod.GET, unmatched)))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(phase2Manager().authorize(Mono.just(user), context(HttpMethod.GET, unmatched)))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
         @Test
         @DisplayName("未登记 GET + 未认证 → 仍 DENY（401 语义不变）")
         void unmatchedGetStillDeniedForAnonymous() {
-            StepVerifier.create(phase2Manager().check(Mono.empty(),
+            StepVerifier.create(phase2Manager().authorize(Mono.empty(),
                             context(HttpMethod.GET, "/api/unmatched-get-fail-open-probe")))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
@@ -141,7 +141,7 @@ class PermissionWriteFailClosedTest {
                 for (HttpMethod method : entry.methods()) {
                     JwtAuthentication user = authenticated("user", List.of("USER"), List.of());
                     String label = "豁免条目必须可达: " + method + " " + entry.pathPattern();
-                    StepVerifier.create(manager.check(Mono.just(user), context(method, samplePath)))
+                    StepVerifier.create(manager.authorize(Mono.just(user), context(method, samplePath)))
                             .expectNextMatches(decision -> {
                                 assertTrue(decision.isGranted(), label);
                                 return true;
@@ -163,8 +163,8 @@ class PermissionWriteFailClosedTest {
         void adminBypassesWriteFailClosed() {
             String unmatched = "/api/unmatched-write-admin-probe";
             JwtAuthentication admin = authenticated("admin", List.of("ADMIN"), List.of());
-            StepVerifier.create(phase2Manager().check(Mono.just(admin), context(HttpMethod.POST, unmatched)))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(phase2Manager().authorize(Mono.just(admin), context(HttpMethod.POST, unmatched)))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -172,9 +172,9 @@ class PermissionWriteFailClosedTest {
         @DisplayName("已登记规则路径 + ROLE_ADMIN 无权限码 → ALLOW（回归）")
         void adminBypassesRegisteredRule() {
             JwtAuthentication admin = authenticated("admin", List.of("ADMIN"), List.of());
-            StepVerifier.create(phase2Manager().check(Mono.just(admin),
+            StepVerifier.create(phase2Manager().authorize(Mono.just(admin),
                             context(HttpMethod.GET, "/api/config/instance/chat")))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
     }
@@ -190,8 +190,8 @@ class PermissionWriteFailClosedTest {
         void legacyModeRestoresFailOpenForWrites() {
             String unmatched = "/api/unmatched-write-legacy-probe";
             JwtAuthentication user = authenticated("user", List.of("USER"), List.of());
-            StepVerifier.create(legacyManager().check(Mono.just(user), context(HttpMethod.POST, unmatched)))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(legacyManager().authorize(Mono.just(user), context(HttpMethod.POST, unmatched)))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -205,20 +205,20 @@ class PermissionWriteFailClosedTest {
                     "user", List.of("USER"), List.of(PermissionCodes.CONFIG_INSTANCES_READ));
 
             // 未命中 GET：allow
-            StepVerifier.create(legacy.check(Mono.just(user), context(HttpMethod.GET, unmatched)))
-                    .expectNextMatches(AuthorizationDecision::isGranted).verifyComplete();
+            StepVerifier.create(legacy.authorize(Mono.just(user), context(HttpMethod.GET, unmatched)))
+                    .expectNextMatches(AuthorizationResult::isGranted).verifyComplete();
             // 未命中 POST：allow（旧 fail-open）
-            StepVerifier.create(legacy.check(Mono.just(user), context(HttpMethod.POST, unmatched)))
-                    .expectNextMatches(AuthorizationDecision::isGranted).verifyComplete();
+            StepVerifier.create(legacy.authorize(Mono.just(user), context(HttpMethod.POST, unmatched)))
+                    .expectNextMatches(AuthorizationResult::isGranted).verifyComplete();
             // 未命中 + 未认证：deny
-            StepVerifier.create(legacy.check(Mono.empty(), context(HttpMethod.POST, unmatched)))
+            StepVerifier.create(legacy.authorize(Mono.empty(), context(HttpMethod.POST, unmatched)))
                     .expectNextMatches(decision -> !decision.isGranted()).verifyComplete();
             // 规则命中 + 有码：allow
-            StepVerifier.create(legacy.check(Mono.just(holder),
+            StepVerifier.create(legacy.authorize(Mono.just(holder),
                             context(HttpMethod.GET, "/api/config/instance/chat")))
-                    .expectNextMatches(AuthorizationDecision::isGranted).verifyComplete();
+                    .expectNextMatches(AuthorizationResult::isGranted).verifyComplete();
             // 规则命中 + 无码：deny
-            StepVerifier.create(legacy.check(Mono.just(user),
+            StepVerifier.create(legacy.authorize(Mono.just(user),
                             context(HttpMethod.GET, "/api/config/instance/chat")))
                     .expectNextMatches(decision -> !decision.isGranted()).verifyComplete();
         }
@@ -231,8 +231,8 @@ class PermissionWriteFailClosedTest {
                 String samplePath = RbacEndpointCoverageChecker.toSamplePath(entry.pathPattern());
                 for (HttpMethod method : entry.methods()) {
                     JwtAuthentication user = authenticated("user", List.of("USER"), List.of());
-                    StepVerifier.create(legacy.check(Mono.just(user), context(method, samplePath)))
-                            .expectNextMatches(AuthorizationDecision::isGranted)
+                    StepVerifier.create(legacy.authorize(Mono.just(user), context(method, samplePath)))
+                            .expectNextMatches(AuthorizationResult::isGranted)
                             .verifyComplete();
                 }
             }
@@ -254,9 +254,9 @@ class PermissionWriteFailClosedTest {
                             .anyMatch(a -> "ROLE_CHAT".equals(a.getAuthority())),
                     "API-Key 主体必须携带 ROLE_CHAT");
 
-            StepVerifier.create(phase2Manager().check(
+            StepVerifier.create(phase2Manager().authorize(
                             Mono.just(apiKeyAuth), context(HttpMethod.POST, "/api/v1/chat/completions")))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -271,7 +271,7 @@ class PermissionWriteFailClosedTest {
                     "/api/v1/images/generations", "/api/v1/images/edits");
             for (String path : servicePaths) {
                 String label = "API-Key 主体必须可访问服务代理面: " + path;
-                StepVerifier.create(phase2Manager().check(
+                StepVerifier.create(phase2Manager().authorize(
                                 Mono.just(apiKeyAuth), context(HttpMethod.POST, path)))
                         .expectNextMatches(decision -> {
                             assertTrue(decision.isGranted(), label);
