@@ -141,7 +141,7 @@ public final class ErrorResponseBuilder {
         if (tooLarge != null) {
             // #862：上传超限在写请求体阶段抛出，WebClient 会把它包成 WebClientRequestException，
             // 必须沿 cause 链识别，否则客户端会拿到 500 + 一段内部异常文本。
-            return new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, tooLarge.getMessage(), throwable);
+            return new ResponseStatusException(HttpStatus.CONTENT_TOO_LARGE, tooLarge.getMessage(), throwable);
         }
 
         if (throwable instanceof WebClientResponseException) {
@@ -226,7 +226,7 @@ public final class ErrorResponseBuilder {
      */
     private HttpStatus extractHttpStatus(final Throwable throwable) {
         if (findCause(throwable, MultipartPayloadTooLargeException.class) != null) {
-            return HttpStatus.PAYLOAD_TOO_LARGE;
+            return HttpStatus.CONTENT_TOO_LARGE;
         }
         if (throwable instanceof WebClientResponseException) {
             HttpStatusCode statusCode = ((WebClientResponseException) throwable).getStatusCode();

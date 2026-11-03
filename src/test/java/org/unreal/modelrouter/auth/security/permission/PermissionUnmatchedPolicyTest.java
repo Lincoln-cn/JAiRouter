@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.server.RequestPath;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.web.server.authorization.AuthorizationContext;
 import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.auth.security.model.ApiKeyAuthentication;
@@ -70,7 +70,7 @@ class PermissionUnmatchedPolicyTest {
             assertFalse(RbacExemptEndpoints.isExempt(HttpMethod.GET, unmatched), "探针必须未豁免");
 
             JwtAuthentication user = authenticated("user", List.of("USER"), List.of());
-            StepVerifier.create(denyAll().check(Mono.just(user), context(HttpMethod.GET, unmatched)))
+            StepVerifier.create(denyAll().authorize(Mono.just(user), context(HttpMethod.GET, unmatched)))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -81,7 +81,7 @@ class PermissionUnmatchedPolicyTest {
             String unmatched = "/api/unmatched-get-with-code-probe";
             JwtAuthentication holder = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.CONFIG_SERVICES_READ));
-            StepVerifier.create(denyAll().check(Mono.just(holder), context(HttpMethod.GET, unmatched)))
+            StepVerifier.create(denyAll().authorize(Mono.just(holder), context(HttpMethod.GET, unmatched)))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -89,7 +89,7 @@ class PermissionUnmatchedPolicyTest {
         @Test
         @DisplayName("未登记 GET + 未认证 → DENY（401 语义不变）")
         void unmatchedGetStillDeniedForAnonymous() {
-            StepVerifier.create(denyAll().check(Mono.empty(),
+            StepVerifier.create(denyAll().authorize(Mono.empty(),
                             context(HttpMethod.GET, "/api/unmatched-get-anon-probe")))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
@@ -107,7 +107,7 @@ class PermissionUnmatchedPolicyTest {
         void unmatchedPostStillDenied() {
             String unmatched = "/api/unmatched-write-p3-probe";
             JwtAuthentication user = authenticated("user", List.of("USER"), List.of());
-            StepVerifier.create(denyAll().check(Mono.just(user), context(HttpMethod.POST, unmatched)))
+            StepVerifier.create(denyAll().authorize(Mono.just(user), context(HttpMethod.POST, unmatched)))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -118,7 +118,7 @@ class PermissionUnmatchedPolicyTest {
             String unmatched = "/api/unmatched-write-variant-p3-probe";
             for (HttpMethod method : List.of(HttpMethod.PUT, HttpMethod.DELETE, HttpMethod.PATCH)) {
                 JwtAuthentication user = authenticated("user", List.of("USER"), List.of());
-                StepVerifier.create(denyAll().check(Mono.just(user), context(method, unmatched)))
+                StepVerifier.create(denyAll().authorize(Mono.just(user), context(method, unmatched)))
                         .expectNextMatches(decision -> !decision.isGranted())
                         .verifyComplete();
             }
@@ -143,7 +143,7 @@ class PermissionUnmatchedPolicyTest {
                 for (HttpMethod method : entry.methods()) {
                     JwtAuthentication user = authenticated("user", List.of("USER"), List.of());
                     String label = "豁免条目必须可达: " + method + " " + entry.pathPattern();
-                    StepVerifier.create(manager.check(Mono.just(user), context(method, samplePath)))
+                    StepVerifier.create(manager.authorize(Mono.just(user), context(method, samplePath)))
                             .expectNextMatches(decision -> {
                                 assertTrue(decision.isGranted(), label);
                                 return true;
@@ -168,10 +168,10 @@ class PermissionUnmatchedPolicyTest {
                     "user", List.of("USER"), List.of(PermissionCodes.CONFIG_INSTANCES_READ));
             JwtAuthentication bare = authenticated("user", List.of("USER"), List.of());
 
-            StepVerifier.create(denyAll().check(Mono.just(holder), context(HttpMethod.GET, path)))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(denyAll().authorize(Mono.just(holder), context(HttpMethod.GET, path)))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
-            StepVerifier.create(denyAll().check(Mono.just(bare), context(HttpMethod.GET, path)))
+            StepVerifier.create(denyAll().authorize(Mono.just(bare), context(HttpMethod.GET, path)))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -187,13 +187,13 @@ class PermissionUnmatchedPolicyTest {
         @DisplayName("未登记 GET/POST + ROLE_ADMIN → ALLOW（DENY_ALL 不影响管理员）")
         void adminBypassesDenyAll() {
             JwtAuthentication admin = authenticated("admin", List.of("ADMIN"), List.of());
-            StepVerifier.create(denyAll().check(Mono.just(admin),
+            StepVerifier.create(denyAll().authorize(Mono.just(admin),
                             context(HttpMethod.GET, "/api/unmatched-admin-get-probe")))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
-            StepVerifier.create(denyAll().check(Mono.just(admin),
+            StepVerifier.create(denyAll().authorize(Mono.just(admin),
                             context(HttpMethod.POST, "/api/unmatched-admin-write-probe")))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -201,9 +201,9 @@ class PermissionUnmatchedPolicyTest {
         @DisplayName("已登记规则路径 + ROLE_ADMIN 无权限码 → ALLOW（回归）")
         void adminBypassesRegisteredRule() {
             JwtAuthentication admin = authenticated("admin", List.of("ADMIN"), List.of());
-            StepVerifier.create(denyAll().check(Mono.just(admin),
+            StepVerifier.create(denyAll().authorize(Mono.just(admin),
                             context(HttpMethod.GET, "/api/config/instance/chat")))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
     }
@@ -219,8 +219,8 @@ class PermissionUnmatchedPolicyTest {
         void legacyModeRestoresFailOpenForGet() {
             String unmatched = "/api/unmatched-get-legacy-p3-probe";
             JwtAuthentication user = authenticated("user", List.of("USER"), List.of());
-            StepVerifier.create(authenticatedFallback().check(Mono.just(user), context(HttpMethod.GET, unmatched)))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(authenticatedFallback().authorize(Mono.just(user), context(HttpMethod.GET, unmatched)))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -229,15 +229,15 @@ class PermissionUnmatchedPolicyTest {
         void legacyModeRestoresFailOpenForWrites() {
             String unmatched = "/api/unmatched-write-legacy-p3-probe";
             JwtAuthentication user = authenticated("user", List.of("USER"), List.of());
-            StepVerifier.create(authenticatedFallback().check(Mono.just(user), context(HttpMethod.POST, unmatched)))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(authenticatedFallback().authorize(Mono.just(user), context(HttpMethod.POST, unmatched)))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
         @Test
         @DisplayName("AUTHENTICATED：未认证仍 DENY（401 语义不变）")
         void legacyModeStillDeniesAnonymous() {
-            StepVerifier.create(authenticatedFallback().check(Mono.empty(),
+            StepVerifier.create(authenticatedFallback().authorize(Mono.empty(),
                             context(HttpMethod.GET, "/api/unmatched-get-legacy-p3-probe")))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
@@ -255,8 +255,8 @@ class PermissionUnmatchedPolicyTest {
         void denyWritesKeepsGetFailOpen() {
             String unmatched = "/api/unmatched-get-denywrites-probe";
             JwtAuthentication user = authenticated("user", List.of("USER"), List.of());
-            StepVerifier.create(denyWrites().check(Mono.just(user), context(HttpMethod.GET, unmatched)))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(denyWrites().authorize(Mono.just(user), context(HttpMethod.GET, unmatched)))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -265,7 +265,7 @@ class PermissionUnmatchedPolicyTest {
         void denyWritesKeepsWriteFailClosed() {
             String unmatched = "/api/unmatched-write-denywrites-probe";
             JwtAuthentication user = authenticated("user", List.of("USER"), List.of());
-            StepVerifier.create(denyWrites().check(Mono.just(user), context(HttpMethod.POST, unmatched)))
+            StepVerifier.create(denyWrites().authorize(Mono.just(user), context(HttpMethod.POST, unmatched)))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -288,7 +288,7 @@ class PermissionUnmatchedPolicyTest {
                     "/api/v1/images/generations", "/api/v1/images/edits");
             for (String path : servicePaths) {
                 String label = "API-Key 主体必须可访问服务代理面: " + path;
-                StepVerifier.create(denyAll().check(
+                StepVerifier.create(denyAll().authorize(
                                 Mono.just(apiKeyAuth), context(HttpMethod.POST, path)))
                         .expectNextMatches(decision -> {
                             assertTrue(decision.isGranted(), label);
@@ -307,14 +307,14 @@ class PermissionUnmatchedPolicyTest {
             // 服务代理面（UniversalController）当前仅 POST；此处用 GET 探测同路径，
             // DENY_ALL 下未命中且未豁免 → DENY（fail-closed，符合「无服务代理 GET」现实）。
             // 若未来服务面新增 GET，必须加入 RbacExemptEndpoints，否则 API-Key 会被误伤。
-            StepVerifier.create(denyAll().check(
+            StepVerifier.create(denyAll().authorize(
                             Mono.just(apiKeyAuth), context(HttpMethod.GET, "/api/v1/chat/completions")))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
 
             // 控制台监控 GET（/api/v1/routing-monitor/**）已有规则，语义与未命中姿态无关：
             // 无权限码 → DENY（既有规则行为，Phase 3 不改变）。
-            StepVerifier.create(denyAll().check(
+            StepVerifier.create(denyAll().authorize(
                             Mono.just(apiKeyAuth), context(HttpMethod.GET, "/api/v1/routing-monitor/status")))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();

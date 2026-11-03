@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>本类断言两件事，缺一不可：</p>
  * <ul>
  *   <li><b>不再放行</b>：超限时下游 chain 一次都不应被调用，异常必须是
- *       {@link HttpStatus#PAYLOAD_TOO_LARGE}（旧实现会调用 chain 且下游读到 0 字节）；</li>
+ *       {@link HttpStatus#CONTENT_TOO_LARGE}（旧实现会调用 chain 且下游读到 0 字节）；</li>
  *   <li><b>客户端真能收到 413</b>：用真实 WebFlux 组合（{@code DispatcherHandler} + 真实
  *       {@link ReactiveGlobalExceptionHandler}）验证 {@code /api/v1/**} 与 {@code /v1/**}
  *       两个面都落 413，且错误体形状各自正确。</li>
@@ -129,7 +129,7 @@ class CachedBodyWebFilterPayloadLimitTest {
         final ResponseStatusException statusError =
                 assertInstanceOf(ResponseStatusException.class, error,
                         "必须是 ResponseStatusException 以便全局异常处理器映射状态码: " + error);
-        assertEquals(HttpStatus.PAYLOAD_TOO_LARGE, statusError.getStatusCode(),
+        assertEquals(HttpStatus.CONTENT_TOO_LARGE, statusError.getStatusCode(),
                 "超限必须是 413，而不是 400/500");
         assertNotNull(statusError.getReason(), "413 必须带可读原因");
         assertTrue(statusError.getReason().contains("10MB"),
@@ -146,7 +146,7 @@ class CachedBodyWebFilterPayloadLimitTest {
             final HttpHandler httpHandler = WebHttpHandlerBuilder.applicationContext(context).build();
             final MockServerWebExchange exchange = dispatch(httpHandler, API_PATH, OVERSIZED);
 
-            assertEquals(HttpStatus.PAYLOAD_TOO_LARGE, exchange.getResponse().getStatusCode(),
+            assertEquals(HttpStatus.CONTENT_TOO_LARGE, exchange.getResponse().getStatusCode(),
                     "控制台面超限必须回 413");
             assertEquals(MediaType.APPLICATION_JSON,
                     exchange.getResponse().getHeaders().getContentType(),
@@ -169,7 +169,7 @@ class CachedBodyWebFilterPayloadLimitTest {
             final HttpHandler httpHandler = WebHttpHandlerBuilder.applicationContext(context).build();
             final MockServerWebExchange exchange = dispatch(httpHandler, V1_PATH, OVERSIZED);
 
-            assertEquals(HttpStatus.PAYLOAD_TOO_LARGE, exchange.getResponse().getStatusCode(),
+            assertEquals(HttpStatus.CONTENT_TOO_LARGE, exchange.getResponse().getStatusCode(),
                     "客户端协议面超限同样必须回 413");
             assertEquals(MediaType.APPLICATION_JSON,
                     exchange.getResponse().getHeaders().getContentType(),
@@ -196,7 +196,7 @@ class CachedBodyWebFilterPayloadLimitTest {
             final HttpHandler httpHandler = WebHttpHandlerBuilder.applicationContext(context).build();
             final MockServerWebExchange exchange = dispatch(httpHandler, "/v1/messages", OVERSIZED);
 
-            assertEquals(HttpStatus.PAYLOAD_TOO_LARGE, exchange.getResponse().getStatusCode(),
+            assertEquals(HttpStatus.CONTENT_TOO_LARGE, exchange.getResponse().getStatusCode(),
                     "Anthropic 面超限同样必须回 413");
             assertEquals(MediaType.APPLICATION_JSON,
                     exchange.getResponse().getHeaders().getContentType(),

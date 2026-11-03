@@ -104,7 +104,9 @@ public class SecurityConfiguration {
         }
 
         // 配置授权规则 - 实现基于角色的访问控制（RBAC）
-        ServerHttpSecurity.AuthorizeExchangeSpec authorizeExchangeSpec = customizedHttp
+        final java.util.concurrent.atomic.AtomicReference<ServerHttpSecurity.AuthorizeExchangeSpec> specRef =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        customizedHttp
                 // CSRF 关闭：本服务为无状态 API 网关（Bearer/API Key，NoOpSecurityContextRepository），
                 // 不依赖 Cookie 会话，CSRF 不适用。若未来引入 Cookie 会话需重新评估并启用 CSRF。
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
@@ -136,7 +138,8 @@ public class SecurityConfiguration {
                         })
                 )
                 // 配置授权规则 - 实现基于角色的访问控制（RBAC）
-                .authorizeExchange();
+                .authorizeExchange(specRef::set);
+        ServerHttpSecurity.AuthorizeExchangeSpec authorizeExchangeSpec = specRef.get();
 
         // 配置公共路径
         // R3-P1：API 文档默认需认证；仅 jairouter.security.docs-public=true 时匿名
@@ -226,8 +229,8 @@ public class SecurityConfiguration {
 
         return new org.springframework.security.authentication.ProviderManager(
                 List.of(
-                        new DaoAuthenticationProvider(passwordEncoder) {{
-                            setUserDetailsService(userDetailsService);
+                        new DaoAuthenticationProvider(userDetailsService) {{
+                            setPasswordEncoder(passwordEncoder);
                         }}
                 )
         );

@@ -6,7 +6,7 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.actuate.health.Status;
+import org.springframework.boot.health.contributor.Status;
 import org.unreal.modelrouter.support.TestTracerProviders;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
 

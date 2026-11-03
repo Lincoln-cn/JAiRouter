@@ -63,7 +63,7 @@ class ReactiveGlobalExceptionHandlerTest {
         lenient().when(response.bufferFactory()).thenReturn(bufferFactory);
         lenient().when(response.getHeaders()).thenReturn(headers);
         lenient().when(response.isCommitted()).thenReturn(false);
-        lenient().when(headers.containsKey(anyString())).thenReturn(false);
+        lenient().when(headers.containsHeader(anyString())).thenReturn(false);
         lenient().when(response.writeWith(any())).thenReturn(Mono.empty());
     }
 
@@ -311,7 +311,7 @@ class ReactiveGlobalExceptionHandlerTest {
         void testSetContentTypeHeader() {
             // Arrange
             RuntimeException ex = new RuntimeException("Test error");
-            when(headers.containsKey("Content-Type")).thenReturn(false);
+            when(headers.containsHeader("Content-Type")).thenReturn(false);
 
             // Act
             handler.handle(exchange, ex).block();
@@ -325,7 +325,7 @@ class ReactiveGlobalExceptionHandlerTest {
         void testDoNotDuplicateContentType() {
             // Arrange
             RuntimeException ex = new RuntimeException("Test error");
-            when(headers.containsKey("Content-Type")).thenReturn(true);
+            when(headers.containsHeader("Content-Type")).thenReturn(true);
 
             // Act
             handler.handle(exchange, ex).block();

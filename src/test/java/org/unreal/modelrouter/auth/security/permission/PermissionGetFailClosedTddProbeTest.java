@@ -37,7 +37,7 @@ class PermissionGetFailClosedTddProbeTest {
         JwtAuthentication user = new JwtAuthentication("user", "token", List.of("USER"), List.of());
         user.setAuthenticated(true);
 
-        StepVerifier.create(manager.check(Mono.just(user), context(HttpMethod.GET, unmatched)))
+        StepVerifier.create(manager.authorize(Mono.just(user), context(HttpMethod.GET, unmatched)))
                 .expectNextMatches(decision -> !decision.isGranted())
                 .verifyComplete();
     }

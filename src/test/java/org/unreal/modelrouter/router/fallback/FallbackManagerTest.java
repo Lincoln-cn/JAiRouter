@@ -112,7 +112,7 @@ class FallbackManagerTest {
 
         // 验证
         assertNotNull(response);
-        assertEquals(503, response.getStatusCodeValue());
+        assertEquals(503, response.getStatusCode().value());
         verify(fallbackStrategy, times(1)).fallback(nullable(FallbackRequestKey.class), any(Exception.class));
     }
 

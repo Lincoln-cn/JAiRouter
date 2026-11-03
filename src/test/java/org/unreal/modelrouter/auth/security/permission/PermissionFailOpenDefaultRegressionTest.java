@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.server.RequestPath;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.web.server.authorization.AuthorizationContext;
 import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.auth.security.model.JwtAuthentication;
@@ -47,7 +47,7 @@ class PermissionFailOpenDefaultRegressionTest {
         AuthorizationContext context = context(HttpMethod.GET, unmatched);
         JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
-        StepVerifier.create(manager.check(Mono.just(auth), context))
+        StepVerifier.create(manager.authorize(Mono.just(auth), context))
                 .expectNextMatches(decision -> !decision.isGranted())
                 .verifyComplete();
     }
@@ -64,8 +64,8 @@ class PermissionFailOpenDefaultRegressionTest {
         AuthorizationContext context = context(HttpMethod.GET, unmatched);
         JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
-        StepVerifier.create(manager.check(Mono.just(auth), context))
-                .expectNextMatches(AuthorizationDecision::isGranted)
+        StepVerifier.create(manager.authorize(Mono.just(auth), context))
+                .expectNextMatches(AuthorizationResult::isGranted)
                 .verifyComplete();
     }
 
@@ -75,7 +75,7 @@ class PermissionFailOpenDefaultRegressionTest {
         PermissionAuthorizationManager manager = new PermissionAuthorizationManager(registry);
         AuthorizationContext context = context(HttpMethod.GET, "/api/unmatched-endpoint-regression-probe");
 
-        StepVerifier.create(manager.check(Mono.empty(), context))
+        StepVerifier.create(manager.authorize(Mono.empty(), context))
                 .expectNextMatches(decision -> !decision.isGranted())
                 .verifyComplete();
     }
@@ -88,16 +88,16 @@ class PermissionFailOpenDefaultRegressionTest {
         JwtAuthentication withCode = authenticated(
                 "user", List.of("USER"), List.of(PermissionCodes.CONFIG_INSTANCES_READ));
 
-        StepVerifier.create(manager.check(
+        StepVerifier.create(manager.authorize(
                         Mono.just(withoutCode),
                         context(HttpMethod.GET, "/api/config/instance/chat")))
                 .expectNextMatches(decision -> !decision.isGranted())
                 .verifyComplete();
 
-        StepVerifier.create(manager.check(
+        StepVerifier.create(manager.authorize(
                         Mono.just(withCode),
                         context(HttpMethod.GET, "/api/config/instance/chat")))
-                .expectNextMatches(AuthorizationDecision::isGranted)
+                .expectNextMatches(AuthorizationResult::isGranted)
                 .verifyComplete();
     }
 

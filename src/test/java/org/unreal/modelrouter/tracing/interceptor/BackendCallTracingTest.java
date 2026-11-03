@@ -357,7 +357,7 @@ class BackendCallTracingTest {
             // Then - 验证追踪头被注入
             verify(exchangeFunction).exchange(argThat(request -> {
                 // 验证请求包含原有头部
-                assertTrue(request.headers().containsKey("User-Agent"));
+                assertTrue(request.headers().containsHeader("User-Agent"));
                 // 验证请求可能包含追踪头部（具体实现取决于追踪上下文的头部注入逻辑）
                 return true;
             }));
