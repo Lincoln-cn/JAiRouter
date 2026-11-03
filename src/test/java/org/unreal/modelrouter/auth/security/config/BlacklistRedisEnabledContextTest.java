@@ -12,10 +12,9 @@ import org.springframework.boot.data.redis.autoconfigure.DataRedisReactiveAutoCo
 import org.springframework.boot.data.redis.autoconfigure.DataRedisRepositoriesAutoConfiguration;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceTransactionManagerAutoConfiguration;
-import org.springframework.boot.jpa.autoconfigure.HibernateJpaAutoConfiguration;
-import org.springframework.boot.security.oauth2.server.resource.autoconfigure.reactive.ReactiveOAuth2ResourceServerAutoConfiguration;
-import org.springframework.boot.security.autoconfigure.web.reactive.ReactiveSecurityAutoConfiguration;
-import org.springframework.boot.security.autoconfigure.web.reactive.ReactiveUserDetailsServiceAutoConfiguration;
+import org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration;
+import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;
+import org.springframework.boot.security.autoconfigure.ReactiveUserDetailsServiceAutoConfiguration;
 import org.springframework.boot.security.autoconfigure.actuate.web.reactive.ReactiveManagementWebSecurityAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -109,10 +108,10 @@ class BlacklistRedisEnabledContextTest {
             DataRedisAutoConfiguration.class,
             DataRedisReactiveAutoConfiguration.class,
             DataRedisRepositoriesAutoConfiguration.class,
-            ReactiveSecurityAutoConfiguration.class,
+            SecurityAutoConfiguration.class,
             ReactiveUserDetailsServiceAutoConfiguration.class,
             ReactiveManagementWebSecurityAutoConfiguration.class,
-            ReactiveOAuth2ResourceServerAutoConfiguration.class
+            // probe4.1: oauth2 自动配置在 4.1 拆为独立模块，本工程未引入
     })
     @Import({JwtServiceConfiguration.class, EnhancedSecurityConfiguration.class})
     @ComponentScan(

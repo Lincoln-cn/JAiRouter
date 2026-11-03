@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.server.RequestPath;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.web.server.authorization.AuthorizationContext;
 import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.auth.security.model.JwtAuthentication;
@@ -50,8 +50,8 @@ class PermissionAuthorizationManagerTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.CONFIG_INSTANCES_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), context))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), context))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -61,7 +61,7 @@ class PermissionAuthorizationManagerTest {
             AuthorizationContext context = context(HttpMethod.GET, "/api/config/version/test");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), context))
+            StepVerifier.create(manager.authorize(Mono.just(auth), context))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -73,7 +73,7 @@ class PermissionAuthorizationManagerTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.CONFIG_POOLS_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), context))
+            StepVerifier.create(manager.authorize(Mono.just(auth), context))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -84,8 +84,8 @@ class PermissionAuthorizationManagerTest {
             AuthorizationContext context = context(HttpMethod.GET, "/api/config/instance/chat");
             JwtAuthentication auth = authenticated("admin", List.of("ADMIN"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), context))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), context))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -97,7 +97,7 @@ class PermissionAuthorizationManagerTest {
                     "user", List.of("USER"), List.of(PermissionCodes.CONFIG_VERSIONS_READ));
 
             // 只有 read 权限码，POST /api/config/version/test 应被拒绝（需要 write 权限码）
-            StepVerifier.create(manager.check(Mono.just(reader), context))
+            StepVerifier.create(manager.authorize(Mono.just(reader), context))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -107,7 +107,7 @@ class PermissionAuthorizationManagerTest {
         void unauthenticatedOnRuleDenied() {
             AuthorizationContext context = context(HttpMethod.GET, "/api/config/instance/chat");
 
-            StepVerifier.create(manager.check(Mono.empty(), context))
+            StepVerifier.create(manager.authorize(Mono.empty(), context))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -123,7 +123,7 @@ class PermissionAuthorizationManagerTest {
             AuthorizationContext context = context(HttpMethod.GET, "/api/unregistered-endpoint");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), context))
+            StepVerifier.create(manager.authorize(Mono.just(auth), context))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -136,8 +136,8 @@ class PermissionAuthorizationManagerTest {
             AuthorizationContext context = context(HttpMethod.GET, "/api/unregistered-endpoint");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
-            StepVerifier.create(legacy.check(Mono.just(auth), context))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(legacy.authorize(Mono.just(auth), context))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -146,7 +146,7 @@ class PermissionAuthorizationManagerTest {
         void noRuleUnauthenticatedDenied() {
             AuthorizationContext context = context(HttpMethod.GET, "/api/unregistered-endpoint");
 
-            StepVerifier.create(manager.check(Mono.empty(), context))
+            StepVerifier.create(manager.authorize(Mono.empty(), context))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -163,8 +163,8 @@ class PermissionAuthorizationManagerTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.CALLHISTORY_VIEW));
 
-            StepVerifier.create(manager.check(Mono.just(auth), context))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), context))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -179,7 +179,7 @@ class PermissionAuthorizationManagerTest {
                 JwtAuthentication auth = authenticated(
                         "user", List.of("USER"), List.of(PermissionCodes.CALLHISTORY_VIEW));
 
-                StepVerifier.create(manager.check(Mono.just(auth), context))
+                StepVerifier.create(manager.authorize(Mono.just(auth), context))
                         .expectNextMatches(decision -> !decision.isGranted())
                         .verifyComplete();
             }
@@ -193,7 +193,7 @@ class PermissionAuthorizationManagerTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.CONFIG_SERVICES_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), context))
+            StepVerifier.create(manager.authorize(Mono.just(auth), context))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -205,8 +205,8 @@ class PermissionAuthorizationManagerTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.CONFIG_CIRCUITBREAKER_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), context))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), context))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -222,16 +222,16 @@ class PermissionAuthorizationManagerTest {
                     "user", List.of("USER"), List.of(PermissionCodes.SECURITY_JWTTOKENS_MANAGE));
 
             // 携带 system:accounts:read -> 放行（#567 之前这里要的是 :manage）
-            StepVerifier.create(manager.check(Mono.just(reader), context))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(reader), context))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
             // 仅携带 system:accounts:manage -> 拒绝：URL 层按方法拆分，读面只认 :read
             // （B11 由角色模板保证「持 manage 者同时持 read」，因此内置角色不会因此失去读能力）
-            StepVerifier.create(manager.check(Mono.just(manageOnly), context))
+            StepVerifier.create(manager.authorize(Mono.just(manageOnly), context))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
             // 仅携带 security:jwttokens:manage -> 拒绝（账户管理不归 JWT 令牌管理）
-            StepVerifier.create(manager.check(Mono.just(tokenManager), context))
+            StepVerifier.create(manager.authorize(Mono.just(tokenManager), context))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -246,11 +246,11 @@ class PermissionAuthorizationManagerTest {
 
             for (HttpMethod method : List.of(HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE)) {
                 AuthorizationContext context = context(method, "/api/security/jwt/accounts");
-                StepVerifier.create(manager.check(Mono.just(reader), context))
+                StepVerifier.create(manager.authorize(Mono.just(reader), context))
                         .expectNextMatches(decision -> !decision.isGranted())
                         .verifyComplete();
-                StepVerifier.create(manager.check(Mono.just(accountManager), context))
-                        .expectNextMatches(AuthorizationDecision::isGranted)
+                StepVerifier.create(manager.authorize(Mono.just(accountManager), context))
+                        .expectNextMatches(AuthorizationResult::isGranted)
                         .verifyComplete();
             }
         }
@@ -266,8 +266,8 @@ class PermissionAuthorizationManagerTest {
             AuthorizationContext context = context(HttpMethod.GET, "/api/security/permissions");
             JwtAuthentication auth = authenticated("admin", List.of("ADMIN"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), context))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), context))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -278,8 +278,8 @@ class PermissionAuthorizationManagerTest {
             JwtAuthentication auth = authenticated(
                     "operator", List.of("USER"), List.of(PermissionCodes.SYSTEM_PERMISSIONS_MANAGE));
 
-            StepVerifier.create(manager.check(Mono.just(auth), context))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), context))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -288,7 +288,7 @@ class PermissionAuthorizationManagerTest {
         void unauthenticatedDeniedOnPermissionManagement() {
             AuthorizationContext context = context(HttpMethod.GET, "/api/security/permissions");
 
-            StepVerifier.create(manager.check(Mono.empty(), context))
+            StepVerifier.create(manager.authorize(Mono.empty(), context))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -299,7 +299,7 @@ class PermissionAuthorizationManagerTest {
             AuthorizationContext context = context(HttpMethod.GET, "/api/security/permissions");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), context))
+            StepVerifier.create(manager.authorize(Mono.just(auth), context))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -310,8 +310,8 @@ class PermissionAuthorizationManagerTest {
             AuthorizationContext context = context(HttpMethod.GET, "/api/auth/permissions");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), context))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), context))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -320,7 +320,7 @@ class PermissionAuthorizationManagerTest {
         void currentUserPermissionsUnauthenticatedDenied() {
             AuthorizationContext context = context(HttpMethod.GET, "/api/auth/permissions");
 
-            StepVerifier.create(manager.check(Mono.empty(), context))
+            StepVerifier.create(manager.authorize(Mono.empty(), context))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }

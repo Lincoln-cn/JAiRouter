@@ -7,7 +7,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;
+import org.springframework.boot.security.autoconfigure.web.reactive.ReactiveWebSecurityAutoConfiguration;
+import org.unreal.modelrouter.support.TestHttpClient;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -72,7 +74,7 @@ class AdapterConfigRequestBodyEndToEndTest {
     /**
      * 随机端口上的 HTTP 客户端。
      */
-    private static TestRestTemplate restTemplate;
+    private static TestHttpClient restTemplate;
 
     /**
      * 启动隔离应用（关闭与本用例无关的自动装配，避免去连数据库 / Redis / 安全链）。
@@ -99,8 +101,8 @@ class AdapterConfigRequestBodyEndToEndTest {
                         + "org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration");
         final Integer port = context.getEnvironment().getProperty("local.server.port", Integer.class);
         assertNotNull(port, "应拿到随机端口");
-        // TestRestTemplate 默认不把 4xx/5xx 当异常抛（内部就是 NoOpResponseErrorHandler），故无需再配
-        restTemplate = new TestRestTemplate();
+        // TestHttpClient 默认不把 4xx/5xx 当异常抛（内部就是 NoOpResponseErrorHandler），故无需再配
+        restTemplate = new TestHttpClient();
     }
 
     /**
@@ -182,7 +184,7 @@ class AdapterConfigRequestBodyEndToEndTest {
      * 隔离应用：真实控制器 + 真实中央处理器 + mock 协作对象 + 一个对照组端点。
      */
     @SpringBootConfiguration
-    @EnableAutoConfiguration
+    @EnableAutoConfiguration(exclude = {SecurityAutoConfiguration.class, ReactiveWebSecurityAutoConfiguration.class})
     @Import({ReactiveGlobalExceptionHandler.class, AdapterConfigController.class, IsolatedApp.ControlGroupController.class})
     static class IsolatedApp {
 

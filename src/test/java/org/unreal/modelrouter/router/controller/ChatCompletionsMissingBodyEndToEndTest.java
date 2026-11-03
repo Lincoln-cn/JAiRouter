@@ -7,7 +7,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;
+import org.springframework.boot.security.autoconfigure.web.reactive.ReactiveWebSecurityAutoConfiguration;
+import org.unreal.modelrouter.support.TestHttpClient;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -48,7 +50,7 @@ import static org.mockito.Mockito.when;
  * <p>为什么必须走真实 HTTP 栈：<b>NPE 只在「参数解析器把 null 交给控制器、控制器真的执行了」
  * 这条路径上才发生</b>。直接调控制器方法（见 {@code UniversalControllerTest#UNIVERSAL-007}）
  * 能锁住「抛什么异常」，但锁不住「客户端实际收到什么状态码」—— 而 #683 的缺陷正是
- * 客户端可观测的状态码。本类断言的是 {@link TestRestTemplate} 拿到的状态码与错误体。
+ * 客户端可观测的状态码。本类断言的是 {@link TestHttpClient} 拿到的状态码与错误体。
  * 隔离应用里同时注册了生产用的两个处理器：注解控制器内抛出的
  * {@code ServerWebInputException} 先由 {@link GlobalControllerExceptionHandler}
  * （{@code @RestControllerAdvice}）接住并渲染 400；没有 advice 时才会落到
@@ -74,7 +76,7 @@ class ChatCompletionsMissingBodyEndToEndTest {
     /**
      * 随机端口上的 HTTP 客户端。
      */
-    private static TestRestTemplate restTemplate;
+    private static TestHttpClient restTemplate;
 
     /**
      * 启动隔离应用（关闭与本用例无关的自动装配，避免去连数据库 / Redis / 安全链）。
@@ -101,8 +103,8 @@ class ChatCompletionsMissingBodyEndToEndTest {
                         + "org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration");
         final Integer port = context.getEnvironment().getProperty("local.server.port", Integer.class);
         assertNotNull(port, "应拿到随机端口");
-        // TestRestTemplate 默认不把 4xx/5xx 当异常抛（内部就是 NoOpResponseErrorHandler），故无需再配
-        restTemplate = new TestRestTemplate();
+        // TestHttpClient 默认不把 4xx/5xx 当异常抛（内部就是 NoOpResponseErrorHandler），故无需再配
+        restTemplate = new TestHttpClient();
     }
 
     /**
@@ -181,7 +183,8 @@ class ChatCompletionsMissingBodyEndToEndTest {
      * 隔离应用：真实控制器 + 真实两个中央处理器 + mock 协作对象 + 一个对照组端点。
      */
     @SpringBootConfiguration
-    @EnableAutoConfiguration
+    @EnableAutoConfiguration(exclude = {SecurityAutoConfiguration.class,
+            ReactiveWebSecurityAutoConfiguration.class})
     @Import({GlobalControllerExceptionHandler.class, ReactiveGlobalExceptionHandler.class,
             UniversalController.class, IsolatedApp.ControlGroupController.class})
     static class IsolatedApp {

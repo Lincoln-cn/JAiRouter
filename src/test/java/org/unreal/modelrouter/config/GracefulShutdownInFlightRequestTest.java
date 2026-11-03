@@ -5,7 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;
+import org.springframework.boot.security.autoconfigure.web.reactive.ReactiveWebSecurityAutoConfiguration;
+import org.unreal.modelrouter.support.TestHttpClient;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -68,7 +70,7 @@ class GracefulShutdownInFlightRequestTest {
             int port = context.getEnvironment().getProperty("local.server.port", Integer.class);
             assertNotNull(port, "应拿到随机端口");
 
-            TestRestTemplate restTemplate = new TestRestTemplate();
+            TestHttpClient restTemplate = new TestHttpClient();
             String url = "http://127.0.0.1:" + port + "/slow";
             AtomicReference<ResponseEntity<String>> responseRef = new AtomicReference<>();
             AtomicReference<Throwable> errorRef = new AtomicReference<>();
@@ -105,7 +107,8 @@ class GracefulShutdownInFlightRequestTest {
     }
 
     @SpringBootConfiguration
-    @EnableAutoConfiguration
+    @EnableAutoConfiguration(exclude = {SecurityAutoConfiguration.class,
+            ReactiveWebSecurityAutoConfiguration.class})
     static class IsolatedApp {
 
         @RestController

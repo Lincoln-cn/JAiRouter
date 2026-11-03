@@ -27,7 +27,7 @@ import reactor.core.publisher.Mono;
  *
  * <p>超过 {@link #MAX_CACHE_SIZE} 的请求体不再「跳过缓存后放行」：body 此时已被
  * {@code DataBufferUtils.join} 消费，放行只会让下游读到空体。该分支以
- * {@link HttpStatus#PAYLOAD_TOO_LARGE}（413）终止，错误体由
+ * {@link HttpStatus#CONTENT_TOO_LARGE}（413）终止，错误体由
  * {@link org.unreal.modelrouter.common.exceptionhandler.ReactiveGlobalExceptionHandler}
  * 统一渲染（{@code /v1/**} 走协议形状，其余路径走 {@code RouterResponse}）。（issue #681）</p>
  *
@@ -99,7 +99,7 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
                                     size / (1024 * 1024), MAX_CACHE_SIZE / (1024 * 1024),
                                     request.getPath().value());
                             return Mono.error(new ResponseStatusException(
-                                    HttpStatus.PAYLOAD_TOO_LARGE, PAYLOAD_TOO_LARGE_MESSAGE));
+                                    HttpStatus.CONTENT_TOO_LARGE, PAYLOAD_TOO_LARGE_MESSAGE));
                         }
                         byte[] bytes = new byte[size];
                         dataBuffer.read(bytes);

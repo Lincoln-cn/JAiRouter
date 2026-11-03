@@ -55,7 +55,7 @@ class JwtPersistenceHealthEndpointTest {
         @DisplayName("应返回 200 状态码")
         void shouldReturn200() {
             ResponseEntity<Map<String, Object>> response = endpoint.health();
-            assertEquals(200, response.getStatusCodeValue());
+            assertEquals(200, response.getStatusCode().value());
         }
 
         @Test
@@ -166,7 +166,7 @@ class JwtPersistenceHealthEndpointTest {
         void shouldReturnCoreHealthForCoreComponent() {
             ResponseEntity<Map<String, Object>> response = endpoint.healthByComponent("core");
 
-            assertEquals(200, response.getStatusCodeValue());
+            assertEquals(200, response.getStatusCode().value());
             assertEquals("core", response.getBody().get("component"));
             assertNotNull(response.getBody().get("status"));
         }

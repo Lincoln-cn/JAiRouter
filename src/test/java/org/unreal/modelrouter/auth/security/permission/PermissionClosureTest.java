@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.server.RequestPath;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.web.server.authorization.AuthorizationContext;
 import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.auth.security.model.JwtAuthentication;
@@ -55,7 +55,7 @@ class PermissionClosureTest {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/auth/api-keys");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -67,8 +67,8 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "admin", List.of("ADMIN"), List.of(PermissionCodes.SECURITY_APIKEYS_MANAGE));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -78,7 +78,7 @@ class PermissionClosureTest {
             AuthorizationContext ctx = context(HttpMethod.POST, "/api/auth/api-keys");
             JwtAuthentication auth = authenticated("operator", List.of("OPERATOR"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -88,7 +88,7 @@ class PermissionClosureTest {
         void deleteApiKeyUnauthenticatedDenied() {
             AuthorizationContext ctx = context(HttpMethod.DELETE, "/api/auth/api-keys/123");
 
-            StepVerifier.create(manager.check(Mono.empty(), ctx))
+            StepVerifier.create(manager.authorize(Mono.empty(), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -106,7 +106,7 @@ class PermissionClosureTest {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/security/audit/extended/jwt-tokens");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -118,8 +118,8 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "operator", List.of("OPERATOR"), List.of(PermissionCodes.SECURITY_AUDIT_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -128,7 +128,7 @@ class PermissionClosureTest {
         void auditQueryUnauthenticatedDenied() {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/security/audit/extended/api-keys");
 
-            StepVerifier.create(manager.check(Mono.empty(), ctx))
+            StepVerifier.create(manager.authorize(Mono.empty(), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -146,7 +146,7 @@ class PermissionClosureTest {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/monitoring/slow-queries/stats");
             JwtAuthentication auth = authenticated("viewer", List.of("VIEWER"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -158,8 +158,8 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.MONITORING_SLOWQUERY_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -173,7 +173,7 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.MONITORING_SLOWQUERY_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -187,8 +187,8 @@ class PermissionClosureTest {
                     List.of(PermissionCodes.MONITORING_SLOWQUERY_READ,
                             PermissionCodes.MONITORING_SLOWQUERY_WRITE));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
     }
@@ -205,7 +205,7 @@ class PermissionClosureTest {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/models/stats");
             JwtAuthentication auth = authenticated("viewer", List.of("VIEWER"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -217,8 +217,8 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.MONITORING_MODELSTATS_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
     }
@@ -235,7 +235,7 @@ class PermissionClosureTest {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/config/version/history");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -247,8 +247,8 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.CONFIG_VERSIONS_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -259,7 +259,7 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.CONFIG_VERSIONS_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -271,8 +271,8 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "operator", List.of("OPERATOR"), List.of(PermissionCodes.CONFIG_VERSIONS_WRITE));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
     }
@@ -289,7 +289,7 @@ class PermissionClosureTest {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/state-persistence/status");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -301,8 +301,8 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.CONFIG_PERSISTENCE_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -313,7 +313,7 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.CONFIG_PERSISTENCE_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -325,8 +325,8 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "operator", List.of("OPERATOR"), List.of(PermissionCodes.CONFIG_PERSISTENCE_WRITE));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
     }
@@ -343,7 +343,7 @@ class PermissionClosureTest {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/tracing/actuator/status");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -355,8 +355,8 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.TRACING_DASHBOARD_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -367,7 +367,7 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.TRACING_DASHBOARD_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -378,8 +378,8 @@ class PermissionClosureTest {
             AuthorizationContext ctx = context(HttpMethod.PUT, "/api/tracing/actuator/config");
             JwtAuthentication auth = authenticated("admin", List.of("ADMIN"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
     }
@@ -396,7 +396,7 @@ class PermissionClosureTest {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/tracing/performance/stats");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -408,8 +408,8 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.TRACING_DASHBOARD_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -420,7 +420,7 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.TRACING_DASHBOARD_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -438,7 +438,7 @@ class PermissionClosureTest {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/tracing/query/search");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -450,8 +450,8 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.TRACING_SEARCH_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -462,7 +462,7 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.TRACING_SEARCH_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -474,8 +474,8 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.TRACING_SEARCH_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
     }
@@ -492,7 +492,7 @@ class PermissionClosureTest {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/dashboard/metrics");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -504,8 +504,8 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.OVERVIEW_DASHBOARD_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -515,8 +515,8 @@ class PermissionClosureTest {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/dashboard/metrics");
             JwtAuthentication auth = authenticated("admin", List.of("ADMIN"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -525,7 +525,7 @@ class PermissionClosureTest {
         void dashboardUnauthenticatedDenied() {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/dashboard/metrics");
 
-            StepVerifier.create(manager.check(Mono.empty(), ctx))
+            StepVerifier.create(manager.authorize(Mono.empty(), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -545,7 +545,7 @@ class PermissionClosureTest {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/config/quota");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -557,8 +557,8 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.CONFIG_QUOTA_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -569,7 +569,7 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.CONFIG_QUOTA_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -581,8 +581,8 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "operator", List.of("OPERATOR"), List.of(PermissionCodes.CONFIG_QUOTA_WRITE));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
     }
@@ -599,7 +599,7 @@ class PermissionClosureTest {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/monitoring/quota/status");
             JwtAuthentication auth = authenticated("viewer", List.of("VIEWER"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -611,8 +611,8 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.MONITORING_QUOTA_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
 
@@ -622,7 +622,7 @@ class PermissionClosureTest {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/monitoring/quota/usage");
             JwtAuthentication auth = authenticated("viewer", List.of("VIEWER"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -634,8 +634,8 @@ class PermissionClosureTest {
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.MONITORING_QUOTA_READ));
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
     }
@@ -652,7 +652,7 @@ class PermissionClosureTest {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/some-unregistered-path");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
-            StepVerifier.create(manager.check(Mono.just(auth), ctx))
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
                     .expectNextMatches(decision -> !decision.isGranted())
                     .verifyComplete();
         }
@@ -665,8 +665,8 @@ class PermissionClosureTest {
             AuthorizationContext ctx = context(HttpMethod.GET, "/api/some-unregistered-path");
             JwtAuthentication auth = authenticated("user", List.of("USER"), List.of());
 
-            StepVerifier.create(legacy.check(Mono.just(auth), ctx))
-                    .expectNextMatches(AuthorizationDecision::isGranted)
+            StepVerifier.create(legacy.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
                     .verifyComplete();
         }
     }
