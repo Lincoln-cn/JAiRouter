@@ -217,7 +217,7 @@ public class ExceptionEventEntity {
      * 创建时间
      */
     @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     /**

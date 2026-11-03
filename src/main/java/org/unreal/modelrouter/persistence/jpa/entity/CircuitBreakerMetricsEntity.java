@@ -126,6 +126,6 @@ public class CircuitBreakerMetricsEntity {
     private Boolean adjustmentApplied = false;
 
     @UpdateTimestamp
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 }
