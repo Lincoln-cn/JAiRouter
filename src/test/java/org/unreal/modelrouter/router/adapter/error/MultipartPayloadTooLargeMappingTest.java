@@ -33,7 +33,7 @@ class MultipartPayloadTooLargeMappingTest {
                 .expectErrorSatisfies(error -> {
                     assertThat(error).isInstanceOf(ResponseStatusException.class);
                     final ResponseStatusException status = (ResponseStatusException) error;
-                    assertThat(status.getStatusCode()).isEqualTo(HttpStatus.PAYLOAD_TOO_LARGE);
+                    assertThat(status.getStatusCode().value()).isEqualTo(413);
                     assertThat(status.getReason())
                             .isEqualTo("上传文件过大：big.bin（26215424 字节）超过上限 26214400 字节（25 MiB）");
                 })
@@ -47,8 +47,8 @@ class MultipartPayloadTooLargeMappingTest {
                 "big.bin", 2048L, 1024L, "上传文件过大：big.bin（2048 字节）超过上限 1024 字节（1 KiB）");
 
         StepVerifier.create(builder.buildErrorResponse(new RuntimeException(tooLarge), "上传文件太大"))
-                .expectErrorSatisfies(error -> assertThat(((ResponseStatusException) error).getStatusCode())
-                        .isEqualTo(HttpStatus.PAYLOAD_TOO_LARGE))
+                .expectErrorSatisfies(error -> assertThat(((ResponseStatusException) error).getStatusCode().value())
+                        .isEqualTo(413))
                 .verify();
     }
 
