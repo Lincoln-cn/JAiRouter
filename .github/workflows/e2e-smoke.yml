@@ -57,7 +57,7 @@ jobs:
           npm run build
 
       - name: 打包后端（前端产物由 copy-frontend-build 打进 jar）
-        run: ./mvnw -B -DskipTests -Dfrontend.build.skip=true package
+        run: ./mvnw -B -Dmaven.test.skip=true -Dfrontend.build.skip=true package
         env:
           MAVEN_OPTS: -Xmx2g
 

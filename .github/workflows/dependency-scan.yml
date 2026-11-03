@@ -82,7 +82,7 @@ jobs:
         continue-on-error: true
         run: |
           mvn -B org.cyclonedx:cyclonedx-maven-plugin:2.9.3:makeAggregateBom \
-            -DskipTests \
+            -Dmaven.test.skip=true \
             -DoutputFormat=json \
             -DoutputName=sbom
 
