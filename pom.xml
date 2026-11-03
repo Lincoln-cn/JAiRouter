@@ -295,11 +295,18 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Redis for caching (optional, for API key and JWT blacklist caching) -->
+        <!--
+          Redis 支持（API Key 与 JWT 黑名单缓存）。
+
+          这里不标 optional：本项目是应用不是库，optional 的唯一实际效果是让
+          spring-boot-maven-plugin 在打包时把该依赖及其传递依赖剔出 jar。
+          Spring Boot 4.1 起 boot 自己把 spring-data-redis 标成了 optional，
+          两层叠加的后果是运行期 NoClassDefFoundError: ReactiveStringRedisTemplate
+          （编译与单测都发现不了，只有起 jar 才暴露）。
+        -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
-            <optional>true</optional>
         </dependency>
 
         <!-- Caffeine for local caching (v2.7.10: client IP rate limiter cache) -->
