@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.7.0
+> **Document Version**: 3.7.1
 > **Last Updated**: 2026-11-04
 > **Git Commit**: -
 > **Author**: Lincoln
@@ -20,6 +20,17 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+### [3.7.1] - 2026-11-04 - Container image build fix (#980)
+
+#### Fixed
+
+- **Container image build failure**: `Dockerfile.optimized`, `Dockerfile.distroless`, and `Dockerfile.jlink` still used the `layertools` packaging mode removed in Spring Boot 4.0, so the `v3.7.0` image build failed at the `extract` step (`Error: Unsupported jarmode 'layertools'`). All three variants now use the `tools` mode, matching the main `Dockerfile`.
+
+#### Notes
+
+- The `v3.7.0` GitHub Release and jar are unaffected; this release only restores the container images.
+
+
 ### [3.7.0] - 2026-11-04 - Spring Boot 4.1 upgrade and Jackson 3 migration (#963-#978)
 
 The headline of this release is the **framework upgrade**: Spring Boot 3.5.16 to 4.1.2, with the application code moved to Jackson 3. OSS support for 3.5 ended on 2026-06-30, so staying on it means security fixes only through a commercial subscription.

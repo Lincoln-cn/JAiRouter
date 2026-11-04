@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.7.0
+> **文档版本**: 3.7.1
 > **最后更新**: 2026-11-04
 > **作者**: JAiRouter Team
 
@@ -21,6 +21,17 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+### [3.7.1] - 2026-11-04 - 镜像构建修复（#980）
+
+#### 修正
+
+- **Docker 镜像构建失败**：`Dockerfile.optimized` / `Dockerfile.distroless` / `Dockerfile.jlink` 三个变体仍使用 Spring Boot 4.0 已移除的 `layertools` 打包模式，`v3.7.0` 的镜像构建在 `extract` 步骤失败（`Error: Unsupported jarmode 'layertools'`）。三个变体改用 `tools` 模式，与主 `Dockerfile` 一致。
+
+#### 说明
+
+- `v3.7.0` 的 GitHub Release 与 jar 包不受影响，本次仅补发容器镜像。
+
+
 ### [3.7.0] - 2026-11-04 - Spring Boot 4.1 升级与 Jackson 3 迁移（#963–#978）
 
 这一版的主项是**框架升级**：Spring Boot 从 3.5.16 升到 4.1.2，业务代码整体迁到 Jackson 3。3.5 的 OSS 支持已于 2026-06-30 结束，停在旧版本意味着安全修复只能靠商业订阅。
