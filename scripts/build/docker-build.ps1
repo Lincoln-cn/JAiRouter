@@ -80,9 +80,9 @@ catch {
 # Step 1: Clean and build the JAR
 Write-Info "Step 1: Building JAR file..."
 if ($Environment -eq "prod") {
-    mvn clean package -DskipTests -Pfast -Dfrontend.build.skip=false
+    mvn clean package -Dmaven.test.skip=true -Pfast -Dfrontend.build.skip=false
 } else {
-    mvn clean package -DskipTests
+    mvn clean package -Dmaven.test.skip=true
 }
 
 if ($LASTEXITCODE -ne 0) {

@@ -46,7 +46,7 @@ jobs:
           cache: 'maven'
 
       - name: 构建 JAR（含前端）
-        run: mvn -B -Pfast -DskipTests -Dfrontend.build.skip=false package
+        run: mvn -B -Pfast -Dmaven.test.skip=true -Dfrontend.build.skip=false package
 
       - name: 断言前端已打包到 static/admin
         run: |

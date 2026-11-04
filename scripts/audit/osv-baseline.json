@@ -2,16 +2,8 @@
   "_comment": [
     "已接受风险的登记表（scripts/audit/osv-scan.py 读取）。",
     "只允许登记「经代码取证确认不可达」或「上游该 line 没有回补版本」的条目，每条必须写 reason。",
-    "新增条目前请先问一句：能不能升级解决？能升级就不该进这张表。"
+    "新增条目前请先问一句：能不能升级解决？能升级就不该进这张表。",
+    "2026-11-04：升级到 Spring Boot 4.1.2 / Spring Framework 7.0.x 后，原本登记的两条 6.2 线 advisory（GHSA-9qf2-26p9-2q2q、GHSA-j9f9-w8pj-32f8）已有回补版本，扫描不再命中，故移除。"
   ],
-  "accepted": [
-    {
-      "id": "GHSA-9qf2-26p9-2q2q",
-      "reason": "Spring Framework 6.2.19 是 6.2 线最新版，修复只在 7.0.9（需 Spring Boot 4 大版本）；该 advisory 是 WebFlux 函数式端点的 Header 谓词绕过，本仓唯一的 RouterFunction 是 SpaWebFluxConfig 的 /admin/** 静态回退，只用 path 谓词，未使用 header 谓词 ⇒ 不可达。"
-    },
-    {
-      "id": "GHSA-j9f9-w8pj-32f8",
-      "reason": "同上：修复只在 7.0.9；该 advisory 是「渲染片段时 SSE 流损坏」，本仓不渲染视图（无 Thymeleaf/模板），SSE 是原样透传上游字节 ⇒ 不可达。"
-    }
-  ]
+  "accepted": []
 }
