@@ -1,8 +1,8 @@
 package org.unreal.modelrouter.common.exceptionhandler;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -152,12 +152,12 @@ class SpringSecurityAuthenticationFilterContentTypeTest {
 
         final String body = new String(bodyBytes(exchange), StandardCharsets.UTF_8);
         try {
-            final JsonParser parser = objectMapper.getFactory().createParser(body);
+            final JsonParser parser = objectMapper.createParser(body);
             final JsonNode json = objectMapper.readTree(parser);
             assertNotNull(json, "响应体应可解析为 JSON: " + body);
             assertNull(parser.nextToken(), "响应体应只包含一个 JSON 对象: " + body);
             return json;
-        } catch (final IOException ex) {
+        } catch (final RuntimeException ex) {
             throw new AssertionError("响应体应为合法 JSON: " + body, ex);
         }
     }

@@ -93,21 +93,21 @@ final class DownstreamErrorParser {
             return null;
         }
         try {
-            final com.fasterxml.jackson.databind.JsonNode root =
-                    new com.fasterxml.jackson.databind.ObjectMapper().readTree(body);
-            final com.fasterxml.jackson.databind.JsonNode error = root.get("error");
+            final tools.jackson.databind.JsonNode root =
+                    new tools.jackson.databind.ObjectMapper().readTree(body);
+            final tools.jackson.databind.JsonNode error = root.get("error");
             if (error != null) {
                 if (error.isTextual()) {
                     return error.asText();
                 }
-                final com.fasterxml.jackson.databind.JsonNode message = error.get("message");
+                final tools.jackson.databind.JsonNode message = error.get("message");
                 if (message != null && message.isTextual()) {
                     return message.asText();
                 }
             }
-            final com.fasterxml.jackson.databind.JsonNode message = root.get("message");
+            final tools.jackson.databind.JsonNode message = root.get("message");
             return message != null && message.isTextual() ? message.asText() : null;
-        } catch (com.fasterxml.jackson.core.JsonProcessingException ignored) {
+        } catch (tools.jackson.core.JacksonException ignored) {
             return null;
         }
     }
@@ -117,20 +117,20 @@ final class DownstreamErrorParser {
             return null;
         }
         try {
-            final com.fasterxml.jackson.databind.JsonNode root =
-                    new com.fasterxml.jackson.databind.ObjectMapper().readTree(body);
-            final com.fasterxml.jackson.databind.JsonNode error = root.get("error");
+            final tools.jackson.databind.JsonNode root =
+                    new tools.jackson.databind.ObjectMapper().readTree(body);
+            final tools.jackson.databind.JsonNode error = root.get("error");
             if (error != null && error.isObject()) {
                 for (String field : new String[] {"code", "type"}) {
-                    final com.fasterxml.jackson.databind.JsonNode node = error.get(field);
+                    final tools.jackson.databind.JsonNode node = error.get(field);
                     if (node != null && node.isTextual()) {
                         return node.asText();
                     }
                 }
             }
-            final com.fasterxml.jackson.databind.JsonNode code = root.get("code");
+            final tools.jackson.databind.JsonNode code = root.get("code");
             return code != null && code.isTextual() ? code.asText() : null;
-        } catch (com.fasterxml.jackson.core.JsonProcessingException ignored) {
+        } catch (tools.jackson.core.JacksonException ignored) {
             return null;
         }
     }

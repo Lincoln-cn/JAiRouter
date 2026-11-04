@@ -512,7 +512,7 @@ class ServiceRequestHandlerResponseCacheIntegrationTest {
         String body = (String) result.response().getBody();
         assertTrue(body.contains("\"id\":\"chatcmpl-native-cached\""), "原生 JSON 应保留下游原始字段: " + body);
         assertTrue(body.contains("\"finish_reason\":\"stop\""));
-        Map<?, ?> parsed = new com.fasterxml.jackson.databind.ObjectMapper().readValue(body, Map.class);
+        Map<?, ?> parsed = new tools.jackson.databind.ObjectMapper().readValue(body, Map.class);
         assertEquals("chatcmpl-native-cached", parsed.get("id"));
         verify(executor, never()).execute(any(), any(), any());
     }
@@ -556,7 +556,7 @@ class ServiceRequestHandlerResponseCacheIntegrationTest {
     private void injectObjectMapper() throws Exception {
         Field field = ServiceRequestHandler.class.getDeclaredField("objectMapper");
         field.setAccessible(true);
-        field.set(handler, new com.fasterxml.jackson.databind.ObjectMapper());
+        field.set(handler, new tools.jackson.databind.ObjectMapper());
     }
 
     /**

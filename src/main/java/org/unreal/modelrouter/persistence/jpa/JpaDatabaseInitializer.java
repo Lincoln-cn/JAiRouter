@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.persistence.jpa;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -349,7 +349,7 @@ public class JpaDatabaseInitializer {
                 String rolesJson;
                 try {
                     rolesJson = objectMapper.writeValueAsString(account.getRoles());
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                     log.error("Failed to serialize roles for account {}: {}", account.getUsername(), e.getMessage());
                     rolesJson = "[]";
                 }

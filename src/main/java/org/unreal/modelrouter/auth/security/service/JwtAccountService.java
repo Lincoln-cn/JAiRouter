@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.auth.security.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -75,7 +75,7 @@ public class JwtAccountService {
             JwtAccountEntity saved = jwtAccountRepository.save(entity);
             log.info("Created JWT account: {} with enabled={}", request.getUsername(), entity.getEnabled());
             return convertToDTO(saved);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException("Failed to serialize roles", e);
         }
     }
@@ -95,7 +95,7 @@ public class JwtAccountService {
         if (request.getRoles() != null) {
             try {
                 entity.setRoles(objectMapper.writeValueAsString(request.getRoles()));
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 throw new RuntimeException("Failed to serialize roles", e);
             }
         }
@@ -156,7 +156,7 @@ public class JwtAccountService {
             if (entity.getRoles() != null) {
                 roles = objectMapper.readValue(entity.getRoles(), List.class);
             }
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.warn("Failed to parse roles for user: {}", entity.getUsername());
         }
 

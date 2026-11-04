@@ -16,9 +16,9 @@
 
 package org.unreal.modelrouter.common.exceptionhandler;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,7 +26,9 @@ import org.unreal.modelrouter.common.controller.response.RouterResponse;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -65,9 +67,8 @@ class ErrorBodyContractSnapshotTest {
 
     private static final String ANTHROPIC_PATH = "/v1/messages";
 
-    private final ObjectMapper objectMapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    private final ObjectMapper objectMapper = JsonMapper.builder()
+            .build();
 
     @Nested
     @DisplayName("OpenAI 面（/v1/**，SDK 按 {error:{message,type,code}} 解析）")
@@ -171,7 +172,9 @@ class ErrorBodyContractSnapshotTest {
             RouterResponse<Object> response = RouterResponse.error("请求处理失败: 429", "429");
             Map<?, ?> json = objectMapper.readValue(objectMapper.writeValueAsString(response), Map.class);
 
-            assertEquals(List.of("success", "message", "errorCode", "timestamp"), new ArrayList<>(json.keySet()),
+            // Jackson 3 的属性发现顺序与 2.x 不同（本仓实测变成字母序）；JSON 对象键顺序
+            // 对客户端没有语义，契约只钉「恰好这四个键」。
+            assertEquals(Set.of("success", "message", "errorCode", "timestamp"), new LinkedHashSet<>(json.keySet()),
                     "控制台面错误体键集合变了 —— 前端与 OpenAPI 文档都按这四个键渲染");
             assertEquals(Boolean.FALSE, json.get("success"));
             assertEquals("请求处理失败: 429", json.get("message"));

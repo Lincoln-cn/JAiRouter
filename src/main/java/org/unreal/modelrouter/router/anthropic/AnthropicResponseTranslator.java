@@ -16,10 +16,10 @@
 
 package org.unreal.modelrouter.router.anthropic;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -159,7 +159,7 @@ public class AnthropicResponseTranslator {
         }
         try {
             return objectMapper.readTree(nativeJson);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.warn("Anthropic 响应翻译: 下游响应体非合法 JSON, 已降级为空文本消息: {}", e.getOriginalMessage());
             return null;
         }
@@ -249,7 +249,7 @@ public class AnthropicResponseTranslator {
                 });
             }
             log.warn("Anthropic 响应翻译: 工具入参不是 JSON 对象, 已保留原文: id={}, arguments={}", callId, arguments);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.warn("Anthropic 响应翻译: 工具入参非法 JSON, 已保留原文: id={}, arguments={}, error={}",
                     callId, arguments, e.getOriginalMessage());
         }

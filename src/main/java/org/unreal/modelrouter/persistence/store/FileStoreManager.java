@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.persistence.store;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.unreal.modelrouter.common.util.JacksonHelper;
@@ -174,7 +174,7 @@ public class FileStoreManager extends BaseStoreManager {
                 String sanitizedKey = PathSanitizer.sanitizeFileName(key);
                 File versionFile = new File(storagePath, sanitizedKey + "@" + version + ".json");
                 JacksonHelper.getObjectMapper().writeValue(versionFile, config);
-            } catch (IOException e) {
+            } catch (RuntimeException e) {
                 LOGGER.error("Failed to save config version for key: " + key + ", version: " + version, e);
             }
         }
@@ -249,7 +249,7 @@ public class FileStoreManager extends BaseStoreManager {
             }
             return JacksonHelper.getObjectMapper().readValue(versionFile, new TypeReference<>() {
             });
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             LOGGER.error("Failed to read config version for key: " + key + ", version: " + version, e);
             return null;
         }
@@ -385,7 +385,7 @@ public class FileStoreManager extends BaseStoreManager {
                     JacksonHelper.getObjectMapper().readValue(file, new TypeReference<Map<String, Object>>() {
                     });
                     return true;
-                } catch (IOException e) {
+                } catch (RuntimeException e) {
                     LOGGER.warn("Version file contains invalid JSON: " + file.getAbsolutePath(), e);
                     return false;
                 }

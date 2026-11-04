@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.router.adapter.support;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;

@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.persistence.jpa;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -67,7 +67,7 @@ public class JpaStoreManager implements StoreManager {
                 configRepository.save(entity);
                 log.info("Created new config for key: {} with version: 1", key);
             }
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Failed to serialize config for key: {}", key, e);
             throw new RuntimeException("Failed to save config", e);
         }
@@ -125,7 +125,7 @@ public class JpaStoreManager implements StoreManager {
             
             configRepository.save(entity);
             log.info("Saved config version for key: {} with version: {} (marked as latest)", key, version);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Failed to serialize config for key: {} version: {}", key, version, e);
             throw new RuntimeException("Failed to save config version", e);
         }
@@ -179,7 +179,7 @@ public class JpaStoreManager implements StoreManager {
                     entity.getConfigValue(),
                     new TypeReference<Map<String, Object>>() { }
             );
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Failed to deserialize config for key: {} version: {}", 
                     entity.getConfigKey(), entity.getVersion(), e);
             throw new RuntimeException("Failed to deserialize config", e);

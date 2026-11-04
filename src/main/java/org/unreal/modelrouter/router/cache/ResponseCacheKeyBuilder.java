@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.router.cache;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.unreal.modelrouter.common.dto.ChatDTO;
 import org.unreal.modelrouter.common.dto.EmbeddingDTO;
 import org.unreal.modelrouter.common.dto.RerankDTO;
@@ -311,7 +311,7 @@ public final class ResponseCacheKeyBuilder {
     private static String canonicalJson(final Map<String, Object> body) {
         try {
             return OBJECT_MAPPER.writeValueAsString(canonicalize(body));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Failed to canonicalize response cache request body", e);
         }
     }

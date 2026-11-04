@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.auth.security.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -48,7 +48,7 @@ class ApiKeyPersistenceServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ApiKeyPersistenceService(storeManager, new ObjectMapper());
+        service = new ApiKeyPersistenceService(storeManager, org.unreal.modelrouter.common.util.JacksonHelper.createNewObjectMapper());
         cache = new ConcurrentHashMap<>();
         keyIdIndex = new ConcurrentHashMap<>();
     }

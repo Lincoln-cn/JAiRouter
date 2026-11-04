@@ -16,8 +16,8 @@
 
 package org.unreal.modelrouter.auth.security.audit;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -45,7 +45,6 @@ class AuditEntityMapperTest {
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        objectMapper.findAndRegisterModules();
         mapper = new AuditEntityMapper(objectMapper);
     }
 

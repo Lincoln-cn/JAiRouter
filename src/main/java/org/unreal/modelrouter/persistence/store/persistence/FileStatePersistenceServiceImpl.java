@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.persistence.store.persistence;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -67,7 +67,7 @@ public class FileStatePersistenceServiceImpl implements StatePersistenceService 
                         filePath.toFile(), new TypeReference<Map<String, Object>>() { });
                 logger.debug("State loaded from file: {}", filePath);
                 return stateData;
-            } catch (IOException e) {
+            } catch (RuntimeException e) {
                 logger.error("Failed to load state from file: {} for type {}", key, stateType, e);
                 return new HashMap<>();
             }

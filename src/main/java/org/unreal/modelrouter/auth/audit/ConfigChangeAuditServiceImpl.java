@@ -4,8 +4,8 @@
  */
 package org.unreal.modelrouter.auth.audit;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -97,7 +97,7 @@ public class ConfigChangeAuditServiceImpl implements ConfigChangeAuditService {
 
             auditRepository.save(audit);
             log.debug("Recorded config change audit: {} - {}", operation, configKey);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Failed to serialize config value for audit", e);
         }
     }

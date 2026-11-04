@@ -16,9 +16,9 @@
 
 package org.unreal.modelrouter.router.anthropic;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.codec.ServerSentEvent;
@@ -608,7 +608,7 @@ public class AnthropicStreamingTranslator {
     private JsonNode readTree(final String payload) {
         try {
             return objectMapper.readTree(payload);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.debug("Anthropic 流式翻译: 跳过无法解析的块: {}", e.getOriginalMessage());
             return null;
         }
@@ -785,7 +785,7 @@ public class AnthropicStreamingTranslator {
     private String toJson(final Object payload) {
         try {
             return objectMapper.writeValueAsString(payload);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Anthropic 流式翻译: 事件载荷序列化失败, 退化为空对象", e);
             return "{}";
         }

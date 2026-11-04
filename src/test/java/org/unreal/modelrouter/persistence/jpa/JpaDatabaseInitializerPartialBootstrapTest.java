@@ -59,7 +59,7 @@ class JpaDatabaseInitializerPartialBootstrapTest {
                 mock(ApiKeyService.class),
                 new SecurityProperties(),
                 mock(PasswordEncoder.class),
-                new com.fasterxml.jackson.databind.ObjectMapper());
+                new tools.jackson.databind.ObjectMapper());
     }
 
     @Test

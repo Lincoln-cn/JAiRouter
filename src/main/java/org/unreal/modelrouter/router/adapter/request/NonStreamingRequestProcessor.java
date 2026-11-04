@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.router.adapter.request;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -370,7 +370,7 @@ public class NonStreamingRequestProcessor {
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .body(finalResponse));
 
-                    } catch (JsonProcessingException e) {
+                    } catch (JacksonException e) {
                         // #725: 只记长度与摘要 —— 响应体含用户 prompt/补全内容，ERROR 日志会随采集外流
                         logUnparseableResponseBody(responseEntity.getBody(), e);
                         return Mono.error(new ResponseStatusException(
@@ -437,7 +437,7 @@ public class NonStreamingRequestProcessor {
         final Object source = (transformed instanceof String || transformed == null) ? downstream : transformed;
         try {
             return objectMapper.writeValueAsString(source);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             logger.warn("原生响应序列化失败, 回退字符串输出: {}", e.getMessage());
             return String.valueOf(source);
         }
@@ -669,7 +669,7 @@ public class NonStreamingRequestProcessor {
         try {
             String json = objectMapper.writeValueAsString(obj);
             return truncate(json);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             logger.debug("序列化请求体失败: {}", e.getMessage());
             return null;
         }

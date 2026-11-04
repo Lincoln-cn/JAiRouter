@@ -1,8 +1,8 @@
 package org.unreal.modelrouter.common.exceptionhandler;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -204,7 +204,7 @@ class SpringSecurityAuthenticationFilterV1BodyTest {
         final byte[] bytes = bodyBytes(exchange);
         assertNotNull(bytes, "响应体字节不应为空");
         final String body = new String(bytes, StandardCharsets.UTF_8);
-        final JsonParser parser = objectMapper.getFactory().createParser(body);
+        final JsonParser parser = objectMapper.createParser(body);
         final JsonNode json = objectMapper.readTree(parser);
         assertNotNull(json, "应解析为 JSON: " + body);
         assertNull(parser.nextToken(),

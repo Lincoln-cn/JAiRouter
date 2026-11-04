@@ -16,7 +16,7 @@
 
 package org.unreal.modelrouter.router.anthropic;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.unreal.modelrouter.auth.security.quota.QuotaTokenEstimator;
 
 import java.util.List;

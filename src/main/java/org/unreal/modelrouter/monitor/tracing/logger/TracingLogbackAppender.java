@@ -2,8 +2,8 @@ package org.unreal.modelrouter.monitor.tracing.logger;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
 
@@ -61,7 +61,7 @@ public final class TracingLogbackAppender extends AppenderBase<ILoggingEvent> {
      * @param event 日志事件
      * @return JSON格式的日志字符串
      */
-    private String formatAsJson(final ILoggingEvent event) throws JsonProcessingException {
+    private String formatAsJson(final ILoggingEvent event) throws JacksonException {
         Map<String, Object> logData = new HashMap<>();
         
         // 基本日志信息

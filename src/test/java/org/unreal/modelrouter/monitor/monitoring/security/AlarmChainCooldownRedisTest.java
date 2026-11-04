@@ -100,8 +100,8 @@ class AlarmChainCooldownRedisTest {
 
         /** JPA 切片不含 Jackson 自动配置，而 AuditEntityMapper 需要它（生产由 Boot 提供） */
         @Bean
-        com.fasterxml.jackson.databind.ObjectMapper objectMapper() {
-            return new com.fasterxml.jackson.databind.ObjectMapper();
+        tools.jackson.databind.ObjectMapper objectMapper() {
+            return new tools.jackson.databind.ObjectMapper();
         }
 
         /** 指向真实 Redis（CI 的 service；本机设 REDIS_TEST=true 且本地有 Redis 时才跑） */

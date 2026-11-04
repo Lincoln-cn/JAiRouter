@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.auth.security.audit;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -164,7 +164,7 @@ public class AuditEntityMapper {
         if (map == null || map.isEmpty()) return null;
         try {
             return objectMapper.writeValueAsString(map);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("JSON序列化失败", e);
             return null;
         }
@@ -177,7 +177,7 @@ public class AuditEntityMapper {
         if (json == null || json.isEmpty()) return new HashMap<>();
         try {
             return objectMapper.readValue(json, Map.class);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("JSON解析失败", e);
             return new HashMap<>();
         }
