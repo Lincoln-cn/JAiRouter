@@ -34,7 +34,7 @@ The upgrade also surfaced two real constraint gaps that had nothing to do with t
 
 #### Fixes
 
-* **Corrupted forwarded request bodies (P0)**: after the 4.1 upgrade every proxied request (chat / embeddings / rerank / tts) sent a body shaped like `{"array":false,"nodeType":"OBJECT",...}`, which upstreams necessarily rejected. Root cause was two Jackson versions coexisting; fixed by migrating to Jackson 3.
+* **Corrupted forwarded request bodies (P0)**: after the 4.1 upgrade every request the gateway forwards (chat / embeddings / rerank / tts) carried a body shaped like `{"array":false,"nodeType":"OBJECT",...}`, which upstreams necessarily rejected. Root cause was two Jackson versions coexisting; fixed by migrating to Jackson 3.
 * **Timestamp columns missed NOT NULL**: 21 `created_at` / `updated_at` columns were nullable in the `V1` baseline while the entities declared `nullable = false`. H2 runs in `update` mode and never adds the constraint, so a fresh start reported nothing; only the schema comparison test caught it. Added `V8` (one for h2, one for postgres; backfill then constrain).
 * **Migration job did nothing**: with only `flyway-core` declared, 4.1 does not run migrations; the `migrate` profile exited cleanly (code 0) without even creating `flyway_schema_history`.
 * **Redis dependency missing from the jar**: `spring-boot-starter-data-redis-reactive` was marked `optional`, and since 4.1 boot marks `spring-data-redis` optional as well, so the packaging plugin dropped the whole closure and the app failed at runtime with `NoClassDefFoundError: ReactiveStringRedisTemplate`. This project is an application, not a library, so the marker was removed.
