@@ -14,7 +14,7 @@ WORKDIR /app
 COPY target/model-router-*.jar app.jar
 
 # 使用 Spring Boot 工具提取分层
-RUN java -Djarmode=layertools -jar app.jar extract --destination extracted
+RUN java -Djarmode=tools -jar app.jar extract --layers --launcher --destination extracted
 
 # =============================================================================
 # 阶段 2: 最终运行镜像
