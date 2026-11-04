@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.6.0
-> **最后更新**: 2026-11-02
+> **文档版本**: 3.7.0
+> **最后更新**: 2026-11-04
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,33 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+### [3.7.0] - 2026-11-04 - Spring Boot 4.1 升级与 Jackson 3 迁移（#963–#978）
+
+这一版的主项是**框架升级**：Spring Boot 从 3.5.16 升到 4.1.2，业务代码整体迁到 Jackson 3。3.5 的 OSS 支持已于 2026-06-30 结束，停在旧版本意味着安全修复只能靠商业订阅。
+
+升级过程中顺带暴露并修掉两个与框架版本无关的真实约束缺失（见「修正」）。
+
+#### 升级
+
+* **Spring Boot 4.1.2**：模块化拆包后的大量包名迁移、Spring Security 7 的授权契约变更、Spring Framework 7 的 `HttpHeaders` 不再实现 `MultiValueMap`。
+* **Jackson 3**：业务代码 169 个文件从 `com.fasterxml.jackson.*` 迁到 `tools.jackson.*`。起因是 4.1 的 HTTP 转换器用 Jackson 3、业务代码用 Jackson 2，两套并存时转发给上游的请求体变成了 `JsonNode` 的 getter 输出（详见下文「修正」）。
+* **Flyway 改用 starter**：4.0 起 Flyway 的自动配置只在 `spring-boot-starter-flyway` 里。
+
+#### 修正
+
+* **转发请求体损坏（P0）**：4.1 升级后所有代理请求（chat / embeddings / rerank / tts）发给上游的 body 都是 `{"array":false,"nodeType":"OBJECT",...}` 这种形状，上游必然报错。根因是两套 Jackson 并存，已通过统一到 Jackson 3 根治。
+* **时间戳列缺 NOT NULL**：`V1` baseline 里 21 个 `created_at` / `updated_at` 是可空的，而实体标了 `nullable = false` —— 同一个模型两套写法。H2 走 `update` 模式不会补约束，空库启动不报错，只有 schema 比对测试能发现。已补 `V8`（h2 与 postgres 各一份，先回填再加约束）。
+* **迁移 Job 空转**：只声明 `flyway-core` 时 4.1 不会执行迁移，`migrate` profile 的进程看起来正常退出（退出码 0），但库里连 `flyway_schema_history` 都没有。
+* **jar 缺 Redis 依赖**：`spring-boot-starter-data-redis-reactive` 标了 `optional`，而 4.1 起 boot 自己把 `spring-data-redis` 也标成 optional，两层叠加后打包时被整体剔除，运行期报 `NoClassDefFoundError: ReactiveStringRedisTemplate`。本项目是应用不是库，已去掉该标记。
+
+#### 升级提示
+
+1. **`-DskipTests` 语义变了**：4.1 起它不再跳过测试的 AOT 处理，要用 `-Dmaven.test.skip=true`。本仓 CI 与构建脚本已同步。
+2. **时间戳列会变成 NOT NULL**：`V8` 会把历史为 NULL 的行回填成当前时间（原本就是 NULL 的行没有真实时间可还原）。
+3. **JSON 对象键顺序变了**：Jackson 3 的属性发现顺序与 2.x 不同。JSON 对象键顺序对客户端没有语义，但如果有下游按字符串比对响应体，需要确认。
+4. **`yyyy-MM-dd HH:mm:ss` 时间格式保持不变**：内部缓存（Redis 里的 JWT 黑名单）沿用了原有格式，历史数据可继续读取。
+5. 依赖安全基线已在新 BOM 上重扫，之前登记接受的两条 Spring Framework advisory 因升级而不再适用，已从接受清单移除。
+
 ### [3.6.0] - 2026-11-02 - 流式响应护栏、容量指标补齐与吞吐口径纠偏（#944–#966）
 
 这一版的主项是**流式响应护栏**：在此之前，响应脱敏只覆盖非流式路径，`stream=true` 时敏感内容原样下发给客户端。同时补齐了最后几处容量指标，并把三处没有出处的吞吐数字换成了实测值。

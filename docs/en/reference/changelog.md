@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.6.0
-> **Last Updated**: 2026-11-02
+> **Document Version**: 3.7.0
+> **Last Updated**: 2026-11-04
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,33 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+### [3.7.0] - 2026-11-04 - Spring Boot 4.1 upgrade and Jackson 3 migration (#963-#978)
+
+The headline of this release is the **framework upgrade**: Spring Boot 3.5.16 to 4.1.2, with the application code moved to Jackson 3. OSS support for 3.5 ended on 2026-06-30, so staying on it means security fixes only through a commercial subscription.
+
+The upgrade also surfaced two real constraint gaps that had nothing to do with the framework version (see "Fixes").
+
+#### Upgrades
+
+* **Spring Boot 4.1.2**: the modular split moved a large number of packages; Spring Security 7 changed the authorization contract; Spring Framework 7's `HttpHeaders` no longer implements `MultiValueMap`.
+* **Jackson 3**: 169 files moved from `com.fasterxml.jackson.*` to `tools.jackson.*`. The trigger was a real defect: 4.1's HTTP converters use Jackson 3 while the application code used Jackson 2, and with both on the classpath the request body forwarded upstream turned into `JsonNode` getter output (see "Fixes").
+* **Flyway via starter**: since 4.0, Flyway auto-configuration only lives in `spring-boot-starter-flyway`.
+
+#### Fixes
+
+* **Corrupted forwarded request bodies (P0)**: after the 4.1 upgrade every proxied request (chat / embeddings / rerank / tts) sent a body shaped like `{"array":false,"nodeType":"OBJECT",...}`, which upstreams necessarily rejected. Root cause was two Jackson versions coexisting; fixed by migrating to Jackson 3.
+* **Timestamp columns missed NOT NULL**: 21 `created_at` / `updated_at` columns were nullable in the `V1` baseline while the entities declared `nullable = false`. H2 runs in `update` mode and never adds the constraint, so a fresh start reported nothing; only the schema comparison test caught it. Added `V8` (one for h2, one for postgres; backfill then constrain).
+* **Migration job did nothing**: with only `flyway-core` declared, 4.1 does not run migrations; the `migrate` profile exited cleanly (code 0) without even creating `flyway_schema_history`.
+* **Redis dependency missing from the jar**: `spring-boot-starter-data-redis-reactive` was marked `optional`, and since 4.1 boot marks `spring-data-redis` optional as well, so the packaging plugin dropped the whole closure and the app failed at runtime with `NoClassDefFoundError: ReactiveStringRedisTemplate`. This project is an application, not a library, so the marker was removed.
+
+#### Upgrade notes
+
+1. **`-DskipTests` changed meaning**: since 4.1 it no longer skips AOT processing of tests; use `-Dmaven.test.skip=true`. CI and build scripts were updated.
+2. **Timestamp columns become NOT NULL**: `V8` backfills historical NULLs with the current time (rows that genuinely were NULL have no real timestamp to restore).
+3. **JSON object key order changed**: Jackson 3 discovers properties in a different order than 2.x. Key order carries no semantic meaning for JSON objects, but anything comparing raw response strings should be checked.
+4. **The `yyyy-MM-dd HH:mm:ss` format is preserved**: internal caches (JWT blacklist entries stored in Redis) keep the previous format, so existing data remains readable.
+5. The dependency security baseline was scanned again against the new BOM; two previously accepted Spring Framework advisories no longer apply and were removed from the accepted list.
+
 ### [3.6.0] - 2026-11-02 - Streaming response guard, remaining capacity metrics, and throughput figures replaced with measurements (#944-#966)
 
 The headline of this release is the **streaming response guard**: until now response sanitization only covered non-streaming paths, so `stream=true` sent sensitive content through untouched. This release also adds the last missing capacity metrics and replaces three throughput figures that had no measurement behind them.
