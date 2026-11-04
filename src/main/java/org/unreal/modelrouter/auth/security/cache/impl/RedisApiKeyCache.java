@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.auth.security.cache.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -165,7 +165,7 @@ public final class RedisApiKeyCache implements ApiKeyCache {
         return Mono.fromCallable(() -> {
             try {
                 return objectMapper.writeValueAsString(apiKey);
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 throw new RuntimeException("序列化API Key信息失败", e);
             }
         });
@@ -178,7 +178,7 @@ public final class RedisApiKeyCache implements ApiKeyCache {
         return Mono.fromCallable(() -> {
             try {
                 return objectMapper.readValue(serialized, ApiKey.class);
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 throw new RuntimeException("反序列化API Key信息失败", e);
             }
         });

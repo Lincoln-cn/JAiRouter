@@ -16,9 +16,9 @@
 
 package org.unreal.modelrouter.router.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -432,7 +432,7 @@ public class AnthropicMessagesController {
         }
         try {
             return ERROR_BODY_MAPPER.readTree(trimmed);
-        } catch (JsonProcessingException | RuntimeException e) {
+        } catch (RuntimeException e) {
             return null;
         }
     }

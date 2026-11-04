@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.auth.security.service.impl;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.unreal.modelrouter.common.dto.TokenBlacklistEntry;
 import org.unreal.modelrouter.common.util.JacksonHelper;

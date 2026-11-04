@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.router.adapter.processor;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.codec.ServerSentEvent;
@@ -76,7 +76,7 @@ final class StreamingErrorTermination {
             return ServerSentEvent.<String>builder()
                     .data(objectMapper.writeValueAsString(body))
                     .build();
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             logger.warn("构造 /v1 流式错误帧失败，改以纯异常终止: {}", e.getMessage());
             return null;
         }

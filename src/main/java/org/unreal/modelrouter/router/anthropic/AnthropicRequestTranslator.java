@@ -16,8 +16,8 @@
 
 package org.unreal.modelrouter.router.anthropic;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.common.dto.ChatDTO;
@@ -627,7 +627,7 @@ public class AnthropicRequestTranslator {
     private String toJson(final Object value) {
         try {
             return OBJECT_MAPPER.writeValueAsString(value);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.warn("Anthropic 工具入参序列化失败, 退化为空对象: {}", e.getOriginalMessage());
             return "{}";
         }

@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.monitor.monitoring.error;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -178,7 +178,7 @@ public class ExceptionPersistenceService {
             // 尝试解析元数据为 JSON
             try {
                 builder.metadata(objectMapper.writeValueAsString(additionalInfo));
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 log.warn("序列化元数据失败：{}", e.getMessage());
             }
         }

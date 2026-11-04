@@ -1,7 +1,6 @@
 package org.unreal.modelrouter.common.exceptionhandler;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,8 +69,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     {
-        // 注册JavaTimeModule以支持LocalDateTime序列化
-        objectMapper.registerModule(new JavaTimeModule());
+        // Jackson 3 的 java.time 支持已内建，无需注册 module
     }
 
     @Override

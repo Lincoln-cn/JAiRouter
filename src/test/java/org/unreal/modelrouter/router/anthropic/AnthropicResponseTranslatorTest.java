@@ -1,9 +1,10 @@
 package org.unreal.modelrouter.router.anthropic;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.SerializationFeature;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -49,9 +50,10 @@ class AnthropicResponseTranslatorTest {
      * 模拟全局 ObjectMapper：NON_NULL 策略（{@code JacksonConfig} 配置）——用于验证
      * {@link AnthropicMessagesResponse} 上的 {@code @JsonInclude(ALWAYS)} 确实生效。
      */
-    private static final ObjectMapper NON_NULL_MAPPER = new ObjectMapper()
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    private static final ObjectMapper NON_NULL_MAPPER = JsonMapper.builder()
+            .changeDefaultPropertyInclusion(value -> JsonInclude.Value.construct(
+                    JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL))
+            .build();
 
     private AnthropicResponseTranslator translator;
 

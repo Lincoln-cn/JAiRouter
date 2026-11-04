@@ -16,8 +16,8 @@
 
 package org.unreal.modelrouter.router.fallback;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,7 +82,7 @@ public final class FallbackRequestKey {
         } else {
             try {
                 payload = objectMapper.writeValueAsString(request);
-            } catch (final JsonProcessingException | RuntimeException e) {
+            } catch (final RuntimeException e) {
                 logger.debug("降级请求键无法序列化请求体，本条请求不参与降级缓存: {}", e.getMessage());
                 return null;
             }

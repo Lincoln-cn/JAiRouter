@@ -1,8 +1,9 @@
 package org.unreal.modelrouter.router.anthropic;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -34,8 +35,10 @@ class AnthropicRequestTranslatorTest {
      * 模拟全局 ObjectMapper：NON_NULL 策略（{@code JacksonConfig} 配置）——用于比对
      * 「文本视图 messages」与「wire messages」的序列化结果是否逐字节一致。
      */
-    private static final ObjectMapper NON_NULL_MAPPER = new ObjectMapper()
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    private static final ObjectMapper NON_NULL_MAPPER = JsonMapper.builder()
+            .changeDefaultPropertyInclusion(value -> JsonInclude.Value.construct(
+                    JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL))
+            .build();
 
     private AnthropicRequestTranslator translator;
 
@@ -44,7 +47,7 @@ class AnthropicRequestTranslatorTest {
         translator = new AnthropicRequestTranslator();
     }
 
-    private AnthropicMessagesRequest parse(final String json) throws JsonProcessingException {
+    private AnthropicMessagesRequest parse(final String json) throws JacksonException {
         return MAPPER.readValue(json, AnthropicMessagesRequest.class);
     }
 
@@ -129,7 +132,7 @@ class AnthropicRequestTranslatorTest {
         @Test
         @DisplayName("content 为非法类型时抛反序列化异常（交由框架转 400）")
         void rejectsNonStringNonArrayContent() {
-            assertThrows(JsonProcessingException.class,
+            assertThrows(JacksonException.class,
                     () -> parse("{\"model\":\"m\",\"messages\":[{\"role\":\"user\",\"content\":42}]}"));
         }
 

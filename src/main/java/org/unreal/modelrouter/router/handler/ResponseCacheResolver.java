@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.router.handler;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -192,13 +192,13 @@ final class ResponseCacheResolver {
             try {
                 objectMapper.readTree(text);
                 return text;
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 logger.debug("原生面缓存值非合法 JSON 文本, 转为 JSON 字符串: {}", e.getOriginalMessage());
             }
         }
         try {
             return objectMapper.writeValueAsString(value);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             logger.warn("原生面缓存值序列化失败: {}", e.getMessage());
             return null;
         }

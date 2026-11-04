@@ -1,8 +1,8 @@
 package org.unreal.modelrouter.router.adapter.request;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -326,7 +326,7 @@ public class TokenUsageExtractor {
                 }
             }
             return text.length() == 0 ? null : text.toString();
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             logger.debug("Cannot parse request body for token estimation: {}", e.getMessage());
             return null;
         }

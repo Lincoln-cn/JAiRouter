@@ -86,7 +86,7 @@ class SanitizationConfigPersistenceIntegrationTest {
                 .load()
                 .migrate();
         repository.deleteAll();
-        store = new SanitizationConfigStore(repository, new com.fasterxml.jackson.databind.ObjectMapper());
+        store = new SanitizationConfigStore(repository, new tools.jackson.databind.ObjectMapper());
     }
 
     @Test

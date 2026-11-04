@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.persistence.store.persistence;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +51,7 @@ public class RedisStatePersistenceServiceImpl implements StatePersistenceService
         return Mono.fromCallable(() -> {
             try {
                 return objectMapper.writeValueAsString(stateData);
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 logger.error("Failed to serialize state data for key: {}", key, e);
                 throw new RuntimeException(e);
             }
@@ -78,7 +78,7 @@ public class RedisStatePersistenceServiceImpl implements StatePersistenceService
                         Map<String, Object> stateData = (Map<String, Object>) objectMapper.readValue(json, Map.class);
                         logger.debug("State loaded from Redis: {}", redisKey);
                         return Mono.just(stateData);
-                    } catch (JsonProcessingException e) {
+                    } catch (JacksonException e) {
                         logger.error("Failed to deserialize state data from Redis: {}", key, e);
                         return Mono.just(new HashMap<String, Object>());
                     }

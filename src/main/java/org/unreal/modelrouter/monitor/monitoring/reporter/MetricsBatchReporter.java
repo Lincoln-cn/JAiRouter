@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.monitor.monitoring.reporter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
@@ -240,7 +240,7 @@ public final class MetricsBatchReporter {
 
             LOGGER.debug("Reported {} metrics to HTTP endpoint: {}", batch.size(), httpEndpointUrl);
             return true;
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             LOGGER.error("Error serializing metrics for HTTP report: {}", e.getMessage());
             return false;
         } catch (Exception e) {

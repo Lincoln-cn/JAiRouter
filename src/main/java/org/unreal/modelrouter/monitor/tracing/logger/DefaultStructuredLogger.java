@@ -16,8 +16,8 @@
 
 package org.unreal.modelrouter.monitor.tracing.logger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -355,7 +355,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
             } else {
                 log.info(jsonLog);
             }
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.debug("序列化日志条目失败", e);
         }
     }

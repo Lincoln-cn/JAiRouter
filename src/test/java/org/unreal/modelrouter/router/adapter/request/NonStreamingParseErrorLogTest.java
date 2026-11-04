@@ -4,7 +4,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
@@ -130,7 +130,7 @@ class NonStreamingParseErrorLogTest {
 
             assertNotNull(event.getThrowableProxy(),
                     "异常栈必须保留（排障需要异常类型与行号）");
-            assertTrue(event.getThrowableProxy().getClassName().contains("Json"),
+            assertTrue(event.getThrowableProxy().getClassName().toLowerCase().contains("jackson"),
                     "须保留 Jackson 解析异常类型：" + event.getThrowableProxy().getClassName());
         } finally {
             logger.detachAppender(appender);

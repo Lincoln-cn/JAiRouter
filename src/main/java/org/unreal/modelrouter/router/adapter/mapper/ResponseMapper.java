@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.router.adapter.mapper;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -124,7 +124,7 @@ public class ResponseMapper {
     public <T> T fromJson(final String json, final Class<T> targetType) {
         try {
             return objectMapper.readValue(json, targetType);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             logger.error("JSON 解析失败：{}", e.getMessage());
             return null;
         }
@@ -139,7 +139,7 @@ public class ResponseMapper {
     public String toJson(final Object object) {
         try {
             return objectMapper.writeValueAsString(object);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             logger.error("JSON 序列化失败：{}", e.getMessage());
             return null;
         }

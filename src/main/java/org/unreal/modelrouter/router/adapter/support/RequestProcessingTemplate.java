@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.router.adapter.support;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -142,7 +142,7 @@ public class RequestProcessingTemplate {
                             .contentType(MediaType.APPLICATION_JSON)
                             .body(finalResponse)
             );
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("无法解析下游服务的响应体：{}", responseEntity.getBody(), e);
             return Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法解析下游服务响应"));
         }

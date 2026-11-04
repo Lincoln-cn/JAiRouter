@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.auth.security.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import io.micrometer.core.instrument.Timer;
@@ -288,7 +288,7 @@ public class AccountManager implements UserDetailsService {
         }
         try {
             return objectMapper.readerForListOf(String.class).readValue(rolesJson);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.warn("解析数据库账户角色失败，按无角色处理: {}", e.getMessage());
             return List.of();
         }

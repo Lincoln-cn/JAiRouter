@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.auth.security.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -89,7 +89,7 @@ class JwtAccountServiceTest {
 
         @Test
         @DisplayName("JWT-ACC-001: 获取所有账户成功")
-        void testGetAllAccounts_Success() throws JsonProcessingException {
+        void testGetAllAccounts_Success() throws JacksonException {
             // Given
             when(jwtAccountRepository.findAll()).thenReturn(List.of(testEntity));
 

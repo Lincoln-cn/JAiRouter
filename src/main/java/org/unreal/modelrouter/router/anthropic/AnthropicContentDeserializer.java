@@ -16,15 +16,14 @@
 
 package org.unreal.modelrouter.router.anthropic;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.ObjectCodec;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.JsonNode;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +38,7 @@ import java.util.Map;
  *   <li>数组 → 逐元素转为块（元素为对象时按类型取字段，为字符串时视为文本块）；</li>
  *   <li>单个对象 → 单元素列表（容错，Anthropic 协议未定义但可低成本兼容）；</li>
  *   <li>null → {@code null}（保持「字段缺失」与「空数组」的语义差异）；</li>
- *   <li>其他类型 → 抛 {@link JsonMappingException}，由 Spring 转成 400（而非静默截断用户输入）。</li>
+ *   <li>其他类型 → 抛 {@link JacksonException}，由 Spring 转成 400（而非静默截断用户输入）。</li>
  * </ul>
  *
  * <p>v3.1 PR-5 起额外提取 {@code tool_use}（{@code id}/{@code name}/{@code input}）与
@@ -51,14 +50,13 @@ import java.util.Map;
  * @since v3.1
  */
 public final class AnthropicContentDeserializer
-        extends JsonDeserializer<List<AnthropicMessagesRequest.ContentBlock>> {
+        extends ValueDeserializer<List<AnthropicMessagesRequest.ContentBlock>> {
 
     @Override
     public List<AnthropicMessagesRequest.ContentBlock> deserialize(
-            final JsonParser parser, final DeserializationContext context) throws IOException {
+            final JsonParser parser, final DeserializationContext context) {
 
-        final ObjectCodec codec = parser.getCodec();
-        final JsonNode node = codec.readTree(parser);
+        final JsonNode node = context.readTree(parser);
         if (node == null || node.isNull()) {
             return null;
         }
@@ -68,7 +66,7 @@ public final class AnthropicContentDeserializer
         if (node.isArray()) {
             final List<AnthropicMessagesRequest.ContentBlock> blocks = new ArrayList<>();
             for (final JsonNode element : node) {
-                final AnthropicMessagesRequest.ContentBlock block = toBlock(element, codec);
+                final AnthropicMessagesRequest.ContentBlock block = toBlock(element, context);
                 if (block != null) {
                     blocks.add(block);
                 }
@@ -76,20 +74,21 @@ public final class AnthropicContentDeserializer
             return blocks;
         }
         if (node.isObject()) {
-            final AnthropicMessagesRequest.ContentBlock block = toBlock(node, codec);
+            final AnthropicMessagesRequest.ContentBlock block = toBlock(node, context);
             return block == null ? List.of() : List.of(block);
         }
-        throw JsonMappingException.from(parser, "content/system 必须是字符串或内容块数组");
+        throw new IllegalArgumentException("content/system 必须是字符串或内容块数组");
     }
 
     /**
      * 将单个 JSON 节点转为内容块.
      *
      * @param element JSON 节点
-     * @param codec   编解码器（物化 {@code input} / {@code tool_result.content} 用）
+     * @param context 反序列化上下文（物化 {@code input} / {@code tool_result.content} 用）
      * @return 内容块；节点为空或类型不支持时返回 {@code null}（由调用方跳过）
      */
-    private AnthropicMessagesRequest.ContentBlock toBlock(final JsonNode element, final ObjectCodec codec) {
+    private AnthropicMessagesRequest.ContentBlock toBlock(final JsonNode element,
+            final DeserializationContext context) {
         if (element == null || element.isNull()) {
             return null;
         }
@@ -104,8 +103,8 @@ public final class AnthropicContentDeserializer
         final String id = textOrNull(element, "id");
         final String name = textOrNull(element, "name");
         final String toolUseId = textOrNull(element, "tool_use_id");
-        final Map<String, Object> input = objectOrNull(element.get("input"), codec);
-        final Object toolResultContent = materialize(element.get("content"), codec);
+        final Map<String, Object> input = objectOrNull(element.get("input"), context);
+        final Object toolResultContent = materialize(element.get("content"), context);
         return new AnthropicMessagesRequest.ContentBlock(
                 type, text, id, name, input, toolUseId, toolResultContent);
     }
@@ -139,12 +138,13 @@ public final class AnthropicContentDeserializer
      * 读取对象字段（{@code tool_use.input}）.
      *
      * @param node  字段节点
-     * @param codec 编解码器
+     * @param context 反序列化上下文
      * @return 对象 Map；非对象形态返回 {@code null}（交由翻译器降级为空对象）
      */
     @SuppressWarnings("unchecked")
-    private Map<String, Object> objectOrNull(final JsonNode node, final ObjectCodec codec) {
-        final Object value = materialize(node, codec);
+    private Map<String, Object> objectOrNull(final JsonNode node,
+            final DeserializationContext context) {
+        final Object value = materialize(node, context);
         return value instanceof Map ? (Map<String, Object>) value : null;
     }
 
@@ -155,17 +155,39 @@ public final class AnthropicContentDeserializer
      * 由翻译器决定如何压平成下游所需的文本。</p>
      *
      * @param node  JSON 节点
-     * @param codec 编解码器
+     * @param context 反序列化上下文
      * @return 物化值；节点缺失/null 时返回 {@code null}，物化异常时退化为节点文本
      */
-    private Object materialize(final JsonNode node, final ObjectCodec codec) {
+    private Object materialize(final JsonNode node, final DeserializationContext context) {
         if (node == null || node.isNull()) {
             return null;
         }
-        try {
-            return codec.treeToValue(node, Object.class);
-        } catch (JsonProcessingException e) {
-            return node.asText();
+        if (node.isObject()) {
+            final Map<String, Object> map = new LinkedHashMap<>();
+            for (final String name : node.propertyNames()) {
+                map.put(name, materialize(node.get(name), context));
+            }
+            return map;
         }
+        if (node.isArray()) {
+            final List<Object> list = new ArrayList<>();
+            for (final JsonNode child : node) {
+                list.add(materialize(child, context));
+            }
+            return list;
+        }
+        if (node.isTextual()) {
+            return node.textValue();
+        }
+        if (node.isBoolean()) {
+            return node.asBoolean();
+        }
+        if (node.isIntegralNumber()) {
+            return node.canConvertToInt() ? node.intValue() : node.longValue();
+        }
+        if (node.isFloatingPointNumber()) {
+            return node.doubleValue();
+        }
+        return node.asText();
     }
 }

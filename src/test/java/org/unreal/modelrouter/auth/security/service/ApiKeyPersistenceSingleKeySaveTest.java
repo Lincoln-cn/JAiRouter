@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.auth.security.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -50,7 +50,7 @@ class ApiKeyPersistenceSingleKeySaveTest {
 
     @BeforeEach
     void setUp() {
-        service = new ApiKeyPersistenceService(storeManager, new ObjectMapper());
+        service = new ApiKeyPersistenceService(storeManager, org.unreal.modelrouter.common.util.JacksonHelper.createNewObjectMapper());
     }
 
     @Test
@@ -81,7 +81,7 @@ class ApiKeyPersistenceSingleKeySaveTest {
         for (final Object item : saved) {
             final ApiKey apiKey = item instanceof ApiKey ak
                     ? ak
-                    : new ObjectMapper().convertValue(item, ApiKey.class);
+                    : org.unreal.modelrouter.common.util.JacksonHelper.createNewObjectMapper().convertValue(item, ApiKey.class);
             if (keyHash.equals(apiKey.getKeyHash())) {
                 return apiKey.getUsage().getDailyTokenUsage()
                         .values().stream().mapToLong(Long::longValue).sum();

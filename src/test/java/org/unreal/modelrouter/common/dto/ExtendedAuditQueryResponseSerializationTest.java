@@ -16,8 +16,8 @@
 
 package org.unreal.modelrouter.common.dto;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("ExtendedAuditQueryResponse 序列化契约")
 class ExtendedAuditQueryResponseSerializationTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private ExtendedAuditQueryResponse response(int page, int size, int eventCount) {
         List<AuditEvent> events = java.util.stream.IntStream.range(0, eventCount)

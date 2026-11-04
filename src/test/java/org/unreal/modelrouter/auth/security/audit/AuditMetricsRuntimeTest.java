@@ -74,8 +74,8 @@ class AuditMetricsRuntimeTest {
 
         /** JPA 切片不含 Jackson 自动配置，而 AuditEntityMapper 需要它（生产由 Boot 提供） */
         @Bean
-        com.fasterxml.jackson.databind.ObjectMapper objectMapper() {
-            return new com.fasterxml.jackson.databind.ObjectMapper();
+        tools.jackson.databind.ObjectMapper objectMapper() {
+            return new tools.jackson.databind.ObjectMapper();
         }
     }
 

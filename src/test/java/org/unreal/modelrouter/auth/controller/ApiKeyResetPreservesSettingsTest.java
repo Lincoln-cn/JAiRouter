@@ -60,7 +60,7 @@ class ApiKeyResetPreservesSettingsTest {
 
     @BeforeEach
     void setUp() {
-        apiKeyService = new ApiKeyService(mock(StoreManager.class), mock(com.fasterxml.jackson.databind.ObjectMapper.class),
+        apiKeyService = new ApiKeyService(mock(StoreManager.class), mock(tools.jackson.databind.ObjectMapper.class),
                 mock(SecurityProperties.class));
         ReflectionTestUtils.setField(apiKeyService, "apiKeyPersistenceService", mock(ApiKeyPersistenceService.class));
         ReflectionTestUtils.setField(apiKeyService, "eventPublisher", mock(ApplicationEventPublisher.class));

@@ -1,8 +1,8 @@
 package org.unreal.modelrouter.auth.sanitization.persistence;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -137,7 +137,7 @@ public class SanitizationConfigStore {
         final List<String> safeValues = values == null ? List.of() : values;
         try {
             return objectMapper.writeValueAsString(safeValues);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException(
                     "脱敏配置序列化失败: scope=" + scope + ", column=" + column, e);
         }
@@ -150,7 +150,7 @@ public class SanitizationConfigStore {
         try {
             final List<String> values = objectMapper.readValue(json, STRING_LIST_TYPE);
             return values == null ? new ArrayList<>() : new ArrayList<>(values);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException(
                     "脱敏配置反序列化失败: scope=" + scope + ", column=" + column, e);
         }
