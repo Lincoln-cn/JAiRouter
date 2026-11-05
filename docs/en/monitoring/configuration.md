@@ -274,6 +274,22 @@ monitoring:
     # buffer-size: 1000 # Small buffer, save memory
 ```
 
+## Usage Data Retention
+
+The `token_usage` table gets one row per request and is the fastest growing table in the gateway. A cleanup task runs daily at 03:00 and deletes records older than the retention window (deliberately not 02:00, so it does not contend with the call history cleanup).
+
+```yaml
+jairouter:
+  monitoring:
+    token-usage:
+      # Enable the cleanup of expired records, default true
+      cleanup-enabled: true
+      # Retention in days, default 90, same as the audit log
+      retention-days: 90
+```
+
+The schedule is the fixed cron `0 0 3 * * ?` and is not configurable. Setting the retention to zero or a negative number skips the cleanup with a warning; the table then grows without bound again.
+
 ## Memory Configuration
 
 ### monitoring.metrics.memory
