@@ -49,7 +49,7 @@ public class TokenUsageCleanupScheduler {
             final int deleted = tokenUsageService.deleteOldUsageRecords(cutoff);
             log.info("Token usage cleanup completed: deleted {} records (retention: {} days)",
                     deleted, retentionDays);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("Token usage cleanup failed: {}", e.getMessage(), e);
         }
     }
