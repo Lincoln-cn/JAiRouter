@@ -354,7 +354,7 @@ public class NonStreamingRequestProcessor {
                         // v2.9.2: 记录治理 - 异步记录含请求/响应体的调用历史
                         if (metricsRecorder != null) {
                             metricsRecorder.recordCompleteCall(
-                                    adapterType, instanceName,
+                                    adapterType, InstanceKeys.label(selectedInstance),
                                     System.currentTimeMillis() - requestStartTime,
                                     true, null, requestedModel, serviceType, selectedInstance,
                                     capturedRequestBody, capturedResponseBody);
