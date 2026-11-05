@@ -57,6 +57,9 @@ import java.util.function.Function;
 @Component
 public class StreamingRequestProcessor {
 
+    /** 一个占位符最长可能有多长（前缀 + 序号 + 右括号），超过就当作普通文本。 */
+    private static final int MAX_PLACEHOLDER_LEN = 32;
+
     private static final Logger logger = LoggerFactory.getLogger(StreamingRequestProcessor.class);
 
     /**
@@ -134,6 +137,9 @@ public class StreamingRequestProcessor {
      */
     @Autowired(required = false)
     private ReversiblePiiService reversiblePiiService;
+
+    @Autowired(required = false)
+    private org.unreal.modelrouter.pii.PiiProperties reversiblePiiProperties;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -286,6 +292,9 @@ public class StreamingRequestProcessor {
                     new java.util.concurrent.atomic.AtomicBoolean(false);
             final java.util.concurrent.atomic.AtomicReference<String> guardPolicy =
                     new java.util.concurrent.atomic.AtomicReference<>(null);
+            // 可逆脱敏：跨 chunk 的占位符尾巴（SSE 逐字下发时占位符几乎必被切开）
+            final java.util.concurrent.atomic.AtomicReference<String> piiPending =
+                    new java.util.concurrent.atomic.AtomicReference<>("");
             Flux<ServerSentEvent<String>> streamResponse = rawChunks
                 .map(chunk -> {
                     firstChunkEmitted.set(true);
@@ -334,7 +343,7 @@ public class StreamingRequestProcessor {
                         }
                     }
                     // 可逆脱敏：先把占位符换回原文，再做适配器变换（占位符本身与目标协议无关）
-                    final String restoredChunk = detokenizeChunk(piiScopeId, guardedChunk);
+                    final String restoredChunk = detokenizeChunk(piiScopeId, guardedChunk, piiPending);
                     ServerSentEvent<String> sse = transformAndWrapChunk(restoredChunk, transformChunkFn);
                     // v2.9.10: 收集变换后 data 串用于流式缓存（v3.2.3: 受缓存字符预算约束）
                     if (transformedChunks != null && !cacheOverBudget.get()) {
@@ -1294,14 +1303,34 @@ public class StreamingRequestProcessor {
     }
 
     /**
-     * 响应侧还原：对每个 chunk 单独替换。
-     * <p>不做跨 chunk 缓冲 —— 一个占位符正好被上游切成两块时这一段还原不到，
-     * 客户端会看到未闭合的占位符片段，但 SSE 的 JSON 结构不会被破坏。</p>
+     * 响应侧还原，带跨 chunk 的占位符缓冲。
+     *
+     * <p>模型逐字输出时占位符几乎一定会被切开（{@code [P} + {@code II_1]}），所以不能逐块替换。
+     * 做法是：把上一个 chunk 残留的「可能是占位符开头」的尾巴拼到本次内容前面，
+     * 如果拼完末尾仍是一个未闭合的占位符形状，就把它留到下一次，本次只还原前面的部分 —— 
+     * 客户端不会看到碎片。</p>
      */
-    String detokenizeChunk(final String scopeId, final String chunk) {
+    String detokenizeChunk(final String scopeId, final String chunk,
+                           final java.util.concurrent.atomic.AtomicReference<String> pending) {
         if (reversiblePiiService == null || !reversiblePiiService.enabled() || chunk == null) {
             return chunk;
         }
-        return reversiblePiiService.detokenizeNow(scopeId, chunk);
+        final String carried = pending == null ? "" : pending.getAndSet("");
+        final String full = carried.isEmpty() ? chunk : carried + chunk;
+        final int open = full.lastIndexOf('[');
+        if (open >= 0 && full.indexOf(']', open) < 0 && full.length() - open <= MAX_PLACEHOLDER_LEN) {
+            if (pending != null) {
+                pending.set(full.substring(open));
+            }
+            return reversiblePiiService.detokenizeNow(scopeId, full.substring(0, open));
+        }
+        return reversiblePiiService.detokenizeNow(scopeId, full);
+    }
+
+    /** 占位符前缀的带括号形式，用于裁剪未闭合的尾巴。 */
+    private String placeholderPrefix() {
+        final String prefix = reversiblePiiProperties == null
+                ? "" : reversiblePiiProperties.getPlaceholderPrefix();
+        return (prefix == null || prefix.isEmpty() ? "PII" : prefix) + "_";
     }
 }
