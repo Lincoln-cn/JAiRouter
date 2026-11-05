@@ -680,10 +680,10 @@
     },
     "docs/en/monitoring/configuration.md": {
       "FilePath": "docs/en/monitoring/configuration.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:34.279829",
-      "ContentHash": "f58a10491a47b48b",
-      "GitCommit": "06b43058",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-05T14:39:57.508585",
+      "ContentHash": "958305be79ca96eb",
+      "GitCommit": "b2a0fc73",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1847,10 +1847,10 @@
     },
     "docs/zh/monitoring/configuration.md": {
       "FilePath": "docs/zh/monitoring/configuration.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:40.097763",
-      "ContentHash": "f5d416fd65ff5093",
-      "GitCommit": "06b43058",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-05T14:39:58.056501",
+      "ContentHash": "200a434edda06e49",
+      "GitCommit": "b2a0fc73",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -6768,7 +6768,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-05T11:56:38.114494",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/configuration.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-05T14:39:57.508597",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/configuration.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-05T14:39:58.056513",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-05T11:56:38.240750"
+  "last_updated": "2026-11-05T14:39:58.310114"
 }
