@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.7.2
+> **Document Version**: 3.7.3
 > **Last Updated**: 2026-11-06
 > **Git Commit**: -
 > **Author**: Lincoln
@@ -20,6 +20,17 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+### [3.7.3] - 2026-11-06 - Field-level policy and streaming support for reversible redaction
+
+- **Field-level policy now works**: `json-paths` was defined in the settings since the feature landed but had no consumer — matching always ran over the whole body. A setting that is accepted but ignored is worse than no setting at all. Matching is now scoped to the configured paths, supporting both `$.a.b` and `$.a[*].b`, with placeholder numbering continuing across paths. When no path matches, the body is not JSON, or parsing fails, matching **falls back to the whole text**, so a misconfigured path never causes a missed redaction.
+- **Streaming now covered**: previously only the non-streaming path was redacted, so with the feature on, PII in a streaming request still went upstream in the clear. The request side is now redacted as usual and the response side restores each chunk on its own. There is no cross-chunk buffering: when the upstream splits a placeholder across two chunks, that piece is not restored — the client sees a complete `[PII_1]` once adjacent chunks are concatenated, and the real value never leaves the gateway because it was already replaced on the request side.
+
+**Upgrade notes**
+
+1. Neither change alters behavior by default — reversible redaction is still off until you enable it.
+2. If you had configured `json-paths` believing it took effect, behavior changes after upgrading: only the fields at those paths participate in matching. To restore whole-body matching, clear `json-paths`.
+3. In streaming, a placeholder split across chunks is not restored. That is the "keep placeholders, never guess" rule showing up on the streaming path, not a defect.
+
 ### [3.7.2] - 2026-11-06 - Semantic cache, reversible redaction, and usage data retention
 
 - **Semantic cache (optional, off by default)**: when the exact cache misses, a SimHash near-match can reuse a previous response. Configured under `jairouter.semantic-cache.*`, `enabled: false` by default. SimHash was chosen over vector embeddings because an embedding call would add one more upstream round trip per request, while the whole point of a semantic cache is to remove one; the cost is that only reworded versions of the same question match, not genuinely different phrasings.
