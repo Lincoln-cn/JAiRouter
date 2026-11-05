@@ -49,7 +49,7 @@ config/
 │   ├── jwt.yml          # JWT authentication configuration
 │   ├── api-key.yml      # API key configuration
 │   ├── audit.yml        # Audit configuration
-│   └── sanitization.yml # Data sanitization configuration
+│   ├── sanitization.yml # Data sanitization
 ├── monitor/             # Monitoring service
 │   ├── slow-query-alerts.yml
 │   ├── error-tracking.yml
@@ -63,7 +63,8 @@ config/
 │   └── model-services-base.yml
 └── security/            # Security configurations (legacy)
     ├── security-base.yml
-    └── persistence-base.yml
+    ├── persistence-base.yml
+    └── pii-reversible.yml
 ```
 
 ### Configuration Import

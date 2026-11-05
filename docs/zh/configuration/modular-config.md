@@ -101,6 +101,7 @@ spring:
       - classpath:config/auth/api-key.yml
       - classpath:config/auth/audit.yml
       - classpath:config/auth/sanitization.yml
+      - classpath:config/security/pii-reversible.yml
 
       # monitor 模块
       - classpath:config/base/monitoring-base.yml
