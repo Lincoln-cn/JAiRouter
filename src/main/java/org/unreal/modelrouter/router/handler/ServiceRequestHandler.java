@@ -45,6 +45,7 @@ import org.unreal.modelrouter.monitor.tracing.interceptor.ControllerTracingInter
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.ServiceCapability;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
+import org.unreal.modelrouter.router.cache.SemanticCacheService;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
 import org.unreal.modelrouter.router.ratelimit.RateLimitContext;
 import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
@@ -134,6 +135,14 @@ public class ServiceRequestHandler {
     public static final String CACHE_KEY_ATTRIBUTE = "JAIR_RESPONSE_CACHE_KEY";
 
     /**
+     * 语义缓存的比对文本（请求 DTO 的 JSON），由缓存读侧在生成精确键时一并写入.
+     * 
+     * <p>写侧（响应生成后）用它把结果放进语义缓存，读侧（精确键未命中时）用它做相似度查找。
+     * </p>
+     */
+    public static final String SEMANTIC_TEXT_ATTRIBUTE = "JAIR_SEMANTIC_TEXT";
+
+    /**
      * v3.1: OpenAI 原生响应标记（{@code /v1} 原生面）.
      *
      * <p>由 {@code OpenAiNativeController} 在 exchange 上置为 {@link Boolean#TRUE}。非流式处理器
@@ -197,6 +206,10 @@ public class ServiceRequestHandler {
      */
     @Autowired(required = false)
     private ResponseCacheService responseCacheService;
+
+    /** 语义缓存（近似请求复用）；{@code null} 表示未装配，整个语义分支短路. */
+    @Autowired(required = false)
+    private SemanticCacheService semanticCacheService;
 
     /**
      * v2.9.10: 限流管理器（可选注入，用于缓存命中前服务级限流预扣）。
@@ -848,7 +861,7 @@ public class ServiceRequestHandler {
      * @return 绑定当前可选依赖的缓存读侧
      */
     private ResponseCacheResolver cacheResolver() {
-        return new ResponseCacheResolver(responseCacheService, objectMapper);
+        return new ResponseCacheResolver(responseCacheService, objectMapper, semanticCacheService);
     }
 
     /**

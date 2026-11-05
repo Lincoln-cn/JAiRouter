@@ -28,6 +28,7 @@ import org.unreal.modelrouter.router.adapter.builder.RequestBuilder;
 import org.unreal.modelrouter.router.adapter.handler.MultipartRequestHandler;
 import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
+import org.unreal.modelrouter.router.cache.SemanticCacheService;
 import org.unreal.modelrouter.router.handler.ServiceRequestHandler;
 import org.unreal.modelrouter.router.model.ModelRouterProperties.ModelInstance;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
@@ -73,6 +74,10 @@ public class NonStreamingRequestProcessor {
      */
     @Autowired(required = false)
     private ResponseCacheService responseCacheService;
+
+    /** 语义缓存（近似请求复用）；{@code null} 表示未装配，语义写入短路. */
+    @Autowired(required = false)
+    private SemanticCacheService semanticCacheService;
 
     public NonStreamingRequestProcessor(
             final ObjectMapper objectMapper,
@@ -343,7 +348,7 @@ public class NonStreamingRequestProcessor {
 
                         // v2.9.9: 响应缓存写 — 仅 2xx 成功分支到达此处(非2xx 已先行短路)；
                         // 流式/非确定性/未启用请求键为空，此处不写
-                        cacheSuccessfulResponse(responseCacheKey, transformedData);
+                        cacheSuccessfulResponse(responseCacheKey, transformedData, requestedModel, capturedRequestBody);
 
                         // v2.9.2: 记录治理 - 异步记录含请求/响应体的调用历史
                         if (metricsRecorder != null) {
@@ -512,10 +517,32 @@ public class NonStreamingRequestProcessor {
      * @param transformedData 下游转换后的 data（缓存命中时原样返回的内容）
      */
     void cacheSuccessfulResponse(final String cacheKey, final Object transformedData) {
-        if (cacheKey == null || transformedData == null || responseCacheService == null) {
+        cacheSuccessfulResponse(cacheKey, transformedData, null, null);
+    }
+
+    /**
+     * 写入响应缓存，并在语义缓存启用时同步写入一条近似命中记录.
+     *
+     * @param cacheKey        精确缓存键（null 表示本次请求不写精确缓存）
+     * @param transformedData 下游转换后的 data
+     * @param modelName       模型名（语义缓存按模型分桶），可为 {@code null}
+     * @param semanticText    语义比对文本（请求体），可为 {@code null}
+     */
+    void cacheSuccessfulResponse(final String cacheKey,
+                                 final Object transformedData,
+                                 final String modelName,
+                                 final String semanticText) {
+        if (transformedData == null) {
             return;
         }
-        responseCacheService.store(cacheKey, transformedData);
+        if (cacheKey != null && responseCacheService != null) {
+            responseCacheService.store(cacheKey, transformedData);
+        }
+        if (modelName == null || modelName.isBlank() || semanticText == null || semanticText.isBlank()
+                || semanticCacheService == null || !semanticCacheService.isEnabled()) {
+            return;
+        }
+        semanticCacheService.put(modelName, semanticText, transformedData);
     }
 
     /**

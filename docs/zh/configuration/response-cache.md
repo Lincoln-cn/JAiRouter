@@ -178,8 +178,40 @@ PUT  /api/config/cache/response/config # 运行时部分更新
 当前版本边界：
 
 - **分布式**：当前为进程内 Caffeine 缓存，多实例各自独立；共享 / Redis 缓存后续版本支持
-- **语义缓存**：仅做请求级字节级匹配，不做语义级复用（你好 vs 嗨）；语义缓存属后续评估
+- **语义匹配**：精确未命中时可选用 SimHash 近似匹配（见下节「语义缓存」），默认关闭；近似命中会跳过上游调用，因此只在请求被判定为确定性时才启用
 - 二进制服务（image / TTS / STT）不参与缓存
+
+## 语义缓存（可选）
+
+精确缓存要求请求体字节级相同。语义缓存在此之上再加一层：精确未命中时，用 SimHash 判断新请求与已缓存的请求是否「换了个说法」。默认关闭。
+
+```yaml
+jairouter:
+  semantic-cache:
+    enabled: true            # 默认 false
+    max-entries-per-model: 512
+    ttl: PT10M
+    max-hamming-distance: 3  # 越小越严；0 等价于要求指纹完全相同
+    min-text-length: 8       # 更短的请求不做语义比对（问候语之类）
+    allow-non-deterministic: false
+```
+
+工作原理：
+
+1. 请求文本归一化（小写、标点折成单空格），切成字符 3-gram，用 SHA-256 取 64 位指纹；
+2. 新请求与同模型下每条缓存项比较汉明距离，距离不超过 `max-hamming-distance`、且两边 token 数相差不超过 20% 才算命中；
+3. 命中即直接返回缓存响应，**不调用上游**；未命中则照常转发，成功后在写入精确缓存的同时写入一条语义记录。
+
+为什么用 SimHash 而不是向量 embedding：embedding 需要为每个请求再调一次上游，把本该「省一次调用」的收益反向吃掉；SimHash 零外部调用、零依赖，代价是只能认出字面接近的换述（"今天天气怎么样" vs "今天天气如何" 命中，"天气如何" 不命中）。
+
+行为约定：
+
+- **只在非流式路径生效**（流式响应无法整块复用）；
+- 默认只在请求被判定为确定性时启用（`temperature` 为 0 或未设置、且未要求 `n > 1`），否则会与采样语义冲突；需要突破时显式设 `allow-non-deterministic: true`；
+- 缓存按模型分桶、每模型最多 `max-entries-per-model` 条（超出淘汰最早写入的），过期时间 `ttl` 默认 10 分钟；
+- 多副本各自独立，与本进程的精确缓存一致。
+
+指标：`jairouter.semantic.cache.hits` / `jairouter.semantic.cache.misses`（见 [监控指标参考](../monitoring/metrics.md)）。
 
 ## 相关文档
 
