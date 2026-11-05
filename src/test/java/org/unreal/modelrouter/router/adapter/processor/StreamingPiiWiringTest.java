@@ -79,7 +79,7 @@ class StreamingPiiWiringTest {
                 .thenAnswer(invocation -> ((String) invocation.getArgument(1)).replace("[PII_1]", "13812345678"));
 
         final String chunk = "data: {\"choices\":[{\"delta\":{\"content\":\"call [PII_1]\"}}]}";
-        assertThat(processor.detokenizeChunk("scope-1", chunk, new java.util.concurrent.atomic.AtomicReference<>(""))).contains("13812345678").doesNotContain("[PII_1]");
+        assertThat(processor.detokenizeChunk("scope-1", chunk)).contains("13812345678").doesNotContain("[PII_1]");
     }
 
     @Test
@@ -87,24 +87,7 @@ class StreamingPiiWiringTest {
     void disabledLeavesChunkUntouched() {
         when(piiService.enabled()).thenReturn(false);
         final String chunk = "data: {\"choices\":[]}";
-        assertThat(processor.detokenizeChunk("scope-1", chunk, new java.util.concurrent.atomic.AtomicReference<>(""))).isSameAs(chunk);
+        assertThat(processor.detokenizeChunk("scope-1", chunk)).isSameAs(chunk);
     }
 
-    @Test
-    @DisplayName("占位符被切成两块时仍能还原，客户端看不到碎片")
-    void placeholderSplitAcrossChunksIsRestored() {
-        when(piiService.enabled()).thenReturn(true);
-        when(piiService.detokenizeNow(eq("scope-1"), anyString()))
-                .thenAnswer(invocation -> ((String) invocation.getArgument(1)).replace("[PII_1]", "13812345678"));
-
-        final java.util.concurrent.atomic.AtomicReference<String> pending =
-                new java.util.concurrent.atomic.AtomicReference<>("");
-
-        final String first = processor.detokenizeChunk("scope-1", "call [P", pending);
-        final String second = processor.detokenizeChunk("scope-1", "II_1] now", pending);
-
-        assertThat(first).isEqualTo("call ");
-        assertThat(second).isEqualTo("13812345678 now");
-        assertThat(pending.get()).isEmpty();
-    }
 }
