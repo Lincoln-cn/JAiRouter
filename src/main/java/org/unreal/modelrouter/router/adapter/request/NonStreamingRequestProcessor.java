@@ -30,6 +30,7 @@ import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
 import org.unreal.modelrouter.router.model.InstanceKeys;
 import org.unreal.modelrouter.router.cache.SemanticCacheService;
+import org.unreal.modelrouter.pii.ReversiblePiiService;
 import org.unreal.modelrouter.router.handler.ServiceRequestHandler;
 import org.unreal.modelrouter.router.model.ModelRouterProperties.ModelInstance;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
@@ -79,6 +80,12 @@ public class NonStreamingRequestProcessor {
     /** 语义缓存（近似请求复用）；{@code null} 表示未装配，语义写入短路. */
     @Autowired(required = false)
     private SemanticCacheService semanticCacheService;
+
+    /**
+     * 可逆脱敏（#987）：{@code null} 表示未装配，请求体按原样发出。
+     */
+    @Autowired(required = false)
+    private ReversiblePiiService reversiblePiiService;
 
     public NonStreamingRequestProcessor(
             final ObjectMapper objectMapper,
@@ -288,6 +295,7 @@ public class NonStreamingRequestProcessor {
             final ModelInstance selectedInstance,
             final QuotaReservation quotaReservation,
             final boolean nativeResponse) {
+        final String piiScopeId = java.util.UUID.randomUUID().toString();
 
         // 支持multipart请求（如STT）
         BodyInserter<?, ? super ClientHttpRequest> requestBody;
@@ -295,7 +303,20 @@ public class NonStreamingRequestProcessor {
             requestBody = multipartHandler.createRequestBody(transformedRequest);
             logger.debug("使用multipart请求体处理STT请求");
         } else {
-            requestBody = org.springframework.web.reactive.function.BodyInserters.fromValue(transformedRequest);
+            // 可逆脱敏（#987）：启用时把 PII 换成占位符再发往上游
+            Object outboundBody = transformedRequest;
+            if (reversiblePiiService != null && reversiblePiiService.enabled()) {
+                try {
+                    final String piiJson = objectMapper.writeValueAsString(transformedRequest);
+                    final String piiTokenized = reversiblePiiService.tokenize(piiScopeId, piiJson).block();
+                    if (piiTokenized != null) {
+                        outboundBody = piiTokenized;
+                    }
+                } catch (RuntimeException e) {
+                    logger.warn("可逆脱敏失败，按原文转发: {}", e.getMessage());
+                }
+            }
+            requestBody = org.springframework.web.reactive.function.BodyInserters.fromValue(outboundBody);
         }
 
         return requestSpec
@@ -320,6 +341,13 @@ public class NonStreamingRequestProcessor {
 
                     try {
                         String bodyStr = responseEntity.getBody();
+                        // 可逆脱敏（#987）：回包时把占位符还原成原值；被改写过的占位符原样返回
+                        if (bodyStr != null && reversiblePiiService != null && reversiblePiiService.enabled()) {
+                            final String piiRestored = reversiblePiiService.detokenize(piiScopeId, bodyStr).block();
+                            if (piiRestored != null) {
+                                bodyStr = piiRestored;
+                            }
+                        }
                         Object downstreamData;
 
                         // v2.9.2: 记录治理 - 捕获原始下游响应体（在转换前）
