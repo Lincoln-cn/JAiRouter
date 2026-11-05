@@ -4,6 +4,7 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.unreal.modelrouter.pii.PiiAuditService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -86,6 +87,9 @@ public class NonStreamingRequestProcessor {
      */
     @Autowired(required = false)
     private ReversiblePiiService reversiblePiiService;
+
+    @Autowired(required = false)
+    private PiiAuditService piiAuditService;
 
     public NonStreamingRequestProcessor(
             final ObjectMapper objectMapper,
@@ -343,8 +347,15 @@ public class NonStreamingRequestProcessor {
                         String bodyStr = responseEntity.getBody();
                         // 可逆脱敏（#987）：回包时把占位符还原成原值；被改写过的占位符原样返回
                         if (bodyStr != null && reversiblePiiService != null && reversiblePiiService.enabled()) {
+                            final int piiBefore = reversiblePiiService.countPlaceholders(bodyStr);
                             final String piiRestored = reversiblePiiService.detokenizeNow(piiScopeId, bodyStr);
                             if (piiRestored != null) {
+                                if (piiAuditService != null) {
+                                    final int piiRestoredCount = piiBefore
+                                            - reversiblePiiService.countPlaceholders(piiRestored);
+                                    piiAuditService.record(piiScopeId, capturedKeyId, path,
+                                            Math.max(0, piiRestoredCount));
+                                }
                                 bodyStr = piiRestored;
                             }
                         }

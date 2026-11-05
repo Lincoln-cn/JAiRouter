@@ -108,6 +108,21 @@ public class ReversiblePiiService {
         return result;
     }
 
+    /** 统计文本里还剩多少个本服务的占位符，供审计计算「还原了几处」。 */
+    public int countPlaceholders(String text) {
+        if (text == null || text.isEmpty() || !enabled()) {
+            return 0;
+        }
+        final String marker = "[" + properties.getPlaceholderPrefix() + "_";
+        int count = 0;
+        int idx = 0;
+        while ((idx = text.indexOf(marker, idx)) >= 0) {
+            count++;
+            idx += marker.length();
+        }
+        return count;
+    }
+
     public Mono<String> tokenize(String scopeId, String text) {
         if (!enabled() || text == null || text.isEmpty() || rules.isEmpty()) {
             return Mono.justOrEmpty(text);
