@@ -373,6 +373,33 @@ curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/co
 curl -X POST -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/apply/3"
 ```
 
+## Runtime Mutability
+
+Not every setting can be changed while the gateway is running, and the ones that can do not all survive a restart. The table below is measured, not inferred — reading it matters more than remembering the endpoint paths.
+
+| Configuration area | Update entry point | Persisted | After restart |
+| --- | --- | --- | --- |
+| Quota | `PUT /api/config/quota` | No (in-memory property only) | **Reverts to the configuration file value** |
+| Monitoring switches and sampling | Monitoring configuration endpoints | No (in-memory property only) | Reverts to the configuration file value |
+| Response sanitization rules | `PUT /api/config/sanitization` | Yes (persisted, then rules rebuilt) | Preserved |
+| Circuit breaker global configuration | `PUT /api/config/circuit-breaker/global-config` | Yes (persisted and mirrored to memory) | Preserved |
+| Instance and service configuration | `/api/config/instance/**` | Yes | Preserved, see the caveat below |
+| YAML / environment variables | — | — | Requires a restart |
+
+### Three rules for reading this table
+
+**1. "Update succeeded" does not mean "update persisted"**
+
+A 200 response and a log line saying the value was hot-reloaded only prove that the running process sees the new value. Settings that must survive a restart belong in YAML, or in an endpoint that explicitly persists (sanitization, circuit breaker).
+
+**2. The quota endpoint distinguishes two kinds of field**
+
+`enabled` / `failOpen` / `windows` can be changed at runtime; `flushIntervalSeconds` / `distributed.*` / `retention.*` take effect only after a restart. Sending them returns 400 with `RESTART_REQUIRED` instead of being silently ignored — this is the only configuration area in the repository that states that boundary in the API itself.
+
+**3. Instances added through the API are not in YAML**
+
+Configuration synchronization and version rollback remove instances that the YAML configuration does not contain. If an instance should exist permanently, put it in the YAML configuration rather than adding it only through the management API.
+
 ## Best Practices
 
 ### 1. Configuration Change Process
