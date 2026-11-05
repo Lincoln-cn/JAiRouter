@@ -5,7 +5,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,7 +34,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "pii_token_vault")
+@Table(name = "pii_token_vault",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_pii_vault_scope_placeholder",
+                columnNames = {"scope_id", "placeholder"}),
+        indexes = @Index(name = "idx_pii_vault_expires_at", columnList = "expires_at"))
 public class PiiTokenVaultEntity {
 
     @Id
