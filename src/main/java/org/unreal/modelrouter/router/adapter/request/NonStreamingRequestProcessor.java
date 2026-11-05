@@ -308,7 +308,7 @@ public class NonStreamingRequestProcessor {
             if (reversiblePiiService != null && reversiblePiiService.enabled()) {
                 try {
                     final String piiJson = objectMapper.writeValueAsString(transformedRequest);
-                    final String piiTokenized = reversiblePiiService.tokenize(piiScopeId, piiJson).block();
+                    final String piiTokenized = reversiblePiiService.tokenizeNow(piiScopeId, piiJson);
                     if (piiTokenized != null) {
                         outboundBody = piiTokenized;
                     }
@@ -343,7 +343,7 @@ public class NonStreamingRequestProcessor {
                         String bodyStr = responseEntity.getBody();
                         // 可逆脱敏（#987）：回包时把占位符还原成原值；被改写过的占位符原样返回
                         if (bodyStr != null && reversiblePiiService != null && reversiblePiiService.enabled()) {
-                            final String piiRestored = reversiblePiiService.detokenize(piiScopeId, bodyStr).block();
+                            final String piiRestored = reversiblePiiService.detokenizeNow(piiScopeId, bodyStr);
                             if (piiRestored != null) {
                                 bodyStr = piiRestored;
                             }

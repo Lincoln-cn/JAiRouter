@@ -80,6 +80,34 @@ public class ReversiblePiiService {
      * @param text    待处理文本
      * @return 替换后的文本
      */
+    /** 同步分词入口：调用方已在自己的线程池上（如 boundedElastic）时可直接使用，避免在事件循环线程上 block。 */
+    public String tokenizeNow(String scopeId, String text) {
+        if (!enabled() || text == null || text.isEmpty() || rules.isEmpty()) {
+            return text;
+        }
+        return doTokenize(scopeId, text);
+    }
+
+    /** 同步还原入口，语义同 tokenizeNow。 */
+    public String detokenizeNow(String scopeId, String text) {
+        if (!enabled() || text == null || text.isEmpty()) {
+            return text;
+        }
+        final List<PiiTokenVaultEntity> entries =
+                repository.findByScopeIdAndExpiresAtAfter(scopeId, LocalDateTime.now());
+        if (entries.isEmpty()) {
+            return text;
+        }
+        String result = text;
+        for (final PiiTokenVaultEntity entry : entries) {
+            if (!result.contains(entry.getPlaceholder())) {
+                continue;
+            }
+            result = result.replace(entry.getPlaceholder(), cipher.decrypt(entry.getCiphertext()));
+        }
+        return result;
+    }
+
     public Mono<String> tokenize(String scopeId, String text) {
         if (!enabled() || text == null || text.isEmpty() || rules.isEmpty()) {
             return Mono.justOrEmpty(text);
