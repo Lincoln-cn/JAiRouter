@@ -362,6 +362,20 @@ jairouter:
 4. **Mappings expire**: past their TTL they no longer participate in substitution, and a cleanup task
    removes them.
 
+### Field-level policy
+
+When `json-paths` is non-empty, only string values at the configured paths participate in matching.
+Two forms are supported:
+
+```yaml
+json-paths:
+  - $.messages[*].content      # every element of an array
+  - $.metadata.userId          # a fixed path
+```
+
+If no path matches, the body is not JSON, or parsing fails, matching **falls back to the whole text**,
+so a misconfigured path never causes a missed redaction.
+
 ### Known limits
 
 - Field-level policy (`json-paths`) only narrows which text participates in matching; it does not

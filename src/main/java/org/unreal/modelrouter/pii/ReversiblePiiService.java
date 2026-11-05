@@ -54,6 +54,10 @@ public class ReversiblePiiService {
 
     private final PiiProperties properties;
 
+    /** 字段级策略需要解析 JSON；未注入时退化为全文本匹配。 */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private tools.jackson.databind.ObjectMapper objectMapper;
+
     /** 编译后的规则，按名字排序保证同一段文本每次得到相同的编号顺序。 */
     private final List<CompiledRule> rules;
 
@@ -84,6 +88,13 @@ public class ReversiblePiiService {
     public String tokenizeNow(String scopeId, String text) {
         if (!enabled() || text == null || text.isEmpty() || rules.isEmpty()) {
             return text;
+        }
+        final List<String> jsonPaths = properties.getJsonPaths();
+        if (jsonPaths != null && !jsonPaths.isEmpty() && objectMapper != null) {
+            final String byPath = doTokenizeByPaths(scopeId, text, jsonPaths);
+            if (byPath != null) {
+                return byPath;
+            }
         }
         return doTokenize(scopeId, text);
     }
@@ -167,6 +178,118 @@ public class ReversiblePiiService {
     public int cleanupExpired() {
         final LocalDateTime now = LocalDateTime.now();
         return repository.deleteByExpiresAtBefore(now);
+    }
+
+    /**
+     * 按 JSON 路径做脱敏：只有命中配置路径的字符串值参与匹配。
+     *
+     * <p>路径语法只支持两种：{@code $.a.b} 与 {@code $.a[*].b}。解析失败或路径全未命中时返回
+     * {@code null}，由调用方回退到全文本匹配 —— 宁可多脱敏，不可漏脱敏。</p>
+     */
+    @SuppressWarnings("unchecked")
+    private String doTokenizeByPaths(String scopeId, String text, List<String> jsonPaths) {
+        try {
+            final Object root = objectMapper.readValue(text, Object.class);
+            if (!(root instanceof java.util.Map)) {
+                return null;
+            }
+            final int[] counter = {0};
+            final List<PiiTokenVaultEntity> pending = new ArrayList<>();
+            final LocalDateTime now = LocalDateTime.now();
+            for (final String path : jsonPaths) {
+                if (path == null || path.isBlank()) {
+                    continue;
+                }
+                final String trimmed = path.trim();
+                final String body = trimmed.startsWith("$.") ? trimmed.substring(2) : trimmed;
+                walkJsonPath(root, body.split("\\."), 0, scopeId, counter, pending, now);
+            }
+            if (pending.isEmpty()) {
+                // 路径全未命中：交给调用方回退到全文本匹配，宁可多脱敏也不漏
+                return null;
+            }
+            repository.saveAll(pending);
+            return objectMapper.writeValueAsString(root);
+        } catch (RuntimeException e) {
+            log.warn("按字段路径脱敏失败，回退到全文本匹配: {}", e.toString());
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void walkJsonPath(Object node, String[] segments, int index, String scopeId,
+                              int[] counter, List<PiiTokenVaultEntity> pending, LocalDateTime now) {
+        if (node == null || index >= segments.length) {
+            return;
+        }
+        final String segment = segments[index];
+        final boolean last = index == segments.length - 1;
+        final boolean arraySegment = segment.endsWith("[*]");
+        final String key = arraySegment ? segment.substring(0, segment.length() - 3) : segment;
+        if (!(node instanceof java.util.Map<?, ?> map)) {
+            return;
+        }
+        final Object child = map.get(key);
+        if (child == null) {
+            return;
+        }
+        if (arraySegment) {
+            if (!(child instanceof List<?> list)) {
+                return;
+            }
+            for (final Object element : list) {
+                if (last) {
+                    if (element instanceof String value) {
+                        final String replaced = applyRules(value, scopeId, counter, pending, now);
+                        if (!replaced.equals(value)) {
+                            ((List<Object>) list).set(list.indexOf(element), replaced);
+                        }
+                    }
+                } else {
+                    walkJsonPath(element, segments, index + 1, scopeId, counter, pending, now);
+                }
+            }
+            return;
+        }
+        if (last) {
+            if (child instanceof String value) {
+                ((java.util.Map<Object, Object>) map).put(key,
+                        applyRules(value, scopeId, counter, pending, now));
+            }
+            return;
+        }
+        walkJsonPath(child, segments, index + 1, scopeId, counter, pending, now);
+    }
+
+    /** 对一段文本应用全部规则，编号与待落库条目由调用方持有。 */
+    private String applyRules(String text, String scopeId, int[] counter,
+                              List<PiiTokenVaultEntity> pending, LocalDateTime now) {
+        String working = text;
+        for (final CompiledRule rule : rules) {
+            final Matcher matcher = rule.pattern.matcher(working);
+            final StringBuilder replaced = new StringBuilder();
+            boolean changed = false;
+            while (matcher.find()) {
+                final String matched = matcher.group();
+                counter[0]++;
+                final String placeholder = "[" + properties.getPlaceholderPrefix() + "_" + counter[0] + "]";
+                matcher.appendReplacement(replaced, Matcher.quoteReplacement(placeholder));
+                changed = true;
+                pending.add(PiiTokenVaultEntity.builder()
+                        .scopeId(scopeId)
+                        .placeholder(placeholder)
+                        .ciphertext(cipher.encrypt(matched))
+                        .ruleName(rule.name)
+                        .createdAt(now)
+                        .expiresAt(now.plus(properties.getTtl()))
+                        .build());
+            }
+            if (changed) {
+                matcher.appendTail(replaced);
+                working = replaced.toString();
+            }
+        }
+        return working;
     }
 
     private String doTokenize(String scopeId, String text) {
