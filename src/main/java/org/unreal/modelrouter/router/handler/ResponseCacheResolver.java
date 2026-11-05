@@ -13,6 +13,7 @@ import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.util.IpUtils;
 import org.unreal.modelrouter.router.cache.CachedStreamingResponse;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
+import org.unreal.modelrouter.router.cache.SemanticCacheService;
 import org.unreal.modelrouter.router.loadbalancer.AffinityKeyResolver;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 import reactor.core.publisher.Flux;
@@ -50,6 +51,9 @@ final class ResponseCacheResolver {
     private final ResponseCacheService responseCacheService;
 
     /** 原生面 JSON 序列化器；{@code null} 表示未注入（退化为只接受文本缓存值）。 */
+    /** 语义缓存（近似请求复用）；{@code null} 表示未装配，语义分支整体短路. */
+    private final SemanticCacheService semanticCacheService;
+
     private final ObjectMapper objectMapper;
 
     /**
@@ -58,9 +62,24 @@ final class ResponseCacheResolver {
      * @param responseCacheService 响应缓存门面，可为 {@code null}
      * @param objectMapper         全局 ObjectMapper，可为 {@code null}
      */
-    ResponseCacheResolver(final ResponseCacheService responseCacheService, final ObjectMapper objectMapper) {
+    ResponseCacheResolver(final ResponseCacheService responseCacheService,
+                           final ObjectMapper objectMapper) {
+        this(responseCacheService, objectMapper, null);
+    }
+
+    /**
+     * 构造器（含语义缓存）.
+     *
+     * @param responseCacheService 响应缓存门面，可为 {@code null}
+     * @param objectMapper         全局 ObjectMapper，可为 {@code null}
+     * @param semanticCacheService 语义缓存，可为 {@code null}
+     */
+    ResponseCacheResolver(final ResponseCacheService responseCacheService,
+                           final ObjectMapper objectMapper,
+                           final SemanticCacheService semanticCacheService) {
         this.responseCacheService = responseCacheService;
         this.objectMapper = objectMapper;
+        this.semanticCacheService = semanticCacheService;
     }
 
     /**
@@ -96,6 +115,28 @@ final class ResponseCacheResolver {
         String cacheKey = responseCacheService.buildKey(tenantKey, endpoint.getServiceType(), requestDto);
         if (cacheKey != null) {
             httpRequest.getAttributes().put(ServiceRequestHandler.CACHE_KEY_ATTRIBUTE, cacheKey);
+            rememberSemanticText(httpRequest, requestDto);
+        }
+    }
+
+    /**
+     * 记下语义缓存的比对文本（请求 DTO 的 JSON 文本）.
+     *
+     * <p>只有语义缓存启用时才做序列化：默认关闭时不留额外开销。序列化失败不抛，
+     * 只是让本次请求不参与语义命中。</p>
+     *
+     * @param httpRequest HTTP 请求（属性写入处）
+     * @param requestDto 原始请求 DTO
+     */
+    private void rememberSemanticText(final ServerHttpRequest httpRequest, final Object requestDto) {
+        if (semanticCacheService == null || !semanticCacheService.isEnabled() || objectMapper == null) {
+            return;
+        }
+        try {
+            httpRequest.getAttributes().put(ServiceRequestHandler.SEMANTIC_TEXT_ATTRIBUTE,
+                    objectMapper.writeValueAsString(requestDto));
+        } catch (RuntimeException ex) {
+            logger.debug("语义缓存比对文本序列化失败, 本次请求不参与语义命中: {}", ex.toString());
         }
     }
 
@@ -122,10 +163,53 @@ final class ResponseCacheResolver {
         String serviceName = serviceType != null ? serviceType.name() : "unknown";
         Optional<Object> cached = responseCacheService.lookup(key, serviceName, modelName);
         if (cached.isEmpty()) {
-            return null;
+            return readSemantic(httpRequest, serviceName, modelName, exchange);
         }
         logger.info("Response cache hit: service={}, model={}", serviceName, modelName);
-        Object value = cached.get();
+        return replayCachedValue(cached.get(), exchange, httpRequest);
+    }
+
+    /**
+     * 语义缓存读：精确键未命中时，用相似请求的结论回放.
+     *
+     * <p>返回 {@code null} 表示继续原流程。任何异常都按未命中处理（缓存是旁路能力）。</p>
+     *
+     * @param httpRequest HTTP 请求（比对文本来源）
+     * @param serviceName 服务名（日志）
+     * @param modelName   模型名（语义缓存按模型分桶）
+     * @param exchange    原始交换对象（读原生面标记）
+     * @return 命中时的响应实体；未命中返回 {@code null}
+     */
+    private ResponseEntity<?> readSemantic(final ServerHttpRequest httpRequest,
+                                           final String serviceName,
+                                           final String modelName,
+                                           final ServerWebExchange exchange) {
+        if (semanticCacheService == null || !semanticCacheService.isEnabled()) {
+            return null;
+        }
+        Object text = httpRequest.getAttributes().get(ServiceRequestHandler.SEMANTIC_TEXT_ATTRIBUTE);
+        if (!(text instanceof String semanticText) || semanticText.isBlank()) {
+            return null;
+        }
+        Optional<Object> hit = semanticCacheService.find(modelName, semanticText);
+        if (hit.isEmpty()) {
+            return null;
+        }
+        logger.info("Semantic cache hit: service={}, model={}", serviceName, modelName);
+        return replayCachedValue(hit.get(), exchange, httpRequest);
+    }
+
+    /**
+     * 按缓存值的类型回放（精确命中与语义命中共用）.
+     *
+     * @param value       缓存值
+     * @param exchange    原始交换对象（读原生面标记）
+     * @param httpRequest HTTP 请求（读原生面标记）
+     * @return 响应实体
+     */
+    private ResponseEntity<?> replayCachedValue(final Object value,
+                                                final ServerWebExchange exchange,
+                                                final ServerHttpRequest httpRequest) {
         // v2.9.10: 流式缓存值 → SSE 逐块回放
         if (value instanceof CachedStreamingResponse streamingResponse) {
             return buildStreamingCacheResponse(streamingResponse);

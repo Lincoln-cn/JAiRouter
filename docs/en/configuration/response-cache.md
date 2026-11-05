@@ -178,8 +178,40 @@ PUT  /api/config/cache/response/config # runtime partial update
 Current version boundaries:
 
 - **Distributed**: the cache is in-process Caffeine; each instance is independent. A shared / Redis cache is planned for a later version
-- **Semantic cache**: only byte-level request matching; no semantic-level reuse (hello vs hi) — semantic caching is under later evaluation
+- **Semantic matching**: when the exact lookup misses, an optional SimHash approximation can be used (see "Semantic Cache" below). Off by default, since a hit skips the upstream call and is only safe for requests judged deterministic
 - Binary services (image / TTS / STT) never enter the cache
+
+## Semantic Cache (optional)
+
+The exact cache requires byte-identical request bodies. The semantic cache adds a layer on top: when the exact lookup misses, a SimHash comparison decides whether the new request is merely a rephrasing of one already cached. Off by default.
+
+```yaml
+jairouter:
+  semantic-cache:
+    enabled: true            # default false
+    max-entries-per-model: 512
+    ttl: PT10M
+    max-hamming-distance: 3  # lower is stricter; 0 requires identical fingerprints
+    min-text-length: 8       # shorter requests skip semantic matching (greetings and the like)
+    allow-non-deterministic: false
+```
+
+How it works:
+
+1. The request text is normalized (lowercased, punctuation folded to single spaces), split into character 3-grams, and hashed to a 64-bit fingerprint with SHA-256.
+2. A new request is compared against every cached entry for the same model by Hamming distance; a distance at most `max-hamming-distance` **and** a token count within 20% counts as a hit.
+3. A hit returns the cached response without calling the upstream. A miss forwards as usual and, on success, records a semantic entry alongside the exact one.
+
+Why SimHash instead of vector embeddings: embeddings would require an extra upstream call per request, cancelling out the very call the cache is meant to save. SimHash needs no external calls and no extra dependency; the trade-off is that it only recognizes small wording changes ("what's the weather today" vs "how's the weather today"), not questions asked in different words.
+
+Behavior:
+
+- **Non-streaming path only** — a streaming response cannot be replayed as a block.
+- Enabled only for requests judged deterministic (`temperature` zero or unset, and `n` not greater than 1); otherwise it would conflict with sampling. Set `allow-non-deterministic: true` to override.
+- Entries are bucketed per model with at most `max-entries-per-model` each (oldest evicted first), and expire after `ttl`, 10 minutes by default.
+- Replicas keep independent caches, same as the in-process exact cache.
+
+Metrics: `jairouter.semantic.cache.hits` / `jairouter.semantic.cache.misses` (see [Monitoring Metrics Reference](../monitoring/metrics.md)).
 
 ## Related Documents
 
