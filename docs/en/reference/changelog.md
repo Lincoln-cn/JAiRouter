@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.7.1
-> **Last Updated**: 2026-11-04
+> **Document Version**: 3.7.2
+> **Last Updated**: 2026-11-06
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,20 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+### [3.7.2] - 2026-11-06 - Semantic cache, reversible redaction, and usage data retention
+
+- **Semantic cache (optional, off by default)**: when the exact cache misses, a SimHash near-match can reuse a previous response. Configured under `jairouter.semantic-cache.*`, `enabled: false` by default. SimHash was chosen over vector embeddings because an embedding call would add one more upstream round trip per request, while the whole point of a semantic cache is to remove one; the cost is that only reworded versions of the same question match, not genuinely different phrasings.
+- **Reversible redaction (optional, off by default)**: ID card numbers, mobile numbers, bank cards and email addresses in the request are replaced with `[PII_n]` before the request leaves the gateway, then restored in the response. Rules are configurable; each original value is encrypted with AES-256-GCM into `pii_token_vault` with a TTL and cleaned up automatically. Restoration is a literal string substitution only, so a placeholder the model rewrote is returned unchanged rather than guessed. Every restoration writes a row to `pii_access_audit` containing scope, caller, path and restored count, with no original values. Configured under `jairouter.pii.reversible.*`, `enabled: false` by default.
+- **Usage data retention**: `token_usage` had no cleanup task at all (the other six tables did), so it grew without bound on long-running deployments. A daily retention job has been added (90 days by default, runs at 03:00, staggered against the call history cleanup). Configured under `jairouter.monitoring.token-usage.*`.
+
+**Upgrade notes**
+
+1. All three capabilities are off by default; upgrading does not change behavior until you enable them.
+2. Two new database migrations: `V9` (reversible redaction vault) and `V10` (redaction audit). Applied automatically at startup.
+3. New configuration file `config/security/pii-reversible.yml` (off by default, no rules), added to `spring.config.import` in `application.yml`.
+4. Reversible redaction currently covers the non-streaming JSON path only; the streaming path is not wired (#989) and the field-level policy does not yet consume the `json-paths` setting (#988). Both are recorded as issues, and streaming will behave differently from non-streaming when this capability is on.
+5. The vault lookup during restoration runs on the event loop thread (the same as the existing token accounting in that method) and takes roughly a millisecond; if reversible redaction becomes a hot path it needs `boundedElastic` plus `flatMap`.
+
 ### [3.7.1] - 2026-11-04 - Container image build fix (#980)
 
 #### Fixed
