@@ -24,6 +24,11 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 
 ## Current Version Status
 
+
+> The per-release detail below stops at v3.5.8. Releases from v3.6.0 onward (Spring Boot 4.1 and Jackson 3
+> upgrade, semantic cache, reversible PII masking, and so on) are tracked in the
+> [changelog](changelog.md) instead of being duplicated here.
+
 ### ✅ v3.5.8 (Patch: two P0s in the observability path, plus nineteen fixes, **released 2026-10-31**)
 
 **Status**: Released (GitHub Release `v3.5.8`, 2026-10-31; multi-arch Docker images rebuilt by CI on release: `v3.5.8` / `3.5.8` / `latest`)
