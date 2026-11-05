@@ -28,6 +28,7 @@ import org.unreal.modelrouter.router.adapter.builder.RequestBuilder;
 import org.unreal.modelrouter.router.adapter.handler.MultipartRequestHandler;
 import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
+import org.unreal.modelrouter.router.model.InstanceKeys;
 import org.unreal.modelrouter.router.cache.SemanticCacheService;
 import org.unreal.modelrouter.router.handler.ServiceRequestHandler;
 import org.unreal.modelrouter.router.model.ModelRouterProperties.ModelInstance;
@@ -254,13 +255,13 @@ public class NonStreamingRequestProcessor {
                                 System.currentTimeMillis() - requestStartTime, "200");
                         // v2.9.2: 二进制响应记录调用历史（仅元数据，body 为二进制不捕获）
                         long duration = System.currentTimeMillis() - requestStartTime;
-                        metricsRecorder.recordCompleteCall(adapterType, instanceName, duration, true,
+                        metricsRecorder.recordCompleteCall(adapterType, InstanceKeys.label(selectedInstance), duration, true,
                                 null, requestedModel, serviceType, selectedInstance);
                     }
                 })
                 .doOnError(throwable -> {
                     if (metricsRecorder != null) {
-                        metricsRecorder.recordError(adapterType, instanceName,
+                        metricsRecorder.recordError(adapterType, InstanceKeys.label(selectedInstance),
                                 throwable.getClass().getSimpleName(), throwable,
                                 System.currentTimeMillis() - requestStartTime, serviceType);
                     }
@@ -395,7 +396,7 @@ public class NonStreamingRequestProcessor {
                 })
                 .doOnError(throwable -> {
                     if (metricsRecorder != null) {
-                        metricsRecorder.recordError(adapterType, instanceName,
+                        metricsRecorder.recordError(adapterType, InstanceKeys.label(selectedInstance),
                                 throwable.getClass().getSimpleName(), throwable,
                                 System.currentTimeMillis() - requestStartTime, serviceType);
                     }
