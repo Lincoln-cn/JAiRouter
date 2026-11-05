@@ -76,3 +76,11 @@ jairouter:
           - 10.0  # 10s
           - 30.0  # 30s
           - 60.0  # 60s
+
+    # Token 用量记录的保留策略（#984）：此前 token_usage 表只增不减，
+    # 因为 TokenUsageService.deleteOldUsageRecords 没有任何调用方。
+    token-usage:
+      # 是否启用过期记录清理
+      cleanup-enabled: true
+      # 保留天数，与审计日志的 90 天口径一致
+      retention-days: 90

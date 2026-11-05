@@ -274,6 +274,22 @@ monitoring:
     # buffer-size: 1000 # 小缓冲区，节省内存
 ```
 
+## 用量数据保留
+
+`token_usage` 表每请求写一行，是网关里增长最快的一张表。清理任务默认每天 03:00 执行，按保留天数删除更早的记录（**刻意避开 02:00 的调用历史清理，避免两张大表同时扫**）。
+
+```yaml
+jairouter:
+  monitoring:
+    token-usage:
+      # 是否启用过期记录清理，默认 true
+      cleanup-enabled: true
+      # 保留天数，默认 90，与审计日志口径一致
+      retention-days: 90
+```
+
+清理时间是固定的 cron `0 0 3 * * ?`，不支持通过配置调整。保留天数设为 0 或负数会跳过清理并打一条 warn —— 这不会让任务报错，但表会重新开始无界增长。
+
 ## 内存配置
 
 ### monitoring.metrics.memory
