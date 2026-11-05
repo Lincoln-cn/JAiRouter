@@ -378,8 +378,11 @@ so a misconfigured path never causes a missed redaction.
 
 ### Known limits
 
-- Field-level policy (`json-paths`) only narrows which text participates in matching; it does not
-  change the placeholder format itself.
+- With `json-paths` set, only string values at those paths participate in matching; if no path
+  matches or the body is not JSON, matching falls back to the whole text.
+- Streaming responses are restored chunk by chunk: if upstream splits one placeholder across two
+  chunks, that piece stays as-is (`[PII_1` and `]` arriving separately); the SSE JSON structure is
+  unaffected.
 - The tokenize and detokenize calls of one request must share the same `scope_id`; placeholder numbers
   are not reusable across requests.
 
