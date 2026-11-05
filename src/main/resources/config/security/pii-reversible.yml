@@ -1,0 +1,31 @@
+# 可逆脱敏（#987）
+#
+# 与 auth/sanitization.yml 的单向脱敏不同：这里把 PII 换成占位符发给上游，
+# 回包时再换回来，原文以密文存在 pii_token_vault 表里。
+#
+# 默认关闭：开启后网关会改写发给上游的内容，属于改变请求语义的行为。
+jairouter:
+  pii:
+    reversible:
+      enabled: false
+
+      # 占位符形如 [PII_1]、[PII_2]，按规则名顺序编号，同一次请求内连续不重复
+      placeholder-prefix: PII
+
+      # 映射保留时长：只需覆盖「请求发出到响应回来」的窗口
+      ttl: PT30M
+
+      # 内置规则（身份证 / 手机号 / 16-19 位银行卡号 / 邮箱）
+      builtin-rules-enabled: true
+
+      # 字段级策略：留空表示整个请求体文本都参与匹配；
+      # 填了则只处理命中的 JSON 路径，例如：
+      #   json-paths:
+      #     - messages[*].content
+      #     - prompt
+      json-paths: []
+
+      # 额外规则，正则命中部分整体替换为占位符
+      rules: []
+      #  - name: employee-id
+      #    pattern: "EMP-\\d{6}"

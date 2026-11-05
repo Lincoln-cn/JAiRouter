@@ -71,8 +71,8 @@ class MigrateOnlyEntryProcessTest {
                 "子进程应在退出前把 schema 建出来；库文件 " + dbFile + " 里的表数不足以说明迁移跑过");
         // 建表者必须是 Flyway（issue #192）：只断言「表存在」证明不了 —— H2 上 ddl-auto: update
         // 自己也会建表。历史表里 V1/V2 两条记录才是「H2 走的是版本化迁移」的直接证据。
-        assertEquals(List.of("1|SQL", "2|SQL", "3|SQL", "4|SQL", "5|SQL", "6|SQL", "7|SQL", "8|SQL"), migrationHistory(url),
-                "H2 路径应由 Flyway 顺序执行 V1~V8（V6 = jwt_accounts 增加软删除列，V7 = 审计事件类型取值补齐，V8 = 时间戳列补 NOT NULL）。子进程输出：\n" + child.output());
+        assertEquals(List.of("1|SQL", "2|SQL", "3|SQL", "4|SQL", "5|SQL", "6|SQL", "7|SQL", "8|SQL", "9|SQL", "10|SQL"), migrationHistory(url),
+                "H2 路径应由 Flyway 顺序执行 V1~V10（V6 = jwt_accounts 增加软删除列，V7 = 审计事件类型取值补齐，V8 = 时间戳列补 NOT NULL，V9 = 可逆脱敏映射表，V10 = 可逆脱敏访问审计表）。子进程输出：\n" + child.output());
     }
 
     @Test

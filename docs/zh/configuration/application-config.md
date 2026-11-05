@@ -49,7 +49,7 @@ config/
 │   ├── jwt.yml          # JWT 认证配置
 │   ├── api-key.yml      # API 密钥配置
 │   ├── audit.yml        # 审计配置
-│   └── sanitization.yml # 数据脱敏配置
+│   ├── sanitization.yml # 数据脱敏配置
 ├── monitor/             # 监控服务
 │   ├── slow-query-alerts.yml
 │   ├── error-tracking.yml
@@ -63,7 +63,8 @@ config/
 │   └── model-services-base.yml
 └── security/            # 安全配置（遗留）
     ├── security-base.yml
-    └── persistence-base.yml
+    ├── persistence-base.yml
+    └── pii-reversible.yml
 ```
 
 ### 配置导入

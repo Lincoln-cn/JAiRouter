@@ -327,6 +327,48 @@ jairouter:
               - "\\b(?:风格|style)[:：]?\\s*[\\w\\d]+\\b"
 ```
 
+## Reversible Redaction
+
+The redaction described above is **one-way**: once replaced, the value is gone — which is why it is
+only suitable for logs and storage. Reversible redaction serves a different need: letting an external
+model see the content while keeping real ID numbers and phone numbers inside your network.
+
+Each match is replaced with a placeholder (`[PII_1]`, `[PII_2]`, ...) before the request goes upstream,
+and the original value is stored encrypted in the `pii_token_vault` table. When the response comes back,
+the placeholders are substituted with the originals again.
+
+### Configuration
+
+```yaml
+jairouter:
+  pii:
+    reversible:
+      enabled: false            # off by default
+      placeholder-prefix: PII
+      ttl: PT30M                # how long a mapping stays valid
+      builtin-rules-enabled: true   # ID card / mobile / 16-19 digit bank card / email
+      json-paths: []            # empty means the whole request body participates
+      rules: []                 # extra rules: name + pattern (Java regex)
+```
+
+### Four behavioral commitments
+
+1. **Off by default**: enabling it rewrites what goes upstream, which changes request semantics.
+2. **Exact substitution only**: if the model rewrites `[PII_1]` into `pii_1`, `[PII_1 ]`, or drops it
+   entirely, that text is returned as-is — the gateway **never guesses**. Showing a placeholder is
+   preferable to substituting the wrong value into a real person's data.
+3. **Originals are only stored encrypted**: the key is shared with call history via
+   `RecordContentCipher` (AES-256-GCM).
+4. **Mappings expire**: past their TTL they no longer participate in substitution, and a cleanup task
+   removes them.
+
+### Known limits
+
+- Field-level policy (`json-paths`) only narrows which text participates in matching; it does not
+  change the placeholder format itself.
+- The tokenize and detokenize calls of one request must share the same `scope_id`; placeholder numbers
+  are not reusable across requests.
+
 ## Streaming Response Guard (SSE)
 
 Request/response sanitization only ever sees a **complete** response body. A streaming response
