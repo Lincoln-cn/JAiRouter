@@ -141,10 +141,10 @@
     },
     "docs/en/configuration/dynamic-config.md": {
       "FilePath": "docs/en/configuration/dynamic-config.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T00:17:54.059622",
-      "ContentHash": "8f06ef448c4cf498",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.2",
+      "LastModified": "2026-11-05T17:57:52.046045",
+      "ContentHash": "dfe5b526db64abe4",
+      "GitCommit": "841de5a5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1307,10 +1307,10 @@
     },
     "docs/zh/configuration/dynamic-config.md": {
       "FilePath": "docs/zh/configuration/dynamic-config.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-30T15:24:49.198466",
-      "ContentHash": "8008fc2ec2194fcf",
-      "GitCommit": "51b84ed6",
+      "Version": "1.0.3",
+      "LastModified": "2026-11-05T17:57:52.787524",
+      "ContentHash": "d4820c020f4cce1e",
+      "GitCommit": "841de5a5",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -6896,7 +6896,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-05T17:52:54.953872",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/dynamic-config.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-05T17:57:52.046056",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/dynamic-config.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-05T17:57:52.787535",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-05T17:52:55.093125"
+  "last_updated": "2026-11-05T17:57:53.501575"
 }
