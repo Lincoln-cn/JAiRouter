@@ -369,6 +369,33 @@ curl -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/co
 curl -X POST -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/version/apply/3"
 ```
 
+## 运行时可变性
+
+不是所有配置都能在运行中修改，改完之后的落点也各不相同。下表是实测结论 —— 判读它比记端点路径更重要。
+
+| 配置面 | 更新入口 | 是否落库 | 重启后 |
+| --- | --- | --- | --- |
+| 配额 | `PUT /api/config/quota` | 否（只改内存属性） | **回到配置文件的值** |
+| 监控开关与采样 | 监控配置更新接口 | 否（只改内存属性） | 回到配置文件的值 |
+| 响应脱敏规则 | `PUT /api/config/sanitization` | 是（先落库再热重建规则） | 保留 |
+| 熔断器全局配置 | `PUT /api/config/circuit-breaker/global-config` | 是（落库并同步内存） | 保留 |
+| 实例与服务配置 | `/api/config/instance/**` | 是 | 保留，见注意事项 |
+| YAML / 环境变量 | — | — | 需重启才生效 |
+
+### 三条判读规则
+
+**1. 「改成功了」不等于「改持久了」**
+
+端点返回 200、日志写着「已热改」，只说明当前进程里的生效值变了。需要跨重启保留的配置，要么写进 YAML，要么走明确持久化的端点（脱敏、熔断）。
+
+**2. 配额端点区分两类字段**
+
+`enabled` / `failOpen` / `windows` 可热改；`flushIntervalSeconds` / `distributed.*` / `retention.*` 属重启级字段，请求里携带会返回 400 与 `RESTART_REQUIRED`，而不是静默忽略 —— 这是仓库里唯一把这条边界显式写进接口的配置面。
+
+**3. 通过 API 新增的实例不在 YAML 里**
+
+执行配置同步或版本回滚时，配置中不存在的实例会被删除。若希望某个实例长期存在，把它写进 YAML 配置文件，而不是只通过管理接口添加。
+
 ## 最佳实践
 
 ### 1. 配置变更流程
