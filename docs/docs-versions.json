@@ -116,10 +116,10 @@
     },
     "docs/en/configuration/application-config.md": {
       "FilePath": "docs/en/configuration/application-config.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-11-01T18:05:16.880293",
-      "ContentHash": "2fe9df80fc829316",
-      "GitCommit": "f1118942",
+      "Version": "1.0.6",
+      "LastModified": "2026-11-05T16:37:41.372166",
+      "ContentHash": "89de2f3127317f15",
+      "GitCommit": "e18317b1",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -233,10 +233,10 @@
     },
     "docs/en/configuration/modular-config.md": {
       "FilePath": "docs/en/configuration/modular-config.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-11-01T18:05:16.937893",
-      "ContentHash": "5712b936b0b7b8dc",
-      "GitCommit": "f1118942",
+      "Version": "1.0.6",
+      "LastModified": "2026-11-05T16:37:41.432537",
+      "ContentHash": "d94f190da7297d7d",
+      "GitCommit": "e18317b1",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -946,10 +946,10 @@
     },
     "docs/en/security/data-sanitization.md": {
       "FilePath": "docs/en/security/data-sanitization.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-11-01T18:05:17.432819",
-      "ContentHash": "678cac051aabf1b1",
-      "GitCommit": "f1118942",
+      "Version": "1.0.5",
+      "LastModified": "2026-11-05T16:37:41.921409",
+      "ContentHash": "602d69d6ec197778",
+      "GitCommit": "e18317b1",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1282,10 +1282,10 @@
     },
     "docs/zh/configuration/application-config.md": {
       "FilePath": "docs/zh/configuration/application-config.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-11-01T18:05:17.610871",
-      "ContentHash": "5abce790358e9f2e",
-      "GitCommit": "f1118942",
+      "Version": "1.0.6",
+      "LastModified": "2026-11-05T16:37:42.118498",
+      "ContentHash": "ce196583731f7552",
+      "GitCommit": "e18317b1",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1398,10 +1398,10 @@
     },
     "docs/zh/configuration/modular-config.md": {
       "FilePath": "docs/zh/configuration/modular-config.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-11-01T18:05:17.668922",
-      "ContentHash": "5ec4cc153dd493a5",
-      "GitCommit": "f1118942",
+      "Version": "1.0.6",
+      "LastModified": "2026-11-05T16:37:42.181729",
+      "ContentHash": "229ec40104b53e6a",
+      "GitCommit": "e18317b1",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2119,10 +2119,10 @@
     },
     "docs/zh/security/data-sanitization.md": {
       "FilePath": "docs/zh/security/data-sanitization.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-11-01T18:05:18.183979",
-      "ContentHash": "4e5898f2f1a1c2f1",
-      "GitCommit": "f1118942",
+      "Version": "1.0.7",
+      "LastModified": "2026-11-05T16:37:42.704242",
+      "ContentHash": "555cdef4b0189f11",
+      "GitCommit": "e18317b1",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -6784,7 +6784,55 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-05T14:39:58.056513",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/application-config.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-05T16:37:41.372177",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/modular-config.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-05T16:37:41.432547",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/data-sanitization.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-05T16:37:41.921418",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/application-config.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-05T16:37:42.118508",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/modular-config.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-05T16:37:42.181740",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/data-sanitization.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-05T16:37:42.704251",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-05T14:39:58.310114"
+  "last_updated": "2026-11-05T16:37:42.864817"
 }
