@@ -385,6 +385,9 @@ so a misconfigured path never causes a missed redaction.
   unaffected.
 - The tokenize and detokenize calls of one request must share the same `scope_id`; placeholder numbers
   are not reusable across requests.
+- Streaming responses: the request side is redacted as usual and the response side restores each chunk on its
+  own. If the upstream splits a placeholder across two chunks, that piece is not restored — the client sees a
+  complete `[PII_1]` once adjacent chunks are concatenated, and the real value still never leaves your network.
 
 ## Streaming Response Guard (SSE)
 
