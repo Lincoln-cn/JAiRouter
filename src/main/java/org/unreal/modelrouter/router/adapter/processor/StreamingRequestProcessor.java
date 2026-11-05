@@ -5,6 +5,7 @@ import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.unreal.modelrouter.pii.ReversiblePiiService;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -55,6 +56,9 @@ import java.util.function.Function;
  */
 @Component
 public class StreamingRequestProcessor {
+
+    /** 一个占位符最长可能有多长（前缀 + 序号 + 右括号），超过就当作普通文本。 */
+    private static final int MAX_PLACEHOLDER_LEN = 32;
 
     private static final Logger logger = LoggerFactory.getLogger(StreamingRequestProcessor.class);
 
@@ -127,6 +131,15 @@ public class StreamingRequestProcessor {
     // 流式护栏（可选注入；未装配或未启用时链路完全不介入）
     @Autowired(required = false)
     private org.unreal.modelrouter.router.guard.StreamGuardService streamGuardService;
+
+    /**
+     * 可逆脱敏（可选）：请求侧换成占位符、响应侧换回原文。
+     */
+    @Autowired(required = false)
+    private ReversiblePiiService reversiblePiiService;
+
+    @Autowired(required = false)
+    private org.unreal.modelrouter.pii.PiiProperties reversiblePiiProperties;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -252,6 +265,9 @@ public class StreamingRequestProcessor {
         final boolean hasInstanceAuth = instanceHeaders.keySet().stream()
                 .anyMatch(key -> "Authorization".equalsIgnoreCase(key));
 
+        // 可逆脱敏：同一次请求内 tokenize 与 detokenize 必须用同一个 scope
+        final String piiScopeId = java.util.UUID.randomUUID().toString();
+
         WebClient.RequestBodySpec requestSpec = client.post()
                 .uri(path)
                 .contentType(MediaType.APPLICATION_JSON);
@@ -323,7 +339,9 @@ public class StreamingRequestProcessor {
                             guardedChunk = guardDecision.output();
                         }
                     }
-                    ServerSentEvent<String> sse = transformAndWrapChunk(guardedChunk, transformChunkFn);
+                    // 可逆脱敏：先把占位符换回原文，再做适配器变换（占位符本身与目标协议无关）
+                    final String restoredChunk = detokenizeChunk(piiScopeId, guardedChunk);
+                    ServerSentEvent<String> sse = transformAndWrapChunk(restoredChunk, transformChunkFn);
                     // v2.9.10: 收集变换后 data 串用于流式缓存（v3.2.3: 受缓存字符预算约束）
                     if (transformedChunks != null && !cacheOverBudget.get()) {
                         final String data = sse.data();
@@ -542,7 +560,7 @@ public class StreamingRequestProcessor {
             // 现改为 `retrieve()` + 状态保真的 `onStatus`：错误仍在**订阅响应体之前**发生，
             // 而正常流的 body 与 legacy 面走同一条已验证有帧的 `bodyToFlux` 路径。
             final Flux<ServerSentEvent<String>> v1Stream = decorateChunks.apply(requestSpec
-                    .bodyValue(rewriteModelField(request, instanceName))
+                    .bodyValue(piiTokenizedBody(rewriteModelField(request, instanceName), piiScopeId))
                     .retrieve()
                     .onStatus(HttpStatusCode::isError, clientResponse -> {
                         logger.warn("流式请求下游错误: instance={}, status={}",
@@ -560,7 +578,7 @@ public class StreamingRequestProcessor {
 
         // legacy /api/** 面（与 Anthropic 面之外的其余路径）：保持既有语义 —— 200 + 流，异常在流内终止
         final Flux<ServerSentEvent<String>> legacyStream = decorateChunks.apply(requestSpec
-                .bodyValue(rewriteModelField(request, instanceName))
+                .bodyValue(piiTokenizedBody(rewriteModelField(request, instanceName), piiScopeId))
                 .retrieve()
                 .onStatus(HttpStatusCode::is5xxServerError, clientResponse -> {
                     logger.error("流式请求5xx错误: instance={}, status={}", instanceName, clientResponse.statusCode());
@@ -1262,5 +1280,43 @@ public class StreamingRequestProcessor {
             return content.substring(0, maxLen);
         }
         return content;
+    }
+
+    /**
+     * 请求侧脱敏：启用时把请求体序列化后换成占位符，返回字符串交给 WebClient。
+     * <p>失败时原样返回未脱敏的对象 —— 宁可让这次请求不生效，也不阻塞转发。</p>
+     */
+    Object piiTokenizedBody(final Object body, final String scopeId) {
+        if (reversiblePiiService == null || !reversiblePiiService.enabled() || body == null) {
+            return body;
+        }
+        try {
+            final String json = objectMapper.writeValueAsString(body);
+            return reversiblePiiService.tokenizeNow(scopeId, json);
+        } catch (RuntimeException ex) {
+            logger.warn("流式请求的可逆脱敏失败，按未脱敏转发: {}", ex.getMessage());
+            return body;
+        }
+    }
+
+    /**
+     * 响应侧还原：逐块替换。
+     *
+     * <p>不做跨块缓冲。SSE 的每个 chunk 是一段完整 JSON，占位符被切开时（{@code [P} + {@code II_1]}）
+     * 字符串层面的缓冲会被 JSON 自身的方括号干扰，判定不可靠；强行缓冲反而可能拼坏 JSON 结构。
+     * 结果是这一块还原不到 —— 客户端把相邻块拼起来后看到的是完整的 {@code [PII_1]}，
+     * 也就是「占位符原样保留」这条既定语义在流式下的表现。</p>
+     */
+    String detokenizeChunk(final String scopeId, final String chunk) {
+        if (reversiblePiiService == null || !reversiblePiiService.enabled() || chunk == null) {
+            return chunk;
+        }
+        return reversiblePiiService.detokenizeNow(scopeId, chunk);
+    }
+
+    private String placeholderPrefix() {
+        final String prefix = reversiblePiiProperties == null
+                ? "" : reversiblePiiProperties.getPlaceholderPrefix();
+        return (prefix == null || prefix.isEmpty() ? "PII" : prefix) + "_";
     }
 }
