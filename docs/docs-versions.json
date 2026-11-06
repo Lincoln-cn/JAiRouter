@@ -2370,6 +2370,36 @@
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
+    },
+    "docs/en/reference/capabilities.md": {
+      "FilePath": "docs/en/reference/capabilities.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-11-06T18:12:14.702796",
+      "ContentHash": "ca3a41865e23fb8a",
+      "GitCommit": "de82677e",
+      "Author": "Leo Lin",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/en/configuration/dynamic-config.md",
+        "docs/en/configuration/response-cache.md",
+        "docs/en/security/data-sanitization.md",
+        "docs/en/troubleshooting/performance.md"
+      ]
+    },
+    "docs/zh/reference/capabilities.md": {
+      "FilePath": "docs/zh/reference/capabilities.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-11-06T18:12:15.365761",
+      "ContentHash": "8086be1b6693a428",
+      "GitCommit": "de82677e",
+      "Author": "Leo Lin",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/zh/configuration/dynamic-config.md",
+        "docs/zh/configuration/response-cache.md",
+        "docs/zh/security/data-sanitization.md",
+        "docs/zh/troubleshooting/performance.md"
+      ]
     }
   },
   "changes": [
@@ -7044,7 +7074,23 @@
       "ChangeType": "DELETED",
       "Timestamp": "2026-11-06T13:24:48.260348",
       "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/en/reference/capabilities.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-11-06T18:12:14.702808",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/zh/reference/capabilities.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-11-06T18:12:15.365771",
+      "Description": "文档created"
     }
   ],
-  "last_updated": "2026-11-06T13:24:48.260701"
+  "last_updated": "2026-11-06T18:12:15.558608"
 }
