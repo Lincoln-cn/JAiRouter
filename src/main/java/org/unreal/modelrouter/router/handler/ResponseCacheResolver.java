@@ -16,6 +16,7 @@ import org.unreal.modelrouter.router.cache.ResponseCacheService;
 import org.unreal.modelrouter.router.cache.SemanticAdmissionPolicy;
 import org.unreal.modelrouter.router.cache.SemanticCacheScope;
 import org.unreal.modelrouter.router.cache.SemanticCacheService;
+import org.unreal.modelrouter.router.cache.SemanticCacheAuditService;
 import org.unreal.modelrouter.router.loadbalancer.AffinityKeyResolver;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 import reactor.core.publisher.Flux;
@@ -57,6 +58,9 @@ final class ResponseCacheResolver {
     /** 语义缓存（近似请求复用）；{@code null} 表示未装配，语义分支整体短路. */
     private final SemanticCacheService semanticCacheService;
 
+    /** 命中审计，可为 null. */
+    private final SemanticCacheAuditService semanticCacheAuditService;
+
     /** 语义缓存的 L3 准入判定；{@code null} 表示未装配（L3 一律不写）. */
     private final SemanticAdmissionPolicy admissionPolicy;
 
@@ -70,7 +74,7 @@ final class ResponseCacheResolver {
      */
     ResponseCacheResolver(final ResponseCacheService responseCacheService,
                            final ObjectMapper objectMapper) {
-        this(responseCacheService, objectMapper, null, null);
+        this(responseCacheService, objectMapper, null, null, null);
     }
 
     /**
@@ -85,10 +89,28 @@ final class ResponseCacheResolver {
                            final ObjectMapper objectMapper,
                            final SemanticCacheService semanticCacheService,
                            final SemanticAdmissionPolicy admissionPolicy) {
+        this(responseCacheService, objectMapper, semanticCacheService, admissionPolicy, null);
+    }
+
+    /**
+     * 五参构造器（含命中审计）.
+     *
+     * @param responseCacheService       响应缓存门面，可为 {@code null}
+     * @param objectMapper               全局 ObjectMapper，可为 {@code null}
+     * @param semanticCacheService       语义缓存，可为 {@code null}
+     * @param admissionPolicy            L3 准入判定，可为 {@code null}
+     * @param semanticCacheAuditService  命中审计，可为 {@code null}
+     */
+    ResponseCacheResolver(final ResponseCacheService responseCacheService,
+                           final ObjectMapper objectMapper,
+                           final SemanticCacheService semanticCacheService,
+                           final SemanticAdmissionPolicy admissionPolicy,
+                           final SemanticCacheAuditService semanticCacheAuditService) {
         this.responseCacheService = responseCacheService;
         this.objectMapper = objectMapper;
         this.semanticCacheService = semanticCacheService;
         this.admissionPolicy = admissionPolicy;
+        this.semanticCacheAuditService = semanticCacheAuditService;
     }
 
     /**
@@ -105,6 +127,7 @@ final class ResponseCacheResolver {
         this.objectMapper = objectMapper;
         this.semanticCacheService = semanticCacheService;
         this.admissionPolicy = null;
+        this.semanticCacheAuditService = null;
     }
 
     /**
@@ -237,17 +260,27 @@ final class ResponseCacheResolver {
             return null;
         }
         Optional<Object> hit = Optional.empty();
+        String hitScope = null;
         final Object publicScope = httpRequest.getAttributes()
                 .get(ServiceRequestHandler.SEMANTIC_PUBLIC_SCOPE_ATTRIBUTE);
         if (publicScope instanceof String publicKey && !publicKey.isBlank()) {
             hit = semanticCacheService.find(publicKey, semanticText);
+            if (hit.isPresent()) {
+                hitScope = publicKey;
+            }
         }
         if (hit.isEmpty()) {
             final Object tenantScope = httpRequest.getAttributes()
                     .get(ServiceRequestHandler.SEMANTIC_TENANT_SCOPE_ATTRIBUTE);
             if (tenantScope instanceof String tenantKey && !tenantKey.isBlank()) {
                 hit = semanticCacheService.find(tenantKey, semanticText);
+                if (hit.isPresent()) {
+                    hitScope = tenantKey;
+                }
             }
+        }
+        if (hit.isPresent() && hitScope != null && semanticCacheAuditService != null) {
+            semanticCacheAuditService.record(hitScope, modelName, 0L, 1);
         }
         if (hit.isEmpty()) {
             return null;
