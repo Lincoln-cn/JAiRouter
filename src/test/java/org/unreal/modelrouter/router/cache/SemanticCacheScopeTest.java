@@ -82,6 +82,8 @@ class SemanticAdmissionPolicyTest {
     @BeforeEach
     void setUp() {
         properties = new SemanticCacheProperties();
+        // 准入判定本身会先看「公共池有没有开」，测试只验准入规则，所以显式打开
+        properties.setPublicScopeEnabled(true);
         policy = new SemanticAdmissionPolicy(properties);
     }
 
