@@ -269,6 +269,7 @@ nav:
     - 调试指南: zh/troubleshooting/debugging.md
   - 参考资料:
     - zh/reference/index.md
+    - 能力清单: zh/reference/capabilities.md
     - 更新日志: zh/reference/changelog.md
     - 发展路线图: zh/reference/roadmap.md
     - FAQ: zh/reference/faq.md
