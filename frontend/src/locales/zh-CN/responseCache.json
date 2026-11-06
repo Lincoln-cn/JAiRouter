@@ -52,5 +52,14 @@
     "operationFailedError": "操作失败",
     "invalidatedByServiceType": "已按服务类型 [{serviceType}] 失效缓存",
     "invalidatedByModel": "已按模型 [{model}] 失效缓存"
-  }
+  },
+  "semanticTitle": "语义缓存",
+  "semanticHint": "L2 按 API Key + user + 模型隔离；L3 跨租户公共池默认关闭。这些值改了要重启，页面只读。",
+  "semanticEnabled": "开关",
+  "semanticTenantScope": "租户内（L2）",
+  "semanticPublicScope": "公共池（L3）",
+  "semanticEntries": "条目数",
+  "semanticTtl": "TTL（秒）",
+  "semanticMaxChars": "公共池长度上限",
+  "semanticDistance": "汉明距离阈值"
 }

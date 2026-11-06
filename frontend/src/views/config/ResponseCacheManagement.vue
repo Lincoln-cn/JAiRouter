@@ -167,6 +167,44 @@
       </div>
     </el-card>
 
+    <!-- 语义缓存（只读） -->
+    <el-card shadow="hover" style="margin-top: 16px">
+      <template #header>
+        <span class="card-title">{{ t('responseCache.semanticTitle') }}</span>
+      </template>
+      <el-alert
+        v-if="semanticStatus"
+        :title="t('responseCache.semanticHint')"
+        type="info"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 12px"
+      />
+      <el-descriptions v-if="semanticStatus" :column="3" border>
+        <el-descriptions-item :label="t('responseCache.semanticEnabled')">
+          {{ semanticStatus.enabled ? 'on' : 'off' }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('responseCache.semanticTenantScope')">
+          {{ semanticStatus.tenantScopeEnabled ? 'on' : 'off' }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('responseCache.semanticPublicScope')">
+          {{ semanticStatus.publicScopeEnabled ? 'on' : 'off' }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('responseCache.semanticEntries')">
+          {{ semanticStatus.size }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('responseCache.semanticTtl')">
+          {{ semanticStatus.ttlSeconds }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('responseCache.semanticDistance')">
+          {{ semanticStatus.maxHammingDistance }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('responseCache.semanticMaxChars')">
+          {{ semanticStatus.maxPublicChars }}
+        </el-descriptions-item>
+      </el-descriptions>
+    </el-card>
+
     <!-- 提示 -->
     <el-alert
       :title="t('responseCache.tipTitle')"
@@ -200,6 +238,8 @@ import {
   updateCacheConfig,
   type CacheStatus,
   type CacheConfigPayload,
+  getSemanticCacheStatus,
+  type SemanticCacheStatus
 } from '@/api/responseCache'
 
 const { t } = useI18n()
@@ -208,6 +248,7 @@ const loading = ref(false)
 const invalidating = ref(false)
 const savingConfig = ref(false)
 const status = ref<CacheStatus | null>(null)
+const semanticStatus = ref<SemanticCacheStatus | null>(null)
 const selectedServiceType = ref('')
 const modelName = ref('')
 
@@ -427,6 +468,10 @@ const handleInvalidateByModel = () => {
     }
   })
 }
+
+onMounted(async () => {
+  semanticStatus.value = await getSemanticCacheStatus().catch(() => null)
+})
 
 onMounted(loadStatus)
 </script>

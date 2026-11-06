@@ -15,10 +15,13 @@ import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
+import org.unreal.modelrouter.router.cache.SemanticCacheProperties;
+import org.unreal.modelrouter.router.cache.SemanticCacheService;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -39,8 +42,23 @@ public class ResponseCacheController {
 
     private final ResponseCacheService responseCacheService;
 
+    private final SemanticCacheService semanticCacheService;
+
+    private final SemanticCacheProperties semanticCacheProperties;
+
     public ResponseCacheController(final ResponseCacheService responseCacheService) {
+        this(responseCacheService, null, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public ResponseCacheController(final ResponseCacheService responseCacheService,
+                                   @org.springframework.beans.factory.annotation.Autowired(required = false)
+                                   final SemanticCacheService semanticCacheService,
+                                   @org.springframework.beans.factory.annotation.Autowired(required = false)
+                                   final SemanticCacheProperties semanticCacheProperties) {
         this.responseCacheService = responseCacheService;
+        this.semanticCacheService = semanticCacheService;
+        this.semanticCacheProperties = semanticCacheProperties;
     }
 
     /**
@@ -56,6 +74,34 @@ public class ResponseCacheController {
                     + "与运行时状态（size/hits/misses/hitRatio）")
     public ResponseEntity<RouterResponse<Map<String, Object>>> getCacheStatus() {
         return ResponseEntity.ok(RouterResponse.success(responseCacheService.snapshot()));
+    }
+
+    /**
+     * 查询语义缓存状态（只读）.
+     *
+     * <p>语义缓存的隔离由 scope 决定：L2 按「API Key + user + 模型」分桶，
+     * L3 是跨租户公共桶、默认关闭。配置项只读 —— 改这些值要改配置文件并重启，
+     * 与配额那类「改了只在内存生效」的端点不同，这里不提供写入。</p>
+     *
+     * @return 配置与条目数；语义缓存未装配时 {@code enabled=false}
+     */
+    @GetMapping("/semantic")
+    @Operation(summary = "查询语义缓存状态",
+            description = "返回隔离层级开关、公共池准入参数、条目数与当前语义缓存开关")
+    public ResponseEntity<RouterResponse<Map<String, Object>>> getSemanticCacheStatus() {
+        final Map<String, Object> body = new LinkedHashMap<>();
+        final SemanticCacheProperties p = semanticCacheProperties;
+        body.put("enabled", p != null && p.isEnabled());
+        body.put("tenantScopeEnabled", p != null && p.isTenantScopeEnabled());
+        body.put("publicScopeEnabled", p != null && p.isPublicScopeEnabled());
+        body.put("publicAllowedTenants", p != null ? p.getPublicAllowedTenants() : List.of());
+        body.put("maxPublicChars", p != null ? p.getMaxPublicChars() : 0);
+        body.put("maxHammingDistance", p != null ? p.getMaxHammingDistance() : 0);
+        body.put("maxEntriesPerModel", p != null ? p.getMaxEntriesPerModel() : 0);
+        body.put("globalMaxEntries", p != null ? p.getGlobalMaxEntries() : 0);
+        body.put("ttlSeconds", p != null && p.getTtl() != null ? p.getTtl().toSeconds() : 0L);
+        body.put("size", semanticCacheService != null ? semanticCacheService.size() : 0);
+        return ResponseEntity.ok(RouterResponse.success(body));
     }
 
     /**
