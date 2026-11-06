@@ -141,7 +141,6 @@ plugins:
             知识库治理: Knowledge Base Governance
             性能优化: Performance Optimization
             常见问题: Common Issues
-            关键问题修复: Key Issue Fixes
             性能问题: Performance Issues
             调试指南: Debugging Guide
             参考资料: Reference
@@ -266,7 +265,6 @@ nav:
   - 故障排除:
     - zh/troubleshooting/index.md
     - 常见问题: zh/troubleshooting/common-issues.md
-    - 关键问题修复: zh/troubleshooting/issue-fixes.md
     - 性能问题: zh/troubleshooting/performance.md
     - 调试指南: zh/troubleshooting/debugging.md
   - 参考资料:
