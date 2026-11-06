@@ -32,6 +32,9 @@
   <a href="https://github.com/Lincoln-cn/JAiRouter/discussions">Discussions</a>
 </p>
 
+> **If JAiRouter saves you time, please give it a star** — the star count is the clearest signal that
+> the project is worth keeping alive, and the main way new users find it. Issues and suggestions are welcome.
+
 This README is written to be read by **people and AI agents alike**: the facts block below and the
 [Repository map](#repository-map) / [Commands](#commands) / [HTTP surfaces](#http-surfaces) sections
 are the machine-actionable core. Where the code and this file disagree, the code wins — please open

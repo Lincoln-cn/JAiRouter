@@ -32,6 +32,9 @@
   <a href="https://github.com/Lincoln-cn/JAiRouter/discussions">Discussions</a>
 </p>
 
+> **如果 JAiRouter 对你有帮助，请点个 Star** ⭐ —— Star 数是「这个项目值得继续做」最直接的信号，
+> 也是新用户找到它的主要途径。问题与建议欢迎直接开 issue。
+
 本 README 同时面向**人和 AI 助手**编写：下方的事实块，以及[仓库地图](#仓库地图)、
 [常用命令](#常用命令)、[HTTP 面](#http-面)三节，是可直接机器读取的核心。**代码与本文件冲突时以代码为准**，
 并请开 issue 提醒我们修文档。
