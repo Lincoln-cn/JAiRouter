@@ -21,6 +21,7 @@ import org.unreal.modelrouter.router.loadbalancer.AffinityKeyResolver;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 import reactor.core.publisher.Flux;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -190,6 +191,9 @@ final class ResponseCacheResolver {
             final Map<String, Object> body = objectMapper.readValue(text, Map.class);
             final Object model = body.get("model");
             final String modelName = model == null ? "" : String.valueOf(model);
+            final Object stream = body.get("stream");
+            httpRequest.getAttributes().put(ServiceRequestHandler.SEMANTIC_STREAM_ATTRIBUTE,
+                    Boolean.TRUE.equals(stream));
             final Object user = body.get("user");
             final String userKey = user instanceof String value ? value : null;
 
@@ -286,6 +290,13 @@ final class ResponseCacheResolver {
             return null;
         }
         logger.info("Semantic cache hit: service={}, model={}", serviceName, modelName);
+        if (Boolean.TRUE.equals(
+                httpRequest.getAttributes().get(ServiceRequestHandler.SEMANTIC_STREAM_ATTRIBUTE))) {
+            final ResponseEntity<?> streamed = replaySemanticAsStream(hit.get());
+            if (streamed != null) {
+                return streamed;
+            }
+        }
         return replayCachedValue(hit.get(), exchange, httpRequest);
     }
 
@@ -384,6 +395,31 @@ final class ResponseCacheResolver {
      * @param cachedResponse 流式缓存值
      * @return SSE 响应实体
      */
+    /**
+     * 把语义缓存的非流式响应体包成 SSE 帧回放.
+     *
+     * <p>语义缓存只存非流式响应（{@code transformedData}）。客户端发的是
+     * {@code stream=true} 时，若直接返回 JSON，按 SSE 解析的 SDK 会失败，
+     * 所以这里补一帧 data（响应 JSON）与一帧 [DONE]。</p>
+     *
+     * @param value 缓存值
+     * @return SSE 响应，序列化失败时返回 {@code null} 让调用方回退 JSON
+     */
+    ResponseEntity<?> replaySemanticAsStream(final Object value) {
+        final String json;
+        try {
+            json = objectMapper != null
+                    ? objectMapper.writeValueAsString(value)
+                    : String.valueOf(value);
+        } catch (RuntimeException e) {
+            logger.warn("语义缓存命中但无法序列化为 SSE 帧，回退 JSON: type={}",
+                    value == null ? "null" : value.getClass().getName(), e);
+            return null;
+        }
+        return buildStreamingCacheResponse(new CachedStreamingResponse(
+                List.of(json, "[DONE]"), null, null, null, null, "stop", true));
+    }
+
     ResponseEntity<?> buildStreamingCacheResponse(final CachedStreamingResponse cachedResponse) {
         Flux<ServerSentEvent<String>> flux = Flux.fromIterable(cachedResponse.chunks())
                 .map(chunk -> ServerSentEvent.<String>builder().data(chunk).build());
