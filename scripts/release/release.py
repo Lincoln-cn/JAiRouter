@@ -251,6 +251,12 @@ def cmd_tag(args: argparse.Namespace) -> int:
     notes = Path(args.notes)
     if not notes.is_file():
         raise SystemExit(f"缺少发布说明文件: {notes}")
+    first = notes.read_text(encoding="utf-8").lstrip()
+    if not first.startswith("# "):
+        raise SystemExit(
+            "发布说明首行必须是 `# 副标题`（GitHub Release 的 title 只用版本号，"
+            "副标题写在正文第一行）。格式见 docs/zh/development/contributing.md 的「发布」一节。"
+        )
 
     print(f"[release] 将在 {head[:8]} 上打 {tag}，并创建 GitHub Release")
     if not args.yes:
@@ -265,7 +271,40 @@ def cmd_tag(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- main
+
+def cmd_notes(args: argparse.Namespace) -> int:
+    """从 changelog 生成发布说明骨架（标题 + 分节 + 镜像段 + 链接），内容由人补。"""
+    version = args.version
+    changelog = read("docs/zh/reference/changelog.md")
+    pattern = rf"(?m)^### \[{re.escape(version)}\]\s*-\s*\d{{4}}-\d{{2}}-\d{{2}}\s*-\s*(.+)$"
+    match = re.search(pattern, changelog)
+    if not match:
+        raise SystemExit(f"changelog 里没有 {version} 的条目；先补条目再生成发布说明")
+    subtitle = match.group(1).strip()
+    tag = f"v{version}"
+    body = (
+        f"# {subtitle}\n\n"
+        "（一两句导语：这批发布来自什么、有没有破坏性变更、指向文末升级提示）\n\n"
+        "## 修复\n\n"
+        "| Issue | 问题 | PR |\n"
+        "|---|---|---|\n"
+        "| #000 | 一句话说明 | #000 |\n\n"
+        "## 升级提示\n\n"
+        "1. \n\n"
+        "## 镜像\n\n"
+        f"随 Release 由 CI 重建多架构镜像：`{tag}` / `{version}` / `latest`。\n\n"
+        "完整变更见 [changelog]"
+        "(https://github.com/Lincoln-cn/JAiRouter/blob/master/docs/zh/reference/changelog.md)。\n"
+    )
+    out = Path(args.out) if args.out else Path(f"release-notes-{version}.md")
+    if args.write:
+        out.write_text(body, encoding="utf-8")
+        print(f"[release] 已写入 {out}")
+    else:
+        print(body)
+    return 0
+
+#--------------------------------------------------------------------------- main
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description="JAiRouter 一键发布助手（默认 dry-run）")
@@ -289,6 +328,12 @@ def main(argv: list[str]) -> int:
     tag.add_argument("--title")
     tag.add_argument("--message")
     tag.add_argument("--yes", action="store_true", help="真正执行（默认 dry-run）")
+
+    notes = subs.add_parser("notes", help="从 changelog 生成发布说明骨架")
+    notes.add_argument("--version", required=True)
+    notes.add_argument("--out", help="输出路径（默认 release-notes-<version>.md）")
+    notes.add_argument("--write", action="store_true", help="写入文件（默认打印到 stdout）")
+    notes.set_defaults(func=cmd_notes)
     tag.set_defaults(func=cmd_tag)
 
     args = parser.parse_args(argv)
