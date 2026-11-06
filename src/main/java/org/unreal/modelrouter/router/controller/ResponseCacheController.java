@@ -50,6 +50,7 @@ public class ResponseCacheController {
         this(responseCacheService, null, null);
     }
 
+    @org.springframework.beans.factory.annotation.Autowired
     public ResponseCacheController(final ResponseCacheService responseCacheService,
                                    @org.springframework.beans.factory.annotation.Autowired(required = false)
                                    final SemanticCacheService semanticCacheService,
