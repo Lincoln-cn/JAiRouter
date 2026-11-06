@@ -213,6 +213,12 @@ jairouter:
 
 指标：`jairouter.semantic.cache.hits` / `jairouter.semantic.cache.misses`（见 [监控指标参考](../monitoring/metrics.md)）。
 
+### 命中审计
+
+跨用户命中会写一行审计（cache_cross_tenant_audit），只记元数据：命中的 scope、条目存在了多久、同 scope 下有多少候选。不记命中的正文 —— 正文可能含敏感内容，审计只需要能回答「这个 scope 有没有被别的租户读到」。
+
+审计表由 SemanticCacheAuditCleanupScheduler 每天 04:20 清理 30 天前的记录（与调用历史 02:00、用量数据 03:00 错开，避免三张表同时扫）。
+
 ## 相关文档
 
 - [更新日志](../reference/changelog.md)

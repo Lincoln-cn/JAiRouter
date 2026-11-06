@@ -222,6 +222,9 @@ public class ServiceRequestHandler {
     @Autowired(required = false)
     private SemanticAdmissionPolicy semanticAdmissionPolicy;
 
+    @Autowired(required = false)
+    private org.unreal.modelrouter.router.cache.SemanticCacheAuditService semanticCacheAuditService;
+
     /**
      * v2.9.10: 限流管理器（可选注入，用于缓存命中前服务级限流预扣）。
      * 未注入时缓存路径不执行预扣——限流由 selectInstance 内部执行（行为与现状一致）。
@@ -873,7 +876,7 @@ public class ServiceRequestHandler {
      */
     private ResponseCacheResolver cacheResolver() {
         return new ResponseCacheResolver(responseCacheService, objectMapper, semanticCacheService,
-                semanticAdmissionPolicy);
+                semanticAdmissionPolicy, semanticCacheAuditService);
     }
 
     /**

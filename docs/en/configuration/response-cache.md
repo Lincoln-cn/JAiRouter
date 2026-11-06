@@ -213,6 +213,12 @@ Behavior:
 
 Metrics: `jairouter.semantic.cache.hits` / `jairouter.semantic.cache.misses` (see [Monitoring Metrics Reference](../monitoring/metrics.md)).
 
+### Hit auditing
+
+A cross-user hit writes a row into `cache_cross_tenant_audit`: which scope matched, how old the entry was, how many candidates the scope held. The matched body is not recorded — it may contain sensitive content, and the audit only needs to answer "was this scope read by another tenant".
+
+`SemanticCacheAuditCleanupScheduler` deletes rows older than 30 days at 04:20 daily, staggered from call history (02:00) and usage data (03:00) so the three tables are never scanned at once.
+
 ## Related Documents
 
 - [Changelog](../reference/changelog.md)
