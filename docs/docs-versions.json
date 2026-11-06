@@ -2,10 +2,10 @@
   "versions": {
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.19",
-      "LastModified": "2026-11-06T00:54:13.762526",
-      "ContentHash": "024e837698f1a8a4",
-      "GitCommit": "9913e943",
+      "Version": "1.0.20",
+      "LastModified": "2026-11-06T13:24:46.968805",
+      "ContentHash": "e99fdb1b9ad61d32",
+      "GitCommit": "98cc062c",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -15,10 +15,10 @@
     },
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.20",
-      "LastModified": "2026-11-06T00:54:13.765503",
-      "ContentHash": "438de1d1cafc07d2",
-      "GitCommit": "9913e943",
+      "Version": "1.0.21",
+      "LastModified": "2026-11-06T13:24:46.970748",
+      "ContentHash": "db961c53e5e131ef",
+      "GitCommit": "98cc062c",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -276,10 +276,10 @@
     },
     "docs/en/configuration/response-cache.md": {
       "FilePath": "docs/en/configuration/response-cache.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-11-05T11:56:37.235535",
-      "ContentHash": "ceb980cb71212e40",
-      "GitCommit": "98d74ff3",
+      "Version": "1.0.3",
+      "LastModified": "2026-11-06T13:24:47.070484",
+      "ContentHash": "4a6d5baf9d12a6c8",
+      "GitCommit": "4d4b7b20",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -889,11 +889,11 @@
     },
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
-      "Version": "1.0.20",
-      "LastModified": "2026-11-05T20:06:53.149687",
-      "ContentHash": "3d298d104d999e93",
-      "GitCommit": "bc286f30",
-      "Author": "Leo Lin",
+      "Version": "1.0.21",
+      "LastModified": "2026-11-06T13:24:47.458052",
+      "ContentHash": "b2e3cbc87e867616",
+      "GitCommit": "98cc062c",
+      "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/reference/changelog.md"
@@ -1166,20 +1166,6 @@
         "docs/en/troubleshooting/performance.md"
       ]
     },
-    "docs/en/troubleshooting/issue-fixes.md": {
-      "FilePath": "docs/en/troubleshooting/issue-fixes.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T00:17:54.661952",
-      "ContentHash": "8c9cccf75331a642",
-      "GitCommit": "3a02eda1",
-      "Author": "Leo Lin",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/en/troubleshooting/common-issues.md",
-        "docs/en/troubleshooting/debugging.md",
-        "docs/en/troubleshooting/index.md"
-      ]
-    },
     "docs/en/troubleshooting/performance.md": {
       "FilePath": "docs/en/troubleshooting/performance.md",
       "Version": "1.0.8",
@@ -1441,10 +1427,10 @@
     },
     "docs/zh/configuration/response-cache.md": {
       "FilePath": "docs/zh/configuration/response-cache.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-11-05T11:56:37.769261",
-      "ContentHash": "a231bc0d978089f0",
-      "GitCommit": "98d74ff3",
+      "Version": "1.0.3",
+      "LastModified": "2026-11-06T13:24:47.707414",
+      "ContentHash": "873d33cd7233e5bb",
+      "GitCommit": "4d4b7b20",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2061,11 +2047,11 @@
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
-      "Version": "1.0.20",
-      "LastModified": "2026-11-05T20:06:53.798074",
-      "ContentHash": "ee3bc6dbe7651369",
-      "GitCommit": "bc286f30",
-      "Author": "Leo Lin",
+      "Version": "1.0.21",
+      "LastModified": "2026-11-06T13:24:48.113113",
+      "ContentHash": "46c414574d2e2260",
+      "GitCommit": "98cc062c",
+      "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/reference/changelog.md"
@@ -2337,20 +2323,6 @@
         "docs/zh/troubleshooting/common-issues.md",
         "docs/zh/troubleshooting/debugging.md",
         "docs/zh/troubleshooting/performance.md"
-      ]
-    },
-    "docs/zh/troubleshooting/issue-fixes.md": {
-      "FilePath": "docs/zh/troubleshooting/issue-fixes.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T00:17:55.301576",
-      "ContentHash": "e7a339a1e3c6f31d",
-      "GitCommit": "3a02eda1",
-      "Author": "Leo Lin",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/zh/troubleshooting/common-issues.md",
-        "docs/zh/troubleshooting/debugging.md",
-        "docs/zh/troubleshooting/index.md"
       ]
     },
     "docs/zh/troubleshooting/performance.md": {
@@ -7008,7 +6980,71 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-06T00:54:13.765509",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.19",
+      "NewVersion": "1.0.20",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-06T13:24:46.968812",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.20",
+      "NewVersion": "1.0.21",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-06T13:24:46.970752",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/response-cache.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-06T13:24:47.070493",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/roadmap.md",
+      "OldVersion": "1.0.20",
+      "NewVersion": "1.0.21",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-06T13:24:47.458062",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/response-cache.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-06T13:24:47.707423",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/roadmap.md",
+      "OldVersion": "1.0.20",
+      "NewVersion": "1.0.21",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-06T13:24:48.113124",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/troubleshooting/issue-fixes.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-11-06T13:24:48.260318",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/zh/troubleshooting/issue-fixes.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-11-06T13:24:48.260348",
+      "Description": "文档已删除"
     }
   ],
-  "last_updated": "2026-11-06T08:55:45.552160"
+  "last_updated": "2026-11-06T13:24:48.260701"
 }
