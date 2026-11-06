@@ -13,11 +13,14 @@ import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.util.IpUtils;
 import org.unreal.modelrouter.router.cache.CachedStreamingResponse;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
+import org.unreal.modelrouter.router.cache.SemanticAdmissionPolicy;
+import org.unreal.modelrouter.router.cache.SemanticCacheScope;
 import org.unreal.modelrouter.router.cache.SemanticCacheService;
 import org.unreal.modelrouter.router.loadbalancer.AffinityKeyResolver;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 import reactor.core.publisher.Flux;
 
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -54,6 +57,9 @@ final class ResponseCacheResolver {
     /** 语义缓存（近似请求复用）；{@code null} 表示未装配，语义分支整体短路. */
     private final SemanticCacheService semanticCacheService;
 
+    /** 语义缓存的 L3 准入判定；{@code null} 表示未装配（L3 一律不写）. */
+    private final SemanticAdmissionPolicy admissionPolicy;
+
     private final ObjectMapper objectMapper;
 
     /**
@@ -64,7 +70,25 @@ final class ResponseCacheResolver {
      */
     ResponseCacheResolver(final ResponseCacheService responseCacheService,
                            final ObjectMapper objectMapper) {
-        this(responseCacheService, objectMapper, null);
+        this(responseCacheService, objectMapper, null, null);
+    }
+
+    /**
+     * 构造器（含 L3 准入判定）.
+     *
+     * @param responseCacheService 响应缓存门面，可为 {@code null}
+     * @param objectMapper         全局 ObjectMapper，可为 {@code null}
+     * @param semanticCacheService 语义缓存，可为 {@code null}
+     * @param admissionPolicy      L3 准入判定，可为 {@code null}
+     */
+    ResponseCacheResolver(final ResponseCacheService responseCacheService,
+                           final ObjectMapper objectMapper,
+                           final SemanticCacheService semanticCacheService,
+                           final SemanticAdmissionPolicy admissionPolicy) {
+        this.responseCacheService = responseCacheService;
+        this.objectMapper = objectMapper;
+        this.semanticCacheService = semanticCacheService;
+        this.admissionPolicy = admissionPolicy;
     }
 
     /**
@@ -80,6 +104,7 @@ final class ResponseCacheResolver {
         this.responseCacheService = responseCacheService;
         this.objectMapper = objectMapper;
         this.semanticCacheService = semanticCacheService;
+        this.admissionPolicy = null;
     }
 
     /**
@@ -115,7 +140,7 @@ final class ResponseCacheResolver {
         String cacheKey = responseCacheService.buildKey(tenantKey, endpoint.getServiceType(), requestDto);
         if (cacheKey != null) {
             httpRequest.getAttributes().put(ServiceRequestHandler.CACHE_KEY_ATTRIBUTE, cacheKey);
-            rememberSemanticText(httpRequest, requestDto);
+            rememberSemanticText(httpRequest, requestDto, callerId);
         }
     }
 
@@ -128,13 +153,33 @@ final class ResponseCacheResolver {
      * @param httpRequest HTTP 请求（属性写入处）
      * @param requestDto 原始请求 DTO
      */
-    private void rememberSemanticText(final ServerHttpRequest httpRequest, final Object requestDto) {
+    private void rememberSemanticText(final ServerHttpRequest httpRequest,
+                                      final Object requestDto,
+                                      final String callerId) {
         if (semanticCacheService == null || !semanticCacheService.isEnabled() || objectMapper == null) {
             return;
         }
         try {
-            httpRequest.getAttributes().put(ServiceRequestHandler.SEMANTIC_TEXT_ATTRIBUTE,
-                    objectMapper.writeValueAsString(requestDto));
+            final String text = objectMapper.writeValueAsString(requestDto);
+            httpRequest.getAttributes().put(ServiceRequestHandler.SEMANTIC_TEXT_ATTRIBUTE, text);
+
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> body = objectMapper.readValue(text, Map.class);
+            final Object model = body.get("model");
+            final String modelName = model == null ? "" : String.valueOf(model);
+            final Object user = body.get("user");
+            final String userKey = user instanceof String value ? value : null;
+
+            // L2 租户 = API Key + 客户端自报的 user（user 只收窄范围，不放宽）
+            httpRequest.getAttributes().put(ServiceRequestHandler.SEMANTIC_TENANT_SCOPE_ATTRIBUTE,
+                    SemanticCacheScope.tenant(callerId, userKey, modelName));
+
+            // L3 公共池必须通过准入判定
+            if (admissionPolicy != null
+                    && admissionPolicy.canEnterPublic(body, SemanticCacheService.normalize(text))) {
+                httpRequest.getAttributes().put(ServiceRequestHandler.SEMANTIC_PUBLIC_SCOPE_ATTRIBUTE,
+                        SemanticCacheScope.publicScope(modelName));
+            }
         } catch (RuntimeException ex) {
             logger.debug("语义缓存比对文本序列化失败, 本次请求不参与语义命中: {}", ex.toString());
         }
@@ -191,7 +236,19 @@ final class ResponseCacheResolver {
         if (!(text instanceof String semanticText) || semanticText.isBlank()) {
             return null;
         }
-        Optional<Object> hit = semanticCacheService.find(modelName, semanticText);
+        Optional<Object> hit = Optional.empty();
+        final Object publicScope = httpRequest.getAttributes()
+                .get(ServiceRequestHandler.SEMANTIC_PUBLIC_SCOPE_ATTRIBUTE);
+        if (publicScope instanceof String publicKey && !publicKey.isBlank()) {
+            hit = semanticCacheService.find(publicKey, semanticText);
+        }
+        if (hit.isEmpty()) {
+            final Object tenantScope = httpRequest.getAttributes()
+                    .get(ServiceRequestHandler.SEMANTIC_TENANT_SCOPE_ATTRIBUTE);
+            if (tenantScope instanceof String tenantKey && !tenantKey.isBlank()) {
+                hit = semanticCacheService.find(tenantKey, semanticText);
+            }
+        }
         if (hit.isEmpty()) {
             return null;
         }

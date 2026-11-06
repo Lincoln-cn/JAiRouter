@@ -30,7 +30,9 @@ import org.unreal.modelrouter.router.adapter.handler.MultipartRequestHandler;
 import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
 import org.unreal.modelrouter.router.model.InstanceKeys;
+import org.unreal.modelrouter.router.cache.SemanticCacheScope;
 import org.unreal.modelrouter.router.cache.SemanticCacheService;
+import org.unreal.modelrouter.pii.PiiDetector;
 import org.unreal.modelrouter.pii.ReversiblePiiService;
 import org.unreal.modelrouter.router.handler.ServiceRequestHandler;
 import org.unreal.modelrouter.router.model.ModelRouterProperties.ModelInstance;
@@ -81,6 +83,10 @@ public class NonStreamingRequestProcessor {
     /** 语义缓存（近似请求复用）；{@code null} 表示未装配，语义写入短路. */
     @Autowired(required = false)
     private SemanticCacheService semanticCacheService;
+
+    /** 独立于脱敏开关的 PII 探测器：命中即放弃本次语义缓存写入. */
+    @Autowired(required = false)
+    private PiiDetector piiDetector;
 
     /**
      * 可逆脱敏（#987）：{@code null} 表示未装配，请求体按原样发出。
@@ -388,7 +394,8 @@ public class NonStreamingRequestProcessor {
 
                         // v2.9.9: 响应缓存写 — 仅 2xx 成功分支到达此处(非2xx 已先行短路)；
                         // 流式/非确定性/未启用请求键为空，此处不写
-                        cacheSuccessfulResponse(responseCacheKey, transformedData, requestedModel, capturedRequestBody);
+                        cacheSuccessfulResponse(responseCacheKey, transformedData,
+                                SemanticCacheScope.tenant(capturedKeyId, null, requestedModel), capturedRequestBody);
 
                         // v2.9.2: 记录治理 - 异步记录含请求/响应体的调用历史
                         if (metricsRecorder != null) {
@@ -565,12 +572,12 @@ public class NonStreamingRequestProcessor {
      *
      * @param cacheKey        精确缓存键（null 表示本次请求不写精确缓存）
      * @param transformedData 下游转换后的 data
-     * @param modelName       模型名（语义缓存按模型分桶），可为 {@code null}
+     * @param tenantScope     语义缓存租户 scope，可为 {@code null}
      * @param semanticText    语义比对文本（请求体），可为 {@code null}
      */
     void cacheSuccessfulResponse(final String cacheKey,
                                  final Object transformedData,
-                                 final String modelName,
+                                 final String tenantScope,
                                  final String semanticText) {
         if (transformedData == null) {
             return;
@@ -578,11 +585,16 @@ public class NonStreamingRequestProcessor {
         if (cacheKey != null && responseCacheService != null) {
             responseCacheService.store(cacheKey, transformedData);
         }
-        if (modelName == null || modelName.isBlank() || semanticText == null || semanticText.isBlank()
+        if (tenantScope == null || tenantScope.isBlank() || semanticText == null || semanticText.isBlank()
                 || semanticCacheService == null || !semanticCacheService.isEnabled()) {
             return;
         }
-        semanticCacheService.put(modelName, semanticText, transformedData);
+        if (isSensitivePayload(transformedData)) {
+            logger.debug("响应疑似含个人信息, 放弃本次语义缓存写入: scope={}", tenantScope);
+            semanticCacheService.countRejectedForPii();
+            return;
+        }
+        semanticCacheService.put(tenantScope, semanticText, transformedData);
     }
 
     /**
@@ -754,5 +766,30 @@ public class NonStreamingRequestProcessor {
             return content.substring(0, maxLen);
         }
         return content;
+    }
+
+    /**
+     * 判断响应是否疑似含个人信息.
+     *
+     * <p>探测与可逆脱敏开关无关：模型自己生成或复述的身份信息也要拦住，
+     * 否则会随缓存条目跨请求复用。探测器缺失或异常时一律按敏感处理。</p>
+     *
+     * @param transformedData 已变换的响应体
+     * @return 疑似含个人信息时返回 {@code true}
+     */
+    boolean isSensitivePayload(final Object transformedData) {
+        if (transformedData == null) {
+            return false;
+        }
+        if (piiDetector == null) {
+            return true;
+        }
+        try {
+            return piiDetector.containsSensitive(
+                    transformedData instanceof String text ? text : objectMapper.writeValueAsString(transformedData));
+        } catch (RuntimeException ex) {
+            logger.debug("PII 探测失败, 按敏感处理: {}", ex.toString());
+            return true;
+        }
     }
 }
