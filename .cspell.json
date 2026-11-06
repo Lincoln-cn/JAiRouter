@@ -330,7 +330,8 @@
     "cyclonedx",
     "vulns",
     "vitest",
-    "Hikari"
+    "Hikari",
+    "OIDC"
   ],
   "ignoreWords": [
     "CNAME",
