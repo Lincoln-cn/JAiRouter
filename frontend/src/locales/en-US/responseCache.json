@@ -52,5 +52,14 @@
     "operationFailedError": "Operation failed",
     "invalidatedByServiceType": "Cache invalidated for service type [{serviceType}]",
     "invalidatedByModel": "Cache invalidated for model [{model}]"
-  }
+  },
+  "semanticTitle": "Semantic cache",
+  "semanticHint": "L2 is isolated per API key + user + model; the L3 cross-tenant pool is off by default. Changing these needs a restart, so this card is read-only.",
+  "semanticEnabled": "Enabled",
+  "semanticTenantScope": "Tenant scope (L2)",
+  "semanticPublicScope": "Public pool (L3)",
+  "semanticEntries": "Entries",
+  "semanticTtl": "TTL (seconds)",
+  "semanticMaxChars": "Public max chars",
+  "semanticDistance": "Hamming distance"
 }

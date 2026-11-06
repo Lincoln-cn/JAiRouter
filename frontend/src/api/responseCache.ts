@@ -92,3 +92,28 @@ export const invalidateCache = async (params?: {
   )
   return response.data.data ?? { executed: false, serviceType: null, model: null }
 }
+
+/**
+ * 语义缓存状态（只读）
+ *
+ * GET /api/config/cache/semantic → RouterResponse<SemanticCacheStatus>
+ *
+ * 隔离层级与准入参数改了要重启，所以这里只读、不提供写入。
+ */
+export interface SemanticCacheStatus {
+  enabled: boolean
+  tenantScopeEnabled: boolean
+  publicScopeEnabled: boolean
+  publicAllowedTenants: string[]
+  maxPublicChars: number
+  maxHammingDistance: number
+  maxEntriesPerModel: number
+  globalMaxEntries: number
+  ttlSeconds: number
+  size: number
+}
+
+export async function getSemanticCacheStatus(): Promise<SemanticCacheStatus | null> {
+  const response = await request.get<RouterResponse<SemanticCacheStatus>>('/config/cache/semantic')
+  return response.data.data ?? null
+}
