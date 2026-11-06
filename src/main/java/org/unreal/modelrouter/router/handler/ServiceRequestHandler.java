@@ -45,6 +45,7 @@ import org.unreal.modelrouter.monitor.tracing.interceptor.ControllerTracingInter
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.ServiceCapability;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
+import org.unreal.modelrouter.router.cache.SemanticAdmissionPolicy;
 import org.unreal.modelrouter.router.cache.SemanticCacheService;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
 import org.unreal.modelrouter.router.ratelimit.RateLimitContext;
@@ -142,6 +143,12 @@ public class ServiceRequestHandler {
      */
     public static final String SEMANTIC_TEXT_ATTRIBUTE = "JAIR_SEMANTIC_TEXT";
 
+    /** 语义缓存 L2（租户内）scope，见 SemanticCacheScope. */
+    public static final String SEMANTIC_TENANT_SCOPE_ATTRIBUTE = "JAIR_SEMANTIC_TENANT_SCOPE";
+
+    /** 语义缓存 L3（公共）scope；仅当准入判定通过时写入. */
+    public static final String SEMANTIC_PUBLIC_SCOPE_ATTRIBUTE = "JAIR_SEMANTIC_PUBLIC_SCOPE";
+
     /**
      * v3.1: OpenAI 原生响应标记（{@code /v1} 原生面）.
      *
@@ -210,6 +217,10 @@ public class ServiceRequestHandler {
     /** 语义缓存（近似请求复用）；{@code null} 表示未装配，整个语义分支短路. */
     @Autowired(required = false)
     private SemanticCacheService semanticCacheService;
+
+    /** L3（公共池）准入判定；{@code null} 表示不装配，此时语义缓存只有 L2. */
+    @Autowired(required = false)
+    private SemanticAdmissionPolicy semanticAdmissionPolicy;
 
     /**
      * v2.9.10: 限流管理器（可选注入，用于缓存命中前服务级限流预扣）。
@@ -861,7 +872,8 @@ public class ServiceRequestHandler {
      * @return 绑定当前可选依赖的缓存读侧
      */
     private ResponseCacheResolver cacheResolver() {
-        return new ResponseCacheResolver(responseCacheService, objectMapper, semanticCacheService);
+        return new ResponseCacheResolver(responseCacheService, objectMapper, semanticCacheService,
+                semanticAdmissionPolicy);
     }
 
     /**

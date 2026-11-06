@@ -13,27 +13,30 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 语义响应缓存（近似请求复用）.
+ * 语义响应缓存（近似请求复用，按 scope 隔离）.
  *
  * <p>与 {@link ResponseCacheService} 的分工：后者按<b>精确键</b>（租户 + 服务 + 模型 + 请求体
  * 的 SHA-256）命中，只复用「同一个请求」；本类在精确键之外提供一层<b>文本相似</b>命中，
  * 复用「措辞不同、意图相同」的请求。</p>
  *
+ * <p><b>隔离由 scope 决定，不由模型名决定</b>（见 {@link SemanticCacheScope}）：L2 的桶是
+ * {@code t|<apiKeyId>|<user>|<model>}，L3 是 {@code p|<model>}。早先的版本只按模型名分桶，
+ * 导致不同 API Key 的相似提问互相命中 —— 那是真实的数据越权，本版已修。</p>
+ *
  * <p><b>实现选择：SimHash 而非向量 embedding</b>。本仓已配置 embedding 模型，但走 embedding
  * 意味着每个请求多一次上游调用（延迟与成本翻倍），而语义缓存的收益本就来自「省掉一次上游调用」。
- * 因此这里用纯本地的 64 位 SimHash 指纹 + 汉明距离做近似判定：零外部调用、零额外依赖、
- * 结果可解释。代价是只能识别「词汇高度重叠」的近似，换述（同义词替换、语序大改）识别不到。</p>
+ * 因此这里用纯本地的 64 位 SimHash 指纹 + 汉明距离做近似判定：零外部调用、零额外依赖、结果可解释。
+ * 代价是只能识别「词汇高度重叠」的近似，换述识别不到。</p>
  *
- * <p><b>失败语义 = 静默旁路</b>：本类的任何异常都不影响主链路（写入/查找失败按未命中处理），
- * 与响应缓存「缓存是旁路能力」的既有约定一致。</p>
- *
- * <p><b>默认关闭</b>，见 {@link SemanticCacheProperties#isEnabled()}。关闭时 {@link #find} 恒空、
- * {@link #put} 无操作。</p>
+ * <p><b>失败语义 = 静默旁路</b>：本类的任何异常都不影响主链路（写入/查找失败按未命中处理）。</p>
  *
  * @author JAiRouter Team
  * @since 3.7.1
@@ -47,54 +50,56 @@ public class SemanticCacheService {
     static final String METRIC_HITS = "jairouter.semantic.cache.hits";
     /** 未命中计数指标名。 */
     static final String METRIC_MISSES = "jairouter.semantic.cache.misses";
+    /** 拒绝写入计数指标名。 */
+    static final String METRIC_REJECTED = "jairouter.semantic.cache.rejected";
 
     /** SimHash 的位数。 */
     private static final int HASH_BITS = 64;
 
     private final SemanticCacheProperties properties;
 
-    /** 模型名 → 条目队列（新条目在尾部，队首最旧，便于淘汰）。 */
+    /** scope → 条目队列（新条目在尾部，队首最旧，便于淘汰）。 */
     private final ConcurrentHashMap<String, Deque<Entry>> buckets = new ConcurrentHashMap<>();
+
+    private final AtomicInteger totalEntries = new AtomicInteger();
 
     private final Counter hits;
     private final Counter misses;
+    private final Counter rejectedPii;
 
     /**
      * 构造器.
      *
-     * @param properties   配置面
-     * @param meterRegistry 指标注册表（可为 {@code null}，为 null 时不记指标）
+     * @param properties    配置面
+     * @param meterRegistry 指标注册表（可为 {@code null}）
      */
     public SemanticCacheService(
             final SemanticCacheProperties properties,
             @Autowired(required = false) final MeterRegistry meterRegistry) {
         this.properties = properties;
-        this.hits = meterRegistry == null ? null : Counter.builder(METRIC_HITS)
-                .description("语义缓存命中次数")
-                .register(meterRegistry);
-        this.misses = meterRegistry == null ? null : Counter.builder(METRIC_MISSES)
-                .description("语义缓存未命中次数")
-                .register(meterRegistry);
+        this.hits = counter(meterRegistry, METRIC_HITS, "语义缓存命中次数");
+        this.misses = counter(meterRegistry, METRIC_MISSES, "语义缓存未命中次数");
+        this.rejectedPii = counter(meterRegistry, METRIC_REJECTED, "因含敏感内容而拒绝写入的次数");
     }
 
     /**
-     * 语义缓存是否启用.
+     * 语义缓存（L2）是否启用.
      *
      * @return true 表示启用
      */
     public boolean isEnabled() {
-        return properties.isEnabled();
+        return properties.isEnabled() && properties.isTenantScopeEnabled();
     }
 
     /**
      * 查找一个足够相似的缓存条目.
      *
-     * @param modelName 模型名（不同模型的答案不可互换，故按模型分桶）
-     * @param text      用于比对的请求文本（通常是 messages 的拼接）
+     * @param scope 缓存 scope（见 {@link SemanticCacheScope}）
+     * @param text  用于比对的请求文本
      * @return 命中的缓存值；未启用、文本过短、无相似条目时返回 {@link Optional#empty()}
      */
-    public Optional<Object> find(final String modelName, final String text) {
-        if (!isEnabled() || modelName == null || modelName.isBlank()) {
+    public Optional<Object> find(final String scope, final String text) {
+        if (!isEnabled() || scope == null || scope.isBlank()) {
             return Optional.empty();
         }
         final String normalized = normalize(text);
@@ -105,7 +110,7 @@ public class SemanticCacheService {
             final long fingerprint = simHash(normalized);
             final int tokens = tokenCount(normalized);
             final long now = System.currentTimeMillis();
-            final Deque<Entry> bucket = buckets.get(modelName);
+            final Deque<Entry> bucket = buckets.get(scope);
             if (bucket == null) {
                 countMiss();
                 return Optional.empty();
@@ -130,12 +135,12 @@ public class SemanticCacheService {
     /**
      * 写入一个缓存条目.
      *
-     * @param modelName 模型名
-     * @param text      请求文本
-     * @param response  待复用的响应值
+     * @param scope    scope
+     * @param text     请求文本
+     * @param response 待复用的响应值
      */
-    public void put(final String modelName, final String text, final Object response) {
-        if (!isEnabled() || modelName == null || modelName.isBlank() || response == null) {
+    public void put(final String scope, final String text, final Object response) {
+        if (!isEnabled() || scope == null || scope.isBlank() || response == null) {
             return;
         }
         final String normalized = normalize(text);
@@ -145,24 +150,86 @@ public class SemanticCacheService {
         try {
             final Entry entry = new Entry(simHash(normalized), tokenCount(normalized), response,
                     System.currentTimeMillis() + ttlMillis());
-            final Deque<Entry> bucket = buckets.computeIfAbsent(modelName, key -> new ArrayDeque<>());
+            final Deque<Entry> bucket = buckets.computeIfAbsent(scope, key -> new ArrayDeque<>());
             synchronized (bucket) {
                 purgeExpired(bucket, System.currentTimeMillis());
                 bucket.addLast(entry);
+                totalEntries.incrementAndGet();
                 while (bucket.size() > Math.max(1, properties.getMaxEntriesPerModel())) {
                     bucket.removeFirst();
+                    totalEntries.decrementAndGet();
                 }
             }
+            evictIfOverGlobalLimit();
         } catch (RuntimeException ex) {
             logger.warn("语义缓存写入失败，忽略本条: {}", ex.toString());
         }
     }
 
     /**
-     * 清空全部条目（供管理面/测试使用）.
+     * 记录一次「因含敏感内容而拒绝写入」.
+     *
+     * <p>单独暴露计数而不在 {@link #put} 里判断，是因为敏感判定需要响应正文 —— 那在调用方手里。</p>
+     */
+    public void countRejectedForPii() {
+        if (rejectedPii != null) {
+            rejectedPii.increment();
+        }
+    }
+
+    /**
+     * 按 scope 清除（L2 支持按租户清，L3 只支持全清）.
+     *
+     * @param scope scope；传 {@code null} 表示全清
+     * @return 清除的条目数
+     */
+    public int evict(final String scope) {
+        if (scope == null) {
+            final int removed = size();
+            buckets.clear();
+            totalEntries.set(0);
+            return removed;
+        }
+        final Deque<Entry> bucket = buckets.remove(scope);
+        if (bucket == null) {
+            return 0;
+        }
+        synchronized (bucket) {
+            final int removed = bucket.size();
+            totalEntries.addAndGet(-removed);
+            return removed;
+        }
+    }
+
+    /**
+     * 按租户清除全部 L2 条目.
+     *
+     * @param apiKeyId 租户标识
+     * @return 清除的条目数
+     */
+    public int evictTenant(final String apiKeyId) {
+        final Iterator<Map.Entry<String, Deque<Entry>>> it = buckets.entrySet().iterator();
+        int removed = 0;
+        while (it.hasNext()) {
+            final Map.Entry<String, Deque<Entry>> entry = it.next();
+            if (!SemanticCacheScope.belongsToTenant(entry.getKey(), apiKeyId)) {
+                continue;
+            }
+            synchronized (entry.getValue()) {
+                removed += entry.getValue().size();
+                totalEntries.addAndGet(-entry.getValue().size());
+            }
+            it.remove();
+        }
+        return removed;
+    }
+
+    /**
+     * 清空全部条目.
      */
     public void clear() {
         buckets.clear();
+        totalEntries.set(0);
     }
 
     /**
@@ -171,13 +238,41 @@ public class SemanticCacheService {
      * @return 条目数
      */
     public int size() {
-        int total = 0;
-        for (final Deque<Entry> bucket : buckets.values()) {
-            synchronized (bucket) {
-                total += bucket.size();
+        return Math.max(0, totalEntries.get());
+    }
+
+    private void evictIfOverGlobalLimit() {
+        final int limit = Math.max(1, properties.getGlobalMaxEntries());
+        while (totalEntries.get() > limit) {
+            Deque<Entry> oldestBucket = null;
+            String oldestScope = null;
+            for (final Map.Entry<String, Deque<Entry>> entry : buckets.entrySet()) {
+                if (!entry.getValue().isEmpty()) {
+                    oldestBucket = entry.getValue();
+                    oldestScope = entry.getKey();
+                    break;
+                }
+            }
+            if (oldestBucket == null) {
+                totalEntries.set(0);
+                return;
+            }
+            synchronized (oldestBucket) {
+                if (oldestBucket.isEmpty()) {
+                    buckets.remove(oldestScope, oldestBucket);
+                    continue;
+                }
+                oldestBucket.removeFirst();
+                totalEntries.decrementAndGet();
+                if (oldestBucket.isEmpty()) {
+                    buckets.remove(oldestScope, oldestBucket);
+                }
             }
         }
-        return total;
+    }
+
+    private Counter counter(final MeterRegistry registry, final String name, final String description) {
+        return registry == null ? null : Counter.builder(name).description(description).register(registry);
     }
 
     private boolean isSimilar(final Entry entry, final long fingerprint, final int tokens) {
@@ -195,6 +290,7 @@ public class SemanticCacheService {
     private void purgeExpired(final Deque<Entry> bucket, final long now) {
         while (!bucket.isEmpty() && bucket.peekFirst().expireAt() <= now) {
             bucket.removeFirst();
+            totalEntries.decrementAndGet();
         }
     }
 
@@ -218,12 +314,10 @@ public class SemanticCacheService {
     /**
      * 归一化：小写、把任意非字母数字字符折叠成单个空格、去首尾空白.
      *
-     * <p>中文没有词边界，这里不做分词，只做字符级归一化；SimHash 的权重按字符 3-gram 统计。</p>
-     *
      * @param text 原始文本
      * @return 归一化后的文本（可能为空串）
      */
-    static String normalize(final String text) {
+    public static String normalize(final String text) {
         if (text == null) {
             return "";
         }
@@ -270,7 +364,7 @@ public class SemanticCacheService {
     }
 
     /**
-     * 计算词（3-gram）数量，用于「长度差太大就不算相似」的粗过滤.
+     * 计算词（3-gram）数量.
      *
      * @param normalized 归一化文本
      * @return 3-gram 数量
@@ -289,7 +383,6 @@ public class SemanticCacheService {
             }
             return hash;
         } catch (NoSuchAlgorithmException ex) {
-            // SHA-256 是 JDK 强制要求提供的算法，这里不可达
             return value.hashCode();
         }
     }
