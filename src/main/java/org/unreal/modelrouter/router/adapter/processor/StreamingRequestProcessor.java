@@ -29,6 +29,7 @@ import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.monitor.monitoring.metrics.SseConnectionMetrics;
 import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
 import org.unreal.modelrouter.router.cache.CachedStreamingResponse;
+import org.unreal.modelrouter.router.cache.SemanticCacheService;
 import org.unreal.modelrouter.router.cache.ResponseCacheService;
 import org.unreal.modelrouter.router.handler.ServiceRequestHandler;
 import org.unreal.modelrouter.router.pool.PoolSelector;
@@ -131,6 +132,10 @@ public class StreamingRequestProcessor {
     // 流式护栏（可选注入；未装配或未启用时链路完全不介入）
     @Autowired(required = false)
     private org.unreal.modelrouter.router.guard.StreamGuardService streamGuardService;
+
+    /** 语义缓存（可选）：流式响应结束后异步写入，只写正文不写原始帧. */
+    @Autowired(required = false)
+    private SemanticCacheService semanticCacheService;
 
     /**
      * 可逆脱敏（可选）：请求侧换成占位符、响应侧换回原文。
@@ -405,6 +410,41 @@ public class StreamingRequestProcessor {
                             && !cacheOverBudget.get() && !terminated) {
                         logger.debug("#721 流未出现终止标记（[DONE]/finish_reason/message_stop），跳过写缓存: key={}",
                                 cacheKeyForWrite);
+                    }
+
+                    // 语义缓存（L2/L3）：与 L1 独立，同一份正文写进租户池或公共池。
+                    // 只在完整成功、未阻断、未超预算时写；脱敏与写库都放到 boundedElastic。
+                    if (semanticCacheService != null && semanticCacheService.isEnabled()
+                            && transformedChunks != null && !transformedChunks.isEmpty()
+                            && !cacheOverBudget.get() && terminated && !guardAborted.get()) {
+                        final Object semanticText = httpRequest.getAttributes()
+                                .get(ServiceRequestHandler.SEMANTIC_TEXT_ATTRIBUTE);
+                        final Object tenantScope = httpRequest.getAttributes()
+                                .get(ServiceRequestHandler.SEMANTIC_TENANT_SCOPE_ATTRIBUTE);
+                        final Object publicScope = httpRequest.getAttributes()
+                                .get(ServiceRequestHandler.SEMANTIC_PUBLIC_SCOPE_ATTRIBUTE);
+                        if (semanticText instanceof String text && !text.isBlank()) {
+                            final List<String> chunksForSemantic;
+                            synchronized (transformedChunks) {
+                                chunksForSemantic = List.copyOf(transformedChunks);
+                            }
+                            final CachedStreamingResponse semanticValue = new CachedStreamingResponse(
+                                    chunksForSemantic,
+                                    modelRef.get(),
+                                    promptTokens.get() > 0 ? promptTokens.get() : null,
+                                    completionTokens.get() > 0 ? completionTokens.get() : null,
+                                    totalTokens.get() > 0 ? totalTokens.get() : null,
+                                    finishReasonRef != null ? finishReasonRef.get() : null,
+                                    true);
+                            final String writeScope = publicScope instanceof String p && !p.isBlank()
+                                    ? p : (tenantScope instanceof String t2 && !t2.isBlank() ? t2 : null);
+                            if (writeScope != null) {
+                                Mono.fromRunnable(() -> semanticCacheService.put(writeScope, text, semanticValue))
+                                        .subscribeOn(Schedulers.boundedElastic())
+                                        .subscribe(null, error -> logger.debug(
+                                                "语义缓存写入失败（忽略）: scope={}", writeScope));
+                            }
+                        }
                     }
 
                     // 记录 token 使用量(含 KV 缓存指标)。
