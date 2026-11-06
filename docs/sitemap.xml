@@ -1478,6 +1478,15 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/reference/faq"/>
   </url>
   <url>
+    <loc>https://jairouter.comzh/reference/capabilities</loc>
+    <lastmod>2026-11-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/reference/capabilities"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/reference/capabilities"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/reference/capabilities"/>
+  </url>
+  <url>
     <loc>https://jairouter.comzh/reference/adapter-updates</loc>
     <lastmod>2026-11-06</lastmod>
     <changefreq>monthly</changefreq>
@@ -1521,6 +1530,15 @@
     <xhtml:link rel="canonical" href="https://jairouter.comen/reference/faq"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/reference/faq"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/reference/faq"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/reference/capabilities</loc>
+    <lastmod>2026-11-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/reference/capabilities"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/reference/capabilities"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/reference/capabilities"/>
   </url>
   <url>
     <loc>https://jairouter.comen/reference/adapter-updates</loc>
