@@ -149,6 +149,9 @@ public class ServiceRequestHandler {
     /** 语义缓存 L3（公共）scope；仅当准入判定通过时写入. */
     public static final String SEMANTIC_PUBLIC_SCOPE_ATTRIBUTE = "JAIR_SEMANTIC_PUBLIC_SCOPE";
 
+    /** 本次请求是否流式（语义缓存的流式命中要按 SSE 帧回放）. */
+    public static final String SEMANTIC_STREAM_ATTRIBUTE = "JAIR_SEMANTIC_STREAM";
+
     /**
      * v3.1: OpenAI 原生响应标记（{@code /v1} 原生面）.
      *
