@@ -121,5 +121,10 @@
       "tracing": "链路追踪",
       "tracingDesc": "追踪请求完整链路"
     }
-  }
+  },
+  "valueTitle": "网关带来的价值",
+  "valueCacheHitRate": "缓存命中率",
+  "valueSavedCalls": "节省的上游调用",
+  "valueGuardAsked": "护栏拦截（脱敏/阻断）",
+  "valueInstances": "活跃实例"
 }

@@ -1,0 +1,27 @@
+# 本机长期运行配置。改动后重启生效。
+#
+# 上游地址：指向你自己的模型服务。这里用本地 Ollama 作例子。
+# 注意：用文件库时实例配置会落库、之后以库为准；改这里只对「首次初始化」有效。
+
+jairouter:
+  quota:
+    enabled: true
+
+logging:
+  level:
+    org.unreal.modelrouter: INFO
+  file:
+    name: logs/jairouter.log
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+spring:
+  datasource:
+    # 持久化 H2 文件库：重启不丢配置与历史。
+    url: jdbc:h2:file:./data/jairouter;AUTO_SERVER=TRUE
+    username: sa
+    password: ""

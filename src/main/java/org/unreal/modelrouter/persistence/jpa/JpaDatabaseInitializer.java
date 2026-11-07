@@ -247,6 +247,9 @@ public class JpaDatabaseInitializer {
                         log.info("Generated instanceId {} for instance: {}", instanceUuid, instance.getName());
                     }
                     
+                    // 实例级的 adapter 可以缺省，缺省时必须回退到服务级、再回退到全局默认 ——
+                    // 否则实例落库后 adapter 为空，网关拿不到适配器会在转发时 502，
+                    // 而健康检查只测端口，仍然显示 HEALTHY（#1004）。
                     ServiceInstanceEntity instanceEntity = ServiceInstanceEntity.builder()
                             .serviceConfigId(savedConfig.getId())
                             .instanceName(instance.getName())
@@ -256,6 +259,8 @@ public class JpaDatabaseInitializer {
                             .weight(instance.getWeight())
                             .status("ACTIVE")
                             .healthStatus("UNKNOWN")
+                            .adapter(ModelRouterProperties.resolveAdapter(
+                                    instance, serviceConfig, modelRouterProperties.getAdapter()))
                             .build();
 
                     serviceInstanceRepository.save(instanceEntity);

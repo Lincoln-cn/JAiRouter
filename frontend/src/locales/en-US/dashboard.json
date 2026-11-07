@@ -121,5 +121,10 @@
       "tracing": "Tracing",
       "tracingDesc": "Trace full request lifecycle"
     }
-  }
+  },
+  "valueTitle": "What this gateway saved",
+  "valueCacheHitRate": "Cache hit rate",
+  "valueSavedCalls": "Upstream calls saved",
+  "valueGuardAsked": "Guard actions (redact/abort)",
+  "valueInstances": "Active instances"
 }
