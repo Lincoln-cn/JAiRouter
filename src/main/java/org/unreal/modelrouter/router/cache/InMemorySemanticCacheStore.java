@@ -9,6 +9,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
+
 /**
  * 语义缓存的进程内存储实现（issue #1002，默认后端）。
  *
@@ -18,6 +21,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @since v3.8.0
  */
+@Component
+@ConditionalOnProperty(name = "jairouter.semantic-cache.redis.enabled", havingValue = "false", matchIfMissing = true)
 public final class InMemorySemanticCacheStore implements SemanticCacheStore {
 
     private final SemanticCacheProperties properties;
