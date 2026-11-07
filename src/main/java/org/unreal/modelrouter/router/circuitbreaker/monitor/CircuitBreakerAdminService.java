@@ -140,7 +140,7 @@ public class CircuitBreakerAdminService {
             }
             Object reason = detail.get("lastFailureReason");
             return reason != null ? reason.toString() : null;
-        } catch (Exception error) {
+        } catch (RuntimeException error) {
             return null;
         }
     }

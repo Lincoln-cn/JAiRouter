@@ -536,7 +536,7 @@ public class ServiceInstanceManager {
                         .openedAt(openedAt instanceof Number number ? number.longValue() : null)
                         .lastFailureReason(lastFailureReason != null ? lastFailureReason.toString() : null);
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             // 运行时状态查询失败不影响配置返回（静态配置字段仍完整）
         }
         return builder.build();

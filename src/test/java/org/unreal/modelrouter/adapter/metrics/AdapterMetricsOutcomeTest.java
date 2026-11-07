@@ -58,7 +58,7 @@ class AdapterMetricsOutcomeTest {
                 AdapterMetricsRecorder.CallOutcome.CLIENT_ERROR, "UPSTREAM_400", MODEL, CHAT, instance);
 
         verify(registry).recordCallComplete(CHAT, instance, 12L, false);
-        verify(registry, never()).recordCallFailure(any(), any(), anyLong(), any());
+        verify(registry, never()).recordCallFailure(any(), any(), anyLong(), any(), any());
         // 可观测性不受影响：统计与错误码照常记录
         verify(statsRepository).updateStats("chat", MODEL, false, 12L);
         verify(statsRepository).recordErrorCode("chat", MODEL, "UPSTREAM_400");
@@ -70,7 +70,8 @@ class AdapterMetricsOutcomeTest {
         recorder.recordCompleteCall("gpustack", "inst-1", 30L,
                 AdapterMetricsRecorder.CallOutcome.INSTANCE_FAILURE, "UPSTREAM_500", MODEL, CHAT, instance);
 
-        verify(registry).recordCallFailure(CHAT, instance, 30L, "UPSTREAM_500");
+        // issue #1010 起 recordCallFailure 携带异常类（本入口无异常对象，为空）
+        verify(registry).recordCallFailure(CHAT, instance, 30L, "UPSTREAM_500", null);
         verify(registry, never()).recordCallComplete(any(), any(), anyLong(), eq(false));
         verify(statsRepository).updateStats("chat", MODEL, false, 30L);
     }
@@ -82,7 +83,7 @@ class AdapterMetricsOutcomeTest {
                 AdapterMetricsRecorder.CallOutcome.SUCCESS, null, MODEL, CHAT, instance);
 
         verify(registry).recordCallComplete(CHAT, instance, 8L, true);
-        verify(registry, never()).recordCallFailure(any(), any(), anyLong(), any());
+        verify(registry, never()).recordCallFailure(any(), any(), anyLong(), any(), any());
         verify(statsRepository).updateStats("chat", MODEL, true, 8L);
     }
 
@@ -92,6 +93,6 @@ class AdapterMetricsOutcomeTest {
         recorder.recordCompleteCallStats("gpustack", "inst-1", 5L, false,
                 "TIMEOUT", MODEL, CHAT, instance);
 
-        verify(registry).recordCallFailure(CHAT, instance, 5L, "TIMEOUT");
+        verify(registry).recordCallFailure(CHAT, instance, 5L, "TIMEOUT", null);
     }
 }
