@@ -120,11 +120,30 @@
       "tokenUsageDesc": "View call history token consumption",
       "tracing": "Tracing",
       "tracingDesc": "Trace full request lifecycle"
-    }
-  },
-  "valueTitle": "What this gateway saved",
-  "valueCacheHitRate": "Cache hit rate",
-  "valueSavedCalls": "Upstream calls saved",
-  "valueGuardAsked": "Guard actions (redact/abort)",
-  "valueInstances": "Active instances"
+    },
+    "valueTitle": "What this gateway saved",
+    "valueCacheHitRate": "Cache hit rate",
+    "valueSavedCalls": "Upstream calls saved",
+    "valueGuardAsked": "Guard actions (redact/abort)",
+    "valueInstances": "Active instances",
+    "gsTitle": "Start here",
+    "gsSubtitle": "Three steps to a working gateway",
+    "gsStepService": "Gateway online",
+    "gsStepServiceOk": "Gateway is up and health check passes",
+    "gsStepServiceFail": "Gateway is not responding; check the process and port",
+    "gsStepInstance": "Configure upstream",
+    "gsStepInstanceOk": "{count} model instance(s) configured",
+    "gsStepInstanceFail": "No model instance yet",
+    "gsStepKey": "Get an API key",
+    "gsStepKeyOk": "A usable credential exists",
+    "gsStepKeyFail": "No API key yet; clients cannot call the gateway",
+    "gsStepCall": "Make one call",
+    "gsStepCallDesc": "Try it in the Playground",
+    "gsActionConfig": "Configure",
+    "gsActionPlayground": "Open Playground",
+    "gsActionApiKey": "Create one",
+    "gsAllDone": "The chain works, you can integrate now",
+    "gsCurlHint": "With the OpenAI SDK, just change the base URL:",
+    "gsTitleDone": "Ready to integrate"
+  }
 }
