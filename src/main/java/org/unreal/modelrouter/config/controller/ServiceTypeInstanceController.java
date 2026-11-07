@@ -76,21 +76,26 @@ public class ServiceTypeInstanceController {
     }
 
     /**
-     * 更新指定服务类型的实例配置（通过数据库ID）
+     * 更新指定服务类型的实例配置
      * @param serviceType 服务类型
-     * @param instanceId 实例数据库ID
+     * @param instanceId 实例标识（规范形态为 UUID，即 DTO 的 {@code instanceId} 字段；
+     *                  为兼容 v2.5~v3.7 调用方，纯数字的数据库主键形态仍然接受）
      * @param request 实例配置请求
      * @return 更新后的实例配置
      */
     @PutMapping("/{serviceType}/{instanceId}")
     public ResponseEntity<RouterResponse<ServiceInstanceDTO>> updateInstanceByServiceType(
             @PathVariable final String serviceType,
-            @PathVariable final Long instanceId,
+            @PathVariable final String instanceId,
             @RequestBody final CreateServiceInstanceRequest request) {
         log.info("Updating instance: serviceType={}, instanceId={}", serviceType, instanceId);
 
-        // 直接通过数据库ID更新实例
-        ServiceInstanceDTO updated = serviceInstanceManager.updateInstance(instanceId, request);
+        var ref = serviceInstanceManager.resolveInstanceRef(instanceId).orElse(null);
+        if (ref == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(RouterResponse.error("实例不存在: " + instanceId, ErrorCode.NOT_FOUND.code()));
+        }
+        ServiceInstanceDTO updated = serviceInstanceManager.updateInstance(ref.entityId(), request);
 
         return ResponseEntity.ok(RouterResponse.success(updated, "实例配置更新成功"));
     }
@@ -122,19 +127,23 @@ public class ServiceTypeInstanceController {
     }
 
     /**
-     * 删除指定服务类型的实例（通过数据库ID）
+     * 删除指定服务类型的实例
      * @param serviceType 服务类型
-     * @param instanceId 实例数据库ID
+     * @param instanceId 实例标识（规范形态为 UUID；纯数字数据库主键仍兼容接受）
      * @return 操作结果
      */
     @DeleteMapping("/{serviceType}/{instanceId}")
     public ResponseEntity<RouterResponse<Void>> deleteInstanceByServiceType(
             @PathVariable final String serviceType,
-            @PathVariable final Long instanceId) {
+            @PathVariable final String instanceId) {
         log.info("Deleting instance: serviceType={}, instanceId={}", serviceType, instanceId);
 
-        // 直接通过数据库ID删除实例
-        serviceInstanceManager.deleteInstance(instanceId);
+        var ref = serviceInstanceManager.resolveInstanceRef(instanceId).orElse(null);
+        if (ref == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(RouterResponse.error("实例不存在: " + instanceId, ErrorCode.NOT_FOUND.code()));
+        }
+        serviceInstanceManager.deleteInstance(ref.entityId());
 
         return ResponseEntity.ok(RouterResponse.success(null, "实例删除成功"));
     }
@@ -143,16 +152,24 @@ public class ServiceTypeInstanceController {
 
     /**
      * 获取实例的限流器配置
+     *
+     * @param instanceId 实例标识（规范形态为 UUID；纯数字数据库主键仍兼容接受）
      */
     @GetMapping("/{serviceType}/{instanceId}/rate-limit")
     public ResponseEntity<RouterResponse<InstanceRateLimitDTO>> getRateLimitConfig(
             @PathVariable final String serviceType,
-            @PathVariable final Long instanceId) {
+            @PathVariable final String instanceId) {
         log.info("Getting rate limit config: instanceId={}", instanceId);
 
-        InstanceRateLimitDTO config = serviceInstanceManager.getRateLimitConfig(instanceId)
+        var ref = serviceInstanceManager.resolveInstanceRef(instanceId).orElse(null);
+        if (ref == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(RouterResponse.error("实例不存在: " + instanceId, ErrorCode.NOT_FOUND.code()));
+        }
+
+        InstanceRateLimitDTO config = serviceInstanceManager.getRateLimitConfig(ref.entityId())
                 .orElse(InstanceRateLimitDTO.builder()
-                        .instanceId(instanceId)
+                        .instanceId(ref.instanceUuid())
                         .enabled(false)
                         .algorithm("token-bucket")
                         .capacity(100)
@@ -166,15 +183,23 @@ public class ServiceTypeInstanceController {
 
     /**
      * 保存实例的限流器配置
+     *
+     * @param instanceId 实例标识（规范形态为 UUID；纯数字数据库主键仍兼容接受）
      */
     @PutMapping("/{serviceType}/{instanceId}/rate-limit")
     public ResponseEntity<RouterResponse<InstanceRateLimitDTO>> saveRateLimitConfig(
             @PathVariable final String serviceType,
-            @PathVariable final Long instanceId,
+            @PathVariable final String instanceId,
             @RequestBody final InstanceRateLimitDTO config) {
         log.info("Saving rate limit config: instanceId={}, enabled={}", instanceId, config.getEnabled());
 
-        InstanceRateLimitDTO saved = serviceInstanceManager.saveRateLimitConfig(instanceId, config);
+        var ref = serviceInstanceManager.resolveInstanceRef(instanceId).orElse(null);
+        if (ref == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(RouterResponse.error("实例不存在: " + instanceId, ErrorCode.NOT_FOUND.code()));
+        }
+
+        InstanceRateLimitDTO saved = serviceInstanceManager.saveRateLimitConfig(ref.entityId(), config);
         return ResponseEntity.ok(RouterResponse.success(saved, "限流器配置保存成功"));
     }
 
@@ -182,16 +207,24 @@ public class ServiceTypeInstanceController {
 
     /**
      * 获取实例的熔断器配置
+     *
+     * @param instanceId 实例标识（规范形态为 UUID；纯数字数据库主键仍兼容接受）
      */
     @GetMapping("/{serviceType}/{instanceId}/circuit-breaker")
     public ResponseEntity<RouterResponse<InstanceCircuitBreakerDTO>> getCircuitBreakerConfig(
             @PathVariable final String serviceType,
-            @PathVariable final Long instanceId) {
+            @PathVariable final String instanceId) {
         log.info("Getting circuit breaker config: instanceId={}", instanceId);
 
-        InstanceCircuitBreakerDTO config = serviceInstanceManager.getCircuitBreakerConfig(instanceId)
+        var ref = serviceInstanceManager.resolveInstanceRef(instanceId).orElse(null);
+        if (ref == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(RouterResponse.error("实例不存在: " + instanceId, ErrorCode.NOT_FOUND.code()));
+        }
+
+        InstanceCircuitBreakerDTO config = serviceInstanceManager.getCircuitBreakerConfig(ref.entityId())
                 .orElse(InstanceCircuitBreakerDTO.builder()
-                        .instanceId(instanceId)
+                        .instanceId(ref.instanceUuid())
                         .enabled(false)
                         .failureThreshold(5)
                         .timeout(60000)
@@ -203,15 +236,23 @@ public class ServiceTypeInstanceController {
 
     /**
      * 保存实例的熔断器配置
+     *
+     * @param instanceId 实例标识（规范形态为 UUID；纯数字数据库主键仍兼容接受）
      */
     @PutMapping("/{serviceType}/{instanceId}/circuit-breaker")
     public ResponseEntity<RouterResponse<InstanceCircuitBreakerDTO>> saveCircuitBreakerConfig(
             @PathVariable final String serviceType,
-            @PathVariable final Long instanceId,
+            @PathVariable final String instanceId,
             @RequestBody final InstanceCircuitBreakerDTO config) {
         log.info("Saving circuit breaker config: instanceId={}, enabled={}", instanceId, config.getEnabled());
 
-        InstanceCircuitBreakerDTO saved = serviceInstanceManager.saveCircuitBreakerConfig(instanceId, config);
+        var ref = serviceInstanceManager.resolveInstanceRef(instanceId).orElse(null);
+        if (ref == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(RouterResponse.error("实例不存在: " + instanceId, ErrorCode.NOT_FOUND.code()));
+        }
+
+        InstanceCircuitBreakerDTO saved = serviceInstanceManager.saveCircuitBreakerConfig(ref.entityId(), config);
         return ResponseEntity.ok(RouterResponse.success(saved, "熔断器配置保存成功"));
     }
 

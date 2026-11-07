@@ -964,15 +964,15 @@ with no configuration yields `200` with an empty list (not `404`).
 
 #### `POST /api/config/instance/{serviceType}`
 Add one instance. Body = `CreateServiceInstanceRequest`: `name`, `baseUrl`, `path`, `weight`, `status`,
-`adapter`, `headers`, `tags`. Returns the created `ServiceInstanceDTO`, whose `id` (a database `Long`) is
-what the update and delete calls below need.
+`adapter`, `headers`, `tags`. Returns the created `ServiceInstanceDTO`, whose `instanceId` field (a UUID)
+is the canonical identifier for the update and delete calls below.
 
 #### `PUT /api/config/instance/{serviceType}/{instanceId}`
-Update an instance **by its database id** (`instanceId` = the `id` from the list call), with the same body
-shape as `POST`.
+Update an instance **by its `instanceId` (UUID)**, with the same body shape as `POST`. For compatibility
+with v2.5~v3.7 callers the database `Long` id form is still accepted (issue #1009).
 
 #### `DELETE /api/config/instance/{serviceType}/{instanceId}`
-Delete an instance by its database id.
+Delete an instance by the same identifier (`instanceId` UUID, or the legacy database id).
 
 #### Per-instance rate limit and circuit breaker
 ```
@@ -992,8 +992,9 @@ POST /api/v1/circuit-breaker-monitor/instances/{instanceId}/reset # config:circu
 POST /api/v1/circuit-breaker-monitor/instances/reset              # config:circuitbreaker:write
 ```
 
-`{instanceId}` here is the **runtime instance UUID** (the `instanceId` column), not the database
-`Long` id used by the update/delete calls above. Reset moves the state machine to `CLOSED`, clears
+`{instanceId}` here is the **runtime instance UUID** (the `instanceId` column). Since issue #1009 every
+`{instanceId}` path parameter uses this same UUID as the canonical form, and the database `Long` id
+form remains accepted as a compatibility path. Reset moves the state machine to `CLOSED`, clears
 the counters, writes a `MANUAL_RESET` history record, and deletes the persisted state so a restart
 cannot restore `OPEN`. A single reset returns
 `{previousState, currentState, persistedStateDeleted, triggerReason}`; a batch reset accepts

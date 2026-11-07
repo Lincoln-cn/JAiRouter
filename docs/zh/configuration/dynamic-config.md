@@ -107,8 +107,8 @@ config/
 |------|------|------|------|
 | 获取实例列表 | GET | `/api/config/instance/{serviceType}` | 该服务类型的全部实例，返回普通数组（不分页） |
 | 添加实例 | POST | `/api/config/instance/{serviceType}` | 请求体 = `CreateServiceInstanceRequest` |
-| 更新实例 | PUT | `/api/config/instance/{serviceType}/{instanceId}` | `{instanceId}` 是列表/新增返回的**数据库 id** |
-| 删除实例 | DELETE | `/api/config/instance/{serviceType}/{instanceId}` | 同一个数据库 id |
+| 更新实例 | PUT | `/api/config/instance/{serviceType}/{instanceId}` | `{instanceId}` = 列表/新增返回的 **`instanceId`（UUID，issue #1009 起的规范形态）**；为兼容 v2.5~v3.7 调用方，**数据库 id** 形态仍接受 |
+| 删除实例 | DELETE | `/api/config/instance/{serviceType}/{instanceId}` | 同一个标识（`instanceId` 或数据库 id） |
 
 **认证。** 这些是管理面端点：JWT 要放在 **`X-Jairouter-Token`** 头里（可用
 `jairouter.security.jwt.jwt-header` 配置），**不是** `X-Jairouter-Token`。不带它每个请求都会得到

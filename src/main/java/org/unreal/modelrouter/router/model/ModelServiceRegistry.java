@@ -579,7 +579,9 @@ public class ModelServiceRegistry {
             String targetInstanceId = ruleDecision.getTargetInstanceId();
             candidates = candidates.stream()
                     .filter(i -> targetInstanceId.equals(i.getInstanceId())
-                            || targetInstanceId.equals(i.getName()))
+                            || targetInstanceId.equals(i.getName())
+                            // issue #1009：兼容历史数据里按数据库主键记录的目标实例标识
+                            || targetInstanceId.equals(i.getId()))
                     .collect(Collectors.toList());
             if (candidates.isEmpty()) {
                 throw new ResponseStatusException(

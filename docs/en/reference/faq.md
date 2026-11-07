@@ -185,7 +185,7 @@ curl -X POST http://localhost:8080/api/config/instance/chat \
   }'
 
 # Update instance
-# $ID = the instance's database id, taken from GET /api/config/instance/{serviceType}
+# $ID = the instance's instanceId (UUID; canonical since v3.8.0), taken from GET /api/config/instance/{serviceType}
 curl -X PUT http://localhost:8080/api/config/instance/chat/$ID \
   -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \

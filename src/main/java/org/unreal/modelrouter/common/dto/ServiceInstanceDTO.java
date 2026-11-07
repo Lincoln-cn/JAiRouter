@@ -23,25 +23,19 @@ public final class ServiceInstanceDTO {
     private Long id;
 
     /**
-     * 获取实例ID（兼容前端）
+     * 实例的稳定唯一标识（UUID），与 {@code service_instance.instance_id} 列值一致。
      *
-     * @deprecated 此字段与 {@link #id} 字段功能重复，仅为兼容前端而保留。
-     *             前端应迁移使用 id 字段，通过 {@link #getId()} 获取实例ID。
-     *             <p>迁移说明：</p>
-     *             <ul>
-     *               <li>instanceId 返回 String 类型（id 的字符串形式）</li>
-     *               <li>id 返回 Long 类型，是数据库主键</li>
-     *               <li>前端应使用 id 字段，统一数据类型</li>
-     *             </ul>
-     *             <p>此字段将在 v3.0 版本中移除，前端需同步更新。</p>
-     * @return 实例ID字符串
-     * @since v2.5.1 标注废弃
+     * <p>熔断器/限流器运行时键、规则与池的「目标实例」标识、日志中的实例标识均使用该值；
+     * {@code GET /api/config/instance/*} 返回的 {@code instanceId} 即此值。</p>
+     *
+     * <p>历史数据 {@code instance_id} 为空时回退为数据库主键 {@link #id} 的字符串形式
+     * （回退逻辑见 {@code ServiceInstanceManager#convertToDTO}）。</p>
+     *
+     * @since v3.8.0 语义统一为 UUID。v2.5.1~v3.7.x 该字段曾返回 {@link #id} 的字符串形式
+     *             （与数据库主键相同），调用方需按 UUID 语义使用；
+     *             {@code id} 仍保留数据库主键，供需要主键的场景（分页、内部关联）使用。
      */
-    @Deprecated(since = "2.5.1", forRemoval = true)
-    @JsonProperty("instanceId")
-    public String getInstanceId() {
-        return id != null ? String.valueOf(id) : null;
-    }
+    private String instanceId;
 
     private Long serviceConfigId;
     private String name;
