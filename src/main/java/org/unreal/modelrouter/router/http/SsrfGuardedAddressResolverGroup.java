@@ -1,10 +1,8 @@
 package org.unreal.modelrouter.router.http;
 
-import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.resolver.AddressResolver;
 import io.netty.resolver.AddressResolverGroup;
-import io.netty.resolver.dns.DefaultDnsServerAddressStreamProvider;
-import io.netty.resolver.dns.DnsAddressResolverGroup;
+import io.netty.resolver.DefaultAddressResolverGroup;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -46,12 +44,21 @@ public final class SsrfGuardedAddressResolverGroup extends AddressResolverGroup<
     private static final Logger logger = LoggerFactory.getLogger(SsrfGuardedAddressResolverGroup.class);
 
     /**
-     * 进程级共享实例：底层 DNS 解析默认值（NioDatagramChannel + 平台 DNS 服务器）与替换前一致。
+     * 进程级共享实例：底层解析交给 JDK（{@link java.net.InetAddress} → 操作系统的 getaddrinfo）。
+     *
+     * <p>#1014：这里原本是 {@code DnsAddressResolverGroup(NioDatagramChannel, DefaultDnsServerAddressStreamProvider)}
+     * —— 即 Netty 自己的 UDP DNS 客户端。它在容器里解析不了 compose 服务名（{@code mock-upstream} 这类名字），
+     * 而同一容器里的 {@code getent hosts} 与 {@code wget} 都正常：两者走的是 glibc。表现是实例健康检查
+     * （{@code socket_connect}，走 glibc）显示 HEALTHY，业务请求却 502，日志里只有
+     * {@code Failed to resolve 'mock-upstream'}，极难定位。</p>
+     *
+     * <p>换成 {@link DefaultAddressResolverGroup} 后，解析与健康检查、与容器内其它工具看到的是同一套
+     * 结果；SSRF 守卫不变 —— 它包在委托解析器外面，判据仍施加在「即将用于建连的地址」上。</p>
      *
      * <p>不随单个 {@link WebClientPool} 释放而关闭：它是进程级共享的解析器，连接池可以有多份。</p>
      */
-    private static final DnsAddressResolverGroup DEFAULT_DNS =
-            new DnsAddressResolverGroup(NioDatagramChannel.class, DefaultDnsServerAddressStreamProvider.INSTANCE);
+    private static final AddressResolverGroup<InetSocketAddress> DEFAULT_DNS =
+            DefaultAddressResolverGroup.INSTANCE;
 
     private static final SsrfGuardedAddressResolverGroup INSTANCE =
             new SsrfGuardedAddressResolverGroup(DEFAULT_DNS::getResolver);

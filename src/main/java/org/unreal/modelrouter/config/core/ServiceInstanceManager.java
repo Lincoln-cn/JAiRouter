@@ -47,6 +47,15 @@ public class ServiceInstanceManager {
     private final ModelServiceRegistry modelServiceRegistry;
     private final CircuitBreakerManager circuitBreakerManager;
 
+    /**
+     * 适配器注册表，用于在查询时给出「适配器是否已注册」的诊断。
+     *
+     * <p>用 {@code required = false} 字段注入而不是加构造器参数：这个类有 8 个依赖、
+     * 被大量测试直接 new，加参数会波及无关用例。</p>
+     */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private org.unreal.modelrouter.router.adapter.AdapterRegistry adapterRegistry;
+
     public ServiceInstanceManager(
             final ServiceInstanceRepository serviceInstanceRepository,
             final InstanceRateLimitRepository rateLimitRepository,
@@ -381,6 +390,36 @@ public class ServiceInstanceManager {
 
     // ==================== 转换方法 ====================
 
+    /**
+     * 实例的适配器是否已注册。注册表不可用时返回 {@code null}（未知，不误报）。
+     */
+    private Boolean resolveAdapterResolved(final String adapter) {
+        if (adapterRegistry == null) {
+            return null;
+        }
+        if (adapter == null || adapter.isBlank()) {
+            return false;
+        }
+        return adapterRegistry.isAdapterSupported(adapter);
+    }
+
+    /**
+     * 适配器未解析时给界面的一句话说明；正常时返回 {@code null}。
+     */
+    private String describeAdapterWarning(final String adapter) {
+        if (adapterRegistry == null) {
+            return null;
+        }
+        if (adapter == null || adapter.isBlank()) {
+            return "实例没有生效的适配器，请求会在转发阶段失败；请在 model.services.<type>.adapter 或实例级 adapter 上配置";
+        }
+        if (!adapterRegistry.isAdapterSupported(adapter)) {
+            return "适配器 '" + adapter + "' 未注册，请求会在转发阶段失败；可用适配器: "
+                    + adapterRegistry.getBuiltinAdapterNames();
+        }
+        return null;
+    }
+
     private ServiceInstanceDTO convertToDTO(final ServiceInstanceEntity entity) {
         ServiceInstanceDTO dto = ServiceInstanceDTO.builder()
                 .id(entity.getId())
@@ -393,6 +432,8 @@ public class ServiceInstanceManager {
                 .healthStatus(entity.getHealthStatus())
                 .errorMessage(entity.getErrorMessage())
                 .adapter(entity.getAdapter())
+                .adapterResolved(resolveAdapterResolved(entity.getAdapter()))
+                .adapterWarning(describeAdapterWarning(entity.getAdapter()))
                 .headers(entity.getHeaders())
                 .tags(entity.getTags())
                 .createdAt(entity.getCreatedAt())
