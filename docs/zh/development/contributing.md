@@ -537,6 +537,41 @@ python scripts/release/release.py tag --version 3.5.9 --notes release-notes.md -
 `tag` 子命令只在 master、工作区干净、版本号与 `pom.xml` 一致时才执行，并提示「Release 创建后才触发镜像构建」。
 
 
+### 发布说明的格式
+
+GitHub Release 的 **title 只用版本号**（`v3.7.3`），**副标题写在正文第一行**（`# 可逆脱敏补上字段级策略与流式链路`）。
+两者不要混：标题栏带副标题会让 Release 列表挤成一团，而正文没有首行标题则整页从要点开始、看不出这版在讲什么。
+
+固定结构：
+
+```markdown
+# <副标题>
+
+<一两句导语：这批发布来自什么、有没有破坏性变更、指向文末升级提示>
+
+## 修复
+
+| Issue | 问题 | PR |
+|---|---|---|
+| #988 | `json-paths` 配了但没有消费方 | #991 |
+
+## 升级提示
+
+1. ...
+
+## 镜像
+
+随 Release 由 CI 重建多架构镜像：`v3.7.3` / `3.7.3` / `latest`。
+
+完整变更见 [changelog](https://github.com/Lincoln-cn/JAiRouter/blob/master/docs/zh/reference/changelog.md)。
+```
+
+- 分节一律用 `##`，不要 `###` / `####` 混用。
+- 结尾三段（升级提示 / 镜像 / changelog 链接）每版都要有。
+- 骨架用 `python scripts/release/release.py notes --version 3.7.3 --write` 生成；`tag` 子命令会校验首行是 `# `，不合规直接拒绝。
+- **不要把 changelog 条目直接当发布说明**：changelog 给查细节的人看，发布说明给「要不要升级」的人看。
+
+
 ## 社区参与
 
 ### 报告问题
