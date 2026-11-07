@@ -12,7 +12,9 @@ import org.unreal.modelrouter.router.ratelimit.RateLimitContext;
 import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -198,16 +200,50 @@ public class ServiceInstanceSelector {
         }
 
         if (circuitOpen > 0) {
-            return new ResponseStatusException(
-                    HttpStatus.SERVICE_UNAVAILABLE,
-                    "No available instances (all in circuit breaker state) for model '" + modelName
-                            + "' (circuit open: " + circuitOpen + ", unhealthy: " + unhealthy
-                            + ", not active: " + notActive + ")");
+            String message = "No available instances (all in circuit breaker state) for model '" + modelName
+                    + "' (circuit open: " + circuitOpen + ", unhealthy: " + unhealthy
+                    + ", not active: " + notActive + ")";
+            // issue #1010：503 携带最近一次真实失败详情（放 RouterResponse.data），
+            // 不再让汇总文案遮蔽真实失败原因
+            return new NoAvailableInstanceException(HttpStatus.SERVICE_UNAVAILABLE, message,
+                    latestFailureDetail(modelInstances));
         }
 
         // 兜底：理论上不可达（上面三种计数之和应等于 modelInstances.size()）
         return new ResponseStatusException(
                 HttpStatus.SERVICE_UNAVAILABLE,
                 "No routable instances for model '" + modelName + "' in service type '" + serviceType + "'");
+    }
+
+    /**
+     * issue #1010：在熔断打开的实例中取「最近一次真实失败」的摘要。
+     *
+     * @return 键：instanceId / instanceName / reason / at / exceptionClass；全部无失败详情时为 null
+     */
+    private Map<String, Object> latestFailureDetail(final List<ModelRouterProperties.ModelInstance> modelInstances) {
+        Map<String, Object> latest = null;
+        long latestAt = Long.MIN_VALUE;
+        for (ModelRouterProperties.ModelInstance instance : modelInstances) {
+            if (InstanceAvailability.isCircuitClosed(circuitBreakerManager, instance)) {
+                continue;
+            }
+            Map<String, Object> detail = circuitBreakerManager.getCircuitBreakerDetail(instance.getInstanceId());
+            if (detail == null) {
+                continue;
+            }
+            Object at = detail.get("lastFailureAt");
+            long atValue = at instanceof Number number ? number.longValue() : 0L;
+            if (latest == null || atValue > latestAt) {
+                latestAt = atValue;
+                Map<String, Object> failure = new HashMap<>();
+                failure.put("instanceId", instance.getInstanceId());
+                failure.put("instanceName", instance.getName());
+                failure.put("reason", detail.get("lastFailureReason"));
+                failure.put("at", at);
+                failure.put("exceptionClass", detail.get("lastFailureExceptionClass"));
+                latest = failure;
+            }
+        }
+        return latest;
     }
 }

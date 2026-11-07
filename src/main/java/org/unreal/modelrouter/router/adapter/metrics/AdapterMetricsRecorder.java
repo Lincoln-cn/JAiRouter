@@ -334,9 +334,24 @@ public class AdapterMetricsRecorder {
             final ModelRouterProperties.ModelInstance instance,
             final long durationMs,
             final String errorCode) {
-        
+        recordCallFailureToRegistry(serviceType, instance, durationMs, errorCode, null);
+    }
+
+    /**
+     * issue #1010: 记录调用失败到服务注册（带失败详情：错误码 + 异常类名）。
+     *
+     * @param exceptionClass 异常类名（可空）
+     * @since v3.8.0
+     */
+    public void recordCallFailureToRegistry(
+            final ModelServiceRegistry.ServiceType serviceType,
+            final ModelRouterProperties.ModelInstance instance,
+            final long durationMs,
+            final String errorCode,
+            final String exceptionClass) {
+
         if (registry != null && serviceType != null && instance != null) {
-            registry.recordCallFailure(serviceType, instance, durationMs, errorCode);
+            registry.recordCallFailure(serviceType, instance, durationMs, errorCode, exceptionClass);
         }
         
         if (log.isDebugEnabled()) {
@@ -426,7 +441,27 @@ public class AdapterMetricsRecorder {
             final ModelServiceRegistry.ServiceType serviceType,
             final ModelRouterProperties.ModelInstance instance) {
         recordCompleteCall(adapterType, instanceId, durationMs, outcome, errorCode,
-                modelName, serviceType, instance, null, null);
+                modelName, serviceType, instance, null);
+    }
+
+    /**
+     * issue #1010：按调用结果分类记录（带异常类名，失败详情透传给熔断器）。
+     *
+     * @param exceptionClass 异常类名（失败时，如 ConnectException），可空
+     * @since v3.8.0
+     */
+    public void recordCompleteCall(
+            final String adapterType,
+            final String instanceId,
+            final long durationMs,
+            final CallOutcome outcome,
+            final String errorCode,
+            final String modelName,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final ModelRouterProperties.ModelInstance instance,
+            final String exceptionClass) {
+        recordCompleteCall(adapterType, instanceId, durationMs, outcome, errorCode,
+                modelName, serviceType, instance, null, null, exceptionClass);
     }
 
     /**
@@ -479,7 +514,7 @@ public class AdapterMetricsRecorder {
             final String modelName,
             final ModelServiceRegistry.ServiceType serviceType,
             final ModelRouterProperties.ModelInstance instance) {
-        recordStats(adapterType, instanceId, durationMs, outcome, errorCode, modelName, serviceType, instance);
+        recordStats(adapterType, instanceId, durationMs, outcome, errorCode, modelName, serviceType, instance, null);
 
         if (log.isDebugEnabled()) {
             log.debug("完整调用统计记录：adapter={}, instance={}, duration={}ms, outcome={}, errorCode={}",
@@ -573,11 +608,33 @@ public class AdapterMetricsRecorder {
             final ModelRouterProperties.ModelInstance instance,
             final String requestBody,
             final String responseBody) {
+        recordCompleteCall(adapterType, instanceId, durationMs, outcome, errorCode,
+                modelName, serviceType, instance, requestBody, responseBody, null);
+    }
+
+    /**
+     * v3.5.4（#647）：按调用结果分类记录（含请求/响应体捕获；issue #1010 带异常类名透传）。
+     *
+     * @param exceptionClass 异常类名（失败时，如 ConnectException），可空
+     * @since v3.8.0
+     */
+    public void recordCompleteCall(
+            final String adapterType,
+            final String instanceId,
+            final long durationMs,
+            final CallOutcome outcome,
+            final String errorCode,
+            final String modelName,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final ModelRouterProperties.ModelInstance instance,
+            final String requestBody,
+            final String responseBody,
+            final String exceptionClass) {
 
         final boolean success = outcome.isSuccess();
 
         // v2.9.2: 统计更新（Registry + MetricsCollector + StatsRepository）
-        recordStats(adapterType, instanceId, durationMs, outcome, errorCode, modelName, serviceType, instance);
+        recordStats(adapterType, instanceId, durationMs, outcome, errorCode, modelName, serviceType, instance, exceptionClass);
 
         // v2.7.8: 记录 API 调用历史（v2.9.2: 含请求/响应体）
         // 脱敏与落库移到 boundedElastic，避免在 EventLoop / 回调线程上 block
@@ -639,7 +696,8 @@ public class AdapterMetricsRecorder {
             final String errorCode,
             final String modelName,
             final ModelServiceRegistry.ServiceType serviceType,
-            final ModelRouterProperties.ModelInstance instance) {
+            final ModelRouterProperties.ModelInstance instance,
+            final String exceptionClass) {
 
         final boolean success = outcome.isSuccess();
 
@@ -648,8 +706,8 @@ public class AdapterMetricsRecorder {
         switch (outcome) {
             case SUCCESS -> recordCallSuccessToRegistry(serviceType, instance, durationMs, true);
             case CLIENT_ERROR -> recordCallClientErrorToRegistry(serviceType, instance, durationMs, errorCode);
-            case INSTANCE_FAILURE -> recordCallFailureToRegistry(serviceType, instance, durationMs, errorCode);
-            default -> recordCallFailureToRegistry(serviceType, instance, durationMs, errorCode);
+            case INSTANCE_FAILURE -> recordCallFailureToRegistry(serviceType, instance, durationMs, errorCode, exceptionClass);
+            default -> recordCallFailureToRegistry(serviceType, instance, durationMs, errorCode, exceptionClass);
         }
 
         // 更新 MetricsCollector

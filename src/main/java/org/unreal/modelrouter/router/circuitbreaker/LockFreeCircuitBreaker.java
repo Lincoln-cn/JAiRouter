@@ -35,6 +35,12 @@ public class LockFreeCircuitBreaker implements CircuitBreaker {
     // 使用 AtomicLong 记录时间戳
     private final AtomicLong lastFailureTime;
 
+    // issue #1010：最近一次失败详情（原因标识 / 异常类名 / 发生时刻），供 503 响应体与管理端点回显真实失败原因
+    private final AtomicReference<FailureDetail> lastFailure;
+
+    // issue #1010：当前熔断打开时刻（0 = 未打开或已重置）
+    private final AtomicLong openedAt;
+
     // #870：半开态只放行一个探测请求。熔断打开到超时后如果全部并发放行，
     // 故障实例会在恢复窗口被重新打满，等于熔断在恢复期失效。
     private final AtomicBoolean halfOpenProbeInFlight;
@@ -55,8 +61,16 @@ public class LockFreeCircuitBreaker implements CircuitBreaker {
         this.failureCount = new AtomicInteger(0);
         this.successCount = new AtomicInteger(0);
         this.lastFailureTime = new AtomicLong(0);
+        this.lastFailure = new AtomicReference<>(null);
+        this.openedAt = new AtomicLong(0);
         this.halfOpenProbeInFlight = new AtomicBoolean(false);
         this.halfOpenProbeStartedAt = new AtomicLong(0);
+    }
+
+    /**
+     * issue #1010：失败详情（reason 沿 triggerReason 的「短标识」风格，如 CONNECT_FAILED）。
+     */
+    public record FailureDetail(String reason, String exceptionClass, long at) {
     }
 
     @Override
@@ -135,16 +149,25 @@ public class LockFreeCircuitBreaker implements CircuitBreaker {
 
     @Override
     public void onFailure() {
+        onFailure(null, null);
+    }
+
+    @Override
+    public void onFailure(final String reason, final String exceptionClass) {
         State currentState = stateRef.get();
-        
+        long now = System.currentTimeMillis();
+        // issue #1010：无论状态如何，先记录最近一次失败详情（成功不清除——恢复后仍可回看「为什么熔断过」）
+        lastFailure.set(new FailureDetail(reason, exceptionClass, now));
+
         switch (currentState) {
             case CLOSED:
                 int newFailureCount = failureCount.incrementAndGet();
-                lastFailureTime.set(System.currentTimeMillis());
-                
+                lastFailureTime.set(now);
+
                 if (newFailureCount >= failureThreshold) {
                     // CAS 操作尝试转为打开状态
                     if (stateRef.compareAndSet(State.CLOSED, State.OPEN)) {
+                        openedAt.set(now);
                         logger.info("熔断器打开：instanceId={}, failureCount={}, failureThreshold={}",
                                 instanceId, newFailureCount, failureThreshold);
                         recordCircuitBreakerEvent("state_change", "OPEN");
@@ -157,17 +180,18 @@ public class LockFreeCircuitBreaker implements CircuitBreaker {
                             instanceId, newFailureCount, failureThreshold);
                 }
                 break;
-                
+
             case OPEN:
-                lastFailureTime.set(System.currentTimeMillis());
+                lastFailureTime.set(now);
                 logger.debug("熔断器记录失败 (OPEN 状态): instanceId={}", instanceId);
                 break;
-                
+
             case HALF_OPEN:
-                lastFailureTime.set(System.currentTimeMillis());
+                lastFailureTime.set(now);
                 halfOpenProbeInFlight.set(false);
                 // 失败则重新进入打开状态
                 if (stateRef.compareAndSet(State.HALF_OPEN, State.OPEN)) {
+                    openedAt.set(now);
                     logger.info("熔断器重新打开：instanceId={}, failure in HALF_OPEN state", instanceId);
                     recordCircuitBreakerEvent("state_change", "OPEN");
                 }
@@ -188,6 +212,9 @@ public class LockFreeCircuitBreaker implements CircuitBreaker {
         failureCount.set(0);
         successCount.set(0);
         lastFailureTime.set(0);
+        // issue #1010：复位同时清空失败详情与打开时刻
+        lastFailure.set(null);
+        openedAt.set(0);
         halfOpenProbeInFlight.set(false);
         halfOpenProbeStartedAt.set(0);
         logger.info("熔断器已重置：instanceId={}", instanceId);
@@ -246,6 +273,12 @@ public class LockFreeCircuitBreaker implements CircuitBreaker {
         detail.put("successThreshold", successThreshold);
         detail.put("timeout", timeout);
         detail.put("elapsedTime", System.currentTimeMillis() - lastFailureTime.get());
+        // issue #1010：真实失败原因与打开时刻（无失败详情/未打开时为 null/0）
+        FailureDetail failureDetail = lastFailure.get();
+        detail.put("lastFailureReason", failureDetail != null ? failureDetail.reason() : null);
+        detail.put("lastFailureExceptionClass", failureDetail != null ? failureDetail.exceptionClass() : null);
+        detail.put("lastFailureAt", failureDetail != null ? failureDetail.at() : null);
+        detail.put("openedAt", openedAt.get());
         return detail;
     }
 

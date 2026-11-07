@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
 import org.springframework.web.server.ResponseStatusException;
+import org.unreal.modelrouter.router.model.NoAvailableInstanceException;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.exception.AuthenticationException;
 import org.unreal.modelrouter.common.exception.DownstreamServiceException;
@@ -105,7 +106,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
                 return handleSpringSecurityAccessDeniedException(
                         exchange, (org.springframework.security.access.AccessDeniedException) ex);
             } else {
-                RouterResponse<Void> errorResponse;
+                RouterResponse<?> errorResponse;
                 HttpStatus status;
                 Long retryAfterSeconds = null;
                 
@@ -137,19 +138,34 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
                 } else if (isDownstreamTimeout(ex)) {
                     // #682：上游读超时/整体超时此前落到「系统异常 500」，还把内部异常文本
                     // （含下游地址）回给调用方。网关等不到上游属可重试的网关侧故障，回 504。
-                    logger.error("下游服务响应超时: {}", ex.getClass().getSimpleName(), ex);
+                    // #1011：日志补目标地址（从异常消息提取 host:port）；堆栈经 SLF4J 末参 Throwable 已携带
+                    logger.error("下游服务响应超时: target={}, type={}",
+                            extractTarget(ex), ex.getClass().getSimpleName(), ex);
                     errorResponse = RouterResponse.error("下游服务响应超时，请稍后重试", "504");
                     status = HttpStatus.GATEWAY_TIMEOUT;
                 } else if (isDownstreamUnavailable(ex)) {
                     // #682：连接被拒/DNS 失败/TLS 握手失败同理，回 502 且只给固定外部文案，
                     // 不把异常消息里的内部地址与实现细节带给客户端。
-                    logger.error("下游服务连接失败: {}", ex.getClass().getSimpleName(), ex);
+                    // #1011：日志补目标地址与异常消息（Netty ConnectException 消息含 host:port；日志可带，响应体不能带）
+                    logger.error("下游服务连接失败: target={}, type={}, cause={}",
+                            extractTarget(ex), ex.getClass().getSimpleName(), ex.getMessage(), ex);
                     errorResponse = RouterResponse.error(
                             "下游服务连接失败，请检查实例地址与网络连通性", "502");
                     status = HttpStatus.BAD_GATEWAY;
+                } else if (ex instanceof NoAvailableInstanceException noAvailable) {
+                    // issue #1010：熔断全开的 503 携带最近一次真实失败详情（data.lastFailure），
+                    // 不再让汇总文案遮蔽真实失败原因
+                    logger.error("无可用实例: message={}", noAvailable.getMessage(), noAvailable);
+                    errorResponse = RouterResponse.error("请求处理失败: " + noAvailable.getReason(),
+                            String.valueOf(noAvailable.getStatusCode().value()), noAvailable.getLastFailure());
+                    status = HttpStatus.SERVICE_UNAVAILABLE;
                 } else if (ex instanceof ResponseStatusException) {
                     ResponseStatusException rse = (ResponseStatusException) ex;
-                    logger.error("响应状态异常: status={}, message={}", rse.getStatusCode(), rse.getMessage());
+                    // issue #1011：带 cause 的 ResponseStatusException（如 ErrorResponseBuilder 抛的
+                    // 上游连接失败）此前只记 status+message，无堆栈无目标地址；现补 target 与 cause 堆栈
+                    Object logTarget = rse.getCause() != null ? rse.getCause() : rse;
+                    logger.error("响应状态异常: status={}, message={}, target={}",
+                            rse.getStatusCode(), rse.getMessage(), extractTarget(ex), logTarget);
                     errorResponse = RouterResponse.error("请求处理失败: " + rse.getReason(),
                             String.valueOf(rse.getStatusCode().value()));
                     status = HttpStatus.resolve(rse.getStatusCode().value());
@@ -178,6 +194,31 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
         }
     }
     
+    /**
+     * issue #1011：从异常链消息里提取目标地址（host:port），只进日志、不进响应体（#682 边界不变）.
+     *
+     * <p>Netty 的 ConnectException 消息形如 {@code Connection refused: /127.0.0.1:8080}；
+     * exchange attributes 里没有实例 URL，故从消息正则提取；提取不到时返回 {@code unknown}。</p>
+     *
+     * @param ex 异常（沿 cause 链逐层找）
+     * @return host:port 或 {@code unknown}
+     */
+    private static String extractTarget(final Throwable ex) {
+        java.util.regex.Pattern pattern = java.util.regex.Pattern
+                .compile("([\\w.-]+|\\d{1,3}(?:\\.\\d{1,3}){3}):(\\d{2,5})");
+        java.util.Set<Throwable> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (Throwable current = ex; current != null && seen.add(current); current = current.getCause()) {
+            String message = current.getMessage();
+            if (message != null) {
+                java.util.regex.Matcher matcher = pattern.matcher(message);
+                if (matcher.find()) {
+                    return matcher.group(1) + ":" + matcher.group(2);
+                }
+            }
+        }
+        return "unknown";
+    }
+
     /**
      * 判断异常链里是否出现「等不到上游」的超时（#682）.
      *
@@ -280,7 +321,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
      */
     private Mono<Void> setResponse(
             final ServerWebExchange exchange,
-            final RouterResponse<Void> errorResponse, final HttpStatus status) {
+            final RouterResponse<?> errorResponse, final HttpStatus status) {
         return setResponse(exchange, errorResponse, status, null);
     }
 
@@ -295,7 +336,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
      */
     private Mono<Void> setResponse(
             final ServerWebExchange exchange,
-            final RouterResponse<Void> errorResponse, final HttpStatus status,
+            final RouterResponse<?> errorResponse, final HttpStatus status,
             final Long retryAfterSeconds) {
         try {
             final ServerHttpResponse response = exchange.getResponse();
@@ -347,7 +388,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
      * @return JSON 文本
      * @throws Exception 序列化异常（由调用方捕获并降级）
      */
-    private String serializeErrorBody(final ServerWebExchange exchange, final RouterResponse<Void> errorResponse,
+    private String serializeErrorBody(final ServerWebExchange exchange, final RouterResponse<?> errorResponse,
                                       final HttpStatus status) throws Exception {
         final Map<String, Object> clientBody = V1ErrorBodyMapper.toErrorBody(
                 V1ErrorBodyMapper.requestPathOf(exchange), status.value(),

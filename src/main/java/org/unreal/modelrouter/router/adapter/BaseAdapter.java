@@ -276,8 +276,10 @@ public abstract class BaseAdapter implements ServiceCapability {
                     final AdapterMetricsRecorder.CallOutcome outcome = classifyFailure(throwable);
                     AdapterMetricsRecorder metricsRecorder = resilienceSupport.getMetricsRecorder();
                     if (metricsRecorder != null) {
+                        // issue #1010：异常类名随失败详情透传给熔断器（503 响应体/管理端点回显）
                         metricsRecorder.recordCompleteCall(adapterType, instanceName, duration, outcome,
-                                errorCode, modelName, serviceType, selectedInstance);
+                                errorCode, modelName, serviceType, selectedInstance,
+                                throwable.getClass().getSimpleName());
                     }
                     // #827：媒体类服务（TTS/STT/生图/编辑）不幂等，只在建连失败时重试
                     final boolean willRetry = retryPolicy.canRetry(retryCount, throwable)

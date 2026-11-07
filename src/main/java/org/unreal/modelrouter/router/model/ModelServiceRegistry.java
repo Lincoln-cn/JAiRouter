@@ -784,11 +784,27 @@ public class ModelServiceRegistry {
                                   final ModelRouterProperties.ModelInstance instance,
                                   final long durationMs,
                                   final String errorCode) {
+        recordCallFailure(serviceType, instance, durationMs, errorCode, null);
+    }
+
+    /**
+     * issue #1010: 记录实例调用失败（带错误码与异常类名），失败详情透传给熔断器，
+     * 供 503 响应体 / 管理端点 / 复位响应回显真实失败原因。
+     *
+     * @param exceptionClass 异常类名（如 ConnectException），可空
+     * @since v3.8.0
+     */
+    public void recordCallFailure(final ServiceType serviceType,
+                                  final ModelRouterProperties.ModelInstance instance,
+                                  final long durationMs,
+                                  final String errorCode,
+                                  final String exceptionClass) {
         LoadBalancer loadBalancer = accountingLoadBalancerFor(serviceType, instance);
         if (loadBalancer != null) {
             loadBalancer.recordCallFailure(instance, durationMs, errorCode);
         }
-        circuitBreakerManager.recordFailure(instance.getInstanceId(), instance.getBaseUrl());
+        circuitBreakerManager.recordFailure(instance.getInstanceId(), instance.getBaseUrl(),
+                instance.getName(), serviceType.name(), errorCode, exceptionClass);
     }
 
     /**

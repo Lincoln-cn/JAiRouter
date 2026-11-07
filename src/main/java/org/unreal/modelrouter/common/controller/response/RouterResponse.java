@@ -59,6 +59,13 @@ public final class RouterResponse<T> {
         return new RouterResponse<>(false, message, null, errorCode);
     }
 
+    /**
+     * 带错误详情的错误响应（issue #1010：如熔断 503 的 lastFailure）：详情放 data 字段，形状不变.
+     */
+    public static <T> RouterResponse<T> error(final String message, final String errorCode, final T data) {
+        return new RouterResponse<>(false, message, data, errorCode);
+    }
+
     public static <T> RouterResponse<T> error(final String message) {
         return error(message, null);
     }

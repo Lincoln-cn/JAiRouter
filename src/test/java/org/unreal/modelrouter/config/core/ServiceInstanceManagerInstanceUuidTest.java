@@ -8,8 +8,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.unreal.modelrouter.common.dto.InstanceCircuitBreakerDTO;
 import org.unreal.modelrouter.common.dto.InstanceRateLimitDTO;
 import org.unreal.modelrouter.common.dto.ServiceInstanceDTO;
+import org.unreal.modelrouter.persistence.jpa.entity.InstanceCircuitBreakerEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.InstanceRateLimitEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.ServiceInstanceEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.InstanceCircuitBreakerRepository;
@@ -130,8 +132,26 @@ class ServiceInstanceManagerInstanceUuidTest {
                 "子 DTO 的 instanceId 必须是父实例 UUID，不得是 Long 主键");
     }
 
-    // ==================== ② resolveInstanceRef 双轨解析 ====================
+    @Test
+    @DisplayName("UID-108: 熔断子 DTO 叠加运行时状态与最近失败原因（issue #1010）")
+    void circuitBreakerDtoCarriesRuntimeFailureDetail() {
+        when(serviceInstanceRepository.findById(1L)).thenReturn(Optional.of(entity(1L, "uuid-aaaa")));
+        InstanceCircuitBreakerEntity cb = new InstanceCircuitBreakerEntity();
+        cb.setId(7L);
+        cb.setInstanceId(1L);
+        cb.setEnabled(true);
+        when(circuitBreakerRepository.findByInstanceId(1L)).thenReturn(Optional.of(cb));
+        when(circuitBreakerManager.getCircuitBreakerDetail("uuid-aaaa")).thenReturn(java.util.Map.of(
+                "state", "OPEN", "openedAt", 1730000000000L, "lastFailureReason", "CONNECT_FAILED"));
 
+        InstanceCircuitBreakerDTO cbDto = manager.getCircuitBreakerConfig(1L).orElseThrow();
+
+        assertEquals("OPEN", cbDto.getCircuitState(), "必须暴露运行时熔断状态");
+        assertEquals(1730000000000L, cbDto.getOpenedAt(), "必须暴露打开时刻");
+        assertEquals("CONNECT_FAILED", cbDto.getLastFailureReason(), "必须暴露真实失败原因");
+    }
+
+    // ==================== ② resolveInstanceRef 双轨解析 ====================
     @Test
     @DisplayName("UID-103: UUID 形态走 findByInstanceId（规范形态）")
     void resolveInstanceRefUuidForm() {

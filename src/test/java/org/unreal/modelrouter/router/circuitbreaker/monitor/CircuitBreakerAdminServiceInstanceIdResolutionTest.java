@@ -136,4 +136,35 @@ class CircuitBreakerAdminServiceInstanceIdResolutionTest {
         // 显式引用一次，避免静态分析把它当未使用
         assertThat(ReflectionTestUtils.getField(service, "monitorService")).isSameAs(monitorService);
     }
+
+    @Test
+    @DisplayName("issue #1010：复位响应带 lastFailureReason（复位前最近一次真实失败原因）")
+    void resetResultCarriesLastFailureReason() {
+        when(serviceInstanceRepository.findByInstanceId(INSTANCE_UUID)).thenReturn(Optional.of(instanceEntity()));
+        when(circuitBreakerManager.getCircuitBreakerDetail(INSTANCE_UUID)).thenReturn(
+                java.util.Map.of("state", "OPEN", "lastFailureReason", "CONNECT_FAILED"));
+        when(circuitBreakerManager.resetCircuitBreakerInPlace(INSTANCE_UUID)).thenReturn(CircuitBreaker.State.OPEN);
+        when(persistenceAdapter.deleteCircuitBreakerState(INSTANCE_UUID))
+                .thenReturn(reactor.core.publisher.Mono.just(true));
+
+        CircuitBreakerResetResult result = service.reset(INSTANCE_UUID, "test").block();
+
+        assertThat(result).isNotNull();
+        assertThat(result.lastFailureReason()).isEqualTo("CONNECT_FAILED");
+    }
+
+    @Test
+    @DisplayName("issue #1010：无失败详情时 lastFailureReason 为 null（形状不变）")
+    void resetResultWithoutFailureDetail() {
+        when(serviceInstanceRepository.findByInstanceId(INSTANCE_UUID)).thenReturn(Optional.of(instanceEntity()));
+        when(circuitBreakerManager.getCircuitBreakerDetail(INSTANCE_UUID)).thenReturn(null);
+        when(circuitBreakerManager.resetCircuitBreakerInPlace(INSTANCE_UUID)).thenReturn(CircuitBreaker.State.CLOSED);
+        when(persistenceAdapter.deleteCircuitBreakerState(INSTANCE_UUID))
+                .thenReturn(reactor.core.publisher.Mono.just(false));
+
+        CircuitBreakerResetResult result = service.reset(INSTANCE_UUID, "test").block();
+
+        assertThat(result).isNotNull();
+        assertThat(result.lastFailureReason()).isNull();
+    }
 }

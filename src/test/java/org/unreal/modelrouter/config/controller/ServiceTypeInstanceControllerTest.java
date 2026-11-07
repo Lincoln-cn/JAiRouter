@@ -428,7 +428,7 @@ class ServiceTypeInstanceControllerTest {
         // Given
         Map<String, String> request = Map.of("instanceId", "uuid-1");
         CircuitBreakerResetResult resetResult = new CircuitBreakerResetResult("uuid-1", "instance-1", "chat",
-                "OPEN", "CLOSED", true, "MANUAL_RESET");
+                "OPEN", "CLOSED", true, "MANUAL_RESET", null);
         when(circuitBreakerAdminService.reset(eq("uuid-1"), anyString())).thenReturn(Mono.just(resetResult));
 
         // When

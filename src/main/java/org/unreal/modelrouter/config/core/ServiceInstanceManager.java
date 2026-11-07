@@ -518,14 +518,28 @@ public class ServiceInstanceManager {
 
     private InstanceCircuitBreakerDTO convertCircuitBreakerToDTO(final InstanceCircuitBreakerEntity entity,
             final String instanceUuid) {
-        return InstanceCircuitBreakerDTO.builder()
+        InstanceCircuitBreakerDTO.InstanceCircuitBreakerDTOBuilder builder = InstanceCircuitBreakerDTO.builder()
                 .id(entity.getId())
                 .instanceId(instanceUuid)
                 .enabled(entity.getEnabled())
                 .failureThreshold(entity.getFailureThreshold())
                 .timeout(entity.getTimeoutMs())
-                .successThreshold(entity.getSuccessThreshold())
-                .build();
+                .successThreshold(entity.getSuccessThreshold());
+        // issue #1010：叠加运行时熔断状态与最近真实失败原因（配置 + 运行时一并暴露）
+        try {
+            Map<String, Object> detail = circuitBreakerManager.getCircuitBreakerDetail(instanceUuid);
+            if (detail != null) {
+                Object state = detail.get("state");
+                Object openedAt = detail.get("openedAt");
+                Object lastFailureReason = detail.get("lastFailureReason");
+                builder.circuitState(state != null ? state.toString() : null)
+                        .openedAt(openedAt instanceof Number number ? number.longValue() : null)
+                        .lastFailureReason(lastFailureReason != null ? lastFailureReason.toString() : null);
+            }
+        } catch (Exception e) {
+            // 运行时状态查询失败不影响配置返回（静态配置字段仍完整）
+        }
+        return builder.build();
     }
 
     /**

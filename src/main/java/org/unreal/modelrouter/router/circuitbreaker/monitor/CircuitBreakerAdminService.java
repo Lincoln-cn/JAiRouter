@@ -106,6 +106,8 @@ public class CircuitBreakerAdminService {
         }
         // 下面要进 lambda，必须 final
         final String instanceId = candidateId;
+        // issue #1010：复位前取最近一次真实失败原因（复位会清空失败详情，先读）
+        final String lastFailureReason = currentLastFailureReason(instanceId);
         CircuitBreaker.State previousState = circuitBreakerManager.resetCircuitBreakerInPlace(instanceId);
         if (previousState == null) {
             return Mono.empty();
@@ -119,12 +121,28 @@ public class CircuitBreakerAdminService {
         resetAdaptiveMetrics(instanceId);
 
         return persistenceAdapter.deleteCircuitBreakerState(instanceId)
-                .map(deleted -> resultOf(instanceId, instanceName, serviceType, previousState, deleted))
-                .defaultIfEmpty(resultOf(instanceId, instanceName, serviceType, previousState, false))
+                .map(deleted -> resultOf(instanceId, instanceName, serviceType, previousState, deleted, lastFailureReason))
+                .defaultIfEmpty(resultOf(instanceId, instanceName, serviceType, previousState, false, lastFailureReason))
                 .onErrorResume(error -> {
                     log.warn("手动重置后删除持久化状态失败: instanceId={}, error={}", instanceId, error.getMessage());
-                    return Mono.just(resultOf(instanceId, instanceName, serviceType, previousState, false));
+                    return Mono.just(resultOf(instanceId, instanceName, serviceType, previousState, false, lastFailureReason));
                 });
+    }
+
+    /**
+     * issue #1010：读取实例熔断器的最近一次失败原因标识（无失败详情时为 null）。
+     */
+    private String currentLastFailureReason(final String instanceId) {
+        try {
+            Map<String, Object> detail = circuitBreakerManager.getCircuitBreakerDetail(instanceId);
+            if (detail == null) {
+                return null;
+            }
+            Object reason = detail.get("lastFailureReason");
+            return reason != null ? reason.toString() : null;
+        } catch (Exception error) {
+            return null;
+        }
     }
 
     /**
@@ -274,9 +292,10 @@ public class CircuitBreakerAdminService {
 
     private CircuitBreakerResetResult resultOf(final String instanceId, final String instanceName,
                                                final String serviceType, final CircuitBreaker.State previousState,
-                                               final boolean persistedStateDeleted) {
+                                               final boolean persistedStateDeleted,
+                                               final String lastFailureReason) {
         return new CircuitBreakerResetResult(instanceId, instanceName, serviceType, previousState.name(),
-                CircuitBreaker.State.CLOSED.name(), persistedStateDeleted, MANUAL_RESET);
+                CircuitBreaker.State.CLOSED.name(), persistedStateDeleted, MANUAL_RESET, lastFailureReason);
     }
 
     private static String joinUrl(final String baseUrl, final String path) {
