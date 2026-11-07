@@ -137,13 +137,13 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
                 } else if (isDownstreamTimeout(ex)) {
                     // #682：上游读超时/整体超时此前落到「系统异常 500」，还把内部异常文本
                     // （含下游地址）回给调用方。网关等不到上游属可重试的网关侧故障，回 504。
-                    logger.error("下游服务响应超时: {}", ex.getClass().getSimpleName());
+                    logger.error("下游服务响应超时: {}", ex.getClass().getSimpleName(), ex);
                     errorResponse = RouterResponse.error("下游服务响应超时，请稍后重试", "504");
                     status = HttpStatus.GATEWAY_TIMEOUT;
                 } else if (isDownstreamUnavailable(ex)) {
                     // #682：连接被拒/DNS 失败/TLS 握手失败同理，回 502 且只给固定外部文案，
                     // 不把异常消息里的内部地址与实现细节带给客户端。
-                    logger.error("下游服务连接失败: {}", ex.getClass().getSimpleName());
+                    logger.error("下游服务连接失败: {}", ex.getClass().getSimpleName(), ex);
                     errorResponse = RouterResponse.error(
                             "下游服务连接失败，请检查实例地址与网络连通性", "502");
                     status = HttpStatus.BAD_GATEWAY;
