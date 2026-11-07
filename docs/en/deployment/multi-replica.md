@@ -46,6 +46,7 @@ A multi-replica deployment must enable all six items below and point them at a s
 | `jairouter.quota.distributed.enabled` | `false` | `true` | Quota is counted per replica; allowed volume ≈ configured value × replicas |
 | `jairouter.persistence.redis.enabled` | `false` | `true` | State persistence falls back to local H2/file, never shared |
 | `jairouter.ratelimit.distributed.enabled` | `false` | `true` | End-user rate-limit counting stays per replica; allowed volume ≈ configured value × replicas |
+| `jairouter.semantic-cache.redis.enabled` | `false` | `true` | Semantic-cache entries stay per replica; hit rate is diluted to about 1/N of a single replica |
 
 Enabling distributed quota also requires `jairouter.quota.enabled=true` (the feature's master switch).
 End-user rate limiting has its own switch, `jairouter.ratelimit.end-user.enabled` (off by default); the

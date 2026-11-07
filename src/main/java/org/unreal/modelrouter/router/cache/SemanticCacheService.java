@@ -58,8 +58,8 @@ public class SemanticCacheService {
 
     private final SemanticCacheProperties properties;
 
-    /** scope → 条目队列（新条目在尾部，队首最旧，便于淘汰）。 */
-    private final ConcurrentHashMap<String, Deque<Entry>> buckets = new ConcurrentHashMap<>();
+    /** 条目存储后端（issue #1002：内存 / Redis 互换，判定逻辑不变）。 */
+    private final SemanticCacheStore store;
 
     private final AtomicInteger totalEntries = new AtomicInteger();
 
@@ -76,7 +76,23 @@ public class SemanticCacheService {
     public SemanticCacheService(
             final SemanticCacheProperties properties,
             @Autowired(required = false) final MeterRegistry meterRegistry) {
+        this(properties, meterRegistry, new InMemorySemanticCacheStore(properties));
+    }
+
+    /**
+     * 构造器（issue #1002：指定存储后端）.
+     *
+     * @param properties    配置面
+     * @param meterRegistry 指标注册表（可为 {@code null}）
+     * @param store         条目存储后端
+     * @since v3.8.0
+     */
+    public SemanticCacheService(
+            final SemanticCacheProperties properties,
+            @Autowired(required = false) final MeterRegistry meterRegistry,
+            final SemanticCacheStore store) {
         this.properties = properties;
+        this.store = store;
         this.hits = counter(meterRegistry, METRIC_HITS, "语义缓存命中次数");
         this.misses = counter(meterRegistry, METRIC_MISSES, "语义缓存未命中次数");
         this.rejectedPii = counter(meterRegistry, METRIC_REJECTED, "因含敏感内容而拒绝写入的次数");
@@ -109,19 +125,10 @@ public class SemanticCacheService {
         try {
             final long fingerprint = simHash(normalized);
             final int tokens = tokenCount(normalized);
-            final long now = System.currentTimeMillis();
-            final Deque<Entry> bucket = buckets.get(scope);
-            if (bucket == null) {
-                countMiss();
-                return Optional.empty();
-            }
-            synchronized (bucket) {
-                purgeExpired(bucket, now);
-                for (final Entry entry : bucket) {
-                    if (isSimilar(entry, fingerprint, tokens)) {
-                        countHit();
-                        return Optional.of(entry.response());
-                    }
+            for (final SemanticCacheEntry entry : store.candidates(scope)) {
+                if (isSimilar(entry, fingerprint, tokens)) {
+                    countHit();
+                    return Optional.of(entry.response());
                 }
             }
             countMiss();
@@ -148,19 +155,9 @@ public class SemanticCacheService {
             return;
         }
         try {
-            final Entry entry = new Entry(simHash(normalized), tokenCount(normalized), response,
-                    System.currentTimeMillis() + ttlMillis());
-            final Deque<Entry> bucket = buckets.computeIfAbsent(scope, key -> new ArrayDeque<>());
-            synchronized (bucket) {
-                purgeExpired(bucket, System.currentTimeMillis());
-                bucket.addLast(entry);
-                totalEntries.incrementAndGet();
-                while (bucket.size() > Math.max(1, properties.getMaxEntriesPerModel())) {
-                    bucket.removeFirst();
-                    totalEntries.decrementAndGet();
-                }
-            }
-            evictIfOverGlobalLimit();
+            final SemanticCacheEntry entry = new SemanticCacheEntry(simHash(normalized), tokenCount(normalized),
+                    response, System.currentTimeMillis() + ttlMillis());
+            store.put(scope, entry);
         } catch (RuntimeException ex) {
             logger.warn("语义缓存写入失败，忽略本条: {}", ex.toString());
         }
@@ -184,21 +181,7 @@ public class SemanticCacheService {
      * @return 清除的条目数
      */
     public int evict(final String scope) {
-        if (scope == null) {
-            final int removed = size();
-            buckets.clear();
-            totalEntries.set(0);
-            return removed;
-        }
-        final Deque<Entry> bucket = buckets.remove(scope);
-        if (bucket == null) {
-            return 0;
-        }
-        synchronized (bucket) {
-            final int removed = bucket.size();
-            totalEntries.addAndGet(-removed);
-            return removed;
-        }
+        return store.evict(scope);
     }
 
     /**
@@ -208,28 +191,14 @@ public class SemanticCacheService {
      * @return 清除的条目数
      */
     public int evictTenant(final String apiKeyId) {
-        final Iterator<Map.Entry<String, Deque<Entry>>> it = buckets.entrySet().iterator();
-        int removed = 0;
-        while (it.hasNext()) {
-            final Map.Entry<String, Deque<Entry>> entry = it.next();
-            if (!SemanticCacheScope.belongsToTenant(entry.getKey(), apiKeyId)) {
-                continue;
-            }
-            synchronized (entry.getValue()) {
-                removed += entry.getValue().size();
-                totalEntries.addAndGet(-entry.getValue().size());
-            }
-            it.remove();
-        }
-        return removed;
+        return store.evictTenant(apiKeyId);
     }
 
     /**
      * 清空全部条目.
      */
     public void clear() {
-        buckets.clear();
-        totalEntries.set(0);
+        store.evict(null);
     }
 
     /**
@@ -238,44 +207,14 @@ public class SemanticCacheService {
      * @return 条目数
      */
     public int size() {
-        return Math.max(0, totalEntries.get());
-    }
-
-    private void evictIfOverGlobalLimit() {
-        final int limit = Math.max(1, properties.getGlobalMaxEntries());
-        while (totalEntries.get() > limit) {
-            Deque<Entry> oldestBucket = null;
-            String oldestScope = null;
-            for (final Map.Entry<String, Deque<Entry>> entry : buckets.entrySet()) {
-                if (!entry.getValue().isEmpty()) {
-                    oldestBucket = entry.getValue();
-                    oldestScope = entry.getKey();
-                    break;
-                }
-            }
-            if (oldestBucket == null) {
-                totalEntries.set(0);
-                return;
-            }
-            synchronized (oldestBucket) {
-                if (oldestBucket.isEmpty()) {
-                    buckets.remove(oldestScope, oldestBucket);
-                    continue;
-                }
-                oldestBucket.removeFirst();
-                totalEntries.decrementAndGet();
-                if (oldestBucket.isEmpty()) {
-                    buckets.remove(oldestScope, oldestBucket);
-                }
-            }
-        }
+        return store.size();
     }
 
     private Counter counter(final MeterRegistry registry, final String name, final String description) {
         return registry == null ? null : Counter.builder(name).description(description).register(registry);
     }
 
-    private boolean isSimilar(final Entry entry, final long fingerprint, final int tokens) {
+    private boolean isSimilar(final SemanticCacheEntry entry, final long fingerprint, final int tokens) {
         if (Long.bitCount(entry.fingerprint() ^ fingerprint) > properties.getMaxHammingDistance()) {
             return false;
         }
@@ -285,13 +224,6 @@ public class SemanticCacheService {
         }
         final int diff = Math.abs(other - tokens);
         return diff * 5 <= Math.max(other, tokens);
-    }
-
-    private void purgeExpired(final Deque<Entry> bucket, final long now) {
-        while (!bucket.isEmpty() && bucket.peekFirst().expireAt() <= now) {
-            bucket.removeFirst();
-            totalEntries.decrementAndGet();
-        }
     }
 
     private long ttlMillis() {
@@ -385,16 +317,5 @@ public class SemanticCacheService {
         } catch (NoSuchAlgorithmException ex) {
             return value.hashCode();
         }
-    }
-
-    /**
-     * 一条缓存记录.
-     *
-     * @param fingerprint SimHash 指纹
-     * @param tokens      3-gram 数量
-     * @param response    缓存值
-     * @param expireAt    过期时刻（epoch millis）
-     */
-    record Entry(long fingerprint, int tokens, Object response, long expireAt) {
     }
 }
