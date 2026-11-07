@@ -56,3 +56,25 @@ export type DashboardMetricsPayload = DashboardMetrics
 export const getDashboardMetrics = () => {
   return request.get<RouterResponse<DashboardMetricsPayload>>('/dashboard/metrics')
 }
+
+/**
+ * 网关价值概览（GET /api/monitoring/value-summary）的响应体。
+ *
+ * backendP95 的值是每个实例的**最大**耗时（毫秒），不是精确 P95 分位 ——
+ * 后端用 Timer.max 近似，UI 文案不要写成「P95」。
+ */
+export interface ValueSummaryPayload {
+  semanticCacheHits: number
+  semanticCacheMisses: number
+  /** 0~1；无流量时为 0（不是 NaN） */
+  semanticCacheHitRate: number
+  savedUpstreamCalls: number
+  guardRedactions: number
+  guardAborts: number
+  /** 实例标识 → 最大耗时（毫秒） */
+  backendP95: Record<string, number>
+}
+
+export const getValueSummary = () => {
+  return request.get<RouterResponse<ValueSummaryPayload>>('/monitoring/value-summary')
+}
