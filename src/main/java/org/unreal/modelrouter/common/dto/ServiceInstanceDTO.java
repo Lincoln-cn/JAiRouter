@@ -65,6 +65,23 @@ public final class ServiceInstanceDTO {
      * 实例级别适配器配置（可选，覆盖服务级别配置）
      */
     private String adapter;
+    /**
+     * 该实例是否解析出一个**已注册**的适配器。
+     *
+     * <p>为 {@code false} 时请求会在转发阶段失败（502），而端口探测仍然通 ——
+     * 这是 #1004 描述的「实例健康但调用全挂」的可观测面。</p>
+     *
+     * @since v3.7.4
+     */
+    private Boolean adapterResolved;
+
+    /**
+     * 适配器未解析时的说明（给界面直接展示），解析正常时为 {@code null}。
+     *
+     * @since v3.7.4
+     */
+    private String adapterWarning;
+
 
     /**
      * 自定义请求头配置
