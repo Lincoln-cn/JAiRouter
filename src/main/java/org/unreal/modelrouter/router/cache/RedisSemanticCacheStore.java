@@ -48,8 +48,6 @@ public final class RedisSemanticCacheStore implements SemanticCacheStore {
     private final SemanticCacheProperties properties;
     private final RecordContentCipher cipher;
 
-    /** 各 scope 的条目 UUID → 写入时刻（本地序，仅用于容量淘汰的「最旧」判定参考）。 */
-    private final ConcurrentHashMap<String, ConcurrentHashMap<String, Long>> localOrder = new ConcurrentHashMap<>();
 
     public RedisSemanticCacheStore(
             final ReactiveRedisTemplate<String, String> redisTemplate,
@@ -94,7 +92,6 @@ public final class RedisSemanticCacheStore implements SemanticCacheStore {
             final String key = buildKey(scope);
             final String field = UUID.randomUUID().toString();
             redisTemplate.opsForHash().put(key, field, encode(entry)).block(timeout());
-            localOrder.computeIfAbsent(scope, k -> new ConcurrentHashMap<>()).put(field, System.currentTimeMillis());
             // 整键 TTL 兜底（条目级过期仍以 expireAt 为准）
             redisTemplate.expire(key, ttlSeconds()).block(timeout());
             evictOverCapacity(scope, key);
@@ -111,11 +108,9 @@ public final class RedisSemanticCacheStore implements SemanticCacheStore {
                 for (final String key : scanKeys(KEY_PREFIX + "*")) {
                     removed += countAndDelete(key);
                 }
-                localOrder.clear();
                 return removed;
             }
             final String key = buildKey(scope);
-            localOrder.remove(scope);
             return countAndDelete(key);
         } catch (RuntimeException ex) {
             log.warn("语义缓存 Redis 清除失败，按空操作处理: {}", ex.toString());
@@ -132,7 +127,6 @@ public final class RedisSemanticCacheStore implements SemanticCacheStore {
             for (final String key : scanKeys(pattern)) {
                 removed += countAndDelete(key);
             }
-            localOrder.keySet().removeIf(scope -> SemanticCacheScope.belongsToTenant(scope, apiKeyId));
             return removed;
         } catch (RuntimeException ex) {
             log.warn("语义缓存 Redis 租户清除失败，按空操作处理: {}", ex.toString());
@@ -164,13 +158,14 @@ public final class RedisSemanticCacheStore implements SemanticCacheStore {
         if (raw == null || raw.size() <= limit) {
             return;
         }
-        // 按写入时刻淘汰最旧（本地序优先，缺失时退化为 field 字典序）
-        final ConcurrentHashMap<String, Long> order = localOrder.get(scope);
+        // 按条目自身 expireAt 升序淘汰最旧（expireAt=写入时刻+固定 TTL ⇒ 越小越旧；
+        // 判据在条目自身、跨进程一致，不依赖任何进程内状态），相同时按 field 字典序稳定定序
         final List<Map.Entry<Object, Object>> sorted = new ArrayList<>(raw);
         sorted.sort((a, b) -> {
-            final long ta = order == null ? 0L : order.getOrDefault(String.valueOf(a.getKey()), 0L);
-            final long tb = order == null ? 0L : order.getOrDefault(String.valueOf(b.getKey()), 0L);
-            return Long.compare(ta, tb);
+            final long ta = expireOf(a.getValue());
+            final long tb = expireOf(b.getValue());
+            final int byTime = Long.compare(ta, tb);
+            return byTime != 0 ? byTime : String.valueOf(a.getKey()).compareTo(String.valueOf(b.getKey()));
         });
         int overflow = raw.size() - limit;
         final List<Object> fields = new ArrayList<>(overflow);
@@ -178,8 +173,15 @@ public final class RedisSemanticCacheStore implements SemanticCacheStore {
             fields.add(sorted.get(i).getKey());
         }
         redisTemplate.opsForHash().remove(key, fields.toArray()).block(timeout());
-        if (order != null) {
-            fields.forEach(f -> order.remove(String.valueOf(f)));
+    }
+
+    /** 解出条目的 expireAt 供淘汰排序；解不出按 0（最旧，优先淘汰）。 */
+    private long expireOf(final Object encoded) {
+        try {
+            final SemanticCacheEntry entry = decode(String.valueOf(encoded));
+            return entry == null ? 0L : entry.expireAt();
+        } catch (RuntimeException ex) {
+            return 0L;
         }
     }
 
