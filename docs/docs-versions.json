@@ -1168,10 +1168,10 @@
     },
     "docs/en/troubleshooting/performance.md": {
       "FilePath": "docs/en/troubleshooting/performance.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-11-07T13:07:04.060853",
-      "ContentHash": "cf50af9ac9c69807",
-      "GitCommit": "a52460b9",
+      "Version": "1.0.10",
+      "LastModified": "2026-11-07T17:22:49.431879",
+      "ContentHash": "5287d1227cf57c35",
+      "GitCommit": "e4149f98",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2327,10 +2327,10 @@
     },
     "docs/zh/troubleshooting/performance.md": {
       "FilePath": "docs/zh/troubleshooting/performance.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-11-07T13:07:04.855021",
-      "ContentHash": "af0eaa8eecebaffe",
-      "GitCommit": "a52460b9",
+      "Version": "1.0.10",
+      "LastModified": "2026-11-07T17:22:50.373898",
+      "ContentHash": "820e512b96c0ce81",
+      "GitCommit": "e4149f98",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -7234,7 +7234,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-07T16:47:24.970335",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/troubleshooting/performance.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-07T17:22:49.431891",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/troubleshooting/performance.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-07T17:22:50.373909",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-07T16:47:25.133559"
+  "last_updated": "2026-11-07T17:22:50.374442"
 }
