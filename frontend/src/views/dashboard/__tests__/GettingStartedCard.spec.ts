@@ -40,8 +40,8 @@ describe('GettingStartedCard', () => {
   })
 
   it('实例与密钥都没有时，两步都标为待办', async () => {
-    getServiceStats.mockResolvedValue({ data: { totalInstances: 0 } })
-    getApiKeys.mockResolvedValue({ data: { keys: [] } })
+    getServiceStats.mockResolvedValue({ data: { data: { totalInstances: 0 } } })
+    getApiKeys.mockResolvedValue({ items: [] })
     const wrapper = mountCard()
     await flush()
     expect(wrapper.text()).toContain('dashboard.gsStepInstance')
@@ -52,11 +52,11 @@ describe('GettingStartedCard', () => {
   })
 
   it('实例与密钥齐备时显示「可以接入」与 curl 示例', async () => {
-    getServiceStats.mockResolvedValue({ data: { totalInstances: 3 } })
-    getApiKeys.mockResolvedValue({ data: { keys: [{ id: 'k1' }] } })
+    getServiceStats.mockResolvedValue({ data: { data: { totalInstances: 3 } } })
+    getApiKeys.mockResolvedValue({ items: [{ id: 'k1' }] })
     const wrapper = mountCard()
     await flush()
-    expect(wrapper.text()).toContain('dashboard.gsAllDone')
+    expect(wrapper.text()).toContain('dashboard.gsTitleDone')
     expect(wrapper.text()).toContain('dashboard.gsCurlHint')
     expect(wrapper.text()).toContain('/v1/chat/completions')
     // 完成态下不再出现跳转动作

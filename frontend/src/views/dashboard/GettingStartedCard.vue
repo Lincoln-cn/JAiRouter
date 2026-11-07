@@ -113,10 +113,8 @@ onMounted(async () => {
     getServiceStats().catch(() => null),
     getApiKeys().catch(() => null),
   ])
-  const payload: any = (stats as any)?.data ?? stats
-  instanceCount.value = payload?.totalInstances ?? 0
-  const list: any = (keys as any)?.data ?? keys
-  apiKeyCount.value = list?.keys?.length ?? list?.items?.length ?? 0
+  instanceCount.value = stats?.data?.data?.totalInstances ?? 0
+  apiKeyCount.value = keys?.items?.length ?? 0
   loading.value = false
 })
 </script>
