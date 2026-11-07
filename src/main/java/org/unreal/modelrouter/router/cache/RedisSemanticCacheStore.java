@@ -147,7 +147,7 @@ public final class RedisSemanticCacheStore implements SemanticCacheStore {
             for (final String key : scanKeys(KEY_PREFIX + "*")) {
                 final Long len = redisTemplate.opsForHash().size(key).block(timeout());
                 if (len != null) {
-                    total += len;
+                    total += len.intValue(); // 显式窄化，避免复合赋值隐式截断（CodeQL 告警）
                 }
             }
             return total;
