@@ -568,7 +568,7 @@ GitHub Release 的 **title 只用版本号**（`v3.7.3`），**副标题写在�
 
 - 分节一律用 `##`，不要 `###` / `####` 混用。
 - 结尾三段（升级提示 / 镜像 / changelog 链接）每版都要有。
-- 骨架用 `python scripts/release/release.py notes --version 3.7.3 --write` 生成；`tag` 子命令会校验首行是 `# `，不合规直接拒绝。
+- 骨架用 `python scripts/release/release.py notes --version 3.7.3 --write` 生成；`tag` 子命令会校验首行是井号加空格（`#` 后跟一个空格），不合规直接拒绝。
 - **不要把 changelog 条目直接当发布说明**：changelog 给查细节的人看，发布说明给「要不要升级」的人看。
 
 

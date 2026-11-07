@@ -41,12 +41,9 @@ monitoring:
 ```
 
 #### 基准测试结果
-```bash
-# 用仓库自带的压测器（先起服务与 mock 上游，步骤见 troubleshooting/performance.md）
-node scripts/perf/loadtest.mjs \
-  --url http://127.0.0.1:8080/v1/chat/completions \
-  --api-key "$API_KEY" --model qwen3:4b --concurrency 50 --duration 20
-```
+压测器（k6 / wrk / jmeter）不属于本仓依赖，用你惯用的那个即可；要点是**固定并发、
+固定时长、上游延迟可忽略**，否则量到的是上游而不是网关。压测前的准备与一次基线记录见
+[性能调优](../troubleshooting/performance.md)。
 
 指标记录是内存操作，本仓也没有「整体关掉监控再跑一遍」的开关，因此**这里不给出监控对吞吐的影响百分比** —— 那种数字要么是示意值、要么只对某个版本成立。要判读实测结果，见[性能调优](../troubleshooting/performance.md)的基线记录与「容量饱和面指标」一节。
 
@@ -590,16 +587,9 @@ def analyze_performance(baseline_file, monitoring_file):
 ### 持续性能监控
 
 #### 1. 性能回归检测
-```yaml
-# 在 CI/CD 中添加性能检查
-- name: Performance Regression Test
-  run: |
-    ./scripts/performance-test.sh
-    if [ $PERFORMANCE_IMPACT -gt 10 ]; then
-      echo "性能影响超过 10%，构建失败"
-      exit 1
-    fi
-```
+本仓没有内置的性能回归脚本。可用的做法是：在 CI 里跑一次压测，把结果与
+上一次的基线比，超过阈值就失败 —— 工具与阈值都由你的流水线决定，仓库只提供
+`jairouter.*` 指标（见上）作为比对口径。
 
 #### 2. 性能趋势监控
 ```promql

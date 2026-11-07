@@ -565,7 +565,7 @@ Full changelog: [changelog](https://github.com/Lincoln-cn/JAiRouter/blob/master/
 - Use `##` for every section; do not mix `###` / `####`.
 - The last three blocks (upgrade notes / images / changelog link) are required in every release.
 - Generate the skeleton with `python scripts/release/release.py notes --version 3.7.3 --write`; the `tag` subcommand
-  rejects a notes file whose first line is not `# `.
+  rejects a notes file whose first line is not a leading hash followed by a space.
 - **Never paste a changelog entry as the release body**: the changelog is for people checking details, the release
   notes are for people deciding whether to upgrade.
 
