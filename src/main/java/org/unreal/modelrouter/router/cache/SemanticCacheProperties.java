@@ -174,4 +174,58 @@ public class SemanticCacheProperties {
     public void setAllowNonDeterministic(final boolean allowNonDeterministic) {
         this.allowNonDeterministic = allowNonDeterministic;
     }
+
+    /**
+     * Redis 共享后端配置（issue #1002）。
+     *
+     * <p>开启后 L2/L3 的候选集存入 Redis（多副本共享，命中率不再按副本数摊薄）；
+     * 关闭（默认）保持进程内内存后端。该开关已登记进
+     * {@code MultiReplicaSharedStateGate}：多副本部署且未开启时会给出告警。</p>
+     */
+    private final Redis redis = new Redis();
+
+    public Redis getRedis() {
+        return redis;
+    }
+
+    /**
+     * Redis 后端子配置（{@code jairouter.semantic-cache.redis.*}）。
+     *
+     * @since v3.8.0
+     */
+    public static class Redis {
+
+        /** 是否启用 Redis 共享后端（多副本部署时建议开启）。 */
+        private boolean enabled = false;
+
+        /** 单次 Redis 操作的等待上限（同步桥接 block 的超时）。 */
+        private java.time.Duration timeout = java.time.Duration.ofMillis(200);
+
+        /** 按租户清除时 SCAN 的每批数量（禁用 KEYS，走 SCAN）。 */
+        private int scanCount = 100;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(final boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public java.time.Duration getTimeout() {
+            return timeout;
+        }
+
+        public void setTimeout(final java.time.Duration timeout) {
+            this.timeout = timeout;
+        }
+
+        public int getScanCount() {
+            return scanCount;
+        }
+
+        public void setScanCount(final int scanCount) {
+            this.scanCount = scanCount;
+        }
+    }
 }
