@@ -91,8 +91,21 @@ public class CircuitBreakerAdminService {
      * @param reason 操作者备注（可为空），仅写入日志，不落库
      * @return 重置结果；该实例当前没有熔断器时返回空 Mono（控制器据此回 404）
      */
-    public Mono<CircuitBreakerResetResult> reset(final String instanceId, final String reason) {
-        Optional<ServiceInstanceEntity> entity = serviceInstanceRepository.findByInstanceId(instanceId);
+    public Mono<CircuitBreakerResetResult> reset(final String rawInstanceId, final String reason) {
+        // #1009：对外两套实例标识 —— 管理 API 的 instanceId 是数据库主键的字符串形式，
+        // 而熔断器的键是 service_instance.instance_id 里的 UUID。这里先按 UUID 找，
+        // 找不到再把它当主键反查一次，两种传参都能复位，避免调用方拿到「没有记录」。
+        String candidateId = rawInstanceId;
+        Optional<ServiceInstanceEntity> entity = serviceInstanceRepository.findByInstanceId(candidateId);
+        if (entity.isEmpty()) {
+            Optional<String> resolved = resolveInstanceIdFromPrimaryKey(candidateId);
+            if (resolved.isPresent()) {
+                candidateId = resolved.get();
+                entity = serviceInstanceRepository.findByInstanceId(candidateId);
+            }
+        }
+        // 下面要进 lambda，必须 final
+        final String instanceId = candidateId;
         CircuitBreaker.State previousState = circuitBreakerManager.resetCircuitBreakerInPlace(instanceId);
         if (previousState == null) {
             return Mono.empty();
@@ -112,6 +125,26 @@ public class CircuitBreakerAdminService {
                     log.warn("手动重置后删除持久化状态失败: instanceId={}, error={}", instanceId, error.getMessage());
                     return Mono.just(resultOf(instanceId, instanceName, serviceType, previousState, false));
                 });
+    }
+
+    /**
+     * #1009：把数据库主键（纯数字）解析成 service_instance.instance_id 里的 UUID.
+     *
+     * @param maybePrimaryKey 可能是主键的字符串
+     * @return 对应的实例 UUID；不是数字、或该主键不存在、或该行没有 instance_id 时为空
+     */
+    private Optional<String> resolveInstanceIdFromPrimaryKey(final String maybePrimaryKey) {
+        String trimmed = maybePrimaryKey == null ? "" : maybePrimaryKey.trim();
+        if (trimmed.isEmpty() || !trimmed.chars().allMatch(Character::isDigit)) {
+            return Optional.empty();
+        }
+        try {
+            return serviceInstanceRepository.findById(Long.parseLong(trimmed))
+                    .map(ServiceInstanceEntity::getInstanceId)
+                    .filter(uuid -> uuid != null && !uuid.isBlank());
+        } catch (NumberFormatException ex) {
+            return Optional.empty();
+        }
     }
 
     /**
