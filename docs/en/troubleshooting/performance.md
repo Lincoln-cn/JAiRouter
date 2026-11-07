@@ -24,6 +24,16 @@ This document provides diagnostic methods and optimization strategies for JAiRou
 | **Resource Usage** | Memory Usage | < 80% | > 90% |
 | **Connections** | Active Connections | < 1000 | > 2000 |
 
+> **Item-by-item correspondence with the recorded baselines** (issue #944 scope close-out): the table above is a **target**; the baseline records in the "Measurement method (reproducible)" section below cover some of these metrics. Anything not marked "measured" has **no corresponding measurement** in this repository:
+>
+> - **P95 response time**: measured — see the p50/p95/p99 table in "Recorded baseline (2026-11-01)" (non-streaming, DEBUG off, mock upstream, single machine).
+> - **RPS**: measured — single-machine non-streaming saturation at about **370–390 RPS**; streaming has its own "Streaming (SSE) baseline (2026-11-02)".
+> - **4xx/5xx error rate**: not measured (the baseline uses a mock upstream that always succeeds); observe against the thresholds above in production.
+> - **CPU usage**: partially measured (JVM `process_cpu_usage` at about 0.18 cores during the baseline; in the PG scenario the bottleneck was the database container); **memory usage** not measured.
+> - **Active connections**: not measured; the threshold is an empirical value.
+>
+> Load-test tooling and thresholds belong to your pipeline (load-test scripts are not distributed with this repository, see issue #1017); the measurement method and baseline numbers in this repository's documentation are authoritative.
+
 ### Monitoring Metric Collection
 
 🔑 **Admin credentials are required****: the `/actuator/**` calls below go through the **normal authentication chain** — only
@@ -611,6 +621,8 @@ echo "=== Performance testing completed ==="
 # Consider safety factor (70%)
 # Recommended actual RPS = 2000 * 0.7 = 1400
 ```
+
+> ⚠️ The formula above is **pure arithmetic** (the ideal bound of average response time × concurrency), not a capacity promise: the measured single-machine non-streaming saturation is about **370–390 RPS** (see "Recorded baseline (2026-11-01)"), an order of magnitude below the example's theoretical 2000 — the gap comes from queuing, accounting writes and connection-pool limits. **Plan capacity from the measured baseline**; the formula only shows how a degraded response time compresses throughput.
 
 ## Performance Optimization Checklist
 
