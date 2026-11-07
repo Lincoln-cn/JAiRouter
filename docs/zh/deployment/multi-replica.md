@@ -40,6 +40,7 @@
 | `jairouter.quota.distributed.enabled` | `false` | `true` | 配额计数每副本一份，放行量约为配置值 × 副本数 |
 | `jairouter.persistence.redis.enabled` | `false` | `true` | 状态持久化退坡到本机 H2/文件，不做跨节点共享 |
 | `jairouter.ratelimit.distributed.enabled` | `false` | `true` | 终端用户限流计数每副本一份，放行量约为配置值 × 副本数 |
+| `jairouter.semantic-cache.redis.enabled` | `false` | `true` | 语义缓存条目各副本独立，命中率约摊薄为单副本的 1/N |
 
 开启配额分布式计数时还需 `jairouter.quota.enabled=true`（配额功能本身的总开关）；终端用户限流另由 `jairouter.ratelimit.end-user.enabled` 控制（默认关），上表那条只决定它的计数是否跨副本共享。
 
