@@ -16,7 +16,7 @@ services:
     container_name: jairouter-demo-upstream
     working_dir: /app
     volumes:
-      - ../../scripts/perf:/app:ro
+      - ./mock-upstream.mjs:/app/mock-upstream.mjs:ro
     command: node mock-upstream.mjs
     environment:
       MOCK_PORT: 18080

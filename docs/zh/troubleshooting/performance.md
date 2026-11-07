@@ -678,12 +678,11 @@ wrk -t12 -c400 -d30s --script=post.lua http://localhost:8080/v1/chat/completions
 
 > 上面的 KPI 表是**目标**，不是实测值。这一节给出仓库自带的测量手段与一次基线记录，任何维护者都能复现。
 
-### 为什么要自备脚本
+### 压测器怎么选
 
-压测工具（k6 / wrk / jmeter）不属于本仓依赖。为了让「怎么测」不依赖个人环境，`scripts/perf/` 提供两个零依赖的 Node 脚本：
-
-- `scripts/perf/mock-upstream.mjs`：OpenAI 兼容的最小上游（`/v1/models` 探活、非流式 JSON、流式 SSE），把**上游模型延迟**从结果里剔除；
-- `scripts/perf/loadtest.mjs`：固定并发 + 固定时长的压测器，输出 RPS、p50/p95/p99 与失败样例。
+压测工具（k6 / wrk / jmeter）不属于本仓依赖，本仓也不附带压测脚本。选型只看两点：
+**上游延迟是否可忽略**（否则量到的是上游）、**是否输出 p50/p95/p99**（平均值会掩盖长尾）。
+本节保留的是「怎么测才可信」的要点与一次基线记录，命令按你所选工具的文档写即可。
 
 ### 前置：先把「护栏」关掉
 
@@ -705,21 +704,18 @@ DATABASE_URL='jdbc:h2:file:./data/perf;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_
 
 ### 命令
 
-```bash
-# 1) 上游 mock（默认 127.0.0.1:18080，20ms 延迟）
-node scripts/perf/mock-upstream.mjs
+网关按下面这样起（dev profile，三层限流关闭）；上游 mock 与压测器按上一节选型自备：
 
-# 2) 网关（dev profile，指向 mock，三层限流关闭）
+```bash
 MODEL_UPSTREAM_BASE_URL=http://127.0.0.1:18080 \
 MODEL_RATELIMIT_ENABLED=false \
 MODEL_SERVICES_CHAT_RATELIMIT_ENABLED=false \
 MODEL_SERVICES_CHAT_INSTANCES_0_RATELIMIT_ENABLED=false \
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
-
-# 3) 压测（model 用 services.yml 里的实例名）
-node scripts/perf/loadtest.mjs --url http://127.0.0.1:8080/v1/chat/completions \
-  --api-key sk-test-api-key-12345678 --model "qwen3:4b" --concurrency 50 --duration 20
 ```
+
+然后把压测器指向 `http://127.0.0.1:8080/v1/chat/completions`，`model` 用 `services.yml`
+里的实例名。
 
 ### 一次基线记录（2026-11-01）
 

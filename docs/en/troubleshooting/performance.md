@@ -683,12 +683,13 @@ By following these performance optimization guidelines, you can ensure that JAiR
 
 > The KPI table above is a **target**, not a measurement. This section documents the tooling shipped with the repository and one recorded baseline, so anyone can reproduce it.
 
-### Why the repository ships its own scripts
+### Choosing a load tester
 
-Load-testing tools (k6 / wrk / jmeter) are not project dependencies. To keep "how to measure" independent of personal setups, `scripts/perf/` contains two zero-dependency Node scripts:
-
-- `scripts/perf/mock-upstream.mjs`: a minimal OpenAI-compatible upstream (`/v1/models` probe, non-streaming JSON, streaming SSE) that removes **model latency** from the result;
-- `scripts/perf/loadtest.mjs`: a fixed-concurrency, fixed-duration load generator that reports RPS, p50/p95/p99 and sample failures.
+Load-testing tools (k6 / wrk / jmeter) are not project dependencies, and no load-test
+script ships with the repository. Two things matter when choosing one: **upstream latency
+is negligible** (otherwise you measure the upstream), and **p50/p95/p99 are reported**
+(averages hide the tail). This section keeps the "how to measure credibly" points and one
+baseline record; write the commands per your chosen tool's docs.
 
 ### Prerequisite: switch the guardrails off
 
@@ -710,21 +711,19 @@ DATABASE_URL='jdbc:h2:file:./data/perf;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_
 
 ### Commands
 
-```bash
-# 1) upstream mock (127.0.0.1:18080, 20 ms delay by default)
-node scripts/perf/mock-upstream.mjs
+Start the gateway like this (dev profile, all three rate limits off); bring your own
+upstream mock and load tester as described in the previous section:
 
-# 2) gateway (dev profile, pointed at the mock, all three rate limits off)
+```bash
 MODEL_UPSTREAM_BASE_URL=http://127.0.0.1:18080 \
 MODEL_RATELIMIT_ENABLED=false \
 MODEL_SERVICES_CHAT_RATELIMIT_ENABLED=false \
 MODEL_SERVICES_CHAT_INSTANCES_0_RATELIMIT_ENABLED=false \
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
-
-# 3) load test (`model` must match an instance name from services.yml)
-node scripts/perf/loadtest.mjs --url http://127.0.0.1:8080/v1/chat/completions \
-  --api-key sk-test-api-key-12345678 --model "qwen3:4b" --concurrency 50 --duration 20
 ```
+
+Then point the load tester at `http://127.0.0.1:8080/v1/chat/completions`, with `model`
+set to an instance name from `services.yml`.
 
 ### Recorded baseline (2026-11-01)
 

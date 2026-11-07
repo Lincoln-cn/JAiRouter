@@ -41,13 +41,10 @@ monitoring:
 ```
 
 #### Benchmark Test Results
-```bash
-# Use the bundled load generator (start the service and the mock upstream first;
-# see troubleshooting/performance.md for the steps)
-node scripts/perf/loadtest.mjs \
-  --url http://127.0.0.1:8080/v1/chat/completions \
-  --api-key "$API_KEY" --model qwen3:4b --concurrency 50 --duration 20
-```
+The load tester (k6 / wrk / jmeter) is not a dependency of this repository; use your
+usual one. What matters is **fixed concurrency, fixed duration, and negligible upstream
+latency** — otherwise you are measuring the upstream, not the gateway. Preparation and a
+baseline record are in [performance tuning](../troubleshooting/performance.md).
 
 Recording a metric is an in-memory operation, and this repository has no switch that turns monitoring off wholesale, so **no percentage is given for the throughput cost of monitoring**: such a number would either be illustrative or valid only for one version. To interpret a measurement, see the baseline and the "capacity saturation metrics" section in [Performance Tuning](../troubleshooting/performance.md).
 
@@ -591,16 +588,10 @@ def analyze_performance(baseline_file, monitoring_file):
 ### Continuous Performance Monitoring
 
 #### 1. Performance Regression Detection
-```yaml
-# Add performance check in CI/CD
-- name: Performance Regression Test
-  run: |
-    ./scripts/performance-test.sh
-    if [ $PERFORMANCE_IMPACT -gt 10 ]; then
-      echo "Performance impact exceeds 10%, build failed"
-      exit 1
-    fi
-```
+The repository ships no built-in performance-regression script. A workable approach:
+run a load test in CI, compare against the previous baseline, fail above a threshold — the
+tooling and the threshold belong to your pipeline; the repository only provides the
+`jairouter.*` metrics (above) as the comparison surface.
 
 #### 2. Performance Trend Monitoring
 ```promql
