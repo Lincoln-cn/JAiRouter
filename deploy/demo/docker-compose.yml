@@ -1,0 +1,69 @@
+# 一键演示环境（不是生产部署模板）
+#
+#   docker compose -f deploy/demo/docker-compose.yml up -d
+#   # 等约 60 秒，然后：
+#   node scripts/demo/run-demo.mjs
+#
+# 起两件东西：
+#   1. mock-upstream —— OpenAI 兼容的假上游，不调真实模型、不花钱
+#   2. jairouter      —— 网关本体，所有模型都指向 mock
+#
+# 生产部署请看 docker-compose.prod.yml 或 deploy/k8s/。
+
+services:
+  mock-upstream:
+    image: node:22-alpine
+    container_name: jairouter-demo-upstream
+    working_dir: /app
+    volumes:
+      - ../../scripts/perf:/app:ro
+    command: node mock-upstream.mjs
+    environment:
+      MOCK_PORT: 18080
+      # 容器内必须监听 0.0.0.0，否则其他容器连不上（默认是 127.0.0.1）
+      MOCK_HOST: 0.0.0.0
+      # 演示里需要有可感知的延迟，否则「缓存命中更快」看不出来
+      MOCK_DELAY_MS: 120
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:18080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - demo-network
+
+  jairouter:
+    image: sodlinken/jairouter:latest
+    container_name: jairouter-demo
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      # ⚠️ 演示专用，不要照抄到任何真实环境
+      JWT_SECRET: demo-only-secret-do-not-use-in-production-32
+      INITIAL_ADMIN_PASSWORD: DemoOnlyPassw0rd
+      # 所有模型实例都指向 mock 上游
+      MODEL_UPSTREAM_BASE_URL: http://mock-upstream:18080
+      # 内存库：每次启动都从 yml 重新初始化。用文件库会沿用上次落库的实例配置，
+      # 改了 compose 里的上游地址却不生效 —— 排查 502 时最费时间的一点。
+      DATABASE_URL: "jdbc:h2:mem:demo;DB_CLOSE_DELAY=-1"
+      # 演示里关掉限流，否则压测式演示会先撞 429
+      MODEL_RATELIMIT_ENABLED: "false"
+      MODEL_SERVICES_CHAT_RATELIMIT_ENABLED: "false"
+      LOGGING_LEVEL_ORG_UNREAL_MODELROUTER: INFO
+    depends_on:
+      mock-upstream:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 30s
+    networks:
+      - demo-network
+
+networks:
+  demo-network:
+    driver: bridge
