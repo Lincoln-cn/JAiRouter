@@ -79,6 +79,22 @@ async function models() {
   return (body?.data || []).map((m) => m.id)
 }
 
+/**
+ * 某类服务下的实例名。
+ *
+ * `/v1/models` 把所有类型混在一起列（对话、embedding、rerank、TTS、ASR、图像），
+ * 但只有对话实例能走 /v1/chat/completions —— 拿别的去对话会 404。
+ * 想知道「有几个能对话的模型」，只能问管理端。
+ */
+async function instances(type) {
+  const resp = await fetch(`${BASE}/api/config/instance/${type}`, {
+    headers: { 'X-Jairouter-Token': token },
+  })
+  if (!resp.ok) return []
+  const body = await resp.json()
+  return (body?.data || []).map((i) => i.name).filter(Boolean)
+}
+
 async function main() {
   console.log(`演示目标：${BASE}`)
   await login()
@@ -87,20 +103,28 @@ async function main() {
   // ── 1. 基础调用 ────────────────────────────────────────────────
   const list = await models()
   section(1, '基础调用', `网关暴露了 ${list.length} 个模型：${list.slice(0, 4).join(', ')}${list.length > 4 ? ' …' : ''}`)
-  const first = list.find((m) => m.startsWith('qwen')) || list[0]
+  const chatable = await instances('chat')
+  const first = chatable.find((m) => m.startsWith('qwen')) || chatable[0] || list[0]
   const r1 = await chat(first, '你好，介绍一下你自己')
   expect(`向 ${first} 发一次请求返回 200`, r1.status === 200, `HTTP ${r1.status}，耗时 ${r1.elapsed}ms`)
   console.log(`     响应片段：${r1.text.slice(0, 120)}`)
 
   // ── 2. 同一个问题打两个模型 ────────────────────────────────────
-  const second = list.find((m) => m !== first && m.startsWith('qwen')) || list[1]
+  const second = chatable.find((m) => m !== first)
   section(2, '同一问题打两个模型', '网关的价值之一：调用方不用改代码就能换模型 / 做对比')
-  const [a, b] = await Promise.all([
-    chat(first, '用一句话解释什么是 API 网关'),
-    chat(second, '用一句话解释什么是 API 网关'),
-  ])
-  expect(`两个模型都返回 200（${first} / ${second}）`, a.status === 200 && b.status === 200,
-    `${first}=${a.status}(${a.elapsed}ms) ${second}=${b.status}(${b.elapsed}ms)`)
+  if (!second) {
+    // 演示环境默认只配了一个对话模型（其余是 embedding / rerank）。
+    // 这一步说明的是「多模型并存时怎么换」，没有第二个模型就如实说没有，不判失败。
+    console.log(`  ℹ️  当前只暴露了 ${chatable.length} 个对话模型（${first}），这一步需要至少两个`)
+    console.log(`     在 services.yml 的 chat 实例列表里再加一个，重启即可；客户端代码不用改。`)
+  } else {
+    const [a, b] = await Promise.all([
+      chat(first, '用一句话解释什么是 API 网关'),
+      chat(second, '用一句话解释什么是 API 网关'),
+    ])
+    expect(`两个模型都返回 200（${first} / ${second}）`, a.status === 200 && b.status === 200,
+      `${first}=${a.status}(${a.elapsed}ms) ${second}=${b.status}(${b.elapsed}ms)`)
+  }
 
   // ── 3. 缓存命中 ────────────────────────────────────────────────
   section(3, '重复请求走缓存', '同样的问题再问一次：第二次不该打到上游')
