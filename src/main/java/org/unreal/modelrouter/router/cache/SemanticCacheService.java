@@ -80,13 +80,14 @@ public class SemanticCacheService {
     }
 
     /**
-     * 构造器（issue #1002：指定存储后端）.
+     * 构造器（issue #1002：Spring 装配入口，指定存储后端）.
      *
      * @param properties    配置面
      * @param meterRegistry 指标注册表（可为 {@code null}）
      * @param store         条目存储后端
      * @since v3.8.0
      */
+    @Autowired
     public SemanticCacheService(
             final SemanticCacheProperties properties,
             @Autowired(required = false) final MeterRegistry meterRegistry,
