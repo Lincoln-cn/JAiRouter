@@ -385,7 +385,7 @@ model:
 # 需要通过配置文件更新后重启服务
 
 # 但可以通过调整实例权重来影响负载分布
-# $ID = 该实例的数据库 id，从 GET /api/config/instance/{serviceType} 的响应里取
+# $ID = 该实例的 instanceId（UUID；v3.8.0 起的规范形态），从 GET /api/config/instance/{serviceType} 的响应里取
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
   -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
@@ -404,7 +404,7 @@ curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
 
 ```bash
 # 场景：GPU 服务器性能提升，增加权重
-# $ID = 该实例的数据库 id，从 GET /api/config/instance/{serviceType} 的响应里取
+# $ID = 该实例的 instanceId（UUID；v3.8.0 起的规范形态），从 GET /api/config/instance/{serviceType} 的响应里取
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
   -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
@@ -416,7 +416,7 @@ curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
   }'
 
 # 场景：CPU 服务器负载过高，降低权重
-# $ID = 该实例的数据库 id，从 GET /api/config/instance/{serviceType} 的响应里取
+# $ID = 该实例的 instanceId（UUID；v3.8.0 起的规范形态），从 GET /api/config/instance/{serviceType} 的响应里取
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
   -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \

@@ -867,8 +867,8 @@ const handleAddInstance = () => {
 const handleEdit = (row: ServiceInstance) => {
   dialogTitle.value = t('instance.editInstance')
   isEdit.value = true
-  // 使用数据库ID（row.id）作为instanceId
-  const dbId = row.id
+  // issue #1009：实例标识统一为 UUID（instanceId 字段）；历史数据回退数据库主键
+  const instanceUuid = row.instanceId || String(row.id)
   Object.assign(form, {
     ...row,
     // 确保使用当前激活的页签对应的服务类型，而不是实例原来的服务类型
@@ -893,8 +893,8 @@ const handleEdit = (row: ServiceInstance) => {
       timeout: 60000,
       successThreshold: 2
     },
-    // 使用数据库ID
-    instanceId: String(dbId)
+    // issue #1009：instanceId 统一为 UUID（后端双轨接受 UUID 与主键）
+    instanceId: instanceUuid
   })
   syncCustomHeadersList()
   syncTagsList()
@@ -911,11 +911,11 @@ const handleDelete = (row: ServiceInstance) => {
     try {
       // 确保使用当前激活的页签对应的服务类型
       const serviceType = activeServiceType.value;
-      // 使用数据库ID
-      const dbId = row.id
-      const response = await deleteServiceInstance(serviceType, String(dbId))
+      // issue #1009：实例标识统一为 UUID；历史数据回退数据库主键（后端双轨接受）
+      const instanceUuid = row.instanceId || String(row.id)
+      const response = await deleteServiceInstance(serviceType, instanceUuid)
       if (response.data?.success) {
-        instances.value[serviceType] = (instances.value[serviceType] || []).filter(i => i.id !== dbId)
+        instances.value[serviceType] = (instances.value[serviceType] || []).filter(i => i.id !== row.id)
         instancesCache.value[serviceType] = [...(instances.value[serviceType] || [])]
         // 同时清除试验场的缓存，让试验场下拉列表刷新
         clearCache(serviceType)
@@ -1010,7 +1010,7 @@ const currentEditServiceType = ref<string>('')
 // 打开限流器配置弹窗
 const openRateLimitConfig = (row: ServiceInstance) => {
   // 使用数据库ID
-  currentEditInstanceId.value = String(row.id)
+  currentEditInstanceId.value = row.instanceId || String(row.id)
   currentEditServiceType.value = activeServiceType.value
   rateLimitDialogTitle.value = t('instance.rateLimitConfigTitle', { name: row.name })
   // 从 row.rateLimit 中提取配置，转换为组件期望的嵌套格式
@@ -1032,7 +1032,7 @@ const openRateLimitConfig = (row: ServiceInstance) => {
 // 打开熔断器配置弹窗
 const openCircuitBreakerConfig = (row: ServiceInstance) => {
   // 使用数据库ID
-  currentEditInstanceId.value = String(row.id)
+  currentEditInstanceId.value = row.instanceId || String(row.id)
   currentEditServiceType.value = activeServiceType.value
   circuitBreakerDialogTitle.value = t('instance.circuitBreakerConfigTitle', { name: row.name })
   // 从 row.circuitBreaker 中提取配置，转换为组件期望的嵌套格式

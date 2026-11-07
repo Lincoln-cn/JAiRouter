@@ -203,7 +203,7 @@ curl -X POST http://localhost:8080/api/config/instance/chat \
   }'
 
 # 更新实例
-# $ID = 该实例的数据库 id，从 GET /api/config/instance/{serviceType} 的响应里取
+# $ID = 该实例的 instanceId（UUID；v3.8.0 起的规范形态），从 GET /api/config/instance/{serviceType} 的响应里取
 curl -X PUT http://localhost:8080/api/config/instance/chat/$ID \
   -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \

@@ -385,7 +385,7 @@ model:
 # Requires updating the configuration file and restarting the service
 
 # But instance weights can be adjusted to influence load distribution
-# $ID = the instance's database id, taken from GET /api/config/instance/{serviceType}
+# $ID = the instance's instanceId (UUID; canonical since v3.8.0), taken from GET /api/config/instance/{serviceType}
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
   -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
@@ -404,7 +404,7 @@ curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
 
 ```bash
 # Scenario: GPU server performance improved, increase weight
-# $ID = the instance's database id, taken from GET /api/config/instance/{serviceType}
+# $ID = the instance's instanceId (UUID; canonical since v3.8.0), taken from GET /api/config/instance/{serviceType}
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
   -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \
@@ -416,7 +416,7 @@ curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
   }'
 
 # Scenario: CPU server overloaded, decrease weight
-# $ID = the instance's database id, taken from GET /api/config/instance/{serviceType}
+# $ID = the instance's instanceId (UUID; canonical since v3.8.0), taken from GET /api/config/instance/{serviceType}
 curl -X PUT "http://localhost:8080/api/config/instance/chat/$ID" \
   -H "X-Jairouter-Token: $TOKEN" \
   -H "Content-Type: application/json" \

@@ -78,6 +78,7 @@ class ServiceTypeInstanceControllerTest {
 
         testInstance = ServiceInstanceDTO.builder()
                 .id(1L)
+                .instanceId("uuid-1")
                 .serviceConfigId(1L)
                 .name("instance-001")
                 .baseUrl("http://localhost:8080")
@@ -89,6 +90,10 @@ class ServiceTypeInstanceControllerTest {
                 .baseUrl("http://localhost:8080")
                 .status("active")
                 .build();
+
+        // issue #1009：实例标识双轨解析（UUID 规范形态 + 数据库主键兼容形态）
+        when(serviceInstanceManager.resolveInstanceRef(anyString()))
+                .thenReturn(Optional.of(new ServiceInstanceManager.InstanceRef(1L, "uuid-1")));
     }
 
     // ==================== 获取服务类型实例列表测试 ====================
@@ -139,19 +144,52 @@ class ServiceTypeInstanceControllerTest {
     class UpdateInstanceByServiceTypeTests {
 
         @Test
-        @DisplayName("STYPE-003: 成功更新实例配置")
+        @DisplayName("STYPE-003: 成功更新实例配置（UUID 形态）")
         void testUpdateInstanceByServiceType_success() {
             // Given
             when(serviceInstanceManager.updateInstance(anyLong(), any(CreateServiceInstanceRequest.class)))
                     .thenReturn(testInstance);
 
             // When
-            ResponseEntity<RouterResponse<ServiceInstanceDTO>> result = controller.updateInstanceByServiceType("chat", 1L, testRequest);
+            ResponseEntity<RouterResponse<ServiceInstanceDTO>> result = controller.updateInstanceByServiceType("chat", "uuid-1", testRequest);
 
             // Then
             assertEquals(HttpStatus.OK, result.getStatusCode());
             assertTrue(result.getBody().isSuccess());
-            assertEquals("1", result.getBody().getData().getInstanceId()); // deprecated method returns String
+            // issue #1009：instanceId 语义为 UUID（与 service_instance.instance_id 列一致）
+            assertEquals("uuid-1", result.getBody().getData().getInstanceId());
+        }
+
+        @Test
+        @DisplayName("STYPE-003b: 数据库主键形态（历史调用方）仍然被接受")
+        void testUpdateInstanceByServiceType_legacyPrimaryKeyForm() {
+            // Given
+            when(serviceInstanceManager.updateInstance(anyLong(), any(CreateServiceInstanceRequest.class)))
+                    .thenReturn(testInstance);
+
+            // When
+            ResponseEntity<RouterResponse<ServiceInstanceDTO>> result = controller.updateInstanceByServiceType("chat", "1", testRequest);
+
+            // Then
+            assertEquals(HttpStatus.OK, result.getStatusCode());
+            assertTrue(result.getBody().isSuccess());
+        }
+
+        @Test
+        @DisplayName("STYPE-003c: 实例标识解析失败 ⇒ 404（不再 NPE/500）")
+        void testUpdateInstanceByServiceType_instanceNotFound() {
+            // Given
+            when(serviceInstanceManager.resolveInstanceRef("missing-uuid")).thenReturn(Optional.empty());
+
+            // When
+            ResponseEntity<RouterResponse<ServiceInstanceDTO>> result =
+                    controller.updateInstanceByServiceType("chat", "missing-uuid", testRequest);
+
+            // Then
+            assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
+            assertFalse(result.getBody().isSuccess());
+            assertEquals(ErrorCode.NOT_FOUND.code(), result.getBody().getErrorCode());
+            verify(serviceInstanceManager, never()).updateInstance(anyLong(), any(CreateServiceInstanceRequest.class));
         }
     }
 
@@ -211,7 +249,7 @@ class ServiceTypeInstanceControllerTest {
             doNothing().when(serviceInstanceManager).deleteInstance(1L);
 
             // When
-            ResponseEntity<RouterResponse<Void>> result = controller.deleteInstanceByServiceType("chat", 1L);
+            ResponseEntity<RouterResponse<Void>> result = controller.deleteInstanceByServiceType("chat", "uuid-1");
 
             // Then
             assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -230,7 +268,7 @@ class ServiceTypeInstanceControllerTest {
         void testGetRateLimitConfig_success() {
             // Given
             InstanceRateLimitDTO config = InstanceRateLimitDTO.builder()
-                    .instanceId(1L)
+                    .instanceId("uuid-1")
                     .enabled(true)
                     .capacity(100)
                     .rate(10)
@@ -238,7 +276,7 @@ class ServiceTypeInstanceControllerTest {
             when(serviceInstanceManager.getRateLimitConfig(1L)).thenReturn(Optional.of(config));
 
             // When
-            ResponseEntity<RouterResponse<InstanceRateLimitDTO>> result = controller.getRateLimitConfig("chat", 1L);
+            ResponseEntity<RouterResponse<InstanceRateLimitDTO>> result = controller.getRateLimitConfig("chat", "uuid-1");
 
             // Then
             assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -253,7 +291,7 @@ class ServiceTypeInstanceControllerTest {
             when(serviceInstanceManager.getRateLimitConfig(1L)).thenReturn(Optional.empty());
 
             // When
-            ResponseEntity<RouterResponse<InstanceRateLimitDTO>> result = controller.getRateLimitConfig("chat", 1L);
+            ResponseEntity<RouterResponse<InstanceRateLimitDTO>> result = controller.getRateLimitConfig("chat", "uuid-1");
 
             // Then
             assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -273,7 +311,7 @@ class ServiceTypeInstanceControllerTest {
         void testSaveRateLimitConfig_success() {
             // Given
             InstanceRateLimitDTO config = InstanceRateLimitDTO.builder()
-                    .instanceId(1L)
+                    .instanceId("uuid-1")
                     .enabled(true)
                     .capacity(200)
                     .rate(20)
@@ -282,7 +320,7 @@ class ServiceTypeInstanceControllerTest {
                     .thenReturn(config);
 
             // When
-            ResponseEntity<RouterResponse<InstanceRateLimitDTO>> result = controller.saveRateLimitConfig("chat", 1L, config);
+            ResponseEntity<RouterResponse<InstanceRateLimitDTO>> result = controller.saveRateLimitConfig("chat", "uuid-1", config);
 
             // Then
             assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -302,7 +340,7 @@ class ServiceTypeInstanceControllerTest {
         void testGetCircuitBreakerConfig_success() {
             // Given
             InstanceCircuitBreakerDTO config = InstanceCircuitBreakerDTO.builder()
-                    .instanceId(1L)
+                    .instanceId("uuid-1")
                     .enabled(true)
                     .failureThreshold(5)
                     .timeout(60000)
@@ -310,7 +348,7 @@ class ServiceTypeInstanceControllerTest {
             when(serviceInstanceManager.getCircuitBreakerConfig(1L)).thenReturn(Optional.of(config));
 
             // When
-            ResponseEntity<RouterResponse<InstanceCircuitBreakerDTO>> result = controller.getCircuitBreakerConfig("chat", 1L);
+            ResponseEntity<RouterResponse<InstanceCircuitBreakerDTO>> result = controller.getCircuitBreakerConfig("chat", "uuid-1");
 
             // Then
             assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -325,7 +363,7 @@ class ServiceTypeInstanceControllerTest {
             when(serviceInstanceManager.getCircuitBreakerConfig(1L)).thenReturn(Optional.empty());
 
             // When
-            ResponseEntity<RouterResponse<InstanceCircuitBreakerDTO>> result = controller.getCircuitBreakerConfig("chat", 1L);
+            ResponseEntity<RouterResponse<InstanceCircuitBreakerDTO>> result = controller.getCircuitBreakerConfig("chat", "uuid-1");
 
             // Then
             assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -345,7 +383,7 @@ class ServiceTypeInstanceControllerTest {
         void testSaveCircuitBreakerConfig_success() {
             // Given
             InstanceCircuitBreakerDTO config = InstanceCircuitBreakerDTO.builder()
-                    .instanceId(1L)
+                    .instanceId("uuid-1")
                     .enabled(true)
                     .failureThreshold(10)
                     .timeout(30000)
@@ -354,7 +392,7 @@ class ServiceTypeInstanceControllerTest {
                     .thenReturn(config);
 
             // When
-            ResponseEntity<RouterResponse<InstanceCircuitBreakerDTO>> result = controller.saveCircuitBreakerConfig("chat", 1L, config);
+            ResponseEntity<RouterResponse<InstanceCircuitBreakerDTO>> result = controller.saveCircuitBreakerConfig("chat", "uuid-1", config);
 
             // Then
             assertEquals(HttpStatus.OK, result.getStatusCode());

@@ -107,8 +107,8 @@ config/
 |-----------|--------|------|-------|
 | List instances | GET | `/api/config/instance/{serviceType}` | Every instance of the service type, as a plain array (no paging) |
 | Add instance | POST | `/api/config/instance/{serviceType}` | Body = `CreateServiceInstanceRequest` |
-| Update instance | PUT | `/api/config/instance/{serviceType}/{instanceId}` | `{instanceId}` = the **database id** returned by the list/add call |
-| Delete instance | DELETE | `/api/config/instance/{serviceType}/{instanceId}` | Same database id |
+| Update instance | PUT | `/api/config/instance/{serviceType}/{instanceId}` | `{instanceId}` = the **`instanceId` field (UUID, canonical since issue #1009)** returned by the list/add call; the **database id** form is still accepted for v2.5~v3.7 callers |
+| Delete instance | DELETE | `/api/config/instance/{serviceType}/{instanceId}` | Same identifier (`instanceId` or database id) |
 
 **Authentication.** These are management endpoints: send the JWT in the **`X-Jairouter-Token`** header
 (configurable via `jairouter.security.jwt.jwt-header`) — **not** `Authorization: Bearer`. Without it every

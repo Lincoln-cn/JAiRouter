@@ -251,11 +251,55 @@ public class ServiceInstanceManager {
     // ==================== 限流器配置管理 ====================
 
     /**
+     * 实例标识解析结果：数据库主键（内部关联用）+ 稳定 UUID（对外标识）。
+     */
+    public record InstanceRef(Long entityId, String instanceUuid) {
+    }
+
+    /**
+     * 把调用方传入的实例标识解析为 {@link InstanceRef}。双轨兼容（issue #1009）：
+     * <ul>
+     *   <li>UUID —— 与 {@code service_instance.instance_id} 列比对（v3.8.0 起的规范形态）；</li>
+     *   <li>纯数字 —— 数据库主键（v2.5~v3.7 的历史 API 形态），保留兼容旧调用方。</li>
+     * </ul>
+     * 历史数据 {@code instance_id} 为空时 {@code instanceUuid} 回退为主键的字符串形式。
+     */
+    public Optional<InstanceRef> resolveInstanceRef(final String rawInstanceId) {
+        if (rawInstanceId == null || rawInstanceId.trim().isEmpty()) {
+            return Optional.empty();
+        }
+        final String trimmed = rawInstanceId.trim();
+        final Optional<ServiceInstanceEntity> entity;
+        if (trimmed.chars().allMatch(Character::isDigit)) {
+            final long id;
+            try {
+                id = Long.parseLong(trimmed);
+            } catch (NumberFormatException e) {
+                return Optional.empty();
+            }
+            entity = serviceInstanceRepository.findById(id);
+        } else {
+            entity = serviceInstanceRepository.findByInstanceId(trimmed);
+        }
+        return entity.map(e -> new InstanceRef(e.getId(),
+                e.getInstanceId() != null ? e.getInstanceId() : String.valueOf(e.getId())));
+    }
+
+    /**
+     * 主键 → 对外 UUID（历史 instance_id 为空时回退主键字符串）。
+     */
+    private String instanceUuidOf(final Long entityId) {
+        return serviceInstanceRepository.findById(entityId)
+                .map(e -> e.getInstanceId() != null ? e.getInstanceId() : String.valueOf(e.getId()))
+                .orElse(String.valueOf(entityId));
+    }
+
+    /**
      * 获取实例的限流器配置
      */
     public Optional<InstanceRateLimitDTO> getRateLimitConfig(final Long instanceId) {
         return rateLimitRepository.findByInstanceId(instanceId)
-                .map(this::convertRateLimitToDTO);
+                .map(rateLimit -> convertRateLimitToDTO(rateLimit, instanceUuidOf(instanceId)));
     }
 
     /**
@@ -305,7 +349,7 @@ public class ServiceInstanceManager {
 
         InstanceRateLimitEntity saved = rateLimitRepository.save(entity);
         log.info("Saved rate limit config for instance: {}", instanceId);
-        return convertRateLimitToDTO(saved);
+        return convertRateLimitToDTO(saved, instanceUuidOf(instanceId));
     }
 
     /**
@@ -324,7 +368,7 @@ public class ServiceInstanceManager {
      */
     public Optional<InstanceCircuitBreakerDTO> getCircuitBreakerConfig(final Long instanceId) {
         return circuitBreakerRepository.findByInstanceId(instanceId)
-                .map(this::convertCircuitBreakerToDTO);
+                .map(cb -> convertCircuitBreakerToDTO(cb, instanceUuidOf(instanceId)));
     }
 
     /**
@@ -367,16 +411,20 @@ public class ServiceInstanceManager {
         log.info("Saved circuit breaker config for instance: {}", instanceId);
 
         // 重置内存中的熔断器状态
-        serviceInstanceRepository.findById(instanceId).ifPresent(inst -> {
+        String parentUuid = String.valueOf(instanceId);
+        var instOpt = serviceInstanceRepository.findById(instanceId);
+        if (instOpt.isPresent()) {
+            var inst = instOpt.get();
             // 使用 entity.getInstanceId()（UUID）而不是数据库 ID
             String circuitBreakerKey = inst.getInstanceId() != null ? inst.getInstanceId() : String.valueOf(instanceId);
+            parentUuid = circuitBreakerKey;
             String instUrl = inst.getBaseUrl() + inst.getPath();
             circuitBreakerManager.resetCircuitBreaker(circuitBreakerKey, instUrl);
             log.info("Reset circuit breaker state after config update: dbId={}, instanceId={}, url={}", 
                     instanceId, circuitBreakerKey, instUrl);
-        });
+        }
 
-        return convertCircuitBreakerToDTO(saved);
+        return convertCircuitBreakerToDTO(saved, parentUuid);
     }
 
     /**
@@ -421,8 +469,11 @@ public class ServiceInstanceManager {
     }
 
     private ServiceInstanceDTO convertToDTO(final ServiceInstanceEntity entity) {
+        // issue #1009：instanceId 统一为 UUID（与 service_instance.instance_id 列一致）；
+        // 历史数据 instance_id 为空时回退为主键字符串（与运行时熔断器键的回退形态一致）。
         ServiceInstanceDTO dto = ServiceInstanceDTO.builder()
                 .id(entity.getId())
+                .instanceId(entity.getInstanceId() != null ? entity.getInstanceId() : String.valueOf(entity.getId()))
                 .serviceConfigId(entity.getServiceConfigId())
                 .name(entity.getInstanceName())
                 .baseUrl(entity.getBaseUrl())
@@ -442,19 +493,19 @@ public class ServiceInstanceManager {
 
         // 加载限流器配置
         rateLimitRepository.findByInstanceId(entity.getId())
-                .ifPresent(rateLimit -> dto.setRateLimit(convertRateLimitToDTO(rateLimit)));
+                .ifPresent(rateLimit -> dto.setRateLimit(convertRateLimitToDTO(rateLimit, dto.getInstanceId())));
 
         // 加载熔断器配置
         circuitBreakerRepository.findByInstanceId(entity.getId())
-                .ifPresent(cb -> dto.setCircuitBreaker(convertCircuitBreakerToDTO(cb)));
+                .ifPresent(cb -> dto.setCircuitBreaker(convertCircuitBreakerToDTO(cb, dto.getInstanceId())));
 
         return dto;
     }
 
-    private InstanceRateLimitDTO convertRateLimitToDTO(final InstanceRateLimitEntity entity) {
+    private InstanceRateLimitDTO convertRateLimitToDTO(final InstanceRateLimitEntity entity, final String instanceUuid) {
         return InstanceRateLimitDTO.builder()
                 .id(entity.getId())
-                .instanceId(entity.getInstanceId())
+                .instanceId(instanceUuid)
                 .enabled(entity.getEnabled())
                 .algorithm(entity.getAlgorithm())
                 .capacity(entity.getCapacity())
@@ -465,10 +516,11 @@ public class ServiceInstanceManager {
                 .build();
     }
 
-    private InstanceCircuitBreakerDTO convertCircuitBreakerToDTO(final InstanceCircuitBreakerEntity entity) {
+    private InstanceCircuitBreakerDTO convertCircuitBreakerToDTO(final InstanceCircuitBreakerEntity entity,
+            final String instanceUuid) {
         return InstanceCircuitBreakerDTO.builder()
                 .id(entity.getId())
-                .instanceId(entity.getInstanceId())
+                .instanceId(instanceUuid)
                 .enabled(entity.getEnabled())
                 .failureThreshold(entity.getFailureThreshold())
                 .timeout(entity.getTimeoutMs())

@@ -623,8 +623,9 @@ POST /api/v1/circuit-breaker-monitor/instances/{instanceId}/reset # config:circu
 POST /api/v1/circuit-breaker-monitor/instances/reset              # config:circuitbreaker:write
 ```
 
-这里的 `{instanceId}` 是**运行时实例 UUID**（`instanceId` 列），不是上文更新/删除所用的数据库
-`Long` 主键。重置会把状态机置为 `CLOSED`、计数清零、写入一条 `MANUAL_RESET` 历史，并删除
+这里的 `{instanceId}` 是**运行时实例 UUID**（`instanceId` 列）。自 issue #1009 起，所有
+`{instanceId}` 路径参数统一以该 UUID 为规范形态，数据库 `Long` 主键形态仅作为兼容路径保留。
+重置会把状态机置为 `CLOSED`、计数清零、写入一条 `MANUAL_RESET` 历史，并删除
 持久化状态，避免重启后恢复回 `OPEN`。单个重置返回
 `{previousState, currentState, persistedStateDeleted, triggerReason}`；批量重置接受
 `{instanceIds}` 或 `{serviceType, states}`，返回 `{matched, reset[]}`。实例不存在时返回

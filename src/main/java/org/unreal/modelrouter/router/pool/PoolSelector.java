@@ -115,7 +115,9 @@ public class PoolSelector {
             return null;
         }
         return instances.stream()
-                .filter(i -> instanceId.equals(i.getInstanceId()) || instanceId.equals(i.getName()))
+                .filter(i -> instanceId.equals(i.getInstanceId()) || instanceId.equals(i.getName())
+                        // issue #1009：兼容历史数据里按数据库主键记录的池成员标识
+                        || instanceId.equals(i.getId()))
                 .findFirst()
                 .orElse(null);
     }
