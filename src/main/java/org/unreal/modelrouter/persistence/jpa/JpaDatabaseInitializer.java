@@ -259,11 +259,8 @@ public class JpaDatabaseInitializer {
                             .weight(instance.getWeight())
                             .status("ACTIVE")
                             .healthStatus("UNKNOWN")
-                            .adapter(instance.getAdapter() != null
-                                    ? instance.getAdapter()
-                                    : (serviceConfig.getAdapter() != null
-                                            ? serviceConfig.getAdapter()
-                                            : modelRouterProperties.getAdapter()))
+                            .adapter(ModelRouterProperties.resolveAdapter(
+                                    instance, serviceConfig, modelRouterProperties.getAdapter()))
                             .build();
 
                     serviceInstanceRepository.save(instanceEntity);

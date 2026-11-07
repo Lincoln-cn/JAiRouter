@@ -7,6 +7,26 @@ import java.util.Map;
 
 @ConfigurationProperties(prefix = "model")
 public final class ModelRouterProperties {
+
+    /**
+     * 解析实例最终生效的适配器：实例级 → 服务级 → 全局默认。
+     *
+     * <p>实例级留空是合法的（大多数实例不单独配）。落库时必须把回退后的值写进实例行，
+     * 否则网关拿不到适配器，转发阶段直接 502；而健康检查只测端口，仍会显示 HEALTHY，
+     * 排查成本很高（#1004）。</p>
+     */
+    public static String resolveAdapter(final ModelInstance instance,
+                                        final ServiceConfig service,
+                                        final String globalAdapter) {
+        if (instance != null && instance.getAdapter() != null && !instance.getAdapter().isBlank()) {
+            return instance.getAdapter();
+        }
+        if (service != null && service.getAdapter() != null && !service.getAdapter().isBlank()) {
+            return service.getAdapter();
+        }
+        return globalAdapter;
+    }
+
     private LoadBalanceConfig loadBalance = new LoadBalanceConfig();
     private String adapter = "normal";
     private Map<String, ServiceConfig> services;
