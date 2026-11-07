@@ -55,10 +55,10 @@
     },
     "docs/en/api-reference/management-api.md": {
       "FilePath": "docs/en/api-reference/management-api.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-30T00:17:54.041541",
-      "ContentHash": "c84ee2e66b0b4d39",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.5",
+      "LastModified": "2026-11-07T16:47:24.036184",
+      "ContentHash": "1ceb686fe00b3c51",
+      "GitCommit": "e831ffdb",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -141,10 +141,10 @@
     },
     "docs/en/configuration/dynamic-config.md": {
       "FilePath": "docs/en/configuration/dynamic-config.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-11-05T17:57:52.046045",
-      "ContentHash": "dfe5b526db64abe4",
-      "GitCommit": "841de5a5",
+      "Version": "1.0.3",
+      "LastModified": "2026-11-07T16:47:24.060614",
+      "ContentHash": "63a3b4eab11f1fc3",
+      "GitCommit": "e831ffdb",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -217,10 +217,10 @@
     },
     "docs/en/configuration/load-balancing.md": {
       "FilePath": "docs/en/configuration/load-balancing.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-30T14:32:21.674595",
-      "ContentHash": "c27c937c2e4ae00c",
-      "GitCommit": "850bb5d1",
+      "Version": "1.0.5",
+      "LastModified": "2026-11-07T16:47:24.094665",
+      "ContentHash": "7828d59b1d76b438",
+      "GitCommit": "e831ffdb",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -558,10 +558,10 @@
     },
     "docs/en/getting-started/first-steps.md": {
       "FilePath": "docs/en/getting-started/first-steps.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T00:17:54.305597",
-      "ContentHash": "7cc8265fa5edfdbe",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.2",
+      "LastModified": "2026-11-07T16:47:24.259219",
+      "ContentHash": "04a6ce5e4799fd03",
+      "GitCommit": "e831ffdb",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -846,10 +846,10 @@
     },
     "docs/en/reference/faq.md": {
       "FilePath": "docs/en/reference/faq.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-11-02T12:15:53.294596",
-      "ContentHash": "0a6df42cae9a6c7d",
-      "GitCommit": "b90f5790",
+      "Version": "1.0.3",
+      "LastModified": "2026-11-07T16:47:24.409662",
+      "ContentHash": "d243352f5e2e28ff",
+      "GitCommit": "e831ffdb",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1207,10 +1207,10 @@
     },
     "docs/zh/api-reference/management-api.md": {
       "FilePath": "docs/zh/api-reference/management-api.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-30T00:17:54.671726",
-      "ContentHash": "f130f4d55e5663e7",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.5",
+      "LastModified": "2026-11-07T16:47:24.575010",
+      "ContentHash": "d3151f9deeff3e5b",
+      "GitCommit": "e831ffdb",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1293,10 +1293,10 @@
     },
     "docs/zh/configuration/dynamic-config.md": {
       "FilePath": "docs/zh/configuration/dynamic-config.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-11-05T17:57:52.787524",
-      "ContentHash": "d4820c020f4cce1e",
-      "GitCommit": "841de5a5",
+      "Version": "1.0.4",
+      "LastModified": "2026-11-07T16:47:24.600357",
+      "ContentHash": "2f2ac9d9f06d69c4",
+      "GitCommit": "e831ffdb",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1368,10 +1368,10 @@
     },
     "docs/zh/configuration/load-balancing.md": {
       "FilePath": "docs/zh/configuration/load-balancing.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-30T14:32:22.347948",
-      "ContentHash": "df97208703337169",
-      "GitCommit": "850bb5d1",
+      "Version": "1.0.5",
+      "LastModified": "2026-11-07T16:47:24.634887",
+      "ContentHash": "889968fba1502b9e",
+      "GitCommit": "e831ffdb",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1710,10 +1710,10 @@
     },
     "docs/zh/getting-started/first-steps.md": {
       "FilePath": "docs/zh/getting-started/first-steps.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T00:17:54.933430",
-      "ContentHash": "edd377254139fa62",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.2",
+      "LastModified": "2026-11-07T16:47:24.798693",
+      "ContentHash": "abfe9c68b5db47f5",
+      "GitCommit": "e831ffdb",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2003,10 +2003,10 @@
     },
     "docs/zh/reference/faq.md": {
       "FilePath": "docs/zh/reference/faq.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-11-02T12:15:54.001875",
-      "ContentHash": "eac8f5ff3500e704",
-      "GitCommit": "b90f5790",
+      "Version": "1.0.3",
+      "LastModified": "2026-11-07T16:47:24.970324",
+      "ContentHash": "9cd53a802edf7b54",
+      "GitCommit": "e831ffdb",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -7154,7 +7154,87 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-07T13:07:04.855029",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/management-api.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-07T16:47:24.036192",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/dynamic-config.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-07T16:47:24.060619",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/load-balancing.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-07T16:47:24.094675",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/first-steps.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-07T16:47:24.259227",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/faq.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-07T16:47:24.409673",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/management-api.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-07T16:47:24.575020",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/dynamic-config.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-07T16:47:24.600368",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/load-balancing.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-07T16:47:24.634895",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/first-steps.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-07T16:47:24.798705",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/faq.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-07T16:47:24.970335",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-07T13:07:04.855462"
+  "last_updated": "2026-11-07T16:47:25.133559"
 }
