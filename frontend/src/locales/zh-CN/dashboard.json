@@ -120,11 +120,30 @@
       "tokenUsageDesc": "查看调用历史 Token 用量",
       "tracing": "链路追踪",
       "tracingDesc": "追踪请求完整链路"
-    }
-  },
-  "valueTitle": "网关带来的价值",
-  "valueCacheHitRate": "缓存命中率",
-  "valueSavedCalls": "节省的上游调用",
-  "valueGuardAsked": "护栏拦截（脱敏/阻断）",
-  "valueInstances": "活跃实例"
+    },
+    "valueTitle": "网关带来的价值",
+    "valueCacheHitRate": "缓存命中率",
+    "valueSavedCalls": "节省的上游调用",
+    "valueGuardAsked": "护栏拦截（脱敏/阻断）",
+    "valueInstances": "活跃实例",
+    "gsTitle": "从这里开始",
+    "gsSubtitle": "三步把它跑起来",
+    "gsStepService": "服务在线",
+    "gsStepServiceOk": "网关已启动，健康检查通过",
+    "gsStepServiceFail": "网关未响应，先确认进程与端口",
+    "gsStepInstance": "配置上游",
+    "gsStepInstanceOk": "已有 {count} 个模型实例",
+    "gsStepInstanceFail": "还没有可用的模型实例",
+    "gsStepKey": "拿到 API Key",
+    "gsStepKeyOk": "已有可用凭证",
+    "gsStepKeyFail": "还没有 API Key，客户端无法调用",
+    "gsStepCall": "调用一次",
+    "gsStepCallDesc": "在 Playground 里试一下",
+    "gsActionConfig": "去配置",
+    "gsActionPlayground": "去 Playground",
+    "gsActionApiKey": "去创建",
+    "gsAllDone": "链路已通，可以接入了",
+    "gsCurlHint": "OpenAI SDK 只需换 base URL：",
+    "gsTitleDone": "开始接入"
+  }
 }

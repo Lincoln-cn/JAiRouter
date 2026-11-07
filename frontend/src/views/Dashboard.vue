@@ -13,6 +13,9 @@
       </div>
     </template>
 
+    <!-- 上手引导：只在还没配好时出现，配好后淡出（不占位） -->
+    <GettingStartedCard />
+
     <!-- 主体图表与监控详情 -->
     <el-row class="main-row" :gutter="20">
       <el-col :xs="24" :lg="16">
@@ -463,6 +466,7 @@ import MetricStrip from '@/components/MetricStrip.vue'
 import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import ChartCard from '@/components/ChartCard.vue'
 import SystemMetricsPanel from './dashboard/SystemMetricsPanel.vue'
+import GettingStartedCard from './dashboard/GettingStartedCard.vue'
 
 // 图表皮肤：颜色/字号/网格/提示框统一从令牌派生，页面不再持有色值
 import { useChartSkin } from '@/composables/useChartSkin'
