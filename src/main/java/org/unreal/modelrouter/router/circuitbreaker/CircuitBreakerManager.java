@@ -227,10 +227,24 @@ public class CircuitBreakerManager {
      */
     public void recordFailure(final String instanceId, final String instanceUrl,
             final String instanceName, final String serviceType) {
+        recordFailure(instanceId, instanceUrl, instanceName, serviceType, null, null);
+    }
+
+    /**
+     * 记录调用失败（带失败详情，issue #1010）：reason/exceptionClass 透传给熔断器，
+     * 供 503 响应体与管理端点回显真实失败原因。
+     *
+     * @param reason 失败原因标识（如错误码 CONNECT_FAILED / TIMEOUT），可空
+     * @param exceptionClass 异常类名（如 ConnectException），可空
+     * @since v3.8.0
+     */
+    public void recordFailure(final String instanceId, final String instanceUrl,
+            final String instanceName, final String serviceType,
+            final String reason, final String exceptionClass) {
         try {
             CircuitBreaker cb = getCircuitBreaker(instanceId, instanceUrl);
             CircuitBreaker.State previousState = cb.getState();
-            cb.onFailure();
+            cb.onFailure(reason, exceptionClass);
             CircuitBreaker.State currentState = cb.getState();
             logger.debug("记录调用失败: instance={}, previousState={}, currentState={}",
                 instanceUrl != null ? instanceUrl : instanceId, previousState, currentState);

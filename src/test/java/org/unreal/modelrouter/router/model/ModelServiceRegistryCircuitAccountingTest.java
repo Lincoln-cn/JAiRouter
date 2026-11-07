@@ -76,7 +76,9 @@ class ModelServiceRegistryCircuitAccountingTest {
         registry.recordCallFailure(CHAT, instance, 40L, "UPSTREAM_500");
 
         verify(loadBalancer).recordCallFailure(instance, 40L, "UPSTREAM_500");
-        verify(circuitBreakerManager).recordFailure("inst-1", "http://172.16.30.6:9090");
+        // issue #1010 起 recordFailure 携带失败详情（实例名/服务类型/错误码/异常类，本调用链异常类为空）
+        verify(circuitBreakerManager).recordFailure("inst-1", "http://172.16.30.6:9090",
+                "qwen3:4b", "chat", "UPSTREAM_500", null);
     }
 
     private static void setField(final Object target, final String name, final Object value) throws Exception {
