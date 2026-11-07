@@ -283,3 +283,6 @@ jindexer.jar
 # 审计探测器的生成物：报告与 JSON 每次都能重跑出来（`python scripts/audit/<detector>.py`），
 # 故不入库，只入库探测器本身与 `scripts/audit/README.md`（2026-10-17 审计）。
 scripts/audit/out/
+
+# SLA tooling (commercial; not part of the open-source distribution)
+sla/

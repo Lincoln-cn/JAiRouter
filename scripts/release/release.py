@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import json
 import re
 import subprocess
 import sys
@@ -112,6 +113,50 @@ def latest_release_versions() -> list[tuple[str, str]]:
 
 # --------------------------------------------------------------------------- check
 
+
+def version_in_range(version: str, spec: str) -> bool:
+    """判断 version 是否落在 >=3.7.0 <4.0.0 这类区间表达式内（无区间时视为不约束）."""
+
+    def parse(text: str):
+        match = re.search(r"(\d+)\.(\d+)\.(\d+)", text or "")
+        return tuple(int(part) for part in match.groups()) if match else None
+
+    actual = parse(version)
+    if actual is None:
+        return False
+    for op, number in re.findall(r"(>=|<=|>|<)\s*(\d+\.\d+\.\d+)", spec or ""):
+        target = parse(number)
+        if target is None:
+            continue
+        if op == ">=" and actual < target:
+            return False
+        if op == "<=" and actual > target:
+            return False
+        if op == ">" and actual <= target:
+            return False
+        if op == "<" and actual >= target:
+            return False
+    return True
+
+
+def check_sla_contract(version: str) -> None:
+    """SLA 工具链的适用范围是软检查：只提醒维护者，不阻断开源发布."""
+    contract = ROOT / "sla" / "contract.json"
+    if not contract.exists():
+        print("[release] 未找到 sla/contract.json，跳过 SLA 工具链适用范围检查")
+        return
+    try:
+        data = json.loads(contract.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        print(f"[release] 读取 sla/contract.json 失败: {exc}")
+        return
+    target = data.get("targetRange") or ""
+    if target and not version_in_range(version, target):
+        print(f"[release] {version} 超出 SLA 工具链适用范围 {target}；"
+              f"请同步更新 sla/contract.json 的 targetRange 与 toolingVersion")
+    else:
+        print(f"[release] SLA 工具链适用范围 {target or '<未声明>'} 覆盖 {version}")
+
 def cmd_check(args: argparse.Namespace) -> int:
     version = project_version()
     print(f"[release] pom 项目版本: {version}")
@@ -154,6 +199,7 @@ def cmd_check(args: argparse.Namespace) -> int:
         return 1
 
     print("[release] ✅ 七处版本号一致、changelog 有当前版本条目")
+    check_sla_contract(version)
     return 0
 
 
