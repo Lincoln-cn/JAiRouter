@@ -190,9 +190,11 @@ class RedisSemanticCacheStoreTest {
     @DisplayName("DSC-104 每 scope 容量上限淘汰最旧")
     void capacityEviction() {
         properties.setMaxEntriesPerModel(2);
-        storeA.put(SCOPE_A, new SemanticCacheEntry(1L, 1, "first", System.currentTimeMillis() + 60_000));
-        storeA.put(SCOPE_A, new SemanticCacheEntry(2L, 1, "second", System.currentTimeMillis() + 60_000));
-        storeA.put(SCOPE_A, new SemanticCacheEntry(3L, 1, "third", System.currentTimeMillis() + 60_000));
+        // expireAt 递增造出确定的「最旧」序（写入时刻+固定 TTL ⇒ expireAt 越小越旧）
+        final long t = System.currentTimeMillis() + 60_000;
+        storeA.put(SCOPE_A, new SemanticCacheEntry(1L, 1, "first", t));
+        storeA.put(SCOPE_A, new SemanticCacheEntry(2L, 1, "second", t + 1));
+        storeA.put(SCOPE_A, new SemanticCacheEntry(3L, 1, "third", t + 2));
 
         final List<String> responses = storeB.candidates(SCOPE_A).stream()
                 .map(e -> String.valueOf(e.response())).toList();
