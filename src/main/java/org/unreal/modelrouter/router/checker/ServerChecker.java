@@ -66,6 +66,15 @@ public class ServerChecker {
      */
     private final Map<String, Integer> consecutiveFailures = new ConcurrentHashMap<>();
 
+    /**
+     * 曾经探活成功的实例键（#1038）。
+     *
+     * <p>滞回（#855）只应保护「原本健康、偶发抖动」的实例。若一个从启动起就从未探测成功的实例
+     * 也享受阈值容忍，它会在首轮失败后仍被判为 HEALTHY，运维于是看到假绿灯。因此这里记录
+     * 「曾经健康过」的键：只有这些实例的失败才走阈值容忍，从未成功过的失败立即判不健康。</p>
+     */
+    private final java.util.Set<String> everHealthyInstances = ConcurrentHashMap.newKeySet();
+
     public ServerChecker(final ModelServiceRegistry modelServiceRegistry,
                          final ServiceStateManager serviceStateManager) {
         this(modelServiceRegistry, serviceStateManager, new HealthCheckProperties());
@@ -108,6 +117,7 @@ public class ServerChecker {
         log.info("清理过期的实例状态缓存，清理前缓存大小: {}", previousInstanceStates.size());
         previousInstanceStates.clear();
         consecutiveFailures.clear();
+        everHealthyInstances.clear();
         log.info("实例状态缓存清理完成");
     }
 
@@ -288,7 +298,11 @@ public class ServerChecker {
                 consecutiveFailures.merge(instanceKey, 1, Integer::sum);
             }
             final int failureStreak = consecutiveFailures.getOrDefault(instanceKey, 0);
-            final boolean currentHealthStatus = probeHealthy || failureStreak < failureThreshold;
+            // #1038：滞回只保护「原本健康、偶发抖动」的实例；从未探测成功过的实例立即判不健康，
+            // 否则首轮失败会被阈值容忍吞掉，运维看到的是假的绿灯。
+            final boolean everHealthy = everHealthyInstances.contains(instanceKey);
+            final boolean currentHealthStatus =
+                    probeHealthy || (failureStreak < failureThreshold && everHealthy);
             if (!probeHealthy && currentHealthStatus) {
                 log.warn("实例 {} 探活失败（第 {}/{} 次，未达阈值，本轮仍视为可用）: {}（base-url={}）",
                         instance.getName(), failureStreak, failureThreshold,
@@ -298,6 +312,9 @@ public class ServerChecker {
             try {
                 if (currentHealthStatus) {
                     hasHealthyInstance = true;
+                    if (probeHealthy) {
+                        everHealthyInstances.add(instanceKey);
+                    }
                     serviceStateManager.updateInstanceHealthStatus(serviceType, instance, true);
                     updateDatabaseHealthStatus(instance.getName(), instance.getInstanceId(),
                             instance.getBaseUrl(), "HEALTHY", null);

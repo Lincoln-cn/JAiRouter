@@ -56,32 +56,39 @@ class ServerCheckerHysteresisTest {
     }
 
     @Test
-    @DisplayName("855-001 单轮探活失败（默认阈值 2）不摘除实例，服务仍判健康")
+    @DisplayName("855-001 曾有成功记录的实例，单轮探活失败（默认阈值 2）不摘除，服务仍判健康")
     void singleRoundFailureDoesNotEvictInstance() throws Exception {
-        final ModelRouterProperties.ModelInstance dead = instance("flaky", closedPort());
-        givenOnlyInstance(dead);
+        try (ServerSocket socket = new ServerSocket(0)) {
+            final ModelRouterProperties.ModelInstance flaky = instance("flaky", socket.getLocalPort());
+            givenOnlyInstance(flaky);
 
-        serverChecker.runHealthCheckBatch();
+            serverChecker.runHealthCheckBatch();   // 第 1 轮：成功，实例进入「曾经健康」
+            socket.close();                        // 端口关掉，后续轮次必失败
+            serverChecker.runHealthCheckBatch();   // 第 2 轮：单轮失败（计数 1，未达阈值 2）
 
-        verify(serviceStateManager, never()).updateInstanceHealthStatus(eq("chat"), eq(dead), eq(false));
-        verify(serviceStateManager).updateServiceHealthStatus("chat", true);
-        // 数据库健康状态走 ServerChecker 的私有方法，测试里 serviceInstanceRepository 为 null 时直接短路，
-        // 因此这里不断言落库，只断言「实例没被摘除」这一可观测语义。
+            verify(serviceStateManager, never()).updateInstanceHealthStatus(eq("chat"), eq(flaky), eq(false));
+            verify(serviceStateManager, times(2)).updateServiceHealthStatus("chat", true);
+            // 数据库健康状态走 ServerChecker 的私有方法，测试里 serviceInstanceRepository 为 null 时直接短路，
+            // 因此这里不断言落库，只断言「实例没被摘除」这一可观测语义。
+        }
     }
 
     @Test
-    @DisplayName("855-002 连续两轮失败才摘除实例，服务随之判不健康")
+    @DisplayName("855-002 曾有成功记录的实例，连续两轮失败才摘除，服务随之判不健康")
     void twoConsecutiveFailuresEvictInstance() throws Exception {
-        final ModelRouterProperties.ModelInstance dead = instance("dead", closedPort());
-        givenOnlyInstance(dead);
-        when(serviceStateManager.isInstanceHealthy(anyString(), any())).thenReturn(false);
+        try (ServerSocket socket = new ServerSocket(0)) {
+            final ModelRouterProperties.ModelInstance flaky = instance("flaky", socket.getLocalPort());
+            givenOnlyInstance(flaky);
+            when(serviceStateManager.isInstanceHealthy(anyString(), any())).thenReturn(false);
 
-        serverChecker.runHealthCheckBatch();   // 第 1 轮：抖动，不摘除
-        serverChecker.runHealthCheckBatch();   // 第 2 轮：连续失败，摘除
+            serverChecker.runHealthCheckBatch();   // 第 1 轮：成功
+            socket.close();
+            serverChecker.runHealthCheckBatch();   // 第 2 轮：抖动，不摘除
+            serverChecker.runHealthCheckBatch();   // 第 3 轮：连续失败，摘除
 
-        verify(serviceStateManager, times(1)).updateInstanceHealthStatus("chat", dead, false);
-        verify(serviceStateManager).updateServiceHealthStatus("chat", false);
-
+            verify(serviceStateManager, times(1)).updateInstanceHealthStatus("chat", flaky, false);
+            verify(serviceStateManager).updateServiceHealthStatus("chat", false);
+        }
     }
 
     @Test
@@ -106,6 +113,19 @@ class ServerCheckerHysteresisTest {
     void thresholdOneKeepsLegacySemantics() throws Exception {
         properties.setFailureThreshold(1);
         final ModelRouterProperties.ModelInstance dead = instance("legacy", closedPort());
+        givenOnlyInstance(dead);
+        when(serviceStateManager.isInstanceHealthy(anyString(), any())).thenReturn(false);
+
+        serverChecker.runHealthCheckBatch();
+
+        verify(serviceStateManager).updateInstanceHealthStatus("chat", dead, false);
+        verify(serviceStateManager).updateServiceHealthStatus("chat", false);
+    }
+
+    @Test
+    @DisplayName("855-005 从未探测成功的实例首轮失败即判不健康（不发生假绿灯，#1038）")
+    void neverHealthyInstanceIsEvictedOnFirstFailure() throws Exception {
+        final ModelRouterProperties.ModelInstance dead = instance("never-up", closedPort());
         givenOnlyInstance(dead);
         when(serviceStateManager.isInstanceHealthy(anyString(), any())).thenReturn(false);
 
