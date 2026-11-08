@@ -6,14 +6,20 @@
 
 ```
 scripts/
-├── build/          # 构建部署脚本
-├── dev/            # 开发辅助脚本
-├── docs/           # 文档管理脚本
-├── migration/      # 数据迁移脚本
-├── monitoring/     # 监控部署脚本
-├── test/           # 测试脚本
-└── tools/          # 工具脚本
+├── audit/                # 静态面审计探测器与其输出
+├── build/                # 构建部署脚本
+├── demo/                 # 5 分钟演示（对本地起的网关跑一遍主链路）
+├── dev/                  # 开发辅助脚本
+├── docs/                 # 文档检查器与它们的自测（CI 文档门闩跑的就是这些）
+├── knowledge-governance/ # innerdoc/ 私有知识库治理工具
+├── migration/            # 数据迁移脚本
+├── monitoring/           # 监控部署脚本
+├── release/              # 发布助手（版本号 / tag / 发布说明）
+├── test/                 # 测试、本地门闩与分支清理
+└── tools/                # 杂项工具
 ```
+
+根目录下的 `monitoring-stack.sh` 是 v1.9.5 时期的入口，尚未并入 `monitoring/`；新用法看 `monitoring/`。
 
 ## 脚本分类说明
 
@@ -36,9 +42,26 @@ scripts/
 | `quick-fix-assets.sh` | 快速修复静态资源版本问题 |
 | `quick-test-fixes.sh` | 快速测试 JWT 安全修复 |
 
-### docs/ - 文档管理
+### docs/ - 文档检查器
 
-文档相关的管理和验证脚本。
+CI 的文档门闩跑的就是这里的检查器：改文档、或改这些脚本本身，都会触发它们。
+**改检查器必须先跑同名自测** `test_<脚本名>.py` —— 自测里带反向用例，确保探测器真的能抓出问题。
+
+| 脚本 | 作用 | 跑在哪 |
+|------|------|--------|
+| `check-links.py` | 死链检查（含外链） | `docs-quality.yml` |
+| `check-fence-parity.py` | Markdown 围栏配平（分隔符为奇数 ⇒ 自错位点起整篇被当代码渲染） | `docs-quality.yml` |
+| `check-error-codes.py` | 文档里出现的错误码必须在代码里有定义 | `docs-quality.yml` |
+| `check-api-endpoints.py` | 文档里写的端点必须真的存在 | `docs-quality.yml` |
+| `check-config-imports.py` | 文档里的配置键必须能绑定到真实字段 | `docs-quality.yml` |
+| `check-capability-claims.py` | 文档里的能力声明与实现面对账 | `gates-fast.yml` |
+| `check-docs-sync.py` | 文档与代码的同步面 | `docs-code-sync.yml` / `docs-content-sync.yml` |
+| `docs-version-manager.py` | 版本信息块扫描 / 写入 / 过期提醒（含 `--mark-reviewed`） | `docs-version-management.yml` |
+| `validate-nav-files.py` | `mkdocs.yml` 的 nav 与真实文件一致 | `docs-version-management.yml` |
+| `test_*.py` | 上面各检查器的自测 | 与各自 workflow 同批 |
+
+`docs-manager.*` / `validate-docs-config.py` / `validate-docs-sync.py` / `validate-structure.ps1` /
+`check-links.ps1` / `fix-links.py` / `test-workflow-paths.py` 是早期版本或本地辅助，**未接 CI**，需要手工跑。
 
 ### migration/ - 数据迁移
 
@@ -70,6 +93,11 @@ scripts/
 | `api-smoke.mjs` | 接口层冒烟（可复跑资产，见下）：直接断言对外状态码与错误体形状 |
 | `branch-cleanup.ps1/.sh/.cmd` | 分支清理与「合并不干净」梳理（见下） |
 | `test-branch-cleanup.ps1` | `branch-cleanup.ps1` 的自检：用合成 git 仓库复现各条判据 |
+| `e2e_test.sh` / `e2e_test_with_login.sh` | 端到端冒烟，需真实运行实例 |
+| `generate-tracing-data.py/.ps1/.sh` | 生成链路追踪样本数据（用法见 `README-tracing-data-generator.md`） |
+| `test-audit-functionality.*` / `test-integrated-audit.*` | 审计功能验证，需真实运行实例 |
+| `test-response-cache-smoke.ps1` | 响应缓存冒烟 |
+| `test-deployment.*` / `test-security-deployment.*` | 部署与安全部署验证 |
 
 ### 接口冒烟（api-smoke）
 
@@ -148,15 +176,51 @@ powershell -ExecutionPolicy Bypass -File scripts/test/test-branch-cleanup.ps1
 > `AccessViolationException ... AmsiScanBuffer` 并直接结束进程；**同一命令重跑即可通过**
 > （与 `local-gates.ps1` 同款问题）。自检脚本已内置重试。
 
+### audit/ - 静态面审计
+
+每个审计轴一个**自校准**探测器 + 一份它的输出（`out/`）。结论落在 issue 台账，方法与覆盖边界见
+`scripts/audit/README.md`；这些探测器只读，不改运行时行为。
+
+| 脚本 | 说明 |
+|------|------|
+| `detect-backend-dead-code.py` | 后端零引用类型、未使用的私有方法、注入但从不读取的字段 |
+| `detect-frontend-dead-code.py` | 前端零引用导出、无调用方的 api 函数、不可达路由视图 |
+| `analyze-config-keys.py` | 配置键对账：无绑定类 / 无读取方 / 代码读了但 yml 没有 |
+| `reconstruct-consumer-paths.py` | 把 `@ConditionalOnProperty(prefix+name)` / `@Value` / `getProperty` 还原成完整键路径，防漏判 |
+| `reconcile-frontend-api.py` | 前端调用与后端端点的对账 |
+| `reconcile-contract-shapes.py` | 契约形状对账（前端声明了后端从不发送的字段） |
+| `detect-hardcoded-i18n.py` | 未走 vue-i18n 的用户可见中文文案 |
+| `detect-ui-states.py` | 界面态：缺加载态、缺二次确认、页内权限门控等 |
+| `osv-scan.py` | 依赖漏洞扫描（`dependency-scan.yml`，基线 `osv-baseline.json`） |
+
+### demo/ - 演示
+
+| 脚本 | 说明 |
+|------|------|
+| `run-demo.mjs` | 5 分钟演示：先 `docker compose -f deploy/demo/docker-compose.yml up -d`，再跑一遍主链路，每节打印「做了什么 / 预期 / 实际」，失败会指出是哪一步 |
+
+### knowledge-governance/ - 知识库治理
+
+治理 `innerdoc/` 私有知识库的健康状态（扫描 / 重复 / 过时 / 归档 / 版本），详见该目录 `README.md`。
+
+### release/ - 发布助手
+
+| 子命令 | 说明 |
+|------|------|
+| `check` | 只读校验：七处版本号一致 + changelog 有当前版本条目 + tag 未占用 |
+| `bump` | 一次改齐 pom / `frontend/package.json` / README×2 / changelog×2 / roadmap×2 |
+| `tag` | 打 tag + 推 tag + 创建 GitHub Release（校验发布说明首行是 `# `） |
+| `notes` | 从 changelog 生成发布说明骨架 |
+
+默认 dry-run，加 `--write` 才真正写盘；发布流程本身见 `docs/zh/development/contributing.md`。
+
 ### tools/ - 工具脚本
 
 | 脚本 | 说明 |
 |------|------|
-| `fix_frontend_complete.py` | 前端配置完整修复 |
-| `fix_frontend_independent_config.sh` | 前端独立配置修复 |
-| `quick_fix_frontend.sh` | 前端快速修复 |
-| `generate_sitemap.py` | 生成站点地图 |
+| `generate_sitemap.py` | 生成站点地图（`update-sitemap.yml` 用） |
 | `validate-jwt-persistence-config.sh` | JWT 持久化配置验证 |
+| `dismiss-csrf-alerts.ps1` | 批量关闭 CSRF 相关告警（GitHub 侧，本地一次性工具） |
 
 ## 常用脚本使用
 
@@ -261,6 +325,7 @@ curl -X DELETE http://127.0.0.1:8080/api/config/instance/chat/<instanceDbId> \
 1. **脚本执行权限**: 确保脚本有执行权限 `chmod +x scripts/**/*.sh`
 2. **跨平台**: `.sh` 文件用于 Linux/macOS，`.ps1` 文件用于 Windows PowerShell
 3. **强制刷新浏览器**: 部署后务必使用 `Ctrl+Shift+R` 强制刷新
+4. **一次性脚本不入库**: 只在某一次迁移/发版期间用到的脚本用完即删（v1.8.1 发布、git tag 合并、包迁移三类已按此清理），需要留痕就写进 PR 或 issue，不要留在 `scripts/` 里 —— 留在仓库里的脚本读者会默认它现在还能用
 
 ## 静态资源版本问题
 
