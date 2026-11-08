@@ -197,14 +197,19 @@
         <logger name="org.apache.http" level="WARN"/>
     </springProfile>
 
-    <!-- 生产环境配置 -->
+    <!--
+      生产环境：stdout 只由 CONSOLE 输出一次，不挂 ASYNC_TRACING。
+      TRACING_APPENDER 把 JSON 直接写 System.out，与 CONSOLE 同挂会让每条 WARN 及以上
+      在 stdout 出现两行（同 issue #932 在 default profile 的处置；实测 3 rps 跑 6.5 小时
+      产出 2.9 GB）。需要一行一个 JSON 的消费方式请用 json-logs profile —— 那里只挂
+      TRACING_APPENDER、不挂 CONSOLE。结构化事件流仍由 ASYNC_STRUCTURED 落文件，不受影响。
+    -->
     <springProfile name="prod &amp; !json-logs">
         <root level="WARN">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
             <appender-ref ref="ASYNC_STRUCTURED"/>
-            <appender-ref ref="ASYNC_TRACING"/>
         </root>
         
         <!-- 只记录关键业务日志 -->
@@ -212,21 +217,18 @@
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
             <appender-ref ref="ASYNC_STRUCTURED"/>
-            <appender-ref ref="ASYNC_TRACING"/>
         </logger>
         
         <logger name="org.unreal.modelrouter.config.ConfigurationService" level="INFO" additivity="false">
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
             <appender-ref ref="ASYNC_STRUCTURED"/>
-            <appender-ref ref="ASYNC_TRACING"/>
         </logger>
         
         <logger name="org.unreal.modelrouter.checker.RateLimiterCleanupChecker" level="WARN" additivity="false">
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
             <appender-ref ref="ASYNC_STRUCTURED"/>
-            <appender-ref ref="ASYNC_TRACING"/>
         </logger>
         
         <!-- 其他组件只记录警告和错误 -->
@@ -234,7 +236,6 @@
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
             <appender-ref ref="ASYNC_STRUCTURED"/>
-            <appender-ref ref="ASYNC_TRACING"/>
         </logger>
         
         <!-- 框架日志最小化 -->

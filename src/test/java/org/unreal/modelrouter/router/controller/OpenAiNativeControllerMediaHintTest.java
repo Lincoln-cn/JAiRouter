@@ -2,6 +2,8 @@ package org.unreal.modelrouter.router.controller;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.unreal.modelrouter.router.handler.ServiceRequestHandler;
 import org.unreal.modelrouter.router.model.ModelCatalogService;
@@ -68,5 +70,45 @@ class OpenAiNativeControllerMediaHintTest {
                 .expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$.object").isEqualTo("list");
+    }
+
+    @Test
+    @DisplayName("MEDIA-004: /v1/images/edits 用 JSON 提交时是 415，并说明只接受 multipart")
+    void imageEditJsonBodyIsUnsupportedMediaType() {
+        client().post().uri("/v1/images/edits")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("model", "stable-diffusion-2-1", "prompt", "a dog"))
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value())
+                .expectBody()
+                .jsonPath("$.error.type").isEqualTo("invalid_request_error")
+                .jsonPath("$.error.code").isEqualTo("unsupported_media_type")
+                .jsonPath("$.error.message").value(message -> {
+                    final String text = String.valueOf(message);
+                    // 必须指出正确提交形式，而不是笼统的「未提供」
+                    org.junit.jupiter.api.Assertions.assertTrue(
+                            text.contains("multipart/form-data"), "应说明正确媒体类型，实际: " + text);
+                    org.junit.jupiter.api.Assertions.assertTrue(
+                            text.contains("image"), "应指出 image 文件字段，实际: " + text);
+                    org.junit.jupiter.api.Assertions.assertFalse(
+                            text.contains("not_implemented"), "已提供映射的端点不能报「未提供」，实际: " + text);
+                });
+    }
+
+    @Test
+    @DisplayName("MEDIA-005: 501 文案不再声明该路径之外的能力「已提供 /v1 原生映射」")
+    void notImplementedHintStaysFactual() {
+        client().post().uri("/v1/images/variations")
+                .exchange()
+                .expectStatus().isEqualTo(501)
+                .expectBody()
+                .jsonPath("$.error.message").value(message -> {
+                    final String text = String.valueOf(message);
+                    org.junit.jupiter.api.Assertions.assertTrue(
+                            text.contains("/api/v1/images/variations"), "应给出控制台面路径，实际: " + text);
+                    // 旧文案在拒绝请求的同时声称「图像生成/编辑已提供 /v1 原生映射」，自相矛盾
+                    org.junit.jupiter.api.Assertions.assertFalse(
+                            text.contains("已提供 /v1 原生映射"), "不应再出现自相矛盾的整体性声明，实际: " + text);
+                });
     }
 }

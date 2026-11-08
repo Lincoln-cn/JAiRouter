@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -71,6 +72,9 @@ import java.util.Map;
 @RequestMapping("/v1")
 @Tag(name = "OpenAI 原生接口", description = "OpenAI 原生格式接口（无 RouterResponse 包裹，可直接接入 OpenAI SDK）")
 public class OpenAiNativeController {
+
+    /** 图像编辑的原生路径：已提供映射，但只接受 multipart（用于兜底入口区分「媒体类型不对」与「未提供」）. */
+    private static final String IMAGE_EDIT_PATH = "/v1/images/edits";
 
     private final ServiceRequestHandler requestHandler;
     private final ModelCatalogService modelCatalogService;
@@ -394,18 +398,45 @@ public class OpenAiNativeController {
         final String originalPath = exchange.getRequest().getPath().pathWithinApplication().value();
         final String consolePath = "/api/v1" + originalPath.substring("/v1".length());
 
+        // /v1/images/edits 已有原生映射，只是 consumes 为 multipart；JSON 请求落到这里时
+        // 说明「媒体类型不对」而不是「该接口未提供」。此前统一回 501 并在正文里声明
+        // 「图像生成/编辑已提供 /v1 原生映射」，与拒绝行为自相矛盾，会让调用方放弃排查。
+        if (IMAGE_EDIT_PATH.equals(originalPath)
+                && HttpMethod.POST.equals(exchange.getRequest().getMethod())) {
+            return mediaErrorResponse(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "unsupported_media_type",
+                    "/v1/images/edits 只接受 multipart/form-data：待编辑图片放在 image 文件字段，"
+                            + "model 与 prompt 以普通表单字段提交；JSON 请求体不受支持。"
+                            + "详见 docs/zh/api-reference/openapi-spec.md");
+        }
+
+        return mediaErrorResponse(HttpStatus.NOT_IMPLEMENTED, "not_implemented_on_v1",
+                "该接口在 /v1 下未提供：请改用 POST " + consolePath
+                        + "（控制台面，响应包裹在 RouterResponse.data 里）。"
+                        + "媒体能力的 /v1 原生面只覆盖 /images/generations、/images/edits（multipart）、"
+                        + "/audio/speech 与 /audio/transcriptions，其余路径请走控制台面。"
+                        + "详见 docs/zh/api-reference/openapi-spec.md");
+    }
+
+    /**
+     * 媒体兜底入口的 OpenAI 形状错误响应.
+     *
+     * @param status  HTTP 状态
+     * @param code    错误码（落在 {@code error.code}）
+     * @param message 面向调用方的说明
+     * @return 携带错误体的响应
+     */
+    private static Mono<ResponseEntity<Map<String, Object>>> mediaErrorResponse(
+            final HttpStatus status, final String code, final String message) {
+
         final Map<String, Object> error = new LinkedHashMap<>();
-        error.put("message", "该接口在 /v1 下未提供：请改用 POST " + consolePath
-                + "（控制台面，响应包裹在 RouterResponse.data 里）。"
-                + "语音合成/转写与图像生成/编辑已提供 /v1 原生映射。"
-                + "详见 docs/zh/api-reference/openapi-spec.md");
+        error.put("message", message);
         error.put("type", "invalid_request_error");
-        error.put("code", "not_implemented_on_v1");
+        error.put("code", code);
 
         final Map<String, Object> body = new LinkedHashMap<>();
         body.put("error", error);
 
-        return Mono.just(ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+        return Mono.just(ResponseEntity.status(status)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body));
     }
