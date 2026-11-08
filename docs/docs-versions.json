@@ -2,27 +2,29 @@
   "versions": {
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.21",
-      "LastModified": "2026-11-08T01:59:07.685734",
-      "ContentHash": "a2295c83574d9502",
-      "GitCommit": "7290eb0c",
+      "Version": "1.0.22",
+      "LastModified": "2026-11-08T03:03:50.438333",
+      "ContentHash": "4be201529a5978b1",
+      "GitCommit": "6df2d86c",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "SECURITY.md",
+        "docs/zh/getting-started/demo.md",
         "docs/zh/reference/changelog.md"
       ]
     },
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.22",
-      "LastModified": "2026-11-08T01:59:07.688097",
-      "ContentHash": "f585c2e98784e982",
-      "GitCommit": "7290eb0c",
+      "Version": "1.0.23",
+      "LastModified": "2026-11-08T03:03:50.440896",
+      "ContentHash": "3eb3ef7397c9ef9a",
+      "GitCommit": "6df2d86c",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "SECURITY.md",
+        "docs/en/getting-started/demo.md",
         "docs/en/reference/changelog.md"
       ]
     },
@@ -608,10 +610,10 @@
     },
     "docs/en/getting-started/quick-start.md": {
       "FilePath": "docs/en/getting-started/quick-start.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-30T15:24:47.359439",
-      "ContentHash": "9444b25a9a903b8e",
-      "GitCommit": "51b84ed6",
+      "Version": "1.0.4",
+      "LastModified": "2026-11-08T03:03:50.839924",
+      "ContentHash": "491cffe0ffed249b",
+      "GitCommit": "6df2d86c",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -619,6 +621,7 @@
         "docs/en/configuration/index.md",
         "docs/en/configuration/instance-examples.md",
         "docs/en/deployment/index.md",
+        "docs/en/getting-started/demo.md",
         "docs/en/getting-started/first-steps.md",
         "docs/en/getting-started/installation.md"
       ]
@@ -1760,10 +1763,10 @@
     },
     "docs/zh/getting-started/quick-start.md": {
       "FilePath": "docs/zh/getting-started/quick-start.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-30T15:24:50.526291",
-      "ContentHash": "4395caea88416dc3",
-      "GitCommit": "51b84ed6",
+      "Version": "1.0.5",
+      "LastModified": "2026-11-08T03:03:51.681223",
+      "ContentHash": "db925c02d4275697",
+      "GitCommit": "6df2d86c",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1771,6 +1774,7 @@
         "docs/zh/configuration/index.md",
         "docs/zh/configuration/instance-examples.md",
         "docs/zh/deployment/index.md",
+        "docs/zh/getting-started/demo.md",
         "docs/zh/getting-started/first-steps.md",
         "docs/zh/getting-started/installation.md",
         "docs/zh/troubleshooting/index.md"
@@ -2399,6 +2403,40 @@
         "docs/zh/configuration/response-cache.md",
         "docs/zh/security/data-sanitization.md",
         "docs/zh/troubleshooting/performance.md"
+      ]
+    },
+    "docs/en/getting-started/demo.md": {
+      "FilePath": "docs/en/getting-started/demo.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-11-08T03:03:50.803581",
+      "ContentHash": "c42ca3b08c433e7a",
+      "GitCommit": "6df2d86c",
+      "Author": "Leo Lin",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/en/deployment/docker.md",
+        "docs/en/deployment/production.md",
+        "docs/en/getting-started/installation.md",
+        "docs/en/getting-started/quick-start.md",
+        "docs/en/getting-started/web-console.md",
+        "docs/en/security/data-sanitization.md"
+      ]
+    },
+    "docs/zh/getting-started/demo.md": {
+      "FilePath": "docs/zh/getting-started/demo.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-11-08T03:03:51.644384",
+      "ContentHash": "294fb874411486fd",
+      "GitCommit": "6df2d86c",
+      "Author": "Leo Lin",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/zh/deployment/docker.md",
+        "docs/zh/deployment/production.md",
+        "docs/zh/getting-started/installation.md",
+        "docs/zh/getting-started/quick-start.md",
+        "docs/zh/getting-started/web-console.md",
+        "docs/zh/security/data-sanitization.md"
       ]
     }
   },
@@ -7330,7 +7368,55 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-08T01:59:09.091418",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.21",
+      "NewVersion": "1.0.22",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-08T03:03:50.438343",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.22",
+      "NewVersion": "1.0.23",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-08T03:03:50.440903",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/demo.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-11-08T03:03:50.803592",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/en/getting-started/quick-start.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-08T03:03:50.839934",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/demo.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-11-08T03:03:51.644393",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/quick-start.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-08T03:03:51.681233",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-08T01:59:09.277074"
+  "last_updated": "2026-11-08T03:03:52.136266"
 }
