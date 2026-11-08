@@ -181,7 +181,8 @@
     "quotaConfigManagement": "Quota Runtime Config",
     "quotaUsageMonitoring": "Quota Usage Monitoring",
     "tools": "Developer Tools",
-    "clientAccessGuide": "Client Access Guide"
+    "clientAccessGuide": "Client Access Guide",
+    "notFound": "Page not found"
   },
   "globalSearch": {
     "dialogLabel": "Global search",
@@ -207,5 +208,12 @@
     "openBreakersAria": "{count} open circuit breakers, click to view monitoring",
     "exceptions24h": "24h exceptions",
     "exceptions24hAria": "{count} exceptions in the last 24 hours, click to view the list"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "This address is not in the console's route table. The link may be stale, or the path may be mistyped.",
+    "pathLabel": "Current path",
+    "backHome": "Back to dashboard",
+    "backPrev": "Go back"
   }
 }
