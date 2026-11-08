@@ -11,6 +11,16 @@ server:
   # Netty/Reactor 下 graceful 会等待在途请求；超过 timeout-per-shutdown-phase 后强制关闭剩余连接。
   shutdown: graceful
 
+  # 响应压缩（#1039）：控制台产物含三个 >1MB 的 chunk，未压缩时冷启动刷新要全量传输约 3.3MB。
+  # Spring Boot 4 的 reactor-netty CompressionCustomizer 对本栈是生效的（实测：带
+  # Accept-Encoding: gzip 的 .js 响应返回 Content-Encoding: gzip）。
+  # min-response-size 只作用于已声明 Content-Length 的响应，而 SSE 走 chunked +
+  # text/event-stream，因此流式响应不会被压缩（实测 /api/health-status/stream 无
+  # Content-Encoding，首帧仍逐条到达）。
+  compression:
+    enabled: true
+    min-response-size: 1024
+
 # Spring Boot 基础配置
 spring:
   main:
