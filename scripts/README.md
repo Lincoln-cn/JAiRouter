@@ -197,7 +197,7 @@ powershell -ExecutionPolicy Bypass -File scripts/test/test-branch-cleanup.ps1
 
 | 脚本 | 说明 |
 |------|------|
-| `run-demo.mjs` | 5 分钟演示：先 `docker compose -f deploy/demo/docker-compose.yml up -d`，再跑一遍主链路，每节打印「做了什么 / 预期 / 实际」，失败会指出是哪一步 |
+| `run-demo.mjs` | 5 分钟演示：先 `docker compose -f deploy/demo/docker-compose.yml up -d`，再跑一遍主链路，每节打印「做了什么 / 预期 / 实际」，失败会指出是哪一步。第 4 步的可逆脱敏判定在上游侧：`docker logs jairouter-demo-upstream \| grep lastUser` 看到 `placeholders=[PII_1]` 是生效、`plaintext(NN B)` 是未开启。完整说明见 `docs/zh/getting-started/demo.md` |
 
 ### knowledge-governance/ - 知识库治理
 
