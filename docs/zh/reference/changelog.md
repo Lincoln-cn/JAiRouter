@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.8.0
+> **文档版本**: 3.8.1
 > **最后更新**: 2026-11-08
 > **作者**: JAiRouter Team
 
@@ -21,6 +21,29 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.8.1] - 2026-11-08 - 可用性审计修复：图像路由、健康判定、控制台兜底
+
+本轮是对「能不能用」的一次专项审计与修复：以「web 控制台打不开 / 服务端不可用」为排查目标，从前端构建产物、55 条控制台路由、325 条 OpenAPI 路径、真实启动实例逐项取证，没有发现 P0；修掉的是三处「看起来能用、实际静默降级」的可用性缺陷，以及一批运维可见性问题。
+
+* **图像服务的服务类型解析（#1031）**：`ServiceTypeResolver` 用「转小写并去掉连字符」的串去比驼峰常量 `ServiceTypeConstants.IMG_GEN`（值为 `"imgGen"`），该比较恒为假；`ServiceType.valueOf("imggen")` 同样因为枚举值是驼峰而必抛。结果是 `img-gen`、`imgEdit`、`img-edit` 三种写法全部解析为 `null`，运行时的 `getAllInstances()` / `getAvailableServiceTypes()` 把这些服务静默过滤掉 —— 图像编辑端点 100% 返回 `404 No instances found`，图像生成与编辑也永不参与健康检查与统计（健康检查批次只覆盖 5 个服务 / 7 个实例，而配置里有 7 个服务 / 9 个实例）。现在解析逻辑收敛到唯一的 `ServiceTypeNames`（先按枚举名大小写不敏感匹配，再走归一化别名表），`ConfigurationValidator` 与 `ConfigValidator` 里两份重复实现改为委托，并补了「每个枚举的服务配置键必须能反解回自身」的往返测试。修复后健康检查覆盖 7 服务 / 9 实例，`/api/models/stats` 的实例数从 0/0 变为 1/1，`/v1/images/edits` 从本地拒绝的 404 变为真正发往上游。
+* **未匹配路由的空白页（#1032）**：控制台没有 catch-all 路由，任何拼错或过期的地址都会渲染成一整张白屏（`title` 只有站名、`body` 为空），看起来像服务挂了。现在兜底到带布局的 404 页，回显当前路径并给出「返回仪表板 / 返回上一页」。
+* **静态资源的缓存策略（#1033）**：入口页与构建产物（`/admin/assets/**`，文件名带内容哈希）此前一律 `no-cache, no-store`，每次刷新都要重下约 3.3 MB；同时缺失的资源会被 SPA 兜底伪装成 `text/html` 的 200，浏览器拿到当作 `.js` 的 HTML 只会报一句含糊的 MIME 错误。现在哈希对象走 `max-age=31536000, immutable`，其余保持 `no-store`，`/admin/assets/**` 下缺失的资源直接 404。
+* **`/v1/images/edits` 的响应语义（#1034）**：该端点只接受 `multipart/form-data`，但 JSON 请求会落到通配兜底并收到一条「该接口在 /v1 下未提供」的 501，而同一条文案又说「图像生成/编辑已提供 /v1 原生映射」——自相矛盾且指向了错误的排查方向。现在 JSON 请求得到 415 并说明应当如何提交（`image` 文件字段 + 普通表单字段），其余未映射路径的 501 文案改为陈述真实覆盖范围。
+* **父级菜单的落地页（#1035）**：`/config`、`/security`、`/system`、`/monitoring`、`/tools` 五个父级路由没有重定向，点进去只有面包屑。现在各自重定向到首个子路由。
+* **生产档的日志双写（#1036）**：`prod` 档同时把 `CONSOLE` 与 `ASYNC_TRACING` 挂在 root 上，而后者直接写 stdout，等于同一条日志在容器日志里出现两遍。已从 prod 分支移除追踪 appender（结构化事件仍由 `ASYNC_STRUCTURED` 落文件；需要 JSON stdout 时用 `json-logs` 档）。
+* **H2 的 schema 归属（#1037）**：H2 此前既跑 Flyway 又保留 `ddl-auto=update`，后者每次启动都要逐表探「是否存在」，探不到就重发 `CREATE TABLE`，于是每次启动都刷十几条 `Table "xxx" already exists` 与堆栈。现在与 PostgreSQL 一样由 Flyway 独自建表（`ddl-auto` 覆盖为 `none`），24 个实体表与 H2 脚本一一对应已核对。
+* **迁移 baseline 的版本（#1046）**：承接上一条，「有表但没有 `flyway_schema_history`」的库会被 baseline 到版本 1 然后重放 V2..V11，在 `V6__jwt_account_soft_delete` 的 `ADD COLUMN deleted` 上因列已存在而失败。现在 baseline 版本取迁移目录里的最新版本，这类库直接认定为最新、一个历史脚本都不执行。
+* **健康检查的假绿灯（#1038）**：判定式 `probeHealthy || failureStreak < failureThreshold` 让滞回无条件生效，配合「上一状态默认 true」，从未连通过的上游首轮失败会被阈值吞掉并记为健康 —— 上游全不可达时健康检查反而报 `9 healthy / 0 unhealthy`。现在只有真正探测成功过的实例才享受滞回，其余首轮失败即判不健康。
+* **静态资源压缩（#1039）**：控制台产物里三个 chunk 都超过 1 MB 且此前完全未压缩。开启 `server.compression`（Netty 栈实测生效）后，`/admin/assets/*.js` 带 `Accept-Encoding: gzip` 会返回 `Content-Encoding: gzip`；SSE 端点不受影响（`text/event-stream` 走 chunked、不参与压缩）。
+* **镜像元数据与 jar 选择（#1047、#1048）**：六个 Dockerfile 的 `LABEL version` 固定为 `3.1.1`，已改为由 `APP_VERSION` 构建参数注入（CI 与构建脚本都会传真实版本）；`COPY target/model-router-*.jar app.jar` 在 `target/` 有多个 jar 时会以一条与根因无关的报错失败，改为先复制到目录、再断言恰好一个并给出目录清单。
+
+**升级提示**
+
+1. **H2 的 `ddl-auto` 从此由 Flyway 接管**（#1037、#1046）：普通升级不需要任何操作。若启动日志出现 `Successfully baselined schema with version: 11`，说明该库此前没有迁移历史、被整体认定为最新 —— 如果这个库的结构其实落后于 3.8.1，缺失的列不会被自动补上，需要人工核对。留意日志是判断依据。
+2. **健康状态可能比升级前「变差」**（#1038）：此前被误判为健康的上游现在会如实报不健康。这是修正而非回归，但如果监控依赖旧的健康数做基线，需要重新取基线。
+3. **开启响应压缩**（#1039）：如果前置的 Nginx/网关也开了 gzip，会出现双重压缩。按需在其中一侧关闭。
+4. 本轮不涉及任何对外 API 契约变更；`/v1/images/edits` 的 JSON 请求由 501 变为 415 属错误码纠正（原先的 501 与真实原因不符），multipart 请求的路径与响应不变。
 
 ### [3.8.0] - 2026-11-08 - 实例标识统一、熔断失败详情、语义缓存共享后端
 

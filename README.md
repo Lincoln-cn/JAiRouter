@@ -46,10 +46,10 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # the local/git directory name differs from the product name
 artifact:        model-router            # Maven artifactId
-project_version: 3.8.0                   # pom.xml
-latest_release:  v3.8.0 (2026-11-08)
+project_version: 3.8.1                   # pom.xml
+latest_release:  v3.8.1 (2026-11-08)
 stack:
-  backend:  Java 17 + Spring Boot 3.5.16 (WebFlux / reactive)
+  backend:  Java 17 + Spring Boot 4.1.2 (WebFlux / reactive)
   frontend: Vue 3 + TypeScript + Vite, bilingual zh-CN / en-US
   build:    Maven wrapper — ./mvnw (Unix) · .\mvnw.cmd (Windows)
 runtime:
@@ -64,7 +64,7 @@ surfaces:
   - /actuator/**  # health, readiness, Prometheus
 tests:
   command: ./mvnw test -o
-  scale:   ~4,100 test methods across ~400 test classes
+  scale:   ~5,100 test methods across ~600 test classes
 license: Apache-2.0
 ```
 
@@ -97,7 +97,7 @@ response cache, and reversible sanitization. A mock upstream stands in for a rea
 no GPU to provision, no API key to obtain, and no JDK to install.
 
 ```bash
-docker compose -f deploy/demo/docker-compose.yml pull        # v3.8.0 or newer
+docker compose -f deploy/demo/docker-compose.yml pull        # v3.8.1 or newer
 docker compose -f deploy/demo/docker-compose.yml up -d      # wait until both are healthy
 node scripts/demo/run-demo.mjs
 ```
@@ -204,7 +204,7 @@ Details worth knowing:
 | `src/main/java/org/unreal/modelrouter/config/` | Configuration service: hot reload, versioning/rollback, validation, console API |
 | `src/main/resources/config/**` | Modular YAML config, imported via `spring.config.import` in `application.yml` |
 | `src/main/resources/db/migration/{h2,postgres}/` | Versioned schema migrations (`Flyway`), one dialect directory each |
-| `src/test/java/` | JUnit 5 + Mockito + Reactor `StepVerifier`; ~4,100 test methods |
+| `src/test/java/` | JUnit 5 + Mockito + Reactor `StepVerifier`; ~5,100 test methods |
 | `frontend/` | Vue 3 + TypeScript console (Vite `base: /admin/`) |
 | `docs/zh/`, `docs/en/` | MkDocs documentation, kept symmetrical |
 | `deploy/` | Kubernetes manifests, compose files, deployment scripts |
@@ -389,7 +389,7 @@ See the [changelog](docs/en/reference/changelog.md) for per-release notes.
 
 ## Status
 
-**Latest release: v3.8.0 (2026-11-08).** Per-release notes, upgrade notes and known limits live in the
+**Latest release: v3.8.1 (2026-11-08).** Per-release notes, upgrade notes and known limits live in the
 [changelog](docs/en/reference/changelog.md); downloads and container tags are on
 [Releases](https://github.com/Lincoln-cn/JAiRouter/releases).
 
@@ -439,7 +439,7 @@ Security issues: please do not open a public issue — report them privately per
 Before opening a pull request:
 
 ```bash
-./mvnw test -o                       # ~400 test classes, ~4,100 test methods, must stay green
+./mvnw test -o                       # ~600 test classes, ~5,100 test methods, must stay green
 cd frontend && npm run type-check    # the frontend type gate
 ```
 

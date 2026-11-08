@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.8.0
+> **Document Version**: 3.8.1
 > **Last Updated**: 2026-11-08
 > **Git Commit**: -
 > **Author**: Lincoln
@@ -20,6 +20,29 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.8.1] - 2026-11-08 - Availability audit fixes: image routing, health verdicts, console fallbacks
+
+This release is the outcome of a dedicated audit aimed at one question: can the web console and the server be taken down by anything in the current tree? The audit covered the built frontend bundle, all 55 console routes, 325 OpenAPI paths and a real running instance. No P0 issue was found. What was fixed are three cases that looked fine but silently degraded, plus a set of problems visible to operators.
+
+* **Service type resolution for the image services (#1031)**: the resolver compared a lowercased, hyphen-stripped key against the camelCase constant `ServiceTypeConstants.IMG_GEN` (value `"imgGen"`), a comparison that could never be true; `ServiceType.valueOf("imggen")` failed for the same reason, because the enum values are camelCase. As a result `img-gen`, `imgEdit` and `img-edit` all resolved to `null`, and the runtime `getAllInstances()` / `getAvailableServiceTypes()` quietly dropped those services. Image editing answered `404 No instances found` on every request, and both image services never took part in health checks or statistics (the batch covered 5 services / 7 instances while the configuration holds 7 services / 9 instances). Resolution now lives in a single `ServiceTypeNames` helper (case-insensitive enum match first, then a normalized alias table), the two duplicate implementations in `ConfigurationValidator` and `ConfigValidator` delegate to it, and a round-trip test asserts that every enum value can be resolved back from its config key. After the fix the health batch covers 7 services / 9 instances, `/api/models/stats` reports 1/1 instead of 0/0, and `/v1/images/edits` forwards upstream instead of failing locally.
+* **Blank page for unmatched routes (#1032)**: the console had no catch-all route, so any mistyped or stale address rendered a fully blank page with no layout and only the site name in the title, which reads as a broken server. It now falls back to a 404 page inside the normal layout, showing the requested path and offering "back to dashboard" / "go back".
+* **Static asset caching (#1033)**: the entry page and the hashed build output under `/admin/assets/**` were all served `no-cache, no-store`, forcing about 3.3 MB to be downloaded again on every refresh. Missing assets were also answered by the SPA fallback as `text/html` with status 200, so a `.js` request could receive HTML and fail with an unhelpful MIME error. Hashed assets now carry `max-age=31536000, immutable`, everything else stays `no-store`, and a missing asset under `/admin/assets/**` returns 404.
+* **Response semantics of `/v1/images/edits` (#1034)**: the endpoint only accepts `multipart/form-data`, but a JSON request reached the wildcard fallback and got a 501 saying the endpoint is not provided over `/v1` — in a message that also claimed image generation and editing are already mapped natively. JSON requests now get 415 with instructions for submitting `image` as a file field plus normal form fields, and the remaining 501 message states the actual coverage.
+* **Landing pages for parent menu entries (#1035)**: `/config`, `/security`, `/system`, `/monitoring` and `/tools` had no redirect and rendered only a breadcrumb. Each now redirects to its first child.
+* **Duplicated log lines in production (#1036)**: the `prod` profile attached both `CONSOLE` and `ASYNC_TRACING` to the root logger, and the latter writes straight to stdout, so every line appeared twice in container logs. The tracing appender is gone from that profile; structured events still go to `ASYNC_STRUCTURED`, and the `json-logs` profile still offers JSON on stdout.
+* **Schema ownership on H2 (#1037)**: H2 ran Flyway and also kept `ddl-auto=update`, so on every start Hibernate probed each table, failed to find it, and re-issued `CREATE TABLE`, producing a dozen `Table "xxx" already exists` warnings with stack traces. H2 now lets Flyway own the schema the same way PostgreSQL does (`ddl-auto` overridden to `none`); the 24 entity tables were diffed against the H2 scripts and match one to one.
+* **Migration baseline version (#1046)**: following the previous change, a database that already had tables but no `flyway_schema_history` had its baseline set at version 1 and then replayed V2..V11, failing on `ADD COLUMN deleted` in `V6__jwt_account_soft_delete` because the column already existed. The baseline version is now taken from the newest script in the migration directory, so such a database is accepted as current and no history script is executed.
+* **False healthy verdicts (#1038)**: the check `probeHealthy || failureStreak < failureThreshold` applied hysteresis unconditionally, and with a previous state that defaulted to true, the first failure of an upstream that had never succeeded was absorbed and recorded as healthy — with every upstream unreachable, the health report still said `9 healthy / 0 unhealthy`. Only instances that have actually been probed successfully now get hysteresis; the rest are reported unhealthy on the first failure.
+* **Static asset compression (#1039)**: three console chunks exceed 1 MB and nothing was compressed. With `server.compression` enabled (verified on the Netty stack) `/admin/assets/*.js` returns `Content-Encoding: gzip` when asked; SSE endpoints are unaffected, since `text/event-stream` is streamed chunked and is not compressed.
+* **Image metadata and jar selection (#1047, #1048)**: all six Dockerfile definitions pinned `LABEL version` to `3.1.1`; it is now injected as the `APP_VERSION` build argument, which both the CI workflow and the build script pass. `COPY target/model-router-*.jar app.jar` failed with an unrelated message when `target/` held more than one jar; the jar is now copied to a directory first and a single-jar assertion prints the actual contents on failure.
+
+**Upgrade notes**
+
+1. **H2 schema is owned by Flyway from this release on** (#1037, #1046). A normal upgrade needs no action. If the startup log shows `Successfully baselined schema with version: 11`, that database had no migration history and was accepted as current; if its structure is in fact behind 3.8.1, missing columns are not added automatically and need manual review. The log line is the signal to look for.
+2. **Health numbers may look worse than before** (#1038). Upstreams that were previously reported healthy by mistake are now reported unhealthy. This is a correction, not a regression, but a monitoring baseline built on the old numbers needs to be taken again.
+3. **Response compression is on** (#1039). If the front proxy or gateway also compresses, disable it on one side to avoid compressing twice.
+4. No public API contract changed. The JSON request to `/v1/images/edits` moved from 501 to 415 because the old code did not describe the real reason; multipart requests behave exactly as before.
 
 ### [3.8.0] - 2026-11-08 - Unified instance identity, breaker failure detail, shared semantic cache backend
 

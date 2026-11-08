@@ -45,10 +45,10 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # 本地/仓库目录名与产品名不同
 artifact:        model-router            # Maven artifactId
-project_version: 3.8.0                   # pom.xml
-latest_release:  v3.8.0 (2026-11-08)
+project_version: 3.8.1                   # pom.xml
+latest_release:  v3.8.1 (2026-11-08)
 stack:
-  backend:  Java 17 + Spring Boot 3.5.16（WebFlux / 响应式）
+  backend:  Java 17 + Spring Boot 4.1.2（WebFlux / 响应式）
   frontend: Vue 3 + TypeScript + Vite，中英双语（zh-CN / en-US）
   build:    Maven wrapper —— ./mvnw（Unix）· .\mvnw.cmd（Windows）
 runtime:
@@ -63,7 +63,7 @@ surfaces:
   - /actuator/**  # 健康、就绪、Prometheus
 tests:
   command: ./mvnw test -o
-  scale:   约 400 个测试类、约 4,100 个测试方法
+  scale:   约 600 个测试类、约 5,100 个测试方法
 license: Apache-2.0
 ```
 
@@ -93,7 +93,7 @@ Xinference、LocalAI——以及云端供应商（OpenAI、Anthropic、Gemini，
 所以不用准备 GPU、不用申请 API Key、也不用装 JDK。
 
 ```bash
-docker compose -f deploy/demo/docker-compose.yml pull        # 拿到 v3.8.0 及之后的镜像
+docker compose -f deploy/demo/docker-compose.yml pull        # 拿到 v3.8.1 及之后的镜像
 docker compose -f deploy/demo/docker-compose.yml up -d      # 等两个容器都 healthy
 node scripts/demo/run-demo.mjs
 ```
@@ -191,7 +191,7 @@ print(response.choices[0].message.content)
 | `src/main/java/org/unreal/modelrouter/config/` | 配置服务：热重载、版本与回滚、校验、控制台接口 |
 | `src/main/resources/config/**` | 模块化 YAML 配置，由 `application.yml` 的 `spring.config.import` 引入 |
 | `src/main/resources/db/migration/{h2,postgres}/` | 版本化 schema 迁移（`Flyway`），两种方言各一个目录 |
-| `src/test/java/` | JUnit 5 + Mockito + Reactor `StepVerifier`；约 4,100 个测试方法 |
+| `src/test/java/` | JUnit 5 + Mockito + Reactor `StepVerifier`；约 5,100 个测试方法 |
 | `frontend/` | Vue 3 + TypeScript 控制台（Vite `base: /admin/`） |
 | `docs/zh/`、`docs/en/` | MkDocs 文档，中英保持对称 |
 | `deploy/` | Kubernetes 清单、compose 文件、部署脚本 |
@@ -368,7 +368,7 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 
 ## 状态
 
-**最新版本：v3.8.0（2026-11-08）。** 逐版本说明、升级提示与已知边界见[更新日志](docs/zh/reference/changelog.md)；
+**最新版本：v3.8.1（2026-11-08）。** 逐版本说明、升级提示与已知边界见[更新日志](docs/zh/reference/changelog.md)；
 下载与容器 tag 见 [Releases](https://github.com/Lincoln-cn/JAiRouter/releases)。
 
 本文件不重复发版历史。此前复制过一份，结果落后了 changelog 五个版本 —— 只有一个事实来源才不会失真。
@@ -414,7 +414,7 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 提 PR 前请先跑：
 
 ```bash
-./mvnw test -o                       # 约 400 个测试类、约 4,100 个测试方法，必须保持全绿
+./mvnw test -o                       # 约 600 个测试类、约 5,100 个测试方法，必须保持全绿
 cd frontend && npm run type-check    # 前端类型门闩
 ```
 
