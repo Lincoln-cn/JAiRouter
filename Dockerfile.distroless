@@ -16,7 +16,14 @@ FROM eclipse-temurin:17-jdk-alpine AS extract-layer
 WORKDIR /app
 
 # 复制 JAR 文件
-COPY target/model-router-*.jar app.jar
+# target 下可能同时存在多个版本的 jar（旧版本未清理），`*.jar` 就会命中多个源，
+# 而 COPY 把多个源复制到文件目标时的报错非常抽象。先复制到目录、再断言恰好一个，
+# 让「选错了 jar」变成一条能直接读懂的失败信息。
+COPY target/model-router-*.jar /tmp/jar/
+RUN set -eux; \
+    set -- /tmp/jar/*.jar; \
+    [ "$#" -eq 1 ] || { echo "expected exactly one model-router jar under target/, found $#:" >&2; ls -l /tmp/jar/ >&2; exit 1; }; \
+    cp /tmp/jar/*.jar app.jar
 
 # 使用 Spring Boot 工具提取分层（利用 Docker 缓存）
 RUN java -Djarmode=tools -jar app.jar extract --layers --launcher --destination extracted
@@ -29,7 +36,9 @@ FROM gcr.io/distroless/java17-debian12:latest
 # 设置元数据
 LABEL maintainer="JAiRouter Team"
 LABEL description="JAiRouter - AI Model Service Routing Gateway (Distroless)"
-LABEL version="3.1.1"
+# 版本号由构建参数注入：默认 dev，发布流程传 --build-arg APP_VERSION=<版本>
+ARG APP_VERSION=dev
+LABEL version="${APP_VERSION}"
 LABEL org.opencontainers.image.source="https://github.com/sodlinken/jairouter"
 
 WORKDIR /app

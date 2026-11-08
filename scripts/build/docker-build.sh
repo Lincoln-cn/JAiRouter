@@ -68,6 +68,7 @@ case "$IMAGE_TYPE" in
     "optimized")
         echo -e "${BLUE}Building optimized image (281MB, recommended) ⭐${NC}"
         docker build -f Dockerfile.optimized \
+            --build-arg APP_VERSION="${VERSION}" \
             -t "${IMAGE_NAME}:${VERSION}-optimized" \
             -t "${IMAGE_NAME}:latest-optimized" \
             .
@@ -84,6 +85,7 @@ case "$IMAGE_TYPE" in
     "jlink")
         echo -e "${BLUE}Building JLink optimized image (281MB, experimental) 🔬${NC}"
         docker build -f Dockerfile.jlink \
+            --build-arg APP_VERSION="${VERSION}" \
             -t "${IMAGE_NAME}:${VERSION}-jlink" \
             -t "${IMAGE_NAME}:jlink" \
             .
@@ -100,6 +102,7 @@ case "$IMAGE_TYPE" in
     *)
         echo -e "${BLUE}Building standard image (440MB)${NC}"
         docker build \
+            --build-arg APP_VERSION="${VERSION}" \
             -t "${IMAGE_NAME}:${VERSION}" \
             -t "${IMAGE_NAME}:latest" \
             .
