@@ -6,7 +6,10 @@ import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.MutablePropertySources;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -23,9 +26,24 @@ import java.util.Map;
  *   <li><b>H2</b>（{@code jdbc:h2:…}）→ 脚本目录 {@code classpath:db/migration/h2}</li>
  * </ul>
  *
- * <p>两者都给 {@code spring.flyway.enabled=true}、{@code baseline-on-migrate=true}、
- * {@code baseline-version=1}，脚本目录各自独立（物理类型不同：H2 是 {@code json} / {@code TEXT} /
- * {@code enum}，PG 是 {@code jsonb} / {@code TEXT} / {@code varchar} + check）。
+ * <p>两者都给 {@code spring.flyway.enabled=true}、{@code baseline-on-migrate=true}，脚本目录各自独立
+ * （物理类型不同：H2 是 {@code json} / {@code TEXT} / {@code enum}，PG 是 {@code jsonb} / {@code TEXT} /
+ * {@code varchar} + check）。
+ *
+ * <h2>{@code baseline-version} 取脚本目录里的最新版本，而不是固定 1</h2>
+ * <p>Flyway 的 {@code baseline-on-migrate} 只在「库非空、但没有迁移历史表」时生效，把它标记成
+ * {@code baseline-version} 然后执行**大于**该版本的脚本。固定成 {@code 1} 的后果是：这类库会被判定
+ * 为「连 V1 都还没跑」，于是 V2..V11 全部重放；其中 V6 是无保护的
+ * {@code ALTER TABLE jwt_accounts ADD COLUMN deleted}，而当前实体建出来的库里该列早就存在
+ * ⇒ {@code Duplicate column name "deleted"}，迁移失败、服务起不来（issue #1046）。
+ *
+ * <p>把 {@code baseline-version} 取成脚本目录里的最新版本，这类库被认作「结构已是最新」，
+ * 一个历史脚本都不重放；之后新增的脚本版本号更大，仍会正常执行。
+ *
+ * <p><b>代价（已知并接受）</b>：对「有表、无迁移历史、且结构其实落后」的库，这个改动不会补救 ——
+ * 它同样被认作最新。那种库需要人工比对结构后重建或手工补迁移，属运维判断而非启动期能猜的事。
+ * {@code baseline-version} 是 Flyway 的启动参数，选「乐观跳过」还是「乐观重放」只能二选一，
+ * 而重放必然在 V6 上崩，因此选跳过。
  *
  * <p><b>两种方言的 {@code ddl-auto} 都会被这里强制覆盖，但覆盖成不同的值</b>：
  * PostgreSQL 用 {@code validate}，H2 用 {@code none}。H2 不能上 {@code validate}，原因是实测的
@@ -84,6 +102,22 @@ public class FlywayDialectEnvironmentPostProcessor implements EnvironmentPostPro
     static final String POSTGRES_LOCATIONS = "classpath:db/migration/postgres";
     static final String H2_LOCATIONS = "classpath:db/migration/h2";
 
+    /** classpath 资源前缀（配置里的写法） */
+    private static final String CLASSPATH_PREFIX = "classpath:";
+
+    /** 跨 classpath 根（含 jar 内）通配查找的前缀 */
+    private static final String CLASSPATH_WILDCARD_PREFIX = "classpath*:";
+
+    /** 扫不到迁移脚本时沿用的 {@code baseline-version}，即固定 1 的历史行为 */
+    static final String DEFAULT_BASELINE_VERSION = "1";
+
+    /** 迁移脚本的路径后缀模式 */
+    private static final String MIGRATION_FILE_SUFFIX_PATTERN = "/V*__*.sql";
+
+    /** 迁移脚本文件名前缀与版本分隔符：{@code V<version>__<description>.sql} */
+    private static final String MIGRATION_FILE_PREFIX = "V";
+    private static final String VERSION_TERMINATOR = "__";
+
     /** 须在配置导入之后运行，才能看到导入文件里的数据源 URL */
     @Override
     public int getOrder() {
@@ -109,7 +143,9 @@ public class FlywayDialectEnvironmentPostProcessor implements EnvironmentPostPro
         dialectDefaults.put(FLYWAY_ENABLED, "true");
         dialectDefaults.put(FLYWAY_LOCATIONS, locations);
         dialectDefaults.put(FLYWAY_BASELINE_ON_MIGRATE, "true");
-        dialectDefaults.put(FLYWAY_BASELINE_VERSION, "1");
+        // 取脚本目录里的最新版本，而不是固定 1：固定 1 会让「有表但无迁移历史」的库重放 V2..V11，
+        // 而 V6 的 ADD COLUMN 在那种库上必然撞重复列（issue #1046）。
+        dialectDefaults.put(FLYWAY_BASELINE_VERSION, resolveLatestMigrationVersion(locations));
         // addLast：显式配置（如 application-test.yml 的 flyway.enabled=false）优先于这些兜底值
         sources.addLast(new MapPropertySource(SOURCE_NAME, dialectDefaults));
 
@@ -154,5 +190,79 @@ public class FlywayDialectEnvironmentPostProcessor implements EnvironmentPostPro
             return H2_LOCATIONS;
         }
         return null;
+    }
+
+    /**
+     * 该方言脚本目录里的最新迁移版本号，用作 {@code baseline-version}。
+     *
+     * <p>扫不到（目录不存在、文件名不符、读不到资源）时回退 {@link #DEFAULT_BASELINE_VERSION}，
+     * 即改动前的行为 —— 扫描失败不该让启动失败。
+     *
+     * <p>扫描走 {@code classpath*:}，因此打包成 jar 后同样有效。
+     */
+    static String resolveLatestMigrationVersion(final String locations) {
+        if (locations == null || !locations.startsWith(CLASSPATH_PREFIX)) {
+            return DEFAULT_BASELINE_VERSION;
+        }
+        final String packagePath = locations.substring(CLASSPATH_PREFIX.length());
+        try {
+            final Resource[] resources = new PathMatchingResourcePatternResolver()
+                    .getResources(CLASSPATH_WILDCARD_PREFIX + packagePath + MIGRATION_FILE_SUFFIX_PATTERN);
+            String latest = null;
+            for (final Resource resource : resources) {
+                final String version = versionOf(resource.getFilename());
+                if (isNewer(version, latest)) {
+                    latest = version;
+                }
+            }
+            return latest == null ? DEFAULT_BASELINE_VERSION : latest;
+        } catch (final IOException ex) {
+            return DEFAULT_BASELINE_VERSION;
+        }
+    }
+
+    /**
+     * 从 {@code V<version>__<description>.sql} 里取出 {@code <version>}；不是迁移脚本时返回 {@code null}。
+     */
+    static String versionOf(final String fileName) {
+        if (fileName == null || !fileName.startsWith(MIGRATION_FILE_PREFIX)) {
+            return null;
+        }
+        final int end = fileName.indexOf(VERSION_TERMINATOR);
+        if (end <= MIGRATION_FILE_PREFIX.length()) {
+            return null;
+        }
+        return fileName.substring(MIGRATION_FILE_PREFIX.length(), end);
+    }
+
+    /**
+     * 版本号是否比当前最新更大。按 {@code .} 分段做数值比较（{@code 10} 大于 {@code 9}，
+     * 而字符串比较会得出相反结论）；段数不同时缺的段按 0 处理。
+     */
+    static boolean isNewer(final String candidate, final String current) {
+        if (candidate == null) {
+            return false;
+        }
+        if (current == null) {
+            return true;
+        }
+        final String[] left = candidate.split("\\.");
+        final String[] right = current.split("\\.");
+        for (int i = 0; i < Math.max(left.length, right.length); i++) {
+            final int l = i < left.length ? parseSegment(left[i]) : 0;
+            final int r = i < right.length ? parseSegment(right[i]) : 0;
+            if (l != r) {
+                return l > r;
+            }
+        }
+        return false;
+    }
+
+    private static int parseSegment(final String value) {
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (final NumberFormatException ex) {
+            return 0;
+        }
     }
 }
