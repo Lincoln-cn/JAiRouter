@@ -4,7 +4,9 @@ FROM eclipse-temurin:17-jdk-alpine
 # 设置维护者信息
 LABEL maintainer="JAiRouter Team"
 LABEL description="JAiRouter Development Environment"
-LABEL version="3.1.1"
+# 版本号由构建参数注入：默认 dev，发布流程传 --build-arg APP_VERSION=<版本>
+ARG APP_VERSION=dev
+LABEL version="${APP_VERSION}"
 
 # 安装必要的工具
 RUN apk add --no-cache curl wget
@@ -21,7 +23,14 @@ RUN mkdir -p /app/logs /app/config /app/config-store /app/data && \
     chown -R jairouter:jairouter /app
 
 # 复制应用 JAR 文件
-COPY target/model-router-*.jar app.jar
+# target 下可能同时存在多个版本的 jar（旧版本未清理），`*.jar` 就会命中多个源，
+# 而 COPY 把多个源复制到文件目标时的报错非常抽象。先复制到目录、再断言恰好一个，
+# 让「选错了 jar」变成一条能直接读懂的失败信息。
+COPY target/model-router-*.jar /tmp/jar/
+RUN set -eux; \
+    set -- /tmp/jar/*.jar; \
+    [ "$#" -eq 1 ] || { echo "expected exactly one model-router jar under target/, found $#:" >&2; ls -l /tmp/jar/ >&2; exit 1; }; \
+    cp /tmp/jar/*.jar app.jar
 RUN chown jairouter:jairouter app.jar
 
 # 配置文件通过卷挂载提供，无需复制到镜像中
