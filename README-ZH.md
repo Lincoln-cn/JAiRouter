@@ -45,8 +45,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # 本地/仓库目录名与产品名不同
 artifact:        model-router            # Maven artifactId
-project_version: 3.7.3                   # pom.xml
-latest_release:  v3.7.3 (2026-11-06)
+project_version: 3.8.0                   # pom.xml
+latest_release:  v3.8.0 (2026-11-08)
 stack:
   backend:  Java 17 + Spring Boot 3.5.16（WebFlux / 响应式）
   frontend: Vue 3 + TypeScript + Vite，中英双语（zh-CN / en-US）
@@ -355,7 +355,7 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 
 ## 状态
 
-**最新版本：v3.7.3（2026-11-06）。** 逐版本说明、升级提示与已知边界见[更新日志](docs/zh/reference/changelog.md)；
+**最新版本：v3.8.0（2026-11-08）。** 逐版本说明、升级提示与已知边界见[更新日志](docs/zh/reference/changelog.md)；
 下载与容器 tag 见 [Releases](https://github.com/Lincoln-cn/JAiRouter/releases)。
 
 本文件不重复发版历史。此前复制过一份，结果落后了 changelog 五个版本 —— 只有一个事实来源才不会失真。

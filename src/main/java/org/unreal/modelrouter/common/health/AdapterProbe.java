@@ -13,7 +13,7 @@ import org.unreal.modelrouter.router.model.ModelRouterProperties;
  * <p>判为 {@link HealthSignal.Severity#SOFT}：适配器解析不出通常是配置疏漏，
  * 实例本身没坏。判成 FATAL 会让一个提示性问题变成整条链路不可用。</p>
  *
- * @since v3.7.4
+ * @since v3.8.0
  */
 public class AdapterProbe implements HealthProbe {
 

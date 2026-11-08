@@ -21,7 +21,7 @@ package org.unreal.modelrouter.common.health;
  * {@code DEGRADED} 实例，有人希望照样打过去（宁可慢也别 503），有人希望跳过。
  * 把它们混在一起，就是上一版方案里「误判一个配置问题导致全量不可用」的根源。</p>
  *
- * @since v3.7.4
+ * @since v3.8.0
  */
 public enum InstanceHealth {
 

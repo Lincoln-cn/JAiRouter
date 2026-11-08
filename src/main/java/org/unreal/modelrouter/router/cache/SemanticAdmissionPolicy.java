@@ -28,7 +28,7 @@ import java.util.Set;
  * <p><b>空配置即拒绝</b>：{@code body} 为 null、结构不是对象、{@code messages} 缺失或为空时一律不放行。</p>
  *
  * @author JAiRouter Team
- * @since 3.7.4
+ * @since 3.8.0
  */
 @Component
 public class SemanticAdmissionPolicy {

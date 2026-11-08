@@ -23,7 +23,7 @@ import java.util.Map;
  * <p>「适配器解析不出」属于 SOFT：实例本身没坏，是配置疏漏，判成 UNHEALTHY
  * 会把一个提示性问题放大成整条链路不可用（见 {@code #1004}）。</p>
  *
- * @since v3.7.4
+ * @since v3.8.0
  */
 public final class InstanceHealthEvaluator {
 

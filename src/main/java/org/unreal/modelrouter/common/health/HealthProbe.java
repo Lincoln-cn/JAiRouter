@@ -18,7 +18,7 @@ import org.unreal.modelrouter.router.model.ModelRouterProperties;
  *       {@link InstanceHealth#UNHEALTHY}，调用方要谨慎。</li>
  * </ul>
  *
- * @since v3.7.4
+ * @since v3.8.0
  */
 public interface HealthProbe {
 
