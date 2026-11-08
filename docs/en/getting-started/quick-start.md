@@ -9,6 +9,8 @@
 
 This guide will help you make your first API call to JAiRouter and understand the basic concepts.
 
+> 💡 **Want to see it run before configuring a model?** The repository ships a demo environment (a mock upstream plus a demo script) that exercises the main path without any model service: [5-Minute Demo](demo.md).
+
 ## Learning Objectives
 
 After completing this guide, you will be able to:

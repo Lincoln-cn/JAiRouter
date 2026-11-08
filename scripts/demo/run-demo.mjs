@@ -131,26 +131,30 @@ async function main() {
   const r2 = await chat(first, '你好，介绍一下你自己')
   expect('第二次请求返回 200', r2.status === 200, `HTTP ${r2.status}`)
   console.log(`     第一次耗时 ${r1.elapsed}ms，第二次耗时 ${r2.elapsed}ms`)
-  if (r2.elapsed < r1.elapsed) {
+  if (r1.status !== 200 || r2.status !== 200) {
+    console.log('  ℹ️  两次请求里有一次没成功，缓存对比不成立（先看第 1 步的失败原因）')
+  } else if (r2.elapsed < r1.elapsed) {
     expect(`缓存生效（${r1.elapsed}ms → ${r2.elapsed}ms）`, true)
   } else {
     console.log('  ℹ️  这次没看出提速：缓存条目可能已过期（默认 10 分钟），或多副本分摊到了未命中的实例')
   }
 
   // ── 4. 可逆脱敏 ────────────────────────────────────────────────
-  section(4, '可逆脱敏', '发一段带身份证号和手机号的文本：上游应该只看到占位符，客户端拿回原文')
+  section(4, '可逆脱敏', '发一段带身份证号和手机号的文本：开启后上游只该收到 [PII_n] 占位符，客户端拿回原文')
   const withPii = await chat(first, '记一下：身份证 110101199003071234，手机 13812345678')
-  if (withPii.status === 200 && withPii.text.includes('110101199003071234')) {
-    expect('客户端拿回的是原文（占位符已被还原）', true)
-    console.log('     上游收到的是 [PII_1]/[PII_2] —— 用 docker logs jairouter-demo-upstream | Select-String PII 可以验证')
-  } else {
-    console.log(`  ℹ️  这一步需要开启可逆脱敏（默认关闭）。开启方式：`)
-    console.log(`     docker compose -f deploy/demo/docker-compose.yml down`)
-    console.log(`     # 在 compose 的 jairouter.environment 里加：`)
-    console.log(`     #   JAIRouter_PII_REVERSIBLE_ENABLED: "true"`)
-    console.log(`     docker compose -f deploy/demo/docker-compose.yml up -d`)
-    console.log(`     当前响应片段：${withPii.text.slice(0, 120)}`)
-  }
+  expect('请求返回 200', withPii.status === 200, `HTTP ${withPii.status}`)
+  console.log(`     响应片段：${withPii.text.slice(0, 120)}`)
+  // 这一步的判定在上游侧，不在客户端：可逆脱敏开启与否，客户端拿回的都是原文
+  // （这正是它的用途），所以只能看 mock 上游收到了什么形状。
+  console.log('     可逆脱敏默认关闭。看上游收到的形状来判定：')
+  console.log('       bash:       docker logs jairouter-demo-upstream | grep lastUser')
+  console.log('       PowerShell: docker logs jairouter-demo-upstream | Select-String lastUser')
+  console.log('       lastUser placeholders=[PII_1],[PII_2]  → 上游没拿到明文（脱敏生效）')
+  console.log('       lastUser plaintext(NN B)                → 上游拿到了明文（未开启，或没生效）')
+  console.log('     开启方式：在 deploy/demo/docker-compose.yml 的 jairouter.environment 里加')
+  console.log('       JAIRouter_PII_REVERSIBLE_ENABLED: "true"')
+  console.log('     再 docker compose -f deploy/demo/docker-compose.yml up -d 重启网关。')
+
 
   // ── 汇总 ──────────────────────────────────────────────────────
   console.log(`\n${'='.repeat(64)}`)
@@ -159,7 +163,7 @@ async function main() {
     console.log('有失败项，先确认两个容器都 healthy：docker compose -f deploy/demo/docker-compose.yml ps')
     process.exit(1)
   }
-  console.log('\n接下来可以打开控制台看这次调用：http://127.0.0.1:8080/admin/')
+  console.log(`\n接下来可以打开控制台看这次调用：${BASE}/admin/`)
   // 不回显口令：值来自 deploy/demo/docker-compose.yml 的 INITIAL_ADMIN_PASSWORD，
   // 或你运行前设置的 $DEMO_PASSWORD。写进日志会被 CodeQL 的 clear-text-logging 判为明文泄漏。
   console.log(`账号 ${USER}`)

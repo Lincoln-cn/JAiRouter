@@ -90,6 +90,21 @@ restarting the process.
 
 ## Quick start
 
+### 5-minute demo — no model service needed
+
+Two containers and one script show the gateway end to end: request forwarding, model switching,
+response cache, and reversible sanitization. A mock upstream stands in for a real model, so there is
+no GPU to provision, no API key to obtain, and no JDK to install.
+
+```bash
+docker compose -f deploy/demo/docker-compose.yml pull        # v3.8.0 or newer
+docker compose -f deploy/demo/docker-compose.yml up -d      # wait until both are healthy
+node scripts/demo/run-demo.mjs
+```
+
+Full walkthrough, including how to check reversible sanitization from the upstream side:
+[5-minute demo](docs/en/getting-started/demo.md).
+
 ### Development profile — no secrets required
 
 ```bash

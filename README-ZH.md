@@ -87,6 +87,19 @@ Xinference、LocalAI——以及云端供应商（OpenAI、Anthropic、Gemini，
 
 ## 快速开始
 
+### 5 分钟演示 —— 不需要模型服务
+
+两个容器加一个脚本，把网关从头到尾走一遍：请求转发、换模型、响应缓存、可逆脱敏。上游是一个 mock，
+所以不用准备 GPU、不用申请 API Key、也不用装 JDK。
+
+```bash
+docker compose -f deploy/demo/docker-compose.yml pull        # 拿到 v3.8.0 及之后的镜像
+docker compose -f deploy/demo/docker-compose.yml up -d      # 等两个容器都 healthy
+node scripts/demo/run-demo.mjs
+```
+
+完整说明（含怎么从上游侧确认可逆脱敏生效）：[5 分钟演示](docs/zh/getting-started/demo.md)。
+
 ### 开发 profile —— 无需任何密钥
 
 ```bash

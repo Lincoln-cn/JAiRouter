@@ -200,6 +200,15 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/monitoring"/>
   </url>
   <url>
+    <loc>https://jairouter.comzh/getting-started/demo</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comzh/getting-started/demo"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/getting-started/demo"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/getting-started/demo"/>
+  </url>
+  <url>
     <loc>https://jairouter.comzh/getting-started/first-steps</loc>
     <lastmod>2026-11-08</lastmod>
     <changefreq>monthly</changefreq>
@@ -243,6 +252,15 @@
     <xhtml:link rel="canonical" href="https://jairouter.comzh/getting-started/installation"/>
     <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comzh/getting-started/installation"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enzh/getting-started/installation"/>
+  </url>
+  <url>
+    <loc>https://jairouter.comen/getting-started/demo</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="canonical" href="https://jairouter.comen/getting-started/demo"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://jairouter.comen/getting-started/demo"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/enen/getting-started/demo"/>
   </url>
   <url>
     <loc>https://jairouter.comen/getting-started/first-steps</loc>
