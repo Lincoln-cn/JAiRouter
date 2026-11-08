@@ -160,7 +160,10 @@ async function main() {
     process.exit(1)
   }
   console.log('\n接下来可以打开控制台看这次调用：http://127.0.0.1:8080/admin/')
-  console.log(`账号 ${USER} / 密码 ${PASSWORD}`)
+  // 不回显口令：值来自 deploy/demo/docker-compose.yml 的 INITIAL_ADMIN_PASSWORD，
+  // 或你运行前设置的 $DEMO_PASSWORD。写进日志会被 CodeQL 的 clear-text-logging 判为明文泄漏。
+  console.log(`账号 ${USER}`)
+  console.log('密码见 deploy/demo/docker-compose.yml 的 INITIAL_ADMIN_PASSWORD；用 $DEMO_PASSWORD 覆盖时就是你设的那个')
 }
 
 main().catch((e) => {
