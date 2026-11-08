@@ -54,7 +54,7 @@ class FlywayDialectEnvironmentPostProcessorTest {
     }
 
     @Test
-    @DisplayName("H2：启用 Flyway 基线迁移（脚本目录 h2），但**不**改 ddl-auto（保留 update）")
+    @DisplayName("H2：启用 Flyway 基线迁移（脚本目录 h2），并把 ddl-auto 覆盖为 none")
     void h2UsesH2Migrations() {
         MockEnvironment environment = environmentWithDefaults(H2_URL);
 
@@ -67,9 +67,29 @@ class FlywayDialectEnvironmentPostProcessorTest {
                 environment.getProperty(FlywayDialectEnvironmentPostProcessor.FLYWAY_BASELINE_ON_MIGRATE));
         assertEquals("1",
                 environment.getProperty(FlywayDialectEnvironmentPostProcessor.FLYWAY_BASELINE_VERSION));
-        // H2 不上 validate：见处理器类注释（DATABASE_TO_UPPER=FALSE 下 Hibernate 的 schema 校验
-        // 查不到对象，实测证据在 issue #192）
-        assertEquals("update", environment.getProperty(FlywayDialectEnvironmentPostProcessor.DDL_AUTO));
+        // H2 上既不上 validate（DATABASE_TO_UPPER=FALSE 下 Hibernate 的 schema 校验查不到对象，
+        // 实测证据在 issue #192），也不留 update（第二次启动会逐表重发 CREATE TABLE、被 H2 以
+        // already exists 拒绝，实测证据在 issue #1037）—— 建表完全交给 Flyway。
+        assertEquals("none", environment.getProperty(FlywayDialectEnvironmentPostProcessor.DDL_AUTO));
+    }
+
+    /**
+     * 反向条款：测试环境用内存库 + {@code create-drop}，Flyway 被显式关掉。此时若还把
+     * {@code ddl-auto} 覆盖成 {@code none}，一张表都不会被建出来，整个测试套件会先崩在装配阶段。
+     * 所以「覆盖」必须以「Flyway 确实在跑」为前提。
+     */
+    @Test
+    @DisplayName("H2 上显式关闭 Flyway 时不覆盖 ddl-auto（否则 create-drop 的测试库没有表）")
+    void h2KeepsUpdateWhenFlywayExplicitlyDisabled() {
+        MockEnvironment environment = environmentWithDefaults(H2_URL);
+        environment.getPropertySources().addFirst(new MapPropertySource("testYml", Map.of(
+                FlywayDialectEnvironmentPostProcessor.FLYWAY_ENABLED, "false")));
+
+        processor.postProcessEnvironment(environment, null);
+
+        assertEquals("false", environment.getProperty(FlywayDialectEnvironmentPostProcessor.FLYWAY_ENABLED));
+        assertEquals("update", environment.getProperty(FlywayDialectEnvironmentPostProcessor.DDL_AUTO),
+                "Flyway 被关掉时表只能由 Hibernate 建，不能覆盖成 none");
     }
 
     @Test

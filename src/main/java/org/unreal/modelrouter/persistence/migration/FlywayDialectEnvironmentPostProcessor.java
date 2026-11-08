@@ -27,15 +27,22 @@ import java.util.Map;
  * {@code baseline-version=1}，脚本目录各自独立（物理类型不同：H2 是 {@code json} / {@code TEXT} /
  * {@code enum}，PG 是 {@code jsonb} / {@code TEXT} / {@code varchar} + check）。
  *
- * <p><b>只有 PostgreSQL 会把 {@code ddl-auto} 覆盖为 {@code validate}</b>，H2 保留配置里的
- * {@code update}。原因是实测的（issue #192）：H2 在 {@code DATABASE_TO_UPPER=FALSE} 下把对象建成
- * 小写（{@code PUBLIC.api_call_history}），而 Hibernate 的 schema 校验在 JDBC 元数据里按另一侧
+ * <p><b>两种方言的 {@code ddl-auto} 都会被这里强制覆盖，但覆盖成不同的值</b>：
+ * PostgreSQL 用 {@code validate}，H2 用 {@code none}。H2 不能上 {@code validate}，原因是实测的
+ * （issue #192）：H2 在 {@code DATABASE_TO_UPPER=FALSE} 下把对象建成小写
+ * （{@code PUBLIC.api_call_history}），而 Hibernate 的 schema 校验在 JDBC 元数据里按另一侧
  * 大小写去找 schema 名，一律报 {@code Schema-validation: missing table …}（用 JDBC 元数据探针确认：
  * {@code getTables(cat, "PUBLIC", …)} 命中、{@code "public"} 不命中；{@code default_schema=PUBLIC}
  * 与 {@code jdbc_metadata_extraction_strategy=grouped} 都不解决）。同一份脚本在**去掉**该模式的
  * H2 默认大小写下跑得通（实测：迁移 + 校验 + 启动 + 退出码 0），但那会让既有小写 H2 库全部失配、
- * 必须重建 —— 属破坏性变更，本步不做。H2 因此是「Flyway 版本化 + Hibernate {@code update}」，
- * 同样能替掉原来的启动期补丁组件（补丁语义见 {@code h2/V2__legacy_convergence.sql}）。
+ * 必须重建 —— 属破坏性变更，本步不做。
+ *
+ * <p>H2 此前保留 {@code update}，是把它当「Flyway 之外的兜底」：万一某张表的迁移脚本缺失，
+ * Hibernate 会补上。代价是 {@code update} 在同一库的**第二次启动**会逐表重新发 {@code CREATE TABLE}，
+ * 被 H2 以 {@code already exists} 拒绝，每次启动刷十余条 WARN 与完整堆栈（issue #1037）——
+ * 这些噪音正是排障时最容易淹没真问题的地方。实测确认 H2 的 V1–V11 脚本与 24 个 {@code @Entity}
+ * 表一一对应之后，这里改为 {@code none}：建表完全交给 Flyway，Hibernate 不再尝试改表。
+ * 关掉 Flyway 的场景（测试用内存库 + {@code create-drop}）不覆盖，保持原有行为。
  *
  * <h2>优先级：本方注入的是兜底默认值，不是强制覆盖</h2>
  * <p>{@code spring.flyway.*} 四个键以 {@code addLast} 注入，因此**任何显式配置都优先**：
@@ -44,7 +51,7 @@ import java.util.Map;
  * 这一点不能靠 {@code addFirst} 实现 —— 那样会把显式配置压下去，实测代价是 PG 门控测试拿
  * H2 的脚本去建 PG 的库（issue #192 修复过程中踩到）。
  *
- * <p>唯一的例外是 PG 上的 {@code ddl-auto}：必须用 {@code addFirst} 盖过 {@code core.yml} 里既有的
+ * <p>唯一的例外是方言受支持时的 {@code ddl-auto}：必须用 {@code addFirst} 盖过 {@code core.yml} 里既有的
  * {@code update}（那条默认值是嵌入式库的安全网，缺了它 Hibernate 对嵌入式数据源会退化为
  * {@code create-drop}，不能删、只能按方言覆盖）。
  *
@@ -71,6 +78,9 @@ public class FlywayDialectEnvironmentPostProcessor implements EnvironmentPostPro
     static final String FLYWAY_BASELINE_VERSION = "spring.flyway.baseline-version";
     static final String DDL_AUTO = "spring.jpa.hibernate.ddl-auto";
 
+    /** H2 上的 {@code ddl-auto} 取值：建表与演进全部交给 Flyway（issue #1037） */
+    static final String DDL_AUTO_NONE = "none";
+
     static final String POSTGRES_LOCATIONS = "classpath:db/migration/postgres";
     static final String H2_LOCATIONS = "classpath:db/migration/h2";
 
@@ -85,6 +95,8 @@ public class FlywayDialectEnvironmentPostProcessor implements EnvironmentPostPro
                                        final SpringApplication application) {
         final MutablePropertySources sources = environment.getPropertySources();
         final String url = environment.getProperty(DATASOURCE_URL);
+        // 必须在注入方言兜底值之前读：注入之后这里读到的就是自己写的 "true"，分不清是否被显式关掉
+        final String explicitFlywayEnabled = environment.getProperty(FLYWAY_ENABLED);
         final String locations = migrationLocations(url);
 
         if (locations == null) {
@@ -102,11 +114,27 @@ public class FlywayDialectEnvironmentPostProcessor implements EnvironmentPostPro
         sources.addLast(new MapPropertySource(SOURCE_NAME, dialectDefaults));
 
         if (locations.equals(POSTGRES_LOCATIONS)) {
-            // PostgreSQL 上 Hibernate 只做校验；H2 不上 validate，原因见类注释（实测：H2 的
-            // DATABASE_TO_UPPER=FALSE 模式下 Hibernate 的 schema 校验查不到对象）。
+            // PostgreSQL 上 Hibernate 只做校验。
             // 这一条必须盖过 core.yml 的 ddl-auto: update，故用 addFirst。
             sources.addFirst(new MapPropertySource(FORCED_SOURCE_NAME, Map.of(DDL_AUTO, "validate")));
+        } else if (!flywayExplicitlyDisabled(explicitFlywayEnabled)) {
+            // H2 上的建表同样交给 Flyway，Hibernate 不参与：update 会在同一库的第二次启动时
+            // 逐表重发 CREATE TABLE、被 H2 以 already exists 拒绝（issue #1037）；validate 又查不到
+            // 小写对象（issue #192）。既然上不了 validate，none 是唯一没有副作用的选择。
+            // 显式关掉 Flyway 的场景不覆盖，原因见 explicitFlywayEnabled 的取值时机。
+            sources.addFirst(new MapPropertySource(FORCED_SOURCE_NAME, Map.of(DDL_AUTO, DDL_AUTO_NONE)));
         }
+    }
+
+    /**
+     * 显式配置是否把 Flyway 关掉了。
+     *
+     * <p>只有显式配置会被认出来（在注入方言兜底值之前取值）。测试环境的
+     * {@code spring.flyway.enabled=false} 属于这一类 —— 那种场景下 H2 的表由 Hibernate 的
+     * {@code create-drop} 建，不能再把 {@code ddl-auto} 覆盖成 {@code none}，否则一张表都不会有。
+     */
+    static boolean flywayExplicitlyDisabled(final String explicitFlywayEnabled) {
+        return "false".equalsIgnoreCase(explicitFlywayEnabled);
     }
 
     /**
