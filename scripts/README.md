@@ -209,7 +209,7 @@ powershell -ExecutionPolicy Bypass -File scripts/test/test-branch-cleanup.ps1
 |------|------|
 | `check` | 只读校验：七处版本号一致 + changelog 有当前版本条目 + tag 未占用 |
 | `bump` | 一次改齐 pom / `frontend/package.json` / README×2 / changelog×2 / roadmap×2 |
-| `tag` | 打 tag + 推 tag + 创建 GitHub Release（校验发布说明首行是 `# `） |
+| `tag` | 打 tag + 推 tag + 创建 GitHub Release（先校验发布说明首行是井号加一个空格） |
 | `notes` | 从 changelog 生成发布说明骨架 |
 
 默认 dry-run，加 `--write` 才真正写盘；发布流程本身见 `docs/zh/development/contributing.md`。
