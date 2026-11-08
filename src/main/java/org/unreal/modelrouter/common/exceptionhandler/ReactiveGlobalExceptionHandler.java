@@ -203,7 +203,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
      * @param ex 异常（沿 cause 链逐层找）
      * @return host:port 或 {@code unknown}
      */
-    private static String extractTarget(final Throwable ex) {
+    static String extractTarget(final Throwable ex) {
         java.util.regex.Pattern pattern = java.util.regex.Pattern
                 .compile("([\\w.-]+|\\d{1,3}(?:\\.\\d{1,3}){3}):(\\d{2,5})");
         java.util.Set<Throwable> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
