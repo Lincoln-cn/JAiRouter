@@ -56,7 +56,17 @@ const router = createRouter({
       component: () => import('../views/Layout.vue'),
       redirect: '/dashboard',
       meta: { requiresAuth: true },
-      children: []
+      children: [
+        // 未匹配路径的兜底：此前没有 catch-all，手输或收藏一个失效地址会得到整页空白
+        // （连侧边栏都不渲染，页面标题仍是默认的 "JAiRouter"），看起来像服务挂了。
+        // 挂在 Layout 下，用户仍可通过菜单离开；静态路由优先于通配，不会吞掉具名路由。
+        {
+          path: ':pathMatch(.*)*',
+          name: 'not-found',
+          component: () => import('../views/NotFound.vue'),
+          meta: { titleKey: 'route.notFound' }
+        }
+      ]
     },
     // 概览
     {
@@ -80,6 +90,7 @@ const router = createRouter({
       name: 'config',
       component: () => import('../views/Layout.vue'),
       meta: { requiresAuth: true, titleKey: 'route.config' },
+      redirect: '/config/services',
       children: [
         {
           path: 'services',
@@ -195,6 +206,7 @@ const router = createRouter({
       name: 'security',
       component: () => import('../views/Layout.vue'),
       meta: { requiresAuth: true, roles: ['ADMIN'], titleKey: 'route.security' },
+      redirect: '/security/api-keys',
       children: [
         {
           path: 'api-keys',
@@ -244,6 +256,7 @@ const router = createRouter({
       name: 'system',
       component: () => import('../views/Layout.vue'),
       meta: { requiresAuth: true, roles: ['ADMIN'], titleKey: 'route.system' },
+      redirect: '/system/accounts',
       children: [
         {
           path: 'accounts',
@@ -380,6 +393,7 @@ const router = createRouter({
       name: 'monitoring',
       component: () => import('../views/Layout.vue'),
       meta: { requiresAuth: true, titleKey: 'route.monitoring' },
+      redirect: '/monitoring/slow-queries',
       children: [
         {
           path: 'slow-queries',
@@ -436,6 +450,7 @@ const router = createRouter({
       name: 'tools',
       component: () => import('../views/Layout.vue'),
       meta: { requiresAuth: true, titleKey: 'route.tools' },
+      redirect: '/tools/client-access',
       children: [
         {
           path: 'client-access',

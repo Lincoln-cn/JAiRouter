@@ -181,7 +181,8 @@
     "quotaConfigManagement": "配额运行时配置",
     "quotaUsageMonitoring": "配额用量监控",
     "tools": "开发者工具",
-    "clientAccessGuide": "客户端接入指南"
+    "clientAccessGuide": "客户端接入指南",
+    "notFound": "页面不存在"
   },
   "globalSearch": {
     "dialogLabel": "全局搜索",
@@ -207,5 +208,12 @@
     "openBreakersAria": "开放熔断 {count} 个，点击查看熔断监控",
     "exceptions24h": "24h 异常",
     "exceptions24hAria": "24 小时异常 {count} 条，点击查看异常列表"
+  },
+  "notFound": {
+    "title": "页面不存在",
+    "description": "你访问的地址不在控制台的路由表里，可能是链接已过期或路径输入有误。",
+    "pathLabel": "当前路径",
+    "backHome": "返回仪表板",
+    "backPrev": "返回上一页"
   }
 }
