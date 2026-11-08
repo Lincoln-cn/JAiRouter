@@ -14,7 +14,7 @@ package org.unreal.modelrouter.router.cache;
  * {@code t|<apiKeyId>|<model>}，而不是退化成按 IP 或公共桶。</p>
  *
  * @author JAiRouter Team
- * @since 3.7.4
+ * @since 3.8.0
  */
 public final class SemanticCacheScope {
 

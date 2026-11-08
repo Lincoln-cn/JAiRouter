@@ -70,7 +70,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 的分工：那个守错误体，这个守成功响应。两者都是「客户端按什么键解析」的问题，属于同一类风险。</p>
  *
  * @author JAiRouter Team
- * @since v3.7.4
+ * @since v3.8.0
  */
 @DisplayName("管理端 API 契约：路由与响应键名逐项钉死")
 class AdminApiSurfaceContractTest {

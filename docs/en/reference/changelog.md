@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.7.3
-> **Last Updated**: 2026-11-06
+> **Document Version**: 3.8.0
+> **Last Updated**: 2026-11-08
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,24 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.8.0] - 2026-11-08 - Unified instance identity, breaker failure detail, shared semantic cache backend
+
+- **Instance identity unified as UUID (#1009)**: `instanceId` used to carry two different meanings — the query API returned the string form of the database primary key ("1"), while the breaker and rate limiter runtime keys used the UUID from services.yml, so passing the former to breaker admin endpoints always failed. The DTO `instanceId` now always returns the UUID (matching the `service_instance.instance_id` column); the database primary key stays in the `id` field. Admin endpoints accept both forms (UUID or plain numeric key), so existing integrations keep working; rule TARGET_INSTANCE and pool member matching accept UUID, instance name and primary key alike.
+- **Circuit-breaker 503 carries the real failure detail (#1010)**: the 503 raised when every instance is open used to say only "all instances are in circuit breaker state", hiding the real failure (connect failure, timeout, 5xx). The 503 body `data` field now carries the latest failure (`lastFailure: {instanceId, instanceName, reason, at, exceptionClass}`); `GET /api/config/instance/{serviceType}` gains `circuitState` / `openedAt` / `lastFailureReason` fields; the breaker reset response also carries `lastFailureReason`.
+- **Downstream failure logs gain the target address (#1011)**: 502/504 error logs used to print only the exception class name, with no target instance address. Logs now carry `target=host:port` (extracted from the exception message along the cause chain) and the full stack. Logs never carry request bodies or credentials; clients still never see internal addresses.
+- **Instance queries carry adapter diagnostics (#1004 observability)**: `GET /api/config/instance/{type}` gains `adapterResolved` and `adapterWarning`. When no adapter is configured, the warning states that the request will fail at forward time and where to set it; when the configured adapter is not registered, the warning lists the registered names. `adapterResolved` is three-state: `true` / `false` / `null` (unknown when the registry is unavailable, never a false alarm). Both fields are diagnostic only — health status and routing are unchanged.
+- **Pluggable shared backend for the semantic cache (#1002)**: the near-neighbor pool lived in process memory, so multi-replica deployments saw the hit rate drop to 1/N with no signal. A `SemanticCacheStore` interface is introduced; the default stays in-memory (behavior unchanged). A new Redis backend (`jairouter.semantic-cache.redis.enabled`, default false, entries stored in a hash, encrypted with AES) lets replicas share one cache; cross-tenant isolation is unchanged (tenant A entries are never returned to tenant B). The multi-replica self-check gate warns when replicas run without this switch.
+- **Gateway value summary card (#1005 completed)**: the dashboard gains a "value" card showing the semantic cache hit rate, saved upstream calls, guard hits (redaction / blocking) and the slowest outbound instance — all from runtime counters, no cost figures.
+- **Fixes**: container-network upstream access by compose service name returned 502 (#1014: the SSRF guard delegated DNS resolution to the Netty DNS resolver, which cannot resolve Docker built-in DNS names; resolution now uses the JDK default resolver, guard checks unchanged); service-level adapter config was not copied onto instances (#1004: initialization now applies instance-level then service-level then global default; existing instance rows need one re-save in the console or a re-init).
+- **Docs**: the performance KPI table gains a row-by-row mapping to the measured baseline (#944), including the limits of the capacity formula; the scripts/ directory is cleaned up (three one-off scripts from the v1.8.1 and v2.x era removed; the README now matches the real layout - the tools/ table had been listing three files that do not exist).
+
+**Upgrade notes**
+
+1. **The `instanceId` meaning change is a public contract change**: any script or integration that used `instanceId` as a database key must switch to the `id` field (plain numeric calls to admin endpoints keep working through the dual-form parser). The frontend and admin APIs are unaffected.
+2. The semantic cache Redis backend is off by default; behavior is unchanged unless enabled. Enabling needs a reachable Redis, and is recommended for multi-replica deployments.
+3. The 503 body `data` field used to be null; it now carries the failure detail in breaker scenarios — parsers that read only `success`/`message`/`errorCode` are unaffected.
+
 ### [3.7.3] - 2026-11-06 - Field-level policy and streaming support for reversible redaction
 
 - **Field-level policy now works**: `json-paths` was defined in the settings since the feature landed but had no consumer — matching always ran over the whole body. A setting that is accepted but ignored is worse than no setting at all. Matching is now scoped to the configured paths, supporting both `$.a.b` and `$.a[*].b`, with placeholder numbering continuing across paths. When no path matches, the body is not JSON, or parsing fails, matching **falls back to the whole text**, so a misconfigured path never causes a missed redaction.

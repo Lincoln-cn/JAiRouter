@@ -533,7 +533,7 @@ with a clean working tree and a version matching `pom.xml`, and reminds you that
 
 ### Release notes format
 
-The GitHub Release **title is the version number only** (`v3.7.3`); the **subtitle goes on the first line of the body**
+The GitHub Release **title is the version number only** (`v3.8.0`); the **subtitle goes on the first line of the body**
 (`# Field-level policy and streaming for reversible masking`). Do not mix the two: a subtitle in the title bar makes the
 release list unreadable, while a body without a leading heading starts straight into bullet points and never says what
 the release was for.
@@ -557,14 +557,14 @@ Fixed structure:
 
 ## Images
 
-Multi-arch images are rebuilt by CI for each release: `v3.7.3` / `3.7.3` / `latest`.
+Multi-arch images are rebuilt by CI for each release: `v3.8.0` / `3.8.0` / `latest`.
 
 Full changelog: [changelog](https://github.com/Lincoln-cn/JAiRouter/blob/master/docs/en/reference/changelog.md).
 ```
 
 - Use `##` for every section; do not mix `###` / `####`.
 - The last three blocks (upgrade notes / images / changelog link) are required in every release.
-- Generate the skeleton with `python scripts/release/release.py notes --version 3.7.3 --write`; the `tag` subcommand
+- Generate the skeleton with `python scripts/release/release.py notes --version 3.8.0 --write`; the `tag` subcommand
   rejects a notes file whose first line is not a leading hash followed by a space.
 - **Never paste a changelog entry as the release body**: the changelog is for people checking details, the release
   notes are for people deciding whether to upgrade.

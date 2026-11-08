@@ -29,7 +29,7 @@ import java.util.regex.PatternSyntaxException;
  * 里追加的自定义规则。只做匹配、不做替换，因此不会改变任何内容。</p>
  *
  * @author JAiRouter Team
- * @since 3.7.4
+ * @since 3.8.0
  */
 @Component
 public class PiiDetector {

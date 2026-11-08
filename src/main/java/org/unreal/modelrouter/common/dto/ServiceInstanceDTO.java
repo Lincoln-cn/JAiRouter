@@ -65,14 +65,14 @@ public final class ServiceInstanceDTO {
      * <p>为 {@code false} 时请求会在转发阶段失败（502），而端口探测仍然通 ——
      * 这是 #1004 描述的「实例健康但调用全挂」的可观测面。</p>
      *
-     * @since v3.7.4
+     * @since v3.8.0
      */
     private Boolean adapterResolved;
 
     /**
      * 适配器未解析时的说明（给界面直接展示），解析正常时为 {@code null}。
      *
-     * @since v3.7.4
+     * @since v3.8.0
      */
     private String adapterWarning;
 
