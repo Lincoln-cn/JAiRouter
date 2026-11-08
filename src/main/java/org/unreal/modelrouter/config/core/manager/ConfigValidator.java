@@ -3,9 +3,8 @@ package org.unreal.modelrouter.config.core.manager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.common.constants.ServiceTypeConstants;
-import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.common.util.InstanceIdUtils;
+import org.unreal.modelrouter.config.core.helper.ServiceTypeNames;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -99,27 +98,16 @@ public class ConfigValidator {
     }
 
     /**
-     * 验证服务类型是否有效
+     * 验证服务类型是否有效。
+     *
+     * <p>名称判定统一委托 {@link ServiceTypeNames}（此前本类另有一份别名表副本，
+     * 与 {@code ServiceTypeResolver} 一样把 {@code img-edit} / {@code imgEdit} 判为无效）。</p>
      *
      * @param serviceType 服务类型
      * @return true 如果服务类型有效
      */
     public boolean isValidServiceType(final String serviceType) {
-        if (serviceType == null) {
-            return false;
-        }
-
-        try {
-            // 标准化处理：转小写，移除空格、下划线和连字符
-            String normalizedKey = serviceType.toLowerCase(java.util.Locale.ROOT)
-                    .replaceAll("[\\s_-]+", "");
-            // 直接匹配枚举值
-            ModelServiceRegistry.ServiceType.valueOf(normalizedKey);
-            return true;
-        } catch (Exception e) {
-            // 处理常见的别名映射
-            return isValidServiceTypeAlias(serviceType);
-        }
+        return ServiceTypeNames.isValid(serviceType);
     }
 
     /**
@@ -200,54 +188,4 @@ public class ConfigValidator {
         return config;
     }
 
-    // ==================== 私有辅助方法 ====================
-
-    /**
-     * 检查是否是有效的服务类型别名
-     */
-    private boolean isValidServiceTypeAlias(final String serviceType) {
-        String lowerServiceType = serviceType.toLowerCase(java.util.Locale.ROOT);
-
-        // 使用常量类进行匹配
-        if (lowerServiceType.equals(ServiceTypeConstants.CHAT)
-                || lowerServiceType.equals("chat-completion")
-                || lowerServiceType.equals("chat-completions")) {
-            return true;
-        }
-
-        if (lowerServiceType.equals(ServiceTypeConstants.EMBEDDING)
-                || lowerServiceType.equals("embeddings")) {
-            return true;
-        }
-
-        if (lowerServiceType.equals(ServiceTypeConstants.RERANK)
-                || lowerServiceType.equals("re-rank")) {
-            return true;
-        }
-
-        if (lowerServiceType.equals(ServiceTypeConstants.TTS)
-                || lowerServiceType.equals("text-to-speech")) {
-            return true;
-        }
-
-        if (lowerServiceType.equals(ServiceTypeConstants.STT)
-                || lowerServiceType.equals("speech-to-text")) {
-            return true;
-        }
-
-        if (lowerServiceType.equals(ServiceTypeConstants.IMG_GEN)
-                || lowerServiceType.equals("imggen")
-                || lowerServiceType.equals("image-generation")
-                || lowerServiceType.equals("image-generate")) {
-            return true;
-        }
-
-        if (lowerServiceType.equals(ServiceTypeConstants.IMG_EDIT)
-                || lowerServiceType.equals("image-edit")
-                || lowerServiceType.equals("image-editing")) {
-            return true;
-        }
-
-        return false;
-    }
 }
