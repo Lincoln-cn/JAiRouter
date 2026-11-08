@@ -8,7 +8,10 @@ import org.springframework.mock.env.MockEnvironment;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * 按方言决定 schema 管理方式（issue #191 / #192）。
@@ -48,7 +51,9 @@ class FlywayDialectEnvironmentPostProcessorTest {
                 environment.getProperty(FlywayDialectEnvironmentPostProcessor.FLYWAY_LOCATIONS));
         assertEquals("true",
                 environment.getProperty(FlywayDialectEnvironmentPostProcessor.FLYWAY_BASELINE_ON_MIGRATE));
-        assertEquals("1",
+        // baseline-version 取脚本目录里的最新版本，不是固定 1（issue #1046）
+        assertEquals(FlywayDialectEnvironmentPostProcessor.resolveLatestMigrationVersion(
+                        FlywayDialectEnvironmentPostProcessor.POSTGRES_LOCATIONS),
                 environment.getProperty(FlywayDialectEnvironmentPostProcessor.FLYWAY_BASELINE_VERSION));
         assertEquals("validate", environment.getProperty(FlywayDialectEnvironmentPostProcessor.DDL_AUTO));
     }
@@ -65,7 +70,9 @@ class FlywayDialectEnvironmentPostProcessorTest {
                 environment.getProperty(FlywayDialectEnvironmentPostProcessor.FLYWAY_LOCATIONS));
         assertEquals("true",
                 environment.getProperty(FlywayDialectEnvironmentPostProcessor.FLYWAY_BASELINE_ON_MIGRATE));
-        assertEquals("1",
+        // baseline-version 取脚本目录里的最新版本，不是固定 1（issue #1046）
+        assertEquals(FlywayDialectEnvironmentPostProcessor.resolveLatestMigrationVersion(
+                        FlywayDialectEnvironmentPostProcessor.H2_LOCATIONS),
                 environment.getProperty(FlywayDialectEnvironmentPostProcessor.FLYWAY_BASELINE_VERSION));
         // H2 上既不上 validate（DATABASE_TO_UPPER=FALSE 下 Hibernate 的 schema 校验查不到对象，
         // 实测证据在 issue #192），也不留 update（第二次启动会逐表重发 CREATE TABLE、被 H2 以
@@ -164,5 +171,57 @@ class FlywayDialectEnvironmentPostProcessorTest {
         processor.postProcessEnvironment(environment, null);
 
         assertEquals("validate", environment.getProperty(FlywayDialectEnvironmentPostProcessor.DDL_AUTO));
+    }
+
+    /**
+     * 扫描确实读到了真实脚本目录（issue #1046）。
+     *
+     * <p>这条同时是反空转断言：若 {@code resolveLatestMigrationVersion} 退化成「永远返回 1」，
+     * {@code assertNotEquals("1", …)} 会红，而不是被「两边都返回 1 所以相等」蒙过去。
+     *
+     * <p>新增迁移脚本后这里需要同步更新 —— 这正是它的价值：让人回头确认 baseline 也跟着走了。
+     */
+    @Test
+    @DisplayName("baseline-version 等于脚本目录里的最新版本（H2 与 PG 都是 11）")
+    void latestMigrationVersionIsScanned() {
+        for (String locations : new String[]{
+                FlywayDialectEnvironmentPostProcessor.H2_LOCATIONS,
+                FlywayDialectEnvironmentPostProcessor.POSTGRES_LOCATIONS}) {
+            String latest = FlywayDialectEnvironmentPostProcessor.resolveLatestMigrationVersion(locations);
+            assertNotEquals(FlywayDialectEnvironmentPostProcessor.DEFAULT_BASELINE_VERSION, latest,
+                    locations + " 上必须扫到脚本；扫不到说明扫描逻辑失效，会退回固定 1 的老行为");
+            assertEquals("11", latest, locations + " 的最新迁移版本");
+        }
+    }
+
+    /** 扫不到时刻意回退到固定 1，而不是让启动失败。 */
+    @Test
+    @DisplayName("扫不到脚本目录时回退到 baseline-version=1")
+    void missingScriptsFallBackToBaselineOne() {
+        assertEquals(FlywayDialectEnvironmentPostProcessor.DEFAULT_BASELINE_VERSION,
+                FlywayDialectEnvironmentPostProcessor.resolveLatestMigrationVersion(
+                        "classpath:db/migration/does-not-exist"));
+        assertEquals(FlywayDialectEnvironmentPostProcessor.DEFAULT_BASELINE_VERSION,
+                FlywayDialectEnvironmentPostProcessor.resolveLatestMigrationVersion(null));
+        assertEquals(FlywayDialectEnvironmentPostProcessor.DEFAULT_BASELINE_VERSION,
+                FlywayDialectEnvironmentPostProcessor.resolveLatestMigrationVersion("file:/tmp/migrations"));
+    }
+
+    /** 版本号按数值比较，不能按字符串：「V10」比「V9」新。 */
+    @Test
+    @DisplayName("迁移版本号按数值比较")
+    void migrationVersionsCompareNumerically() {
+        assertEquals("6", FlywayDialectEnvironmentPostProcessor.versionOf("V6__jwt_account_soft_delete.sql"));
+        assertEquals("11", FlywayDialectEnvironmentPostProcessor.versionOf("V11__cache_cross_tenant_audit.sql"));
+        assertNull(FlywayDialectEnvironmentPostProcessor.versionOf("baseline.sql"));
+        assertNull(FlywayDialectEnvironmentPostProcessor.versionOf("V__broken.sql"));
+        assertNull(FlywayDialectEnvironmentPostProcessor.versionOf(null));
+
+        assertTrue(FlywayDialectEnvironmentPostProcessor.isNewer("10", "9"),
+                "字符串比较会把 10 排在 9 前面，这里必须按数值");
+        assertTrue(FlywayDialectEnvironmentPostProcessor.isNewer("2", null));
+        assertFalse(FlywayDialectEnvironmentPostProcessor.isNewer("9", "10"));
+        assertFalse(FlywayDialectEnvironmentPostProcessor.isNewer(null, "1"));
+        assertFalse(FlywayDialectEnvironmentPostProcessor.isNewer("11", "11"));
     }
 }
