@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.unreal.modelrouter.config.core.manager.ConfigVersionManager;
+import org.unreal.modelrouter.config.core.helper.SensitiveHeaderMasker;
 import org.unreal.modelrouter.common.dto.ServiceInstanceDTO;
 import org.unreal.modelrouter.common.dto.InstanceRateLimitDTO;
 import org.unreal.modelrouter.common.dto.InstanceCircuitBreakerDTO;
@@ -193,7 +194,9 @@ public class ServiceInstanceManager {
             entity.setAdapter(request.getAdapter());
         }
         if (request.getHeaders() != null) {
-            entity.setHeaders(request.getHeaders());
+            // issue #1053：管理台会把读面的掩码回填到编辑表单再整份提交，
+            // 这里把「等于库里原值掩码」的项还原为原值，避免掩码覆盖真实凭证。
+            entity.setHeaders(SensitiveHeaderMasker.preserveMasked(request.getHeaders(), entity.getHeaders()));
         }
         if (request.getTags() != null) {
             entity.setTags(request.getTags());
@@ -485,7 +488,9 @@ public class ServiceInstanceManager {
                 .adapter(entity.getAdapter())
                 .adapterResolved(resolveAdapterResolved(entity.getAdapter()))
                 .adapterWarning(describeAdapterWarning(entity.getAdapter()))
-                .headers(entity.getHeaders())
+                // issue #1053：读面只回显敏感头的掩码值 —— 该端点只需 config:instances:read，
+                // 而该权限同时授予 USER 与 VIEWER，明文回显等于把上游供应商凭证发给普通登录用户。
+                .headers(SensitiveHeaderMasker.mask(entity.getHeaders()))
                 .tags(entity.getTags())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())

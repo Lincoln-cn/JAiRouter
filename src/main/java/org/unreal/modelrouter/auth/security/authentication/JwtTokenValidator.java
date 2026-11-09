@@ -43,4 +43,18 @@ public interface JwtTokenValidator {
      * @return 用户ID
      */
     Mono<String> extractUserId(String token);
+
+    /**
+     * 从令牌中提取主体（subject）。
+     *
+     * <p>与 {@link #extractUserId(String)} 的区别：那个优先取 {@code userId} 声明、缺失才回落到
+     * subject，而本方法**只取 subject** —— 它要与 {@code Authentication#getName()} 对齐
+     * （后者在 {@code DefaultJwtTokenValidator#validateToken} 里正是用 subject 构造的）。</p>
+     *
+     * <p>issue #1060 引入：令牌刷新端点需要比对「令牌是谁的」与「调用者是谁」。</p>
+     *
+     * @param token JWT令牌
+     * @return 令牌主体；令牌无效时以 {@code AuthenticationException} 终止
+     */
+    Mono<String> extractSubject(String token);
 }

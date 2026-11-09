@@ -15,6 +15,8 @@ import lombok.NoArgsConstructor;
 import org.unreal.modelrouter.auth.security.model.UsageStatistics;
 import org.unreal.modelrouter.auth.security.util.ApiKeyHashUtil;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -399,7 +401,11 @@ public class ApiKey {
         // 兼容旧数据：如果只有 keyValue（明文存储），则直接比较
         // 这种情况应该尽快迁移到哈希存储
         if (keyValue != null && !keyValue.isEmpty()) {
-            return keyValue.equals(providedKey);
+            // issue #1063：旧格式也要恒时比较。String#equals 会在首个不同字符处返回，
+            // 让攻击者能按响应时间逐位猜出明文 key。
+            return providedKey != null && MessageDigest.isEqual(
+                    keyValue.getBytes(StandardCharsets.UTF_8),
+                    providedKey.getBytes(StandardCharsets.UTF_8));
         }
         return false;
     }

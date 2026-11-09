@@ -57,6 +57,9 @@ class JwtAuthControllerIntegrationTest {
     @Mock
     private Authentication authentication;
 
+    @Mock
+    private org.unreal.modelrouter.auth.security.authentication.JwtTokenValidator jwtTokenValidator;
+
     @InjectMocks
     private JwtAuthController controller;
 
@@ -73,6 +76,9 @@ class JwtAuthControllerIntegrationTest {
         // issue #697：登录链先过一次失败频控，未锁定 = 空完成
         lenient().when(loginBruteForceGuard.checkNotLocked(anyString(), anyString()))
                 .thenReturn(Mono.empty());
+        // issue #1060：刷新端点会先比对「令牌主体」与「调用者主体」，这里让二者一致
+        lenient().when(authentication.getName()).thenReturn("admin");
+        lenient().when(jwtTokenValidator.extractSubject(anyString())).thenReturn(Mono.just("admin"));
     }
 
     // ==================== 登录测试 ====================
