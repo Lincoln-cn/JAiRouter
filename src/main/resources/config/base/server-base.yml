@@ -12,8 +12,11 @@ spring:
   webflux:
     multipart:
       max-in-memory-size: 10MB        # 内存中multipart数据的最大大小
-      max-disk-usage-per-part: 100MB  # 每个部分可使用的最大磁盘空间
-      max-parts: 50                   # 最大部分数量
+      # issue #1067：Spring 的 max-disk-usage-per-part **没有全局上限**，总量上限 =
+      # max-disk-usage-per-part × max-parts。原来是 100MB × 50 = 5GB，单个匿名上传即可写满临时目录。
+      # 图像编辑/语音上传按 10MB/部分、20 部分（最坏 200MB）已够用；需要更大的部署自行覆盖。
+      max-disk-usage-per-part: 10MB   # 每个部分可使用的最大磁盘空间
+      max-parts: 20                   # 最大部分数量
       max-headers-size: 8KB           # 请求头最大大小
       file-storage-directory: ${java.io.tmpdir} # 临时文件存储目录
 

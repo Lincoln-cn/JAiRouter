@@ -143,10 +143,10 @@ public class MetricsMemoryManager {
             // 清理50%的最旧条目
             int targetSize = (int) (metricsCache.size() * 0.5);
             evictToSize(targetSize);
-            
-            // 强制垃圾回收
-            System.gc();
-            
+            // issue #1057：这里原来调 System.gc()。这个方法是定时任务（每 30s）触发的，
+            // 堆长期高位时等于让 JVM 每 30 秒做一次全堆回收（STW），而被清理的缓存本身
+            // 往往只有少量条目（putCacheEntry 目前没有调用方）—— 代价远大于收益。
+            // 需要主动回收应交给 JVM 的 GC 策略，或在运维侧显式触发。
         } finally {
             cacheLock.writeLock().unlock();
         }

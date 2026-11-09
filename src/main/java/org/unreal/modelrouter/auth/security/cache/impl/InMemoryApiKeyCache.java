@@ -1,5 +1,6 @@
 package org.unreal.modelrouter.auth.security.cache.impl;
 
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -176,6 +177,18 @@ public final class InMemoryApiKeyCache implements ApiKeyCache {
         });
     }
     
+    /**
+     * 停止定期清理任务（issue #1065）。
+     *
+     * <p>构造函数里起的这个线程池是 {@code Executors.newScheduledThreadPool(1)}，非守护线程，
+     * 容器关闭时若不主动停，会留着一条清理线程走完最后一次调度（测试与热重载场景下表现为线程泄漏）。</p>
+     */
+    @PreDestroy
+    void shutdown() {
+        scheduler.shutdownNow();
+        log.info("内存API Key缓存清理任务已停止");
+    }
+
     /**
      * 清理过期的缓存条目
      */
