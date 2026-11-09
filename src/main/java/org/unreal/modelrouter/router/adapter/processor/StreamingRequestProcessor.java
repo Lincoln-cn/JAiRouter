@@ -63,6 +63,9 @@ public class StreamingRequestProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(StreamingRequestProcessor.class);
 
+    /** 脱敏链路失败时写进调用历史的占位内容（issue #1058：宁可无正文，也不回退原文）。 */
+    private static final String SANITIZATION_FAILED_PLACEHOLDER = "[脱敏失败，内容未记录]";
+
     /**
      * #720：请求属性键 —— 客户端是否要求 usage 帧（{@code stream_options.include_usage}）。
      *
@@ -474,10 +477,12 @@ public class StreamingRequestProcessor {
                                 ? sanitizationService.sanitizeForStorage(rawResponseBody, "application/json")
                                         .timeout(Duration.ofSeconds(5))
                                         .onErrorResume(e -> {
-                                            logger.debug("流式响应体脱敏失败: {}", e.getMessage());
-                                            return Mono.just(rawResponseBody);
+                                            logger.warn("流式响应体脱敏失败，正文按未记录处理: {}", e.getMessage());
+                                            return Mono.just(SANITIZATION_FAILED_PLACEHOLDER);
                                         })
-                                        .map(sanitized -> sanitized != null ? sanitized : rawResponseBody)
+                                        .map(sanitized -> sanitized != null && !sanitized.isEmpty()
+                                                ? sanitized : SANITIZATION_FAILED_PLACEHOLDER)
+                                        .defaultIfEmpty(SANITIZATION_FAILED_PLACEHOLDER)
                                 : Mono.just(rawResponseBody);
 
                         bodyMono.subscribeOn(Schedulers.boundedElastic())

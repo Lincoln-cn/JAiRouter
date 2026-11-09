@@ -49,6 +49,9 @@ public class AdapterMetricsRecorder {
     @Autowired(required = false)
     private SanitizationService sanitizationService;
 
+    /** 脱敏链路失败时写进调用历史的占位内容（issue #1058：宁可无正文，也不回退原文）。 */
+    private static final String SANITIZATION_FAILED_PLACEHOLDER = "[脱敏失败，内容未记录]";
+
     public AdapterMetricsRecorder(MetricsCollector metricsCollector,
                                   ModelCallStatsRepository statsRepository,
                                   ModelServiceRegistry registry) {
@@ -736,21 +739,25 @@ public class AdapterMetricsRecorder {
 
     /**
      * 异步脱敏：SUMMARY 且装配了 SanitizationService 时走脱敏链路，否则原样透传。
-     * 超时/异常回退为原文，保证调用历史仍可记录。
+     *
+     * <p>issue #1058：脱敏失败（异常、超时、或脱敏器返回空）时不再回退为原始正文，
+     * 而是记占位标记 —— 这条记录本身就是「脱敏后才落库」的承诺，回退原文等于把
+     * 本应被脱敏的内容原样写进调用历史。</p>
      */
-    private Mono<String> sanitizeOptional(final boolean needSanitize,
-                                          final SanitizationService sanitization,
-                                          final String raw) {
-        if (!needSanitize || sanitization == null) {
+    Mono<String> sanitizeOptional(final boolean needSanitize,
+                                  final SanitizationService sanitization,
+                                  final String raw) {
+        if (!needSanitize || sanitization == null || raw == null || raw.isEmpty()) {
             return Mono.justOrEmpty(raw);
         }
         return sanitization.sanitizeForStorage(raw, "application/json")
                 .timeout(Duration.ofSeconds(5))
                 .onErrorResume(e -> {
-                    log.debug("Sanitization failed: {}", e.getMessage());
-                    return Mono.justOrEmpty(raw);
+                    log.warn("调用历史脱敏失败，正文按未记录处理: {}", e.getMessage());
+                    return Mono.just(SANITIZATION_FAILED_PLACEHOLDER);
                 })
-                .map(sanitized -> sanitized != null ? sanitized : raw)
-                .defaultIfEmpty(raw);
+                .map(sanitized -> sanitized != null && !sanitized.isEmpty()
+                        ? sanitized : SANITIZATION_FAILED_PLACEHOLDER)
+                .defaultIfEmpty(SANITIZATION_FAILED_PLACEHOLDER);
     }
 }
