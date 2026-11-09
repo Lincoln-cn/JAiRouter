@@ -91,6 +91,7 @@
     "nacos",
     "istio",
     "envoy",
+    "APISIX",
     "traefik",
     "haproxy",
     "loadbalancer",
