@@ -306,7 +306,7 @@ Environment configuration files only contain the differences from the base confi
 | Profile | Required | Behavior when missing |
 | --- | --- | --- |
 | `dev` / `default` | none | The JWT secret and the admin password fall back to random values and are printed once in the startup log (they change on every restart) |
-| `staging` | `JWT_SECRET` | `jairouter.security.jwt.secret` resolves to an empty string, the `@Size(min = 32)` binding check fails and the process exits with code 1 |
+| `staging` | `JWT_SECRET` | `jairouter.security.jwt.secret` resolves to an empty string and **binds without error** (the length check was moved out of the binding annotation into runtime validation, see #821). `staging` is not covered by the startup gate, so the process starts; every JWT issue/validation then fails with `WeakKeyException` because the key is too short |
 | `prod` | `JWT_SECRET` + `INITIAL_ADMIN_PASSWORD` | The startup gate (`StartupSecurityGate`) refuses to boot |
 
 Every profile reads only `JWT_SECRET` and, for the admin password, `INITIAL_ADMIN_PASSWORD`. The three

@@ -7,7 +7,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.unreal.modelrouter.common.dto.AuditEvent;
 import org.unreal.modelrouter.common.dto.AuditEventQuery;
 import org.unreal.modelrouter.common.dto.AuditEventType;
@@ -31,6 +30,13 @@ import java.util.stream.Collectors;
 /**
  * 扩展安全审计服务实现（JPA版本）
  * 实现真实的审计日志存储和查询功能
+ *
+ * <p><b>为什么这里没有方法级事务（issue #1062）</b>：本类的方法一律返回 {@code Mono}，真正的写入
+ * 发生在 {@code Mono.fromRunnable(...).subscribeOn(Schedulers.boundedElastic())} 的订阅阶段 ——
+ * 也就是方法返回**之后**、另一个线程上。方法级 {@code @Transactional} 在方法返回时就已提交，
+ * 覆盖不到那段执行，所以此前 15 个方法上的注解是无效的（写入能成功靠的是
+ * {@code SecurityAuditEventRepository.save()} 自带的事务）。若将来需要「多条写入要么全成、要么全不成」，
+ * 必须改用 {@code TransactionalOperator} 或在 repository 层组合事务，<b>不要</b>把注解加回来。</p>
  */
 @Slf4j
 @Service
@@ -55,7 +61,6 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     // ========== JWT令牌审计方法 ==========
 
     @Override
-    @Transactional
     public Mono<Void> auditTokenIssued(final String userId, final String tokenId,
             final String ipAddress, final String userAgent) {
         return Mono.fromRunnable(() -> {
@@ -77,7 +82,6 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    @Transactional
     public Mono<Void> auditTokenRefreshed(final String userId, final String oldTokenId,
             final String newTokenId, final String ipAddress) {
         return Mono.fromRunnable(() -> {
@@ -103,7 +107,6 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    @Transactional
     public Mono<Void> auditTokenRevoked(final String userId, final String tokenId,
             final String reason, final String revokedBy) {
         return Mono.fromRunnable(() -> {
@@ -129,7 +132,6 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    @Transactional
     public Mono<Void> auditTokenValidated(final String userId, final String tokenId,
             final boolean isValid, final String ipAddress) {
         return Mono.fromRunnable(() -> {
@@ -153,7 +155,6 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     // ========== API Key审计方法 ==========
 
     @Override
-    @Transactional
     public Mono<Void> auditApiKeyCreated(final String keyId, final String createdBy, final String ipAddress) {
         return Mono.fromRunnable(() -> {
             SecurityAuditEventEntity entity = SecurityAuditEventEntity.builder()
@@ -173,7 +174,6 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    @Transactional
     public Mono<Void> auditApiKeyUsed(final String keyId, final String endpoint,
             final String ipAddress, final boolean success) {
         return Mono.fromRunnable(() -> {
@@ -199,7 +199,6 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    @Transactional
     public Mono<Void> auditApiKeyRevoked(final String keyId, final String reason, final String revokedBy) {
         return Mono.fromRunnable(() -> {
             Map<String, Object> metadata = new HashMap<>();
@@ -224,7 +223,6 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    @Transactional
     public Mono<Void> auditApiKeyExpired(final String keyId) {
         return Mono.fromRunnable(() -> {
             SecurityAuditEventEntity entity = SecurityAuditEventEntity.builder()
@@ -244,7 +242,6 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     // ========== 安全事件审计方法 ==========
 
     @Override
-    @Transactional
     public Mono<Void> auditSecurityEvent(final String eventType, final String details,
             final String userId, final String ipAddress) {
         return Mono.fromRunnable(() -> {
@@ -268,7 +265,6 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    @Transactional
     public Mono<Void> auditSuspiciousActivity(final String activity, final String userId,
             final String ipAddress, final String details) {
         return Mono.fromRunnable(() -> {
@@ -349,7 +345,6 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    @Transactional
     public Mono<Void> recordAuditEvent(final AuditEvent auditEvent) {
         return Mono.fromRunnable(() -> {
             SecurityAuditEventEntity entity = entityMapper.dtoToEntity(auditEvent);
@@ -359,7 +354,6 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    @Transactional
     public Mono<Void> batchRecordAuditEvents(final List<AuditEvent> auditEvents) {
         return Mono.fromRunnable(() -> {
             List<SecurityAuditEventEntity> entities = auditEvents.stream()
@@ -434,7 +428,6 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    @Transactional
     public Mono<Void> recordEvent(final SecurityAuditEvent event) {
         return Mono.fromRunnable(() -> {
             SecurityAuditEventEntity entity = entityMapper.securityEventToEntity(event);
@@ -444,7 +437,6 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    @Transactional
     public Mono<Void> recordAuthenticationEvent(final String userId, final String clientIp, final String userAgent,
                                                final boolean success, final String failureReason) {
         return Mono.fromRunnable(() -> {
@@ -469,7 +461,6 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    @Transactional
     public Mono<Void> recordSanitizationEvent(final String userId, final String contentType,
             final String ruleId, final int matchCount) {
         return Mono.fromRunnable(() -> {
