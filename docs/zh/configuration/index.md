@@ -303,7 +303,7 @@ JAiRouter 支持多种环境配置文件：
 | Profile | 必填环境变量 | 缺失时的行为 |
 | --- | --- | --- |
 | `dev` / `default` | 无 | JWT 密钥与管理员口令回退为随机值，并打印在启动日志里（重启即换新值） |
-| `staging` | `JWT_SECRET` | `jairouter.security.jwt.secret` 解析为空串，`@Size(min = 32)` 绑定校验失败，进程以退出码 1 结束 |
+| `staging` | `JWT_SECRET` | `jairouter.security.jwt.secret` 解析为空串并**能正常绑定**（长度校验已从绑定注解移到运行期，见 #821）；`staging` 不在启动门闩的判定范围内，进程会起来，但任何 JWT 签发/校验都会因密钥过弱抛 `WeakKeyException` |
 | `prod` | `JWT_SECRET` + `INITIAL_ADMIN_PASSWORD` | 启动门闩（`StartupSecurityGate`）直接拒绝启动 |
 
 所有 profile 都只读 `JWT_SECRET` 与（管理员口令）`INITIAL_ADMIN_PASSWORD`。曾经的三个 profile 别名
