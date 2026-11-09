@@ -18,6 +18,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import org.unreal.modelrouter.auth.sanitization.SanitizationService;
 import org.unreal.modelrouter.auth.security.quota.QuotaReservation;
@@ -594,7 +595,14 @@ public class NonStreamingRequestProcessor {
             semanticCacheService.countRejectedForPii();
             return;
         }
-        semanticCacheService.put(tenantScope, semanticText, transformedData);
+        // issue #1056：语义缓存的后端可能走 Redis，put 内部会阻塞等待 I/O，
+        // 而本方法在响应转换链上（reactor-http-nio 事件循环线程）执行 ⇒ 交给 boundedElastic。
+        // 失败只记日志：语义缓存是旁路能力，写失败不应影响已经成功的响应
+        // （对照 StreamingRequestProcessor 对同一能力的处理）。
+        Mono.fromRunnable(() -> semanticCacheService.put(tenantScope, semanticText, transformedData))
+                .subscribeOn(Schedulers.boundedElastic())
+                .subscribe(ignored -> { },
+                        error -> logger.warn("语义缓存写入失败: scope={}, error={}", tenantScope, error.getMessage()));
     }
 
     /**
