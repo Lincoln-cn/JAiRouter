@@ -812,7 +812,7 @@ security:
     secret: your-very-secure-jwt-secret-key-here
     algorithm: HS256
     expiration-minutes: 15  # Short-lived tokens for production
-    refresh-expiration-days: 30
+    refresh-expiration-days: 1  # refresh allowed for 1 day after expiry
     issuer: jairouter-production
     
     # JWT Token Persistence Configuration

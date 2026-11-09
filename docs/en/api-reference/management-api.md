@@ -84,9 +84,14 @@ Login and obtain JWT token.
 **Response Example:**
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiIs...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
-  "expiresIn": 3600
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIs...",
+    "tokenType": "Bearer",
+    "expiresIn": 3600
+  },
+  "errorCode": null
 }
 ```
 

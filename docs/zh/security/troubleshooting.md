@@ -159,7 +159,7 @@ jairouter:
 2. **刷新令牌**
 ```bash
 curl -X POST -H "Content-Type: application/json" \
-     -d '{"refresh_token": "your-refresh-token"}' \
+     -d '{"token": "your-jwt-token"}' \
      http://localhost:8080/api/auth/jwt/refresh
 ```
 

@@ -33,8 +33,10 @@ jairouter:
       # #677：同上，JWT_EXPIRATION_MINUTES 此前只被 config-external 读，随包配置读不到
       expiration-minutes: "${JWT_EXPIRATION_MINUTES:60}"
       
-      # 刷新令牌过期时间（天）
-      refresh-expiration-days: 7
+      # 刷新令牌过期时间（天）：令牌过期后仍可换出新令牌的窗口。
+      # issue #1073：该窗口此前因解析阶段就校验 exp 而从未生效；修好后它真的会放行
+      # 「已过期但未超窗口」的令牌，因此默认值随之从 7 天收紧到 1 天。
+      refresh-expiration-days: 1
       
       # JWT 发行者
       issuer: "jairouter"

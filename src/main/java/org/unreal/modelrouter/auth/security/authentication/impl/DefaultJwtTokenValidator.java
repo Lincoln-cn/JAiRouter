@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.auth.security.authentication.impl;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -99,13 +100,10 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
                 }
 
                 try {
-                    // 解析和验证JWT令牌
+                    // 解析和验证JWT令牌。
+                    // 过期判定由解析器负责：parseSignedClaims 在解析阶段就抛 ExpiredJwtException，
+                    // 由下面的 catch 映射为 JWT_EXPIRED（issue #1073 —— 原先这里再判一次是永不执行的死分支）。
                     Claims claims = parseToken(token);
-
-                    // 检查令牌是否过期
-                    if (claims.getExpiration().before(new Date())) {
-                        return Mono.error(new AuthenticationException("JWT令牌已过期", ErrorCode.JWT_EXPIRED.code()));
-                    }
 
                     // 提取用户信息
                     String subject = claims.getSubject();
@@ -148,6 +146,12 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
                                 return Mono.just((Authentication) authentication);
                             });
 
+                } catch (ExpiredJwtException e) {
+                    // issue #1073：过期与「无效」必须是两个错误码 —— 删掉上面那段死分支后，
+                    // 若落到通用 JwtException 分支，「已过期」会被报成 JWT_INVALID，
+                    // 且 SecurityMetrics#recordJwtExpired 永远打不到点（见下方 doOnError）。
+                    log.warn("JWT令牌已过期: {}", e.getMessage());
+                    return Mono.error(new AuthenticationException("JWT令牌已过期", ErrorCode.JWT_EXPIRED.code()));
                 } catch (JwtException e) {
                     log.warn("JWT令牌验证失败: {}", e.getMessage());
                     return Mono.error(new AuthenticationException(
@@ -231,8 +235,10 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
      */
     private Mono<String> doRefreshToken(final String token) {
         try {
-            // 解析当前令牌
-            Claims claims = parseToken(token);
+            // 解析当前令牌。
+            // issue #1073：这里必须用「允许已过期」的解析入口，否则下面的窗口判断永远走不到 ——
+            // jjwt 的 parseSignedClaims 在解析阶段就会校验 exp 并抛 ExpiredJwtException。
+            Claims claims = parseClaimsForRefresh(token);
 
             // 检查是否可以刷新（通常检查是否在刷新窗口内）
             Date now = new Date();
@@ -278,6 +284,10 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
                     }
                 });
 
+        } catch (AuthenticationException e) {
+            // 本类已判定出具体原因的拒绝（签发者不匹配、超出刷新窗口等）原样透传：
+            // 放进下面的通用分支会被改写成「刷新失败」，错误码与日志都失去分辨力（issue #1073）。
+            return Mono.error(e);
         } catch (JwtException e) {
             log.warn("JWT令牌刷新失败: {}", e.getMessage());
             return Mono.error(new AuthenticationException(
@@ -507,6 +517,39 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
             .build()
             .parseSignedClaims(token)
             .getPayload();
+    }
+
+    /**
+     * 为刷新场景解析令牌：把「令牌已过期」当作可接受状态。
+     *
+     * <p>issue #1073：{@link #parseToken(String)} 底层是 jjwt 的 {@code parseSignedClaims}，
+     * 它在解析阶段就校验 {@code exp} 并抛 {@link ExpiredJwtException}，于是刷新路径上
+     * 「过期未超窗口仍可续期」的判断永远不可达、{@code refresh-expiration-days} 形同摆设。
+     * 这里捕获该异常并继续使用它携带的载荷：签名此时已由 jjwt 严格校验通过，
+     * 剩下的有效期判断交给调用方（{@code doRefreshToken} 的窗口判断）。</p>
+     *
+     * <p><strong>issuer 必须在这里复核</strong>：{@code ExpiredJwtException} 可能在任何一项
+     * claim 校验的中途抛出，不能假设 {@code requireIssuer(...)} 已经执行过；
+     * 若不复核，一枚「用正确密钥签发、issuer 却不对」的过期令牌就能借刷新路径绕过 issuer 校验。</p>
+     *
+     * <p>除「已过期」之外的一切失败（签名不符、结构损坏）仍按原样抛出。</p>
+     */
+    private Claims parseClaimsForRefresh(final String token) {
+        try {
+            return parseToken(token);
+        } catch (ExpiredJwtException expired) {
+            final Claims claims = expired.getClaims();
+            if (claims == null) {
+                throw expired;
+            }
+            final String expectedIssuer = securityProperties.getJwt().getIssuer();
+            final String actualIssuer = claims.getIssuer();
+            if (expectedIssuer != null && !expectedIssuer.equals(actualIssuer)) {
+                log.warn("拒绝刷新：令牌已过期且签发者不匹配: expected={}, actual={}", expectedIssuer, actualIssuer);
+                throw new AuthenticationException("JWT令牌签发者不匹配", ErrorCode.JWT_INVALID.code());
+            }
+            return claims;
+        }
     }
 
     /**

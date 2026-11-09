@@ -90,9 +90,14 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 **响应示例:**
 ```json
 {
-  "token": "eyJhbGciOiJIUzM4NCJ9...",
-  "tokenType": "Bearer",
-  "expiresIn": 3600
+  "success": true,
+  "message": "登录成功",
+  "data": {
+    "token": "eyJhbGciOiJIUzM4NCJ9...",
+    "tokenType": "Bearer",
+    "expiresIn": 3600
+  },
+  "errorCode": null
 }
 ```
 
