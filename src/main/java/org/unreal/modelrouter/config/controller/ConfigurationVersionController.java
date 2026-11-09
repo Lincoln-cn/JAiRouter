@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.config.core.ConfigurationService;
 import org.unreal.modelrouter.config.core.manager.ConfigVersionManager;
+import org.unreal.modelrouter.config.core.helper.SensitiveHeaderMasker;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.config.dto.VersionInfoResponse;
 import org.unreal.modelrouter.persistence.store.StoreManager;
@@ -95,7 +96,8 @@ public class ConfigurationVersionController {
             @Parameter(description = "版本号", example = "1")
             @PathVariable("version") final int version) {
         return Mono.fromSupplier(() -> {
-            Map<String, Object> config = configVersionManager.getVersionConfig(version);
+            Map<String, Object> config = SensitiveHeaderMasker.maskConfigTree(
+                    configVersionManager.getVersionConfig(version));
             if (config == null) {
                 return RouterResponse.<Map<String, Object>>error("指定版本的配置不存在: " + version);
             }
@@ -260,7 +262,8 @@ public class ConfigurationVersionController {
             }
 
             try {
-                ConfigDiff diff = versionDiffService.compareVersions(sourceVersion, targetVersion);
+                ConfigDiff diff = SensitiveHeaderMasker.maskDiff(
+                        versionDiffService.compareVersions(sourceVersion, targetVersion));
                 return RouterResponse.success(diff, String.format(
                         "版本 %d 与 %d 对比完成，共发现 %d 处差异",
                         sourceVersion, targetVersion, diff.getTotalChanges()));
@@ -309,7 +312,8 @@ public class ConfigurationVersionController {
                     previousVersion = allVersions.get(index - 1);
                 }
 
-                ConfigDiff diff = versionDiffService.compareVersions(previousVersion, version);
+                ConfigDiff diff = SensitiveHeaderMasker.maskDiff(
+                        versionDiffService.compareVersions(previousVersion, version));
                 return RouterResponse.success(diff, String.format(
                         "版本 %d 的变更内容（基于版本 %d），共 %d 处变更",
                         version, previousVersion, diff.getTotalChanges()));

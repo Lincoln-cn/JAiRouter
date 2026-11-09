@@ -44,9 +44,14 @@ public class JwtConfig {
 
     /**
      * 签名算法
+     *
+     * <p>issue #1064：只接受 HMAC 家族。签发与校验两端一律使用 {@code Keys.hmacShaKeyFor(...)}
+     * （见 {@code DefaultJwtTokenValidator#getSigningKey}、{@code AccountManager}），
+     * 配成 {@code RS256} 曾既不生效也不报错 —— 运维会误以为已切到非对称密钥。
+     * 若要真正支持非对称算法，需先实现 RSA 的公私钥加载与签名/验签分支，再放开这里的正则。</p>
      */
     @NotBlank
-    @Pattern(regexp = "^(HS256|HS384|HS512|RS256|RS384|RS512)$", message = "不支持的JWT算法")
+    @Pattern(regexp = "^(HS256|HS384|HS512)$", message = "不支持的JWT算法（当前仅支持 HS256/HS384/HS512）")
     private String algorithm = "HS256";
 
     /**

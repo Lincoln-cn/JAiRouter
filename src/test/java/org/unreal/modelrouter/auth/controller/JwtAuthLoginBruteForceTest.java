@@ -65,7 +65,8 @@ class JwtAuthLoginBruteForceTest {
         ReflectionTestUtils.setField(guard, "maxFailuresPerPrincipal", 3);
         ReflectionTestUtils.setField(guard, "maxFailuresPerIp", 100);
 
-        controller = new JwtAuthController(tokenRefreshService, accountManager, securityProperties, guard);
+        controller = new JwtAuthController(tokenRefreshService, accountManager, securityProperties, guard,
+                mock(org.unreal.modelrouter.auth.security.authentication.JwtTokenValidator.class));
 
         final JwtConfig jwtConfig = mock(JwtConfig.class);
         lenient().when(jwtConfig.getExpirationMinutes()).thenReturn(60L);

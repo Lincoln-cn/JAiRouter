@@ -9,6 +9,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.unreal.modelrouter.auth.security.config.properties.JwtConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.ratelimit.LoginBruteForceGuard;
@@ -23,6 +25,8 @@ import org.unreal.modelrouter.common.dto.TokenRefreshRequest;
 import org.unreal.modelrouter.common.exception.ApiException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -51,6 +55,9 @@ class JwtAuthControllerTest {
 
     @Mock
     private LoginBruteForceGuard loginBruteForceGuard;
+
+    @Mock
+    private org.unreal.modelrouter.auth.security.authentication.JwtTokenValidator jwtTokenValidator;
 
     @InjectMocks
     private JwtAuthController controller;
@@ -162,6 +169,65 @@ class JwtAuthControllerTest {
                         ApiException apiEx = (ApiException) ex;
                         assertEquals("TOKEN_REFRESH_FAILED", apiEx.getErrorCode());
                         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, apiEx.getStatus());
+                    })
+                    .verify();
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/auth/jwt/refresh - 令牌属主校验（issue #1060）")
+    class RefreshOwnershipTests {
+
+        private Authentication principal(final String name) {
+            return new UsernamePasswordAuthenticationToken(name, null, List.of());
+        }
+
+        @Test
+        @DisplayName("刷新本人令牌：放行")
+        void refreshOwnToken_isAccepted() {
+            when(jwtTokenValidator.extractSubject("test-token")).thenReturn(Mono.just("alice"));
+            when(tokenRefreshService.refreshToken(anyString(), any(), any()))
+                    .thenReturn(Mono.just("new-jwt-token"));
+
+            Mono<RouterResponse<JwtTokenInfo>> result =
+                    controller.refreshToken(testRefreshRequest, principal("alice"), null);
+
+            StepVerifier.create(result)
+                    .expectNextMatches(response -> response.isSuccess()
+                            && "new-jwt-token".equals(response.getData().getToken()))
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("刷新他人令牌：403 且不调用刷新服务")
+        void refreshForeignToken_isRejected() {
+            when(jwtTokenValidator.extractSubject("test-token")).thenReturn(Mono.just("bob"));
+
+            Mono<RouterResponse<JwtTokenInfo>> result =
+                    controller.refreshToken(testRefreshRequest, principal("alice"), null);
+
+            StepVerifier.create(result)
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        assertEquals("FORBIDDEN", ((ApiException) ex).getErrorCode());
+                    })
+                    .verify();
+            verify(tokenRefreshService, never()).refreshToken(anyString(), any(), any());
+        }
+
+        @Test
+        @DisplayName("令牌无法解析时按刷新失败处理")
+        void unparsableToken_failsAsRefreshError() {
+            when(jwtTokenValidator.extractSubject("test-token"))
+                    .thenReturn(Mono.error(new IllegalStateException("bad signature")));
+
+            Mono<RouterResponse<JwtTokenInfo>> result =
+                    controller.refreshToken(testRefreshRequest, principal("alice"), null);
+
+            StepVerifier.create(result)
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        assertEquals("TOKEN_REFRESH_FAILED", ((ApiException) ex).getErrorCode());
                     })
                     .verify();
         }

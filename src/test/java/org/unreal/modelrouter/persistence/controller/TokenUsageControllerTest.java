@@ -134,6 +134,11 @@ class TokenUsageControllerTest {
                     "admin", null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
         }
 
+        private Authentication viewerPrincipal() {
+            return new UsernamePasswordAuthenticationToken(
+                    "viewer", null, List.of(new SimpleGrantedAuthority("ROLE_VIEWER")));
+        }
+
         @Test
         @DisplayName("API Key 主体上报他人 apiKeyId：403 且不落库")
         void apiKeyClaimingOtherKeyId_isRejected() {
@@ -172,15 +177,28 @@ class TokenUsageControllerTest {
         }
 
         @Test
-        @DisplayName("非 API Key 主体（JWT）声明他人 apiKeyId：保持既有行为（放行）")
-        void jwtPrincipalClaimingOtherKeyId_isAcceptedForNow() {
+        @DisplayName("普通 JWT 主体（非管理员）声明他人 apiKeyId：403 且不落库（issue #1059）")
+        void jwtPrincipalClaimingOtherKeyId_isRejected() {
+            testRecord.setApiKeyId("other-key");
+
+            final ResponseEntity<RouterResponse<Void>> result =
+                    controller.recordTokenUsage(testRecord, viewerPrincipal());
+
+            assertEquals(HttpStatus.FORBIDDEN, result.getStatusCode());
+            assertFalse(result.getBody().isSuccess());
+            verify(tokenUsageService, never()).recordTokenUsage(any());
+        }
+
+        @Test
+        @DisplayName("管理员 JWT 主体代报：放行")
+        void administratorPrincipalClaimingOtherKeyId_isAccepted() {
             testRecord.setApiKeyId("other-key");
 
             final ResponseEntity<RouterResponse<Void>> result =
                     controller.recordTokenUsage(testRecord, jwtPrincipal());
 
             assertEquals(HttpStatus.OK, result.getStatusCode(),
-                    "管理面代报属未定义的调用形态，本次刻意不收紧");
+                    "管理员代报保留：该端点是摄取面，管理员仍需能补录");
             verify(tokenUsageService).recordTokenUsage(testRecord);
         }
 

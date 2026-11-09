@@ -455,6 +455,21 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
     }
 
     /**
+     * 提取令牌主体（issue #1060）。
+     *
+     * <p>与 {@link #extractUserId(String)} 走同一个 {@link #parseToken(String)}，因此失败语义一致
+     * （签名/issuer 不合法或已过期都会终止）；唯一区别是**只认 subject**，不做 userId 声明回落，
+     * 以便与 {@code JwtAuthentication#getName()} 的口径对齐。</p>
+     */
+    @Override
+    public Mono<String> extractSubject(final String token) {
+        return Mono.fromCallable(() -> parseToken(token).getSubject())
+            .onErrorMap(JwtException.class, e -> new AuthenticationException(
+                "无法从JWT令牌中提取主体: " + e.getMessage(),
+                ErrorCode.JWT_USER_ID_EXTRACTION_FAILED.code()));
+    }
+
+    /**
      * 生成新的JWT令牌（使用JJWT 0.12.x API）
      */
     public String generateToken(

@@ -20,6 +20,7 @@ import org.unreal.modelrouter.common.dto.LoginRequest;
 import org.unreal.modelrouter.common.dto.LoginResponse;
 import org.unreal.modelrouter.common.dto.TokenRefreshRequest;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
+import org.unreal.modelrouter.auth.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.auth.security.ratelimit.LoginBruteForceGuard;
 import org.unreal.modelrouter.auth.security.service.AccountManager;
 import org.unreal.modelrouter.auth.security.service.JwtTokenRefreshService;
@@ -45,6 +46,11 @@ public class JwtAuthController {
     private final AccountManager accountManager;
     private final SecurityProperties securityProperties;
     private final LoginBruteForceGuard loginBruteForceGuard;
+    /**
+     * 用于刷新端点的主体比对（issue #1060）。与 {@code DefaultJwtTokenValidator} 同受
+     * {@code jairouter.security.jwt.enabled=true} 约束，二者同生同死，故可直接强依赖。
+     */
+    private final JwtTokenValidator jwtTokenValidator;
 
     @Autowired(required = false)
     private JwtPersistenceService jwtPersistenceService;
@@ -110,6 +116,10 @@ public class JwtAuthController {
 
     /**
      * 刷新JWT令牌
+     *
+     * <p>issue #1060：请求体里的令牌可以是任意字符串，本端点此前只要求「请求已认证」就把
+     * 它交给刷新服务 ⇒ 任一登录用户拿他人令牌即可代为续期（刷新窗口内可把将失效的令牌
+     * 续到窗口之外）。现在要求<b>令牌主体就是调用者本人</b>。</p>
      */
     @PostMapping("/refresh")
     @Operation(summary = "刷新JWT令牌", description = "使用当前令牌获取新的JWT令牌")
@@ -128,6 +138,37 @@ public class JwtAuthController {
         String clientIp = getClientIpAddress(exchange);
         String userAgent = exchange != null ? exchange.getRequest().getHeaders().getFirst("User-Agent") : null;
 
+        // 未认证主体在安全链上已被拒绝，这里只在有主体时做属主比对（既保持既有单测的
+        // authentication == null 形态可用，也不给匿名调用留下任何路径）。
+        if (authentication == null) {
+            return doRefreshToken(request, clientIp, userAgent, authentication);
+        }
+
+        return jwtTokenValidator.extractSubject(request.getToken())
+                .flatMap(tokenSubject -> {
+                    if (!authentication.getName().equals(tokenSubject)) {
+                        log.warn("拒绝刷新：令牌主体与当前认证主体不一致: tokenSubject={}, caller={}",
+                                tokenSubject, authentication.getName());
+                        return Mono.error(ApiException.of(ErrorCode.FORBIDDEN.code(),
+                                "只能刷新当前登录主体自己的令牌"));
+                    }
+                    return doRefreshToken(request, clientIp, userAgent, authentication);
+                })
+                .onErrorResume(ex -> {
+                    if (ex instanceof ApiException apiException) {
+                        return Mono.error(apiException);
+                    }
+                    log.warn("JWT令牌刷新失败（主体解析阶段）: {}", ex.getMessage());
+                    return Mono.error(ApiException.of(
+                            ErrorCode.TOKEN_REFRESH_FAILED.code(), "令牌刷新失败: " + ex.getMessage()));
+                });
+    }
+
+    private Mono<RouterResponse<JwtTokenInfo>> doRefreshToken(
+            final TokenRefreshRequest request,
+            final String clientIp,
+            final String userAgent,
+            final Authentication authentication) {
         return tokenRefreshService.refreshToken(request.getToken(), clientIp, userAgent)
                 .flatMap(newToken -> {
                     JwtTokenInfo response = new JwtTokenInfo();
