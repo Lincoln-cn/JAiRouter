@@ -232,6 +232,56 @@ class CachedBodyWebFilterPayloadLimitTest {
         }
     }
 
+    // ==================== issue #1054：超限在读取阶段就终止 ====================
+
+    @Test
+    @DisplayName("issue #1054：分块流式 body 达到上限后立即终止，不读完剩余分片")
+    void oversizedChunkedBody_shouldStopReadingOnceLimitExceeded() {
+        final CachedBodyWebFilter filter = new CachedBodyWebFilter();
+        final int chunkSize = 1024 * 1024;
+        final int totalChunks = 40;
+        final AtomicInteger chunksEmitted = new AtomicInteger();
+
+        final Flux<DataBuffer> body = Flux.range(0, totalChunks)
+                .map(index -> {
+                    chunksEmitted.incrementAndGet();
+                    return bufferFactory.wrap(new byte[chunkSize]);
+                });
+
+        final MockServerHttpRequest request = MockServerHttpRequest.post(API_PATH)
+                .contentType(MediaType.APPLICATION_JSON)
+                // 故意不带 Content-Length：走 hasBody() 的 chunked 分支
+                .header("Transfer-Encoding", "chunked")
+                .body(body);
+        final MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+        final AtomicInteger chainInvocations = new AtomicInteger();
+        final AtomicReference<Throwable> captured = new AtomicReference<>();
+
+        filter.filter(exchange, incoming -> {
+            chainInvocations.incrementAndGet();
+            return Mono.empty();
+        })
+                .onErrorResume(error -> {
+                    captured.set(error);
+                    return Mono.empty();
+                })
+                .block(TIMEOUT);
+
+        assertEquals(0, chainInvocations.get(), "超限请求体不得交给后续链路");
+
+        final ResponseStatusException statusError = assertInstanceOf(
+                ResponseStatusException.class, captured.get(),
+                "超限必须以 413 异常终止: " + captured.get());
+        assertEquals(HttpStatus.CONTENT_TOO_LARGE, statusError.getStatusCode(),
+                "超限必须是 413");
+
+        // 关键断言：带上限的 join 一旦超过阈值就取消上游，
+        // 不再像无上限重载那样把剩下的 30MB 也拉进堆
+        assertTrue(chunksEmitted.get() < totalChunks,
+                "超限后必须停止拉取剩余分片，实际拉了 " + chunksEmitted.get() + "/" + totalChunks);
+    }
+
     // ==================== 真实 WebFlux 组合 ====================
 
     /**

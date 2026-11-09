@@ -90,7 +90,10 @@ public class TracingMemoryManager {
         TracingPerformanceConfig.MemoryConfig memoryConfig =
                 tracingConfiguration.getPerformance().getMemory();
 
-        this.traceCache = new LRUCache<>(memoryConfig.getMaxSpansInMemory());
+        // issue #1055：把「值离开缓存」的回调接上记账，否则 totalMemoryUsed 只增不减，
+        // 一旦越过 80% 阈值，之后每次写追踪都会误判为需要紧急清理。
+        this.traceCache = new LRUCache<>(memoryConfig.getMaxSpansInMemory(),
+                cached -> totalMemoryUsed.addAndGet(-cached.getEstimatedSize()));
     }
 
     @PostConstruct
@@ -318,7 +321,10 @@ public class TracingMemoryManager {
             return false;
         });
 
-        performGarbageCollection().subscribe();
+        // 不再在这里自动发起 System.gc()（issue #1055）：把缓存砍半之后，JVM 自己的 GC
+        // 足以回收被摘掉的对象；显式 GC 只会把停顿放大，而且此路径此前会「每次写入都触发一次」
+        // —— 因为记账不回落，shouldTriggerCleanup() 会一直为真。
+        // 需要主动回收时走 performGarbageCollection()（/api 的显式接口，或性能优化入口）。
     }
 
     private void performPeriodicCleanup() {

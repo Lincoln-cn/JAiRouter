@@ -3,6 +3,7 @@ package org.unreal.modelrouter.common.filter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferLimitException;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,6 +31,12 @@ import reactor.core.publisher.Mono;
  * {@link HttpStatus#CONTENT_TOO_LARGE}（413）终止，错误体由
  * {@link org.unreal.modelrouter.common.exceptionhandler.ReactiveGlobalExceptionHandler}
  * 统一渲染（{@code /v1/**} 走协议形状，其余路径走 {@code RouterResponse}）。（issue #681）</p>
+ *
+ * <p><b>体积上限在读取阶段就生效</b>（issue #1054）：这里用的是带 {@code maxByteCount} 的
+ * {@code DataBufferUtils.join(Publisher, int)}，累积超过 {@link #MAX_CACHE_SIZE} 时立即
+ * 丢弃已攒的 buffer 并抛 {@link DataBufferLimitException}，由后续 {@code onErrorMap}
+ * 转成同一个 413。此前用的是无上限重载，会先把整个请求体读进堆再判断 ⇒ 本过滤器又在认证链
+ * 之前执行，未认证的 chunked 请求即可把堆占满。</p>
  *
  * @author JAiRouter Team
  * @since 1.0.0
@@ -87,7 +94,7 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
     private Mono<Void> handleStandardRequest(
             final ServerWebExchange exchange, final WebFilterChain chain,
             final ServerHttpRequest request) {
-        return DataBufferUtils.join(request.getBody())
+        return DataBufferUtils.join(request.getBody(), MAX_CACHE_SIZE)
                 .flatMap(dataBuffer -> {
                     try {
                         int size = dataBuffer.readableByteCount();
@@ -98,8 +105,7 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
                             log.warn("请求体过大({}MB > {}MB)，返回 413: {}",
                                     size / (1024 * 1024), MAX_CACHE_SIZE / (1024 * 1024),
                                     request.getPath().value());
-                            return Mono.error(new ResponseStatusException(
-                                    HttpStatus.CONTENT_TOO_LARGE, PAYLOAD_TOO_LARGE_MESSAGE));
+                            return Mono.error(payloadTooLarge());
                         }
                         byte[] bytes = new byte[size];
                         dataBuffer.read(bytes);
@@ -118,10 +124,32 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
                         }
                     }
                 })
+                .onErrorMap(DataBufferLimitException.class, error -> {
+                    // 带上限的 join 在累积超过 MAX_CACHE_SIZE 时立即丢弃已攒的 buffer 并报错，
+                    // 不会再像无上限重载那样把整个请求体读进堆（issue #1054）。
+                    log.warn("请求体超过缓存上限 {}MB，返回 413: {}",
+                            MAX_CACHE_SIZE / (1024 * 1024), request.getPath().value());
+                    return payloadTooLarge();
+                })
                 .onErrorResume(error -> {
+                    if (error instanceof ResponseStatusException statusError
+                            && statusError.getStatusCode() == HttpStatus.CONTENT_TOO_LARGE) {
+                        // 超限有专门的 413 语义，不必再记一条「缓存失败」的 warn
+                        return Mono.error(error);
+                    }
                     log.warn("缓存请求体失败，直接抛出异常: {} - {}", request.getPath().value(), error.getMessage());
                     return Mono.error(error); // 让异常冒泡到全局异常处理器
                 });
+    }
+
+    /**
+     * 构造请求体超限的统一异常（issue #681 / #1054 共用同一错误语义）.
+     *
+     * @return 413 异常
+     */
+    private ResponseStatusException payloadTooLarge() {
+        return new ResponseStatusException(
+                HttpStatus.CONTENT_TOO_LARGE, PAYLOAD_TOO_LARGE_MESSAGE);
     }
 
     /**

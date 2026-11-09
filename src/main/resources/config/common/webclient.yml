@@ -42,6 +42,9 @@ jairouter:
     # 副本数越多、单副本资源越小时越应下调，避免每副本都开满连接压垮下游。
     max-connections: 500
     # 等待获取连接的排队超时（毫秒）。
-    pending-acquire-timeout-ms: 60000
+    # issue #1066：原值 60000 与 response-timeout-seconds（60s）同量级 —— 连接池打满时，
+    # 请求会先在这个队列里等到几乎和响应超时一样长，然后才失败，两个超时谁先触发取决于时序，
+    # 排障时很难区分「下游慢」还是「本机排队」。降到 10s 让「池耗尽」快速失败、语义清晰。
+    pending-acquire-timeout-ms: 10000
     # 连接空闲回收时间（秒）。
     max-idle-time-seconds: 60
