@@ -14,6 +14,10 @@
 </p>
 
 <p align="center">
+  <em>Java + Spring Boot —— 写给栈里已经有 JVM 的团队。</em>
+</p>
+
+<p align="center">
   <a href="https://github.com/Lincoln-cn/JAiRouter/releases">
     <img src="https://img.shields.io/github/v/release/Lincoln-cn/JAiRouter?style=flat-square" alt="Latest release">
   </a>
@@ -31,9 +35,6 @@
   <a href="https://github.com/Lincoln-cn/JAiRouter/issues">Issues</a> •
   <a href="https://github.com/Lincoln-cn/JAiRouter/discussions">Discussions</a>
 </p>
-
-> **如果 JAiRouter 对你有帮助，请点个 Star** ⭐ —— Star 数是「这个项目值得继续做」最直接的信号，
-> 也是新用户找到它的主要途径。问题与建议欢迎直接开 issue。
 
 本 README 同时面向**人和 AI 助手**编写：下方的事实块，以及[仓库地图](#仓库地图)、
 [常用命令](#常用命令)、[HTTP 面](#http-面)三节，是可直接机器读取的核心。**代码与本文件冲突时以代码为准**，
@@ -66,6 +67,16 @@ tests:
   scale:   约 600 个测试类、约 5,100 个测试方法
 license: Apache-2.0
 ```
+
+## 为什么是这个
+
+多数 LLM 网关要么是 Python 的（LiteLLM），要么是一整套你得整体接管的网关栈（Kong、APISIX、Envoy）。
+如果你的服务本来就在 Spring Boot 上、运维也已经有 JVM 的容器化经验，那 JAiRouter 是同一件事
+换一个你本来就会部署、会监控、会排查的栈：一个 jar 或一个镜像，PostgreSQL 或 H2，Flyway 迁移，
+Micrometer 与 Prometheus，外加一个读起来像管理后台的控制台。
+
+它不打算做万能代理。它要做一个**中小规模部署里真正能运维**的网关：授权细到权限码，
+审计经得起事后翻阅，配置改了不用重启。
 
 ## 它是什么
 

@@ -14,6 +14,10 @@
 </p>
 
 <p align="center">
+  <em>Java + Spring Boot — built for teams whose stack already speaks JVM.</em>
+</p>
+
+<p align="center">
   <a href="https://github.com/Lincoln-cn/JAiRouter/releases">
     <img src="https://img.shields.io/github/v/release/Lincoln-cn/JAiRouter?style=flat-square" alt="Latest release">
   </a>
@@ -31,9 +35,6 @@
   <a href="https://github.com/Lincoln-cn/JAiRouter/issues">Issues</a> •
   <a href="https://github.com/Lincoln-cn/JAiRouter/discussions">Discussions</a>
 </p>
-
-> **If JAiRouter saves you time, please give it a star** — the star count is the clearest signal that
-> the project is worth keeping alive, and the main way new users find it. Issues and suggestions are welcome.
 
 This README is written to be read by **people and AI agents alike**: the facts block below and the
 [Repository map](#repository-map) / [Commands](#commands) / [HTTP surfaces](#http-surfaces) sections
@@ -67,6 +68,18 @@ tests:
   scale:   ~5,100 test methods across ~600 test classes
 license: Apache-2.0
 ```
+
+## Why this one
+
+Most LLM gateways are Python (LiteLLM) or an existing gateway stack you have to adopt whole
+(Kong, APISIX, Envoy). If your services are Spring Boot and your ops team already runs JVM
+workloads in containers, JAiRouter is the same job done in a stack you already know how to
+deploy, monitor and debug: one jar or one image, PostgreSQL or H2, Flyway migrations,
+Micrometer and Prometheus, and a console that reads like an admin page.
+
+It is not a universal proxy. It is an operable gateway for a small-to-mid deployment:
+authorization down to permission codes, audit that survives review, and configuration you can
+change without a restart.
 
 ## What it is
 
