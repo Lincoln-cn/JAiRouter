@@ -67,7 +67,7 @@ jairouter:
   security:
     jwt:
       expiration-minutes: 15        # 访问令牌有效期
-      refresh-expiration-days: 30   # 刷新令牌有效期
+      refresh-expiration-days: 1    # 令牌过期后仍可续期的窗口
 ```
 
 #### 非对称密钥（RS256/RS384/RS512）
@@ -88,7 +88,7 @@ jairouter:
       secret: "dev-jwt-secret-key-for-development-only-not-for-production"
       algorithm: "HS256"
       expiration-minutes: 60
-      refresh-expiration-days: 7
+      refresh-expiration-days: 1
       issuer: "jairouter"
       blacklist-enabled: true
       # 用户账户配置
@@ -165,7 +165,7 @@ curl -X POST http://localhost:8080/api/auth/jwt/login \
 | `private-key` | string | - | JWT 私钥（非对称算法） |
 | `algorithm` | string | "HS256" | JWT 签名算法 |
 | `expiration-minutes` | int | 60 | 访问令牌过期时间（分钟） |
-| `refresh-expiration-days` | int | 7 | 刷新令牌过期时间（天） |
+| `refresh-expiration-days` | int | 1 | 令牌过期后仍可刷新的窗口（天，1–30） |
 | `issuer` | string | "jairouter" | JWT 发行者标识 |
 | `blacklist-enabled` | boolean | true | 是否启用黑名单功能 |
 | `jwt-header` | string | "X-Jairouter-Token" | 自定义 JWT 头名称 |
@@ -221,7 +221,7 @@ jairouter:
   security:
     jwt:
       expiration-minutes: 15        # 访问令牌15分钟过期
-      refresh-expiration-days: 30   # 刷新令牌30天过期
+      refresh-expiration-days: 1    # 令牌过期后 1 天内仍可续期
 ```
 
 ### 刷新令牌流程
@@ -243,7 +243,7 @@ curl -H "X-Jairouter-Token: access_token_here" \
 ```bash
 curl -X POST http://localhost:8080/api/auth/jwt/refresh \
      -H "Content-Type: application/json" \
-     -d '{"refresh_token": "refresh_token_here"}'
+     -d '{"token": "your-jwt-token"}'
 ```
 
 ---

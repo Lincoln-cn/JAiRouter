@@ -242,7 +242,7 @@ jairouter:
       secret: "${JWT_SECRET:}"          # JWT secret (use env var)
       algorithm: "HS256"                # Signing algorithm
       expiration-minutes: 60            # Access token expiration
-      refresh-expiration-days: 7        # Refresh token expiration
+      refresh-expiration-days: 1        # window (days) after expiry during which refresh is allowed
       issuer: "jairouter"               # Token issuer
       blacklist-enabled: true           # Enable token blacklist
 ```

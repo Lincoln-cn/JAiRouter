@@ -242,7 +242,7 @@ jairouter:
       secret: "${JWT_SECRET:}"          # JWT 密钥（使用环境变量）
       algorithm: "HS256"                # 签名算法
       expiration-minutes: 60            # 访问令牌过期时间
-      refresh-expiration-days: 7        # 刷新令牌过期时间
+      refresh-expiration-days: 1        # 令牌过期后仍可续期的窗口（天）
       issuer: "jairouter"               # 令牌签发者
       blacklist-enabled: true           # 启用令牌黑名单
 ```

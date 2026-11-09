@@ -55,7 +55,7 @@ jairouter:
   security:
     jwt:
       expiration-minutes: 15        # access token lifetime
-      refresh-expiration-days: 30   # refresh token lifetime
+      refresh-expiration-days: 1    # window after expiry during which refresh is allowed
 ```
 
 #### Asymmetric Key (RS256/RS384/RS512)
@@ -76,7 +76,7 @@ jairouter:
       secret: "dev-jwt-secret-key-for-development-only-not-for-production"
       algorithm: "HS256"
       expiration-minutes: 60
-      refresh-expiration-days: 7
+      refresh-expiration-days: 1
       issuer: "jairouter"
       blacklist-enabled: true
       # User Account Configuration
@@ -153,7 +153,7 @@ curl -X POST http://localhost:8080/api/auth/jwt/login \
 | `private-key` | string | - | JWT private key (asymmetric algorithm) |
 | `algorithm` | string | "HS256" | JWT signing algorithm |
 | `expiration-minutes` | int | 60 | Access token expiration (minutes) |
-| `refresh-expiration-days` | int | 7 | Refresh token expiration (days) |
+| `refresh-expiration-days` | int | 1 | Window (days, 1-30) after expiry during which refresh is allowed |
 | `issuer` | string | "jairouter" | JWT issuer identifier |
 | `blacklist-enabled` | boolean | true | Enable blacklist functionality |
 | `jwt-header` | string | "X-Jairouter-Token" | Custom JWT header name |
@@ -209,7 +209,7 @@ jairouter:
   security:
     jwt:
       expiration-minutes: 15        # Access token expires in 15 minutes
-      refresh-expiration-days: 30   # Refresh token expires in 30 days
+      refresh-expiration-days: 1    # refresh allowed for 1 day after expiry
 ```
 
 ### Refresh Token Flow
@@ -231,7 +231,7 @@ curl -H "X-Jairouter-Token: access_token_here" \
 ```bash
 curl -X POST http://localhost:8080/api/auth/jwt/refresh \
      -H "Content-Type: application/json" \
-     -d '{"refresh_token": "refresh_token_here"}'
+     -d '{"token": "your-jwt-token"}'
 ```
 
 ---

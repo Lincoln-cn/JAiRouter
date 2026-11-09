@@ -62,11 +62,16 @@ public class JwtConfig {
     private long expirationMinutes = 60;
 
     /**
-     * 刷新令牌过期时间（天）
+     * 刷新令牌过期时间（天）：令牌过期后仍可换出新令牌的时间窗口。
+     *
+     * <p>issue #1073：这个窗口原本因解析阶段就校验 {@code exp} 而从未生效，
+     * 修复后它真的会放行「已过期但未超窗口」的令牌。默认值随之从 7 天收紧到 1 天 ——
+     * 窗口越长，泄露出去的过期令牌可被续期的暴露面越大，而「一小时内自动续期失败后
+     * 还能补救一天」已覆盖客户端时钟漂移与短暂离线的常见场景。</p>
      */
     @Min(1)
     @Max(30)
-    private long refreshExpirationDays = 7;
+    private long refreshExpirationDays = 1;
 
     /**
      * 令牌发行者
