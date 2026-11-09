@@ -16,11 +16,31 @@ import java.util.Map;
 /**
  * JWT Redis健康监控器
  * 监控JWT相关的Redis服务健康状态
+ *
+ * <p><b>启用条件必须同时满足两个开关</b>（issue #1052）：本类依赖三样东西，
+ * 分别由不同的条件键提供 ——</p>
+ * <ul>
+ *   <li>{@code ReactiveRedisTemplate} 与 {@code redisJwtHealthChecker}：
+ *       {@code jairouter.security.jwt.persistence.redis.enabled=true}
+ *       （见 {@link RedisJwtCacheConfiguration}）；</li>
+ *   <li>{@link JwtBlacklistCacheManager}：
+ *       {@code jairouter.security.jwt.blacklist.redis.enabled=true}</li>
+ * </ul>
+ *
+ * <p>此前这里只声明了前者，于是只要有人打开 {@code persistence.redis.enabled}
+ * （例如 {@code application-staging.yml}）而不打开黑名单开关，本类就会被创建、
+ * 却注入不到 {@code JwtBlacklistCacheManager}，整个上下文启动失败。两个键都列出后，
+ * 缺任何一个本类都不创建，也就不可能注入到不存在的依赖。</p>
  */
 @Slf4j
 @Component("jwtRedisHealthIndicator")
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "true")
+@ConditionalOnProperty(
+        name = {
+                "jairouter.security.jwt.persistence.redis.enabled",
+                "jairouter.security.jwt.blacklist.redis.enabled"
+        },
+        havingValue = "true")
 public class JwtRedisHealthMonitor implements HealthIndicator {
     
     private final ReactiveRedisTemplate<String, String> redisTemplate;
