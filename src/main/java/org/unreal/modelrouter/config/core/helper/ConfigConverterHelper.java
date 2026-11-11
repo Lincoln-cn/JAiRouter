@@ -114,7 +114,53 @@ public class ConfigConverterHelper {
             serviceConfig.setInstances(instances);
         }
 
+        // issue #1095：sticky 块此前完全没有被映射。配置 API 写入 sticky.enabled=false 后，
+        // originalProperties 里的 ServiceConfig 仍然没有 sticky 字段，
+        // ModelServiceRegistry.getStickyScope 就回落到「默认 tenant_model」——
+        // 于是「关掉粘性」这个动作永远不会生效，必须在这里把 YAML/DB 里的 sticky 读进来。
+        if (serviceConfigMap.containsKey("sticky") && serviceConfigMap.get("sticky") instanceof Map) {
+            Map<String, Object> stickyMap = (Map<String, Object>) serviceConfigMap.get("sticky");
+            ModelRouterProperties.StickyConfig stickyConfig = new ModelRouterProperties.StickyConfig();
+            if (stickyMap.containsKey("enabled")) {
+                // 只在能明确解析时覆盖：无法识别的值保持 StickyConfig 的默认值（true），
+                // 否则 enabled 会被写成 null，而 getStickyScope 把非 TRUE 一律当成「关闭」。
+                Boolean enabled = asBoolean(stickyMap.get("enabled"));
+                if (enabled != null) {
+                    stickyConfig.setEnabled(enabled);
+                }
+            }
+            if (stickyMap.containsKey("affinityKeyScope")) {
+                Object scopeObj = stickyMap.get("affinityKeyScope");
+                if (scopeObj instanceof String) {
+                    stickyConfig.setAffinityKeyScope((String) scopeObj);
+                }
+            }
+            serviceConfig.setSticky(stickyConfig);
+        }
+
         return serviceConfig;
+    }
+
+    /**
+     * 把配置里的布尔值宽松解析成 Boolean（兼容 YAML 的 true/false 与字符串 "true"/"false"）
+     *
+     * @param value 原始值
+     * @return Boolean；无法识别时返回 null（保持 {@code StickyConfig} 的默认值）
+     */
+    private Boolean asBoolean(final Object value) {
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        if (value instanceof String) {
+            final String text = ((String) value).trim();
+            if ("true".equalsIgnoreCase(text)) {
+                return Boolean.TRUE;
+            }
+            if ("false".equalsIgnoreCase(text)) {
+                return Boolean.FALSE;
+            }
+        }
+        return null;
     }
 
     /**
