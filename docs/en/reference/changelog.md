@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.8.2
+> **Document Version**: 3.8.3
 > **Last Updated**: 2026-11-08
 > **Git Commit**: -
 > **Author**: Lincoln
@@ -20,6 +20,29 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.8.3] - 2026-11-12 - Sticky sessions can now be turned off
+
+With more than one instance of a service, every load balancing strategy (`round-robin` / `random` /
+`least-connections` / `ip-hash` / `consistent-hash`) kept sending all requests to the same instance. The
+balancer itself was correct: **session stickiness is enabled by default** and **could not be disabled**.
+`getStickyScope` falls back to `tenant_model` affinity (keyed by `apiKeyId|serviceType|modelName`) whenever
+a service has more than one instance and no explicit `sticky` block. The config API had no `sticky` field and
+`ConfigConverterHelper` did not parse the block, so even `sticky.enabled=false` in YAML had no effect.
+
+Stickiness is intentional (it helps upstream prefix caching), but being invisible and unavoidable made it look
+like a load balancing bug.
+
+* **Service config accepts `sticky` incrementally (#1095)**: `PUT /api/config/type/services/{type}` now takes
+  `sticky` (`enabled` / `affinityKeyScope`) using the same incremental merge as #1088, and
+  `ConfigConverterHelper` parses it so disabling actually takes effect at runtime. An unparsable value keeps the
+  `true` default instead of accidentally disabling stickiness.
+* **New console toggle**: "Services -> Edit" shows the effective value (displayed as on when unset, matching the
+  server default) and submits it explicitly, with a hint that the load balancing strategy will not spread traffic
+  while it is on.
+* **SLA toolchain `sla-0.2.2`**: new `sticky.toggleable` check in `verify`; `lb.spread` now checks stickiness
+  first and reports "load balancing overridden by session stickiness" instead of a balancer defect; the `bundle`
+  summary gained a "load balancing and session stickiness" section.
 
 ### [3.8.2] - 2026-11-12 - Gateway behavior fixes: config writes, load balancing, quota and operations
 
