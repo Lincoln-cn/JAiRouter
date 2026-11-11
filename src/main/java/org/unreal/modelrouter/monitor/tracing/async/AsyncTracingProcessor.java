@@ -252,7 +252,11 @@ public final class AsyncTracingProcessor {
     }
 
     /**
-     * 清理过期数据
+     * 清理影子队列中的过期条目。
+     *
+     * <p>{@link #traceQueue} 只用于容量判断与过期观测，真正被消费的是 {@link #traceDataSink}；
+     * 从影子队列移除<b>不会</b>丢弃数据，因此这里不累加 {@code droppedCount}
+     * （否则同一条数据会被计成「已处理」与「已丢弃」两次，见 issue #1083）。
      */
     private void cleanupExpiredData() {
         try {
@@ -271,8 +275,11 @@ public final class AsyncTracingProcessor {
             }
             
             if (removedCount > 0) {
-                log.info("清理过期追踪数据: 清理数量={}", removedCount);
-                droppedCount.addAndGet(removedCount);
+                // 这里清的是「影子队列」，sink 的缓冲里仍有同一批数据，随后会被
+                // processBatch 正常处理并计入 processedCount（issue #1083）。
+                // 若把移除数量累加进 droppedCount，同一条数据会同时被计成「已处理」和「已丢弃」，
+                // dropRate 就会长期停在 50% 附近，让运维误判为「追踪数据丢了一半」。
+                log.debug("清理影子队列中的过期条目: 数量={}", removedCount);
             }
         } catch (Exception e) {
             log.error("清理过期数据失败", e);
