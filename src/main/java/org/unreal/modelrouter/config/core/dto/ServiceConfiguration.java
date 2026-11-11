@@ -15,8 +15,22 @@ public record ServiceConfiguration(
         LoadBalanceConfiguration loadBalance,
         RateLimitConfiguration rateLimit,
         CircuitBreakerConfiguration circuitBreaker,
-        FallbackConfiguration fallback
+        FallbackConfiguration fallback,
+        StickyConfiguration sticky
 ) {
+    /**
+     * 向后兼容的构造器：不传 sticky 时视为「未配置」，与加这个字段之前的行为一致。
+     */
+    public ServiceConfiguration(
+            final String adapter,
+            final List<ModelInstanceConfiguration> instances,
+            final LoadBalanceConfiguration loadBalance,
+            final RateLimitConfiguration rateLimit,
+            final CircuitBreakerConfiguration circuitBreaker,
+            final FallbackConfiguration fallback) {
+        this(adapter, instances, loadBalance, rateLimit, circuitBreaker, fallback, null);
+    }
+
     /**
      * 创建默认配置
      */
@@ -27,7 +41,8 @@ public record ServiceConfiguration(
                 LoadBalanceConfiguration.defaultConfig(),
                 RateLimitConfiguration.defaultConfig(),
                 CircuitBreakerConfiguration.defaultConfig(),
-                FallbackConfiguration.defaultConfig()
+                FallbackConfiguration.defaultConfig(),
+                StickyConfiguration.defaultConfig()
         );
     }
 
@@ -45,7 +60,8 @@ public record ServiceConfiguration(
                 LoadBalanceConfiguration.fromMap(getMap(map, "loadBalance")),
                 RateLimitConfiguration.fromMap(getMap(map, "rateLimit")),
                 CircuitBreakerConfiguration.fromMap(getMap(map, "circuitBreaker")),
-                FallbackConfiguration.fromMap(getMap(map, "fallback"))
+                FallbackConfiguration.fromMap(getMap(map, "fallback")),
+                StickyConfiguration.fromMap(getMap(map, "sticky"))
         );
     }
 
@@ -71,6 +87,11 @@ public record ServiceConfiguration(
         }
         if (fallback != null) {
             map.put("fallback", fallback.toMap());
+        }
+        // issue #1095：此前这里不输出 sticky，导致「写进去的粘性开关」在读面消失，
+        // 运维看不到当前状态、工具链也无法回读确认关闭是否生效。
+        if (sticky != null) {
+            map.put("sticky", sticky.toMap());
         }
         return map;
     }
