@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.8.2
+> **文档版本**: 3.8.3
 > **最后更新**: 2026-11-12
 > **作者**: JAiRouter Team
 
@@ -21,6 +21,25 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.8.3] - 2026-11-12 - 会话粘性可关闭：负载均衡策略终于能生效
+
+多实例部署时，无论把负载均衡策略设成 `round-robin` / `random` / `least-connections` / `ip-hash` /
+`consistent-hash`，请求都会落在同一个实例上。根因不是负载均衡器写错了，而是**会话粘性默认开启**并且
+**没有任何途径关闭它**：`getStickyScope` 在实例数 > 1 且服务未显式配置 `sticky` 时默认返回
+`tenant_model` 亲和（键为 `apiKeyId|serviceType|modelName`），而配置接口缺少 `sticky` 字段、
+`ConfigConverterHelper` 也不解析该块 —— 即使在 YAML 里写了 `sticky.enabled=false` 同样不生效。
+
+会话粘性本身是刻意设计（对上游前缀缓存友好），问题在于它不可见、不可关，运维会把它当成「负载均衡有 bug」。
+
+* **服务配置支持 `sticky` 增量写入（#1095）**：`PUT /api/config/type/services/{type}` 新增 `sticky`
+  字段（`enabled` / `affinityKeyScope`），沿用 #1088 的增量语义；`ConfigConverterHelper` 补上 sticky 解析，
+  使「关闭」能真正热生效。解析失败时保持默认 `true`，不会因为写坏一个字段而误关粘性。
+* **控制台「服务管理 → 编辑」增加会话粘性开关**：回显实际生效值（未配置时显示开启，与服务端缺省一致），
+  保存时显式提交，说明文字写明「开启后负载均衡策略不会真正分流」。
+* **SLA 工具链同步（`sla-0.2.2`）**：`verify` 新增 `sticky.toggleable` 检查；`lb.spread` 增加粘性前置判定
+  —— 粘性未关闭且健康实例 > 1 时直接报「负载均衡被会话粘性覆盖」，不再误报成负载均衡缺陷；`bundle` 的
+  summary 新增「负载均衡与会话粘性」小节，逐类型给出实例数、健康数与粘性状态。
 
 ### [3.8.2] - 2026-11-12 - 网关行为修正：配置写入、负载均衡、配额与运维修正
 
