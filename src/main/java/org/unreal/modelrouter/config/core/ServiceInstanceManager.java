@@ -233,6 +233,14 @@ public class ServiceInstanceManager {
         rateLimitRepository.deleteByInstanceId(id);
         circuitBreakerRepository.deleteByInstanceId(id);
         serviceInstanceRepository.deleteById(id);
+
+        // 内存里的熔断器也要移除（issue #1086）：只删数据库配置时，
+        // CircuitBreakerManager 的注册表仍留着该实例，`/circuit-breaker/states`
+        // 会持续回显已删除实例（实测删除两个实例后仍返回 5 条），运维据此会误判实例还在。
+        if (entity != null && circuitBreakerManager != null) {
+            circuitBreakerManager.resetCircuitBreaker(entity.getInstanceId(), entity.getBaseUrl());
+        }
+
         log.info("Deleted service instance: {}", id);
         
         // 保存版本

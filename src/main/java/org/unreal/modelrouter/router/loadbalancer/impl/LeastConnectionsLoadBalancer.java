@@ -19,7 +19,20 @@ public class LeastConnectionsLoadBalancer implements LoadBalancer {
     private static final Logger logger = LoggerFactory.getLogger(LeastConnectionsLoadBalancer.class);
 
     private final Map<String, AtomicLong> connectionCounts = new ConcurrentHashMap<>();
-    
+
+    /**
+     * 等连接时的轮转起点（issue #1085）。
+     *
+     * <p>「最少连接」在多个实例的加权连接数<b>完全相等</b>时没有天然的先后，
+     * 原实现取「遍历到的第一个」，而遍历顺序固定 ⇒ 只要流量足够短、几乎所有时刻
+     * 各实例在途连接数都相同，就会次次选中同一个实例：实测 3 个实例、30 并发，
+     * 100% 命中同一实例，另外两个完全闲置。</p>
+     *
+     * <p>这里用一个自增游标轮转遍历起点，等值时自然分散；连接数真的不同时，
+     * 「最小连接优先」的语义不受影响。</p>
+     */
+    private final AtomicLong tieBreakCursor = new AtomicLong();
+
     @Autowired(required = false)
     private MetricsCollector metricsCollector;
 
@@ -43,7 +56,12 @@ public class LeastConnectionsLoadBalancer implements LoadBalancer {
         long minConnections = Long.MAX_VALUE;
         double minWeightedConnections = Double.MAX_VALUE;
 
-        for (ModelRouterProperties.ModelInstance instance : instances) {
+        // 从轮转起点开始遍历：等加权连接时由起点决定胜者，避免多实例退化为单实例。
+        final int size = instances.size();
+        final int start = (int) Math.floorMod(tieBreakCursor.getAndIncrement(), (long) size);
+
+        for (int offset = 0; offset < size; offset++) {
+            ModelRouterProperties.ModelInstance instance = instances.get((start + offset) % size);
             String key = getInstanceKey(instance);
             long connections = connectionCounts.getOrDefault(key, new AtomicLong(0)).get();
 

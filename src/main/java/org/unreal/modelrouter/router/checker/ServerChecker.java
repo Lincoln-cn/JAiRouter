@@ -323,9 +323,16 @@ public class ServerChecker {
                     serviceStateManager.updateInstanceHealthStatus(serviceType, instance, false);
                     updateDatabaseHealthStatus(instance.getName(), instance.getInstanceId(),
                             instance.getBaseUrl(), "UNHEALTHY", probe.detail());
-                    log.warn("实例 {} 连续 {} 次探活失败，判为不健康: {}（base-url={}）",
-                            instance.getName(), failureStreak, probe.detail(), instance.getBaseUrl());
-                }
+                    // issue #1087：只在「健康 -> 不健康」那一刻打 WARN。
+                    // 上游持续不可达时，每轮健康检查对每个实例都打一条 WARN，
+                    // 实测 22 分钟产出 4653 条，会把真正的错误挤出日志轮转窗口。
+                    if (previousHealthStatus) {
+                        log.warn("实例 {} 连续 {} 次探活失败，判为不健康: {}（base-url={}）",
+                                instance.getName(), failureStreak, probe.detail(), instance.getBaseUrl());
+                    } else {
+                        log.debug("实例 {} 仍不健康（连续 {} 次探活失败）: {}（base-url={}）",
+                                instance.getName(), failureStreak, probe.detail(), instance.getBaseUrl());
+                    }                }
 
                 recordHealthCheckMetrics(getAdapterType(instance), instance.getName(),
                         currentHealthStatus, probe.responseTimeMs());
