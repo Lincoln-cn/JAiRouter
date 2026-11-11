@@ -56,7 +56,7 @@ COPY --from=build-extract --chown=jairouter:jairouter /app/extracted/snapshot-de
 COPY --from=build-extract --chown=jairouter:jairouter /app/extracted/application/ ./
 
 # 设置环境变量
-ENV JAVA_OPTS="-Xms128m -Xmx256m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+ENV JAVA_OPTS="-Xms128m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 
 # 应用配置
 ENV SPRING_PROFILES_ACTIVE=prod

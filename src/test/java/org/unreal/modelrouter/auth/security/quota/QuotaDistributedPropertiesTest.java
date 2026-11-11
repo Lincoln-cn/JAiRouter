@@ -76,6 +76,8 @@ class QuotaDistributedPropertiesTest {
     void switches_shouldBeIndependent() {
         final QuotaProperties properties = new QuotaProperties();
 
+        // 账本总开关默认开启（行为变更），这里显式关掉才能验证「分布式开关不会把它改回来」。
+        properties.setEnabled(false);
         properties.getDistributed().setEnabled(true);
         properties.getDistributed().setDegradeToLocal(false);
 

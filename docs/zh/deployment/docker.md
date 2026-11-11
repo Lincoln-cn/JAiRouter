@@ -102,6 +102,19 @@ docker run -d \
   sodlinken/jairouter:latest
 ```
 
+> **挂载目录必须先给容器用户写权限。** 镜像以非 root 用户 `jairouter`（uid/gid **10010**）运行。
+> 如果 `logs/` 或 `data/` 是 root 创建的，容器会因
+> `java.io.FileNotFoundException: logs/jairouter-structured.log (Permission denied)` 反复重启
+> （`docker ps` 里显示 `Restarting`，健康检查永远不通过，而日志目录是空的，看不出原因）。
+> 首次部署请先执行：
+>
+> ```bash
+> mkdir -p data logs config-store
+> sudo chown -R 10010:10010 data logs config-store
+> ```
+>
+> 容器健康后再改属主不影响已写入的文件；换机器或换数据卷时同样适用。
+
 ## 镜像构建
 
 ### 构建方式选择

@@ -34,7 +34,7 @@ RUN chown jairouter:jairouter app.jar
 # 配置文件通过卷挂载提供，无需复制到镜像中
 
 # 设置 JVM 参数
-ENV JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+ENV JAVA_OPTS="-Xms512m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 
 # 设置应用参数
 ENV SPRING_PROFILES_ACTIVE=prod

@@ -60,7 +60,7 @@ COPY --from=extract-layer --chown=jairouter:jairouter /app/extracted/snapshot-de
 COPY --from=extract-layer --chown=jairouter:jairouter /app/extracted/application/ ./
 
 # JVM 优化参数（容器感知，适用于小内存环境）
-ENV JAVA_OPTS="-Xms128m -Xmx256m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20"
+ENV JAVA_OPTS="-Xms128m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20"
 
 # 应用配置
 ENV SPRING_PROFILES_ACTIVE=prod
