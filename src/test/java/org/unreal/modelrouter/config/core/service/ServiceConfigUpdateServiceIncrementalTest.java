@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.unreal.modelrouter.common.dto.CircuitBreakerConfig;
 import org.unreal.modelrouter.common.dto.LoadBalanceConfig;
 import org.unreal.modelrouter.common.dto.RateLimitConfig;
+import org.unreal.modelrouter.common.dto.StickyConfig;
 import org.unreal.modelrouter.config.dto.UpdateServiceConfigRequest;
 
 import java.util.LinkedHashMap;
@@ -176,5 +177,41 @@ class ServiceConfigUpdateServiceIncrementalTest {
         assertEquals("static", fallback.get("strategy"));
         assertFalse(updated.containsKey("adapter") && updated.get("adapter") == null);
         assertTrue(updated.containsKey("adapter"));
+    }
+
+    @Test
+    @DisplayName("#1095：提交 sticky.enabled=false 会写进配置，且不影响其它字段")
+    void sticky_isApplied() {
+        final Map<String, Object> existing = existingChatConfig();
+        final UpdateServiceConfigRequest request = UpdateServiceConfigRequest.builder()
+                .sticky(StickyConfig.builder().enabled(false).build())
+                .build();
+
+        final Map<String, Object> updated = service.buildServiceConfigUpdate(existing, request);
+
+        @SuppressWarnings("unchecked")
+        final Map<String, Object> sticky = (Map<String, Object>) updated.get("sticky");
+        assertEquals(Boolean.FALSE, sticky.get("enabled"));
+        assertEquals("gpustack", updated.get("adapter"));
+        assertTrue(updated.containsKey("rateLimit"));
+        assertTrue(updated.containsKey("instances"));
+    }
+
+    @Test
+    @DisplayName("#1095：sticky 块内部按字段合并，已有的 affinityKeyScope 不会丢")
+    void sticky_blockIsMergedByField() {
+        final Map<String, Object> existing = existingChatConfig();
+        existing.put("sticky", new LinkedHashMap<>(Map.of("affinityKeyScope", "tenant")));
+
+        final UpdateServiceConfigRequest request = UpdateServiceConfigRequest.builder()
+                .sticky(StickyConfig.builder().enabled(true).build())
+                .build();
+
+        final Map<String, Object> updated = service.buildServiceConfigUpdate(existing, request);
+
+        @SuppressWarnings("unchecked")
+        final Map<String, Object> sticky = (Map<String, Object>) updated.get("sticky");
+        assertEquals(Boolean.TRUE, sticky.get("enabled"));
+        assertEquals("tenant", sticky.get("affinityKeyScope"));
     }
 }

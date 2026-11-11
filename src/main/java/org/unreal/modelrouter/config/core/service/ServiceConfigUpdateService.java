@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.common.dto.CircuitBreakerConfig;
 import org.unreal.modelrouter.common.dto.LoadBalanceConfig;
 import org.unreal.modelrouter.common.dto.RateLimitConfig;
+import org.unreal.modelrouter.common.dto.StickyConfig;
 import org.unreal.modelrouter.config.dto.UpdateServiceConfigRequest;
 
 import java.util.LinkedHashMap;
@@ -85,6 +86,16 @@ public class ServiceConfigUpdateService {
             }
         }
 
+        // issue #1095：sticky 此前不在 DTO 里，只能通过 YAML 设置，
+        // 而它的默认值是「开启」——控制台无法关闭，多实例却不分流。
+        final StickyConfig sticky = request.getSticky();
+        if (sticky != null) {
+            final Map<String, Object> patch = buildStickyMap(sticky);
+            if (!patch.isEmpty()) {
+                newConfig.put("sticky", mergeBlock(newConfig.get("sticky"), patch));
+            }
+        }
+
         // issue #1088：fallback 原本有 DTO 字段却从未被写回，这里补齐（null 仍表示不修改）
         if (request.getFallback() != null) {
             newConfig.put("fallback", request.getFallback());
@@ -144,6 +155,16 @@ public class ServiceConfigUpdateService {
         putIfPresent(cbMap, "timeout", cb.getTimeout());
         putIfPresent(cbMap, "successThreshold", cb.getSuccessThreshold());
         return cbMap;
+    }
+
+    /**
+     * 构建会话粘性配置补丁（只包含请求里出现的字段，null 不写入）
+     */
+    private Map<String, Object> buildStickyMap(final StickyConfig sticky) {
+        final Map<String, Object> stickyMap = new LinkedHashMap<>();
+        putIfPresent(stickyMap, "enabled", sticky.getEnabled());
+        putIfPresent(stickyMap, "affinityKeyScope", sticky.getAffinityKeyScope());
+        return stickyMap;
     }
 
     private static void putIfPresent(final Map<String, Object> target, final String key, final Object value) {
