@@ -392,10 +392,10 @@
     },
     "docs/en/deployment/docker.md": {
       "FilePath": "docs/en/deployment/docker.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-30T15:24:46.621786",
-      "ContentHash": "16abd82dabeff76d",
-      "GitCommit": "51b84ed6",
+      "Version": "1.0.3",
+      "LastModified": "2026-11-11T16:49:27.308234",
+      "ContentHash": "cfb7c55e9a9366ec",
+      "GitCommit": "0cf01221",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1544,10 +1544,10 @@
     },
     "docs/zh/deployment/docker.md": {
       "FilePath": "docs/zh/deployment/docker.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-30T15:24:49.806602",
-      "ContentHash": "c5842faf19b4d0be",
-      "GitCommit": "51b84ed6",
+      "Version": "1.0.3",
+      "LastModified": "2026-11-11T16:49:27.943031",
+      "ContentHash": "57db0f99b742c030",
+      "GitCommit": "0cf01221",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -7584,7 +7584,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-09T15:28:22.186501",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/docker.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-11T16:49:27.308248",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/docker.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-11T16:49:27.943043",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-11T08:50:47.895105"
+  "last_updated": "2026-11-11T16:49:28.442410"
 }
