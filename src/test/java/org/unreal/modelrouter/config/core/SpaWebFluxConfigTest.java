@@ -37,11 +37,17 @@ class SpaWebFluxConfigTest {
     }
 
     @Test
-    @DisplayName("SPA-002: 缺失的构建产物是 404，不再回落 index.html")
+    @DisplayName("SPA-002: 缺失的构建产物是 404，且响应体指明具体文件")
     void missingBuildAssetIsNotFound() {
         client().get().uri("/admin/assets/missing-chunk-xyz.js")
                 .exchange()
-                .expectStatus().isNotFound();
+                .expectStatus().isNotFound()
+                // Micrometer 把 URI 归一成 /admin/**，响应体是调用方唯一能直接看到具体路径的地方（issue #1079）
+                .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
+                .expectBody(String.class)
+                .value(body -> org.junit.jupiter.api.Assertions.assertTrue(
+                        body.contains("/admin/assets/missing-chunk-xyz.js"),
+                        "404 响应体应含具体路径，实际: " + body));
     }
 
     @Test

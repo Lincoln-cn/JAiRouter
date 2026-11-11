@@ -1,10 +1,12 @@
 package org.unreal.modelrouter.config.core;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
@@ -27,6 +29,7 @@ import java.time.Duration;
  * <p>构建产物缺失时返回 404 而不是回落 index.html：浏览器拿到 {@code text/html} 的 .js
  * 会因 MIME 不符拒绝执行，页面白屏且控制台只留一条含糊的报错。</p>
  */
+@Slf4j
 @Configuration
 public class SpaWebFluxConfig {
 
@@ -70,9 +73,16 @@ public class SpaWebFluxConfig {
                                 .body(Mono.just(resource), ClassPathResource.class);
                     }
 
-                    // 构建产物缺失时不能伪装成 index.html（MIME 不符会让脚本被拒绝执行）
+                    // 构建产物缺失时不能伪装成 index.html（MIME 不符会让脚本被拒绝执行）。
+                    // 这里必须留下具体路径：Micrometer 把 URI 归一成 /admin/**，聚合指标无法还原
+                    // 是哪个 chunk 404，日志是唯一能把两者对上号的地方（issue #1079）。
                     if (isBuildAsset(path)) {
-                        return ServerResponse.notFound().build();
+                        log.warn("构建产物不存在: {}（若来自仍开着的旧页面，刷新即可；"
+                                + "若反复出现，说明前端引用了打包产物里不存在的文件）", path);
+                        // notFound() 返回的是 HeadersBuilder（没有 contentType）；要带响应体必须用 status(...)
+                        return ServerResponse.status(HttpStatus.NOT_FOUND)
+                                .contentType(MediaType.TEXT_PLAIN)
+                                .bodyValue("静态资源不存在: " + path);
                     }
 
                     return serveIndexHtml();
