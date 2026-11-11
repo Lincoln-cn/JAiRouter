@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.8.4
+> **文档版本**: 3.8.5
 > **最后更新**: 2026-11-12
 > **作者**: JAiRouter Team
 
@@ -21,6 +21,19 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.8.5] - 2026-11-12 - 实例变动不再抹掉服务级配置
+
+这次的问题与上一版同源：**写进去的配置在另一条路径上被整段丢掉**。实例增删（`createInstance` /
+`updateInstance` / `deleteInstance`）结束时都会调用 `saveVersion()`，后者用
+`buildFullConfigFromDatabase()` 生成新版本并立即刷新运行时配置 —— 而那个方法为每个服务**新建空 map**，
+只写 `adapter`、`loadBalance`、`instances` 三个键。
+
+于是「先关闭会话粘性、再新增一个实例」之后，粘性悄悄回到开启状态；服务级 `rateLimit`、
+服务级 `circuitBreaker`、`fallback` 一并丢失，`loadBalance.hashAlgorithm` 被改回 `md5`。
+
+* **实例变更保留服务级配置（#1102）**：`buildFullConfigFromDatabase()` 改为以既有服务配置为基线，
+  只覆盖来自实体的 `adapter` 与 `loadBalance.type`，其余键原样保留；不再硬编码 `hashAlgorithm`。
 
 ### [3.8.4] - 2026-11-12 - 粘性开关的状态在接口里看得见了
 
