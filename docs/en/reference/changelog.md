@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.8.1
+> **Document Version**: 3.8.2
 > **Last Updated**: 2026-11-08
 > **Git Commit**: -
 > **Author**: Lincoln
@@ -20,6 +20,54 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.8.2] - 2026-11-12 - Gateway behavior fixes: config writes, load balancing, quota and operations
+
+The common thread this round is "the configuration looked applied but was not": service updates wiped omitted
+fields, least-connections never spread load, per-key quotas never blocked anything, and the tracing drop rate sat
+at 50% forever. None of these produced an error - they only showed up under real load and careful comparison.
+
+* **Service config updates merge incrementally (#1088)**: `PUT /api/config/type/services/{type}` used to build a new
+  map from scratch keeping only `instances`, so any omitted `adapter` / `rateLimit` / `circuitBreaker` / `fallback`
+  was silently cleared while the endpoint still returned success (observed: chat's `adapter: gpustack` became
+  `null` and the whole service type stopped routing). It now starts from the existing config, treats `null` as
+  "no change", merges nested blocks field by field, and finally writes back `fallback`.
+* **Least-connections actually spreads (#1085)**: the tie comparison used strict less-than, so with equal weighted
+  connections the first instance always won and sequential requests all landed on one instance. A rotating cursor
+  now picks the starting point; instances with fewer connections still win.
+* **Deleting an instance clears its circuit breaker (#1086)**: only the persisted row was removed, leaving the
+  registry entry to be reused by a new instance with the same `baseUrl`.
+* **Health-check logging throttled (#1087)**: an unreachable upstream wrote one WARN per instance per round
+  (4653 lines in 22 minutes), pushing real errors out of the rotation window. WARN is now emitted only on state
+  transition.
+* **Quota ledger enabled by default (#1089)**: `QuotaProperties.enabled` defaulted to `false`, so
+  `QuotaEnforcementService` let everything through and per-key limits never applied (observed: a key with
+  `dailyRequestLimit=5` served 8 requests). Default is now `true`; set `jairouter.quota.enabled=false` to opt out.
+* **Container memory settings (#1090)**: all six Dockerfile definitions set both `-Xmx` and `-XX:MaxRAMPercentage=75.0`, and
+  `-Xmx` won - a 2GB container still capped the heap at 512MB. `-Xmx` is removed so the heap follows container memory.
+* **Deployment docs cover directory ownership (#1090)**: the image runs as uid/gid 10010; root-owned `data/` and
+  `logs/` cause a `Permission denied` restart loop with empty logs. The docs now include the initial
+  `chown -R 10010:10010`.
+* **`/actuator/info` exposes build.version (#1077)**: previously only `tracing.config.serviceVersion=1.0.0`
+  (not the product version), so the SLA toolchain could not check version compatibility.
+* **Missing static assets are traceable (#1079)**: a missing build artifact returned nothing and logged nothing,
+  while Prometheus templated the URI to `/admin/**`. It now logs a WARN and returns a `text/plain` 404.
+* **threaddump exposed in production (#1081)**: there was no way to capture evidence from a hung or deadlocked
+  process. heapdump stays disabled on purpose (hundreds of MB per dump).
+* **Tracing drop rate no longer inflated (#1083)**: expired entries were removed from a shadow queue used only for
+  capacity checks, then processed normally and counted as handled - and also counted as dropped, pinning the rate
+  near 50%. Genuine drop accounting is unchanged.
+
+**Upgrade notes**
+
+* **Quotas now actually block**: per-API-key daily/hourly/monthly request and token limits take effect and return
+  429 when exceeded. Set `jairouter.quota.enabled=false` to keep the previous behavior.
+* **Container heap ceiling changed**: no longer a fixed 512MB/1GB/256MB but 75% of container memory. Adjust if you
+  run very small containers.
+* **`/actuator/info` gains a `build` section** and `threaddump` is exposed in prod only; clients with strict
+  response assertions need to adapt.
+* **Service config writes are incremental**: clearing a field by sending `null` (for example `fallback`) no longer
+  works; use version rollback instead.
 
 ### [3.8.1] - 2026-11-08 - Availability audit fixes: image routing, health verdicts, console fallbacks
 
