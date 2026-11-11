@@ -24,6 +24,7 @@ import org.unreal.modelrouter.common.util.SecurityUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -600,16 +601,36 @@ public class ServiceInstanceManager {
         
         // 构建服务配置 Map
         Map<String, Object> servicesMap = new HashMap<>();
-        
+
+        // issue #1102：以现有服务配置为基线。
+        // 本方法原先只写 adapter / loadBalance / instances 三个键，其余服务级字段
+        // （sticky、服务级 rateLimit、服务级 circuitBreaker、fallback）会在保存新版本时被整段丢弃，
+        // 于是「关闭会话粘性后再增删实例」会把粘性悄悄恢复成默认开启（读面还显示 true）。
+        final Map<?, ?> existingServices = baseConfig.get("services") instanceof Map<?, ?>
+                ? (Map<?, ?>) baseConfig.get("services")
+                : Map.of();
+
         for (ServiceConfigEntity serviceConfig : serviceConfigs) {
-            Map<String, Object> serviceMap = new HashMap<>();
+            Map<String, Object> serviceMap = new LinkedHashMap<>();
+            final Object existingService = existingServices.get(serviceConfig.getServiceType());
+            if (existingService instanceof Map<?, ?> existingMap) {
+                for (Map.Entry<?, ?> entry : existingMap.entrySet()) {
+                    serviceMap.put(String.valueOf(entry.getKey()), entry.getValue());
+                }
+            }
+
             serviceMap.put("adapter", serviceConfig.getAdapter());
-            
-            // 负载均衡配置
-            Map<String, Object> loadBalanceMap = new HashMap<>();
+
+            // 负载均衡配置：type 以实体为准，其余键（hashAlgorithm 等）沿用现有值，
+            // 不再硬编码 md5 —— 那会把用户配的 hashAlgorithm 悄悄改回默认。
+            Map<String, Object> loadBalanceMap = new LinkedHashMap<>();
+            if (serviceMap.get("loadBalance") instanceof Map<?, ?> existingLb) {
+                for (Map.Entry<?, ?> entry : existingLb.entrySet()) {
+                    loadBalanceMap.put(String.valueOf(entry.getKey()), entry.getValue());
+                }
+            }
             loadBalanceMap.put("type", serviceConfig.getLoadBalanceType() != null
                     ? serviceConfig.getLoadBalanceType() : "round-robin");
-            loadBalanceMap.put("hashAlgorithm", "md5");
             serviceMap.put("loadBalance", loadBalanceMap);
             
             // 获取该服务的所有实例
