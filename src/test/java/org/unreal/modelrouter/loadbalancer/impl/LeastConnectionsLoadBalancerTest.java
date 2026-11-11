@@ -273,9 +273,22 @@ class LeastConnectionsLoadBalancerTest {
         // When: 这次调用失败（失败路径只会走 recordCallFailure）
         loadBalancer.recordCallFailure(second);
 
-        // Then: 计数被释放，两个实例重新同一起点，选中列表里的第一个
-        assertEquals("first", loadBalancer.selectInstance(instances, "127.0.0.1", "chat").getName(),
-                "失败也应释放在途计数，否则 second 会永久停在高位");
+        // Then: 计数被释放，两个实例重新并列。
+        //
+        // 这里不能用「选中第一个」来断言：#1085 之后并列场景按游标轮转，第一次未必是 first。
+        // 而且旧断言其实是空断言 —— 无论计数有没有被释放（未释放时 second 在途=1，一定选 first；
+        // 释放后旧实现也选 first），结果都是 "first"，根本测不出「失败有没有释放在途计数」。
+        //
+        // 有效判据：连续选择多次，必须能选到 second。若计数未释放，second 的在途恒为 1，
+        // 每次都会绕过它去选 first，这里就会红。
+        final java.util.Set<String> picked = new java.util.HashSet<>();
+        for (int i = 0; i < 4; i++) {
+            picked.add(loadBalancer.selectInstance(instances, "127.0.0.1", "chat").getName());
+        }
+        assertTrue(picked.contains("second"),
+                "失败应释放在途计数：否则 second 的在途恒为 1，四次选择都会绕过它，实际=" + picked);
+        assertEquals(java.util.Set.of("first", "second"), picked,
+                "并列且无新调用时应当轮转覆盖两个实例，实际=" + picked);
     }
 
     @Test
