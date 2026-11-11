@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.8.3
+> **Document Version**: 3.8.4
 > **Last Updated**: 2026-11-08
 > **Git Commit**: -
 > **Author**: Lincoln
@@ -20,6 +20,19 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.8.4] - 2026-11-12 - Stickiness state is now visible in the API
+
+The previous release made stickiness configurable, but the read side never returned it:
+`GET /api/config/type/services/{type}` is built from `ServiceConfiguration#toMap()`, and that record had no
+`sticky` field, so the written toggle vanished from the response. Operators could not see the current state,
+the console could only show the default, and the SLA `verify` check could not confirm a disable had taken effect.
+
+* **The service config read endpoint now returns `sticky` (#1099)**: new `StickyConfiguration` record and a
+  `sticky` field on `ServiceConfiguration` (with a compatibility constructor so existing callers are untouched).
+  `fromMap` accepts booleans and the strings `true` / `false`; an unparsable value is **not** written as `false`
+  (`getStickyScope` treats anything but TRUE as disabled, so writing false would silently turn stickiness off);
+  services that never configured it do **not** emit the key, so "unset" stays distinguishable from "explicitly on".
 
 ### [3.8.3] - 2026-11-12 - Sticky sessions can now be turned off
 
