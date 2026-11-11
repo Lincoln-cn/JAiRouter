@@ -451,6 +451,22 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <!--
+                      生成 META-INF/build-info.properties，让 /actuator/info 暴露 build.version。
+                      为什么必须有：SLA 工具链（sla/）要按契约的 targetRange 判定「工具与网关是否
+                      兼容」，而它跑在客户机器上、拿不到 jar 与镜像标签。没有 build.version 时它只能
+                      要求人手工传 version 参数，自动巡检就没人传，版本守卫形同虚设。
+                      注意：/actuator/info 里的 config.serviceVersion 是 tracing 组件的配置值
+                      （TracingConfiguration.serviceVersion，默认 1.0.0），不是产品版本，工具不得采用。
+                    -->
+                    <execution>
+                        <id>build-info</id>
+                        <goals>
+                            <goal>build-info</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- Maven Compiler Plugin -->
