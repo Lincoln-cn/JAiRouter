@@ -64,6 +64,10 @@
       "selectLoadBalance": "Select a load balance strategy",
       "descriptionPlaceholder": "Add a brief description for identification (e.g. used for customer service chat)"
     },
+    "sticky": {
+      "enable": "Session Stickiness",
+      "hint": "When enabled, requests with the same credential and model always hit the same instance (better upstream cache hits), but the load balancing strategy will not spread traffic. Turn it off if multiple instances should share load."
+    },
     "rateLimit": {
       "section": "Service-level Rate Limit Config",
       "enable": "Enable Rate Limit",

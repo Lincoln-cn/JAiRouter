@@ -267,6 +267,12 @@
         />
       </el-form-item>
       
+      <!-- 会话粘性（issue #1095）：多实例时把同一主体+同一模型固定到同一实例 -->
+      <el-form-item :label="t('service.sticky.enable')">
+        <el-switch v-model="form.sticky.enabled" :active-text="t('service.enabled')" :inactive-text="t('service.disabled')" />
+        <div class="sticky-hint">{{ t('service.sticky.hint') }}</div>
+      </el-form-item>
+
       <!-- 服务级别限流配置 -->
       <el-divider content-position="left">{{ t('service.rateLimit.section') }}</el-divider>
       <el-form-item :label="t('service.rateLimit.enable')">
@@ -424,6 +430,14 @@ interface ServiceForm {
     timeout: number
     successThreshold: number
   }
+  /**
+   * 会话粘性（issue #1095）。服务器侧缺省开启，控制台此前没有任何入口能关，
+   * 表现为「加实例、切策略，路由却始终落在同一实例」。
+   */
+  sticky: {
+    enabled: boolean
+    affinityKeyScope: string
+  }
 }
 
 // 状态管理
@@ -510,6 +524,11 @@ const form = reactive<ServiceForm>({
     failureThreshold: 5,
     timeout: 60000,
     successThreshold: 2
+  },
+  // #1095：默认与服务器一致（开启）；关闭后多实例按负载均衡策略分流
+  sticky: {
+    enabled: true,
+    affinityKeyScope: 'tenant_model'
   }
 })
 
@@ -703,6 +722,8 @@ const handleAddService = () => {
   form.adapter = ''
   form.loadBalance.type = 'random'
   form.description = ''
+  form.sticky.enabled = true
+  form.sticky.affinityKeyScope = 'tenant_model'
   dialogVisible.value = true
 }
 
@@ -733,6 +754,11 @@ const handleEdit = async (row: Service) => {
         failureThreshold: cfg.circuitBreaker?.failureThreshold || 5,
         timeout: cfg.circuitBreaker?.timeout || 60000,
         successThreshold: cfg.circuitBreaker?.successThreshold || 2
+      }
+      // #1095：配置里没有 sticky 时按服务器默认值（开启）显示，避免开关状态与真实行为相反
+      form.sticky = {
+        enabled: cfg.sticky?.enabled !== false,
+        affinityKeyScope: cfg.sticky?.affinityKeyScope || 'tenant_model'
       }
       // v2.8.8: 从 ratelimit 端点加载 canonical 格式的限流配置(覆盖通用配置里可能缺失的字段)
       const rateLimitRes = await getServiceRateLimit(row.type)
@@ -799,6 +825,11 @@ const handleSave = async () => {
           adapter: form.adapter || undefined,
           loadBalance: form.loadBalance,
           description: form.description || undefined,
+          // #1095：粘性开关；服务器缺省开启，所以这里始终显式提交当前状态
+          sticky: {
+            enabled: form.sticky.enabled,
+            affinityKeyScope: form.sticky.affinityKeyScope
+          },
           // 添加服务级别的限流和熔断配置
           rateLimit: form.rateLimit.enabled ? form.rateLimit : { enabled: false },
           circuitBreaker: form.circuitBreaker.enabled ? form.circuitBreaker : { enabled: false }
@@ -869,6 +900,15 @@ onMounted(() => { fetchServices() })
 </script>
 
 <style scoped>
+/* 粘性开关下方的说明（issue #1095） */
+.sticky-hint {
+  width: 100%;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--el-text-color-secondary);
+}
+
 /* 搜索/筛选工具栏宽度 */
 .search-input {
   width: 360px;
