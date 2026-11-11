@@ -47,9 +47,20 @@ export interface ServiceConfigEntry {
   }
   rateLimit?: ServiceRateLimitSection
   circuitBreaker?: ServiceCircuitBreakerSection
+  /**
+   * 会话粘性（issue #1095）：多实例时把同一主体的同一模型固定到同一实例。
+   * 服务器侧缺省为「开启」，因此关闭必须显式提交 `{ enabled: false }`。
+   */
+  sticky?: ServiceStickySection
   /** 该服务下的实例列表（首页按类型汇总实例数/健康数时读取） */
   instances?: ServiceInstance[]
   [key: string]: unknown
+}
+
+/** 会话粘性段（issue #1095） */
+export interface ServiceStickySection {
+  enabled?: boolean
+  affinityKeyScope?: string
 }
 
 /** 通用配置里的限流段（canonical 格式见 `@/api/service` 的 ServiceRateLimitConfig） */
