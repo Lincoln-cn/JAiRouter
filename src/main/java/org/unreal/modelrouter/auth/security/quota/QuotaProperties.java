@@ -16,7 +16,8 @@ import java.util.Objects;
 /**
  * 配额账本配置（{@code jairouter.quota.*}）。
  *
- * <p>默认 {@link #isEnabled() enabled=false}，即完全不启用账本：不累加、不查库、不落库，
+ * <p>默认 {@link #isEnabled() enabled=true}，即默认启用账本：按 Key 的配额累加、查库、落库。
+ * 如需完全关闭（例如纯透传的测试环境），显式设置 {@code jairouter.quota.enabled=false}。
  * 行为与 v3.0.x 完全一致（零行为变更）。{@link #getDistributed() distributed} 默认同样关闭：
  * 计数留在本进程内存（{@code LocalCounterBackend}），只有
  * {@code jairouter.quota.distributed.enabled=true} 时才把 Redis 作为权威计数
@@ -60,7 +61,7 @@ public class QuotaProperties {
     /**
      * 是否启用配额账本（默认 false：零行为变更）
      */
-    private boolean enabled = false;
+    private boolean enabled = true;
 
     /**
      * 账本异常时是否 fail-open（默认 true）：true = 放行请求并标记降级，false = 拒绝请求

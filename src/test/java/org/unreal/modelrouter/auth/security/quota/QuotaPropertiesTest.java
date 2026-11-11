@@ -25,11 +25,13 @@ class QuotaPropertiesTest {
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 3, 14, 13, 45, 30);
 
     @Test
-    @DisplayName("默认关闭：enabled=false / failOpen=true / 60 秒落库 / 四级窗口")
-    void defaults_shouldBeDisabledAndFourWindows() {
+    @DisplayName("默认开启：enabled=true / failOpen=true / 60 秒落库 / 四级窗口")
+    void defaults_shouldBeEnabledAndFourWindows() {
         final QuotaProperties properties = new QuotaProperties();
 
-        assertFalse(properties.isEnabled(), "默认必须关闭，保证零行为变更");
+        // 2026-11 行为变更：配额账本默认开启（按 Key 的日/时/月额度真正生效）。
+        // 需要完全关闭时显式设置 jairouter.quota.enabled=false。
+        assertTrue(properties.isEnabled(), "配额账本默认开启，否则按 Key 配置的额度永远不会被检查");
         assertTrue(properties.isFailOpen());
         assertEquals(60L, properties.getFlushIntervalSeconds());
         assertEquals(List.of(QuotaWindow.MINUTE, QuotaWindow.HOUR, QuotaWindow.DAY, QuotaWindow.MONTH),

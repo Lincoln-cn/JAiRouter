@@ -102,6 +102,21 @@ docker run -d \
   sodlinken/jairouter:latest
 ```
 
+> **Give the container user write access to the mounted directories first.** The image runs as
+> the non-root user `jairouter` (uid/gid **10010**). If `logs/` or `data/` was created by root, the
+> container restarts in a loop with
+> `java.io.FileNotFoundException: logs/jairouter-structured.log (Permission denied)`
+> (`docker ps` shows `Restarting`, the health check never passes, and the log directory stays empty,
+> so the cause is not visible). Run this once before the first start:
+>
+> ```bash
+> mkdir -p data logs config-store
+> sudo chown -R 10010:10010 data logs config-store
+> ```
+>
+> Changing ownership after the container is healthy does not affect files already written; the same
+> applies when moving to a new host or a new volume.
+
 ## Image Building
 
 ### Build Method Selection
