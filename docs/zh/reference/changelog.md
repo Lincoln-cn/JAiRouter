@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.8.3
+> **文档版本**: 3.8.4
 > **最后更新**: 2026-11-12
 > **作者**: JAiRouter Team
 
@@ -21,6 +21,17 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.8.4] - 2026-11-12 - 粘性开关的状态在接口里看得见了
+
+上一版让粘性可以被关闭，但**读面没有回显**：`GET /api/config/type/services/{type}` 返回
+`ServiceConfiguration#toMap()`，而该 record 没有 `sticky` 字段 —— 于是写进去的开关在响应里彻底消失。
+结果是运维看不到当前状态、前端编辑框只能显示默认值、SLA 的 `verify` 也无法通过回读确认关闭是否生效。
+
+* **服务配置读面回显 `sticky`（#1099）**：新增 `StickyConfiguration` record，`ServiceConfiguration` 增加
+  `sticky` 字段（保留兼容构造器，既有调用点零改动）。`fromMap` 支持布尔与字符串 `true` / `false`；
+  无法识别的值**不写成 false**（`getStickyScope` 把非 TRUE 一律当作已关闭，写成 false 会误关粘性）；
+  未配置过的服务**不输出该键**，避免「未配置」与「显式开启」混淆。
 
 ### [3.8.3] - 2026-11-12 - 会话粘性可关闭：负载均衡策略终于能生效
 
