@@ -30,7 +30,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus
+        # threaddump 是「进程卡住 / 死锁 / 线程泄漏」唯一的现场取证手段（issue #1081）：
+        # 没有它，这类问题只能重启复现。访问面仍受 /actuator/** 的 ROLE_ADMIN 约束，
+        # 匿名请求在安全链就被拒。heapdump 刻意不暴露：产出可达数百 MB，容易写满磁盘。
+        include: health,info,prometheus,threaddump
 
 # 安全配置（生产环境）
 jairouter:
