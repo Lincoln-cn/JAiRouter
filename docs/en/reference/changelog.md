@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.8.4
+> **Document Version**: 3.8.5
 > **Last Updated**: 2026-11-08
 > **Git Commit**: -
 > **Author**: Lincoln
@@ -20,6 +20,21 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.8.5] - 2026-11-12 - Instance changes no longer wipe service-level config
+
+This one has the same shape as the previous release: **what was written on one path is dropped on another**.
+Every instance mutation (`createInstance` / `updateInstance` / `deleteInstance`) ends by calling `saveVersion()`,
+which builds the new version from `buildFullConfigFromDatabase()` and immediately refreshes the runtime config -
+and that method started from a **fresh empty map** per service, writing only `adapter`, `loadBalance`, `instances`.
+
+So after "disable session stickiness, then add an instance", stickiness silently went back to enabled;
+service-level `rateLimit`, service-level `circuitBreaker` and `fallback` were dropped, and
+`loadBalance.hashAlgorithm` was reset to `md5`.
+
+* **Instance mutations keep service-level config (#1102)**: `buildFullConfigFromDatabase()` now starts from the
+  existing service config and only overrides `adapter` and `loadBalance.type` from the entity; other keys are
+  preserved and `hashAlgorithm` is no longer hard-coded.
 
 ### [3.8.4] - 2026-11-12 - Stickiness state is now visible in the API
 
