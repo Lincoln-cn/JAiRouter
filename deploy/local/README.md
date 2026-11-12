@@ -37,8 +37,18 @@ notepad deploy\local\application-local.yml
 ## 停止
 
 ```powershell
-.\deploy\local\stop.ps1
+.\deploy\local\stop.ps1          # 优雅停机：发 Ctrl+C，等 Spring 关闭序列，最多 35 秒
+.\deploy\local\stop.ps1 -Force   # 进程卡死时直接强杀（会中断在途请求）
 ```
+
+Windows 没有 SIGTERM，`Stop-Process -Force` 走的是 TerminateProcess，等于直接拔电源。
+脚本改为向 java 进程的控制台发送 Ctrl+C，这样 `server.shutdown=graceful` 与 30 秒的
+`spring.lifecycle.timeout-per-shutdown-phase` 才真正生效。三点要知道：
+
+- **直接关闭控制台窗口 = 硬杀**：不执行 shutdown hook，在途的流式请求立刻中断。
+- **进程没有控制台**（由服务管理器或计划任务托管）：脚本发不出 Ctrl+C，会明确打印原因后强制终止。
+  需要优雅停机请用 WinSW 之类的 SCM 宿主托管（`sc stop` 实测能正常触发优雅关闭）。
+- **`-Force` 或等待超时**：明确打印「shutdown hook 未执行，在途请求已中断」，不做无声降级。
 
 ## 数据在哪
 

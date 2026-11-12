@@ -1,0 +1,31 @@
+# JAiRouter 的 jlink 最小模块集
+#
+# 基线：Spring Boot 4.1.2 / Java 17（`pom.xml` 的 java.version）。
+# 实测：用这份清单裁剪出的运行时 45.6 MB，dev 与 prod profile 均启动成功、
+#       `/actuator/health` 返回 200（对比完整 JRE 约 130–180 MB）。
+#
+# 用法（本文件被 Dockerfile.jlink 与离线打包脚本共用，只需一处维护）：
+#   MODULES="$(grep -v '^[[:space:]]*#' docker/jre-modules.txt | tr -d '[:space:]')"
+#   jlink --add-modules "$MODULES" --include-locales=en,zh \
+#         --strip-debug --no-header-files --no-man-pages --compress=2 --output runtime
+#
+# 两个坑（都实测踩过）：
+#   1. 不能只写 `java.se` —— 聚合模块不含 jdk.net / jdk.unsupported / jdk.crypto.ec，
+#      Lettuce 的 ExtendedKeepAliveSupport 会 NoClassDefFoundError: jdk/net/ExtendedSocketOptions。
+#   2. 必须用 `--compress=2`：本 JDK 的 jlink 不接受 `--compress=zip-N`
+#      （报 “Invalid compression level zip-6”）。
+#
+# 各模块为什么在（删任何一个都会在启动链路上失败）：
+#   java.compiler     —— Spring Data JPA 的 RepositoryRegistrationAotProcessor
+#                        （bean data-jpa.repository-aot-processor#0）在非 AOT 运行下也会实例化，
+#                        它引用 javax.lang.model.SourceVersion
+#   jdk.net           —— Lettuce 的 ExtendedSocketOptions（Boot 4 的 DataRedisReactive 必然触达）
+#   jdk.naming.dns / jdk.naming.rmi —— JNDI 解析路径
+#   jdk.crypto.ec     —— TLS 椭圆曲线密码套件
+#   jdk.crypto.cryptoki —— PKCS#11（JWT/密钥库的可选后端）
+#   jdk.localedata    —— --include-locales 依赖它
+#   jdk.unsupported   —— sun.misc.Unsafe（Netty、Jackson 等常用）
+#   jdk.management / java.management —— JMX 与 Micrometer 的 JVM 指标
+#   jdk.jfr           —— Spring Boot 的 JFR 支持（未启用也不影响启动，留着避免后续开启时再改清单）
+#   java.desktop      —— java.beans（Spring 的 BeanInfo 推断）
+java.base,java.logging,java.naming,java.management,java.instrument,java.sql,java.xml,java.desktop,java.net.http,java.security.jgss,java.security.sasl,java.compiler,jdk.unsupported,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.management,jdk.localedata,jdk.zipfs,jdk.jfr,jdk.net,jdk.naming.dns,jdk.naming.rmi
