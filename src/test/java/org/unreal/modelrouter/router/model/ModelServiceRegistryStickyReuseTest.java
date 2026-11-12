@@ -97,10 +97,12 @@ class ModelServiceRegistryStickyReuseTest {
         cache.put("chat", runtimeConfig);
         setField(registry, "serviceConfigCache", cache);
 
-        // 粘性：服务配置里开启（实例数 > 1 才会真正生效）
+        // 粘性：本测试验证粘性路径，必须显式开启（3.8.6 起默认关闭，见 #1095）
         Map<String, ModelRouterProperties.ServiceConfig> services = new HashMap<>();
         ModelRouterProperties.ServiceConfig serviceConfig = new ModelRouterProperties.ServiceConfig();
-        serviceConfig.setSticky(new ModelRouterProperties.StickyConfig());
+        ModelRouterProperties.StickyConfig stickyConfig = new ModelRouterProperties.StickyConfig();
+        stickyConfig.setEnabled(true);
+        serviceConfig.setSticky(stickyConfig);
         services.put("chat", serviceConfig);
         when(properties.getServices()).thenReturn(services);
     }
@@ -154,6 +156,24 @@ class ModelServiceRegistryStickyReuseTest {
                 "两次选择必须复用同一个粘性包装器（旧实现每次 new，哈希环缓存永不命中）");
         assertEquals(StickyLoadBalancer.class, used.get(0).getClass(), "粘性路径应包装为 StickyLoadBalancer");
         assertEquals(1, registry.getStickyLoadBalancerCacheSize());
+    }
+
+    @Test
+    @DisplayName("STICKY-004: 服务未配置 sticky 时默认不启用粘性（3.8.6 起，#1095）")
+    void stickyAbsent_doesNotWrapByDefault() throws Exception {
+        Map<String, ModelRouterProperties.ServiceConfig> noSticky = new HashMap<>();
+        noSticky.put("chat", new ModelRouterProperties.ServiceConfig());
+        when(properties.getServices()).thenReturn(noSticky);
+
+        ServiceInstanceSelector selector = mock(ServiceInstanceSelector.class);
+        when(selector.selectWithRateLimit(any(), any(), any(), any(), any(), any())).thenReturn(instanceA);
+        setField(registry, "instanceSelector", selector);
+
+        AffinityContextHolder.set("key-1", "203.0.113.7", "chat", "gpt-4");
+        registry.selectInstance(ModelServiceRegistry.ServiceType.chat, "gpt-4", "203.0.113.7");
+
+        assertEquals(0, registry.getStickyLoadBalancerCacheSize(),
+                "默认关闭粘性：未配置 sticky 时不应创建粘性包装器");
     }
 
     private ModelRouterProperties.ModelInstance instance(final String id, final String name, final String baseUrl) {

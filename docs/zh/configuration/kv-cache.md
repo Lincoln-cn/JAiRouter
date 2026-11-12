@@ -31,11 +31,11 @@ model:
     deepseek:
       adapter: deepseek
       sticky:
-        enabled: true            # 是否启用粘性路由（默认 true；实例数 > 1 时生效）
+        enabled: false           # 是否启用粘性路由（默认 false；实例数 > 1 时生效）
         affinityKeyScope: tenant_model  # 粘性粒度：tenant_model（默认）/ tenant
 ```
 
-- `sticky.enabled`：是否启用粘性路由（默认 `true`；仅实例数 > 1 且健康时生效）
+- `sticky.enabled`：是否启用粘性路由（默认 `false`；仅实例数 > 1 且健康时生效）
 - `sticky.affinityKeyScope`：
   - `tenant_model`（默认）：亲和键含 `modelName` —— 同一租户的不同模型可路由到不同实例
   - `tenant`：亲和键为 `apiKeyId|serviceType`（无 apiKey 回退 clientIp）—— 同一租户全部钉在同一实例

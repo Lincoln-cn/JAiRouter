@@ -78,11 +78,12 @@ class ServiceConfigurationStickyTest {
     }
 
     @Test
-    @DisplayName("默认配置里粘性是开启的，与服务端缺省一致")
-    void defaultConfig_stickyEnabled() {
+    @DisplayName("默认配置里粘性是关闭的（3.8.6 起），与服务端缺省一致")
+    void defaultConfig_stickyDisabled() {
         final ServiceConfiguration config = ServiceConfiguration.defaultConfig();
         assertNotNull(config.sticky());
-        assertEquals(Boolean.TRUE, config.sticky().enabled());
+        assertEquals(Boolean.FALSE, config.sticky().enabled(),
+                "默认必须关闭：多实例默认按负载均衡策略分摊，粘性需要显式开启");
         assertEquals("tenant_model", config.sticky().affinityKeyScope());
     }
 }

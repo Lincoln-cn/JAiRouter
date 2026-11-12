@@ -30,7 +30,7 @@ public record StickyConfiguration(
      * 避免「接口报默认开启、实际运行默认关闭」这类口径分裂。
      */
     public static StickyConfiguration defaultConfig() {
-        return new StickyConfiguration(Boolean.TRUE, "tenant_model");
+        return new StickyConfiguration(Boolean.FALSE, "tenant_model");
     }
 
     /**

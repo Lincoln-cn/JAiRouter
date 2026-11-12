@@ -997,8 +997,10 @@ public class ModelServiceRegistry {
                 return scope != null ? scope : AffinityKeyResolver.SCOPE_TENANT_MODEL;
             }
         }
-        // 默认: 实例>1时启用，使用 tenant_model 粒度
-        return AffinityKeyResolver.SCOPE_TENANT_MODEL;
+        // 默认: 不启用粘性（issue #1095 / 3.8.6）。
+        // 多实例默认按配置的负载均衡策略分摊；需要前缀缓存亲和时显式配置
+        // model.services.<type>.sticky.enabled=true。
+        return null;
     }
 
     /**
