@@ -170,7 +170,7 @@ The repository already ships Redis shared-state implementations (quota `RedisCou
 
 ### Features
 
-- **High Availability** (planned): multi-instance deployment and automatic failover require shared database and shared-state wiring first; `replicas` must currently be 1
+- **High Availability**: multi-instance deployment and automatic failover require three preconditions — a shared PostgreSQL, a shared Redis with every shared-state switch on, and the same `JWT_SECRET` on all replicas (see [Multi-Replica Deployment](multi-replica.md)). The default manifest uses the H2 single-file database with `replicas: 1`; do not scale out before that wiring is done.
 - **Auto-scaling** (planned): HPA would raise the replica count, which is incompatible with the H2 single-file database — do not enable
 - **Rolling Updates**: zero-downtime updates (note: no graceful-shutdown settings exist today, so in-flight streaming responses may be truncated)
 - **Service Discovery**: Built-in service discovery and load balancing
@@ -417,9 +417,9 @@ kubectl apply -f pvc.yaml
 
 ### 5. Create Deployment
 
-> **⚠️ Warning: `replicas` must be 1**
+> **⚠️ Warning: `replicas` must be 1 until a shared database is wired in**
 >
-> The only supported store is the H2 embedded single-file database. Verified: two JVM processes opening the same file database concurrently causes the second process to fail immediately (`Database may be already in use`, error 90020). Sharing one PVC makes the second and third Pods crash-loop; separate volumes give each Pod its own data, so request round-robin produces random 401s / state drift. `replicas > 1` requires external shared database adaptation first (issue #160).
+> The default manifest only ships the H2 embedded single-file database. Verified: two JVM processes opening the same file database concurrently causes the second process to fail immediately (`Database may be already in use`, error 90020). Sharing one PVC makes the second and third Pods crash-loop; separate volumes give each Pod its own data, so request round-robin produces random 401s / state drift. **Once you switch to PostgreSQL (see [Database Configuration](database.md)) and turn on the shared-state switches listed in [Multi-Replica Deployment](multi-replica.md), `replicas` can be greater than 1.**
 >
 > `/app/data` must be mounted on a persistent volume (`ReadWriteOnce`). With `readOnlyRootFilesystem: true` and no `/app/data` mount, the primary H2 database cannot be created, so the Pod **fails to start even with `replicas: 1`**.
 
@@ -433,7 +433,7 @@ metadata:
   labels:
     app: jairouter
 spec:
-  # Must be 1: the H2 embedded single-file database does not support multi-replica (see warning above and issue #160)
+  # Keep at 1 until a shared database is wired in: the H2 single-file database does not support multi-replica (switch to PostgreSQL to scale, see multi-replica.md)
   replicas: 1
   selector:
     matchLabels:
@@ -828,7 +828,7 @@ maintainers:
 
 ```yaml
 # values.yaml
-# Must be 1: the H2 embedded single-file database does not support multi-replica (issue #160)
+# Keep at 1 until a shared database is wired in: the H2 single-file database does not support multi-replica (switch to PostgreSQL to scale, see multi-replica.md)
 replicaCount: 1
 
 image:
@@ -1172,7 +1172,7 @@ kubectl rollout undo deployment/jairouter --to-revision=2 -n jairouter
 
 ### 4. Scaling
 
-> **⚠️ Not available today**: `kubectl scale --replicas > 1` is incompatible with the H2 embedded single-file database and requires shared database adaptation first (issue #160). Rate limiting, quota, JWT blacklist, and API-Key caches are all per-Pod semantics — see "Multi-Replica Support Status (Known Constraints)" above.
+> **⚠️ Do not scale out before a shared database is wired in**: `kubectl scale --replicas > 1` is incompatible with the embedded H2 single-file database (error 90020). Switch to PostgreSQL (see [Database Configuration](database.md)) and enable the shared-state switches from [Multi-Replica Deployment](multi-replica.md) first; without them, rate limiting, quota, JWT blacklist and API-Key caches remain per-Pod semantics.
 
 ```bash
 # Manual scaling (not available today, see warning above)
@@ -1315,7 +1315,7 @@ metadata:
   labels:
     app: jairouter
 spec:
-  # Must be 1: the H2 embedded single-file database does not support multi-replica (issue #160)
+  # Keep at 1 until a shared database is wired in: the H2 single-file database does not support multi-replica (switch to PostgreSQL to scale, see multi-replica.md)
   replicas: 1
   selector:
     matchLabels:

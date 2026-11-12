@@ -31,9 +31,11 @@ $args = @(
     "--spring.config.additional-location=file:$cfg",
     "--server.port=$Port"
 )
-$proc = Start-Process -FilePath 'java' -ArgumentList $args -WorkingDirectory $repo -PassThru -WindowStyle Hidden `
-    -RedirectStandardOutput (Join-Path $repo 'logs\stdout.log') `
-    -RedirectStandardError (Join-Path $repo 'logs\stderr.log')
+# 刻意不重定向 stdout/stderr：Windows 上没有 SIGTERM，stop.ps1 只能靠"向进程所在控制台
+# 发送 Ctrl+C"触发 JVM shutdown hook。带重定向启动时子进程是否仍有控制台取决于启动方式，
+# 一旦没有，优雅停机就退化成强制终止。保持子进程拥有自己的（隐藏）控制台是这条路径成立的前提；
+# 运行日志本来就在 logs\jairouter-*.log（logback 固定写 <工作目录>\logs），不依赖标准流。
+$proc = Start-Process -FilePath 'java' -ArgumentList $args -WorkingDirectory $repo -PassThru -WindowStyle Hidden
 
 Set-Content -Path (Join-Path $repo 'logs\jairouter.pid') -Value $proc.Id
 Write-Host "已启动，PID=$($proc.Id)。等待就绪（首次启动约 60 秒）…" -ForegroundColor Yellow

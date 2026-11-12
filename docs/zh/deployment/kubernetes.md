@@ -148,7 +148,7 @@ crash-loop。已实测两个 JVM 进程并发打开 `jdbc:h2:file:./data/jairout
 
 ### 特性
 
-- **高可用性**（规划中）：多实例部署与自动故障转移需先完成共享数据库与共享态接线，当前 `replicas` 必须为 1
+- **高可用性**：多实例部署与自动故障转移需先满足三项前置条件——共享 PostgreSQL、共享 Redis 并打开全部共享态开关、所有副本同一 `JWT_SECRET`（见 [多副本部署](multi-replica.md)）；默认清单用 H2 单文件库、`replicas: 1`，未接线前不要扩容
 - **自动扩缩容**（规划中）：HPA 会把副本数拉高，当前与 H2 单文件库不兼容，勿启用
 - **滚动更新**：零停机时间更新（注意：当前无优雅停机配置，在途流式响应可能被截断）
 - **服务发现**：内置服务发现和负载均衡
@@ -418,9 +418,9 @@ kubectl apply -f pvc.yaml
 
 ### 5. 创建 Deployment
 
-> **⚠️ 警告：`replicas` 必须为 1**
+> **⚠️ 警告：未接共享数据库时 `replicas` 必须为 1**
 >
-> 当前唯一支持 H2 嵌入式单文件数据库。已实测两个 JVM 进程并发打开同一文件库时，第二个进程直接失败（`Database may be already in use`，错误码 90020）。共享同一 PVC 时第 2、3 个 Pod 会 crash-loop；各自独立卷时每 Pod 一份数据，请求轮询随机 401/状态错乱。`replicas > 1` 需先完成外部共享数据库适配（issue #160）。
+> 默认清单只有 H2 嵌入式单文件数据库。已实测两个 JVM 进程并发打开同一文件库时，第二个进程直接失败（`Database may be already in use`，错误码 90020）。共享同一 PVC 时第 2、3 个 Pod 会 crash-loop；各自独立卷时每 Pod 一份数据，请求轮询随机 401/状态错乱。**改用 PostgreSQL（见 [数据库配置](database.md)）并按 [多副本部署](multi-replica.md) 打开那批共享态开关之后，`replicas` 可以大于 1。**
 >
 > `/app/data` 必须挂载持久卷（`ReadWriteOnce`）。若 `readOnlyRootFilesystem: true` 而未挂载 `/app/data`，主 H2 库无法创建，**即使 `replicas: 1` 也起不来**。
 
@@ -434,7 +434,7 @@ metadata:
   labels:
     app: jairouter
 spec:
-  # 必须为 1：H2 嵌入式单文件库不支持多副本（见上方警告与 issue #160）
+  # 未接共享数据库时保持 1：H2 单文件库不支持多副本（改用 PostgreSQL 后可扩容，见 multi-replica.md）
   replicas: 1
   selector:
     matchLabels:
@@ -835,7 +835,7 @@ maintainers:
 
 ```
 # values.yaml
-# 必须为 1：H2 嵌入式单文件库不支持多副本（issue #160）
+# 未接共享数据库时保持 1：H2 单文件库不支持多副本（改用 PostgreSQL 后可扩容，见 multi-replica.md）
 replicaCount: 1
 
 image:
@@ -1224,7 +1224,7 @@ metadata:
   labels:
     app: jairouter
 spec:
-  # 必须为 1：H2 嵌入式单文件库不支持多副本（issue #160）
+  # 未接共享数据库时保持 1：H2 单文件库不支持多副本（改用 PostgreSQL 后可扩容，见 multi-replica.md）
   replicas: 1
   selector:
     matchLabels:
@@ -1653,7 +1653,7 @@ kubectl rollout undo deployment/jairouter --to-revision=2 -n jairouter
 
 ### 4. 扩缩容
 
-> **⚠️ 当前不可用**：`kubectl scale --replicas > 1` 与 H2 嵌入式单文件库不兼容，需先完成共享数据库适配（issue #160）。多副本下限流/配额/JWT 黑名单/API-Key 缓存等均为每 Pod 语义，详见「多副本支持现状（已知约束）」。
+> **⚠️ 接入共享数据库前不要扩容**：`kubectl scale --replicas > 1` 与 H2 嵌入式单文件库不兼容（错误码 90020）。先在 [数据库配置](database.md) 切到 PostgreSQL、按 [多副本部署](multi-replica.md) 打开共享态开关，之后再扩容；未开共享态开关时限流/配额/JWT 黑名单/API-Key 缓存等仍是每 Pod 语义。
 
 ```
 # 手动扩容（当前不可用，见上方警告）

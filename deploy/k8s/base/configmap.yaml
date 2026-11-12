@@ -51,3 +51,11 @@ data:
       persistence:
         redis:
           enabled: true
+      # 语义缓存的跨副本共享（docs/zh/deployment/multi-replica.md 的「必开 7 项」之一）。
+      # 不开启时各副本各自在本地判命中，同一提示词在不同副本上会重复计费。
+      semantic-cache:
+        redis:
+          enabled: true
+      # 说明：jairouter.cluster.events.enabled 默认 false，属「可选」而非必开
+      # （实时事件跨副本广播，Redis pub/sub + 回环过滤，失效时降级不阻断），
+      # 需要控制台事件实时跨副本可见时再显式打开。

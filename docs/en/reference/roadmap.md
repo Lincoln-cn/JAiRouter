@@ -250,7 +250,7 @@ Monolithic App → Modular Design → Reactive Programming
 - **Performance bottlenecks**: Performance challenges at scale
 - **Compatibility**: Multi-version API compatibility maintenance
 - **Security**: Security vulnerabilities and attack protection
-- **Horizontal scaling blocked**: The only supported store is the H2 embedded single-file database, so multiple replicas cannot share one data file and `replicas` must stay at 1; rate limiting, quota, JWT blacklist, and API-Key caches are all per-process by default. Planned order of work: issue #160 (shared database adapter), #161 (cross-instance rate limiting), #162 (shared-state wiring), #163 (scheduler locks), #164 (real-time event broadcast), #165 (K8s artifacts)
+- **Horizontal scaling prerequisites**: The default manifest uses the H2 embedded single-file database with `replicas: 1`. After a shared PostgreSQL and a shared Redis with every shared-state switch on are wired in, and all replicas share the same `JWT_SECRET`, you can scale out (see [Multi-Replica Deployment](../deployment/multi-replica.md)). Without those switches, rate limiting, quota, JWT blacklist and API-Key caches remain per-process; service-level and instance-level rate limiting still count per replica (see the same page and issue #1114)
 
 ### Market Risks
 - **Increased competition**: Competition from similar products

@@ -1,16 +1,26 @@
-# JAiRouter 最终优化版 Dockerfile  
-# 使用 Alpine + 多阶段构建 + JVM 参数优化
-# 实际大小：~280MB（比标准版减少 36%）
-# 注：JLink 方案由于 Spring Boot 3.x 模块兼容性问题无法使用
+# JAiRouter 镜像 —— jlink 裁剪运行时版
+#
+# 事实基线（2026-11，Spring Boot 4.1.2 / Java 17）：
+#   - 用 Java 17 的 jmods 按 docker/jre-modules.txt 裁剪后，运行时 45.6 MB，
+#     dev 与 prod profile 均启动成功、/actuator/health 返回 200
+#     （对比完整 JRE 约 130–180 MB，整包因此从 ~280 MB 降到约 150 MB）。
+#   - 必须用 `--compress=2`：本 JDK 的 jlink 不接受 `--compress=zip-N`
+#     （报 “Invalid compression level zip-6”）。
+#   - 不能只写 `java.se`：聚合模块不含 jdk.net / jdk.unsupported / jdk.crypto.ec。
+#
+# 历史注释「JLink 方案由于 Spring Boot 3.x 模块兼容性问题无法使用」已不成立：
+# Boot 4 的 AOT 处理器需要 java.compiler，补上之后整条链路即可跑通（见模块清单里的逐项说明）。
+#
+# 注：本文件当前没有被任何 workflow 引用，需人工构建验证：
+#   docker build -f Dockerfile.jlink -t jairouter:jlink .
 
 # =============================================================================
-# 阶段 1: 提取 JAR 内容
+# 阶段 1: 提取 JAR 分层
 # =============================================================================
 FROM eclipse-temurin:17-jdk-alpine AS build-extract
 
 WORKDIR /app
 
-# 复制 JAR 文件
 # target 下可能同时存在多个版本的 jar（旧版本未清理），`*.jar` 就会命中多个源，
 # 而 COPY 把多个源复制到文件目标时的报错非常抽象。先复制到目录、再断言恰好一个，
 # 让「选错了 jar」变成一条能直接读懂的失败信息。
@@ -20,23 +30,50 @@ RUN set -eux; \
     [ "$#" -eq 1 ] || { echo "expected exactly one model-router jar under target/, found $#:" >&2; ls -l /tmp/jar/ >&2; exit 1; }; \
     cp /tmp/jar/*.jar app.jar
 
-# 使用 Spring Boot 工具提取分层
 RUN java -Djarmode=tools -jar app.jar extract --layers --launcher --destination extracted
 
 # =============================================================================
-# 阶段 2: 最终运行镜像
+# 阶段 2: 用 jlink 生成最小运行时
 # =============================================================================
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jdk-alpine AS jre-build
 
-# 设置元数据
+# strip-debug 需要 objcopy（binutils）——只在构建阶段装，不进最终镜像
+RUN apk add --no-cache binutils
+
+COPY docker/jre-modules.txt /tmp/jre-modules.txt
+
+RUN set -eux; \
+    MODULES="$(grep -v '^[[:space:]]*#' /tmp/jre-modules.txt | tr -d '[:space:]')"; \
+    [ -n "$MODULES" ] || { echo "jre-modules.txt 里没有模块清单" >&2; exit 1; }; \
+    "$JAVA_HOME/bin/jlink" \
+        --add-modules "$MODULES" \
+        --include-locales=en,zh \
+        --strip-debug \
+        --no-header-files \
+        --no-man-pages \
+        --compress=2 \
+        --output /customjre; \
+    # 构建期自检：musl 基线不匹配会在这里就失败，而不是等容器跑起来才报
+    /customjre/bin/java -version
+
+# =============================================================================
+# 阶段 3: 最终运行镜像（纯 alpine + 裁剪后的运行时）
+# =============================================================================
+FROM alpine:3.21
+
 LABEL maintainer="JAiRouter Team"
-LABEL description="JAiRouter - AI Model Service Routing Gateway (Optimized)"
+LABEL description="JAiRouter - AI Model Service Routing Gateway (jlink trimmed runtime)"
 # 版本号由构建参数注入：默认 dev，发布流程传 --build-arg APP_VERSION=<版本>
 ARG APP_VERSION=dev
 LABEL version="${APP_VERSION}"
 
-# 安装必要工具
+# 安装必要工具（wget 供 HEALTHCHECK 用）
 RUN apk add --no-cache wget tzdata
+
+# 裁剪后的运行时（由 jre-build 阶段产出，不含 JDK 工具链）
+COPY --from=jre-build /customjre /opt/java
+ENV JAVA_HOME=/opt/java
+ENV PATH="/opt/java/bin:${PATH}"
 
 # 创建非 root 用户
 RUN addgroup -g 10010 -S jairouter && \
