@@ -192,13 +192,15 @@ on every replica (log keyword: "刷新 API Key 缓存") before suspecting config
 
 ## Rate-limit key dimension and multi-replica semantics
 
-Rate-limit state lives **in the JVM by default**. Three Redis-backed counting paths are controlled by
+Rate-limit state lives **in the JVM by default**. Every Redis-backed counting path is controlled by
 `jairouter.ratelimit.distributed.enabled`:
 
 - **end-user rate limiting (v3.5.2)** — per-`(API key, end user)` counters shared across replicas.
 - **per-API-key minute limiting (v3.8.6)** — prefix `jairouter:ratelimit:api-key:`.
 - **client-dimension limiting (wired since v3.5.2, off by default, #623)** — `RedisSlidingWindowRateLimiter`
   is called from the request path, but **every bundled configuration sets `client-ip-enable` to `false`**.
+- **global / service / instance / rule level limiters (v3.8.6, #1114)** — prefix
+  `jairouter:ratelimit:scoped:`.
 
 **The per-API-key `rateLimitPerMinute` cap has been enforced by `ApiKeyMinuteRateLimitService` on the main
 request path since v3.8.6**, toggled by `jairouter.ratelimit.api-key.enabled` (default `true`). With
@@ -212,7 +214,13 @@ volume is roughly `configured value × replica count`.
 > `jairouter:ratelimit:*` keys appeared in Redis; on a single replica the same key returned `[200×9, 429×5]`.
 > Neither the auth chain nor the ledger judges the minute rate any more; the ledger only covers hour/day/month.
 
-Everything else (service / instance / rule level limiters) is still per replica. Under multiple replicas:
+**Since v3.8.6 the global / service / instance / rule level limiters follow the same switch** (#1114):
+with it on they also write to Redis, so the allowed volume equals the configured value instead of
+`configured value × replicas`; with it off each pod keeps its own. What is still not wired is persisting the
+**local limiter state** (`RateLimiterStatePersistenceAdapter` only knows the local implementation) — that is a
+restart-recovery capability, unrelated to the counting semantics.
+
+So, for a multi-replica deployment with the switch off:
 
 > the effective allowed volume for one client is roughly `configured value × replica count`, window
 > resets are per replica, and burst shape depends on which pod a request lands on (equivalent to
@@ -260,11 +268,12 @@ operators could not see "affinity is nominal" from metrics.
 With `jairouter.ratelimit.distributed.enabled=true`, rate-limit counters live in Redis and every replica
 shares one counter — allowed volume equals the configured value instead of `configured value × replicas`.
 
-**Today the switch covers three paths**: end-user rate limiting (gated by
+**The switch covers every rate-limit path**: end-user rate limiting (gated by
 `jairouter.ratelimit.end-user.enabled`, off by default), per-API-key minute limiting (gated by
-`jairouter.ratelimit.api-key.enabled`, on by default since v3.8.6) and client-dimension limiting (wired
-since v3.5.2, disabled in every bundled configuration). With the switch off, all three fall back to a
-bounded local counter, so each replica counts on its own.
+`jairouter.ratelimit.api-key.enabled`, on by default since v3.8.6), client-dimension limiting (wired
+since v3.5.2, disabled in every bundled configuration), and the global / service / instance / rule level
+limiters (v3.8.6, see #1114). With the switch off, all of them fall back to a bounded local counter, so each
+replica counts on its own.
 
 - **Atomic Lua**: `INCR` → set the TTL on first write → on overflow `DECR` the counter back and return a
   rejection from the same script, so concurrent replicas cannot over-issue.
@@ -276,11 +285,15 @@ bounded local counter, so each replica counts on its own.
 - With the switch off, a bounded local counter is used (Caffeine; entry cap comes from `local-cache-size`),
   so each replica counts on its own.
 
-### Still not done
+### Two semantic differences once distributed counting is on
 
-Cross-replica counting currently covers **end-user rate limiting** and **client-dimension limiting** (the
-latter only when `client-ip-enable` is switched on). The service / instance / rule level limiters remain
-per replica, so their allowed volume still scales with the replica count and needs the same treatment.
+- **`capacity` no longer applies**: the local implementation is a token bucket and allows a `capacity`-sized
+  initial burst; the Redis path is a one-second sliding window and only honours `rate`. Turning distributed
+  counting on flattens bursts and makes the cap accurate — a deliberate trade-off so that multi-replica
+  deployments get a predictable global limit.
+- **Local limiter state persistence does not cover the Redis path**: `RateLimiterStatePersistenceAdapter`
+  only reads and writes the local bucket state, so restart recovery applies to deployments **without**
+  distributed counting; Redis-side counters expire via their own TTL and need no cleanup job.
 
 ## Cross-replica real-time event broadcast
 
