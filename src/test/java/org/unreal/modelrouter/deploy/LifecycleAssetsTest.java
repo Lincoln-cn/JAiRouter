@@ -81,6 +81,12 @@ class LifecycleAssetsTest {
         assertTrue(script.contains("systemctl enable --now"), "systemd 路径要注册为开机自启");
         assertTrue(script.contains("docker info"),
                 "只看 docker 命令存在不够：守护进程不可用时应当降级而不是装作装好了");
+        assertTrue(script.contains("docker compose version"),
+                "有 docker 不等于有 compose：只装了引擎、没有 compose 插件的机器"
+                        + "（Ubuntu 的 docker.io 包就是这样）必须被判成容器模式不可用，"
+                        + "否则要等到 `up -d` 才发现命令根本不存在");
+        assertTrue(script.contains("docker-compose version"),
+                "老机器只有独立的 docker-compose 命令，要能回退到它而不是直接放弃容器模式");
         assertTrue(script.contains("/actuator/health"), "装完必须真去请求健康端点");
         assertTrue(script.contains("useradd --system"), "systemd 路径要建独立运行用户，不能用 root 跑");
 
@@ -109,6 +115,48 @@ class LifecycleAssetsTest {
                 "purge_data 必须只在 --purge 分支被调用");
         assertEquals(1, countOccurrences(script, "rm -rf \"$PREFIX/data\""),
                 "rm -rf data 只应出现一次（在 purge_data 里）；多出来说明有别的路径也在删数据");
+    }
+
+    @Test
+    @DisplayName("安装脚本不碰别人的目录，多实例的环境文件互不共用")
+    void installScriptRefusesForeignPrefix() throws IOException {
+        String install = read(LINUX.resolve("install.sh"));
+        String uninstall = read(LINUX.resolve("uninstall.sh"));
+
+        assertTrue(install.contains("check_prefix_ownership"),
+                "目标目录可能是别的部署的数据卷，必须在落盘前先判断归属");
+        assertTrue(install.contains("jairouter.json"),
+                "缺安装标记就没法区分「本脚本装的」与「别人的目录」");
+        assertTrue(install.contains("--force"),
+                "拒绝写入的同时要给出显式放行的出口，否则运维只能手工删目录");
+
+        // 真正的判据是「plan_and_apply 里先判归属、后建目录」，不是函数定义的位置。
+        int planStart = install.indexOf("plan_and_apply() {");
+        int ownershipCall = install.indexOf("check_prefix_ownership", planStart);
+        int mkdir = install.indexOf("mkdir -p \"$PREFIX/lib\"", planStart);
+        assertTrue(planStart > 0 && ownershipCall > 0 && mkdir > 0 && ownershipCall < mkdir,
+                "归属判断必须早于 mkdir：先建目录再判断就等于已经把别人的目录改了一半");
+
+        // 环境文件名由 prefix 派生：同一台机器装第二个实例时不能复用第一个的密钥。
+        assertTrue(install.contains("basename \"$PREFIX\""), "install.sh 的 env 文件名没有按 prefix 派生");
+        assertTrue(uninstall.contains("basename \"$PREFIX\""), "uninstall.sh 的 env 文件名没有按 prefix 派生");
+    }
+
+    @Test
+    @DisplayName("卸载失败时不假装成功")
+    void uninstallScriptDoesNotClaimSuccessOnFailure() throws IOException {
+        String script = read(LINUX.resolve("uninstall.sh"));
+
+        assertTrue(script.contains("if ! detect_compose"),
+                "compose 插件可能本来就不存在（容器是别处起的镜像），必须单独判断而不是假定命令可用");
+        assertTrue(script.contains("容器可能仍在运行"),
+                "停不掉容器却打印「已停止并移除容器与网络」，下一个人会以为环境已经干净了");
+
+        // 「已停止并移除容器与网络」只能出现在 down 成功之后的分支里。
+        int successLog = script.indexOf("已停止并移除容器与网络");
+        int downCall = script.indexOf("down; then");
+        assertTrue(successLog > 0 && downCall > 0 && downCall < successLog,
+                "成功提示必须挂在 compose down 的真实退出码上，不能在调用之后无条件打印");
     }
 
     @Test
