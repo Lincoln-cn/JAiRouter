@@ -203,6 +203,10 @@ public class PermissionRuleRegistry {
                 PermissionRule.get("/api/config/quota/**", PermissionCodes.CONFIG_QUOTA_READ),
                 PermissionRule.write("/api/config/quota/**", PermissionCodes.CONFIG_QUOTA_WRITE),
 
+                // ===== 限流配置管理（RatelimitConfigController，#1113 配套 Web 开关） =====
+                PermissionRule.get("/api/config/ratelimit/**", PermissionCodes.CONFIG_RATELIMIT_READ),
+                PermissionRule.write("/api/config/ratelimit/**", PermissionCodes.CONFIG_RATELIMIT_WRITE),
+
                 // ===== 配额监控（QuotaMonitoringController） =====
                 PermissionRule.get("/api/monitoring/quota/**", PermissionCodes.MONITORING_QUOTA_READ),
 

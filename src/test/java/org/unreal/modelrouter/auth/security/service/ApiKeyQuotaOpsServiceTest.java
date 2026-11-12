@@ -4,13 +4,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
 import org.unreal.modelrouter.auth.security.dto.ApiKeyUpdateRequest;
 import org.unreal.modelrouter.auth.security.dto.ApiKeyVO;
+import org.unreal.modelrouter.router.ratelimit.apikey.ApiKeyMinuteRateLimitService;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -33,13 +36,14 @@ class ApiKeyQuotaOpsServiceTest {
     private ApiKeyService apiKeyService;
 
     @Mock
-    private TokenBucketRateLimiter rateLimiter;
+    private ApiKeyMinuteRateLimitService apiKeyMinuteRateLimitService;
 
+    @InjectMocks
     private ApiKeyQuotaService quotaService;
 
     @BeforeEach
     void setUp() {
-        quotaService = new ApiKeyQuotaService(apiKeyService, rateLimiter);
+        ReflectionTestUtils.setField(quotaService, "apiKeyMinuteRateLimitService", apiKeyMinuteRateLimitService);
         final ApiKey key = ApiKey.builder()
                 .keyId("key-1")
                 .keyHash("hash-1")
@@ -93,7 +97,7 @@ class ApiKeyQuotaOpsServiceTest {
             return Mono.just(ApiKeyVO.builder().keyId("key-1").build());
         });
         when(apiKeyService.resetDailyQuota(anyString())).thenReturn(Mono.empty());
-        when(rateLimiter.getCurrentCount(anyString())).thenReturn(0);
+        when(apiKeyMinuteRateLimitService.currentUsage(anyString())).thenReturn(0L);
     }
 
     @Test
@@ -184,15 +188,15 @@ class ApiKeyQuotaOpsServiceTest {
         assertEquals(1, n);
         verify(apiKeyService, times(1)).resetDailyQuota("key-1");
         verify(apiKeyService, never()).resetDailyQuota("missing");
-        verify(rateLimiter, atLeastOnce()).reset("key-1");
+        verify(apiKeyMinuteRateLimitService, atLeastOnce()).reset("key-1");
     }
 
     @Test
     @DisplayName("resetAllDailyQuotas: 调用既有全量重置")
     void resetAllDailyQuotas_delegates() {
-        doNothing().when(rateLimiter).resetAll();
+        when(apiKeyMinuteRateLimitService.resetAll()).thenReturn(0);
         quotaService.resetAllDailyQuotas();
         verify(apiKeyService, atLeastOnce()).resetDailyQuota("key-1");
-        verify(rateLimiter).resetAll();
+        verify(apiKeyMinuteRateLimitService).resetAll();
     }
 }

@@ -20,8 +20,8 @@ JAiRouter 从 **v3.1.0** 起提供**配额账本（quota ledger）**：在请求
 | 3. 查看用量 | **运行观测 → 用量统计 → 配额使用** `/monitoring/quota` | 多维用量 + 与 API Key 限额对照（进度条） |
 | 4. 告警与重置 | **安全 → API 密钥** | 配额告警列表、重置每日计数 |
 
-- 限额判定映射：DAY 窗口 → 日请求/日 Token；MINUTE 窗口 → 每分钟速率；`0` 表示不限制。
-- 账本关闭时仍走 API Key 认证路径的既有校验（内存统计 + TokenBucket）。
+- 限额判定映射：DAY 窗口 → 日请求/日 Token；每分钟速率**不再由账本判定**（v3.8.6 起由主链路限流器负责，见[限流配置](rate-limiting.md)）；`0` 表示不限制。
+- 账本关闭时，日请求 / 日 Token 上限仍由认证链按内存统计判定；每分钟速率由主链路限流器判定。
 
 - **默认关闭（opt-in）**：`jairouter.quota.enabled` 默认 `false`，即零行为变更——不累加、不查库、不落库，行为与 v3.0.x 完全一致
 - **计数后端可选**：默认为进程内 `LocalCounterBackend`（`LongAdder`），仅 `distributed.enabled=true` 时才装配 `RedisCounterBackend` 作为跨实例权威计数
@@ -35,8 +35,7 @@ jairouter:
     enabled: true                  # 启用配额账本（默认 false）
     fail-open: true                # 账本异常时是否放行（默认 true）
     flush-interval-seconds: 60     # 内存账本快照落库间隔，秒（默认 60）
-    windows:                       # 启用的窗口列表（默认四级全开）
-      - MINUTE
+    windows:                       # 启用的窗口列表（默认三级）
       - HOUR
       - DAY
       - MONTH
@@ -61,7 +60,7 @@ jairouter:
 | `enabled` | `false` | 总开关；关闭时账本读写全部短路，零额外开销 |
 | `fail-open` | `true` | 账本异常时是否放行请求：`true` = 放行并标记降级，`false` = 拒绝请求 |
 | `flush-interval-seconds` | `60` | 内存账本快照落库间隔（秒），最小为 1 |
-| `windows` | `[MINUTE, HOUR, DAY, MONTH]` | 启用的窗口列表；省略的窗口不产生记账 |
+| `windows` | `[HOUR, DAY, MONTH]` | 启用的窗口列表；省略的窗口不产生记账。v3.8.6 起账本不判定每分钟速率，清单里写 `MINUTE` 也不会产生该窗口的计数 |
 | `retention.minute` | `1d` | 分钟窗口保留期 |
 | `retention.hour` | `2d` | 小时窗口保留期 |
 | `retention.day` | `35d` | 天窗口保留期 |
@@ -106,7 +105,7 @@ PUT  /api/config/quota        # 运行时部分更新
 |------|------|------|
 | `enabled` | Boolean | 是否启用配额账本 |
 | `failOpen` | Boolean | 账本异常时是否放行 |
-| `windows` | String[] | 启用的窗口列表（如 `["MINUTE", "HOUR", "DAY"]`） |
+| `windows` | String[] | 启用的窗口列表（如 `["HOUR", "DAY", "MONTH"]`） |
 
 **需重启生效的字段**（携带非 `null` 值即被拒绝，返回 HTTP 400 + `errorCode=RESTART_REQUIRED`，message 列出具体字段名）：
 

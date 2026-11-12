@@ -516,6 +516,39 @@ ratelimit:
 - **与配额层的区别**：配额层（`jairouter.quota.*`）按窗口计**量**（请求数 / token），失败时返回 `X-Quota-*`；本层只按分钟计**速率**，返回 `X-RateLimit-*`。
 - **v1 不做每 Key 覆盖**：额度是全局一份；按 Key 定制额度留待出现真实需求后再做。
 
+## API Key 每分钟限流（v3.8.6，默认开启）
+
+按 API Key 计的**全局**每分钟上限，即 `rateLimitPerMinute` 的唯一判定点。v3.8.6 之前同一个值被两套计数各判一次（认证链的进程内滑动窗口 + 配额账本的分钟窗口），多副本下两套口径还不一致；现在收敛为一套。
+
+### 配置
+
+```yaml
+ratelimit:
+  api-key:
+    enabled: true                # 总开关，默认 true
+    local-cache-size: 50000      # 无 Redis 时的本地计数器上限（需重启生效）
+```
+
+### 执行位置与超限响应
+
+判定在**认证之后、终端用户限流之前**（先整 Key 上限，再单用户上限），早于服务级限流预扣与响应缓存读取 —— 缓存命中同样受限流约束。超限返回 `429` 与错误码 `RATE_LIMITED_API_KEY`，并带 `Retry-After`（到下一整分钟）、`X-RateLimit-Limit`、`X-RateLimit-Remaining`、`X-RateLimit-Reset`。
+
+### 多副本
+
+打开 `jairouter.ratelimit.distributed.enabled=true` 后所有副本共享同一 Redis 固定分钟窗口，`rateLimitPerMinute` 即**真正的全局上限**；关闭则每副本一份，实际放行量约为配置值 × 副本数。见[多副本部署](../deployment/multi-replica.md)。
+
+### 与配额账本的分工
+
+配额账本的窗口为**小时 / 天 / 月**，只计量；每分钟速率**不再进账本**（v3.8.6 起）。`jairouter.quota.windows` 里即使显式写了 `minute`，账本也不会据此判定。
+
+## 运行时配置页面（v3.8.6）
+
+控制台「流量治理 → 限流 → 限流配置」（`/rate-limiters/config`，权限码 `config:ratelimit:read` / `config:ratelimit:write`）可以查看并修改上面两层限流的开关与阈值，无需改文件或重启。
+
+- **可热改**：`api-key.enabled`、`end-user.enabled`、`end-user.requests-per-minute`、`end-user.header-enabled`、`end-user.missing-identity`。
+- **需重启**：`distributed.enabled`、`distributed.timeout-ms`、两个 `local-cache-size`、`fingerprint-length` —— 这些在 Bean 装配或计数器构造时就已固化，页面会标出，并且携带它们的请求会被整条拒绝（返回 `RESTART_REQUIRED`，不做部分写入）。
+- 页面改的是运行时属性，**不写回 `config/` 下的 YAML**：重启后仍以文件为准。要让改动持久，请同时更新配置文件。
+
 ## 多层限流配置
 
 ### 分层限流策略

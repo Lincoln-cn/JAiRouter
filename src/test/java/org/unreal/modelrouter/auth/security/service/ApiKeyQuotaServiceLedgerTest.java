@@ -18,6 +18,7 @@ import org.unreal.modelrouter.auth.security.quota.QuotaDimension;
 import org.unreal.modelrouter.auth.security.quota.QuotaLedgerService;
 import org.unreal.modelrouter.auth.security.quota.QuotaProperties;
 import org.unreal.modelrouter.auth.security.quota.QuotaRequest;
+import org.unreal.modelrouter.router.ratelimit.apikey.ApiKeyMinuteRateLimitService;
 import reactor.core.publisher.Mono;
 
 import java.time.Clock;
@@ -36,7 +37,7 @@ import static org.mockito.Mockito.when;
  * {@link ApiKeyQuotaService} 账本委派（v3.1 PR-1）测试。
  *
  * <p>被测对象是真实 {@link ApiKeyQuotaService}（字段注入真实 {@link QuotaLedgerService}）与
- * 真实账本服务 + 手写内存仓库；仅 {@link ApiKeyService} / {@link TokenBucketRateLimiter}
+ * 真实账本服务 + 手写内存仓库；仅 {@link ApiKeyService} / {@link ApiKeyMinuteRateLimitService}
  * 沿用例既有的 Mockito 协作方夹具（与 {@code ApiKeyQuotaServiceTest} 保持一致）。</p>
  *
  * @author JAiRouter Team
@@ -53,7 +54,7 @@ class ApiKeyQuotaServiceLedgerTest {
     private ApiKeyService apiKeyService;
 
     @Mock
-    private TokenBucketRateLimiter rateLimiter;
+    private ApiKeyMinuteRateLimitService apiKeyMinuteRateLimitService;
 
     @InjectMocks
     private ApiKeyQuotaService quotaService;
@@ -75,6 +76,7 @@ class ApiKeyQuotaServiceLedgerTest {
         quotaProperties.setEnabled(true);
         ledgerService = new QuotaLedgerService(ledgerRepository.proxy(), quotaProperties, Clock.systemDefaultZone());
         ReflectionTestUtils.setField(quotaService, "quotaLedgerService", ledgerService);
+        ReflectionTestUtils.setField(quotaService, "apiKeyMinuteRateLimitService", apiKeyMinuteRateLimitService);
 
         // 旧内存路径固定为「今日 50 请求 / 10000 token」，便于区分数据来源
         apiKeyCache.put("hash-" + KEY_ID, legacyApiKey(50L, 10000L));
@@ -140,7 +142,7 @@ class ApiKeyQuotaServiceLedgerTest {
         quotaService.resetDailyQuota(KEY_ID);
 
         verify(apiKeyService).resetDailyQuota(KEY_ID);
-        verify(rateLimiter).reset(KEY_ID);
+        verify(apiKeyMinuteRateLimitService).reset(KEY_ID);
         assertTrue(ledgerService.usageAll(KEY_ID).isEmpty(), "账本中该 Key 的用量应被清空");
         assertEquals(50L, quotaService.getQuotaUsage(KEY_ID).orElseThrow().getTodayRequestCount(),
             "账本清空后回退既有内存路径");

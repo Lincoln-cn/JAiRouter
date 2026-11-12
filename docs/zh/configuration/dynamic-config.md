@@ -376,6 +376,7 @@ curl -X POST -H "X-Jairouter-Token: $TOKEN" "http://localhost:8080/api/config/ve
 | 配置面 | 更新入口 | 是否落库 | 重启后 |
 | --- | --- | --- | --- |
 | 配额 | `PUT /api/config/quota` | 否（只改内存属性） | **回到配置文件的值** |
+| 限流（API Key 级 / 终端用户级） | `PUT /api/config/ratelimit` | 否（只改内存属性；分布式开关、超时、缓存容量与摘要长度需重启） | 回到配置文件的值 |
 | 监控开关与采样 | 监控配置更新接口 | 否（只改内存属性） | 回到配置文件的值 |
 | 响应脱敏规则 | `PUT /api/config/sanitization` | 是（先落库再热重建规则） | 保留 |
 | 熔断器全局配置 | `PUT /api/config/circuit-breaker/global-config` | 是（落库并同步内存） | 保留 |

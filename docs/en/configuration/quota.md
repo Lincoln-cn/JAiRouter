@@ -20,7 +20,7 @@ JAiRouter ships a **quota ledger**: it tracks request counts and token usage acr
 | 3. Observe usage | **Observability → Usage → Quota Usage** `/monitoring/quota` | Multi-dimensional usage + limit/progress columns |
 | 4. Alerts & reset | **Security → API Keys** | Quota alerts list, reset daily counters |
 
-- Limit mapping: DAY window → daily request/token caps; MINUTE window → rate limit; `0` means unlimited.
+- Limit mapping: DAY window → daily request/token caps; the per-minute rate is **no longer judged by the ledger** (since v3.8.6 it belongs to the request-path limiter, see [rate limiting](rate-limiting.md)); `0` means unlimited.
 - With the ledger off, API Key auth still enforces the same limits via in-memory counters + token bucket.
 
 - **Off by default (opt-in)**: `jairouter.quota.enabled` defaults to `false` — zero behavior change. No accumulation, no database access, no Redis access; behavior is identical to v3.0.x
@@ -35,8 +35,7 @@ jairouter:
     enabled: true                  # enable the quota ledger (default false)
     fail-open: true                # allow requests when the ledger fails (default true)
     flush-interval-seconds: 60     # in-memory snapshot flush interval in seconds (default 60)
-    windows:                       # enabled windows (default: all four)
-      - MINUTE
+    windows:                       # enabled windows (default: three)
       - HOUR
       - DAY
       - MONTH
@@ -61,7 +60,7 @@ All properties live under the `jairouter.quota` prefix. Key naming follows Sprin
 | `enabled` | `false` | Master switch; when off, ledger reads and writes short-circuit with zero overhead |
 | `fail-open` | `true` | Whether to allow requests when the ledger encounters an error: `true` = allow and mark degraded; `false` = reject |
 | `flush-interval-seconds` | `60` | In-memory snapshot flush interval in seconds (minimum 1) |
-| `windows` | `[MINUTE, HOUR, DAY, MONTH]` | Enabled window list; omitted windows produce no accounting |
+| `windows` | `[HOUR, DAY, MONTH]` | Enabled window list; omitted windows produce no accounting. Since v3.8.6 the ledger does not judge the per-minute rate, so a `MINUTE` entry produces no counts for that window |
 | `retention.minute` | `1d` | Minute window retention period |
 | `retention.hour` | `2d` | Hour window retention period |
 | `retention.day` | `35d` | Day window retention period |
@@ -106,7 +105,7 @@ Partial update — only non-`null` fields in the request body are modified; `nul
 |-------|------|-------------|
 | `enabled` | Boolean | Enable or disable the quota ledger |
 | `failOpen` | Boolean | Allow requests when the ledger fails |
-| `windows` | String[] | Enabled window list (e.g. `["MINUTE", "HOUR", "DAY"]`) |
+| `windows` | String[] | Enabled window list (e.g. `["HOUR", "DAY", "MONTH"]`) |
 
 **Restart-required fields** (if any non-`null` value is sent, the request is rejected with HTTP 400 + `errorCode=RESTART_REQUIRED`; the message lists the specific field names):
 

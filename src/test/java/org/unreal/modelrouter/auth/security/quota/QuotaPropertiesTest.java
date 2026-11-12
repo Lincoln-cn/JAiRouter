@@ -25,7 +25,7 @@ class QuotaPropertiesTest {
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 3, 14, 13, 45, 30);
 
     @Test
-    @DisplayName("默认开启：enabled=true / failOpen=true / 60 秒落库 / 四级窗口")
+    @DisplayName("默认开启：enabled=true / failOpen=true / 60 秒落库 / 三级窗口（不含分钟）")
     void defaults_shouldBeEnabledAndFourWindows() {
         final QuotaProperties properties = new QuotaProperties();
 
@@ -34,7 +34,9 @@ class QuotaPropertiesTest {
         assertTrue(properties.isEnabled(), "配额账本默认开启，否则按 Key 配置的额度永远不会被检查");
         assertTrue(properties.isFailOpen());
         assertEquals(60L, properties.getFlushIntervalSeconds());
-        assertEquals(List.of(QuotaWindow.MINUTE, QuotaWindow.HOUR, QuotaWindow.DAY, QuotaWindow.MONTH),
+        // v3.8.6：每分钟速率改由 ApiKeyMinuteRateLimitService 在主链路判定，账本不再含 MINUTE ——
+        // 否则同一个 rateLimitPerMinute 会被两套计数各判一次，多副本下两套口径还不一致。
+        assertEquals(List.of(QuotaWindow.HOUR, QuotaWindow.DAY, QuotaWindow.MONTH),
             properties.enabledWindows());
     }
 

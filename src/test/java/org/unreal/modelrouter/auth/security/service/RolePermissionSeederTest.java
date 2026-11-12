@@ -78,9 +78,10 @@ class RolePermissionSeederTest {
             // #567（B11）：OPERATOR / USER 都持 lb:config:write ⇒ 必须补 lb:config:read，故 45+1 / 28+1；
             // VIEWER 仍是 27：它是「所有 :read」，但 #567 的 8 个管理面 read 只发给持有对应 manage 的角色，
             // 只读角色不凭空扩权（见 RolePermissionSeeder.MANAGE_PAIRED_READ_CODES）
-            assertEquals(46L, counts.get("OPERATOR"));
-            assertEquals(29L, counts.get("USER"));
-            assertEquals(27L, counts.get("VIEWER"));
+            // v3.8.6：新增 config:ratelimit:read/write（限流运行时配置）⇒ OPERATOR +2、USER +1（只读）、VIEWER +1
+            assertEquals(48L, counts.get("OPERATOR"));
+            assertEquals(30L, counts.get("USER"));
+            assertEquals(28L, counts.get("VIEWER"));
         }
 
         @Test
@@ -147,11 +148,11 @@ class RolePermissionSeederTest {
         }
 
         @Test
-        @DisplayName("VIEWER 仅含 :read 权限码（27 个），排除 view/write/manage/use")
+        @DisplayName("VIEWER 仅含 :read 权限码（28 个），排除 view/write/manage/use")
         void viewerContainsOnlyReadCodes() {
             List<String> codes = codesOf("VIEWER");
 
-            assertEquals(27, codes.size());
+            assertEquals(28, codes.size());
             assertTrue(codes.stream().allMatch(code -> code.endsWith(":read")));
             assertTrue(codes.contains(PermissionCodes.SECURITY_AUDIT_READ));
             assertFalse(codes.contains(PermissionCodes.CALLHISTORY_VIEW));

@@ -48,18 +48,31 @@ public class QuotaProperties {
     /** Redis 命令超时上限（避免误配大值把请求链路拖死） */
     private static final Duration MAX_DISTRIBUTED_TIMEOUT = Duration.ofSeconds(5L);
 
-    /** 默认启用的四级窗口：分钟 / 小时 / 天 / 月 */
+    /**
+     * 默认启用的三级窗口：小时 / 天 / 月.
+     *
+     * <p><b>v3.8.6 起不再含 MINUTE</b>：每分钟限额改由
+     * {@code ApiKeyMinuteRateLimitService}（Redis 固定窗口，Redis 不可用时回落进程内计数）
+     * 在主链路判定，口径是「60 秒窗口内最多 N 次」。账本若同时保留 MINUTE，同一个
+     * {@code rateLimitPerMinute} 会被两套计数各判一次，多副本下两套口径还不一致（账本按
+     * 自然分钟固定窗口、限流器按请求到达时刻），客户端只会看到其中一个 429，排在后面的
+     * 那套等于白算。因此 MINUTE 从账本窗口列表移除，速率语义只在一处定义。</p>
+     *
+     * <p>仍然保留 MINUTE 枚举值本身：既有的账本数据与 Redis key 里可能还存在 minute 段，
+     * 读取与清理路径必须继续认识它；只是它不再进入默认判定链。</p>
+     */
     private static final List<QuotaWindow> DEFAULT_WINDOWS =
-        List.of(QuotaWindow.MINUTE, QuotaWindow.HOUR, QuotaWindow.DAY, QuotaWindow.MONTH);
+        List.of(QuotaWindow.HOUR, QuotaWindow.DAY, QuotaWindow.MONTH);
 
-    /** 默认保留期：minute=1d / hour=2d / day=35d / month=13mo */
+    /** 默认保留期：hour=2d / day=35d / month=13mo（minute 仍保留一份，用于兼容存量数据） */
     private static final Map<String, String> DEFAULT_RETENTION = defaultRetention();
 
     /** 无法解析保留期时的兜底天数 */
     private static final long FALLBACK_RETENTION_DAYS = 1L;
 
     /**
-     * 是否启用配额账本（默认 false：零行为变更）
+     * 是否启用配额账本（默认 true）。关闭后小时/天/月窗口的账本判定与预留整体停用，
+     * 残留的每日统计仍由 {@code ApiKey} 上的内存用量字段承担。
      */
     private boolean enabled = true;
 
@@ -74,7 +87,11 @@ public class QuotaProperties {
     private long flushIntervalSeconds = 60L;
 
     /**
-     * 启用的窗口列表（默认四级：MINUTE / HOUR / DAY / MONTH）
+     * 启用的窗口列表（默认三级：HOUR / DAY / MONTH）。
+     *
+     * <p>显式配置里若仍写着 {@code MINUTE}，账本会照常计入与读取该窗口，
+     * 但每分钟速率判定已转移到 {@code ApiKeyMinuteRateLimitService}，两处同时开启会造成
+     * 同一个阈值被判定两次（见 {@link #DEFAULT_WINDOWS} 的说明）。</p>
      */
     private List<QuotaWindow> windows = new ArrayList<>(DEFAULT_WINDOWS);
 

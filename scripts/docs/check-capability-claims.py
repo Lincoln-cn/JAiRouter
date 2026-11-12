@@ -114,11 +114,13 @@ RATELIMITER_LABELS: Dict[str, Dict[str, List[str]]] = {
 # 横切能力：路线图上有声明、代码里**没有同名类**，但确实有实现载体 ⇒ 用显式锚点登记，
 # 并**校验锚点符号真实存在**（否则「锚点」会变成绕过门闩的后门）。
 EXTRA_ANCHORS: Dict[str, Dict[str, object]] = {
-    "ApiKeyValidator#validateRateLimit": {
+    # v3.8.6 起 API Key 每分钟限额由主链路限流器判定，认证链的
+    # ApiKeyValidator#validateRateLimit 已删除（两套计数会双扣），锚点随之迁移。
+    "ApiKeyMinuteRateLimitService#evaluate": {
         "zh": ["API Key 级限流"],
         "en": ["API-key-level rate limiting"],
-        "source": "src/main/java/org/unreal/modelrouter/auth/security/service/ApiKeyValidator.java",
-        "symbol": "validateRateLimit",
+        "source": "src/main/java/org/unreal/modelrouter/router/ratelimit/apikey/ApiKeyMinuteRateLimitService.java",
+        "symbol": "evaluate",
     },
     "EndUserRateLimitService#evaluate": {
         "zh": ["终端用户级限流"],

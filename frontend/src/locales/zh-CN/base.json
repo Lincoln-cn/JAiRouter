@@ -101,6 +101,7 @@
     "usage": "用量统计",
     "loadBalancing": "负载均衡",
     "rateLimiting": "限流",
+    "rateLimitingConfig": "限流配置",
     "circuitBreaking": "熔断"
   },
   "tabs": {
@@ -173,6 +174,7 @@
     "exceptionDetail": "异常事件详情",
     "exceptionStatistics": "异常统计分析",
     "rateLimiterMonitoring": "实时监控",
+    "rateLimiterConfig": "限流配置",
     "slowQueryAnalysis": "慢查询分析",
     "callHistoryDashboard": "调用历史仪表盘",
     "callHistoryList": "调用历史列表",

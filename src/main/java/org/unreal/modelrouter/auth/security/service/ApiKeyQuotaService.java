@@ -10,6 +10,7 @@ import org.unreal.modelrouter.auth.security.quota.QuotaLedgerService;
 import org.unreal.modelrouter.auth.security.quota.QuotaLimits;
 import org.unreal.modelrouter.auth.security.quota.QuotaUsage;
 import org.unreal.modelrouter.auth.security.quota.QuotaWindow;
+import org.unreal.modelrouter.router.ratelimit.apikey.ApiKeyMinuteRateLimitService;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -31,7 +32,21 @@ import java.util.stream.Collectors;
 public class ApiKeyQuotaService {
 
     private final ApiKeyService apiKeyService;
-    private final TokenBucketRateLimiter rateLimiter;
+
+    /**
+     * v3.8.6: API Key 级每分钟限流服务——管理面「当前分钟已用」的唯一数据源。
+     *
+     * <p>此前该字段直接读认证侧 {@code TokenBucketRateLimiter.getCurrentCount(...)}（进程内
+     * Caffeine 滑动窗口）。那份计数与真正的限流判定同源，但多副本下只代表本副本、且与配额账本
+     * 的 MINUTE 窗口口径不同，列表页展示的「当前分钟已用」因此在集群里没有意义。改为读
+     * {@link ApiKeyMinuteRateLimitService#currentUsage(String)}：判定与展示共用同一个计数器，
+     * 展示值就是判定依据本身。</p>
+     *
+     * <p>该服务未装配时（{@code jairouter.ratelimit.api-key.enabled=false}）展示 0，
+     * <b>不回退</b>到任何进程内计数——回退会让同一页面在两种部署形态下显示两种口径。</p>
+     */
+    @Autowired(required = false)
+    private ApiKeyMinuteRateLimitService apiKeyMinuteRateLimitService;
 
     /**
      * 配额账本（v3.1 PR-1 旁路账本）。
@@ -43,10 +58,8 @@ public class ApiKeyQuotaService {
     private QuotaLedgerService quotaLedgerService;
 
     @Autowired
-    public ApiKeyQuotaService(ApiKeyService apiKeyService,
-                              TokenBucketRateLimiter rateLimiter) {
+    public ApiKeyQuotaService(ApiKeyService apiKeyService) {
         this.apiKeyService = apiKeyService;
-        this.rateLimiter = rateLimiter;
     }
 
     /**
@@ -85,7 +98,11 @@ public class ApiKeyQuotaService {
             }
         }
 
-        int currentRate = rateLimiter.getCurrentCount(keyId);
+        int currentRate = 0;
+        if (apiKeyMinuteRateLimitService != null) {
+            currentRate = (int) Math.min(Integer.MAX_VALUE,
+                    Math.max(0L, apiKeyMinuteRateLimitService.currentUsage(keyId)));
+        }
 
         // v3.1 PR-1：账本启用时优先读取账本的今日（DAY 窗口）用量；
         // 账本未启用、无今日数据或读取失败时回退上面的内存路径，既有返回结构不变。
@@ -273,7 +290,9 @@ public class ApiKeyQuotaService {
         apiKeyService.resetDailyQuota(keyId)
                 .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
                 .block(java.time.Duration.ofSeconds(5));
-        rateLimiter.reset(keyId);
+        if (apiKeyMinuteRateLimitService != null) {
+            apiKeyMinuteRateLimitService.reset(keyId);
+        }
         resetLedger(keyId);
         log.info("已重置 API Key 每日配额和速率限制: {}", keyId);
     }
@@ -363,8 +382,11 @@ public class ApiKeyQuotaService {
                     .block(java.time.Duration.ofSeconds(5));
             resetLedger(keyId);
         }
-        rateLimiter.resetAll();
-        log.info("已重置所有 API Key 每日配额和速率限制");
+        int clearedRateBuckets = 0;
+        if (apiKeyMinuteRateLimitService != null) {
+            clearedRateBuckets = apiKeyMinuteRateLimitService.resetAll();
+        }
+        log.info("已重置所有 API Key 每日配额和速率限制: 速率桶清零 {} 个", clearedRateBuckets);
     }
 
     /**

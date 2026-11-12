@@ -50,6 +50,11 @@ class QuotaLedgerServiceTest {
         repository = InMemoryQuotaLedgerRepository.create();
         properties = new QuotaProperties();
         properties.setEnabled(true);
+        // 本类验证的是账本的「窗口循环」能力，与默认窗口集合无关。v3.8.6 起默认窗口不再含
+        // MINUTE（每分钟速率移交 ApiKeyMinuteRateLimitService 判定），这里显式配齐四个窗口，
+        // 以保持原有覆盖面（存量部署仍可这样配置，账本会继续记录但不判定速率）。
+        properties.setWindows(List.of(QuotaWindow.MINUTE, QuotaWindow.HOUR,
+                QuotaWindow.DAY, QuotaWindow.MONTH));
         clock = new MutableClock(NOW, ZONE);
     }
 

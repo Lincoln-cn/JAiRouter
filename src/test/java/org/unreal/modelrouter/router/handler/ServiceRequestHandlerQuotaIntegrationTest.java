@@ -241,20 +241,21 @@ class ServiceRequestHandlerQuotaIntegrationTest {
     }
 
     @Test
-    @DisplayName("每分钟超限：429 + MINUTE 窗口头（Retry-After 指向下一分钟）")
-    void rateLimitPerMinuteExceeded_shouldReturn429() throws Exception {
+    @DisplayName("每分钟限额：账本不再拦截（v3.8.6 起移交主链路的 ApiKeyMinuteRateLimitService）")
+    void rateLimitPerMinute_shouldNotBeEnforcedByLedger() throws Exception {
         seedUsage(2, 0L);
         registerApiKey(0L, 0L, 2);
         final ServerWebExchange exchange = buildExchange(deterministicChat("hello!"));
         final ServiceRequestExecutor executor = downstreamExecutor();
 
-        StepVerifier.create(invoke(exchange, executor))
-                .expectErrorMatches(error -> error instanceof ResponseStatusException statusException
-                        && statusException.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS)
-                .verify(java.time.Duration.ofSeconds(10));
+        final ResponseEntity<?> response = invoke(exchange, executor).block(java.time.Duration.ofSeconds(10));
 
-        assertQuotaHeaders(exchange, "2", "0", "MINUTE", SECONDS_TO_NEXT_MINUTE);
-        verify(executor, never()).execute(any(), any(), any());
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode(),
+                "账本不得再按 rateLimitPerMinute 拒绝：该判定已移交主链路限流器，重复判定会双扣");
+        assertNull(exchange.getResponse().getHeaders().getFirst(ServiceRequestHandler.QUOTA_HEADER_LIMIT),
+                "未触发配额判定时不得写 X-Quota-* 头");
+        verify(executor, times(1)).execute(any(), any(), any());
     }
 
     @Test

@@ -52,7 +52,6 @@ class QuotaEnforcementServiceTest {
     /** 固定时刻 2026-03-14 13:45:30（分钟剩 30 秒、小时剩 14m30s、当天剩 10h14m30s、当月剩 17d10h14m30s） */
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 3, 14, 13, 45, 30);
 
-    private static final long SECONDS_TO_NEXT_MINUTE = 30L;
     private static final long SECONDS_TO_NEXT_HOUR = 870L;
     private static final long SECONDS_TO_NEXT_DAY = 36870L;
     private static final long SECONDS_TO_NEXT_MONTH = 1505670L;
@@ -144,24 +143,25 @@ class QuotaEnforcementServiceTest {
     }
 
     @Test
-    @DisplayName("每分钟限额：MINUTE 窗口请求数触达 rateLimitPerMinute 时拒绝并给出分钟窗口信息")
-    void rateLimitPerMinute_shouldRejectInMinuteWindow() {
+    @DisplayName("每分钟限额：账本不再判定（v3.8.6 起移交主链路的 ApiKeyMinuteRateLimitService）")
+    void rateLimitPerMinute_shouldNotBeJudgedByLedger() {
+        // 刻意把 MINUTE 显式配进窗口：默认集合里已经没有它，但存量部署仍可能照旧配置。
+        // 这个用例要证明的是「即使 MINUTE 在窗口里，账本也不能再按速率拒绝」—— 若只断言
+        // 默认情况下不拒绝，是没有检测力的（默认集合不含 MINUTE 时任何实现都不会拒绝）。
+        properties.setWindows(List.of(QuotaWindow.MINUTE, QuotaWindow.HOUR, QuotaWindow.DAY, QuotaWindow.MONTH));
         seedUsage(2, 0L);
         registerApiKey(0L, 0L, 2);
 
-        final Optional<QuotaLimitViolation> violation = enforcementService.tryReserve(request, KEY_ID, 0L);
-
-        assertTrue(violation.isPresent());
-        final QuotaLimitViolation result = violation.get();
-        assertEquals(QuotaLimitViolation.METRIC_RATE_PER_MINUTE, result.metric());
-        assertEquals(QuotaWindow.MINUTE, result.window());
-        assertEquals(2L, result.limit());
-        assertEquals(2L, result.used());
-        assertEquals(SECONDS_TO_NEXT_MINUTE, result.retryAfterSeconds(), "Retry-After 应指向下一分钟边界");
+        // 账本若再判一次每分钟速率，就会与主链路限流器双扣（多副本下两套口径还不一致），
+        // 因此 evaluate 与 CAS 预留两条路径都必须放行。
+        assertTrue(enforcementService.tryReserve(request, KEY_ID, 0L).isEmpty(),
+                "账本不得再按每分钟速率拒绝（limitsOf 的 minuteRequests 必须为 0）");
+        assertTrue(enforcementService.evaluate(KEY_ID, 0L).isEmpty(),
+                "evaluate 不得返回 METRIC_RATE_PER_MINUTE");
     }
 
     @Test
-    @DisplayName("判定优先级：小时请求数 → 日请求数 → 日 token → 月限额 → 每分钟，命中即返回")
+    @DisplayName("判定优先级：小时请求数 → 日请求数 → 日 token → 月限额，命中即返回")
     void evaluation_shouldReportFirstHitByPriority() {
         seedUsage(5, 5000L);
         registerApiKey(1L, 1L, 1);
@@ -392,9 +392,19 @@ class QuotaEnforcementServiceTest {
 
     // ==================== 结算（冲正 / 回滚 / 恰一次） ====================
 
+    /**
+     * 结算类用例用 MINUTE 作样本窗口：默认窗口集合自 v3.8.6 起不再含 MINUTE（每分钟速率移交主链路的
+     * {@code ApiKeyMinuteRateLimitService}），这里显式打开它，保持原来的覆盖面 —— 结算能力与
+     * 「默认窗口是哪几个」无关，缺了它反而会退化成「0 == 0」的假绿。
+     */
+    private void enableMinuteSampleWindow() {
+        properties.setWindows(List.of(QuotaWindow.MINUTE, QuotaWindow.HOUR, QuotaWindow.DAY, QuotaWindow.MONTH));
+    }
+
     @Test
     @DisplayName("成功结算：token 按 实际 − 估算 冲正，请求数不变")
     void settleSuccess_shouldReconcileTokensToActual() {
+        enableMinuteSampleWindow();
         registerApiKey(0L, 0L, 0);
         assertTrue(enforcementService.tryReserve(request, KEY_ID, 100L).isEmpty());
         final QuotaReservation reservation = QuotaReservation.from(request);
@@ -412,6 +422,7 @@ class QuotaEnforcementServiceTest {
     @Test
     @DisplayName("失败结算：整笔回滚（请求数 −1、token −估算）")
     void settleFailure_shouldRollbackReservation() {
+        enableMinuteSampleWindow();
         registerApiKey(0L, 0L, 0);
         assertTrue(enforcementService.tryReserve(request, KEY_ID, 100L).isEmpty());
         final QuotaReservation reservation = QuotaReservation.from(request);
@@ -428,6 +439,7 @@ class QuotaEnforcementServiceTest {
     @Test
     @DisplayName("结算恰一次：重复结算（成功后再回滚 / 连续回滚）不产生额外冲正")
     void settle_shouldBeExactlyOnce() {
+        enableMinuteSampleWindow();
         registerApiKey(0L, 0L, 0);
         assertTrue(enforcementService.tryReserve(request, KEY_ID, 100L).isEmpty());
         final QuotaReservation reservation = QuotaReservation.from(request);

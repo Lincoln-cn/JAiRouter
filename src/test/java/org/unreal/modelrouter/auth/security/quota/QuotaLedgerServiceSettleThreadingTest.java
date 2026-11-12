@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -59,6 +60,9 @@ class QuotaLedgerServiceSettleThreadingTest {
         repository = InMemoryQuotaLedgerRepository.create();
         properties = new QuotaProperties();
         properties.setEnabled(true);
+        // v3.8.6 起默认窗口不含 MINUTE；本类验证结算线程语义，显式配齐四个窗口保持原覆盖面
+        properties.setWindows(List.of(QuotaWindow.MINUTE, QuotaWindow.HOUR,
+                QuotaWindow.DAY, QuotaWindow.MONTH));
         properties.getDistributed().setEnabled(true);
         properties.getDistributed().setTimeout(Duration.ofMillis(200));
         template = new FakeReactiveRedisTemplate();

@@ -147,7 +147,7 @@ jairouter:
 
 1. **每日 Token 限额**：跟踪每日 Token 使用量。当达到限额时，API 请求将被拒绝，返回 429（Too Many Requests）状态码。
 
-2. **请求速率限制**：使用滑动窗口算法限制每分钟请求次数。当达到限制时，API 请求将被拒绝，返回 429 状态码。
+2. **请求速率限制**：按**固定的自然分钟窗口**限制每分钟请求次数（v3.8.6 起由主链路的 API Key 限流器判定；打开 `jairouter.ratelimit.distributed.enabled` 后各副本共享同一份 Redis 计数，限额即全局上限）。当达到限制时，API 请求将被拒绝，返回 429 与 `RATE_LIMITED_API_KEY`，并带 `X-RateLimit-*` 与 `Retry-After` 响应头。
 
 3. **告警阈值**：当使用量超过阈值百分比（如 80%）时，系统会触发告警。这对于监控和主动管理非常有用。
 

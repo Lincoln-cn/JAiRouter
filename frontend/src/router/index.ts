@@ -383,6 +383,12 @@ const router = createRouter({
           name: 'rate-limiter-monitoring',
           component: () => import('../views/rate-limiter/Monitoring.vue'),
           meta: { titleKey: 'route.rateLimiterMonitoring', icon: 'monitor' }
+        },
+        {
+          path: 'config',
+          name: 'rate-limiter-config',
+          component: () => import('../views/rate-limiter/Config.vue'),
+          meta: { titleKey: 'route.rateLimiterConfig', icon: 'setting' }
         }
       ]
     },

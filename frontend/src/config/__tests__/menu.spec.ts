@@ -40,8 +40,9 @@ describe('menu.ts 信息架构', () => {
       }
     }
     const routes = items.flatMap(item => item.tabs.map(tab => tab.to))
-    // 40 → 29：12 个被收起页面仍在 tabs 里，因此 tab 总数 = 29 + 12 = 41
-    expect(routes.length).toBe(41)
+    // 40 → 30：12 个被收起页面仍在 tabs 里，因此 tab 总数 = 30 + 12 = 42
+    // （v3.8.6 在「限流」项下新增 config tab）
+    expect(routes.length).toBe(42)
     expect(new Set(routes).size).toBe(routes.length)
   })
 
@@ -53,7 +54,7 @@ describe('menu.ts 信息架构', () => {
         }
       }
     }
-    expect(Object.keys(ROUTE_TO_MENU)).toHaveLength(41)
+    expect(Object.keys(ROUTE_TO_MENU)).toHaveLength(42)
   })
 
   it('深链未命中回退 route.path；异常详情归到异常列表', () => {
@@ -92,7 +93,7 @@ describe('menu.ts 信息架构', () => {
 /**
  * 权限码白名单（#567）
  *
- * 前端不复制后端常量表：这里只守「`menu.ts` 里出现的每个权限码都在一份 63 码字面量清单内」。
+ * 前端不复制后端常量表：这里只守「`menu.ts` 里出现的每个权限码都在一份 65 码字面量清单内」。
  * 拼错一个码（例如把 `security:apikeys:manage` 写成 `security:apikey:manage`）不会报错，
  * 只会让菜单静默消失 —— 这份清单就是那种漂移的哨兵。
  */
@@ -123,6 +124,8 @@ describe('menu.ts 权限码白名单（#567）', () => {
     'config:validation:write',
     'config:quota:read',
     'config:quota:write',
+    'config:ratelimit:read',
+    'config:ratelimit:write',
     'lb:monitoring:read',
     'lb:config:read',
     'lb:config:write',
@@ -179,9 +182,9 @@ describe('menu.ts 权限码白名单（#567）', () => {
     return codes
   }
 
-  it('白名单自身 = 63 个互不重复的权限码', () => {
-    expect(KNOWN_PERMISSION_CODES).toHaveLength(63)
-    expect(new Set(KNOWN_PERMISSION_CODES).size).toBe(63)
+  it('白名单自身 = 65 个互不重复的权限码', () => {
+    expect(KNOWN_PERMISSION_CODES).toHaveLength(65)
+    expect(new Set(KNOWN_PERMISSION_CODES).size).toBe(65)
   })
 
   it('menu.ts 里出现的权限码全部在白名单内', () => {

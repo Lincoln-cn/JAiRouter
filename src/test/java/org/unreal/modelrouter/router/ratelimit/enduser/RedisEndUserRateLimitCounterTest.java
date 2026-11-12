@@ -88,7 +88,7 @@ class RedisEndUserRateLimitCounterTest {
     @DisplayName("Redis key 带固定前缀与窗口起点（窗口切换天然隔离）")
     void redisKeyContainsPrefixAndWindow() {
         assertEquals("jairouter:ratelimit:end-user:bucket:" + WINDOW_START,
-                RedisEndUserRateLimitCounter.redisKey("bucket", WINDOW_START));
+                RedisEndUserRateLimitCounter.redisKeyWithPrefix(RedisEndUserRateLimitCounter.KEY_PREFIX, "bucket", WINDOW_START));
     }
 
     private static ReactiveRedisTemplate<String, String> templateReturning(final Flux<Long> result) {
