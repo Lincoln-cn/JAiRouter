@@ -23,7 +23,12 @@ JAiRouter 支持在 Kubernetes 集群中部署，提供自动故障转移准备�
 # 预览渲染结果（kubectl 内置 kustomize，无需安装 helm）
 kubectl kustomize deploy/k8s/overlays/prod
 
-# 部署
+# 部署：先跑迁移 Job，再起应用（apply.sh 会等到迁移完成）
+deploy/k8s/apply.sh --overlay prod
+
+# 等价的手工两步，顺序不能反（原因见下节）
+kubectl apply -k deploy/k8s/migrate
+kubectl wait --for=condition=complete --timeout=600s -n jairouter job/jairouter-schema-init
 kubectl apply -k deploy/k8s/overlays/prod
 ```
 
@@ -31,8 +36,11 @@ kubectl apply -k deploy/k8s/overlays/prod
 可被单元测试直接解析断言（见 `K8sManifestTest`）。
 
 制品已包含：Deployment、Service、Ingress、ConfigMap、ServiceAccount、PodDisruptionBudget、
-schema 迁移 Job，以及 liveness / readiness / startup 探针、资源 requests/limits、非 root 安全上下文
-（`runAsUser: 10010`，沿用镜像内的既有用户）。
+**共享 PostgreSQL 参考清单**（`base/postgres.yaml`：Secret + Service + StatefulSet，供没有托管数据库的集群直接起步；
+若已用托管库或 operator，请删掉它并把 ConfigMap 里的 `DATABASE_URL` 指过去），以及 liveness / readiness / startup 探针、
+资源 requests/limits、非 root 安全上下文（`runAsUser: 10010`，沿用镜像内的既有用户）。
+
+schema 迁移 Job **不在** `base` 里，而是单独放在 `deploy/k8s/migrate/` —— 原因见下节。
 
 ### schema 迁移由 Job 先行（部署顺序）
 
@@ -46,6 +54,9 @@ schema 迁移 Job 完成**，所以部署顺序是：**Job 跑完 → 应用 Pod
 - 迁移失败、或该实例的配置不合格（例如生产安全检查不过）时 Job 会失败：这与应用 Pod 是同一套判据，
   失败发生在流量切换之前。
 - 该模式下仍会启动应用上下文（非 Web、不监听端口），所以它的启动耗时与内存占用与应用 Pod 同量级。
+- **清单层面因此把 Job 移出 `base`**：`kubectl apply -k` 不保证 `Job` 先于 `Deployment` 创建，
+  同一次 apply 里应用 Pod 可能先起来各跑各的 Flyway，多副本并发 DDL 的结果不确定（issue #1111）。
+  `deploy/k8s/apply.sh` 把「删旧 Job → apply migrate → wait complete → apply base」串成一条命令。
 
 **部署前必须完成两件事**：
 

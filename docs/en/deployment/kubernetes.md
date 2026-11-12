@@ -25,7 +25,12 @@ required:
 # Preview the rendered output (kustomize is built into kubectl — no helm needed)
 kubectl kustomize deploy/k8s/overlays/prod
 
-# Deploy
+# Deploy: run the migration Job first, then start the app (apply.sh waits for it)
+deploy/k8s/apply.sh --overlay prod
+
+# The equivalent manual two-step; the order matters (see the next section)
+kubectl apply -k deploy/k8s/migrate
+kubectl wait --for=condition=complete --timeout=600s -n jairouter job/jairouter-schema-init
 kubectl apply -k deploy/k8s/overlays/prod
 ```
 
@@ -34,8 +39,12 @@ helm; the manifests are plain YAML and can be asserted directly by unit tests (s
 `K8sManifestTest`).
 
 The artifacts include: Deployment, Service, Ingress, ConfigMap, ServiceAccount, PodDisruptionBudget,
-a schema migration Job, plus liveness / readiness / startup probes, resource requests/limits, and a
-non-root security context (`runAsUser: 10010`, matching the user already inside the image).
+a **shared PostgreSQL reference manifest** (`base/postgres.yaml`: Secret + Service + StatefulSet, so a cluster
+without a managed database can start; if you already use one, delete that file and point `DATABASE_URL` at it),
+plus liveness / readiness / startup probes, resource requests/limits, and a non-root security context
+(`runAsUser: 10010`, matching the user already inside the image).
+
+The schema migration Job is **not** part of `base`; it lives in `deploy/k8s/migrate/` on its own — see the next section.
 
 ### The schema migration Job runs first (deployment order)
 
@@ -54,6 +63,10 @@ single instance:
   traffic is switched over.
 - That mode still boots the application context (non-web, listening on no port), so its startup cost is
   on the same order as an application pod.
+- **That is why the Job is not part of `base`**: `kubectl apply -k` does not guarantee that the `Job` is
+  created before the `Deployment`, so application pods in the same apply may start first and each run its
+  own Flyway — concurrent DDL across replicas has no defined outcome (issue #1111).
+  `deploy/k8s/apply.sh` chains "delete stale Job -> apply migrate -> wait complete -> apply base" into one command.
 
 **Two things you must do before deploying**:
 
