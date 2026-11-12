@@ -7,7 +7,6 @@ import org.unreal.modelrouter.auth.security.dto.ApiKeyVO;
 import org.unreal.modelrouter.auth.security.model.UsageStatistics;
 import org.unreal.modelrouter.auth.security.service.ApiKeyQuotaService;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
-import org.unreal.modelrouter.auth.security.service.TokenBucketRateLimiter;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
@@ -47,8 +46,7 @@ class ApiKeyManagementControllerQuotaBlockingTest {
     @Test
     void updateQuotaShouldSucceedWhenSubscribedOnReactorNonBlockingThread() {
         final ApiKeyService apiKeyService = mock(ApiKeyService.class);
-        final TokenBucketRateLimiter rateLimiter = mock(TokenBucketRateLimiter.class);
-        final ApiKeyQuotaService quotaService = new ApiKeyQuotaService(apiKeyService, rateLimiter);
+        final ApiKeyQuotaService quotaService = new ApiKeyQuotaService(apiKeyService);
         final ApiKeyManagementController controller =
                 new ApiKeyManagementController(apiKeyService, quotaService);
 
@@ -78,7 +76,6 @@ class ApiKeyManagementControllerQuotaBlockingTest {
         when(apiKeyService.getApiKeyCache()).thenReturn(cache);
         when(apiKeyService.getKeyIdIndex()).thenReturn(index);
         when(apiKeyService.updateApiKey(eq(KEY_ID), any())).thenReturn(Mono.just(new ApiKeyVO()));
-        when(rateLimiter.getCurrentCount(KEY_ID)).thenReturn(0);
 
         final ApiKeyUpdateRequest request = new ApiKeyUpdateRequest();
         request.setDailyRequestLimit(500L);

@@ -31,6 +31,50 @@ public interface EndUserRateLimitCounter {
     Decision record(String bucketKey, long windowStartEpochSecond, int limit, long nowEpochSecond);
 
     /**
+     * 读取本窗口已用量（只读，不占名额）。
+     *
+     * <p>默认实现返回 {@code 0}：后端没有读取能力时，调用方应按「暂无数据」处理，
+     * <b>不得</b>回退到进程内计数——那会重新引入本接口要消灭的第二套口径。</p>
+     *
+     * <p>本方法供管理面展示「当前分钟已用」，不参与放行判定，因此不抛异常：
+     * 后端故障时返回 {@code 0} 而不是让读接口失败。</p>
+     *
+     * @param bucketKey             桶键
+     * @param windowStartEpochSecond 窗口起点
+     * @return 已用量，不小于 0
+     */
+    default long currentUsage(final String bucketKey, final long windowStartEpochSecond) {
+        return 0L;
+    }
+
+    /**
+     * 清零指定桶的当前窗口计数（管理面「重置配额」用）。
+     *
+     * <p>默认实现返回 {@code false}（后端不支持单键清零）；返回 {@code true} 表示调用方
+     * 可以认为该桶本窗口已清零。<b>不得</b>用「重建进程内计数」来假冒成功——那只会让
+     * 展示值与真正的判定后端脱节。</p>
+     *
+     * @param bucketKey             桶键
+     * @param windowStartEpochSecond 窗口起点
+     * @return 是否已清零
+     */
+    default boolean reset(final String bucketKey, final long windowStartEpochSecond) {
+        return false;
+    }
+
+    /**
+     * 清零全部计数（管理面「重置全部配额」用）。
+     *
+     * <p>默认实现返回 {@code 0}：分布式后端通常不支持 O(1) 全清，调用方应把返回值当作
+     * 「实际清零的桶数」如实上报，而不是假设成功。</p>
+     *
+     * @return 实际清零的桶数
+     */
+    default int resetAll() {
+        return 0;
+    }
+
+    /**
      * 判定结果。
      *
      * @param allowed           是否放行

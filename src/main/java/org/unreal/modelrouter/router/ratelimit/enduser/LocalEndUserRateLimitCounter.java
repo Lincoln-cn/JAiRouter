@@ -62,6 +62,26 @@ public final class LocalEndUserRateLimitCounter implements EndUserRateLimitCount
         }
     }
 
+    @Override
+    public long currentUsage(final String bucketKey, final long windowStartEpochSecond) {
+        final AtomicLong counter = counts.getIfPresent(cacheKey(bucketKey, windowStartEpochSecond));
+        return counter == null ? 0L : Math.max(0L, counter.get());
+    }
+
+    @Override
+    public boolean reset(final String bucketKey, final long windowStartEpochSecond) {
+        counts.invalidate(cacheKey(bucketKey, windowStartEpochSecond));
+        return true;
+    }
+
+    @Override
+    public int resetAll() {
+        final long size = counts.estimatedSize();
+        counts.invalidateAll();
+        counts.cleanUp();
+        return (int) Math.min(Integer.MAX_VALUE, size);
+    }
+
     /**
      * 当前缓存的条目数（先做一次惰性清理）。
      *

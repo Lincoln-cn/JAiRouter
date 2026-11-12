@@ -11,6 +11,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -59,6 +60,9 @@ class QuotaLedgerServiceDistributedTest {
         repository = InMemoryQuotaLedgerRepository.create();
         properties = new QuotaProperties();
         properties.setEnabled(true);
+        // v3.8.6 起默认窗口不含 MINUTE；本类验证分布式计数与窗口循环，显式配齐四个窗口保持原覆盖面
+        properties.setWindows(List.of(QuotaWindow.MINUTE, QuotaWindow.HOUR,
+                QuotaWindow.DAY, QuotaWindow.MONTH));
         properties.getDistributed().setEnabled(true);
         properties.getDistributed().setTimeout(Duration.ofMillis(200));
         clock = new MutableClock(NOW, ZONE);

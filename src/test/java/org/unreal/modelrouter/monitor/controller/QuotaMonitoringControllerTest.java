@@ -68,6 +68,9 @@ class QuotaMonitoringControllerTest {
     void setUp() {
         quotaProperties = new QuotaProperties();
         quotaProperties.setEnabled(true);
+        // v3.8.6 起默认窗口不含 MINUTE；本类断言"四级窗口都有数据"的载荷形状，显式配齐四个窗口
+        quotaProperties.setWindows(List.of(QuotaWindow.MINUTE, QuotaWindow.HOUR,
+                QuotaWindow.DAY, QuotaWindow.MONTH));
         repo = InMemoryRepo.create();
         ledgerService = new QuotaLedgerService(
                 repo.proxy(), quotaProperties,
@@ -296,6 +299,8 @@ class QuotaMonitoringControllerTest {
     void usagePayloadUnchangedAfterReactiveConversion() throws Exception {
         final QuotaProperties distributedProperties = new QuotaProperties();
         distributedProperties.setEnabled(true);
+        distributedProperties.setWindows(List.of(QuotaWindow.MINUTE, QuotaWindow.HOUR,
+                QuotaWindow.DAY, QuotaWindow.MONTH));
         distributedProperties.getDistributed().setEnabled(true);
         final FakeReactiveRedisTemplate template = new FakeReactiveRedisTemplate();
         final InMemoryQuotaLedgerRepository ledgerRepository = InMemoryQuotaLedgerRepository.create();

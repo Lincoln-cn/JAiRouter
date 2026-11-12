@@ -36,7 +36,7 @@ deployments have no such gate**, so the startup self-check emits a WARN when it 
 
 ## Required configuration
 
-A multi-replica deployment must enable all six items below and point them at a shared Redis:
+A multi-replica deployment must enable all seven items below and point them at a shared Redis:
 
 | Configuration key | Default | Set to | Consequence if left off |
 |---|---|---|---|
@@ -50,7 +50,10 @@ A multi-replica deployment must enable all six items below and point them at a s
 
 Enabling distributed quota also requires `jairouter.quota.enabled=true` (the feature's master switch).
 End-user rate limiting has its own switch, `jairouter.ratelimit.end-user.enabled` (off by default); the
-row above only decides whether **its** counting is shared across replicas.
+row above only decides whether **its** counting is shared across replicas. Per-API-key minute limiting has
+its own switch too, `jairouter.ratelimit.api-key.enabled` (**on by default**; since v3.8.6 it replaces the
+removed in-process limiter that used to live in the auth chain), and whether *its* counting is shared is
+likewise governed by the `jairouter.ratelimit.distributed.enabled` row above.
 
 Connection details come from the `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` (and `REDIS_DATABASE`)
 environment variables, or from Spring's `spring.data.redis.*`. The switches above only decide
@@ -189,19 +192,25 @@ on every replica (log keyword: "刷新 API Key 缓存") before suspecting config
 
 ## Rate-limit key dimension and multi-replica semantics
 
-Rate-limit state lives **in the JVM by default**. Two Redis-backed counting paths exist:
+Rate-limit state lives **in the JVM by default**. Three Redis-backed counting paths are controlled by
+`jairouter.ratelimit.distributed.enabled`:
 
-- **end-user rate limiting (v3.5.2)** — with `jairouter.ratelimit.distributed.enabled=true`,
-  per-`(API key, end user)` counters are shared across replicas.
+- **end-user rate limiting (v3.5.2)** — per-`(API key, end user)` counters shared across replicas.
+- **per-API-key minute limiting (v3.8.6)** — prefix `jairouter:ratelimit:api-key:`.
 - **client-dimension limiting (wired since v3.5.2, off by default, #623)** — `RedisSlidingWindowRateLimiter`
-  is now called from the request path, but **every bundled configuration sets `client-ip-enable` to `false`**.
+  is called from the request path, but **every bundled configuration sets `client-ip-enable` to `false`**.
 
-**The per-API-key `rateLimitPerMinute` quota is per replica** and is *not* covered by
-`jairouter.ratelimit.distributed.enabled`: each replica keeps its own local token bucket. Measured with
-`rateLimitPerMinute=10` on three replicas, 18 concurrent requests (6 per replica) were **all accepted
-(18/18, zero 429)**, and no `jairouter:ratelimit:*` keys appeared in Redis. On a single replica the same
-key returned `[200×9, 429×5]`. Budget accordingly (or front the deployment with a shared limiter) if the
-per-key quota is meant to be a global cap.
+**The per-API-key `rateLimitPerMinute` cap has been enforced by `ApiKeyMinuteRateLimitService` on the main
+request path since v3.8.6**, toggled by `jairouter.ratelimit.api-key.enabled` (default `true`). With
+`jairouter.ratelimit.distributed.enabled=true` all replicas share one Redis fixed-minute window, so
+`rateLimitPerMinute=10` is a **global** cap; with it off each replica keeps a local counter and the effective
+volume is roughly `configured value × replica count`.
+
+> Before v3.8.6 this cap was judged twice — once by an in-process sliding window in the auth chain and once by
+> the quota ledger's MINUTE window — and both were per replica. Measured with `rateLimitPerMinute=10` on three
+> replicas, 18 concurrent requests (6 per replica) were **all accepted (18/18, zero 429)** and no
+> `jairouter:ratelimit:*` keys appeared in Redis; on a single replica the same key returned `[200×9, 429×5]`.
+> Neither the auth chain nor the ledger judges the minute rate any more; the ledger only covers hour/day/month.
 
 Everything else (service / instance / rule level limiters) is still per replica. Under multiple replicas:
 
@@ -251,10 +260,11 @@ operators could not see "affinity is nominal" from metrics.
 With `jairouter.ratelimit.distributed.enabled=true`, rate-limit counters live in Redis and every replica
 shares one counter — allowed volume equals the configured value instead of `configured value × replicas`.
 
-**Today the switch covers two paths**: end-user rate limiting (gated by
-`jairouter.ratelimit.end-user.enabled`, off by default) and client-dimension limiting (wired since v3.5.2,
-disabled in every bundled configuration). With the switch off, both fall back to a bounded local counter,
-so each replica counts on its own.
+**Today the switch covers three paths**: end-user rate limiting (gated by
+`jairouter.ratelimit.end-user.enabled`, off by default), per-API-key minute limiting (gated by
+`jairouter.ratelimit.api-key.enabled`, on by default since v3.8.6) and client-dimension limiting (wired
+since v3.5.2, disabled in every bundled configuration). With the switch off, all three fall back to a
+bounded local counter, so each replica counts on its own.
 
 - **Atomic Lua**: `INCR` → set the TTL on first write → on overflow `DECR` the counter back and return a
   rejection from the same script, so concurrent replicas cannot over-issue.

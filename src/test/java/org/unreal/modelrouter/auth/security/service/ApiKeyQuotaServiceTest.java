@@ -9,9 +9,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
 import org.unreal.modelrouter.auth.security.dto.ApiKeyUpdateRequest;
 import org.unreal.modelrouter.auth.security.model.UsageStatistics;
+import org.unreal.modelrouter.router.ratelimit.apikey.ApiKeyMinuteRateLimitService;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
@@ -40,7 +42,7 @@ class ApiKeyQuotaServiceTest {
     private ApiKeyService apiKeyService;
 
     @Mock
-    private TokenBucketRateLimiter rateLimiter;
+    private ApiKeyMinuteRateLimitService apiKeyMinuteRateLimitService;
 
     @InjectMocks
     private ApiKeyQuotaService quotaService;
@@ -54,6 +56,7 @@ class ApiKeyQuotaServiceTest {
         keyIdIndex = new HashMap<>();
         when(apiKeyService.getApiKeyCache()).thenReturn(apiKeyCache);
         when(apiKeyService.getKeyIdIndex()).thenReturn(keyIdIndex);
+        ReflectionTestUtils.setField(quotaService, "apiKeyMinuteRateLimitService", apiKeyMinuteRateLimitService);
     }
 
     private ApiKey createMockApiKey(String keyId, long dailyRequestLimit,
@@ -95,7 +98,7 @@ class ApiKeyQuotaServiceTest {
     @DisplayName("getQuotaUsage - 正常返回配额详情")
     void getQuotaUsage_normal_shouldReturnDetail() {
         createMockApiKey("key-1", 1000, 500000, 60);
-        when(rateLimiter.getCurrentCount("key-1")).thenReturn(10);
+        when(apiKeyMinuteRateLimitService.currentUsage("key-1")).thenReturn(10L);
 
         Optional<ApiKeyQuotaService.QuotaUsageDetail> result = quotaService.getQuotaUsage("key-1");
 
@@ -254,7 +257,7 @@ class ApiKeyQuotaServiceTest {
         quotaService.resetDailyQuota("key-reset");
 
         verify(apiKeyService).resetDailyQuota("key-reset");
-        verify(rateLimiter).reset("key-reset");
+        verify(apiKeyMinuteRateLimitService).reset("key-reset");
     }
 
     @Test

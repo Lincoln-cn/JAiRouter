@@ -36,7 +36,9 @@ import org.unreal.modelrouter.auth.security.quota.QuotaEnforcementService;
 import org.unreal.modelrouter.auth.security.quota.QuotaLimitViolation;
 import org.unreal.modelrouter.auth.security.quota.QuotaReservation;
 import org.unreal.modelrouter.auth.security.quota.QuotaTokenEstimator;
+import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.exception.AuthenticationException;
 import org.unreal.modelrouter.common.util.IpUtils;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitor.tracing.TracingConstants;
@@ -51,6 +53,7 @@ import org.unreal.modelrouter.router.checker.ServiceStateManager;
 import org.unreal.modelrouter.router.ratelimit.RateLimitContext;
 import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
 import org.unreal.modelrouter.router.ratelimit.ServiceRateLimitHolder;
+import org.unreal.modelrouter.router.ratelimit.apikey.ApiKeyMinuteRateLimitService;
 import org.unreal.modelrouter.router.ratelimit.enduser.EndUserRateLimitCounter;
 import org.unreal.modelrouter.router.ratelimit.enduser.EndUserRateLimitProperties;
 import org.unreal.modelrouter.router.ratelimit.enduser.EndUserRateLimitService;
@@ -256,6 +259,17 @@ public class ServiceRequestHandler {
     private EndUserRateLimitService endUserRateLimitService;
 
     /**
+     * v3.8.6: API Key 级每分钟限流服务（默认装配）。
+     *
+     * <p>它是 {@code ApiKey.rateLimitPerMinute} 的<b>唯一</b>判定点：此前该阈值分散在认证侧的
+     * 进程内滑动窗口（{@code ApiKeyValidator#validateRateLimit}）与配额账本的 {@code MINUTE}
+     * 窗口两处，前者多副本时各算各的、后者按自然分钟固定窗口，叠加起来既重复计数又互相矛盾。
+     * 未注入（{@code jairouter.ratelimit.api-key.enabled=false}）时不判定、不设响应头。</p>
+     */
+    @Autowired(required = false)
+    private ApiKeyMinuteRateLimitService apiKeyMinuteRateLimitService;
+
+    /**
      * v3.1 PR-4c: 全局 ObjectMapper（可选注入）。
      *
      * <p>仅用于「原生面（{@code /v1/**}）+ 响应缓存命中」时把缓存值序列化为<b>原生 JSON</b>
@@ -444,6 +458,20 @@ public class ServiceRequestHandler {
                         requestHeaders.put(key, values.get(0));
                     }
                 });
+            }
+
+            // v3.8.6: API Key 级每分钟限流（默认开启）——按单个 API Key 的固定分钟窗口计数，
+            // 后端为 Redis（跨副本共享）或本地内存（单副本）。这是 rateLimitPerMinute 的唯一
+            // 判定点：认证侧的进程内滑动窗口与配额账本的 MINUTE 窗口都已移除。
+            // 位置刻意早于终端用户级限流：L1 是「整个 Key 的上限」，先给所有调用方一个一致的
+            // 全局边界，再由 L2 判定单用户公平性；反过来的话，一个用户打满 L2 时他看到的
+            // 「剩余」与 Key 的全局剩余无关，客户端无法据此推断整体是否接近上限。
+            if (apiKeyMinuteRateLimitService != null) {
+                final Optional<EndUserRateLimitCounter.Decision> apiKeyDecision =
+                        apiKeyMinuteRateLimitService.evaluate(callerId, serviceType, isJwtCaller(callerId));
+                if (apiKeyDecision.isPresent() && !apiKeyDecision.get().allowed()) {
+                    return rejectByApiKeyMinuteLimit(exchange, apiKeyDecision.get());
+                }
             }
 
             // v3.5.2: 终端用户级限流（默认关闭）——按 (API Key, 终端用户) 的固定分钟窗口计数。
@@ -835,6 +863,42 @@ public class ServiceRequestHandler {
         }
         return Mono.error(new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
                 "End-user rate limit exceeded (limit=" + decision.limit() + "/min)"));
+    }
+
+    /**
+     * v3.8.6: API Key 每分钟限流超限响应（429 + Retry-After + X-RateLimit-*）.
+     *
+     * <p><b>为什么抛 {@link AuthenticationException} 而不是 {@link ResponseStatusException}</b>：
+     * 该阈值此前由认证链产生，对外错误体固定为 {@code code=RATE_LIMITED_API_KEY}（429）——
+     * 客户端与既有测试都按这个码分流。{@code ResponseStatusException} 会被全局处理器渲染成
+     * {@code code="429"}，等于悄悄改了对外契约；因此这里沿用它原来的码与文案，只把判定点
+     * 从认证链搬到主链路。代价是日志里会被记成「认证失败」，是既有分派顺序的措辞偏差，
+     * 不影响客户端可见行为。</p>
+     *
+     * <p>响应头写入手法与 {@link #rejectByQuota} / {@link #rejectByEndUserLimit} 一致：
+     * 先写头，再抛异常；全局处理器只设置状态码与 Content-Type，不清空已有头。</p>
+     *
+     * @param exchange 原始交换对象，可为 {@code null}
+     * @param decision 拒绝判定
+     * @return 429 错误的 Mono
+     */
+    private Mono<ResponseEntity<?>> rejectByApiKeyMinuteLimit(final ServerWebExchange exchange,
+                                                              final EndUserRateLimitCounter.Decision decision) {
+        if (exchange != null) {
+            try {
+                final HttpHeaders headers = exchange.getResponse().getHeaders();
+                headers.set(END_USER_HEADER_LIMIT, String.valueOf(decision.limit()));
+                headers.set(END_USER_HEADER_REMAINING, String.valueOf(decision.remaining()));
+                headers.set(END_USER_HEADER_RESET,
+                        String.valueOf(Instant.now().getEpochSecond() + decision.retryAfterSeconds()));
+                headers.set(HttpHeaders.RETRY_AFTER, String.valueOf(decision.retryAfterSeconds()));
+            } catch (RuntimeException e) {
+                logger.debug("设置 API Key 每分钟限流响应头失败: {}", e.getMessage());
+            }
+        }
+        logger.warn("API Key 每分钟限流超限，返回 429: limit={}/min", decision.limit());
+        return Mono.error(new AuthenticationException("请求频率超过限制，请稍后再试",
+                ErrorCode.RATE_LIMITED_API_KEY.code(), HttpStatus.TOO_MANY_REQUESTS));
     }
 
     /**

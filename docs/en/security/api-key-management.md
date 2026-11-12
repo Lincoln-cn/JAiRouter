@@ -132,7 +132,7 @@ jairouter:
 
 1. **Daily Token Limit**: Tracks Token usage per day. When the limit is reached, API requests are rejected with a 429 (Too Many Requests) status code.
 
-2. **Rate Limiting**: Uses a sliding window algorithm to limit requests per minute. When the limit is reached, API requests are rejected with a 429 status code.
+2. **Rate Limiting**: Caps requests per minute on a **fixed natural-minute window** (since v3.8.6 this is enforced by the API-key limiter on the main request path; with `jairouter.ratelimit.distributed.enabled=true` all replicas share one Redis counter, so the cap is global). Requests beyond the cap get 429 with `RATE_LIMITED_API_KEY` plus `X-RateLimit-*` and `Retry-After` headers.
 
 3. **Alert Threshold**: Ratio `0.0–1.0` (0.8 = 80%). `0` on limit fields means unlimited.
 

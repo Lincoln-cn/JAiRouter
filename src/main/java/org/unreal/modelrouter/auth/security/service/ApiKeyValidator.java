@@ -23,9 +23,6 @@ import java.util.Optional;
 @Component
 public class ApiKeyValidator {
 
-    @Autowired(required = false)
-    private TokenBucketRateLimiter rateLimiter;
-
     /**
      * 验证 API Key 格式
      * 检查 keyValue 是否符合基本格式要求
@@ -161,30 +158,6 @@ public class ApiKeyValidator {
     }
 
     /**
-     * 验证请求速率限制.
-     *
-     * <p>超限时返回的码是 {@link ErrorCode#RATE_LIMITED_API_KEY}（客户端可见 **429**），
-     * **不是**管理面限流器直写扁平体时用的 {@link ErrorCode#RATE_LIMIT_EXCEEDED}：
-     * 两者的客户端可见状态相同（429），但入口面与错误体形状不同，故按 issue #404 的裁定拆成两个码。</p>
-     *
-     * @param apiKey 要验证的 ApiKey
-     * @return 验证结果
-     */
-    public ValidationResult validateRateLimit(final ApiKey apiKey) {
-        if (apiKey.getRateLimitPerMinute() <= 0) {
-            return ValidationResult.success();
-        }
-        if (rateLimiter == null) {
-            return ValidationResult.success();
-        }
-        if (!rateLimiter.tryAcquire(apiKey.getKeyId(), apiKey.getRateLimitPerMinute())) {
-            return ValidationResult.failure("请求频率超过限制，请稍后再试",
-                    ErrorCode.RATE_LIMITED_API_KEY.code());
-        }
-        return ValidationResult.success();
-    }
-
-    /**
      * 执行完整的 API Key 验证流程
      *
      * @param keyValue 原始 API Key 值
@@ -244,21 +217,14 @@ public class ApiKeyValidator {
                     ipResult.getMessage(), ipResult.getErrorCode());
         }
 
-        // 6. 速率限制验证
-        ValidationResult rateResult = validateRateLimit(matchedKey);
-        if (!rateResult.isSuccess()) {
-            return FullValidationResult.validationError(matchedKey.getKeyId(),
-                    rateResult.getMessage(), rateResult.getErrorCode());
-        }
-
-        // 7. 每日请求限制验证
+        // 6. 每日请求限制验证
         ValidationResult limitResult = validateDailyLimit(matchedKey);
         if (!limitResult.isSuccess()) {
             return FullValidationResult.validationError(matchedKey.getKeyId(),
                     limitResult.getMessage(), limitResult.getErrorCode());
         }
 
-        // 8. 每日 Token 使用限制验证
+        // 7. 每日 Token 使用限制验证
         ValidationResult tokenResult = validateTokenLimit(matchedKey);
         if (!tokenResult.isSuccess()) {
             return FullValidationResult.validationError(matchedKey.getKeyId(),

@@ -115,6 +115,9 @@ class StreamingRequestProcessorQuotaSettleTest {
         repository = InMemoryQuotaLedgerRepository.create();
         quotaProperties = new QuotaProperties();
         quotaProperties.setEnabled(true);
+        // v3.8.6 起默认窗口不含 MINUTE；本类断言结算落在具体窗口上，显式配齐四个窗口保持原覆盖面
+        quotaProperties.setWindows(List.of(QuotaWindow.MINUTE, QuotaWindow.HOUR,
+                QuotaWindow.DAY, QuotaWindow.MONTH));
 
         final Map<String, ApiKey> apiKeyCache = new HashMap<>();
         final Map<String, String> keyIdIndex = new HashMap<>();

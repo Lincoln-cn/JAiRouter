@@ -146,7 +146,9 @@ public class QuotaEnforcementService {
             final QuotaDimension dimension = QuotaDimension.ofApiKey(apiKeyId);
             final long tokens = Math.max(0L, estimatedTokens);
 
-            // 判定顺序：HOUR → DAY → MONTH → MINUTE（见类 javadoc 的优先级说明）
+            // 判定顺序：HOUR → DAY → MONTH。
+            // 每分钟速率不在这里判定（v3.8.6 起）：它由主链路的 ApiKeyMinuteRateLimitService
+            // 单独负责，避免同一个 rateLimitPerMinute 被账本与限流器各判一次。
             Optional<QuotaLimitViolation> violation = evaluateWindow(apiKey, dimension, windows,
                 QuotaWindow.HOUR, apiKey.getHourlyRequestLimit(), apiKey.getHourlyTokenLimit(),
                 QuotaLimitViolation.METRIC_HOURLY_REQUESTS, QuotaLimitViolation.METRIC_HOURLY_TOKENS,
@@ -168,9 +170,7 @@ public class QuotaEnforcementService {
             if (violation.isPresent()) {
                 return violation;
             }
-            return evaluateWindow(apiKey, dimension, windows,
-                QuotaWindow.MINUTE, apiKey.getRateLimitPerMinute(), 0L,
-                QuotaLimitViolation.METRIC_RATE_PER_MINUTE, null, 0L, now);
+            return Optional.empty();
         } catch (Exception e) {
             log.warn("配额限额判定异常，按 fail-open 放行: apiKeyId={}, error={}", apiKeyId, e.toString());
             return Optional.empty();
@@ -284,13 +284,17 @@ public class QuotaEnforcementService {
     }
 
     /**
-     * 把 API Key 的限额字段映射为账本侧限额集合（四个窗口）。
+     * 把 API Key 的限额字段映射为账本侧限额集合（小时 / 天 / 月三个窗口）。
+     *
+     * <p>第一参（分钟请求数）固定传 {@code 0L}（不限制）：v3.8.6 起每分钟速率由
+     * {@code ApiKeyMinuteRateLimitService} 判定，账本不再对 MINUTE 记账，否则显式把
+     * {@code MINUTE} 配进 {@code jairouter.quota.windows} 的部署会同时被两套计数判定。</p>
      *
      * @param apiKey API Key 配置
      * @return 限额集合
      */
     private static QuotaLimitSet limitsOf(final ApiKey apiKey) {
-        return new QuotaLimitSet(apiKey.getRateLimitPerMinute(),
+        return new QuotaLimitSet(0L,
                 apiKey.getHourlyRequestLimit(), apiKey.getHourlyTokenLimit(),
                 apiKey.getDailyRequestLimit(), apiKey.getDailyTokenLimit(),
                 apiKey.getMonthlyRequestLimit(), apiKey.getMonthlyTokenLimit());
