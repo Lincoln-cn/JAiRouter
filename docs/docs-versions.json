@@ -205,11 +205,11 @@
     },
     "docs/en/configuration/kv-cache.md": {
       "FilePath": "docs/en/configuration/kv-cache.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:31.850923",
-      "ContentHash": "22fc2d8f64e5ee87",
-      "GitCommit": "ac0f7045",
-      "Author": "Lincoln",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-12T02:15:03.882945",
+      "ContentHash": "adc851f6f65ff0c6",
+      "GitCommit": "0b4a2e73",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/configuration/load-balancing.md",
@@ -1357,11 +1357,11 @@
     },
     "docs/zh/configuration/kv-cache.md": {
       "FilePath": "docs/zh/configuration/kv-cache.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:37.713770",
-      "ContentHash": "96aeaa8f695d8af7",
-      "GitCommit": "ac0f7045",
-      "Author": "Lincoln",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-12T02:15:04.664152",
+      "ContentHash": "bbabc26d38316d71",
+      "GitCommit": "0b4a2e73",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/configuration/load-balancing.md",
@@ -2377,10 +2377,10 @@
     },
     "docs/en/reference/capabilities.md": {
       "FilePath": "docs/en/reference/capabilities.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-11-06T18:12:14.702796",
-      "ContentHash": "ca3a41865e23fb8a",
-      "GitCommit": "de82677e",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-12T02:15:04.350211",
+      "ContentHash": "a5c5728031a8d18f",
+      "GitCommit": "0b4a2e73",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -7792,7 +7792,31 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-11T19:47:55.136263",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/kv-cache.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T02:15:03.882955",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/capabilities.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T02:15:04.350222",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/kv-cache.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T02:15:04.664162",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-11T19:47:55.310446"
+  "last_updated": "2026-11-12T02:15:05.402160"
 }
