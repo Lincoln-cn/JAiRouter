@@ -3,9 +3,13 @@ kind: Kustomization
 
 # 开发 / 单副本 overlay。
 #
-# 单副本下没有并发 DDL 问题，也不需要中断预算，因此移除 PDB 与迁移 Job。
+# 单副本下没有并发 DDL 问题，也不需要中断预算，因此移除 PDB。
+# 迁移 Job 不在 base 里（见 deploy/k8s/migrate/），单副本开发环境直接用 H2 自建表即可，不需要单独跑。
 # 注意：单副本仍会读到 base 中开启共享态开关的 ConfigMap——那是多副本才需要的，
 # 单副本保留它们只是多一个 Redis 依赖，可在此 overlay 中按需关闭。
+# base 现在自带 postgres.yaml（多副本的共享库）。开发集群若没有 StorageClass，
+# 可把 postgres.yaml 从 `kubectl kustomize` 结果里排除，或直接改用 H2：
+# 在 ConfigMap 里去掉 DATABASE_URL/DATABASE_USERNAME 即可回落到容器内 H2 单文件库。
 
 namespace: jairouter-dev
 
@@ -27,13 +31,3 @@ patches:
       kind: PodDisruptionBudget
       metadata:
         name: jairouter
-  # 单副本无并发 DDL 问题，移除迁移 Job
-  - target:
-      kind: Job
-      name: jairouter-schema-init
-    patch: |-
-      $patch: delete
-      apiVersion: batch/v1
-      kind: Job
-      metadata:
-        name: jairouter-schema-init

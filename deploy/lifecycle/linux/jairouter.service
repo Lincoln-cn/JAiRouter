@@ -1,0 +1,31 @@
+[Unit]
+Description=JAiRouter LLM Gateway
+Documentation=https://github.com/Lincoln-cn/JAiRouter
+# 只在网络就绪后启动：启动期要连 PostgreSQL / Redis，早于网络会白白触发一次 on-failure 重启。
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=@@RUN_USER@@
+Group=@@RUN_USER@@
+WorkingDirectory=@@PREFIX@@
+# 密钥与 JVM 参数放这里，不写进 unit：unit 文件是 644，env 文件装完会被设成 600。
+EnvironmentFile=@@ENV_FILE@@
+# KillSignal 默认就是 SIGTERM，写出来是给后来改的人看：不要换成 SIGKILL，
+# 否则 server.shutdown=graceful 与 30s 的 timeout-per-shutdown-phase 全部失效。
+KillSignal=SIGTERM
+# 必须大于 spring.lifecycle.timeout-per-shutdown-phase（仓库默认 30s），留 10s 余量。
+# 小于它，systemd 会在 Spring 还没排空在途请求时就补一刀 SIGKILL。
+TimeoutStopSec=40
+ExecStart=@@JAVA_BIN@@ -jar @@PREFIX@@/lib/model-router.jar --spring.profiles.active=@@PROFILE@@ --spring.config.additional-location=file:@@PREFIX@@/config/
+# 被 SIGTERM 正常停掉时退出码是 143；不声明的话 `systemctl stop` 会被记成 failed。
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65535
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

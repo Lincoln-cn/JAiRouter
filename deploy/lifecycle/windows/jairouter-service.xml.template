@@ -1,0 +1,38 @@
+<!--
+  WinSW 服务定义模板（install.ps1 渲染后写到 <Prefix>\jairouter.xml）。
+
+  为什么用 WinSW：Windows 没有 SIGTERM 的等价物，`taskkill /PID`（不带 /F）看起来成功但
+  进程被直接干掉、shutdown hook 一行都不执行（v3.8.6 实测）。只有向 java 所在的控制台发
+  Ctrl+C 才会走 Spring 的优雅停机。WinSW 把 JVM 作为子进程挂在 SCM 下，`sc stop` 时
+  向它转发 CTRL_BREAK —— 实测 1.43s 内完成 GRACEFUL_COMMENCING / GRACEFUL_COMPLETE。
+
+  占位符由 install.ps1 替换：
+    @@JAVA_BIN@@  @@PREFIX@@  @@PROFILE@@  @@PORT@@  @@STOP_TIMEOUT_SEC@@  @@ENV_BLOCK@@
+-->
+<service>
+  <id>jairouter</id>
+  <name>JAiRouter</name>
+  <description>JAiRouter LLM Gateway（由 deploy/lifecycle/windows/install.ps1 安装）</description>
+
+  <executable>@@JAVA_BIN@@</executable>
+  <arguments>-jar &quot;@@PREFIX@@\lib\model-router.jar&quot; --spring.profiles.active=@@PROFILE@@ --spring.config.additional-location=file:@@PREFIX@@\config\</arguments>
+
+  <!-- 工作目录决定相对路径：日志默认写 <workingdirectory>\logs，install.ps1 会把它记进 jairouter.json -->
+  <workingdirectory>@@PREFIX@@</workingdirectory>
+
+  <!--
+    必须大于 spring.lifecycle.timeout-per-shutdown-phase（仓库默认 30s）。
+    超时后 WinSW 会结束整棵进程树 —— 那是硬杀，在途请求会断。
+  -->
+  <stoptimeout>@@STOP_TIMEOUT_SEC@@sec</stoptimeout>
+
+  <startmode>Automatic</startmode>
+  <delayedAutoStart>true</delayedAutoStart>
+  <onfailure action="restart" delay="10 sec"/>
+  <resetfailure>1 hour</resetfailure>
+
+  <logmode>none</logmode>
+  <logpath>@@PREFIX@@\logs</logpath>
+
+@@ENV_BLOCK@@
+</service>

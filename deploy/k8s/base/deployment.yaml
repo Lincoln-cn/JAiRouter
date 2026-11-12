@@ -58,6 +58,14 @@ spec:
             - name: JAVA_OPTS
               value: >-
                 -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+UseContainerSupport
+            # 共享数据库密码（DATABASE_URL / DATABASE_USERNAME 来自 jairouter-config）。
+            # 走 secretKeyRef 而不是 envFrom：postgres.yaml 里的 Secret 与 jairouter-secrets 是分开的，
+            # 换托管数据库时只需替换这个 Secret 的 POSTGRES_PASSWORD。
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jairouter-postgres
+                  key: POSTGRES_PASSWORD
           envFrom:
             - configMapRef:
                 name: jairouter-config

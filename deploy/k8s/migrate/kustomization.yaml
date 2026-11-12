@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# 数据库迁移 —— 必须作为**独立的一步**、在 base 之前应用（issue #1111）。
+#
+# 为什么不能和 base 放在同一份清单里：kustomize / kubectl apply 不保证 apply 顺序，
+# Deployment 的 Pod 会在 Job 完成前就起来、各副本自己去跑 Flyway。PostgreSQL 上 Flyway 的
+# 表级锁能把它们串行化，但 `ddl-auto: validate` 会在迁移尚未结束时直接失败，表现为一轮
+# CrashLoopBackOff；H2 单文件库上更是直接并发 DDL。
+#
+# 用法（deploy/k8s/apply.sh 把这三步串好了）：
+#   kubectl apply -k deploy/k8s/migrate
+#   kubectl wait --for=condition=complete --timeout=600s -n jairouter job/jairouter-schema-init
+#   kubectl apply -k deploy/k8s/base
+#
+# Job 用 migrate profile：非 Web 入口、跑完即退出、退出码反映成败（issue #193）。
+# 它读的 ConfigMap/Secret 与 base 同名同 namespace，所以两边必须用同一个 namespace。
+
+namespace: jairouter
+
+resources:
+  - migration-job.yaml

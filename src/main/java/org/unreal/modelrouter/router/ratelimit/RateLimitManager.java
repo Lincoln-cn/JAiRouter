@@ -1,5 +1,7 @@
 package org.unreal.modelrouter.router.ratelimit;
 
+import jakarta.annotation.PostConstruct;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -79,6 +81,32 @@ public class RateLimitManager {
         initializeRateLimiters();
     }
 
+    /**
+     * v3.8.6（issue #1114）：分布式开关打开时，用 Redis 实现重建四级限流器。
+     *
+     * <p>为什么要单独一步：{@code distributedRateLimitEnabled} 与 {@code reactiveRedisTemplateProvider}
+     * 由 {@code @Value} / {@code @Autowired} 注入，而 {@link #initializeRateLimiters()} 在构造器里
+     * 就跑完了 —— 那一刻开关还是默认的 {@code false}、模板还是 {@code null}。所以构造期创建的必然是
+     * 本地实现，注入完成后要覆盖一次。</p>
+     *
+     * <p>客户端维度不受影响：那一路是惰性求值（{@code clientIpRateLimiterCache} 的 loader），
+     * 创建时机已在注入之后。</p>
+     */
+    @PostConstruct
+    void reinitializeDistributedLimiters() {
+        if (!distributedRateLimitEnabled) {
+            return;
+        }
+        if (reactiveRedisTemplateProvider == null
+                || reactiveRedisTemplateProvider.getIfAvailable() == null) {
+            LOGGER.warn("jairouter.ratelimit.distributed.enabled=true 但没有可用的 Redis 模板，"
+                    + "全局/服务/实例/规则四级限流器保持本地实现（放行量将随副本数放大）");
+            return;
+        }
+        initializeRateLimiters();
+        LOGGER.info("分布式限流已启用：全局/服务/实例/规则四级限流器改用 Redis 滑动窗口");
+    }
+
     /* ===================== 初始化 ===================== */
 
     private void initializeRateLimiters() {
@@ -92,7 +120,7 @@ public class RateLimitManager {
         /* 全局 */
         ModelRouterProperties.RateLimitConfig globalCfg = properties.getRateLimit();
         if (globalCfg != null && Boolean.TRUE.equals(globalCfg.getEnabled())) {
-            globalLimiter = componentFactory.createScopedRateLimiter(convert(globalCfg));
+            globalLimiter = createScopedLimiter(globalCfg, "global");
             LOGGER.info("Global limiter initialized");
         }
 
@@ -114,8 +142,9 @@ public class RateLimitManager {
 
             /* 服务级 */
             if (svcCfg.getRateLimit() != null && Boolean.TRUE.equals(svcCfg.getRateLimit().getEnabled())) {
-                serviceLimiters.put(type, componentFactory.createScopedRateLimiter(
-                        configConverterHelper.convertRateLimitConfig(svcCfg.getRateLimit())));
+                serviceLimiters.put(type, createScopedLimiter(
+                        configConverterHelper.convertRateLimitConfig(svcCfg.getRateLimit()),
+                        "service:" + type.name().toLowerCase()));
                 svcCnt++;
                 if (!Boolean.TRUE.equals(svcCfg.getRateLimit().getClientIpEnable())) {
                     sharedBucketServices.add(serviceKey);
@@ -126,10 +155,9 @@ public class RateLimitManager {
             if (svcCfg.getInstances() != null) {
                 for (var inst : svcCfg.getInstances()) {
                     if (inst.getRateLimit() != null && Boolean.TRUE.equals(inst.getRateLimit().getEnabled())) {
-                        instanceLimiters.put(
-                                generateInstanceKey(type, inst),
-                                componentFactory.createScopedRateLimiter(
-                                        convert(inst.getRateLimit())));
+                        final String instanceKey = generateInstanceKey(type, inst);
+                        instanceLimiters.put(instanceKey,
+                                createScopedLimiter(inst.getRateLimit(), "instance:" + instanceKey));
                         instCnt++;
                     }
                 }
@@ -260,7 +288,7 @@ public class RateLimitManager {
             return true;
         }
         RateLimiter limiter = ruleLimiters.computeIfAbsent(ruleId,
-                k -> componentFactory.createScopedRateLimiter(cfg));
+                k -> createScopedLimiter(cfg, "rule:" + ruleId));
         return limiter.tryAcquire(context);
     }
 
@@ -363,6 +391,49 @@ public class RateLimitManager {
     }
 
     /**
+     * v3.8.6（issue #1114）：全局 / 服务 / 实例 / 规则四级限流器也跟随分布式开关。
+     *
+     * <p>此前只有客户端维度与终端用户维度接上了 Redis，其余四级在大 `jairouter.ratelimit.distributed.enabled`
+     * 打开后仍是每副本一份 —— 三副本部署时服务级上限实际是配置值的 3 倍。这里统一走同一套判定。</p>
+     *
+     * <p>语义差异：{@link RedisSlidingWindowRateLimiter} 用「每秒滑动窗口内最多 rate 次」，
+     * 不保留本地 token-bucket 的 {@code capacity} 初始突发额度。开分布式后突发被抹平、上限变准，
+     * 这是有意的取舍（否则多副本下无法给出可预期的全局上限）。</p>
+     *
+     * @param config   生效的限流配置（属性侧）
+     * @param cacheKey 区分各级限流器的标识，同时作为 Redis key 的一段
+     * @return 限流器；配置为空时返回 null
+     */
+    private RateLimiter createScopedLimiter(final ModelRouterProperties.RateLimitConfig config,
+                                            final String cacheKey) {
+        if (config == null) {
+            return null;
+        }
+        return createScopedLimiter(convert(config), cacheKey);
+    }
+
+    /**
+     * v3.8.6（issue #1114）：同上，入参是已转换的限流配置（规则级走这条）。
+     */
+    private RateLimiter createScopedLimiter(final RateLimitConfig converted, final String cacheKey) {
+        if (converted == null) {
+            return null;
+        }
+        if (distributedRateLimitEnabled) {
+            final ReactiveRedisTemplate<String, String> redisTemplate =
+                    reactiveRedisTemplateProvider.getIfAvailable();
+            if (redisTemplate != null) {
+                return new RedisSlidingWindowRateLimiter(converted,
+                        REDIS_KEY_PREFIX + "scoped:" + cacheKey,
+                        redisTemplate, Duration.ofMillis(distributedRateLimitTimeoutMs));
+            }
+            LOGGER.warn("jairouter.ratelimit.distributed.enabled=true 但没有可用的 Redis 模板，"
+                    + "限流器 {} 退回本地（放行量将随副本数放大）", cacheKey);
+        }
+        return componentFactory.createScopedRateLimiter(converted);
+    }
+
+    /**
      * v2.7.10: 获取客户端 IP 限流器缓存统计信息
      */
     public ClientIpRateLimiterCache.CacheStats getClientIpCacheStats() {
@@ -406,7 +477,7 @@ public class RateLimitManager {
             LOGGER.info("Global limiter removed");
             return;
         }
-        globalLimiter = componentFactory.createScopedRateLimiter(convert(cfg));
+        globalLimiter = createScopedLimiter(cfg, "global");
         LOGGER.info("Global limiter updated");
     }
 
@@ -421,7 +492,7 @@ public class RateLimitManager {
             LOGGER.info("Service limiter removed for {}", type);
             return;
         }
-        serviceLimiters.put(type, componentFactory.createScopedRateLimiter(cfg));
+        serviceLimiters.put(type, createScopedLimiter(cfg, "service:" + type.name().toLowerCase()));
         LOGGER.info("Service limiter set for {}", type);
     }
 
@@ -440,7 +511,7 @@ public class RateLimitManager {
             LOGGER.info("Instance limiter removed for {}", key);
             return;
         }
-        instanceLimiters.put(key, componentFactory.createScopedRateLimiter(convert(cfg)));
+        instanceLimiters.put(key, createScopedLimiter(cfg, "instance:" + key));
         LOGGER.info("Instance limiter set for {}", key);
     }
 

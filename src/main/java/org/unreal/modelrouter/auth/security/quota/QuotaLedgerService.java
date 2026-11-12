@@ -77,7 +77,9 @@ import java.util.function.Supplier;
  *       开启分布式计数后额度由 Redis 共享，本地计数仅在降级期间作为兜底视图。</li>
  * </ul>
  *
- * <p>{@code jairouter.quota.enabled=false}（默认）时所有方法立即返回、不访问数据库与 Redis。</p>
+ * <p>{@code jairouter.quota.enabled=false} 时所有方法立即返回、不访问数据库与 Redis。
+ * 该开关默认 {@code true}（字段声明即默认值，`src/main/resources` 下没有任何 yml 覆盖它），
+ * 只有显式配成 {@code false} 才会停用。</p>
  *
  * @author JAiRouter Team
  * @since 3.1.0
@@ -209,7 +211,7 @@ public class QuotaLedgerService {
     /**
      * 账本是否启用。
      *
-     * @return {@code jairouter.quota.enabled} 的值，默认 {@code false}
+     * @return {@code jairouter.quota.enabled} 的值，默认 {@code true}
      */
     public boolean isEnabled() {
         return properties.isEnabled();
