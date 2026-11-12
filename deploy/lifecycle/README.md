@@ -28,7 +28,7 @@
 Linux 的降级链（`--mode auto` 默认）：
 
 1. `systemd` + 系统 Java 17+ → 注册 unit，开机自启、崩溃自动重启
-2. `docker` + systemd → 生成 compose，`restart: unless-stopped`
+2. `docker` + `compose` + systemd → 生成 compose，`restart: unless-stopped`。**有 docker 不等于有 compose**：只装了引擎、没装 compose 插件的机器（Ubuntu 的 `docker.io` 包就是这样）判为容器模式不可用，而不是装完才发现 `docker compose up` 不存在
 3. `foreground` → `setsid nohup` 后台跑，**不会开机自启**，脚本会明确打印这一点
 4. 都不满足 → 装前失败，提示用离线 bundle 自带的运行时
 
@@ -41,6 +41,19 @@ Windows 的降级链（`-Mode auto` 默认）：
 
 每次降级都会打印**为什么**降级，而不是静默选一条路。
 
+### 目标目录不是空的怎么办
+
+`--prefix` 指向的目录已经有内容、但里面没有本脚本写的 `jairouter.json` 时，安装会**直接拒绝**并
+退出（写盘之前），因为那个目录很可能是别的部署的数据卷 —— 接手时 `chown` 一遍就足以把别人的
+挂载目录改坏。确认要覆盖再加 `--force`。
+
+`--dry-run` 同样会先做这项归属判断，所以可以拿它去探一个目录「能不能装」而不动磁盘。
+
+### docker 模式的镜像 tag
+
+默认 `latest` 只为快速起步；生产请用 `--image-tag v3.8.5` 固定版本，否则某天重新 `up` 会把版本
+一起换掉。compose 文件里同时留了 `JAIRouter_IMAGE` 环境变量覆盖口。
+
 ### 装完自检
 
 两个脚本最后都真的去请求 `http://127.0.0.1:<port>/actuator/health`，超时（默认 60s / 90s）
@@ -50,10 +63,15 @@ Windows 的降级链（`-Mode auto` 默认）：
 
 首次安装会生成 `JWT_SECRET` 与 `INITIAL_ADMIN_PASSWORD`：
 
-- Linux：`/etc/jairouter/jairouter.env`，`chmod 600`
+- Linux：`/etc/jairouter/<prefix 目录名>.env`（默认前缀下就是 `/etc/jairouter/jairouter.env`），`chmod 600`
 - Windows：`<Prefix>\config\jairouter.env`，`icacls` 收紧到 SYSTEM + Administrators
 
 重复执行**不会覆盖**已有密钥 —— 换了密钥所有已签发的 token 立刻失效。
+
+同一台机器上装第二个实例时，密钥文件、容器名、systemd 之外的一切都按 `--prefix` 的目录名区分：
+`/opt/jairouter` → `/etc/jairouter/jairouter.env` + 容器 `jairouter`；
+`/opt/jairouter-test` → `/etc/jairouter/jairouter-test.env` + 容器 `jairouter-test`。
+这样两个实例不会共用密钥，也不会互相顶掉容器。
 
 ## 停机语义（这是本目录存在的主要原因）
 
@@ -81,8 +99,13 @@ sudo ./linux/uninstall.sh --purge          # 连数据、日志、密钥一起�
 .\windows\uninstall.ps1 -Purge             # 连数据、日志、密钥一起删（二次确认）
 ```
 
-默认保留：`data/`（H2 文件库或外部库的本地缓存）、`logs/`、`config/`（含密钥）。
-`--purge` / `-Purge` 才删，且一定会先打印将删哪些路径再确认。
+默认删的程序资产：`lib/model-router.jar`、`docker/docker-compose.yml`（compose 定义）、
+`jairouter.json`（安装标记），以及服务/计划任务注册与容器网络。
+默认保留：`data/`（H2 文件库或外部库的本地缓存）、`logs/`、`config/`（覆盖层）、密钥。
+`--purge` / `-Purge` 才删数据，且一定会先打印将删哪些路径再确认。
+
+卸载时如果 `docker compose` 不可用，脚本会明确打印「容器可能仍在运行」并给出人工处理命令 ——
+不会在 `down` 失败的情况下照样宣布「已停止并移除」。
 
 ## 安装记录
 
@@ -96,8 +119,9 @@ sudo ./linux/uninstall.sh --purge          # 连数据、日志、密钥一起�
 | `workingDirectory` / `logDirectory` | **日志落点**：`logback-spring.xml` 用相对路径 `logs`，所以日志在 `<workingDirectory>\logs` |
 | `service.kind` | `winsw` / `schtasks` / `none` |
 
-Linux 侧没有单独的 json 记录，`install.sh` 的约定写死在这里：前缀默认 `/opt/jairouter`，
-环境文件 `/etc/jairouter/jairouter.env`，unit 名 `jairouter.service`。
+Linux 侧同样写 `$PREFIX/jairouter.json`（字段：`mode` / `prefix` / `port` / `profile` / `envFile` /
+`containerName` / `dataDirectory` / `logDirectory`），另外两个约定是：前缀默认 `/opt/jairouter`，
+unit 名固定 `jairouter.service`（同机多实例只用 `--prefix` 区分数据与密钥，不注册第二个 unit）。
 
 ## 离线安装
 
