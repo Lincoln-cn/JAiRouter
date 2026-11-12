@@ -201,7 +201,10 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.9', '3.11']
+        # 3.9 于 2025-10 结束官方支持，且 ubuntu-latest（26.04）的 setup-python
+        # 已无 3.9 可用（报 “The version '3.9' ... was not found for Ubuntu 26.04”）。
+        # 用 3.10 与 3.11 覆盖“较老 / 较新”两档解释器。
+        python-version: ['3.10', '3.11']
     
     steps:
     - name: 检出代码
