@@ -431,7 +431,7 @@ interface ServiceForm {
     successThreshold: number
   }
   /**
-   * 会话粘性（issue #1095）。服务器侧缺省开启，控制台此前没有任何入口能关，
+   * 会话粘性（issue #1095）。3.8.6 起服务器侧缺省关闭，开启后多实例不再按策略分摊。
    * 表现为「加实例、切策略，路由却始终落在同一实例」。
    */
   sticky: {
@@ -525,9 +525,9 @@ const form = reactive<ServiceForm>({
     timeout: 60000,
     successThreshold: 2
   },
-  // #1095：默认与服务器一致（开启）；关闭后多实例按负载均衡策略分流
+  // #1095 / 3.8.6：默认与服务器一致（关闭）；此时多实例按负载均衡策略分流
   sticky: {
-    enabled: true,
+    enabled: false,
     affinityKeyScope: 'tenant_model'
   }
 })
@@ -722,7 +722,7 @@ const handleAddService = () => {
   form.adapter = ''
   form.loadBalance.type = 'random'
   form.description = ''
-  form.sticky.enabled = true
+  form.sticky.enabled = false
   form.sticky.affinityKeyScope = 'tenant_model'
   dialogVisible.value = true
 }
@@ -755,9 +755,9 @@ const handleEdit = async (row: Service) => {
         timeout: cfg.circuitBreaker?.timeout || 60000,
         successThreshold: cfg.circuitBreaker?.successThreshold || 2
       }
-      // #1095：配置里没有 sticky 时按服务器默认值（开启）显示，避免开关状态与真实行为相反
+      // #1095 / 3.8.6：配置里没有 sticky 时按服务器默认值（关闭）显示，避免开关状态与真实行为相反
       form.sticky = {
-        enabled: cfg.sticky?.enabled !== false,
+        enabled: cfg.sticky?.enabled === true,
         affinityKeyScope: cfg.sticky?.affinityKeyScope || 'tenant_model'
       }
       // v2.8.8: 从 ratelimit 端点加载 canonical 格式的限流配置(覆盖通用配置里可能缺失的字段)

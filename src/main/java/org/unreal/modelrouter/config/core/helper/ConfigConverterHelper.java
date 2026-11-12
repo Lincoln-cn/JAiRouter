@@ -122,7 +122,7 @@ public class ConfigConverterHelper {
             Map<String, Object> stickyMap = (Map<String, Object>) serviceConfigMap.get("sticky");
             ModelRouterProperties.StickyConfig stickyConfig = new ModelRouterProperties.StickyConfig();
             if (stickyMap.containsKey("enabled")) {
-                // 只在能明确解析时覆盖：无法识别的值保持 StickyConfig 的默认值（true），
+                // 只在能明确解析时覆盖：无法识别的值保持 StickyConfig 的默认值（3.8.6 起为 false），
                 // 否则 enabled 会被写成 null，而 getStickyScope 把非 TRUE 一律当成「关闭」。
                 Boolean enabled = asBoolean(stickyMap.get("enabled"));
                 if (enabled != null) {
@@ -145,7 +145,7 @@ public class ConfigConverterHelper {
      * 把配置里的布尔值宽松解析成 Boolean（兼容 YAML 的 true/false 与字符串 "true"/"false"）
      *
      * @param value 原始值
-     * @return Boolean；无法识别时返回 null（保持 {@code StickyConfig} 的默认值）
+     * @return Boolean；无法识别时返回 null（保持 {@code StickyConfig} 的默认值，3.8.6 起为 false）
      */
     private Boolean asBoolean(final Object value) {
         if (value instanceof Boolean) {

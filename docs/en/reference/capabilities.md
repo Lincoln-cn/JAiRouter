@@ -20,7 +20,7 @@ This page answers three questions: **what it does, what it does not do, and wher
 
 | Capability | Status | Default | Configuration | Boundary |
 |---|---|---|---|---|
-| Multi-instance load balancing | Available | On | `model.services.<type>.instances` | Eight strategies: round-robin / random / least-connections / consistent-hash / IP-hash / latency-aware / sticky-session |
+| Multi-instance load balancing | Available | On | `model.services.<type>.instances` | Strategies: round-robin / random / least-connections / consistent-hash / IP-hash / latency-aware (sticky-session is a separate affinity switch, **off by default since 3.8.6**) |
 | Same-name instances form a candidate set | Available | On | Instance `name` | The request's `model` field matches instance names; identical names mean "replicas of the same model" |
 | Circuit breaking | Available | On | `model.circuit-breaker.*` | State is persisted in the database and survives restarts; half-open recovery is implemented |
 | Retry | Available | On | `model.services.<type>.retry` | — |

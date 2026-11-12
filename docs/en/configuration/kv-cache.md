@@ -31,11 +31,11 @@ model:
     deepseek:
       adapter: deepseek
       sticky:
-        enabled: true            # enable sticky routing (default true; effective when instances > 1)
+        enabled: false           # enable sticky routing (default false; effective when instances > 1)
         affinityKeyScope: tenant_model  # affinity granularity: tenant_model (default) / tenant
 ```
 
-- `sticky.enabled`: enable sticky routing (default `true`; effective only when instances > 1 and healthy)
+- `sticky.enabled`: enable sticky routing (default `false`; effective only when instances > 1 and healthy)
 - `sticky.affinityKeyScope`:
   - `tenant_model` (default): affinity key includes `modelName` — the same tenant's different models may route to different instances
   - `tenant`: affinity key is `apiKeyId|serviceType` (falls back to clientIp) — the whole tenant pins to one instance

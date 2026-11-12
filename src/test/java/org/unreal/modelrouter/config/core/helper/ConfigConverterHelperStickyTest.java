@@ -69,7 +69,7 @@ class ConfigConverterHelperStickyTest {
     }
 
     @Test
-    @DisplayName("无法识别的 enabled 不会把开关关掉（保持默认 true）")
+    @DisplayName("无法识别的 enabled 不会把开关关掉（保持默认值，3.8.6 起为 false）")
     void stickyUnparsableEnabled_keepsDefault() {
         final Map<String, Object> sticky = new LinkedHashMap<>();
         sticky.put("enabled", "maybe");
@@ -80,7 +80,7 @@ class ConfigConverterHelperStickyTest {
         final ModelRouterProperties.ServiceConfig config = helper.convertMapToServiceConfig(serviceMap);
 
         assertNotNull(config.getSticky());
-        assertEquals(Boolean.TRUE, config.getSticky().getEnabled(),
+        assertEquals(Boolean.FALSE, config.getSticky().getEnabled(),
                 "解析失败必须保持默认值——写成 null 会被 getStickyScope 当成「已关闭」");
     }
 }

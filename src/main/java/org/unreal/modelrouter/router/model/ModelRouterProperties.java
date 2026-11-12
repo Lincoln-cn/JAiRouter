@@ -507,7 +507,9 @@ public final class ModelRouterProperties {
     // v2.9.0: 会话粘性配置类
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static final class StickyConfig {
-        private Boolean enabled = true;   // 是否启用粘性路由(默认开,实例数>1且健康时生效)
+        // issue #1095 / 3.8.6：默认关闭。多实例默认按配置的负载均衡策略分摊；
+        // 需要上游前缀缓存亲和（同一 apiKey + 同一 model 固定到同一实例）时显式设为 true。
+        private Boolean enabled = false;  // 是否启用粘性路由(默认关,显式开启后实例数>1且健康时生效)
         private String affinityKeyScope = "tenant_model"; // 粘性粒度: tenant_model / tenant
 
         public Boolean getEnabled() {

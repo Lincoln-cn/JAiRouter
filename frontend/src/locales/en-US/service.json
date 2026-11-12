@@ -66,7 +66,7 @@
     },
     "sticky": {
       "enable": "Session Stickiness",
-      "hint": "When enabled, requests with the same credential and model always hit the same instance (better upstream cache hits), but the load balancing strategy will not spread traffic. Turn it off if multiple instances should share load."
+      "hint": "When enabled, requests with the same credential and model always hit the same instance (better upstream cache hits), but the load balancing strategy will not spread traffic. Off by default; keep it off if multiple instances should share load."
     },
     "rateLimit": {
       "section": "Service-level Rate Limit Config",
