@@ -157,9 +157,10 @@ API Key 校验走的是各副本自己的内存镜像，只在本进程内更新
 
 ## 限流键维度与多副本语义
 
-限流状态**默认在 JVM 内**。仓库里有三条受 `jairouter.ratelimit.distributed.enabled` 控制的 Redis 计数路径：
-终端用户限流（v3.5.2）、API Key 每分钟限流（v3.8.6，前缀 `jairouter:ratelimit:api-key:`）与客户端维度限流
-（`RedisSlidingWindowRateLimiter`，窗口 1 秒，v3.5.2 起已接进主链路、但**仓库默认关闭**，见 #623）。
+限流状态**默认在 JVM 内**。仓库里所有 Redis 计数路径都受 `jairouter.ratelimit.distributed.enabled` 控制：
+终端用户限流（v3.5.2）、API Key 每分钟限流（v3.8.6，前缀 `jairouter:ratelimit:api-key:`）、客户端维度限流
+（`RedisSlidingWindowRateLimiter`，窗口 1 秒，v3.5.2 起已接进主链路、但**仓库默认关闭**，见 #623），
+以及 v3.8.6 起接上的全局 / 服务级 / 实例级 / 规则级限流器（前缀 `jairouter:ratelimit:scoped:`，见 #1114）。
 
 **API Key 的每分钟限流（`rateLimitPerMinute`）自 v3.8.6 起由主链路的 `ApiKeyMinuteRateLimitService` 判定**，
 开关是 `jairouter.ratelimit.api-key.enabled`（默认 `true`）。打开 `jairouter.ratelimit.distributed.enabled`
@@ -171,7 +172,11 @@ API Key 校验走的是各副本自己的内存镜像，只在本进程内更新
 > Redis 中也没有任何 `jairouter:ratelimit:*` 键；单副本连打 14 次则是 `[200×9, 429×5]`。现在认证链与账本
 > 都不再判定每分钟速率，配额账本只负责小时/天/月（#1113）。
 
-其余服务级 / 实例级 / 规则级限流器仍是每副本一份。因此多副本下：
+**v3.8.6 起，全局 / 服务级 / 实例级 / 规则级四级限流器也跟随同一开关**（#1114）：打开后它们同样写 Redis，
+放行量等于配置值而不是配置值 × 副本数；关闭时退回每 Pod 各一份。仍未接线的是对**本地限流器状态**的持久化
+（`RateLimiterStatePersistenceAdapter` 只认本地实现），那是重启恢复能力，与计数口径无关。
+
+因此，未开该开关的多副本部署下：
 
 > 同一客户端的实际放行量 ≈ 配置值 × 副本数，且窗口重置各副本独立，突发形态还会随请求落到哪个
 > Pod 而变化（等价于每 Pod 各发一个满额桶）。
@@ -215,9 +220,10 @@ WARN 日志与 `recordLoadBalancer(..., "random-fallback-no-client-ip")` 指标�
 
 `jairouter.ratelimit.distributed.enabled=true` 时，限流计数写到 Redis，各副本共享同一份 —— 放行量等于配置值，而不是配置值 × 副本数。
 
-**该开关今天同时作用在三条路径上**：终端用户限流（`jairouter.ratelimit.end-user.enabled`，默认关闭）、
-API Key 每分钟限流（`jairouter.ratelimit.api-key.enabled`，v3.8.6 起默认开启）与客户端维度限流
-（v3.5.2 起已接线、仓库自带配置默认关闭）。三者未开启该开关时都用本机有界计数器，各副本各算各的。
+**该开关作用于全部限流路径**：终端用户限流（`jairouter.ratelimit.end-user.enabled`，默认关闭）、
+API Key 每分钟限流（`jairouter.ratelimit.api-key.enabled`，v3.8.6 起默认开启）、客户端维度限流
+（v3.5.2 起已接线、仓库自带配置默认关闭），以及全局 / 服务级 / 实例级 / 规则级限流器（v3.8.6 起，见 #1114）。
+未开启该开关时它们都用本机有界计数器，各副本各算各的。
 
 - **Lua 原子**：`INCR` → 首次写入时设置 TTL → 超过上限则 `DECR` 回滚并在同一段脚本里返回拒绝，多副本并发不会超发。
 - **fail-open**：Redis 不可用（连接失败/超时）时放行并告警 —— 全站拒绝比放宽限流更糟，与配额侧 `degradeToLocal` 的取向一致。
@@ -225,9 +231,12 @@ API Key 每分钟限流（`jairouter.ratelimit.api-key.enabled`，v3.8.6 起默�
 - 键带 TTL 自动过期，无需清理任务。
 - 未开启该开关时用本机有界计数器（Caffeine，条目上限由 `local-cache-size` 决定），多副本下各算各的。
 
-### 仍未做
+### 开启分布式后的两点语义差异
 
-跨副本计数目前覆盖**终端用户限流**与**客户端维度限流**（后者需显式开启 `client-ip-enable`）；服务级 / 实例级 / 规则级限流器仍是每副本一份，多副本下这几级的放行量仍会随副本数放大，需要按同样思路改造。
+- **容量（`capacity`）不再生效**：本地实现是 token-bucket，允许 `capacity` 的初始突发；Redis 路径是每秒滑动窗口，
+  只认 `rate`。开分布式后突发被抹平、上限变准 —— 这是为了让多副本下有可预期的全局上限，属有意取舍。
+- **本地限流器状态持久化不覆盖 Redis 路径**：`RateLimiterStatePersistenceAdapter` 只读写本地实现的桶状态，
+  重启恢复能力限于「未开分布式」的部署；Redis 侧靠 key 的 TTL 自然过期，不需要清理任务。
 
 ## 实时事件跨副本广播
 
