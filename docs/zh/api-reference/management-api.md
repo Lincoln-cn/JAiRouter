@@ -130,7 +130,74 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 ### API 密钥管理
 
-#### 基础路径: `/api/auth/api-keys`
+#### 基础路径: `/api/config/ratelimit`
+
+读取与运行时调整 API Key 每分钟限流（L1）与终端用户限流（L2）的开关与阈值。两者都只修改**内存属性**，不写回 `config/` 下的 YAML，重启后回到配置文件的值。
+
+#### `GET /api/config/ratelimit`
+
+获取当前生效的限流配置快照。
+
+**权限码:** `config:ratelimit:read`
+
+**响应示例:**
+```json
+{
+  "success": true,
+  "data": {
+    "apiKey": {
+      "enabled": true,
+      "localCacheSize": 50000
+    },
+    "endUser": {
+      "enabled": false,
+      "requestsPerMinute": 60,
+      "headerEnabled": true,
+      "missingIdentity": "SKIP",
+      "localCacheSize": 50000,
+      "fingerprintLength": 16
+    },
+    "distributed": {
+      "enabled": false,
+      "timeoutMs": 50,
+      "apiKeyBackend": "local",
+      "endUserBackend": "local"
+    },
+    "hotEditableFields": ["apiKey.enabled", "endUser.enabled", "endUser.requestsPerMinute", "endUser.headerEnabled", "endUser.missingIdentity"],
+    "restartRequiredFields": ["distributed.enabled", "distributed.timeoutMs", "apiKey.localCacheSize", "endUser.localCacheSize", "endUser.fingerprintLength"]
+  }
+}
+```
+
+#### `PUT /api/config/ratelimit`
+
+运行时更新限流配置（部分更新，仅非 null 字段生效）。
+
+**权限码:** `config:ratelimit:write`
+
+**请求体:**
+```json
+{
+  "apiKeyEnabled": null,
+  "endUserEnabled": true,
+  "endUserRequestsPerMinute": 120,
+  "endUserHeaderEnabled": null,
+  "endUserMissingIdentity": "REJECT",
+  "distributedEnabled": null,
+  "distributedTimeoutMs": null,
+  "apiKeyLocalCacheSize": null,
+  "endUserLocalCacheSize": null,
+  "endUserFingerprintLength": null
+}
+```
+
+- 可热改字段：`apiKeyEnabled`、`endUserEnabled`、`endUserRequestsPerMinute`、`endUserHeaderEnabled`、`endUserMissingIdentity`
+- 需重启字段（`distributedEnabled` / `distributedTimeoutMs` / `apiKeyLocalCacheSize` / `endUserLocalCacheSize` / `endUserFingerprintLength`）：携带非 null 值时返回 HTTP 400 + `errorCode=RESTART_REQUIRED`，且**整条请求都不生效**（不做部分写入）
+- `endUserMissingIdentity` 只接受 `SKIP` / `REJECT`（大小写不敏感），其它值 → HTTP 400 + `errorCode=INVALID_REQUEST`
+- `endUserRequestsPerMinute` 必须 ≥ 1，否则 HTTP 400 + `errorCode=INVALID_REQUEST`
+- 全空请求体 → HTTP 400 + `errorCode=INVALID_REQUEST`
+
+### 基础路径: `/api/auth/api-keys`
 
 #### `GET /api/auth/api-keys`
 列出所有 API 密钥。
@@ -797,7 +864,7 @@ POST /api/v1/circuit-breaker-monitor/instances/reset              # config:circu
   "data": {
     "enabled": true,
     "failOpen": true,
-    "windows": ["MINUTE", "HOUR", "DAY", "MONTH"],
+    "windows": ["HOUR", "DAY", "MONTH"],
     "flushIntervalSeconds": 60,
     "retention": {
       "minute": "1d",
@@ -829,7 +896,7 @@ POST /api/v1/circuit-breaker-monitor/instances/reset              # config:circu
 {
   "enabled": true,
   "failOpen": true,
-  "windows": ["MINUTE", "HOUR", "DAY"],
+  "windows": ["HOUR", "DAY", "MONTH"],
   "flushIntervalSeconds": null,
   "distributedEnabled": null,
   "distributedKeyPrefix": null,
@@ -839,7 +906,8 @@ POST /api/v1/circuit-breaker-monitor/instances/reset              # config:circu
 }
 ```
 
-- 可热改字段：`enabled`、`failOpen`、`windows`
+- 可热改字段：`enabled`、`failOpen`、`windows`（v3.8.6 起账本不再判定每分钟速率：
+  即使 `windows` 里含 `MINUTE`，该窗口也不会计数，每分钟上限由 `config:ratelimit` 那套限流器负责）
 - 需重启字段（`distributedEnabled` / `distributedKeyPrefix` / `distributedTimeoutMs` / `distributedDegradeToLocal` / `retention` / `flushIntervalSeconds`）：携带非 null 值时返回 HTTP 400 + `errorCode=RESTART_REQUIRED`，message 列出具体字段名
 - 全空请求体 → HTTP 400 + `errorCode=INVALID_REQUEST`
 
@@ -871,7 +939,7 @@ POST /api/v1/circuit-breaker-monitor/instances/reset              # config:circu
     "degraded": false,
     "degradedReason": "",
     "failOpen": true,
-    "windows": ["MINUTE", "HOUR", "DAY", "MONTH"],
+    "windows": ["HOUR", "DAY", "MONTH"],
     "distributed": {
       "enabled": false,
       "keyPrefix": "jairouter:quota",

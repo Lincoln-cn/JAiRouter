@@ -124,7 +124,74 @@ Get cleanup statistics.
 
 ### API Key Management
 
-#### Base Path: `/api/auth/api-keys`
+#### Base Path: `/api/config/ratelimit`
+
+Read and adjust the switches and thresholds of the per-API-Key per-minute limit (L1) and the end-user limit (L2) at runtime. Both only change **in-memory properties**; nothing is written back to the YAML under `config/`, so a restart reverts to the configuration files.
+
+#### `GET /api/config/ratelimit`
+
+Returns the currently effective rate-limit configuration snapshot.
+
+**Permission code:** `config:ratelimit:read`
+
+**Example response:**
+```json
+{
+  "success": true,
+  "data": {
+    "apiKey": {
+      "enabled": true,
+      "localCacheSize": 50000
+    },
+    "endUser": {
+      "enabled": false,
+      "requestsPerMinute": 60,
+      "headerEnabled": true,
+      "missingIdentity": "SKIP",
+      "localCacheSize": 50000,
+      "fingerprintLength": 16
+    },
+    "distributed": {
+      "enabled": false,
+      "timeoutMs": 50,
+      "apiKeyBackend": "local",
+      "endUserBackend": "local"
+    },
+    "hotEditableFields": ["apiKey.enabled", "endUser.enabled", "endUser.requestsPerMinute", "endUser.headerEnabled", "endUser.missingIdentity"],
+    "restartRequiredFields": ["distributed.enabled", "distributed.timeoutMs", "apiKey.localCacheSize", "endUser.localCacheSize", "endUser.fingerprintLength"]
+  }
+}
+```
+
+#### `PUT /api/config/ratelimit`
+
+Updates the rate-limit configuration at runtime (partial update; only non-null fields apply).
+
+**Permission code:** `config:ratelimit:write`
+
+**Request body:**
+```json
+{
+  "apiKeyEnabled": null,
+  "endUserEnabled": true,
+  "endUserRequestsPerMinute": 120,
+  "endUserHeaderEnabled": null,
+  "endUserMissingIdentity": "REJECT",
+  "distributedEnabled": null,
+  "distributedTimeoutMs": null,
+  "apiKeyLocalCacheSize": null,
+  "endUserLocalCacheSize": null,
+  "endUserFingerprintLength": null
+}
+```
+
+- Hot-editable: `apiKeyEnabled`, `endUserEnabled`, `endUserRequestsPerMinute`, `endUserHeaderEnabled`, `endUserMissingIdentity`
+- Restart required (`distributedEnabled` / `distributedTimeoutMs` / `apiKeyLocalCacheSize` / `endUserLocalCacheSize` / `endUserFingerprintLength`): a non-null value returns HTTP 400 + `errorCode=RESTART_REQUIRED`, and **the whole request is rejected** (no partial write)
+- `endUserMissingIdentity` accepts only `SKIP` / `REJECT` (case-insensitive); anything else → HTTP 400 + `errorCode=INVALID_REQUEST`
+- `endUserRequestsPerMinute` must be ≥ 1, otherwise HTTP 400 + `errorCode=INVALID_REQUEST`
+- An entirely empty body → HTTP 400 + `errorCode=INVALID_REQUEST`
+
+### Base Path: `/api/auth/api-keys`
 
 #### `GET /api/auth/api-keys`
 List all API keys.
@@ -732,7 +799,7 @@ Get the current quota configuration snapshot (including runtime overrides).
   "data": {
     "enabled": true,
     "failOpen": true,
-    "windows": ["MINUTE", "HOUR", "DAY", "MONTH"],
+    "windows": ["HOUR", "DAY", "MONTH"],
     "flushIntervalSeconds": 60,
     "retention": {
       "minute": "1d",
@@ -764,7 +831,7 @@ Update quota configuration at runtime (partial update; only non-null fields take
 {
   "enabled": true,
   "failOpen": true,
-  "windows": ["MINUTE", "HOUR", "DAY"],
+  "windows": ["HOUR", "DAY", "MONTH"],
   "flushIntervalSeconds": null,
   "distributedEnabled": null,
   "distributedKeyPrefix": null,
@@ -775,6 +842,8 @@ Update quota configuration at runtime (partial update; only non-null fields take
 ```
 
 - Hot-editable fields: `enabled`, `failOpen`, `windows`
+  (since v3.8.6 the ledger no longer judges the per-minute rate: a `MINUTE` entry in `windows` is not counted,
+  the per-minute ceiling belongs to the `config:ratelimit` limiters)
 - Restart-required fields (`distributedEnabled` / `distributedKeyPrefix` / `distributedTimeoutMs` / `distributedDegradeToLocal` / `retention` / `flushIntervalSeconds`): if any non-null value is sent, the request returns HTTP 400 + `errorCode=RESTART_REQUIRED` with the specific field names in the message
 - All-null body → HTTP 400 + `errorCode=INVALID_REQUEST`
 
@@ -803,7 +872,7 @@ Query the quota ledger runtime status.
     "degraded": false,
     "degradedReason": "",
     "failOpen": true,
-    "windows": ["MINUTE", "HOUR", "DAY", "MONTH"],
+    "windows": ["HOUR", "DAY", "MONTH"],
     "distributed": {
       "enabled": false,
       "keyPrefix": "jairouter:quota",

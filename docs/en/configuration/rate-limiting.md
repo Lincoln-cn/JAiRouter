@@ -534,6 +534,39 @@ single-script check — see [Multi-replica deployment](../deployment/multi-repli
 - **No per-key overrides in v1**: there is one global allowance; per-key tuning is deferred until there is a
   real need.
 
+## Per-API-Key per-minute limit (v3.8.6, on by default)
+
+The **global** per-minute ceiling for one API Key, and the only place `rateLimitPerMinute` is evaluated. Before v3.8.6 the same value was judged twice (the in-process sliding window in the auth chain and the quota ledger's minute window), and the two disagreed across replicas; it is now a single path.
+
+### Configuration
+
+```yaml
+ratelimit:
+  api-key:
+    enabled: true                # master switch, defaults to true
+    local-cache-size: 50000      # local counter bound without Redis (requires restart)
+```
+
+### Where it runs and what a rejection looks like
+
+It runs **after authentication and before the end-user limit** (whole-key ceiling first, then per-user ceiling), earlier than the service-level reservation and the response-cache read — cache hits are rate limited too. Exceeding it returns `429` with error code `RATE_LIMITED_API_KEY` plus `Retry-After` (until the next whole minute), `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`.
+
+### Multiple replicas
+
+With `jairouter.ratelimit.distributed.enabled=true` all replicas share one Redis fixed-minute window and `rateLimitPerMinute` is the **true global ceiling**; without it each replica keeps its own, so the effective allowance is roughly the configured value × replica count. See [multi-replica deployment](../deployment/multi-replica.md).
+
+### Division of labour with the quota ledger
+
+The quota ledger uses **hour / day / month** windows and only counts volume; per-minute rate is **no longer recorded there** (since v3.8.6). Listing `minute` in `jairouter.quota.windows` does not make the ledger judge it.
+
+## Runtime configuration page (v3.8.6)
+
+The console page "Traffic Governance → Rate Limiting → Rate Limit Config" (`/rate-limiters/config`, permission codes `config:ratelimit:read` / `config:ratelimit:write`) reads and updates the switches and thresholds of both layers above without editing files or restarting.
+
+- **Hot-editable**: `api-key.enabled`, `end-user.enabled`, `end-user.requests-per-minute`, `end-user.header-enabled`, `end-user.missing-identity`.
+- **Restart required**: `distributed.enabled`, `distributed.timeout-ms`, both `local-cache-size` values and `fingerprint-length` — these are fixed when the bean is wired or the counter is built. The page marks them, and a request carrying any of them is rejected as a whole (`RESTART_REQUIRED`, no partial write).
+- The page changes runtime properties only; it does **not** write back to the YAML under `config/`, so a restart reverts to the files. Update the configuration file too if the change should persist.
+
 ## Multi-Layer Rate Limiting Configuration
 
 ### Layered Rate Limiting Strategy

@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAut
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -17,8 +18,8 @@ import static org.mockito.Mockito.mock;
 /**
  * v3.5.2 PR-2: {@link EndUserRateLimitConfiguration} 装配测试。
  *
- * <p>覆盖三条装配判定：默认关闭时上下文里没有相关 Bean（零行为变更）、开启且无 Redis 时回落
- * 本地计数、开启且声明分布式且存在 Redis 连接工厂时用 Redis 计数。</p>
+ * <p>覆盖三条装配判定：默认关闭时仍注册 Bean 但判定直接跳过（v3.8.6 起改为恒装配，
+ * 以便管理页面热开）、无 Redis 时回落本地计数、声明分布式且存在 Redis 连接工厂时用 Redis 计数。</p>
  *
  * @author JAiRouter Team
  * @since 3.5.2
@@ -31,12 +32,19 @@ class EndUserRateLimitConfigurationTest {
             .withUserConfiguration(EndUserRateLimitProperties.class, EndUserRateLimitConfiguration.class);
 
     @Test
-    @DisplayName("默认关闭：不注册计数器与服务，其余组件不受影响")
-    void disabledByDefault_registersNothing() {
+    @DisplayName("默认关闭：仍注册计数器与服务，但判定直接跳过（供页面热开）")
+    void disabledByDefault_stillRegistersButDoesNotJudge() {
         runner.run(context -> {
-            assertFalse(context.containsBean("endUserRateLimitCounter"));
-            assertFalse(context.containsBean("endUserRateLimitService"));
-            assertTrue(context.getBeansOfType(EndUserRateLimitCounter.class).isEmpty());
+            assertTrue(context.containsBean("endUserRateLimitCounter"));
+            assertTrue(context.containsBean("endUserRateLimitService"));
+
+            final EndUserRateLimitProperties properties =
+                    context.getBean(EndUserRateLimitProperties.class);
+            assertFalse(properties.isEnabled());
+
+            final EndUserRateLimitService service = context.getBean(EndUserRateLimitService.class);
+            assertTrue(service.evaluate("key-1", null, "user-1", ServiceType.chat, false).isEmpty(),
+                    "关闭时每次判定都应直接跳过：热路径行为与「Bean 不存在」等价");
         });
     }
 

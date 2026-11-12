@@ -3,7 +3,6 @@ package org.unreal.modelrouter.router.ratelimit.apikey;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
@@ -19,6 +18,12 @@ import java.time.Duration;
 
 /**
  * API Key 级每分钟限流装配（{@code jairouter.ratelimit.api-key.enabled}，默认开启）。
+ *
+ * <p><b>为什么恒装配</b>：装配期用 {@code @ConditionalOnProperty} 关掉 Bean 会让管理面的开关
+ * 变成「改了要重启」——页面把 {@code jairouter.ratelimit.api-key.enabled} 改回 {@code true}
+ * 之后容器里根本没有这个 Bean，主链路拿不到它，开关看起来生效其实没生效。因此本类恒注册，
+ * 由 {@link ApiKeyMinuteRateLimitService#isEnabled()} 在每次判定前读配置决定是否真的判定，
+ * 关闭只是「不做判定」，不是「没有 Bean」。</p>
  *
  * <p><b>兼容性约束</b>：本类<b>不</b>把计数器注册成独立 Bean。{@code EndUserRateLimitConfiguration}
  * 的 {@code endUserRateLimitService(...)} 以 <em>类型</em>（参数名 {@code counter}）注入
@@ -37,8 +42,6 @@ import java.time.Duration;
  */
 @Slf4j
 @Configuration
-@ConditionalOnProperty(prefix = "jairouter.ratelimit.api-key", name = "enabled",
-        havingValue = "true", matchIfMissing = true)
 public class ApiKeyMinuteRateLimitConfiguration {
 
     /**

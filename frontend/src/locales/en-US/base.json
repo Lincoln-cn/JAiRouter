@@ -101,6 +101,7 @@
     "usage": "Usage",
     "loadBalancing": "Load Balancing",
     "rateLimiting": "Rate Limiting",
+    "rateLimitingConfig": "Rate-limit Config",
     "circuitBreaking": "Circuit Breakers"
   },
   "tabs": {
@@ -173,6 +174,7 @@
     "exceptionDetail": "Exception Detail",
     "exceptionStatistics": "Exception Statistics",
     "rateLimiterMonitoring": "Real-time Monitoring",
+    "rateLimiterConfig": "Rate-limit Config",
     "slowQueryAnalysis": "Slow Query Analysis",
     "callHistoryDashboard": "Call History Dashboard",
     "callHistoryList": "Call History List",

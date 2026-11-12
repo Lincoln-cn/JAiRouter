@@ -225,13 +225,19 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/rate-limiters/monitoring',
         title: 'menu.rateLimiting',
-        permission: 'rl:monitoring:read',
+        permission: ['rl:monitoring:read', 'config:ratelimit:read'],
         tabs: [
           {
             key: 'monitoring',
             labelKey: 'menu.rateLimiting',
             to: '/rate-limiters/monitoring',
             permission: 'rl:monitoring:read'
+          },
+          {
+            key: 'config',
+            labelKey: 'menu.rateLimitingConfig',
+            to: '/rate-limiters/config',
+            permission: 'config:ratelimit:read'
           }
         ]
       },

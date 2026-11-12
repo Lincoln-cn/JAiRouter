@@ -6,6 +6,7 @@ import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 import org.unreal.modelrouter.router.ratelimit.enduser.EndUserRateLimitCounter;
+import org.unreal.modelrouter.router.ratelimit.enduser.RedisEndUserRateLimitCounter;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -175,6 +176,18 @@ public class ApiKeyMinuteRateLimitService {
      */
     public boolean isEnabled() {
         return properties != null && properties.isEnabled();
+    }
+
+    /**
+     * 计数后端名称（管理面展示用）。
+     *
+     * <p>装配期由 {@link ApiKeyMinuteRateLimitConfiguration} 二选一，运行期不再切换 ——
+     * 切换后端要重建计数器对象，属「改配置需重启」的那一档。</p>
+     *
+     * @return {@code redis} 或 {@code local}
+     */
+    public String backendName() {
+        return counter instanceof RedisEndUserRateLimitCounter ? "redis" : "local";
     }
 
     /**

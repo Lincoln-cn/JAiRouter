@@ -266,7 +266,7 @@ Error bodies are protocol-shaped per surface: on `/v1/messages` an Anthropic-sha
 - **API key** — header `X-API-Key`. Gateway credentials are separate from downstream provider keys:
   `x-api-key` is consumed by the gateway and never forwarded, so per-instance downstream credentials
   belong in the instance's own `headers.Authorization`.
-- **RBAC** — data-driven: 63 permission codes, 4 role templates (`ADMIN` / `OPERATOR` / `USER` /
+- **RBAC** — data-driven: 65 permission codes, 4 role templates (`ADMIN` / `OPERATOR` / `USER` /
   `VIEWER`), a URL rule matrix plus method-level `@PreAuthorize`. Requests that match no rule follow
   `jairouter.security.rbac.unmatched-policy`, whose default is `DENY_ALL`; `ROLE_ADMIN` short-circuits
   everything. `/v1/**` is authenticated but intentionally outside the permission matrix.

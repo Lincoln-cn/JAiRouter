@@ -78,6 +78,10 @@ public final class PermissionCodes {
     public static final String CONFIG_QUOTA_READ = "config:quota:read";
     /** 配额配置-写 */
     public static final String CONFIG_QUOTA_WRITE = "config:quota:write";
+    /** 限流配置-读（API Key 级 / 终端用户级限流的开关与阈值） */
+    public static final String CONFIG_RATELIMIT_READ = "config:ratelimit:read";
+    /** 限流配置-写 */
+    public static final String CONFIG_RATELIMIT_WRITE = "config:ratelimit:write";
 
     // ==================== lb / cb / rl（流量治理） ====================
 
@@ -197,6 +201,7 @@ public final class PermissionCodes {
             CONFIG_CACHE_READ, CONFIG_CACHE_WRITE,
             CONFIG_VALIDATION_READ, CONFIG_VALIDATION_WRITE,
             CONFIG_QUOTA_READ, CONFIG_QUOTA_WRITE,
+            CONFIG_RATELIMIT_READ, CONFIG_RATELIMIT_WRITE,
             LB_MONITORING_READ, LB_CONFIG_READ, LB_CONFIG_WRITE,
             CB_MONITORING_READ, CB_HISTORY_READ,
             RL_MONITORING_READ,

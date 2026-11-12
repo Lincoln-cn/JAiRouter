@@ -380,6 +380,7 @@ Not every setting can be changed while the gateway is running, and the ones that
 | Configuration area | Update entry point | Persisted | After restart |
 | --- | --- | --- | --- |
 | Quota | `PUT /api/config/quota` | No (in-memory property only) | **Reverts to the configuration file value** |
+| Rate limiting (per API Key / per end user) | `PUT /api/config/ratelimit` | No (in-memory property only; distributed switch, timeout, cache sizes and fingerprint length need a restart) | Reverts to the configuration file value |
 | Monitoring switches and sampling | Monitoring configuration endpoints | No (in-memory property only) | Reverts to the configuration file value |
 | Response sanitization rules | `PUT /api/config/sanitization` | Yes (persisted, then rules rebuilt) | Preserved |
 | Circuit breaker global configuration | `PUT /api/config/circuit-breaker/global-config` | Yes (persisted and mirrored to memory) | Preserved |
