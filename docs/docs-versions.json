@@ -448,13 +448,15 @@
     },
     "docs/en/deployment/kubernetes.md": {
       "FilePath": "docs/en/deployment/kubernetes.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-11-01T06:54:32.561095",
-      "ContentHash": "fb5e082b4a56cd64",
-      "GitCommit": "be150b22",
+      "Version": "1.0.5",
+      "LastModified": "2026-11-12T21:04:53.364994",
+      "ContentHash": "faf386dcbe240128",
+      "GitCommit": "eaadada2",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
+        "docs/en/deployment/database.md",
+        "docs/en/deployment/multi-replica.md",
         "docs/en/deployment/production.md",
         "docs/en/monitoring/index.md",
         "docs/en/troubleshooting/index.md",
@@ -463,10 +465,10 @@
     },
     "docs/en/deployment/multi-replica.md": {
       "FilePath": "docs/en/deployment/multi-replica.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-11-12T15:06:27.957777",
-      "ContentHash": "6d479018792b9587",
-      "GitCommit": "53ff72ac",
+      "Version": "1.0.7",
+      "LastModified": "2026-11-12T21:04:53.367034",
+      "ContentHash": "79718bc26b1b6fd6",
+      "GitCommit": "eaadada2",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -892,13 +894,14 @@
     },
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
-      "Version": "1.0.27",
-      "LastModified": "2026-11-11T19:47:54.366047",
-      "ContentHash": "a5bf967140300e53",
-      "GitCommit": "1298b46d",
+      "Version": "1.0.28",
+      "LastModified": "2026-11-12T21:04:53.748248",
+      "ContentHash": "55a887c81405117c",
+      "GitCommit": "eaadada2",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
+        "docs/en/deployment/multi-replica.md",
         "docs/en/reference/changelog.md"
       ]
     },
@@ -1599,13 +1602,15 @@
     },
     "docs/zh/deployment/kubernetes.md": {
       "FilePath": "docs/zh/deployment/kubernetes.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-11-01T06:54:33.279414",
-      "ContentHash": "5e25d8ad6a7c7923",
-      "GitCommit": "be150b22",
+      "Version": "1.0.6",
+      "LastModified": "2026-11-12T21:04:54.156751",
+      "ContentHash": "6ad52fce10ad6470",
+      "GitCommit": "eaadada2",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
+        "docs/zh/deployment/database.md",
+        "docs/zh/deployment/multi-replica.md",
         "docs/zh/deployment/production.md",
         "docs/zh/monitoring/index.md",
         "docs/zh/troubleshooting/index.md",
@@ -1614,10 +1619,10 @@
     },
     "docs/zh/deployment/multi-replica.md": {
       "FilePath": "docs/zh/deployment/multi-replica.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-11-12T15:06:28.686001",
-      "ContentHash": "31f3c9620ccc24b4",
-      "GitCommit": "53ff72ac",
+      "Version": "1.0.7",
+      "LastModified": "2026-11-12T21:04:54.158924",
+      "ContentHash": "49fd39e2a67201d4",
+      "GitCommit": "eaadada2",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2051,13 +2056,14 @@
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
-      "Version": "1.0.27",
-      "LastModified": "2026-11-11T19:47:55.136256",
-      "ContentHash": "daa4232622de4c2d",
-      "GitCommit": "1298b46d",
+      "Version": "1.0.28",
+      "LastModified": "2026-11-12T21:04:54.560824",
+      "ContentHash": "60a2625fb79e70ea",
+      "GitCommit": "eaadada2",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
+        "docs/zh/deployment/multi-replica.md",
         "docs/zh/reference/changelog.md"
       ]
     },
@@ -7936,7 +7942,55 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-12T15:06:29.080386",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/kubernetes.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T21:04:53.365003",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/multi-replica.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T21:04:53.367039",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/roadmap.md",
+      "OldVersion": "1.0.27",
+      "NewVersion": "1.0.28",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T21:04:53.748255",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/kubernetes.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T21:04:54.156758",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/multi-replica.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T21:04:54.158929",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/roadmap.md",
+      "OldVersion": "1.0.27",
+      "NewVersion": "1.0.28",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T21:04:54.560831",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-12T15:06:29.218243"
+  "last_updated": "2026-11-12T21:04:54.748922"
 }
