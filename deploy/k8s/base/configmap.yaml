@@ -11,6 +11,12 @@ data:
   REDIS_HOST: "redis"
   REDIS_PORT: "6379"
   REDIS_ENABLED: "true"
+  # 共享数据库（多副本的硬前置条件，issue #1109）。指向同目录 postgres.yaml 里的 StatefulSet。
+  # 换托管实例（RDS / Cloud SQL）时只改这两行；密码从 Secret 注入，见 deployment.yaml 的 DATABASE_PASSWORD。
+  # 不设 DATABASE_URL 时应用会回落到容器内 H2 单文件库 —— 多副本下即"每个 Pod 一份数据"，
+  # 在 A 副本新建的 API Key 在 B 副本不存在，控制台改的配置只有改的那个副本生效。
+  DATABASE_URL: "jdbc:postgresql://jairouter-postgres:5432/jairouter"
+  DATABASE_USERNAME: "jairouter"
   # 多副本共享态自检（见 docs/zh/deployment/multi-replica.md）：
   # WARN = 启动告警但不改 /actuator/health；确认要让编排层感知时改为 FAIL。
   JAIROUTER_SHARED_STATE_MODE: "WARN"

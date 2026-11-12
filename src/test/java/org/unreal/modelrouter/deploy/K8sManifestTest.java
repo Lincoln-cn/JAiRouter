@@ -36,6 +36,14 @@ class K8sManifestTest {
 
     private static final Path BASE = Paths.get("deploy", "k8s", "base");
 
+    /**
+     * 迁移 Job 的独立 kustomization 目录（issue #1111）。
+     *
+     * <p>Job 必须早于 Deployment 完成，而 kustomize 不保证 apply 顺序，所以它被移出 base、
+     * 由 deploy/k8s/apply.sh 按「apply migrate → wait → apply base」串起来。</p>
+     */
+    private static final Path MIGRATE = Paths.get("deploy", "k8s", "migrate");
+
     /** 与 config/common/server.yml 的 spring.lifecycle.timeout-per-shutdown-phase 一致 */
     private static final long SHUTDOWN_PHASE_SECONDS = 30L;
 
@@ -114,7 +122,8 @@ class K8sManifestTest {
     @Test
     @DisplayName("迁移 Job 用专用入口（migrate profile），且不再用超时兜底")
     void migrationJobUsesDedicatedEntryWithoutDeadline() throws IOException {
-        Map<String, Object> job = findDoc("migration-job.yaml", "Job");
+        // issue #1111：Job 已移出 base，独立在 deploy/k8s/migrate/，由 apply.sh 保证顺序。
+        Map<String, Object> job = findDocIn(MIGRATE, "migration-job.yaml", "Job");
         Map<String, Object> spec = asMap(job.get("spec"));
 
         // issue #193：有了真正的 migrate-only 入口（跑完即退出、退出码反映成败），
@@ -154,6 +163,7 @@ class K8sManifestTest {
             "jairouter.quota.distributed.enabled",
             "jairouter.persistence.redis.enabled",
             "jairouter.ratelimit.distributed.enabled",
+            "jairouter.semantic-cache.redis.enabled",
         };
         for (String key : requiredSwitches) {
             String leaf = key.substring(key.lastIndexOf('.') + 1);
@@ -162,7 +172,83 @@ class K8sManifestTest {
         }
     }
 
+    @Test
+    @DisplayName("base：自带共享数据库，否则多副本就是各存各的数据（#1109）")
+    void baseShipsSharedDatabase() throws IOException {
+        List<Object> resources = asList(kustomization("base").get("resources"));
+        List<String> names = new ArrayList<>();
+        for (Object item : resources) {
+            names.add(String.valueOf(item));
+        }
+        assertTrue(names.contains("postgres.yaml"),
+                "base 必须下发共享 PostgreSQL：多副本下各 Pod 各用 H2 时，"
+                        + "在 A 副本建的 API Key 在 B 副本不存在（issue #1109）。实际: " + names);
+
+        Map<String, Object> configMap = findDoc("configmap.yaml", "ConfigMap", "jairouter-config");
+        Map<String, Object> data = asMap(configMap.get("data"));
+        String databaseUrl = String.valueOf(data.get("DATABASE_URL"));
+        assertTrue(databaseUrl.startsWith("jdbc:postgresql://"),
+                "jairouter-config 的 DATABASE_URL 必须指向 PostgreSQL，实际: " + databaseUrl);
+        assertTrue(String.valueOf(data.get("DATABASE_USERNAME")).length() > 0,
+                "DATABASE_USERNAME 必须随 ConfigMap 下发");
+
+        // 密码不能出现在 ConfigMap 里，必须走 Secret。
+        assertNull(data.get("DATABASE_PASSWORD"),
+                "密码不得写进 ConfigMap，应由 Secret 注入");
+        boolean passwordFromSecret = false;
+        for (Object item : asList(firstContainer("deployment.yaml").get("env"))) {
+            Map<String, Object> entry = asMap(item);
+            if (!"DATABASE_PASSWORD".equals(entry.get("name"))) {
+                continue;
+            }
+            Map<String, Object> secretRef = asMap(asMap(entry.get("valueFrom")).get("secretKeyRef"));
+            assertEquals("jairouter-postgres", secretRef.get("name"),
+                    "DATABASE_PASSWORD 应引用 postgres.yaml 里的 Secret");
+            assertEquals("POSTGRES_PASSWORD", secretRef.get("key"));
+            passwordFromSecret = true;
+        }
+        assertTrue(passwordFromSecret, "Deployment 必须从 Secret 注入 DATABASE_PASSWORD");
+    }
+
+    @Test
+    @DisplayName("base：不含迁移 Job，避免与 Deployment 抢 DDL（#1111）")
+    void baseDoesNotShipMigrationJob() throws IOException {
+        List<Object> resources = asList(kustomization("base").get("resources"));
+        List<String> names = new ArrayList<>();
+        for (Object item : resources) {
+            names.add(String.valueOf(item));
+        }
+        assertTrue(!names.contains("migration-job.yaml"),
+                "迁移 Job 不得出现在 base：kubectl apply 不保证顺序，"
+                        + "Deployment 会先起来各跑各的 Flyway。它应在 deploy/k8s/migrate 独立应用。实际: " + names);
+        assertTrue(!Files.exists(BASE.resolve("migration-job.yaml")),
+                "migration-job.yaml 不应留在 base 目录（K8sManifestTest 也从 migrate 目录读它）");
+    }
+
+    @Test
+    @DisplayName("migrate：独立 kustomization 只包含迁移 Job")
+    void migrateKustomizationIsStandalone() throws IOException {
+        List<Object> resources = asList(kustomization("migrate").get("resources"));
+        List<String> names = new ArrayList<>();
+        for (Object item : resources) {
+            names.add(String.valueOf(item));
+        }
+        assertEquals(List.of("migration-job.yaml"), names,
+                "migrate 目录应只含迁移 Job：混进 Deployment 就又回到「谁先谁后看运气」");
+        assertEquals("jairouter", kustomization("migrate").get("namespace"),
+                "migrate 与 base 必须同一 namespace，否则 Job 读不到 base 的 ConfigMap/Secret");
+    }
+
     // ---------- 辅助 ----------
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> kustomization(final String dirName) throws IOException {
+        Path file = Paths.get("deploy", "k8s", dirName, "kustomization.yaml");
+        assertTrue(Files.exists(file), "kustomization 不存在: " + file.toAbsolutePath());
+        Object doc = new Yaml().load(Files.readString(file));
+        assertTrue(doc instanceof Map, "kustomization 应解析为映射: " + file);
+        return (Map<String, Object>) doc;
+    }
 
     private static Map<String, Object> podSpec(final String fileName) throws IOException {
         Map<String, Object> deployment = findDoc(fileName, "Deployment");
@@ -197,10 +283,10 @@ class K8sManifestTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> findDoc(final String fileName,
-                                               final String kind,
-                                               final String... name) throws IOException {
-        for (Map<String, Object> doc : loadAll(fileName)) {
+    private static Map<String, Object> findDocIn(final Path dir, final String fileName,
+                                                 final String kind,
+                                                 final String... name) throws IOException {
+        for (Map<String, Object> doc : loadAllIn(dir, fileName)) {
             if (!kind.equals(doc.get("kind"))) {
                 continue;
             }
@@ -212,13 +298,20 @@ class K8sManifestTest {
             }
             return doc;
         }
-        fail("未找到 kind=" + kind + " 的清单，文件: " + fileName);
+        fail("未找到 kind=" + kind + " 的清单，文件: " + dir.resolve(fileName));
         return null;
     }
 
     @SuppressWarnings("unchecked")
-    private static List<Map<String, Object>> loadAll(final String fileName) throws IOException {
-        Path file = BASE.resolve(fileName);
+    private static Map<String, Object> findDoc(final String fileName,
+                                               final String kind,
+                                               final String... name) throws IOException {
+        return findDocIn(BASE, fileName, kind, name);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> loadAllIn(final Path dir, final String fileName) throws IOException {
+        Path file = dir.resolve(fileName);
         assertTrue(Files.exists(file), "清单文件不存在: " + file.toAbsolutePath());
         List<Map<String, Object>> docs = new ArrayList<>();
         try (InputStream in = Files.newInputStream(file)) {
@@ -230,5 +323,9 @@ class K8sManifestTest {
         }
         assertTrue(!docs.isEmpty(), "清单文件为空: " + file);
         return docs;
+    }
+
+    private static List<Map<String, Object>> loadAll(final String fileName) throws IOException {
+        return loadAllIn(BASE, fileName);
     }
 }

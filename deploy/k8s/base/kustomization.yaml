@@ -8,17 +8,24 @@ kind: Kustomization
 # 需要模板化能力（多环境差异很大）时可在此基础上引入 Helm，或改用 overlays 组合
 # （本目录已给出 dev/prod 两个 overlay 的用法）。
 #
-# 多副本部署的前置条件：必须先落地共享数据库（见 docs/zh/deployment/multi-replica.md）。
-# 多副本下本机 H2 单文件库物理上不成立，因此 base 的 data/logs 卷使用 emptyDir
-# （每副本独立）——不要在未切共享 DB 前把它换成共享 PVC。
+# 本目录现在自带共享数据库（postgres.yaml）：多副本把 API Key、实例配置、审计记录放在同一个库里，
+# 各副本各用 H2 时数据互不可见（issue #1109）。base 的 2 副本依赖这个 PG 与共享 Redis 才成立；
+# 换托管 PG 就改 configmap 的 DATABASE_URL/USERNAME 与 postgres 的 Secret，并删掉 postgres.yaml。
+#
+# data/logs 卷仍是 emptyDir（每副本独立）——那是给本机缓存与日志用的，不是状态载体；
+# 不要在未切共享 DB 前把它们换成共享 PVC。
+#
+# 迁移 Job 不在本清单里（issue #1111）：它必须**先跑完**再滚动 Deployment，而 kustomize
+# 不提供 apply 顺序保证，把两者放在同一份清单里等于让每个副本自己去抢 DDL。
+# 部署顺序见 deploy/k8s/apply.sh：先 apply migrate/，等 Job 完成，再 apply 本目录。
 
 namespace: jairouter
 
 resources:
   - serviceaccount.yaml
+  - postgres.yaml
   - configmap.yaml
   - deployment.yaml
   - service.yaml
   - ingress.yaml
   - pdb.yaml
-  - migration-job.yaml

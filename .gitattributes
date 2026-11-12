@@ -11,3 +11,6 @@
 # 关掉这两条路径的行尾转换：仓库里存什么、工作副本就是什么（生成器写 LF，两侧一致）。
 frontend/auto-imports.d.ts -text
 frontend/components.d.ts -text
+
+# Shell 脚本一律 LF：CRLF 会让 set -euo pipefail 与 shebang 解析失败（deploy/k8s/apply.sh 需在 WSL/Git Bash 里直接跑）。
+*.sh text eol=lf

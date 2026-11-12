@@ -1,0 +1,115 @@
+# 共享 PostgreSQL —— 多副本部署的硬前置条件（issue #1109）。
+#
+# 为什么必须随清单一起给：网关把 API Key、实例配置、审计记录放在同一个数据库里。
+# 多副本各用容器内 H2 单文件库时，每个 Pod 都看到自己那份数据——在 A 副本新建的 Key
+# 在 B 副本不存在，控制台改的配置只有改的那个副本生效。这不是"性能差一点"，是功能错。
+#
+# 这是**参考清单**，不是生产高可用方案：
+#   - 单节点 StatefulSet + PVC，只够验证与中小规模部署；
+#   - 生产建议换托管实例（RDS / Cloud SQL 等）或 operator（如 CloudNativePG），
+#     然后把 DATABASE_URL / DATABASE_USERNAME / DATABASE_PASSWORD 指过去即可，
+#     并删除本文件里的三个对象。
+#
+# 密码：下面 Secret 里是占位值。生产请用
+#   kubectl create secret generic jairouter-postgres -n jairouter \
+#     --from-literal=POSTGRES_PASSWORD="$(openssl rand -base64 24)"
+# 覆盖它，或用 sealed-secrets / external-secrets 托管。
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jairouter-postgres
+  labels:
+    app.kubernetes.io/name: jairouter-postgres
+    app.kubernetes.io/component: database
+type: Opaque
+stringData:
+  POSTGRES_PASSWORD: change-me-postgres
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jairouter-postgres
+  labels:
+    app.kubernetes.io/name: jairouter-postgres
+    app.kubernetes.io/component: database
+spec:
+  selector:
+    app.kubernetes.io/name: jairouter-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: jairouter-postgres
+  labels:
+    app.kubernetes.io/name: jairouter-postgres
+    app.kubernetes.io/component: database
+spec:
+  serviceName: jairouter-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: jairouter-postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: jairouter-postgres
+        app.kubernetes.io/component: database
+    spec:
+      # postgres:16-alpine 里 postgres 用户的 uid/gid 都是 70。
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+          env:
+            - name: POSTGRES_DB
+              value: jairouter
+            - name: POSTGRES_USER
+              value: jairouter
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jairouter-postgres
+                  key: POSTGRES_PASSWORD
+            # 子目录放 PGDATA：挂载点根目录上常有 lost+found，PG 初始化会拒绝非空目录。
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U jairouter -d jairouter"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U jairouter -d jairouter"]
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
