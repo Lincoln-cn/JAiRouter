@@ -16,10 +16,10 @@
     },
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.29",
-      "LastModified": "2026-11-11T19:47:53.794254",
-      "ContentHash": "c6533584ed77cfc6",
-      "GitCommit": "1298b46d",
+      "Version": "1.0.30",
+      "LastModified": "2026-11-12T15:06:27.743190",
+      "ContentHash": "73581e9824909cf6",
+      "GitCommit": "53ff72ac",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -57,10 +57,10 @@
     },
     "docs/en/api-reference/management-api.md": {
       "FilePath": "docs/en/api-reference/management-api.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-11-09T15:02:40.946656",
-      "ContentHash": "e9af2517c1758702",
-      "GitCommit": "f425da6b",
+      "Version": "1.0.7",
+      "LastModified": "2026-11-12T15:06:27.762903",
+      "ContentHash": "8f56a3eba9ee4c1b",
+      "GitCommit": "53ff72ac",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -143,10 +143,10 @@
     },
     "docs/en/configuration/dynamic-config.md": {
       "FilePath": "docs/en/configuration/dynamic-config.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-11-07T16:47:24.060614",
-      "ContentHash": "63a3b4eab11f1fc3",
-      "GitCommit": "e831ffdb",
+      "Version": "1.0.4",
+      "LastModified": "2026-11-12T15:06:27.800084",
+      "ContentHash": "b3d7cdd64fc5601c",
+      "GitCommit": "53ff72ac",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -245,10 +245,10 @@
     },
     "docs/en/configuration/quota.md": {
       "FilePath": "docs/en/configuration/quota.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:32.064495",
-      "ContentHash": "7e859fd1a92b94f9",
-      "GitCommit": "b54650d4",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-12T15:06:27.834741",
+      "ContentHash": "082181e3d28f3275",
+      "GitCommit": "53ff72ac",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -260,10 +260,10 @@
     },
     "docs/en/configuration/rate-limiting.md": {
       "FilePath": "docs/en/configuration/rate-limiting.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-30T00:30:37.732263",
-      "ContentHash": "15959f29c6d1ea93",
-      "GitCommit": "770361cd",
+      "Version": "1.0.7",
+      "LastModified": "2026-11-12T15:06:27.837116",
+      "ContentHash": "759e0b3e60aa87c8",
+      "GitCommit": "53ff72ac",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -463,10 +463,10 @@
     },
     "docs/en/deployment/multi-replica.md": {
       "FilePath": "docs/en/deployment/multi-replica.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-11-07T18:49:31.209838",
-      "ContentHash": "8c029c5d4e065d10",
-      "GitCommit": "8c6df474",
+      "Version": "1.0.6",
+      "LastModified": "2026-11-12T15:06:27.957777",
+      "ContentHash": "6d479018792b9587",
+      "GitCommit": "53ff72ac",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": []
@@ -904,10 +904,10 @@
     },
     "docs/en/security/api-key-management.md": {
       "FilePath": "docs/en/security/api-key-management.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-30T16:00:39.002724",
-      "ContentHash": "040cddfa1d0222ac",
-      "GitCommit": "14156038",
+      "Version": "1.0.3",
+      "LastModified": "2026-11-12T15:06:28.313411",
+      "ContentHash": "3cb7e8e62aa5152e",
+      "GitCommit": "53ff72ac",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -992,10 +992,10 @@
     },
     "docs/en/security/rbac-permissions.md": {
       "FilePath": "docs/en/security/rbac-permissions.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T15:24:48.504734",
-      "ContentHash": "89314d856ad9091c",
-      "GitCommit": "51b84ed6",
+      "Version": "1.0.2",
+      "LastModified": "2026-11-12T15:06:28.342947",
+      "ContentHash": "fc0b83de40fc9d42",
+      "GitCommit": "53ff72ac",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1210,10 +1210,10 @@
     },
     "docs/zh/api-reference/management-api.md": {
       "FilePath": "docs/zh/api-reference/management-api.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-11-09T15:02:41.654140",
-      "ContentHash": "032c31080f466008",
-      "GitCommit": "f425da6b",
+      "Version": "1.0.7",
+      "LastModified": "2026-11-12T15:06:28.494022",
+      "ContentHash": "84bd5ea42bd898d9",
+      "GitCommit": "53ff72ac",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1296,10 +1296,10 @@
     },
     "docs/zh/configuration/dynamic-config.md": {
       "FilePath": "docs/zh/configuration/dynamic-config.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-11-07T16:47:24.600357",
-      "ContentHash": "2f2ac9d9f06d69c4",
-      "GitCommit": "e831ffdb",
+      "Version": "1.0.5",
+      "LastModified": "2026-11-12T15:06:28.529780",
+      "ContentHash": "ad3a9ec3ecd128ea",
+      "GitCommit": "53ff72ac",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1397,10 +1397,10 @@
     },
     "docs/zh/configuration/quota.md": {
       "FilePath": "docs/zh/configuration/quota.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:37.909696",
-      "ContentHash": "a75ef23481df8c5e",
-      "GitCommit": "b54650d4",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-12T15:06:28.562576",
+      "ContentHash": "890ba58a76058312",
+      "GitCommit": "53ff72ac",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1412,10 +1412,10 @@
     },
     "docs/zh/configuration/rate-limiting.md": {
       "FilePath": "docs/zh/configuration/rate-limiting.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-10-30T00:30:38.467559",
-      "ContentHash": "000935e715837cf4",
-      "GitCommit": "770361cd",
+      "Version": "1.0.7",
+      "LastModified": "2026-11-12T15:06:28.564870",
+      "ContentHash": "b518ca0f9e8c69eb",
+      "GitCommit": "53ff72ac",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1614,10 +1614,10 @@
     },
     "docs/zh/deployment/multi-replica.md": {
       "FilePath": "docs/zh/deployment/multi-replica.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-11-07T18:49:31.876364",
-      "ContentHash": "2624f49045da2a91",
-      "GitCommit": "8c6df474",
+      "Version": "1.0.6",
+      "LastModified": "2026-11-12T15:06:28.686001",
+      "ContentHash": "31f3c9620ccc24b4",
+      "GitCommit": "53ff72ac",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2063,10 +2063,10 @@
     },
     "docs/zh/security/api-key-management.md": {
       "FilePath": "docs/zh/security/api-key-management.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-10-30T16:00:39.540745",
-      "ContentHash": "fe1df68f353398b3",
-      "GitCommit": "14156038",
+      "Version": "1.0.3",
+      "LastModified": "2026-11-12T15:06:29.052309",
+      "ContentHash": "e4bff979ba25155a",
+      "GitCommit": "53ff72ac",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2152,10 +2152,10 @@
     },
     "docs/zh/security/rbac-permissions.md": {
       "FilePath": "docs/zh/security/rbac-permissions.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T15:24:51.759856",
-      "ContentHash": "bf185d9c6b073fd0",
-      "GitCommit": "51b84ed6",
+      "Version": "1.0.2",
+      "LastModified": "2026-11-12T15:06:29.080377",
+      "ContentHash": "f1dd1cb015673e37",
+      "GitCommit": "53ff72ac",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -7816,7 +7816,127 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-12T02:15:04.664162",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.29",
+      "NewVersion": "1.0.30",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T15:06:27.743201",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/management-api.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T15:06:27.762914",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/dynamic-config.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T15:06:27.800096",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/quota.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T15:06:27.834751",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/rate-limiting.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T15:06:27.837122",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/multi-replica.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T15:06:27.957788",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/api-key-management.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T15:06:28.313421",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/rbac-permissions.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T15:06:28.342958",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/management-api.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T15:06:28.494033",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/dynamic-config.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T15:06:28.529790",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/quota.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T15:06:28.562586",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/rate-limiting.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T15:06:28.564874",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/multi-replica.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T15:06:28.686011",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/api-key-management.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T15:06:29.052319",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/rbac-permissions.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-12T15:06:29.080386",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-12T09:18:06.873850"
+  "last_updated": "2026-11-12T15:06:29.218243"
 }
