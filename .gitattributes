@@ -14,3 +14,5 @@ frontend/components.d.ts -text
 
 # Shell 脚本一律 LF：CRLF 会让 set -euo pipefail 与 shebang 解析失败（deploy/k8s/apply.sh 需在 WSL/Git Bash 里直接跑）。
 *.sh text eol=lf
+# PowerShell 脚本一律 CRLF：Windows PowerShell 5.1 对 LF 的 .ps1 在部分场景下解析异常。
+*.ps1 text eol=crlf
