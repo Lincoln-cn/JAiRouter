@@ -81,8 +81,12 @@ jobs:
         with:
           images: ${{ env.DOCKER_IMAGE_NAME }}
           tags: |
-            type=raw,value=${{ env.VERSION }}
-            type=raw,value=latest,enable={{is_default_branch}}
+            # 正式发布（release 事件）才推版本号与 latest；
+            # 手动触发（workflow_dispatch）只推 edge 与短 sha，避免开发迭代过程中
+            # 覆盖已经发布的 3.8.x / latest 镜像 —— 否则「拉 latest 验证」会拿到半成品。
+            type=raw,value=${{ env.VERSION }},enable=${{ github.event_name == 'release' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+            type=raw,value=edge,enable=${{ github.event_name == 'workflow_dispatch' }}
             type=ref,event=tag
             type=sha,prefix=,format=short
 
