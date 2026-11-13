@@ -47,8 +47,8 @@ product:         JAiRouter
 repository:      Lincoln-cn/JAiRouter
 checkout_dir:    model-router            # the local/git directory name differs from the product name
 artifact:        model-router            # Maven artifactId
-project_version: 3.8.5                   # pom.xml
-latest_release:  v3.8.5 (2026-11-12)
+project_version: 3.8.6                   # pom.xml
+latest_release:  v3.8.6 (2026-11-14)
 stack:
   backend:  Java 17 + Spring Boot 4.1.2 (WebFlux / reactive)
   frontend: Vue 3 + TypeScript + Vite, bilingual zh-CN / en-US
@@ -402,7 +402,7 @@ See the [changelog](docs/en/reference/changelog.md) for per-release notes.
 
 ## Status
 
-**Latest release: v3.8.1 (2026-11-08).** Per-release notes, upgrade notes and known limits live in the
+**Latest release: v3.8.6 (2026-11-14).** Per-release notes, upgrade notes and known limits live in the
 [changelog](docs/en/reference/changelog.md); downloads and container tags are on
 [Releases](https://github.com/Lincoln-cn/JAiRouter/releases).
 
