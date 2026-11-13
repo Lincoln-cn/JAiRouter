@@ -219,10 +219,10 @@
     },
     "docs/en/configuration/load-balancing.md": {
       "FilePath": "docs/en/configuration/load-balancing.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-11-07T16:47:24.094665",
-      "ContentHash": "7828d59b1d76b438",
-      "GitCommit": "e831ffdb",
+      "Version": "1.0.6",
+      "LastModified": "2026-11-13T13:47:56.691177",
+      "ContentHash": "6f58f4d48f746f5c",
+      "GitCommit": "dfb5f116",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1374,10 +1374,10 @@
     },
     "docs/zh/configuration/load-balancing.md": {
       "FilePath": "docs/zh/configuration/load-balancing.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-11-07T16:47:24.634887",
-      "ContentHash": "889968fba1502b9e",
-      "GitCommit": "e831ffdb",
+      "Version": "1.0.6",
+      "LastModified": "2026-11-13T13:47:57.499188",
+      "ContentHash": "7ab1a7ea7e7106c2",
+      "GitCommit": "dfb5f116",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -8006,7 +8006,23 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-13T12:31:41.669676",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/load-balancing.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-13T13:47:56.691187",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/load-balancing.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-13T13:47:57.499197",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-13T12:31:41.861297"
+  "last_updated": "2026-11-13T13:47:58.249833"
 }
