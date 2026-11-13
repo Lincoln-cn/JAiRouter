@@ -185,7 +185,7 @@ jairouter:
 > `chat` / `embedding` / `rerank` / `tts` / `stt` / `imgGen` / `imgEdit`，Key 的实际授权
 > authority 是 `ROLE_<服务类型>`。下表里的 `read` / `write` / `delete` / `admin` 是**早期格式**，
 > 仍然被接受，但会被归一化成「全部服务类型」（语义与当初的「粗粒度动作」不同）。
-
+>
 > **⚠️ 留空等于不限服务（v3.8.6 起）**：创建 Key 时不传 `permissions`，服务端会展开成全部服务类型。
 > 此前留空会原样落库 —— Key 建得出来却调不通任何服务，调用 `/v1/**` 一律返回
 > `403 Caller does not have permission for service: ...`。响应里的 `warning` 会如实提示

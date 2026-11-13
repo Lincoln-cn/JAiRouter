@@ -162,7 +162,7 @@ You can monitor API Key quota usage through:
 > key is `ROLE_<serviceType>`. The `read` / `write` / `delete` / `admin` values below are the
 > **legacy format**: they are still accepted, but they are normalized to "all service types", which
 > is not the coarse-grained action semantics they originally had.
-
+>
 > **⚠️ Empty means unrestricted (since v3.8.6)**: when a create request omits `permissions`, the
 > server expands it to all service types. Previously the empty list was stored as-is — the key was
 > created successfully but could not call anything: every `/v1/**` call returned
