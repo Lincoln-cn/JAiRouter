@@ -270,14 +270,16 @@ plan_and_apply() {
 # 这个文件含密钥，权限已设为 600，不要提交到任何仓库。
 JWT_SECRET=$jwt
 INITIAL_ADMIN_PASSWORD=$admin
-JAVA_OPTS=-Xms512m -Xmx2g -XX:+UseG1GC
+# JAVA_OPTS 必须带引号：这是被 set -a 后 source 的 shell 文件，
+# 不加引号时 shell 会把 -Xmx2g 当成独立命令执行。
+JAVA_OPTS="-Xms512m -Xmx2g -XX:+UseG1GC"
 EOF
         chmod 600 "$ENV_FILE"
         log "已生成运行时密钥（$ENV_FILE）"
     else
         log "环境文件已存在，保留原密钥（$ENV_FILE）"
         # 顺带补上后来新增的键，不动已有值。
-        grep -q '^JAVA_OPTS=' "$ENV_FILE" || printf 'JAVA_OPTS=-Xms512m -Xmx2g -XX:+UseG1GC\n' >> "$ENV_FILE"
+        grep -q '^JAVA_OPTS=' "$ENV_FILE" || printf 'JAVA_OPTS="-Xms512m -Xmx2g -XX:+UseG1GC"\n' >> "$ENV_FILE"
     fi
 
     # 只写我们真正要覆盖的键，其余交给 jar 内的 application.yml。
@@ -298,6 +300,9 @@ EOF
     fi
 
     # 安装标记：既是「这个目录归本脚本管」的凭据，也是排障时看安装参数的地方。
+    # containerName 只在 docker 模式有意义，其它模式写空行（避免运维误以为有容器）。
+    container_line=""
+    [[ "$MODE" == "docker" ]] && container_line="  \"containerName\": \"$CONTAINER_NAME\","
     cat > "$PREFIX/jairouter.json" <<EOF
 {
   "schemaVersion": 1,
@@ -308,7 +313,7 @@ EOF
   "port": $PORT,
   "profile": "$PROFILE",
   "envFile": "$ENV_FILE",
-  "containerName": "$CONTAINER_NAME",
+$container_line
   "dataDirectory": "$PREFIX/data",
   "logDirectory": "$PREFIX/logs"
 }
@@ -382,7 +387,13 @@ start_and_check() {
             "${COMPOSE[@]}" -f "$PREFIX/docker/docker-compose.yml" up -d
             ;;
         foreground)
-            setsid nohup bash -c "set -a; . '$ENV_FILE'; set +a; exec '$JAVA_BIN' \$JAVA_OPTS -jar '$JAR_DEST' --spring.profiles.active=$PROFILE --spring.config.additional-location=file:$CONFIG_DIR/" \
+            # 先 cd 到 $PREFIX：logback-spring.xml 的 LOG_PATH 是相对路径（logs），
+            # 不切换工作目录时日志会落到进程当前目录（常见是 /），而 install.json
+            # 里登记的 logDirectory 指向 $PREFIX/logs，运维会找不到日志。
+            # --server.port 必须走命令行参数：jar 内 application.yml 用 spring.config.import
+            # 导入了 config/common/server.yml（port: 8080），而 import 的优先级高于
+            # additional-location —— 只写 $CONFIG_DIR/application.yml 的话端口仍是 8080。
+            setsid nohup bash -c "cd '$PREFIX' && set -a; . '$ENV_FILE'; set +a; exec '$JAVA_BIN' \$JAVA_OPTS -jar '$JAR_DEST' --server.port=$PORT --spring.profiles.active=$PROFILE --spring.config.additional-location=file:$CONFIG_DIR/" \
                 > "$PREFIX/logs/stdout.log" 2>&1 &
             echo $! > "$PREFIX/jairouter.pid"
             log "已后台启动（pid $(cat "$PREFIX/jairouter.pid")）—— 前台模式不会随开机自启"
@@ -414,7 +425,16 @@ rollback() {
         systemd) systemctl disable --now jairouter >/dev/null 2>&1 || true
                  rm -f "$UNIT_PATH"; systemctl daemon-reload || true ;;
         docker) compose_down_safely ;;
-        foreground) [[ -f "$PREFIX/jairouter.pid" ]] && kill "$(cat "$PREFIX/jairouter.pid")" 2>/dev/null || true ;;
+        foreground)
+            if [[ -f "$PREFIX/jairouter.pid" ]]; then
+                pid="$(cat "$PREFIX/jairouter.pid")"
+                # 按进程组发信号：setsid 起的 bash 是组 leader，java 是它的子进程。
+                # 只杀 bash 会把 java 留成孤儿，继续占用 H2 文件锁（下次安装报 file is locked）。
+                kill -TERM -- "-$pid" 2>/dev/null || kill -TERM "$pid" 2>/dev/null || true
+                sleep 1
+                kill -KILL -- "-$pid" 2>/dev/null || true
+            fi
+            ;;
     esac
     die "安装未完成，已回滚。排查后可用同一命令重试（数据目录与密钥都保留）"
 }

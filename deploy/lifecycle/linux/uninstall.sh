@@ -127,14 +127,16 @@ stop_and_remove_program() {
         foreground)
             if [[ -f "$PREFIX/jairouter.pid" ]]; then
                 local pid; pid="$(cat "$PREFIX/jairouter.pid")"
-                if kill -0 "$pid" 2>/dev/null; then
-                    log "向 pid $pid 发送 SIGTERM（优雅停机，最多等 35s）"
-                    kill -TERM "$pid"
+                # 按进程组发信号：setsid 起的 bash 是组 leader，java 是它的子进程。
+                # 只杀 bash 会把 java 留成孤儿，继续占用 H2 文件锁，重装会报 file is locked。
+                if kill -0 -- "-$pid" 2>/dev/null; then
+                    log "向进程组 $pid 发送 SIGTERM（优雅停机，最多等 35s）"
+                    kill -TERM -- "-$pid"
                     local waited=0
-                    while kill -0 "$pid" 2>/dev/null && (( waited < 35 )); do sleep 1; waited=$(( waited + 1 )); done
-                    if kill -0 "$pid" 2>/dev/null; then
+                    while kill -0 -- "-$pid" 2>/dev/null && (( waited < 35 )); do sleep 1; waited=$(( waited + 1 )); done
+                    if kill -0 -- "-$pid" 2>/dev/null; then
                         warn "35s 内未退出，改发 SIGKILL —— 在途请求已中断"
-                        kill -KILL "$pid" 2>/dev/null || true
+                        kill -KILL -- "-$pid" 2>/dev/null || true
                     fi
                 else
                     warn "pid 文件里的 $pid 已不在运行"
@@ -144,12 +146,14 @@ stop_and_remove_program() {
             ;;
     esac
 
-    # jar、compose 定义、安装标记都属于「程序」，默认删；数据、日志、配置覆盖层保留。
+    # jar 与 compose 定义属于「程序」，默认删；数据、日志、配置覆盖层保留。
     rm -f "$PREFIX/lib/model-router.jar"
     rmdir "$PREFIX/lib" 2>/dev/null || true
     rm -rf "$PREFIX/docker"
-    rm -f "$PREFIX/jairouter.json"
-    log "已移除程序文件（$PREFIX/lib、$PREFIX/docker、$PREFIX/jairouter.json）"
+    # jairouter.json 保留：它是前缀归属标记，install 靠它确认「这个目录归本脚本管」。
+    # 删掉它却留下 data/logs/config，会让之后的重装被「目录已存在且无标记」挡住。
+    # --purge 走整目录删除，不依赖这条标记。
+    log "已移除程序文件（$PREFIX/lib、$PREFIX/docker）；jairouter.json 保留，作为重装时的归属凭据"
 }
 
 purge_data() {
@@ -161,6 +165,9 @@ purge_data() {
     confirm "确认继续？" || die "已取消，未删除任何数据"
 
     rm -rf "$PREFIX/data" "$PREFIX/logs" "$PREFIX/config"
+    # 归属标记也要删：非 purge 分支特意保留了它，purge 不删就会让 rmdir 失败、
+    # 目录里留一个孤立的 jairouter.json。
+    rm -f "$PREFIX/jairouter.json"
     rm -f "$ENV_FILE"
     rmdir "$ENV_DIR" 2>/dev/null || true
     rmdir "$PREFIX" 2>/dev/null || true

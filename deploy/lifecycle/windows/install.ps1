@@ -51,7 +51,10 @@ function Test-Administrator {
 function Get-JavaMajorVersion {
     $java = Get-Command java -ErrorAction SilentlyContinue
     if (-not $java) { return $null }
-    $lines = & java -version 2>&1 | Out-String
+    # java -version 把版本信息写到 stderr。PowerShell 5.1（Windows Server 默认 shell）
+    # 在 $ErrorActionPreference='Stop' 下会把 stderr 当成终止性错误（NativeCommandError），
+    # 脚本会在“探测运行时版本”这一步直接退出。交给 cmd 把两个流合并后再读输出。
+    $lines = cmd /c ('"' + $java.Source + '" -version 2>&1') | Out-String
     if ($lines -match 'version "([^"]+)"') {
         $raw = $Matches[1]
         $major = $raw.Split('.')[0]
