@@ -3,6 +3,7 @@ package org.unreal.modelrouter.config.core;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.unreal.modelrouter.config.core.manager.ConfigVersionAllocator;
 import org.unreal.modelrouter.persistence.store.StoreManager;
 
 import java.util.List;
@@ -27,9 +28,10 @@ public class VersionControlService {
     static final String CURRENT_KEY = "model-router-config";
 
     private final StoreManager storeManager;
+    private final ConfigVersionAllocator versionAllocator;
 
     /**
-     * 创建新版本：版本号 = 持久化历史里的最大值 + 1（无历史时从 1 开始），
+     * 创建新版本：版本号由 {@link ConfigVersionAllocator} 在数据库内原子分配（#1135），
      * 并把这份配置按该版本号写入历史（标记为最新）。
      *
      * @return 新版本号
@@ -71,7 +73,7 @@ public class VersionControlService {
     }
 
     private int nextVersion() {
-        return maxVersion() + 1;
+        return versionAllocator.allocate(CURRENT_KEY);
     }
 
     private int maxVersion() {

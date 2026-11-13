@@ -269,6 +269,12 @@ const router = createRouter({
           name: 'permission-management',
           component: () => import('../views/system/PermissionManagement.vue'),
           meta: { titleKey: 'route.permissionManagement', icon: 'key', permissions: ['system:permissions:read', 'system:permissions:manage'] }
+        },
+        {
+          path: 'cluster',
+          name: 'cluster-config',
+          component: () => import('../views/system/ClusterConfig.vue'),
+          meta: { titleKey: 'route.clusterConfig', icon: 'connection', permissions: ['config:cluster:read', 'config:cluster:write'] }
         }
       ]
     },

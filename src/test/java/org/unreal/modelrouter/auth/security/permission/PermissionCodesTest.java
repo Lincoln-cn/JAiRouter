@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>三类防漂移断言：
  * <ul>
- *   <li><b>总数 = 65</b>：权限码总数同时出现在 README 与中英两版 rbac-permissions 文档里，
+ *   <li><b>总数 = 67</b>：权限码总数同时出现在 README 与中英两版 rbac-permissions 文档里，
  *   改这里就必须同步改那三处（本断言是「代码侧唯一真值」的钉子）。</li>
  *   <li><b>常量集合 ≡ {@link PermissionCodes#ALL_PERMISSION_CODES}</b>：新增常量却忘记登记进清单、
  *   或清单里残留已删除的常量，都会立刻红 —— 否则该码永远不会被角色模板/ADMIN 短路覆盖。</li>
@@ -33,12 +33,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("PermissionCodes 权限码清单（#567）")
 class PermissionCodesTest {
 
-    /** 权威总数：65 = 36 个 :read + 19 个 :write + 10 个 manage/view/use。 */
-    private static final int EXPECTED_TOTAL = 65;
+    /** 权威总数：67 = 38 个 :read + 19 个 :write + 10 个 manage/view/use。 */
+    private static final int EXPECTED_TOTAL = 67;
 
     @Test
-    @DisplayName("权限码总数为 65")
-    void totalCodeCountIsSixtyFive() {
+    @DisplayName("权限码总数为 67")
+    void totalCodeCountIsSixtySeven() {
         assertEquals(EXPECTED_TOTAL, PermissionCodes.ALL_PERMISSION_CODES.size(),
                 "权限码总数变化必须同步 README 与 docs/{zh,en}/security/rbac-permissions.md 的计数");
         assertEquals(EXPECTED_TOTAL, declaredCodeConstants().size(),

@@ -3,9 +3,11 @@ package org.unreal.modelrouter.config.core.manager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.config.cluster.ClusterConfigSyncService;
 import org.unreal.modelrouter.config.core.ConfigMergeService;
 import org.unreal.modelrouter.config.version.ConfigMetadata;
 import org.unreal.modelrouter.config.version.VersionInfo;
+import org.unreal.modelrouter.common.cluster.ClusterEventBus;
 import org.unreal.modelrouter.persistence.store.StoreManager;
 import org.unreal.modelrouter.common.util.SecurityUtils;
 
@@ -38,8 +40,11 @@ public class ConfigVersionManager {
     private final VersionValidator versionValidator;
     private final VersionMetadataManager metadataManager;
     private final VersionSyncService syncService;
+    private final ConfigVersionAllocator versionAllocator;
+    private final ClusterEventBus clusterEventBus;
 
-    // 版本创建锁 - 使用 ReentrantLock 提升并发性能
+    // 版本创建锁：只在本进程内减少并发竞争（让同一副本的重复提交排队），
+    // 跨副本的唯一性由 ConfigVersionAllocator 的数据库原子递增保证（#1135）。
     private final ReentrantLock versionCreationLock = new ReentrantLock();
 
     // 记录最近版本创建的时间，用于检测短时间内的重复创建
@@ -51,13 +56,17 @@ public class ConfigVersionManager {
                                  final ConfigComparator configComparator,
                                  final VersionValidator versionValidator,
                                  final VersionMetadataManager metadataManager,
-                                 final VersionSyncService syncService) {
+                                 final VersionSyncService syncService,
+                                 final ConfigVersionAllocator versionAllocator,
+                                 final ClusterEventBus clusterEventBus) {
         this.storeManager = storeManager;
         this.configMergeService = configMergeService;
         this.configComparator = configComparator;
         this.versionValidator = versionValidator;
         this.metadataManager = metadataManager;
         this.syncService = syncService;
+        this.versionAllocator = versionAllocator;
+        this.clusterEventBus = clusterEventBus;
     }
 
     /**
@@ -162,8 +171,8 @@ public class ConfigVersionManager {
                 logger.info("创建新的配置元数据");
             }
 
-            // 内联生成新版本号
-            int newVersion = getCurrentVersion() + 1;
+            // 从数据库原子分配新版本号：并发写入时不会拿到相同的版本号（#1135）
+            int newVersion = versionAllocator.allocate(CURRENT_KEY);
             logger.info("生成新版本号：{}", newVersion);
 
             // 保存版本配置
@@ -191,6 +200,11 @@ public class ConfigVersionManager {
             logger.debug("当前活跃配置已更新");
 
             logger.info("已保存配置为新版本：{}", newVersion);
+
+            // 广播给其它副本：它们收到后立即检查版本并刷新运行时（#1132）。
+            // 单副本时 ClusterEventBus 是空实现，这里是无操作；广播失败也不能影响保存结果。
+            clusterEventBus.publish(ClusterConfigSyncService.CONFIG_CHANGED_CHANNEL,
+                    "{\"key\":\"" + CURRENT_KEY + "\",\"version\":" + newVersion + "}");
             return newVersion;
         } catch (Exception e) {
             logger.error("保存新版本配置失败", e);

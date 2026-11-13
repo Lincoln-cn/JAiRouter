@@ -229,6 +229,16 @@ public class ServerChecker {
             // 忽略追踪错误
         }
 
+        // #1137：把本轮本副本的健康判定上报到共享视图（未启用/非集群模式时 publish 内部直接返回）
+        try {
+            org.unreal.modelrouter.config.cluster.ClusterHealthShareService healthShare =
+                org.unreal.modelrouter.common.util.ApplicationContextProvider.getBean(
+                    org.unreal.modelrouter.config.cluster.ClusterHealthShareService.class);
+            healthShare.publish(serviceStateManager.getAllInstanceHealthStatus());
+        } catch (RuntimeException e) {
+            log.debug("上报本副本健康状态失败: {}", e.getMessage());
+        }
+
         log.debug("所有服务实例健康检查完成，健康服务: {}/{}, 健康实例: {}/{}, 耗时: {}ms",
             healthyServices, totalServices, healthyInstances, totalInstances, batchDuration);
         } finally {
