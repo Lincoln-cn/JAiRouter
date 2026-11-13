@@ -103,15 +103,17 @@ class PostgresFlywayMigrationEquivalenceTest {
 
             // 迁移历史：空库 = V1 + V2..V5 都是 SQL；老库 = 基线 1 + V2..V5
             assertEquals(List.of("1|SQL|true", "2|SQL|true", "3|SQL|true", "4|SQL|true", "5|SQL|true",
-                        "6|SQL|true", "7|SQL|true", "8|SQL|true", "9|SQL|true", "10|SQL|true", "11|SQL|true"),
+                        "6|SQL|true", "7|SQL|true", "8|SQL|true", "9|SQL|true", "10|SQL|true", "11|SQL|true",
+                        "12|SQL|true"),
                     history(connection, FRESH),
-                    "空库应顺序执行 V1~V11（V4 = 脱敏配置持久化，V5 = 移除请求侧脱敏配置面，"
-                        + "V6 = JWT 账户软删除列，V7 = 审计事件类型取值补齐，V8 = 时间戳列补 NOT NULL，V9 = 可逆脱敏映射表，V10 = 可逆脱敏访问审计表，V11 = 语义缓存跨用户命中审计表）");
+                    "空库应顺序执行 V1~V12（V4 = 脱敏配置持久化，V5 = 移除请求侧脱敏配置面，"
+                        + "V6 = JWT 账户软删除列，V7 = 审计事件类型取值补齐，V8 = 时间戳列补 NOT NULL，V9 = 可逆脱敏映射表，V10 = 可逆脱敏访问审计表，V11 = 语义缓存跨用户命中审计表，V12 = 配置版本号分配器表）");
             for (String legacy : List.of(LEGACY_MISSING, LEGACY_DIVERGENT)) {
                 assertEquals(List.of("1|BASELINE|true", "2|SQL|true", "3|SQL|true", "4|SQL|true", "5|SQL|true",
-                        "6|SQL|true", "7|SQL|true", "8|SQL|true", "9|SQL|true", "10|SQL|true", "11|SQL|true"),
+                        "6|SQL|true", "7|SQL|true", "8|SQL|true", "9|SQL|true", "10|SQL|true", "11|SQL|true",
+                        "12|SQL|true"),
                         history(connection, legacy),
-                        "老库应记为基线 1 且不重放 V1，再执行 V2~V11");
+                        "老库应记为基线 1 且不重放 V1，再执行 V2~V12");
             }
         }
     }
