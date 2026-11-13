@@ -17,6 +17,7 @@
       "serviceType": "Service Type",
       "adapter": "Adapter",
       "loadBalanceType": "Load Balance Strategy",
+      "sticky": "Sticky",
       "actions": "Actions",
       "notFound": "No services found",
       "summary": "Total {count} items (page {current} / {total})"
@@ -66,7 +67,14 @@
     },
     "sticky": {
       "enable": "Session Stickiness",
-      "hint": "When enabled, requests with the same credential and model always hit the same instance (better upstream cache hits), but the load balancing strategy will not spread traffic. Off by default; keep it off if multiple instances should share load."
+      "hint": "When enabled, requests with the same credential and model always hit the same instance (better upstream cache hits), but the load balancing strategy will not spread traffic. Off by default; keep it off if multiple instances should share load.",
+      "scope": "Stickiness Scope",
+      "selectScope": "Select stickiness scope",
+      "scopeTenantModel": "Same credential + same model (tenant_model)",
+      "scopeTenant": "Same tenant across models (tenant)",
+      "scopeHint": "tenant_model keeps stickiness only within one API key and one model, so switching models may land on another instance. tenant lets the same tenant reuse one instance across models, which suits deployments with shared upstream caches or limited GPU memory.",
+      "notSpreading": "Sticky · no spread",
+      "listHint": "Stickiness is on and this service has {count} instances, so one client keeps hitting one instance and the load balancing strategy has no effect. Open Edit to turn it off."
     },
     "rateLimit": {
       "section": "Service-level Rate Limit Config",
