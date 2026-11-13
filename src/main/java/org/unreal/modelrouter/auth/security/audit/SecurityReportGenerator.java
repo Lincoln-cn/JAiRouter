@@ -10,6 +10,7 @@ import org.unreal.modelrouter.common.dto.SecurityReport;
 import org.unreal.modelrouter.persistence.jpa.entity.SecurityAuditEventEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.SecurityAuditEventEntity.RiskLevel;
 import org.unreal.modelrouter.persistence.jpa.repository.SecurityAuditEventRepository;
+import org.unreal.modelrouter.persistence.jpa.repository.spec.SecurityAuditEventSpecifications;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -193,8 +194,9 @@ public class SecurityReportGenerator {
     public Mono<Long> countEvents(final LocalDateTime startTime, final LocalDateTime endTime,
                                   final List<AuditEventType> eventTypes, final String clientIp,
                                   final Boolean success) {
-        return Mono.fromCallable(() -> auditRepository.countByConditions(
-                        startTime, endTime, eventTypes, null, null, clientIp, success, null, null))
+        return Mono.fromCallable(() -> auditRepository.count(
+                        SecurityAuditEventSpecifications.of(
+                                startTime, endTime, eventTypes, null, null, clientIp, success, null, null)))
                 .subscribeOn(Schedulers.boundedElastic());
     }
 

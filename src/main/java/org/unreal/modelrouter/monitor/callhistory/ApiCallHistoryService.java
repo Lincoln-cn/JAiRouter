@@ -15,6 +15,7 @@ import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO;
 import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryStatisticsDTO;
 import org.unreal.modelrouter.persistence.jpa.entity.ApiCallHistoryEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ApiCallHistoryRepository;
+import org.unreal.modelrouter.persistence.jpa.repository.spec.ApiCallHistorySpecifications;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -108,13 +109,14 @@ public class ApiCallHistoryService {
                 query.getSize() != null ? query.getSize() : 20,
                 sort);
 
-        return repository.findWithFilters(
-                startTime, endTime,
-                query.getModelName(),
-                query.getServiceType(),
-                query.getApiKeyId(),
-                query.getIsSuccess(),
-                query.getHttpStatusCode(),
+        return repository.findAll(
+                ApiCallHistorySpecifications.withFilters(
+                        startTime, endTime,
+                        query.getModelName(),
+                        query.getServiceType(),
+                        query.getApiKeyId(),
+                        query.getIsSuccess(),
+                        query.getHttpStatusCode()),
                 pageRequest);
     }
 
@@ -152,10 +154,11 @@ public class ApiCallHistoryService {
      */
     @Transactional(readOnly = true)
     public List<ApiCallHistoryEntity> findErrors(LocalDateTime startTime, LocalDateTime endTime, int limit) {
-        return repository.findErrors(
-                startTime != null ? startTime : LocalDateTime.now().minusDays(7),
-                endTime != null ? endTime : LocalDateTime.now(),
-                PageRequest.of(0, Math.min(limit, 100)));
+        return repository.findAll(
+                ApiCallHistorySpecifications.errors(
+                        startTime != null ? startTime : LocalDateTime.now().minusDays(7),
+                        endTime != null ? endTime : LocalDateTime.now()),
+                PageRequest.of(0, Math.min(limit, 100))).getContent();
     }
 
     /**
@@ -171,11 +174,12 @@ public class ApiCallHistoryService {
     public List<ApiCallHistoryEntity> findSlowCalls(Long threshold, LocalDateTime startTime,
                                                      LocalDateTime endTime, int limit) {
         long effectiveThreshold = threshold != null ? threshold : properties.getSlowCallThresholdMs();
-        return repository.findSlowCalls(
-                effectiveThreshold,
-                startTime != null ? startTime : LocalDateTime.now().minusDays(7),
-                endTime != null ? endTime : LocalDateTime.now(),
-                PageRequest.of(0, Math.min(limit, 100)));
+        return repository.findAll(
+                ApiCallHistorySpecifications.slowCalls(
+                        effectiveThreshold,
+                        startTime != null ? startTime : LocalDateTime.now().minusDays(7),
+                        endTime != null ? endTime : LocalDateTime.now()),
+                PageRequest.of(0, Math.min(limit, 100))).getContent();
     }
 
     /**

@@ -154,13 +154,13 @@ class ApiCallHistoryServiceTest {
         @DisplayName("分页查询调用历史")
         void testQuery() {
             Page<ApiCallHistoryEntity> page = new PageImpl<>(Collections.emptyList());
-            when(repository.findWithFilters(any(), any(), any(), any(), any(), any(), any(), any(PageRequest.class)))
+            when(repository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class)))
                     .thenReturn(page);
 
             var result = service.query(new org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryQueryDTO());
 
             assertNotNull(result);
-            verify(repository).findWithFilters(any(), any(), any(), any(), any(), any(), any(), any(PageRequest.class));
+            verify(repository).findAll(any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class));
         }
 
         @Test
@@ -191,25 +191,25 @@ class ApiCallHistoryServiceTest {
         @Test
         @DisplayName("查询错误调用")
         void testFindErrors() {
-            when(repository.findErrors(any(LocalDateTime.class), any(LocalDateTime.class), any(PageRequest.class)))
-                    .thenReturn(Collections.emptyList());
+            when(repository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class)))
+                    .thenReturn(new PageImpl<>(Collections.emptyList()));
 
             var result = service.findErrors(null, null, 50);
 
             assertNotNull(result);
-            verify(repository).findErrors(any(LocalDateTime.class), any(LocalDateTime.class), any(PageRequest.class));
+            verify(repository).findAll(any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class));
         }
 
         @Test
         @DisplayName("查询慢调用")
         void testFindSlowCalls() {
-            when(repository.findSlowCalls(eq(1000L), any(LocalDateTime.class), any(LocalDateTime.class), any(PageRequest.class)))
-                    .thenReturn(Collections.emptyList());
+            when(repository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class)))
+                    .thenReturn(new PageImpl<>(Collections.emptyList()));
 
             var result = service.findSlowCalls(1000L, null, null, 50);
 
             assertNotNull(result);
-            verify(repository).findSlowCalls(eq(1000L), any(LocalDateTime.class), any(LocalDateTime.class), any(PageRequest.class));
+            verify(repository).findAll(any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class));
         }
     }
 

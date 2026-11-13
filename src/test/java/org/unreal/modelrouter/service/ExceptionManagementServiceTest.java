@@ -80,19 +80,8 @@ class ExceptionManagementServiceTest {
         Page<ExceptionEventEntity> page = new PageImpl<>(entities);
 
         // Mock Repository - 使用 any() 匹配所有参数（12 个参数：10 原有 + serviceType + modelName）
-        when(exceptionEventRepository.findByConditions(
-                any(LocalDateTime.class),
-                any(LocalDateTime.class),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(PageRequest.class)
+        when(exceptionEventRepository.findAll(
+                any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class)
         )).thenReturn(page);
 
         // 构建查询请求
@@ -122,19 +111,8 @@ class ExceptionManagementServiceTest {
         List<ExceptionEventEntity> entities = new ArrayList<>();
         Page<ExceptionEventEntity> page = new PageImpl<>(entities);
 
-        when(exceptionEventRepository.findByConditions(
-                any(LocalDateTime.class),
-                any(LocalDateTime.class),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(PageRequest.class)
+        when(exceptionEventRepository.findAll(
+                any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class)
         )).thenReturn(page);
 
         ExceptionQueryRequest request = ExceptionQueryRequest.builder()
@@ -261,9 +239,8 @@ class ExceptionManagementServiceTest {
         List<ExceptionEventEntity> entities = Arrays.asList(testEntity);
         Page<ExceptionEventEntity> page = new PageImpl<>(entities, PageRequest.of(0, 20), 1);
 
-        when(exceptionEventRepository.findByConditions(
-                any(LocalDateTime.class), any(LocalDateTime.class), any(), any(),
-                any(), any(), any(), any(), any(), any(), any(), any(PageRequest.class)
+        when(exceptionEventRepository.findAll(
+                any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class)
         )).thenReturn(page);
 
         ExceptionQueryRequest request = ExceptionQueryRequest.builder().page(0).size(20).build();

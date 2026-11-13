@@ -3,6 +3,7 @@ package org.unreal.modelrouter.persistence.jpa.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,7 +21,8 @@ import java.util.Optional;
  * @since 1.9.1
  */
 @Repository
-public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEntity, Long> {
+public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEntity, Long>,
+        JpaSpecificationExecutor<ExceptionEventEntity> {
 
     // ========== 基本查询方法 ==========
 
@@ -116,62 +118,6 @@ public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEn
     long countByTimeRange(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
-
-    // ========== 多条件组合查询 ==========
-
-    /**
-     * 根据条件分页查询
-     */
-    @Query("SELECT e FROM ExceptionEventEntity e WHERE "
-           + "(:startTime IS NULL OR e.occurredAt >= :startTime) AND "
-           + "(:endTime IS NULL OR e.occurredAt <= :endTime) AND "
-           + "(:exceptionType IS NULL OR e.exceptionType LIKE %:exceptionType%) AND "
-           + "(:operation IS NULL OR e.operation LIKE %:operation%) AND "
-           + "(:errorCode IS NULL OR e.errorCode = :errorCode) AND "
-           + "(:errorCategory IS NULL OR e.errorCategory = :errorCategory) AND "
-           + "(:traceId IS NULL OR e.traceId = :traceId) AND "
-           + "(:clientIp IS NULL OR e.clientIp = :clientIp) AND "
-           + "(:isAggregated IS NULL OR e.isAggregated = :isAggregated) AND "
-           + "(:serviceType IS NULL OR e.serviceType = :serviceType) AND "
-           + "(:modelName IS NULL OR e.modelName LIKE %:modelName%) "
-           + "ORDER BY e.occurredAt DESC")
-    Page<ExceptionEventEntity> findByConditions(
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime,
-            @Param("exceptionType") String exceptionType,
-            @Param("operation") String operation,
-            @Param("errorCode") String errorCode,
-            @Param("errorCategory") String errorCategory,
-            @Param("traceId") String traceId,
-            @Param("clientIp") String clientIp,
-            @Param("isAggregated") Boolean isAggregated,
-            @Param("serviceType") String serviceType,
-            @Param("modelName") String modelName,
-            Pageable pageable);
-
-    /**
-     * 统计符合条件的异常数量
-     */
-    @Query("SELECT COUNT(e) FROM ExceptionEventEntity e WHERE "
-           + "(:startTime IS NULL OR e.occurredAt >= :startTime) AND "
-           + "(:endTime IS NULL OR e.occurredAt <= :endTime) AND "
-           + "(:exceptionType IS NULL OR e.exceptionType LIKE %:exceptionType%) AND "
-           + "(:operation IS NULL OR e.operation LIKE %:operation%) AND "
-           + "(:errorCode IS NULL OR e.errorCode = :errorCode) AND "
-           + "(:errorCategory IS NULL OR e.errorCategory = :errorCategory) AND "
-           + "(:traceId IS NULL OR e.traceId = :traceId) AND "
-           + "(:clientIp IS NULL OR e.clientIp = :clientIp) AND "
-           + "(:isAggregated IS NULL OR e.isAggregated = :isAggregated)")
-    long countByConditions(
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime,
-            @Param("exceptionType") String exceptionType,
-            @Param("operation") String operation,
-            @Param("errorCode") String errorCode,
-            @Param("errorCategory") String errorCategory,
-            @Param("traceId") String traceId,
-            @Param("clientIp") String clientIp,
-            @Param("isAggregated") Boolean isAggregated);
 
     // ========== 统计查询 ==========
 

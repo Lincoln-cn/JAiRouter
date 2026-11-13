@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.unreal.modelrouter.persistence.jpa.entity.ExceptionEventEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.ExceptionStatsHourlyEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ExceptionEventRepository;
+import org.unreal.modelrouter.persistence.jpa.repository.spec.ExceptionEventSpecifications;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 
 import java.time.LocalDateTime;
@@ -406,9 +407,11 @@ public class ExceptionPersistenceService {
             final String modelName,
             final org.springframework.data.domain.Pageable pageable) {
 
-        return exceptionEventRepository.findByConditions(
-                startTime, endTime, exceptionType, operation, errorCode, errorCategory,
-                traceId, clientIp, isAggregated, serviceType, modelName, pageable);
+        return exceptionEventRepository.findAll(
+                ExceptionEventSpecifications.of(
+                        startTime, endTime, exceptionType, operation, errorCode, errorCategory,
+                        traceId, clientIp, isAggregated, serviceType, modelName),
+                pageable);
     }
 
     /**
