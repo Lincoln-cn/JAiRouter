@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.common.health.HealthDetails;
 import org.unreal.modelrouter.monitor.tracing.async.AsyncTracingProcessor;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
 import org.unreal.modelrouter.monitor.tracing.memory.TracingMemoryManager;
@@ -166,7 +167,7 @@ public class TracingHealthIndicator implements HealthIndicator {
         } catch (Exception e) {
             log.error("追踪健康检查失败", e);
             return Health.down()
-                .withDetail("error", e.getMessage())
+                .withDetail("error", HealthDetails.safeMessage(e))
                 .withDetail("errorClass", e.getClass().getSimpleName())
                 .withDetail("checkTime", LocalDateTime.now())
                 .build();

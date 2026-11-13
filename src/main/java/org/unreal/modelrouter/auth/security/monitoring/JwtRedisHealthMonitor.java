@@ -9,6 +9,7 @@ import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.auth.security.cache.JwtBlacklistCacheManager;
 import org.unreal.modelrouter.auth.security.config.RedisJwtCacheConfiguration;
+import org.unreal.modelrouter.common.health.HealthDetails;
 
 import java.time.Duration;
 import java.util.Map;
@@ -90,7 +91,7 @@ public class JwtRedisHealthMonitor implements HealthIndicator {
         } catch (Exception e) {
             log.error("JWT Redis health check failed: {}", e.getMessage(), e);
             return Health.down()
-                .withDetail("error", e.getMessage())
+                .withDetail("error", HealthDetails.safeMessage(e))
                 .withDetail("status", "Health check failed")
                 .build();
         }
@@ -167,7 +168,7 @@ public class JwtRedisHealthMonitor implements HealthIndicator {
         } catch (Exception e) {
             log.warn("Blacklist cache health check failed: {}", e.getMessage());
             return Map.of(
-                "error", e.getMessage(),
+                "error", HealthDetails.safeMessage(e),
                 "healthy", false,
                 "lastCheck", System.currentTimeMillis()
             );
@@ -210,7 +211,7 @@ public class JwtRedisHealthMonitor implements HealthIndicator {
         } catch (Exception e) {
             log.warn("Redis performance check failed: {}", e.getMessage());
             return Map.of(
-                "error", e.getMessage(),
+                "error", HealthDetails.safeMessage(e),
                 "status", "failed",
                 "lastCheck", System.currentTimeMillis()
             );
@@ -262,7 +263,7 @@ public class JwtRedisHealthMonitor implements HealthIndicator {
         } catch (Exception e) {
             log.error("Failed to generate detailed health report: {}", e.getMessage(), e);
             return Map.of(
-                "error", e.getMessage(),
+                "error", HealthDetails.safeMessage(e),
                 "timestamp", System.currentTimeMillis()
             );
         }
@@ -285,7 +286,7 @@ public class JwtRedisHealthMonitor implements HealthIndicator {
         } catch (Exception e) {
             log.warn("Failed to get connection pool status: {}", e.getMessage());
             return Map.of(
-                "error", e.getMessage(),
+                "error", HealthDetails.safeMessage(e),
                 "lastCheck", System.currentTimeMillis()
             );
         }
