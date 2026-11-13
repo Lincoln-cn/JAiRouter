@@ -586,6 +586,40 @@ webclient:
 
 ```
 
+## Session Stickiness and Load Balancing (v3.8.6+)
+
+Session stickiness (`sticky`) and service-level load balancing are **mutually exclusive** paths. Once stickiness is enabled for a service, requests carrying the same client identity are pinned to one instance and the load balancing strategy no longer takes part in selection for that service.
+
+| Aspect | Description |
+| --- | --- |
+| Where to configure | Console → Configuration → Services → Edit → "Session Stickiness"; or `sticky.enabled` via `PUT /api/config/type/services/<type>` |
+| Scope | `affinityKeyScope`: `tenant_model` (same credential + same model) or `tenant` (same tenant across models). Selectable in the console since v3.8.6 |
+| Default | **Off** since v3.8.6; on by default before that |
+| How to tell it is active | The routing monitor reports `strategy` as `StickyLoadBalancer` for that service instead of `LeastConnectionsLoadBalancer` and friends |
+
+### What changes when upgrading
+
+The stickiness switch only reached the console in v3.8.6. A deployment still serving an older frontend will show **no such field** under service configuration — you see "the setting does not exist", not "it is off", so the UI cannot tell you whether stickiness is enabled in the running gateway.
+
+Two opposite surprises can appear during an upgrade:
+
+- Services with **no explicit** `sticky` in their configuration: the older default was on, the new default is off, so behavior shifts from "pinned instance" to "spread by strategy".
+- Services with an **explicit** `sticky.enabled=true`: they stay pinned after the upgrade (the code trusts the configured value), yet the console now shows a switch you had never seen before, and load balancing still does not apply.
+
+Confirm the intended value for every service after upgrading. Three places surface this:
+
+1. **Service list**: services with stickiness on and more than one instance show a "Sticky · no spread" warning tag in the Sticky column (v3.8.6+).
+2. **Startup log**: `STICKY_INEFFECTIVE` means at least one service has stickiness on with multiple instances; the log line includes the command to turn it off.
+3. **sla tooling**: both `sla doctor` and `sla audit` report it; `audit` also prints the instance count and the current strategy.
+
+Turn it off (takes effect immediately, no restart):
+
+```bash
+curl -X PUT http://<gateway>/api/config/type/services/chat \
+  -H "X-Jairouter-Token: <JWT>" -H "Content-Type: application/json" \
+  -d '{"sticky": {"enabled": false}}'
+```
+
 ## Fault Handling
 
 ### 1. Automatic Instance Fault Handling

@@ -17,6 +17,7 @@
       "serviceType": "服务类型",
       "adapter": "适配器",
       "loadBalanceType": "负载均衡策略",
+      "sticky": "粘性",
       "actions": "操作",
       "notFound": "未找到服务",
       "summary": "共 {count} 条（第 {current} / {total} 页）"
@@ -66,7 +67,14 @@
     },
     "sticky": {
       "enable": "会话粘性",
-      "hint": "开启后，同一凭证 + 同一模型的请求会固定到同一实例（利于上游缓存命中），但此时负载均衡策略不会真正分流。默认关闭；多实例想按策略分摊请保持关闭。"
+      "hint": "开启后，同一凭证 + 同一模型的请求会固定到同一实例（利于上游缓存命中），但此时负载均衡策略不会真正分流。默认关闭；多实例想按策略分摊请保持关闭。",
+      "scope": "粘性粒度",
+      "selectScope": "选择粘性粒度",
+      "scopeTenantModel": "同一凭证 + 同一模型（tenant_model）",
+      "scopeTenant": "同一租户跨模型（tenant）",
+      "scopeHint": "tenant_model 只在「同一 API Key + 同一模型」内保持粘性，换模型就不保证命中同一实例；tenant 让同一租户在不同模型之间也复用同一实例，适合上游有共享缓存或显存受限的部署。",
+      "notSpreading": "粘性·不分流",
+      "listHint": "该服务开启了会话粘性且有 {count} 个实例，同一客户端的流量会固定在一个实例上，负载均衡策略不生效。点「编辑」可关闭。"
     },
     "rateLimit": {
       "section": "服务级别限流配置",

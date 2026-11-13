@@ -139,6 +139,22 @@
             </template>
           </el-table-column>
 
+          <!-- issue #1129：粘性开启且实例数>1 时提示「不会分流」，单实例或无粘性保持安静 -->
+          <el-table-column :label="t('service.table.sticky')" width="130" align="center">
+            <template #default="scope">
+              <el-tooltip
+                v-if="scope.row.stickyEnabled && (scope.row.instanceCount || 0) > 1"
+                :content="t('service.sticky.listHint', { count: scope.row.instanceCount })"
+                placement="top"
+              >
+                <el-tag type="warning" effect="plain" size="small">
+                  {{ t('service.sticky.notSpreading') }}
+                </el-tag>
+              </el-tooltip>
+              <span v-else class="cell-text">—</span>
+            </template>
+          </el-table-column>
+
           <el-table-column :label="t('service.table.actions')" fixed="right" width="140">
             <template #default="scope">
               <el-button
@@ -273,6 +289,15 @@
         <div class="sticky-hint">{{ t('service.sticky.hint') }}</div>
       </el-form-item>
 
+      <!-- 粘性粒度（issue #1128）：只在开启时显示；关闭时保持原值，避免把服务端的 tenant 打回默认 -->
+      <el-form-item v-if="form.sticky.enabled" :label="t('service.sticky.scope')">
+        <el-select v-model="form.sticky.affinityKeyScope" :placeholder="t('service.sticky.selectScope')">
+          <el-option :label="t('service.sticky.scopeTenantModel')" value="tenant_model" />
+          <el-option :label="t('service.sticky.scopeTenant')" value="tenant" />
+        </el-select>
+        <div class="sticky-hint">{{ t('service.sticky.scopeHint') }}</div>
+      </el-form-item>
+
       <!-- 服务级别限流配置 -->
       <el-divider content-position="left">{{ t('service.rateLimit.section') }}</el-divider>
       <el-form-item :label="t('service.rateLimit.enable')">
@@ -404,6 +429,9 @@ interface Service {
   adapter: string
   loadBalanceType: string
   description?: string
+  // issue #1129：列表页要能一眼看出「粘性开启 + 多实例」= 不会按策略分流
+  stickyEnabled?: boolean
+  instanceCount?: number
 }
 
 // 表单定义
@@ -674,7 +702,9 @@ const fetchServices = async () => {
             type,
             adapter: cfg.adapter || '',
             loadBalanceType: cfg.loadBalance?.type || 'random',
-            description: cfg.description || ''
+            description: cfg.description || '',
+            stickyEnabled: cfg.sticky?.enabled === true,
+            instanceCount: (cfg.instances || []).length
           }
           serviceList.push(serviceData)
           
