@@ -14,6 +14,7 @@ import org.unreal.modelrouter.common.dto.SecurityReport;
 import org.unreal.modelrouter.persistence.jpa.entity.SecurityAuditEventEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.SecurityAuditEventEntity.RiskLevel;
 import org.unreal.modelrouter.persistence.jpa.repository.SecurityAuditEventRepository;
+import org.unreal.modelrouter.persistence.jpa.repository.spec.SecurityAuditEventSpecifications;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -300,16 +301,17 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     Sort.by(Sort.Direction.fromString(query.getSortDirection()), query.getSortBy())
             );
 
-            Page<SecurityAuditEventEntity> page = auditRepository.findByConditions(
-                    query.getStartTime(),
-                    query.getEndTime(),
-                    query.getEventTypes(),
-                    query.getUserId(),
-                    query.getResourceId(),
-                    query.getIpAddress(),
-                    query.getSuccess(),
-                    null,
-                    null,
+            Page<SecurityAuditEventEntity> page = auditRepository.findAll(
+                    SecurityAuditEventSpecifications.of(
+                            query.getStartTime(),
+                            query.getEndTime(),
+                            query.getEventTypes(),
+                            query.getUserId(),
+                            query.getResourceId(),
+                            query.getIpAddress(),
+                            query.getSuccess(),
+                            null,
+                            null),
                     pageRequest
             );
 
@@ -324,16 +326,17 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     @Override
     public Mono<Long> countAuditEvents(final AuditEventQuery query) {
         return Mono.fromCallable(() -> {
-            return auditRepository.countByConditions(
-                    query.getStartTime(),
-                    query.getEndTime(),
-                    query.getEventTypes(),
-                    query.getUserId(),
-                    query.getResourceId(),
-                    query.getIpAddress(),
-                    query.getSuccess(),
-                    null,
-                    null
+            return auditRepository.count(
+                    SecurityAuditEventSpecifications.of(
+                            query.getStartTime(),
+                            query.getEndTime(),
+                            query.getEventTypes(),
+                            query.getUserId(),
+                            query.getResourceId(),
+                            query.getIpAddress(),
+                            query.getSuccess(),
+                            null,
+                            null)
             );
         })
         .subscribeOn(Schedulers.boundedElastic());

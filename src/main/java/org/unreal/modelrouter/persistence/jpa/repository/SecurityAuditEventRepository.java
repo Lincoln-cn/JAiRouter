@@ -3,6 +3,7 @@ package org.unreal.modelrouter.persistence.jpa.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,7 +20,8 @@ import java.util.Optional;
  * 安全审计事件仓库
  */
 @Repository
-public interface SecurityAuditEventRepository extends JpaRepository<SecurityAuditEventEntity, Long> {
+public interface SecurityAuditEventRepository extends JpaRepository<SecurityAuditEventEntity, Long>,
+        JpaSpecificationExecutor<SecurityAuditEventEntity> {
 
     // ========== 基本查询方法 ==========
 
@@ -71,52 +73,6 @@ public interface SecurityAuditEventRepository extends JpaRepository<SecurityAudi
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
 
-    // ========== 多条件组合查询 ==========
-
-    @Query("SELECT e FROM SecurityAuditEventEntity e WHERE "
-           + "(:startTime IS NULL OR e.timestamp >= :startTime) AND "
-           + "(:endTime IS NULL OR e.timestamp <= :endTime) AND "
-           + "(:eventTypes IS NULL OR e.eventType IN :eventTypes) AND "
-           + "(:userId IS NULL OR e.userId = :userId) AND "
-           + "(:resourceId IS NULL OR e.resourceId = :resourceId) AND "
-           + "(:clientIp IS NULL OR e.clientIp = :clientIp) AND "
-           + "(:success IS NULL OR e.success = :success) AND "
-           + "(:eventCategory IS NULL OR e.eventCategory = :eventCategory) AND "
-           + "(:riskLevel IS NULL OR e.riskLevel = :riskLevel) "
-           + "ORDER BY e.timestamp DESC")
-    Page<SecurityAuditEventEntity> findByConditions(
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime,
-            @Param("eventTypes") List<AuditEventType> eventTypes,
-            @Param("userId") String userId,
-            @Param("resourceId") String resourceId,
-            @Param("clientIp") String clientIp,
-            @Param("success") Boolean success,
-            @Param("eventCategory") String eventCategory,
-            @Param("riskLevel") RiskLevel riskLevel,
-            Pageable pageable);
-
-    @Query("SELECT COUNT(e) FROM SecurityAuditEventEntity e WHERE "
-           + "(:startTime IS NULL OR e.timestamp >= :startTime) AND "
-           + "(:endTime IS NULL OR e.timestamp <= :endTime) AND "
-           + "(:eventTypes IS NULL OR e.eventType IN :eventTypes) AND "
-           + "(:userId IS NULL OR e.userId = :userId) AND "
-           + "(:resourceId IS NULL OR e.resourceId = :resourceId) AND "
-           + "(:clientIp IS NULL OR e.clientIp = :clientIp) AND "
-           + "(:success IS NULL OR e.success = :success) AND "
-           + "(:eventCategory IS NULL OR e.eventCategory = :eventCategory) AND "
-           + "(:riskLevel IS NULL OR e.riskLevel = :riskLevel)")
-    long countByConditions(
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime,
-            @Param("eventTypes") List<AuditEventType> eventTypes,
-            @Param("userId") String userId,
-            @Param("resourceId") String resourceId,
-            @Param("clientIp") String clientIp,
-            @Param("success") Boolean success,
-            @Param("eventCategory") String eventCategory,
-            @Param("riskLevel") RiskLevel riskLevel);
-
     // ========== 统计查询 ==========
 
     @Query("SELECT e.eventType, COUNT(e) FROM SecurityAuditEventEntity e "
@@ -162,57 +118,6 @@ public interface SecurityAuditEventRepository extends JpaRepository<SecurityAudi
     long countSuccessEvents(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
-
-    // ========== JWT令牌相关查询 ==========
-
-    @Query("SELECT e FROM SecurityAuditEventEntity e WHERE "
-           + "e.eventType IN :jwtEventTypes "
-           + "AND (:startTime IS NULL OR e.timestamp >= :startTime) AND "
-           + "(:endTime IS NULL OR e.timestamp <= :endTime) AND "
-           + "(:userId IS NULL OR e.userId = :userId) AND "
-           + "(:resourceId IS NULL OR e.resourceId = :resourceId) "
-           + "ORDER BY e.timestamp DESC")
-    Page<SecurityAuditEventEntity> findJwtTokenEvents(
-            @Param("jwtEventTypes") List<AuditEventType> jwtEventTypes,
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime,
-            @Param("userId") String userId,
-            @Param("resourceId") String resourceId,
-            Pageable pageable);
-
-    // ========== API Key相关查询 ==========
-
-    @Query("SELECT e FROM SecurityAuditEventEntity e WHERE "
-           + "e.eventType IN :apiKeyEventTypes "
-           + "AND (:startTime IS NULL OR e.timestamp >= :startTime) AND "
-           + "(:endTime IS NULL OR e.timestamp <= :endTime) AND "
-           + "(:userId IS NULL OR e.userId = :userId) AND "
-           + "(:resourceId IS NULL OR e.resourceId = :resourceId) "
-           + "ORDER BY e.timestamp DESC")
-    Page<SecurityAuditEventEntity> findApiKeyEvents(
-            @Param("apiKeyEventTypes") List<AuditEventType> apiKeyEventTypes,
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime,
-            @Param("userId") String userId,
-            @Param("resourceId") String resourceId,
-            Pageable pageable);
-
-    // ========== 安全事件查询 ==========
-
-    @Query("SELECT e FROM SecurityAuditEventEntity e WHERE "
-           + "e.eventType IN :securityEventTypes "
-           + "AND (:startTime IS NULL OR e.timestamp >= :startTime) AND "
-           + "(:endTime IS NULL OR e.timestamp <= :endTime) AND "
-           + "(:userId IS NULL OR e.userId = :userId) AND "
-           + "(:clientIp IS NULL OR e.clientIp = :clientIp) "
-           + "ORDER BY e.timestamp DESC")
-    Page<SecurityAuditEventEntity> findSecurityEvents(
-            @Param("securityEventTypes") List<AuditEventType> securityEventTypes,
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime,
-            @Param("userId") String userId,
-            @Param("clientIp") String clientIp,
-            Pageable pageable);
 
     // ========== 告警阈值检查 ==========
 

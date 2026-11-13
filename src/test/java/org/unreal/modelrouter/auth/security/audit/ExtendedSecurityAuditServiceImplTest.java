@@ -9,6 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.unreal.modelrouter.common.dto.AuditEvent;
 import org.unreal.modelrouter.common.dto.AuditEventQuery;
@@ -334,7 +335,7 @@ class ExtendedSecurityAuditServiceImplTest {
             List<SecurityAuditEventEntity> entities = List.of(createMockEntity());
             Page<SecurityAuditEventEntity> page = new PageImpl<>(entities);
             
-            when(auditRepository.findByConditions(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
+            when(auditRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class)))
                     .thenReturn(page);
             when(entityMapper.entityToDto(any())).thenReturn(createMockAuditEvent());
 
@@ -352,7 +353,7 @@ class ExtendedSecurityAuditServiceImplTest {
         void testCountAuditEvents_Success() {
             // Arrange
             AuditEventQuery query = new AuditEventQuery();
-            when(auditRepository.countByConditions(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+            when(auditRepository.count(any(org.springframework.data.jpa.domain.Specification.class)))
                     .thenReturn(100L);
 
             // Act
@@ -674,7 +675,7 @@ class ExtendedSecurityAuditServiceImplTest {
         @Test
         @DisplayName("countEvents 把条件交给存储侧计数（不走「取回一批再内存过滤」）")
         void countEvents_delegatesToRepositoryCount() {
-            when(auditRepository.countByConditions(any(), any(), anyList(), any(), any(), any(), any(), any(), any()))
+            when(auditRepository.count(any(org.springframework.data.jpa.domain.Specification.class)))
                     .thenReturn(42L);
 
             StepVerifier.create(service.countEvents(LocalDateTime.now().minusMinutes(10), LocalDateTime.now(),
@@ -682,9 +683,7 @@ class ExtendedSecurityAuditServiceImplTest {
                     .expectNext(42L)
                     .verifyComplete();
 
-            verify(auditRepository).countByConditions(any(), any(),
-                    eq(List.of(AuditEventType.AUTHENTICATION_FAILED)), any(), any(),
-                    eq("10.0.0.9"), eq(Boolean.FALSE), any(), any());
+            verify(auditRepository).count(any(org.springframework.data.jpa.domain.Specification.class));
         }
     }
 

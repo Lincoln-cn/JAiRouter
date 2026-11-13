@@ -3,6 +3,7 @@ package org.unreal.modelrouter.persistence.jpa.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,7 +20,8 @@ import java.util.List;
  * @since 2.7.8
  */
 @Repository
-public interface ApiCallHistoryRepository extends JpaRepository<ApiCallHistoryEntity, Long> {
+public interface ApiCallHistoryRepository extends JpaRepository<ApiCallHistoryEntity, Long>,
+        JpaSpecificationExecutor<ApiCallHistoryEntity> {
 
     // ========== 基础查询 ==========
 
@@ -70,55 +72,6 @@ public interface ApiCallHistoryRepository extends JpaRepository<ApiCallHistoryEn
      */
     Page<ApiCallHistoryEntity> findByCreatedAtBetween(
             LocalDateTime startTime, LocalDateTime endTime, Pageable pageable);
-
-    /**
-     * 分页查询（带过滤条件）
-     */
-    @Query("SELECT c FROM ApiCallHistoryEntity c WHERE "
-           + "(:startTime IS NULL OR c.createdAt >= :startTime) AND "
-           + "(:endTime IS NULL OR c.createdAt <= :endTime) AND "
-           + "(:modelName IS NULL OR c.modelName = :modelName) AND "
-           + "(:serviceType IS NULL OR c.serviceType = :serviceType) AND "
-           + "(:apiKeyId IS NULL OR c.apiKeyId = :apiKeyId) AND "
-           + "(:isSuccess IS NULL OR c.isSuccess = :isSuccess) AND "
-           + "(:httpStatusCode IS NULL OR c.httpStatusCode = :httpStatusCode) "
-           + "ORDER BY c.createdAt DESC")
-    Page<ApiCallHistoryEntity> findWithFilters(
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime,
-            @Param("modelName") String modelName,
-            @Param("serviceType") String serviceType,
-            @Param("apiKeyId") String apiKeyId,
-            @Param("isSuccess") Boolean isSuccess,
-            @Param("httpStatusCode") Integer httpStatusCode,
-            Pageable pageable);
-
-    // ========== 错误和慢调用查询 ==========
-
-    /**
-     * 查询错误调用（失败的请求）
-     */
-    @Query("SELECT c FROM ApiCallHistoryEntity c WHERE c.isSuccess = false "
-           + "AND (:startTime IS NULL OR c.createdAt >= :startTime) "
-           + "AND (:endTime IS NULL OR c.createdAt <= :endTime) "
-           + "ORDER BY c.createdAt DESC")
-    List<ApiCallHistoryEntity> findErrors(
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime,
-            Pageable pageable);
-
-    /**
-     * 查询慢调用（响应时间超过阈值）
-     */
-    @Query("SELECT c FROM ApiCallHistoryEntity c WHERE c.responseTimeMs > :threshold "
-           + "AND (:startTime IS NULL OR c.createdAt >= :startTime) "
-           + "AND (:endTime IS NULL OR c.createdAt <= :endTime) "
-           + "ORDER BY c.responseTimeMs DESC")
-    List<ApiCallHistoryEntity> findSlowCalls(
-            @Param("threshold") Long threshold,
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime,
-            Pageable pageable);
 
     // ========== 统计查询 ==========
 

@@ -13,6 +13,7 @@ import org.unreal.modelrouter.monitor.dto.ExceptionStatisticsDTO;
 import org.unreal.modelrouter.common.dto.PagedResult;
 import org.unreal.modelrouter.persistence.jpa.entity.ExceptionEventEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ExceptionEventRepository;
+import org.unreal.modelrouter.persistence.jpa.repository.spec.ExceptionEventSpecifications;
 import org.unreal.modelrouter.monitor.monitoring.error.ExceptionPersistenceService;
 
 import java.time.LocalDateTime;
@@ -66,18 +67,19 @@ public class ExceptionManagementService {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
         // 执行查询
-        Page<ExceptionEventEntity> entityPage = exceptionEventRepository.findByConditions(
-                startTime,
-                endTime,
-                request.getExceptionType(),
-                request.getOperation(),
-                request.getErrorCode(),
-                request.getErrorCategory(),
-                request.getTraceId(),
-                request.getClientIp(),
-                request.getAggregatedOnly(),
-                request.getServiceType(),
-                request.getModelName(),
+        Page<ExceptionEventEntity> entityPage = exceptionEventRepository.findAll(
+                ExceptionEventSpecifications.of(
+                        startTime,
+                        endTime,
+                        request.getExceptionType(),
+                        request.getOperation(),
+                        request.getErrorCode(),
+                        request.getErrorCategory(),
+                        request.getTraceId(),
+                        request.getClientIp(),
+                        request.getAggregatedOnly(),
+                        request.getServiceType(),
+                        request.getModelName()),
                 pageRequest
         );
 
