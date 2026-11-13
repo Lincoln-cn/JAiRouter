@@ -38,8 +38,12 @@ public final class ApiKeyCreateRequest {
     private String description;
 
     /**
-     * 权限列表
-     * 可选值：READ, WRITE, DELETE, ADMIN
+     * 权限列表 —— 这里填的是<b>服务类型</b>（chat / embedding / rerank / tts / stt / imgGen / imgEdit），
+     * 不是 READ / WRITE / DELETE 这类动作。
+     *
+     * <p>留空（或不传）等价于「不限服务」：服务端会展开成全部服务类型（v3.8.6 起）。此前留空会
+     * 原样落库，Key 建得出来却调不通任何服务（403 {@code Caller does not have permission for
+     * service: ...}）。旧格式 READ / WRITE / DELETE / ADMIN 仍被接受，同样展开成全部服务类型。</p>
      */
     private List<String> permissions;
 

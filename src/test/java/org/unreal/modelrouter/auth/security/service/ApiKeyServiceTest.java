@@ -234,6 +234,41 @@ class ApiKeyServiceTest {
                             error.getMessage().contains("已存在"))
                     .verify();
         }
+        @Test
+        @DisplayName("创建API Key - 不传 permissions 时默认授予全部服务类型（v3.8.6）")
+        void createApiKey_WithoutPermissions_GrantsAllServiceTypes() {
+            // 此前空 permissions 会原样落库 ⇒ Key 建得出来却调不通任何服务
+            // （hasServicePermission 只认 ROLE_<SERVICE>，实测 /v1/chat/completions 返回 403）。
+            ApiKeyCreateRequest request = new ApiKeyCreateRequest();
+            request.setDescription("No permissions specified");
+
+            StepVerifier.create(apiKeyService.createApiKey(request))
+                    .assertNext(vo -> {
+                        assertNotNull(vo.getPermissions(), "空 permissions 应被展开而不是留空");
+                        assertTrue(vo.getPermissions().size() > 1,
+                                "应展开为全部服务类型: " + vo.getPermissions());
+                        assertTrue(vo.getPermissions().contains("chat"), vo.getPermissions().toString());
+                        assertTrue(vo.getPermissions().contains("embedding"), vo.getPermissions().toString());
+                        assertTrue(vo.getWarning().contains("默认授予全部服务类型"),
+                                "响应应如实告知默认授权: " + vo.getWarning());
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("创建API Key - 显式传 permissions 时不被默认值覆盖")
+        void createApiKey_WithExplicitPermissions_KeepsThem() {
+            ApiKeyCreateRequest request = new ApiKeyCreateRequest();
+            request.setPermissions(List.of("chat"));
+
+            StepVerifier.create(apiKeyService.createApiKey(request))
+                    .assertNext(vo -> {
+                        assertEquals(List.of("chat"), vo.getPermissions());
+                        assertFalse(vo.getWarning().contains("默认授予全部服务类型"),
+                                "显式传了权限就不该提示默认授权: " + vo.getWarning());
+                    })
+                    .verifyComplete();
+        }
     }
 
     @Nested

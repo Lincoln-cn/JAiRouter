@@ -123,9 +123,9 @@ class ErrorBodyUtf8CharsetTest {
         assertEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode());
         final byte[] bytes = bodyBytes(exchange);
         final String body = new String(bytes, StandardCharsets.UTF_8);
-        assertTrue(body.contains("请求缺少认证信息，请提供API Key或JWT Token"),
+        assertTrue(body.contains("请求缺少认证信息，请通过 X-API-Key 或 X-Jairouter-Token"),
                 "按 UTF-8 解码后应为可读中文: " + body);
-        assertContainsUtf8(bytes, "请求缺少认证信息，请提供API Key或JWT Token");
+        assertContainsUtf8(bytes, "请求缺少认证信息，请通过 X-API-Key 或 X-Jairouter-Token");
         assertNoReplacementCharacter(body);
     }
 
