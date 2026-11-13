@@ -103,6 +103,15 @@ public class ApiKeyService {
                     : ApiKey.generateApiKey("sk-", 32);
             String kh = ApiKeyHashUtil.hashApiKey(kv);
             List<String> validatedPermissions = validatePermissions(req.getPermissions());
+            // 空权限的 Key 建得出来却调不通任何服务：ServiceRequestHandler#hasServicePermission
+            // 只认 ROLE_<SERVICE>，而 authorities 由这里的 permissions 展开（实测
+            // /v1/chat/completions 返回 403 Caller does not have permission for service: chat）。
+            // 调用方不传 permissions 时视为「不限服务」；创建接口本身受 config:api-key:write 保护，
+            // 默认全服务类型不额外放大攻击面。YAML 内置 Key 仍走 #813 的旧权限归一化，不在此默认放行。
+            final boolean defaultedPermissions = validatedPermissions == null || validatedPermissions.isEmpty();
+            if (defaultedPermissions) {
+                validatedPermissions = convertLegacyPermissionsToAllServiceTypes();
+            }
             ApiKey ak = ApiKey.builder().keyId(kid).keyHash(kh).keyPrefix("sk-").description(req.getDescription())
                 .permissions(validatedPermissions).enabled(req.getEnabled() != null ? req.getEnabled() : true)
                 .expiresAt(req.getExpiresAt()).createdAt(LocalDateTime.now()).createdBy(by).creatorIpAddress(ip)
@@ -134,7 +143,9 @@ public class ApiKeyService {
                 .monthlyTokenLimit(ak.getMonthlyTokenLimit())
                 .rateLimitPerMinute(ak.getRateLimitPerMinute())
                 .quotaAlertThreshold(ak.getQuotaAlertThreshold())
-                .warning("密钥值只会显示一次，请妥善保存！").build();
+                .warning(defaultedPermissions
+                    ? "未指定 permissions，已默认授予全部服务类型；密钥值只会显示一次，请妥善保存！"
+                    : "密钥值只会显示一次，请妥善保存！").build();
         });
     }
 

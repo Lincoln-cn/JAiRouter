@@ -136,15 +136,21 @@ class SpringSecurityAuthenticationFilterRateLimitTest {
     }
 
     @Test
-    @DisplayName("RATE-005: 三条 401 老路径的响应体逐字节等于改动前的输出")
+    @DisplayName("RATE-005: 三条 401 老路径的响应体形状与状态码不变（文案 v3.8.6 起点名可用头）")
     void legacyPaths401_shouldBeByteIdentical() {
-        // 期望值 = 改动前实现的原始字节（硬编码 "authentication_error" + 硬编码 401）
-        final String legacyMissing = "{\"error\": {\"message\": \"请求缺少认证信息，请提供API Key或JWT Token\", "
+        // 期望值 = 当前实现的原始字节（硬编码 "authentication_error" + 硬编码 401）。
+        // v3.8.6：文案不再写「请提供API Key或JWT Token」（它没说头名，客户端按 OpenAI 习惯发
+        // Authorization: Bearer 只会看到 401），改为点名 X-API-Key / X-Jairouter-Token；
+        // 形状、type、code 与状态码均未变，本用例守住这三点。
+        final String legacyMissing = "{\"error\": {\"message\": \"请求缺少认证信息，请通过 X-API-Key 或 X-Jairouter-Token "
+                + "请求头提供凭据（Authorization 头不参与网关认证，原样透传给下游服务）\", "
                 + "\"type\": \"authentication_error\", \"code\": \"AUTH_MISSING\"}}";
-        final String openAiMissing = "{\"error\":{\"message\":\"请求缺少认证信息，请提供API Key或JWT Token\","
+        final String openAiMissing = "{\"error\":{\"message\":\"请求缺少认证信息，请通过 X-API-Key 或 X-Jairouter-Token "
+                + "请求头提供凭据（Authorization 头不参与网关认证，原样透传给下游服务）\","
                 + "\"type\":\"authentication_error\",\"code\":\"AUTH_MISSING\"}}";
         final String anthropicMissing = "{\"type\":\"error\",\"error\":{\"type\":\"authentication_error\","
-                + "\"message\":\"请求缺少认证信息，请提供API Key或JWT Token\"}}";
+                + "\"message\":\"请求缺少认证信息，请通过 X-API-Key 或 X-Jairouter-Token "
+                + "请求头提供凭据（Authorization 头不参与网关认证，原样透传给下游服务）\"}}";
 
         final MockServerWebExchange legacy = exchangeOf(LEGACY_PATH);
         filterWithoutCredentials().filter(legacy, mockChain()).block(TIMEOUT);
@@ -160,6 +166,63 @@ class SpringSecurityAuthenticationFilterRateLimitTest {
         filterWithoutCredentials().filter(anthropic, mockChain()).block(TIMEOUT);
         assertEquals(HttpStatus.UNAUTHORIZED, anthropic.getResponse().getStatusCode());
         assertEquals(anthropicMissing, bodyText(anthropic));
+    }
+
+    @Test
+    @DisplayName("RATE-006: 凭据缺失提示点名声明的头名（自定义头名跟着变，不再只写「API Key 或 JWT」）")
+    void missingCredentialsMessage_shouldNameConfiguredHeaders() {
+        // v3.8.6 起文案取自配置：JWT 走 JwtConfig.jwtHeader、API Key 走 ApiKeyConfig.headerName，
+        // 因为 Authorization 头刻意留给下游透传（客户端按 OpenAI 习惯发 Bearer 只会得到 401）。
+        final SecurityProperties props = mock(SecurityProperties.class);
+        final ApiKeyConfig apiKeyConfig = mock(ApiKeyConfig.class);
+        final JwtConfig jwtConfig = mock(JwtConfig.class);
+        when(props.getApiKey()).thenReturn(apiKeyConfig);
+        when(props.getJwt()).thenReturn(jwtConfig);
+        when(apiKeyConfig.isEnabled()).thenReturn(true);
+        when(jwtConfig.isEnabled()).thenReturn(true);
+        when(apiKeyConfig.getHeaderName()).thenReturn("X-Tenant-Key");
+        when(jwtConfig.getJwtHeader()).thenReturn("X-Tenant-Token");
+
+        final ServerAuthenticationConverter converter = mock(ServerAuthenticationConverter.class);
+        when(converter.convert(any())).thenReturn(Mono.empty());
+        final SpringSecurityAuthenticationFilter filter = new SpringSecurityAuthenticationFilter(
+                props, converter, mock(ReactiveAuthenticationManager.class));
+
+        final MockServerWebExchange exchange = exchangeOf(LEGACY_PATH);
+        filter.filter(exchange, mockChain()).block(TIMEOUT);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode());
+        final String body = bodyText(exchange);
+        assertTrue(body.contains("X-Tenant-Key"), "文案应点名 API Key 头名: " + body);
+        assertTrue(body.contains("X-Tenant-Token"), "文案应点名 JWT 头名: " + body);
+        assertFalse(body.contains("请提供API Key或JWT Token"), "旧文案没有头名，不该再出现: " + body);
+    }
+
+    @Test
+    @DisplayName("RATE-007: 头名空白时提示回落到 X-API-Key / X-Jairouter-Token，不出现 null")
+    void missingCredentialsMessage_shouldFallBackWhenHeaderNameBlank() {
+        final SecurityProperties props = mock(SecurityProperties.class);
+        final ApiKeyConfig apiKeyConfig = mock(ApiKeyConfig.class);
+        final JwtConfig jwtConfig = mock(JwtConfig.class);
+        when(props.getApiKey()).thenReturn(apiKeyConfig);
+        when(props.getJwt()).thenReturn(jwtConfig);
+        when(apiKeyConfig.isEnabled()).thenReturn(true);
+        when(jwtConfig.isEnabled()).thenReturn(true);
+        when(apiKeyConfig.getHeaderName()).thenReturn(null);
+        when(jwtConfig.getJwtHeader()).thenReturn("  ");
+
+        final ServerAuthenticationConverter converter = mock(ServerAuthenticationConverter.class);
+        when(converter.convert(any())).thenReturn(Mono.empty());
+        final SpringSecurityAuthenticationFilter filter = new SpringSecurityAuthenticationFilter(
+                props, converter, mock(ReactiveAuthenticationManager.class));
+
+        final MockServerWebExchange exchange = exchangeOf(LEGACY_PATH);
+        filter.filter(exchange, mockChain()).block(TIMEOUT);
+
+        final String body = bodyText(exchange);
+        assertTrue(body.contains("X-API-Key"), body);
+        assertTrue(body.contains("X-Jairouter-Token"), body);
+        assertFalse(body.contains("null"), "提示里不得出现 null: " + body);
     }
 
     // ==================== 辅助方法 ====================

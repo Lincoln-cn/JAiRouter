@@ -157,7 +157,19 @@ You can monitor API Key quota usage through:
 
 ### Permission Level Descriptions
 
-| Permission | Description | Applicable Scenarios |
+> **⚠️ In the current implementation `permissions` holds service types, not actions**: fill in
+> `chat` / `embedding` / `rerank` / `tts` / `stt` / `imgGen` / `imgEdit`. The authority granted to the
+> key is `ROLE_<serviceType>`. The `read` / `write` / `delete` / `admin` values below are the
+> **legacy format**: they are still accepted, but they are normalized to "all service types", which
+> is not the coarse-grained action semantics they originally had.
+>
+> **⚠️ Empty means unrestricted (since v3.8.6)**: when a create request omits `permissions`, the
+> server expands it to all service types. Previously the empty list was stored as-is — the key was
+> created successfully but could not call anything: every `/v1/**` call returned
+> `403 Caller does not have permission for service: ...`. The response `warning` states that all
+> service types were granted by default.
+
+| Permission (legacy format) | Description | Applicable Scenarios |
 |------------|-------------|----------------------|
 | `read` | Read-only permission, can query models and send inference requests | Regular users, client applications |
 | `write` | Write permission, can modify configurations (excluding security configurations) | Service administrators |

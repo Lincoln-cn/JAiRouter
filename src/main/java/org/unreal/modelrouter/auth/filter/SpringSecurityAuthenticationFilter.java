@@ -23,7 +23,9 @@ import reactor.core.publisher.Mono;
 import org.unreal.modelrouter.common.exceptionhandler.V1ErrorBodyMapper;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -49,6 +51,19 @@ import java.util.Map;
  */
 @Slf4j
 public class SpringSecurityAuthenticationFilter implements WebFilter {
+
+    /**
+     * 与 {@code ApiKeyConfig.headerName} 的字段默认值一致。
+     *
+     * <p>提示文案里再兜一层：配置对象可能被 mock 或未完全绑定（{@code getHeaderName()} 返回
+     * {@code null}），而把「请通过 null 请求头提供凭据」写给客户端比不给提示更糟。</p>
+     */
+    private static final String DEFAULT_API_KEY_HEADER = "X-API-Key";
+
+    /**
+     * 与 {@code JwtConfig.jwtHeader} 的字段默认值一致，兜底理由同上。
+     */
+    private static final String DEFAULT_JWT_HEADER = "X-Jairouter-Token";
 
     private final SecurityProperties securityProperties;
     private final ServerAuthenticationConverter authenticationConverter;
@@ -98,8 +113,7 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
         // complete empty、永不 emit 值，认证成功的请求同样会命中该分支并写出伪 401，覆盖
         // 尚未提交的真实响应（典型表现：/v1/** 代理与流式调用恒回 AUTH_MISSING）。
         return authenticationConverter.convert(exchange)
-                .switchIfEmpty(writeMissingCredentialsError(exchange,
-                        "请求缺少认证信息，请提供API Key或JWT Token"))
+                .switchIfEmpty(writeMissingCredentialsError(exchange, missingCredentialsMessage()))
                 // 使用认证管理器进行实际认证
                 .flatMap(authentication -> authenticationManager.authenticate(authentication))
                 .flatMap(authenticated -> {
@@ -115,6 +129,42 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
                     }
                     return Mono.error(throwable);
                 });
+    }
+
+    /**
+     * 凭据缺失时的提示文案。
+     *
+     * <p>头名取自配置而不是写死：API Key 走 {@code SecurityProperties.ApiKey.headerName}
+     * （默认 {@code X-API-Key}），JWT 走 {@code JwtConfig.jwtHeader}（默认
+     * {@code X-Jairouter-Token}）。{@code Authorization} 头刻意<b>不</b>参与网关认证 ——
+     * 它要原样透传给下游 AI 服务（见 {@link DefaultAuthenticationConverter} 的
+     * {@code extractJwtToken} javadoc），因此文案必须点名可用的头，否则调用方按 OpenAI
+     * 习惯发 {@code Authorization: Bearer ...} 只会看到 401，却不知道该换哪个头。</p>
+     *
+     * @return 面向客户端的中文提示
+     */
+    private String missingCredentialsMessage() {
+        final List<String> acceptedHeaders = new ArrayList<>(2);
+        if (securityProperties.getApiKey().isEnabled()) {
+            acceptedHeaders.add(headNameOrFallback(
+                    securityProperties.getApiKey().getHeaderName(), DEFAULT_API_KEY_HEADER));
+        }
+        if (securityProperties.getJwt().isEnabled()) {
+            acceptedHeaders.add(headNameOrFallback(
+                    securityProperties.getJwt().getJwtHeader(), DEFAULT_JWT_HEADER));
+        }
+        if (acceptedHeaders.isEmpty()) {
+            return "请求缺少认证信息";
+        }
+        return "请求缺少认证信息，请通过 " + String.join(" 或 ", acceptedHeaders)
+                + " 请求头提供凭据（Authorization 头不参与网关认证，原样透传给下游服务）";
+    }
+
+    /**
+     * 头名为空白时回落到默认常量（理由见 {@link #DEFAULT_API_KEY_HEADER}）。
+     */
+    private static String headNameOrFallback(final String configured, final String fallback) {
+        return configured == null || configured.isBlank() ? fallback : configured;
     }
 
     /**
@@ -165,8 +215,7 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
         // Mono.defer 延迟构造：辅助方法内含"装配期不应执行"的告警与响应写入逻辑，若作为
         // switchIfEmpty 的实参被提前求值，认证成功的请求也会被打出"缺少认证信息"告警。
         return authenticationConverter.convert(exchange)
-                .switchIfEmpty(writeMissingCredentialsError(exchange,
-                        "请求缺少认证信息，请提供X-API-Key或Jairouter_token"))
+                .switchIfEmpty(writeMissingCredentialsError(exchange, missingCredentialsMessage()))
                 .flatMap(authentication -> authenticationManager.authenticate(authentication)
                         .flatMap(authenticated -> continueWithSecurityContext(authenticated, exchange, chain))
                         // 只捕获认证相关异常，其它异常放行
