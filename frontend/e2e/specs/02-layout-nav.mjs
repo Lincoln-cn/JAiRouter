@@ -16,7 +16,7 @@ const MENU_GROUPS = [
 ]
 
 // 每组菜单项数（合计 29）：40 → 29 后 12 个页面收进 tabs，不再单独占侧栏
-const MENU_ITEMS_PER_GROUP = [1, 5, 7, 4, 6, 4, 2]
+const MENU_ITEMS_PER_GROUP = [1, 5, 7, 4, 6, 5, 2]
 
 export default {
   id: 'layout-nav',
@@ -39,9 +39,9 @@ export default {
     const subCount = await subMenus.count()
     check('layout-menu-groups', subCount === 7, `sub-menus=${subCount}`)
 
-    // 菜单项总数与逐组项数（7 组 29 项；增删菜单时这里与 MENU_GROUPS 都要同步改）
+    // 菜单项总数与逐组项数（7 组 30 项；增删菜单时这里与 MENU_GROUPS 都要同步改）
     const allItems = await page.locator('.layout-menu .el-menu-item').count()
-    check('layout-menu-item-total', allItems === 29, `items=${allItems}`)
+    check('layout-menu-item-total', allItems === 30, `items=${allItems}`)
     for (let i = 0; i < MENU_GROUPS.length; i++) {
       const group = page.locator('.layout-menu .el-sub-menu').nth(i)
       const count = await group.locator('.el-menu-item').count()
