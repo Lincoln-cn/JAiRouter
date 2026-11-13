@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.common.health.HealthDetails;
 import org.unreal.modelrouter.monitor.tracing.async.AsyncTracingProcessor;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
 import org.unreal.modelrouter.monitor.tracing.config.TracingMonitoringConfig;
@@ -301,7 +302,7 @@ public final class TracingPerformanceMonitor implements HealthIndicator {
                     .withDetail("processingDropRate", processingStats.getDropRate())
                     .build();
         } catch (Exception e) {
-            return Health.down().withDetail("error", e.getMessage()).build();
+            return Health.down().withDetail("error", HealthDetails.safeMessage(e)).build();
         }
     }
 
