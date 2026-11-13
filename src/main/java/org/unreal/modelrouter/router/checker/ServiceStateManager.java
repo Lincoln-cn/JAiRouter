@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.config.cluster.ClusterHealthShareService;
 import org.unreal.modelrouter.monitor.controller.HealthStatusSseController;
 import org.unreal.modelrouter.router.model.InstanceKeys;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
@@ -28,6 +29,14 @@ public class ServiceStateManager {
     @Lazy
     @Autowired(required = false)
     private HealthStatusSseController healthStatusSseController;
+
+    /**
+     * 上游实例健康状态的跨副本共享（issue #1137）。未配置/未启用时为 null，
+     * 此时判定完全沿用本副本探测结果。
+     */
+    @Lazy
+    @Autowired(required = false)
+    private ClusterHealthShareService clusterHealthShareService;
 
     // 存储每个服务类型的健康状态
     private final Map<String, Boolean> serviceHealthStatus = new ConcurrentHashMap<>();
@@ -55,7 +64,17 @@ public class ServiceStateManager {
     public boolean isInstanceHealthy(final String serviceType, final ModelRouterProperties.ModelInstance instance) {
         // v2.7.11: 使用 BitSet 查询；#636 起键由 InstanceKeys 统一解析（instanceId 缺失回退 baseUrl）
         String instanceKey = InstanceKeys.healthKey(serviceType, instance);
-        return instanceHealthBits.isHealthy(instanceKey, true); // 默认健康
+        boolean localHealthy = instanceHealthBits.isHealthy(instanceKey, true); // 默认健康
+        // #1137：集群模式下按配置语义合并其它副本上报的健康视图；单机或未启用时直接返回本地结果
+        if (clusterHealthShareService == null) {
+            return localHealthy;
+        }
+        try {
+            return clusterHealthShareService.resolve(instanceKey, localHealthy);
+        } catch (RuntimeException e) {
+            // 共享视图异常不得影响选路：退回本地判定
+            return localHealthy;
+        }
     }
 
     /**

@@ -3,6 +3,9 @@ package org.unreal.modelrouter.auth.security.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
+import org.unreal.modelrouter.common.cluster.ClusterEventBus;
+import org.unreal.modelrouter.config.cluster.ClusterConfigSyncService;
+import org.unreal.modelrouter.config.core.manager.ConfigVersionAllocator;
 import org.unreal.modelrouter.persistence.store.StoreManager;
 
 import java.util.HashMap;
@@ -18,11 +21,17 @@ import java.util.Map;
 public class ApiKeyConfigManager {
 
     private final StoreManager storeManager;
+    private final ConfigVersionAllocator versionAllocator;
+    private final ClusterEventBus clusterEventBus;
     private final String apiKeysStoreKey = "security.api-keys";
     private final String storeApiKeys = "apiKeys";
 
-    public ApiKeyConfigManager(final StoreManager storeManager) {
+    public ApiKeyConfigManager(final StoreManager storeManager,
+                               final ConfigVersionAllocator versionAllocator,
+                               final ClusterEventBus clusterEventBus) {
         this.storeManager = storeManager;
+        this.versionAllocator = versionAllocator;
+        this.clusterEventBus = clusterEventBus;
     }
 
     /**
@@ -80,9 +89,13 @@ public class ApiKeyConfigManager {
      * 保存新版本配置
      */
     public int saveNewVersion(final Map<String, Object> config) {
-        int version = getCurrentVersion() + 1;
+        int version = versionAllocator.allocate(apiKeysStoreKey);
         storeManager.saveConfigVersion(apiKeysStoreKey, config, version);
         log.info("已保存 API Key 配置为新版本：{}", version);
+
+        // 广播给其它副本，让它们的 API Key 缓存立即刷新（#1132）；单副本时是空实现。
+        clusterEventBus.publish(ClusterConfigSyncService.CONFIG_CHANGED_CHANNEL,
+                "{\"key\":\"" + apiKeysStoreKey + "\",\"version\":" + version + "}");
         return version;
     }
 

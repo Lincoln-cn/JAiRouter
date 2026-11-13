@@ -328,21 +328,91 @@ jairouter:
       enabled: true      # default false: single-replica deployments need no cross-replica broadcast
 ```
 
-## Configuration change timing contract
+## Cluster member discovery and visibility (v3.8.6+)
+
+In a multi-replica deployment each replica keeps a **member record** in shared storage, so operators can
+see at a glance how many replicas exist, which are online, and which are behind on configuration:
+
+```yaml
+jairouter:
+  cluster:
+    mode: auto                 # auto / standalone / cluster
+    advertise-url: ""          # optional: this replica's reachable address, defaults to http://<hostname>:<server.port>
+    heartbeat-interval-ms: 5000
+    ttl-seconds: 15            # no renewal within this window means the member is gone
+    member-store: redis        # redis / db
+```
+
+- **Zero cost in standalone mode**: under `mode=auto` the decision uses `replicas>1` or
+  `KUBERNETES_SERVICE_HOST`/`POD_NAME`; a standalone verdict means the heartbeat thread and the member
+  store never start working, so an extra deployment shape costs no background overhead.
+- **Where the member table lives**: Redis by default (`SET ... EX ttl` renewed every
+  `heartbeat-interval-ms` — lease semantics, no cleanup job). With `member-store: db` it uses a
+  PostgreSQL table plus a cleanup job, for deployments that only provide PostgreSQL.
+- **`advertise-url` is worth setting explicitly**: under container bridge networking `hostname:port` is
+  not reachable from outside, and Kubernetes pod IPs change across restarts. Other replicas and the
+  `sla` toolchain reach this replica through it.
+- **Status endpoint**: `GET /api/cluster/status` (permission `config:cluster:read`) returns `mode`,
+  `modeSource`, `self`, `clusterConfigVersion`, `summary{total,online,suspect,staleReplicas}` and
+  `members[]` (each with `displayName` / `advertiseUrl` / `startedAt` / `configVersion` /
+  `instanceCount` / `healthyInstances` / `buildVersion` / `lastSeen`). In standalone mode it returns
+  `mode: "standalone"` with an empty member list.
+- **Console**: the "System → Cluster Settings" page shows the member table and config-sync parameters,
+  backed by `/api/config/cluster` (permissions `config:cluster:read` / `config:cluster:write`).
+
+The default member TTL is 15 seconds (three heartbeat periods). After a replica is `kill -9`ed it
+disappears from the member table within 15 seconds; the page marks a member whose last renewal is older
+than two heartbeat periods as suspected offline (yellow) instead of dropping it immediately.
+
+## Shared upstream health across replicas (v3.8.6+)
+
+By default every replica judges upstream instance health **on its own**: replica A may consider an
+instance down while replica B still considers it healthy, so the same instance gets opposite routing
+decisions at the same moment. With health sharing enabled, each replica publishes its per-instance
+verdict to shared storage and routing merges them according to the configured semantics:
+
+```yaml
+jairouter:
+  cluster:
+    health-sharing:
+      enabled: false           # default off: a single replica needs no sharing
+      mode: quorum             # local / shared / quorum
+      tolerance-count: 1       # under quorum, how many replicas must see it healthy
+      grace-seconds: 30        # freshness window for the shared view
+```
+
+| Mode | Semantics |
+|---|---|
+| `local` | Only the local verdict (equivalent to disabled) |
+| `shared` | Use the shared view while it is fresh; fall back to local otherwise |
+| `quorum` | A healthy local verdict wins; otherwise require at least `tolerance-count` healthy replicas in the shared view |
+
+**Failure semantics**: if the shared view cannot be read, routing falls back to the local verdict and
+only logs at debug level.
+
+## Configuration change timing contract (v3.8.6+)
 
 When a management API call modifies service instances or routing rules, the configuration is written to
-shared storage as a **new version** and reloaded immediately **only in the replica that handled the
-request** (the version save triggers `ModelServiceRegistry.refreshFromMergedConfig`).
+shared storage as a **new version**. v3.8.6 adds **cross-replica sync**:
 
-- **The replica that made the change**: effective immediately.
-- **Every other replica**: **not** notified (there is no configuration broadcast and no periodic pull);
-  it keeps the old configuration until it triggers a local reload itself (a management operation on that
-  replica) or restarts.
+```yaml
+jairouter:
+  cluster:
+    config-sync:
+      enabled: true            # default on
+      poll-interval-ms: 5000   # how often each replica polls the shared version
+      event-bus-enabled: true  # also notify over Redis pub/sub (requires cluster.events.enabled=true)
+```
 
-So a configuration change in a multi-replica deployment is **not globally atomic** — there is a window
-during which replicas use different rules, and its length depends on when operations restart pods or
-trigger a local reload. If that window is unacceptable, pin traffic during changes at the gateway, or
-wait for configuration broadcast / periodic pull to be introduced.
+- **The replica that made the change**: effective immediately (local reload after saving).
+- **Every other replica**: picks up the advanced version within one `poll-interval-ms` and reloads;
+  with `event-bus-enabled` and `cluster.events.enabled=true` this is usually sub-second.
+- **Version source**: the configuration `version` column in shared storage (one `max` read per round,
+  so the cost is negligible).
+- **Version allocation**: `config_sequences` plus CAS keeps versions unique across replicas (v3.8.6,
+  #1135).
+- Single-replica deployments are unaffected: the switch is on by default, but a poll that sees an
+  unchanged version does nothing.
 
 ## Known gaps
 
@@ -352,8 +422,6 @@ The following are recorded but not yet implemented — multi-replica deployments
   `RolePermissionService` cache (`Caffeine`, 5-minute write expiry) is invalidated only in the local
   process, so role changes take up to 5 minutes to converge — a **bounded** limit, recorded here
   deliberately. The API key cache is now covered by the scheduled refresh above (same bound).
-- **Configuration hot reload is not pushed between replicas.** A management API change takes effect
-  only in the local process; other replicas converge on restart or on their next local reload, so
-  routing and rate-limit rules briefly diverge.
-- **Each replica runs DDL itself.** Versioned migrations (the prerequisite for safe concurrent DDL
-  across replicas) are not in place yet.
+- **Each replica runs DDL itself.** Flyway migrations run on each replica at startup and Flyway takes
+  its own lock for concurrent runs; for cross-version upgrades it is still best to let one replica
+  finish migrating before rolling the rest.

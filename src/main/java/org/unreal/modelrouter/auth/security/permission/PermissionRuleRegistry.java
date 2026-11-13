@@ -207,6 +207,12 @@ public class PermissionRuleRegistry {
                 PermissionRule.get("/api/config/ratelimit/**", PermissionCodes.CONFIG_RATELIMIT_READ),
                 PermissionRule.write("/api/config/ratelimit/**", PermissionCodes.CONFIG_RATELIMIT_WRITE),
 
+                // ===== 集群设置（ClusterConfigController，#1132 / #1136 / #1137） =====
+                PermissionRule.get("/api/config/cluster/**", PermissionCodes.CONFIG_CLUSTER_READ),
+                PermissionRule.write("/api/config/cluster/**", PermissionCodes.CONFIG_CLUSTER_WRITE),
+                // 集群成员状态（ClusterStatusController，#1136）：只读
+                PermissionRule.get("/api/cluster/**", PermissionCodes.CONFIG_CLUSTER_READ),
+
                 // ===== 配额监控（QuotaMonitoringController） =====
                 PermissionRule.get("/api/monitoring/quota/**", PermissionCodes.MONITORING_QUOTA_READ),
 

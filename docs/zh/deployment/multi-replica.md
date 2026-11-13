@@ -267,18 +267,80 @@ jairouter:
       enabled: true      # 默认 false：单副本部署无需跨副本广播
 ```
 
-## 配置变更的生效时间契约
+## 集群成员发现与状态可见（v3.8.6+）
 
-管理 API 修改服务实例或路由规则后，配置以「新版本」写入共享存储，并**只在处理该请求的副本内**
-立即重载（保存版本后调用 `ModelServiceRegistry.refreshFromMergedConfig`）。
+多副本部署下每个副本会在共享存储里维护一条「成员记录」，让运维能在一个页面上看到「一共有几个副本、
+谁在线、谁的配置版本落后」：
 
-- **发起变更的副本**：立即生效。
-- **其它副本**：**不会**被主动通知（仓库既无配置广播，也无定时拉取），保持旧配置，直到该副本
-  自身触发一次本地重载（本副本上的一次管理操作）或重启。
+```yaml
+jairouter:
+  cluster:
+    mode: auto                 # auto / standalone / cluster
+    advertise-url: ""          # 可选：本副本对外可达地址，缺省 http://<hostname>:<server.port>
+    heartbeat-interval-ms: 5000
+    ttl-seconds: 15            # 超过该时长未续期即视为失联
+    member-store: redis        # redis / db
+```
 
-即多副本下配置变更**不是全局原子**的，存在「各副本短暂使用不同规则」的窗口，窗口长度取决于运维
-何时滚动重启或在本副本触发 reload。若该窗口不可接受，需在网关层做变更期流量固定，或等待后续
-引入配置广播 / 定时拉取。
+- **单机模式零开销**：`mode=auto` 时按 `replicas>1` 或 `KUBERNETES_SERVICE_HOST`/`POD_NAME` 判定；
+  判为单机则心跳线程与成员存储根本不启动（Bean 存在但不工作），不会因为多了一个部署形态而多一份后台开销。
+- **成员表落点**：默认 Redis（`SET ... EX ttl` 每 `heartbeat-interval-ms` 续期，租约语义，无需清理任务）；
+  `member-store: db` 时改用 PostgreSQL 表 + 定时清理，适用于「客户只提供 PostgreSQL」的部署。
+- **`advertise-url` 建议显式配置**：容器 bridge 网络下 `hostname:port` 对外不可达，K8s Pod IP 会随重启变化；
+  工具链（`sla`）与其它副本靠它访问本副本。
+- **状态端点**：`GET /api/cluster/status`（权限 `config:cluster:read`）返回 `mode`、`modeSource`、`self`、
+  `clusterConfigVersion`、`summary{total,online,suspect,staleReplicas}` 与 `members[]`
+  （每个成员的 `displayName` / `advertiseUrl` / `startedAt` / `configVersion` / `instanceCount` /
+  `healthyInstances` / `buildVersion` / `lastSeen`）。单机模式返回 `mode: "standalone"` 与空成员表。
+- **控制台**：「系统 → 集群设置」页展示成员表与配置同步参数，读写走 `/api/config/cluster`
+  （权限 `config:cluster:read` / `config:cluster:write`）。
+
+成员记录的默认 TTL 是 15 秒（3 个心跳周期）。副本被 `kill -9` 时，最长 15 秒后从成员表消失；
+页面把「超过 2 个心跳周期未续期」的成员标为疑似离线（黄色），不会立即从表里移除。
+
+## 上游健康状态跨副本共享（v3.8.6+）
+
+默认每个副本对上游实例的健康判定**各算各的**：副本 A 认为某实例挂了，副本 B 可能仍认为它健康，
+于是同一时刻不同副本对同一实例做出相反的路由决策。开启健康共享后，各副本把自己对每个实例的判定
+写进共享存储，选路时按配置的语义合并：
+
+```yaml
+jairouter:
+  cluster:
+    health-sharing:
+      enabled: false           # 默认关：单副本无需共享
+      mode: quorum             # local / shared / quorum
+      tolerance-count: 1       # quorum 下至少多少个副本认为健康才算健康
+      grace-seconds: 30        # 共享视图的新鲜度窗口
+```
+
+| 模式 | 语义 |
+|---|---|
+| `local` | 只看本地判定（等价于不开启） |
+| `shared` | 有新鲜上报时以共享视图为准；无上报退回本地 |
+| `quorum` | 本地健康即健康；本地不健康时要求「共享视图里健康副本数 ≥ `tolerance-count`」 |
+
+**失败语义**：共享视图读取异常时回退本地判定（选路不受影响），只记 debug 日志。
+
+## 配置变更的生效时间契约（v3.8.6+）
+
+管理 API 修改服务实例或路由规则后，配置以「新版本」写入共享存储。v3.8.6 起新增**跨副本同步**：
+
+```yaml
+jairouter:
+  cluster:
+    config-sync:
+      enabled: true            # 默认开
+      poll-interval-ms: 5000   # 轮询共享存储版本号的间隔
+      event-bus-enabled: true  # 额外用 Redis pub/sub 即时通知（需 cluster.events.enabled=true）
+```
+
+- **发起变更的副本**：立即生效（保存后本地重载）。
+- **其它副本**：最迟一个 `poll-interval-ms` 内感知版本号前进并重载；`event-bus-enabled` 且
+  `cluster.events.enabled=true` 时通常亚秒级。
+- **版本号来源**：共享存储里配置的 `version` 列（每轮只读一次 `max`，代价很小）。
+- **版本号分配**：由 `config_sequences` 表 + CAS 保证跨副本不撞号（v3.8.6，#1135）。
+- 单副本部署不受影响：开关虽默认开，但轮询发现版本不变时不动作。
 
 ## 已知未覆盖
 
@@ -287,6 +349,5 @@ jairouter:
 - **权限缓存失效不跨 Pod 主动传播**：`RolePermissionService` 的缓存（`Caffeine`，写后 5 分钟过期）
   只在本进程失效，改角色后各副本最长 5 分钟内不一致——这是**已知且有界**的失效上限。
   API Key 缓存已由上一节的定时刷新覆盖（上限同样是刷新间隔）。
-- **配置热更新不互推**：管理 API 改配置后只有本进程生效，其它副本靠重启或再次触发本地 reload，
-  期间路由与限流规则在各副本间短暂分裂。
-- **DDL 由各副本自行执行**：多副本同时启动时并发 DDL 的前置治理（版本化迁移）尚未落地。
+- **DDL 由各副本自行执行**：Flyway 迁移在各副本启动时各自执行，并发由 Flyway 自己加锁；
+  跨版本升级时仍建议先滚动到一个副本完成迁移，再滚动其余副本。
