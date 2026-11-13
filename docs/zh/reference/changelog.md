@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 3.8.5
-> **最后更新**: 2026-11-12
+> **文档版本**: 3.8.6
+> **最后更新**: 2026-11-14
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,36 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [3.8.6] - 2026-11-14 - 多副本下配置、成员与健康状态开始互认
+
+这一版处理的是同一类问题：**多副本部署里，每个副本各说各话**。配置改了只有本副本知道，成员有几台没人说得清，同一个上游实例在 A 那里是坏的、在 B 那里还是好的。三件事现在都有了对策，并且都能在控制台里看见。
+
+* **配置变更跨副本同步（#1132）**：新增 `jairouter.cluster.config-sync.{enabled（默认 true）, poll-interval-ms（默认 5000）, event-bus-enabled（默认 true）}`。每个副本定时读取共享库里的配置版本号，发现前进就重建运行时配置；开启 `cluster.events.enabled` 后还通过 Redis pub/sub 即时通知。原先「其它副本不会被主动通知」的契约就此作废。
+* **配置版本号跨副本唯一（#1135）**：新增 `config_sequences` 表（V12 迁移）与 `ConfigVersionAllocator`，用「读当前值 → CAS 写入 → 失败退避重试」分配版本号，替换原来的「读最大版本 + 1」。并发写入不再撞同一个版本号。
+* **集群成员发现与状态可见（#1136）**：新增 `jairouter.cluster.{mode=auto|standalone|cluster, advertise-url, heartbeat-interval-ms=5000, ttl-seconds=15, member-store=redis|db}`。集群形态下每个副本每 5 秒续期一条成员记录（Redis 租约或 PostgreSQL 表），失联由 TTL 判定；`GET /api/cluster/status` 返回成员表、配置版本与汇总，控制台「系统 → 集群设置」页直接展示。**单机形态零开销**：判定为单机时不启动心跳线程。
+* **上游健康状态跨副本共享（#1137）**：新增 `jairouter.cluster.health-sharing.{enabled（默认 false）, mode=local|shared|quorum, tolerance-count=1, grace-seconds=30}`。默认关闭，行为与之前一致；打开后路由可参考其它副本的上报，`quorum` 语义为「本地健康即健康，本地不健康时要求足够多副本看到健康」。
+* **PostgreSQL 下的可选条件查询可以执行了（#1134）**：审计事件、异常事件、调用历史三处「参数为 null 就不限」的 JPQL 改成 Spring Data Specification 动态拼条件。原先在 PostgreSQL 上会报 `could not determine data type of parameter $1`（H2 上不报，所以测试一直没抓到），并且补了静态守卫，禁止再写 `(:param IS NULL OR ...)`。
+* **健康检查自身不再把 `/actuator/health` 变成 400（#1133）**：`Health.Builder#withDetail` 与 `Map.of` 都拒绝 null，而 Redis 超时时异常消息常常是空的，于是健康检查自己抛 NPE、被全局异常处理器变成 400。新增 `HealthDetails.safeMessage(Throwable)`，3 个健康指示器共 9 处统一改用。
+
+**限流与配额**
+
+* **API Key 每分钟限流接入主链路（#1113/#1114）**：新增固定窗口的每分钟限流（`jairouter.ratelimit.apiKey.*`，默认开启），在配额检查之前执行，超限返回 429 + `X-RateLimit-*` 头；多副本下通过 Redis Lua 原子自增实现全局上限，Redis 不可用时按 `fail-open` 降级。原先认证侧那套每分钟限流已删除，避免双重判定。配额窗口不再包含 `MINUTE`（存量数据仍兼容）。
+* **Web 可配置（#1116）**：控制台「流量治理 → 限流配置」页可查看与修改每分钟限流参数，改动即时生效；需要重启的字段会明确提示。权限码新增 `config:ratelimit:read/write`。
+
+**部署与运维**
+
+* **Kubernetes 多副本资产（#1108–#1113）**：`deploy/k8s/base/postgres.yaml`（Secret + Service + StatefulSet）、ConfigMap 补 `DATABASE_URL/USERNAME` 与 `semantic-cache.redis.enabled`、Deployment 用 secretKeyRef 注入 `DATABASE_PASSWORD`；迁移 Job 独立到 `deploy/k8s/migrate/`，配套 `deploy/k8s/apply.sh`。
+* **生命周期脚本（#1117、#1140）**：`deploy/lifecycle/{linux,windows}` 在真实服务器上跑了安装、卸载、重装、purge 全链路，修掉 9 类问题（docker compose 探测、`--dry-run` 强依赖 jar、prefix 归属保护、env 文件多实例冲突、`spring.config.import` 优先级导致端口配置不生效、`JAVA_OPTS` 未加引号、日志目录未切工作目录、回滚只杀包装进程留下孤儿 java 持 H2 锁、卸载非 purge 误删标记文件）。
+
+**会话粘性与前端**
+
+* **粘性配置无效时启动提示（#1127）**：`sticky.enabled=true` 且实例数大于 1 时，负载均衡实际不会分散。启动时输出 `STICKY_INEFFECTIVE` 警告与修复命令，`sla doctor` 也新增对应检查。
+* **粘性粒度可视化（#1128–#1130）**：服务管理页新增「粘性」列与粒度下拉（同一凭证 + 同一模型 / 同一租户跨模型），列表对「粘性且多实例」标出橙色标签。
+
+**其它**
+
+* 认证失败提示点明应使用哪个请求头与哪个端点（#1124）；API Key 未显式指定 `permissions` 时默认允许全部服务类型（#1125）。
 
 ### [3.8.5] - 2026-11-12 - 实例变动不再抹掉服务级配置
 

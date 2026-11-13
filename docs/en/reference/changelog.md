@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.8.5
-> **Last Updated**: 2026-11-08
+> **Document Version**: 3.8.6
+> **Last Updated**: 2026-11-14
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,36 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.8.6] - 2026-11-14 - Multiple replicas start agreeing on configuration, members and health
+
+This release addresses one class of problem: **in a multi-replica deployment every replica told its own story**. A configuration change was visible only to the replica that handled it, nobody could say how many replicas existed, and an upstream instance could be down on replica A while replica B still routed to it. All three now have an answer, and all three are visible in the console.
+
+* **Configuration changes propagate across replicas (#1132)**: new `jairouter.cluster.config-sync.{enabled (default true), poll-interval-ms (default 5000), event-bus-enabled (default true)}`. Each replica polls the configuration version in shared storage and reloads when it advances; with `cluster.events.enabled` it also gets an immediate Redis pub/sub notification. The old "other replicas are not notified" contract is gone.
+* **Configuration versions are unique across replicas (#1135)**: new `config_sequences` table (V12 migration) and `ConfigVersionAllocator`, which allocates a version with "read current value, compare-and-set, back off and retry" instead of "read max version and add one". Concurrent writes no longer collide on the same version.
+* **Cluster member discovery and visibility (#1136)**: new `jairouter.cluster.{mode=auto|standalone|cluster, advertise-url, heartbeat-interval-ms=5000, ttl-seconds=15, member-store=redis|db}`. In cluster mode every replica renews a member record every 5 seconds (Redis lease or PostgreSQL table) and expiry decides liveness; `GET /api/cluster/status` returns the member table, the configuration version and a summary, and the console gets a "System → Cluster Settings" page. **Standalone costs nothing**: when the verdict is standalone, no heartbeat thread starts at all.
+* **Upstream health is shared across replicas (#1137)**: new `jairouter.cluster.health-sharing.{enabled (default false), mode=local|shared|quorum, tolerance-count=1, grace-seconds=30}`. Off by default, so behavior is unchanged; once on, routing can consult other replicas' reports. Under `quorum`, a healthy local verdict wins, and an unhealthy local verdict requires enough replicas to see the instance healthy.
+* **Optional-condition queries now run on PostgreSQL (#1134)**: the three "skip this condition when the parameter is null" JPQL queries for audit events, exception events and call history became Spring Data Specification predicates built only from the parameters that are present. On PostgreSQL the old form failed with `could not determine data type of parameter $1` (H2 inferred it, so the tests never caught it). A static guard now fails the build if `(:param IS NULL OR ...)` reappears.
+* **Health checks no longer turn `/actuator/health` into a 400 (#1133)**: both `Health.Builder#withDetail` and `Map.of` reject null, and Redis timeouts often carry no message, so the health indicator threw an NPE that the global exception handler rendered as 400. New `HealthDetails.safeMessage(Throwable)`; nine call sites across three indicators now use it.
+
+**Rate limiting and quota**
+
+* **Per-API-key per-minute limiting joined the main path (#1113/#1114)**: a fixed-window per-minute limiter (`jairouter.ratelimit.apiKey.*`, on by default) runs before the quota check and answers 429 with `X-RateLimit-*` headers; under multiple replicas it uses an atomic Redis Lua increment so the ceiling is global, and degrades fail-open when Redis is unavailable. The old per-minute limiter on the authentication side is removed to avoid double accounting. Quota windows no longer include `MINUTE` (existing data stays readable).
+* **Configurable in the console (#1116)**: the "Traffic governance → Rate limiter" page reads and edits the per-minute parameters; changes apply immediately, and fields that need a restart say so. New permissions `config:ratelimit:read/write`.
+
+**Deployment and operations**
+
+* **Kubernetes multi-replica assets (#1108–#1113)**: `deploy/k8s/base/postgres.yaml` (Secret + Service + StatefulSet), ConfigMap gains `DATABASE_URL`/`USERNAME` and `semantic-cache.redis.enabled`, and the Deployment injects `DATABASE_PASSWORD` through a secretKeyRef; the migration Job moved to `deploy/k8s/migrate/` with a companion `deploy/k8s/apply.sh`.
+* **Lifecycle scripts (#1117, #1140)**: `deploy/lifecycle/{linux,windows}` was exercised end to end on a real server (install, uninstall, reinstall, purge) and nine classes of problems were fixed: docker compose detection, `--dry-run` requiring the jar, a missing prefix-ownership guard, a hard-coded env file path that collided across instances, `spring.config.import` taking precedence so the configured port was ignored, unquoted `JAVA_OPTS`, logs landing outside the install directory, rollback killing only the wrapper shell and leaving an orphaned java holding the H2 lock, and non-purge uninstall deleting the ownership marker.
+
+**Session stickiness and the console**
+
+* **Startup warning when stickiness cannot work (#1127)**: with `sticky.enabled=true` and more than one instance, the load balancer never spreads. Startup now logs a `STICKY_INEFFECTIVE` warning with the fix command, and `sla doctor` checks for it too.
+* **Stickiness scope made visible (#1128–#1130)**: the service management page gains a "Stickiness" column and a scope selector (same credential + same model / same tenant across models), and marks "sticky + multiple instances" rows with an orange tag.
+
+**Other**
+
+* Authentication failures now say which header and which endpoint to use (#1124); an API key without explicit `permissions` defaults to all service types (#1125).
 
 ### [3.8.5] - 2026-11-12 - Instance changes no longer wipe service-level config
 
