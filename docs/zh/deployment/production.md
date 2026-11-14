@@ -1382,6 +1382,34 @@ docker logs --since="1h" jairouter-1 2>&1 | grep -i error | tail -5
 
 ## 故障排查
 
+### 升级现有部署（Flyway 校验）
+
+数据库结构由 Flyway 迁移脚本维护。升级前先确认当前版本，按下表处理：
+
+| 当前版本 | 是否需手工干预 | 说明 |
+| --- | --- | --- |
+| 3.8.5 及更早 | 否 | 替换程序包即可，未执行的迁移会自动补上 |
+| **3.8.6** | **是** | 3.8.6 把 `config_sequences` 写进了 `V1__baseline.sql`，本版已移回 `V12__config_sequences.sql`，V1 的校验和因此变化 |
+| 全新安装 | 否 | — |
+
+从 3.8.6 升级时启动会报类似：
+
+```text
+Validate failed: Migration checksum mismatch for migration version 1
+```
+
+处理方式任选其一（推荐第一种）：
+
+```bash
+# 1. 升级前对同一数据库执行一次 repair（保留已应用记录，只重算校验和）
+flyway -url=jdbc:postgresql://<host>:5432/jairouter -user=<user> -password=<pass> repair
+
+# 2. 或让应用在启动时 repair 一次，成功后再移除该参数
+java -jar model-router.jar --spring.flyway.repair-on-migrate=true
+```
+
+> **不要**直接删 `flyway_schema_history` 里的记录来"重置"——那会让所有迁移重跑，在已有数据的库上会因建表冲突失败。
+
 ### Redis 设置 {#redis-setup}
 
 在生产环境中使用 Redis 作为缓存和会话存储：
