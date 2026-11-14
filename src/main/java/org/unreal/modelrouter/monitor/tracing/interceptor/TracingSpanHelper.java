@@ -238,11 +238,11 @@ public class TracingSpanHelper {
                 duration,
                 false, // error status
                 "OK", // status code
-                new HashMap<>() // attributes
+                new HashMap<>(), // attributes
+                tracingContext.getSpanId() // parentSpanId：挂到发起本次调用的根 span 下
+
             );
 
-            // 使用同步方法记录 span，确保数据存储完成
-            // Controller层请求都是后端API请求，使用 "server" 作为服务标识
             traceQueryService.recordTraceSync(
                 tracingContext.getTraceId(),
                 "server",

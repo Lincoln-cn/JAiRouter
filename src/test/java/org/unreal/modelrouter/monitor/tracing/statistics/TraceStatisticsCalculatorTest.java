@@ -46,6 +46,16 @@ class TraceStatisticsCalculatorTest {
         );
     }
 
+    private SpanRecord createSpanWithParent(String spanId, String traceId, String operation,
+                                          double duration, boolean error, String statusCode, String parentSpanId) {
+        Instant now = Instant.now();
+        return new SpanRecord(
+            spanId, traceId, operation,
+            now.minusMillis((long) duration), now,
+            duration, error, statusCode, new HashMap<>(), parentSpanId
+        );
+    }
+
     private TraceRecord createTrace(String traceId, String serviceName,
                                     List<SpanRecord> spans, double duration) {
         return new TraceRecord(traceId, serviceName, spans, duration, Instant.now());
@@ -324,6 +334,72 @@ class TraceStatisticsCalculatorTest {
 
             double errorRate = (Double) serviceStats.get("errorRate");
             assertTrue(errorRate >= 66.0 && errorRate <= 67.0);
+        }
+    }
+
+    @Nested
+    @DisplayName("父子关系与趋势聚合（#1150/#1151）")
+    class HierarchyAndTrends {
+
+        @Test
+        @DisplayName("按 parentSpanId 计算真实深度")
+        void depthFollowsParentSpanId() {
+            SpanRecord root = createSpanWithParent("root", "t1", "POST /v1/chat", 50.0, false, "200", null);
+            SpanRecord child = createSpanWithParent("child", "t1", "Adapter.chat", 30.0, false, "200", "root");
+            SpanRecord grand = createSpanWithParent("grand", "t1", "InstanceSelection", 5.0, false, "200", "child");
+
+            TraceChainStats stats = calculator.calculateChainStats(List.of(root, child, grand));
+
+            assertEquals(3, stats.getDepth());
+        }
+
+        @Test
+        @DisplayName("父 span 不在链路内时按 1 层处理")
+        void orphanSpanCountsAsOneLayer() {
+            SpanRecord orphan = createSpanWithParent("orphan", "t2", "op", 10.0, false, "200", "missing-parent");
+
+            assertEquals(1, calculator.calculateChainStats(List.of(orphan)).getDepth());
+        }
+
+        @Test
+        @DisplayName("无数据时三个趋势方法都返回空列表")
+        void trendsAreEmptyWithoutData() {
+            Map<String, TraceRecord> empty = new HashMap<>();
+            long now = System.currentTimeMillis();
+
+            assertTrue(calculator.latencyTrend(empty, now - 3600000, now, 60000).isEmpty());
+            assertTrue(calculator.errorTrend(empty, now - 3600000, now, 60000).isEmpty());
+            assertTrue(calculator.throughputTrend(empty, now - 3600000, now, 60000).isEmpty());
+        }
+
+        @Test
+        @DisplayName("同一时间桶内的多条 trace 聚合到同一个点")
+        void trendsBucketByTimeWindow() {
+            Instant base = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.HOURS);
+            Map<String, TraceRecord> traces = new HashMap<>();
+            traces.put("t1", createTraceWithTime("t1", "svc",
+                List.of(createSpan("s1", "t1", "op", 10.0, false, "200")), 10.0, base.plusSeconds(60)));
+            traces.put("t2", createTraceWithTime("t2", "svc",
+                List.of(createSpan("s2", "t2", "op", 20.0, true, "500")), 20.0, base.plusSeconds(120)));
+
+            List<Map<String, Object>> latency = calculator.latencyTrend(traces, base.toEpochMilli(), base.plusSeconds(3600).toEpochMilli(), 3600000L);
+            List<Map<String, Object>> errors = calculator.errorTrend(traces, base.toEpochMilli(), base.plusSeconds(3600).toEpochMilli(), 3600000L);
+            List<Map<String, Object>> throughput = calculator.throughputTrend(traces, base.toEpochMilli(), base.plusSeconds(3600).toEpochMilli(), 3600000L);
+
+            assertEquals(2, latency.get(0).get("requestCount"));
+            assertEquals(2, throughput.get(0).get("requestCount"));
+            assertEquals(1L, ((Number) errors.get(0).get("errorCount")).longValue());
+        }
+
+        @Test
+        @DisplayName("未注入配置时采样率返回 0 而不是抛异常")
+        void samplingRateDefaultsToZero() {
+            Map<String, TraceRecord> traces = new HashMap<>();
+            long now = System.currentTimeMillis();
+
+            TraceStatistics stats = calculator.getTraceStatistics(traces, now - 60000, now + 60000);
+
+            assertEquals(0.0, stats.getSamplingRate(), 1e-9);
         }
     }
 }

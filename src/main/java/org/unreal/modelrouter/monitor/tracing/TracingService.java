@@ -162,11 +162,13 @@ public class TracingService {
      * @param duration 请求处理时长（毫秒）
      */
     public void finishHttpSpan(final ServerWebExchange exchange, final TracingContext context, final long duration) {
-        if (context == null || !context.isActive()) {
+        if (context == null) {
             return;
         }
 
-        long startTime = System.currentTimeMillis();
+        // duration 是本请求的处理时长，开始时刻要由它回推；直接用当前时刻会让入口 span
+        // 在时间轴上晚于它内部的子 span（见 #1151）
+        long startTime = System.currentTimeMillis() - duration;
         boolean success = true;
 
         try {

@@ -17,13 +17,11 @@ import org.unreal.modelrouter.monitor.tracing.query.TraceQueryService;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 /**
  * 追踪查询控制器
@@ -293,6 +291,10 @@ public class TracingQueryController {
             @Parameter(description = "开始时间") @RequestParam(required = false) final String startTime,
             @Parameter(description = "结束时间") @RequestParam(required = false) final String endTime) {
         
+        long endMs = endTime != null ? parseTimeString(endTime) : System.currentTimeMillis();
+        long startMs = startTime != null ? parseTimeString(startTime) : endMs - 3600000L;
+        long bucketMs = Math.max(60_000L, (endMs - startMs) / 24L);
+
         return traceQueryService.getServiceStatistics()
             .map(services -> {
                 Map<String, Object> response = new HashMap<>();
@@ -313,8 +315,8 @@ public class TracingQueryController {
                 }
                 latencyData.put("distribution", distributionData);
                 
-                // 生成延迟趋势数据（模拟）
-                List<Map<String, Object>> trendData = generateLatencyTimeSeries();
+                // 延迟趋势：按时间桶聚合本副本真实 trace（见 #1150）
+                List<Map<String, Object>> trendData = traceQueryService.latencyTrend(startMs, endMs, bucketMs);
                 latencyData.put("trend", trendData);
                 
                 response.put("data", latencyData);
@@ -330,6 +332,10 @@ public class TracingQueryController {
             @Parameter(description = "开始时间") @RequestParam(required = false) final String startTime,
             @Parameter(description = "结束时间") @RequestParam(required = false) final String endTime) {
         
+        long endMs = endTime != null ? parseTimeString(endTime) : System.currentTimeMillis();
+        long startMs = startTime != null ? parseTimeString(startTime) : endMs - 3600000L;
+        long bucketMs = Math.max(60_000L, (endMs - startMs) / 24L);
+
         return traceQueryService.getServiceStatistics()
             .map(services -> {
                 Map<String, Object> response = new HashMap<>();
@@ -350,8 +356,8 @@ public class TracingQueryController {
                 }
                 errorData.put("errorRateDistribution", errorRateDistribution);
                 
-                // 生成错误趋势数据（模拟）
-                List<Map<String, Object>> errorTrend = generateErrorTimeSeries();
+                // 错误趋势：按时间桶聚合本副本真实 trace（见 #1150）
+                List<Map<String, Object>> errorTrend = traceQueryService.errorTrend(startMs, endMs, bucketMs);
                 errorData.put("errorTrend", errorTrend);
                 
                 // 常见错误数据（模拟）
@@ -371,6 +377,10 @@ public class TracingQueryController {
             @Parameter(description = "开始时间") @RequestParam(required = false) final String startTime,
             @Parameter(description = "结束时间") @RequestParam(required = false) final String endTime) {
         
+        long endMs = endTime != null ? parseTimeString(endTime) : System.currentTimeMillis();
+        long startMs = startTime != null ? parseTimeString(startTime) : endMs - 3600000L;
+        long bucketMs = Math.max(60_000L, (endMs - startMs) / 24L);
+
         return traceQueryService.getServiceStatistics()
             .map(services -> {
                 Map<String, Object> response = new HashMap<>();
@@ -391,8 +401,8 @@ public class TracingQueryController {
                 }
                 throughputData.put("requestDistribution", requestDistribution);
                 
-                // 生成QPS趋势数据（模拟）
-                List<Map<String, Object>> qpsTrend = generateThroughputTimeSeries();
+                // 吞吐趋势：按时间桶聚合本副本真实 trace（见 #1150）
+                List<Map<String, Object>> qpsTrend = traceQueryService.throughputTrend(startMs, endMs, bucketMs);
                 throughputData.put("qpsTrend", qpsTrend);
                 
                 response.put("data", throughputData);
@@ -420,59 +430,4 @@ public class TracingQueryController {
         }
     }
 
-    private List<Map<String, Object>> generateLatencyTimeSeries() {
-        List<Map<String, Object>> timeSeries = new java.util.ArrayList<>();
-        long now = System.currentTimeMillis();
-        Random random = new SecureRandom();
-        
-        for (int i = 23; i >= 0; i--) {
-            Map<String, Object> dataPoint = new HashMap<>();
-            long timestamp = now - (i * 3600000); // 每小时一个数据点
-            dataPoint.put("timestamp", timestamp);
-            dataPoint.put("hour", String.format("%02d:00", (24 - i) % 24));
-            dataPoint.put("p50", 80 + random.nextDouble() * 40);
-            dataPoint.put("p95", 200 + random.nextDouble() * 100);
-            dataPoint.put("p99", 350 + random.nextDouble() * 150);
-            dataPoint.put("avg", 100 + random.nextDouble() * 50);
-            timeSeries.add(dataPoint);
-        }
-        
-        return timeSeries;
-    }
-
-    private List<Map<String, Object>> generateErrorTimeSeries() {
-        List<Map<String, Object>> timeSeries = new java.util.ArrayList<>();
-        long now = System.currentTimeMillis();
-        Random random = new SecureRandom();
-        
-        for (int i = 23; i >= 0; i--) {
-            Map<String, Object> dataPoint = new HashMap<>();
-            long timestamp = now - (i * 3600000);
-            dataPoint.put("timestamp", timestamp);
-            dataPoint.put("hour", String.format("%02d:00", (24 - i) % 24));
-            dataPoint.put("errorCount", random.nextInt(15));
-            dataPoint.put("errorRate", random.nextDouble() * 5.0);
-            timeSeries.add(dataPoint);
-        }
-        
-        return timeSeries;
-    }
-
-    private List<Map<String, Object>> generateThroughputTimeSeries() {
-        List<Map<String, Object>> timeSeries = new java.util.ArrayList<>();
-        long now = System.currentTimeMillis();
-        Random random = new SecureRandom();
-        
-        for (int i = 23; i >= 0; i--) {
-            Map<String, Object> dataPoint = new HashMap<>();
-            long timestamp = now - (i * 3600000);
-            dataPoint.put("timestamp", timestamp);
-            dataPoint.put("hour", String.format("%02d:00", (24 - i) % 24));
-            dataPoint.put("qps", 10 + random.nextDouble() * 20);
-            dataPoint.put("requestCount", 100 + random.nextInt(200));
-            timeSeries.add(dataPoint);
-        }
-        
-        return timeSeries;
-    }
 }

@@ -199,7 +199,7 @@
               <template #header>
                 <h4 style="margin: 0;">{{ t('tracing.search.spanDetailsTitle') }}</h4>
               </template>
-              <el-table :data="sortedSpans" style="width: 100%" size="small" default-sort="{prop: 'startTime', order: 'ascending'}">
+              <el-table :data="sortedSpans" row-key="spanId" :tree-props="{ children: 'children' }" style="width: 100%" size="small" default-sort="{prop: 'startTime', order: 'ascending'}">
                 <el-table-column type="index" label="#" min-width="50" />
                 <el-table-column prop="spanId" label="Span ID" min-width="70" show-overflow-tooltip>
                   <template #default="{ row }">
@@ -366,14 +366,32 @@ const traceChainChart = ref<HTMLElement | null>(null)
 let traceChainChartInstance: echarts.ECharts | null = null
 
 // 计算属性：排序后的 Span 列表
-const sortedSpans = computed(() => {
-  if (!traceChain.value || !traceChain.value.spans) {
-    return []
-  }
-  
-  return [...traceChain.value.spans].sort((a, b) => 
+// Span 节点：后端已按 parentSpanId 建立父子关系（#1151），这里组装成 el-table 的树形数据。
+type SpanNode = NonNullable<NonNullable<typeof traceChain.value>['spans']>[number] & { children: SpanNode[] }
+
+const sortedSpans = computed<SpanNode[]>(() => {
+  const spans: SpanNode[] = (traceChain.value?.spans || []).map(span => ({ ...span, children: [] }))
+  if (spans.length === 0) return []
+
+  const byTime = (a: SpanNode, b: SpanNode) =>
     new Date(a.startTime ?? 0).getTime() - new Date(b.startTime ?? 0).getTime()
-  )
+  const byId = new Map(spans.map(span => [span.spanId, span]))
+  const roots: SpanNode[] = []
+  for (const span of spans) {
+    const parent = span.parentSpanId ? byId.get(span.parentSpanId) : undefined
+    if (parent && parent !== span) {
+      parent.children.push(span)
+    } else {
+      roots.push(span)
+    }
+  }
+
+  const sortTree = (list: SpanNode[]) => {
+    list.sort(byTime)
+    for (const item of list) sortTree(item.children)
+  }
+  sortTree(roots)
+  return roots
 })
 
 // 搜索追踪
