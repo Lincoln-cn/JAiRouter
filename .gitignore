@@ -284,5 +284,6 @@ jindexer.jar
 # 故不入库，只入库探测器本身与 `scripts/audit/README.md`（2026-10-17 审计）。
 scripts/audit/out/
 
-# SLA tooling (commercial; not part of the open-source distribution)
-sla/
+# SLA 工具链已并入本仓库（v3.8.6 之后）。采集输出、现场包与打包产物由 `sla/.gitignore` 排除，
+# 不再在根上整目录忽略。
+

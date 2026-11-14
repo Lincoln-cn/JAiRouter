@@ -1,0 +1,35 @@
+{
+  "toolingVersion": "0.1.0",
+  "targetRange": ">=3.7.0 <4.0.0",
+  "_comment": "SLA 工具链依赖的网关契约面。任何一项消失都意味着工具需要更新，而不是网关有故障。仓库侧对应 src/test/java/org/unreal/modelrouter/SlaSurfaceContractTest.java（快照断言），这里保持同一份清单。 auth.login 由 preflight 单独验证（需要凭证），不放在本清单里。",
+  "endpoints": [
+    {
+      "id": "health",
+      "kind": "status",
+      "path": "/actuator/health"
+    },
+    {
+      "id": "instance.chat",
+      "kind": "endpoint",
+      "path": "/api/config/instance/{type}",
+      "expect": "data"
+    },
+    {
+      "id": "models.stats",
+      "kind": "endpoint",
+      "path": "/api/models/stats",
+      "expect": "data.totalInstances"
+    },
+    {
+      "id": "api-keys",
+      "kind": "endpoint",
+      "path": "/api/auth/api-keys",
+      "expect": "data"
+    },
+    {
+      "id": "metrics.prometheus",
+      "kind": "status",
+      "path": "/actuator/prometheus"
+    }
+  ]
+}

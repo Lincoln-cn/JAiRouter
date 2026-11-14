@@ -1,0 +1,27 @@
+# SLA 工具链自己的忽略规则（与主仓库的 .gitignore 相互独立）
+#
+# 这个目录是一个独立的本地 git 仓库：主仓库用 `sla/` 忽略了整个目录（商业版不分发），
+# 而 `git -C sla ...` 走的是这里的 `.git`，两边互不干扰。
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+
+# 打包产物
+*.tar
+*.tar.gz
+jairouter-sla-*.tar.gz
+
+# 采集输出与现场包（含明文密钥与客户环境信息，绝不入库）
+out/
+bundle/
+*.bundle
+.sla-backup/
+backup/
+
+# 临时文件
+*.log
+.tmp-*
+
+# Node
+node_modules/

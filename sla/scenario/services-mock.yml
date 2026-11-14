@@ -1,0 +1,218 @@
+# ============================================================================
+# 桩环境专用的服务配置（SLA 场景测试用；不进交付，也不覆盖生产配置）
+# ----------------------------------------------------------------------------
+# 与 src/main/resources/config/router/services.yml 的唯一差别：
+#   - chat 用 3 个实例，分别指向桩服务 9100 / 9101 / 9102（验证负载均衡）
+#   - 其余服务指向 127.0.0.1:19999（无监听，故意让它们保持不健康，避免干扰测试）
+# 用法：挂到容器的 /app/config/router/services.yml（application.yml 的最后一条 import）
+# ============================================================================
+
+# ========================================
+# 模型服务实例配置 (router 模块)
+# ========================================
+# 此文件包含各模型服务实例的详细配置
+# 位置：org.unreal.modelrouter.router.model
+# v2.x: 添加 instance-id 字段用于实例唯一标识
+# v2.9.7: 实例支持 tags 标签(Map<String,String>),用于标签路由圈选候选实例
+#   示例:
+#     - name: "qwen2.5-72b"
+#       base-url: "http://10.0.0.1:8000"
+#       tags:
+#         gpu_type: a100
+#         region: cn-north
+#         tier: premium
+#   请求级圈选: header X-JAiRouter-Tags: "gpu_type=a100,region=cn-north"
+#
+# 上游地址（issue #804）：所有实例的 base-url 统一写成
+#   http://127.0.0.1:19999
+# 默认指向本机 Ollama（开箱可跑）；部署时用环境变量 MODEL_UPSTREAM_BASE_URL 覆盖，
+# 或直接改这里的字面量。历史上这里写死过内网示例地址 172.16.30.6:9090，
+# 按文档启动的部署会对着一个不存在的主机做健康检查，健康检查把实例判死之后全端点 503。
+
+model:
+  # v3.5.3(#643): 本文件是 model.services 的唯一来源。
+  # 早期 config/base/model-services-base.yml 也定义过 model.services，且导入顺序靠后而实际生效；
+  # 两处重复定义已消除，聚合策略（load-balance / adapter / rate-limit / circuit-breaker / fallback）仍在 base 文件。
+  services:
+    # 聊天服务配置
+    chat:
+      load-balance:
+        type: least-connections
+      adapter: gpustack # 使用GPUStack适配器
+      # 服务级别限流配置
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 100
+        rate: 10
+        scope: "service"
+        client-ip-enable: false  # v3.5.2(#623): 默认关闭——该维度已接线，但按 IP 计数在集群/无反代下会合并不同客户端
+      instances:
+        # 桩服务三实例：用于验证负载均衡（同一服务多实例时流量如何分布）。
+        # 三个坑位落在三个不同的桩进程上，桩会在响应头 X-Mock-Instance 与响应体 mock_instance 里标记自己是谁，
+        # 因此「均衡与否」不用猜，数一下各 tag 的命中次数即可。
+        - name: "mock-9100"
+          instance-id: "aaaaaaaa-0000-4000-8000-000000000001"
+          base-url: "http://127.0.0.1:9100"
+          path: "/v1/chat/completions"
+          weight: 1
+          rate-limit:
+            enabled: false
+        - name: "mock-9101"
+          instance-id: "aaaaaaaa-0000-4000-8000-000000000002"
+          base-url: "http://127.0.0.1:9101"
+          path: "/v1/chat/completions"
+          weight: 1
+          rate-limit:
+            enabled: false
+        - name: "mock-9102"
+          instance-id: "aaaaaaaa-0000-4000-8000-000000000003"
+          base-url: "http://127.0.0.1:9102"
+          path: "/v1/chat/completions"
+          weight: 1
+          rate-limit:
+            enabled: false
+
+    # Embedding 服务配置
+    embedding:
+      load-balance:
+        type: round-robin
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 200
+        rate: 20
+        scope: "service"
+        client-ip-enable: false  # v3.5.2(#623): 默认关闭——该维度已接线，但按 IP 计数在集群/无反代下会合并不同客户端
+      # 为 embeddings 服务添加专门的熔断器配置
+      circuit-breaker:
+        enabled: true
+        failureThreshold: 10  # 提高失败阈值，避免因认证错误导致频繁熔断
+        timeout: 30000       # 缩短熔断超时时间
+        successThreshold: 3
+      instances:
+        - name: "nomic-embed-text-v1.5"
+          instance-id: "9352737c-7e9a-415c-afbc-a9c533b63388"
+          base-url: "http://127.0.0.1:19999"
+          path: "/v1/embeddings"
+          weight: 1
+          headers:
+            Authorization: "Bearer ${GPUSTACK_API_TOKEN:}"
+        - name: "bge-large-zh-v1.5"
+          instance-id: "663ef0dd-a08c-4d93-b5be-86af766f10fb"
+          base-url: "http://127.0.0.1:19999/"
+          path: "/v1/embeddings"
+          weight: 1
+          headers:
+            Authorization: "Bearer ${GPUSTACK_API_TOKEN:}"
+        - name: "bge-large-zh-v1.5"
+          instance-id: "2c17cfe6-5544-4371-9534-27846ab68e29"
+          base-url: "http://127.0.0.1:19999/"
+          path: "/v1/embeddings"
+          weight: 1
+          headers:
+            Authorization: "Bearer ${GPUSTACK_API_TOKEN:}"
+
+    # Rerank 服务配置
+    rerank:
+      load-balance:
+        type: ip-hash
+        hash-algorithm: "sha256"
+      fallback:
+        enabled: true
+        strategy: cache
+        cache-size: 50
+        cache-ttl: 600000 # 10分钟
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 50
+        rate: 5
+        scope: "service"
+        client-ip-enable: false  # v3.5.2(#623): 默认关闭——该维度已接线，但按 IP 计数在集群/无反代下会合并不同客户端
+      instances:
+        - name: "bge-reranker-v2-m3"
+          instance-id: "e28e74f0-99e8-4de9-b37e-3328f83da0f5"
+          base-url: "http://127.0.0.1:19999"
+          path: "/v1/rerank"
+          weight: 2
+          headers:
+            Authorization: "Bearer ${GPUSTACK_API_TOKEN:}"
+
+    # TTS 服务配置
+    tts:
+      load-balance:
+        type: random
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 30
+        rate: 3
+        scope: "service"
+        client-ip-enable: false  # v3.5.2(#623): 默认关闭——该维度已接线，但按 IP 计数在集群/无反代下会合并不同客户端
+      instances:
+        - name: "cosyvoice-300m"
+          instance-id: "3fe04c97-a68a-4926-a9ab-9cb34028da44"
+          base-url: "http://127.0.0.1:19999"
+          path: "/v1/audio/speech"
+          weight: 1
+          headers:
+            Authorization: "Bearer ${GPUSTACK_API_TOKEN:}"
+
+    # STT 服务配置
+    stt:
+      load-balance:
+        type: round-robin
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 30
+        rate: 3
+        scope: "service"
+        client-ip-enable: false  # v3.5.2(#623): 默认关闭——该维度已接线，但按 IP 计数在集群/无反代下会合并不同客户端
+      instances:
+        - name: "faster-whisper-tiny"
+          instance-id: "d6cef366-2bc0-4228-8bea-b220665094c8"
+          base-url: "http://127.0.0.1:19999"
+          path: "/v1/audio/transcriptions"
+          weight: 1
+          headers:
+            Authorization: "Bearer ${GPUSTACK_API_TOKEN:}"
+
+    imgGen:
+      load-balance:
+        type: round-robin
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 10
+        rate: 1
+        scope: "service"
+        client-ip-enable: false  # v3.5.2(#623): 默认关闭——该维度已接线，但按 IP 计数在集群/无反代下会合并不同客户端
+      instances:
+        - name: "stable-diffusion-2-1"
+          instance-id: "4b01f194-1c72-4cff-8520-4b10d3bb1329"
+          base-url: "http://127.0.0.1:19999"
+          path: "/v1/images/generations"
+          weight: 1
+          headers:
+            Authorization: "Bearer ${GPUSTACK_API_TOKEN:}"
+
+    imgEdit:
+      load-balance:
+        type: round-robin
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 10
+        rate: 1
+        scope: "service"
+        client-ip-enable: false  # v3.5.2(#623): 默认关闭——该维度已接线，但按 IP 计数在集群/无反代下会合并不同客户端
+      instances:
+        - name: "stable-diffusion-2-1"
+          instance-id: "46de45f9-1702-461b-95cd-5f0e7424f8b8"
+          base-url: "http://127.0.0.1:19999"
+          path: "/v1/images/edits"
+          weight: 1
+          headers:
+            Authorization: "Bearer ${GPUSTACK_API_TOKEN:}"
