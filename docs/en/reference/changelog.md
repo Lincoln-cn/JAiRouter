@@ -21,6 +21,16 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 ## Version History
 
+### [3.8.7] - 2026-11-14 - Probes ask the right endpoint, and a dependency failure no longer kills a replica
+
+This release answers two questions: which endpoint should a probe call, and does a replica still count as alive when a dependency is down. Every Dockerfile `HEALTHCHECK` used to hit the aggregate `/actuator/health`, which includes `jwtRedis` and other dependencies — so a Redis hiccup marked the replica dead and restarted it, even though the replica could still serve requests. Deployment assets now use `liveness`/`readiness`, and dependency verdicts gained a hot-editable switch.
+
+* **Deployment assets use dedicated probes**: all five Dockerfile `HEALTHCHECK` commands now hit `/actuator/health/liveness`, and the `healthcheck` in `deploy/demo/docker-compose.yml` hits `/actuator/health/readiness`. The aggregate health endpoint is no longer used by orchestration probes.
+* **jwtRedis failure verdict can be turned off**: new `jairouter.security.jwt.redis-health.fail-health` (default `true`, preserving current behavior). When set to `false`, an unreachable Redis reports `UP` with a `details` entry describing the impact (rate limiting and quota fail open, JWT blacklist may be stale), instead of turning `/actuator/health` into a 503.
+* **Readiness can aggregate dependencies**: new `jairouter.health.readiness.include-dependencies` (default `false`) plus an always-registered `readinessDependencies` aggregator. When enabled, the readiness probe consults `db`/`redis`, skipping contributors that are not registered and ignoring contributors that throw. It is off by default because draining traffic during a dependency outage widens the failure.
+* **Configurable in the console**: the "System → Health Probe Settings" page reads and updates both switches with immediate effect, and shows a table of which endpoint each consumer should use. New permission codes `config:health:read/write` (67 → 69).
+* **Documentation**: `api-reference/monitoring-api` gained three sections on choosing a probe endpoint (including why readiness excludes dependencies, given Spring Boot's strict membership validation), and probe examples in the deployment docs now use liveness.
+
 ### [3.8.6] - 2026-11-14 - Multiple replicas start agreeing on configuration, members and health
 
 This release addresses one class of problem: **in a multi-replica deployment every replica told its own story**. A configuration change was visible only to the replica that handled it, nobody could say how many replicas existed, and an upstream instance could be down on replica A while replica B still routed to it. All three now have an answer, and all three are visible in the console.

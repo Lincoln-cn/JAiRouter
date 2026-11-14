@@ -22,6 +22,16 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 ## 版本历史
 
+### [3.8.7] - 2026-11-14 - 健康探针用对端点，依赖故障不再误杀副本
+
+这一版处理的是「探针该问哪个端点」以及「依赖挂了副本还算不算活着」两个问题。此前所有 Dockerfile 的 `HEALTHCHECK` 都打整体 `/actuator/health`，而该端点包含 `jwtRedis` 等依赖组件——Redis 抖动时副本被判死、被重启，可它其实还能服务请求。现在部署资产改用 `liveness`/`readiness`，并给依赖判定加了热改开关。
+
+* **部署资产改用专用探针**：5 个 Dockerfile 的 `HEALTHCHECK` 全部改打 `/actuator/health/liveness`，`deploy/demo/docker-compose.yml` 的 `healthcheck` 改打 `/actuator/health/readiness`。整体 health 不再用于编排探针。
+* **jwtRedis 故障判定可关**：新增 `jairouter.security.jwt.redis-health.fail-health`（默认 `true`，保持既有行为）。设为 `false` 后 Redis 不可达时该组件返回 `UP` 并在 `details` 里写明影响面（限流与配额 fail-open、JWT 黑名单可能失效），不再把 `/actuator/health` 拉成 503。
+* **就绪可纳入依赖聚合**：新增 `jairouter.health.readiness.include-dependencies`（默认 `false`）与恒装配的 `readinessDependencies` 聚合器。开启后就绪探针会参考 `db`/`redis`，未装配的贡献者自动跳过、贡献者自身异常不影响结果。默认关闭是因为依赖故障时摘流会放大故障面。
+* **Web 可配置**：控制台「系统 → 健康探针设置」页可查看与修改上述两项，改动即时生效；同页给出各探针端点的语义对照表。权限码新增 `config:health:read/write`（67 → 69）。
+* **文档补齐**：`api-reference/monitoring-api` 新增「各探针该用哪个端点」三节（含「为什么 readiness 不含依赖」的严格存在性校验说明），部署文档里的探针示例同步改为 liveness。
+
 ### [3.8.6] - 2026-11-14 - 多副本下配置、成员与健康状态开始互认
 
 这一版处理的是同一类问题：**多副本部署里，每个副本各说各话**。配置改了只有本副本知道，成员有几台没人说得清，同一个上游实例在 A 那里是坏的、在 B 那里还是好的。三件事现在都有了对策，并且都能在控制台里看见。
