@@ -278,6 +278,7 @@ public class RolePermissionSeeder implements ApplicationRunner {
                 PermissionCodes.CONFIG_QUOTA_READ,
                 PermissionCodes.CONFIG_RATELIMIT_READ,
                 PermissionCodes.CONFIG_CLUSTER_READ,
+                PermissionCodes.CONFIG_HEALTH_READ,
                 PermissionCodes.MONITORING_QUOTA_READ,
                 PermissionCodes.MONITORING_EXCEPTIONS_READ
         );

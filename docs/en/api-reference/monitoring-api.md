@@ -103,6 +103,73 @@ GET /actuator/health
 > `services.*.instances[]` detail) — **no such component exists in the code**, so it has
 > been removed; see the note at the top of this section for the real health components.
 
+### Which Endpoint Should Each Probe Use
+
+`/actuator/health` is the **aggregate** health including downstream components (`db`, `jwtRedis`, ...).
+It is suitable for humans and alerting, but a poor fit for orchestration probes: a dependency blip
+will take the replica out of rotation even though the replica could still serve traffic.
+
+| Consumer | Endpoint | Semantics |
+| --- | --- | --- |
+| Process liveness | `/actuator/health/liveness` | Contains only `livenessState` and `ping`; UP while the process is alive |
+| Accepting traffic (readiness) | `/actuator/health/readiness` | Contains only `readinessState`; **excludes** db/redis by default |
+| Container self-check (Docker `HEALTHCHECK`) | `/actuator/health/liveness` | All five Dockerfile definitions in this repo are configured this way |
+| Alerting and troubleshooting | `/actuator/health` | DOWN as soon as any component is DOWN — which is the signal you want |
+| External load balancer (self-managed) | `/actuator/health/readiness` | If you *want* dependency failures to drain traffic, use aggregate health instead and accept the false drain |
+
+> The Kubernetes manifests (`deploy/k8s/base/deployment.yaml`) already do the right thing:
+> `startupProbe` / `livenessProbe` hit `/actuator/health/liveness`, `readinessProbe` hits
+> `/actuator/health/readiness`.
+
+#### Why readiness does not include dependencies
+
+`readiness` includes only `readinessState` (`config/base/monitoring-base.yml`). Spring Boot validates
+health group `include` entries **strictly**: naming a contributor that is not present in the current
+context makes the application **fail to start**. Whether `db` or `redis` is assembled depends on
+configuration (for example `REDIS_ENABLED`), so it cannot be listed statically in YAML.
+
+The trade-off: **when Redis or the database is unavailable, the replica stays in the ready set** and
+keeps receiving traffic. For deployments where a dependency failure must drain traffic, aggregate it at
+the orchestration layer (an extra probe against aggregate health, accepting the false drain), or enable
+`jairouter.health.readiness.include-dependencies` (available from 3.8.7, defaults to `false`). When on,
+`/actuator/health/readiness` evaluates `db` and `redis` through the `readinessDependencies` aggregator, so
+a dependency failure leaves the ready set — at the cost of a dependency blip potentially keeping new
+replicas out of the ready set during a rolling update.
+
+> That aggregator is **always assembled**, so listing it in the readiness `include` does not trip the
+> strict-existence check above. Internally it only evaluates `db` / `redis` that are actually assembled;
+> absent dependencies are skipped rather than reported DOWN.
+
+#### Health probe settings
+
+Both switches are readable and editable on **System → Health Probe Settings** (`/system/health`) or over
+the API. Both are hot-editable and need no restart.
+
+| Key | Default | Effect |
+| --- | --- | --- |
+| `jairouter.health.readiness.include-dependencies` | `false` | Whether readiness aggregates `db` / `redis` |
+| `jairouter.security.jwt.redis-health.fail-health` | `true` | Whether `jwtRedis` turns aggregate health DOWN when Redis is unreachable |
+
+```bash
+# Read current values
+curl -s -H "Authorization: Bearer <token>" http://localhost:8080/api/config/health
+
+# Change one of them (partial update)
+curl -s -X PUT -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  -d '{"jwtRedisFailHealth": false}' http://localhost:8080/api/config/health
+```
+
+#### Impact of the jwtRedis component in multi-replica setups
+
+Once both `jairouter.security.jwt.persistence.redis.enabled` and
+`jairouter.security.jwt.blacklist.redis.enabled` are enabled (required for multi-replica),
+`jwtRedisHealthIndicator` performs real Redis round-trips; when Redis is unreachable it reports DOWN and
+**aggregate `/actuator/health` returns 503**.
+
+From 3.8.7, `jairouter.security.jwt.redis-health.fail-health=false` downgrades it to UP (with the impact
+noted in the details: rate limiting and quota fail open, blacklist may be stale), so a Redis blip no
+longer drains healthy replicas.
+
 ## Metrics Endpoints
 
 ### Application Metrics
@@ -408,8 +475,8 @@ Import the JAiRouter Grafana dashboard for visualization:
 Configure external monitoring tools to check JAiRouter health:
 
 ```bash
-# Simple health check
-curl -f http://localhost:8080/actuator/health || exit 1
+# Simple health check (process liveness)
+curl -f http://localhost:8080/actuator/health/liveness || exit 1
 
 # Detailed health check with specific component
 curl -f http://localhost:8080/actuator/health/tracing || exit 1

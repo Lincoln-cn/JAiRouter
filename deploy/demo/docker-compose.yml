@@ -56,7 +56,9 @@ services:
       mock-upstream:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      # 就绪探针：只问「能否接收流量」。不要用整体 /actuator/health ——
+      # 它包含 db/redis 等依赖组件，依赖抖动会让容器变成 unhealthy。
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health/readiness"]
       interval: 5s
       timeout: 3s
       retries: 20

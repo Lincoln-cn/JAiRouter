@@ -199,7 +199,7 @@ docker run -d \
   -v $(pwd)/logs:/app/logs \
   -v $(pwd)/config-store:/app/config-store \
   --restart unless-stopped \
-  --health-cmd="curl -f http://localhost:8080/actuator/health || exit 1" \
+  --health-cmd="curl -f http://localhost:8080/actuator/health/liveness || exit 1" \
   --health-interval=30s \
   --health-timeout=10s \
   --health-retries=3 \
@@ -222,7 +222,7 @@ docker run  \
   -e INITIAL_ADMIN_PASSWORD="<强密码>" \
   -e JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0" \
   --restart unless-stopped \
-  --health-cmd="curl -f http://localhost:8080/actuator/health || exit 1" \
+  --health-cmd="curl -f http://localhost:8080/actuator/health/liveness || exit 1" \
   --health-interval=30s \
   --health-timeout=10s \
   --health-retries=3 \
@@ -291,7 +291,7 @@ services:
       - ./config-store:/app/config-store
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health/liveness"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -511,7 +511,7 @@ networks:
 ```
 # Docker 运行时健康检查
 docker run -d \
-  --health-cmd="curl -f http://localhost:8080/actuator/health || exit 1" \
+  --health-cmd="curl -f http://localhost:8080/actuator/health/liveness || exit 1" \
   --health-interval=30s \
   --health-timeout=10s \
   --health-retries=3 \
@@ -523,7 +523,7 @@ docker run -d \
 
 ```
 healthcheck:
-  test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+  test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health/liveness"]
   interval: 30s
   timeout: 10s
   retries: 3

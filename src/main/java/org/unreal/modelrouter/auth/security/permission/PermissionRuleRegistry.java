@@ -213,6 +213,10 @@ public class PermissionRuleRegistry {
                 // 集群成员状态（ClusterStatusController，#1136）：只读
                 PermissionRule.get("/api/cluster/**", PermissionCodes.CONFIG_CLUSTER_READ),
 
+                // ===== 健康探针设置（HealthConfigController） =====
+                PermissionRule.get("/api/config/health/**", PermissionCodes.CONFIG_HEALTH_READ),
+                PermissionRule.write("/api/config/health/**", PermissionCodes.CONFIG_HEALTH_WRITE),
+
                 // ===== 配额监控（QuotaMonitoringController） =====
                 PermissionRule.get("/api/monitoring/quota/**", PermissionCodes.MONITORING_QUOTA_READ),
 

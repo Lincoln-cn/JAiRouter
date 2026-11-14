@@ -19,6 +19,7 @@ import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.ReactiveValueOperations;
 import org.unreal.modelrouter.auth.security.cache.JwtBlacklistCacheManager;
 import org.unreal.modelrouter.auth.security.config.RedisJwtCacheConfiguration;
+import org.unreal.modelrouter.config.health.JwtRedisHealthProperties;
 import reactor.core.publisher.Mono;
 
 /**
@@ -46,6 +47,10 @@ class JwtRedisHealthMonitorHealthDetailTest {
     }
 
     private JwtRedisHealthMonitor monitorWith(Throwable cacheFailure) {
+        return monitorWith(cacheFailure, true);
+    }
+
+    private JwtRedisHealthMonitor monitorWith(Throwable cacheFailure, boolean failHealth) {
         JwtBlacklistCacheManager cacheManager = mock(JwtBlacklistCacheManager.class);
         when(cacheManager.getBlacklistCacheStats()).thenReturn(Mono.error(cacheFailure));
 
@@ -53,7 +58,13 @@ class JwtRedisHealthMonitorHealthDetailTest {
                 mock(RedisJwtCacheConfiguration.RedisJwtHealthChecker.class);
         when(checker.isHealthy()).thenReturn(true);
 
-        return new JwtRedisHealthMonitor(template(), cacheManager, checker);
+        return new JwtRedisHealthMonitor(template(), cacheManager, checker, properties(failHealth));
+    }
+
+    private static JwtRedisHealthProperties properties(boolean failHealth) {
+        JwtRedisHealthProperties properties = new JwtRedisHealthProperties();
+        properties.setFailHealth(failHealth);
+        return properties;
     }
 
     @Test
@@ -95,11 +106,30 @@ class JwtRedisHealthMonitorHealthDetailTest {
         when(checker.isHealthy()).thenReturn(false);
 
         JwtRedisHealthMonitor monitor = new JwtRedisHealthMonitor(
-                template(), mock(JwtBlacklistCacheManager.class), checker);
+                template(), mock(JwtBlacklistCacheManager.class), checker, properties(true));
 
         Health health = monitor.health();
 
         assertEquals(Status.DOWN.getCode(), health.getStatus().getCode());
         assertEquals("Connection failed", health.getDetails().get("redis"));
+    }
+
+    @Test
+    @DisplayName("关闭 fail-health 后 Redis 不可用只降级为 UP + 影响面说明，不再拖垮整体健康端点")
+    void redisDownWithFailHealthOff_shouldReportUpWithImpact() {
+        RedisJwtCacheConfiguration.RedisJwtHealthChecker checker =
+                mock(RedisJwtCacheConfiguration.RedisJwtHealthChecker.class);
+        when(checker.isHealthy()).thenReturn(false);
+
+        JwtRedisHealthMonitor monitor = new JwtRedisHealthMonitor(
+                template(), mock(JwtBlacklistCacheManager.class), checker, properties(false));
+
+        Health health = monitor.health();
+
+        assertEquals(Status.UP.getCode(), health.getStatus().getCode(),
+                "fail-health=false 时不应让 /actuator/health 变 503");
+        assertEquals("Connection failed", health.getDetails().get("redis"));
+        assertEquals(false, health.getDetails().get("fail-health"));
+        assertNotNull(health.getDetails().get("impact"), "必须说明关闭后仍存在的功能影响");
     }
 }

@@ -86,6 +86,10 @@ public final class PermissionCodes {
     public static final String CONFIG_CLUSTER_READ = "config:cluster:read";
     /** 集群配置-写 */
     public static final String CONFIG_CLUSTER_WRITE = "config:cluster:write";
+    /** 健康探针配置-读（就绪探针依赖聚合、JWT Redis 故障判定） */
+    public static final String CONFIG_HEALTH_READ = "config:health:read";
+    /** 健康探针配置-写 */
+    public static final String CONFIG_HEALTH_WRITE = "config:health:write";
 
     // ==================== lb / cb / rl（流量治理） ====================
 
@@ -207,6 +211,7 @@ public final class PermissionCodes {
             CONFIG_QUOTA_READ, CONFIG_QUOTA_WRITE,
             CONFIG_RATELIMIT_READ, CONFIG_RATELIMIT_WRITE,
             CONFIG_CLUSTER_READ, CONFIG_CLUSTER_WRITE,
+            CONFIG_HEALTH_READ, CONFIG_HEALTH_WRITE,
             LB_MONITORING_READ, LB_CONFIG_READ, LB_CONFIG_WRITE,
             CB_MONITORING_READ, CB_HISTORY_READ,
             RL_MONITORING_READ,

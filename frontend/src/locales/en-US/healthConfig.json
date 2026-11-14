@@ -1,0 +1,37 @@
+{
+  "pageTitle": "Health Probe Settings",
+  "reload": "Refresh",
+  "hotHint": "These switches only affect probe verdicts, not business behavior. Both are hot-editable and take effect on the next health check.",
+  "loadFailed": "Failed to load health probe settings. Check that the backend is reachable and you have config:health:read.",
+  "saveSuccess": "Health probe settings saved",
+  "saveFailed": "Save failed. Check the values or your permissions.",
+  "reset": "Reset",
+  "save": "Save",
+
+  "endpointTitle": "Which Endpoint Should Each Probe Use",
+  "endpointDesc": "The aggregate /actuator/health includes dependency components and suits alerting. Orchestration probes should use liveness / readiness so a dependency blip does not drain the replica.",
+  "colConsumer": "Consumer",
+  "colEndpoint": "Endpoint",
+  "colSemantics": "Semantics",
+  "rowLivenessConsumer": "Process liveness (livenessProbe)",
+  "rowLivenessSemantics": "Only livenessState and ping; UP while the process is alive",
+  "rowReadinessConsumer": "Accepting traffic (readinessProbe)",
+  "rowReadinessSemantics": "Only readinessState; excludes db/redis by default",
+  "rowAlertConsumer": "Alerting and troubleshooting",
+  "rowAlertSemantics": "DOWN as soon as any component is DOWN — which is what alerts need",
+
+  "readinessTitle": "Readiness Dependency Aggregation",
+  "readinessDesc": "When enabled, /actuator/health/readiness also checks db and redis; if either is unavailable the replica leaves the ready set. Disabled by default to preserve pre-3.8.6 behavior.",
+  "readinessSwitch": "Aggregate dependencies into readiness",
+  "readinessSwitchHint": "Drains traffic on dependency failure; rolling updates stall while the dependency is down",
+
+  "jwtRedisTitle": "JWT Redis Failure Verdict",
+  "jwtRedisDesc": "Controls whether the jwtRedis component turns the aggregate health endpoint DOWN when Redis is unreachable. Multi-replica deployments must enable JWT Redis persistence and blacklist, so this switch decides whether a Redis blip drains replicas.",
+  "jwtRedisSwitch": "Report DOWN when Redis is unreachable",
+  "jwtRedisSwitchHint": "When off, only component details note the impact; aggregate health no longer returns 503",
+
+  "enabled": "Enabled",
+  "disabled": "Disabled",
+  "failHealthOn": "Fails as DOWN",
+  "failHealthOff": "Alert only"
+}

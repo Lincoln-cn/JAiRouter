@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.auth.security.cache.JwtBlacklistCacheManager;
 import org.unreal.modelrouter.auth.security.config.RedisJwtCacheConfiguration;
 import org.unreal.modelrouter.common.health.HealthDetails;
+import org.unreal.modelrouter.config.health.JwtRedisHealthProperties;
 
 import java.time.Duration;
 import java.util.Map;
@@ -47,6 +48,7 @@ public class JwtRedisHealthMonitor implements HealthIndicator {
     private final ReactiveRedisTemplate<String, String> redisTemplate;
     private final JwtBlacklistCacheManager cacheManager;
     private final RedisJwtCacheConfiguration.RedisJwtHealthChecker healthChecker;
+    private final JwtRedisHealthProperties healthProperties;
     
     private static final String HEALTH_CHECK_KEY = "jwt:health_monitor";
     private static final Duration HEALTH_CHECK_TIMEOUT = Duration.ofSeconds(5);
@@ -59,10 +61,7 @@ public class JwtRedisHealthMonitor implements HealthIndicator {
             // 检查Redis连接
             boolean redisHealthy = checkRedisConnection();
             if (!redisHealthy) {
-                return Health.down()
-                    .withDetail("redis", "Connection failed")
-                    .withDetail("status", "Redis connection is not available")
-                    .build();
+                return unavailable("Redis connection is not available");
             }
             
             builder.withDetail("redis", "Connected");
@@ -83,18 +82,39 @@ public class JwtRedisHealthMonitor implements HealthIndicator {
             if (persistenceHealthy && !cacheStats.containsKey("error")) {
                 return builder.build();
             } else {
-                return builder.status("DEGRADED")
+                // DEGRADED 不是 UP，同样会让整体 health 变成 503；
+                // fail-health=false 时降级为 UP + 警告详情。
+                Health.Builder degraded = healthProperties.isFailHealth() ? builder.status("DEGRADED") : builder;
+                return degraded
                     .withDetail("warning", "Some JWT Redis features have issues")
                     .build();
             }
             
         } catch (Exception e) {
             log.error("JWT Redis health check failed: {}", e.getMessage(), e);
-            return Health.down()
+            Health.Builder builder = healthProperties.isFailHealth() ? Health.down() : Health.up();
+            return builder
                 .withDetail("error", HealthDetails.safeMessage(e))
                 .withDetail("status", "Health check failed")
+                .withDetail("fail-health", healthProperties.isFailHealth())
                 .build();
         }
+    }
+
+    /**
+     * Redis 不可用时的健康结果：{@code fail-health=true} 报 DOWN，否则报 UP 并在 details
+     * 里说明影响面。影响面文案是给排障者看的，不需要他们再去翻代码确认哪些功能会降级。
+     */
+    private Health unavailable(String reason) {
+        Health.Builder builder = healthProperties.isFailHealth() ? Health.down() : Health.up();
+        return builder
+            .withDetail("redis", "Connection failed")
+            .withDetail("status", reason)
+            .withDetail("fail-health", healthProperties.isFailHealth())
+            .withDetail("impact", healthProperties.isFailHealth()
+                ? "整体健康端点判定为 DOWN，按该端点的编排探针会摘流或重启副本"
+                : "限流与配额 fail-open、JWT 黑名单可能失效；本副本仍可接收流量")
+            .build();
     }
     
     /**
