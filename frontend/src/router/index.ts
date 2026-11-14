@@ -275,6 +275,12 @@ const router = createRouter({
           name: 'cluster-config',
           component: () => import('../views/system/ClusterConfig.vue'),
           meta: { titleKey: 'route.clusterConfig', icon: 'connection', permissions: ['config:cluster:read', 'config:cluster:write'] }
+        },
+        {
+          path: 'health',
+          name: 'health-config',
+          component: () => import('../views/system/HealthProbeConfig.vue'),
+          meta: { titleKey: 'route.healthConfig', icon: 'first-aid-kit', permissions: ['config:health:read', 'config:health:write'] }
         }
       ]
     },

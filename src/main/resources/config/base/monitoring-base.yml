@@ -23,21 +23,31 @@ management:
       # 云平台自动探测——非 K8s 环境（本地、纯 Docker）下不声明会导致探针路径 404。
       probes:
         enabled: true
+      # group 成员存在性校验：默认 true 时，include 里列一个当前上下文不存在的贡献者会
+      # 让应用**启动失败**。就绪组 include 的 readinessDependencies 是恒装配的组件，
+      # 但仓库里的隔离最小应用测试（只 @EnableAutoConfiguration + 有限 @Import）不会扫到它，
+      # 于是启动即失败。关掉校验后不存在的成员被忽略：完整应用里它参与就绪判定，
+      # 精简上下文里该组回落到 readinessState 单独判定。
+      validate-group-membership: false
       group:
         # 活性：只看进程是否存活。刻意不纳入 db/redis——下游依赖抖动应由就绪摘流处理，
         # 不应触发 Pod 重启（重启解决不了依赖故障，只会放大抖动）。
         liveness:
           include: livenessState,ping
-        # 就绪：只用 readinessState。
+        # 就绪：readinessState + readinessDependencies。
         #
-        # 刻意不 include db/redis：Spring Boot 对 group 成员做**严格存在性校验**
+        # 不能直接 include db/redis：Spring Boot 对 group 成员做**严格存在性校验**
         # （HealthEndpointGroupMembershipValidator），include 一个当前上下文不存在的
         # 贡献者会导致**应用启动失败**——例如没有 DataSource 的上下文就没有 db 组件
         # （已由 GracefulShutdownInFlightRequestTest 实测复现）。
-        # 代价：数据库不可用不会让 Pod 退出就绪集合，请用 /actuator/health 的 db 组件
-        # 详情配合告警规则来覆盖这一场景。
+        #
+        # 所以这里 include 的是一个恒装配的聚合器（common/health/ReadinessDependencyIndicator），
+        # 它内部按需查找 db/redis 贡献者，未装配就跳过。该聚合器默认关闭
+        # （jairouter.health.readiness.include-dependencies=false），此时恒定 UP，
+        # 不改变既有行为；打开后依赖故障会让副本退出就绪集合，代价是依赖故障期间
+        # 滚动发布会卡住。
         readiness:
-          include: readinessState
+          include: readinessState,readinessDependencies
     prometheus:
       cache:
         time-to-live: 10s

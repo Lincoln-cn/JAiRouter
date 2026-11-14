@@ -4,7 +4,7 @@
 import { createAuthedContext, gotoApp, currentPathname } from '../harness.mjs'
 import { ALL_ROUTES } from '../routes.mjs'
 
-// P0-3 IA：7 组 29 项（v3.5.1 新增「记录治理」；顺序与 src/config/menu.ts 的 menuGroups 一致）
+// P0-3 IA：7 组 31 项（v3.5.1 新增「记录治理」；顺序与 src/config/menu.ts 的 menuGroups 一致）
 const MENU_GROUPS = [
   'dashboard',
   'observability',
@@ -15,8 +15,8 @@ const MENU_GROUPS = [
   'dev-tools'
 ]
 
-// 每组菜单项数（合计 29）：40 → 29 后 12 个页面收进 tabs，不再单独占侧栏
-const MENU_ITEMS_PER_GROUP = [1, 5, 7, 4, 6, 5, 2]
+// 每组菜单项数（合计 31）：40 → 29 后 12 个页面收进 tabs，不再单独占侧栏
+const MENU_ITEMS_PER_GROUP = [1, 5, 7, 4, 6, 6, 2]
 
 export default {
   id: 'layout-nav',
@@ -39,9 +39,9 @@ export default {
     const subCount = await subMenus.count()
     check('layout-menu-groups', subCount === 7, `sub-menus=${subCount}`)
 
-    // 菜单项总数与逐组项数（7 组 30 项；增删菜单时这里与 MENU_GROUPS 都要同步改）
+    // 菜单项总数与逐组项数（7 组 31 项；增删菜单时这里与 MENU_GROUPS 都要同步改）
     const allItems = await page.locator('.layout-menu .el-menu-item').count()
-    check('layout-menu-item-total', allItems === 30, `items=${allItems}`)
+    check('layout-menu-item-total', allItems === 31, `items=${allItems}`)
     for (let i = 0; i < MENU_GROUPS.length; i++) {
       const group = page.locator('.layout-menu .el-sub-menu').nth(i)
       const count = await group.locator('.el-menu-item').count()

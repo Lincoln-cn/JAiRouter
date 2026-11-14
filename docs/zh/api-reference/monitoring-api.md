@@ -102,6 +102,65 @@ GET /actuator/health
 > ⚠️ 原文档在这里还列了一个 `modelRouter` 组件（含 `services.*.instances[]` 明细）——
 > **该组件在代码里不存在**，示例已删除；真实注册的 health 组件见本节开头的说明。
 
+### 各探针该用哪个端点
+
+`/actuator/health` 是**整体**健康，包含依赖组件（`db`、`jwtRedis` 等）。它适合「人看」和「告警」，
+不适合直接当编排探针：依赖抖动会让副本被摘掉，而副本本身可能完全能服务。
+
+| 消费者 | 用哪个端点 | 语义 |
+| --- | --- | --- |
+| 进程存活（liveness） | `/actuator/health/liveness` | 只含 `livenessState` 与 `ping`，进程活着就是 UP |
+| 接收流量（readiness） | `/actuator/health/readiness` | 只含 `readinessState`，默认**不含** db/redis |
+| 容器自检（Docker `HEALTHCHECK`） | `/actuator/health/liveness` | 仓库内 5 个 Dockerfile 均按此配置 |
+| 告警与排障 | `/actuator/health` | 任一组件 DOWN 即 DOWN，这正是告警需要的信号 |
+| 外部负载均衡（自建） | `/actuator/health/readiness` | 若希望「依赖故障就摘流」，改用整体 health 并接受误摘 |
+
+> Kubernetes 清单（`deploy/k8s/base/deployment.yaml`）已经是正确做法：`startupProbe` /
+> `livenessProbe` 打 `/actuator/health/liveness`，`readinessProbe` 打 `/actuator/health/readiness`。
+
+#### 为什么 readiness 不含依赖
+
+readiness 只 include 了 `readinessState`（`config/base/monitoring-base.yml`）。原因是 Spring Boot 对
+health group 的 `include` 做**严格存在性校验**：列一个当前上下文里不存在的组件名，应用会**启动失败**。
+而 `db`、`redis` 这类组件是否装配取决于配置（例如 `REDIS_ENABLED`），无法在 yml 里静态列全。
+
+代价是：**Redis / 数据库不可用时，副本仍留在就绪集合**，流量照进。对「依赖故障必须摘流」的部署，
+需要在编排层自行聚合（额外探针查整体 health 并接受误摘），或打开
+`jairouter.health.readiness.include-dependencies`（3.8.7 起提供，默认 `false`；开启后
+`/actuator/health/readiness` 会经由 `readinessDependencies` 聚合器检查 `db` 与 `redis`，
+依赖故障即退出就绪集合 —— 代价是滚动发布期间依赖抖动可能让新副本迟迟不就绪）。
+
+> 该聚合器是**恒装配**的组件，因此写进 readiness 的 `include` 不会触发上面那条严格存在性校验；
+> 它内部只评估当前上下文里**确实装配了**的 `db` / `redis`，没装配的依赖会被跳过而不是判 DOWN。
+
+#### 健康探针的设置项
+
+三项都在「系统 → 健康探针设置」页（`/system/health`）可读可改，也可以直接走 API，
+全部支持热改、无需重启：
+
+| 配置键 | 默认值 | 作用 |
+| --- | --- | --- |
+| `jairouter.health.readiness.include-dependencies` | `false` | 就绪探针是否聚合 `db` / `redis` |
+| `jairouter.security.jwt.redis-health.fail-health` | `true` | Redis 不可用时 `jwtRedis` 是否把整体 health 判 DOWN |
+
+```bash
+# 读取当前值
+curl -s -H "Authorization: Bearer <token>" http://localhost:8080/api/config/health
+
+# 只改其中一项（部分更新）
+curl -s -X PUT -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  -d '{"jwtRedisFailHealth": false}' http://localhost:8080/api/config/health
+```
+
+#### 多副本下 jwtRedis 组件的影响
+
+同时开启 `jairouter.security.jwt.persistence.redis.enabled` 与
+`jairouter.security.jwt.blacklist.redis.enabled`（多副本部署必须开启）后，`jwtRedisHealthIndicator`
+会做真实 Redis 往返；Redis 连不上时它返回 DOWN，**整体 `/actuator/health` 随之 503**。
+
+3.8.7 起可以用 `jairouter.security.jwt.redis-health.fail-health=false` 把它降级为 UP
+（details 中注明影响面：限流与配额 fail-open、黑名单可能失效），以免 Redis 抖动导致副本被误摘。
+
 ## 指标端点
 
 ### 应用指标
@@ -398,8 +457,8 @@ scrape_configs:
 配置外部监控工具检查 JAiRouter 健康状态：
 
 ```bash
-# 简单健康检查
-curl -f http://localhost:8080/actuator/health || exit 1
+# 简单健康检查（进程存活）
+curl -f http://localhost:8080/actuator/health/liveness || exit 1
 
 # 特定组件的详细健康检查
 curl -f http://localhost:8080/actuator/health/tracing || exit 1

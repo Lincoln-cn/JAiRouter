@@ -1,4 +1,4 @@
-﻿# Deployment Guide
+# Deployment Guide
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -108,7 +108,7 @@ Configure health checks for deployment orchestration:
 
 ```dockerfile
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:8080/actuator/health || exit 1
+  CMD curl -f http://localhost:8080/actuator/health/liveness || exit 1
 ```
 
 ### Kubernetes Health Check

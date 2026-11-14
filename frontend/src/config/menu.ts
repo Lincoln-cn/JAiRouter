@@ -7,7 +7,7 @@
  * - 流量治理(7)：路由规则 / 负载均衡 / 限流 / 熔断 / 响应缓存 / 配额策略 / 连接池
  * - 模型与实例(4)：服务 / 实例 / 版本 / 适配器
  * - 安全(5)：API Key / 响应脱敏 / JWT 令牌 / 黑名单 / 审计日志
- * - 系统(5)：账号 / 权限 / 链路追踪配置 / 状态持久化 / 集群设置
+ * - 系统(6)：账号 / 权限 / 链路追踪配置 / 状态持久化 / 集群设置 / 健康探针设置
  * - 开发工具(2)：AI 试验场 / 客户端接入
  *
  * **URL 一律不变**：40 → 28 只是把 12 个页面收进同组的 `tabs`，
@@ -19,7 +19,7 @@
  * - 数组 = **或**（任一命中即显示），用于「聚合了不同权限码页面」的菜单项；
  * - tab 必须再单独门控：菜单可见 ≠ 每个 tab 可用（例：只有 `cb:history:read` 的用户
  *   看得到「熔断」，但落地页是「历史」而不是「状态与重置」）。
- * - 权限码以 `PermissionCodes.java` 的 `ALL_PERMISSION_CODES` 为权威全集（当前 63 个）。
+ * - 权限码以 `PermissionCodes.java` 的 `ALL_PERMISSION_CODES` 为权威全集（当前 69 个）。
  *   设计文档 §3.1 表里的 `security:jwt:manage` / `system:users:manage` / `system:roles:manage`
  *   在代码里不存在，已分别替换为 `security:jwttokens:manage` / `system:accounts:manage` /
  *   `system:permissions:manage`。
@@ -519,6 +519,19 @@ export const menuGroups: MenuGroup[] = [
             labelKey: 'menu.clusterConfig',
             to: '/system/cluster',
             permission: ['config:cluster:read', 'config:cluster:write']
+          }
+        ]
+      },
+      {
+        path: '/system/health',
+        title: 'menu.healthConfig',
+        permission: ['config:health:read', 'config:health:write'],
+        tabs: [
+          {
+            key: 'health-config',
+            labelKey: 'menu.healthConfig',
+            to: '/system/health',
+            permission: ['config:health:read', 'config:health:write']
           }
         ]
       }

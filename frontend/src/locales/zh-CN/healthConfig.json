@@ -1,0 +1,37 @@
+{
+  "pageTitle": "健康探针设置",
+  "reload": "刷新",
+  "hotHint": "本页开关只影响探针判定，不影响业务功能；两项均可热改，保存后下一次健康检查即生效。",
+  "loadFailed": "读取健康探针设置失败，请确认后端可用且具备 config:health:read 权限。",
+  "saveSuccess": "健康探针设置已保存",
+  "saveFailed": "保存失败，请检查参数或权限",
+  "reset": "重置",
+  "save": "保存",
+
+  "endpointTitle": "探针端点对照",
+  "endpointDesc": "整体 /actuator/health 包含依赖组件，适合告警；编排探针应使用 liveness / readiness，避免依赖抖动导致副本被摘。",
+  "colConsumer": "消费者",
+  "colEndpoint": "端点",
+  "colSemantics": "语义",
+  "rowLivenessConsumer": "进程存活（livenessProbe）",
+  "rowLivenessSemantics": "只含 livenessState 与 ping，进程活着即 UP",
+  "rowReadinessConsumer": "接收流量（readinessProbe）",
+  "rowReadinessSemantics": "只含 readinessState，默认不含 db/redis",
+  "rowAlertConsumer": "告警与排障",
+  "rowAlertSemantics": "任一组件 DOWN 即 DOWN，这正是告警需要的信号",
+
+  "readinessTitle": "就绪探针依赖聚合",
+  "readinessDesc": "打开后，/actuator/health/readiness 会同时检查 db 与 redis；任一不可用会让副本退出就绪集合。默认关闭以保持 3.8.6 之前的行为。",
+  "readinessSwitch": "就绪探针聚合依赖",
+  "readinessSwitchHint": "开启后依赖故障会摘流；依赖故障期间滚动发布会卡住",
+
+  "jwtRedisTitle": "JWT Redis 故障判定",
+  "jwtRedisDesc": "决定 Redis 不可用时 jwtRedis 组件是否把整体健康端点判为 DOWN。多副本部署需要开启 JWT Redis 持久化与黑名单，因此该开关直接决定 Redis 抖动是否会导致副本被摘。",
+  "jwtRedisSwitch": "Redis 不可用时判定为 DOWN",
+  "jwtRedisSwitchHint": "关闭后仅在组件详情里标注影响面，整体健康端点不再返回 503",
+
+  "enabled": "已启用",
+  "disabled": "已关闭",
+  "failHealthOn": "故障即 DOWN",
+  "failHealthOff": "故障仅告警"
+}

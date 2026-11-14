@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.unreal.modelrouter.auth.security.cache.JwtBlacklistCacheManager;
 import org.unreal.modelrouter.auth.security.config.RedisJwtCacheConfiguration;
+import org.unreal.modelrouter.config.health.JwtRedisHealthProperties;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -40,6 +41,7 @@ class JwtRedisHealthMonitorWiringTest {
      */
     private final ApplicationContextRunner runner = new ApplicationContextRunner()
             .withUserConfiguration(JwtRedisHealthMonitor.class)
+            .withBean(JwtRedisHealthProperties.class, JwtRedisHealthProperties::new)
             .withBean("reactiveStringRedisTemplate", ReactiveRedisTemplate.class,
                     () -> Mockito.mock(ReactiveRedisTemplate.class))
             .withBean(JwtBlacklistCacheManager.class,
