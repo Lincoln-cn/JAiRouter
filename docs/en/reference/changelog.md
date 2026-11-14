@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.8.6
+> **Document Version**: 3.8.7
 > **Last Updated**: 2026-11-14
 > **Git Commit**: -
 > **Author**: Lincoln
