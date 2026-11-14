@@ -70,10 +70,10 @@
     },
     "docs/en/api-reference/monitoring-api.md": {
       "FilePath": "docs/en/api-reference/monitoring-api.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-30T20:28:42.300640",
-      "ContentHash": "6c7d01b0419a6fc8",
-      "GitCommit": "991698b7",
+      "Version": "1.0.4",
+      "LastModified": "2026-11-14T05:23:16.327311",
+      "ContentHash": "bf09e30f947a5658",
+      "GitCommit": "4ac22aa7",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -353,10 +353,10 @@
     },
     "docs/en/deployment/china-optimization.md": {
       "FilePath": "docs/en/deployment/china-optimization.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T15:24:46.509911",
-      "ContentHash": "931f5d0ddcac853b",
-      "GitCommit": "51b84ed6",
+      "Version": "1.0.2",
+      "LastModified": "2026-11-14T05:23:16.439845",
+      "ContentHash": "bb93abc4b5624360",
+      "GitCommit": "4ac22aa7",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -392,10 +392,10 @@
     },
     "docs/en/deployment/docker.md": {
       "FilePath": "docs/en/deployment/docker.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-11-11T16:49:27.308234",
-      "ContentHash": "cfb7c55e9a9366ec",
-      "GitCommit": "0cf01221",
+      "Version": "1.0.4",
+      "LastModified": "2026-11-14T05:23:16.455655",
+      "ContentHash": "0e531140a8540318",
+      "GitCommit": "4ac22aa7",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -417,10 +417,10 @@
     },
     "docs/en/deployment/index.md": {
       "FilePath": "docs/en/deployment/index.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:32.965770",
-      "ContentHash": "97549531a37e313e",
-      "GitCommit": "537f419c",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-14T05:23:16.477253",
+      "ContentHash": "86b5c35e3801b97f",
+      "GitCommit": "4ac22aa7",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -475,10 +475,10 @@
     },
     "docs/en/deployment/production.md": {
       "FilePath": "docs/en/deployment/production.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-11-09T15:02:41.148199",
-      "ContentHash": "1d6ab6ef6f6598a6",
-      "GitCommit": "f425da6b",
+      "Version": "1.0.5",
+      "LastModified": "2026-11-14T05:23:16.489679",
+      "ContentHash": "44a09798f366f00f",
+      "GitCommit": "4ac22aa7",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -772,10 +772,10 @@
     },
     "docs/en/monitoring/setup.md": {
       "FilePath": "docs/en/monitoring/setup.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T00:17:54.422840",
-      "ContentHash": "297aa0ac54c648b8",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.2",
+      "LastModified": "2026-11-14T05:23:16.714567",
+      "ContentHash": "84e0a81bd5f9bd80",
+      "GitCommit": "4ac22aa7",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1226,10 +1226,10 @@
     },
     "docs/zh/api-reference/monitoring-api.md": {
       "FilePath": "docs/zh/api-reference/monitoring-api.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-10-30T20:28:42.946320",
-      "ContentHash": "c009080707088d74",
-      "GitCommit": "991698b7",
+      "Version": "1.0.4",
+      "LastModified": "2026-11-14T05:23:16.992214",
+      "ContentHash": "340f9dc33d5fca0d",
+      "GitCommit": "4ac22aa7",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1508,10 +1508,10 @@
     },
     "docs/zh/deployment/china-optimization.md": {
       "FilePath": "docs/zh/deployment/china-optimization.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-10-22T21:05:38.456892",
-      "ContentHash": "5df1a6b9c1a1b072",
-      "GitCommit": "9d7b7666",
+      "Version": "1.0.1",
+      "LastModified": "2026-11-14T05:23:17.106132",
+      "ContentHash": "c7e736164d5013fa",
+      "GitCommit": "4ac22aa7",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1547,10 +1547,10 @@
     },
     "docs/zh/deployment/docker.md": {
       "FilePath": "docs/zh/deployment/docker.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-11-11T16:49:27.943031",
-      "ContentHash": "57db0f99b742c030",
-      "GitCommit": "0cf01221",
+      "Version": "1.0.4",
+      "LastModified": "2026-11-14T05:23:17.121531",
+      "ContentHash": "3f6b1294eceab847",
+      "GitCommit": "4ac22aa7",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1631,10 +1631,10 @@
     },
     "docs/zh/deployment/production.md": {
       "FilePath": "docs/zh/deployment/production.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-10-30T15:24:49.977055",
-      "ContentHash": "7874f46c93aadb1a",
-      "GitCommit": "51b84ed6",
+      "Version": "1.0.5",
+      "LastModified": "2026-11-14T05:23:17.164591",
+      "ContentHash": "e194a4b7c3a8e38f",
+      "GitCommit": "4ac22aa7",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1933,10 +1933,10 @@
     },
     "docs/zh/monitoring/setup.md": {
       "FilePath": "docs/zh/monitoring/setup.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-10-30T00:17:55.069937",
-      "ContentHash": "842e20232a047bb5",
-      "GitCommit": "3a02eda1",
+      "Version": "1.0.2",
+      "LastModified": "2026-11-14T05:23:17.393274",
+      "ContentHash": "a5471762e276b40c",
+      "GitCommit": "4ac22aa7",
       "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
@@ -8086,7 +8086,95 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-11-13T22:44:48.855174",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/monitoring-api.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-14T05:23:16.327320",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/china-optimization.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-14T05:23:16.439856",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/docker.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-14T05:23:16.455660",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/index.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-14T05:23:16.477260",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/production.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-14T05:23:16.489684",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/setup.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-14T05:23:16.714576",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/monitoring-api.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-14T05:23:16.992223",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/china-optimization.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-14T05:23:17.106142",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/docker.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-14T05:23:17.121536",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/production.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-14T05:23:17.164598",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/setup.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-11-14T05:23:17.393284",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-11-13T22:44:49.047460"
+  "last_updated": "2026-11-14T05:23:17.660032"
 }
