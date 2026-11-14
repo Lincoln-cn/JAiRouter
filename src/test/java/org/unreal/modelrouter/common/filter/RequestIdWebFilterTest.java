@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
@@ -19,10 +20,12 @@ import reactor.test.StepVerifier;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -205,6 +208,53 @@ class RequestIdWebFilterTest {
             assertEquals(Ordered.HIGHEST_PRECEDENCE + 2, filter.getOrder());
             assertTrue(filter.getOrder() > Ordered.HIGHEST_PRECEDENCE,
                     "必须晚于 CachedBodyWebFilter/tracing，才能拿到 tracing 上下文");
+        }
+    }
+
+    @Nested
+    @DisplayName("MDC 透传（日志 traceId 列）")
+    class MdcPropagation {
+
+        @Test
+        @DisplayName("入站 X-Request-Id 在链执行期间可从 MDC 读到，且与响应头一致")
+        void inboundRequestIdReachesMdcAndResponseHeader() {
+            final MockServerWebExchange exchange = jsonExchange(HEADER, "client-req-mdc-1");
+            final AtomicReference<String> duringChain = new AtomicReference<>();
+
+            StepVerifier.create(filter.filter(exchange, e -> {
+                duringChain.set(MDC.get(RequestIdWebFilter.MDC_TRACE_ID_KEY));
+                return Mono.empty();
+            })).verifyComplete();
+
+            assertEquals("client-req-mdc-1", duringChain.get(),
+                    "logback 的 %X{traceId:-} 依赖 MDC，链执行期间必须有值");
+            assertEquals("client-req-mdc-1", responseHeader(exchange));
+        }
+
+        @Test
+        @DisplayName("无入站 ID 时 MDC 与响应头使用同一个生成值")
+        void generatedIdIsUsedForBothMdcAndHeader() {
+            final MockServerWebExchange exchange = jsonExchange();
+            final AtomicReference<String> duringChain = new AtomicReference<>();
+
+            StepVerifier.create(filter.filter(exchange, e -> {
+                duringChain.set(MDC.get(RequestIdWebFilter.MDC_TRACE_ID_KEY));
+                return Mono.empty();
+            })).verifyComplete();
+
+            assertNotNull(duringChain.get(), "链执行期间 MDC 必须有 traceId");
+            assertEquals(duringChain.get(), responseHeader(exchange),
+                    "日志里的 traceId 必须能对上响应头里的请求 ID");
+        }
+
+        @Test
+        @DisplayName("请求结束后清理 MDC，避免 Netty 线程复用导致串号")
+        void mdcIsClearedAfterCompletion() {
+            final MockServerWebExchange exchange = jsonExchange(HEADER, "client-req-mdc-3");
+
+            StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
+
+            assertNull(MDC.get(RequestIdWebFilter.MDC_TRACE_ID_KEY));
         }
     }
 

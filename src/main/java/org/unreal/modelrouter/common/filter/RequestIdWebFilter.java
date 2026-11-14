@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.common.filter;
 
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
@@ -9,6 +10,7 @@ import org.unreal.modelrouter.common.util.SecurityUtils;
 import org.unreal.modelrouter.monitor.tracing.TracingConstants;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import reactor.core.publisher.Mono;
+import reactor.util.context.Context;
 
 /**
  * 在响应侧统一回写请求 ID 的 WebFilter（issue #724）.
@@ -47,6 +49,16 @@ public class RequestIdWebFilter implements WebFilter, Ordered {
             RequestIdWebFilter.class.getName() + ".requestId";
 
     /**
+     * MDC 中的键名，与 {@code logback-spring.xml} 的 {@code %X{traceId}} 对齐.
+     *
+     * <p>日志 pattern 里早就写了 {@code [%X{traceId:-}]}，但此前没有任何代码往 MDC 里放过值，
+     * 所以该列一直是空的。本过滤器负责补齐这一环：请求 ID 选定后立即放进 MDC，并通过
+     * Reactor Context + {@code contextCapture()} 跨线程传播（WebFlux 的线程切换会让纯
+     * ThreadLocal 的 MDC 丢失，只有捕获-恢复语义才能在业务线程里继续看到它）。</p>
+     */
+    public static final String MDC_TRACE_ID_KEY = "traceId";
+
+    /**
      * 顺序：紧跟在 {@code CachedBodyWebFilter}（+0）与可写请求头装饰器（+1）之后.
      *
      * @return 过滤器顺序
@@ -67,8 +79,15 @@ public class RequestIdWebFilter implements WebFilter, Ordered {
     public Mono<Void> filter(final ServerWebExchange exchange, final WebFilterChain chain) {
         final String requestId = SecurityUtils.extractRequestId(exchange, resolveTraceId(exchange));
         exchange.getAttributes().put(REQUEST_ID_ATTRIBUTE, requestId);
+        final String traceId = resolveTraceId(exchange);
+        final String mdcTraceId = (traceId != null && !traceId.isEmpty()) ? traceId : requestId;
+        MDC.put(MDC_TRACE_ID_KEY, mdcTraceId);
+        exchange.getAttributes().put(MDC_TRACE_ID_KEY, mdcTraceId);
         log.debug("请求 ID 已回写响应头 {}: {}", TracingConstants.Headers.X_REQUEST_ID, requestId);
-        return chain.filter(exchange);
+        return chain.filter(exchange)
+                .contextWrite(Context.of(MDC_TRACE_ID_KEY, mdcTraceId))
+                .contextCapture()
+                .doFinally(signal -> MDC.remove(MDC_TRACE_ID_KEY));
     }
 
     /**
