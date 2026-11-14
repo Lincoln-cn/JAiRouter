@@ -129,7 +129,11 @@ class H2BaselineMatchesEntityModelTest {
                     // username 的 unique 索引就换成了这个形状）—— 两种形状归一成同一个名字。
                     .replaceAll("CONSTRAINT_[0-9A-F]+_INDEX_[0-9A-F]+", "CONSTRAINT_INDEX_<id>")
                     .replaceAll("(PRIMARY_KEY|CONSTRAINT_INDEX)_[0-9A-F]+", "$1_<id>")
-                    .replaceAll("(_INDEX_)[0-9A-F]+\\b", "$1<id>"));
+                    .replaceAll("(_INDEX_)[0-9A-F]+\\b", "$1<id>")
+                    // H2 给自动生成的 PRIMARY KEY / UNIQUE 约束也编内部 ID（CONSTRAINT_BB、
+                    // CONSTRAINT_9D2）。同一张表在不同迁移路径（V1 建 vs 后续增量建）上 ID 不同，
+                    // 所以纯 CONSTRAINT_<HEX> 也要归一 —— 显式命名的约束（uk_xxx）不含该前缀。
+                    .replaceAll("\\bCONSTRAINT_[0-9A-F]+\\b", "CONSTRAINT_<id>"));
         }
         return normalized;
     }

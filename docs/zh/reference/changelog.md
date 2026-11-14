@@ -31,6 +31,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **就绪可纳入依赖聚合**：新增 `jairouter.health.readiness.include-dependencies`（默认 `false`）与恒装配的 `readinessDependencies` 聚合器。开启后就绪探针会参考 `db`/`redis`，未装配的贡献者自动跳过、贡献者自身异常不影响结果。默认关闭是因为依赖故障时摘流会放大故障面。
 * **Web 可配置**：控制台「系统 → 健康探针设置」页可查看与修改上述两项，改动即时生效；同页给出各探针端点的语义对照表。权限码新增 `config:health:read/write`（67 → 69）。
 * **文档补齐**：`api-reference/monitoring-api` 新增「各探针该用哪个端点」三节（含「为什么 readiness 不含依赖」的严格存在性校验说明），部署文档里的探针示例同步改为 liveness。
+* **升级注意（从 3.8.6 升级）**：3.8.6 曾把 `config_sequences` 表写进 `V1__baseline.sql`，本版把它移回独立的 `V12__config_sequences.sql`，以免修改已发布的迁移文件。Flyway 按校验和判断文件是否变动，因此 **3.8.6 创建的库**升级时会报 `Migration checksum mismatch for migration version 1`，需要先对同一数据库执行 `flyway repair`，或用新增的 `--jairouter.migration.repair-on-start=true` 启动一次（先 repair 再迁移，用完移除）。3.8.5 及更早版本、以及全新安装都不受影响，详见部署文档 `production.md` 的「升级现有部署（Flyway 校验）」一节。
 
 ### [3.8.6] - 2026-11-14 - 多副本下配置、成员与健康状态开始互认
 

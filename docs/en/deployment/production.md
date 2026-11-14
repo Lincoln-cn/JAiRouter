@@ -1435,6 +1435,39 @@ docker logs --since="1h" jairouter-1 2>&1 | grep -i error | tail -5
 
 ## Troubleshooting
 
+### Upgrading an Existing Deployment (Flyway validation)
+
+The database schema is maintained by Flyway migrations. Check the version you are running and follow the table below:
+
+| Current version | Manual step required | Notes |
+| --- | --- | --- |
+| 3.8.5 or earlier | No | Replace the package; pending migrations are applied automatically |
+| **3.8.6** | **Yes** | 3.8.6 had `config_sequences` inside `V1__baseline.sql`; this release moved it back to `V12__config_sequences.sql`, which changes the V1 checksum |
+| Fresh install | No | — |
+
+Upgrading from 3.8.6 fails validation with a message like:
+
+```text
+Validate failed: Migration checksum mismatch for migration version 1
+```
+
+Pick one of the following (the first is recommended):
+
+```bash
+# 1. Run repair against the same database before upgrading
+#    (keeps applied records, recomputes checksums only)
+flyway -url=jdbc:postgresql://<host>:5432/jairouter -user=<user> -password=<pass> repair
+
+# 2. Or let the application repair before migrating, then drop the flag
+java -jar model-router.jar --jairouter.migration.repair-on-start=true
+```
+
+> Note: there is **no** `spring.flyway.repair-on-migrate` property (Spring Boot's `FlywayProperties` only exposes `baselineOnMigrate` / `validateOnMigrate`), so `--spring.flyway.repair-on-migrate=true` does nothing. The switch in this project is `jairouter.migration.repair-on-start`.
+>
+> `repair` only recomputes checksums in `flyway_schema_history`; it does not re-run migrations or touch business data. Do not bake it into a startup script — it would hide future accidental edits to migration files. Remove it once the upgrade is done.
+>
+> **Do not** delete rows from `flyway_schema_history` to "reset" — every migration would re-run and fail on create-table conflicts against existing data.
+
 ### Redis Setup {#redis-setup}
 
 Using Redis as cache and session storage in production:
