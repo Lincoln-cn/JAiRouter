@@ -1404,10 +1404,14 @@ Validate failed: Migration checksum mismatch for migration version 1
 # 1. 升级前对同一数据库执行一次 repair（保留已应用记录，只重算校验和）
 flyway -url=jdbc:postgresql://<host>:5432/jairouter -user=<user> -password=<pass> repair
 
-# 2. 或让应用在启动时 repair 一次，成功后再移除该参数
-java -jar model-router.jar --spring.flyway.repair-on-migrate=true
+# 2. 或让应用在启动时先 repair 再迁移，成功后再移除该参数
+java -jar model-router.jar --jairouter.migration.repair-on-start=true
 ```
 
+> 注意：`spring.flyway.*` 下**没有** `repair-on-migrate` 这类属性（Spring Boot 的 `FlywayProperties` 只有 `baselineOnMigrate` / `validateOnMigrate`），所以不能用 `--spring.flyway.repair-on-migrate=true` 代替；本项目的开关是 `jairouter.migration.repair-on-start`。
+>
+> `repair` 只重算 `flyway_schema_history` 里的校验和，不重跑迁移、不改业务数据。但不要把它固化进启动脚本——它会掩盖「迁移文件被误改」这类问题，修完一次就应移除。
+>
 > **不要**直接删 `flyway_schema_history` 里的记录来"重置"——那会让所有迁移重跑，在已有数据的库上会因建表冲突失败。
 
 ### Redis 设置 {#redis-setup}

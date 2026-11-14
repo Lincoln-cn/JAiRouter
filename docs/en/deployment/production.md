@@ -1458,10 +1458,14 @@ Pick one of the following (the first is recommended):
 #    (keeps applied records, recomputes checksums only)
 flyway -url=jdbc:postgresql://<host>:5432/jairouter -user=<user> -password=<pass> repair
 
-# 2. Or let the application repair once at startup, then drop the flag
-java -jar model-router.jar --spring.flyway.repair-on-migrate=true
+# 2. Or let the application repair before migrating, then drop the flag
+java -jar model-router.jar --jairouter.migration.repair-on-start=true
 ```
 
+> Note: there is **no** `spring.flyway.repair-on-migrate` property (Spring Boot's `FlywayProperties` only exposes `baselineOnMigrate` / `validateOnMigrate`), so `--spring.flyway.repair-on-migrate=true` does nothing. The switch in this project is `jairouter.migration.repair-on-start`.
+>
+> `repair` only recomputes checksums in `flyway_schema_history`; it does not re-run migrations or touch business data. Do not bake it into a startup script — it would hide future accidental edits to migration files. Remove it once the upgrade is done.
+>
 > **Do not** delete rows from `flyway_schema_history` to "reset" — every migration would re-run and fail on create-table conflicts against existing data.
 
 ### Redis Setup {#redis-setup}
