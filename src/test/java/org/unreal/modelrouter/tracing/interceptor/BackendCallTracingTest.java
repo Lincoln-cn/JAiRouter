@@ -40,6 +40,7 @@ import org.unreal.modelrouter.support.TestTracerProviders;
 import org.unreal.modelrouter.monitor.tracing.DefaultTracingContext;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
+import org.unreal.modelrouter.monitor.tracing.client.RequestIdPropagationFilter;
 import org.unreal.modelrouter.monitor.tracing.client.TracingWebClientFactory;
 import org.unreal.modelrouter.monitor.tracing.logger.StructuredLogger;
 import org.unreal.modelrouter.router.http.WebClientPool;
@@ -101,7 +102,8 @@ class BackendCallTracingTest {
         // 创建测试对象
         interceptor = new BackendCallTracingInterceptor(structuredLogger);
         WebClientPool webClientPool = new WebClientPool();
-        webClientFactory = new TracingWebClientFactory(interceptor, webClientPool);
+        webClientFactory = new TracingWebClientFactory(interceptor, webClientPool,
+                new RequestIdPropagationFilter());
         
         // 设置ClientResponse Mock行为
         when(clientResponse.statusCode()).thenReturn(HttpStatus.OK);

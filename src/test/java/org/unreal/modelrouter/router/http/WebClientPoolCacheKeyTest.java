@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.unreal.modelrouter.monitor.tracing.client.RequestIdPropagationFilter;
 import org.unreal.modelrouter.monitor.tracing.client.TracingWebClientFactory;
 import org.unreal.modelrouter.monitor.tracing.interceptor.BackendCallTracingInterceptor;
 
@@ -67,7 +68,8 @@ class WebClientPoolCacheKeyTest {
     @DisplayName("KEY-003 追踪工厂连续调用必须复用同一个 WebClient")
     void tracingFactoryReusesOneClient() {
         final TracingWebClientFactory factory = new TracingWebClientFactory(
-                mock(BackendCallTracingInterceptor.class), webClientPool);
+                mock(BackendCallTracingInterceptor.class), webClientPool,
+                new RequestIdPropagationFilter());
 
         final WebClient first = factory.createTracingWebClient(BASE_URL);
         final WebClient second = factory.createTracingWebClient(BASE_URL);
