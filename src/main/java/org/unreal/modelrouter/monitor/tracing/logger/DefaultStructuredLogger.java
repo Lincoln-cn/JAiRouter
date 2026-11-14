@@ -20,6 +20,7 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
@@ -306,13 +307,21 @@ public class DefaultStructuredLogger implements StructuredLogger {
      * 在MDC上下文中执行操作
      */
     private void executeWithMDC(final TracingContext context, final Runnable action) {
+        // 保存调用前的 MDC：结构化日志只是临时借用 traceId/spanId，
+        // 直接 clearMDC() 会把外层（RequestIdWebFilter）设置的 traceId 一起清掉，
+        // 导致同一请求后续所有业务日志的 traceId 列为空。
+        final Map<String, String> previous = MDC.getCopyOfContextMap();
         try {
             setMDC(context);
             action.run();
         } catch (Exception e) {
             log.debug("记录日志时发生错误", e);
         } finally {
-            clearMDC();
+            if (previous == null || previous.isEmpty()) {
+                MDC.clear();
+            } else {
+                MDC.setContextMap(previous);
+            }
         }
     }
 
@@ -320,10 +329,6 @@ public class DefaultStructuredLogger implements StructuredLogger {
         if (context != null && tracingConfiguration.getLogging().isIncludeTraceId()) {
             tracingMDCManager.setMDC(context);
         }
-    }
-
-    private void clearMDC() {
-        tracingMDCManager.clearMDC();
     }
 
     // ========================================
