@@ -41,7 +41,7 @@ export default {
 
     // 菜单项总数与逐组项数（7 组 31 项；增删菜单时这里与 MENU_GROUPS 都要同步改）
     const allItems = await page.locator('.layout-menu .el-menu-item').count()
-    check('layout-menu-item-total', allItems === 30, `items=${allItems}`)
+    check('layout-menu-item-total', allItems === 31, `items=${allItems}`)
     for (let i = 0; i < MENU_GROUPS.length; i++) {
       const group = page.locator('.layout-menu .el-sub-menu').nth(i)
       const count = await group.locator('.el-menu-item').count()
