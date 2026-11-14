@@ -3,7 +3,7 @@
 <!-- 版本信息 -->
 > **Doc Version**: 2.5.0
 > **Last Updated**: 2026-10-30
-> **Git Tag**: v3.8.6
+> **Git Tag**: v3.8.7
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -24,7 +24,7 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 
 ## Current Version Status
 
-**Latest release: v3.8.6 (2026-11-14).** Per-release notes, upgrade notes and known limits live in the
+**Latest release: v3.8.7 (2026-11-14).** Per-release notes, upgrade notes and known limits live in the
 [changelog](changelog.md); downloads and container tags are on
 [Releases](https://github.com/Lincoln-cn/JAiRouter/releases).
 
