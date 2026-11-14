@@ -35,11 +35,14 @@ class TracingWebClientFactoryTest {
     @Mock
     private WebClient mockWebClient;
 
+    @Mock
+    private RequestIdPropagationFilter requestIdPropagationFilter;
+
     private TracingWebClientFactory factory;
 
     @BeforeEach
     void setUp() {
-        factory = new TracingWebClientFactory(tracingInterceptor, webClientPool);
+        factory = new TracingWebClientFactory(tracingInterceptor, webClientPool, requestIdPropagationFilter);
     }
 
     @Test

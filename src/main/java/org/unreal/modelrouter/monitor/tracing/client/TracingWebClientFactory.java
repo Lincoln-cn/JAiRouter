@@ -33,12 +33,15 @@ public class TracingWebClientFactory {
 
     private final BackendCallTracingInterceptor tracingInterceptor;
     private final WebClientPool webClientPool;
+    private final RequestIdPropagationFilter requestIdPropagationFilter;
 
     public TracingWebClientFactory(
             final BackendCallTracingInterceptor tracingInterceptor,
-            final WebClientPool webClientPool) {
+            final WebClientPool webClientPool,
+            final RequestIdPropagationFilter requestIdPropagationFilter) {
         this.tracingInterceptor = tracingInterceptor;
         this.webClientPool = webClientPool;
+        this.requestIdPropagationFilter = requestIdPropagationFilter;
     }
 
     /**
@@ -63,6 +66,8 @@ public class TracingWebClientFactory {
         final String variant = streaming ? STREAMING_TRACING_VARIANT : TRACING_VARIANT;
         return webClientPool.getOrCreate(baseUrl, variant, builder -> {
             builder.filter(tracingInterceptor);
+            // 出站请求 ID 透传：让上游日志与网关日志能按同一个值对上（3.8.8）
+            builder.filter(requestIdPropagationFilter);
         });
     }
 

@@ -8,6 +8,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.common.util.ApplicationContextProvider;
+import org.unreal.modelrouter.monitor.tracing.client.RequestIdPropagationFilter;
 import org.unreal.modelrouter.monitor.tracing.client.TracingWebClientFactory;
 import org.unreal.modelrouter.router.http.WebClientPool;
 
@@ -49,12 +50,32 @@ class WebClientCacheManagerFallbackTest {
         final WebClientPool pool = mock(WebClientPool.class);
         final WebClient pooled = mock(WebClient.class);
         when(pool.getOrCreate(BASE_URL)).thenReturn(pooled);
-        useContext(pool, null);
+        useContext(pool, null, null);
 
         final WebClient result = new WebClientCacheManager().getOrCreate(BASE_URL);
 
         assertSame(pooled, result, "降级分支应返回 WebClientPool 创建的客户端");
         verify(pool).getOrCreate(BASE_URL);
+    }
+
+    @Test
+    @DisplayName("降级分支在过滤器可用时挂上请求标识透传")
+    void fallback_attachesRequestIdFilterWhenBeanPresent() {
+        final WebClientPool pool = mock(WebClientPool.class);
+        final WebClient pooled = mock(WebClient.class);
+        final RequestIdPropagationFilter requestIdFilter = mock(RequestIdPropagationFilter.class);
+        when(pool.getOrCreate(org.mockito.ArgumentMatchers.eq(BASE_URL),
+                org.mockito.ArgumentMatchers.eq("request-id"),
+                org.mockito.ArgumentMatchers.any())).thenReturn(pooled);
+        useContext(pool, null, requestIdFilter);
+
+        final WebClient result = new WebClientCacheManager().getOrCreate(BASE_URL);
+
+        assertSame(pooled, result);
+        verify(pool).getOrCreate(org.mockito.ArgumentMatchers.eq(BASE_URL),
+                org.mockito.ArgumentMatchers.eq("request-id"),
+                org.mockito.ArgumentMatchers.any());
+        verify(pool, never()).getOrCreate(BASE_URL);
     }
 
     @Test
@@ -64,7 +85,7 @@ class WebClientCacheManagerFallbackTest {
         final TracingWebClientFactory tracingFactory = mock(TracingWebClientFactory.class);
         final WebClient traced = mock(WebClient.class);
         when(tracingFactory.createTracingWebClient(BASE_URL)).thenReturn(traced);
-        useContext(pool, tracingFactory);
+        useContext(pool, tracingFactory, null);
 
         final WebClient result = new WebClientCacheManager().getOrCreate(BASE_URL);
 
@@ -73,11 +94,17 @@ class WebClientCacheManagerFallbackTest {
         verify(pool, never()).getOrCreate(BASE_URL);
     }
 
-    private void useContext(final WebClientPool pool, final TracingWebClientFactory tracingFactory) {
+    private void useContext(final WebClientPool pool,
+                            final TracingWebClientFactory tracingFactory,
+                            final RequestIdPropagationFilter requestIdFilter) {
         context = new GenericApplicationContext();
         context.registerBean("webClientPool", WebClientPool.class, () -> pool);
         if (tracingFactory != null) {
             context.registerBean("tracingWebClientFactory", TracingWebClientFactory.class, () -> tracingFactory);
+        }
+        if (requestIdFilter != null) {
+            context.registerBean("requestIdPropagationFilter", RequestIdPropagationFilter.class,
+                    () -> requestIdFilter);
         }
         context.refresh();
         new ApplicationContextProvider().setApplicationContext(context);
