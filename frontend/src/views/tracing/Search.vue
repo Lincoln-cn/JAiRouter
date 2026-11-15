@@ -78,7 +78,10 @@
         <span>{{ t('tracing.search.resultsTitle', { count: traces.length }) }}</span>
         <div class="header-actions">
           <el-button @click="handleExport" :disabled="traces.length === 0">{{ t('tracing.search.export') }}</el-button>
-          <el-button @click="handleGetRecent">{{ t('tracing.search.getRecent') }}</el-button>
+          <el-checkbox v-model="includeArchived" class="archived-toggle">
+          {{ t('tracing.search.includeArchived') }}
+        </el-checkbox>
+        <el-button @click="handleGetRecent">{{ t('tracing.search.getRecent') }}</el-button>
         </div>
       </div>
     </template>
@@ -292,6 +295,8 @@ import { ElMessage } from 'element-plus'
 import {
   searchTraces,
   getRecentTraces,
+  getArchivedRecentTraces,
+  type ArchivedTraceRow,
   getTraceChain,
   getServiceStats,
   exportTraces
@@ -315,6 +320,8 @@ const { t } = useI18n()
 const route = useRoute()
 
 // 搜索表单
+const includeArchived = ref(false)
+
 const searchForm = ref({
   timeRange: [],
   serviceName: '',
@@ -482,6 +489,45 @@ const handleSearch = async (resetPage = true) => {
   }
 }
 
+/**
+ * 把持久化的异常链路合并进内存列表（#1155）。
+ *
+ * 内存里的链路更新，所以按 traceId 去重时保留内存那份；
+ * 归档只补「内存已经淘汰掉」的那些。归档读取失败不影响主列表。
+ */
+const mergeArchived = async (memoryData: unknown): Promise<unknown[]> => {
+  const memoryRows: Array<Record<string, unknown>> = Array.isArray(memoryData)
+    ? (memoryData as Array<Record<string, unknown>>)
+    : (((memoryData as TraceSearchResult | undefined)?.traces ?? []) as unknown as Array<
+        Record<string, unknown>
+      >)
+  const seen = new Set<string>()
+  for (const row of memoryRows) {
+    if (row.traceId) seen.add(String(row.traceId))
+  }
+
+  try {
+    const archived = await getArchivedRecentTraces(pageSize.value * 5)
+    const archivedRows = ((archived.data?.data || archived.data) ?? []) as ArchivedTraceRow[]
+    const extra = archivedRows
+      .filter(row => row.traceId && !seen.has(row.traceId))
+      .map(row => ({
+        traceId: row.traceId,
+        serviceName: row.serviceName,
+        operationName: row.operationName,
+        startTime: row.startTime,
+        duration: row.duration ?? 0,
+        hasError: row.hasError,
+        spanCount: 0,
+        archived: true,
+      }))
+    // 归档的行本身就是异常链路，排在前面——它们才是最需要看的
+    return [...extra, ...memoryRows]
+  } catch {
+    return memoryRows
+  }
+}
+
 // 获取最近追踪
 const handleGetRecent = async () => {
   // 清空搜索条件
@@ -498,7 +544,10 @@ const handleGetRecent = async () => {
   try {
     const response = await getRecentTraces(pageSize.value * 5) // 获取更多数据用于分页
 
-    const data = (response.data?.data || response.data) as TraceSearchResult | TraceSpan[] | undefined
+    let data: unknown = (response.data?.data || response.data) as unknown
+    if (includeArchived.value) {
+      data = await mergeArchived(data)
+    }
     if (Array.isArray(data)) {
       // 模拟分页
       traces.value = data.slice(0, pageSize.value)

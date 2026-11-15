@@ -49,7 +49,7 @@
         "errorRate": "错误率",
         "p95Latency": "P95延迟",
         "p99Latency": "P99延迟",
-    "maxLatency": "最大延迟",
+        "maxLatency": "最大延迟",
         "requests": "请求数",
         "status": "状态",
         "operation": "操作",
@@ -148,7 +148,8 @@
         "exportFailed": "导出失败",
         "traceDownloaded": "追踪数据已下载",
         "spanDetailsCopied": "Span详情已复制到控制台"
-      }
+      },
+      "includeArchived": "包含已归档的异常链路"
     },
     "management": {
       "title": "追踪配置",

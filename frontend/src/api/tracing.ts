@@ -88,6 +88,27 @@ export const searchTraces = (params: TraceSearchParams) => {
     return request.get<RouterResponse<TraceSearchResult | TraceSpan[]>>('/tracing/query/search', { params })
 }
 
+export interface ArchivedTraceRow {
+  traceId: string
+  serviceName?: string
+  operationName?: string
+  startTime: number
+  duration?: number
+  statusCode?: string
+  errorCount?: number
+  hasError: boolean
+  archived: boolean
+}
+
+/**
+ * 读取持久化的异常链路归档（#1155）。
+ *
+ * 只在用户显式勾选「包含已归档」时调用——默认搜索仍然只查内存，
+ * 因为归档表可能很大，且其中的链路早已不在运行态。
+ */
+export const getArchivedRecentTraces = (limit = 50) =>
+  request.get('/tracing/query/archived/recent', { params: { limit } })
+
 export const getRecentTraces = (limit: number = 50) => {
     return request.get<RouterResponse<TraceSpan[]>>('/tracing/query/recent', { params: { limit } })
 }

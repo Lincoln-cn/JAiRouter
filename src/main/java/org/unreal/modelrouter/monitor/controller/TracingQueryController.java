@@ -17,6 +17,7 @@ import org.unreal.modelrouter.auth.audit.ConfigChangeAuditEntity;
 import org.unreal.modelrouter.auth.audit.ConfigChangeAuditRepository;
 import org.unreal.modelrouter.monitor.tracing.helper.ConsoleOperationNames;
 import org.unreal.modelrouter.monitor.tracing.helper.ServiceNameResolver;
+import org.unreal.modelrouter.monitor.tracing.query.TraceArchiveService;
 import org.unreal.modelrouter.monitor.tracing.query.TraceQueryService;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -48,13 +49,16 @@ public class TracingQueryController {
 
     private final TraceQueryService traceQueryService;
     private final ConfigChangeAuditRepository configChangeAuditRepository;
+    private final TraceArchiveService traceArchiveService;
 
     // 手动添加构造函数
     public TracingQueryController(
             final TraceQueryService traceQueryService,
-            final ConfigChangeAuditRepository configChangeAuditRepository) {
+            final ConfigChangeAuditRepository configChangeAuditRepository,
+            final TraceArchiveService traceArchiveService) {
         this.traceQueryService = traceQueryService;
         this.configChangeAuditRepository = configChangeAuditRepository;
+        this.traceArchiveService = traceArchiveService;
     }
     
     @GetMapping("/trace/{traceId}")
@@ -110,6 +114,38 @@ public class TracingQueryController {
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
                 response.put("data", result);
+                return ResponseEntity.ok(response);
+            })
+            .onErrorReturn(ResponseEntity.internalServerError().<Map<String, Object>>build());
+    }
+
+    @GetMapping("/archived/recent")
+    @Operation(summary = "获取最近的已归档异常链路", description = "从持久化归档中读取异常链路（#1155）")
+    @ApiResponse(responseCode = "200", description = "成功返回归档记录")
+    public Mono<ResponseEntity<Map<String, Object>>> getArchivedRecent(
+            @Parameter(description = "返回条数，1-200") @RequestParam(defaultValue = "50") final int limit) {
+
+        final int safeLimit = Math.max(1, Math.min(200, limit));
+        return Mono.fromCallable(() -> traceArchiveService.recent(safeLimit).stream()
+                .map(entity -> {
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("traceId", entity.getTraceId());
+                    row.put("serviceName", entity.getService());
+                    row.put("operationName", entity.getOperation());
+                    row.put("startTime", entity.getCreatedAt() == null ? 0L : entity.getCreatedAt().toEpochMilli());
+                    row.put("duration", entity.getDurationMs() == null ? 0.0 : entity.getDurationMs());
+                    row.put("statusCode", entity.getStatusCode());
+                    row.put("errorCount", entity.getErrorCount() == null ? 0 : entity.getErrorCount());
+                    row.put("hasError", true);
+                    row.put("archived", true);
+                    return row;
+                })
+                .collect(Collectors.toList()))
+            .subscribeOn(Schedulers.boundedElastic())
+            .map(rows -> {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("data", rows);
                 return ResponseEntity.ok(response);
             })
             .onErrorReturn(ResponseEntity.internalServerError().<Map<String, Object>>build());
