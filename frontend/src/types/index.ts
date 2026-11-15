@@ -303,21 +303,35 @@ export interface TimeSeriesData {
   value: number
 }
 
+/** 后端按时间桶聚合出的趋势点（#1150）。缺省字段表示该桶不适用于当前趋势类型。 */
+export interface TrendPoint {
+  timestamp: number
+  hour: string
+  requestCount: number
+  avgDuration?: number
+  maxDuration?: number
+  p95Duration?: number
+  errorCount?: number
+  errorRate?: number
+  qps?: number
+}
+
+
 export interface LatencyAnalysis {
   distribution: ServiceLatency[]
-  trend: LatencyTrendData
+  trend: TrendPoint[]
   percentiles: PercentileData
 }
 
 export interface ErrorAnalysis {
   errorRateDistribution: ServiceErrorRate[]
-  errorTrend: TimeSeriesData[]
+  errorTrend: TrendPoint[]
   commonErrors: CommonError[]
 }
 
 export interface ThroughputAnalysis {
   requestDistribution: ServiceThroughput[]
-  qpsTrend: TimeSeriesData[]
+  qpsTrend: TrendPoint[]
 }
 
 export interface ServiceLatency {
@@ -327,12 +341,6 @@ export interface ServiceLatency {
   p99Latency: number
 }
 
-export interface LatencyTrendData {
-  timestamps: string[]
-  avgLatency: number[]
-  p95Latency: number[]
-  p99Latency: number[]
-}
 
 export interface PercentileData {
   p50: number

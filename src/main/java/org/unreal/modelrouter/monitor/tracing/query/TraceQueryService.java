@@ -160,6 +160,21 @@ public class TraceQueryService {
         return Mono.fromCallable(() -> statisticsCalculator.getServiceStatistics(traceStore));
     }
 
+    /** 延迟趋势（真实聚合，数据源为本副本内存里的 traceStore）。 */
+    public List<Map<String, Object>> latencyTrend(final long startTime, final long endTime, final long bucketMillis) {
+        return statisticsCalculator.latencyTrend(traceStore, startTime, endTime, bucketMillis);
+    }
+
+    /** 错误趋势（真实聚合）。 */
+    public List<Map<String, Object>> errorTrend(final long startTime, final long endTime, final long bucketMillis) {
+        return statisticsCalculator.errorTrend(traceStore, startTime, endTime, bucketMillis);
+    }
+
+    /** 吞吐趋势（真实聚合）。 */
+    public List<Map<String, Object>> throughputTrend(final long startTime, final long endTime, final long bucketMillis) {
+        return statisticsCalculator.throughputTrend(traceStore, startTime, endTime, bucketMillis);
+    }
+
     public Mono<Long> cleanupExpiredTraces(final long maxAgeMillis) {
         return Mono.fromCallable(() -> {
             Instant cutoff = Instant.now().minusMillis(maxAgeMillis);
@@ -236,11 +251,23 @@ public class TraceQueryService {
         private final String spanId; private final String traceId; private final String operationName;
         private final Instant startTime; private final Instant endTime; private final double duration;
         private final boolean error; private final String statusCode; private final Map<String, Object> attributes;
+
+        /** 父 span 标识：入口 span 为 null，子 span 指向发起它的 span（见 #1151）。 */
+        private final String parentSpanId;
+
         public SpanRecord(String spanId, String traceId, String operationName, Instant startTime, Instant endTime,
-                         double duration, boolean error, String statusCode, Map<String, Object> attributes) {
+                         double duration, boolean error, String statusCode, Map<String, Object> attributes,
+                         String parentSpanId) {
             this.spanId = spanId; this.traceId = traceId; this.operationName = operationName;
             this.startTime = startTime; this.endTime = endTime; this.duration = duration;
             this.error = error; this.statusCode = statusCode; this.attributes = attributes;
+            this.parentSpanId = parentSpanId;
+        }
+
+        /** 简化构造：没有父 span 的记录按入口 span 处理。 */
+        public SpanRecord(String spanId, String traceId, String operationName, Instant startTime, Instant endTime,
+                         double duration, boolean error, String statusCode, Map<String, Object> attributes) {
+            this(spanId, traceId, operationName, startTime, endTime, duration, error, statusCode, attributes, null);
         }
         public String getSpanId() { return spanId; }
         public String getTraceId() { return traceId; }
@@ -251,6 +278,7 @@ public class TraceQueryService {
         public boolean isError() { return error; }
         public String getStatusCode() { return statusCode; }
         public Map<String, Object> getAttributes() { return attributes; }
+        public String getParentSpanId() { return parentSpanId; }
     }
 
     public static class TraceChain {
@@ -360,14 +388,29 @@ public class TraceQueryService {
         private final double minDuration; private final Map<String, Long> serviceStats;
         private final Map<String, Long> operationStats; private final Map<String, Long> statusStats;
         private final Instant startTime; private final Instant endTime;
+
+        /** 当前全局采样比例（0.0–1.0），供仪表盘展示；来自 jairouter.tracing.sampling.ratio。 */
+        private final double samplingRate;
+
         public TraceStatistics(long totalTraces, long totalSpans, long successfulTraces, long errorTraces,
                               double avgDuration, double maxDuration, double minDuration,
                               Map<String, Long> serviceStats, Map<String, Long> operationStats,
-                              Map<String, Long> statusStats, Instant startTime, Instant endTime) {
+                              Map<String, Long> statusStats, Instant startTime, Instant endTime,
+                              double samplingRate) {
             this.totalTraces = totalTraces; this.totalSpans = totalSpans; this.successfulTraces = successfulTraces;
             this.errorTraces = errorTraces; this.avgDuration = avgDuration; this.maxDuration = maxDuration;
             this.minDuration = minDuration; this.serviceStats = serviceStats; this.operationStats = operationStats;
             this.statusStats = statusStats; this.startTime = startTime; this.endTime = endTime;
+            this.samplingRate = samplingRate;
+        }
+
+        /** 兼容旧调用：采样率未知时记 0，由调用方在展示层说明。 */
+        public TraceStatistics(long totalTraces, long totalSpans, long successfulTraces, long errorTraces,
+                              double avgDuration, double maxDuration, double minDuration,
+                              Map<String, Long> serviceStats, Map<String, Long> operationStats,
+                              Map<String, Long> statusStats, Instant startTime, Instant endTime) {
+            this(totalTraces, totalSpans, successfulTraces, errorTraces, avgDuration, maxDuration, minDuration,
+                 serviceStats, operationStats, statusStats, startTime, endTime, 0.0);
         }
         public long getTotalTraces() { return totalTraces; }
         public long getTotalSpans() { return totalSpans; }
@@ -381,6 +424,7 @@ public class TraceQueryService {
         public Map<String, Long> getStatusStats() { return statusStats; }
         public Instant getStartTime() { return startTime; }
         public Instant getEndTime() { return endTime; }
+        public double getSamplingRate() { return samplingRate; }
     }
 
     public static class TraceExportRequest {

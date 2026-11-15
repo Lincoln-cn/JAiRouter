@@ -279,7 +279,7 @@ import {
 } from '@/api/tracing'
 import type { TraceSpan, TracingServiceStat, TracingStatistics, TracingStatus } from '@/types/tracing'
 import type { LocationQueryRaw } from 'vue-router'
-import type { CommonError, ErrorAnalysis, LatencyAnalysis, LatencyTrendData, ThroughputAnalysis, TimeSeriesData } from '@/types'
+import type { CommonError, ErrorAnalysis, LatencyAnalysis, ThroughputAnalysis, TrendPoint } from '@/types'
 import TraceDetail from './components/TraceDetail.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import MetricStrip from '@/components/MetricStrip.vue'
@@ -345,10 +345,11 @@ const traceDetailVisible = ref(false)
 const selectedTrace = ref<TraceSpan | null>(null)
 
 // 数据空态：各图只看自己的数据源
-// 追踪趋势图当前没有后端时序接口（issue #253），恒定空态，不用占位数据伪造曲线。
-const traceTrendEmpty = true
+// 数据空态：各图只看自己的数据源
+// 追踪量趋势 = 吞吐趋势里的 requestCount 与错误趋势里的 errorCount（同一次请求、同一时间窗）。
+const traceTrendEmpty = computed(() => (throughputAnalysis.value?.qpsTrend || []).length === 0)
 const latencyDistEmpty = computed(() => serviceStats.value.length === 0)
-const latencyTrendEmpty = computed(() => (latencyAnalysis.value?.trend?.timestamps || []).length === 0)
+const latencyTrendEmpty = computed(() => (latencyAnalysis.value?.trend || []).length === 0)
 const errorTrendEmpty = computed(() => (errorAnalysis.value?.errorTrend || []).length === 0)
 const throughputTrendEmpty = computed(() => (throughputAnalysis.value?.qpsTrend || []).length === 0)
 
@@ -500,13 +501,12 @@ const initCharts = () => {
   latencyDistEcharts?.setOption(getLatencyDistributionOption(), { notMerge: true })
 }
 
-// 图表配置
-// 追踪趋势：当前后端 API 面没有「按时间桶的追踪数/错误数」时序接口 ——
-// /tracing/query/statistics 与 /tracing/actuator/stats 只返回标量快照，
-// /tracing/performance/metrics/dashboard 返回处理器与内存快照。故此处渲染空序列，
-// 待后端提供时序接口后再接线；不得用随机数占位（issue #253）。
+// 追踪量趋势：请求数来自吞吐趋势、错误数来自错误趋势（同一时间窗与桶宽，#1150）。
 const getTraceTrendOption = () => {
   const chartSkin = skin.value
+  const throughput: TrendPoint[] = throughputAnalysis.value?.qpsTrend || []
+  const errors: TrendPoint[] = errorAnalysis.value?.errorTrend || []
+  const errorByHour = new Map(errors.map(p => [p.hour, p.errorCount ?? 0]))
   return {
     tooltip: { ...chartSkin.tooltip, trigger: 'axis', axisPointer: { type: 'cross' } },
     legend: {
@@ -521,7 +521,7 @@ const getTraceTrendOption = () => {
     xAxis: {
       ...chartSkin.categoryAxis,
       boundaryGap: false,
-      data: generateTimeLabels()
+      data: throughput.map(p => p.hour)
     },
     yAxis: { ...chartSkin.valueAxis },
     series: [
@@ -532,7 +532,7 @@ const getTraceTrendOption = () => {
         showSymbol: false,
         areaStyle: { opacity: 0.12 },
         itemStyle: { color: chartSkin.palette[0] },
-        data: []
+        data: throughput.map(p => p.requestCount)
       },
       {
         name: t('tracing.dashboard.columns.errors'),
@@ -540,21 +540,20 @@ const getTraceTrendOption = () => {
         smooth: true,
         showSymbol: false,
         itemStyle: { color: chartSkin.emphasis },
-        data: []
+        data: throughput.map(p => errorByHour.get(p.hour) ?? 0)
       }
     ]
   }
 }
 
-// 延迟趋势（P95/P99）——数据来自 /tracing/query/performance/latency
 const getLatencyTrendOption = () => {
   const chartSkin = skin.value
-  const trend: Partial<LatencyTrendData> = latencyAnalysis.value?.trend ?? {}
+  const points: TrendPoint[] = latencyAnalysis.value?.trend || []
   return {
     tooltip: { ...chartSkin.tooltip, trigger: 'axis', axisPointer: { type: 'cross' } },
     legend: {
       ...chartSkin.legend,
-      data: [t('tracing.dashboard.columns.p95Latency'), t('tracing.dashboard.columns.p99Latency')],
+      data: [t('tracing.dashboard.columns.p95Latency'), t('tracing.dashboard.columns.maxLatency')],
       bottom: 0,
       top: 'auto',
       right: 'auto',
@@ -564,7 +563,7 @@ const getLatencyTrendOption = () => {
     xAxis: {
       ...chartSkin.categoryAxis,
       boundaryGap: false,
-      data: trend.timestamps || []
+      data: points.map(p => p.hour)
     },
     yAxis: { ...chartSkin.valueAxis },
     series: [
@@ -574,15 +573,15 @@ const getLatencyTrendOption = () => {
         smooth: true,
         showSymbol: false,
         itemStyle: { color: chartSkin.palette[0] },
-        data: trend.p95Latency || []
+        data: points.map(p => p.p95Duration ?? 0)
       },
       {
-        name: t('tracing.dashboard.columns.p99Latency'),
+        name: t('tracing.dashboard.columns.maxLatency'),
         type: 'line',
         smooth: true,
         showSymbol: false,
         itemStyle: { color: chartSkin.palette[4] },
-        data: trend.p99Latency || []
+        data: points.map(p => p.maxDuration ?? 0)
       }
     ]
   }
@@ -591,7 +590,7 @@ const getLatencyTrendOption = () => {
 // 错误率趋势——数据来自 /tracing/query/performance/errors
 const getErrorTrendOption = () => {
   const chartSkin = skin.value
-  const points: TimeSeriesData[] = errorAnalysis.value?.errorTrend || []
+  const points: TrendPoint[] = errorAnalysis.value?.errorTrend || []
   return {
     tooltip: { ...chartSkin.tooltip, trigger: 'axis', axisPointer: { type: 'cross' } },
     legend: {
@@ -606,7 +605,7 @@ const getErrorTrendOption = () => {
     xAxis: {
       ...chartSkin.categoryAxis,
       boundaryGap: false,
-      data: points.map(p => p.timestamp)
+      data: points.map(p => p.hour)
     },
     yAxis: { ...chartSkin.valueAxis },
     series: [
@@ -616,7 +615,7 @@ const getErrorTrendOption = () => {
         smooth: true,
         showSymbol: false,
         itemStyle: { color: chartSkin.emphasis },
-        data: points.map(p => p.value)
+        data: points.map(p => p.errorRate)
       }
     ]
   }
@@ -625,7 +624,7 @@ const getErrorTrendOption = () => {
 // 请求量趋势——数据来自 /tracing/query/performance/throughput
 const getThroughputTrendOption = () => {
   const chartSkin = skin.value
-  const points: TimeSeriesData[] = throughputAnalysis.value?.qpsTrend || []
+  const points: TrendPoint[] = throughputAnalysis.value?.qpsTrend || []
   return {
     tooltip: { ...chartSkin.tooltip, trigger: 'axis', axisPointer: { type: 'cross' } },
     legend: {
@@ -640,7 +639,7 @@ const getThroughputTrendOption = () => {
     xAxis: {
       ...chartSkin.categoryAxis,
       boundaryGap: false,
-      data: points.map(p => p.timestamp)
+      data: points.map(p => p.hour)
     },
     yAxis: { ...chartSkin.valueAxis },
     series: [
@@ -650,7 +649,7 @@ const getThroughputTrendOption = () => {
         smooth: true,
         showSymbol: false,
         itemStyle: { color: chartSkin.palette[0] },
-        data: points.map(p => p.value)
+        data: points.map(p => p.qps)
       }
     ]
   }
@@ -738,16 +737,6 @@ const getLatencyDistributionOption = () => {
 }
 
 // 辅助函数
-const generateTimeLabels = () => {
-  const labels = []
-  const now = new Date()
-  for (let i = 11; i >= 0; i--) {
-    const time = new Date(now.getTime() - i * 5 * 60 * 1000)
-    labels.push(time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }))
-  }
-  return labels
-}
-
 const formatNumber = (num: number) => {
   if (num >= 10000) {
     return `${(num / 10000).toFixed(1)  }w`
