@@ -13,8 +13,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.PageRequest;
 import org.unreal.modelrouter.auth.audit.ConfigChangeAuditEntity;
 import org.unreal.modelrouter.auth.audit.ConfigChangeAuditRepository;
+import org.unreal.modelrouter.persistence.jpa.entity.ConfigAuditLogEntity;
+import org.unreal.modelrouter.persistence.jpa.repository.ConfigAuditLogRepository;
 import org.unreal.modelrouter.monitor.tracing.helper.ConsoleOperationNames;
 import org.unreal.modelrouter.monitor.tracing.helper.ServiceNameResolver;
 import org.unreal.modelrouter.monitor.tracing.query.TraceArchiveService;
@@ -25,6 +28,7 @@ import reactor.core.scheduler.Schedulers;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -50,14 +54,20 @@ public class TracingQueryController {
     private final TraceQueryService traceQueryService;
     private final ConfigChangeAuditRepository configChangeAuditRepository;
     private final TraceArchiveService traceArchiveService;
+    private final ConfigAuditLogRepository configAuditLogRepository;
+    private final tools.jackson.databind.ObjectMapper auditObjectMapper;
 
     // 手动添加构造函数
     public TracingQueryController(
             final TraceQueryService traceQueryService,
             final ConfigChangeAuditRepository configChangeAuditRepository,
-            final TraceArchiveService traceArchiveService) {
+            final TraceArchiveService traceArchiveService,
+            final ConfigAuditLogRepository configAuditLogRepository,
+            final tools.jackson.databind.ObjectMapper auditObjectMapper) {
         this.traceQueryService = traceQueryService;
         this.configChangeAuditRepository = configChangeAuditRepository;
+        this.configAuditLogRepository = configAuditLogRepository;
+        this.auditObjectMapper = auditObjectMapper;
         this.traceArchiveService = traceArchiveService;
     }
     
@@ -186,6 +196,61 @@ public class TracingQueryController {
                     return Mono.just(ResponseEntity.internalServerError()
                             .body(Map.<String, Object>of("success", false, "message", "查询控制台操作失败")));
                 });
+    }
+
+    @GetMapping("/console-records")
+    @Operation(summary = "查询管理操作记录",
+            description = "以变更审计为主表（谁、何时、改了什么），追踪补耗时与状态；审计链路断开时该表只含存量数据（#1160）")
+    public Mono<ResponseEntity<Map<String, Object>>> getConsoleRecords(
+            @Parameter(description = "返回条数，1-200") @RequestParam(defaultValue = "50") final int limit) {
+        final int safeLimit = Math.max(1, Math.min(limit, 200));
+        return Mono.fromCallable(() -> {
+            final List<ConfigAuditLogEntity> rows =
+                    configAuditLogRepository.findRecent(PageRequest.of(0, safeLimit));
+            final List<Map<String, Object>> records = new ArrayList<>(rows.size());
+            for (ConfigAuditLogEntity row : rows) {
+                records.add(toConsoleRecord(row));
+            }
+            return records;
+        }).subscribeOn(Schedulers.boundedElastic())
+                .map(data -> ResponseEntity.ok(Map.<String, Object>of("success", true, "data", data)))
+                .onErrorResume(error -> {
+                    log.error("查询管理操作记录失败", error);
+                    return Mono.just(ResponseEntity.internalServerError()
+                            .body(Map.<String, Object>of("success", false, "message", "查询管理操作记录失败")));
+                });
+    }
+
+    /**
+     * 把一条变更审计转成操作记录行。
+     *
+     * <p>{@code description} 是审计过滤器写入的 JSON，含 method / path / status / duration_ms / traceId；
+     * 解析失败时这些字段为 null，界面按「不可用」显示，而不是伪造数值。</p>
+     */
+    private Map<String, Object> toConsoleRecord(final ConfigAuditLogEntity row) {
+        final Map<String, Object> record = new LinkedHashMap<>();
+        record.put("id", row.getId());
+        record.put("operation", row.getChangeType());
+        record.put("path", row.getEntityId());
+        record.put("operator", row.getUserId());
+        record.put("timestamp", row.getTimestamp() != null ? row.getTimestamp().toEpochMilli() : 0L);
+        final Map<String, Object> data = parseAuditData(row.getDescription());
+        record.put("status", data.get("status"));
+        record.put("duration", data.get("duration_ms"));
+        record.put("traceId", row.getTraceId() != null ? row.getTraceId() : data.get("traceId"));
+        return record;
+    }
+
+    private Map<String, Object> parseAuditData(final String description) {
+        if (description == null || description.isEmpty()) {
+            return Map.of();
+        }
+        try {
+            final Map<String, Object> parsed = auditObjectMapper.readValue(description, Map.class);
+            return parsed != null ? parsed : Map.of();
+        } catch (RuntimeException e) {
+            return Map.of();
+        }
     }
 
     /**

@@ -113,6 +113,27 @@ public final class ConsoleOperationNames {
     }
 
     /**
+     * 操作名是否是登记过的管理面写操作
+     *
+     * <p>采样器据此对管理面写操作强制采样：这类操作低频、值得留证，
+     * 「谁改了配置」比「某个业务请求」更该被记录（#1160）。</p>
+     *
+     * @param operationName 入口 span 的操作名（{@link #resolve} 的返回值）
+     * @return true 表示命中登记表
+     */
+    public static boolean isKnownOperation(final String operationName) {
+        if (operationName == null || operationName.isEmpty()) {
+            return false;
+        }
+        for (final Rule rule : RULES) {
+            if (rule.operationName().equals(operationName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * 控制台既可能通过 {@code /api/...} 直连，也可能经由 {@code /admin/api/...} 代理，
      * 两种前缀映射到同一组规则。
      *

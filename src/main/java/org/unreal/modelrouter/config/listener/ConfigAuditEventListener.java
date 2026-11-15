@@ -26,6 +26,9 @@ import java.time.Instant;
 @Slf4j
 public class ConfigAuditEventListener {
 
+    /** 控制台写操作审计把链路 ID 放在事件的 data 里，落库时单列存一份便于按 traceId 反查 */
+    private static final String TRACE_ID_KEY = "traceId";
+
     private final ConfigAuditLogRepository auditLogRepository;
 
     @Autowired(required = false)
@@ -101,6 +104,12 @@ public class ConfigAuditEventListener {
 
             if (event.data() != null) {
                 entity.setDescription(JacksonHelper.getObjectMapper().writeValueAsString(event.data()));
+                // 操作记录与链路关联：traceId 由 ConsoleAuditWebFilter 放进 data，
+                // 页面据此把「谁改了什么」和「慢在哪一步」接起来（#1160）
+                Object traceId = event.data().get(TRACE_ID_KEY);
+                if (traceId != null) {
+                    entity.setTraceId(String.valueOf(traceId));
+                }
             }
 
             auditLogRepository.save(entity);

@@ -6,6 +6,7 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.sdk.trace.data.LinkData;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
 import io.opentelemetry.sdk.trace.samplers.SamplingResult;
+import org.unreal.modelrouter.monitor.tracing.helper.ConsoleOperationNames;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -38,6 +39,12 @@ public final class DelegatingSampler implements Sampler {
             final SpanKind spanKind,
             final Attributes attributes,
             final List<LinkData> parentLinks) {
+        // 管理面写操作强制采样：低频、值得留证，不受全局采样率影响（#1160）。
+        // name 是 ServiceNameResolver.buildOperationName 的返回值，写操作会得到
+        // config.instance.update 这类登记过的可读名。
+        if (ConsoleOperationNames.isKnownOperation(name)) {
+            return SamplingResult.recordAndSample();
+        }
         return current().shouldSample(parentContext, traceId, name, spanKind, attributes, parentLinks);
     }
 

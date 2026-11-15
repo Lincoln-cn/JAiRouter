@@ -1,6 +1,9 @@
 package org.unreal.modelrouter.monitor.tracing.interceptor;
 
+import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.sdk.trace.ReadableSpan;
+import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import lombok.RequiredArgsConstructor;
@@ -236,6 +239,10 @@ public class TracingSpanHelper {
             long duration = Instant.now().toEpochMilli() - startTime.toEpochMilli();
             Instant endTime = Instant.now();
 
+            // 子 span 的结论必须来自 OTel span，而不是无条件写成功：
+            // 原先这里硬编码 false / "OK"，导致上游调用失败时 CLIENT span 仍然是绿色的。
+            final boolean failed = isErrorStatus(span);
+
             // 使用 TraceQueryService.SpanRecord 内部类
             TraceQueryService.SpanRecord spanRecord = new TraceQueryService.SpanRecord(
                 span.getSpanContext().getSpanId(),
@@ -244,9 +251,9 @@ public class TracingSpanHelper {
                 startTime,
                 endTime,
                 duration,
-                false, // error status
-                "OK", // status code
-                new HashMap<>(), // attributes
+                failed,
+                statusCodeOf(span, failed),
+                snapshotAttributes(span),
                 tracingContext.getSpanId(), // parentSpanId：挂到发起本次调用的根 span 下
                 spanKind // span 类型：网关内部 / 上游调用
             );
@@ -264,6 +271,75 @@ public class TracingSpanHelper {
         } catch (Exception e) {
             log.debug("记录子Span失败", e);
         }
+    }
+
+    /**
+     * OTel span 是否被标记为失败
+     *
+     * @param span OTel span
+     * @return true 表示 {@code setStatus(StatusCode.ERROR)} 过
+     */
+    private static boolean isErrorStatus(final Span span) {
+        final SpanData data = spanDataOf(span);
+        return data != null && data.getStatus().getStatusCode() == StatusCode.ERROR;
+    }
+
+    /**
+     * 读取 OTel span 的快照
+     *
+     * <p>{@code io.opentelemetry.api.trace.Span} 只有 setter，读属性与状态必须走
+     * SDK 的 {@link ReadableSpan#toSpanData()}。</p>
+     *
+     * @param span OTel span
+     * @return span 快照，非 SDK 实现时返回 null
+     */
+    private static SpanData spanDataOf(final Span span) {
+        if (span instanceof ReadableSpan) {
+            return ((ReadableSpan) span).toSpanData();
+        }
+        return null;
+    }
+
+    /**
+     * 子 span 的状态码
+     *
+     * <p>优先取 span 上的 {@code http.status_code}；上游调用没有 HTTP 状态码时，
+     * 用 {@code ERROR} / {@code OK} 表示结果，避免把失败写成 "OK"。</p>
+     *
+     * @param span   OTel span
+     * @param failed 是否失败
+     * @return 状态码字符串
+     */
+    private static String statusCodeOf(final Span span, final boolean failed) {
+        final SpanData data = spanDataOf(span);
+        if (data != null) {
+            final Object httpStatus = data.getAttributes().get(AttributeKey.longKey("http.status_code"));
+            if (httpStatus != null) {
+                return String.valueOf(httpStatus);
+            }
+        }
+        return failed ? "ERROR" : "OK";
+    }
+
+    /**
+     * 把 OTel span 上的属性快照到链路记录里
+     *
+     * <p>异常分析要按上游实例 / 适配器聚合，这些信息原本只写在 OTel span 上，
+     * {@code SpanRecord.attributes} 是空的，前端拿不到。</p>
+     *
+     * @param span OTel span
+     * @return 属性快照（键名保持 {@code instance.id} 这类点号形式）
+     */
+    private static Map<String, Object> snapshotAttributes(final Span span) {
+        Map<String, Object> snapshot = new HashMap<>();
+        final SpanData data = spanDataOf(span);
+        if (data == null) {
+            return snapshot;
+        }
+        for (Map.Entry<AttributeKey<?>, Object> entry : data.getAttributes().asMap().entrySet()) {
+            snapshot.put(entry.getKey().getKey(), entry.getValue());
+        }
+        return snapshot;
     }
 
     /**

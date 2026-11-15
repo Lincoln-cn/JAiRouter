@@ -1,22 +1,21 @@
 {
   "consoleOperations": {
-    "pageTitle": "Console Operations",
-    "tableTitle": "Recent console write operations",
+    "pageTitle": "Operation Records",
+    "tableTitle": "Recent administrative operations",
     "refresh": "Refresh",
-    "onlyErrors": "Failed only",
-    "hint": "Only write operations (create, update, delete) are recorded. Duration and result come from tracing; the operator comes from the change audit, joined by trace ID. The current version does not write trace IDs into the audit yet, so the operator usually shows Unknown.",
-    "countHint": "{total} record(s)",
-    "empty": "No write operations",
+    "onlyErrors": "Failures only",
+    "hint": "Answers \"who changed what, and when\": the operator comes from the change audit, while duration and result come from the tracing of the same operation. Click \"View trace\" to see which steps the operation went through inside the gateway. Only the most recent records are kept; older ones live in the server audit log.",
+    "countHint": "{total} records",
+    "empty": "No operation records",
     "time": "Time",
     "operator": "Operator",
     "operation": "Operation",
+    "path": "Target",
     "duration": "Duration",
     "result": "Result",
     "trace": "Trace",
     "viewTrace": "View trace",
-    "succeeded": "Succeeded",
-    "failed": "Failed",
     "unknownOperator": "Unknown",
-    "loadFailed": "Failed to load console operations"
+    "loadFailed": "Failed to load operation records"
   }
 }

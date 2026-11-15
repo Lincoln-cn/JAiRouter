@@ -16,6 +16,7 @@ import org.springframework.web.server.WebFilterChain;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.exception.AuthenticationException;
 import org.unreal.modelrouter.common.exception.SecurityAuthenticationException;
+import org.unreal.modelrouter.common.util.SecurityUtils;
 import org.unreal.modelrouter.auth.security.config.ExcludedPathsConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import reactor.core.publisher.Mono;
@@ -119,6 +120,11 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
                 .flatMap(authenticated -> {
                     // 创建已认证的安全上下文，并在该安全上下文中继续执行过滤器链
                     SecurityContextImpl securityContext = new SecurityContextImpl(authenticated);
+                    // 审计过滤器排在本过滤器之前，读不到这里的 Reactor Context，
+                    // 所以把用户名放到 exchange 属性里供 ConsoleAuditWebFilter 记录操作人（#1160）
+                    if (authenticated.getName() != null) {
+                        exchange.getAttributes().put(SecurityUtils.USER_ID_ATTRIBUTE, authenticated.getName());
+                    }
                     return chain.filter(exchange).contextWrite(
                             ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)));
                 })

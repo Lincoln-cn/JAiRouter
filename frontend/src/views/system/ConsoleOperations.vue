@@ -33,35 +33,35 @@
         size="small"
         :empty-text="t('consoleOperations.empty')"
       >
-        <el-table-column prop="startTime" :label="t('consoleOperations.time')" width="180">
-          <template #default="{ row }">{{ formatTime(row.startTime) }}</template>
+        <el-table-column prop="timestamp" :label="t('consoleOperations.time')" width="180">
+          <template #default="{ row }">{{ formatTime(row.timestamp) }}</template>
         </el-table-column>
         <el-table-column prop="operator" :label="t('consoleOperations.operator')" width="140">
           <template #default="{ row }">{{ row.operator || t('consoleOperations.unknownOperator') }}</template>
         </el-table-column>
-        <el-table-column prop="operationName" :label="t('consoleOperations.operation')" min-width="200">
-          <template #default="{ row }">
-            <code class="op-name">{{ row.operationName }}</code>
-          </template>
+        <el-table-column prop="operation" :label="t('consoleOperations.operation')" min-width="200">
+          <template #default="{ row }"><code>{{ row.operation || '-' }}</code></template>
+        </el-table-column>
+        <el-table-column prop="path" :label="t('consoleOperations.path')" min-width="180">
+          <template #default="{ row }"><span class="path">{{ row.path || '-' }}</span></template>
         </el-table-column>
         <el-table-column prop="duration" :label="t('consoleOperations.duration')" width="120" sortable>
           <template #default="{ row }">{{ formatDuration(row.duration) }}</template>
         </el-table-column>
-        <el-table-column prop="hasError" :label="t('consoleOperations.result')" width="110">
+        <el-table-column prop="status" :label="t('consoleOperations.result')" width="110">
           <template #default="{ row }">
-            <el-tag size="small" :type="row.hasError ? 'danger' : 'success'" effect="plain">
-              {{ row.hasError ? t('consoleOperations.failed') : t('consoleOperations.succeeded') }}
-            </el-tag>
+            <el-tag v-if="typeof row.status === 'number' && row.status >= 400" type="danger" size="small">{{ row.status }}</el-tag>
+            <el-tag v-else-if="typeof row.status === 'number'" type="success" size="small">{{ row.status }}</el-tag>
+            <span v-else>-</span>
           </template>
         </el-table-column>
         <el-table-column :label="t('consoleOperations.trace')" width="120">
           <template #default="{ row }">
-            <el-link type="primary" :underline="false" @click="openTrace(row.traceId)">
-              {{ t('consoleOperations.viewTrace') }}
-            </el-link>
+            <el-link v-if="row.traceId" type="primary" @click="openTrace(row.traceId)">{{ t('consoleOperations.viewTrace') }}</el-link>
+            <span v-else>-</span>
           </template>
         </el-table-column>
-      </el-table>
+</el-table>
     </el-card>
   </PageSkeleton>
 </template>
@@ -73,27 +73,29 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { InfoFilled, Refresh } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
-import { getConsoleOperations, type ConsoleOperation } from '@/api/consoleOperations'
+import { getConsoleRecords, type ConsoleRecord } from '@/api/consoleOperations'
 
 const { t } = useI18n()
 const router = useRouter()
 
 const loading = ref(false)
-const operations = ref<ConsoleOperation[]>([])
+const operations = ref<ConsoleRecord[]>([])
 const onlyErrors = ref(false)
 
 const filtered = computed(() =>
-  onlyErrors.value ? operations.value.filter((item) => item.hasError) : operations.value
+  onlyErrors.value
+    ? operations.value.filter((item) => typeof item.status === 'number' && item.status >= 400)
+    : operations.value
 )
 
 async function loadOperations() {
   loading.value = true
   try {
-    const response = await getConsoleOperations(100)
+    const response = await getConsoleRecords(100)
     // 拦截器解包层级在不同版本里不一致（数组 / {data} / {data:{data}}），逐层兼容
-    const first = response as unknown as ConsoleOperation[] | { data?: ConsoleOperation[] | { data?: ConsoleOperation[] } }
+    const first = response as unknown as ConsoleRecord[] | { data?: ConsoleRecord[] | { data?: ConsoleRecord[] } }
     const second = Array.isArray(first) ? undefined : first?.data
-    const list = Array.isArray(first) ? first : Array.isArray(second) ? second : (second as { data?: ConsoleOperation[] } | undefined)?.data
+    const list = Array.isArray(first) ? first : Array.isArray(second) ? second : (second as { data?: ConsoleRecord[] } | undefined)?.data
     operations.value = Array.isArray(list) ? list : []
   } catch (error) {
     ElMessage.error(t('consoleOperations.loadFailed'))
@@ -103,13 +105,13 @@ async function loadOperations() {
   }
 }
 
-function formatTime(value: string) {
+function formatTime(value: number | null | undefined) {
   if (!value) return '-'
   const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString()
 }
 
-function formatDuration(ms: number) {
+function formatDuration(ms: number | null | undefined) {
   if (typeof ms !== 'number' || Number.isNaN(ms)) return '-'
   return `${ms.toFixed(1)} ms`
 }
@@ -117,8 +119,6 @@ function formatDuration(ms: number) {
 function openTrace(traceId: string) {
   router.push({ path: '/tracing/search', query: { traceId } })
 }
-
-onMounted(loadOperations)
 
 onMounted(loadOperations)
 </script>
@@ -151,5 +151,10 @@ onMounted(loadOperations)
 .op-name {
   font-family: var(--ja-font-mono, monospace);
   font-size: 12px;
+}
+.path {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--ja-text-secondary);
 }
 </style>
