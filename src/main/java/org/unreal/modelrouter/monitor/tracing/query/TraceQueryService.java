@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.monitor.tracing.exporter.TraceExporter;
+import org.unreal.modelrouter.monitor.tracing.helper.ServiceNameResolver;
 import org.unreal.modelrouter.monitor.tracing.memory.TracingMemoryManager;
 import org.unreal.modelrouter.monitor.tracing.memory.model.CachedTraceData;
 import org.unreal.modelrouter.monitor.tracing.statistics.TraceStatisticsCalculator;
@@ -131,9 +132,15 @@ public class TraceQueryService {
                 }
             }
             double totalDuration = Math.max(existingTrace.getDuration(), duration);
-            trace = new TraceRecord(traceId, serviceName, mergedSpans, totalDuration, existingTrace.getCreatedAt());
+            // 服务名以入口 span 写入的为准：子 span 后到，不能覆盖入口的服务名，
+            // 否则同一条链路会被拆成两个服务（#1153）。
+            trace = new TraceRecord(traceId, existingTrace.getServiceName(), mergedSpans, totalDuration,
+                existingTrace.getCreatedAt());
         } else {
-            trace = new TraceRecord(traceId, serviceName, spans, duration, Instant.now());
+            // 子 span 可能先于入口 span 到达（理论上不会），此时服务名兜底为 gateway（#1153）
+            trace = new TraceRecord(traceId,
+                serviceName != null ? serviceName : ServiceNameResolver.SERVICE_GATEWAY,
+                spans, duration, Instant.now());
         }
         traceStore.put(traceId, trace);
         if (existingTrace == null) {
@@ -255,19 +262,36 @@ public class TraceQueryService {
         /** 父 span 标识：入口 span 为 null，子 span 指向发起它的 span（见 #1151）。 */
         private final String parentSpanId;
 
+        /** span 类型：SERVER（入口）/ INTERNAL（网关内部）/ CLIENT（上游调用），见 #1153。 */
+        public static final String KIND_SERVER = "SERVER";
+        public static final String KIND_INTERNAL = "INTERNAL";
+        public static final String KIND_CLIENT = "CLIENT";
+
+        private final String spanKind;
+
         public SpanRecord(String spanId, String traceId, String operationName, Instant startTime, Instant endTime,
                          double duration, boolean error, String statusCode, Map<String, Object> attributes,
-                         String parentSpanId) {
+                         String parentSpanId, String spanKind) {
             this.spanId = spanId; this.traceId = traceId; this.operationName = operationName;
             this.startTime = startTime; this.endTime = endTime; this.duration = duration;
             this.error = error; this.statusCode = statusCode; this.attributes = attributes;
             this.parentSpanId = parentSpanId;
+            this.spanKind = spanKind != null ? spanKind : KIND_INTERNAL;
+        }
+
+        /** 兼容构造：有父 span 但未指定类型时按网关内部处理。 */
+        public SpanRecord(String spanId, String traceId, String operationName, Instant startTime, Instant endTime,
+                         double duration, boolean error, String statusCode, Map<String, Object> attributes,
+                         String parentSpanId) {
+            this(spanId, traceId, operationName, startTime, endTime, duration, error, statusCode, attributes,
+                parentSpanId, KIND_INTERNAL);
         }
 
         /** 简化构造：没有父 span 的记录按入口 span 处理。 */
         public SpanRecord(String spanId, String traceId, String operationName, Instant startTime, Instant endTime,
                          double duration, boolean error, String statusCode, Map<String, Object> attributes) {
-            this(spanId, traceId, operationName, startTime, endTime, duration, error, statusCode, attributes, null);
+            this(spanId, traceId, operationName, startTime, endTime, duration, error, statusCode, attributes,
+                null, KIND_SERVER);
         }
         public String getSpanId() { return spanId; }
         public String getTraceId() { return traceId; }
@@ -279,6 +303,7 @@ public class TraceQueryService {
         public String getStatusCode() { return statusCode; }
         public Map<String, Object> getAttributes() { return attributes; }
         public String getParentSpanId() { return parentSpanId; }
+        public String getSpanKind() { return spanKind; }
     }
 
     public static class TraceChain {

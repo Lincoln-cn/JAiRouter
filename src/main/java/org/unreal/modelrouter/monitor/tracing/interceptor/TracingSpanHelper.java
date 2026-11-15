@@ -127,7 +127,8 @@ public class TracingSpanHelper {
             if (selectionSpan.isRecording()) {
                 selectionSpan.end();
             }
-            recordChildSpan(selectionSpan, tracingContext, startTime, operationName);
+            recordChildSpan(selectionSpan, tracingContext, startTime, operationName,
+                TraceQueryService.SpanRecord.KIND_INTERNAL);
         }
     }
 
@@ -210,16 +211,23 @@ public class TracingSpanHelper {
                 if (adapterSpan.isRecording()) {
                     adapterSpan.end();
                 }
-                recordChildSpan(adapterSpan, tracingContext, startTime, operationName);
+                recordChildSpan(adapterSpan, tracingContext, startTime, operationName,
+                    TraceQueryService.SpanRecord.KIND_CLIENT);
             });
     }
 
     /**
      * 记录子Span到TraceQueryService
+     *
+     * @param span          OTel span
+     * @param tracingContext 追踪上下文
+     * @param startTime     开始时刻
+     * @param operationName 操作名
+     * @param spanKind      span 类型（INTERNAL 网关内部 / CLIENT 上游调用），见 #1153
      */
     void recordChildSpan(
             final Span span, final TracingContext tracingContext,
-            final Instant startTime, final String operationName) {
+            final Instant startTime, final String operationName, final String spanKind) {
         if (traceQueryService == null || tracingContext == null || span == null) {
             return;
         }
@@ -239,13 +247,14 @@ public class TracingSpanHelper {
                 false, // error status
                 "OK", // status code
                 new HashMap<>(), // attributes
-                tracingContext.getSpanId() // parentSpanId：挂到发起本次调用的根 span 下
-
+                tracingContext.getSpanId(), // parentSpanId：挂到发起本次调用的根 span 下
+                spanKind // span 类型：网关内部 / 上游调用
             );
 
+            // 服务名传 null：合并同 traceId 时会保留入口 span 写入的服务名（#1153）
             traceQueryService.recordTraceSync(
                 tracingContext.getTraceId(),
-                "server",
+                null,
                 Collections.singletonList(spanRecord),
                 duration
             );

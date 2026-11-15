@@ -33,7 +33,7 @@ class TracingConfigurationTest {
             TracingConfiguration config = new TracingConfiguration();
 
             assertTrue(config.isEnabled());
-            assertEquals("jairouter", config.getServiceName());
+            assertEquals("gateway", config.getServiceName());
             assertEquals("1.0.0", config.getServiceVersion());
             assertEquals("production", config.getServiceNamespace());
             assertNotNull(config.getOpenTelemetry());

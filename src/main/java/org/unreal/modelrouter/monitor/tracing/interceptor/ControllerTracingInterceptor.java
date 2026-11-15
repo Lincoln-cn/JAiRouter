@@ -12,6 +12,7 @@ import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitor.tracing.TracingConstants;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
+import org.unreal.modelrouter.monitor.tracing.query.TraceQueryService;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
@@ -133,7 +134,8 @@ public class ControllerTracingInterceptor {
                 if (controllerSpan.isRecording()) {
                     controllerSpan.end();
                 }
-                tracingSpanHelper.recordChildSpan(controllerSpan, tracingContext, startTime, operationName);
+                tracingSpanHelper.recordChildSpan(controllerSpan, tracingContext, startTime, operationName,
+                    TraceQueryService.SpanRecord.KIND_INTERNAL);
             });
     }
 

@@ -182,6 +182,12 @@
               <el-descriptions-item :label="t('tracing.search.maxDurationLabel')">
                 {{ Math.round(traceChain?.stats?.maxDuration || 0) }}ms
               </el-descriptions-item>
+              <el-descriptions-item :label="t('tracing.search.gatewayDurationLabel')">
+                {{ Math.round(gatewayDuration) }}ms
+              </el-descriptions-item>
+              <el-descriptions-item :label="t('tracing.search.upstreamDurationLabel')">
+                {{ Math.round(upstreamDuration) }}ms
+              </el-descriptions-item>
             </el-descriptions>
           </el-card>
 
@@ -223,6 +229,13 @@
                     <span :class="{ 'high-latency': row.duration > 500 }">
                       {{ Math.round(row.duration) }}
                     </span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="spanKind" :label="t('tracing.search.spanKindLabel')" min-width="80">
+                  <template #default="{ row }">
+                    <el-tag size="small" :type="getSpanKindTagType(row.spanKind)">
+                      {{ getSpanKindText(row.spanKind) }}
+                    </el-tag>
                   </template>
                 </el-table-column>
                 <el-table-column prop="startTime" :label="t('tracing.search.startTime')" min-width="140" sortable>
@@ -363,6 +376,17 @@ const traceDialogVisible = ref(false)
 const selectedTrace = ref<TraceSpan | null>(null)
 const traceChain = ref<TraceChainResponse | null>(null)
 const traceChainChart = ref<HTMLElement | null>(null)
+/** 上游调用耗时合计（spanKind === 'CLIENT'），#1153 */
+const upstreamDuration = computed(() =>
+  (traceChain.value?.spans || [])
+    .filter(span => span.spanKind === 'CLIENT')
+    .reduce((sum, span) => sum + (span.duration ?? 0), 0)
+)
+/** 网关自身耗时 = 总耗时 − 上游调用耗时 */
+const gatewayDuration = computed(() => {
+  const total = traceChain.value?.stats?.totalDuration || selectedTrace.value?.duration || 0
+  return Math.max(0, total - upstreamDuration.value)
+})
 let traceChainChartInstance: echarts.ECharts | null = null
 
 // 计算属性：排序后的 Span 列表
@@ -626,7 +650,11 @@ const getTraceChainChartOption = () => {
         duration
       ],
       itemStyle: {
-        color: span.error ? theme.danger : ((span.operationName ?? '').includes('process') ? theme.success : theme.primary),
+        // #1153：按 span 类型着色，区分「网关自身」与「上游调用」
+        color: span.error ? theme.danger
+          : span.spanKind === 'CLIENT' ? 'var(--ja-warning, #e6a23c)'
+            : span.spanKind === 'SERVER' ? 'var(--ja-text-secondary, #909399)'
+              : theme.primary,
         borderColor: 'var(--ja-bg-page, #fff)',
         borderWidth: 1
       }
@@ -807,6 +835,19 @@ const getStatusCodeType = (statusCode: string) => {
   if (code >= 300 && code < 400) return 'warning'
   if (code >= 400) return 'danger'
   return 'info'
+}
+
+// span 类型展示（#1153）：SERVER 入口 / INTERNAL 网关内部 / CLIENT 上游调用
+const getSpanKindText = (kind?: string) => {
+  if (kind === 'SERVER') return t('tracing.search.spanKindServer')
+  if (kind === 'CLIENT') return t('tracing.search.spanKindClient')
+  return t('tracing.search.spanKindInternal')
+}
+
+const getSpanKindTagType = (kind?: string) => {
+  if (kind === 'SERVER') return 'info'
+  if (kind === 'CLIENT') return 'warning'
+  return 'primary'
 }
 
 // 显示 Span 详情

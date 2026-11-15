@@ -57,7 +57,7 @@ class ServiceNameResolverTest {
         String serviceName = serviceNameResolver.resolveServiceName(request);
 
         // Then
-        assertEquals("front", serviceName);
+        assertEquals(ServiceNameResolver.SERVICE_WEB, serviceName);
     }
 
     @Test
@@ -70,7 +70,7 @@ class ServiceNameResolverTest {
         String serviceName = serviceNameResolver.resolveServiceName(request);
 
         // Then
-        assertEquals("front", serviceName);
+        assertEquals(ServiceNameResolver.SERVICE_WEB, serviceName);
     }
 
     @Test
@@ -83,7 +83,7 @@ class ServiceNameResolverTest {
         String serviceName = serviceNameResolver.resolveServiceName(request);
 
         // Then
-        assertEquals("front", serviceName);
+        assertEquals(ServiceNameResolver.SERVICE_WEB, serviceName);
     }
 
     @Test
@@ -96,7 +96,7 @@ class ServiceNameResolverTest {
         String serviceName = serviceNameResolver.resolveServiceName(request);
 
         // Then
-        assertEquals("front", serviceName);
+        assertEquals(ServiceNameResolver.SERVICE_WEB, serviceName);
     }
 
     @Test
@@ -109,7 +109,7 @@ class ServiceNameResolverTest {
         String serviceName = serviceNameResolver.resolveServiceName(request);
 
         // Then
-        assertEquals("front", serviceName);
+        assertEquals(ServiceNameResolver.SERVICE_WEB, serviceName);
     }
 
     @Test
@@ -122,7 +122,7 @@ class ServiceNameResolverTest {
         String serviceName = serviceNameResolver.resolveServiceName(request);
 
         // Then
-        assertEquals("front", serviceName);
+        assertEquals(ServiceNameResolver.SERVICE_WEB, serviceName);
     }
 
     @Test
@@ -135,7 +135,7 @@ class ServiceNameResolverTest {
         String serviceName = serviceNameResolver.resolveServiceName(request);
 
         // Then
-        assertEquals("front", serviceName); // favicon.ico 是静态资源
+        assertEquals(ServiceNameResolver.SERVICE_WEB, serviceName); // favicon.ico 是静态资源
     }
 
     @Test
@@ -148,7 +148,7 @@ class ServiceNameResolverTest {
         String serviceName = serviceNameResolver.resolveServiceName(request);
 
         // Then
-        assertEquals("server", serviceName);
+        assertEquals(ServiceNameResolver.SERVICE_CONSOLE, serviceName);
     }
 
     @Test
@@ -161,7 +161,7 @@ class ServiceNameResolverTest {
         String serviceName = serviceNameResolver.resolveServiceName(request);
 
         // Then
-        assertEquals("server", serviceName);
+        assertEquals(ServiceNameResolver.SERVICE_CONSOLE, serviceName);
     }
 
     @Test
@@ -174,7 +174,7 @@ class ServiceNameResolverTest {
         String serviceName = serviceNameResolver.resolveServiceName(request);
 
         // Then
-        assertEquals("server", serviceName);
+        assertEquals(ServiceNameResolver.SERVICE_CONSOLE, serviceName);
     }
 
     @Test
@@ -188,6 +188,20 @@ class ServiceNameResolverTest {
 
         // Then
         assertEquals("jairouter", serviceName);
+    }
+
+    @Test
+    @DisplayName("解析服务名称 - 业务转发默认 gateway（#1153）")
+    void resolveServiceName_shouldDefaultToGatewayForBusinessTraffic() {
+        // Given：生产默认配置（serviceName 默认 gateway），而不是 mock 的 jairouter
+        ServiceNameResolver productionResolver = new ServiceNameResolver(new TracingConfiguration());
+        setupRequestPath("/v1/chat/completions");
+
+        // When
+        String serviceName = productionResolver.resolveServiceName(request);
+
+        // Then
+        assertEquals(ServiceNameResolver.SERVICE_GATEWAY, serviceName);
     }
 
     @Test
