@@ -94,6 +94,8 @@ export interface TraceSpan {
   traceId?: string
   spanId?: string
   parentSpanId?: string
+  /** span 类型（#1153）：SERVER 入口 / INTERNAL 网关内部 / CLIENT 上游调用 */
+  spanKind?: 'SERVER' | 'INTERNAL' | 'CLIENT' | string
   /** 展示用操作名（如 `HTTP GET /v1/chat/completions`） */
   operationName?: string
   serviceName?: string

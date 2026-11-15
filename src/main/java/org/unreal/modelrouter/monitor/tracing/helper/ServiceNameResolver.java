@@ -23,6 +23,18 @@ public class ServiceNameResolver {
     private final TracingConfiguration tracingConfiguration;
 
     /**
+     * 服务名常量：三个词覆盖整个系统。
+     *
+     * <p>{@code gateway} —— 业务转发（{@code /v1/**}），链路里包含选实例与上游调用；
+     * {@code console} —— 控制台与后端管理 API；{@code web} —— 前端静态资源。</p>
+     *
+     * <p>刻意不用带产品名的前缀：日志里 {@code [gateway]} 比 {@code [jairouter-gateway]} 更容易扫。</p>
+     */
+    public static final String SERVICE_GATEWAY = "gateway";
+    public static final String SERVICE_CONSOLE = "console";
+    public static final String SERVICE_WEB = "web";
+
+    /**
      * 根据请求路径判断服务名称
      *
      * @param request HTTP 请求
@@ -31,7 +43,7 @@ public class ServiceNameResolver {
     public String resolveServiceName(final ServerHttpRequest request) {
         String path = request.getPath().value();
 
-        // 前端静态资源路径判断（包括 favicon.ico）
+        // 前端静态资源（含 favicon 与 SPA 页面路由返回的 index.html）
         if (path.startsWith("/admin/assets/")
             || (path.startsWith("/admin/") && isStaticResource(path))
             || path.endsWith(".js") || path.endsWith(".css")
@@ -39,26 +51,25 @@ public class ServiceNameResolver {
             || path.endsWith(".png") || path.endsWith(".jpg")
             || path.endsWith(".svg") || path.endsWith(".woff")
             || path.endsWith(".woff2") || path.endsWith(".ttf")) {
-            return "front";
+            return SERVICE_WEB;
         }
 
-        // Admin API 请求判断（优先于 SPA 路由判断）
+        // 控制台后端 API（优先于 SPA 路由判断）
         if (path.startsWith("/admin/api/")) {
-            return "server";
+            return SERVICE_CONSOLE;
         }
 
-        // 前端页面路由请求（SPA 路由，如 /admin/tracing/search）
-        // 这些请求实际上返回 index.html，属于前端页面
+        // SPA 路由（如 /admin/tracing/search），实际返回 index.html
         if (path.startsWith("/admin/") && !path.startsWith("/admin/api/")) {
-            return "front";
+            return SERVICE_WEB;
         }
 
-        // 后端 API 请求判断
+        // 后端管理 API 与运维端点
         if (path.startsWith("/api/") || path.startsWith("/actuator/")) {
-            return "server";
+            return SERVICE_CONSOLE;
         }
 
-        // 其他请求使用默认服务名称
+        // 其余（主要是 /v1/** 业务转发）使用配置的服务名，默认 gateway
         return tracingConfiguration.getServiceName();
     }
 

@@ -37,7 +37,7 @@ public class TracingConfiguration {
     /**
      * 服务名称
      */
-    private String serviceName = "jairouter";
+    private String serviceName = "gateway";
     
     /**
      * 服务版本

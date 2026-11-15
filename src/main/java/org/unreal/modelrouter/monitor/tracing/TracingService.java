@@ -286,8 +286,9 @@ public class TracingService {
             ).subscribe();
 
             // 记录错误追踪数据到查询服务
-            // 错误记录通常发生在 API 请求处理过程中，使用 "server" 作为服务标识
-            String serviceName = "server";
+            // 错误记录通常发生在 API 请求处理过程中；若该 trace 已有入口 span，
+            // 合并时保留入口写入的服务名（见 #1153），此处只作首次写入的兜底。
+            String serviceName = ServiceNameResolver.SERVICE_GATEWAY;
             List<TraceQueryService.SpanRecord> errorSpanRecords = new ArrayList<>();
             Map<String, Object> errorAttributes = new HashMap<>();
             errorAttributes.put("error.type", error.getClass().getSimpleName());
