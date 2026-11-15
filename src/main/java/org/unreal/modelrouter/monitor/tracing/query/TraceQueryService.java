@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
@@ -32,22 +34,44 @@ public class TraceQueryService {
     private final TracingMemoryManager memoryManager;
     private final TraceStatisticsCalculator statisticsCalculator;
     private final TraceExporter traceExporter;
+    private final TraceArchiveService traceArchiveService;
 
     private final Map<String, TraceRecord> traceStore = new ConcurrentHashMap<>();
     private final Queue<TraceRecord> recentTraces = new ConcurrentLinkedQueue<>();
+    /** 异常链路单独保留区：LRU，与 traceStore 的淘汰互不影响（#1155）。 */
+    private final Map<String, TraceRecord> errorTraceStore = Collections.synchronizedMap(
+        new LinkedHashMap<String, TraceRecord>(16, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(final Map.Entry<String, TraceRecord> eldest) {
+                return size() > MAX_ERROR_TRACES;
+            }
+        });
     private final AtomicLong traceCounter = new AtomicLong(0);
 
     private static final int MAX_STORED_TRACES = 10000;
     private static final int MAX_RECENT_TRACES = 1000;
+    /** 异常链路的单独保留上限：与普通链路分开计数，避免被控制台的高频请求挤出（#1155）。 */
+    private static final int MAX_ERROR_TRACES = 1000;
 
     public Mono<TraceChain> getTraceChain(final String traceId) {
         return Mono.fromCallable(() -> {
-            TraceRecord trace = traceStore.get(traceId);
+            // 异常链路优先从保留区取：它在 traceStore 里可能已被淘汰（#1155）
+            TraceRecord trace = errorTraceStore.get(traceId);
+            if (trace == null) {
+                trace = traceStore.get(traceId);
+            }
             if (trace == null) {
                 CachedTraceData cachedData =
                     memoryManager.getCachedTraceData(traceId).block(org.unreal.modelrouter.common.util.ReactorTimeouts.BLOCK);
                 if (cachedData != null) {
                     trace = convertFromCachedData(cachedData);
+                }
+            }
+            if (trace == null) {
+                // 内存里都没有时再查归档：归档只存异常链路，普通链路不会走到这里（#1155）
+                final TraceChain archived = traceArchiveService.loadArchivedChain(traceId).orElse(null);
+                if (archived != null) {
+                    return archived;
                 }
             }
             if (trace == null) {
@@ -67,7 +91,7 @@ public class TraceQueryService {
     }
 
     public Flux<TraceSummary> searchTraces(final TraceSearchCriteria criteria) {
-        return Flux.fromIterable(traceStore.values())
+        return Flux.fromIterable(allTraces())
             .filter(trace -> matchesCriteria(trace, criteria))
             .map(this::createTraceSummary)
             .sort((a, b) -> b.getStartTime().compareTo(a.getStartTime()))
@@ -76,7 +100,7 @@ public class TraceQueryService {
 
     public Mono<Map<String, Object>> searchTracesWithPagination(final TraceSearchCriteria criteria) {
         return Mono.fromCallable(() -> {
-            List<TraceRecord> allTraces = traceStore.values().stream()
+            List<TraceRecord> allTraces = allTraces().stream()
                 .filter(trace -> matchesCriteria(trace, criteria))
                 .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
                 .collect(Collectors.toList());
@@ -96,15 +120,57 @@ public class TraceQueryService {
         });
     }
 
+    /** 普通区 + 异常保留区的全量视图（去重，异常区优先）（#1155）。 */
+    private List<TraceRecord> allTraces() {
+        final Map<String, TraceRecord> merged = new LinkedHashMap<>();
+        for (TraceRecord trace : errorTraceStore.values()) {
+            merged.put(trace.getTraceId(), trace);
+        }
+        for (TraceRecord trace : traceStore.values()) {
+            merged.putIfAbsent(trace.getTraceId(), trace);
+        }
+        return new ArrayList<>(merged.values());
+    }
+
     public Mono<TraceStatistics> getTraceStatistics(final long startTime, final long endTime) {
         return Mono.fromCallable(() -> statisticsCalculator.getTraceStatistics(traceStore, startTime, endTime));
     }
 
     public Flux<TraceSummary> getRecentTraces(final int limit) {
-        return Flux.fromIterable(recentTraces)
-            .takeLast(Math.min(limit, recentTraces.size()))
+        return Flux.fromIterable(recentTraceSnapshot(limit))
             .map(this::createTraceSummary)
             .sort((a, b) -> b.getStartTime().compareTo(a.getStartTime()));
+    }
+
+    /**
+     * 追踪查询接口自己打出来的链路。
+     *
+     * <p>控制台打开「链路搜索」页就会连发好几个查询请求，如果不排除，
+     * 「最近链路」里永远是观测者自己——真正的业务链路和异常链路反而看不见。</p>
+     */
+    private static final String SELF_QUERY_PREFIX = "/api/tracing/";
+
+    private static boolean isSelfObservation(final TraceRecord trace) {
+        for (SpanRecord span : trace.getSpans()) {
+            final String operation = span.getOperationName();
+            if (operation != null && operation.contains(SELF_QUERY_PREFIX)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 最近链路快照：普通区与异常保留区合并去重，按发生时间倒序（#1155）。
+     *
+     * <p>顺带剔除追踪查询接口自身产生的链路，避免控制台一刷新就把列表刷成自己。</p>
+     */
+    private List<TraceRecord> recentTraceSnapshot(final int limit) {
+        return allTraces().stream()
+            .filter(trace -> !isSelfObservation(trace))
+            .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+            .limit(Math.max(1, limit))
+            .collect(Collectors.toList());
     }
 
     public Mono<TraceExportResult> exportTraces(final TraceExportRequest request) {
@@ -143,6 +209,11 @@ public class TraceQueryService {
                 spans, duration, Instant.now());
         }
         traceStore.put(traceId, trace);
+        // 异常链路额外放进保留区：它在主存储里被淘汰后仍可查（#1155）
+        if (hasErrorSpan(trace)) {
+            errorTraceStore.put(traceId, trace);
+            traceArchiveService.archiveAsync(trace);
+        }
         if (existingTrace == null) {
             recentTraces.offer(trace);
             traceCounter.incrementAndGet();
@@ -151,7 +222,9 @@ public class TraceQueryService {
             recentTraces.offer(trace);
         }
         if (traceStore.size() > MAX_STORED_TRACES) {
+            // 淘汰最旧的普通链路；异常链路已进保留区，不参与本次淘汰（#1155）
             String oldestTraceId = traceStore.values().stream()
+                .filter(candidate -> !errorTraceStore.containsKey(candidate.getTraceId()))
                 .min(Comparator.comparing(TraceRecord::getCreatedAt))
                 .map(TraceRecord::getTraceId).orElse(null);
             if (oldestTraceId != null) {
@@ -161,6 +234,11 @@ public class TraceQueryService {
         if (recentTraces.size() > MAX_RECENT_TRACES) {
             recentTraces.poll();
         }
+    }
+
+    /** 链路上任一 span 失败即视为异常链路（#1155）。 */
+    private static boolean hasErrorSpan(final TraceRecord trace) {
+        return trace.getSpans().stream().anyMatch(SpanRecord::isError);
     }
 
     public Mono<List<Map<String, Object>>> getServiceStatistics() {
