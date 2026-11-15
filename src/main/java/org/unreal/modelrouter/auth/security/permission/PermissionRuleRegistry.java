@@ -193,7 +193,9 @@ public class PermissionRuleRegistry {
                 PermissionRule.write("/api/tracing/performance/**", PermissionCodes.TRACING_CONFIG_MANAGE),
 
                 // ===== B2b 渐进补齐：追踪检索（TracingQueryController → 菜单「追踪-查询/搜索」） =====
-                PermissionRule.get("/api/tracing/query/**", PermissionCodes.TRACING_SEARCH_READ),
+                // #1154：控制台管理操作页单独授权，必须先于 /api/tracing/query/** 命中
+        PermissionRule.get("/api/tracing/query/console-operations", PermissionCodes.MONITORING_CONSOLE_READ),
+        PermissionRule.get("/api/tracing/query/**", PermissionCodes.TRACING_SEARCH_READ),
                 PermissionRule.write("/api/tracing/query/**", PermissionCodes.TRACING_CONFIG_MANAGE),
 
                 // ===== B2b 渐进补齐：概览仪表盘（DashboardMetricsController → 菜单「概览」） =====

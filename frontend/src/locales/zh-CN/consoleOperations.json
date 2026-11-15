@@ -1,0 +1,22 @@
+{
+  "consoleOperations": {
+    "pageTitle": "管理操作",
+    "tableTitle": "最近的控制台写操作",
+    "refresh": "刷新",
+    "onlyErrors": "只看失败",
+    "hint": "只记录写操作（新增、修改、删除）。耗时与结果来自追踪；操作人来自配置变更审计，按追踪 ID 关联 —— 当前版本的审计尚未写入追踪 ID，所以操作人通常显示「未知」。",
+    "countHint": "共 {total} 条",
+    "empty": "暂无写操作",
+    "time": "时间",
+    "operator": "操作人",
+    "operation": "操作名",
+    "duration": "耗时",
+    "result": "结果",
+    "trace": "追踪",
+    "viewTrace": "查看链路",
+    "succeeded": "成功",
+    "failed": "失败",
+    "unknownOperator": "未知",
+    "loadFailed": "加载管理操作失败"
+  }
+}

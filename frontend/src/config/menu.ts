@@ -7,7 +7,7 @@
  * - 流量治理(7)：路由规则 / 负载均衡 / 限流 / 熔断 / 响应缓存 / 配额策略 / 连接池
  * - 模型与实例(4)：服务 / 实例 / 版本 / 适配器
  * - 安全(5)：API Key / 响应脱敏 / JWT 令牌 / 黑名单 / 审计日志
- * - 系统(6)：账号 / 权限 / 链路追踪配置 / 状态持久化 / 集群设置 / 健康探针设置
+ * - 系统(7)：账号 / 权限 / 链路追踪配置 / 状态持久化 / 集群设置 / 健康探针设置 / 管理操作
  * - 开发工具(2)：AI 试验场 / 客户端接入
  *
  * **URL 一律不变**：40 → 28 只是把 12 个页面收进同组的 `tabs`，
@@ -532,6 +532,19 @@ export const menuGroups: MenuGroup[] = [
             labelKey: 'menu.healthConfig',
             to: '/system/health',
             permission: ['config:health:read', 'config:health:write']
+          }
+        ]
+      },
+      {
+        path: '/system/console-operations',
+        title: 'menu.consoleOperations',
+        permission: ['monitoring:console:read'],
+        tabs: [
+          {
+            key: 'console-operations',
+            labelKey: 'menu.consoleOperations',
+            to: '/system/console-operations',
+            permission: ['monitoring:console:read']
           }
         ]
       }

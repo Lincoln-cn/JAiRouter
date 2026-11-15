@@ -80,9 +80,10 @@ class RolePermissionSeederTest {
             // 只读角色不凭空扩权（见 RolePermissionSeeder.MANAGE_PAIRED_READ_CODES）
             // v3.8.6：新增 config:ratelimit:read/write（限流运行时配置）⇒ OPERATOR +2、USER +1（只读）、VIEWER +1
             // v3.8.6：新增 config:cluster:read/write（集群设置）⇒ OPERATOR +2、USER +1、VIEWER +1
-            assertEquals(52L, counts.get("OPERATOR"));
-            assertEquals(32L, counts.get("USER"));
-            assertEquals(30L, counts.get("VIEWER"));
+            // v3.8.8：新增 monitoring:console:read（管理操作页）⇒ OPERATOR +1、USER +1、VIEWER +1
+            assertEquals(53L, counts.get("OPERATOR"));
+            assertEquals(33L, counts.get("USER"));
+            assertEquals(31L, counts.get("VIEWER"));
         }
 
         @Test
@@ -149,11 +150,11 @@ class RolePermissionSeederTest {
         }
 
         @Test
-        @DisplayName("VIEWER 仅含 :read 权限码（30 个），排除 view/write/manage/use")
+        @DisplayName("VIEWER 仅含 :read 权限码（31 个），排除 view/write/manage/use")
         void viewerContainsOnlyReadCodes() {
             List<String> codes = codesOf("VIEWER");
 
-            assertEquals(30, codes.size());
+            assertEquals(31, codes.size());
             assertTrue(codes.stream().allMatch(code -> code.endsWith(":read")));
             assertTrue(codes.contains(PermissionCodes.SECURITY_AUDIT_READ));
             assertFalse(codes.contains(PermissionCodes.CALLHISTORY_VIEW));
