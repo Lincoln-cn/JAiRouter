@@ -737,16 +737,6 @@ const getLatencyDistributionOption = () => {
 }
 
 // 辅助函数
-const generateTimeLabels = () => {
-  const labels = []
-  const now = new Date()
-  for (let i = 11; i >= 0; i--) {
-    const time = new Date(now.getTime() - i * 5 * 60 * 1000)
-    labels.push(time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }))
-  }
-  return labels
-}
-
 const formatNumber = (num: number) => {
   if (num >= 10000) {
     return `${(num / 10000).toFixed(1)  }w`
