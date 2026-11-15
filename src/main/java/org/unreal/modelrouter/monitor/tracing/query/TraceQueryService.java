@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.monitor.tracing.exporter.TraceExporter;
 import org.unreal.modelrouter.monitor.tracing.helper.ServiceNameResolver;
 import org.unreal.modelrouter.monitor.tracing.memory.TracingMemoryManager;
+import org.unreal.modelrouter.monitor.tracing.metrics.TraceMetricsRecorder;
 import org.unreal.modelrouter.monitor.tracing.memory.model.CachedTraceData;
 import org.unreal.modelrouter.monitor.tracing.statistics.TraceStatisticsCalculator;
 import reactor.core.publisher.Flux;
@@ -35,6 +36,7 @@ public class TraceQueryService {
     private final TraceStatisticsCalculator statisticsCalculator;
     private final TraceExporter traceExporter;
     private final TraceArchiveService traceArchiveService;
+    private final TraceMetricsRecorder traceMetricsRecorder;
 
     private final Map<String, TraceRecord> traceStore = new ConcurrentHashMap<>();
     private final Queue<TraceRecord> recentTraces = new ConcurrentLinkedQueue<>();
@@ -221,6 +223,8 @@ public class TraceQueryService {
             recentTraces.remove(existingTrace);
             recentTraces.offer(trace);
         }
+        // 指标出口（#1156）：入口 span 到达后记一次，内部按 traceId 去重
+        traceMetricsRecorder.record(trace);
         if (traceStore.size() > MAX_STORED_TRACES) {
             // 淘汰最旧的普通链路；异常链路已进保留区，不参与本次淘汰（#1155）
             String oldestTraceId = traceStore.values().stream()

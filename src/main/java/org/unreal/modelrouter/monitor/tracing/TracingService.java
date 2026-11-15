@@ -15,6 +15,8 @@ import org.unreal.modelrouter.monitor.tracing.memory.TracingMemoryManager;
 import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryStats;
 import org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceMonitor;
 import org.unreal.modelrouter.monitor.tracing.query.TraceQueryService;
+import org.unreal.modelrouter.monitor.tracing.metrics.WebResourceMetrics;
+import org.unreal.modelrouter.monitor.tracing.helper.ServiceNameResolver;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
@@ -47,6 +49,7 @@ public class TracingService {
     private final TraceQueryService traceQueryService;
     private final SpanAttributeHelper spanAttributeHelper;
     private final ServiceNameResolver serviceNameResolver;
+    private final WebResourceMetrics webResourceMetrics;
 
     /**
      * 为 HTTP 请求创建根追踪上下文
@@ -205,6 +208,11 @@ public class TracingService {
 
             // 记录追踪数据到查询服务
             String serviceName = serviceNameResolver.resolveServiceName(exchange.getRequest());
+            // 静态资源只做异常（#1156）：常规 2xx/3xx 只累指标，4xx/5xx 且未在窗口内
+            // 重复过的才留一条链路，避免控制台刷新把 traceStore 刷满
+            if (ServiceNameResolver.SERVICE_WEB.equals(serviceName) && !webResourceMetrics.record(exchange)) {
+                return;
+            }
             List<TraceQueryService.SpanRecord> spanRecords = new ArrayList<>();
             Instant startTimeInstant = Instant.ofEpochMilli(startTime);
             Instant endTimeInstant = Instant.ofEpochMilli(startTime + duration);
