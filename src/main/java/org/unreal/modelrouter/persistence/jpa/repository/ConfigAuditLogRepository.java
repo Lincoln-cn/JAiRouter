@@ -27,4 +27,11 @@ public interface ConfigAuditLogRepository extends JpaRepository<ConfigAuditLogEn
 
     @Query("SELECT a FROM ConfigAuditLogEntity a WHERE a.changeType = :changeType")
     List<ConfigAuditLogEntity> findByChangeType(String changeType);
+
+    /** 按 traceId 批量反查，供「操作记录」页把耗时/结果接上链路（#1160） */
+    List<ConfigAuditLogEntity> findByTraceIdIn(java.util.Collection<String> traceIds);
+
+    /** 最近的控制台写操作，倒序 */
+    @Query("SELECT a FROM ConfigAuditLogEntity a ORDER BY a.timestamp DESC")
+    List<ConfigAuditLogEntity> findRecent(org.springframework.data.domain.Pageable pageable);
 }

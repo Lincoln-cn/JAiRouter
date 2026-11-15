@@ -22,7 +22,8 @@ import java.time.Instant;
     // 而 H2/MySQL 是表级。security_audit 表已占用 idx_audit_user_id / idx_audit_timestamp，
     // 重名在 PG 上会导致 CREATE INDEX 失败且 Hibernate 只记 WARN——索引被静默丢失。
     @Index(name = "idx_config_audit_user_id", columnList = "userId"),
-    @Index(name = "idx_config_audit_timestamp", columnList = "timestamp")
+    @Index(name = "idx_config_audit_timestamp", columnList = "timestamp"),
+    @Index(name = "idx_config_audit_trace_id", columnList = "traceId")
 })
 @Data
 public class ConfigAuditLogEntity {
@@ -54,6 +55,9 @@ public class ConfigAuditLogEntity {
 
     @Column(length = 100)
     private String entityId;
+
+    @Column(name = "trace_id", length = 64)
+    private String traceId;
 
     @Column(length = 500)
     private String description;

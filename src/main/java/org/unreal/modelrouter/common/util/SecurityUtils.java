@@ -22,6 +22,15 @@ public class SecurityUtils {
     
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    /**
+     * 认证成功后写入 exchange 的用户标识键
+     *
+     * <p>审计过滤器（{@code ConsoleAuditWebFilter}）排在认证过滤器之前，
+     * Reactor Context 里的 SecurityContext 对它不可见（{@code contextWrite} 只作用于内层链），
+     * 所以认证过滤器把用户名放到 exchange 属性里，审计侧据此记录「谁改的」。</p>
+     */
+    public static final String USER_ID_ATTRIBUTE = "jairouter.security.userId";
     
     /**
      * 生成唯一ID

@@ -1,22 +1,21 @@
 {
   "consoleOperations": {
-    "pageTitle": "管理操作",
-    "tableTitle": "最近的控制台写操作",
+    "pageTitle": "操作记录",
+    "tableTitle": "最近的管理操作",
     "refresh": "刷新",
     "onlyErrors": "只看失败",
-    "hint": "只记录写操作（新增、修改、删除）。耗时与结果来自追踪；操作人来自配置变更审计，按追踪 ID 关联 —— 当前版本的审计尚未写入追踪 ID，所以操作人通常显示「未知」。",
+    "hint": "这里回答「谁在什么时候改了什么」：操作人来自变更审计，耗时与结果来自同一次操作的链路追踪。点「查看链路」可以看到这次操作在网关内部经过了哪些步骤。记录只保留最近的若干条，更早的请查看服务器上的审计日志。",
     "countHint": "共 {total} 条",
-    "empty": "暂无写操作",
+    "empty": "暂无操作记录",
     "time": "时间",
     "operator": "操作人",
-    "operation": "操作名",
+    "operation": "操作",
+    "path": "对象",
     "duration": "耗时",
     "result": "结果",
     "trace": "追踪",
     "viewTrace": "查看链路",
-    "succeeded": "成功",
-    "failed": "失败",
     "unknownOperator": "未知",
-    "loadFailed": "加载管理操作失败"
+    "loadFailed": "加载操作记录失败"
   }
 }
