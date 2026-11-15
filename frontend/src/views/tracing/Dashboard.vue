@@ -357,14 +357,12 @@ import {
   getServiceStats,
   getTracingStatus,
   getLatencyAnalysis,
-  getErrorAnalysis,
   getErrorAnalysisAggregated,
   getThroughputAnalysis,
 } from '@/api/tracing'
 import type { TraceSpan, TracingServiceStat, TracingStatistics, TracingStatus } from '@/types/tracing'
 import type { LocationQueryRaw } from 'vue-router'
 import type {
-  CommonError,
   ErrorAnalysis,
   LatencyAnalysis,
   ThroughputAnalysis,
@@ -411,7 +409,6 @@ const trendData = ref({
 
 const serviceStats = ref<TracingServiceStat[]>([])
 const slowTraces = ref<TraceSpan[]>([])
-const commonErrors = ref<CommonError[]>([])
 
 // 趋势图数据源（来自 /tracing/query/performance/*；缺失时渲染空图，不使用占位数据）
 const latencyAnalysis = ref<LatencyAnalysis | null>(null)
