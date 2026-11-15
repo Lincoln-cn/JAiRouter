@@ -27,7 +27,9 @@
       "save": "Save",
       "unknownError": "Unknown error",
       "requestCount": "Requests",
-      "errorMessage": "Error Message"
+      "errorMessage": "Error Message",
+      "trace": "Trace",
+      "viewTrace": "View trace"
     },
     "dashboard": {
       "title": "Call History Dashboard",

@@ -27,7 +27,9 @@
       "save": "保存",
       "unknownError": "未知错误",
       "requestCount": "请求数",
-      "errorMessage": "错误信息"
+      "errorMessage": "错误信息",
+      "trace": "追踪",
+      "viewTrace": "查看链路"
     },
     "dashboard": {
       "title": "调用历史仪表盘",
