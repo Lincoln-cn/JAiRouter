@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 3.8.7
-> **Last Updated**: 2026-11-14
+> **Document Version**: 3.8.8
+> **Last Updated**: 2026-11-16
 > **Git Commit**: -
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,17 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [3.8.8] - 2026-11-16 - Tracing that can be investigated, not just watched
+
+This release turns tracing into a usable investigation path: layered service names, console operations that leave a trail, error traces that survive eviction, tracing metrics that can back alerts, and an error view aggregated by dimension.
+
+* **Service-name and span-kind layers (#1153)**: service names are now `gateway` (`/v1/**`), `console` (console and internal APIs) and `web` (static assets); spans carry `spanKind` (`SERVER` / `INTERNAL` / `CLIENT`). The detail drawer separates gateway time from upstream time.
+* **Console operation records (#1154 / #1160)**: console write operations are traced with readable operation names (e.g. `cluster.config.update`) and their `trace_id` is written into the change audit; the "Operation Records" page answers who changed what and when, and links straight to the trace. Console writes are always sampled regardless of the global ratio.
+* **Error traces kept apart and archived (#1155)**: error traces get their own 1000-entry retention area so console traffic cannot evict them, and 4xx/5xx traces are archived asynchronously into the new `trace_archive` table (7 days by default) so they survive a restart.
+* **Tracing metrics (#1156)**: `jairouter_trace_requests_total`, `jairouter_trace_duration_seconds` (with histogram) and `jairouter_trace_errors_total`, plus `jairouter_web_requests_total` / `jairouter_web_errors_total` / `jairouter_web_errors_by_client_total` for static assets. Alerts are meant to be driven by Prometheus and an external Alertmanager; the product ships no push channel.
+* **Error analysis view (#1167)**: the dashboard "Error Analysis" tab ranks errors by operation, upstream instance and client, with an error timeline and filters.
+* **Call history stops losing records (#1165)**: a `Mono.zip` that never emitted when both sources were empty, a NOT NULL `trace_id` colliding with a missing fallback, and a batch queue that was never cleared. Call history now stores the real trace id, so slow calls link to their traces.
 
 ### [3.8.7] - 2026-11-14 - Probes ask the right endpoint, and a dependency failure no longer kills a replica
 
