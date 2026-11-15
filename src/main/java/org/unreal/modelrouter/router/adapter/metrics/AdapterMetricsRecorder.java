@@ -16,6 +16,8 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
+
+import java.util.Optional;
 import org.unreal.modelrouter.router.model.InstanceKeys;
 
 /**
@@ -660,8 +662,12 @@ public class AdapterMetricsRecorder {
             final String historyTraceId = currentTraceId();
 
             Mono.zip(
-                            sanitizeOptional(needSanitize, sanitization, rawRequestBody),
-                            sanitizeOptional(needSanitize, sanitization, rawResponseBody))
+                            sanitizeOptional(needSanitize, sanitization, rawRequestBody)
+                                    .map(Optional::ofNullable)
+                                    .defaultIfEmpty(Optional.empty()),
+                            sanitizeOptional(needSanitize, sanitization, rawResponseBody)
+                                    .map(Optional::ofNullable)
+                                    .defaultIfEmpty(Optional.empty()))
                     .subscribeOn(Schedulers.boundedElastic())
                     .subscribe(tuple -> {
                         try {
@@ -675,8 +681,8 @@ public class AdapterMetricsRecorder {
                                     .responseTimeMs(finalDurationMs)
                                     .isSuccess(finalSuccess)
                                     .errorCode(finalErrorCode)
-                                    .requestBody(tuple.getT1())
-                                    .responseBody(tuple.getT2())
+                                    .requestBody(tuple.getT1().orElse(null))
+                                    .responseBody(tuple.getT2().orElse(null))
                                     .build();
                             recorder.record(record);
                         } catch (Exception e) {

@@ -385,7 +385,9 @@ public class ApiCallHistoryService {
         }
 
         return ApiCallHistoryEntity.builder()
-                .traceId(dto.getTraceId())
+                .traceId(dto.getTraceId() != null
+                        ? dto.getTraceId()
+                        : UUID.randomUUID().toString())
                 .requestId(dto.getRequestId() != null ? dto.getRequestId() : UUID.randomUUID().toString())
                 .requestMethod(dto.getRequestMethod() != null ? dto.getRequestMethod() : "POST")
                 .requestPath(dto.getRequestPath() != null ? dto.getRequestPath() : "/unknown")

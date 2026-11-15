@@ -141,8 +141,8 @@ class ApiCallHistoryServiceTest {
         }
 
         @Test
-        @DisplayName("记录时没有 traceId 就留空，不编造随机值")
-        void testRecordWithoutTraceIdStaysNull() {
+        @DisplayName("记录时没有 traceId 也要补一个值（列是 NOT NULL，留空会让整批写入失败）")
+        void testRecordWithoutTraceIdFillsPlaceholder() {
             CallHistoryRecordDTO dto = createTestRecord();
             dto.setTraceId(null);
             when(repository.save(any(ApiCallHistoryEntity.class)))
@@ -150,7 +150,8 @@ class ApiCallHistoryServiceTest {
 
             ApiCallHistoryEntity saved = service.record(dto);
 
-            assertNull(saved.getTraceId());
+            assertNotNull(saved.getTraceId());
+            assertFalse(saved.getTraceId().isEmpty());
         }
 
         @Test
