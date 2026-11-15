@@ -568,6 +568,52 @@ public class CustomMetrics {
 }
 ```
 
+## Tracing metrics (v3.8.8+)
+
+Tracing exports what it sees as Prometheus metrics so that alerts can be driven by trace data
+instead of someone refreshing a page first (issue #1156). Metrics accumulate for every **finished**
+trace and use the same definitions as the "trace search" page.
+
+| Metric | Type | Labels | Meaning |
+| --- | --- | --- | --- |
+| `jairouter_trace_requests_total` | Counter | `service` `operation` `status` | Number of traces |
+| `jairouter_trace_duration_seconds` | Timer (histogram) | `service` `operation` | Trace duration, with `_bucket` series |
+| `jairouter_trace_errors_total` | Counter | `service` `operation` `error_type` | Failed traces |
+| `jairouter_web_requests_total` | Counter | `status_class` | Static asset requests (`2xx`/`3xx`/`4xx`/`5xx`) |
+| `jairouter_web_errors_total` | Counter | `status` `path_class` | Static asset errors by status and path class |
+| `jairouter_web_errors_by_client_total` | Counter | `client_hash` | Static asset errors by client fingerprint (scan detection) |
+
+`service` is `gateway` (`/v1/**` traffic), `console` (`/admin/api/**` and `/api/**`), or `web`
+(front-end static assets).
+
+`error_type` is `http_4xx`, `http_5xx`, `upstream` (the model call failed), or `internal`.
+
+> **Static assets are error-only**: normal `2xx`/`3xx` requests only increment metrics and create no
+> trace; `4xx`/`5xx` create a trace, and the same client on the same path creates at most one trace
+> per minute — otherwise a scanner could flush the in-memory trace buffer.
+
+### Example alerting rules
+
+```promql
+# Error rate spike (over 5% in 5 minutes)
+sum(rate(jairouter_trace_errors_total{service="gateway"}[5m]))
+  / sum(rate(jairouter_trace_requests_total{service="gateway"}[5m])) > 0.05
+
+# p95 for a single operation above 3 seconds
+histogram_quantile(0.95,
+  sum by (operation) (rate(jairouter_trace_duration_seconds_bucket{service="gateway"}[5m]))
+) > 3
+
+# Upstream calls keep failing
+sum by (error_type) (rate(jairouter_trace_errors_total{service="gateway",error_type="upstream"}[5m])) > 0.2
+
+# Static asset 4xx spike (possible scan)
+sum(rate(jairouter_web_errors_total[1m])) > 20
+```
+
+Failed traces also emit one structured log line (`trace.error trace_id=... service=... operation=...
+duration_ms=... status=... error_type=...`) that log systems can index directly.
+
 ## Common Query Patterns
 
 ### Error Rate Calculation

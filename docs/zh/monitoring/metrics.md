@@ -568,6 +568,51 @@ public class CustomMetrics {
 }
 ```
 
+## 追踪指标（v3.8.8+）
+
+链路追踪会把自己看到的请求导出成 Prometheus 指标，这样告警可以基于追踪数据触发，
+而不必先翻页面（见 issue #1156）。指标随每条**已结束**的链路累加，口径与「链路搜索」页一致。
+
+| 指标 | 类型 | 标签 | 说明 |
+| --- | --- | --- | --- |
+| `jairouter_trace_requests_total` | Counter | `service` `operation` `status` | 链路总数 |
+| `jairouter_trace_duration_seconds` | Timer（直方图） | `service` `operation` | 链路耗时，含 `_bucket` 后缀的分桶 |
+| `jairouter_trace_errors_total` | Counter | `service` `operation` `error_type` | 异常链路数 |
+| `jairouter_web_requests_total` | Counter | `status_class` | 静态资源请求数（`2xx`/`3xx`/`4xx`/`5xx`） |
+| `jairouter_web_errors_total` | Counter | `status` `path_class` | 静态资源异常（按状态码与路径分类） |
+| `jairouter_web_errors_by_client_total` | Counter | `client_hash` | 静态资源异常（按客户端指纹，用于识别扫描） |
+
+`service` 的取值是 `gateway`（`/v1/**` 业务接口）、`console`（`/admin/api/**` 与 `/api/**` 管理面）、
+`web`（前端静态资源）。
+
+`error_type` 的取值：`http_4xx`、`http_5xx`、`upstream`（上游模型调用失败）、`internal`。
+
+> **静态资源只做异常**：常规 `2xx`/`3xx` 只累指标、不建链路；`4xx`/`5xx` 才会留一条链路，
+> 且同一客户端在同一路径上一分钟内只留一条——否则扫描器能把内存里的链路环挤满。
+
+### 告警规则示例
+
+```promql
+# 业务错误率突增（5 分钟内超过 5%）
+sum(rate(jairouter_trace_errors_total{service="gateway"}[5m]))
+  / sum(rate(jairouter_trace_requests_total{service="gateway"}[5m])) > 0.05
+
+# 某个 operation 的 p95 超过 3 秒
+histogram_quantile(0.95,
+  sum by (operation) (rate(jairouter_trace_duration_seconds_bucket{service="gateway"}[5m]))
+) > 3
+
+# 上游调用持续失败
+sum by (error_type) (rate(jairouter_trace_errors_total{service="gateway",error_type="upstream"}[5m])) > 0.2
+
+# 静态资源 4xx 突增（可能是扫描）
+sum(rate(jairouter_web_errors_total[1m])) > 20
+```
+
+异常链路同时会落一行结构化日志（`trace.error trace_id=... service=... operation=... duration_ms=...
+status=... error_type=...`），日志系统可以直接检索，也可以交给外部告警系统。
+
+
 ## 常用查询模式
 
 ### 错误率计算

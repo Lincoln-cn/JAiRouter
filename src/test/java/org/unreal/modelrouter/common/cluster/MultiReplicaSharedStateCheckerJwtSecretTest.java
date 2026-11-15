@@ -36,16 +36,20 @@ class MultiReplicaSharedStateCheckerJwtSecretTest {
     @Test
     @DisplayName("919-002: 设置了 JWT_SECRET 就不再告警")
     void staysSilentWhenJwtSecretConfigured(final CapturedOutput output) {
+        // 只检查本次调用新增的输出：CapturedOutput 是全类共享的缓冲区，
+        // 直接断言「不含某段文字」会被 919-001 的残留输污染（#1157）
+        final String before = output.getOut();
         checker().warnIfJwtSecretNotShared(true, "shared-secret-for-all-replicas");
-
-        assertFalse(output.getOut().contains("未设置 JWT_SECRET"), output.getOut());
+        assertFalse(output.getOut().substring(before.length()).contains("未设置 JWT_SECRET"),
+            output.getOut().substring(before.length()));
     }
 
     @Test
     @DisplayName("919-003: 单副本不打扰")
     void staysSilentForSingleReplica(final CapturedOutput output) {
+        final String before = output.getOut();
         checker().warnIfJwtSecretNotShared(false, null);
-
-        assertFalse(output.getOut().contains("未设置 JWT_SECRET"), output.getOut());
+        assertFalse(output.getOut().substring(before.length()).contains("未设置 JWT_SECRET"),
+            output.getOut().substring(before.length()));
     }
 }

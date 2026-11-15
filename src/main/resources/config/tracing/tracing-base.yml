@@ -15,7 +15,8 @@ jairouter:
     enabled: true
     
     # 服务信息
-    service-name: "jairouter"
+    # 默认服务名（/v1/** 业务转发）。控制台与静态资源分别固定为 console / web，不读这个值
+    service-name: "gateway"
     service-version: "1.0.0"
     service-namespace: "production"
     

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.unreal.modelrouter.monitor.tracing.memory.TracingMemoryManager;
 import org.unreal.modelrouter.monitor.tracing.exporter.TraceExporter;
+import org.unreal.modelrouter.monitor.tracing.metrics.TraceMetricsRecorder;
 import org.unreal.modelrouter.monitor.tracing.statistics.TraceStatisticsCalculator;
 import reactor.core.publisher.Mono;
 
@@ -32,7 +33,8 @@ class TraceQueryServiceErrorRetentionTest {
         final TraceStatisticsCalculator calculator = mock(TraceStatisticsCalculator.class);
         when(calculator.calculateChainStats(anyList()))
             .thenReturn(mock(TraceQueryService.TraceChainStats.class));
-        service = new TraceQueryService(memoryManager, calculator, mock(TraceExporter.class), mock(TraceArchiveService.class));
+        service = new TraceQueryService(memoryManager, calculator, mock(TraceExporter.class),
+            mock(TraceArchiveService.class), mock(TraceMetricsRecorder.class));
     }
 
     @Test
