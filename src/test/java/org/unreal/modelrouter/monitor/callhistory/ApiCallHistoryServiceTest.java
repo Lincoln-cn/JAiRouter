@@ -128,6 +128,32 @@ class ApiCallHistoryServiceTest {
         }
 
         @Test
+        @DisplayName("记录时保留调用方给的 traceId（不再用随机 UUID 冒充）")
+        void testRecordKeepsProvidedTraceId() {
+            CallHistoryRecordDTO dto = createTestRecord();
+            dto.setTraceId("real-trace-abc");
+            when(repository.save(any(ApiCallHistoryEntity.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+
+            ApiCallHistoryEntity saved = service.record(dto);
+
+            assertEquals("real-trace-abc", saved.getTraceId());
+        }
+
+        @Test
+        @DisplayName("记录时没有 traceId 就留空，不编造随机值")
+        void testRecordWithoutTraceIdStaysNull() {
+            CallHistoryRecordDTO dto = createTestRecord();
+            dto.setTraceId(null);
+            when(repository.save(any(ApiCallHistoryEntity.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+
+            ApiCallHistoryEntity saved = service.record(dto);
+
+            assertNull(saved.getTraceId());
+        }
+
+        @Test
         @DisplayName("批量记录调用历史")
         void testBatchRecord() {
             List<CallHistoryRecordDTO> records = List.of(createTestRecord(), createTestRecord());

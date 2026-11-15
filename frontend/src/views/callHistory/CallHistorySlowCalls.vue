@@ -97,7 +97,14 @@
         </template>
       </el-table-column>
       <el-table-column :label="t('callHistory.common.provider')" prop="provider" width="100" show-overflow-tooltip />
-      <el-table-column label="Trace ID" prop="traceId" width="140" show-overflow-tooltip />
+      <el-table-column :label="t('callHistory.common.trace')" width="120" align="center">
+          <template #default="{ row }">
+            <el-link v-if="row.traceId" type="primary" @click="openTrace(row.traceId)">
+              {{ t('callHistory.common.viewTrace') }}
+            </el-link>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
     </el-table>
   </ListPageLayout>
 </template>
@@ -107,6 +114,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { getErrorMessage } from '@/utils/error'
+import { useRouter } from 'vue-router'
 import { getSlowCalls } from '@/api/callHistory'
 import type { ApiCallHistoryRecord } from '@/types/callHistory'
 import ListPageLayout from '@/components/ListPageLayout.vue'
@@ -116,6 +124,7 @@ import MetricStrip from '@/components/MetricStrip.vue'
 import type { MetricStripItem } from '@/components/MetricStrip.vue'
 
 const { t } = useI18n()
+const router = useRouter()
 
 // 筛选条件
 const dateRange = ref<[string, string] | null>(null)
@@ -226,6 +235,11 @@ const handleReset = () => {
 onMounted(() => {
   loadData()
 })
+
+function openTrace(traceId: string) {
+  router.push({ path: '/tracing/search', query: { traceId } })
+}
+
 </script>
 
 <style scoped>

@@ -485,10 +485,14 @@ public class StreamingRequestProcessor {
                                         .defaultIfEmpty(SANITIZATION_FAILED_PLACEHOLDER)
                                 : Mono.just(rawResponseBody);
 
+                        // 记录发生在 boundedElastic 线程上，ThreadLocal/MDC 已丢失，
+                        // 必须在当前线程先取到 traceId 再由闭包带进去（#1160）
+                        final String historyTraceId = currentTraceId();
                         bodyMono.subscribeOn(Schedulers.boundedElastic())
                                 .subscribe(responseBodyForRecord -> {
                                     try {
                                         CallHistoryRecordDTO dto = CallHistoryRecordDTO.builder()
+                                                .traceId(historyTraceId.isEmpty() ? null : historyTraceId)
                                                 .serviceType(serviceType != null ? serviceType.name() : null)
                                                 .modelName(modelForRecord)
                                                 .provider(adapterType)
@@ -830,7 +834,9 @@ public class StreamingRequestProcessor {
             return;
         }
         try {
+            final String historyTraceId = currentTraceId();
             final CallHistoryRecordDTO dto = CallHistoryRecordDTO.builder()
+                    .traceId(historyTraceId.isEmpty() ? null : historyTraceId)
                     .serviceType(serviceType != null ? serviceType.name() : null)
                     .modelName(model)
                     .provider(adapterType)
@@ -1364,4 +1370,20 @@ public class StreamingRequestProcessor {
                 ? "" : reversiblePiiProperties.getPlaceholderPrefix();
         return (prefix == null || prefix.isEmpty() ? "PII" : prefix) + "_";
     }
+    /**
+     * 当前请求的追踪 ID
+     *
+     * <p>优先读 MDC（{@code RequestIdWebFilter} 写入，值稳定），
+     * 回落追踪上下文的 ThreadLocal；都没有返回空串，由调用方决定是否留空。</p>
+     */
+    private static String currentTraceId() {
+        final String mdcTraceId = org.slf4j.MDC.get(org.unreal.modelrouter.common.filter.RequestIdWebFilter.MDC_TRACE_ID_KEY);
+        if (mdcTraceId != null && !mdcTraceId.isEmpty()) {
+            return mdcTraceId;
+        }
+        final String contextTraceId = TracingContextHolder.getCurrentTraceId();
+        return contextTraceId != null ? contextTraceId : "";
+    }
+
+
 }

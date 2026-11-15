@@ -656,6 +656,8 @@ public class AdapterMetricsRecorder {
             final long finalDurationMs = durationMs;
             final boolean finalSuccess = success;
             final String finalErrorCode = errorCode;
+            // 记录发生在 boundedElastic 线程上，ThreadLocal 已丢，先在当前线程取
+            final String historyTraceId = currentTraceId();
 
             Mono.zip(
                             sanitizeOptional(needSanitize, sanitization, rawRequestBody),
@@ -664,6 +666,7 @@ public class AdapterMetricsRecorder {
                     .subscribe(tuple -> {
                         try {
                             CallHistoryRecordDTO record = CallHistoryRecordDTO.builder()
+                                    .traceId(historyTraceId.isEmpty() ? null : historyTraceId)
                                     .serviceType(finalServiceType)
                                     .modelName(finalModelName)
                                     .provider(finalAdapterType)
@@ -760,4 +763,22 @@ public class AdapterMetricsRecorder {
                         ? sanitized : SANITIZATION_FAILED_PLACEHOLDER)
                 .defaultIfEmpty(SANITIZATION_FAILED_PLACEHOLDER);
     }
+
+    /**
+     * 当前请求的追踪 ID
+     *
+     * <p>优先读 MDC（{@code RequestIdWebFilter} 写入），回落追踪上下文 ThreadLocal；
+     * 都没有返回空串，由调用方决定是否留空，绝不用随机值冒充。</p>
+     */
+    private static String currentTraceId() {
+        final String mdcTraceId = org.slf4j.MDC.get(
+                org.unreal.modelrouter.common.filter.RequestIdWebFilter.MDC_TRACE_ID_KEY);
+        if (mdcTraceId != null && !mdcTraceId.isEmpty()) {
+            return mdcTraceId;
+        }
+        final String contextTraceId =
+                org.unreal.modelrouter.monitor.tracing.TracingContextHolder.getCurrentTraceId();
+        return contextTraceId != null ? contextTraceId : "";
+    }
+
 }
