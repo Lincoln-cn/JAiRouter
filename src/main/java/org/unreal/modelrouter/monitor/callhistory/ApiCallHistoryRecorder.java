@@ -158,6 +158,8 @@ public class ApiCallHistoryRecorder {
 
                 if (batchFull || waitTimeout) {
                     flushBatch(batch);
+                    // 清空已提交的批次；否则同一批会在下一个 waitTimeout 被再次写入
+                    batch.clear();
                     lastFlushTime = now;
                 }
 
@@ -198,6 +200,8 @@ public class ApiCallHistoryRecorder {
             return;
         }
 
+        if (log.isDebugEnabled()) {
+        }
         try {
             service.batchRecord(new ArrayList<>(batch));
             log.debug("Flushed {} call history records", batch.size());

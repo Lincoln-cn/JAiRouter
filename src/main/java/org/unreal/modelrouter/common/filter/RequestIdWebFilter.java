@@ -83,6 +83,9 @@ public class RequestIdWebFilter implements WebFilter, Ordered {
         final String mdcTraceId = (traceId != null && !traceId.isEmpty()) ? traceId : requestId;
         MDC.put(MDC_TRACE_ID_KEY, mdcTraceId);
         exchange.getAttributes().put(MDC_TRACE_ID_KEY, mdcTraceId);
+        // 同时写到请求属性上：后续处理链路可能切换线程，MDC 是 ThreadLocal 会丢，
+        // 而 ServerHttpRequest#getAttributes() 与线程无关，是更稳的传递位置。
+        exchange.getRequest().getAttributes().put(MDC_TRACE_ID_KEY, mdcTraceId);
         log.debug("请求 ID 已回写响应头 {}: {}", TracingConstants.Headers.X_REQUEST_ID, requestId);
         return chain.filter(exchange)
                 .contextWrite(Context.of(MDC_TRACE_ID_KEY, mdcTraceId))

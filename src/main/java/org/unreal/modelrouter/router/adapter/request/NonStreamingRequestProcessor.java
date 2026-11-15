@@ -3,7 +3,10 @@ package org.unreal.modelrouter.router.adapter.request;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
+import org.slf4j.MDC;
 import org.slf4j.LoggerFactory;
+import org.unreal.modelrouter.common.filter.RequestIdWebFilter;
+import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
 import org.unreal.modelrouter.pii.PiiAuditService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -207,15 +210,17 @@ public class NonStreamingRequestProcessor {
         // 4. 根据响应类型处理
         // v3.1 PR-2: 失败/取消时回滚配额预留（成功路径由 token 落库点结算，凭据保证恰一次）
         Mono<? extends ResponseEntity<?>> result;
+        // 记录发生在更下游的回调/线程上，ThreadLocal 会丢；在入口线程先取出来带下去
+        final String callTraceId = traceIdOf(httpRequest);
         if (responseType == byte[].class) {
             result = processBinaryResponse(requestSpec, transformedRequest, path,
                     instanceName, adapterType, serviceType, requestStartTime, multipartHandler,
-                    selectedInstance, requestedModel);
+                    selectedInstance, requestedModel, callTraceId);
         } else {
             result = processJsonResponse(requestSpec, transformedRequest, instanceName,
                     adapterType, serviceType, requestStartTime, path, transformResponseFn, multipartHandler,
                     capturedKeyId, responseCacheKey, requestedModel, capturedRequestBody, selectedInstance,
-                    quotaReservation, isNativeResponse(httpRequest));
+                    quotaReservation, isNativeResponse(httpRequest), callTraceId);
         }
         // #719：失败结算交给 BaseAdapter 在「确定不再重试」时统一执行；这里只在取消时立刻回滚
         // （取消不会重试，且不结算会让预留一直挂着）。
@@ -236,7 +241,8 @@ public class NonStreamingRequestProcessor {
             final long requestStartTime,
             final MultipartRequestHandler multipartHandler,
             final ModelInstance selectedInstance,
-            final String requestedModel) {
+            final String requestedModel,
+            final String callTraceId) {
 
         BodyInserter<?, ? super ClientHttpRequest> requestBody;
         if (multipartHandler != null) {
@@ -273,8 +279,9 @@ public class NonStreamingRequestProcessor {
                                 System.currentTimeMillis() - requestStartTime, "200");
                         // v2.9.2: 二进制响应记录调用历史（仅元数据，body 为二进制不捕获）
                         long duration = System.currentTimeMillis() - requestStartTime;
-                        metricsRecorder.recordCompleteCall(adapterType, InstanceKeys.label(selectedInstance), duration, true,
-                                null, requestedModel, serviceType, selectedInstance);
+                        withTraceId(callTraceId, () -> metricsRecorder.recordCompleteCall(
+                                adapterType, InstanceKeys.label(selectedInstance), duration, true,
+                                null, requestedModel, serviceType, selectedInstance));
                     }
                 })
                 .doOnError(throwable -> {
@@ -305,7 +312,8 @@ public class NonStreamingRequestProcessor {
             final String capturedRequestBody,
             final ModelInstance selectedInstance,
             final QuotaReservation quotaReservation,
-            final boolean nativeResponse) {
+            final boolean nativeResponse,
+            final String callTraceId) {
         final String piiScopeId = java.util.UUID.randomUUID().toString();
 
         // 支持multipart请求（如STT）
@@ -400,11 +408,13 @@ public class NonStreamingRequestProcessor {
 
                         // v2.9.2: 记录治理 - 异步记录含请求/响应体的调用历史
                         if (metricsRecorder != null) {
-                            metricsRecorder.recordCompleteCall(
+                            final String historyRequestBody = capturedRequestBody;
+                            final String historyResponseBody = capturedResponseBody;
+                            withTraceId(callTraceId, () -> metricsRecorder.recordCompleteCall(
                                     adapterType, InstanceKeys.label(selectedInstance),
                                     System.currentTimeMillis() - requestStartTime,
                                     true, null, requestedModel, serviceType, selectedInstance,
-                                    capturedRequestBody, capturedResponseBody);
+                                    historyRequestBody, historyResponseBody));
                         }
 
                         // v3.1: OpenAI 原生面（/v1）——不包 RouterResponse，直接回下游原生 JSON
@@ -800,4 +810,51 @@ public class NonStreamingRequestProcessor {
             return true;
         }
     }
+
+    /**
+     * 在指定 traceId 下执行一次同步的记录调用。
+     *
+     * <p>调用历史在 {@code recordCompleteCall} 内部读取 traceId；该调用可能发生在
+     * boundedElastic 回调线程上，MDC 已被丢弃，因此在调用点临时补回、结束后移除。
+     *
+     * @param traceId 追踪 ID，空则原样执行
+     * @param action  记录动作
+     */
+    private static void withTraceId(final String traceId, final Runnable action) {
+        if (traceId == null || traceId.isEmpty()) {
+            action.run();
+            return;
+        }
+        MDC.put(RequestIdWebFilter.MDC_TRACE_ID_KEY, traceId);
+        try {
+            action.run();
+        } finally {
+            MDC.remove(RequestIdWebFilter.MDC_TRACE_ID_KEY);
+        }
+    }
+
+    /**
+     * 读取当前线程的追踪 ID。
+     *
+     * @return traceId，取不到时返回空串
+     */
+    private static String traceIdOf(final ServerHttpRequest request) {
+        if (request != null) {
+            final Object attribute = request.getAttributes().get(RequestIdWebFilter.MDC_TRACE_ID_KEY);
+            if (attribute != null && !String.valueOf(attribute).isEmpty()) {
+                return String.valueOf(attribute);
+            }
+        }
+        return currentTraceId();
+    }
+
+    private static String currentTraceId() {
+        final String mdc = MDC.get(RequestIdWebFilter.MDC_TRACE_ID_KEY);
+        if (mdc != null && !mdc.isEmpty()) {
+            return mdc;
+        }
+        final String ctx = TracingContextHolder.getCurrentTraceId();
+        return ctx != null ? ctx : "";
+    }
+
 }
