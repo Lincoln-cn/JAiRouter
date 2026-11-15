@@ -532,6 +532,32 @@ public class TracingQueryController {
             .onErrorReturn(ResponseEntity.internalServerError().<Map<String, Object>>build());
     }
 
+    @GetMapping("/error-analysis")
+    @Operation(summary = "获取异常聚合", description = "按 operation / 上游实例 / 客户端聚合错误，并给出错误时间线")
+    @ApiResponse(responseCode = "200", description = "成功返回异常聚合")
+    public Mono<ResponseEntity<Map<String, Object>>> getErrorAnalysisAggregated(
+            @Parameter(description = "开始时间") @RequestParam(required = false) final String startTime,
+            @Parameter(description = "结束时间") @RequestParam(required = false) final String endTime,
+            @Parameter(description = "按 operation 过滤") @RequestParam(required = false) final String operation,
+            @Parameter(description = "按上游实例过滤") @RequestParam(required = false) final String instance,
+            @Parameter(description = "按客户端过滤") @RequestParam(required = false) final String client) {
+
+        long endMs = endTime != null ? parseTimeString(endTime) : System.currentTimeMillis();
+        long startMs = startTime != null ? parseTimeString(startTime) : endMs - 3600000L;
+        long bucketMs = Math.max(60_000L, (endMs - startMs) / 24L);
+
+        return Mono.fromCallable(() -> traceQueryService.errorAnalysis(
+                        startMs, endMs, bucketMs, operation, instance, client))
+                .subscribeOn(Schedulers.boundedElastic())
+                .map(data -> {
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("success", true);
+                    response.put("data", data);
+                    return ResponseEntity.ok(response);
+                })
+                .onErrorReturn(ResponseEntity.internalServerError().<Map<String, Object>>build());
+    }
+
     @GetMapping("/performance/throughput")
     @Operation(summary = "获取吞吐量分析", description = "获取吞吐量分析数据")
     @ApiResponse(responseCode = "200", description = "成功返回吞吐量分析")

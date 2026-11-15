@@ -182,6 +182,60 @@
         </el-tab-pane>
 
         <el-tab-pane :label="t('tracing.dashboard.tabs.error')" name="error">
+          <div class="error-filters">
+            <el-select
+              v-model="errorFilters.operation"
+              :placeholder="t('tracing.dashboard.errorFilters.operation')"
+              size="small"
+              clearable
+              style="width: 240px"
+            >
+              <el-option
+                v-for="option in errorAggregated?.filterOptions.operations || []"
+                :key="option"
+                :label="option"
+                :value="option"
+              />
+            </el-select>
+            <el-select
+              v-model="errorFilters.instance"
+              :placeholder="t('tracing.dashboard.errorFilters.instance')"
+              size="small"
+              clearable
+              style="width: 220px"
+            >
+              <el-option
+                v-for="option in errorAggregated?.filterOptions.instances || []"
+                :key="option"
+                :label="option"
+                :value="option"
+              />
+            </el-select>
+            <el-select
+              v-model="errorFilters.client"
+              :placeholder="t('tracing.dashboard.errorFilters.client')"
+              size="small"
+              clearable
+              style="width: 180px"
+            >
+              <el-option
+                v-for="option in errorAggregated?.filterOptions.clients || []"
+                :key="option"
+                :label="option"
+                :value="option"
+              />
+            </el-select>
+            <el-button size="small" type="primary" @click="loadErrorAnalysis">
+              {{ t('tracing.dashboard.errorFilters.apply') }}
+            </el-button>
+            <span class="error-summary">
+              {{ t('tracing.dashboard.errorSummary', {
+                total: errorAggregated?.totalTraces ?? 0,
+                errors: errorAggregated?.errorTraces ?? 0,
+                rate: ((errorAggregated?.errorRate ?? 0) * 100).toFixed(1)
+              }) }}
+            </span>
+          </div>
           <el-row :gutter="16">
             <el-col :xs="24" :lg="12">
               <ChartCard
@@ -197,20 +251,49 @@
             <el-col :xs="24" :lg="12">
               <div class="chart-wrapper">
                 <div class="chart-header">
-                  <h4>{{ t('tracing.dashboard.chart.commonErrors') }}</h4>
+                  <h4>{{ t('tracing.dashboard.errorRank.byOperation') }}</h4>
                 </div>
-                <el-table :data="commonErrors" style="width: 100%" size="small" max-height="300">
-                  <el-table-column prop="errorType" :label="t('tracing.dashboard.columns.errorType')" width="150">
+                <el-table :data="errorAggregated?.byOperation || []" style="width: 100%" size="small" max-height="260">
+                  <el-table-column prop="name" :label="t('tracing.dashboard.errorRank.name')" show-overflow-tooltip />
+                  <el-table-column prop="totalCount" :label="t('tracing.dashboard.errorRank.total')" width="80" />
+                  <el-table-column prop="errorCount" :label="t('tracing.dashboard.errorRank.errors')" width="80">
                     <template #default="{ row }">
-                      <el-tag type="danger" size="small">{{ row.errorType || 'Unknown' }}</el-tag>
+                      <span class="text-danger">{{ row.errorCount }}</span>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="count" :label="t('tracing.dashboard.columns.count')" width="80">
-                    <template #default="{ row }">
-                      <span class="text-danger">{{ row.count }}</span>
-                    </template>
+                  <el-table-column :label="t('tracing.dashboard.errorRank.rate')" width="90">
+                    <template #default="{ row }">{{ (row.errorRate * 100).toFixed(1) }}%</template>
                   </el-table-column>
-                  <el-table-column prop="service" :label="t('tracing.dashboard.columns.service')" show-overflow-tooltip />
+                </el-table>
+              </div>
+            </el-col>
+          </el-row>
+          <el-row :gutter="16" style="margin-top: 16px">
+            <el-col :xs="24" :lg="12">
+              <div class="chart-wrapper">
+                <div class="chart-header">
+                  <h4>{{ t('tracing.dashboard.errorRank.byInstance') }}</h4>
+                </div>
+                <el-table :data="errorAggregated?.byInstance || []" style="width: 100%" size="small" max-height="260">
+                  <el-table-column prop="name" :label="t('tracing.dashboard.errorRank.name')" show-overflow-tooltip />
+                  <el-table-column prop="errorCount" :label="t('tracing.dashboard.errorRank.errors')" width="80" />
+                  <el-table-column :label="t('tracing.dashboard.errorRank.rate')" width="90">
+                    <template #default="{ row }">{{ (row.errorRate * 100).toFixed(1) }}%</template>
+                  </el-table-column>
+                </el-table>
+              </div>
+            </el-col>
+            <el-col :xs="24" :lg="12">
+              <div class="chart-wrapper">
+                <div class="chart-header">
+                  <h4>{{ t('tracing.dashboard.errorRank.byClient') }}</h4>
+                </div>
+                <el-table :data="errorAggregated?.byClient || []" style="width: 100%" size="small" max-height="260">
+                  <el-table-column prop="name" :label="t('tracing.dashboard.errorRank.name')" show-overflow-tooltip />
+                  <el-table-column prop="errorCount" :label="t('tracing.dashboard.errorRank.errors')" width="80" />
+                  <el-table-column :label="t('tracing.dashboard.errorRank.rate')" width="90">
+                    <template #default="{ row }">{{ (row.errorRate * 100).toFixed(1) }}%</template>
+                  </el-table-column>
                 </el-table>
               </div>
             </el-col>
@@ -259,7 +342,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick, computed } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, nextTick, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import * as echarts from 'echarts'
@@ -275,11 +358,19 @@ import {
   getTracingStatus,
   getLatencyAnalysis,
   getErrorAnalysis,
+  getErrorAnalysisAggregated,
   getThroughputAnalysis,
 } from '@/api/tracing'
 import type { TraceSpan, TracingServiceStat, TracingStatistics, TracingStatus } from '@/types/tracing'
 import type { LocationQueryRaw } from 'vue-router'
-import type { CommonError, ErrorAnalysis, LatencyAnalysis, ThroughputAnalysis, TrendPoint } from '@/types'
+import type {
+  CommonError,
+  ErrorAnalysis,
+  LatencyAnalysis,
+  ThroughputAnalysis,
+  TrendPoint,
+} from '@/types'
+import type { ErrorAnalysisAggregated } from '@/api/tracing'
 import TraceDetail from './components/TraceDetail.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import MetricStrip from '@/components/MetricStrip.vue'
@@ -325,6 +416,8 @@ const commonErrors = ref<CommonError[]>([])
 // 趋势图数据源（来自 /tracing/query/performance/*；缺失时渲染空图，不使用占位数据）
 const latencyAnalysis = ref<LatencyAnalysis | null>(null)
 const errorAnalysis = ref<ErrorAnalysis | null>(null)
+const errorAggregated = ref<ErrorAnalysisAggregated | null>(null)
+const errorFilters = reactive({ operation: '', instance: '', client: '' })
 const throughputAnalysis = ref<ThroughputAnalysis | null>(null)
 
 // 图表引用
@@ -350,7 +443,7 @@ const selectedTrace = ref<TraceSpan | null>(null)
 const traceTrendEmpty = computed(() => (throughputAnalysis.value?.qpsTrend || []).length === 0)
 const latencyDistEmpty = computed(() => serviceStats.value.length === 0)
 const latencyTrendEmpty = computed(() => (latencyAnalysis.value?.trend || []).length === 0)
-const errorTrendEmpty = computed(() => (errorAnalysis.value?.errorTrend || []).length === 0)
+const errorTrendEmpty = computed(() => (errorAggregated.value?.errorTrend || []).length === 0)
 const throughputTrendEmpty = computed(() => (throughputAnalysis.value?.qpsTrend || []).length === 0)
 
 /** 环比提示文案（有变化才显示，避免每格都挂一条 0%）。 */
@@ -668,11 +761,17 @@ const loadLatencyAnalysis = async () => {
 
 const loadErrorAnalysis = async () => {
   try {
-    const response = await getErrorAnalysis()
-    errorAnalysis.value = (response.data?.data || response.data) as ErrorAnalysis | null
+    const response = await getErrorAnalysisAggregated({
+      startTime: timeRange.value[0] || undefined,
+      endTime: timeRange.value[1] || undefined,
+      operation: errorFilters.operation || undefined,
+      instance: errorFilters.instance || undefined,
+      client: errorFilters.client || undefined
+    })
+    errorAggregated.value = (response.data?.data || response.data) as ErrorAnalysisAggregated | null
   } catch (error) {
     console.error('加载错误分析失败:', error)
-    errorAnalysis.value = null
+    errorAggregated.value = null
   }
 }
 
