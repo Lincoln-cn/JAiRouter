@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -257,6 +258,182 @@ public class TraceQueryService {
     /** 错误趋势（真实聚合）。 */
     public List<Map<String, Object>> errorTrend(final long startTime, final long endTime, final long bucketMillis) {
         return statisticsCalculator.errorTrend(traceStore, startTime, endTime, bucketMillis);
+    }
+
+    /**
+     * 异常聚合（#1168）：一次返回按 operation / 上游实例 / 客户端三个维度的排行，外加错误时间线。
+     *
+     * <p>只统计窗口内有错误 span 的链路；维度值来自 entry span 的 operationName、
+     * CLIENT span 的 instance.id 与 entry span 的 http.client_ip 属性。
+     * 缺这些属性时该链路不计入对应维度（而不是记成 unknown），避免排行被无意义的桶占满。
+     *
+     * @param startTime   窗口开始（epoch 毫秒）
+     * @param endTime     窗口结束（epoch 毫秒）
+     * @param bucketMillis 时间线分桶宽度
+     * @param operation   按 operation 过滤（模糊包含，可为 null）
+     * @param instance    按上游实例过滤（模糊包含，可为 null）
+     * @param client      按客户端过滤（模糊包含，可为 null）
+     * @return 聚合结果
+     */
+    public Map<String, Object> errorAnalysis(final long startTime, final long endTime, final long bucketMillis,
+                                             final String operation, final String instance, final String client) {
+        final List<TraceRecord> window = new ArrayList<>();
+        for (final TraceRecord trace : allTraces()) {
+            final long createdAt = trace.getCreatedAt() == null ? 0L : trace.getCreatedAt().toEpochMilli();
+            if (createdAt >= startTime && createdAt <= endTime && !isSelfObservation(trace)) {
+                window.add(trace);
+            }
+        }
+
+        final List<TraceRecord> filtered = new ArrayList<>();
+        for (final TraceRecord trace : window) {
+            if (matchesErrorFilters(trace, operation, instance, client)) {
+                filtered.add(trace);
+            }
+        }
+
+        long errorTraces = 0;
+        final Map<String, long[]> byOperation = new LinkedHashMap<>();
+        final Map<String, long[]> byInstance = new LinkedHashMap<>();
+        final Map<String, long[]> byClient = new LinkedHashMap<>();
+
+        for (final TraceRecord trace : filtered) {
+            final boolean failed = hasErrorSpan(trace);
+            if (failed) {
+                errorTraces++;
+            }
+
+            final SpanRecord root = entrySpanOf(trace);
+            if (root != null) {
+                countInto(byOperation, root.getOperationName(), failed);
+                final Object ip = root.getAttributes().get("http.client_ip");
+                if (ip != null && !String.valueOf(ip).isEmpty()) {
+                    countInto(byClient, String.valueOf(ip), failed);
+                }
+            }
+
+            // instance.id 由实例选择阶段的 span 写入（不再是 CLIENT span），因此按链路取一次
+            final String instanceId = instanceOf(trace);
+            if (instanceId != null) {
+                countInto(byInstance, instanceId, failed);
+            }
+        }
+
+        final Map<String, Object> result = new LinkedHashMap<>();
+        result.put("totalTraces", filtered.size());
+        result.put("errorTraces", errorTraces);
+        result.put("errorRate", filtered.isEmpty() ? 0.0 : (double) errorTraces / filtered.size());
+        result.put("byOperation", topRows(byOperation));
+        result.put("byInstance", topRows(byInstance));
+        result.put("byClient", topRows(byClient));
+        result.put("errorTrend", statisticsCalculator.errorTrend(
+                collectStoreOf(filtered), startTime, endTime, bucketMillis));
+        result.put("filterOptions", filterOptionsOf(window));
+        return result;
+    }
+
+    private boolean matchesErrorFilters(final TraceRecord trace, final String operation,
+                                        final String instance, final String client) {
+        final SpanRecord root = entrySpanOf(trace);
+        if (operation != null && !operation.isEmpty()
+                && (root == null || !containsIgnoreCase(root.getOperationName(), operation))) {
+            return false;
+        }
+        if (client != null && !client.isEmpty()) {
+            final Object ip = root != null ? root.getAttributes().get("http.client_ip") : null;
+            if (ip == null || !containsIgnoreCase(String.valueOf(ip), client)) {
+                return false;
+            }
+        }
+        if (instance != null && !instance.isEmpty()) {
+            final String instanceId = instanceOf(trace);
+            if (instanceId == null || !containsIgnoreCase(instanceId, instance)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean containsIgnoreCase(final String value, final String keyword) {
+        return value != null && keyword != null && value.toLowerCase().contains(keyword.toLowerCase());
+    }
+
+    /** 链路选中的上游实例（instance.id 由实例选择阶段的 span 写入，不是 CLIENT span）。 */
+    private static String instanceOf(final TraceRecord trace) {
+        for (final SpanRecord span : trace.getSpans()) {
+            final Object value = span.getAttributes().get("instance.id");
+            if (value != null && !String.valueOf(value).isEmpty()) {
+                return String.valueOf(value);
+            }
+        }
+        return null;
+    }
+
+    private static SpanRecord entrySpanOf(final TraceRecord trace) {
+        for (final SpanRecord span : trace.getSpans()) {
+            final String parent = span.getParentSpanId();
+            if (parent == null || parent.isEmpty()) {
+                return span;
+            }
+        }
+        return trace.getSpans().isEmpty() ? null : trace.getSpans().get(0);
+    }
+
+    private static void countInto(final Map<String, long[]> target, final String key, final boolean failed) {
+        final long[] counter = target.computeIfAbsent(key, k -> new long[2]);
+        counter[0]++;
+        if (failed) {
+            counter[1]++;
+        }
+    }
+
+    private static List<Map<String, Object>> topRows(final Map<String, long[]> source) {
+        final List<Map<String, Object>> rows = new ArrayList<>();
+        for (final Map.Entry<String, long[]> entry : source.entrySet()) {
+            final long total = entry.getValue()[0];
+            final long errors = entry.getValue()[1];
+            final Map<String, Object> row = new LinkedHashMap<>();
+            row.put("name", entry.getKey());
+            row.put("totalCount", total);
+            row.put("errorCount", errors);
+            row.put("errorRate", total == 0 ? 0.0 : (double) errors / total);
+            rows.add(row);
+        }
+        rows.sort((a, b) -> Long.compare((Long) b.get("errorCount"), (Long) a.get("errorCount")));
+        return rows.size() > 10 ? new ArrayList<>(rows.subList(0, 10)) : rows;
+    }
+
+    private static Map<String, TraceRecord> collectStoreOf(final List<TraceRecord> traces) {
+        final Map<String, TraceRecord> store = new LinkedHashMap<>();
+        for (final TraceRecord trace : traces) {
+            store.put(trace.getTraceId(), trace);
+        }
+        return store;
+    }
+
+    private Map<String, List<String>> filterOptionsOf(final List<TraceRecord> traces) {
+        final Set<String> operations = new LinkedHashSet<>();
+        final Set<String> instances = new LinkedHashSet<>();
+        final Set<String> clients = new LinkedHashSet<>();
+        for (final TraceRecord trace : traces) {
+            final SpanRecord root = entrySpanOf(trace);
+            if (root != null) {
+                operations.add(root.getOperationName());
+                final Object ip = root.getAttributes().get("http.client_ip");
+                if (ip != null && !String.valueOf(ip).isEmpty()) {
+                    clients.add(String.valueOf(ip));
+                }
+            }
+            final String instanceId = instanceOf(trace);
+            if (instanceId != null) {
+                instances.add(instanceId);
+            }
+        }
+        final Map<String, List<String>> options = new LinkedHashMap<>();
+        options.put("operations", new ArrayList<>(operations));
+        options.put("instances", new ArrayList<>(instances));
+        options.put("clients", new ArrayList<>(clients));
+        return options;
     }
 
     /** 吞吐趋势（真实聚合）。 */

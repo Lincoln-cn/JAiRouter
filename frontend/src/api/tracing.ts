@@ -4,7 +4,8 @@ import type {
     LatencyAnalysis,
     ErrorAnalysis,
     ThroughputAnalysis,
-    TimeRange
+    TimeRange,
+    TrendPoint
 } from '@/types'
 import type {
     TraceChainResponse,
@@ -132,6 +133,44 @@ export const getLatencyAnalysis = (timeRange?: TimeRange) => {
 export const getErrorAnalysis = (timeRange?: TimeRange) => {
     return request.get<RouterResponse<ErrorAnalysis>>('/tracing/query/performance/errors', {
         params: timeRange
+    })
+}
+
+/** 异常排行的一行（按 operation / 上游实例 / 客户端三个维度共用）。 */
+export interface ErrorRankRow {
+    name: string
+    totalCount: number
+    errorCount: number
+    errorRate: number
+}
+
+/** 异常聚合结果：三个维度排行 + 错误时间线 + 筛选项。 */
+export interface ErrorAnalysisAggregated {
+    totalTraces: number
+    errorTraces: number
+    errorRate: number
+    byOperation: ErrorRankRow[]
+    byInstance: ErrorRankRow[]
+    byClient: ErrorRankRow[]
+    errorTrend: TrendPoint[]
+    filterOptions: {
+        operations: string[]
+        instances: string[]
+        clients: string[]
+    }
+}
+
+export interface ErrorAnalysisParams {
+    startTime?: string
+    endTime?: string
+    operation?: string
+    instance?: string
+    client?: string
+}
+
+export const getErrorAnalysisAggregated = (params?: ErrorAnalysisParams) => {
+    return request.get<RouterResponse<ErrorAnalysisAggregated>>('/tracing/query/error-analysis', {
+        params
     })
 }
 

@@ -72,7 +72,23 @@
       "messages": {
         "loadFailed": "加载数据失败，请稍后重试",
         "refreshed": "数据已刷新"
-      }
+      },
+      "errorFilters": {
+        "operation": "按 operation 过滤",
+        "instance": "按上游实例过滤",
+        "client": "按客户端过滤",
+        "apply": "应用"
+      },
+      "errorRank": {
+        "byOperation": "按操作排行",
+        "byInstance": "按上游实例排行",
+        "byClient": "按客户端排行",
+        "name": "名称",
+        "total": "总数",
+        "errors": "错误数",
+        "rate": "错误率"
+      },
+      "errorSummary": "共 {total} 条链路，{errors} 条异常，错误率 {rate}%"
     },
     "search": {
       "title": "追踪搜索",

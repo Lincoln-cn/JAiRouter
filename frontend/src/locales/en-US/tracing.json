@@ -72,7 +72,23 @@
       "messages": {
         "loadFailed": "Failed to load data. Please try again later.",
         "refreshed": "Data refreshed"
-      }
+      },
+      "errorFilters": {
+        "operation": "Filter by operation",
+        "instance": "Filter by upstream instance",
+        "client": "Filter by client",
+        "apply": "Apply"
+      },
+      "errorRank": {
+        "byOperation": "Top operations",
+        "byInstance": "Top upstream instances",
+        "byClient": "Top clients",
+        "name": "Name",
+        "total": "Total",
+        "errors": "Errors",
+        "rate": "Error rate"
+      },
+      "errorSummary": "{total} traces, {errors} failed, error rate {rate}%"
     },
     "search": {
       "title": "Trace Search",
