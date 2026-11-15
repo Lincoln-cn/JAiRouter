@@ -281,6 +281,12 @@ const router = createRouter({
           name: 'health-config',
           component: () => import('../views/system/HealthProbeConfig.vue'),
           meta: { titleKey: 'route.healthConfig', icon: 'first-aid-kit', permissions: ['config:health:read', 'config:health:write'] }
+        },
+        {
+          path: 'console-operations',
+          name: 'console-operations',
+          component: () => import('../views/system/ConsoleOperations.vue'),
+          meta: { titleKey: 'route.consoleOperations', icon: 'document', permissions: ['monitoring:console:read'] }
         }
       ]
     },

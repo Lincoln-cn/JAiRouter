@@ -13,6 +13,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.unreal.modelrouter.auth.audit.ConfigChangeAuditEntity;
+import org.unreal.modelrouter.auth.audit.ConfigChangeAuditRepository;
+import org.unreal.modelrouter.monitor.tracing.helper.ConsoleOperationNames;
+import org.unreal.modelrouter.monitor.tracing.helper.ServiceNameResolver;
 import org.unreal.modelrouter.monitor.tracing.query.TraceQueryService;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -22,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 追踪查询控制器
@@ -42,10 +47,14 @@ import java.util.Map;
 public class TracingQueryController {
 
     private final TraceQueryService traceQueryService;
-    
+    private final ConfigChangeAuditRepository configChangeAuditRepository;
+
     // 手动添加构造函数
-    public TracingQueryController(final TraceQueryService traceQueryService) {
+    public TracingQueryController(
+            final TraceQueryService traceQueryService,
+            final ConfigChangeAuditRepository configChangeAuditRepository) {
         this.traceQueryService = traceQueryService;
+        this.configChangeAuditRepository = configChangeAuditRepository;
     }
     
     @GetMapping("/trace/{traceId}")
@@ -121,6 +130,58 @@ public class TracingQueryController {
                 return ResponseEntity.ok(response);
             })
             .onErrorReturn(ResponseEntity.internalServerError().<Map<String, Object>>build());
+    }
+
+    @GetMapping("/console-operations")
+    @Operation(summary = "查询控制台写操作", description = "按时间倒序返回最近的控制台写操作及其耗时、结果与操作人（#1154）")
+    public Mono<ResponseEntity<Map<String, Object>>> getConsoleOperations(
+            @Parameter(description = "返回条数，1-200") @RequestParam(defaultValue = "50") final int limit) {
+        final int safeLimit = Math.max(1, Math.min(limit, 200));
+        return traceQueryService.getRecentTraces(safeLimit * 5)
+                .filter(summary -> ServiceNameResolver.SERVICE_CONSOLE.equals(summary.getServiceName()))
+                .filter(summary -> ConsoleOperationNames.isReadable(summary.getOperationName()))
+                .take(safeLimit)
+                .collectList()
+                .flatMap(summaries -> Mono.fromCallable(() -> enrichWithOperator(summaries))
+                        .subscribeOn(Schedulers.boundedElastic()))
+                .map(data -> ResponseEntity.ok(Map.<String, Object>of("success", true, "data", data)))
+                .onErrorResume(error -> {
+                    log.error("查询控制台操作失败", error);
+                    return Mono.just(ResponseEntity.internalServerError()
+                            .body(Map.<String, Object>of("success", false, "message", "查询控制台操作失败")));
+                });
+    }
+
+    /**
+     * 用 traceId 把「追踪里的耗时」与「审计里的操作人」对上（#1154）。
+     *
+     * <p>两个数据源天然不同步：追踪在内存里只留最近若干条，审计落库。用 traceId
+     * 做左连接，查不到的 operator 就是 null，界面上显示「未知」而不是伪造一个。</p>
+     */
+    private List<Map<String, Object>> enrichWithOperator(final List<TraceQueryService.TraceSummary> summaries) {
+        final List<String> traceIds = summaries.stream()
+                .map(TraceQueryService.TraceSummary::getTraceId)
+                .collect(Collectors.toList());
+        final Map<String, String> operatorByTrace = new HashMap<>();
+        if (!traceIds.isEmpty()) {
+            for (final ConfigChangeAuditEntity audit : configChangeAuditRepository.findByTraceIdIn(traceIds)) {
+                if (audit.getTraceId() != null && audit.getOperator() != null) {
+                    operatorByTrace.putIfAbsent(audit.getTraceId(), audit.getOperator());
+                }
+            }
+        }
+        final List<Map<String, Object>> rows = new ArrayList<>(summaries.size());
+        for (final TraceQueryService.TraceSummary summary : summaries) {
+            final Map<String, Object> row = new HashMap<>();
+            row.put("traceId", summary.getTraceId());
+            row.put("operationName", summary.getOperationName());
+            row.put("startTime", summary.getStartTime());
+            row.put("duration", summary.getDuration());
+            row.put("hasError", summary.isHasError());
+            row.put("operator", operatorByTrace.get(summary.getTraceId()));
+            rows.add(row);
+        }
+        return rows;
     }
 
     @GetMapping("/services")

@@ -102,6 +102,12 @@ public class ServiceNameResolver {
             path = path.substring(0, path.indexOf("?"));
         }
 
+        // 控制台写操作用可读名字（#1154）：config.instance.update 比 PUT /api/config/... 更好查
+        final String readable = ConsoleOperationNames.resolve(method, path);
+        if (readable != null) {
+            return readable;
+        }
+
         return method + " " + path;
     }
 }

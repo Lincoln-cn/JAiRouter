@@ -15,7 +15,7 @@ import {
  * 一旦结构漂移（多一项、少一组、tab 路由写错、反查表漏项），先在这里红。
  */
 describe('menu.ts 信息架构', () => {
-  it('7 组 31 项，组顺序与设计文档一致', () => {
+  it('7 组 32 项，组顺序与设计文档一致', () => {
     expect(menuGroups.map(g => g.index)).toEqual([
       'dashboard',
       'observability',
@@ -25,8 +25,8 @@ describe('menu.ts 信息架构', () => {
       'system',
       'dev-tools'
     ])
-    expect(menuGroups.map(g => g.children.length)).toEqual([1, 5, 7, 4, 6, 6, 2])
-    expect(menuGroups.reduce((total, g) => total + g.children.length, 0)).toBe(31)
+    expect(menuGroups.map(g => g.children.length)).toEqual([1, 5, 7, 4, 6, 7, 2])
+    expect(menuGroups.reduce((total, g) => total + g.children.length, 0)).toBe(32)
   })
 
   it('每项主路径 = 第一个 tab 的路由，且 tab 路由全局唯一', () => {
@@ -41,8 +41,8 @@ describe('menu.ts 信息架构', () => {
     }
     const routes = items.flatMap(item => item.tabs.map(tab => tab.to))
     // 40 → 31：12 个被收起页面仍在 tabs 里，因此 tab 总数 = 31 + 12 = 43
-    // （v3.8.6 在「限流」项下新增 config tab、在「系统」项下新增集群设置 ⇒ 43；v3.8.7 新增健康探针设置 ⇒ 44）
-    expect(routes.length).toBe(44)
+    // （v3.8.6 在「限流」项下新增 config tab、在「系统」项下新增集群设置 ⇒ 43；v3.8.7 新增健康探针设置 ⇒ 44；v3.8.8 新增管理操作 ⇒ 45）
+    expect(routes.length).toBe(45)
     expect(new Set(routes).size).toBe(routes.length)
   })
 
@@ -54,7 +54,7 @@ describe('menu.ts 信息架构', () => {
         }
       }
     }
-    expect(Object.keys(ROUTE_TO_MENU)).toHaveLength(44)
+    expect(Object.keys(ROUTE_TO_MENU)).toHaveLength(45)
   })
 
   it('深链未命中回退 route.path；异常详情归到异常列表', () => {
@@ -147,6 +147,7 @@ describe('menu.ts 权限码白名单（#567）', () => {
     'monitoring:quota:read',
     'monitoring:exceptions:read',
     'monitoring:exceptions:write',
+    'monitoring:console:read',
     'monitoring:config:write',
     'tracing:dashboard:read',
     'tracing:search:read',
@@ -186,9 +187,9 @@ describe('menu.ts 权限码白名单（#567）', () => {
     return codes
   }
 
-  it('白名单自身 = 69 个互不重复的权限码', () => {
-    expect(KNOWN_PERMISSION_CODES).toHaveLength(69)
-    expect(new Set(KNOWN_PERMISSION_CODES).size).toBe(69)
+  it('白名单自身 = 70 个互不重复的权限码', () => {
+    expect(KNOWN_PERMISSION_CODES).toHaveLength(70)
+    expect(new Set(KNOWN_PERMISSION_CODES).size).toBe(70)
   })
 
   it('menu.ts 里出现的权限码全部在白名单内', () => {

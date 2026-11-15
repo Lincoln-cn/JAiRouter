@@ -286,6 +286,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, nextTick, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 import {
@@ -311,6 +312,7 @@ import { useChartAutoRefresh } from '@/composables/useChartAutoRefresh'
 
 const { getChartTheme } = useChartTheme()
 const { t } = useI18n()
+const route = useRoute()
 
 // 搜索表单
 const searchForm = ref({
@@ -893,7 +895,15 @@ const disposeTraceChainChart = () => {
 onMounted(() => {
   useChartAutoRefresh(rebuildAll)
   loadAvailableServices()
-  handleGetRecent() // 默认加载最近的追踪
+
+  // 从「管理操作」页跳过来时带 traceId（#1154）：直接按该 ID 搜索，而不是显示最近列表
+  const incomingTraceId = route.query.traceId
+  if (typeof incomingTraceId === 'string' && incomingTraceId.trim().length > 0) {
+    searchForm.value.traceId = incomingTraceId.trim()
+    handleSearch()
+  } else {
+    handleGetRecent() // 默认加载最近的追踪
+  }
 })
 
 onBeforeUnmount(() => {

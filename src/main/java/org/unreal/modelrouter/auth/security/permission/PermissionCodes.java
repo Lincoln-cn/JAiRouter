@@ -131,6 +131,9 @@ public final class PermissionCodes {
     public static final String MONITORING_QUOTA_READ = "monitoring:quota:read";
     /** 异常事件-读（R2-P1-03） */
     public static final String MONITORING_EXCEPTIONS_READ = "monitoring:exceptions:read";
+
+    /** 控制台管理操作-读（#1154：系统 → 管理操作页） */
+    public static final String MONITORING_CONSOLE_READ = "monitoring:console:read";
     /** 异常事件-写/清理（R2-P1-03） */
     public static final String MONITORING_EXCEPTIONS_WRITE = "monitoring:exceptions:write";
     /** 监控配置/运维操作-写（#116：开关指标、降级、缓存清理、熔断强制操作等） */
@@ -222,6 +225,7 @@ public final class PermissionCodes {
             MONITORING_ROUTING_READ,
             MONITORING_QUOTA_READ,
             MONITORING_EXCEPTIONS_READ, MONITORING_EXCEPTIONS_WRITE,
+            MONITORING_CONSOLE_READ,
             MONITORING_CONFIG_WRITE,
             TRACING_DASHBOARD_READ, TRACING_SEARCH_READ, TRACING_CONFIG_READ, TRACING_CONFIG_MANAGE,
             SECURITY_APIKEYS_READ, SECURITY_APIKEYS_MANAGE,
