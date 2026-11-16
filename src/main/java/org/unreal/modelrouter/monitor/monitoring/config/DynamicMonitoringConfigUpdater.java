@@ -173,7 +173,7 @@ public class DynamicMonitoringConfigUpdater {
                 return true;
             }
             return false;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("更新监控采集性能配置失败: {}", e.getMessage());
             return false;
         }

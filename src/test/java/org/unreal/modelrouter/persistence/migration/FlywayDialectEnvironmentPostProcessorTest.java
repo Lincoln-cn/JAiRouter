@@ -182,7 +182,7 @@ class FlywayDialectEnvironmentPostProcessorTest {
      * <p>新增迁移脚本后这里需要同步更新 —— 这正是它的价值：让人回头确认 baseline 也跟着走了。
      */
     @Test
-    @DisplayName("baseline-version 等于脚本目录里的最新版本（H2 与 PG 都是 14）")
+    @DisplayName("baseline-version 等于脚本目录里的最新版本（H2 与 PG 都是 15）")
     void latestMigrationVersionIsScanned() {
         for (String locations : new String[]{
                 FlywayDialectEnvironmentPostProcessor.H2_LOCATIONS,
@@ -190,7 +190,7 @@ class FlywayDialectEnvironmentPostProcessorTest {
             String latest = FlywayDialectEnvironmentPostProcessor.resolveLatestMigrationVersion(locations);
             assertNotEquals(FlywayDialectEnvironmentPostProcessor.DEFAULT_BASELINE_VERSION, latest,
                     locations + " 上必须扫到脚本；扫不到说明扫描逻辑失效，会退回固定 1 的老行为");
-            assertEquals("14", latest, locations + " 的最新迁移版本");
+            assertEquals("15", latest, locations + " 的最新迁移版本");
         }
     }
 

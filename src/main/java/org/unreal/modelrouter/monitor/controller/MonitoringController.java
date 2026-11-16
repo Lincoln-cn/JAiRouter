@@ -98,7 +98,7 @@ public class MonitoringController {
             securityAuditService.recordEvent(event)
                     .subscribe(null,
                             error -> logger.warn("记录监控配置审计失败: action={}, error={}", action, error.getMessage()));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.warn("记录监控配置审计失败: action={}, error={}", action, e.getMessage());
         }
     }
