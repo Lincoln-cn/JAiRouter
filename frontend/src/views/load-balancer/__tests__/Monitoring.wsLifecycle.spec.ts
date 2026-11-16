@@ -10,6 +10,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
+import { createPinia, setActivePinia } from 'pinia'
 
 vi.mock('element-plus', () => ({
   ElMessage: { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() }
@@ -90,10 +91,15 @@ class MockWebSocket {
 }
 
 describe('load-balancer Monitoring WebSocket 生命周期（issue #130）', () => {
+  let pinia: ReturnType<typeof createPinia>
+
   beforeEach(() => {
     MockWebSocket.instances = []
     vi.useFakeTimers()
     vi.stubGlobal('WebSocket', MockWebSocket as unknown as typeof WebSocket)
+    // 页面用 usePermission() 判定写操作可见性（内部读 user store），挂载前必须有活动 pinia
+    pinia = createPinia()
+    setActivePinia(pinia)
   })
 
   afterEach(() => {
@@ -102,7 +108,7 @@ describe('load-balancer Monitoring WebSocket 生命周期（issue #130）', () =
   })
 
   it('卸载后不应再重建 WebSocket（无僵尸重连）', () => {
-    const wrapper = mount(Monitoring, { global: { plugins: [i18n], stubs } })
+    const wrapper = mount(Monitoring, { global: { plugins: [i18n, pinia], stubs } })
     expect(MockWebSocket.instances.length).toBe(1)
 
     wrapper.unmount()

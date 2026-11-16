@@ -58,10 +58,20 @@
 
     <template #footer>
       <div class="footer-actions">
-        <el-button type="primary" :disabled="!selectedRole" :loading="saving" @click="handleSave">
+        <el-button
+        v-permission="'system:permissions:manage'"
+        type="primary"
+        :disabled="!selectedRole"
+        :loading="saving"
+        @click="handleSave"
+      >
           {{ t('permissions.save') }}
         </el-button>
-        <el-button :disabled="!selectedRole || loading" @click="resetSelection">
+        <el-button
+        v-permission="'system:permissions:manage'"
+        :disabled="!selectedRole || loading"
+        @click="resetSelection"
+      >
           {{ t('permissions.reset') }}
         </el-button>
       </div>

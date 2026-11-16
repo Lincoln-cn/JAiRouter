@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { menuGroups } from '@/config/menu'
 import { KNOWN_PERMISSION_CODES } from '@/config/__tests__/knownPermissions'
 import router from '@/router'
@@ -107,4 +107,25 @@ describe('菜单与路由守卫一致性', () => {
       .sort()
     expect(paths).toEqual(['/security', '/system'])
   })
+
+  it('除登录页外，每个可直达页面都能从菜单进入（防新增页面忘记挂菜单）', () => {
+    const menuTabPaths = new Set(
+      menuGroups.flatMap(group => group.children.flatMap(item => item.tabs.map(tab => tab.to)))
+    )
+    expect(menuTabPaths.size, '菜单 tab 集合异常小，疑似 menu.ts 结构变动').toBeGreaterThanOrEqual(45)
+
+    /** 有意不挂菜单的页面：登录页。新增例外必须写清理由，不要为了让测试变绿而放宽 */
+    const NON_MENU_PAGES = new Set(['/login'])
+
+    const uncovered = router
+      .getRoutes()
+      .filter(route => route.components?.default && !route.redirect && !route.path.includes(':'))
+      .map(route => route.path)
+      .filter(path => !menuTabPaths.has(path) && !NON_MENU_PAGES.has(path))
+      .sort()
+
+    expect(uncovered, '这些页面没有对应的菜单入口：挂到某个 tab，或登记到 NON_MENU_PAGES 并说明理由').toEqual([])
+  })
 })
+
+

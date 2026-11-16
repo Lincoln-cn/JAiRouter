@@ -111,7 +111,13 @@ describe('页面按钮权限门控', () => {
       ['system/HealthProbeConfig.vue', 'config:health:write'],
       ['system/ClusterConfig.vue', 'config:cluster:write'],
       ['rate-limiter/Config.vue', 'config:ratelimit:write'],
-      ['exception/ExceptionManagement.vue', 'monitoring:exceptions:write']
+      ['exception/ExceptionManagement.vue', 'monitoring:exceptions:write'],
+      // 2026-11-16 第二轮补充：这些页的写操作原先对只读角色也可见，点击才 403
+      ['circuit-breaker/History.vue', 'config:circuitbreaker:write'],
+      ['tracing/Management.vue', 'tracing:config:manage'],
+      ['system/PermissionManagement.vue', 'system:permissions:manage'],
+      // 用 computed canWrite 收敛，不走 v-permission：写码出现一次即可
+      ['load-balancer/Monitoring.vue', 'lb:config:write']
     ]
     const missing = expected
       .filter(([name, code]) => {

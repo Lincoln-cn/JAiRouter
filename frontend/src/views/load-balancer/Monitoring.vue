@@ -14,7 +14,7 @@
           </el-dropdown-menu>
         </template>
       </el-dropdown>
-      <el-button @click="clearHistory" :loading="clearingHistory">
+      <el-button v-if="canWrite" @click="clearHistory" :loading="clearingHistory">
         {{ t('loadBalancer.monitoring.clearHistory') }}
       </el-button>
       <el-dropdown @command="handleMoreCommand">
@@ -24,7 +24,7 @@
         </el-button>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item command="toggle">
+            <el-dropdown-item v-if="canWrite" command="toggle">
               {{ monitorStatus.paused ? t('loadBalancer.monitoring.resumeMonitoring') : t('loadBalancer.monitoring.pauseMonitoring') }}
             </el-dropdown-item>
             <el-dropdown-item command="strategy" divided>
@@ -53,7 +53,7 @@
               :max="100"
               :format-tooltip="formatSampleRate"
               @change="updateSampleRate"
-              :disabled="updatingConfig"
+              :disabled="updatingConfig || !canWrite"
             />
           </div>
         </el-col>
@@ -66,7 +66,7 @@
               :max="10000"
               :step="100"
               @change="updateHistorySize"
-              :disabled="updatingConfig"
+              :disabled="updatingConfig || !canWrite"
             />
           </div>
         </el-col>
@@ -167,6 +167,7 @@
             </div>
             <div class="service-actions">
               <el-button
+                v-if="canWrite"
                 size="small"
                 :type="isServicePaused(serviceType) ? 'success' : 'warning'"
                 @click="toggleServiceMonitor(serviceType as string)"
@@ -252,6 +253,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, ArrowDown, Box, InfoFilled } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import { usePermission } from '@/composables/usePermission'
 
 interface MonitorStatus {
   enabled: boolean
@@ -317,6 +319,10 @@ let isManualClose = false
 
 const { t } = useI18n()
 const router = useRouter()
+const { hasPermission } = usePermission()
+// 路由监控的写操作（暂停/恢复、采样率、历史大小、清空历史）在后端归 lb:config:write；
+// 只读角色（仅持 lb:monitoring:read）看到这些控件只会点出 403，因此一律按写码收敛。
+const canWrite = computed(() => hasPermission('lb:config:write'))
 
 const filteredEvents = computed(() => {
   if (!selectedServiceType.value) {
