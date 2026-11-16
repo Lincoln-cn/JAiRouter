@@ -1,0 +1,354 @@
+<template>
+  <PageSkeleton :title="t('monitoringRuntime.pageTitle')">
+    <template #actions>
+      <el-button size="default" :loading="loading" @click="loadAll">
+        <el-icon><Refresh /></el-icon>
+        {{ t('monitoringRuntime.refresh') }}
+      </el-button>
+    </template>
+
+    <template #toolbar>
+      <p class="runtime-hint">
+        <el-icon><InfoFilled /></el-icon>
+        <span>{{ t('monitoringRuntime.hint') }}</span>
+      </p>
+    </template>
+
+    <el-card shadow="hover" class="runtime-card">
+      <template #header>
+        <span class="card-title">{{ t('monitoringRuntime.healthTitle') }}</span>
+      </template>
+      <el-descriptions :column="2" border>
+        <el-descriptions-item :label="t('monitoringRuntime.statusLabel')">
+          <el-tag :type="health?.healthy ? 'success' : 'danger'" effect="plain">
+            {{ health?.healthy ? t('monitoringRuntime.healthy') : t('monitoringRuntime.unhealthy') }}
+          </el-tag>
+          <span v-if="health?.status" class="status-text">{{ health.status }}</span>
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('monitoringRuntime.issuesLabel')">
+          {{ health?.issues?.length ? health.issues.join('; ') : t('monitoringRuntime.noIssues') }}
+        </el-descriptions-item>
+      </el-descriptions>
+    </el-card>
+
+    <el-card shadow="hover" class="runtime-card">
+      <template #header>
+        <span class="card-title">{{ t('monitoringRuntime.degradationTitle') }}</span>
+      </template>
+      <el-descriptions :column="2" border>
+        <el-descriptions-item :label="t('monitoringRuntime.levelLabel')">
+          {{ readString(degradation, 'level') }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('monitoringRuntime.autoModeLabel')">
+          {{ readBooleanLabel(degradation, 'autoModeEnabled') }}
+        </el-descriptions-item>
+      </el-descriptions>
+
+      <div v-if="canWrite" class="runtime-actions">
+        <div class="inline-field">
+          <span class="config-label">{{ t('monitoringRuntime.levelTitle') }}</span>
+          <el-select v-model="degradationLevel" style="width: 180px">
+            <el-option v-for="level in degradationLevels" :key="level" :label="level" :value="level" />
+          </el-select>
+        </div>
+        <ConfirmAction
+          v-permission="'monitoring:config:write'"
+          :title="t('monitoringRuntime.forceRecoveryConfirm')"
+          :confirm-text="t('monitoringRuntime.forceRecovery')"
+          @confirm="applyAction(forceMonitoringRecovery)"
+        >
+          <el-button type="warning" plain>{{ t('monitoringRuntime.forceRecovery') }}</el-button>
+        </ConfirmAction>
+        <el-button
+          v-permission="'monitoring:config:write'"
+          :loading="acting"
+          @click="applyAction(() => setMonitoringDegradationLevel(degradationLevel))"
+        >
+          {{ t('monitoringRuntime.levelTitle') }}
+        </el-button>
+        <el-switch
+          v-permission="'monitoring:config:write'"
+          v-model="degradationAutoMode"
+          :active-text="t('monitoringRuntime.autoModeTitle')"
+          @change="onAutoModeChange"
+        />
+      </div>
+    </el-card>
+
+    <el-card shadow="hover" class="runtime-card">
+      <template #header>
+        <span class="card-title">{{ t('monitoringRuntime.errorStatsTitle') }}</span>
+      </template>
+      <pre class="raw-block">{{ pretty(errorStats) }}</pre>
+
+      <div v-if="canWrite" class="runtime-actions">
+        <div class="inline-field">
+          <span class="config-label">{{ t('monitoringRuntime.componentLabel') }}</span>
+          <el-input v-model="errorComponent" style="width: 160px" />
+        </div>
+        <div class="inline-field">
+          <span class="config-label">{{ t('monitoringRuntime.operationLabel') }}</span>
+          <el-input v-model="errorOperation" style="width: 160px" />
+        </div>
+        <ConfirmAction
+          v-permission="'monitoring:config:write'"
+          :title="t('monitoringRuntime.resetErrorsConfirm')"
+          :confirm-text="t('monitoringRuntime.resetErrors')"
+          @confirm="applyAction(() => resetMonitoringErrors(errorComponent, errorOperation))"
+        >
+          <el-button type="warning" plain>{{ t('monitoringRuntime.resetErrors') }}</el-button>
+        </ConfirmAction>
+      </div>
+    </el-card>
+
+    <el-card shadow="hover" class="runtime-card">
+      <template #header>
+        <span class="card-title">{{ t('monitoringRuntime.cacheTitle') }}</span>
+      </template>
+      <pre class="raw-block">{{ pretty(cacheStats) }}</pre>
+
+      <div v-if="canWrite" class="runtime-actions">
+        <ConfirmAction
+          v-permission="'monitoring:config:write'"
+          :title="t('monitoringRuntime.clearCacheConfirm')"
+          :confirm-text="t('monitoringRuntime.clearCache')"
+          @confirm="applyAction(clearMonitoringCache)"
+        >
+          <el-button type="danger" plain>{{ t('monitoringRuntime.clearCache') }}</el-button>
+        </ConfirmAction>
+      </div>
+    </el-card>
+
+    <el-card shadow="hover" class="runtime-card">
+      <template #header>
+        <span class="card-title">{{ t('monitoringRuntime.pipelineBreakerTitle') }}</span>
+      </template>
+      <pre class="raw-block">{{ pretty(pipelineBreakerStats) }}</pre>
+
+      <div v-if="canWrite" class="runtime-actions">
+        <ConfirmAction
+          v-permission="'monitoring:config:write'"
+          :title="t('monitoringRuntime.openBreakerConfirm')"
+          :confirm-text="t('monitoringRuntime.openBreaker')"
+          @confirm="applyAction(forceOpenPipelineBreaker)"
+        >
+          <el-button type="danger" plain>{{ t('monitoringRuntime.openBreaker') }}</el-button>
+        </ConfirmAction>
+        <ConfirmAction
+          v-permission="'monitoring:config:write'"
+          :title="t('monitoringRuntime.closeBreakerConfirm')"
+          :confirm-text="t('monitoringRuntime.closeBreaker')"
+          @confirm="applyAction(forceClosePipelineBreaker)"
+        >
+          <el-button type="success" plain>{{ t('monitoringRuntime.closeBreaker') }}</el-button>
+        </ConfirmAction>
+      </div>
+    </el-card>
+
+    <el-card shadow="hover" class="runtime-card">
+      <template #header>
+        <span class="card-title">{{ t('monitoringRuntime.monitoringBreakerTitle') }}</span>
+      </template>
+      <pre class="raw-block">{{ pretty(monitoringBreakerStats) }}</pre>
+
+      <div v-if="canWrite" class="runtime-actions">
+        <ConfirmAction
+          v-permission="'monitoring:config:write'"
+          :title="t('monitoringRuntime.openBreakerConfirm')"
+          :confirm-text="t('monitoringRuntime.openBreaker')"
+          @confirm="applyAction(forceOpenMonitoringBreaker)"
+        >
+          <el-button type="danger" plain>{{ t('monitoringRuntime.openBreaker') }}</el-button>
+        </ConfirmAction>
+        <ConfirmAction
+          v-permission="'monitoring:config:write'"
+          :title="t('monitoringRuntime.closeBreakerConfirm')"
+          :confirm-text="t('monitoringRuntime.closeBreaker')"
+          @confirm="applyAction(forceCloseMonitoringBreaker)"
+        >
+          <el-button type="success" plain>{{ t('monitoringRuntime.closeBreaker') }}</el-button>
+        </ConfirmAction>
+      </div>
+    </el-card>
+  </PageSkeleton>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { ElMessage } from 'element-plus'
+import { InfoFilled, Refresh } from '@element-plus/icons-vue'
+import PageSkeleton from '@/components/PageSkeleton.vue'
+import ConfirmAction from '@/components/ConfirmAction.vue'
+import { usePermission } from '@/composables/usePermission'
+import {
+  clearMonitoringCache,
+  forceCloseMonitoringBreaker,
+  forceClosePipelineBreaker,
+  forceMonitoringRecovery,
+  forceOpenMonitoringBreaker,
+  forceOpenPipelineBreaker,
+  getMonitoringBreakerStats,
+  getMonitoringCacheStats,
+  getMonitoringDegradationStatus,
+  getMonitoringErrorStats,
+  getMonitoringHealth,
+  getMonitoringPipelineBreakerStats,
+  resetMonitoringErrors,
+  setMonitoringDegradationAutoMode,
+  setMonitoringDegradationLevel,
+  type MonitoringHealth
+} from '@/api/monitoringConfig'
+
+const { t } = useI18n()
+const { hasPermission } = usePermission()
+
+const canWrite = computed(() => hasPermission('monitoring:config:write'))
+
+const DEGRADATION_LEVELS = ['NONE', 'PARTIAL', 'FULL', 'EMERGENCY']
+
+const loading = ref(false)
+const acting = ref(false)
+const health = ref<MonitoringHealth | null>(null)
+const degradation = ref<Record<string, unknown> | null>(null)
+const errorStats = ref<Record<string, unknown> | null>(null)
+const cacheStats = ref<Record<string, unknown> | null>(null)
+const pipelineBreakerStats = ref<Record<string, unknown> | null>(null)
+const monitoringBreakerStats = ref<Record<string, unknown> | null>(null)
+
+const degradationLevel = ref('NONE')
+const degradationAutoMode = ref(true)
+const errorComponent = ref('')
+const errorOperation = ref('')
+const degradationLevels = DEGRADATION_LEVELS
+
+const readString = (source: Record<string, unknown> | null, key: string): string => {
+  const value = source?.[key]
+  return value === undefined || value === null ? '-' : String(value)
+}
+
+const readBooleanLabel = (source: Record<string, unknown> | null, key: string): string => {
+  const value = source?.[key]
+  return typeof value === 'boolean' ? (value ? 'true' : 'false') : '-'
+}
+
+const pretty = (source: Record<string, unknown> | null): string => {
+  if (!source) {
+    return '-'
+  }
+  return JSON.stringify(source, null, 2)
+}
+
+const loadAll = async () => {
+  loading.value = true
+  try {
+    const [healthResult, degradationResult, errorResult, cacheResult, pipelineResult, breakerResult] =
+      await Promise.allSettled([
+        getMonitoringHealth(),
+        getMonitoringDegradationStatus(),
+        getMonitoringErrorStats(),
+        getMonitoringCacheStats(),
+        getMonitoringPipelineBreakerStats(),
+        getMonitoringBreakerStats()
+      ])
+
+    health.value = healthResult.status === 'fulfilled' ? healthResult.value : null
+    degradation.value = degradationResult.status === 'fulfilled' ? degradationResult.value : null
+    errorStats.value = errorResult.status === 'fulfilled' ? errorResult.value : null
+    cacheStats.value = cacheResult.status === 'fulfilled' ? cacheResult.value : null
+    pipelineBreakerStats.value = pipelineResult.status === 'fulfilled' ? pipelineResult.value : null
+    monitoringBreakerStats.value = breakerResult.status === 'fulfilled' ? breakerResult.value : null
+
+    const level = degradation.value?.level
+    if (typeof level === 'string' && DEGRADATION_LEVELS.includes(level)) {
+      degradationLevel.value = level
+    }
+    const autoMode = degradation.value?.autoModeEnabled
+    if (typeof autoMode === 'boolean') {
+      degradationAutoMode.value = autoMode
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+/**
+ * 统一执行应急操作：成功后提示并刷新状态；失败只提示，不改动页面状态。
+ *
+ * <p>这些端点在后端都会写 MONITORING_CONFIG_CHANGED 审计（含操作主体），
+ * 所以前端不需要再单独上报。
+ */
+const applyAction = async (action: () => Promise<void>) => {
+  acting.value = true
+  try {
+    await action()
+    ElMessage.success(t('monitoringRuntime.done'))
+    await loadAll()
+  } catch {
+    ElMessage.error(t('monitoringRuntime.failed'))
+  } finally {
+    acting.value = false
+  }
+}
+
+const onAutoModeChange = async (enabled: boolean) => {
+  await applyAction(() => setMonitoringDegradationAutoMode(enabled))
+}
+
+onMounted(loadAll)
+</script>
+
+<style scoped>
+.runtime-hint {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+
+.card-title {
+  font-weight: 600;
+}
+
+.runtime-card {
+  margin-bottom: 16px;
+}
+
+.runtime-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.inline-field {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.config-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.status-text {
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.raw-block {
+  max-height: 240px;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  font-size: 12px;
+  line-height: 1.5;
+  background: var(--el-fill-color-lighter);
+  border-radius: 6px;
+}
+</style>

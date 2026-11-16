@@ -402,6 +402,24 @@ Get the current monitoring configuration:
 GET /api/monitoring/config
 ```
 
+Hot-edit the basic configuration (writes only touch memory and fall back to the configuration
+files on restart; each successful change records one `MONITORING_CONFIG_CHANGED` audit event):
+
+```http
+PUT /api/monitoring/config/enabled
+PUT /api/monitoring/config/prefix
+PUT /api/monitoring/config/collection-interval
+PUT /api/monitoring/config/categories
+PUT /api/monitoring/config/sampling
+PUT /api/monitoring/config/performance
+```
+
+> The six `sampling` rates take values in 0~1 (requests / backend / infrastructure / trace /
+> trace processing / trace analysis); `performance` requires `batchSize >= 1` and
+> `bufferSize >= batchSize`, otherwise the endpoint returns 400. These endpoints require
+> `monitoring:config:write` (granted to ADMIN and OPERATOR by default). They cannot be replaced by
+> `/actuator/metrics/*`: that surface is ADMIN-only and performs no value validation.
+
 ### Metrics Pipeline Circuit Breaker Statistics
 
 Get statistics for the metrics pipeline circuit breaker (`MetricsCircuitBreaker`):

@@ -15,7 +15,7 @@ JAiRouter 自 **v2.9.8** 起提供**数据驱动的 RBAC（基于角色的访问
 2. **角色模板**：启动时自动在 `role_permissions` 表种入 4 个内置角色模板（ADMIN / OPERATOR / USER / VIEWER），每个角色对应一组权限码（表为空则全量播种；表非空则执行只增不删的增量收敛，见「角色模板」一节）。
 3. **JWT 内嵌**：登录成功后，服务端按角色从 `role_permissions` 查询权限码并写入 JWT 的 `permissions` claim（角色仍保留在 `roles` claim；权限码无 `ROLE_` 前缀）。
 4. **URL 权限矩阵**：`PermissionRuleRegistry` 登记 75 条「{HTTP 方法, URL 模式} → 权限码」规则，`PermissionAuthorizationManager` 在网关层对每个 `/api/**` 请求完成权限判定。
-5. **菜单与路由**：前端 `menu.ts` 数据驱动渲染（当前 7 组 32 项 / 45 个 tab；v2.9.8 为 8 组 34 项），`usePermission` 过滤菜单、路由守卫 `meta.permissions` 拦截无权限访问。
+5. **菜单与路由**：前端 `menu.ts` 数据驱动渲染（当前 7 组 33 项 / 47 个 tab；v2.9.8 为 8 组 34 项），`usePermission` 过滤菜单、路由守卫 `meta.permissions` 拦截无权限访问。
 
 核心设计原则：
 
@@ -340,16 +340,16 @@ ADMIN 直接返回全量 71 码；其他角色返回其 JWT `permissions` claim 
 
 ## 菜单与路由
 
-当前（P0-3 信息架构重构）前端菜单为 **7 组 32 项 / 45 个 tab**，由 `menu.ts` 数据驱动 + 权限过滤。v2.9.8 的「11 组 → 8 组 34 项」是历史形态，已被本次收敛取代：
+当前（P0-3 信息架构重构）前端菜单为 **7 组 33 项 / 47 个 tab**，由 `menu.ts` 数据驱动 + 权限过滤。v2.9.8 的「11 组 → 8 组 34 项」是历史形态，已被本次收敛取代：
 
 | 菜单组 | 菜单项数 | 菜单项（括号内为 tab，`｜` 分隔；附权限码） |
 |--------|:-------:|---------------------------------------------|
 | 概览 | 1 | 仪表板（`overview:dashboard:read`） |
 | 运行观测 | 5 | 调用历史（调用记录 ｜ 调用历史仪表盘，`callhistory:read`）/ 链路追踪（链路搜索 `tracing:search:read` ｜ 追踪仪表盘 `tracing:dashboard:read`）/ 异常管理（异常列表 ｜ 统计分析，`monitoring:exceptions:read`）/ 慢请求（慢调用 ｜ 慢 SQL，`monitoring:slowquery:read`）/ 用量统计（Token 用量 `monitoring:tokenusage:read` ｜ 配额使用 `monitoring:quota:read`） |
 | 流量治理 | 7 | 路由规则（`config:rules:read`）/ 负载均衡（实时监控 `lb:monitoring:read` ｜ 策略配置 `lb:config:read` / `lb:config:write`）/ 限流（限流监控 `rl:monitoring:read` ｜ 限流配置 `config:ratelimit:read`）/ 熔断（熔断监控 `cb:monitoring:read` ｜ 熔断历史 `cb:history:read` ｜ 全局配置 `config:circuitbreaker:read`）/ 响应缓存管理（`config:cache:read` / `config:cache:write`）/ 配额运行时配置（`config:quota:read`）/ 资源池（`config:pools:read`） |
-| 模型与实例 | 4 | 服务管理 / 实例管理 / 版本管理 / Adapter管理（对应 `config:services|instances|versions|adapters:read`） |
+| 模型与实例 | 4 | 适配器管理 / 服务管理 / 实例管理 / 版本管理（对应 `config:adapters|services|instances|versions:read`） |
 | 安全 | 6 | API 密钥管理（`security:apikeys:read` / `security:apikeys:manage`）/ PII 脱敏管理（`security:sanitization:read` / `security:sanitization:manage`）/ JWT 令牌管理（`security:jwttokens:read` / `security:jwttokens:manage`）/ 黑名单管理（`security:blacklist:read` / `security:blacklist:manage`）/ 审计日志（`security:audit:read`）/ 记录治理（`config:callhistory:read` / `config:callhistory:write`） |
-| 系统 | 7 | 账户管理（`system:accounts:read` / `system:accounts:manage`）/ 权限管理（`system:permissions:read` / `system:permissions:manage`）/ 追踪配置（`tracing:config:read` / `tracing:config:manage`）/ 状态持久化（`config:persistence:read`）/ 集群设置（`config:cluster:read` / `config:cluster:write`）/ 健康探针设置（`config:health:read` / `config:health:write`）/ 操作记录（`monitoring:console:read`） |
+| 系统 | 8 | 账户管理（`system:accounts:read` / `system:accounts:manage`）/ 权限管理（`system:permissions:read` / `system:permissions:manage`）/ 追踪配置（`tracing:config:read` / `tracing:config:manage`）/ 监控配置（监控配置 ｜ 运行时与应急，`monitoring:config:write`）/ 状态持久化（`config:persistence:read`）/ 集群设置（`config:cluster:read` / `config:cluster:write`）/ 健康探针设置（`config:health:read` / `config:health:write`）/ 操作记录（`monitoring:console:read`） |
 | 开发工具 | 2 | AI 试验场（对话测试 / 向量生成 / 重排序 / 语音服务 / 图像服务，均为 `ai:playground:use`）/ 客户端接入指南（无权限码，所有已登录用户可见） |
 
 可见性控制机制：

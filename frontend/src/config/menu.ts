@@ -517,6 +517,25 @@ export const menuGroups: MenuGroup[] = [
         ]
       },
       {
+        path: '/monitoring/config',
+        title: 'menu.monitoringConfig',
+        permission: ['monitoring:config:write'],
+        tabs: [
+          {
+            key: 'monitoring-config',
+            labelKey: 'menu.monitoringConfig',
+            to: '/monitoring/config',
+            permission: ['monitoring:config:write']
+          },
+          {
+            key: 'monitoring-runtime',
+            labelKey: 'tabs.monitoringRuntime',
+            to: '/monitoring/config/runtime',
+            permission: ['monitoring:config:write']
+          }
+        ]
+      },
+      {
         path: '/config/state-persistence',
         title: 'menu.statePersistence',
         permission: 'config:persistence:read',

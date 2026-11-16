@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
+import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.config.core.MonitoringProperties;
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsCacheAndRetry;
@@ -19,6 +22,7 @@ import org.unreal.modelrouter.monitor.monitoring.config.DynamicMonitoringConfigU
 import org.unreal.modelrouter.monitor.monitoring.error.MetricsErrorHandler;
 import org.unreal.modelrouter.monitor.monitoring.security.SecurityAlertService;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.dto.AuditEventType;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -46,6 +50,7 @@ public class MonitoringController {
     private final MetricsDegradationStrategy degradationStrategy;
     private final MetricsCircuitBreaker circuitBreaker;
     private final ObjectProvider<SecurityAlertService> alertServiceProvider;
+    private final SecurityAuditService securityAuditService;
 
     public MonitoringController(final MonitoringProperties monitoringProperties,
                               final DynamicMonitoringConfigUpdater configUpdater,
@@ -54,7 +59,8 @@ public class MonitoringController {
                               final MetricsCacheAndRetry cacheAndRetry,
                               final MetricsDegradationStrategy degradationStrategy,
                               final MetricsCircuitBreaker circuitBreaker,
-                              final ObjectProvider<SecurityAlertService> alertServiceProvider) {
+                              final ObjectProvider<SecurityAlertService> alertServiceProvider,
+                              final SecurityAuditService securityAuditService) {
         this.monitoringProperties = monitoringProperties;
         this.configUpdater = configUpdater;
         this.errorHandler = errorHandler;
@@ -63,6 +69,49 @@ public class MonitoringController {
         this.degradationStrategy = degradationStrategy;
         this.circuitBreaker = circuitBreaker;
         this.alertServiceProvider = alertServiceProvider;
+        this.securityAuditService = securityAuditService;
+    }
+
+    /**
+     * 记录一条监控配置变更 / 应急操作审计。
+     *
+     * <p>为什么记在控制器：监控配置的写端点没有通用审计切面，而「谁在什么时候改了采样率、
+     * 强制降级、清缓存、打开指标熔断」事后必须可追（本轮决策 D4）。审计失败不阻断业务操作，
+     * 与调用历史的 FULL_CONTENT_ACCESS 审计同口径。
+     *
+     * <p>事件类型统一用 {@link AuditEventType#MONITORING_CONFIG_CHANGED}，靠 {@code action}
+     * 区分具体动作、{@code additionalData.detail} 记录目标值。
+     */
+    private void auditChange(final Authentication authentication, final String action, final String detail) {
+        if (securityAuditService == null) {
+            return;
+        }
+        try {
+            SecurityAuditEvent event = SecurityAuditEvent.builder()
+                    .eventType(AuditEventType.MONITORING_CONFIG_CHANGED.name())
+                    .userId(authentication != null ? authentication.getName() : null)
+                    .resource("monitoring")
+                    .action(action)
+                    .success(true)
+                    .additionalData(Map.of("detail", detail))
+                    .build();
+            securityAuditService.recordEvent(event)
+                    .subscribe(null,
+                            error -> logger.warn("记录监控配置审计失败: action={}, error={}", action, error.getMessage()));
+        } catch (Exception e) {
+            logger.warn("记录监控配置审计失败: action={}, error={}", action, e.getMessage());
+        }
+    }
+
+    private static double valueOr(final Double value, final double fallback) {
+        return value != null ? value : fallback;
+    }
+
+    private static void requireSamplingRate(final String name, final double value) {
+        if (value < 0.0 || value > 1.0) {
+            throw ApiException.of(ErrorCode.INVALID_REQUEST.code(),
+                    "采样率必须在 0~1 之间: " + name + "=" + value);
+        }
     }
 
     /**
@@ -94,7 +143,8 @@ public class MonitoringController {
      * with RouterResponse.success(...) implementations
      */
     @PutMapping("/config/enabled")
-    public Mono<RouterResponse<Object>> updateEnabled(@RequestBody final Map<String, Boolean> request) {
+    public Mono<RouterResponse<Object>> updateEnabled(@RequestBody final Map<String, Boolean> request,
+            final Authentication authentication) {
         return Mono.fromCallable(() -> {
             Boolean enabled = request.get("enabled");
             if (enabled == null) {
@@ -106,6 +156,7 @@ public class MonitoringController {
                     monitoringProperties.getCollectionInterval(),
                     monitoringProperties.getEnabledCategories());
             if (updated) {
+                auditChange(authentication, "CONFIG_ENABLED", "enabled=" + enabled);
                 return RouterResponse.<Object>success("监控状态已更新为: " + enabled);
             } else {
                 return RouterResponse.<Object>success("监控状态无变化");
@@ -120,7 +171,8 @@ public class MonitoringController {
      * 更新指标前缀
      */
     @PutMapping("/config/prefix")
-    public Mono<RouterResponse<Object>> updatePrefix(@RequestBody final Map<String, String> request) {
+    public Mono<RouterResponse<Object>> updatePrefix(@RequestBody final Map<String, String> request,
+            final Authentication authentication) {
         return Mono.fromCallable(() -> {
             String prefix = request.get("prefix");
             if (prefix == null || prefix.trim().isEmpty()) {
@@ -136,6 +188,7 @@ public class MonitoringController {
                     monitoringProperties.getCollectionInterval(),
                     monitoringProperties.getEnabledCategories());
             if (updated) {
+                auditChange(authentication, "CONFIG_PREFIX", "prefix=" + prefix);
                 return RouterResponse.<Object>success("指标前缀已更新为: " + prefix);
             } else {
                 return RouterResponse.<Object>success("指标前缀无变化");
@@ -150,7 +203,8 @@ public class MonitoringController {
      * 更新收集间隔
      */
     @PutMapping("/config/collection-interval")
-    public Mono<RouterResponse<Object>> updateCollectionInterval(@RequestBody final Map<String, String> request) {
+    public Mono<RouterResponse<Object>> updateCollectionInterval(@RequestBody final Map<String, String> request,
+            final Authentication authentication) {
         return Mono.fromCallable(() -> {
             String intervalStr = request.get("interval");
             if (intervalStr == null || intervalStr.trim().isEmpty()) {
@@ -166,6 +220,7 @@ public class MonitoringController {
                     monitoringProperties.isEnabled(), monitoringProperties.getPrefix(),
                     interval, monitoringProperties.getEnabledCategories());
             if (updated) {
+                auditChange(authentication, "CONFIG_COLLECTION_INTERVAL", "interval=" + interval);
                 return RouterResponse.<Object>success("收集间隔已更新为: " + interval);
             } else {
                 return RouterResponse.<Object>success("收集间隔无变化");
@@ -180,7 +235,8 @@ public class MonitoringController {
      * 更新启用的类别
      */
     @PutMapping("/config/categories")
-    public Mono<RouterResponse<Object>> updateEnabledCategories(@RequestBody final Map<String, Set<String>> request) {
+    public Mono<RouterResponse<Object>> updateEnabledCategories(@RequestBody final Map<String, Set<String>> request,
+            final Authentication authentication) {
         return Mono.fromCallable(() -> {
             Set<String> categories = request.get("categories");
             if (categories == null) {
@@ -195,12 +251,106 @@ public class MonitoringController {
                     monitoringProperties.isEnabled(), monitoringProperties.getPrefix(),
                     monitoringProperties.getCollectionInterval(), categories);
             if (updated) {
+                auditChange(authentication, "CONFIG_CATEGORIES", "categories=" + categories);
                 return RouterResponse.<Object>success("启用类别已更新为: " + categories);
             } else {
                 return RouterResponse.<Object>success("启用类别无变化");
             }
         }).onErrorResume(e -> {
             logger.error("更新启用类别失败: {}", e.getMessage());
+            return Mono.error(ApiExceptions.wrap(e, "更新失败"));
+        });
+    }
+
+    /**
+     * 更新采样率配置（热改，只改内存；重启回到配置文件值）。
+     *
+     * <p>为什么不用 {@code POST /actuator/metrics/sampling}：那个端点整族在
+     * {@code /actuator/**} 的 {@code hasRole('ADMIN')} 之下，运维角色调不了；本端点走
+     * {@code monitoring:config:write}，与控制台其余监控配置同一权限面。
+     *
+     * <p>字段为 {@code null} 表示「不改该项」，未传的项保留当前值。取值必须落在 0~1。
+     */
+    @PutMapping("/config/sampling")
+    public Mono<RouterResponse<Object>> updateSampling(
+            @RequestBody final SamplingUpdateRequest request,
+            final Authentication authentication) {
+        return Mono.fromCallable(() -> {
+            MonitoringProperties.Sampling current = monitoringProperties.getSampling();
+
+            MonitoringProperties.Sampling target = new MonitoringProperties.Sampling();
+            target.setRequestMetrics(valueOr(request.getRequestMetrics(), current.getRequestMetrics()));
+            target.setBackendMetrics(valueOr(request.getBackendMetrics(), current.getBackendMetrics()));
+            target.setInfrastructureMetrics(valueOr(request.getInfrastructureMetrics(), current.getInfrastructureMetrics()));
+            target.setTraceMetrics(valueOr(request.getTraceMetrics(), current.getTraceMetrics()));
+            target.setTraceProcessingMetrics(valueOr(request.getTraceProcessingMetrics(), current.getTraceProcessingMetrics()));
+            target.setTraceAnalysisMetrics(valueOr(request.getTraceAnalysisMetrics(), current.getTraceAnalysisMetrics()));
+
+            requireSamplingRate("request-metrics", target.getRequestMetrics());
+            requireSamplingRate("backend-metrics", target.getBackendMetrics());
+            requireSamplingRate("infrastructure-metrics", target.getInfrastructureMetrics());
+            requireSamplingRate("trace-metrics", target.getTraceMetrics());
+            requireSamplingRate("trace-processing-metrics", target.getTraceProcessingMetrics());
+            requireSamplingRate("trace-analysis-metrics", target.getTraceAnalysisMetrics());
+
+            boolean updated = configUpdater.updateSamplingConfig(target);
+            if (updated) {
+                auditChange(authentication, "CONFIG_SAMPLING",
+                        "request=" + target.getRequestMetrics()
+                                + ",backend=" + target.getBackendMetrics()
+                                + ",infrastructure=" + target.getInfrastructureMetrics()
+                                + ",trace=" + target.getTraceMetrics()
+                                + ",traceProcessing=" + target.getTraceProcessingMetrics()
+                                + ",traceAnalysis=" + target.getTraceAnalysisMetrics());
+                return RouterResponse.<Object>success("采样率已更新");
+            }
+            return RouterResponse.<Object>success("采样率无变化");
+        }).onErrorResume(e -> {
+            logger.error("更新采样率失败: {}", e.getMessage());
+            return Mono.error(ApiExceptions.wrap(e, "更新失败"));
+        });
+    }
+
+    /**
+     * 更新采集性能配置（异步处理 / 批大小 / 缓冲区），热改且只改内存。
+     *
+     * <p>约束：批大小 ≥ 1，缓冲区 ≥ 批大小（与启动期 {@code MonitoringConfigurationValidator}
+     * 的边界一致）；字段为 {@code null} 表示不改该项。
+     */
+    @PutMapping("/config/performance")
+    public Mono<RouterResponse<Object>> updatePerformance(
+            @RequestBody final PerformanceUpdateRequest request,
+            final Authentication authentication) {
+        return Mono.fromCallable(() -> {
+            MonitoringProperties.Performance current = monitoringProperties.getPerformance();
+
+            MonitoringProperties.Performance target = new MonitoringProperties.Performance();
+            target.setAsyncProcessing(request.getAsyncProcessing() != null
+                    ? request.getAsyncProcessing() : current.isAsyncProcessing());
+            int batchSize = request.getBatchSize() != null ? request.getBatchSize() : current.getBatchSize();
+            int bufferSize = request.getBufferSize() != null ? request.getBufferSize() : current.getBufferSize();
+
+            if (batchSize < 1) {
+                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "批大小必须 ≥ 1: " + batchSize);
+            }
+            if (bufferSize < batchSize) {
+                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(),
+                        "缓冲区必须 ≥ 批大小: bufferSize=" + bufferSize + ", batchSize=" + batchSize);
+            }
+            target.setBatchSize(batchSize);
+            target.setBufferSize(bufferSize);
+
+            boolean updated = configUpdater.updatePerformanceConfig(target);
+            if (updated) {
+                auditChange(authentication, "CONFIG_PERFORMANCE",
+                        "async=" + target.isAsyncProcessing()
+                                + ",batchSize=" + target.getBatchSize()
+                                + ",bufferSize=" + target.getBufferSize());
+                return RouterResponse.<Object>success("采集性能配置已更新");
+            }
+            return RouterResponse.<Object>success("采集性能配置无变化");
+        }).onErrorResume(e -> {
+            logger.error("更新采集性能配置失败: {}", e.getMessage());
             return Mono.error(ApiExceptions.wrap(e, "更新失败"));
         });
     }
@@ -271,7 +421,8 @@ public class MonitoringController {
      * 重置指定组件的错误状态
      */
     @PostMapping("/errors/reset")
-    public Mono<RouterResponse<Object>> resetErrorState(@RequestBody final Map<String, String> request) {
+    public Mono<RouterResponse<Object>> resetErrorState(@RequestBody final Map<String, String> request,
+            final Authentication authentication) {
         return Mono.fromCallable(() -> {
             String component = request.get("component");
             String operation = request.get("operation");
@@ -281,6 +432,7 @@ public class MonitoringController {
             }
 
             errorHandler.resetErrorState(component, operation);
+            auditChange(authentication, "EMERGENCY_ERROR_RESET", component + ":" + operation);
             return RouterResponse.<Object>success("错误状态已重置: " + component + ":" + operation);
         }).onErrorResume(e -> {
             logger.error("重置错误状态失败: {}", e.getMessage());
@@ -315,7 +467,8 @@ public class MonitoringController {
      * 设置降级级别
      */
     @PostMapping("/degradation/level")
-    public Mono<RouterResponse<Object>> setDegradationLevel(@RequestBody final Map<String, String> request) {
+    public Mono<RouterResponse<Object>> setDegradationLevel(@RequestBody final Map<String, String> request,
+            final Authentication authentication) {
         return Mono.fromCallable(() -> {
             String levelStr = request.get("level");
             if (levelStr == null) {
@@ -326,6 +479,7 @@ public class MonitoringController {
                 MetricsDegradationStrategy.DegradationLevel level =
                         MetricsDegradationStrategy.DegradationLevel.valueOf(levelStr.toUpperCase());
                 degradationStrategy.setDegradationLevel(level);
+                auditChange(authentication, "EMERGENCY_DEGRADATION_LEVEL", level.name());
                 return RouterResponse.<Object>success("降级级别已设置为: " + level.getDescription());
             } catch (IllegalArgumentException e) {
                 throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "Invalid degradation level: " + levelStr);
@@ -340,7 +494,8 @@ public class MonitoringController {
      * 启用/禁用降级策略自动模式
      */
     @PostMapping("/degradation/auto-mode")
-    public Mono<RouterResponse<Object>> setAutoMode(@RequestBody final Map<String, Boolean> request) {
+    public Mono<RouterResponse<Object>> setAutoMode(@RequestBody final Map<String, Boolean> request,
+            final Authentication authentication) {
         return Mono.fromCallable(() -> {
             Boolean enabled = request.get("enabled");
             if (enabled == null) {
@@ -348,6 +503,7 @@ public class MonitoringController {
             }
 
             degradationStrategy.setAutoModeEnabled(enabled);
+            auditChange(authentication, "EMERGENCY_DEGRADATION_AUTO_MODE", "enabled=" + enabled);
             return RouterResponse.<Object>success("降级策略自动模式已" + (enabled ? "启用" : "禁用"));
         }).onErrorResume(e -> {
             logger.error("设置自动模式失败: {}", e.getMessage());
@@ -359,9 +515,10 @@ public class MonitoringController {
      * 强制恢复到正常模式
      */
     @PostMapping("/degradation/force-recovery")
-    public Mono<RouterResponse<Object>> forceRecovery() {
+    public Mono<RouterResponse<Object>> forceRecovery(final Authentication authentication) {
         return Mono.fromCallable(() -> {
             degradationStrategy.forceRecovery();
+            auditChange(authentication, "EMERGENCY_DEGRADATION_RECOVERY", "force-recovery");
             return RouterResponse.<Object>success("已强制恢复到正常模式");
         }).onErrorResume(e -> {
             logger.error("强制恢复失败: {}", e.getMessage());
@@ -395,9 +552,10 @@ public class MonitoringController {
      * 清空缓存
      */
     @PostMapping("/cache/clear")
-    public Mono<RouterResponse<Object>> clearCache() {
+    public Mono<RouterResponse<Object>> clearCache(final Authentication authentication) {
         return Mono.fromCallable(() -> {
             cacheAndRetry.clearCache();
+            auditChange(authentication, "EMERGENCY_CACHE_CLEAR", "clear");
             return RouterResponse.<Object>success("缓存已清空");
         }).onErrorResume(e -> {
             logger.error("清空缓存失败: {}", e.getMessage());
@@ -464,8 +622,9 @@ public class MonitoringController {
      * 也不会使任何实例进入熔断状态。</p>
      */
     @PostMapping("/metrics-pipeline/circuit-breaker/force-open")
-    public Mono<RouterResponse<Object>> forceOpenMetricsPipelineCircuitBreaker() {
-        return forceOpenCircuitBreakerInternal();
+    public Mono<RouterResponse<Object>> forceOpenMetricsPipelineCircuitBreaker(
+            final Authentication authentication) {
+        return forceOpenCircuitBreakerInternal(authentication);
     }
 
     /**
@@ -476,13 +635,16 @@ public class MonitoringController {
      */
     @Deprecated
     @PostMapping("/circuit-breaker/force-open")
-    public Mono<RouterResponse<Object>> forceOpenCircuitBreaker() {
-        return forceOpenCircuitBreakerInternal();
+    public Mono<RouterResponse<Object>> forceOpenCircuitBreaker(
+            final Authentication authentication) {
+        return forceOpenCircuitBreakerInternal(authentication);
     }
 
-    private Mono<RouterResponse<Object>> forceOpenCircuitBreakerInternal() {
+    private Mono<RouterResponse<Object>> forceOpenCircuitBreakerInternal(
+            final Authentication authentication) {
         return Mono.fromCallable(() -> {
             circuitBreaker.forceOpen();
+            auditChange(authentication, "EMERGENCY_METRICS_BREAKER_OPEN", "force-open");
             // 文案必须写明作用域：旧文案「熔断器已强制开启」会被误读为「强制熔断某个实例」
             return RouterResponse.<Object>success("已强制打开指标处理链路熔断器（仅影响监控指标处理，不影响实例路由熔断器）");
         }).onErrorResume(e -> {
@@ -497,8 +659,9 @@ public class MonitoringController {
      * <p>作用域：仅作用于监控指标处理链路（{@link MetricsCircuitBreaker}），不影响实例路由熔断器。</p>
      */
     @PostMapping("/metrics-pipeline/circuit-breaker/force-close")
-    public Mono<RouterResponse<Object>> forceCloseMetricsPipelineCircuitBreaker() {
-        return forceCloseCircuitBreakerInternal();
+    public Mono<RouterResponse<Object>> forceCloseMetricsPipelineCircuitBreaker(
+            final Authentication authentication) {
+        return forceCloseCircuitBreakerInternal(authentication);
     }
 
     /**
@@ -509,13 +672,16 @@ public class MonitoringController {
      */
     @Deprecated
     @PostMapping("/circuit-breaker/force-close")
-    public Mono<RouterResponse<Object>> forceCloseCircuitBreaker() {
-        return forceCloseCircuitBreakerInternal();
+    public Mono<RouterResponse<Object>> forceCloseCircuitBreaker(
+            final Authentication authentication) {
+        return forceCloseCircuitBreakerInternal(authentication);
     }
 
-    private Mono<RouterResponse<Object>> forceCloseCircuitBreakerInternal() {
+    private Mono<RouterResponse<Object>> forceCloseCircuitBreakerInternal(
+            final Authentication authentication) {
         return Mono.fromCallable(() -> {
             circuitBreaker.forceClose();
+            auditChange(authentication, "EMERGENCY_METRICS_BREAKER_CLOSE", "force-close");
             return RouterResponse.<Object>success("已强制关闭指标处理链路熔断器（仅影响监控指标处理，不影响实例路由熔断器）");
         }).onErrorResume(e -> {
             logger.error("强制关闭指标处理链路熔断器失败: {}", e.getMessage());
@@ -603,5 +769,99 @@ public class MonitoringController {
         public Map<String, String> customTags;
         public MonitoringProperties.Sampling sampling;
         public MonitoringProperties.Performance performance;
+    }
+
+
+    /**
+     * 采样率更新请求：字段为 {@code null} 表示「不改该项」，未传的项保留当前值。
+     */
+    public static final class SamplingUpdateRequest {
+        private Double requestMetrics;
+        private Double backendMetrics;
+        private Double infrastructureMetrics;
+        private Double traceMetrics;
+        private Double traceProcessingMetrics;
+        private Double traceAnalysisMetrics;
+
+        public Double getRequestMetrics() {
+            return requestMetrics;
+        }
+
+        public void setRequestMetrics(final Double requestMetrics) {
+            this.requestMetrics = requestMetrics;
+        }
+
+        public Double getBackendMetrics() {
+            return backendMetrics;
+        }
+
+        public void setBackendMetrics(final Double backendMetrics) {
+            this.backendMetrics = backendMetrics;
+        }
+
+        public Double getInfrastructureMetrics() {
+            return infrastructureMetrics;
+        }
+
+        public void setInfrastructureMetrics(final Double infrastructureMetrics) {
+            this.infrastructureMetrics = infrastructureMetrics;
+        }
+
+        public Double getTraceMetrics() {
+            return traceMetrics;
+        }
+
+        public void setTraceMetrics(final Double traceMetrics) {
+            this.traceMetrics = traceMetrics;
+        }
+
+        public Double getTraceProcessingMetrics() {
+            return traceProcessingMetrics;
+        }
+
+        public void setTraceProcessingMetrics(final Double traceProcessingMetrics) {
+            this.traceProcessingMetrics = traceProcessingMetrics;
+        }
+
+        public Double getTraceAnalysisMetrics() {
+            return traceAnalysisMetrics;
+        }
+
+        public void setTraceAnalysisMetrics(final Double traceAnalysisMetrics) {
+            this.traceAnalysisMetrics = traceAnalysisMetrics;
+        }
+    }
+
+    /**
+     * 采集性能更新请求：字段为 {@code null} 表示「不改该项」。
+     */
+    public static final class PerformanceUpdateRequest {
+        private Boolean asyncProcessing;
+        private Integer batchSize;
+        private Integer bufferSize;
+
+        public Boolean getAsyncProcessing() {
+            return asyncProcessing;
+        }
+
+        public void setAsyncProcessing(final Boolean asyncProcessing) {
+            this.asyncProcessing = asyncProcessing;
+        }
+
+        public Integer getBatchSize() {
+            return batchSize;
+        }
+
+        public void setBatchSize(final Integer batchSize) {
+            this.batchSize = batchSize;
+        }
+
+        public Integer getBufferSize() {
+            return bufferSize;
+        }
+
+        public void setBufferSize(final Integer bufferSize) {
+            this.bufferSize = bufferSize;
+        }
     }
 }

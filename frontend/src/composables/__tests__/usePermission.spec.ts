@@ -48,12 +48,12 @@ describe('filterMenuByPermission', () => {
     expect(groups.map(group => group.index)).toEqual(['dashboard', 'dev-tools'])
   })
 
-  it('ADMIN 拥有全部权限 ⇒ 7 组 32 项全在', () => {
+  it('ADMIN 拥有全部权限 ⇒ 7 组 33 项全在', () => {
     setup([], ['ADMIN'])
     const { filterMenuByPermission } = usePermission()
     const groups = filterMenuByPermission(menuGroups)
     expect(groups).toHaveLength(7)
-    expect(groups.reduce((total, group) => total + group.children.length, 0)).toBe(32)
+    expect(groups.reduce((total, group) => total + group.children.length, 0)).toBe(33)
   })
 
   it('无 permission 声明的菜单项（客户端接入）对所有已登录用户可见', () => {
@@ -139,9 +139,9 @@ describe('菜单可见性：权限码是唯一门控', () => {
     setActivePinia(createPinia())
   })
 
-  it('OPERATOR 持审计/集群/健康/操作记录码时，安全与系统组只显示有码的项', () => {
+  it('OPERATOR 持审计/集群/健康/操作记录/监控配置码时，安全与系统组只显示有码的项', () => {
     setup(
-      ['security:audit:read', 'config:cluster:read', 'config:health:read', 'monitoring:console:read', 'config:callhistory:read', 'config:persistence:read'],
+      ['security:audit:read', 'config:cluster:read', 'config:health:read', 'monitoring:console:read', 'config:callhistory:read', 'config:persistence:read', 'monitoring:config:write'],
       ['OPERATOR']
     )
     const { filterMenuByPermission } = usePermission()
@@ -152,9 +152,11 @@ describe('菜单可见性：权限码是唯一门控', () => {
       '/security/audit-logs',
       '/security/record-governance'
     ])
-    // 系统组：accounts/permissions 需要 system:* 码；追踪配置需要 tracing:config:* ⇒ 都不显示
+    // 系统组：accounts/permissions 需要 system:* 码；追踪配置需要 tracing:config:* ⇒ 都不显示；
+    // 「监控配置」与「状态持久化」都是运行时配置面，OPERATOR 持相应写码/读码即可见。
     const system = groups.find(group => group.index === 'system')
     expect(system?.children.map(item => item.path)).toEqual([
+      '/monitoring/config',
       '/config/state-persistence',
       '/system/cluster',
       '/system/health',
@@ -181,12 +183,12 @@ describe('菜单可见性：权限码是唯一门控', () => {
     expect(security?.children.map(item => item.path)).toEqual(['/security/audit-logs'])
   })
 
-  it('ADMIN 不受影响（安全组 6 项、系统组 7 项都在）', () => {
+  it('ADMIN 不受影响（安全组 6 项、系统组 8 项都在）', () => {
     setup([], ['ADMIN'])
     const { filterMenuByPermission } = usePermission()
     const groups = filterMenuByPermission(menuGroups)
     expect(groups.find(group => group.index === 'security')?.children).toHaveLength(6)
-    expect(groups.find(group => group.index === 'system')?.children).toHaveLength(7)
+    expect(groups.find(group => group.index === 'system')?.children).toHaveLength(8)
   })
 
   it('调用历史拆码：callhistory:read 给运维（可见），USER/VIEWER 不可见', () => {

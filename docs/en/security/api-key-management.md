@@ -459,6 +459,9 @@ to a default, so use these names verbatim when filtering, exporting or building 
 #### Call History Configuration
 `RECORD_LEVEL_CHANGE`
 
+#### Monitoring Configuration
+`MONITORING_CONFIG_CHANGED` (hot edits of enabled / prefix / collection interval / categories / sampling / performance, plus emergency operations)
+
 #### System Events
 `SYSTEM_CLEANUP` · `SYSTEM_MAINTENANCE`
 

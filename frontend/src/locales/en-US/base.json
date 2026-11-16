@@ -92,6 +92,7 @@
     "recordGovernance": "Record Governance",
     "accounts": "Accounts",
     "permissions": "Permissions",
+    "monitoringConfig": "Monitoring Config",
     "statePersistence": "State Persistence",
     "clusterConfig": "Cluster Settings",
     "healthConfig": "Health Probe Settings",
@@ -128,7 +129,8 @@
     "playgroundEmbedding": "Embedding",
     "playgroundRerank": "Rerank",
     "playgroundAudio": "Audio Service",
-    "playgroundImage": "Image Service"
+    "playgroundImage": "Image Service",
+    "monitoringRuntime": "Runtime & Emergency"
   },
   "route": {
     "dashboard": "Overview",
@@ -171,6 +173,8 @@
     "tracingDashboard": "Tracing Dashboard",
     "tracingSearch": "Tracing",
     "tracingManagement": "Tracing Config",
+    "monitoringConfig": "Monitoring Config",
+    "monitoringRuntime": "Runtime & Emergency",
     "playgroundChat": "Chat Playground",
     "playgroundEmbedding": "Embedding",
     "playgroundRerank": "Rerank",

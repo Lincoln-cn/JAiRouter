@@ -386,6 +386,22 @@ GET /api/monitoring/health
 GET /api/monitoring/config
 ```
 
+热改基础配置（写操作只改内存，重启后回到配置文件；每次成功变更写一条 `MONITORING_CONFIG_CHANGED` 审计）：
+
+```http
+PUT /api/monitoring/config/enabled
+PUT /api/monitoring/config/prefix
+PUT /api/monitoring/config/collection-interval
+PUT /api/monitoring/config/categories
+PUT /api/monitoring/config/sampling
+PUT /api/monitoring/config/performance
+```
+
+> `sampling` 六项取值为 0~1（请求 / 后端 / 基础设施 / 链路 / 链路处理 / 链路分析）；
+> `performance` 要求 `batchSize ≥ 1` 且 `bufferSize ≥ batchSize`，越界返回 400。
+> 这些端点需要 `monitoring:config:write`（默认授 ADMIN 与 OPERATOR），不能用
+> `/actuator/metrics/*` 替代 —— 后者只对 ADMIN 开放，且没有取值校验。
+
 ### 指标处理链路熔断器统计
 
 获取指标处理链路熔断器（`MetricsCircuitBreaker`）的统计信息：

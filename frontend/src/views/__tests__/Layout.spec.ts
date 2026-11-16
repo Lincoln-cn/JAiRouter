@@ -111,7 +111,7 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
       items: group.findAll('.el-menu-item').map(node => node.text())
     }))
 
-  it('OPERATOR 视角：安全组只剩审计日志/记录治理，系统组只剩有码的 4 项', async () => {
+  it('OPERATOR 视角：安全组只剩审计日志/记录治理，系统组只剩有码的 5 项', async () => {
     const wrapper = await mountAt('/config/state-persistence', [
       'overview:dashboard:read',
       'security:audit:read',
@@ -119,7 +119,8 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
       'config:persistence:read',
       'config:cluster:read',
       'config:health:read',
-      'monitoring:console:read'
+      'monitoring:console:read',
+      'monitoring:config:write'
     ], ['OPERATOR'])
 
     const groups = sidebarGroups(wrapper)
@@ -128,6 +129,7 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
     expect(groups.find(group => group.title === '安全')?.items).toEqual(['审计日志', '记录治理'])
     // API Key / PII 脱敏 / JWT 令牌 / 黑名单 仍需各自的 read 码（OPERATOR 不持有）
     expect(groups.find(group => group.title === '系统')?.items).toEqual([
+      '监控配置',
       '状态持久化',
       '集群设置',
       '健康探针设置',
@@ -136,7 +138,7 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
     wrapper.unmount()
   })
 
-  it('ADMIN 视角：七组齐全，安全 6 项与系统 7 项都在（反证不是整栏都没渲染）', async () => {
+  it('ADMIN 视角：七组齐全，安全 6 项与系统 8 项都在（反证不是整栏都没渲染）', async () => {
     const wrapper = await mountAt('/system/cluster', [], ['ADMIN'])
 
     const groups = sidebarGroups(wrapper)
@@ -150,7 +152,7 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
       '开发工具'
     ])
     expect(groups.find(group => group.title === '安全')?.items).toHaveLength(6)
-    expect(groups.find(group => group.title === '系统')?.items).toHaveLength(7)
+    expect(groups.find(group => group.title === '系统')?.items).toHaveLength(8)
     wrapper.unmount()
   })
 
