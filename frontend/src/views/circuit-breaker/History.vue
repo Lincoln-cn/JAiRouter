@@ -8,7 +8,9 @@
         type="danger"
         plain
         @click="cleanupHistory"
-      >{{ t('circuitBreaker.history.cleanupExpired') }}</el-button>
+      >
+        {{ t('circuitBreaker.history.cleanupExpired') }}
+      </el-button>
     </template>
 
     <template #stats>
