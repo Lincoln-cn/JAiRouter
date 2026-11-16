@@ -19,6 +19,7 @@ import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsCircuitBr
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsDegradationStrategy;
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MonitoringHealthChecker;
 import org.unreal.modelrouter.monitor.monitoring.config.DynamicMonitoringConfigUpdater;
+import org.unreal.modelrouter.monitor.monitoring.config.MonitoringHotReloadValidator;
 import org.unreal.modelrouter.monitor.monitoring.error.MetricsErrorHandler;
 import org.unreal.modelrouter.monitor.monitoring.security.SecurityAlertService;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
@@ -100,17 +101,6 @@ public class MonitoringController {
                             error -> logger.warn("记录监控配置审计失败: action={}, error={}", action, error.getMessage()));
         } catch (RuntimeException e) {
             logger.warn("记录监控配置审计失败: action={}, error={}", action, e.getMessage());
-        }
-    }
-
-    private static double valueOr(final Double value, final double fallback) {
-        return value != null ? value : fallback;
-    }
-
-    private static void requireSamplingRate(final String name, final double value) {
-        if (value < 0.0 || value > 1.0) {
-            throw ApiException.of(ErrorCode.INVALID_REQUEST.code(),
-                    "采样率必须在 0~1 之间: " + name + "=" + value);
         }
     }
 
@@ -279,19 +269,19 @@ public class MonitoringController {
             MonitoringProperties.Sampling current = monitoringProperties.getSampling();
 
             MonitoringProperties.Sampling target = new MonitoringProperties.Sampling();
-            target.setRequestMetrics(valueOr(request.getRequestMetrics(), current.getRequestMetrics()));
-            target.setBackendMetrics(valueOr(request.getBackendMetrics(), current.getBackendMetrics()));
-            target.setInfrastructureMetrics(valueOr(request.getInfrastructureMetrics(), current.getInfrastructureMetrics()));
-            target.setTraceMetrics(valueOr(request.getTraceMetrics(), current.getTraceMetrics()));
-            target.setTraceProcessingMetrics(valueOr(request.getTraceProcessingMetrics(), current.getTraceProcessingMetrics()));
-            target.setTraceAnalysisMetrics(valueOr(request.getTraceAnalysisMetrics(), current.getTraceAnalysisMetrics()));
+            target.setRequestMetrics(MonitoringHotReloadValidator.valueOr(request.getRequestMetrics(), current.getRequestMetrics()));
+            target.setBackendMetrics(MonitoringHotReloadValidator.valueOr(request.getBackendMetrics(), current.getBackendMetrics()));
+            target.setInfrastructureMetrics(MonitoringHotReloadValidator.valueOr(request.getInfrastructureMetrics(), current.getInfrastructureMetrics()));
+            target.setTraceMetrics(MonitoringHotReloadValidator.valueOr(request.getTraceMetrics(), current.getTraceMetrics()));
+            target.setTraceProcessingMetrics(MonitoringHotReloadValidator.valueOr(request.getTraceProcessingMetrics(), current.getTraceProcessingMetrics()));
+            target.setTraceAnalysisMetrics(MonitoringHotReloadValidator.valueOr(request.getTraceAnalysisMetrics(), current.getTraceAnalysisMetrics()));
 
-            requireSamplingRate("request-metrics", target.getRequestMetrics());
-            requireSamplingRate("backend-metrics", target.getBackendMetrics());
-            requireSamplingRate("infrastructure-metrics", target.getInfrastructureMetrics());
-            requireSamplingRate("trace-metrics", target.getTraceMetrics());
-            requireSamplingRate("trace-processing-metrics", target.getTraceProcessingMetrics());
-            requireSamplingRate("trace-analysis-metrics", target.getTraceAnalysisMetrics());
+            MonitoringHotReloadValidator.requireSamplingRate("request-metrics", target.getRequestMetrics());
+            MonitoringHotReloadValidator.requireSamplingRate("backend-metrics", target.getBackendMetrics());
+            MonitoringHotReloadValidator.requireSamplingRate("infrastructure-metrics", target.getInfrastructureMetrics());
+            MonitoringHotReloadValidator.requireSamplingRate("trace-metrics", target.getTraceMetrics());
+            MonitoringHotReloadValidator.requireSamplingRate("trace-processing-metrics", target.getTraceProcessingMetrics());
+            MonitoringHotReloadValidator.requireSamplingRate("trace-analysis-metrics", target.getTraceAnalysisMetrics());
 
             boolean updated = configUpdater.updateSamplingConfig(target);
             if (updated) {
@@ -330,13 +320,7 @@ public class MonitoringController {
             int batchSize = request.getBatchSize() != null ? request.getBatchSize() : current.getBatchSize();
             int bufferSize = request.getBufferSize() != null ? request.getBufferSize() : current.getBufferSize();
 
-            if (batchSize < 1) {
-                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(), "批大小必须 ≥ 1: " + batchSize);
-            }
-            if (bufferSize < batchSize) {
-                throw ApiException.of(ErrorCode.INVALID_REQUEST.code(),
-                        "缓冲区必须 ≥ 批大小: bufferSize=" + bufferSize + ", batchSize=" + batchSize);
-            }
+            MonitoringHotReloadValidator.requirePerformanceBounds(batchSize, bufferSize);
             target.setBatchSize(batchSize);
             target.setBufferSize(bufferSize);
 

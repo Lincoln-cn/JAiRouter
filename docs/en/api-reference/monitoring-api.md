@@ -418,7 +418,50 @@ PUT /api/monitoring/config/performance
 > trace processing / trace analysis); `performance` requires `batchSize >= 1` and
 > `bufferSize >= batchSize`, otherwise the endpoint returns 400. These endpoints require
 > `monitoring:config:write` (granted to ADMIN and OPERATOR by default). They cannot be replaced by
-> `/actuator/metrics/*`: that surface is ADMIN-only and performs no value validation.
+> `/actuator/metrics/*`: that surface is ADMIN-only. Both paths now share the same value
+> validation (see the next section), but the actuator path emits no configuration-change event
+> and writes no audit record.
+
+
+### Internal operations surface (`/actuator/metrics/*`)
+
+`MetricsManagementController` exposes a second set of configuration and emergency endpoints under
+`/actuator/metrics`. The whole family is guarded by `hasRole('ADMIN')` in `SecurityConfiguration` and
+is a break-glass path for operators; the web console does not use it.
+
+```http
+GET  /actuator/metrics/status
+GET  /actuator/metrics/performance
+GET  /actuator/metrics/memory
+GET  /actuator/metrics/circuit-breaker
+GET  /actuator/metrics/sampling
+POST /actuator/metrics/sampling                     # marked @Deprecated
+GET  /actuator/metrics/performance-config
+POST /actuator/metrics/performance-config           # marked @Deprecated
+POST /actuator/metrics/memory/cleanup
+POST /actuator/metrics/memory/clear-cache
+POST /actuator/metrics/metrics-pipeline/circuit-breaker/{action}
+POST /actuator/metrics/circuit-breaker/{action}
+GET  /actuator/metrics/error-handler
+POST /actuator/metrics/error-handler/reset
+GET  /actuator/metrics/degradation
+POST /actuator/metrics/degradation/level
+POST /actuator/metrics/degradation/auto-mode
+POST /actuator/metrics/degradation/force-recovery
+```
+
+The two write endpoints (`POST /sampling`, `POST /performance-config`) overlap with
+`PUT /api/monitoring/config/*` and now share the same value validation (sampling rates in 0~1,
+`batchSize >= 1` and `bufferSize >= batchSize`; out-of-range input returns 400). What differs is
+what they skip: they mutate the in-memory configuration object directly, emit no
+configuration-change event, and write no audit record. Use `/api/monitoring/config/*` for routine
+operations.
+
+> Prefix overlap: `/actuator/metrics/sampling` shares its prefix with the built-in
+> `/actuator/metrics/{metricName}` endpoint. Production exposes only
+> `health,info,prometheus,threaddump` by default (see `application-prod.yml`), so these custom
+> write endpoints are normally available in dev only — do not treat them as a production hot-reload
+> entry point.
 
 ### Metrics Pipeline Circuit Breaker Statistics
 

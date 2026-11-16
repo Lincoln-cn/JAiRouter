@@ -3,6 +3,7 @@
     <el-popconfirm
       v-if="interactive"
       :title="title"
+      :width="width"
       :confirm-button-text="confirmText"
       :cancel-button-text="cancelText"
       :confirm-button-type="type"
@@ -51,13 +52,15 @@ const props = withDefaults(
   defineProps<{
     /** 确认气泡文案 */
     title: string
+    /** 气泡宽度（px）：文案带影响面数字时会变长，默认 150 会挤成多行 */
+    width?: number
     confirmText?: string
     cancelText?: string
     type?: 'primary' | 'danger' | 'warning'
     disabled?: boolean
     loading?: boolean
   }>(),
-  { type: 'primary', disabled: false, loading: false, confirmText: undefined, cancelText: undefined }
+  { type: 'primary', disabled: false, loading: false, confirmText: undefined, cancelText: undefined, width: undefined }
 )
 
 const emit = defineEmits<{

@@ -30,6 +30,11 @@
     "closeBreaker": "强制关闭",
     "openBreakerConfirm": "确认强制打开熔断？指标采集会立即中断。",
     "closeBreakerConfirm": "确认强制关闭熔断？",
+    "clearCacheConfirmWithEntries": "确认清空指标缓存？将移除 {entries} 条已缓存的指标项（只影响内存缓存，不涉及业务数据）。",
+    "resetErrorsConfirmWithTarget": "确认重置 {component}/{operation} 的错误状态？错误统计里当前共 {keys} 个键。",
+    "forceRecoveryConfirmWithLevel": "确认强制恢复到正常模式？当前降级级别为 {level}。",
+    "openBreakerConfirmWithState": "确认强制打开熔断？当前状态 {state}，打开后指标采集会立即中断。",
+    "closeBreakerConfirmWithState": "确认强制关闭熔断？当前状态 {state}。",
     "rawTitle": "原始数据",
     "done": "已完成",
     "failed": "操作失败"
