@@ -311,75 +311,101 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 
 </details>
 
-<details>
-<summary><b>控制台截图</b></summary>
+## 控制台导览
+
+控制台是一个 Vue 3 单页应用，由同一个 Spring Boot jar 在 `/admin/` 提供 —— 不用单独部署前端容器，也不额外占端口。界面双语（zh-CN / en-US），自带亮色与暗色主题。下面的截图都取自运行中的实例（演示数据），因此需要流量累积的面板显示的是空态，而不是专门摆拍的界面。
+
+### 指挥中心 —— 一屏回答「哪里坏了」
 
 <p align="center">
-  <img src="screenshots/dashboard-zh-CN-light.png" alt="JAiRouter 仪表盘" width="720">
-  <br/>
-  <em>仪表盘 —— 实时的服务、实例与系统指标</em>
+  <img src="screenshots/dashboard-zh-CN-light.png" alt="指挥中心 —— 服务、实例、模型计数，系统指标与治理链">
 </p>
+
+顶部那一行是这套部署的清单：服务、实例、模型、健康实例数、不健康实例数、账号数。下面是与「要不要重启」直接相关的系统指标 —— JVM 内存、线程数、CPU 负载、运行时长、认证成功与失败、审计事件 —— 以及一条**治理链**，报告每个请求都要经过的四个环节各自的状态：规则命中、限流、断路器、负载均衡。客户端报错时，先在这里判断是哪一环出的问题。
+
+### 服务管理 —— 服务类型、适配器与策略
 
 <p align="center">
-  <img src="screenshots/service-management-zh-CN-light.png" alt="服务管理" width="720">
-  <img src="screenshots/instance-management-zh-CN-light.png" alt="实例管理" width="720">
-  <br/>
-  <em>服务与实例管理 —— 每个服务的适配器与负载均衡策略</em>
+  <img src="screenshots/service-management-zh-CN-light.png" alt="服务管理 —— 服务类型、适配器与负载均衡策略">
 </p>
+
+一个服务就是（服务类型、适配器、负载均衡策略）三元组。列表里是网关能提供的七种服务类型 —— 对话、向量化、重排、语音转文字、文字转语音、图像生成、图像编辑 —— 各自绑定一个适配器（GPUStack、vLLM、Ollama、OpenAI……）和一套策略，从轮询到最少连接、IP 哈希。页面顶部的四步引导就是接一个新后端该走的顺序：配置适配器 → 创建服务 → 添加实例 → 去演练场试一次。适配器配错了会在第一步就暴露，而不是等第一个真实请求打进来。
+
+### 实例管理 —— 服务背后的真实端点
 
 <p align="center">
-  <img src="screenshots/rule-management-zh-CN-light.png" alt="规则引擎" width="720">
-  <br/>
-  <em>可视化路由规则 —— 命中统计、优先级拖拽与模板</em>
+  <img src="screenshots/instance-management-zh-CN-light.png" alt="实例管理 —— Base URL、权重、请求头、标签与单实例控制">
 </p>
+
+一个实例就是一个真实端点：Base URL、路径、权重、单实例请求头与标签，按服务类型分页签。权重供加权类策略使用，标签供规则条件使用，单实例请求头则是让下游凭据只留在那一个上游的写法。每一行都自带限流与断路器，某个上游出问题时可以只隔离它、只修它，不用动整个服务。
+
+### 路由规则 —— 条件、优先级与目标
 
 <p align="center">
-  <img src="screenshots/call-history-dashboard-zh-CN-light.png" alt="调用历史分析" width="720">
-  <br/>
-  <em>调用历史分析 —— 成功率、延迟与 Token 用量趋势</em>
+  <img src="screenshots/rule-management-zh-CN-light.png" alt="路由规则 —— 条件、优先级、命中计数与目标实例">
 </p>
+
+规则在任何负载均衡决策之前生效。上图这条规则把请求头 `x-tenant` 等于 `tenant-a` 的请求以优先级 90 固定到 `internal-gpu-1`。规则可以拖拽排序，可以停用而不必删除，命中计数是实时更新的 —— 所以一条从不命中的规则是看得见的，不会悄悄变成死配置。常用形态（租户固定、灰度分流、按请求头 A/B）有模板可直接套。
+
+### 调用历史分析 —— 三档记录，一个看板
 
 <p align="center">
-  <img src="screenshots/extra-slow-query-analysis-zh-CN-light.png" alt="慢查询分析" width="720">
-  <br/>
-  <em>慢查询分析 —— 热点、告警状态与操作分布</em>
+  <img src="screenshots/call-history-dashboard-zh-CN-light.png" alt="调用历史看板 —— 统计卡、每日趋势、模型与服务类型分布">
 </p>
+
+每一次调用都按三档之一记录 —— 仅元数据、脱敏摘要、AES-256-GCM 加密全文 —— 这个页面把记录收敛成运维真正要看的数：总请求与失败请求、成功率、平均响应时间、Token 消耗与单请求均值，再往下是每日趋势、Top 10 模型、服务类型构成和 24 小时分布。顶部的时间范围会一次性筛掉所有面板，原始记录就在旁边的页签里。
+
+### 慢查询分析 —— 延迟到底花在哪
 
 <p align="center">
-  <img src="screenshots/playground-chat-zh-CN-light.png" alt="AI 演练场" width="720">
-  <br/>
-  <em>演练场 —— 对话、向量化、重排、语音与图像测试台</em>
+  <img src="screenshots/extra-slow-query-analysis-zh-CN-light.png" alt="慢查询分析 —— 慢查询计数、按操作类型的耗时与告警统计">
 </p>
+
+慢查询会被计数、按操作归类，并给出每组的次数、平均、最大、最小与总耗时，另有一张热点表指向最差的那几个。右侧两个数字容易读错：告警**触发**次数与告警**抑制**次数。抑制走的是冷却逻辑 —— 同一个热点持续越过阈值只记一次，之后安静下来，所以「抑制多、触发少」是设计在正常工作，而不是阈值坏了。
+
+### AI 演练场 —— 接客户端之前先验模型
 
 <p align="center">
-  <img src="screenshots/quota-config-zh-CN-light.png" alt="配额运行时配置" width="720">
-  <br/>
-  <em>配额运行时配置 —— 仅重启生效的字段为只读并带角标</em>
+  <img src="screenshots/playground-chat-zh-CN-light.png" alt="AI 演练场 —— 对话、向量化、重排、语音与图像测试台">
 </p>
+
+一个模型选择器后面挂了五个测试台：对话、向量化、重排、语音服务与图像服务。验证一个新加入的实例能不能正确应答，这是最快的路径 —— 凭据、路由与记录治理都和真实客户端一致，但请求和流式响应都直接显示在页面上。没选模型之前发送是禁用的，不会出现「点了没反应」。
+
+### 配额运行时配置 —— 哪些立即生效，哪些要重启
 
 <p align="center">
-  <img src="screenshots/quota-monitoring-zh-CN-light.png" alt="配额用量监控" width="720">
-  <br/>
-  <em>配额监控 —— 后端类型、降级状态与多维度筛选</em>
+  <img src="screenshots/quota-config-zh-CN-light.png" alt="配额运行时配置 —— 热改配置与需重启的只读字段">
 </p>
+
+配额设置按「生效代价」分成两类。**可热改**的 —— 启用配额、失败放行（Fail Open）、统计窗口（分钟 / 小时 / 天 / 月）—— 保存即生效。**需重启**的字段是只读的、带角标说明，而不是让人改完才发现没生效。页面顶部的状态条会把当前实际状态摊开：启用还是关闭、存储后端（本地或 Redis）、是否失败放行、刷写间隔。配额默认关闭，这里就是打开它的地方。
+
+### 配额用量监控 —— 多维筛选，且如实说明自身状态
 
 <p align="center">
-  <img src="screenshots/client-access-zh-CN-light.png" alt="客户端接入指引" width="720">
-  <br/>
-  <em>客户端接入指引 —— OpenAI 兼容与 Anthropic base URL 的可复制片段</em>
+  <img src="screenshots/quota-monitoring-zh-CN-light.png" alt="配额用量监控 —— 后端类型、降级状态与多维度筛选">
 </p>
+
+用量可以同时按六个维度筛 —— 租户、API Key、用户、服务类型、模型、窗口 —— 按租户对账或按 Key 复盘事故都不必先导出数据。上方四张状态卡先回答真正该问的问题（账本是否启用、用的是哪个后端、是否降级、有几个活跃窗口），再展示数字；没有数据时它直接说明原因（配额账本未启用），而不是渲染一张空表让人猜。
+
+### 客户端接入指引 —— 一页带一个团队上手
 
 <p align="center">
-  <img src="screenshots/dashboard-zh-CN-dark.png" alt="仪表盘（暗色主题）" width="720">
-  <br/>
-  <em>内置暗色主题 —— 界面可换肤、双语</em>
+  <img src="screenshots/client-access-zh-CN-light.png" alt="客户端接入指引 —— Base URL、认证头、curl 与 OpenAI SDK 示例">
 </p>
 
-</details>
+新团队应该第一个打开的页面：Base URL、`X-API-Key` 请求头、`GET /v1/models`、`POST /v1/chat/completions` 及其流式写法，然后是同一段调用的 `curl` 版本与 OpenAI Python SDK 版本，每个块都有复制按钮。Base URL 取自这个实例自己的配置，所以复制到的就是这台网关实际对外提供的地址。
+
+### 暗色主题
+
+<p align="center">
+  <img src="screenshots/dashboard-zh-CN-dark.png" alt="指挥中心的暗色主题">
+</p>
+
+同一个控制台，内置暗色主题 —— 顶栏一个开关，不需要另起构建，也不用加查询参数。zh-CN / en-US 切换就在它旁边。
 
 ## 状态
 
-**最新版本：v3.8.1（2026-11-08）。** 逐版本说明、升级提示与已知边界见[更新日志](docs/zh/reference/changelog.md)；
+**最新版本：v3.8.8（2026-11-16）。** 逐版本说明、升级提示与已知边界见[更新日志](docs/zh/reference/changelog.md)；
 下载与容器 tag 见 [Releases](https://github.com/Lincoln-cn/JAiRouter/releases)。
 
 本文件不重复发版历史。此前复制过一份，结果落后了 changelog 五个版本 —— 只有一个事实来源才不会失真。

@@ -334,71 +334,142 @@ See the [changelog](docs/en/reference/changelog.md) for per-release notes.
 
 </details>
 
-<details>
-<summary><b>Console screenshots</b></summary>
+## Console tour
+
+The console is a Vue 3 SPA served at `/admin/` from the same Spring Boot jar — no separate frontend
+container, no extra port to expose. It is bilingual (zh-CN / en-US) and ships light and dark themes.
+The screenshots below are the pages you will actually use in the first ten minutes. They come from a
+running instance with demo data, so a panel that needs accumulated traffic shows its empty state, not
+a mock-up.
+
+### Command Center — one screen for "is anything broken?"
 
 <p align="center">
-  <img src="screenshots/dashboard-en-US-light.png" alt="JAiRouter dashboard" width="720">
-  <br/>
-  <em>Dashboard — real-time service, instance and system metrics</em>
+  <img src="screenshots/dashboard-en-US-light.png" alt="Command Center — service, instance and model counters, system metrics and the governance chain">
 </p>
+
+The top row is the inventory of this deployment: services, instances, models, healthy and unhealthy
+instances, accounts. Under it sit the system metrics that answer "should I restart something" — JVM
+memory, threads, CPU load, uptime, authentication success and failure, audit events — and a
+**governance chain** that reports the state of the four stages every request passes through: rule
+hits, rate limiting, circuit breakers and load balancing. When a client reports an error, this is the
+page that tells you which stage to look at next.
+
+### Service management — service type, adapter, strategy
 
 <p align="center">
-  <img src="screenshots/service-management-en-US-light.png" alt="Service Management" width="720">
-  <img src="screenshots/instance-management-en-US-light.png" alt="Instance Management" width="720">
-  <br/>
-  <em>Service & instance management — adapters and load-balancing strategies per service</em>
+  <img src="screenshots/service-management-en-US-light.png" alt="Service management — service types, adapters and load-balancing strategies">
 </p>
+
+A service is the triple (service type, adapter, load-balancing strategy). The list shows the seven
+service types the gateway can serve — Chat, Embedding, Rerank, Speech-to-Text, Text-to-Speech, Image
+Generation and Image Editing — each bound to an adapter (GPUStack, vLLM, Ollama, OpenAI, …) and to its
+own strategy, from round-robin to least-connections or IP hash. The four-step guide at the top is the
+intended order for wiring a new backend: configure adapter → create service → add instance → try it in
+the playground. Adapter mistakes surface at step one instead of on the first real request.
+
+### Instance management — the endpoints behind a service
 
 <p align="center">
-  <img src="screenshots/rule-management-en-US-light.png" alt="Rule Engine" width="720">
-  <br/>
-  <em>Visual routing rules with hit statistics, priority drag-and-drop and templates</em>
+  <img src="screenshots/instance-management-en-US-light.png" alt="Instance management — base URLs, weights, headers, tags and per-instance controls">
 </p>
+
+An instance is one real endpoint: base URL, path, weight, per-instance headers and tags, grouped into
+tabs by service type. Weight feeds the weighted strategies, tags feed rule conditions, and per-instance
+headers are how a downstream credential stays local to that one upstream. Every row carries its own
+rate limiter and circuit breaker, so a single misbehaving endpoint can be isolated and healed without
+touching the rest of the service.
+
+### Routing rules — condition, priority, target
 
 <p align="center">
-  <img src="screenshots/call-history-dashboard-en-US-light.png" alt="Call History Analytics" width="720">
-  <br/>
-  <em>Call history analytics — success rate, latency and token usage trends</em>
+  <img src="screenshots/rule-management-en-US-light.png" alt="Routing rules — condition, priority, hit counter and target instance">
 </p>
+
+Rules are evaluated before any balancing decision. The row above sends every request whose `x-tenant`
+header equals `tenant-a` to `internal-gpu-1` at priority 90. Rows are reordered by drag-and-drop, a rule
+can be disabled without being deleted, and the hit counter updates in place — so a rule that never
+matches is visible instead of quietly dead. Templates cover the usual shapes.
+
+### Call history analytics — three record levels, one dashboard
 
 <p align="center">
-  <img src="screenshots/extra-slow-query-analysis-en-US-light.png" alt="Slow Query Analysis" width="720">
-  <br/>
-  <em>Slow-query analysis — hotspots, alert status and operation breakdown</em>
+  <img src="screenshots/call-history-dashboard-en-US-light.png" alt="Call history dashboard — counters, daily trend, model and service-type distribution">
 </p>
+
+Every call is recorded at one of three levels — metadata only, desensitized summary, or AES-256-GCM
+encrypted full content — and this page reduces that record to what an operator needs: total and failed
+requests, success rate, average response time, tokens consumed and tokens per request, then daily
+trend, top-10 models, service-type mix and a 24-hour distribution. The time-range picker at the top
+narrows all of it at once, and the raw records live one tab over.
+
+### Slow query analysis — where the latency went
 
 <p align="center">
-  <img src="screenshots/playground-chat-en-US-light.png" alt="AI Playground" width="720">
-  <br/>
-  <em>Playground — chat, embedding, rerank, audio and image test benches</em>
+  <img src="screenshots/extra-slow-query-analysis-en-US-light.png" alt="Slow query analysis — slow-query counts, per-operation durations and alert statistics">
 </p>
+
+Slow queries are counted, grouped by operation, and reported with count, average, max, min and total
+duration per group, plus a hotspot table for the worst offenders. The two figures on the right are easy
+to misread: alerts **triggered** versus alerts **suppressed**. Suppression is the cooldown path — a
+single hotspot that keeps breaching the threshold is counted once and then quietened, so a large
+suppressed count next to a small triggered count is the design working, not a broken threshold.
+
+### AI Playground — test a model before wiring a client
 
 <p align="center">
-  <img src="screenshots/quota-config-en-US-light.png" alt="Quota Runtime Configuration" width="720">
-  <br/>
-  <em>Quota runtime configuration — restart-required fields are read-only with a badge</em>
+  <img src="screenshots/playground-chat-en-US-light.png" alt="AI Playground — chat, embedding, rerank, audio and image benches">
 </p>
+
+Five benches behind one model picker: Chat, Embedding, Rerank, Audio Service and Image Service. It is
+the quickest way to prove that a newly added instance answers correctly — same credentials, same
+routing and same record governance as a real client, but with the request and the streamed response
+visible on the page. Pick a model, or nothing sends; the composer stays disabled until you do.
+
+### Quota runtime configuration — what applies now, what needs a restart
 
 <p align="center">
-  <img src="screenshots/quota-monitoring-en-US-light.png" alt="Quota Usage Monitoring" width="720">
-  <br/>
-  <em>Quota monitoring — backend type, degradation status and multi-dimensional filtering</em>
+  <img src="screenshots/quota-config-en-US-light.png" alt="Quota runtime configuration — hot-editable settings and restart-required read-only fields">
 </p>
+
+Quota settings are split by what it takes to apply them. **Hot-editable** — enable quota, fail-open
+behavior and the statistical windows (minute / hour / day / month) — takes effect on save. **Restart
+required** fields are read-only and badged instead of silently ignored, so nobody spends an afternoon
+editing a value that only lands on the next boot. The header restates the live state: enabled or
+disabled, storage backend (local or Redis), fail-open, flush interval. Quota is off by default; this
+page is where you turn it on.
+
+### Quota usage monitoring — multi-dimensional and honest about its state
 
 <p align="center">
-  <img src="screenshots/client-access-en-US-light.png" alt="Client Access Guide" width="720">
-  <br/>
-  <em>Client access guide — copy-ready snippets for the OpenAI-compatible and Anthropic base URLs</em>
+  <img src="screenshots/quota-monitoring-en-US-light.png" alt="Quota usage monitoring — backend, degradation status and multi-dimensional filters">
 </p>
+
+Usage can be filtered on six dimensions at once — tenant, API key, user, service type, model and
+window — which is what makes a per-tenant review or a per-key incident possible without exporting
+anything. The four status cards answer the question you actually ask during an incident (is the ledger
+enabled, which backend, is it degraded, how many windows are active) before showing a single number,
+and the empty state says why it is empty rather than rendering a blank table.
+
+### Client access guide — onboarding a team in one page
 
 <p align="center">
-  <img src="screenshots/dashboard-en-US-dark.png" alt="Dashboard (dark theme)" width="720">
-  <br/>
-  <em>Built-in dark theme — the console is themeable and bilingual</em>
+  <img src="screenshots/client-access-en-US-light.png" alt="Client access guide — base URL, auth header, curl and OpenAI SDK examples">
 </p>
 
-</details>
+The page a new team should open first: base URL, the `X-API-Key` header, `GET /v1/models`, `POST
+/v1/chat/completions` with its streaming form, and then the same call as `curl` and as the OpenAI
+Python SDK, each with a copy button. The base URL is read from this instance's own configuration, so
+what you copy is what this gateway actually serves.
+
+### Dark theme
+
+<p align="center">
+  <img src="screenshots/dashboard-en-US-dark.png" alt="Dashboard in the built-in dark theme">
+</p>
+
+The same console in the built-in dark theme — one toggle in the header, no separate build and no query
+parameter. The zh-CN / en-US switch sits next to it.
 
 ## Status
 
