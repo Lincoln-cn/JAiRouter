@@ -642,7 +642,7 @@ management:
 
 | 方法 | 路径 | 生效的权限码 |
 |---|---|---|
-| `DELETE` | `/api/call-history/cleanup` | `未登记写规则 ⇒ 默认拒绝（`RbacUnmatchedPolicy` DENY_ALL，仅 ADMIN）` |
+| `DELETE` | `/api/call-history/cleanup` | 未登记写规则 ⇒ 默认拒绝（`RbacUnmatchedPolicy` DENY_ALL，仅 ADMIN） |
 | `GET` | `/api/call-history/count` | `callhistory:read` |
 | `GET` | `/api/call-history/errors` | `callhistory:read` |
 | `GET` | `/api/call-history/recent` | `callhistory:read` |

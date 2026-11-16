@@ -660,7 +660,7 @@ None of these endpoints is called by the console, and none was documented (the `
 
 | Method | Path | Effective permission code |
 |---|---|---|
-| `DELETE` | `/api/call-history/cleanup` | `no write rule ⇒ denied by default (`RbacUnmatchedPolicy` DENY_ALL, ADMIN only)` |
+| `DELETE` | `/api/call-history/cleanup` | no write rule ⇒ denied by default (`RbacUnmatchedPolicy` DENY_ALL, ADMIN only) |
 | `GET` | `/api/call-history/count` | `callhistory:read` |
 | `GET` | `/api/call-history/errors` | `callhistory:read` |
 | `GET` | `/api/call-history/recent` | `callhistory:read` |

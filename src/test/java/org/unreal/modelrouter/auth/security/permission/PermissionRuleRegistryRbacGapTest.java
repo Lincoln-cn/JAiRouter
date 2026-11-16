@@ -98,10 +98,12 @@ class PermissionRuleRegistryRbacGapTest {
     }
 
     @Test
-    @DisplayName("/api/security/audit/extended 写操作必须登记 security:audit:write（#116）")
+    @DisplayName("/api/security/audit/extended 写操作必须登记 security:audit:write（#116）；只读查询按 read 放行")
     void extendedAuditWrites_haveWriteRule() {
+        // 复杂查询是只读（用 POST 只为传筛选条件），2026-11-16 起由精确 POST 规则按 read 码放行；
+        // 批量写入 / 测试数据生成仍必须 security:audit:write。
         assertRuleCode(HttpMethod.POST, "/api/security/audit/extended/query",
-                PermissionCodes.SECURITY_AUDIT_WRITE, "审计复杂查询");
+                PermissionCodes.SECURITY_AUDIT_READ, "审计复杂查询");
         assertRuleCode(HttpMethod.POST, "/api/security/audit/extended/events/batch",
                 PermissionCodes.SECURITY_AUDIT_WRITE, "审计批量写入");
         assertRuleCode(HttpMethod.POST, "/api/security/audit/extended/test-data/generate",
