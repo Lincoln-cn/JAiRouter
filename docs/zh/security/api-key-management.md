@@ -480,6 +480,9 @@ jairouter:
 #### 调用历史配置
 `RECORD_LEVEL_CHANGE`
 
+#### 监控配置
+`MONITORING_CONFIG_CHANGED`（含启用/前缀/采集间隔/分类/采样率/采集性能的热改与应急操作）
+
 #### 系统事件
 `SYSTEM_CLEANUP` · `SYSTEM_MAINTENANCE`
 

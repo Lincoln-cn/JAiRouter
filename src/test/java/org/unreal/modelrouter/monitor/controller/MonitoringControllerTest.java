@@ -12,6 +12,8 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.config.core.MonitoringProperties;
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsCacheAndRetry;
@@ -21,11 +23,14 @@ import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MonitoringHealth
 import org.unreal.modelrouter.monitor.monitoring.config.DynamicMonitoringConfigUpdater;
 import org.unreal.modelrouter.monitor.monitoring.error.MetricsErrorHandler;
 import org.unreal.modelrouter.monitor.monitoring.security.SecurityAlertService;
+import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.dto.AuditEventType;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -49,6 +54,10 @@ import static org.mockito.Mockito.*;
 @MockitoSettings(strictness = Strictness.LENIENT)
 @SuppressWarnings("deprecation") // 兼容别名路径仍需被测试覆盖（#555）
 class MonitoringControllerTest {
+
+    /** 写端点新增的审计主体参数：审计只记名字，不需要真实凭据。 */
+    private static final Authentication AUTH = new UsernamePasswordAuthenticationToken(
+            "tester", "n/a", List.of());
 
     @Mock
     private MonitoringProperties monitoringProperties;
@@ -77,11 +86,15 @@ class MonitoringControllerTest {
     @Mock
     private SecurityAlertService securityAlertService;
 
+    @Mock
+    private SecurityAuditService securityAuditService;
+
     @InjectMocks
     private MonitoringController controller;
 
     @BeforeEach
     void setUp() {
+        when(securityAuditService.recordEvent(any())).thenReturn(Mono.empty());
         when(monitoringProperties.isEnabled()).thenReturn(true);
         when(monitoringProperties.getPrefix()).thenReturn("jairouter");
         when(monitoringProperties.getCollectionInterval()).thenReturn(Duration.ofSeconds(10));
@@ -126,7 +139,7 @@ class MonitoringControllerTest {
             when(configUpdater.updateBasicConfig(anyBoolean(), anyString(), any(), any())).thenReturn(true);
 
             // When
-            var result = controller.updateEnabled(Map.of("enabled", false));
+            var result = controller.updateEnabled(Map.of("enabled", false), AUTH);
 
             // Then
             StepVerifier.create(result)
@@ -140,7 +153,7 @@ class MonitoringControllerTest {
         @DisplayName("MONITOR-003: 缺少参数返回错误")
         void testUpdateEnabled_missingParam() {
             // When
-            var result = controller.updateEnabled(new HashMap<>());
+            var result = controller.updateEnabled(new HashMap<>(), AUTH);
 
             // Then
             // 参数缺失属于客户端不合规：ApiException(INVALID_REQUEST) 由
@@ -167,7 +180,7 @@ class MonitoringControllerTest {
         @DisplayName("MONITOR-020: 缺少 enabled 参数返回 400（与 updateEnabled 口径一致）")
         void testSetAutoMode_missingEnabledParam() {
             // When：请求体存在但没有 enabled 键
-            var result = controller.setAutoMode(new HashMap<>());
+            var result = controller.setAutoMode(new HashMap<>(), AUTH);
 
             // Then：客户端参数不合规 → ApiException(INVALID_REQUEST) → 400。
             // 此前该分支既无测试覆盖、错误码又与同文件 updateEnabled 不一致（500 vs 400）。
@@ -186,7 +199,7 @@ class MonitoringControllerTest {
         @DisplayName("MONITOR-021: 启用自动模式成功")
         void testSetAutoMode_enabledSuccess() {
             // When
-            var result = controller.setAutoMode(Map.of("enabled", true));
+            var result = controller.setAutoMode(Map.of("enabled", true), AUTH);
 
             // Then
             StepVerifier.create(result)
@@ -199,7 +212,7 @@ class MonitoringControllerTest {
         @DisplayName("MONITOR-022: 禁用自动模式成功")
         void testSetAutoMode_disabledSuccess() {
             // When
-            var result = controller.setAutoMode(Map.of("enabled", false));
+            var result = controller.setAutoMode(Map.of("enabled", false), AUTH);
 
             // Then
             StepVerifier.create(result)
@@ -216,7 +229,7 @@ class MonitoringControllerTest {
                     .when(degradationStrategy).setAutoModeEnabled(anyBoolean());
 
             // When
-            var result = controller.setAutoMode(Map.of("enabled", true));
+            var result = controller.setAutoMode(Map.of("enabled", true), AUTH);
 
             // Then：经 catch-all ApiExceptions.wrap 归一为 ApiException，
             // 关键断言是「绝不能再返回 200 + success=false」（issue #94 的核心契约）。
@@ -246,7 +259,7 @@ class MonitoringControllerTest {
             when(configUpdater.updateBasicConfig(anyBoolean(), anyString(), any(), any())).thenReturn(true);
 
             // When
-            var result = controller.updatePrefix(Map.of("prefix", "newprefix"));
+            var result = controller.updatePrefix(Map.of("prefix", "newprefix"), AUTH);
 
             // Then
             StepVerifier.create(result)
@@ -260,7 +273,7 @@ class MonitoringControllerTest {
         @DisplayName("MONITOR-005: 空前缀返回错误")
         void testUpdatePrefix_emptyPrefix() {
             // When
-            var result = controller.updatePrefix(Map.of("prefix", ""));
+            var result = controller.updatePrefix(Map.of("prefix", ""), AUTH);
 
             // Then
             // 前缀为空属于客户端不合规：ApiException(INVALID_REQUEST) 由
@@ -407,7 +420,7 @@ class MonitoringControllerTest {
             doNothing().when(cacheAndRetry).clearCache();
 
             // When
-            var result = controller.clearCache();
+            var result = controller.clearCache(AUTH);
 
             // Then
             StepVerifier.create(result)
@@ -461,7 +474,7 @@ class MonitoringControllerTest {
             doNothing().when(circuitBreaker).forceOpen();
 
             // When
-            var result = controller.forceOpenCircuitBreaker();
+            var result = controller.forceOpenCircuitBreaker(AUTH);
 
             // Then
             StepVerifier.create(result)
@@ -482,7 +495,7 @@ class MonitoringControllerTest {
         @DisplayName("MONITOR-025: 规范路径 force-open 命中同一个熔断器且响应说明作用域")
         void testMetricsPipelineForceOpen_hitsSameCircuitBreaker() {
             // When
-            var result = controller.forceOpenMetricsPipelineCircuitBreaker();
+            var result = controller.forceOpenMetricsPipelineCircuitBreaker(AUTH);
 
             // Then
             StepVerifier.create(result)
@@ -501,7 +514,7 @@ class MonitoringControllerTest {
         @DisplayName("MONITOR-026: 旧路径 force-open 是兼容别名，命中同一个熔断器")
         void testLegacyForceOpen_hitsSameCircuitBreaker() {
             // When
-            var result = controller.forceOpenCircuitBreaker();
+            var result = controller.forceOpenCircuitBreaker(AUTH);
 
             // Then
             StepVerifier.create(result)
@@ -517,7 +530,7 @@ class MonitoringControllerTest {
         @DisplayName("MONITOR-027: 规范路径 force-close 命中同一个熔断器且响应说明作用域")
         void testMetricsPipelineForceClose_hitsSameCircuitBreaker() {
             // When
-            var result = controller.forceCloseMetricsPipelineCircuitBreaker();
+            var result = controller.forceCloseMetricsPipelineCircuitBreaker(AUTH);
 
             // Then
             StepVerifier.create(result)
@@ -534,7 +547,7 @@ class MonitoringControllerTest {
         @DisplayName("MONITOR-028: 旧路径 force-close 是兼容别名，命中同一个熔断器")
         void testLegacyForceClose_hitsSameCircuitBreaker() {
             // When
-            var result = controller.forceCloseCircuitBreaker();
+            var result = controller.forceCloseCircuitBreaker(AUTH);
 
             // Then
             StepVerifier.create(result)
@@ -676,6 +689,113 @@ class MonitoringControllerTest {
             when(cbStats.getState()).thenReturn("CLOSED");
             when(cbStats.getFailureRate()).thenReturn(0.0);
             when(circuitBreaker.getStats()).thenReturn(cbStats);
+        }
+    }
+
+    // ==================== 采样率 / 采集性能热改测试 ====================
+
+    @Nested
+    @DisplayName("PUT /api/monitoring/config/sampling 与 /config/performance - 热改测试")
+    class MonitoringConfigHotReloadTests {
+
+        private MonitoringController.SamplingUpdateRequest allSamplingRates() {
+            MonitoringController.SamplingUpdateRequest request = new MonitoringController.SamplingUpdateRequest();
+            request.setRequestMetrics(0.5);
+            request.setBackendMetrics(0.4);
+            request.setInfrastructureMetrics(0.3);
+            request.setTraceMetrics(0.2);
+            request.setTraceProcessingMetrics(0.1);
+            request.setTraceAnalysisMetrics(0.05);
+            return request;
+        }
+
+        private MonitoringController.PerformanceUpdateRequest performance(
+                final Boolean async, final Integer batchSize, final Integer bufferSize) {
+            MonitoringController.PerformanceUpdateRequest request = new MonitoringController.PerformanceUpdateRequest();
+            request.setAsyncProcessing(async);
+            request.setBatchSize(batchSize);
+            request.setBufferSize(bufferSize);
+            return request;
+        }
+
+        @Test
+        @DisplayName("MONITOR-SAMPLING-001: 采样率热改成功并写审计")
+        void testUpdateSampling_success() {
+            when(configUpdater.updateSamplingConfig(any())).thenReturn(true);
+
+            StepVerifier.create(controller.updateSampling(allSamplingRates(), AUTH))
+                    .assertNext(response -> {
+                        assertTrue(response.isSuccess());
+                        assertEquals("采样率已更新", response.getMessage());
+                    })
+                    .verifyComplete();
+
+            verify(securityAuditService).recordEvent(argThat(event ->
+                    AuditEventType.MONITORING_CONFIG_CHANGED.name().equals(event.getEventType())
+                            && "tester".equals(event.getUserId())
+                            && "CONFIG_SAMPLING".equals(event.getAction())
+                            && "monitoring".equals(event.getResource())));
+        }
+
+        @Test
+        @DisplayName("MONITOR-SAMPLING-002: 采样率越界被拒且不写审计")
+        void testUpdateSampling_outOfRange() {
+            MonitoringController.SamplingUpdateRequest request = allSamplingRates();
+            request.setRequestMetrics(1.5);
+
+            StepVerifier.create(controller.updateSampling(request, AUTH))
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        assertEquals("INVALID_REQUEST", ((ApiException) ex).getErrorCode());
+                        assertTrue(ex.getMessage().contains("0~1"));
+                    })
+                    .verify();
+
+            verify(securityAuditService, never()).recordEvent(any());
+        }
+
+        @Test
+        @DisplayName("MONITOR-SAMPLING-003: 无变化时不写审计")
+        void testUpdateSampling_noChange() {
+            when(configUpdater.updateSamplingConfig(any())).thenReturn(false);
+
+            StepVerifier.create(controller.updateSampling(allSamplingRates(), AUTH))
+                    .assertNext(response -> {
+                        assertTrue(response.isSuccess());
+                        assertEquals("采样率无变化", response.getMessage());
+                    })
+                    .verifyComplete();
+
+            verify(securityAuditService, never()).recordEvent(any());
+        }
+
+        @Test
+        @DisplayName("MONITOR-PERF-001: 采集性能热改成功并写审计")
+        void testUpdatePerformance_success() {
+            when(configUpdater.updatePerformanceConfig(any())).thenReturn(true);
+
+            StepVerifier.create(controller.updatePerformance(performance(true, 200, 2000), AUTH))
+                    .assertNext(response -> {
+                        assertTrue(response.isSuccess());
+                        assertEquals("采集性能配置已更新", response.getMessage());
+                    })
+                    .verifyComplete();
+
+            verify(securityAuditService).recordEvent(argThat(event ->
+                    AuditEventType.MONITORING_CONFIG_CHANGED.name().equals(event.getEventType())
+                            && "CONFIG_PERFORMANCE".equals(event.getAction())));
+        }
+
+        @Test
+        @DisplayName("MONITOR-PERF-002: 缓冲区小于批大小被拒")
+        void testUpdatePerformance_bufferSmallerThanBatch() {
+            StepVerifier.create(controller.updatePerformance(performance(true, 500, 100), AUTH))
+                    .expectErrorSatisfies(ex -> {
+                        assertInstanceOf(ApiException.class, ex);
+                        assertEquals("INVALID_REQUEST", ((ApiException) ex).getErrorCode());
+                        assertTrue(ex.getMessage().contains("缓冲区必须"));
+                    })
+                    .verify();
         }
     }
 }

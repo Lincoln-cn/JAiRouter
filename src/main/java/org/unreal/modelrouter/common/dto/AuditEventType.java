@@ -40,5 +40,6 @@ public enum AuditEventType {
 
     // 系统事件
     SYSTEM_CLEANUP,         // 系统清理
+    MONITORING_CONFIG_CHANGED, // 监控配置变更（含应急操作，含强制降级/熔断开合/清缓存）
     SYSTEM_MAINTENANCE      // 系统维护
 }

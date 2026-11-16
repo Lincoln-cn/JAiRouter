@@ -120,6 +120,14 @@ public class DynamicMonitoringConfigUpdater {
                 oldValue.setTraceMetrics(samplingConfig.getTraceMetrics());
                 changed = true;
             }
+            if (oldValue.getTraceProcessingMetrics() != samplingConfig.getTraceProcessingMetrics()) {
+                oldValue.setTraceProcessingMetrics(samplingConfig.getTraceProcessingMetrics());
+                changed = true;
+            }
+            if (oldValue.getTraceAnalysisMetrics() != samplingConfig.getTraceAnalysisMetrics()) {
+                oldValue.setTraceAnalysisMetrics(samplingConfig.getTraceAnalysisMetrics());
+                changed = true;
+            }
             
             if (changed) {
                 currentConfig.put("sampling", samplingConfig);
@@ -130,6 +138,43 @@ public class DynamicMonitoringConfigUpdater {
             return false;
         } catch (Exception e) {
             logger.error("更新监控采样配置失败: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 更新采集性能配置（异步处理 / 批大小 / 缓冲区）。
+     *
+     * <p>与基础配置、采样配置一致：只改内存里的 {@link MonitoringProperties}，不落盘，
+     * 重启后回到配置文件值。取值边界由调用方（控制器）先行校验。
+     */
+    public boolean updatePerformanceConfig(final MonitoringProperties.Performance performanceConfig) {
+        try {
+            MonitoringProperties.Performance oldValue = monitoringProperties.getPerformance();
+
+            boolean changed = false;
+            if (oldValue.isAsyncProcessing() != performanceConfig.isAsyncProcessing()) {
+                oldValue.setAsyncProcessing(performanceConfig.isAsyncProcessing());
+                changed = true;
+            }
+            if (oldValue.getBatchSize() != performanceConfig.getBatchSize()) {
+                oldValue.setBatchSize(performanceConfig.getBatchSize());
+                changed = true;
+            }
+            if (oldValue.getBufferSize() != performanceConfig.getBufferSize()) {
+                oldValue.setBufferSize(performanceConfig.getBufferSize());
+                changed = true;
+            }
+
+            if (changed) {
+                currentConfig.put("performance", performanceConfig);
+                logger.info("监控采集性能配置已更新");
+                publishConfigurationChangeEvent("performance", oldValue, performanceConfig);
+                return true;
+            }
+            return false;
+        } catch (RuntimeException e) {
+            logger.error("更新监控采集性能配置失败: {}", e.getMessage());
             return false;
         }
     }

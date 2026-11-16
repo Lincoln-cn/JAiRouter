@@ -430,6 +430,21 @@ const router = createRouter({
           name: 'quota-usage-monitoring',
           component: () => import('../views/monitoring/QuotaUsageMonitoring.vue'),
           meta: { titleKey: 'route.quotaUsageMonitoring', icon: 'data-analysis', permissions: ['monitoring:quota:read'] }
+        },
+        {
+          // 监控配置：系统组里的一项两 tab（决策 D1）；路径沿用 /monitoring 前缀。
+          // 权限门槛用 monitoring:config:write —— 库里没有 monitoring:config:read，
+          // 而这个码正好是「运营/管理」面才有的：ADMIN + OPERATOR 有，USER/VIEWER 无。
+          path: 'config',
+          name: 'monitoring-config',
+          component: () => import('../views/monitoring/MonitoringConfig.vue'),
+          meta: { titleKey: 'route.monitoringConfig', icon: 'setting', permissions: ['monitoring:config:write'] }
+        },
+        {
+          path: 'config/runtime',
+          name: 'monitoring-runtime',
+          component: () => import('../views/monitoring/MonitoringRuntime.vue'),
+          meta: { titleKey: 'route.monitoringRuntime', icon: 'setting', permissions: ['monitoring:config:write'] }
         }
       ]
     },

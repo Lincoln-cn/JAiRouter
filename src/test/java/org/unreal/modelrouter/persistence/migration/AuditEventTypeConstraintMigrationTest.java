@@ -23,6 +23,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>背景：V1 建表时只枚举了 16 个早期值，枚举后来扩到 26 个，写新事件类型时报
  * {@code Value not permitted for column ... [22030-232]}，调用方吞掉异常 ⇒ 审计轨迹静默缺项。
  *
+ * <p>V15 续扩到 27 个：新增 {@code MONITORING_CONFIG_CHANGED}（控制台改监控配置/应急操作），
+ * 迁移方式与 V7 相同，本测试同时覆盖两段迁移。
+ *
  * <p>本测试做两件事：
  * <ol>
  *   <li>静态守卫：H2 与 PostgreSQL 的 V7 迁移都必须点名全部枚举常量（防止以后再扩枚举忘记同步 DDL）；</li>
@@ -32,8 +35,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 class AuditEventTypeConstraintMigrationTest {
 
-    private static final String H2_MIGRATION = "db/migration/h2/V7__audit_event_type_values.sql";
-    private static final String POSTGRES_MIGRATION = "db/migration/postgres/V7__audit_event_type_values.sql";
+    private static final String H2_V7_MIGRATION = "db/migration/h2/V7__audit_event_type_values.sql";
+    private static final String H2_V15_MIGRATION = "db/migration/h2/V15__monitoring_config_audit_event.sql";
+    private static final String POSTGRES_V15_MIGRATION = "db/migration/postgres/V15__monitoring_config_audit_event.sql";
 
     /** V1 建表时的 16 个旧取值，用来复现迁移前的状态。 */
     private static final String LEGACY_ENUM_VALUES = "'API_KEY_CREATED','API_KEY_EXPIRED','API_KEY_REVOKED',"
@@ -43,17 +47,19 @@ class AuditEventTypeConstraintMigrationTest {
 
     @Test
     void everyEnumConstantIsAllowedByBothMigrations() throws IOException {
-        final String h2 = stripComments(readResource(H2_MIGRATION));
-        final String postgres = stripComments(readResource(POSTGRES_MIGRATION));
+        // V15 用「重设整列类型 / 重建 check 约束」的方式扩取值，必须一次性列全，
+        // 因此这里只校验最新一版迁移（V7 已被 V15 覆盖）。
+        final String h2 = stripComments(readResource(H2_V15_MIGRATION));
+        final String postgres = stripComments(readResource(POSTGRES_V15_MIGRATION));
 
         for (final AuditEventType type : AuditEventType.values()) {
             assertTrue(h2.contains("'" + type.name() + "'"),
-                    "H2 的 V7 迁移缺少审计事件类型: " + type.name());
+                    "H2 的 V15 迁移缺少审计事件类型: " + type.name());
             assertTrue(postgres.contains("'" + type.name() + "'"),
-                    "PostgreSQL 的 V7 迁移缺少审计事件类型: " + type.name());
+                    "PostgreSQL 的 V15 迁移缺少审计事件类型: " + type.name());
         }
-        assertEquals(26, AuditEventType.values().length,
-                "枚举常量数量变了：请确认 V7 迁移与实体映射同步更新，再调整此断言");
+        assertEquals(27, AuditEventType.values().length,
+                "枚举常量数量变了：请确认新增迁移与实体映射同步更新，再调整此断言");
     }
 
     @Test
@@ -71,12 +77,19 @@ class AuditEventTypeConstraintMigrationTest {
             assertThrows(SQLException.class, () -> insertEvent(connection, "API_KEY_INVALID"),
                     "旧约束本应拒绝 API_KEY_INVALID；如果这里不抛异常，说明测试的前置状态没造对");
 
-            // 执行 V7 里的 ALTER
+            // 执行 V7 里的 ALTER（历史迁移，此时 MONITORING_CONFIG_CHANGED 还不在允许值里）
             try (Statement statement = connection.createStatement()) {
-                statement.execute(v7AlterStatement());
+                statement.execute(extractAlterStatement(H2_V7_MIGRATION));
+            }
+            assertThrows(SQLException.class, () -> insertEvent(connection, "MONITORING_CONFIG_CHANGED"),
+                    "V7 之后、V15 之前 MONITORING_CONFIG_CHANGED 本应仍被拒；若通过说明断言失去检测力");
+
+            // 执行 V15 里的 ALTER
+            try (Statement statement = connection.createStatement()) {
+                statement.execute(extractAlterStatement(H2_V15_MIGRATION));
             }
 
-            // 迁移后：全部 26 个取值都可写
+            // 迁移后：全部 27 个取值都可写
             for (final AuditEventType type : AuditEventType.values()) {
                 insertEvent(connection, type.name());
             }
@@ -91,12 +104,12 @@ class AuditEventTypeConstraintMigrationTest {
         }
     }
 
-    /** 从 H2 的 V7 迁移里取出那条 alter 语句（去掉注释与结尾分号）。 */
-    private String v7AlterStatement() throws IOException {
-        final String sql = stripComments(readResource(H2_MIGRATION)).trim();
+    /** 从 H2 迁移里取出那条 alter 语句（去掉注释与结尾分号）。 */
+    private String extractAlterStatement(final String migration) throws IOException {
+        final String sql = stripComments(readResource(migration)).trim();
         final int start = sql.toLowerCase().indexOf("alter table");
         if (start < 0) {
-            fail("V7 迁移里找不到 alter table 语句");
+            fail("迁移里找不到 alter table 语句: " + migration);
         }
         return sql.substring(start).replaceAll(";+\s*$", "");
     }

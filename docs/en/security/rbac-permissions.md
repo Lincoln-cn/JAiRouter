@@ -15,7 +15,7 @@ Since **v2.9.8**, JAiRouter provides a **data-driven RBAC (role-based access con
 2. **Role template**: On startup the system seeds 4 built-in role templates (ADMIN / OPERATOR / USER / VIEWER) into the `role_permissions` table — full seeding when the table is empty, and insert-only additive reconcile when it is not (see "Role Templates").
 3. **JWT embedding**: After a successful login, the backend resolves permission codes per role from `role_permissions` and writes them into the JWT `permissions` claim (roles stay in the `roles` claim; permission codes carry no `ROLE_` prefix).
 4. **URL permission matrix**: `PermissionRuleRegistry` holds 75 `{HTTP method, URL pattern} → permission code` rules, and `PermissionAuthorizationManager` evaluates every `/api/**` request at the gateway layer.
-5. **Menu and routing**: the frontend renders menus from `menu.ts` in a data-driven way (currently 7 groups / 32 items / 45 tabs; v2.9.8 had 8 groups / 34 items); `usePermission` filters the menu and the route guard `meta.permissions` blocks unauthorized access.
+5. **Menu and routing**: the frontend renders menus from `menu.ts` in a data-driven way (currently 7 groups / 33 items / 47 tabs; v2.9.8 had 8 groups / 34 items); `usePermission` filters the menu and the route guard `meta.permissions` blocks unauthorized access.
 
 Core design principles:
 
@@ -340,16 +340,16 @@ The "System → Permission Management" page (route `/system/permissions`, requir
 
 ## Menu and Route Guarding
 
-The web menu currently has **7 groups / 32 items / 45 tabs** (P0-3 information-architecture rework), driven by `menu.ts` plus permission filtering. The v2.9.8 shape ("11 groups to 8 groups / 34 items") is historical and has been superseded:
+The web menu currently has **7 groups / 33 items / 47 tabs** (P0-3 information-architecture rework), driven by `menu.ts` plus permission filtering. The v2.9.8 shape ("11 groups to 8 groups / 34 items") is historical and has been superseded:
 
 | Menu group | Items | Menu items (tabs in parentheses, `｜` separated; permission code) |
 |------------|:-----:|------------------------------------------------------------------|
 | Overview | 1 | Dashboard (`overview:dashboard:read`) |
 | Observability | 5 | Call History (Call Records ｜ Call History Dashboard, `callhistory:read`) / Distributed Tracing (Trace Search `tracing:search:read` ｜ Tracing Dashboard `tracing:dashboard:read`) / Exceptions (Exception List ｜ Statistics, `monitoring:exceptions:read`) / Slow Requests (Slow Calls ｜ Slow SQL, `monitoring:slowquery:read`) / Usage (Token Usage `monitoring:tokenusage:read` ｜ Quota Usage `monitoring:quota:read`) |
 | Traffic Governance | 7 | Routing Rules (`config:rules:read`) / Load Balancing (Real-time Monitoring `lb:monitoring:read` ｜ Strategy Config `lb:config:read` / `lb:config:write`) / Rate Limiting (Rate Limit Monitoring `rl:monitoring:read` ｜ Rate Limit Config `config:ratelimit:read`) / Circuit Breakers (Circuit Monitoring `cb:monitoring:read` ｜ Circuit History `cb:history:read` ｜ Global Config `config:circuitbreaker:read`) / Response Cache Management (`config:cache:read` / `config:cache:write`) / Quota Runtime Config (`config:quota:read`) / Resource Pools (`config:pools:read`) |
-| Model & Instances | 4 | Service Management / Instance Management / Version Management / Adapter Management (corresponding to `config:services|instances|versions|adapters:read`) |
+| Model & Instances | 4 | Adapter Management / Service Management / Instance Management / Version Management (corresponding to `config:adapters|services|instances|versions:read`) |
 | Security | 6 | API Key Management (`security:apikeys:read` / `security:apikeys:manage`) / PII Sanitization (`security:sanitization:read` / `security:sanitization:manage`) / JWT Token Management (`security:jwttokens:read` / `security:jwttokens:manage`) / Blacklist Management (`security:blacklist:read` / `security:blacklist:manage`) / Audit Logs (`security:audit:read`) / Record Governance (`config:callhistory:read` / `config:callhistory:write`) |
-| System | 7 | Account Management (`system:accounts:read` / `system:accounts:manage`) / Permission Management (`system:permissions:read` / `system:permissions:manage`) / Tracing Config (`tracing:config:read` / `tracing:config:manage`) / State Persistence (`config:persistence:read`) / Cluster Settings (`config:cluster:read` / `config:cluster:write`) / Health Probe Settings (`config:health:read` / `config:health:write`) / Operation Log (`monitoring:console:read`) |
+| System | 8 | Account Management (`system:accounts:read` / `system:accounts:manage`) / Permission Management (`system:permissions:read` / `system:permissions:manage`) / Tracing Config (`tracing:config:read` / `tracing:config:manage`) / Monitoring Config (Monitoring Config ｜ Runtime & Emergency, `monitoring:config:write`) / State Persistence (`config:persistence:read`) / Cluster Settings (`config:cluster:read` / `config:cluster:write`) / Health Probe Settings (`config:health:read` / `config:health:write`) / Operation Log (`monitoring:console:read`) |
 | Developer Tools | 2 | AI Playground (Chat Playground / Embedding / Rerank / Audio / Image, all `ai:playground:use`) / Client Access Guide (no permission code — visible to every authenticated user) |
 
 Visibility control mechanisms:
