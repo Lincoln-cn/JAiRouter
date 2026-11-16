@@ -84,6 +84,7 @@
           </el-form-item>
           <el-form-item>
             <el-button
+              v-permission="'config:callhistory:write'"
               type="primary"
               :loading="configSaving"
               :disabled="configSaving || configLoading"

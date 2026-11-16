@@ -58,6 +58,56 @@ const pages = collectVueFiles(viewsDir).map(file => ({
 const countOccurrences = (source: string, needle: string): number =>
   source.split(needle).length - 1
 
+/**
+ * 从 `src/api/*.ts` 里认出「会发写请求」的导出函数名。
+ *
+ * 页面上的写操作有两类调用形态：`import { updateXxx } from '@/api/xxx'` 与直接
+ * `request.delete(...)`。前者要靠这一步把函数名映射回「是不是写」，否则只能靠人记。
+ */
+function collectWriteApiNames(): Set<string> {  const names = new Set<string>()
+  const apiDir = join(frontendRoot!, 'src', 'api')
+  for (const file of readdirSync(apiDir).filter(name => name.endsWith('.ts'))) {
+    const source = readFileSync(join(apiDir, file), 'utf-8')
+    const matcher = /\nexport\s+(?:async\s+)?(?:const|function)\s+([A-Za-z0-9_]+)([\s\S]*?)(?=\nexport\s|$)/g
+    for (const match of source.matchAll(matcher)) {
+      const body = match[2] ?? ''
+      // 泛型写法（`request.post<RouterResponse<void>>(...)`）里方法名后面不是 `(`，
+      // 所以这里只要求方法名整体出现，不能再紧跟 `\s*\(`
+      if (/\.(post|put|delete|patch)\b|method:\s*['"](POST|PUT|DELETE|PATCH)/.test(body)) {
+        names.add(match[1])
+      }
+    }
+  }
+  return names
+}
+
+/**
+ * POST 也常用于「查询 / 导出 / 试跑」这类只读语义（如 queryAuditEventsAdvanced 用 POST 传查询体），
+ * 只看 HTTP 方法会误报，所以按命名前缀把只读语义摘出去。
+ */
+const QUERY_LIKE_PREFIX = /^(query|search|fetch|export|test|preview|validate|get)/i
+
+/** 弹窗/向导/面板这类嵌套组件由已门控的父页面打开，自身不重复门控 */
+const NESTED_COMPONENTS = new Set([
+  'config/adapter/AdapterTestPanel.vue',
+  'config/adapter/AdapterWizard.vue',
+  'config/rules/RuleFormDialog.vue',
+  'config/rules/RuleTemplateDialog.vue',
+  'security/apikeys/ImportConfigDialog.vue',
+  'security/apikeys/QuotaDrawer.vue'
+])
+
+/**
+ * `/security` 父路由 `meta.roles: ['ADMIN']`（router/index.ts:208），非 ADMIN 根本进不来；
+ * ADMIN 又恒持有这些 manage 码 ⇒ 这些页面的按钮门控没有实际差别，不逐页加。
+ */
+const ADMIN_ONLY_PAGES = new Set([
+  'security/ApiKeyManagement.vue',
+  'security/JwtAccountManagement.vue',
+  'security/JwtTokenManagement.vue',
+  'security/SanitizationManagement.vue'
+])
+
 describe('页面按钮权限门控', () => {
   it('扫描面自证：views 下确实扫到了 .vue 与 v-permission 用法（防扫描目录失效后空转）', () => {
     expect(pages.length).toBeGreaterThan(40)
@@ -117,7 +167,11 @@ describe('页面按钮权限门控', () => {
       ['tracing/Management.vue', 'tracing:config:manage'],
       ['system/PermissionManagement.vue', 'system:permissions:manage'],
       // 用 computed canWrite 收敛，不走 v-permission：写码出现一次即可
-      ['load-balancer/Monitoring.vue', 'lb:config:write']
+      ['load-balancer/Monitoring.vue', 'lb:config:write'],
+      // 2026-11-16 第三轮：写 API 扫描发现这两页会调用 updateCallHistoryConfig，
+      // 但保存按钮对只持 read 的角色（USER/OPERATOR/VIEWER 都能进记录治理页）仍可见
+      ['security/RecordGovernance.vue', 'config:callhistory:write'],
+      ['callHistory/CallHistoryList.vue', 'config:callhistory:write']
     ]
     const missing = expected
       .filter(([name, code]) => {
@@ -126,5 +180,33 @@ describe('页面按钮权限门控', () => {
       })
       .map(([name, code]) => `${name} 缺少 ${code}`)
     expect(missing).toEqual([])
+  })
+
+  it('调用写接口的页面必须挂门控（含直接 request.delete 这类写法）', () => {
+    // POST 也常用于查询/导出/试跑这三类只读语义（如 queryAuditEventsAdvanced 用 POST 传查询体），
+    // 只看 HTTP 方法会误报，所以按命名前缀把只读语义摘出去
+    const writeApis = [...collectWriteApiNames()].filter(name => !QUERY_LIKE_PREFIX.test(name))
+    expect(writeApis.length, '写接口集合异常小：api 模块解析可能失效').toBeGreaterThan(5)
+
+    // 白名单自身要能对上真实文件，否则改了名字以后白名单会静默失效
+    const whitelisted = [...NESTED_COMPONENTS, ...ADMIN_ONLY_PAGES]
+    expect(whitelisted.filter(name => !pages.some(page => page.name === name))).toEqual([])
+
+    const GATED = /v-permission|hasPermission|canWrite|canEdit|canManage|canReset/
+    const DIRECT_WRITE = /request\.(post|put|delete|patch)\b/
+
+    const ungated = pages
+      .filter(page => !NESTED_COMPONENTS.has(page.name) && !ADMIN_ONLY_PAGES.has(page.name))
+      .filter(page => {
+        const callsWriteApi = writeApis.some(name => new RegExp(`\\b${name}\\s*\\(`).test(page.source))
+        return callsWriteApi || DIRECT_WRITE.test(page.source)
+      })
+      .filter(page => !GATED.test(page.source))
+      .map(page => page.name)
+
+    expect(
+      ungated,
+      '这些页面会发写请求却没有门控：只读角色能看到按钮，点了才 403'
+    ).toEqual([])
   })
 })
