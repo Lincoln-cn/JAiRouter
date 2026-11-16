@@ -30,7 +30,7 @@ jairouter:
       algorithm: "${JWT_ALGORITHM:HS256}"
       
       # 令牌过期时间（分钟）
-      # #677：同上，JWT_EXPIRATION_MINUTES 此前只被 config-external 读，随包配置读不到
+      # #677：同上，JWT_EXPIRATION_MINUTES 此前只在外部示例配置里出现过，随包配置读不到
       expiration-minutes: "${JWT_EXPIRATION_MINUTES:60}"
       
       # 刷新令牌过期时间（天）：令牌过期后仍可换出新令牌的窗口。

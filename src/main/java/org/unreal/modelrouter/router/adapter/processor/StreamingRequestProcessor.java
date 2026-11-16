@@ -266,7 +266,7 @@ public class StreamingRequestProcessor {
         // v3.1 修复: 与非流式路径保持一致——实例自定义 headers 优先（含下游 Authorization），
         // 仅在实例未提供 Authorization 时回退到请求传入的 authorization。
         // 修复前流式路径写死 .header("Authorization", authorization)，导致"密钥只配在实例
-        // headers 上"的部署（参见 config-external/router/services.yml 的既有模式）流式调用
+        // headers 上"的部署（如内置 config/router/services.yml 的实例级 headers.Authorization）流式调用
         // 必然被下游 401 拒绝。
         final Map<String, String> instanceHeaders = (selectedInstance.getHeaders() != null)
                 ? selectedInstance.getHeaders() : Map.of();
