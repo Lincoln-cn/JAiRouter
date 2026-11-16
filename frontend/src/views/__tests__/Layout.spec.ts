@@ -98,7 +98,7 @@ describe('Layout 多 tab 切换条', () => {
  * menuRouteAlignment.spec.ts）证明「声明与路由同口径」，这里证明「侧栏里确实不再出现
  * 那些点不进去的入口」，并用守卫重定向验证路由侧仍然拦着。
  */
-describe('Layout 角色门控', () => {
+describe('Layout 菜单可见性（权限码是唯一门控）', () => {
   beforeEach(() => {
     i18n.global.locale.value = 'zh-CN'
     localStorage.removeItem('ja-sidebar-collapsed')
@@ -111,9 +111,11 @@ describe('Layout 角色门控', () => {
       items: group.findAll('.el-menu-item').map(node => node.text())
     }))
 
-  it('OPERATOR 视角：安全组整体消失，系统组只剩状态持久化', async () => {
+  it('OPERATOR 视角：安全组只剩审计日志/记录治理，系统组只剩有码的 4 项', async () => {
     const wrapper = await mountAt('/config/state-persistence', [
       'overview:dashboard:read',
+      'security:audit:read',
+      'config:callhistory:read',
       'config:persistence:read',
       'config:cluster:read',
       'config:health:read',
@@ -121,10 +123,16 @@ describe('Layout 角色门控', () => {
     ], ['OPERATOR'])
 
     const groups = sidebarGroups(wrapper)
-    // 安全组 6 项全部落在 /security 父级（roles: ['ADMIN']）下 ⇒ 整组不渲染
-    expect(groups.map(group => group.title)).not.toContain('安全')
-    // 系统组仍在：状态持久化没有角色声明；其它 6 项要 ADMIN，即使权限码在手也不显示
-    expect(groups.find(group => group.title === '系统')?.items).toEqual(['状态持久化'])
+    // 第五轮撤掉了父路由 roles：有 security:audit:read 就能看到「审计日志」，
+    // 与后端 /api/security/audit/extended/** 返回 200 的口径一致。
+    expect(groups.find(group => group.title === '安全')?.items).toEqual(['审计日志', '记录治理'])
+    // API Key / PII 脱敏 / JWT 令牌 / 黑名单 仍需各自的 read 码（OPERATOR 不持有）
+    expect(groups.find(group => group.title === '系统')?.items).toEqual([
+      '状态持久化',
+      '集群设置',
+      '健康探针设置',
+      '操作记录'
+    ])
     wrapper.unmount()
   })
 
@@ -146,7 +154,7 @@ describe('Layout 角色门控', () => {
     wrapper.unmount()
   })
 
-  it('非 ADMIN 直接输入 /system/cluster 被守卫重定向回仪表板，状态持久化可直达', async () => {
+  it('有码即可直达 /system/cluster；无码页面仍被守卫挡回仪表板', async () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const userStore = useUserStore()
@@ -162,6 +170,10 @@ describe('Layout 角色门控', () => {
     // 守卫根本不执行，会得到「没被重定向」的假红（实际踩过）。
     await router.push('/tools/client-access')
     await router.push('/system/cluster')
+    expect(router.currentRoute.value.path).toBe('/system/cluster')
+
+    // 没有 security:apikeys:read ⇒ 仍然进不去
+    await router.push('/security/api-keys')
     expect(router.currentRoute.value.path).toBe('/dashboard/main')
 
     await router.push('/config/state-persistence')
@@ -182,9 +194,7 @@ describe('Layout 角色门控', () => {
 
     await router.push('/tools/client-access')
     await router.push('/system/cluster')
-    // 守卫把用户送到 dashboard-main 后，若再跳一次就会抛 Infinite redirect；
-    // 现在落地页自身无权限时直接放行，所以导航停在 /dashboard/main 不报错
-    expect(router.currentRoute.value.path).toBe('/dashboard/main')
+    expect(router.currentRoute.value.path).toBe('/system/cluster')
   })
 })
 

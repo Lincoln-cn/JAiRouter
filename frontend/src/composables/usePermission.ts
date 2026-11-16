@@ -11,9 +11,11 @@ import type { MenuGroup, MenuItem } from '@/config/menu'
  * - `filterMenuByPermission(groups)`：按当前用户权限**与角色**过滤菜单组/子项
  * - `getAccessibleTabs(item)`：菜单项的 tab 级门控（菜单可见 ≠ 每个 tab 可用）
  *
- * 角色判定与 `router/index.ts` 的守卫同源（都是 `userInfo.roles`）：`/security`、
- * `/system` 父级声明了 `roles: ['ADMIN']`，菜单若只看权限码就会列出「点了被重定向」
- * 的死入口 —— 所以菜单项用 `roles` 把同一条约束显式写下来。
+ * 角色判定与 `router/index.ts` 的守卫同源（都是 `userInfo.roles`）。**当前没有任何菜单项
+ * 或路由声明 roles**：`/security`、`/system` 父级的 `meta.roles` 已撤掉，授权边界统一交给
+ * 权限码 —— 否则会出现「后端放行、前端藏入口」的反向不可达（四角色冒烟实测：
+ * OPERATOR/VIEWER 持 `security:audit:read`，审计接口 200，UI 却进不去）。
+ * `roles` 相关能力保留，将来若恢复角色级门控，菜单与路由必须同时声明并保持同口径。
  *
  * 核心判定逻辑在 user store 的 `hasPermission`，本 composable 仅做菜单层包装。
  * 注意：`hasPermission` 的 fail-open（无权限数据时不限制）是已裁定的既有语义，

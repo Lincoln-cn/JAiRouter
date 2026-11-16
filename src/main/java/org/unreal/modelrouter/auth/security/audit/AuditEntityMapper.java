@@ -43,7 +43,12 @@ public class AuditEntityMapper {
         dto.setGeoLocation(entity.getGeoLocation());
         dto.setDeviceInfo(entity.getDeviceInfo());
         dto.setUserId(entity.getUserId());
-        dto.setResourceId(entity.getResourceId());
+        // 实体有两个字段：resource（资源类型，如 call-history）与 resourceId（具体记录 id）。
+        // SecurityAuditEvent 只有 resource、没有 resourceId ⇒ 经 recordEvent 落库的行
+        // 只有 resource 有值，直接读 getResourceId() 会让查询响应恒空（运行态核对发现
+        // FULL_CONTENT_ACCESS 的 resourceId 一直是空）。这里回退到 resource，保证
+        // 「事件里带资源名」的行在 DTO 侧至少能显示资源。
+        dto.setResourceId(entity.getResourceId() != null ? entity.getResourceId() : entity.getResource());
         dto.setAction(entity.getAction());
         dto.setDetails(entity.getDetails());
         dto.setIpAddress(entity.getClientIp());

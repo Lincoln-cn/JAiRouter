@@ -17,12 +17,17 @@
  * 权限语义（设计文档 §3.3）：
  * - `permission` 缺省 = 所有已登录用户可见；
  * - 数组 = **或**（任一命中即显示），用于「聚合了不同权限码页面」的菜单项；
- * - `roles` 缺省 = 不限制；声明后与 `permission` 是**且**关系，必须与路由守卫的
- *   `meta.roles` 同口径（`/security`、`/system` 两个父级要求 ADMIN）。否则会出现
- *   「菜单看得见、点进去被重定向到仪表板」的死入口 —— 见 `menu.spec.ts` 的一致性断言；
+ * - `roles` 字段保留（能力上与 `permission` 是**且**关系，必须与路由守卫的
+ *   `meta.roles` 同口径），但**当前没有任何菜单项声明它**：`/security`、`/system`
+ *   两个父级的 `meta.roles: ['ADMIN']` 已移除，授权边界统一交给权限码 + 路由
+ *   `meta.permissions`。原因是运行态冒烟发现「后端允许、前端父路由挡」——OPERATOR /
+ *   VIEWER 持有 `security:audit:read`，API 返回 200，UI 却进不去，属重复门控造出的
+ *   功能不可达。将来若确实需要角色级门控，请同时给菜单项与路由加上并保持同口径
+ *   （见 `menu.spec.ts` 与 `menuRouteAlignment.spec.ts` 的一致性断言）；
  * - tab 必须再单独门控：菜单可见 ≠ 每个 tab 可用（例：只有 `cb:history:read` 的用户
  *   看得到「熔断」，但落地页是「历史」而不是「状态与重置」）。
- * - 权限码以 `PermissionCodes.java` 的 `ALL_PERMISSION_CODES` 为权威全集（当前 70 个）。
+ * - 权限码以 `PermissionCodes.java` 的 `ALL_PERMISSION_CODES` 为权威全集（当前 71 个：
+ *   `callhistory:view` 已拆为 `callhistory:read` + `callhistory:full-content`）。
  *   设计文档 §3.1 表里的 `security:jwt:manage` / `system:users:manage` / `system:roles:manage`
  *   在代码里不存在，已分别替换为 `security:jwttokens:manage` / `system:accounts:manage` /
  *   `system:permissions:manage`。
@@ -56,6 +61,9 @@ export interface MenuItem {
    *
    * 与 `permission` 是**且**关系，且必须与路由守卫的 `meta.roles` 同口径：
    * 菜单只按权限码过滤、路由按角色拦截时，会造出「看得见但点不进」的死入口。
+   *
+   * **当前没有任何菜单项使用它**：`/security`、`/system` 父级的 `meta.roles` 已撤掉，
+   * 授权边界统一交给权限码（否则会反过来出现「后端放行、前端藏入口」）。
    */
   roles?: string[]
   /** 菜单项图标名（Element Plus 图标 kebab-case 名，可选） */
@@ -387,7 +395,6 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/security/api-keys',
         title: 'menu.apiKeys',
-        roles: ['ADMIN'],
         permission: ['security:apikeys:read', 'security:apikeys:manage'],
         tabs: [
           {
@@ -401,7 +408,6 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/security/sanitization',
         title: 'menu.sanitization',
-        roles: ['ADMIN'],
         permission: ['security:sanitization:read', 'security:sanitization:manage'],
         tabs: [
           {
@@ -415,7 +421,6 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/security/jwt-tokens',
         title: 'menu.jwtTokens',
-        roles: ['ADMIN'],
         permission: ['security:jwttokens:read', 'security:jwttokens:manage'],
         tabs: [
           {
@@ -429,7 +434,6 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/security/blacklist',
         title: 'menu.blacklist',
-        roles: ['ADMIN'],
         permission: ['security:blacklist:read', 'security:blacklist:manage'],
         tabs: [
           {
@@ -443,7 +447,6 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/security/audit-logs',
         title: 'menu.auditLogs',
-        roles: ['ADMIN'],
         permission: 'security:audit:read',
         tabs: [
           {
@@ -457,7 +460,6 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/security/record-governance',
         title: 'menu.recordGovernance',
-        roles: ['ADMIN'],
         permission: ['config:callhistory:read', 'config:callhistory:write'],
         tabs: [
           {
@@ -478,7 +480,6 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/system/accounts',
         title: 'menu.accounts',
-        roles: ['ADMIN'],
         permission: ['system:accounts:read', 'system:accounts:manage'],
         tabs: [
           {
@@ -492,7 +493,6 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/system/permissions',
         title: 'menu.permissions',
-        roles: ['ADMIN'],
         permission: ['system:permissions:read', 'system:permissions:manage'],
         tabs: [
           {
@@ -532,7 +532,6 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/system/cluster',
         title: 'menu.clusterConfig',
-        roles: ['ADMIN'],
         permission: ['config:cluster:read', 'config:cluster:write'],
         tabs: [
           {
@@ -546,7 +545,6 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/system/health',
         title: 'menu.healthConfig',
-        roles: ['ADMIN'],
         permission: ['config:health:read', 'config:health:write'],
         tabs: [
           {
@@ -560,7 +558,6 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/system/console-operations',
         title: 'menu.consoleOperations',
-        roles: ['ADMIN'],
         permission: ['monitoring:console:read'],
         tabs: [
           {

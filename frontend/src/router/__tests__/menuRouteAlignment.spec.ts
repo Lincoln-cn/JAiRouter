@@ -4,19 +4,19 @@ import { KNOWN_PERMISSION_CODES } from '@/config/__tests__/knownPermissions'
 import router from '@/router'
 
 /**
- * 菜单 ↔ 路由守卫一致性（死入口守卫，2026-11-16）
+ * 菜单 ↔ 路由守卫一致性（2026-11-16）
  *
- * 背景：`/security`、`/system` 两个父路由声明了 `meta.roles = ['ADMIN']`，而菜单此前
- * 只按权限码过滤 ⇒ OPERATOR / USER / VIEWER 能看到「审计日志」「记录治理」「集群设置」
- * 等入口，点击后被守卫重定向回仪表板（看得见、点不进）。
+ * 第四轮的背景：`/security`、`/system` 两个父路由声明了 `meta.roles = ['ADMIN']`，而菜单
+ * 只按权限码过滤 ⇒ OPERATOR / USER / VIEWER 能看到「点了被重定向」的入口。当时的修法是
+ * 给菜单项补同样的 `roles`。
  *
- * 修法：菜单项显式声明 `roles`，本测试用真实的 `router.resolve()` 取**合并后**的
- * `meta.roles`（vue-router 会把父级 roles 合并到子路由）与菜单声明逐一对照，
- * 任何一侧单边改动都会在这里红。
- *
- * 另外两条守卫分别盯「菜单里的 URL 是否真的存在」与「每个业务页面是否都声明了权限码」，
- * 后者是 2026-11-16 那次修复的防复发项：当时 53 条路由里只有 15 条带 `meta.permissions`，
- * 新增页面很容易再次漏写。
+ * 第五轮撤回这一步：运行态冒烟发现后端对 OPERATOR / VIEWER 是放行审计接口的
+ * （它们持有 `security:audit:read`），前端父级角色限制反而造出「有权限却看不到」的
+ * 反向不可达。现在授权边界只由权限码 + `meta.permissions` 表达，本文件守的是：
+ * ① 菜单声明的 roles 与路由合并后的 `meta.roles` 必须一致（当前都为空）；
+ * ② 菜单声明的权限码都能在路由 `meta.permissions` 找到（菜单可见则路由必须放行）；
+ * ③ 路由表里不再有 `meta.roles`；
+ * ④ 菜单 URL 真实存在；⑤ 业务页面必须声明权限码；⑥ 页面必须能从菜单进入。
  */
 const toArray = (value?: string | string[]): string[] =>
   value ? (Array.isArray(value) ? [...value] : [value]) : []
@@ -99,13 +99,17 @@ describe('菜单与路由守卫一致性', () => {
     expect([...new Set(unknown)].sort()).toEqual([])
   })
 
-  it('路由表里声明 meta.roles 的只有 /security 与 /system 两个父级', () => {
+  it('路由表里没有任何路由声明 meta.roles（授权边界统一由权限码表达）', () => {
+    // 第五轮把 `/security`、`/system` 的 `meta.roles: ['ADMIN']` 撤掉了：
+    // 它和权限码表达的是同一条边界，两处各写一遍必然漂移（运行态冒烟发现
+    // OPERATOR/VIEWER 的后端 200 但 UI 进不去）。将来若要恢复角色级门控，
+    // 请同时给菜单项加 roles，并把这条断言改成「菜单声明集合 == 路由声明集合」。
     const paths = router
       .getRoutes()
       .filter(route => (route.meta.roles?.length ?? 0) > 0)
       .map(route => route.path)
       .sort()
-    expect(paths).toEqual(['/security', '/system'])
+    expect(paths).toEqual([])
   })
 
   it('菜单项的 permission 覆盖其每个 tab 的 permission（否则菜单项门控与 tab 门控会漂移）', () => {

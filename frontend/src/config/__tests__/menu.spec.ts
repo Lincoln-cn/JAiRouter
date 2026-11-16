@@ -155,44 +155,30 @@ describe('menu.ts 权限码白名单（#567）', () => {
 })
 
 /**
- * 菜单角色声明（死入口回归，2026-11-16）
+ * 菜单角色声明的现状（2026-11-16 第五轮）
  *
- * `/security`、`/system` 两个父路由要求 `roles: ['ADMIN']`。菜单此前只按权限码过滤，
- * 导致 OPERATOR / USER / VIEWER 看得到「审计日志」「记录治理」「集群设置」等入口，
- * 点进去却被守卫重定向回仪表板。这里把「哪些项必须声明 ADMIN」钉成清单，
- * 与 `router/__tests__/menuRouteAlignment.spec.ts`（对照路由 meta.roles）互为保险。
+ * 第五轮前的做法是「`/security`、`/system` 父路由要求 `roles: ['ADMIN']`，菜单给对应 11 项
+ * 补同样的 roles」—— 修掉了「看得见但点不进」的死入口。
+ *
+ * 但四角色运行态冒烟又发现反向问题：OPERATOR / VIEWER 持有 `security:audit:read`
+ * （VIEWER 模板是「所有 :read 减 8 个管理面 read」），后端 `/api/security/audit/extended/**`
+ * 返回 200，前端却因父路由角色限制进不去 —— 同一条授权边界在两处各写一遍，必然漂移。
+ *
+ * 现在的口径：**授权边界只由权限码 + 路由 `meta.permissions` 表达**，两个父级的
+ * `meta.roles` 已移除，菜单也不再声明 roles。`roles` 字段保留但当前无人使用；
+ * 若将来重新启用，必须同时改菜单与路由并让本文件与
+ * `router/__tests__/menuRouteAlignment.spec.ts` 的一致性断言继续通过。
  */
-describe('menu.ts 角色声明（与路由守卫同口径）', () => {
-  /** 落在 /security、/system 父级下的菜单项（11 项） */
-  const ADMIN_ONLY_ITEMS = [
-    '/security/api-keys',
-    '/security/sanitization',
-    '/security/jwt-tokens',
-    '/security/blacklist',
-    '/security/audit-logs',
-    '/security/record-governance',
-    '/system/accounts',
-    '/system/permissions',
-    '/system/cluster',
-    '/system/health',
-    '/system/console-operations'
-  ]
-
-  it('只有这两个父级下的 11 项声明 roles，且均为 ADMIN', () => {
+describe('menu.ts 角色声明（当前统一交给权限码）', () => {
+  it('没有任何菜单项声明 roles', () => {
     const items = menuGroups.flatMap(group => group.children)
     const withRoles = items.filter(item => (item.roles?.length ?? 0) > 0)
-    expect(withRoles.map(item => item.path).sort()).toEqual([...ADMIN_ONLY_ITEMS].sort())
-    for (const item of withRoles) {
-      expect(item.roles, item.path).toEqual(['ADMIN'])
-    }
+    expect(withRoles.map(item => item.path)).toEqual([])
   })
 
-  it('状态持久化与追踪配置不在 /system 父级下，不声明 roles', () => {
-    const items = menuGroups.flatMap(group => group.children)
-    for (const path of ['/config/state-persistence', '/tracing/management']) {
-      const item = items.find(candidate => candidate.path === path)
-      expect(item, path).toBeTruthy()
-      expect(item?.roles, path).toBeUndefined()
-    }
+  it('tab 级也没有 roles 残留', () => {
+    const tabs = menuGroups.flatMap(group => group.children).flatMap(item => item.tabs)
+    const withRoles = tabs.filter(tab => (tab.roles?.length ?? 0) > 0)
+    expect(withRoles.map(tab => tab.to)).toEqual([])
   })
 })

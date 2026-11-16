@@ -348,8 +348,8 @@ ADMIN 直接返回全量 71 码；其他角色返回其 JWT `permissions` claim 
 | 运行观测 | 5 | 调用历史（调用记录 ｜ 调用历史仪表盘，`callhistory:read`）/ 链路追踪（链路搜索 `tracing:search:read` ｜ 追踪仪表盘 `tracing:dashboard:read`）/ 异常管理（异常列表 ｜ 统计分析，`monitoring:exceptions:read`）/ 慢请求（慢调用 ｜ 慢 SQL，`monitoring:slowquery:read`）/ 用量统计（Token 用量 `monitoring:tokenusage:read` ｜ 配额使用 `monitoring:quota:read`） |
 | 流量治理 | 7 | 路由规则（`config:rules:read`）/ 负载均衡（实时监控 `lb:monitoring:read` ｜ 策略配置 `lb:config:read` / `lb:config:write`）/ 限流（限流监控 `rl:monitoring:read` ｜ 限流配置 `config:ratelimit:read`）/ 熔断（熔断监控 `cb:monitoring:read` ｜ 熔断历史 `cb:history:read` ｜ 全局配置 `config:circuitbreaker:read`）/ 响应缓存管理（`config:cache:read` / `config:cache:write`）/ 配额运行时配置（`config:quota:read`）/ 资源池（`config:pools:read`） |
 | 模型与实例 | 4 | 服务管理 / 实例管理 / 版本管理 / Adapter管理（对应 `config:services|instances|versions|adapters:read`） |
-| 安全 | 5 | API 密钥管理（`security:apikeys:read` / `security:apikeys:manage`）/ PII 脱敏管理（`security:sanitization:read` / `security:sanitization:manage`）/ JWT 令牌管理（`security:jwttokens:read` / `security:jwttokens:manage`）/ 黑名单管理（`security:blacklist:read` / `security:blacklist:manage`）/ 审计日志（`security:audit:read`） |
-| 系统 | 4 | 账户管理（`system:accounts:read` / `system:accounts:manage`）/ 权限管理（`system:permissions:read` / `system:permissions:manage`）/ 追踪配置（`tracing:config:read` / `tracing:config:manage`）/ 状态持久化（`config:persistence:read`） |
+| 安全 | 6 | API 密钥管理（`security:apikeys:read` / `security:apikeys:manage`）/ PII 脱敏管理（`security:sanitization:read` / `security:sanitization:manage`）/ JWT 令牌管理（`security:jwttokens:read` / `security:jwttokens:manage`）/ 黑名单管理（`security:blacklist:read` / `security:blacklist:manage`）/ 审计日志（`security:audit:read`）/ 记录治理（`config:callhistory:read` / `config:callhistory:write`） |
+| 系统 | 7 | 账户管理（`system:accounts:read` / `system:accounts:manage`）/ 权限管理（`system:permissions:read` / `system:permissions:manage`）/ 追踪配置（`tracing:config:read` / `tracing:config:manage`）/ 状态持久化（`config:persistence:read`）/ 集群设置（`config:cluster:read` / `config:cluster:write`）/ 健康探针设置（`config:health:read` / `config:health:write`）/ 操作记录（`monitoring:console:read`） |
 | 开发工具 | 2 | AI 试验场（对话测试 / 向量生成 / 重排序 / 语音服务 / 图像服务，均为 `ai:playground:use`）/ 客户端接入指南（无权限码，所有已登录用户可见） |
 
 可见性控制机制：
@@ -357,8 +357,9 @@ ADMIN 直接返回全量 71 码；其他角色返回其 JWT `permissions` claim 
 - **菜单过滤**：`menu.ts` 中每项可带 `permission` 字段（采用「读」语义码）；类型可以是单个权限码或数组，**数组是「或」语义**（任一命中即显示）。`usePermission`（内部调用 user store 的 `hasPermission`）过滤子项，组内子项全部被过滤时整组隐藏。无 `permission` 字段的项对所有已登录用户可见。
 - **tab 单独门控**：一个菜单项内的 tab 各自带 `permission`，只拥有部分 tab 权限时该项仍显示，落地页取「第一个有权限的 tab」；点击菜单项不会跳到无权限的页面。
 - **深链高亮**：`ROUTE_TO_MENU` 由 `menu.ts` 的 tabs 派生（不手写），未命中的路由回退到自身路径；因此直接打开 `/monitoring/quota` 这类被收起的 URL 时，侧栏仍高亮「用量统计」。
-- **路由守卫**：路由 `meta.permissions` 声明所需权限码数组，`router.beforeEach` 要求**全部满足**（ADMIN 恒通过），不满足时跳转仪表板。
-  - ⚠️ 菜单是「或」、路由守卫是「与」，两者语义不同：`#567` 把 9 个入口的 `permission` 改成「读码或写/管理码」，但这些页面的 `meta.permissions` 仍只声明写/管理码 ⇒ **只持读码的用户会看到入口、点进去被重定向回仪表板**。要真正让只读用户进入这些页面，需同步收敛路由守卫语义（本次未改 `router/index.ts`）。
+- **路由守卫**：路由 `meta.permissions` 声明所需权限码数组，`router.beforeEach` 要求**任一命中**（ADMIN 恒通过），不满足时跳转仪表板。
+  - 菜单与路由使用同一批权限码：菜单项可见 ⇒ 该路由的 `meta.permissions` 必然放行（`menuRouteAlignment.spec.ts` 会校验这层包含关系）。只有「菜单项挂了多个 tab、而用户只持其中一个 tab 的码」时才会出现入口可见、落地页是另一个 tab 的正常行为。
+- **没有角色级门控**：`/security`、`/system` 两个父路由曾用 `meta.roles = ['ADMIN']` 把整组挡在角色上，运行态冒烟发现 OPERATOR / VIEWER 持 `security:audit:read` 时后端审计接口返回 200、控制台却进不去（后端放行、前端藏入口）⇒ 该限制已撤掉，授权边界只由权限码表达。`/system/accounts`、`/system/permissions` 之类仍然只有 ADMIN 能进，因为 `system:*` 码只授 ADMIN，而不是靠角色名拦截。
 - **空权限数据兼容**：旧版本签发的令牌无 `permissions` claim（或角色未在 `role_permissions` 登记）时，前端权限列表为空且**不限制**菜单/路由，避免菜单整体消失。注意这是**前端**的兼容行为（前端无法判定 URL 规则）；后端对未命中规则的 `/api/**` 已改为 fail-closed，两者独立。
 
 ## 升级与迁移

@@ -205,7 +205,7 @@ const router = createRouter({
       path: '/security',
       name: 'security',
       component: () => import('../views/Layout.vue'),
-      meta: { requiresAuth: true, roles: ['ADMIN'], titleKey: 'route.security' },
+      meta: { requiresAuth: true, titleKey: 'route.security' },
       redirect: '/security/api-keys',
       children: [
         {
@@ -255,7 +255,7 @@ const router = createRouter({
       path: '/system',
       name: 'system',
       component: () => import('../views/Layout.vue'),
-      meta: { requiresAuth: true, roles: ['ADMIN'], titleKey: 'route.system' },
+      meta: { requiresAuth: true, titleKey: 'route.system' },
       redirect: '/system/accounts',
       children: [
         {

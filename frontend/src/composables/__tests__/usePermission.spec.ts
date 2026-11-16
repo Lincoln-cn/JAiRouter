@@ -123,40 +123,65 @@ describe('resolveLandingPath / getAccessibleTabs', () => {
 })
 
 /**
- * 菜单可见性必须与路由守卫同口径（死入口回归，2026-11-16）
+ * 菜单可见性只由权限码决定（2026-11-16 第五轮）
  *
- * `/security`、`/system` 两个父路由声明了 `meta.roles = ['ADMIN']`，而菜单此前只按权限码
- * 过滤 ⇒ OPERATOR / USER / VIEWER 会看到「点了被重定向回仪表板」的菜单项。
- * 现在菜单项用 `roles` 把同一条约束显式写下来，本组断言守的正是它。
+ * 第四轮的做法是给 `/security`、`/system` 下的菜单项补 `roles: ['ADMIN']`，
+ * 与当时的父路由 `meta.roles` 对齐。但四角色运行态冒烟发现两个问题：
+ * 1. 后端本来就允许 OPERATOR / VIEWER 调 `/api/security/audit/extended/**`（它们持有
+ *    `security:audit:read`），前端却把入口藏起来 ⇒ 有权限也看不到，属功能不可达；
+ * 2. 同一条授权边界写两遍（父路由 roles + 菜单 roles），任一处改动都可能漂移。
+ *
+ * 第五轮撤掉父级 `meta.roles` 与菜单 `roles`，让权限码成为唯一门控。本组断言守的是
+ * 「同一套权限码在菜单与后端得到同一种可见性」。
  */
-describe('roles 声明：菜单与路由守卫同口径', () => {
+describe('菜单可见性：权限码是唯一门控', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })
 
-  it('OPERATOR 持有 security:audit:read / config:cluster:read 也看不到「安全」组与 /system 下 5 项', () => {
+  it('OPERATOR 持审计/集群/健康/操作记录码时，安全与系统组只显示有码的项', () => {
     setup(
       ['security:audit:read', 'config:cluster:read', 'config:health:read', 'monitoring:console:read', 'config:callhistory:read', 'config:persistence:read'],
       ['OPERATOR']
     )
     const { filterMenuByPermission } = usePermission()
     const groups = filterMenuByPermission(menuGroups)
-    // 安全组 6 项全部落在 /security 父级（roles: ['ADMIN']）下 ⇒ 整个组消失
-    expect(groups.find(group => group.index === 'security')).toBeUndefined()
-    // 系统组：accounts/permissions/cluster/health/console-operations 被角色拦掉；
-    // 追踪配置需要 tracing:config:*（OPERATOR 不持有）；只剩不在 /system 父级下的状态持久化
+    // 安全组：API Key / PII 脱敏 / JWT 令牌 / 黑名单 需要各自的 read 码（OPERATOR 不持有）
+    const security = groups.find(group => group.index === 'security')
+    expect(security?.children.map(item => item.path)).toEqual([
+      '/security/audit-logs',
+      '/security/record-governance'
+    ])
+    // 系统组：accounts/permissions 需要 system:* 码；追踪配置需要 tracing:config:* ⇒ 都不显示
     const system = groups.find(group => group.index === 'system')
-    expect(system?.children.map(item => item.path)).toEqual(['/config/state-persistence'])
+    expect(system?.children.map(item => item.path)).toEqual([
+      '/config/state-persistence',
+      '/system/cluster',
+      '/system/health',
+      '/system/console-operations'
+    ])
   })
 
-  it('USER 持有 config:cluster:read 也看不到「集群设置」（父级要求 ADMIN）', () => {
+  it('USER 只有 config:cluster:read 时只多看到「集群设置」，安全组整体不出现', () => {
     setup(['config:cluster:read', 'config:persistence:read'], ['USER'])
     const { filterMenuByPermission } = usePermission()
-    const system = filterMenuByPermission(menuGroups).find(group => group.index === 'system')
-    expect(system?.children.map(item => item.path)).toEqual(['/config/state-persistence'])
+    const groups = filterMenuByPermission(menuGroups)
+    expect(groups.find(group => group.index === 'security')).toBeUndefined()
+    const system = groups.find(group => group.index === 'system')
+    expect(system?.children.map(item => item.path)).toEqual([
+      '/config/state-persistence',
+      '/system/cluster'
+    ])
   })
 
-  it('ADMIN 不受 roles 声明影响（安全组 6 项、系统组 7 项都在）', () => {
+  it('VIEWER 持 security:audit:read 时看得到「审计日志」（与后端接口一致）', () => {
+    setup(['security:audit:read'], ['VIEWER'])
+    const { filterMenuByPermission } = usePermission()
+    const security = filterMenuByPermission(menuGroups).find(group => group.index === 'security')
+    expect(security?.children.map(item => item.path)).toEqual(['/security/audit-logs'])
+  })
+
+  it('ADMIN 不受影响（安全组 6 项、系统组 7 项都在）', () => {
     setup([], ['ADMIN'])
     const { filterMenuByPermission } = usePermission()
     const groups = filterMenuByPermission(menuGroups)
