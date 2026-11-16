@@ -491,6 +491,22 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
 
+  /**
+   * 无权限时的统一出口
+   *
+   * 落地页 `dashboard-main` 自身也受权限门控（它声明了 meta.permissions），
+   * 若用户连落地页的权限码都没有，再跳 `dashboard-main` 就会被同一个守卫反复拦截，
+   * vue-router 会抛「Infinite redirect in navigation guard」而整页白屏。
+   * 所以已经在落地页上时直接放行，由页面自身呈现（数据请求失败也可降级展示）。
+   */
+  const denyToDashboard = (): void => {
+    if (to.name === 'dashboard-main') {
+      next()
+      return
+    }
+    next({ name: 'dashboard-main' })
+  }
+
   // 特殊处理根路径的重定向
   if (to.path === '/') {
     next({ name: 'dashboard-main' })
@@ -520,7 +536,7 @@ router.beforeEach((to, from, next) => {
       const hasRole = requiredRoles.some(role => userRoles.includes(role))
       if (!hasRole) {
         // 无权限，跳转到仪表板
-        next({ name: 'dashboard-main' })
+        denyToDashboard()
         return
       }
     }
@@ -531,7 +547,7 @@ router.beforeEach((to, from, next) => {
       const hasAnyPermission = requiredPermissions.some(code => userStore.hasPermission(code))
       if (!hasAnyPermission) {
         // 无权限，跳转到仪表板
-        next({ name: 'dashboard-main' })
+        denyToDashboard()
         return
       }
     }

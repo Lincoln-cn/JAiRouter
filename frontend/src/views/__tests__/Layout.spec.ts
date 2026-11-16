@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import ElementPlus from 'element-plus'
 import router from '@/router'
@@ -15,15 +15,21 @@ import Layout from '@/views/Layout.vue'
  * 这里挂真实 Layout + 真实 router（只 stub 掉页面组件与语言切换器），
  * 断言的类名与 e2e/specs/02-layout-nav.mjs 的 `nav-tabs` / `nav-tab` 一致。
  */
-const mountAt = async (path: string, permissions: string[]) => {
+const mountAt = async (path: string, permissions: string[], roles: string[] = ['USER']) => {
+  // 每个用例独立 pinia，并显式传给 mount：否则 Layout 内 useUserStore() 可能解析到
+  // 上一个用例残留的 pinia 实例，读到别人的 roles/permissions（实际踩过）。
+  const pinia = createPinia()
+  setActivePinia(pinia)
   const userStore = useUserStore()
   userStore.token = 'test-token'
   userStore.permissions = permissions
+  // 角色判定与路由守卫同源（userInfo.roles）；不写 roles 时 hasRouteRoles 无法命中
+  userStore.userInfo = { username: 'tester', roles, permissions }
   await router.push(path)
   await router.isReady()
   return mount(Layout, {
     global: {
-      plugins: [ElementPlus, i18n, router],
+      plugins: [pinia, ElementPlus, i18n, router],
       stubs: {
         RouterView: true,
         LanguageSwitcher: true
@@ -82,6 +88,103 @@ describe('Layout 多 tab 切换条', () => {
     expect(wrapper.findAll('.el-breadcrumb__inner a')).toHaveLength(2)
     expect(wrapper.findAll('.el-breadcrumb__item').at(-1)?.find('a').exists()).toBe(false)
     wrapper.unmount()
+  })
+})
+
+/**
+ * 角色门控（死入口回归，2026-11-16）
+ *
+ * 菜单项的 `roles` 声明只有真的进到渲染层才算修好：配置断言（menu.spec.ts /
+ * menuRouteAlignment.spec.ts）证明「声明与路由同口径」，这里证明「侧栏里确实不再出现
+ * 那些点不进去的入口」，并用守卫重定向验证路由侧仍然拦着。
+ */
+describe('Layout 角色门控', () => {
+  beforeEach(() => {
+    i18n.global.locale.value = 'zh-CN'
+    localStorage.removeItem('ja-sidebar-collapsed')
+  })
+
+  /** 侧栏分组快照：组标题 → 组内菜单项文本（组标题可能与项名重名，不能拿整段 text() 断言） */
+  const sidebarGroups = (wrapper: VueWrapper) =>
+    wrapper.findAll('.el-sub-menu').map(group => ({
+      title: group.find('.el-sub-menu__title').text(),
+      items: group.findAll('.el-menu-item').map(node => node.text())
+    }))
+
+  it('OPERATOR 视角：安全组整体消失，系统组只剩状态持久化', async () => {
+    const wrapper = await mountAt('/config/state-persistence', [
+      'overview:dashboard:read',
+      'config:persistence:read',
+      'config:cluster:read',
+      'config:health:read',
+      'monitoring:console:read'
+    ], ['OPERATOR'])
+
+    const groups = sidebarGroups(wrapper)
+    // 安全组 6 项全部落在 /security 父级（roles: ['ADMIN']）下 ⇒ 整组不渲染
+    expect(groups.map(group => group.title)).not.toContain('安全')
+    // 系统组仍在：状态持久化没有角色声明；其它 6 项要 ADMIN，即使权限码在手也不显示
+    expect(groups.find(group => group.title === '系统')?.items).toEqual(['状态持久化'])
+    wrapper.unmount()
+  })
+
+  it('ADMIN 视角：七组齐全，安全 6 项与系统 7 项都在（反证不是整栏都没渲染）', async () => {
+    const wrapper = await mountAt('/system/cluster', [], ['ADMIN'])
+
+    const groups = sidebarGroups(wrapper)
+    expect(groups.map(group => group.title)).toEqual([
+      '概览',
+      '运行观测',
+      '流量治理',
+      '模型与实例',
+      '安全',
+      '系统',
+      '开发工具'
+    ])
+    expect(groups.find(group => group.title === '安全')?.items).toHaveLength(6)
+    expect(groups.find(group => group.title === '系统')?.items).toHaveLength(7)
+    wrapper.unmount()
+  })
+
+  it('非 ADMIN 直接输入 /system/cluster 被守卫重定向回仪表板，状态持久化可直达', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const userStore = useUserStore()
+    userStore.token = 'test-token'
+    userStore.permissions = ['overview:dashboard:read', 'config:cluster:read', 'config:persistence:read']
+    userStore.userInfo = {
+      username: 'op',
+      roles: ['OPERATOR'],
+      permissions: userStore.permissions
+    }
+
+    // 从无权限码要求的页面出发：同路径 push 会被 vue-router 当成重复导航跳过，
+    // 守卫根本不执行，会得到「没被重定向」的假红（实际踩过）。
+    await router.push('/tools/client-access')
+    await router.push('/system/cluster')
+    expect(router.currentRoute.value.path).toBe('/dashboard/main')
+
+    await router.push('/config/state-persistence')
+    expect(router.currentRoute.value.path).toBe('/config/state-persistence')
+  })
+
+  it('连仪表板权限都没有时，落地页放行而不是无限重定向', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const userStore = useUserStore()
+    userStore.token = 'test-token'
+    userStore.permissions = ['config:cluster:read']
+    userStore.userInfo = {
+      username: 'op',
+      roles: ['OPERATOR'],
+      permissions: userStore.permissions
+    }
+
+    await router.push('/tools/client-access')
+    await router.push('/system/cluster')
+    // 守卫把用户送到 dashboard-main 后，若再跳一次就会抛 Infinite redirect；
+    // 现在落地页自身无权限时直接放行，所以导航停在 /dashboard/main 不报错
+    expect(router.currentRoute.value.path).toBe('/dashboard/main')
   })
 })
 

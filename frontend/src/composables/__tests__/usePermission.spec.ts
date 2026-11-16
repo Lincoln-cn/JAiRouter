@@ -139,4 +139,20 @@ describe('roles 声明：菜单与路由守卫同口径', () => {
     expect(groups.find(group => group.index === 'security')?.children).toHaveLength(6)
     expect(groups.find(group => group.index === 'system')?.children).toHaveLength(7)
   })
+
+  it('调用历史（callhistory:view）当前只授 ADMIN：其它角色看不到调用记录页面', () => {
+    // 现状口径（后端 RolePermissionSeederTest 已逐角色断言）：OPERATOR 只收 :read/:write、
+    // USER 的硬编码清单一律不含、VIEWER 只收 :read ⇒ 三角色都没有 callhistory:view。
+    // 若将来把该码发给其它角色，这条断言会红 —— 那时应当同步文档与可见性评审，
+    // 而不是直接改断言（调用记录含请求/响应正文）。
+    for (const role of ['OPERATOR', 'USER', 'VIEWER']) {
+      setup(['overview:dashboard:read', 'config:callhistory:read'], [role])
+      const { filterMenuByPermission } = usePermission()
+      const tabs = filterMenuByPermission(menuGroups).flatMap(group =>
+        group.children.flatMap(item => item.tabs.map(tab => tab.to))
+      )
+      expect(tabs, role).not.toContain('/call-history/list')
+      expect(tabs, role).not.toContain('/call-history/dashboard')
+    }
+  })
 })
