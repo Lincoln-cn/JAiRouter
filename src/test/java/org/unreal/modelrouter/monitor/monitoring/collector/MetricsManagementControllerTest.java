@@ -384,5 +384,89 @@ class MetricsManagementControllerTest {
             assertEquals(HttpStatus.OK, result.getStatusCode());
             verify(sampling).setRequestMetrics(0.5);
         }
+
+        @Test
+        @DisplayName("METRICS-016b: 采样率越界返回 400（与控制台共用同一套校验）")
+        void testUpdateSamplingConfig_rejectsOutOfRange() {
+            MonitoringProperties.Sampling sampling = mock(MonitoringProperties.Sampling.class);
+            when(monitoringProperties.getSampling()).thenReturn(sampling);
+
+            MetricsManagementController.SamplingUpdateRequest request = new MetricsManagementController.SamplingUpdateRequest();
+            request.setRequestMetrics(5.0);
+
+            ResponseEntity<String> result = controller.updateSamplingConfig(request);
+
+            assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+            assertTrue(result.getBody().contains("采样率必须在 0~1 之间"));
+            verify(sampling, never()).setRequestMetrics(5.0);
+        }
+
+        @Test
+        @DisplayName("METRICS-016c: 6 项采样率都能写回（原来 traceProcessing/traceAnalysis 被静默忽略）")
+        void testUpdateSamplingConfig_writesAllSixRates() {
+            MonitoringProperties.Sampling sampling = mock(MonitoringProperties.Sampling.class);
+            when(monitoringProperties.getSampling()).thenReturn(sampling);
+
+            MetricsManagementController.SamplingUpdateRequest request = new MetricsManagementController.SamplingUpdateRequest();
+            request.setRequestMetrics(0.1);
+            request.setBackendMetrics(0.2);
+            request.setInfrastructureMetrics(0.3);
+            request.setTraceMetrics(0.4);
+            request.setTraceProcessingMetrics(0.5);
+            request.setTraceAnalysisMetrics(0.6);
+
+            ResponseEntity<String> result = controller.updateSamplingConfig(request);
+
+            assertEquals(HttpStatus.OK, result.getStatusCode());
+            verify(sampling).setRequestMetrics(0.1);
+            verify(sampling).setBackendMetrics(0.2);
+            verify(sampling).setInfrastructureMetrics(0.3);
+            verify(sampling).setTraceMetrics(0.4);
+            verify(sampling).setTraceProcessingMetrics(0.5);
+            verify(sampling).setTraceAnalysisMetrics(0.6);
+        }
+    }
+
+    // ==================== 更新采集性能配置测试 ====================
+
+    @Nested
+    @DisplayName("POST /actuator/metrics/performance-config - 更新采集性能配置测试")
+    class UpdatePerformanceConfigTests {
+
+        @Test
+        @DisplayName("METRICS-017: 成功更新采集性能配置")
+        void testUpdatePerformanceConfig_success() {
+            MonitoringProperties.Performance performance = mock(MonitoringProperties.Performance.class);
+            when(monitoringProperties.getPerformance()).thenReturn(performance);
+            when(performance.getBatchSize()).thenReturn(100);
+            when(performance.getBufferSize()).thenReturn(1000);
+
+            MetricsManagementController.PerformanceUpdateRequest request = new MetricsManagementController.PerformanceUpdateRequest();
+            request.setBatchSize(200);
+
+            ResponseEntity<String> result = controller.updatePerformanceConfig(request);
+
+            assertEquals(HttpStatus.OK, result.getStatusCode());
+            verify(performance).setBatchSize(200);
+        }
+
+        @Test
+        @DisplayName("METRICS-017b: 缓冲区小于批大小返回 400")
+        void testUpdatePerformanceConfig_rejectsBufferSmallerThanBatch() {
+            MonitoringProperties.Performance performance = mock(MonitoringProperties.Performance.class);
+            when(monitoringProperties.getPerformance()).thenReturn(performance);
+            when(performance.getBatchSize()).thenReturn(100);
+            when(performance.getBufferSize()).thenReturn(1000);
+
+            MetricsManagementController.PerformanceUpdateRequest request = new MetricsManagementController.PerformanceUpdateRequest();
+            request.setBatchSize(800);
+            request.setBufferSize(400);
+
+            ResponseEntity<String> result = controller.updatePerformanceConfig(request);
+
+            assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+            assertTrue(result.getBody().contains("缓冲区必须 ≥ 批大小"));
+            verify(performance, never()).setBufferSize(400);
+        }
     }
 }

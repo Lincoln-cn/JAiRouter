@@ -17,8 +17,10 @@ import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsCacheAndR
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsCircuitBreaker;
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsDegradationStrategy;
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MonitoringHealthChecker;
+import org.unreal.modelrouter.common.exception.ApiException;
 import org.unreal.modelrouter.monitor.monitoring.config.DynamicMonitoringConfigUpdater;
 import org.unreal.modelrouter.monitor.monitoring.config.MonitoringEnabledCondition;
+import org.unreal.modelrouter.monitor.monitoring.config.MonitoringHotReloadValidator;
 import org.unreal.modelrouter.monitor.monitoring.error.MetricsErrorHandler;
 
 import java.util.HashMap;
@@ -31,6 +33,8 @@ import java.util.Map;
  * <p><b>为什么这里捕获 {@link RuntimeException} 而不是 {@code Exception}</b>（#604 批次 D）：本类只做
  * 参数校验与委托调用（collector / memory manager / circuit breaker / 配置对象），这些委托不抛受检
  * 异常；控制器边界的兜底语义（记录日志 + 500）保持不变，只是把“预期失败集合”写明。</p>
+ *
+ * <p><b>与控制台的分工</b>（#1172）：本类整族挂在 {@code /actuator/**} 下，{@code SecurityConfiguration} 对前缀要求 {@code ROLE_ADMIN}，是给运维做 break-glass 排障的入口，控制台不消费它。监控配置页面走 {@code PUT /api/monitoring/config/*}（{@code monitoring:config:write}），那条链路经 {@link DynamicMonitoringConfigUpdater}、会发配置变更事件并写 {@code MONITORING_CONFIG_CHANGED} 审计；本类直接改配置对象字段、不发事件也不写审计。因此与控制器重复的两个写入口（{@code POST /sampling}、{@code POST /performance-config}）已标注 {@code @Deprecated}，取值校验与控制器共用 {@link MonitoringHotReloadValidator}，非法输入返回 400 而不是 500。</p>
  */
 @RestController
 @RequestMapping("/actuator/metrics")
@@ -158,31 +162,60 @@ public class MetricsManagementController {
     }
 
     /**
-     * 更新采样率配置
+     * 更新采样率配置（内部运维入口）.
+     *
+     * <p>补齐 6 项采样率（含 {@code traceProcessing}/{@code traceAnalysis}）：原来只改前 4 项，后两项传了也不生效，属静默忽略。
+     *
+     * @deprecated 控制台与常规运维请改用 {@code PUT /api/monitoring/config/sampling}：那里走 {@link DynamicMonitoringConfigUpdater}、发配置变更事件并写审计；本端点仅供 {@code /actuator/**} 应急排障。
      */
+    @Deprecated
     @PostMapping("/sampling")
     public ResponseEntity<String> updateSamplingConfig(@RequestBody final SamplingUpdateRequest request) {
+        final MonitoringProperties.Sampling current = monitoringProperties.getSampling();
         try {
-            MonitoringProperties.Sampling sampling = monitoringProperties.getSampling();
-            
+            final double targetRequest = MonitoringHotReloadValidator.valueOr(request.getRequestMetrics(), current.getRequestMetrics());
+            final double targetBackend = MonitoringHotReloadValidator.valueOr(request.getBackendMetrics(), current.getBackendMetrics());
+            final double targetInfrastructure = MonitoringHotReloadValidator.valueOr(request.getInfrastructureMetrics(), current.getInfrastructureMetrics());
+            final double targetTrace = MonitoringHotReloadValidator.valueOr(request.getTraceMetrics(), current.getTraceMetrics());
+            final double targetTraceProcessing = MonitoringHotReloadValidator.valueOr(request.getTraceProcessingMetrics(), current.getTraceProcessingMetrics());
+            final double targetTraceAnalysis = MonitoringHotReloadValidator.valueOr(request.getTraceAnalysisMetrics(), current.getTraceAnalysisMetrics());
+
+            MonitoringHotReloadValidator.requireSamplingRate("request-metrics", targetRequest);
+            MonitoringHotReloadValidator.requireSamplingRate("backend-metrics", targetBackend);
+            MonitoringHotReloadValidator.requireSamplingRate("infrastructure-metrics", targetInfrastructure);
+            MonitoringHotReloadValidator.requireSamplingRate("trace-metrics", targetTrace);
+            MonitoringHotReloadValidator.requireSamplingRate("trace-processing-metrics", targetTraceProcessing);
+            MonitoringHotReloadValidator.requireSamplingRate("trace-analysis-metrics", targetTraceAnalysis);
+
             if (request.getRequestMetrics() != null) {
-                sampling.setRequestMetrics(request.getRequestMetrics());
+                current.setRequestMetrics(targetRequest);
             }
             if (request.getBackendMetrics() != null) {
-                sampling.setBackendMetrics(request.getBackendMetrics());
+                current.setBackendMetrics(targetBackend);
             }
             if (request.getInfrastructureMetrics() != null) {
-                sampling.setInfrastructureMetrics(request.getInfrastructureMetrics());
+                current.setInfrastructureMetrics(targetInfrastructure);
             }
             if (request.getTraceMetrics() != null) {
-                sampling.setTraceMetrics(request.getTraceMetrics());
+                current.setTraceMetrics(targetTrace);
             }
-            
-            logger.info("Updated sampling config: request={}, backend={}, infrastructure={}, trace={}", 
-                       sampling.getRequestMetrics(), sampling.getBackendMetrics(), 
-                       sampling.getInfrastructureMetrics(), sampling.getTraceMetrics());
-            
+            if (request.getTraceProcessingMetrics() != null) {
+                current.setTraceProcessingMetrics(targetTraceProcessing);
+            }
+            if (request.getTraceAnalysisMetrics() != null) {
+                current.setTraceAnalysisMetrics(targetTraceAnalysis);
+            }
+
+            logger.info("Updated sampling config: request={}, backend={}, infrastructure={}, trace={}, "
+                    + "traceProcessing={}, traceAnalysis={}",
+                    current.getRequestMetrics(), current.getBackendMetrics(),
+                    current.getInfrastructureMetrics(), current.getTraceMetrics(),
+                    current.getTraceProcessingMetrics(), current.getTraceAnalysisMetrics());
+
             return ResponseEntity.ok("Sampling configuration updated successfully");
+        } catch (ApiException e) {
+            logger.warn("Invalid sampling config: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (RuntimeException e) {
             logger.error("Error updating sampling config", e);
             return ResponseEntity.internalServerError()
@@ -205,27 +238,36 @@ public class MetricsManagementController {
     }
 
     /**
-     * 更新性能配置
+     * 更新采集性能配置（内部运维入口）.
+     *
+     * @deprecated 控制台与常规运维请改用 {@code PUT /api/monitoring/config/performance}：那里走 {@link DynamicMonitoringConfigUpdater}、发配置变更事件并写审计；本端点仅供 {@code /actuator/**} 应急排障。
      */
+    @Deprecated
     @PostMapping("/performance-config")
     public ResponseEntity<String> updatePerformanceConfig(@RequestBody final PerformanceUpdateRequest request) {
+        final MonitoringProperties.Performance current = monitoringProperties.getPerformance();
         try {
-            MonitoringProperties.Performance performance = monitoringProperties.getPerformance();
-            
+            final int batchSize = request.getBatchSize() != null ? request.getBatchSize() : current.getBatchSize();
+            final int bufferSize = request.getBufferSize() != null ? request.getBufferSize() : current.getBufferSize();
+            MonitoringHotReloadValidator.requirePerformanceBounds(batchSize, bufferSize);
+
             if (request.getAsyncProcessing() != null) {
-                performance.setAsyncProcessing(request.getAsyncProcessing());
+                current.setAsyncProcessing(request.getAsyncProcessing());
             }
             if (request.getBatchSize() != null) {
-                performance.setBatchSize(request.getBatchSize());
+                current.setBatchSize(request.getBatchSize());
             }
             if (request.getBufferSize() != null) {
-                performance.setBufferSize(request.getBufferSize());
+                current.setBufferSize(request.getBufferSize());
             }
-            
-            logger.info("Updated performance config: async={}, batchSize={}, bufferSize={}", 
-                       performance.isAsyncProcessing(), performance.getBatchSize(), performance.getBufferSize());
-            
+
+            logger.info("Updated performance config: async={}, batchSize={}, bufferSize={}",
+                    current.isAsyncProcessing(), current.getBatchSize(), current.getBufferSize());
+
             return ResponseEntity.ok("Performance configuration updated successfully");
+        } catch (ApiException e) {
+            logger.warn("Invalid performance config: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (RuntimeException e) {
             logger.error("Error updating performance config", e);
             return ResponseEntity.internalServerError()
@@ -466,6 +508,8 @@ public class MetricsManagementController {
         private Double backendMetrics;
         private Double infrastructureMetrics;
         private Double traceMetrics;
+        private Double traceProcessingMetrics;
+        private Double traceAnalysisMetrics;
 
         // Getters and Setters
         public Double getRequestMetrics() {
@@ -498,6 +542,22 @@ public class MetricsManagementController {
 
         public void setTraceMetrics(final Double traceMetrics) {
             this.traceMetrics = traceMetrics;
+        }
+
+        public Double getTraceProcessingMetrics() {
+            return traceProcessingMetrics;
+        }
+
+        public void setTraceProcessingMetrics(final Double traceProcessingMetrics) {
+            this.traceProcessingMetrics = traceProcessingMetrics;
+        }
+
+        public Double getTraceAnalysisMetrics() {
+            return traceAnalysisMetrics;
+        }
+
+        public void setTraceAnalysisMetrics(final Double traceAnalysisMetrics) {
+            this.traceAnalysisMetrics = traceAnalysisMetrics;
         }
     }
 

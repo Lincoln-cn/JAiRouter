@@ -53,7 +53,8 @@
         </div>
         <ConfirmAction
           v-permission="'monitoring:config:write'"
-          :title="t('monitoringRuntime.forceRecoveryConfirm')"
+          :title="forceRecoveryTitle"
+          :width="300"
           :confirm-text="t('monitoringRuntime.forceRecovery')"
           @confirm="applyAction(forceMonitoringRecovery)"
         >
@@ -92,7 +93,8 @@
         </div>
         <ConfirmAction
           v-permission="'monitoring:config:write'"
-          :title="t('monitoringRuntime.resetErrorsConfirm')"
+          :title="resetErrorsTitle"
+          :width="320"
           :confirm-text="t('monitoringRuntime.resetErrors')"
           @confirm="applyAction(() => resetMonitoringErrors(errorComponent, errorOperation))"
         >
@@ -110,7 +112,8 @@
       <div v-if="canWrite" class="runtime-actions">
         <ConfirmAction
           v-permission="'monitoring:config:write'"
-          :title="t('monitoringRuntime.clearCacheConfirm')"
+          :title="clearCacheTitle"
+          :width="320"
           :confirm-text="t('monitoringRuntime.clearCache')"
           @confirm="applyAction(clearMonitoringCache)"
         >
@@ -128,7 +131,8 @@
       <div v-if="canWrite" class="runtime-actions">
         <ConfirmAction
           v-permission="'monitoring:config:write'"
-          :title="t('monitoringRuntime.openBreakerConfirm')"
+          :title="pipelineBreakerTitle"
+          :width="300"
           :confirm-text="t('monitoringRuntime.openBreaker')"
           @confirm="applyAction(forceOpenPipelineBreaker)"
         >
@@ -136,7 +140,8 @@
         </ConfirmAction>
         <ConfirmAction
           v-permission="'monitoring:config:write'"
-          :title="t('monitoringRuntime.closeBreakerConfirm')"
+          :title="pipelineCloseBreakerTitle"
+          :width="240"
           :confirm-text="t('monitoringRuntime.closeBreaker')"
           @confirm="applyAction(forceClosePipelineBreaker)"
         >
@@ -154,7 +159,8 @@
       <div v-if="canWrite" class="runtime-actions">
         <ConfirmAction
           v-permission="'monitoring:config:write'"
-          :title="t('monitoringRuntime.openBreakerConfirm')"
+          :title="monitoringBreakerTitle"
+          :width="300"
           :confirm-text="t('monitoringRuntime.openBreaker')"
           @confirm="applyAction(forceOpenMonitoringBreaker)"
         >
@@ -162,7 +168,8 @@
         </ConfirmAction>
         <ConfirmAction
           v-permission="'monitoring:config:write'"
-          :title="t('monitoringRuntime.closeBreakerConfirm')"
+          :title="monitoringCloseBreakerTitle"
+          :width="240"
           :confirm-text="t('monitoringRuntime.closeBreaker')"
           @confirm="applyAction(forceCloseMonitoringBreaker)"
         >
@@ -181,6 +188,12 @@ import { InfoFilled, Refresh } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import ConfirmAction from '@/components/ConfirmAction.vue'
 import { usePermission } from '@/composables/usePermission'
+import {
+  countErrorEntries,
+  readBreakerState,
+  readCacheEntries,
+  readDegradationLevel
+} from './runtimePreview'
 import {
   clearMonitoringCache,
   forceCloseMonitoringBreaker,
@@ -221,6 +234,64 @@ const degradationAutoMode = ref(true)
 const errorComponent = ref('')
 const errorOperation = ref('')
 const degradationLevels = DEGRADATION_LEVELS
+
+/**
+ * 应急操作的确认文案：把当前影响面拼进去（见 runtimePreview.ts）。
+ *
+ * 字段缺失时一律退回 i18n 里的通用文案 —— 宁可少一句影响面说明，
+ * 也不要在确认气泡里出现猜出来的数字。
+ */
+const clearCacheTitle = computed(() => {
+  const entries = readCacheEntries(cacheStats.value)
+  return entries === null
+    ? t('monitoringRuntime.clearCacheConfirm')
+    : t('monitoringRuntime.clearCacheConfirmWithEntries', { entries })
+})
+
+const resetErrorsTitle = computed(() => {
+  const component = errorComponent.value.trim()
+  const operation = errorOperation.value.trim()
+  const keys = countErrorEntries(errorStats.value)
+  if (!component || !operation || keys === null) {
+    return t('monitoringRuntime.resetErrorsConfirm')
+  }
+  return t('monitoringRuntime.resetErrorsConfirmWithTarget', { component, operation, keys })
+})
+
+const forceRecoveryTitle = computed(() => {
+  const level = readDegradationLevel(degradation.value)
+  return level === null
+    ? t('monitoringRuntime.forceRecoveryConfirm')
+    : t('monitoringRuntime.forceRecoveryConfirmWithLevel', { level })
+})
+
+const pipelineBreakerTitle = computed(() => {
+  const state = readBreakerState(pipelineBreakerStats.value)
+  return state === null
+    ? t('monitoringRuntime.openBreakerConfirm')
+    : t('monitoringRuntime.openBreakerConfirmWithState', { state })
+})
+
+const monitoringBreakerTitle = computed(() => {
+  const state = readBreakerState(monitoringBreakerStats.value)
+  return state === null
+    ? t('monitoringRuntime.openBreakerConfirm')
+    : t('monitoringRuntime.openBreakerConfirmWithState', { state })
+})
+
+const pipelineCloseBreakerTitle = computed(() => {
+  const state = readBreakerState(pipelineBreakerStats.value)
+  return state === null
+    ? t('monitoringRuntime.closeBreakerConfirm')
+    : t('monitoringRuntime.closeBreakerConfirmWithState', { state })
+})
+
+const monitoringCloseBreakerTitle = computed(() => {
+  const state = readBreakerState(monitoringBreakerStats.value)
+  return state === null
+    ? t('monitoringRuntime.closeBreakerConfirm')
+    : t('monitoringRuntime.closeBreakerConfirmWithState', { state })
+})
 
 const readString = (source: Record<string, unknown> | null, key: string): string => {
   const value = source?.[key]

@@ -399,8 +399,45 @@ PUT /api/monitoring/config/performance
 
 > `sampling` 六项取值为 0~1（请求 / 后端 / 基础设施 / 链路 / 链路处理 / 链路分析）；
 > `performance` 要求 `batchSize ≥ 1` 且 `bufferSize ≥ batchSize`，越界返回 400。
-> 这些端点需要 `monitoring:config:write`（默认授 ADMIN 与 OPERATOR），不能用
-> `/actuator/metrics/*` 替代 —— 后者只对 ADMIN 开放，且没有取值校验。
+> 这些端点需要 `monitoring:config:write`（默认授 ADMIN 与 OPERATOR），不建议用
+> `/actuator/metrics/*` 替代：后者只对 ADMIN 开放；取值校验两边共用（见下节），但它不发配置变更事件、
+> 也不写审计。
+
+
+### 内部运维接口（`/actuator/metrics/*`）
+
+`MetricsManagementController` 在 `/actuator/metrics` 下另有一套配置与应急端点。整族由
+`SecurityConfiguration` 的 `hasRole('ADMIN')` 保护，是留给运维做 break-glass 排障的旁路，控制台不消费它：
+
+```http
+GET  /actuator/metrics/status
+GET  /actuator/metrics/performance
+GET  /actuator/metrics/memory
+GET  /actuator/metrics/circuit-breaker
+GET  /actuator/metrics/sampling
+POST /actuator/metrics/sampling                     # 已标注 @Deprecated
+GET  /actuator/metrics/performance-config
+POST /actuator/metrics/performance-config           # 已标注 @Deprecated
+POST /actuator/metrics/memory/cleanup
+POST /actuator/metrics/memory/clear-cache
+POST /actuator/metrics/metrics-pipeline/circuit-breaker/{action}
+POST /actuator/metrics/circuit-breaker/{action}
+GET  /actuator/metrics/error-handler
+POST /actuator/metrics/error-handler/reset
+GET  /actuator/metrics/degradation
+POST /actuator/metrics/degradation/level
+POST /actuator/metrics/degradation/auto-mode
+POST /actuator/metrics/degradation/force-recovery
+```
+
+其中 `POST /sampling` 与 `POST /performance-config` 与 `PUT /api/monitoring/config/*` 功能重叠：
+**取值校验共用**（采样率 0~1、`batchSize ≥ 1` 且 `bufferSize ≥ batchSize`，越界同样返回 400），
+差别在它们直接改内存里的配置对象 —— 不发配置变更事件、不写 `MONITORING_CONFIG_CHANGED` 审计。
+常规运维与控制台请用 `/api/monitoring/config/*`。
+
+> 前缀重叠提醒：`/actuator/metrics/sampling` 与内置的 `/actuator/metrics/{metricName}` 同前缀。
+> 生产默认只暴露 `health,info,prometheus,threaddump`（见 `application-prod.yml`），
+> 因此这两个自定义写端点通常只在 dev 可用，不要把它们当作生产热改入口。
 
 ### 指标处理链路熔断器统计
 
