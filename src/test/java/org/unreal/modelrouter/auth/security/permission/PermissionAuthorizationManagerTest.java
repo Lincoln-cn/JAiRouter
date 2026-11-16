@@ -157,6 +157,32 @@ class PermissionAuthorizationManagerTest {
     class RuleSemanticsTests {
 
         @Test
+        @DisplayName("审计日志查询/导出走 POST 但只需 security:audit:read（只读角色打得开页面就要查得出数据）")
+        void auditExtendedPostQueryRequiresReadOnly() {
+            AuthorizationContext context =
+                    context(HttpMethod.POST, "/api/security/audit/extended/query");
+            JwtAuthentication viewer = authenticated(
+                    "viewer", List.of("VIEWER"), List.of(PermissionCodes.SECURITY_AUDIT_READ));
+
+            StepVerifier.create(manager.authorize(Mono.just(viewer), context))
+                    .expectNextMatches(AuthorizationResult::isGranted)
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("审计日志的写端点仍要 security:audit:write（POST 只读规则不能放宽整条前缀）")
+        void auditExtendedWriteEndpointStillRequiresWriteCode() {
+            AuthorizationContext context =
+                    context(HttpMethod.POST, "/api/security/audit/extended/events");
+            JwtAuthentication viewer = authenticated(
+                    "viewer", List.of("VIEWER"), List.of(PermissionCodes.SECURITY_AUDIT_READ));
+
+            StepVerifier.create(manager.authorize(Mono.just(viewer), context))
+                    .expectNextMatches(decision -> !decision.isGranted())
+                    .verifyComplete();
+        }
+
+        @Test
         @DisplayName("call-history 读 -> callhistory:read 放行（issue #514 后仅 GET 有规则）")
         void callHistoryReadRule() {
             AuthorizationContext context = context(HttpMethod.GET, "/api/call-history/recent");

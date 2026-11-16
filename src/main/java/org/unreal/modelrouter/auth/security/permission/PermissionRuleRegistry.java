@@ -164,6 +164,11 @@ public class PermissionRuleRegistry {
                 PermissionRule.write("/api/auth/api-keys/**", PermissionCodes.SECURITY_APIKEYS_MANAGE),
 
                 // ===== B2b 渐进补齐：安全审计扩展（ExtendedSecurityAuditController → 菜单「安全管理-审计日志」） =====
+                // 审计日志页的主查询与导出都走 POST /api/security/audit/extended/query（POST 传查询体、
+                // 只读语义）。若让前缀的 write 规则接管，只持 :read 的角色（VIEWER）打开页面后
+                // 列表必然 403 —— 第六轮运行态冒烟后撤掉前端父路由角色限制时才暴露出来。
+                // 顺序要紧：更具体的 POST 规则必须排在 write 规则之前。
+                PermissionRule.post("/api/security/audit/extended/query", PermissionCodes.SECURITY_AUDIT_READ),
                 PermissionRule.get("/api/security/audit/extended/**", PermissionCodes.SECURITY_AUDIT_READ),
                 PermissionRule.write("/api/security/audit/extended/**", PermissionCodes.SECURITY_AUDIT_WRITE),
 
