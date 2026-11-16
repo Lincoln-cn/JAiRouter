@@ -445,13 +445,13 @@ const router = createRouter({
           path: 'dashboard',
           name: 'call-history-dashboard',
           component: () => import('../views/callHistory/Dashboard.vue'),
-          meta: { titleKey: 'route.callHistoryDashboard', icon: 'data-analysis', permissions: ['callhistory:view'] }
+          meta: { titleKey: 'route.callHistoryDashboard', icon: 'data-analysis', permissions: ['callhistory:read'] }
         },
         {
           path: 'list',
           name: 'call-history-list',
           component: () => import('../views/callHistory/CallHistoryList.vue'),
-          meta: { titleKey: 'route.callHistoryList', icon: 'list', permissions: ['callhistory:view'] }
+          meta: { titleKey: 'route.callHistoryList', icon: 'list', permissions: ['callhistory:read'] }
         },
         {
           path: 'slow-calls',

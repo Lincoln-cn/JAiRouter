@@ -1,4 +1,4 @@
-# Web Console Operation Guide
+﻿# Web Console Operation Guide
 
 <!-- Version Info -->
 > **Doc Version**: 1.0.0
@@ -24,7 +24,7 @@ Both entry points serve the same frontend code with identical functionality.
 
 | Username | Default Password | Role | Description |
 |----------|-----------------|------|-------------|
-| `admin` | `ChangeMeOnFirstStartup123456` | ADMIN, USER | Super admin with all 63 permission codes |
+| `admin` | `ChangeMeOnFirstStartup123456` | ADMIN, USER | Super admin with all 71 permission codes |
 | `user` | `user123456` | USER | Regular user, primarily read-only |
 
 > ⚠️ **Change the `admin` password before first production use.** The password is set via the `INITIAL_ADMIN_PASSWORD` environment variable (see `src/main/resources/config/auth/jwt.yml`). Restart the service after changing it.
@@ -267,10 +267,10 @@ Overview → Dashboard provides a single-pane view:
 
 | Role | Permission Count | Permission Scope | Description |
 |------|:----------------:|------------------|-------------|
-| **ADMIN** | 63 | All permission codes | Super admin; bypasses URL rules, full codes embedded in JWT |
-| **OPERATOR** | 43 | All `:read` + `:write` codes | Day-to-day ops; excludes system management (`system:*`), security management `manage` codes (API Key / JWT Token / Blacklist management) |
-| **USER** | 28 | Dashboard + config read + full lb/cb/rl + monitoring read + tracing dashboard/search + AI Playground | Regular user; only write code is `lb:config:write` |
-| **VIEWER** | 27 | All `:read` codes | Pure read-only role; no `callhistory:view`, `ai:playground:use`, or other non-`:read` codes |
+| **ADMIN** | 71 | All permission codes | Super admin; bypasses URL rules, full codes embedded in JWT |
+| **OPERATOR** | 54 | All `:read` + `:write` codes | Day-to-day ops; excludes system management (`system:*`), security management `manage` codes (API Key / JWT Token / Blacklist management); holds `callhistory:read` (records and summaries, no bodies) |
+| **USER** | 33 | Dashboard + config read + full lb/cb/rl + monitoring read + tracing dashboard/search + AI Playground | Regular user; only write code is `lb:config:write` |
+| **VIEWER** | 31 | All `:read` codes (minus the 8 codes paired with write/manage surfaces and `callhistory:read`) | Pure read-only role; no call history (`callhistory:read`), `ai:playground:use`, or other non-`:read` codes |
 
 ### 6.2 Why Some Menu Pages Are Missing {#why-menu-pages-missing}
 

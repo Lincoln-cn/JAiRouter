@@ -21,6 +21,14 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 ## Version History
 
+### [Unreleased] - Call-history bodies split from metadata
+
+`callhistory:view` is split into `callhistory:read` + `callhistory:full-content`:
+
+* **Metadata and bodies now have separate codes**: the read rule on `/api/call-history/**` requires `callhistory:read`; bodies of FULL-level records are decrypted (and a `FULL_CONTENT_ACCESS` audit entry is written) only for callers holding `callhistory:full-content`. Everyone else gets summaries with the encrypted fields stripped, on both list and detail. `DELETE /api/call-history/cleanup` still has no write rule and stays deny-by-default (ADMIN only).
+* **Role impact**: OPERATOR inherits `callhistory:read` through the "all `:read` codes" rule (54 codes) and can browse records and summaries; `callhistory:full-content` is ADMIN-only by default; USER and VIEWER hold neither (VIEWER excludes it explicitly to stay at 31 codes). The catalogue grows from 70 to 71 codes.
+* **Migration note**: `callhistory:view` no longer exists in the catalogue; deployments that manually granted it must switch to `callhistory:read` under System → Permissions (grant `callhistory:full-content` as well to read bodies).
+
 ### [3.8.8] - 2026-11-16 - Tracing that can be investigated, not just watched
 
 This release turns tracing into a usable investigation path: layered service names, console operations that leave a trail, error traces that survive eviction, tracing metrics that can back alerts, and an error view aggregated by dimension.

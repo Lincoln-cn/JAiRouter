@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.model.ApiKeyAuthentication;
+import org.unreal.modelrouter.auth.security.permission.PermissionChecks;
+import org.unreal.modelrouter.auth.security.permission.PermissionCodes;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
@@ -49,7 +51,8 @@ import org.unreal.modelrouter.common.exception.ApiException;
 @RequestMapping("/api/call-history")
 @RequiredArgsConstructor
 @Tag(name = "API 调用历史", description = "API 调用历史记录、查询和统计接口")
-// v2.9.4-fix: RBAC 由 SecurityConfiguration URL 规则保护（/api/call-history/** -> ADMIN）。
+// RBAC 由 SecurityConfiguration URL 规则保护（/api/call-history/** 的 GET 规则挂 callhistory:read；
+// FULL 级别正文是否解密由本 controller 按 callhistory:full-content 逐主体裁剪）。
 // 本 controller 返回同步 ResponseEntity，类级 @PreAuthorize 在 @EnableReactiveMethodSecurity 下
 // 要求 Publisher 返回类型，真实请求会报 500（Reactor Context 错误）。
 public class ApiCallHistoryController {
@@ -110,18 +113,23 @@ public class ApiCallHistoryController {
 
     /**
      * 分页查询调用历史
+     *
+     * <p>列表不返回正文：无 {@code callhistory:full-content} 的主体拿到的加密字段为 {@code null}，
+     * 只保留摘要列（正文解密只发生在 {@code /{id}/detail}，见 {@link #getDetail}）。</p>
      */
     @GetMapping
     @Operation(summary = "分页查询调用历史", description = "根据条件分页查询 API 调用历史")
     public ResponseEntity<RouterResponse<Page<ApiCallHistoryEntity>>> query(
             @Parameter(description = "查询参数")
-            @ModelAttribute CallHistoryQueryDTO query) {
+            @ModelAttribute CallHistoryQueryDTO query,
+            final Authentication authentication) {
 
         if (query == null) {
             query = new CallHistoryQueryDTO();
         }
 
         Page<ApiCallHistoryEntity> result = callHistoryService.query(query);
+        redactBodies(authentication, result.getContent());
         return ResponseEntity.ok(RouterResponse.success(result));
     }
 
@@ -132,29 +140,43 @@ public class ApiCallHistoryController {
     @Operation(summary = "根据 traceId 查询调用链路", description = "查询同一 traceId 下的所有调用记录")
     public ResponseEntity<RouterResponse<List<ApiCallHistoryEntity>>> findByTraceId(
             @Parameter(description = "追踪 ID")
-            @PathVariable String traceId) {
+            @PathVariable String traceId,
+            final Authentication authentication) {
 
         List<ApiCallHistoryEntity> records = callHistoryService.findByTraceId(traceId);
+        redactBodies(authentication, records);
         return ResponseEntity.ok(RouterResponse.success(records));
     }
 
     /**
-     * 查询单条记录详情（解密后）
-     * 若记录级别为 FULL，会触发 FULL_CONTENT_ACCESS 审计事件
+     * 查询单条记录详情（按主体裁剪正文）
+     *
+     * <p>只有持 {@code callhistory:full-content} 的主体才会解密正文，并在记录级别为 FULL 时
+     * 记 {@code FULL_CONTENT_ACCESS} 审计事件；其余主体（含仅持 {@code callhistory:read} 的运维）
+     * 拿到加密字段为 {@code null} 的记录，摘要列照常可见，且不产生「解密查看」审计噪音。</p>
      */
     @GetMapping("/{id}/detail")
-    @Operation(summary = "查询记录详情", description = "根据 ID 查询单条调用历史记录，自动解密加密内容")
+    @Operation(summary = "查询记录详情", description = "根据 ID 查询单条调用历史记录；"
+            + "持 callhistory:full-content 时自动解密正文，否则只返回摘要")
     public ResponseEntity<RouterResponse<ApiCallHistoryEntity>> getDetail(
             @Parameter(description = "记录 ID")
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            final Authentication authentication) {
+
+        final boolean fullContent = PermissionChecks.hasPermission(
+                authentication, PermissionCodes.CALLHISTORY_FULL_CONTENT);
 
         return callHistoryService.findById(id)
                 .map(entity -> {
-                    // 若记录级别为 FULL，在返回前记录审计事件
-                    if (RecordLevel.FULL.name().equals(entity.getRecordLevel())) {
-                        emitFullContentAccessAudit(entity.getId());
+                    if (fullContent) {
+                        // 解密查看 FULL 级别正文前先落审计，口径与拆码前一致
+                        if (RecordLevel.FULL.name().equals(entity.getRecordLevel())) {
+                            emitFullContentAccessAudit(entity.getId());
+                        }
+                        callHistoryService.decryptBodies(entity);
+                    } else {
+                        redactBodies(authentication, entity);
                     }
-                    callHistoryService.decryptBodies(entity);
                     return ResponseEntity.ok(RouterResponse.success(entity));
                 })
                 .orElseGet(() -> ResponseEntity
@@ -169,9 +191,11 @@ public class ApiCallHistoryController {
     @Operation(summary = "获取最近的调用记录", description = "获取最近发生的 API 调用记录")
     public ResponseEntity<RouterResponse<List<ApiCallHistoryEntity>>> findRecent(
             @Parameter(description = "最大数量")
-            @RequestParam(defaultValue = "20") int limit) {
+            @RequestParam(defaultValue = "20") int limit,
+            final Authentication authentication) {
 
         List<ApiCallHistoryEntity> records = callHistoryService.findRecent(limit);
+        redactBodies(authentication, records);
         return ResponseEntity.ok(RouterResponse.success(records));
     }
 
@@ -190,9 +214,11 @@ public class ApiCallHistoryController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
 
             @Parameter(description = "最大数量")
-            @RequestParam(defaultValue = "50") int limit) {
+            @RequestParam(defaultValue = "50") int limit,
+            final Authentication authentication) {
 
         List<ApiCallHistoryEntity> records = callHistoryService.findErrors(startTime, endTime, limit);
+        redactBodies(authentication, records);
         return ResponseEntity.ok(RouterResponse.success(records));
     }
 
@@ -214,9 +240,11 @@ public class ApiCallHistoryController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
 
             @Parameter(description = "最大数量")
-            @RequestParam(defaultValue = "50") int limit) {
+            @RequestParam(defaultValue = "50") int limit,
+            final Authentication authentication) {
 
         List<ApiCallHistoryEntity> records = callHistoryService.findSlowCalls(threshold, startTime, endTime, limit);
+        redactBodies(authentication, records);
         return ResponseEntity.ok(RouterResponse.success(records));
     }
 
@@ -250,13 +278,16 @@ public class ApiCallHistoryController {
 
             @Parameter(description = "结束时间 (ISO-8601)")
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
+
+            final Authentication authentication) {
 
         // 统计信息
         CallHistoryStatisticsDTO statistics = callHistoryService.getStatistics(startTime, endTime);
 
         // 最近调用
         List<ApiCallHistoryEntity> recentCalls = callHistoryService.findRecent(10);
+        redactBodies(authentication, recentCalls);
 
         // 构建仪表盘数据
         Map<String, Object> dashboard = new HashMap<>();
@@ -307,6 +338,36 @@ public class ApiCallHistoryController {
         result.put("count", count);
 
         return ResponseEntity.ok(RouterResponse.success(result));
+    }
+
+    /**
+     * 按主体裁剪正文：无 {@code callhistory:full-content} 时清空加密字段，只保留摘要列。
+     *
+     * <p>加密字段对前端没有可读价值，但「列表 / 详情都带密文」会让审计口径含糊 ——
+     * 正文是否可见应当只取决于 {@code callhistory:full-content}，而不是「能不能看到密文」。</p>
+     *
+     * @param authentication 当前认证主体
+     * @param entity         待裁剪的记录，可为 {@code null}
+     */
+    private void redactBodies(final Authentication authentication, final ApiCallHistoryEntity entity) {
+        if (entity == null
+                || PermissionChecks.hasPermission(authentication, PermissionCodes.CALLHISTORY_FULL_CONTENT)) {
+            return;
+        }
+        entity.setRequestBodyEncrypted(null);
+        entity.setResponseBodyEncrypted(null);
+    }
+
+    /**
+     * {@link #redactBodies} 的列表形态。
+     */
+    private void redactBodies(final Authentication authentication, final List<ApiCallHistoryEntity> entities) {
+        if (entities == null || entities.isEmpty()) {
+            return;
+        }
+        for (ApiCallHistoryEntity entity : entities) {
+            redactBodies(authentication, entity);
+        }
     }
 
     /**

@@ -83,9 +83,10 @@ public class PermissionRuleRegistry {
                 // issue #514：这里原来是 any(...)（空方法集 = 所有方法），于是「查看」权限码
                 // 同时放行了 POST /record（写入一条调用记录）与 DELETE /cleanup（删除历史）。
                 // 现在只给 GET 一条规则：写/删**不匹配任何规则**，由 RbacUnmatchedPolicy 裁决
-                // （默认 DENY_ALL ⇒ 仅 ROLE_ADMIN 直通）。这样既不新增权限码、也不动角色模板，
-                // 权限语义就与「view」这个名字一致了。
-                PermissionRule.get("/api/call-history/**", PermissionCodes.CALLHISTORY_VIEW),
+                // （默认 DENY_ALL ⇒ 仅 ROLE_ADMIN 直通；POST /record 走 RbacExemptEndpoints 摄取豁免）。
+                // FULL 级别正文是否解密由 controller 按 callhistory:full-content 逐主体裁剪，
+                // 所以这条前缀规则只挂 callhistory:read，不参与正文判定。
+                PermissionRule.get("/api/call-history/**", PermissionCodes.CALLHISTORY_READ),
                 PermissionRule.get("/api/config/call-history/**", PermissionCodes.CONFIG_CALLHISTORY_READ),
                 PermissionRule.write("/api/config/call-history/**", PermissionCodes.CONFIG_CALLHISTORY_WRITE),
 

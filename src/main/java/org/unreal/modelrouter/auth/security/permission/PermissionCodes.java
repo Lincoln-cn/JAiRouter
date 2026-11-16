@@ -108,8 +108,18 @@ public final class PermissionCodes {
 
     // ==================== callhistory（调用历史） ====================
 
-    /** 调用历史查看 */
-    public static final String CALLHISTORY_VIEW = "callhistory:view";
+    /** 调用历史查看（列表 / 统计 / 链路 / 错误 / 慢调用；不含正文解密） */
+    public static final String CALLHISTORY_READ = "callhistory:read";
+
+    /**
+     * 调用历史正文查看（解密 FULL 级别记录的请求 / 响应正文）。
+     *
+     * <p>只含正文的「打开」权限，不负责列表访问：<b>必须同时持有 {@link #CALLHISTORY_READ}</b>
+     * 才能进入该前缀（URL 规则只认 {@code callhistory:read}）。当前只授 ADMIN（运维可通过
+     * 记录治理配置记录级别，但不应读到正文）。每次解密都记
+     * {@code AuditEventType.FULL_CONTENT_ACCESS} 审计事件。</p>
+     */
+    public static final String CALLHISTORY_FULL_CONTENT = "callhistory:full-content";
 
     // ==================== monitoring（监控，5 个资源 × read） ====================
 
@@ -218,7 +228,7 @@ public final class PermissionCodes {
             LB_MONITORING_READ, LB_CONFIG_READ, LB_CONFIG_WRITE,
             CB_MONITORING_READ, CB_HISTORY_READ,
             RL_MONITORING_READ,
-            CALLHISTORY_VIEW,
+            CALLHISTORY_READ, CALLHISTORY_FULL_CONTENT,
             MONITORING_METRICS_READ, MONITORING_METRICS_WRITE, MONITORING_SLOWQUERY_READ,
             MONITORING_SLOWQUERY_WRITE,
             MONITORING_TOKENUSAGE_READ, MONITORING_MODELSTATS_READ,

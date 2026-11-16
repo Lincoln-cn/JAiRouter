@@ -103,19 +103,19 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/call-history/list',
         title: 'menu.callHistory',
-        permission: 'callhistory:view',
+        permission: 'callhistory:read',
         tabs: [
           {
             key: 'records',
             labelKey: 'tabs.callHistoryRecords',
             to: '/call-history/list',
-            permission: 'callhistory:view'
+            permission: 'callhistory:read'
           },
           {
             key: 'dashboard',
             labelKey: 'tabs.callHistoryDashboard',
             to: '/call-history/dashboard',
-            permission: 'callhistory:view'
+            permission: 'callhistory:read'
           }
         ]
       },

@@ -97,7 +97,7 @@ describe('menu.ts 信息架构', () => {
  * `menu.ts` 里写错一个权限码（例如把 `security:apikeys:manage` 写成 `security:apikey:manage`）
  * 不会报错，只会让菜单静默消失 —— 这份白名单就是那种漂移的哨兵。
  *
- * 白名单本体在 `./knownPermissions.ts`（70 码），由 `permissionCodesBackend.spec.ts`
+ * 白名单本体在 `./knownPermissions.ts`（71 码），由 `permissionCodesBackend.spec.ts`
  * 与后端 `PermissionCodes.java` 做双向比对，这里只守「menu.ts 的码都在白名单内」。
  */
 describe('menu.ts 权限码白名单（#567）', () => {
@@ -116,9 +116,9 @@ describe('menu.ts 权限码白名单（#567）', () => {
     return codes
   }
 
-  it('白名单自身 = 70 个互不重复的权限码', () => {
-    expect(KNOWN_PERMISSION_CODES).toHaveLength(70)
-    expect(new Set(KNOWN_PERMISSION_CODES).size).toBe(70)
+  it('白名单自身 = 71 个互不重复的权限码', () => {
+    expect(KNOWN_PERMISSION_CODES).toHaveLength(71)
+    expect(new Set(KNOWN_PERMISSION_CODES).size).toBe(71)
   })
 
   it('menu.ts 里出现的权限码全部在白名单内', () => {

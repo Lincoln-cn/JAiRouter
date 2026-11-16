@@ -45,7 +45,7 @@ describe('Layout 多 tab 切换条', () => {
   })
 
   it('多 tab 菜单项渲染切换条，点击第二个 tab 跳到对应 URL', async () => {
-    const wrapper = await mountAt('/call-history/list', ['callhistory:view'])
+    const wrapper = await mountAt('/call-history/list', ['callhistory:read'])
 
     const tabs = wrapper.findAll('.nav-tabs .nav-tab')
     expect(tabs.map(tab => tab.text())).toEqual(['调用记录', '调用历史仪表盘'])

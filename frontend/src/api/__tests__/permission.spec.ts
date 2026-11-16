@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ALL_PERMISSION_CODES, PERMISSION_GROUPS } from '../permission'
+import { KNOWN_PERMISSION_CODES } from '@/config/__tests__/knownPermissions'
 import zh from '@/locales/zh-CN/permissions.json'
 import en from '@/locales/en-US/permissions.json'
 
@@ -7,13 +8,18 @@ import en from '@/locales/en-US/permissions.json'
  * 权限码展示口径守卫。
  *
  * 背景：权限树过去直接渲染权限码（`config:services:read`），且分组表漏了 TA4 新增的
- * read 码（49/63）——用户看不到、也勾不到那些权限。这里把两条都钉住：
- * 1) 分组表必须覆盖后端全量 63 码（数目 + 不重复 + 分组无重复）；
- * 2) 每个码拆出的模块/资源/动作，在中英词表里都必须有词条（否则界面会回退成裸码）。
+ * read 码（49/63）——用户看不到、也勾不到那些权限。这里把三条都钉住：
+ * 1) 分组表必须覆盖全量权限码（数目 + 不重复 + 与 knownPermissions 集合相等）；
+ * 2) 每个码拆出的模块/资源/动作，在中英词表里都必须有词条（否则界面会回退成裸码）；
+ * 3) 中英词表键位对齐。
+ *
+ * 与 `config/__tests__/permissionCodesBackend.spec.ts` 的分工：那边守「白名单 ↔ 后端 Java 源」，
+ * 这边守「展示分组 ↔ 白名单」——后端新增码时先红在后端比对，再红在这里，提示补分组与词条。
  */
 
 const ACTIONS = ['read', 'view', 'write', 'manage', 'use']
-const EXPECTED_TOTAL = 63
+/** 后端 PermissionCodes.ALL_PERMISSION_CODES 的当前规模（callhistory 拆双码后 71） */
+const EXPECTED_TOTAL = 71
 
 interface SplitCode {
   module: string
@@ -38,7 +44,7 @@ const localeWordMaps = [
 ] as const
 
 describe('permission codes wiring', () => {
-  it('covers all 63 backend permission codes exactly once', () => {
+  it('covers all 71 backend permission codes exactly once', () => {
     expect(ALL_PERMISSION_CODES).toHaveLength(EXPECTED_TOTAL)
     expect(new Set(ALL_PERMISSION_CODES).size).toBe(EXPECTED_TOTAL)
   })
@@ -52,6 +58,10 @@ describe('permission codes wiring', () => {
       }
     }
     expect(seen.size).toBe(EXPECTED_TOTAL)
+  })
+
+  it('分组清单与 knownPermissions 白名单集合相等（漏分组会让管理员勾不到该码）', () => {
+    expect([...ALL_PERMISSION_CODES].sort()).toEqual([...KNOWN_PERMISSION_CODES].sort())
   })
 
   it('exposes every module, resource and action used by a code', () => {

@@ -164,19 +164,37 @@ describe('roles 声明：菜单与路由守卫同口径', () => {
     expect(groups.find(group => group.index === 'system')?.children).toHaveLength(7)
   })
 
-  it('调用历史（callhistory:view）当前只授 ADMIN：其它角色看不到调用记录页面', () => {
-    // 现状口径（后端 RolePermissionSeederTest 已逐角色断言）：OPERATOR 只收 :read/:write、
-    // USER 的硬编码清单一律不含、VIEWER 只收 :read ⇒ 三角色都没有 callhistory:view。
-    // 若将来把该码发给其它角色，这条断言会红 —— 那时应当同步文档与可见性评审，
-    // 而不是直接改断言（调用记录含请求/响应正文）。
-    for (const role of ['OPERATOR', 'USER', 'VIEWER']) {
-      setup(['overview:dashboard:read', 'config:callhistory:read'], [role])
+  it('调用历史拆码：callhistory:read 给运维（可见），USER/VIEWER 不可见', () => {
+    // 后端 RolePermissionSeederTest 逐角色钉住的口径：
+    // OPERATOR 由「所有 :read」自动获得 callhistory:read；VIEWER 显式排除；USER 的硬编码清单不含。
+    // 前端只跟 read 走 —— callhistory:full-content 是详情页的正文闸门，不进菜单。
+    const visibleTabs = () => {
       const { filterMenuByPermission } = usePermission()
-      const tabs = filterMenuByPermission(menuGroups).flatMap(group =>
+      return filterMenuByPermission(menuGroups).flatMap(group =>
         group.children.flatMap(item => item.tabs.map(tab => tab.to))
       )
-      expect(tabs, role).not.toContain('/call-history/list')
-      expect(tabs, role).not.toContain('/call-history/dashboard')
     }
+
+    setup(['overview:dashboard:read', 'callhistory:read'], ['OPERATOR'])
+    expect(visibleTabs()).toContain('/call-history/list')
+    expect(visibleTabs()).toContain('/call-history/dashboard')
+
+    for (const role of ['USER', 'VIEWER']) {
+      setup(['overview:dashboard:read', 'config:callhistory:read'], [role])
+      expect(visibleTabs(), role).not.toContain('/call-history/list')
+      expect(visibleTabs(), role).not.toContain('/call-history/dashboard')
+    }
+  })
+
+  it('只持 callhistory:full-content 不带 read 时看不到调用历史（前缀规则要求 read）', () => {
+    // 拆码后的不变式：full-content 是「锦上添花」的正文闸门，不能替代 read。
+    // 若哪天前端把菜单改成读 full-content，这条会红 —— 那是权限面收缩，需评审。
+    setup(['overview:dashboard:read', 'callhistory:full-content'], ['OPERATOR'])
+    const { filterMenuByPermission } = usePermission()
+    const tabs = filterMenuByPermission(menuGroups).flatMap(group =>
+      group.children.flatMap(item => item.tabs.map(tab => tab.to))
+    )
+    expect(tabs).not.toContain('/call-history/list')
+    expect(tabs).not.toContain('/call-history/dashboard')
   })
 })

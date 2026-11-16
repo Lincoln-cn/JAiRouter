@@ -642,12 +642,14 @@ management:
 
 | 方法 | 路径 | 生效的权限码 |
 |---|---|---|
-| `DELETE` | `/api/call-history/cleanup` | `callhistory:view（同码，见 #514）` |
-| `GET` | `/api/call-history/count` | `callhistory:view` |
-| `GET` | `/api/call-history/errors` | `callhistory:view` |
-| `GET` | `/api/call-history/recent` | `callhistory:view` |
+| `DELETE` | `/api/call-history/cleanup` | `未登记写规则 ⇒ 默认拒绝（`RbacUnmatchedPolicy` DENY_ALL，仅 ADMIN）` |
+| `GET` | `/api/call-history/count` | `callhistory:read` |
+| `GET` | `/api/call-history/errors` | `callhistory:read` |
+| `GET` | `/api/call-history/recent` | `callhistory:read` |
 | `POST` | `/api/call-history/record` | `**摄取面豁免**（`RbacExemptEndpoints`，#454）` |
-| `GET` | `/api/call-history/trace/{}` | `callhistory:view` |
+| `GET` | `/api/call-history/trace/{}` | `callhistory:read` |
+
+`GET /api/call-history/**` 的响应正文按主体裁剪：持 `callhistory:full-content` 时详情会解密 FULL 级别记录的正文并记一次 `FULL_CONTENT_ACCESS` 审计，否则（含只持 `callhistory:read` 的运维）返回的记录里加密字段一律为 `null`，只保留摘要列。
 
 ### 路由监控（RoutingMonitorController）
 
@@ -714,5 +716,5 @@ management:
 ### 两个需要注意的口径
 
 1. **`/api/monitoring/metrics/**` 的写操作已有显式规则** —— 读 `monitoring:metrics:read`、写 `monitoring:metrics:write`（`#454` 补）。此前写操作没有规则、只靠 `RbacUnmatchedPolicy` 的默认 `DENY_ALL`（仅 `ROLE_ADMIN`）兜住，属「碰巧安全」；现在「谁能注册指标」是一条可授的权限，`OPERATOR` 模板按「所有 `:read`/`:write` 码」自动获得它。
-2. **`/api/call-history/**` 的读 / 写 / 删共用 `callhistory:view`** —— `POST /record`（写入）与 `DELETE /cleanup`（删除）都被「查看」权限放行，见 `#514`。
+2. **`/api/call-history/**` 只登记了 GET 规则（`callhistory:read`），写面靠默认拒绝与豁免** —— `POST /record` 在 `RbacExemptEndpoints` 摄取面豁免清单上（仅要求认证）；`DELETE /cleanup` **没有**登记写规则，因此落入 `DENY_ALL` 默认姿态（仅 ADMIN 可用），不是被 `callhistory:read` 放行。`#514` 修的是「`callhistory:view` 曾经连读写删一起放行」这个缺陷，现状已由「GET 一条规则 + 写面默认拒绝 + 摄取豁免」取代。
 

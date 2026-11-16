@@ -660,12 +660,14 @@ None of these endpoints is called by the console, and none was documented (the `
 
 | Method | Path | Effective permission code |
 |---|---|---|
-| `DELETE` | `/api/call-history/cleanup` | `callhistory:view（同码，见 #514）` |
-| `GET` | `/api/call-history/count` | `callhistory:view` |
-| `GET` | `/api/call-history/errors` | `callhistory:view` |
-| `GET` | `/api/call-history/recent` | `callhistory:view` |
-| `POST` | `/api/call-history/record` | `callhistory:view（同码，见 #514）` |
-| `GET` | `/api/call-history/trace/{}` | `callhistory:view` |
+| `DELETE` | `/api/call-history/cleanup` | `no write rule ⇒ denied by default (`RbacUnmatchedPolicy` DENY_ALL, ADMIN only)` |
+| `GET` | `/api/call-history/count` | `callhistory:read` |
+| `GET` | `/api/call-history/errors` | `callhistory:read` |
+| `GET` | `/api/call-history/recent` | `callhistory:read` |
+| `POST` | `/api/call-history/record` | `**ingestion exemption** (`RbacExemptEndpoints`, #454)` |
+| `GET` | `/api/call-history/trace/{}` | `callhistory:read` |
+
+Responses from `GET /api/call-history/**` are redacted per caller: with `callhistory:full-content` the detail endpoint decrypts FULL-level bodies and records one `FULL_CONTENT_ACCESS` audit event; otherwise (including an operator that only holds `callhistory:read`) the encrypted fields are `null` and only the summary columns stay visible.
 
 ### Routing monitor
 
@@ -734,5 +736,5 @@ None of these endpoints is called by the console, and none was documented (the `
 ### Two caveats
 
 1. **Writes under `/api/monitoring/metrics/**` now have an explicit rule** — reads use `monitoring:metrics:read`, writes use `monitoring:metrics:write` (added by `#454`). Previously writes had no rule and were protected only by the `RbacUnmatchedPolicy` default `DENY_ALL` ("secure by accident"); the `OPERATOR` template now receives the write code automatically.
-2. **`/api/call-history/**` shares `callhistory:view` across read, write and delete** — `POST /record` and `DELETE /cleanup` are both allowed by the "view" code; see `#514`.
+2. **`/api/call-history/**` registers a GET rule only (`callhistory:read`); its write surface relies on deny-by-default and the exemption list** — `POST /record` is on the `RbacExemptEndpoints` ingestion exemption (authentication only), while `DELETE /cleanup` has **no** write rule and therefore falls into the `DENY_ALL` default posture (ADMIN only) rather than being allowed by `callhistory:read`. `#514` fixed the defect where `callhistory:view` authorized reads, writes and deletes alike; the current shape is "one GET rule + deny-by-default writes + ingestion exemption".
 

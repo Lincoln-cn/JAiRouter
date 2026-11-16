@@ -123,7 +123,8 @@ const roleOptions = computed<{ value: RoleName; label: string }[]>(() =>
 /**
  * 权限码 → 「资源 · 动作」的中文/英文名（模块名由分组标题承担）。
  * 命名口径：模块 · 资源 · 动作（如 config:services:read ⇒ 服务配置 · 查看）；
- * 没有资源段的码（如 callhistory:view）用模块名当资源，避免出现「· 查看」这种半截文案。
+ * 没有资源段的码（如 callhistory:read）用模块名当资源，避免出现「· 查看」这种半截文案；
+ * 带非动作后缀的码（如 callhistory:full-content）用后缀当资源，需在 permissions.resources 里备词条。
  * 找不到词条时回退成码片段本身，保证不漏显示。
  */
 const PERMISSION_ACTIONS = ['read', 'view', 'write', 'manage', 'use']
