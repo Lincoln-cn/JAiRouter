@@ -171,7 +171,7 @@ public class ApiCallHistoryController {
                     if (fullContent) {
                         // 解密查看 FULL 级别正文前先落审计，口径与拆码前一致
                         if (RecordLevel.FULL.name().equals(entity.getRecordLevel())) {
-                            emitFullContentAccessAudit(entity.getId());
+                            emitFullContentAccessAudit(entity.getId(), authentication);
                         }
                         callHistoryService.decryptBodies(entity);
                     } else {
@@ -373,13 +373,18 @@ public class ApiCallHistoryController {
     /**
      * 发送 FULL_CONTENT_ACCESS 审计事件
      *
-     * @param recordId 记录 ID
+     * <p>带上解密主体（{@code userId}）：运行态核对时发现只写 {@code additionalData.recordId}
+     * 会让审计行没有「谁看的」，等于解了密却追溯不到人。</p>
+     *
+     * @param recordId       记录 ID
+     * @param authentication 解密主体（可为 null）
      */
-    private void emitFullContentAccessAudit(final Long recordId) {
+    private void emitFullContentAccessAudit(final Long recordId, final Authentication authentication) {
         try {
             SecurityAuditEvent event = SecurityAuditEvent.builder()
                     .eventId(UUID.randomUUID().toString())
                     .eventType(AuditEventType.FULL_CONTENT_ACCESS.name())
+                    .userId(authentication != null ? authentication.getName() : null)
                     .resource("call-history")
                     .action("DETAIL")
                     .success(true)

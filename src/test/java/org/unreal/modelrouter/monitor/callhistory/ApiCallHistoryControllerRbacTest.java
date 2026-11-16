@@ -158,6 +158,10 @@ class ApiCallHistoryControllerRbacTest {
                     AuditEventType.FULL_CONTENT_ACCESS == AuditEventType.valueOf(event.getEventType())
                             && "call-history".equals(event.getResource())
                             && "DETAIL".equals(event.getAction())
+                            // 审计必须能回答「谁看了正文」：运行态核对曾发现 userId 为空
+                            && "operator".equals(event.getUserId())
+                            && event.getAdditionalData() != null
+                            && Long.valueOf(2L).equals(event.getAdditionalData().get("recordId"))
             ));
         }
 
@@ -171,7 +175,7 @@ class ApiCallHistoryControllerRbacTest {
             controller.getDetail(3L, admin());
 
             verify(callHistoryService).decryptBodies(entity);
-            verify(securityAuditService).recordEvent(any());
+            verify(securityAuditService).recordEvent(argThat(event -> "admin".equals(event.getUserId())));
         }
 
         @Test
