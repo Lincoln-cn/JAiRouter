@@ -30,6 +30,14 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **角色影响**：OPERATOR 由「全部 `:read`」规则自动获得 `callhistory:read`（54 码），可在控制台看调用记录与摘要；`callhistory:full-content` 默认仅 ADMIN；USER / VIEWER 两个码都不持有（VIEWER 显式排除以保持 31 码）。全量权限码 70 → 71。
 * **迁移说明**：`callhistory:view` 已不在权限码全集里；手工给角色勾过该码的部署需在「系统 → 权限管理」改勾 `callhistory:read`（要看正文还需 `callhistory:full-content`）。
 
+### [Unreleased] - 监控配置页、双入口收口与应急操作影响面
+
+* **新增「系统 → 监控配置」页**：两项 tab —— `监控配置`（`/monitoring/config`，热改监控开关、指标前缀、采集间隔、采集类别、6 档采样率与采集性能；只改内存，重启后回到配置文件）与 `运行时与应急`（`/monitoring/config/runtime`，展示健康、降级、错误、缓存与两级熔断状态，并提供错误重置、强制恢复、清缓存、熔断开合等应急操作，均二次确认）。菜单可见按 `monitoring:config:read`、写按钮按 `monitoring:config:write`，内置角色里只有 ADMIN 与 OPERATOR 能进。
+* **热改与应急操作写审计**：新增审计事件 `MONITORING_CONFIG_CHANGED`（`AuditEventType` 26 → 27，H2 与 PostgreSQL 各一条 V15 迁移），记录操作者、动作与细节；审计写入失败不影响操作本身。
+* **两套写入口的校验收在一处**：`/api/monitoring/config/*` 与 `/actuator/metrics/*` 的采样率/性能写入共用同一套边界（采样率 0~1、`batchSize ≥ 1`、`bufferSize ≥ batchSize`），越界在两条路径上都返回 400；`/actuator/metrics/*` 明确为 ADMIN 的 break-glass 旁路并标注 `@Deprecated`，控制台不消费它。
+* **应急操作影响面预览**：新增 `GET /api/monitoring/emergency/preview?action=`，执行前返回条目数、错误键 top 列表、当前降级级别与采样率、熔断器状态与失败率（明细最多 20 条，总数单独给出），控制台把它拼进二次确认气泡。
+* **权限码 71 → 72**：新增 `monitoring:config:read`（监控配置页与影响面预览的读码），按「管理面读码与写码配对」规则授给已持写码的 OPERATOR（54 → 55）；VIEWER 仍 31、USER 仍 33，监控配置页对二者不可见。
+
 ### [3.8.8] - 2026-11-16 - 请求追踪从「能看」到「能查」
 
 这一版把链路追踪补成一条可用的排障链路：服务名分层、控制台操作留痕、异常链路不被挤出、追踪指标可接告警、异常按维度聚合。

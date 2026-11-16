@@ -798,4 +798,113 @@ class MonitoringControllerTest {
                     .verify();
         }
     }
+
+    /**
+     * #1173：应急操作的影响面预览。
+     *
+     * <p>守两件事：① 每个 action 返回的 impact 字段齐不齐；② 明细确实按上限截断、总数单独给。
+     * 预览是只读的，所以每个用例都顺带断言「没有写审计」。</p>
+     */
+    @Nested
+    @DisplayName("应急操作影响面预览（#1173）")
+    class EmergencyPreviewTests {
+
+        @Test
+        @DisplayName("PREVIEW-001: clear-cache 返回条数、上限与截断后的键名")
+        void previewClearCache() {
+            when(cacheAndRetry.getCacheStats()).thenReturn(
+                    new MetricsCacheAndRetry.CacheStats(1234, 10000, 0, 0));
+            when(cacheAndRetry.snapshotKeys(20)).thenReturn(List.of("http.server.requests", "jvm.memory.used"));
+
+            StepVerifier.create(controller.previewEmergencyAction("clear-cache"))
+                    .assertNext(response -> {
+                        assertTrue(response.isSuccess());
+                        assertEquals("clear-cache", response.getData().get("action"));
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> impact = (Map<String, Object>) response.getData().get("impact");
+                        assertEquals(1234, impact.get("entries"));
+                        assertEquals(10000, impact.get("maxSize"));
+                        assertEquals(List.of("http.server.requests", "jvm.memory.used"), impact.get("sampleKeys"));
+                    })
+                    .verifyComplete();
+
+            verify(securityAuditService, never()).recordEvent(any());
+        }
+
+        @Test
+        @DisplayName("PREVIEW-002: reset-errors 返回键数、错误总数与逐键明细")
+        void previewResetErrors() {
+            when(errorHandler.getErrorStats())
+                    .thenReturn(new MetricsErrorHandler.MetricsErrorStats(3, 1, 42));
+            when(errorHandler.snapshotErrorKeys(20)).thenReturn(List.of(
+                    new MetricsErrorHandler.ErrorKeySnapshot("collector", "scrape", 30),
+                    new MetricsErrorHandler.ErrorKeySnapshot("reporter", "flush", 12)));
+
+            StepVerifier.create(controller.previewEmergencyAction("reset-errors"))
+                    .assertNext(response -> {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> impact = (Map<String, Object>) response.getData().get("impact");
+                        assertEquals(3, impact.get("keys"));
+                        assertEquals(42, impact.get("totalErrors"));
+                        @SuppressWarnings("unchecked")
+                        List<MetricsErrorHandler.ErrorKeySnapshot> sample =
+                                (List<MetricsErrorHandler.ErrorKeySnapshot>) impact.get("sampleKeys");
+                        assertEquals(2, sample.size());
+                        assertEquals("collector", sample.get(0).getComponent());
+                        assertEquals(30, sample.get(0).getCount());
+                    })
+                    .verifyComplete();
+
+            verify(securityAuditService, never()).recordEvent(any());
+        }
+
+        @Test
+        @DisplayName("PREVIEW-003: force-recovery 返回当前级别与自动模式")
+        void previewForceRecovery() {
+            MetricsDegradationStrategy.DegradationStatus status =
+                    mock(MetricsDegradationStrategy.DegradationStatus.class);
+            when(status.getLevel()).thenReturn(MetricsDegradationStrategy.DegradationLevel.LIGHT);
+            when(status.getSamplingRate()).thenReturn(0.5);
+            when(status.isAutoModeEnabled()).thenReturn(true);
+            when(degradationStrategy.getDegradationStatus()).thenReturn(status);
+
+            StepVerifier.create(controller.previewEmergencyAction("force-recovery"))
+                    .assertNext(response -> {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> impact = (Map<String, Object>) response.getData().get("impact");
+                        assertEquals("LIGHT", impact.get("level"));
+                        assertEquals(0.5, impact.get("samplingRate"));
+                        assertEquals(true, impact.get("autoModeEnabled"));
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("PREVIEW-004: breaker-open 返回当前熔断状态与失败率")
+        void previewBreakerOpen() {
+            MetricsCircuitBreaker.CircuitBreakerStats stats =
+                    new MetricsCircuitBreaker.CircuitBreakerStats("CLOSED", 0, 0, 100, 0.0);
+            when(circuitBreaker.getStats()).thenReturn(stats);
+
+            StepVerifier.create(controller.previewEmergencyAction("breaker-open"))
+                    .assertNext(response -> {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> impact = (Map<String, Object>) response.getData().get("impact");
+                        assertEquals("CLOSED", impact.get("state"));
+                        assertEquals(100, impact.get("requestCount"));
+                    })
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("PREVIEW-005: 未知动作返回失败响应，不抛到调用方")
+        void previewUnknownAction() {
+            StepVerifier.create(controller.previewEmergencyAction("rm-rf"))
+                    .assertNext(response -> {
+                        assertFalse(response.isSuccess());
+                        assertTrue(response.getMessage().contains("影响面"));
+                    })
+                    .verifyComplete();
+        }
+    }
 }

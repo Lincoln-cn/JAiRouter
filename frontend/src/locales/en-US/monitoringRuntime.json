@@ -35,7 +35,9 @@
     "forceRecoveryConfirmWithLevel": "Force a recovery to normal mode? The current degradation level is {level}.",
     "openBreakerConfirmWithState": "Force the circuit breaker open? Current state is {state}; metrics collection stops immediately.",
     "closeBreakerConfirmWithState": "Force the circuit breaker closed? Current state is {state}.",
-    "rawTitle": "Raw data",
+    "clearCacheConfirmWithKeys": "Clear the metrics cache? This removes {entries} cached metric entries (for example {keys}; memory cache only, business data is untouched).",
+  "resetErrorsConfirmWithTargetAndTotal": "Reset the error state of {component}/{operation}? The error stats currently hold {keys} keys and {total} errors.",
+  "rawTitle": "Raw data",
     "done": "Done",
     "failed": "Action failed"
   }

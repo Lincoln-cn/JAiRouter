@@ -146,6 +146,13 @@ public final class PermissionCodes {
     public static final String MONITORING_CONSOLE_READ = "monitoring:console:read";
     /** 异常事件-写/清理（R2-P1-03） */
     public static final String MONITORING_EXCEPTIONS_WRITE = "monitoring:exceptions:write";
+    /**
+     * 监控配置-读（#1173：系统 → 监控配置页面的页面门槛，以及应急操作的影响面预览）。
+     *
+     * <p>为什么单独拆出读码：页面本身与应急操作都只对运维/管理员开放，而「能看到页面」与
+     * 「能改配置」是两件事 —— 用写码当页面门槛会让只读的运维账号连配置现状都看不到。</p>
+     */
+    public static final String MONITORING_CONFIG_READ = "monitoring:config:read";
     /** 监控配置/运维操作-写（#116：开关指标、降级、缓存清理、熔断强制操作等） */
     public static final String MONITORING_CONFIG_WRITE = "monitoring:config:write";
 
@@ -236,7 +243,7 @@ public final class PermissionCodes {
             MONITORING_QUOTA_READ,
             MONITORING_EXCEPTIONS_READ, MONITORING_EXCEPTIONS_WRITE,
             MONITORING_CONSOLE_READ,
-            MONITORING_CONFIG_WRITE,
+            MONITORING_CONFIG_READ, MONITORING_CONFIG_WRITE,
             TRACING_DASHBOARD_READ, TRACING_SEARCH_READ, TRACING_CONFIG_READ, TRACING_CONFIG_MANAGE,
             SECURITY_APIKEYS_READ, SECURITY_APIKEYS_MANAGE,
             SECURITY_JWTTOKENS_READ, SECURITY_JWTTOKENS_MANAGE,

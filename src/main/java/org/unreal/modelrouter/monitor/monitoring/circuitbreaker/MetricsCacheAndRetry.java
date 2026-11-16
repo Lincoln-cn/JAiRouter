@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -280,6 +281,29 @@ public final class MetricsCacheAndRetry {
             activeRetries.get(),
             retryQueue.size()
         );
+    }
+
+    /**
+     * 缓存键快照（#1173：给「清缓存」的确认框展示影响面）。
+     *
+     * <p>只返回键名、不返回值 —— 指标缓存里的值是聚合数字，不是业务数据，但调用方只需要
+     * 「清掉的是哪些指标」这一层信息，没必要把值也搬出去。</p>
+     *
+     * <p>按字典序取前 {@code limit} 个键，保证同一状态下多次预览结果稳定（{@link ConcurrentHashMap}
+     * 的迭代顺序不保证），并按上限截断：缓存最多 {@value #MAX_CACHE_SIZE} 条，全量返回会让
+     * 响应失去可读性。</p>
+     *
+     * @param limit 最多返回多少个键
+     * @return 键名列表（可能为空）
+     */
+    public List<String> snapshotKeys(final int limit) {
+        if (limit <= 0) {
+            return List.of();
+        }
+        return metricsCache.keySet().stream()
+            .sorted()
+            .limit(limit)
+            .toList();
     }
     
     /**

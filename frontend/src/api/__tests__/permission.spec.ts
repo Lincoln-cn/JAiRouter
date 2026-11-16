@@ -18,8 +18,8 @@ import en from '@/locales/en-US/permissions.json'
  */
 
 const ACTIONS = ['read', 'view', 'write', 'manage', 'use']
-/** 后端 PermissionCodes.ALL_PERMISSION_CODES 的当前规模（callhistory 拆双码后 71） */
-const EXPECTED_TOTAL = 71
+/** 后端 PermissionCodes.ALL_PERMISSION_CODES 的当前规模（#1173 新增 monitoring:config:read 后 72） */
+const EXPECTED_TOTAL = 72
 
 interface SplitCode {
   module: string
@@ -44,7 +44,7 @@ const localeWordMaps = [
 ] as const
 
 describe('permission codes wiring', () => {
-  it('covers all 71 backend permission codes exactly once', () => {
+  it('covers all 72 backend permission codes exactly once', () => {
     expect(ALL_PERMISSION_CODES).toHaveLength(EXPECTED_TOTAL)
     expect(new Set(ALL_PERMISSION_CODES).size).toBe(EXPECTED_TOTAL)
   })

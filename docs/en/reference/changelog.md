@@ -29,6 +29,14 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 * **Role impact**: OPERATOR inherits `callhistory:read` through the "all `:read` codes" rule (54 codes) and can browse records and summaries; `callhistory:full-content` is ADMIN-only by default; USER and VIEWER hold neither (VIEWER excludes it explicitly to stay at 31 codes). The catalogue grows from 70 to 71 codes.
 * **Migration note**: `callhistory:view` no longer exists in the catalogue; deployments that manually granted it must switch to `callhistory:read` under System → Permissions (grant `callhistory:full-content` as well to read bodies).
 
+### [Unreleased] - Monitoring config page, one shared validator, and emergency impact preview
+
+* **New System → Monitoring Config page**: two tabs — `Monitoring Config` (`/monitoring/config`) hot-edits the monitoring switch, metric prefix, collection interval, categories, six sampling ratios and collection performance (in-memory only; a restart restores the config files), and `Runtime & Emergency` (`/monitoring/config/runtime`) shows health, degradation, errors, cache and both circuit breakers while offering error reset, forced recovery, cache clearing and breaker open/close behind a confirmation. Menu visibility uses `monitoring:config:read`, write buttons use `monitoring:config:write`; of the built-in roles only ADMIN and OPERATOR can reach it.
+* **Hot reload and emergency actions are audited**: a new `MONITORING_CONFIG_CHANGED` audit event (`AuditEventType` 26 → 27, with a V15 migration each for H2 and PostgreSQL) records actor, action and detail; an audit write failure never blocks the operation.
+* **One validator for both write surfaces**: `/api/monitoring/config/*` and `/actuator/metrics/*` share the same sampling/performance bounds (sampling 0..1, `batchSize >= 1`, `bufferSize >= batchSize`), and a violation returns 400 on either path; `/actuator/metrics/*` is documented as the ADMIN break-glass bypass, marked `@Deprecated`, and is not consumed by the console.
+* **Emergency impact preview**: `GET /api/monitoring/emergency/preview?action=` reports entry counts, the top error keys, the current degradation level and sampling ratios, and breaker state and failure rate before an action runs (lists capped at 20 rows, totals separate); the console feeds it into the confirmation popover.
+* **Permission codes 71 → 72**: `monitoring:config:read` (read access to the page and the impact preview) is granted to OPERATOR through the manage/read pairing rule, since it already holds the write code (54 → 55); VIEWER stays at 31 and USER at 33, and neither sees the monitoring config page.
+
 ### [3.8.8] - 2026-11-16 - Tracing that can be investigated, not just watched
 
 This release turns tracing into a usable investigation path: layered service names, console operations that leave a trail, error traces that survive eviction, tracing metrics that can back alerts, and an error view aggregated by dimension.

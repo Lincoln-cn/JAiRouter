@@ -116,6 +116,22 @@ class PermissionRuleRegistryTest {
     }
 
     @Test
+    @DisplayName("#1173：应急操作影响面预览挂 monitoring:config:read，且精确规则先于 /api/monitoring/** 通配")
+    void emergencyPreviewRequiresConfigRead() {
+        // 精确规则：只读预览，不要求写码；但也不该落到通配的 monitoring:metrics:read 上 ——
+        // 那会把「运维配置面」的现状暴露给只持 metrics:read 的角色。
+        assertRuleCode(HttpMethod.GET, "/api/monitoring/emergency/preview",
+                PermissionCodes.MONITORING_CONFIG_READ);
+        // 通配规则仍然生效：其余只读端点还是 monitoring:metrics:read
+        assertRuleCode(HttpMethod.GET, "/api/monitoring/health", PermissionCodes.MONITORING_METRICS_READ);
+        assertRuleCode(HttpMethod.GET, "/api/monitoring/cache/stats",
+                PermissionCodes.MONITORING_METRICS_READ);
+        // 写端点仍是 monitoring:config:write，没有因为新增读码而放松
+        assertRuleCode(HttpMethod.PUT, "/api/monitoring/config/prefix",
+                PermissionCodes.MONITORING_CONFIG_WRITE);
+    }
+
+    @Test
     @DisplayName("负载均衡：配置读与监控读仍然分离，具体路径优先")
     void loadBalancerConfigReadIsSeparatedFromMonitoringRead() {
         assertRuleCode(HttpMethod.GET, "/api/loadbalancer/config/global", PermissionCodes.LB_CONFIG_READ);

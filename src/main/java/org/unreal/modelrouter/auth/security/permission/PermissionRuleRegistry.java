@@ -234,6 +234,9 @@ public class PermissionRuleRegistry {
                 // ===== 监控配置/运维端点（MonitoringController，#116） =====
                 // 注意：必须登记在 metrics/slow-queries/quota 的更具体 GET 规则之后（首条命中优先），
                 // 以免改写已生效的 monitoring:metrics|slowquery|quota:read 绑定。
+                // 应急操作的影响面预览（#1173）是只读端点，但读的是「配置/运维面」的现状，
+                // 与页面门槛同用 monitoring:config:read；必须排在下一条通配 GET 之前。
+                PermissionRule.get("/api/monitoring/emergency/preview", PermissionCodes.MONITORING_CONFIG_READ),
                 PermissionRule.get("/api/monitoring/**", PermissionCodes.MONITORING_METRICS_READ),
                 PermissionRule.write("/api/monitoring/**", PermissionCodes.MONITORING_CONFIG_WRITE),
 

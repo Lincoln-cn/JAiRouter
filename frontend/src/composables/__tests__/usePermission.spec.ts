@@ -141,7 +141,7 @@ describe('菜单可见性：权限码是唯一门控', () => {
 
   it('OPERATOR 持审计/集群/健康/操作记录/监控配置码时，安全与系统组只显示有码的项', () => {
     setup(
-      ['security:audit:read', 'config:cluster:read', 'config:health:read', 'monitoring:console:read', 'config:callhistory:read', 'config:persistence:read', 'monitoring:config:write'],
+      ['security:audit:read', 'config:cluster:read', 'config:health:read', 'monitoring:console:read', 'config:callhistory:read', 'config:persistence:read', 'monitoring:config:read', 'monitoring:config:write'],
       ['OPERATOR']
     )
     const { filterMenuByPermission } = usePermission()
