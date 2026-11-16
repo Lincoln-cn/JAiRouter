@@ -81,7 +81,9 @@ class RolePermissionSeederTest {
             // v3.8.6：新增 config:ratelimit:read/write（限流运行时配置）⇒ OPERATOR +2、USER +1（只读）、VIEWER +1
             // v3.8.6：新增 config:cluster:read/write（集群设置）⇒ OPERATOR +2、USER +1、VIEWER +1
             // v3.8.8：新增 monitoring:console:read（管理操作页）⇒ OPERATOR +1、USER +1、VIEWER +1
-            assertEquals(53L, counts.get("OPERATOR"));
+            // 调用历史双码：callhistory:read 由「全部 :read」规则自动进 OPERATOR（+1 ⇒ 54），
+            // callhistory:full-content 只授 ADMIN；VIEWER 显式排除 callhistory:read ⇒ 仍 31
+            assertEquals(54L, counts.get("OPERATOR"));
             assertEquals(33L, counts.get("USER"));
             assertEquals(31L, counts.get("VIEWER"));
         }
@@ -110,7 +112,10 @@ class RolePermissionSeederTest {
             assertFalse(codes.contains(PermissionCodes.SECURITY_JWTTOKENS_MANAGE));
             assertFalse(codes.contains(PermissionCodes.SECURITY_BLACKLIST_MANAGE));
             assertFalse(codes.contains(PermissionCodes.ACTUATOR_ADMIN_MANAGE));
-            assertFalse(codes.contains(PermissionCodes.CALLHISTORY_VIEW));
+            assertTrue(codes.contains(PermissionCodes.CALLHISTORY_READ),
+                    "调用历史双码：operator（运维）应能看记录元数据与摘要");
+            assertFalse(codes.contains(PermissionCodes.CALLHISTORY_FULL_CONTENT),
+                    "调用历史双码：正文解密只授 ADMIN");
             assertFalse(codes.contains(PermissionCodes.TRACING_CONFIG_MANAGE));
             assertFalse(codes.contains(PermissionCodes.AI_PLAYGROUND_USE));
         }
@@ -143,7 +148,8 @@ class RolePermissionSeederTest {
             // 排除项：config 写、security 读/管理、system、actuator、callhistory
             assertFalse(codes.contains(PermissionCodes.CONFIG_SERVICES_WRITE));
             assertFalse(codes.contains(PermissionCodes.SECURITY_AUDIT_READ));
-            assertFalse(codes.contains(PermissionCodes.CALLHISTORY_VIEW));
+            assertFalse(codes.contains(PermissionCodes.CALLHISTORY_READ));
+            assertFalse(codes.contains(PermissionCodes.CALLHISTORY_FULL_CONTENT));
             assertFalse(codes.contains(PermissionCodes.TRACING_CONFIG_MANAGE));
             assertFalse(codes.contains(PermissionCodes.SYSTEM_PERMISSIONS_MANAGE));
             assertFalse(codes.contains(PermissionCodes.ACTUATOR_ADMIN_MANAGE));
@@ -157,7 +163,9 @@ class RolePermissionSeederTest {
             assertEquals(31, codes.size());
             assertTrue(codes.stream().allMatch(code -> code.endsWith(":read")));
             assertTrue(codes.contains(PermissionCodes.SECURITY_AUDIT_READ));
-            assertFalse(codes.contains(PermissionCodes.CALLHISTORY_VIEW));
+            assertFalse(codes.contains(PermissionCodes.CALLHISTORY_READ),
+                    "调用历史双码：VIEWER 不持运维面的记录读权限");
+            assertFalse(codes.contains(PermissionCodes.CALLHISTORY_FULL_CONTENT));
             assertFalse(codes.contains(PermissionCodes.LB_CONFIG_WRITE));
             assertFalse(codes.contains(PermissionCodes.AI_PLAYGROUND_USE));
             assertFalse(codes.contains(PermissionCodes.TRACING_CONFIG_MANAGE));

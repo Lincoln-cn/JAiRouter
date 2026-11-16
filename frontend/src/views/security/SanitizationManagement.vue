@@ -75,7 +75,7 @@
 
     <el-card shadow="hover" style="margin-bottom: var(--ja-space-4)">
       <div class="config-actions">
-        <el-button type="primary" :loading="saving" @click="handleSave">
+        <el-button v-permission="'security:sanitization:manage'" type="primary" :loading="saving" @click="handleSave">
           <el-icon><Check /></el-icon>
           {{ t('sanitization.save') }}
         </el-button>

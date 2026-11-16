@@ -83,9 +83,10 @@ public class PermissionRuleRegistry {
                 // issue #514：这里原来是 any(...)（空方法集 = 所有方法），于是「查看」权限码
                 // 同时放行了 POST /record（写入一条调用记录）与 DELETE /cleanup（删除历史）。
                 // 现在只给 GET 一条规则：写/删**不匹配任何规则**，由 RbacUnmatchedPolicy 裁决
-                // （默认 DENY_ALL ⇒ 仅 ROLE_ADMIN 直通）。这样既不新增权限码、也不动角色模板，
-                // 权限语义就与「view」这个名字一致了。
-                PermissionRule.get("/api/call-history/**", PermissionCodes.CALLHISTORY_VIEW),
+                // （默认 DENY_ALL ⇒ 仅 ROLE_ADMIN 直通；POST /record 走 RbacExemptEndpoints 摄取豁免）。
+                // FULL 级别正文是否解密由 controller 按 callhistory:full-content 逐主体裁剪，
+                // 所以这条前缀规则只挂 callhistory:read，不参与正文判定。
+                PermissionRule.get("/api/call-history/**", PermissionCodes.CALLHISTORY_READ),
                 PermissionRule.get("/api/config/call-history/**", PermissionCodes.CONFIG_CALLHISTORY_READ),
                 PermissionRule.write("/api/config/call-history/**", PermissionCodes.CONFIG_CALLHISTORY_WRITE),
 
@@ -163,6 +164,11 @@ public class PermissionRuleRegistry {
                 PermissionRule.write("/api/auth/api-keys/**", PermissionCodes.SECURITY_APIKEYS_MANAGE),
 
                 // ===== B2b 渐进补齐：安全审计扩展（ExtendedSecurityAuditController → 菜单「安全管理-审计日志」） =====
+                // 审计日志页的主查询与导出都走 POST /api/security/audit/extended/query（POST 传查询体、
+                // 只读语义）。若让前缀的 write 规则接管，只持 :read 的角色（VIEWER）打开页面后
+                // 列表必然 403 —— 第六轮运行态冒烟后撤掉前端父路由角色限制时才暴露出来。
+                // 顺序要紧：更具体的 POST 规则必须排在 write 规则之前。
+                PermissionRule.post("/api/security/audit/extended/query", PermissionCodes.SECURITY_AUDIT_READ),
                 PermissionRule.get("/api/security/audit/extended/**", PermissionCodes.SECURITY_AUDIT_READ),
                 PermissionRule.write("/api/security/audit/extended/**", PermissionCodes.SECURITY_AUDIT_WRITE),
 
@@ -196,6 +202,9 @@ public class PermissionRuleRegistry {
                 // #1154：控制台管理操作页单独授权，必须先于 /api/tracing/query/** 命中
         PermissionRule.get("/api/tracing/query/console-operations", PermissionCodes.MONITORING_CONSOLE_READ),
         PermissionRule.get("/api/tracing/query/**", PermissionCodes.TRACING_SEARCH_READ),
+                // POST /export 只读（读库生成导出件、不落库），与 GET 同挂 :search:read；
+                // 精确规则必须先于下面的 write 命中，否则只读角色点「导出」会 403。
+                PermissionRule.post("/api/tracing/query/export", PermissionCodes.TRACING_SEARCH_READ),
                 PermissionRule.write("/api/tracing/query/**", PermissionCodes.TRACING_CONFIG_MANAGE),
 
                 // ===== B2b 渐进补齐：概览仪表盘（DashboardMetricsController → 菜单「概览」） =====
@@ -239,8 +248,11 @@ public class PermissionRuleRegistry {
 
                 // ===== PII / 脱敏配置管理（SanitizationConfigController） =====
                 // #567：GET（当前配置 / 规则清单）走 security:sanitization:read；
-                // PUT 配置、POST /test 仍走 :manage。
+                // POST /test 与 POST /scope/preview 只是拿当前规则/scope 做只读试算（不落库、不改配置），
+                // 同样挂 :read —— 只读角色点「试脱敏」「预览」不该 403。精确规则必须先于下面的 write 命中。
                 PermissionRule.get("/api/config/sanitization/**", PermissionCodes.SECURITY_SANITIZATION_READ),
+                PermissionRule.post("/api/config/sanitization/test", PermissionCodes.SECURITY_SANITIZATION_READ),
+                PermissionRule.post("/api/config/sanitization/scope/preview", PermissionCodes.SECURITY_SANITIZATION_READ),
                 PermissionRule.write("/api/config/sanitization/**", PermissionCodes.SECURITY_SANITIZATION_MANAGE),
 
                 // ===== #128 Phase 2: JWT 令牌运维端点（方法级 @PreAuthorize 均为 hasRole('ADMIN')） =====

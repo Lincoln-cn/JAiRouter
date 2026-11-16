@@ -203,7 +203,12 @@
                前一个按钮基数线错位（用户反馈「详情 和 黑名单 没有对齐」） -->
           <div class="row-actions">
             <el-button size="small" type="primary" link @click="handleViewDetail(scope.row)">{{ t('auditLog.detail') }}</el-button>
-            <el-dropdown v-if="scope.row.ipAddress" trigger="click" @command="(cmd: string) => handleAddToBlacklist(scope.row, cmd)">
+            <el-dropdown
+              v-if="scope.row.ipAddress"
+              v-permission="'security:blacklist:manage'"
+              trigger="click"
+              @command="(cmd: string) => handleAddToBlacklist(scope.row, cmd)"
+            >
               <el-button size="small" type="warning" link>{{ t('auditLog.blacklist') }}</el-button>
               <template #dropdown>
                 <el-dropdown-menu>

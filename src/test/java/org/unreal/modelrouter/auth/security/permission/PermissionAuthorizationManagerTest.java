@@ -157,11 +157,82 @@ class PermissionAuthorizationManagerTest {
     class RuleSemanticsTests {
 
         @Test
-        @DisplayName("call-history 读 -> callhistory:view 放行（issue #514 后仅 GET 有规则）")
-        void callHistoryReadRule() {
-            AuthorizationContext context = context(HttpMethod.GET, "/api/call-history/recent");
+        @DisplayName("审计日志查询/导出走 POST 但只需 security:audit:read（只读角色打得开页面就要查得出数据）")
+        void auditExtendedPostQueryRequiresReadOnly() {
+            AuthorizationContext context =
+                    context(HttpMethod.POST, "/api/security/audit/extended/query");
+            JwtAuthentication viewer = authenticated(
+                    "viewer", List.of("VIEWER"), List.of(PermissionCodes.SECURITY_AUDIT_READ));
+
+            StepVerifier.create(manager.authorize(Mono.just(viewer), context))
+                    .expectNextMatches(AuthorizationResult::isGranted)
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("审计日志的写端点仍要 security:audit:write（POST 只读规则不能放宽整条前缀）")
+        void auditExtendedWriteEndpointStillRequiresWriteCode() {
+            AuthorizationContext context =
+                    context(HttpMethod.POST, "/api/security/audit/extended/events");
+            JwtAuthentication viewer = authenticated(
+                    "viewer", List.of("VIEWER"), List.of(PermissionCodes.SECURITY_AUDIT_READ));
+
+            StepVerifier.create(manager.authorize(Mono.just(viewer), context))
+                    .expectNextMatches(decision -> !decision.isGranted())
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("脱敏试算与范围预览走 POST 但只需 security:sanitization:read（只读角色点得动按钮）")
+        void sanitizationDryRunEndpointsRequireReadOnly() {
+            JwtAuthentication viewer = authenticated(
+                    "viewer", List.of("VIEWER"), List.of(PermissionCodes.SECURITY_SANITIZATION_READ));
+
+            StepVerifier.create(manager.authorize(
+                            Mono.just(viewer), context(HttpMethod.POST, "/api/config/sanitization/test")))
+                    .expectNextMatches(AuthorizationResult::isGranted)
+                    .verifyComplete();
+
+            StepVerifier.create(manager.authorize(
+                            Mono.just(viewer), context(HttpMethod.POST, "/api/config/sanitization/scope/preview")))
+                    .expectNextMatches(AuthorizationResult::isGranted)
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("脱敏配置的写端点仍要 security:sanitization:manage（POST 只读规则不能放宽整条前缀）")
+        void sanitizationConfigUpdateStillRequiresManage() {
+            AuthorizationContext context = context(HttpMethod.PUT, "/api/config/sanitization");
+            JwtAuthentication viewer = authenticated(
+                    "viewer", List.of("VIEWER"), List.of(PermissionCodes.SECURITY_SANITIZATION_READ));
+
+            StepVerifier.create(manager.authorize(Mono.just(viewer), context))
+                    .expectNextMatches(decision -> !decision.isGranted())
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("追踪导出走 POST 但只需 tracing:search:read，清理仍要 tracing:config:manage")
+        void tracingExportRequiresSearchRead() {
+            JwtAuthentication viewer = authenticated(
+                    "viewer", List.of("VIEWER"), List.of(PermissionCodes.TRACING_SEARCH_READ));
+
+            StepVerifier.create(manager.authorize(
+                            Mono.just(viewer), context(HttpMethod.POST, "/api/tracing/query/export")))
+                    .expectNextMatches(AuthorizationResult::isGranted)
+                    .verifyComplete();
+
+            StepVerifier.create(manager.authorize(
+                            Mono.just(viewer), context(HttpMethod.POST, "/api/tracing/query/cleanup")))
+                    .expectNextMatches(decision -> !decision.isGranted())
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("call-history 读 -> callhistory:read 放行（issue #514 后仅 GET 有规则）")
+        void callHistoryReadRule() {            AuthorizationContext context = context(HttpMethod.GET, "/api/call-history/recent");
             JwtAuthentication auth = authenticated(
-                    "user", List.of("USER"), List.of(PermissionCodes.CALLHISTORY_VIEW));
+                    "user", List.of("USER"), List.of(PermissionCodes.CALLHISTORY_READ));
 
             StepVerifier.create(manager.authorize(Mono.just(auth), context))
                     .expectNextMatches(AuthorizationResult::isGranted)
@@ -169,15 +240,15 @@ class PermissionAuthorizationManagerTest {
         }
 
         @Test
-        @DisplayName("call-history 写/删 -> 不再由 callhistory:view 放行（issue #514 的回归点）")
-        void callHistoryWriteIsNotGuardedByViewCode() {
+        @DisplayName("call-history 写/删 -> 不再由 callhistory:read 放行（issue #514 的回归点）")
+        void callHistoryWriteIsNotGuardedByReadCode() {
             // 修复前：any(...) 规则让「查看」权限码同时放行 DELETE 与 POST。
             // 修复后：该前缀只有 GET 规则 ⇒ 写/删不匹配任何规则，落到 RbacUnmatchedPolicy
-            // （本测试用默认 manager，即 DENY_ALL）⇒ 仅持 CALLHISTORY_VIEW 的用户被拒。
+            // （本测试用默认 manager，即 DENY_ALL）⇒ 仅持 CALLHISTORY_READ 的用户被拒。
             for (HttpMethod method : new HttpMethod[]{HttpMethod.DELETE, HttpMethod.POST}) {
                 AuthorizationContext context = context(method, "/api/call-history/cleanup");
                 JwtAuthentication auth = authenticated(
-                        "user", List.of("USER"), List.of(PermissionCodes.CALLHISTORY_VIEW));
+                        "user", List.of("USER"), List.of(PermissionCodes.CALLHISTORY_READ));
 
                 StepVerifier.create(manager.authorize(Mono.just(auth), context))
                         .expectNextMatches(decision -> !decision.isGranted())

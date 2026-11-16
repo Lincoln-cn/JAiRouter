@@ -7,9 +7,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
+import org.unreal.modelrouter.auth.security.permission.PermissionCodes;
 import org.unreal.modelrouter.common.constants.ErrorCode;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.AuditEventType;
@@ -18,6 +23,8 @@ import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryQueryDTO;
 import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryStatisticsDTO;
 import org.unreal.modelrouter.persistence.jpa.entity.ApiCallHistoryEntity;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,18 +32,23 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * ApiCallHistoryController RBAC 和详情端点单元测试
+ * ApiCallHistoryController RBAC 与正文可见性单元测试。
  *
- * 验证：
- * 1. @PreAuthorize("hasRole('ADMIN')") 注解存在于类级别
- * 2. 详情端点（detail）正常返回解密数据
- * 3. FULL 级别记录触发 FULL_CONTENT_ACCESS 审计事件
+ * <p>验证：
+ * <ol>
+ *   <li>controller 无类级 {@code @PreAuthorize}（RBAC 由 URL 规则保护）</li>
+ *   <li>调用历史双码：{@code callhistory:read} 看元数据与摘要，
+ *   {@code callhistory:full-content} 才解密正文</li>
+ *   <li>只有真正解密 FULL 正文时才记 {@code FULL_CONTENT_ACCESS} 审计 ——
+ *   仅持 read 的运维不该产生「解密查看」审计噪音</li>
+ *   <li>无 full-content 时加密字段一律从响应里清空（列表与详情同一口径）</li>
+ * </ol>
  *
  * @author JAiRouter Team
  * @since 2.9.2
  */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("ApiCallHistoryController RBAC 与详情端点测试")
+@DisplayName("ApiCallHistoryController RBAC 与正文可见性测试")
 class ApiCallHistoryControllerRbacTest {
 
     @Mock
@@ -51,6 +63,39 @@ class ApiCallHistoryControllerRbacTest {
     @InjectMocks
     private ApiCallHistoryController controller;
 
+    // ==================== 认证主体工具 ====================
+
+    /**
+     * 持若干权限码的运维主体（不含 ROLE_ADMIN）。
+     */
+    private static Authentication withCodes(final String... codes) {
+        return new UsernamePasswordAuthenticationToken(
+                "operator", null,
+                Arrays.stream(codes).map(SimpleGrantedAuthority::new).toList());
+    }
+
+    private static Authentication admin() {
+        return new UsernamePasswordAuthenticationToken(
+                "admin", null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+    }
+
+    private static ApiCallHistoryEntity record(final long id, final RecordLevel level) {
+        return ApiCallHistoryEntity.builder()
+                .id(id)
+                .recordLevel(level.name())
+                .traceId("trace-" + id)
+                .requestId("req-" + id)
+                .requestMethod("POST")
+                .requestPath("/v1/chat/completions")
+                .serviceType("chat")
+                .modelName("gpt-4")
+                .requestBodySummary("request-summary")
+                .responseBodySummary("response-summary")
+                .requestBodyEncrypted("encrypted-request")
+                .responseBodyEncrypted("encrypted-response")
+                .build();
+    }
+
     // ==================== RBAC 检查 ====================
 
     @Nested
@@ -58,56 +103,100 @@ class ApiCallHistoryControllerRbacTest {
     class RbacAnnotationTests {
 
         @Test
-        @DisplayName("controller 无 @PreAuthorize（RBAC 由 SecurityConfiguration URL 规则保护）")
+        @DisplayName("controller 无 @PreAuthorize（RBAC 由 URL 规则保护）")
         void noClassLevelPreAuthorize() {
             // v2.9.4-fix: 同步返回类型的 controller 不能用类级 @PreAuthorize
             // （@EnableReactiveMethodSecurity 要求 Publisher 返回类型，真实请求 500），
-            // RBAC 已移至 SecurityConfiguration 的 URL 规则：/api/call-history/** -> hasRole('ADMIN')
+            // RBAC 已移至 URL 规则：GET /api/call-history/** -> callhistory:read，
+            // 正文解密再由 callhistory:full-content 在本类内细粒度把关。
             PreAuthorize annotation = ApiCallHistoryController.class.getAnnotation(PreAuthorize.class);
             assertNull(annotation,
                     "ApiCallHistoryController 不应有 @PreAuthorize（RBAC 由 URL 规则保护）");
         }
     }
 
-    // ==================== 详情端点测试 ====================
+    // ==================== 详情端点：双码 ====================
 
     @Nested
-    @DisplayName("GET /{id}/detail - 查询记录详情")
+    @DisplayName("GET /{id}/detail - 双码正文可见性")
     class GetDetailTests {
 
         @Test
-        @DisplayName("记录存在时返回解密后的实体")
-        void detailFound() {
-            ApiCallHistoryEntity entity = ApiCallHistoryEntity.builder()
-                    .id(1L)
-                    .recordLevel(RecordLevel.METADATA_ONLY.name())
-                    .traceId("trace-1")
-                    .requestId("req-1")
-                    .requestMethod("POST")
-                    .requestPath("/v1/chat/completions")
-                    .serviceType("chat")
-                    .modelName("gpt-4")
-                    .build();
-
+        @DisplayName("仅持 callhistory:read ⇒ 不解密、不发审计、加密字段被清空")
+        void readOnlyDoesNotDecrypt() {
+            ApiCallHistoryEntity entity = record(1L, RecordLevel.FULL);
             when(callHistoryService.findById(1L)).thenReturn(Optional.of(entity));
-            when(callHistoryService.decryptBodies(entity)).thenReturn(entity);
 
-            ResponseEntity<RouterResponse<ApiCallHistoryEntity>> response = controller.getDetail(1L);
+            ResponseEntity<RouterResponse<ApiCallHistoryEntity>> response =
+                    controller.getDetail(1L, withCodes(PermissionCodes.CALLHISTORY_READ));
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());
-            assertEquals(entity, response.getBody().getData());
-            verify(callHistoryService).decryptBodies(entity);
-            // METADATA_ONLY 不应触发审计
+            // 核心断言：正文不可见，但摘要仍可读（运维面需要的正是摘要与元数据）
+            assertNull(entity.getRequestBodyEncrypted(), "无 full-content 时不得返回请求正文密文");
+            assertNull(entity.getResponseBodyEncrypted(), "无 full-content 时不得返回响应正文密文");
+            assertEquals("request-summary", entity.getRequestBodySummary());
+            verify(callHistoryService, never()).decryptBodies(any());
             verifyNoInteractions(securityAuditService);
         }
 
         @Test
-        @DisplayName("记录不存在时返回错误")
+        @DisplayName("持 callhistory:full-content ⇒ 解密 FULL 正文并发 FULL_CONTENT_ACCESS 审计")
+        void fullContentDecryptsAndAudits() {
+            ApiCallHistoryEntity entity = record(2L, RecordLevel.FULL);
+            when(callHistoryService.findById(2L)).thenReturn(Optional.of(entity));
+            when(securityAuditService.recordEvent(any())).thenReturn(reactor.core.publisher.Mono.empty());
+
+            ResponseEntity<RouterResponse<ApiCallHistoryEntity>> response =
+                    controller.getDetail(2L, withCodes(
+                            PermissionCodes.CALLHISTORY_READ, PermissionCodes.CALLHISTORY_FULL_CONTENT));
+
+            assertNotNull(response.getBody());
+            assertTrue(response.getBody().isSuccess());
+            verify(callHistoryService).decryptBodies(entity);
+            verify(securityAuditService).recordEvent(argThat(event ->
+                    AuditEventType.FULL_CONTENT_ACCESS == AuditEventType.valueOf(event.getEventType())
+                            && "call-history".equals(event.getResource())
+                            && "DETAIL".equals(event.getAction())
+                            // 审计必须能回答「谁看了正文」：运行态核对曾发现 userId 为空
+                            && "operator".equals(event.getUserId())
+                            && event.getAdditionalData() != null
+                            && Long.valueOf(2L).equals(event.getAdditionalData().get("recordId"))
+            ));
+        }
+
+        @Test
+        @DisplayName("ADMIN 直通（ROLE_ADMIN 即隐含 full-content）")
+        void adminImpliesFullContent() {
+            ApiCallHistoryEntity entity = record(3L, RecordLevel.FULL);
+            when(callHistoryService.findById(3L)).thenReturn(Optional.of(entity));
+            when(securityAuditService.recordEvent(any())).thenReturn(reactor.core.publisher.Mono.empty());
+
+            controller.getDetail(3L, admin());
+
+            verify(callHistoryService).decryptBodies(entity);
+            verify(securityAuditService).recordEvent(argThat(event -> "admin".equals(event.getUserId())));
+        }
+
+        @Test
+        @DisplayName("FULL 之外（SUMMARY）即使有 full-content 也不发审计")
+        void summaryLevelNoAudit() {
+            ApiCallHistoryEntity entity = record(4L, RecordLevel.SUMMARY);
+            when(callHistoryService.findById(4L)).thenReturn(Optional.of(entity));
+
+            controller.getDetail(4L, withCodes(PermissionCodes.CALLHISTORY_FULL_CONTENT));
+
+            verify(callHistoryService).decryptBodies(entity);
+            verifyNoInteractions(securityAuditService);
+        }
+
+        @Test
+        @DisplayName("记录不存在时返回 NOT_FOUND 错误")
         void detailNotFound() {
             when(callHistoryService.findById(999L)).thenReturn(Optional.empty());
 
-            ResponseEntity<RouterResponse<ApiCallHistoryEntity>> response = controller.getDetail(999L);
+            ResponseEntity<RouterResponse<ApiCallHistoryEntity>> response =
+                    controller.getDetail(999L, withCodes(PermissionCodes.CALLHISTORY_READ));
 
             assertNotNull(response.getBody());
             assertFalse(response.getBody().isSuccess());
@@ -115,59 +204,52 @@ class ApiCallHistoryControllerRbacTest {
             // issue #413：状态码已按 NOT_FOUND 解析，响应体也必须带同一个码（此前为 null）
             assertEquals(ErrorCode.NOT_FOUND.code(), response.getBody().getErrorCode());
         }
+    }
+
+    // ==================== 列表端点：同一裁剪口径 ====================
+
+    @Nested
+    @DisplayName("列表端点 - 无 full-content 时清空密文")
+    class ListRedactionTests {
 
         @Test
-        @DisplayName("FULL 级别记录触发 FULL_CONTENT_ACCESS 审计事件")
-        void fullLevelTriggersAudit() {
-            ApiCallHistoryEntity entity = ApiCallHistoryEntity.builder()
-                    .id(2L)
-                    .recordLevel(RecordLevel.FULL.name())
-                    .traceId("trace-2")
-                    .requestId("req-2")
-                    .requestMethod("POST")
-                    .requestPath("/v1/chat/completions")
-                    .serviceType("chat")
-                    .modelName("gpt-4")
-                    .requestBodyEncrypted("encrypted-data")
-                    .build();
+        @DisplayName("GET /api/call-history 分页结果不返回密文")
+        void queryRedactsBodies() {
+            ApiCallHistoryEntity entity = record(10L, RecordLevel.FULL);
+            when(callHistoryService.query(any(CallHistoryQueryDTO.class)))
+                    .thenReturn(new PageImpl<>(List.of(entity)));
 
-            when(callHistoryService.findById(2L)).thenReturn(Optional.of(entity));
-            when(callHistoryService.decryptBodies(entity)).thenReturn(entity);
-            when(securityAuditService.recordEvent(any())).thenReturn(reactor.core.publisher.Mono.empty());
-
-            ResponseEntity<RouterResponse<ApiCallHistoryEntity>> response = controller.getDetail(2L);
+            ResponseEntity<RouterResponse<org.springframework.data.domain.Page<ApiCallHistoryEntity>>> response =
+                    controller.query(new CallHistoryQueryDTO(), withCodes(PermissionCodes.CALLHISTORY_READ));
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());
-            verify(securityAuditService).recordEvent(argThat(event ->
-                    AuditEventType.FULL_CONTENT_ACCESS == AuditEventType.valueOf(event.getEventType())
-                            && "call-history".equals(event.getResource())
-                            && "DETAIL".equals(event.getAction())
-            ));
+            assertNull(entity.getRequestBodyEncrypted());
+            assertNull(entity.getResponseBodyEncrypted());
         }
 
         @Test
-        @DisplayName("SUMMARY 级别记录不触发审计事件")
-        void summaryLevelNoAudit() {
-            ApiCallHistoryEntity entity = ApiCallHistoryEntity.builder()
-                    .id(3L)
-                    .recordLevel(RecordLevel.SUMMARY.name())
-                    .traceId("trace-3")
-                    .requestId("req-3")
-                    .requestMethod("POST")
-                    .requestPath("/v1/chat/completions")
-                    .serviceType("chat")
-                    .modelName("gpt-4")
-                    .build();
+        @DisplayName("GET /recent 对无 full-content 主体清空密文")
+        void recentRedactsBodies() {
+            ApiCallHistoryEntity entity = record(11L, RecordLevel.FULL);
+            when(callHistoryService.findRecent(20)).thenReturn(List.of(entity));
 
-            when(callHistoryService.findById(3L)).thenReturn(Optional.of(entity));
-            when(callHistoryService.decryptBodies(entity)).thenReturn(entity);
+            controller.findRecent(20, withCodes(PermissionCodes.CALLHISTORY_READ));
 
-            ResponseEntity<RouterResponse<ApiCallHistoryEntity>> response = controller.getDetail(3L);
+            assertNull(entity.getRequestBodyEncrypted());
+            assertNull(entity.getResponseBodyEncrypted());
+        }
 
-            assertNotNull(response.getBody());
-            assertTrue(response.getBody().isSuccess());
-            verifyNoInteractions(securityAuditService);
+        @Test
+        @DisplayName("持 full-content 的列表不做裁剪")
+        void listKeepsCiphertextForFullContent() {
+            ApiCallHistoryEntity entity = record(12L, RecordLevel.FULL);
+            when(callHistoryService.findRecent(20)).thenReturn(List.of(entity));
+
+            controller.findRecent(20, admin());
+
+            assertEquals("encrypted-request", entity.getRequestBodyEncrypted());
+            assertEquals("encrypted-response", entity.getResponseBodyEncrypted());
         }
     }
 
@@ -177,15 +259,9 @@ class ApiCallHistoryControllerRbacTest {
     @DisplayName("POST /record - 写入属主校验（issue #698）")
     class OwnershipTests {
 
-        private org.springframework.security.core.Authentication apiKeyOf(final String keyId) {
+        private Authentication apiKeyOf(final String keyId) {
             return new org.unreal.modelrouter.auth.security.model.ApiKeyAuthentication(
-                    keyId, "sk-test", java.util.List.of("chat"));
-        }
-
-        private org.springframework.security.core.Authentication jwtPrincipal() {
-            return new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
-                    "admin", null, java.util.List.of(
-                            new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN")));
+                    keyId, "sk-test", List.of("chat"));
         }
 
         private org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO recordOf(final String apiKeyId) {
@@ -246,7 +322,7 @@ class ApiCallHistoryControllerRbacTest {
             final org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO record =
                     recordOf("key-victim");
 
-            final ResponseEntity<RouterResponse<Void>> result = controller.record(record, jwtPrincipal());
+            final ResponseEntity<RouterResponse<Void>> result = controller.record(record, admin());
 
             assertEquals(org.springframework.http.HttpStatus.OK, result.getStatusCode(),
                     "管理面代报属未定义的调用形态，本次刻意不收紧");
@@ -271,23 +347,6 @@ class ApiCallHistoryControllerRbacTest {
     @Nested
     @DisplayName("基础端点功能测试")
     class BasicEndpointTests {
-
-        @Test
-        @DisplayName("查询调用历史 - 正常返回")
-        void querySuccess() {
-            CallHistoryQueryDTO query = new CallHistoryQueryDTO();
-            org.springframework.data.domain.Page<ApiCallHistoryEntity> mockPage =
-                    mock(org.springframework.data.domain.Page.class);
-
-            when(callHistoryService.query(any(CallHistoryQueryDTO.class))).thenReturn(mockPage);
-
-            ResponseEntity<RouterResponse<org.springframework.data.domain.Page<ApiCallHistoryEntity>>> response =
-                    controller.query(query);
-
-            assertNotNull(response.getBody());
-            assertTrue(response.getBody().isSuccess());
-            verify(callHistoryService).query(query);
-        }
 
         @Test
         @DisplayName("获取统计信息 - 正常返回")

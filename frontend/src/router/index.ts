@@ -19,7 +19,7 @@ declare module 'vue-router' {
     icon?: string
     /** 允许访问的角色名（任一命中即可） */
     roles?: string[]
-    /** 需要的权限码（需全部拥有；ADMIN 恒通过） */
+    /** 需要的权限码（任一命中即可；ADMIN 恒通过） */
     permissions?: string[]
   }
 }
@@ -80,7 +80,7 @@ const router = createRouter({
           path: 'main',
           name: 'dashboard-main',
           component: () => import('../views/Dashboard.vue'),
-          meta: { titleKey: 'route.dashboardMain', icon: 'house' }
+          meta: { titleKey: 'route.dashboardMain', icon: 'house', permissions: ['overview:dashboard:read'] }
         }
       ]
     },
@@ -96,43 +96,43 @@ const router = createRouter({
           path: 'services',
           name: 'service-management',
           component: () => import('../views/config/ServiceManagement.vue'),
-          meta: { titleKey: 'route.serviceManagement', icon: 'setting' }
+          meta: { titleKey: 'route.serviceManagement', icon: 'setting', permissions: ['config:services:read'] }
         },
         {
           path: 'instances',
           name: 'instance-management',
           component: () => import('../views/config/InstanceManagement.vue'),
-          meta: { titleKey: 'route.instanceManagement', icon: 'cpu' }
+          meta: { titleKey: 'route.instanceManagement', icon: 'cpu', permissions: ['config:instances:read'] }
         },
         {
           path: 'versions',
           name: 'version-management',
           component: () => import('../views/config/VersionManagement.vue'),
-          meta: { titleKey: 'route.versionManagement', icon: 'document' }
+          meta: { titleKey: 'route.versionManagement', icon: 'document', permissions: ['config:versions:read'] }
         },
         {
           path: 'state-persistence',
           name: 'state-persistence-config',
           component: () => import('../views/config/StatePersistenceManagement.vue'),
-          meta: { titleKey: 'route.statePersistenceConfig', icon: 'folder-opened' }
+          meta: { titleKey: 'route.statePersistenceConfig', icon: 'folder-opened', permissions: ['config:persistence:read'] }
         },
         {
           path: 'adapters',
           name: 'adapter-management',
           component: () => import('../views/config/AdapterManagement.vue'),
-          meta: { titleKey: 'route.adapterManagement', icon: 'connection' }
+          meta: { titleKey: 'route.adapterManagement', icon: 'connection', permissions: ['config:adapters:read'] }
         },
         {
           path: 'rules',
           name: 'rule-management',
           component: () => import('../views/config/rules/RuleManagement.vue'),
-          meta: { titleKey: 'route.ruleManagement', icon: 'set-up' }
+          meta: { titleKey: 'route.ruleManagement', icon: 'set-up', permissions: ['config:rules:read'] }
         },
         {
           path: 'pools',
           name: 'pool-management',
           component: () => import('../views/config/pools/PoolManagement.vue'),
-          meta: { titleKey: 'route.poolManagement', icon: 'box' }
+          meta: { titleKey: 'route.poolManagement', icon: 'box', permissions: ['config:pools:read'] }
         },
         {
           path: 'cache',
@@ -160,13 +160,13 @@ const router = createRouter({
           path: 'monitoring',
           name: 'load-balancer-monitoring',
           component: () => import('../views/load-balancer/Monitoring.vue'),
-          meta: { titleKey: 'route.loadBalancerMonitoring', icon: 'monitor' }
+          meta: { titleKey: 'route.loadBalancerMonitoring', icon: 'monitor', permissions: ['lb:monitoring:read', 'lb:config:read', 'lb:config:write'] }
         },
         {
           path: 'strategy-config',
           name: 'load-balancer-strategy-config',
           component: () => import('../views/load-balancer/StrategyConfig.vue'),
-          meta: { titleKey: 'route.loadBalancerStrategyConfig', icon: 'setting' }
+          meta: { titleKey: 'route.loadBalancerStrategyConfig', icon: 'setting', permissions: ['lb:config:read', 'lb:config:write'] }
         }
       ]
     },
@@ -183,19 +183,19 @@ const router = createRouter({
           path: 'monitoring',
           name: 'circuit-breaker-monitoring',
           component: () => import('../views/circuit-breaker/Monitoring.vue'),
-          meta: { titleKey: 'route.circuitBreakerMonitoring', icon: 'monitor' }
+          meta: { titleKey: 'route.circuitBreakerMonitoring', icon: 'monitor', permissions: ['cb:monitoring:read', 'cb:history:read', 'config:circuitbreaker:read'] }
         },
         {
           path: 'history',
           name: 'circuit-breaker-history',
           component: () => import('../views/circuit-breaker/History.vue'),
-          meta: { titleKey: 'route.circuitBreakerHistory', icon: 'document' }
+          meta: { titleKey: 'route.circuitBreakerHistory', icon: 'document', permissions: ['cb:history:read'] }
         },
         {
           path: 'global-config',
           name: 'circuit-breaker-global-config',
           component: () => import('../views/circuit-breaker/GlobalConfig.vue'),
-          meta: { titleKey: 'route.circuitBreakerGlobalConfig', icon: 'setting' }
+          meta: { titleKey: 'route.circuitBreakerGlobalConfig', icon: 'setting', permissions: ['config:circuitbreaker:read'] }
         }
       ]
     },
@@ -205,7 +205,7 @@ const router = createRouter({
       path: '/security',
       name: 'security',
       component: () => import('../views/Layout.vue'),
-      meta: { requiresAuth: true, roles: ['ADMIN'], titleKey: 'route.security' },
+      meta: { requiresAuth: true, titleKey: 'route.security' },
       redirect: '/security/api-keys',
       children: [
         {
@@ -255,7 +255,7 @@ const router = createRouter({
       path: '/system',
       name: 'system',
       component: () => import('../views/Layout.vue'),
-      meta: { requiresAuth: true, roles: ['ADMIN'], titleKey: 'route.system' },
+      meta: { requiresAuth: true, titleKey: 'route.system' },
       redirect: '/system/accounts',
       children: [
         {
@@ -302,19 +302,19 @@ const router = createRouter({
           path: 'dashboard',
           name: 'tracing-dashboard',
           component: () => import('../views/tracing/Dashboard.vue'),
-          meta: { titleKey: 'route.tracingDashboard', icon: 'connection' }
+          meta: { titleKey: 'route.tracingDashboard', icon: 'connection', permissions: ['tracing:dashboard:read'] }
         },
         {
           path: 'search',
           name: 'tracing-search',
           component: () => import('../views/tracing/Search.vue'),
-          meta: { titleKey: 'route.tracingSearch', icon: 'search' }
+          meta: { titleKey: 'route.tracingSearch', icon: 'search', permissions: ['tracing:search:read'] }
         },
         {
           path: 'management',
           name: 'tracing-management',
           component: () => import('../views/tracing/Management.vue'),
-          meta: { titleKey: 'route.tracingManagement', icon: 'setting' }
+          meta: { titleKey: 'route.tracingManagement', icon: 'setting', permissions: ['tracing:config:read', 'tracing:config:manage'] }
         }
       ]
     },
@@ -331,31 +331,31 @@ const router = createRouter({
           path: 'chat',
           name: 'playground-chat',
           component: () => import('../views/playground/components/chat/ChatContainer.vue'),
-          meta: { titleKey: 'route.playgroundChat', icon: 'chat-dot-round' }
+          meta: { titleKey: 'route.playgroundChat', icon: 'chat-dot-round', permissions: ['ai:playground:use'] }
         },
         {
           path: 'embedding',
           name: 'playground-embedding',
           component: () => import('../views/playground/components/embedding/EmbeddingContainer.vue'),
-          meta: { titleKey: 'route.playgroundEmbedding', icon: 'data-line' }
+          meta: { titleKey: 'route.playgroundEmbedding', icon: 'data-line', permissions: ['ai:playground:use'] }
         },
         {
           path: 'rerank',
           name: 'playground-rerank',
           component: () => import('../views/playground/components/rerank/RerankContainer.vue'),
-          meta: { titleKey: 'route.playgroundRerank', icon: 'sort' }
+          meta: { titleKey: 'route.playgroundRerank', icon: 'sort', permissions: ['ai:playground:use'] }
         },
         {
           path: 'audio',
           name: 'playground-audio',
           component: () => import('../views/playground/components/audio/AudioContainer.vue'),
-          meta: { titleKey: 'route.playgroundAudio', icon: 'headset' }
+          meta: { titleKey: 'route.playgroundAudio', icon: 'headset', permissions: ['ai:playground:use'] }
         },
         {
           path: 'image',
           name: 'playground-image',
           component: () => import('../views/playground/components/image/ImageContainer.vue'),
-          meta: { titleKey: 'route.playgroundImage', icon: 'picture' }
+          meta: { titleKey: 'route.playgroundImage', icon: 'picture', permissions: ['ai:playground:use'] }
         }
       ]
     },
@@ -372,19 +372,19 @@ const router = createRouter({
           path: 'list',
           name: 'exception-list',
           component: () => import('../views/exception/ExceptionManagement.vue'),
-          meta: { titleKey: 'route.exceptionList', icon: 'warning' }
+          meta: { titleKey: 'route.exceptionList', icon: 'warning', permissions: ['monitoring:exceptions:read'] }
         },
         {
           path: 'detail/:id',
           name: 'exception-detail',
           component: () => import('../views/exception/ExceptionDetail.vue'),
-          meta: { titleKey: 'route.exceptionDetail', icon: 'document-checked' }
+          meta: { titleKey: 'route.exceptionDetail', icon: 'document-checked', permissions: ['monitoring:exceptions:read'] }
         },
         {
           path: 'statistics',
           name: 'exception-statistics',
           component: () => import('../views/exception/ExceptionStatistics.vue'),
-          meta: { titleKey: 'route.exceptionStatistics', icon: 'data-analysis' }
+          meta: { titleKey: 'route.exceptionStatistics', icon: 'data-analysis', permissions: ['monitoring:exceptions:read'] }
         }
       ]
     },
@@ -400,13 +400,13 @@ const router = createRouter({
           path: 'monitoring',
           name: 'rate-limiter-monitoring',
           component: () => import('../views/rate-limiter/Monitoring.vue'),
-          meta: { titleKey: 'route.rateLimiterMonitoring', icon: 'monitor' }
+          meta: { titleKey: 'route.rateLimiterMonitoring', icon: 'monitor', permissions: ['rl:monitoring:read'] }
         },
         {
           path: 'config',
           name: 'rate-limiter-config',
           component: () => import('../views/rate-limiter/Config.vue'),
-          meta: { titleKey: 'route.rateLimiterConfig', icon: 'setting' }
+          meta: { titleKey: 'route.rateLimiterConfig', icon: 'setting', permissions: ['config:ratelimit:read'] }
         }
       ]
     },
@@ -445,25 +445,25 @@ const router = createRouter({
           path: 'dashboard',
           name: 'call-history-dashboard',
           component: () => import('../views/callHistory/Dashboard.vue'),
-          meta: { titleKey: 'route.callHistoryDashboard', icon: 'data-analysis' }
+          meta: { titleKey: 'route.callHistoryDashboard', icon: 'data-analysis', permissions: ['callhistory:read'] }
         },
         {
           path: 'list',
           name: 'call-history-list',
           component: () => import('../views/callHistory/CallHistoryList.vue'),
-          meta: { titleKey: 'route.callHistoryList', icon: 'list' }
+          meta: { titleKey: 'route.callHistoryList', icon: 'list', permissions: ['callhistory:read'] }
         },
         {
           path: 'slow-calls',
           name: 'call-history-slow-calls',
           component: () => import('../views/callHistory/CallHistorySlowCalls.vue'),
-          meta: { titleKey: 'route.callHistorySlowCalls', icon: 'timer' }
+          meta: { titleKey: 'route.callHistorySlowCalls', icon: 'timer', permissions: ['monitoring:slowquery:read'] }
         },
         {
           path: 'token-usage',
           name: 'call-history-token-usage',
           component: () => import('../views/callHistory/TokenUsageStatistics.vue'),
-          meta: { titleKey: 'route.callHistoryTokenUsage', icon: 'DataAnalysis' }
+          meta: { titleKey: 'route.callHistoryTokenUsage', icon: 'DataAnalysis', permissions: ['monitoring:tokenusage:read', 'monitoring:quota:read'] }
         }
       ]
     },
@@ -490,6 +490,22 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
+
+  /**
+   * 无权限时的统一出口
+   *
+   * 落地页 `dashboard-main` 自身也受权限门控（它声明了 meta.permissions），
+   * 若用户连落地页的权限码都没有，再跳 `dashboard-main` 就会被同一个守卫反复拦截，
+   * vue-router 会抛「Infinite redirect in navigation guard」而整页白屏。
+   * 所以已经在落地页上时直接放行，由页面自身呈现（数据请求失败也可降级展示）。
+   */
+  const denyToDashboard = (): void => {
+    if (to.name === 'dashboard-main') {
+      next()
+      return
+    }
+    next({ name: 'dashboard-main' })
+  }
 
   // 特殊处理根路径的重定向
   if (to.path === '/') {
@@ -520,7 +536,7 @@ router.beforeEach((to, from, next) => {
       const hasRole = requiredRoles.some(role => userRoles.includes(role))
       if (!hasRole) {
         // 无权限，跳转到仪表板
-        next({ name: 'dashboard-main' })
+        denyToDashboard()
         return
       }
     }
@@ -531,7 +547,7 @@ router.beforeEach((to, from, next) => {
       const hasAnyPermission = requiredPermissions.some(code => userStore.hasPermission(code))
       if (!hasAnyPermission) {
         // 无权限，跳转到仪表板
-        next({ name: 'dashboard-main' })
+        denyToDashboard()
         return
       }
     }

@@ -58,6 +58,7 @@
 
       <div class="config-actions">
         <el-button
+          v-permission="'config:cache:write'"
           :type="configChanged ? 'primary' : 'default'"
           :loading="savingConfig"
           :disabled="!configChanged"
@@ -108,6 +109,7 @@
             />
           </el-select>
           <el-button
+            v-permission="'config:cache:write'"
             type="warning"
             :loading="invalidating"
             :disabled="!selectedServiceType || !status?.enabled"
@@ -132,6 +134,7 @@
             clearable
           />
           <el-button
+            v-permission="'config:cache:write'"
             type="warning"
             :loading="invalidating"
             :disabled="!modelName.trim() || !status?.enabled"
@@ -158,7 +161,7 @@
           @confirm="handleInvalidateAll"
         >
           <template #reference>
-            <el-button type="danger" plain :loading="invalidating" :disabled="!status?.enabled">
+            <el-button v-permission="'config:cache:write'" type="danger" plain :loading="invalidating" :disabled="!status?.enabled">
               <el-icon><Delete /></el-icon>
               {{ t('responseCache.clearAllCache') }}
             </el-button>

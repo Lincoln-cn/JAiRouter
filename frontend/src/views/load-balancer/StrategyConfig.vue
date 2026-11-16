@@ -103,7 +103,7 @@
         </el-table-column>
         <el-table-column :label="t('loadBalancer.strategyConfig.columns.actions')" min-width="100" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" type="primary" @click="showConfigDialog(row)">{{ t('loadBalancer.strategyConfig.configure') }}</el-button>
+            <el-button v-permission="'lb:config:write'" size="small" type="primary" @click="showConfigDialog(row)">{{ t('loadBalancer.strategyConfig.configure') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -148,7 +148,7 @@
       </el-form>
       <template #footer>
         <el-button @click="configDialogVisible = false">{{ t('loadBalancer.strategyConfig.cancel') }}</el-button>
-        <el-button type="primary" @click="saveServiceConfig" :loading="saving">{{ t('loadBalancer.strategyConfig.save') }}</el-button>
+        <el-button v-permission="'lb:config:write'" type="primary" @click="saveServiceConfig" :loading="saving">{{ t('loadBalancer.strategyConfig.save') }}</el-button>
       </template>
     </el-dialog>
   </PageSkeleton>

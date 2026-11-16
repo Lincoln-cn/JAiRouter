@@ -2,7 +2,15 @@
   <PageSkeleton :title="t('circuitBreaker.history.title')">
     <template #actions>
       <el-button size="small" @click="loadHistory" :loading="loadingHistory">{{ t('circuitBreaker.history.refresh') }}</el-button>
-      <el-button size="small" type="danger" plain @click="cleanupHistory">{{ t('circuitBreaker.history.cleanupExpired') }}</el-button>
+      <el-button
+        v-permission="'config:circuitbreaker:write'"
+        size="small"
+        type="danger"
+        plain
+        @click="cleanupHistory"
+      >
+        {{ t('circuitBreaker.history.cleanupExpired') }}
+      </el-button>
     </template>
 
     <template #stats>

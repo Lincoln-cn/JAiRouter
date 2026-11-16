@@ -22,6 +22,14 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 ## 版本历史
 
+### [Unreleased] - 调用历史正文与元数据分权
+
+`callhistory:view` 拆成 `callhistory:read` + `callhistory:full-content`：
+
+* **元数据与正文分权**：`/api/call-history/**` 的读规则改挂 `callhistory:read`；FULL 级别记录的正文只在主体持 `callhistory:full-content` 时解密并记 `FULL_CONTENT_ACCESS` 审计，否则列表与详情都只返回摘要（加密字段置空）。`DELETE /api/call-history/cleanup` 仍无写规则，靠默认拒绝（仅 ADMIN）。
+* **角色影响**：OPERATOR 由「全部 `:read`」规则自动获得 `callhistory:read`（54 码），可在控制台看调用记录与摘要；`callhistory:full-content` 默认仅 ADMIN；USER / VIEWER 两个码都不持有（VIEWER 显式排除以保持 31 码）。全量权限码 70 → 71。
+* **迁移说明**：`callhistory:view` 已不在权限码全集里；手工给角色勾过该码的部署需在「系统 → 权限管理」改勾 `callhistory:read`（要看正文还需 `callhistory:full-content`）。
+
 ### [3.8.8] - 2026-11-16 - 请求追踪从「能看」到「能查」
 
 这一版把链路追踪补成一条可用的排障链路：服务名分层、控制台操作留痕、异常链路不被挤出、追踪指标可接告警、异常按维度聚合。

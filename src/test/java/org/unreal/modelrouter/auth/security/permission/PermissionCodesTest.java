@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>三类防漂移断言：
  * <ul>
- *   <li><b>总数 = 70</b>：权限码总数同时出现在 README 与中英两版 rbac-permissions 文档里，
+ *   <li><b>总数 = 71</b>：权限码总数同时出现在 README 与中英两版 rbac-permissions 文档里，
  *   改这里就必须同步改那三处（本断言是「代码侧唯一真值」的钉子）。</li>
  *   <li><b>常量集合 ≡ {@link PermissionCodes#ALL_PERMISSION_CODES}</b>：新增常量却忘记登记进清单、
  *   或清单里残留已删除的常量，都会立刻红 —— 否则该码永远不会被角色模板/ADMIN 短路覆盖。</li>
@@ -33,12 +33,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("PermissionCodes 权限码清单（#567）")
 class PermissionCodesTest {
 
-    /** 权威总数：70 = 40 个 :read + 20 个 :write + 10 个 manage/view/use。 */
-    private static final int EXPECTED_TOTAL = 70;
+    /**
+     * 权威总数：71 = 40 个 :read + 21 个 :write + 8 个 manage + ai:playground:use + callhistory:full-content。
+     *
+     * <p>调用历史拆码（2026-11-16）后 70 → 71：原 {@code callhistory:view} 换成
+     * {@code callhistory:read}（并进 :read 计数）+ {@code callhistory:full-content}（单独一项）。
+     */
+    private static final int EXPECTED_TOTAL = 71;
 
     @Test
-    @DisplayName("权限码总数为 70")
-    void totalCodeCountIsSixtySeven() {
+    @DisplayName("权限码总数为 71")
+    void totalCodeCountMatchesDocumentedValue() {
         assertEquals(EXPECTED_TOTAL, PermissionCodes.ALL_PERMISSION_CODES.size(),
                 "权限码总数变化必须同步 README 与 docs/{zh,en}/security/rbac-permissions.md 的计数");
         assertEquals(EXPECTED_TOTAL, declaredCodeConstants().size(),
@@ -61,9 +66,11 @@ class PermissionCodesTest {
     @Test
     @DisplayName("权限码格式统一：全小写、冒号分隔的 module:resource:action")
     void codesFollowModuleResourceActionFormat() {
+        // 段内允许连字符（复合动作，如 callhistory:full-content 的 full-content）；
+        // 也允许两段形态（module:action）：callhistory:full-content 没有资源段。
         List<String> malformed = PermissionCodes.ALL_PERMISSION_CODES.stream()
                 .filter(code -> !code.equals(code.toLowerCase(Locale.ROOT))
-                        || !code.matches("[a-z][a-z0-9]*(?::[a-z][a-z0-9]*)+"))
+                        || !code.matches("[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*)+"))
                 .collect(Collectors.toList());
         assertTrue(malformed.isEmpty(), "存在不符合 module:resource:action 约定的权限码: " + malformed);
     }

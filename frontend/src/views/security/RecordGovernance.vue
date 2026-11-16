@@ -39,6 +39,7 @@
       <p class="level-desc" data-test="level-desc">{{ levelDescription }}</p>
       <div class="config-actions">
         <el-button
+          v-permission="'config:callhistory:write'"
           type="primary"
           data-test="save"
           :loading="saving"

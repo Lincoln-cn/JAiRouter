@@ -86,6 +86,45 @@ class AuditEntityMapperTest {
         }
 
         @Test
+        @DisplayName("只写 resource 的事件（经 SecurityAuditService 落库）也要在 DTO 的 resourceId 里露出来")
+        void testResourceFallsBackWhenResourceIdAbsent() {
+            // 运行态核对发现：SecurityAuditEvent 只有 resource、没有 resourceId，
+            // 于是 FULL_CONTENT_ACCESS 这类经 recordEvent 落库的行，
+            // 查询响应里的 resourceId 一直是空 —— 表现就是「审计行没有资源」。
+            SecurityAuditEventEntity entity = SecurityAuditEventEntity.builder()
+                    .eventId("event-resource-1")
+                    .eventType(AuditEventType.FULL_CONTENT_ACCESS)
+                    .userId("admin")
+                    .resource("call-history")
+                    .action("DETAIL")
+                    .success(true)
+                    .timestamp(LocalDateTime.of(2025, 1, 15, 10, 30, 0))
+                    .build();
+
+            AuditEvent dto = mapper.entityToDto(entity);
+
+            assertEquals("call-history", dto.getResourceId());
+        }
+
+        @Test
+        @DisplayName("resourceId 存在时优先用它，不被 resource 覆盖")
+        void testResourceIdWinsOverResource() {
+            SecurityAuditEventEntity entity = SecurityAuditEventEntity.builder()
+                    .eventId("event-resource-2")
+                    .eventType(AuditEventType.API_KEY_USED)
+                    .resource("endpoint-/v1/chat")
+                    .resourceId("key-123")
+                    .action("USE")
+                    .success(true)
+                    .timestamp(LocalDateTime.of(2025, 1, 15, 10, 30, 0))
+                    .build();
+
+            AuditEvent dto = mapper.entityToDto(entity);
+
+            assertEquals("key-123", dto.getResourceId());
+        }
+
+        @Test
         @DisplayName("事件分类/风险级别/地理位置/设备信息都要映射出来（#459）")
         void testRiskLevelAndCategoryAreMapped() {
             SecurityAuditEventEntity entity = SecurityAuditEventEntity.builder()

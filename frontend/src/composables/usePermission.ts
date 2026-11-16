@@ -7,8 +7,15 @@ import type { MenuGroup, MenuItem } from '@/config/menu'
  * - `hasPermission(code)`：判断当前用户是否拥有指定权限码（ADMIN 恒 true；
  *   未提供 code 视为无权限限制；用户权限数据为空时不限制，向后兼容旧令牌）
  * - `hasAnyPermission(permission)`：支持 `string | string[]`，数组语义为「或」
- * - `filterMenuByPermission(groups)`：按当前用户权限过滤菜单组/子项
+ * - `hasRouteRoles(roles)`：判断当前用户的角色是否命中声明（数组语义为「或」）
+ * - `filterMenuByPermission(groups)`：按当前用户权限**与角色**过滤菜单组/子项
  * - `getAccessibleTabs(item)`：菜单项的 tab 级门控（菜单可见 ≠ 每个 tab 可用）
+ *
+ * 角色判定与 `router/index.ts` 的守卫同源（都是 `userInfo.roles`）。**当前没有任何菜单项
+ * 或路由声明 roles**：`/security`、`/system` 父级的 `meta.roles` 已撤掉，授权边界统一交给
+ * 权限码 —— 否则会出现「后端放行、前端藏入口」的反向不可达（四角色冒烟实测：
+ * OPERATOR/VIEWER 持 `security:audit:read`，审计接口 200，UI 却进不去）。
+ * `roles` 相关能力保留，将来若恢复角色级门控，菜单与路由必须同时声明并保持同口径。
  *
  * 核心判定逻辑在 user store 的 `hasPermission`，本 composable 仅做菜单层包装。
  * 注意：`hasPermission` 的 fail-open（无权限数据时不限制）是已裁定的既有语义，
@@ -48,10 +55,43 @@ export function usePermission() {
   }
 
   /**
+   * 判断当前用户是否命中角色限制（缺省或空数组视为不限制）
+   *
+   * 与路由守卫 `meta.roles` 判定同一数据源（`userStore.hasAnyRole` → `userInfo.roles`），
+   * 保证「菜单可见」与「点进去会不会被重定向」口径一致。
+   *
+   * @param roles 允许的角色名；空/未声明表示不限制
+   */
+  const hasRouteRoles = (roles?: string[]): boolean => {
+    if (!roles || roles.length === 0) {
+      return true
+    }
+    return userStore.hasAnyRole(roles)
+  }
+
+  /**
+   * 菜单项是否对当前用户可见：角色命中，且**至少有一个可进的 tab**
+   *
+   * 不能只判 `item.permission`：那是 tabs 的「或」聚合，可能出现「菜单项可点、
+   * 但每个 tab 的码都缺」的情况（例：只有 `lb:config:read` 的用户），点进去会被
+   * 路由守卫弹回仪表板 —— 2026-11-16 收口时改成本判定。
+   */
+  const canAccessItem = (item: MenuItem): boolean => {
+    if (!hasRouteRoles(item.roles)) {
+      return false
+    }
+    if (item.tabs.length === 0) {
+      return hasAnyPermission(item.permission)
+    }
+    return getAccessibleTabs(item).length > 0
+  }
+
+  /**
    * 按当前用户权限过滤菜单
    *
    * - 子项无 permission 字段 → 保留（所有已登录用户可见）
    * - 子项 permission 为数组 → 任一命中即保留（聚合了不同权限码页面）
+   * - 子项声明 roles 时，还需角色命中（与路由守卫同口径）
    * - 子项有 permission 字段但用户无对应权限 → 移除
    * - 组内全部子项被移除 → 组整体隐藏
    *
@@ -62,7 +102,7 @@ export function usePermission() {
     return groups
       .map(group => ({
         ...group,
-        children: group.children.filter(item => hasAnyPermission(item.permission))
+        children: group.children.filter(canAccessItem)
       }))
       .filter(group => group.children.length > 0)
   }
@@ -70,13 +110,17 @@ export function usePermission() {
   /**
    * 取菜单项中当前用户可见的 tab（按 menu.ts 声明顺序）
    *
-   * tab 未声明 permission 时沿用菜单项的 permission。
+   * tab 未声明 permission/roles 时沿用菜单项的同名字段。
    *
    * @param item 菜单项
    * @returns 可见 tab 列表；可能为空（调用方负责回退）
    */
   const getAccessibleTabs = (item: MenuItem) => {
-    return item.tabs.filter(tab => hasAnyPermission(tab.permission ?? item.permission))
+    return item.tabs.filter(
+      tab =>
+        hasAnyPermission(tab.permission ?? item.permission) &&
+        hasRouteRoles(tab.roles ?? item.roles)
+    )
   }
 
   /**
@@ -93,6 +137,7 @@ export function usePermission() {
   return {
     hasPermission,
     hasAnyPermission,
+    hasRouteRoles,
     filterMenuByPermission,
     getAccessibleTabs,
     resolveLandingPath

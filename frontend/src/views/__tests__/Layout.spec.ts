@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import ElementPlus from 'element-plus'
 import router from '@/router'
@@ -15,15 +15,21 @@ import Layout from '@/views/Layout.vue'
  * 这里挂真实 Layout + 真实 router（只 stub 掉页面组件与语言切换器），
  * 断言的类名与 e2e/specs/02-layout-nav.mjs 的 `nav-tabs` / `nav-tab` 一致。
  */
-const mountAt = async (path: string, permissions: string[]) => {
+const mountAt = async (path: string, permissions: string[], roles: string[] = ['USER']) => {
+  // 每个用例独立 pinia，并显式传给 mount：否则 Layout 内 useUserStore() 可能解析到
+  // 上一个用例残留的 pinia 实例，读到别人的 roles/permissions（实际踩过）。
+  const pinia = createPinia()
+  setActivePinia(pinia)
   const userStore = useUserStore()
   userStore.token = 'test-token'
   userStore.permissions = permissions
+  // 角色判定与路由守卫同源（userInfo.roles）；不写 roles 时 hasRouteRoles 无法命中
+  userStore.userInfo = { username: 'tester', roles, permissions }
   await router.push(path)
   await router.isReady()
   return mount(Layout, {
     global: {
-      plugins: [ElementPlus, i18n, router],
+      plugins: [pinia, ElementPlus, i18n, router],
       stubs: {
         RouterView: true,
         LanguageSwitcher: true
@@ -39,7 +45,7 @@ describe('Layout 多 tab 切换条', () => {
   })
 
   it('多 tab 菜单项渲染切换条，点击第二个 tab 跳到对应 URL', async () => {
-    const wrapper = await mountAt('/call-history/list', ['callhistory:view'])
+    const wrapper = await mountAt('/call-history/list', ['callhistory:read'])
 
     const tabs = wrapper.findAll('.nav-tabs .nav-tab')
     expect(tabs.map(tab => tab.text())).toEqual(['调用记录', '调用历史仪表盘'])
@@ -82,6 +88,113 @@ describe('Layout 多 tab 切换条', () => {
     expect(wrapper.findAll('.el-breadcrumb__inner a')).toHaveLength(2)
     expect(wrapper.findAll('.el-breadcrumb__item').at(-1)?.find('a').exists()).toBe(false)
     wrapper.unmount()
+  })
+})
+
+/**
+ * 角色门控（死入口回归，2026-11-16）
+ *
+ * 菜单项的 `roles` 声明只有真的进到渲染层才算修好：配置断言（menu.spec.ts /
+ * menuRouteAlignment.spec.ts）证明「声明与路由同口径」，这里证明「侧栏里确实不再出现
+ * 那些点不进去的入口」，并用守卫重定向验证路由侧仍然拦着。
+ */
+describe('Layout 菜单可见性（权限码是唯一门控）', () => {
+  beforeEach(() => {
+    i18n.global.locale.value = 'zh-CN'
+    localStorage.removeItem('ja-sidebar-collapsed')
+  })
+
+  /** 侧栏分组快照：组标题 → 组内菜单项文本（组标题可能与项名重名，不能拿整段 text() 断言） */
+  const sidebarGroups = (wrapper: VueWrapper) =>
+    wrapper.findAll('.el-sub-menu').map(group => ({
+      title: group.find('.el-sub-menu__title').text(),
+      items: group.findAll('.el-menu-item').map(node => node.text())
+    }))
+
+  it('OPERATOR 视角：安全组只剩审计日志/记录治理，系统组只剩有码的 4 项', async () => {
+    const wrapper = await mountAt('/config/state-persistence', [
+      'overview:dashboard:read',
+      'security:audit:read',
+      'config:callhistory:read',
+      'config:persistence:read',
+      'config:cluster:read',
+      'config:health:read',
+      'monitoring:console:read'
+    ], ['OPERATOR'])
+
+    const groups = sidebarGroups(wrapper)
+    // 第五轮撤掉了父路由 roles：有 security:audit:read 就能看到「审计日志」，
+    // 与后端 /api/security/audit/extended/** 返回 200 的口径一致。
+    expect(groups.find(group => group.title === '安全')?.items).toEqual(['审计日志', '记录治理'])
+    // API Key / PII 脱敏 / JWT 令牌 / 黑名单 仍需各自的 read 码（OPERATOR 不持有）
+    expect(groups.find(group => group.title === '系统')?.items).toEqual([
+      '状态持久化',
+      '集群设置',
+      '健康探针设置',
+      '操作记录'
+    ])
+    wrapper.unmount()
+  })
+
+  it('ADMIN 视角：七组齐全，安全 6 项与系统 7 项都在（反证不是整栏都没渲染）', async () => {
+    const wrapper = await mountAt('/system/cluster', [], ['ADMIN'])
+
+    const groups = sidebarGroups(wrapper)
+    expect(groups.map(group => group.title)).toEqual([
+      '概览',
+      '运行观测',
+      '流量治理',
+      '模型与实例',
+      '安全',
+      '系统',
+      '开发工具'
+    ])
+    expect(groups.find(group => group.title === '安全')?.items).toHaveLength(6)
+    expect(groups.find(group => group.title === '系统')?.items).toHaveLength(7)
+    wrapper.unmount()
+  })
+
+  it('有码即可直达 /system/cluster；无码页面仍被守卫挡回仪表板', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const userStore = useUserStore()
+    userStore.token = 'test-token'
+    userStore.permissions = ['overview:dashboard:read', 'config:cluster:read', 'config:persistence:read']
+    userStore.userInfo = {
+      username: 'op',
+      roles: ['OPERATOR'],
+      permissions: userStore.permissions
+    }
+
+    // 从无权限码要求的页面出发：同路径 push 会被 vue-router 当成重复导航跳过，
+    // 守卫根本不执行，会得到「没被重定向」的假红（实际踩过）。
+    await router.push('/tools/client-access')
+    await router.push('/system/cluster')
+    expect(router.currentRoute.value.path).toBe('/system/cluster')
+
+    // 没有 security:apikeys:read ⇒ 仍然进不去
+    await router.push('/security/api-keys')
+    expect(router.currentRoute.value.path).toBe('/dashboard/main')
+
+    await router.push('/config/state-persistence')
+    expect(router.currentRoute.value.path).toBe('/config/state-persistence')
+  })
+
+  it('连仪表板权限都没有时，落地页放行而不是无限重定向', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const userStore = useUserStore()
+    userStore.token = 'test-token'
+    userStore.permissions = ['config:cluster:read']
+    userStore.userInfo = {
+      username: 'op',
+      roles: ['OPERATOR'],
+      permissions: userStore.permissions
+    }
+
+    await router.push('/tools/client-access')
+    await router.push('/system/cluster')
+    expect(router.currentRoute.value.path).toBe('/system/cluster')
   })
 })
 

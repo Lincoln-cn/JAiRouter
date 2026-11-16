@@ -30,6 +30,18 @@ public record PermissionRule(Set<HttpMethod> methods, String pathPattern, String
         return new PermissionRule(Set.of(HttpMethod.GET), pathPattern, permissionCode);
     }
 
+    /**
+     * 仅匹配 POST 的规则（用 POST 传查询体的**只读**端点）。
+     *
+     * <p>这类端点（如审计日志页的 {@code POST /api/security/audit/extended/query}）语义是读，
+     * 但会被前缀上的 {@link #write} 规则要求写码，导致只读角色打得开页面却查不出数据。
+     * 登记该规则时必须放在同前缀的 {@code write} 规则**之前** ——
+     * {@link PermissionRuleRegistry#findRule} 是顺序匹配、首个命中即返回。
+     */
+    public static PermissionRule post(final String pathPattern, final String permissionCode) {
+        return new PermissionRule(Set.of(HttpMethod.POST), pathPattern, permissionCode);
+    }
+
     /** 匹配写操作（POST/PUT/DELETE/PATCH）的规则 */
     public static PermissionRule write(final String pathPattern, final String permissionCode) {
         return new PermissionRule(

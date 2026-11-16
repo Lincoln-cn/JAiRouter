@@ -33,7 +33,7 @@ export const ROLE_DESCRIPTIONS: Record<RoleName, string> = {
 }
 
 /**
- * 63 权限码按模块展示分组（与后端 PermissionCodes 全量一致，含 TA4 新增的 8 个 read 码）。
+ * 71 权限码按模块展示分组（与后端 PermissionCodes 全量一致，含 TA4 新增的 8 个 read 码）。
  * 仅用于 UI 展示（权限树分组），不代表后端授权语义。
  * module 为分组标题的 i18n key（页面以 t(group.module) 渲染），
  * 文案位于 locales/{zh-CN,en-US}/permissions.json 的 groups 节点。
@@ -54,6 +54,9 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       'config:callhistory:read', 'config:callhistory:write',
       'config:cache:read', 'config:cache:write',
       'config:quota:read', 'config:quota:write',
+      'config:ratelimit:read', 'config:ratelimit:write',
+      'config:cluster:read', 'config:cluster:write',
+      'config:health:read', 'config:health:write',
       'config:validation:read', 'config:validation:write'
     ]
   },
@@ -65,7 +68,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       'rl:monitoring:read'
     ]
   },
-  { module: 'permissions.groups.callHistory', codes: ['callhistory:view'] },
+  { module: 'permissions.groups.callHistory', codes: ['callhistory:read', 'callhistory:full-content'] },
   {
     module: 'permissions.groups.monitoring',
     codes: [
@@ -75,6 +78,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       'monitoring:tokenusage:read', 'monitoring:modelstats:read',
       'monitoring:routing:read',
       'monitoring:exceptions:read', 'monitoring:exceptions:write',
+      'monitoring:console:read',
       'monitoring:config:write'
     ]
   },

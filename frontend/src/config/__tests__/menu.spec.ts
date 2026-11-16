@@ -6,6 +6,7 @@ import {
   findMenuTab,
   resolveMenuPath
 } from '@/config/menu'
+import { KNOWN_PERMISSION_CODES } from './knownPermissions'
 
 /**
  * 导航信息架构（P0-3）静态断言
@@ -93,85 +94,13 @@ describe('menu.ts 信息架构', () => {
 /**
  * 权限码白名单（#567）
  *
- * 前端不复制后端常量表：这里只守「`menu.ts` 里出现的每个权限码都在一份 65 码字面量清单内」。
- * 拼错一个码（例如把 `security:apikeys:manage` 写成 `security:apikey:manage`）不会报错，
- * 只会让菜单静默消失 —— 这份清单就是那种漂移的哨兵。
+ * `menu.ts` 里写错一个权限码（例如把 `security:apikeys:manage` 写成 `security:apikey:manage`）
+ * 不会报错，只会让菜单静默消失 —— 这份白名单就是那种漂移的哨兵。
+ *
+ * 白名单本体在 `./knownPermissions.ts`（71 码），由 `permissionCodesBackend.spec.ts`
+ * 与后端 `PermissionCodes.java` 做双向比对，这里只守「menu.ts 的码都在白名单内」。
  */
 describe('menu.ts 权限码白名单（#567）', () => {
-  const KNOWN_PERMISSION_CODES = [
-    'overview:dashboard:read',
-    'config:services:read',
-    'config:services:write',
-    'config:instances:read',
-    'config:instances:write',
-    'config:versions:read',
-    'config:versions:write',
-    'config:persistence:read',
-    'config:persistence:write',
-    'config:adapters:read',
-    'config:adapters:write',
-    'config:rules:read',
-    'config:rules:write',
-    'config:pools:read',
-    'config:pools:write',
-    'config:circuitbreaker:read',
-    'config:circuitbreaker:write',
-    'config:callhistory:read',
-    'config:callhistory:write',
-    'config:cache:read',
-    'config:cache:write',
-    'config:validation:read',
-    'config:validation:write',
-    'config:quota:read',
-    'config:quota:write',
-    'config:ratelimit:read',
-    'config:ratelimit:write',
-    'config:cluster:read',
-    'config:cluster:write',
-    'config:health:read',
-    'config:health:write',
-    'lb:monitoring:read',
-    'lb:config:read',
-    'lb:config:write',
-    'cb:monitoring:read',
-    'cb:history:read',
-    'rl:monitoring:read',
-    'callhistory:view',
-    'monitoring:metrics:read',
-    'monitoring:metrics:write',
-    'monitoring:slowquery:read',
-    'monitoring:slowquery:write',
-    'monitoring:tokenusage:read',
-    'monitoring:modelstats:read',
-    'monitoring:routing:read',
-    'monitoring:quota:read',
-    'monitoring:exceptions:read',
-    'monitoring:exceptions:write',
-    'monitoring:console:read',
-    'monitoring:config:write',
-    'tracing:dashboard:read',
-    'tracing:search:read',
-    'tracing:config:read',
-    'tracing:config:manage',
-    'security:apikeys:read',
-    'security:apikeys:manage',
-    'security:jwttokens:read',
-    'security:jwttokens:manage',
-    'security:blacklist:read',
-    'security:blacklist:manage',
-    'security:audit:read',
-    'security:audit:write',
-    'security:sanitization:read',
-    'security:sanitization:manage',
-    'system:accounts:read',
-    'system:accounts:manage',
-    'system:permissions:read',
-    'system:permissions:manage',
-    'ai:playground:use',
-    'actuator:admin:manage'
-  ]
-
-  /** 收集 menu.ts 中每一项 / 每个 tab 声明的权限码（数组保持原样展开） */
   const collectPermissions = (): string[] => {
     const codes: string[] = []
     const push = (permission?: string | string[]): void => {
@@ -187,9 +116,9 @@ describe('menu.ts 权限码白名单（#567）', () => {
     return codes
   }
 
-  it('白名单自身 = 70 个互不重复的权限码', () => {
-    expect(KNOWN_PERMISSION_CODES).toHaveLength(70)
-    expect(new Set(KNOWN_PERMISSION_CODES).size).toBe(70)
+  it('白名单自身 = 71 个互不重复的权限码', () => {
+    expect(KNOWN_PERMISSION_CODES).toHaveLength(71)
+    expect(new Set(KNOWN_PERMISSION_CODES).size).toBe(71)
   })
 
   it('menu.ts 里出现的权限码全部在白名单内', () => {
@@ -222,5 +151,34 @@ describe('menu.ts 权限码白名单（#567）', () => {
         expect(item.permission, path).toEqual(expect.arrayContaining([readCode, manageCode]))
       }
     }
+  })
+})
+
+/**
+ * 菜单角色声明的现状（2026-11-16 第五轮）
+ *
+ * 第五轮前的做法是「`/security`、`/system` 父路由要求 `roles: ['ADMIN']`，菜单给对应 11 项
+ * 补同样的 roles」—— 修掉了「看得见但点不进」的死入口。
+ *
+ * 但四角色运行态冒烟又发现反向问题：OPERATOR / VIEWER 持有 `security:audit:read`
+ * （VIEWER 模板是「所有 :read 减 8 个管理面 read」），后端 `/api/security/audit/extended/**`
+ * 返回 200，前端却因父路由角色限制进不去 —— 同一条授权边界在两处各写一遍，必然漂移。
+ *
+ * 现在的口径：**授权边界只由权限码 + 路由 `meta.permissions` 表达**，两个父级的
+ * `meta.roles` 已移除，菜单也不再声明 roles。`roles` 字段保留但当前无人使用；
+ * 若将来重新启用，必须同时改菜单与路由并让本文件与
+ * `router/__tests__/menuRouteAlignment.spec.ts` 的一致性断言继续通过。
+ */
+describe('menu.ts 角色声明（当前统一交给权限码）', () => {
+  it('没有任何菜单项声明 roles', () => {
+    const items = menuGroups.flatMap(group => group.children)
+    const withRoles = items.filter(item => (item.roles?.length ?? 0) > 0)
+    expect(withRoles.map(item => item.path)).toEqual([])
+  })
+
+  it('tab 级也没有 roles 残留', () => {
+    const tabs = menuGroups.flatMap(group => group.children).flatMap(item => item.tabs)
+    const withRoles = tabs.filter(tab => (tab.roles?.length ?? 0) > 0)
+    expect(withRoles.map(tab => tab.to)).toEqual([])
   })
 })

@@ -6,12 +6,12 @@
         {{ t('service.actions.versionHistory') }}
       </el-button>
       <el-tooltip v-if="availableTypes.length === 0" :content="t('service.allTypesAdded')" placement="left">
-        <el-button type="primary" v-permission="'config:instances:write'" @click="handleAddService" :disabled="availableTypes.length === 0" size="medium">
+        <el-button type="primary" v-permission="'config:services:write'" @click="handleAddService" :disabled="availableTypes.length === 0" size="medium">
           <el-icon><Plus /></el-icon>
           {{ t('service.addService') }}
         </el-button>
       </el-tooltip>
-      <el-button v-else type="primary" v-permission="'config:instances:write'" @click="handleAddService" size="medium">
+      <el-button v-else type="primary" v-permission="'config:services:write'" @click="handleAddService" size="medium">
         <el-icon><Plus /></el-icon>
         {{ t('service.addService') }}
       </el-button>
@@ -161,7 +161,7 @@
                 link
                 type="primary"
                 size="small"
-                v-permission="'config:instances:write'"
+                v-permission="'config:services:write'"
                 @click="handleEdit(scope.row)"
               >
                 {{ t('service.edit') }}
@@ -170,7 +170,7 @@
               <el-button
                 link
                 size="small"
-                v-permission="'config:instances:write'"
+                v-permission="'config:services:write'"
                 @click="handleDelete(scope.row)"
               >
                 {{ t('service.delete') }}
@@ -384,7 +384,7 @@
     <template #footer>
       <span class="dialog-footer">
         <el-button @click="handleDialogClose" size="large">{{ t('service.cancel') }}</el-button>
-        <el-button type="primary" v-permission="'config:instances:write'" @click="handleSave" :loading="dialogLoading" size="large">{{ t('service.save') }}</el-button>
+        <el-button type="primary" v-permission="'config:services:write'" @click="handleSave" :loading="dialogLoading" size="large">{{ t('service.save') }}</el-button>
       </span>
     </template>
   </el-dialog>

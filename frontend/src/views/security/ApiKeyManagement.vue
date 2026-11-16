@@ -2,8 +2,8 @@
   <PageSkeleton :title="t('apiKeys.title')">
     <template #actions>
       <el-button icon="Download" @click="handleExport">{{ t('apiKeys.exportConfig') }}</el-button>
-      <el-button icon="Upload" @click="showImportDialog">{{ t('apiKeys.importConfig') }}</el-button>
-      <el-button icon="Plus" type="primary" @click="handleCreateApiKey">{{ t('apiKeys.createApiKey') }}</el-button>
+      <el-button v-permission="'security:apikeys:manage'" icon="Upload" @click="showImportDialog">{{ t('apiKeys.importConfig') }}</el-button>
+      <el-button v-permission="'security:apikeys:manage'" icon="Plus" type="primary" @click="handleCreateApiKey">{{ t('apiKeys.createApiKey') }}</el-button>
       <el-button icon="DataAnalysis" @click="goQuotaMonitoring">{{ t('apiKeys.gotoQuotaMonitoring') }}</el-button>
     </template>
 

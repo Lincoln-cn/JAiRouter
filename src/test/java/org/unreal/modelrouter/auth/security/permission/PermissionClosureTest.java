@@ -456,9 +456,23 @@ class PermissionClosureTest {
         }
 
         @Test
-        @DisplayName("POST /api/tracing/query/export - 仅 read 无 config:manage → 拒绝")
-        void tracingExportWithOnlyReadDenied() {
+        @DisplayName("POST /api/tracing/query/export - 携带 tracing:search:read → 放行")
+        void tracingExportWithOnlyReadGranted() {
+            // 导出是读库生成导出件（PermissionRule.post 精确规则排在 write 前缀之前），
+            // 2026-11-16 起只读角色也能导出；清理类端点仍归 tracing:config:manage（见下一条）。
             AuthorizationContext ctx = context(HttpMethod.POST, "/api/tracing/query/export");
+            JwtAuthentication auth = authenticated(
+                    "user", List.of("USER"), List.of(PermissionCodes.TRACING_SEARCH_READ));
+
+            StepVerifier.create(manager.authorize(Mono.just(auth), ctx))
+                    .expectNextMatches(AuthorizationResult::isGranted)
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("POST /api/tracing/query/cleanup - 仅 read 无 config:manage → 拒绝")
+        void tracingCleanupWithOnlyReadDenied() {
+            AuthorizationContext ctx = context(HttpMethod.POST, "/api/tracing/query/cleanup");
             JwtAuthentication auth = authenticated(
                     "user", List.of("USER"), List.of(PermissionCodes.TRACING_SEARCH_READ));
 

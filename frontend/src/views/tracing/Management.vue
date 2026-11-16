@@ -2,7 +2,7 @@
   <PageSkeleton :title="t('tracing.management.title')">
     <template #actions>
       <el-button @click="handleRefresh" :loading="loading">{{ t('tracing.management.refresh') }}</el-button>
-      <el-button type="primary" @click="handleSaveConfig" :loading="saving">{{ t('tracing.management.saveConfig') }}</el-button>
+      <el-button v-permission="'tracing:config:manage'" type="primary" @click="handleSaveConfig" :loading="saving">{{ t('tracing.management.saveConfig') }}</el-button>
     </template>
 
     <el-tabs v-model="activeTab" type="border-card">
@@ -140,13 +140,13 @@
             </el-table-column>
             <el-table-column :label="t('tracing.management.action')" width="100">
               <template #default="{ $index }">
-                <el-button type="danger" text @click="removeServiceConfig($index)">
+                <el-button v-permission="'tracing:config:manage'" type="danger" text @click="removeServiceConfig($index)">
                   {{ t('tracing.management.delete') }}
                 </el-button>
               </template>
             </el-table-column>
           </el-table>
-          <el-button type="primary" text @click="addServiceConfig" style="margin-top: 12px">
+          <el-button v-permission="'tracing:config:manage'" type="primary" text @click="addServiceConfig" style="margin-top: 12px">
             {{ t('tracing.management.addServiceConfig') }}
           </el-button>
         </el-card>
@@ -204,10 +204,10 @@
           <el-divider content-position="left">{{ t('tracing.management.dataManagement') }}</el-divider>
 
           <div class="action-buttons">
-            <el-button type="danger" @click="handleClearCache" :loading="clearingCache">
+            <el-button v-permission="'tracing:config:manage'" type="danger" @click="handleClearCache" :loading="clearingCache">
               {{ t('tracing.management.clearCache') }}
             </el-button>
-            <el-button type="danger" @click="handleCleanupExpired" :loading="cleaningUp">
+            <el-button v-permission="'tracing:config:manage'" type="danger" @click="handleCleanupExpired" :loading="cleaningUp">
               {{ t('tracing.management.cleanupExpired') }}
             </el-button>
             <el-button @click="handleExportConfig">

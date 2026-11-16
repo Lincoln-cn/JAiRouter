@@ -85,7 +85,7 @@ class MetricsWriteAndIngestExemptionTest {
         assertFalse(RbacExemptEndpoints.isExempt(HttpMethod.DELETE, "/api/call-history/cleanup"),
                 "cleanup 是删除操作，不应继承 record 的摄取面豁免");
         assertFalse(RbacExemptEndpoints.isExempt(HttpMethod.GET, "/api/call-history/recent"),
-                "读取仍应由 callhistory:view 保护，不该被豁免");
+                "读取仍应由 callhistory:read 保护，不该被豁免");
     }
 
     @Test

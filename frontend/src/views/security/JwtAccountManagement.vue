@@ -11,7 +11,7 @@
           <el-icon><Search /></el-icon>
         </template>
       </el-input>
-      <el-button type="primary" @click="showCreateDialog = true">
+      <el-button v-permission="'system:accounts:manage'" type="primary" @click="showCreateDialog = true">
         <el-icon><Plus /></el-icon>
         {{ t('accounts.createAccount') }}
       </el-button>
@@ -46,6 +46,7 @@
       <el-table-column :label="t('accounts.status')" min-width="80" align="center">
         <template #default="scope">
           <el-switch
+            v-permission="'system:accounts:manage'"
             v-model="scope.row.enabled"
             @change="handleStatusChange(scope.row)"
             :loading="scope.row.statusLoading"
@@ -66,6 +67,7 @@
         <template #default="scope">
           <span class="row-actions">
             <el-button
+              v-permission="'system:accounts:manage'"
               link
               size="small"
               :title="t('accounts.editAccount')"
@@ -75,6 +77,7 @@
               <el-icon><Edit /></el-icon>
             </el-button>
             <el-button
+              v-permission="'system:accounts:manage'"
               link
               type="danger"
               size="small"

@@ -35,14 +35,19 @@ import java.util.stream.Collectors;
  * {@link PermissionRule#permissionCode()}，使后续版本新增权限码并登记 URL 规则后，
  * 已初始化部署不再因种子跳过而静默失去访问（#144）。
  *
- * <p>角色模板（权限码共 63 个，以实现 {@link PermissionCodes} 为准）：
+ * <p>角色模板（权限码共 71 个，以实现 {@link PermissionCodes} 为准）：
  * <ul>
  *   <li>ADMIN：全量权限码（超集，兼容现有 ADMIN）</li>
  *   <li>OPERATOR：所有 :read + :write（排除 system:* / security:*:manage / actuator:*）</li>
  *   <li>USER：dashboard + config:*:read + lb/cb/rl + monitoring:*:read（含 exceptions:read） +
  *   tracing dashboard+search + ai:playground:use</li>
- *   <li>VIEWER：仅所有 :read（#567 的 8 个「管理面 read」除外，见 {@link #MANAGE_PAIRED_READ_CODES}）</li>
+ *   <li>VIEWER：仅所有 :read（#567 的 8 个「管理面 read」与 callhistory:read 除外，见
+ *   {@link #MANAGE_PAIRED_READ_CODES} 与 {@link #viewerCodes()}）</li>
  * </ul>
+ *
+ * <p><b>调用历史双码</b>：{@code callhistory:read} 是运维面（看记录元数据与摘要），
+ * {@code callhistory:full-content} 才允许解密 FULL 级别正文。前者随「所有 :read」落入 OPERATOR，
+ * 由 VIEWER 显式排除；后者当前只授 ADMIN（`:full-content` 既不匹配 :read 也不匹配 :write）。
  *
  * <p><b>#567 / B11 不变式</b>：任何模板只要持有某个 {@code x:write} 或 {@code x:manage}，
  * 就必须同时持有与之配对的 {@code x:read}（若该 read 码存在）。这样「读一眼」不再需要写权限，
@@ -286,15 +291,21 @@ public class RolePermissionSeeder implements ApplicationRunner {
     }
 
     /**
-     * VIEWER：仅所有 :read（#567 的 8 个管理面 read 除外）
+     * VIEWER：仅所有 :read（#567 的 8 个管理面 read 与 callhistory:read 除外）
      *
      * <p>排除理由见 {@link #MANAGE_PAIRED_READ_CODES}：VIEWER 不持任何 :write / :manage，
      * 按 B11「只读角色不凭空扩权」不给它管理面的只读入口。
+     *
+     * <p>{@code callhistory:read} 单独排除：调用记录里带着请求/响应正文的摘要与调用方标识，
+     * 口径上是运维/审计面而非通用只读面（与 {@code config:callhistory:read} 不同 —— 后者只是
+     * 「记录治理的配置」）。拆码前该面由 {@code callhistory:view} 把关、三角色都不持有，
+     * 拆码后由 {@link #operatorCodes()} 自动带走一份给运维，VIEWER 需显式排除以免凭空扩权。
      */
     private static List<String> viewerCodes() {
         return PermissionCodes.ALL_PERMISSION_CODES.stream()
                 .filter(code -> code.endsWith(":read"))
                 .filter(code -> !MANAGE_PAIRED_READ_CODES.contains(code))
+                .filter(code -> !PermissionCodes.CALLHISTORY_READ.equals(code))
                 .collect(Collectors.toList());
     }
 }

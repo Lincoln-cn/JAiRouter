@@ -93,14 +93,26 @@ class PermissionRuleRegistryTest {
         assertRuleCode(HttpMethod.PUT, "/api/security/permissions/roles/USER",
                 PermissionCodes.SYSTEM_PERMISSIONS_MANAGE);
         assertRuleCode(HttpMethod.PUT, "/api/config/sanitization", PermissionCodes.SECURITY_SANITIZATION_MANAGE);
-        assertRuleCode(HttpMethod.POST, "/api/config/sanitization/test",
-                PermissionCodes.SECURITY_SANITIZATION_MANAGE);
         assertRuleCode(HttpMethod.DELETE, "/api/config/tracing/security/access/cache",
                 PermissionCodes.TRACING_CONFIG_MANAGE);
         assertRuleCode(HttpMethod.PUT, "/api/loadbalancer/config/chat", PermissionCodes.LB_CONFIG_WRITE);
         assertRuleCode(HttpMethod.POST, "/api/auth/api-keys", PermissionCodes.SECURITY_APIKEYS_MANAGE);
         assertRuleCode(HttpMethod.POST, "/api/auth/jwt/cleanup", PermissionCodes.SECURITY_JWTTOKENS_MANAGE);
         assertRuleCode(HttpMethod.POST, "/api/auth/jwt/revoke/batch", PermissionCodes.SECURITY_JWTTOKENS_MANAGE);
+    }
+
+    @Test
+    @DisplayName("只用 POST 传参的只读端点挂 :read，同类写端点仍挂 :manage（精确规则先于前缀命中）")
+    void readOnlyPostEndpointsRequireReadCode() {
+        // 试脱敏与范围预览都只拿当前规则/scope 做试算，不落库、不改配置
+        assertRuleCode(HttpMethod.POST, "/api/config/sanitization/test",
+                PermissionCodes.SECURITY_SANITIZATION_READ);
+        assertRuleCode(HttpMethod.POST, "/api/config/sanitization/scope/preview",
+                PermissionCodes.SECURITY_SANITIZATION_READ);
+        // 导出是读库生成导出件；清理才是写
+        assertRuleCode(HttpMethod.POST, "/api/tracing/query/export", PermissionCodes.TRACING_SEARCH_READ);
+        assertRuleCode(HttpMethod.POST, "/api/tracing/query/cleanup",
+                PermissionCodes.TRACING_CONFIG_MANAGE);
     }
 
     @Test
