@@ -1,13 +1,13 @@
 <template>
   <PageSkeleton :title="t('blacklist.pageTitle')">
     <template #actions>
-      <el-button type="primary" @click="handleOpenAddDialog">
+      <el-button v-permission="'security:blacklist:manage'" type="primary" @click="handleOpenAddDialog">
         <el-icon><Plus /></el-icon>{{ t('blacklist.add') }}
       </el-button>
       <el-button :loading="loading" @click="handleRefresh">
         <el-icon><Refresh /></el-icon>{{ t('blacklist.refresh') }}
       </el-button>
-      <el-button @click="handleCleanup">
+      <el-button v-permission="'security:blacklist:manage'" @click="handleCleanup">
         <el-icon><Delete /></el-icon>{{ t('blacklist.cleanupExpired') }}
       </el-button>
     </template>
@@ -79,7 +79,7 @@
       </el-table-column>
       <el-table-column :label="t('blacklist.actions')" width="120" fixed="right">
         <template #default="scope">
-          <el-button v-if="scope.row.status === 'ACTIVE'" link type="danger" size="small" @click="handleRemove(scope.row)">
+          <el-button v-if="scope.row.status === 'ACTIVE'" v-permission="'security:blacklist:manage'" link type="danger" size="small" @click="handleRemove(scope.row)">
             {{ t('blacklist.remove') }}
           </el-button>
           <el-button size="small" link @click="handleViewDetail(scope.row)">

@@ -71,7 +71,7 @@
             <el-button icon="Coin" size="small" type="primary" @click="emit('quota', row)">
               {{ t('apiKeys.quota') }}
             </el-button>
-            <el-dropdown trigger="click" @command="(command: string) => emit('command', command, row)">
+            <el-dropdown v-permission="'security:apikeys:manage'" trigger="click" @command="(command: string) => emit('command', command, row)">
               <el-button size="small">
                 {{ t('apiKeys.moreActions') }}<el-icon class="el-icon--right"><ArrowDown /></el-icon>
               </el-button>

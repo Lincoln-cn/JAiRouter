@@ -89,10 +89,10 @@
         </el-form-item>
       </el-form>
       <div class="quota-drawer-actions">
-        <el-button type="primary" :loading="quotaDrawerSaving" @click="saveQuotaFromDrawer">
+        <el-button v-permission="'security:apikeys:manage'" type="primary" :loading="quotaDrawerSaving" @click="saveQuotaFromDrawer">
           {{ t('apiKeys.quotaForm.saveQuota') }}
         </el-button>
-        <el-button type="warning" @click="handleResetQuotaFromDrawer">
+        <el-button v-permission="'security:apikeys:manage'" type="warning" @click="handleResetQuotaFromDrawer">
           {{ t('apiKeys.quotaForm.resetQuota') }}
         </el-button>
       </div>

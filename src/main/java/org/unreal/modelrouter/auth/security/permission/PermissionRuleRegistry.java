@@ -202,6 +202,9 @@ public class PermissionRuleRegistry {
                 // #1154：控制台管理操作页单独授权，必须先于 /api/tracing/query/** 命中
         PermissionRule.get("/api/tracing/query/console-operations", PermissionCodes.MONITORING_CONSOLE_READ),
         PermissionRule.get("/api/tracing/query/**", PermissionCodes.TRACING_SEARCH_READ),
+                // POST /export 只读（读库生成导出件、不落库），与 GET 同挂 :search:read；
+                // 精确规则必须先于下面的 write 命中，否则只读角色点「导出」会 403。
+                PermissionRule.post("/api/tracing/query/export", PermissionCodes.TRACING_SEARCH_READ),
                 PermissionRule.write("/api/tracing/query/**", PermissionCodes.TRACING_CONFIG_MANAGE),
 
                 // ===== B2b 渐进补齐：概览仪表盘（DashboardMetricsController → 菜单「概览」） =====
@@ -245,8 +248,11 @@ public class PermissionRuleRegistry {
 
                 // ===== PII / 脱敏配置管理（SanitizationConfigController） =====
                 // #567：GET（当前配置 / 规则清单）走 security:sanitization:read；
-                // PUT 配置、POST /test 仍走 :manage。
+                // POST /test 与 POST /scope/preview 只是拿当前规则/scope 做只读试算（不落库、不改配置），
+                // 同样挂 :read —— 只读角色点「试脱敏」「预览」不该 403。精确规则必须先于下面的 write 命中。
                 PermissionRule.get("/api/config/sanitization/**", PermissionCodes.SECURITY_SANITIZATION_READ),
+                PermissionRule.post("/api/config/sanitization/test", PermissionCodes.SECURITY_SANITIZATION_READ),
+                PermissionRule.post("/api/config/sanitization/scope/preview", PermissionCodes.SECURITY_SANITIZATION_READ),
                 PermissionRule.write("/api/config/sanitization/**", PermissionCodes.SECURITY_SANITIZATION_MANAGE),
 
                 // ===== #128 Phase 2: JWT 令牌运维端点（方法级 @PreAuthorize 均为 hasRole('ADMIN')） =====

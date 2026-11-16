@@ -2,10 +2,10 @@
   <PageSkeleton :title="t('jwtTokens.title')">
     <template #actions>
       <el-button :loading="loading" type="primary" @click="handleRefreshTokens">{{ t('jwtTokens.refreshList') }}</el-button>
-      <el-button :disabled="selectedTokens.length === 0" plain @click="handleOpenBatchRevoke">
+      <el-button v-permission="'security:jwttokens:manage'" :disabled="selectedTokens.length === 0" plain @click="handleOpenBatchRevoke">
         {{ t('jwtTokens.batchRevokeCount', { count: selectedTokens.length }) }}
       </el-button>
-      <el-button plain @click="handleCleanupExpiredTokens">{{ t('jwtTokens.cleanupExpired') }}</el-button>
+      <el-button v-permission="'security:jwttokens:manage'" plain @click="handleCleanupExpiredTokens">{{ t('jwtTokens.cleanupExpired') }}</el-button>
     </template>
 
     <template #toolbar>
@@ -76,7 +76,7 @@
       </el-table-column>
       <el-table-column :label="t('jwtTokens.blacklist')" width="120" fixed="right">
         <template #default="scope">
-          <el-dropdown trigger="click" @command="(cmd: string) => handleAddToBlacklist(scope.row, cmd)">
+          <el-dropdown v-permission="'security:blacklist:manage'" trigger="click" @command="(cmd: string) => handleAddToBlacklist(scope.row, cmd)">
             <el-button size="small" link type="danger">
               <el-icon><Warning /></el-icon>{{ t('jwtTokens.join') }}
             </el-button>
@@ -100,6 +100,7 @@
             {{ t('jwtTokens.details') }}
           </el-button>
           <el-button 
+            v-permission="'security:jwttokens:manage'"
             size="small" 
             link
             type="danger" 

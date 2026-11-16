@@ -104,7 +104,7 @@
             :title="t('apiKeys.quota')"
             @click="emit('quota', scope.row)"
           />
-          <el-dropdown trigger="click" @command="(command: string) => emit('command', command, scope.row)">
+          <el-dropdown v-permission="'security:apikeys:manage'" trigger="click" @command="(command: string) => emit('command', command, scope.row)">
             <el-button size="small" :aria-label="t('apiKeys.moreActions')" :title="t('apiKeys.moreActions')">
               <template v-if="!compact">
                 {{ t('apiKeys.moreActions') }}<el-icon class="el-icon--right"><ArrowDown /></el-icon>

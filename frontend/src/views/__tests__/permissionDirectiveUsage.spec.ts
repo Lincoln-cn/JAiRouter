@@ -93,20 +93,16 @@ const NESTED_COMPONENTS = new Set([
   'config/adapter/AdapterWizard.vue',
   'config/rules/RuleFormDialog.vue',
   'config/rules/RuleTemplateDialog.vue',
-  'security/apikeys/ImportConfigDialog.vue',
-  'security/apikeys/QuotaDrawer.vue'
+  'security/apikeys/ImportConfigDialog.vue'
 ])
 
 /**
- * `/security` 父路由 `meta.roles: ['ADMIN']`（router/index.ts:208），非 ADMIN 根本进不来；
- * ADMIN 又恒持有这些 manage 码 ⇒ 这些页面的按钮门控没有实际差别，不逐页加。
+ * 原先这里列着 `/security` 下的四页，理由是父路由 `meta.roles: ['ADMIN']` 挡住非 ADMIN、
+ * 而 ADMIN 恒持 manage 码，所以按钮门控没有实际差别。
+ * 2026-11-16 第五轮撤掉了父路由角色门控（权限码成为唯一门控）⇒ 该理由不再成立，
+ * 这些页的写按钮必须自己挂码；白名单清空后仍保留结构，方便将来再有同类豁免时登记。
  */
-const ADMIN_ONLY_PAGES = new Set([
-  'security/ApiKeyManagement.vue',
-  'security/JwtAccountManagement.vue',
-  'security/JwtTokenManagement.vue',
-  'security/SanitizationManagement.vue'
-])
+const ADMIN_ONLY_PAGES = new Set<string>([])
 
 describe('页面按钮权限门控', () => {
   it('扫描面自证：views 下确实扫到了 .vue 与 v-permission 用法（防扫描目录失效后空转）', () => {
@@ -171,7 +167,17 @@ describe('页面按钮权限门控', () => {
       // 2026-11-16 第三轮：写 API 扫描发现这两页会调用 updateCallHistoryConfig，
       // 但保存按钮对只持 read 的角色（USER/OPERATOR/VIEWER 都能进记录治理页）仍可见
       ['security/RecordGovernance.vue', 'config:callhistory:write'],
-      ['callHistory/CallHistoryList.vue', 'config:callhistory:write']
+      ['callHistory/CallHistoryList.vue', 'config:callhistory:write'],
+      // 2026-11-16 第四轮：撤掉 /security、/system 父路由的角色门控后，这两组页面对
+      // 「只勾了 read 码的自定义角色」可达，写按钮必须自己挂码，否则点击才 403
+      ['security/ApiKeyManagement.vue', 'security:apikeys:manage'],
+      ['security/apikeys/ApiKeyTable.vue', 'security:apikeys:manage'],
+      ['security/apikeys/ApiKeyCards.vue', 'security:apikeys:manage'],
+      ['security/apikeys/QuotaDrawer.vue', 'security:apikeys:manage'],
+      ['security/SanitizationManagement.vue', 'security:sanitization:manage'],
+      ['security/JwtTokenManagement.vue', 'security:jwttokens:manage'],
+      ['security/BlacklistManagement.vue', 'security:blacklist:manage'],
+      ['security/JwtAccountManagement.vue', 'system:accounts:manage']
     ]
     const missing = expected
       .filter(([name, code]) => {
