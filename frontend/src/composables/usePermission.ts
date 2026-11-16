@@ -68,10 +68,21 @@ export function usePermission() {
   }
 
   /**
-   * 菜单项是否对当前用户可见：权限码（或）**且** 角色（或）
+   * 菜单项是否对当前用户可见：角色命中，且**至少有一个可进的 tab**
+   *
+   * 不能只判 `item.permission`：那是 tabs 的「或」聚合，可能出现「菜单项可点、
+   * 但每个 tab 的码都缺」的情况（例：只有 `lb:config:read` 的用户），点进去会被
+   * 路由守卫弹回仪表板 —— 2026-11-16 收口时改成本判定。
    */
-  const canAccessItem = (item: MenuItem): boolean =>
-    hasAnyPermission(item.permission) && hasRouteRoles(item.roles)
+  const canAccessItem = (item: MenuItem): boolean => {
+    if (!hasRouteRoles(item.roles)) {
+      return false
+    }
+    if (item.tabs.length === 0) {
+      return hasAnyPermission(item.permission)
+    }
+    return getAccessibleTabs(item).length > 0
+  }
 
   /**
    * 按当前用户权限过滤菜单

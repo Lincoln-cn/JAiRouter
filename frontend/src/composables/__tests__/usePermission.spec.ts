@@ -96,6 +96,30 @@ describe('resolveLandingPath / getAccessibleTabs', () => {
     const { getAccessibleTabs } = usePermission()
     expect(getAccessibleTabs(item)).toHaveLength(5)
   })
+
+  it('只要有一个 tab 可进，菜单项就显示，且落地页落在可进的那个 tab', () => {
+    // 只有熔断历史码的用户：monitoring / global-config 两个 tab 都进不去，
+    // 但菜单项必须仍然可见，且点击后要直接落到 history（不能落到首个 tab）
+    setup(['cb:history:read'])
+    const { filterMenuByPermission, resolveLandingPath } = usePermission()
+    const item = filterMenuByPermission(menuGroups)
+      .find(group => group.index === 'traffic')!
+      .children.find(child => child.path === '/circuit-breakers/monitoring')!
+    expect(item, '有一个可进 tab 就应当可见').toBeDefined()
+    expect(resolveLandingPath(item)).toBe('/circuit-breakers/history')
+  })
+
+  it('一个 tab 都进不去时菜单项整体隐藏（避免「菜单可点、点进去被守卫弹回」）', () => {
+    // 只持限流监控码：负载均衡两项都不满足（monitoring 要 lb:monitoring:read，
+    // strategy 要 config:read 或 config:write），故负载均衡项整项消失；
+    // 同组内真正可进的限流项仍保留，组不会因此整体隐藏
+    setup(['rl:monitoring:read'])
+    const { filterMenuByPermission } = usePermission()
+    const traffic = filterMenuByPermission(menuGroups).find(group => group.index === 'traffic')
+    const paths = traffic?.children.map(item => item.path) ?? []
+    expect(paths).not.toContain('/load-balancers/monitoring')
+    expect(paths).toContain('/rate-limiters/monitoring')
+  })
 })
 
 /**

@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { menuGroups } from '@/config/menu'
 import { KNOWN_PERMISSION_CODES } from '@/config/__tests__/knownPermissions'
 import router from '@/router'
@@ -106,6 +106,22 @@ describe('菜单与路由守卫一致性', () => {
       .map(route => route.path)
       .sort()
     expect(paths).toEqual(['/security', '/system'])
+  })
+
+  it('菜单项的 permission 覆盖其每个 tab 的 permission（否则菜单项门控与 tab 门控会漂移）', () => {
+    const offenders: string[] = []
+    for (const group of menuGroups) {
+      for (const item of group.children) {
+        const itemCodes = toArray(item.permission)
+        for (const tab of item.tabs) {
+          const uncovered = toArray(tab.permission).filter(code => !itemCodes.includes(code))
+          if (uncovered.length > 0) {
+            offenders.push(`${tab.to} 的 ${uncovered.join(', ')} 不在菜单项 permission 里`)
+          }
+        }
+      }
+    }
+    expect(offenders).toEqual([])
   })
 
   it('除登录页外，每个可直达页面都能从菜单进入（防新增页面忘记挂菜单）', () => {
