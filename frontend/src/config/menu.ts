@@ -519,19 +519,19 @@ export const menuGroups: MenuGroup[] = [
       {
         path: '/monitoring/config',
         title: 'menu.monitoringConfig',
-        permission: ['monitoring:config:write'],
+        permission: ['monitoring:config:read'],
         tabs: [
           {
             key: 'monitoring-config',
             labelKey: 'menu.monitoringConfig',
             to: '/monitoring/config',
-            permission: ['monitoring:config:write']
+            permission: ['monitoring:config:read']
           },
           {
             key: 'monitoring-runtime',
             labelKey: 'tabs.monitoringRuntime',
             to: '/monitoring/config/runtime',
-            permission: ['monitoring:config:write']
+            permission: ['monitoring:config:read']
           }
         ]
       },

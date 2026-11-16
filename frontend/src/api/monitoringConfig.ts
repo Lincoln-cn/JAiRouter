@@ -18,6 +18,7 @@ import type { RouterResponse } from '@/types'
  *        /metrics-pipeline/circuit-breaker/stats、/circuit-breaker/stats
  * - POST /errors/reset、/degradation/{level,auto-mode,force-recovery}、/cache/clear、
  *        /metrics-pipeline/circuit-breaker/{force-open,force-close}、/circuit-breaker/{force-open,force-close}
+ * - GET  /emergency/preview?action=       应急操作的影响面快照（#1173，只读）
  *
  * 这些写端点只改内存（`DynamicMonitoringConfigUpdater`），重启后回到配置文件，
  * 页面必须把「重启后回落」写清楚。
@@ -198,6 +199,35 @@ export const forceOpenMonitoringBreaker = async (): Promise<void> => {
 
 export const forceCloseMonitoringBreaker = async (): Promise<void> => {
   await request.post<RouterResponse<unknown>>('/monitoring/circuit-breaker/force-close')
+}
+
+/**
+ * 应急操作的影响面预览（#1173）。
+ *
+ * <p>后端只给数据、不给文案：`impact` 的形状随 `action` 不同，缺失的键一律当作「不知道」，
+ * 由页面退回通用确认文案 —— 确认气泡里出现猜出来的数字比没有数字更糟。</p>
+ */
+export type MonitoringEmergencyAction =
+  | 'clear-cache'
+  | 'reset-errors'
+  | 'force-recovery'
+  | 'breaker-open'
+  | 'breaker-close'
+
+/** 预览响应：`impact` 的具体字段见后端 `MonitoringController#previewEmergencyAction`。 */
+export interface MonitoringEmergencyPreview {
+  action: MonitoringEmergencyAction | string
+  impact: Record<string, unknown>
+}
+
+export const getMonitoringEmergencyPreview = async (
+  action: MonitoringEmergencyAction
+): Promise<MonitoringEmergencyPreview | null> => {
+  const response = await request.get<RouterResponse<MonitoringEmergencyPreview>>(
+    '/monitoring/emergency/preview',
+    { params: { action } }
+  )
+  return unwrap(response)
 }
 
 /**

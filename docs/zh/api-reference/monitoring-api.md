@@ -403,6 +403,18 @@ PUT /api/monitoring/config/performance
 > `/actuator/metrics/*` 替代：后者只对 ADMIN 开放；取值校验两边共用（见下节），但它不发配置变更事件、
 > 也不写审计。
 
+应急操作执行前的影响面预览（只读，不发审计）：
+
+```http
+GET /api/monitoring/emergency/preview?action=clear-cache
+```
+
+`action` 取值：`clear-cache` / `reset-errors` / `force-recovery` / `breaker-open` / `breaker-close`。
+响应的 `impact` 字段按动作不同：清缓存给出条目数与键名样例，错误重置给出键数、错误总数与 top 键，
+强制恢复给出当前降级级别、采样率与自动模式，熔断开合给出状态、失败率、失败数与请求数。明细最多返回
+20 条、总数单独给出。该端点需要 `monitoring:config:read`（默认授 ADMIN 与 OPERATOR）—— 页面可见与
+能否改配置是两件事，写操作仍要求 `monitoring:config:write`。
+
 
 ### 内部运维接口（`/actuator/metrics/*`）
 

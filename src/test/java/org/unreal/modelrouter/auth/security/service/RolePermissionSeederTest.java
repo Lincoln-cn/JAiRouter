@@ -83,7 +83,9 @@ class RolePermissionSeederTest {
             // v3.8.8：新增 monitoring:console:read（管理操作页）⇒ OPERATOR +1、USER +1、VIEWER +1
             // 调用历史双码：callhistory:read 由「全部 :read」规则自动进 OPERATOR（+1 ⇒ 54），
             // callhistory:full-content 只授 ADMIN；VIEWER 显式排除 callhistory:read ⇒ 仍 31
-            assertEquals(54L, counts.get("OPERATOR"));
+            // #1173：monitoring:config:read 与 write 配对（MANAGE_PAIRED_READ_TO_WRITE）⇒
+            // OPERATOR 持 write 故保留 read（+1 ⇒ 55），VIEWER 不持写码故被排除 ⇒ 仍 31
+            assertEquals(55L, counts.get("OPERATOR"));
             assertEquals(33L, counts.get("USER"));
             assertEquals(31L, counts.get("VIEWER"));
         }
@@ -118,6 +120,10 @@ class RolePermissionSeederTest {
                     "调用历史双码：正文解密只授 ADMIN");
             assertFalse(codes.contains(PermissionCodes.TRACING_CONFIG_MANAGE));
             assertFalse(codes.contains(PermissionCodes.AI_PLAYGROUND_USE));
+            assertTrue(codes.contains(PermissionCodes.MONITORING_CONFIG_READ),
+                    "#1173：运维要能打开监控配置页并看应急操作的影响面");
+            assertTrue(codes.contains(PermissionCodes.MONITORING_CONFIG_WRITE),
+                    "#1173：运维同时持写码（读写都授，读码不单独扩权）");
         }
 
         @Test
@@ -153,6 +159,8 @@ class RolePermissionSeederTest {
             assertFalse(codes.contains(PermissionCodes.TRACING_CONFIG_MANAGE));
             assertFalse(codes.contains(PermissionCodes.SYSTEM_PERMISSIONS_MANAGE));
             assertFalse(codes.contains(PermissionCodes.ACTUATOR_ADMIN_MANAGE));
+            assertFalse(codes.contains(PermissionCodes.MONITORING_CONFIG_READ),
+                    "#1173：监控配置页只对运维/管理员开放，USER 不持该读码");
         }
 
         @Test
@@ -435,9 +443,18 @@ class RolePermissionSeederTest {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * USER 口径里「所有 monitoring:*:read」的集合。
+     *
+     * <p>#1173 起要排除 {@code monitoring:config:read}：它守的是监控配置页与应急操作影响面，
+     * 属于运维面（与 {@link #MANAGE_PAIRED_READ_CODES} 同一条反方向规则 —— 不持写码的角色
+     * 不凭空拿管理面读码）。不排除的话，USER 会被要求持有它，页面门槛又按它过滤，
+     * 等于把「监控配置」露出给普通用户。</p>
+     */
     private static List<String> monitoringReadCodes() {
         return PermissionCodes.ALL_PERMISSION_CODES.stream()
                 .filter(code -> code.startsWith("monitoring:") && code.endsWith(":read"))
+                .filter(code -> !PermissionCodes.MONITORING_CONFIG_READ.equals(code))
                 .collect(Collectors.toList());
     }
 

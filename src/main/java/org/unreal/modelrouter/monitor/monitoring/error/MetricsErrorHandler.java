@@ -9,6 +9,9 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -188,6 +191,63 @@ public class MetricsErrorHandler {
         );
     }
     
+    /**
+     * 错误键快照（#1173：给「重置错误状态」的确认框展示影响面）。
+     *
+     * <p>errorCounts 的键是 {@code component:operation} 拼串，这里拆回两段 —— 页面要按
+     * 「组件 / 操作」两列展示，把拼串丢给前端等于让前端猜分隔符。</p>
+     *
+     * <p>按错误数倒序、取前 {@code limit} 条：先看影响最大的，比按字典序更有用。</p>
+     *
+     * @param limit 最多返回多少条
+     * @return 错误键快照（可能为空）
+     */
+    public List<ErrorKeySnapshot> snapshotErrorKeys(final int limit) {
+        if (limit <= 0) {
+            return List.of();
+        }
+        return errorCounts.entrySet().stream()
+            .sorted(Comparator.comparingInt((Map.Entry<String, AtomicInteger> e) -> e.getValue().get())
+                .reversed()
+                .thenComparing(Map.Entry::getKey))
+            .limit(limit)
+            .map(entry -> {
+                String key = entry.getKey();
+                int sep = key.indexOf(':');
+                String component = sep > 0 ? key.substring(0, sep) : key;
+                String operation = sep > 0 ? key.substring(sep + 1) : "";
+                return new ErrorKeySnapshot(component, operation, entry.getValue().get());
+            })
+            .toList();
+    }
+
+    /**
+     * 单条错误键快照：组件、操作、当前错误计数。
+     */
+    public static class ErrorKeySnapshot {
+        private final String component;
+        private final String operation;
+        private final int count;
+
+        public ErrorKeySnapshot(final String component, final String operation, final int count) {
+            this.component = component;
+            this.operation = operation;
+            this.count = count;
+        }
+
+        public String getComponent() {
+            return component;
+        }
+
+        public String getOperation() {
+            return operation;
+        }
+
+        public int getCount() {
+            return count;
+        }
+    }
+
     /**
      * 手动重置错误状态
      */

@@ -422,6 +422,20 @@ PUT /api/monitoring/config/performance
 > validation (see the next section), but the actuator path emits no configuration-change event
 > and writes no audit record.
 
+Preview the impact of an emergency action before running it (read-only, no audit entry):
+
+```http
+GET /api/monitoring/emergency/preview?action=clear-cache
+```
+
+`action` accepts `clear-cache` / `reset-errors` / `force-recovery` / `breaker-open` / `breaker-close`.
+The `impact` object depends on the action: cache clearing returns the entry count and sample keys, error
+reset returns the key count, total errors and top keys, forced recovery returns the current degradation
+level, sampling rates and auto-mode flag, and breaker open/close returns state, failure rate, failure
+count and request count. Detail lists are capped at 20 rows while totals are reported separately. The
+endpoint requires `monitoring:config:read` (granted to ADMIN and OPERATOR by default) — seeing the page
+and being allowed to change configuration are separate, so writes still require
+`monitoring:config:write`.
 
 ### Internal operations surface (`/actuator/metrics/*`)
 

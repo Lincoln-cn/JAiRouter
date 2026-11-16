@@ -120,6 +120,7 @@ describe('Layout 菜单可见性（权限码是唯一门控）', () => {
       'config:cluster:read',
       'config:health:read',
       'monitoring:console:read',
+      'monitoring:config:read',
       'monitoring:config:write'
     ], ['OPERATOR'])
 

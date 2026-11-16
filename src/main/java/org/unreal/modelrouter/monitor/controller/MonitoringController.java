@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.core.Authentication;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
@@ -52,6 +53,11 @@ public class MonitoringController {
     private final MetricsCircuitBreaker circuitBreaker;
     private final ObjectProvider<SecurityAlertService> alertServiceProvider;
     private final SecurityAuditService securityAuditService;
+
+    /**
+     * 影响面预览的明细截断上限（#1173）：只给前 N 条，总数单独返回。
+     */
+    private static final int PREVIEW_SAMPLE_LIMIT = 20;
 
     public MonitoringController(final MonitoringProperties monitoringProperties,
                               final DynamicMonitoringConfigUpdater configUpdater,
@@ -739,6 +745,66 @@ public class MonitoringController {
         .onErrorResume(e -> {
             logger.error("获取监控概览失败: {}", e.getMessage());
             return Mono.just(RouterResponse.<Map<String, Object>>error("获取监控概览失败"));
+        });
+    }
+
+    /**
+     * 应急操作的影响面预览（#1173）。
+     *
+     * <p><b>为什么需要它</b>：确认框里的「N 条缓存」「M 个错误键」前端能从现有只读接口算出来，
+     * 但「清掉的是哪几个指标」「重置的是哪几个 component/operation」算不出来 —— 那部分信息
+     * 只在 {@link MetricsCacheAndRetry} 与 {@link MetricsErrorHandler} 的内部 Map 里。本端点按
+     * action 返回该动作的影响面快照，前端只管渲染。</p>
+     *
+     * <p><b>只读</b>：不改任何状态、不写审计。明细按 {@value #PREVIEW_SAMPLE_LIMIT} 条截断，
+     * 总数单独返回 —— 缓存上限 10000 条、错误键数量不设上限，全量返回会让响应失去可读性。</p>
+     *
+     * @param action 动作：{@code clear-cache} / {@code reset-errors} / {@code force-recovery} /
+     *               {@code breaker-open} / {@code breaker-close}
+     * @return {@code { action, impact }}，未知动作返回 400
+     */
+    @GetMapping("/emergency/preview")
+    public Mono<RouterResponse<Map<String, Object>>> previewEmergencyAction(
+            @RequestParam("action") final String action) {
+        return Mono.fromCallable(() -> {
+            Map<String, Object> impact = new HashMap<>();
+            switch (action) {
+                case "clear-cache" -> {
+                    MetricsCacheAndRetry.CacheStats stats = cacheAndRetry.getCacheStats();
+                    impact.put("entries", stats.getCurrentSize());
+                    impact.put("maxSize", stats.getMaxSize());
+                    impact.put("sampleKeys", cacheAndRetry.snapshotKeys(PREVIEW_SAMPLE_LIMIT));
+                }
+                case "reset-errors" -> {
+                    MetricsErrorHandler.MetricsErrorStats stats = errorHandler.getErrorStats();
+                    impact.put("keys", stats.getActiveErrorComponents());
+                    impact.put("totalErrors", stats.getTotalErrors());
+                    impact.put("sampleKeys", errorHandler.snapshotErrorKeys(PREVIEW_SAMPLE_LIMIT));
+                }
+                case "force-recovery" -> {
+                    MetricsDegradationStrategy.DegradationStatus status = degradationStrategy.getDegradationStatus();
+                    impact.put("level", status.getLevel().name());
+                    impact.put("samplingRate", status.getSamplingRate());
+                    impact.put("autoModeEnabled", status.isAutoModeEnabled());
+                }
+                case "breaker-open", "breaker-close" -> {
+                    MetricsCircuitBreaker.CircuitBreakerStats stats = circuitBreaker.getStats();
+                    impact.put("state", stats.getState());
+                    impact.put("failureRate", stats.getFailureRate());
+                    impact.put("failureCount", stats.getFailureCount());
+                    impact.put("requestCount", stats.getRequestCount());
+                }
+                default -> throw ApiException.of(ErrorCode.INVALID_REQUEST.code(),
+                        "未知的预览动作: " + action);
+            }
+
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("action", action);
+            payload.put("impact", impact);
+            return RouterResponse.<Map<String, Object>>success(payload);
+        }).onErrorResume(e -> {
+            logger.error("获取应急操作影响面失败: {}", e.getMessage());
+            return Mono.just(RouterResponse.<Map<String, Object>>error("获取应急操作影响面失败"));
         });
     }
 

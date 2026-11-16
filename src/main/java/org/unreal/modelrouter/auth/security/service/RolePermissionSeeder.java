@@ -35,13 +35,13 @@ import java.util.stream.Collectors;
  * {@link PermissionRule#permissionCode()}，使后续版本新增权限码并登记 URL 规则后，
  * 已初始化部署不再因种子跳过而静默失去访问（#144）。
  *
- * <p>角色模板（权限码共 71 个，以实现 {@link PermissionCodes} 为准）：
+ * <p>角色模板（权限码共 72 个，以实现 {@link PermissionCodes} 为准）：
  * <ul>
  *   <li>ADMIN：全量权限码（超集，兼容现有 ADMIN）</li>
  *   <li>OPERATOR：所有 :read + :write（排除 system:* / security:*:manage / actuator:*）</li>
  *   <li>USER：dashboard + config:*:read + lb/cb/rl + monitoring:*:read（含 exceptions:read） +
  *   tracing dashboard+search + ai:playground:use</li>
- *   <li>VIEWER：仅所有 :read（#567 的 8 个「管理面 read」与 callhistory:read 除外，见
+ *   <li>VIEWER：仅所有 :read（#567 的 9 个「管理面 read」与 callhistory:read 除外，见
  *   {@link #MANAGE_PAIRED_READ_CODES} 与 {@link #viewerCodes()}）</li>
  * </ul>
  *
@@ -62,7 +62,7 @@ import java.util.stream.Collectors;
 public class RolePermissionSeeder implements ApplicationRunner {
 
     /**
-     * #567：8 个「管理面 read」权限码 → 与之配对的写/管理码。
+     * #567：9 个「管理面 read」权限码 → 与之配对的写/管理码。
      *
      * <p>引入这 8 个码是为了让「读」不再被「写」权限绑架（B11）：<b>凡是持有右侧写/管理码的
      * 角色，都必须同时持有左侧 read 码</b>，保证升级后没有任何角色的可见面变小。反方向不成立
@@ -85,10 +85,11 @@ public class RolePermissionSeeder implements ApplicationRunner {
             PermissionCodes.SECURITY_BLACKLIST_READ, PermissionCodes.SECURITY_BLACKLIST_MANAGE,
             PermissionCodes.SECURITY_SANITIZATION_READ, PermissionCodes.SECURITY_SANITIZATION_MANAGE,
             PermissionCodes.SYSTEM_ACCOUNTS_READ, PermissionCodes.SYSTEM_ACCOUNTS_MANAGE,
-            PermissionCodes.SYSTEM_PERMISSIONS_READ, PermissionCodes.SYSTEM_PERMISSIONS_MANAGE);
+            PermissionCodes.SYSTEM_PERMISSIONS_READ, PermissionCodes.SYSTEM_PERMISSIONS_MANAGE,
+            PermissionCodes.MONITORING_CONFIG_READ, PermissionCodes.MONITORING_CONFIG_WRITE);
 
     /**
-     * 上述 8 个 read 码的集合（{@link #MANAGE_PAIRED_READ_TO_WRITE} 的键集），只读角色需整体排除。
+     * 上述 9 个 read 码的集合（{@link #MANAGE_PAIRED_READ_TO_WRITE} 的键集），只读角色需整体排除。
      */
     private static final Set<String> MANAGE_PAIRED_READ_CODES = MANAGE_PAIRED_READ_TO_WRITE.keySet();
 
