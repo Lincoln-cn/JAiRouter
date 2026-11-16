@@ -15,7 +15,9 @@ function setup(permissions: string[], roles: string[] = ['USER']) {
   setActivePinia(pinia)
   const store = useUserStore()
   store.permissions = permissions
-  store.roles = roles
+  // 角色判定与路由守卫同源（userInfo.roles），fixture 必须一并写入；
+  // 只设 store.roles 是无效的 —— store 并未暴露 roles 字段。
+  store.userInfo = { username: 'tester', roles, permissions }
   return store
 }
 
@@ -93,5 +95,48 @@ describe('resolveLandingPath / getAccessibleTabs', () => {
       .children.find(child => child.path === '/playground/chat')!
     const { getAccessibleTabs } = usePermission()
     expect(getAccessibleTabs(item)).toHaveLength(5)
+  })
+})
+
+/**
+ * 菜单可见性必须与路由守卫同口径（死入口回归，2026-11-16）
+ *
+ * `/security`、`/system` 两个父路由声明了 `meta.roles = ['ADMIN']`，而菜单此前只按权限码
+ * 过滤 ⇒ OPERATOR / USER / VIEWER 会看到「点了被重定向回仪表板」的菜单项。
+ * 现在菜单项用 `roles` 把同一条约束显式写下来，本组断言守的正是它。
+ */
+describe('roles 声明：菜单与路由守卫同口径', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('OPERATOR 持有 security:audit:read / config:cluster:read 也看不到「安全」组与 /system 下 5 项', () => {
+    setup(
+      ['security:audit:read', 'config:cluster:read', 'config:health:read', 'monitoring:console:read', 'config:callhistory:read', 'config:persistence:read'],
+      ['OPERATOR']
+    )
+    const { filterMenuByPermission } = usePermission()
+    const groups = filterMenuByPermission(menuGroups)
+    // 安全组 6 项全部落在 /security 父级（roles: ['ADMIN']）下 ⇒ 整个组消失
+    expect(groups.find(group => group.index === 'security')).toBeUndefined()
+    // 系统组：accounts/permissions/cluster/health/console-operations 被角色拦掉；
+    // 追踪配置需要 tracing:config:*（OPERATOR 不持有）；只剩不在 /system 父级下的状态持久化
+    const system = groups.find(group => group.index === 'system')
+    expect(system?.children.map(item => item.path)).toEqual(['/config/state-persistence'])
+  })
+
+  it('USER 持有 config:cluster:read 也看不到「集群设置」（父级要求 ADMIN）', () => {
+    setup(['config:cluster:read', 'config:persistence:read'], ['USER'])
+    const { filterMenuByPermission } = usePermission()
+    const system = filterMenuByPermission(menuGroups).find(group => group.index === 'system')
+    expect(system?.children.map(item => item.path)).toEqual(['/config/state-persistence'])
+  })
+
+  it('ADMIN 不受 roles 声明影响（安全组 6 项、系统组 7 项都在）', () => {
+    setup([], ['ADMIN'])
+    const { filterMenuByPermission } = usePermission()
+    const groups = filterMenuByPermission(menuGroups)
+    expect(groups.find(group => group.index === 'security')?.children).toHaveLength(6)
+    expect(groups.find(group => group.index === 'system')?.children).toHaveLength(7)
   })
 })

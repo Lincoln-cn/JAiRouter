@@ -98,8 +98,8 @@
             {{ dirtyCount > 0 ? t('circuitBreaker.globalConfig.dirtyCount', { count: dirtyCount }) : t('circuitBreaker.globalConfig.noChanges') }}
           </span>
           <div class="config-footer__actions">
-            <el-button @click="resetGlobalConfig">{{ t('circuitBreaker.globalConfig.resetToDefaults') }}</el-button>
-            <el-button type="primary" @click="saveGlobalConfig" :loading="savingConfig">
+            <el-button v-permission="'config:circuitbreaker:write'" @click="resetGlobalConfig">{{ t('circuitBreaker.globalConfig.resetToDefaults') }}</el-button>
+            <el-button v-permission="'config:circuitbreaker:write'" type="primary" @click="saveGlobalConfig" :loading="savingConfig">
               {{ t('circuitBreaker.globalConfig.save') }}
             </el-button>
           </div>

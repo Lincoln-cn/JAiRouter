@@ -224,3 +224,46 @@ describe('menu.ts 权限码白名单（#567）', () => {
     }
   })
 })
+
+/**
+ * 菜单角色声明（死入口回归，2026-11-16）
+ *
+ * `/security`、`/system` 两个父路由要求 `roles: ['ADMIN']`。菜单此前只按权限码过滤，
+ * 导致 OPERATOR / USER / VIEWER 看得到「审计日志」「记录治理」「集群设置」等入口，
+ * 点进去却被守卫重定向回仪表板。这里把「哪些项必须声明 ADMIN」钉成清单，
+ * 与 `router/__tests__/menuRouteAlignment.spec.ts`（对照路由 meta.roles）互为保险。
+ */
+describe('menu.ts 角色声明（与路由守卫同口径）', () => {
+  /** 落在 /security、/system 父级下的菜单项（11 项） */
+  const ADMIN_ONLY_ITEMS = [
+    '/security/api-keys',
+    '/security/sanitization',
+    '/security/jwt-tokens',
+    '/security/blacklist',
+    '/security/audit-logs',
+    '/security/record-governance',
+    '/system/accounts',
+    '/system/permissions',
+    '/system/cluster',
+    '/system/health',
+    '/system/console-operations'
+  ]
+
+  it('只有这两个父级下的 11 项声明 roles，且均为 ADMIN', () => {
+    const items = menuGroups.flatMap(group => group.children)
+    const withRoles = items.filter(item => (item.roles?.length ?? 0) > 0)
+    expect(withRoles.map(item => item.path).sort()).toEqual([...ADMIN_ONLY_ITEMS].sort())
+    for (const item of withRoles) {
+      expect(item.roles, item.path).toEqual(['ADMIN'])
+    }
+  })
+
+  it('状态持久化与追踪配置不在 /system 父级下，不声明 roles', () => {
+    const items = menuGroups.flatMap(group => group.children)
+    for (const path of ['/config/state-persistence', '/tracing/management']) {
+      const item = items.find(candidate => candidate.path === path)
+      expect(item, path).toBeTruthy()
+      expect(item?.roles, path).toBeUndefined()
+    }
+  })
+})

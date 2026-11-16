@@ -86,7 +86,6 @@ declare module 'vue' {
     ListPageLayout: typeof import('./src/components/ListPageLayout.vue')['default']
     MetricStrip: typeof import('./src/components/MetricStrip.vue')['default']
     PageSkeleton: typeof import('./src/components/PageSkeleton.vue')['default']
-    PageTabs: typeof import('./src/components/PageTabs.vue')['default']
     RateLimitConfig: typeof import('./src/components/RateLimitConfig.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
