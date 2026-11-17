@@ -39,6 +39,8 @@ class AuditEventTypeConstraintMigrationTest {
     private static final String H2_V15_MIGRATION = "db/migration/h2/V15__monitoring_config_audit_event.sql";
     private static final String H2_V16_MIGRATION = "db/migration/h2/V16__sla_access.sql";
     private static final String POSTGRES_V16_MIGRATION = "db/migration/postgres/V16__sla_access.sql";
+    private static final String H2_V17_MIGRATION = "db/migration/h2/V17__login_guard_config.sql";
+    private static final String POSTGRES_V17_MIGRATION = "db/migration/postgres/V17__login_guard_config.sql";
 
     /** V1 建表时的 16 个旧取值，用来复现迁移前的状态。 */
     private static final String LEGACY_ENUM_VALUES = "'API_KEY_CREATED','API_KEY_EXPIRED','API_KEY_REVOKED',"
@@ -48,18 +50,18 @@ class AuditEventTypeConstraintMigrationTest {
 
     @Test
     void everyEnumConstantIsAllowedByBothMigrations() throws IOException {
-        // V16 用「重设整列类型 / 重建 check 约束」的方式扩取值，必须一次性列全，
-        // 因此这里只校验最新一版迁移（V7、V15 都已被 V16 覆盖）。
-        final String h2 = stripComments(readResource(H2_V16_MIGRATION));
-        final String postgres = stripComments(readResource(POSTGRES_V16_MIGRATION));
+        // V17 用「重设整列类型 / 重建 check 约束」的方式扩取值，必须一次性列全，
+        // 因此这里只校验最新一版迁移（V7、V15、V16 都已被 V17 覆盖）。
+        final String h2 = stripComments(readResource(H2_V17_MIGRATION));
+        final String postgres = stripComments(readResource(POSTGRES_V17_MIGRATION));
 
         for (final AuditEventType type : AuditEventType.values()) {
             assertTrue(h2.contains("'" + type.name() + "'"),
-                    "H2 的 V16 迁移缺少审计事件类型: " + type.name());
+                    "H2 的 V17 迁移缺少审计事件类型: " + type.name());
             assertTrue(postgres.contains("'" + type.name() + "'"),
-                    "PostgreSQL 的 V16 迁移缺少审计事件类型: " + type.name());
+                    "PostgreSQL 的 V17 迁移缺少审计事件类型: " + type.name());
         }
-        assertEquals(31, AuditEventType.values().length,
+        assertEquals(33, AuditEventType.values().length,
                 "枚举常量数量变了：请确认新增迁移与实体映射同步更新，再调整此断言");
     }
 
@@ -98,7 +100,18 @@ class AuditEventTypeConstraintMigrationTest {
                 statement.execute(extractAlterStatement(H2_V16_MIGRATION));
             }
 
-            // 迁移后：全部 31 个取值都可写
+            // V16 之后 LOGIN_GUARD_* 仍应被拒（这一版还没扩到它们）
+            for (final String rejected : new String[] {"LOGIN_GUARD_CONFIG_CHANGED", "LOGIN_GUARD_UNLOCKED"}) {
+                assertThrows(SQLException.class, () -> insertEvent(connection, rejected),
+                        "V16 之后、V17 之前 " + rejected + " 本应仍被拒；若通过说明断言失去检测力");
+            }
+
+            // 执行 V17 里的 ALTER（33 个取值）
+            try (Statement statement = connection.createStatement()) {
+                statement.execute(extractAlterStatement(H2_V17_MIGRATION));
+            }
+
+            // 迁移后：全部 33 个取值都可写
             for (final AuditEventType type : AuditEventType.values()) {
                 insertEvent(connection, type.name());
             }

@@ -247,6 +247,16 @@ const router = createRouter({
             icon: 'lock',
             permissions: ['config:callhistory:read', 'config:callhistory:write']
           }
+        },
+        {
+          path: 'login-guard',
+          name: 'login-guard',
+          component: () => import('../views/security/LoginGuardManagement.vue'),
+          meta: {
+            titleKey: 'route.loginGuard',
+            icon: 'key',
+            permissions: ['security:loginguard:read', 'security:loginguard:manage']
+          }
         }
       ]
     },

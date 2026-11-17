@@ -1,0 +1,25 @@
+# ========================================
+# 登录保护（暴力破解频控，issue #1176）
+# ========================================
+# 首次启动时，这四个值会被写入 security_login_guard_config 表（由
+# LoginGuardConfigService#seedIfEmpty 完成）；之后以数据库为准 ——
+# 控制台「安全 → 登录保护」改的是库里那一行并立即热改。
+#
+# 换句话说：改这个文件只影响「表里还没有那行数据」的新部署。
+# 已有部署请改控制台，或者直接改库后重启（重启会重新从库加载）。
+#
+# 两个维度的语义：
+#   max-failures          同一来源 IP + 同一用户名的失败阈值（达阈值即锁定）
+#   max-failures-per-ip   同一来源 IP 跨用户名的失败阈值（防换用户名继续撞）
+#   window-minutes        失败计数窗口；窗口之前的失败不计入
+#   lock-minutes          达到阈值后的锁定时长
+#
+# 低于 1 的阈值会被拒绝（第一次失败就永久锁定等于封号）；窗口/锁定允许 0，
+# 分别表示「不累计」与「只记录不锁定」。
+jairouter:
+  auth:
+    login-bruteforce:
+      max-failures: 5
+      max-failures-per-ip: 30
+      window-minutes: 15
+      lock-minutes: 15

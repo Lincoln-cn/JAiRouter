@@ -44,6 +44,10 @@ public enum AuditEventType {
     SLA_REFRESH,            // SLA 用刷新凭据换新访问令牌
     SLA_CREDENTIAL_REVOKED, // SLA 凭据被吊销
 
+    // 登录保护（issue #1176）：锁定阈值变更与手动解锁
+    LOGIN_GUARD_CONFIG_CHANGED, // 登录保护阈值变更
+    LOGIN_GUARD_UNLOCKED,       // 登录锁定被手动解除
+
     // 系统事件
     SYSTEM_CLEANUP,         // 系统清理
     MONITORING_CONFIG_CHANGED, // 监控配置变更（含应急操作，含强制降级/熔断开合/清缓存）

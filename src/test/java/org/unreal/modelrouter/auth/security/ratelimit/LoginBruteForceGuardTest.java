@@ -1,5 +1,8 @@
 package org.unreal.modelrouter.auth.security.ratelimit;
 
+import java.util.List;
+import java.util.Locale;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -163,5 +166,79 @@ class LoginBruteForceGuardTest {
         guard.recordFailure(USERNAME, IP);
 
         StepVerifier.create(guard.checkNotLocked(USERNAME, IP)).verifyComplete();
+    }
+
+    @Test
+    @DisplayName("applySettings 立即生效：把阈值压到 3 后第三次失败即锁定")
+    void applySettingsTakesEffectImmediately() {
+        guard.applySettings(new LoginGuardSettings(3, 30, 15, 15));
+        guard.recordFailure(USERNAME, IP);
+        guard.recordFailure(USERNAME, IP);
+        StepVerifier.create(guard.checkNotLocked(USERNAME, IP)).verifyComplete();
+
+        guard.recordFailure(USERNAME, IP);
+        StepVerifier.create(guard.checkNotLocked(USERNAME, IP))
+                .expectErrorSatisfies(error -> {
+                    assertInstanceOf(ApiException.class, error);
+                    assertEquals(HttpStatus.TOO_MANY_REQUESTS, ((ApiException) error).getStatus());
+                })
+                .verify();
+    }
+
+    @Test
+    @DisplayName("锁定文案带剩余时间：不再是「请稍后再试」这种无从判断的提示")
+    void lockMessageCarriesRemainingTime() {
+        guard.applySettings(new LoginGuardSettings(1, 30, 15, 5));
+        guard.recordFailure(USERNAME, IP);
+
+        StepVerifier.create(guard.checkNotLocked(USERNAME, IP))
+                .expectErrorSatisfies(error -> {
+                    final String message = ((ApiException) error).getMessage();
+                    assertTrue(message.contains("分"), "应包含剩余时间的分钟部分: " + message);
+                    assertTrue(message.contains("秒"), "应包含剩余时间的秒部分: " + message);
+                })
+                .verify();
+    }
+
+    @Test
+    @DisplayName("snapshotLocked 只列仍在锁定窗口内的主体，且带维度与剩余秒数")
+    void snapshotListsOnlyLockedPrincipals() {
+        guard.applySettings(new LoginGuardSettings(1, 30, 15, 15));
+        guard.recordFailure(USERNAME, IP);
+
+        final List<LoginBruteForceGuard.LockedPrincipal> locked = guard.snapshotLocked();
+        assertEquals(1, locked.size());
+        assertEquals("account", locked.get(0).scope());
+        assertEquals(USERNAME.toLowerCase(Locale.ROOT), locked.get(0).username());
+        assertEquals(IP, locked.get(0).ip());
+        assertTrue(locked.get(0).remainingSeconds() > 0);
+    }
+
+    @Test
+    @DisplayName("unlock(用户名, IP) 精确清除后立即放行")
+    void unlockReleasesPrincipal() {
+        guard.applySettings(new LoginGuardSettings(1, 30, 15, 15));
+        guard.recordFailure(USERNAME, IP);
+        StepVerifier.create(guard.checkNotLocked(USERNAME, IP)).expectError().verify();
+
+        assertEquals(1, guard.unlock(USERNAME, IP));
+        StepVerifier.create(guard.checkNotLocked(USERNAME, IP)).verifyComplete();
+        assertTrue(guard.snapshotLocked().isEmpty());
+    }
+
+    @Test
+    @DisplayName("unlock(用户名, null) 解该用户名在所有 IP 上的锁定；unlockAll 清空全部")
+    void unlockByUsernameAndAll() {
+        guard.applySettings(new LoginGuardSettings(1, 30, 15, 15));
+        guard.recordFailure(USERNAME, IP);
+        guard.recordFailure(USERNAME, "10.0.0.9");
+        assertEquals(2, guard.snapshotLocked().size());
+
+        assertEquals(2, guard.unlock(USERNAME, null));
+        assertTrue(guard.snapshotLocked().isEmpty());
+
+        guard.recordFailure("someone-else", IP);
+        assertTrue(guard.unlockAll() >= 1);
+        assertTrue(guard.snapshotLocked().isEmpty());
     }
 }

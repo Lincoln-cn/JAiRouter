@@ -469,6 +469,19 @@ export const menuGroups: MenuGroup[] = [
             permission: ['config:callhistory:read', 'config:callhistory:write']
           }
         ]
+      },
+      {
+        path: '/security/login-guard',
+        title: 'menu.loginGuard',
+        permission: ['security:loginguard:read', 'security:loginguard:manage'],
+        tabs: [
+          {
+            key: 'login-guard',
+            labelKey: 'menu.loginGuard',
+            to: '/security/login-guard',
+            permission: ['security:loginguard:read', 'security:loginguard:manage']
+          }
+        ]
       }
     ]
   },

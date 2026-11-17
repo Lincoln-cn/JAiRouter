@@ -107,7 +107,8 @@
     "loadBalancing": "Load Balancing",
     "rateLimiting": "Rate Limiting",
     "rateLimitingConfig": "Rate-limit Config",
-    "circuitBreaking": "Circuit Breakers"
+    "circuitBreaking": "Circuit Breakers",
+    "loginGuard": "Login Protection"
   },
   "tabs": {
     "dashboard": "Dashboard",
@@ -132,7 +133,8 @@
     "playgroundAudio": "Audio Service",
     "playgroundImage": "Image Service",
     "monitoringRuntime": "Runtime & Emergency",
-    "slaAccess": "SLA Access"
+    "slaAccess": "SLA Access",
+    "loginGuard": "Login Protection"
   },
   "route": {
     "dashboard": "Overview",
@@ -197,7 +199,8 @@
     "quotaUsageMonitoring": "Quota Usage Monitoring",
     "tools": "Developer Tools",
     "clientAccessGuide": "Client Access Guide",
-    "notFound": "Page not found"
+    "notFound": "Page not found",
+    "loginGuard": "Login Protection"
   },
   "globalSearch": {
     "dialogLabel": "Global search",

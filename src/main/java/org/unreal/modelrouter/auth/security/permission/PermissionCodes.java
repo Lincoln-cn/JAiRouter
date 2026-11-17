@@ -189,6 +189,10 @@ public final class PermissionCodes {
     public static final String SECURITY_SANITIZATION_READ = "security:sanitization:read";
     /** PII / 数据脱敏配置管理 */
     public static final String SECURITY_SANITIZATION_MANAGE = "security:sanitization:manage";
+    /** 登录保护配置-读（#1176：查看锁定阈值与当前被锁主体） */
+    public static final String SECURITY_LOGINGUARD_READ = "security:loginguard:read";
+    /** 登录保护配置-管理（改阈值、手动解除登录锁定） */
+    public static final String SECURITY_LOGINGUARD_MANAGE = "security:loginguard:manage";
 
     // ==================== system（系统管理） ====================
 
@@ -264,6 +268,7 @@ public final class PermissionCodes {
             SECURITY_JWTTOKENS_READ, SECURITY_JWTTOKENS_MANAGE,
             SECURITY_BLACKLIST_READ, SECURITY_BLACKLIST_MANAGE, SECURITY_AUDIT_READ, SECURITY_AUDIT_WRITE,
             SECURITY_SANITIZATION_READ, SECURITY_SANITIZATION_MANAGE,
+            SECURITY_LOGINGUARD_READ, SECURITY_LOGINGUARD_MANAGE,
             SYSTEM_ACCOUNTS_READ, SYSTEM_ACCOUNTS_MANAGE, SYSTEM_PERMISSIONS_READ, SYSTEM_PERMISSIONS_MANAGE,
             SYSTEM_SLA_READ, SYSTEM_SLA_MANAGE,
             AI_PLAYGROUND_USE,

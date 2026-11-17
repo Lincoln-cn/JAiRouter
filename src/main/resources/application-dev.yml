@@ -56,6 +56,17 @@ management:
 jairouter:
   security:
     enabled: true
+  
+  # 登录保护（issue #1176）：dev 单独放宽。
+  # 2026-11 实测踩到过：本地连续试密码 5 次被锁 15 分钟，而当时控制台还没有解锁入口。
+  # 表里已有那行数据时以库为准，所以这里只影响「首次启动、还没落库」的库；
+  # 已有 dev 库要生效，改控制台（安全 → 登录保护）或删掉 data/ 下的库重来。
+  auth:
+    login-bruteforce:
+      max-failures: 20
+      max-failures-per-ip: 100
+      window-minutes: 5
+      lock-minutes: 5
     
     jwt:
       enabled: true

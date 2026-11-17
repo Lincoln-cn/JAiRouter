@@ -80,7 +80,8 @@
       "permissions": "Permissions",
       "sla": "SLA access",
       "playground": "Playground",
-      "admin": "Actuator admin"
+      "admin": "Actuator admin",
+      "loginguard": "Login protection"
     },
     "actions": {
       "read": "View",

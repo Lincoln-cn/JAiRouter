@@ -22,6 +22,15 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 ## 版本历史
 
+### [Unreleased] - 登录保护配置（阈值落库 + 解除锁定）
+
+- **新增 `security:loginguard:read` / `security:loginguard:manage`**（权限码 76 个）：前者看阈值与当前被锁主体，后者改阈值与解除锁定。内置角色模板仍是 6 个，配对表增至 11 对；OPERATOR（55 码）不持 `loginguard:manage`，按 B11 规则也不获得对应读码。
+- **新增表 `security_login_guard_config`**（单行，`config_id = 'default'`）：`config/auth/login-guard.yml` 的 `jairouter.auth.login-bruteforce.*` 只在表里还没有那一行时作为初始值，之后以数据库为准（同 `jwt_accounts` 口径）。dev profile 单独放宽为 20 次 / 5 分钟窗口 / 锁 5 分钟。
+- **登录失败告警可读性**：429 文案改为「登录尝试过于频繁，请在 N 分 M 秒后重试」，不再只说「请稍后再试」。
+- **新增端点** `GET|PUT /api/security/login-guard`、`GET /api/security/login-guard/locked`、`POST /api/security/login-guard/unlock`，并新增审计事件 `LOGIN_GUARD_CONFIG_CHANGED` / `LOGIN_GUARD_UNLOCKED`（枚举 33 个，迁移 `V17`）。
+- **新增页面**：安全 → 登录保护（`/security/login-guard`），含阈值表单、当前被锁主体列表与服务端解锁。
+- 迁移 `V17__login_guard_config.sql` 会建表并将 `security_audit.event_type` 扩到 33 个值；已有部署升级后首次启动会自动落库一行。
+
 ### [Unreleased] - SLA 接入凭据（一次性令牌 + refresh）
 
 - **新增 `system:sla:read` / `system:sla:manage`**（权限码 74 个），内置角色模板增至 6 个：`SLA_READONLY`（35 码，只读巡检面）与 `SLA_OPERATOR`（53 码，只读巡检面 + 配置写）。

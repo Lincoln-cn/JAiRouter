@@ -21,6 +21,15 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 ## Version History
 
+### [Unreleased] - Login protection configuration (persisted thresholds + lock release)
+
+- **New codes `security:loginguard:read` / `security:loginguard:manage`** (76 permission codes): the first reads thresholds and locked principals, the second changes thresholds and releases locks. The six built-in role templates are unchanged; the paired-read table grows to 11 entries, and OPERATOR (55 codes) does not hold `loginguard:manage`, so B11 also withholds the matching read code.
+- **New table `security_login_guard_config`** (single row, `config_id = 'default'`): `jairouter.auth.login-bruteforce.*` in `config/auth/login-guard.yml` only seeds the row when it is missing; afterwards the database is authoritative (same rule as `jwt_accounts`). The dev profile relaxes it to 20 failures / 5-minute window / 5-minute lock.
+- **Readable rate-limit message**: the 429 body now says "too many attempts, retry in N min M s" instead of a bare "please retry later".
+- **New endpoints** `GET|PUT /api/security/login-guard`, `GET /api/security/login-guard/locked`, `POST /api/security/login-guard/unlock`, plus audit events `LOGIN_GUARD_CONFIG_CHANGED` / `LOGIN_GUARD_UNLOCKED` (33 values, migration `V17`).
+- **New page**: Security → Login Protection (`/security/login-guard`) with the threshold form, the list of currently locked principals, and server-side unlock.
+- Migration `V17__login_guard_config.sql` creates the table and widens `security_audit.event_type` to 33 values; an existing deployment seeds the row on its first startup after the upgrade.
+
 ### [Unreleased] - SLA access credentials (one-time token + refresh)
 
 - **New codes `system:sla:read` / `system:sla:manage`** (74 permission codes) and two built-in role templates: `SLA_READONLY` (35 codes, read-only inspection) and `SLA_OPERATOR` (53 codes, inspection plus configuration writes).

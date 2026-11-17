@@ -249,7 +249,7 @@ error 帧，**并且仍以异常终止流**——失败流绝不补 `[DONE]`，�
 - **JWT** —— 头名可配置，默认 `Jairouter_Token`。
 - **API Key** —— 头 `X-API-Key`。网关凭据与下游供应商密钥彻底分离：`x-api-key` 只被网关消费、
   绝不透传，实例级下游凭据请放在该实例自己的 `headers.Authorization`。
-- **RBAC** —— 数据驱动：74 个权限码、6 个角色模板（`ADMIN` / `OPERATOR` / `USER` / `VIEWER`）、
+- **RBAC** —— 数据驱动：76 个权限码、6 个角色模板（`ADMIN` / `OPERATOR` / `USER` / `VIEWER`）、
   URL 规则矩阵 + 方法级 `@PreAuthorize`。未命中任何规则的请求按
   `jairouter.security.rbac.unmatched-policy` 处理，默认 `DENY_ALL`；`ROLE_ADMIN` 恒直通。
   `/v1/**` 需要认证，但有意不进权限矩阵。
