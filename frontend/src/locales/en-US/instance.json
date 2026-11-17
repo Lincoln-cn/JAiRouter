@@ -27,6 +27,14 @@
     "notConfigured": "Not configured",
     "globalNote": "(global)",
     "emptyText": "No instances yet",
+    "noMatchTitle": "No matching instances",
+    "noMatchDescription": "Adjust the search keyword or status filter and try again.",
+    "clearFilters": "Clear filters",
+    "metrics": {
+      "total": "Total instances",
+      "currentType": "Instances of this type",
+      "currentEnabled": "Enabled of this type"
+    },
     "copyUrl": "Copy URL",
     "copySuccess": "Copied to clipboard",
     "copyFailed": "Copy failed, please copy manually",

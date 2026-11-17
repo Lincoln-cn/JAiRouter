@@ -247,3 +247,14 @@ html.dark {
   --ja-chart-series-neutral: #8b96a6;
   --ja-chart-axis: #2b3542;
 }
+
+/* ========== 基座文字与背景（深色可读性，2026-11-18）=========================
+   深色模式此前只切 --ja-* 变量，而未显式着色的文本仍继承 index.html 内联 style 的
+   `body { color: #10151c }`（它只在 prefers-color-scheme 为 dark 时才改亮）⇒
+   手动切深色后，所有没有自己 color 的文本（各配置页的 .config-label / .switch-label
+   等）在 #0e1116 上对比度只有 1.03:1，几乎不可见（用户反馈「深色下配置 title 看不清」）。
+   这里把基座文本色/背景绑定到语义令牌：任何未着色的文本都随主题走。 */
+body {
+  background: var(--ja-surface);
+  color: var(--ja-ink);
+}

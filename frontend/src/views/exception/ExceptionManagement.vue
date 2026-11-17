@@ -1,24 +1,18 @@
 <template>
-  <ListPageLayout
-    :loading="loading"
-    :empty="!loading && exceptionList.length === 0"
-    :empty-title="t('exception.list.emptyTitle')"
-    :empty-description="t('exception.list.emptyDescription')"
-  >
-    <template #header>
+  <PageSkeleton>
+    <template #title>
       <h2 class="page-title">{{ t('exception.list.title') }}</h2>
       <p class="page-subtitle">{{ t('exception.list.pageDescription') }}</p>
     </template>
 
     <template #actions>
-      <el-button icon="Refresh" @click="handleRefresh">{{ t('exception.list.refresh') }}</el-button>
-      <el-button icon="Delete" type="danger" plain v-permission="'monitoring:exceptions:write'" @click="showCleanupDialog">{{ t('exception.list.cleanupExpired') }}</el-button>
+      <!-- 主操作只保留一个：统计分析（跳转）；刷新与清理过期进工具栏 -->
       <el-button icon="DataAnalysis" type="primary" @click="goToStatistics">{{ t('exception.list.goStatistics') }}</el-button>
     </template>
 
-    <!-- 筛选条件 -->
-    <template #filters>
-      <FilterBar>
+    <!-- 筛选条件 + 工具栏（顺序：筛选 → 刷新 → 次要动作） -->
+    <template #toolbar>
+      <FilterBar class="toolbar-filter">
         <el-form :inline="true" :model="queryParams" class="filter-form">
           <el-form-item :label="t('exception.list.exceptionType')">
             <el-input
@@ -94,17 +88,19 @@
           </el-form-item>
           <el-form-item>
             <el-button type="primary" icon="Search" @click="handleQuery">{{ t('exception.list.query') }}</el-button>
-            <el-button icon="Refresh" @click="handleReset">{{ t('exception.list.reset') }}</el-button>
+            <el-button icon="RefreshLeft" @click="handleReset">{{ t('exception.list.reset') }}</el-button>
+            <!-- 刷新跟在筛选之后 -->
+            <el-button icon="Refresh" :loading="loading" @click="handleRefresh">{{ t('exception.list.refresh') }}</el-button>
+            <!-- 清理过期：先打开确认抽屉，真正的删除由抽屉里的 ConfirmAction 提交 -->
+            <el-button icon="Delete" type="danger" plain v-permission="'monitoring:exceptions:write'" @click="showCleanupDialog">{{ t('exception.list.cleanupExpired') }}</el-button>
           </el-form-item>
         </el-form>
       </FilterBar>
     </template>
 
-    <!-- 统计指标条：中性为主，「异常总数 > 0」才上语义色 -->
-    <template #toolbar>
-      <div class="stats-row">
-        <MetricStrip :items="metricItems" :columns="4" />
-      </div>
+    <template #stats>
+      <!-- 统计指标条：中性为主，「异常总数 > 0」才上语义色 -->
+      <MetricStrip :items="metricItems" :columns="4" />
     </template>
 
     <!-- 表格（窄屏不渲染，改用下方卡片列表） -->
@@ -119,6 +115,19 @@
         :class="{ 'compact-table': isCompact }"
         @row-click="handleRowClick"
       >
+        <!-- 空态区分「还没有数据」与「筛选无结果」；两种情况都给出下一步动作 -->
+        <template #empty>
+          <EmptyState
+            icon="Warning"
+            :title="hasActiveFilter ? t('exception.list.emptyTitle') : t('exception.list.emptyNoDataTitle')"
+            :description="hasActiveFilter ? t('exception.list.emptyDescription') : t('exception.list.emptyNoDataDescription')"
+          >
+            <template #actions>
+              <el-button v-if="hasActiveFilter" @click="handleReset">{{ t('exception.list.reset') }}</el-button>
+              <el-button v-else icon="Refresh" :loading="loading" @click="handleRefresh">{{ t('exception.list.refresh') }}</el-button>
+            </template>
+          </EmptyState>
+        </template>
         <el-table-column :label="t('exception.list.eventId')" prop="eventId" :width="isCompact ? 75 : 200" show-overflow-tooltip>
           <template #default="scope">
             <el-tag effect="plain" type="info">{{ scope.row.eventId }}</el-tag>
@@ -203,8 +212,8 @@
       :rows="exceptionList"
       row-key="eventId"
       :aria-label="t('exception.list.cards.ariaLabel')"
-      :empty-title="t('exception.list.emptyTitle')"
-      :empty-description="t('exception.list.emptyDescription')"
+      :empty-title="hasActiveFilter ? t('exception.list.emptyTitle') : t('exception.list.emptyNoDataTitle')"
+      :empty-description="hasActiveFilter ? t('exception.list.emptyDescription') : t('exception.list.emptyNoDataDescription')"
     >
       <template #default="{ row }">
         <div class="exception-card">
@@ -253,7 +262,7 @@
       </template>
     </TableCards>
 
-    <!-- 分页（空态由骨架承担，0 条时不渲染无意义的分页条） -->
+    <!-- 分页（0 条时不渲染无意义的分页条） -->
     <template #footer>
       <el-pagination
         v-if="totalElements > 0"
@@ -267,132 +276,133 @@
       />
     </template>
 
-    <!-- 详情 / 清理对话框（drawer 透传槽，不受空态影响） -->
-    <template #drawer>
-      <el-dialog
-        v-model="detailVisible"
-        :title="t('exception.list.detailDialogTitle')"
-        width="800px"
-        :close-on-click-modal="false"
-      >
-        <el-descriptions v-if="selectedEvent" :column="2" border>
-          <el-descriptions-item :label="t('exception.list.eventId')">{{ selectedEvent.eventId }}</el-descriptions-item>
-          <el-descriptions-item :label="t('exception.list.exceptionType')">{{ selectedEvent.exceptionType }}</el-descriptions-item>
-          <el-descriptions-item :label="t('exception.list.errorCode')">
-            <el-tag :type="getErrorTagType(selectedEvent.errorCode)" size="small">
-              {{ selectedEvent.errorCode }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('exception.list.errorCategory')">
-            <el-tag :type="getCategoryTagType(selectedEvent.errorCategory)" size="small">
-              {{ formatCategory(selectedEvent.errorCategory) }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('exception.list.httpStatus')">
-            <el-tag :type="getHttpStatusTagType(selectedEvent.httpStatus)" size="small">
-              {{ selectedEvent.httpStatus || '-' }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('exception.list.clientIp')">{{ selectedEvent.clientIp || '-' }}</el-descriptions-item>
-          <el-descriptions-item :label="t('exception.list.serviceType')">
-            <el-link
-              v-if="selectedEvent.serviceType"
-              type="primary"
-              :underline="false"
-              @click="router.push({ name: 'service-management', query: { serviceType: normalizeServiceType(selectedEvent.serviceType) } })"
-            >
-              <el-tag size="small" type="info">{{ selectedEvent.serviceType }}</el-tag>
-            </el-link>
-            <span v-else>-</span>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('exception.list.modelName')">{{ selectedEvent.modelName || '-' }}</el-descriptions-item>
-          <el-descriptions-item :label="t('exception.list.provider')">{{ selectedEvent.provider || '-' }}</el-descriptions-item>
-          <el-descriptions-item :label="t('exception.list.instanceName')">
-            <el-link
-              v-if="selectedEvent.instanceName && selectedEvent.serviceType"
-              type="primary"
-              :underline="false"
-              @click="router.push({ name: 'instance-management', query: { serviceType: normalizeServiceType(selectedEvent.serviceType) } })"
-            >
-              {{ selectedEvent.instanceName }}
-            </el-link>
-            <span v-else>{{ selectedEvent.instanceName || '-' }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('exception.list.responseTime')">{{ selectedEvent.responseTimeMs != null ? selectedEvent.responseTimeMs : '-' }}</el-descriptions-item>
-          <el-descriptions-item :label="t('exception.list.traceId')" :span="2">
-            <el-tag effect="plain" type="info">{{ selectedEvent.traceId || '-' }}</el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('exception.list.exceptionMessage')" :span="2">
-            <el-input
-              v-model="selectedEvent.exceptionMessage"
-              type="textarea"
-              :rows="4"
-              readonly
-            />
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('exception.list.sanitizedMessage')" :span="2">
-            <el-input
-              v-model="selectedEvent.sanitizedMessage"
-              type="textarea"
-              :rows="3"
-              readonly
-            />
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('exception.list.occurrenceCount')">{{ selectedEvent.occurrenceCount || 1 }}</el-descriptions-item>
-          <el-descriptions-item :label="t('exception.list.isAggregated')">
-            <el-tag :type="selectedEvent.isAggregated ? 'success' : 'info'" size="small">
-              {{ selectedEvent.isAggregated ? t('exception.list.yes') : t('exception.list.no') }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('exception.list.firstOccurredAt')">{{ formatTime(selectedEvent.firstOccurrence) }}</el-descriptions-item>
-          <el-descriptions-item :label="t('exception.list.lastOccurredAt')">{{ formatTime(selectedEvent.lastOccurrence) }}</el-descriptions-item>
-          <el-descriptions-item :label="t('exception.list.occurredAt')">{{ formatTime(selectedEvent.occurredAt) }}</el-descriptions-item>
-        </el-descriptions>
-        <template #footer>
-          <el-button @click="detailVisible = false">{{ t('exception.list.close') }}</el-button>
-        </template>
-      </el-dialog>
+  </PageSkeleton>
 
-      <el-dialog
-        v-model="cleanupVisible"
-        :title="t('exception.list.cleanupDialogTitle')"
-        width="500px"
-        :close-on-click-modal="false"
-      >
-        <el-form :model="cleanupForm" label-width="100px">
-          <el-form-item :label="t('exception.list.cutoffTime')">
-            <el-date-picker
-              v-model="cleanupForm.cutoffTime"
-              type="datetime"
-              :placeholder="t('exception.list.cutoffTimePlaceholder')"
-              value-format="YYYY-MM-DD HH:mm:ss"
-              style="width: 100%"
-            />
-          </el-form-item>
-          <el-form-item :label="t('exception.list.aggregatedOnly')">
-            <el-switch v-model="cleanupForm.aggregatedOnly" />
-          </el-form-item>
-          <el-alert
-            :title="t('exception.list.warning')"
-            type="warning"
-            :description="t('exception.list.cleanupWarning')"
-            :closable="false"
-          />
-        </el-form>
-        <template #footer>
-          <el-button @click="cleanupVisible = false">{{ t('exception.list.cancel') }}</el-button>
-          <el-button type="danger" @click="handleCleanup">{{ t('exception.list.confirmCleanup') }}</el-button>
-        </template>
-      </el-dialog>
+  <!-- 详情：只读明细走 DetailDrawer。
+       宽度取 640 而非标准 520：两列描述 + 长消息块在 520 下会挤成窄条；
+       消息块自身限高滚动（.message-block），不会把抽屉撑开。 -->
+  <DetailDrawer v-model="detailVisible" :title="t('exception.list.detailDialogTitle')" :width="640">
+    <el-descriptions v-if="selectedEvent" :column="2" border>
+      <el-descriptions-item :label="t('exception.list.eventId')">{{ selectedEvent.eventId }}</el-descriptions-item>
+      <el-descriptions-item :label="t('exception.list.exceptionType')">{{ selectedEvent.exceptionType }}</el-descriptions-item>
+      <el-descriptions-item :label="t('exception.list.errorCode')">
+        <el-tag :type="getErrorTagType(selectedEvent.errorCode)" size="small">
+          {{ selectedEvent.errorCode }}
+        </el-tag>
+      </el-descriptions-item>
+      <el-descriptions-item :label="t('exception.list.errorCategory')">
+        <el-tag :type="getCategoryTagType(selectedEvent.errorCategory)" size="small">
+          {{ formatCategory(selectedEvent.errorCategory) }}
+        </el-tag>
+      </el-descriptions-item>
+      <el-descriptions-item :label="t('exception.list.httpStatus')">
+        <el-tag :type="getHttpStatusTagType(selectedEvent.httpStatus)" size="small">
+          {{ selectedEvent.httpStatus || '-' }}
+        </el-tag>
+      </el-descriptions-item>
+      <el-descriptions-item :label="t('exception.list.clientIp')">{{ selectedEvent.clientIp || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="t('exception.list.serviceType')">
+        <el-link
+          v-if="selectedEvent.serviceType"
+          type="primary"
+          :underline="false"
+          @click="router.push({ name: 'service-management', query: { serviceType: normalizeServiceType(selectedEvent.serviceType) } })"
+        >
+          <el-tag size="small" type="info">{{ selectedEvent.serviceType }}</el-tag>
+        </el-link>
+        <span v-else>-</span>
+      </el-descriptions-item>
+      <el-descriptions-item :label="t('exception.list.modelName')">{{ selectedEvent.modelName || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="t('exception.list.provider')">{{ selectedEvent.provider || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="t('exception.list.instanceName')">
+        <el-link
+          v-if="selectedEvent.instanceName && selectedEvent.serviceType"
+          type="primary"
+          :underline="false"
+          @click="router.push({ name: 'instance-management', query: { serviceType: normalizeServiceType(selectedEvent.serviceType) } })"
+        >
+          {{ selectedEvent.instanceName }}
+        </el-link>
+        <span v-else>{{ selectedEvent.instanceName || '-' }}</span>
+      </el-descriptions-item>
+      <el-descriptions-item :label="t('exception.list.responseTime')">{{ selectedEvent.responseTimeMs != null ? selectedEvent.responseTimeMs : '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="t('exception.list.traceId')" :span="2">
+        <el-tag effect="plain" type="info">{{ selectedEvent.traceId || '-' }}</el-tag>
+      </el-descriptions-item>
+      <!-- 消息可能是多行长文本：只读展示用 pre，不用输入框假装文本域 -->
+      <el-descriptions-item :label="t('exception.list.exceptionMessage')" :span="2">
+        <pre class="message-block">{{ selectedEvent.exceptionMessage || '-' }}</pre>
+      </el-descriptions-item>
+      <el-descriptions-item :label="t('exception.list.sanitizedMessage')" :span="2">
+        <pre class="message-block">{{ selectedEvent.sanitizedMessage || '-' }}</pre>
+      </el-descriptions-item>
+      <el-descriptions-item :label="t('exception.list.occurrenceCount')">{{ selectedEvent.occurrenceCount || 1 }}</el-descriptions-item>
+      <el-descriptions-item :label="t('exception.list.isAggregated')">
+        <el-tag :type="selectedEvent.isAggregated ? 'success' : 'info'" size="small">
+          {{ selectedEvent.isAggregated ? t('exception.list.yes') : t('exception.list.no') }}
+        </el-tag>
+      </el-descriptions-item>
+      <el-descriptions-item :label="t('exception.list.firstOccurredAt')">{{ formatTime(selectedEvent.firstOccurrence) }}</el-descriptions-item>
+      <el-descriptions-item :label="t('exception.list.lastOccurredAt')">{{ formatTime(selectedEvent.lastOccurrence) }}</el-descriptions-item>
+      <el-descriptions-item :label="t('exception.list.occurredAt')">{{ formatTime(selectedEvent.occurredAt) }}</el-descriptions-item>
+    </el-descriptions>
+    <template #footer>
+      <el-button @click="detailVisible = false">{{ t('exception.list.close') }}</el-button>
     </template>
-  </ListPageLayout>
+  </DetailDrawer>
+
+  <!-- 清理过期：一次性表单，统一用右侧抽屉；真正的删除由抽屉里的 ConfirmAction 提交 -->
+  <el-drawer
+    v-model="cleanupVisible"
+    :title="t('exception.list.cleanupDialogTitle')"
+    direction="rtl"
+    :size="640"
+    :close-on-click-modal="false"
+  >
+    <el-form :model="cleanupForm" label-width="100px">
+      <el-form-item :label="t('exception.list.cutoffTime')">
+        <el-date-picker
+          v-model="cleanupForm.cutoffTime"
+          type="datetime"
+          :placeholder="t('exception.list.cutoffTimePlaceholder')"
+          value-format="YYYY-MM-DD HH:mm:ss"
+          style="width: 100%"
+        />
+      </el-form-item>
+      <el-form-item :label="t('exception.list.aggregatedOnly')">
+        <el-switch v-model="cleanupForm.aggregatedOnly" />
+      </el-form-item>
+      <el-alert
+        :title="t('exception.list.warning')"
+        type="warning"
+        :description="t('exception.list.cleanupWarning')"
+        :closable="false"
+      />
+    </el-form>
+    <template #footer>
+      <span class="drawer-footer">
+        <el-button @click="cleanupVisible = false">{{ t('exception.list.cancel') }}</el-button>
+        <ConfirmAction
+          :title="t('exception.list.cleanupConfirmMessage')"
+          :width="320"
+          :confirm-text="t('exception.list.confirmCleanup')"
+          :cancel-text="t('exception.list.cancel')"
+          type="danger"
+          :loading="cleanupSubmitting"
+          @confirm="handleCleanup"
+        >
+          <el-button type="danger" :loading="cleanupSubmitting">{{ t('exception.list.confirmCleanup') }}</el-button>
+        </ConfirmAction>
+      </span>
+    </template>
+  </el-drawer>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { getErrorMessage } from '@/utils/error'
 import {
   queryExceptionEvents,
@@ -401,10 +411,13 @@ import {
 } from '@/api/exception'
 import type { ExceptionEvent, ExceptionQueryParams } from '@/types/exception'
 import MetricStrip, { type MetricStripItem } from '@/components/MetricStrip.vue'
-import ListPageLayout from '@/components/ListPageLayout.vue'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 import FilterBar from '@/components/FilterBar.vue'
 import TimeText from '@/components/TimeText.vue'
 import TableCards from '@/components/TableCards.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import ConfirmAction from '@/components/ConfirmAction.vue'
+import DetailDrawer from '@/components/DetailDrawer.vue'
 import { useViewport } from '@/composables/useViewport'
 
 const router = useRouter()
@@ -439,6 +452,19 @@ const queryParams = reactive<ExceptionQueryParams>({
 
 // 时间范围
 const dateRange = ref<[string, string] | null>(null)
+
+// 是否处于筛选状态：空态文案据此在「还没有数据」与「筛选无结果」之间切换
+const hasActiveFilter = computed(() =>
+  Boolean(
+    queryParams.exceptionType ||
+      queryParams.errorCode ||
+      queryParams.errorCategory ||
+      queryParams.clientIp ||
+      queryParams.serviceType ||
+      queryParams.modelName ||
+      dateRange.value
+  )
+)
 
 // 分页
 const currentPage = ref(1)
@@ -481,12 +507,14 @@ const metricItems = computed<MetricStripItem[]>(() => [
   }
 ])
 
-// 详情对话框
+// 详情抽屉
 const detailVisible = ref(false)
 const selectedEvent = ref<ExceptionEvent | null>(null)
 
-// 清理对话框
+// 清理抽屉
 const cleanupVisible = ref(false)
+// 清理提交中：避免 ConfirmAction 被重复触发
+const cleanupSubmitting = ref(false)
 const cleanupForm = reactive({
   cutoffTime: '',
   aggregatedOnly: false
@@ -647,31 +675,22 @@ const goToStatistics = () => {
   router.push('/exceptions/statistics')
 }
 
-// 显示清理对话框
+// 显示清理抽屉
 const showCleanupDialog = () => {
   cleanupForm.cutoffTime = ''
   cleanupForm.aggregatedOnly = false
   cleanupVisible.value = true
 }
 
-// 清理过期数据
+// 清理过期数据：二次确认由抽屉里的 ConfirmAction 承担，这里直接执行
 const handleCleanup = async () => {
   if (!cleanupForm.cutoffTime) {
     ElMessage.warning(t('exception.list.selectCutoffTime'))
     return
   }
 
+  cleanupSubmitting.value = true
   try {
-    await ElMessageBox.confirm(
-      t('exception.list.cleanupConfirmMessage'),
-      t('exception.list.warning'),
-      {
-        confirmButtonText: t('exception.list.confirm'),
-        cancelButtonText: t('exception.list.cancel'),
-        type: 'warning'
-      }
-    )
-
     const result = await deleteOldExceptionEvents(
       cleanupForm.cutoffTime,
       cleanupForm.aggregatedOnly
@@ -681,10 +700,10 @@ const handleCleanup = async () => {
     cleanupVisible.value = false
     loadData()
   } catch (error) {
-    if (error !== 'cancel') {
-      console.error('清理异常事件失败:', error)
-      ElMessage.error(t('exception.list.cleanupFailed', { message: getErrorMessage(error) || t('exception.list.unknownError') }))
-    }
+    console.error('清理异常事件失败:', error)
+    ElMessage.error(t('exception.list.cleanupFailed', { message: getErrorMessage(error) || t('exception.list.unknownError') }))
+  } finally {
+    cleanupSubmitting.value = false
   }
 }
 
@@ -709,8 +728,32 @@ onMounted(() => {
   line-height: 1.5;
 }
 
-.stats-row {
-  margin-bottom: 20px;
+/* FilterBar 落在 page-toolbar 这个 flex 容器里，需要占满整行 */
+.toolbar-filter {
+  width: 100%;
+}
+
+/* 长消息块：限高滚动，避免撑开抽屉 */
+.message-block {
+  max-height: 180px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 10px;
+  background-color: var(--ja-primary-light-9, var(--el-fill-color-light));
+  border-radius: 4px;
+  font-family: var(--el-font-family-mono, monospace);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 抽屉底部动作条：右对齐、间距统一 */
+.drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--ja-space-2, 8px);
 }
 
 /* 两行查询条件：用 flex + row-gap 控制行距，并给整块一个面板底（原来 item 的 margin-bottom 被清零 ⇒ 两行 32px 控件之间 0 间距、整块贴在页头上） */

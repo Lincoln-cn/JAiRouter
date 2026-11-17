@@ -53,6 +53,14 @@
     "remove": "Delete",
     "deleteConfirm": "Deleting also removes the credentials and the mirrored jwt_accounts row. This cannot be undone.",
     "deleteSuccess": "Account deleted",
-    "deleteFailed": "Failed to delete account"
+    "deleteFailed": "Failed to delete account",
+    "metricAccounts": "Accounts",
+    "metricEnabled": "Enabled",
+    "metricRefreshTokens": "Active credentials",
+    "metricPendingTokens": "Pending tokens",
+    "searchPlaceholder": "Search by account name",
+    "noMatchTitle": "No matching account",
+    "noMatchHint": "Try another keyword, or clear the search box to see all accounts.",
+    "createRoleHint": "SLA_READONLY is read-only; SLA_OPERATOR also has config write access (no user/permission management or audit writes)."
   }
 }

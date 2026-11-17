@@ -25,7 +25,15 @@
       "sticky": "Sticky",
       "actions": "Actions",
       "notFound": "No services found",
+      "notFoundHint": "Adjust the search keyword or filters and try again.",
+      "clearFilters": "Clear filters",
       "summary": "Total {count} items (page {current} / {total})"
+    },
+    "metrics": {
+      "total": "Total services",
+      "withAdapter": "With adapter",
+      "instances": "Total instances",
+      "stickyNotSpreading": "Sticky, not spreading"
     },
     "loadBalance": {
       "random": "Random",

@@ -53,6 +53,14 @@
     "remove": "删除",
     "deleteConfirm": "删除会同时清掉凭据与 jwt_accounts 里的镜像账号行，不可恢复。",
     "deleteSuccess": "账号已删除",
-    "deleteFailed": "删除失败"
+    "deleteFailed": "删除失败",
+    "metricAccounts": "接入账号",
+    "metricEnabled": "已启用",
+    "metricRefreshTokens": "有效凭据",
+    "metricPendingTokens": "待用令牌",
+    "searchPlaceholder": "按账号名搜索",
+    "noMatchTitle": "没有匹配的账号",
+    "noMatchHint": "换个关键字，或清空搜索框看全部账号。",
+    "createRoleHint": "SLA_READONLY 只能读；SLA_OPERATOR 另含配置写权限（不含用户/权限管理与审计写）。"
   }
 }

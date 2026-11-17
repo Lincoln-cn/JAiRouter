@@ -85,6 +85,13 @@
         font-weight: 600;
       }
 
+      /* 手动切深色（html.dark）时 @media 分支不生效，这里补一条同值规则：
+         首帧 body 是 #10151c 近黑，深色背景上未显式着色的文本会看不见。 */
+      html.dark body { background: #0e1116; color: #e8ecf2; }
+      html.dark h2 { color: #e8ecf2; }
+      html.dark p { color: #b6bfcc; }
+      html.dark .loading-container { background: #151a21; border-color: #1c222b; box-shadow: none; }
+
       @media (prefers-color-scheme: dark) {
         body { background: #0e1116; }
         .loading-container {

@@ -27,6 +27,14 @@
     "notConfigured": "未配置",
     "globalNote": "(全局)",
     "emptyText": "暂无实例",
+    "noMatchTitle": "没有匹配的实例",
+    "noMatchDescription": "调整搜索关键字或状态筛选后再试。",
+    "clearFilters": "清除筛选",
+    "metrics": {
+      "total": "实例总数",
+      "currentType": "当前类型实例",
+      "currentEnabled": "当前类型已启用"
+    },
     "copyUrl": "复制 URL",
     "copySuccess": "已复制到剪贴板",
     "copyFailed": "复制失败，请手动选择复制",

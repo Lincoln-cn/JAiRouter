@@ -5,11 +5,25 @@
       <p class="page-subtitle">{{ t('version.description') }}</p>
     </template>
 
-    <template #actions>
-      <el-button :loading="loading" type="primary" @click="handleRefresh">
-        <el-icon>
-          <Refresh />
-        </el-icon>
+    <template #stats>
+      <!-- 版本页没有「新建」，统计条只给行数型指标：记录数 / 可回退数 / 当前版本号 -->
+      <MetricStrip :items="metricItems" :loading="loading" :columns="3" />
+    </template>
+
+    <template #toolbar>
+      <!-- 工具栏顺序：筛选 → 刷新（本页无新建动作，主操作位置留空） -->
+      <el-input
+        v-model="keyword"
+        :placeholder="t('version.searchPlaceholder')"
+        clearable
+        style="width: 260px;"
+      >
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
+      </el-input>
+      <el-button :loading="loading" @click="handleRefresh">
+        <el-icon><Refresh /></el-icon>
         {{ t('version.refresh') }}
       </el-button>
     </template>
@@ -21,7 +35,20 @@
       <span class="hint-item"><b>{{ t('version.help.view') }}</b>{{ t('version.help.viewBody') }}</span>
     </p>
 
-    <el-table v-loading="loading" :data="versions" border class="version-table" fit>
+    <el-table v-loading="loading" :data="pagedVersions" border class="version-table" fit>
+      <template #empty>
+        <!-- 空态区分「还没有数据」与「筛选无结果」（P3 规范第 4 条） -->
+        <EmptyState
+          icon="Clock"
+          :title="keyword ? t('version.noMatchTitle') : t('version.emptyTitle')"
+          :description="keyword ? t('version.noMatchHint') : t('version.emptyDescription')"
+        >
+          <template #actions>
+            <el-button v-if="keyword" @click="keyword = ''">{{ t('version.clearFilter') }}</el-button>
+            <el-button v-else :loading="loading" @click="handleRefresh">{{ t('version.refresh') }}</el-button>
+          </template>
+        </EmptyState>
+      </template>
       <el-table-column align="center" :label="t('version.versionNo')" prop="version" width="110" />
       <el-table-column align="center" :label="t('version.status')" prop="status" width="120">
         <template #default="scope">
@@ -91,16 +118,16 @@
       </el-table-column>
     </el-table>
 
-    <EmptyState
-      v-if="!loading && versions.length === 0"
-      icon="Clock"
-      :title="t('version.emptyTitle')"
-      :description="t('version.emptyDescription')"
-    >
-      <template #actions>
-        <el-button :loading="loading" @click="handleRefresh">{{ t('version.refresh') }}</el-button>
-      </template>
-    </EmptyState>
+    <!-- 版本记录会随配置变更持续增长，超过一页才出现分页（总数 0 时隐藏） -->
+    <div v-if="filteredVersions.length > 0" class="pagination-bar">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50]"
+        :total="filteredVersions.length"
+        layout="total, sizes, prev, pager, next"
+      />
+    </div>
   </PageSkeleton>
 
   <!-- 版本详情：只读抽屉（DetailDrawer 已内置 close-on-click-modal / loading 骨架） -->
@@ -139,21 +166,49 @@
       <el-button @click="detailDrawerVisible = false">{{ t('version.close') }}</el-button>
     </template>
   </DetailDrawer>
+
+  <!--
+    应用失败的详情：一次性结果展示，保留 el-dialog（规范 §二.8 允许的例外）；
+    这里只读、必须显式关闭，且不承担任何编辑/确认职责。
+  -->
+  <el-dialog v-model="errorDialogVisible" :title="errorDialogTitle" width="480px">
+    <p class="dialog-line">
+      <strong>{{ t('version.errorDialog.details') }}</strong>{{ errorMessage }}
+    </p>
+    <p v-if="errorDetails" class="dialog-line">
+      <strong>{{ t('version.errorDialog.techDetails') }}</strong>
+      <span class="dialog-tech">{{ errorDetails }}</span>
+    </p>
+    <div class="dialog-advice">
+      <strong>{{ t('version.errorDialog.advice') }}</strong>
+      <p class="dialog-advice__item">{{ t('version.errorDialog.advice1') }}</p>
+      <p class="dialog-advice__item">{{ t('version.errorDialog.advice2') }}</p>
+      <p class="dialog-advice__item">{{ t('version.errorDialog.advice3') }}</p>
+    </div>
+    <template #footer>
+      <el-button type="primary" @click="errorDialogVisible = false">
+        {{ t('version.errorDialog.acknowledge') }}
+      </el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElLoading, ElMessage, ElMessageBox } from 'element-plus'
+import { ElLoading, ElMessage } from 'element-plus'
 import type { VersionInfo } from '@/api/version'
 import { getErrorMessage } from '@/utils/error'
 import { applyVersion, deleteConfigVersion, getAllVersionInfo, type Version } from '@/api/version.ts'
 import { formatDateTime } from '@/utils/format'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import MetricStrip from '@/components/MetricStrip.vue'
 import ConfirmAction from '@/components/ConfirmAction.vue'
 import DetailDrawer from '@/components/DetailDrawer.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import { useViewport } from '@/composables/useViewport'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
+import { Document, Refresh, Search, SuccessFilled } from '@element-plus/icons-vue'
 
 const { t } = useI18n()
 const { isNarrow } = useViewport()
@@ -165,6 +220,18 @@ const currentVersion = ref({} as Version)
 const loading = ref(false)
 const applyingVersions = ref<Set<number>>(new Set())
 const deletingVersions = ref<Set<number>>(new Set())
+
+// 工具栏筛选：版本号 / 操作类型 / 操作详情都可命中
+const keyword = ref('')
+// 前端分页：版本记录会持续增长，超过一页时给出分页
+const currentPage = ref(1)
+const pageSize = ref(10)
+
+// 应用失败详情对话框（替代 MessageBox 的 alert 弹层）
+const errorDialogVisible = ref(false)
+const errorDialogTitle = ref('')
+const errorMessage = ref('')
+const errorDetails = ref('')
 
 // 获取操作类型显示名称
 const getOperationDisplayName = (operation: string | undefined) => {
@@ -206,20 +273,67 @@ const formatTimestamp = (timestamp: number | undefined) => {
   return formatDateTime(timestamp)
 }
 
+/** 统计条：只统计行数（记录总数 / 可回退的历史版本数）与当前版本号，不造指标 */
+const metricItems = computed<MetricStripItem[]>(() => {
+  const total = versions.value.length
+  const history = versions.value.filter((item) => item.status !== 'current').length
+  const current = versions.value.find((item) => item.status === 'current')
+  return [
+    { key: 'total', label: t('version.metricTotal'), value: total },
+    { key: 'history', label: t('version.metricHistory'), value: history },
+    {
+      key: 'current',
+      label: t('version.metricCurrent'),
+      value: current ? `v${current.version}` : '-'
+    }
+  ]
+})
+
+/** 筛选结果：关键词同时匹配版本号、操作类型展示名与操作详情 */
+const filteredVersions = computed<Version[]>(() => {
+  const kw = keyword.value.trim().toLowerCase()
+  if (!kw) return versions.value
+  return versions.value.filter((item) => {
+    const haystack = [
+      String(item.version),
+      getOperationDisplayName(item.operation),
+      item.operationDetail || ''
+    ]
+      .join(' ')
+      .toLowerCase()
+    return haystack.includes(kw)
+  })
+})
+
+/** 当前页数据（前端分页） */
+const pagedVersions = computed<Version[]>(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return filteredVersions.value.slice(start, start + pageSize.value)
+})
+
+// 筛选条件或每页条数变化后，把页码收敛回有效范围
+watch([filteredVersions, pageSize], () => {
+  const maxPage = Math.max(1, Math.ceil(filteredVersions.value.length / pageSize.value))
+  if (currentPage.value > maxPage) currentPage.value = maxPage
+})
+watch(keyword, () => {
+  currentPage.value = 1
+})
+
 // 获取版本列表（使用优化接口）
 const fetchVersions = async () => {
   try {
     loading.value = true
     // 使用优化接口一次性获取所有版本信息
     const response = await getAllVersionInfo()
-    
+
     // 检查响应结构
     if (!response || !response.data) {
       console.error('Invalid API response structure:', response)
       ElMessage.error(t('version.messages.invalidResponse'))
       return
     }
-    
+
     // 处理可能的双重序列化问题
     let versionInfos: VersionInfo[] = []
     if (typeof response.data === 'string') {
@@ -275,7 +389,8 @@ const handleApply = async (row: Version) => {
     lock: true,
     text: t('version.applyLoading', { version: row.version }),
     spinner: 'el-icon-loading',
-    background: 'rgba(0, 0, 0, 0.7)'
+    // 遮罩色走 Element Plus 主题变量，避免写死 rgba
+    background: 'var(--el-overlay-color-light)'
   })
 
   // 设置按钮加载状态
@@ -316,9 +431,9 @@ const handleApply = async (row: Version) => {
     console.error('应用版本失败:', error)
 
     // 详细的错误处理
-    let errorTitle = t('version.errorDialog.title')
-    let errorMessage = t('version.errors.unknown')
-    let errorDetails = ''
+    let title = t('version.errorDialog.title')
+    let message = t('version.errors.unknown')
+    let details = ''
 
     // catch 的载荷是 unknown（#523）：这里按「后端错误体」形状收窄
     const err = error as {
@@ -327,52 +442,35 @@ const handleApply = async (row: Version) => {
 
     if (err.response?.data) {
       const errorData = err.response.data
-      errorMessage = errorData.message || t('version.errors.server')
-      errorDetails = errorData.details || errorData.error || ''
+      message = errorData.message || t('version.errors.server')
+      details = errorData.details || errorData.error || ''
 
       // 中文哨兵分类：后端 API 直返的 message 恒为中文原文（en 界面下也不随界面语言翻译），
       // 故按中文关键词匹配错误类别，再映射为 i18n（t()）展示文案；
       // 未命中分类时错误详情保持后端原文，无后端消息时走 i18n 通用文案。
-      if (errorMessage.includes('版本不存在')) {
-        errorTitle = t('version.errors.versionNotFoundTitle')
-        errorMessage = t('version.errors.versionNotFound', { version: row.version })
-      } else if (errorMessage.includes('配置损坏')) {
-        errorTitle = t('version.errors.configCorruptTitle')
-        errorMessage = t('version.errors.configCorrupt', { version: row.version })
-      } else if (errorMessage.includes('权限')) {
-        errorTitle = t('version.errors.permissionTitle')
-        errorMessage = t('version.errors.permissionDenied')
-      } else if (errorMessage.includes('系统错误')) {
-        errorTitle = t('version.errors.systemTitle')
-        errorMessage = t('version.errors.systemError')
+      if (message.includes('版本不存在')) {
+        title = t('version.errors.versionNotFoundTitle')
+        message = t('version.errors.versionNotFound', { version: row.version })
+      } else if (message.includes('配置损坏')) {
+        title = t('version.errors.configCorruptTitle')
+        message = t('version.errors.configCorrupt', { version: row.version })
+      } else if (message.includes('权限')) {
+        title = t('version.errors.permissionTitle')
+        message = t('version.errors.permissionDenied')
+      } else if (message.includes('系统错误')) {
+        title = t('version.errors.systemTitle')
+        message = t('version.errors.systemError')
       }
     } else {
       // 没有后端错误体时，用异常自带的文案；仍为空则保留上面的 i18n 通用文案
-      errorMessage = getErrorMessage(error) || errorMessage
+      message = getErrorMessage(error) || message
     }
 
-    // 显示详细错误对话框
-    ElMessageBox.alert(
-      `
-      <div>
-        <p><strong>${t('version.errorDialog.details')}</strong></p>
-        <p>${errorMessage}</p>
-        ${errorDetails ? `<p><strong>${t('version.errorDialog.techDetails')}</strong></p><p style="color: var(--ja-text-secondary); font-size: 12px;">${errorDetails}</p>` : ''}
-        <p style="margin-top: 15px; color: var(--ja-text-regular);">
-          <strong>${t('version.errorDialog.advice')}</strong><br/>
-          ${t('version.errorDialog.advice1')}<br/>
-          ${t('version.errorDialog.advice2')}<br/>
-          ${t('version.errorDialog.advice3')}
-        </p>
-      </div>
-      `,
-      errorTitle,
-      {
-        confirmButtonText: t('version.errorDialog.acknowledge'),
-        type: 'error',
-        dangerouslyUseHTMLString: true
-      }
-    )
+    // 展示只读错误详情对话框（不再用 MessageBox）
+    errorDialogTitle.value = title
+    errorMessage.value = message
+    errorDetails.value = details
+    errorDialogVisible.value = true
   } finally {
     // 清除按钮加载状态
     applyingVersions.value.delete(row.version)
@@ -383,25 +481,7 @@ const handleApply = async (row: Version) => {
 const handleDelete = async (row: Version) => {
   // 防御性守卫：当前版本不可删除（按钮已置灰，正常路径点不到）
   if (row.status === 'current') {
-    ElMessageBox.alert(
-      `
-      <div>
-        <p><i class="el-icon-warning" style="color: var(--ja-warning);"></i> <strong>${t('version.cannotDelete.heading')}</strong></p>
-        <p>${t('version.cannotDelete.message', { version: row.version })}</p>
-        <p style="margin-top: 10px; color: var(--ja-text-regular);">
-          <strong>${t('version.cannotDelete.advice')}</strong><br/>
-          ${t('version.cannotDelete.advice1')}<br/>
-          ${t('version.cannotDelete.advice2')}
-        </p>
-      </div>
-      `,
-      t('version.cannotDelete.title'),
-      {
-        confirmButtonText: t('version.cannotDelete.acknowledge'),
-        type: 'warning',
-        dangerouslyUseHTMLString: true
-      }
-    )
+    ElMessage.warning(t('version.cannotDelete.message', { version: row.version }))
     return
   }
 
@@ -488,6 +568,13 @@ onMounted(() => {
   margin-left: 8px;
 }
 
+/* 分页条：右对齐，与表格底部留白一致 */
+.pagination-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--ja-space-4, 16px);
+}
+
 .config-preview {
   max-height: 300px;
   overflow-y: auto;
@@ -517,5 +604,42 @@ onMounted(() => {
   align-items: center;
   gap: 4px;
   font-size: 14px;
+}
+
+/* 应用失败详情：纯文本渲染，颜色走语义令牌 */
+.dialog-line {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ja-text-primary);
+  word-break: break-word;
+}
+
+.dialog-line strong {
+  margin-right: 4px;
+  font-weight: 600;
+  color: var(--ja-text-regular);
+}
+
+.dialog-tech {
+  font-family: var(--el-font-family-mono, monospace);
+  font-size: 12px;
+  color: var(--ja-text-secondary);
+}
+
+.dialog-advice {
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ja-text-regular);
+}
+
+.dialog-advice strong {
+  font-weight: 600;
+}
+
+.dialog-advice__item {
+  margin: 2px 0 0;
+  color: var(--ja-text-secondary);
 }
 </style>

@@ -1,13 +1,11 @@
 <template>
   <PageSkeleton :title="t('consoleOperations.pageTitle')">
-    <template #actions>
-      <el-button @click="loadOperations" :loading="loading" size="default">
-        <el-icon><Refresh /></el-icon>
-        {{ t('consoleOperations.refresh') }}
-      </el-button>
+    <template #stats>
+      <!-- 统计条：只读页没有主操作，指标全部来自当前这批控制台记录 -->
+      <MetricStrip :items="metricItems" :loading="loading" :columns="4" />
     </template>
 
-    <!-- 工具栏（只读集合页）：筛选 → 说明；刷新固定在 #actions -->
+    <!-- 工具栏（只读集合页）：筛选 → 说明 → 刷新（只读页没有新建主操作，刷新归工具栏） -->
     <template #toolbar>
       <FilterBar :collapsible="false" class="toolbar-filter">
         <el-switch v-model="onlyErrors" :active-text="t('consoleOperations.onlyErrors')" />
@@ -15,6 +13,9 @@
           <el-icon><InfoFilled /></el-icon>
           <span>{{ t('consoleOperations.hint') }}</span>
         </p>
+        <el-button icon="Refresh" :loading="loading" @click="loadOperations">
+          {{ t('consoleOperations.refresh') }}
+        </el-button>
       </FilterBar>
     </template>
 
@@ -64,6 +65,7 @@
         </el-table-column>
         <template #empty>
           <EmptyState
+            v-if="!loading"
             :icon="onlyErrors ? 'Search' : 'Document'"
             :title="onlyErrors ? t('consoleOperations.filterEmptyTitle') : t('consoleOperations.empty')"
             :description="onlyErrors ? t('consoleOperations.filterEmptyDescription') : t('consoleOperations.emptyDescription')"
@@ -83,11 +85,13 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { InfoFilled, Refresh } from '@element-plus/icons-vue'
+import { InfoFilled } from '@element-plus/icons-vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import FilterBar from '@/components/FilterBar.vue'
 import TimeText from '@/components/TimeText.vue'
+import MetricStrip from '@/components/MetricStrip.vue'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import { getConsoleRecords, type ConsoleRecord } from '@/api/consoleOperations'
 
 const { t } = useI18n()
@@ -102,6 +106,44 @@ const filtered = computed(() =>
     ? operations.value.filter((item) => typeof item.status === 'number' && item.status >= 400)
     : operations.value
 )
+
+/** 统计条：4 项都来自已加载的控制台记录；耗时只统计有值的样本，避免缺失值当 0 拉低均值 */
+const metricItems = computed<MetricStripItem[]>(() => {
+  const records = operations.value
+  const failedCount = records.filter(
+    (item) => typeof item.status === 'number' && item.status >= 400
+  ).length
+  const durations = records
+    .map((item) => item.duration)
+    .filter((value): value is number => typeof value === 'number' && !Number.isNaN(value))
+  const avgDuration = durations.length
+    ? durations.reduce((sum, value) => sum + value, 0) / durations.length
+    : 0
+  const maxDuration = durations.length ? Math.max(...durations) : 0
+  return [
+    {
+      key: 'total',
+      label: t('consoleOperations.stats.total'),
+      value: records.length
+    },
+    {
+      key: 'failed',
+      label: t('consoleOperations.stats.failed'),
+      value: failedCount,
+      tone: failedCount > 0 ? 'danger' : 'default'
+    },
+    {
+      key: 'avgDuration',
+      label: t('consoleOperations.stats.avgDuration'),
+      value: durations.length ? `${avgDuration.toFixed(1)} ms` : '-'
+    },
+    {
+      key: 'maxDuration',
+      label: t('consoleOperations.stats.maxDuration'),
+      value: durations.length ? `${maxDuration.toFixed(1)} ms` : '-'
+    }
+  ]
+})
 
 async function loadOperations() {
   loading.value = true

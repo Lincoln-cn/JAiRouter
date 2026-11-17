@@ -127,6 +127,15 @@
     "entityUser": "用户",
     "addedToBlacklist": "已添加到黑名单",
     "addFailed": "添加失败",
+    "emptyTitle": "还没有审计日志",
+    "emptyDescription": "系统产生审计事件后，记录会出现在这里。",
+    "emptySearchTitle": "没有匹配的审计日志",
+    "emptySearchDescription": "调整时间范围或筛选条件后重试。",
+    "banEntity": "拦截对象",
+    "banTarget": "拦截目标",
+    "banReason": "拦截原因",
+    "confirm": "确认",
+    "cancel": "取消",
     "loadFailed": "加载审计日志失败: {message}"
   }
 }
