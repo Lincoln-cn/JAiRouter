@@ -6,6 +6,12 @@
     "onlyErrors": "Failures only",
     "hint": "Answers \"who changed what, and when\": the operator comes from the change audit, while duration and result come from the tracing of the same operation. Click \"View trace\" to see which steps the operation went through inside the gateway. Only the most recent records are kept; older ones live in the server audit log.",
     "countHint": "{total} records",
+    "stats": {
+      "total": "Records",
+      "failed": "Failures",
+      "avgDuration": "Avg Duration",
+      "maxDuration": "Slowest"
+    },
     "empty": "No operation records",
     "emptyDescription": "No administrative operations have been recorded yet. Once a configuration change is made, this page shows who changed what and when.",
     "filterEmptyTitle": "No matching results",

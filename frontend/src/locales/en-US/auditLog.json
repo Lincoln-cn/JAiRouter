@@ -127,6 +127,15 @@
     "entityUser": "the user",
     "addedToBlacklist": "Added to the blacklist",
     "addFailed": "Add failed",
+    "emptyTitle": "No audit logs yet",
+    "emptyDescription": "Records appear here after the system emits audit events.",
+    "emptySearchTitle": "No matching audit logs",
+    "emptySearchDescription": "Adjust the time range or filters and try again.",
+    "banEntity": "Target entity",
+    "banTarget": "Target value",
+    "banReason": "Reason",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
     "loadFailed": "Failed to load audit logs: {message}"
   }
 }

@@ -1,32 +1,21 @@
 <template>
   <PageSkeleton :title="t('service.title')">
     <template #actions>
-      <el-button type="info" plain size="medium" @click="router.push({ name: 'version-management' })">
-        <el-icon><Document /></el-icon>
-        {{ t('service.actions.versionHistory') }}
-      </el-button>
+      <!-- 2026-11-18 统一列表页口径：actions 区只放一个主操作；版本历史属于次要跳转，移到工具栏 -->
       <el-tooltip v-if="availableTypes.length === 0" :content="t('service.allTypesAdded')" placement="left">
-        <el-button type="primary" v-permission="'config:services:write'" @click="handleAddService" :disabled="availableTypes.length === 0" size="medium">
+        <el-button type="primary" v-permission="'config:services:write'" @click="handleAddService" :disabled="availableTypes.length === 0" size="default">
           <el-icon><Plus /></el-icon>
           {{ t('service.addService') }}
         </el-button>
       </el-tooltip>
-      <el-button v-else type="primary" v-permission="'config:services:write'" @click="handleAddService" size="medium">
+      <el-button v-else type="primary" v-permission="'config:services:write'" @click="handleAddService" size="default">
         <el-icon><Plus /></el-icon>
         {{ t('service.addService') }}
       </el-button>
     </template>
 
     <template #stats>
-      <!-- 4 步引导条默认展示；老用户可关闭（localStorage: ja-services-guide-dismissed），关闭后不再占位 -->
-      <div v-if="!guideDismissed" class="guide-bar">
-        <OnboardingSteps :current-step="2" />
-        <div class="guide-bar-footer">
-          <el-button link size="small" class="guide-dismiss" @click="dismissGuide">
-            {{ t('service.guideDismiss') }}
-          </el-button>
-        </div>
-      </div>
+      <MetricStrip :items="metricItems" :loading="loading" :columns="4" />
     </template>
 
     <template #toolbar>
@@ -34,7 +23,7 @@
         v-model="searchQuery"
         :placeholder="t('service.searchPlaceholder')"
         clearable
-        size="medium"
+        size="default"
         class="search-input"
         @clear="handleSearchClear"
         @keyup.enter="applySearch"
@@ -48,7 +37,7 @@
         v-model="filterLoadBalance"
         :placeholder="t('service.filters.loadBalance')"
         clearable
-        size="medium"
+        size="default"
         class="filter-select"
       >
         <el-option :label="t('service.filters.all')" value=""></el-option>
@@ -61,7 +50,7 @@
         v-model="filterAdapter"
         :placeholder="t('service.filters.adapter')"
         clearable
-        size="medium"
+        size="default"
         class="filter-select adapter-filter"
       >
         <el-option
@@ -72,12 +61,27 @@
         />
       </el-select>
 
-      <!-- 工具栏口径：筛选在前、刷新在后 -->
-      <el-button size="medium" class="refresh-button" :loading="loading" @click="handleRefresh">
+      <!-- 工具栏口径：筛选 → 刷新 → 次要动作（版本历史是跨页跳转，不属于主操作） -->
+      <el-button size="default" class="refresh-button" :loading="loading" @click="handleRefresh">
         <el-icon><Refresh /></el-icon>
         {{ t('service.refresh') }}
       </el-button>
+      <el-button type="info" plain size="default" @click="router.push({ name: 'version-management' })">
+        <el-icon><Document /></el-icon>
+        {{ t('service.actions.versionHistory') }}
+      </el-button>
     </template>
+
+    <!-- 4 步引导条默认展示；老用户可关闭（localStorage: ja-services-guide-dismissed），关闭后不再占位。
+         引导属于一次性提示，不占指标位：放在指标区之下、内容之上 -->
+    <div v-if="!guideDismissed" class="guide-bar">
+      <OnboardingSteps :current-step="2" />
+      <div class="guide-bar-footer">
+        <el-button link size="small" class="guide-dismiss" @click="dismissGuide">
+          {{ t('service.guideDismiss') }}
+        </el-button>
+      </div>
+    </div>
 
     <el-alert
       v-if="errorMessage"
@@ -102,7 +106,6 @@
           style="width: 100%"
           v-loading="loading"
           :element-loading-text="t('service.loading')"
-          element-loading-background="rgba(0, 0, 0, 0.05)"
           class="service-table"
           :row-key="rowKey"
           border
@@ -194,28 +197,33 @@
               </ConfirmAction>
             </template>
           </el-table-column>
-        </el-table>
-
-        <!-- 空态统一走 EmptyState（口径：集合页空态不得直写 el-empty） -->
-        <EmptyState
-          v-if="filteredServices.length === 0 && !loading"
-          icon="Files"
-          :title="hasActiveFilters ? t('service.table.notFound') : t('service.emptyTitle')"
-          :description="hasActiveFilters ? '' : t('service.emptyDescription')"
-        >
-          <template #actions>
-            <el-button
-              type="primary"
-              size="medium"
-              v-permission="'config:services:write'"
-              :disabled="availableTypes.length === 0"
-              @click="handleAddService"
+          <!-- 空态统一走 EmptyState（口径：集合页空态不得直写 el-empty）；
+               放在表格 #empty 槽内，并区分「还没有数据」与「筛选无结果」 -->
+          <template #empty>
+            <EmptyState
+              icon="Files"
+              :title="hasActiveFilters ? t('service.table.notFound') : t('service.emptyTitle')"
+              :description="hasActiveFilters ? t('service.table.notFoundHint') : t('service.emptyDescription')"
             >
-              <el-icon><Plus /></el-icon>
-              {{ t('service.addService') }}
-            </el-button>
+              <template #actions>
+                <el-button v-if="hasActiveFilters" size="default" @click="clearFilters">
+                  {{ t('service.table.clearFilters') }}
+                </el-button>
+                <el-button
+                  v-else
+                  type="primary"
+                  size="default"
+                  v-permission="'config:services:write'"
+                  :disabled="availableTypes.length === 0"
+                  @click="handleAddService"
+                >
+                  <el-icon><Plus /></el-icon>
+                  {{ t('service.addService') }}
+                </el-button>
+              </template>
+            </EmptyState>
           </template>
-        </EmptyState>
+        </el-table>
       </template>
     </el-skeleton>
 
@@ -468,6 +476,8 @@ import {
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import ConfirmAction from '@/components/ConfirmAction.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import MetricStrip from '@/components/MetricStrip.vue'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import { useViewport } from '@/composables/useViewport'
 import OnboardingSteps from './adapter/OnboardingSteps.vue'
 
@@ -553,6 +563,33 @@ const drawerTitle = computed(() =>
     ? t('service.createTitle')
     : t('service.editTitle', { type: serviceTypeLabel(form.type) })
 )
+
+// 行数型指标：服务总数 / 已绑定适配器 / 实例总数 / 粘性未分流（后者只在出现时用警示色）
+const metricItems = computed<MetricStripItem[]>(() => {
+  const list = services.value
+  const stickyNotSpreading = list.filter(
+    (item) => item.stickyEnabled && (item.instanceCount || 0) > 1
+  ).length
+  return [
+    { key: 'total', label: t('service.metrics.total'), value: list.length },
+    {
+      key: 'adapter',
+      label: t('service.metrics.withAdapter'),
+      value: list.filter((item) => Boolean(item.adapter)).length
+    },
+    {
+      key: 'instances',
+      label: t('service.metrics.instances'),
+      value: list.reduce((sum, item) => sum + (item.instanceCount || 0), 0)
+    },
+    {
+      key: 'stickyNotSpreading',
+      label: t('service.metrics.stickyNotSpreading'),
+      value: stickyNotSpreading,
+      tone: stickyNotSpreading > 0 ? 'warning' : 'default'
+    }
+  ]
+})
 
 // 空态文案：有筛选条件时说「未找到」，无筛选时说「还没有服务」
 const hasActiveFilters = computed(() =>
@@ -672,6 +709,14 @@ function debounce<T extends (...args: never[]) => void>(fn: T, wait = 300) {
 
 const applySearch = debounce(() => { currentPage.value = 1 }, 350)
 const handleSearchClear = () => { currentPage.value = 1 }
+
+// 空态里的「清除筛选」：一次清掉关键字、负载均衡与适配器筛选
+const clearFilters = () => {
+  searchQuery.value = ''
+  filterLoadBalance.value = ''
+  filterAdapter.value = ''
+  currentPage.value = 1
+}
 
 // 添加适配器相关数据
 const adapters = ref<AdapterInfo[]>([])
@@ -1082,9 +1127,10 @@ onMounted(() => { fetchServices() })
   background-color: var(--ja-main-bg);
 }
 
-/* 引导条：默认展示，可关闭（避免长期占位） */
+/* 引导条：默认展示，可关闭（避免长期占位）；放在指标区之下，需要与内容拉开间距 */
 .guide-bar {
   position: relative;
+  margin-bottom: var(--ja-space-4);
 }
 
 .guide-bar-footer {

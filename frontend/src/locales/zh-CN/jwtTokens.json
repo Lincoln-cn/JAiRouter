@@ -45,6 +45,17 @@
     "confirm": "确定",
     "cancel": "取消",
     "confirmTitle": "提示",
+    "metricTotal": "令牌总数",
+    "metricActivePage": "本页活跃",
+    "metricRevokedPage": "本页已吊销",
+    "metricExpiredPage": "本页已过期",
+    "emptyTitle": "还没有令牌记录",
+    "emptyDescription": "用户登录或签发令牌后，令牌会出现在这里。",
+    "emptySearchTitle": "没有匹配的令牌",
+    "emptySearchDescription": "调整用户 ID 或状态筛选后重试。",
+    "blacklistType": "拦截类型",
+    "blacklistValue": "拦截目标",
+    "blacklistReason": "拦截原因",
     "messages": {
       "unknownError": "未知错误",
       "loadFailed": "加载令牌列表失败: {error}",
@@ -65,7 +76,8 @@
       "selectTokensFirst": "请先选择要撤销的令牌",
       "batchRevokeSuccess": "成功撤销{count}个令牌",
       "batchRevokeFailed": "批量撤销失败",
-      "batchRevokeFailedDetail": "批量撤销失败: {error}"
+      "batchRevokeFailedDetail": "批量撤销失败: {error}",
+      "batchRevokeConfirmMessage": "确定要批量撤销 {count} 个令牌吗？此操作不可恢复。"
     }
   }
 }

@@ -46,6 +46,13 @@
     "createFromTemplate": "从模板创建",
     "emptyTitle": "暂无适配器",
     "emptyDescription": "新增适配器后，模型实例就能通过它转发请求。",
+    "noMatchTitle": "没有匹配的适配器",
+    "noMatchDescription": "调整搜索关键字或来源筛选后再试。",
+    "clearFilters": "清除筛选",
+    "searchPlaceholder": "搜索适配器名称或类型",
+    "sourceAll": "全部来源",
+    "metricTotal": "适配器总数",
+    "tableSummary": "共 {count} 个适配器，第 {current}/{total} 页",
     "capability": {
       "chat": "聊天",
       "embedding": "嵌入",

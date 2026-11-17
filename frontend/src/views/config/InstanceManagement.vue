@@ -1,45 +1,50 @@
 <template>
   <PageSkeleton :title="t('instance.title')">
     <template #actions>
-      <el-button
-        type="primary"
-        link
-        size="small"
-        class="header-cross-link"
-        @click="router.push({ name: 'service-management', query: route.query.serviceType ? { serviceType: route.query.serviceType as string } : {} })"
-      >
-        {{ t('instance.openServiceConfig') }}
-      </el-button>
-      <el-button type="primary" v-permission="'config:instances:write'" @click="handleAddInstance" size="medium">
+      <!-- 2026-11-18 统一列表页口径：actions 区只放一个主操作；跨页跳转属于次要动作，移到工具栏 -->
+      <el-button type="primary" v-permission="'config:instances:write'" @click="handleAddInstance" size="default">
         <el-icon><Plus /></el-icon>
         {{ t('instance.addInstance') }}
       </el-button>
     </template>
 
     <template #stats>
-      <OnboardingSteps :current-step="3" :service-type="(route.query.serviceType as string) || undefined" />
+      <MetricStrip :items="metricItems" :loading="loading" :columns="3" />
     </template>
 
     <template #toolbar>
-      <el-input v-model="searchQuery" :placeholder="t('instance.searchPlaceholder')" clearable size="medium"
+      <el-input v-model="searchQuery" :placeholder="t('instance.searchPlaceholder')" clearable size="default"
         class="search-input" @clear="handleSearchClear" @keyup.enter="applySearch">
         <template #prefix>
           <el-icon><Search /></el-icon>
         </template>
       </el-input>
 
-      <el-select v-model="statusFilter" :placeholder="t('instance.status')" clearable size="medium" class="filter-select">
+      <el-select v-model="statusFilter" :placeholder="t('instance.status')" clearable size="default" class="filter-select">
         <el-option :label="t('instance.all')" value=""></el-option>
         <el-option :label="t('instance.enabled')" value="active"></el-option>
         <el-option :label="t('instance.disabled')" value="inactive"></el-option>
       </el-select>
 
-      <!-- 工具栏口径：筛选在前、刷新在后 -->
-      <el-button type="text" class="refresh-button" @click="refreshCurrent">
+      <!-- 工具栏口径：筛选 → 刷新 → 次要动作（打开服务配置是跨页跳转，不属于主操作） -->
+      <el-button class="refresh-button" :loading="loading" @click="refreshCurrent">
         <el-icon><Refresh /></el-icon>
         {{ t('instance.refresh') }}
       </el-button>
+      <el-button
+        type="primary"
+        link
+        size="default"
+        @click="router.push({ name: 'service-management', query: route.query.serviceType ? { serviceType: route.query.serviceType as string } : {} })"
+      >
+        {{ t('instance.openServiceConfig') }}
+      </el-button>
     </template>
+
+    <!-- 引导条属于一次性提示，不占指标位：放在指标区之下、内容之上 -->
+    <div class="guide-bar">
+      <OnboardingSteps :current-step="3" :service-type="(route.query.serviceType as string) || undefined" />
+    </div>
 
     <div class="tabs-wrap">
       <!-- 服务类型切换：真正的 tab（下划线指示器 + 每项计数），键盘可达 -->
@@ -146,22 +151,27 @@
                       </ConfirmAction>
                     </template>
                   </el-table-column>
-                </el-table>
 
-                <!-- 空态统一走 EmptyState（口径：集合页空态不得直写 el-empty） -->
-                <EmptyState
-                  v-if="filtered.length === 0"
-                  icon="Files"
-                  :title="t('instance.emptyText')"
-                  :description="t('instance.emptyDescription')"
-                >
-                  <template #actions>
-                    <el-button type="primary" size="medium" v-permission="'config:instances:write'" @click="handleAddInstance">
-                      <el-icon><Plus /></el-icon>
-                      {{ t('instance.addInstance') }}
-                    </el-button>
+                  <!-- 空态统一走 EmptyState（口径：集合页空态不得直写 el-empty）；
+                       放在表格 #empty 槽内，区分「还没有数据」与「筛选无结果」 -->
+                  <template #empty>
+                    <EmptyState
+                      icon="Files"
+                      :title="hasActiveFilters ? t('instance.noMatchTitle') : t('instance.emptyText')"
+                      :description="hasActiveFilters ? t('instance.noMatchDescription') : t('instance.emptyDescription')"
+                    >
+                      <template #actions>
+                        <el-button v-if="hasActiveFilters" @click="clearFilters">
+                          {{ t('instance.clearFilters') }}
+                        </el-button>
+                        <el-button v-else type="primary" size="default" v-permission="'config:instances:write'" @click="handleAddInstance">
+                          <el-icon><Plus /></el-icon>
+                          {{ t('instance.addInstance') }}
+                        </el-button>
+                      </template>
+                    </EmptyState>
                   </template>
-                </EmptyState>
+                </el-table>
 
                 <div class="table-footer" v-if="filtered.length > 0">
                   <div class="footer-info">
@@ -433,6 +443,8 @@ import OnboardingSteps from './adapter/OnboardingSteps.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import ConfirmAction from '@/components/ConfirmAction.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import MetricStrip from '@/components/MetricStrip.vue'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import { useViewport } from '@/composables/useViewport'
 import { uid } from '@/utils/uid'
 
@@ -538,6 +550,33 @@ const tabCounts = computed<Record<string, number>>(() => {
   }
   return result
 })
+
+// 行数型指标：实例总数（全部服务类型）/ 当前类型实例数 / 当前类型已启用数
+// 注：非当前类型只做了计数预取、拿不到启用明细，所以后两个指标显式按「当前类型」口径
+const activeTypeCount = computed(() => tabCounts.value[activeServiceType.value] ?? 0)
+const activeTypeEnabledCount = computed(
+  () => (instances.value[activeServiceType.value] ?? []).filter((item) => item.status === 'active').length
+)
+
+const metricItems = computed<MetricStripItem[]>(() => [
+  {
+    key: 'total',
+    label: t('instance.metrics.total'),
+    value: Object.values(tabCounts.value).reduce((sum, count) => sum + count, 0)
+  },
+  {
+    key: 'currentType',
+    label: t('instance.metrics.currentType'),
+    value: activeTypeCount.value,
+    hint: serviceTypeLabel(activeServiceType.value)
+  },
+  {
+    key: 'currentEnabled',
+    label: t('instance.metrics.currentEnabled'),
+    value: activeTypeEnabledCount.value,
+    hint: serviceTypeLabel(activeServiceType.value)
+  }
+])
 
 // 复制基础 URL（表格内长 URL 截断，复制按钮补齐可用性）
 const copyUrl = async (url: string) => {
@@ -704,6 +743,16 @@ function debounce<T extends (...args: never[]) => void>(fn: T, wait = 300) {
 }
 const applySearch = debounce(() => { currentPage.value = 1 }, 350)
 const handleSearchClear = () => { currentPage.value = 1 }
+
+// 空态文案：有筛选条件时说「未找到」，无筛选时说「还没有实例」
+const hasActiveFilters = computed(() => Boolean((searchQuery.value || '').trim() || statusFilter.value))
+
+// 空态里的「清除筛选」：一次清掉关键字与状态筛选
+const clearFilters = () => {
+  searchQuery.value = ''
+  statusFilter.value = ''
+  currentPage.value = 1
+}
 
 // 计算当前选中类型是否有数据
 const hasInstances = computed(() => {
@@ -1194,8 +1243,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.header-cross-link {
-  font-size: 13px;
+/* 引导条在指标区之下、内容之上，不占指标位 */
+.guide-bar {
+  margin-bottom: var(--ja-space-4);
 }
 
 .search-input {
@@ -1400,7 +1450,7 @@ onMounted(() => {
 
 .header-row:hover {
   border-color: var(--ja-primary);
-  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
+  box-shadow: var(--ja-shadow);
 }
 
 .header-row:last-child {

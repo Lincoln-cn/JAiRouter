@@ -1,22 +1,49 @@
 <template>
   <PageSkeleton :title="t('adapter.management')">
     <template #actions>
-      <el-button type="primary" v-permission="'config:adapters:write'" @click="handleCreate" size="medium">
+      <!-- 2026-11-18 统一列表页口径：actions 区只放一个主操作，刷新移到工具栏 -->
+      <el-button type="primary" v-permission="'config:adapters:write'" @click="handleCreate" size="default">
         <el-icon><Plus /></el-icon>
         {{ t('adapter.newAdapter') }}
-      </el-button>
-      <!-- 工具栏口径：主操作在前、刷新在最后 -->
-      <el-button class="refresh-button" :loading="loading" @click="fetchAdapters">
-        <el-icon><Refresh /></el-icon>&nbsp;{{ t('adapter.refresh') }}
       </el-button>
     </template>
 
     <template #stats>
-      <OnboardingSteps :current-step="1" />
+      <MetricStrip :items="metricItems" :loading="loading" :columns="3" />
     </template>
 
+    <template #toolbar>
+      <!-- 工具栏顺序：筛选 → 刷新（导出类次要动作放这里） -->
+      <el-input
+        v-model="keyword"
+        :placeholder="t('adapter.searchPlaceholder')"
+        clearable
+        class="search-input"
+        @clear="handleSearchClear"
+        @keyup.enter="applySearch"
+      >
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
+      </el-input>
+      <el-select v-model="sourceFilter" class="filter-select" @change="handleFilterChange">
+        <el-option :label="t('adapter.sourceAll')" value="all" />
+        <el-option :label="t('adapter.builtin')" value="builtin" />
+        <el-option :label="t('adapter.configDriven')" value="configurable" />
+      </el-select>
+      <el-button :loading="loading" class="refresh-button" @click="fetchAdapters">
+        <el-icon><Refresh /></el-icon>
+        {{ t('adapter.refresh') }}
+      </el-button>
+    </template>
+
+    <!-- 引导条是一次性提示，不占指标位；指标区只放行数型统计 -->
+    <div class="guide-bar">
+      <OnboardingSteps :current-step="1" />
+    </div>
+
     <el-table
-      :data="adapterList"
+      :data="paginatedAdapters"
       v-loading="loading"
       stripe
       border
@@ -93,11 +120,17 @@
         </template>
       </el-table-column>
       <template #empty>
-        <EmptyState :title="t('adapter.emptyTitle')" :description="t('adapter.emptyDescription')">
+        <!-- 空态区分「还没有数据」与「筛选无结果」，两者给出不同的下一步动作 -->
+        <EmptyState
+          :title="hasActiveFilters ? t('adapter.noMatchTitle') : t('adapter.emptyTitle')"
+          :description="hasActiveFilters ? t('adapter.noMatchDescription') : t('adapter.emptyDescription')"
+        >
           <template #actions>
+            <el-button v-if="hasActiveFilters" @click="clearFilters">{{ t('adapter.clearFilters') }}</el-button>
             <el-button
+              v-else
               type="primary"
-              size="medium"
+              size="default"
               v-permission="'config:adapters:write'"
               @click="handleCreate"
             >
@@ -108,9 +141,25 @@
         </EmptyState>
       </template>
     </el-table>
-  </PageSkeleton>
 
-    <!-- 测试弹窗 -->
+    <!-- 分页：数据超过一页时才需要，总数为 0 时整块隐藏 -->
+    <div v-if="filteredAdapters.length > 0" class="table-footer">
+      <span class="footer-info">
+        {{ t('adapter.tableSummary', { count: filteredAdapters.length, current: currentPage, total: totalPages }) }}
+      </span>
+      <el-pagination
+        v-model:current-page="currentPage"
+        :page-size="pageSize"
+        layout="prev, pager, next, sizes, jumper"
+        :page-sizes="[5, 10, 20, 50]"
+        :total="filteredAdapters.length"
+        @size-change="handleSizeChange"
+        @current-change="handlePageChange"
+      />
+    </div>
+
+    <!-- 测试弹窗：一次性结果展示（发起测试 → 看结果 → 关闭），不是可编辑容器，
+         规范允许保留 dialog；这里显式保留并加注释，避免被误认为待改造的编辑弹层 -->
     <el-dialog
       v-model="testDialogVisible"
       :title="t('adapter.testDialogTitle', { name: testingName })"
@@ -230,11 +279,11 @@
       </template>
     </el-drawer>
 
-    <!-- 查看详情弹窗 -->
-    <el-dialog
+    <!-- 查看详情：只读信息用 DetailDrawer（右侧抽屉，520），不再用 el-dialog -->
+    <DetailDrawer
       v-model="viewDialogVisible"
       :title="t('adapter.detailTitle')"
-      width="500px"
+      :width="520"
     >
       <el-descriptions :column="1" border>
         <el-descriptions-item :label="t('adapter.name')">{{ viewData.name }}</el-descriptions-item>
@@ -245,15 +294,16 @@
           </el-tag>
         </el-descriptions-item>
       </el-descriptions>
-    </el-dialog>
+    </DetailDrawer>
+  </PageSkeleton>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, nextTick, onMounted } from 'vue'
+import { ref, reactive, computed, nextTick, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { getErrorMessage } from '@/utils/error'
-import { Plus, Refresh } from '@element-plus/icons-vue'
+import { Plus, Refresh, Search } from '@element-plus/icons-vue'
 import {
   getAdapterList,
   getParentAdapterList,
@@ -269,6 +319,9 @@ import OnboardingSteps from './adapter/OnboardingSteps.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import ConfirmAction from '@/components/ConfirmAction.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import MetricStrip from '@/components/MetricStrip.vue'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
+import DetailDrawer from '@/components/DetailDrawer.vue'
 import { useViewport } from '@/composables/useViewport'
 
 const { t } = useI18n()
@@ -306,9 +359,9 @@ const wizardVisible = ref(false)
 const testDialogVisible = ref(false)
 const testingName = ref('')
 
-// 抽屉尺寸：普通表单 520（字段不多），窄屏铺满；编辑标题带对象名
+// 抽屉尺寸：编辑统一 640（集合页规范），窄屏铺满；编辑标题带对象名
 const { isNarrow } = useViewport()
-const drawerSize = computed(() => (isNarrow.value ? '100%' : '520px'))
+const drawerSize = computed(() => (isNarrow.value ? '100%' : '640px'))
 const drawerTitle = computed(() =>
   drawerMode.value === 'create'
     ? t('adapter.newAdapter')
@@ -388,6 +441,80 @@ const fetchAdapters = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// —— 列表筛选与分页（集合页口径：筛选在工具栏、分页在底栏）——
+const keyword = ref('')
+// source 取值与后端一致：builtin / configurable（后者界面显示为「配置驱动」）
+const sourceFilter = ref<'all' | 'builtin' | 'configurable'>('all')
+const currentPage = ref(1)
+const pageSize = ref(20)
+
+// 行数型指标：总数 / 内置 / 配置驱动
+const metricItems = computed<MetricStripItem[]>(() => [
+  { key: 'total', label: t('adapter.metricTotal'), value: adapterList.value.length },
+  {
+    key: 'builtin',
+    label: t('adapter.builtin'),
+    value: adapterList.value.filter((item) => item.source === 'builtin').length
+  },
+  {
+    key: 'configDriven',
+    label: t('adapter.configDriven'),
+    value: adapterList.value.filter((item) => item.source === 'configurable').length
+  }
+])
+
+const hasActiveFilters = computed(() => Boolean(keyword.value.trim() || sourceFilter.value !== 'all'))
+
+const filteredAdapters = computed(() => {
+  const word = keyword.value.trim().toLowerCase()
+  return adapterList.value.filter((item) => {
+    if (sourceFilter.value !== 'all' && item.source !== sourceFilter.value) return false
+    if (!word) return true
+    return item.name.toLowerCase().includes(word) || (item.type || '').toLowerCase().includes(word)
+  })
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredAdapters.value.length / pageSize.value)))
+
+const paginatedAdapters = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return filteredAdapters.value.slice(start, start + pageSize.value)
+})
+
+// 过滤条件变化后页码可能越界，回落到最后一页
+watch([filteredAdapters, pageSize], () => {
+  if (currentPage.value > totalPages.value) currentPage.value = totalPages.value
+})
+
+const applySearch = () => {
+  currentPage.value = 1
+}
+
+const handleSearchClear = () => {
+  keyword.value = ''
+  currentPage.value = 1
+}
+
+const handleFilterChange = () => {
+  currentPage.value = 1
+}
+
+// 空态里的「清除筛选」：一次清掉搜索与来源筛选
+const clearFilters = () => {
+  keyword.value = ''
+  sourceFilter.value = 'all'
+  currentPage.value = 1
+}
+
+const handleSizeChange = (size: number) => {
+  pageSize.value = size
+  currentPage.value = 1
+}
+
+const handlePageChange = (page: number) => {
+  currentPage.value = page
 }
 
 const handleCreate = () => {
@@ -510,6 +637,43 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 工具栏：筛选 → 刷新（宽度约束避免挤成两行） */
+.search-input {
+  width: 260px;
+  min-width: 180px;
+}
+
+.filter-select {
+  width: 150px;
+  min-width: 120px;
+}
+
+.refresh-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 引导条在指标区之下、表格之上，不占指标位 */
+.guide-bar {
+  margin-bottom: var(--ja-space-4);
+}
+
+/* 底栏：摘要 + 分页 */
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--ja-space-3);
+  padding-top: var(--ja-space-3);
+  border-top: 1px solid var(--ja-border-lighter);
+}
+
+.footer-info {
+  color: var(--ja-ink-3);
+  font-size: 13px;
+}
+
 .capability-tags {
   display: flex;
   flex-wrap: wrap;

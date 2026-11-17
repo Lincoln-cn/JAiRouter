@@ -45,6 +45,17 @@
     "confirm": "Confirm",
     "cancel": "Cancel",
     "confirmTitle": "Notice",
+    "metricTotal": "Total Tokens",
+    "metricActivePage": "Active (this page)",
+    "metricRevokedPage": "Revoked (this page)",
+    "metricExpiredPage": "Expired (this page)",
+    "emptyTitle": "No tokens yet",
+    "emptyDescription": "Tokens appear here after users sign in or tokens are issued.",
+    "emptySearchTitle": "No matching tokens",
+    "emptySearchDescription": "Adjust the user ID or status filter and try again.",
+    "blacklistType": "Target type",
+    "blacklistValue": "Target value",
+    "blacklistReason": "Reason",
     "messages": {
       "unknownError": "Unknown error",
       "loadFailed": "Failed to load token list: {error}",
@@ -65,7 +76,8 @@
       "selectTokensFirst": "Please select tokens to revoke first",
       "batchRevokeSuccess": "Successfully revoked {count} tokens",
       "batchRevokeFailed": "Failed to batch revoke",
-      "batchRevokeFailedDetail": "Failed to batch revoke: {error}"
+      "batchRevokeFailedDetail": "Failed to batch revoke: {error}",
+      "batchRevokeConfirmMessage": "Revoke {count} tokens in batch? This cannot be undone."
     }
   }
 }

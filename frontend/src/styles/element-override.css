@@ -45,6 +45,8 @@ html.dark {
   --el-table-header-bg-color: var(--ja-surface-2);
   --el-table-row-hover-bg-color: var(--ja-surface);
   --el-table-border-color: var(--ja-border);
+  /* 表头用 ink-2：表头底色是 --ja-surface-2（暗色 #1c222b），ink-3 只有 4.41:1 */
+  --el-table-header-text-color: var(--ja-ink-2);
 
   /* ========== 文字色 ========== */
   --el-text-color-primary: var(--ja-text-primary);
@@ -150,4 +152,17 @@ p { color: var(--ja-text-regular); }
   --el-table-header-bg-color: var(--ja-surface-2);
   --el-table-row-hover-bg-color: var(--ja-surface);
   --el-table-border-color: var(--ja-border);
+  /* 表头用 ink-2：表头底色是 --ja-surface-2（暗色 #1c222b），ink-3 只有 4.41:1 */
+  --el-table-header-text-color: var(--ja-ink-2);
+}
+
+/* ── 配置类表单标签（2026-11-18 深色可读性）──────────────────────────────
+   `.config-label` / `.config-switch-label` / `.switch-label` 在十几个页面各自 scoped
+   声明，其中多数没写 color ⇒ 深色下继承 body 的近黑色（1.03:1）。这里给统一语义色；
+   页面里已声明 color 的（如 ClusterConfig 的 --el-text-color-regular）特异性更高，
+   仍然由页面决定。 */
+.config-label,
+.config-switch-label,
+.switch-label {
+  color: var(--el-text-color-regular);
 }

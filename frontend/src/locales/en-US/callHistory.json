@@ -105,6 +105,12 @@
       "loadFailed": "Failed to load call history: {message}",
       "emptyTitle": "No matching records",
       "emptyDescription": "No call records match the current filters. Adjust the time range or filters and try again.",
+      "stats": {
+        "total": "Total Records",
+        "pageSuccess": "Succeeded on This Page",
+        "pageFailed": "Failed on This Page",
+        "pageAvgResponseTime": "Avg Response Time on This Page (ms)"
+      },
       "cards": {
         "ariaLabel": "Call history card list"
       }
@@ -121,7 +127,9 @@
       "listTitle": "Slow Call List",
       "thresholdTag": "Threshold: {value} ms",
       "emptyTitle": "No matching records",
-      "emptyDescription": "No slow calls exceeded the threshold in this time range. Lower the threshold or adjust the time range and try again."
+      "emptyDescription": "No slow calls exceeded the threshold in this time range. Lower the threshold or adjust the time range and try again.",
+      "noDataTitle": "No slow calls yet",
+      "noDataDescription": "No request exceeded {threshold} ms in this range, so response times stayed within the threshold. Lower the threshold to see more records."
     },
     "tokenUsage": {
       "pageTitle": "Token Usage Statistics",

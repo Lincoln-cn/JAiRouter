@@ -46,6 +46,13 @@
     "createFromTemplate": "Create from template",
     "emptyTitle": "No adapters yet",
     "emptyDescription": "Add an adapter so model instances can forward requests through it.",
+    "noMatchTitle": "No matching adapters",
+    "noMatchDescription": "Adjust the search keyword or source filter and try again.",
+    "clearFilters": "Clear filters",
+    "searchPlaceholder": "Search adapter name or type",
+    "sourceAll": "All sources",
+    "metricTotal": "Total adapters",
+    "tableSummary": "{count} adapters, page {current}/{total}",
     "capability": {
       "chat": "Chat",
       "embedding": "Embedding",

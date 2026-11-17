@@ -1,18 +1,18 @@
 <template>
-  <ListPageLayout
-    :loading="loading"
-    :empty="!loading && tableData.length === 0"
-    :empty-title="emptyTitle"
-    :empty-description="emptyDescription"
-  >
-    <template #header>
-      <h2 class="page-title">{{ t('callHistory.list.pageTitle') }}</h2>
+  <PageSkeleton>
+    <template #title>
+      <h2 class="page-heading">{{ t('callHistory.list.pageTitle') }}</h2>
       <p class="page-subtitle">{{ t('callHistory.list.pageDescription') }}</p>
     </template>
 
-    <template #filters>
+    <template #stats>
+      <!-- 统计条：只有「总记录数」是筛选后的全局量，其余三项只覆盖当前页，标签里写明范围 -->
+      <MetricStrip :items="metricItems" :loading="loading" :columns="4" />
+    </template>
+
+    <template #toolbar>
       <!-- 工具栏顺序：时间范围 → 维度筛选（模型/服务类型/状态/状态码）→ 刷新 → 重置 -->
-      <FilterBar>
+      <FilterBar class="toolbar-filter">
         <el-form :inline="true" :model="queryForm" class="filter-form">
           <el-form-item :label="t('callHistory.common.timeRange')">
             <el-date-picker
@@ -66,43 +66,41 @@
       </FilterBar>
     </template>
 
-    <template #toolbar>
-      <!-- v2.9.2 记录治理设置：与列表数据无关，放 toolbar 以免空态时被隐藏 -->
-      <el-card class="settings-card" shadow="hover" v-loading="configLoading">
-        <template #header>
-          <div class="table-header">
-            <span class="chart-title">{{ t('callHistory.list.recordGovernanceTitle') }}</span>
-          </div>
-        </template>
-        <el-form label-width="100px" class="settings-form">
-          <el-form-item :label="t('callHistory.list.recordLevelLabel')">
-            <el-radio-group v-model="recordLevel" :disabled="configSaving">
-              <el-radio value="METADATA_ONLY">{{ t('callHistory.list.recordLevels.metadataOnly') }}</el-radio>
-              <el-radio value="SUMMARY">{{ t('callHistory.list.recordLevels.summary') }}</el-radio>
-              <el-radio value="FULL">{{ t('callHistory.list.recordLevels.full') }}</el-radio>
-            </el-radio-group>
-          </el-form-item>
-          <el-form-item>
-            <el-button
-              v-permission="'config:callhistory:write'"
-              type="primary"
-              :loading="configSaving"
-              :disabled="configSaving || configLoading"
-              @click="handleSaveConfig"
-            >
-              {{ t('callHistory.common.save') }}
-            </el-button>
-          </el-form-item>
-        </el-form>
-        <el-alert
-          type="info"
-          :closable="false"
-          show-icon
-          :title="t('callHistory.list.levelGuideTitle')"
-          :description="t('callHistory.list.levelGuideDescription')"
-        />
-      </el-card>
-    </template>
+    <!-- v2.9.2 记录治理设置：与列表数据无关，放表格之上；表格空态只替换行区，不会把它藏起来 -->
+    <el-card class="settings-card" shadow="hover" v-loading="configLoading">
+      <template #header>
+        <div class="table-header">
+          <span class="chart-title">{{ t('callHistory.list.recordGovernanceTitle') }}</span>
+        </div>
+      </template>
+      <el-form label-width="100px" class="settings-form">
+        <el-form-item :label="t('callHistory.list.recordLevelLabel')">
+          <el-radio-group v-model="recordLevel" :disabled="configSaving">
+            <el-radio value="METADATA_ONLY">{{ t('callHistory.list.recordLevels.metadataOnly') }}</el-radio>
+            <el-radio value="SUMMARY">{{ t('callHistory.list.recordLevels.summary') }}</el-radio>
+            <el-radio value="FULL">{{ t('callHistory.list.recordLevels.full') }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item>
+          <el-button
+            v-permission="'config:callhistory:write'"
+            type="primary"
+            :loading="configSaving"
+            :disabled="configSaving || configLoading"
+            @click="handleSaveConfig"
+          >
+            {{ t('callHistory.common.save') }}
+          </el-button>
+        </el-form-item>
+      </el-form>
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        :title="t('callHistory.list.levelGuideTitle')"
+        :description="t('callHistory.list.levelGuideDescription')"
+      />
+    </el-card>
 
     <!-- 数据表格 -->
     <div class="table-header">
@@ -221,6 +219,16 @@
           </el-button>
         </template>
       </el-table-column>
+      <!-- 空态：区分「还没有数据」与「筛选无结果」，筛选态给一个复位动作（只读页没有新建主操作） -->
+      <template #empty>
+        <EmptyState v-if="!loading" :title="emptyTitle" :description="emptyDescription">
+          <template v-if="hasActiveFilter" #actions>
+            <el-button icon="Refresh" @click="handleReset">
+              {{ t('callHistory.common.reset') }}
+            </el-button>
+          </template>
+        </EmptyState>
+      </template>
     </el-table>
 
     <TableCards
@@ -290,124 +298,122 @@
     </template>
 
     <!-- 详情抽屉 -->
-    <template #drawer>
-      <el-drawer
-        v-model="drawerVisible"
-        :title="t('callHistory.list.detailsTitle')"
-        size="600px"
-      >
-        <template v-if="selectedRecord">
-          <el-descriptions :column="2" border>
-            <el-descriptions-item label="Trace ID" :span="2">
-              <el-tag>{{ selectedRecord.traceId }}</el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('callHistory.list.requestId')" :span="2">
-              {{ selectedRecord.requestId }}
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('callHistory.common.time')" :span="2">
-              {{ formatTime(selectedRecord.createdAt) }}
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('callHistory.list.requestMethod')">
-              {{ selectedRecord.requestMethod }}
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('callHistory.list.requestPath')" :span="2">
-              {{ selectedRecord.requestPath }}
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('callHistory.common.modelName')">
-              {{ selectedRecord.modelName }}
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('callHistory.common.serviceType')">
-              <el-link
-                v-if="selectedRecord.serviceType"
-                type="primary"
-                :underline="false"
-                @click="router.push({ name: 'service-management', query: { serviceType: selectedRecord.serviceType } })"
-              >
-                {{ getServiceTypeLabel(selectedRecord.serviceType) }}
-              </el-link>
-              <span v-else>{{ getServiceTypeLabel(selectedRecord.serviceType) }}</span>
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('callHistory.common.provider')">
-              {{ selectedRecord.provider || '-' }}
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('callHistory.list.instanceName')">
-              <el-link
-                v-if="selectedRecord.instanceName && selectedRecord.serviceType"
-                type="primary"
-                :underline="false"
-                @click="router.push({ name: 'instance-management', query: { serviceType: selectedRecord.serviceType } })"
-              >
-                {{ selectedRecord.instanceName }}
-              </el-link>
-              <span v-else>{{ selectedRecord.instanceName || '-' }}</span>
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('callHistory.common.httpStatusCode')">
-              <el-tag :type="getStatusType(selectedRecord.httpStatusCode)">
-                {{ selectedRecord.httpStatusCode || '-' }}
-              </el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('callHistory.list.responseTime')">
-              {{ selectedRecord.responseTimeMs?.toFixed(0) || '-' }} ms
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('callHistory.common.callStatus')">
-              <el-tag :type="selectedRecord.isSuccess ? 'info' : 'danger'">
-                {{ selectedRecord.isSuccess ? t('callHistory.common.success') : t('callHistory.common.failed') }}
-              </el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('callHistory.list.errorCode')">
-              {{ selectedRecord.errorCode || '-' }}
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('callHistory.common.errorMessage')" :span="2">
-              <span v-if="selectedRecord.errorMessage" class="error-message">
-                {{ selectedRecord.errorMessage }}
-              </span>
-              <span v-else>-</span>
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('callHistory.list.tokenStatsTitle')" :span="2">
-              <el-tag type="info" size="small">{{ t('callHistory.list.tokenStats.input', { value: selectedRecord.promptTokens }) }}</el-tag>
-              <el-tag type="info" size="small">{{ t('callHistory.list.tokenStats.output', { value: selectedRecord.completionTokens }) }}</el-tag>
-              <el-tag type="info" size="small">{{ t('callHistory.list.tokenStats.total', { value: selectedRecord.totalTokens }) }}</el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('callHistory.list.rateLimitedStatus')">
-              <el-tag :type="selectedRecord.rateLimited ? 'danger' : 'info'" size="small">
-                {{ selectedRecord.rateLimited ? t('callHistory.list.rateLimited') : t('callHistory.common.normal') }}
-              </el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('callHistory.list.circuitBreakStatus')">
-              <el-tag :type="selectedRecord.circuitBroken ? 'danger' : 'info'" size="small">
-                {{ selectedRecord.circuitBroken ? t('callHistory.list.circuitBroken') : t('callHistory.common.normal') }}
-              </el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('callHistory.list.clientIp')">
-              {{ selectedRecord.clientIp || '-' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="User Agent">
-              {{ selectedRecord.userAgent || '-' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="API Key" :span="2">
-              {{ selectedRecord.apiKeyId || '-' }}
-            </el-descriptions-item>
-          </el-descriptions>
+    <el-drawer
+      v-model="drawerVisible"
+      :title="t('callHistory.list.detailsTitle')"
+      size="600px"
+    >
+      <template v-if="selectedRecord">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="Trace ID" :span="2">
+            <el-tag>{{ selectedRecord.traceId }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('callHistory.list.requestId')" :span="2">
+            {{ selectedRecord.requestId }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('callHistory.common.time')" :span="2">
+            {{ formatTime(selectedRecord.createdAt) }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('callHistory.list.requestMethod')">
+            {{ selectedRecord.requestMethod }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('callHistory.list.requestPath')" :span="2">
+            {{ selectedRecord.requestPath }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('callHistory.common.modelName')">
+            {{ selectedRecord.modelName }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('callHistory.common.serviceType')">
+            <el-link
+              v-if="selectedRecord.serviceType"
+              type="primary"
+              :underline="false"
+              @click="router.push({ name: 'service-management', query: { serviceType: selectedRecord.serviceType } })"
+            >
+              {{ getServiceTypeLabel(selectedRecord.serviceType) }}
+            </el-link>
+            <span v-else>{{ getServiceTypeLabel(selectedRecord.serviceType) }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('callHistory.common.provider')">
+            {{ selectedRecord.provider || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('callHistory.list.instanceName')">
+            <el-link
+              v-if="selectedRecord.instanceName && selectedRecord.serviceType"
+              type="primary"
+              :underline="false"
+              @click="router.push({ name: 'instance-management', query: { serviceType: selectedRecord.serviceType } })"
+            >
+              {{ selectedRecord.instanceName }}
+            </el-link>
+            <span v-else>{{ selectedRecord.instanceName || '-' }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('callHistory.common.httpStatusCode')">
+            <el-tag :type="getStatusType(selectedRecord.httpStatusCode)">
+              {{ selectedRecord.httpStatusCode || '-' }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('callHistory.list.responseTime')">
+            {{ selectedRecord.responseTimeMs?.toFixed(0) || '-' }} ms
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('callHistory.common.callStatus')">
+            <el-tag :type="selectedRecord.isSuccess ? 'info' : 'danger'">
+              {{ selectedRecord.isSuccess ? t('callHistory.common.success') : t('callHistory.common.failed') }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('callHistory.list.errorCode')">
+            {{ selectedRecord.errorCode || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('callHistory.common.errorMessage')" :span="2">
+            <span v-if="selectedRecord.errorMessage" class="error-message">
+              {{ selectedRecord.errorMessage }}
+            </span>
+            <span v-else>-</span>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('callHistory.list.tokenStatsTitle')" :span="2">
+            <el-tag type="info" size="small">{{ t('callHistory.list.tokenStats.input', { value: selectedRecord.promptTokens }) }}</el-tag>
+            <el-tag type="info" size="small">{{ t('callHistory.list.tokenStats.output', { value: selectedRecord.completionTokens }) }}</el-tag>
+            <el-tag type="info" size="small">{{ t('callHistory.list.tokenStats.total', { value: selectedRecord.totalTokens }) }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('callHistory.list.rateLimitedStatus')">
+            <el-tag :type="selectedRecord.rateLimited ? 'danger' : 'info'" size="small">
+              {{ selectedRecord.rateLimited ? t('callHistory.list.rateLimited') : t('callHistory.common.normal') }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('callHistory.list.circuitBreakStatus')">
+            <el-tag :type="selectedRecord.circuitBroken ? 'danger' : 'info'" size="small">
+              {{ selectedRecord.circuitBroken ? t('callHistory.list.circuitBroken') : t('callHistory.common.normal') }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('callHistory.list.clientIp')">
+            {{ selectedRecord.clientIp || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="User Agent">
+            {{ selectedRecord.userAgent || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="API Key" :span="2">
+            {{ selectedRecord.apiKeyId || '-' }}
+          </el-descriptions-item>
+        </el-descriptions>
 
-          <!-- 请求/响应摘要 -->
-          <el-card v-if="selectedRecord.requestBodySummary || selectedRecord.responseBodySummary"
-                   shadow="never" style="margin-top: 16px;">
-            <template #header>
-              <span>{{ t('callHistory.list.bodySummaryTitle') }}</span>
-            </template>
-            <div v-if="selectedRecord.requestBodySummary" class="body-summary">
-              <div class="summary-label">{{ t('callHistory.list.requestBodySummary') }}</div>
-              <pre class="summary-content">{{ selectedRecord.requestBodySummary }}</pre>
-            </div>
-            <div v-if="selectedRecord.responseBodySummary" class="body-summary">
-              <div class="summary-label">{{ t('callHistory.list.responseBodySummary') }}</div>
-              <pre class="summary-content">{{ selectedRecord.responseBodySummary }}</pre>
-            </div>
-          </el-card>
-        </template>
-      </el-drawer>
-    </template>
-  </ListPageLayout>
+        <!-- 请求/响应摘要 -->
+        <el-card v-if="selectedRecord.requestBodySummary || selectedRecord.responseBodySummary"
+                 shadow="never" style="margin-top: 16px;">
+          <template #header>
+            <span>{{ t('callHistory.list.bodySummaryTitle') }}</span>
+          </template>
+          <div v-if="selectedRecord.requestBodySummary" class="body-summary">
+            <div class="summary-label">{{ t('callHistory.list.requestBodySummary') }}</div>
+            <pre class="summary-content">{{ selectedRecord.requestBodySummary }}</pre>
+          </div>
+          <div v-if="selectedRecord.responseBodySummary" class="body-summary">
+            <div class="summary-label">{{ t('callHistory.list.responseBodySummary') }}</div>
+            <pre class="summary-content">{{ selectedRecord.responseBodySummary }}</pre>
+          </div>
+        </el-card>
+      </template>
+    </el-drawer>
+  </PageSkeleton>
 </template>
 
 <script setup lang="ts">
@@ -419,7 +425,10 @@ import { getErrorMessage } from '@/utils/error'
 import { queryCallHistory, getCallHistoryConfig, updateCallHistoryConfig } from '@/api/callHistory'
 import type { CallHistoryConfig } from '@/api/callHistory'
 import type { ApiCallHistoryRecord, CallHistoryQuery } from '@/types/callHistory'
-import ListPageLayout from '@/components/ListPageLayout.vue'
+import PageSkeleton from '@/components/PageSkeleton.vue'
+import MetricStrip from '@/components/MetricStrip.vue'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
+import EmptyState from '@/components/EmptyState.vue'
 import FilterBar from '@/components/FilterBar.vue'
 import TimeText from '@/components/TimeText.vue'
 import TableCards from '@/components/TableCards.vue'
@@ -505,11 +514,50 @@ const hasActiveFilter = computed(
     !!queryForm.httpStatusCode
 )
 const emptyTitle = computed(() =>
-  hasActiveFilter.value ? t('callHistory.list.emptyTitle') : t('callHistory.common.emptyNoDataTitle')
+  hasActiveFilter.value ? t('callHistory.common.emptyFilteredTitle') : t('callHistory.common.emptyNoDataTitle')
 )
 const emptyDescription = computed(() =>
-  hasActiveFilter.value ? t('callHistory.list.emptyDescription') : t('callHistory.common.emptyNoDataDescription')
+  hasActiveFilter.value
+    ? t('callHistory.common.emptyFilteredDescription')
+    : t('callHistory.common.emptyNoDataDescription')
 )
+
+// 统计条：只有「总记录数」是筛选后的全局量；其余三项只能覆盖当前页，标签里写明范围避免误读
+const metricItems = computed<MetricStripItem[]>(() => {
+  const pageRecords = tableData.value
+  const successCount = pageRecords.filter((record) => record.isSuccess).length
+  const failedCount = pageRecords.length - successCount
+  // 只用有值的响应时间参与平均，避免把缺失值当 0 拉低均值
+  const durations = pageRecords
+    .map((record) => record.responseTimeMs)
+    .filter((value): value is number => typeof value === 'number')
+  const avgDuration = durations.length
+    ? durations.reduce((sum, value) => sum + value, 0) / durations.length
+    : 0
+  return [
+    {
+      key: 'total',
+      label: t('callHistory.list.stats.total'),
+      value: formatNumber(totalCount.value)
+    },
+    {
+      key: 'pageSuccess',
+      label: t('callHistory.list.stats.pageSuccess'),
+      value: successCount
+    },
+    {
+      key: 'pageFailed',
+      label: t('callHistory.list.stats.pageFailed'),
+      value: failedCount,
+      tone: failedCount > 0 ? 'danger' : 'default'
+    },
+    {
+      key: 'pageAvgResponseTime',
+      label: t('callHistory.list.stats.pageAvgResponseTime'),
+      value: durations.length ? `${avgDuration.toFixed(0)} ms` : '-'
+    }
+  ]
+})
 
 // 格式化时间
 const formatTime = (time?: string) => {
@@ -643,22 +691,29 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page-title {
+/* 与其它集合页同形：18px/600 的页标题（PageSkeleton 的 scoped 样式作用不到 #title 插槽内容） */
+.page-heading {
   margin: 0;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.3;
+  color: var(--ja-text-primary);
 }
 
 .page-subtitle {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   font-size: 13px;
-  color: var(--ja-ink-3);
-  line-height: 1.5;
+  color: var(--ja-text-secondary);
+  line-height: 1.6;
+}
+
+/* FilterBar 作为 #toolbar 的 flex 子项需要占满整行 */
+.toolbar-filter {
+  width: 100%;
 }
 
 .settings-card {
-  margin-bottom: 0;
+  margin-bottom: 12px;
 }
 
 .settings-form {

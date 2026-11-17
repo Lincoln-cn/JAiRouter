@@ -31,6 +31,13 @@
     "unknownOperation": "未知操作",
     "emptyTitle": "暂无版本记录",
     "emptyDescription": "配置发生变更后会自动生成版本记录，可在此查看历史版本并应用。",
+    "searchPlaceholder": "搜索版本号、操作类型或操作详情",
+    "clearFilter": "清除筛选",
+    "noMatchTitle": "没有匹配的版本",
+    "noMatchHint": "换个关键词试试，或清除筛选查看全部版本。",
+    "metricTotal": "版本记录",
+    "metricHistory": "可回退版本",
+    "metricCurrent": "当前版本号",
     "operationNames": {
       "systemInit": "系统初始化",
       "instanceChange": "实例变更",

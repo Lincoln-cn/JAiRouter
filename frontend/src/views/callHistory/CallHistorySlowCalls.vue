@@ -1,18 +1,18 @@
 <template>
-  <ListPageLayout
-    :loading="loading"
-    :empty="!loading && slowCalls.length === 0"
-    :empty-title="t('callHistory.slowCalls.emptyTitle')"
-    :empty-description="t('callHistory.slowCalls.emptyDescription')"
-  >
-    <template #header>
-      <h2 class="page-title">{{ t('callHistory.slowCalls.pageTitle') }}</h2>
+  <PageSkeleton>
+    <template #title>
+      <h2 class="page-heading">{{ t('callHistory.slowCalls.pageTitle') }}</h2>
       <p class="page-subtitle">{{ t('callHistory.slowCalls.pageDescription') }}</p>
     </template>
 
-    <template #filters>
+    <template #stats>
+      <!-- 慢调用指标：3 项都是耗时/计数度量，没有失败语义，全部保持 default -->
+      <MetricStrip :items="kpiItems" :loading="loading" :columns="3" />
+    </template>
+
+    <template #toolbar>
       <!-- 工具栏顺序：时间范围 → 维度筛选（阈值/显示数量）→ 刷新 → 重置 -->
-      <FilterBar>
+      <FilterBar class="toolbar-filter">
         <el-form :inline="true" class="filter-form">
           <el-form-item :label="t('callHistory.common.timeRange')">
             <el-date-picker
@@ -49,14 +49,11 @@
       </FilterBar>
     </template>
 
-    <template #toolbar>
-      <div class="list-toolbar">
-        <span class="chart-title">{{ t('callHistory.slowCalls.listTitle') }}</span>
-        <el-tag type="info" size="small">{{ t('callHistory.slowCalls.thresholdTag', { value: threshold }) }}</el-tag>
-      </div>
-      <!-- 慢调用指标：3 张彩色图标卡 → 一条中性 MetricStrip（本页数字没有失败语义，全部 default） -->
-      <MetricStrip :items="kpiItems" :loading="loading" :columns="3" />
-    </template>
+    <!-- 列表标题 + 当前阈值 -->
+    <div class="list-toolbar">
+      <span class="chart-title">{{ t('callHistory.slowCalls.listTitle') }}</span>
+      <el-tag type="info" size="small">{{ t('callHistory.slowCalls.thresholdTag', { value: threshold }) }}</el-tag>
+    </div>
 
     <!-- 慢调用列表 -->
     <el-table v-loading="loading" :data="slowCalls" border stripe :max-height="600">
@@ -106,8 +103,18 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
+      <!-- 空态：区分「还没有慢调用」与「时间范围筛选无结果」，筛选态给一个复位动作 -->
+      <template #empty>
+        <EmptyState v-if="!loading" :title="emptyTitle" :description="emptyDescription">
+          <template v-if="hasActiveFilter" #actions>
+            <el-button icon="Refresh" @click="handleReset">
+              {{ t('callHistory.common.reset') }}
+            </el-button>
+          </template>
+        </EmptyState>
+      </template>
     </el-table>
-  </ListPageLayout>
+  </PageSkeleton>
 </template>
 
 <script setup lang="ts">
@@ -118,7 +125,8 @@ import { getErrorMessage } from '@/utils/error'
 import { useRouter } from 'vue-router'
 import { getSlowCalls } from '@/api/callHistory'
 import type { ApiCallHistoryRecord } from '@/types/callHistory'
-import ListPageLayout from '@/components/ListPageLayout.vue'
+import PageSkeleton from '@/components/PageSkeleton.vue'
+import EmptyState from '@/components/EmptyState.vue'
 import FilterBar from '@/components/FilterBar.vue'
 import TimeText from '@/components/TimeText.vue'
 import MetricStrip from '@/components/MetricStrip.vue'
@@ -204,6 +212,19 @@ const kpiItems = computed<MetricStripItem[]>(() => [
   }
 ])
 
+// 空态文案：只有「时间范围」算筛选条件 —— 阈值与显示数量是查询参数，默认值即「看全部慢调用」
+const hasActiveFilter = computed(() => !!dateRange.value)
+const emptyTitle = computed(() =>
+  hasActiveFilter.value
+    ? t('callHistory.common.emptyFilteredTitle')
+    : t('callHistory.slowCalls.noDataTitle')
+)
+const emptyDescription = computed(() =>
+  hasActiveFilter.value
+    ? t('callHistory.common.emptyFilteredDescription')
+    : t('callHistory.slowCalls.noDataDescription', { threshold: threshold.value })
+)
+
 // 加载数据
 const loadData = async () => {
   loading.value = true
@@ -245,23 +266,30 @@ function openTrace(traceId: string) {
 </script>
 
 <style scoped>
-.page-title {
+/* 与其它集合页同形：18px/600 的页标题（PageSkeleton 的 scoped 样式作用不到 #title 插槽内容） */
+.page-heading {
   margin: 0;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.3;
+  color: var(--ja-text-primary);
 }
 
 .page-subtitle {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   font-size: 13px;
-  color: var(--ja-ink-3);
-  line-height: 1.5;
+  color: var(--ja-text-secondary);
+  line-height: 1.6;
+}
+
+/* FilterBar 作为 #toolbar 的 flex 子项需要占满整行，筛选控件从左侧起排 */
+.toolbar-filter {
+  width: 100%;
 }
 
 .filter-form {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   width: 100%;
 }
 

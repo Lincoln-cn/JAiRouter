@@ -31,6 +31,13 @@
     "unknownOperation": "Unknown Operation",
     "emptyTitle": "No versions yet",
     "emptyDescription": "Version records are created automatically when the configuration changes. You can review historical versions here and apply one.",
+    "searchPlaceholder": "Search version, operation type, or details",
+    "clearFilter": "Clear filters",
+    "noMatchTitle": "No matching versions",
+    "noMatchHint": "Try another keyword, or clear the filter to see all versions.",
+    "metricTotal": "Version Records",
+    "metricHistory": "Restorable Versions",
+    "metricCurrent": "Current Version",
     "operationNames": {
       "systemInit": "System Initialization",
       "instanceChange": "Instance Change",

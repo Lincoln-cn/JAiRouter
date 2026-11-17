@@ -1,11 +1,33 @@
 <template>
   <PageSkeleton :title="t('pool.title')">
     <template #actions>
+      <!-- 主操作只有一个：新建（刷新移到工具栏） -->
       <el-button type="primary" v-permission="'config:pools:write'" @click="handleCreate">
         <el-icon><Plus /></el-icon>&nbsp;{{ t('pool.addPool') }}
       </el-button>
-      <!-- 工具栏口径：主操作在前、刷新在最后 -->
-      <el-button class="refresh-button" :loading="loading" @click="fetchPools">
+    </template>
+
+    <template #stats>
+      <!-- 指标条：全部为行数/求和型，不新增后端字段 -->
+      <MetricStrip :items="metricItems" :loading="loading" :columns="4" />
+    </template>
+
+    <template #toolbar>
+      <!-- 工具栏顺序：筛选（搜索 / 下拉） → 刷新 -->
+      <el-input
+        v-model="keyword"
+        :placeholder="t('pool.searchPlaceholder')"
+        clearable
+        style="width: 220px;"
+      >
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
+      </el-input>
+      <el-select v-model="serviceTypeFilter" clearable :placeholder="t('pool.serviceTypeFilter')" style="width: 170px;">
+        <el-option v-for="s in SERVICE_TYPES" :key="s" :label="s" :value="s" />
+      </el-select>
+      <el-button :loading="loading" @click="fetchPools">
         <el-icon><Refresh /></el-icon>&nbsp;{{ t('pool.refreshList') }}
       </el-button>
     </template>
@@ -19,7 +41,7 @@
     />
 
     <el-card class="table-card" shadow="never">
-      <el-table :data="pools" v-loading="loading" style="width: 100%" row-key="poolName">
+      <el-table :data="pagedPools" v-loading="loading" style="width: 100%" row-key="poolName">
         <el-table-column :label="t('pool.enabled')" width="70" align="center">
           <template #default="{ row }">
             <el-switch :model-value="row.enabled" @change="(val: boolean) => handleToggle(row, val)" />
@@ -76,15 +98,31 @@
           </template>
         </el-table-column>
         <template #empty>
-          <EmptyState :title="t('pool.emptyTitle')" :description="t('pool.emptyDescription')">
+          <!-- 空态区分「还没有资源池」与「筛选无结果」 -->
+          <EmptyState
+            :title="hasFilter ? t('pool.noMatchTitle') : t('pool.emptyTitle')"
+            :description="hasFilter ? t('pool.noMatchHint') : t('pool.emptyDescription')"
+          >
             <template #actions>
-              <el-button type="primary" v-permission="'config:pools:write'" @click="handleCreate">
+              <el-button v-if="hasFilter" @click="clearFilter">{{ t('pool.clearFilter') }}</el-button>
+              <el-button v-else type="primary" v-permission="'config:pools:write'" @click="handleCreate">
                 <el-icon><Plus /></el-icon>&nbsp;{{ t('pool.addPool') }}
               </el-button>
             </template>
           </EmptyState>
         </template>
       </el-table>
+
+      <!-- 资源池数量受服务类型规模约束，通常不足一页；超出一页时才出现分页 -->
+      <div v-if="filteredPools.length > 0" class="pagination-bar">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 50]"
+          :total="filteredPools.length"
+          layout="total, sizes, prev, pager, next"
+        />
+      </div>
     </el-card>
   </PageSkeleton>
 
@@ -162,7 +200,7 @@ import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Refresh, Delete } from '@element-plus/icons-vue'
+import { Plus, Refresh, Delete, Search } from '@element-plus/icons-vue'
 import { ALL_SERVICE_TYPES as SERVICE_TYPES } from '@/constants/serviceTypes'
 import {
   getPoolList,
@@ -176,6 +214,8 @@ import { getServiceInstances, type InstanceConfig } from '@/api/instance'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import ConfirmAction from '@/components/ConfirmAction.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import MetricStrip from '@/components/MetricStrip.vue'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import { useViewport } from '@/composables/useViewport'
 
 const { t } = useI18n()
@@ -191,6 +231,60 @@ const formRef = ref<FormInstance>()
 const instances = ref<InstanceConfig[]>([])
 const instancesLoading = ref(false)
 const router = useRouter()
+
+// 工具栏筛选：关键词命中池名/显示名，服务类型精确匹配
+const keyword = ref('')
+const serviceTypeFilter = ref('')
+// 前端分页：池数量超过一页才生效
+const currentPage = ref(1)
+const pageSize = ref(10)
+
+const hasFilter = computed(() => Boolean(keyword.value.trim() || serviceTypeFilter.value))
+
+const filteredPools = computed<PoolDefinition[]>(() => {
+  const kw = keyword.value.trim().toLowerCase()
+  return pools.value.filter((pool) => {
+    if (serviceTypeFilter.value && pool.serviceType !== serviceTypeFilter.value) return false
+    if (!kw) return true
+    return `${pool.poolName} ${pool.name || ''}`.toLowerCase().includes(kw)
+  })
+})
+
+const pagedPools = computed<PoolDefinition[]>(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return filteredPools.value.slice(start, start + pageSize.value)
+})
+
+/** 统计条：全部是行数/求和型指标（总数 / 启用 / 禁用 / 成员合计） */
+const metricItems = computed<MetricStripItem[]>(() => {
+  const total = pools.value.length
+  const enabled = pools.value.filter((pool) => pool.enabled).length
+  const members = pools.value.reduce((sum, pool) => sum + (pool.members?.length || 0), 0)
+  return [
+    { key: 'total', label: t('pool.metricTotal'), value: total },
+    { key: 'enabled', label: t('pool.metricEnabled'), value: enabled, tone: 'success' },
+    { key: 'disabled', label: t('pool.metricDisabled'), value: total - enabled, tone: total - enabled > 0 ? 'warning' : 'default' },
+    { key: 'members', label: t('pool.metricMembers'), value: members }
+  ]
+})
+
+// 清空全部筛选条件
+const clearFilter = () => {
+  keyword.value = ''
+  serviceTypeFilter.value = ''
+}
+
+// 筛选条件或每页条数变化后，把页码收敛回有效范围
+watch([filteredPools, pageSize], () => {
+  const maxPage = Math.max(1, Math.ceil(filteredPools.value.length / pageSize.value))
+  if (currentPage.value > maxPage) currentPage.value = maxPage
+})
+watch(keyword, () => {
+  currentPage.value = 1
+})
+watch(serviceTypeFilter, () => {
+  currentPage.value = 1
+})
 
 const form = reactive<PoolDefinition>({
   poolName: '',
@@ -408,6 +502,14 @@ onMounted(() => { fetchPools() })
 
 .table-card :deep(.el-card__body) {
   padding: 0;
+}
+
+/* 分页条：卡片内自带左右留白，与表格内容对齐靠右 */
+.pagination-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 16px;
+  border-top: 1px solid var(--ja-border-lighter);
 }
 
 .form-tip {

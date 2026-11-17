@@ -105,6 +105,12 @@
       "loadFailed": "加载调用历史失败：{message}",
       "emptyTitle": "没有符合条件的记录",
       "emptyDescription": "当前筛选条件下没有调用记录，可调整时间范围或筛选条件后重试。",
+      "stats": {
+        "total": "总记录数",
+        "pageSuccess": "本页成功",
+        "pageFailed": "本页失败",
+        "pageAvgResponseTime": "本页平均响应时间 (ms)"
+      },
       "cards": {
         "ariaLabel": "调用记录卡片列表"
       }
@@ -121,7 +127,9 @@
       "listTitle": "慢调用列表",
       "thresholdTag": "阈值: {value} ms",
       "emptyTitle": "没有符合条件的记录",
-      "emptyDescription": "当前时间范围内没有超过阈值的慢调用，可放宽阈值或调整时间范围后重试。"
+      "emptyDescription": "当前时间范围内没有超过阈值的慢调用，可放宽阈值或调整时间范围后重试。",
+      "noDataTitle": "暂无慢调用",
+      "noDataDescription": "当前阈值 {threshold} ms 下没有慢调用记录，说明这段时间的响应时间都在阈值以内；可下调阈值查看更多记录。"
     },
     "tokenUsage": {
       "pageTitle": "Token 使用统计",

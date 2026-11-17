@@ -5,6 +5,8 @@
       "pageDescription": "聚合展示网关异常事件，可按类型、错误码、服务与时间范围定位问题。",
       "emptyTitle": "没有符合条件的记录",
       "emptyDescription": "当前筛选条件下没有异常事件，可调整时间范围或筛选条件后重试。",
+      "emptyNoDataTitle": "还没有异常记录",
+      "emptyNoDataDescription": "网关尚未产生异常事件；出现异常后，记录会出现在这里。",
       "refresh": "刷新",
       "cleanupExpired": "清理过期数据",
       "goStatistics": "统计分析",

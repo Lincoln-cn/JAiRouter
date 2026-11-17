@@ -1,20 +1,41 @@
 <template>
   <PageSkeleton :title="t('rule.pageTitle')">
     <template #actions>
-      <el-button :icon="Refresh" circle @click="refresh" :title="t('rule.refreshTooltip')" />
-      <el-button plain @click="templateDialogVisible = true">
-        <el-icon><MagicStick /></el-icon>&nbsp;{{ t('rule.createFromTemplate') }}
-      </el-button>
+      <!-- 主操作只有一个：新增规则（刷新与「从模板创建」移到工具栏） -->
       <el-button type="primary" v-permission="'config:rules:write'" @click="handleCreate">
         <el-icon><Plus /></el-icon>&nbsp;{{ t('rule.addRule') }}
       </el-button>
     </template>
 
+    <template #stats>
+      <!-- 指标条：规则数 / 启用数 / YAML 只读规则数 / 累计命中，全部由现有列表与统计接口算出 -->
+      <MetricStrip :items="metricItems" :loading="loading" :columns="4" />
+    </template>
+
+    <template #toolbar>
+      <!-- 工具栏顺序：筛选 → 刷新 → 次要动作 -->
+      <el-input
+        v-model="keyword"
+        :placeholder="t('rule.searchPlaceholder')"
+        clearable
+        style="width: 240px;"
+      >
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
+      </el-input>
+      <el-button :loading="loading" @click="refresh">
+        <el-icon><Refresh /></el-icon>&nbsp;{{ t('rule.refresh') }}
+      </el-button>
+      <el-button plain @click="templateDialogVisible = true">
+        <el-icon><MagicStick /></el-icon>&nbsp;{{ t('rule.createFromTemplate') }}
+      </el-button>
+    </template>
+
     <el-card shadow="never" class="table-card">
       <el-table
-        v-show="loading || rules.length > 0"
         ref="tableRef"
-        :data="rules"
+        :data="filteredRules"
         v-loading="loading"
         style="width: 100%"
         row-key="id"
@@ -22,7 +43,7 @@
         <el-table-column :label="t('rule.sort')" width="60" align="center">
           <template #default="{ row }">
             <el-icon
-              v-if="row.source !== 'YAML' && canWrite"
+              v-if="row.source !== 'YAML' && reorderEnabled"
               class="drag-handle"
               :title="t('rule.dragToSort')"
             >
@@ -79,23 +100,27 @@
             </ConfirmAction>
           </template>
         </el-table-column>
-      </el-table>
-
-      <EmptyState
-        v-if="!loading && rules.length === 0"
-        icon="Files"
-        :title="t('rule.emptyTitle')"
-        :description="t('rule.emptyDescription')"
-      >
-        <template #actions>
-          <el-button @click="templateDialogVisible = true">
-            <el-icon><MagicStick /></el-icon>&nbsp;{{ t('rule.createFromTemplate') }}
-          </el-button>
-          <el-button type="primary" v-permission="'config:rules:write'" @click="handleCreate">
-            <el-icon><Plus /></el-icon>&nbsp;{{ t('rule.addRule') }}
-          </el-button>
+        <template #empty>
+          <!-- 空态区分「还没有规则」与「筛选无结果」：无数据时把主操作放进空态 -->
+          <EmptyState
+            icon="Files"
+            :title="keyword ? t('rule.noMatchTitle') : t('rule.emptyTitle')"
+            :description="keyword ? t('rule.noMatchHint') : t('rule.emptyDescription')"
+          >
+            <template #actions>
+              <el-button v-if="keyword" @click="keyword = ''">{{ t('rule.clearFilter') }}</el-button>
+              <template v-else>
+                <el-button @click="templateDialogVisible = true">
+                  <el-icon><MagicStick /></el-icon>&nbsp;{{ t('rule.createFromTemplate') }}
+                </el-button>
+                <el-button type="primary" v-permission="'config:rules:write'" @click="handleCreate">
+                  <el-icon><Plus /></el-icon>&nbsp;{{ t('rule.addRule') }}
+                </el-button>
+              </template>
+            </template>
+          </EmptyState>
         </template>
-      </EmptyState>
+      </el-table>
     </el-card>
   </PageSkeleton>
 
@@ -113,7 +138,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { Plus, MagicStick, Rank, Refresh } from '@element-plus/icons-vue'
+import { Plus, MagicStick, Rank, Refresh, Search } from '@element-plus/icons-vue'
 import Sortable from 'sortablejs'
 import {
   getRuleList,
@@ -131,6 +156,8 @@ import RuleTemplateDialog from './RuleTemplateDialog.vue'
 import PageSkeleton from '@/components/PageSkeleton.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import ConfirmAction from '@/components/ConfirmAction.vue'
+import MetricStrip from '@/components/MetricStrip.vue'
+import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import { usePermission } from '@/composables/usePermission'
 
 const rules = ref<RuleDefinition[]>([])
@@ -140,6 +167,8 @@ const editingRule = ref<RuleDefinition | null>(null)
 const statsMap = ref<Record<string, number>>({})
 const tableRef = ref()
 const templateDialogVisible = ref(false)
+// 工具栏筛选：命中规则名、条件、动作目标等原始字段（不匹配展示用的翻译文案）
+const keyword = ref('')
 const { t } = useI18n()
 const router = useRouter()
 const { hasPermission } = usePermission()
@@ -151,6 +180,47 @@ const { hasPermission } = usePermission()
  * 仍能拖动行，松手即触发 `PUT /api/config/rules/priorities` → 403（issue #468）。
  */
 const canWrite = computed(() => hasPermission('config:rules:write'))
+
+/**
+ * 拖拽只在「有写权限 + 未筛选」时可用：
+ * 排序锚定的是全量有序数组的索引，筛选后 DOM 行与 `rules` 下标不再一一对应，
+ * 放开拖拽会把错误顺序写回后端。
+ */
+const reorderEnabled = computed(() => canWrite.value && !keyword.value.trim())
+
+/** 统计条：规则总数 / 已启用 / YAML 只读规则 / 累计命中（统计接口按 ruleId 累加） */
+const metricItems = computed<MetricStripItem[]>(() => {
+  const total = rules.value.length
+  const enabled = rules.value.filter((rule) => rule.enabled).length
+  const yamlCount = rules.value.filter((rule) => rule.source === 'YAML').length
+  const hits = Object.values(statsMap.value).reduce((sum, value) => sum + (value || 0), 0)
+  return [
+    { key: 'total', label: t('rule.metricTotal'), value: total },
+    { key: 'enabled', label: t('rule.metricEnabled'), value: enabled, tone: 'success' },
+    { key: 'yaml', label: t('rule.metricYaml'), value: yamlCount },
+    { key: 'hits', label: t('rule.metricHits'), value: hits }
+  ]
+})
+
+/** 搜索文本：只拼原始字段值，避免把随语言切换的展示文案算进匹配 */
+const ruleSearchText = (rule: RuleDefinition) => {
+  const parts: string[] = [rule.name || '', String(rule.priority ?? ''), rule.source || '']
+  for (const c of rule.conditions || []) {
+    parts.push(c.type || '', c.operator || '', c.value || '', c.field || '')
+  }
+  const action = rule.action
+  if (action) {
+    parts.push(action.type || '', action.modelName || '', action.instanceId || '', action.adapterName || '', action.lbStrategy || '')
+    Object.values(action.tags || {}).forEach((value) => parts.push(String(value)))
+  }
+  return parts.join(' ').toLowerCase()
+}
+
+const filteredRules = computed<RuleDefinition[]>(() => {
+  const kw = keyword.value.trim().toLowerCase()
+  if (!kw) return rules.value
+  return rules.value.filter((rule) => ruleSearchText(rule).includes(kw))
+})
 
 const fetchRules = async () => {
   loading.value = true
@@ -196,9 +266,9 @@ const initDrag = () => {
     handle: '.drag-handle',
     filter: '.yaml-row',
     animation: 150,
-    // 无写权限时整体禁用（手柄本身也不渲染，这里是第二道保险：
+    // 无写权限或正在筛选时整体禁用（手柄本身也不渲染，这里是第二道保险：
     // 权限在会话内变化 / 手柄选择器将来被改宽时仍然拖不动）。
-    disabled: !canWrite.value,
+    disabled: !reorderEnabled.value,
     onEnd: (evt) => {
       const { oldIndex, newIndex } = evt
       if (oldIndex == null || newIndex == null || oldIndex === newIndex) return
@@ -211,8 +281,8 @@ const initDrag = () => {
   })
 }
 
-// 权限在运行时变化（切换账号 / 刷新权限）时同步 Sortable 的 enabled 状态。
-watch(canWrite, (allowed) => {
+// 权限在运行时变化（切换账号 / 刷新权限）或进入筛选时，同步 Sortable 的 disabled 状态。
+watch(reorderEnabled, (allowed) => {
   sortable?.option('disabled', !allowed)
 })
 

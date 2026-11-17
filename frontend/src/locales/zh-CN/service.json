@@ -25,7 +25,15 @@
       "sticky": "粘性",
       "actions": "操作",
       "notFound": "未找到服务",
+      "notFoundHint": "调整搜索关键字或筛选条件后再试。",
+      "clearFilters": "清除筛选",
       "summary": "共 {count} 条（第 {current} / {total} 页）"
+    },
+    "metrics": {
+      "total": "服务总数",
+      "withAdapter": "已绑定适配器",
+      "instances": "实例总数",
+      "stickyNotSpreading": "粘性未分流"
     },
     "loadBalance": {
       "random": "随机",

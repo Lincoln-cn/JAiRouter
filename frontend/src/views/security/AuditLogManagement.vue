@@ -1,21 +1,19 @@
 <template>
   <PageSkeleton :title="t('auditLog.pageTitle')">
     <template #actions>
-      <el-button-group>
-        <el-button @click="handleRefresh" :icon="Refresh">{{ t('auditLog.refresh') }}</el-button>
-        <el-dropdown @command="handleExport">
-          <el-button type="primary">
-            {{ t('auditLog.export') }}<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-          </el-button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="csv">{{ t('auditLog.exportCsv') }}</el-dropdown-item>
-              <el-dropdown-item command="excel">{{ t('auditLog.exportExcel') }}</el-dropdown-item>
-              <el-dropdown-item command="json">{{ t('auditLog.exportJson') }}</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-      </el-button-group>
+      <!-- 主操作只保留一个：导出（三种格式共用一盏下拉）；刷新移到工具栏 -->
+      <el-dropdown @command="handleExport">
+        <el-button type="primary">
+          {{ t('auditLog.export') }}<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+        </el-button>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="csv">{{ t('auditLog.exportCsv') }}</el-dropdown-item>
+            <el-dropdown-item command="excel">{{ t('auditLog.exportExcel') }}</el-dropdown-item>
+            <el-dropdown-item command="json">{{ t('auditLog.exportJson') }}</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
     </template>
 
     <template #stats>
@@ -157,6 +155,8 @@
               <el-form-item label=" ">
                 <el-button type="primary" @click="handleSearch">{{ t('auditLog.search') }}</el-button>
                 <el-button @click="handleReset">{{ t('auditLog.reset') }}</el-button>
+                <!-- 刷新跟在筛选之后（工具栏顺序：筛选 → 刷新 → 次要动作） -->
+                <el-button :loading="loading" :icon="Refresh" @click="handleRefresh">{{ t('auditLog.refresh') }}</el-button>
               </el-form-item>
             </el-col>
           </el-row>
@@ -166,6 +166,19 @@
 
     <!-- 日志表格 -->
     <el-table :data="logs" style="width: 100%" border v-loading="loading" :row-class-name="tableRowClassName">
+      <!-- 空态区分「还没有数据」与「筛选无结果」；两种情况都给出下一步动作 -->
+      <template #empty>
+        <EmptyState
+          icon="Document"
+          :title="hasActiveFilter ? t('auditLog.emptySearchTitle') : t('auditLog.emptyTitle')"
+          :description="hasActiveFilter ? t('auditLog.emptySearchDescription') : t('auditLog.emptyDescription')"
+        >
+          <template #actions>
+            <el-button v-if="hasActiveFilter" @click="handleReset">{{ t('auditLog.reset') }}</el-button>
+            <el-button v-else :loading="loading" @click="handleRefresh">{{ t('auditLog.refresh') }}</el-button>
+          </template>
+        </EmptyState>
+      </template>
       <el-table-column prop="timestamp" :label="t('auditLog.time')" width="180" sortable>
         <template #default="scope">
           {{ formatDateTime(scope.row.timestamp) }}
@@ -223,7 +236,9 @@
     </el-table>
 
     <template #footer>
+      <!-- 总数为 0 时不渲染无意义的分页条 -->
       <el-pagination
+        v-if="pagination.total > 0"
         v-model:current-page="pagination.currentPage"
         v-model:page-size="pagination.pageSize"
         :page-sizes="[10, 20, 50, 100]"
@@ -235,47 +250,90 @@
     </template>
   </PageSkeleton>
 
-    <!-- 日志详情对话框 -->
-    <el-dialog v-model="detailDialogVisible" :title="t('auditLog.logDetailTitle')" width="650px">
-      <el-descriptions v-if="currentLog" :column="2" border>
-        <el-descriptions-item :label="t('auditLog.eventId')" :span="2">{{ currentLog.id }}</el-descriptions-item>
-        <el-descriptions-item :label="t('auditLog.time')">{{ formatDateTime(currentLog.timestamp) }}</el-descriptions-item>
-        <el-descriptions-item :label="t('auditLog.riskLevel')">
-          <el-tag :type="getRiskLevelColor(currentLog.riskLevel)" v-if="currentLog.riskLevel">
-            {{ currentLog.riskLevel }}
-          </el-tag>
-          <span v-else>LOW</span>
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('auditLog.userId')">{{ currentLog.userId || '-' }}</el-descriptions-item>
-        <el-descriptions-item :label="t('auditLog.eventType')">
-          <el-tag :type="getEventTypeColor(currentLog.type)">
-            {{ getEventTypeText(currentLog.type) }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('auditLog.resourceId')" :span="2">{{ currentLog.resourceId || '-' }}</el-descriptions-item>
-        <el-descriptions-item :label="t('auditLog.action')">{{ currentLog.action || '-' }}</el-descriptions-item>
-        <el-descriptions-item :label="t('auditLog.clientIp')">{{ currentLog.ipAddress || '-' }}</el-descriptions-item>
-        <el-descriptions-item :label="t('auditLog.userAgent')" :span="2">{{ currentLog.userAgent || '-' }}</el-descriptions-item>
-        <el-descriptions-item :label="t('auditLog.outcome')">
-          <el-tag :type="currentLog.success ? 'success' : 'danger'">
-            {{ currentLog.success ? t('auditLog.success') : t('auditLog.failed') }}
-          </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('auditLog.geoLocation')">{{ currentLog.geoLocation || '-' }}</el-descriptions-item>
-        <el-descriptions-item :label="t('auditLog.description')" :span="2">{{ currentLog.details || '-' }}</el-descriptions-item>
-        <el-descriptions-item :label="t('auditLog.metadata')" :span="2" v-if="currentLog.metadata && Object.keys(currentLog.metadata).length > 0">
-          <pre class="metadata-pre">{{ JSON.stringify(currentLog.metadata, null, 2) }}</pre>
-        </el-descriptions-item>
-      </el-descriptions>
-      <template #footer>
-        <el-button @click="detailDialogVisible = false">{{ t('auditLog.close') }}</el-button>
-      </template>
-    </el-dialog>
+  <!-- 日志详情：只读明细走 DetailDrawer。
+       标准宽度 520 放不下「两列描述 + metadata 大段 JSON」，故与规范允许的复杂详情一致用 640；
+       JSON 块自身限高滚动（.metadata-pre），不会把抽屉撑开。 -->
+  <DetailDrawer v-model="detailDrawerVisible" :title="t('auditLog.logDetailTitle')" :width="640">
+    <el-descriptions v-if="currentLog" :column="2" border>
+      <el-descriptions-item :label="t('auditLog.eventId')" :span="2">{{ currentLog.id }}</el-descriptions-item>
+      <el-descriptions-item :label="t('auditLog.time')">{{ formatDateTime(currentLog.timestamp) }}</el-descriptions-item>
+      <el-descriptions-item :label="t('auditLog.riskLevel')">
+        <el-tag :type="getRiskLevelColor(currentLog.riskLevel)" v-if="currentLog.riskLevel">
+          {{ currentLog.riskLevel }}
+        </el-tag>
+        <span v-else>LOW</span>
+      </el-descriptions-item>
+      <el-descriptions-item :label="t('auditLog.userId')">{{ currentLog.userId || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="t('auditLog.eventType')">
+        <el-tag :type="getEventTypeColor(currentLog.type)">
+          {{ getEventTypeText(currentLog.type) }}
+        </el-tag>
+      </el-descriptions-item>
+      <el-descriptions-item :label="t('auditLog.resourceId')" :span="2">{{ currentLog.resourceId || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="t('auditLog.action')">{{ currentLog.action || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="t('auditLog.clientIp')">{{ currentLog.ipAddress || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="t('auditLog.userAgent')" :span="2">{{ currentLog.userAgent || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="t('auditLog.outcome')">
+        <el-tag :type="currentLog.success ? 'success' : 'danger'">
+          {{ currentLog.success ? t('auditLog.success') : t('auditLog.failed') }}
+        </el-tag>
+      </el-descriptions-item>
+      <el-descriptions-item :label="t('auditLog.geoLocation')">{{ currentLog.geoLocation || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="t('auditLog.description')" :span="2">{{ currentLog.details || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="t('auditLog.metadata')" :span="2" v-if="currentLog.metadata && Object.keys(currentLog.metadata).length > 0">
+        <pre class="metadata-pre">{{ JSON.stringify(currentLog.metadata, null, 2) }}</pre>
+      </el-descriptions-item>
+    </el-descriptions>
+    <template #footer>
+      <el-button @click="detailDrawerVisible = false">{{ t('auditLog.close') }}</el-button>
+    </template>
+  </DetailDrawer>
+
+  <!-- 加入黑名单：先展示拦截对象/目标/原因，再由 ConfirmAction 提交（替代弹窗确认） -->
+  <el-drawer
+    v-model="blacklistVisible"
+    :title="t('auditLog.confirmTitle')"
+    direction="rtl"
+    :size="640"
+    :close-on-click-modal="false"
+    @closed="resetBlacklistTarget"
+  >
+    <el-alert
+      v-if="blacklistTarget"
+      :title="t('auditLog.confirmMessage', { entity: blacklistEntityText, target: blacklistTarget.value })"
+      type="warning"
+      :closable="false"
+      show-icon
+      style="margin-bottom: var(--ja-space-4);"
+    />
+    <el-descriptions v-if="blacklistTarget" :column="1" border>
+      <el-descriptions-item :label="t('auditLog.banEntity')">{{ blacklistEntityText }}</el-descriptions-item>
+      <el-descriptions-item :label="t('auditLog.banTarget')">
+        <code class="mono-value">{{ blacklistTarget.value }}</code>
+      </el-descriptions-item>
+      <el-descriptions-item :label="t('auditLog.banReason')">{{ blacklistTarget.reason }}</el-descriptions-item>
+    </el-descriptions>
+    <template #footer>
+      <span class="drawer-footer">
+        <el-button @click="blacklistVisible = false">{{ t('auditLog.cancel') }}</el-button>
+        <ConfirmAction
+          :title="t('auditLog.confirmTitle')"
+          :width="260"
+          :confirm-text="t('auditLog.confirm')"
+          :cancel-text="t('auditLog.cancel')"
+          type="danger"
+          @confirm="handleConfirmAddToBlacklist"
+        >
+          <el-button type="danger">{{ t('auditLog.confirm') }}</el-button>
+        </ConfirmAction>
+      </span>
+    </template>
+  </el-drawer>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, reactive, onMounted, onUnmounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { getErrorMessage } from '@/utils/error'
 import { useI18n } from 'vue-i18n'
 import { Refresh, ArrowDown } from '@element-plus/icons-vue'
@@ -295,6 +353,9 @@ import MetricStrip from '@/components/MetricStrip.vue'
 import type { MetricStripItem } from '@/components/MetricStrip.vue'
 import ChartCard from '@/components/ChartCard.vue'
 import FilterBar from '@/components/FilterBar.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import ConfirmAction from '@/components/ConfirmAction.vue'
+import DetailDrawer from '@/components/DetailDrawer.vue'
 import { formatDateTime as formatDateTimeBase } from '@/utils/format'
 
 const { t } = useI18n()
@@ -320,11 +381,24 @@ const pagination = reactive({
   total: 0
 })
 
+// 是否处于筛选状态：空态文案据此在「还没有数据」与「筛选无结果」之间切换
+const hasActiveFilter = computed(() =>
+  Boolean(
+    searchForm.quickTime ||
+      searchForm.startTime ||
+      searchForm.endTime ||
+      searchForm.eventType ||
+      searchForm.userId ||
+      searchForm.clientIp ||
+      searchForm.success !== null
+  )
+)
+
 // 审计日志数据
 const logs = ref<AuditEvent[]>([])
 const loading = ref(false)
 
-const detailDialogVisible = ref(false)
+const detailDrawerVisible = ref(false)
 const currentLog = ref<AuditEvent | null>(null)
 
 // 统计数据
@@ -501,11 +575,30 @@ const convertToCSV = (events: AuditEvent[]): string => {
 // 查看详情
 const handleViewDetail = (row: AuditEvent) => {
   currentLog.value = row
-  detailDialogVisible.value = true
+  detailDrawerVisible.value = true
 }
 
-// 添加到黑名单
-const handleAddToBlacklist = async (log: AuditEvent, type: string) => {
+// 加入黑名单的待确认目标：下拉命令只落状态并打开抽屉，提交交给 ConfirmAction
+const blacklistVisible = ref(false)
+const blacklistTarget = ref<{
+  type: 'IP' | 'USER'
+  value: string
+  userId?: string
+  reason: string
+} | null>(null)
+
+// 拦截对象文案（抽屉里展示，与 confirmMessage 的 {entity} 同源）
+const blacklistEntityText = computed(() =>
+  blacklistTarget.value?.type === 'IP' ? t('auditLog.entityIp') : t('auditLog.entityUser')
+)
+
+// 抽屉关闭后清空待确认目标，避免残留上一次的目标
+const resetBlacklistTarget = () => {
+  blacklistTarget.value = null
+}
+
+// 添加到黑名单：先算出拦截目标与原因，再由抽屉确认
+const handleAddToBlacklist = (log: AuditEvent, type: string) => {
   let targetValue = ''
   let reason = ''
 
@@ -525,31 +618,38 @@ const handleAddToBlacklist = async (log: AuditEvent, type: string) => {
     return
   }
 
-  try {
-    await ElMessageBox.confirm(
-      t('auditLog.confirmMessage', {
-        entity: type === 'IP' ? t('auditLog.entityIp') : t('auditLog.entityUser'),
-        target: targetValue
-      }),
-      t('auditLog.confirmTitle'),
-      { type: 'warning' }
-    )
+  blacklistTarget.value = {
+    type: type === 'IP' ? 'IP' : 'USER',
+    value: targetValue,
+    userId: log.userId,
+    reason
+  }
+  blacklistVisible.value = true
+}
 
+// 确认加入黑名单（由抽屉里的 ConfirmAction 触发）
+const handleConfirmAddToBlacklist = async () => {
+  if (!blacklistTarget.value) return
+  const target = blacklistTarget.value
+
+  try {
     const result = await addToBlacklist({
-      blacklistType: type === 'IP' ? 'IP' : 'DEVICE',
-      targetValue,
-      userId: type === 'USER' ? targetValue : log.userId,
-      reason,
+      blacklistType: target.type === 'IP' ? 'IP' : 'DEVICE',
+      targetValue: target.value,
+      userId: target.type === 'USER' ? target.value : target.userId,
+      reason: target.reason,
       riskLevel: 'HIGH'
     })
 
     if (result.success) {
       ElMessage.success(t('auditLog.addedToBlacklist'))
+      blacklistVisible.value = false
+      blacklistTarget.value = null
     } else {
       ElMessage.error(result.message || t('auditLog.addFailed'))
     }
-  } catch {
-    // 用户取消
+  } catch (error) {
+    ElMessage.error(getErrorMessage(error) || t('auditLog.addFailed'))
   }
 }
 
@@ -836,6 +936,21 @@ onUnmounted(() => {
   border-radius: 4px;
   font-size: 12px;
   white-space: pre-wrap;
+}
+
+/* 抽屉底部动作条：右对齐、间距统一 */
+.drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--ja-space-2, 8px);
+}
+
+/* 黑名单目标值：可选中、可换行，避免长 IP/用户 ID 撑破描述格 */
+.mono-value {
+  font-family: var(--el-font-family-mono, monospace);
+  font-size: 12px;
+  word-break: break-all;
 }
 
 :deep(.warning-row) {
