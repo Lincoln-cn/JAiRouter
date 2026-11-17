@@ -462,6 +462,12 @@ to a default, so use these names verbatim when filtering, exporting or building 
 #### Monitoring Configuration
 `MONITORING_CONFIG_CHANGED` (hot edits of enabled / prefix / collection interval / categories / sampling / performance, plus emergency operations)
 
+#### SLA Access
+- `SLA_BOOTSTRAP_ISSUED`: an admin issued a one-time bootstrap token (plaintext appears once; only the SHA-256 hash is stored)
+- `SLA_BOOTSTRAP_CONSUMED`: the SLA tool exchanged it for access + refresh credentials (the token is burned immediately)
+- `SLA_REFRESH`: a refresh credential produced a new access token (every renewal is recorded, so it reconciles with "last seen")
+- `SLA_CREDENTIAL_REVOKED`: credentials were revoked (host swap, leak, decommission); deleting an account records one too
+
 #### System Events
 `SYSTEM_CLEANUP` · `SYSTEM_MAINTENANCE`
 

@@ -78,6 +78,11 @@ public class PermissionRuleRegistry {
                 // v2.9.8 Phase 2: 权限管理 API（PermissionManagementController）→ 读 :read、写（PUT 角色权限）:manage
                 PermissionRule.get("/api/security/permissions/**", PermissionCodes.SYSTEM_PERMISSIONS_READ),
                 PermissionRule.write("/api/security/permissions/**", PermissionCodes.SYSTEM_PERMISSIONS_MANAGE),
+                // issue #1174: SLA 接入管理（SlaAdminController）→ 读走 system:sla:read、写走 system:sla:manage。
+                // 不借用 system:accounts:* —— 「谁能管人账号」与「谁能给外部巡检工具发凭据」是两件事，
+                // 后者的凭据能读到调用历史与配置面，误授的代价更大。
+                PermissionRule.get("/api/security/sla/**", PermissionCodes.SYSTEM_SLA_READ),
+                PermissionRule.write("/api/security/sla/**", PermissionCodes.SYSTEM_SLA_MANAGE),
 
                 // ===== 调用历史（原硬编码 ADMIN 规则迁移） =====
                 // issue #514：这里原来是 any(...)（空方法集 = 所有方法），于是「查看」权限码

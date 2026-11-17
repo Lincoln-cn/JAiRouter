@@ -122,6 +122,89 @@ Trigger cleanup of expired tokens.
 #### `GET /api/auth/jwt/cleanup/stats`
 Get cleanup statistics.
 
+### SLA access {#sla-access}
+
+Two surfaces: the anonymous endpoints the SLA tool calls, and the admin endpoints that maintain its accounts in the console.
+
+**Why a separate credential**: the SLA tool has to run unattended for months, while access tokens last 60 minutes and the refresh
+window is one day (`jwt.yml`) — so the status quo stores an admin password in the customer environment. With a one-time bootstrap
+token that is exchanged for a long-lived refresh credential, the secret appears exactly once, the principal is bound to a dedicated
+role template (`SLA_READONLY` / `SLA_OPERATOR`), and revocation takes effect immediately.
+
+#### Base path: `/api/auth/sla` (anonymous, no `Authorization` header)
+
+##### `POST /api/auth/sla/bootstrap`
+
+Exchange a one-time bootstrap token for long-lived credentials.
+
+```json
+{ "token": "one-time token plaintext" }
+```
+
+Response `data`:
+
+```json
+{
+  "accessToken": "eyJhbGciOi...",
+  "refreshToken": "refresh credential plaintext",
+  "expiresIn": 60,
+  "subject": "sla:builder"
+}
+```
+
+- The token lives 15 minutes by default and is **single-use** (concurrent double-spend is caught by row-level optimistic locking;
+  the loser gets "SLA bootstrap token has already been used").
+- The token may be bound to a caller IP in advance; a mismatch returns 403.
+- A disabled account returns 403.
+- The plaintext appears only at issuance and in this response; the database stores SHA-256.
+
+##### `POST /api/auth/sla/refresh`
+
+Exchange a refresh credential for a new access token.
+
+```json
+{ "refreshToken": "refresh credential plaintext" }
+```
+
+Response `data`: `{ "accessToken": "...", "expiresIn": 60 }`.
+
+- The refresh credential lives 90 days by default and rolls forward on every use (`lastUsedAt`, `expiresAt`, `clientIp` updated).
+- Revoked ⇒ "SLA refresh credential has been revoked"; expired ⇒ "SLA refresh credential has expired".
+
+#### Base path: `/api/security/sla` (needs `system:sla:read` / `system:sla:manage`)
+
+##### `GET /api/security/sla/accounts`
+
+Lists SLA accounts: `accountId`, `name`, `roleTemplate`, `enabled`, `createdBy`, `createdAt`, `lastSeenAt`, plus
+`activeRefreshTokens` and `unusedBootstrapTokens`. Requires `system:sla:read`.
+
+##### `POST /api/security/sla/accounts`
+
+```json
+{ "name": "builder", "roleTemplate": "SLA_READONLY" }
+```
+
+`roleTemplate` must be `SLA_READONLY` or `SLA_OPERATOR`; a duplicate name returns a conflict. Requires `system:sla:manage`.
+
+##### `POST /api/security/sla/accounts/{accountId}/bootstrap`
+
+Issues a one-time bootstrap token (**the response is the only place the plaintext appears**).
+
+```json
+{ "ttlMinutes": 15, "allowedIp": "10.0.0.8" }
+```
+
+Both fields are optional (defaults: 15 minutes, any IP). Response: `{ "bootstrapToken": "...", "expiresAt": "...", "expiresIn": 900 }`.
+
+##### `POST /api/security/sla/accounts/{accountId}/revoke`
+
+Revokes every active refresh credential of that account and returns `{ "revoked": 2 }`. Refresh fails immediately afterwards;
+already-issued access tokens simply expire.
+
+##### `DELETE /api/security/sla/accounts/{accountId}`
+
+Deletes the account together with its bootstrap tokens, refresh credentials and the corresponding `sla:<name>` principal in `jwt_accounts`.
+
 ### API Key Management
 
 #### Base Path: `/api/config/ratelimit`

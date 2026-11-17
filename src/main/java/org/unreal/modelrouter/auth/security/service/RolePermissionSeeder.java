@@ -62,7 +62,7 @@ import java.util.stream.Collectors;
 public class RolePermissionSeeder implements ApplicationRunner {
 
     /**
-     * #567：9 个「管理面 read」权限码 → 与之配对的写/管理码。
+     * #567：10 个「管理面 read」权限码 → 与之配对的写/管理码。
      *
      * <p>引入这 8 个码是为了让「读」不再被「写」权限绑架（B11）：<b>凡是持有右侧写/管理码的
      * 角色，都必须同时持有左侧 read 码</b>，保证升级后没有任何角色的可见面变小。反方向不成立
@@ -86,10 +86,11 @@ public class RolePermissionSeeder implements ApplicationRunner {
             PermissionCodes.SECURITY_SANITIZATION_READ, PermissionCodes.SECURITY_SANITIZATION_MANAGE,
             PermissionCodes.SYSTEM_ACCOUNTS_READ, PermissionCodes.SYSTEM_ACCOUNTS_MANAGE,
             PermissionCodes.SYSTEM_PERMISSIONS_READ, PermissionCodes.SYSTEM_PERMISSIONS_MANAGE,
-            PermissionCodes.MONITORING_CONFIG_READ, PermissionCodes.MONITORING_CONFIG_WRITE);
+            PermissionCodes.MONITORING_CONFIG_READ, PermissionCodes.MONITORING_CONFIG_WRITE,
+            PermissionCodes.SYSTEM_SLA_READ, PermissionCodes.SYSTEM_SLA_MANAGE);
 
     /**
-     * 上述 9 个 read 码的集合（{@link #MANAGE_PAIRED_READ_TO_WRITE} 的键集），只读角色需整体排除。
+     * 上述 10 个 read 码的集合（{@link #MANAGE_PAIRED_READ_TO_WRITE} 的键集），只读角色需整体排除。
      */
     private static final Set<String> MANAGE_PAIRED_READ_CODES = MANAGE_PAIRED_READ_TO_WRITE.keySet();
 
@@ -225,6 +226,8 @@ public class RolePermissionSeeder implements ApplicationRunner {
         templates.put("OPERATOR", operatorCodes());
         templates.put("USER", userCodes());
         templates.put("VIEWER", viewerCodes());
+        templates.put(SLA_READONLY_ROLE, slaReadonlyCodes());
+        templates.put(SLA_OPERATOR_ROLE, slaOperatorCodes());
         return Collections.unmodifiableMap(templates);
     }
 
@@ -289,6 +292,91 @@ public class RolePermissionSeeder implements ApplicationRunner {
                 PermissionCodes.MONITORING_EXCEPTIONS_READ,
                 PermissionCodes.MONITORING_CONSOLE_READ
         );
+    }
+
+    /** SLA 只读角色名（外部巡检工具的运行主体，issue #1174）。 */
+    public static final String SLA_READONLY_ROLE = "SLA_READONLY";
+
+    /** SLA 运维角色名（只读 + 配置写，供升级后回归与场景编排使用，issue #1174）。 */
+    public static final String SLA_OPERATOR_ROLE = "SLA_OPERATOR";
+
+    /**
+     * SLA_READONLY：外部巡检工具能看到的全部观测面，写一个都不给。
+     *
+     * <p>口径 = 「凡是巡检、诊断、容量报表会用到的读面」：总览、监控、追踪、调用记录
+     * （<b>不含</b> {@code callhistory:full-content} —— 正文解密仍只给 ADMIN）、配置读、
+     * 负载均衡/熔断/限流的监控读、审计读。刻意不给 {@code security:*} 管理面与
+     * {@code system:accounts|permissions}：SLA 是观测者，不是管理员。
+     */
+    private static List<String> slaReadonlyCodes() {
+        return List.of(
+                PermissionCodes.OVERVIEW_DASHBOARD_READ,
+                PermissionCodes.CONFIG_SERVICES_READ,
+                PermissionCodes.CONFIG_INSTANCES_READ,
+                PermissionCodes.CONFIG_VERSIONS_READ,
+                PermissionCodes.CONFIG_PERSISTENCE_READ,
+                PermissionCodes.CONFIG_ADAPTERS_READ,
+                PermissionCodes.CONFIG_RULES_READ,
+                PermissionCodes.CONFIG_POOLS_READ,
+                PermissionCodes.CONFIG_CIRCUITBREAKER_READ,
+                PermissionCodes.CONFIG_CALLHISTORY_READ,
+                PermissionCodes.CONFIG_CACHE_READ,
+                PermissionCodes.CONFIG_VALIDATION_READ,
+                PermissionCodes.CONFIG_QUOTA_READ,
+                PermissionCodes.CONFIG_RATELIMIT_READ,
+                PermissionCodes.CONFIG_CLUSTER_READ,
+                PermissionCodes.CONFIG_HEALTH_READ,
+                PermissionCodes.LB_MONITORING_READ,
+                PermissionCodes.LB_CONFIG_READ,
+                PermissionCodes.CB_MONITORING_READ,
+                PermissionCodes.CB_HISTORY_READ,
+                PermissionCodes.RL_MONITORING_READ,
+                PermissionCodes.CALLHISTORY_READ,
+                PermissionCodes.MONITORING_METRICS_READ,
+                PermissionCodes.MONITORING_SLOWQUERY_READ,
+                PermissionCodes.MONITORING_TOKENUSAGE_READ,
+                PermissionCodes.MONITORING_MODELSTATS_READ,
+                PermissionCodes.MONITORING_ROUTING_READ,
+                PermissionCodes.MONITORING_QUOTA_READ,
+                PermissionCodes.MONITORING_EXCEPTIONS_READ,
+                PermissionCodes.MONITORING_CONSOLE_READ,
+                PermissionCodes.MONITORING_CONFIG_READ,
+                PermissionCodes.TRACING_DASHBOARD_READ,
+                PermissionCodes.TRACING_SEARCH_READ,
+                PermissionCodes.TRACING_CONFIG_READ,
+                PermissionCodes.SECURITY_AUDIT_READ
+        );
+    }
+
+    /**
+     * SLA_OPERATOR：SLA_READONLY + 控制面配置写。
+     *
+     * <p>用途 = 升级后回归（{@code sla verify --allow-writes}）与场景编排需要改配置再恢复。
+     * <b>不含</b>：用户/权限管理、审计写、{@code security:*:manage}（密钥/令牌/黑名单/脱敏）、
+     * {@code actuator:admin:manage}、{@code callhistory:full-content}、{@code system:sla:manage}
+     * —— 这些都是「能改别人的凭据或看到正文」的能力，不该随巡检账号一起发出去。
+     */
+    private static List<String> slaOperatorCodes() {
+        List<String> codes = new java.util.ArrayList<>(slaReadonlyCodes());
+        codes.add(PermissionCodes.CONFIG_SERVICES_WRITE);
+        codes.add(PermissionCodes.CONFIG_INSTANCES_WRITE);
+        codes.add(PermissionCodes.CONFIG_VERSIONS_WRITE);
+        codes.add(PermissionCodes.CONFIG_RULES_WRITE);
+        codes.add(PermissionCodes.CONFIG_POOLS_WRITE);
+        codes.add(PermissionCodes.CONFIG_CIRCUITBREAKER_WRITE);
+        codes.add(PermissionCodes.CONFIG_CACHE_WRITE);
+        codes.add(PermissionCodes.CONFIG_QUOTA_WRITE);
+        codes.add(PermissionCodes.CONFIG_RATELIMIT_WRITE);
+        codes.add(PermissionCodes.CONFIG_CLUSTER_WRITE);
+        codes.add(PermissionCodes.CONFIG_HEALTH_WRITE);
+        codes.add(PermissionCodes.CONFIG_PERSISTENCE_WRITE);
+        codes.add(PermissionCodes.CONFIG_ADAPTERS_WRITE);
+        codes.add(PermissionCodes.CONFIG_VALIDATION_WRITE);
+        codes.add(PermissionCodes.CONFIG_CALLHISTORY_WRITE);
+        codes.add(PermissionCodes.LB_CONFIG_WRITE);
+        codes.add(PermissionCodes.TRACING_CONFIG_MANAGE);
+        codes.add(PermissionCodes.MONITORING_CONFIG_WRITE);
+        return List.copyOf(codes);
     }
 
     /**

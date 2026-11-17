@@ -37,7 +37,8 @@ class AuditEventTypeConstraintMigrationTest {
 
     private static final String H2_V7_MIGRATION = "db/migration/h2/V7__audit_event_type_values.sql";
     private static final String H2_V15_MIGRATION = "db/migration/h2/V15__monitoring_config_audit_event.sql";
-    private static final String POSTGRES_V15_MIGRATION = "db/migration/postgres/V15__monitoring_config_audit_event.sql";
+    private static final String H2_V16_MIGRATION = "db/migration/h2/V16__sla_access.sql";
+    private static final String POSTGRES_V16_MIGRATION = "db/migration/postgres/V16__sla_access.sql";
 
     /** V1 建表时的 16 个旧取值，用来复现迁移前的状态。 */
     private static final String LEGACY_ENUM_VALUES = "'API_KEY_CREATED','API_KEY_EXPIRED','API_KEY_REVOKED',"
@@ -47,18 +48,18 @@ class AuditEventTypeConstraintMigrationTest {
 
     @Test
     void everyEnumConstantIsAllowedByBothMigrations() throws IOException {
-        // V15 用「重设整列类型 / 重建 check 约束」的方式扩取值，必须一次性列全，
-        // 因此这里只校验最新一版迁移（V7 已被 V15 覆盖）。
-        final String h2 = stripComments(readResource(H2_V15_MIGRATION));
-        final String postgres = stripComments(readResource(POSTGRES_V15_MIGRATION));
+        // V16 用「重设整列类型 / 重建 check 约束」的方式扩取值，必须一次性列全，
+        // 因此这里只校验最新一版迁移（V7、V15 都已被 V16 覆盖）。
+        final String h2 = stripComments(readResource(H2_V16_MIGRATION));
+        final String postgres = stripComments(readResource(POSTGRES_V16_MIGRATION));
 
         for (final AuditEventType type : AuditEventType.values()) {
             assertTrue(h2.contains("'" + type.name() + "'"),
-                    "H2 的 V15 迁移缺少审计事件类型: " + type.name());
+                    "H2 的 V16 迁移缺少审计事件类型: " + type.name());
             assertTrue(postgres.contains("'" + type.name() + "'"),
-                    "PostgreSQL 的 V15 迁移缺少审计事件类型: " + type.name());
+                    "PostgreSQL 的 V16 迁移缺少审计事件类型: " + type.name());
         }
-        assertEquals(27, AuditEventType.values().length,
+        assertEquals(31, AuditEventType.values().length,
                 "枚举常量数量变了：请确认新增迁移与实体映射同步更新，再调整此断言");
     }
 
@@ -84,12 +85,20 @@ class AuditEventTypeConstraintMigrationTest {
             assertThrows(SQLException.class, () -> insertEvent(connection, "MONITORING_CONFIG_CHANGED"),
                     "V7 之后、V15 之前 MONITORING_CONFIG_CHANGED 本应仍被拒；若通过说明断言失去检测力");
 
-            // 执行 V15 里的 ALTER
+            // 执行 V15 里的 ALTER（27 个取值；SLA 四个事件还不该被接受）
             try (Statement statement = connection.createStatement()) {
                 statement.execute(extractAlterStatement(H2_V15_MIGRATION));
             }
+            insertEvent(connection, "MONITORING_CONFIG_CHANGED");
+            assertThrows(SQLException.class, () -> insertEvent(connection, "SLA_BOOTSTRAP_ISSUED"),
+                    "V15 之后、V16 之前 SLA_BOOTSTRAP_ISSUED 本应仍被拒；若通过说明断言失去检测力");
 
-            // 迁移后：全部 27 个取值都可写
+            // 执行 V16 里的 ALTER
+            try (Statement statement = connection.createStatement()) {
+                statement.execute(extractAlterStatement(H2_V16_MIGRATION));
+            }
+
+            // 迁移后：全部 31 个取值都可写
             for (final AuditEventType type : AuditEventType.values()) {
                 insertEvent(connection, type.name());
             }

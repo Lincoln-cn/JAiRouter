@@ -93,6 +93,7 @@
     "accounts": "账户管理",
     "permissions": "权限管理",
     "monitoringConfig": "监控配置",
+    "slaAccess": "SLA 接入",
     "statePersistence": "状态持久化",
     "clusterConfig": "集群设置",
     "healthConfig": "健康探针设置",
@@ -130,7 +131,8 @@
     "playgroundRerank": "重排序",
     "playgroundAudio": "语音服务",
     "playgroundImage": "图像服务",
-    "monitoringRuntime": "运行时与应急"
+    "monitoringRuntime": "运行时与应急",
+    "slaAccess": "SLA 接入"
   },
   "route": {
     "dashboard": "概览",
@@ -175,6 +177,7 @@
     "tracingManagement": "追踪配置",
     "monitoringConfig": "监控配置",
     "monitoringRuntime": "运行时与应急",
+    "slaAccess": "SLA 接入",
     "playgroundChat": "对话测试",
     "playgroundEmbedding": "向量生成",
     "playgroundRerank": "重排序",

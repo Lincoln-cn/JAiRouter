@@ -24,7 +24,7 @@ Both entry points serve the same frontend code with identical functionality.
 
 | Username | Default Password | Role | Description |
 |----------|-----------------|------|-------------|
-| `admin` | `ChangeMeOnFirstStartup123456` | ADMIN, USER | Super admin with all 72 permission codes |
+| `admin` | `ChangeMeOnFirstStartup123456` | ADMIN, USER | Super admin with all 74 permission codes |
 | `user` | `user123456` | USER | Regular user, primarily read-only |
 
 > ⚠️ **Change the `admin` password before first production use.** The password is set via the `INITIAL_ADMIN_PASSWORD` environment variable (see `src/main/resources/config/auth/jwt.yml`). Restart the service after changing it.
@@ -61,7 +61,7 @@ After a successful login, the JWT is stored in the browser `localStorage` under 
 
 ### 2.1 Left Navigation
 
-The console has a collapsible sidebar containing **7 menu groups** with **33 menu items** and **47 pages (tabs)**. Pages that belong together are folded into **tabs** (for example, "Call History" holds "Call Records / Call History Dashboard"); tabs are ordered and switch in place.
+The console has a collapsible sidebar containing **7 menu groups** with **34 menu items** and **48 pages (tabs)**. Pages that belong together are folded into **tabs** (for example, "Call History" holds "Call Records / Call History Dashboard"); tabs are ordered and switch in place.
 
 Menu visibility is controlled by permission codes: groups/menu items for which the user lacks the required code are hidden, and **each tab is gated separately** — if the user can only see some tabs, the item still shows and the landing tab is the first one the user is allowed to open.
 
@@ -74,10 +74,10 @@ Menu visibility is controlled by permission codes: groups/menu items for which t
 | 3 | Traffic Governance | 流量治理 | Routing Rules, Load Balancing (Real-time Monitoring ｜ Strategy Config), Rate Limiting (Rate Limit Monitoring), Circuit Breakers (Circuit Monitoring ｜ Circuit History ｜ Global Config), Response Cache Management, Quota Runtime Config, Resource Pools |
 | 4 | Model & Instances | 模型与实例 | Adapters, Service Management, Instance Management, Version Management |
 | 5 | Security | 安全 | API Key Management, PII Sanitization, JWT Token Management, Blacklist Management, Audit Logs, Record Governance |
-| 6 | System | 系统 | Account Management, Permission Management, Tracing Config, Monitoring Config (Monitoring Config ｜ Runtime & Emergency), State Persistence, Cluster Settings, Health Probe Settings, Operation Records |
+| 6 | System | 系统 | Account Management, Permission Management, Tracing Config, Monitoring Config (Monitoring Config ｜ Runtime & Emergency), State Persistence, Cluster Settings, Health Probe Settings, Operation Records, SLA Access |
 | 7 | Developer Tools | 开发工具 | AI Playground (Chat Playground ｜ Embedding ｜ Rerank ｜ Audio Service ｜ Image Service), Client Access Guide |
 
-> This information architecture (IA) change folds 9 groups / 40 entries into 7 groups / 28 items; later additions brought it to 7 groups / 33 items and 47 pages (v3.5.1 Record Governance, v3.8.6 Cluster Settings, v3.8.7 Health Probe Settings, v3.8.8 Operation Records and Monitoring Config): 12 entries became tabs of a sibling item, and **every URL stays the same**. Deep links, bookmarks, and the paths in the appendix keep working; they simply no longer occupy a sidebar row of their own.
+> This information architecture (IA) change folds 9 groups / 40 entries into 7 groups / 28 items; later additions brought it to 7 groups / 34 items and 48 pages (v3.5.1 Record Governance, v3.8.6 Cluster Settings, v3.8.7 Health Probe Settings, v3.8.8 Operation Records and Monitoring Config, SLA Access): 12 entries became tabs of a sibling item, and **every URL stays the same**. Deep links, bookmarks, and the paths in the appendix keep working; they simply no longer occupy a sidebar row of their own.
 
 ### 2.2 Top Bar
 
@@ -263,14 +263,16 @@ Overview → Dashboard provides a single-pane view:
 
 ## 6. Permissions and Roles
 
-### 6.1 Four Built-in Roles
+### 6.1 Six Built-in Roles
 
 | Role | Permission Count | Permission Scope | Description |
 |------|:----------------:|------------------|-------------|
-| **ADMIN** | 72 | All permission codes | Super admin; bypasses URL rules, full codes embedded in JWT |
-| **OPERATOR** | 54 | All `:read` + `:write` codes | Day-to-day ops; excludes system management (`system:*`), security management `manage` codes (API Key / JWT Token / Blacklist management); holds `callhistory:read` (records and summaries, no bodies) |
+| **ADMIN** | 74 | All permission codes | Super admin; bypasses URL rules, full codes embedded in JWT |
+| **OPERATOR** | 55 | All `:read` + `:write` codes | Day-to-day ops; excludes system management (`system:*`), security management `manage` codes (API Key / JWT Token / Blacklist management); holds `callhistory:read` (records and summaries, no bodies) |
 | **USER** | 33 | Dashboard + config read + full lb/cb/rl + monitoring read + tracing dashboard/search + AI Playground | Regular user; only write code is `lb:config:write` |
-| **VIEWER** | 31 | All `:read` codes (minus the 8 codes paired with write/manage surfaces and `callhistory:read`) | Pure read-only role; no call history (`callhistory:read`), `ai:playground:use`, or other non-`:read` codes |
+| **VIEWER** | 31 | All `:read` codes (minus the 10 codes paired with write/manage surfaces and `callhistory:read`) | Pure read-only role; no call history (`callhistory:read`), `ai:playground:use`, or other non-`:read` codes |
+| **SLA_READONLY** | 35 | Read-only inspection surface | Read-only role for SLA tooling: dashboard, config read codes, lb/cb/rl monitoring, `callhistory:read` (summaries only), monitoring read, tracing read, audit log read; no record bodies and no management codes |
+| **SLA_OPERATOR** | 53 | Read-only inspection plus configuration writes | Adds the 15 `config:*:write` codes, `lb:config:write`, `tracing:config:manage` and `monitoring:config:write` on top of SLA_READONLY; still no account/permission management and no `security:*:manage` |
 
 ### 6.2 Why Some Menu Pages Are Missing {#why-menu-pages-missing}
 

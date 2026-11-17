@@ -78,6 +78,7 @@
       "sanitization": "脱敏规则",
       "accounts": "账户",
       "permissions": "权限",
+      "sla": "SLA 接入",
       "playground": "试验场",
       "admin": "管理端点"
     },

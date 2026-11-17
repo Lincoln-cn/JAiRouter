@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>三类防漂移断言：
  * <ul>
- *   <li><b>总数 = 72</b>：权限码总数同时出现在 README 与中英两版 rbac-permissions 文档里，
+ *   <li><b>总数 = 74</b>：权限码总数同时出现在 README 与中英两版 rbac-permissions 文档里，
  *   改这里就必须同步改那三处（本断言是「代码侧唯一真值」的钉子）。</li>
  *   <li><b>常量集合 ≡ {@link PermissionCodes#ALL_PERMISSION_CODES}</b>：新增常量却忘记登记进清单、
  *   或清单里残留已删除的常量，都会立刻红 —— 否则该码永远不会被角色模板/ADMIN 短路覆盖。</li>
@@ -34,18 +34,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PermissionCodesTest {
 
     /**
-     * 权威总数：72 = 41 个 :read + 21 个 :write + 8 个 manage + ai:playground:use + callhistory:full-content。
+     * 权威总数：74 = 42 个 :read + 21 个 :write + 9 个 manage + ai:playground:use + callhistory:full-content。
      *
      * <p>调用历史拆码（2026-11-16）后 70 → 71：原 {@code callhistory:view} 换成
      * {@code callhistory:read}（并进 :read 计数）+ {@code callhistory:full-content}（单独一项）。
      *
      * <p>#1173（2026-11-17）71 → 72：新增 {@code monitoring:config:read}，把「能看到监控配置与
      * 应急影响面」从写码里拆出来。
+     *
+     * <p>#1174（2026-11-17）72 → 74：新增 {@code system:sla:read} / {@code system:sla:manage}，
+     * 让 SLA 巡检账号能在控制台被签发一次性接入令牌、查看与吊销凭据。
      */
-    private static final int EXPECTED_TOTAL = 72;
+    private static final int EXPECTED_TOTAL = 74;
 
     @Test
-    @DisplayName("权限码总数为 72")
+    @DisplayName("权限码总数为 74")
     void totalCodeCountMatchesDocumentedValue() {
         assertEquals(EXPECTED_TOTAL, PermissionCodes.ALL_PERMISSION_CODES.size(),
                 "权限码总数变化必须同步 README 与 docs/{zh,en}/security/rbac-permissions.md 的计数");

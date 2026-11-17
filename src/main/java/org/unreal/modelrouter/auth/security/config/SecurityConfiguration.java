@@ -178,6 +178,12 @@ public class SecurityConfiguration {
                 .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/login").permitAll()
                 // JWT验证端点允许匿名访问（用于验证令牌有效性）
                 .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/validate").permitAll()
+                // issue #1174: SLA 接入的两条端点必须匿名 —— 调用方手上只有一次性接入令牌或
+                // 长期刷新凭据，都还没有被认证层识别的网关凭据，`/api/**` 的权限矩阵进不来。
+                // 令牌/凭据本身的校验（一次性、TTL、来源 IP、吊销、账号启用）在 SlaAccessService
+                // 里做，审计事件由同一处写。管理端 /api/security/sla/** 不在放行之列。
+                .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/sla/bootstrap").permitAll()
+                .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/sla/refresh").permitAll()
                 // v2.9.8-fix: ModelCallStatsController.hasAdminPermission() stub 恒 true，
                 // /api/model-stats/** 全量改为 URL 规则 hasRole('ADMIN')（DELETE /clear 为管理员操作）
                 .pathMatchers("/api/model-stats/**").hasRole("ADMIN")

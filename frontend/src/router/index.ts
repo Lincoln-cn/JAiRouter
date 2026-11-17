@@ -287,6 +287,13 @@ const router = createRouter({
           name: 'console-operations',
           component: () => import('../views/system/ConsoleOperations.vue'),
           meta: { titleKey: 'route.consoleOperations', icon: 'document', permissions: ['monitoring:console:read'] }
+        },
+        {
+          path: 'sla',
+          name: 'sla-access',
+          component: () => import('../views/system/SlaAccessManagement.vue'),
+          // 看账号列表只需读码；签发/吊销/删除按钮各自挂 system:sla:manage。
+          meta: { titleKey: 'route.slaAccess', icon: 'link', permissions: ['system:sla:read', 'system:sla:manage'] }
         }
       ]
     },

@@ -483,6 +483,12 @@ jairouter:
 #### 监控配置
 `MONITORING_CONFIG_CHANGED`（含启用/前缀/采集间隔/分类/采样率/采集性能的热改与应急操作）
 
+#### SLA 接入
+- `SLA_BOOTSTRAP_ISSUED`：管理员签发一次性接入令牌（明文只出现一次，库里只留 SHA-256）
+- `SLA_BOOTSTRAP_CONSUMED`：SLA 用一次性令牌换到 access + refresh 凭据（令牌当场作废）
+- `SLA_REFRESH`：用 refresh 凭据换新的 access token（每次刷新都留痕，可与「上次使用时间」对账）
+- `SLA_CREDENTIAL_REVOKED`：凭据被吊销（换机、泄露、下线）；删除账号同样记一条
+
 #### 系统事件
 `SYSTEM_CLEANUP` · `SYSTEM_MAINTENANCE`
 

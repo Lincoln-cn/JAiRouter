@@ -62,14 +62,15 @@ class RolePermissionSeederTest {
     class SeedWhenEmptyTests {
 
         @Test
-        @DisplayName("表空时种入 4 个角色模板，权限码数量正确")
-        void seedsFourRolesWithCorrectCounts() {
+        @DisplayName("表空时种入 6 个角色模板，权限码数量正确")
+        void seedsSixRoleTemplatesWithCorrectCounts() {
             seeder.seedIfEmpty();
 
             Map<String, Long> counts = repository.rows().stream().collect(Collectors.groupingBy(
                     RolePermissionEntity::getRoleName, Collectors.counting()));
 
-            assertEquals(Set.of("ADMIN", "OPERATOR", "USER", "VIEWER"), counts.keySet());
+            assertEquals(Set.of("ADMIN", "OPERATOR", "USER", "VIEWER", "SLA_READONLY", "SLA_OPERATOR"),
+                    counts.keySet());
             assertEquals(PermissionCodes.ALL_PERMISSION_CODES.size(), counts.get("ADMIN").intValue());
             // R2-P1-03: + monitoring:exceptions:read/write；#116: + monitoring:config:write, security:audit:write
             // 45 = 44 + monitoring:slowquery:write（#468 新增；OPERATOR 的规则是「所有 :read/:write 码」，
@@ -88,6 +89,13 @@ class RolePermissionSeederTest {
             assertEquals(55L, counts.get("OPERATOR"));
             assertEquals(33L, counts.get("USER"));
             assertEquals(31L, counts.get("VIEWER"));
+            // #1174：系统里第一组「不是人」的角色模板。SLA_READONLY = 35 个只读码（不含
+            // callhistory:full-content、security:*:manage、system:*）；SLA_OPERATOR 再加 18 个
+            // 控制面写码（config 15 个 write + lb:config:write + tracing:config:manage +
+            // monitoring:config:write）⇒ 53。两者都不含 system:sla:manage，避免巡检账号自己
+            // 给自己续凭据。
+            assertEquals(35L, counts.get("SLA_READONLY"));
+            assertEquals(53L, counts.get("SLA_OPERATOR"));
         }
 
         @Test
@@ -218,7 +226,15 @@ class RolePermissionSeederTest {
                     "ADMIN", Set.copyOf(MANAGE_PAIRED_READ_CODES),
                     "OPERATOR", Set.of(PermissionCodes.LB_CONFIG_READ),
                     "USER", Set.of(PermissionCodes.LB_CONFIG_READ),
-                    "VIEWER", Set.of());
+                    "VIEWER", Set.of(),
+                    // #1174：SLA 模板是「巡检面」，只读角色需要看负载均衡策略、链路配置与监控
+                    // 配置（这三个 read 的配对写码分别由 SLA_OPERATOR 的 lb:config:write /
+                    // tracing:config:manage / monitoring:config:write 覆盖），但都不持有
+                    // security:*:manage / system:*:manage —— 巡检账号不该能签发密钥或改账号。
+                    "SLA_READONLY", Set.of(PermissionCodes.LB_CONFIG_READ,
+                            PermissionCodes.TRACING_CONFIG_READ, PermissionCodes.MONITORING_CONFIG_READ),
+                    "SLA_OPERATOR", Set.of(PermissionCodes.LB_CONFIG_READ,
+                            PermissionCodes.TRACING_CONFIG_READ, PermissionCodes.MONITORING_CONFIG_READ));
 
             Map<String, List<String>> templates = RolePermissionSeeder.DEFAULT_ROLE_TEMPLATES;
             assertEquals(expected.keySet(), templates.keySet());

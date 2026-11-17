@@ -586,6 +586,19 @@ export const menuGroups: MenuGroup[] = [
             permission: ['monitoring:console:read']
           }
         ]
+      },
+      {
+        path: '/system/sla',
+        title: 'menu.slaAccess',
+        permission: ['system:sla:read', 'system:sla:manage'],
+        tabs: [
+          {
+            key: 'sla-access',
+            labelKey: 'tabs.slaAccess',
+            to: '/system/sla',
+            permission: ['system:sla:read', 'system:sla:manage']
+          }
+        ]
       }
     ]
   },

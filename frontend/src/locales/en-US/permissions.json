@@ -78,6 +78,7 @@
       "sanitization": "Sanitization rules",
       "accounts": "Accounts",
       "permissions": "Permissions",
+      "sla": "SLA access",
       "playground": "Playground",
       "admin": "Actuator admin"
     },

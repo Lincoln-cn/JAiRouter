@@ -128,6 +128,86 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 #### `GET /api/auth/jwt/cleanup/stats`
 获取清理统计。
 
+### SLA 接入 {#sla-access}
+
+覆盖两段：SLA 工具自己调的两个匿名端点，以及管理员在控制台维护账号的管理端点。
+
+**为什么单独一套凭据**：SLA 工具要长期无人值守运行，而 JWT 访问令牌默认 60 分钟、refresh 窗口 1 天（`jwt.yml`），
+用它就得在客户环境里长期存一份管理员密码。改成「一次性接入令牌 → 长期 refresh 凭据」后，密码只在签发那一刻出现一次，
+权限绑定到专用角色模板（`SLA_READONLY` / `SLA_OPERATOR`），吊销即时生效。
+
+#### 基础路径: `/api/auth/sla`（匿名，无 `Authorization` 要求）
+
+##### `POST /api/auth/sla/bootstrap`
+
+用一次性接入令牌换长期凭据。
+
+```json
+{ "token": "一次性令牌明文" }
+```
+
+响应 `data`：
+
+```json
+{
+  "accessToken": "eyJhbGciOi...",
+  "refreshToken": "刷新凭据明文",
+  "expiresIn": 60,
+  "subject": "sla:builder"
+}
+```
+
+- 令牌 TTL 默认 15 分钟、**只能使用一次**（并发双花由行级乐观锁兜住，第二个请求返回「SLA 接入令牌已被使用」）。
+- 可预先绑定调用方 IP；不匹配时返回 403。
+- 账号被禁用时返回 403。
+- 明文只在签发与本次响应里出现，库里只存 SHA-256。
+
+##### `POST /api/auth/sla/refresh`
+
+用刷新凭据换新的访问令牌。
+
+```json
+{ "refreshToken": "刷新凭据明文" }
+```
+
+响应 `data`：`{ "accessToken": "...", "expiresIn": 60 }`。
+
+- 刷新凭据默认 90 天，每次刷新滚动续期（`lastUsedAt`、`expiresAt`、`clientIp` 一并更新）。
+- 已吊销返回「SLA 刷新凭据已被吊销」；已过期返回「SLA 刷新凭据已过期」。
+
+#### 基础路径: `/api/security/sla`（需 `system:sla:read` / `system:sla:manage`）
+
+##### `GET /api/security/sla/accounts`
+
+列出 SLA 账号：`accountId`、`name`、`roleTemplate`、`enabled`、`createdBy`、`createdAt`、`lastSeenAt`，
+以及 `activeRefreshTokens`（有效刷新凭据数）、`unusedBootstrapTokens`（未使用的一次性令牌数）。需 `system:sla:read`。
+
+##### `POST /api/security/sla/accounts`
+
+```json
+{ "name": "builder", "roleTemplate": "SLA_READONLY" }
+```
+
+`roleTemplate` 只能是 `SLA_READONLY` / `SLA_OPERATOR`；重名返回冲突。需 `system:sla:manage`。
+
+##### `POST /api/security/sla/accounts/{accountId}/bootstrap`
+
+签发一次性接入令牌（**响应里是唯一一次明文**）。
+
+```json
+{ "ttlMinutes": 15, "allowedIp": "10.0.0.8" }
+```
+
+两个字段都可省略（默认 15 分钟、不限 IP）。响应：`{ "bootstrapToken": "...", "expiresAt": "...", "expiresIn": 900 }`。
+
+##### `POST /api/security/sla/accounts/{accountId}/revoke`
+
+吊销该账号下所有有效刷新凭据，返回 `{ "revoked": 2 }`。吊销后 refresh 立刻失败；已签发的访问令牌按到期自然失效。
+
+##### `DELETE /api/security/sla/accounts/{accountId}`
+
+删除账号，连同其一次性令牌、刷新凭据与 `jwt_accounts` 中对应的 `sla:<name>` 主体。
+
 ### API 密钥管理
 
 #### 基础路径: `/api/config/ratelimit`
